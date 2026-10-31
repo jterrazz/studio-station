@@ -489,6 +489,11 @@ func (l ListScreen) row(r Row, widths []int, width int, selected bool) string {
 		used += widths[i] + len(cellGap)
 	}
 	text := strings.TrimRight(line.String(), " ")
+	if lipgloss.Width(text) > width-1 {
+		// invariant: a row is one line; columns wider than the screen are cut
+		// here, or the selection's fixed width would wrap the row onto a second one.
+		text = lipgloss.NewStyle().MaxWidth(max(width-2, 1)).Render(text) + "…"
+	}
 	if selected {
 		return lipgloss.NewStyle().Background(t.Tokens.Selection).Width(max(width-1, 1)).Render(text)
 	}

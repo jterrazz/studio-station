@@ -1,0 +1,55 @@
+description: 'the Fleet tab hints: d on a host says forget, s on a temporary VM says delete, ctrl+r wants the name'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/vm-t/
+    - ./__fixtures__/terminal/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION"'
+      stdin: |
+          see Machine
+          send 5
+          see - Images
+          send \x1b[B
+          send d
+          see forget: f
+          send \x1b[B
+          send s
+          see temporary: delete with d
+          send \x1b[A
+          send \x12
+          see Restart x?
+          screen
+          send \x1b
+          gone Restart x?
+          send q
+      exit: 0
+      stdout: |4
+           station   Status · Tools · Config · Clean │ Fleet                     x · host
+           ──────────────────────────────────────────────────────────────────────────────
+           - x                                                                        2 ●
+             ● x               host                                               online…
+             ● t               linux                       x           temporary  runnin…
+           - Images                                                                   1 ●
+             ● linux           2026.11.07                  20.0 GB     1 VM
+           - Secrets                                                                  2 ●
+               none
+             ● vm-join-id      never leaves this host
+             ● vm-join-secret  never leaves this host
+           - Tailnet                                                             3 ●  2 ◐
+             ● tailnet         Running (userspace daemon)
+             ● node            x                           100.64.0.1
+             ◐ keep awake      not active
+             ● login           userspace · login
+             ◐ VM join         not verified
+           ┌────────────────────────────────────────────────────────────┐
+           │ ┃ Restart x?                                               │
+           │ ┃ type x to confirm                                        │
+           │ ┃ >                                                        │
+           └────────────────────────────────────────────────────────────┘
+
+           ↑↓ move · space fold · n create · enter open · s start/stop · ? more
+    - command: '--version > /dev/null; /usr/bin/grep -c -E ''^(tart (stop|delete|run)|ssh) '' .calls'
+      exit: 1
+      stdout: |
+          0
