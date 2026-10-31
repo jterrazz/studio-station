@@ -19,9 +19,9 @@ const (
 	defaultPath = "skills/studio-toolbelt/SKILL.md"
 )
 
-// hazard: this command may not reach os.Exit nor os.Stderr (the boundary test
-// keeps both to src/cmd/station), so a failure panics: go run then exits non-zero
-// with the error on stderr.
+// hazard: the boundary test keeps the process exit and the standard error stream
+// to src/cmd/station, so a failure here panics: go run then exits non-zero with the
+// error on stderr.
 func main() {
 	path := flag.String("file", defaultPath, "the skill page whose generated blocks are rewritten")
 	flag.Parse()
