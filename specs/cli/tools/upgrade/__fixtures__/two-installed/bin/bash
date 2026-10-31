@@ -1,0 +1,3 @@
+#!/bin/sh
+# bash as a curl installer meets it: the installer's URL is recorded, the run succeeds.
+printf 'bash %s\n' "$3" >> "$HOME/.calls"
