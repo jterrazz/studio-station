@@ -7,6 +7,7 @@ Two suites prove a change: Go tests (the module tests and the boundary test of t
 | The two suites           | What `make test` runs, and in which order             |
 | A scenario is a document | The `<case>.spec.yaml` form and how it is regenerated |
 | The sandbox              | Why no spec reaches the real machine                  |
+| The stubs                | How a spec scripts a system tool                      |
 | What CI runs             | The gate a pull request passes                        |
 
 ## The two suites
@@ -46,6 +47,14 @@ A document may stand on ground of its own: `fixture: ./__fixtures__/<case>/` spr
 No spec reaches the real machine. The runner sets `HOME` to the run's working directory, `PATH` to its `bin/` alone (the fixture's stubs), and `STATION_SYSTEM_DIRS` to nothing, so a system tool no fixture stubs is "not found" alike on a Mac and on the Linux CI runner. It also pins `NO_COLOR=1`, `COLUMNS=80`, `TZ=UTC` and `STATION_MACHINE_KIND=host`, so every stream is the pipe form and a document means the same thing on every host.
 
 The full grammar is `@jterrazz/test`'s [Spec documents](https://github.com/jterrazz/package-test/blob/main/docs/guides/spec-documents.md) and [CLI specs](https://github.com/jterrazz/package-test/blob/main/docs/guides/cli-specs.md).
+
+## The stubs
+
+A spec copies one `fixture:` directory into its working directory, so stubs live beside the command word that uses them: `specs/cli/<noun>/__fixtures__/<case>/bin/<tool>`. A stub answers by argv from a table, appends `<tool> <argv>` (and the stdin of `brew bundle --file=-`) to `$HOME/.calls`, and exits 97 on anything unscripted. A document asserts `.calls` through `files:` to prove which installer line ran. The GitHub and Tailscale APIs are stub backends the runner serves, reached through `STATION_GITHUB_API_URL` and `STATION_TAILSCALE_API_URL`.
+
+## What a test is for
+
+A test exists because a real regression would turn it red. Every behaviour of a command (each flag, refusal, exit code, `--json` schema and migration) has a spec document through the real binary; the architecture test proves the layers; a module test exists only where the logic is dense and a spec cannot reach it honestly (a terminal, a timing budget, root, a pure algorithm). A test that restates a declaration, a table or a mock's own return is deleted.
 
 ## What CI runs
 

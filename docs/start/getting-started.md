@@ -1,32 +1,34 @@
 # Getting started
 
-From a fresh Mac to a machine `workstation` knows: the one-line install, then the three commands that register the machine, show it and configure it.
+From a fresh Mac to a machine `station` knows: the one-line install, naming the machine, then tools and config.
 
-## 1. Install `workstation`
+## 1. Install `station`
 
 ```sh
 xcode-select --install
-curl -fsSL https://raw.githubusercontent.com/jterrazz/studio-workstation/main/scripts/install.sh | sh
-source ~/.zshrc
+curl -fsSL https://raw.githubusercontent.com/jterrazz/studio-station/main/scripts/install.sh | sh
+exec zsh
 ```
 
-`scripts/install.sh` reads the latest release tag from the GitHub API, downloads `workstation-<os>-<arch>` for the detected platform into `~/.studio/bin/`, and makes it executable. It then does two things beyond the binary, because the binary alone is not the product: it clones the repository to `~/Developer/studio-workstation` when that directory does not exist (the dotfiles and the skills are files on disk, not compiled in), and appends a `source .../dotfiles/applications/zsh/zshrc.sh` line to `~/.zshrc` when one is not already there. That clone is what [Dotfiles](../reference/dotfiles.md) and the `skills/` folder are served from.
+The script reads the latest release tag, downloads `station-<os>-<arch>`, checks it against the release's `checksums.txt`, installs it to `~/.local/bin/station` and runs `station setup`. There is no clone: the dotfiles are in the binary. Running the script again is the upgrade.
 
-Upgrading is re-running the same script: it overwrites the binary and leaves the clone and the shell line alone.
-
-## 2. Register this machine
+## 2. Name this machine
 
 ```sh
-workstation machine init
+station setup --name macbook
 ```
 
-It asks for this machine's alias and role (`client` for a laptop, `server` for a box other machines reach) and writes them to `~/.studio/config.json`. The role decides which checks `workstation machine status` runs and which items `workstation config` offers ([Machines](../reference/machines.md)).
+Piped through `curl | sh`, setup cannot ask the name and leaves it `○`; this is the step that fills it. `setup` registers the host in the fleet, writes the managed block of `~/.zshrc` and moves an old `~/.studio/` to the XDG folders. It is safe to run again ([Dotfiles](../reference/dotfiles.md)).
 
-## 3. Look at it, then configure it
+## 3. Tools, then config
 
 ```sh
-workstation status    # the dashboard: system, workspace, applications, configuration
-workstation config    # the configurator: terminal, security, editor, skills, remote
+station tools install homebrew tailscale tart
+station tailnet up
+station config install ghostty-dotfiles zed-dotfiles hushlogin
+station status
 ```
 
-Everything `workstation` wrote on the way lives under `~/.studio/`, listed in [Footprint](../reference/footprint.md); every verb is in [Commands](../reference/commands.md).
+A config item that needs values (a password, a token) opens a form on a terminal ([Configuration](../reference/configuration.md)). A host stays clean: dev work lives in VMs ([Machines](../reference/machines.md)), and Claude Code reaches them with a lent token ([Secrets](../reference/secrets.md#claude-in-a-vm)).
+
+Every command is in [Commands](../reference/commands.md); every file written is in [Footprint](../reference/footprint.md).
