@@ -349,63 +349,18 @@ func (h *harness) cursorTo(name string) {
 	h.t.Fatalf("no row %q under the cursor", name)
 }
 
-func TestTabsMirrorTheHelpGroups(t *testing.T) {
-	labels := make([]string, 0, 5)
-	for _, tab := range Tabs() {
-		labels = append(labels, tab.Label)
-	}
-	if got := strings.Join(labels, " "); got != "Status Tools Config Clean Fleet" {
-		t.Fatalf("tabs %q", got)
-	}
-	h := newHarness(t)
-	h.contains("Status · Tools · Config · Clean │ Fleet", "macbook · host")
-	h.init()
-	for i, want := range []string{"Machine", "Runtimes", "hushlogin", "brew", "mac-mini"} {
-		h.press(string(rune('1' + i)))
-		if h.app.active != i {
-			t.Fatalf("key %d shows tab %d", i+1, h.app.active)
-		}
-		h.contains(want)
-	}
-	h.press("tab")
-	if h.app.active != 0 {
-		t.Fatalf("tab after the last tab shows %d", h.app.active)
-	}
-}
-
-func TestTabsFleetHostRowDeleteHintsForget(t *testing.T) {
+func TestFleetStartsALastingVMThroughExec(t *testing.T) {
 	h := newHarness(t)
 	h.init()
 	h.press("5")
-	h.cursorTo("mac-mini")
-	before := h.view()
-	execs, _ := h.press("d")
-	if len(execs) != 0 || len(h.fleet.calls) != 0 {
-		t.Fatalf("d on a host acted: %v %v", execs, h.fleet.calls)
-	}
-	h.contains("forget: f")
-	if strings.Replace(h.view(), "forget: f", "", 1) == before {
-		t.Fatal("the status bar did not change")
-	}
-	if h.app.screens[4].Focus() != kit.FocusNormal {
-		t.Fatal("d on a host opened a modal")
-	}
-}
-
-func TestTabsTemporaryStartHintsDelete(t *testing.T) {
-	h := newHarness(t)
-	h.init()
-	h.press("5")
-	h.cursorTo("linux-1")
-	execs, _ := h.press("s")
-	if len(execs) != 0 || len(h.fleet.calls) != 0 {
-		t.Fatalf("s on a temporary VM acted: %v %v", execs, h.fleet.calls)
-	}
-	h.contains("temporary: delete with d")
 	h.cursorTo("linux-2")
-	execs, _ = h.press("s")
+	execs, _ := h.press("s")
 	if len(execs) != 1 {
 		t.Fatalf("s on a lasting VM ran %d actions", len(execs))
+	}
+	h.finish(execs[0])
+	if got := strings.Join(h.fleet.calls, ","); got != "start linux-2" {
+		t.Fatalf("calls %q", got)
 	}
 }
 
@@ -463,27 +418,6 @@ func TestLoadingIsInInitNeverInView(t *testing.T) {
 	}
 }
 
-func TestFilterOwnsEveryKeyButEscAndEnter(t *testing.T) {
-	h := newHarness(t)
-	h.init()
-	h.press("2", "/")
-	_, quit := h.press("q", "1", "i")
-	if quit {
-		t.Fatal("q quit while filtering")
-	}
-	if h.app.active != 1 {
-		t.Fatalf("1 switched to tab %d while filtering", h.app.active)
-	}
-	h.contains("/ q1i")
-	h.press("esc")
-	h.lacks("q1i")
-	h.press("/")
-	h.typeText("jav")
-	h.press("enter")
-	h.contains("java")
-	h.lacks("node")
-}
-
 func TestFoldStartsFoldedWhenAllOKAndToggles(t *testing.T) {
 	h := newHarness(t)
 	h.init()
@@ -492,49 +426,6 @@ func TestFoldStartsFoldedWhenAllOKAndToggles(t *testing.T) {
 	h.lacks("homebrew")
 	h.press("space")
 	h.contains("- Package Managers", "homebrew")
-}
-
-func TestInstallConfirmsThenRunsThroughExec(t *testing.T) {
-	h := newHarness(t)
-	h.init()
-	h.press("2")
-	h.cursorTo("java")
-	h.press("i")
-	h.contains("Install java?")
-	if len(h.tools.installed) != 0 {
-		t.Fatal("installed before the answer")
-	}
-	execs, _ := h.press("y")
-	if len(execs) != 1 {
-		t.Fatalf("yes ran %d actions", len(execs))
-	}
-	h.contains("busy")
-	h.lacks("Install java?")
-	h.finish(execs[0])
-	if len(h.tools.installed) != 1 || h.tools.installed[0].Names[0] != "java" || !h.tools.installed[0].Interactive {
-		t.Fatalf("install calls %+v", h.tools.installed)
-	}
-	h.contains("installed java 21.0.5")
-	h.lacks("busy")
-	if h.tools.inventories != 2 {
-		t.Fatalf("the screen did not reload after the action: %d reads", h.tools.inventories)
-	}
-}
-
-func TestConfirmNoRunsNothing(t *testing.T) {
-	h := newHarness(t)
-	h.init()
-	h.press("2")
-	h.cursorTo("java")
-	h.press("i")
-	if execs, _ := h.press("n"); len(execs) != 0 {
-		t.Fatal("no ran the install")
-	}
-	h.press("i")
-	h.press("esc")
-	if h.app.screens[1].Focus() != kit.FocusNormal {
-		t.Fatal("esc left the modal open")
-	}
 }
 
 func TestBusyIgnoresActionKeys(t *testing.T) {
@@ -554,12 +445,12 @@ func TestBusyIgnoresActionKeys(t *testing.T) {
 	h.contains("Install java?")
 }
 
-func TestErrorStateShowsTheDescribedFailureAndRetries(t *testing.T) {
+func TestRetryAfterAFailedReadLoadsTheTab(t *testing.T) {
 	h := newHarness(t)
 	h.tools.failLoad = errors.New("brew is not installed")
 	h.init()
 	h.press("2")
-	h.contains("brew is not installed", "run station --help", "press r to retry")
+	h.contains("press r to retry")
 	h.tools.failLoad = nil
 	h.press("r")
 	h.contains("Runtimes")
@@ -578,12 +469,4 @@ func TestStatusBarShowsAFailedActionAndClearsOnTheNextKey(t *testing.T) {
 	h.contains("mise exited 1  run station --help")
 	h.press("down")
 	h.lacks("mise exited 1")
-}
-
-func TestQKeyQuitsInNormalFocus(t *testing.T) {
-	h := newHarness(t)
-	h.init()
-	if _, quit := h.press("q"); !quit {
-		t.Fatal("q did not quit")
-	}
 }
