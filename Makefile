@@ -7,11 +7,11 @@ BIN_DIR      := $(HOME)/.local/bin
 INSTALL_PATH := $(BIN_DIR)/$(BINARY)
 LDFLAGS      := -X github.com/jterrazz/studio-station/src/app.version=$(shell git describe --tags --always --dirty)
 
-# hazard: the spine (L1) ships the system adapters, their fakes and the answer path
+# hazard: the spine (L1, L2) ships the system adapters, their fakes and the answer path
 # before any domain calls them. Each pattern names a function shipped ahead of its
 # first caller; the lot that brings the caller deletes its pattern, and L-INT
 # deletes this variable, which must then be empty.
-DEADCODE_AHEAD := ^src/system/host/|^src/system/systemtest/|unreachable func: (IO\.Answer|Refuse|For|jsonRenderer\.Render|pipeRenderer\.Render|pipeBlock|pipeLine|ttyRenderer\.Render|Writer\.Answer|MarkOf)$$
+DEADCODE_AHEAD := ^src/system/systemtest/engine\.go|unreachable func: (Store\.Save|Keychain\.Remove)$$
 
 CYAN  := \033[36m
 GREEN := \033[32m
