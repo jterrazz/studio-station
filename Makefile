@@ -7,12 +7,6 @@ BIN_DIR      := $(HOME)/.local/bin
 INSTALL_PATH := $(BIN_DIR)/$(BINARY)
 LDFLAGS      := -X github.com/jterrazz/studio-station/src/app.version=$(shell git describe --tags --always --dirty)
 
-# hazard: the spine (L1, L2) ships the system adapters, their fakes and the answer path
-# before any domain calls them. Each pattern names a function shipped ahead of its
-# first caller; the lot that brings the caller deletes its pattern, and L-INT
-# deletes this variable, which must then be empty.
-DEADCODE_AHEAD := ^src/system/systemtest/engine\.go|^src/domain/shell/|^src/domain/images/versions\.go|unreachable func: (Store\.Save|Keychain\.Remove|Service\.(Lookup|Init))$$
-
 CYAN  := \033[36m
 GREEN := \033[32m
 DIM   := \033[2m
@@ -42,7 +36,7 @@ lint: node_modules/.install ## Both halves: gofmt, golangci-lint and deadcode ov
 	@unformatted=$$(gofmt -l ./src ./specs); \
 		if [ -n "$$unformatted" ]; then printf "gofmt would rewrite:\n%s\n" "$$unformatted"; exit 1; fi
 	@go tool golangci-lint run ./src/... ./specs/...
-	@dead=$$(go tool deadcode -test ./src/... | grep -v -E '$(DEADCODE_AHEAD)'); \
+	@dead=$$(go tool deadcode -test ./src/...); \
 		if [ -n "$$dead" ]; then printf "deadcode found unreachable functions:\n%s\n" "$$dead"; exit 1; fi
 	@printf "$(GREEN)●$(RESET) Go lint passed\n"
 	@npm run --silent lint
