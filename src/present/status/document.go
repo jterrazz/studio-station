@@ -97,7 +97,7 @@ func machineRows(s status.Snapshot) []present.Row {
 	facts := strings.Join(parts, " · ")
 	name := row(present.MarkOK, "name", m.Name, facts)
 	if !m.Registered {
-		name = row(present.MarkAbsent, "name", "unregistered", facts)
+		name = row(present.MarkAbsent, "name", present.Unregistered, facts)
 	}
 	rows := []present.Row{name}
 	if s.System.Uptime != "" {

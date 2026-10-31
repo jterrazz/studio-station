@@ -73,7 +73,7 @@ type Answer struct {
 
 func MachineContext(name, kind string, registered bool) string {
 	if !registered || name == "" {
-		return kind + " · " + unregistered
+		return kind + " · " + Unregistered
 	}
 	return name + " · " + kind
 }
@@ -93,7 +93,6 @@ func Bytes(n int64) string {
 	return fmt.Sprintf("%.1f %s", value, string(byteSuffixes[suffix])+"B")
 }
 
-const (
-	byteSuffixes = "KMGTPE"
-	unregistered = "unregistered"
-)
+const byteSuffixes = "KMGTPE"
+
+const Unregistered = "unregistered"
