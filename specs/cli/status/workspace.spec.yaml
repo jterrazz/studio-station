@@ -2,6 +2,8 @@ description: 'the workspace counts repositories, outdated dependencies, docker a
 fixture:
     - ./__fixtures__/workspace/
 runs:
+    - command: 'help >/dev/null; /bin/mkdir Developer/jterrazz/api/.git Developer/jterrazz/web/.git Developer/other/tool/.git'
+      exit: 0
     - command: 'status --json | /usr/bin/jq -c ''.workspace.repositories | map([.path, .branch, .dirty])'''
       exit: 0
       stdout: |
