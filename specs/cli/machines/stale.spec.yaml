@@ -1,0 +1,15 @@
+description: "a temporary VM whose run ended without a poweroff shows stale, with its delete"
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/vm-t/
+    - ../__fixtures__/stale-t/
+runs:
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	x	host			online	100.64.0.1	1 VM
+          ✗	t	linux	x	temporary	stale	-	station machines delete t
+    - command: 'machines --here --json | /usr/bin/jq -r ''.hosts[0].vms[0] | .name + " " + .state'''
+      exit: 0
+      stdout: |
+          t stale

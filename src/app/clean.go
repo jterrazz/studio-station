@@ -11,6 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/clean"
 	"github.com/jterrazz/studio-station/src/domain/images"
+	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/system/tart"
 )
@@ -19,6 +20,7 @@ func cleanCommand(env kit.Env, m machine) *cobra.Command {
 	service := clean.New(m.host, catalog.Cleanables, clean.Options{
 		Here:      m.kind,
 		OldImages: oldImages{images: m.images(), engine: tart.New(m.host.Run)},
+		StaleVMs:  staleVMs{machines: m.machines(false)},
 	})
 	return cleancmd.Command(cleancmd.Deps{Clean: service, Context: m.context}, env)
 }
@@ -50,4 +52,23 @@ func (o oldImages) Remove(ctx context.Context, name string) error {
 		return err
 	}
 	return o.engine.PruneCaches(ctx)
+}
+
+type staleVMs struct{ machines *machines.Service }
+
+func (s staleVMs) List(ctx context.Context) ([]clean.Reclaimable, error) {
+	stale, err := s.machines.Stale(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]clean.Reclaimable, 0, len(stale))
+	for _, vm := range stale {
+		out = append(out, clean.Reclaimable{Name: vm.Name, Bytes: int64(vm.SizeGB) * gigabyte})
+	}
+	return out, nil
+}
+
+func (s staleVMs) Remove(ctx context.Context, name string) error {
+	_, err := s.machines.Delete(ctx, name)
+	return err
 }

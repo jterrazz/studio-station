@@ -1,0 +1,19 @@
+description: "stale temporary VMs are a sized cleanable, and reclaiming one removes its node too"
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/vm-t/
+    - ../__fixtures__/stale-t/
+serve: tailscale
+runs:
+    - command: 'clean --json | /usr/bin/jq -c ''.items[] | select(.name == "stale-vms") | [.available, .bytes]'''
+      exit: 0
+      stdout: |
+          [true,20000000000]
+    - command: 'clean stale-vms --yes'
+      exit: 0
+      stdout: |
+          ●	stale-vms	1 removed
+      files:
+          .api: { contains: 'DELETE /api/v2/device/n-t' }
+          .local/state/station/vms/t.json: absent
+          .tart-vms/t: absent
