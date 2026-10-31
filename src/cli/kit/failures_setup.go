@@ -1,7 +1,30 @@
 package kit
 
-import "github.com/jterrazz/studio-station/src/fail"
+import (
+	"errors"
 
-func setupFailure(_ error) (*fail.Error, bool) {
+	"github.com/jterrazz/studio-station/src/domain/setup"
+	"github.com/jterrazz/studio-station/src/fail"
+)
+
+func setupFailure(err error) (*fail.Error, bool) {
+	var mismatch *setup.NameMismatchError
+	var bad *setup.BadNameError
+	var step *setup.StepFailedError
+	var different *setup.DifferentContentError
+	switch {
+	case errors.As(err, &mismatch):
+		return fail.Usage(mismatch.Error(), "run station setup without --name"), true
+	case errors.As(err, &bad):
+		return fail.Usage(bad.Error(), "use lowercase letters, digits and -, 1 to 40 characters"), true
+	case errors.Is(err, setup.ErrNameOnVM):
+		return fail.Usage(setup.ErrNameOnVM.Error(), "run station setup without --name"), true
+	case errors.As(err, &step):
+		hint := "fix it, then run station setup again: it resumes"
+		if errors.As(err, &different) {
+			hint = "keep one of the two files, then run station setup again"
+		}
+		return fail.Failed(step.Error(), hint, err), true
+	}
 	return nil, false
 }

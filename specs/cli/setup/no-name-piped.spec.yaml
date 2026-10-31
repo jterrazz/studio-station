@@ -1,0 +1,16 @@
+description: 'piped without a name, setup does the rest and says how to name the host'
+runs:
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ○	name	not set: station setup --name <name>
+          ●	zshrc
+          ●	layout	nothing to move
+      files:
+          .zshrc:
+              equals: |
+                  # >>> station >>>
+                  export PATH="$HOME/.local/bin:$PATH"
+                  command -v station >/dev/null 2>&1 && eval "$(station shell zsh)"
+                  # <<< station <<<
+          .config: absent

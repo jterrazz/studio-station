@@ -1,0 +1,43 @@
+description: 'a second setup changes nothing: one block, the same rows, the same name accepted'
+fixture:
+    - ./__fixtures__/legacy-zshrc/
+runs:
+    - command: 'setup --name t'
+      exit: 0
+      stdout: |
+          ●	name	t
+          ●	zshrc
+          ●	layout	nothing to move
+      files:
+          .zshrc:
+              contains: |
+                  # >>> station >>>
+                  export PATH="$HOME/.local/bin:$PATH"
+                  command -v station >/dev/null 2>&1 && eval "$(station shell zsh)"
+                  # <<< station <<<
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	name	t
+          ●	zshrc
+          ●	layout	nothing to move
+      files:
+          .zshrc:
+              contains: |
+                  # >>> station >>>
+                  export PATH="$HOME/.local/bin:$PATH"
+                  command -v station >/dev/null 2>&1 && eval "$(station shell zsh)"
+                  # <<< station <<<
+    - command: 'setup --name t'
+      exit: 0
+      stdout: |
+          ●	name	t
+          ●	zshrc
+          ●	layout	nothing to move
+      files:
+          .zshrc:
+              contains: |
+                  # >>> station >>>
+                  export PATH="$HOME/.local/bin:$PATH"
+                  command -v station >/dev/null 2>&1 && eval "$(station shell zsh)"
+                  # <<< station <<<

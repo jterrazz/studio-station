@@ -1,0 +1,11 @@
+#!/bin/sh
+# The keychain as the setup specs need it: every call is recorded in $HOME/.calls,
+# its stdin too (the secret travels there, never in argv); a file $HOME/.security-fails-once
+# makes the first call fail and every later one succeed.
+printf 'security %s\n' "$*" >> "$HOME/.calls"
+if [ "$1" = "-i" ]; then /bin/cat >> "$HOME/.calls"; fi
+if [ -f "$HOME/.security-fails-once" ] && [ ! -f "$HOME/.security-failed" ]; then
+    : > "$HOME/.security-failed"
+    echo "security: keychain locked" >&2
+    exit 36
+fi

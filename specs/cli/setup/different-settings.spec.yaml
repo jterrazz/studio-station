@@ -1,0 +1,33 @@
+description: 'a settings.json that differs from the converted config.json is never overwritten'
+fixture:
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/v1-studio/
+    - ./__fixtures__/other-settings/
+env:
+    - USER=tester
+runs:
+    - command: 'setup'
+      exit: 1
+      stdout: |
+          ●	name	elsewhere
+          ●	zshrc
+          ✗	layout	{{workdir}}/.config/station/settings.json already exists with different content
+      stderr: |
+          Error: setup step layout: {{workdir}}/.config/station/settings.json already exists with different content
+          Hint: keep one of the two files, then run station setup again
+      files:
+          .studio/config.json: exists
+          .calls: absent
+          .config/station/settings.json:
+              equals: |
+                  {
+                    "here": "elsewhere",
+                    "hosts": {
+                      "elsewhere": {}
+                    },
+                    "tailnet": {
+                      "mode": "userspace",
+                      "auth_method": "login"
+                    },
+                    "vm_user": "someone"
+                  }

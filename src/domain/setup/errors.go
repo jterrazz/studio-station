@@ -1,0 +1,29 @@
+package setup
+
+import "errors"
+
+var ErrNameOnVM = errors.New("a VM's name is given when it is created")
+
+type NameMismatchError struct{ Here, Asked string }
+
+func (e *NameMismatchError) Error() string {
+	return "this host is named \"" + e.Here + "\", not \"" + e.Asked + "\""
+}
+
+type BadNameError struct{ Name string }
+
+func (e *BadNameError) Error() string { return "\"" + e.Name + "\" is not a machine name" }
+
+type StepFailedError struct {
+	Step  string
+	Cause error
+}
+
+func (e *StepFailedError) Error() string { return "setup step " + e.Step + ": " + e.Cause.Error() }
+func (e *StepFailedError) Unwrap() error { return e.Cause }
+
+type DifferentContentError struct{ Path string }
+
+func (e *DifferentContentError) Error() string {
+	return e.Path + " already exists with different content"
+}

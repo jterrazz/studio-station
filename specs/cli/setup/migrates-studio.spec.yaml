@@ -1,0 +1,58 @@
+description: 'setup moves the real ~/.studio: settings, auth key into the keychain, dns and the daemon identity'
+fixture:
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/v1-studio/
+env:
+    - USER=tester
+runs:
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	name	base
+          ●	zshrc
+          ●	layout	moved to the XDG folders
+      files:
+          .config/station/settings.json:
+              equals: |
+                  {
+                    "here": "base",
+                    "hosts": {
+                      "base": {},
+                      "mini": {
+                        "user": "agent",
+                        "key": "~/.ssh/id_mini"
+                      }
+                    },
+                    "tailnet": {
+                      "mode": "userspace",
+                      "auth_method": "authkey"
+                    },
+                    "vm_user": "tester",
+                    "user_email": "owner@example.com"
+                  }
+          .calls:
+              equals: |
+                  security -i
+                  add-generic-password -U -s station -a "tailnet-authkey" -w "fake-node-authkey-123"
+          .local/state/station/tailscaled/tailscaled.state:
+              equals: |
+                  NODE-IDENTITY-1f2e3d
+          .local/state/station/tailscaled/tailscaled.log:
+              equals: |
+                  daemon log
+          .local/state/station/tailscaled/tailscaled.pid: absent
+          .local/state/station/tailscaled/tailscaled.sock: absent
+          .local/state/station/dns/quad9-dns.mobileconfig: exists
+          .studio: absent
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	name	base
+          ●	zshrc
+          ●	layout	nothing to move
+      files:
+          .calls:
+              equals: |
+                  security -i
+                  add-generic-password -U -s station -a "tailnet-authkey" -w "fake-node-authkey-123"
+          .studio: absent

@@ -1,0 +1,11 @@
+{
+  "here": "elsewhere",
+  "hosts": {
+    "elsewhere": {}
+  },
+  "tailnet": {
+    "mode": "userspace",
+    "auth_method": "login"
+  },
+  "vm_user": "someone"
+}

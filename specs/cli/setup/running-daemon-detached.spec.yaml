@@ -1,0 +1,31 @@
+description: 'with a live tailscaled the move runs in a background re-exec of setup'
+fixture:
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/v1-studio/
+    - ./__fixtures__/detached/
+env:
+    - USER=tester
+    - STATION_EXECUTABLE=$WORKDIR/bin/stub-station
+runs:
+    - command: '--version >/dev/null; echo $PPID > .studio/tailscale/tailscaled.pid'
+      exit: 0
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	name	base
+          ●	zshrc
+          ◐	layout	tailscaled moves in the background	{{workdir}}/.local/state/station/logs/setup.log
+      files:
+          .studio/tailscale/tailscaled.state: exists
+          .local/state/station/dns/quad9-dns.mobileconfig: exists
+          .local/state/station/logs/setup.log: exists
+    - command: '--version'
+      exit: 0
+      stdout: |
+          station version {{string}} ({{sha}})
+      files:
+          .calls:
+              equals: |
+                  security -i
+                  add-generic-password -U -s station -a "tailnet-authkey" -w "fake-node-authkey-123"
+                  station setup STATION_XDG_DETACHED=1
