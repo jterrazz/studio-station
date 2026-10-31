@@ -63,7 +63,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		tailnetCommand(kenv),
 		runCommand(kenv, here),
 		setupCommand(kenv),
-		shellCommand(kenv),
+		shellCommand(kenv, here),
 	)
 	root.SetArgs(args)
 	root.SetIn(stdin)
