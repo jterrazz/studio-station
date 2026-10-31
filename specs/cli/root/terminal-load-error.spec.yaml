@@ -1,0 +1,18 @@
+description: 'a tab whose read fails says why, how to repair it and that r retries, and the TUI stays open'
+fixture:
+    - ./__fixtures__/terminal/
+    - ./__fixtures__/broken-settings/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION"'
+      stdin: |
+          see station
+          send 5
+          see press r to retry
+          see repair the JSON of
+          send r
+          see press r to retry
+          send 1
+          see Machine
+          send q
+      exit: 0

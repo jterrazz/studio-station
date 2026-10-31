@@ -1,0 +1,85 @@
+description: 'install asks first, runs brew off the TUI on yes, and the status bar names the outcome'
+fixture: ./__fixtures__/terminal/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION"'
+      stdin: |
+          see Machine
+          send 2
+          see - Runtimes
+          send /bat\r
+          see ○ bat
+          send \x1b[B
+          send i
+          see Install bat?
+          screen
+          send n
+          gone Install bat?
+          send i
+          see Install bat?
+          send y
+          see ● installed bat
+          screen
+          send \x1b[A
+          gone ● installed bat
+          send q
+      exit: 0
+      stdout: |4
+           station   Status · Tools · Config · Clean │ Fleet          host · unregistered
+           ──────────────────────────────────────────────────────────────────────────────
+           / bat
+           - CLI Tools                                                               10 ○
+             ○ bat                                 brew    station tools install bat
+
+
+
+
+
+
+
+
+
+
+
+
+           ┌────────────────────────────────────────────────────────────┐
+           │ ┃ Install bat?                                             │
+           │ ┃                                                          │
+           │ ┃   Yes  No                                                │
+           └────────────────────────────────────────────────────────────┘
+
+           ↑↓ move · space fold · i install · u uninstall · / filter · ? more
+           station   Status · Tools · Config · Clean │ Fleet          host · unregistered
+           ──────────────────────────────────────────────────────────────────────────────
+           / bat
+           - CLI Tools                                                           1 ●  9 ○
+             ● bat                          1.0    brew
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+           ● installed bat
+           ↑↓ move · space fold · i install · u uninstall · / filter · ? more
+      files:
+          .calls:
+              contains:
+                  - |-
+                    brew bundle install --no-upgrade --file=-
+                    brew "bat"
+    - command: '--version > /dev/null; /usr/bin/grep -c ''bundle'' .calls'
+      exit: 0
+      stdout: |
+          1

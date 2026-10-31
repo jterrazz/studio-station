@@ -1,0 +1,20 @@
+description: 'the number keys and tab move between the tabs, each loaded on its own, and space folds a group'
+fixture: ./__fixtures__/terminal/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION"'
+      stdin: |
+          see Machine
+          send 2
+          see - Runtimes
+          send \x20
+          see + Package Managers
+          send \t
+          see - Terminal
+          see hushlogin
+          send 4
+          see The system trash
+          send 1
+          see Machine
+          send q
+      exit: 0

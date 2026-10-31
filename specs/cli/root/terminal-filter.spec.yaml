@@ -1,0 +1,17 @@
+description: 'the filter takes every key but esc and enter: q1i filters Tools and neither quits nor moves the tab'
+fixture: ./__fixtures__/terminal/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION"'
+      stdin: |
+          see Machine
+          send 2
+          see - Runtimes
+          send /q1i
+          see / q1i
+          gone - Runtimes
+          send \x1b
+          gone / q1i
+          see - Runtimes
+          send q
+      exit: 0
