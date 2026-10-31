@@ -1,10 +1,10 @@
 #!/bin/sh
 set -e
 
-REPO="jterrazz/studio-workstation"
-BINARY="workstation"
+REPO="jterrazz/studio-station"
+BINARY="station"
 INSTALL_DIR="$HOME/.studio/bin"
-REPO_DIR="$HOME/Developer/studio-workstation"
+REPO_DIR="$HOME/Developer/studio-station"
 
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
@@ -37,9 +37,9 @@ fi
 ZSHRC_LINE="source $REPO_DIR/dotfiles/applications/zsh/zshrc.sh"
 if [ -f "$HOME/.zshrc" ]; then
   if ! grep -q "zshrc.sh" "$HOME/.zshrc"; then
-    printf '\n# studio-workstation\n%s\n' "$ZSHRC_LINE" >> "$HOME/.zshrc"
+    printf '\n# studio-station\n%s\n' "$ZSHRC_LINE" >> "$HOME/.zshrc"
     echo "✓ Added source to ~/.zshrc"
   fi
 fi
 
-echo "✓ Done. Run 'source ~/.zshrc', then 'workstation help'"
+echo "✓ Done. Run 'source ~/.zshrc', then 'station help'"
