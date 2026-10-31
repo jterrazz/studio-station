@@ -1,0 +1,104 @@
+package settings
+
+import (
+	"context"
+	"errors"
+	"strings"
+
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/system"
+)
+
+var (
+	ErrNoKeychain = errors.New("kept secrets live only in a host's keychain")
+	errMultiline  = errors.New("a keychain value holds no newline")
+)
+
+const (
+	service = "station"
+	// outside: `security` exits 44 when the item is not in the keychain.
+	notFound = 44
+)
+
+type Keychain struct {
+	run system.Runner
+	off bool
+}
+
+func NewKeychain(r system.Runner) Keychain { return Keychain{run: r} }
+
+func (k Keychain) On(kind catalog.MachineKind) Keychain {
+	k.off = kind != catalog.Host
+	return k
+}
+
+func (k Keychain) Read(ctx context.Context, account string) (string, bool, error) {
+	if k.off {
+		return "", false, ErrNoKeychain
+	}
+	out, err := k.run.Output(ctx, system.Cmd{Name: "security", Args: []string{"find-generic-password", "-s", service, "-a", account, "-w"}})
+	switch {
+	case err != nil:
+		return "", false, &KeychainError{Account: account, Cause: err}
+	case out.ExitCode == notFound:
+		return "", false, nil
+	case out.ExitCode != 0:
+		return "", false, &KeychainError{Account: account, Cause: errors.New(strings.TrimSpace(out.Stderr))}
+	}
+	return strings.TrimRight(out.Stdout, "\n"), true, nil
+}
+
+func (k Keychain) Write(ctx context.Context, account, value string) error {
+	if k.off {
+		return ErrNoKeychain
+	}
+	line, err := addCommand(account, value)
+	if err != nil {
+		return &KeychainError{Account: account, Cause: err}
+	}
+	out, err := k.run.Output(ctx, system.Cmd{Name: "security", Args: []string{"-i"}, Stdin: line})
+	if err == nil && out.ExitCode != 0 {
+		err = errors.New(strings.TrimSpace(out.Stderr))
+	}
+	if err != nil {
+		return &KeychainError{Account: account, Cause: err}
+	}
+	return nil
+}
+
+func (k Keychain) Remove(ctx context.Context, account string) error {
+	if k.off {
+		return ErrNoKeychain
+	}
+	out, err := k.run.Output(ctx, system.Cmd{Name: "security", Args: []string{"delete-generic-password", "-s", service, "-a", account}})
+	if err == nil && out.ExitCode != 0 && out.ExitCode != notFound {
+		err = errors.New(strings.TrimSpace(out.Stderr))
+	}
+	if err != nil {
+		return &KeychainError{Account: account, Cause: err}
+	}
+	return nil
+}
+
+// invariant: the value travels on security's stdin, in its interactive mode,
+// never in argv (where `ps` shows it) and never through a prompt.
+func addCommand(account, value string) (string, error) {
+	if strings.ContainsAny(account+value, "\n\r") {
+		return "", errMultiline
+	}
+	return "add-generic-password -U -s " + service + " -a " + quote(account) + " -w " + quote(value) + "\n", nil
+}
+
+func quote(s string) string {
+	return `"` + strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(s) + `"`
+}
+
+type KeychainError struct {
+	Account string
+	Cause   error
+}
+
+func (e *KeychainError) Error() string {
+	return "keychain account " + e.Account + ": " + e.Cause.Error()
+}
+func (e *KeychainError) Unwrap() error { return e.Cause }
