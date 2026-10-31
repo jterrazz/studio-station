@@ -48,7 +48,7 @@ func (s *Service) Install(ctx context.Context, r InstallRequest) ([]Outcome, err
 		if s.row(pending[0]).bundleLine {
 			batch = s.bundleBatch(pending, inRequest, outcomes)
 		} else {
-			batch = pending[:1]
+			batch = []catalog.Tool{pending[0]}
 		}
 		pending = slices.DeleteFunc(pending, func(t catalog.Tool) bool { return slices.ContainsFunc(batch, sameName(t)) })
 		var ready []catalog.Tool
