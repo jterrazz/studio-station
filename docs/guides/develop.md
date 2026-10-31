@@ -24,20 +24,21 @@ Go 1.26+ and npm are the two requirements: `make install` fetches the Go modules
 
 ## The make targets
 
-| Target             | Does                                                                                                                  |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| `make install`     | Fetch the Go modules and install the npm half (`npm ci`)                                                              |
-| `make build`       | Build `.artifacts/go/workstation`                                                                                     |
-| `make lint`        | Both halves: `gofmt -l` and `golangci-lint run ./src/...`, then `typescript check`                                    |
-| `make fix`         | Every fixer: `gofmt -w ./src/`, then `typescript fix`                                                                 |
-| `make test`        | `go test ./src/...`, then `typescript test`: the `specs/cli` suite against a fresh test binary, none on a proven tree |
-| `make check`       | `lint` then `test`, the gate a change passes                                                                          |
-| `make skills`      | Regenerate the toolbelt skill's rosters from the registries                                                           |
-| `make provision`   | Build and put `workstation` on this machine: `~/.studio/bin`, the `zshrc.sh` line                                     |
-| `make deprovision` | Remove the provisioned binary                                                                                         |
-| `make clean`       | Remove `.artifacts/`                                                                                                  |
+| Target             | Does                                                                                                     |
+| ------------------ | -------------------------------------------------------------------------------------------------------- |
+| `make install`     | Fetch the Go modules and install the npm half (`npm ci`)                                                 |
+| `make build`       | Build `.artifacts/go/station`, its version stamped from `git describe`                                   |
+| `make build-linux` | Build `.artifacts/go/station-linux-arm64`, the binary a VM image carries                                 |
+| `make lint`        | Both halves: `gofmt -l`, `go tool golangci-lint` and `go tool deadcode` over Go, then `typescript check` |
+| `make fix`         | Every fixer: `gofmt -w ./src ./specs`, then `typescript fix`                                             |
+| `make test`        | `go test ./src/... ./specs/...`, then `typescript test`: the `specs/cli` suite against a fresh build     |
+| `make check`       | `lint`, `test`, then `build-linux`: the gate a change passes                                             |
+| `make skills`      | Regenerate the toolbelt skill's rosters from the catalogue                                               |
+| `make provision`   | Build, put `station` in `~/.local/bin`, then run `station setup`                                         |
+| `make deprovision` | Remove the provisioned binary                                                                            |
+| `make clean`       | Remove `.artifacts/`                                                                                     |
 
-The first six are the gestures every repository of the estate answers, so a session that never opened this one installs, proves and repairs it the same way; `make install` touches nothing outside the checkout, and putting `workstation` on the machine is `make provision`'s alone. `make check` is the whole gate, and it fails on the first finding of either half. The Go half runs the `golangci-lint` version the Makefile PINS: it installs that exact one when it is missing, because a linter resolved at `@latest` makes a green run a fact about the day it ran. Which linters judge the Go sources, and the four exclusions that carry a reason, are `.golangci.yml`. The TypeScript half is `typescript check` from `@jterrazz/typescript`, whose passes are the toolchain's own [Quality checks](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md).
+`install`, `build`, `lint`, `fix`, `test` and `check` are the gestures every repository of the estate answers, so a session that never opened this one installs, proves and repairs it the same way; `make install` touches nothing outside the checkout, and putting `workstation` on the machine is `make provision`'s alone. `make check` is the whole gate, and it fails on the first finding of either half. The Go half runs `golangci-lint` and `deadcode` with `go tool`, at the versions the `tool` directive of `go.mod` declares, so the Go that builds the binary builds its linters and a green run is never a fact about the day it ran. Which linters judge the Go sources, and the four exclusions that carry a reason, are `.golangci.yml`. The TypeScript half is `typescript check` from `@jterrazz/typescript`, whose passes are the toolchain's own [Quality checks](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md).
 
 ## Where a change goes
 

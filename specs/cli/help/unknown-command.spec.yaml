@@ -1,7 +1,0 @@
-description: errors on an unknown command
-runs:
-    - command: frobnicate
-      exit: 1
-      stderr: |
-          Error: unknown command "frobnicate" for "workstation"
-          Run 'workstation --help' for usage.

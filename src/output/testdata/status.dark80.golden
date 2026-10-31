@@ -1,0 +1,35 @@
+ station status                                                  macbook · host
+ ──────────────────────────────────────────────────────────────────────────────
+
+ Machine
+   ● name       macbook       host · Darwin 27.0.0 arm64 · jterrazz · zsh
+   ● uptime     3d 4h         battery 92% charging
+   ● setup      done
+
+ Environment
+   ● local ip   192.168.1.24
+   ● public ip  82.65.10.4
+   ○ vpn        off
+   ● filevault  on
+   ◐ brew       3 outdated    station tools upgrade --via brew
+   ● tailnet    connected     userspace · 100.64.0.3
+
+ Workspace
+   ● repos      41            3 dirty
+   ◐ deps       7 outdated    in 3 repos
+   ● docker     running       4 containers · 12 images
+   ● disk       18.4 GB       reclaimable: station clean
+
+ Identity
+   ● git email  set           admin@jterrazz.com
+   ● ssh key    present       id_ed25519
+
+ Tools  58 ●  2 ◐  14 ○
+   ◐ node       24.11.0       on PATH, not managed by mise
+   ○ mise                     station tools install mise
+
+ Config  9 ●  3 ○
+   ○ hushlogin                station config install hushlogin
+
+ → station tools for the catalogue
+ → station config for the items

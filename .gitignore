@@ -16,3 +16,6 @@ node_modules/
 
 # Local config
 .claude/
+
+# Release builds, should one run in the checkout
+dist/

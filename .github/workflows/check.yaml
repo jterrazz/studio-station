@@ -10,3 +10,5 @@ jobs:
     check:
         name: Check
         uses: jterrazz/studio-actions/.github/workflows/check.yaml@main
+        with:
+            go-version-file: go.mod

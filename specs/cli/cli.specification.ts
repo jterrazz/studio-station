@@ -5,38 +5,52 @@ import { resolve } from 'node:path';
 import { afterAll } from 'vitest';
 
 const REPO_ROOT = resolve(import.meta.dirname, '../..');
-const WORKSTATION_BIN = resolve(REPO_ROOT, '.artifacts/go/workstation-test');
-const GO_SRC = resolve(REPO_ROOT, 'src');
+const STATION_BIN = resolve(REPO_ROOT, '.artifacts/go/station-test');
+const SOURCES = resolve(REPO_ROOT, 'src');
 
-// hazard: a stale binary silently tests old behaviour, so the suite rebuilds when
-// any `src/**/*.go` is newer than the binary, so an edit to the CLI is what a rerun exercises.
+// hazard: a stale binary silently tests old behaviour, so the suite rebuilds when any
+// file under `src/` is newer than the binary: the embedded dotfiles and recipes are
+// build inputs as much as the Go sources are.
 function binaryIsStale(): boolean {
-    if (!existsSync(WORKSTATION_BIN)) {
+    if (!existsSync(STATION_BIN)) {
         return true;
     }
-    const binModifiedMs = statSync(WORKSTATION_BIN).mtimeMs;
-    for (const entry of readdirSync(GO_SRC, { recursive: true, withFileTypes: true })) {
-        if (!entry.isFile() || !entry.name.endsWith('.go')) {
-            continue;
-        }
-        if (statSync(resolve(entry.parentPath, entry.name)).mtimeMs > binModifiedMs) {
+    const binModifiedMs = statSync(STATION_BIN).mtimeMs;
+    for (const entry of readdirSync(SOURCES, { recursive: true, withFileTypes: true })) {
+        if (
+            entry.isFile() &&
+            statSync(resolve(entry.parentPath, entry.name)).mtimeMs > binModifiedMs
+        ) {
             return true;
         }
     }
     return false;
 }
 
-if (process.env.WORKSTATION_FORCE_REBUILD === '1' || binaryIsStale()) {
-    execSync(`go build -o ${WORKSTATION_BIN} ./src/cmd/workstation`, {
-        cwd: REPO_ROOT,
-        stdio: 'inherit',
-    });
+if (process.env.STATION_FORCE_REBUILD === '1' || binaryIsStale()) {
+    const version = execSync('git describe --tags --always --dirty', { cwd: REPO_ROOT })
+        .toString()
+        .trim();
+    execSync(
+        `go build -ldflags "-X github.com/jterrazz/studio-station/src/app.version=${version}" -o ${STATION_BIN} ./src/cmd/station`,
+        { cwd: REPO_ROOT, stdio: 'inherit' },
+    );
 }
 
-// invariant: `workstation` reads its machine registry from `~/.studio/`, so every run
-// gets a HOME of its own and never the developer's.
-export const { cleanup, cli } = await specification.cli(WORKSTATION_BIN, {
-    defaults: { HOME: '$WORKDIR' },
+// invariant: no run reaches the real machine. HOME is the run's own directory, PATH
+// holds only the fixture's stubs and STATION_SYSTEM_DIRS adds no system directory, so
+// an unstubbed tool is "not found" alike on a Mac and on the Linux CI runner; the
+// machine kind is pinned to host unless a document says otherwise.
+export const { cleanup, cli } = await specification.cli(STATION_BIN, {
+    defaults: {
+        COLUMNS: '80',
+        HOME: '$WORKDIR',
+        NO_COLOR: '1',
+        PATH: '$WORKDIR/bin',
+        STATION_MACHINE_KIND: 'host',
+        STATION_SYSTEM_DIRS: '',
+        TZ: 'UTC',
+    },
 });
 
 afterAll(cleanup);

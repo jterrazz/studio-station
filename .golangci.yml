@@ -2,7 +2,7 @@ version: '2'
 
 # invariant: `default: none` makes the roster a decision: a golangci-lint release
 # that adds a linter to a preset cannot change a verdict without a line in this
-# file. The version that reads it is pinned in the Makefile.
+# file. The version that reads it is the `tool` directive of go.mod.
 linters:
     default: none
     enable:
@@ -40,18 +40,18 @@ linters:
                 # outside: Bubble Tea's contract is a model passed and returned BY VALUE;
                 # the copy is the architecture, not an oversight.
                 - hugeParam
-                # value: the registries are value catalogues (Tool, Script, Machine):
+                # value: the catalogue is values (Tool, ConfigItem, Cleanable):
                 # ranging by index to save a copy trades the loop's meaning for its bytes.
                 - rangeValCopy
         gosec:
             excludes:
                 # invariant: running a declared command is what this CLI IS. Every
-                # subprocess comes from the registries under src/internal/config/, never
-                # from input.
+                # subprocess comes from the catalogue under src/catalog/ or a domain
+                # operation, never from free input.
                 - G204
                 - G702
                 # invariant: the paths it reads are derived from $HOME and from the
-                # registry, and a workstation tool that may not open a computed path
+                # catalogue, and a station tool that may not open a computed path
                 # cannot report on the machine it runs on.
                 - G304
                 - G703
@@ -59,23 +59,32 @@ linters:
             enable-all: true
             disable:
                 # value: struct fields are ordered by meaning; padding is not the
-                # constraint of a CLI that holds a few dozen registry entries in memory.
+                # constraint of a CLI that holds a few dozen catalogue entries in memory.
                 - fieldalignment
         misspell:
             locale: US
+            # invariant: the glossary's words (docs/concepts/glossary.md): the CLI
+            # says "catalogue" and a declined question is "cancelled".
+            ignore-rules:
+                - catalogue
+                - cancelled
         staticcheck:
             checks:
                 - all
+                # invariant: what a Go comment may be is the comment rule's (rule 10 of
+                # specs/architecture/layers_test.go): a kept comment opens with its kind,
+                # so a package comment, which must open with "Package", has no place.
+                - -ST1000
 
     exclusions:
         generated: lax
         rules:
-            # invariant: `internal/` publishes nothing, so a doc comment per exported
-            # identifier there documents a package no consumer can import. Package
-            # comments are still required, since staticcheck's ST1000 asks for them.
+            # invariant: the module publishes nothing (every package is the binary's),
+            # and the comment rule admits only kinded comments, so no exported
+            # identifier carries a doc comment.
             - linters:
                   - revive
-              text: '^exported:'
+              text: '^(exported|package-comments):'
 
 issues:
     # hazard: a capped report is a gate that hides debt.
