@@ -19,7 +19,7 @@ type Deps struct {
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:         "docker <" + strings.Join(shortcutNames(), "|") + ">",
-		Short:       "Remove every docker container, every image, or both",
+		Short:       "Delete every docker container, every image, or both",
 		Example:     "  station run docker rm --yes\n  station run docker reset --yes",
 		Args:        cobra.ArbitraryArgs,
 		ValidArgs:   shortcutNames(),

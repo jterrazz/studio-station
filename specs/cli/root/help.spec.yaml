@@ -39,3 +39,43 @@ runs:
           config
           status
           tools
+    - command: status --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
+    - command: tools --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
+    - command: config --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
+    - command: clean --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
+    - command: machines --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
+    - command: images --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
+    - command: secrets --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
+    - command: tailnet --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
+    - command: run --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
+    - command: setup --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
