@@ -54,6 +54,11 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
         STATION_TAILSCALE_API_URL: 'http://127.0.0.1:9',
         TZ: 'UTC',
     },
+    // value: a document that drives the TUI runs `terminal "$STATION"`, the binary on a
+    // pseudo-terminal its fixture's driver opens, since a run is never given a TTY.
+    env: {
+        terminal: { STATION: STATION_BIN, TERM: 'xterm-256color' },
+    },
     serve: {
         github: {
             command: 'node specs/cli/__setup__/github-api.ts',

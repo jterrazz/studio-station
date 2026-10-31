@@ -45,6 +45,10 @@ A document may stand on ground of its own: `fixture: ./__fixtures__/<case>/` spr
 
 No spec reaches the real machine. The runner sets `HOME` to the run's working directory, `PATH` to its `bin/` alone (the fixture's stubs), and `STATION_SYSTEM_DIRS` to nothing, so a system tool no fixture stubs is "not found" alike on a Mac and on the Linux CI runner. It also pins `NO_COLOR=1`, `COLUMNS=80`, `TZ=UTC` and `STATION_MACHINE_KIND=host`, so every stream is the pipe form and a document means the same thing on every host.
 
+## The TUI on a terminal
+
+A run is never given a terminal, so a document that drives the TUI names the `terminal` env set and runs `--version >/dev/null; terminal "$STATION"`. The `terminal` stub of `specs/cli/root/__fixtures__/terminal/` opens a pseudo-terminal (80x24, or `--size`), replays what the binary draws on a screen of cells, and plays the steps the document writes on `stdin:`: `see` and `gone` wait for a text on the screen, `send` types keys (`\r`, `\x1b[B`), `screen` prints the screen. It then exits with the binary's code, and a wait that times out prints the screen on stderr and exits 124. The `terminal-*.spec.yaml` documents of `specs/cli/root/` are those sessions.
+
 The full grammar is `@jterrazz/test`'s [Spec documents](https://github.com/jterrazz/package-test/blob/main/docs/guides/spec-documents.md) and [CLI specs](https://github.com/jterrazz/package-test/blob/main/docs/guides/cli-specs.md).
 
 ## What CI runs

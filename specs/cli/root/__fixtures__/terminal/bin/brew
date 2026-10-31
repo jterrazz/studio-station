@@ -1,0 +1,16 @@
+#!/bin/sh
+# Homebrew for the TUI documents: every call, with the Brewfile a bundle reads, recorded
+# in $HOME/.calls; a formula the bundle installs is listed from then on, at version 1.0.
+printf 'brew %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    "--version") echo "Homebrew 5.0.1" ;;
+    "list --formula --versions") if [ -f "$HOME/.formulae" ]; then /bin/cat "$HOME/.formulae"; fi ;;
+    "list --cask --versions" | "outdated --quiet") ;;
+    "bundle install --no-upgrade --file=-")
+        /usr/bin/tee -a "$HOME/.calls" | /usr/bin/sed -n 's/^brew "\(.*\)"$/\1 1.0/p' >> "$HOME/.formulae"
+        ;;
+    *)
+        echo "stub brew: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

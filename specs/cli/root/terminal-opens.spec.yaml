@@ -1,0 +1,16 @@
+description: 'bare station on a terminal opens the TUI on Status with five tabs, and q leaves it, exit 0'
+fixture: ./__fixtures__/terminal/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION"'
+      stdin: |
+          see station   Status · Tools · Config · Clean │ Fleet
+          see Machine
+          see ↑↓ scroll · r reload · ? more
+          send q
+      exit: 0
+    - command: '--version >/dev/null; terminal --size 0x0 "$STATION"'
+      stdin: |
+          see station   Status · Tools · Config · Clean │ Fleet
+          send q
+      exit: 0

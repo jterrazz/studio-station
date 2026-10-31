@@ -52,9 +52,14 @@ func globalKeys() []key.Binding {
 func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		if msg.Width > 0 && msg.Height > 0 {
-			a.width, a.height = msg.Width, msg.Height
+		if msg.Width <= 0 || msg.Height <= 0 {
+			// hazard: a terminal that reports no size (a pty `script` opens over a
+			// pipe) leaves the renderer 0x0, and it draws nothing; resizing it to the
+			// model's own size makes the first frame appear.
+			size := tea.WindowSizeMsg{Width: a.width, Height: a.height}
+			return a, func() tea.Msg { return size }
 		}
+		a.width, a.height = msg.Width, msg.Height
 	case tea.BackgroundColorMsg:
 		a.theme = theme.New(msg.IsDark())
 		a.help = kit.NewHelp(a.theme)

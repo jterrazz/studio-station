@@ -1,0 +1,295 @@
+#!/usr/bin/python3
+# A terminal for the TUI documents: runs COMMAND on a pseudo-terminal of the given size,
+# replays what it draws on a screen of cells, and plays the steps read on stdin, one per
+# line:
+#   see TEXT    wait until the screen shows TEXT
+#   gone TEXT   wait until the screen no longer shows TEXT
+#   send KEYS   type KEYS; \r, \x1b and \xNN escapes are keys
+#   screen      print the screen's text, each line's trailing blanks and the blank
+#               bottom lines trimmed
+# Then it waits for COMMAND to exit and exits with its code. A wait that times out
+# prints the screen on stderr and exits 124.
+# usage: terminal [--size COLSxROWS] COMMAND [ARG...]
+import codecs
+import fcntl
+import os
+import pty
+import re
+import select
+import signal
+import struct
+import sys
+import termios
+import time
+import unicodedata
+
+WAIT = 10.0
+
+
+class Screen:
+    def __init__(self, cols, rows):
+        self.cols, self.rows = max(cols, 80), max(rows, 24)
+        self.main = self.blank()
+        self.alt = None
+        self.cells = self.main
+        self.x = self.y = 0
+        self.saved = (0, 0)
+        self.top, self.bottom = 0, self.rows - 1
+        self.last = " "
+        self.state = "ground"
+        self.seq = ""
+        self.replies = b""
+
+    def blank(self):
+        return [[" "] * self.cols for _ in range(self.rows)]
+
+    def text(self):
+        lines = ["".join(c for c in row if c is not None).rstrip() for row in self.cells]
+        while lines and not lines[-1]:
+            lines.pop()
+        return "\n".join(lines)
+
+    def feed(self, data):
+        for ch in data:
+            self.step(ch)
+
+    def step(self, ch):
+        if self.state == "esc":
+            self.escape(ch)
+        elif self.state == "csi":
+            self.seq += ch
+            if "\x40" <= ch <= "\x7e":
+                self.state = "ground"
+                self.csi(self.seq)
+        elif self.state == "string":
+            if ch == "\x07":
+                self.state = "ground"
+            elif ch == "\x1b":
+                self.state = "string-esc"
+        elif self.state == "string-esc":
+            self.state = "ground" if ch == "\\" else "string"
+        elif self.state == "charset":
+            self.state = "ground"
+        elif ch == "\x1b":
+            self.state = "esc"
+        elif ch == "\r":
+            self.x = 0
+        elif ch == "\n":
+            self.down()
+        elif ch == "\b":
+            self.x = max(self.x - 1, 0)
+        elif ch == "\t":
+            self.x = min((self.x // 8 + 1) * 8, self.cols - 1)
+        elif ch >= " ":
+            self.put(ch)
+
+    def escape(self, ch):
+        self.state = "ground"
+        if ch == "[":
+            self.state, self.seq = "csi", ""
+        elif ch in "]PX^_":
+            self.state = "string"
+        elif ch in "()*+":
+            self.state = "charset"
+        elif ch == "7":
+            self.saved = (self.x, self.y)
+        elif ch == "8":
+            self.x, self.y = self.saved
+        elif ch == "D":
+            self.down()
+        elif ch == "E":
+            self.x = 0
+            self.down()
+        elif ch == "M":
+            if self.y == self.top:
+                self.scroll(-1)
+            else:
+                self.y = max(self.y - 1, 0)
+
+    def put(self, ch):
+        wide = unicodedata.east_asian_width(ch) in "WF"
+        if unicodedata.combining(ch):
+            return
+        if self.x + (2 if wide else 1) > self.cols:
+            self.x = 0
+            self.down()
+        self.cells[self.y][self.x] = ch
+        if wide:
+            self.cells[self.y][self.x + 1] = None
+        self.x += 2 if wide else 1
+        self.last = ch
+        if self.x >= self.cols:
+            self.x = self.cols - 1
+
+    def down(self):
+        if self.y == self.bottom:
+            self.scroll(1)
+        else:
+            self.y = min(self.y + 1, self.rows - 1)
+
+    def scroll(self, n):
+        region = self.cells[self.top : self.bottom + 1]
+        if n > 0:
+            region = region[n:] + [[" "] * self.cols for _ in range(min(n, len(region)))]
+        else:
+            region = [[" "] * self.cols for _ in range(min(-n, len(region)))] + region[:n]
+        self.cells[self.top : self.bottom + 1] = region[: self.bottom - self.top + 1]
+
+    def erase(self, y, x0, x1):
+        for x in range(max(x0, 0), min(x1, self.cols)):
+            self.cells[y][x] = " "
+
+    def csi(self, seq):
+        final, body = seq[-1], seq[:-1]
+        private = body[:1] in ("?", ">", "=", "<")
+        params = [int(p) if p.isdigit() else 0 for p in re.split("[;:]", body.lstrip("?>=<"))] if body.lstrip("?>=<") else []
+        n = params[0] if params and params[0] else 1
+
+        def arg(i, default):
+            return params[i] if len(params) > i and params[i] else default
+
+        if private:
+            if final in "hl" and 1049 in params:
+                self.screen(final == "h")
+            return
+        if final == "A":
+            self.y = max(self.y - n, 0)
+        elif final in "Be":
+            self.y = min(self.y + n, self.rows - 1)
+        elif final in "Ca":
+            self.x = min(self.x + n, self.cols - 1)
+        elif final == "D":
+            self.x = max(self.x - n, 0)
+        elif final == "E":
+            self.x, self.y = 0, min(self.y + n, self.rows - 1)
+        elif final == "F":
+            self.x, self.y = 0, max(self.y - n, 0)
+        elif final in "G`":
+            self.x = min(n - 1, self.cols - 1)
+        elif final == "d":
+            self.y = min(n - 1, self.rows - 1)
+        elif final in "Hf":
+            self.y, self.x = min(arg(0, 1) - 1, self.rows - 1), min(arg(1, 1) - 1, self.cols - 1)
+        elif final == "J":
+            mode = arg(0, 0)
+            if mode == 0:
+                self.erase(self.y, self.x, self.cols)
+                for y in range(self.y + 1, self.rows):
+                    self.erase(y, 0, self.cols)
+            elif mode == 1:
+                for y in range(self.y):
+                    self.erase(y, 0, self.cols)
+                self.erase(self.y, 0, self.x + 1)
+            else:
+                for y in range(self.rows):
+                    self.erase(y, 0, self.cols)
+        elif final == "K":
+            mode = arg(0, 0)
+            start, end = {0: (self.x, self.cols), 1: (0, self.x + 1)}.get(mode, (0, self.cols))
+            self.erase(self.y, start, end)
+        elif final == "X":
+            self.erase(self.y, self.x, self.x + n)
+        elif final == "b":
+            for _ in range(n):
+                self.put(self.last)
+        elif final == "@":
+            row = self.cells[self.y]
+            row[self.x :] = ([" "] * n + row[self.x :])[: self.cols - self.x]
+        elif final == "P":
+            row = self.cells[self.y]
+            row[self.x :] = (row[self.x + n :] + [" "] * n)[: self.cols - self.x]
+        elif final in "LM" and self.top <= self.y <= self.bottom:
+            top = self.top
+            self.top = self.y
+            self.scroll(-n if final == "L" else n)
+            self.top = top
+        elif final == "S":
+            self.scroll(n)
+        elif final == "T":
+            self.scroll(-n)
+        elif final == "r":
+            self.top, self.bottom = arg(0, 1) - 1, min(arg(1, self.rows), self.rows) - 1
+            self.x = self.y = 0
+        elif final == "s":
+            self.saved = (self.x, self.y)
+        elif final == "u":
+            self.x, self.y = self.saved
+        elif final == "n" and arg(0, 0) == 6:
+            self.replies += b"\x1b[%d;%dR" % (self.y + 1, self.x + 1)
+
+    def screen(self, alternate):
+        if alternate and self.cells is self.main:
+            self.alt = self.blank()
+            self.cells = self.alt
+        elif not alternate and self.cells is not self.main:
+            self.cells = self.main
+
+
+def main():
+    args = sys.argv[1:]
+    cols, rows = 80, 24
+    if args[:1] == ["--size"]:
+        cols, rows = (int(v) for v in args[1].split("x"))
+        args = args[2:]
+    steps = sys.stdin.read().splitlines()
+    pid, fd = pty.fork()
+    if pid == 0:
+        try:
+            os.execvp(args[0], args)
+        finally:
+            os._exit(127)
+    fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
+    screen = Screen(cols, rows)
+    decoder = codecs.getincrementaldecoder("utf-8")("replace")
+    status = None
+
+    def pump(seconds):
+        nonlocal status
+        ready, _, _ = select.select([fd], [], [], seconds)
+        if ready:
+            try:
+                data = os.read(fd, 65536)
+            except OSError:
+                data = b""
+            if data:
+                screen.feed(decoder.decode(data))
+                if screen.replies:
+                    os.write(fd, screen.replies)
+                    screen.replies = b""
+                return
+        if status is None:
+            done, code = os.waitpid(pid, os.WNOHANG)
+            if done:
+                status = os.waitstatus_to_exitcode(code)
+
+    def fail(why):
+        sys.stderr.write(why + "; the screen held:\n" + screen.text() + "\n")
+        if status is None:
+            os.kill(pid, signal.SIGKILL)
+        sys.exit(124)
+
+    def wait(ok, why):
+        deadline = time.monotonic() + WAIT
+        while not ok():
+            if time.monotonic() > deadline:
+                fail(why)
+            pump(0.05)
+
+    for line in steps:
+        verb, _, arg = line.partition(" ")
+        if verb == "see":
+            wait(lambda: arg in screen.text(), "never saw " + repr(arg))
+        elif verb == "gone":
+            wait(lambda: arg not in screen.text(), "still saw " + repr(arg))
+        elif verb == "send":
+            os.write(fd, arg.encode().decode("unicode_escape").encode("latin-1"))
+        elif verb == "screen":
+            pump(0.2)
+            print(screen.text())
+        elif verb:
+            sys.exit("terminal: unknown step " + repr(line))
+    wait(lambda: status is not None, "the command never exited")
+    sys.exit(status)
+
+
+main()
