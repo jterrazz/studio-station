@@ -33,9 +33,11 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	}
 	inTTY, outTTY, errTTY := term.IsTerminal(stdin.Fd()), term.IsTerminal(stdout.Fd()), term.IsTerminal(stderr.Fd())
 	dark := true
-	if inTTY && outTTY {
+	if inTTY && outTTY && len(args) > 0 {
 		// hazard: the background query writes an OSC request and reads the reply
-		// on stdin, so it runs only when both ends are a terminal that answers.
+		// on stdin, so it runs only when both ends are a terminal that answers; bare
+		// `station` opens the TUI, which asks itself, and a key typed early must
+		// reach it rather than be swallowed as the reply.
 		dark = lipgloss.HasDarkBackground(stdin, stdout)
 	}
 	writer := output.NewWriter(
