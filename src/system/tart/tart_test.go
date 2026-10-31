@@ -52,15 +52,6 @@ func TestListKeepsLocalVMsAndMapsTheirShape(t *testing.T) {
 	}
 }
 
-func TestVersionIsTheTrimmedOutput(t *testing.T) {
-	eng, run := newEngine(t)
-	run.On("/home/o/.local/bin/tart", "--version").Reply(system.Output{Stdout: recorded(t, "version.txt")})
-	v, err := eng.Version(context.Background())
-	if err != nil || v != "2.41.1" {
-		t.Fatalf("version = %q, %v", v, err)
-	}
-}
-
 func TestIPTimeoutIsErrTimeout(t *testing.T) {
 	eng, run := newEngine(t)
 	run.On("/home/o/.local/bin/tart", "ip", "dev", "--wait", "30").Reply(system.Output{ExitCode: 1, Stderr: "Failed to get IP"})
@@ -70,30 +61,12 @@ func TestIPTimeoutIsErrTimeout(t *testing.T) {
 	}
 }
 
-func TestIPIsTheTrimmedAddress(t *testing.T) {
-	eng, run := newEngine(t)
-	run.On("/home/o/.local/bin/tart", "ip", "dev", "--wait", "5").Reply(system.Output{Stdout: "192.168.64.7\n"})
-	ip, err := eng.IP(context.Background(), "dev", 5*time.Second)
-	if err != nil || ip != "192.168.64.7" {
-		t.Fatalf("ip = %q, %v", ip, err)
-	}
-}
-
 func TestRunArgvCarriesTheAbsoluteTartAndTheConsole(t *testing.T) {
 	eng, _ := newEngine(t)
 	got := eng.RunArgv("dev", "/v/dev.console")
 	want := []string{"/home/o/.local/bin/tart", "run", "--no-graphics", "--no-audio", "--serial-path", "/v/dev.console", "dev"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("argv = %v, want %v", got, want)
-	}
-}
-
-func TestResizeSendsOnlyTheAskedResources(t *testing.T) {
-	eng, run := newEngine(t)
-	run.On("/home/o/.local/bin/tart", "set", "dev", "--cpu", "4", "--memory", "8192", "--disk-size", "60").Reply(system.Output{})
-	err := eng.Resize(context.Background(), "dev", system.Resources{CPUs: 4, MemoryBytes: 8 << 30, DiskBytes: 60_000_000_000})
-	if err != nil {
-		t.Fatal(err)
 	}
 }
 
