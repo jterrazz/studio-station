@@ -17,7 +17,7 @@ make test      # go test ./src/... ./specs/..., then typescript test: the specs 
 npm test       # the specs alone
 ```
 
-The Go tests come first. The module tests are `*_test.go` files next to the code they judge, kept only for what no session of the binary reaches honestly: a terminal, a timing budget, a pure algorithm whose edge cases are cheaper at its own level (the renderer goldens of `src/output/`, the confirm gate of `src/cli/kit/`). The boundary test, `specs/architecture/layers_test.go`, owns the import table and the forbidden symbols of the layers, and proves each of its rules still bites by adding one violating file in memory.
+The Go tests come first. The module tests are `*_test.go` files next to the code they judge, kept only for what no session of the binary reaches honestly: a state the terminal driver cannot observe (the TUI loading in `Init`, a busy screen, the renderer's colours), a timing budget, root, a pure algorithm whose edge cases are cheaper at its own level (the renderer goldens of `src/output/`). The boundary test, `specs/architecture/layers_test.go`, owns the import table and the forbidden symbols of the layers, and proves each of its rules still bites by adding one violating file in memory.
 
 Then `make test` runs the CLI specs under `specs/cli/` on Vitest, through `@jterrazz/test`. There is exactly one runner: `specs/cli/cli.specification.ts` builds `.artifacts/go/station-test`, stamped with the version `git describe` prints, before any spec runs, so the whole suite shares one compilation, and every spec drives that binary. It rebuilds when the binary is missing, when `STATION_FORCE_REBUILD=1` is set (what `make test` does), or when any file under `src/` is newer than the binary. It is an mtime check, so editing the CLI and re-running the suite always exercises the change instead of a stale build.
 
@@ -48,7 +48,7 @@ No spec reaches the real machine. The runner sets `HOME` to the run's working di
 
 ## The TUI on a terminal
 
-A run is never given a terminal, so a document that needs one names the `terminal` env set and runs `--version >/dev/null; terminal "$STATION" [words]`. The `terminal` stub of `specs/cli/__fixtures__/terminal/`, which any noun's document lists in its `fixture:`, opens a pseudo-terminal (80x24, or `--size`), replays what the binary draws on a screen of cells, and plays the steps the document writes on `stdin:`: `see` and `gone` wait for a text on the screen, `send` types keys (`\r`, `\x1b[B`), `screen` prints the screen. It then exits with the binary's code, and a wait that times out prints the screen on stderr and exits 124. The `terminal-*.spec.yaml` documents of `specs/cli/root/` are the TUI sessions; `setup` and the `config` items that need a terminal drive the binary the same way.
+A run is never given a terminal, so a document that needs one names the `terminal` env set and runs `--version >/dev/null; terminal "$STATION" [words]`. The `terminal` stub of `specs/cli/__fixtures__/terminal/`, which any noun's document lists in its `fixture:`, opens a pseudo-terminal (80x24, or `--size`), replays what the binary draws on a screen of cells, and plays the steps the document writes on `stdin:`: `see` and `gone` wait for a text on the screen, `send` types keys (`\r`, `\x1b[B`), `screen` prints the screen. It then exits with the binary's code, and a wait that times out prints the screen on stderr and exits 124. The `terminal-*.spec.yaml` documents of `specs/cli/root/` are the TUI sessions; `setup`, the `config` items that ask values, the confirm gate of a destructive verb and `machines unlock` drive the binary the same way.
 
 The full grammar is `@jterrazz/test`'s [Spec documents](https://github.com/jterrazz/package-test/blob/main/docs/guides/spec-documents.md) and [CLI specs](https://github.com/jterrazz/package-test/blob/main/docs/guides/cli-specs.md).
 
@@ -58,7 +58,7 @@ A spec copies one `fixture:` directory into its working directory, so stubs live
 
 ## What a test is for
 
-A test exists because a real regression would turn it red. Every behaviour of a command (each flag, refusal, exit code, `--json` schema and migration) has a spec document through the real binary; the architecture test proves the layers; a module test exists only where the logic is dense and a spec cannot reach it honestly (a terminal, a timing budget, root, a pure algorithm). A test that restates a declaration, a table or a mock's own return is deleted.
+A test exists because a real regression would turn it red. Every behaviour of a command (each flag, refusal, exit code, `--json` schema and migration) has a spec document through the real binary; the architecture test proves the layers; a module test exists only where the logic is dense and a spec cannot reach it honestly (what the terminal driver cannot observe, a timing budget, root, a pure algorithm). A test that restates a declaration, a table or a mock's own return is deleted.
 
 ## What CI runs
 
