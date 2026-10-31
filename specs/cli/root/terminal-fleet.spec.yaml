@@ -2,7 +2,8 @@ description: 'the Fleet tab hints: d on a host says forget, s on a temporary VM 
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/vm-t/
-    - ./__fixtures__/terminal/
+    - ../__fixtures__/terminal/
+    - ./__fixtures__/homebrew/
 env: terminal
 runs:
     - command: '--version >/dev/null; terminal "$STATION"'

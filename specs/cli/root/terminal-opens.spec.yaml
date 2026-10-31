@@ -1,5 +1,7 @@
 description: 'bare station on a terminal opens the TUI on Status with five tabs, and q leaves it, exit 0'
-fixture: ./__fixtures__/terminal/
+fixture:
+    - ../__fixtures__/terminal/
+    - ./__fixtures__/homebrew/
 env: terminal
 runs:
     - command: '--version >/dev/null; terminal "$STATION"'
