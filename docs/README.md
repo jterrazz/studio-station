@@ -26,14 +26,15 @@
 
 ## Reference
 
-| Page                                              | Answers                                                                             |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [Commands](reference/commands.md)                 | `status`, `install`, `upgrade`, `clean`, `run`, and the shell shortcuts             |
-| [Machines](reference/machines.md)                 | The machine registry, the `config.json` model, roles, remote access                 |
-| [Configuration](reference/configuration.md)       | The `workstation config` TUI: its tabs, items, categories, and what each one writes |
-| [Tools and skills](reference/tools-and-skills.md) | The tool and skill registries, the `skills` CLI, the toolbelt projection            |
-| [Dotfiles](reference/dotfiles.md)                 | The versioned application configs under `dotfiles/applications/`                    |
-| [Footprint](reference/footprint.md)               | Everything `workstation` writes on a machine                                        |
+| Page                                              | Answers                                                                                   |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [Commands](reference/commands.md)                 | `status`, `install`, `upgrade`, `clean`, `run`, and the shell shortcuts                   |
+| [The status contract](reference/status-json.md)   | The `station.status/v1` document `station status --json` prints and `studio doctor` reads |
+| [Machines](reference/machines.md)                 | The machine registry, the `config.json` model, roles, remote access                       |
+| [Configuration](reference/configuration.md)       | The `workstation config` TUI: its tabs, items, categories, and what each one writes       |
+| [Tools and skills](reference/tools-and-skills.md) | The tool and skill registries, the `skills` CLI, the toolbelt projection                  |
+| [Dotfiles](reference/dotfiles.md)                 | The versioned application configs under `dotfiles/applications/`                          |
+| [Footprint](reference/footprint.md)               | Everything `workstation` writes on a machine                                              |
 
 ## Decisions
 
