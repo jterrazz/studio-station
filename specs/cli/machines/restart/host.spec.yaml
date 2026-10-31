@@ -2,7 +2,7 @@ description: 'restarting a host sends the FileVault authrestart, then waits for 
 fixture:
     - ../__fixtures__/hosts-x-y/
     - ../__fixtures__/stubs/
-    - ../__fixtures__/down-then-up/
+    - ./__fixtures__/down-then-up/
 runs:
     - command: 'machines restart y --yes'
       exit: 0

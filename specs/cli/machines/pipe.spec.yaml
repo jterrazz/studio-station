@@ -1,4 +1,4 @@
-description: 'piped, every row has the same eight tab-separated fields and every VM row names its host in the fourth'
+description: 'piped, every row has eight tab-separated fields and a VM row names its host'
 fixture:
     - ./__fixtures__/hosts-x-y/
     - ./__fixtures__/stubs/

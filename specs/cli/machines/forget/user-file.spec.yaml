@@ -1,5 +1,5 @@
 description: 'adding then forgetting a host gives a user''s ssh config back byte for byte'
-fixture: ../__fixtures__/user-ssh-config/
+fixture: ./__fixtures__/user-ssh-config/
 runs:
     - command: 'machines add --name box --user agent'
       exit: 0

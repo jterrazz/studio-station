@@ -2,7 +2,7 @@ description: 'an unreachable machine is a finding in the rows, not a failure'
 fixture:
     - ../__fixtures__/hosts-x-y/
     - ../__fixtures__/stubs/
-    - ../__fixtures__/unreachable-y/
+    - ./__fixtures__/unreachable-y/
 env:
     - OPENCLAW_GATEWAY_PORT=1
     - HERMES_GATEWAY_PORT=9

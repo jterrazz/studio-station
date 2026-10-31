@@ -1,4 +1,4 @@
-description: 'a word the machines family does not know is refused, exit 2: no second list, no remote verb, no machine shell, no init'
+description: 'a word the machines family does not know is refused, exit 2'
 runs:
     - command: 'machines status'
       exit: 2

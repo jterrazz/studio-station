@@ -1,8 +1,8 @@
 description: 'up starts the userspace daemon, then connects with the keychain''s auth key on stdin, never --ssh'
 fixture:
-    - ../__fixtures__/authkey/
+    - ./__fixtures__/authkey/
     - ../__fixtures__/stubs/
-    - ../__fixtures__/authkey-in-keychain/
+    - ./__fixtures__/authkey-in-keychain/
 runs:
     - command: 'tailnet up'
       exit: 0

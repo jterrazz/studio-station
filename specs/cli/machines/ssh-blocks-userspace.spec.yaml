@@ -1,4 +1,4 @@
-description: 'in userspace mode every block reaches its machine through the station daemon''s socket, and owns its host key'
+description: 'in userspace mode each block reaches its machine through the station socket'
 fixture: ./__fixtures__/hosts-x-y/
 runs:
     - command: 'machines'

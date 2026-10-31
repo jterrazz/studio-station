@@ -1,6 +1,6 @@
 description: 'a node that logged in before reconnects with no credential at all'
 fixture:
-    - ../__fixtures__/registered/
+    - ./__fixtures__/registered/
     - ../__fixtures__/stubs/
     - ../__fixtures__/running/
 runs:

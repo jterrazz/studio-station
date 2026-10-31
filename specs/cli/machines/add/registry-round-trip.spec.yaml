@@ -1,4 +1,4 @@
-description: 'adds and forgets hosts, keeping the registry and the managed ssh blocks in step, the block bytes pinned'
+description: 'adds and forgets hosts, the registry and the managed blocks in step'
 fixture: ../__fixtures__/host-x/
 runs:
     - command: 'machines add --name mac-mini --user agent'

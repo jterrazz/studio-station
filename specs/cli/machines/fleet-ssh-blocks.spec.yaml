@@ -1,4 +1,4 @@
-description: 'every host sees every VM by name: the listing writes a block for another host''s VM with the fleet''s VM login'
+description: 'bare machines writes a block for a VM of another host, with the VM login'
 fixture:
     - ./__fixtures__/hosts-x-y/
     - ./__fixtures__/stubs/

@@ -2,7 +2,7 @@ description: 'a Mac that refuses the reboot is a failure naming sudo''s own line
 fixture:
     - ../__fixtures__/hosts-x-y/
     - ../__fixtures__/stubs/
-    - ../__fixtures__/refuses-restart/
+    - ./__fixtures__/refuses-restart/
 runs:
     - command: 'machines restart y --yes'
       exit: 1

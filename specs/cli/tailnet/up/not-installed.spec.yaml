@@ -1,5 +1,5 @@
 description: 'up without tailscale on the machine fails with the install that fixes it'
-fixture: ../__fixtures__/registered/
+fixture: ./__fixtures__/registered/
 runs:
     - command: 'tailnet up </dev/null'
       exit: 1
