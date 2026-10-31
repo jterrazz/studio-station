@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 type Runner struct {
+	mu      sync.Mutex
 	t       testing.TB
 	script  []*Call
 	Paths   map[string]string
@@ -48,6 +50,8 @@ func (c *Call) Fail(err error) *Call {
 }
 
 func (r *Runner) answer(c system.Cmd) *Call {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.Calls = append(r.Calls, c)
 	for _, call := range r.script {
 		if call.name == c.Name && slices.Equal(call.args, c.Args) {

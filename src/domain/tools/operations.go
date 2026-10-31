@@ -1,0 +1,332 @@
+package tools
+
+import (
+	"context"
+	"slices"
+	"strconv"
+	"strings"
+
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/system"
+)
+
+const (
+	verbInstall   = "install"
+	verbUninstall = "uninstall"
+	verbUpgrade   = "upgrade"
+)
+
+func (s *Service) Install(ctx context.Context, r InstallRequest) ([]Outcome, error) {
+	requested, err := s.Find(r.Names)
+	if err != nil {
+		return nil, err
+	}
+	states := s.statesWithRequirements(ctx, requested)
+	inRequest := map[string]bool{}
+	for _, t := range requested {
+		inRequest[t.Name] = true
+	}
+	for _, t := range requested {
+		for _, dep := range s.requirements(t) {
+			if !inRequest[dep] && !installed(states[dep]) {
+				return nil, &MissingDependencyError{Tool: t.Name, Requires: dep}
+			}
+		}
+	}
+	ordered := s.topological(requested)
+	outcomes := map[string]*Outcome{}
+	var pending []catalog.Tool
+	for _, t := range ordered {
+		if states[t.Name] == catalog.StateOK {
+			outcomes[t.Name] = &Outcome{Name: t.Name, Verb: verbInstall, Result: catalog.StateOK, Detail: "already installed"}
+			continue
+		}
+		pending = append(pending, t)
+	}
+	for len(pending) > 0 {
+		var batch []catalog.Tool
+		if s.row(pending[0]).bundleLine {
+			batch = s.bundleBatch(pending, inRequest, outcomes)
+		} else {
+			batch = pending[:1]
+		}
+		pending = slices.DeleteFunc(pending, func(t catalog.Tool) bool { return slices.ContainsFunc(batch, sameName(t)) })
+		var ready []catalog.Tool
+		for _, t := range batch {
+			if dep := s.failedRequirement(t, outcomes); dep != "" {
+				outcomes[t.Name] = &Outcome{Name: t.Name, Verb: verbInstall, Result: catalog.StateBroken, Detail: "requires " + dep + ", which failed"}
+				continue
+			}
+			ready = append(ready, t)
+		}
+		if len(ready) == 0 {
+			continue
+		}
+		var done []Outcome
+		if s.row(ready[0]).bundleLine {
+			done = s.bundle(ctx, verbInstall, ready, "--no-upgrade")
+		} else {
+			done = []Outcome{s.run(ctx, verbInstall, ready[0], s.row(ready[0]).install)}
+		}
+		for i := range done {
+			o := done[i]
+			if o.Result == catalog.StateOK {
+				o.Steps = s.then(ctx, s.byName[o.Name], r.Interactive)
+			}
+			outcomes[o.Name] = &o
+		}
+	}
+	result := make([]Outcome, 0, len(ordered))
+	for _, t := range requested {
+		result = append(result, *outcomes[t.Name])
+	}
+	return result, nil
+}
+
+func (s *Service) Uninstall(ctx context.Context, names []string) ([]Outcome, error) {
+	requested, err := s.Find(names)
+	if err != nil {
+		return nil, err
+	}
+	states := s.states(ctx, requested)
+	out := make([]Outcome, 0, len(requested))
+	for _, t := range requested {
+		if !installed(states[t.Name]) {
+			out = append(out, Outcome{Name: t.Name, Verb: verbUninstall, Result: catalog.StateAbsent, Detail: "not installed"})
+			continue
+		}
+		out = append(out, s.run(ctx, verbUninstall, t, s.row(t).uninstall))
+	}
+	return out, nil
+}
+
+func (s *Service) Upgrade(ctx context.Context, r UpgradeRequest) ([]Outcome, error) {
+	var candidates []catalog.Tool
+	if len(r.Names) > 0 {
+		found, err := s.Find(r.Names)
+		if err != nil {
+			return nil, err
+		}
+		candidates = found
+	} else {
+		methods := map[catalog.Method]bool{}
+		for _, mm := range catalog.Managers {
+			if len(r.Via) == 0 || slices.Contains(r.Via, mm.Manager) {
+				for _, m := range mm.Methods {
+					methods[m] = true
+				}
+			}
+		}
+		if len(r.Via) == 0 {
+			methods[catalog.MethodScript] = true
+		}
+		for _, t := range s.Placed() {
+			if methods[s.install(t).Method()] && s.row(t).upgradable() {
+				candidates = append(candidates, t)
+			}
+		}
+	}
+	states := s.states(ctx, candidates)
+	var outcomes []Outcome
+	var bundled, single []catalog.Tool
+	for _, t := range candidates {
+		state := states[t.Name]
+		upgradable := state == catalog.StateOK || (len(r.Names) > 0 && state == catalog.StateDegraded)
+		switch {
+		case !upgradable && len(r.Names) > 0:
+			outcomes = append(outcomes, Outcome{Name: t.Name, Verb: verbUpgrade, Result: catalog.StateAbsent, Detail: "not installed: station tools install " + t.Name})
+		case !upgradable:
+		case s.row(t).bundleLine:
+			bundled = append(bundled, t)
+		default:
+			single = append(single, t)
+		}
+	}
+	if len(bundled) > 0 {
+		outcomes = append(outcomes, s.bundle(ctx, verbUpgrade, bundled, "--upgrade")...)
+	}
+	for _, t := range single {
+		outcomes = append(outcomes, s.run(ctx, verbUpgrade, t, s.row(t).upgrade))
+	}
+	return outcomes, nil
+}
+
+func (s *Service) bundleBatch(pending []catalog.Tool, inRequest map[string]bool, done map[string]*Outcome) []catalog.Tool {
+	var batch []catalog.Tool
+	for _, t := range pending {
+		if !s.row(t).bundleLine {
+			continue
+		}
+		ready := true
+		for _, dep := range s.requirements(t) {
+			if inRequest[dep] && done[dep] == nil && !slices.ContainsFunc(batch, func(b catalog.Tool) bool { return b.Name == dep }) {
+				ready = false
+			}
+		}
+		if ready {
+			batch = append(batch, t)
+		}
+	}
+	return batch
+}
+
+// hazard: brew's own prompts (a cask's sudo) read /dev/tty, not stdin, so feeding
+// the Brewfile on stdin (--file=-) does not steal them.
+func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, mode string) []Outcome {
+	lines := make([]string, 0, len(list))
+	for _, t := range list {
+		lines = append(lines, brewfileLine(s.install(t)))
+	}
+	c := system.Cmd{Name: "brew", Args: []string{"bundle", "install", mode, "--file=-"}, Stdin: strings.Join(lines, "\n") + "\n"}
+	if _, ok := s.h.Run.LookPath("mise"); ok && s.o.MiseShims != "" {
+		c.Env = []string{"PATH=" + s.o.MiseShims + ":" + s.o.Path}
+	}
+	code, err := s.h.Run.Attach(ctx, c, system.ToStderr)
+	failure := ""
+	switch {
+	case err != nil:
+		failure = "brew bundle: " + err.Error()
+	case code != 0:
+		failure = "brew bundle exited " + strconv.Itoa(code)
+	}
+	out := make([]Outcome, 0, len(list))
+	if verb == verbUpgrade {
+		for _, t := range list {
+			o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
+			if failure != "" {
+				o.Result, o.Detail = catalog.StateBroken, failure
+			}
+			out = append(out, o)
+		}
+		return out
+	}
+	// invariant: one exit code answers for N tools, so each tool's verdict is
+	// whether the inventory lists it once the bundle has run.
+	states := s.states(ctx, list)
+	for _, t := range list {
+		o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
+		if states[t.Name] != catalog.StateOK {
+			o.Result, o.Detail = catalog.StateBroken, failure
+			if failure == "" {
+				o.Detail = "not listed after brew bundle"
+			}
+		}
+		out = append(out, o)
+	}
+	return out
+}
+
+func (s *Service) run(ctx context.Context, verb string, t catalog.Tool, build func(catalog.Install) []system.Cmd) Outcome {
+	o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
+	for _, c := range build(s.install(t)) {
+		code, err := s.h.Run.Attach(ctx, c, system.ToStderr)
+		switch {
+		case err != nil:
+			o.Result, o.Detail, o.Err = catalog.StateBroken, c.Name+": "+err.Error(), err
+			return o
+		case code != 0:
+			o.Result, o.Detail = catalog.StateBroken, c.Name+" "+c.Args[0]+" exited "+strconv.Itoa(code)
+			return o
+		}
+	}
+	return o
+}
+
+func (s *Service) then(ctx context.Context, t catalog.Tool, interactive bool) []Step {
+	steps := make([]Step, 0, len(t.Then))
+	for _, item := range t.Then {
+		if s.cfg == nil {
+			steps = append(steps, Step{Item: item, Result: catalog.StateAbsent, Detail: "not applied: station config install " + item})
+			continue
+		}
+		step, err := s.cfg.Configure(ctx, item, interactive)
+		if err != nil {
+			step = Step{Item: item, Result: catalog.StateBroken, Detail: err.Error()}
+		}
+		steps = append(steps, step)
+	}
+	return steps
+}
+
+func (s *Service) requirements(t catalog.Tool) []string {
+	reqs := slices.Clone(t.Requires)
+	if needs := s.row(t).needs; needs != "" && needs != t.Name && !slices.Contains(reqs, needs) {
+		reqs = append([]string{needs}, reqs...)
+	}
+	return reqs
+}
+
+func (s *Service) failedRequirement(t catalog.Tool, outcomes map[string]*Outcome) string {
+	for _, dep := range s.requirements(t) {
+		if o := outcomes[dep]; o != nil && o.Result == catalog.StateBroken {
+			return dep
+		}
+	}
+	return ""
+}
+
+func (s *Service) topological(list []catalog.Tool) []catalog.Tool {
+	inRequest := map[string]catalog.Tool{}
+	for _, t := range list {
+		inRequest[t.Name] = t
+	}
+	var ordered []catalog.Tool
+	visited := map[string]bool{}
+	var visit func(t catalog.Tool)
+	visit = func(t catalog.Tool) {
+		if visited[t.Name] {
+			return
+		}
+		visited[t.Name] = true
+		for _, dep := range s.requirements(t) {
+			if d, ok := inRequest[dep]; ok {
+				visit(d)
+			}
+		}
+		ordered = append(ordered, t)
+	}
+	for _, t := range list {
+		visit(t)
+	}
+	return ordered
+}
+
+func (s *Service) states(ctx context.Context, list []catalog.Tool) map[string]catalog.State {
+	out := map[string]catalog.State{}
+	for _, r := range s.reports(ctx, list) {
+		out[r.Tool.Name] = r.State
+	}
+	return out
+}
+
+func (s *Service) statesWithRequirements(ctx context.Context, list []catalog.Tool) map[string]catalog.State {
+	all := map[string]catalog.Tool{}
+	var walk func(t catalog.Tool)
+	walk = func(t catalog.Tool) {
+		if _, ok := all[t.Name]; ok {
+			return
+		}
+		all[t.Name] = t
+		for _, dep := range s.requirements(t) {
+			if d, ok := s.byName[dep]; ok {
+				if _, placed := d.InstallOn(s.o.Here); placed {
+					walk(d)
+				}
+			}
+		}
+	}
+	for _, t := range list {
+		walk(t)
+	}
+	flat := make([]catalog.Tool, 0, len(all))
+	for _, t := range all {
+		flat = append(flat, t)
+	}
+	return s.states(ctx, flat)
+}
+
+func installed(s catalog.State) bool { return s == catalog.StateOK || s == catalog.StateDegraded }
+
+func sameName(t catalog.Tool) func(catalog.Tool) bool {
+	return func(o catalog.Tool) bool { return o.Name == t.Name }
+}
