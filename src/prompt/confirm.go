@@ -12,6 +12,7 @@ import (
 
 type Prompter interface {
 	Confirm(question string) (bool, error)
+	AskName(suggestion string) (string, error)
 }
 
 type Terminal struct {

@@ -17,6 +17,8 @@ type answer struct {
 
 func (a answer) Confirm(string) (bool, error) { return a.yes, a.err }
 
+func (answer) AskName(string) (string, error) { return "", nil }
+
 func TestTheConfirmGateOnATerminal(t *testing.T) {
 	for _, c := range []struct {
 		name   string
