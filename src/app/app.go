@@ -55,7 +55,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	root = cli.NewRoot(kenv, tuiOpener(kenv, func() *cobra.Command { return root }),
 		statusCommand(kenv),
 		toolsCommand(kenv, here),
-		configCommand(kenv),
+		configCommand(kenv, here),
 		cleanCommand(kenv),
 		machinesCommand(kenv),
 		imagesCommand(kenv),
