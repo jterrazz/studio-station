@@ -1,0 +1,18 @@
+description: 'on a linux VM a brew tool installs through mise, and brew is never called'
+fixture: ../__fixtures__/stubs/
+env:
+    - STATION_MACHINE_KIND=linux
+runs:
+    - command: 'tools install gh'
+      exit: 0
+      stdout: |
+          ●	gh
+          ○	github-login	not applied: station config install github-login
+      files:
+          .calls:
+              contains:
+                  - 'mise use --global gh@latest'
+    - command: '--version > /dev/null; /usr/bin/grep -c ''^brew'' .calls'
+      exit: 1
+      stdout: |
+          0

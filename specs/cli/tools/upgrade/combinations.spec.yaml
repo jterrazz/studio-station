@@ -1,0 +1,20 @@
+description: 'names with --via, the deleted --all and an unknown manager are refused'
+fixture: ../__fixtures__/stubs/
+runs:
+    - command: 'tools upgrade bat --via brew'
+      exit: 2
+      stderr: |
+          Error: name tools or give --via, not both
+          Hint: station tools upgrade --via brew
+    - command: 'tools upgrade --all'
+      exit: 2
+      stderr: |
+          Error: unknown flag: --all
+          Hint: run station tools upgrade --help
+    - command: 'tools upgrade --via nope'
+      exit: 2
+      stderr: |
+          Error: unknown manager "nope"
+          Hint: --via takes brew, npm, bun, uv, mise, skills
+      files:
+          .calls: absent

@@ -1,0 +1,13 @@
+description: 'a linux VM lists browser-use, never dia nor a cask'
+env:
+    - STATION_MACHINE_KIND=linux
+runs:
+    - command: 'tools --json | /usr/bin/jq -r ''.tools[] | select(.name | IN("dia", "node", "ollama", "browser-use", "xcode")) | "\(.name) \(.places | join(","))"'''
+      exit: 0
+      stdout: |
+          node host,linux,macos
+          browser-use linux,macos
+    - command: 'tools --json | /usr/bin/jq -r ''[.tools[] | select(.method == "cask")] | length'''
+      exit: 0
+      stdout: |
+          0

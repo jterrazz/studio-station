@@ -1,0 +1,9 @@
+description: 'a node on PATH that mise does not list is degraded, not absent'
+fixture:
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/node-on-path/
+runs:
+    - command: 'tools --json | /usr/bin/jq -r ''.tools[] | select(.name == "node") | "\(.state) \(.managed) \(.detail)"'''
+      exit: 0
+      stdout: |
+          degraded false on PATH, not managed by mise

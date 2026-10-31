@@ -1,0 +1,12 @@
+#!/bin/sh
+# mise: its global listing is an answer file; use, unuse and upgrade succeed.
+answers="${0%/*}/../answers/mise"
+printf 'mise %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    "ls --global --json") /bin/cat "$answers/ls.json" ;;
+    "use --global "* | "unuse --global "* | "upgrade "*) ;;
+    *)
+        echo "stub mise: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

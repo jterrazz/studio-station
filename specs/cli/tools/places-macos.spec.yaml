@@ -1,0 +1,10 @@
+description: 'a macOS VM lists the dev tools the hosts refuse'
+env:
+    - STATION_MACHINE_KIND=macos
+runs:
+    - command: 'tools --json | /usr/bin/jq -r ''.tools[] | select(.name | IN("dia", "node", "ollama", "browser-use", "xcode")) | "\(.name) \(.places | join(","))"'''
+      exit: 0
+      stdout: |
+          node host,linux,macos
+          xcode macos
+          browser-use linux,macos

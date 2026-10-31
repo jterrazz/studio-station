@@ -1,0 +1,12 @@
+description: 'a host lists what may live on a host: dia and ollama, node everywhere, and no VM-only nor dev tool'
+runs:
+    - command: 'tools --json | /usr/bin/jq -r ''.tools[] | select(.name | IN("dia", "node", "ollama", "browser-use", "xcode")) | "\(.name) \(.places | join(","))"'''
+      exit: 0
+      stdout: |
+          node host,linux,macos
+          ollama host
+          dia host
+    - command: 'tools --json | /usr/bin/jq -r ''[.tools[] | select(.name | IN("xcode", "cocoapods", "xcodegen", "android-studio", "lens", "orbstack", "multipass", "utm", "browser-use"))] | length'''
+      exit: 0
+      stdout: |
+          0

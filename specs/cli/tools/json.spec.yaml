@@ -1,0 +1,25 @@
+description: 'tools --json is station.tools/v1: a method per tool, never a kind, clashing skills suffixed'
+fixture: ./__fixtures__/stubs/
+runs:
+    - command: 'tools --json | /usr/bin/jq -r .schema'
+      exit: 0
+      stdout: |
+          station.tools/v1
+    - command: 'tools --json | /usr/bin/jq -r ''.tools[0] | keys | join(" ")'''
+      exit: 0
+      stdout: |
+          category detail managed method name places provides state version
+    - command: 'tools --json | /usr/bin/jq -r ''.tools[0] | (has("method") and (has("kind") | not))'''
+      exit: 0
+      stdout: |
+          true
+    - command: 'tools --json | /usr/bin/jq -r ''.tools[] | select(.name == "mise") | .method'''
+      exit: 0
+      stdout: |
+          brew
+    - command: 'tools --json | /usr/bin/jq -r ''.tools[] | select(.name | test("^(qmd|agent-browser)(-skill)?$")) | "\(.name) \(.method) \(.category)"'''
+      exit: 0
+      stdout: |
+          qmd bun AI Tooling
+          qmd-skill skill Agent skills
+          agent-browser-skill skill Agent skills

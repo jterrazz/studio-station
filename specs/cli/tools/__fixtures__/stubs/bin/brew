@@ -1,0 +1,24 @@
+#!/bin/sh
+# Homebrew as the tools specs need it: every call is recorded in $HOME/.calls (a
+# bundle's Brewfile too), the listings are answer files, and a bundle swaps in the
+# *.after.txt listings it was given, as a real install changes what brew lists.
+answers="${0%/*}/../answers/brew"
+printf 'brew %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    "--version") echo "Homebrew 5.0.1" ;;
+    "list --formula --versions") /bin/cat "$answers/formula.txt" ;;
+    "list --cask --versions") /bin/cat "$answers/cask.txt" ;;
+    "bundle install --no-upgrade --file=-" | "bundle install --upgrade --file=-")
+        /bin/cat >> "$HOME/.calls"
+        for list in formula cask; do
+            if [ -f "$answers/$list.after.txt" ]; then /bin/cp "$answers/$list.after.txt" "$answers/$list.txt"; fi
+        done
+        if [ -f "$answers/bundle.stderr" ]; then /bin/cat "$answers/bundle.stderr" >&2; fi
+        exit "$(/bin/cat "$answers/bundle.exit")"
+        ;;
+    "uninstall "*) ;;
+    *)
+        echo "stub brew: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

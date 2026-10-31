@@ -1,0 +1,13 @@
+description: 'a tool already installed is a no-op'
+fixture:
+    - ../__fixtures__/stubs/
+    - ../__fixtures__/bat-installed/
+runs:
+    - command: 'tools install bat'
+      exit: 0
+      stdout: |
+          ●	bat	already installed
+    - command: '--version > /dev/null; /usr/bin/grep -c ''bundle'' .calls'
+      exit: 1
+      stdout: |
+          0

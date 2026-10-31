@@ -1,0 +1,22 @@
+description: 'a formula and a cask install through ONE brew bundle fed on stdin'
+fixture:
+    - ../__fixtures__/stubs/
+    - ./__fixtures__/bundle-batch/
+runs:
+    - command: 'tools install bat ghostty'
+      exit: 0
+      stdout: |
+          ●	bat
+          ●	ghostty
+          ○	ghostty-dotfiles	not applied: station config install ghostty-dotfiles
+      files:
+          .calls:
+              contains:
+                  - |-
+                    brew bundle install --no-upgrade --file=-
+                    brew "bat"
+                    cask "ghostty"
+    - command: '--version > /dev/null; /usr/bin/grep -c ''bundle'' .calls'
+      exit: 0
+      stdout: |
+          1

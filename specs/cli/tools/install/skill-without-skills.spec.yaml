@@ -1,0 +1,8 @@
+description: 'a skill without the skills CLI is refused with the install that repairs it'
+fixture: ../__fixtures__/stubs/
+runs:
+    - command: 'tools install frontend-design'
+      exit: 1
+      stderr: |
+          Error: frontend-design requires skills, which is not installed
+          Hint: station tools install skills frontend-design
