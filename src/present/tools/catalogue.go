@@ -6,7 +6,7 @@ import (
 	"github.com/jterrazz/studio-station/src/present"
 )
 
-type toolJSON struct {
+type ToolJSON struct {
 	Name     string   `json:"name"`
 	Category string   `json:"category"`
 	Method   string   `json:"method"`
@@ -20,13 +20,13 @@ type toolJSON struct {
 
 type catalogueJSON struct {
 	Schema string     `json:"schema"`
-	Tools  []toolJSON `json:"tools"`
+	Tools  []ToolJSON `json:"tools"`
 }
 
 func Catalogue(reports []tools.Report, context string) present.Answer {
-	body := catalogueJSON{Schema: "station.tools/v1", Tools: make([]toolJSON, 0, len(reports))}
+	body := catalogueJSON{Schema: "station.tools/v1", Tools: make([]ToolJSON, 0, len(reports))}
 	for _, r := range reports {
-		body.Tools = append(body.Tools, jsonOf(r))
+		body.Tools = append(body.Tools, ToolObject(r))
 	}
 	var blocks []present.Block
 	for _, category := range catalog.Categories {
@@ -39,7 +39,7 @@ func Catalogue(reports []tools.Report, context string) present.Answer {
 		if len(group) == 0 {
 			continue
 		}
-		blocks = append(blocks, present.Section{Title: string(category), Counts: counts(group), Blocks: []present.Block{present.Table{Rows: Rows(group)}}})
+		blocks = append(blocks, present.Section{Title: string(category), Counts: Counts(group), Blocks: []present.Block{present.Table{Rows: Rows(group)}}})
 	}
 	if len(blocks) == 0 {
 		blocks = append(blocks, present.Table{Rows: []present.Row{{Cells: []present.Cell{{Text: "none", Tone: present.Muted}}}}})
@@ -55,7 +55,7 @@ func Catalogue(reports []tools.Report, context string) present.Answer {
 	}
 }
 
-func jsonOf(r tools.Report) toolJSON {
+func ToolObject(r tools.Report) ToolJSON {
 	kinds := r.Tool.Places()
 	places := make([]string, 0, len(kinds))
 	for _, k := range kinds {
@@ -66,7 +66,7 @@ func jsonOf(r tools.Report) toolJSON {
 	if detail == "" {
 		detail = r.Live
 	}
-	return toolJSON{
+	return ToolJSON{
 		Name:     r.Tool.Name,
 		Category: string(r.Tool.Category),
 		Method:   string(r.Method),
@@ -123,7 +123,7 @@ func Outcomes(verb string, outcomes []tools.Outcome, context string) present.Ans
 	}}
 }
 
-func counts(reports []tools.Report) []present.Count {
+func Counts(reports []tools.Report) []present.Count {
 	n := map[present.Mark]int{}
 	for _, r := range reports {
 		n[present.MarkOf(r.State)]++

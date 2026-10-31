@@ -17,27 +17,35 @@ type peerJSON struct {
 	Tags   []string `json:"tags"`
 }
 
+type Object struct {
+	State        string `json:"state"`
+	Connected    bool   `json:"connected"`
+	BackendState string `json:"backend_state"`
+	Daemon       string `json:"daemon"`
+	Name         string `json:"name"`
+	IP           string `json:"ip"`
+	KeepAwake    bool   `json:"keep_awake"`
+	Mode         string `json:"mode"`
+	AuthMethod   string `json:"auth_method"`
+	VMJoin       string `json:"vm_join"`
+}
+
 type statusJSON struct {
-	Schema       string     `json:"schema"`
-	State        string     `json:"state"`
-	Connected    bool       `json:"connected"`
-	BackendState string     `json:"backend_state"`
-	Daemon       string     `json:"daemon"`
-	Name         string     `json:"name"`
-	IP           string     `json:"ip"`
-	KeepAwake    bool       `json:"keep_awake"`
-	Mode         string     `json:"mode"`
-	AuthMethod   string     `json:"auth_method"`
-	VMJoin       string     `json:"vm_join"`
-	Peers        []peerJSON `json:"peers"`
+	Schema string `json:"schema"`
+	Object
+	Peers []peerJSON `json:"peers"`
+}
+
+func ObjectOf(s tailnet.Status) Object {
+	return Object{
+		State: string(s.State), Connected: s.Connected, BackendState: s.BackendState, Daemon: string(s.Daemon),
+		Name: s.Name, IP: s.IP, KeepAwake: s.KeepAwake, Mode: string(s.Mode), AuthMethod: string(s.AuthMethod),
+		VMJoin: string(s.VMJoin),
+	}
 }
 
 func Status(s tailnet.Status, context string) present.Answer {
-	body := statusJSON{
-		Schema: "station.tailnet/v1", State: string(s.State), Connected: s.Connected, BackendState: s.BackendState,
-		Daemon: string(s.Daemon), Name: s.Name, IP: s.IP, KeepAwake: s.KeepAwake, Mode: string(s.Mode),
-		AuthMethod: string(s.AuthMethod), VMJoin: string(s.VMJoin), Peers: make([]peerJSON, 0, len(s.Peers)),
-	}
+	body := statusJSON{Schema: "station.tailnet/v1", Object: ObjectOf(s), Peers: make([]peerJSON, 0, len(s.Peers))}
 	peers := make([]present.Row, 0, len(s.Peers))
 	for _, p := range s.Peers {
 		tags := p.Tags

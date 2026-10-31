@@ -6,7 +6,7 @@ import (
 	"github.com/jterrazz/studio-station/src/present"
 )
 
-type itemJSON struct {
+type ItemJSON struct {
 	Name     string   `json:"name"`
 	Category string   `json:"category"`
 	Places   []string `json:"places"`
@@ -16,7 +16,15 @@ type itemJSON struct {
 
 type itemsJSON struct {
 	Schema string     `json:"schema"`
-	Items  []itemJSON `json:"items"`
+	Items  []ItemJSON `json:"items"`
+}
+
+func ItemObject(r config.Report) ItemJSON {
+	places := make([]string, len(r.Item.Places))
+	for i, p := range r.Item.Places {
+		places[i] = string(p)
+	}
+	return ItemJSON{Name: r.Item.Name, Category: string(r.Item.Category), Places: places, State: string(r.State), Detail: r.Detail}
 }
 
 func categoryOrder() []catalog.ConfigCategory {
@@ -27,16 +35,9 @@ func categoryOrder() []catalog.ConfigCategory {
 }
 
 func Items(reports []config.Report, context string) present.Answer {
-	body := itemsJSON{Schema: "station.config/v1", Items: make([]itemJSON, 0, len(reports))}
+	body := itemsJSON{Schema: "station.config/v1", Items: make([]ItemJSON, 0, len(reports))}
 	for _, r := range reports {
-		places := make([]string, len(r.Item.Places))
-		for i, p := range r.Item.Places {
-			places[i] = string(p)
-		}
-		body.Items = append(body.Items, itemJSON{
-			Name: r.Item.Name, Category: string(r.Item.Category), Places: places,
-			State: string(r.State), Detail: r.Detail,
-		})
+		body.Items = append(body.Items, ItemObject(r))
 	}
 	var blocks []present.Block
 	for _, category := range categoryOrder() {
@@ -49,7 +50,7 @@ func Items(reports []config.Report, context string) present.Answer {
 		if len(group) == 0 {
 			continue
 		}
-		blocks = append(blocks, present.Section{Title: string(category), Counts: counts(group), Blocks: []present.Block{present.Table{Rows: Rows(group)}}})
+		blocks = append(blocks, present.Section{Title: string(category), Counts: Counts(group), Blocks: []present.Block{present.Table{Rows: Rows(group)}}})
 	}
 	if len(blocks) == 0 {
 		blocks = append(blocks, present.Table{Rows: []present.Row{{Cells: []present.Cell{{Text: "none", Tone: present.Muted}}}}})
@@ -89,7 +90,7 @@ func detail(r config.Report) string {
 	return r.Detail
 }
 
-func counts(reports []config.Report) []present.Count {
+func Counts(reports []config.Report) []present.Count {
 	n := map[present.Mark]int{}
 	for _, r := range reports {
 		n[present.MarkOf(r.State)]++
