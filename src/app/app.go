@@ -63,7 +63,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 
 	var root *cobra.Command
 	root = cli.NewRoot(kenv, tuiOpener(kenv, func() *cobra.Command { return root }),
-		statusCommand(kenv),
+		statusCommand(kenv, here),
 		toolsCommand(kenv, here),
 		configCommand(kenv, here),
 		cleanCommand(kenv, here),

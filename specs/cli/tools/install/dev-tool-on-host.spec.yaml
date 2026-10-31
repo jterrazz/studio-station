@@ -5,6 +5,6 @@ runs:
       exit: 2
       stderr: |
           Error: xcode's place is macos; here is a host
-          Hint: the macOS VM is not built yet (TODO.md "The macOS VM")
+          Hint: the macOS VM does not exist yet (TODO.md "The macOS VM")
       files:
           .calls: absent

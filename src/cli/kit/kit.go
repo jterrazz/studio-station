@@ -197,10 +197,6 @@ func Refuse(message, hint string) error {
 	return fail.Usage(message, hint)
 }
 
-func NotBuilt() error {
-	return fail.Failed("not built yet", "run station --help", nil)
-}
-
 func FlagError(c *cobra.Command, err error) error {
 	return fail.Usage(err.Error(), helpHint(c))
 }

@@ -20,8 +20,17 @@ import (
 )
 
 func toolsCommand(env kit.Env, m machine) *cobra.Command {
+	service := toolsService(env, m)
+	return toolscmd.Command(toolscmd.Deps{Tools: service, Context: m.context}, env,
+		toolsinstall.Command(toolsinstall.Deps{Tools: service, Context: m.context}, env),
+		toolsuninstall.Command(toolsuninstall.Deps{Tools: service, Context: m.context}, env),
+		toolsupgrade.Command(toolsupgrade.Deps{Tools: service, Context: m.context}, env),
+	)
+}
+
+func toolsService(env kit.Env, m machine) *tools.Service {
 	ask, _ := env.Prompt.(prompt.Asker)
-	service := tools.New(m.host, catalog.Tools, configurer{config: configService(m), ask: ask}, tools.Options{
+	return tools.New(m.host, catalog.Tools, configurer{config: configService(m), ask: ask}, tools.Options{
 		Here:        m.kind,
 		MiseShims:   filepath.Join(m.or("MISE_DATA_DIR", filepath.Join(m.host.Env.Home(), ".local", "share", "mise")), "shims"),
 		Path:        m.vars["PATH"],
@@ -29,11 +38,6 @@ func toolsCommand(env kit.Env, m machine) *cobra.Command {
 		GitHubToken: m.or("GITHUB_TOKEN", m.vars["GH_TOKEN"]),
 		VMs:         m.machines(env.Interactive),
 	})
-	return toolscmd.Command(toolscmd.Deps{Tools: service, Context: m.context}, env,
-		toolsinstall.Command(toolsinstall.Deps{Tools: service, Context: m.context}, env),
-		toolsuninstall.Command(toolsuninstall.Deps{Tools: service, Context: m.context}, env),
-		toolsupgrade.Command(toolsupgrade.Deps{Tools: service, Context: m.context}, env),
-	)
 }
 
 // invariant: a Then item that asks values or a terminal is skipped off one, as a

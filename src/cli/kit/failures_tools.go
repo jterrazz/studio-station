@@ -40,7 +40,7 @@ func placeHint(e *tools.WrongPlaceError) string {
 	case slices.Contains(e.Places, catalog.Linux):
 		return "station machines create"
 	case slices.Contains(e.Places, catalog.MacOS):
-		return `the macOS VM is not built yet (TODO.md "The macOS VM")`
+		return `the macOS VM does not exist yet (TODO.md "The macOS VM")`
 	}
 	return "run it on a host: station tools install " + e.Tool + " --on <host>"
 }

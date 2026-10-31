@@ -14,9 +14,13 @@ import (
 )
 
 func setupCommand(env kit.Env, m machine) *cobra.Command {
+	return setupcmd.Command(setupcmd.Deps{Setup: setupService(env, m), Context: m.context}, env)
+}
+
+func setupService(env kit.Env, m machine) *setup.Service {
 	registrar := fleetRegistrar{store: m.store, machines: m.machines(env.Interactive)}
 	daemon := tailnetDaemon{service: m.tailnet(env.Interactive)}
-	service := setup.New(m.host, m.store, settings.NewKeychain(m.host.Run).On(m.kind), registrar, daemon, setup.Options{
+	return setup.New(m.host, m.store, settings.NewKeychain(m.host.Run).On(m.kind), registrar, daemon, setup.Options{
 		Here:  m.kind,
 		Paths: m.paths,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
@@ -24,7 +28,6 @@ func setupCommand(env kit.Env, m machine) *cobra.Command {
 		Executable: m.or("STATION_EXECUTABLE", m.host.Env.Executable()),
 		Detached:   m.vars["STATION_XDG_DETACHED"] == "1",
 	})
-	return setupcmd.Command(setupcmd.Deps{Setup: service, Context: m.context}, env)
 }
 
 type fleetRegistrar struct {
