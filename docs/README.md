@@ -42,4 +42,16 @@
 
 ## Decisions
 
-The records of decisions this repository alone took go in [`decisions/`](decisions/), numbered in the order they were taken, the mold `_template.md` beside them. A decision spanning several repositories is recorded by the corpus that spans them. What was left for later is `TODO.md` at the repository root.
+The records of decisions this repository alone took go in [`decisions/`](decisions/), numbered in the order they were taken, the mold `_template.md` beside them.
+
+- [001 station mirrors the studio CLI's layers](decisions/001-station-mirrors-the-studio-cli-layers.md)
+- [002 brew bundle installs, native commands uninstall](decisions/002-brew-bundle-installs-native-commands-uninstall.md)
+- [003 mise owns the runtimes](decisions/003-mise-owns-the-runtimes.md)
+- [004 station status --json is a contract](decisions/004-station-status-json-is-a-contract.md)
+- [005 The version is stamped from the tag](decisions/005-the-version-is-stamped-from-the-tag.md)
+- [006 Tart is the engine, behind a port](decisions/006-tart-is-the-engine-behind-a-port.md)
+- [007 Files live in the XDG folders](decisions/007-files-live-in-the-xdg-folders.md)
+- [008 Every VM is temporary or lasting](decisions/008-every-vm-is-temporary-or-lasting.md)
+- [009 One bootstrap verb, and no values in argv](decisions/009-one-bootstrap-verb-and-no-values-in-argv.md)
+
+A decision spanning several repositories is recorded by the corpus that spans them. What was left for later is `TODO.md` at the repository root.
