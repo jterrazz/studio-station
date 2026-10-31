@@ -1,0 +1,51 @@
+description: "a build runs admin's recipe, vm_user's cleanup, waits for the poweroff, then records"
+fixture:
+    - ../__fixtures__/stubs/
+    - ./__fixtures__/build/
+runs:
+    - command: 'images build linux --binary $HOME/station-linux'
+      exit: 0
+      stdout: |
+          ●	linux	{{string}}	built
+      files:
+          .calls:
+              contains:
+                  - |-
+                    tart pull ghcr.io/cirruslabs/ubuntu:24.04
+                    tart clone ghcr.io/cirruslabs/ubuntu:24.04 station-build-linux
+                    tart ip station-build-linux --wait 60
+                  - 'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o BatchMode=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -o NumberOfPasswordPrompts=1 {{workdir}}/station-linux admin@192.168.64.5:/tmp/station'
+                  - 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o BatchMode=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -o NumberOfPasswordPrompts=1 admin@192.168.64.5 sudo env VM_USER=''dev'' IMAGE_KEY=''ssh-ed25519 AAAAstub station-image'' bash -s'
+                  - 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o BatchMode=yes -o IdentitiesOnly=yes -i {{workdir}}/.local/state/station/images/key dev@192.168.64.5 sudo bash -s'
+          .ssh-admin.env:
+              equals: |
+                  force
+                  admin
+          .ssh-admin.stdin:
+              contains:
+                  - 'apt-get install -y libatomic1'
+                  - 'station-intent.service'
+                  - 'station-hostkeys.service'
+          .ssh-vm.stdin:
+              contains:
+                  - 'pkill -u admin'
+                  - 'userdel -r admin'
+                  - 'systemctl --no-block poweroff'
+          .runs:
+              contains: 'tart run --no-graphics --no-audio --serial-path {{workdir}}/.local/state/station/consoles/station-build-linux station-build-linux'
+    - command: '--version > /dev/null; /usr/bin/awk ''/^tart pull/{p=NR} /^tart clone/{c=NR} /^scp/{s=NR} / admin@/{a=NR} / dev@/{d=NR} /^tart stop/{t=NR} /^tart rename/{r=NR} END{print (p<c && c<s && s<a && a<d && d<t && t<r) ? "ordered" : "disordered"}'' .calls'
+      exit: 0
+      stdout: |
+          ordered
+    - command: '--version > /dev/null; /usr/bin/awk ''/^tart list/{n++} /^tart stop/{print n}'' .calls'
+      exit: 0
+      stdout: |
+          3
+    - command: '--version > /dev/null; /usr/bin/grep -c "^tart rename station-build-linux station-image-linux-$(/bin/date -u +%Y.%m.%d)$" .calls'
+      exit: 0
+      stdout: |
+          1
+    - command: '--version > /dev/null; /usr/bin/jq -r ''[.name, .base, (.recipe_sha | length)] | join(" ")'' .local/state/station/images/linux/$(/bin/date -u +%Y.%m.%d).json'
+      exit: 0
+      stdout: |
+          linux ghcr.io/cirruslabs/ubuntu:24.04 64

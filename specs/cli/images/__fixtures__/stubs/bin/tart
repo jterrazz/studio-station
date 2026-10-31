@@ -1,0 +1,29 @@
+#!/bin/sh
+# Tart as the images specs need it: every call but `run` is recorded in $HOME/.calls
+# (the detached `run` goes to $HOME/.runs, since its line races the calls beside it);
+# `list` answers list.<n>.json for its n-th call when the case ships one, else list.json.
+answers="${0%/*}/../answers/tart"
+if [ "$1" = run ]; then
+    printf 'tart %s\n' "$*" >> "$HOME/.runs"
+    exit 0
+fi
+printf 'tart %s\n' "$*" >> "$HOME/.calls"
+case "$1" in
+    --version) echo "2.41.1" ;;
+    pull | clone | rename | delete | stop) ;;
+    ip) echo "192.168.64.5" ;;
+    list)
+        n=$(/bin/cat "$HOME/.lists" 2> /dev/null || echo 0)
+        n=$((n + 1))
+        echo "$n" > "$HOME/.lists"
+        if [ -f "$answers/list.$n.json" ]; then
+            /bin/cat "$answers/list.$n.json"
+        else
+            /bin/cat "$answers/list.json"
+        fi
+        ;;
+    *)
+        echo "stub tart: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

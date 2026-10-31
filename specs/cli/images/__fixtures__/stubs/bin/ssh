@@ -1,0 +1,17 @@
+#!/bin/sh
+# ssh as the images specs need it: the call goes to $HOME/.calls, its stdin to
+# .ssh-<who>.stdin (who = admin or vm), and an admin call records the askpass
+# contract (SSH_ASKPASS_REQUIRE and what the helper answers) in .ssh-admin.env.
+answers="${0%/*}/../answers/ssh"
+printf 'ssh %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    *" admin@"*) who=admin ;;
+    *) who=vm ;;
+esac
+if [ "$who" = admin ]; then
+    printf '%s\n' "$SSH_ASKPASS_REQUIRE" > "$HOME/.ssh-admin.env"
+    "$SSH_ASKPASS" >> "$HOME/.ssh-admin.env"
+fi
+/bin/cat > "$HOME/.ssh-$who.stdin"
+if [ -f "$answers/$who.stderr" ]; then /bin/cat "$answers/$who.stderr" >&2; fi
+if [ -f "$answers/$who.exit" ]; then exit "$(/bin/cat "$answers/$who.exit")"; fi

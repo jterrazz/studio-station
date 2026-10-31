@@ -1,0 +1,20 @@
+description: 'a recipe that fails exits 1, deletes the build VM and records nothing'
+fixture:
+    - ../__fixtures__/stubs/
+    - ./__fixtures__/build/
+    - ./__fixtures__/recipe-fails/
+runs:
+    - command: 'images build linux --binary $HOME/station-linux'
+      exit: 1
+      stderr: |
+          Error: image linux: the recipe failed: ssh exited 1: E: Unable to locate package libatomic1
+          Hint: station images build linux
+      files:
+          .calls:
+              contains: 'tart delete station-build-linux'
+    - command: '--version > /dev/null; /bin/ls .local/state/station/images'
+      exit: 0
+      stdout: |
+          askpass
+          key
+          key.pub
