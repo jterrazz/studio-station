@@ -19,6 +19,11 @@ export default defineConfig({
                 go: 'the CLI specification builds the Go binary it drives; the toolchain is a machine requirement, never an npm dependency',
             },
         },
+        oxfmt: {
+            ignore: {
+                'TODO.md': 'copied verbatim from the design; a test compares it byte for byte',
+            },
+        },
         roots: {
             scripts: 'the curl-piped installer a fresh machine runs before `station` exists on it',
         },
