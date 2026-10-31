@@ -35,6 +35,7 @@ type IO struct {
 func (o IO) Answer(a present.Answer) error { return o.out.Answer(a, o.JSON) }
 
 func (o IO) Raw(p []byte) error { return o.out.Raw(p) }
+func (o IO) Wait(label string) (stop func()) { return o.out.Wait(label) }
 
 type Leaf[I any] struct {
 	Use, Short, Example string

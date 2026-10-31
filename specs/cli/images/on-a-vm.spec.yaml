@@ -1,0 +1,8 @@
+description: 'a VM has no images to list'
+env: STATION_MACHINE_KIND=linux
+runs:
+    - command: 'images'
+      exit: 2
+      stderr: |
+          Error: images live on a host; here is linux
+          Hint: run it on a host

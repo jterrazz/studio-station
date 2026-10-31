@@ -1,0 +1,7 @@
+description: 'without tart a build is refused before anything runs, pointing at the tool'
+runs:
+    - command: 'images build linux --binary x'
+      exit: 2
+      stderr: |
+          Error: tart is not installed or does not answer
+          Hint: station tools install tart

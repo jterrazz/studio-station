@@ -1,0 +1,7 @@
+description: 'the round-1 flag --station is gone: a build names its binary with --binary'
+runs:
+    - command: 'images build linux --station x'
+      exit: 2
+      stderr: |
+          Error: unknown flag: --station
+          Hint: run station images build --help

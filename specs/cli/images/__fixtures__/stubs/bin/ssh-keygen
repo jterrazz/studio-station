@@ -1,0 +1,9 @@
+#!/bin/sh
+# ssh-keygen as the images specs need it: it writes the pair named by -f.
+printf 'ssh-keygen %s\n' "$*" >> "$HOME/.calls"
+while [ $# -gt 0 ]; do
+    if [ "$1" = -f ]; then key="$2"; fi
+    shift
+done
+echo "stub private key" > "$key"
+echo "ssh-ed25519 AAAAstub station-image" > "$key.pub"

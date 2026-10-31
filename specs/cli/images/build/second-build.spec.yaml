@@ -1,0 +1,18 @@
+description: 'a second build the same UTC day is version .2, beside the first'
+fixture:
+    - ../__fixtures__/stubs/
+    - ./__fixtures__/build/
+    - ./__fixtures__/second-build/
+runs:
+    - command: 'images build linux --binary $HOME/station-linux'
+      exit: 0
+      stdout: |
+          ●	linux	{{string}}	built
+    - command: 'images build linux --binary $HOME/station-linux'
+      exit: 0
+      stdout: |
+          ●	linux	{{string}}.2	built
+    - command: '--version > /dev/null; /bin/ls .local/state/station/images/linux | /usr/bin/grep -c ''\.2\.json$'''
+      exit: 0
+      stdout: |
+          1

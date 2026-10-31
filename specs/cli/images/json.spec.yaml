@@ -1,0 +1,18 @@
+description: 'images --json is station.images/v1, one object per version, with the glossary keys'
+fixture:
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/recorded/
+runs:
+    - command: 'images --json | /usr/bin/jq -r .schema'
+      exit: 0
+      stdout: |
+          station.images/v1
+    - command: 'images --json | /usr/bin/jq -r ''.images[0] | keys | join(" ")'''
+      exit: 0
+      stdout: |
+          base built_at name newest recipe_sha size_bytes station version vms
+    - command: 'images --json | /usr/bin/jq -r ''.images[] | "\(.version) \(.newest) \(.size_bytes) \(.vms | join(","))"'''
+      exit: 0
+      stdout: |
+          2026.11.07 true 6000000000 api
+          2026.11.01 false 5000000000 
