@@ -1,0 +1,7 @@
+description: an unknown flag is one error block whose hint names the command's help, and exits 2
+runs:
+    - command: status --nope
+      exit: 2
+      stderr: |
+          Error: unknown flag: --nope
+          Hint: run station status --help

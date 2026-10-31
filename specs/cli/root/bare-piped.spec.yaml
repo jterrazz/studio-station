@@ -1,0 +1,16 @@
+description: bare station off a terminal prints the menu on stderr and exits 2, with no error block
+runs:
+    - command: 2> menu.txt || echo "station exited $?"
+      exit: 0
+      stdout: |
+          station exited 2
+      files:
+          menu.txt:
+              contains:
+                  - '    tools '
+                  - '    machines '
+                  - '    setup '
+    - command: 2>&1 | /usr/bin/grep -c 'Error:'
+      exit: 1
+      stdout: |
+          0

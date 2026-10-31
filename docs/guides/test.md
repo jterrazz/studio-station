@@ -1,53 +1,49 @@
 # Testing
 
-Two suites prove a change: Go unit tests over the packages, and end-to-end specs that drive the real `workstation` binary and state what it printed.
+Two suites prove a change: Go tests (the module tests and the boundary test of the layers), and end-to-end specs that drive the real `station` binary and state what it printed.
 
 | Section                  | Answers                                               |
 | ------------------------ | ----------------------------------------------------- |
 | The two suites           | What `make test` runs, and in which order             |
 | A scenario is a document | The `<case>.spec.yaml` form and how it is regenerated |
-| What the host decides    | The tokens that stand for a host's verdicts           |
+| The sandbox              | Why no spec reaches the real machine                  |
 | What CI runs             | The gate a pull request passes                        |
 
 ## The two suites
 
 ```sh
-make test      # go test ./src/..., then typescript test: the specs against a fresh build of workstation, none on a proven tree
+make test      # go test ./src/... ./specs/..., then typescript test: the specs against a fresh build of station
 npm test       # the specs alone
 ```
 
-The Go module tests come first: `*_test.go` files next to the code they judge, kept for what no session of the binary reaches honestly: the parsers (an ssh endpoint, a tool's version, the `skills` CLI's listing, the remote settings), the skill lock and its upstream check against a stubbed GitHub, the kcpassword cipher, and the TUI models, whose keys only a terminal sends. What a command does to the machine (the registry, the managed `~/.ssh/config` blocks) is specified from the binary, by the documents below. One of them is a sync test over the projection: `src/cmd/skillsgen/main_test.go` fails when `skills/studio-toolbelt/SKILL.md` no longer matches the registry, which is why a registry change and its `make skills` land together.
+The Go tests come first. The module tests are `*_test.go` files next to the code they judge, kept only for what no session of the binary reaches honestly: a terminal, a timing budget, a pure algorithm whose edge cases are cheaper at its own level (the renderer goldens of `src/output/`, the confirm gate of `src/cli/kit/`). The boundary test, `specs/architecture/layers_test.go`, owns the import table and the forbidden symbols of the layers, and proves each of its rules still bites by adding one violating file in memory.
 
-Then `make test` runs the CLI specs under `specs/cli/` on Vitest, through `@jterrazz/test`. There is exactly one runner: `specs/cli/cli.specification.ts` builds `.artifacts/go/workstation-test` before any spec runs, so the whole suite shares one compilation, and every spec drives that binary. It rebuilds when the binary is missing, when `WORKSTATION_FORCE_REBUILD=1` is set (what `make test` does), or when any `src/**/*.go` is newer than the binary. It is an mtime check, so editing the CLI and re-running the suite always exercises the change instead of a stale build.
+Then `make test` runs the CLI specs under `specs/cli/` on Vitest, through `@jterrazz/test`. There is exactly one runner: `specs/cli/cli.specification.ts` builds `.artifacts/go/station-test`, stamped with the version `git describe` prints, before any spec runs, so the whole suite shares one compilation, and every spec drives that binary. It rebuilds when the binary is missing, when `STATION_FORCE_REBUILD=1` is set (what `make test` does), or when any file under `src/` is newer than the binary. It is an mtime check, so editing the CLI and re-running the suite always exercises the change instead of a stale build.
 
-`vitest.config.ts` is the one line `@jterrazz/test` derives from `studio.config.ts`: its `cli` project collects `specs/cli/`, and every `*.spec.yaml` there becomes a one-test module driving that runner. The runner also gives every run a `HOME` of its own (the spec's working directory), so `workstation` never reads the developer's `~/.studio/` registry.
+`vitest.config.ts` is the one line `@jterrazz/test` derives from `studio.config.ts`: its `cli` project collects `specs/cli/`, and every `*.spec.yaml` there becomes a one-test module driving that runner. The runner's defaults are [the sandbox](#the-sandbox).
 
 ## A scenario is a document
 
 Almost every spec here is a terminal session (a command, its exit code, what it printed), so it is written as one: a `<case>.spec.yaml` in the command's folder, in the literate format of `@jterrazz/test`. The file IS the test; `description:` is its title in the runner, and each entry of `runs:` states the command, its `exit:` and its `stdout:`/`stderr:` byte-exact.
 
 ```yaml
-# specs/cli/status/help-surface.spec.yaml
-description: documents the status command under --help
+# specs/cli/root/unknown-command.spec.yaml
+description: an unknown command is one error block on stderr, without colour, and exits 2
 runs:
-    - command: status --help
-      exit: 0
-      stdout: |
-          Show comprehensive system status
-
-          Usage:
-            workstation status [flags]
+    - command: nope
+      exit: 2
+      stderr: |
+          Error: unknown command "nope" for "station"
+          Hint: run station --help
 ```
 
-A document may stand on ground of its own: `fixture: ./__fixtures__/server-registry/` spreads `specs/cli/machine/__fixtures__/server-registry/` into the working directory, which is the run's `HOME`, so the binary reads the registry inside it. That is how the server-role rows are exercised deterministically on a client laptop. Ground sits in a special folder spelt with double underscores; a subject folder never starts with one.
+A document may stand on ground of its own: `fixture: ./__fixtures__/<case>/` spreads that folder into the working directory, which is the run's `HOME`, so a stub tool under its `bin/` answers the binary. Ground sits in a special folder spelt with double underscores; a subject folder never starts with one. Where a stream is long and only some of it is the claim, the command writes it to a file (`help > help.txt`) and `files:` asserts what it `contains`.
 
 `TEST_UPDATE=1 npm test` rewrites the `exit:` and the streams of every document from what the binary actually printed: deliberately, after a change to a command's output, and never as a way to make a red suite go green. Nothing else in the file is touched.
 
-## What the host decides
+## The sandbox
 
-Some of what `workstation` prints comes from the HOST, not from the binary: the `✓`/`✗` install-state column of the catalog, and the machine-status verdicts (FileVault, sshd, running services, OrbStack). A document still states the whole stream; the cell the host decides is the token `{{string}}` (`{{string}} FileVault {{string}}`), so each row's label and its place are asserted and the machine's answer is not. What the binary decides on its own stays literal: the catalog's families and methods, the config paths under `{{workdir}}`, the rows a server role adds.
-
-`TEST_UPDATE=1` keeps a token wherever it still matches, but writes a NEW row with the host's literal glyph: after adding a tool, replace its `✓` or `✗` with `{{string}}` before committing, or the document holds this machine's answer.
+No spec reaches the real machine. The runner sets `HOME` to the run's working directory, `PATH` to its `bin/` alone (the fixture's stubs), and `STATION_SYSTEM_DIRS` to nothing, so a system tool no fixture stubs is "not found" alike on a Mac and on the Linux CI runner. It also pins `NO_COLOR=1`, `COLUMNS=80`, `TZ=UTC` and `STATION_MACHINE_KIND=host`, so every stream is the pipe form and a document means the same thing on every host.
 
 The full grammar is `@jterrazz/test`'s [Spec documents](https://github.com/jterrazz/package-test/blob/main/docs/guides/spec-documents.md) and [CLI specs](https://github.com/jterrazz/package-test/blob/main/docs/guides/cli-specs.md).
 

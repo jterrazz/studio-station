@@ -1,0 +1,7 @@
+description: an unknown command is one error block on stderr, without colour, and exits 2
+runs:
+    - command: nope
+      exit: 2
+      stderr: |
+          Error: unknown command "nope" for "station"
+          Hint: run station --help

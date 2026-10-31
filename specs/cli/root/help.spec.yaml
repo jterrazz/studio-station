@@ -1,0 +1,30 @@
+description: help lists the visible commands in their groups, and none of the hidden or deleted ones
+runs:
+    - command: help > help.txt
+      exit: 0
+      files:
+          help.txt:
+              contains:
+                  - '  HERE'
+                  - '  THE FLEET'
+                  - '  SHORTCUTS'
+                  - '  THE BINARY'
+                  - '    status '
+                  - '    tools '
+                  - '    config '
+                  - '    clean '
+                  - '    machines '
+                  - '    images '
+                  - '    secrets '
+                  - '    tailnet '
+                  - '    run '
+                  - '    setup '
+                  - '    help '
+    - command: --help | /usr/bin/grep -cE '^    (skills|shell|completion|man|install|upgrade|remote|machine|vms|hosts|supervise)( |$)'
+      exit: 1
+      stdout: |
+          0
+    - command: --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+      exit: 1
+      stdout: |
+          0
