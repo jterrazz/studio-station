@@ -8,7 +8,7 @@ runs:
       stdout: |
           ●	bat
           ●	ghostty
-          ○	ghostty-dotfiles	not applied: station config install ghostty-dotfiles
+          ●	ghostty-dotfiles	~/.config/ghostty/config and 2 more
       files:
           .calls:
               contains:

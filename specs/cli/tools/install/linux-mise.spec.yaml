@@ -7,7 +7,7 @@ runs:
       exit: 0
       stdout: |
           ●	gh
-          ○	github-login	not applied: station config install github-login
+          ○	github-login	needs a terminal: station config install github-login
       files:
           .calls:
               contains:
