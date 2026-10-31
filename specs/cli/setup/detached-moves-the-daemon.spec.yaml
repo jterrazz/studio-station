@@ -1,0 +1,28 @@
+description: 'the background re-exec stops the old tailscaled, moves its identity to the XDG folders and starts it there'
+fixture:
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/v1-studio/
+    - ./__fixtures__/daemon/
+env:
+    - USER=tester
+    - STATION_XDG_DETACHED=1
+runs:
+    - command: '--version >/dev/null; /bin/sleep 20 >/dev/null 2>&1 & echo $! > .studio/tailscale/tailscaled.pid; echo $! > .old-daemon.pid'
+      exit: 0
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	name	base
+          ●	zshrc
+          ●	layout	moved to the XDG folders
+      files:
+          .local/state/station/tailscaled/tailscaled.state:
+              equals: |
+                  NODE-IDENTITY-1f2e3d
+          .studio: absent
+    - command: '--version >/dev/null; /bin/kill -0 "$(/bin/cat .old-daemon.pid)" 2>/dev/null'
+      exit: 1
+    - command: '--version >/dev/null; /usr/bin/grep -c "^tailscaled --tun=userspace-networking --state=$HOME/.local/state/station/tailscaled/tailscaled.state " .calls'
+      exit: 0
+      stdout: |
+          1
