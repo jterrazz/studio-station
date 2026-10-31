@@ -1,0 +1,12 @@
+description: 'without tart the create is refused before anything, and names the tool to install'
+fixture: ../../__fixtures__/vms/
+runs:
+    - command: '--version > /dev/null; /bin/rm bin/tart'
+      exit: 0
+    - command: 'machines create --lifetime temporary'
+      exit: 2
+      stderr: |
+          Error: tart is not installed or does not answer
+          Hint: station tools install tart
+      files:
+          .calls: absent

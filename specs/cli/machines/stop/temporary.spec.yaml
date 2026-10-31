@@ -1,0 +1,19 @@
+description: 'stop never destroys: a temporary VM is refused before any question, and stop takes no --yes'
+fixture:
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/vm-t/
+runs:
+    - command: 'machines stop t'
+      exit: 2
+      stderr: |
+          Error: t is temporary: stopping it would delete it
+          Hint: station machines delete t
+      files:
+          .calls: absent
+    - command: 'machines stop t --yes'
+      exit: 2
+      stderr: |
+          Error: unknown flag: --yes
+          Hint: run station machines stop --help
+      files:
+          .calls: absent

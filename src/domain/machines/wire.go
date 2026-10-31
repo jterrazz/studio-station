@@ -52,7 +52,7 @@ func ToWire(f Fleet) WireFleet {
 	for _, h := range f.Hosts {
 		w := WireHost{
 			Name: h.Name, Here: h.Here, Reachable: h.Reachable, StationVersion: h.StationVersion, User: h.User,
-			Node: WireNode(h.Node), VMs: make([]WireVM, 0, len(h.VMs)),
+			Node: toWire(h.Node), VMs: make([]WireVM, 0, len(h.VMs)),
 		}
 		for _, vm := range h.VMs {
 			lent := vm.Lent
@@ -63,7 +63,7 @@ func ToWire(f Fleet) WireFleet {
 				Name: vm.Name, Kind: string(vm.Kind), Image: vm.Image, Version: vm.Version,
 				Lifetime: string(vm.Lifetime), State: string(vm.State), CPUs: vm.Resources.CPUs,
 				MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes,
-				CreatedAt: vm.CreatedAt, Node: WireNode(vm.Node), Lent: lent,
+				CreatedAt: vm.CreatedAt, Node: toWire(vm.Node), Lent: lent,
 			})
 		}
 		out.Hosts = append(out.Hosts, w)
@@ -72,14 +72,18 @@ func ToWire(f Fleet) WireFleet {
 }
 
 func (w WireHost) view(name, user string) HostView {
-	view := HostView{Name: name, User: user, StationVersion: w.StationVersion, Reachable: true, Node: Node(w.Node)}
+	view := HostView{Name: name, User: user, StationVersion: w.StationVersion, Reachable: true, Node: w.Node.node()}
 	for _, vm := range w.VMs {
 		view.VMs = append(view.VMs, VM{
 			Name: vm.Name, Image: vm.Image, Version: vm.Version, Host: name, Kind: catalog.MachineKind(vm.Kind),
 			Lifetime: Lifetime(vm.Lifetime), State: VMState(vm.State),
 			Resources: system.Resources{CPUs: vm.CPUs, MemoryBytes: vm.MemoryBytes, DiskBytes: vm.DiskBytes},
-			Node:      Node(vm.Node), Lent: vm.Lent, CreatedAt: vm.CreatedAt,
+			Node:      vm.Node.node(), Lent: vm.Lent, CreatedAt: vm.CreatedAt,
 		})
 	}
 	return view
 }
+
+func toWire(n Node) WireNode { return WireNode{Online: n.Online, IP: n.IP} }
+
+func (w WireNode) node() Node { return Node{Online: w.Online, IP: w.IP} }

@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	vmTag         = "tag:station-vm"
+	VMTag         = "tag:station-vm"
 	defaultTTL    = 10 * time.Minute
 	oauthEndpoint = "/api/v2/oauth/token"
 	keysPath      = "/api/v2/tailnet/-/keys"
@@ -66,7 +66,7 @@ func (s *Service) Mint(ctx context.Context, r MintRequest) (AuthKey, error) {
 	}
 	tags := r.Tags
 	if len(tags) == 0 {
-		tags = []string{vmTag}
+		tags = []string{VMTag}
 	}
 	expiry := r.Expiry
 	if expiry == 0 {

@@ -1,0 +1,19 @@
+description: "run by the VM's own agent, delete never stops it and boots the agent out last"
+fixture:
+    - ../../__fixtures__/vms/
+    - ../__fixtures__/vm-api/
+env: STATION_VM_AGENT=api
+serve: tailscale
+runs:
+    - command: 'machines delete api --yes'
+      exit: 0
+      stdout: |
+          ●	api	deleted
+      files:
+          .api: { contains: 'DELETE /api/v2/device/n-api' }
+          .local/state/station/vms/api.json: absent
+    - command: '--version > /dev/null; /usr/bin/tail -n 1 .calls; /usr/bin/grep -c "^tart stop" .calls'
+      exit: 1
+      stdout: |
+          launchctl bootout gui/{{int}}/com.jterrazz.station.vm.api
+          0

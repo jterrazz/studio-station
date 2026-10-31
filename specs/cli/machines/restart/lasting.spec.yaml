@@ -1,0 +1,18 @@
+description: 'a lasting VM restarts by its own poweroff then a kick of its agent, which stays loaded'
+fixture:
+    - ../../__fixtures__/vms/
+    - ../__fixtures__/vm-api/
+runs:
+    - command: 'machines restart api --yes'
+      exit: 0
+      stdout: |
+          ●	api	restarted
+      files:
+          .calls:
+              contains:
+                  - 'vmu@192.168.64.5 sudo systemctl --no-block poweroff'
+                  - 'launchctl kickstart gui/{{int}}/com.jterrazz.station.vm.api'
+    - command: '--version > /dev/null; /usr/bin/awk ''/systemctl --no-block poweroff$/{p=NR} /^launchctl kickstart/{k=NR} /^launchctl bootout/{b=NR} END{print (p<k && !b) ? "poweroff, then kickstart" : "wrong"}'' .calls'
+      exit: 0
+      stdout: |
+          poweroff, then kickstart

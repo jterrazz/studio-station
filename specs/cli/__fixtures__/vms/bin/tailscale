@@ -1,0 +1,20 @@
+#!/bin/sh
+# tailscale as the VM specs need it: `status --json` answers answers/tailscale/status.json
+# with every VM whose first boot ran (listed in $HOME/.joined) as an online peer tagged
+# tag:station-vm; the status file holds at least one peer.
+printf 'tailscale %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    *"status --json")
+        peers=''
+        if [ -f "$HOME/.joined" ]; then
+            while read -r name; do
+                peers="$peers\"j-$name\":{\"ID\":\"n-$name\",\"HostName\":\"$name\",\"TailscaleIPs\":[\"100.64.0.42\"],\"Online\":true,\"Tags\":[\"tag:station-vm\"]},"
+            done < "$HOME/.joined"
+        fi
+        /usr/bin/sed "s/\"Peer\":{/\"Peer\":{$peers/" "${0%/*}/../answers/tailscale/status.json"
+        ;;
+    *)
+        echo "stub tailscale: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

@@ -1,0 +1,41 @@
+description: "a lasting VM's agent loads at login and restarts after a crash, from a one-use key"
+fixture: ../../__fixtures__/vms/
+serve: tailscale
+runs:
+    - command: 'machines create --lifetime lasting --name api'
+      exit: 0
+      stdout: |
+          ●	api	x	lasting	linux 2026.11.07	4 cpus · 8 GB
+      files:
+          Library/LaunchAgents/com.jterrazz.station.vm.api.plist:
+              contains:
+                  - |-
+                    		<string>machines</string>
+                    		<string>supervise</string>
+                    		<string>api</string>
+                  - |-
+                    	<key>RunAtLoad</key>
+                    	<true/>
+                    	<key>KeepAlive</key>
+                    	<dict>
+                    		<key>SuccessfulExit</key>
+                    		<false/>
+                    	</dict>
+          .local/state/station/vms/api.json: { contains: '"lifetime": "lasting"' }
+    - command: '--version > /dev/null; /usr/bin/grep -c "poweroff deletes it" .firstboot.stdin'
+      exit: 0
+      stdout: |
+          1
+    - command: '--version > /dev/null; /usr/bin/sed -n ''/^POST \/api\/v2\/tailnet\/-\/keys$/{n;p;}'' .api | /usr/bin/jq -c ''[.capabilities.devices.create | .reusable, .ephemeral, .preauthorized, .tags], .expirySeconds'''
+      exit: 0
+      stdout: |
+          [false,false,true,["tag:station-vm"]]
+          600
+    - command: '--version > /dev/null; /usr/bin/grep -c ''client_id=stub-id&client_secret=stub-secret'' .api'
+      exit: 0
+      stdout: |
+          1
+    - command: '--version > /dev/null; /usr/bin/grep -rl t[s]key .calls .local .config Library || echo "no key on disk"'
+      exit: 0
+      stdout: |
+          no key on disk

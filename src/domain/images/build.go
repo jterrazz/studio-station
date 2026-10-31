@@ -253,8 +253,10 @@ func (s *Service) waitStopped(ctx context.Context, vm string) error {
 	return fmt.Errorf("still running after %d s", int(stopWait/time.Second))
 }
 
+func (s *Service) KeyPath() string { return path.Join(s.o.Paths.State, "images", "key") }
+
 func (s *Service) imageKey(ctx context.Context) (key, pub string, err error) {
-	key = path.Join(s.o.Paths.State, "images", "key")
+	key = s.KeyPath()
 	if _, statErr := s.h.FS.Stat(key); statErr != nil {
 		if mkErr := s.h.FS.MkdirAll(path.Dir(key), 0o700); mkErr != nil {
 			return "", "", mkErr

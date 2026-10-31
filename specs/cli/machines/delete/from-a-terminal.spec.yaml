@@ -1,0 +1,26 @@
+description: "delete removes the node through the API, the agent before the disk, and every file"
+fixture:
+    - ../../__fixtures__/vms/
+    - ../__fixtures__/vm-api/
+serve: tailscale
+runs:
+    - command: 'machines delete api --yes'
+      exit: 0
+      stdout: |
+          ●	api	deleted
+      files:
+          .api: { contains: 'DELETE /api/v2/device/n-api' }
+          .local/state/station/vms/api.json: absent
+          Library/LaunchAgents/com.jterrazz.station.vm.api.plist: absent
+          .local/state/station/logs/api.log: absent
+          .local/state/station/consoles/api: absent
+          .local/state/station/known_hosts/api: absent
+          .tart-vms/api: absent
+          .ssh/config:
+              equals: |
+                  Host github.com
+                    User git
+    - command: '--version > /dev/null; /usr/bin/awk ''/^launchctl bootout/{b=NR} /^tart stop /{s=NR} /^tart delete api/{d=NR} END{print (b && b<s && s<d) ? "bootout, stop, delete" : "wrong"}'' .calls'
+      exit: 0
+      stdout: |
+          bootout, stop, delete

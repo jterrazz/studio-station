@@ -1,0 +1,12 @@
+#!/bin/sh
+# launchctl as the VM specs need it: every call is recorded in $HOME/.calls; `print`
+# says the agent is loaded only when answers/launchctl/loaded exists.
+printf 'launchctl %s\n' "$*" >> "$HOME/.calls"
+case "$1" in
+    print) [ -f "${0%/*}/../answers/launchctl/loaded" ] || exit 113 ;;
+    bootstrap | bootout | kickstart | enable | disable) ;;
+    *)
+        echo "stub launchctl: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

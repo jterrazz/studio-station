@@ -16,12 +16,15 @@ type Deps struct {
 	Context  string
 }
 
-type Input struct{ Name string }
+type Input struct {
+	Name string
+	VM   bool
+}
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "restart <machine>",
-		Short:   "Restart a host with a FileVault-aware reboot, and wait for it to come back",
+		Short:   "Restart a host with a FileVault-aware reboot, or a lasting VM with a poweroff and a start",
 		Example: "  station machines restart mac-mini --yes",
 		Args:    cobra.ExactArgs(1),
 		Bind: func(in *Input, args []string) error {
@@ -36,17 +39,23 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			switch {
-			case m.Kind == catalog.Host:
+			if m.Kind == catalog.Host {
 				return nil
-			case m.Lifetime == machines.Temporary:
+			}
+			in.VM = true
+			if m.Lifetime == machines.Temporary {
 				return &machines.TemporaryRestartError{Name: in.Name}
 			}
-			return kit.NotBuilt()
+			return nil
 		},
 		Destructive: func(*Input) bool { return true },
-		Confirm:     func(in *Input) string { return "Restart " + in.Name + " (sudo fdesetup authrestart)?" },
-		Complete:    func([]string, string) []string { return d.Machines.Names() },
+		Confirm: func(in *Input) string {
+			if in.VM {
+				return "Restart " + in.Name + " (poweroff, then start)?"
+			}
+			return "Restart " + in.Name + " (sudo fdesetup authrestart)?"
+		},
+		Complete: func([]string, string) []string { return d.Machines.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			if _, err := d.Machines.Restart(ctx, in.Name, nil); err != nil {
 				return err

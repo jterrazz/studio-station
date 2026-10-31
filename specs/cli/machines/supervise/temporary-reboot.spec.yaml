@@ -1,0 +1,21 @@
+description: "a guest reboot never deletes: the VM runs again on an emptied console until its poweroff"
+fixture:
+    - ../../__fixtures__/vms/
+    - ./__fixtures__/vm-linux-1/
+    - ./__fixtures__/runs-reboot/
+env: STATION_VM_AGENT=linux-1
+serve: tailscale
+runs:
+    - command: 'machines supervise linux-1'
+      exit: 0
+      files:
+          .consoles:
+              equals: |
+                  console before run 1: 0
+                  console before run 2: 0
+          .local/state/station/vms/linux-1.json: absent
+    - command: '--version > /dev/null; /usr/bin/grep -c "^tart run --no-graphics --no-audio --serial-path .*/.local/state/station/consoles/linux-1 linux-1$" .calls; /usr/bin/awk ''/^tart run/{r=NR} /^tart delete/{d=NR} END{print (r<d) ? "deleted after the second run" : "wrong"}'' .calls'
+      exit: 0
+      stdout: |
+          2
+          deleted after the second run

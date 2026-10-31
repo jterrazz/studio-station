@@ -1,0 +1,17 @@
+description: 'a name is lowercase letters, digits and "-", and one an online peer holds is refused'
+fixture:
+    - ../../__fixtures__/vms/
+    - ./__fixtures__/online-peer/
+runs:
+    - command: 'machines create --lifetime temporary --name Bad_Name'
+      exit: 2
+      stderr: |
+          Error: "Bad_Name" is not a valid name
+          Hint: use lowercase letters, digits and "-", 1 to 40 characters
+      files:
+          .calls: absent
+    - command: 'machines create --lifetime temporary --name linux-1'
+      exit: 2
+      stderr: |
+          Error: "linux-1" already names a VM
+          Hint: pick another name

@@ -1,0 +1,10 @@
+description: 'a VM record on another host holds its name, even with its node offline'
+fixture:
+    - ../../__fixtures__/vms/
+    - ./__fixtures__/other-host/
+serve: tailscale
+runs:
+    - command: 'machines create --lifetime temporary | /usr/bin/cut -f2'
+      exit: 0
+      stdout: |
+          linux-2

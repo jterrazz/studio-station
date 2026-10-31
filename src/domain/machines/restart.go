@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -29,16 +30,19 @@ func (s *Service) Restart(ctx context.Context, name string, progress func(Restar
 	if err := s.CheckHost(); err != nil {
 		return RestartReport{}, err
 	}
-	m, err := s.RemoteHost(name, "restart")
+	m, err := s.Remote(name)
 	if err != nil {
 		return RestartReport{}, err
 	}
-	started := s.h.Clock.Now()
 	say := func(phase, detail string) {
 		if progress != nil {
 			progress(RestartEvent{Phase: phase, Detail: detail})
 		}
 	}
+	if m.Kind != catalog.Host {
+		return s.restartVM(ctx, name, say)
+	}
+	started := s.h.Clock.Now()
 
 	say("restarting", "sudo fdesetup authrestart -delayminutes 0")
 	out, err := s.h.Run.Output(ctx, system.Cmd{

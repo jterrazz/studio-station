@@ -6,14 +6,39 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
+	"github.com/jterrazz/studio-station/src/domain/machines"
+	presentmachines "github.com/jterrazz/studio-station/src/present/machines"
 )
 
-func Command(env kit.Env) *cobra.Command {
-	cmd := kit.Command(kit.Leaf[struct{}]{
-		Use:   "stop <vm>",
-		Short: "Stop a lasting VM; it stays stopped",
-		Args:  cobra.ExactArgs(1),
-		Run:   func(context.Context, *struct{}, kit.IO) error { return kit.NotBuilt() },
+type Deps struct {
+	Machines *machines.Service
+	Context  string
+}
+
+type Input struct{ Name string }
+
+func Command(d Deps, env kit.Env) *cobra.Command {
+	// invariant: stop never destroys, so it asks nothing and has no --yes; a
+	// temporary VM is refused, since its stop would be its end.
+	return kit.Command(kit.Leaf[Input]{
+		Use:     "stop <vm>",
+		Short:   "Power a lasting VM off; it stays off until started",
+		Example: "  station machines stop api",
+		Args:    cobra.ExactArgs(1),
+		Bind: func(in *Input, args []string) error {
+			in.Name = args[0]
+			return nil
+		},
+		Validate: func(_ context.Context, in *Input) error { return d.Machines.CheckStop(in.Name) },
+		Complete: func([]string, string) []string { return d.Machines.Names() },
+		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			stop := io.Wait("powering " + in.Name + " off")
+			err := d.Machines.Stop(ctx, in.Name)
+			stop()
+			if err != nil {
+				return err
+			}
+			return io.Answer(presentmachines.Change("stop", in.Name, "stopped", d.Context))
+		},
 	}, env)
-	return cmd
 }

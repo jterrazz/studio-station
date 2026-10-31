@@ -1,0 +1,54 @@
+#!/bin/sh
+# ssh as the VM specs need it: every call's argv is recorded in $HOME/.calls; a host
+# answers the fleet fan-out from answers/ssh/fleet-<host>.json (else 255). Over the
+# NAT (an argv holding `-i`): the first boot keeps its stdin in $HOME/.firstboot.stdin,
+# joins the VM named by its hostnamectl line ($HOME/.joined) and prints its node id
+# (answers/ssh/firstboot.exit fails it); a poweroff stops every running VM and exits
+# 255; a tailscale logout exits as answers/ssh/logout.exit says (default 0). `<name>
+# true` checks the host key in known_hosts/<name> against answers/ssh/hostkey, as
+# StrictHostKeyChecking=accept-new does. Anything else exits 97.
+answers="${0%/*}/../answers/ssh"
+printf 'ssh %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    *"machines --here --json"*)
+        prev=''
+        for arg; do
+            if [ "$arg" = -- ]; then target=$prev; break; fi
+            prev=$arg
+        done
+        if [ -f "$answers/fleet-$target.json" ]; then /bin/cat "$answers/fleet-$target.json"; exit 0; fi
+        exit 255
+        ;;
+    *" -i "*"sudo bash -s")
+        /bin/cat > "$HOME/.firstboot.stdin"
+        if [ -f "$answers/firstboot.exit" ]; then exit "$(/bin/cat "$answers/firstboot.exit")"; fi
+        name=$(/usr/bin/sed -n "s/^hostnamectl set-hostname '\(.*\)'$/\1/p" "$HOME/.firstboot.stdin")
+        echo "$name" >> "$HOME/.joined"
+        echo "Success."
+        echo "n-$name"
+        ;;
+    *" -i "*"sudo systemctl --no-block poweroff")
+        for vm in "$HOME"/.tart-vms/*; do
+            [ "$(/bin/cat "$vm")" = running ] && echo stopped > "$vm"
+        done
+        exit 255
+        ;;
+    *" -i "*"sudo tailscale logout")
+        if [ -f "$answers/logout.exit" ]; then exit "$(/bin/cat "$answers/logout.exit")"; fi
+        ;;
+    *" true")
+        eval "name=\${$(($# - 1))}"
+        known="$HOME/.local/state/station/known_hosts/$name"
+        key=$(/bin/cat "$answers/hostkey")
+        if [ -f "$known" ] && ! /usr/bin/grep -qF "$key" "$known"; then
+            echo "@@@@ WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED! @@@@" >&2
+            exit 255
+        fi
+        /bin/mkdir -p "${known%/*}"
+        echo "$name $key" >> "$known"
+        ;;
+    *)
+        echo "stub ssh: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

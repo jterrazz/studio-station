@@ -1,0 +1,20 @@
+description: "a lasting VM stops unasked by its own poweroff, its agent disabled, record and node kept"
+fixture:
+    - ../../__fixtures__/vms/
+    - ../__fixtures__/vm-api/
+runs:
+    - command: 'machines stop api </dev/null'
+      exit: 0
+      stdout: |
+          ●	api	stopped
+      files:
+          .calls:
+              contains: |-
+                  ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o BatchMode=yes -o IdentitiesOnly=yes -i {{workdir}}/.local/state/station/images/key vmu@192.168.64.5 sudo systemctl --no-block poweroff
+                  tart list --source local --format json
+                  launchctl disable gui/{{int}}/com.jterrazz.station.vm.api
+          .local/state/station/vms/api.json: { contains: '"node_id": "n-api"' }
+    - command: '--version > /dev/null; /usr/bin/grep -c -e "^tart stop" -e "^launchctl bootout" .calls'
+      exit: 1
+      stdout: |
+          0

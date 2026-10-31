@@ -1,0 +1,10 @@
+description: 'a VM may take at most three quarters of the host memory'
+fixture: ../../__fixtures__/vms/
+runs:
+    - command: 'machines create --lifetime temporary --memory 999G'
+      exit: 2
+      stderr: |
+          Error: 999 GB of memory is over this host's limit of 12 GB
+          Hint: ask for less: --memory 8G
+      files:
+          .local/state/station/vms: absent

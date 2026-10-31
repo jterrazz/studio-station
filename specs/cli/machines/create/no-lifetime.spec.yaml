@@ -1,0 +1,17 @@
+description: 'off a terminal the lifetime is never defaulted, and only the two lifetimes exist'
+fixture: ../../__fixtures__/vms/
+runs:
+    - command: 'machines create </dev/null'
+      exit: 2
+      stderr: |
+          Error: a VM needs a lifetime
+          Hint: station machines create --lifetime temporary
+      files:
+          .calls: absent
+    - command: 'machines create --lifetime forever'
+      exit: 2
+      stderr: |
+          Error: unknown lifetime "forever": temporary or lasting
+          Hint: station machines create --lifetime temporary
+      files:
+          .calls: absent

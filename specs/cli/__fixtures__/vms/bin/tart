@@ -1,0 +1,52 @@
+#!/bin/sh
+# Tart as the VM specs need it: every call is recorded in $HOME/.calls, and the VMs are
+# the files of $HOME/.tart-vms (each holding its state); `run` follows the script
+# answers/tart/run.<n> for its n-th call: a line `intent` writes the guest's poweroff
+# intent into the --serial-path file, a line `exit <code>` is its exit (default 0).
+vms="$HOME/.tart-vms"
+answers="${0%/*}/../answers/tart"
+printf 'tart %s\n' "$*" >> "$HOME/.calls"
+case "$1" in
+    --version) echo "2.41.1" ;;
+    list)
+        printf '['
+        sep=''
+        for vm in "$vms"/*; do
+            [ -f "$vm" ] || continue
+            state=$(/bin/cat "$vm")
+            printf '%s{"Source":"local","Name":"%s","Disk":20,"Size":20,"State":"%s","Running":%s}' "$sep" "${vm##*/}" "$state" "$([ "$state" = running ] && echo true || echo false)"
+            sep=','
+        done
+        printf ']\n'
+        ;;
+    clone) echo stopped > "$vms/$3" ;;
+    set) ;;
+    ip) echo "192.168.64.5" ;;
+    stop) echo stopped > "$vms/$2" ;;
+    delete) /bin/rm -f "$vms/$2" ;;
+    run)
+        n=$(/bin/cat "$HOME/.tart-runs" 2> /dev/null || echo 0)
+        n=$((n + 1))
+        echo "$n" > "$HOME/.tart-runs"
+        prev=''
+        for arg in "$@"; do
+            [ "$prev" = --serial-path ] && console=$arg
+            prev=$arg
+        done
+        printf 'console before run %s: %s\n' "$n" "$(/usr/bin/wc -c < "$console" | /usr/bin/tr -d ' ')" >> "$HOME/.consoles"
+        code=0
+        if [ -f "$answers/run.$n" ]; then
+            while read -r word value; do
+                case "$word" in
+                    intent) echo "station-intent=poweroff" >> "$console" ;;
+                    exit) code=$value ;;
+                esac
+            done < "$answers/run.$n"
+        fi
+        exit "$code"
+        ;;
+    *)
+        echo "stub tart: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

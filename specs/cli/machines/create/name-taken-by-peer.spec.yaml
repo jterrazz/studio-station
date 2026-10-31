@@ -1,0 +1,10 @@
+description: 'an online peer holds its name fleet-wide, so the next generic name is taken'
+fixture:
+    - ../../__fixtures__/vms/
+    - ./__fixtures__/online-peer/
+serve: tailscale
+runs:
+    - command: 'machines create --lifetime temporary | /usr/bin/cut -f2'
+      exit: 0
+      stdout: |
+          linux-2

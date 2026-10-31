@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"slices"
 
 	"github.com/spf13/cobra"
 
@@ -48,7 +49,12 @@ func (t fleetTailnet) Peers(ctx context.Context) (map[string]machines.Node, erro
 	}
 	nodes := make(map[string]machines.Node, len(roster))
 	for _, p := range roster {
-		nodes[p.Name] = machines.Node{Online: p.Online, IP: p.IP}
+		// invariant: a name two nodes share (a VM made again under a leftover's
+		// name) is the online one's.
+		if held, ok := nodes[p.Name]; ok && held.Online {
+			continue
+		}
+		nodes[p.Name] = machines.Node{Online: p.Online, IP: p.IP, StationVM: slices.Contains(p.Tags, tailnet.VMTag)}
 	}
 	return nodes, nil
 }

@@ -1,0 +1,12 @@
+description: 'a temporary VM is never started again: it runs once, and a stopped one is stale'
+fixture:
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/vm-t/
+runs:
+    - command: 'machines start t'
+      exit: 2
+      stderr: |
+          Error: t is temporary: it runs once, and a stopped one is stale
+          Hint: station machines create --lifetime temporary
+      files:
+          .calls: absent

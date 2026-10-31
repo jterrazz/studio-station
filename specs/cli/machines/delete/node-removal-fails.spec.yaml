@@ -1,0 +1,19 @@
+description: "a node neither the API nor a NAT logout removes is one warning naming the admin console"
+fixture:
+    - ../../__fixtures__/vms/
+    - ../__fixtures__/vm-api/
+    - ./__fixtures__/removal-fails/
+serve: tailscale
+runs:
+    - command: 'machines delete api --yes'
+      exit: 0
+      stdout: |
+          ●	api	deleted
+          ◐	api	the node of api is still on the tailnet: remove it at https://login.tailscale.com/admin/machines
+      files:
+          .calls: { contains: 'vmu@192.168.64.5 sudo tailscale logout' }
+          .local/state/station/vms/api.json: absent
+    - command: '--version > /dev/null; /usr/bin/grep -c "ssh api" .calls'
+      exit: 1
+      stdout: |
+          0

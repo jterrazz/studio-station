@@ -1,0 +1,24 @@
+description: "a name made again after a delete meets no changed host key"
+fixture:
+    - ../../__fixtures__/vms/
+    - ../__fixtures__/vm-api/
+serve: tailscale
+runs:
+    - command: '--version > /dev/null; ssh api true'
+      exit: 255
+      stderr: |
+          @@@@ WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED! @@@@
+    - command: 'machines delete api --yes'
+      exit: 0
+      stdout: |
+          ●	api	deleted
+      files:
+          .local/state/station/known_hosts/api: absent
+    - command: 'machines create --lifetime lasting --name api | /usr/bin/cut -f2'
+      exit: 0
+      stdout: |
+          api
+    - command: '--version > /dev/null; ssh api true'
+      exit: 0
+      files:
+          .local/state/station/known_hosts/api: { contains: 'api ssh-ed25519 AAAAnew' }

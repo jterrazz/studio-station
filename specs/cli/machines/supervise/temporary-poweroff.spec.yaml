@@ -1,0 +1,19 @@
+description: "a declared poweroff ends a temporary VM: node, disk, files, and its agent last"
+fixture:
+    - ../../__fixtures__/vms/
+    - ./__fixtures__/vm-linux-1/
+    - ./__fixtures__/runs-poweroff/
+env: STATION_VM_AGENT=linux-1
+serve: tailscale
+runs:
+    - command: 'machines supervise linux-1'
+      exit: 0
+      files:
+          .calls: { contains: 'tart run --no-graphics --no-audio --serial-path {{workdir}}/.local/state/station/consoles/linux-1 linux-1' }
+          .api: { contains: 'DELETE /api/v2/device/n-linux-1' }
+          .local/state/station/vms/linux-1.json: absent
+    - command: '--version > /dev/null; /usr/bin/grep -c "^tart delete linux-1$" .calls; /usr/bin/tail -n 1 .calls'
+      exit: 0
+      stdout: |
+          1
+          launchctl bootout gui/{{int}}/com.jterrazz.station.vm.linux-1

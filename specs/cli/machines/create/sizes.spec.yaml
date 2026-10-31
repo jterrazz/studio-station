@@ -1,0 +1,25 @@
+description: "memory counts binary, disk decimal, a bare number is GB, an unknown unit is refused"
+fixture: ../../__fixtures__/vms/
+serve: tailscale
+runs:
+    - command: 'machines create --lifetime temporary --memory 12G --disk 80G --cpus 2'
+      exit: 0
+      stdout: |
+          ●	linux-1	x	temporary	linux 2026.11.07	2 cpus · 12 GB
+      files:
+          .calls: { contains: 'tart set linux-1 --cpu 2 --memory 12288 --disk-size 80' }
+    - command: 'machines create --lifetime temporary --memory 12 --name bare'
+      exit: 0
+      stdout: |
+          ●	bare	x	temporary	linux 2026.11.07	4 cpus · 12 GB
+      files:
+          .calls: { contains: 'tart set bare --cpu 4 --memory 12288 --disk-size 50' }
+    - command: 'machines create --lifetime temporary --memory 512M --name half'
+      exit: 0
+      stdout: |
+          ●	half	x	temporary	linux 2026.11.07	4 cpus · 0.5 GB
+    - command: 'machines create --lifetime temporary --memory 12X'
+      exit: 2
+      stderr: |
+          Error: --memory "12X" is not a size
+          Hint: write a size with its unit: 512M, 8G, 1T

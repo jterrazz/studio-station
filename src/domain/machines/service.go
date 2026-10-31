@@ -14,17 +14,20 @@ import (
 type Ports struct{ OpenClaw, Hermes int }
 
 type Options struct {
-	Ports   Ports
-	Here    catalog.MachineKind
-	Paths   settings.Paths
-	User    string
-	Version string
-	Remote  func(target string, words []string) []string
+	Ports    Ports
+	Here     catalog.MachineKind
+	Paths    settings.Paths
+	User     string
+	Version  string
+	Remote   func(target string, words []string) []string
+	Agent    string
+	AgentEnv map[string]string
 }
 
 type Node struct {
-	Online bool
-	IP     string
+	Online    bool
+	IP        string
+	StationVM bool
 }
 
 type Tailnet interface {
@@ -37,6 +40,7 @@ type Tailnet interface {
 
 type Images interface {
 	Latest(ctx context.Context, image string) (tartName, version string, err error)
+	KeyPath() string
 }
 
 type Service struct {

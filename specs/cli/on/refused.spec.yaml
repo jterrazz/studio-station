@@ -11,6 +11,11 @@ runs:
       stderr: |
           Error: --on does not apply to "completion zsh"
           Hint: run it on x itself: ssh x
+    - command: 'machines supervise v --on x'
+      exit: 2
+      stderr: |
+          Error: --on does not apply to "machines supervise"
+          Hint: run it on x itself: ssh x
     - command: 'help --on x'
       exit: 2
       stderr: |
