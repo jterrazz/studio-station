@@ -1,4 +1,4 @@
-description: 'the old workstation block is replaced by the station block, foreign lines byte for byte'
+description: 'the old block is replaced by the station block, foreign lines byte for byte'
 fixture:
     - ./__fixtures__/legacy-zshrc/
 runs:
