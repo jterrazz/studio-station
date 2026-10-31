@@ -38,23 +38,12 @@ export FZF_DEFAULT_OPTS="\
 
 export BAT_THEME="Catppuccin Macchiato"
 
-export PATH="$HOME/.studio/bin:$PATH"
-
 export PATH="$HOME/.bun/bin:$PATH"
 
 export PATH="$HOME/go/bin:$PATH"
 
-# invariant: each nvm source is guarded, so a machine without nvm sources nothing.
-export NVM_DIR="$HOME/.nvm"
-[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
-[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
-
 if [[ -o interactive && "$PWD" == "$HOME" && -d "$HOME/Developer" ]]; then
     cd "$HOME/Developer"
-fi
-
-if command -v workstation &> /dev/null; then
-    eval "$(workstation completion zsh)"
 fi
 
 jj() {

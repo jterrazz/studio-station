@@ -16,8 +16,6 @@ export default defineConfig({
             },
         },
         roots: {
-            dotfiles:
-                'the application configs `station config` installs onto a machine, versioned with the CLI that writes them',
             scripts: 'the curl-piped installer a fresh machine runs before `station` exists on it',
         },
     },
