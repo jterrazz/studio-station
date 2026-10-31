@@ -134,9 +134,9 @@ func (r ttyRenderer) document(d present.Document) string {
 func (r ttyRenderer) header(b *strings.Builder, d present.Document) {
 	left := "station"
 	styled := r.theme.Title.Render("station")
-	if d.Command != "" {
-		left += " " + d.Command
-		styled += " " + r.theme.Plain.Render(d.Command)
+	if path := commandPath(d.Command); path != "" {
+		left += " " + path
+		styled += " " + r.theme.Plain.Render(path)
 	}
 	gap := r.width - 1 - ansi.StringWidth(margin+left) - ansi.StringWidth(d.Context)
 	if gap < 1 {
@@ -148,6 +148,12 @@ func (r ttyRenderer) header(b *strings.Builder, d present.Document) {
 	}
 	b.WriteString(line + "\n")
 	b.WriteString(margin + r.theme.Subtle.Render(strings.Repeat("─", max(r.width-2, 1))) + "\n")
+}
+
+// invariant: a presenter names its command whole ("station tools") and a fixture
+// may name it bare ("tools"); the header prints "station" once either way.
+func commandPath(command string) string {
+	return strings.TrimSpace(strings.TrimPrefix(command, "station"))
 }
 
 func (r ttyRenderer) block(b *strings.Builder, block present.Block, widths []int) {

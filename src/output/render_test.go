@@ -98,7 +98,7 @@ func counts(ok, degraded, absent, broken int) []present.Count {
 func statusDocument() present.Document {
 	ok, degraded, absent := present.MarkOK, present.MarkDegraded, present.MarkAbsent
 	return present.Document{
-		Command: "status",
+		Command: "station status",
 		Context: present.MachineContext("macbook", "host", true),
 		Blocks: []present.Block{
 			section("Machine", nil,
@@ -139,7 +139,7 @@ func statusDocument() present.Document {
 func toolsDocument() present.Document {
 	ok, degraded, absent, broken := present.MarkOK, present.MarkDegraded, present.MarkAbsent, present.MarkBroken
 	return present.Document{
-		Command: "tools",
+		Command: "station tools",
 		Context: present.MachineContext("macbook", "host", true),
 		Blocks: []present.Block{
 			section("Package Managers", counts(3, 0, 0, 0),
