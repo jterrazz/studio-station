@@ -36,7 +36,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Example: "  station machines create --lifetime temporary\n" +
 			"  station machines create --lifetime lasting --name api --memory 12G",
 		Declare: func(f *pflag.FlagSet, in *Input) {
-			f.StringVar(&in.Lifetime, "lifetime", "", "temporary (a guest poweroff deletes it) or lasting; asked on a terminal")
+			f.StringVar(&in.Lifetime, "lifetime", "", "temporary (a poweroff inside it deletes it) or lasting; asked on a terminal")
 			f.StringVar(&in.Image, "image", "linux", "the image the VM is made from")
 			f.StringVar(&in.Name, "name", "", "the VM's name (default <image>-<n>)")
 			f.IntVar(&in.CPUs, "cpus", 0, "virtual CPUs (default the image's)")

@@ -362,7 +362,7 @@ func (m Model) createInputs() []catalog.Input {
 		names = append(names, img.Name)
 	}
 	inputs := []catalog.Input{
-		{Name: "lifetime", Label: "Lifetime", Help: "temporary ends with a guest poweroff; lasting stays until deleted", Kind: catalog.InputSelect, Options: []string{string(machines.Temporary), string(machines.Lasting)}, Required: true},
+		{Name: "lifetime", Label: "Lifetime", Help: "temporary ends with a poweroff inside it; lasting stays until deleted", Kind: catalog.InputSelect, Options: []string{string(machines.Temporary), string(machines.Lasting)}, Required: true},
 	}
 	if _, hosts := m.hosts(); len(hosts) > 1 {
 		inputs = append(inputs, catalog.Input{Name: "host", Label: "On which host?", Kind: catalog.InputSelect, Options: hosts, Required: true})

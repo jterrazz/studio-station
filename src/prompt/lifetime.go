@@ -27,7 +27,7 @@ func createQuestions(lifetime string, hosts []HostChoice) []question {
 	var qs []question
 	if lifetime == "" {
 		qs = append(qs, question{key: "lifetime", title: "Will it last?", options: []huh.Option[string]{
-			huh.NewOption("temporary: a guest poweroff deletes it", "temporary"),
+			huh.NewOption("temporary: a poweroff inside it deletes it", "temporary"),
 			huh.NewOption("lasting: it stays until deleted", "lasting"),
 		}})
 	}
