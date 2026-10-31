@@ -1,0 +1,10 @@
+#!/bin/sh
+# brew as the clean specs need it: `cleanup` succeeds and is recorded.
+printf 'brew %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    "cleanup") ;;
+    *)
+        echo "stub brew: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

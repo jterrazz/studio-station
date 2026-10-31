@@ -1,0 +1,23 @@
+#!/bin/sh
+# docker as the clean specs need it: `system df` answers sizes, a prune succeeds unless
+# answers/docker/<noun>.exit says otherwise; every call lands in $HOME/.calls, the df format
+# (a spec token in disguise) written as plain `docker system df`.
+answers="${0%/*}/../answers/docker"
+case "$*" in
+    "system df --format {{.Size}}")
+        printf 'docker system df\n' >> "$HOME/.calls"
+        /bin/cat "$answers/df.txt"
+        ;;
+    "container prune -f" | "image prune -f" | "volume prune -f" | "network prune -f" | "builder prune -f")
+        printf 'docker %s\n' "$*" >> "$HOME/.calls"
+        noun="${1}"
+        if [ -f "$answers/$noun.exit" ]; then
+            echo "Error response from daemon: $noun prune failed" >&2
+            exit "$(/bin/cat "$answers/$noun.exit")"
+        fi
+        ;;
+    *)
+        echo "stub docker: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

@@ -56,7 +56,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		statusCommand(kenv),
 		toolsCommand(kenv, here),
 		configCommand(kenv),
-		cleanCommand(kenv),
+		cleanCommand(kenv, here),
 		machinesCommand(kenv),
 		imagesCommand(kenv),
 		secretsCommand(kenv),

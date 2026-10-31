@@ -1,0 +1,26 @@
+description: 'clean refuses its contradictory words before any question and any effect, exit 2'
+fixture:
+    - ./__fixtures__/docker/
+runs:
+    - command: 'clean --yes'
+      exit: 2
+      stderr: |
+          Error: --yes has nothing to confirm
+          Hint: station clean <item...> --yes
+    - command: 'clean --json trash'
+      exit: 2
+      stderr: |
+          Error: --json lists; it cannot reclaim
+          Hint: station clean --json
+    - command: 'clean nope --yes'
+      exit: 2
+      stderr: |
+          Error: unknown cleanable "nope"
+          Hint: run station clean for what can be reclaimed here
+    - command: 'clean trash --all --yes'
+      exit: 2
+      stderr: |
+          Error: name cleanables or give --all, not both
+          Hint: station clean --all --yes
+      files:
+          .calls: absent

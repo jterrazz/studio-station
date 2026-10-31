@@ -1,0 +1,17 @@
+description: 'bare clean lists sizes and acts on nothing: its one call is docker system df'
+fixture:
+    - ./__fixtures__/docker/
+    - ./__fixtures__/trash/
+runs:
+    - command: 'clean | /usr/bin/grep -v -e stale-vms -e old-images'
+      exit: 0
+      stdout: |
+          ○	brew	not available	The Homebrew download cache
+          ●	docker	1.8 GB	Stopped containers, dangling images, unused volumes, networks and build cache
+          ●	trash	1.5 KB	The system trash
+      files:
+          .calls:
+              equals: |
+                  docker system df
+          .Trash/old-download.zip:
+              contains: 'xxxxxxxx'
