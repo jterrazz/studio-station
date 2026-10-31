@@ -1,0 +1,10 @@
+description: 'config uninstall refuses without --yes when nothing can ask'
+fixture: ../__fixtures__/security/
+runs:
+    - command: 'config uninstall vm-join </dev/null'
+      exit: 2
+      stderr: |
+          Error: refusing to uninstall without --yes
+          Hint: re-run with --yes
+      files:
+          .calls: absent

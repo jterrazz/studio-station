@@ -1,0 +1,10 @@
+{
+  "here": "x",
+  "tailnet": {
+    "mode": "auto",
+    "auth_method": "authkey"
+  },
+  "lend_list": [
+    "session:a"
+  ]
+}

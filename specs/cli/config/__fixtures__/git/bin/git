@@ -1,0 +1,10 @@
+#!/bin/sh
+# git as the config specs need it: commit signing is switched on.
+printf 'git %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    "config --global commit.gpgsign") echo true ;;
+    *)
+        echo "stub git: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

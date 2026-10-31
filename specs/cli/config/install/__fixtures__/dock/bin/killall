@@ -1,0 +1,2 @@
+#!/bin/sh
+printf 'killall %s\n' "$*" >> "$HOME/.calls"

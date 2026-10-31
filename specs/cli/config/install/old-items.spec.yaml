@@ -1,0 +1,17 @@
+description: 'the bootstrap steps that moved to station setup are no longer items'
+runs:
+    - command: 'config install zshrc'
+      exit: 2
+      stderr: |
+          Error: unknown config item "zshrc"
+          Hint: run station config for the items
+    - command: 'config install xdg-layout'
+      exit: 2
+      stderr: |
+          Error: unknown config item "xdg-layout"
+          Hint: run station config for the items
+    - command: 'config instal hushlogin'
+      exit: 2
+      stderr: |
+          Error: unknown command "instal" for "station config"
+          Hint: run station config --help

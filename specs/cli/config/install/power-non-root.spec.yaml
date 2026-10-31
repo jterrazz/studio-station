@@ -1,0 +1,7 @@
+description: 'a headless item needs root on a host, and says how to get it'
+runs:
+    - command: 'config install power'
+      exit: 1
+      stderr: |
+          Error: power needs root
+          Hint: sudo station config install power

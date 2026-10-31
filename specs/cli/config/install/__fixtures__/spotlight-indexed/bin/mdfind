@@ -1,0 +1,4 @@
+#!/bin/sh
+# Spotlight finds the file: the folder is indexed.
+printf 'mdfind\n' >> "$HOME/.calls"
+echo "$HOME/Developer/a.txt"

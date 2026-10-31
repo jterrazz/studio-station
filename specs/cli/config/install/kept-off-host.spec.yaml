@@ -1,0 +1,19 @@
+description: 'kept secrets never live in a VM: their items are refused there'
+env:
+    - STATION_MACHINE_KIND=linux
+runs:
+    - command: 'config install vm-join'
+      exit: 2
+      stderr: |
+          Error: vm-join's place is host; here is linux
+          Hint: run it on a host: station config install vm-join --on <host>
+    - command: 'config install tailnet-auth'
+      exit: 2
+      stderr: |
+          Error: tailnet-auth's place is host; here is linux
+          Hint: run it on a host: station config install tailnet-auth --on <host>
+    - command: 'config install claude-token'
+      exit: 2
+      stderr: |
+          Error: claude-token's place is host; here is linux
+          Hint: run it on a host: station config install claude-token --on <host>

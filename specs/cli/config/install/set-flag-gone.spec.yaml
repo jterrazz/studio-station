@@ -1,0 +1,9 @@
+description: 'values are asked in a form: the flag that once carried them is unknown'
+runs:
+    - command: 'config install tailnet-auth --s""et tailnet-auth.mode=userspace > out.txt 2>&1; echo "exit $?"'
+      exit: 0
+      stdout: |
+          exit 2
+      files:
+          out.txt:
+              contains: 'unknown flag: --s'

@@ -1,0 +1,2 @@
+#!/bin/sh
+printf 'tmux %s\n' "$1" >> "$HOME/.calls"
