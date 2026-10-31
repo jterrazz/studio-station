@@ -364,6 +364,39 @@ func TestFleetStartsALastingVMThroughExec(t *testing.T) {
 	}
 }
 
+func TestTabsShowTheHelpGroupsInOrder(t *testing.T) {
+	h := newHarness(t)
+	h.init()
+	bar := strings.SplitN(plain(h.view()), "\n", 2)[0]
+	at := -1
+	for _, label := range []string{"Status", "Tools", "Config", "Clean", "Fleet"} {
+		i := strings.Index(bar, label)
+		if i <= at {
+			t.Fatalf("tab %q out of order in %q", label, bar)
+		}
+		at = i
+	}
+}
+
+func TestTabsFleetHintsInsteadOfActing(t *testing.T) {
+	h := newHarness(t)
+	h.init()
+	h.press("5")
+	h.cursorTo("linux-1")
+	if execs, _ := h.press("s"); len(execs) != 0 || h.app.screens[4].Focus() != kit.FocusNormal {
+		t.Fatal("s on a temporary VM acted")
+	}
+	h.contains("temporary: delete with d")
+	h.cursorTo("mac-mini")
+	if execs, _ := h.press("d"); len(execs) != 0 || h.app.screens[4].Focus() != kit.FocusNormal {
+		t.Fatal("d on a host acted")
+	}
+	h.contains("forget: f")
+	if len(h.fleet.calls) != 0 {
+		t.Fatalf("calls %q", h.fleet.calls)
+	}
+}
+
 func TestTabsRestartAsksTheMachineName(t *testing.T) {
 	h := newHarness(t)
 	h.init()
