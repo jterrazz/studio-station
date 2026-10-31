@@ -28,3 +28,7 @@ runs:
       exit: 1
       stdout: |
           0
+    - command: --help | /usr/bin/grep -c -e '--on '
+      exit: 0
+      stdout: |
+          1
