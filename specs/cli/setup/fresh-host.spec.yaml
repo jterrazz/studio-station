@@ -1,0 +1,31 @@
+description: 'setup on an empty HOME registers the host and writes the zshrc block, with no .studio'
+env:
+    - USER=tester
+runs:
+    - command: 'setup --name macbook'
+      exit: 0
+      stdout: |
+          ●	name	macbook
+          ●	zshrc
+          ●	layout	nothing to move
+      files:
+          .config/station/settings.json:
+              equals: |
+                  {
+                    "here": "macbook",
+                    "hosts": {
+                      "macbook": {}
+                    },
+                    "tailnet": {
+                      "mode": "userspace",
+                      "auth_method": "login"
+                    },
+                    "vm_user": "tester"
+                  }
+          .zshrc:
+              equals: |
+                  # >>> station >>>
+                  export PATH="$HOME/.local/bin:$PATH"
+                  command -v station >/dev/null 2>&1 && eval "$(station shell zsh)"
+                  # <<< station <<<
+          .studio: absent

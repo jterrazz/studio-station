@@ -1,0 +1,18 @@
+description: 'a registered host refuses another name, and a malformed name is refused'
+runs:
+    - command: 'setup --name macbook'
+      exit: 0
+      stdout: |
+          ●	name	macbook
+          ●	zshrc
+          ●	layout	nothing to move
+    - command: 'setup --name other'
+      exit: 2
+      stderr: |
+          Error: this host is named "macbook", not "other"
+          Hint: run station setup without --name
+    - command: 'setup --name Bad_Name'
+      exit: 2
+      stderr: |
+          Error: "Bad_Name" is not a machine name
+          Hint: use lowercase letters, digits and -, 1 to 40 characters

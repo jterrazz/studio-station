@@ -1,0 +1,3 @@
+#!/bin/sh
+# Stands in for the station binary the layout step re-executes in the background.
+printf 'station %s STATION_XDG_DETACHED=%s\n' "$*" "$STATION_XDG_DETACHED" >> "$HOME/.calls"

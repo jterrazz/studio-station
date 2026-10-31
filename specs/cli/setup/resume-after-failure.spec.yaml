@@ -1,0 +1,46 @@
+description: 'a failing keychain names the layout step, keeps config.json, and a rerun finishes the move'
+fixture:
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/v1-studio/
+    - ./__fixtures__/fails-once/
+env:
+    - USER=tester
+runs:
+    - command: 'setup'
+      exit: 1
+      stdout: |
+          ○	name	waits for the layout step
+          ●	zshrc
+          ✗	layout	keychain account tailnet-authkey: security: keychain locked
+      stderr: |
+          Error: setup step layout: keychain account tailnet-authkey: security: keychain locked
+          Hint: fix it, then run station setup again: it resumes
+      files:
+          .studio/config.json: exists
+          .config: absent
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	name	base
+          ●	zshrc
+          ●	layout	moved to the XDG folders
+      files:
+          .studio: absent
+          .config/station/settings.json:
+              equals: |
+                  {
+                    "here": "base",
+                    "hosts": {
+                      "base": {},
+                      "mini": {
+                        "user": "agent",
+                        "key": "~/.ssh/id_mini"
+                      }
+                    },
+                    "tailnet": {
+                      "mode": "userspace",
+                      "auth_method": "authkey"
+                    },
+                    "vm_user": "tester",
+                    "user_email": "owner@example.com"
+                  }

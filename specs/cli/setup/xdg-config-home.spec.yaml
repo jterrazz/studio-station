@@ -1,0 +1,15 @@
+description: 'XDG_CONFIG_HOME moves settings.json and nothing is written to the default folder'
+env:
+    - XDG_CONFIG_HOME=$WORKDIR/c
+runs:
+    - command: 'setup --name t'
+      exit: 0
+      stdout: |
+          ●	name	t
+          ●	zshrc
+          ●	layout	nothing to move
+      files:
+          c/station/settings.json:
+              contains: '"here": "t",'
+          .config: absent
+          .studio: absent
