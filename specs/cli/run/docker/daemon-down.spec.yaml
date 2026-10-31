@@ -1,0 +1,14 @@
+description: 'a docker that cannot list stops reset with one block, exit 1, and removes nothing'
+fixture:
+    - ./__fixtures__/docker/
+    - ./__fixtures__/daemon-down/
+runs:
+    - command: 'run docker reset --yes'
+      exit: 1
+      stderr: |
+          Error: docker ps failed: Cannot connect to the Docker daemon
+          Hint: check that the docker daemon runs, then run it again
+      files:
+          .calls:
+              equals: |
+                  docker ps -aq

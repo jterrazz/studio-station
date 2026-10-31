@@ -1,0 +1,10 @@
+description: 'feat, fix and chore without a message exit 2 before git runs'
+fixture: ./__fixtures__/git/
+runs:
+    - command: 'run git feat'
+      exit: 2
+      stderr: |
+          Error: requires at least 1 arg(s), only received 0
+          Hint: run station run git feat --help
+      files:
+          .calls: absent

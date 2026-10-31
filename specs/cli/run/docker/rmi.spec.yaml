@@ -1,0 +1,12 @@
+description: 'rmi lists every image and force-removes them'
+fixture: ./__fixtures__/docker/
+runs:
+    - command: 'run docker rmi --yes'
+      exit: 0
+      stdout: |
+          ●	images	1 removed
+      files:
+          .calls:
+              equals: |
+                  docker images -aq
+                  docker rmi -f i1

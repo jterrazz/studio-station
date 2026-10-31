@@ -1,0 +1,11 @@
+description: 'a failing git step stops the shortcut loudly: one block naming the step, exit 1'
+fixture:
+    - ./__fixtures__/git/
+    - ./__fixtures__/push-fails/
+runs:
+    - command: 'run git push'
+      exit: 1
+      stderr: |
+          fatal: push failed
+          Error: git push exited 1
+          Hint: fix what git printed above, then run station run git push again

@@ -1,0 +1,10 @@
+description: 'run docker clean is gone: exit 2 and no docker call; station clean docker replaces it'
+fixture: ./__fixtures__/docker/
+runs:
+    - command: 'run docker clean'
+      exit: 2
+      stderr: |
+          Error: unknown docker shortcut "clean"
+          Hint: run docker takes rm, rmi, reset
+      files:
+          .calls: absent

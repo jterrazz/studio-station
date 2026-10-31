@@ -1,0 +1,12 @@
+description: 'rm lists every container and force-removes them with their volumes'
+fixture: ./__fixtures__/docker/
+runs:
+    - command: 'run docker rm --yes'
+      exit: 0
+      stdout: |
+          ●	containers	2 removed
+      files:
+          .calls:
+              equals: |
+                  docker ps -aq
+                  docker rm -vf c1 c2
