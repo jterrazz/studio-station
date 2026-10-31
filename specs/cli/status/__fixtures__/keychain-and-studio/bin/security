@@ -2,5 +2,8 @@
 # The login keychain holding every kept account, each with the value s3cr3t.
 case "$*" in
     "find-generic-password -s station -a "*" -w") echo s3cr3t ;;
-    *) exit 44 ;;
+    *)
+        echo "stub security: unexpected invocation: $*" >&2
+        exit 97
+        ;;
 esac

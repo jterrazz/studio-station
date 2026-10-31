@@ -5,5 +5,8 @@ case "$*" in
     "volume ls -q") printf 'v1\n' ;;
     "images -f dangling=true --format {{.Size}}") printf '1.5MB\n500kB\n' ;;
     "system df --format {{.Size}}") printf '2.0GB\n1.5GB\n0B\n' ;;
-    *) exit 1 ;;
+    *)
+        echo "stub ${0##*/}: unexpected invocation: $*" >&2
+        exit 97
+        ;;
 esac

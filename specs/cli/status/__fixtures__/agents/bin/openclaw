@@ -1,3 +1,9 @@
 #!/bin/sh
 # openclaw channels status: Slack healthy, Telegram stuck, BlueBubbles not reported.
-printf 'Slack: connected health:healthy\nTelegram: reconnecting\n'
+case "$*" in
+    "channels status") printf 'Slack: connected health:healthy\nTelegram: reconnecting\n' ;;
+    *)
+        echo "stub openclaw: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

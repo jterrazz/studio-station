@@ -9,5 +9,8 @@ case "$*" in
         printf 'USER PID PPID COMMAND\nroot 1 0 /sbin/launchd\n'
         if [ -f "$answers/gateway" ]; then /bin/cat "$answers/gateway"; fi
         ;;
-    *) exit 1 ;;
+    *)
+        echo "stub ps: unexpected invocation: $*" >&2
+        exit 97
+        ;;
 esac

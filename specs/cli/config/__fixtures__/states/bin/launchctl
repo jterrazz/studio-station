@@ -3,5 +3,8 @@
 printf 'launchctl %s\n' "$*" >> "$HOME/.calls"
 case "$*" in
     "print-disabled system") echo '	"com.openssh.sshd" => enabled' ;;
-    *) exit 113 ;;
+    *)
+        echo "stub launchctl: unexpected invocation: $*" >&2
+        exit 97
+        ;;
 esac

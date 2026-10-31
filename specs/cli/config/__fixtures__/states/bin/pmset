@@ -1,7 +1,9 @@
 #!/bin/sh
 # pmset -g custom, with the always-on policy applied.
 printf 'pmset %s\n' "$*" >> "$HOME/.calls"
-/bin/cat <<'OUT'
+case "$*" in
+    "-g custom")
+        /bin/cat <<'OUT'
 Battery Power:
  sleep                0
 AC Power:
@@ -12,3 +14,9 @@ AC Power:
  powernap             0
  womp                 1
 OUT
+        ;;
+    *)
+        echo "stub pmset: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

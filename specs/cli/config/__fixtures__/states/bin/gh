@@ -1,2 +1,10 @@
 #!/bin/sh
+# gh auth status, logged in.
 printf 'gh %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    "auth status") ;;
+    *)
+        echo "stub gh: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

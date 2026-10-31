@@ -3,7 +3,13 @@
 # its stdin too (the secret travels there, never in argv); a file $HOME/.security-fails-once
 # makes the first call fail and every later one succeed.
 printf 'security %s\n' "$*" >> "$HOME/.calls"
-if [ "$1" = "-i" ]; then /bin/cat >> "$HOME/.calls"; fi
+case "$*" in
+    -i) /bin/cat >> "$HOME/.calls" ;;
+    *)
+        echo "stub security: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac
 if [ -f "$HOME/.security-fails-once" ] && [ ! -f "$HOME/.security-failed" ]; then
     : > "$HOME/.security-failed"
     echo "security: keychain locked" >&2

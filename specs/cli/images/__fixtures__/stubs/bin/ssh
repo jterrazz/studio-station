@@ -5,8 +5,12 @@
 answers="${0%/*}/../answers/ssh"
 printf 'ssh %s\n' "$*" >> "$HOME/.calls"
 case "$*" in
-    *" admin@"*) who=admin ;;
-    *) who=vm ;;
+    "-o "*" admin@"*" sudo env "*" bash -s") who=admin ;;
+    "-o "*" dev@"*" sudo bash -s") who=vm ;;
+    *)
+        echo "stub ${0##*/}: unexpected invocation: $*" >&2
+        exit 97
+        ;;
 esac
 if [ "$who" = admin ]; then
     printf '%s\n' "$SSH_ASKPASS_REQUIRE" > "$HOME/.ssh-admin.env"

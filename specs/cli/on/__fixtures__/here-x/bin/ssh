@@ -1,8 +1,9 @@
 #!/bin/sh
-# ssh as the --on specs need it: the argv is recorded in $HOME/.calls, and the remote's
-# stdout, stderr and exit code are answer files.
-answers="${0%/*}/../answers/ssh"
+# ssh, which a run --on the machine it runs on never reaches.
 printf 'ssh %s\n' "$*" >> "$HOME/.calls"
-/bin/cat "$answers/stdout.txt"
-/bin/cat "$answers/stderr.txt" >&2
-exit "$(/bin/cat "$answers/exit")"
+case "$*" in
+    *)
+        echo "stub ${0##*/}: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

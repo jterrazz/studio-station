@@ -1,2 +1,8 @@
 #!/bin/sh
-echo "assessments enabled"
+case "$*" in
+    --status) echo "assessments enabled" ;;
+    *)
+        echo "stub ${0##*/}: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

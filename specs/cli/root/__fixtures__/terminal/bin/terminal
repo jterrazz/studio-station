@@ -287,7 +287,9 @@ def main():
             pump(0.2)
             print(screen.text())
         elif verb:
-            sys.exit("terminal: unknown step " + repr(line))
+            # invariant: an unscripted step is refused with exit 97, as every stub refuses one.
+            sys.stderr.write("terminal: unknown step " + repr(line) + "\n")
+            sys.exit(97)
     wait(lambda: status is not None, "the command never exited")
     sys.exit(status)
 

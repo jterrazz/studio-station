@@ -1,2 +1,8 @@
 #!/bin/sh
-echo "System Integrity Protection status: enabled."
+case "$*" in
+    status) echo "System Integrity Protection status: enabled." ;;
+    *)
+        echo "stub ${0##*/}: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac
