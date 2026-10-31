@@ -1,0 +1,13 @@
+#!/bin/sh
+# git as the run specs need it: every argv is recorded one word per <..>, so a message that
+# reached git as ONE word is told from one split in two; `status` prints a line, and
+# answers/git/<verb>.exit makes a verb fail.
+answers="${0%/*}/../answers/git"
+printf 'git' >> "$HOME/.calls"
+for word in "$@"; do printf ' <%s>' "$word" >> "$HOME/.calls"; done
+printf '\n' >> "$HOME/.calls"
+if [ "$1" = "status" ]; then echo "On branch main"; fi
+if [ -f "$answers/$1.exit" ]; then
+    echo "fatal: $1 failed" >&2
+    exit "$(/bin/cat "$answers/$1.exit")"
+fi

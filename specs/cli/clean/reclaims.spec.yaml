@@ -1,0 +1,25 @@
+description: 'named cleanables run their steps in order, empty the trash, and skip what needs a missing tool'
+fixture:
+    - ./__fixtures__/docker/
+    - ./__fixtures__/trash/
+runs:
+    - command: 'clean docker trash brew --yes'
+      exit: 0
+      stdout: |
+          ●	docker	cleaned
+          ●	trash	cleaned
+          ○	brew	skipped: brew not found
+      files:
+          .calls:
+              equals: |
+                  docker container prune -f
+                  docker image prune -f
+                  docker volume prune -f
+                  docker network prune -f
+                  docker builder prune -f
+          .Trash/old-download.zip: absent
+    - command: 'clean trash --json'
+      exit: 2
+      stderr: |
+          Error: --json lists; it cannot reclaim
+          Hint: station clean --json

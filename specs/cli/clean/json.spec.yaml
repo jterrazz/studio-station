@@ -1,0 +1,19 @@
+description: 'clean --json is station.clean/v1; a host lists its five cleanables and none of the old names'
+fixture: ./__fixtures__/docker/
+runs:
+    - command: 'clean --json | /usr/bin/jq -r .schema'
+      exit: 0
+      stdout: |
+          station.clean/v1
+    - command: 'clean --json | /usr/bin/jq -r ''.items[0] | keys | join(" ")'''
+      exit: 0
+      stdout: |
+          available bytes description name
+    - command: 'clean --json | /usr/bin/jq -r ''[.items[].name] | join(" ")'''
+      exit: 0
+      stdout: |
+          brew docker trash stale-vms old-images
+    - command: 'clean --json | /usr/bin/jq -r ''.items[] | select(.name == "docker") | "\(.available) \(.bytes)"'''
+      exit: 0
+      stdout: |
+          true 1800000000

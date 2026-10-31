@@ -3,8 +3,7 @@ set -e
 
 REPO="jterrazz/studio-station"
 BINARY="station"
-INSTALL_DIR="$HOME/.studio/bin"
-REPO_DIR="$HOME/Developer/studio-station"
+INSTALL_DIR="$HOME/.local/bin"
 
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
@@ -16,30 +15,40 @@ esac
 
 echo "Installing $BINARY ($OS/$ARCH)..."
 
-TAG="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | cut -d'"' -f4)"
+TAG="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')"
 if [ -z "$TAG" ]; then
   echo "Failed to fetch latest release" && exit 1
 fi
 
-URL="https://github.com/$REPO/releases/download/$TAG/$BINARY-$OS-$ARCH"
+ASSET="$BINARY-$OS-$ARCH"
+BASE_URL="https://github.com/$REPO/releases/download/$TAG"
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+curl -fsSL "$BASE_URL/$ASSET" -o "$WORK/$ASSET"
+curl -fsSL "$BASE_URL/checksums.txt" -o "$WORK/checksums.txt"
+
+# invariant: a binary whose line is missing from checksums.txt, or whose hash differs, is never installed.
+EXPECTED="$(awk -v asset="$ASSET" '$2 == asset { print $1 }' "$WORK/checksums.txt")"
+if [ -z "$EXPECTED" ]; then
+  echo "checksums.txt has no line for $ASSET" && exit 1
+fi
+if command -v sha256sum >/dev/null 2>&1; then
+  ACTUAL="$(sha256sum "$WORK/$ASSET" | awk '{ print $1 }')"
+else
+  ACTUAL="$(shasum -a 256 "$WORK/$ASSET" | awk '{ print $1 }')"
+fi
+if [ "$EXPECTED" != "$ACTUAL" ]; then
+  echo "Checksum mismatch for $ASSET" && exit 1
+fi
+
 mkdir -p "$INSTALL_DIR"
-curl -fsSL "$URL" -o "$INSTALL_DIR/$BINARY"
+mv "$WORK/$ASSET" "$INSTALL_DIR/$BINARY"
 chmod +x "$INSTALL_DIR/$BINARY"
+rm -f "$HOME/.studio/bin/workstation"
 echo "✓ Installed $INSTALL_DIR/$BINARY ($TAG)"
 
-# invariant: the shell line below sources this clone's dotfiles, so the binary alone is not a working install.
-if [ ! -d "$REPO_DIR" ]; then
-  mkdir -p "$HOME/Developer"
-  git clone "https://github.com/$REPO.git" "$REPO_DIR"
-  echo "✓ Cloned repo to $REPO_DIR"
-fi
+# outside: ~/.local/bin may not be on PATH yet on a fresh machine, so setup runs by path.
+"$INSTALL_DIR/station" setup
 
-ZSHRC_LINE="source $REPO_DIR/dotfiles/applications/zsh/zshrc.sh"
-if [ -f "$HOME/.zshrc" ]; then
-  if ! grep -q "zshrc.sh" "$HOME/.zshrc"; then
-    printf '\n# studio-station\n%s\n' "$ZSHRC_LINE" >> "$HOME/.zshrc"
-    echo "✓ Added source to ~/.zshrc"
-  fi
-fi
-
-echo "✓ Done. Run 'source ~/.zshrc', then 'station help'"
+echo "✓ Done. Run 'exec zsh', then 'station'"

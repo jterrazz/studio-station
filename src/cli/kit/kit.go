@@ -34,6 +34,8 @@ type IO struct {
 
 func (o IO) Answer(a present.Answer) error { return o.out.Answer(a, o.JSON) }
 
+func (o IO) Raw(p []byte) error { return o.out.Raw(p) }
+
 type Leaf[I any] struct {
 	Use, Short, Example string
 	Group               string

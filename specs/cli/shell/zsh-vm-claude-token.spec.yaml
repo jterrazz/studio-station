@@ -1,0 +1,13 @@
+description: 'in a VM the lent Claude token is exported from the VM''s file store, quoted for the shell'
+fixture: ./__fixtures__/studio/
+env:
+    - STATION_MACHINE_KIND=linux
+runs:
+    - command: 'shell zsh | /usr/bin/tail -n 1'
+      exit: 0
+      stdout: |
+          export CLAUDE_CODE_OAUTH_TOKEN='tok'\''en'
+      files:
+          .calls:
+              equals: |
+                  STUDIO_CREDENTIALS_BACKEND=file studio credentials export operator:claude:oauth-token

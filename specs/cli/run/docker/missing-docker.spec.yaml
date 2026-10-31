@@ -1,0 +1,7 @@
+description: 'without docker on PATH the shortcut says so, exit 1'
+runs:
+    - command: 'run docker rm --yes'
+      exit: 1
+      stderr: |
+          Error: docker is not installed
+          Hint: station tools install docker

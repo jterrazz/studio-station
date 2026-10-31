@@ -1,0 +1,17 @@
+description: 'an unknown word under run or run git exits 2 with one block, and a near miss is suggested'
+runs:
+    - command: 'run nope'
+      exit: 2
+      stderr: |
+          Error: unknown command "nope" for "station run"
+          Hint: run station run --help
+    - command: 'run git nope'
+      exit: 2
+      stderr: |
+          Error: unknown command "nope" for "station run git"
+          Hint: run station run git --help
+    - command: 'run git statu'
+      exit: 2
+      stderr: |
+          Error: unknown command "statu" for "station run git"
+          Hint: run station run git --help (did you mean "status"?)
