@@ -23,3 +23,7 @@ runs:
       stderr: |
           Error: --memory "12X" is not a size
           Hint: write a size with its unit: 512M, 8G, 1T
+    - command: '--version > /dev/null; /usr/bin/grep -rl t[s]key .calls .local .config Library || echo "no key on disk"'
+      exit: 0
+      stdout: |
+          no key on disk

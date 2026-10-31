@@ -16,3 +16,7 @@ runs:
           2026.11.07
           8589934592
           100.64.0.42
+    - command: '--version > /dev/null; /usr/bin/grep -rl t[s]key .calls .local .config Library || echo "no key on disk"'
+      exit: 0
+      stdout: |
+          no key on disk
