@@ -106,7 +106,7 @@ func vmJoinRow(state catalog.State) present.Row {
 		return present.Row{Mark: present.MarkAbsent, Cells: []present.Cell{label, {Text: "not set up"}, {Text: joinDocs, Tone: present.Muted}}}
 	case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown:
 	}
-	return present.Row{Mark: present.MarkDegraded, Cells: []present.Cell{label, {Text: "set up, not tried"}}}
+	return present.Row{Mark: present.MarkDegraded, Cells: []present.Cell{label, {Text: "not verified"}}}
 }
 
 func daemonText(s tailnet.Status) string {

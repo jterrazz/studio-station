@@ -1,0 +1,27 @@
+#!/bin/sh
+# tailscale as the tailnet specs need it: every call is recorded in $HOME/.calls, status
+# answers answers/status.json once the daemon runs (answers/running, or a tailscaled call
+# recorded) and fails before, up consumes its stdin and exits as answers/up.exit says.
+answers="${0%/*}/../answers"
+printf 'tailscale %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    *"status --json")
+        if [ -f "$answers/running" ] || /usr/bin/grep -q '^tailscaled ' "$HOME/.calls"; then
+            /bin/cat "$answers/status.json"
+            exit 0
+        fi
+        exit 1
+        ;;
+    *" up "* | *" up")
+        /bin/cat > /dev/null
+        if [ -f "$answers/up.exit" ]; then
+            echo "Error: backend is stopped" >&2
+            exit "$(/bin/cat "$answers/up.exit")"
+        fi
+        ;;
+    *" down") ;;
+    *)
+        echo "stub tailscale: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

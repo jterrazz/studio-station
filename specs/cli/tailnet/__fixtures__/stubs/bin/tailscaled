@@ -1,0 +1,3 @@
+#!/bin/sh
+# tailscaled that only records it was started, and with which flags.
+printf 'tailscaled %s\n' "$*" >> "$HOME/.calls"

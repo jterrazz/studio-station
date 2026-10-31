@@ -25,7 +25,7 @@ type UpResult struct {
 type DownResult struct{ Stopped []Daemon }
 
 func (s *Service) Configured(ctx context.Context) bool {
-	if _, err := s.h.FS.Stat(s.stateFile()); err == nil {
+	if s.registered() {
 		return true
 	}
 	cfg, err := s.store.Load()
@@ -34,6 +34,11 @@ func (s *Service) Configured(ctx context.Context) bool {
 	}
 	_, found, err := s.keys.Read(ctx, hostAuthKeyAccount)
 	return err == nil && found
+}
+
+func (s *Service) registered() bool {
+	_, err := s.h.FS.Stat(s.stateFile())
+	return err == nil
 }
 
 func (s *Service) Up(ctx context.Context) (UpResult, error) {
@@ -56,8 +61,7 @@ func (s *Service) Up(ctx context.Context) (UpResult, error) {
 			key = value
 		}
 	}
-	registered := s.Configured(ctx)
-	firstLogin := !registered && key == ""
+	firstLogin := !s.registered() && key == ""
 	if firstLogin && (cfg.Tailnet.AuthMethod != settings.AuthLogin || !s.o.Interactive) {
 		return UpResult{}, &NeedsAuthError{}
 	}

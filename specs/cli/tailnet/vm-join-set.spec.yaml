@@ -1,0 +1,15 @@
+description: 'a host holding the VM-join client reports it set up but not tried, and no secret reaches the output'
+fixture:
+    - ./__fixtures__/login/
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/running/
+    - ./__fixtures__/vm-join-set/
+runs:
+    - command: 'tailnet --json | /usr/bin/jq -r .vm_join'
+      exit: 0
+      stdout: |
+          unknown
+    - command: 'tailnet --json | /usr/bin/grep -c client-secret'
+      exit: 1
+      stdout: |
+          0

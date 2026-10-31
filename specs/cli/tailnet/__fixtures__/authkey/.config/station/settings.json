@@ -1,0 +1,10 @@
+{
+  "here": "x",
+  "hosts": {
+    "x": {}
+  },
+  "tailnet": {
+    "mode": "userspace",
+    "auth_method": "authkey"
+  }
+}

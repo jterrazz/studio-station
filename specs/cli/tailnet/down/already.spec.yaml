@@ -1,0 +1,9 @@
+description: 'down with no daemon running is not an error'
+fixture:
+    - ../__fixtures__/login/
+    - ../__fixtures__/stubs/
+runs:
+    - command: 'tailnet down'
+      exit: 0
+      stdout: |
+          ●	tailnet	already disconnected
