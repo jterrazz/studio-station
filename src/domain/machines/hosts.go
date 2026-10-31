@@ -3,6 +3,7 @@ package machines
 import (
 	"context"
 	"errors"
+	"maps"
 	"sort"
 	"strings"
 
@@ -99,6 +100,7 @@ func (s *Service) AddHost(name string, h settings.Host) error {
 		}
 	}
 	before := cfg
+	cfg.Hosts = maps.Clone(cfg.Hosts)
 	if cfg.Hosts == nil {
 		cfg.Hosts = map[string]settings.Host{}
 	}

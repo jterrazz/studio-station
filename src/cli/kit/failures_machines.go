@@ -23,9 +23,9 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	var record *machines.RecordError
 	switch {
 	case errors.As(err, &unknown):
-		return fail.Usage(unknown.Error(), "station machines lists the fleet"), true
+		return fail.Usage(unknown.Error(), "run station machines for the fleet"), true
 	case errors.As(err, &here):
-		return fail.Usage(here.Error(), "add --on to act on another machine, or run it there"), true
+		return fail.Usage(here.Error(), "pick another machine: run station machines for the fleet"), true
 	case errors.As(err, &notHost):
 		return fail.Usage(notHost.Error(), notAHostHint(notHost)), true
 	case errors.As(err, &onlyHost):
@@ -56,7 +56,7 @@ func notAHostHint(e *machines.NotAHostError) string {
 	if e.Verb == "forget" {
 		return "station machines delete " + e.Name
 	}
-	return "station machines lists the hosts"
+	return "run station machines for the hosts"
 }
 
 func takenHint(e *machines.NameTakenError) string {

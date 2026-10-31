@@ -48,12 +48,10 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Confirm:     func(in *Input) string { return "Restart " + in.Name + " (sudo fdesetup authrestart)?" },
 		Complete:    func([]string, string) []string { return d.Machines.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			var events []machines.RestartEvent
-			report, err := d.Machines.Restart(ctx, in.Name, func(e machines.RestartEvent) { events = append(events, e) })
-			if err != nil {
+			if _, err := d.Machines.Restart(ctx, in.Name, nil); err != nil {
 				return err
 			}
-			return io.Answer(presentmachines.Restart(events, report, d.Context))
+			return io.Answer(presentmachines.Restart(in.Name, d.Context))
 		},
 	}, env)
 }

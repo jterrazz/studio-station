@@ -41,7 +41,7 @@ func hostRow(h machines.HostView, hereVersion string) present.Row {
 	switch {
 	case !h.Reachable:
 		mark, state, tone, resources = present.MarkDegraded, "unreachable", present.Warn, "-"
-	case h.StationVersion != hereVersion:
+	case h.StationVersion != "" && h.StationVersion != hereVersion:
 		mark, resources = present.MarkDegraded, "station "+h.StationVersion+" here "+hereVersion
 	}
 	return present.Row{Mark: mark, Cells: []present.Cell{
