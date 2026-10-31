@@ -20,6 +20,7 @@ type Env struct {
 	Prompt      prompt.Prompter
 	Interactive bool
 	Screen      bool
+	On          *On
 }
 
 type IO struct {
@@ -87,6 +88,9 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 	cmd.RunE = func(c *cobra.Command, a []string) error {
 		if l.RawArgs && len(a) > 0 && (a[0] == "-h" || a[0] == "--help") {
 			return c.Help()
+		}
+		if machine, ok := env.On.Target(); ok {
+			return Translate(env.On.Delegate(c.Context(), machine, env.Interactive), path(c))
 		}
 		err := run(c.Context(), c, l, in, a, env, IO{
 			JSON:          wantJSON,

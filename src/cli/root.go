@@ -14,11 +14,21 @@ func NewRoot(env kit.Env, openTUI func(context.Context) error, children ...*cobr
 		Short: "Set up and run this machine and the fleet: tools, config, hosts and VMs",
 	}
 	root.RunE = func(c *cobra.Command, _ []string) error {
+		if handled, err := kit.Delegates(env, c); handled {
+			return err
+		}
 		if env.Screen {
 			return openTUI(c.Context())
 		}
 		return kit.Menu(env, c)
 	}
+	root.PersistentPreRunE = kit.RefuseOn(env)
+	var machine string
+	target := &machine
+	if env.On != nil {
+		target = &env.On.Machine
+	}
+	root.PersistentFlags().StringVar(target, "on", "", "run this command on that `machine`, over ssh")
 	root.AddGroup(
 		&cobra.Group{ID: "here", Title: "Here"},
 		&cobra.Group{ID: "fleet", Title: "The fleet"},

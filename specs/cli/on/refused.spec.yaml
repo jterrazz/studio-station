@@ -1,0 +1,26 @@
+description: '--on is refused where it means nothing, and a bare station --on is the menu off a terminal'
+fixture: ./__fixtures__/ssh-answers/
+runs:
+    - command: 'shell zsh --on x'
+      exit: 2
+      stderr: |
+          Error: --on does not apply to "shell"
+          Hint: run it on x itself: ssh x
+    - command: 'completion zsh --on x'
+      exit: 2
+      stderr: |
+          Error: --on does not apply to "completion zsh"
+          Hint: run it on x itself: ssh x
+    - command: 'help --on x'
+      exit: 2
+      stderr: |
+          Error: --on does not apply to "help"
+          Hint: run it on x itself: ssh x
+    - command: '--on x 2> menu.txt </dev/null || echo "station exited $?"'
+      exit: 0
+      stdout: |
+          station exited 2
+      files:
+          menu.txt:
+              contains: '    tools '
+          .calls: absent

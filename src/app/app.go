@@ -15,6 +15,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli"
 	"github.com/jterrazz/studio-station/src/cli/kit"
+	"github.com/jterrazz/studio-station/src/domain/remote"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/fail"
 	"github.com/jterrazz/studio-station/src/output"
@@ -49,6 +50,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		Prompt:      prompt.New(stdin, stderr),
 		Interactive: inTTY && errTTY,
 		Screen:      inTTY && outTTY,
+		On:          &kit.On{Here: here.here(), Args: args, Remote: remote.New(here.host.Run)},
 	}
 
 	var root *cobra.Command
@@ -137,4 +139,9 @@ func (m machine) or(name, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func (m machine) here() string {
+	current, _ := m.store.Load()
+	return current.Here
 }
