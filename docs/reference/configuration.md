@@ -1,59 +1,87 @@
 # Configuration
 
-`workstation config` is an interactive TUI for configuring the local machine, organised into 3 tabs (`←/→` to cycle, `1..3` to jump directly):
+`station config` sets a machine up: dotfiles, logins and macOS defaults. Each entry is a config item, named by what it sets, and `station`'s own file is `settings.json`.
 
-- **Configuration**: installable items grouped by category. Sections are collapsible; items show their current state.
-- **Skills**: install / update / remove AI agent skills (requires the `skills` CLI on PATH; see [Tools and skills](tools-and-skills.md)). Each row is one of three states: `✓` installed & current, `⬆` update available, or `✗` not installed. Install state comes straight from the filesystem (`~/.agents/skills/`); currency is checked afterwards by comparing the `skillFolderHash` recorded in `~/.agents/.skill-lock.json` (the git tree SHA of the skill's folder when it was installed) against that folder's current tree SHA on GitHub. That is deliberately the same oracle the `skills` CLI uses to decide what to update, so a row marked `⬆` is always one `skills update` will actually act on. The check never blocks startup, shares one GitHub request per source repo, and a muted "checking for updates..." footer hint shows while it's in flight; anything inconclusive (offline, rate-limited, deleted upstream) stays `✓` rather than inventing staleness. Press `i` to install a missing skill or update an outdated one; up-to-date skills no-op on `i`.
-- **Remote**: read-only summary of the Tailscale endpoint; press `i` to open a form that rewrites `~/.studio/config.json`.
+| Section       | Answers                                        |
+| ------------- | ---------------------------------------------- |
+| The items     | Every config item, its place and what it does  |
+| Values        | How an item that needs values asks for them    |
+| settings.json | The file station keeps its own choices in      |
+| Environment   | The variables station reads, all resolved once |
 
-```text
- workstation config                                                self: mac-mini · server
- [Configuration]  Skills  Remote
- ──────────────────────────────────────────────────────────────────────────────
- ▾ Terminal               3/3
-   ✓ ghostty
-   ✓ tmux
-   ✓ hushlogin
+## The items
 
- ▸ Security               4/5
- ▾ Editor                 1/1
-   ✓ zed
+An item lists only on a machine whose kind is in its place ([Glossary](../concepts/glossary.md)); asked for elsewhere it is refused with exit 2. Only reversible items uninstall.
 
- ▸ System                 2/4
- ▾ Server                2/4
-   ✓ autologin
- ▶ ✗ power
-   ✓ lock-after-login
-   ✗ sshd
- ──────────────────────────────────────────────────────────────────────────────
- ▶ power |  i install   space details
+| Item                        | Place       | Sets                                                                                     | Reversible |
+| --------------------------- | ----------- | ---------------------------------------------------------------------------------------- | ---------- |
+| `hushlogin`                 | all         | `~/.hushlogin`                                                                           | no         |
+| `tmux-dotfiles`             | all         | `~/.tmux.conf`, reloaded in a running tmux                                               | no         |
+| `starship-dotfiles`         | all         | `~/.config/starship.toml`                                                                | no         |
+| `github-login`              | all         | `gh auth login` over ssh; in a VM this token is the VM's own                             | no         |
+| `ghostty-dotfiles`          | host, macos | `~/.config/ghostty/` config and themes                                                   | no         |
+| `zed-dotfiles`              | host, macos | `~/.config/zed/` config and formatter values                                             | no         |
+| `git-signing`               | host, macos | GPG commit signing                                                                       | no         |
+| `spotlight-exclude`         | host, macos | Spotlight exclusions for build folders                                                   | no         |
+| `dock-reset`, `dock-spacer` | host, macos | the Dock                                                                                 | no         |
+| `ssh-key`                   | host        | `~/.ssh/id_ed25519`                                                                      | no         |
+| `dns`                       | host        | the Quad9 encrypted DNS profile                                                          | no         |
+| `autologin`                 | host        | automatic login, for an unattended host; needs root                                      | yes        |
+| `power`                     | host        | the power policy of an always-on host; needs root                                        | yes        |
+| `lock-after-login`          | host        | lock the screen after the automatic login; needs root                                    | yes        |
+| `sshd`                      | host        | Remote Login; needs root                                                                 | yes        |
+| `tailnet-auth`              | host        | how this host authenticates to the tailnet: login or auth key                            | yes        |
+| `vm-join`                   | host        | the OAuth client that lets this host mint VM auth keys ([Machines](machines.md#vm-join)) | yes        |
+| `claude-token`              | host        | the Claude Code token lent to VMs ([Secrets](secrets.md#claude-in-a-vm))                 | yes        |
+
+Items group by category: Terminal, Security, Editor, System, Network, and Headless (`autologin`, `power`, `lock-after-login` and `sshd`: what an unattended host needs). An item that needs root is refused without it with `sudo station config install <item>`.
+
+## Values
+
+An item with inputs (`tailnet-auth`, `vm-join`, `autologin`, `claude-token`) or an interactive procedure (`git-signing`, `ssh-key`, `github-login`) runs on a terminal only. A form asks each value, a password is never echoed, and `AGENT_PASSWORD` pre-fills the autologin password. Off a terminal the command exits 2 with `Hint: run it on a terminal`.
+
+There is no flag to pass a value: a secret never travels in argv or shell history ([ADR-009](../decisions/009-one-bootstrap-verb-and-no-values-in-argv.md)).
+
+## settings.json
+
+`~/.config/station/settings.json` holds what station decides for itself:
+
+```json
+{
+    "here": "macbook",
+    "hosts": {
+        "macbook": {},
+        "mac-mini": { "user": "jterrazz.agent", "key": "~/.ssh/id_ed25519" }
+    },
+    "tailnet": { "mode": "userspace", "auth_method": "login" },
+    "vm_user": "jterrazz",
+    "lend_list": ["session:openpanel"],
+    "user_email": "admin@jterrazz.com",
+    "user_name": "Jean-Baptiste Terrazzoni"
+}
 ```
 
-## Categories
+`here` is this machine's name, `hosts` the other hosts it can drive, `vm_user` the one login of every VM in the fleet, `lend_list` the secrets that may be lent. No secret is in it: those are in the keychain ([Footprint](footprint.md)).
 
-The Configuration tab groups items by category (Server only appears when the current machine is registered as `server`; see [Machines](machines.md)):
+## Environment
 
-- **Terminal**: ghostty, tmux, hushlogin
-- **Security**: GPG commit signing, SSH keygen, GitHub CLI auth, encrypted DNS (Quad9), Spotlight exclusion
-- **Editor**: Zed config
-- **System**: JAVA_HOME, nvm, dock reset/spacer
-- **Server**: autologin, power policy, lock-after-login, sshd
+`app` reads the environment once and passes typed options down; no other layer reads a variable.
 
-Items that need extra inputs (e.g. autologin's password) open a modal form before installing, built on [Charm's huh](https://github.com/charmbracelet/huh). Set `AGENT_PASSWORD` in your environment to pre-fill the autologin password field.
-
-## Keys
-
-| Key                       | Action                                                                                                                             |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `←` `→` `1..3`            | switch tab                                                                                                                         |
-| `↑` `↓` `workstation` `k` | navigate                                                                                                                           |
-| `tab`                     | collapse/expand current section                                                                                                    |
-| `space`                   | toggle the inline detail panel (Configuration tab)                                                                                 |
-| `i`                       | install the current item; on the Skills tab, updates it instead if it's outdated (or opens the reconfigure form on the Remote tab) |
-| `u`                       | uninstall (only for toggleable items that are currently installed)                                                                 |
-| `q` `esc`                 | quit                                                                                                                               |
+| Variable                                                          | Read for                                                     |
+| ----------------------------------------------------------------- | ------------------------------------------------------------ |
+| `AGENT_PASSWORD`                                                  | pre-fills the `autologin` form                               |
+| `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT` | the gateway ports `machines probe` and `status` check        |
+| `MISE_DATA_DIR`                                                   | where mise keeps its shims                                   |
+| `NO_COLOR`, `COLUMNS`                                             | the output form and width                                    |
+| `XDG_CONFIG_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME`             | the folders station uses ([Footprint](footprint.md))         |
+| `TART_HOME`                                                       | Tart's own storage, not station's                            |
+| `STATION_GITHUB_API_URL`, `STATION_TAILSCALE_API_URL`             | the API origins, so a spec can point them at a stub          |
+| `STATION_SYSTEM_DIRS`, `STATION_MACHINE_KIND`                     | which system folders count, and the machine kind, for a spec |
+| `STATION_VM_AGENT`                                                | internal: set in a VM's launchd agent                        |
+| `STATION_XDG_DETACHED`                                            | internal: `setup`'s detached layout step                     |
 
 ## Related
 
-- [Tools and skills](tools-and-skills.md): the Skills tab and the underlying registries.
-- [Machines](machines.md): how the machine role gates which items appear.
+- [Commands](commands.md): `station config`.
+- [Dotfiles](dotfiles.md): the files the dotfile items copy.
+- [Footprint](footprint.md): every file station writes.

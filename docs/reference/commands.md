@@ -1,75 +1,175 @@
 # Commands
 
-The everyday verbs. Machine management is in [Machines](machines.md); the interactive configurator in [Configuration](configuration.md).
+Every command of `station`, grouped as `station --help` groups them. The words are the [Glossary](../concepts/glossary.md)'s.
 
-## `workstation status`
+| Section    | Answers                                         |
+| ---------- | ----------------------------------------------- |
+| Rules      | What holds for every command                    |
+| Here       | `status`, `tools`, `config`, `clean`            |
+| The fleet  | `machines`, `images`, `secrets`, `tailnet`      |
+| Shortcuts  | `run git` and `run docker`                      |
+| The binary | `setup`, `--version`, `help`                    |
+| Plumbing   | The hidden commands the machine runs for itself |
+| Exit codes | What 0, 1, 2 and 130 mean                       |
 
-Full-screen TUI dashboard, organised into 4 tabs (`←/→` to cycle, `1..4` to jump directly):
+## Rules
 
-- **System**: live CPU/Memory/GPU/Network sparklines, top processes, network, Tailscale peers, and system health (firewall, DNS, etc.)
-- **Workspace**: tracked git repos, Docker containers, project dependencies
-- **Applications**: every catalogue tool with its version, by category
-- **Configuration**: every `workstation config` item with its current state, grouped by category (Terminal / Security / Editor / System / Server / Network / Identity). Server subsection only shows on a server-registered machine.
+- A bare noun lists (`tools`, `config`, `clean`, `machines`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`station`, `run`, `run git`) prints its menu on stderr and exits 2; on a terminal bare `station` opens the TUI.
+- An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create --lifetime lasting --name api`).
+- The same verbs everywhere: `install`, `uninstall`, `upgrade`. There are no aliases.
+- Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
+- Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`.
+- `--on <machine>` runs any command below on another machine of the fleet, over ssh; see [Machines](machines.md#on-another-machine).
+- A value a command needs from you is never an argv flag when it could be a secret: a config item asks in a form on a terminal ([Configuration](configuration.md)).
 
-Everything loads in parallel with a progress bar; the System tab's live readings refresh every second.
+## Here
 
-## `workstation install [tool...]`
+These commands act on the machine they run on, and list only what its kind allows.
 
-With no arguments in an interactive terminal, opens a full-screen TUI with the same architecture as `workstation config`. The 18 tool families are grouped into 4 pages: **Dev** (Package Managers, Runtimes, Shell & Terminal, CLI Tools, Git, Editors & IDEs), **Infra** (Containers & VMs, Deploy, Remote Access, Security), **AI** (AI Agents, AI Tooling, AI Apps), **Apps** (Browsers, Communication, Productivity, Media, System Utilities). Each is split into collapsible family sections, rows in registry order. Press `i` to install, `u` to uninstall (with a Yes/No confirm first), `space` for a detail panel (description, replaces, method, formula, dependencies, post-install scripts), `tab` to fold a section, `←/→`/`1..4` to switch pages. Entries that are neither installable nor uninstallable through the registry (App Store apps, Xcode, and other manual/check-only entries) show a muted `(read-only)` marker instead of `i`/`u` hints. Installing a tool with unmet `Dependencies` refuses with "install `<dep>` first" instead of running.
-
-```sh
-workstation install                 # Open the interactive install TUI (TTY only)
-workstation install --list          # Print the plain-text tool catalog instead
-workstation install homebrew go node         # Install specific tools directly
-workstation install claude codex ollama rtk  # AI tools
-workstation install ghostty tmux zed         # Terminal + editor
-```
-
-Falls back to the plain-text catalog listing (the classic `✓`/`✗` table by category) when stdout isn't a terminal (scripts, CI, piped output) or when `--list` is passed. `workstation install <tool> [tool...]` (the direct, non-interactive form) is unchanged either way.
-
-The tool catalogue and its categories live in [Tools and skills](tools-and-skills.md).
-
-## `workstation upgrade [package...]`
+### `station status`
 
 ```sh
-workstation upgrade --all          # Upgrade all package managers (brew, npm, bun)
-workstation upgrade --brew         # Upgrade Homebrew only
-workstation upgrade node claude    # Upgrade specific packages
+station status [--json]
 ```
 
-## `workstation clean [item...]`
+Everything about this machine: system, environment, workspace, identity, daemons, services, tools, config and setup. `--json` prints the [`station.status/v1`](status-json.md) document `studio doctor` reads.
+
+### `station tools`
 
 ```sh
-workstation clean --all            # Clean everything (brew cache, docker, multipass, trash)
-workstation clean docker trash     # Clean specific items
+station tools [--json]                          # the catalogue tools placed here, agent skills included
+station tools install <tool...>
+station tools uninstall <tool...> [--yes]
+station tools upgrade [<tool...> | --via <manager>...]
 ```
 
-## `workstation run`
+A bare `upgrade` upgrades every installed catalogue tool. `--via` takes a manager (`brew`, `npm`, `bun`, `uv`, `mise`, `skills`) and cannot be combined with names. A tool whose place excludes this machine is refused with a hint naming where it lives. An agent skill is a tool: `station tools install frontend-design`. The model is [Tools and skills](tools-and-skills.md).
+
+### `station config`
 
 ```sh
-workstation run git feat "message"    # git add . && commit "feat: message"
-workstation run git fix "message"     # git add . && commit "fix: message"
-workstation run git wip               # git add --all && commit "WIP"
-workstation run git unwip             # Undo last commit
-workstation run git push              # Push current branch
-workstation run git sync              # Fetch + pull
-workstation run docker reset          # Remove all containers + images
-workstation run docker clean          # System prune
+station config [--json]                         # the config items placed here
+station config install <item...>
+station config uninstall <item...> [--yes]
 ```
 
-## Shell shortcuts
+An item that needs values asks them in a form on a terminal and is refused elsewhere. Only reversible items uninstall. See [Configuration](configuration.md).
 
-Sourced via `dotfiles/applications/zsh/zshrc.sh` (see [Dotfiles](dotfiles.md)):
+### `station clean`
 
-| Command | Action                     |
-| ------- | -------------------------- |
-| `jj`    | Attach tmux session `main` |
-| `jc`    | Open Claude in tmux        |
-| `jo`    | Open Codex in tmux         |
-| `jg`    | Open Gemini in tmux        |
+```sh
+station clean [--json]                          # what can be reclaimed, with sizes; nothing runs
+station clean <cleanable...> [--yes]
+station clean --all [--yes]
+```
+
+`stale-vms` and `old-images` clean what the fleet left behind ([Images](images.md), [Machines](machines.md)).
+
+## The fleet
+
+### `station machines`
+
+```sh
+station machines [--here] [--json]              # every host and the VMs on each
+station machines add --name <name> [--user <login>] [--key <file>]
+station machines forget <host> [--yes]
+station machines create [--lifetime temporary|lasting] [--image linux] [--name <name>] [--cpus <n>] [--memory <size>] [--disk <size>]
+station machines start <vm>
+station machines stop <vm>
+station machines restart <machine> [--yes]
+station machines delete <vm> [--yes]
+station machines probe <machine> [--json]
+station machines unlock <host>
+```
+
+`--here` lists this host only, with no network. `create` asks the lifetime on a terminal and, with two reachable hosts, the host; piped it needs `--lifetime`. `delete` is the only verb that destroys a machine; `forget` only unregisters a host. VMs are made and run on hosts, so these commands except `probe` are refused on a VM. See [Machines](machines.md).
+
+### `station images`
+
+```sh
+station images [--json]
+station images build [<image...>] [--binary <linux station binary>]
+station images delete <image>[@<version>] [--yes]
+```
+
+A bare `build` builds every image that is missing or whose recipe changed. See [Images](images.md).
+
+### `station secrets`
+
+```sh
+station secrets [--json]                        # the lend list and what was lent where, names only
+station secrets allow <name...>
+station secrets disallow <name...> [--yes]
+station secrets lend --to <vm> [<name...>]
+station secrets recall --from <vm> [<name...>]
+```
+
+See [Secrets](secrets.md).
+
+### `station tailnet`
+
+```sh
+station tailnet [--json]                        # this machine's node, the peers, whether VMs can join
+station tailnet up
+station tailnet down
+```
+
+`up` asks how this host authenticates on a terminal the first time.
+
+## Shortcuts
+
+```sh
+station run git <branches|chore|feat|fix|log|push|status|sync|unwip|wip> [args]
+station run docker <rm|rmi|reset> [--yes]
+```
+
+| Shortcut                              | Does                                                               |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| `run git feat "message"`              | `git add .`, then commit `feat: message` (`fix`, `chore` alike)    |
+| `run git wip` / `unwip`               | commit everything as `WIP` / undo that commit, keeping the changes |
+| `run git push`                        | `git push -u origin HEAD`                                          |
+| `run git sync`                        | fetch with prune, then pull                                        |
+| `run git status` / `log` / `branches` | git's own, `log` the last 10 one-line                              |
+| `run docker rm`                       | remove every container                                             |
+| `run docker rmi`                      | remove every image                                                 |
+| `run docker reset`                    | `rm`, then `rmi`                                                   |
+
+`station clean docker` prunes Docker's unused data.
+
+## The binary
+
+```sh
+station setup [--name <name>]
+station --version
+station help [command]
+```
+
+`setup` is the one bootstrap verb, safe to run again: it registers this host in the fleet (asking the name on a terminal, taking `--name` otherwise), writes the one managed block of `~/.zshrc`, and moves `~/.studio/` to the XDG folders. `--version` prints `station version <version> (<commit>)`. See [Getting started](../start/getting-started.md) and [Dotfiles](dotfiles.md).
+
+## Plumbing
+
+Three commands exist for the machine's own use. They are hidden from help and the owner never types them.
+
+| Command                           | What runs it and what it does                                                                                                                                                                       |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `station shell zsh`               | the `~/.zshrc` block evaluates it at every shell start: PATH, the mise activation, station's completion, and in a VM the lent Claude token. Output on stdout only; another shell or none is refused |
+| `station completion <shell>`      | cobra's completion script, for a shell the block does not serve                                                                                                                                     |
+| `station machines supervise <vm>` | a VM's launchd agent runs it; refused unless it is that agent ([Machines](machines.md#lifetimes))                                                                                                   |
+
+`--on` is refused on `shell`, `completion`, `help` and `supervise`.
+
+## Exit codes
+
+| Code | Means                                               |
+| ---- | --------------------------------------------------- |
+| 0    | Done                                                |
+| 1    | An operation failed, or a confirmation was declined |
+| 2    | A refusal, before any question or effect            |
+| 130  | Interrupted                                         |
+
+A command over several items prints every outcome, then exits 1 with `<n> of <m> <noun> failed` if any failed.
 
 ## Related
 
-- [Machines](machines.md): `workstation machine` and `workstation remote`.
-- [Configuration](configuration.md): `workstation config`.
-- [Tools and skills](tools-and-skills.md): what `install`/`upgrade`/`clean` act on.
+- [Design system](../concepts/design-system.md): the forms a document takes.
+- [Status contract](status-json.md): the JSON a script reads.

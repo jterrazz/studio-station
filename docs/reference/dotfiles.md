@@ -1,19 +1,45 @@
 # Dotfiles
 
-`dotfiles/applications/` holds the versioned configuration `workstation config` installs onto a machine, one folder per application. Keeping them in the repo means every machine converges on the same setup, and changes are diffable and reviewed.
+The application configs `station` puts on a machine are embedded in the binary, one folder per application, so a machine converges on the same setup with no clone on disk.
 
-| Application | Contents                                                                                                     |
-| ----------- | ------------------------------------------------------------------------------------------------------------ |
-| `ghostty`   | Terminal `config` + `themes/`                                                                                |
-| `starship`  | `starship.toml` prompt                                                                                       |
-| `tmux`      | `tmux.conf`                                                                                                  |
-| `vscode`    | `Default.code-profile`                                                                                       |
-| `zed`       | `settings.json` + `.oxfmtrc.json`: the formatter values Zed applies when it saves its own settings           |
-| `zsh`       | `zshrc.sh`, sourced into `~/.zshrc` by `make install`; defines the `jj` / `jc` / `jo` / `jg` shell shortcuts |
+| Section            | Answers                                            |
+| ------------------ | -------------------------------------------------- |
+| The files          | What is embedded and which config item installs it |
+| The shell block    | What `station setup` writes into `~/.zshrc`        |
+| Removing the block | How to take it out by hand                         |
 
-The relevant `workstation config` items (Terminal, Editor categories) point at these files (see [Configuration](configuration.md)). The shell shortcuts are listed in [Commands](commands.md).
+## The files
+
+They live under `src/catalog/dotfiles/` and are embedded with `go:embed`.
+
+| Application | Contents                                                                            | Installed by        |
+| ----------- | ----------------------------------------------------------------------------------- | ------------------- |
+| `ghostty`   | terminal `config` and `themes/`                                                     | `ghostty-dotfiles`  |
+| `starship`  | the `starship.toml` prompt                                                          | `starship-dotfiles` |
+| `tmux`      | `tmux.conf`                                                                         | `tmux-dotfiles`     |
+| `zed`       | `settings.json` and `.oxfmtrc.json`: Zed config and the formatter values it applies | `zed-dotfiles`      |
+| `zsh`       | `zshrc.sh`, the shell loader: prompt, colours, FZF, `jj` `jc` `jo` `jg`             | `station shell zsh` |
+
+The `jj`, `jc`, `jo` and `jg` shortcuts attach tmux session `main` and open Claude, Codex and Gemini in tmux.
+
+## The shell block
+
+`station setup` writes one managed block into `~/.zshrc`; `make provision` and `scripts/install.sh` call it. `make install` never touches the machine.
+
+```zsh
+# >>> station >>>
+export PATH="$HOME/.local/bin:$PATH"
+command -v station >/dev/null 2>&1 && eval "$(station shell zsh)"
+# <<< station <<<
+```
+
+`station shell zsh` is hidden plumbing ([Commands](commands.md#plumbing)). It prints the embedded loader, the mise activation, station's own completion, and inside a VM the lent Claude token ([Secrets](secrets.md#claude-in-a-vm)). Running `setup` again leaves a correct block untouched and replaces an older form of the line, never adding a second; every other line of the file is left byte for byte.
+
+## Removing the block
+
+Nothing removes the block for you. Delete the lines from `# >>> station >>>` to `# <<< station <<<` in `~/.zshrc`, `make deprovision` from a checkout removes the binary and leaves the block alone.
 
 ## Related
 
-- [Configuration](configuration.md): the items that install these configs.
-- [Release](../guides/release.md): how `zshrc.sh` gets sourced onto a machine.
+- [Configuration](configuration.md): the items that install these files.
+- [Footprint](footprint.md): where each one lands.
