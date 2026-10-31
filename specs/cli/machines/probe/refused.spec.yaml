@@ -1,0 +1,13 @@
+description: 'probing this machine or an unknown one is refused, exit 2, before anything is reached'
+fixture: ../__fixtures__/hosts-x-y/
+runs:
+    - command: 'machines probe x'
+      exit: 2
+      stderr: |
+          Error: "x" is this machine
+          Hint: pick another machine: run station machines for the fleet
+    - command: 'machines probe nope'
+      exit: 2
+      stderr: |
+          Error: unknown machine "nope"
+          Hint: run station machines for the fleet

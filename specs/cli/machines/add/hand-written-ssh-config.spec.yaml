@@ -1,0 +1,75 @@
+description: 'add refuses to shadow a Host it does not manage, and rolls back'
+fixture: ./__fixtures__/hand-written-ssh-config/
+runs:
+    - command: 'machines add --name mac-mini --user agent'
+      exit: 1
+      stderr: |
+          Error: ssh config update failed (registry rolled back): refusing to modify {{workdir}}/.ssh/config: Host mac-mini already defined at line 1 (outside any managed block)
+          Hint: check "{{workdir}}/.ssh/config" and run it again
+      files:
+          .ssh/config:
+              equals: |
+                  Host mac-mini
+                    HostName legacy
+                    User legacy
+
+                  # >>> jterrazz machine worker >>>
+                  Host worker
+                    HostName 10.0.0.1
+                    User old
+                    IdentityFile ~/.ssh/id_ed25519
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                  # <<< jterrazz machine worker <<<
+          .config/station/settings.json:
+              equals: |
+                  {
+                    "here": "x",
+                    "hosts": {
+                      "x": {}
+                    },
+                    "tailnet": {
+                      "mode": "userspace",
+                      "auth_method": "login"
+                    },
+                    "vm_user": "vmu"
+                  }
+    - command: 'machines add --name worker --user deploy --key "~/.ssh/deploy_key"'
+      exit: 0
+      stdout: |
+          ●	worker	added, ssh worker
+      files:
+          .ssh/config:
+              equals: |
+                  Host mac-mini
+                    HostName legacy
+                    User legacy
+
+                  # >>> jterrazz machine worker >>>
+                  Host worker
+                    HostName worker
+                    User deploy
+                    IdentityFile ~/.ssh/deploy_key
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                    UserKnownHostsFile ~/.local/state/station/known_hosts/worker
+                    StrictHostKeyChecking accept-new
+                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
+                  # <<< jterrazz machine worker <<<
+          .config/station/settings.json:
+              equals: |
+                  {
+                    "here": "x",
+                    "hosts": {
+                      "worker": {
+                        "user": "deploy",
+                        "key": "~/.ssh/deploy_key"
+                      },
+                      "x": {}
+                    },
+                    "tailnet": {
+                      "mode": "userspace",
+                      "auth_method": "login"
+                    },
+                    "vm_user": "vmu"
+                  }

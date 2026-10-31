@@ -1,0 +1,11 @@
+description: 'a Mac that refuses the reboot is a failure naming sudo''s own line'
+fixture:
+    - ../__fixtures__/hosts-x-y/
+    - ../__fixtures__/stubs/
+    - ./__fixtures__/refuses-restart/
+runs:
+    - command: 'machines restart y --yes'
+      exit: 1
+      stderr: |
+          Error: "y" refused to restart: sudo: a password is required
+          Hint: check that sudo needs no password for fdesetup on y

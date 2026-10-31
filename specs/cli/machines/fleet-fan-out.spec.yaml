@@ -1,0 +1,18 @@
+description: 'the fleet asks every other host for its own view, in BatchMode, and merges the answers'
+fixture:
+    - ./__fixtures__/hosts-x-y/
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/fleet-y-answers/
+runs:
+    - command: 'machines --json | /usr/bin/jq -r ''.hosts | map(.name + ":" + (.here | tostring) + ":" + (.reachable | tostring)) | join(" ")'''
+      exit: 0
+      stdout: |
+          x:true:true y:false:true
+      files:
+          .calls:
+              equals: |
+                  ssh -o BatchMode=yes -o ConnectTimeout=5 y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station machines --here --json
+    - command: 'machines --json | /usr/bin/jq -r ''.hosts[1].vms[0] | [.name, .state, .lifetime, .node.ip] | join(" ")'''
+      exit: 0
+      stdout: |
+          w running lasting 100.64.0.9

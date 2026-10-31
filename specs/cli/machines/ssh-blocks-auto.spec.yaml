@@ -1,0 +1,23 @@
+description: 'in auto mode the blocks carry no ProxyCommand: the system daemon routes the name'
+fixture:
+    - ./__fixtures__/hosts-x-y/
+    - ./__fixtures__/auto-mode/
+runs:
+    - command: 'machines'
+      exit: 0
+      stdout: |
+          ●	x	host			online	-	0 VMs
+          ◐	y	host			unreachable	-	-
+      files:
+          .ssh/config:
+              equals: |
+                  # >>> jterrazz machine y >>>
+                  Host y
+                    HostName y
+                    User u
+                    IdentityFile ~/.ssh/id_ed25519
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                    UserKnownHostsFile ~/.local/state/station/known_hosts/y
+                    StrictHostKeyChecking accept-new
+                  # <<< jterrazz machine y <<<

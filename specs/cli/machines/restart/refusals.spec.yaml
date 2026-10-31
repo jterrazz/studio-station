@@ -1,0 +1,18 @@
+description: 'restart refuses this machine, an unknown one and a temporary VM before any question, exit 2'
+fixture: ../__fixtures__/vm-record/
+runs:
+    - command: 'machines restart x --yes'
+      exit: 2
+      stderr: |
+          Error: "x" is this machine
+          Hint: pick another machine: run station machines for the fleet
+    - command: 'machines restart nope --yes'
+      exit: 2
+      stderr: |
+          Error: unknown machine "nope"
+          Hint: run station machines for the fleet
+    - command: 'machines restart linux-1 --yes'
+      exit: 2
+      stderr: |
+          Error: linux-1 is temporary: restarting it from the host would delete it
+          Hint: ssh linux-1 sudo reboot

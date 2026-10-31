@@ -1,0 +1,8 @@
+description: 'forgetting the host it runs on is refused, exit 2, and nothing changes'
+fixture: ../__fixtures__/host-x/
+runs:
+    - command: 'machines forget x --yes'
+      exit: 2
+      stderr: |
+          Error: "x" is this machine
+          Hint: pick another machine: run station machines for the fleet

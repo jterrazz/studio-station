@@ -1,0 +1,4 @@
+#!/bin/sh
+# ping that finds its host unless answers/ping.exit says otherwise, recorded in $HOME/.calls.
+printf 'ping %s\n' "$*" >> "$HOME/.calls"
+if [ -f "${0%/*}/../answers/ping.exit" ]; then exit "$(/bin/cat "${0%/*}/../answers/ping.exit")"; fi

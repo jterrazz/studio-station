@@ -1,0 +1,35 @@
+description: 'adding then forgetting a host gives a user''s ssh config back byte for byte'
+fixture: ./__fixtures__/user-ssh-config/
+runs:
+    - command: 'machines add --name box --user agent'
+      exit: 0
+      stdout: |
+          ●	box	added, ssh box
+      files:
+          .ssh/config:
+              equals: |
+                  Host x
+                    User y
+
+
+                  # >>> jterrazz machine box >>>
+                  Host box
+                    HostName box
+                    User agent
+                    IdentityFile ~/.ssh/id_ed25519
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                    UserKnownHostsFile ~/.local/state/station/known_hosts/box
+                    StrictHostKeyChecking accept-new
+                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
+                  # <<< jterrazz machine box <<<
+    - command: 'machines forget box --yes'
+      exit: 0
+      stdout: |
+          ●	box	forgotten
+      files:
+          .ssh/config:
+              equals: |+
+                  Host x
+                    User y
+

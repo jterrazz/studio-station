@@ -1,0 +1,12 @@
+description: 'a tailscale up that fails is a failure naming tailscale''s own error'
+fixture:
+    - ./__fixtures__/registered/
+    - ../__fixtures__/stubs/
+    - ../__fixtures__/running/
+    - ./__fixtures__/up-fails/
+runs:
+    - command: 'tailnet up </dev/null'
+      exit: 1
+      stderr: |
+          Error: tailscale up failed: backend is stopped
+          Hint: station tailnet shows where the node stands
