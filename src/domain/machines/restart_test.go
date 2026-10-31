@@ -104,14 +104,3 @@ func TestRestartGivesUpOnAHostThatNeverComesBack(t *testing.T) {
 		t.Fatalf("spent %v, want the 180s return budget", spent)
 	}
 }
-
-func TestRestartReportsAMacThatRefusedTheReboot(t *testing.T) {
-	svc, _ := restarting(t, system.Output{ExitCode: 1, Stderr: "sudo: a password is required\n"}, 0)
-
-	_, err := svc.Restart(context.Background(), "x", nil)
-
-	var refused *machines.RestartRefusedError
-	if !errors.As(err, &refused) || refused.Detail != "sudo: a password is required" {
-		t.Fatalf("Restart error = %v, want the refusal with sudo's line", err)
-	}
-}

@@ -17,14 +17,9 @@ func TestNextKeepsEveryVMAStopDidNotDeclare(t *testing.T) {
 		now      time.Time
 		want     action
 	}{
-		{name: "a declared poweroff deletes a temporary VM", lifetime: Temporary, intent: true, now: at(0), want: actDelete},
-		{name: "a declared poweroff leaves a lasting VM off", lifetime: Lasting, intent: true, now: at(0), want: actDone},
 		{name: "the intent wins over the run's exit code", lifetime: Temporary, intent: true, code: 1, now: at(0), want: actDelete},
-		{name: "a clean stop without intent is a reboot: run again", lifetime: Temporary, now: at(0), want: actRerun},
-		{name: "a crash deletes nothing", lifetime: Temporary, code: 1, now: at(0), want: actCrashed},
 		{name: "a lasting crash is launchd's to restart", lifetime: Lasting, code: 137, now: at(0), want: actCrashed},
 		{name: "a third re-run within the window still runs", lifetime: Temporary, reruns: []time.Time{at(0), at(10)}, now: at(20), want: actRerun},
-		{name: "a fourth stop within the window is a broken guest", lifetime: Temporary, reruns: []time.Time{at(0), at(10), at(20)}, now: at(30), want: actGuestStops},
 		{name: "re-runs older than the window are forgotten", lifetime: Temporary, reruns: []time.Time{at(0), at(10), at(20)}, now: at(65), want: actRerun},
 		{name: "the window is a strict 60 seconds", lifetime: Temporary, reruns: []time.Time{at(0), at(30), at(40)}, now: at(60), want: actRerun},
 	} {

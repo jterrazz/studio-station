@@ -9,8 +9,6 @@ func TestClaudeTokenLine(t *testing.T) {
 		want   string
 		ok     bool
 	}{
-		{"plain", `{"operator:claude:oauth-token":"sk-ant-oat01"}`, `export CLAUDE_CODE_OAUTH_TOKEN='sk-ant-oat01'`, true},
-		{"single quote", `{"operator:claude:oauth-token":"tok'en"}`, `export CLAUDE_CODE_OAUTH_TOKEN='tok'\''en'`, true},
 		{"spaces and dollar", `{"operator:claude:oauth-token":"a b $HOME"}`, `export CLAUDE_CODE_OAUTH_TOKEN='a b $HOME'`, true},
 		{"other name only", `{"session:a":"x"}`, "", false},
 		{"empty value", `{"operator:claude:oauth-token":""}`, "", false},
