@@ -110,6 +110,8 @@ Modern replacements are on every machine; prefer them over the defaults:
 - **opencode**: Open-source AI coding agent CLI
 - **hermes**: Self-improving AI agent with persistent memory
 - **conductor**: Runs parallel AI coding agents in git worktrees
+- **herdr**: Agent multiplexer that lives in your terminal
+- **herdr-app**: Desktop app that keeps coding agents running in the background
 
 ### AI Tooling
 

@@ -64,6 +64,8 @@ runs:
            {{string}} opencode       brew
            {{string}} hermes         sh
            {{string}} conductor      brew
+           ✗ herdr          brew
+           ✗ herdr-app      brew
           AI Tooling
            {{string}} ollama         brew
            {{string}} qmd            bun

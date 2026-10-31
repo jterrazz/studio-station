@@ -636,6 +636,25 @@ var Tools = []Tool{
 		Dependencies: []string{"homebrew"},
 		CheckFn:      checkAppWithCask("Conductor", "conductor"),
 	},
+	{
+		Name:         "herdr",
+		Description:  "Agent multiplexer that lives in your terminal",
+		Command:      "herdr",
+		Formula:      "herdr",
+		Method:       InstallBrewFormula,
+		Category:     CategoryAIAgents,
+		Dependencies: []string{"homebrew"},
+		VersionFn:    tool.VersionFromBrewFormula("herdr"),
+	},
+	{
+		Name:         "herdr-app",
+		Description:  "Desktop app that keeps coding agents running in the background",
+		Formula:      "herdr-app",
+		Method:       InstallBrewCask,
+		Category:     CategoryAIAgents,
+		Dependencies: []string{"homebrew"},
+		CheckFn:      checkAppWithCask("Herdr", "herdr-app"),
+	},
 
 	{
 		Name:         "ollama",
