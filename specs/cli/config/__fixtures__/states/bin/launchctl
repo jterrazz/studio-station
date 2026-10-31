@@ -1,0 +1,7 @@
+#!/bin/sh
+# launchctl print-disabled system, with Remote Login enabled.
+printf 'launchctl %s\n' "$*" >> "$HOME/.calls"
+case "$*" in
+    "print-disabled system") echo '	"com.openssh.sshd" => enabled' ;;
+    *) exit 113 ;;
+esac

@@ -1,0 +1,2 @@
+#!/bin/sh
+printf 'open %s\n' "${1##*/}" >> "$HOME/.calls"

@@ -1,0 +1,13 @@
+description: 'a linux VM lists only the config items placed on it: no headless item, no kept secret'
+env:
+    - STATION_MACHINE_KIND=linux
+runs:
+    - command: 'config --json | /usr/bin/jq -r ''[.items[].name | select(IN("power", "dns", "ssh-key", "sshd", "autologin", "tailnet-auth", "vm-join", "claude-token", "ghostty-dotfiles"))] | length'''
+      exit: 0
+      stdout: |
+          0
+    - command: 'config --json | /usr/bin/jq -r ''.items[] | select(.name | IN("hushlogin", "github-login")) | .name'''
+      exit: 0
+      stdout: |
+          hushlogin
+          github-login

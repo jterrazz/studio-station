@@ -1,0 +1,26 @@
+description: 'uninstalling the Claude token deletes it from the studio store and takes it off the lend list'
+fixture:
+    - ../__fixtures__/studio/
+    - ./__fixtures__/settings-lent/
+runs:
+    - command: 'config uninstall claude-token --yes'
+      exit: 0
+      stdout: |
+          ●	claude-token
+          ●	operator:claude:oauth-token	deleted from the studio credential store
+          ●	lend list	no longer holds operator:claude:oauth-token
+      files:
+          .calls:
+              equals: |
+                  studio credentials delete operator:claude:oauth-token
+          .config/station/settings.json:
+              equals: |
+                  {
+                    "tailnet": {
+                      "mode": "userspace",
+                      "auth_method": "login"
+                    },
+                    "lend_list": [
+                      "session:a"
+                    ]
+                  }

@@ -1,0 +1,9 @@
+description: 'one unknown name refuses the whole request before any effect'
+runs:
+    - command: 'config install hushlogin nope'
+      exit: 2
+      stderr: |
+          Error: unknown config item "nope"
+          Hint: run station config for the items
+      files:
+          .hushlogin: absent

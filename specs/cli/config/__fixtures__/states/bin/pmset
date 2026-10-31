@@ -1,0 +1,14 @@
+#!/bin/sh
+# pmset -g custom, with the always-on policy applied.
+printf 'pmset %s\n' "$*" >> "$HOME/.calls"
+/bin/cat <<'OUT'
+Battery Power:
+ sleep                0
+AC Power:
+ autorestart          1
+ sleep                0
+ displaysleep         5
+ disksleep            0
+ powernap             0
+ womp                 1
+OUT

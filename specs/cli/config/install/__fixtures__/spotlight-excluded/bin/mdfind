@@ -1,0 +1,3 @@
+#!/bin/sh
+# Spotlight finds nothing in the folder: it is in the Privacy list.
+printf 'mdfind\n' >> "$HOME/.calls"

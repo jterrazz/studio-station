@@ -1,0 +1,48 @@
+description: 'an item with values or an interactive login refuses off a terminal, before any question or effect'
+fixture:
+    - ../__fixtures__/security/
+    - ../__fixtures__/studio/
+    - ../__fixtures__/git/
+runs:
+    - command: 'config install tailnet-auth </dev/null'
+      exit: 2
+      stderr: |
+          Error: tailnet-auth needs a terminal
+          Hint: run it on a terminal
+      files:
+          .calls: absent
+    - command: 'config install vm-join </dev/null'
+      exit: 2
+      stderr: |
+          Error: vm-join needs a terminal
+          Hint: run it on a terminal
+      files:
+          .calls: absent
+    - command: 'config install autologin </dev/null'
+      exit: 2
+      stderr: |
+          Error: autologin needs a terminal
+          Hint: run it on a terminal
+      files:
+          .calls: absent
+    - command: 'config install claude-token </dev/null'
+      exit: 2
+      stderr: |
+          Error: claude-token needs a terminal
+          Hint: run it on a terminal
+      files:
+          .calls: absent
+    - command: 'config install git-signing </dev/null'
+      exit: 2
+      stderr: |
+          Error: git-signing needs a terminal
+          Hint: run it on a terminal
+      files:
+          .calls: absent
+    - command: 'config install hushlogin vm-join </dev/null'
+      exit: 2
+      stderr: |
+          Error: vm-join needs a terminal
+          Hint: run it on a terminal
+      files:
+          .hushlogin: absent
