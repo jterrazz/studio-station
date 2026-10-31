@@ -1,0 +1,25 @@
+description: 'on a terminal a host that fails the pre-check is unreachable, exit 1, and no session opens'
+fixture:
+    - ../../__fixtures__/terminal/
+    - ../__fixtures__/hosts-x-y/
+    - ../__fixtures__/stubs/
+    - ./__fixtures__/unreachable/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION" machines unlock y'
+      stdin: |
+          see Hint: station machines probe y
+          screen
+      exit: 1
+      stdout: |
+          Error: cannot reach "y"
+          Hint: station machines probe y
+      files:
+          .calls:
+              contains:
+                  - '-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile='
+                  - 'known_hosts/y.preboot y true'
+    - command: '--version >/dev/null; /usr/bin/grep -c PreferredAuthentications .calls'
+      exit: 1
+      stdout: |
+          0
