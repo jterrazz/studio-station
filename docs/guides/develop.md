@@ -1,6 +1,6 @@
 # Developing
 
-How to work on `workstation` itself: build it, run it from the checkout, and know which file a change belongs in.
+How to work on `station` itself: build it, run it from the checkout, and know which file a change belongs in.
 
 | Section             | Answers                                     |
 | ------------------- | ------------------------------------------- |
@@ -12,15 +12,14 @@ How to work on `workstation` itself: build it, run it from the checkout, and kno
 ## Working from source
 
 ```sh
-git clone https://github.com/jterrazz/studio-workstation.git ~/Developer/studio-workstation
-cd ~/Developer/studio-workstation
-make build                # .artifacts/go/workstation
-./.artifacts/go/workstation status  # run the build without installing it
+git clone https://github.com/jterrazz/studio-station.git
+cd studio-station
+make install              # Go modules and the npm half
+make build                # .artifacts/go/station
+./.artifacts/go/station status  # run the build without installing it
 ```
 
-The path is the one the install script clones to, because the machine serves one clone: the `~/.zshrc` line sources its `zshrc.sh`, and `workstation` reads its dotfiles and scripts from it unless `WORKSTATION_REPO_PATH` names another ([Footprint](../reference/footprint.md)). A second clone elsewhere is a checkout to build, not the one the shell runs.
-
-Go 1.26+ and npm are the two requirements: `make install` fetches the Go modules and the npm half the specs and the toolchain run on ([Test](test.md)). `make provision` puts the build on the machine as the real `workstation`; that gesture, and everything else about a machine that has `workstation` on it, is [Release](release.md)'s.
+The binary reads nothing from the clone: the dotfiles and the VM recipes are embedded, so any checkout is a checkout to build. Go 1.27+ and npm are the two requirements; `make install` touches nothing outside the checkout. `make provision` puts the build on the machine as the real `station` ([Release](release.md)).
 
 ## The make targets
 
@@ -38,30 +37,35 @@ Go 1.26+ and npm are the two requirements: `make install` fetches the Go modules
 | `make deprovision` | Remove the provisioned binary                                                                            |
 | `make clean`       | Remove `.artifacts/`                                                                                     |
 
-`install`, `build`, `lint`, `fix`, `test` and `check` are the gestures every repository of the estate answers, so a session that never opened this one installs, proves and repairs it the same way; `make install` touches nothing outside the checkout, and putting `workstation` on the machine is `make provision`'s alone. `make check` is the whole gate, and it fails on the first finding of either half. The Go half runs `golangci-lint` and `deadcode` with `go tool`, at the versions the `tool` directive of `go.mod` declares, so the Go that builds the binary builds its linters and a green run is never a fact about the day it ran. Which linters judge the Go sources, and the four exclusions that carry a reason, are `.golangci.yml`. The TypeScript half is `typescript check` from `@jterrazz/typescript`, whose passes are the toolchain's own [Quality checks](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md).
+`install`, `build`, `lint`, `fix`, `test` and `check` are the gestures every repository of the estate answers, so a session that never opened this one installs, proves and repairs it the same way; `make install` touches nothing outside the checkout, and putting `station` on the machine is `make provision`'s alone. `make check` is the whole gate, and it fails on the first finding of either half. The Go half runs `golangci-lint` and `deadcode` with `go tool`, at the versions the `tool` directive of `go.mod` declares, so the Go that builds the binary builds its linters and a green run is never a fact about the day it ran. Which linters judge the Go sources, and the four exclusions that carry a reason, are `.golangci.yml`. The TypeScript half is `typescript check` from `@jterrazz/typescript`, whose passes are the toolchain's own [Quality checks](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md).
 
 ## Where a change goes
 
-Most changes are a registry entry, not new code: that is the shape [Architecture](../concepts/architecture.md) describes. The file to open:
+Most changes are a catalogue value, not new code ([Architecture](../concepts/architecture.md)). The folder to open:
 
-| Change                                        | File                                                                              |
-| --------------------------------------------- | --------------------------------------------------------------------------------- |
-| A tool `workstation install` offers           | `src/internal/config/tools_catalog.go`                                            |
-| A `workstation config` item                   | `src/internal/config/scripts.go` (server items: `server_*.go` beside the command) |
-| A `workstation run` shortcut                  | `src/internal/config/commands.go`                                                 |
-| Something `workstation clean` reclaims        | `src/internal/config/cleanables.go`                                               |
-| A package manager `workstation upgrade` knows | `src/internal/config/upgraders.go`                                                |
-| A curated agent skill                         | `src/internal/config/skills.go`                                                   |
-| A new verb                                    | A file under `src/internal/commands/`, registering itself in `init()`             |
-| What a TUI shows                              | `src/internal/presentation/views/<view>/`                                         |
-| A shell shortcut or an app's dotfile          | `dotfiles/applications/`                                                          |
+| Change                                          | Folder                                                                                                           |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| A tool or an agent skill `station tools` offers | `src/catalog/tools.go`, `src/catalog/skills.go`                                                                  |
+| A config item                                   | `src/catalog/config.go`, its procedure in `src/domain/config/`                                                   |
+| Something `station clean` reclaims              | `src/catalog/cleanables.go`                                                                                      |
+| A manager `--via` knows                         | `src/catalog/managers.go`                                                                                        |
+| A `station run` shortcut                        | `src/catalog/shortcuts.go`                                                                                       |
+| How a method installs                           | `src/domain/tools/methods.go`, the one method table                                                              |
+| A VM image's recipe                             | `src/catalog/images/`                                                                                            |
+| An application's dotfile                        | `src/catalog/dotfiles/`                                                                                          |
+| A new verb                                      | a leaf folder `src/cli/<noun>/<verb>/`, its domain call, its presenter in `src/present/`, its file in `src/app/` |
+| What a document shows                           | `src/present/<subject>/`                                                                                         |
+| What the TUI shows                              | `src/tui/screens/`                                                                                               |
+| The wording of a domain error                   | `src/cli/kit/failures_<noun>.go`                                                                                 |
+
+Dependencies flow one way; `specs/architecture/layers_test.go` refuses a change that crosses a layer. The linters run with `go tool`, so `make lint` needs no installed tool.
 
 ## What a change owes
 
-Five things land in the same commit as the change that makes them true:
+Four things land in the same commit as the change that makes them true:
 
-- **A registry change regenerates the projection.** Run `make skills`; the sync test in `make test` fails otherwise, and the sections between the `GENERATED` markers are never edited by hand ([Tools and skills](../reference/tools-and-skills.md)).
-- **A change to a command's output regenerates the specs.** `TEST_UPDATE=1 npm test` rewrites the `exit:` and the streams of the affected documents, and nothing else ([Test](test.md)).
+- **A catalogue change regenerates the projection.** Run `make skills`; the sync test in `make test` fails otherwise, and the sections between the `GENERATED` markers are never edited by hand ([Tools and skills](../reference/tools-and-skills.md)).
+- **A change to behaviour carries its spec document.** A new command, flag, refusal or `--json` key comes with the `.spec.yaml` that proves it end to end; `TEST_UPDATE=1 npm test` rewrites only the `exit:` and streams of existing documents ([Test](test.md)).
 - **A change to behaviour updates its page.** The corpus is where this repository's knowledge is authored; a page left saying what is no longer true is a bug that shipped.
 - **A comment states its kind, in both halves.** The default is none; a comment that stays opens with `invariant:`, `hazard:`, `outside:` or `value:` ([A comment states its kind](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/lint-presets.md#a-comment-states-its-kind)). The Go half holds the same law in Go's shapes: a package comment (staticcheck's ST1000 asks for it), and one line of doc above an exported identifier or member, its hover. A kinded comment about an exported function goes inside its body, since ST1020 wants that function's doc to open with its name. `typescript check` reads the configs and scripts, not `.go` files, so on the Go side the review is the gate.
 - **A change to a doctrine page updates its skill.** [The stack](../concepts/stack.md) ships as `studio-stack` and [Repo structure](../concepts/repo-structure.md) as `studio-repo-structure`; skills route, they never author.

@@ -1,0 +1,93 @@
+# Design system
+
+Everything `station` shows, in a terminal, a pipe or the TUI, comes from one palette, one mark vocabulary and one document model.
+
+| Section           | Answers                                                |
+| ----------------- | ------------------------------------------------------ |
+| The palette       | The colours, by meaning                                |
+| The marks         | The four glyphs and what each says                     |
+| Typography        | Margins, rows, columns and empty states                |
+| Header and footer | What frames every document                             |
+| Pipe and JSON     | The record format a script reads, written once         |
+| The TUI           | Tabs, focus modes, the action rule and the loading law |
+
+## The palette
+
+Semantic tokens, each a light and a dark value chosen by the terminal's background (Catppuccin Latte and Macchiato, the flavour the dotfiles already use). `src/theme/palette.go` is the only place a colour is written; the layer test refuses a hex or a colour constructor anywhere else.
+
+| Token       | Used for                                                      |
+| ----------- | ------------------------------------------------------------- |
+| `Text`      | body text                                                     |
+| `Muted`     | hints, details, `○`, secondary text                           |
+| `Subtle`    | rules and inactive tabs only; never text that carries meaning |
+| `Surface`   | borders and the modal frame                                   |
+| `Selection` | the cursor row's background                                   |
+| `Accent`    | active tab, section titles, the header name                   |
+| `Good`      | `●`                                                           |
+| `Warn`      | `◐`                                                           |
+| `Bad`       | `✗` and `Error:`                                              |
+
+The same tokens colour Fang's help and the forms that ask a config item's values.
+
+## The marks
+
+| Mark | Means                |
+| ---- | -------------------- |
+| `●`  | ok                   |
+| `◐`  | degraded, or unknown |
+| `○`  | absent               |
+| `✗`  | broken               |
+
+The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. The glyphs live in `src/present/mark.go` and nowhere else. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
+
+## Typography
+
+- The left margin is one space. Headers, rules, section titles and hints start at the margin; rows start two columns in.
+- A blank line precedes every section. A section title is `Accent` and bold, followed by its counts (`58 ●  2 ◐  14 ○`, each in its mark's tone).
+- A row is a mark, a space, then cells separated by two spaces. Column widths are computed per document, so every section lines up, and the last cell is never padded.
+- A cell is a name (strong), a value, a method (muted), then a detail (muted, cut with `…` to the width, never cut in a pipe). A row that is not `●` may end with the one command that repairs it.
+- Sizes are humanised by one function; numbers are right-aligned.
+- An empty state is one muted row (`none`, `nothing to clean`, `no machines registered`) plus a hint naming the command that fills it.
+
+## Header and footer
+
+```text
+ station tools                                                macbook · host
+ ────────────────────────────────────────────────────────────────────────────
+```
+
+Left, `station` and the command path; right, this machine's name and kind. A rule runs under it. The footer is a blank line, then the hints, one per line, each prefixed `→ `.
+
+## Pipe and JSON
+
+When stdout is not a terminal, or `NO_COLOR` is set, a document prints as records, one per line, with no header, rule, footer or padding and no colour sequence. The separator is a tab everywhere:
+
+- a section title is `# <title>`, then its counts as `<n> <glyph>` cells;
+- a row is `<glyph>` then its cells; a row with no mark starts with an empty field;
+- a key and its value are `<key><TAB><value>`;
+- a blank cell stays (two tabs); trailing empty cells are trimmed.
+
+So `cut -f2` is a row's name. `--json` prints the presenter's JSON value, two-space indented, with a trailing newline; the key conventions are `name`, `ip`, `*_at`, `*_bytes`, `lend_list` and `vms`, one key per concept across every schema.
+
+## The TUI
+
+`station` on a terminal opens one Bubble Tea app with the tabs Status, Tools, Config, Clean and Fleet. The TUI renders the same presenters as the commands.
+
+| Tab    | Holds                                                                              | Keys                                                                       |
+| ------ | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Status | the status document's sections as panels, with a live strip while the tab is shown | `r`                                                                        |
+| Tools  | the catalogue by category, agent skills last                                       | `i` install, `u` uninstall, `U` upgrade, `/`                               |
+| Config | the config items placed here; an item with inputs opens its form                   | `i`, `u`                                                                   |
+| Clean  | the cleanables with sizes                                                          | `c` clean the row, `/`                                                     |
+| Fleet  | every host and its VMs, then images, secrets and the tailnet                       | `n` `s` `d` `f` `p` `b` `o` `t`, `enter` opens that machine's TUI over ssh |
+
+Focus modes: the app holds exactly one. Normal owns the global keys (`tab`, `1` to `5`, `r`, `?`, `q`); Filter gives the text input every key except `esc` and `enter`, so typing `q1i` filters by `q1i`; Modal gives a form every key except `ctrl+c`.
+
+The action rule: every mutating key releases the screen, makes the one domain call with the real terminal, then restores the screen, shows the outcome in the status bar and reloads. Reads run as commands with a spinner. One action at a time per screen.
+
+The loading law: a screen's `Init` returns the commands that call the domain, results arrive as messages, and `View` only renders the model. A view never calls a service, a probe or the system.
+
+## Related
+
+- [Architecture](architecture.md): the output layer that decides the form.
+- [Commands](../reference/commands.md): the commands these documents belong to.

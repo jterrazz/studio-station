@@ -7,6 +7,7 @@ Two suites prove a change: Go tests (the module tests and the boundary test of t
 | The two suites           | What `make test` runs, and in which order             |
 | A scenario is a document | The `<case>.spec.yaml` form and how it is regenerated |
 | The sandbox              | Why no spec reaches the real machine                  |
+| The stubs                | How a spec scripts a system tool                      |
 | What CI runs             | The gate a pull request passes                        |
 
 ## The two suites
@@ -50,6 +51,14 @@ No spec reaches the real machine. The runner sets `HOME` to the run's working di
 A run is never given a terminal, so a document that drives the TUI names the `terminal` env set and runs `--version >/dev/null; terminal "$STATION"`. The `terminal` stub of `specs/cli/root/__fixtures__/terminal/` opens a pseudo-terminal (80x24, or `--size`), replays what the binary draws on a screen of cells, and plays the steps the document writes on `stdin:`: `see` and `gone` wait for a text on the screen, `send` types keys (`\r`, `\x1b[B`), `screen` prints the screen. It then exits with the binary's code, and a wait that times out prints the screen on stderr and exits 124. The `terminal-*.spec.yaml` documents of `specs/cli/root/` are those sessions.
 
 The full grammar is `@jterrazz/test`'s [Spec documents](https://github.com/jterrazz/package-test/blob/main/docs/guides/spec-documents.md) and [CLI specs](https://github.com/jterrazz/package-test/blob/main/docs/guides/cli-specs.md).
+
+## The stubs
+
+A spec copies one `fixture:` directory into its working directory, so stubs live beside the command word that uses them: `specs/cli/<noun>/__fixtures__/<case>/bin/<tool>`. A stub answers by argv from a table, appends `<tool> <argv>` (and the stdin of `brew bundle --file=-`) to `$HOME/.calls`, and exits 97 on anything unscripted. A document asserts `.calls` through `files:` to prove which installer line ran. The GitHub and Tailscale APIs are stub backends the runner serves, reached through `STATION_GITHUB_API_URL` and `STATION_TAILSCALE_API_URL`.
+
+## What a test is for
+
+A test exists because a real regression would turn it red. Every behaviour of a command (each flag, refusal, exit code, `--json` schema and migration) has a spec document through the real binary; the architecture test proves the layers; a module test exists only where the logic is dense and a spec cannot reach it honestly (a terminal, a timing budget, root, a pure algorithm). A test that restates a declaration, a table or a mock's own return is deleted.
 
 ## What CI runs
 

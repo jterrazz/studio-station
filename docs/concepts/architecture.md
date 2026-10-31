@@ -1,54 +1,137 @@
 # Architecture
 
-`workstation` is one Go binary whose behaviour is declared as data: a registry of tools, configuration items, run shortcuts and curated skills, read by a thin Cobra command layer and rendered by Bubble Tea views.
+`station` is one Go binary in layers: an input layer parses argv, a command calls one domain operation, a pure presenter turns the result into a document, and one output layer prints it. The layers mirror the estate's TypeScript `studio` CLI, and a test refuses an import that crosses them.
 
-| Section                  | Answers                                                  |
-| ------------------------ | -------------------------------------------------------- |
-| The binary               | What runs when you type `workstation`                    |
-| The four packages        | Where each kind of code lives                            |
-| Registry-driven          | Why a feature is usually a data entry, not a new command |
-| The two sources of truth | The registry in the repo, the config on the machine      |
-| The compiler             | The one source layer this repo projects                  |
+| Section                   | Answers                                                         |
+| ------------------------- | --------------------------------------------------------------- |
+| The layers                | The packages under `src/` and what each one holds               |
+| Who may import whom       | The direction dependencies flow, and the test that owns it      |
+| The path of a request     | What happens between argv and the bytes on the terminal         |
+| The error block           | The one error shape, and the exit codes                         |
+| Fang behind the CLI       | Why help, errors and completion can be removed without a change |
+| The catalogue and methods | Why a feature is a value, and the one method table              |
+| The two sources of truth  | The catalogue in the binary, the state on the machine           |
+| The compiler              | The one source layer this repository projects                   |
 
-## The binary
+## The layers
 
-`src/cmd/workstation/main.go` does one thing: call `commands.Execute()` and exit non-zero on error. `Execute` runs the single Cobra root declared in `src/internal/commands/root.go`: `workstation`, with Cobra's own `help` command and default completion command hidden.
+```text
+src/
+  cmd/station/    process entry: reads argv, environment and the three streams once, calls app
+  cmd/skillsgen/  the compiler: projects the catalogue into the toolbelt skill
+  app/            the composition root: builds adapters and services, resolves every environment
+                  variable into a typed option, builds the cobra tree and Fang, maps an error to an exit code
+  cli/            the cobra tree, one folder per command word: input -> command -> presenter
+    kit/          how a leaf and a group are declared; the confirm gate; the wording of every domain error
+  domain/         behaviour, never touching the machine except through ports
+    settings/ tools/ config/ setup/ status/ clean/ machines/ images/ secrets/ remote/ tailnet/ shortcuts/ shell/
+```
 
-Every verb is a `*cobra.Command` in its own file under `src/internal/commands/`, registered on the root by that file's `init()`. A verb is small on purpose: `status.go` and `config.go` hand straight over to a view (`statusview.RunOrExit()`, `configview.RunOrExit()`), and `install.go` holds only the branch between the interactive TUI and the plain-text catalogue. The decision it makes is whether stdout is a terminal, or whether `--list` was passed.
+The ports and the data:
 
-Two commands ship as a second binary each: `src/cmd/skillsgen/` is the projection generator run by `make skills`, and the CLI specs build their own copy of `workstation` (see [Test](../guides/test.md)).
+```text
+  system/         the ports: interfaces and value types (Runner, FS, Env, Net, Clock, Host, Engine)
+    tart/         the Engine adapter, over Runner
+    host/         the real adapters: the only importer of os/exec, files, the network
+    systemtest/   scripted fakes of every port, for tests
+  catalog/        pure data: tools, config items, cleanables, managers, shortcuts, images, the embedded dotfiles and recipes
+  present/        the Document model (blocks, tones, marks) and one presenter per subject
+  output/         the only place that knows a terminal: tty, pipe or json, and the one error block
+  theme/          the one palette
+  prompt/         the conversations on stderr: confirmations and the forms that ask a config item's values
+  fail/           the error type: a message, a hint and a code
+  tui/            the unified Bubble Tea app
+```
 
-## The four packages
+Beside `src/`, `specs/` holds the proofs:
 
-| Package                      | Holds                                                                                                                             |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `src/internal/commands/`     | One Cobra command per file, plus the server-side actions `workstation config` items call (`server_*.go`)                          |
-| `src/internal/config/`       | The registries (tools, scripts, run commands, cleanables, upgraders, skills) and the machine registry                             |
-| `src/internal/domain/`       | Behaviour that is not a registry entry: version parsing, status loading, the `skills` CLI integration                             |
-| `src/internal/presentation/` | Bubble Tea views (`views/status`, `views/install`, `views/config`), shared `components/`, `theme/`, and `print/` for plain output |
+```text
+specs/
+  architecture/   the test of the layers
+  cli/            the end-to-end spec documents
+```
 
-The registry package is the centre rather than a bottom layer: `commands`, `domain/status` and the views all import `config`, and `config` reaches back into `presentation/print` for the lines its install actions emit. Only `domain/tool` (version detection and command probing) is imported by others without importing anything of its own.
+A leaf folder `cli/<noun>/<verb>/` holds two files: `input.go` (argv to a typed input) and `command.go` (one domain call, one presenter, one answer). A leaf never prints: it answers through `kit.IO`, and the `output` layer decides the form.
 
-The four server items are the one place the direction is inverted. Their implementations need `commands`, which already imports `config`, so `server.go` hands them over at startup: its `init()` calls `config.RegisterServerActions(...)` with the check, install and uninstall functions defined in `server_*.go`. The registry stays the thing the TUI reads; the cycle never forms.
+Presenters live in `present/<subject>/`, not in the leaf folder, because the TUI renders the same ones: a `tui` to `cli` import would couple the TUI to cobra.
 
-## Registry-driven
+## Who may import whom
 
-Each registry is a slice of structs that declares both the data and the functions that act on it. A `Script` (`src/internal/config/scripts.go`) carries its category, its help text, an optional `Role` gate, a `CheckFn` returning a `CheckResult`, an `InstallFn` taking the values a modal form collected, and an optional `UninstallFn`, and it is the presence of that last function that makes the item toggleable in the TUI. A `Tool` declares its install method, its dependencies, its version detection and its post-install scripts; a `Cleanable` declares where reclaimable storage lives and how big it is; a `RunCommand` declares a group of `workstation run` subcommands.
+The import table and the list of forbidden symbols are Go literals in [`specs/architecture/layers_test.go`](../../specs/architecture/layers_test.go), and nowhere else; this page draws the direction and does not restate the rules.
 
-The consequence is the rule this repo is built on: **add to the registry, not to bespoke command code**. One entry gives the same tool a row in `workstation install`, a line in the Applications tab of `workstation status`, and an uninstall path, because all three read the same slice. A change that needs new command code is the exception, and worth questioning.
+```text
+cmd/station ─> app ─> cli ─> cli/kit ─> domain ─> system <─ system/host
+                │       │                 │          ▲
+                │       └─> present <─────┘          └── system/tart
+                ├─> output ─> theme
+                ├─> prompt ─> theme/forms
+                └─> tui ─> present, domain, output
+catalog: imported by domain, present, cli, prompt; imports nothing of the module
+```
 
-What each registry contains, and how the catalogue is organised, is [Tools and skills](../reference/tools-and-skills.md); what the items look like on screen is [Configuration](../reference/configuration.md).
+What the test holds, in short: `domain` reaches the machine only through `system` ports; only `system/host` imports `os/exec`, the network and the process environment; only `output` writes bytes and only `theme` holds a colour; only `app` imports Fang; the catalogue holds values and no function; every domain error type has its wording in `cli/kit`. Each rule has a mutation test, so a rule that stops biting fails the gate.
+
+## The path of a request
+
+`station tools install node`:
+
+1. `cmd/station` hands argv and the environment to `app.Run`.
+2. `app` builds the services over the real adapters and the cobra tree, and runs it under Fang.
+3. The leaf `cli/tools/install` binds argv to an `Input`, then validates it against the catalogue and the config (refusals are exit 2, before any question, any read and any effect).
+4. The confirm gate runs for a destructive leaf: `--yes`, or a question on a terminal, or a refusal.
+5. The leaf makes one call to the domain service `domain/tools`, which orders dependencies, runs the method table's commands through the `Runner` port and reads the inventory back.
+6. The leaf hands the result to `present/tools`, which returns an answer: a `Document` for a person and a JSON value for `--json`.
+7. `output` prints it in the form the stream allows: tty with colour, pipe as tab-separated records, or json. The form is decided once per stream; `NO_COLOR` degrades a terminal to the pipe form.
+
+Multi-step behaviour (install then configure, restart then wait) lives in the domain operation, so a leaf and a TUI action make the same one call.
+
+## The error block
+
+Every failure prints one block on stderr and nothing else writes an error:
+
+```text
+Error: unknown tool "nope"
+Hint: station tools
+```
+
+The exit code comes from the returned error, never from a call to exit inside a command:
+
+| Code | Means                                                                                               |
+| ---- | --------------------------------------------------------------------------------------------------- |
+| 0    | Done, or a read that found findings (an unreachable machine is a finding)                           |
+| 1    | An operation failed, or a confirmation was declined                                                 |
+| 2    | A refusal: argv, the catalogue, the config or the place said no, before any question and any effect |
+| 130  | Interrupted; no block is printed                                                                    |
+
+A bare group (`station run`) prints its menu on stderr and exits 2, with no block. The wording of every domain error (message and one hint) lives in `cli/kit`'s `failures_<noun>.go` files, and the layer test requires one for every exported error type.
+
+## Fang behind the CLI
+
+Fang renders the help, the version and the completion script, and handles the interrupt. It sits behind the CLI's own error layer: its error handler only calls the CLI's writer, and `app` is the only importer. Removing Fang is replacing one call in `app` by cobra's own execute plus the same failure call; no command changes.
+
+`station --version` prints `station version <version> (<commit>)`. The version is stamped by the linker from the tag, in the Makefile and the publish workflow ([ADR-005](../decisions/005-the-version-is-stamped-from-the-tag.md)).
+
+## The catalogue and methods
+
+The catalogue is values in `src/catalog/`: tools (agent skills included), config items, cleanables, managers, shortcuts, images. A catalogue value carries no function, and a test says so, because behaviour chosen by data belongs to the domain, chosen by the value's type from a closed union.
+
+The rule this repository is built on: **add to the catalogue, not to command code**. One tool entry gives the same tool a row in `station tools`, a line in `station status`, an install, an uninstall and an upgrade path, because all of them read the same value. Which file a change opens is [Develop](../guides/develop.md)'s table.
+
+How a tool installs is one table, the method table in `src/domain/tools/methods.go`: one row per method with its install, uninstall, upgrade and inventory commands, and the machine kinds that accept it. No other file switches on a method. `brew bundle` installs and upgrades every method it covers; uninstall is each method's native command ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). The model is [Tools and skills](../reference/tools-and-skills.md)'s.
+
+Every catalogue entry carries its place, the kinds of machine it may live on, so one binary on a host, a Linux VM and a macOS VM lists and installs only what fits there ([Glossary](glossary.md)).
 
 ## The two sources of truth
 
-The repository holds the catalogue: what `workstation` knows how to install and configure. The machine holds its own registry: `~/.studio/config.json`, which names this box, the machines it can reach, and their roles. Nothing else on the machine is consulted for that: adding a machine also writes the managed block in `~/.ssh/config`, and the role decides which checks run and which `workstation config` items exist at all (`Script.Role`, `Machine.Validate`). The model is [Machines](../reference/machines.md)'s.
+The binary holds the catalogue: what station knows how to install and configure. The machine holds its own state, in the XDG folders: `~/.config/station/settings.json` (this machine's name, the hosts, the tailnet choice, the lend list), the VM records and image records under `~/.local/state/station/`. Nothing else is consulted for that, and no path inside the clone matters: the dotfiles and the VM recipes are embedded in the binary, so a deleted or moved clone breaks nothing. [Footprint](../reference/footprint.md) lists every file.
 
 ## The compiler
 
-This repo is an application in the sense of the [repo-structure doctrine](repo-structure.md): it authors a corpus, routes to it from `CLAUDE.md` and `skills/`, and generates no API reference. It does hold one source layer worth projecting, the tool registry, and `make skills` (`src/cmd/skillsgen/`) renders it between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md`. The projection is committed and a Go test fails when it drifts; see [Tools and skills](../reference/tools-and-skills.md).
+This repository is an application in the sense of the [repo-structure doctrine](repo-structure.md): it authors a corpus, routes to it from `CLAUDE.md` and `skills/`, and generates no API reference. Its one source layer worth projecting is the tool catalogue, and `make skills` (`src/cmd/skillsgen/`) renders it between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md`. The projection is committed and a test fails when it drifts ([Tools and skills](../reference/tools-and-skills.md)).
 
 ## Related
 
-- [Develop](../guides/develop.md): the gestures that change any of the above.
-- [Commands](../reference/commands.md): what each verb does for a user.
-- [Repo structure](repo-structure.md): the corpus / injection / compiler doctrine this shape follows.
+- [Design system](design-system.md): the palette, the marks and the documents the output layer prints.
+- [Develop](../guides/develop.md): the gestures and the table of which file a change opens.
+- [Test](../guides/test.md): the suites that prove the layers and the behaviour.
+- [ADR-001](../decisions/001-station-mirrors-the-studio-cli-layers.md): why the layers mirror the `studio` CLI, and where they deliberately differ.

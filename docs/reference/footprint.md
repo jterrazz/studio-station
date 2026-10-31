@@ -1,24 +1,46 @@
 # Footprint
 
-Everything `workstation` writes on a machine. Everything it owns lives under `~/.studio/`:
+Everything `station` writes on a machine, by where it lives. Binaries, config, state and caches follow the estate's XDG rule; nothing lives in a clone.
 
-```text
-~/.studio/
-├── bin/           # the binary
-├── config.json    # the machine registry and the remote settings
-├── tailscale/     # userspace daemon state
-└── dns/           # generated DNS profiles
-```
+| Section             | Answers                                |
+| ------------------- | -------------------------------------- |
+| The XDG folders     | The files station owns                 |
+| Do not delete       | The two files nothing can rebuild      |
+| Outside the folders | What station writes elsewhere, and why |
 
-Outside it, and outside what a `workstation config` item the user chose writes onto the machine (each item's files are [Configuration](configuration.md)'s), three things land that a user did not create:
+## The XDG folders
 
-- the clone of this repository at `~/Developer/studio-workstation`, which the install script makes when that directory does not exist ([Getting started](../start/getting-started.md)); `workstation` reads its dotfiles and scripts from it, and `WORKSTATION_REPO_PATH` names another clone instead;
-- the `source` line in `~/.zshrc`, which points at that clone's `dotfiles/applications/zsh/zshrc.sh`;
-- the managed `Host` block in `~/.ssh/config` per registered machine with an ssh endpoint, which follows the registry: removing the machine gives the file back as it was.
+Each path honours its `XDG_*_HOME` variable when it is set and absolute.
 
-The config model itself is [Machines](machines.md)'s.
+| Path                                                   | Holds                                                                                                            |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `~/.local/bin/station`                                 | the binary                                                                                                       |
+| `~/.config/station/settings.json`                      | this machine's name, the hosts, the tailnet choice, `vm_user`, the lend list ([Configuration](configuration.md)) |
+| `~/.local/state/station/vms/<name>.json`               | one record per VM on this host                                                                                   |
+| `~/.local/state/station/known_hosts/<name>`            | one machine's ssh host key, deleted with the VM                                                                  |
+| `~/.local/state/station/images/<image>/<version>.json` | image records ([Images](images.md))                                                                              |
+| `~/.local/state/station/images/key`, `key.pub`         | the image key                                                                                                    |
+| `~/.local/state/station/tailscaled/`                   | the userspace tailscaled's state, socket and log                                                                 |
+| `~/.local/state/station/dns/`                          | the generated DNS profile                                                                                        |
+| `~/.local/state/station/logs/`                         | each VM supervisor's log, and `setup.log`                                                                        |
+| `~/.local/state/station/consoles/<vm>`                 | a VM's console file, read by its supervisor                                                                      |
+| `~/.cache/station/`                                    | downloaded `station-linux-arm64` binaries                                                                        |
+| keychain, service `station`                            | kept secrets: `vm-join-id`, `vm-join-secret`, `tailnet-authkey`                                                  |
+
+`~/.studio/` is the old home of these files; `station setup` moves them and removes it, and station reads only the new paths.
+
+## Do not delete
+
+Two files are do-not-delete. The VM records alone know each VM's lifetime and lent names, and the image key is the only way into a fresh VM. Neither can be derived again; everything else in the table can.
+
+## Outside the folders
+
+- `~/Library/LaunchAgents/com.jterrazz.station.vm.<name>.plist`: one launchd agent per VM, macOS's own place for it ([Machines](machines.md#lifetimes)).
+- `~/.tart`: Tart's storage, which station does not move; its images are named `station-image-<image>-<version>`.
+- The managed block of `~/.zshrc` ([Dotfiles](dotfiles.md)).
+- One managed `Host` block per machine of the fleet in `~/.ssh/config`, between `# >>> jterrazz machine <name> >>>` markers; removing a machine gives the file back as it was.
+- The files each dotfile config item copies ([Dotfiles](dotfiles.md)), and mise's global `~/.config/mise/config.toml`.
 
 ## Related
 
-- [Release](../guides/release.md): how the binary reaches `~/.studio/bin/`.
-- [Machines](machines.md): the registry `config.json` holds.
+- [Release](../guides/release.md): how the binary reaches `~/.local/bin`.

@@ -1,45 +1,60 @@
 # Tools and skills
 
-`workstation` is registry-driven: the tools it installs and the AI agent skills it curates are declared as data in `src/internal/config/`, so the same catalogue powers `workstation install`, `workstation status`, and `workstation config`.
+A tool is installed content: software or an agent skill. The catalogue in `src/catalog/` declares each one as a value, and `station tools`, `station status` and the toolbelt skill all read it.
 
-## The tools registry
+| Section         | Answers                                                    |
+| --------------- | ---------------------------------------------------------- |
+| The catalogue   | How a tool is declared, and its place                      |
+| Methods         | How each method installs, uninstalls, upgrades and is read |
+| Runtimes        | Why mise owns node, go, python, bun, rust and java         |
+| Skills as tools | Agent skills installed with `station tools install`        |
+| The toolbelt    | The committed projection agents read                       |
 
-The catalogue is grouped in families: package managers, runtimes, shell & terminal, CLI tools, git, editors & IDEs, containers & VMs, deploy, AI agents/tooling/apps, browsers, communication, productivity, media, remote access, security, and system utilities. Each tool declares its install method (brew, cask, npm, bun, manual), dependencies, version detection, and any post-install script. Both install and uninstall dispatch per method straight from the registry (brew formula/cask, npm, bun, uv), so a tool is one entry away from being toggleable in the `workstation install` TUI without bespoke command code. `workstation install`, `workstation upgrade`, and `workstation clean` (see [Commands](commands.md)) all act on this catalogue, and the Applications tab of `workstation status` renders it with live versions.
+## The catalogue
 
-## The skills registry
+A tool has a name, a description, a category, its install per kind of machine, the commands it provides and what it requires. Its place, the kinds it may live on (`host`, `linux`, `macos`), is derived from its installs, so it cannot disagree with them. Dev tools live in VMs: Xcode, CocoaPods, XcodeGen, Android Studio and Lens are placed `macos` only and install nowhere until the macOS VM exists ([TODO](../../TODO.md)); Ollama stays on hosts for the GPU; Docker lives in the Linux VM.
 
-The curated Claude Code / agent skills live in `src/internal/config/skills.go`, split into two lists:
+A tool asked for on a machine outside its place is refused with exit 2, naming where it lives and, when a VM is running, the command with `--on`.
 
-- **StudioSkills**: the `@jterrazz` skills, the foundation of every project (toolbelt, stack, new-project, repo-structure, manifest + its seo/geo/structured-data/content-reach domain skills, infrastructure + observability, typescript, analytics, attestation, broadcast, intelligence, telemetry, test, workflows).
-- **CommunitySkills**: third-party skills worth having.
+A tool's state is one of `ok` (the method's manager lists it), `degraded` (found on PATH or as an app but not managed by its method), `broken`, `absent` or `unknown` (the manager did not answer). `Requires` orders an install and refuses one whose requirement is missing.
 
-Each entry is a `{ repo, skill }` pair; `StudioRepos` / `CommunityRepos` carry the human-readable repo descriptions shown in the UI. `skills.go` is the single source of truth: adding an entry there is all it takes (plus a `make skills` to refresh the projected roster below); there is no lockfile.
+## Methods
 
-The `workstation config` **Skills** tab installs, lists, and removes these by shelling out to the standalone **`skills`** CLI (it must be on `PATH`):
+One table, `src/domain/tools/methods.go`, holds a row per method; nothing else switches on a method.
+
+| Method                | Install                                  | Uninstall                               | Upgrade                          | Kinds       |
+| --------------------- | ---------------------------------------- | --------------------------------------- | -------------------------------- | ----------- |
+| `brew`, `cask`, `mas` | `brew bundle` (Brewfile on stdin)        | `brew uninstall`, `mas uninstall`       | `brew bundle --upgrade`          | host, macos |
+| `npm`, `uv`           | `brew bundle`                            | `npm uninstall -g`, `uv tool uninstall` | `brew bundle --upgrade`          | host, macos |
+| `bun`                 | `bun install -g`                         | `bun remove -g`                         | `bun update -g`                  | all         |
+| `mise`                | `mise use --global <tool>@<version>`     | `mise unuse --global`                   | `mise upgrade`                   | all         |
+| `script`, `shell`     | the vendor's installer                   | not reversible                          | rerun the script; none for shell | all         |
+| `app`                 | manual: the refusal names how            | not reversible                          | none                             | host, macos |
+| `skill`               | `skills add <repo> -g -y --skill <name>` | `skills remove -g -y <name>`            | the install again                | all         |
+
+`brew bundle` installs a whole request in one call and taps a trusted formula itself; the catalogue's `trusted` taps are the owner's act of trust ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). `station tools upgrade` upgrades catalogue tools only; `--via <manager>` selects every installed tool of a manager (`brew` covers brew and cask).
+
+## Runtimes
+
+mise owns the language runtimes on every machine ([ADR-003](../decisions/003-mise-owns-the-runtimes.md)). `station tools install node` writes mise's global config and installs; a machine that still has node from elsewhere shows it `degraded`, "on PATH, not managed by mise", and the repair is that same command. `station shell zsh` activates mise in every shell ([Dotfiles](dotfiles.md)).
+
+## Skills as tools
+
+An agent skill is a tool whose method is `skill`, in the category "Agent skills", installed through the `skills` CLI, which `station` requires like it requires Homebrew for a cask. There is no separate family:
 
 ```sh
-skills add <repo> -g -y --skill <name>   # install one skill globally
-skills list -g                           # list installed
-skills remove -g -y <name>               # remove
+station tools install frontend-design better-ui
+station tools                       # skills are the last group; ◐ means upstream moved
+station tools uninstall shadcn
 ```
 
-See `src/internal/domain/skill/` for the integration.
+Only community skills are in the catalogue. The `@jterrazz` skills are not curated here: `studio doctor` derives them from the repositories the estate declares. Two skills share a name with a tool, so they carry a `-skill` suffix: `qmd-skill` and `agent-browser-skill`. Installed state is read from the `skills` lock file `~/.agents/.skill-lock.json`; currency is compared against GitHub with a 5 second budget and is `unknown` on failure.
 
-### What this registry curates, and what it does not
+## The toolbelt
 
-A skill belongs on this list when nothing derives it. Third-party skills are the operator's taste (nothing in the estate implies that a machine wants `anthropics/skills` or a Remotion pack), so a curated list is the only place that answer can come from.
-
-The `@jterrazz` skills are the opposite. Every repository the estate declares either carries a `skills/` folder or does not, and those folders are the answer; `studio doctor` reads them off the synced clones and names the missing install as the repair. `StudioSkills` is the copy that derivation retires, and until it is deleted this registry is not the authority for that half of the roster.
-
-> **Note:** the toolchain skill set follows the `@jterrazz/typescript@6` consolidation: `@jterrazz/codestyle` (lint/format) was absorbed into `@jterrazz/typescript`, so a single `studio-typescript` skill now covers build, lint, format, and docs, alongside `studio-repo-structure` for repo doctrine.
-
-## The toolbelt skill, a committed projection
-
-The registries are also projected into an agent-facing skill: [`skills/studio-toolbelt/`](../../skills/studio-toolbelt/SKILL.md) carries the full tool roster and the modern-replacement table, so any agent starting work on a studio machine knows what is available. (The curated skills list is deliberately not projected: an installed skill is already injected into the agent.) The sections between its `GENERATED` markers are compiled from `src/internal/config/` by **`make skills`** (`src/cmd/skillsgen/`), never edited by hand, and a Go sync test run by `make test` fails when the registry and the skill drift. Change a registry, run `make skills`, commit both in the same change.
-
-This is the repo's one compiler in the sense of the repo-structure doctrine: the registry is the source layer, the skill roster is its committed, diffable projection.
+[`skills/studio-toolbelt/`](../../skills/studio-toolbelt/SKILL.md) tells an agent on a studio machine what is available. The sections between its `GENERATED` markers are compiled from the catalogue by `make skills` (`src/cmd/skillsgen/`), never edited by hand, and a test run by `make test` fails when the catalogue and the skill drift. Change the catalogue, run `make skills`, commit both together.
 
 ## Related
 
-- [Commands](commands.md): `workstation install` / `workstation upgrade` / `workstation clean`.
-- [Configuration](configuration.md): the Skills tab.
+- [Commands](commands.md): `station tools`.
+- [Architecture](../concepts/architecture.md): why the catalogue is values and the method table is one.

@@ -1,6 +1,6 @@
 # Release
 
-This repository ships one artefact, the `workstation` binary, and it reaches a machine two ways: a tagged GitHub release, or a build from a checkout.
+This repository ships one artefact, the `station` binary, and it reaches a machine two ways: a tagged GitHub release, or a build from a checkout.
 
 | Section                | Answers                               |
 | ---------------------- | ------------------------------------- |
@@ -13,13 +13,13 @@ This repository ships one artefact, the `workstation` binary, and it reaches a m
 There is no deploy: the release IS the delivery. Pushing a version tag is the whole gesture.
 
 ```sh
-git tag v1.0.0
+git tag v3.0.0
 git push --tags
 ```
 
-`.github/workflows/publish.yaml` fires on `push: tags: v*` and calls the shared `studio-actions` `publish-go.yaml` workflow with the binary name `workstation`, the build path `./src/cmd/workstation`, Go 1.26, and four targets: `darwin/arm64`, `darwin/amd64`, `linux/arm64`, `linux/amd64`. Nothing publishes on a merge to `main`: a merge only runs the validate workflow ([Test](test.md)).
+`.github/workflows/publish.yaml` fires on `push: tags: v*` and calls the shared `studio-actions` `publish-go.yaml` workflow with the binary name `station`, the build path `./src/cmd/station`, the Go version of `go.mod`, a linker flag that stamps the tag as the version, and four targets: `darwin/arm64`, `darwin/amd64`, `linux/arm64`, `linux/amd64`. Nothing publishes on a merge to `main`: a merge only runs the validate workflow ([Test](test.md)).
 
-Each target is published as an asset named `workstation-<os>-<arch>`, which is the name the install script asks for. A release that renames those assets breaks every machine's install path.
+Each target is published as an asset named `station-<os>-<arch>` plus a `checksums.txt`; the install script asks for that name and refuses a binary the checksums do not vouch for. The version is stamped from the tag ([ADR-005](../decisions/005-the-version-is-stamped-from-the-tag.md)); the next release is a new major, `v3.0.0`. A release that renames those assets breaks every machine's install path.
 
 ## How a machine takes it
 
@@ -28,18 +28,18 @@ A machine takes the release through the one-line install of [Getting started](..
 ## From a checkout
 
 ```sh
-git clone https://github.com/jterrazz/studio-workstation.git ~/Developer/studio-workstation
-cd ~/Developer/studio-workstation
+git clone https://github.com/jterrazz/studio-station.git
+cd studio-station
 make provision
-source ~/.zshrc
+exec zsh
 ```
 
-`make provision` builds and copies the binary to `~/.studio/bin/workstation` and appends the `zshrc.sh` source line if it is missing.
+`make provision` builds, copies the binary to `~/.local/bin/station`, and runs `station setup`, which asks the machine's name on a terminal and writes or migrates the `~/.zshrc` block ([Dotfiles](../reference/dotfiles.md)).
 
 `make deprovision` removes the binary and touches nothing else; the user data survives.
 
 ## Related
 
 - [Footprint](../reference/footprint.md): everything the binary writes on the machine it reaches.
-- [Machines](../reference/machines.md): the registry `config.json` holds, and remote access.
+- [Machines](../reference/machines.md): the fleet, and remote access.
 - [Commands](../reference/commands.md): every verb the installed binary answers to.
