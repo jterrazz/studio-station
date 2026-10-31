@@ -91,7 +91,8 @@ func (s *Service) Supervise(ctx context.Context, name string) error {
 			return err
 		}
 		argv := s.engine.RunArgv(name, console)
-		code, err := s.h.Run.Attach(ctx, system.Cmd{Name: argv[0], Args: argv[1:]}, system.ToStderr)
+		ran, err := s.h.Run.Attach(ctx, system.Cmd{Name: argv[0], Args: argv[1:]}, system.ToStderr)
+		code := ran.ExitCode
 		if err != nil {
 			return err
 		}

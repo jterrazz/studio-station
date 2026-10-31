@@ -28,7 +28,8 @@ func (s *Service) Git(ctx context.Context, name string, args []string) error {
 		if step.AppendArgs != "" {
 			argv = append(argv, step.AppendArgs+strings.Join(args, " "))
 		}
-		code, err := s.h.Run.Attach(ctx, system.Cmd{Name: "git", Args: argv}, system.ToStdout)
+		ran, err := s.h.Run.Attach(ctx, system.Cmd{Name: "git", Args: argv}, system.ToStdout)
+		code := ran.ExitCode
 		if errors.Is(err, system.ErrNotFound) {
 			return &NotInstalledError{Tool: "git"}
 		}

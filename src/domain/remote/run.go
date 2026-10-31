@@ -17,7 +17,8 @@ type Service struct{ run system.Runner }
 func New(run system.Runner) *Service { return &Service{run: run} }
 
 func (s *Service) Run(ctx context.Context, machine string, interactive bool, words []string) (int, error) {
-	code, err := s.run.Attach(ctx, system.Cmd{Name: "ssh", Args: Argv(machine, interactive, words)}, system.ToStdout)
+	ran, err := s.run.Attach(ctx, system.Cmd{Name: "ssh", Args: Argv(machine, interactive, words)}, system.ToStdout)
+	code := ran.ExitCode
 	if err != nil {
 		return 0, err
 	}

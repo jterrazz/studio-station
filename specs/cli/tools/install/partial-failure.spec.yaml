@@ -7,7 +7,7 @@ runs:
       exit: 1
       stdout: |
           ●	bat
-          ✗	ghostty	brew bundle exited 1
+          ✗	ghostty	brew bundle exited 1: curl: (22) The requested URL returned error: 404
       stderr: |
           ==> Downloading ghostty
           curl: (22) The requested URL returned error: 404

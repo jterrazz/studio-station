@@ -34,6 +34,11 @@ type Output struct {
 	ExitCode int
 }
 
+type Attached struct {
+	ExitCode   int
+	LastStderr string
+}
+
 type Sig int
 
 const (
@@ -43,7 +48,7 @@ const (
 
 type Runner interface {
 	Output(ctx context.Context, c Cmd) (Output, error)
-	Attach(ctx context.Context, c Cmd, out Stream) (exitCode int, err error)
+	Attach(ctx context.Context, c Cmd, out Stream) (Attached, error)
 	Start(c Cmd, logPath string) (pid int, err error)
 	LookPath(name string) (string, bool)
 	Alive(pid int) bool

@@ -68,9 +68,15 @@ func (r *Runner) Output(_ context.Context, c system.Cmd) (system.Output, error) 
 	return call.output, call.err
 }
 
-func (r *Runner) Attach(_ context.Context, c system.Cmd, _ system.Stream) (int, error) {
+func (r *Runner) Attach(_ context.Context, c system.Cmd, _ system.Stream) (system.Attached, error) {
 	call := r.answer(c)
-	return call.output.ExitCode, call.err
+	last := ""
+	for _, line := range strings.Split(call.output.Stderr, "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			last = line
+		}
+	}
+	return system.Attached{ExitCode: call.output.ExitCode, LastStderr: last}, call.err
 }
 
 func (r *Runner) Start(c system.Cmd, _ string) (int, error) {

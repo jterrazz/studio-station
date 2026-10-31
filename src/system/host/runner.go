@@ -71,13 +71,14 @@ func (r *runner) Output(ctx context.Context, c system.Cmd) (system.Output, error
 	return system.Output{Stdout: stdout.String(), Stderr: stderr.String(), ExitCode: code}, err
 }
 
-func (r *runner) Attach(ctx context.Context, c system.Cmd, out system.Stream) (int, error) {
+func (r *runner) Attach(ctx context.Context, c system.Cmd, out system.Stream) (system.Attached, error) {
 	ctx, cmd, cancel, err := r.command(ctx, c)
 	if err != nil {
-		return 0, err
+		return system.Attached{}, err
 	}
 	defer cancel()
-	cmd.Stdout, cmd.Stderr = r.stderr, r.stderr
+	stderr := &lastLine{w: r.stderr}
+	cmd.Stdout, cmd.Stderr = stderr, stderr
 	if out == system.ToStdout {
 		cmd.Stdout = r.stdout
 	}
@@ -85,7 +86,37 @@ func (r *runner) Attach(ctx context.Context, c system.Cmd, out system.Stream) (i
 	if c.Stdin != "" {
 		cmd.Stdin = strings.NewReader(c.Stdin)
 	}
-	return exitOf(ctx, cmd.Run())
+	code, err := exitOf(ctx, cmd.Run())
+	return system.Attached{ExitCode: code, LastStderr: stderr.last()}, err
+}
+
+type lastLine struct {
+	w        io.Writer
+	line     []byte
+	nonEmpty string
+}
+
+func (l *lastLine) Write(p []byte) (int, error) {
+	for _, b := range p {
+		if b != '\n' {
+			l.line = append(l.line, b)
+			continue
+		}
+		l.keep()
+	}
+	return l.w.Write(p)
+}
+
+func (l *lastLine) keep() {
+	if line := strings.TrimSpace(string(l.line)); line != "" {
+		l.nonEmpty = line
+	}
+	l.line = l.line[:0]
+}
+
+func (l *lastLine) last() string {
+	l.keep()
+	return l.nonEmpty
 }
 
 func exitOf(ctx context.Context, err error) (int, error) {

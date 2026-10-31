@@ -147,7 +147,8 @@ func (s *Service) steps(ctx context.Context, c catalog.Cleanable) (string, error
 	var first error
 	detail := ""
 	for _, step := range c.Steps {
-		code, err := s.h.Run.Attach(ctx, system.Cmd{Name: step[0], Args: step[1:]}, system.ToStderr)
+		ran, err := s.h.Run.Attach(ctx, system.Cmd{Name: step[0], Args: step[1:]}, system.ToStderr)
+		code := ran.ExitCode
 		if err == nil && code != 0 {
 			err = &stepError{step: strings.Join(step, " "), code: code}
 		}

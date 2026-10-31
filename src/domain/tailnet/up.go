@@ -90,7 +90,8 @@ func (s *Service) Up(ctx context.Context) (UpResult, error) {
 func (s *Service) up(ctx context.Context, args []string, stdin string, attached bool) error {
 	cmd := system.Cmd{Name: "tailscale", Args: s.daemonArgv(Userspace, args...), Stdin: stdin}
 	if attached {
-		code, err := s.h.Run.Attach(ctx, cmd, system.ToStderr)
+		ran, err := s.h.Run.Attach(ctx, cmd, system.ToStderr)
+		code := ran.ExitCode
 		if err != nil {
 			return err
 		}

@@ -181,13 +181,16 @@ func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, 
 	if _, ok := s.h.Run.LookPath("mise"); ok && s.o.MiseShims != "" {
 		c.Env = []string{"PATH=" + s.o.MiseShims + ":" + s.o.Path}
 	}
-	code, err := s.h.Run.Attach(ctx, c, system.ToStderr)
+	ran, err := s.h.Run.Attach(ctx, c, system.ToStderr)
 	failure := ""
 	switch {
 	case err != nil:
 		failure = "brew bundle: " + err.Error()
-	case code != 0:
-		failure = "brew bundle exited " + strconv.Itoa(code)
+	case ran.ExitCode != 0:
+		failure = "brew bundle exited " + strconv.Itoa(ran.ExitCode)
+		if ran.LastStderr != "" {
+			failure += ": " + ran.LastStderr
+		}
 	}
 	out := make([]Outcome, 0, len(list))
 	if verb == verbUpgrade {
@@ -219,7 +222,8 @@ func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, 
 func (s *Service) run(ctx context.Context, verb string, t catalog.Tool, build func(catalog.Install) []system.Cmd) Outcome {
 	o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
 	for _, c := range build(s.install(t)) {
-		code, err := s.h.Run.Attach(ctx, c, system.ToStderr)
+		ran, err := s.h.Run.Attach(ctx, c, system.ToStderr)
+		code := ran.ExitCode
 		switch {
 		case err != nil:
 			o.Result, o.Detail, o.Err = catalog.StateBroken, c.Name+": "+err.Error(), err

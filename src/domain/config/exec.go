@@ -46,7 +46,8 @@ func (s *Service) mustWith(ctx context.Context, stdin, name string, args ...stri
 }
 
 func (s *Service) attach(ctx context.Context, stdin, name string, args ...string) error {
-	code, err := s.h.Run.Attach(ctx, system.Cmd{Name: name, Args: args, Stdin: stdin}, system.ToStderr)
+	ran, err := s.h.Run.Attach(ctx, system.Cmd{Name: name, Args: args, Stdin: stdin}, system.ToStderr)
+	code := ran.ExitCode
 	if err != nil {
 		return err
 	}
