@@ -125,9 +125,21 @@ func (s *Service) Peers(ctx context.Context) ([]Peer, error) {
 	return peersOf(st), nil
 }
 
-// Status answers a daemon that is down as a state, not as an error: only a
-// daemon that cannot be queried while the settings cannot be read fails.
+func (s *Service) Roster(ctx context.Context) ([]Peer, error) {
+	st, err := s.query(ctx, s.activeDaemon(ctx, s.mode()))
+	if err != nil {
+		return nil, err
+	}
+	roster := peersOf(st)
+	if st.Self != nil {
+		roster = append([]Peer{{ID: st.Self.ID, Name: st.Self.name(), IP: st.Self.ip(), Online: st.BackendState == "Running", Tags: st.Self.Tags}}, roster...)
+	}
+	return roster, nil
+}
+
 func (s *Service) Status(ctx context.Context) (Status, error) {
+	// invariant: a daemon that is down is a state, not an error; only a daemon that
+	// cannot be queried while the settings cannot be read fails.
 	cfg, cfgErr := s.store.Load()
 	daemon := s.activeDaemon(ctx, cfg.Tailnet.Mode)
 	out := Status{

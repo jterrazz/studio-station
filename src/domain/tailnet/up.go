@@ -24,8 +24,6 @@ type UpResult struct {
 
 type DownResult struct{ Stopped []Daemon }
 
-// Configured reports whether a tailnet login can run without asking anything:
-// the node was registered before, or the chosen auth key is in the keychain.
 func (s *Service) Configured(ctx context.Context) bool {
 	if _, err := s.h.FS.Stat(s.stateFile()); err == nil {
 		return true
@@ -60,7 +58,7 @@ func (s *Service) Up(ctx context.Context) (UpResult, error) {
 	}
 	registered := s.Configured(ctx)
 	firstLogin := !registered && key == ""
-	if firstLogin && !(cfg.Tailnet.AuthMethod == settings.AuthLogin && s.o.Interactive) {
+	if firstLogin && (cfg.Tailnet.AuthMethod != settings.AuthLogin || !s.o.Interactive) {
 		return UpResult{}, &NeedsAuthError{}
 	}
 	if err := s.StartDaemon(ctx); err != nil {
@@ -290,8 +288,6 @@ func parseFlags(tokens []string) []flag {
 	return flags
 }
 
-// mergeFlags keeps tailscale's suggested preferences and lets ours override
-// the ones both name.
 func mergeFlags(desiredArgs, suggested []string) []string {
 	desired := parseFlags(desiredArgs[1:])
 	byKey := make(map[string]flag, len(desired))

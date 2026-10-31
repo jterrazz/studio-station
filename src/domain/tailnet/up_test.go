@@ -15,8 +15,6 @@ import (
 
 const state = "/state/tailscaled"
 
-// warmingUp answers `tailscale status` as a daemon that needs a few polls to
-// come up, as a real one does after it is started.
 type warmingUp struct {
 	*systemtest.Runner
 	failures int

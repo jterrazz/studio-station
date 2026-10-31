@@ -3,16 +3,16 @@ package tailnet
 import (
 	"context"
 	"encoding/json"
-	"net/url"
+	"strings"
 	"time"
 )
 
 const (
-	vmTag       = "tag:station-vm"
-	defaultTTL  = 10 * time.Minute
-	tokenPath   = "/api/v2/oauth/token"
-	keysPath    = "/api/v2/tailnet/-/keys"
-	devicesPath = "/api/v2/device/"
+	vmTag         = "tag:station-vm"
+	defaultTTL    = 10 * time.Minute
+	oauthEndpoint = "/api/v2/oauth/token"
+	keysPath      = "/api/v2/tailnet/-/keys"
+	devicesPath   = "/api/v2/device/"
 )
 
 type MintRequest struct {
@@ -20,8 +20,6 @@ type MintRequest struct {
 	Expiry time.Duration
 }
 
-// AuthKey hides its value from every formatter and encoder: only Reveal
-// returns it, and only the first-boot rendering calls that.
 type AuthKey struct{ value string }
 
 func (k AuthKey) Reveal() string { return k.value }
@@ -44,9 +42,9 @@ func (s *Service) token(ctx context.Context) (string, error) {
 	if !foundID || !foundSecret {
 		return "", &NoVMJoinError{}
 	}
-	form := url.Values{"client_id": {id}, "client_secret": {secret}, "grant_type": {"client_credentials"}}
-	status, body, err := s.h.Net.Post(ctx, s.o.APIURL+tokenPath,
-		map[string]string{"Content-Type": "application/x-www-form-urlencoded"}, []byte(form.Encode()))
+	form := "grant_type=client_credentials&client_id=" + escape(id) + "&client_secret=" + escape(secret)
+	status, body, err := s.h.Net.Post(ctx, s.o.APIURL+oauthEndpoint,
+		map[string]string{"Content-Type": "application/x-www-form-urlencoded"}, []byte(form))
 	if err != nil {
 		return "", err
 	}
@@ -59,10 +57,9 @@ func (s *Service) token(ctx context.Context) (string, error) {
 	return reply.AccessToken, nil
 }
 
-// Mint asks for a single-use key for one new VM. Nodes are never ephemeral:
-// an ephemeral node can vanish while a temporary VM is merely paused, so
-// station removes every node itself.
 func (s *Service) Mint(ctx context.Context, r MintRequest) (AuthKey, error) {
+	// invariant: nodes are never ephemeral; an ephemeral node can vanish while a
+	// temporary VM is merely paused, so station removes every node itself.
 	token, err := s.token(ctx)
 	if err != nil {
 		return AuthKey{}, err
@@ -100,14 +97,12 @@ func (s *Service) Mint(ctx context.Context, r MintRequest) (AuthKey, error) {
 	return AuthKey{value: reply.Key}, nil
 }
 
-// Remove deletes a node through the API; a node that is already gone counts
-// as removed.
 func (s *Service) Remove(ctx context.Context, nodeID string) error {
 	token, err := s.token(ctx)
 	if err != nil {
 		return err
 	}
-	status, _, err := s.h.Net.Delete(ctx, s.o.APIURL+devicesPath+url.PathEscape(nodeID), bearer(token))
+	status, _, err := s.h.Net.Delete(ctx, s.o.APIURL+devicesPath+escape(nodeID), bearer(token))
 	if err != nil {
 		return err
 	}
@@ -119,4 +114,22 @@ func (s *Service) Remove(ctx context.Context, nodeID string) error {
 
 func bearer(token string) map[string]string {
 	return map[string]string{"Authorization": "Bearer " + token, "Content-Type": "application/json"}
+}
+
+// value: percent-encoding everything but RFC 3986's unreserved characters is
+// right for a form value and for a path segment alike.
+func escape(s string) string {
+	const hex = "0123456789ABCDEF"
+	var b strings.Builder
+	for i := range len(s) {
+		c := s[i]
+		if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '.' || c == '_' || c == '~' {
+			b.WriteByte(c)
+			continue
+		}
+		b.WriteByte('%')
+		b.WriteByte(hex[c>>4])
+		b.WriteByte(hex[c&15])
+	}
+	return b.String()
 }

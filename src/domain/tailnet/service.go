@@ -45,8 +45,6 @@ func (s *Service) mode() settings.Mode {
 	return cfg.Tailnet.Mode
 }
 
-// Argv answers the arguments of a tailscale call that talks to the daemon the
-// ssh blocks and the fleet use: station's own socket in userspace mode.
 func (s *Service) Argv(args ...string) []string {
 	if s.mode() == settings.ModeUserspace {
 		return s.daemonArgv(Userspace, args...)
