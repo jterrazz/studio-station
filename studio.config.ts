@@ -21,7 +21,7 @@ export default defineConfig({
         },
         oxfmt: {
             ignore: {
-                'TODO.md': 'copied verbatim from the design; a test compares it byte for byte',
+                'TODO.md': 'copied verbatim from the design',
             },
         },
         roots: {
