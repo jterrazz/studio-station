@@ -21,11 +21,10 @@ var update = flag.Bool("update", false, "rewrite the goldens from the renderer")
 func TestTheTTYRendererReproducesTheMockups(t *testing.T) {
 	for name, doc := range map[string]present.Document{"status": statusDocument(), "tools": toolsDocument()} {
 		t.Run(name, func(t *testing.T) {
-			dark80 := output.TTYString(doc, 80, theme.New(true))
-			if want := read(t, name+".mockup.txt"); ansi.Strip(dark80) != want {
-				t.Errorf("dark 80 columns, stripped of its color, differs from the SPEC mockup:\n%s\nwant:\n%s", ansi.Strip(dark80), want)
+			// invariant: the dark-80 golden IS the SPEC mockup, so -update never rewrites it.
+			if got, want := ansi.Strip(output.TTYString(doc, 80, theme.New(true))), read(t, name+".dark80.golden"); got != want {
+				t.Errorf("dark 80 columns, stripped of its color, differs from the SPEC mockup:\n%s\nwant:\n%s", got, want)
 			}
-			golden(t, name+".dark80.golden", ansi.Strip(dark80))
 			golden(t, name+".light80.golden", output.TTYString(doc, 80, theme.New(false)))
 			golden(t, name+".dark40.golden", ansi.Strip(output.TTYString(doc, 40, theme.New(true))))
 		})
