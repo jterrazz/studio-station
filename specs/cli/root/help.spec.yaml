@@ -32,3 +32,10 @@ runs:
       exit: 0
       stdout: |
           1
+    - command: --help | /usr/bin/sed -n '/^  HERE/,/^  THE FLEET/p' | /usr/bin/grep -oE '^    (status|tools|config|clean) ' | /usr/bin/tr -d ' '
+      exit: 0
+      stdout: |
+          clean
+          config
+          status
+          tools

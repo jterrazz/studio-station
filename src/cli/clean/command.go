@@ -21,6 +21,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	var flags *pflag.FlagSet
 	return kit.Command(kit.Leaf[Input]{
 		Use:       "clean [<cleanable...> | --all]",
+		Group:     "here",
 		Short:     "What can be reclaimed, with its size; named or --all, reclaim it",
 		Example:   "  station clean\n  station clean brew trash --yes\n  station clean --all --yes",
 		Args:      cobra.ArbitraryArgs,
