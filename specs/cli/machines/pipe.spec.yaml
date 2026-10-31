@@ -11,7 +11,7 @@ runs:
           ●	x	host			online	-	1 VM
           ✗	linux-1	linux	x	temporary	stale	-	station machines delete linux-1
           ●	y	host			online	100.64.0.2	1 VM
-          ●	w	linux	y	lasting	running	100.64.0.9	4 cpus · 8.0 GB · 50.0 GB
+          ●	w	linux	y	lasting	running	100.64.0.9	4 cpus · 8 GB · 50.0 GB
     - command: 'machines | /usr/bin/awk -F''\t'' ''{ print NF }'' | /usr/bin/sort -u'
       exit: 0
       stdout: |

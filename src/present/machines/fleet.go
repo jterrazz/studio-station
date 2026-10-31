@@ -80,7 +80,17 @@ func vmRow(vm machines.VM) present.Row {
 
 func resourcesOf(vm machines.VM) string {
 	r := vm.Resources
-	return plural(r.CPUs, "cpu") + " · " + present.Bytes(r.MemoryBytes) + " · " + present.Bytes(r.DiskBytes)
+	return plural(r.CPUs, "cpu") + " · " + memory(r.MemoryBytes) + " · " + present.Bytes(r.DiskBytes)
+}
+
+// invariant: memory reads in binary gigabytes, as macOS and tart count RAM, so the
+// 8 GB a VM was given prints as 8 GB.
+func memory(n int64) string {
+	const gib = 1 << 30
+	if n%gib == 0 {
+		return strconv.FormatInt(n/gib, 10) + " GB"
+	}
+	return strconv.FormatFloat(float64(n)/gib, 'f', 1, 64) + " GB"
 }
 
 func plural(n int, noun string) string {

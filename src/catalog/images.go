@@ -16,7 +16,12 @@ type Image struct {
 //go:embed images
 var Recipes embed.FS
 
-const gigabyte = 1000 * 1000 * 1000
+// invariant: memory counts in binary gigabytes, as macOS and tart count RAM; a
+// disk in decimal ones, as tart's --disk-size does.
+const (
+	gigabyte = 1000 * 1000 * 1000
+	gibibyte = 1 << 30
+)
 
 var Images = []Image{
 	{
@@ -25,7 +30,7 @@ var Images = []Image{
 		Recipe:    "images/linux.sh",
 		Cleanup:   "images/linux-cleanup.sh",
 		Firstboot: "images/linux-firstboot.sh",
-		Defaults:  ImageDefaults{CPUs: 4, MemoryBytes: 8 * gigabyte, DiskBytes: 50 * gigabyte},
+		Defaults:  ImageDefaults{CPUs: 4, MemoryBytes: 8 * gibibyte, DiskBytes: 50 * gigabyte},
 		Kind:      Linux,
 	},
 }

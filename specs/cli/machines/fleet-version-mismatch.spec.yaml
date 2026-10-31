@@ -9,4 +9,4 @@ runs:
       stdout: |
           ●	x	host			online	-	0 VMs
           ◐	y	host			online	100.64.0.2	station v0.0.0-other here {{string}}
-          ●	w	linux	y	lasting	running	100.64.0.9	4 cpus · 8.0 GB · 50.0 GB
+          ●	w	linux	y	lasting	running	100.64.0.9	4 cpus · 8 GB · 50.0 GB
