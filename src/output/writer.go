@@ -36,6 +36,11 @@ func (w *Writer) Answer(a present.Answer, wantJSON bool) error {
 	return For(c, theme.New(c.Dark)).Render(w.colored(w.stdout, c), a)
 }
 
+func (w *Writer) Raw(p []byte) error {
+	_, err := w.stdout.W.Write(p)
+	return err
+}
+
 func (w *Writer) Failure(err error) {
 	if err == nil {
 		return
