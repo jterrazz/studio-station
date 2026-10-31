@@ -1,0 +1,12 @@
+description: 'a registered machine names itself, has a finished setup and no null anywhere'
+fixture: ./__fixtures__/registered/
+runs:
+    - command: 'status --json | /usr/bin/jq -c ''[.machine.name, .setup.state, ([paths(. == null)] | length)]'''
+      exit: 0
+      stdout: |
+          ["macbook","ok",0]
+    - command: 'status | /usr/bin/grep -E ''^.	(name|setup)	'' | /usr/bin/cut -f1-3'
+      exit: 0
+      stdout: |
+          ●	name	macbook
+          ●	setup	done

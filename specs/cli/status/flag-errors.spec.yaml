@@ -1,0 +1,12 @@
+description: 'a flag the command cannot read is one usage block and exit 2'
+runs:
+    - command: 'status --json=maybe'
+      exit: 2
+      stderr: |
+          Error: invalid argument "maybe" for "--json" flag: strconv.ParseBool: parsing "maybe": invalid syntax
+          Hint: run station status --help
+    - command: 'status tools'
+      exit: 2
+      stderr: |
+          Error: unknown command "tools" for "station status"
+          Hint: run station status --help

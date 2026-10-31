@@ -1,0 +1,9 @@
+#!/bin/sh
+case "$*" in
+    "ps -q") printf 'aaa\nbbb\n' ;;
+    "images -q") printf 'i1\ni2\ni1\n' ;;
+    "volume ls -q") printf 'v1\n' ;;
+    "images -f dangling=true --format {{.Size}}") printf '1.5MB\n500kB\n' ;;
+    "system df --format {{.Size}}") printf '2.0GB\n1.5GB\n0B\n' ;;
+    *) exit 1 ;;
+esac

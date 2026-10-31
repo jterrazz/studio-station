@@ -1,0 +1,7 @@
+#!/bin/sh
+# go list -m -u: two modules, one of them with an update.
+if [ "$1 $2 $3" = "list -m -u" ]; then
+    printf '{"Path":"a"}\n{"Path":"b","Update":{"Version":"v2"}}\n'
+    exit 0
+fi
+exit 1

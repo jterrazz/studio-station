@@ -1,0 +1,10 @@
+description: 'an OpenClaw whose config exists but whose gateway is gone is broken, Hermes is not listed'
+fixture:
+    - ./__fixtures__/processes/
+    - ./__fixtures__/openclaw-config-only/
+runs:
+    - command: 'status --json | /usr/bin/jq -r ''.services[] | [.name, .state, .value, .detail] | join("|")'''
+      exit: 0
+      stdout: |
+          OpenClaw runtime|broken|not running|gateway process not found
+          OpenClaw config|ok|claude-sonnet|{{workdir}}/.openclaw/openclaw.json

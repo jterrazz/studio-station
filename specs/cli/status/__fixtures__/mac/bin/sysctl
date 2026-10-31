@@ -1,0 +1,7 @@
+#!/bin/sh
+# sysctl answering the two keys status reads; the boot time is 3 days and 4 hours ago.
+case "$*" in
+    "-n hw.memsize") echo 34359738368 ;;
+    "-n kern.boottime") echo "{ sec = $(( $(/bin/date +%s) - 3 * 86400 - 4 * 3600 - 120 )), usec = 0 } Sat Oct 28 10:00:00 2026" ;;
+    *) exit 1 ;;
+esac

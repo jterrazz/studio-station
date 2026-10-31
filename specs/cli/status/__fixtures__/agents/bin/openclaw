@@ -1,0 +1,3 @@
+#!/bin/sh
+# openclaw channels status: Slack healthy, Telegram stuck, BlueBubbles not reported.
+printf 'Slack: connected health:healthy\nTelegram: reconnecting\n'

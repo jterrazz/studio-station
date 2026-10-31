@@ -1,0 +1,2 @@
+#!/bin/sh
+echo "sec   ed25519/ABCDEF 2026-01-01 [SC]"

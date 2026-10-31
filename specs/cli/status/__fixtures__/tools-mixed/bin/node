@@ -1,0 +1,3 @@
+#!/bin/sh
+# A node nobody installed through mise: it answers, and nothing manages it.
+echo v22.0.0

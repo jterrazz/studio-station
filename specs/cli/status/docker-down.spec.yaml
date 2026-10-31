@@ -1,0 +1,11 @@
+description: 'docker installed with its daemon stopped is degraded, not absent and not broken'
+fixture: ./__fixtures__/docker-down/
+runs:
+    - command: 'status --json | /usr/bin/jq -c ''.workspace.docker.state'''
+      exit: 0
+      stdout: |
+          "degraded"
+    - command: 'status | /usr/bin/grep ''docker'' | /usr/bin/head -1'
+      exit: 0
+      stdout: |
+          ◐	docker	not running

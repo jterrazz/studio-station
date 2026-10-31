@@ -1,0 +1,7 @@
+#!/bin/sh
+# cat of the three files status reads on Linux, served from the fixture's proc/.
+case "$1" in
+    /proc/*) /bin/cat "${0%/*}/../proc/${1#/proc/}" ;;
+    /etc/resolv.conf) /bin/cat "${0%/*}/../proc/resolv.conf" ;;
+    *) /bin/cat "$@" ;;
+esac

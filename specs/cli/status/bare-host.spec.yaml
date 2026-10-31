@@ -1,0 +1,10 @@
+description: 'with no agent, daemon or repository the document has no Services or Daemons section'
+runs:
+    - command: 'status --json | /usr/bin/jq -c ''[(.services | length), (.daemons | length), (.workspace.repositories | length)]'''
+      exit: 0
+      stdout: |
+          [0,0,0]
+    - command: 'status | /usr/bin/grep -c -E ''^# (Services|Daemons)'''
+      exit: 1
+      stdout: |
+          0

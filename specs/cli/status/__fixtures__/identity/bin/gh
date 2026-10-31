@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "github.com
+  Logged in to github.com account octo (keyring)" >&2

@@ -1,0 +1,4 @@
+#!/bin/sh
+# pnpm outdated exits 1 when something is outdated.
+printf '{"left-pad":{"current":"1","latest":"2"},"lodash":{"current":"3","latest":"4"}}\n'
+exit 1

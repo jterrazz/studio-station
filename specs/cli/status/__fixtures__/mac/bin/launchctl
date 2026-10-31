@@ -1,0 +1,6 @@
+#!/bin/sh
+case "$*" in
+    "list") printf 'PID\tStatus\tLabel\n12\t0\tai.jterrazz.x\n-\t1\tai.jterrazz.y\n-\t0\tcom.apple.z\n' ;;
+    "print-disabled system") echo '"com.openssh.sshd" => enabled' ;;
+    *) exit 1 ;;
+esac

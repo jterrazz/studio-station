@@ -1,0 +1,3 @@
+#!/bin/sh
+# lsof -F output: three listeners, one of them the system's own.
+printf 'p100\ncnode\nn*:3000\np200\ncrapportd\nn*:49152\np101\ncpostgres\nn127.0.0.1:5432\n'
