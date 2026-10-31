@@ -2,6 +2,9 @@ package tools
 
 import (
 	"context"
+	"errors"
+	"slices"
+	"sort"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
@@ -13,10 +16,15 @@ type Options struct {
 	Path        string
 	APIURL      string
 	GitHubToken string
+	VMs         VMs
 }
 
 type Configurer interface {
 	Configure(ctx context.Context, item string, interactive bool) (Step, error)
+}
+
+type VMs interface {
+	Running(ctx context.Context) (map[string]catalog.MachineKind, error)
 }
 
 type Service struct {
@@ -102,8 +110,12 @@ func (s *Service) Find(names []string) ([]catalog.Tool, error) {
 	return found, nil
 }
 
-func (s *Service) CheckInstall(names []string) error {
+func (s *Service) CheckInstall(ctx context.Context, names []string) error {
 	found, err := s.Find(names)
+	var place *WrongPlaceError
+	if errors.As(err, &place) {
+		place.VM = s.runningVM(ctx, place.Places)
+	}
 	if err != nil {
 		return err
 	}
@@ -149,4 +161,27 @@ func (s *Service) install(t catalog.Tool) catalog.Install {
 
 func (s *Service) row(t catalog.Tool) method {
 	return s.table[s.install(t).Method()]
+}
+
+// invariant: the VM named in a refusal is one that runs now and whose kind is a
+// place of the tool; a failed listing names none, so the refusal still stands.
+func (s *Service) runningVM(ctx context.Context, places []catalog.MachineKind) string {
+	if s.o.VMs == nil {
+		return ""
+	}
+	running, err := s.o.VMs.Running(ctx)
+	if err != nil {
+		return ""
+	}
+	names := make([]string, 0, len(running))
+	for name, kind := range running {
+		if slices.Contains(places, kind) {
+			names = append(names, name)
+		}
+	}
+	if len(names) == 0 {
+		return ""
+	}
+	sort.Strings(names)
+	return names[0]
 }

@@ -24,7 +24,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Args:     cobra.MinimumNArgs(1),
 		Bind:     bind,
 		Complete: names(d.Tools),
-		Validate: func(_ context.Context, in *Input) error { return d.Tools.CheckInstall(in.Names) },
+		Validate: func(ctx context.Context, in *Input) error { return d.Tools.CheckInstall(ctx, in.Names) },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			outcomes, err := d.Tools.Install(ctx, tools.InstallRequest{Names: in.Names, Interactive: io.Interactive})
 			if err != nil {

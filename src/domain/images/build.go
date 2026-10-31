@@ -191,7 +191,7 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 	}
 	_ = s.e.Stop(ctx, vm, 10*time.Second)
 	progress(Step{Label: "recording " + img.Name + " " + version})
-	final := tartName(img.Name, version)
+	final := TartName(img.Name, version)
 	if err := s.e.Rename(ctx, vm, final); err != nil {
 		return failed("renaming the build VM", err)
 	}

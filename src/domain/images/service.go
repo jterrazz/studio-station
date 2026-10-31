@@ -75,7 +75,7 @@ func (s *Service) List(ctx context.Context) ([]Report, error) {
 			return nil, err
 		}
 		for i, r := range all {
-			if size, ok := sizes[tartName(r.Name, r.Version)]; ok {
+			if size, ok := sizes[TartName(r.Name, r.Version)]; ok {
 				r.SizeGB = size
 			}
 			out = append(out, Report{Record: r, Newest: i == 0, VMs: users[r.Name+"@"+r.Version]})
@@ -158,7 +158,7 @@ func (s *Service) Delete(ctx context.Context, image, version string) ([]Record, 
 		if version != "" && r.Version != version {
 			continue
 		}
-		name := tartName(r.Name, r.Version)
+		name := TartName(r.Name, r.Version)
 		if slices.ContainsFunc(present, func(vm system.VMInfo) bool { return vm.Name == name }) {
 			if err := s.e.Delete(ctx, name); err != nil {
 				return removed, err

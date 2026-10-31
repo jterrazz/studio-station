@@ -84,3 +84,17 @@ func (s *Service) ask(ctx context.Context, name string, h settings.Host, node No
 	}
 	return view
 }
+
+func (s *Service) Running(ctx context.Context) (map[string]catalog.MachineKind, error) {
+	vms, err := s.vms(ctx, "", nil)
+	if err != nil {
+		return nil, err
+	}
+	running := map[string]catalog.MachineKind{}
+	for _, vm := range vms {
+		if vm.State == Running {
+			running[vm.Name] = vm.Kind
+		}
+	}
+	return running, nil
+}

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -17,7 +18,9 @@ import (
 	machinesstop "github.com/jterrazz/studio-station/src/cli/machines/stop"
 	machinessupervise "github.com/jterrazz/studio-station/src/cli/machines/supervise"
 	machinesunlock "github.com/jterrazz/studio-station/src/cli/machines/unlock"
+	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/system/tart"
 )
 
 const (
@@ -26,7 +29,7 @@ const (
 )
 
 func (m machine) machines(interactive bool) *machines.Service {
-	return machines.New(m.host, nil, m.store, fleetTailnet{service: m.tailnet(interactive)}, nil, machines.Options{
+	return machines.New(m.host, tart.New(m.host.Run), m.store, fleetTailnet{service: m.tailnet(interactive)}, fleetImages{service: m.images()}, machines.Options{
 		Ports: machines.Ports{
 			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
 			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),
@@ -73,4 +76,14 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		machinesunlock.Command(machinesunlock.Deps{Machines: service, Context: m.context}, env),
 		machinessupervise.Command(env),
 	)
+}
+
+type fleetImages struct{ service *images.Service }
+
+func (i fleetImages) Latest(ctx context.Context, image string) (tartName, version string, err error) {
+	r, err := i.service.Latest(ctx, image)
+	if err != nil {
+		return "", "", err
+	}
+	return images.TartName(r.Name, r.Version), r.Version, nil
 }

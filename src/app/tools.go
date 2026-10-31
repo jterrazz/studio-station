@@ -27,6 +27,7 @@ func toolsCommand(env kit.Env, m machine) *cobra.Command {
 		Path:        m.vars["PATH"],
 		APIURL:      m.or("STATION_GITHUB_API_URL", "https://api.github.com"),
 		GitHubToken: m.or("GITHUB_TOKEN", m.vars["GH_TOKEN"]),
+		VMs:         m.machines(env.Interactive),
 	})
 	return toolscmd.Command(toolscmd.Deps{Tools: service, Context: m.context}, env,
 		toolsinstall.Command(toolsinstall.Deps{Tools: service, Context: m.context}, env),

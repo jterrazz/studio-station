@@ -12,17 +12,21 @@ import (
 	"github.com/jterrazz/studio-station/src/system/tart"
 )
 
-func imagesCommand(env kit.Env, m machine) *cobra.Command {
+func (m machine) images() *images.Service {
 	user := m.host.Env.User()
 	if current, err := m.store.Load(); err == nil && current.VMUser != "" {
 		user = current.VMUser
 	}
-	service := images.New(m.host, tart.New(m.host.Run), catalog.Images, images.Options{
+	return images.New(m.host, tart.New(m.host.Run), catalog.Images, images.Options{
 		Paths:   m.paths,
 		Version: Version(),
 		User:    user,
 		Here:    m.kind,
 	})
+}
+
+func imagesCommand(env kit.Env, m machine) *cobra.Command {
+	service := m.images()
 	return imagescmd.Command(imagescmd.Deps{Images: service, Context: m.context}, env,
 		imagesbuild.Command(imagesbuild.Deps{Images: service, Context: m.context}, env),
 		imagesdelete.Command(imagesdelete.Deps{Images: service, Context: m.context}, env),

@@ -27,7 +27,7 @@ const (
 	buildPrefix = "station-build-"
 )
 
-func tartName(image, version string) string { return imagePrefix + image + "-" + version }
+func TartName(image, version string) string { return imagePrefix + image + "-" + version }
 
 func (s *Service) imageDir(image string) string { return path.Join(s.o.Paths.State, "images", image) }
 

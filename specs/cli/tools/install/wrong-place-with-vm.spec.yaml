@@ -1,0 +1,14 @@
+description: 'a tool placed in VMs only is refused on a host, and the hint names the running VM it can go to'
+fixture:
+    - ../__fixtures__/stubs/
+    - ./__fixtures__/vm-api/
+runs:
+    - command: 'tools install browser-use'
+      exit: 2
+      stderr: |
+          Error: browser-use's place is linux, macos; here is a host
+          Hint: station tools install browser-use --on api
+      files:
+          .calls:
+              equals: |
+                  tart list --source local --format json
