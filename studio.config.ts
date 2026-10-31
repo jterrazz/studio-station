@@ -12,6 +12,8 @@ export default defineConfig({
                     'the runner every `<case>.spec.yaml` document is bound to by the literate plugin; no TypeScript spec imports it',
                 'specs/cli/__setup__/github-api.ts':
                     'the GitHub API stub a document serves (`serve: [github]`); the runner spawns it with node, nothing imports it',
+                'specs/cli/__setup__/tailscale-api.ts':
+                    'the Tailscale API stub a document serves (`serve: tailscale`); the runner spawns it with node, nothing imports it',
             },
             ignoreBinaries: {
                 go: 'the CLI specification builds the Go binary it drives; the toolchain is a machine requirement, never an npm dependency',

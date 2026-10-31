@@ -41,7 +41,7 @@ if (process.env.STATION_FORCE_REBUILD === '1' || binaryIsStale()) {
 // holds only the fixture's stubs and STATION_SYSTEM_DIRS adds no system directory, so
 // an unstubbed tool is "not found" alike on a Mac and on the Linux CI runner; the
 // machine kind is pinned to host unless a document says otherwise; GitHub is a closed
-// port unless a document serves its stub.
+// port unless a document serves its stub, and so is Tailscale's API.
 export const { cleanup, cli } = await specification.cli(STATION_BIN, {
     defaults: {
         COLUMNS: '80',
@@ -51,12 +51,19 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
         STATION_GITHUB_API_URL: 'http://127.0.0.1:9',
         STATION_MACHINE_KIND: 'host',
         STATION_SYSTEM_DIRS: '',
+        STATION_TAILSCALE_API_URL: 'http://127.0.0.1:9',
         TZ: 'UTC',
     },
     serve: {
         github: {
             command: 'node specs/cli/__setup__/github-api.ts',
             env: 'STATION_GITHUB_API_URL',
+            ready: /listening on port (?<port>\d+)/u,
+            url: (port) => `http://127.0.0.1:${port}`,
+        },
+        tailscale: {
+            command: 'node specs/cli/__setup__/tailscale-api.ts',
+            env: 'STATION_TAILSCALE_API_URL',
             ready: /listening on port (?<port>\d+)/u,
             url: (port) => `http://127.0.0.1:${port}`,
         },
