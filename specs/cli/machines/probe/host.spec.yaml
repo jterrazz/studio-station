@@ -1,0 +1,16 @@
+description: 'probing a host checks ping, ssh, the two gateways and the console owner'
+fixture:
+    - ../__fixtures__/hosts-x-y/
+    - ../__fixtures__/stubs/
+env:
+    - OPENCLAW_GATEWAY_PORT=1
+    - HERMES_GATEWAY_PORT=9
+runs:
+    - command: 'machines probe y'
+      exit: 0
+      stdout: |
+          ●	ping	127.0.0.1
+          ●	ssh	BatchMode auth ok
+          ✗	openclaw gateway	127.0.0.1	port 1 closed
+          ✗	hermes gateway	127.0.0.1	port 9 closed
+          ●	console owner	owner

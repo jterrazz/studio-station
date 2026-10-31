@@ -1,0 +1,12 @@
+description: 'unlock needs a terminal: piped it is refused, exit 2, before any ssh'
+fixture:
+    - ../__fixtures__/hosts-x-y/
+    - ../__fixtures__/stubs/
+runs:
+    - command: 'machines unlock y </dev/null'
+      exit: 2
+      stderr: |
+          Error: unlock needs a terminal
+          Hint: run it on a terminal
+      files:
+          .calls: absent

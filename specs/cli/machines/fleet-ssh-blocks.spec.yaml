@@ -1,0 +1,35 @@
+description: 'every host sees every VM by name: the listing writes a block for another host''s VM with the fleet''s VM login'
+fixture:
+    - ./__fixtures__/hosts-x-y/
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/fleet-y-answers/
+runs:
+    - command: 'machines --json | /usr/bin/jq -r ''.hosts | length | tostring'''
+      exit: 0
+      stdout: |
+          2
+      files:
+          .ssh/config:
+              equals: |
+                  # >>> jterrazz machine y >>>
+                  Host y
+                    HostName y
+                    User u
+                    IdentityFile ~/.ssh/id_ed25519
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                    UserKnownHostsFile ~/.local/state/station/known_hosts/y
+                    StrictHostKeyChecking accept-new
+                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
+                  # <<< jterrazz machine y <<<
+
+                  # >>> jterrazz machine w >>>
+                  Host w
+                    HostName w
+                    User vmu
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                    UserKnownHostsFile ~/.local/state/station/known_hosts/w
+                    StrictHostKeyChecking accept-new
+                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
+                  # <<< jterrazz machine w <<<

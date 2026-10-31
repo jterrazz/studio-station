@@ -1,0 +1,91 @@
+description: 'adds and forgets hosts, keeping the registry and the managed ssh blocks in step, the block bytes pinned'
+fixture: ../__fixtures__/host-x/
+runs:
+    - command: 'machines add --name mac-mini --user agent'
+      exit: 0
+      stdout: |
+          ●	mac-mini	added, ssh mac-mini
+      files:
+          .ssh/config:
+              equals: |
+                  # >>> jterrazz machine mac-mini >>>
+                  Host mac-mini
+                    HostName mac-mini
+                    User agent
+                    IdentityFile ~/.ssh/id_ed25519
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                    UserKnownHostsFile ~/.local/state/station/known_hosts/mac-mini
+                    StrictHostKeyChecking accept-new
+                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
+                  # <<< jterrazz machine mac-mini <<<
+    - command: 'machines add --name worker --user deploy --key "~/.ssh/deploy_key"'
+      exit: 0
+      stdout: |
+          ●	worker	added, ssh worker
+      files:
+          .ssh/config:
+              equals: |
+                  # >>> jterrazz machine mac-mini >>>
+                  Host mac-mini
+                    HostName mac-mini
+                    User agent
+                    IdentityFile ~/.ssh/id_ed25519
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                    UserKnownHostsFile ~/.local/state/station/known_hosts/mac-mini
+                    StrictHostKeyChecking accept-new
+                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
+                  # <<< jterrazz machine mac-mini <<<
+
+                  # >>> jterrazz machine worker >>>
+                  Host worker
+                    HostName worker
+                    User deploy
+                    IdentityFile ~/.ssh/deploy_key
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                    UserKnownHostsFile ~/.local/state/station/known_hosts/worker
+                    StrictHostKeyChecking accept-new
+                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
+                  # <<< jterrazz machine worker <<<
+    - command: 'machines add --name mac-mini'
+      exit: 2
+      stderr: |
+          Error: machine "mac-mini" already exists
+          Hint: station machines forget mac-mini first, to change it
+    - command: 'machines forget mac-mini --yes'
+      exit: 0
+      stdout: |
+          ●	mac-mini	forgotten
+      files:
+          .config/station/settings.json:
+              equals: |
+                  {
+                    "here": "x",
+                    "hosts": {
+                      "worker": {
+                        "user": "deploy",
+                        "key": "~/.ssh/deploy_key"
+                      },
+                      "x": {}
+                    },
+                    "tailnet": {
+                      "mode": "userspace",
+                      "auth_method": "login"
+                    },
+                    "vm_user": "vmu"
+                  }
+          .ssh/config:
+              equals: |
+                  # >>> jterrazz machine worker >>>
+                  Host worker
+                    HostName worker
+                    User deploy
+                    IdentityFile ~/.ssh/deploy_key
+                    ServerAliveInterval 30
+                    ServerAliveCountMax 3
+                    UserKnownHostsFile ~/.local/state/station/known_hosts/worker
+                    StrictHostKeyChecking accept-new
+                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
+                  # <<< jterrazz machine worker <<<

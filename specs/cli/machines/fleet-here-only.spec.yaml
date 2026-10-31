@@ -1,0 +1,13 @@
+description: '--here lists this host alone and asks no other host'
+fixture:
+    - ./__fixtures__/hosts-x-y/
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/fleet-y-answers/
+runs:
+    - command: 'machines --here --json | /usr/bin/jq -r ''.hosts | map(.name) | join(" ")'''
+      exit: 0
+      stdout: |
+          x
+      files:
+          .calls: absent
+          .ssh/config: absent

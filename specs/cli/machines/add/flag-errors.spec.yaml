@@ -1,0 +1,35 @@
+description: 'the old flags and a missing or bad name are refused, exit 2'
+fixture: ../__fixtures__/host-x/
+runs:
+    - command: 'machines add --name y --ssh u@y'
+      exit: 2
+      stderr: |
+          Error: unknown flag: --ssh
+          Hint: run station machines add --help
+    - command: 'machines add --name y --identity k'
+      exit: 2
+      stderr: |
+          Error: unknown flag: --identity
+          Hint: run station machines add --help
+    - command: 'machines add --name y --role server'
+      exit: 2
+      stderr: |
+          Error: unknown flag: --role
+          Hint: run station machines add --help
+    - command: 'machines add'
+      exit: 2
+      stderr: |
+          Error: --name is required
+          Hint: station machines add --name <name>
+    - command: 'machines add --name Bad_Name'
+      exit: 2
+      stderr: |
+          Error: "Bad_Name" is not a valid name
+          Hint: use lowercase letters, digits and "-", 1 to 40 characters
+    - command: 'machines add --name x'
+      exit: 2
+      stderr: |
+          Error: machine "x" already exists
+          Hint: station machines forget x first, to change it
+      files:
+          .ssh/config: absent

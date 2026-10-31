@@ -1,0 +1,14 @@
+description: 'a host that does not answer is a degraded row, never a failure'
+fixture:
+    - ./__fixtures__/hosts-x-y/
+    - ./__fixtures__/stubs/
+runs:
+    - command: 'machines'
+      exit: 0
+      stdout: |
+          ●	x	host			online	-	0 VMs
+          ◐	y	host			unreachable	-	-
+    - command: 'machines --json | /usr/bin/jq -r ''.hosts[1] | [.name, (.reachable | tostring), (.vms | length | tostring)] | join(" ")'''
+      exit: 0
+      stdout: |
+          y false 0

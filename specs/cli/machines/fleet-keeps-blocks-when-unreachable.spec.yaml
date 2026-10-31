@@ -1,0 +1,13 @@
+description: 'an unreachable host leaves the blocks of its VMs alone: unknown is not gone'
+fixture:
+    - ./__fixtures__/hosts-x-y/
+    - ./__fixtures__/stubs/
+    - ./__fixtures__/stale-blocks/
+runs:
+    - command: 'machines'
+      exit: 0
+      stdout: |
+          ●	x	host			online	-	0 VMs
+          ◐	y	host			unreachable	-	-
+      files:
+          .ssh/config: { contains: '# >>> jterrazz machine gone >>>' }

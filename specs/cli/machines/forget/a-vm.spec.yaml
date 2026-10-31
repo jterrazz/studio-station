@@ -1,0 +1,8 @@
+description: 'a VM is deleted, never forgotten: the refusal names the verb'
+fixture: ../__fixtures__/vm-record/
+runs:
+    - command: 'machines forget linux-1 --yes'
+      exit: 2
+      stderr: |
+          Error: "linux-1" is a VM, not a host
+          Hint: station machines delete linux-1
