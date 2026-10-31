@@ -17,12 +17,15 @@ import (
 )
 
 func cleanCommand(env kit.Env, m machine) *cobra.Command {
-	service := clean.New(m.host, catalog.Cleanables, clean.Options{
+	return cleancmd.Command(cleancmd.Deps{Clean: m.clean(), Context: m.context}, env)
+}
+
+func (m machine) clean() *clean.Service {
+	return clean.New(m.host, catalog.Cleanables, clean.Options{
 		Here:      m.kind,
 		OldImages: oldImages{images: m.images(), engine: tart.New(m.host.Run)},
 		StaleVMs:  staleVMs{machines: m.machines(false)},
 	})
-	return cleancmd.Command(cleancmd.Deps{Clean: service, Context: m.context}, env)
 }
 
 const gigabyte = 1_000_000_000

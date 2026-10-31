@@ -10,7 +10,6 @@ import (
 	"charm.land/fang/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/term"
-	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli"
@@ -61,8 +60,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		return fleet.SSHBlocks(ctx, f)
 	}
 
-	var root *cobra.Command
-	root = cli.NewRoot(kenv, tuiOpener(kenv, func() *cobra.Command { return root }),
+	root := cli.NewRoot(kenv, tuiOpener(kenv, here),
 		statusCommand(kenv, here),
 		toolsCommand(kenv, here),
 		configCommand(kenv, here),

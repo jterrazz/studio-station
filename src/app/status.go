@@ -9,7 +9,11 @@ import (
 )
 
 func statusCommand(env kit.Env, m machine) *cobra.Command {
-	service := status.New(m.host, status.Sources{
+	return statuscmd.Command(statuscmd.Deps{Status: statusService(env, m), Context: m.context}, env)
+}
+
+func statusService(env kit.Env, m machine) *status.Service {
+	return status.New(m.host, status.Sources{
 		Tools:   toolsService(env, m),
 		Config:  configService(m),
 		Tailnet: m.tailnet(env.Interactive),
@@ -22,5 +26,4 @@ func statusCommand(env kit.Env, m machine) *cobra.Command {
 		Version:      Version(),
 		Commit:       Commit(),
 	})
-	return statuscmd.Command(statuscmd.Deps{Status: service, Context: m.context}, env)
 }

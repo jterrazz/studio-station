@@ -33,6 +33,19 @@ func TTYString(d present.Document, width int, t theme.Theme) string {
 	return ttyRenderer{width: width, theme: t}.document(d)
 }
 
+func TTYBody(d present.Document, width int, t theme.Theme) string {
+	r := ttyRenderer{width: width, theme: t}
+	var b strings.Builder
+	widths := columnWidths(d.Blocks)
+	for i, block := range d.Blocks {
+		if i > 0 {
+			b.WriteByte('\n')
+		}
+		r.block(&b, block, widths)
+	}
+	return b.String()
+}
+
 type jsonRenderer struct{}
 
 func (jsonRenderer) Render(w io.Writer, a present.Answer) error {
@@ -222,40 +235,44 @@ func (r ttyRenderer) cell(c present.Cell) string {
 	return r.toneStyle(c.Tone).Render(c.Text)
 }
 
-func (r ttyRenderer) toneStyle(t present.Tone) lipgloss.Style {
-	switch t {
+func (r ttyRenderer) toneStyle(tone present.Tone) lipgloss.Style { return ToneStyle(r.theme, tone) }
+
+func (r ttyRenderer) markStyle(m present.Mark) lipgloss.Style { return MarkStyle(r.theme, m) }
+
+func ToneStyle(t theme.Theme, tone present.Tone) lipgloss.Style {
+	switch tone {
 	case present.Strong:
-		return r.theme.Strong
+		return t.Strong
 	case present.Muted:
-		return r.theme.Muted
+		return t.Muted
 	case present.Accent:
-		return r.theme.Accent
+		return t.Accent
 	case present.Good:
-		return r.theme.Good
+		return t.Good
 	case present.Warn:
-		return r.theme.Warn
+		return t.Warn
 	case present.Bad:
-		return r.theme.Bad
+		return t.Bad
 	case present.Plain:
-		return r.theme.Plain
+		return t.Plain
 	}
-	return r.theme.Plain
+	return t.Plain
 }
 
-func (r ttyRenderer) markStyle(m present.Mark) lipgloss.Style {
+func MarkStyle(t theme.Theme, m present.Mark) lipgloss.Style {
 	switch m {
 	case present.MarkOK:
-		return r.theme.Good
+		return t.Good
 	case present.MarkDegraded:
-		return r.theme.Warn
+		return t.Warn
 	case present.MarkAbsent:
-		return r.theme.Muted
+		return t.Muted
 	case present.MarkBroken:
-		return r.theme.Bad
+		return t.Bad
 	case present.NoMark:
-		return r.theme.Plain
+		return t.Plain
 	}
-	return r.theme.Plain
+	return t.Plain
 }
 
 func columnWidths(blocks []present.Block) []int {

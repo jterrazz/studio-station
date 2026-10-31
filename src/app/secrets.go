@@ -17,12 +17,11 @@ import (
 	secretsdisallow "github.com/jterrazz/studio-station/src/cli/secrets/disallow"
 	secretslend "github.com/jterrazz/studio-station/src/cli/secrets/lend"
 	secretsrecall "github.com/jterrazz/studio-station/src/cli/secrets/recall"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 func secretsCommand(env kit.Env, m machine) *cobra.Command {
-	service := secrets.New(m.host, m.store, vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}, secrets.Options{Here: m.kind})
+	service := m.secrets()
 	return secretscmd.Command(secretscmd.Deps{Secrets: service, Context: m.context}, env,
 		secretsallow.Command(secretsallow.Deps{Secrets: service, Context: m.context}, env),
 		secretsdisallow.Command(secretsdisallow.Deps{Secrets: service, Context: m.context}, env),
