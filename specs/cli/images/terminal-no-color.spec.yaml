@@ -1,0 +1,25 @@
+description: 'NO_COLOR turns a terminal into the pipe form; without it the same command draws the header'
+fixture:
+    - ../__fixtures__/terminal/
+    - ./__fixtures__/stubs/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION" images'
+      stdin: |
+          see none built
+          screen
+      exit: 0
+      stdout: |
+          none built
+    - command: '--version >/dev/null; /usr/bin/env -u NO_COLOR terminal "$STATION" images'
+      stdin: |
+          see none built
+          screen
+      exit: 0
+      stdout: |4
+           station images                                             host · unregistered
+           ──────────────────────────────────────────────────────────────────────────────
+
+             none built
+
+           → station images build
