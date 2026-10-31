@@ -84,7 +84,7 @@ npm's trusted publishing is configured on npmjs.com against that file name, `pub
 
 ## Repo structure, born structured
 
-A new project starts with the corpus + injection layout, not just code. Do not author layout advice here; follow the **`studio-repo-structure`** skill, whose canonical page is `studio-workstation` `docs/concepts/repo-structure.md`:
+A new project starts with the corpus + injection layout, not just code. Do not author layout advice here; follow the **`studio-repo-structure`** skill, whose canonical page is `studio-station` `docs/concepts/repo-structure.md`:
 
 - `README.md`: the vitrine (what it is, install, a pointer into `docs/`), not a manual.
 - `CLAUDE.md`: the agent brief (mental model + routing table into `docs/`), a regular file; no `AGENTS.md` (the toolchain's `docs/no-agents-brief` refuses one).

@@ -40,7 +40,7 @@ Every project carries:
 
 How each is written is `@jterrazz/typescript`'s [Getting started](https://github.com/jterrazz/package-typescript/blob/main/docs/start/getting-started.md); scaffolding one from nothing is the `studio-new-project` skill.
 
-A repository whose product is not TypeScript carries them all the same, for the half that is: `workstation` is a Go binary whose end-to-end harness under `specs/` declares itself a `cli` on `node` held to `@jterrazz/test`'s preset. Its own language answers to its own linter (`.golangci.yml`, at the version the Makefile pins), and each gesture runs both halves.
+A repository whose product is not TypeScript carries them all the same, for the half that is: `station` is a Go binary whose end-to-end harness under `specs/` declares itself a `cli` on `node` held to `@jterrazz/test`'s preset. Its own language answers to its own linter (`.golangci.yml`, at the version the Makefile pins), and each gesture runs both halves.
 
 ## Testing
 

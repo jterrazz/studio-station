@@ -5,7 +5,7 @@ description: 'Overview of the @jterrazz ecosystem: shared npm packages, project 
 
 # @jterrazz Stack
 
-The map of the `@jterrazz` ecosystem: composable packages, one set of conventions, interchangeable repos. Canonical home: `studio-workstation` `docs/concepts/stack.md`.
+The map of the `@jterrazz` ecosystem: composable packages, one set of conventions, interchangeable repos. Canonical home: `studio-station` `docs/concepts/stack.md`.
 
 ## Mental model
 
@@ -15,15 +15,15 @@ The map of the `@jterrazz` ecosystem: composable packages, one set of convention
 
 ## Where to look
 
-| Task                                                | Read                                          |
-| --------------------------------------------------- | --------------------------------------------- |
-| The whole picture: packages, naming, required files | `studio-workstation` `docs/concepts/stack.md` |
-| Build / lint / format / API docs                    | `studio-typescript` skill                     |
-| Testing conventions and structure                   | `studio-test` skill                           |
-| Scaffolding a new project                           | `studio-new-project` skill                    |
-| CI/CD workflows                                     | `studio-workflows` skill                      |
-| Where knowledge lives in a repo                     | `studio-repo-structure` skill                 |
-| What is installed on the machine                    | `studio-toolbelt` skill                       |
+| Task                                                | Read                                      |
+| --------------------------------------------------- | ----------------------------------------- |
+| The whole picture: packages, naming, required files | `studio-station` `docs/concepts/stack.md` |
+| Build / lint / format / API docs                    | `studio-typescript` skill                 |
+| Testing conventions and structure                   | `studio-test` skill                       |
+| Scaffolding a new project                           | `studio-new-project` skill                |
+| CI/CD workflows                                     | `studio-workflows` skill                  |
+| Where knowledge lives in a repo                     | `studio-repo-structure` skill             |
+| What is installed on the machine                    | `studio-toolbelt` skill                   |
 
 ## Always
 
