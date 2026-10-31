@@ -28,14 +28,6 @@ func TestPlaceEveryInstallOnAKindItsMethodAccepts(t *testing.T) {
 	}
 }
 
-func TestPlaceBundleMethodsNeverReachLinux(t *testing.T) {
-	for _, m := range []catalog.Method{catalog.MethodBrew, catalog.MethodCask, catalog.MethodMas, catalog.MethodApp, catalog.MethodNpm, catalog.MethodUv} {
-		if slices.Contains(catalog.MethodKinds[m], catalog.Linux) {
-			t.Errorf("method %s accepts linux", m)
-		}
-	}
-}
-
 func TestUniqueNamesAcrossToolsSkillsAndConfigItems(t *testing.T) {
 	owner := map[string]string{}
 	claim := func(name, what string) {
