@@ -2,6 +2,7 @@ package settings_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -33,7 +34,7 @@ func TestKeychainWriteRefusesANewline(t *testing.T) {
 
 func TestKeychainIsClosedOffAHost(t *testing.T) {
 	k := settings.NewKeychain(systemtest.NewRunner(t)).On(catalog.Linux)
-	if _, _, err := k.Read(context.Background(), "a"); err != settings.ErrNoKeychain {
+	if _, _, err := k.Read(context.Background(), "a"); !errors.Is(err, settings.ErrNoKeychain) {
 		t.Fatalf("read on linux: %v", err)
 	}
 }

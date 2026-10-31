@@ -79,8 +79,6 @@ func NewStore(files system.FS, p Paths) Store {
 	return Store{fs: files, dir: p.Config, path: path.Join(p.Config, fileName)}
 }
 
-func (s Store) Path() string { return s.path }
-
 func (s Store) Load() (Settings, error) {
 	v := Defaults()
 	data, err := s.fs.ReadFile(s.path)

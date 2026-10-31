@@ -1,5 +1,5 @@
 #!/bin/bash
-# A new VM's first boot: run as root (sudo bash -s) over the NAT session. The
+# invariant: A new VM's first boot: run as root (sudo bash -s) over the NAT session. The
 # rendering replaces the {{name}}, {{lifetime}} and {{authkey}} placeholders.
 set -euo pipefail
 

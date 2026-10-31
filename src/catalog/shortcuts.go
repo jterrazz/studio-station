@@ -8,6 +8,7 @@ type GitShortcut struct {
 
 // invariant: AppendArgs, when set, is the prefix of ONE more argument made of the
 // shortcut's own words joined by spaces (`feat: <message>`).
+
 type GitStep struct {
 	Args          []string
 	AppendArgs    string

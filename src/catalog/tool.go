@@ -41,6 +41,7 @@ type Tool struct {
 // invariant: which machine kinds accept a method is the `kinds` column of the
 // method table (src/domain/tools/methods.go reads it from here), so a placement and
 // the dispatch that runs it can never disagree.
+
 var MethodKinds = map[Method][]MachineKind{
 	MethodBrew:   {Host, MacOS},
 	MethodCask:   {Host, MacOS},

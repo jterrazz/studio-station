@@ -1,5 +1,5 @@
 #!/bin/bash
-# The linux image recipe: run as root (sudo bash -s) over the build VM's NAT
+# invariant: The linux image recipe: run as root (sudo bash -s) over the build VM's NAT
 # session, as the base's admin user. Its inputs are the environment variables
 # station sets: VM_USER, IMAGE_KEY (the host's image public key) and the station
 # binary already copied to /tmp/station.

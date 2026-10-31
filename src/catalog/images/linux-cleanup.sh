@@ -1,5 +1,5 @@
 #!/bin/bash
-# The second build session: run as root (sudo bash -s) as VM_USER with the image
+# invariant: The second build session: run as root (sudo bash -s) as VM_USER with the image
 # key, once the base's admin session has ended, so its user can be removed.
 set -euo pipefail
 

@@ -32,7 +32,7 @@ func (k Keychain) On(kind catalog.MachineKind) Keychain {
 	return k
 }
 
-func (k Keychain) Read(ctx context.Context, account string) (string, bool, error) {
+func (k Keychain) Read(ctx context.Context, account string) (value string, found bool, err error) {
 	if k.off {
 		return "", false, ErrNoKeychain
 	}

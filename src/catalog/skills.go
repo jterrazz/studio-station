@@ -7,6 +7,7 @@ func skill(name, description, repo, skillName string) Tool {
 // invariant: a skill tool is named after its skill, except where that name is
 // already a tool's: then it carries the `-skill` suffix, and its install keeps the
 // upstream name the skills lock records.
+
 var AgentSkills = []Tool{
 	skill("frontend-design", "Distinctive, production-grade frontend interfaces", "anthropics/skills", "frontend-design"),
 	skill("upgrading-expo", "Upgrade an Expo app across SDK versions", "expo/skills", "upgrading-expo"),
