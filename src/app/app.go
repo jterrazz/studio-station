@@ -52,6 +52,14 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		Screen:      inTTY && outTTY,
 		On:          &kit.On{Here: here.here(), Args: args, Remote: remote.New(here.host.Run)},
 	}
+	kenv.On.Refresh = func(ctx context.Context) error {
+		fleet := here.machines(false)
+		f, err := fleet.Fleet(ctx, false)
+		if err != nil {
+			return err
+		}
+		return fleet.SSHBlocks(ctx, f)
+	}
 
 	var root *cobra.Command
 	root = cli.NewRoot(kenv, tuiOpener(kenv, func() *cobra.Command { return root }),

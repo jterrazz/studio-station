@@ -93,7 +93,11 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 			return c.Help()
 		}
 		if machine, ok := env.On.Target(); ok {
-			return Translate(env.On.Delegate(c.Context(), machine, env.Interactive), path(c))
+			if err := env.On.Delegate(c.Context(), machine, env.Interactive); err != nil {
+				return Translate(err, path(c))
+			}
+			env.On.refresh(c.Context(), path(c))
+			return nil
 		}
 		err := run(c.Context(), c, l, in, a, env, IO{
 			JSON:          wantJSON,

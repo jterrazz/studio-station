@@ -1,0 +1,18 @@
+description: 'a VM created on another host with --on gets its ssh block here as soon as the create returns'
+fixture: ./__fixtures__/create-on-y/
+runs:
+    - command: 'machines create --lifetime lasting --on y'
+      exit: 0
+      stdout: |
+          ●	linux-1	lasting	running
+      files:
+          .ssh/config:
+              contains:
+                  - |-
+                    Host linux-1
+                      HostName linux-1
+                      User vmu
+    - command: '--version > /dev/null; /usr/bin/head -n 1 .calls'
+      exit: 0
+      stdout: |
+          ssh y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station machines create --lifetime lasting

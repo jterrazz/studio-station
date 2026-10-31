@@ -15,6 +15,19 @@ type On struct {
 	Here    string
 	Args    []string
 	Remote  *remote.Service
+	Refresh func(ctx context.Context) error
+}
+
+// invariant: the remote's answer is the outcome; a refresh that fails leaves the
+// blocks the next bare `station machines` rewrites, so it is no failure.
+func (o *On) refresh(ctx context.Context, path string) {
+	if o.Refresh == nil {
+		return
+	}
+	switch path {
+	case "machines create", "machines delete", "machines add", "machines forget":
+		_ = o.Refresh(ctx)
+	}
 }
 
 func (o *On) Target() (string, bool) {

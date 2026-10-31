@@ -1,0 +1,14 @@
+{
+  "here": "x",
+  "hosts": {
+    "x": {},
+    "y": {
+      "user": "u"
+    }
+  },
+  "tailnet": {
+    "mode": "userspace",
+    "auth_method": "login"
+  },
+  "vm_user": "vmu"
+}
