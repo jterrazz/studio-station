@@ -11,7 +11,7 @@ Every studio machine is provisioned by `workstation` (studio-workstation). The r
 
 Modern replacements are on every machine; prefer them over the defaults:
 
-<!-- GENERATED:prefer by `make skills` from src/internal/config: DO NOT EDIT between markers -->
+<!-- GENERATED:prefer by `make skills` from src/catalog: DO NOT EDIT between markers -->
 
 | Instead of                              | Use                                                          |
 | --------------------------------------- | ------------------------------------------------------------ |
@@ -34,23 +34,24 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 ## Tools roster
 
-<!-- GENERATED:tools by `make skills` from src/internal/config: DO NOT EDIT between markers -->
+<!-- GENERATED:tools by `make skills` from src/catalog: DO NOT EDIT between markers -->
 
 ### Package Managers
 
+- **homebrew**: macOS package manager
+- **mise**: Polyglot runtime manager: node, go, python, bun, rust, java
+- **mas**: Mac App Store command line
 - **uv**: Fast Python package and project manager
 - **cocoapods**: Dependency manager for iOS and macOS projects
-- **homebrew**: macOS package manager
-- **npm**: Node.js package manager
-- **nvm**: Manage multiple installed Node.js versions
 - **pnpm**: Fast, disk space efficient Node package manager
+- **skills**: Agent skills package manager
 
 ### Runtimes
 
 - **bun**: Fast JavaScript runtime and package manager
 - **go**: Compiled systems programming language by Google
 - **node**: JavaScript runtime built on Chrome's V8 engine
-- **openjdk**: Open-source Java Development Kit
+- **java**: Java Development Kit (Temurin)
 - **python**: Python programming language runtime
 - **rust**: Systems programming language for safety and speed
 
@@ -73,27 +74,31 @@ Modern replacements are on every machine; prefer them over the defaults:
 - **tgrep**: Trigram-indexed grep for large codebases
 - **sd**: Intuitive sed alternative
 - **difftastic**: Structural diff tool
+- **jq**: Command-line JSON processor
 
 ### Git
 
+- **git**: Distributed version control system (the Command Line Tools)
 - **gpg**: GNU Privacy Guard for encryption and signing
 - **lazygit**: Terminal UI for git
-- **git**: Distributed version control system
 - **gh**: GitHub CLI for repository management
 
 ### Editors & IDEs
 
 - **zed**: Zed code editor
-- **android-studio**: Android development IDE
 - **cursor**: AI-powered code editor
+- **android-studio**: Android development IDE
 - **xcode**: Apple development IDE
+- **xcodegen**: Generates Xcode projects from a spec
 
 ### Containers & VMs
 
-- **multipass**: Lightweight Ubuntu VMs on demand
-- **orbstack**: OrbStack container runtime (provides docker CLI)
+- **tart**: Virtual machines on Apple silicon: the engine of station's VMs
+- **docker**: Container engine, inside the Linux VM
 - **lens**: Kubernetes IDE for managing clusters
-- **utm**: Virtual machines for macOS (QEMU + Apple Virtualization)
+- **kubectl**: Kubernetes command line
+- **helm**: Kubernetes package manager
+- **helmfile**: Declarative deployments of Helm charts
 
 ### Deploy
 
@@ -115,10 +120,9 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 ### AI Tooling
 
-- **ollama**: Run large language models locally
+- **ollama**: Run large language models locally, on the host's GPU
 - **qmd**: Local semantic search over markdown
 - **rtk**: Token-optimized CLI proxy for agents
-- **skills**: Agent skills package manager
 - **browser-use**: AI agent library for browser automation
 - **markitdown**: Convert files to Markdown for LLMs
 - **playwright-mcp**: Browser automation for AI agents via MCP
@@ -167,7 +171,7 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 - **jump-desktop-connect**: Remote GUI recovery host service for headless Macs
 - **jump-desktop**: Jump Desktop viewer/client app
-- **tailscale**: Mesh VPN built on WireGuard
+- **tailscale**: Mesh VPN built on WireGuard: every machine of the fleet is a node
 
 ### Security
 
@@ -182,6 +186,26 @@ Modern replacements are on every machine; prefer them over the defaults:
 - **pipifier**: Picture-in-Picture for Safari
 - **snippety**: Code snippet manager
 - **speedtest**: Internet speed test
+
+### Agent skills
+
+- **frontend-design**: Distinctive, production-grade frontend interfaces
+- **upgrading-expo**: Upgrade an Expo app across SDK versions
+- **modern-web-guidance**: Chrome's current web platform guidance
+- **chrome-extensions**: Chrome extension authoring
+- **better-interface**: Interface polish
+- **better-accessibility**: Accessibility review and fixes
+- **better-layout**: Layout and spacing craft
+- **better-writing**: Interface copy
+- **better-typography**: Typography craft
+- **better-colors**: Color craft
+- **better-ui**: UI review across the better-* skills
+- **shadcn**: shadcn/ui components and patterns
+- **last30days**: Research what happened in the last 30 days
+- **qmd-skill**: Drive qmd, the local markdown search
+- **agent-browser-skill**: Drive agent-browser, the browser automation CLI
+- **vercel-react-best-practices**: React and Next.js performance practices
+- **vercel-react-native-skills**: React Native practices
 
 <!-- /GENERATED:tools -->
 
