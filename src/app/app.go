@@ -59,7 +59,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		cleanCommand(kenv),
 		machinesCommand(kenv),
 		imagesCommand(kenv),
-		secretsCommand(kenv),
+		secretsCommand(kenv, here),
 		tailnetCommand(kenv),
 		runCommand(kenv),
 		setupCommand(kenv),
