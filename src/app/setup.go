@@ -7,12 +7,16 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	setupcmd "github.com/jterrazz/studio-station/src/cli/setup"
+	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
+	"github.com/jterrazz/studio-station/src/domain/tailnet"
 )
 
 func setupCommand(env kit.Env, m machine) *cobra.Command {
-	service := setup.New(m.host, m.store, settings.NewKeychain(m.host.Run).On(m.kind), settingsRegistrar{store: m.store, user: m.host.Env.User()}, noDaemon{}, setup.Options{
+	registrar := fleetRegistrar{store: m.store, machines: m.machines(env.Interactive)}
+	daemon := tailnetDaemon{service: m.tailnet(env.Interactive)}
+	service := setup.New(m.host, m.store, settings.NewKeychain(m.host.Run).On(m.kind), registrar, daemon, setup.Options{
 		Here:  m.kind,
 		Paths: m.paths,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
@@ -23,40 +27,24 @@ func setupCommand(env kit.Env, m machine) *cobra.Command {
 	return setupcmd.Command(setupcmd.Deps{Setup: service, Context: m.context}, env)
 }
 
-// hazard: stands in for the fleet registry until L-INT adapts machines.Service.Init
-// over the same two methods.
-type settingsRegistrar struct {
-	store settings.Store
-	user  string
+type fleetRegistrar struct {
+	store    settings.Store
+	machines *machines.Service
 }
 
-func (r settingsRegistrar) Here() (string, bool) {
+func (r fleetRegistrar) Here() (string, bool) {
 	current, err := r.store.Load()
 	return current.Here, err == nil && current.Here != ""
 }
 
-func (r settingsRegistrar) Register(name string) error {
-	current, err := r.store.Load()
-	if err != nil {
-		return err
-	}
-	current.Here = name
-	if current.Hosts == nil {
-		current.Hosts = map[string]settings.Host{}
-	}
-	if _, ok := current.Hosts[name]; !ok {
-		current.Hosts[name] = settings.Host{}
-	}
-	if current.VMUser == "" {
-		current.VMUser = r.user
-	}
-	return r.store.Save(current)
+func (r fleetRegistrar) Register(name string) error { return r.machines.Init(name) }
+
+type tailnetDaemon struct{ service *tailnet.Service }
+
+func (d tailnetDaemon) Running(ctx context.Context) (bool, error) {
+	return d.service.DaemonRunning(ctx), nil
 }
 
-// hazard: stands in for the tailnet's daemon control until L-INT adapts it: the
-// tailnet domain has no daemon of its own yet, so there is nothing to ask or restart.
-type noDaemon struct{}
+func (d tailnetDaemon) Stop(ctx context.Context) error { return d.service.StopDaemon(ctx) }
 
-func (noDaemon) Running(context.Context) (bool, error) { return false, nil }
-func (noDaemon) Stop(context.Context) error            { return nil }
-func (noDaemon) Start(context.Context) error           { return nil }
+func (d tailnetDaemon) Start(ctx context.Context) error { return d.service.StartDaemon(ctx) }
