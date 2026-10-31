@@ -48,13 +48,10 @@ func Delegates(env Env, c *cobra.Command) (bool, error) {
 
 func refusesOn(path string) bool {
 	words := strings.Fields(path)
-	switch {
-	case len(words) == 0:
+	if len(words) == 0 {
 		return false
-	case words[0] == "shell", words[0] == "completion", words[0] == "help":
-		return true
 	}
-	return len(words) > 1 && words[0] == "machines" && words[1] == "supervise"
+	return words[0] == "shell" || words[0] == "completion" || words[0] == "help"
 }
 
 func RefuseOn(env Env) func(*cobra.Command, []string) error {
