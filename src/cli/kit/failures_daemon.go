@@ -66,7 +66,7 @@ func servicesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &ignored):
 		return fail.Usage(ignored.Error(), "the host ignores ports below 1024 and 22"), true
 	case errors.As(err, &away):
-		return fail.Failed(away.Error(), "on "+away.Host+": station setup", err), true
+		return fail.Failed(away.Error(), away.Hint(), err), true
 	case errors.As(err, &pinned):
 		return fail.Usage(pinned.Error(), "re-run with --yes"), true
 	case errors.As(err, &vmOnly):

@@ -1,0 +1,23 @@
+description: 'in a VM no host has connected to yet, every services command says so'
+env: daemon
+runs:
+    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" services'
+      exit: 1
+      stderr: |
+          Error: no host has connected to this VM yet
+          Hint: on the VM's host: station setup
+    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" services --json'
+      exit: 1
+      stderr: |
+          Error: no host has connected to this VM yet
+          Hint: on the VM's host: station setup
+    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" services url 3000'
+      exit: 1
+      stderr: |
+          Error: no host has connected to this VM yet
+          Hint: on the VM's host: station setup
+    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" services release 3000'
+      exit: 1
+      stderr: |
+          Error: no host has connected to this VM yet
+          Hint: on the VM's host: station setup

@@ -43,7 +43,19 @@ func (e *IgnoredPortError) Error() string {
 
 type HostAwayError struct{ Host string }
 
-func (e *HostAwayError) Error() string { return e.Host + " is not connected to this VM" }
+func (e *HostAwayError) Error() string {
+	if e.Host == "" {
+		return "no host has connected to this VM yet"
+	}
+	return e.Host + " is not connected to this VM"
+}
+
+func (e *HostAwayError) Hint() string {
+	if e.Host == "" {
+		return "on the VM's host: station setup"
+	}
+	return "on " + e.Host + ": station setup"
+}
 
 type PinnedError struct {
 	VM   string
