@@ -29,7 +29,7 @@ For each reported port the daemon takes a **lease**: the lowest free port of the
 | the host port is busy                   | the next free port (a pinned lease waits, retried every 10 s)      |
 | the host reboots                        | the daemon publishes every lease again as the guests report        |
 
-The leases live in `~/.local/state/station/leases.json`, a kept file: deleting it changes every URL. Each URL has one shape: `local` `http://127.0.0.1:<port>`, `tailnet` `<public host>:<port>` and `https` per [mode](#https). The public URL, the one `services url` prints, is the https one for an HTTP service when https is on, else the tailnet one.
+The leases live in `~/.local/state/station/leases.json`, a kept file: deleting it changes every URL. Each URL has one shape: `local` `http://127.0.0.1:<port>`, `tailnet` `http://<public host>:<port>` (`<public host>:<port>` for a service that is not HTTP, a raw TCP one) and `https` per [mode](#https). The public URL, the one `services url` prints, is the https one for an HTTP service when https is on, else the tailnet one.
 
 ## The commands
 
@@ -62,11 +62,11 @@ The daemon reads the file again when it changes. [Configuration](configuration.m
 
 An HTTP service (detected once per lease: a server that speaks first is not HTTP, else `HEAD /` must answer `HTTP/`) gets an https URL from the Tailscale app's `tailscale serve`, with a valid certificate: an iPhone on the tailnet opens it as a secure context.
 
-| `https` | Serve line                                                                              | URL                                              |
-| ------- | --------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `port`  | `tailscale serve --bg --https=<host port> http://127.0.0.1:<host port>`                 | `https://macbook.tail1234.ts.net:40000`          |
-| `path`  | `tailscale serve --bg --https=443 --set-path=/<vm>/<port> http://127.0.0.1:<host port>` | `https://macbook.tail1234.ts.net/api/8081/`      |
-| `off`   | none                                                                                    | the tailnet one, `macbook.tail1234.ts.net:40000` |
+| `https` | Serve line                                                                              | URL                                                     |
+| ------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `port`  | `tailscale serve --bg --https=<host port> http://127.0.0.1:<host port>`                 | `https://macbook.tail1234.ts.net:40000`                 |
+| `path`  | `tailscale serve --bg --https=443 --set-path=/<vm>/<port> http://127.0.0.1:<host port>` | `https://macbook.tail1234.ts.net/api/8081/`             |
+| `off`   | none                                                                                    | the tailnet one, `http://macbook.tail1234.ts.net:40000` |
 
 The tailnet needs HTTPS certificates enabled once, in the [admin console's DNS page](https://login.tailscale.com/admin/dns) (MagicDNS on, then HTTPS Certificates). A refused serve (or one that waits for the admin to enable Serve) leaves the service published without https: its row `◐` with tailscale's own line (never the CLI's `Warning:` lines), its public URL the tailnet one, and in `port` mode its tailnet port bound by the daemon instead. From then on, until a serve succeeds, every lease not served hands out its tailnet URL too: `services url` and the profiles a new VM exports. In `path` mode a tool that builds absolute URLs needs its base path set to `/<vm>/<port>/`. Whether the app serves https on every port of the range is proved on a real host before `port` stays the default ([TODO](../../TODO.md)).
 

@@ -11,7 +11,7 @@ func TestURLsHaveOneShapePerMode(t *testing.T) {
 	if u := URLs(l, "macbook.ts.net", HTTPSPath); u.HTTPS != "https://macbook.ts.net/api/8081/" {
 		t.Fatalf("path mode %+v", u)
 	}
-	if u := URLs(l, "macbook.ts.net", HTTPSOff); u.HTTPS != "" || u.Public() != "macbook.ts.net:40000" {
+	if u := URLs(l, "macbook.ts.net", HTTPSOff); u.HTTPS != "" || u.Public() != "http://macbook.ts.net:40000" {
 		t.Fatalf("off %+v", u)
 	}
 	l.HTTP = &no

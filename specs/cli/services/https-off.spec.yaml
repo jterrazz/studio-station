@@ -9,5 +9,5 @@ runs:
       exit: 0
       stdout: |
           0
-          ["published","","macbook.tail1234.ts.net:42080"]
-          ◐	api	8081	macbook.tail1234.ts.net:42080	x	published		local only
+          ["published","","http://macbook.tail1234.ts.net:42080"]
+          ◐	api	8081	http://macbook.tail1234.ts.net:42080	x	published		local only

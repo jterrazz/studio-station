@@ -72,7 +72,7 @@ func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile st
 	if err := d.c.Do(ctx, "reserve", daemon.Request{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
 		return machines.Reserved{}, downAs(err, machines.ErrDaemonDown)
 	}
-	host, _, _ := strings.Cut(v.URLs.Tailnet, ":")
+	host, _, _ := strings.Cut(strings.TrimPrefix(v.URLs.Tailnet, "http://"), ":")
 	return machines.Reserved{GuestPort: v.GuestPort, HostPort: v.HostPort, Profile: profile, URL: v.URLs.Public(), PublicHost: host}, nil
 }
 

@@ -9,5 +9,5 @@ runs:
       exit: 0
       stdout: |
           ["waiting","https://macbook.tail1234.ts.net:42200"]
-          ["waiting","","macbook.tail1234.ts.net:42200"]
-          macbook.tail1234.ts.net:42203
+          ["waiting","","http://macbook.tail1234.ts.net:42200"]
+          http://macbook.tail1234.ts.net:42203

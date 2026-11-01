@@ -12,7 +12,8 @@ func (l Lease) isHTTP() bool { return l.HTTP == nil || *l.HTTP }
 
 func URLs(l Lease, publicHost, httpsMode string) URLSet {
 	// invariant: one shape everywhere; the public URL is the https one when the
-	// service is HTTP (or not yet known) and https is on, else the tailnet one.
+	// service is HTTP (or not yet known) and https is on, else the tailnet one,
+	// which carries http:// on the same condition so a URL parser reads a host.
 	port := strconv.Itoa(l.HostPort)
 	u := URLSet{Local: "127.0.0.1:" + port}
 	if l.HTTP != nil && *l.HTTP {
@@ -25,6 +26,7 @@ func URLs(l Lease, publicHost, httpsMode string) URLSet {
 	if !l.isHTTP() {
 		return u
 	}
+	u.Tailnet = "http://" + u.Tailnet
 	switch httpsMode {
 	case HTTPSPort:
 		u.HTTPS = "https://" + publicHost + ":" + port
