@@ -134,7 +134,7 @@ func Summary(s tailnet.Status) present.Row {
 		return row
 	}
 	parts := []string{s.BackendState}
-	for _, part := range []string{s.DNSName, s.IP, s.Variant} {
+	for _, part := range []string{s.DNSName, s.IP, s.Variant, s.CLI} {
 		if part != "" {
 			parts = append(parts, part)
 		}

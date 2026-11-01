@@ -11,7 +11,7 @@ runs:
     - command: 'status | /usr/bin/grep -E ''^.	tailnet	'''
       exit: 0
       stdout: |
-          ●	tailnet	Running · macbook.tail1234.ts.net · 192.0.2.1 · app-store
+          ●	tailnet	Running · macbook.tail1234.ts.net · 192.0.2.1 · app-store · {{workdir}}/root/Applications/Tailscale.app/Contents/MacOS/Tailscale
     - command: '--version >/dev/null; /bin/rm -r root/Applications/Tailscale.app; "$STATION" status --json | /usr/bin/jq -c ''.tailnet | [.state, .variant, .cli]'''
       exit: 0
       stdout: |
