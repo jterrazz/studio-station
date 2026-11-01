@@ -12,3 +12,5 @@ Library/Trial
 Library/Metadata
 Library/Logs/DiagnosticReports
 Library/HTTPStorages/com.apple.*
+Library/HomeKit
+Library/DataDeliveryServices
