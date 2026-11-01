@@ -50,10 +50,12 @@ Before=shutdown.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'echo station-intent=poweroff >/dev/hvc0'
+ExecStart=/bin/sh -c 'printf "\\nstation-intent=poweroff\\n" >/dev/hvc0'
 
 [Install]
 WantedBy=poweroff.target halt.target
 UNIT
 
 systemctl enable station-hostkeys.service station-intent.service
+# outside: the console is a host file tart reads back as input, so a getty on it answers its own prompts.
+systemctl mask --now serial-getty@hvc0.service
