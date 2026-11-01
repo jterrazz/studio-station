@@ -72,6 +72,7 @@ type Daemon struct {
 	svcs    map[string]*svc
 	leases  []services.Lease
 	self    tailnet.Self
+	refused bool
 	started time.Time
 	note    func(line string)
 }

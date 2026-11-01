@@ -248,6 +248,7 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 			} else {
 				s.served = true
 			}
+			d.refused = !s.served
 		}
 	}
 	if !s.served || p.HTTPS != services.HTTPSPort {
@@ -373,8 +374,13 @@ func (d *Daemon) detectHTTP(ctx context.Context, s *svc) bool {
 	}
 }
 
+// invariant: once this host saw a serve refused, a lease not served hands out
+// the tailnet URL: an https one would be dead until a serve succeeds again.
 func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View {
 	phase := services.Waiting
+	if d.refused && (s == nil || !s.served) {
+		httpsMode = services.HTTPSOff
+	}
 	v := services.ViewOf(l, d.self.DNSName, httpsMode, phase)
 	if s != nil {
 		switch s.st.Phase {
