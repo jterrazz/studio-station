@@ -5,7 +5,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Section    | Answers                                         |
 | ---------- | ----------------------------------------------- |
 | Rules      | What holds for every command                    |
-| Here       | `status`, `tools`, `config`, `clean`            |
+| Here       | `status`, `tools`, `config`, `storage`          |
 | The fleet  | `machines`, `images`, `secrets`, `tailnet`      |
 | Shortcuts  | `run git` and `run docker`                      |
 | The binary | `setup`, `--version`, `help`                    |
@@ -14,7 +14,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 
 ## Rules
 
-- A bare noun lists (`tools`, `config`, `clean`, `machines`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`station`, `run`, `run git`) prints its menu on stderr and exits 2; on a terminal bare `station` opens the TUI.
+- A bare noun lists (`tools`, `config`, `storage`, `machines`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`station`, `run`, `run git`) prints its menu on stderr and exits 2; on a terminal bare `station` opens the TUI.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create --lifetime lasting --name api`).
 - The same verbs everywhere: `install`, `uninstall`, `upgrade`. There are no aliases.
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
