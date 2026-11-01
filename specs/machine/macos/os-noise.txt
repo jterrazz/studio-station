@@ -1,0 +1,14 @@
+# Paths macOS's own daemons write under $HOME while the suite runs, never a tool's.
+# One shell glob per line, relative to $HOME; a tool's path never goes here.
+Library/Preferences/com.apple.*
+Library/Preferences/ByHost
+Library/Caches/com.apple.*
+Library/Application Support/com.apple.*
+Library/Containers/com.apple.*
+Library/Group Containers/group.com.apple.*
+Library/Daemon Containers
+Library/Biome
+Library/Trial
+Library/Metadata
+Library/Logs/DiagnosticReports
+Library/HTTPStorages/com.apple.*

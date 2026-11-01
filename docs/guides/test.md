@@ -60,6 +60,16 @@ A spec copies one `fixture:` directory into its working directory, so stubs live
 
 A test exists because a real regression would turn it red. Every behaviour of a command (each flag, refusal, exit code, `--json` schema and migration) has a spec document through the real binary; the architecture test proves the layers; a module test exists only where the logic is dense and a spec cannot reach it honestly (what the terminal driver cannot observe, a timing budget, root, a pure algorithm). A test that restates a declaration, a table or a mock's own return is deleted.
 
+## The machine specs
+
+Tiers 2 and 3 run the real binary on a real VM of this host, where the sandbox cannot reach: `make e2e-machine KIND=linux` (tier 2, a clone of the product `linux` image, 4 GB) and `make e2e-machine KIND=macos` (tier 3, one macOS VM at 8 GB with no other VM running). They live in `specs/machine/` and run only there: never in `make check` nor CI, since GitHub's macOS runners are VMs and nest none. The verdict is the exit code; the log is `.artifacts/e2e/<kind>.log`.
+
+Tier 3 clones a test-only image, `station-e2e-macos-<catalogue hash>`: the upstream `macos-tahoe-base` with Homebrew added by `specs/machine/macos/prebake.sh`, rebuilt only when `src/catalog/` changes. It is not a product image. Inside it the harness exports `STATION_MACHINE_KIND=host`, so the guest plays a fresh host, and records what `kern.hv_vmm_present` prints there.
+
+Every VM the harness makes is named `station-e2e-*`, outside station's ownership rule, and deleted at the end, pass or fail. One VM runs the suite: `scripts/install.sh` through its one test seam, `STATION_INSTALL_FROM=<the binary just built>` (a local file instead of the release download, no tag and no checksum read), then `setup`, the tools of `specs/machine/<kind>/one-per-method.txt`, the native commands (`go build`, `npm i`, `bun add -g`, `bunx`, `uv tool install`, `brew install` on macOS, `zsh -c`, `zsh -ic`, and IDE-like calls under `env -i` with only the tool's own bin on PATH).
+
+Then the footprint test: the home is listed (depth 4) before install.sh and after every step, and every new path must be one the storage table declares (`station storage --json`), a home-root exception of [Footprint](../reference/footprint.md), or a path the OS writes itself (`specs/machine/<kind>/os-noise.txt`, never a tool's). An unmatched path fails the suite, named with the step that made it. `storage clean` must leave every cache empty and every data path untouched, and `storage reset go`, on a fresh clone of the VM, must take only go's data.
+
 ## What CI runs
 
 `.github/workflows/check.yaml` calls the shared `studio-actions` check workflow on every push and every pull request to `main`; what that workflow runs against a repository's `make` targets is [The stack](../concepts/stack.md)'s. Locally the same gate is `make build` then `make check`.

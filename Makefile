@@ -1,4 +1,4 @@
-.PHONY: help install build build-linux lint fix test check provision deprovision generate clean
+.PHONY: help install build build-linux lint fix test check e2e-machine provision deprovision generate clean
 
 BINARY       := station
 BUILD_PATH   := .artifacts/go/$(BINARY)
@@ -52,6 +52,9 @@ test: node_modules/.install ## The Go tests (modules and the boundary), then the
 	@STATION_FORCE_REBUILD=1 npx typescript test
 
 check: lint test build-linux ## Every gate a change passes
+
+e2e-machine: build build-linux ## The machine specs on a real VM of this host: KIND=linux (tier 2) or KIND=macos (tier 3); never in check
+	@specs/machine/run.sh $(KIND)
 
 provision: build ## Put this build on the machine (~/.local/bin/station), then run station setup
 	@mkdir -p $(BIN_DIR)
