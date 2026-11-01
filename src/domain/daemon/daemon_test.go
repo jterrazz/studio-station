@@ -166,3 +166,19 @@ func TestAFourthStopWithinAMinuteLeavesTheVMBroken(t *testing.T) {
 		t.Errorf("after 4 stops in 20 s: %s with %d runs, want broken and no fifth run", got, h.runs())
 	}
 }
+
+func TestARunWhoseGuestNeverConnectsAnswersGuestTimeoutAfterAMinute(t *testing.T) {
+	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Lasting, Want: machines.WantRunning})
+	h.run.Spawn(4242)
+	v, _ := h.d.find("api")
+	v.pid, v.state, v.guest = 4242, StateRunning, GuestConnecting
+	began := h.clock.At
+	err := h.d.awaitGuest(t.Context(), "api")
+	var op *OpError
+	if !errors.As(err, &op) || op.Code != "guest_timeout" {
+		t.Fatalf("a guest that never connects: %v, want guest_timeout", err)
+	}
+	if waited := h.clock.At.Sub(began); waited < guestReady {
+		t.Errorf("guest_timeout after %s, want %s", waited, guestReady)
+	}
+}

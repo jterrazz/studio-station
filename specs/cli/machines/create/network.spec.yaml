@@ -3,6 +3,7 @@ fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
+serve: sshd
 runs:
     - command: 'machines create --lifetime temporary --network bridged'
       exit: 2

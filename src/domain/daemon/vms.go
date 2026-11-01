@@ -298,6 +298,28 @@ func (d *Daemon) opRun(ctx context.Context, vm string) error {
 	return d.start(ctx, v)
 }
 
+// invariant: run answers once the guest is connected (it has written the VM's
+// keys block and services.env), or when the run ended first (its end is the
+// supervision's), else guest_timeout after guestReady.
+func (d *Daemon) awaitGuest(ctx context.Context, vm string) error {
+	v, err := d.find(vm)
+	if err != nil {
+		return err
+	}
+	for waited := time.Duration(0); waited < guestReady; waited += pollEvery {
+		d.mu.Lock()
+		connected, ended := v.guest == GuestConnected, v.pid == 0 || !d.h.Run.Alive(v.pid)
+		d.mu.Unlock()
+		if connected || ended {
+			return nil
+		}
+		if err := d.h.Clock.Sleep(ctx, pollEvery); err != nil {
+			return err
+		}
+	}
+	return fault("guest_timeout", vm+"'s guest did not connect in "+strconv.Itoa(int(guestReady.Seconds()))+" s", "station machines probe "+vm)
+}
+
 func (d *Daemon) opStart(ctx context.Context, vm string) error {
 	v, err := d.find(vm)
 	if err != nil {

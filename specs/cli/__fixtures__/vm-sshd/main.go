@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -77,6 +78,11 @@ func main() {
 }
 
 func serve(conn net.Conn, cfg *ssh.ServerConfig) {
+	if data, err := os.ReadFile(filepath.Join(workdir(), "vm", "boot-seconds")); err == nil {
+		if n, err := strconv.ParseFloat(strings.TrimSpace(string(data)), 64); err == nil {
+			time.Sleep(time.Duration(n * float64(time.Second)))
+		}
+	}
 	_, chans, reqs, err := ssh.NewServerConn(conn, cfg)
 	if err != nil {
 		return

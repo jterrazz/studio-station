@@ -4,6 +4,7 @@ fixture:
     - ../__fixtures__/daemon-vm/
     - ./__fixtures__/crash/
 env: daemon
+serve: sshd
 runs:
     - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41540-41559"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary > /dev/null; /bin/sleep 3; /usr/bin/grep -c "^tart delete" .calls; "$STATION" machines --json | /usr/bin/jq -r ".hosts[0].vms[0].state"; kill $d; wait $d'
       exit: 0

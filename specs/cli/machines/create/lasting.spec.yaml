@@ -3,6 +3,7 @@ fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
+serve: sshd
 runs:
     - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41020-41039"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime lasting --name api; kill $d; wait $d'
       exit: 0

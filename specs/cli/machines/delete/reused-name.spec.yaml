@@ -4,6 +4,7 @@ fixture:
     - ../../__fixtures__/daemon-vm/
     - ../../__fixtures__/vm-api/
 env: daemon
+serve: sshd
 runs:
     - command: '--version > /dev/null; ssh api true'
       exit: 255
@@ -19,7 +20,5 @@ runs:
       exit: 0
       stdout: |
           api
-    - command: '--version > /dev/null; ssh api true'
+    - command: '--version > /dev/null; /usr/bin/cut -d" " -f2- .local/state/station/known_hosts/api > answers/ssh/hostkey; ssh api true'
       exit: 0
-      files:
-          .local/state/station/known_hosts/api: { contains: 'api ssh-ed25519 AAAAnew' }

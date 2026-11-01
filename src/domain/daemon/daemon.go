@@ -233,7 +233,10 @@ func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
 	case "release":
 		return d.release(ctx, r.VM, r.GuestPort)
 	case "run":
-		return nil, d.opRun(ctx, r.VM)
+		if err := d.opRun(ctx, r.VM); err != nil {
+			return nil, err
+		}
+		return nil, d.awaitGuest(ctx, r.VM)
 	case "start":
 		return nil, d.opStart(ctx, r.VM)
 	case "stop":

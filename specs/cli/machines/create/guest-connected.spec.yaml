@@ -1,0 +1,13 @@
+description: 'create answers once the guest is connected and has written the VM''s keys block and services.env'
+fixture:
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
+env: daemon
+serve: sshd
+runs:
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41620-41639"}/'' .config/station/settings.json; echo 2 > vm/boot-seconds; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime lasting --name api > /dev/null; "$STATION" machines --json | /usr/bin/jq -r ".hosts[0].vms[0].guest"; /usr/bin/grep -c "station hosts" vm/.ssh/authorized_keys; /usr/bin/grep -c STATION_PUBLIC_HOST vm/.config/station/services.env; "$STATION" machines stop api > /dev/null; kill $d; wait $d'
+      exit: 0
+      stdout: |
+          connected
+          2
+          1

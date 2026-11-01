@@ -3,6 +3,7 @@ fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
+serve: sshd
 runs:
     - command: '--version >/dev/null; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary --memory 12G --disk 80G --cpus 2; kill $d; wait $d'
       exit: 0
