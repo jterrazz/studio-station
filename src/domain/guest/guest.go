@@ -81,6 +81,7 @@ type session struct {
 	hello   Hello
 	ready   bool
 	last    []Listener
+	docker  []Listener
 	pending map[string]chan message
 	seq     int
 }
@@ -148,7 +149,7 @@ func (g *session) handle(ctx context.Context, m message) {
 		if !g.ready {
 			g.ready = true
 			g.send(map[string]any{"v": 1, "type": "ready", "guest_version": g.s.o.Version, "kind": string(g.s.o.Kind)})
-			g.last = g.s.scan(ctx, g.hello, true)
+			g.last = g.s.scan(ctx, g.hello, &g.docker, true)
 			g.send(map[string]any{"v": 1, "type": "snapshot", "ports": g.last})
 			go g.watch(ctx)
 		}
@@ -170,7 +171,7 @@ func (g *session) watch(ctx context.Context) {
 		if g.s.h.Clock.Sleep(ctx, scanEvery) != nil {
 			return
 		}
-		now := g.s.scan(ctx, g.hello, tick%dockerEach == 0)
+		now := g.s.scan(ctx, g.hello, &g.docker, tick%dockerEach == 0)
 		if tick%snapshotEach == 0 {
 			g.send(map[string]any{"v": 1, "type": "snapshot", "ports": now})
 		} else {
@@ -192,7 +193,10 @@ func (g *session) watch(ctx context.Context) {
 
 func (s *Service) root(p string) string { return path.Join(s.o.Root, p) }
 
-func (s *Service) scan(ctx context.Context, h Hello, docker bool) []Listener {
+// invariant: docker is asked every dockerEach scans, and its last answer is
+// merged into every scan between, so a container's port keeps its name and
+// never flaps (its socket is root's docker-proxy, or none without the proxy).
+func (s *Service) scan(ctx context.Context, h Hello, docker *[]Listener, refresh bool) []Listener {
 	var found []Listener
 	if s.o.Kind == catalog.MacOS {
 		out, err := s.h.Run.Output(ctx, system.Cmd{Name: "lsof", Args: []string{"-nP", "-iTCP", "-sTCP:LISTEN", "-Fpcn"}, Timeout: 5 * time.Second})
@@ -204,12 +208,14 @@ func (s *Service) scan(ctx context.Context, h Hello, docker bool) []Listener {
 		tcp6, _ := s.h.FS.ReadFile(s.root("/proc/net/tcp6"))
 		found = s.owners(ParseProcNet(tcp, tcp6))
 	}
-	if _, ok := s.h.Run.LookPath("docker"); ok && docker {
-		out, err := s.h.Run.Output(ctx, system.Cmd{Name: "docker", Args: []string{"ps", "--format", "{{json .}}"}, Timeout: 5 * time.Second})
-		if err == nil && out.ExitCode == 0 {
-			found = Merge(found, ParseDockerPS([]byte(out.Stdout)))
+	if refresh {
+		if _, ok := s.h.Run.LookPath("docker"); !ok {
+			*docker = nil
+		} else if out, err := s.h.Run.Output(ctx, system.Cmd{Name: "docker", Args: []string{"ps", "--format", "{{json .}}"}, Timeout: 5 * time.Second}); err == nil && out.ExitCode == 0 {
+			*docker = ParseDockerPS([]byte(out.Stdout))
 		}
 	}
+	found = Merge(found, *docker)
 	return Filter(found, h.MinPort, h.Ignored)
 }
 
