@@ -175,7 +175,7 @@ func parseMacProcesses(r reply) []Process {
 		if len(fields) < 3 {
 			continue
 		}
-		value, err := strconv.ParseFloat(fields[1], 64)
+		value, err := parseDecimal(fields[1])
 		if err != nil {
 			continue
 		}
@@ -203,8 +203,8 @@ func linuxProcesses(r reply) (cpu, memory []Process) {
 		if len(fields) < 4 {
 			continue
 		}
-		c, err1 := strconv.ParseFloat(fields[len(fields)-2], 64)
-		m, err2 := strconv.ParseFloat(fields[len(fields)-1], 64)
+		c, err1 := parseDecimal(fields[len(fields)-2])
+		m, err2 := parseDecimal(fields[len(fields)-1])
 		if err1 != nil || err2 != nil {
 			continue
 		}
@@ -218,6 +218,12 @@ func linuxProcesses(r reply) (cpu, memory []Process) {
 	}
 	memory = top(byMemory)
 	return cpu, memory
+}
+
+// outside: ps prints its decimals in the caller's locale, `69,4` under fr_FR;
+// it is not run under C, which would escape every non-ASCII command name.
+func parseDecimal(s string) (float64, error) {
+	return strconv.ParseFloat(strings.Replace(s, ",", ".", 1), 64)
 }
 
 func top(ps []Process) []Process {

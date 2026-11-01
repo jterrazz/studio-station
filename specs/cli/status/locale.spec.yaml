@@ -1,0 +1,16 @@
+description: 'under a French locale status still reads the top processes ps prints with a decimal comma'
+fixture:
+    - ./__fixtures__/tools-mixed/
+    - ./__fixtures__/mac/
+    - ./__fixtures__/processes/
+    - ./__fixtures__/registered/
+env:
+    - USER=tester
+    - SHELL=/bin/zsh
+    - LANG=fr_FR.UTF-8
+    - LC_ALL=fr_FR.UTF-8
+runs:
+    - command: 'status --json | /usr/bin/jq -c ''.system.cpu'''
+      exit: 0
+      stdout: |
+          [{"pid":301,"name":"Google Chrome Helper","value":45.5},{"pid":302,"name":"node","value":12}]
