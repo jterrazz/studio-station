@@ -32,7 +32,7 @@ The binary reads nothing from the clone: the dotfiles and the VM recipes are emb
 | `make fix`         | Every fixer: `gofmt -w ./src ./specs`, then `typescript fix`                                             |
 | `make test`        | `go test ./src/... ./specs/...`, then `typescript test`: the `specs/cli` suite against a fresh build     |
 | `make check`       | `lint`, `test`, then `build-linux`: the gate a change passes                                             |
-| `make skills`      | Regenerate the toolbelt skill's rosters from the catalogue                                               |
+| `make generate`    | Regenerate the catalogue's projections: the toolbelt skill's rosters and `docs/reference/footprint.md`   |
 | `make provision`   | Build, put `station` in `~/.local/bin`, then run `station setup`                                         |
 | `make deprovision` | Remove the provisioned binary                                                                            |
 | `make clean`       | Remove `.artifacts/`                                                                                     |
@@ -47,7 +47,7 @@ Most changes are a catalogue value, not new code ([Architecture](../concepts/arc
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | A tool or an agent skill `station tools` offers | `src/catalog/tools.go`, `src/catalog/skills.go`                                                                  |
 | A config item                                   | `src/catalog/config.go`, its procedure in `src/domain/config/`                                                   |
-| Something `station clean` reclaims              | `src/catalog/cleanables.go`                                                                                      |
+| What a tool keeps on disk, how it is cleaned    | its row in `src/catalog/storage.go`                                                                              |
 | A manager `--via` knows                         | `src/catalog/managers.go`                                                                                        |
 | A `station run` shortcut                        | `src/catalog/shortcuts.go`                                                                                       |
 | How a method installs                           | `src/domain/tools/methods.go`, the one method table                                                              |
@@ -64,7 +64,7 @@ Dependencies flow one way; `specs/architecture/layers_test.go` refuses a change 
 
 Four things land in the same commit as the change that makes them true:
 
-- **A catalogue change regenerates the projection.** Run `make skills`; the sync test in `make test` fails otherwise, and the sections between the `GENERATED` markers are never edited by hand ([Tools and skills](../reference/tools-and-skills.md)).
+- **A catalogue change regenerates the projection.** Run `make generate`; the sync test in `make test` fails otherwise, and the sections between the `GENERATED` markers are never edited by hand ([Tools and skills](../reference/tools-and-skills.md)).
 - **A change to behaviour carries its spec document.** A new command, flag, refusal or `--json` key comes with the `.spec.yaml` that proves it end to end; `TEST_UPDATE=1 npm test` rewrites only the `exit:` and streams of existing documents ([Test](test.md)).
 - **A change to behaviour updates its page.** The corpus is where this repository's knowledge is authored; a page left saying what is no longer true is a bug that shipped.
 - **A comment states its kind, in both halves.** The default is none; a comment that stays opens with `invariant:`, `hazard:`, `outside:` or `value:` ([A comment states its kind](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/lint-presets.md#a-comment-states-its-kind)). The Go half holds the same law in Go's shapes: a package comment (staticcheck's ST1000 asks for it), and one line of doc above an exported identifier or member, its hover. A kinded comment about an exported function goes inside its body, since ST1020 wants that function's doc to open with its name. `typescript check` reads the configs and scripts, not `.go` files, so on the Go side the review is the gate.

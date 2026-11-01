@@ -5,7 +5,7 @@ A Go CLI that sets up and runs a Mac and its fleet of VMs: tools, config, hosts,
 ## Mental model
 
 - **Layers.** input, command, domain, pure presenter, one output layer. A test refuses an import that crosses them ([`docs/concepts/architecture.md`](docs/concepts/architecture.md)).
-- **Add to the catalogue, not to command code.** Tools (agent skills included), config items, cleanables, shortcuts and images are values in `src/catalog/`.
+- **Add to the catalogue, not to command code.** Tools (agent skills included, each with its storage row), config items, shortcuts and images are values in `src/catalog/`.
 - **The binary is hermetic.** Dotfiles and VM recipes are embedded; nothing reads a path inside the clone.
 - **The words are the glossary's.** One word per concept ([`docs/concepts/glossary.md`](docs/concepts/glossary.md)).
 - **Specs drive the real binary.** Every behaviour has a `<case>.spec.yaml` document under `specs/cli/`; module tests exist only where a spec cannot reach.
@@ -37,7 +37,7 @@ The corpus is `docs/` + `README.md`, mapped by `docs/README.md`. Do not duplicat
 | `@jterrazz` stack conventions                | `docs/concepts/stack.md`             |
 | Repo doctrine (corpus/injection/compiler)    | `docs/concepts/repo-structure.md`    |
 
-The repo-structure doctrine is authored **here** and ships to agents as the `studio-repo-structure` skill. This repo is an application: it adopts the corpus + injection layers and generates no API reference. Its one compiler is `make skills` (`src/cmd/skillsgen/`), which projects the catalogue into the `studio-toolbelt` skill.
+The repo-structure doctrine is authored **here** and ships to agents as the `studio-repo-structure` skill. This repo is an application: it adopts the corpus + injection layers and generates no API reference. Its one compiler is `make generate` (`src/cmd/generate/`), which projects the catalogue into the `studio-toolbelt` skill and `docs/reference/footprint.md`.
 
 ## Setup & commands
 
@@ -54,5 +54,5 @@ make provision  # put this build on the machine as the real station, then statio
 ## Standing rules
 
 - **Add to the catalogue, not to command code.** Which folder a change opens is the table in `docs/guides/develop.md`.
-- **Four things land in the same commit as the change that makes them true**: the `make skills` projection, the spec document that proves the behaviour, the page the behaviour falsified, and the skill a doctrine page feeds. Each is stated once, in `docs/guides/develop.md` § What a change owes.
-- **Never edit a generated section by hand**: the blocks between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md` come from `make skills`.
+- **Four things land in the same commit as the change that makes them true**: the `make generate` projection, the spec document that proves the behaviour, the page the behaviour falsified, and the skill a doctrine page feeds. Each is stated once, in `docs/guides/develop.md` § What a change owes.
+- **Never edit a generated section by hand**: the blocks between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md` come from `make generate`, and `docs/reference/footprint.md` is generated whole.

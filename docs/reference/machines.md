@@ -36,7 +36,7 @@ Whether a VM is meant to last is asked at every create ([Glossary](../concepts/g
 | ------------------------------ | ----------------------------------------------------- | ------------------------------------------ |
 | `poweroff` inside the VM       | deleted: disk, node, ssh blocks, record               | stays stopped                              |
 | `reboot` inside the VM         | comes back; never deleted                             | comes back                                 |
-| host reboot or power cut       | stale (`✗`), reclaimed by `station clean stale-vms`   | comes back up with the host                |
+| host reboot or power cut       | stale (`✗`), reclaimed by `station machines delete`   | comes back up with the host                |
 | `station machines delete <vm>` | deleted                                               | deleted                                    |
 | `station machines stop <vm>`   | refused: it would delete it (`Hint: machines delete`) | powers off and stays stopped until `start` |
 

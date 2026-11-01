@@ -15,10 +15,22 @@ OSS tailscaled inside, `kern.hv_vmm_present` = 1 for kind detection, a build
 deployed to the iPhone over `--net-bridged=en0` (pairing: cable on the host,
 or Accessory Access). Then add the `macos` image (recipe, first-boot), move
 lift `images build`'s linux-only list: xcode, cocoapods, xcodegen,
-android-studio and lens are already placed `macos` (the owner, 2026-10-31:
-the host stays clean) and install there from then on. If the iPhone cannot
+android-studio and lens are placed `macos` (and `host` as exploration since
+2026-11-01) and install there from then on. If the iPhone cannot
 be reached from the VM, the owner decides how the install step reaches it
 (a host Xcode is not an option he has accepted).
+
+## Machine test tiers (S10, the owner 2026-11-01)
+Tier 1 is the sandboxed specs (CI, every PR), built. After the storage lot
+and phase B: tier 2, Linux machine specs on a cloned VM, pre-release; tier 3,
+macOS machine specs on a cloned pre-baked image keyed by the catalogue hash,
+one VM per suite, destructive scenarios on fresh clones, `make e2e-machine`
+locally and nightly on the Mac mini later: install.sh → setup → one tool per
+manager → native commands, a non-interactive `zsh -c` and IDE-like calls
+included → a before/after HOME snapshot checked against the storage table's
+allowlist (declared paths, strays, `HomeExceptions`) → `storage clean` and
+`storage reset`. Tier 3 is also the proof that activates the bun relocation
+(bun's globals and cache leave `~/.bun`).
 
 ## The Mac mini as a host
 The owner finishes this first, so the new MacBook stays ultra clean (round 3).

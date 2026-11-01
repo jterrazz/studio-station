@@ -38,7 +38,8 @@
 | [Configuration](reference/configuration.md)       | The config items, `settings.json`, the environment variables                              |
 | [Tools and skills](reference/tools-and-skills.md) | The catalogue, the method table, mise, skills as tools, the toolbelt                      |
 | [Dotfiles](reference/dotfiles.md)                 | The embedded application configs and the `~/.zshrc` block                                 |
-| [Footprint](reference/footprint.md)               | Everything `station` writes on a machine                                                  |
+| [Storage](reference/storage.md)                   | The levels, the relocation rule, `station storage`, clean and reset                       |
+| [Footprint](reference/footprint.md)               | Everything `station` and the tools write on a machine, generated from the table           |
 
 ## Decisions
 

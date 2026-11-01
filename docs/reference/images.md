@@ -7,7 +7,7 @@ An image is a versioned, read-only VM disk that VMs are cloned from. Each host b
 | Building          | `station images build`, the base and the version           |
 | The recipe        | What the image contains, and the two sessions that make it |
 | The binary inside | `--binary` and `make build-linux`                          |
-| Cleaning          | `images delete` and `clean old-images`                     |
+| Cleaning          | `images delete`; Tart's pull cache is `storage clean tart` |
 
 ## Building
 
@@ -39,7 +39,7 @@ station images build linux --binary .artifacts/go/station-linux-arm64
 
 ## Cleaning
 
-`station images delete <image>[@<version>]` and `station clean old-images` never touch a VM: a VM is an APFS clone, independent of its image once made. `clean old-images` also prunes Tart's cache of the base, which the next build pulls again.
+`station images delete <image>[@<version>]` never touches a VM: a VM is an APFS clone, independent of its image once made. Bare `station images` marks every version older than the newest. Deleting never prunes Tart's cache of the base: that cache is Tart's, emptied by `station storage clean tart` ([Storage](storage.md)), and the next build pulls the base again after it.
 
 ## Related
 

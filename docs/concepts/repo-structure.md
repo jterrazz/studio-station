@@ -14,7 +14,7 @@ An outside corpus holds two things about a repository and no more: a pointer to 
 
 1. **The corpus**: `README.md` plus `docs/`, cut into the five sections below. This is where knowledge is _authored_: prose a human writes and maintains.
 2. **The injection layers**: `CLAUDE.md` (the agent brief, and no `AGENTS.md` beside it) and the `skills/` entries. They **route**, they never author. A skill points at a page; it does not restate what the page says.
-3. **The compiler**: a repo-specific command that projects a source layer into the corpus. In `package-typescript`, the rule rows project into the tables of its reference pages; in `studio-station`, `make skills` projects the install registry into the toolbelt skill rosters. A repo with nothing to project simply has no compiler.
+3. **The compiler**: a repo-specific command that projects a source layer into the corpus. In `package-typescript`, the rule rows project into the tables of its reference pages; in `studio-station`, `make generate` projects the install registry into the toolbelt skill rosters. A repo with nothing to project simply has no compiler.
 
 ## Three golden rules
 
@@ -104,4 +104,4 @@ The doctrine applies in full to every repo: a written corpus in the shape above,
 ## Related
 
 - [The stack](stack.md): how `@jterrazz` projects compose.
-- [Tools and skills](../reference/tools-and-skills.md): this repo's own compiler, `make skills`.
+- [Tools and skills](../reference/tools-and-skills.md): this repo's own compiler, `make generate`.

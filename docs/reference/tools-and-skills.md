@@ -52,7 +52,7 @@ Only community skills are in the catalogue. The `@jterrazz` skills are not curat
 
 ## The toolbelt
 
-[`skills/studio-toolbelt/`](../../skills/studio-toolbelt/SKILL.md) tells an agent on a studio machine what is available. The sections between its `GENERATED` markers are compiled from the catalogue by `make skills` (`src/cmd/skillsgen/`), never edited by hand, and a test run by `make test` fails when the catalogue and the skill drift. Change the catalogue, run `make skills`, commit both together.
+[`skills/studio-toolbelt/`](../../skills/studio-toolbelt/SKILL.md) tells an agent on a studio machine what is available. The sections between its `GENERATED` markers are compiled from the catalogue by `make generate` (`src/cmd/generate/`), never edited by hand, and a test run by `make test` fails when the catalogue and the skill drift. Change the catalogue, run `make generate`, commit both together.
 
 ## Related
 

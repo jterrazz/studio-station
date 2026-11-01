@@ -18,13 +18,13 @@ The binary lives at `~/.local/bin/station`; its files follow the XDG folders. Th
 ## What it does
 
 ```sh
-station                 # on a terminal: the TUI (Status, Tools, Config, Clean, Fleet)
+station                 # on a terminal: the TUI (Status, Tools, Config, Storage, Fleet)
 
 # Here
 station status          # everything about this machine
 station tools           # install, uninstall, upgrade tools and agent skills
 station config          # dotfiles, logins and macOS defaults
-station clean           # reclaim disk, with sizes
+station storage         # what each tool keeps on disk: clean caches, reset data
 
 # The fleet
 station machines        # hosts and VMs: create, start, stop, delete, probe

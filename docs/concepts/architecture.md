@@ -18,13 +18,13 @@
 ```text
 src/
   cmd/station/    process entry: reads argv, environment and the three streams once, calls app
-  cmd/skillsgen/  the compiler: projects the catalogue into the toolbelt skill
+  cmd/generate/   the compiler: projects the catalogue into the toolbelt skill and the footprint page
   app/            the composition root: builds adapters and services, resolves every environment
                   variable into a typed option, builds the cobra tree and Fang, maps an error to an exit code
   cli/            the cobra tree, one folder per command word: input -> command -> presenter
     kit/          how a leaf and a group are declared; the confirm gate; the wording of every domain error
   domain/         behaviour, never touching the machine except through ports
-    settings/ tools/ config/ setup/ status/ clean/ machines/ images/ secrets/ remote/ tailnet/ shortcuts/ shell/
+    settings/ tools/ config/ setup/ status/ storage/ machines/ images/ secrets/ remote/ tailnet/ shortcuts/ shell/
 ```
 
 The ports and the data:
@@ -34,7 +34,7 @@ The ports and the data:
     tart/         the Engine adapter, over Runner
     host/         the real adapters: the only importer of os/exec, files, the network
     systemtest/   scripted fakes of every port, for tests
-  catalog/        pure data: tools, config items, cleanables, managers, shortcuts, images, the embedded dotfiles and recipes
+  catalog/        pure data: tools and their storage rows, config items, managers, shortcuts, images, the embedded dotfiles and recipes
   present/        the Document model (blocks, tones, marks) and one presenter per subject
   output/         the only place that knows a terminal: tty, pipe or json, and the one error block
   theme/          the one palette
@@ -113,7 +113,7 @@ Fang renders the help, the version and the completion script, and handles the in
 
 ## The catalogue and methods
 
-The catalogue is values in `src/catalog/`: tools (agent skills included), config items, cleanables, managers, shortcuts, images. A catalogue value carries no function, and a test says so, because behaviour chosen by data belongs to the domain, chosen by the value's type from a closed union.
+The catalogue is values in `src/catalog/`: tools (agent skills included), config items, managers, shortcuts, images, and each tool's storage row. A catalogue value carries no function, and a test says so, because behaviour chosen by data belongs to the domain, chosen by the value's type from a closed union.
 
 The rule this repository is built on: **add to the catalogue, not to command code**. One tool entry gives the same tool a row in `station tools`, a line in `station status`, an install, an uninstall and an upgrade path, because all of them read the same value. Which file a change opens is [Develop](../guides/develop.md)'s table.
 
@@ -127,7 +127,7 @@ The binary holds the catalogue: what station knows how to install and configure.
 
 ## The compiler
 
-This repository is an application in the sense of the [repo-structure doctrine](repo-structure.md): it authors a corpus, routes to it from `CLAUDE.md` and `skills/`, and generates no API reference. Its one source layer worth projecting is the tool catalogue, and `make skills` (`src/cmd/skillsgen/`) renders it between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md`. The projection is committed and a test fails when it drifts ([Tools and skills](../reference/tools-and-skills.md)).
+This repository is an application in the sense of the [repo-structure doctrine](repo-structure.md): it authors a corpus, routes to it from `CLAUDE.md` and `skills/`, and generates no API reference. Its one source layer worth projecting is the tool catalogue, and `make generate` (`src/cmd/generate/`) renders it between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md`. The projection is committed and a test fails when it drifts ([Tools and skills](../reference/tools-and-skills.md)).
 
 ## Related
 

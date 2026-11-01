@@ -55,15 +55,15 @@ station config uninstall <item...> [--yes]
 
 An item that needs values asks them in a form on a terminal and is refused elsewhere. Only reversible items uninstall. See [Configuration](configuration.md).
 
-### `station clean`
+### `station storage`
 
 ```sh
-station clean [--json]                          # what can be reclaimed, with sizes; nothing runs
-station clean <cleanable...> [--yes]
-station clean --all [--yes]
+station storage [--json]                        # per tool: caches · data · kept · installed, with sizes; nothing runs
+station storage clean [<tool...>]               # empty caches with each tool's own command; bare = every row here
+station storage reset <tool...> [--yes]         # delete a tool's data, back to factory; asks first
 ```
 
-`stale-vms` and `old-images` clean what the fleet left behind ([Images](images.md), [Machines](machines.md)).
+`clean` asks nothing: caches only. `reset` is always named, and refuses while the tool's app runs. A stale VM goes with `station machines delete`, an old image version with `station images delete`. See [Storage](storage.md).
 
 ## The fleet
 
@@ -134,7 +134,7 @@ station run docker <rm|rmi|reset> [--yes]
 | `run docker rmi`                      | remove every image                                                 |
 | `run docker reset`                    | `rm`, then `rmi`                                                   |
 
-`station clean docker` prunes Docker's unused data.
+`station storage clean docker` prunes Docker's unused data.
 
 ## The binary
 

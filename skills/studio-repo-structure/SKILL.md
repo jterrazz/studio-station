@@ -13,7 +13,7 @@ A repo is three distinct roles, and conflating them is the failure mode this ski
 
 1. **The corpus**: `README.md` + `docs/`. Where knowledge is _authored_.
 2. **The injection layers**: `CLAUDE.md` (agent brief), `skills/` entries. They **route**, they never author.
-3. **The compiler**: a repo-specific projector, when there is a source layer worth projecting (rule rows into the generated tables of `package-typescript`'s reference, `make skills` into the toolbelt rosters in studio-station). No source layer, no compiler.
+3. **The compiler**: a repo-specific projector, when there is a source layer worth projecting (rule rows into the generated tables of `package-typescript`'s reference, `make generate` into the toolbelt rosters in studio-station). No source layer, no compiler.
 
 The corpus belongs to the repository: anything a change in this repo would make false (its architecture, its conventions, its runbook, its quirks, the decisions it alone took) is authored in its `docs/`. An outside corpus (the OS wiki) keeps only a pointer to the repo and the contracts between repos. A decision this repo alone took goes to `docs/decisions/NNN-title.md`; one that spans several repos is recorded by the corpus that spans them and linked from here.
 
@@ -46,19 +46,19 @@ A page growing a second mood splits: the option table to `reference/`, the why t
 
 ## Where to look
 
-| Task                                                            | Read                                                                                                                                                                            |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The doctrine itself (three roles, golden rules, root layout)    | `studio-station` `docs/concepts/repo-structure.md`                                                                                                                              |
-| The manual's shape: the sections, the required pages, naming    | `studio-station` `docs/concepts/repo-structure.md`                                                                                                                              |
-| The rule ids the gate prints for that shape                     | `package-typescript`'s [Quality checks](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md#the-docs-layout-pass), the Docs (layout) pass |
-| The studio's own compiler (`make skills`, the toolbelt rosters) | `studio-station` `docs/reference/tools-and-skills.md`                                                                                                                           |
+| Task                                                              | Read                                                                                                                                                                            |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The doctrine itself (three roles, golden rules, root layout)      | `studio-station` `docs/concepts/repo-structure.md`                                                                                                                              |
+| The manual's shape: the sections, the required pages, naming      | `studio-station` `docs/concepts/repo-structure.md`                                                                                                                              |
+| The rule ids the gate prints for that shape                       | `package-typescript`'s [Quality checks](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md#the-docs-layout-pass), the Docs (layout) pass |
+| The studio's own compiler (`make generate`, the toolbelt rosters) | `studio-station` `docs/reference/tools-and-skills.md`                                                                                                                           |
 
 How `@jterrazz` projects compose (packages, naming, CI) is a separate capability: see the `studio-stack` skill.
 
 ## Always
 
 - Never restate a page's content in a skill or in CLAUDE.md; link to it instead.
-- Never hand-edit a projection; regenerate it (`TEST_UPDATE=1`, `make skills`).
+- Never hand-edit a projection; regenerate it (`TEST_UPDATE=1`, `make generate`).
 - Regenerate a projection in the same change that touches its source, so the sync check stays green.
 - One skill per capability, split by genuinely distinct trigger conditions, not one skill restating two pages.
 - Move or rename a page together with every inbound link in the same change: the map, the cross-links, `CLAUDE.md`, the skills, the `read:` of every finding.
