@@ -58,5 +58,6 @@ The records of decisions this repository alone took go in [`decisions/`](decisio
 - [010 VMs are reached through their host](decisions/010-vms-are-reached-through-their-host.md)
 - [011 One daemon per host](decisions/011-one-daemon-per-host.md)
 - [012 Services are leased and published by the host](decisions/012-services-are-leased-and-published.md)
+- [013 Every service leaves through Serve](decisions/013-every-service-leaves-through-serve.md)
 
 A decision spanning several repositories is recorded by the corpus that spans them. What was left for later is `TODO.md` at the repository root.

@@ -1,6 +1,6 @@
 # ADR-012: Services are leased and published by the host
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-013](013-every-service-leaves-through-serve.md)
 **Date:** 2026-11-01
 
 ## Context
