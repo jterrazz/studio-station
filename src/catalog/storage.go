@@ -35,6 +35,7 @@ const (
 	FileGoEnv  ToolFile = "go-env"
 	FileNpmrc  ToolFile = "npmrc"
 	FileBunfig ToolFile = "bunfig"
+	FileMise   ToolFile = "mise config"
 )
 
 type Relocation struct {
@@ -253,6 +254,7 @@ var (
 		Relocate: []Relocation{
 			{File: FileGoEnv, Key: "GOPATH", Value: "{data}/go"},
 			{File: FileGoEnv, Key: "GOMODCACHE", Value: "{cache}/go/mod"},
+			{File: FileMise, Key: "settings.go_set_gobin", Value: "false"},
 		},
 		Strays: []Stray{{
 			Path:  "~/go",

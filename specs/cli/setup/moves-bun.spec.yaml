@@ -8,7 +8,7 @@ runs:
           ●	name	m
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	bunfig, go env, npmrc, moved ~/.bun
+          ●	relocate	bunfig, go env, mise config, npmrc, moved ~/.bun
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	daemon	not needed until tart is installed
       files:

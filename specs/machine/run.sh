@@ -194,10 +194,11 @@ if [ "$kind" = macos ]; then
   step "brew install" "$brew_path; brew install hello && hello"
 fi
 step "gopls" "$mise_path; go install golang.org/x/tools/gopls@v0.20.0"
+in_vm 'test -x ~/.local/share/go/bin/gopls' || fail "go install put no gopls in ~/.local/share/go/bin: mise set GOBIN"
 step "zsh -c" "$mise_path; zsh -c 'go env GOPATH'"
 step "zsh -ic" "zsh -ic 'command -v station && command -v mise && go env GOPATH && mise --version'"
 step "IDE: go env" "$mise_path; d=\$(mise where go)/bin; env -i HOME=\$HOME PATH=\$d go env GOPATH"
-step "IDE: gopls version" "$mise_path; d=\$(mise where go)/bin; g=\$(go env GOBIN); g=\${g:-\$(go env GOPATH)/bin}; env -i HOME=\$HOME PATH=\$g:\$d gopls version"
+step "IDE: gopls version" "$mise_path; d=\$(mise where go)/bin; env -i HOME=\$HOME PATH=\$HOME/.local/share/go/bin:\$d gopls version"
 step "IDE: npm config get cache" "$mise_path; d=\$(mise where node)/bin; env -i HOME=\$HOME PATH=\$d:/usr/bin:/bin npm config get cache"
 
 in_vm 'test -f ~/.bunfig.toml' || fail "setup wrote no ~/.bunfig.toml"
@@ -251,6 +252,8 @@ made+=("$reset_vm")
 tart clone "$vm" "$reset_vm" >> "$log" 2>&1 || fail "clone for the reset"
 ip=$(boot "$reset_vm") || fail "boot $reset_vm"
 in_vm "$station storage --json" > "$work/reset-before.json" || fail "storage --json"
+held=$(jq -r '[.rows[] | select(.name == "go") | .paths[] | select(.path == "~/.local/share/go/bin/*") | .bytes] | add // 0' "$work/reset-before.json")
+[ "$held" -gt 0 ] || fail "go's bin holds nothing before the reset: the check would prove nothing"
 in_vm "$mise_path $station storage reset go --yes" >> "$log" 2>&1 || fail "storage reset go exited $?"
 in_vm "$station storage --json" > "$work/reset-after.json" || fail "storage --json"
 gone=$(jq -r '[.rows[] | select(.name == "go") | .paths[] | select((.level == "data" or .level == "cache") and .bytes > 0) | .path] | .[]' "$work/reset-after.json")

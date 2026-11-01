@@ -51,8 +51,12 @@ func fileName(f catalog.ToolFile) string {
 }
 
 func keyLabel(file catalog.ToolFile, key string) string {
-	if file == catalog.FileNpmrc {
+	switch file {
+	case catalog.FileNpmrc:
 		return "npm " + key
+	case catalog.FileMise:
+		return "mise " + strings.TrimPrefix(key, "settings.")
+	case catalog.FileGoEnv, catalog.FileBunfig:
 	}
 	return key
 }
@@ -136,7 +140,11 @@ func (s *Service) writeToolFiles() (written, notes []string, err error) {
 				continue
 			}
 			value := s.o.Expand.Expand(r.Value)
-			updated, did, hand := UpsertEnvLine(text, r.Key, value)
+			upsert := UpsertEnvLine
+			if file == catalog.FileMise {
+				upsert = UpsertTableKey
+			}
+			updated, did, hand := upsert(text, r.Key, value)
 			if hand != "" {
 				notes = append(notes, keyLabel(file, r.Key)+" set by hand to "+hand+"; station leaves it")
 				continue

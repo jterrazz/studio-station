@@ -6,7 +6,7 @@ runs:
       exit: 0
       stdout: |
           ●	zshrc
-          ●	relocate	bunfig, go env, npmrc
+          ●	relocate	bunfig, go env, mise config, npmrc
       files:
           .config/go/env: exists
           Library: absent

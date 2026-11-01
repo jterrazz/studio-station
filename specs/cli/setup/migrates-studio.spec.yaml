@@ -12,7 +12,7 @@ runs:
           ●	zshrc
           ●	layout	moved to the XDG folders
           ●	layout	userspace tailscaled retired; its node "base" stays at https://login.tailscale.com/admin/machines until you remove it
-          ●	relocate	bunfig, go env, npmrc
+          ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	daemon	not needed until tart is installed
       files:

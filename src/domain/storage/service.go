@@ -349,7 +349,7 @@ func (s *Service) Relocated(st catalog.Storage) bool {
 			return false
 		}
 		value := LineValue
-		if r.File == catalog.FileBunfig {
+		if r.File == catalog.FileBunfig || r.File == catalog.FileMise {
 			value = TableValue
 		}
 		if _, ok := value(string(data), r.Key); !ok {

@@ -33,11 +33,14 @@ station's own files follow the XDG rule: `~/.config/station` (settings), `~/.loc
 
 A tool's path moves only through the tool's own config file, the one it reads whoever launches it (an IDE started from the Dock included), never through a shell variable alone. `station setup` writes them, absolute, and never over a value the owner set by hand:
 
-| Tool | File                                                                                             | Keys                                             | Old home |
-| ---- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------ | -------- |
-| go   | Go's env file: `$GOENV`, else `~/Library/Application Support/go/env` (Linux: `~/.config/go/env`) | `GOPATH`, `GOMODCACHE`                           | `~/go`   |
-| npm  | `~/.npmrc`                                                                                       | `cache`                                          | `~/.npm` |
-| bun  | `~/.bunfig.toml`                                                                                 | `globalDir`, `globalBinDir`, `install.cache.dir` | `~/.bun` |
+| Tool | File                                                                                                                     | Keys                                             | Old home |
+| ---- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ | -------- |
+| go   | Go's env file: `$GOENV`, else `~/Library/Application Support/go/env` (Linux: `~/.config/go/env`)                         | `GOPATH`, `GOMODCACHE`                           | `~/go`   |
+| npm  | `~/.npmrc`                                                                                                               | `cache`                                          | `~/.npm` |
+| bun  | `~/.bunfig.toml`                                                                                                         | `globalDir`, `globalBinDir`, `install.cache.dir` | `~/.bun` |
+| go   | mise's global config: `$MISE_GLOBAL_CONFIG_FILE`, else `$MISE_CONFIG_DIR/config.toml`, else `~/.config/mise/config.toml` | `settings.go_set_gobin = false`                  |          |
+
+mise's go backend sets `GOBIN` to the running version's own install unless `go_set_gobin` is false, so `go install` would put its binaries where an upgrade or a prune loses them and `storage reset go` never sees them; with it off, they land in `~/.local/share/go/bin`. The key goes under the owner's own `[settings]` table when there is one.
 
 bun's values sit in a managed block between `# >>> station >>>` and `# <<< station <<<`; a bunfig with its own `[install]` table is left alone, and setup says which keys to set by hand. The macOS machine tier proved that `bun add -g`, `bun install -g`, `bunx` and `bun pm cache rm` honour the global bunfig and create no `~/.bun`. `station setup` moves an existing `~/.bun`'s globals and bins into `~/.local/share/bun`, one rename each, so their relative bin links still resolve; `station storage clean bun` deletes its old cache.
 

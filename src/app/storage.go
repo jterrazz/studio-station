@@ -57,10 +57,18 @@ func (m machine) toolFiles() map[catalog.ToolFile]string {
 	if filepath.IsAbs(m.vars["XDG_CONFIG_HOME"]) {
 		bunfig = filepath.Join(m.vars["XDG_CONFIG_HOME"], ".bunfig.toml")
 	}
+	mise := filepath.Join(m.paths.Roots.Config, "mise", "config.toml")
+	if dir := m.vars["MISE_CONFIG_DIR"]; filepath.IsAbs(dir) {
+		mise = filepath.Join(dir, "config.toml")
+	}
+	if file := m.vars["MISE_GLOBAL_CONFIG_FILE"]; filepath.IsAbs(file) {
+		mise = file
+	}
 	return map[catalog.ToolFile]string{
 		catalog.FileGoEnv:  goenv,
 		catalog.FileNpmrc:  filepath.Join(home, ".npmrc"),
 		catalog.FileBunfig: bunfig,
+		catalog.FileMise:   mise,
 	}
 }
 

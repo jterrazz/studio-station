@@ -665,11 +665,12 @@ What a tool keeps at the root of the home folder, declared with its reason; anyt
 
 Written by `station setup` into the tool's own file, never by a shell variable.
 
-| Tool | File   | Key                    | Value                               | Status  |
-| ---- | ------ | ---------------------- | ----------------------------------- | ------- |
-| bun  | bunfig | `install.globalDir`    | `~/.local/share/bun/install/global` | written |
-| bun  | bunfig | `install.globalBinDir` | `~/.local/share/bun/bin`            | written |
-| bun  | bunfig | `install.cache.dir`    | `~/.cache/bun/install`              | written |
-| go   | go-env | `GOPATH`               | `~/.local/share/go`                 | written |
-| go   | go-env | `GOMODCACHE`           | `~/.cache/go/mod`                   | written |
-| node | npmrc  | `cache`                | `~/.cache/npm`                      | written |
+| Tool | File        | Key                     | Value                               | Status  |
+| ---- | ----------- | ----------------------- | ----------------------------------- | ------- |
+| bun  | bunfig      | `install.globalDir`     | `~/.local/share/bun/install/global` | written |
+| bun  | bunfig      | `install.globalBinDir`  | `~/.local/share/bun/bin`            | written |
+| bun  | bunfig      | `install.cache.dir`     | `~/.cache/bun/install`              | written |
+| go   | go-env      | `GOPATH`                | `~/.local/share/go`                 | written |
+| go   | go-env      | `GOMODCACHE`            | `~/.cache/go/mod`                   | written |
+| go   | mise config | `settings.go_set_gobin` | `false`                             | written |
+| node | npmrc       | `cache`                 | `~/.cache/npm`                      | written |
