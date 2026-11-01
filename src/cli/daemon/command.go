@@ -19,6 +19,6 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Short:    "Run this host's daemon: it supervises the VMs and publishes their services",
 		Plumbing: true,
 		Validate: func(context.Context, *struct{}) error { return d.Daemon.Check() },
-		Run:      func(ctx context.Context, _ *struct{}, _ kit.IO) error { return d.Daemon.Run(ctx) },
+		Run:      func(ctx context.Context, _ *struct{}, io kit.IO) error { return d.Daemon.Run(ctx, io.Note) },
 	}, env)
 }

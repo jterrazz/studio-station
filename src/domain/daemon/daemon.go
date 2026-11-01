@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"path"
 	"strconv"
 	"strings"
@@ -57,7 +56,6 @@ type Options struct {
 	PID       int
 	Tick      time.Duration
 	GuestPort int
-	Log       io.Writer
 }
 
 type Daemon struct {
@@ -75,6 +73,7 @@ type Daemon struct {
 	leases  []services.Lease
 	self    tailnet.Self
 	started time.Time
+	note    func(line string)
 }
 
 func New(h system.Host, e system.Engine, ssh system.SSH, m Machines, tn Tailnet, store settings.Store, o Options) *Daemon {
@@ -83,9 +82,6 @@ func New(h system.Host, e system.Engine, ssh system.SSH, m Machines, tn Tailnet,
 	}
 	if o.GuestPort == 0 {
 		o.GuestPort = 22
-	}
-	if o.Log == nil {
-		o.Log = io.Discard
 	}
 	return &Daemon{h: h, engine: e, ssh: ssh, m: m, tn: tn, store: store, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}}
 }
@@ -109,7 +105,8 @@ func (d *Daemon) leaseStore() services.Store { return services.NewStore(d.h.FS, 
 
 func (d *Daemon) saveLeases() { _ = d.leaseStore().Save(append([]services.Lease(nil), d.leases...)) }
 
-func (d *Daemon) Run(ctx context.Context) error {
+func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
+	d.note = note
 	// invariant: the socket's liveness is the lock: a daemon that answers ping makes
 	// a second one exit; a socket file nobody answers is removed and made again.
 	// The socket is made only once adoption and serve reconciliation are done,
@@ -152,7 +149,9 @@ func (d *Daemon) Run(ctx context.Context) error {
 }
 
 func (d *Daemon) logf(subject, message string) {
-	_, _ = io.WriteString(d.o.Log, d.h.Clock.Now().UTC().Format(time.RFC3339)+" "+subject+": "+message+"\n")
+	if d.note != nil {
+		d.note(d.h.Clock.Now().UTC().Format(time.RFC3339) + " " + subject + ": " + message)
+	}
 }
 
 func (d *Daemon) refreshSelf(ctx context.Context) {
