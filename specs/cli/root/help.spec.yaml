@@ -16,11 +16,29 @@ runs:
                   - '    machines '
                   - '    images '
                   - '    secrets '
+                  - '    services '
                   - '    tailnet '
                   - '    run '
                   - '    setup '
                   - '    help '
-    - command: --help | /usr/bin/grep -cE '^    (skills|clean|shell|completion|man|install|upgrade|remote|machine|vms|hosts|supervise)( |$)'
+    - command: --help | /usr/bin/grep -cE '^    (skills|clean|shell|completion|man|install|upgrade|remote|machine|vms|hosts|supervise|daemon|guest|pipe)( |$)'
+      exit: 1
+      stdout: |
+          0
+    - command: --help | /usr/bin/sed -n '/^  THE FLEET/,/^  SHORTCUTS/p' | /usr/bin/grep -oE '^    [a-z]+ ' | /usr/bin/tr -d ' '
+      exit: 0
+      stdout: |
+          images
+          machines
+          secrets
+          services
+          tailnet
+    - command: services --help | /usr/bin/sed -n '/^  COMMANDS/,/^  FLAGS/p' | /usr/bin/grep -oE '^    [a-z]+ ' | /usr/bin/tr -d ' '
+      exit: 0
+      stdout: |
+          release
+          url
+    - command: tailnet --help | /usr/bin/grep -c 'COMMANDS'
       exit: 1
       stdout: |
           0
