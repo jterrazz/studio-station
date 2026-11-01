@@ -39,7 +39,7 @@ func (l listener) Port() int {
 const sunPathMax = 100
 
 // hazard: a unix socket path is capped near 104 bytes (sun_path); a longer one is
-// bound or dialled through a short symlink to its folder, made in a fresh temp
+// bound or dialed through a short symlink to its folder, made in a fresh temp
 // folder for that one call and removed once the call returns, so concurrent
 // calls never share a link and none is left behind.
 func viaShort(path string, call func(string) error) error {

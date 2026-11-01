@@ -18,7 +18,7 @@ func TestALongSocketPathIsServedAndLeavesNothingInTheTempFolder(t *testing.T) {
 	t.Cleanup(func() { _ = os.RemoveAll(tmp) })
 	t.Setenv("TMPDIR", tmp)
 	dir := filepath.Join(home, strings.Repeat("d", 60), "station")
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	if err = os.MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	sock := filepath.Join(dir, "daemon.sock")
@@ -32,18 +32,18 @@ func TestALongSocketPathIsServedAndLeavesNothingInTheTempFolder(t *testing.T) {
 	}
 	accepted := make(chan error, 1)
 	go func() {
-		c, err := l.Accept()
-		if err == nil {
+		c, acceptErr := l.Accept()
+		if acceptErr == nil {
 			_ = c.Close()
 		}
-		accepted <- err
+		accepted <- acceptErr
 	}()
 	c, err := sockets{}.DialUnix(context.Background(), sock, time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
 	_ = c.Close()
-	if err := <-accepted; err != nil {
+	if err = <-accepted; err != nil {
 		t.Fatal(err)
 	}
 	_ = l.Close()
