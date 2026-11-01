@@ -58,9 +58,11 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
         TZ: 'UTC',
     },
     // value: a document that drives the TUI runs `terminal "$STATION"`, the binary on a
-    // pseudo-terminal its fixture's driver opens, since a run is never given a TTY.
+    // pseudo-terminal its fixture's driver opens, since a run is never given a TTY; one
+    // that installs runs `$INSTALL_SH` from a local file through its one test seam.
     env: {
         daemon: { STATION: STATION_BIN },
+        install: { INSTALL_SH: resolve(REPO_ROOT, 'scripts/install.sh'), STATION: STATION_BIN },
         terminal: { STATION: STATION_BIN, TERM: 'xterm-256color' },
     },
     serve: {

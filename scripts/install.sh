@@ -15,31 +15,41 @@ esac
 
 echo "Installing $BINARY ($OS/$ARCH)..."
 
-TAG="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')"
-if [ -z "$TAG" ]; then
-  echo "Failed to fetch latest release" && exit 1
-fi
-
 ASSET="$BINARY-$OS-$ARCH"
-BASE_URL="https://github.com/$REPO/releases/download/$TAG"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-curl -fsSL "$BASE_URL/$ASSET" -o "$WORK/$ASSET"
-curl -fsSL "$BASE_URL/checksums.txt" -o "$WORK/checksums.txt"
-
-# invariant: a binary whose line is missing from checksums.txt, or whose hash differs, is never installed.
-EXPECTED="$(awk -v asset="$ASSET" '$2 == asset { print $1 }' "$WORK/checksums.txt")"
-if [ -z "$EXPECTED" ]; then
-  echo "checksums.txt has no line for $ASSET" && exit 1
-fi
-if command -v sha256sum >/dev/null 2>&1; then
-  ACTUAL="$(sha256sum "$WORK/$ASSET" | awk '{ print $1 }')"
+# value: the machine tiers install the binary they just built, from a local file,
+# with no tag read and no checksum; everything after the download is the same.
+if [ -n "${STATION_INSTALL_FROM:-}" ]; then
+  if [ ! -f "$STATION_INSTALL_FROM" ]; then
+    echo "STATION_INSTALL_FROM: no file at $STATION_INSTALL_FROM" && exit 1
+  fi
+  TAG="local"
+  cp "$STATION_INSTALL_FROM" "$WORK/$ASSET"
 else
-  ACTUAL="$(shasum -a 256 "$WORK/$ASSET" | awk '{ print $1 }')"
-fi
-if [ "$EXPECTED" != "$ACTUAL" ]; then
-  echo "Checksum mismatch for $ASSET" && exit 1
+  TAG="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')"
+  if [ -z "$TAG" ]; then
+    echo "Failed to fetch latest release" && exit 1
+  fi
+
+  BASE_URL="https://github.com/$REPO/releases/download/$TAG"
+  curl -fsSL "$BASE_URL/$ASSET" -o "$WORK/$ASSET"
+  curl -fsSL "$BASE_URL/checksums.txt" -o "$WORK/checksums.txt"
+
+  # invariant: a binary whose line is missing from checksums.txt, or whose hash differs, is never installed.
+  EXPECTED="$(awk -v asset="$ASSET" '$2 == asset { print $1 }' "$WORK/checksums.txt")"
+  if [ -z "$EXPECTED" ]; then
+    echo "checksums.txt has no line for $ASSET" && exit 1
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    ACTUAL="$(sha256sum "$WORK/$ASSET" | awk '{ print $1 }')"
+  else
+    ACTUAL="$(shasum -a 256 "$WORK/$ASSET" | awk '{ print $1 }')"
+  fi
+  if [ "$EXPECTED" != "$ACTUAL" ]; then
+    echo "Checksum mismatch for $ASSET" && exit 1
+  fi
 fi
 
 mkdir -p "$INSTALL_DIR"
