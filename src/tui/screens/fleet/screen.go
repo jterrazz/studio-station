@@ -51,7 +51,6 @@ type Secrets interface {
 
 type Services interface {
 	List(ctx context.Context, hereOnly bool) (services.Fleet, error)
-	Pinned(t services.Target) bool
 	Release(ctx context.Context, t services.Target, host string, yes bool) (services.Lease, error)
 }
 
@@ -120,7 +119,7 @@ func (m Model) load() ([]kit.Group, kit.Status, error) {
 	if refreshErr := m.d.Machines.SSHBlocks(m.ctx, fleet); refreshErr != nil {
 		note = kit.Status{Mark: present.MarkDegraded, Text: "ssh config not refreshed: " + refreshErr.Error()}
 	}
-	groups := append(hostGroups(fleet), m.servicesGroup())
+	groups := append(hostGroups(fleet), m.servicesGroups()...)
 	reports, err := m.d.Images.List(m.ctx)
 	groups = append(groups, m.section("Images", err, func() present.Document { return presentimages.List(reports, "").Doc }))
 	lent, err := m.d.Secrets.List(m.ctx)
@@ -164,25 +163,67 @@ func hostGroups(f machines.Fleet) []kit.Group {
 
 type Service struct {
 	Target services.Target
+	Host   string
+	Pinned bool
 }
 
-func (m Model) servicesGroup() kit.Group {
-	f, err := m.d.Services.List(m.ctx, true)
-	g := m.section("Services", err, func() present.Document { return presentservices.Fleet(f, "").Doc })
-	var targets []services.Target
+// invariant: the Services sections are the fleet's, as `station services` shows
+// them: one per host, titled with its range, and a service of another host is
+// released on that host.
+func (m Model) servicesGroups() []kit.Group {
+	f, err := m.d.Services.List(m.ctx, false)
+	if err != nil {
+		return []kit.Group{m.section("Services", err, nil)}
+	}
+	var found []Service
 	for _, h := range f.Hosts {
+		host := h.Name
+		if h.Here {
+			host = ""
+		}
 		for _, s := range h.Services {
-			targets = append(targets, services.Target{VM: s.VM, Port: s.GuestPort})
+			found = append(found, Service{Target: services.Target{VM: s.VM, Port: s.GuestPort}, Host: host, Pinned: s.Pinned})
 		}
 	}
-	for i := range g.Rows {
-		cells := g.Rows[i].Row.Cells
-		if len(cells) < 2 || len(targets) == 0 || cells[0].Text != targets[0].VM || cells[1].Text != strconv.Itoa(targets[0].Port) {
-			continue
+	var groups []kit.Group
+	for _, b := range presentservices.Fleet(f, "").Doc.Blocks {
+		switch v := b.(type) {
+		case present.Section:
+			g := kit.Group{Title: "Services · " + v.Title}
+			for _, inner := range v.Blocks {
+				if t, ok := inner.(present.Table); ok {
+					g.Rows = append(g.Rows, rowsOf(t)...)
+				}
+			}
+			groups = append(groups, g)
+		case present.Table:
+			if len(groups) == 0 {
+				groups = append(groups, kit.Group{Title: "Services"})
+			}
+			last := &groups[len(groups)-1]
+			last.Rows = append(last.Rows, rowsOf(v)...)
 		}
-		g.Rows[i].Data, targets = Service{Target: targets[0]}, targets[1:]
 	}
-	return g
+	for gi := range groups {
+		g := &groups[gi]
+		for i := range g.Rows {
+			cells := g.Rows[i].Row.Cells
+			if len(cells) < 2 || len(found) == 0 || cells[0].Text != found[0].Target.VM || cells[1].Text != strconv.Itoa(found[0].Target.Port) {
+				continue
+			}
+			g.Rows[i].Data, found = found[0], found[1:]
+		}
+		g.Counts = counts(g.Rows)
+	}
+	return groups
+}
+
+func rowsOf(t present.Table) []kit.Row {
+	rows := make([]kit.Row, 0, len(t.Rows))
+	for _, r := range t.Rows {
+		rows = append(rows, kit.Row{Row: r})
+	}
+	return rows
 }
 
 func counts(rows []kit.Row) []present.Count {
@@ -265,7 +306,7 @@ func (m *Model) action(pressed string) (tea.Cmd, bool) {
 		if m.list.Busy() {
 			return nil, true
 		}
-		return m.release(svc.Target), true
+		return m.release(svc), true
 	case "s", "d", "f", "p", "ctrl+r", "o", "enter":
 	default:
 		return nil, false
@@ -355,14 +396,14 @@ func (m *Model) machineAction(pressed string, machine Machine) tea.Cmd {
 	return cmd
 }
 
-func (m *Model) release(t services.Target) tea.Cmd {
-	name := t.VM + ":" + strconv.Itoa(t.Port)
+func (m *Model) release(svc Service) tea.Cmd {
+	name := svc.Target.VM + ":" + strconv.Itoa(svc.Target.Port)
 	run := m.exec(func() (kit.Status, error) {
-		_, err := m.d.Services.Release(m.ctx, t, "", true)
+		_, err := m.d.Services.Release(m.ctx, svc.Target, svc.Host, true)
 		return kit.Outcome("released", name, catalog.StateOK, ""), err
 	})
 	var cmd tea.Cmd
-	if m.d.Services.Pinned(t) {
+	if svc.Pinned {
 		m.list, cmd = m.list.Open(kit.Confirm("Release "+name+"? Its URL is in the VM's environment.", run))
 	} else {
 		m.list, cmd = m.list.Act(run)

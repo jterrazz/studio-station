@@ -73,13 +73,13 @@ So `cut -f2` is a row's name. `--json` prints the presenter's JSON value, two-sp
 
 `station` on a terminal opens one Bubble Tea app with the tabs Status, Tools, Config, Storage and Fleet. The TUI renders the same presenters as the commands.
 
-| Tab     | Holds                                                                              | Keys                                                                                               |
-| ------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Status  | the status document's sections as panels, with a live strip while the tab is shown | `r`                                                                                                |
-| Tools   | the catalogue by category, agent skills last                                       | `i` install, `u` uninstall, `U` upgrade, `/`                                                       |
-| Config  | the config items placed here; an item with inputs opens its form                   | `i`, `u`                                                                                           |
-| Storage | each tool's storage by level, then the strays                                      | `c` clean the row (no question), `x` reset it (the reset form, Keep by default), `/`               |
-| Fleet   | every host and its VMs, then this host's services, images, secrets and the tailnet | `n` `s` `d` `f` `p` `b` `o` `t`, `x` releases a service, `enter` opens that machine's TUI over ssh |
+| Tab     | Holds                                                                                                                                             | Keys                                                                                                                             |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Status  | the status document's sections as panels, with a live strip while the tab is shown                                                                | `r`                                                                                                                              |
+| Tools   | the catalogue by category, agent skills last                                                                                                      | `i` install, `u` uninstall, `U` upgrade, `/`                                                                                     |
+| Config  | the config items placed here; an item with inputs opens its form                                                                                  | `i`, `u`                                                                                                                         |
+| Storage | each tool's storage by level, then the strays                                                                                                     | `c` clean the row (no question), `x` reset it (the reset form, Keep by default), `/`                                             |
+| Fleet   | every host and its VMs, then the fleet's services (one section per host, titled with its range, leased and free), images, secrets and the tailnet | `n` `s` `d` `f` `p` `b` `o` `t`, `x` releases a service (another host's on that host), `enter` opens that machine's TUI over ssh |
 
 Focus modes: the app holds exactly one. Normal owns the global keys (`tab`, `1` to `5`, `r`, `?`, `q`); Filter gives the text input every key except `esc` and `enter`, so typing `q1i` filters by `q1i`; Modal gives a form every key except `ctrl+c`.
 
