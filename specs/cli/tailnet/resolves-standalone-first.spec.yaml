@@ -1,0 +1,15 @@
+description: 'with both apps'' CLIs present, the Standalone one answers before the App Store bundle'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/tailscale-standalone/
+    - ../__fixtures__/tailscale-app-store/
+runs:
+    - command: 'tailnet --json | /usr/bin/jq -c ''.cli'''
+      exit: 0
+      stdout: |
+          "{{workdir}}/root/usr/local/bin/tailscale"
+      files:
+          .calls:
+              equals: |
+                  tailscale-standalone status --json
+                  tailscale-standalone serve status --json
