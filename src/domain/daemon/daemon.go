@@ -107,6 +107,8 @@ func (d *Daemon) saveLeases() { _ = d.leaseStore().Save(append([]services.Lease(
 func (d *Daemon) Run(ctx context.Context) error {
 	// invariant: the socket's liveness is the lock: a daemon that answers ping makes
 	// a second one exit; a socket file nobody answers is removed and made again.
+	// The socket is made only once adoption and serve reconciliation are done,
+	// so its file means the daemon is ready.
 	if err := d.Check(); err != nil {
 		return err
 	}
@@ -118,6 +120,11 @@ func (d *Daemon) Run(ctx context.Context) error {
 	if err := d.h.FS.MkdirAll(d.o.Paths.State, 0o700); err != nil {
 		return err
 	}
+	d.started = d.h.Clock.Now().UTC().Truncate(time.Second)
+	d.leases, _ = d.leaseStore().Load()
+	d.refreshSelf(ctx)
+	d.adopt(ctx)
+	d.reconcileServe(ctx)
 	l, err := d.h.Sockets.ListenUnix(sock)
 	if err != nil {
 		return err
@@ -126,11 +133,6 @@ func (d *Daemon) Run(ctx context.Context) error {
 		_ = l.Close()
 		_ = d.h.FS.Remove(sock)
 	}()
-	d.started = d.h.Clock.Now().UTC().Truncate(time.Second)
-	d.leases, _ = d.leaseStore().Load()
-	d.refreshSelf(ctx)
-	d.adopt(ctx)
-	d.reconcileServe(ctx)
 	go d.accept(ctx, l)
 	for tick := 1; ; tick++ {
 		if err := d.h.Clock.Sleep(ctx, d.o.Tick); err != nil {
