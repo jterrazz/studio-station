@@ -87,6 +87,18 @@ Host api                                       # a VM of mac-mini, seen from mac
 
 `station machines pipe <vm>` (hidden plumbing) carries ssh's bytes to the VM's current NAT ip on its own host; it never needs the daemon. A VM trusts its host's key and every line of the host's own `~/.ssh/authorized_keys` through a managed block of its `~/.ssh/authorized_keys` (`# >>> station hosts >>>`), written by the guest, so whoever may log into a host may reach its VMs. Herdr drives that same ssh: `hc machine add api` (add `--temp` for a temporary VM). There is no `ssh` verb in station: a wrapper would be a second way to do one thing.
 
+## Files and editors
+
+Nothing of a host is ever shared into a VM: `tart run` gets no `--dir`, and no flag or setting adds one, because a mounted host folder would be a hole in the isolation. The ssh name is the one door, for files and editors alike:
+
+```sh
+scp report.zip api:                 # one file in
+rsync -a project/ api:project/      # a folder, again and again
+scp api:out.log .                   # and back
+```
+
+An editor on a host opens the VM by its Remote SSH to the same name: Zed, VS Code or Cursor on `ssh://api/~/code`. So there is no `cp` verb and no shared exchange folder.
+
 ## The daemon
 
 One `station daemon` per host, under the launchd agent `com.jterrazz.station.daemon` that `station setup` installs once tart is there (`○ daemon  not needed until tart is installed` before). It runs every VM of the host detached (a daemon restart never stops a VM), reads how each run ended (the rules of [Lifetimes](#lifetimes)), adopts the running VMs again at its start, keeps one ssh connection per running VM to its [guest](services.md), and holds the leases. The CLI is its client over `~/.local/state/station/daemon.sock` (protocol `station.daemon/v1`, [Services](services.md#the-daemon-protocol)). With it down, `machines` and `services` still read the files and show one `◐ daemon  not running  station setup` row; `status` shows the same row in its Machine section. [Footprint](footprint.md) lists the plist, the socket and the run files. A host from the earlier rounds moves under it by the [Round 5 migration](#round-5-migration).

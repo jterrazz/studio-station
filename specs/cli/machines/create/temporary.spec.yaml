@@ -1,4 +1,4 @@
-description: 'a temporary VM: cloned, sized, run detached by the daemon, one NAT boot, no tailnet'
+description: 'a temporary VM: cloned, sized, run detached by the daemon, one NAT boot, no tailnet, no host folder'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
@@ -22,7 +22,7 @@ runs:
                   - "hostnamectl set-hostname 'linux-1'"
                   - 'temporary VM: poweroff deletes it; reboot keeps it'
           Library/LaunchAgents/com.jterrazz.station.vm.linux-1.plist: absent
-    - command: '--version >/dev/null; /usr/bin/awk ''/^tart clone/{c=NR} /^tart set/{s=NR} /^sh -c/{r=NR} /sudo bash -s$/{f=NR} END{print (c<s && s<r && r<f) ? "ordered" : "disordered"}'' .calls; /usr/bin/grep -c -E ''launchctl|tailscale up'' .calls .local/state/station/vms/linux-1.json .firstboot.stdin'
+    - command: '--version >/dev/null; /usr/bin/awk ''/^tart clone/{c=NR} /^tart set/{s=NR} /^sh -c/{r=NR} /sudo bash -s$/{f=NR} END{print (c<s && s<r && r<f) ? "ordered" : "disordered"}'' .calls; /usr/bin/grep -c -E ''launchctl|tailscale up|--dir'' .calls .local/state/station/vms/linux-1.json .firstboot.stdin'
       exit: 1
       stdout: |
           ordered
