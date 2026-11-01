@@ -1,4 +1,4 @@
-description: 'a refused https serve is a degraded publish: tailscale''s own line, and the public URL falls back to the tailnet one'
+description: 'a refused https serve is degraded: tailscale''s own line, the tailnet URL as the public one'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/

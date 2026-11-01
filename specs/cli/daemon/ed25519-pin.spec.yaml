@@ -1,4 +1,4 @@
-description: 'a VM pinned by ssh with its ed25519 key is reached by the daemon too: one pin, whichever key type came first'
+description: 'a VM pinned by ssh with its ed25519 key is reached by the daemon too: one pin for both'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
