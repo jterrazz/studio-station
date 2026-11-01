@@ -131,15 +131,14 @@ var StationStorage = Storage{
 		noted(data("{state}/station/runs/*"), "each running VM's `<vm>.pid` and `<vm>.exit`"),
 		noted(conf("~/Library/LaunchAgents/com.jterrazz.station.daemon.plist", Host), "the one daemon's launchd agent"),
 		noted(conf("{config}/station/settings.json"), "here, hosts, vm_user, the lend list, the services policy"),
-		noted(conf("{config}/station/services.env", Linux, MacOS), "in a VM: its profiles' exports, written by the guest"),
-		noted(data("{state}/station/guest.json", Linux, MacOS), "in a VM: the host that runs it"),
-		noted(data("{state}/station/guest.sock", Linux, MacOS), "in a VM: the guest's socket, live while it runs"),
+		noted(conf("{config}/station/services.env", Linux, MacOS), "its profiles' exports, written by the guest"),
+		noted(data("{state}/station/guest.json", Linux, MacOS), "the host that runs it"),
+		noted(data("{state}/station/guest.sock", Linux, MacOS), "the guest's socket, live while it runs"),
 		noted(conf("~/.zshrc"), "the one managed block"),
 		noted(conf("~/.ssh/config"), "one Host block per fleet machine"),
 		noted(kept("{state}/station/vms/*.json"), "VM records: do not delete"),
 		noted(kept("{state}/station/images/key*"), "the only way into a fresh VM: do not delete"),
 		noted(kept("{state}/station/leases.json"), "the services' host ports: deleting it changes every URL"),
-		noted(kept("~/Library/LaunchAgents/com.jterrazz.station.vm.*.plist", Host), "one per VM, removed by `station machines delete`"),
 	},
 	Installed: []string{"~/.local/bin/station"},
 	Clean: []Action{remove(
@@ -151,7 +150,7 @@ var StationStorage = Storage{
 	NoReset: stationNoReset,
 }
 
-const StationKeychainNote = "The keychain service `station` holds nothing since round 5: `station setup` removed the three tailnet accounts the earlier rounds kept there."
+const StationRetiredNote = "The keychain service `station` holds nothing since round 5: `station setup` removed the three tailnet accounts the earlier rounds kept there. It also retired round 3's per-VM launchd agents, `~/Library/LaunchAgents/com.jterrazz.station.vm.*.plist`: booted out and removed, the one daemon runs every VM."
 
 var HomeExceptions = []Exception{
 	{Path: ".ssh", Reason: "the owner's keys and ssh config"},

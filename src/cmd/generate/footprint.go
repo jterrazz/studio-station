@@ -17,7 +17,7 @@ Everything ` + "`station`" + ` and the catalogue's tools write on a machine, by 
 
 ` + "%LEVELS%" + `
 
-Paths under ` + "`~/.config`, `~/.local/share`, `~/.local/state` and `~/.cache`" + ` follow their ` + "`XDG_*_HOME`" + ` variable when it is set and absolute. A path marked mac lives on a host and a macOS VM; linux, on a Linux VM.`
+Paths under ` + "`~/.config`, `~/.local/share`, `~/.local/state` and `~/.cache`" + ` follow their ` + "`XDG_*_HOME`" + ` variable when it is set and absolute. A path marked mac lives on a host and a macOS VM; linux, on a Linux VM; vm, in every VM and never on a host; host, on a host only.`
 
 func footprint() string {
 	levels := table([]string{"Level", "Who removes it"}, [][]string{
@@ -28,7 +28,7 @@ func footprint() string {
 	})
 	parts := []string{
 		strings.Replace(footprintPreamble, "%LEVELS%", levels, 1),
-		"## Station", table([]string{"Path", "Level", "Note"}, storedRows(catalog.StationStorage)), catalog.StationKeychainNote,
+		"## Station", table([]string{"Path", "Level", "Note"}, storedRows(catalog.StationStorage)), catalog.StationRetiredNote,
 		"## Tools",
 	}
 	for _, t := range catalog.Tools {
@@ -60,15 +60,25 @@ func shown(pattern string) string {
 func code(s string) string { return "`" + s + "`" }
 
 func on(kinds []catalog.MachineKind) string {
-	switch {
-	case len(kinds) == 0:
-		return ""
-	case len(kinds) == 1 && kinds[0] == catalog.Linux:
-		return "linux"
-	case len(kinds) == 1 && kinds[0] == catalog.Host:
-		return "host"
+	has := map[catalog.MachineKind]bool{}
+	for _, k := range kinds {
+		has[k] = true
 	}
-	return "mac"
+	switch {
+	case len(has) == 0 || len(has) == 3:
+		return ""
+	case len(has) == 2 && has[catalog.Host] && has[catalog.MacOS]:
+		return "mac"
+	case len(has) == 2 && has[catalog.Linux] && has[catalog.MacOS]:
+		return "vm"
+	case len(has) == 1 && has[catalog.Linux]:
+		return "linux"
+	case len(has) == 1 && has[catalog.Host]:
+		return "host"
+	case len(has) == 1 && has[catalog.MacOS]:
+		return "macOS VM"
+	}
+	return "host and Linux VM"
 }
 
 func note(parts ...string) string {

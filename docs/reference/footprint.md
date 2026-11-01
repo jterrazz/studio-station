@@ -11,7 +11,7 @@ Everything `station` and the catalogue's tools write on a machine, by level. The
 | config | nobody: a config item's uninstall where reversible  |
 | kept   | nobody                                              |
 
-Paths under `~/.config`, `~/.local/share`, `~/.local/state` and `~/.cache` follow their `XDG_*_HOME` variable when it is set and absolute. A path marked mac lives on a host and a macOS VM; linux, on a Linux VM.
+Paths under `~/.config`, `~/.local/share`, `~/.local/state` and `~/.cache` follow their `XDG_*_HOME` variable when it is set and absolute. A path marked mac lives on a host and a macOS VM; linux, on a Linux VM; vm, in every VM and never on a host; host, on a host only.
 
 ## Station
 
@@ -29,18 +29,17 @@ Paths under `~/.config`, `~/.local/share`, `~/.local/state` and `~/.cache` follo
 | `~/.local/state/station/runs/*`                            | data      | each running VM's `<vm>.pid` and `<vm>.exit`                                       |
 | `~/Library/LaunchAgents/com.jterrazz.station.daemon.plist` | config    | host; the one daemon's launchd agent                                               |
 | `~/.config/station/settings.json`                          | config    | here, hosts, vm_user, the lend list, the services policy                           |
-| `~/.config/station/services.env`                           | config    | mac; in a VM: its profiles' exports, written by the guest                          |
-| `~/.local/state/station/guest.json`                        | data      | mac; in a VM: the host that runs it                                                |
-| `~/.local/state/station/guest.sock`                        | data      | mac; in a VM: the guest's socket, live while it runs                               |
+| `~/.config/station/services.env`                           | config    | vm; its profiles' exports, written by the guest                                    |
+| `~/.local/state/station/guest.json`                        | data      | vm; the host that runs it                                                          |
+| `~/.local/state/station/guest.sock`                        | data      | vm; the guest's socket, live while it runs                                         |
 | `~/.zshrc`                                                 | config    | the one managed block                                                              |
 | `~/.ssh/config`                                            | config    | one Host block per fleet machine                                                   |
 | `~/.local/state/station/vms/*.json`                        | kept      | VM records: do not delete                                                          |
 | `~/.local/state/station/images/key*`                       | kept      | the only way into a fresh VM: do not delete                                        |
 | `~/.local/state/station/leases.json`                       | kept      | the services' host ports: deleting it changes every URL                            |
-| `~/Library/LaunchAgents/com.jterrazz.station.vm.*.plist`   | kept      | host; one per VM, removed by `station machines delete`                             |
 | `~/.local/bin/station`                                     | installed | removed by `station tools uninstall`                                               |
 
-The keychain service `station` holds nothing since round 5: `station setup` removed the three tailnet accounts the earlier rounds kept there.
+The keychain service `station` holds nothing since round 5: `station setup` removed the three tailnet accounts the earlier rounds kept there. It also retired round 3's per-VM launchd agents, `~/Library/LaunchAgents/com.jterrazz.station.vm.*.plist`: booted out and removed, the one daemon runs every VM.
 
 ## Tools
 
