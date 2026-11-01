@@ -230,6 +230,10 @@ func (s *Service) boot(vm, image string) error {
 	if err := s.h.FS.MkdirAll(logs, 0o700); err != nil {
 		return err
 	}
+	// invariant: tart opens --serial-path for reading and writing and refuses to run when the file is missing.
+	if err := s.h.FS.WriteFile(console, nil, 0o600); err != nil {
+		return err
+	}
 	argv := s.e.RunArgv(vm, console)
 	_, err := s.h.Run.Start(system.Cmd{Name: argv[0], Args: argv[1:]}, path.Join(logs, buildPrefix+image+".log"))
 	return err

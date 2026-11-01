@@ -1,9 +1,19 @@
 #!/bin/sh
 # Tart as the images specs need it: every call but `run` is recorded in $HOME/.calls
-# (the detached `run` goes to $HOME/.runs, since its line races the calls beside it);
+# (the detached `run` goes to $HOME/.runs, since its line races the calls beside it,
+# and, as tart 2.41 does, refuses a --serial-path that names no file);
 # `list` answers list.<n>.json for its n-th call when the case ships one, else list.json.
 answers="${0%/*}/../answers/tart"
 if [ "$1" = run ]; then
+    prev=''
+    for arg in "$@"; do
+        [ "$prev" = --serial-path ] && console=$arg
+        prev=$arg
+    done
+    if [ ! -f "$console" ]; then
+        echo "Error: VMConfigurationError(\"Failed to open PTY\")" >&2
+        exit 1
+    fi
     printf 'tart %s\n' "$*" >> "$HOME/.runs"
     exit 0
 fi
