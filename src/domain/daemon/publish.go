@@ -19,6 +19,8 @@ const (
 	busyRetry  = 10 * time.Second
 )
 
+const issuingDetail = "issuing certificate"
+
 type svc struct {
 	vm        string
 	port      int
@@ -380,6 +382,9 @@ func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View 
 		}
 		v.Process = s.process
 		v.Detail = services.JoinDetail(services.JoinDetail(s.detail, s.serveNote), v.Detail)
+		if d.issuing && s.served && l.HTTP != nil && *l.HTTP {
+			v.Detail = services.JoinDetail(v.Detail, issuingDetail)
+		}
 		if s.refused {
 			v.State = services.Refused
 		}

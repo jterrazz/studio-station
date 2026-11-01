@@ -26,6 +26,7 @@ const (
 	serveEvery = 30
 	seenEvery  = time.Minute
 	guestReady = 60 * time.Second
+	certBudget = 120 * time.Second
 )
 
 type Machines interface {
@@ -47,6 +48,7 @@ type Tailnet interface {
 	Self(ctx context.Context) (tailnet.Self, error)
 	Serve(ctx context.Context, args ...string) error
 	ServeStatus(ctx context.Context) (tailnet.ServeConfig, error)
+	Cert(ctx context.Context, host string) error
 }
 
 type Options struct {
@@ -73,6 +75,7 @@ type Daemon struct {
 	leases  []services.Lease
 	self    tailnet.Self
 	read    bool
+	issuing bool
 	started time.Time
 	note    func(line string)
 }
@@ -177,6 +180,9 @@ func (d *Daemon) refreshSelf(ctx context.Context) {
 	if !first && self.ServeOn == was {
 		return
 	}
+	if self.ServeOn {
+		d.warmCert(ctx, self.DNSName)
+	}
 	switch {
 	case self.ServeOn && !first:
 		d.logf("tailnet", "Serve is on: every lease is served on the tailnet")
@@ -186,6 +192,37 @@ func (d *Daemon) refreshSelf(ctx context.Context) {
 		d.logf("tailnet", catalog.ServeOffDetail+": services are local only")
 		d.unserveAll()
 	}
+}
+
+// invariant: tailscaled issues the host's certificate at the first https
+// request, 34.5 s measured, so the daemon asks for it as Serve turns on, in
+// the background: never blocking a publish, one at a time, within its budget.
+func (d *Daemon) warmCert(ctx context.Context, host string) {
+	d.mu.Lock()
+	if d.issuing || host == "" {
+		d.mu.Unlock()
+		return
+	}
+	d.issuing = true
+	d.mu.Unlock()
+	go func() {
+		start := d.h.Clock.Now()
+		wait, cancel := context.WithDeadline(ctx, start.Add(certBudget))
+		err := d.tn.Cert(wait, host)
+		cancel()
+		d.mu.Lock()
+		d.issuing = false
+		d.mu.Unlock()
+		switch {
+		case ctx.Err() != nil:
+		case err == nil:
+			d.logf("tailnet", "certificate for "+host+" ready in "+d.h.Clock.Now().Sub(start).Round(time.Millisecond).String())
+		case errors.Is(err, system.ErrTimeout) || errors.Is(err, context.DeadlineExceeded):
+			d.logf("tailnet", "certificate for "+host+" not issued: no answer within "+certBudget.String())
+		default:
+			d.logf("tailnet", "certificate for "+host+" not issued: "+err.Error())
+		}
+	}()
 }
 
 func (d *Daemon) accept(ctx context.Context, l system.Listener) {

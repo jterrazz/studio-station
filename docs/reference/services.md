@@ -74,6 +74,8 @@ With Serve on, an HTTP service (detected once per lease: a server that speaks fi
 
 Unpublishing runs the same line ending `off`. `https` `off`, and any other word, is read as `port`. A serve refused while Serve is on leaves the service published locally: its row `◐` with `serve:` and tailscale's own line (never the CLI's `Warning:` lines), its public URL unchanged, the serve retried at its next publish. In `path` mode a tool that builds absolute URLs needs its base path set to `/<vm>/<port>/`.
 
+tailscaled issues the host's certificate at the first https request, 34.5 s measured, so the daemon warms it: at its start with Serve on, and when Serve turns on, it runs `tailscale cert --cert-file=/dev/null --key-file=/dev/null <host>` in the background, one at a time, within 120 s, never holding a publish. Meanwhile every row served `--https` says `issuing certificate` (`◐`, its URL unchanged); `daemon.log` then says `certificate for <host> ready in <d>` or `not issued:` with tailscale's line.
+
 With Serve off no serve runs (one would block waiting for the admin): every lease is local only, every row of the host says `Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console`, and every public URL is the local one; `daemon.log` says it once per change. Serve turning on serves every published lease at the next read.
 
 Station owns only the serve entries on its range (both kinds) or under `/<vm>/` of its VMs (`path`), and, while Serve is on, removes the ones no lease justifies at the daemon's start and when Serve turns on; it never touches another entry.

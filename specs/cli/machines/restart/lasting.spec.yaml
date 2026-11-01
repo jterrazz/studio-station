@@ -5,7 +5,7 @@ fixture:
 env: daemon
 serve: sshd
 runs:
-    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41320-41339"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime lasting --name api > /dev/null; "$STATION" machines restart api --yes > /dev/null; echo "restart $?"; n=0; while [ "$(/usr/bin/grep -c "^sh -c" .calls)" -lt 2 ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /usr/bin/grep -c "^sh -c" .calls; "$STATION" machines stop api > /dev/null; n=0; while [ ! -f .local/state/station/runs/api.exit ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /bin/cat .local/state/station/runs/api.exit; kill $d; wait $d'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41320-41339"}/'' .config/station/settings.json; "$STATION" daemon 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime lasting --name api > /dev/null; "$STATION" machines restart api --yes > /dev/null; echo "restart $?"; n=0; while [ "$(/usr/bin/grep -c "^sh -c" .calls)" -lt 2 ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /usr/bin/grep -c "^sh -c" .calls; "$STATION" machines stop api > /dev/null; n=0; while [ ! -f .local/state/station/runs/api.exit ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /bin/cat .local/state/station/runs/api.exit; kill $d; wait $d'
       exit: 0
       stdout: |
           restart 0
