@@ -1,6 +1,6 @@
 # Services
 
-A service is a TCP port something listens on inside a VM. The VM is never on the tailnet, so its host publishes what it listens on: the host's daemon leases a host port for it, listens there on 127.0.0.1 and on the host's tailnet ip, and carries each connection into the VM over its one ssh connection. An HTTP service also gets `tailscale serve` https. Nothing is configured per service: a dev server that starts listening is published within seconds.
+A service is a TCP port something listens on inside a VM. The VM is never on the tailnet, so its host publishes what it listens on: the host's daemon leases a host port for it, listens there on 127.0.0.1 and on the host's tailnet ip, and carries each connection into the VM over its one ssh connection. An HTTP service also gets `tailscale serve` https; in the `port` mode that tailnet port is `tailscale serve`'s, so the daemon listens on 127.0.0.1 alone. Nothing is configured per service: a dev server that starts listening is published within seconds.
 
 | Section               | Answers                                                        |
 | --------------------- | -------------------------------------------------------------- |
@@ -15,7 +15,7 @@ A service is a TCP port something listens on inside a VM. The VM is never on the
 
 Inside each running VM, `station guest` (hidden, run by the host's [daemon](machines.md#the-daemon) over its ssh connection) reports every listening TCP port, loopback included, and the ports Docker publishes. The VM never opens a connection to its host and never picks a host port. Ports below 1024 and the ignored ones (22) are never reported.
 
-For each reported port the daemon takes a **lease**: the lowest free port of the range (default 40000-40999), sticky on (VM, guest port), so the same dev server gets the same URL next week. It then **publishes** it: host listeners on `127.0.0.1:<host port>` and on the host's tailnet ip (never `0.0.0.0`: station refuses to bind every interface), each connection carried by ssh `direct-tcpip` to the address the VM reported. A tool bound to 127.0.0.1 in the VM needs no `--host`.
+For each reported port the daemon takes a **lease**: the lowest free port of the range (default 40000-40999), sticky on (VM, guest port), so the same dev server gets the same URL next week. It then **publishes** it: host listeners on `127.0.0.1:<host port>` and on the host's tailnet ip (never `0.0.0.0`: station refuses to bind every interface; an HTTP service in the https `port` mode has no tailnet-ip listener, since `tailscale serve` holds that port), each connection carried by ssh `direct-tcpip` to the address the VM reported. A tool bound to 127.0.0.1 in the VM needs no `--host`.
 
 | Event                                   | What happens                                                       |
 | --------------------------------------- | ------------------------------------------------------------------ |
@@ -44,7 +44,7 @@ Rows have one schema, piped tab-separated: mark, VM, guest port, public URL, hos
 
 So one command shows what ports exist and what is free across the fleet, each host's group is headed on a terminal by its range: `macbook  40000-40999 · 3 leased · 997 free · 20 per VM`. In `--json` each host carries it as `range` (`low`, `high`, `leased`, `free`, `max_per_vm`), read from that host's policy and lease file, so it is there with the daemon down; a host too old to tell its range has none. The piped form stays rows only.
 
-`services url <port>` in a VM reserves the lease at once, whether or not anything listens yet, so a value can be computed before the tool starts: `$(station services url 3000)`. On a host it is exit 2 (`Hint: station services url runs inside a VM; here: station services`); with the host's daemon away it is exit 1 (`Error: macbook is not connected to this VM`, `Hint: on macbook: station setup`).
+`services url <port>` in a VM reserves the lease at once, whether or not anything listens yet, so a value can be computed before the tool starts: `$(station services url 3000)`. On a host it is exit 2 (`Hint: station services url runs inside a VM; here: station services`); with the host's daemon away it is exit 1 (`Error: macbook is not connected to this VM`, `Hint: on macbook: station setup`), and in a VM no host has connected to yet, so with no host name to give, every `services` command is exit 1 (`Error: no host has connected to this VM yet`, `Hint: on the VM's host: station setup`).
 
 `services release` gives a lease back. A VM of another host is released on that host, over ssh. A profile's lease asks first (`--yes` piped): its URL is in the VM's environment. With the daemon down, a host edits the lease store itself.
 
