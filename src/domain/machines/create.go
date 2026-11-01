@@ -183,9 +183,6 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	case !nameFree(r.Name, held):
 		return r, &NameTakenError{Name: r.Name, VM: held[r.Name] == claimVM, Host: held[r.Name] == claimHost}
 	}
-	if err := s.daemonUp(ctx); err != nil {
-		return r, err
-	}
 	if r.Resources.CPUs == 0 {
 		r.Resources.CPUs = img.Defaults.CPUs
 	}
@@ -197,6 +194,9 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	}
 	if limit, ok := s.memoryLimit(ctx); ok && r.Resources.MemoryBytes > limit {
 		return r, &TooBigError{MemoryGB: int(r.Resources.MemoryBytes >> 30), LimitGB: int(limit >> 30)}
+	}
+	if err := s.daemonUp(ctx); err != nil {
+		return r, err
 	}
 	return r, nil
 }
