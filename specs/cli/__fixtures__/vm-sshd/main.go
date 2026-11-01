@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
@@ -19,8 +21,9 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// invariant: the VM a spec talks to: an sshd that accepts any key, runs each
-// exec under the document's vm/ folder, and answers every direct-tcpip itself,
+// invariant: the VM a spec talks to: an sshd that accepts any key, offers an
+// ed25519 and an ecdsa host key as OpenSSH does (the ed25519 one written to the
+// document's vm/hostkey.ed25519), runs each exec under the document's vm/ folder, and answers every direct-tcpip itself,
 // so no real listener exists on the runner; each exec and channel is recorded in
 // the document's .calls.
 var mu sync.Mutex
@@ -39,16 +42,26 @@ func record(line string) {
 }
 
 func main() {
-	_, private, err := ed25519.GenerateKey(rand.Reader)
+	_, edKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		panic(err)
 	}
-	signer, err := ssh.NewSignerFromKey(private)
+	ecKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		panic(err)
 	}
 	cfg := &ssh.ServerConfig{PublicKeyCallback: func(ssh.ConnMetadata, ssh.PublicKey) (*ssh.Permissions, error) { return nil, nil }}
-	cfg.AddHostKey(signer)
+	for _, key := range []any{edKey, ecKey} {
+		signer, err := ssh.NewSignerFromKey(key)
+		if err != nil {
+			panic(err)
+		}
+		cfg.AddHostKey(signer)
+		if signer.PublicKey().Type() == ssh.KeyAlgoED25519 {
+			_ = os.MkdirAll(filepath.Join(workdir(), "vm"), 0o700)
+			_ = os.WriteFile(filepath.Join(workdir(), "vm", "hostkey.ed25519"), ssh.MarshalAuthorizedKey(signer.PublicKey()), 0o600)
+		}
+	}
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		panic(err)

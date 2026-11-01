@@ -2,6 +2,7 @@ package sshclient
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"io"
 	"net"
@@ -64,6 +65,34 @@ func hostKeys(file, name string) ssh.HostKeyCallback {
 	}
 }
 
+// invariant: a VM already pinned is asked only for the key types of its pins,
+// so a pin OpenSSH made with one type (ed25519) is never refused because Go
+// would negotiate another (ecdsa).
+func pinnedAlgorithms(file, name string, remote net.Addr) []string {
+	check, err := knownhosts.New(file)
+	if err != nil {
+		return nil
+	}
+	probe, err := ssh.NewPublicKey(ed25519.PublicKey(make([]byte, ed25519.PublicKeySize)))
+	if err != nil {
+		return nil
+	}
+	var mismatch *knownhosts.KeyError
+	if !errors.As(check(name+":22", remote, probe), &mismatch) {
+		return nil
+	}
+	var algos []string
+	for _, want := range mismatch.Want {
+		switch t := want.Key.Type(); t {
+		case ssh.KeyAlgoRSA:
+			algos = append(algos, ssh.KeyAlgoRSASHA512, ssh.KeyAlgoRSASHA256, ssh.KeyAlgoRSA)
+		default:
+			algos = append(algos, t)
+		}
+	}
+	return algos
+}
+
 func (dialer) Dial(ctx context.Context, t system.SSHTarget) (system.SSHClient, error) {
 	key, err := os.ReadFile(t.KeyPath)
 	if err != nil {
@@ -84,6 +113,7 @@ func (dialer) Dial(ctx context.Context, t system.SSHTarget) (system.SSHClient, e
 	if err != nil {
 		return nil, err
 	}
+	cfg.HostKeyAlgorithms = pinnedAlgorithms(t.KnownHosts, t.Name, conn.RemoteAddr())
 	c, chans, reqs, err := ssh.NewClientConn(conn, t.Addr, cfg)
 	if err != nil {
 		_ = conn.Close()
