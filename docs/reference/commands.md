@@ -93,7 +93,7 @@ station services url <port> [--json]           # in a VM: reserve the port's pub
 station services release <vm>:<port> [--yes]   # on a host; in a VM: station services release <port>
 ```
 
-Every host is asked over ssh; `--here` asks none. `url` runs inside a VM only, its piped stdout the URL alone. A profile's lease asks before `release`. See [Services](services.md).
+Every host is asked over ssh; `--here` asks none, and is refused in a VM (exit 2), which lists only its own services. `url` runs inside a VM only, its piped stdout the URL alone. A profile's lease asks before `release`. See [Services](services.md).
 
 ### `station images`
 

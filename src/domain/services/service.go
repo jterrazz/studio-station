@@ -143,6 +143,13 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 	return view, nil
 }
 
+func (s *Service) CheckList(hereOnly bool) error {
+	if hereOnly && s.inVM() {
+		return &HereInVMError{}
+	}
+	return nil
+}
+
 func (s *Service) List(ctx context.Context, hereOnly bool) (Fleet, error) {
 	here, err := s.Here(ctx)
 	if err != nil {

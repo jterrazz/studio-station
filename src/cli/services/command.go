@@ -29,7 +29,8 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.Here, "here", false, "only this host")
 		},
-		Read: func(*Input) bool { return true },
+		Read:     func(*Input) bool { return true },
+		Validate: func(_ context.Context, in *Input) error { return d.Services.CheckList(in.Here) },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			fleet, err := d.Services.List(ctx, in.Here)
 			if err != nil {

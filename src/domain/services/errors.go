@@ -70,3 +70,7 @@ type RemoteError struct {
 func (e *RemoteError) Error() string {
 	return "cannot reach \"" + e.Host + "\""
 }
+
+type HereInVMError struct{}
+
+func (*HereInVMError) Error() string { return "--here is for a host: a VM lists only its own services" }

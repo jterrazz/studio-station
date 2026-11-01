@@ -46,7 +46,10 @@ func servicesFailure(err error) (*fail.Error, bool) {
 	var vmOnly *services.VMOnlyError
 	var unknown *services.UnknownVMError
 	var remote *services.RemoteError
+	var hereInVM *services.HereInVMError
 	switch {
+	case errors.As(err, &hereInVM):
+		return fail.Usage(hereInVM.Error(), "station services"), true
 	case errors.As(err, &full):
 		return fail.Failed(full.Error(), "station services release <port>", err), true
 	case errors.As(err, &perVM):
