@@ -246,6 +246,10 @@ say "   every cache empty or absent, every data path untouched"
 
 
 say "-- storage reset go, on a fresh clone"
+# hazard: tart stop can end a Linux guest before it writes its page cache back,
+# so the clone boots an older disk (2026-11-01: go's bin empty, storage clean's
+# deletions undone); sync first.
+in_vm 'sync' || fail "sync before the clone"
 tart stop "$vm" >> "$log" 2>&1
 reset_vm="station-e2e-$kind-$run_id-reset"
 made+=("$reset_vm")
