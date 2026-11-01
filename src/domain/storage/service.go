@@ -274,7 +274,7 @@ func (s *Service) measure(ctx context.Context, e Entry, installed bool) Row {
 		if !p.PlacedOn(s.o.Here) {
 			continue
 		}
-		bytes := s.size(p.Path)
+		bytes := s.storedBytes(p)
 		row.Bytes[p.Level] += bytes
 		row.Paths = append(row.Paths, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: bytes})
 	}
@@ -427,7 +427,7 @@ func (s *Service) Plan(names []string) []PathReport {
 			if !p.PlacedOn(s.o.Here) || (p.Level != catalog.LevelCache && p.Level != catalog.LevelData) {
 				continue
 			}
-			out = append(out, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: s.size(p.Path)})
+			out = append(out, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: s.storedBytes(p)})
 		}
 	}
 	return out
@@ -484,8 +484,18 @@ func (s *Service) levelBytes(e Entry, level catalog.Level) int64 {
 	var total int64
 	for _, p := range e.Storage.Paths {
 		if p.Level == level && p.PlacedOn(s.o.Here) {
-			total += s.size(p.Path)
+			total += s.storedBytes(p)
 		}
+	}
+	return total
+}
+
+// invariant: a memo a tool rewrites on every call (mise's bin_paths, written by each
+// shim and by station's own reads) is not counted, so a cleaned cache measures empty.
+func (s *Service) storedBytes(st catalog.Stored) int64 {
+	total := s.size(st.Path)
+	for _, m := range st.Memos {
+		total -= s.size(path.Join(st.Path, m))
 	}
 	return total
 }

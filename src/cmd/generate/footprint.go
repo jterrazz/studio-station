@@ -91,10 +91,21 @@ func note(parts ...string) string {
 	return strings.Join(kept, "; ")
 }
 
+func memoNote(memos []string) string {
+	if len(memos) == 0 {
+		return ""
+	}
+	shownMemos := make([]string, 0, len(memos))
+	for _, m := range memos {
+		shownMemos = append(shownMemos, code(m))
+	}
+	return strings.Join(shownMemos, ", ") + " rewritten on every call, not counted"
+}
+
 func storedRows(s catalog.Storage) [][]string {
 	rows := make([][]string, 0, len(s.Paths)+len(s.Installed)+len(s.Strays))
 	for _, p := range s.Paths {
-		rows = append(rows, []string{code(shown(p.Path)), string(p.Level), note(on(p.On), p.Note)})
+		rows = append(rows, []string{code(shown(p.Path)), string(p.Level), note(on(p.On), p.Note, memoNote(p.Memos))})
 	}
 	for _, p := range s.Installed {
 		rows = append(rows, []string{code(shown(p)), "installed", "removed by `station tools uninstall`"})

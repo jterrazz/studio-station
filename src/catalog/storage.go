@@ -16,6 +16,7 @@ type Stored struct {
 	Level Level
 	On    []MachineKind
 	Note  string
+	Memos []string
 }
 
 type Action struct {
@@ -104,6 +105,8 @@ func conf(path string, on ...MachineKind) Stored {
 func kept(path string, on ...MachineKind) Stored { return Stored{Path: path, Level: LevelKept, On: on} }
 
 func noted(s Stored, note string) Stored { s.Note = note; return s }
+
+func memos(s Stored, patterns ...string) Stored { s.Memos = patterns; return s }
 
 func runIf(needs string, argv ...string) Action { return Action{Run: argv, Needs: needs} }
 
@@ -196,9 +199,10 @@ var (
 		Clean:     []Action{runIf("brew", "brew", "cleanup", "--prune=all")},
 		NoReset:   "Homebrew's data are its formulae: station tools uninstall <tool>",
 	}
+	miseMemo    = "*/*/bin_paths-*.msgpack.z"
 	storageMise = Storage{
 		Paths: []Stored{
-			cache("~/Library/Caches/mise", Host, MacOS), cache("{cache}/mise", Linux), cache("{data}/mise/downloads"),
+			memos(cache("~/Library/Caches/mise", Host, MacOS), miseMemo), memos(cache("{cache}/mise", Linux), miseMemo), cache("{data}/mise/downloads"),
 			noted(cache("~/Library/Caches/sigstore-rust", Host, MacOS), "mise's signature checks"), noted(cache("{cache}/sigstore-rust", Linux), "mise's signature checks"),
 			data("{state}/mise"),
 			conf("{config}/mise/config.toml"),

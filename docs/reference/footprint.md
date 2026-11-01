@@ -55,17 +55,17 @@ Clean: `brew cleanup --prune=all`. Reset: none (Homebrew's data are its formulae
 
 ### mise
 
-| Path                             | Level     | Note                                 |
-| -------------------------------- | --------- | ------------------------------------ |
-| `~/Library/Caches/mise`          | cache     | mac                                  |
-| `~/.cache/mise`                  | cache     | linux                                |
-| `~/.local/share/mise/downloads`  | cache     |                                      |
-| `~/Library/Caches/sigstore-rust` | cache     | mac; mise's signature checks         |
-| `~/.cache/sigstore-rust`         | cache     | linux; mise's signature checks       |
-| `~/.local/state/mise`            | data      |                                      |
-| `~/.config/mise/config.toml`     | config    |                                      |
-| `~/.local/share/mise/installs`   | installed | removed by `station tools uninstall` |
-| `~/.local/share/mise/shims`      | installed | removed by `station tools uninstall` |
+| Path                             | Level     | Note                                                                    |
+| -------------------------------- | --------- | ----------------------------------------------------------------------- |
+| `~/Library/Caches/mise`          | cache     | mac; `*/*/bin_paths-*.msgpack.z` rewritten on every call, not counted   |
+| `~/.cache/mise`                  | cache     | linux; `*/*/bin_paths-*.msgpack.z` rewritten on every call, not counted |
+| `~/.local/share/mise/downloads`  | cache     |                                                                         |
+| `~/Library/Caches/sigstore-rust` | cache     | mac; mise's signature checks                                            |
+| `~/.cache/sigstore-rust`         | cache     | linux; mise's signature checks                                          |
+| `~/.local/state/mise`            | data      |                                                                         |
+| `~/.config/mise/config.toml`     | config    |                                                                         |
+| `~/.local/share/mise/installs`   | installed | removed by `station tools uninstall`                                    |
+| `~/.local/share/mise/shims`      | installed | removed by `station tools uninstall`                                    |
 
 Clean: `mise cache clear`, `mise prune --tools`, delete `~/Library/Caches/mise/*`, delete `~/Library/Caches/sigstore-rust/*`, delete `~/.cache/mise/*`, delete `~/.cache/sigstore-rust/*`. Reset: none (runtimes are tools: station tools uninstall <runtime>).
 
