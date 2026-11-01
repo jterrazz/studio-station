@@ -193,7 +193,7 @@ func (s *Service) Serve(ctx context.Context, args ...string) error {
 	// enable Serve) is refused with the line it printed, not with the timeout.
 	out, err := s.run(ctx, append([]string{"serve"}, args...)...)
 	if errors.Is(err, system.ErrTimeout) {
-		if detail := firstLine(out.Stderr + out.Stdout); detail != "" {
+		if detail := reason(out.Stderr + "\n" + out.Stdout); detail != "" {
 			return &ServeError{Detail: detail}
 		}
 	}
@@ -201,7 +201,7 @@ func (s *Service) Serve(ctx context.Context, args ...string) error {
 		return err
 	}
 	if out.ExitCode != 0 {
-		detail := firstLine(out.Stderr + out.Stdout)
+		detail := reason(out.Stderr + "\n" + out.Stdout)
 		if detail == "" {
 			detail = "exit " + strconv.Itoa(out.ExitCode)
 		}
@@ -263,6 +263,17 @@ func ParseServe(data []byte) (ServeConfig, error) {
 		return cfg.Entries[i].Path < cfg.Entries[j].Path
 	})
 	return cfg, nil
+}
+
+// invariant: a refusal is told by its own line: the CLI's "Warning:" lines (a
+// client older than its daemon) come first and say nothing about the serve.
+func reason(text string) string {
+	for _, line := range strings.Split(text, "\n") {
+		if line = strings.TrimSpace(line); line != "" && !strings.HasPrefix(line, "Warning:") {
+			return line
+		}
+	}
+	return firstLine(text)
 }
 
 func firstLine(text string) string {
