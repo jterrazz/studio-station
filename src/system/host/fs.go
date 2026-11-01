@@ -34,12 +34,20 @@ func (disk) DirSize(path string) int64 {
 	_ = filepath.WalkDir(path, func(_ string, d fs.DirEntry, err error) error {
 		if err == nil && d.Type().IsRegular() {
 			if info, err := d.Info(); err == nil {
-				total += info.Size()
+				total += allocated(info)
 			}
 		}
 		return nil
 	})
 	return total
+}
+
+// value: a sparse VM disk reports its full virtual size; its blocks are what it costs.
+func allocated(info fs.FileInfo) int64 {
+	if st, ok := info.Sys().(*syscall.Stat_t); ok && st.Blocks*512 < info.Size() {
+		return st.Blocks * 512
+	}
+	return info.Size()
 }
 
 func (disk) Rename(from, to string) error {
