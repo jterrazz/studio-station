@@ -1,6 +1,6 @@
 description: 'values are asked in a form: the flag that once carried them is unknown'
 runs:
-    - command: 'config install tailnet-auth --s""et tailnet-auth.mode=userspace > out.txt 2>&1; echo "exit $?"'
+    - command: 'config install git-signing --s""et git-signing.key=x > out.txt 2>&1; echo "exit $?"'
       exit: 0
       stdout: |
           exit 2

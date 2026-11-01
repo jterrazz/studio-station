@@ -59,8 +59,6 @@ const (
 	ProcPower            Procedure = "power"
 	ProcLockAfterLogin   Procedure = "lock-after-login"
 	ProcSshd             Procedure = "sshd"
-	ProcTailnetAuth      Procedure = "tailnet-auth"
-	ProcVMJoin           Procedure = "vm-join"
 	ProcClaudeToken      Procedure = "claude-token"
 	ProcBackupExclusions Procedure = "backup-exclusions"
 )
@@ -121,15 +119,6 @@ var ConfigItems = []ConfigItem{
 	{Name: "power", Description: "Always-on power policy (no sleep, autorestart, wake)", Category: CategoryHeadless, Places: hostKind, Effect: ProcPower, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist"), "pmset: no sleep, autorestart, wake")}},
 	{Name: "lock-after-login", Description: "A LaunchAgent that locks the screen ~20s after auto-login", Category: CategoryHeadless, Places: hostKind, Effect: ProcLockAfterLogin, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Users/jterrazz.agent/Library/LaunchAgents/ai.jterrazz.lock-after-login.plist"), "the agent user's `lock-after-login.plist`"), noted(cache("/Users/jterrazz.agent/.openclaw/logs"), "its logs")}},
 	{Name: "sshd", Description: "macOS Remote Login (sshd)", Category: CategoryHeadless, Places: hostKind, Effect: ProcSshd, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/System/Library/LaunchDaemons/ssh.plist"), "Remote Login, through systemsetup")}},
-	{Name: "tailnet-auth", Description: "How this host joins the tailnet: the daemon mode and the login", Category: CategoryNetwork, Places: hostKind, Effect: ProcTailnetAuth, Reversible: true, Inputs: []Input{
-		{Name: "mode", Label: "Daemon", Kind: InputSelect, Options: []string{"auto", "userspace"}, Required: true},
-		{Name: "method", Label: "Login", Kind: InputSelect, Options: []string{"login", "authkey"}, Required: true},
-		{Name: "authkey", Label: "Auth key", Help: "required when the login is authkey", Kind: InputPassword},
-	}, Writes: []Stored{conf("{config}/station/settings.json"), noted(kept("{state}/station/tailscaled/tailscaled.state"), "the node identity; the auth key in the keychain, account `tailnet-authkey`")}},
-	{Name: "vm-join", Description: "The OAuth client that mints a tailnet key for each new VM", Category: CategoryNetwork, Places: hostKind, Effect: ProcVMJoin, Reversible: true, Inputs: []Input{
-		{Name: "client-id", Label: "OAuth client id", Kind: InputText, Required: true},
-		{Name: "client-secret", Label: "OAuth client secret", Kind: InputPassword, Required: true},
-	}, Writes: []Stored{noted(kept("{config}/station/settings.json"), "keychain service `station`, accounts `vm-join-id` and `vm-join-secret`")}},
 	{Name: "backup-exclusions", Description: "Keep ~/.cache and station's VMs out of Time Machine", Category: CategorySystem, Places: hostKind, Effect: ProcBackupExclusions, Reversible: true, Writes: []Stored{
 		noted(conf("{cache}"), "a sticky Time Machine exclusion (`tmutil addexclusion`)"),
 		noted(conf("{data}/station/vms"), "a sticky Time Machine exclusion (`tmutil addexclusion`)"),

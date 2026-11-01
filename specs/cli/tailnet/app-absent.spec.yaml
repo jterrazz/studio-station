@@ -1,0 +1,8 @@
+description: 'with no tailscale the tailnet is absent, with the verb that installs it'
+env: daemon
+runs:
+    - command: 'tailnet --json | /usr/bin/jq -r .state; "$STATION" tailnet'
+      exit: 0
+      stdout: |
+          absent
+          ○	tailnet	not installed	station tools install tailscale

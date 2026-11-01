@@ -16,10 +16,6 @@ runs:
           .config/station/settings.json:
               equals: |
                   {
-                    "tailnet": {
-                      "mode": "userspace",
-                      "auth_method": "login"
-                    },
                     "lend_list": [
                       "session:a"
                     ]

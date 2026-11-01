@@ -1,7 +1,7 @@
 description: 'config uninstall refuses without --yes when nothing can ask'
-fixture: ../__fixtures__/security/
+fixture: ../__fixtures__/tmutil/
 runs:
-    - command: 'config uninstall vm-join </dev/null'
+    - command: 'config uninstall backup-exclusions </dev/null'
       exit: 2
       stderr: |
           Error: refusing to uninstall without --yes

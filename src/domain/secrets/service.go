@@ -34,15 +34,14 @@ type VMs interface {
 }
 
 type Service struct {
-	run      system.Runner
-	store    settings.Store
-	keychain settings.Keychain
-	vms      VMs
-	here     catalog.MachineKind
+	run   system.Runner
+	store settings.Store
+	vms   VMs
+	here  catalog.MachineKind
 }
 
 func New(h system.Host, store settings.Store, vms VMs, o Options) *Service {
-	return &Service{run: h.Run, store: store, keychain: settings.NewKeychain(h.Run).On(o.Here), vms: vms, here: o.Here}
+	return &Service{run: h.Run, store: store, vms: vms, here: o.Here}
 }
 
 type Report struct {
@@ -61,7 +60,7 @@ type RecallReport struct {
 	Warnings []string
 }
 
-func (s *Service) List(ctx context.Context) (Report, error) {
+func (s *Service) List(_ context.Context) (Report, error) {
 	current, err := s.store.Load()
 	if err != nil {
 		return Report{}, err
@@ -70,13 +69,7 @@ func (s *Service) List(ctx context.Context) (Report, error) {
 	if err != nil {
 		return Report{}, err
 	}
-	kept := []string{}
-	for _, account := range keptAccounts() {
-		if _, found, err := s.keychain.Read(ctx, account); err == nil && found {
-			kept = append(kept, account)
-		}
-	}
-	return Report{LendList: append([]string{}, current.LendList...), Lent: lent, Kept: kept}, nil
+	return Report{LendList: append([]string{}, current.LendList...), Lent: lent, Kept: []string{}}, nil
 }
 
 func (s *Service) Allow(names []string) error {
@@ -258,10 +251,6 @@ func (s *Service) recallFrom(ctx context.Context, vm string, names []string) err
 		return &StepError{VM: vm, Step: "deleting the copies", Cause: failure(err, out)}
 	}
 	return s.vms.RecordRecalled(vm, names)
-}
-
-func keptAccounts() []string {
-	return []string{"vm-join-id", "vm-join-secret", "tailnet-authkey"}
 }
 
 func vmStudio(args ...string) []string {

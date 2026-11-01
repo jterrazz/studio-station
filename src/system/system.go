@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"errors"
+	"io"
 	"io/fs"
 	"time"
 )
@@ -11,6 +12,7 @@ var (
 	ErrNotFound    = errors.New("command not found")
 	ErrTimeout     = errors.New("command timed out")
 	ErrCrossDevice = errors.New("another volume: a rename cannot move it")
+	ErrWildcard    = errors.New("refused: station never listens on every interface")
 )
 
 type Stream int
@@ -71,6 +73,7 @@ type FS interface {
 	DirSize(path string) int64
 	Chmod(path string, perm fs.FileMode) error
 	Chown(path string, uid, gid int) error
+	Readlink(path string) (string, error)
 }
 
 type Env interface {
@@ -87,8 +90,35 @@ type Env interface {
 type Net interface {
 	Dial(ctx context.Context, host string, port int, timeout time.Duration) bool
 	Get(ctx context.Context, url string, header map[string]string) (status int, body []byte, err error)
-	Post(ctx context.Context, url string, header map[string]string, body []byte) (status int, respBody []byte, err error)
-	Delete(ctx context.Context, url string, header map[string]string) (status int, respBody []byte, err error)
+}
+
+type Conn interface{ io.ReadWriteCloser }
+
+type Listener interface {
+	Accept() (Conn, error)
+	Close() error
+	Port() int
+}
+
+type Sockets interface {
+	ListenUnix(path string) (Listener, error)
+	DialUnix(ctx context.Context, path string, timeout time.Duration) (Conn, error)
+	ListenTCP(ip string, port int) (Listener, error)
+	Pipe(ctx context.Context, ip string, port int, in io.Reader, out io.Writer) error
+	Join(a, b Conn)
+}
+
+type SSHTarget struct{ Addr, User, KeyPath, KnownHosts, Name string }
+
+type SSHClient interface {
+	Exec(ctx context.Context, command string, stdin io.Reader, stdout, stderr io.Writer) (exitCode int, err error)
+	Forward(ctx context.Context, ip string, port int) (Conn, error)
+	Close() error
+	Done() <-chan struct{}
+}
+
+type SSH interface {
+	Dial(ctx context.Context, t SSHTarget) (SSHClient, error)
 }
 
 type Clock interface {
@@ -97,9 +127,10 @@ type Clock interface {
 }
 
 type Host struct {
-	Run   Runner
-	FS    FS
-	Env   Env
-	Net   Net
-	Clock Clock
+	Run     Runner
+	FS      FS
+	Env     Env
+	Net     Net
+	Sockets Sockets
+	Clock   Clock
 }

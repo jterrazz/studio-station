@@ -240,7 +240,7 @@ func (s *Service) boot(vm, image string) error {
 	if err := s.h.FS.WriteFile(console, nil, 0o600); err != nil {
 		return err
 	}
-	argv := s.e.RunArgv(vm, console)
+	argv := s.e.RunArgv(vm, console, system.RunOptions{})
 	_, err := s.h.Run.Start(system.Cmd{Name: argv[0], Args: argv[1:]}, path.Join(logs, buildPrefix+image+".log"))
 	return err
 }

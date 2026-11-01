@@ -45,10 +45,6 @@ func (s *Service) procedure(it catalog.ConfigItem, p catalog.Procedure) (handler
 		return handler{check: s.checkLockAfterLogin, install: bare(s.installLockAfterLogin), uninstall: s.uninstallLockAfterLogin}, nil
 	case catalog.ProcSshd:
 		return handler{check: s.checkSshd, install: bare(s.installSshd), uninstall: s.uninstallSshd}, nil
-	case catalog.ProcTailnetAuth:
-		return handler{check: s.checkTailnetAuth, install: s.installTailnetAuth, uninstall: s.uninstallTailnetAuth}, nil
-	case catalog.ProcVMJoin:
-		return handler{check: s.checkVMJoin, install: s.installVMJoin, uninstall: s.uninstallVMJoin}, nil
 	case catalog.ProcClaudeToken:
 		return handler{check: s.checkClaudeToken, install: s.installClaudeToken, uninstall: s.uninstallClaudeToken}, nil
 	case catalog.ProcBackupExclusions:

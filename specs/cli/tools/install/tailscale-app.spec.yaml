@@ -1,0 +1,24 @@
+description: 'tailscale installs as the app, the cask tailscale-app, on a host only'
+fixture:
+    - ../__fixtures__/stubs/
+    - ./__fixtures__/tailscale-app/
+env: daemon
+runs:
+    - command: 'tools --json | /usr/bin/jq -c ''.tools[] | select(.name == "tailscale") | [.method, .places, .use]'''
+      exit: 0
+      stdout: |
+          ["cask",["host"],"system"]
+    - command: 'tools install tailscale'
+      exit: 0
+      stdout: |
+          ●	tailscale
+      files:
+          .calls:
+              contains:
+                  - |-
+                    brew bundle install --no-upgrade --file=-
+                    cask "tailscale-app"
+    - command: '--version > /dev/null; STATION_MACHINE_KIND=linux "$STATION" tools --json | /usr/bin/jq -r ''[.tools[] | select(.name == "tailscale")] | length'''
+      exit: 0
+      stdout: |
+          0

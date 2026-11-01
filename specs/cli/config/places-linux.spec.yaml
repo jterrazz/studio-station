@@ -2,7 +2,7 @@ description: 'a linux VM lists only the config items placed on it: no headless i
 env:
     - STATION_MACHINE_KIND=linux
 runs:
-    - command: 'config --json | /usr/bin/jq -r ''[.items[].name | select(IN("power", "dns", "ssh-key", "sshd", "autologin", "tailnet-auth", "vm-join", "claude-token", "ghostty-dotfiles"))] | length'''
+    - command: 'config --json | /usr/bin/jq -r ''[.items[].name | select(IN("power", "dns", "ssh-key", "sshd", "autologin", "claude-token", "ghostty-dotfiles"))] | length'''
       exit: 0
       stdout: |
           0

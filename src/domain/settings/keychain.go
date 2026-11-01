@@ -9,10 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-var (
-	ErrNoKeychain = errors.New("kept secrets live only in a host's keychain")
-	errMultiline  = errors.New("a keychain value holds no newline")
-)
+var ErrNoKeychain = errors.New("kept secrets live only in a host's keychain")
 
 const (
 	service = "station"
@@ -48,49 +45,18 @@ func (k Keychain) Read(ctx context.Context, account string) (value string, found
 	return strings.TrimRight(out.Stdout, "\n"), true, nil
 }
 
-func (k Keychain) Write(ctx context.Context, account, value string) error {
+func (k Keychain) Remove(ctx context.Context, account string) (removed bool, err error) {
 	if k.off {
-		return ErrNoKeychain
-	}
-	line, err := addCommand(account, value)
-	if err != nil {
-		return &KeychainError{Account: account, Cause: err}
-	}
-	out, err := k.run.Output(ctx, system.Cmd{Name: "security", Args: []string{"-i"}, Stdin: line})
-	if err == nil && out.ExitCode != 0 {
-		err = errors.New(strings.TrimSpace(out.Stderr))
-	}
-	if err != nil {
-		return &KeychainError{Account: account, Cause: err}
-	}
-	return nil
-}
-
-func (k Keychain) Remove(ctx context.Context, account string) error {
-	if k.off {
-		return ErrNoKeychain
+		return false, ErrNoKeychain
 	}
 	out, err := k.run.Output(ctx, system.Cmd{Name: "security", Args: []string{"delete-generic-password", "-s", service, "-a", account}})
 	if err == nil && out.ExitCode != 0 && out.ExitCode != notFound {
 		err = errors.New(strings.TrimSpace(out.Stderr))
 	}
 	if err != nil {
-		return &KeychainError{Account: account, Cause: err}
+		return false, &KeychainError{Account: account, Cause: err}
 	}
-	return nil
-}
-
-// invariant: the value travels on security's stdin, in its interactive mode,
-// never in argv (where `ps` shows it) and never through a prompt.
-func addCommand(account, value string) (string, error) {
-	if strings.ContainsAny(account+value, "\n\r") {
-		return "", errMultiline
-	}
-	return "add-generic-password -U -s " + service + " -a " + quote(account) + " -w " + quote(value) + "\n", nil
-}
-
-func quote(s string) string {
-	return `"` + strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(s) + `"`
+	return out.ExitCode == 0, nil
 }
 
 type KeychainError struct {

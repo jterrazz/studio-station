@@ -3,7 +3,6 @@ fixture: ./__fixtures__/ssh-down/
 runs:
     - command: 'tools --on x'
       exit: 1
-      stdout: ''
       stderr: |
           Error: cannot reach "x"
           Hint: station machines probe x

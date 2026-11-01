@@ -15,10 +15,10 @@ type Deps struct {
 	Context string
 }
 
-func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
-	cmd := kit.Command(kit.Leaf[struct{}]{
+func Command(d Deps, env kit.Env) *cobra.Command {
+	return kit.Command(kit.Leaf[struct{}]{
 		Use:     "tailnet",
-		Short:   "This machine's tailnet node, its peers, and whether VMs can join",
+		Short:   "This host's node in the Tailscale app, its peers and what it serves",
 		Example: "  station tailnet\n  station tailnet --json",
 		Group:   "fleet",
 		Read:    func(*struct{}) bool { return true },
@@ -30,6 +30,4 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			return io.Answer(presenttailnet.Status(status, d.Context))
 		},
 	}, env)
-	cmd.AddCommand(children...)
-	return cmd
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 )
 
@@ -22,9 +21,10 @@ func setupCommand(env kit.Env, m machine) *cobra.Command {
 }
 
 func setupService(env kit.Env, m machine) *setup.Service {
-	registrar := fleetRegistrar{store: m.store, machines: m.machines(env.Interactive)}
-	daemon := tailnetDaemon{service: m.tailnet(env.Interactive)}
-	return setup.New(m.host, m.store, settings.NewKeychain(m.host.Run).On(m.kind), registrar, daemon, setup.Options{
+	fleet := m.machines(env.Interactive)
+	registrar := fleetRegistrar{store: m.store, machines: fleet}
+	installer := daemonInstaller{m: m, machines: fleet}
+	return setup.New(m.host, m.store, settings.NewKeychain(m.host.Run).On(m.kind), registrar, installer, setup.Options{
 		Here:  m.kind,
 		Paths: m.paths,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
@@ -96,13 +96,3 @@ func (r fleetRegistrar) Here() (string, bool) {
 }
 
 func (r fleetRegistrar) Register(name string) error { return r.machines.Init(name) }
-
-type tailnetDaemon struct{ service *tailnet.Service }
-
-func (d tailnetDaemon) Running(ctx context.Context) (bool, error) {
-	return d.service.DaemonRunning(ctx), nil
-}
-
-func (d tailnetDaemon) Stop(ctx context.Context) error { return d.service.StopDaemon(ctx) }
-
-func (d tailnetDaemon) Start(ctx context.Context) error { return d.service.StartDaemon(ctx) }

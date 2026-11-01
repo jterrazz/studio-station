@@ -7,10 +7,7 @@ import (
 
 type v1Document struct {
 	Remote struct {
-		Mode       string `json:"mode"`
-		AuthMethod string `json:"auth_method"`
-		Secret     string `json:"secret"`
-		Hostname   string `json:"hostname"`
+		Hostname string `json:"hostname"`
 	} `json:"remote"`
 	UserEmail string `json:"user_email"`
 	UserName  string `json:"user_name"`
@@ -21,23 +18,18 @@ type v1Document struct {
 	} `json:"machines"`
 }
 
-func ConvertV1(v1 []byte, user string) (s Settings, authKey string, err error) {
+func ConvertV1(v1 []byte, user string) (Settings, error) {
+	// invariant: the v1 tailnet mode and auth key are dropped: the Tailscale app
+	// logs in itself, and station keeps no tailnet secret.
 	var old v1Document
 	if err := json.Unmarshal(v1, &old); err != nil {
-		return Settings{}, "", &UnreadableError{Path: "config.json", Cause: err}
+		return Settings{}, &UnreadableError{Path: "config.json", Cause: err}
 	}
-	s = Defaults()
+	s := Defaults()
 	s.Here = old.Self
 	s.VMUser = user
 	s.UserEmail = old.UserEmail
 	s.UserName = old.UserName
-	if old.Remote.Mode == string(ModeAuto) {
-		s.Tailnet.Mode = ModeAuto
-	}
-	if old.Remote.AuthMethod == string(AuthAuthKey) {
-		s.Tailnet.AuthMethod = AuthAuthKey
-		authKey = old.Remote.Secret
-	}
 	for name, m := range old.Machines {
 		if s.Hosts == nil {
 			s.Hosts = map[string]Host{}
@@ -59,5 +51,5 @@ func ConvertV1(v1 []byte, user string) (s Settings, authKey string, err error) {
 			s.Hosts[s.Here] = Host{}
 		}
 	}
-	return s, authKey, nil
+	return s, nil
 }

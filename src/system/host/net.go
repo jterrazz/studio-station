@@ -26,14 +26,6 @@ func (n network) Get(ctx context.Context, url string, header map[string]string) 
 	return n.do(ctx, http.MethodGet, url, header, nil)
 }
 
-func (n network) Post(ctx context.Context, url string, header map[string]string, payload []byte) (status int, body []byte, err error) {
-	return n.do(ctx, http.MethodPost, url, header, payload)
-}
-
-func (n network) Delete(ctx context.Context, url string, header map[string]string) (status int, body []byte, err error) {
-	return n.do(ctx, http.MethodDelete, url, header, nil)
-}
-
 func (network) do(ctx context.Context, method, url string, header map[string]string, payload []byte) (status int, body []byte, err error) {
 	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(payload))
 	if err != nil {

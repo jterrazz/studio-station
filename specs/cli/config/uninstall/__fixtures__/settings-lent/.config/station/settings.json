@@ -1,8 +1,4 @@
 {
-  "tailnet": {
-    "mode": "userspace",
-    "auth_method": "login"
-  },
   "lend_list": [
     "session:a",
     "operator:claude:oauth-token"

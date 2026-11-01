@@ -1,0 +1,20 @@
+description: 'machines pipe refuses before any byte: an unknown name, a host, a VM'
+fixture:
+    - ../../__fixtures__/vms/
+    - ../__fixtures__/local-vm/
+runs:
+    - command: 'machines pipe nope'
+      exit: 2
+      stderr: |
+          Error: unknown machine "nope"
+          Hint: run station machines for the fleet
+    - command: 'machines pipe x'
+      exit: 2
+      stderr: |
+          Error: "x" is a host, not a VM
+          Hint: run station machines for the VMs
+    - command: 'machines pipe linux-1 --on x'
+      exit: 2
+      stderr: |
+          Error: --on does not apply to "machines pipe"
+          Hint: run it on x itself: ssh x

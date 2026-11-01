@@ -20,8 +20,13 @@ apt-get install -y libatomic1 git zsh curl ca-certificates build-essential gnupg
 
 curl -fsSL https://get.docker.com | sh
 usermod -aG docker "$VM_USER"
-curl -fsSL https://tailscale.com/install.sh | sh
 sudo -u "$VM_USER" bash -c 'curl -fsSL https://mise.run | sh'
+
+cat > /etc/ssh/sshd_config.d/60-station.conf <<'CONF'
+AllowTcpForwarding local
+ClientAliveInterval 15
+ClientAliveCountMax 4
+CONF
 
 install -m 0755 /tmp/station /usr/local/bin/station
 sudo -u "$VM_USER" -H /usr/local/bin/station setup

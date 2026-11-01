@@ -11,7 +11,7 @@ runs:
     - command: 'config --json | /usr/bin/jq -r ''[.items[].category] | unique | join(" ")'''
       exit: 0
       stdout: |
-          Editor Headless Network Security System Terminal
+          Editor Headless Security System Terminal
     - command: 'config --json | /usr/bin/jq -r ''.items[] | select(.name == "power") | .places | join(",")'''
       exit: 0
       stdout: |

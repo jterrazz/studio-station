@@ -1,14 +1,12 @@
 package tailnet
 
 import (
-	"strings"
+	"strconv"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/present"
 )
-
-const joinDocs = "docs/reference/machines.md#vm-join"
 
 type peerJSON struct {
 	Name   string   `json:"name"`
@@ -17,35 +15,38 @@ type peerJSON struct {
 	Tags   []string `json:"tags"`
 }
 
+type serveJSON struct {
+	Port    int    `json:"port"`
+	Path    string `json:"path"`
+	Target  string `json:"target"`
+	Station bool   `json:"station"`
+}
+
 type Object struct {
 	State        string `json:"state"`
 	Connected    bool   `json:"connected"`
 	BackendState string `json:"backend_state"`
-	Daemon       string `json:"daemon"`
 	Name         string `json:"name"`
+	DNSName      string `json:"dns_name"`
 	IP           string `json:"ip"`
-	KeepAwake    bool   `json:"keep_awake"`
-	Mode         string `json:"mode"`
-	AuthMethod   string `json:"auth_method"`
-	VMJoin       string `json:"vm_join"`
 }
 
 type statusJSON struct {
 	Schema string `json:"schema"`
 	Object
-	Peers []peerJSON `json:"peers"`
+	Peers []peerJSON  `json:"peers"`
+	Serve []serveJSON `json:"serve"`
 }
 
 func ObjectOf(s tailnet.Status) Object {
 	return Object{
-		State: string(s.State), Connected: s.Connected, BackendState: s.BackendState, Daemon: string(s.Daemon),
-		Name: s.Name, IP: s.IP, KeepAwake: s.KeepAwake, Mode: string(s.Mode), AuthMethod: string(s.AuthMethod),
-		VMJoin: string(s.VMJoin),
+		State: string(s.State), Connected: s.Connected, BackendState: s.BackendState,
+		Name: s.Name, DNSName: s.DNSName, IP: s.IP,
 	}
 }
 
 func Status(s tailnet.Status, context string) present.Answer {
-	body := statusJSON{Schema: "station.tailnet/v1", Object: ObjectOf(s), Peers: make([]peerJSON, 0, len(s.Peers))}
+	body := statusJSON{Schema: "station.tailnet/v1", Object: ObjectOf(s), Peers: make([]peerJSON, 0, len(s.Peers)), Serve: make([]serveJSON, 0, len(s.Serve))}
 	peers := make([]present.Row, 0, len(s.Peers))
 	for _, p := range s.Peers {
 		tags := p.Tags
@@ -60,20 +61,30 @@ func Status(s tailnet.Status, context string) present.Answer {
 		peers = append(peers, present.Row{Mark: mark, Cells: []present.Cell{
 			{Text: p.Name, Tone: present.Strong},
 			{Text: p.IP},
-			{Text: strings.Join(tags, " "), Tone: present.Muted},
+		}})
+	}
+	serve := make([]present.Row, 0, len(s.Serve))
+	for _, e := range s.Serve {
+		body.Serve = append(body.Serve, serveJSON{Port: e.Port, Path: e.Path, Target: e.Target, Station: e.Station})
+		owner := "not station's"
+		if e.Station {
+			owner = "station"
+		}
+		serve = append(serve, present.Row{Mark: present.MarkOK, Cells: []present.Cell{
+			{Text: "https " + strconv.Itoa(e.Port) + e.Path, Tone: present.Strong},
+			{Text: e.Target},
+			{Text: owner, Tone: present.Muted},
 		}})
 	}
 	blocks := []present.Block{present.Table{Rows: Rows(s)}}
 	if len(peers) > 0 {
 		blocks = append(blocks, present.Section{Title: "Peers", Blocks: []present.Block{present.Table{Rows: peers}}})
 	}
+	if len(serve) > 0 {
+		blocks = append(blocks, present.Section{Title: "Serve", Blocks: []present.Block{present.Table{Rows: serve}}})
+	}
 	return present.Answer{
-		Doc: present.Document{
-			Command: "station tailnet",
-			Context: context,
-			Blocks:  blocks,
-			Hints:   hints(s),
-		},
+		Doc:  present.Document{Command: "station tailnet", Context: context, Blocks: blocks, Hints: hints(s)},
 		JSON: body,
 	}
 }
@@ -81,7 +92,7 @@ func Status(s tailnet.Status, context string) present.Answer {
 func Rows(s tailnet.Status) []present.Row {
 	rows := []present.Row{{Mark: present.MarkOf(s.State), Cells: []present.Cell{
 		{Text: "tailnet", Tone: present.Strong},
-		{Text: daemonText(s)},
+		{Text: stateText(s)},
 		{Text: repair(s), Tone: present.Muted},
 	}}}
 	if s.Name != "" {
@@ -91,49 +102,35 @@ func Rows(s tailnet.Status) []present.Row {
 			{Text: s.IP, Tone: present.Muted},
 		}})
 	}
-	if s.Daemon == tailnet.Userspace && s.Connected {
-		mark, text := present.MarkOK, "active"
-		if !s.KeepAwake {
-			mark, text = present.MarkDegraded, "not active"
-		}
-		rows = append(rows, present.Row{Mark: mark, Cells: []present.Cell{{Text: "keep awake", Tone: present.Strong}, {Text: text}}})
-	}
-	rows = append(rows, present.Row{Mark: present.MarkOK, Cells: []present.Cell{
-		{Text: "login", Tone: present.Strong},
-		{Text: string(s.Mode) + " · " + string(s.AuthMethod)},
-	}}, vmJoinRow(s.VMJoin))
 	return rows
 }
 
-func vmJoinRow(state catalog.State) present.Row {
-	label := present.Cell{Text: "VM join", Tone: present.Strong}
-	switch state {
-	case catalog.StateOK:
-		return present.Row{Mark: present.MarkOK, Cells: []present.Cell{label, {Text: "a key was minted"}}}
-	case catalog.StateAbsent:
-		return present.Row{Mark: present.MarkAbsent, Cells: []present.Cell{label, {Text: "not set up"}, {Text: joinDocs, Tone: present.Muted}}}
-	case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown:
+func stateText(s tailnet.Status) string {
+	switch {
+	case s.State == catalog.StateAbsent:
+		return "not installed"
+	case s.BackendState == "":
+		return "the Tailscale app does not answer"
+	case s.DNSName != "":
+		return s.BackendState + " · " + s.DNSName
 	}
-	return present.Row{Mark: present.MarkDegraded, Cells: []present.Cell{label, {Text: "not verified"}}}
-}
-
-func daemonText(s tailnet.Status) string {
-	if s.BackendState == "" {
-		return string(s.Daemon) + " daemon is not running"
-	}
-	return s.BackendState + " (" + string(s.Daemon) + " daemon)"
+	return s.BackendState
 }
 
 func repair(s tailnet.Status) string {
-	if s.State == catalog.StateOK {
+	switch s.State {
+	case catalog.StateOK:
 		return ""
+	case catalog.StateAbsent:
+		return "station tools install tailscale"
+	case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown:
 	}
-	return "station tailnet up"
+	return "open the Tailscale app and log in"
 }
 
 func hints(s tailnet.Status) []string {
-	if s.State == catalog.StateOK {
-		return nil
+	if r := repair(s); r != "" {
+		return []string{r}
 	}
-	return []string{"station tailnet up"}
+	return nil
 }

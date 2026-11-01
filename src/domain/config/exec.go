@@ -102,13 +102,3 @@ func oneLineOrDash(s string) string {
 	}
 	return strings.Join(fields, " ")
 }
-
-// outside: a machine with no `security` binary keeps nothing, so a missing tool
-// reads as "not kept" rather than as a broken keychain.
-func (s *Service) kept(ctx context.Context, account string) (bool, error) {
-	_, found, err := s.kc.Read(ctx, account)
-	if errors.Is(err, system.ErrNotFound) {
-		return false, nil
-	}
-	return found, err
-}

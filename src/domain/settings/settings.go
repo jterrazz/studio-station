@@ -16,38 +16,27 @@ type Paths struct {
 	Roots                           Roots
 }
 
-type Mode string
-
-const (
-	ModeAuto      Mode = "auto"
-	ModeUserspace Mode = "userspace"
-)
-
-type AuthMethod string
-
-const (
-	AuthLogin   AuthMethod = "login"
-	AuthAuthKey AuthMethod = "authkey"
-)
-
 type Host struct {
 	User string `json:"user,omitempty"`
 	Key  string `json:"key,omitempty"`
 }
 
-type Tailnet struct {
-	Mode       Mode       `json:"mode"`
-	AuthMethod AuthMethod `json:"auth_method"`
+type Services struct {
+	Range        string `json:"range,omitempty"`
+	MaxPerVM     int    `json:"max_per_vm,omitempty"`
+	IgnoredPorts []int  `json:"ignored_ports,omitempty"`
+	MinPort      int    `json:"min_port,omitempty"`
+	HTTPS        string `json:"https,omitempty"`
 }
 
 type Settings struct {
 	Here      string          `json:"here,omitempty"`
 	Hosts     map[string]Host `json:"hosts,omitempty"`
-	Tailnet   Tailnet         `json:"tailnet"`
 	VMUser    string          `json:"vm_user,omitempty"`
 	LendList  []string        `json:"lend_list,omitempty"`
 	UserEmail string          `json:"user_email,omitempty"`
 	UserName  string          `json:"user_name,omitempty"`
+	Services  *Services       `json:"services,omitempty"`
 }
 
 const (
@@ -71,7 +60,7 @@ func (v Settings) Name() string {
 }
 
 func Defaults() Settings {
-	return Settings{Tailnet: Tailnet{Mode: ModeUserspace, AuthMethod: AuthLogin}}
+	return Settings{}
 }
 
 type Store struct {
@@ -95,12 +84,6 @@ func (s Store) Load() (Settings, error) {
 	}
 	if err := json.Unmarshal(data, &v); err != nil {
 		return Defaults(), &UnreadableError{Path: s.path, Cause: err}
-	}
-	if v.Tailnet.Mode == "" {
-		v.Tailnet.Mode = ModeUserspace
-	}
-	if v.Tailnet.AuthMethod == "" {
-		v.Tailnet.AuthMethod = AuthLogin
 	}
 	return v, nil
 }

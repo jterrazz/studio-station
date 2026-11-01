@@ -46,6 +46,9 @@ func (s *Service) listings(ctx context.Context, list []catalog.Tool) map[catalog
 	needed := map[catalog.Method]bool{}
 	for _, t := range list {
 		needed[s.install(t).Method()] = true
+		if t.Supersedes != "" {
+			needed[catalog.MethodBrew] = true
+		}
 	}
 	var mu sync.Mutex
 	out := map[catalog.Method]listing{}
@@ -115,6 +118,10 @@ func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catal
 	}
 	if version, ok := l.keys[i.Key()]; ok {
 		r.State, r.Version, r.Managed = catalog.StateOK, version, true
+		return r
+	}
+	if _, ok := listings[catalog.MethodBrew].keys[t.Supersedes]; ok && t.Supersedes != "" && !s.bundled(t) {
+		r.State, r.Detail = catalog.StateDegraded, "formula installed, app absent"
 		return r
 	}
 	if s.present(ctx, t, &r) {

@@ -29,6 +29,7 @@ type Tool struct {
 	Description string
 	Category    Category
 	Replaces    string
+	Supersedes  string
 	Installs    []Place
 	Provides    []string
 	Bundle      string

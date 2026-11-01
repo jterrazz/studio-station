@@ -109,7 +109,7 @@ var coreTools = []Tool{
 
 	{Name: "jump-desktop-connect", Description: "Remote GUI recovery host service for headless Macs", Category: CategoryRemoteAccess, Installs: HostOnly(Cask("jump-desktop-connect")), Bundle: "Jump Desktop Connect"},
 	{Name: "jump-desktop", Description: "Jump Desktop viewer/client app", Category: CategoryRemoteAccess, Installs: HostOnly(Cask("jump-desktop")), Bundle: "Jump Desktop"},
-	{Name: "tailscale", Description: "Mesh VPN built on WireGuard: every machine of the fleet is a node", Category: CategoryRemoteAccess, Installs: Everywhere(Brew("tailscale"), Script("https://tailscale.com/install.sh")), Provides: []string{"tailscale", "tailscaled"}, Bundle: "Tailscale", Storage: storageTailscale, System: true},
+	{Name: "tailscale", Description: "The Tailscale app: each host is a node, and station reads it", Category: CategoryRemoteAccess, Installs: HostOnly(Cask("tailscale-app")), Supersedes: "tailscale", Provides: []string{"tailscale"}, Bundle: "Tailscale", Storage: storageTailscale, System: true},
 
 	{Name: "bitwarden", Description: "Password manager", Category: CategorySecurityApps, Installs: HostOnly(Cask("bitwarden")), Bundle: "Bitwarden"},
 	{Name: "adguard", Description: "Ad blocker for Safari", Category: CategorySecurityApps, Installs: HostOnly(Mas("AdGuard for Safari", 1440147259)), Bundle: "AdGuard for Safari"},

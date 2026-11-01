@@ -1,4 +1,4 @@
-description: 'setup moves the real ~/.studio: settings, auth key into the keychain, dns and the daemon identity'
+description: 'setup moves ~/.studio: settings and dns; the userspace tailscaled is retired, not moved'
 fixture:
     - ./__fixtures__/stubs/
     - ./__fixtures__/v1-studio/
@@ -11,8 +11,10 @@ runs:
           ●	name	base
           ●	zshrc
           ●	layout	moved to the XDG folders
+          ●	layout	userspace tailscaled retired; its node "base" stays at https://login.tailscale.com/admin/machines until you remove it
           ●	relocate	go env, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ○	daemon	not needed until tart is installed
       files:
           .config/station/settings.json:
               equals: |
@@ -25,25 +27,15 @@ runs:
                         "key": "~/.ssh/id_mini"
                       }
                     },
-                    "tailnet": {
-                      "mode": "userspace",
-                      "auth_method": "authkey"
-                    },
                     "vm_user": "tester",
                     "user_email": "owner@example.com"
                   }
           .calls:
               equals: |
-                  security -i
-                  add-generic-password -U -s station -a "tailnet-authkey" -w "fake-node-authkey-123"
-          .local/state/station/tailscaled/tailscaled.state:
-              equals: |
-                  NODE-IDENTITY-1f2e3d
-          .local/state/station/tailscaled/tailscaled.log:
-              equals: |
-                  daemon log
-          .local/state/station/tailscaled/tailscaled.pid: absent
-          .local/state/station/tailscaled/tailscaled.sock: absent
+                  security delete-generic-password -s station -a vm-join-id
+                  security delete-generic-password -s station -a vm-join-secret
+                  security delete-generic-password -s station -a tailnet-authkey
+          .local/state/station/tailscaled: absent
           .local/state/station/dns/quad9-dns.mobileconfig: exists
           .studio: absent
     - command: 'setup'
@@ -51,12 +43,9 @@ runs:
       stdout: |
           ●	name	base
           ●	zshrc
-          ●	layout	nothing to move
+          ●	layout	nothing to retire
           ●	relocate	nothing to do
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ○	daemon	not needed until tart is installed
       files:
-          .calls:
-              equals: |
-                  security -i
-                  add-generic-password -U -s station -a "tailnet-authkey" -w "fake-node-authkey-123"
           .studio: absent

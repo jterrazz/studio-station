@@ -6,9 +6,5 @@
       "user": "u"
     }
   },
-  "tailnet": {
-    "mode": "userspace",
-    "auth_method": "login"
-  },
   "vm_user": "vmu"
 }

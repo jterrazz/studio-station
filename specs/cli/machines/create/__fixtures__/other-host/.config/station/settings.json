@@ -2,11 +2,9 @@
   "here": "x",
   "hosts": {
     "x": {},
-    "y": { "user": "u" }
-  },
-  "tailnet": {
-    "mode": "userspace",
-    "auth_method": "login"
+    "y": {
+      "user": "u"
+    }
   },
   "vm_user": "vmu"
 }

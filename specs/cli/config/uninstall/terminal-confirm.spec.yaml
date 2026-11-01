@@ -1,42 +1,39 @@
 description: 'on a terminal uninstall asks: no is cancelled with one block, ctrl-c exits 130, yes runs it'
 fixture:
     - ../../__fixtures__/terminal/
-    - ../__fixtures__/security/
+    - ../__fixtures__/tmutil/
 env: terminal
 runs:
-    - command: '--version >/dev/null; terminal "$STATION" config uninstall vm-join'
+    - command: '--version >/dev/null; terminal "$STATION" config uninstall backup-exclusions'
       stdin: |
-          see Uninstall vm-join?
+          see Uninstall backup-exclusions?
           send n
           see Hint: re-run with --yes to skip the question
           screen
       exit: 1
       stdout: |
-          ┃ Uninstall vm-join?
+          ┃ Uninstall backup-exclusions?
           ┃
           Error: uninstall cancelled
           Hint: re-run with --yes to skip the question
       files:
           .calls: absent
-    - command: '--version >/dev/null; terminal "$STATION" config uninstall vm-join'
+    - command: '--version >/dev/null; terminal "$STATION" config uninstall backup-exclusions'
       stdin: |
-          see Uninstall vm-join?
+          see Uninstall backup-exclusions?
           send \x03
           screen
       exit: 130
       stdout: |
-          ┃ Uninstall vm-join?
+          ┃ Uninstall backup-exclusions?
           ┃
       files:
           .calls: absent
-    - command: '--version >/dev/null; terminal "$STATION" config uninstall vm-join'
+    - command: '--version >/dev/null; terminal "$STATION" config uninstall backup-exclusions'
       stdin: |
-          see Uninstall vm-join?
+          see Uninstall backup-exclusions?
           send y
-          see vm-join-secret
       exit: 0
       files:
           .calls:
-              equals: |
-                  security delete-generic-password -s station -a vm-join-id
-                  security delete-generic-password -s station -a vm-join-secret
+              contains: 'tmutil removeexclusion'

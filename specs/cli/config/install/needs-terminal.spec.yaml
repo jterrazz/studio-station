@@ -4,20 +4,6 @@ fixture:
     - ../__fixtures__/studio/
     - ../__fixtures__/git/
 runs:
-    - command: 'config install tailnet-auth </dev/null'
-      exit: 2
-      stderr: |
-          Error: tailnet-auth needs a terminal
-          Hint: run it on a terminal
-      files:
-          .calls: absent
-    - command: 'config install vm-join </dev/null'
-      exit: 2
-      stderr: |
-          Error: vm-join needs a terminal
-          Hint: run it on a terminal
-      files:
-          .calls: absent
     - command: 'config install autologin </dev/null'
       exit: 2
       stderr: |
@@ -39,10 +25,10 @@ runs:
           Hint: run it on a terminal
       files:
           .calls: absent
-    - command: 'config install hushlogin vm-join </dev/null'
+    - command: 'config install hushlogin git-signing </dev/null'
       exit: 2
       stderr: |
-          Error: vm-join needs a terminal
+          Error: git-signing needs a terminal
           Hint: run it on a terminal
       files:
           .hushlogin: absent

@@ -15,7 +15,7 @@ runs:
       files:
           .local/state/station/vms/a.json: { equals: "{\"lifetime\":\"lasting\"}\n" }
           .local/state/station/images/key: { equals: "a private key\n" }
-          .local/state/station/tailscaled/tailscaled.state: { equals: "node identity\n" }
+          .local/state/station/leases.json: { equals: "{\"schema\":\"station.leases/v1\",\"leases\":[]}\n" }
           .local/state/station/known_hosts/x: { equals: "x ssh-ed25519 AAAA\n" }
           .config/gh/hosts.yml: { equals: "github.com:\n    user: jterrazz\n" }
           .npmrc: { equals: "registry=https://r.example/\n" }

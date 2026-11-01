@@ -31,10 +31,7 @@ runs:
           ●	power	Always-on power policy (no sleep, autorestart, wake)	always-on policy applied
           ○	lock-after-login	A LaunchAgent that locks the screen ~20s after auto-login	station config install lock-after-login
           ●	sshd	macOS Remote Login (sshd)	Remote Login on
-          # Network	1 ●	1 ○
-          ●	tailnet-auth	How this host joins the tailnet: the daemon mode and the login	userspace · login
-          ○	vm-join	The OAuth client that mints a tailnet key for each new VM	station config install vm-join
-    - command: 'config --json | /usr/bin/jq -r ''.items[] | select(.name | IN("hushlogin", "git-signing", "tailnet-auth", "vm-join", "dock-reset", "power", "sshd", "github-login")) | "\(.name):\(.state):\(.detail)"'''
+    - command: 'config --json | /usr/bin/jq -r ''.items[] | select(.name | IN("hushlogin", "git-signing", "dock-reset", "power", "sshd", "github-login")) | "\(.name):\(.state):\(.detail)"'''
       exit: 0
       stdout: |
           hushlogin:ok:~/.hushlogin
@@ -43,5 +40,3 @@ runs:
           dock-reset:absent:run once
           power:ok:always-on policy applied
           sshd:ok:Remote Login on
-          tailnet-auth:ok:userspace · login
-          vm-join:absent:

@@ -28,21 +28,21 @@ runs:
       stdout: |4
            station   Status · Tools · Config · Storage │ Fleet                   x · host
            ──────────────────────────────────────────────────────────────────────────────
-           - x                                                                        2 ●
-             ● x               host                                               online…
-             ● t               linux                       x           temporary  runnin…
+           - x                                                                   1 ●  1 ◐
+             ◐ x        host                                                     online …
+             ● t        linux                              x          temporary  running…
            - Images                                                                   1 ●
-             ● linux           2026.11.07                  20.0 GB     1 VM
-           - Secrets                                                                  2 ●
+             ● linux    2026.11.07                         20.0 GB    1 VM
+           - Secrets
                none
-             ● vm-join-id      never leaves this host
-             ● vm-join-secret  never leaves this host
-           - Tailnet                                                             3 ●  2 ◐
-             ● tailnet         Running (userspace daemon)
-             ● node            x                           100.64.0.1
-             ◐ keep awake      not active
-             ● login           userspace · login
-             ◐ VM join         not verified
+               none
+           - Tailnet                                                                  2 ●
+             ● tailnet  Running · macbook.tail1234.ts.net
+             ● node     x                                  192.0.2.1
+
+
+
+
            ┌────────────────────────────────────────────────────────────┐
            │ ┃ Restart x?                                               │
            │ ┃ type x to confirm                                        │
