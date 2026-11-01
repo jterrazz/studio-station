@@ -128,7 +128,7 @@ say "-- $vm at $ip"
 
 env_prefix=""
 [ "$kind" = macos ] && env_prefix="export STATION_MACHINE_KIND=host;"
-on() { ssh "${ssh_opts[@]}" -o BatchMode=yes -i "$ssh_key" "$user@$1" "$env_prefix $2"; }
+on() { ssh -n "${ssh_opts[@]}" -o BatchMode=yes -i "$ssh_key" "$user@$1" "$env_prefix $2"; }
 in_vm() { on "$ip" "$1"; }
 
 if [ "$kind" = macos ]; then
@@ -198,7 +198,7 @@ step "zsh -c" "$mise_path; zsh -c 'go env GOPATH'"
 step "zsh -ic" "zsh -ic 'command -v station && command -v mise && go env GOPATH && mise --version'"
 step "IDE: go env" "$mise_path; d=\$(mise where go)/bin; env -i HOME=\$HOME PATH=\$d go env GOPATH"
 step "IDE: gopls version" "$mise_path; d=\$(mise where go)/bin; g=\$(go env GOBIN); g=\${g:-\$(go env GOPATH)/bin}; env -i HOME=\$HOME PATH=\$g:\$d gopls version"
-step "IDE: npm config get cache" "$mise_path; d=\$(mise where node)/bin; env -i HOME=\$HOME PATH=\$d npm config get cache"
+step "IDE: npm config get cache" "$mise_path; d=\$(mise where node)/bin; env -i HOME=\$HOME PATH=\$d:/usr/bin:/bin npm config get cache"
 
 if [ "$kind" = macos ]; then
   if in_vm 'test -e ~/.bun'; then
@@ -215,6 +215,7 @@ in_vm "$station storage --json" > "$work/storage.json" || fail "storage --json"
   jq -r '.rows[].paths[].path | select(startswith("~/")) | ltrimstr("~/")' "$work/storage.json"
   sed -n 's/^| `~\/\([^`]*\)`.*/\1/p' "$repo/docs/reference/footprint.md"
   grep -v '^#' "$suite/$kind/os-noise.txt"
+  grep -v '^#' "$suite/suite-made.txt"
 } | grep -v '^$' | LC_ALL=C sort -u > "$work/allowed.txt"
 unmatched=0
 prev="$work/0-before.txt"
