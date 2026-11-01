@@ -22,6 +22,14 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Example: "  station tools\n  station tools --json",
 		Group:   "here",
 		Read:    func(*Input) bool { return true },
+		Entry: kit.Entry("station tools install", func() []string {
+			placed := d.Tools.Placed()
+			out := make([]string, 0, len(placed))
+			for _, t := range placed {
+				out = append(out, t.Name)
+			}
+			return out
+		}),
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
 			reports, err := d.Tools.Inventory(ctx)
 			if err != nil {

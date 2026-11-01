@@ -1,0 +1,12 @@
+description: 'a word naming a catalogue tool hints the install verb; any other word hints the help'
+runs:
+    - command: 'tools jq'
+      exit: 2
+      stderr: |
+          Error: unknown command "jq" for "station tools"
+          Hint: station tools install jq
+    - command: 'tools nope'
+      exit: 2
+      stderr: |
+          Error: unknown command "nope" for "station tools"
+          Hint: run station tools --help

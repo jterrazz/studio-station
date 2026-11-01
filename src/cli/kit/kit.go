@@ -59,6 +59,7 @@ type Leaf[I any] struct {
 	Confirm             func(in *I) string
 	Ask                 func(in *I) (bool, error)
 	Complete            func(args []string, toComplete string) []string
+	Entry               func(word string) string
 	Run                 func(ctx context.Context, in *I, io IO) error
 }
 
@@ -81,7 +82,13 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 	}
 	cmd.Args = func(c *cobra.Command, a []string) error {
 		if err := args(c, a); err != nil {
-			return fail.Usage(err.Error(), helpHint(c))
+			hint := helpHint(c)
+			if l.Entry != nil && len(a) > 0 {
+				if h := l.Entry(a[0]); h != "" {
+					hint = h
+				}
+			}
+			return fail.Usage(err.Error(), hint)
 		}
 		return nil
 	}
@@ -202,6 +209,17 @@ func Group(use, short, groupID string, env Env, children ...*cobra.Command) *cob
 		return fail.Usage("unknown command \""+args[0]+"\" for \""+c.CommandPath()+"\"", hint)
 	}
 	return cmd
+}
+
+func Entry(verb string, names func() []string) func(string) string {
+	return func(word string) string {
+		for _, n := range names() {
+			if n == word {
+				return verb + " " + word
+			}
+		}
+		return ""
+	}
 }
 
 func Menu(env Env, cmd *cobra.Command) error {

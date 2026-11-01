@@ -1,0 +1,17 @@
+description: 'a word naming a config item hints the install verb; any other word hints the help'
+runs:
+    - command: 'config github-login'
+      exit: 2
+      stderr: |
+          Error: unknown command "github-login" for "station config"
+          Hint: station config install github-login
+    - command: 'config vm-join'
+      exit: 2
+      stderr: |
+          Error: unknown command "vm-join" for "station config"
+          Hint: run station config --help
+    - command: 'config nope'
+      exit: 2
+      stderr: |
+          Error: unknown command "nope" for "station config"
+          Hint: run station config --help

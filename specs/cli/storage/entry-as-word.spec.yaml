@@ -1,0 +1,12 @@
+description: 'a word naming a storage row hints the clean verb; any other word hints the help'
+runs:
+    - command: 'storage go'
+      exit: 2
+      stderr: |
+          Error: unknown command "go" for "station storage"
+          Hint: station storage clean go
+    - command: 'storage nope'
+      exit: 2
+      stderr: |
+          Error: unknown command "nope" for "station storage"
+          Hint: run station storage --help

@@ -24,6 +24,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Example: "  station storage\n  station storage --json",
 		Group:   "here",
 		Read:    func(*Input) bool { return true },
+		Entry:   kit.Entry("station storage clean", d.Storage.Names),
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
 			report, err := d.Storage.List(ctx)
 			if err != nil {
