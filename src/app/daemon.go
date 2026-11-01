@@ -140,6 +140,23 @@ func (i daemonInstaller) launchctl(ctx context.Context, args ...string) (system.
 	return i.m.host.Run.Output(ctx, system.Cmd{Name: "launchctl", Args: args})
 }
 
+// invariant: a launchctl call that exits non-zero failed: a daemon launchd never
+// loaded or never started is no "running" row.
+func (i daemonInstaller) mustLaunchctl(ctx context.Context, args ...string) error {
+	out, err := i.launchctl(ctx, args...)
+	if err != nil {
+		return err
+	}
+	if out.ExitCode == 0 {
+		return nil
+	}
+	message := "launchctl " + args[0] + " exited " + strconv.Itoa(out.ExitCode)
+	if first, _, _ := strings.Cut(strings.TrimSpace(out.Stderr), "\n"); first != "" {
+		message += ": " + first
+	}
+	return errors.New(message)
+}
+
 // invariant: setup installs ONE daemon per host, after migrating the round-3
 // per-VM agents; it restarts the daemon only when its plist changed or it runs
 // another version, and the VMs survive that restart.
@@ -174,15 +191,19 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 	target := domain + "/" + daemon.Label
 	version := Version()
 	if out, err := i.launchctl(ctx, "print", target); err != nil || out.ExitCode != 0 {
-		if _, err := i.launchctl(ctx, "bootstrap", domain, file); err != nil {
+		if err := i.mustLaunchctl(ctx, "bootstrap", domain, file); err != nil {
 			return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
 		}
-		_, _ = i.launchctl(ctx, "kickstart", target)
+		if err := i.mustLaunchctl(ctx, "kickstart", target); err != nil {
+			return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
+		}
 		return setup.Step{Name: step, State: catalog.StateOK, Detail: "running " + version, Changed: true}, nil
 	}
 	running, err := i.m.hostDaemon().c.Ping(ctx)
 	if changed || (err == nil && running.Version != version) {
-		_, _ = i.launchctl(ctx, "kickstart", "-k", target)
+		if kickErr := i.mustLaunchctl(ctx, "kickstart", "-k", target); kickErr != nil {
+			return setup.Step{Name: step, State: catalog.StateBroken, Detail: kickErr.Error()}, &setup.StepFailedError{Step: step, Cause: kickErr}
+		}
 		detail := "restarted"
 		if err == nil && running.Version != version {
 			detail += " (" + running.Version + " → " + version + ")"

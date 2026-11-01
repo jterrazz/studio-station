@@ -1,0 +1,21 @@
+description: 'a daemon launchd refuses to load is a failed step, never a running row'
+fixture:
+    - ../__fixtures__/vms/
+    - ./__fixtures__/launchctl-fails-bootstrap/
+runs:
+    - command: 'setup </dev/null'
+      exit: 1
+      stdout: |
+          ●	name	x
+          ●	zshrc
+          ●	layout	nothing to retire
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tailscale: run station setup on a terminal
+          ✗	daemon	launchctl bootstrap exited 5: Bootstrap failed: 5: Input/output error
+      stderr: |
+          Error: setup step daemon: launchctl bootstrap exited 5: Bootstrap failed: 5: Input/output error
+          Hint: fix it, then run station setup again: it resumes
+    - command: '--version >/dev/null; /usr/bin/grep -c "launchctl kickstart" .calls || true'
+      exit: 0
+      stdout: |
+          0
