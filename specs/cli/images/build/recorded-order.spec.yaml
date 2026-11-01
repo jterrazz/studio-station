@@ -31,6 +31,7 @@ runs:
                   - 'pkill -KILL -u admin'
                   - 'userdel --remove admin'
                   - 'systemctl --no-block poweroff'
+          .local/state/station/consoles/station-build-linux: absent
           .runs:
               contains: 'tart run --no-graphics --no-audio --serial-path {{workdir}}/.local/state/station/consoles/station-build-linux station-build-linux'
     - command: '--version > /dev/null; /usr/bin/awk ''/^tart pull/{p=NR} /^tart clone/{c=NR} /^scp/{s=NR} / admin@/{a=NR} / dev@/{d=NR} /^tart stop/{t=NR} /^tart rename/{r=NR} END{print (p<c && c<s && s<a && a<d && d<t && t<r) ? "ordered" : "disordered"}'' .calls'

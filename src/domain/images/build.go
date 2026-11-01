@@ -119,6 +119,8 @@ type session struct {
 
 func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string, progress func(Step)) (Record, error) {
 	vm := buildPrefix + img.Name
+	// invariant: the console only serves the run of this build, so no build leaves it behind.
+	defer func() { _ = s.h.FS.Remove(s.consolePath(img.Name)) }()
 	failed := func(step string, cause error) (Record, error) {
 		// invariant: a failed build leaves no VM behind; the cleanup survives a cancelled ctx.
 		clean := context.WithoutCancel(ctx)
@@ -221,8 +223,12 @@ func (s *Service) dropLeftover(ctx context.Context, vm string) error {
 	return nil
 }
 
+func (s *Service) consolePath(image string) string {
+	return path.Join(s.o.Paths.State, "consoles", buildPrefix+image)
+}
+
 func (s *Service) boot(vm, image string) error {
-	console := path.Join(s.o.Paths.State, "consoles", buildPrefix+image)
+	console := s.consolePath(image)
 	logs := path.Join(s.o.Paths.State, "logs")
 	if err := s.h.FS.MkdirAll(path.Dir(console), 0o700); err != nil {
 		return err

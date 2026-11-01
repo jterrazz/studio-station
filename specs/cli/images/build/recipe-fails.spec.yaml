@@ -12,6 +12,7 @@ runs:
       files:
           .calls:
               contains: 'tart delete station-build-linux'
+          .local/state/station/consoles/station-build-linux: absent
     - command: '--version > /dev/null; /bin/ls .local/state/station/images'
       exit: 0
       stdout: |
