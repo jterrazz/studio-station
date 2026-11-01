@@ -12,9 +12,9 @@ func TestAllocateNameSkipsEveryHeldName(t *testing.T) {
 		{name: "a host named like a VM holds its name", held: []string{"x", "linux-1"}, want: "linux-2"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			held := map[string]bool{}
+			held := map[string]claim{}
 			for _, r := range c.held {
-				held[r] = true
+				held[r] = claimVM
 			}
 			if got := allocateName("linux", held); got != c.want {
 				t.Errorf("allocateName = %q, want %q", got, c.want)

@@ -173,9 +173,6 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if _, _, err := s.img.Latest(ctx, r.Image); err != nil {
 		return r, err
 	}
-	if err := s.daemonUp(ctx); err != nil {
-		return r, err
-	}
 	held, err := s.claims(ctx)
 	if err != nil {
 		return r, err
@@ -184,7 +181,10 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	case r.Name == "":
 		r.Name = allocateName(r.Image, held)
 	case !nameFree(r.Name, held):
-		return r, &NameTakenError{Name: r.Name, VM: true}
+		return r, &NameTakenError{Name: r.Name, VM: held[r.Name] == claimVM, Host: held[r.Name] == claimHost}
+	}
+	if err := s.daemonUp(ctx); err != nil {
+		return r, err
 	}
 	if r.Resources.CPUs == 0 {
 		r.Resources.CPUs = img.Defaults.CPUs
@@ -214,16 +214,16 @@ func (s *Service) daemonUp(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) claims(ctx context.Context) (map[string]bool, error) {
+func (s *Service) claims(ctx context.Context) (map[string]claim, error) {
 	fleet, err := s.Fleet(ctx, false)
 	if err != nil {
 		return nil, err
 	}
-	held := map[string]bool{}
+	held := map[string]claim{}
 	for _, h := range fleet.Hosts {
-		held[h.Name] = true
+		held[h.Name] = claimHost
 		for _, vm := range h.VMs {
-			held[vm.Name] = true
+			held[vm.Name] = claimVM
 		}
 	}
 	cfg, err := s.store.Load()
@@ -231,7 +231,7 @@ func (s *Service) claims(ctx context.Context) (map[string]bool, error) {
 		return nil, err
 	}
 	for name := range cfg.Hosts {
-		held[name] = true
+		held[name] = claimHost
 	}
 	return held, nil
 }

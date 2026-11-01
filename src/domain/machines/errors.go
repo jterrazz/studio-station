@@ -23,9 +23,13 @@ func (e *OnlyOnHostError) Error() string {
 type NameTakenError struct {
 	Name string
 	VM   bool
+	Host bool
 }
 
 func (e *NameTakenError) Error() string {
+	if e.Host {
+		return "\"" + e.Name + "\" already names a host"
+	}
 	if e.VM {
 		return "\"" + e.Name + "\" already names a VM"
 	}

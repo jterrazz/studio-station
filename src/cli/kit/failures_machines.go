@@ -63,7 +63,7 @@ func notAHostHint(e *machines.NotAHostError) string {
 }
 
 func takenHint(e *machines.NameTakenError) string {
-	if e.VM {
+	if e.VM || e.Host {
 		return "pick another name"
 	}
 	return "station machines forget " + e.Name + " first, to change it"

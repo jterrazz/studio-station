@@ -1,7 +1,8 @@
-description: 'a name is lowercase letters, digits and "-", and one an online peer holds is refused'
+description: 'a malformed name, a host''s name and a name a VM record holds are refused before the daemon'
 fixture:
     - ../../__fixtures__/vms/
-    - ./__fixtures__/online-peer/
+    - ./__fixtures__/other-host/
+env: daemon
 runs:
     - command: 'machines create --lifetime temporary --name Bad_Name'
       exit: 2
@@ -10,8 +11,25 @@ runs:
           Hint: use lowercase letters, digits and "-", 1 to 40 characters
       files:
           .calls: absent
-    - command: 'machines create --lifetime temporary --name linux-1'
-      exit: 1
+    - command: 'machines create --lifetime temporary --name x'
+      exit: 2
       stderr: |
-          Error: the station daemon is not running
-          Hint: station setup
+          Error: "x" already names a host
+          Hint: pick another name
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"x": {}/"x": {}, "y": {}/'' .config/station/settings.json; "$STATION" machines create --lifetime temporary --name y'
+      exit: 2
+      stderr: |
+          Error: "y" already names a host
+          Hint: pick another name
+    - command: 'machines create --lifetime temporary --name linux-1'
+      exit: 2
+      stderr: |
+          Error: "linux-1" already names a VM
+          Hint: pick another name
+      files:
+          .calls:
+              contains: 'machines --here --json'
+    - command: '--version >/dev/null; /usr/bin/grep -c ''tart clone'' .calls'
+      exit: 1
+      stdout: |
+          0
