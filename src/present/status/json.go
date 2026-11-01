@@ -1,11 +1,13 @@
 package status
 
 import (
-	presentstorage "github.com/jterrazz/studio-station/src/present/storage"
+	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/status"
 	presentconfig "github.com/jterrazz/studio-station/src/present/config"
+	presentstorage "github.com/jterrazz/studio-station/src/present/storage"
 	presenttailnet "github.com/jterrazz/studio-station/src/present/tailnet"
 	presenttools "github.com/jterrazz/studio-station/src/present/tools"
 )
@@ -25,13 +27,20 @@ type snapshotJSON struct {
 	Setup       setupJSON                `json:"setup"`
 	Identity    []checkJSON              `json:"identity"`
 	Daemons     []checkJSON              `json:"daemons"`
-	Services    []checkJSON              `json:"services"`
+	Gateways    []checkJSON              `json:"gateways"`
 	Tailnet     presenttailnet.Object    `json:"tailnet"`
 }
 
 type stationJSON struct {
+	Version string     `json:"version"`
+	Commit  string     `json:"commit"`
+	Daemon  daemonJSON `json:"daemon"`
+}
+
+type daemonJSON struct {
+	State   string `json:"state"`
+	Running bool   `json:"running"`
 	Version string `json:"version"`
-	Commit  string `json:"commit"`
 }
 
 type machineJSON struct {
@@ -133,7 +142,7 @@ func jsonOf(s status.Snapshot) snapshotJSON {
 	body := snapshotJSON{
 		Schema:      schema,
 		GeneratedAt: s.GeneratedAt.UTC().Format(time.RFC3339),
-		Station:     stationJSON{Version: s.Station.Version, Commit: s.Station.Commit},
+		Station:     stationJSON{Version: s.Station.Version, Commit: s.Station.Commit, Daemon: daemonOf(s.Station.Daemon)},
 		Machine: machineJSON{
 			Kind: string(s.Machine.Kind), Hostname: s.Machine.Hostname, OS: s.Machine.OS,
 			Arch: s.Machine.Arch, User: s.Machine.User, Shell: s.Machine.Shell,
@@ -165,7 +174,7 @@ func jsonOf(s status.Snapshot) snapshotJSON {
 		Setup:    setupJSON{State: string(s.Setup.State), Steps: make([]stepJSON, 0, len(s.Setup.Steps))},
 		Identity: checks(s.Identity),
 		Daemons:  checks(s.Daemons),
-		Services: checks(s.Services),
+		Gateways: checks(s.Gateways),
 		Tailnet:  presenttailnet.ObjectOf(s.Tailnet),
 	}
 	if s.Machine.Registered {
@@ -210,4 +219,17 @@ func processes(in []status.Process) []processJSON {
 		out = append(out, processJSON{PID: p.PID, Name: p.Name, Value: p.Value})
 	}
 	return out
+}
+
+func daemonOf(c status.Check) daemonJSON {
+	d := daemonJSON{State: string(c.State), Running: c.State == catalog.StateOK || strings.HasPrefix(c.Value, "runs ")}
+	if d.State == "" {
+		d.State = string(catalog.StateAbsent)
+	}
+	if v, ok := strings.CutPrefix(c.Value, "running "); ok {
+		d.Version = v
+	} else if v, ok := strings.CutPrefix(c.Value, "runs "); ok {
+		d.Version, _, _ = strings.Cut(v, ",")
+	}
+	return d
 }

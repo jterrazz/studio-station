@@ -60,6 +60,10 @@ func (jsonRenderer) Render(w io.Writer, a present.Answer) error {
 type pipeRenderer struct{}
 
 func (pipeRenderer) Render(w io.Writer, a present.Answer) error {
+	if a.Piped != "" {
+		_, err := io.WriteString(w, a.Piped)
+		return err
+	}
 	var b strings.Builder
 	for _, block := range a.Doc.Blocks {
 		pipeBlock(&b, block)

@@ -10,7 +10,6 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
@@ -24,7 +23,7 @@ func fixed() status.Snapshot {
 	node := catalog.Tool{Name: "node", Category: catalog.CategoryRuntimes, Installs: catalog.Anywhere(catalog.Mise("node", "lts")), Provides: []string{"node", "npm", "npx"}}
 	return status.Snapshot{
 		GeneratedAt: time.Date(2026, 10, 31, 14, 0, 0, 0, time.UTC),
-		Station:     status.Station{Version: "v3.0.0", Commit: "abc1234"},
+		Station:     status.Station{Version: "v3.0.0", Commit: "abc1234", Daemon: status.Check{Name: "daemon", State: catalog.StateOK, Value: "running v3.0.0"}},
 		Machine: status.Machine{
 			Name: "macbook", Registered: true, Kind: catalog.Host, Hostname: "macbook",
 			OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh",
@@ -60,11 +59,10 @@ func fixed() status.Snapshot {
 		}},
 		Identity: []status.Check{{Name: "git-email", State: catalog.StateOK, Value: "admin@jterrazz.com"}},
 		Daemons:  []status.Check{{Name: "ai.jterrazz.x", State: catalog.StateOK, Value: "running · pid 12"}},
-		Services: []status.Check{{Name: "OpenClaw runtime", State: catalog.StateBroken, Value: "not running", Detail: "gateway process not found"}},
+		Gateways: []status.Check{{Name: "OpenClaw runtime", State: catalog.StateBroken, Value: "not running", Detail: "gateway process not found"}},
 		Tailnet: tailnet.Status{
-			State: catalog.StateOK, Connected: true, BackendState: "Running", Daemon: tailnet.Userspace,
-			Name: "macbook", IP: "100.64.0.1", KeepAwake: true, Mode: settings.ModeUserspace,
-			AuthMethod: settings.AuthLogin, VMJoin: catalog.StateOK,
+			State: catalog.StateOK, Connected: true, BackendState: "Running",
+			Name: "macbook", DNSName: "macbook.tail1234.ts.net", IP: "100.64.0.1",
 		},
 	}
 }

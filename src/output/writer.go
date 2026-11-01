@@ -65,6 +65,10 @@ func (w *Writer) Failure(err error) {
 	_, _ = io.WriteString(w.colored(w.stderr, c), block)
 }
 
+func (w *Writer) Note(text string) {
+	_, _ = io.WriteString(w.stderr.W, text+"\n")
+}
+
 func (w *Writer) Menu(render func(io.Writer)) {
 	render(w.stderr.W)
 }

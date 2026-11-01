@@ -24,8 +24,8 @@ func Snapshot(s status.Snapshot, context string) present.Answer {
 	if len(s.Daemons) > 0 {
 		blocks = append(blocks, section("Daemons", checkRows(s.Daemons)))
 	}
-	if len(s.Services) > 0 {
-		blocks = append(blocks, section("Services", checkRows(s.Services)))
+	if len(s.Gateways) > 0 {
+		blocks = append(blocks, section("Gateways", checkRows(s.Gateways)))
 	}
 	blocks = append(blocks,
 		present.Section{Title: "Tools", Counts: presenttools.Counts(s.Tools), Blocks: []present.Block{present.Table{Rows: presenttools.Rows(notOK(s.Tools))}}},
@@ -107,7 +107,11 @@ func machineRows(s status.Snapshot) []present.Row {
 		}
 		rows = append(rows, row(present.MarkOK, "uptime", s.System.Uptime, detail))
 	}
-	return append(rows, setupRow(s.Setup))
+	rows = append(rows, setupRow(s.Setup))
+	if d := s.Station.Daemon; d.Value != "" {
+		rows = append(rows, row(present.MarkOf(d.State), "daemon", d.Value, d.Detail))
+	}
+	return rows
 }
 
 func setupRow(s status.Setup) present.Row {

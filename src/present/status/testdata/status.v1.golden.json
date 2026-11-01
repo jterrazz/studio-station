@@ -3,7 +3,12 @@
   "generated_at": "2026-10-31T14:00:00Z",
   "station": {
     "version": "v3.0.0",
-    "commit": "abc1234"
+    "commit": "abc1234",
+    "daemon": {
+      "state": "ok",
+      "running": true,
+      "version": "v3.0.0"
+    }
   },
   "machine": {
     "name": "macbook",
@@ -171,7 +176,7 @@
       "detail": ""
     }
   ],
-  "services": [
+  "gateways": [
     {
       "name": "OpenClaw runtime",
       "state": "broken",
@@ -183,12 +188,8 @@
     "state": "ok",
     "connected": true,
     "backend_state": "Running",
-    "daemon": "userspace",
     "name": "macbook",
-    "ip": "100.64.0.1",
-    "keep_awake": true,
-    "mode": "userspace",
-    "auth_method": "login",
-    "vm_join": "ok"
+    "dns_name": "macbook.tail1234.ts.net",
+    "ip": "100.64.0.1"
   }
 }

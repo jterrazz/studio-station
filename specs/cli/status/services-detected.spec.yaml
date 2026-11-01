@@ -4,11 +4,11 @@ fixture:
     - ./__fixtures__/gateway/
     - ./__fixtures__/agents/
 runs:
-    - command: 'status --json | /usr/bin/jq -r ''.services | length'''
+    - command: 'status --json | /usr/bin/jq -r ''.gateways | length'''
       exit: 0
       stdout: |
           7
-    - command: 'status --json | /usr/bin/jq -r ''.services[] | [.name, .state, .value] | join("|")'''
+    - command: 'status --json | /usr/bin/jq -r ''.gateways[] | [.name, .state, .value] | join("|")'''
       exit: 0
       stdout: |
           OpenClaw runtime|degraded|running
@@ -18,12 +18,12 @@ runs:
           OpenClaw BlueBubbles|absent|not reported
           Hermes runtime|degraded|running
           Hermes config|ok|hermes-4
-    - command: 'status --json | /usr/bin/jq -r ''.services[] | select(.name | endswith("runtime")) | .detail'''
+    - command: 'status --json | /usr/bin/jq -r ''.gateways[] | select(.name | endswith("runtime")) | .detail'''
       exit: 0
       stdout: |
           pid 4242 · user jterrazz.agent · port 18789 not listening
           pid 4343 · user jterrazz.agent · port 8642 not listening
-    - command: 'status | /usr/bin/grep -c ''^# Services'''
+    - command: 'status | /usr/bin/grep -c ''^# Gateways'''
       exit: 0
       stdout: |
           1

@@ -33,7 +33,7 @@ func serviceTable() []service {
 	}
 }
 
-func (s *Service) services(ctx context.Context) []Check {
+func (s *Service) gateways(ctx context.Context) []Check {
 	checks := []Check{}
 	if !s.mac() {
 		return checks

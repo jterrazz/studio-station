@@ -111,7 +111,7 @@ func statusDocument() present.Document {
 				row(absent, name("vpn"), value("off")),
 				row(ok, name("filevault"), value("on")),
 				row(degraded, name("brew"), value("3 outdated"), detail("station tools upgrade --via brew")),
-				row(ok, name("tailnet"), value("connected"), detail("userspace · 100.64.0.3")),
+				row(ok, name("tailnet"), value("connected"), detail("macbook · 100.64.0.3")),
 			),
 			section("Workspace", nil,
 				row(ok, name("repos"), value("41"), detail("3 dirty")),

@@ -29,6 +29,11 @@ type Sources struct {
 	Setup   SetupChecker
 	Store   settings.Store
 	Storage StorageReader
+	Daemon  DaemonReader
+}
+
+type DaemonReader interface {
+	Ping(ctx context.Context) (version string, err error)
 }
 
 type StorageReader interface {
@@ -73,11 +78,14 @@ type Snapshot struct {
 	Setup       Setup
 	Identity    []Check
 	Daemons     []Check
-	Services    []Check
+	Gateways    []Check
 	Tailnet     tailnet.Status
 }
 
-type Station struct{ Version, Commit string }
+type Station struct {
+	Version, Commit string
+	Daemon          Check
+}
 
 type Machine struct {
 	Name       string
@@ -185,8 +193,9 @@ func (s *Service) Snapshot(ctx context.Context) (Snapshot, error) {
 		settingsHere                string
 		hereOK                      bool
 		sysFacts                    systemFacts
-		identity, daemons, services []Check
+		identity, daemons, gateways []Check
 		osName                      string
+		daemon                      Check
 	)
 	run := func(fn func()) {
 		wg.Add(1)
@@ -210,7 +219,8 @@ func (s *Service) Snapshot(ctx context.Context) (Snapshot, error) {
 	run(func() { snap.Workspace = s.workspace(ctx) })
 	run(func() { identity = s.identity(ctx) })
 	run(func() { daemons = s.daemons(ctx) })
-	run(func() { services = s.services(ctx) })
+	run(func() { gateways = s.gateways(ctx) })
+	run(func() { daemon = s.daemon(ctx) })
 	wg.Wait()
 
 	if current, err := s.deps.Store.Load(); err == nil && current.Here != "" {
@@ -236,7 +246,8 @@ func (s *Service) Snapshot(ctx context.Context) (Snapshot, error) {
 		Shell:      shellName(s.h.Env.Shell()),
 	}
 	snap.System = System{Uptime: sysFacts.uptime, Battery: sysFacts.battery, MemoryTotal: sysFacts.memory, Sample: sample}
-	snap.Identity, snap.Daemons, snap.Services = identity, daemons, services
+	snap.Identity, snap.Daemons, snap.Gateways = identity, daemons, gateways
+	snap.Station.Daemon = daemon
 	if s.mac() {
 		for _, d := range [][2]string{{"sshd", "remote-login"}, {"dns", "encrypted-dns"}} {
 			if check, placed := fromConfig(snap.Config, d[0], d[1]); placed {
@@ -307,4 +318,27 @@ func shellName(shell string) string {
 		return ""
 	}
 	return path.Base(shell)
+}
+
+// invariant: the daemon matters where VMs can exist: a host with tart; one that
+// does not answer, or answers another version, is degraded, never an error.
+func (s *Service) daemon(ctx context.Context) Check {
+	c := Check{Name: "daemon", State: catalog.StateAbsent}
+	if s.o.Here != catalog.Host || s.deps.Daemon == nil {
+		return c
+	}
+	if _, ok := s.h.Run.LookPath("tart"); !ok {
+		c.Value = "not needed until tart is installed"
+		return c
+	}
+	version, err := s.deps.Daemon.Ping(ctx)
+	switch {
+	case err != nil:
+		c.State, c.Value, c.Detail = catalog.StateDegraded, "not running", "station setup"
+	case version != s.o.Version:
+		c.State, c.Value, c.Detail = catalog.StateDegraded, "runs "+version+", station is "+s.o.Version, "station setup"
+	default:
+		c.State, c.Value = catalog.StateOK, "running "+version
+	}
+	return c
 }

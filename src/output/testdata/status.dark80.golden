@@ -12,7 +12,7 @@
    ○ vpn        off
    ● filevault  on
    ◐ brew       3 outdated    station tools upgrade --via brew
-   ● tailnet    connected     userspace · 100.64.0.3
+   ● tailnet    connected     macbook · 100.64.0.3
 
  Workspace
    ● repos      41            3 dirty

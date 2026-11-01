@@ -1,0 +1,17 @@
+description: 'with tart and no daemon the daemon is degraded; without tart it is not needed'
+fixture: ../__fixtures__/vms/
+env: daemon
+runs:
+    - command: 'status --json | /usr/bin/jq -c ''.station.daemon'''
+      exit: 0
+      stdout: |
+          {"state":"degraded","running":false,"version":""}
+    - command: 'status | /usr/bin/awk -F "\t" ''$2 == "daemon"'''
+      exit: 0
+      stdout: |
+          ◐	daemon	not running	station setup
+    - command: '--version >/dev/null; /bin/rm bin/tart; "$STATION" status --json | /usr/bin/jq -c ''.station.daemon''; "$STATION" status | /usr/bin/awk -F "\t" ''$2 == "daemon"'''
+      exit: 0
+      stdout: |
+          {"state":"absent","running":false,"version":""}
+          ○	daemon	not needed until tart is installed

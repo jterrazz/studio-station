@@ -8,13 +8,18 @@ runs:
     - command: 'status --json | /usr/bin/jq -r ''keys | join(" ")'''
       exit: 0
       stdout: |
-          config daemons environment generated_at identity machine schema services setup station system tailnet tools workspace
-    - command: 'status --json | /usr/bin/jq -e ''has("generated_at") and has("station") and has("machine") and has("system") and has("environment") and has("workspace") and has("tools") and has("config") and has("setup") and has("identity") and has("daemons") and has("services") and has("tailnet")'''
+          config daemons environment gateways generated_at identity machine schema setup station system tailnet tools workspace
+    - command: 'status --json | /usr/bin/jq -e ''has("generated_at") and has("station") and has("machine") and has("system") and has("environment") and has("workspace") and has("tools") and has("config") and has("setup") and has("identity") and has("daemons") and has("gateways") and has("tailnet") and (has("services") | not)'''
       exit: 0
       stdout: |
           true
-    - command: 'status --json | /usr/bin/jq -e ''.tools and .config and .setup and .services and .tailnet and .workspace and .environment and .identity and .daemons'' > /dev/null'
+    - command: 'status --json | /usr/bin/jq -e ''.tools and .config and .setup and .gateways and .tailnet and .workspace and .environment and .identity and .daemons'' > /dev/null'
       exit: 0
+    - command: 'status --json | /usr/bin/jq -r ''(.gateways | type), (.station.daemon | keys | join(" "))'''
+      exit: 0
+      stdout: |
+          array
+          running state version
     - command: 'status --json | /usr/bin/jq -r ''[.. | objects | select(has("state")) | .state] | map(select(. as $s | ["ok","degraded","absent","broken","unknown"] | index($s) | not)) | length'''
       exit: 0
       stdout: |
@@ -33,7 +38,7 @@ runs:
           arch hostname kind name os shell user
           battery cpu memory uptime
           dependencies disk docker repositories strays
-          auth_method backend_state connected daemon ip keep_awake mode name state vm_join
+          backend_state connected dns_name ip name state
     - command: 'status --json | /usr/bin/jq -r ''.environment | keys | join(" ")'''
       exit: 0
       stdout: |
