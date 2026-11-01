@@ -108,7 +108,11 @@ func storedRows(s catalog.Storage) [][]string {
 		rows = append(rows, []string{code(shown(p.Path)), string(p.Level), note(on(p.On), p.Note, memoNote(p.Memos))})
 	}
 	for _, p := range s.Installed {
-		rows = append(rows, []string{code(shown(p)), "installed", "removed by `station tools uninstall`"})
+		removal := s.Removal[p]
+		if removal == "" {
+			removal = "removed by `station tools uninstall`"
+		}
+		rows = append(rows, []string{code(shown(p)), "installed", removal})
 	}
 	for _, st := range s.Strays {
 		moves := make([]string, 0, len(st.Move))

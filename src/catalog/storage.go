@@ -66,6 +66,7 @@ const (
 type Storage struct {
 	Paths     []Stored
 	Installed []string
+	Removal   map[string]string
 	Size      SizeProbe
 	Clean     []Action
 	Reset     []Action
@@ -389,6 +390,7 @@ var (
 			kept("~/Library/Application Scripts/*io.tailscale.*", Host),
 		},
 		Installed: []string{TailscaleApp, TailscaleStandaloneCLI, "~/.local/bin/tailscale"},
+		Removal:   map[string]string{"~/.local/bin/tailscale": "written by `station setup` for the App Store app, whose uninstall station refuses: removed by hand"},
 		NoReset:   "nothing to reset: the login is the Tailscale app's",
 	}
 	storageGit = Storage{
