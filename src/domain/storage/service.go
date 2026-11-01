@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"path"
 	"strconv"
 	"strings"
@@ -380,15 +381,19 @@ func (s *Service) Clean(ctx context.Context, names []string) ([]Outcome, error) 
 	}
 	outcomes := make([]Outcome, 0, len(entries))
 	for _, e := range entries {
-		if !installed[e.Name] {
+		present := installed[e.Name]
+		before := s.cacheBytes(e)
+		if !present && before == 0 && len(s.strays(e)) == 0 {
 			outcomes = append(outcomes, Outcome{Name: e.Name, Result: catalog.StateAbsent, Detail: "not installed"})
 			continue
 		}
-		before := s.cacheBytes(e)
-		failure := s.actions(ctx, e.Storage.Clean)
+		failure := s.actions(ctx, e.Storage.Clean, present)
+		if !present {
+			failure = first(failure, s.deleteCaches(e))
+		}
 		for _, st := range e.Storage.Strays {
 			if _, err := s.h.FS.Stat(s.o.Expand.Expand(st.Path)); err == nil {
-				failure = first(failure, s.actions(ctx, st.Clean))
+				failure = first(failure, s.actions(ctx, st.Clean, present))
 			}
 		}
 		outcomes = append(outcomes, s.outcome(e.Name, failure, before-s.cacheBytes(e), false))
@@ -433,6 +438,7 @@ func (s *Service) Reset(ctx context.Context, names []string) ([]Outcome, error) 
 	if err != nil {
 		return nil, err
 	}
+	installed := s.installed(ctx)
 	outcomes := make([]Outcome, 0, len(entries))
 	for _, e := range entries {
 		if e.Storage.Quit != "" && s.running(ctx, e.Storage.Quit) {
@@ -443,7 +449,11 @@ func (s *Service) Reset(ctx context.Context, names []string) ([]Outcome, error) 
 			continue
 		}
 		before := s.levelBytes(e, catalog.LevelCache) + s.levelBytes(e, catalog.LevelData)
-		failure := first(s.actions(ctx, e.Storage.Clean), s.actions(ctx, e.Storage.Reset))
+		present := installed[e.Name]
+		failure := first(s.actions(ctx, e.Storage.Clean, present), s.actions(ctx, e.Storage.Reset, present))
+		if !present {
+			failure = first(failure, s.deleteCaches(e))
+		}
 		after := s.levelBytes(e, catalog.LevelCache) + s.levelBytes(e, catalog.LevelData)
 		outcomes = append(outcomes, s.outcome(e.Name, failure, before-after, true))
 	}
@@ -491,10 +501,11 @@ func first(a, b *actionFailure) *actionFailure {
 
 // invariant: every action runs even after one failed, and the first failure is the one
 // reported, so a stopped docker daemon does not hide an image prune that could run.
-func (s *Service) actions(ctx context.Context, actions []catalog.Action) *actionFailure {
+// A tool that is not installed has no binary to run, so only its plain deletions run.
+func (s *Service) actions(ctx context.Context, actions []catalog.Action, present bool) *actionFailure {
 	var failed *actionFailure
 	for _, a := range actions {
-		if !a.PlacedOn(s.o.Here) {
+		if !a.PlacedOn(s.o.Here) || (!present && len(a.Run) > 0) {
 			continue
 		}
 		failed = first(failed, s.action(ctx, a))
@@ -513,15 +524,42 @@ func (s *Service) action(ctx context.Context, a catalog.Action) *actionFailure {
 		failed = s.run(ctx, a)
 	}
 	for _, pattern := range a.Delete {
-		matches, _ := s.h.FS.Glob(s.o.Expand.Expand(pattern))
-		for _, m := range matches {
-			if err := s.h.FS.RemoveAll(m); err != nil {
-				failed = first(failed, &actionFailure{detail: err.Error()})
-			}
-		}
+		failed = first(failed, s.delete(pattern))
 	}
 	for _, dir := range a.Prune {
 		_ = s.h.FS.Remove(s.o.Expand.Expand(dir))
+	}
+	return failed
+}
+
+func (s *Service) deleteCaches(e Entry) *actionFailure {
+	var failed *actionFailure
+	for _, p := range e.Storage.Paths {
+		if p.Level == catalog.LevelCache && p.PlacedOn(s.o.Here) {
+			failed = first(failed, s.delete(p.Path))
+		}
+	}
+	return failed
+}
+
+// invariant: a tree the tool wrote read-only (Go's module cache) is made writable and
+// removed again, since without the tool's own clean nothing else can remove it.
+func (s *Service) delete(pattern string) *actionFailure {
+	matches, _ := s.h.FS.Glob(s.o.Expand.Expand(pattern))
+	var failed *actionFailure
+	for _, m := range matches {
+		if s.h.FS.RemoveAll(m) == nil {
+			continue
+		}
+		_ = s.h.FS.WalkDir(m, func(p string, d fs.DirEntry, err error) error {
+			if err == nil && d.IsDir() {
+				_ = s.h.FS.Chmod(p, 0o700)
+			}
+			return nil
+		})
+		if err := s.h.FS.RemoveAll(m); err != nil {
+			failed = first(failed, &actionFailure{detail: err.Error()})
+		}
 	}
 	return failed
 }

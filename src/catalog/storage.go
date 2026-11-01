@@ -238,7 +238,7 @@ var (
 			Prune: []string{"~/go/bin", "~/go"},
 			Clean: []Action{
 				{Run: []string{"go", "clean", "-modcache"}, Env: []string{"GOMODCACHE=~/go/pkg/mod", "GOFLAGS=-modcacherw"}, Needs: "go"},
-				{Prune: []string{"~/go/pkg/mod", "~/go/pkg", "~/go/bin", "~/go"}},
+				{Delete: []string{"~/go/pkg/mod"}, Prune: []string{"~/go/pkg", "~/go/bin", "~/go"}},
 			},
 		}},
 	}

@@ -51,13 +51,14 @@ Tart's app and its `LICENSE` live in `~/.local/share/station/tart/`, its home (`
 
 - `station storage` lists, per tool placed here, its cache size, then its data, kept and installed sizes; `station` first, then the catalogue's categories, then the strays. `--json` is `station.storage/v1`. A row that holds nothing is not shown. The installed size counts the system paths too (`/opt/homebrew`, an app in `/Applications`, `/Library/Developer/CoreSimulator`). Every row is sized in parallel under 10 s; a row past it shows `?` (`-1` in JSON).
 - `station storage clean [<tool...>]` empties caches with each tool's official command (`go clean -cache -modcache`, `brew cleanup --prune=all`, `tart prune --entries=caches --older-than=0`, `npm cache clean --force`...), or deletes a cache folder its docs call deletable. Bare, it cleans every row here that is installed or holds bytes. It asks nothing; a failing action is its row's `✗` and the others still run.
+- A tool that is not installed has no command to run: `clean` and `reset` skip its commands and still delete by path, its cache folders, the cache inside its strays, and for `reset` the data it names. With nothing left to delete, `clean` says `○ <tool> not installed`.
 - `station storage reset <tool...>` deletes a tool's caches and data, back to factory: always named, asked in a form whose default is Keep, `--yes` off a terminal. It refuses while the tool's app runs. Resetting xcode empties DerivedData and erases every simulator device; the archives stay.
 
 A row with no reset names who owns its data instead: station's VMs and images are `station machines delete` and `station images delete`, Homebrew's formulae are `station tools uninstall`.
 
 ## Strays
 
-A stray is a home-root folder a tool writes when its relocation is missing or was never applied: `~/go`, `~/.npm`, `~/.tart`. `station status` shows each as a `◐` row of Workspace with its size and its repair: `station setup` while something in it is still to move, else `station storage clean <tool>`, which empties it with the old location's own command and removes the emptied folders. A file station does not own stays where it is.
+A stray is a home-root folder a tool writes when its relocation is missing or was never applied: `~/go`, `~/.npm`, `~/.tart`. `station status` shows each as a `◐` row of Workspace with its size and its repair: `station setup` while something in it is still to move, else `station storage clean <tool>`, which empties it with the old location's own command (or deletes the cache inside it, the tool gone) and removes the emptied folders. A file station does not own stays where it is.
 
 ## Backups
 
