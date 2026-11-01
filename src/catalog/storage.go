@@ -137,6 +137,7 @@ var StationStorage = Storage{
 		noted(data("{state}/station/known_hosts/*"), "pins: deleting them downgrades to trust-on-first-use, never cleaned"),
 		noted(data("{state}/station/consoles/*"), "live while a VM or a build runs: `consoles/<vm>`, `consoles/station-build-<image>`"),
 		noted(data("{state}/station/daemon.sock"), "the daemon's socket, live while it runs"),
+		noted(data("{state}/station/children/*"), "the daemon's `tailscale` calls in flight, `<pid>` holding its start: the next daemon start kills what a killed one left"),
 		noted(data("{state}/station/runs/*"), "each running VM's `<vm>.pid` and `<vm>.exit`"),
 		noted(conf("~/Library/LaunchAgents/com.jterrazz.station.daemon.plist", Host), "the one daemon's launchd agent"),
 		noted(conf("{config}/station/settings.json"), "here, hosts, vm_user, the lend list, the services policy"),

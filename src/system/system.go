@@ -29,6 +29,7 @@ type Cmd struct {
 	Env     []string
 	Stdin   string
 	Timeout time.Duration
+	Track   string
 }
 
 type Output struct {
@@ -56,6 +57,7 @@ type Runner interface {
 	LookPath(name string) (string, bool)
 	Alive(pid int) bool
 	Signal(pid int, sig Sig) error
+	Reap(dir string) int
 }
 
 type FS interface {

@@ -124,3 +124,5 @@ func (r *Runner) Signal(pid int, sig system.Sig) error {
 	delete(r.live, pid)
 	return nil
 }
+
+func (r *Runner) Reap(string) int { return 0 }

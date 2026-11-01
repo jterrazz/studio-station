@@ -121,6 +121,9 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 		return &RunningError{PID: p.PID}
 	}
 	_ = d.h.FS.Remove(sock)
+	if n := d.h.Run.Reap(ChildrenDir(d.o.Paths)); n > 0 {
+		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed daemon left running")
+	}
 	if err := d.h.FS.MkdirAll(d.o.Paths.State, 0o700); err != nil {
 		return err
 	}

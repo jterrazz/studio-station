@@ -76,6 +76,8 @@ func (*HostOnlyError) Error() string { return "the daemon runs only on a host" }
 
 func SocketPath(p settings.Paths) string { return path.Join(p.State, "daemon.sock") }
 
+func ChildrenDir(p settings.Paths) string { return path.Join(p.State, "children") }
+
 type Client struct {
 	sockets system.Sockets
 	path    string

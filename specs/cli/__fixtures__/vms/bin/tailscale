@@ -3,7 +3,8 @@
 # $HOME/.calls; `status --json` answers answers/tailscale/status.json, `serve status
 # --json` answers answers/tailscale/serve.json (else {}), and every other `serve` is
 # recorded and succeeds unless answers/tailscale/serve.exit says otherwise, or
-# answers/tailscale/serve.hang makes it print the app's line and wait for the admin;
+# answers/tailscale/serve.hang makes it print the app's line and wait for the admin
+# (its pid in $HOME/serve.pid);
 # answers/tailscale/serve.warn makes every `serve` first warn, as a CLI older than its
 # daemon does.
 answers="${0%/*}/../answers/tailscale"
@@ -19,6 +20,7 @@ case "$*" in
         fi
         if [ -f "$answers/serve.hang" ]; then
             echo "Serve is not enabled on your tailnet."
+            echo $$ > "$HOME/serve.pid"
             exec /bin/sleep 20
         fi
         if [ -f "$answers/serve.exit" ]; then

@@ -9,8 +9,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -53,7 +55,73 @@ func (r *runner) command(ctx context.Context, c system.Cmd) (context.Context, *e
 	cmd := exec.CommandContext(ctx, path, c.Args...)
 	cmd.Dir = c.Dir
 	cmd.Env = append(append([]string{}, r.env...), c.Env...)
+	if c.Track != "" {
+		// invariant: a tracked child leads its own process group, so the end of
+		// its context kills whatever it spawned too, never only the direct child.
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
+		cmd.WaitDelay = time.Second
+	}
 	return ctx, cmd, cancel, nil
+}
+
+func run(cmd *exec.Cmd, track string) error {
+	if track == "" {
+		return cmd.Run()
+	}
+	if err := os.MkdirAll(track, 0o700); err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	// invariant: a tracked child's file lives while it runs, so a parent killed
+	// with -9 leaves the record its next start reaps.
+	file := filepath.Join(track, strconv.Itoa(cmd.Process.Pid))
+	_ = os.WriteFile(file, []byte(strconv.FormatInt(time.Now().Unix(), 10)+"\n"), 0o600)
+	err := cmd.Wait()
+	_ = os.Remove(file)
+	return err
+}
+
+func (r *runner) Reap(dir string) int {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0
+	}
+	killed := 0
+	for _, e := range entries {
+		file := filepath.Join(dir, e.Name())
+		data, _ := os.ReadFile(file)
+		_ = os.Remove(file)
+		pid, err := strconv.Atoi(e.Name())
+		if err != nil || pid <= 1 {
+			continue
+		}
+		started, err := strconv.ParseInt(strings.TrimSpace(string(data)), 10, 64)
+		if err != nil || !startedAt(pid, started) {
+			continue
+		}
+		if syscall.Kill(-pid, syscall.SIGKILL) == nil {
+			killed++
+		}
+	}
+	return killed
+}
+
+// invariant: a recorded pid is killed only while it still names the process
+// that was recorded: its start time must match, so a recycled pid survives.
+func startedAt(pid int, unix int64) bool {
+	out, err := exec.Command("/bin/ps", "-o", "lstart=", "-p", strconv.Itoa(pid)).Output()
+	if err != nil {
+		return false
+	}
+	t, err := time.ParseInLocation("Mon Jan _2 15:04:05 2006", strings.TrimSpace(string(out)), time.Local)
+	if err != nil {
+		return false
+	}
+	d := t.Unix() - unix
+	return d >= -2 && d <= 2
 }
 
 func (r *runner) Output(ctx context.Context, c system.Cmd) (system.Output, error) {
@@ -67,7 +135,7 @@ func (r *runner) Output(ctx context.Context, c system.Cmd) (system.Output, error
 	if c.Stdin != "" {
 		cmd.Stdin = strings.NewReader(c.Stdin)
 	}
-	code, err := exitOf(ctx, cmd.Run())
+	code, err := exitOf(ctx, run(cmd, c.Track))
 	return system.Output{Stdout: stdout.String(), Stderr: stderr.String(), ExitCode: code}, err
 }
 
@@ -86,7 +154,7 @@ func (r *runner) Attach(ctx context.Context, c system.Cmd, out system.Stream) (s
 	if c.Stdin != "" {
 		cmd.Stdin = strings.NewReader(c.Stdin)
 	}
-	code, err := exitOf(ctx, cmd.Run())
+	code, err := exitOf(ctx, run(cmd, c.Track))
 	return system.Attached{ExitCode: code, LastStderr: stderr.last()}, err
 }
 

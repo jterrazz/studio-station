@@ -17,11 +17,18 @@ import (
 const queryBudget = 5 * time.Second
 
 type Service struct {
-	h    system.Host
-	owns func(ServeEntry) bool
+	h     system.Host
+	owns  func(ServeEntry) bool
+	track string
 }
 
 func New(h system.Host, owns func(ServeEntry) bool) *Service { return &Service{h: h, owns: owns} }
+
+func (s *Service) Tracked(dir string) *Service {
+	t := *s
+	t.track = dir
+	return &t
+}
 
 type Peer struct {
 	ID, Name, IP string
@@ -93,7 +100,7 @@ func (s *Service) run(ctx context.Context, args ...string) (system.Output, error
 	if _, ok := s.h.Run.LookPath("tailscale"); !ok {
 		return system.Output{}, ErrAbsent
 	}
-	return s.h.Run.Output(ctx, system.Cmd{Name: "tailscale", Args: args, Timeout: queryBudget})
+	return s.h.Run.Output(ctx, system.Cmd{Name: "tailscale", Args: args, Timeout: queryBudget, Track: s.track})
 }
 
 func (s *Service) query(ctx context.Context) (rawStatus, error) {
