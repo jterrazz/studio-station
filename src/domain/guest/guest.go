@@ -252,12 +252,24 @@ func (s *Service) owners(ls []Listener) []Listener {
 				link = strings.TrimSpace(string(data))
 			}
 			if i, ok := byInode[link]; ok {
-				comm, _ := s.h.FS.ReadFile(s.root(path.Join("/proc", e.Name(), "comm")))
-				ls[i].PID, ls[i].Process = pid, strings.TrimSpace(string(comm))
+				ls[i].PID, ls[i].Process = pid, s.program(e.Name())
 			}
 		}
 	}
 	return ls
+}
+
+// invariant: a process is named by its program, argv[0]'s base name, since
+// comm holds the main thread's name a runtime may rename (node-MainThread);
+// an argv[0] rewritten into a title (postgres: checkpointer) leaves comm.
+func (s *Service) program(pid string) string {
+	cmdline, _ := s.h.FS.ReadFile(s.root(path.Join("/proc", pid, "cmdline")))
+	argv0, _, _ := strings.Cut(string(cmdline), "\x00")
+	if argv0 != "" && !strings.ContainsAny(argv0, " :") {
+		return path.Base(argv0)
+	}
+	comm, _ := s.h.FS.ReadFile(s.root(path.Join("/proc", pid, "comm")))
+	return strings.TrimSpace(string(comm))
 }
 
 func (s *Service) writeFiles(h Hello) error {
