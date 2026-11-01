@@ -27,10 +27,11 @@ func New(env []string, stdin io.Reader, stdout, stderr io.Writer) system.Host {
 		}
 	}
 	return system.Host{
-		Run:   &runner{env: env, dirs: dirs, stdin: stdin, stdout: stdout, stderr: stderr},
-		FS:    disk{},
-		Env:   identity{vars: vars},
-		Net:   network{},
-		Clock: clock{},
+		Run:     &runner{env: env, dirs: dirs, stdin: stdin, stdout: stdout, stderr: stderr},
+		FS:      disk{},
+		Env:     identity{vars: vars},
+		Net:     network{},
+		Sockets: sockets{},
+		Clock:   clock{},
 	}
 }

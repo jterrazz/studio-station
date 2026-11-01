@@ -5,9 +5,10 @@ runs:
       stdout: |
           ●	name	m
           ●	zshrc
-          ●	layout	nothing to move
+          ●	layout	nothing to retire
           ●	relocate	go env, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ○	daemon	not needed until tart is installed
       files:
           Library/Application Support/go/env: { equals: "GOPATH={{workdir}}/.local/share/go\nGOMODCACHE={{workdir}}/.cache/go/mod\n" }
           .npmrc: { equals: "cache={{workdir}}/.cache/npm\n" }
@@ -17,9 +18,10 @@ runs:
       stdout: |
           ●	name	m
           ●	zshrc
-          ●	layout	nothing to move
+          ●	layout	nothing to retire
           ●	relocate	nothing to do
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ○	daemon	not needed until tart is installed
     - command: '--version >/dev/null; /bin/cat "Library/Application Support/go/env" .npmrc'
       exit: 0
       stdout: |

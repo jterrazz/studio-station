@@ -65,10 +65,10 @@ func refusesOn(path string) bool {
 		return false
 	}
 	switch words[0] {
-	case "shell", "completion", "help":
+	case "shell", "completion", "help", "daemon", "guest":
 		return true
 	}
-	return len(words) > 1 && words[0] == "machines" && words[1] == "supervise"
+	return len(words) > 1 && words[0] == "machines" && (words[1] == "supervise" || words[1] == "pipe")
 }
 
 func RefuseOn(env Env) func(*cobra.Command, []string) error {

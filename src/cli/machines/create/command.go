@@ -23,10 +23,10 @@ type Deps struct {
 }
 
 type Input struct {
-	Lifetime, Image, Name, Memory, Disk string
-	CPUs                                int
-	request                             machines.CreateRequest
-	buildFirst                          bool
+	Lifetime, Image, Name, Memory, Disk, Network string
+	CPUs                                         int
+	request                                      machines.CreateRequest
+	buildFirst                                   bool
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -42,6 +42,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			f.IntVar(&in.CPUs, "cpus", 0, "virtual CPUs (default the image's)")
 			f.StringVar(&in.Memory, "memory", "", "memory, e.g. 8G or 512M; a bare number is GB")
 			f.StringVar(&in.Disk, "disk", "", "disk size, e.g. 50G; a bare number is GB")
+			f.StringVar(&in.Network, "network", "nat", "nat, or bridged (macOS VMs only: an iPhone on the Wi-Fi reaches it)")
 		},
 		Read: func(*Input) bool { return false },
 		Bind: func(in *Input, _ []string) error {
@@ -49,7 +50,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			in.request = machines.CreateRequest{Image: in.Image, Name: in.Name, Lifetime: machines.Lifetime(in.Lifetime), Resources: r}
+			in.request = machines.CreateRequest{Image: in.Image, Name: in.Name, Lifetime: machines.Lifetime(in.Lifetime), Network: in.Network, Resources: r}
 			return nil
 		},
 		Validate: func(ctx context.Context, in *Input) error {
@@ -81,7 +82,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				}
 			}
 			stop := func() {}
-			vm, err := d.Machines.Create(ctx, in.request, func(s machines.Step) {
+			created, err := d.Machines.Create(ctx, in.request, func(s machines.Step) {
 				stop()
 				stop = io.Wait(s.Label)
 			})
@@ -89,7 +90,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Answer(presentmachines.Created(vm, d.Context))
+			return io.Answer(presentmachines.Created(created, d.Context))
 		},
 	}, env)
 }

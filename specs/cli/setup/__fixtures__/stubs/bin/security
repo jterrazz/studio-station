@@ -1,10 +1,15 @@
 #!/bin/sh
 # The keychain as the setup specs need it: every call is recorded in $HOME/.calls,
 # its stdin too (the secret travels there, never in argv); a file $HOME/.security-fails-once
-# makes the first call fail and every later one succeed.
+# makes the first call fail and every later one succeed; delete-generic-password exits
+# as $HOME/.security-delete says (default 44: the account is absent).
 printf 'security %s\n' "$*" >> "$HOME/.calls"
 case "$*" in
     -i) /bin/cat >> "$HOME/.calls" ;;
+    delete-generic-password*)
+        if [ -f "$HOME/.security-delete" ]; then exit "$(/bin/cat "$HOME/.security-delete")"; fi
+        exit 44
+        ;;
     *)
         echo "stub security: unexpected invocation: $*" >&2
         exit 97

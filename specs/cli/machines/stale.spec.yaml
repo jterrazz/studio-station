@@ -7,7 +7,7 @@ runs:
     - command: 'machines --here'
       exit: 0
       stdout: |
-          ●	x	host			online	100.64.0.1	1 VM
+          ◐	x	host			online	192.0.2.1	daemon not running · station setup
           ✗	t	linux	x	temporary	stale	-	station machines delete t
     - command: 'machines --here --json | /usr/bin/jq -r ''.hosts[0].vms[0] | .name + " " + .state'''
       exit: 0

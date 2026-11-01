@@ -13,16 +13,37 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-const (
-	onlineWait = 60 * time.Second
-	onlinePoll = 2 * time.Second
-	memoryCap  = 75
-)
+const memoryCap = 75
+
+var ErrDaemonDown = errors.New("the station daemon is not running")
+
+type DaemonDownError struct{}
+
+func (*DaemonDownError) Error() string { return "the station daemon is not running" }
+
+type BadNetworkError struct {
+	Value  string
+	Bridge bool
+}
+
+func (e *BadNetworkError) Error() string {
+	if e.Bridge {
+		return "--network bridged is for macOS VMs"
+	}
+	return "unknown network \"" + e.Value + "\": nat or bridged"
+}
 
 type CreateRequest struct {
 	Image, Name string
 	Lifetime    Lifetime
+	Network     string
 	Resources   system.Resources
+}
+
+type Created struct {
+	VM       VM
+	Services []Reserved
+	Env      map[string]string
 }
 
 type Step struct{ Label string }
@@ -132,6 +153,17 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if !ok {
 		return r, &UnknownImageError{Image: r.Image}
 	}
+	switch r.Network {
+	case "":
+		r.Network = NetworkNAT
+	case NetworkNAT:
+	case Bridged:
+		if img.Kind != catalog.MacOS {
+			return r, &BadNetworkError{Value: r.Network, Bridge: true}
+		}
+	default:
+		return r, &BadNetworkError{Value: r.Network}
+	}
 	if r.Name != "" && !validName(r.Name) {
 		return r, &BadNameError{Name: r.Name}
 	}
@@ -141,14 +173,17 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if _, _, err := s.img.Latest(ctx, r.Image); err != nil {
 		return r, err
 	}
-	records, nodes, err := s.claims(ctx)
+	if err := s.daemonUp(ctx); err != nil {
+		return r, err
+	}
+	held, err := s.claims(ctx)
 	if err != nil {
 		return r, err
 	}
 	switch {
 	case r.Name == "":
-		r.Name = allocateName(r.Image, records, nodes)
-	case !nameFree(r.Name, records, nodes):
+		r.Name = allocateName(r.Image, held)
+	case !nameFree(r.Name, held):
 		return r, &NameTakenError{Name: r.Name, VM: true}
 	}
 	if r.Resources.CPUs == 0 {
@@ -166,26 +201,39 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	return r, nil
 }
 
-func (s *Service) claims(ctx context.Context) (records map[string]bool, nodes map[string]Node, err error) {
+func (s *Service) daemonUp(ctx context.Context) error {
+	if s.daemon == nil {
+		return &DaemonDownError{}
+	}
+	if _, err := s.daemon.Ping(ctx); err != nil {
+		if errors.Is(err, ErrDaemonDown) {
+			return &DaemonDownError{}
+		}
+		return err
+	}
+	return nil
+}
+
+func (s *Service) claims(ctx context.Context) (map[string]bool, error) {
 	fleet, err := s.Fleet(ctx, false)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	records = map[string]bool{}
+	held := map[string]bool{}
 	for _, h := range fleet.Hosts {
-		records[h.Name] = true
+		held[h.Name] = true
 		for _, vm := range h.VMs {
-			records[vm.Name] = true
+			held[vm.Name] = true
 		}
 	}
 	cfg, err := s.store.Load()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	for name := range cfg.Hosts {
-		records[name] = true
+		held[name] = true
 	}
-	return records, s.nodes(ctx), nil
+	return held, nil
 }
 
 func (s *Service) memoryLimit(ctx context.Context) (int64, bool) {
@@ -200,12 +248,13 @@ func (s *Service) memoryLimit(ctx context.Context) (int64, bool) {
 	return total * memoryCap / 100, true
 }
 
-func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Step)) (VM, error) {
-	// invariant: the key is minted first, so a refused mint creates nothing; any
-	// failure after it rolls every made thing back.
+func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Step)) (Created, error) {
+	// invariant: the profiles' ports are reserved before the VM first runs, and
+	// their rendered variables go into the record, fixed for the VM's life; any
+	// failure after the clone rolls every made thing back.
 	r, err := s.CheckCreate(ctx, r)
 	if err != nil {
-		return VM{}, err
+		return Created{}, err
 	}
 	say := func(label string) {
 		if progress != nil {
@@ -214,27 +263,25 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 	}
 	cfg, err := s.store.Load()
 	if err != nil {
-		return VM{}, err
+		return Created{}, err
 	}
 	img, _ := imageOf(r.Image)
 	tartName, version, err := s.img.Latest(ctx, r.Image)
 	if err != nil {
-		return VM{}, err
-	}
-	say("minting a tailnet key")
-	key, err := s.tn.Mint(ctx)
-	if err != nil {
-		return VM{}, err
+		return Created{}, err
 	}
 	rec := VMRecord{
-		Name: r.Name, Image: r.Image, Version: version, Lifetime: r.Lifetime,
+		Name: r.Name, Image: r.Image, Version: version, Lifetime: r.Lifetime, Network: r.Network,
 		Resources: r.Resources, CreatedAt: s.h.Clock.Now().UTC().Truncate(time.Second),
+	}
+	if r.Lifetime == Lasting {
+		rec.Want = WantRunning
 	}
 	user := s.vmUser(cfg)
 	made := &made{}
-	fail := func(step string, cause error) (VM, error) {
+	fail := func(step string, cause error) (Created, error) {
 		s.undoCreate(ctx, r.Name, made)
-		return VM{}, &CreateFailedError{Name: r.Name, Step: step, Cause: cause}
+		return Created{}, &CreateFailedError{Name: r.Name, Step: step, Cause: cause}
 	}
 
 	say("cloning " + tartName)
@@ -249,52 +296,77 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		return fail("the record", err)
 	}
 	made.record = true
-	say("starting its agent")
-	made.agent = true
-	if err = s.installAgent(ctx, r.Name, r.Lifetime); err != nil {
-		return fail("the launchd agent", err)
+	say("reserving its services")
+	made.leases = true
+	reserved, env, err := s.reserveProfiles(ctx, r.Name)
+	if err != nil {
+		return fail("the reservations", err)
+	}
+	rec.Env = env
+	if err = s.writeRecord(rec); err != nil {
+		return fail("the record", err)
+	}
+	say("starting it")
+	made.running = true
+	if err = s.daemon.Do(ctx, "run", r.Name); err != nil {
+		return fail("the start", err)
 	}
 	say("first boot")
 	ip, err := s.engine.IP(ctx, r.Name, ipWait)
 	if err != nil {
 		return fail("the first boot", err)
 	}
-	nodeID, err := s.firstBoot(ctx, img, ip, user, r.Name, r.Lifetime, key)
-	if err != nil {
+	if err := s.firstBoot(ctx, img, ip, user, r.Name, r.Lifetime); err != nil {
 		return fail("the first boot", err)
-	}
-	made.nodeID = nodeID
-	say("joining the tailnet")
-	node, err := s.awaitOnline(ctx, r.Name)
-	if err != nil {
-		return fail("the tailnet join", err)
-	}
-	rec.NodeID = nodeID
-	if err := s.writeRecord(rec); err != nil {
-		return fail("the record", err)
 	}
 	if fleet, err := s.Fleet(ctx, false); err == nil {
 		_ = s.SSHBlocks(ctx, fleet)
 	}
-	return VM{
-		Name: r.Name, Image: r.Image, Version: version, Host: s.here(cfg), Kind: img.Kind, Lifetime: r.Lifetime,
-		State: Running, Resources: r.Resources, Node: node, CreatedAt: rec.CreatedAt,
+	return Created{
+		VM: VM{
+			Name: r.Name, Image: r.Image, Version: version, Host: s.here(cfg), Kind: img.Kind, Lifetime: r.Lifetime,
+			State: Running, Resources: r.Resources, Network: r.Network, IP: ip, CreatedAt: rec.CreatedAt,
+		},
+		Services: reserved,
+		Env:      env,
 	}, nil
 }
 
-type made struct {
-	vm, record, agent bool
-	nodeID            string
+func (s *Service) reserveProfiles(ctx context.Context, name string) ([]Reserved, map[string]string, error) {
+	var reserved []Reserved
+	env := map[string]string{}
+	publicHost := ""
+	for _, p := range catalog.Profiles {
+		got, err := s.daemon.Reserve(ctx, name, p.Port, p.Name)
+		if err != nil {
+			return nil, nil, err
+		}
+		reserved = append(reserved, got)
+		publicHost = got.PublicHost
+		for _, e := range p.Env {
+			env[e.Name] = render(e.Value, got)
+		}
+	}
+	if publicHost != "" {
+		env[catalog.PublicHostEnv.Name] = render(catalog.PublicHostEnv.Value, Reserved{PublicHost: publicHost})
+	}
+	return reserved, env, nil
 }
+
+func render(template string, r Reserved) string {
+	return strings.NewReplacer("{url}", r.URL, "{host}", r.PublicHost, "{port}", strconv.Itoa(r.HostPort)).Replace(template)
+}
+
+type made struct{ vm, record, leases, running bool }
 
 // invariant: the rollback is best effort and runs every step whatever fails, so a
 // half-made VM leaves as little as it can; what it reports is the create's failure.
 func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
-	if m.nodeID != "" {
-		_ = s.tn.Remove(ctx, m.nodeID)
+	if m.running {
+		_ = s.daemon.Do(ctx, "forget", name)
 	}
-	if m.agent {
-		_, _ = s.launchctl(ctx, "bootout", s.agentTarget(name))
+	if m.leases && s.rel != nil {
+		_ = s.rel.ReleaseVM(ctx, name)
 	}
 	if m.vm {
 		if s.engineState(ctx, name) == system.VMRunning {
@@ -306,7 +378,8 @@ func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
 }
 
 func (s *Service) removeFiles(name string, record bool) {
-	files := []string{s.plistPath(name), s.logPath(name), s.consolePath(name), path.Join(s.knownHostsDir(), name)}
+	files := []string{s.LogPath(name), s.ConsolePath(name), s.KnownHostsPath(name),
+		path.Join(s.o.Paths.State, "runs", name+".pid"), path.Join(s.o.Paths.State, "runs", name+".exit")}
 	if record {
 		files = append(files, s.recordPath(name))
 	}
@@ -315,28 +388,16 @@ func (s *Service) removeFiles(name string, record bool) {
 	}
 }
 
-func (s *Service) awaitOnline(ctx context.Context, name string) (Node, error) {
-	for waited := time.Duration(0); ; waited += onlinePoll {
-		if node, ok := s.nodes(ctx)[name]; ok && node.Online {
-			return node, nil
-		}
-		if waited >= onlineWait {
-			return Node{}, errors.New(name + " did not come online on the tailnet in " + onlineWait.String())
-		}
-		if err := s.h.Clock.Sleep(ctx, onlinePoll); err != nil {
-			return Node{}, err
-		}
-	}
-}
-
 func (s *Service) recordPath(name string) string { return path.Join(s.recordsDir(), name+".json") }
+
+func (s *Service) Save(r VMRecord) error { return s.writeRecord(r) }
 
 func (s *Service) writeRecord(r VMRecord) error {
 	if err := s.h.FS.MkdirAll(s.recordsDir(), 0o700); err != nil {
 		return err
 	}
 	data, err := json.MarshalIndent(recordFile{
-		Name: r.Name, Image: r.Image, Version: r.Version, NodeID: r.NodeID, Lifetime: r.Lifetime,
+		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
 		CPUs: r.Resources.CPUs, MemoryBytes: r.Resources.MemoryBytes, DiskBytes: r.Resources.DiskBytes,
 		Lent: r.Lent, CreatedAt: r.CreatedAt,
 	}, "", "  ")

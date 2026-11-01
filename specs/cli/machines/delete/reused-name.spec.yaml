@@ -1,8 +1,9 @@
 description: "a name made again after a delete meets no changed host key"
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/vm-api/
-serve: tailscale
+    - ../../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vm-api/
+env: daemon
 runs:
     - command: '--version > /dev/null; ssh api true'
       exit: 255
@@ -14,7 +15,7 @@ runs:
           ●	api	deleted
       files:
           .local/state/station/known_hosts/api: absent
-    - command: 'machines create --lifetime lasting --name api | /usr/bin/cut -f2'
+    - command: '--version >/dev/null; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime lasting --name api | /usr/bin/head -1 | /usr/bin/cut -f2; kill $d; wait $d'
       exit: 0
       stdout: |
           api

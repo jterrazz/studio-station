@@ -27,6 +27,8 @@ type Resources struct {
 	DiskBytes   int64
 }
 
+type RunOptions struct{ Bridged string }
+
 type Engine interface {
 	Version(ctx context.Context) (string, error)
 	List(ctx context.Context) ([]VMInfo, error)
@@ -34,7 +36,7 @@ type Engine interface {
 	Clone(ctx context.Context, from, to string) error
 	Rename(ctx context.Context, from, to string) error
 	Resize(ctx context.Context, name string, r Resources) error
-	RunArgv(name, console string) []string
+	RunArgv(name, console string, o RunOptions) []string
 	Stop(ctx context.Context, name string, wait time.Duration) error
 	Delete(ctx context.Context, name string) error
 	IP(ctx context.Context, name string, wait time.Duration) (string, error)

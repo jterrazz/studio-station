@@ -2,13 +2,11 @@ package machines
 
 import (
 	"context"
-	"time"
+	"errors"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
 )
-
-const nodeConsole = "https://login.tailscale.com/admin/machines"
 
 type NotAVMError struct{ Name, Verb string }
 
@@ -74,36 +72,42 @@ func (s *Service) Start(ctx context.Context, name string) error {
 	if err := s.CheckStart(name); err != nil {
 		return err
 	}
-	target := s.agentTarget(name)
-	if err := s.launchctlOK(ctx, "enable", target); err != nil {
+	if err := s.daemonUp(ctx); err != nil {
 		return err
 	}
-	if !s.loaded(ctx, name) {
-		if err := s.launchctlOK(ctx, "bootstrap", s.guiDomain(), s.plistPath(name)); err != nil {
-			return err
-		}
-	}
-	if err := s.launchctlOK(ctx, "kickstart", target); err != nil {
-		return err
-	}
-	_, err := s.awaitOnline(ctx, name)
-	return err
+	return s.daemon.Do(ctx, "start", name)
 }
 
 func (s *Service) Stop(ctx context.Context, name string) error {
-	// invariant: a stopped lasting VM stays stopped across logins, because its
-	// agent is disabled; the node stays, a lasting VM keeps its identity.
+	// invariant: a stopped lasting VM stays stopped until `start`, because its
+	// record says so; with the daemon down the stop runs here, so a broken daemon
+	// never holds a VM hostage.
 	if err := s.CheckStop(name); err != nil {
 		return err
 	}
-	cfg, err := s.store.Load()
+	if s.daemon != nil {
+		err := s.daemon.Do(ctx, "stop", name)
+		if !errors.Is(err, ErrDaemonDown) {
+			return err
+		}
+	}
+	return s.StopDirect(ctx, name)
+}
+
+func (s *Service) StopDirect(ctx context.Context, name string) error {
+	rec, err := s.VM(name, "stop")
 	if err != nil {
 		return err
 	}
-	if err := s.powerOff(ctx, name, s.vmUser(cfg)); err != nil {
+	rec.Want = WantStopped
+	if err := s.writeRecord(rec); err != nil {
 		return err
 	}
-	return s.launchctlOK(ctx, "disable", s.agentTarget(name))
+	if err := s.powerOff(ctx, name, s.VMUser()); err != nil {
+		return err
+	}
+	s.retireAgent(ctx, name)
+	return nil
 }
 
 func (s *Service) restartVM(ctx context.Context, name string, say func(phase, detail string)) (RestartReport, error) {
@@ -114,47 +118,43 @@ func (s *Service) restartVM(ctx context.Context, name string, say func(phase, de
 	if rec.Lifetime == Temporary {
 		return RestartReport{}, &TemporaryRestartError{Name: name}
 	}
-	cfg, err := s.store.Load()
-	if err != nil {
+	if err := s.daemonUp(ctx); err != nil {
 		return RestartReport{}, err
 	}
 	started := s.h.Clock.Now()
 	say("restarting", "poweroff, then start")
-	if err := s.powerOff(ctx, name, s.vmUser(cfg)); err != nil {
+	if err := s.daemon.Do(ctx, "restart", name); err != nil {
 		return RestartReport{}, err
 	}
-	say("down", "the VM is off")
-	if err := s.launchctlOK(ctx, "kickstart", s.agentTarget(name)); err != nil {
-		return RestartReport{}, err
-	}
-	say("back", "its agent runs it again")
+	say("back", "the daemon runs it again")
 	return RestartReport{Name: name, Waited: s.h.Clock.Now().Sub(started)}, nil
 }
 
 func (s *Service) Delete(ctx context.Context, name string) (DeleteReport, error) {
-	// invariant: run by the VM's own agent (its run ended), a delete skips the
-	// stop and boots the agent out last, since that ends the agent itself.
-	rec, err := s.VM(name, "delete")
-	if err != nil {
+	if _, err := s.VM(name, "delete"); err != nil {
 		return DeleteReport{}, err
 	}
-	cfg, err := s.store.Load()
-	if err != nil {
-		return DeleteReport{}, err
-	}
-	self := s.o.Agent == name
-	report := DeleteReport{Name: name}
-	if rec.NodeID != "" {
-		if err := s.tn.Remove(ctx, rec.NodeID); err != nil && !s.natLogout(ctx, name, s.vmUser(cfg)) {
-			report.Warnings = append(report.Warnings, "the node of "+name+" is still on the tailnet: remove it at "+nodeConsole)
+	if s.daemon != nil {
+		err := s.daemon.Do(ctx, "delete", name)
+		if err == nil {
+			return DeleteReport{Name: name}, nil
+		}
+		if !errors.Is(err, ErrDaemonDown) {
+			return DeleteReport{}, err
 		}
 	}
-	if !self {
-		_, _ = s.launchctl(ctx, "bootout", s.agentTarget(name))
-		if s.engineState(ctx, name) == system.VMRunning {
-			if err := s.engine.Stop(ctx, name, hardStopWait); err != nil {
-				return report, err
-			}
+	return s.Remove(ctx, name)
+}
+
+func (s *Service) Remove(ctx context.Context, name string) (DeleteReport, error) {
+	// invariant: Remove is the whole delete, run by the daemon or, when it is down,
+	// by the CLI: the run stops, the disk, record, files and block go, and the VM's
+	// leases and their serve entries are released.
+	report := DeleteReport{Name: name}
+	s.retireAgent(ctx, name)
+	if s.engineState(ctx, name) == system.VMRunning {
+		if err := s.engine.Stop(ctx, name, hardStopWait); err != nil {
+			return report, err
 		}
 	}
 	if s.engineState(ctx, name) != system.VMMissing {
@@ -162,26 +162,14 @@ func (s *Service) Delete(ctx context.Context, name string) (DeleteReport, error)
 			return report, err
 		}
 	}
+	if s.rel != nil {
+		if err := s.rel.ReleaseVM(ctx, name); err != nil {
+			report.Warnings = append(report.Warnings, err.Error())
+		}
+	}
 	s.removeFiles(name, true)
 	if err := s.editConfig(nil, false, []string{name}); err != nil {
 		report.Warnings = append(report.Warnings, err.Error())
 	}
-	if self {
-		_, _ = s.launchctl(ctx, "bootout", s.agentTarget(name))
-	}
 	return report, nil
-}
-
-// hazard: the logout runs over the NAT with the image key, never over the
-// tailnet: logging out cuts the very session that would carry it.
-func (s *Service) natLogout(ctx context.Context, name, user string) bool {
-	if s.engineState(ctx, name) != system.VMRunning {
-		return false
-	}
-	ip, err := s.engine.IP(ctx, name, natIPWait)
-	if err != nil {
-		return false
-	}
-	out, err := s.nat(ctx, ip, user, "", 30*time.Second, "sudo", "tailscale", "logout")
-	return err == nil && out.ExitCode == 0
 }

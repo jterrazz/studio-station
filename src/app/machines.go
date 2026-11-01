@@ -13,6 +13,7 @@ import (
 	machinescreate "github.com/jterrazz/studio-station/src/cli/machines/create"
 	machinesdelete "github.com/jterrazz/studio-station/src/cli/machines/delete"
 	machinesforget "github.com/jterrazz/studio-station/src/cli/machines/forget"
+	machinespipe "github.com/jterrazz/studio-station/src/cli/machines/pipe"
 	machinesprobe "github.com/jterrazz/studio-station/src/cli/machines/probe"
 	machinesrestart "github.com/jterrazz/studio-station/src/cli/machines/restart"
 	machinesstart "github.com/jterrazz/studio-station/src/cli/machines/start"
@@ -32,32 +33,20 @@ const (
 	defaultHermesPort   = 8642
 )
 
-func (m machine) machines(interactive bool) *machines.Service {
-	return machines.New(m.host, tart.New(m.host.Run), m.store, fleetTailnet{service: m.tailnet(interactive)}, fleetImages{service: m.images()}, machines.Options{
+func (m machine) machines(_ bool) *machines.Service {
+	return machines.New(m.host, tart.New(m.host.Run), m.store, hostNodes{service: m.tailnet()}, fleetImages{service: m.images()}, m.hostDaemon(), leaseReleaser{m: m}, machines.Options{
 		Ports: machines.Ports{
 			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
 			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),
 		},
-		Here:     m.kind,
-		Paths:    m.paths,
-		User:     m.host.Env.User(),
-		Version:  Version(),
-		Remote:   fanOutArgv,
-		Agent:    m.vars["STATION_VM_AGENT"],
-		AgentEnv: m.agentEnv(),
+		Here:      m.kind,
+		Paths:     m.paths,
+		User:      m.host.Env.User(),
+		Version:   Version(),
+		Remote:    fanOutArgv,
+		Hop:       func(host string, words []string) []string { return remote.Argv(host, false, words) },
+		GuestPort: m.guestPort(),
 	})
-}
-
-// invariant: a launchd agent starts with launchd's own PATH and no XDG, so the
-// agent of a VM gets the creating process's resolution of both.
-func (m machine) agentEnv() map[string]string {
-	env := map[string]string{"HOME": m.host.Env.Home()}
-	for _, name := range []string{"PATH", "XDG_CONFIG_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"} {
-		if v := m.vars[name]; v != "" {
-			env[name] = v
-		}
-	}
-	return env
 }
 
 func (m machine) port(fallback int, names ...string) int {
@@ -95,7 +84,8 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		machinesdelete.Command(machinesdelete.Deps{Machines: service, Context: m.context}, env),
 		machinesprobe.Command(machinesprobe.Deps{Machines: service, Context: m.context}, env),
 		machinesunlock.Command(machinesunlock.Deps{Machines: service, Context: m.context}, env),
-		machinessupervise.Command(machinessupervise.Deps{Machines: service}, env),
+		machinessupervise.Command(env),
+		machinespipe.Command(machinespipe.Deps{Machines: service}, env),
 	)
 }
 

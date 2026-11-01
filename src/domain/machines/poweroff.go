@@ -27,9 +27,9 @@ func (s *Service) engineState(ctx context.Context, name string) system.VMState {
 	return system.VMMissing
 }
 
-// invariant: a graceful stop is the guest's own poweroff, so its
-// station-intent unit runs and the supervisor reads the stop as declared; the hard
-// stop is only for a guest that ignored it past the budget.
+// invariant: a graceful stop is the guest's own poweroff, so its station-intent
+// unit runs and the stop reads as declared; the hard stop is only for a guest
+// that ignored it past the budget.
 func (s *Service) powerOff(ctx context.Context, name, user string) error {
 	if s.engineState(ctx, name) != system.VMRunning {
 		return nil
@@ -50,4 +50,12 @@ func (s *Service) powerOff(ctx context.Context, name, user string) error {
 		}
 	}
 	return s.engine.Stop(ctx, name, hardStopWait)
+}
+
+func (s *Service) PowerOff(ctx context.Context, name string) error {
+	return s.powerOff(ctx, name, s.VMUser())
+}
+
+func (s *Service) EngineRunning(ctx context.Context, name string) bool {
+	return s.engineState(ctx, name) == system.VMRunning
 }

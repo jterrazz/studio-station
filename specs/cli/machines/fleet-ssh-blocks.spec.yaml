@@ -20,16 +20,16 @@ runs:
                     ServerAliveCountMax 3
                     UserKnownHostsFile ~/.local/state/station/known_hosts/y
                     StrictHostKeyChecking accept-new
-                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
                   # <<< jterrazz machine y <<<
 
                   # >>> jterrazz machine w >>>
                   Host w
                     HostName w
                     User vmu
+                    IdentityFile ~/.ssh/id_ed25519
                     ServerAliveInterval 30
                     ServerAliveCountMax 3
                     UserKnownHostsFile ~/.local/state/station/known_hosts/w
                     StrictHostKeyChecking accept-new
-                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
+                    ProxyCommand ssh y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station machines pipe w
                   # <<< jterrazz machine w <<<

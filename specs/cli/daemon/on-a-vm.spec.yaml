@@ -1,0 +1,8 @@
+description: 'the daemon runs only on a host'
+env: daemon
+runs:
+    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" daemon'
+      exit: 2
+      stderr: |
+          Error: the daemon runs only on a host
+          Hint: run it on a host: station setup installs it

@@ -14,28 +14,42 @@ import (
 type Ports struct{ OpenClaw, Hermes int }
 
 type Options struct {
-	Ports    Ports
-	Here     catalog.MachineKind
-	Paths    settings.Paths
-	User     string
-	Version  string
-	Remote   func(target string, words []string) []string
-	Agent    string
-	AgentEnv map[string]string
+	Ports     Ports
+	Here      catalog.MachineKind
+	Paths     settings.Paths
+	User      string
+	Version   string
+	Remote    func(target string, words []string) []string
+	Hop       func(host string, words []string) []string
+	GuestPort int
 }
 
 type Node struct {
-	Online    bool
-	IP        string
-	StationVM bool
+	Online bool
+	IP     string
 }
 
-type Tailnet interface {
-	Mint(ctx context.Context) (secretText string, err error)
-	Remove(ctx context.Context, nodeID string) error
+type Nodes interface {
 	Peers(ctx context.Context) (map[string]Node, error)
-	Argv(args ...string) []string
-	Mode() string
+}
+
+type DaemonVM struct{ State, Guest, IP, Detail string }
+
+type Reserved struct {
+	GuestPort, HostPort int
+	Profile, URL        string
+	PublicHost          string
+}
+
+type Daemon interface {
+	Ping(ctx context.Context) (version string, err error)
+	VMs(ctx context.Context) (map[string]DaemonVM, error)
+	Do(ctx context.Context, op, vm string) error
+	Reserve(ctx context.Context, vm string, port int, profile string) (Reserved, error)
+}
+
+type Releaser interface {
+	ReleaseVM(ctx context.Context, vm string) error
 }
 
 type Images interface {
@@ -47,13 +61,15 @@ type Service struct {
 	h      system.Host
 	engine system.Engine
 	store  settings.Store
-	tn     Tailnet
+	nodes  Nodes
 	img    Images
+	daemon Daemon
+	rel    Releaser
 	o      Options
 }
 
-func New(h system.Host, e system.Engine, store settings.Store, tn Tailnet, img Images, o Options) *Service {
-	return &Service{h: h, engine: e, store: store, tn: tn, img: img, o: o}
+func New(h system.Host, e system.Engine, store settings.Store, nodes Nodes, img Images, d Daemon, rel Releaser, o Options) *Service {
+	return &Service{h: h, engine: e, store: store, nodes: nodes, img: img, daemon: d, rel: rel, o: o}
 }
 
 type Lifetime string
@@ -70,14 +86,24 @@ const (
 	Stopped   VMState = "stopped"
 	Suspended VMState = "suspended"
 	Stale     VMState = "stale"
+	Broken    VMState = "broken"
+)
+
+const (
+	WantRunning = "running"
+	WantStopped = "stopped"
+	NetworkNAT  = "nat"
+	Bridged     = "bridged"
 )
 
 type VMRecord struct {
-	Name, Image, Version, NodeID string
-	Lifetime                     Lifetime
-	Resources                    system.Resources
-	Lent                         []string
-	CreatedAt                    time.Time
+	Name, Image, Version string
+	Lifetime             Lifetime
+	Want, Network        string
+	Env                  map[string]string
+	Resources            system.Resources
+	Lent                 []string
+	CreatedAt            time.Time
 }
 
 type Machine struct {
@@ -96,15 +122,21 @@ type VM struct {
 	State                      VMState
 	Resources                  system.Resources
 	SizeGB                     int
-	Node                       Node
+	IP, Network, Guest, Detail string
 	Lent                       []string
 	CreatedAt                  time.Time
+}
+
+type DaemonInfo struct {
+	Known, Running bool
+	Version        string
 }
 
 type HostView struct {
 	Name, User, StationVersion string
 	Here, Reachable            bool
 	Node                       Node
+	Daemon                     DaemonInfo
 	VMs                        []VM
 }
 

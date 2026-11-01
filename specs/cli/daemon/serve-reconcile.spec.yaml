@@ -1,0 +1,9 @@
+description: 'at its start the daemon removes the serve entries of its range no lease justifies, and only those'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/daemon-vm/
+    - ../__fixtures__/serving/
+env: daemon
+runs:
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41560-41579"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /usr/bin/grep "serve --https" .calls; kill $d; wait $d'
+      exit: 0

@@ -17,7 +17,6 @@ runs:
                     ServerAliveCountMax 3
                     UserKnownHostsFile ~/.local/state/station/known_hosts/mac-mini
                     StrictHostKeyChecking accept-new
-                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
                   # <<< jterrazz machine mac-mini <<<
     - command: 'machines add --name worker --user deploy --key "~/.ssh/deploy_key"'
       exit: 0
@@ -35,7 +34,6 @@ runs:
                     ServerAliveCountMax 3
                     UserKnownHostsFile ~/.local/state/station/known_hosts/mac-mini
                     StrictHostKeyChecking accept-new
-                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
                   # <<< jterrazz machine mac-mini <<<
 
                   # >>> jterrazz machine worker >>>
@@ -47,7 +45,6 @@ runs:
                     ServerAliveCountMax 3
                     UserKnownHostsFile ~/.local/state/station/known_hosts/worker
                     StrictHostKeyChecking accept-new
-                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
                   # <<< jterrazz machine worker <<<
     - command: 'machines add --name mac-mini'
       exit: 2
@@ -70,10 +67,6 @@ runs:
                       },
                       "x": {}
                     },
-                    "tailnet": {
-                      "mode": "userspace",
-                      "auth_method": "login"
-                    },
                     "vm_user": "vmu"
                   }
           .ssh/config:
@@ -87,5 +80,4 @@ runs:
                     ServerAliveCountMax 3
                     UserKnownHostsFile ~/.local/state/station/known_hosts/worker
                     StrictHostKeyChecking accept-new
-                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
                   # <<< jterrazz machine worker <<<

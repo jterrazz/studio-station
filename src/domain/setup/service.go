@@ -29,10 +29,8 @@ type Registrar interface {
 	Register(name string) error
 }
 
-type DaemonControl interface {
-	Running(ctx context.Context) (bool, error)
-	Stop(ctx context.Context) error
-	Start(ctx context.Context) error
+type DaemonInstaller interface {
+	Install(ctx context.Context) (Step, error)
 }
 
 type Options struct {
@@ -52,11 +50,11 @@ type Service struct {
 	store    settings.Store
 	keychain settings.Keychain
 	reg      Registrar
-	daemon   DaemonControl
+	daemon   DaemonInstaller
 	o        Options
 }
 
-func New(h system.Host, store settings.Store, kc settings.Keychain, reg Registrar, d DaemonControl, o Options) *Service {
+func New(h system.Host, store settings.Store, kc settings.Keychain, reg Registrar, d DaemonInstaller, o Options) *Service {
 	return &Service{h: h, store: store, keychain: kc, reg: reg, daemon: d, o: o}
 }
 
@@ -109,7 +107,7 @@ func (s *Service) currentHere() string {
 	if err != nil {
 		return ""
 	}
-	converted, _, err := settings.ConvertV1(data, s.h.Env.User())
+	converted, err := settings.ConvertV1(data, s.h.Env.User())
 	if err != nil {
 		return ""
 	}
@@ -148,7 +146,7 @@ func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
 		relocate, relocateErr := s.relocate(ctx, r.Interactive)
 		return Report{Steps: []Step{zshrc, relocate}}, errors.Join(err, relocateErr)
 	}
-	migrated := s.migrateSettings(ctx)
+	migrated := s.migrateSettings()
 	name, nameErr := s.name(r, migrated != nil)
 	if nameErr != nil && !isStepFailure(nameErr) {
 		return Report{}, nameErr
@@ -156,14 +154,19 @@ func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
 	zshrc, zshrcErr := s.zshrc()
 	layout, layoutErr := s.layout(ctx, migrated)
 	relocate, relocateErr := s.relocate(ctx, r.Interactive)
-	steps := []Step{name, zshrc, layout, relocate}
-	toolsErr := error(nil)
+	steps := append(append([]Step{name, zshrc}, layout...), relocate)
+	toolsErr, daemonErr := error(nil), error(nil)
 	if relocateErr == nil {
 		var tools Step
 		tools, toolsErr = s.tools(ctx, r.Interactive)
 		steps = append(steps, tools)
 	}
-	return Report{Steps: steps}, errors.Join(nameErr, zshrcErr, layoutErr, relocateErr, toolsErr)
+	if s.daemon != nil {
+		var daemon Step
+		daemon, daemonErr = s.daemon.Install(ctx)
+		steps = append(steps, daemon)
+	}
+	return Report{Steps: steps}, errors.Join(nameErr, zshrcErr, layoutErr, relocateErr, toolsErr, daemonErr)
 }
 
 func isStepFailure(err error) bool {

@@ -1,0 +1,12 @@
+description: 'with the daemon down the reads degrade, never fail'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/vm-api/
+env: daemon
+runs:
+    - command: 'machines --json | /usr/bin/jq -c ''.hosts[0].daemon''; "$STATION" machines | /usr/bin/grep daemon; "$STATION" services'
+      exit: 0
+      stdout: |
+          {"running":false,"version":""}
+          ◐	x	host			online	192.0.2.1	daemon not running · station setup
+          ◐	daemon			x	not running		station setup

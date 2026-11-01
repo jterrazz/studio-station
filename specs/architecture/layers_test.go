@@ -32,6 +32,7 @@ const (
 	ansi   = "github.com/charmbracelet/x/ansi"
 	cprof  = "github.com/charmbracelet/colorprofile"
 	std    = "std"
+	sshPkg = "golang.org/x/crypto/ssh"
 )
 
 // invariant: the import table of docs/concepts/architecture.md, owned HERE. A
@@ -43,13 +44,16 @@ func importTable() map[string][]string {
 	return map[string][]string{
 		"cmd/station":       {"app", "os"},
 		"cmd/generate":      {"catalog", "os", "flag", std},
-		"app":               {"*", fang, cobra, lip, term, "os", "os/signal", "runtime/debug", std},
+		"app":               {"*", fang, cobra, lip, term, "os", "os/signal", "syscall", "runtime/debug", std},
 		"cli":               {"cli/kit", cobra, std},
 		"cli/kit":           {"output", "present", "prompt", "fail", "domain/*", "catalog", cobra, pflag, std},
 		"cli/*":             {"cli/kit", "domain/*", "present", "present/*", "catalog", "prompt", cobra, pflag, std},
 		"domain/*":          domain,
 		"domain/setup":      append(slices.Clone(domain), "domain/shell", "domain/storage"),
-		"domain/status":     append(slices.Clone(domain), "domain/tools", "domain/config", "domain/tailnet", "domain/setup", "domain/storage"),
+		"domain/status":     append(slices.Clone(domain), "domain/tools", "domain/config", "domain/tailnet", "domain/setup", "domain/storage", "domain/services"),
+		"domain/daemon":     append(slices.Clone(domain), "domain/machines", "domain/services", "domain/tailnet"),
+		"domain/guest":      append(slices.Clone(domain), "domain/services"),
+		"system/sshclient":  {"system", sshPkg, sshPkg + "/knownhosts", "os", "net", std},
 		"system":            {std},
 		"system/tart":       {"system", std},
 		"system/host":       {"system", "os", "os/exec", "os/user", "net", "net/http", "syscall", std},
@@ -92,14 +96,17 @@ func symbolRules() []symbolRule {
 	return []symbolRule{
 		{symbols: []string{"os.Getenv", "os.LookupEnv", "os.Setenv", "os.UserHomeDir", "os.Hostname", "os.Geteuid"}, owners: []string{"system/host"}},
 		{symbols: []string{"os.Environ", "os.Args", "os.Exit", "os.Stdin", "os.Stdout", "os.Stderr"}, owners: []string{"cmd/station"}},
-		{symbols: []string{"os.ReadFile", "os.WriteFile", "os.MkdirAll"}, owners: []string{"system/host", "cmd/generate"}, tests: true},
+		{symbols: []string{"os.ReadFile", "os.WriteFile", "os.MkdirAll"}, owners: []string{"system/host", "system/sshclient", "cmd/generate"}, tests: true},
+		{symbols: []string{"os.Getpid", "syscall.SIGTERM"}, owners: []string{"app", "system/host"}},
 		{symbols: []string{"os.File", "os.File.Fd", "os.Interrupt"}, owners: []string{"system/host", "app"}},
-		{symbols: []string{"os.*", "os/exec.*", "syscall.*", "os/user.*"}, owners: []string{"system/host"}},
-		{symbols: []string{"net.*", "net/http.*"}, owners: []string{"system/host"}},
+		{symbols: []string{"os.*", "os/exec.*", "syscall.*", "os/user.*"}, owners: []string{"system/host", "system/sshclient"}},
+		{symbols: []string{"net.*"}, owners: []string{"system/host", "system/sshclient"}},
+		{symbols: []string{"net/http.*"}, owners: []string{"system/host"}},
+		{symbols: []string{sshPkg + ".*", sshPkg + "/knownhosts.*"}, owners: []string{"system/sshclient"}},
 		{symbols: []string{"fmt.Print", "fmt.Println", "fmt.Printf", "log.*", "print", "println"}},
 		{symbols: []string{"fmt.Fprint", "fmt.Fprintln", "fmt.Fprintf", "io.WriteString", "io.Copy", "io.CopyN"}, owners: []string{"output", "prompt", "system/host", "cmd/generate"}},
 		{symbols: cobraWriters(), owners: []string{"cli/kit", "app"}},
-		{symbols: []string{"time.Now", "time.Since", "time.Until", "time.Sleep", "time.After", "time.Tick", "time.NewTimer", "time.NewTicker", "time.AfterFunc"}, owners: []string{"system/host", "output", "tui", "tui/*"}},
+		{symbols: []string{"time.Now", "time.Since", "time.Until", "time.Sleep", "time.After", "time.Tick", "time.NewTimer", "time.NewTicker", "time.AfterFunc"}, owners: []string{"system/host", "system/sshclient", "output", "tui", "tui/*"}},
 		{symbols: []string{"path/filepath.Glob", "path/filepath.Walk", "path/filepath.WalkDir", "path/filepath.EvalSymlinks", "path/filepath.Abs", "io/fs.WalkDir", "io/fs.Glob"}, owners: []string{"system/host", "system/systemtest"}},
 		{symbols: paletteSymbols(), owners: []string{"theme"}},
 		{symbols: []string{lip + ".*"}, owners: []string{"output", "theme", "tui", "tui/*", "app"}},
@@ -641,6 +648,42 @@ func ruleRegistries(w *world) []finding {
 	return out
 }
 
+// invariant: rule 12: the raw byte streams reach only a leaf declared
+// Plumbing, in the same file as its kit.Leaf literal.
+func ruleStreams(w *world) []finding {
+	var out []finding
+	for _, f := range w.files {
+		if f.pkg == "cli/kit" || f.test {
+			continue
+		}
+		plumbing, calls := false, []token.Pos{}
+		ast.Inspect(f.syntax, func(n ast.Node) bool {
+			switch x := n.(type) {
+			case *ast.KeyValueExpr:
+				if k, ok := x.Key.(*ast.Ident); ok && k.Name == "Plumbing" {
+					if v, ok := x.Value.(*ast.Ident); ok && v.Name == "true" {
+						plumbing = true
+					}
+				}
+			case *ast.SelectorExpr:
+				if x.Sel.Name != "Streams" {
+					return true
+				}
+				if fn, ok := f.info.Uses[x.Sel].(*types.Func); ok && fn.Pkg() != nil && fn.Pkg().Path() == module+"/src/cli/kit" {
+					calls = append(calls, x.Pos())
+				}
+			}
+			return true
+		})
+		if !plumbing {
+			for _, at := range calls {
+				out = append(out, finding{"streams", f.at(at), "kit.IO.Streams outside a leaf declared Plumbing"})
+			}
+		}
+	}
+	return out
+}
+
 func sortedKeys(m map[string]bool) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -670,6 +713,7 @@ func rules() []rule {
 		{"Catalog", ruleCatalog, "src/catalog/mutant_catalog.go", "package catalog\n\ntype mutantEntry struct{ Check func() bool }\n\nvar mutantDefault = mutantEntry{Check: func() bool { return true }}\n", "src/catalog/mutant_catalog.go"},
 		{"Worded", ruleWorded, "src/domain/mutant/mutant.go", "package mutant\n\ntype UnwordedError struct{}\n\nfunc (UnwordedError) Error() string { return \"unworded\" }\n", "src/domain/mutant/mutant.go"},
 		{"Comments", ruleComments, "src/present/mutant_comments.go", "package present\n\n// a comment that states no kind\nconst mutantComment = 1\n", "src/present/mutant_comments.go"},
+		{"Streams", ruleStreams, "src/cli/mutant/mutant_streams.go", "package mutant\n\nimport \"" + module + "/src/cli/kit\"\n\nfunc mutantStreams(o kit.IO) { _, _ = o.Streams() }\n", "src/cli/mutant"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
 }
@@ -724,3 +768,4 @@ func TestCatalog(t *testing.T)    { judge(t, "Catalog") }
 func TestWorded(t *testing.T)     { judge(t, "Worded") }
 func TestComments(t *testing.T)   { judge(t, "Comments") }
 func TestRegistries(t *testing.T) { judge(t, "Registries") }
+func TestStreams(t *testing.T)    { judge(t, "Streams") }

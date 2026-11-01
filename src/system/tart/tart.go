@@ -120,8 +120,12 @@ func (e *engine) Resize(ctx context.Context, name string, r system.Resources) er
 	return err
 }
 
-func (e *engine) RunArgv(name, console string) []string {
-	return []string{e.path, "run", "--no-graphics", "--no-audio", "--serial-path", console, name}
+func (e *engine) RunArgv(name, console string, o system.RunOptions) []string {
+	argv := []string{e.path, "run", "--no-graphics", "--no-audio", "--serial-path", console}
+	if o.Bridged != "" {
+		argv = append(argv, "--net-bridged="+o.Bridged)
+	}
+	return append(argv, name)
 }
 
 func (e *engine) Stop(ctx context.Context, name string, wait time.Duration) error {

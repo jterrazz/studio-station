@@ -1,12 +1,14 @@
 description: 'a script reads the new name from the second field, or the created document from --json'
-fixture: ../../__fixtures__/vms/
-serve: tailscale
+fixture:
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
+env: daemon
 runs:
-    - command: 'machines create --lifetime temporary | /usr/bin/cut -f2'
+    - command: '--version >/dev/null; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary | /usr/bin/head -1 | /usr/bin/cut -f2; kill $d; wait $d'
       exit: 0
       stdout: |
           linux-1
-    - command: 'machines create --lifetime temporary --json | /usr/bin/jq -r ''.schema, .name, .host, .lifetime, .version, .memory_bytes, .ip'''
+    - command: '--version >/dev/null; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary --json | /usr/bin/jq -r ''.schema, .name, .host, .lifetime, .version, .memory_bytes, .ip''; kill $d; wait $d'
       exit: 0
       stdout: |
           station.machines.created/v1
@@ -15,8 +17,4 @@ runs:
           temporary
           2026.11.07
           8589934592
-          100.64.0.42
-    - command: '--version > /dev/null; /usr/bin/grep -rl t[s]key .calls .local .config Library || echo "no key on disk"'
-      exit: 0
-      stdout: |
-          no key on disk
+          127.0.0.1

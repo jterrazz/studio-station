@@ -1,66 +1,31 @@
-description: "a temporary VM: cloned, sized, a supervised agent off at login, one NAT boot, a one-use key"
-fixture: ../../__fixtures__/vms/
-serve: tailscale
+description: 'a temporary VM: cloned, sized, run detached by the daemon, one NAT boot, no tailnet'
+fixture:
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
+env: daemon
 runs:
-    - command: 'machines create --lifetime temporary'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41000-41019"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary; kill $d; wait $d'
       exit: 0
       stdout: |
           ●	linux-1	x	temporary	linux 2026.11.07	4 cpus · 8 GB
+          ●	expo	8081	→ https://macbook.tail1234.ts.net:41000
+          ●	vite	5173	→ https://macbook.tail1234.ts.net:41001
       files:
           .calls:
               contains:
                   - 'tart clone station-image-linux-2026.11.07 linux-1'
                   - 'tart set linux-1 --cpu 4 --memory 8192 --disk-size 50'
-                  - 'launchctl bootstrap gui/{{int}} {{workdir}}/Library/LaunchAgents/com.jterrazz.station.vm.linux-1.plist'
-                  - 'launchctl kickstart gui/{{int}}/com.jterrazz.station.vm.linux-1'
-                  - 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o BatchMode=yes -o IdentitiesOnly=yes -i {{workdir}}/.local/state/station/images/key vmu@192.168.64.5 sudo bash -s'
-          Library/LaunchAgents/com.jterrazz.station.vm.linux-1.plist:
-              contains:
-                  - |-
-                    	<key>ProgramArguments</key>
-                    	<array>
-                    		<string>{{path}}</string>
-                    		<string>machines</string>
-                    		<string>supervise</string>
-                    		<string>linux-1</string>
-                    	</array>
-                  - |-
-                    		<key>PATH</key>
-                    		<string>{{workdir}}/bin</string>
-                  - |-
-                    		<key>STATION_VM_AGENT</key>
-                    		<string>linux-1</string>
-                  - |-
-                    	<key>RunAtLoad</key>
-                    	<false/>
+                  - 'tart run --no-graphics --no-audio --serial-path {{workdir}}/.local/state/station/consoles/linux-1 linux-1'
+                  - 'vmu@127.0.0.1 sudo bash -s'
           .firstboot.stdin:
               contains:
                   - "hostnamectl set-hostname 'linux-1'"
-                  - "if [ 'temporary' = temporary ]; then"
                   - 'temporary VM: poweroff deletes it; reboot keeps it'
-                  - 'tailscale up --auth-key=file:/dev/stdin'
-          .local/state/station/vms/linux-1.json:
-              contains:
-                  - '"lifetime": "temporary"'
-                  - '"node_id": "n-linux-1"'
-    - command: '--version > /dev/null; /usr/bin/awk ''/^tart clone/{c=NR} /^tart set/{s=NR} /^launchctl bootstrap/{b=NR} /^launchctl kickstart/{k=NR} /sudo bash -s$/{f=NR} END{print (c<s && s<b && b<k && k<f) ? "ordered" : "disordered"}'' .calls'
-      exit: 0
-      stdout: |
-          ordered
-    - command: '--version > /dev/null; /usr/bin/grep -c KeepAlive Library/LaunchAgents/com.jterrazz.station.vm.linux-1.plist'
+          Library/LaunchAgents/com.jterrazz.station.vm.linux-1.plist: absent
+    - command: '--version >/dev/null; /usr/bin/awk ''/^tart clone/{c=NR} /^tart set/{s=NR} /^sh -c/{r=NR} /sudo bash -s$/{f=NR} END{print (c<s && s<r && r<f) ? "ordered" : "disordered"}'' .calls; /usr/bin/grep -c -E ''launchctl|tailscale up'' .calls .local/state/station/vms/linux-1.json .firstboot.stdin'
       exit: 1
       stdout: |
-          0
-    - command: '--version > /dev/null; /usr/bin/grep -rl t[s]key .calls .local .config Library || echo "no key on disk"'
-      exit: 0
-      stdout: |
-          no key on disk
-    - command: '--version > /dev/null; /usr/bin/sed -n ''/^POST \/api\/v2\/tailnet\/-\/keys$/{n;p;}'' .api | /usr/bin/jq -c ''[.capabilities.devices.create | .reusable, .ephemeral, .preauthorized, .tags], .expirySeconds'''
-      exit: 0
-      stdout: |
-          [false,false,true,["tag:station-vm"]]
-          600
-    - command: '--version > /dev/null; /usr/bin/grep -c ''^grant_type=client_credentials&client_id=stub-id&client_secret=stub-secret$'' .api'
-      exit: 0
-      stdout: |
-          1
+          ordered
+          .calls:0
+          .local/state/station/vms/linux-1.json:0
+          .firstboot.stdin:0

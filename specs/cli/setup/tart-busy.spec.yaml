@@ -8,8 +8,9 @@ runs:
       stdout: |
           ●	name	m
           ●	zshrc
-          ●	layout	nothing to move
+          ●	layout	nothing to retire
           ✗	relocate	tart is running: its files cannot move under it
+          ○	daemon	not needed until tart is installed
       stderr: |
           Error: setup step relocate: tart is running: its files cannot move under it
           Hint: stop the lasting VMs and delete the temporary ones (station machines), then station setup

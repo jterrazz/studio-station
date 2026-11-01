@@ -6,9 +6,10 @@ runs:
       stdout: |
           ●	name	m
           ●	zshrc
-          ●	layout	nothing to move
+          ●	layout	nothing to retire
           ●	relocate	go env, npmrc, moved ~/go
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ○	daemon	not needed until tart is installed
       files:
           .local/share/go/bin/foo: { equals: "foo binary\n" }
           go: absent

@@ -19,9 +19,10 @@ func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
 	if err != nil {
 		return Fleet{}, err
 	}
-	nodes := s.nodes(ctx)
+	nodes := s.nodeMap(ctx)
 	name := s.here(cfg)
-	vms, err := s.vms(ctx, name, nodes)
+	info, live := s.daemonView(ctx)
+	vms, err := s.vms(ctx, name, live)
 	if err != nil {
 		return Fleet{}, err
 	}
@@ -30,7 +31,7 @@ func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
 		user = s.h.Env.User()
 	}
 	fleet := Fleet{Hosts: []HostView{{
-		Name: name, User: user, StationVersion: s.o.Version, Here: true, Reachable: true, Node: nodes[name], VMs: vms,
+		Name: name, User: user, StationVersion: s.o.Version, Here: true, Reachable: true, Node: nodes[name], Daemon: info, VMs: vms,
 	}}}
 	if hereOnly || s.o.Here != catalog.Host {
 		return fleet, nil
@@ -56,15 +57,35 @@ func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
 	return fleet, nil
 }
 
-func (s *Service) nodes(ctx context.Context) map[string]Node {
-	if s.tn == nil {
+func (s *Service) nodeMap(ctx context.Context) map[string]Node {
+	if s.nodes == nil || s.o.Here != catalog.Host {
 		return nil
 	}
-	nodes, err := s.tn.Peers(ctx)
+	nodes, err := s.nodes.Peers(ctx)
 	if err != nil {
 		return nil
 	}
 	return nodes
+}
+
+// invariant: the daemon matters only where VMs can exist: on a host with tart; a
+// daemon that does not answer degrades the view, never fails it.
+func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[string]DaemonVM) {
+	if s.o.Here != catalog.Host || s.daemon == nil {
+		return DaemonInfo{}, nil
+	}
+	if _, ok := s.h.Run.LookPath("tart"); !ok {
+		return DaemonInfo{}, nil
+	}
+	version, err := s.daemon.Ping(ctx)
+	if err != nil {
+		return DaemonInfo{Known: true}, nil
+	}
+	live, err = s.daemon.VMs(ctx)
+	if err != nil {
+		return DaemonInfo{Known: true, Running: true, Version: version}, nil
+	}
+	return DaemonInfo{Known: true, Running: true, Version: version}, live
 }
 
 func (s *Service) ask(ctx context.Context, name string, h settings.Host, node Node) HostView {
@@ -86,7 +107,8 @@ func (s *Service) ask(ctx context.Context, name string, h settings.Host, node No
 }
 
 func (s *Service) Running(ctx context.Context) (map[string]catalog.MachineKind, error) {
-	vms, err := s.vms(ctx, "", nil)
+	_, live := s.daemonView(ctx)
+	vms, err := s.vms(ctx, "", live)
 	if err != nil {
 		return nil, err
 	}

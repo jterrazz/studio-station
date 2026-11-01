@@ -1,0 +1,10 @@
+description: 'a socket file nobody answers is replaced'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/daemon-vm/
+env: daemon
+runs:
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41440-41459"}/'' .config/station/settings.json; /bin/mkdir -p .local/state/station; : > .local/state/station/daemon.sock; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; printf ''{"v":1,"id":"1","op":"ping"}\n'' | /usr/bin/nc -U .local/state/station/daemon.sock | /usr/bin/jq -c .ok; kill $d; wait $d'
+      exit: 0
+      stdout: |
+          true

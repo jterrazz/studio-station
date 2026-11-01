@@ -1,17 +1,20 @@
 #!/bin/sh
-# tailscale as the VM specs need it: `status --json` answers answers/tailscale/status.json
-# with every VM whose first boot ran (listed in $HOME/.joined) as an online peer tagged
-# tag:station-vm; the status file holds at least one peer.
+# The Tailscale app's CLI as the VM specs need it: every call is recorded in
+# $HOME/.calls; `status --json` answers answers/tailscale/status.json, `serve status
+# --json` answers answers/tailscale/serve.json (else {}), and every other `serve` is
+# recorded and succeeds unless answers/tailscale/serve.exit says otherwise.
+answers="${0%/*}/../answers/tailscale"
 printf 'tailscale %s\n' "$*" >> "$HOME/.calls"
 case "$*" in
-    *"status --json")
-        peers=''
-        if [ -f "$HOME/.joined" ]; then
-            while read -r name; do
-                peers="$peers\"j-$name\":{\"ID\":\"n-$name\",\"HostName\":\"$name\",\"TailscaleIPs\":[\"100.64.0.42\"],\"Online\":true,\"Tags\":[\"tag:station-vm\"]},"
-            done < "$HOME/.joined"
+    "status --json") /bin/cat "$answers/status.json" ;;
+    "serve status --json")
+        if [ -f "$answers/serve.json" ]; then /bin/cat "$answers/serve.json"; else echo '{}'; fi
+        ;;
+    serve*)
+        if [ -f "$answers/serve.exit" ]; then
+            echo "serve: HTTPS is not enabled for this tailnet" >&2
+            exit "$(/bin/cat "$answers/serve.exit")"
         fi
-        /usr/bin/sed "s/\"Peer\":{/\"Peer\":{$peers/" "${0%/*}/../answers/tailscale/status.json"
         ;;
     *)
         echo "stub tailscale: unexpected invocation: $*" >&2

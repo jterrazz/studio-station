@@ -28,10 +28,6 @@ runs:
                     "hosts": {
                       "x": {}
                     },
-                    "tailnet": {
-                      "mode": "userspace",
-                      "auth_method": "login"
-                    },
                     "vm_user": "vmu"
                   }
     - command: 'machines add --name worker --user deploy --key "~/.ssh/deploy_key"'
@@ -54,7 +50,6 @@ runs:
                     ServerAliveCountMax 3
                     UserKnownHostsFile ~/.local/state/station/known_hosts/worker
                     StrictHostKeyChecking accept-new
-                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
                   # <<< jterrazz machine worker <<<
           .config/station/settings.json:
               equals: |
@@ -66,10 +61,6 @@ runs:
                         "key": "~/.ssh/deploy_key"
                       },
                       "x": {}
-                    },
-                    "tailnet": {
-                      "mode": "userspace",
-                      "auth_method": "login"
                     },
                     "vm_user": "vmu"
                   }

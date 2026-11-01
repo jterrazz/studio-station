@@ -1,41 +1,19 @@
-description: "a lasting VM's agent loads at login and restarts after a crash, from a one-use key"
-fixture: ../../__fixtures__/vms/
-serve: tailscale
+description: 'a lasting VM: its record wants it running on NAT, and the daemon runs it; no agent of its own'
+fixture:
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
+env: daemon
 runs:
-    - command: 'machines create --lifetime lasting --name api'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41020-41039"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime lasting --name api; kill $d; wait $d'
       exit: 0
       stdout: |
           ●	api	x	lasting	linux 2026.11.07	4 cpus · 8 GB
+          ●	expo	8081	→ https://macbook.tail1234.ts.net:41020
+          ●	vite	5173	→ https://macbook.tail1234.ts.net:41021
       files:
-          Library/LaunchAgents/com.jterrazz.station.vm.api.plist:
+          .local/state/station/vms/api.json:
               contains:
-                  - |-
-                    		<string>machines</string>
-                    		<string>supervise</string>
-                    		<string>api</string>
-                  - |-
-                    	<key>RunAtLoad</key>
-                    	<true/>
-                    	<key>KeepAlive</key>
-                    	<dict>
-                    		<key>SuccessfulExit</key>
-                    		<false/>
-                    	</dict>
-          .local/state/station/vms/api.json: { contains: '"lifetime": "lasting"' }
-    - command: '--version > /dev/null; /usr/bin/grep -c "poweroff deletes it" .firstboot.stdin'
-      exit: 0
-      stdout: |
-          1
-    - command: '--version > /dev/null; /usr/bin/sed -n ''/^POST \/api\/v2\/tailnet\/-\/keys$/{n;p;}'' .api | /usr/bin/jq -c ''[.capabilities.devices.create | .reusable, .ephemeral, .preauthorized, .tags], .expirySeconds'''
-      exit: 0
-      stdout: |
-          [false,false,true,["tag:station-vm"]]
-          600
-    - command: '--version > /dev/null; /usr/bin/grep -c ''client_id=stub-id&client_secret=stub-secret'' .api'
-      exit: 0
-      stdout: |
-          1
-    - command: '--version > /dev/null; /usr/bin/grep -rl t[s]key .calls .local .config Library || echo "no key on disk"'
-      exit: 0
-      stdout: |
-          no key on disk
+                  - '"lifetime": "lasting"'
+                  - '"want": "running"'
+                  - '"network": "nat"'
+          Library/LaunchAgents/com.jterrazz.station.vm.api.plist: absent

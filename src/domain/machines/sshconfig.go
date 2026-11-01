@@ -9,8 +9,6 @@ import (
 	"path"
 	"sort"
 	"strings"
-
-	"github.com/jterrazz/studio-station/src/domain/settings"
 )
 
 // value: the name sits in both markers, so each block names itself to a human who opens the file.
@@ -26,33 +24,41 @@ func endMarker(name string) string   { return endPrefix + name + endSuffix }
 
 type target struct {
 	Name, User, Key string
-	Host            bool
+	Proxy           string
 }
+
+const defaultKey = "~/.ssh/id_ed25519"
 
 func (s *Service) block(t target) string {
 	// invariant: the name IS the HostName, and each machine keeps its own
-	// known_hosts, so a name reused by a new VM meets no changed host key.
+	// known_hosts, so a name reused by a new VM meets no changed host key; a VM
+	// is reached through its host, never on the tailnet.
 	lines := []string{beginMarker(t.Name), "Host " + t.Name, "  HostName " + t.Name}
 	if t.User != "" {
 		lines = append(lines, "  User "+t.User)
 	}
-	if t.Host {
-		key := t.Key
-		if key == "" {
-			key = "~/.ssh/id_ed25519"
-		}
-		lines = append(lines, "  IdentityFile "+key)
+	key := t.Key
+	if key == "" {
+		key = defaultKey
 	}
 	lines = append(lines,
+		"  IdentityFile "+key,
 		"  ServerAliveInterval 30",
 		"  ServerAliveCountMax 3",
 		"  UserKnownHostsFile "+s.tilde(path.Join(s.knownHostsDir(), t.Name)),
 		"  StrictHostKeyChecking accept-new",
 	)
-	if s.tn.Mode() == string(settings.ModeUserspace) {
-		lines = append(lines, "  ProxyCommand tailscale "+strings.Join(s.tn.Argv("nc", "%h", "%p"), " "))
+	if t.Proxy != "" {
+		lines = append(lines, "  ProxyCommand "+t.Proxy)
 	}
 	return strings.Join(append(lines, endMarker(t.Name), ""), "\n")
+}
+
+func (s *Service) proxy(host string, here bool, vm string) string {
+	if here {
+		return s.h.Env.Executable() + " machines pipe " + vm
+	}
+	return "ssh " + strings.Join(s.o.Hop(host, []string{"machines", "pipe", vm}), " ")
 }
 
 func (s *Service) tilde(p string) string {
@@ -72,14 +78,15 @@ func (s *Service) SSHBlocks(_ context.Context, f Fleet) error {
 	}
 	var targets []target
 	complete := true
+	key := cfg.Hosts[cfg.Here].Key
 	for _, host := range f.Hosts {
 		complete = complete && host.Reachable
 		if !host.Here {
 			h := cfg.Hosts[host.Name]
-			targets = append(targets, target{Name: host.Name, User: h.User, Key: h.Key, Host: true})
+			targets = append(targets, target{Name: host.Name, User: h.User, Key: h.Key})
 		}
 		for _, vm := range host.VMs {
-			targets = append(targets, target{Name: vm.Name, User: s.vmUser(cfg)})
+			targets = append(targets, target{Name: vm.Name, User: s.vmUser(cfg), Key: key, Proxy: s.proxy(host.Name, host.Here, vm.Name)})
 		}
 	}
 	if err := s.h.FS.MkdirAll(s.knownHostsDir(), 0o700); err != nil {

@@ -11,7 +11,7 @@ runs:
       files:
           .calls: absent
     - command: 'machines create --lifetime temporary --name linux-1'
-      exit: 2
+      exit: 1
       stderr: |
-          Error: "linux-1" already names a VM
-          Hint: pick another name
+          Error: the station daemon is not running
+          Hint: station setup

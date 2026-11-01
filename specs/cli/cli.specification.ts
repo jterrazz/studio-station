@@ -7,6 +7,7 @@ import { afterAll } from 'vitest';
 const REPO_ROOT = resolve(import.meta.dirname, '../..');
 const STATION_BIN = resolve(REPO_ROOT, '.artifacts/go/station-test');
 const SOURCES = resolve(REPO_ROOT, 'src');
+const VM_SSHD = resolve(import.meta.dirname, '__fixtures__/vm-sshd');
 
 // hazard: a stale binary silently tests old behaviour, so the suite rebuilds when any
 // file under `src/` is newer than the binary: the embedded dotfiles and recipes are
@@ -43,7 +44,7 @@ if (process.env.STATION_FORCE_REBUILD === '1' || binaryIsStale()) {
 // STATION_SYSTEM_ROOT reads /Applications, /opt/homebrew and /Library under the run's
 // own `root/`, so the owner's apps are neither listed nor sized; the
 // machine kind is pinned to host unless a document says otherwise; GitHub is a closed
-// port unless a document serves its stub, and so is Tailscale's API.
+// port unless a document serves its stub; a VM's sshd is the served stub vm-sshd.
 export const { cleanup, cli } = await specification.cli(STATION_BIN, {
     defaults: {
         COLUMNS: '80',
@@ -54,12 +55,12 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
         STATION_MACHINE_KIND: 'host',
         STATION_SYSTEM_DIRS: '',
         STATION_SYSTEM_ROOT: '$WORKDIR/root',
-        STATION_TAILSCALE_API_URL: 'http://127.0.0.1:9',
         TZ: 'UTC',
     },
     // value: a document that drives the TUI runs `terminal "$STATION"`, the binary on a
     // pseudo-terminal its fixture's driver opens, since a run is never given a TTY.
     env: {
+        daemon: { STATION: STATION_BIN },
         terminal: { STATION: STATION_BIN, TERM: 'xterm-256color' },
     },
     serve: {
@@ -69,11 +70,11 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
             ready: /listening on port (?<port>\d+)/u,
             url: (port) => `http://127.0.0.1:${port}`,
         },
-        tailscale: {
-            command: 'node specs/cli/__setup__/tailscale-api.ts',
-            env: 'STATION_TAILSCALE_API_URL',
+        sshd: {
+            command: `STATION_TEST_BIN=${STATION_BIN} go run ${VM_SSHD}`,
+            env: 'STATION_GUEST_SSH_PORT',
             ready: /listening on port (?<port>\d+)/u,
-            url: (port) => `http://127.0.0.1:${port}`,
+            url: String,
         },
     },
 });

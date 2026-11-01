@@ -24,4 +24,4 @@ runs:
     - command: 'machines --json | /usr/bin/jq -r ''.hosts[0].vms[0] | keys | join(" ")'''
       exit: 0
       stdout: |
-          cpus created_at disk_bytes image kind lent lifetime memory_bytes name node state version
+          cpus created_at disk_bytes guest image ip kind lent lifetime memory_bytes name network state version

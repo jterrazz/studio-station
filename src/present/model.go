@@ -67,8 +67,9 @@ type Document struct {
 }
 
 type Answer struct {
-	Doc  Document
-	JSON any
+	Doc   Document
+	JSON  any
+	Piped string
 }
 
 func MachineContext(name, kind string, registered bool) string {

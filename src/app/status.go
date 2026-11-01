@@ -16,10 +16,11 @@ func statusService(env kit.Env, m machine) *status.Service {
 	return status.New(m.host, status.Sources{
 		Tools:   toolsService(env, m),
 		Config:  configService(m),
-		Tailnet: m.tailnet(env.Interactive),
+		Tailnet: m.tailnet(),
 		Setup:   setupService(env, m),
 		Store:   m.store,
 		Storage: m.storage(env),
+		Daemon:  m.hostDaemon(),
 	}, status.Options{
 		Here:         m.kind,
 		OpenClawPort: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),

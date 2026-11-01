@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"charm.land/fang/v2"
 	"charm.land/lipgloss/v2"
@@ -52,6 +53,8 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		Interactive: inTTY && errTTY,
 		Screen:      inTTY && outTTY,
 		On:          &kit.On{Here: here.here(), Args: args, Remote: remote.New(here.host.Run)},
+		Stdin:       stdin,
+		Stdout:      stdout,
 	}
 	kenv.On.Refresh = func(ctx context.Context) error {
 		fleet := here.machines(false)
@@ -71,6 +74,9 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		imagesCommand(kenv, here),
 		secretsCommand(kenv, here),
 		tailnetCommand(kenv, here),
+		servicesCommand(kenv, here),
+		daemonCommand(kenv, here),
+		guestCommand(kenv, here),
 		runCommand(kenv, here),
 		setupCommand(kenv, here),
 		shellCommand(kenv, here),
@@ -87,7 +93,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 			writer.Failure(kit.Translate(err, ""))
 		}),
 		fang.WithColorSchemeFunc(fangScheme),
-		fang.WithNotifySignal(os.Interrupt),
+		fang.WithNotifySignal(os.Interrupt, syscall.SIGTERM),
 	)
 	if err == nil {
 		return int(fail.CodeOK)

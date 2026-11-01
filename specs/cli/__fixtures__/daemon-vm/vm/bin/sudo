@@ -1,0 +1,15 @@
+#!/bin/sh
+# sudo inside the VM: a guest poweroff stops every running VM of the host's stub tart
+# and declares the intent, as the station-intent unit does.
+case "$*" in
+    "systemctl --no-block poweroff")
+        /bin/mkdir -p "$TEST_WORKDIR/.tart-intents"
+        for vm in "$TEST_WORKDIR"/.tart-vms/*; do
+            if [ "$(/bin/cat "$vm")" = running ]; then
+                : > "$TEST_WORKDIR/.tart-intents/${vm##*/}"
+                echo stopped > "$vm"
+            fi
+        done
+        ;;
+    *) exit 97 ;;
+esac

@@ -81,10 +81,19 @@ func vmFailure(err error) (*fail.Error, bool) {
 	var stop *machines.TemporaryStopError
 	var start *machines.TemporaryStartError
 	var created *machines.CreateFailedError
-	var agent *machines.NotTheAgentError
-	var stops *machines.GuestStopsError
-	var ended *machines.RunEndedError
+	var down *machines.DaemonDownError
+	var network *machines.BadNetworkError
+	if f, ok := pipeFailure(err); ok {
+		return f, true
+	}
 	switch {
+	case errors.As(err, &down):
+		return fail.Failed(down.Error(), "station setup", err), true
+	case errors.As(err, &network):
+		if network.Bridge {
+			return fail.Usage(network.Error(), "it lets an iPhone on the Wi-Fi reach the VM; Linux VMs publish their services instead"), true
+		}
+		return fail.Usage(network.Error(), "station machines create --network nat"), true
 	case errors.As(err, &created):
 		return fail.Failed(created.Error(), "fix the cause, then run station machines create again", err), true
 	case errors.As(err, &notVM):
@@ -107,12 +116,6 @@ func vmFailure(err error) (*fail.Error, bool) {
 		return fail.Usage(stop.Error(), "station machines delete "+stop.Name), true
 	case errors.As(err, &start):
 		return fail.Usage(start.Error(), "station machines create --lifetime temporary"), true
-	case errors.As(err, &agent):
-		return fail.Usage(agent.Error(), "station machines shows its state"), true
-	case errors.As(err, &stops):
-		return fail.Failed(stops.Error(), "read its log: ~/.local/state/station/logs/"+stops.Name+".log", err), true
-	case errors.As(err, &ended):
-		return fail.Failed(ended.Error(), "read its log: ~/.local/state/station/logs/"+ended.Name+".log", err), true
 	}
 	return nil, false
 }
@@ -125,4 +128,25 @@ func notAVMHint(e *machines.NotAVMError) string {
 		return "station machines restart " + e.Name
 	}
 	return "run station machines for the VMs"
+}
+
+func pipeFailure(err error) (*fail.Error, bool) {
+	var notHere *machines.NotHereError
+	var stopped *machines.StoppedError
+	var closed *machines.SSHDClosedError
+	var running *machines.RunningUnderAgentError
+	switch {
+	case errors.As(err, &notHere):
+		return fail.Usage(notHere.Error(), "ssh "+notHere.Name+" goes through "+notHere.Host+": station machines"), true
+	case errors.As(err, &stopped):
+		if stopped.Lifetime == machines.Temporary {
+			return fail.Failed(stopped.Error(), "station machines delete "+stopped.Name, err), true
+		}
+		return fail.Failed(stopped.Error(), "station machines start "+stopped.Name, err), true
+	case errors.As(err, &closed):
+		return fail.Failed(closed.Error(), "station machines probe "+closed.Name, err), true
+	case errors.As(err, &running):
+		return fail.Failed(running.Error(), "stop the lasting VMs and delete the temporary ones (station machines), then station setup", err), true
+	}
+	return nil, false
 }

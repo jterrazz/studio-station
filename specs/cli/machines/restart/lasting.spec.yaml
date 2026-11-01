@@ -1,18 +1,11 @@
-description: 'a lasting VM restarts by its own poweroff then a kick of its agent, which stays loaded'
+description: 'restart stops a lasting VM gracefully and the daemon runs it again'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/vm-api/
+    - ../../__fixtures__/daemon-vm/
+env: daemon
 runs:
-    - command: 'machines restart api --yes'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41320-41339"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime lasting --name api > /dev/null; "$STATION" machines restart api --yes > /dev/null; echo "restart $?"; /usr/bin/grep -c "^sh -c" .calls; kill $d; wait $d'
       exit: 0
       stdout: |
-          ●	api	restarted
-      files:
-          .calls:
-              contains:
-                  - 'vmu@192.168.64.5 sudo systemctl --no-block poweroff'
-                  - 'launchctl kickstart gui/{{int}}/com.jterrazz.station.vm.api'
-    - command: '--version > /dev/null; /usr/bin/awk ''/systemctl --no-block poweroff$/{p=NR} /^launchctl kickstart/{k=NR} /^launchctl bootout/{b=NR} END{print (p<k && !b) ? "poweroff, then kickstart" : "wrong"}'' .calls'
-      exit: 0
-      stdout: |
-          poweroff, then kickstart
+          restart 0
+          2

@@ -21,7 +21,6 @@ runs:
                     ServerAliveCountMax 3
                     UserKnownHostsFile ~/.local/state/station/known_hosts/box
                     StrictHostKeyChecking accept-new
-                    ProxyCommand tailscale --socket={{workdir}}/.local/state/station/tailscaled/tailscaled.sock nc %h %p
                   # <<< jterrazz machine box <<<
     - command: 'machines forget box --yes'
       exit: 0

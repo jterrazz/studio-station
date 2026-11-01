@@ -63,10 +63,14 @@ func TestIPTimeoutIsErrTimeout(t *testing.T) {
 
 func TestRunArgvCarriesTheAbsoluteTartAndTheConsole(t *testing.T) {
 	eng, _ := newEngine(t)
-	got := eng.RunArgv("dev", "/v/dev.console")
+	got := eng.RunArgv("dev", "/v/dev.console", system.RunOptions{})
 	want := []string{"/home/o/.local/bin/tart", "run", "--no-graphics", "--no-audio", "--serial-path", "/v/dev.console", "dev"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("argv = %v, want %v", got, want)
+	}
+	bridged := eng.RunArgv("dev", "/v/dev.console", system.RunOptions{Bridged: "en0"})
+	if want := "--net-bridged=en0"; bridged[len(bridged)-2] != want || bridged[len(bridged)-1] != "dev" {
+		t.Fatalf("bridged argv = %v, want %s before the VM name", bridged, want)
 	}
 }
 

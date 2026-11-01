@@ -14,6 +14,6 @@ runs:
           bash [-c] [script="$(curl -fsSL "$0")" && exec bash -c "$script" bash "$@"] [https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh]
           brew bundle install --no-upgrade --file=-
           brew "mise"
-          brew "tailscale"
+          cask "tailscale-app"
           bash [-c] [xcode-select --install]
           bash [-c] [d="$HOME/.local/share"; case "$XDG_DATA_HOME" in /*) d="$XDG_DATA_HOME" ;; esac; mkdir -p "$d/station/tart" "$d/station/vms" "$HOME/.local/bin" && curl -fsSL https://github.com/cirruslabs/tart/releases/latest/download/tart.tar.gz | tar -xz -C "$d/station/tart"]

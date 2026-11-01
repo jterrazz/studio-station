@@ -21,6 +21,8 @@ type Env struct {
 	Interactive bool
 	Screen      bool
 	On          *On
+	Stdin       io.Reader
+	Stdout      io.Writer
 }
 
 type IO struct {
@@ -30,16 +32,22 @@ type IO struct {
 	Prompt        prompt.Prompter
 	ZshCompletion func(w io.Writer) error
 	out           *output.Writer
+	in            io.Reader
+	raw           io.Writer
 }
+
+func (o IO) Streams() (io.Reader, io.Writer) { return o.in, o.raw }
 
 func (o IO) Answer(a present.Answer) error { return o.out.Answer(a, o.JSON) }
 
 func (o IO) Raw(p []byte) error              { return o.out.Raw(p) }
+func (o IO) Note(text string)                { o.out.Note(text) }
 func (o IO) Wait(label string) (stop func()) { return o.out.Wait(label) }
 
 type Leaf[I any] struct {
 	Use, Short, Example string
 	Group               string
+	Plumbing            bool
 	Args                cobra.PositionalArgs
 	ValidArgs           []string
 	RawArgs             bool
@@ -68,6 +76,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 		GroupID:            l.Group,
 		ValidArgs:          l.ValidArgs,
 		DisableFlagParsing: l.RawArgs,
+		Hidden:             l.Plumbing,
 	}
 	cmd.Args = func(c *cobra.Command, a []string) error {
 		if err := args(c, a); err != nil {
@@ -100,14 +109,18 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 			env.On.refresh(c.Context(), path(c))
 			return nil
 		}
-		err := run(c.Context(), c, l, in, a, env, IO{
+		o := IO{
 			JSON:          wantJSON,
 			Yes:           yes,
 			Interactive:   env.Interactive,
 			Prompt:        env.Prompt,
 			ZshCompletion: c.Root().GenZshCompletion,
 			out:           env.Out,
-		})
+		}
+		if l.Plumbing {
+			o.in, o.raw = env.Stdin, env.Stdout
+		}
+		err := run(c.Context(), c, l, in, a, env, o)
 		if err != nil {
 			return Translate(err, path(c))
 		}

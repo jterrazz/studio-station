@@ -43,6 +43,8 @@ func hostRow(h machines.HostView, hereVersion string) present.Row {
 		mark, state, tone, resources = present.MarkDegraded, "unreachable", present.Warn, "-"
 	case h.StationVersion != "" && h.StationVersion != hereVersion:
 		mark, resources = present.MarkDegraded, "station "+h.StationVersion+" here "+hereVersion
+	case h.Daemon.Known && !h.Daemon.Running:
+		mark, resources = present.MarkDegraded, "daemon not running · station setup"
 	}
 	return present.Row{Mark: mark, Cells: []present.Cell{
 		{Text: h.Name, Tone: present.Strong},
@@ -66,6 +68,8 @@ func vmRow(vm machines.VM) present.Row {
 		mark, tone = present.MarkDegraded, present.Warn
 	case machines.Stale:
 		mark, tone, resources = present.MarkBroken, present.Bad, "station machines delete "+vm.Name
+	case machines.Broken:
+		mark, tone, resources = present.MarkBroken, present.Bad, vm.Detail
 	}
 	return present.Row{Mark: mark, Cells: []present.Cell{
 		{Text: vm.Name, Tone: present.Strong},
@@ -73,7 +77,7 @@ func vmRow(vm machines.VM) present.Row {
 		{Text: vm.Host, Tone: present.Muted},
 		{Text: string(vm.Lifetime), Tone: present.Muted},
 		{Text: string(vm.State), Tone: tone},
-		{Text: orDash(vm.Node.IP), Tone: present.Muted},
+		{Text: orDash(vm.IP), Tone: present.Muted},
 		{Text: resources, Tone: present.Muted},
 	}}
 }

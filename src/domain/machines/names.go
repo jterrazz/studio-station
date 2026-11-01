@@ -2,20 +2,13 @@ package machines
 
 import "strconv"
 
-// invariant: a name is held by a VM record on any host, a host, an online node or
-// a node station did not tag; an offline `tag:station-vm` node with no record is a
-// leftover of a VM that is gone, so its name is free again.
-func nameFree(name string, records map[string]bool, nodes map[string]Node) bool {
-	if records[name] {
-		return false
-	}
-	node, ok := nodes[name]
-	return !ok || (!node.Online && node.StationVM)
-}
+// invariant: a name is held by a VM record on any host of the fleet or by a
+// host; no tailnet node holds a VM's name since VMs left the tailnet.
+func nameFree(name string, held map[string]bool) bool { return !held[name] }
 
-func allocateName(image string, records map[string]bool, nodes map[string]Node) string {
+func allocateName(image string, held map[string]bool) string {
 	for n := 1; ; n++ {
-		if name := image + "-" + strconv.Itoa(n); nameFree(name, records, nodes) {
+		if name := image + "-" + strconv.Itoa(n); nameFree(name, held) {
 			return name
 		}
 	}

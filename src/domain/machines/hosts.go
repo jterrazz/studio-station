@@ -111,7 +111,7 @@ func (s *Service) AddHost(name string, h settings.Host) error {
 	if err := s.h.FS.MkdirAll(s.knownHostsDir(), 0o700); err != nil {
 		return s.rollBack(before, err)
 	}
-	if err := s.editConfig([]target{{Name: name, User: h.User, Key: h.Key, Host: true}}, false, nil); err != nil {
+	if err := s.editConfig([]target{{Name: name, User: h.User, Key: h.Key}}, false, nil); err != nil {
 		return s.rollBack(before, err)
 	}
 	return nil

@@ -15,13 +15,9 @@ import (
 
 type noTailnet struct{}
 
-func (noTailnet) Mint(context.Context) (string, error) { return "", nil }
-func (noTailnet) Remove(context.Context, string) error { return nil }
 func (noTailnet) Peers(context.Context) (map[string]machines.Node, error) {
 	return nil, nil
 }
-func (noTailnet) Argv(args ...string) []string { return args }
-func (noTailnet) Mode() string                 { return "auto" }
 
 func service(t *testing.T, run system.Runner) (*machines.Service, *systemtest.Clock) {
 	t.Helper()
@@ -34,7 +30,7 @@ func service(t *testing.T, run system.Runner) (*machines.Service, *systemtest.Cl
 	if err := store.Save(settings.Settings{Here: "mac", Hosts: hosts}); err != nil {
 		t.Fatal(err)
 	}
-	return machines.New(h, nil, store, noTailnet{}, nil, machines.Options{Here: catalog.Host, Paths: paths}), clock
+	return machines.New(h, nil, store, noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, Paths: paths}), clock
 }
 
 type answering struct {

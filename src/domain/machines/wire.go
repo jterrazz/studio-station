@@ -25,18 +25,27 @@ type WireVM struct {
 	MemoryBytes int64     `json:"memory_bytes"`
 	DiskBytes   int64     `json:"disk_bytes"`
 	CreatedAt   time.Time `json:"created_at"`
-	Node        WireNode  `json:"node"`
+	IP          string    `json:"ip"`
+	Network     string    `json:"network"`
+	Guest       string    `json:"guest"`
+	Detail      string    `json:"detail,omitempty"`
 	Lent        []string  `json:"lent"`
 }
 
+type WireDaemon struct {
+	Running bool   `json:"running"`
+	Version string `json:"version"`
+}
+
 type WireHost struct {
-	Name           string   `json:"name"`
-	Here           bool     `json:"here"`
-	Reachable      bool     `json:"reachable"`
-	StationVersion string   `json:"station_version"`
-	User           string   `json:"user"`
-	Node           WireNode `json:"node"`
-	VMs            []WireVM `json:"vms"`
+	Name           string      `json:"name"`
+	Here           bool        `json:"here"`
+	Reachable      bool        `json:"reachable"`
+	StationVersion string      `json:"station_version"`
+	User           string      `json:"user"`
+	Node           WireNode    `json:"node"`
+	Daemon         *WireDaemon `json:"daemon,omitempty"`
+	VMs            []WireVM    `json:"vms"`
 }
 
 type WireFleet struct {
@@ -54,6 +63,9 @@ func ToWire(f Fleet) WireFleet {
 			Name: h.Name, Here: h.Here, Reachable: h.Reachable, StationVersion: h.StationVersion, User: h.User,
 			Node: toWire(h.Node), VMs: make([]WireVM, 0, len(h.VMs)),
 		}
+		if h.Daemon.Known {
+			w.Daemon = &WireDaemon{Running: h.Daemon.Running, Version: h.Daemon.Version}
+		}
 		for _, vm := range h.VMs {
 			lent := vm.Lent
 			if lent == nil {
@@ -63,7 +75,7 @@ func ToWire(f Fleet) WireFleet {
 				Name: vm.Name, Kind: string(vm.Kind), Image: vm.Image, Version: vm.Version,
 				Lifetime: string(vm.Lifetime), State: string(vm.State), CPUs: vm.Resources.CPUs,
 				MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes,
-				CreatedAt: vm.CreatedAt, Node: toWire(vm.Node), Lent: lent,
+				CreatedAt: vm.CreatedAt, IP: vm.IP, Network: vm.Network, Guest: vm.Guest, Detail: vm.Detail, Lent: lent,
 			})
 		}
 		out.Hosts = append(out.Hosts, w)
@@ -73,17 +85,20 @@ func ToWire(f Fleet) WireFleet {
 
 func (w WireHost) view(name, user string) HostView {
 	view := HostView{Name: name, User: user, StationVersion: w.StationVersion, Reachable: true, Node: w.Node.node()}
+	if w.Daemon != nil {
+		view.Daemon = DaemonInfo{Known: true, Running: w.Daemon.Running, Version: w.Daemon.Version}
+	}
 	for _, vm := range w.VMs {
 		view.VMs = append(view.VMs, VM{
 			Name: vm.Name, Image: vm.Image, Version: vm.Version, Host: name, Kind: catalog.MachineKind(vm.Kind),
 			Lifetime: Lifetime(vm.Lifetime), State: VMState(vm.State),
 			Resources: system.Resources{CPUs: vm.CPUs, MemoryBytes: vm.MemoryBytes, DiskBytes: vm.DiskBytes},
-			Node:      vm.Node.node(), Lent: vm.Lent, CreatedAt: vm.CreatedAt,
+			IP:        vm.IP, Network: vm.Network, Guest: vm.Guest, Detail: vm.Detail, Lent: vm.Lent, CreatedAt: vm.CreatedAt,
 		})
 	}
 	return view
 }
 
-func toWire(n Node) WireNode { return WireNode{Online: n.Online, IP: n.IP} }
+func toWire(n Node) WireNode { return WireNode(n) }
 
-func (w WireNode) node() Node { return Node{Online: w.Online, IP: w.IP} }
+func (w WireNode) node() Node { return Node(w) }

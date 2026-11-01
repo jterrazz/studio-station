@@ -1,26 +1,15 @@
-description: "delete removes the node through the API, the agent before the disk, and every file"
+description: 'delete stops the run and removes the disk, the record, the files, the block and the leases'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/vm-api/
-serve: tailscale
+    - ../../__fixtures__/daemon-vm/
+env: daemon
 runs:
-    - command: 'machines delete api --yes'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41340-41359"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime lasting --name api > /dev/null; "$STATION" machines delete api --yes; /bin/ls .local/state/station/vms; /usr/bin/jq -c ".leases" .local/state/station/leases.json; /usr/bin/grep -E "^tart delete|serve --https" .calls; /usr/bin/grep -c "Host api" .ssh/config; kill $d; wait $d'
       exit: 0
       stdout: |
           ●	api	deleted
-      files:
-          .api: { contains: 'DELETE /api/v2/device/n-api' }
-          .local/state/station/vms/api.json: absent
-          Library/LaunchAgents/com.jterrazz.station.vm.api.plist: absent
-          .local/state/station/logs/api.log: absent
-          .local/state/station/consoles/api: absent
-          .local/state/station/known_hosts/api: absent
-          .tart-vms/api: absent
-          .ssh/config:
-              equals: |
-                  Host github.com
-                    User git
-    - command: '--version > /dev/null; /usr/bin/awk ''/^launchctl bootout/{b=NR} /^tart stop /{s=NR} /^tart delete api/{d=NR} END{print (b && b<s && s<d) ? "bootout, stop, delete" : "wrong"}'' .calls'
-      exit: 0
-      stdout: |
-          bootout, stop, delete
+          []
+          tailscale serve --https=41340 off
+          tailscale serve --https=41341 off
+          tart delete api
+          0

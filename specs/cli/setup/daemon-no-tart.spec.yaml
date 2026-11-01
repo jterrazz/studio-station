@@ -1,0 +1,15 @@
+description: 'with no tart no VM can exist, so setup writes no daemon'
+env:
+    - USER=tester
+runs:
+    - command: 'setup --name m </dev/null'
+      exit: 0
+      stdout: |
+          ●	name	m
+          ●	zshrc
+          ●	layout	nothing to retire
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ○	daemon	not needed until tart is installed
+      files:
+          Library/LaunchAgents/com.jterrazz.station.daemon.plist: absent

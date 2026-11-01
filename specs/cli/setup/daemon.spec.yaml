@@ -1,0 +1,41 @@
+description: 'setup installs the one daemon of a host under its launchd agent, and starts it'
+fixture: ../__fixtures__/vms/
+runs:
+    - command: 'setup </dev/null'
+      exit: 0
+      stdout: |
+          ●	name	x
+          ●	zshrc
+          ●	layout	nothing to retire
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tailscale: run station setup on a terminal
+          ●	daemon	running {{string}}
+      files:
+          Library/LaunchAgents/com.jterrazz.station.daemon.plist:
+              contains:
+                  - '<string>com.jterrazz.station.daemon</string>'
+                  - |-
+                    	<key>ProgramArguments</key>
+                    	<array>
+                    		<string>{{path}}</string>
+                    		<string>daemon</string>
+                    	</array>
+                  - |-
+                    		<key>PATH</key>
+                    		<string>{{workdir}}/bin</string>
+                  - "\t<key>RunAtLoad</key>
+
+                    \t<true/>
+
+                    \t<key>KeepAlive</key>
+
+                    \t<true/>
+
+                    \t<key>AbandonProcessGroup</key>
+
+                    \t<true/>"
+                  - '<string>{{workdir}}/.local/state/station/logs/daemon.log</string>'
+          .calls:
+              contains:
+                  - 'launchctl bootstrap gui/{{int}} {{workdir}}/Library/LaunchAgents/com.jterrazz.station.daemon.plist'
+                  - 'launchctl kickstart gui/{{int}}/com.jterrazz.station.daemon'

@@ -154,8 +154,10 @@ func (r *runner) Start(c system.Cmd, logPath string) (int, error) {
 	if err := cmd.Start(); err != nil {
 		return 0, err
 	}
-	pid := cmd.Process.Pid
-	return pid, cmd.Process.Release()
+	// invariant: the child is reaped here when it ends, so a long-lived parent (the
+	// daemon) never keeps a zombie that Alive would read as running.
+	go func() { _ = cmd.Wait() }()
+	return cmd.Process.Pid, nil
 }
 
 func (r *runner) Alive(pid int) bool {

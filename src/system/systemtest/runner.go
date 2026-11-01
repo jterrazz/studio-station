@@ -16,7 +16,7 @@ type Runner struct {
 	t       testing.TB
 	script  []*Call
 	Paths   map[string]string
-	Live    map[int]bool
+	live    map[int]bool
 	Calls   []system.Cmd
 	Signals []system.Sig
 }
@@ -30,7 +30,7 @@ type Call struct {
 }
 
 func NewRunner(t testing.TB) *Runner {
-	return &Runner{t: t, Paths: map[string]string{}, Live: map[int]bool{}}
+	return &Runner{t: t, Paths: map[string]string{}, live: map[int]bool{}}
 }
 
 func (r *Runner) On(name string, args ...string) *Call {
@@ -84,8 +84,10 @@ func (r *Runner) Start(c system.Cmd, _ string) (int, error) {
 	if call.err != nil {
 		return 0, call.err
 	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	pid := 1000 + len(r.Calls)
-	r.Live[pid] = true
+	r.live[pid] = true
 	return pid, nil
 }
 
@@ -94,13 +96,31 @@ func (r *Runner) LookPath(name string) (string, bool) {
 	return path, ok
 }
 
-func (r *Runner) Alive(pid int) bool { return r.Live[pid] }
+func (r *Runner) Alive(pid int) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.live[pid]
+}
+
+func (r *Runner) Spawn(pid int) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.live[pid] = true
+}
+
+func (r *Runner) Exit(pid int) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.live, pid)
+}
 
 func (r *Runner) Signal(pid int, sig system.Sig) error {
-	if !r.Live[pid] {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if !r.live[pid] {
 		return fmt.Errorf("no process %d", pid)
 	}
 	r.Signals = append(r.Signals, sig)
-	delete(r.Live, pid)
+	delete(r.live, pid)
 	return nil
 }

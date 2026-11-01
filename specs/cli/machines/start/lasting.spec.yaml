@@ -1,17 +1,13 @@
-description: 'a lasting VM starts by enabling its agent, loading it when launchd does not hold it, and kicking it'
+description: 'start asks the daemon to run a lasting VM again'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/vm-api/
-    - ./__fixtures__/joined-api/
+    - ../../__fixtures__/daemon-vm/
+env: daemon
 runs:
-    - command: 'machines start api'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41280-41299"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime lasting --name api > /dev/null; "$STATION" machines stop api > /dev/null; "$STATION" machines start api; /usr/bin/jq -r .want .local/state/station/vms/api.json; /usr/bin/grep -c "^sh -c" .calls; /usr/bin/grep -c launchctl .calls; kill $d; wait $d'
       exit: 0
       stdout: |
           ●	api	started
-      files:
-          .calls:
-              contains: |-
-                  launchctl enable gui/{{int}}/com.jterrazz.station.vm.api
-                  launchctl print gui/{{int}}/com.jterrazz.station.vm.api
-                  launchctl bootstrap gui/{{int}} {{workdir}}/Library/LaunchAgents/com.jterrazz.station.vm.api.plist
-                  launchctl kickstart gui/{{int}}/com.jterrazz.station.vm.api
+          running
+          2
+          0

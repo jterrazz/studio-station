@@ -1,7 +1,7 @@
 description: 'deleting a VM piped without --yes is refused, exit 2, and nothing is reached'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/vm-api/
+    - ../../__fixtures__/vm-api/
 runs:
     - command: 'machines delete api </dev/null'
       exit: 2
