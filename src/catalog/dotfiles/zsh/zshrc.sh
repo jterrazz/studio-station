@@ -2,6 +2,13 @@
 # themes use: ANSI 1=red(#ed8796) 2=green(#a6da95) 3=yellow(#eed49f)
 # 4=blue(#8aadf4) 5=magenta(#f5bde6) 6=cyan(#8bd5ca) 7=white(#a5adcb).
 
+# invariant: Homebrew's bins are on PATH before anything below looks for a tool, since
+# only a login shell's ~/.zprofile runs `brew shellenv`, and an IDE's or ssh's zsh -ic
+# would otherwise find neither the Brew-installed mise nor starship.
+if [[ -d /opt/homebrew/bin && ":$PATH:" != *":/opt/homebrew/bin:"* ]]; then
+    export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+fi
+
 # invariant: a fresh machine without starship still gets a usable, path-only prompt.
 if command -v starship &>/dev/null; then
     export STARSHIP_CONFIG="$HOME/.config/starship.toml"

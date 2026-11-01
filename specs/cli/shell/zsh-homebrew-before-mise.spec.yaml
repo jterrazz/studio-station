@@ -1,0 +1,7 @@
+description: 'shell zsh puts Homebrew on PATH before it looks for mise, so a non-login zsh -ic activates the Brew-installed mise'
+fixture: ./__fixtures__/studio/
+runs:
+    - command: 'shell zsh | /usr/bin/awk ''/^ *export PATH="\/opt\/homebrew\/bin:\/opt\/homebrew\/sbin:\$PATH"/ && !b { b = NR } /command -v mise/ && !m { m = NR } END { print (b && m && b < m) ? "homebrew first" : "no homebrew before mise" }'''
+      exit: 0
+      stdout: |
+          homebrew first
