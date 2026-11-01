@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"net"
 	"strings"
 	"sync"
 	"testing"
@@ -13,8 +12,19 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
+type wallConn struct{ wrote chan []byte }
+
+func (c wallConn) Read([]byte) (int, error) { return 0, io.EOF }
+
+func (c wallConn) Write(p []byte) (int, error) {
+	c.wrote <- append([]byte(nil), p...)
+	return len(p), nil
+}
+
+func (c wallConn) Close() error { return nil }
+
 type wallListener struct {
-	conns chan net.Conn
+	conns chan wallConn
 	once  sync.Once
 	done  chan struct{}
 }
@@ -35,8 +45,6 @@ func (l *wallListener) Close() error {
 
 func (l *wallListener) Port() int { return 40999 }
 
-// wall is the macOS firewall as the real run met it on the tailnet ip: the
-// handshake is accepted, the listener's bytes never reach the client.
 type wall struct {
 	system.Sockets
 	drops bool
@@ -49,7 +57,7 @@ func (w *wall) ListenTCP(ip string, _ int) (system.Listener, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.bound = append(w.bound, ip)
-	w.l = &wallListener{conns: make(chan net.Conn, 1), done: make(chan struct{})}
+	w.l = &wallListener{conns: make(chan wallConn, 1), done: make(chan struct{})}
 	return w.l, nil
 }
 
@@ -57,13 +65,13 @@ func (w *wall) Pipe(_ context.Context, _ string, _ int, _ io.Reader, out io.Writ
 	w.mu.Lock()
 	l := w.l
 	w.mu.Unlock()
-	client, server := net.Pipe()
-	l.conns <- server
+	conn := wallConn{wrote: make(chan []byte, 1)}
+	l.conns <- conn
+	data := <-conn.wrote
 	if w.drops {
-		_, _ = io.Copy(io.Discard, client)
 		return nil
 	}
-	_, err := io.Copy(out, client)
+	_, err := out.Write(data)
 	return err
 }
 
