@@ -73,6 +73,7 @@ type Daemon struct {
 	leases  []services.Lease
 	self    tailnet.Self
 	refused bool
+	walled  bool
 	started time.Time
 	note    func(line string)
 }
@@ -160,9 +161,19 @@ func (d *Daemon) refreshSelf(ctx context.Context) {
 	if err != nil {
 		self = tailnet.Self{}
 	}
+	walled := self.IP != "" && !d.carries(ctx, self.IP)
 	d.mu.Lock()
 	d.self = self
+	changed := walled != d.walled
+	d.walled = walled
 	d.mu.Unlock()
+	if !changed {
+		return
+	}
+	if walled {
+		d.logf("tailnet", "the firewall drops the bytes of station's listeners on "+self.IP+": services are local only")
+	}
+	d.republish(ctx)
 }
 
 func (d *Daemon) accept(ctx context.Context, l system.Listener) {

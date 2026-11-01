@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"sort"
@@ -16,6 +17,8 @@ const (
 	bannerWait = 300 * time.Millisecond
 	headWait   = 2 * time.Second
 	busyRetry  = 10 * time.Second
+	probeWait  = 2 * time.Second
+	probeWord  = "station-probe"
 )
 
 type svc struct {
@@ -253,9 +256,11 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 	}
 	if !s.served || p.HTTPS != services.HTTPSPort {
 		note := ""
-		switch d.self.IP {
-		case "":
+		switch {
+		case d.self.IP == "":
 			note = "tailnet down: local only"
+		case d.walled:
+			note = "firewall: local only"
 		default:
 			if tl, err := d.h.Sockets.ListenTCP(d.self.IP, lease.HostPort); err == nil {
 				s.listeners = append(s.listeners, tl)
@@ -270,6 +275,50 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 	}
 	if httpsNote != "" {
 		s.detail = joinDetail(s.detail, httpsNote)
+	}
+}
+
+// invariant: a listener on the tailnet ip counts only if it carries bytes: the
+// macOS firewall lets an unsigned binary's handshake through and drops its
+// data, with no prompt, so the probe reads what its own listener wrote.
+func (d *Daemon) carries(ctx context.Context, ip string) bool {
+	l, err := d.h.Sockets.ListenTCP(ip, 0)
+	if err != nil {
+		return true
+	}
+	defer func() { _ = l.Close() }()
+	go func() {
+		conn, err := l.Accept()
+		if err != nil {
+			return
+		}
+		_, _ = conn.Write([]byte(probeWord))
+		_ = conn.Close()
+	}()
+	wait, cancel := context.WithTimeout(ctx, probeWait)
+	defer cancel()
+	got := make(chan string, 1)
+	go func() {
+		var out bytes.Buffer
+		_ = d.h.Sockets.Pipe(wait, ip, l.Port(), strings.NewReader(""), &out)
+		got <- out.String()
+	}()
+	select {
+	case read := <-got:
+		return read == probeWord
+	case <-wait.Done():
+		return false
+	}
+}
+
+func (d *Daemon) republish(ctx context.Context) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for _, s := range d.svcs {
+		if s.st.Phase == services.Published && len(s.listeners) > 0 {
+			d.unpublish(ctx, s)
+			d.publish(ctx, s)
+		}
 	}
 }
 
