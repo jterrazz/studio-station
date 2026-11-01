@@ -6,6 +6,7 @@ Library/Caches/com.apple.*
 Library/Application Support/com.apple.*
 Library/Containers/com.apple.*
 Library/Group Containers/group.com.apple.*
+Library/Application Scripts/group.com.apple.*
 Library/Daemon Containers
 Library/Biome
 Library/Trial
