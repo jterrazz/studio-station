@@ -6,6 +6,7 @@ runs:
       exit: 0
       stdout: |
           ●	zshrc
+          ●	relocate	go env, npmrc
       files:
           .zshrc:
               equals: |
@@ -13,7 +14,7 @@ runs:
                   export PATH="$HOME/.local/bin:$PATH"
                   command -v station >/dev/null 2>&1 && eval "$(station shell zsh)"
                   # <<< station <<<
-          .config: absent
+          .config/station: absent
     - command: 'setup --name x'
       exit: 2
       stderr: |

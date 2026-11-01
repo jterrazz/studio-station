@@ -12,6 +12,9 @@ func setupFailure(err error) (*fail.Error, bool) {
 	var bad *setup.BadNameError
 	var step *setup.StepFailedError
 	var different *setup.DifferentContentError
+	var busy *setup.BusyError
+	var exists *setup.DestinationExistsError
+	var cross *setup.CrossDeviceError
 	switch {
 	case errors.As(err, &mismatch):
 		return fail.Usage(mismatch.Error(), "run station setup without --name"), true
@@ -21,8 +24,15 @@ func setupFailure(err error) (*fail.Error, bool) {
 		return fail.Usage(setup.ErrNameOnVM.Error(), "run station setup without --name"), true
 	case errors.As(err, &step):
 		hint := "fix it, then run station setup again: it resumes"
-		if errors.As(err, &different) {
+		switch {
+		case errors.As(err, &different):
 			hint = "keep one of the two files, then run station setup again"
+		case errors.As(err, &busy):
+			hint = "stop the lasting VMs and delete the temporary ones (station machines), then station setup"
+		case errors.As(err, &exists):
+			hint = exists.Path + " already exists: move one of them by hand"
+		case errors.As(err, &cross):
+			hint = "station never copies: move it by hand, then station setup"
 		}
 		return fail.Failed(step.Error(), hint, err), true
 	}

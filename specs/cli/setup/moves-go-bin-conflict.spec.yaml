@@ -1,0 +1,16 @@
+description: 'a binary of the same name already in the new home stays, the old one too, and setup says so'
+fixture:
+    - ./__fixtures__/go-bin/
+    - ./__fixtures__/go-bin-conflict/
+runs:
+    - command: 'setup --name m </dev/null'
+      exit: 0
+      stdout: |
+          ●	name	m
+          ●	zshrc
+          ●	layout	nothing to move
+          ◐	relocate	~/go/bin/foo already in ~/.local/share/go/bin
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+      files:
+          .local/share/go/bin/foo: { equals: "another foo\n" }
+          go/bin/foo: { equals: "foo binary\n" }

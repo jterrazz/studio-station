@@ -12,6 +12,8 @@ runs:
           ●	name	elsewhere
           ●	zshrc
           ✗	layout	{{workdir}}/.config/station/settings.json already exists with different content
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
       stderr: |
           Error: setup step layout: {{workdir}}/.config/station/settings.json already exists with different content
           Hint: keep one of the two files, then run station setup again

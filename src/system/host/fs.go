@@ -1,9 +1,13 @@
 package host
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"syscall"
+
+	"github.com/jterrazz/studio-station/src/system"
 )
 
 type disk struct{}
@@ -36,4 +40,12 @@ func (disk) DirSize(path string) int64 {
 		return nil
 	})
 	return total
+}
+
+func (disk) Rename(from, to string) error {
+	err := os.Rename(from, to)
+	if errors.Is(err, syscall.EXDEV) {
+		return errors.Join(system.ErrCrossDevice, err)
+	}
+	return err
 }

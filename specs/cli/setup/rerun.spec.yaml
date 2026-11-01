@@ -8,6 +8,8 @@ runs:
           ●	name	t
           ●	zshrc
           ●	layout	nothing to move
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
       files:
           .zshrc:
               contains: |
@@ -21,6 +23,8 @@ runs:
           ●	name	t
           ●	zshrc
           ●	layout	nothing to move
+          ●	relocate	nothing to do
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
       files:
           .zshrc:
               contains: |
@@ -34,6 +38,8 @@ runs:
           ●	name	t
           ●	zshrc
           ●	layout	nothing to move
+          ●	relocate	nothing to do
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
       files:
           .zshrc:
               contains: |

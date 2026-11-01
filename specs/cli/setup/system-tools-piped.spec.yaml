@@ -1,0 +1,12 @@
+description: 'piped, setup installs no system tool and names the missing ones'
+runs:
+    - command: 'setup --name m </dev/null'
+      exit: 0
+      stdout: |
+          ●	name	m
+          ●	zshrc
+          ●	layout	nothing to move
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+      files:
+          .calls: absent

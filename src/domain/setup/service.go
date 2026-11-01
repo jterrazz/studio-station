@@ -12,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/shell"
+	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -39,6 +40,11 @@ type Options struct {
 	Paths      settings.Paths
 	Executable string
 	Detached   bool
+	Tools      []catalog.Tool
+	Expand     storage.Expander
+	Files      map[catalog.ToolFile]string
+	Configurer Configurer
+	Installer  Installer
 }
 
 type Service struct {
@@ -139,7 +145,8 @@ func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
 	}
 	if !s.isHost() {
 		zshrc, err := s.zshrc()
-		return Report{Steps: []Step{zshrc}}, err
+		relocate, relocateErr := s.relocate(ctx, r.Interactive)
+		return Report{Steps: []Step{zshrc, relocate}}, errors.Join(err, relocateErr)
 	}
 	migrated := s.migrateSettings(ctx)
 	name, nameErr := s.name(r, migrated != nil)
@@ -148,8 +155,15 @@ func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
 	}
 	zshrc, zshrcErr := s.zshrc()
 	layout, layoutErr := s.layout(ctx, migrated)
-	report := Report{Steps: []Step{name, zshrc, layout}}
-	return report, errors.Join(nameErr, zshrcErr, layoutErr)
+	relocate, relocateErr := s.relocate(ctx, r.Interactive)
+	steps := []Step{name, zshrc, layout, relocate}
+	toolsErr := error(nil)
+	if relocateErr == nil {
+		var tools Step
+		tools, toolsErr = s.tools(ctx, r.Interactive)
+		steps = append(steps, tools)
+	}
+	return Report{Steps: steps}, errors.Join(nameErr, zshrcErr, layoutErr, relocateErr, toolsErr)
 }
 
 func isStepFailure(err error) bool {

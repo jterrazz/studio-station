@@ -15,6 +15,8 @@ runs:
           ●	name	base
           ●	zshrc
           ●	layout	moved to the XDG folders
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
       files:
           .local/state/station/tailscaled/tailscaled.state:
               equals: |

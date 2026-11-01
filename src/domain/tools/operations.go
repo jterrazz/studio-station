@@ -295,6 +295,14 @@ func (s *Service) topological(list []catalog.Tool) []catalog.Tool {
 	return ordered
 }
 
+func (s *Service) States(ctx context.Context, names []string) (map[string]catalog.State, error) {
+	list, err := s.Find(names)
+	if err != nil {
+		return nil, err
+	}
+	return s.states(ctx, list), nil
+}
+
 func (s *Service) states(ctx context.Context, list []catalog.Tool) map[string]catalog.State {
 	out := map[string]catalog.State{}
 	for _, r := range s.reports(ctx, list) {

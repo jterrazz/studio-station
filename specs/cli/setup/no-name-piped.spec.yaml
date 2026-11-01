@@ -6,6 +6,8 @@ runs:
           ○	name	not set: station setup --name <name>
           ●	zshrc
           ●	layout	nothing to move
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
       files:
           .zshrc:
               equals: |

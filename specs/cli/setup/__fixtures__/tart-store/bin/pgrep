@@ -1,0 +1,4 @@
+#!/bin/sh
+# pgrep: nothing of that name runs.
+printf 'pgrep %s\n' "$*" >> "$HOME/.calls"
+exit 1

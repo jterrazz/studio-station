@@ -6,6 +6,8 @@ runs:
           ●	name	macbook
           ●	zshrc
           ●	layout	nothing to move
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
     - command: 'setup --name other'
       exit: 2
       stderr: |

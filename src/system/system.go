@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("command not found")
-	ErrTimeout  = errors.New("command timed out")
+	ErrNotFound    = errors.New("command not found")
+	ErrTimeout     = errors.New("command timed out")
+	ErrCrossDevice = errors.New("another volume: a rename cannot move it")
 )
 
 type Stream int
@@ -62,6 +63,7 @@ type FS interface {
 	MkdirAll(path string, perm fs.FileMode) error
 	Remove(path string) error
 	RemoveAll(path string) error
+	Rename(from, to string) error
 	Stat(path string) (fs.FileInfo, error)
 	ReadDir(path string) ([]fs.DirEntry, error)
 	Glob(pattern string) ([]string, error)

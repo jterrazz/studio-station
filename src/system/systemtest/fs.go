@@ -2,6 +2,7 @@ package systemtest
 
 import (
 	"io/fs"
+	"maps"
 	"path"
 	"strings"
 	"testing/fstest"
@@ -89,3 +90,19 @@ func (f *FS) Chmod(p string, perm fs.FileMode) error {
 }
 
 func (f *FS) Chown(string, int, int) error { return nil }
+
+func (f *FS) Rename(from, to string) error {
+	k, dst := key(from), key(to)
+	if _, ok := f.Files[k]; !ok {
+		return &fs.PathError{Op: "rename", Path: from, Err: fs.ErrNotExist}
+	}
+	moved := fstest.MapFS{}
+	for name, file := range f.Files {
+		if name == k || strings.HasPrefix(name, k+"/") {
+			moved[dst+strings.TrimPrefix(name, k)] = file
+			delete(f.Files, name)
+		}
+	}
+	maps.Copy(f.Files, moved)
+	return nil
+}

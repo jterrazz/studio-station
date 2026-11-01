@@ -12,6 +12,8 @@ runs:
           ○	name	waits for the layout step
           ●	zshrc
           ✗	layout	keychain account tailnet-authkey: security: keychain locked
+          ●	relocate	go env, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
       stderr: |
           Error: setup step layout: keychain account tailnet-authkey: security: keychain locked
           Hint: fix it, then run station setup again: it resumes
@@ -24,6 +26,8 @@ runs:
           ●	name	base
           ●	zshrc
           ●	layout	moved to the XDG folders
+          ●	relocate	nothing to do
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
       files:
           .studio: absent
           .config/station/settings.json:

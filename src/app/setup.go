@@ -2,15 +2,19 @@ package app
 
 import (
 	"context"
+	"errors"
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	setupcmd "github.com/jterrazz/studio-station/src/cli/setup"
+	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
+	"github.com/jterrazz/studio-station/src/domain/tools"
 )
 
 func setupCommand(env kit.Env, m machine) *cobra.Command {
@@ -27,7 +31,58 @@ func setupService(env kit.Env, m machine) *setup.Service {
 		// observable; unset, the running binary is the one re-executed.
 		Executable: m.or("STATION_EXECUTABLE", m.host.Env.Executable()),
 		Detached:   m.vars["STATION_XDG_DETACHED"] == "1",
+		Tools:      catalog.Tools,
+		Expand:     m.expander(),
+		Files:      m.toolFiles(),
+		Configurer: setupConfigurer{config: configService(m)},
+		Installer:  systemTools{tools: toolsService(env, m)},
 	})
+}
+
+type setupConfigurer struct{ config *config.Service }
+
+func (c setupConfigurer) Configure(ctx context.Context, item string, interactive bool) error {
+	_, err := c.config.Install(ctx, item, nil, interactive)
+	return err
+}
+
+type systemTools struct{ tools *tools.Service }
+
+func (s systemTools) names() []string {
+	var out []string
+	for _, t := range s.tools.Placed() {
+		if t.System {
+			out = append(out, t.Name)
+		}
+	}
+	return out
+}
+
+func (s systemTools) Missing(ctx context.Context) ([]string, error) {
+	states, err := s.tools.States(ctx, s.names())
+	if err != nil {
+		return nil, err
+	}
+	var missing []string
+	for _, name := range s.names() {
+		if states[name] != catalog.StateOK {
+			missing = append(missing, name)
+		}
+	}
+	return missing, nil
+}
+
+func (s systemTools) Install(ctx context.Context, names []string) error {
+	outcomes, err := s.tools.Install(ctx, tools.InstallRequest{Names: names, Interactive: true})
+	if err != nil {
+		return err
+	}
+	for _, o := range outcomes {
+		if o.Result == catalog.StateBroken {
+			return errors.New(o.Name + ": " + o.Detail)
+		}
+	}
+	return nil
 }
 
 type fleetRegistrar struct {

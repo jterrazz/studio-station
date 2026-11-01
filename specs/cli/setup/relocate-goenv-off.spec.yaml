@@ -1,0 +1,14 @@
+description: 'with GOENV=off setup writes no go env file and says the go part is off'
+env:
+    - GOENV=off
+runs:
+    - command: 'setup --name m </dev/null'
+      exit: 0
+      stdout: |
+          ●	name	m
+          ●	zshrc
+          ●	layout	nothing to move
+          ◐	relocate	go env is off (GOENV=off): station writes nothing
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+      files:
+          Library/Application Support/go: absent
