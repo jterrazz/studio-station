@@ -38,6 +38,9 @@ func (e *SSHDClosedError) Error() string { return e.Name + "'s sshd does not ans
 func (e *SSHDClosedError) Unwrap() error { return e.Cause }
 
 func (s *Service) CheckPipe(ctx context.Context, name string) (VMRecord, error) {
+	if err := s.CheckHost(); err != nil {
+		return VMRecord{}, err
+	}
 	m, err := s.lookup(name)
 	var unknown *UnknownMachineError
 	if errors.As(err, &unknown) {
@@ -46,9 +49,6 @@ func (s *Service) CheckPipe(ctx context.Context, name string) (VMRecord, error) 
 		}
 	}
 	if err != nil {
-		return VMRecord{}, err
-	}
-	if err := s.CheckHost(); err != nil {
 		return VMRecord{}, err
 	}
 	return s.VM(m.Name, "pipe")
