@@ -59,10 +59,12 @@ func markOf(s services.View) present.Mark {
 	switch {
 	case s.State == services.Refused:
 		return present.MarkBroken
-	case s.State == services.Unknown || s.Degraded:
+	case s.State == services.Unknown:
 		return present.MarkDegraded
 	case s.State == services.Waiting:
 		return present.MarkAbsent
+	case s.Detail != "":
+		return present.MarkDegraded
 	}
 	return present.MarkOK
 }

@@ -27,7 +27,7 @@ type svc struct {
 	listeners []system.Listener
 	served    bool
 	detail    string
-	degraded  bool
+	httpsDown bool
 	refused   bool
 	retryAt   time.Time
 }
@@ -191,7 +191,7 @@ func (d *Daemon) releaseVM(ctx context.Context, vm string) {
 // busy port and says so.
 func (d *Daemon) publish(ctx context.Context, s *svc) {
 	p := d.policy()
-	s.detail, s.degraded, s.refused = "", false, false
+	s.detail, s.httpsDown, s.refused = "", false, false
 	i := d.leaseIndex(s.vm, s.port)
 	if i < 0 {
 		l, err := services.Allocate(p, d.leases, s.vm, s.port, d.busy)
@@ -212,7 +212,7 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 	local, err := d.h.Sockets.ListenTCP("127.0.0.1", lease.HostPort)
 	if err != nil {
 		if lease.Pinned {
-			s.detail, s.degraded, s.retryAt = "host port "+strconv.Itoa(lease.HostPort)+" is busy", true, d.h.Clock.Now().Add(busyRetry)
+			s.detail, s.retryAt = "host port "+strconv.Itoa(lease.HostPort)+" is busy", d.h.Clock.Now().Add(busyRetry)
 			s.refused = true
 			return
 		}
@@ -227,10 +227,10 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 		d.leases[i] = lease
 		d.saveLeases()
 		if local, err = d.h.Sockets.ListenTCP("127.0.0.1", lease.HostPort); err != nil {
-			s.detail, s.degraded = err.Error(), true
+			s.detail = err.Error()
 			return
 		}
-		s.detail, s.degraded = "host port "+strconv.Itoa(was)+" was busy: now "+strconv.Itoa(lease.HostPort), true
+		s.detail = "host port " + strconv.Itoa(was) + " was busy: now " + strconv.Itoa(lease.HostPort)
 	}
 	s.listeners = []system.Listener{local}
 	go d.carry(ctx, s, local)
@@ -240,8 +240,17 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 		d.leases[i] = lease
 		d.saveLeases()
 	}
-	httpsOwnPort := *lease.HTTP && p.HTTPS == services.HTTPSPort
-	if !httpsOwnPort {
+	httpsNote := ""
+	if *lease.HTTP {
+		if args := services.ServeArgs(lease, p.HTTPS, true); args != nil {
+			if err := d.tn.Serve(ctx, args...); err != nil {
+				s.httpsDown, httpsNote = true, "https: "+strings.TrimPrefix(err.Error(), "tailscale serve refused: ")
+			} else {
+				s.served = true
+			}
+		}
+	}
+	if !s.served || p.HTTPS != services.HTTPSPort {
 		note := ""
 		switch d.self.IP {
 		case "":
@@ -255,17 +264,11 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 			}
 		}
 		if note != "" {
-			s.detail, s.degraded = joinDetail(s.detail, note), true
+			s.detail = joinDetail(s.detail, note)
 		}
 	}
-	if *lease.HTTP {
-		if args := services.ServeArgs(lease, p.HTTPS, true); args != nil {
-			if err := d.tn.Serve(ctx, args...); err != nil {
-				s.detail, s.degraded = joinDetail(s.detail, "https: "+strings.TrimPrefix(err.Error(), "tailscale serve refused: ")), true
-			} else {
-				s.served = true
-			}
-		}
+	if httpsNote != "" {
+		s.detail = joinDetail(s.detail, httpsNote)
 	}
 }
 
@@ -381,7 +384,10 @@ func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View 
 			v.State = services.Refused
 		case services.None, services.Waiting, services.Gone, services.Unknown:
 		}
-		v.Process, v.Detail, v.Degraded = s.process, s.detail, s.degraded
+		v.Process, v.Detail = s.process, s.detail
+		if s.httpsDown {
+			v.URLs.HTTPS = ""
+		}
 		if s.refused {
 			v.State = services.Refused
 		}

@@ -68,7 +68,7 @@ An HTTP service (detected once per lease: a server that speaks first is not HTTP
 | `path`  | `tailscale serve --bg --https=443 --set-path=/<vm>/<port> http://127.0.0.1:<host port>` | `https://macbook.tail1234.ts.net/api/8081/`      |
 | `off`   | none                                                                                    | the tailnet one, `macbook.tail1234.ts.net:40000` |
 
-The tailnet needs HTTPS certificates enabled once, in the [admin console's DNS page](https://login.tailscale.com/admin/dns) (MagicDNS on, then HTTPS Certificates). A refused serve leaves the service published without https, its row `◐` with tailscale's own line. In `path` mode a tool that builds absolute URLs needs its base path set to `/<vm>/<port>/`. Whether the app serves https on every port of the range is proved on a real host before `port` stays the default ([TODO](../../TODO.md)).
+The tailnet needs HTTPS certificates enabled once, in the [admin console's DNS page](https://login.tailscale.com/admin/dns) (MagicDNS on, then HTTPS Certificates). A refused serve (or one that waits for the admin to enable Serve) leaves the service published without https: its row `◐` with tailscale's own line, its public URL the tailnet one, and in `port` mode its tailnet port bound by the daemon instead. In `path` mode a tool that builds absolute URLs needs its base path set to `/<vm>/<port>/`. Whether the app serves https on every port of the range is proved on a real host before `port` stays the default ([TODO](../../TODO.md)).
 
 Station owns only the serve entries on its range (`port`) or under `/<vm>/` of its VMs (`path`), and removes the ones no lease justifies at the daemon's start; it never touches another entry.
 

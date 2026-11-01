@@ -31,7 +31,6 @@ type View struct {
 	URLs       URLSet     `json:"urls"`
 	LastSeenAt *time.Time `json:"last_seen_at"`
 	Detail     string     `json:"detail"`
-	Degraded   bool       `json:"-"`
 }
 
 type DaemonInfo struct {
@@ -120,7 +119,6 @@ func (s *Service) offline() HostView {
 	leases, _ := s.leases().Load()
 	for _, l := range leases {
 		v := ViewOf(l, "", view.HTTPS, Unknown)
-		v.Degraded = true
 		view.Services = append(view.Services, v)
 	}
 	return view

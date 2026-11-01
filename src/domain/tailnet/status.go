@@ -188,8 +188,15 @@ func (s *Service) Status(ctx context.Context) (Status, error) {
 	return out, nil
 }
 
+// invariant: a serve that never returns (the app waits for the admin to
+// enable Serve) is refused with the line it printed, not with the timeout.
 func (s *Service) Serve(ctx context.Context, args ...string) error {
 	out, err := s.run(ctx, append([]string{"serve"}, args...)...)
+	if errors.Is(err, system.ErrTimeout) {
+		if detail := firstLine(out.Stderr + out.Stdout); detail != "" {
+			return &ServeError{Detail: detail}
+		}
+	}
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,8 @@
 # The Tailscale app's CLI as the VM specs need it: every call is recorded in
 # $HOME/.calls; `status --json` answers answers/tailscale/status.json, `serve status
 # --json` answers answers/tailscale/serve.json (else {}), and every other `serve` is
-# recorded and succeeds unless answers/tailscale/serve.exit says otherwise.
+# recorded and succeeds unless answers/tailscale/serve.exit says otherwise, or
+# answers/tailscale/serve.hang makes it print the app's line and wait for the admin.
 answers="${0%/*}/../answers/tailscale"
 printf 'tailscale %s\n' "$*" >> "$HOME/.calls"
 case "$*" in
@@ -11,6 +12,10 @@ case "$*" in
         if [ -f "$answers/serve.json" ]; then /bin/cat "$answers/serve.json"; else echo '{}'; fi
         ;;
     serve*)
+        if [ -f "$answers/serve.hang" ]; then
+            echo "Serve is not enabled on your tailnet."
+            exec /bin/sleep 20
+        fi
         if [ -f "$answers/serve.exit" ]; then
             echo "serve: HTTPS is not enabled for this tailnet" >&2
             exit "$(/bin/cat "$answers/serve.exit")"
