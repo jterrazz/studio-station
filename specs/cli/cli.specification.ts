@@ -41,8 +41,8 @@ if (process.env.STATION_FORCE_REBUILD === '1' || binaryIsStale()) {
 // invariant: no run reaches the real machine. HOME is the run's own directory, PATH
 // holds only the fixture's stubs and STATION_SYSTEM_DIRS adds no system directory, so
 // an unstubbed tool is "not found" alike on a Mac and on the Linux CI runner;
-// STATION_SYSTEM_ROOT reads /Applications, /opt/homebrew and /Library under the run's
-// own `root/`, so the owner's apps are neither listed nor sized; the
+// STATION_SYSTEM_ROOT reads /Applications, /opt/homebrew, /Library and /usr/local under
+// the run's own `root/`, so the owner's apps are neither listed nor sized nor run; the
 // machine kind is pinned to host unless a document says otherwise; GitHub is a closed
 // port unless a document serves its stub; a VM's sshd is the served stub vm-sshd.
 export const { cleanup, cli } = await specification.cli(STATION_BIN, {

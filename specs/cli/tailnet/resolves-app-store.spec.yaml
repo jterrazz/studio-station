@@ -1,0 +1,18 @@
+description: 'the App Store bundle''s executable answers before the CLI on PATH, run directly'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/tailscale-app-store/
+runs:
+    - command: 'tailnet --json | /usr/bin/jq -c ''[.variant, .cli]'''
+      exit: 0
+      stdout: |
+          ["app-store","{{workdir}}/root/Applications/Tailscale.app/Contents/MacOS/Tailscale"]
+      files:
+          .calls:
+              equals: |
+                  tailscale-app-store status --json
+                  tailscale-app-store serve status --json
+    - command: 'tailnet | /usr/bin/grep -E ''^.	cli	'''
+      exit: 0
+      stdout: |
+          ●	cli	{{workdir}}/root/Applications/Tailscale.app/Contents/MacOS/Tailscale	app-store

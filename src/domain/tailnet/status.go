@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,13 +17,58 @@ import (
 
 const queryBudget = 5 * time.Second
 
+const (
+	VariantStandalone = "standalone"
+	VariantAppStore   = "app-store"
+)
+
 type Service struct {
 	h     system.Host
+	root  string
 	owns  func(ServeEntry) bool
 	track string
 }
 
-func New(h system.Host, owns func(ServeEntry) bool) *Service { return &Service{h: h, owns: owns} }
+func New(h system.Host, root string, owns func(ServeEntry) bool) *Service {
+	return &Service{h: h, root: root, owns: owns}
+}
+
+type CLI struct{ Path, Variant string }
+
+func (s *Service) Variant() string {
+	if _, err := s.h.FS.Stat(path.Join("/", s.root, catalog.TailscaleReceipt)); err == nil {
+		return VariantAppStore
+	}
+	if _, err := s.h.FS.Stat(path.Join("/", s.root, catalog.TailscaleApp)); err == nil {
+		return VariantStandalone
+	}
+	return ""
+}
+
+func (s *Service) AppStoreCLI() string {
+	if s.Variant() != VariantAppStore {
+		return ""
+	}
+	return path.Join("/", s.root, catalog.TailscaleBundleCLI)
+}
+
+func (s *Service) CLI() CLI {
+	// invariant: the CLI is resolved at each call, by absolute path: a launchd
+	// agent's PATH holds neither Homebrew's bin nor ~/.local/bin, and the App
+	// Store app has no CLI on any PATH, so the app's own paths come first and
+	// PATH last.
+	c := CLI{Variant: s.Variant()}
+	for _, p := range catalog.TailscaleCLIs {
+		if found, ok := s.h.Run.LookPath(path.Join("/", s.root, p)); ok {
+			c.Path = found
+			return c
+		}
+	}
+	if found, ok := s.h.Run.LookPath("tailscale"); ok {
+		c.Path = found
+	}
+	return c
+}
 
 func (s *Service) Tracked(dir string) *Service {
 	t := *s
@@ -63,6 +109,7 @@ type Status struct {
 	BackendState string
 	Name, IP     string
 	DNSName      string
+	Variant, CLI string
 	ServeOn      bool
 	Peers        []Peer
 	Serve        []ServeEntry
@@ -106,16 +153,36 @@ func (n *rawNode) ip() string {
 	return n.TailscaleIPs[0]
 }
 
-func (s *Service) run(ctx context.Context, args ...string) (system.Output, error) {
-	if _, ok := s.h.Run.LookPath("tailscale"); !ok {
+func (s *Service) run(ctx context.Context, budget time.Duration, args ...string) (system.Output, error) {
+	cli := s.CLI().Path
+	if cli == "" {
 		return system.Output{}, ErrAbsent
 	}
-	return s.h.Run.Output(ctx, system.Cmd{Name: "tailscale", Args: args, Timeout: queryBudget, Track: s.track})
+	out, err := s.h.Run.Output(ctx, system.Cmd{Name: cli, Args: args, Timeout: budget, Track: s.track})
+	out.Stdout, out.Stderr = withoutWarnings(out.Stdout), withoutWarnings(out.Stderr)
+	return out, err
+}
+
+// invariant: a CLI older or newer than its daemon prints "Warning: client
+// version ..." before every answer, on either stream: the line says nothing
+// about the answer, so nothing reads it.
+func withoutWarnings(text string) string {
+	if !strings.Contains(text, "Warning:") {
+		return text
+	}
+	lines := strings.SplitAfter(text, "\n")
+	kept := lines[:0]
+	for _, line := range lines {
+		if !strings.HasPrefix(strings.TrimSpace(line), "Warning:") {
+			kept = append(kept, line)
+		}
+	}
+	return strings.Join(kept, "")
 }
 
 func (s *Service) query(ctx context.Context) (rawStatus, error) {
 	var st rawStatus
-	out, err := s.run(ctx, "status", "--json")
+	out, err := s.run(ctx, queryBudget, "status", "--json")
 	if err != nil {
 		return st, err
 	}
@@ -175,9 +242,10 @@ func (s *Service) Self(ctx context.Context) (Self, error) {
 }
 
 func (s *Service) Status(ctx context.Context) (Status, error) {
-	// invariant: station reads the app and drives only `tailscale serve`; an app
-	// that is down or absent is a state, never an error.
-	out := Status{State: catalog.StateAbsent}
+	// invariant: station reads the app and drives only `tailscale serve` and
+	// `tailscale cert`; an app that is down or absent is a state, never an error.
+	cli := s.CLI()
+	out := Status{State: catalog.StateAbsent, Variant: cli.Variant, CLI: cli.Path}
 	st, err := s.query(ctx)
 	if err != nil {
 		if !errors.Is(err, ErrAbsent) {
@@ -209,9 +277,9 @@ func (s *Service) Status(ctx context.Context) (Status, error) {
 func (s *Service) Serve(ctx context.Context, args ...string) error {
 	// invariant: a serve that never returns (the app waits for the admin to
 	// enable Serve) is refused with the line it printed, not with the timeout.
-	out, err := s.run(ctx, append([]string{"serve"}, args...)...)
+	out, err := s.run(ctx, queryBudget, append([]string{"serve"}, args...)...)
 	if errors.Is(err, system.ErrTimeout) {
-		if detail := reason(out.Stderr + "\n" + out.Stdout); detail != "" {
+		if detail := firstLine(out.Stderr + "\n" + out.Stdout); detail != "" {
 			return &ServeError{Detail: detail}
 		}
 	}
@@ -219,11 +287,29 @@ func (s *Service) Serve(ctx context.Context, args ...string) error {
 		return err
 	}
 	if out.ExitCode != 0 {
-		detail := reason(out.Stderr + "\n" + out.Stdout)
+		detail := firstLine(out.Stderr + "\n" + out.Stdout)
 		if detail == "" {
 			detail = "exit " + strconv.Itoa(out.ExitCode)
 		}
 		return &ServeError{Detail: detail}
+	}
+	return nil
+}
+
+func (s *Service) Cert(ctx context.Context, host string) error {
+	// invariant: both outputs are /dev/null: the certificate stays in
+	// tailscaled's own store, so the first https request after it is answered
+	// at once.
+	out, err := s.run(ctx, 0, "cert", "--cert-file=/dev/null", "--key-file=/dev/null", host)
+	if err != nil {
+		return err
+	}
+	if out.ExitCode != 0 {
+		detail := firstLine(out.Stderr + "\n" + out.Stdout)
+		if detail == "" {
+			detail = "exit " + strconv.Itoa(out.ExitCode)
+		}
+		return errors.New(detail)
 	}
 	return nil
 }
@@ -241,7 +327,7 @@ type rawServe struct {
 }
 
 func (s *Service) ServeStatus(ctx context.Context) (ServeConfig, error) {
-	out, err := s.run(ctx, "serve", "status", "--json")
+	out, err := s.run(ctx, queryBudget, "serve", "status", "--json")
 	if err != nil {
 		return ServeConfig{}, err
 	}
@@ -282,17 +368,6 @@ func ParseServe(data []byte) (ServeConfig, error) {
 		return cfg.Entries[i].Path < cfg.Entries[j].Path
 	})
 	return cfg, nil
-}
-
-// invariant: a refusal is told by its own line: the CLI's "Warning:" lines (a
-// client older than its daemon) come first and say nothing about the serve.
-func reason(text string) string {
-	for _, line := range strings.Split(text, "\n") {
-		if line = strings.TrimSpace(line); line != "" && !strings.HasPrefix(line, "Warning:") {
-			return line
-		}
-	}
-	return firstLine(text)
 }
 
 func firstLine(text string) string {

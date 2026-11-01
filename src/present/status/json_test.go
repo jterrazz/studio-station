@@ -63,6 +63,7 @@ func fixed() status.Snapshot {
 		Tailnet: tailnet.Status{
 			State: catalog.StateOK, Connected: true, BackendState: "Running",
 			Name: "macbook", DNSName: "macbook.tail1234.ts.net", IP: "100.64.0.1",
+			Variant: "app-store", CLI: "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
 		},
 	}
 }

@@ -130,7 +130,7 @@ func environmentRows(s status.Snapshot) []present.Row {
 	rows := checkRows(s.Environment.Network)
 	rows = append(rows, checkRows(s.Environment.Security)...)
 	rows = append(rows, checkRows(s.Environment.Updates)...)
-	return append(rows, presenttailnet.Rows(s.Tailnet)[0])
+	return append(rows, presenttailnet.Summary(s.Tailnet))
 }
 
 func workspaceRows(w status.Workspace) []present.Row {

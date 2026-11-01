@@ -23,7 +23,7 @@ func (m machine) exposure(ctx context.Context) services.Exposure {
 func (m machine) tailnet() *tailnet.Service {
 	cfg, _ := m.store.Load()
 	p := services.PolicyOf(cfg.Services)
-	return tailnet.New(m.host, func(e tailnet.ServeEntry) bool {
+	return tailnet.New(m.host, m.systemRoot(), func(e tailnet.ServeEntry) bool {
 		return p.InRange(e.Port) || (p.HTTPS == services.HTTPSPath && e.Port == 443 && e.Path != "/")
 	})
 }

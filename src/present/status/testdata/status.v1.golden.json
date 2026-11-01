@@ -190,6 +190,8 @@
     "backend_state": "Running",
     "name": "macbook",
     "dns_name": "macbook.tail1234.ts.net",
-    "ip": "100.64.0.1"
+    "ip": "100.64.0.1",
+    "variant": "app-store",
+    "cli": "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
   }
 }

@@ -2,6 +2,7 @@ package tailnet
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
@@ -29,6 +30,8 @@ type Object struct {
 	Name         string `json:"name"`
 	DNSName      string `json:"dns_name"`
 	IP           string `json:"ip"`
+	Variant      string `json:"variant"`
+	CLI          string `json:"cli"`
 }
 
 type statusJSON struct {
@@ -41,7 +44,7 @@ type statusJSON struct {
 func ObjectOf(s tailnet.Status) Object {
 	return Object{
 		State: string(s.State), Connected: s.Connected, BackendState: s.BackendState,
-		Name: s.Name, DNSName: s.DNSName, IP: s.IP,
+		Name: s.Name, DNSName: s.DNSName, IP: s.IP, Variant: s.Variant, CLI: s.CLI,
 	}
 }
 
@@ -76,7 +79,15 @@ func Status(s tailnet.Status, context string) present.Answer {
 			{Text: owner, Tone: present.Muted},
 		}})
 	}
-	blocks := []present.Block{present.Table{Rows: Rows(s)}}
+	rows := Rows(s)
+	if s.CLI != "" {
+		rows = append(rows, present.Row{Mark: present.MarkOK, Cells: []present.Cell{
+			{Text: "cli", Tone: present.Strong},
+			{Text: s.CLI},
+			{Text: s.Variant, Tone: present.Muted},
+		}})
+	}
+	blocks := []present.Block{present.Table{Rows: rows}}
 	if len(peers) > 0 {
 		blocks = append(blocks, present.Section{Title: "Peers", Blocks: []present.Block{present.Table{Rows: peers}}})
 	}
@@ -115,6 +126,21 @@ func stateText(s tailnet.Status) string {
 		return s.BackendState + " · " + s.DNSName
 	}
 	return s.BackendState
+}
+
+func Summary(s tailnet.Status) present.Row {
+	row := Rows(s)[0]
+	if s.State != catalog.StateOK {
+		return row
+	}
+	parts := []string{s.BackendState}
+	for _, part := range []string{s.DNSName, s.IP, s.Variant} {
+		if part != "" {
+			parts = append(parts, part)
+		}
+	}
+	row.Cells[1].Text = strings.Join(parts, " · ")
+	return row
 }
 
 func repair(s tailnet.Status) string {

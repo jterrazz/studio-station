@@ -6,7 +6,7 @@ runs:
     - command: 'tailnet --json | /usr/bin/jq -c ''keys, [.serve[] | [.port, .station]]'''
       exit: 0
       stdout: |
-          ["backend_state","connected","dns_name","ip","name","peers","schema","serve","state"]
+          ["backend_state","cli","connected","dns_name","ip","name","peers","schema","serve","state","variant"]
           [[443,false],[40098,true],[40099,true]]
       files:
           .calls:
