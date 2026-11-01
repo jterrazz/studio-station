@@ -26,5 +26,5 @@ runs:
       exit: 2
       stdout: ''
       stderr: |
-          Error: this machine is a linux VM, and only a host does this
+          Error: only a host does this; here is a linux VM
           Hint: run it on a host

@@ -17,7 +17,7 @@ func (e *NotAHostError) Error() string { return "\"" + e.Name + "\" is a VM, not
 type OnlyOnHostError struct{ Here catalog.MachineKind }
 
 func (e *OnlyOnHostError) Error() string {
-	return "this machine is " + e.Here.Article() + ", and only a host does this"
+	return "only a host does this; here is " + e.Here.Article()
 }
 
 type NameTakenError struct {
