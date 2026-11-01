@@ -111,8 +111,11 @@ func (r *runner) Reap(dir string) int {
 
 // invariant: a recorded pid is killed only while it still names the process
 // that was recorded: its start time must match, so a recycled pid survives.
+// ps prints that time in the C locale, the only one its layout parses.
 func startedAt(pid int, unix int64) bool {
-	out, err := exec.Command("/bin/ps", "-o", "lstart=", "-p", strconv.Itoa(pid)).Output()
+	cmd := exec.Command("/bin/ps", "-o", "lstart=", "-p", strconv.Itoa(pid))
+	cmd.Env = append(os.Environ(), "LC_ALL=C")
+	out, err := cmd.Output()
 	if err != nil {
 		return false
 	}
