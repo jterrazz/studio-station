@@ -29,6 +29,8 @@ sudo -u "$VM_USER" -H /usr/local/bin/station setup
 cat > /etc/systemd/system/station-hostkeys.service <<'UNIT'
 [Unit]
 Description=Generate the ssh host keys a clone was built without
+DefaultDependencies=no
+After=local-fs.target
 Before=ssh.service ssh.socket
 ConditionPathExists=!/etc/ssh/ssh_host_ed25519_key
 

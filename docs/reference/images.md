@@ -23,7 +23,7 @@ The base of `linux` is `ghcr.io/cirruslabs/ubuntu`, pulled once (about 5 GB) and
 
 The recipes are shell files embedded under `src/catalog/images/`. The build runs two ssh sessions over the NAT:
 
-1. as the base's own user, `linux.sh` creates `vm_user` with passwordless sudo and the host's image key, installs the packages, Docker, Tailscale, mise, the `station` binary, runs `station setup` for the shell block, and installs two systemd units: `station-intent` (tells the host about a poweroff, see [Machines](machines.md#lifetimes)) and `station-hostkeys` (generates ssh host keys at first boot, since the base has no cloud-init);
+1. as the base's own user, `linux.sh` creates `vm_user` with passwordless sudo and the host's image key, installs the packages, Docker, Tailscale, mise, the `station` binary, runs `station setup` for the shell block, and installs two systemd units: `station-intent` (tells the host about a poweroff, see [Machines](machines.md#lifetimes)) and `station-hostkeys` (generates ssh host keys at first boot, ordered before `ssh.socket` outside the default dependencies, which would make a cycle);
 2. as `vm_user`, `linux-cleanup.sh` stops the base's `tart-guest-agent` (it runs as `admin`), removes the base's user and fails the build if it cannot, empties the machine id and the host keys, and powers off.
 
 A VM's first boot sets its own name and machine id, grows the disk and joins the tailnet.
