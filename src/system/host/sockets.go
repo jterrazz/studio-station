@@ -2,8 +2,6 @@ package host
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"io"
 	"net"
@@ -18,10 +16,19 @@ import (
 
 type sockets struct{}
 
-type listener struct{ l net.Listener }
+type listener struct {
+	l    net.Listener
+	sock string
+}
 
 func (l listener) Accept() (system.Conn, error) { return l.l.Accept() }
-func (l listener) Close() error                 { return l.l.Close() }
+func (l listener) Close() error {
+	err := l.l.Close()
+	if l.sock != "" {
+		_ = os.Remove(l.sock)
+	}
+	return err
+}
 func (l listener) Port() int {
 	if a, ok := l.l.Addr().(*net.TCPAddr); ok {
 		return a.Port
@@ -32,44 +39,60 @@ func (l listener) Port() int {
 const sunPathMax = 100
 
 // hazard: a unix socket path is capped near 104 bytes (sun_path); a longer one is
-// reached through a short symlink to its folder, the same for the listener and
-// every client, so both name one socket.
-func reachable(path string) string {
+// bound or dialled through a short symlink to its folder, made in a fresh temp
+// folder for that one call and removed once the call returns, so concurrent
+// calls never share a link and none is left behind.
+func viaShort(path string, call func(string) error) error {
 	if len(path) < sunPathMax {
-		return path
+		return call(path)
 	}
 	dir, name := filepath.Split(path)
-	sum := sha256.Sum256([]byte(dir))
 	for _, base := range []string{os.TempDir(), "/tmp"} {
-		link := filepath.Join(base, "station-"+hex.EncodeToString(sum[:6]))
-		short := filepath.Join(link, name)
-		if len(short) >= sunPathMax {
+		tmp, err := os.MkdirTemp(base, "station-")
+		if err != nil {
 			continue
 		}
-		if target, err := os.Readlink(link); err != nil || target != dir {
-			_ = os.Remove(link)
-			_ = os.Symlink(dir, link)
+		link := filepath.Join(tmp, "d")
+		short := filepath.Join(link, name)
+		if len(short) >= sunPathMax || os.Symlink(filepath.Clean(dir), link) != nil {
+			_ = os.RemoveAll(tmp)
+			continue
 		}
-		return short
+		err = call(short)
+		_ = os.Remove(link)
+		_ = os.Remove(tmp)
+		return err
 	}
-	return path
+	return call(path)
 }
 
 func (sockets) ListenUnix(path string) (system.Listener, error) {
-	l, err := net.Listen("unix", reachable(path))
-	if err != nil {
+	var l net.Listener
+	if err := viaShort(path, func(p string) (err error) {
+		l, err = net.Listen("unix", p)
+		return err
+	}); err != nil {
 		return nil, err
 	}
 	if err := os.Chmod(path, 0o600); err != nil {
 		_ = l.Close()
 		return nil, err
 	}
-	return listener{l: l}, nil
+	sock := ""
+	if len(path) >= sunPathMax {
+		sock = path
+	}
+	return listener{l: l, sock: sock}, nil
 }
 
 func (sockets) DialUnix(ctx context.Context, path string, timeout time.Duration) (system.Conn, error) {
 	d := net.Dialer{Timeout: timeout}
-	return d.DialContext(ctx, "unix", reachable(path))
+	var conn net.Conn
+	err := viaShort(path, func(p string) (err error) {
+		conn, err = d.DialContext(ctx, "unix", p)
+		return err
+	})
+	return conn, err
 }
 
 // invariant: no code path binds every interface: an empty or unspecified ip is
