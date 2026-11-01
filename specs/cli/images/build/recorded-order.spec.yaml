@@ -28,8 +28,8 @@ runs:
                   - 'station-hostkeys.service'
           .ssh-vm.stdin:
               contains:
-                  - 'pkill -u admin'
-                  - 'userdel -r admin'
+                  - 'pkill -KILL -u admin'
+                  - 'userdel --remove admin'
                   - 'systemctl --no-block poweroff'
           .runs:
               contains: 'tart run --no-graphics --no-audio --serial-path {{workdir}}/.local/state/station/consoles/station-build-linux station-build-linux'
