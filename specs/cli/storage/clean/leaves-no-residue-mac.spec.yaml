@@ -1,0 +1,12 @@
+description: 'clean empties every macOS cache: what brew cleanup keeps, and no pnpm store made where there was none'
+fixture: ./__fixtures__/mac-residue/
+runs:
+    - command: '--version >/dev/null; /bin/mkdir -p Library/Caches/Homebrew/api Library/Caches/Homebrew/bootsnap Library/Caches/Homebrew/downloads && for f in api/formula.jws.json bootsnap/x downloads/y; do echo x > Library/Caches/Homebrew/$f; done'
+      exit: 0
+    - command: 'storage clean </dev/null >/dev/null'
+      exit: 0
+    - command: 'storage --json | /usr/bin/jq -r ''.rows[].paths[] | select(.level == "cache" and .bytes > 0) | .path'''
+      exit: 0
+      stdout: ''
+      files:
+          Library/pnpm/store: absent

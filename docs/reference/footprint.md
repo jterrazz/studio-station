@@ -51,7 +51,7 @@ The keychain service `station` holds nothing since round 5: `station setup` remo
 | `~/Library/Logs/Homebrew`   | cache     |                                      |
 | `/opt/homebrew`             | installed | removed by `station tools uninstall` |
 
-Clean: `brew cleanup --prune=all`. Reset: none (Homebrew's data are its formulae: station tools uninstall <tool>).
+Clean: `brew cleanup --prune=all`, delete `~/Library/Caches/Homebrew/*`. Reset: none (Homebrew's data are its formulae: station tools uninstall <tool>).
 
 ### mise
 
@@ -97,7 +97,7 @@ Clean: `pod cache clean --all`, delete `~/.cocoapods/repos/*`. Reset: none (noth
 | `~/.local/state/pnpm`        | cache  |       |
 | `~/Library/Preferences/pnpm` | config | mac   |
 
-Clean: `pnpm store prune`. Reset: none (nothing to reset: keys and logins are kept).
+Clean: `pnpm store prune` when `~/Library/pnpm/store` exists, `pnpm store prune` when `~/.local/share/pnpm/store` exists, delete `~/Library/pnpm/store/*`, delete `~/.local/share/pnpm/store/*`. Reset: none (nothing to reset: keys and logins are kept).
 
 ### skills
 

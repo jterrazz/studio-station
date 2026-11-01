@@ -529,6 +529,9 @@ func (s *Service) action(ctx context.Context, a catalog.Action) *actionFailure {
 			return nil
 		}
 	}
+	if a.Exists != "" && !s.exists(a.Exists) {
+		return nil
+	}
 	var failed *actionFailure
 	if len(a.Run) > 0 {
 		failed = s.run(ctx, a)

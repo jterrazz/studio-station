@@ -25,6 +25,7 @@ type Action struct {
 	Delete []string
 	Prune  []string
 	Needs  string
+	Exists string
 	On     []MachineKind
 }
 
@@ -109,6 +110,8 @@ func noted(s Stored, note string) Stored { s.Note = note; return s }
 func memos(s Stored, patterns ...string) Stored { s.Memos = patterns; return s }
 
 func runIf(needs string, argv ...string) Action { return Action{Run: argv, Needs: needs} }
+
+func ifExists(a Action, path string) Action { a.Exists = path; return a }
 
 func remove(patterns ...string) Action { return Action{Delete: patterns} }
 
@@ -196,7 +199,7 @@ var (
 	storageHomebrew = Storage{
 		Paths:     []Stored{cache("~/Library/Caches/Homebrew"), cache("~/Library/Logs/Homebrew")},
 		Installed: []string{"/opt/homebrew"},
-		Clean:     []Action{runIf("brew", "brew", "cleanup", "--prune=all")},
+		Clean:     []Action{runIf("brew", "brew", "cleanup", "--prune=all"), remove("~/Library/Caches/Homebrew/*")},
 		NoReset:   "Homebrew's data are its formulae: station tools uninstall <tool>",
 	}
 	miseMemo    = "*/*/bin_paths-*.msgpack.z"
@@ -287,7 +290,11 @@ var (
 			cache("~/Library/pnpm/store", Host, MacOS), cache("{data}/pnpm/store", Linux), cache("{state}/pnpm"),
 			conf("~/Library/Preferences/pnpm", Host, MacOS),
 		},
-		Clean:   []Action{runIf("pnpm", "pnpm", "store", "prune")},
+		Clean: []Action{
+			onMac(ifExists(runIf("pnpm", "pnpm", "store", "prune"), "~/Library/pnpm/store")),
+			onLinux(ifExists(runIf("pnpm", "pnpm", "store", "prune"), "{data}/pnpm/store")),
+			onMac(remove("~/Library/pnpm/store/*")), onLinux(remove("{data}/pnpm/store/*")),
+		},
 		NoReset: toolsNoReset,
 	}
 	storageRust = Storage{

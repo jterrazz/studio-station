@@ -144,7 +144,11 @@ func actions(list []catalog.Action) string {
 	var out []string
 	for _, a := range list {
 		if len(a.Run) > 0 {
-			out = append(out, code(strings.Join(a.Run, " ")))
+			run := code(strings.Join(a.Run, " "))
+			if a.Exists != "" {
+				run += " when " + code(shown(a.Exists)) + " exists"
+			}
+			out = append(out, run)
 		}
 		for _, d := range a.Delete {
 			out = append(out, "delete "+code(shown(d)))
