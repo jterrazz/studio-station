@@ -55,17 +55,19 @@ Clean: `brew cleanup --prune=all`. Reset: none (Homebrew's data are its formulae
 
 ### mise
 
-| Path                            | Level     | Note                                 |
-| ------------------------------- | --------- | ------------------------------------ |
-| `~/Library/Caches/mise`         | cache     | mac                                  |
-| `~/.cache/mise`                 | cache     | linux                                |
-| `~/.local/share/mise/downloads` | cache     |                                      |
-| `~/.local/state/mise`           | data      |                                      |
-| `~/.config/mise/config.toml`    | config    |                                      |
-| `~/.local/share/mise/installs`  | installed | removed by `station tools uninstall` |
-| `~/.local/share/mise/shims`     | installed | removed by `station tools uninstall` |
+| Path                             | Level     | Note                                 |
+| -------------------------------- | --------- | ------------------------------------ |
+| `~/Library/Caches/mise`          | cache     | mac                                  |
+| `~/.cache/mise`                  | cache     | linux                                |
+| `~/.local/share/mise/downloads`  | cache     |                                      |
+| `~/Library/Caches/sigstore-rust` | cache     | mac; mise's signature checks         |
+| `~/.cache/sigstore-rust`         | cache     | linux; mise's signature checks       |
+| `~/.local/state/mise`            | data      |                                      |
+| `~/.config/mise/config.toml`     | config    |                                      |
+| `~/.local/share/mise/installs`   | installed | removed by `station tools uninstall` |
+| `~/.local/share/mise/shims`      | installed | removed by `station tools uninstall` |
 
-Clean: `mise cache clear`, `mise prune --tools`. Reset: none (runtimes are tools: station tools uninstall <runtime>).
+Clean: `mise cache clear`, `mise prune --tools`, delete `~/Library/Caches/mise/*`, delete `~/Library/Caches/sigstore-rust/*`, delete `~/.cache/mise/*`, delete `~/.cache/sigstore-rust/*`. Reset: none (runtimes are tools: station tools uninstall <runtime>).
 
 ### uv
 
@@ -121,27 +123,34 @@ Clean: `bun pm cache rm`, delete `~/Library/Caches/bun/*`. Reset: none (bun's gl
 
 ### go
 
-| Path                                   | Level  | Note                                                                 |
-| -------------------------------------- | ------ | -------------------------------------------------------------------- |
-| `~/Library/Caches/go-build`            | cache  | mac                                                                  |
-| `~/.cache/go-build`                    | cache  | linux                                                                |
-| `~/.cache/go/mod`                      | cache  |                                                                      |
-| `~/.local/share/go/bin/*`              | data   | what go install put there                                            |
-| `~/Library/Application Support/go/env` | config | mac                                                                  |
-| `~/.config/go/env`                     | config | linux                                                                |
-| `~/go`                                 | stray  | stray: `station setup` moves `~/go/bin/*` to `~/.local/share/go/bin` |
+| Path                                         | Level  | Note                                                                 |
+| -------------------------------------------- | ------ | -------------------------------------------------------------------- |
+| `~/Library/Caches/go-build`                  | cache  | mac                                                                  |
+| `~/.cache/go-build`                          | cache  | linux                                                                |
+| `~/.cache/go/mod`                            | cache  |                                                                      |
+| `~/Library/Caches/gopls`                     | cache  | mac; gopls's index                                                   |
+| `~/.cache/gopls`                             | cache  | linux; gopls's index                                                 |
+| `~/Library/Caches/goimports`                 | cache  | mac                                                                  |
+| `~/.cache/goimports`                         | cache  | linux                                                                |
+| `~/.local/share/go/bin/*`                    | data   | what go install put there                                            |
+| `~/.local/share/go/pkg`                      | data   | the checksum database's state                                        |
+| `~/Library/Application Support/go/env`       | config | mac                                                                  |
+| `~/.config/go/env`                           | config | linux                                                                |
+| `~/Library/Application Support/go/telemetry` | config | mac; Go's telemetry mode and counters                                |
+| `~/.config/go/telemetry`                     | config | linux; Go's telemetry mode and counters                              |
+| `~/go`                                       | stray  | stray: `station setup` moves `~/go/bin/*` to `~/.local/share/go/bin` |
 
-Clean: `go clean -cache -modcache`. Reset: delete `~/.local/share/go/bin/*`.
+Clean: `go clean -cache -modcache`, delete `~/Library/Caches/go-build/*`, delete `~/Library/Caches/gopls/*`, delete `~/Library/Caches/goimports/*`, delete `~/.cache/go-build/*`, delete `~/.cache/gopls/*`, delete `~/.cache/goimports/*`. Reset: delete `~/.local/share/go/bin/*`, delete `~/.local/share/go/pkg/*`.
 
 ### node
 
-| Path           | Level  | Note                                      |
-| -------------- | ------ | ----------------------------------------- |
-| `~/.cache/npm` | cache  |                                           |
-| `~/.npmrc`     | config | may hold registry tokens                  |
-| `~/.npm`       | stray  | stray: `station storage clean` empties it |
+| Path           | Level  | Note                                           |
+| -------------- | ------ | ---------------------------------------------- |
+| `~/.cache/npm` | cache  | bun's cache too: bun follows the npmrc's cache |
+| `~/.npmrc`     | config | may hold registry tokens                       |
+| `~/.npm`       | stray  | stray: `station storage clean` empties it      |
 
-Clean: `npm cache clean --force`, delete `~/.cache/npm/_npx/*`, delete `~/.cache/npm/_logs/*`. Reset: none (npm's globals are tools).
+Clean: `npm cache clean --force`, delete `~/.cache/npm/*`. Reset: none (npm's globals are tools).
 
 ### python
 

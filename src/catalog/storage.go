@@ -111,6 +111,8 @@ func remove(patterns ...string) Action { return Action{Delete: patterns} }
 
 func onMac(a Action) Action { a.On = macKinds; return a }
 
+func onLinux(a Action) Action { a.On = []MachineKind{Linux}; return a }
+
 const (
 	stationNoReset = "station's data are VMs and images: station machines delete <vm>, station images delete <image>"
 	toolsNoReset   = "nothing to reset: keys and logins are kept"
@@ -197,18 +199,23 @@ var (
 	storageMise = Storage{
 		Paths: []Stored{
 			cache("~/Library/Caches/mise", Host, MacOS), cache("{cache}/mise", Linux), cache("{data}/mise/downloads"),
+			noted(cache("~/Library/Caches/sigstore-rust", Host, MacOS), "mise's signature checks"), noted(cache("{cache}/sigstore-rust", Linux), "mise's signature checks"),
 			data("{state}/mise"),
 			conf("{config}/mise/config.toml"),
 		},
 		Installed: []string{"{data}/mise/installs", "{data}/mise/shims"},
-		Clean:     []Action{runIf("mise", "mise", "cache", "clear"), runIf("mise", "mise", "prune", "--tools")},
-		NoReset:   "runtimes are tools: station tools uninstall <runtime>",
+		Clean: []Action{
+			runIf("mise", "mise", "cache", "clear"), runIf("mise", "mise", "prune", "--tools"),
+			onMac(remove("~/Library/Caches/mise/*", "~/Library/Caches/sigstore-rust/*")),
+			onLinux(remove("{cache}/mise/*", "{cache}/sigstore-rust/*")),
+		},
+		NoReset: "runtimes are tools: station tools uninstall <runtime>",
 	}
 	storageNode = Storage{
-		Paths: []Stored{cache("{cache}/npm"), noted(conf("~/.npmrc"), "may hold registry tokens")},
+		Paths: []Stored{noted(cache("{cache}/npm"), "bun's cache too: bun follows the npmrc's cache"), noted(conf("~/.npmrc"), "may hold registry tokens")},
 		Clean: []Action{
 			runIf("npm", "npm", "cache", "clean", "--force"),
-			remove("{cache}/npm/_npx/*", "{cache}/npm/_logs/*"),
+			remove("{cache}/npm/*"),
 		},
 		NoReset:  "npm's globals are tools",
 		Relocate: []Relocation{{File: FileNpmrc, Key: "cache", Value: "{cache}/npm"}},
@@ -223,11 +230,20 @@ var (
 	storageGo = Storage{
 		Paths: []Stored{
 			cache("~/Library/Caches/go-build", Host, MacOS), cache("{cache}/go-build", Linux), cache("{cache}/go/mod"),
+			noted(cache("~/Library/Caches/gopls", Host, MacOS), "gopls's index"), noted(cache("{cache}/gopls", Linux), "gopls's index"),
+			cache("~/Library/Caches/goimports", Host, MacOS), cache("{cache}/goimports", Linux),
 			noted(data("{data}/go/bin/*"), "what go install put there"),
+			noted(data("{data}/go/pkg"), "the checksum database's state"),
 			conf("~/Library/Application Support/go/env", Host, MacOS), conf("{config}/go/env", Linux),
+			noted(conf("~/Library/Application Support/go/telemetry", Host, MacOS), "Go's telemetry mode and counters"),
+			noted(conf("{config}/go/telemetry", Linux), "Go's telemetry mode and counters"),
 		},
-		Clean: []Action{runIf("go", "go", "clean", "-cache", "-modcache")},
-		Reset: []Action{remove("{data}/go/bin/*")},
+		Clean: []Action{
+			runIf("go", "go", "clean", "-cache", "-modcache"),
+			onMac(remove("~/Library/Caches/go-build/*", "~/Library/Caches/gopls/*", "~/Library/Caches/goimports/*")),
+			onLinux(remove("{cache}/go-build/*", "{cache}/gopls/*", "{cache}/goimports/*")),
+		},
+		Reset: []Action{remove("{data}/go/bin/*", "{data}/go/pkg/*")},
 		Relocate: []Relocation{
 			{File: FileGoEnv, Key: "GOPATH", Value: "{data}/go"},
 			{File: FileGoEnv, Key: "GOMODCACHE", Value: "{cache}/go/mod"},
