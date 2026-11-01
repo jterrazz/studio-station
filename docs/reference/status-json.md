@@ -17,7 +17,7 @@ The top-level keys, in order:
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `schema`       | `station.status/v1`                                                                                                                                                                                                                                                           |
 | `generated_at` | The moment of the reading, RFC 3339 in UTC                                                                                                                                                                                                                                    |
-| `station`      | `version` and `commit` of the binary that answered                                                                                                                                                                                                                            |
+| `station`      | `version` and `commit` of the binary that answered; on a host `daemon` (`state`, `running`, `version`: station's daemon, `absent` before tart is installed)                                                                                                                   |
 | `machine`      | `name` (`null` when unregistered), `kind` (`host`, `linux`, `macos`), `hostname`, `os`, `arch`, `user`, `shell`                                                                                                                                                               |
 | `system`       | `uptime`, `battery`, `cpu` and `memory.top` (the busiest processes: `pid`, `name`, `value`), `memory.total_bytes`                                                                                                                                                             |
 | `environment`  | `network`, `security` and `updates` (checks), `ports` (`pid`, `name`, `port`)                                                                                                                                                                                                 |
@@ -27,16 +27,16 @@ The top-level keys, in order:
 | `setup`        | `state` and `steps` (`name`, `state`, `detail`) of `station setup`                                                                                                                                                                                                            |
 | `identity`     | Checks: git email, name and signing, gpg key, github, ssh key                                                                                                                                                                                                                 |
 | `daemons`      | Checks: one per `ai.jterrazz.*` launch agent                                                                                                                                                                                                                                  |
-| `services`     | Checks: the OpenClaw and Hermes gateways, when detected                                                                                                                                                                                                                       |
-| `tailnet`      | The object `station tailnet --json` prints, without its peers                                                                                                                                                                                                                 |
+| `gateways`     | Checks: the OpenClaw and Hermes gateways, when detected                                                                                                                                                                                                                       |
+| `tailnet`      | `state`, `connected`, `backend_state`, `name`, `ip`, `dns_name`: the Tailscale app's node, read only                                                                                                                                                                          |
 
 A check is `{"name": "filevault", "state": "ok", "value": "on", "detail": ""}`. `workspace.docker` is `{state, containers, images, volumes, dangling_bytes, total_bytes}`.
 
-`environment.security` and `environment.updates`, `daemons` and `services` are macOS-only: they are `[]` on a Linux machine. The `setup.steps` of a machine that is not a host leave out `name` and `layout`.
+`environment.security` and `environment.updates`, `daemons` and `gateways` are macOS-only: they are `[]` on a Linux machine. The `setup.steps` of a machine that is not a host leave out `name` and `layout`.
 
 `remote-login` and `encrypted-dns` are read from the state of the `sshd` and `dns` config items, so `status` and `station config` cannot disagree about them. A machine where those items are not placed has no such row.
 
-`services` holds a service only when it is detected, by its gateway process or by its config file: an OpenClaw with a config and no gateway is `broken`, a machine with neither lists nothing.
+`gateways` holds a gateway only when it is detected, by its gateway process or by its config file: an OpenClaw with a config and no gateway is `broken`, a machine with neither lists nothing.
 
 ## Rules of the encoding
 

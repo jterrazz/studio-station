@@ -24,11 +24,10 @@ Piped through `curl | sh`, setup cannot ask the name and leaves it `○`; this i
 
 ```sh
 station tools install homebrew tailscale tart
-station tailnet up
 station config install ghostty-dotfiles zed-dotfiles hushlogin
 station status
 ```
 
-A config item that needs values (a password, a token) opens a form on a terminal ([Configuration](../reference/configuration.md)). A host stays clean: dev work lives in VMs ([Machines](../reference/machines.md)), and Claude Code reaches them with a lent token ([Secrets](../reference/secrets.md#claude-in-a-vm)).
+Open the Tailscale app once and log in: station only reads it. A config item that needs values (a password, a token) opens a form on a terminal ([Configuration](../reference/configuration.md)). A host stays clean: dev work lives in VMs ([Machines](../reference/machines.md)), and Claude Code reaches them with a lent token ([Secrets](../reference/secrets.md#claude-in-a-vm)).
 
 Every command is in [Commands](../reference/commands.md); every file written is in [Footprint](../reference/footprint.md).

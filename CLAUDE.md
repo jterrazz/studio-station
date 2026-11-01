@@ -26,7 +26,8 @@ The corpus is `docs/` + `README.md`, mapped by `docs/README.md`. Do not duplicat
 | Every command and flag                       | `docs/reference/commands.md`         |
 | Config items, `settings.json`, env variables | `docs/reference/configuration.md`    |
 | Tools, methods, skills, the toolbelt         | `docs/reference/tools-and-skills.md` |
-| Hosts, VMs, lifetimes, `--on`, the tailnet   | `docs/reference/machines.md`         |
+| Hosts, VMs, lifetimes, `--on`, the daemon    | `docs/reference/machines.md`         |
+| Services, leases, HTTPS, profiles            | `docs/reference/services.md`         |
 | VM images and their recipe                   | `docs/reference/images.md`           |
 | Kept, lent and bound secrets                 | `docs/reference/secrets.md`          |
 | The `station.status/v1` contract             | `docs/reference/status-json.md`      |

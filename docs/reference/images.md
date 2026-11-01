@@ -23,10 +23,10 @@ The base of `linux` is `ghcr.io/cirruslabs/ubuntu`, pulled once (about 5 GB) and
 
 The recipes are shell files embedded under `src/catalog/images/`. The build runs two ssh sessions over the NAT:
 
-1. as the base's own user, `linux.sh` creates `vm_user` with passwordless sudo and the host's image key, installs the packages, Docker, Tailscale, mise, the `station` binary, runs `station setup` for the shell block, installs two systemd units: `station-intent` (tells the host about a poweroff, see [Machines](machines.md#lifetimes)) and `station-hostkeys` (generates ssh host keys at first boot, ordered before `ssh.socket` outside the default dependencies, which would make a cycle), and masks the getty on `/dev/hvc0`, since tart reads the console file back into the guest as input;
+1. as the base's own user, `linux.sh` creates `vm_user` with passwordless sudo and the host's image key, installs the packages, Docker, mise, the `station` binary, lets sshd carry the daemon's forwards (`/etc/ssh/sshd_config.d/60-station.conf`: `AllowTcpForwarding local`), runs `station setup` for the shell block, installs two systemd units: `station-intent` (tells the host about a poweroff, see [Machines](machines.md#lifetimes)) and `station-hostkeys` (generates ssh host keys at first boot, ordered before `ssh.socket` outside the default dependencies, which would make a cycle), and masks the getty on `/dev/hvc0`, since tart reads the console file back into the guest as input;
 2. as `vm_user`, `linux-cleanup.sh` stops the base's `tart-guest-agent` (it runs as `admin`), removes the base's user and fails the build if it cannot, empties the machine id and the host keys, and powers off.
 
-A VM's first boot sets its own name and machine id, grows the disk and joins the tailnet.
+A VM's first boot sets its own name and machine id and grows the disk. No tailscale is in the image: a VM is reached through its host ([Machines](machines.md#ssh-and-herdr)).
 
 ## The binary inside
 

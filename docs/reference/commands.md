@@ -2,19 +2,19 @@
 
 Every command of `station`, grouped as `station --help` groups them. The words are the [Glossary](../concepts/glossary.md)'s.
 
-| Section    | Answers                                         |
-| ---------- | ----------------------------------------------- |
-| Rules      | What holds for every command                    |
-| Here       | `status`, `tools`, `config`, `storage`          |
-| The fleet  | `machines`, `images`, `secrets`, `tailnet`      |
-| Shortcuts  | `run git` and `run docker`                      |
-| The binary | `setup`, `--version`, `help`                    |
-| Plumbing   | The hidden commands the machine runs for itself |
-| Exit codes | What 0, 1, 2 and 130 mean                       |
+| Section    | Answers                                                |
+| ---------- | ------------------------------------------------------ |
+| Rules      | What holds for every command                           |
+| Here       | `status`, `tools`, `config`, `storage`                 |
+| The fleet  | `machines`, `services`, `images`, `secrets`, `tailnet` |
+| Shortcuts  | `run git` and `run docker`                             |
+| The binary | `setup`, `--version`, `help`                           |
+| Plumbing   | The hidden commands the machine runs for itself        |
+| Exit codes | What 0, 1, 2 and 130 mean                              |
 
 ## Rules
 
-- A bare noun lists (`tools`, `config`, `storage`, `machines`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`station`, `run`, `run git`) prints its menu on stderr and exits 2; on a terminal bare `station` opens the TUI.
+- A bare noun lists (`tools`, `config`, `storage`, `machines`, `services`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`station`, `run`, `run git`) prints its menu on stderr and exits 2; on a terminal bare `station` opens the TUI.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create --lifetime lasting --name api`).
 - The same verbs everywhere: `install`, `uninstall`, `upgrade`. There are no aliases.
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
@@ -32,7 +32,7 @@ These commands act on the machine they run on, and list only what its kind allow
 station status [--json]
 ```
 
-Everything about this machine: system, environment, workspace, identity, daemons, services, tools, config and setup. `--json` prints the [`station.status/v1`](status-json.md) document `studio doctor` reads.
+Everything about this machine: system, environment, workspace, identity, daemons, gateways, tools, config and setup; on a host its Machine section shows station's daemon. `--json` prints the [`station.status/v1`](status-json.md) document `studio doctor` reads.
 
 ### `station tools`
 
@@ -73,7 +73,7 @@ station storage reset <tool...> [--yes]         # delete a tool's data, back to 
 station machines [--here] [--json]              # every host and the VMs on each
 station machines add --name <name> [--user <login>] [--key <file>]
 station machines forget <host> [--yes]
-station machines create [--lifetime temporary|lasting] [--image linux] [--name <name>] [--cpus <n>] [--memory <size>] [--disk <size>]
+station machines create [--lifetime temporary|lasting] [--image linux] [--name <name>] [--cpus <n>] [--memory <size>] [--disk <size>] [--network nat|bridged]
 station machines start <vm>
 station machines stop <vm>
 station machines restart <machine> [--yes]
@@ -82,7 +82,17 @@ station machines probe <machine> [--json]
 station machines unlock <host>
 ```
 
-`--here` lists this host only, with no network. `create` asks the lifetime on a terminal and, with two reachable hosts, the host; piped it needs `--lifetime`. `delete` is the only verb that destroys a machine; `forget` only unregisters a host. VMs are made and run on hosts, so these commands except `probe` are refused on a VM. See [Machines](machines.md).
+`--here` lists this host only, with no network. `create` asks the lifetime on a terminal and, with two reachable hosts, the host; piped it needs `--lifetime`. `delete` is the only verb that destroys a machine; `forget` only unregisters a host. VMs are made and run on hosts, so these commands except `probe` are refused on a VM. `create`, `start` and `restart` need the host's daemon; `stop` and `delete` act without it. `--network bridged` is for macOS VMs only. See [Machines](machines.md).
+
+### `station services`
+
+```sh
+station services [--here] [--json]             # what the fleet's VMs listen on, and each URL
+station services url <port> [--json]           # in a VM: reserve the port's public URL now, and print it
+station services release <vm>:<port> [--yes]   # on a host; in a VM: station services release <port>
+```
+
+Every host is asked over ssh; `--here` asks none. `url` runs inside a VM only, its piped stdout the URL alone. A profile's lease asks before `release`. See [Services](services.md).
 
 ### `station images`
 
@@ -109,12 +119,10 @@ See [Secrets](secrets.md).
 ### `station tailnet`
 
 ```sh
-station tailnet [--json]                        # this machine's node, the peers, whether VMs can join
-station tailnet up
-station tailnet down
+station tailnet [--json]                        # the Tailscale app's node, the peers, what serve exposes
 ```
 
-`up` asks how this host authenticates on a terminal the first time.
+Read only: the owner logs in through the Tailscale app, and station never drives it but for [published services](services.md#https).
 
 ## Shortcuts
 
@@ -148,15 +156,18 @@ station help [command]
 
 ## Plumbing
 
-Three commands exist for the machine's own use. They are hidden from help and the owner never types them.
+These commands exist for the machine's own use. They are hidden from help and the owner never types them.
 
-| Command                           | What runs it and what it does                                                                                                                                                                       |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `station shell zsh`               | the `~/.zshrc` block evaluates it at every shell start: PATH, the mise activation, station's completion, and in a VM the lent Claude token. Output on stdout only; another shell or none is refused |
-| `station completion <shell>`      | cobra's completion script, for a shell the block does not serve                                                                                                                                     |
-| `station machines supervise <vm>` | a VM's launchd agent runs it; refused unless it is that agent ([Machines](machines.md#lifetimes))                                                                                                   |
+| Command                           | What runs it and what it does                                                                                                                                                                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `station shell zsh`               | the `~/.zshrc` block evaluates it at every shell start: PATH, the mise activation, station's completion, and in a VM the lent Claude token and the [profiles'](services.md#profiles) exports. Output on stdout only; another shell or none is refused |
+| `station completion <shell>`      | cobra's completion script, for a shell the block does not serve                                                                                                                                                                                       |
+| `station daemon`                  | the launchd agent `com.jterrazz.station.daemon` runs it on a host: the VMs and their services ([Machines](machines.md#the-daemon))                                                                                                                    |
+| `station guest`                   | the host's daemon runs it inside each VM over ssh: what listens there ([Services](services.md))                                                                                                                                                       |
+| `station machines pipe <vm>`      | a VM's `~/.ssh/config` ProxyCommand runs it: ssh's bytes to the VM's NAT ip ([Machines](machines.md#ssh-and-herdr))                                                                                                                                   |
+| `station machines supervise <vm>` | retired: an old per-VM agent that still runs it exits at once; `station setup` removes those agents                                                                                                                                                   |
 
-`--on` is refused on `shell`, `completion`, `help` and `supervise`.
+`--on` is refused on `shell`, `completion`, `help`, `daemon`, `guest` and `machines pipe`.
 
 ## Exit codes
 

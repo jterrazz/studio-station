@@ -16,3 +16,5 @@ Lifetime is asked at every create and never defaulted. The VM says when it power
 - A reboot inside a temporary VM is safe.
 - If the console cannot be read, a poweroff leaves the VM stale for `clean stale-vms`; nothing is deleted on a guess.
 - A temporary VM cannot be stopped or restarted from the host, only deleted.
+
+Round 5 (2026-11-01, [ADR-011](011-one-daemon-per-host.md)): the host's one daemon, not a per-VM supervisor, reads the intent.

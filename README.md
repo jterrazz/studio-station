@@ -28,9 +28,10 @@ station storage         # what each tool keeps on disk: clean caches, reset data
 
 # The fleet
 station machines        # hosts and VMs: create, start, stop, delete, probe
+station services        # what the VMs listen on, and each URL
 station images          # the VM images
 station secrets         # what may be lent to a VM
-station tailnet         # this machine on the tailnet
+station tailnet         # the Tailscale app's node, read only
 
 # Shortcuts
 station run git         # commit, push, sync

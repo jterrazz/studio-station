@@ -54,7 +54,7 @@ The full grammar is `@jterrazz/test`'s [Spec documents](https://github.com/jterr
 
 ## The stubs
 
-A spec copies one `fixture:` directory into its working directory, so stubs live beside the command word that uses them: `specs/cli/<noun>/__fixtures__/<case>/bin/<tool>`. A stub answers by argv from a table, appends `<tool> <argv>` (and the stdin of `brew bundle --file=-`) to `$HOME/.calls`, and exits 97 on anything unscripted. A document asserts `.calls` through `files:` to prove which installer line ran. The GitHub and Tailscale APIs are stub backends the runner serves, reached through `STATION_GITHUB_API_URL` and `STATION_TAILSCALE_API_URL`.
+A spec copies one `fixture:` directory into its working directory, so stubs live beside the command word that uses them: `specs/cli/<noun>/__fixtures__/<case>/bin/<tool>`. A stub answers by argv from a table, appends `<tool> <argv>` (and the stdin of `brew bundle --file=-`) to `$HOME/.calls`, and exits 97 on anything unscripted. A document asserts `.calls` through `files:` to prove which installer line ran. The GitHub API is a stub backend the runner serves, reached through `STATION_GITHUB_API_URL`; a VM's sshd is the stub `vm-sshd` (`specs/cli/__fixtures__/vm-sshd/`), served to the documents that declare `serve: sshd` and reached through `STATION_GUEST_SSH_PORT`.
 
 ## What a test is for
 

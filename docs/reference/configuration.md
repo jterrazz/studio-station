@@ -32,15 +32,13 @@ An item lists only on a machine whose kind is in its place ([Glossary](../concep
 | `power`                     | host        | the power policy of an always-on host; needs root                                                     | yes        |
 | `lock-after-login`          | host        | lock the screen after the automatic login; needs root                                                 | yes        |
 | `sshd`                      | host        | Remote Login; needs root                                                                              | yes        |
-| `tailnet-auth`              | host        | how this host authenticates to the tailnet: login or auth key                                         | yes        |
-| `vm-join`                   | host        | the OAuth client that lets this host mint VM auth keys ([Machines](machines.md#vm-join))              | yes        |
 | `claude-token`              | host        | the Claude Code token lent to VMs ([Secrets](secrets.md#claude-in-a-vm))                              | yes        |
 
 Items group by category: Terminal, Security, Editor, System, Network, and Headless (`autologin`, `power`, `lock-after-login` and `sshd`: what an unattended host needs). An item that needs root is refused without it with `sudo station config install <item>`.
 
 ## Values
 
-An item with inputs (`tailnet-auth`, `vm-join`, `autologin`, `claude-token`) or an interactive procedure (`git-signing`, `ssh-key`, `github-login`) runs on a terminal only. A form asks each value, a password is never echoed, and `AGENT_PASSWORD` pre-fills the autologin password. Off a terminal the command exits 2 with `Hint: run it on a terminal`.
+An item with inputs (`autologin`, `claude-token`) or an interactive procedure (`git-signing`, `ssh-key`, `github-login`) runs on a terminal only. A form asks each value, a password is never echoed, and `AGENT_PASSWORD` pre-fills the autologin password. Off a terminal the command exits 2 with `Hint: run it on a terminal`.
 
 There is no flag to pass a value: a secret never travels in argv or shell history ([ADR-009](../decisions/009-one-bootstrap-verb-and-no-values-in-argv.md)).
 
@@ -55,34 +53,34 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
         "macbook": {},
         "mac-mini": { "user": "jterrazz.agent", "key": "~/.ssh/id_ed25519" }
     },
-    "tailnet": { "mode": "userspace", "auth_method": "login" },
     "vm_user": "jterrazz",
     "lend_list": ["session:openpanel"],
     "user_email": "admin@jterrazz.com",
-    "user_name": "Jean-Baptiste Terrazzoni"
+    "user_name": "Jean-Baptiste Terrazzoni",
+    "services": { "max_per_vm": 10 }
 }
 ```
 
-`here` is this machine's name, `hosts` the other hosts it can drive, `vm_user` the one login of every VM in the fleet, `lend_list` the secrets that may be lent. No secret is in it: those are in the keychain ([Footprint](footprint.md)).
+`here` is this machine's name, `hosts` the other hosts it can drive, `vm_user` the one login of every VM in the fleet, `lend_list` the secrets that may be lent, `services` the policy of [published services](services.md#the-policy): `range` the host ports leases take, `max_per_vm` the leases one VM may hold, `ignored_ports` and `min_port` what is never published, `https` `port`, `path` or `off`; every `services` key is optional, the defaults being `40000-40999`, 20, `[22]`, 1024 and `port`. No secret is in it. A `tailnet` key an earlier round wrote is dropped at the next save.
 
 ## Environment
 
 `app` reads the environment once and passes typed options down; no other layer reads a variable.
 
-| Variable                                                               | Read for                                                                            |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `AGENT_PASSWORD`                                                       | pre-fills the `autologin` form                                                      |
-| `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT`      | the gateway ports `machines probe` and `status` check                               |
-| `MISE_DATA_DIR`                                                        | where mise keeps its shims                                                          |
-| `NO_COLOR`, `COLUMNS`                                                  | the output form and width                                                           |
-| `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | the folders station uses, when absolute ([Storage](storage.md#the-folders))         |
-| `GOENV`                                                                | where `station setup` writes Go's env file; `off` writes none                       |
-| `TART_HOME`                                                            | set by the tart launcher, never by the owner ([Storage](storage.md#tart))           |
-| `STATION_GITHUB_API_URL`, `STATION_TAILSCALE_API_URL`                  | the API origins, so a spec can point them at a stub                                 |
-| `STATION_SYSTEM_DIRS`, `STATION_MACHINE_KIND`                          | which system folders count, and the machine kind, for a spec                        |
-| `STATION_SYSTEM_ROOT`                                                  | the root `/Applications`, `/opt/homebrew` and `/Library` are read under, for a spec |
-| `STATION_VM_AGENT`                                                     | internal: set in a VM's launchd agent                                               |
-| `STATION_XDG_DETACHED`                                                 | internal: `setup`'s detached layout step                                            |
+| Variable                                                               | Read for                                                                                            |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `AGENT_PASSWORD`                                                       | pre-fills the `autologin` form                                                                      |
+| `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT`      | the gateway ports `machines probe` and `status` check                                               |
+| `MISE_DATA_DIR`                                                        | where mise keeps its shims                                                                          |
+| `NO_COLOR`, `COLUMNS`                                                  | the output form and width                                                                           |
+| `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | the folders station uses, when absolute ([Storage](storage.md#the-folders))                         |
+| `GOENV`                                                                | where `station setup` writes Go's env file; `off` writes none                                       |
+| `TART_HOME`                                                            | set by the tart launcher, never by the owner ([Storage](storage.md#tart))                           |
+| `STATION_GITHUB_API_URL`                                               | the GitHub API origin, so a spec can point it at a stub                                             |
+| `STATION_SYSTEM_DIRS`, `STATION_MACHINE_KIND`                          | which system folders count, and the machine kind, for a spec                                        |
+| `STATION_SYSTEM_ROOT`                                                  | the root `/Applications`, `/opt/homebrew`, `/Library` and a VM's `/proc` are read under, for a spec |
+| `STATION_GUEST_SSH_PORT`                                               | the port the daemon dials a VM's sshd on (default 22), for a spec's stub sshd                       |
+| `STATION_XDG_DETACHED`                                                 | internal: `setup`'s detached layout step                                                            |
 
 ## Related
 

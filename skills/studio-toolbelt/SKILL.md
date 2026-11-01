@@ -172,7 +172,7 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 - **jump-desktop-connect**: Remote GUI recovery host service for headless Macs
 - **jump-desktop**: Jump Desktop viewer/client app
-- **tailscale**: Mesh VPN built on WireGuard: every machine of the fleet is a node
+- **tailscale**: The Tailscale app: each host is a node, and station reads it
 
 ### Security
 

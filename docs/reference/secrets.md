@@ -12,11 +12,11 @@ A secret travels only as far as its tier allows: kept on the host, lent to a VM 
 
 ## The three tiers
 
-| Tier  | Lives                                         | Examples                                                                     | What `machines delete` does                                                             |
-| ----- | --------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| kept  | the host's keychain, service `station`        | the VM-join client, the host's tailnet auth key, `AGENT_PASSWORD`            | nothing: it never leaves                                                                |
-| lent  | the host; a copy in the VM's credential store | `session:*` browser sessions; the Claude token                               | the copy goes with the disk; the secret stays valid at its service                      |
-| bound | inside one VM                                 | its node key, its ssh host keys, its `github-login` token, a `claude /login` | the node is removed and the disk goes; a token stays valid at its service until revoked |
+| Tier  | Lives                                         | Examples                                                       | What `machines delete` does                                        |
+| ----- | --------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------ |
+| kept  | the host only                                 | the owner's GitHub token, Apple ID, `AGENT_PASSWORD`           | nothing: it never leaves                                           |
+| lent  | the host; a copy in the VM's credential store | `session:*` browser sessions; the Claude token                 | the copy goes with the disk; the secret stays valid at its service |
+| bound | inside one VM                                 | its ssh host keys, its `github-login` token, a `claude /login` | the disk goes; a token stays valid at its service until revoked    |
 
 Deleting a VM is not revoking a token. Use fine-grained, expiring tokens in a VM, and revoke at the service.
 
@@ -41,7 +41,6 @@ A lent copy is a snapshot: later captures on the host do not reach it until you 
 | A VM's GitHub token                | github.com, your account page for developer tokens and authorized apps                             |
 | A lent `session:*` browser session | log out of that service in the host browser; the service's session list shows the others           |
 | The Claude token                   | claude.ai, your account page for sessions and tokens; then `station config uninstall claude-token` |
-| A node's access                    | Tailscale admin console, Machines; `machines delete` removes the node itself                       |
 
 ## Studio in a VM
 
@@ -62,5 +61,5 @@ The alternative is a bound login: run `claude /login` inside a lasting VM. The l
 
 ## Related
 
-- [Machines](machines.md): `delete` and the node.
-- [Configuration](configuration.md): `claude-token` and `vm-join`.
+- [Machines](machines.md): `delete`.
+- [Configuration](configuration.md): `claude-token`.

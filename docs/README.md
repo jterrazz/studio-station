@@ -32,7 +32,8 @@
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | [Commands](reference/commands.md)                 | Every command and flag, the hidden plumbing, the exit codes                               |
 | [The status contract](reference/status-json.md)   | The `station.status/v1` document `station status --json` prints and `studio doctor` reads |
-| [Machines](reference/machines.md)                 | Hosts, VMs, lifetimes, `--on`, the tailnet join, ssh, launchd                             |
+| [Machines](reference/machines.md)                 | Hosts, VMs, lifetimes, `--on`, the tailnet, ssh, the daemon, the round-5 migration        |
+| [Services](reference/services.md)                 | What a VM listens on: leases, publication, HTTPS, profiles, the daemon protocol           |
 | [Images](reference/images.md)                     | The VM images, the recipe, the binary inside                                              |
 | [Secrets](reference/secrets.md)                   | Kept, lent and bound secrets; Claude and studio in a VM                                   |
 | [Configuration](reference/configuration.md)       | The config items, `settings.json`, the environment variables                              |
@@ -54,5 +55,8 @@ The records of decisions this repository alone took go in [`decisions/`](decisio
 - [007 Files live in the XDG folders](decisions/007-files-live-in-the-xdg-folders.md)
 - [008 Every VM is temporary or lasting](decisions/008-every-vm-is-temporary-or-lasting.md)
 - [009 One bootstrap verb, and no values in argv](decisions/009-one-bootstrap-verb-and-no-values-in-argv.md)
+- [010 VMs are reached through their host](decisions/010-vms-are-reached-through-their-host.md)
+- [011 One daemon per host](decisions/011-one-daemon-per-host.md)
+- [012 Services are leased and published by the host](decisions/012-services-are-leased-and-published.md)
 
 A decision spanning several repositories is recorded by the corpus that spans them. What was left for later is `TODO.md` at the repository root.
