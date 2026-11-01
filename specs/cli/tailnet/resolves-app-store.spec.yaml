@@ -1,7 +1,8 @@
-description: 'the App Store bundle''s executable answers before the CLI on PATH, run directly'
+description: 'the App Store bundle''s executable answers first, run directly, even under launchd''s bare env'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/tailscale-app-store/
+env: daemon
 runs:
     - command: 'tailnet --json | /usr/bin/jq -c ''[.variant, .cli]'''
       exit: 0
@@ -16,3 +17,7 @@ runs:
       exit: 0
       stdout: |
           ●	cli	{{workdir}}/root/Applications/Tailscale.app/Contents/MacOS/Tailscale	app-store
+    - command: '--version >/dev/null; /usr/bin/env -u TERM -u TERM_PROGRAM -u SHLVL "$STATION" tailnet --json | /usr/bin/jq -c ''[.state, .connected, .variant]'''
+      exit: 0
+      stdout: |
+          ["ok",true,"app-store"]

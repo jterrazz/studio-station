@@ -158,7 +158,10 @@ func (s *Service) run(ctx context.Context, budget time.Duration, args ...string)
 	if cli == "" {
 		return system.Output{}, ErrAbsent
 	}
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: cli, Args: args, Timeout: budget, Track: s.track})
+	// invariant: the App Store bundle's executable answers as a CLI only when
+	// TERM, SHLVL or TERM_PROGRAM is set, and launchd sets none: without them it
+	// starts its GUI and fails (measured 2026-11-02), so every call carries SHLVL.
+	out, err := s.h.Run.Output(ctx, system.Cmd{Name: cli, Args: args, Env: []string{"SHLVL=1"}, Timeout: budget, Track: s.track})
 	out.Stdout, out.Stderr = withoutWarnings(out.Stdout), withoutWarnings(out.Stderr)
 	return out, err
 }
