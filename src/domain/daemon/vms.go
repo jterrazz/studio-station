@@ -46,6 +46,7 @@ type vmState struct {
 	in       io.WriteCloser
 	wmu      sync.Mutex
 	keys     string
+	lastErr  string
 }
 
 func (d *Daemon) runsDir() string { return path.Join(d.o.Paths.State, "runs") }
@@ -432,6 +433,7 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState) {
 	name := v.rec.Name
 	ip, err := d.engine.IP(ctx, name, 5*time.Second)
 	if err != nil {
+		d.guestFailed(ctx, v, "no ip: "+err.Error())
 		return
 	}
 	client, err := d.ssh.Dial(ctx, system.SSHTarget{
@@ -439,6 +441,7 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState) {
 		KeyPath: d.m.KeyPath(), KnownHosts: d.m.KnownHostsPath(name), Name: name,
 	})
 	if err != nil {
+		d.guestFailed(ctx, v, err.Error())
 		return
 	}
 	defer func() { _ = client.Close() }()
@@ -466,6 +469,21 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState) {
 		d.fromGuest(ctx, v, scanner.Bytes())
 	}
 	_ = inW.Close()
+}
+
+// invariant: why a guest does not connect reaches daemon.log once per new
+// reason, so a guest stuck connecting is never a silent log.
+func (d *Daemon) guestFailed(ctx context.Context, v *vmState, reason string) {
+	if ctx.Err() != nil {
+		return
+	}
+	d.mu.Lock()
+	repeated := v.lastErr == reason
+	v.lastErr = reason
+	d.mu.Unlock()
+	if !repeated {
+		d.logf(v.rec.Name+" guest", reason)
+	}
 }
 
 func (d *Daemon) write(v *vmState, msg any) {
@@ -532,7 +550,7 @@ func (d *Daemon) fromGuest(ctx context.Context, v *vmState, line []byte) {
 	switch m.Type {
 	case "ready":
 		d.mu.Lock()
-		v.guest = GuestConnected
+		v.guest, v.lastErr = GuestConnected, ""
 		d.mu.Unlock()
 	case "snapshot":
 		seen := map[int]bool{}

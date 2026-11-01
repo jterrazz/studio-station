@@ -1,0 +1,11 @@
+description: 'the daemon logs why a guest does not connect, once per new reason, on its stderr (launchd''s daemon.log)'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/daemon-vm/
+    - ../__fixtures__/vm-api/
+env: daemon
+runs:
+    - command: '--version >/dev/null; echo stopped > .tart-vms/api; STATION_GUEST_SSH_PORT=9 "$STATION" daemon 2> daemon.err & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /bin/sleep 4; kill $d; wait $d; echo stopped > .tart-vms/api; /usr/bin/cut -d" " -f2- daemon.err'
+      exit: 0
+      stdout: |
+          api guest: dial tcp 127.0.0.1:9: connect: connection refused
