@@ -47,6 +47,7 @@ type vmState struct {
 	wmu      sync.Mutex
 	keys     string
 	lastErr  string
+	gen      int
 }
 
 func (d *Daemon) runsDir() string { return path.Join(d.o.Paths.State, "runs") }
@@ -228,6 +229,7 @@ func (d *Daemon) ended(ctx context.Context, v *vmState) {
 	v.reruns, v.pid = reruns, 0
 	d.mu.Unlock()
 	_ = d.h.FS.Remove(d.pidFile(name))
+	d.disconnect(v)
 	d.vmStopped(ctx, name)
 	switch act {
 	case machines.ActRerun:
@@ -365,6 +367,7 @@ func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
 		d.mu.Unlock()
 	}()
 	if pid == 0 && !d.m.EngineRunning(ctx, vm) {
+		d.disconnect(v)
 		d.setState(v, StateStopped, "")
 		return nil
 	}
@@ -394,6 +397,7 @@ func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
 	d.mu.Lock()
 	v.pid = 0
 	d.mu.Unlock()
+	d.disconnect(v)
 	d.vmStopped(ctx, vm)
 	d.setState(v, StateStopped, "")
 	return nil
@@ -421,9 +425,30 @@ func (d *Daemon) connect(ctx context.Context, v *vmState) {
 		return
 	}
 	gctx, cancel := context.WithCancel(ctx)
+	v.gen++
 	v.cancel, v.guest = cancel, GuestConnecting
+	gen := v.gen
 	d.mu.Unlock()
-	go d.session(gctx, v)
+	go d.session(gctx, v, gen)
+}
+
+// invariant: a run that ended takes its guest session with it, so the next
+// run's guest is awaited afresh: a stopped VM's ssh connection may outlive it,
+// and a session it kept would answer for the new run before its sshd is up.
+func (d *Daemon) disconnect(v *vmState) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if v.cancel != nil {
+		v.cancel()
+	}
+	v.gen++
+	v.cancel, v.guest, v.client, v.in = nil, GuestAbsent, nil, nil
+}
+
+func (d *Daemon) current(v *vmState, gen int) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return v.gen == gen
 }
 
 func (d *Daemon) alive(v *vmState) bool {
@@ -432,15 +457,20 @@ func (d *Daemon) alive(v *vmState) bool {
 	return v.pid > 0 && !v.stopping && d.h.Run.Alive(v.pid)
 }
 
-func (d *Daemon) session(ctx context.Context, v *vmState) {
+func (d *Daemon) session(ctx context.Context, v *vmState, gen int) {
 	defer func() {
 		d.mu.Lock()
-		v.cancel, v.guest, v.client, v.in = nil, GuestAbsent, nil, nil
+		if v.gen == gen {
+			v.cancel, v.guest, v.client, v.in = nil, GuestAbsent, nil, nil
+		}
 		d.mu.Unlock()
 	}()
 	backoff := time.Second
 	for d.alive(v) {
-		d.guestOnce(ctx, v)
+		d.guestOnce(ctx, v, gen)
+		if !d.current(v, gen) {
+			return
+		}
 		d.vmStopped(ctx, v.rec.Name)
 		if ctx.Err() != nil || d.h.Clock.Sleep(ctx, backoff) != nil {
 			return
@@ -451,7 +481,7 @@ func (d *Daemon) session(ctx context.Context, v *vmState) {
 	}
 }
 
-func (d *Daemon) guestOnce(ctx context.Context, v *vmState) {
+func (d *Daemon) guestOnce(ctx context.Context, v *vmState, gen int) {
 	name := v.rec.Name
 	ip, err := d.engine.IP(ctx, name, 5*time.Second)
 	if err != nil {
@@ -470,6 +500,10 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState) {
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
 	d.mu.Lock()
+	if v.gen != gen {
+		d.mu.Unlock()
+		return
+	}
 	v.client, v.ip, v.in, v.guest = client, ip, inW, GuestConnecting
 	d.mu.Unlock()
 	go func() {
@@ -565,7 +599,7 @@ type guestMessage struct {
 
 func (d *Daemon) fromGuest(ctx context.Context, v *vmState, line []byte) {
 	var m guestMessage
-	if json.Unmarshal(line, &m) != nil {
+	if ctx.Err() != nil || json.Unmarshal(line, &m) != nil {
 		return
 	}
 	name := v.rec.Name

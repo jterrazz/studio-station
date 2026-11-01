@@ -237,14 +237,20 @@ func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
 		}
 		return nil, d.awaitGuest(ctx, r.VM)
 	case "start":
-		return nil, d.opStart(ctx, r.VM)
+		if err := d.opStart(ctx, r.VM); err != nil {
+			return nil, err
+		}
+		return nil, d.awaitGuest(ctx, r.VM)
 	case "stop":
 		return nil, d.opStop(ctx, r.VM, true)
 	case "restart":
 		if err := d.opStop(ctx, r.VM, false); err != nil {
 			return nil, err
 		}
-		return nil, d.opRun(ctx, r.VM)
+		if err := d.opRun(ctx, r.VM); err != nil {
+			return nil, err
+		}
+		return nil, d.awaitGuest(ctx, r.VM)
 	case "delete":
 		return nil, d.opDelete(ctx, r.VM)
 	case "forget":
