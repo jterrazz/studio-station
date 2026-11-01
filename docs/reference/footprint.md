@@ -103,6 +103,7 @@ Clean: `pnpm store prune`. Reset: none (nothing to reset: keys and logins are ke
 | ---------------------------- | --------- | ------------------------------------ |
 | `~/.agents/.skill-lock.json` | config    |                                      |
 | `~/.agents/skills`           | installed | removed by `station tools uninstall` |
+| `~/.claude/skills`           | installed | removed by `station tools uninstall` |
 
 Reset: none (skills are tools: station tools uninstall <skill>).
 

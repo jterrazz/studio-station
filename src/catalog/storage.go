@@ -544,7 +544,7 @@ var (
 	}
 	storageSkills = Storage{
 		Paths:     []Stored{conf("~/.agents/.skill-lock.json")},
-		Installed: []string{"~/.agents/skills"},
+		Installed: []string{"~/.agents/skills", "~/.claude/skills"},
 		NoReset:   "skills are tools: station tools uninstall <skill>",
 	}
 	storageClaudeDesktop = Storage{

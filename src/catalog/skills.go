@@ -8,6 +8,12 @@ func skill(name, description, repo, skillName string) Tool {
 // already a tool's: then it carries the `-skill` suffix, and its install keeps the
 // upstream name the skills lock records.
 
+// value: the agents a skill is installed for: Claude Code (~/.claude/skills) and
+// the shared ~/.agents/skills that codex and the other universal agents read.
+// Without it the skills CLI, finding no agent on a fresh home, writes to all 79.
+
+var SkillAgents = []string{"claude-code", "codex"}
+
 var AgentSkills = []Tool{
 	skill("frontend-design", "Distinctive, production-grade frontend interfaces", "anthropics/skills", "frontend-design"),
 	skill("upgrading-expo", "Upgrade an Expo app across SDK versions", "expo/skills", "upgrading-expo"),

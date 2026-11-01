@@ -70,7 +70,7 @@ func installArgv(i catalog.Install) []system.Cmd {
 	case catalog.ShellInstall:
 		return []system.Cmd{cmd("bash", "-c", v.Line)}
 	case catalog.SkillInstall:
-		return []system.Cmd{cmd("skills", "add", v.Repo, "-g", "-y", "--skill", v.Skill)}
+		return []system.Cmd{cmd("skills", append([]string{"add", v.Repo, "-g", "-y", "--skill", v.Skill, "--agent"}, catalog.SkillAgents...)...)}
 	}
 	return nil
 }

@@ -12,5 +12,5 @@ runs:
       files:
           .calls:
               equals: |
-                  skills add anthropics/skills -g -y --skill frontend-design
-                  skills add shadcn-ui/ui -g -y --skill shadcn
+                  skills add anthropics/skills -g -y --skill frontend-design --agent claude-code codex
+                  skills add shadcn-ui/ui -g -y --skill shadcn --agent claude-code codex

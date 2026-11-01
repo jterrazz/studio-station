@@ -22,15 +22,15 @@ A tool's state is one of `ok` (the method's manager lists it), `degraded` (found
 
 One table, `src/domain/tools/methods.go`, holds a row per method; nothing else switches on a method.
 
-| Method                | Install                                  | Uninstall                               | Upgrade                          | Kinds       |
-| --------------------- | ---------------------------------------- | --------------------------------------- | -------------------------------- | ----------- |
-| `brew`, `cask`, `mas` | `brew bundle` (Brewfile on stdin)        | `brew uninstall`, `mas uninstall`       | `brew bundle --upgrade`          | host, macos |
-| `npm`, `uv`           | `brew bundle`                            | `npm uninstall -g`, `uv tool uninstall` | `brew bundle --upgrade`          | host, macos |
-| `bun`                 | `bun install -g`                         | `bun remove -g`                         | `bun update -g`                  | all         |
-| `mise`                | `mise use --global <tool>@<version>`     | `mise unuse --global`                   | `mise upgrade`                   | all         |
-| `script`, `shell`     | the vendor's installer                   | not reversible                          | rerun the script; none for shell | all         |
-| `app`                 | manual: the refusal names how            | not reversible                          | none                             | host, macos |
-| `skill`               | `skills add <repo> -g -y --skill <name>` | `skills remove -g -y <name>`            | the install again                | all         |
+| Method                | Install                                                            | Uninstall                               | Upgrade                          | Kinds       |
+| --------------------- | ------------------------------------------------------------------ | --------------------------------------- | -------------------------------- | ----------- |
+| `brew`, `cask`, `mas` | `brew bundle` (Brewfile on stdin)                                  | `brew uninstall`, `mas uninstall`       | `brew bundle --upgrade`          | host, macos |
+| `npm`, `uv`           | `brew bundle`                                                      | `npm uninstall -g`, `uv tool uninstall` | `brew bundle --upgrade`          | host, macos |
+| `bun`                 | `bun install -g`                                                   | `bun remove -g`                         | `bun update -g`                  | all         |
+| `mise`                | `mise use --global <tool>@<version>`                               | `mise unuse --global`                   | `mise upgrade`                   | all         |
+| `script`, `shell`     | the vendor's installer                                             | not reversible                          | rerun the script; none for shell | all         |
+| `app`                 | manual: the refusal names how                                      | not reversible                          | none                             | host, macos |
+| `skill`               | `skills add <repo> -g -y --skill <name> --agent claude-code codex` | `skills remove -g -y <name>`            | the install again                | all         |
 
 `brew bundle` installs a whole request in one call and taps a trusted formula itself; the catalogue's `trusted` taps are the owner's act of trust ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). `station tools upgrade` upgrades catalogue tools only; `--via <manager>` selects every installed tool of a manager (`brew` covers brew and cask).
 
@@ -48,7 +48,7 @@ station tools                       # skills are the last group; ◐ means upstr
 station tools uninstall shadcn
 ```
 
-Only community skills are in the catalogue. The `@jterrazz` skills are not curated here: `studio doctor` derives them from the repositories the estate declares. Two skills share a name with a tool, so they carry a `-skill` suffix: `qmd-skill` and `agent-browser-skill`. Installed state is read from the `skills` lock file `~/.agents/.skill-lock.json`; currency is compared against GitHub with a 5 second budget and is `unknown` on failure.
+Only community skills are in the catalogue. The `@jterrazz` skills are not curated here: `studio doctor` derives them from the repositories the estate declares. Two skills share a name with a tool, so they carry a `-skill` suffix: `qmd-skill` and `agent-browser-skill`. A skill is installed for Claude Code (`~/.claude/skills`) and the shared `~/.agents/skills` that codex and the other universal agents read, never for every agent the skills CLI knows, which it does on a home where it detects none. Installed state is read from the `skills` lock file `~/.agents/.skill-lock.json`; currency is compared against GitHub with a 5 second budget and is `unknown` on failure.
 
 ## The toolbelt
 
