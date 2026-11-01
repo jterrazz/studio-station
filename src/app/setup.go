@@ -29,13 +29,14 @@ func setupService(env kit.Env, m machine) *setup.Service {
 		Paths: m.paths,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
 		// observable; unset, the running binary is the one re-executed.
-		Executable: m.or("STATION_EXECUTABLE", m.host.Env.Executable()),
-		Detached:   m.vars["STATION_XDG_DETACHED"] == "1",
-		Tools:      catalog.Tools,
-		Expand:     m.expander(),
-		Files:      m.toolFiles(),
-		Configurer: setupConfigurer{config: configService(m)},
-		Installer:  systemTools{tools: toolsService(env, m)},
+		Executable:  m.or("STATION_EXECUTABLE", m.host.Env.Executable()),
+		Detached:    m.vars["STATION_XDG_DETACHED"] == "1",
+		Tools:       catalog.Tools,
+		Expand:      m.expander(),
+		Files:       m.toolFiles(),
+		Configurer:  setupConfigurer{config: configService(m)},
+		Installer:   systemTools{tools: toolsService(env, m)},
+		AppStoreCLI: m.tailnet().AppStoreCLI,
 	})
 }
 
@@ -70,6 +71,12 @@ func (s systemTools) Missing(ctx context.Context) ([]string, error) {
 		}
 	}
 	return missing, nil
+}
+
+func (s systemTools) Superseded(ctx context.Context) []string { return s.tools.Superseded(ctx) }
+
+func (s systemTools) RemoveFormula(ctx context.Context, formula string) error {
+	return s.tools.RemoveFormula(ctx, formula)
 }
 
 func (s systemTools) Install(ctx context.Context, names []string) error {

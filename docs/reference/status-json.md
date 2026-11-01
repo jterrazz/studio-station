@@ -28,11 +28,11 @@ The top-level keys, in order:
 | `identity`     | Checks: git email, name and signing, gpg key, github, ssh key                                                                                                                                                                                                                 |
 | `daemons`      | Checks: one per `ai.jterrazz.*` launch agent                                                                                                                                                                                                                                  |
 | `gateways`     | Checks: the OpenClaw and Hermes gateways, when detected; `Tailscale Serve` on a host whose tailnet is connected                                                                                                                                                               |
-| `tailnet`      | `state`, `connected`, `backend_state`, `name`, `ip`, `dns_name`: the Tailscale app's node, read only                                                                                                                                                                          |
+| `tailnet`      | `state`, `connected`, `backend_state`, `name`, `ip`, `dns_name`: the Tailscale app's node, read only; `variant` (`standalone`, `app-store` or `""`) and `cli`, the absolute path of the CLI station ran (`""` when absent)                                                    |
 
 A check is `{"name": "filevault", "state": "ok", "value": "on", "detail": ""}`. `workspace.docker` is `{state, containers, images, volumes, dangling_bytes, total_bytes}`.
 
-`environment.security` and `environment.updates`, `daemons` and `gateways` are macOS-only: they are `[]` on a Linux machine. The `setup.steps` of a machine that is not a host leave out `name` and `layout`.
+`environment.security` and `environment.updates`, `daemons` and `gateways` are macOS-only: they are `[]` on a Linux machine. The `setup.steps` of a host are `name`, `zshrc`, `layout` and `tools` (`degraded` while the App Store app's [CLI wrapper](machines.md#the-tailnet) is due); a machine that is not a host leaves out `name`, `layout` and `tools`.
 
 `remote-login` and `encrypted-dns` are read from the state of the `sshd` and `dns` config items, so `status` and `station config` cannot disagree about them. A machine where those items are not placed has no such row.
 

@@ -16,17 +16,11 @@ import (
 
 const (
 	stepRelocate = "relocate"
-	stepTools    = "tools"
 	busyBudget   = 2 * time.Second
 )
 
 type Configurer interface {
 	Configure(ctx context.Context, item string, interactive bool) error
-}
-
-type Installer interface {
-	Missing(ctx context.Context) ([]string, error)
-	Install(ctx context.Context, names []string) error
 }
 
 type BusyError struct{ Process string }
@@ -284,24 +278,4 @@ func (s *Service) rename(from, to string) error {
 		return &CrossDeviceError{From: s.o.Expand.Display(from), To: s.o.Expand.Display(to)}
 	}
 	return err
-}
-
-func (s *Service) tools(ctx context.Context, interactive bool) (Step, error) {
-	if s.o.Installer == nil {
-		return Step{Name: stepTools, State: catalog.StateOK}, nil
-	}
-	missing, err := s.o.Installer.Missing(ctx)
-	if err != nil {
-		return failed(stepTools, err)
-	}
-	if len(missing) == 0 {
-		return Step{Name: stepTools, State: catalog.StateOK}, nil
-	}
-	if !interactive {
-		return Step{Name: stepTools, State: catalog.StateAbsent, Detail: "missing: " + strings.Join(missing, " ") + ": run station setup on a terminal"}, nil
-	}
-	if err := s.o.Installer.Install(ctx, missing); err != nil {
-		return failed(stepTools, err)
-	}
-	return Step{Name: stepTools, State: catalog.StateOK, Detail: "installed " + strings.Join(missing, " "), Changed: true}, nil
 }

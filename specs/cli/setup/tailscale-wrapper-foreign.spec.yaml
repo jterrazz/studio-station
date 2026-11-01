@@ -1,0 +1,15 @@
+description: 'a tailscale file setup did not write is never overwritten'
+fixture:
+    - ../__fixtures__/system-tools/
+    - ../__fixtures__/tailscale-app-store/
+env: daemon
+runs:
+    - command: '--version >/dev/null; /bin/rm bin/tailscale; /bin/mkdir -p .local/bin; printf "#!/bin/sh\necho mine\n" > .local/bin/tailscale; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	tools'''
+      exit: 0
+      stdout: |
+          ●	tools
+      files:
+          .local/bin/tailscale:
+              equals: |
+                  #!/bin/sh
+                  echo mine

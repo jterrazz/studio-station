@@ -66,7 +66,18 @@ station machines unlock mac-mini    # the FileVault pre-boot ssh session
 
 ## The tailnet
 
-Each host runs the Tailscale app (the cask `tailscale-app`, `station tools install tailscale`); the owner logs in through the app. Station only reads it: `station tailnet` shows the node, its MagicDNS name and what `tailscale serve` exposes, and station drives nothing but `tailscale serve` for [published services](services.md#serve-and-https). A VM has no node, no key and no tag; the owner's Tailscale policy needs no line for station.
+Each host runs the Tailscale app; the owner logs in through the app. Station only reads it: `station tailnet` shows the node, its MagicDNS name, the CLI it ran and what `tailscale serve` exposes, and station drives nothing but `tailscale serve` for [published services](services.md#serve-and-https) and `tailscale cert`, which [warms the certificate](services.md#serve-and-https). A VM has no node, no key and no tag; the owner's Tailscale policy needs no line for station.
+
+The app comes in two variants, and station takes either:
+
+| Variant      | Bundle id                 | How it got there                                                                                                             | Its CLI                                                            |
+| ------------ | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `standalone` | `io.tailscale.ipn.macsys` | the cask `tailscale-app`, `station tools install tailscale`                                                                  | `/usr/local/bin/tailscale`, which the cask's pkg installs          |
+| `app-store`  | `io.tailscale.ipn.macos`  | the App Store (`Contents/_MASReceipt`); `tools` lists it `ok`, unmanaged, `app-store`, never upgraded nor removed by station | `/Applications/Tailscale.app/Contents/MacOS/Tailscale`, on no PATH |
+
+Every `tailscale` call, the daemon's included, runs the CLI resolved at that call by absolute path: `/usr/local/bin/tailscale`, then the App Store bundle's executable, then `tailscale` on PATH (launchd's PATH holds neither `/opt/homebrew/bin` nor `~/.local/bin`); none is the tailnet `absent`. A `Warning: client version ...` line, a CLI older or newer than its daemon, is dropped before the answer is read. `station tailnet` and `status --json`'s `tailnet` say the `variant` and the `cli` path used.
+
+With the App Store app, `station setup`'s `tools` step makes `tailscale` answer in a terminal, an IDE and `studio doctor` by writing `~/.local/bin/tailscale`, two lines, `#!/bin/sh` and `exec /Applications/Tailscale.app/Contents/MacOS/Tailscale "$@"`: a symlink to that executable crashes (`bundleIdentifier is unknown to the registry`), so a symlink found there is replaced, the script's exact bytes are adopted, and a file station did not write, or another `tailscale` on PATH, is left alone. Until it is written `status` shows `◐ setup  tools`. The same step uninstalls the Homebrew formula `tailscale` (an older CLI the app supersedes) once the app is installed: `● tools  tailscale formula uninstalled: the app replaces it`; the formula alone stays, `◐ tailscale  formula installed, app absent`.
 
 ## SSH and Herdr
 
@@ -110,7 +121,7 @@ One `station daemon` per host, under the launchd agent `com.jterrazz.station.dae
 - `layout`: the userspace tailscaled station ran is stopped (in the background when it carries the session) and its files removed; its node stays in the [admin console](https://login.tailscale.com/admin/machines) until the owner removes it. The three tailnet keychain accounts are deleted, and the row points at the [OAuth client](https://login.tailscale.com/admin/settings/oauth) to revoke. `settings.json` loses its `tailnet` key.
 - `daemon`: every per-VM agent `com.jterrazz.station.vm.<name>` is booted out and its plist removed, a lasting VM keeping its stopped or running wish; with any of those VMs running the step refuses (`Hint: stop the lasting VMs and delete the temporary ones (station machines), then station setup`), never cutting a VM.
 
-Left to the owner, by hand and whenever wanted: the old VM tag and its ACL lines, the OAuth client, each host's old userspace node in the admin console, and the Homebrew formula (`brew uninstall tailscale`: `status` shows `◐ tailscale  formula installed, app absent` until the app is installed).
+Left to the owner, by hand and whenever wanted: the old VM tag and its ACL lines, the OAuth client and each host's old userspace node in the admin console. The Homebrew formula `tailscale` is `setup`'s to uninstall once the app is there ([The tailnet](#the-tailnet)).
 
 ## Gateways
 

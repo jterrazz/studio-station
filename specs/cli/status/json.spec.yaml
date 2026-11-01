@@ -38,7 +38,7 @@ runs:
           arch hostname kind name os shell user
           battery cpu memory uptime
           dependencies disk docker repositories strays
-          backend_state connected dns_name ip name state
+          backend_state cli connected dns_name ip name state variant
     - command: 'status --json | /usr/bin/jq -r ''.environment | keys | join(" ")'''
       exit: 0
       stdout: |
@@ -54,4 +54,4 @@ runs:
     - command: 'status --json | /usr/bin/jq -r ''.setup.steps | map(.name) | join(" ")'''
       exit: 0
       stdout: |
-          name zshrc layout
+          name zshrc layout tools

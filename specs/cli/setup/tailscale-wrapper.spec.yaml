@@ -1,0 +1,26 @@
+description: 'with the App Store app and no tailscale on PATH, setup writes the wrapper once, then adopts it'
+fixture:
+    - ../__fixtures__/system-tools/
+    - ../__fixtures__/tailscale-app-store/
+env: daemon
+runs:
+    - command: '--version >/dev/null; /bin/rm bin/tailscale; "$STATION" status --json | /usr/bin/jq -r ''.setup.steps[] | select(.name == "tools") | .state'''
+      exit: 0
+      stdout: |
+          degraded
+    - command: 'setup --name m </dev/null | /usr/bin/grep -E ''^.	tools'''
+      exit: 0
+      stdout: |
+          ●	tools	tailscale wrapper written: ~/.local/bin/tailscale
+      files:
+          .local/bin/tailscale:
+              equals: |
+                  #!/bin/sh
+                  exec {{workdir}}/root/Applications/Tailscale.app/Contents/MacOS/Tailscale "$@"
+    - command: '--version >/dev/null; /bin/ls -l .local/bin/tailscale | /usr/bin/cut -c1-10; /usr/bin/touch -t 202601010000 .local/bin/tailscale; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	tools''; /bin/ls -l .local/bin/tailscale | /usr/bin/grep -c " 2026 "; "$STATION" status --json | /usr/bin/jq -r ''.setup.steps[] | select(.name == "tools") | .state'''
+      exit: 0
+      stdout: |
+          -rwxr-xr-x
+          ●	tools
+          1
+          ok

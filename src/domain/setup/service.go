@@ -34,15 +34,16 @@ type DaemonInstaller interface {
 }
 
 type Options struct {
-	Here       catalog.MachineKind
-	Paths      settings.Paths
-	Executable string
-	Detached   bool
-	Tools      []catalog.Tool
-	Expand     storage.Expander
-	Files      map[catalog.ToolFile]string
-	Configurer Configurer
-	Installer  Installer
+	Here        catalog.MachineKind
+	Paths       settings.Paths
+	Executable  string
+	Detached    bool
+	Tools       []catalog.Tool
+	Expand      storage.Expander
+	Files       map[catalog.ToolFile]string
+	Configurer  Configurer
+	Installer   Installer
+	AppStoreCLI func() string
 }
 
 type Service struct {
@@ -244,7 +245,7 @@ func (s *Service) Check(_ context.Context) (Report, error) {
 		if s.holdsStationFiles() {
 			layout = Step{Name: stepLayout, State: catalog.StateDegraded, Detail: "~/.studio still holds station's files: station setup"}
 		}
-		steps = append(steps, layout)
+		steps = append(steps, layout, s.toolsCheck())
 	}
 	return Report{Steps: steps}, nil
 }
