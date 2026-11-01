@@ -22,7 +22,7 @@ runs:
                     	</array>
                   - |-
                     		<key>PATH</key>
-                    		<string>{{workdir}}/bin</string>
+                    		<string>{{workdir}}/bin:{{workdir}}/.bun/bin:{{workdir}}/.local/share/go/bin</string>
                   - "\t<key>RunAtLoad</key>
 
                     \t<true/>

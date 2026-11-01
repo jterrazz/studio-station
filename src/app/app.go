@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -26,6 +27,7 @@ import (
 )
 
 func Run(args, env []string, stdin, stdout, stderr *os.File) int {
+	env = withToolBins(env)
 	vars := map[string]string{}
 	for _, kv := range env {
 		if k, v, ok := strings.Cut(kv, "="); ok {
@@ -110,6 +112,39 @@ func widthOf(f *os.File, isTerminal bool) int {
 		return 0
 	}
 	return w
+}
+
+// value: the shell loader puts these bins on an interactive PATH (zsh/zshrc.sh);
+// station appends them to its own, so what it installed there answers a
+// non-interactive caller too, and the caller's PATH still wins.
+func withToolBins(env []string) []string {
+	home, path, at := "", "", -1
+	for i, kv := range env {
+		switch k, v, _ := strings.Cut(kv, "="); k {
+		case "HOME":
+			home = v
+		case "PATH":
+			path, at = v, i
+		}
+	}
+	if home == "" {
+		return env
+	}
+	have := strings.Split(path, ":")
+	for _, dir := range []string{filepath.Join(".bun", "bin"), filepath.Join(".local", "share", "go", "bin")} {
+		if dir = filepath.Join(home, dir); !slices.Contains(have, dir) {
+			if path != "" {
+				path += ":"
+			}
+			path += dir
+		}
+	}
+	out := slices.Clone(env)
+	if at < 0 {
+		return append(out, "PATH="+path)
+	}
+	out[at] = "PATH=" + path
+	return out
 }
 
 type machine struct {
