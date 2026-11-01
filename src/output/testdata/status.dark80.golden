@@ -18,7 +18,7 @@
    ● repos      41            3 dirty
    ◐ deps       7 outdated    in 3 repos
    ● docker     running       4 containers · 12 images
-   ● disk       18.4 GB       reclaimable: station clean
+   ● disk       18.4 GB       reclaimable: station storage clean
 
  Identity
    ● git email  set           admin@jterrazz.com

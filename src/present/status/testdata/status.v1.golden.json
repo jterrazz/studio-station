@@ -94,9 +94,11 @@
     "disk": [
       {
         "name": "homebrew",
+        "level": "",
         "bytes": 123
       }
-    ]
+    ],
+    "strays": []
   },
   "tools": [
     {
@@ -116,7 +118,8 @@
         "npm",
         "npx"
       ],
-      "detail": ""
+      "detail": "",
+      "use": "exploration"
     }
   ],
   "config": [

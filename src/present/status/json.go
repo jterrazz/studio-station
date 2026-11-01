@@ -1,6 +1,7 @@
 package status
 
 import (
+	presentstorage "github.com/jterrazz/studio-station/src/present/storage"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/domain/status"
@@ -104,14 +105,16 @@ type dockerJSON struct {
 
 type diskJSON struct {
 	Name  string `json:"name"`
+	Level string `json:"level"`
 	Bytes int64  `json:"bytes"`
 }
 
 type workspaceJSON struct {
-	Repositories []repositoryJSON `json:"repositories"`
-	Dependencies []dependencyJSON `json:"dependencies"`
-	Docker       dockerJSON       `json:"docker"`
-	Disk         []diskJSON       `json:"disk"`
+	Repositories []repositoryJSON           `json:"repositories"`
+	Dependencies []dependencyJSON           `json:"dependencies"`
+	Docker       dockerJSON                 `json:"docker"`
+	Disk         []diskJSON                 `json:"disk"`
+	Strays       []presentstorage.StrayJSON `json:"strays"`
 }
 
 type stepJSON struct {
@@ -154,7 +157,8 @@ func jsonOf(s status.Snapshot) snapshotJSON {
 				Images: s.Workspace.Docker.Images, Volumes: s.Workspace.Docker.Volumes,
 				DanglingBytes: s.Workspace.Docker.DanglingBytes, TotalBytes: s.Workspace.Docker.TotalBytes,
 			},
-			Disk: make([]diskJSON, 0, len(s.Workspace.Disk)),
+			Disk:   make([]diskJSON, 0, len(s.Workspace.Disk)),
+			Strays: presentstorage.Strays(s.Workspace.Strays),
 		},
 		Tools:    make([]presenttools.ToolJSON, 0, len(s.Tools)),
 		Config:   make([]presentconfig.ItemJSON, 0, len(s.Config)),
@@ -178,7 +182,7 @@ func jsonOf(s status.Snapshot) snapshotJSON {
 		body.Workspace.Dependencies = append(body.Workspace.Dependencies, dependencyJSON{Path: d.Path, Manager: d.Manager, Outdated: d.Outdated})
 	}
 	for _, d := range s.Workspace.Disk {
-		body.Workspace.Disk = append(body.Workspace.Disk, diskJSON{Name: d.Name, Bytes: d.Bytes})
+		body.Workspace.Disk = append(body.Workspace.Disk, diskJSON{Name: d.Name, Level: string(d.Level), Bytes: d.Bytes})
 	}
 	for _, t := range s.Tools {
 		body.Tools = append(body.Tools, presenttools.ToolObject(t))

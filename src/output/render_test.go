@@ -117,7 +117,7 @@ func statusDocument() present.Document {
 				row(ok, name("repos"), value("41"), detail("3 dirty")),
 				row(degraded, name("deps"), value("7 outdated"), detail("in 3 repos")),
 				row(ok, name("docker"), value("running"), detail("4 containers · 12 images")),
-				row(ok, name("disk"), value("18.4 GB"), detail("reclaimable: station clean")),
+				row(ok, name("disk"), value("18.4 GB"), detail("reclaimable: station storage clean")),
 			),
 			section("Identity", nil,
 				row(ok, name("git email"), value("set"), detail("admin@jterrazz.com")),

@@ -130,7 +130,12 @@ func environmentRows(s status.Snapshot) []present.Row {
 }
 
 func workspaceRows(w status.Workspace) []present.Row {
-	return []present.Row{reposRow(w.Repositories), depsRow(w.Dependencies), dockerRow(w.Docker), diskRow(w.Disk)}
+	rows := make([]present.Row, 0, 4+len(w.Strays))
+	rows = append(rows, reposRow(w.Repositories), depsRow(w.Dependencies), dockerRow(w.Docker), diskRow(w.Disk))
+	for _, st := range w.Strays {
+		rows = append(rows, row(present.MarkDegraded, st.Name, st.Path, present.Bytes(st.Bytes)+" · "+st.Repair))
+	}
+	return rows
 }
 
 func reposRow(repos []status.Repository) present.Row {
@@ -188,10 +193,12 @@ func dockerRow(d status.Docker) present.Row {
 func diskRow(disk []status.Disk) present.Row {
 	var total int64
 	for _, d := range disk {
-		total += d.Bytes
+		if d.Level == catalog.LevelCache {
+			total += d.Bytes
+		}
 	}
 	if total == 0 {
 		return row(present.MarkOK, "disk", "no caches", "")
 	}
-	return row(present.MarkOK, "disk", present.Bytes(total), "reclaimable: station clean")
+	return row(present.MarkOK, "disk", present.Bytes(total), "reclaimable: station storage clean")
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
+	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/system"
@@ -27,6 +28,11 @@ type Sources struct {
 	Tailnet TailnetReader
 	Setup   SetupChecker
 	Store   settings.Store
+	Storage StorageReader
+}
+
+type StorageReader interface {
+	List(ctx context.Context) (storage.Report, error)
 }
 
 type ToolsReader interface {
@@ -149,6 +155,7 @@ type Docker struct {
 
 type Disk struct {
 	Name  string
+	Level catalog.Level
 	Bytes int64
 }
 
@@ -157,6 +164,7 @@ type Workspace struct {
 	Dependencies []Dependency
 	Docker       Docker
 	Disk         []Disk
+	Strays       []storage.StrayReport
 }
 
 func (s *Service) mac() bool { return s.o.Here != catalog.Linux }

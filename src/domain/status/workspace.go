@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -33,11 +34,8 @@ func (s *Service) workspace(ctx context.Context) Workspace {
 	run(func() { ws.Repositories = s.repositories(ctx, root, paths) })
 	run(func() { ws.Dependencies = s.dependencies(ctx, root, paths) })
 	run(func() { ws.Docker = s.docker(ctx) })
-	run(func() { ws.Disk = s.disk() })
+	run(func() { ws.Disk, ws.Strays = s.disk(ctx) })
 	wg.Wait()
-	if ws.Docker.TotalBytes > 0 {
-		ws.Disk = append([]Disk{{Name: "docker", Bytes: ws.Docker.TotalBytes}}, ws.Disk...)
-	}
 	return ws
 }
 
@@ -245,40 +243,29 @@ func dockerSize(s string) int64 {
 	return 0
 }
 
-func (s *Service) disk() []Disk {
-	home := s.h.Env.Home()
-	sizes := []Disk{}
-	for _, group := range s.diskGroups() {
-		var bytes int64
-		for _, p := range group.paths {
-			bytes += s.h.FS.DirSize(path.Join(home, p))
+func (s *Service) disk(ctx context.Context) ([]Disk, []storage.StrayReport) {
+	disk := []Disk{}
+	if s.deps.Storage == nil {
+		return disk, []storage.StrayReport{}
+	}
+	report, err := s.deps.Storage.List(ctx)
+	if err != nil {
+		return disk, []storage.StrayReport{}
+	}
+	for _, r := range report.Rows {
+		for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData} {
+			if b := r.Bytes[level]; b > 0 {
+				disk = append(disk, Disk{Name: r.Entry.Name, Level: level, Bytes: b})
+			}
 		}
-		if bytes > 0 {
-			sizes = append(sizes, Disk{Name: group.name, Bytes: bytes})
+		if r.Install > 0 {
+			disk = append(disk, Disk{Name: r.Entry.Name, Level: levelInstalled, Bytes: r.Install})
 		}
 	}
-	return sizes
+	if report.Other > 0 {
+		disk = append(disk, Disk{Name: "other", Level: catalog.LevelCache, Bytes: report.Other})
+	}
+	return disk, append(make([]storage.StrayReport, 0, len(report.Strays)), report.Strays...)
 }
 
-type diskGroup struct {
-	name  string
-	paths []string
-}
-
-func (s *Service) diskGroups() []diskGroup {
-	packages := []string{".npm", ".bun/install/cache", "go/pkg/mod", ".gradle/caches"}
-	if !s.mac() {
-		return []diskGroup{
-			{"caches", []string{".cache"}},
-			{"packages", packages},
-			{"trash", []string{".local/share/Trash"}},
-		}
-	}
-	return []diskGroup{
-		{"homebrew", []string{"Library/Caches/Homebrew"}},
-		{"xcode", []string{"Library/Developer/Xcode/DerivedData", "Library/Developer/Xcode/Archives", "Library/Developer/Xcode/iOS DeviceSupport"}},
-		{"packages", append([]string{"Library/pnpm", "Library/Caches/Yarn", "Library/Caches/CocoaPods"}, packages...)},
-		{"logs", []string{"Library/Logs"}},
-		{"trash", []string{".Trash"}},
-	}
-}
+const levelInstalled catalog.Level = "installed"

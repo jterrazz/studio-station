@@ -1,0 +1,18 @@
+description: 'a declared stray is a ◐ row of Workspace naming its tool and its repair; none, no row'
+fixture: ./__fixtures__/strays/
+runs:
+    - command: 'status </dev/null | /usr/bin/grep -e "^◐	go" -e "^◐	tart"'
+      exit: 0
+      stdout: |
+          ◐	go	~/go	2 B · station storage clean go
+          ◐	tart	~/.tart	2 B · station setup
+    - command: 'status --json | /usr/bin/jq -c ''.workspace.strays | map([.name, .path, .bytes > 0, .repair])'''
+      exit: 0
+      stdout: |
+          [["go","~/go",true,"station storage clean go"],["tart","~/.tart",true,"station setup"]]
+    - command: '--version >/dev/null; /bin/rm -rf go .tart'
+      exit: 0
+    - command: 'status --json | /usr/bin/jq -c ''.workspace.strays'''
+      exit: 0
+      stdout: |
+          []

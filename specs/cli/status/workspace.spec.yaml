@@ -19,7 +19,7 @@ runs:
     - command: 'status --json | /usr/bin/jq -c ''.workspace.disk | map([.name, .bytes])'''
       exit: 0
       stdout: |
-          [["docker",3500000000],["homebrew",3000],["trash",500]]
+          [["homebrew",3000]]
     - command: 'status | /usr/bin/sed -n ''/^# Workspace/,/^# Identity/p'''
       exit: 0
       stdout: |
@@ -27,5 +27,5 @@ runs:
           ●	repos	3	2 dirty
           ◐	deps	3 outdated	in 2 repos
           ●	docker	running	2 containers · 2 images
-          ●	disk	3.5 GB	reclaimable: station clean
+          ●	disk	3.0 KB	reclaimable: station storage clean
           # Identity
