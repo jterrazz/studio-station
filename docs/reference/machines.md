@@ -62,7 +62,7 @@ station machines unlock mac-mini    # the FileVault pre-boot ssh session
 
 ## On another machine
 
-`--on <machine>` runs the same command there: `station status --on mac-mini`, `station tools install gh --on api`. Station runs `ssh <machine>` with the remote `station`, and the exit code is the remote's. An unreachable machine is `Error: cannot reach "<machine>"`, `Hint: station machines probe <machine>`, exit 1. It is refused on `shell`, `completion`, `help` and the hidden plumbing (`daemon`, `guest`, `machines pipe`). Bare `station --on api` opens that machine's TUI on a terminal. After a remote create, delete, add or forget, the local ssh blocks refresh.
+`--on <machine>` runs the same command there: `station status --on mac-mini`, `station tools install gh --on api`. Station runs `ssh <machine>` with the remote `station`, and the exit code is the remote's. An unreachable machine is `Error: cannot reach "<machine>"`, `Hint: station machines probe <machine>`, exit 1. It is refused on `shell`, `completion`, `help` and the hidden plumbing (`daemon`, `guest`, `machines pipe`, `machines supervise`); `man` runs there like any command. Bare `station --on api` opens that machine's TUI on a terminal. After a remote create, delete, add or forget, the local ssh blocks refresh.
 
 ## The tailnet
 

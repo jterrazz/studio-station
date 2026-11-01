@@ -12,9 +12,17 @@ runs:
           Error: --on does not apply to "completion zsh"
           Hint: run it on x itself: ssh x
     - command: 'machines supervise v --on x'
-      exit: 0
+      exit: 2
       stderr: |
-          supervise is retired: the daemon supervises VMs (station setup)
+          Error: --on does not apply to "machines supervise"
+          Hint: run it on x itself: ssh x
+    - command: 'machines pipe v --on x'
+      exit: 2
+      stderr: |
+          Error: --on does not apply to "machines pipe"
+          Hint: run it on x itself: ssh x
+      files:
+          .calls: absent
     - command: 'daemon --on x'
       exit: 2
       stderr: |

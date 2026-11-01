@@ -167,7 +167,7 @@ These commands exist for the machine's own use. They are hidden from help and th
 | `station machines pipe <vm>`      | a VM's `~/.ssh/config` ProxyCommand runs it: ssh's bytes to the VM's NAT ip ([Machines](machines.md#ssh-and-herdr))                                                                                                                                   |
 | `station machines supervise <vm>` | retired: an old per-VM agent that still runs it exits at once; `station setup` removes those agents                                                                                                                                                   |
 
-`--on` is refused on `shell`, `completion`, `help`, `daemon`, `guest` and `machines pipe`.
+`--on` is refused on `shell`, `completion`, `help`, `daemon`, `guest`, `machines pipe` and `machines supervise`; `man --on <machine>` prints that machine's page.
 
 ## Exit codes
 

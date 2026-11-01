@@ -72,13 +72,48 @@ func refusesOn(path string) bool {
 }
 
 func RefuseOn(env Env) func(*cobra.Command, []string) error {
-	return func(c *cobra.Command, _ []string) error {
-		if env.On == nil || env.On.Machine == "" {
+	return func(c *cobra.Command, args []string) error {
+		if env.On == nil {
 			return nil
 		}
-		if p := path(c); refusesOn(p) {
+		if env.On.Machine == "" && c.DisableFlagParsing {
+			env.On.Machine = rawOn(args)
+		}
+		if env.On.Machine == "" {
+			return nil
+		}
+		p := path(c)
+		if refusesOn(p) {
 			return fail.Usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
+		}
+		if machine, ok := env.On.Target(); ok && c.Annotations[owned] == "" && c.HasParent() {
+			c.Run = nil
+			c.RunE = func(c *cobra.Command, _ []string) error {
+				if err := env.On.Delegate(c.Context(), machine, env.Interactive); err != nil {
+					return Translate(err, p)
+				}
+				return nil
+			}
 		}
 		return nil
 	}
+}
+
+// invariant: a command kit built answers --on itself; one it did not (fang's
+// man) runs over ssh in place of its own run.
+const owned = "station.kit"
+
+func rawOn(args []string) string {
+	for i, a := range args {
+		if a == "--" {
+			return ""
+		}
+		if v, ok := strings.CutPrefix(a, "--on="); ok {
+			return v
+		}
+		if a == "--on" && i+1 < len(args) {
+			return args[i+1]
+		}
+	}
+	return ""
 }

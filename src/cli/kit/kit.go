@@ -77,6 +77,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 		ValidArgs:          l.ValidArgs,
 		DisableFlagParsing: l.RawArgs,
 		Hidden:             l.Plumbing,
+		Annotations:        map[string]string{owned: "leaf"},
 	}
 	cmd.Args = func(c *cobra.Command, a []string) error {
 		if err := args(c, a); err != nil {
@@ -183,10 +184,11 @@ func gate(verb string, ask func() (bool, error), o IO) error {
 
 func Group(use, short, groupID string, env Env, children ...*cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     use,
-		Short:   short,
-		GroupID: groupID,
-		Args:    cobra.ArbitraryArgs,
+		Use:         use,
+		Short:       short,
+		GroupID:     groupID,
+		Args:        cobra.ArbitraryArgs,
+		Annotations: map[string]string{owned: "group"},
 	}
 	cmd.AddCommand(children...)
 	cmd.RunE = func(c *cobra.Command, args []string) error {

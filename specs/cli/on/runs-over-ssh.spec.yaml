@@ -16,3 +16,11 @@ runs:
       files:
           .calls:
               contains: ssh y -- sh -c
+    - command: 'man --on x'
+      exit: 3
+      stdout: |
+          {"schema":"station.tools/v1","tools":[]}
+      files:
+          .calls:
+              contains: |
+                  ssh x -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station man
