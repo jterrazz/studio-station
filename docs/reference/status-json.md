@@ -13,22 +13,22 @@
 
 The top-level keys, in order:
 
-| Key            | Holds                                                                                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `schema`       | `station.status/v1`                                                                                                            |
-| `generated_at` | The moment of the reading, RFC 3339 in UTC                                                                                     |
-| `station`      | `version` and `commit` of the binary that answered                                                                             |
-| `machine`      | `name` (`null` when unregistered), `kind` (`host`, `linux`, `macos`), `hostname`, `os`, `arch`, `user`, `shell`                |
-| `system`       | `uptime`, `battery`, `cpu` and `memory.top` (the busiest processes: `pid`, `name`, `value`), `memory.total_bytes`              |
-| `environment`  | `network`, `security` and `updates` (checks), `ports` (`pid`, `name`, `port`)                                                  |
-| `workspace`    | `repositories` (`path`, `branch`, `dirty`), `dependencies` (`path`, `manager`, `outdated`), `docker`, `disk` (`name`, `bytes`) |
-| `tools`        | One object per catalogue tool, as `station tools --json` prints it                                                             |
-| `config`       | One object per config item placed here, as `station config --json` prints it                                                   |
-| `setup`        | `state` and `steps` (`name`, `state`, `detail`) of `station setup`                                                             |
-| `identity`     | Checks: git email, name and signing, gpg key, github, ssh key                                                                  |
-| `daemons`      | Checks: one per `ai.jterrazz.*` launch agent                                                                                   |
-| `services`     | Checks: the OpenClaw and Hermes gateways, when detected                                                                        |
-| `tailnet`      | The object `station tailnet --json` prints, without its peers                                                                  |
+| Key            | Holds                                                                                                                                                                                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema`       | `station.status/v1`                                                                                                                                                                                                                                                           |
+| `generated_at` | The moment of the reading, RFC 3339 in UTC                                                                                                                                                                                                                                    |
+| `station`      | `version` and `commit` of the binary that answered                                                                                                                                                                                                                            |
+| `machine`      | `name` (`null` when unregistered), `kind` (`host`, `linux`, `macos`), `hostname`, `os`, `arch`, `user`, `shell`                                                                                                                                                               |
+| `system`       | `uptime`, `battery`, `cpu` and `memory.top` (the busiest processes: `pid`, `name`, `value`), `memory.total_bytes`                                                                                                                                                             |
+| `environment`  | `network`, `security` and `updates` (checks), `ports` (`pid`, `name`, `port`)                                                                                                                                                                                                 |
+| `workspace`    | `repositories` (`path`, `branch`, `dirty`), `dependencies` (`path`, `manager`, `outdated`), `docker`, `disk` (`name`, `level`, `bytes`: one per storage row placed here and level, then `other`, the caches no such row claims), `strays` (`name`, `path`, `bytes`, `repair`) |
+| `tools`        | One object per catalogue tool, as `station tools --json` prints it                                                                                                                                                                                                            |
+| `config`       | One object per config item placed here, as `station config --json` prints it                                                                                                                                                                                                  |
+| `setup`        | `state` and `steps` (`name`, `state`, `detail`) of `station setup`                                                                                                                                                                                                            |
+| `identity`     | Checks: git email, name and signing, gpg key, github, ssh key                                                                                                                                                                                                                 |
+| `daemons`      | Checks: one per `ai.jterrazz.*` launch agent                                                                                                                                                                                                                                  |
+| `services`     | Checks: the OpenClaw and Hermes gateways, when detected                                                                                                                                                                                                                       |
+| `tailnet`      | The object `station tailnet --json` prints, without its peers                                                                                                                                                                                                                 |
 
 A check is `{"name": "filevault", "state": "ok", "value": "on", "detail": ""}`. `workspace.docker` is `{state, containers, images, volumes, dangling_bytes, total_bytes}`.
 

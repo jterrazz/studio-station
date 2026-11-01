@@ -1,4 +1,4 @@
-description: 'the disk view comes from the storage table, by row and level, with unclaimed caches as other'
+description: 'the disk view sizes placed rows by level, and caches no placed row claims as other'
 fixture: ../__fixtures__/terminal/
 env: terminal
 runs:
@@ -7,12 +7,16 @@ runs:
     - command: 'status --json | /usr/bin/jq -c ''.workspace.disk'''
       exit: 0
       stdout: |
-          [{"name":"uv","level":"cache","bytes":5},{"name":"go","level":"cache","bytes":5},{"name":"tart","level":"cache","bytes":5},{"name":"other","level":"cache","bytes":9}]
+          [{"name":"uv","level":"cache","bytes":5},{"name":"go","level":"cache","bytes":5},{"name":"tart","level":"cache","bytes":5},{"name":"other","level":"cache","bytes":14}]
     - command: 'status </dev/null | /usr/bin/grep "^●	disk"'
       exit: 0
       stdout: |
-          ●	disk	24 B	reclaimable: station storage clean
+          ●	disk	29 B	reclaimable: station storage clean
     - command: '--version >/dev/null; STATION_MACHINE_KIND=macos "$STATION" status --json | /usr/bin/jq -c ''.workspace.disk[] | select(.name == "playwright-browsers")'''
       exit: 0
       stdout: |
           {"name":"playwright-browsers","level":"installed","bytes":5}
+    - command: '--version >/dev/null; STATION_MACHINE_KIND=macos "$STATION" status --json | /usr/bin/jq -c ''.workspace.disk[] | select(.name == "other")'''
+      exit: 0
+      stdout: |
+          {"name":"other","level":"cache","bytes":9}

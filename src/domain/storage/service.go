@@ -179,7 +179,7 @@ func (s *Service) List(ctx context.Context) (Report, error) {
 
 func (s *Service) other() int64 {
 	var claimed []string
-	for _, e := range s.Entries() {
+	for _, e := range s.Placed() {
 		for _, p := range e.Storage.Paths {
 			claimed = append(claimed, s.o.Expand.Expand(p.Path))
 		}
