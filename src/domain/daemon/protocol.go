@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -70,9 +71,11 @@ func (e *RunningError) Error() string {
 	return "a station daemon already runs (pid " + strconv.Itoa(e.PID) + ")"
 }
 
-type HostOnlyError struct{}
+type HostOnlyError struct{ Here catalog.MachineKind }
 
-func (*HostOnlyError) Error() string { return "the daemon runs only on a host" }
+func (e *HostOnlyError) Error() string {
+	return "the daemon runs only on a host; here is " + e.Here.Article()
+}
 
 func SocketPath(p settings.Paths) string { return path.Join(p.State, "daemon.sock") }
 

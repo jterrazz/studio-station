@@ -1,5 +1,7 @@
 package secrets
 
+import "github.com/jterrazz/studio-station/src/catalog"
+
 type NotSessionError struct{ Name string }
 
 func (e *NotSessionError) Error() string {
@@ -26,9 +28,11 @@ func (e *NotAVMError) Error() string {
 	return "\"" + e.Name + "\" is a host: secrets are lent to VMs only"
 }
 
-type OffHostError struct{}
+type OffHostError struct{ Here catalog.MachineKind }
 
-func (e *OffHostError) Error() string { return "secrets are lent from a host, not from a VM" }
+func (e *OffHostError) Error() string {
+	return "secrets are lent from a host; here is " + e.Here.Article()
+}
 
 type EmptyLendListError struct{}
 

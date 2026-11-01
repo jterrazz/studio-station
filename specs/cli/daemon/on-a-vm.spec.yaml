@@ -4,5 +4,5 @@ runs:
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" daemon'
       exit: 2
       stderr: |
-          Error: the daemon runs only on a host
+          Error: the daemon runs only on a host; here is a linux VM
           Hint: run it on a host: station setup installs it

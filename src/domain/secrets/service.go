@@ -205,7 +205,7 @@ func (s *Service) Recall(ctx context.Context, from string, names []string) (Reca
 
 func (s *Service) lendPlan(ctx context.Context, to string, names []string) ([]string, error) {
 	if s.here != catalog.Host {
-		return nil, &OffHostError{}
+		return nil, &OffHostError{Here: s.here}
 	}
 	if err := s.checkVM(ctx, to); err != nil {
 		return nil, err

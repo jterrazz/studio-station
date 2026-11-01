@@ -90,7 +90,7 @@ func New(h system.Host, e system.Engine, ssh system.SSH, m Machines, tn Tailnet,
 
 func (d *Daemon) Check() error {
 	if d.o.Here != catalog.Host {
-		return &HostOnlyError{}
+		return &HostOnlyError{Here: d.o.Here}
 	}
 	return nil
 }
