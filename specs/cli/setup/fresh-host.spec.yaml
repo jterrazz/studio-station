@@ -8,7 +8,7 @@ runs:
           ●	name	macbook
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	go env, npmrc
+          ●	relocate	bunfig, go env, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	daemon	not needed until tart is installed
       files:

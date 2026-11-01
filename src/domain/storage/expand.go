@@ -65,3 +65,20 @@ func LineValue(text, key string) (string, bool) {
 	}
 	return "", false
 }
+
+func TableValue(text, key string) (string, bool) {
+	cut := strings.LastIndex(key, ".")
+	table, name := key[:cut], key[cut+1:]
+	current := ""
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			current = strings.TrimSpace(line[1 : len(line)-1])
+			continue
+		}
+		if k, v, ok := strings.Cut(line, "="); ok && current == table && strings.TrimSpace(k) == name {
+			return strings.Trim(strings.TrimSpace(v), `"`), true
+		}
+	}
+	return "", false
+}

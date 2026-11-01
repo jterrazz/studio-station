@@ -120,7 +120,21 @@ func (s *Service) writeToolFiles() (written, notes []string, err error) {
 		}
 		text := string(current)
 		changed := false
+		if file == catalog.FileBunfig {
+			values := map[string]string{}
+			for _, r := range byFile[file] {
+				values[r.Key] = s.o.Expand.Expand(r.Value)
+			}
+			updated, did, conflict := UpsertBunfig(text, values["install.globalDir"], values["install.globalBinDir"], values["install.cache.dir"])
+			if conflict != "" {
+				notes = append(notes, conflict)
+			}
+			text, changed = updated, did
+		}
 		for _, r := range byFile[file] {
+			if file == catalog.FileBunfig {
+				continue
+			}
 			value := s.o.Expand.Expand(r.Value)
 			updated, did, hand := UpsertEnvLine(text, r.Key, value)
 			if hand != "" {

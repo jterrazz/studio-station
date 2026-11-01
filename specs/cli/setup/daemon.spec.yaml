@@ -7,7 +7,7 @@ runs:
           ●	name	x
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	go env, npmrc
+          ●	relocate	bunfig, go env, npmrc
           ○	tools	missing: homebrew mise git tailscale: run station setup on a terminal
           ●	daemon	running {{string}}
       files:
@@ -22,7 +22,7 @@ runs:
                     	</array>
                   - |-
                     		<key>PATH</key>
-                    		<string>{{workdir}}/bin:{{workdir}}/.bun/bin:{{workdir}}/.local/share/go/bin</string>
+                    		<string>{{workdir}}/bin:{{workdir}}/.local/share/bun/bin:{{workdir}}/.local/share/go/bin</string>
                   - "\t<key>RunAtLoad</key>
 
                     \t<true/>

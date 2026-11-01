@@ -348,7 +348,11 @@ func (s *Service) Relocated(st catalog.Storage) bool {
 		if err != nil {
 			return false
 		}
-		if _, ok := LineValue(string(data), r.Key); !ok {
+		value := LineValue
+		if r.File == catalog.FileBunfig {
+			value = TableValue
+		}
+		if _, ok := value(string(data), r.Key); !ok {
 			return false
 		}
 	}

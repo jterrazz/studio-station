@@ -131,7 +131,7 @@ func withToolBins(env []string) []string {
 		return env
 	}
 	have := strings.Split(path, ":")
-	for _, dir := range []string{filepath.Join(".bun", "bin"), filepath.Join(".local", "share", "go", "bin")} {
+	for _, dir := range []string{filepath.Join(".local", "share", "bun", "bin"), filepath.Join(".local", "share", "go", "bin")} {
 		if dir = filepath.Join(home, dir); !slices.Contains(have, dir) {
 			if path != "" {
 				path += ":"

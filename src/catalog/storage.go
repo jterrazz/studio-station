@@ -192,7 +192,6 @@ var HomeExceptions = []Exception{
 	{Path: ".docker", Reason: "relocated by DOCKER_CONFIG only (open question 48)"},
 	{Path: ".agent-browser", Reason: "no config file relocates it (open question 48)"},
 	{Path: ".hermes", Reason: "no config file relocates it (open question 48)"},
-	{Path: ".bun", Reason: "while bun's relocation is pending its macOS-VM proof"},
 }
 
 var (
@@ -219,7 +218,7 @@ var (
 		NoReset: "runtimes are tools: station tools uninstall <runtime>",
 	}
 	storageNode = Storage{
-		Paths: []Stored{noted(cache("{cache}/npm"), "bun's cache too: bun follows the npmrc's cache"), noted(conf("~/.npmrc"), "may hold registry tokens")},
+		Paths: []Stored{cache("{cache}/npm"), noted(conf("~/.npmrc"), "may hold registry tokens")},
 		Clean: []Action{
 			runIf("npm", "npm", "cache", "clean", "--force"),
 			remove("{cache}/npm/*"),
@@ -267,17 +266,26 @@ var (
 	}
 	storageBun = Storage{
 		Paths: []Stored{
-			cache("~/.bun/install/cache"), cache("~/Library/Caches/bun", Host, MacOS),
+			cache("{cache}/bun/install"), cache("~/Library/Caches/bun", Host, MacOS),
 			conf("~/.bunfig.toml"),
 		},
-		Installed: []string{"~/.bun/install/global", "~/.bun/bin"},
+		Installed: []string{"{data}/bun/install/global", "{data}/bun/bin"},
 		Clean:     []Action{runIf("bun", "bun", "pm", "cache", "rm"), onMac(remove("~/Library/Caches/bun/*"))},
 		NoReset:   "bun's globals are tools",
 		Relocate: []Relocation{
-			{File: FileBunfig, Key: "install.globalDir", Value: "{data}/bun/install/global", Pending: bunProof},
-			{File: FileBunfig, Key: "install.globalBinDir", Value: "{data}/bun/bin", Pending: bunProof},
-			{File: FileBunfig, Key: "install.cache.dir", Value: "{cache}/bun/install", Pending: bunProof},
+			{File: FileBunfig, Key: "install.globalDir", Value: "{data}/bun/install/global"},
+			{File: FileBunfig, Key: "install.globalBinDir", Value: "{data}/bun/bin"},
+			{File: FileBunfig, Key: "install.cache.dir", Value: "{cache}/bun/install"},
 		},
+		Strays: []Stray{{
+			Path: "~/.bun",
+			Move: []Move{
+				{From: "~/.bun/install/global", To: "{data}/bun/install/global"},
+				{From: "~/.bun/bin/*", To: "{data}/bun/bin"},
+			},
+			Prune: []string{"~/.bun/bin", "~/.bun/install", "~/.bun"},
+			Clean: []Action{{Delete: []string{"~/.bun/install/cache"}, Prune: []string{"~/.bun/bin", "~/.bun/install", "~/.bun"}}},
+		}},
 	}
 	storageUv = Storage{
 		Paths:     []Stored{cache("{cache}/uv")},
@@ -640,5 +648,3 @@ var (
 		},
 	}
 )
-
-const bunProof = "the macOS-VM tier proves bun reads the global bunfig (TODO.md \"Machine test tiers\")"

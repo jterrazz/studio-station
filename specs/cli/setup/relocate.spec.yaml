@@ -1,4 +1,4 @@
-description: 'setup writes go''s env file and ~/.npmrc, absolute and nothing else, and a rerun changes nothing'
+description: 'setup writes go''s env file, ~/.npmrc and the bunfig, absolute, and a rerun changes nothing'
 runs:
     - command: 'setup --name m </dev/null'
       exit: 0
@@ -6,13 +6,13 @@ runs:
           ●	name	m
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	go env, npmrc
+          ●	relocate	bunfig, go env, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	daemon	not needed until tart is installed
       files:
           Library/Application Support/go/env: { equals: "GOPATH={{workdir}}/.local/share/go\nGOMODCACHE={{workdir}}/.cache/go/mod\n" }
           .npmrc: { equals: "cache={{workdir}}/.cache/npm\n" }
-          .bunfig.toml: absent
+          .bunfig.toml: { equals: "# >>> station >>>\n[install]\nglobalDir = \"{{workdir}}/.local/share/bun/install/global\"\nglobalBinDir = \"{{workdir}}/.local/share/bun/bin\"\n\n[install.cache]\ndir = \"{{workdir}}/.cache/bun/install\"\n# <<< station <<<\n" }
     - command: 'setup </dev/null'
       exit: 0
       stdout: |

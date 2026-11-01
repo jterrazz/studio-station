@@ -10,7 +10,7 @@ runs:
           ○	name	not set: station setup --name <name>
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	go env, npmrc
+          ●	relocate	bunfig, go env, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	daemon	not needed until tart is installed
           ✓ Done. Run 'exec zsh', then 'station'

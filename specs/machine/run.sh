@@ -200,13 +200,11 @@ step "IDE: go env" "$mise_path; d=\$(mise where go)/bin; env -i HOME=\$HOME PATH
 step "IDE: gopls version" "$mise_path; d=\$(mise where go)/bin; g=\$(go env GOBIN); g=\${g:-\$(go env GOPATH)/bin}; env -i HOME=\$HOME PATH=\$g:\$d gopls version"
 step "IDE: npm config get cache" "$mise_path; d=\$(mise where node)/bin; env -i HOME=\$HOME PATH=\$d:/usr/bin:/bin npm config get cache"
 
-if [ "$kind" = macos ]; then
-  if in_vm 'test -e ~/.bun'; then
-    say "bun verdict: ~/.bun present after bun add -g and bunx: it stays a permanent exception"
-  else
-    say "bun verdict: ~/.bun absent after bun add -g and bunx: the bun relocation activates"
-  fi
+in_vm 'test -f ~/.bunfig.toml' || fail "setup wrote no ~/.bunfig.toml"
+if in_vm 'test -e ~/.bun'; then
+  fail "~/.bun present after tools install skills, bun add -g and bunx: bun ignored the bunfig"
 fi
+say "   ~/.bun absent after tools install skills, bun add -g and bunx: bun honours the bunfig"
 
 
 say "-- the footprint test"

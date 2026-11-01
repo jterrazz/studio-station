@@ -45,7 +45,7 @@ export FZF_DEFAULT_OPTS="\
 
 export BAT_THEME="Catppuccin Macchiato"
 
-export PATH="$HOME/.bun/bin:$PATH"
+export PATH="$HOME/.local/share/bun/bin:$PATH"
 
 export PATH="$HOME/.local/share/go/bin:$PATH"
 

@@ -39,7 +39,7 @@ A tool's path moves only through the tool's own config file, the one it reads wh
 | npm  | `~/.npmrc`                                                                                       | `cache`                                          | `~/.npm` |
 | bun  | `~/.bunfig.toml`                                                                                 | `globalDir`, `globalBinDir`, `install.cache.dir` | `~/.bun` |
 
-The bun row is pending: setup does not write it until the macOS machine tier proves that `bun add -g`, `bun install -g` and `bunx` honour the global bunfig and create no `~/.bun` (`TODO.md`, "Machine test tiers"). Until then `~/.bun` is a declared exception.
+bun's values sit in a managed block between `# >>> station >>>` and `# <<< station <<<`; a bunfig with its own `[install]` table is left alone, and setup says which keys to set by hand. The macOS machine tier proved that `bun add -g`, `bun install -g`, `bunx` and `bun pm cache rm` honour the global bunfig and create no `~/.bun`. `station setup` moves an existing `~/.bun`'s globals and bins into `~/.local/share/bun`, one rename each, so their relative bin links still resolve; `station storage clean bun` deletes its old cache.
 
 Nothing already under `~/Library/Caches` or another `~/Library` folder moves: go-build, Homebrew, mise's cache, the pnpm store and Playwright are in the macOS place for them. The folders a tool keeps at the home root on purpose (`.ssh`, `.gnupg`, `.cargo` and `.rustup`, which rust-analyzer started by a GUI IDE needs, `.claude`, `.codex`, the dotfiles) are the declared exceptions, listed with their reasons in [Footprint](footprint.md#home-root-exceptions).
 

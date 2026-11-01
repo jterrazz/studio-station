@@ -9,7 +9,7 @@ runs:
           ●	name	x
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	go env, npmrc
+          ●	relocate	bunfig, go env, npmrc
           ○	tools	missing: homebrew mise git tailscale: run station setup on a terminal
           ✗	daemon	launchctl bootstrap exited 5: Bootstrap failed: 5: Input/output error
       stderr: |

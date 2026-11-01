@@ -111,13 +111,14 @@ Reset: none (skills are tools: station tools uninstall <skill>).
 
 ### bun
 
-| Path                    | Level     | Note                                 |
-| ----------------------- | --------- | ------------------------------------ |
-| `~/.bun/install/cache`  | cache     |                                      |
-| `~/Library/Caches/bun`  | cache     | mac                                  |
-| `~/.bunfig.toml`        | config    |                                      |
-| `~/.bun/install/global` | installed | removed by `station tools uninstall` |
-| `~/.bun/bin`            | installed | removed by `station tools uninstall` |
+| Path                                | Level     | Note                                                                                                                                    |
+| ----------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `~/.cache/bun/install`              | cache     |                                                                                                                                         |
+| `~/Library/Caches/bun`              | cache     | mac                                                                                                                                     |
+| `~/.bunfig.toml`                    | config    |                                                                                                                                         |
+| `~/.local/share/bun/install/global` | installed | removed by `station tools uninstall`                                                                                                    |
+| `~/.local/share/bun/bin`            | installed | removed by `station tools uninstall`                                                                                                    |
+| `~/.bun`                            | stray     | stray: `station setup` moves `~/.bun/install/global` to `~/.local/share/bun/install/global`, `~/.bun/bin/*` to `~/.local/share/bun/bin` |
 
 Clean: `bun pm cache rm`, delete `~/Library/Caches/bun/*`. Reset: none (bun's globals are tools).
 
@@ -144,11 +145,11 @@ Clean: `go clean -cache -modcache`, delete `~/Library/Caches/go-build/*`, delete
 
 ### node
 
-| Path           | Level  | Note                                           |
-| -------------- | ------ | ---------------------------------------------- |
-| `~/.cache/npm` | cache  | bun's cache too: bun follows the npmrc's cache |
-| `~/.npmrc`     | config | may hold registry tokens                       |
-| `~/.npm`       | stray  | stray: `station storage clean` empties it      |
+| Path           | Level  | Note                                      |
+| -------------- | ------ | ----------------------------------------- |
+| `~/.cache/npm` | cache  |                                           |
+| `~/.npmrc`     | config | may hold registry tokens                  |
+| `~/.npm`       | stray  | stray: `station storage clean` empties it |
 
 Clean: `npm cache clean --force`, delete `~/.cache/npm/*`. Reset: none (npm's globals are tools).
 
@@ -659,17 +660,16 @@ What a tool keeps at the root of the home folder, declared with its reason; anyt
 | `~/.docker`        | relocated by DOCKER_CONFIG only (open question 48)                    |
 | `~/.agent-browser` | no config file relocates it (open question 48)                        |
 | `~/.hermes`        | no config file relocates it (open question 48)                        |
-| `~/.bun`           | while bun's relocation is pending its macOS-VM proof                  |
 
 ## Relocations
 
 Written by `station setup` into the tool's own file, never by a shell variable.
 
-| Tool | File   | Key                    | Value                               | Status                                                                                       |
-| ---- | ------ | ---------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |
-| bun  | bunfig | `install.globalDir`    | `~/.local/share/bun/install/global` | pending: the macOS-VM tier proves bun reads the global bunfig (TODO.md "Machine test tiers") |
-| bun  | bunfig | `install.globalBinDir` | `~/.local/share/bun/bin`            | pending: the macOS-VM tier proves bun reads the global bunfig (TODO.md "Machine test tiers") |
-| bun  | bunfig | `install.cache.dir`    | `~/.cache/bun/install`              | pending: the macOS-VM tier proves bun reads the global bunfig (TODO.md "Machine test tiers") |
-| go   | go-env | `GOPATH`               | `~/.local/share/go`                 | written                                                                                      |
-| go   | go-env | `GOMODCACHE`           | `~/.cache/go/mod`                   | written                                                                                      |
-| node | npmrc  | `cache`                | `~/.cache/npm`                      | written                                                                                      |
+| Tool | File   | Key                    | Value                               | Status  |
+| ---- | ------ | ---------------------- | ----------------------------------- | ------- |
+| bun  | bunfig | `install.globalDir`    | `~/.local/share/bun/install/global` | written |
+| bun  | bunfig | `install.globalBinDir` | `~/.local/share/bun/bin`            | written |
+| bun  | bunfig | `install.cache.dir`    | `~/.cache/bun/install`              | written |
+| go   | go-env | `GOPATH`               | `~/.local/share/go`                 | written |
+| go   | go-env | `GOMODCACHE`           | `~/.cache/go/mod`                   | written |
+| node | npmrc  | `cache`                | `~/.cache/npm`                      | written |

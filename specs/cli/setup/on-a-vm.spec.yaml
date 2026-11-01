@@ -6,7 +6,7 @@ runs:
       exit: 0
       stdout: |
           ●	zshrc
-          ●	relocate	go env, npmrc
+          ●	relocate	bunfig, go env, npmrc
       files:
           .zshrc:
               equals: |
