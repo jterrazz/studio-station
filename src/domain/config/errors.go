@@ -25,11 +25,7 @@ func (e *WrongPlaceError) Error() string {
 	for i, p := range e.Places {
 		places[i] = string(p)
 	}
-	here := string(e.Here)
-	if e.Here == catalog.Host {
-		here = "a host"
-	}
-	return e.Item + "'s place is " + strings.Join(places, ", ") + "; here is " + here
+	return e.Item + "'s place is " + strings.Join(places, ", ") + "; here is " + e.Here.Article()
 }
 
 type NotReversibleError struct{ Item string }

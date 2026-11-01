@@ -40,12 +40,5 @@ func (e *WrongPlaceError) Error() string {
 	for i, p := range e.Places {
 		places[i] = string(p)
 	}
-	return e.Tool + "'s place is " + strings.Join(places, ", ") + "; here is " + article(e.Here)
-}
-
-func article(k catalog.MachineKind) string {
-	if k == catalog.Host {
-		return "a host"
-	}
-	return string(k)
+	return e.Tool + "'s place is " + strings.Join(places, ", ") + "; here is " + e.Here.Article()
 }

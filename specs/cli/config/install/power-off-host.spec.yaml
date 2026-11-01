@@ -5,5 +5,5 @@ runs:
     - command: 'config install power'
       exit: 2
       stderr: |
-          Error: power's place is host; here is linux
+          Error: power's place is host; here is a linux VM
           Hint: run it on a host: station config install power --on <host>

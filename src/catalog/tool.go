@@ -8,6 +8,13 @@ const (
 	MacOS MachineKind = "macos"
 )
 
+func (k MachineKind) Article() string {
+	if k == Host {
+		return "a host"
+	}
+	return "a " + string(k) + " VM"
+}
+
 type Place struct {
 	Kinds   []MachineKind
 	Install Install

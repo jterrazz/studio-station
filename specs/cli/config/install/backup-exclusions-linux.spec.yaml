@@ -6,7 +6,7 @@ runs:
     - command: 'config install backup-exclusions'
       exit: 2
       stderr: |
-          Error: backup-exclusions's place is host; here is linux
+          Error: backup-exclusions's place is host; here is a linux VM
           Hint: run it on a host: station config install backup-exclusions --on <host>
       files:
           .calls: absent

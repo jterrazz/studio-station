@@ -40,7 +40,7 @@ type Report struct {
 
 func (s *Service) checkHost() error {
 	if s.o.Here != catalog.Host {
-		return &NotAHostError{Here: string(s.o.Here)}
+		return &NotAHostError{Here: s.o.Here}
 	}
 	return nil
 }

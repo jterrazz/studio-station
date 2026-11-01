@@ -21,7 +21,7 @@ func (e *WrongPlaceError) Error() string {
 	for i, p := range e.Places {
 		places[i] = string(p)
 	}
-	return e.Name + "'s place is " + strings.Join(places, ", ") + "; here is " + string(e.Here)
+	return e.Name + "'s place is " + strings.Join(places, ", ") + "; here is " + e.Here.Article()
 }
 
 type NoCleanError struct{ Name string }

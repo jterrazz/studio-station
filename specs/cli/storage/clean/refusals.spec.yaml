@@ -14,7 +14,7 @@ runs:
     - command: 'storage clean docker'
       exit: 2
       stderr: |
-          Error: docker's place is linux; here is host
+          Error: docker's place is linux; here is a host
           Hint: station storage
     - command: 'storage clean --yes'
       exit: 2

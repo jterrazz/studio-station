@@ -1,6 +1,10 @@
 package images
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/jterrazz/studio-station/src/catalog"
+)
 
 type UnknownImageError struct{ Image string }
 
@@ -32,10 +36,10 @@ func (e *NoEngineError) Error() string { return "tart is not installed or does n
 
 func (e *NoEngineError) Unwrap() error { return e.Cause }
 
-type NotAHostError struct{ Here string }
+type NotAHostError struct{ Here catalog.MachineKind }
 
 func (e *NotAHostError) Error() string {
-	return "images live on a host; here is " + e.Here
+	return "images live on a host; here is " + e.Here.Article()
 }
 
 type BuildFailedError struct {
