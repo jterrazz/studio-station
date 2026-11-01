@@ -15,7 +15,7 @@ type GitStep struct {
 	IgnoreFailure bool
 }
 
-type DockerShortcut struct{ Name, Description string }
+type DockerShortcut struct{ Name, Description, Verb string }
 
 var GitShortcuts = []GitShortcut{
 	{Name: "branches", Description: "List local branches", Steps: []GitStep{{Args: []string{"branch"}}}},
@@ -31,9 +31,9 @@ var GitShortcuts = []GitShortcut{
 }
 
 var DockerShortcuts = []DockerShortcut{
-	{Name: "rm", Description: "Remove every container"},
-	{Name: "rmi", Description: "Remove every image"},
-	{Name: "reset", Description: "Remove every container, then every image"},
+	{Name: "rm", Description: "Remove every container", Verb: "remove every container"},
+	{Name: "rmi", Description: "Remove every image", Verb: "remove every image"},
+	{Name: "reset", Description: "Remove every container, then every image", Verb: "remove every container and image"},
 }
 
 func commit(prefix string) []GitStep {

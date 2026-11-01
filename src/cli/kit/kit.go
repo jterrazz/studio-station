@@ -57,6 +57,7 @@ type Leaf[I any] struct {
 	Read                func(in *I) bool
 	Destructive         func(in *I) bool
 	Confirm             func(in *I) string
+	Verb                func(in *I) string
 	Ask                 func(in *I) (bool, error)
 	Complete            func(args []string, toComplete string) []string
 	Entry               func(word string) string
@@ -157,7 +158,11 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 		if l.Ask != nil {
 			ask = func() (bool, error) { return l.Ask(in) }
 		}
-		if err := gate(c.Name(), ask, o); err != nil {
+		verb := c.Name()
+		if l.Verb != nil {
+			verb = l.Verb(in)
+		}
+		if err := gate(verb, ask, o); err != nil {
 			return err
 		}
 	}

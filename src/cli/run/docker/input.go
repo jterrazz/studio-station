@@ -31,3 +31,12 @@ func bind(in *Input, args []string) error {
 	in.Name = args[0]
 	return nil
 }
+
+func verb(in *Input) string {
+	for _, s := range catalog.DockerShortcuts {
+		if s.Name == in.Name {
+			return s.Verb
+		}
+	}
+	return in.Name
+}

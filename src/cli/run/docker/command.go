@@ -26,6 +26,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Bind:        bind,
 		Destructive: func(*Input) bool { return true },
 		Confirm:     func(in *Input) string { return "run docker " + in.Name + "?" },
+		Verb:        verb,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			outcome, err := d.Shortcuts.Docker(ctx, in.Name)
 			if err != nil {

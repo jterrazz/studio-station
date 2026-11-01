@@ -4,17 +4,17 @@ runs:
     - command: 'run docker rm'
       exit: 2
       stderr: |
-          Error: refusing to docker without --yes
+          Error: refusing to remove every container without --yes
           Hint: re-run with --yes
     - command: 'run docker rmi'
       exit: 2
       stderr: |
-          Error: refusing to docker without --yes
+          Error: refusing to remove every image without --yes
           Hint: re-run with --yes
     - command: 'run docker reset'
       exit: 2
       stderr: |
-          Error: refusing to docker without --yes
+          Error: refusing to remove every container and image without --yes
           Hint: re-run with --yes
       files:
           .calls: absent
