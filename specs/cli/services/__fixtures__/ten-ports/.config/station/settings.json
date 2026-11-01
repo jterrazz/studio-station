@@ -1,0 +1,10 @@
+{
+  "here": "x",
+  "hosts": {
+    "x": {}
+  },
+  "vm_user": "vmu",
+  "services": {
+    "range": "40000-40009"
+  }
+}

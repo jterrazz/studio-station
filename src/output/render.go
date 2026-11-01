@@ -75,6 +75,12 @@ func (pipeRenderer) Render(w io.Writer, a present.Answer) error {
 func pipeBlock(b *strings.Builder, block present.Block) {
 	switch v := block.(type) {
 	case present.Section:
+		if v.Banner {
+			for _, inner := range v.Blocks {
+				pipeBlock(b, inner)
+			}
+			return
+		}
 		counts := orderedCounts(v.Counts)
 		fields := make([]string, 0, len(counts)+1)
 		fields = append(fields, "# "+v.Title)

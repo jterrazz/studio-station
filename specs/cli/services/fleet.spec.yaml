@@ -1,4 +1,4 @@
-description: 'the fleet''s services: every host asked over ssh, an unreachable one shown, never fatal'
+description: 'the fleet''s services and ranges: every host asked over ssh, an unreachable one shown'
 fixture:
     - ../__fixtures__/vms/
     - ./__fixtures__/fleet/
@@ -9,6 +9,10 @@ runs:
           "station.services/v1"
           [["x",true,true],["y",false,true],["z",false,false]]
           [["detail","guest_port","host_port","http","last_seen_at","pinned","process","profile","state","urls","vm"],["detail","guest_port","host_port","http","last_seen_at","pinned","process","profile","state","urls","vm"],["detail","guest_port","host_port","http","last_seen_at","pinned","process","profile","state","urls","vm"]]
+    - command: 'services --json | /usr/bin/jq -c ''[.hosts[] | .range]'''
+      exit: 0
+      stdout: |
+          [{"low":40000,"high":40999,"leased":2,"free":998,"max_per_vm":20},{"low":40000,"high":40099,"leased":1,"free":99,"max_per_vm":20},null]
     - command: 'services'
       exit: 0
       stdout: |

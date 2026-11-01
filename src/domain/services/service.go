@@ -46,7 +46,16 @@ type HostView struct {
 	Daemon     DaemonInfo `json:"daemon"`
 	PublicHost string     `json:"public_host"`
 	HTTPS      string     `json:"https"`
+	Range      *Range     `json:"range,omitempty"`
 	Services   []View     `json:"services"`
+}
+
+type Range struct {
+	Low      int `json:"low"`
+	High     int `json:"high"`
+	Leased   int `json:"leased"`
+	Free     int `json:"free"`
+	MaxPerVM int `json:"max_per_vm"`
 }
 
 type Fleet struct {
@@ -134,13 +143,29 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 	}
 	view, err := s.d.Services(ctx)
 	if errors.Is(err, ErrDaemonDown) {
-		return s.offline(), nil
+		view, err = s.offline(), nil
 	}
 	if err != nil {
 		return HostView{}, err
 	}
 	view.Name, view.Here, view.Reachable = s.o.HereName, true, true
+	view.Range = s.rangeOf()
 	return view, nil
+}
+
+// invariant: the range is the host's policy and its lease file, so it reads the
+// same with the daemon up or down; a lease left outside a narrowed range is not
+// counted against it.
+func (s *Service) rangeOf() *Range {
+	p := s.policy()
+	leases, _ := s.leases().Load()
+	leased := 0
+	for _, l := range leases {
+		if l.HostPort >= p.Low && l.HostPort <= p.High {
+			leased++
+		}
+	}
+	return &Range{Low: p.Low, High: p.High, Leased: leased, Free: p.High - p.Low + 1 - leased, MaxPerVM: p.MaxPerVM}
 }
 
 func (s *Service) CheckList(hereOnly bool) error {

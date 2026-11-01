@@ -35,6 +35,8 @@ type Section struct {
 	Title  string
 	Counts []Count
 	Blocks []Block
+	// value: a banner's title is for the eye only; the pipe prints its rows alone.
+	Banner bool
 }
 
 type Table struct{ Rows []Row }

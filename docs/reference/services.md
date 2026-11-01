@@ -42,6 +42,8 @@ station services release api:3000    # on a host; in a VM: station services rele
 
 Rows have one schema, piped tab-separated: mark, VM, guest port, public URL, host, state, process, detail. `●` published, `○` waiting (leased, nothing listens), `✗` refused, `◐` degraded (local only, no https, a moved port) or unknown (the host's daemon is down). An unreachable host is one `◐` row, never a failure.
 
+So one command shows what ports exist and what is free across the fleet, each host's group is headed on a terminal by its range: `macbook  40000-40999 · 3 leased · 997 free · 20 per VM`. In `--json` each host carries it as `range` (`low`, `high`, `leased`, `free`, `max_per_vm`), read from that host's policy and lease file, so it is there with the daemon down; a host too old to tell its range has none. The piped form stays rows only.
+
 `services url <port>` in a VM reserves the lease at once, whether or not anything listens yet, so a value can be computed before the tool starts: `$(station services url 3000)`. On a host it is exit 2 (`Hint: station services url runs inside a VM; here: station services`); with the host's daemon away it is exit 1 (`Error: macbook is not connected to this VM`, `Hint: on macbook: station setup`).
 
 `services release` gives a lease back. A VM of another host is released on that host, over ssh. A profile's lease asks first (`--yes` piped): its URL is in the VM's environment. With the daemon down, a host edits the lease store itself.

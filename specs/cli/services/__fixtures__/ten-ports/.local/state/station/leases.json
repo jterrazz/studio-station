@@ -1,0 +1,6 @@
+{
+  "schema": "station.leases/v1",
+  "leases": [
+    {"vm": "api", "guest_port": 3000, "host_port": 40000, "pinned": false, "http": true, "reserved_at": "2026-11-01T09:00:00Z"}
+  ]
+}
