@@ -175,3 +175,13 @@ func channelCheck(name, channel, status string) Check {
 	}
 	return Check{Name: name, State: catalog.StateAbsent, Value: "not reported"}
 }
+
+// invariant: Tailscale Serve is the way every VM service leaves the host, so a
+// host whose tailnet is connected says whether it is on, and the admin step
+// when it is not.
+func serveGateway(on bool) Check {
+	if on {
+		return Check{Name: "Tailscale Serve", State: catalog.StateOK, Value: "on"}
+	}
+	return Check{Name: "Tailscale Serve", State: catalog.StateDegraded, Value: "off", Detail: catalog.ServeOffDetail}
+}

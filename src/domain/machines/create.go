@@ -334,23 +334,34 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 
 func (s *Service) reserveProfiles(ctx context.Context, name string) ([]Reserved, map[string]string, error) {
 	var reserved []Reserved
-	env := map[string]string{}
-	publicHost := ""
 	for _, p := range catalog.Profiles {
 		got, err := s.daemon.Reserve(ctx, name, p.Port, p.Name)
 		if err != nil {
 			return nil, nil, err
 		}
 		reserved = append(reserved, got)
-		publicHost = got.PublicHost
-		for _, e := range p.Env {
-			env[e.Name] = render(e.Value, got)
+	}
+	return reserved, ProfileEnv(reserved), nil
+}
+
+func ProfileEnv(reserved []Reserved) map[string]string {
+	env := map[string]string{}
+	publicHost := ""
+	for _, r := range reserved {
+		publicHost = r.PublicHost
+		for _, p := range catalog.Profiles {
+			if p.Name != r.Profile {
+				continue
+			}
+			for _, e := range p.Env {
+				env[e.Name] = render(e.Value, r)
+			}
 		}
 	}
 	if publicHost != "" {
 		env[catalog.PublicHostEnv.Name] = render(catalog.PublicHostEnv.Value, Reserved{PublicHost: publicHost})
 	}
-	return reserved, env, nil
+	return env
 }
 
 func render(template string, r Reserved) string {

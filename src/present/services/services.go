@@ -70,7 +70,7 @@ func markOf(s services.View) present.Mark {
 }
 
 func Row(s services.View, host string) present.Row {
-	public := s.URLs.Public()
+	public := s.URLs.Public
 	if s.HostPort == 0 {
 		public = ""
 	}
@@ -90,7 +90,7 @@ func Row(s services.View, host string) present.Row {
 }
 
 func URL(s services.View, context string) present.Answer {
-	public := s.URLs.Public()
+	public := s.URLs.Public
 	return present.Answer{
 		Doc: present.Document{
 			Command: "station services url " + strconv.Itoa(s.GuestPort),

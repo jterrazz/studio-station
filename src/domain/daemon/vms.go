@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"maps"
 	"path"
 	"sort"
 	"strconv"
@@ -13,7 +14,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -140,6 +143,8 @@ func (d *Daemon) start(ctx context.Context, v *vmState) error {
 			}
 		}
 	}
+	d.refreshSelf(ctx)
+	d.renderEnv(v)
 	console := d.m.ConsolePath(name)
 	for _, dir := range []string{d.runsDir(), path.Dir(console), path.Dir(d.m.LogPath(name))} {
 		if err := d.h.FS.MkdirAll(dir, 0o700); err != nil {
@@ -562,7 +567,7 @@ func (d *Daemon) hello(v *vmState) {
 	keys := d.hostKeys()
 	d.mu.Lock()
 	v.keys = strings.Join(keys, "\n")
-	public := d.self.DNSName
+	public := services.ExposureOf(d.self.ServeOn, d.self.DNSName).PublicHost
 	d.mu.Unlock()
 	env := v.rec.Env
 	if env == nil {
@@ -652,4 +657,36 @@ func hostPort(ip string, port int) string {
 		return "[" + ip + "]:" + strconv.Itoa(port)
 	}
 	return ip + ":" + strconv.Itoa(port)
+}
+
+// invariant: a VM's profile environment is rendered at each of its runs from
+// Serve's state read then, never at an adoption, so it holds for the whole of a run
+// and a lasting VM picks up the public URLs at its first start after Serve
+// turns on.
+func (d *Daemon) renderEnv(v *vmState) {
+	p := d.policy()
+	d.mu.Lock()
+	e := services.ExposureOf(d.self.ServeOn, d.self.DNSName)
+	var reserved []machines.Reserved
+	for _, pr := range catalog.Profiles {
+		if l, i := services.Find(d.leases, v.rec.Name, pr.Port); i >= 0 {
+			view := services.ViewOf(l, e, p.HTTPS, services.Waiting)
+			reserved = append(reserved, machines.Reserved{GuestPort: l.GuestPort, HostPort: l.HostPort, Profile: pr.Name, URL: view.URLs.Public, PublicHost: e.PublicHost})
+		}
+	}
+	rec := v.rec
+	d.mu.Unlock()
+	if len(reserved) == 0 {
+		return
+	}
+	env := machines.ProfileEnv(reserved)
+	if maps.Equal(env, rec.Env) {
+		return
+	}
+	rec.Env = env
+	if d.m.Save(rec) == nil {
+		d.mu.Lock()
+		v.rec = rec
+		d.mu.Unlock()
+	}
 }

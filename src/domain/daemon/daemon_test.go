@@ -65,7 +65,7 @@ func newHarness(t *testing.T, records ...machines.VMRecord) harness {
 	h := systemtest.Host(run, files, systemtest.Env{}, systemtest.NewNet(), clock)
 	m := &fakeMachines{records: records, poweroff: map[string]bool{}}
 	paths := settings.Paths{Config: "/c", State: "/s"}
-	d := New(h, fakeEngine{}, nil, m, nil, settings.NewStore(files, paths), Options{Paths: paths, Here: catalog.Host})
+	d := New(h, fakeEngine{}, nil, m, &fakeTailnet{}, settings.NewStore(files, paths), Options{Paths: paths, Here: catalog.Host})
 	for _, r := range records {
 		run.On("sh", RunCmd(fakeEngine{}.RunArgv(r.Name, m.ConsolePath(r.Name), system.RunOptions{}), d.exitFile(r.Name)).Args...)
 	}

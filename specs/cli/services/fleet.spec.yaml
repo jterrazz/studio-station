@@ -17,8 +17,8 @@ runs:
       exit: 0
       stdout: |
           ◐	daemon			x	not running		station setup
-          ◐	api	3000	http://127.0.0.1:{{port}}	x	unknown
-          ◐	api	8081	http://127.0.0.1:{{port}}	x	unknown		expo
+          ◐	api	3000	https://macbook.tail1234.ts.net:{{port}}	x	unknown
+          ◐	api	8081	https://macbook.tail1234.ts.net:{{port}}	x	unknown		expo
           ●	w	3000	https://y.tail1234.ts.net:40000	y	published	node
           ◐	z			z	unreachable		ssh z true
       files:

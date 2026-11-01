@@ -12,11 +12,19 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
 )
 
+func (m machine) exposure(ctx context.Context) services.Exposure {
+	self, err := m.tailnet().Self(ctx)
+	if err != nil {
+		return services.ExposureOf(false, "")
+	}
+	return services.ExposureOf(self.ServeOn, self.DNSName)
+}
+
 func (m machine) tailnet() *tailnet.Service {
 	cfg, _ := m.store.Load()
 	p := services.PolicyOf(cfg.Services)
 	return tailnet.New(m.host, func(e tailnet.ServeEntry) bool {
-		return (p.HTTPS != services.HTTPSPath && p.InRange(e.Port)) || (p.HTTPS == services.HTTPSPath && e.Port == 443 && e.Path != "/")
+		return p.InRange(e.Port) || (p.HTTPS == services.HTTPSPath && e.Port == 443 && e.Path != "/")
 	})
 }
 

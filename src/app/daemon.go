@@ -72,8 +72,20 @@ func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile st
 	if err := d.c.Do(ctx, "reserve", daemon.Request{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
 		return machines.Reserved{}, downAs(err, machines.ErrDaemonDown)
 	}
-	host, _, _ := strings.Cut(strings.TrimPrefix(v.URLs.Tailnet, "http://"), ":")
-	return machines.Reserved{GuestPort: v.GuestPort, HostPort: v.HostPort, Profile: profile, URL: v.URLs.Public(), PublicHost: host}, nil
+	return machines.Reserved{
+		GuestPort: v.GuestPort, HostPort: v.HostPort, Profile: profile, URL: v.URLs.Public, PublicHost: hostOf(v.URLs.Public),
+		ServeOff: strings.Contains(v.Detail, catalog.ServeOffDetail),
+	}, nil
+}
+
+func hostOf(url string) string {
+	_, rest, ok := strings.Cut(url, "://")
+	if !ok {
+		rest = url
+	}
+	host, _, _ := strings.Cut(rest, "/")
+	host, _, _ = strings.Cut(host, ":")
+	return host
 }
 
 type servicesDaemon struct{ c daemon.Client }
@@ -111,11 +123,9 @@ func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	cfg, _ := r.m.store.Load()
 	mode := services.PolicyOf(cfg.Services).HTTPS
 	tn := r.m.tailnet()
-	for _, l := range gone {
-		if l.HTTP == nil || *l.HTTP {
-			if args := services.ServeArgs(l, mode, false); args != nil {
-				_ = tn.Serve(ctx, args...)
-			}
+	if self, err := tn.Self(ctx); err == nil && self.ServeOn {
+		for _, l := range gone {
+			_ = tn.Serve(ctx, services.ServeArgs(l, mode, false)...)
 		}
 	}
 	return store.Save(kept)

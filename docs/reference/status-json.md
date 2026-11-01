@@ -27,7 +27,7 @@ The top-level keys, in order:
 | `setup`        | `state` and `steps` (`name`, `state`, `detail`) of `station setup`                                                                                                                                                                                                            |
 | `identity`     | Checks: git email, name and signing, gpg key, github, ssh key                                                                                                                                                                                                                 |
 | `daemons`      | Checks: one per `ai.jterrazz.*` launch agent                                                                                                                                                                                                                                  |
-| `gateways`     | Checks: the OpenClaw and Hermes gateways, when detected                                                                                                                                                                                                                       |
+| `gateways`     | Checks: the OpenClaw and Hermes gateways, when detected; `Tailscale Serve` on a host whose tailnet is connected                                                                                                                                                               |
 | `tailnet`      | `state`, `connected`, `backend_state`, `name`, `ip`, `dns_name`: the Tailscale app's node, read only                                                                                                                                                                          |
 
 A check is `{"name": "filevault", "state": "ok", "value": "on", "detail": ""}`. `workspace.docker` is `{state, containers, images, volumes, dangling_bytes, total_bytes}`.
@@ -36,7 +36,7 @@ A check is `{"name": "filevault", "state": "ok", "value": "on", "detail": ""}`. 
 
 `remote-login` and `encrypted-dns` are read from the state of the `sshd` and `dns` config items, so `status` and `station config` cannot disagree about them. A machine where those items are not placed has no such row.
 
-`gateways` holds a gateway only when it is detected, by its gateway process or by its config file: an OpenClaw with a config and no gateway is `broken`, a machine with neither lists nothing.
+`gateways` holds a gateway only when it is detected, by its gateway process or by its config file: an OpenClaw with a config and no gateway is `broken`, a machine with neither lists nothing. `Tailscale Serve` is `ok` with value `on` when the tailnet lists a certificate domain, else `degraded`, value `off`, detail `Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console`; the tailnet logged out or absent, or a VM, has no such row.
 
 ## Rules of the encoding
 

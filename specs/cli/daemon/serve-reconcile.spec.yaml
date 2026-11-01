@@ -1,11 +1,13 @@
-description: 'at its start the daemon removes the serve entries of its range no lease justifies, and only those'
+description: 'at its start the daemon removes only its range''s serve entries no lease justifies, both kinds'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
     - ../__fixtures__/serving/
 env: daemon
 runs:
-    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "40090-40109"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /usr/bin/grep "serve --https" .calls; kill $d; wait $d'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "40090-40109"}/'' .config/station/settings.json; "$STATION" daemon & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /usr/bin/grep -E "serve --(https|tcp)" .calls; /usr/bin/grep -c "443" .calls; kill $d; wait $d'
       exit: 0
       stdout: |
+          tailscale serve --tcp=40098 off
           tailscale serve --https=40099 off
+          0

@@ -12,7 +12,6 @@ import (
 const (
 	HTTPSPort = "port"
 	HTTPSPath = "path"
-	HTTPSOff  = "off"
 )
 
 type Policy struct {
@@ -43,9 +42,8 @@ func PolicyOf(s *settings.Services) Policy {
 	if s.IgnoredPorts != nil {
 		p.Ignored = s.IgnoredPorts
 	}
-	switch s.HTTPS {
-	case HTTPSPort, HTTPSPath, HTTPSOff:
-		p.HTTPS = s.HTTPS
+	if s.HTTPS == HTTPSPath {
+		p.HTTPS = HTTPSPath
 	}
 	return p
 }

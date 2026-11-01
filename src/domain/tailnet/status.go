@@ -38,12 +38,20 @@ type Peer struct {
 
 type Self struct {
 	Name, DNSName, IP, BackendState string
+	ServeOn                         bool
+}
+
+func ServeOn(backendState string, certDomains []string) bool {
+	// invariant: Serve is on when the tailnet lists a certificate domain: Serve
+	// needs HTTPS certificates, and a node logged out or absent serves nothing.
+	return backendState == "Running" && len(certDomains) > 0
 }
 
 type ServeEntry struct {
 	Port    int
 	Path    string
 	Target  string
+	TCP     bool
 	Station bool
 }
 
@@ -55,6 +63,7 @@ type Status struct {
 	BackendState string
 	Name, IP     string
 	DNSName      string
+	ServeOn      bool
 	Peers        []Peer
 	Serve        []ServeEntry
 }
@@ -70,6 +79,7 @@ type rawNode struct {
 
 type rawStatus struct {
 	BackendState string              `json:"BackendState"`
+	CertDomains  []string            `json:"CertDomains"`
 	Self         *rawNode            `json:"Self"`
 	Peer         map[string]*rawNode `json:"Peer"`
 }
@@ -156,7 +166,7 @@ func (s *Service) Self(ctx context.Context) (Self, error) {
 	if err != nil {
 		return Self{}, err
 	}
-	out := Self{BackendState: st.BackendState}
+	out := Self{BackendState: st.BackendState, ServeOn: ServeOn(st.BackendState, st.CertDomains)}
 	if st.Self != nil {
 		out.Name, out.IP = st.Self.name(), st.Self.ip()
 		out.DNSName = strings.TrimSuffix(st.Self.DNSName, ".")
@@ -177,6 +187,7 @@ func (s *Service) Status(ctx context.Context) (Status, error) {
 	}
 	out.BackendState = st.BackendState
 	out.Connected = st.BackendState == "Running"
+	out.ServeOn = ServeOn(st.BackendState, st.CertDomains)
 	out.State = catalog.StateDegraded
 	if out.Connected {
 		out.State = catalog.StateOK
@@ -219,7 +230,8 @@ func (s *Service) Serve(ctx context.Context, args ...string) error {
 
 type rawServe struct {
 	TCP map[string]struct {
-		HTTPS bool `json:"HTTPS"`
+		HTTPS      bool   `json:"HTTPS"`
+		TCPForward string `json:"TCPForward"`
 	} `json:"TCP"`
 	Web map[string]struct {
 		Handlers map[string]struct {
@@ -257,10 +269,10 @@ func ParseServe(data []byte) (ServeConfig, error) {
 			seen[port] = true
 		}
 	}
-	for portText := range raw.TCP {
+	for portText, tcp := range raw.TCP {
 		port, err := strconv.Atoi(portText)
 		if err == nil && !seen[port] {
-			cfg.Entries = append(cfg.Entries, ServeEntry{Port: port})
+			cfg.Entries = append(cfg.Entries, ServeEntry{Port: port, Target: tcp.TCPForward, TCP: tcp.TCPForward != ""})
 		}
 	}
 	sort.Slice(cfg.Entries, func(i, j int) bool {

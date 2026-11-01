@@ -123,7 +123,7 @@ See [Secrets](secrets.md).
 station tailnet [--json]                        # the Tailscale app's node, the peers, what serve exposes
 ```
 
-Read only: the owner logs in through the Tailscale app, and station never drives it but for [published services](services.md#https).
+Read only: the owner logs in through the Tailscale app, and station never drives it but for [published services](services.md#serve-and-https).
 
 ## Shortcuts
 

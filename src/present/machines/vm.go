@@ -3,6 +3,7 @@ package machines
 import (
 	"strconv"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/present"
 )
@@ -60,6 +61,12 @@ func Created(c machines.Created, context string) present.Answer {
 			{Text: "→ " + s.URL},
 		}})
 	}
+	if servesOff(c.Services) {
+		rows = append(rows, present.Row{Mark: present.MarkDegraded, Cells: []present.Cell{
+			{Text: "services", Tone: present.Strong},
+			{Text: catalog.ServeOffDetail, Tone: present.Warn},
+		}})
+	}
 	return present.Answer{
 		Doc: present.Document{
 			Command: "station machines create",
@@ -69,6 +76,15 @@ func Created(c machines.Created, context string) present.Answer {
 		},
 		JSON: body,
 	}
+}
+
+func servesOff(reserved []machines.Reserved) bool {
+	for _, r := range reserved {
+		if r.ServeOff {
+			return true
+		}
+	}
+	return false
 }
 
 func Deleted(r machines.DeleteReport, context string) present.Answer {

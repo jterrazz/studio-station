@@ -56,7 +56,7 @@ station machines probe api          # reachability without logging in
 station machines unlock mac-mini    # the FileVault pre-boot ssh session
 ```
 
-`create` asks the lifetime on a terminal, then the host when two or more are reachable. Defaults are 4 CPUs, 8 GB, 50 GB and image `linux`; memory is capped at 75 % of the host's. It reserves the ports of every service [profile](services.md#profiles) before the VM first runs, and a step that fails rolls everything back. `--network bridged` is for macOS VMs only (an iPhone on the Wi-Fi reaching the VM); a Linux VM publishes its [services](services.md) instead. A temporary VM cannot be restarted from the host (`Hint: ssh <vm> sudo reboot`).
+`create` asks the lifetime on a terminal, then the host when two or more are reachable. Defaults are 4 CPUs, 8 GB, 50 GB and image `linux`; memory is capped at 75 % of the host's. It reserves the ports of every service [profile](services.md#profiles) before the VM first runs, and a step that fails rolls everything back. `--network bridged` is for macOS VMs only (an iPhone on the Wi-Fi reaching the VM); a Linux VM publishes its [services](services.md) instead. With Serve off on the tailnet, the profiles' variables hold the local URL and `create` adds a `◐ services` row naming the admin step. A temporary VM cannot be restarted from the host (`Hint: ssh <vm> sudo reboot`).
 
 `create`, `start` and `restart` need the [daemon](#the-daemon): with it down they refuse before any change (`Error: the station daemon is not running`, `Hint: station setup`). `stop` and `delete` act directly when it is down, so a broken daemon never holds a VM.
 
@@ -66,7 +66,7 @@ station machines unlock mac-mini    # the FileVault pre-boot ssh session
 
 ## The tailnet
 
-Each host runs the Tailscale app (the cask `tailscale-app`, `station tools install tailscale`); the owner logs in through the app. Station only reads it: `station tailnet` shows the node, its MagicDNS name and what `tailscale serve` exposes, and station drives nothing but `tailscale serve` for [published services](services.md#https). A VM has no node, no key and no tag; the owner's Tailscale policy needs no line for station.
+Each host runs the Tailscale app (the cask `tailscale-app`, `station tools install tailscale`); the owner logs in through the app. Station only reads it: `station tailnet` shows the node, its MagicDNS name and what `tailscale serve` exposes, and station drives nothing but `tailscale serve` for [published services](services.md#serve-and-https). A VM has no node, no key and no tag; the owner's Tailscale policy needs no line for station.
 
 ## SSH and Herdr
 
@@ -114,7 +114,7 @@ Left to the owner, by hand and whenever wanted: the old VM tag and its ACL lines
 
 ## Gateways
 
-On a host, `station status` and `machines probe` report the OpenClaw and Hermes gateways when detected, by their process or their config: the runtime, the config and the channels for OpenClaw, the runtime and the config for Hermes (`status.gateways` in [the contract](status-json.md)). Their ports come from `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT` and `API_SERVER_PORT` ([Configuration](configuration.md)). Designing them as VMs is on the [TODO](../../TODO.md).
+On a host, `station status` and `machines probe` report the OpenClaw and Hermes gateways when detected, by their process or their config: the runtime, the config and the channels for OpenClaw, the runtime and the config for Hermes; and, on a host whose tailnet is connected, `Tailscale Serve`, the way every VM service leaves the host: `on`, or `◐ off` with the admin step ([Services](services.md#serve-and-https)) (`status.gateways` in [the contract](status-json.md)). Their ports come from `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT` and `API_SERVER_PORT` ([Configuration](configuration.md)). Designing them as VMs is on the [TODO](../../TODO.md).
 
 ## Related
 

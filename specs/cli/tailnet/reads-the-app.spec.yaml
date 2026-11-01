@@ -7,7 +7,7 @@ runs:
       exit: 0
       stdout: |
           ["backend_state","connected","dns_name","ip","name","peers","schema","serve","state"]
-          [[443,false],[40099,true]]
+          [[443,false],[40098,true],[40099,true]]
       files:
           .calls:
               equals: |

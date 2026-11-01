@@ -39,6 +39,7 @@ type Reserved struct {
 	GuestPort, HostPort int
 	Profile, URL        string
 	PublicHost          string
+	ServeOff            bool
 }
 
 type Daemon interface {

@@ -29,4 +29,6 @@ var Profiles = []Profile{
 	{Name: "vite", Port: 5173, HTTP: true, Env: []ProfileEnv{{Name: "__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS", Value: "{host}"}}},
 }
 
+const ServeOffDetail = "Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console"
+
 var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}

@@ -2,67 +2,58 @@ package services
 
 import "strconv"
 
+const LocalHost = "127.0.0.1"
+
 type URLSet struct {
-	Local   string `json:"local"`
-	Tailnet string `json:"tailnet"`
-	HTTPS   string `json:"https"`
+	Local  string `json:"local"`
+	Public string `json:"public"`
 }
 
 func (l Lease) isHTTP() bool { return l.HTTP == nil || *l.HTTP }
 
-func URLs(l Lease, publicHost, httpsMode string) URLSet {
-	// invariant: one shape everywhere; the public URL is the https one when the
-	// service is HTTP (or not yet known) and https is on, else the tailnet one,
-	// which carries http:// on the same condition so a URL parser reads a host.
+func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
+	// invariant: one shape everywhere. An HTTP service, or one not yet detected,
+	// carries a scheme so a URL parser reads a host; with Serve off the local URL
+	// is the only one there is; a raw TCP service is tailscaled's bytes, no scheme.
 	port := strconv.Itoa(l.HostPort)
-	u := URLSet{Local: "127.0.0.1:" + port}
-	if l.HTTP != nil && *l.HTTP {
+	u := URLSet{Local: LocalHost + ":" + port}
+	if l.isHTTP() {
 		u.Local = "http://" + u.Local
 	}
-	if publicHost == "" {
+	u.Public = u.Local
+	if !serveOn || publicHost == "" {
 		return u
 	}
-	u.Tailnet = publicHost + ":" + port
-	if !l.isHTTP() {
-		return u
-	}
-	u.Tailnet = "http://" + u.Tailnet
-	switch httpsMode {
-	case HTTPSPort:
-		u.HTTPS = "https://" + publicHost + ":" + port
-	case HTTPSPath:
-		u.HTTPS = "https://" + publicHost + "/" + l.VM + "/" + strconv.Itoa(l.GuestPort) + "/"
+	switch {
+	case !l.isHTTP():
+		u.Public = publicHost + ":" + port
+	case httpsMode == HTTPSPath:
+		u.Public = "https://" + publicHost + "/" + l.VM + "/" + strconv.Itoa(l.GuestPort) + "/"
+	default:
+		u.Public = "https://" + publicHost + ":" + port
 	}
 	return u
 }
 
-func (u URLSet) Public() string {
-	if u.HTTPS != "" {
-		return u.HTTPS
-	}
-	if u.Tailnet != "" {
-		return u.Tailnet
-	}
-	return u.Local
-}
-
 func ServeArgs(l Lease, httpsMode string, on bool) []string {
 	port := strconv.Itoa(l.HostPort)
-	target := "http://127.0.0.1:" + port
-	switch httpsMode {
-	case HTTPSPort:
+	switch {
+	case !l.isHTTP():
 		if on {
-			return []string{"--bg", "--https=" + port, target}
+			return []string{"--bg", "--tcp=" + port, "tcp://" + LocalHost + ":" + port}
 		}
-		return []string{"--https=" + port, "off"}
-	case HTTPSPath:
+		return []string{"--tcp=" + port, "off"}
+	case httpsMode == HTTPSPath:
 		p := "--set-path=/" + l.VM + "/" + strconv.Itoa(l.GuestPort)
 		if on {
-			return []string{"--bg", "--https=443", p, target}
+			return []string{"--bg", "--https=443", p, "http://" + LocalHost + ":" + port}
 		}
 		return []string{"--https=443", p, "off"}
 	}
-	return nil
+	if on {
+		return []string{"--bg", "--https=" + port, "http://" + LocalHost + ":" + port}
+	}
+	return []string{"--https=" + port, "off"}
 }
 
 func Dialed(ip string) string {

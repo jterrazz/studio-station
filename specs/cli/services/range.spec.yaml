@@ -20,4 +20,4 @@ runs:
       exit: 0
       stdout: |
           ◐	daemon			x	not running		station setup
-          ◐	api	3000	http://127.0.0.1:40000	x	unknown
+          ◐	api	3000	https://macbook.tail1234.ts.net:40000	x	unknown

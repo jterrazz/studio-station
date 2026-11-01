@@ -246,6 +246,9 @@ func (s *Service) Snapshot(ctx context.Context) (Snapshot, error) {
 		Shell:      shellName(s.h.Env.Shell()),
 	}
 	snap.System = System{Uptime: sysFacts.uptime, Battery: sysFacts.battery, MemoryTotal: sysFacts.memory, Sample: sample}
+	if s.o.Here == catalog.Host && snap.Tailnet.Connected {
+		gateways = append(gateways, serveGateway(snap.Tailnet.ServeOn))
+	}
 	snap.Identity, snap.Daemons, snap.Gateways = identity, daemons, gateways
 	snap.Station.Daemon = daemon
 	if s.mac() {

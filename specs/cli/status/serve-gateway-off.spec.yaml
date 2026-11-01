@@ -1,0 +1,25 @@
+description: 'a tailnet with Serve off is a degraded gateway with the admin step; logged out, no row'
+fixture: ../__fixtures__/vms/
+env: daemon
+runs:
+    - command: '--version >/dev/null; : > answers/tailscale/status.serve-off; "$STATION" status --json | /usr/bin/jq -c ''.gateways[] | select(.name == "Tailscale Serve")'''
+      exit: 0
+      stdout: |
+          {"name":"Tailscale Serve","state":"degraded","value":"off","detail":"Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console"}
+    - command: '--version >/dev/null; : > answers/tailscale/status.serve-off; "$STATION" status | /usr/bin/grep "Tailscale Serve"'
+      exit: 0
+      stdout: |
+          ◐	Tailscale Serve	off	Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console
+    - command: '--version >/dev/null; : > answers/tailscale/status.serve-off; "$STATION" services --json | /usr/bin/jq -r ''.hosts[0].serve, .hosts[0].public_host'''
+      exit: 0
+      stdout: |
+          off
+          127.0.0.1
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"Running"/"NeedsLogin"/'' answers/tailscale/status.json; "$STATION" status --json | /usr/bin/jq ''[.gateways[] | select(.name == "Tailscale Serve")] | length'''
+      exit: 0
+      stdout: |
+          0
+    - command: '--version >/dev/null; /bin/rm bin/tailscale; "$STATION" status --json | /usr/bin/jq ''[.gateways[] | select(.name == "Tailscale Serve")] | length'''
+      exit: 0
+      stdout: |
+          0

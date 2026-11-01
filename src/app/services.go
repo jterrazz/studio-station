@@ -17,7 +17,7 @@ import (
 )
 
 func (m machine) services(env kit.Env) *services.Service {
-	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Remote: fanOutArgv}
+	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Remote: fanOutArgv, Exposure: m.exposure}
 	d := servicesDaemon{c: daemon.Dial(m.host, m.paths)}
 	if m.kind != catalog.Host {
 		g := m.guest()

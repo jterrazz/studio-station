@@ -23,7 +23,7 @@ const (
 	stopWait   = 60 * time.Second
 	hardWait   = 10 * time.Second
 	pollEvery  = 200 * time.Millisecond
-	selfEvery  = 30
+	serveEvery = 30
 	seenEvery  = time.Minute
 	guestReady = 60 * time.Second
 )
@@ -72,8 +72,7 @@ type Daemon struct {
 	svcs    map[string]*svc
 	leases  []services.Lease
 	self    tailnet.Self
-	refused bool
-	walled  bool
+	read    bool
 	started time.Time
 	note    func(line string)
 }
@@ -146,11 +145,15 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 			d.closeAll()
 			return nil
 		}
-		if tick%selfEvery == 0 {
-			d.refreshSelf(ctx)
-		}
-		d.tick(ctx)
+		d.step(ctx, tick)
 	}
+}
+
+func (d *Daemon) step(ctx context.Context, tick int) {
+	if tick%serveEvery == 0 {
+		d.refreshSelf(ctx)
+	}
+	d.tick(ctx)
 }
 
 func (d *Daemon) logf(subject, message string) {
@@ -159,24 +162,30 @@ func (d *Daemon) logf(subject, message string) {
 	}
 }
 
+// invariant: Serve's state is read at start and every serveEvery ticks: on,
+// every published lease is served and the entries no lease justifies go; off,
+// no serve runs and every row says so, logged once per change.
 func (d *Daemon) refreshSelf(ctx context.Context) {
 	self, err := d.tn.Self(ctx)
 	if err != nil {
 		self = tailnet.Self{}
 	}
-	walled := self.IP != "" && !d.carries(ctx, self.IP)
 	d.mu.Lock()
-	d.self = self
-	changed := walled != d.walled
-	d.walled = walled
+	was, first := d.self.ServeOn, !d.read
+	d.self, d.read = self, true
 	d.mu.Unlock()
-	if !changed {
+	if !first && self.ServeOn == was {
 		return
 	}
-	if walled {
-		d.logf("tailnet", "the firewall drops the bytes of station's listeners on "+self.IP+": services are local only")
+	switch {
+	case self.ServeOn && !first:
+		d.logf("tailnet", "Serve is on: every lease is served on the tailnet")
+		d.serveAll(ctx)
+		d.reconcileServe(ctx)
+	case !self.ServeOn:
+		d.logf("tailnet", catalog.ServeOffDetail+": services are local only")
+		d.unserveAll()
 	}
-	d.republish(ctx)
 }
 
 func (d *Daemon) accept(ctx context.Context, l system.Listener) {

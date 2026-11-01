@@ -44,6 +44,7 @@ type HostView struct {
 	Reachable  bool       `json:"reachable"`
 	Daemon     DaemonInfo `json:"daemon"`
 	PublicHost string     `json:"public_host"`
+	Serve      string     `json:"serve"`
 	HTTPS      string     `json:"https"`
 	Range      *Range     `json:"range,omitempty"`
 	Services   []View     `json:"services"`
@@ -77,6 +78,7 @@ type Options struct {
 	Remote   func(host string, words []string) []string
 	Delegate func(ctx context.Context, host string, words []string) (int, error)
 	VMHost   func(ctx context.Context, vm string) (host string, here bool, err error)
+	Exposure func(ctx context.Context) Exposure
 }
 
 type Service struct {
@@ -102,24 +104,64 @@ func (s *Service) policy() Policy {
 
 func (s *Service) leases() Store { return NewStore(s.h.FS, s.o.State) }
 
-func ViewOf(l Lease, publicHost, httpsMode string, phase Phase) View {
+const (
+	ServeOn  = "on"
+	ServeOff = "off"
+)
+
+type Exposure struct {
+	On         bool
+	PublicHost string
+}
+
+func ExposureOf(serveOn bool, dnsName string) Exposure {
+	if !serveOn || dnsName == "" {
+		return Exposure{PublicHost: LocalHost}
+	}
+	return Exposure{On: true, PublicHost: dnsName}
+}
+
+func (e Exposure) Word() string {
+	if e.On {
+		return ServeOn
+	}
+	return ServeOff
+}
+
+func ViewOf(l Lease, e Exposure, httpsMode string, phase Phase) View {
 	v := View{
 		VM: l.VM, GuestPort: l.GuestPort, HostPort: l.HostPort, State: phase, Pinned: l.Pinned, Profile: l.Profile,
-		HTTP: l.HTTP != nil && *l.HTTP, URLs: URLs(l, publicHost, httpsMode),
+		HTTP: l.HTTP != nil && *l.HTTP, URLs: URLs(l, e.PublicHost, httpsMode, e.On),
 	}
 	if !l.LastSeenAt.IsZero() {
 		seen := l.LastSeenAt
 		v.LastSeenAt = &seen
 	}
+	if !e.On {
+		v.Detail = catalog.ServeOffDetail
+	}
 	return v
 }
 
-func (s *Service) offline() HostView {
-	view := HostView{Name: s.o.HereName, Here: true, Reachable: true, HTTPS: s.policy().HTTPS, Services: []View{}}
+func JoinDetail(a, b string) string {
+	switch {
+	case a == "":
+		return b
+	case b == "":
+		return a
+	}
+	return a + " · " + b
+}
+
+func (s *Service) offline(ctx context.Context) HostView {
+	e := ExposureOf(false, "")
+	if s.o.Exposure != nil {
+		e = s.o.Exposure(ctx)
+	}
+	view := HostView{Name: s.o.HereName, Here: true, Reachable: true, PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: s.policy().HTTPS, Services: []View{}}
 	leases, _ := s.leases().Load()
 	for _, l := range leases {
-		v := ViewOf(l, "", view.HTTPS, Unknown)
-		view.Services = append(view.Services, v)
+		view.Services = append(view.Services, ViewOf(l, e, view.HTTPS, Unknown))
 	}
 	return view
 }
@@ -141,7 +183,7 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 	}
 	view, err := s.d.Services(ctx)
 	if errors.Is(err, ErrDaemonDown) {
-		view, err = s.offline(), nil
+		view, err = s.offline(ctx), nil
 	}
 	if err != nil {
 		return HostView{}, err
