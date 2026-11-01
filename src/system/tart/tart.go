@@ -141,8 +141,3 @@ func (e *engine) IP(ctx context.Context, name string, wait time.Duration) (strin
 	}
 	return strings.TrimSpace(out), nil
 }
-
-func (e *engine) PruneCaches(ctx context.Context) error {
-	_, err := e.exec(ctx, 0, "prune", "--entries=caches")
-	return err
-}

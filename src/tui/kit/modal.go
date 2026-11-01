@@ -36,6 +36,15 @@ func Confirm(question string, onYes tea.Cmd) *Modal {
 	}, huh.NewConfirm().Key("ok").Title(question).Affirmative("Yes").Negative("No"))
 }
 
+func ConfirmReset(question, description string, onYes tea.Cmd) *Modal {
+	return newModal(func(f *huh.Form) tea.Cmd {
+		if f.GetBool("ok") {
+			return onYes
+		}
+		return nil
+	}, huh.NewConfirm().Key("ok").Title(question).Description(description).Affirmative("Reset").Negative("Keep"))
+}
+
 func TypeToConfirm(question, name string, onYes tea.Cmd) *Modal {
 	return newModal(func(f *huh.Form) tea.Cmd {
 		if f.GetString("name") == name {

@@ -1,0 +1,6 @@
+description: 'on an empty HOME storage holds the station row only, and no stray'
+runs:
+    - command: 'storage --json | /usr/bin/jq -c ''[([.rows[] | select(.installed or .cache_bytes > 0 or .data_bytes > 0) | select(.name != "zed" and .category != "Editors & IDEs") | .name] | map(select(. as $n | ["station", "go", "node", "homebrew", "tart", "mise", "uv"] | index($n)))), .strays]'''
+      exit: 0
+      stdout: |
+          [["station"],[]]

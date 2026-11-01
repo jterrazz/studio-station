@@ -1,0 +1,60 @@
+package storage
+
+import (
+	"path"
+	"strings"
+
+	"github.com/jterrazz/studio-station/src/domain/settings"
+)
+
+type Expander struct {
+	Home  string
+	Roots settings.Roots
+}
+
+func (e Expander) Expand(pattern string) string {
+	if pattern == "~" {
+		return e.Home
+	}
+	if rest, ok := strings.CutPrefix(pattern, "~/"); ok {
+		return path.Join(e.Home, rest)
+	}
+	for prefix, root := range map[string]string{"{config}": e.Roots.Config, "{data}": e.Roots.Data, "{state}": e.Roots.State, "{cache}": e.Roots.Cache} {
+		if pattern == prefix {
+			return root
+		}
+		if rest, ok := strings.CutPrefix(pattern, prefix+"/"); ok {
+			return path.Join(root, rest)
+		}
+	}
+	return pattern
+}
+
+func (e Expander) Word(word string) string {
+	if key, value, ok := strings.Cut(word, "="); ok && !strings.HasPrefix(word, "-") {
+		return key + "=" + e.Word(value)
+	}
+	if strings.HasPrefix(word, "~/") || strings.HasPrefix(word, "{") {
+		return e.Expand(word)
+	}
+	return word
+}
+
+func (e Expander) Display(abs string) string {
+	if abs == e.Home {
+		return "~"
+	}
+	if rest, ok := strings.CutPrefix(abs, e.Home+"/"); ok {
+		return "~/" + rest
+	}
+	return abs
+}
+
+func LineValue(text, key string) (string, bool) {
+	for _, line := range strings.Split(text, "\n") {
+		if k, v, ok := strings.Cut(strings.TrimSpace(line), "="); ok && strings.TrimSpace(k) == key {
+			return strings.TrimSpace(v), true
+		}
+	}
+	return "", false
+}

@@ -1,0 +1,15 @@
+description: 'a stale temporary VM is deleted by its verb: the node goes from the tailnet, the VM from tart'
+fixture:
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/vm-t/
+    - ../__fixtures__/stale-t/
+serve: tailscale
+runs:
+    - command: 'machines delete t --yes'
+      exit: 0
+      stdout: |
+          ●	t	deleted
+      files:
+          .api: { contains: 'DELETE /api/v2/device/n-t' }
+          .local/state/station/vms/t.json: absent
+          .tart-vms/t: absent

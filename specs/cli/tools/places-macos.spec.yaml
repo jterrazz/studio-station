@@ -1,4 +1,4 @@
-description: 'a macOS VM lists the dev tools the hosts refuse'
+description: 'a macOS VM lists the dev tools a host keeps as exploration'
 env:
     - STATION_MACHINE_KIND=macos
 runs:
@@ -6,5 +6,5 @@ runs:
       exit: 0
       stdout: |
           node host,linux,macos
-          xcode macos
+          xcode host,macos
           browser-use linux,macos

@@ -1,0 +1,24 @@
+description: 'reset names its tools, and refuses a row whose data another verb owns, before acting'
+runs:
+    - command: 'storage reset'
+      exit: 2
+      stderr: |
+          Error: reset names its tools
+          Hint: station storage reset <tool...>
+    - command: 'storage reset homebrew --yes'
+      exit: 2
+      stderr: |
+          Error: homebrew has no data station can reset
+          Hint: Homebrew's data are its formulae: station tools uninstall <tool>
+    - command: 'storage reset station --yes'
+      exit: 2
+      stderr: |
+          Error: station has no data station can reset
+          Hint: station's data are VMs and images: station machines delete <vm>, station images delete <image>
+    - command: 'storage reset tart --yes'
+      exit: 2
+      stderr: |
+          Error: tart has no data station can reset
+          Hint: station's data are VMs and images: station machines delete <vm>, station images delete <image>
+      files:
+          .calls: absent

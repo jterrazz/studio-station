@@ -1,0 +1,9 @@
+#!/bin/sh
+# mas: Xcode is listed once a bundle asked for it, as the App Store install leaves it.
+case "$*" in
+    list) if /usr/bin/grep -q 'mas "Xcode"' "$HOME/.calls" 2> /dev/null; then echo "497799835  Xcode  (26.1)"; fi ;;
+    *)
+        echo "stub mas: unexpected invocation: $*" >&2
+        exit 97
+        ;;
+esac

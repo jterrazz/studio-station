@@ -26,7 +26,7 @@ runs:
           send q
       exit: 0
       stdout: |4
-           station   Status · Tools · Config · Clean │ Fleet                     x · host
+           station   Status · Tools · Config · Storage │ Fleet                   x · host
            ──────────────────────────────────────────────────────────────────────────────
            - x                                                                        2 ●
              ● x               host                                               online…

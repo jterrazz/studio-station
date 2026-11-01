@@ -1,0 +1,19 @@
+description: 'a failing action is its row''s ✗ with its last stderr line; the other rows still clean, exit 1'
+fixture:
+    - ../../__fixtures__/system-tools/
+    - ../__fixtures__/go/
+runs:
+    - command: '--version >/dev/null; echo 1 > tart-prune.exit'
+      exit: 0
+    - command: 'storage clean tart go'
+      exit: 1
+      stdout: |
+          ✗	tart	tart prune exited 1	boom
+          ●	go	0 B freed
+      stderr: |
+          boom
+          Error: 1 of 2 tools failed
+          Hint: re-run it: station storage clean tart
+      files:
+          .calls:
+              contains: 'go clean -cache -modcache'

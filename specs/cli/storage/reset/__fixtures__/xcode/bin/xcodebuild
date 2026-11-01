@@ -1,0 +1,3 @@
+#!/bin/sh
+# Xcode installed: it answers its version.
+printf 'Xcode 26.1\nBuild version 17B55\n'

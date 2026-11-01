@@ -42,7 +42,7 @@ func List(reports []images.Report, context string) present.Answer {
 		})
 		mark, note := present.MarkOK, ""
 		if !r.Newest {
-			mark, note = present.MarkAbsent, "older: station clean old-images"
+			mark, note = present.MarkAbsent, "older: station images delete "+r.Record.Name+"@"+r.Record.Version
 		}
 		rows = append(rows, present.Row{Mark: mark, Cells: []present.Cell{
 			{Text: r.Record.Name, Tone: present.Strong},

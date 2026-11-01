@@ -38,5 +38,4 @@ type Engine interface {
 	Stop(ctx context.Context, name string, wait time.Duration) error
 	Delete(ctx context.Context, name string) error
 	IP(ctx context.Context, name string, wait time.Duration) (string, error)
-	PruneCaches(ctx context.Context) error
 }

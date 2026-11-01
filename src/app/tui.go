@@ -17,7 +17,7 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 			Status:   statusService(env, m),
 			Tools:    toolsService(env, m),
 			Config:   configService(m),
-			Clean:    m.clean(),
+			Storage:  m.storage(env),
 			Machines: m.machines(true),
 			Images:   m.images(),
 			Secrets:  m.secrets(),

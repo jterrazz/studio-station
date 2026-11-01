@@ -12,7 +12,7 @@ runs:
                   - '    status '
                   - '    tools '
                   - '    config '
-                  - '    clean '
+                  - '    storage '
                   - '    machines '
                   - '    images '
                   - '    secrets '
@@ -20,7 +20,7 @@ runs:
                   - '    run '
                   - '    setup '
                   - '    help '
-    - command: --help | /usr/bin/grep -cE '^    (skills|shell|completion|man|install|upgrade|remote|machine|vms|hosts|supervise)( |$)'
+    - command: --help | /usr/bin/grep -cE '^    (skills|clean|shell|completion|man|install|upgrade|remote|machine|vms|hosts|supervise)( |$)'
       exit: 1
       stdout: |
           0
@@ -32,12 +32,12 @@ runs:
       exit: 0
       stdout: |
           1
-    - command: --help | /usr/bin/sed -n '/^  HERE/,/^  THE FLEET/p' | /usr/bin/grep -oE '^    (status|tools|config|clean) ' | /usr/bin/tr -d ' '
+    - command: --help | /usr/bin/sed -n '/^  HERE/,/^  THE FLEET/p' | /usr/bin/grep -oE '^    (status|tools|config|storage) ' | /usr/bin/tr -d ' '
       exit: 0
       stdout: |
-          clean
           config
           status
+          storage
           tools
     - command: status --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
       exit: 1
@@ -51,7 +51,7 @@ runs:
       exit: 1
       stdout: |
           0
-    - command: clean --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
+    - command: storage --help | /usr/bin/grep -ciwE 'role|server|self|address|identity|remove|init'
       exit: 1
       stdout: |
           0

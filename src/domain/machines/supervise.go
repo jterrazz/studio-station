@@ -49,7 +49,7 @@ const (
 
 // invariant: a temporary VM is deleted only on a poweroff its guest declared; a
 // reboot (a clean stop without the intent) runs it again, and every other stop
-// keeps it, stale, for `clean stale-vms` or `delete` to end on purpose.
+// keeps it, stale, for `machines delete` to end on purpose.
 func next(l Lifetime, intent bool, code int, reruns []time.Time, now time.Time) (action, []time.Time) {
 	switch {
 	case intent && l == Temporary:

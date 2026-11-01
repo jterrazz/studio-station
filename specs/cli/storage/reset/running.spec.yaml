@@ -1,0 +1,14 @@
+description: 'a reset refuses a tool whose app is running, names how to go on, and leaves its data'
+fixture: ../../__fixtures__/process-running/
+runs:
+    - command: '--version >/dev/null; /bin/mkdir -p "Library/Application Support/Zed/db" && echo x > "Library/Application Support/Zed/db/x"'
+      exit: 0
+    - command: 'storage reset zed --yes'
+      exit: 1
+      stdout: |
+          ✗	zed	zed is running
+      stderr: |
+          Error: 1 of 1 tools failed
+          Hint: quit zed, then station storage reset zed
+      files:
+          Library/Application Support/Zed/db/x: exists

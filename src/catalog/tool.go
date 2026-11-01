@@ -36,6 +36,8 @@ type Tool struct {
 	Requires    []string
 	Then        []string
 	Live        Liveness
+	Storage     Storage
+	System      bool
 }
 
 // invariant: which machine kinds accept a method is the `kinds` column of the
@@ -63,8 +65,6 @@ func Everywhere(mac, linux Install) []Place {
 func Mac(i Install) []Place { return []Place{{Kinds: []MachineKind{Host, MacOS}, Install: i}} }
 
 func HostOnly(i Install) []Place { return []Place{{Kinds: []MachineKind{Host}, Install: i}} }
-
-func MacOSOnly(i Install) []Place { return []Place{{Kinds: []MachineKind{MacOS}, Install: i}} }
 
 func LinuxOnly(i Install) []Place { return []Place{{Kinds: []MachineKind{Linux}, Install: i}} }
 

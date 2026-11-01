@@ -12,20 +12,20 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/clean"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/theme"
 	"github.com/jterrazz/studio-station/src/tui/kit"
-	cleanscreen "github.com/jterrazz/studio-station/src/tui/screens/clean"
 	configscreen "github.com/jterrazz/studio-station/src/tui/screens/config"
 	fleetscreen "github.com/jterrazz/studio-station/src/tui/screens/fleet"
 	statusscreen "github.com/jterrazz/studio-station/src/tui/screens/status"
+	storagescreen "github.com/jterrazz/studio-station/src/tui/screens/storage"
 	toolsscreen "github.com/jterrazz/studio-station/src/tui/screens/tools"
 )
 
@@ -86,13 +86,31 @@ func (fakeConfig) Install(context.Context, string, map[string]string, bool) (con
 	return config.Change{}, nil
 }
 
-type fakeClean struct{}
+type fakeStorage struct{ calls *[]string }
 
-func (fakeClean) List(context.Context) ([]clean.Report, error) {
-	return []clean.Report{{Item: catalog.Cleanable{Name: "brew", Description: "The Homebrew download cache"}, Available: true, Bytes: 1_200_000_000}}, nil
+func (fakeStorage) List(context.Context) (storage.Report, error) {
+	row := storage.Row{
+		Entry:     storage.Entry{Name: "zed", Category: string(catalog.CategoryEditors), Storage: catalog.Storage{Reset: []catalog.Action{{Delete: []string{"~/x"}}}}},
+		Installed: true,
+		State:     catalog.StateOK,
+		Bytes:     map[catalog.Level]int64{catalog.LevelCache: 1_200_000_000},
+	}
+	return storage.Report{Rows: []storage.Row{row}}, nil
 }
 
-func (fakeClean) Clean(context.Context, []string) ([]clean.Outcome, error) { return nil, nil }
+func (f fakeStorage) Clean(_ context.Context, names []string) ([]storage.Outcome, error) {
+	*f.calls = append(*f.calls, "clean "+strings.Join(names, " "))
+	return nil, nil
+}
+
+func (f fakeStorage) Reset(_ context.Context, names []string) ([]storage.Outcome, error) {
+	*f.calls = append(*f.calls, "reset "+strings.Join(names, " "))
+	return nil, nil
+}
+
+func (fakeStorage) Plan([]string) []storage.PathReport {
+	return []storage.PathReport{{Path: "~/Library/Application Support/Zed/db", Level: catalog.LevelData, Bytes: 2_000_000}}
+}
 
 type fakeStatus struct{}
 
@@ -164,10 +182,11 @@ func (fakeTailnet) Down(context.Context) (tailnet.DownResult, error) {
 }
 
 type harness struct {
-	t     *testing.T
-	app   App
-	tools *fakeTools
-	fleet *fakeFleet
+	t      *testing.T
+	app    App
+	tools  *fakeTools
+	fleet  *fakeFleet
+	stored []string
 }
 
 func describe(err error) (message, hint string) { return err.Error(), "run station --help" }
@@ -181,7 +200,7 @@ func newHarness(t *testing.T) *harness {
 		statusscreen.New(ctx, fakeStatus{}, describe, th),
 		toolsscreen.New(ctx, h.tools, describe, th),
 		configscreen.New(ctx, fakeConfig{}, describe, th),
-		cleanscreen.New(ctx, fakeClean{}, describe, th),
+		storagescreen.New(ctx, fakeStorage{calls: &h.stored}, describe, th),
 		fleetscreen.New(ctx, fleetscreen.Deps{
 			Machines: h.fleet, Images: fakeImages{}, Secrets: fakeSecrets{}, Tailnet: fakeTailnet{},
 			Remote:   func(_ context.Context, machine string, _ []string) error { return h.fleet.record("remote " + machine) },
@@ -369,12 +388,35 @@ func TestTabsShowTheHelpGroupsInOrder(t *testing.T) {
 	h.init()
 	bar := strings.SplitN(plain(h.view()), "\n", 2)[0]
 	at := -1
-	for _, label := range []string{"Status", "Tools", "Config", "Clean", "Fleet"} {
+	for _, label := range []string{"Status", "Tools", "Config", "Storage", "Fleet"} {
 		i := strings.Index(bar, label)
 		if i <= at {
 			t.Fatalf("tab %q out of order in %q", label, bar)
 		}
 		at = i
+	}
+}
+
+func TestTabsStorageCleansWithoutAskingAndResetsOnlyOnReset(t *testing.T) {
+	h := newHarness(t)
+	h.init()
+	h.press("4")
+	h.cursorTo("zed")
+	execs, _ := h.press("c")
+	if len(execs) != 1 || h.app.screens[3].Focus() != kit.FocusNormal {
+		t.Fatal("c asked before cleaning")
+	}
+	h.finish(execs[0])
+	h.press("x")
+	if h.app.screens[3].Focus() != kit.FocusModal {
+		t.Fatal("x opened no reset form")
+	}
+	h.contains("Reset zed?", "Keep")
+	if execs, _ := h.press("enter"); len(execs) != 0 {
+		t.Fatal("enter on the default reset the tool")
+	}
+	if got := strings.Join(h.stored, ","); got != "clean zed" {
+		t.Fatalf("calls %q", got)
 	}
 }
 

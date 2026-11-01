@@ -27,11 +27,11 @@ runs:
           send q
       exit: 0
       stdout: |4
-           station   Status · Tools · Config · Clean │ Fleet          host · unregistered
+           station   Status · Tools · Config · Storage │ Fleet        host · unregistered
            ──────────────────────────────────────────────────────────────────────────────
            / bat
            - CLI Tools                                                               10 ○
-             ○ bat                                 brew    station tools install bat
+             ○ bat                                 brew             station tools instal…
 
 
 
@@ -51,7 +51,7 @@ runs:
            └────────────────────────────────────────────────────────────┘
 
            ↑↓ move · space fold · i install · u uninstall · / filter · ? more
-           station   Status · Tools · Config · Clean │ Fleet          host · unregistered
+           station   Status · Tools · Config · Storage │ Fleet        host · unregistered
            ──────────────────────────────────────────────────────────────────────────────
            / bat
            - CLI Tools                                                           1 ●  9 ○

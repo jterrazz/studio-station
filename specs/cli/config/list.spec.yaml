@@ -21,9 +21,11 @@ runs:
           ○	claude-token	The Claude Code subscription token a VM may borrow	station config install claude-token
           # Editor	1 ○
           ○	zed-dotfiles	The Zed settings and its formatter config	needs zed: station tools install zed
-          # System	2 ○
+          # System	1 ◐	3 ○
           ○	dock-reset	Reset the dock to the system defaults	run once
           ○	dock-spacer	Add a small spacer tile to the dock	run once
+          ◐	backup-exclusions	Keep ~/.cache and station's VMs out of Time Machine	tmutil not found
+          ○	tart-launcher	The tart launcher: Tart's home is station's VMs folder	station config install tart-launcher
           # Headless	2 ●	2 ○
           ○	autologin	GUI auto-login for jterrazz.agent (FileVault-aware)	station config install autologin
           ●	power	Always-on power policy (no sleep, autorestart, wake)	always-on policy applied

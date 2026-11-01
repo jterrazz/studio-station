@@ -40,7 +40,7 @@ export BAT_THEME="Catppuccin Macchiato"
 
 export PATH="$HOME/.bun/bin:$PATH"
 
-export PATH="$HOME/go/bin:$PATH"
+export PATH="$HOME/.local/share/go/bin:$PATH"
 
 if [[ -o interactive && "$PWD" == "$HOME" && -d "$HOME/Developer" ]]; then
     cd "$HOME/Developer"

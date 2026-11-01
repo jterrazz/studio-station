@@ -51,6 +51,8 @@ func (s *Service) procedure(it catalog.ConfigItem, p catalog.Procedure) (handler
 		return handler{check: s.checkVMJoin, install: s.installVMJoin, uninstall: s.uninstallVMJoin}, nil
 	case catalog.ProcClaudeToken:
 		return handler{check: s.checkClaudeToken, install: s.installClaudeToken, uninstall: s.uninstallClaudeToken}, nil
+	case catalog.ProcBackupExclusions:
+		return handler{check: s.checkBackupExclusions, install: bare(s.installBackupExclusions), uninstall: s.uninstallBackupExclusions}, nil
 	}
 	return handler{}, &unhandledError{Item: it.Name}
 }

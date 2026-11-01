@@ -1,0 +1,25 @@
+description: 'storage --json is station.storage/v1: every row with its bytes by level, its actions and its paths'
+fixture: ./__fixtures__/go/
+runs:
+    - command: '--version >/dev/null; /bin/mkdir -p Library/Caches/go-build .cache/go/mod .local/share/go/bin .local/state/station/vms .local/state/station/images && /bin/dd if=/dev/zero of=Library/Caches/go-build/a bs=1048576 count=3 2>/dev/null && /bin/dd if=/dev/zero of=.cache/go/mod/m bs=1048576 count=1 2>/dev/null && /bin/dd if=/dev/zero of=.local/share/go/bin/t bs=1048576 count=1 2>/dev/null && echo "{}" > .local/state/station/vms/a.json && echo key > .local/state/station/images/key'
+      exit: 0
+    - command: 'storage --json | /usr/bin/jq -r .schema'
+      exit: 0
+      stdout: |
+          station.storage/v1
+    - command: 'storage --json | /usr/bin/jq -r ''[.rows[] | keys | join(" ")] | unique | .[]'''
+      exit: 0
+      stdout: |
+          cache_bytes category clean config_bytes data_bytes installed installed_bytes kept_bytes mark name paths reset
+    - command: 'storage --json | /usr/bin/jq -c ''.rows[] | select(.name == "go") | [.mark, .installed, .cache_bytes, .data_bytes, .clean, .reset]'''
+      exit: 0
+      stdout: |
+          ["ok",true,4194304,1048576,true,true]
+    - command: 'storage --json | /usr/bin/jq -c ''.rows[] | select(.name == "station") | [.kept_bytes > 0, .reset, .installed]'''
+      exit: 0
+      stdout: |
+          [true,false,true]
+    - command: 'storage --json | /usr/bin/jq -r ''[.rows[].paths[].level] | unique | join(" ")'''
+      exit: 0
+      stdout: |
+          cache config data kept

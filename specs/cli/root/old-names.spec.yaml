@@ -1,4 +1,4 @@
-description: the old binary's name and the deleted skills family are unknown commands, exit 2
+description: the old binary's name and the deleted skills and clean families are unknown commands, exit 2
 runs:
     - command: workstation
       exit: 2
@@ -14,4 +14,14 @@ runs:
       exit: 2
       stderr: |
           Error: unknown command "skills" for "station"
+          Hint: run station --help
+    - command: clean
+      exit: 2
+      stderr: |
+          Error: unknown command "clean" for "station"
+          Hint: run station --help
+    - command: clean --all --yes
+      exit: 2
+      stderr: |
+          Error: unknown command "clean" for "station"
           Hint: run station --help

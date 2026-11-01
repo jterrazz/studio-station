@@ -2,7 +2,7 @@ description: "a temporary VM whose run ended without a poweroff shows stale, wit
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/vm-t/
-    - ../__fixtures__/stale-t/
+    - ./__fixtures__/stale-t/
 runs:
     - command: 'machines --here'
       exit: 0

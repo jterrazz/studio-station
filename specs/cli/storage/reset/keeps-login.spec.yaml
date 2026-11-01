@@ -1,0 +1,12 @@
+description: 'resetting gh removes its state and keeps its login and its config'
+runs:
+    - command: '--version >/dev/null; /bin/mkdir -p .local/state/gh .config/gh && echo s > .local/state/gh/s && printf "github.com:\n    user: jterrazz\n" > .config/gh/hosts.yml && echo "git_protocol: ssh" > .config/gh/config.yml'
+      exit: 0
+    - command: 'storage reset gh --yes'
+      exit: 0
+      stdout: |
+          ●	gh	reset · 2 B freed
+      files:
+          .local/state/gh/s: absent
+          .config/gh/hosts.yml: { equals: "github.com:\n    user: jterrazz\n" }
+          .config/gh/config.yml: { equals: "git_protocol: ssh\n" }

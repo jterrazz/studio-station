@@ -66,7 +66,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		statusCommand(kenv, here),
 		toolsCommand(kenv, here),
 		configCommand(kenv, here),
-		cleanCommand(kenv, here),
+		storageCommand(kenv, here),
 		machinesCommand(kenv, here),
 		imagesCommand(kenv, here),
 		secretsCommand(kenv, here),
@@ -117,17 +117,25 @@ type machine struct {
 
 func resolve(h system.Host, vars map[string]string) machine {
 	home := h.Env.Home()
-	xdg := func(name, fallback string) string {
+	root := func(name, fallback string) string {
 		if dir := vars[name]; filepath.IsAbs(dir) {
-			return filepath.Join(dir, "station")
+			return dir
 		}
-		return filepath.Join(home, fallback, "station")
+		return filepath.Join(home, fallback)
+	}
+	roots := settings.Roots{
+		Config: root("XDG_CONFIG_HOME", ".config"),
+		Data:   root("XDG_DATA_HOME", filepath.Join(".local", "share")),
+		State:  root("XDG_STATE_HOME", filepath.Join(".local", "state")),
+		Cache:  root("XDG_CACHE_HOME", ".cache"),
 	}
 	paths := settings.Paths{
-		Config: xdg("XDG_CONFIG_HOME", ".config"),
-		State:  xdg("XDG_STATE_HOME", filepath.Join(".local", "state")),
-		Cache:  xdg("XDG_CACHE_HOME", ".cache"),
+		Config: filepath.Join(roots.Config, "station"),
+		Data:   filepath.Join(roots.Data, "station"),
+		State:  filepath.Join(roots.State, "station"),
+		Cache:  filepath.Join(roots.Cache, "station"),
 		Bin:    filepath.Join(home, ".local", "bin"),
+		Roots:  roots,
 	}
 	kind := settings.DetectKind(context.Background(), h, vars["STATION_MACHINE_KIND"])
 	store := settings.NewStore(h.FS, paths)

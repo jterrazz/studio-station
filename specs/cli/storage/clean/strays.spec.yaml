@@ -1,0 +1,23 @@
+description: 'a stray is cleaned with its old location''s own command, then its emptied folders go'
+fixture:
+    - ../__fixtures__/go/
+    - ./__fixtures__/node/
+    - ./__fixtures__/relocated/
+    - ./__fixtures__/strays/
+runs:
+    - command: 'storage clean go node'
+      exit: 0
+      stdout: |
+          ●	go	2 B freed
+          ●	node	4 B freed
+      files:
+          go: absent
+          .npm: absent
+    - command: '--version >/dev/null; /bin/cat .calls'
+      exit: 0
+      stdout: |
+          go clean -cache -modcache
+          go clean -modcache
+          env GOMODCACHE={{workdir}}/go/pkg/mod GOFLAGS=-modcacherw
+          npm cache clean --force
+          npm cache clean --force --cache {{workdir}}/.npm

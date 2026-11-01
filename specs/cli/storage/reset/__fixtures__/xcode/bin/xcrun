@@ -1,0 +1,3 @@
+#!/bin/sh
+# xcrun: every simctl call is recorded and succeeds.
+printf 'xcrun %s\n' "$*" >> "$HOME/.calls"

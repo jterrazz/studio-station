@@ -1,4 +1,4 @@
-.PHONY: help install build build-linux lint fix test check provision deprovision skills clean
+.PHONY: help install build build-linux lint fix test check provision deprovision generate clean
 
 BINARY       := station
 BUILD_PATH   := .artifacts/go/$(BINARY)
@@ -69,9 +69,9 @@ deprovision: ## Remove the binary from ~/.local/bin; the user data stays
 		printf "$(DIM)$(BINARY) not found at $(INSTALL_PATH)$(RESET)\n"; \
 	fi
 
-skills: ## Regenerate the toolbelt skill rosters
-	@go run ./src/cmd/skillsgen
-	@printf "$(GREEN)●$(RESET) Regenerated skills/studio-toolbelt/SKILL.md\n"
+generate: ## Regenerate the catalogue's projections
+	@go run ./src/cmd/generate
+	@printf "$(GREEN)●$(RESET) Regenerated skills/studio-toolbelt/SKILL.md and docs/reference/footprint.md\n"
 
 clean: ## Remove build artifacts
 	@rm -rf .artifacts

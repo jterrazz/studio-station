@@ -16,6 +16,7 @@ type ToolJSON struct {
 	Managed  bool     `json:"managed"`
 	Provides []string `json:"provides"`
 	Detail   string   `json:"detail"`
+	Use      string   `json:"use"`
 }
 
 type catalogueJSON struct {
@@ -76,7 +77,15 @@ func ToolObject(r tools.Report) ToolJSON {
 		Managed:  r.Managed,
 		Provides: provides,
 		Detail:   detail,
+		Use:      Use(r.Tool),
 	}
+}
+
+func Use(t catalog.Tool) string {
+	if t.System {
+		return "system"
+	}
+	return "exploration"
 }
 
 func Rows(reports []tools.Report) []present.Row {
@@ -92,11 +101,18 @@ func Rows(reports []tools.Report) []present.Row {
 		rows = append(rows, present.Row{Mark: present.MarkOf(r.State), Cells: []present.Cell{
 			{Text: r.Tool.Name, Tone: present.Strong},
 			{Text: r.Version},
-			{Text: string(r.Method), Tone: present.Muted},
+			{Text: method(r), Tone: present.Muted},
 			{Text: detail, Tone: present.Muted},
 		}})
 	}
 	return rows
+}
+
+func method(r tools.Report) string {
+	if r.Tool.System {
+		return string(r.Method) + " · system"
+	}
+	return string(r.Method)
 }
 
 func Outcomes(verb string, outcomes []tools.Outcome, context string) present.Answer {

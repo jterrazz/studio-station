@@ -9,7 +9,12 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-type Paths struct{ Config, State, Cache, Bin string }
+type Roots struct{ Config, Data, State, Cache string }
+
+type Paths struct {
+	Config, Data, State, Cache, Bin string
+	Roots                           Roots
+}
 
 type Mode string
 

@@ -1,0 +1,19 @@
+description: 'a stray holding a file station does not own stays, its row still clean, and status still shows it'
+fixture:
+    - ../__fixtures__/go/
+    - ./__fixtures__/relocated/
+    - ./__fixtures__/strays/
+runs:
+    - command: '--version >/dev/null; /bin/mkdir -p go/bin && echo mine > go/bin/foo'
+      exit: 0
+    - command: 'storage clean go'
+      exit: 0
+      stdout: |
+          ●	go	2 B freed
+      files:
+          go/bin/foo: exists
+          go/pkg: absent
+    - command: 'status --json | /usr/bin/jq -c ''.workspace.strays | map([.name, .path, .repair])'''
+      exit: 0
+      stdout: |
+          [["go","~/go","station setup"],["node","~/.npm","station setup"]]

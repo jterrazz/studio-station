@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"context"
 	"io/fs"
 
@@ -32,13 +33,18 @@ func (s *Service) touch(e catalog.Touch) handler {
 func (s *Service) dotfiles(e catalog.Dotfiles) handler {
 	return handler{
 		check: func(context.Context) (catalog.State, string) {
-			present := 0
+			present, differ := 0, false
 			for _, c := range e.Files {
 				if s.exists(s.home(c.To)) {
 					present++
+					if c.Mode != 0 && !s.same(c) {
+						differ = true
+					}
 				}
 			}
 			switch {
+			case present == len(e.Files) && differ:
+				return catalog.StateDegraded, "differs from station's: station config install"
 			case present == len(e.Files):
 				return catalog.StateOK, e.Files[0].To
 			case present == 0:
@@ -53,7 +59,14 @@ func (s *Service) dotfiles(e catalog.Dotfiles) handler {
 				if err != nil {
 					return change, err
 				}
-				if err := s.write(s.home(c.To), data, 0o600); err != nil {
+				mode := c.Mode
+				if mode == 0 {
+					mode = 0o600
+				}
+				if err := s.write(s.home(c.To), data, mode); err != nil {
+					return change, err
+				}
+				if err := s.h.FS.Chmod(s.home(c.To), mode); err != nil {
 					return change, err
 				}
 				change.Steps = append(change.Steps, okStep(c.To, "written"))
@@ -78,4 +91,13 @@ func (s *Service) reload(ctx context.Context, argv []string) []Step {
 		return nil
 	}
 	return []Step{okStep(argv[0], "reloaded")}
+}
+
+func (s *Service) same(c catalog.Copy) bool {
+	want, err := fs.ReadFile(s.files, c.From)
+	if err != nil {
+		return false
+	}
+	got, err := s.h.FS.ReadFile(s.home(c.To))
+	return err == nil && bytes.Equal(got, want)
 }

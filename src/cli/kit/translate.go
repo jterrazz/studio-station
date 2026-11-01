@@ -24,7 +24,7 @@ func Translate(err error, path string) *fail.Error {
 		toolsFailure,
 		configFailure,
 		setupFailure,
-		cleanFailure,
+		storageFailure,
 		machinesFailure,
 		imagesFailure,
 		secretsFailure,

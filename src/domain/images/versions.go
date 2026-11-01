@@ -12,17 +12,3 @@ func (s *Service) Latest(_ context.Context, image string) (Record, error) {
 	}
 	return all[0], nil
 }
-
-func (s *Service) Old(_ context.Context) ([]Record, error) {
-	var old []Record
-	for _, img := range s.list {
-		all, err := s.records(img.Name)
-		if err != nil {
-			return nil, err
-		}
-		if len(all) > 1 {
-			old = append(old, all[1:]...)
-		}
-	}
-	return old, nil
-}

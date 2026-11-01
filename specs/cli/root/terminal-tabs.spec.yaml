@@ -15,7 +15,7 @@ runs:
           see - Terminal
           see hushlogin
           send 4
-          see The system trash
+          see - Station
           send 1
           see Machine
           send q

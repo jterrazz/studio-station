@@ -6,13 +6,13 @@ env: terminal
 runs:
     - command: '--version >/dev/null; terminal "$STATION"'
       stdin: |
-          see station   Status · Tools · Config · Clean │ Fleet
+          see station   Status · Tools · Config · Storage │ Fleet
           see Machine
           see ↑↓ scroll · r reload · ? more
           send q
       exit: 0
     - command: '--version >/dev/null; terminal --size 0x0 "$STATION"'
       stdin: |
-          see station   Status · Tools · Config · Clean │ Fleet
+          see station   Status · Tools · Config · Storage │ Fleet
           send q
       exit: 0

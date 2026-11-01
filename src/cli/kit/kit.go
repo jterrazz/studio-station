@@ -49,6 +49,7 @@ type Leaf[I any] struct {
 	Read                func(in *I) bool
 	Destructive         func(in *I) bool
 	Confirm             func(in *I) string
+	Ask                 func(in *I) (bool, error)
 	Complete            func(args []string, toComplete string) []string
 	Run                 func(ctx context.Context, in *I, io IO) error
 }
@@ -131,7 +132,11 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 		if l.Confirm != nil {
 			question = l.Confirm(in)
 		}
-		if err := gate(c.Name(), question, o); err != nil {
+		ask := func() (bool, error) { return o.Prompt.Confirm(question) }
+		if l.Ask != nil {
+			ask = func() (bool, error) { return l.Ask(in) }
+		}
+		if err := gate(c.Name(), ask, o); err != nil {
 			return err
 		}
 	}
@@ -142,12 +147,12 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 	return l.Run(ctx, in, o)
 }
 
-func gate(verb, question string, o IO) error {
+func gate(verb string, ask func() (bool, error), o IO) error {
 	switch {
 	case o.Yes:
 		return nil
 	case o.Interactive:
-		ok, err := o.Prompt.Confirm(question)
+		ok, err := ask()
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
 				return fail.Interrupted()

@@ -1,0 +1,5 @@
+#!/bin/sh
+# bash as a shell installer meets it: each argument recorded in brackets, nothing run.
+line='bash'
+for arg in "$@"; do line="$line [$arg]"; done
+printf '%s\n' "$line" >> "$HOME/.calls"
