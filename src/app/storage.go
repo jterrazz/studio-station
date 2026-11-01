@@ -35,7 +35,7 @@ func (m machine) storage(env kit.Env) *storage.Service {
 }
 
 func (m machine) expander() storage.Expander {
-	return storage.Expander{Home: m.host.Env.Home(), Roots: m.paths.Roots}
+	return storage.Expander{Home: m.host.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
 }
 
 // invariant: Go's env file is where `go env GOENV` says: $GOENV when set and

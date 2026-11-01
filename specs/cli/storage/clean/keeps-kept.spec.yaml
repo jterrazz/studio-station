@@ -4,7 +4,7 @@ fixture:
     - ../__fixtures__/go/
     - ./__fixtures__/kept/
 runs:
-    - command: 'storage clean | /usr/bin/grep -v -E "	(ghostty|zed|cursor|android-studio|xcode|discord|notion|obsidian|claude-desktop|orbstack|herdr-app|ollama|tailscale|lens)	"'
+    - command: 'storage clean'
       exit: 0
       stdout: |
           ●	station	0 B freed

@@ -10,6 +10,7 @@ import (
 type Expander struct {
 	Home  string
 	Roots settings.Roots
+	Root  string
 }
 
 func (e Expander) Expand(pattern string) string {
@@ -18,6 +19,9 @@ func (e Expander) Expand(pattern string) string {
 	}
 	if rest, ok := strings.CutPrefix(pattern, "~/"); ok {
 		return path.Join(e.Home, rest)
+	}
+	if strings.HasPrefix(pattern, "/") {
+		return path.Join("/", e.Root, pattern)
 	}
 	for prefix, root := range map[string]string{"{config}": e.Roots.Config, "{data}": e.Roots.Data, "{state}": e.Roots.State, "{cache}": e.Roots.Cache} {
 		if pattern == prefix {
@@ -41,6 +45,9 @@ func (e Expander) Word(word string) string {
 }
 
 func (e Expander) Display(abs string) string {
+	if rest, ok := strings.CutPrefix(abs, e.Root+"/"); ok && e.Root != "" {
+		return "/" + rest
+	}
 	if abs == e.Home {
 		return "~"
 	}

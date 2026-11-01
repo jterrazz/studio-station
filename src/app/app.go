@@ -157,6 +157,15 @@ func (m machine) or(name, fallback string) string {
 	return fallback
 }
 
+// value: the root absolute catalogue paths (/Applications, /opt/homebrew, /Library)
+// are read under; the spec harness points it into the sandbox.
+func (m machine) systemRoot() string {
+	if r := m.vars["STATION_SYSTEM_ROOT"]; filepath.IsAbs(r) {
+		return r
+	}
+	return ""
+}
+
 func (m machine) here() string {
 	current, _ := m.store.Load()
 	return current.Here

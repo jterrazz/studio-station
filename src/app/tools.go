@@ -34,6 +34,7 @@ func toolsService(env kit.Env, m machine) *tools.Service {
 		Here:        m.kind,
 		MiseShims:   filepath.Join(m.or("MISE_DATA_DIR", filepath.Join(m.host.Env.Home(), ".local", "share", "mise")), "shims"),
 		Path:        m.vars["PATH"],
+		Root:        m.systemRoot(),
 		APIURL:      m.or("STATION_GITHUB_API_URL", "https://api.github.com"),
 		GitHubToken: m.or("GITHUB_TOKEN", m.vars["GH_TOKEN"]),
 		VMs:         m.machines(env.Interactive),

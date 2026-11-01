@@ -14,6 +14,7 @@ type Options struct {
 	Here        catalog.MachineKind
 	MiseShims   string
 	Path        string
+	Root        string
 	APIURL      string
 	GitHubToken string
 	VMs         VMs

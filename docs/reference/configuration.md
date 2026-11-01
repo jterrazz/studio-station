@@ -69,19 +69,20 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 
 `app` reads the environment once and passes typed options down; no other layer reads a variable.
 
-| Variable                                                               | Read for                                                                    |
-| ---------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `AGENT_PASSWORD`                                                       | pre-fills the `autologin` form                                              |
-| `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT`      | the gateway ports `machines probe` and `status` check                       |
-| `MISE_DATA_DIR`                                                        | where mise keeps its shims                                                  |
-| `NO_COLOR`, `COLUMNS`                                                  | the output form and width                                                   |
-| `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | the folders station uses, when absolute ([Storage](storage.md#the-folders)) |
-| `GOENV`                                                                | where `station setup` writes Go's env file; `off` writes none               |
-| `TART_HOME`                                                            | set by the tart launcher, never by the owner ([Storage](storage.md#tart))   |
-| `STATION_GITHUB_API_URL`, `STATION_TAILSCALE_API_URL`                  | the API origins, so a spec can point them at a stub                         |
-| `STATION_SYSTEM_DIRS`, `STATION_MACHINE_KIND`                          | which system folders count, and the machine kind, for a spec                |
-| `STATION_VM_AGENT`                                                     | internal: set in a VM's launchd agent                                       |
-| `STATION_XDG_DETACHED`                                                 | internal: `setup`'s detached layout step                                    |
+| Variable                                                               | Read for                                                                            |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `AGENT_PASSWORD`                                                       | pre-fills the `autologin` form                                                      |
+| `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT`      | the gateway ports `machines probe` and `status` check                               |
+| `MISE_DATA_DIR`                                                        | where mise keeps its shims                                                          |
+| `NO_COLOR`, `COLUMNS`                                                  | the output form and width                                                           |
+| `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | the folders station uses, when absolute ([Storage](storage.md#the-folders))         |
+| `GOENV`                                                                | where `station setup` writes Go's env file; `off` writes none                       |
+| `TART_HOME`                                                            | set by the tart launcher, never by the owner ([Storage](storage.md#tart))           |
+| `STATION_GITHUB_API_URL`, `STATION_TAILSCALE_API_URL`                  | the API origins, so a spec can point them at a stub                                 |
+| `STATION_SYSTEM_DIRS`, `STATION_MACHINE_KIND`                          | which system folders count, and the machine kind, for a spec                        |
+| `STATION_SYSTEM_ROOT`                                                  | the root `/Applications`, `/opt/homebrew` and `/Library` are read under, for a spec |
+| `STATION_VM_AGENT`                                                     | internal: set in a VM's launchd agent                                               |
+| `STATION_XDG_DETACHED`                                                 | internal: `setup`'s detached layout step                                            |
 
 ## Related
 

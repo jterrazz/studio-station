@@ -209,7 +209,7 @@ func (s *Service) bundled(t catalog.Tool) bool {
 	if t.Bundle == "" {
 		return false
 	}
-	_, err := s.h.FS.Stat(path.Join(applications, t.Bundle+".app"))
+	_, err := s.h.FS.Stat(path.Join(s.o.Root, applications, t.Bundle+".app"))
 	return err == nil
 }
 

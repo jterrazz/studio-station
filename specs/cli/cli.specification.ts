@@ -39,7 +39,9 @@ if (process.env.STATION_FORCE_REBUILD === '1' || binaryIsStale()) {
 
 // invariant: no run reaches the real machine. HOME is the run's own directory, PATH
 // holds only the fixture's stubs and STATION_SYSTEM_DIRS adds no system directory, so
-// an unstubbed tool is "not found" alike on a Mac and on the Linux CI runner; the
+// an unstubbed tool is "not found" alike on a Mac and on the Linux CI runner;
+// STATION_SYSTEM_ROOT reads /Applications, /opt/homebrew and /Library under the run's
+// own `root/`, so the owner's apps are neither listed nor sized; the
 // machine kind is pinned to host unless a document says otherwise; GitHub is a closed
 // port unless a document serves its stub, and so is Tailscale's API.
 export const { cleanup, cli } = await specification.cli(STATION_BIN, {
@@ -51,6 +53,7 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
         STATION_GITHUB_API_URL: 'http://127.0.0.1:9',
         STATION_MACHINE_KIND: 'host',
         STATION_SYSTEM_DIRS: '',
+        STATION_SYSTEM_ROOT: '$WORKDIR/root',
         STATION_TAILSCALE_API_URL: 'http://127.0.0.1:9',
         TZ: 'UTC',
     },
