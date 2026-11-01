@@ -5,6 +5,8 @@ fixture:
 env:
     - STATION_MACHINE_KIND=linux
 runs:
+    - command: '--version >/dev/null; /bin/mkdir -p .cache/go-build && echo x > .cache/go-build/a'
+      exit: 0
     - command: 'storage --json | /usr/bin/jq -c ''[.rows[].name | select(. == "docker" or . == "tart" or . == "xcode" or . == "homebrew")]'''
       exit: 0
       stdout: |

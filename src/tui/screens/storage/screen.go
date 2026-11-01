@@ -105,7 +105,7 @@ func (m Model) Update(msg tea.Msg) (kit.Screen, tea.Cmd) {
 func (m Model) plan(name string) string {
 	var lines []string
 	for _, p := range m.storage.Plan([]string{name}) {
-		lines = append(lines, string(p.Level)+"  "+p.Path+"  "+present.Bytes(p.Bytes))
+		lines = append(lines, string(p.Level)+"  "+p.Path+"  "+presentstorage.Size(p.Bytes))
 	}
 	return strings.Join(append(lines, "installed files and kept files stay"), "\n")
 }

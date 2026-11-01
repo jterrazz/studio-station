@@ -17,6 +17,8 @@ const (
 	StationCategory = "Station"
 	dockerDFBudget  = 5 * time.Second
 	quitBudget      = 2 * time.Second
+	sizeBudget      = 10 * time.Second
+	Unknown         = int64(-1)
 )
 
 type Inventory interface {
@@ -28,6 +30,7 @@ type Options struct {
 	Expand    Expander
 	Files     map[catalog.ToolFile]string
 	Inventory Inventory
+	Budget    time.Duration
 }
 
 type Service struct {
@@ -63,6 +66,7 @@ type StrayReport struct {
 type Row struct {
 	Entry     Entry
 	Installed bool
+	Unknown   bool
 	State     catalog.State
 	Bytes     map[catalog.Level]int64
 	Install   int64
@@ -162,9 +166,8 @@ func (s *Service) installed(ctx context.Context) map[string]bool {
 func (s *Service) List(ctx context.Context) (Report, error) {
 	installed := s.installed(ctx)
 	report := Report{Rows: []Row{}, Strays: []StrayReport{}}
-	for _, e := range s.Placed() {
-		row := s.measure(ctx, e, installed[e.Name])
-		if !row.Installed && row.Total() == 0 {
+	for _, row := range s.measureAll(ctx, s.Placed(), installed) {
+		if row.Entry.Name != StationName && !row.Unknown && row.Total() == 0 {
 			continue
 		}
 		report.Rows = append(report.Rows, row)
@@ -219,6 +222,51 @@ func claims(patterns []string, entry string) bool {
 	return false
 }
 
+// invariant: one slow tree (a simulator runtime, /opt/homebrew) never holds the list
+// past the budget: its row answers Unknown and the others keep their sizes.
+func (s *Service) measureAll(ctx context.Context, entries []Entry, installed map[string]bool) []Row {
+	budget := s.o.Budget
+	if budget == 0 {
+		budget = sizeBudget
+	}
+	ctx, cancel := context.WithTimeout(ctx, budget)
+	defer cancel()
+	done := make([]chan Row, len(entries))
+	for i, e := range entries {
+		done[i] = make(chan Row, 1)
+		go func() { done[i] <- s.measure(ctx, e, installed[e.Name]) }()
+	}
+	rows := make([]Row, len(entries))
+	for i, e := range entries {
+		select {
+		case rows[i] = <-done[i]:
+		case <-ctx.Done():
+			select {
+			case rows[i] = <-done[i]:
+			default:
+				rows[i] = s.unknown(e, installed[e.Name])
+			}
+		}
+	}
+	return rows
+}
+
+func (s *Service) unknown(e Entry, installed bool) Row {
+	row := Row{Entry: e, Installed: installed, Unknown: true, Bytes: map[catalog.Level]int64{}, Install: Unknown, Paths: []PathReport{}, Strays: []StrayReport{}, State: catalog.StateAbsent}
+	if installed {
+		row.State = catalog.StateOK
+	}
+	for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData, catalog.LevelConfig, catalog.LevelKept} {
+		row.Bytes[level] = Unknown
+	}
+	for _, p := range e.Storage.Paths {
+		if p.PlacedOn(s.o.Here) {
+			row.Paths = append(row.Paths, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: Unknown})
+		}
+	}
+	return row
+}
+
 func (s *Service) measure(ctx context.Context, e Entry, installed bool) Row {
 	row := Row{Entry: e, Installed: installed, Bytes: map[catalog.Level]int64{}, Paths: []PathReport{}, Strays: []StrayReport{}}
 	for _, p := range e.Storage.Paths {
@@ -248,9 +296,6 @@ func (s *Service) measure(ctx context.Context, e Entry, installed bool) Row {
 }
 
 func (s *Service) size(pattern string) int64 {
-	if strings.HasPrefix(pattern, "/") {
-		return 0
-	}
 	matches, _ := s.h.FS.Glob(s.o.Expand.Expand(pattern))
 	var total int64
 	for _, m := range matches {

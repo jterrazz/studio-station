@@ -1,0 +1,12 @@
+description: 'an app installed under /Applications is listed and its bundle sized as installed'
+runs:
+    - command: '--version >/dev/null; /bin/mkdir -p root/Applications/OrbStack.app/Contents && /bin/dd if=/dev/zero of=root/Applications/OrbStack.app/Contents/x bs=1048576 count=1 2>/dev/null'
+      exit: 0
+    - command: 'storage --json | /usr/bin/jq -c ''[[.rows[].name], (.rows[] | select(.name == "orbstack") | [.installed, .installed_bytes])]'''
+      exit: 0
+      stdout: |
+          [["station","orbstack"],[true,1048576]]
+    - command: 'storage </dev/null | /usr/bin/grep orbstack'
+      exit: 0
+      stdout: |
+          ●	orbstack	0 B	installed 1.0 MB

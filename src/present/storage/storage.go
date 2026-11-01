@@ -90,7 +90,7 @@ func rowsJSON(rows []storage.Row) []rowJSON {
 func cacheTotal(r storage.Report) int64 {
 	var total int64
 	for _, row := range r.Rows {
-		total += row.Bytes[catalog.LevelCache]
+		total += max(row.Bytes[catalog.LevelCache], 0)
 	}
 	for _, s := range r.Strays {
 		total += s.Bytes
@@ -146,7 +146,7 @@ func Rows(rows []storage.Row) []present.Row {
 func Row(r storage.Row) present.Row {
 	cells := []present.Cell{
 		{Text: r.Entry.Name, Tone: present.Strong},
-		{Text: present.Bytes(r.Bytes[catalog.LevelCache])},
+		{Text: Size(r.Bytes[catalog.LevelCache])},
 		{Text: Detail(r), Tone: present.Muted},
 	}
 	if len(r.Strays) > 0 {
@@ -168,6 +168,9 @@ func Detail(r storage.Row) string {
 		if part.bytes > 0 {
 			parts = append(parts, part.name+" "+present.Bytes(part.bytes))
 		}
+	}
+	if r.Unknown {
+		return "not sized within 10 s"
 	}
 	return strings.Join(parts, " · ")
 }
@@ -215,4 +218,9 @@ func OutcomeDetail(o storage.Outcome) string {
 	return freed
 }
 
-func Size(n int64) string { return present.Bytes(n) }
+func Size(n int64) string {
+	if n < 0 {
+		return "?"
+	}
+	return present.Bytes(n)
+}
