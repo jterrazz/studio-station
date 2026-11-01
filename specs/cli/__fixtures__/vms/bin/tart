@@ -1,7 +1,8 @@
 #!/bin/sh
 # Tart as the VM specs need it: every call is recorded in $HOME/.calls, and the VMs are
 # the files of $HOME/.tart-vms (each holding its state). `run` marks the VM running
-# and lasts until something marks it stopped (a poweroff, `tart stop`) or, when its
+# and lasts until something marks it stopped (a poweroff, `tart stop`), its home is
+# removed, or 300 s pass (a home kept by hand never holds a run forever), or, when its
 # script answers/tart/run.<n> says `after <seconds>`, that long; then a poweroff the
 # guest declared ($HOME/.tart-intents/<vm>) or a script line `intent` writes the
 # intent into the --serial-path file, a line `say <word>` writes the word there, and a
@@ -47,7 +48,11 @@ case "$1" in
         if [ -n "$after" ]; then
             /bin/sleep "$after"
         else
-            while [ "$(/bin/cat "$vms/$vm" 2> /dev/null)" = running ]; do /bin/sleep 0.1; done
+            t=0
+            while [ "$(/bin/cat "$vms/$vm" 2> /dev/null)" = running ] && [ $t -lt 3000 ]; do
+                /bin/sleep 0.1
+                t=$((t + 1))
+            done
         fi
         if [ -f "$HOME/.tart-intents/$vm" ]; then
             echo "station-intent=poweroff" >> "$console"
