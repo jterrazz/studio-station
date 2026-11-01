@@ -16,6 +16,7 @@ func toolsFailure(err error) (*fail.Error, bool) {
 	var irreversible *tools.NotReversibleError
 	var manual *tools.ManualInstallError
 	var noUpgrade *tools.NoUpgradePathError
+	var appStore *tools.AppStoreError
 	switch {
 	case errors.As(err, &unknown):
 		return fail.Usage(unknown.Error(), "run station tools for the catalogue"), true
@@ -27,6 +28,8 @@ func toolsFailure(err error) (*fail.Error, bool) {
 		return fail.Usage(irreversible.Error(), "station installs it but cannot remove it: remove it by hand"), true
 	case errors.As(err, &manual):
 		return fail.Usage(manual.Error(), manual.Hint), true
+	case errors.As(err, &appStore):
+		return fail.Usage(appStore.Error(), "remove it from /Applications"), true
 	case errors.As(err, &noUpgrade):
 		return fail.Usage(noUpgrade.Error(), "reinstall it by hand: station tools install "+noUpgrade.Tool), true
 	}

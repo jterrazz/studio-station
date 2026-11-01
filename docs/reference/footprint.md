@@ -574,12 +574,20 @@ Reset: none (an app's data is its account's: reset it in the app). A reset refus
 
 ### tailscale
 
-| Path                                                | Level | Note |
-| --------------------------------------------------- | ----- | ---- |
-| `~/Library/Containers/io.tailscale.ipn.macos`       | kept  | host |
-| `~/Library/Group Containers/io.tailscale.ipn.macos` | kept  | host |
+| Path                                                     | Level     | Note                                 |
+| -------------------------------------------------------- | --------- | ------------------------------------ |
+| `~/Library/Containers/io.tailscale.ipn.macos*`           | kept      | host; the App Store app's login      |
+| `~/Library/Containers/io.tailscale.ipn.macsys*`          | kept      | host; the Standalone app's login     |
+| `~/Library/Containers/Tailscale`                         | kept      | host                                 |
+| `~/Library/Group Containers/*io.tailscale.ipn.macos`     | kept      | host                                 |
+| `~/Library/Group Containers/*io.tailscale.ipn.macsys`    | kept      | host                                 |
+| `~/Library/Group Containers/group.*.io.tailscale.shared` | kept      | host                                 |
+| `~/Library/Application Scripts/*io.tailscale.*`          | kept      | host                                 |
+| `/Applications/Tailscale.app`                            | installed | removed by `station tools uninstall` |
+| `/usr/local/bin/tailscale`                               | installed | removed by `station tools uninstall` |
+| `~/.local/bin/tailscale`                                 | installed | removed by `station tools uninstall` |
 
-Reset: none (nothing to reset: keys and logins are kept).
+Reset: none (nothing to reset: the login is the Tailscale app's).
 
 ### mole
 

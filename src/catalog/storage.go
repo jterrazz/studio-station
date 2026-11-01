@@ -380,10 +380,16 @@ var (
 	}
 	storageTailscale = Storage{
 		Paths: []Stored{
-			kept("~/Library/Containers/io.tailscale.ipn.macos", Host),
-			kept("~/Library/Group Containers/io.tailscale.ipn.macos", Host),
+			noted(kept("~/Library/Containers/io.tailscale.ipn.macos*", Host), "the App Store app's login"),
+			noted(kept("~/Library/Containers/io.tailscale.ipn.macsys*", Host), "the Standalone app's login"),
+			kept("~/Library/Containers/Tailscale", Host),
+			kept("~/Library/Group Containers/*io.tailscale.ipn.macos", Host),
+			kept("~/Library/Group Containers/*io.tailscale.ipn.macsys", Host),
+			kept("~/Library/Group Containers/group.*.io.tailscale.shared", Host),
+			kept("~/Library/Application Scripts/*io.tailscale.*", Host),
 		},
-		NoReset: toolsNoReset,
+		Installed: []string{TailscaleApp, TailscaleStandaloneCLI, "~/.local/bin/tailscale"},
+		NoReset:   "nothing to reset: the login is the Tailscale app's",
 	}
 	storageGit = Storage{
 		Paths:   []Stored{conf("~/.gitconfig")},

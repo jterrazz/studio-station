@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strconv"
 	"strings"
@@ -126,13 +127,19 @@ func (s *Service) Upgrade(ctx context.Context, r UpgradeRequest) ([]Outcome, err
 			}
 		}
 	}
-	states := s.states(ctx, candidates)
+	reports := map[string]Report{}
+	for _, rep := range s.reports(ctx, candidates) {
+		reports[rep.Tool.Name] = rep
+	}
 	var outcomes []Outcome
 	var bundled, single []catalog.Tool
 	for _, t := range candidates {
-		state := states[t.Name]
+		state := reports[t.Name].State
 		upgradable := state == catalog.StateOK || (len(r.Names) > 0 && state == catalog.StateDegraded)
 		switch {
+		case reports[t.Name].Detail == DetailAppStore && len(r.Names) > 0:
+			outcomes = append(outcomes, Outcome{Name: t.Name, Verb: verbUpgrade, Result: catalog.StateAbsent, Detail: "the App Store updates it"})
+		case reports[t.Name].Detail == DetailAppStore:
 		case !upgradable && len(r.Names) > 0:
 			outcomes = append(outcomes, Outcome{Name: t.Name, Verb: verbUpgrade, Result: catalog.StateAbsent, Detail: "not installed: station tools install " + t.Name})
 		case !upgradable:
@@ -341,4 +348,39 @@ func installed(s catalog.State) bool { return s == catalog.StateOK || s == catal
 
 func sameName(t catalog.Tool) func(catalog.Tool) bool {
 	return func(o catalog.Tool) bool { return o.Name == t.Name }
+}
+
+func (s *Service) Superseded(ctx context.Context) []string {
+	// invariant: a superseded formula goes only once the tool replacing it is
+	// ok: the formula alone is a half install, named, never removed.
+	var list []catalog.Tool
+	for _, t := range s.Placed() {
+		if t.Supersedes != "" {
+			list = append(list, t)
+		}
+	}
+	if len(list) == 0 {
+		return nil
+	}
+	listings := s.listings(ctx, list)
+	var out []string
+	for _, t := range list {
+		if _, listed := listings[catalog.MethodBrew].keys[t.Supersedes]; listed && s.report(ctx, t, listings).State == catalog.StateOK {
+			out = append(out, t.Supersedes)
+		}
+	}
+	return out
+}
+
+func (s *Service) RemoveFormula(ctx context.Context, formula string) error {
+	for _, c := range s.table[catalog.MethodBrew].uninstall(catalog.Brew(formula)) {
+		ran, err := s.h.Run.Attach(ctx, c, system.ToStderr)
+		if err != nil {
+			return err
+		}
+		if ran.ExitCode != 0 {
+			return errors.New(c.Name + " " + strings.Join(c.Args, " ") + " exited " + strconv.Itoa(ran.ExitCode))
+		}
+	}
+	return nil
 }

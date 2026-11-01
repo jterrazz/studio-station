@@ -37,6 +37,7 @@ type Tool struct {
 	Category    Category
 	Replaces    string
 	Supersedes  string
+	AppStore    bool
 	Installs    []Place
 	Provides    []string
 	Bundle      string

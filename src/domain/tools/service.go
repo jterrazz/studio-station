@@ -138,6 +138,9 @@ func (s *Service) CheckUninstall(names []string) error {
 		if s.row(t).uninstall == nil {
 			return &NotReversibleError{Tool: t.Name}
 		}
+		if s.fromAppStore(t) {
+			return &AppStoreError{Tool: t.Name}
+		}
 	}
 	return nil
 }

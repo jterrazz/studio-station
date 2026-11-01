@@ -32,3 +32,15 @@ var Profiles = []Profile{
 const ServeOffDetail = "Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console"
 
 var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}
+
+// value: the two Tailscale app variants, measured 2026-11-01: the Standalone
+// app's pkg installs the first CLI path, the App Store app only its bundle,
+// whose executable answers when run directly (a symlink to it crashes).
+const (
+	TailscaleApp           = "/Applications/Tailscale.app"
+	TailscaleReceipt       = TailscaleApp + "/Contents/_MASReceipt"
+	TailscaleBundleCLI     = TailscaleApp + "/Contents/MacOS/Tailscale"
+	TailscaleStandaloneCLI = "/usr/local/bin/tailscale"
+)
+
+var TailscaleCLIs = []string{TailscaleStandaloneCLI, TailscaleBundleCLI}

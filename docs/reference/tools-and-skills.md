@@ -34,6 +34,10 @@ One table, `src/domain/tools/methods.go`, holds a row per method; nothing else s
 
 `brew bundle` installs a whole request in one call and taps a trusted formula itself; the catalogue's `trusted` taps are the owner's act of trust ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). `station tools upgrade` upgrades catalogue tools only; `--via <manager>` selects every installed tool of a manager (`brew` covers brew and cask).
 
+## Superseded installs and App Store copies
+
+A catalogue tool can name the formula it `Supersedes`: with the formula alone the tool is `◐ formula installed, app absent`, and once the tool itself is `ok` `station setup` uninstalls the formula. An `AppStore` tool whose bundle carries the App Store's receipt (`Contents/_MASReceipt`) is `ok` through that copy, unmanaged, detail `app-store`: `tools install` says it is already installed, `tools upgrade` leaves it to the App Store (`○ the App Store updates it` when named), and `tools uninstall` refuses it (`Hint: remove it from /Applications`). Tailscale is both ([The tailnet](machines.md#the-tailnet)).
+
 ## Runtimes
 
 mise owns the language runtimes on every machine ([ADR-003](../decisions/003-mise-owns-the-runtimes.md)). `station tools install node` writes mise's global config and installs; a machine that still has node from elsewhere shows it `degraded`, "on PATH, not managed by mise", and the repair is that same command. `station shell zsh` activates mise in every shell ([Dotfiles](dotfiles.md)).

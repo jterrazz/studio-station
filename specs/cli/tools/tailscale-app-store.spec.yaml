@@ -1,0 +1,41 @@
+description: 'the App Store app counts as tailscale installed, unmanaged: never upgraded nor removed by station'
+fixture:
+    - ./__fixtures__/stubs/
+    - ./upgrade/__fixtures__/two-installed/
+    - ../__fixtures__/tailscale-app-store/
+runs:
+    - command: 'tools --json | /usr/bin/jq -c ''.tools[] | select(.name == "tailscale") | [.state, .managed, .detail]'''
+      exit: 0
+      stdout: |
+          ["ok",false,"app-store"]
+    - command: 'tools install tailscale'
+      exit: 0
+      stdout: |
+          ●	tailscale	already installed
+    - command: 'tools upgrade tailscale'
+      exit: 0
+      stdout: |
+          ○	tailscale	the App Store updates it
+    - command: 'tools upgrade'
+      exit: 0
+      stdout: |
+          ●	bat
+          ●	jq
+          ●	homebrew
+      files:
+          .calls:
+              contains:
+                  - |-
+                    brew bundle install --upgrade --file=-
+                    brew "bat"
+                    brew "jq"
+                  - 'bash https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh'
+    - command: 'tools uninstall tailscale --yes'
+      exit: 2
+      stderr: |
+          Error: tailscale is the App Store's install
+          Hint: remove it from /Applications
+    - command: '--version >/dev/null; /usr/bin/grep -cE "tailscale-app|brew uninstall|brew bundle install --no-upgrade" .calls'
+      exit: 1
+      stdout: |
+          0

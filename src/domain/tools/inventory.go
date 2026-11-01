@@ -13,6 +13,8 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
+const DetailAppStore = "app-store"
+
 const (
 	inventoryBudget = 30 * time.Second
 	probeBudget     = 5 * time.Second
@@ -120,6 +122,10 @@ func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catal
 		r.State, r.Version, r.Managed = catalog.StateOK, version, true
 		return r
 	}
+	if s.fromAppStore(t) {
+		r.State, r.Detail = catalog.StateOK, DetailAppStore
+		return r
+	}
 	if _, ok := listings[catalog.MethodBrew].keys[t.Supersedes]; ok && t.Supersedes != "" && !s.bundled(t) {
 		r.State, r.Detail = catalog.StateDegraded, "formula installed, app absent"
 		return r
@@ -217,6 +223,16 @@ func (s *Service) bundled(t catalog.Tool) bool {
 		return false
 	}
 	_, err := s.h.FS.Stat(path.Join(s.o.Root, applications, t.Bundle+".app"))
+	return err == nil
+}
+
+// invariant: an App Store copy of an AppStore tool's bundle is its install,
+// not station's: present, never managed, upgraded or removed by station.
+func (s *Service) fromAppStore(t catalog.Tool) bool {
+	if !t.AppStore || t.Bundle == "" {
+		return false
+	}
+	_, err := s.h.FS.Stat(path.Join(s.o.Root, applications, t.Bundle+".app", "Contents", "_MASReceipt"))
 	return err == nil
 }
 
