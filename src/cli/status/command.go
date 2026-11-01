@@ -18,7 +18,7 @@ type Deps struct {
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[struct{}]{
 		Use:     "status",
-		Short:   "Everything about this machine: system, environment, tools, config, setup, services",
+		Short:   "Everything about this machine: system, environment, tools, config, setup, gateways",
 		Example: "  station status\n  station status --json",
 		Group:   "here",
 		Read:    func(*struct{}) bool { return true },
