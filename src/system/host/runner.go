@@ -99,7 +99,7 @@ func (r *runner) Reap(dir string) int {
 			continue
 		}
 		started, err := strconv.ParseInt(strings.TrimSpace(string(data)), 10, 64)
-		if err != nil || !startedAt(pid, started) {
+		if err != nil || !r.startedAt(pid, started) {
 			continue
 		}
 		if syscall.Kill(-pid, syscall.SIGKILL) == nil {
@@ -112,9 +112,9 @@ func (r *runner) Reap(dir string) int {
 // invariant: a recorded pid is killed only while it still names the process
 // that was recorded: its start time must match, so a recycled pid survives.
 // ps prints that time in the C locale, the only one its layout parses.
-func startedAt(pid int, unix int64) bool {
+func (r *runner) startedAt(pid int, unix int64) bool {
 	cmd := exec.Command("/bin/ps", "-o", "lstart=", "-p", strconv.Itoa(pid))
-	cmd.Env = append(os.Environ(), "LC_ALL=C")
+	cmd.Env = append(append([]string{}, r.env...), "LC_ALL=C")
 	out, err := cmd.Output()
 	if err != nil {
 		return false

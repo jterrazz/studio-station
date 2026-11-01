@@ -1,4 +1,4 @@
-description: 'a tailscale serve a killed daemon left running is killed at the next daemon start, whatever the locale'
+description: 'a serve a killed daemon left running is killed at the next daemon start, whatever the locale'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
