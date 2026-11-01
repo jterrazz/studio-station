@@ -1,0 +1,10 @@
+description: 'a VM of another host is released by that host''s station, over ssh'
+fixture:
+    - ../../__fixtures__/vms/
+    - ./__fixtures__/remote/
+runs:
+    - command: 'services release w:3000; /usr/bin/grep ''services release'' .calls'
+      exit: 0
+      stdout: |
+          ●	w:3000	released
+          ssh y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station services release w:3000

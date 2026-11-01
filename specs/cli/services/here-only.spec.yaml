@@ -1,0 +1,10 @@
+description: 'services --here asks no other host'
+fixture:
+    - ../__fixtures__/vms/
+    - ./__fixtures__/fleet/
+runs:
+    - command: 'services --here --json | /usr/bin/jq -c ''[.hosts[] | .name]''; /bin/cat .calls 2>/dev/null | /usr/bin/awk ''/^ssh/{n++} END{print n+0}'''
+      exit: 0
+      stdout: |
+          ["x"]
+          0

@@ -1,0 +1,22 @@
+description: 'the fleet''s services: every host asked over ssh, an unreachable one shown, never fatal'
+fixture:
+    - ../__fixtures__/vms/
+    - ./__fixtures__/fleet/
+runs:
+    - command: 'services --json | /usr/bin/jq -c ''.schema, [.hosts[] | [.name, .here, .reachable]], [.hosts[].services[] | keys]'''
+      exit: 0
+      stdout: |
+          "station.services/v1"
+          [["x",true,true],["y",false,true],["z",false,false]]
+          [["detail","guest_port","host_port","http","last_seen_at","pinned","process","profile","state","urls","vm"],["detail","guest_port","host_port","http","last_seen_at","pinned","process","profile","state","urls","vm"],["detail","guest_port","host_port","http","last_seen_at","pinned","process","profile","state","urls","vm"]]
+    - command: 'services'
+      exit: 0
+      stdout: |
+          ◐	daemon			x	not running		station setup
+          ◐	api	3000	http://127.0.0.1:{{port}}	x	unknown
+          ◐	api	8081	http://127.0.0.1:{{port}}	x	unknown		expo
+          ●	w	3000	https://y.tail1234.ts.net:40000	y	published	node
+          ◐	z			z	unreachable		ssh z true
+      files:
+          .calls:
+              contains: 'ssh -o BatchMode=yes -o ConnectTimeout=5 y -- sh -c'

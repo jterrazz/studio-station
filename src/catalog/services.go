@@ -1,0 +1,32 @@
+package catalog
+
+import "time"
+
+type ServiceDefaults struct {
+	RangeLow, RangeHigh, MaxPerVM, MinPort int
+	Ignored                                []int
+	HTTPS                                  string
+	Idle, Grace                            time.Duration
+}
+
+var ServicePolicy = ServiceDefaults{
+	RangeLow: 40000, RangeHigh: 40999, MaxPerVM: 20, MinPort: 1024,
+	Ignored: []int{22}, HTTPS: "port", Idle: 7 * 24 * time.Hour, Grace: 5 * time.Second,
+}
+
+type ProfileEnv struct{ Name, Value string }
+
+type Profile struct {
+	Name string
+	Port int
+	HTTP bool
+	Env  []ProfileEnv
+	Note string
+}
+
+var Profiles = []Profile{
+	{Name: "expo", Port: 8081, HTTP: true, Env: []ProfileEnv{{Name: "EXPO_PACKAGER_PROXY_URL", Value: "{url}"}}},
+	{Name: "vite", Port: 5173, HTTP: true, Env: []ProfileEnv{{Name: "__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS", Value: "{host}"}}},
+}
+
+var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}

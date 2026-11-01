@@ -21,7 +21,10 @@ const miseBlock = `if command -v mise >/dev/null 2>&1; then
 fi
 `
 
-type Options struct{ Here catalog.MachineKind }
+type Options struct {
+	Here     catalog.MachineKind
+	Services string
+}
 
 type Service struct {
 	h     system.Host
@@ -45,7 +48,20 @@ func (s *Service) Zsh(ctx context.Context, completion string) (string, error) {
 	if line, ok := s.token(ctx); ok {
 		script += "\n" + line + "\n"
 	}
-	return script, nil
+	return script + s.services(), nil
+}
+
+// invariant: in a VM the profiles' exports the guest wrote are a file read, never
+// a subprocess: a shell start never waits on the host.
+func (s *Service) services() string {
+	if (s.o.Here != catalog.Linux && s.o.Here != catalog.MacOS) || s.o.Services == "" {
+		return ""
+	}
+	data, err := s.h.FS.ReadFile(s.o.Services)
+	if err != nil || len(data) == 0 {
+		return ""
+	}
+	return "\n" + string(data)
 }
 
 // hazard: the file backend is forced because a VM has no keychain, and any failure
