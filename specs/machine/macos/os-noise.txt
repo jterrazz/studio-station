@@ -1,5 +1,6 @@
 # Paths macOS's own daemons write under $HOME while the suite runs, never a tool's.
-# One shell glob per line, relative to $HOME; a tool's path never goes here.
+# One shell glob per line, relative to $HOME; a tool's path never goes here. A line
+# names a shape (a daemon's folder, a temp file's form), never one transient name.
 Library/Preferences/com.apple.*
 Library/Preferences/ByHost
 Library/Caches/com.apple.*
@@ -15,3 +16,5 @@ Library/Logs/DiagnosticReports
 Library/HTTPStorages/com.apple.*
 Library/HomeKit
 Library/DataDeliveryServices
+Library/Sharing/**
+Library/**/*.sb-*-*

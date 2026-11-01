@@ -1,7 +1,8 @@
 # The footprint test's matcher. The first file holds the allowed paths, one shell
 # glob per line relative to $HOME (the storage table's paths, the home-root
-# exceptions, the OS's noise); the second the paths a step created, relative to
-# $HOME. A path is matched when it is an allowed path, lies under one, or is a
+# exceptions, the OS's noise; `*` and `?` stay inside one folder, `**` spans
+# folders and `**/` may be none); the second the paths a step created, relative
+# to $HOME. A path is matched when it is an allowed path, lies under one, or is a
 # parent folder of one (~/.local made for ~/.local/share/mise). Prints every
 # unmatched path.
 # usage: awk -f footprint.awk allowed.txt created.txt
@@ -9,7 +10,9 @@ function regex(glob,    out, i, c) {
     out = ""
     for (i = 1; i <= length(glob); i++) {
         c = substr(glob, i, 1)
-        if (c == "*") out = out "[^/]*"
+        if (substr(glob, i, 3) == "**/") { out = out "(.*/)?"; i += 2 }
+        else if (substr(glob, i, 2) == "**") { out = out ".*"; i++ }
+        else if (c == "*") out = out "[^/]*"
         else if (c == "?") out = out "[^/]"
         else if (index("\\.^$+()[]{}|", c)) out = out "\\" c
         else out = out c
