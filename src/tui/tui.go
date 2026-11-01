@@ -9,6 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
+	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
@@ -31,6 +32,7 @@ type Deps struct {
 	Machines *machines.Service
 	Images   *images.Service
 	Secrets  *secrets.Service
+	Services *services.Service
 	Tailnet  *tailnet.Service
 	Remote   func(ctx context.Context, machine string, words []string) error
 	Describe func(error) (message, hint string)
@@ -48,7 +50,7 @@ func Run(ctx context.Context, d Deps) error {
 		configscreen.New(ctx, d.Config, d.Describe, t),
 		storagescreen.New(ctx, d.Storage, d.Describe, t),
 		fleetscreen.New(ctx, fleetscreen.Deps{
-			Machines: d.Machines, Images: d.Images, Secrets: d.Secrets, Tailnet: d.Tailnet,
+			Machines: d.Machines, Images: d.Images, Secrets: d.Secrets, Services: d.Services, Tailnet: d.Tailnet,
 			Remote: d.Remote, Describe: d.Describe,
 		}, t),
 	})

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
+	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
@@ -142,8 +144,8 @@ func (f *fakeFleet) CheckCreate(_ context.Context, r machines.CreateRequest) (ma
 	return r, nil
 }
 
-func (f *fakeFleet) Create(_ context.Context, r machines.CreateRequest, _ func(machines.Step)) (machines.VM, error) {
-	return machines.VM{Name: r.Name, Host: "macbook"}, f.record("create " + r.Name)
+func (f *fakeFleet) Create(_ context.Context, r machines.CreateRequest, _ func(machines.Step)) (machines.Created, error) {
+	return machines.Created{VM: machines.VM{Name: r.Name, Host: "macbook"}}, f.record("create " + r.Name)
 }
 func (f *fakeFleet) Start(_ context.Context, name string) error { return f.record("start " + name) }
 func (f *fakeFleet) Stop(_ context.Context, name string) error  { return f.record("stop " + name) }
@@ -171,22 +173,35 @@ type fakeSecrets struct{}
 
 func (fakeSecrets) List(context.Context) (secrets.Report, error) { return secrets.Report{}, nil }
 
+type fakeServices struct{ released *[]string }
+
+func (fakeServices) List(context.Context, bool) (services.Fleet, error) {
+	return services.Fleet{Hosts: []services.HostView{{Name: "macbook", Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true}, Services: []services.View{
+		{VM: "api", GuestPort: 3000, HostPort: 40002, State: services.Published},
+		{VM: "api", GuestPort: 8081, HostPort: 40000, State: services.Waiting, Pinned: true, Profile: "expo"},
+	}}}}, nil
+}
+
+func (fakeServices) Pinned(t services.Target) bool { return t.Port == 8081 }
+
+func (f fakeServices) Release(_ context.Context, t services.Target, _ string, _ bool) (services.Lease, error) {
+	*f.released = append(*f.released, t.VM+":"+strconv.Itoa(t.Port))
+	return services.Lease{VM: t.VM, GuestPort: t.Port}, nil
+}
+
 type fakeTailnet struct{}
 
 func (fakeTailnet) Status(context.Context) (tailnet.Status, error) {
 	return tailnet.Status{State: catalog.StateOK, Connected: true}, nil
 }
-func (fakeTailnet) Up(context.Context) (tailnet.UpResult, error) { return tailnet.UpResult{}, nil }
-func (fakeTailnet) Down(context.Context) (tailnet.DownResult, error) {
-	return tailnet.DownResult{}, nil
-}
 
 type harness struct {
-	t      *testing.T
-	app    App
-	tools  *fakeTools
-	fleet  *fakeFleet
-	stored []string
+	t        *testing.T
+	app      App
+	tools    *fakeTools
+	fleet    *fakeFleet
+	stored   []string
+	released []string
 }
 
 func describe(err error) (message, hint string) { return err.Error(), "run station --help" }
@@ -202,7 +217,7 @@ func newHarness(t *testing.T) *harness {
 		configscreen.New(ctx, fakeConfig{}, describe, th),
 		storagescreen.New(ctx, fakeStorage{calls: &h.stored}, describe, th),
 		fleetscreen.New(ctx, fleetscreen.Deps{
-			Machines: h.fleet, Images: fakeImages{}, Secrets: fakeSecrets{}, Tailnet: fakeTailnet{},
+			Machines: h.fleet, Images: fakeImages{}, Secrets: fakeSecrets{}, Services: fakeServices{released: &h.released}, Tailnet: fakeTailnet{},
 			Remote:   func(_ context.Context, machine string, _ []string) error { return h.fleet.record("remote " + machine) },
 			Describe: describe,
 		}, th),
@@ -380,6 +395,26 @@ func TestFleetStartsALastingVMThroughExec(t *testing.T) {
 	h.finish(execs[0])
 	if got := strings.Join(h.fleet.calls, ","); got != "start linux-2" {
 		t.Fatalf("calls %q", got)
+	}
+}
+
+func TestFleetReleasesAServiceAndAsksFirstForAProfiles(t *testing.T) {
+	h := newHarness(t)
+	h.init()
+	h.press("5")
+	h.cursorTo("3000")
+	execs, _ := h.press("x")
+	if len(execs) != 1 {
+		t.Fatalf("x on an unpinned service ran %d actions", len(execs))
+	}
+	h.finish(execs[0])
+	h.cursorTo("8081")
+	if execs, _ := h.press("x"); len(execs) != 0 || h.app.screens[4].Focus() != kit.FocusModal {
+		t.Fatal("x on a profile's service released it without asking")
+	}
+	h.contains("Release api:8081?")
+	if got := strings.Join(h.released, ","); got != "api:3000" {
+		t.Fatalf("released %q", got)
 	}
 }
 

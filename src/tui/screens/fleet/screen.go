@@ -2,6 +2,7 @@ package fleetscreen
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -11,11 +12,13 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
+	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/present"
 	presentimages "github.com/jterrazz/studio-station/src/present/images"
 	presentmachines "github.com/jterrazz/studio-station/src/present/machines"
 	presentsecrets "github.com/jterrazz/studio-station/src/present/secrets"
+	presentservices "github.com/jterrazz/studio-station/src/present/services"
 	presenttailnet "github.com/jterrazz/studio-station/src/present/tailnet"
 	"github.com/jterrazz/studio-station/src/theme"
 	"github.com/jterrazz/studio-station/src/tui/kit"
@@ -27,7 +30,7 @@ type Machines interface {
 	Fleet(ctx context.Context, hereOnly bool) (machines.Fleet, error)
 	SSHBlocks(ctx context.Context, f machines.Fleet) error
 	CheckCreate(ctx context.Context, r machines.CreateRequest) (machines.CreateRequest, error)
-	Create(ctx context.Context, r machines.CreateRequest, progress func(machines.Step)) (machines.VM, error)
+	Create(ctx context.Context, r machines.CreateRequest, progress func(machines.Step)) (machines.Created, error)
 	Start(ctx context.Context, name string) error
 	Stop(ctx context.Context, name string) error
 	Delete(ctx context.Context, name string) (machines.DeleteReport, error)
@@ -46,10 +49,14 @@ type Secrets interface {
 	List(ctx context.Context) (secrets.Report, error)
 }
 
+type Services interface {
+	List(ctx context.Context, hereOnly bool) (services.Fleet, error)
+	Pinned(t services.Target) bool
+	Release(ctx context.Context, t services.Target, host string, yes bool) (services.Lease, error)
+}
+
 type Tailnet interface {
 	Status(ctx context.Context) (tailnet.Status, error)
-	Up(ctx context.Context) (tailnet.UpResult, error)
-	Down(ctx context.Context) (tailnet.DownResult, error)
 }
 
 type Remote func(ctx context.Context, machine string, words []string) error
@@ -58,6 +65,7 @@ type Deps struct {
 	Machines Machines
 	Images   Images
 	Secrets  Secrets
+	Services Services
 	Tailnet  Tailnet
 	Remote   Remote
 	Describe kit.Describe
@@ -95,8 +103,8 @@ func New(ctx context.Context, d Deps, th theme.Theme) Model {
 			kit.Bind("f", "forget", "f"),
 			kit.Bind("ctrl+r", "restart", "ctrl+r"),
 			kit.Bind("o", "unlock", "o"),
-			kit.Bind("t", "tailnet up/down", "t"),
 			kit.Bind("b", "build images", "b"),
+			kit.Bind("x", "release", "x"),
 			kit.FilterKey(),
 		},
 	}, th)
@@ -112,7 +120,7 @@ func (m Model) load() ([]kit.Group, kit.Status, error) {
 	if refreshErr := m.d.Machines.SSHBlocks(m.ctx, fleet); refreshErr != nil {
 		note = kit.Status{Mark: present.MarkDegraded, Text: "ssh config not refreshed: " + refreshErr.Error()}
 	}
-	groups := hostGroups(fleet)
+	groups := append(hostGroups(fleet), m.servicesGroup())
 	reports, err := m.d.Images.List(m.ctx)
 	groups = append(groups, m.section("Images", err, func() present.Document { return presentimages.List(reports, "").Doc }))
 	lent, err := m.d.Secrets.List(m.ctx)
@@ -152,6 +160,29 @@ func hostGroups(f machines.Fleet) []kit.Group {
 		groups = append(groups, g)
 	}
 	return groups
+}
+
+type Service struct {
+	Target services.Target
+}
+
+func (m Model) servicesGroup() kit.Group {
+	f, err := m.d.Services.List(m.ctx, true)
+	g := m.section("Services", err, func() present.Document { return presentservices.Fleet(f, "").Doc })
+	var targets []services.Target
+	for _, h := range f.Hosts {
+		for _, s := range h.Services {
+			targets = append(targets, services.Target{VM: s.VM, Port: s.GuestPort})
+		}
+	}
+	for i := range g.Rows {
+		cells := g.Rows[i].Row.Cells
+		if len(cells) < 2 || len(targets) == 0 || cells[0].Text != targets[0].VM || cells[1].Text != strconv.Itoa(targets[0].Port) {
+			continue
+		}
+		g.Rows[i].Data, targets = Service{Target: targets[0]}, targets[1:]
+	}
+	return g
 }
 
 func counts(rows []kit.Row) []present.Count {
@@ -220,11 +251,21 @@ func hint(text string) tea.Cmd { return kit.Say(kit.Status{Text: text}) }
 
 func (m *Model) action(pressed string) (tea.Cmd, bool) {
 	switch pressed {
-	case "n", "t", "b":
+	case "n", "b":
 		if m.list.Busy() || !m.list.Loaded() {
 			return nil, true
 		}
 		return m.fleetAction(pressed), true
+	case "x":
+		row, _ := m.list.Current()
+		svc, ok := row.Data.(Service)
+		if !ok {
+			return hint("release: on a service row"), true
+		}
+		if m.list.Busy() {
+			return nil, true
+		}
+		return m.release(svc.Target), true
 	case "s", "d", "f", "p", "ctrl+r", "o", "enter":
 	default:
 		return nil, false
@@ -245,8 +286,6 @@ func (m *Model) fleetAction(pressed string) tea.Cmd {
 	switch pressed {
 	case "n":
 		m.list, cmd = m.list.Open(kit.Form("Create a VM", m.createInputs(), nil, m.create))
-	case "t":
-		m.list, cmd = m.list.Act(m.toggleTailnet())
 	case "b":
 		m.list, cmd = m.list.Act(m.exec(func() (kit.Status, error) {
 			records, err := m.d.Images.Build(m.ctx, images.BuildRequest{}, nil)
@@ -316,6 +355,21 @@ func (m *Model) machineAction(pressed string, machine Machine) tea.Cmd {
 	return cmd
 }
 
+func (m *Model) release(t services.Target) tea.Cmd {
+	name := t.VM + ":" + strconv.Itoa(t.Port)
+	run := m.exec(func() (kit.Status, error) {
+		_, err := m.d.Services.Release(m.ctx, t, "", true)
+		return kit.Outcome("released", name, catalog.StateOK, ""), err
+	})
+	var cmd tea.Cmd
+	if m.d.Services.Pinned(t) {
+		m.list, cmd = m.list.Open(kit.Confirm("Release "+name+"? Its URL is in the VM's environment.", run))
+	} else {
+		m.list, cmd = m.list.Act(run)
+	}
+	return cmd
+}
+
 func (m Model) exec(action func() (kit.Status, error)) tea.Cmd { return kit.Exec(ID, action) }
 
 func (m Model) probe(name string) tea.Cmd {
@@ -323,23 +377,6 @@ func (m Model) probe(name string) tea.Cmd {
 		report, err := m.d.Machines.Probe(m.ctx, name)
 		return kit.ReadDone{Screen: ID, Title: name, Doc: presentmachines.Probe(report, "").Doc, Err: err}
 	}
-}
-
-func (m Model) toggleTailnet() tea.Cmd {
-	connected := false
-	for _, r := range m.list.Rows() {
-		if s, ok := r.Data.(tailnet.Status); ok {
-			connected = s.Connected
-		}
-	}
-	return m.exec(func() (kit.Status, error) {
-		if connected {
-			_, err := m.d.Tailnet.Down(m.ctx)
-			return kit.Outcome("disconnected", "the tailnet", catalog.StateOK, ""), err
-		}
-		_, err := m.d.Tailnet.Up(m.ctx)
-		return kit.Outcome("connected", "the tailnet", catalog.StateOK, ""), err
-	})
 }
 
 func (m Model) hosts() (here string, reachable []string) {
@@ -396,7 +433,7 @@ func (m Model) create(values map[string]string) tea.Cmd {
 		if err != nil {
 			return kit.Status{}, err
 		}
-		vm, err := m.d.Machines.Create(m.ctx, checked, nil)
-		return kit.Outcome("created", vm.Name, catalog.StateOK, "on "+vm.Host), err
+		created, err := m.d.Machines.Create(m.ctx, checked, nil)
+		return kit.Outcome("created", created.VM.Name, catalog.StateOK, "on "+created.VM.Host), err
 	})
 }
