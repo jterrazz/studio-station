@@ -22,3 +22,14 @@ runs:
       stdout: |
           0
           ●	docker	?	not sized within 10 s
+    - command: '--version >/dev/null; /usr/bin/jq -r --arg h "$HOME" ''.v, (.sizes[$h + "/.cache/go-build"].bytes)'' .cache/station/sizes.json'
+      exit: 0
+      stdout: |
+          1
+          2
+    - command: '--version >/dev/null; echo yy > .cache/go-build/b; STATION_MACHINE_KIND=linux "$STATION" storage --json | /usr/bin/jq ''.rows[] | select(.name == "go") | .cache_bytes'''
+      exit: 0
+      stdout: |
+          5
+    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" storage clean station > /dev/null; /bin/ls -A .cache/station'
+      exit: 0

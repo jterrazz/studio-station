@@ -145,7 +145,13 @@ func Rows(rows []storage.Row) []present.Row {
 
 func Row(r storage.Row) present.Row {
 	if r.Pending {
-		return present.Row{Mark: present.MarkPending, Cells: []present.Cell{{Text: r.Entry.Name, Tone: present.Strong}, {Text: ""}, {Text: "", Tone: present.Muted}}}
+		// invariant: a row the walk has not answered shows its last-known size,
+		// Muted, or nothing when it has none.
+		last := ""
+		if b := r.Bytes[catalog.LevelCache]; b > 0 {
+			last = present.Bytes(b)
+		}
+		return present.Row{Mark: present.MarkPending, Cells: []present.Cell{{Text: r.Entry.Name, Tone: present.Strong}, {Text: last, Tone: present.Muted}, {Text: "", Tone: present.Muted}}}
 	}
 	cells := []present.Cell{
 		{Text: r.Entry.Name, Tone: present.Strong},

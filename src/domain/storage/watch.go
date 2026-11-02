@@ -5,6 +5,7 @@ import (
 	"maps"
 	"path"
 	"slices"
+	"sync"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/probe"
@@ -47,6 +48,7 @@ type plan struct {
 
 type reading struct {
 	sizes     []int64
+	known     []int64
 	installed map[string]bool
 	docker    int64
 }
@@ -62,9 +64,13 @@ func (s *Service) Forget() { s.o.Pool.Forget(subject) }
 // the other caches together, and a row fills when its last root answers.
 func (s *Service) watch(ctx context.Context) <-chan Report {
 	p := s.plan()
-	frame := reading{sizes: make([]int64, len(p.roots)), docker: pending}
-	for i := range frame.sizes {
-		frame.sizes[i] = pending
+	frame := reading{sizes: make([]int64, len(p.roots)), known: make([]int64, len(p.roots)), docker: pending}
+	known := s.loadKnown()
+	for i, root := range p.roots {
+		frame.sizes[i], frame.known[i] = pending, pending
+		if k, ok := known[root]; ok {
+			frame.known[i] = k.Bytes
+		}
 	}
 	budget := s.o.Budget
 	if budget == 0 {
@@ -74,9 +80,17 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 		{
 			Key: subject + "/walk", Lane: probe.Walks, Budget: budget,
 			Partial: func(ctx context.Context, emit func(func(*reading))) func(*reading) {
+				var mu sync.Mutex
+				answered := slices.Repeat([]int64{Unknown}, len(p.roots))
 				s.h.FS.Sizes(ctx, p.roots, func(i int, bytes int64) {
+					mu.Lock()
+					answered[i] = bytes
+					mu.Unlock()
 					emit(func(r *reading) { r.sizes[i] = bytes })
 				})
+				mu.Lock()
+				defer mu.Unlock()
+				s.saveKnown(p.roots, answered)
 				return func(*reading) {}
 			},
 			Late: func(r *reading) {
@@ -108,7 +122,7 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 		},
 	}
 	readings := probe.Run(ctx, s.o.Pool, frame, jobs, func(r reading) reading {
-		return reading{sizes: slices.Clone(r.sizes), installed: maps.Clone(r.installed), docker: r.docker}
+		return reading{sizes: slices.Clone(r.sizes), known: r.known, installed: maps.Clone(r.installed), docker: r.docker}
 	})
 	out := make(chan Report)
 	go func() {
@@ -216,7 +230,7 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 		switch b := r.sizes[i]; b {
 		case pending:
 			waiting = true
-			return 0
+			return max(r.known[i], 0)
 		case Unknown:
 			unknown = true
 			return 0
