@@ -26,7 +26,9 @@ const (
 )
 
 type Inventory interface {
-	Installed(ctx context.Context) (map[string]bool, error)
+	// value: each call holds every tool answered so far, so a row's mark fills
+	// as soon as its own tool answers; the last call holds them all.
+	Installed(ctx context.Context, each func(map[string]bool))
 }
 
 type Options struct {
@@ -164,13 +166,28 @@ func (s *Service) find(name string) (Entry, error) {
 
 func (s *Service) installed(ctx context.Context) map[string]bool {
 	out := map[string]bool{}
-	if s.o.Inventory != nil {
-		if got, err := s.o.Inventory.Installed(ctx); err == nil {
-			out = got
-		}
-	}
+	s.eachInstalled(ctx, func(got map[string]bool) { out = got })
 	out[StationName] = true
 	return out
+}
+
+func (s *Service) eachInstalled(ctx context.Context, each func(map[string]bool)) {
+	if s.o.Inventory != nil {
+		s.o.Inventory.Installed(ctx, each)
+	}
+}
+
+func (s *Service) isInstalled(ctx context.Context, name string) bool {
+	ctx, stop := context.WithCancel(ctx)
+	defer stop()
+	var installed bool
+	s.eachInstalled(ctx, func(got map[string]bool) {
+		if v, ok := got[name]; ok {
+			installed = v
+			stop()
+		}
+	})
+	return installed
 }
 
 func (s *Service) List(ctx context.Context) (Report, error) {

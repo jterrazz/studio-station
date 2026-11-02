@@ -51,6 +51,7 @@ type reading struct {
 	sizes     []int64
 	known     []int64
 	installed map[string]bool
+	listed    bool
 	docker    int64
 }
 
@@ -62,7 +63,8 @@ func (s *Service) Forget() { s.o.Pool.Forget(subject) }
 
 // invariant: the frame is every placed entry whose declared paths exist, read
 // with a glob and a stat each; one walk then sizes every root of every row and
-// the other caches together, and a row fills when its last root answers.
+// the other caches together, and a row's size fills when its last root
+// answers, its mark when its own tool answers the inventory.
 func (s *Service) watch(ctx context.Context) <-chan Report {
 	p := s.plan()
 	frame := reading{sizes: make([]int64, len(p.roots)), known: make([]int64, len(p.roots)), docker: pending}
@@ -101,17 +103,19 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 		},
 		{
 			Key: subject + "/installed", Lane: probe.Inline,
-			Do: func(ctx context.Context) func(*reading) {
-				installed := s.installed(ctx)
-				return func(r *reading) { r.installed = installed }
+			Partial: func(ctx context.Context, emit func(func(*reading))) func(*reading) {
+				s.eachInstalled(ctx, func(installed map[string]bool) {
+					emit(func(r *reading) { r.installed = installed })
+				})
+				return func(r *reading) { r.listed = true }
 			},
-			Late: func(r *reading) { r.installed = map[string]bool{StationName: true} },
+			Late: func(r *reading) { r.listed = true },
 		},
 		{
 			Key: subject + "/docker", Lane: probe.Inline,
 			Do: func(ctx context.Context) func(*reading) {
 				bytes := int64(0)
-				if s.needsDocker(p) && s.installed(ctx)[dockerEntry(p)] {
+				if name := dockerEntry(p); name != "" && s.isInstalled(ctx, name) {
 					bytes = s.dockerBytes(ctx)
 				}
 				return func(r *reading) { r.docker = bytes }
@@ -120,7 +124,7 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 		},
 	}
 	readings := probe.Run(ctx, s.o.Pool, frame, jobs, func(r reading) reading {
-		return reading{sizes: slices.Clone(r.sizes), known: r.known, installed: maps.Clone(r.installed), docker: r.docker}
+		return reading{sizes: slices.Clone(r.sizes), known: r.known, installed: maps.Clone(r.installed), listed: r.listed, docker: r.docker}
 	})
 	out := make(chan Report)
 	go func() {
@@ -135,8 +139,6 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 	}()
 	return out
 }
-
-func (s *Service) needsDocker(p plan) bool { return dockerEntry(p) != "" }
 
 func dockerEntry(p plan) string {
 	for _, e := range p.entries {
@@ -222,7 +224,9 @@ func (s *Service) assemble(p plan, r reading) Report {
 func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 	e := ep.entry
 	installed := r.installed[e.Name] || e.Name == StationName
-	waiting := r.installed == nil
+	_, answered := r.installed[e.Name]
+	marked := r.listed || answered || e.Name == StationName
+	waiting := false
 	var within time.Duration
 	value := func(i int) int64 {
 		switch b := r.sizes[i]; b {
@@ -268,11 +272,17 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 		row.State = catalog.StateDegraded
 	case installed:
 		row.State = catalog.StateOK
+	case !marked:
+		row.State = catalog.StatePending
 	default:
 		row.State = catalog.StateAbsent
 	}
 	if within > 0 && !waiting {
-		return s.unknown(e, installed, within), true
+		unknown := s.unknown(e, installed, within)
+		if !marked {
+			unknown.State = catalog.StatePending
+		}
+		return unknown, true
 	}
 	if waiting {
 		row.Pending = true

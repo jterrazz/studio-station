@@ -75,14 +75,14 @@ func (m machine) toolFiles() map[catalog.ToolFile]string {
 
 type inventory struct{ tools *tools.Service }
 
-func (i inventory) Installed(ctx context.Context) (map[string]bool, error) {
-	reports, err := i.tools.Inventory(ctx)
-	if err != nil {
-		return nil, err
+func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
+	for reports := range i.tools.Watch(ctx) {
+		out := make(map[string]bool, len(reports))
+		for _, r := range reports {
+			if !r.Pending {
+				out[r.Tool.Name] = r.State == catalog.StateOK || r.State == catalog.StateDegraded
+			}
+		}
+		each(out)
 	}
-	out := make(map[string]bool, len(reports))
-	for _, r := range reports {
-		out[r.Tool.Name] = r.State == catalog.StateOK || r.State == catalog.StateDegraded
-	}
-	return out, nil
 }
