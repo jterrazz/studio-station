@@ -9,6 +9,10 @@
 #   send KEYS   type KEYS; \r, \x1b and \xNN escapes are keys
 #   screen      print the screen's text, each line's trailing blanks and the blank
 #               bottom lines trimmed
+#   scrollback  wait for COMMAND to exit, then print the history above the screen and
+#               the screen, as tmux keeps them: a line scrolled off the top joins the
+#               history, and so does the whole screen when it is cleared from its
+#               first cell (tmux's scroll-on-clear, on by default)
 # Then it waits for COMMAND to exit and exits with its code. A wait that times out
 # prints the screen on stderr and exits 124.
 # usage: terminal [--size COLSxROWS] COMMAND [ARG...]
@@ -32,6 +36,7 @@ class Screen:
     def __init__(self, cols, rows):
         self.cols, self.rows = max(cols, 80), max(rows, 24)
         self.main = self.blank()
+        self.history = []
         self.alt = None
         self.cells = self.main
         self.x = self.y = 0
@@ -46,10 +51,23 @@ class Screen:
         return [[" "] * self.cols for _ in range(self.rows)]
 
     def text(self):
-        lines = ["".join(c for c in row if c is not None).rstrip() for row in self.cells]
+        lines = [self.line(row) for row in self.cells]
         while lines and not lines[-1]:
             lines.pop()
         return "\n".join(lines)
+
+    def line(self, row):
+        return "".join(c for c in row if c is not None).rstrip()
+
+    def scrollback(self):
+        return "\n".join(self.history + [self.text()])
+
+    def keep(self):
+        if self.cells is self.main:
+            lines = [self.line(row) for row in self.cells]
+            while lines and not lines[-1]:
+                lines.pop()
+            self.history += lines
 
     def feed(self, data):
         for ch in data:
@@ -136,6 +154,8 @@ class Screen:
 
     def scroll(self, n):
         region = self.cells[self.top : self.bottom + 1]
+        if n > 0 and self.top == 0 and self.cells is self.main:
+            self.history += [self.line(row) for row in region[:n]]
         if n > 0:
             region = region[n:] + [[" "] * self.cols for _ in range(min(n, len(region)))]
         else:
@@ -179,6 +199,8 @@ class Screen:
             self.y, self.x = min(arg(0, 1) - 1, self.rows - 1), min(arg(1, 1) - 1, self.cols - 1)
         elif final == "J":
             mode = arg(0, 0)
+            if mode == 2 or (mode == 0 and self.x == 0 and self.y == 0):
+                self.keep()
             if mode == 0:
                 self.erase(self.y, self.x, self.cols)
                 for y in range(self.y + 1, self.rows):
@@ -330,6 +352,10 @@ def main():
         elif verb == "screen":
             pump(0.2)
             print(screen.text())
+        elif verb == "scrollback":
+            wait(lambda: status is not None, "the command never exited")
+            pump(0.2)
+            print(screen.scrollback())
         elif verb:
             # invariant: an unscripted step is refused with exit 97, as every stub refuses one.
             sys.stderr.write("terminal: unknown step " + repr(line) + "\n")

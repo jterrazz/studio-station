@@ -25,11 +25,12 @@ func (w *Writer) Live(answers <-chan present.Answer) error {
 		got   bool
 		drawn int
 	)
+	// invariant: the region is erased line by line, never by erasing the screen
+	// below: once a clipped frame's top is the screen's first cell, that erase
+	// clears the whole screen, and tmux's scroll-on-clear keeps every such screen
+	// in its history.
 	erase := func() string {
-		if drawn == 0 {
-			return ""
-		}
-		return "\r" + ansi.CursorUp(drawn) + ansi.EraseScreenBelow
+		return "\r" + strings.Repeat(ansi.CUU1+ansi.EraseEntireLine, drawn)
 	}
 	for a := range answers {
 		last, got = a, true
@@ -40,8 +41,8 @@ func (w *Writer) Live(answers <-chan present.Answer) error {
 		}
 		drawn = len(lines)
 	}
-	if e := erase(); e != "" {
-		if _, err := io.WriteString(out, e); err != nil {
+	if drawn > 0 {
+		if _, err := io.WriteString(out, erase()); err != nil {
 			return err
 		}
 	}
