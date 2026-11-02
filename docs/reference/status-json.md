@@ -32,7 +32,7 @@ The top-level keys, in order:
 
 A check is `{"name": "filevault", "state": "ok", "value": "on", "detail": ""}`. `workspace.docker` is `{state, containers, images, volumes, dangling_bytes, total_bytes}`.
 
-`environment.security` and `environment.updates`, `daemons` and `gateways` are macOS-only: they are `[]` on a Linux machine. The `setup.steps` of a host are `name`, `zshrc`, `layout` and `tools` (`degraded` while the App Store app's [CLI wrapper](machines.md#the-tailnet) is due); a machine that is not a host leaves out `name`, `layout` and `tools`.
+The `macos` update reads the list the background check wrote to `/Library/Preferences/com.apple.SoftwareUpdate.plist` (`<n> pending` or `up to date`, detail `checked <age> ago`); `softwareupdate -l` runs only when that list is missing or older than 7 days. `environment.security` and `environment.updates`, `daemons` and `gateways` are macOS-only: they are `[]` on a Linux machine. The `setup.steps` of a host are `name`, `zshrc`, `layout` and `tools` (`degraded` while the App Store app's [CLI wrapper](machines.md#the-tailnet) is due); a machine that is not a host leaves out `name`, `layout` and `tools`.
 
 `remote-login` and `encrypted-dns` are read from the state of the `sshd` and `dns` config items, so `status` and `station config` cannot disagree about them. A machine where those items are not placed has no such row.
 
@@ -46,7 +46,7 @@ Arrays are never `null`: an empty one is `[]`. The only `null` is `machine.name`
 
 Numbers are JSON numbers, sizes are `*_bytes`, `generated_at` is RFC 3339 in UTC, and a dependency whose scan outlived its budget reports `outdated: -1`.
 
-Every probe runs under its own deadline, all at once: 2 s by default, 10 s for `brew outdated` and `softwareupdate -l`, 5 s per repository and 20 s overall for the dependency scan. A probe past its budget answers `unknown`, so the command is bounded by about 20 s on a Mac and finishes well under 6 s where every tool is missing.
+Every probe runs under its own deadline, counted from its start: 2 s by default, 5 s for `gh auth status`, 10 s for `brew outdated` and `softwareupdate -l`, 5 s per repository and 20 s overall for the dependency scan. A probe past its budget answers `unknown`, value `?`, detail `no answer in <budget>`, so the command is bounded by about 20 s on a Mac and finishes well under 6 s where every tool is missing.
 
 No kept secret reaches the document.
 

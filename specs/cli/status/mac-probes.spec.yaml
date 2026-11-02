@@ -43,3 +43,17 @@ runs:
           ○	ai.jterrazz.gone	not loaded
           ●	ai.jterrazz.x	running · pid 12
           ✗	ai.jterrazz.y	idle · last exit 1
+    - command: '--version >/dev/null; /usr/bin/grep -q "^softwareupdate -l$" .calls && echo ran'
+      exit: 0
+      stdout: |
+          ran
+    - command: '--version >/dev/null; /bin/rm .calls; /bin/mkdir -p root/Library/Preferences && : > root/Library/Preferences/com.apple.SoftwareUpdate.plist'
+      exit: 0
+    - command: 'status | /usr/bin/grep "macos"'
+      exit: 0
+      stdout: |
+          ◐	macos	2 pending	checked 1h ago
+    - command: '--version >/dev/null; /bin/cat .calls 2>/dev/null | /usr/bin/grep -c softwareupdate'
+      exit: 1
+      stdout: |
+          0

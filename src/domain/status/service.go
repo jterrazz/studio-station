@@ -18,6 +18,7 @@ import (
 
 type Options struct {
 	Pool                     *schedule.Pool
+	Root                     string
 	Here                     catalog.MachineKind
 	OpenClawPort, HermesPort int
 	Version, Commit          string
