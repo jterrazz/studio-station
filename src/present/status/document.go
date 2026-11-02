@@ -27,10 +27,15 @@ func Snapshot(s status.Snapshot, context string) present.Answer {
 	if len(s.Gateways) > 0 {
 		blocks = append(blocks, section("Gateways", checkRows(s.Gateways)))
 	}
-	blocks = append(blocks,
-		present.Section{Title: "Tools", Counts: presenttools.Counts(s.Tools), Blocks: []present.Block{present.Table{Rows: presenttools.Rows(notOK(s.Tools))}}},
-		present.Section{Title: "Config", Counts: presentconfig.Counts(s.Config), Blocks: []present.Block{present.Table{Rows: presentconfig.Rows(notOKConfig(s.Config))}}},
-	)
+	toolsPart := present.Section{Title: "Tools", Counts: presenttools.Counts(s.Tools), Blocks: []present.Block{present.Table{Rows: presenttools.Rows(notOK(s.Tools))}}}
+	if s.ToolsPending {
+		toolsPart = section("Tools", []present.Row{pending("catalogue")})
+	}
+	configPart := present.Section{Title: "Config", Counts: presentconfig.Counts(s.Config), Blocks: []present.Block{present.Table{Rows: presentconfig.Rows(notOKConfig(s.Config))}}}
+	if s.ConfigPending {
+		configPart = section("Config", []present.Row{pending("items")})
+	}
+	blocks = append(blocks, toolsPart, configPart)
 	return present.Answer{
 		Doc: present.Document{
 			Command: "station status",
@@ -74,9 +79,17 @@ func row(mark present.Mark, name, value, detail string) present.Row {
 	}}
 }
 
+// invariant: a pending row says only its name: its value is the probe's, and
+// the probe has not answered.
+func pending(name string) present.Row { return row(present.MarkPending, name, "", "") }
+
 func checkRows(checks []status.Check) []present.Row {
 	rows := make([]present.Row, 0, len(checks))
 	for _, c := range checks {
+		if c.State == catalog.StatePending {
+			rows = append(rows, pending(strings.ReplaceAll(c.Name, "-", " ")))
+			continue
+		}
 		value := c.Value
 		if value == "" && c.State == catalog.StateUnknown {
 			value = "unknown"
@@ -100,6 +113,9 @@ func machineRows(s status.Snapshot) []present.Row {
 		name = row(present.MarkAbsent, "name", present.Unregistered, facts)
 	}
 	rows := []present.Row{name}
+	if s.System.Pending {
+		rows = append(rows, pending("uptime"))
+	}
 	if s.System.Uptime != "" {
 		detail := ""
 		if s.System.Battery != "" {
@@ -108,13 +124,18 @@ func machineRows(s status.Snapshot) []present.Row {
 		rows = append(rows, row(present.MarkOK, "uptime", s.System.Uptime, detail))
 	}
 	rows = append(rows, setupRow(s.Setup))
-	if d := s.Station.Daemon; d.Value != "" {
+	if d := s.Station.Daemon; d.State == catalog.StatePending {
+		rows = append(rows, pending("daemon"))
+	} else if d.Value != "" {
 		rows = append(rows, row(present.MarkOf(d.State), "daemon", d.Value, d.Detail))
 	}
 	return rows
 }
 
 func setupRow(s status.Setup) present.Row {
+	if s.State == catalog.StatePending {
+		return pending("setup")
+	}
 	for _, step := range s.Steps {
 		if step.State != catalog.StateOK {
 			return row(present.MarkOf(s.State), "setup", step.Name, "station setup")
@@ -130,16 +151,30 @@ func environmentRows(s status.Snapshot) []present.Row {
 	rows := checkRows(s.Environment.Network)
 	rows = append(rows, checkRows(s.Environment.Security)...)
 	rows = append(rows, checkRows(s.Environment.Updates)...)
+	if s.Tailnet.State == catalog.StatePending {
+		return append(rows, pending("tailnet"))
+	}
 	return append(rows, presenttailnet.Summary(s.Tailnet))
 }
 
 func workspaceRows(w status.Workspace) []present.Row {
 	rows := make([]present.Row, 0, 4+len(w.Strays))
-	rows = append(rows, reposRow(w.Repositories), depsRow(w.Dependencies), dockerRow(w.Docker), diskRow(w.Disk))
+	rows = append(rows,
+		pendingOr(w.ReposPending, "repos", reposRow(w.Repositories)),
+		pendingOr(w.DepsPending, "deps", depsRow(w.Dependencies)),
+		pendingOr(w.Docker.State == catalog.StatePending, "docker", dockerRow(w.Docker)),
+		diskRow(w.Disk, w.DiskPending))
 	for _, st := range w.Strays {
 		rows = append(rows, row(present.MarkDegraded, st.Name, st.Path, present.Bytes(st.Bytes)+" · "+st.Repair))
 	}
 	return rows
+}
+
+func pendingOr(waiting bool, name string, answered present.Row) present.Row {
+	if waiting {
+		return pending(name)
+	}
+	return answered
 }
 
 func reposRow(repos []status.Repository) present.Row {
@@ -189,17 +224,24 @@ func dockerRow(d status.Docker) present.Row {
 		return row(present.MarkAbsent, "docker", "not installed", "station tools install docker")
 	case catalog.StateDegraded:
 		return row(present.MarkDegraded, "docker", "not running", "")
-	case catalog.StateBroken, catalog.StateUnknown:
+	case catalog.StateBroken, catalog.StateUnknown, catalog.StatePending:
 	}
 	return row(present.MarkDegraded, "docker", "unknown", "")
 }
 
-func diskRow(disk []status.Disk) present.Row {
+func diskRow(disk []status.Disk, waiting bool) present.Row {
 	var total int64
 	for _, d := range disk {
 		if d.Level == catalog.LevelCache {
 			total += d.Bytes
 		}
+	}
+	if waiting {
+		last := ""
+		if total > 0 {
+			last = present.Bytes(total)
+		}
+		return present.Row{Mark: present.MarkPending, Cells: []present.Cell{{Text: "disk", Tone: present.Strong}, {Text: last, Tone: present.Muted}, {Text: "", Tone: present.Muted}}}
 	}
 	if total == 0 {
 		return row(present.MarkOK, "disk", "no caches", "")

@@ -16,6 +16,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli"
 	"github.com/jterrazz/studio-station/src/cli/kit"
+	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/domain/remote"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/fail"
@@ -103,6 +104,13 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	return int(fail.CodeOf(kit.Translate(err, "")))
 }
 
+// value: commands 16 at a time (each is its own process; status starts ~70),
+// walks one at a time (one walk is eight workers, the measured knee).
+const (
+	commandLane = 16
+	walkLane    = 1
+)
+
 func widthOf(f *os.File, isTerminal bool) int {
 	if !isTerminal {
 		return 0
@@ -148,6 +156,7 @@ func withToolBins(env []string) []string {
 }
 
 type machine struct {
+	pool    *probe.Pool
 	host    system.Host
 	vars    map[string]string
 	kind    catalog.MachineKind
@@ -182,6 +191,7 @@ func resolve(h system.Host, vars map[string]string) machine {
 	store := settings.NewStore(h.FS, paths)
 	current, _ := store.Load()
 	return machine{
+		pool:    probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
 		host:    h,
 		vars:    vars,
 		kind:    kind,

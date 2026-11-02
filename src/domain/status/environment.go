@@ -1,38 +1,12 @@
 package status
 
 import (
-	"context"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 )
-
-func (s *Service) environment(ctx context.Context) Environment {
-	var (
-		env Environment
-		wg  sync.WaitGroup
-	)
-	run := func(fn func()) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			fn()
-		}()
-	}
-	run(func() { env.Network = s.probes(ctx, s.networkProbes()) })
-	if s.mac() {
-		run(func() { env.Security = s.probes(ctx, securityProbes()) })
-		run(func() { env.Updates = s.probes(ctx, updateProbes()) })
-		run(func() {
-			env.Ports = listeningPorts(s.ask(ctx, cmd("lsof", "-iTCP", "-sTCP:LISTEN", "-P", "-n", "-Fpcn"), defaultBudget))
-		})
-	}
-	wg.Wait()
-	return env
-}
 
 func (s *Service) networkProbes() []probe {
 	if !s.mac() {
@@ -56,13 +30,6 @@ func securityProbes() []probe {
 		{name: "firewall", cmd: cmd("socketfilterfw", "--getglobalstate"), interpret: onWhen("enabled")},
 		{name: "sip", cmd: cmd("csrutil", "status"), interpret: onWhen("enabled")},
 		{name: "gatekeeper", cmd: cmd("spctl", "--status"), interpret: onWhen("enabled")},
-	}
-}
-
-func updateProbes() []probe {
-	return []probe{
-		{name: "macos", cmd: cmd("softwareupdate", "-l"), budget: updateBudget, interpret: macUpdates},
-		{name: "brew", cmd: cmd("brew", "outdated", "--quiet"), budget: updateBudget, interpret: brewOutdated},
 	}
 }
 
@@ -158,7 +125,7 @@ func onWhen(needle string) func(string, reply) Check {
 }
 
 // outside: softwareupdate prints its verdict on stderr, and lists each update as `* Label: ...`.
-func macUpdates(name string, r reply) Check {
+func softwareUpdate(name string, r reply) Check {
 	if !r.ok() {
 		return Check{Name: name, State: catalog.StateUnknown}
 	}

@@ -3,16 +3,27 @@ package tools_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
+type stillClock struct{}
+
+func (stillClock) Now() time.Time { return time.Unix(0, 0) }
+
+func (stillClock) Sleep(ctx context.Context, _ time.Duration) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+
 func reportOf(t *testing.T, tool catalog.Tool, run *systemtest.Runner, files *systemtest.FS) tools.Report {
 	h := systemtest.Host(run, files, systemtest.Env{HomeDir: "/home/u", OS: "darwin"}, systemtest.NewNet(), &systemtest.Clock{})
-	reports, err := tools.New(h, []catalog.Tool{tool}, nil, tools.Options{Here: catalog.Host}).Inventory(context.Background())
+	reports, err := tools.New(h, []catalog.Tool{tool}, nil, tools.Options{Here: catalog.Host, Pool: probe.NewPool(context.Background(), stillClock{}, 16, 1)}).Inventory(context.Background())
 	if err != nil || len(reports) != 1 {
 		t.Fatalf("inventory: %v %v", reports, err)
 	}

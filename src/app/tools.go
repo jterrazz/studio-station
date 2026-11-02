@@ -31,6 +31,7 @@ func toolsCommand(env kit.Env, m machine) *cobra.Command {
 func toolsService(env kit.Env, m machine) *tools.Service {
 	ask, _ := env.Prompt.(prompt.Asker)
 	return tools.New(m.host, catalog.Tools, configurer{config: configService(m), ask: ask}, tools.Options{
+		Pool:        m.pool,
 		Here:        m.kind,
 		MiseShims:   filepath.Join(m.or("MISE_DATA_DIR", filepath.Join(m.host.Env.Home(), ".local", "share", "mise")), "shims"),
 		Path:        m.vars["PATH"],

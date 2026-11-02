@@ -3,10 +3,10 @@ package status
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	schedule "github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -15,6 +15,8 @@ const (
 	updateBudget  = 10 * time.Second
 	repoBudget    = 5 * time.Second
 	scanBudget    = 20 * time.Second
+	ghBudget      = 5 * time.Second
+	commandLane   = 16
 )
 
 type reply struct {
@@ -33,17 +35,31 @@ type probe struct {
 	name      string
 	cmd       system.Cmd
 	budget    time.Duration
+	shared    bool
 	interpret func(name string, r reply) Check
+	read      func(ctx context.Context, budget time.Duration) Check
 }
 
 func (s *Service) ask(ctx context.Context, c system.Cmd, budget time.Duration) reply {
+	return s.asked(ctx, c, budget, false)
+}
+
+// invariant: a shared command (gh auth status, read by config too) runs once per
+// run of the pool, so one reading never asks the network twice.
+func (s *Service) asked(ctx context.Context, c system.Cmd, budget time.Duration, shared bool) reply {
 	if budget <= 0 {
 		budget = defaultBudget
 	}
 	ctx, cancel := context.WithTimeout(ctx, budget)
 	defer cancel()
 	c.Timeout = budget
-	out, err := s.h.Run.Output(ctx, c)
+	var out system.Output
+	var err error
+	if shared {
+		out, err = schedule.Output(ctx, s.o.Pool, s.h.Run, c)
+	} else {
+		out, err = s.h.Run.Output(ctx, c)
+	}
 	switch {
 	case errors.Is(err, system.ErrTimeout), errors.Is(ctx.Err(), context.DeadlineExceeded):
 		return reply{late: true}
@@ -61,25 +77,18 @@ func (s *Service) probe(ctx context.Context, p probe) Check {
 	if budget <= 0 {
 		budget = defaultBudget
 	}
-	r := s.ask(ctx, p.cmd, budget)
+	if p.read != nil {
+		return p.read(ctx, budget)
+	}
+	r := s.asked(ctx, p.cmd, budget, p.shared)
 	if r.late {
-		return Check{Name: p.name, State: catalog.StateUnknown, Detail: "no answer in " + budget.String()}
+		return late(p.name, budget)
 	}
 	return p.interpret(p.name, r)
 }
 
-func (s *Service) probes(ctx context.Context, table []probe) []Check {
-	checks := make([]Check, len(table))
-	var wg sync.WaitGroup
-	for i, p := range table {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			checks[i] = s.probe(ctx, p)
-		}()
-	}
-	wg.Wait()
-	return checks
+func late(name string, budget time.Duration) Check {
+	return Check{Name: name, State: catalog.StateUnknown, Value: "?", Detail: "no answer in " + budget.String()}
 }
 
 func cmd(name string, args ...string) system.Cmd { return system.Cmd{Name: name, Args: args} }

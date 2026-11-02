@@ -4,10 +4,12 @@ import (
 	"context"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/system"
 )
 
 func (s *Service) checkGitHubLogin(ctx context.Context) (state catalog.State, detail string) {
-	if _, ok := s.probe(ctx, "gh", "auth", "status"); ok {
+	out, err := s.read(ctx, system.Cmd{Name: "gh", Args: []string{"auth", "status"}, Timeout: probeBudget})
+	if err == nil && out.ExitCode == 0 {
 		return catalog.StateOK, "authenticated"
 	}
 	return catalog.StateAbsent, ""

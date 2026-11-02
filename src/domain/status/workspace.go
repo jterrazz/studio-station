@@ -17,28 +17,6 @@ import (
 // machine with deep dependency trees.
 const repoDepth = 2
 
-func (s *Service) workspace(ctx context.Context) Workspace {
-	var (
-		ws Workspace
-		wg sync.WaitGroup
-	)
-	run := func(fn func()) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			fn()
-		}()
-	}
-	root := path.Join(s.h.Env.Home(), "Developer")
-	paths := s.findRepos(root, 0)
-	run(func() { ws.Repositories = s.repositories(ctx, root, paths) })
-	run(func() { ws.Dependencies = s.dependencies(ctx, root, paths) })
-	run(func() { ws.Docker = s.docker(ctx) })
-	run(func() { ws.Disk, ws.Strays = s.disk(ctx) })
-	wg.Wait()
-	return ws
-}
-
 func (s *Service) findRepos(dir string, depth int) []string {
 	if depth > repoDepth {
 		return nil
@@ -243,15 +221,8 @@ func dockerSize(s string) int64 {
 	return 0
 }
 
-func (s *Service) disk(ctx context.Context) ([]Disk, []storage.StrayReport) {
+func disk(report storage.Report) ([]Disk, []storage.StrayReport) {
 	disk := []Disk{}
-	if s.deps.Storage == nil {
-		return disk, []storage.StrayReport{}
-	}
-	report, err := s.deps.Storage.List(ctx)
-	if err != nil {
-		return disk, []storage.StrayReport{}
-	}
 	for _, r := range report.Rows {
 		for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData} {
 			if b := r.Bytes[level]; b > 0 {

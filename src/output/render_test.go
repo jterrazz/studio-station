@@ -19,7 +19,7 @@ import (
 var update = flag.Bool("update", false, "rewrite the goldens from the renderer")
 
 func TestTheTTYRendererReproducesTheMockups(t *testing.T) {
-	for name, doc := range map[string]present.Document{"status": statusDocument(), "tools": toolsDocument()} {
+	for name, doc := range map[string]present.Document{"status": statusDocument(), "status.pending": pendingDocument(), "tools": toolsDocument()} {
 		t.Run(name, func(t *testing.T) {
 			// invariant: the dark-80 golden IS the SPEC mockup, so -update never rewrites it.
 			if got, want := ansi.Strip(output.TTYString(doc, 80, theme.New(true))), read(t, name+".dark80.golden"); got != want {
@@ -132,6 +132,30 @@ func statusDocument() present.Document {
 			),
 		},
 		Hints: []string{"station tools for the catalogue", "station config for the items"},
+	}
+}
+
+// value: the frame a live read draws first: each row a probe has not answered
+// says its name only, under the Muted pending mark.
+func pendingDocument() present.Document {
+	ok, pending := present.MarkOK, present.MarkPending
+	return present.Document{
+		Command: "station status",
+		Context: present.MachineContext("macbook", "host", true),
+		Blocks: []present.Block{
+			section("Machine", nil,
+				row(ok, name("name"), value("macbook"), detail("host · darwin arm64 · jterrazz · zsh")),
+				row(pending, name("uptime"), value(""), detail("")),
+			),
+			section("Environment", nil,
+				row(pending, name("local ip"), value(""), detail("")),
+				row(pending, name("public ip"), value(""), detail("")),
+				row(pending, name("vpn"), value(""), detail("")),
+				row(pending, name("filevault"), value(""), detail("")),
+				row(pending, name("brew"), value(""), detail("")),
+				row(pending, name("tailnet"), value(""), detail("")),
+			),
+		},
 	}
 }
 

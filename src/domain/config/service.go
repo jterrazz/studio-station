@@ -7,8 +7,10 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	schedule "github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -19,6 +21,7 @@ const (
 )
 
 type Options struct {
+	Pool     *schedule.Pool
 	Here     catalog.MachineKind
 	Paths    settings.Paths
 	Defaults map[string]map[string]string
@@ -84,18 +87,29 @@ func (s *Service) Placed() []catalog.ConfigItem {
 
 func (s *Service) List(ctx context.Context) ([]Report, error) {
 	placed := s.Placed()
-	reports := make([]Report, 0, len(placed))
-	for _, it := range placed {
+	reports := make([]Report, len(placed))
+	for i, it := range placed {
 		h, err := s.handler(it)
 		if err != nil {
 			return nil, err
 		}
-		state, detail := catalog.StateAbsent, "run once"
-		if h.check != nil {
-			state, detail = h.check(ctx)
+		reports[i] = Report{Item: it, State: catalog.StateAbsent, Detail: "run once", Applies: s.applies(it)}
+		if h.check == nil {
+			continue
 		}
-		reports = append(reports, Report{Item: it, State: state, Detail: detail, Applies: s.applies(it)})
+		reports[i].State = catalog.StatePending
 	}
+	// invariant: every item's check is a read of its own, so they run at once and
+	// the list costs its slowest check, not their sum.
+	var wg sync.WaitGroup
+	for i, it := range placed {
+		if reports[i].State != catalog.StatePending {
+			continue
+		}
+		h, _ := s.handler(it)
+		wg.Go(func() { reports[i].State, reports[i].Detail = h.check(ctx) })
+	}
+	wg.Wait()
 	return reports, nil
 }
 

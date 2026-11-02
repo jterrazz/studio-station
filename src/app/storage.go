@@ -27,6 +27,7 @@ func storageCommand(env kit.Env, m machine) *cobra.Command {
 
 func (m machine) storage(env kit.Env) *storage.Service {
 	return storage.New(m.host, catalog.Tools, storage.Options{
+		Pool:      m.pool,
 		Here:      m.kind,
 		Expand:    m.expander(),
 		Files:     m.toolFiles(),

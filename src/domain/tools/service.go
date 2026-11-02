@@ -7,10 +7,14 @@ import (
 	"sort"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
+const commandLane = 16
+
 type Options struct {
+	Pool        *probe.Pool
 	Here        catalog.MachineKind
 	MiseShims   string
 	Path        string
@@ -42,6 +46,9 @@ func New(h system.Host, list []catalog.Tool, cfg Configurer, o Options) *Service
 	for _, t := range list {
 		byName[t.Name] = t
 	}
+	if o.Pool == nil {
+		o.Pool = probe.NewPool(context.Background(), h.Clock, commandLane, 1)
+	}
 	return &Service{h: h, tools: list, byName: byName, cfg: cfg, o: o, table: methods()}
 }
 
@@ -53,6 +60,7 @@ type Report struct {
 	Managed bool
 	Detail  string
 	Live    string
+	Pending bool
 }
 
 type Outcome struct {

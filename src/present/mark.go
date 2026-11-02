@@ -10,6 +10,9 @@ const (
 	MarkDegraded
 	MarkAbsent
 	MarkBroken
+	// value: a value whose probe has not answered; a tty and the TUI only, since
+	// pipe and JSON wait for every probe.
+	MarkPending
 )
 
 func (m Mark) Glyph() string {
@@ -22,6 +25,8 @@ func (m Mark) Glyph() string {
 		return "○"
 	case MarkBroken:
 		return "✗"
+	case MarkPending:
+		return "◌"
 	case NoMark:
 		return ""
 	}
@@ -38,6 +43,8 @@ func MarkOf(s catalog.State) Mark {
 		return MarkAbsent
 	case catalog.StateBroken:
 		return MarkBroken
+	case catalog.StatePending:
+		return MarkPending
 	}
 	return NoMark
 }

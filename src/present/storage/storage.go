@@ -144,6 +144,9 @@ func Rows(rows []storage.Row) []present.Row {
 }
 
 func Row(r storage.Row) present.Row {
+	if r.Pending {
+		return present.Row{Mark: present.MarkPending, Cells: []present.Cell{{Text: r.Entry.Name, Tone: present.Strong}, {Text: ""}, {Text: "", Tone: present.Muted}}}
+	}
 	cells := []present.Cell{
 		{Text: r.Entry.Name, Tone: present.Strong},
 		{Text: Size(r.Bytes[catalog.LevelCache])},

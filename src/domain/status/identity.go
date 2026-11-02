@@ -1,24 +1,21 @@
 package status
 
 import (
-	"context"
 	"path"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-func (s *Service) identity(ctx context.Context) []Check {
+func (s *Service) identityTable() []probe {
 	want, _ := s.deps.Store.Load()
-	table := []probe{
+	return []probe{
 		{name: "git-email", cmd: cmd("git", "config", "--global", "user.email"), interpret: gitValue(want.Email())},
 		{name: "git-name", cmd: cmd("git", "config", "--global", "user.name"), interpret: gitValue(want.Name())},
 		{name: "git-signing", cmd: cmd("git", "config", "--global", "commit.gpgsign"), interpret: gitSigning},
 		{name: "gpg-key", cmd: cmd("gpg", "--list-secret-keys", "--keyid-format", "long"), interpret: gpgKey},
-		{name: "github", cmd: cmd("gh", "auth", "status"), interpret: githubLogin},
+		{name: "github", cmd: cmd("gh", "auth", "status"), budget: ghBudget, shared: true, interpret: githubLogin},
 	}
-	checks := s.probes(ctx, table)
-	return append(checks, s.sshKey())
 }
 
 func (s *Service) sshKey() Check {

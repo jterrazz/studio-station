@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -19,6 +20,8 @@ const (
 	dockerDFBudget  = 5 * time.Second
 	quitBudget      = 2 * time.Second
 	sizeBudget      = 10 * time.Second
+	commandLane     = 16
+	walkLane        = 1
 	Unknown         = int64(-1)
 )
 
@@ -27,6 +30,7 @@ type Inventory interface {
 }
 
 type Options struct {
+	Pool      *probe.Pool
 	Here      catalog.MachineKind
 	Expand    Expander
 	Files     map[catalog.ToolFile]string
@@ -41,6 +45,9 @@ type Service struct {
 }
 
 func New(h system.Host, tools []catalog.Tool, o Options) *Service {
+	if o.Pool == nil {
+		o.Pool = probe.NewPool(context.Background(), h.Clock, commandLane, walkLane)
+	}
 	return &Service{h: h, tools: tools, o: o}
 }
 
@@ -73,6 +80,7 @@ type Row struct {
 	Install   int64
 	Paths     []PathReport
 	Strays    []StrayReport
+	Pending   bool
 }
 
 func (r Row) Total() int64 {
@@ -165,20 +173,10 @@ func (s *Service) installed(ctx context.Context) map[string]bool {
 }
 
 func (s *Service) List(ctx context.Context) (Report, error) {
-	installed := s.installed(ctx)
-	report := Report{Rows: []Row{}, Strays: []StrayReport{}}
-	for _, row := range s.measureAll(ctx, s.Placed(), installed) {
-		if row.Entry.Name != StationName && !row.Unknown && row.Total() == 0 {
-			continue
-		}
-		report.Rows = append(report.Rows, row)
-		report.Strays = append(report.Strays, row.Strays...)
-	}
-	report.Other = s.other()
-	return report, nil
+	return probe.Last(s.Watch(ctx)), ctx.Err()
 }
 
-func (s *Service) other() int64 {
+func (s *Service) otherRoots() []string {
 	var claimed []string
 	for _, e := range s.Placed() {
 		for _, p := range e.Storage.Paths {
@@ -192,7 +190,7 @@ func (s *Service) other() int64 {
 	if s.o.Here != catalog.Linux {
 		roots = append(roots, path.Join(s.o.Expand.Home, "Library", "Caches"))
 	}
-	var total int64
+	var out []string
 	for _, root := range roots {
 		entries, err := s.h.FS.ReadDir(root)
 		if err != nil {
@@ -202,13 +200,12 @@ func (s *Service) other() int64 {
 			if strings.HasPrefix(entry.Name(), "com.apple.") {
 				continue
 			}
-			full := path.Join(root, entry.Name())
-			if !claims(claimed, full) {
-				total += s.dirSize(full)
+			if full := path.Join(root, entry.Name()); !claims(claimed, full) {
+				out = append(out, full)
 			}
 		}
 	}
-	return total
+	return out
 }
 
 func claims(patterns []string, entry string) bool {
@@ -221,79 +218,6 @@ func claims(patterns []string, entry string) bool {
 		}
 	}
 	return false
-}
-
-// invariant: one slow tree (a simulator runtime, /opt/homebrew) never holds the list
-// past the budget: its row answers Unknown and the others keep their sizes.
-func (s *Service) measureAll(ctx context.Context, entries []Entry, installed map[string]bool) []Row {
-	budget := s.o.Budget
-	if budget == 0 {
-		budget = sizeBudget
-	}
-	ctx, cancel := context.WithTimeout(ctx, budget)
-	defer cancel()
-	done := make([]chan Row, len(entries))
-	for i, e := range entries {
-		done[i] = make(chan Row, 1)
-		go func() { done[i] <- s.measure(ctx, e, installed[e.Name]) }()
-	}
-	rows := make([]Row, len(entries))
-	for i, e := range entries {
-		select {
-		case rows[i] = <-done[i]:
-		case <-ctx.Done():
-			select {
-			case rows[i] = <-done[i]:
-			default:
-				rows[i] = s.unknown(e, installed[e.Name])
-			}
-		}
-	}
-	return rows
-}
-
-func (s *Service) unknown(e Entry, installed bool) Row {
-	row := Row{Entry: e, Installed: installed, Unknown: true, Bytes: map[catalog.Level]int64{}, Install: Unknown, Paths: []PathReport{}, Strays: []StrayReport{}, State: catalog.StateAbsent}
-	if installed {
-		row.State = catalog.StateOK
-	}
-	for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData, catalog.LevelConfig, catalog.LevelKept} {
-		row.Bytes[level] = Unknown
-	}
-	for _, p := range e.Storage.Paths {
-		if p.PlacedOn(s.o.Here) {
-			row.Paths = append(row.Paths, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: Unknown})
-		}
-	}
-	return row
-}
-
-func (s *Service) measure(ctx context.Context, e Entry, installed bool) Row {
-	row := Row{Entry: e, Installed: installed, Bytes: map[catalog.Level]int64{}, Paths: []PathReport{}, Strays: []StrayReport{}}
-	for _, p := range e.Storage.Paths {
-		if !p.PlacedOn(s.o.Here) {
-			continue
-		}
-		bytes := s.storedBytes(p)
-		row.Bytes[p.Level] += bytes
-		row.Paths = append(row.Paths, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: bytes})
-	}
-	if e.Storage.Size == catalog.SizeDockerDF && installed {
-		row.Bytes[catalog.LevelCache] += s.dockerBytes(ctx)
-	}
-	for _, p := range e.Storage.Installed {
-		row.Install += s.size(p)
-	}
-	row.Strays = s.strays(e)
-	switch {
-	case len(row.Strays) > 0:
-		row.State = catalog.StateDegraded
-	case installed:
-		row.State = catalog.StateOK
-	default:
-		row.State = catalog.StateAbsent
-	}
-	return row
 }
 
 func (s *Service) size(pattern string) int64 {
@@ -323,13 +247,16 @@ func (s *Service) strays(e Entry) []StrayReport {
 		if _, err := s.h.FS.Stat(abs); err != nil {
 			continue
 		}
-		repair := "station storage clean " + e.Name
-		if s.movable(st) || !s.Relocated(e.Storage) {
-			repair = "station setup"
-		}
-		out = append(out, StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: s.dirSize(abs), Repair: repair})
+		out = append(out, StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: s.dirSize(abs), Repair: s.repair(e, st)})
 	}
 	return out
+}
+
+func (s *Service) repair(e Entry, st catalog.Stray) string {
+	if s.movable(st) || !s.Relocated(e.Storage) {
+		return "station setup"
+	}
+	return "station storage clean " + e.Name
 }
 
 func (s *Service) movable(st catalog.Stray) bool {
@@ -623,6 +550,9 @@ func label(argv []string) string {
 
 func (s *Service) dockerBytes(ctx context.Context) int64 {
 	out, err := s.h.Run.Output(ctx, system.Cmd{Name: "docker", Args: []string{"system", "df", "--format", "{{.Size}}"}, Timeout: dockerDFBudget})
+	if errors.Is(err, system.ErrTimeout) || ctx.Err() != nil {
+		return Unknown
+	}
 	if err != nil || out.ExitCode != 0 {
 		return 0
 	}

@@ -275,7 +275,7 @@ func MarkStyle(t theme.Theme, m present.Mark) lipgloss.Style {
 		return t.Good
 	case present.MarkDegraded:
 		return t.Warn
-	case present.MarkAbsent:
+	case present.MarkAbsent, present.MarkPending:
 		return t.Muted
 	case present.MarkBroken:
 		return t.Bad

@@ -22,6 +22,7 @@ func statusService(env kit.Env, m machine) *status.Service {
 		Storage: m.storage(env),
 		Daemon:  m.hostDaemon(),
 	}, status.Options{
+		Pool:         m.pool,
 		Here:         m.kind,
 		OpenClawPort: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
 		HermesPort:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),

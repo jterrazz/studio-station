@@ -11,22 +11,39 @@ import (
 	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
+type realClock struct{}
+
+func (realClock) Now() time.Time { return time.Unix(0, 0) }
+
+func (realClock) Sleep(ctx context.Context, d time.Duration) error {
+	waited, cancel := context.WithTimeout(ctx, d)
+	defer cancel()
+	<-waited.Done()
+	return ctx.Err()
+}
+
 type slowFS struct {
 	*systemtest.FS
 	release chan struct{}
 }
 
 func (f slowFS) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
+	slow := -1
 	for i, p := range roots {
 		if p == "/h/slow/tree" {
-			select {
-			case <-f.release:
-			case <-ctx.Done():
-				each(i, -1)
-				continue
-			}
+			slow = i
+			continue
 		}
 		f.FS.Sizes(ctx, []string{p}, func(_ int, b int64) { each(i, b) })
+	}
+	if slow < 0 {
+		return
+	}
+	select {
+	case <-f.release:
+		f.FS.Sizes(ctx, roots[slow:slow+1], func(_ int, b int64) { each(slow, b) })
+	case <-ctx.Done():
+		each(slow, -1)
 	}
 }
 
@@ -39,7 +56,7 @@ func TestARowPastTheBudgetIsUnknownAndDelaysNoOtherRow(t *testing.T) {
 		{Name: "slow", Installs: catalog.HostOnly(catalog.Brew("slow")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/slow/*", Level: catalog.LevelCache}}}},
 		{Name: "fast", Installs: catalog.HostOnly(catalog.Brew("fast")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/fast/*", Level: catalog.LevelCache}}}},
 	}
-	s := New(system.Host{FS: fs}, tools, Options{Here: catalog.Host, Expand: Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
+	s := New(system.Host{FS: fs, Clock: realClock{}}, tools, Options{Here: catalog.Host, Expand: Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
 
 	waited, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

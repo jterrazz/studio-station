@@ -28,6 +28,7 @@ func configService(m machine) *config.Service {
 	// invariant: "dotfiles" is the embedded root, so Sub cannot fail.
 	files, _ := fs.Sub(catalog.DotfilesFS, "dotfiles")
 	return config.New(m.host, catalog.ConfigItems, files, m.store, config.Options{
+		Pool:     m.pool,
 		Here:     m.kind,
 		Paths:    m.paths,
 		Defaults: configDefaults(m),

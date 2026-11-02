@@ -91,6 +91,12 @@ func Use(t catalog.Tool) string {
 func Rows(reports []tools.Report) []present.Row {
 	rows := make([]present.Row, 0, len(reports))
 	for _, r := range reports {
+		if r.Pending {
+			rows = append(rows, present.Row{Mark: present.MarkPending, Cells: []present.Cell{
+				{Text: r.Tool.Name, Tone: present.Strong}, {Text: ""}, {Text: method(r), Tone: present.Muted}, {Text: "", Tone: present.Muted},
+			}})
+			continue
+		}
 		detail := r.Detail
 		switch {
 		case r.State == catalog.StateOK && detail == "":

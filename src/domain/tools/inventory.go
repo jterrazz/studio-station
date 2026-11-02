@@ -4,16 +4,21 @@ import (
 	"context"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-const DetailAppStore = "app-store"
+const (
+	DetailAppStore = "app-store"
+	subject        = "tools"
+)
 
 const (
 	inventoryBudget = 30 * time.Second
@@ -29,11 +34,71 @@ type listing struct {
 }
 
 func (s *Service) Inventory(ctx context.Context) ([]Report, error) {
-	return s.reports(ctx, s.Placed()), nil
+	return probe.Last(s.Watch(ctx)), ctx.Err()
+}
+
+func (s *Service) Watch(ctx context.Context) <-chan []Report {
+	return probe.Stream(ctx, s.o.Pool, subject, s.watch)
+}
+
+func (s *Service) Forget() { s.o.Pool.Forget(subject) }
+
+// invariant: the frame is the catalogue placed here, every row pending; one job
+// per method lists its manager once (shared by every reader of the run) and
+// fills that method's rows together.
+func (s *Service) watch(ctx context.Context) <-chan []Report {
+	list := s.Placed()
+	frame := make([]Report, len(list))
+	byMethod := map[catalog.Method][]int{}
+	var methods []catalog.Method
+	for i, t := range list {
+		m := s.install(t).Method()
+		frame[i] = Report{Tool: t, Method: m, State: catalog.StateUnknown, Pending: true}
+		if _, seen := byMethod[m]; !seen {
+			methods = append(methods, m)
+		}
+		byMethod[m] = append(byMethod[m], i)
+	}
+	jobs := make([]probe.Job[[]Report], 0, len(methods))
+	for _, m := range methods {
+		rows := byMethod[m]
+		jobs = append(jobs, probe.Job[[]Report]{
+			Key: subject + "/method/" + string(m), Budget: inventoryBudget + probeBudget + currencyBudget,
+			Do: func(ctx context.Context) func(*[]Report) {
+				group := make([]catalog.Tool, len(rows))
+				for k, i := range rows {
+					group[k] = list[i]
+				}
+				reports := s.reportsWith(ctx, group, s.sharedListings(ctx, group))
+				return func(out *[]Report) {
+					for k, i := range rows {
+						(*out)[i] = reports[k]
+					}
+				}
+			},
+			Late: func(out *[]Report) {
+				for _, i := range rows {
+					(*out)[i] = Report{Tool: list[i], Method: m, State: catalog.StateUnknown, Detail: "no answer in " + (inventoryBudget + probeBudget + currencyBudget).String()}
+				}
+			},
+		})
+	}
+	return probe.Run(ctx, s.o.Pool, frame, jobs, slices.Clone[[]Report])
+}
+
+func (s *Service) sharedListings(ctx context.Context, list []catalog.Tool) map[catalog.Method]listing {
+	out := map[catalog.Method]listing{}
+	for m := range s.needed(list) {
+		out[m] = probe.Share(ctx, s.o.Pool, subject+"/list/"+string(m), func(ctx context.Context) listing { return s.list(ctx, m) })
+	}
+	return out
 }
 
 func (s *Service) reports(ctx context.Context, list []catalog.Tool) []Report {
-	listings := s.listings(ctx, list)
+	return s.reportsWith(ctx, list, s.listings(ctx, list))
+}
+
+func (s *Service) reportsWith(ctx context.Context, list []catalog.Tool, listings map[catalog.Method]listing) []Report {
 	out := make([]Report, len(list))
 	var wg sync.WaitGroup
 	for i, t := range list {
@@ -44,7 +109,7 @@ func (s *Service) reports(ctx context.Context, list []catalog.Tool) []Report {
 	return out
 }
 
-func (s *Service) listings(ctx context.Context, list []catalog.Tool) map[catalog.Method]listing {
+func (s *Service) needed(list []catalog.Tool) map[catalog.Method]bool {
 	needed := map[catalog.Method]bool{}
 	for _, t := range list {
 		needed[s.install(t).Method()] = true
@@ -52,6 +117,11 @@ func (s *Service) listings(ctx context.Context, list []catalog.Tool) map[catalog
 			needed[catalog.MethodBrew] = true
 		}
 	}
+	return needed
+}
+
+func (s *Service) listings(ctx context.Context, list []catalog.Tool) map[catalog.Method]listing {
+	needed := s.needed(list)
 	var mu sync.Mutex
 	out := map[catalog.Method]listing{}
 	var wg sync.WaitGroup

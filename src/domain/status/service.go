@@ -3,11 +3,11 @@ package status
 import (
 	"context"
 	"path"
-	"sync"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
+	schedule "github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
@@ -17,6 +17,7 @@ import (
 )
 
 type Options struct {
+	Pool                     *schedule.Pool
 	Here                     catalog.MachineKind
 	OpenClawPort, HermesPort int
 	Version, Commit          string
@@ -37,7 +38,7 @@ type DaemonReader interface {
 }
 
 type StorageReader interface {
-	List(ctx context.Context) (storage.Report, error)
+	Watch(ctx context.Context) <-chan storage.Report
 }
 
 type ToolsReader interface {
@@ -63,6 +64,9 @@ type Service struct {
 }
 
 func New(h system.Host, deps Sources, o Options) *Service {
+	if o.Pool == nil {
+		o.Pool = schedule.NewPool(context.Background(), h.Clock, commandLane, 1)
+	}
 	return &Service{h: h, deps: deps, o: o}
 }
 
@@ -80,6 +84,10 @@ type Snapshot struct {
 	Daemons     []Check
 	Gateways    []Check
 	Tailnet     tailnet.Status
+	// value: a section whose reading has not answered; never past Snapshot.
+	ToolsPending, ConfigPending bool
+	found                       []Check
+	err                         error
 }
 
 type Station struct {
@@ -128,6 +136,7 @@ type System struct {
 	Battery     string
 	MemoryTotal int64
 	Sample      Sample
+	Pending     bool
 }
 
 type Port struct {
@@ -173,92 +182,20 @@ type Workspace struct {
 	Docker       Docker
 	Disk         []Disk
 	Strays       []storage.StrayReport
+	// value: a row whose reading has not answered; never past Snapshot.
+	ReposPending, DepsPending, DiskPending bool
 }
 
 func (s *Service) mac() bool { return s.o.Here != catalog.Linux }
 
-func (s *Service) Snapshot(ctx context.Context) (Snapshot, error) {
-	// invariant: every part runs at once under its own budget, so a slow tool delays
-	// only its own row.
-	snap := Snapshot{
-		GeneratedAt: s.h.Clock.Now().UTC(),
-		Station:     Station{Version: s.o.Version, Commit: s.o.Commit},
-		Tailnet:     tailnet.Status{State: catalog.StateUnknown},
-	}
-	var (
-		wg                          sync.WaitGroup
-		toolsErr, configErr         error
-		sampleErr                   error
-		sample                      Sample
-		settingsHere                string
-		hereOK                      bool
-		sysFacts                    systemFacts
-		identity, daemons, gateways []Check
-		osName                      string
-		daemon                      Check
-	)
-	run := func(fn func()) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			fn()
-		}()
-	}
-	run(func() { snap.Tools, toolsErr = s.deps.Tools.Inventory(ctx) })
-	run(func() { snap.Config, configErr = s.deps.Config.List(ctx) })
-	run(func() {
-		if st, err := s.deps.Tailnet.Status(ctx); err == nil {
-			snap.Tailnet = st
-		}
-	})
-	run(func() { snap.Setup = s.setup(ctx) })
-	run(func() { sample, sampleErr = s.Sample(ctx) })
-	run(func() { sysFacts = s.systemFacts(ctx) })
-	run(func() { osName = s.osName(ctx) })
-	run(func() { snap.Environment = s.environment(ctx) })
-	run(func() { snap.Workspace = s.workspace(ctx) })
-	run(func() { identity = s.identity(ctx) })
-	run(func() { daemons = s.daemons(ctx) })
-	run(func() { gateways = s.gateways(ctx) })
-	run(func() { daemon = s.daemon(ctx) })
-	wg.Wait()
+func (s Snapshot) Err() error { return s.err }
 
-	if current, err := s.deps.Store.Load(); err == nil && current.Here != "" {
-		settingsHere, hereOK = current.Here, true
+func (s *Service) Snapshot(ctx context.Context) (Snapshot, error) {
+	snap := schedule.Last(s.Watch(ctx))
+	if err := ctx.Err(); err != nil {
+		return Snapshot{}, err
 	}
-	if toolsErr != nil {
-		return Snapshot{}, toolsErr
-	}
-	if configErr != nil {
-		return Snapshot{}, configErr
-	}
-	if sampleErr != nil {
-		return Snapshot{}, sampleErr
-	}
-	snap.Machine = Machine{
-		Name:       settingsHere,
-		Registered: hereOK,
-		Kind:       s.o.Here,
-		Hostname:   s.h.Env.Hostname(),
-		OS:         osName,
-		Arch:       s.h.Env.GOARCH(),
-		User:       s.h.Env.User(),
-		Shell:      shellName(s.h.Env.Shell()),
-	}
-	snap.System = System{Uptime: sysFacts.uptime, Battery: sysFacts.battery, MemoryTotal: sysFacts.memory, Sample: sample}
-	if s.o.Here == catalog.Host && snap.Tailnet.Connected {
-		gateways = append(gateways, serveGateway(snap.Tailnet.ServeOn))
-	}
-	snap.Identity, snap.Daemons, snap.Gateways = identity, daemons, gateways
-	snap.Station.Daemon = daemon
-	if s.mac() {
-		for _, d := range [][2]string{{"sshd", "remote-login"}, {"dns", "encrypted-dns"}} {
-			if check, placed := fromConfig(snap.Config, d[0], d[1]); placed {
-				snap.Environment.Security = append(snap.Environment.Security, check)
-			}
-		}
-	}
-	return snap, nil
+	return snap, snap.err
 }
 
 // invariant: a protection a config item installs is read from that item's own state,
@@ -273,7 +210,7 @@ func fromConfig(reports []config.Report, item, name string) (Check, bool) {
 			return Check{Name: name, State: catalog.StateOK, Value: "on"}, true
 		case catalog.StateAbsent:
 			return Check{Name: name, State: catalog.StateAbsent, Value: "off"}, true
-		case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown:
+		case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown, catalog.StatePending:
 		}
 		return Check{Name: name, State: catalog.StateUnknown}, true
 	}
@@ -310,6 +247,7 @@ func rank(s catalog.State) int {
 		return 3
 	case catalog.StateBroken:
 		return 4
+	case catalog.StatePending:
 	}
 	return 1
 }

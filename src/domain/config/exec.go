@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	schedule "github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -21,6 +22,15 @@ func (s *Service) probe(ctx context.Context, name string, args ...string) (stdou
 		return strings.TrimSpace(out.Stdout), false
 	}
 	return strings.TrimSpace(out.Stdout), true
+}
+
+// invariant: a read another subject asks too (gh auth status) runs once per run
+// of the shared pool.
+func (s *Service) read(ctx context.Context, c system.Cmd) (system.Output, error) {
+	if s.o.Pool == nil {
+		return s.h.Run.Output(ctx, c)
+	}
+	return schedule.Output(ctx, s.o.Pool, s.h.Run, c)
 }
 
 func (s *Service) must(ctx context.Context, name string, args ...string) (string, error) {

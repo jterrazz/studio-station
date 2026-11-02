@@ -149,7 +149,7 @@ func repair(s tailnet.Status) string {
 		return ""
 	case catalog.StateAbsent:
 		return "station tools install tailscale"
-	case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown:
+	case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown, catalog.StatePending:
 	}
 	return "open the Tailscale app and log in"
 }
