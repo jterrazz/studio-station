@@ -40,7 +40,7 @@ const (
 // `x/*`, a longer prefix beats a shorter. `std` is the standard library minus
 // forbiddenStd; a forbidden member is re-allowed only by its name in a row.
 func importTable() map[string][]string {
-	domain := []string{"system", "catalog", "domain/settings", std}
+	domain := []string{"system", "catalog", "domain/settings", "domain/probe", std}
 	return map[string][]string{
 		"cmd/station":       {"app", "os"},
 		"cmd/generate":      {"catalog", "os", "flag", std},
@@ -56,7 +56,7 @@ func importTable() map[string][]string {
 		"system/sshclient":  {"system", sshPkg, sshPkg + "/knownhosts", "os", "net", std},
 		"system":            {std},
 		"system/tart":       {"system", std},
-		"system/host":       {"system", "os", "os/exec", "os/user", "net", "net/http", "syscall", std},
+		"system/host":       {"system", "os", "os/exec", "os/user", "net", "net/http", "syscall", "unsafe", "golang.org/x/sys/unix", std},
 		"system/systemtest": {"system", "testing", "testing/fstest", std},
 		"catalog":           {"embed", std},
 		"present":           {"catalog", std},
