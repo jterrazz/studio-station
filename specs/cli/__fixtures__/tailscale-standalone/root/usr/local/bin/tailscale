@@ -12,7 +12,9 @@
 # answers/tailscale/serve.warn makes every `serve` first warn, as a CLI older than its
 # daemon does, and answers/tailscale/warn makes every call warn on both streams;
 # `cert` succeeds, held while answers/tailscale/cert.hold exists until
-# $HOME/cert.release does (20 s at most). The App Store bundle's executable
+# $HOME/cert.release does (20 s at most), and fails as the real one does when
+# an output it is given already exists and is not a regular file ("-" is
+# stdout). The App Store bundle's executable
 # fails as the real one does when its caller set none of TERM, SHLVL and
 # TERM_PROGRAM (this shell sets SHLVL to 1 and TERM to dumb when it found none).
 answers="$HOME/answers/tailscale"
@@ -56,6 +58,18 @@ case "$*" in
         fi
         ;;
     cert*)
+        for a in "$@"; do
+            case "$a" in
+                --cert-file=-|--key-file=-) ;;
+                --cert-file=*|--key-file=*)
+                    f=${a#*=}
+                    if [ -e "$f" ] && [ ! -f "$f" ]; then
+                        echo "$(/bin/date '+%Y/%m/%d %H:%M:%S') $f already exists and is not a regular file" >&2
+                        exit 1
+                    fi
+                    ;;
+            esac
+        done
         if [ -f "$answers/cert.hold" ]; then
             n=0
             while [ ! -f "$HOME/cert.release" ] && [ $n -lt 200 ]; do /bin/sleep 0.1; n=$((n+1)); done

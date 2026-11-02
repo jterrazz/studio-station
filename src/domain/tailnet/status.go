@@ -300,10 +300,11 @@ func (s *Service) Serve(ctx context.Context, args ...string) error {
 }
 
 func (s *Service) Cert(ctx context.Context, host string) error {
-	// invariant: both outputs are /dev/null: the certificate stays in
+	// invariant: both outputs are stdout, thrown away: the certificate stays in
 	// tailscaled's own store, so the first https request after it is answered
-	// at once.
-	out, err := s.run(ctx, 0, "cert", "--cert-file=/dev/null", "--key-file=/dev/null", host)
+	// at once. /dev/null is refused, as an existing file that is not a regular
+	// one (measured 2026-11-02).
+	out, err := s.run(ctx, 0, "cert", "--cert-file=-", "--key-file=-", host)
 	if err != nil {
 		return err
 	}
