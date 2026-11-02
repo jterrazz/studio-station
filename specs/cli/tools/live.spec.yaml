@@ -1,4 +1,4 @@
-description: 'tools on a terminal draws the catalogue placed here at once, every row pending, and fills each method''s rows as its manager answers; piped, one document'
+description: 'tools on a terminal draws the catalogue pending at once and fills it as each manager answers'
 fixture:
     - ../__fixtures__/terminal/
     - ./__fixtures__/slow-cask/

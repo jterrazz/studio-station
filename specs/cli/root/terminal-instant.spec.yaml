@@ -1,10 +1,9 @@
-description: 'the TUI draws every row of every tab at once and fills each as its probe answers, the active tab first; a late probe says why; one reading per run; q leaves nothing running'
+description: 'every tab draws its rows at once and fills them, a late probe says why, q leaves nothing running'
 fixture:
     - ../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
-    - ../status/__fixtures__/identity/
-    - ../status/__fixtures__/slow-gpg/
-    - ../status/__fixtures__/recording-gh/
+    - ../__fixtures__/recording/
+    - ../__fixtures__/slow-gpg/
 env: terminal
 runs:
     - command: '--version >/dev/null; terminal --size 120x80 "$STATION"'

@@ -1,11 +1,10 @@
-description: 'status on a terminal draws every row at once, fills each as its probe answers, then prints the final document once; one reading per run asks brew and gh once'
+description: 'status on a terminal fills in place then prints once, and asks brew and gh once'
 fixture:
     - ../__fixtures__/terminal/
-    - ../root/__fixtures__/homebrew/
     - ./__fixtures__/workspace/
     - ./__fixtures__/identity/
-    - ./__fixtures__/slow-gpg/
-    - ./__fixtures__/recording-gh/
+    - ../__fixtures__/recording/
+    - ../__fixtures__/slow-gpg/
 env: terminal
 runs:
     - command: '--version >/dev/null; terminal --size 120x250 /usr/bin/env -u NO_COLOR COLUMNS=120 "$STATION" status | /usr/bin/grep -c "^ station status"'

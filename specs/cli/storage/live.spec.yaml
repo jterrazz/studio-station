@@ -1,4 +1,4 @@
-description: 'storage on a terminal draws every existing row at once, sizes each as the walk answers, and a probe past its budget answers ?; piped, one document after the budget'
+description: 'storage on a terminal fills in place, a late size says ?, and last-known sizes are kept'
 fixture:
     - ../__fixtures__/terminal/
     - ./__fixtures__/slow-docker/

@@ -1,8 +1,8 @@
-description: 'json and pipe wait for every probe: a late probe answers ? and why within its budget, a slow one its own answer, and no pending value reaches either'
+description: 'json and pipe wait for every probe, a late one answers ? and why, and none says pending'
 fixture:
     - ./__fixtures__/workspace/
     - ./__fixtures__/identity/
-    - ./__fixtures__/slow-gpg/
+    - ../__fixtures__/slow-gpg/
 env: terminal
 runs:
     - command: 'status --json | /usr/bin/jq -c ''.identity[] | select(.name == "gpg-key") | [.state, .value, .detail]'''
