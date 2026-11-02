@@ -44,8 +44,9 @@ func (s *Service) Watch(ctx context.Context) <-chan []Report {
 func (s *Service) Forget() { s.o.Pool.Forget(subject) }
 
 // invariant: the frame is the catalogue placed here, every row pending; one job
-// per method lists its manager once (shared by every reader of the run) and
-// fills that method's rows together.
+// per method lists its manager once (shared by every reader of the run), and
+// each row fills as its own probe answers, so one hung tool holds back no other
+// row of its method; a skill row waits for the method's currency check.
 func (s *Service) watch(ctx context.Context) <-chan []Report {
 	list := s.Placed()
 	frame := make([]Report, len(list))
@@ -64,12 +65,17 @@ func (s *Service) watch(ctx context.Context) <-chan []Report {
 		rows := byMethod[m]
 		jobs = append(jobs, probe.Job[[]Report]{
 			Key: subject + "/method/" + string(m), Budget: inventoryBudget + probeBudget + currencyBudget,
-			Do: func(ctx context.Context) func(*[]Report) {
+			Partial: func(ctx context.Context, emit func(func(*[]Report))) func(*[]Report) {
 				group := make([]catalog.Tool, len(rows))
 				for k, i := range rows {
 					group[k] = list[i]
 				}
-				reports := s.reportsWith(ctx, group, s.sharedListings(ctx, group))
+				each := func(k int, r Report) {
+					if m != catalog.MethodSkill {
+						emit(func(out *[]Report) { (*out)[rows[k]] = r })
+					}
+				}
+				reports := s.reportsEach(ctx, group, s.sharedListings(ctx, group), each)
 				return func(out *[]Report) {
 					for k, i := range rows {
 						(*out)[i] = reports[k]
@@ -78,6 +84,9 @@ func (s *Service) watch(ctx context.Context) <-chan []Report {
 			},
 			Late: func(out *[]Report) {
 				for _, i := range rows {
+					if !(*out)[i].Pending {
+						continue
+					}
 					(*out)[i] = Report{Tool: list[i], Method: m, State: catalog.StateUnknown, Detail: "no answer in " + (inventoryBudget + probeBudget + currencyBudget).String()}
 				}
 			},
@@ -99,10 +108,17 @@ func (s *Service) reports(ctx context.Context, list []catalog.Tool) []Report {
 }
 
 func (s *Service) reportsWith(ctx context.Context, list []catalog.Tool, listings map[catalog.Method]listing) []Report {
+	return s.reportsEach(ctx, list, listings, func(int, Report) {})
+}
+
+func (s *Service) reportsEach(ctx context.Context, list []catalog.Tool, listings map[catalog.Method]listing, each func(int, Report)) []Report {
 	out := make([]Report, len(list))
 	var wg sync.WaitGroup
 	for i, t := range list {
-		wg.Go(func() { out[i] = s.report(ctx, t, listings) })
+		wg.Go(func() {
+			out[i] = s.report(ctx, t, listings)
+			each(i, out[i])
+		})
 	}
 	wg.Wait()
 	s.currency(ctx, out, listings[catalog.MethodSkill])
