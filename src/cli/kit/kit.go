@@ -40,6 +40,14 @@ func (o IO) Streams() (io.Reader, io.Writer) { return o.in, o.raw }
 
 func (o IO) Answer(a present.Answer) error { return o.out.Answer(a, o.JSON) }
 
+func (o IO) CanLive() bool {
+	// invariant: a read goes live only on a terminal, without --json and without
+	// NO_COLOR; everywhere else it prints one complete document.
+	return !o.JSON && o.out.CanLive()
+}
+
+func (o IO) Live(answers <-chan present.Answer) error { return o.out.Live(answers) }
+
 func (o IO) Raw(p []byte) error              { return o.out.Raw(p) }
 func (o IO) Note(text string)                { o.out.Note(text) }
 func (o IO) Wait(label string) (stop func()) { return o.out.Wait(label) }
@@ -62,6 +70,8 @@ type Leaf[I any] struct {
 	Complete            func(args []string, toComplete string) []string
 	Entry               func(word string) string
 	Run                 func(ctx context.Context, in *I, io IO) error
+	// value: a leaf that draws its reading as it fills needs no spinner.
+	Live bool
 }
 
 func Command[I any](l Leaf[I], env Env) *cobra.Command {
@@ -166,7 +176,7 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 			return err
 		}
 	}
-	if l.Read != nil && l.Read(in) && !o.JSON {
+	if l.Read != nil && l.Read(in) && !o.JSON && (!l.Live || !o.CanLive()) {
 		stop := env.Out.Wait("reading")
 		defer stop()
 	}
@@ -254,4 +264,15 @@ func path(c *cobra.Command) string {
 
 func didYouMean(suggestions []string) string {
 	return " (did you mean \"" + strings.Join(suggestions, "\" or \"") + "\"?)"
+}
+
+func Answers[T any](values <-chan T, answer func(T) present.Answer) <-chan present.Answer {
+	out := make(chan present.Answer)
+	go func() {
+		defer close(out)
+		for v := range values {
+			out <- answer(v)
+		}
+	}()
+	return out
 }

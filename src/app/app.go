@@ -45,7 +45,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		dark = lipgloss.HasDarkBackground(stdin, stdout)
 	}
 	writer := output.NewWriter(
-		output.Stream{W: stdout, IsTerminal: outTTY, Width: widthOf(stdout, outTTY), Dark: dark},
+		output.Stream{W: stdout, IsTerminal: outTTY, Width: widthOf(stdout, outTTY), Height: heightOf(stdout, outTTY), Dark: dark},
 		output.Stream{W: stderr, IsTerminal: errTTY, Width: widthOf(stderr, errTTY), Dark: dark},
 		vars,
 	)
@@ -110,6 +110,17 @@ const (
 	commandLane = 16
 	walkLane    = 1
 )
+
+func heightOf(f *os.File, isTerminal bool) int {
+	if !isTerminal {
+		return 0
+	}
+	_, h, err := term.GetSize(f.Fd())
+	if err != nil {
+		return 0
+	}
+	return h
+}
 
 func widthOf(f *os.File, isTerminal bool) int {
 	if !isTerminal {

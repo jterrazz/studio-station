@@ -33,7 +33,7 @@ These commands act on the machine they run on, and list only what its kind allow
 station status [--json]
 ```
 
-Everything about this machine: system, environment, workspace, identity, daemons, gateways, tools, config and setup; on a host its Machine section shows station's daemon. `--json` prints the [`station.status/v1`](status-json.md) document `studio doctor` reads.
+Everything about this machine: system, environment, workspace, identity, daemons, gateways, tools, config and setup; on a host its Machine section shows station's daemon. `--json` prints the [`station.status/v1`](status-json.md) document `studio doctor` reads. On a terminal, `status`, `tools` and `storage` draw every row at once and fill each as its probe answers ([instant reads](../concepts/design-system.md#instant-reads)); piped or with `--json` they print one complete document.
 
 ### `station tools`
 

@@ -17,6 +17,7 @@ type Stream struct {
 	W          io.Writer
 	IsTerminal bool
 	Width      int
+	Height     int
 	Dark       bool
 }
 

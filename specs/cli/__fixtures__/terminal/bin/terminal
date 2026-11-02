@@ -3,6 +3,8 @@
 # replays what it draws on a screen of cells, and plays the steps read on stdin, one per
 # line:
 #   see TEXT    wait until the screen shows TEXT
+#   within SECONDS see TEXT
+#               the same, failing when TEXT is not shown within SECONDS
 #   gone TEXT   wait until the screen no longer shows TEXT
 #   send KEYS   type KEYS; \r, \x1b and \xNN escapes are keys
 #   screen      print the screen's text, each line's trailing blanks and the blank
@@ -64,10 +66,15 @@ class Screen:
         elif self.state == "string":
             if ch == "\x07":
                 self.state = "ground"
+                self.string(self.seq)
             elif ch == "\x1b":
                 self.state = "string-esc"
+            else:
+                self.seq += ch
         elif self.state == "string-esc":
             self.state = "ground" if ch == "\\" else "string"
+            if self.state == "ground":
+                self.string(self.seq)
         elif self.state == "charset":
             self.state = "ground"
         elif ch == "\x1b":
@@ -88,7 +95,7 @@ class Screen:
         if ch == "[":
             self.state, self.seq = "csi", ""
         elif ch in "]PX^_":
-            self.state = "string"
+            self.state, self.seq = "string", ""
         elif ch in "()*+":
             self.state = "charset"
         elif ch == "7":
@@ -214,8 +221,16 @@ class Screen:
             self.saved = (self.x, self.y)
         elif final == "u":
             self.x, self.y = self.saved
+        elif final == "c" and not body:
+            self.replies += b"\x1b[?62;22c"
         elif final == "n" and arg(0, 0) == 6:
             self.replies += b"\x1b[%d;%dR" % (self.y + 1, self.x + 1)
+
+    def string(self, body):
+        # invariant: the screen answers the background query as a dark terminal
+        # does, so a binary never waits on a reply a real terminal gives at once.
+        if body == "11;?":
+            self.replies += b"\x1b]11;rgb:0000/0000/0000\x1b\\"
 
     def screen(self, alternate):
         if alternate and self.cells is self.main:
@@ -268,8 +283,8 @@ def main():
             os.kill(pid, signal.SIGKILL)
         sys.exit(124)
 
-    def wait(ok, why):
-        deadline = time.monotonic() + WAIT
+    def wait(ok, why, seconds=WAIT):
+        deadline = time.monotonic() + seconds
         while not ok():
             if time.monotonic() > deadline:
                 fail(why)
@@ -277,7 +292,14 @@ def main():
 
     for line in steps:
         verb, _, arg = line.partition(" ")
-        if verb == "see":
+        if verb == "within":
+            seconds, _, rest = arg.partition(" ")
+            then, _, text = rest.partition(" ")
+            if then != "see":
+                sys.stderr.write("terminal: unknown step " + repr(line) + "\n")
+                sys.exit(97)
+            wait(lambda: text in screen.text(), "never saw " + repr(text) + " within " + seconds + " s", float(seconds))
+        elif verb == "see":
             wait(lambda: arg in screen.text(), "never saw " + repr(arg))
         elif verb == "gone":
             wait(lambda: arg not in screen.text(), "still saw " + repr(arg))

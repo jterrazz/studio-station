@@ -37,8 +37,9 @@ The same tokens colour Fang's help and the forms that ask a config item's values
 | `◐`  | degraded, or unknown |
 | `○`  | absent               |
 | `✗`  | broken               |
+| `◌`  | pending              |
 
-The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. The glyphs live in `src/present/mark.go` and nowhere else. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
+The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. `◌` (Muted) marks a row whose probe has not answered yet, on a terminal and in the TUI only: a pipe, `NO_COLOR` and `--json` wait for every probe, so they never carry it. The glyphs live in `src/present/mark.go` and nowhere else. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
 
 ## Typography
 
@@ -57,6 +58,10 @@ The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinfor
 ```
 
 Left, `station` and the command path; right, this machine's name and kind. A rule runs under it. The footer is a blank line, then the hints, one per line, each prefixed `→ `.
+
+## Instant reads
+
+`station status`, `storage` and `tools` on a terminal draw their frame at once: every row the catalogue or a probe table declares, each `◌` with its name only. Each row fills in place as its probe answers, the region redrawn at most every 50 ms and clipped to the terminal's height with a Muted `… <n> rows pending` last line; a probe past its budget answers `◐ ?` with `no answer in <budget>`. When the last probe answers the region is erased and the final document printed once, so the scrollback holds what a pipe would. The probes run on two bounded lanes (16 commands, one walk of 8 workers), and one reading per run is shared: the tools inventory feeds status, tools and storage; the storage walk feeds the Storage tab and the status `disk` row.
 
 ## Pipe and JSON
 

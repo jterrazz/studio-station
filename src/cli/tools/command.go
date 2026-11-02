@@ -7,6 +7,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/present"
 	presenttools "github.com/jterrazz/studio-station/src/present/tools"
 )
 
@@ -22,6 +23,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Example: "  station tools\n  station tools --json",
 		Group:   "here",
 		Read:    func(*Input) bool { return true },
+		Live:    true,
 		Entry: kit.Entry("station tools install", func() []string {
 			placed := d.Tools.Placed()
 			out := make([]string, 0, len(placed))
@@ -31,6 +33,14 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			return out
 		}),
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
+			if io.CanLive() {
+				if err := io.Live(kit.Answers(d.Tools.Watch(ctx), func(r []tools.Report) present.Answer {
+					return presenttools.Catalogue(r, d.Context)
+				})); err != nil {
+					return err
+				}
+				return ctx.Err()
+			}
 			reports, err := d.Tools.Inventory(ctx)
 			if err != nil {
 				return err
