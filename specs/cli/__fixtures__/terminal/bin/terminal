@@ -7,6 +7,7 @@
 #               the same, failing when TEXT is not shown within SECONDS
 #   gone TEXT   wait until the screen no longer shows TEXT
 #   send KEYS   type KEYS; \r, \x1b and \xNN escapes are keys
+#   file PATH   wait until PATH exists and is not empty, so a step can follow a stub's start
 #   screen      print the screen's text, each line's trailing blanks and the blank
 #               bottom lines trimmed
 #   scrollback  wait for COMMAND to exit, then print the history above the screen and
@@ -347,6 +348,8 @@ def main():
             wait(lambda: arg in screen.text(), "never saw " + repr(arg))
         elif verb == "gone":
             wait(lambda: arg not in screen.text(), "still saw " + repr(arg))
+        elif verb == "file":
+            wait(lambda: os.path.isfile(arg) and os.path.getsize(arg) > 0, "never saw the file " + repr(arg))
         elif verb == "send":
             os.write(fd, arg.encode().decode("unicode_escape").encode("latin-1"))
         elif verb == "screen":
