@@ -32,7 +32,10 @@ type Job[R any] struct {
 	Lane   Lane
 	Budget time.Duration
 	Do     func(ctx context.Context) func(*R)
-	Late   func(*R)
+	// value: a job whose part fills in steps (one walk, many rows) emits each
+	// step; its own answer is the last.
+	Partial func(ctx context.Context, emit func(func(*R))) func(*R)
+	Late    func(*R)
 }
 
 type Pool struct {
@@ -196,15 +199,16 @@ func (p *Pool) execute(ctx context.Context, which Lane, budget time.Duration, wa
 
 // invariant: one key is one execution for the life of the pool (until Forget):
 // a second reader of the same key waits for the first one's answer.
-func (p *Pool) start(ctx context.Context, which Lane, key string, budget time.Duration, do func(context.Context) any) *flight {
+func (p *Pool) start(ctx context.Context, which Lane, key string, shared bool, budget time.Duration, do func(context.Context) any) *flight {
+	shared = shared && key != ""
 	p.mu.Lock()
-	if f, ok := p.shared[key].(*flight); ok && key != "" {
+	if f, ok := p.shared[key].(*flight); ok && shared {
 		p.mu.Unlock()
 		return f
 	}
 	f := &flight{done: make(chan struct{})}
 	base := ctx
-	if key != "" {
+	if shared {
 		p.shared[key] = f
 		base = p.ctx
 	}
@@ -229,7 +233,7 @@ func (f *flight) await(ctx context.Context) (answer any, late bool) {
 func Share[T any](ctx context.Context, p *Pool, key string, fn func(context.Context) T) T {
 	// invariant: fn runs once per key for the life of the pool and every caller
 	// gets its answer; it holds no lane slot, so the work fn does is its own.
-	answer, _ := p.start(ctx, Inline, key, 0, func(c context.Context) any { return fn(c) }).await(ctx)
+	answer, _ := p.start(ctx, Inline, key, true, 0, func(c context.Context) any { return fn(c) }).await(ctx)
 	v, _ := answer.(T)
 	return v
 }
@@ -246,14 +250,29 @@ func Output(ctx context.Context, p *Pool, run system.Runner, c system.Cmd) (syst
 		out, err := run.Output(ctx, c)
 		return result{out: out, err: err}
 	})
+	if err := ctx.Err(); err != nil {
+		return system.Output{}, err
+	}
 	return r.out, r.err
 }
 
 func Run[R any](ctx context.Context, p *Pool, frame R, jobs []Job[R], clone func(R) R) <-chan R {
 	out := make(chan R, 1)
 	answers := make(chan func(*R), len(jobs))
+	partials := make(chan func(*R))
+	done := make(chan struct{})
+	emit := func(set func(*R)) {
+		select {
+		case partials <- set:
+		case <-done:
+		}
+	}
 	for _, j := range jobs {
-		f := p.start(ctx, j.Lane, j.Key, j.Budget, func(c context.Context) any { return j.Do(c) })
+		do := func(c context.Context) any { return j.Do(c) }
+		if j.Partial != nil {
+			do = func(c context.Context) any { return j.Partial(c, emit) }
+		}
+		f := p.start(ctx, j.Lane, j.Key, j.Partial == nil, j.Budget, do)
 		go func() {
 			answer, late := f.await(ctx)
 			set, ok := answer.(func(*R))
@@ -265,11 +284,14 @@ func Run[R any](ctx context.Context, p *Pool, frame R, jobs []Job[R], clone func
 			}
 		}()
 	}
-	go collect(ctx, p.clock, frame, len(jobs), answers, clone, out)
+	go func() {
+		defer close(done)
+		collect(ctx, p.clock, frame, len(jobs), answers, partials, clone, out)
+	}()
 	return out
 }
 
-func collect[R any](ctx context.Context, clock system.Clock, report R, left int, answers <-chan func(*R), clone func(R) R, out chan<- R) {
+func collect[R any](ctx context.Context, clock system.Clock, report R, left int, answers, partials <-chan func(*R), clone func(R) R, out chan<- R) {
 	defer close(out)
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
@@ -289,6 +311,22 @@ func collect[R any](ctx context.Context, clock system.Clock, report R, left int,
 			if left == 0 {
 				return
 			}
+		case set := <-partials:
+			set(&report)
+			dirty = true
+			if send != nil {
+				ready = clone(report)
+			}
+			if send == nil && wakeUp == nil {
+				wake := make(chan struct{})
+				wakeUp = wake
+				go func() {
+					if clock.Sleep(ctx, max(coalesce-clock.Now().Sub(last), 0)) == nil {
+						close(wake)
+					}
+				}()
+			}
+			continue
 		case set := <-answers:
 			left--
 			if set != nil {
@@ -333,10 +371,11 @@ func Stream[T any](ctx context.Context, p *Pool, key string, start func(context.
 		h = &hub[T]{}
 		h.cond = sync.NewCond(&h.mu)
 		p.shared[key] = h
-		source := start(p.ctx)
-		go h.pump(source)
 	}
 	p.mu.Unlock()
+	if !ok {
+		go h.pump(start(p.ctx))
+	}
 	return h.subscribe(ctx)
 }
 
