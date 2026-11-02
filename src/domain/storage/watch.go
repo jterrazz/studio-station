@@ -6,6 +6,7 @@ import (
 	"path"
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/probe"
@@ -72,10 +73,7 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 			frame.known[i] = k.Bytes
 		}
 	}
-	budget := s.o.Budget
-	if budget == 0 {
-		budget = sizeBudget
-	}
+	budget := s.walkBudget()
 	jobs := []probe.Job[reading]{
 		{
 			Key: subject + "/walk", Lane: probe.Walks, Budget: budget,
@@ -225,14 +223,14 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 	e := ep.entry
 	installed := r.installed[e.Name] || e.Name == StationName
 	waiting := r.installed == nil
-	unknown := false
+	var within time.Duration
 	value := func(i int) int64 {
 		switch b := r.sizes[i]; b {
 		case pending:
 			waiting = true
 			return max(r.known[i], 0)
 		case Unknown:
-			unknown = true
+			within = max(within, s.walkBudget())
 			return 0
 		default:
 			return b
@@ -260,7 +258,7 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 		case pending:
 			waiting = true
 		case Unknown:
-			unknown = true
+			within = max(within, dockerDFBudget)
 		default:
 			row.Bytes[catalog.LevelCache] += r.docker
 		}
@@ -273,8 +271,8 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 	default:
 		row.State = catalog.StateAbsent
 	}
-	if unknown && !waiting {
-		return s.unknown(e, installed), true
+	if within > 0 && !waiting {
+		return s.unknown(e, installed, within), true
 	}
 	if waiting {
 		row.Pending = true
@@ -283,8 +281,15 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 	return row, e.Name == StationName || row.Total() != 0
 }
 
-func (s *Service) unknown(e Entry, installed bool) Row {
-	row := Row{Entry: e, Installed: installed, Unknown: true, Bytes: map[catalog.Level]int64{}, Install: Unknown, Paths: []PathReport{}, Strays: []StrayReport{}, State: catalog.StateAbsent}
+func (s *Service) walkBudget() time.Duration {
+	if s.o.Budget > 0 {
+		return s.o.Budget
+	}
+	return sizeBudget
+}
+
+func (s *Service) unknown(e Entry, installed bool, within time.Duration) Row {
+	row := Row{Entry: e, Installed: installed, Unknown: true, Within: within, Bytes: map[catalog.Level]int64{}, Install: Unknown, Paths: []PathReport{}, Strays: []StrayReport{}, State: catalog.StateAbsent}
 	if installed {
 		row.State = catalog.StateOK
 	}

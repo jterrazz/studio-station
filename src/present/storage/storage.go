@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/storage"
@@ -179,7 +181,7 @@ func Detail(r storage.Row) string {
 		}
 	}
 	if r.Unknown {
-		return "not sized within 10 s"
+		return "not sized within " + strconv.Itoa(int(r.Within.Round(time.Second)/time.Second)) + " s"
 	}
 	return strings.Join(parts, " · ")
 }

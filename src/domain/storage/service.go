@@ -75,6 +75,7 @@ type Row struct {
 	Entry     Entry
 	Installed bool
 	Unknown   bool
+	Within    time.Duration
 	State     catalog.State
 	Bytes     map[catalog.Level]int64
 	Install   int64

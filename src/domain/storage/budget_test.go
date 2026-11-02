@@ -75,8 +75,8 @@ func TestARowPastTheBudgetIsUnknownAndDelaysNoOtherRow(t *testing.T) {
 	for _, r := range report.Rows {
 		got[r.Entry.Name] = r
 	}
-	if slow := got["slow"]; !slow.Unknown || slow.Bytes[catalog.LevelCache] != Unknown {
-		t.Errorf("the stuck row answered %+v, want unknown sizes", slow)
+	if slow := got["slow"]; !slow.Unknown || slow.Bytes[catalog.LevelCache] != Unknown || slow.Within != 30*time.Millisecond {
+		t.Errorf("the stuck row answered %+v, want unknown sizes, not sized within the walk's budget", slow)
 	}
 	if fast := got["fast"]; fast.Unknown || fast.Bytes[catalog.LevelCache] != 3 {
 		t.Errorf("the fast row answered %+v, want its 3 bytes", fast)

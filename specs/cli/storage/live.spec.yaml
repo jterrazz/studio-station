@@ -21,7 +21,7 @@ runs:
       exit: 0
       stdout: |
           0
-          ●	docker	?	not sized within 10 s
+          ●	docker	?	not sized within 5 s
     - command: '--version >/dev/null; /usr/bin/jq -r --arg h "$HOME" ''.v, (.sizes[$h + "/.cache/go-build"].bytes)'' .cache/station/sizes.json'
       exit: 0
       stdout: |
