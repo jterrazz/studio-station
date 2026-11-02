@@ -16,11 +16,18 @@ type slowFS struct {
 	release chan struct{}
 }
 
-func (f slowFS) DirSize(p string) int64 {
-	if p == "/h/slow/tree" {
-		<-f.release
+func (f slowFS) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
+	for i, p := range roots {
+		if p == "/h/slow/tree" {
+			select {
+			case <-f.release:
+			case <-ctx.Done():
+				each(i, -1)
+				continue
+			}
+		}
+		f.FS.Sizes(ctx, []string{p}, func(_ int, b int64) { each(i, b) })
 	}
-	return f.FS.DirSize(p)
 }
 
 func TestARowPastTheBudgetIsUnknownAndDelaysNoOtherRow(t *testing.T) {

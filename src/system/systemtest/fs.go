@@ -1,6 +1,7 @@
 package systemtest
 
 import (
+	"context"
 	"io/fs"
 	"maps"
 	"path"
@@ -71,15 +72,21 @@ func (f *FS) WalkDir(root string, fn fs.WalkDirFunc) error {
 	})
 }
 
-func (f *FS) DirSize(p string) int64 {
-	var total int64
-	k := key(p)
-	for name, file := range f.Files {
-		if strings.HasPrefix(name, k+"/") && !file.Mode.IsDir() {
-			total += int64(len(file.Data))
+func (f *FS) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
+	for i, p := range roots {
+		if ctx.Err() != nil {
+			each(i, -1)
+			continue
 		}
+		var total int64
+		k := key(p)
+		for name, file := range f.Files {
+			if strings.HasPrefix(name, k+"/") && !file.Mode.IsDir() {
+				total += int64(len(file.Data))
+			}
+		}
+		each(i, total)
 	}
-	return total
 }
 
 func (f *FS) Chmod(p string, perm fs.FileMode) error {

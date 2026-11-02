@@ -204,7 +204,7 @@ func (s *Service) other() int64 {
 			}
 			full := path.Join(root, entry.Name())
 			if !claims(claimed, full) {
-				total += s.h.FS.DirSize(full)
+				total += s.dirSize(full)
 			}
 		}
 	}
@@ -300,9 +300,15 @@ func (s *Service) size(pattern string) int64 {
 	matches, _ := s.h.FS.Glob(s.o.Expand.Expand(pattern))
 	var total int64
 	for _, m := range matches {
-		total += s.h.FS.DirSize(m)
+		total += s.dirSize(m)
 	}
 	return total
+}
+
+func (s *Service) dirSize(p string) int64 {
+	var bytes int64
+	s.h.FS.Sizes(context.Background(), []string{p}, func(_ int, b int64) { bytes = b })
+	return bytes
 }
 
 func (s *Service) exists(pattern string) bool {
@@ -321,7 +327,7 @@ func (s *Service) strays(e Entry) []StrayReport {
 		if s.movable(st) || !s.Relocated(e.Storage) {
 			repair = "station setup"
 		}
-		out = append(out, StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: s.h.FS.DirSize(abs), Repair: repair})
+		out = append(out, StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: s.dirSize(abs), Repair: repair})
 	}
 	return out
 }
@@ -479,7 +485,7 @@ func (s *Service) running(ctx context.Context, process string) bool {
 func (s *Service) cacheBytes(e Entry) int64 {
 	total := s.levelBytes(e, catalog.LevelCache)
 	for _, st := range e.Storage.Strays {
-		total += s.h.FS.DirSize(s.o.Expand.Expand(st.Path))
+		total += s.dirSize(s.o.Expand.Expand(st.Path))
 	}
 	return total
 }
