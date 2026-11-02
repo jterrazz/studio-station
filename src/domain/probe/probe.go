@@ -25,6 +25,7 @@ const (
 	commandBudget = 2 * time.Second
 	walkBudget    = 10 * time.Second
 	coalesce      = 50 * time.Millisecond
+	closeGrace    = 2 * time.Second
 )
 
 type Job[R any] struct {
@@ -40,6 +41,8 @@ type Job[R any] struct {
 
 type Pool struct {
 	ctx    context.Context
+	cancel context.CancelFunc
+	work   sync.WaitGroup
 	clock  system.Clock
 	mu     sync.Mutex
 	lanes  [2]*lane
@@ -60,12 +63,50 @@ type ticket struct {
 }
 
 func NewPool(ctx context.Context, clock system.Clock, commands, walks int) *Pool {
+	ctx, cancel := context.WithCancel(ctx)
 	return &Pool{
 		ctx:    ctx,
+		cancel: cancel,
 		clock:  clock,
 		lanes:  [2]*lane{{free: commands}, {free: walks}},
 		shared: map[string]any{},
 	}
+}
+
+func (p *Pool) Close() {
+	// invariant: Close ends every job and stream of the pool, shared or not, so
+	// the commands they run are killed, then waits for them to be reaped (at
+	// most closeGrace): station never exits leaving a probe alive behind it.
+	p.mu.Lock()
+	p.cancel()
+	p.mu.Unlock()
+	reaped := make(chan struct{})
+	go func() {
+		p.work.Wait()
+		close(reaped)
+	}()
+	grace, stop := context.WithCancel(context.Background())
+	defer stop()
+	go func() {
+		_ = p.clock.Sleep(grace, closeGrace)
+		stop()
+	}()
+	select {
+	case <-reaped:
+	case <-grace.Done():
+	}
+}
+
+// invariant: track holds the pool open for one goroutine of work; once the pool
+// is closed it refuses, so Close never waits on work that starts after it.
+func (p *Pool) track() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.ctx.Err() != nil {
+		return false
+	}
+	p.work.Add(1)
+	return true
 }
 
 func (p *Pool) Prefer(prefix string) {
@@ -172,10 +213,17 @@ func (p *Pool) execute(ctx context.Context, which Lane, budget time.Duration, wa
 		case Inline:
 		}
 	}
+	if !p.track() {
+		release()
+		return nil, true
+	}
 	jobCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	stopOnClose := context.AfterFunc(p.ctx, cancel)
 	answered := make(chan any, 1)
 	go func() {
+		defer p.work.Done()
+		defer stopOnClose()
 		defer release()
 		answered <- do(jobCtx)
 	}()
@@ -192,7 +240,7 @@ func (p *Pool) execute(ctx context.Context, which Lane, budget time.Duration, wa
 		return a, false
 	case <-expired:
 		return nil, true
-	case <-ctx.Done():
+	case <-jobCtx.Done():
 		return nil, true
 	}
 }
@@ -373,8 +421,18 @@ func Stream[T any](ctx context.Context, p *Pool, key string, start func(context.
 		p.shared[key] = h
 	}
 	p.mu.Unlock()
-	if !ok {
-		go h.pump(start(p.ctx))
+	switch {
+	case ok:
+	case p.track():
+		source := start(p.ctx)
+		go func() {
+			defer p.work.Done()
+			h.pump(source)
+		}()
+	default:
+		ended := make(chan T)
+		close(ended)
+		h.pump(ended)
 	}
 	return h.subscribe(ctx)
 }

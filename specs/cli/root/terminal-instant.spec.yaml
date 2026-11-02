@@ -29,3 +29,13 @@ runs:
           1 brew list --cask --versions
           1 gh auth status
           gone
+    - command: '--version >/dev/null; terminal --size 120x80 "$STATION"'
+      stdin: |
+          within 1 see ◌ gpg key
+          within 2 see ● github
+          send q
+      exit: 0
+    - command: '--version >/dev/null; [ -s .gpg-pid ] && { /bin/kill -0 "$(/bin/cat .gpg-pid)" 2>/dev/null || echo gone; }'
+      exit: 0
+      stdout: |
+          gone

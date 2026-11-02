@@ -240,6 +240,31 @@ class Screen:
             self.cells = self.main
 
 
+def hold(args):
+    # invariant: the pseudo-terminal's session leader is a shell's stand-in, never
+    # COMMAND: it runs COMMAND as a foreground job and takes the terminal back when
+    # it exits, as a shell does, so the hangup of the leader's exit reaches only
+    # the leader and what COMMAND leaves running stays alive to be seen.
+    try:
+        signal.signal(signal.SIGTTOU, signal.SIG_IGN)
+        job = os.fork()
+        if job == 0:
+            os.setpgid(0, 0)
+            os.tcsetpgrp(0, os.getpgrp())
+            signal.signal(signal.SIGTTOU, signal.SIG_DFL)
+            os.execvp(args[0], args)
+        try:
+            os.setpgid(job, job)
+            os.tcsetpgrp(0, job)
+        except OSError:
+            pass
+        _, code = os.waitpid(job, 0)
+        os.tcsetpgrp(0, os.getpgrp())
+        os._exit(os.waitstatus_to_exitcode(code) & 0xFF)
+    finally:
+        os._exit(127)
+
+
 def main():
     args = sys.argv[1:]
     cols, rows = 80, 24
@@ -249,10 +274,7 @@ def main():
     steps = sys.stdin.read().splitlines()
     pid, fd = pty.fork()
     if pid == 0:
-        try:
-            os.execvp(args[0], args)
-        finally:
-            os._exit(127)
+        hold(args)
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
     screen = Screen(cols, rows)
     decoder = codecs.getincrementaldecoder("utf-8")("replace")

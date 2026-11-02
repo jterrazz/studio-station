@@ -229,3 +229,26 @@ func TestAStreamIsSharedAndEveryReaderSeesItsLastValue(t *testing.T) {
 		t.Fatalf("the stream started %d times, want once", n)
 	}
 }
+
+func TestCloseEndsASharedJobAndWaitsForIt(t *testing.T) {
+	p := NewPool(context.Background(), &manualClock{}, 4, 1)
+	started := make(chan struct{})
+	var reaped atomic.Bool
+	job := Job[report]{Key: "storage/docker", Budget: time.Hour, Do: func(ctx context.Context) func(*report) {
+		close(started)
+		<-ctx.Done()
+		reaped.Store(true)
+		return set(0, "killed")
+	}}
+	ch := Run(context.Background(), p, report{parts: []string{""}}, []Job[report]{job}, clone)
+	<-started
+	p.Close()
+	if !reaped.Load() {
+		t.Fatal("Close returned while a shared job still ran: its command outlives station")
+	}
+	Last(ch)
+	Last(Run(context.Background(), p, report{parts: []string{""}}, []Job[report]{{Key: "after", Do: func(context.Context) func(*report) {
+		t.Error("a job started on a closed pool")
+		return set(0, "ran")
+	}}}, clone))
+}

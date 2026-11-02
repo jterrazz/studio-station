@@ -98,6 +98,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		fang.WithColorSchemeFunc(fangScheme),
 		fang.WithNotifySignal(os.Interrupt, syscall.SIGTERM),
 	)
+	here.pool.Close()
 	if err == nil {
 		return int(fail.CodeOK)
 	}
