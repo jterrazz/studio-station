@@ -57,11 +57,11 @@ func New(ctx context.Context, t Tools, describe kit.Describe, th theme.Theme) Mo
 	return m
 }
 
-func (m Model) watch(ctx context.Context, fresh bool) <-chan []kit.Group {
+func (m Model) watch(ctx context.Context, fresh bool) (<-chan []kit.Group, error) {
 	if fresh {
 		m.tools.Forget()
 	}
-	return kit.Groups(ctx, m.tools.Watch(ctx), groups)
+	return kit.Groups(ctx, m.tools.Watch(ctx), groups), nil
 }
 
 func groups(reports []tools.Report) []kit.Group {

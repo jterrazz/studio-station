@@ -48,11 +48,11 @@ func New(ctx context.Context, s Storage, describe kit.Describe, th theme.Theme) 
 	return m
 }
 
-func (m Model) watch(ctx context.Context, fresh bool) <-chan []kit.Group {
+func (m Model) watch(ctx context.Context, fresh bool) (<-chan []kit.Group, error) {
 	if fresh {
 		m.storage.Forget()
 	}
-	return kit.Groups(ctx, m.storage.Watch(ctx), groups)
+	return kit.Groups(ctx, m.storage.Watch(ctx), groups), nil
 }
 
 func groups(report storage.Report) []kit.Group {

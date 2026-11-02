@@ -78,11 +78,14 @@ func (f *fakeTools) Upgrade(context.Context, tools.UpgradeRequest) ([]tools.Outc
 
 type fakeConfig struct{ failLoad *error }
 
-func (f fakeConfig) List(context.Context) ([]config.Report, error) {
+func (f fakeConfig) Watch(context.Context) (<-chan []config.Report, error) {
 	if f.failLoad != nil && *f.failLoad != nil {
 		return nil, *f.failLoad
 	}
-	return []config.Report{{Item: catalog.ConfigItem{Name: "hushlogin", Description: "No login banner", Category: catalog.CategoryShell}, State: catalog.StateAbsent, Applies: true}}, nil
+	reports := make(chan []config.Report, 1)
+	reports <- []config.Report{{Item: catalog.ConfigItem{Name: "hushlogin", Description: "No login banner", Category: catalog.CategoryShell}, State: catalog.StateAbsent, Applies: true}}
+	close(reports)
+	return reports, nil
 }
 
 func (fakeConfig) Defaults(string) map[string]string { return nil }

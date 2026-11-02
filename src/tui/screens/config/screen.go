@@ -16,7 +16,7 @@ import (
 const ID = "config"
 
 type Config interface {
-	List(ctx context.Context) ([]config.Report, error)
+	Watch(ctx context.Context) (<-chan []config.Report, error)
 	Defaults(item string) map[string]string
 	CheckInstall(names []string, interactive bool) error
 	Install(ctx context.Context, name string, values map[string]string, interactive bool) (config.Change, error)
@@ -34,7 +34,7 @@ func New(ctx context.Context, c Config, describe kit.Describe, th theme.Theme) M
 	m := Model{ctx: ctx, config: c}
 	m.list = kit.NewList(kit.ListConfig{
 		ID:        ID,
-		Load:      m.load,
+		Watch:     m.watch,
 		Describe:  describe,
 		Empty:     "none",
 		EmptyHint: "no config item is placed on this machine",
@@ -52,11 +52,18 @@ func New(ctx context.Context, c Config, describe kit.Describe, th theme.Theme) M
 	return m
 }
 
-func (m Model) load() ([]kit.Group, kit.Status, error) {
-	reports, err := m.config.List(m.ctx)
+func (m Model) watch(watch context.Context, _ bool) (<-chan []kit.Group, error) {
+	ctx, stop := context.WithCancel(m.ctx)
+	context.AfterFunc(watch, stop)
+	reports, err := m.config.Watch(ctx)
 	if err != nil {
-		return nil, kit.Status{}, err
+		stop()
+		return nil, err
 	}
+	return kit.Groups(ctx, reports, groups), nil
+}
+
+func groups(reports []config.Report) []kit.Group {
 	byName := make(map[string]config.Report, len(reports))
 	for _, r := range reports {
 		byName[r.Item.Name] = r
@@ -69,7 +76,7 @@ func (m Model) load() ([]kit.Group, kit.Status, error) {
 			}
 		}
 	}
-	return groups, kit.Status{}, nil
+	return groups
 }
 
 func (m Model) Init() tea.Cmd { return m.list.Init() }

@@ -7,7 +7,6 @@ import (
 	"path"
 	"slices"
 	"strings"
-	"sync"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	schedule "github.com/jterrazz/studio-station/src/domain/probe"
@@ -86,31 +85,70 @@ func (s *Service) Placed() []catalog.ConfigItem {
 }
 
 func (s *Service) List(ctx context.Context) ([]Report, error) {
+	reports, err := s.Watch(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return schedule.Last(reports), nil
+}
+
+func (s *Service) Watch(ctx context.Context) (<-chan []Report, error) {
+	// invariant: the first value is every placed item, those with a check
+	// pending; every check is a read of its own, so they run at once, each row
+	// fills as its check answers, and the list costs its slowest check.
 	placed := s.Placed()
 	reports := make([]Report, len(placed))
+	checks := make([]func(context.Context) (catalog.State, string), len(placed))
 	for i, it := range placed {
 		h, err := s.handler(it)
 		if err != nil {
 			return nil, err
 		}
 		reports[i] = Report{Item: it, State: catalog.StateAbsent, Detail: "run once", Applies: s.applies(it)}
-		if h.check == nil {
+		if h.check != nil {
+			reports[i].State, reports[i].Detail, checks[i] = catalog.StatePending, "", h.check
+		}
+	}
+	type answer struct {
+		i      int
+		state  catalog.State
+		detail string
+	}
+	answers := make(chan answer, len(placed))
+	left := 0
+	for i, check := range checks {
+		if check == nil {
 			continue
 		}
-		reports[i].State = catalog.StatePending
+		left++
+		go func() {
+			state, detail := check(ctx)
+			answers <- answer{i: i, state: state, detail: detail}
+		}()
 	}
-	// invariant: every item's check is a read of its own, so they run at once and
-	// the list costs its slowest check, not their sum.
-	var wg sync.WaitGroup
-	for i, it := range placed {
-		if reports[i].State != catalog.StatePending {
-			continue
+	out := make(chan []Report)
+	go func() {
+		defer close(out)
+		send := func() bool {
+			select {
+			case out <- slices.Clone(reports):
+				return true
+			case <-ctx.Done():
+				return false
+			}
 		}
-		h, _ := s.handler(it)
-		wg.Go(func() { reports[i].State, reports[i].Detail = h.check(ctx) })
-	}
-	wg.Wait()
-	return reports, nil
+		if !send() {
+			return
+		}
+		for ; left > 0; left-- {
+			a := <-answers
+			reports[a.i].State, reports[a.i].Detail = a.state, a.detail
+			if !send() {
+				return
+			}
+		}
+	}()
+	return out, nil
 }
 
 func (s *Service) Find(names []string) ([]catalog.ConfigItem, error) {

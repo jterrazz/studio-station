@@ -48,8 +48,9 @@ type ListConfig struct {
 	ID   string
 	Load func() ([]Group, Status, error)
 	// value: a screen whose reading fills in steps watches it instead: the
-	// frame at once, then each value; fresh drops the run's shared reading.
-	Watch     func(ctx context.Context, fresh bool) <-chan []Group
+	// frame at once, then each value; fresh drops the run's shared reading. A
+	// reading that cannot start answers its error, shown as a failed read.
+	Watch     func(ctx context.Context, fresh bool) (<-chan []Group, error)
 	Describe  Describe
 	Empty     string
 	EmptyHint string
@@ -128,7 +129,13 @@ func (l ListScreen) watch(fresh bool) tea.Cmd {
 	ctx, stop := context.WithCancel(context.Background()) //nolint:gosec // outside: held in *l.stop, called when the next watch starts.
 	*l.stop = stop
 	watch := l.cfg.Watch
-	return func() tea.Msg { return next(id, gen, watch(ctx, fresh))() }
+	return func() tea.Msg {
+		values, err := watch(ctx, fresh)
+		if err != nil {
+			return Loaded{Screen: id, Err: err, gen: gen, final: true}
+		}
+		return next(id, gen, values)()
+	}
 }
 
 func Groups[T any](ctx context.Context, src <-chan T, groups func(T) []Group) <-chan []Group {
