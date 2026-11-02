@@ -90,7 +90,7 @@ Focus modes: the app holds exactly one. Normal owns the global keys (`tab`, `1` 
 
 The action rule: every mutating key releases the screen, makes the one domain call with the real terminal, then restores the screen, shows the outcome in the status bar and reloads. Reads run as commands with a spinner. One action at a time per screen.
 
-The loading law: a screen's `Init` returns the commands that call the domain, results arrive as messages, and `View` only renders the model. A view never calls a service, a probe or the system.
+The loading law: a screen's `Init` returns the commands that call the domain, results arrive as messages, and `View` only renders the model. A view never calls a service, a probe or the system. Every tab starts its reading at once, so the first frame shows each tab's rows pending and every tab fills in the background; the shown tab's probes go first, and the header spinner turns while one of them is pending. `r` drops the shared reading and starts a new one.
 
 ## Related
 

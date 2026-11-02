@@ -31,24 +31,29 @@ import (
 	toolsscreen "github.com/jterrazz/studio-station/src/tui/screens/tools"
 )
 
+func once[T any](v T) <-chan T {
+	ch := make(chan T, 1)
+	ch <- v
+	close(ch)
+	return ch
+}
+
 type fakeTools struct {
 	inventories int
-	failLoad    error
 	failInstall error
 	installed   []tools.InstallRequest
 }
 
-func (f *fakeTools) Inventory(context.Context) ([]tools.Report, error) {
+func (f *fakeTools) Forget() {}
+
+func (f *fakeTools) Watch(context.Context) <-chan []tools.Report {
 	f.inventories++
-	if f.failLoad != nil {
-		return nil, f.failLoad
-	}
-	return []tools.Report{
+	return once([]tools.Report{
 		{Tool: catalog.Tool{Name: "homebrew", Category: catalog.CategoryPackageManagers}, Method: catalog.MethodScript, State: catalog.StateOK, Version: "5.0.1"},
 		{Tool: catalog.Tool{Name: "node", Category: catalog.CategoryRuntimes}, Method: catalog.MethodMise, State: catalog.StateDegraded, Version: "24.11.0", Detail: "on PATH, not managed by mise"},
 		{Tool: catalog.Tool{Name: "go", Category: catalog.CategoryRuntimes}, Method: catalog.MethodMise, State: catalog.StateOK, Version: "1.27.3"},
 		{Tool: catalog.Tool{Name: "java", Category: catalog.CategoryRuntimes}, Method: catalog.MethodMise, State: catalog.StateAbsent},
-	}, nil
+	})
 }
 
 func (f *fakeTools) CheckInstall(context.Context, []string) error { return nil }
@@ -71,9 +76,12 @@ func (f *fakeTools) Upgrade(context.Context, tools.UpgradeRequest) ([]tools.Outc
 	return nil, nil
 }
 
-type fakeConfig struct{}
+type fakeConfig struct{ failLoad *error }
 
-func (fakeConfig) List(context.Context) ([]config.Report, error) {
+func (f fakeConfig) List(context.Context) ([]config.Report, error) {
+	if f.failLoad != nil && *f.failLoad != nil {
+		return nil, *f.failLoad
+	}
 	return []config.Report{{Item: catalog.ConfigItem{Name: "hushlogin", Description: "No login banner", Category: catalog.CategoryShell}, State: catalog.StateAbsent, Applies: true}}, nil
 }
 
@@ -90,14 +98,16 @@ func (fakeConfig) Install(context.Context, string, map[string]string, bool) (con
 
 type fakeStorage struct{ calls *[]string }
 
-func (fakeStorage) List(context.Context) (storage.Report, error) {
+func (fakeStorage) Forget() {}
+
+func (fakeStorage) Watch(context.Context) <-chan storage.Report {
 	row := storage.Row{
 		Entry:     storage.Entry{Name: "zed", Category: string(catalog.CategoryEditors), Storage: catalog.Storage{Reset: []catalog.Action{{Delete: []string{"~/x"}}}}},
 		Installed: true,
 		State:     catalog.StateOK,
 		Bytes:     map[catalog.Level]int64{catalog.LevelCache: 1_200_000_000},
 	}
-	return storage.Report{Rows: []storage.Row{row}}, nil
+	return once(storage.Report{Rows: []storage.Row{row}})
 }
 
 func (f fakeStorage) Clean(_ context.Context, names []string) ([]storage.Outcome, error) {
@@ -116,8 +126,10 @@ func (fakeStorage) Plan([]string) []storage.PathReport {
 
 type fakeStatus struct{}
 
-func (fakeStatus) Snapshot(context.Context) (status.Snapshot, error) {
-	return status.Snapshot{Machine: status.Machine{Name: "macbook"}}, nil
+func (fakeStatus) Forget() {}
+
+func (fakeStatus) Watch(context.Context) <-chan status.Snapshot {
+	return once(status.Snapshot{Machine: status.Machine{Name: "macbook"}})
 }
 
 func (fakeStatus) Sample(context.Context) (status.Sample, error) { return status.Sample{}, nil }
@@ -196,12 +208,13 @@ func (fakeTailnet) Status(context.Context) (tailnet.Status, error) {
 }
 
 type harness struct {
-	t        *testing.T
-	app      App
-	tools    *fakeTools
-	fleet    *fakeFleet
-	stored   []string
-	released []string
+	t           *testing.T
+	app         App
+	tools       *fakeTools
+	fleet       *fakeFleet
+	stored      []string
+	released    []string
+	configFails *error
 }
 
 func describe(err error) (message, hint string) { return err.Error(), "run station --help" }
@@ -210,18 +223,18 @@ func newHarness(t *testing.T) *harness {
 	t.Helper()
 	ctx := context.Background()
 	th := theme.New(true)
-	h := &harness{t: t, tools: &fakeTools{}, fleet: &fakeFleet{}}
+	h := &harness{t: t, tools: &fakeTools{}, fleet: &fakeFleet{}, configFails: new(error)}
 	h.app = newApp("macbook · host", Tabs(), []kit.Screen{
 		statusscreen.New(ctx, fakeStatus{}, describe, th),
 		toolsscreen.New(ctx, h.tools, describe, th),
-		configscreen.New(ctx, fakeConfig{}, describe, th),
+		configscreen.New(ctx, fakeConfig{failLoad: h.configFails}, describe, th),
 		storagescreen.New(ctx, fakeStorage{calls: &h.stored}, describe, th),
 		fleetscreen.New(ctx, fleetscreen.Deps{
 			Machines: h.fleet, Images: fakeImages{}, Secrets: fakeSecrets{}, Services: fakeServices{released: &h.released}, Tailnet: fakeTailnet{},
 			Remote:   func(_ context.Context, machine string, _ []string) error { return h.fleet.record("remote " + machine) },
 			Describe: describe,
 		}, th),
-	})
+	}, nil)
 	h.send(tea.WindowSizeMsg{Width: 100, Height: 30})
 	return h
 }
@@ -557,13 +570,13 @@ func TestBusyIgnoresActionKeys(t *testing.T) {
 
 func TestRetryAfterAFailedReadLoadsTheTab(t *testing.T) {
 	h := newHarness(t)
-	h.tools.failLoad = errors.New("brew is not installed")
+	*h.configFails = errors.New("defaults is not installed")
 	h.init()
-	h.press("2")
+	h.press("3")
 	h.contains("press r to retry")
-	h.tools.failLoad = nil
+	*h.configFails = nil
 	h.press("r")
-	h.contains("Runtimes")
+	h.contains("hushlogin")
 	h.lacks("press r to retry")
 }
 

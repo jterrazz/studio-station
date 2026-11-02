@@ -36,10 +36,11 @@ type Deps struct {
 	Tailnet  *tailnet.Service
 	Remote   func(ctx context.Context, machine string, words []string) error
 	Describe func(error) (message, hint string)
+	Prefer   func(prefix string)
 }
 
 func Tabs() []kit.Tab {
-	return []kit.Tab{{Label: "Status"}, {Label: "Tools"}, {Label: "Config"}, {Label: "Storage"}, {Label: "Fleet", Fleet: true}}
+	return []kit.Tab{{Label: "Status", Probes: "status/"}, {Label: "Tools", Probes: "tools/"}, {Label: "Config"}, {Label: "Storage", Probes: "storage/"}, {Label: "Fleet", Fleet: true}}
 }
 
 func Run(ctx context.Context, d Deps) error {
@@ -53,7 +54,7 @@ func Run(ctx context.Context, d Deps) error {
 			Machines: d.Machines, Images: d.Images, Secrets: d.Secrets, Services: d.Services, Tailnet: d.Tailnet,
 			Remote: d.Remote, Describe: d.Describe,
 		}, t),
-	})
+	}, d.Prefer)
 	_, err := tea.NewProgram(app, tea.WithContext(ctx)).Run()
 	return err
 }

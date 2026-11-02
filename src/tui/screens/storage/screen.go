@@ -18,7 +18,8 @@ import (
 const ID = "storage"
 
 type Storage interface {
-	List(ctx context.Context) (storage.Report, error)
+	Watch(ctx context.Context) <-chan storage.Report
+	Forget()
 	Clean(ctx context.Context, names []string) ([]storage.Outcome, error)
 	Reset(ctx context.Context, names []string) ([]storage.Outcome, error)
 	Plan(names []string) []storage.PathReport
@@ -34,7 +35,7 @@ func New(ctx context.Context, s Storage, describe kit.Describe, th theme.Theme) 
 	m := Model{ctx: ctx, storage: s}
 	m.list = kit.NewList(kit.ListConfig{
 		ID:        ID,
-		Load:      m.load,
+		Watch:     m.watch,
 		Describe:  describe,
 		Empty:     "nothing stored",
 		EmptyHint: "press r to measure again",
@@ -47,11 +48,14 @@ func New(ctx context.Context, s Storage, describe kit.Describe, th theme.Theme) 
 	return m
 }
 
-func (m Model) load() ([]kit.Group, kit.Status, error) {
-	report, err := m.storage.List(m.ctx)
-	if err != nil {
-		return nil, kit.Status{}, err
+func (m Model) watch(ctx context.Context, fresh bool) <-chan []kit.Group {
+	if fresh {
+		m.storage.Forget()
 	}
+	return kit.Groups(ctx, m.storage.Watch(ctx), groups)
+}
+
+func groups(report storage.Report) []kit.Group {
 	var groups []kit.Group
 	for _, g := range presentstorage.Groups(report) {
 		group := kit.Group{Title: g.Title, Rows: make([]kit.Row, 0, len(g.Rows))}
@@ -67,7 +71,7 @@ func (m Model) load() ([]kit.Group, kit.Status, error) {
 		}
 		groups = append(groups, group)
 	}
-	return groups, kit.Status{}, nil
+	return groups
 }
 
 func (m Model) Init() tea.Cmd { return m.list.Init() }
@@ -75,6 +79,8 @@ func (m Model) Init() tea.Cmd { return m.list.Init() }
 func (m Model) Focus() kit.Focus { return m.list.Focus() }
 
 func (m Model) Busy() bool { return m.list.Busy() }
+
+func (m Model) Loading() bool { return m.list.Loading() }
 
 func (m Model) Keys() []key.Binding { return m.list.Keys() }
 

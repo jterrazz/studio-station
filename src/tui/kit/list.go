@@ -1,6 +1,7 @@
 package kit
 
 import (
+	"context"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -31,6 +32,9 @@ type Loaded struct {
 	Groups []Group
 	Note   Status
 	Err    error
+	gen    int
+	more   <-chan []Group
+	final  bool
 }
 
 type ReadDone struct {
@@ -41,8 +45,11 @@ type ReadDone struct {
 }
 
 type ListConfig struct {
-	ID        string
-	Load      func() ([]Group, Status, error)
+	ID   string
+	Load func() ([]Group, Status, error)
+	// value: a screen whose reading fills in steps watches it instead: the
+	// frame at once, then each value; fresh drops the run's shared reading.
+	Watch     func(ctx context.Context, fresh bool) <-chan []Group
 	Describe  Describe
 	Empty     string
 	EmptyHint string
@@ -72,6 +79,10 @@ type ListScreen struct {
 	rowBusy   string
 	modal     *Modal
 	spinner   spinner.Model
+	gen       int
+	// invariant: Init runs on a copy, so the running watch's cancel is held
+	// where every copy of the screen sees it.
+	stop *context.CancelFunc
 }
 
 type item struct {
@@ -87,20 +98,58 @@ func NewList(cfg ListConfig, t theme.Theme) ListScreen {
 		theme:   t,
 		folded:  map[string]bool{},
 		loading: true,
+		stop:    new(context.CancelFunc),
 		filter:  filter,
 		spinner: spinner.New(spinner.WithSpinner(spinner.Dot), spinner.WithStyle(t.Accent)),
 	}
 }
 
 func (l ListScreen) Init() tea.Cmd {
-	return tea.Batch(l.spinner.Tick, l.load())
+	return tea.Batch(l.spinner.Tick, l.watch(false))
 }
 
-func (l ListScreen) load() tea.Cmd {
-	id, load := l.cfg.ID, l.cfg.Load
+func (l ListScreen) start(fresh bool) (ListScreen, tea.Cmd) {
+	l.gen++
+	return l, l.watch(fresh)
+}
+
+func (l ListScreen) watch(fresh bool) tea.Cmd {
+	id, gen := l.cfg.ID, l.gen
+	if l.cfg.Watch == nil {
+		load := l.cfg.Load
+		return func() tea.Msg {
+			groups, note, err := load()
+			return Loaded{Screen: id, Groups: groups, Note: note, Err: err, gen: gen, final: true}
+		}
+	}
+	if *l.stop != nil {
+		(*l.stop)()
+	}
+	ctx, stop := context.WithCancel(context.Background()) //nolint:gosec // outside: held in *l.stop, called when the next watch starts.
+	*l.stop = stop
+	watch := l.cfg.Watch
+	return func() tea.Msg { return next(id, gen, watch(ctx, fresh))() }
+}
+
+func Groups[T any](ctx context.Context, src <-chan T, groups func(T) []Group) <-chan []Group {
+	out := make(chan []Group)
+	go func() {
+		defer close(out)
+		for v := range src {
+			select {
+			case out <- groups(v):
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out
+}
+
+func next(id string, gen int, ch <-chan []Group) tea.Cmd {
 	return func() tea.Msg {
-		groups, note, err := load()
-		return Loaded{Screen: id, Groups: groups, Note: note, Err: err}
+		groups, open := <-ch
+		return Loaded{Screen: id, Groups: groups, gen: gen, more: ch, final: !open}
 	}
 }
 
@@ -115,6 +164,8 @@ func (l ListScreen) Focus() Focus {
 }
 
 func (l ListScreen) Busy() bool { return l.busy }
+
+func (l ListScreen) Loading() bool { return l.loading }
 
 func (l ListScreen) Loaded() bool { return l.loaded && l.failure.Text == "" }
 
@@ -189,7 +240,8 @@ func (l ListScreen) Update(msg tea.Msg) (ListScreen, tea.Cmd) {
 			status = Status{Mark: present.MarkBroken, Text: text, Hint: hint}
 		}
 		l.loading = true
-		return l, tea.Batch(Say(status), l.load())
+		started, cmd := l.start(true)
+		return started, tea.Batch(Say(status), cmd)
 	case ReadDone:
 		if msg.Screen != l.cfg.ID {
 			return l, nil
@@ -206,7 +258,8 @@ func (l ListScreen) Update(msg tea.Msg) (ListScreen, tea.Cmd) {
 			return l, nil
 		}
 		l.loading = true
-		return l, tea.Batch(l.spinner.Tick, l.load())
+		started, cmd := l.start(true)
+		return started, tea.Batch(l.spinner.Tick, cmd)
 	case spinner.TickMsg:
 		if !l.loaded || l.rowBusy != "" {
 			var cmd tea.Cmd
@@ -229,25 +282,52 @@ func (l ListScreen) Update(msg tea.Msg) (ListScreen, tea.Cmd) {
 }
 
 func (l ListScreen) loadedWith(msg Loaded) (ListScreen, tea.Cmd) {
+	if msg.gen != l.gen {
+		return l, nil
+	}
+	if msg.more != nil {
+		if msg.final {
+			l.loading = false
+			return l, nil
+		}
+		l = l.show(msg.Groups)
+		return l, next(l.cfg.ID, msg.gen, msg.more)
+	}
 	l.loading = false
 	if msg.Err != nil {
 		text, hint := l.cfg.Describe(msg.Err)
 		l.failure = Status{Mark: present.MarkBroken, Text: text, Hint: hint}
 		return l, nil
 	}
-	l.failure = Status{}
-	for _, g := range msg.Groups {
-		if _, seen := l.folded[g.Title]; !seen && g.Title != "" {
-			l.folded[g.Title] = l.cfg.FoldAllOK && allOK(g)
-		}
-	}
-	l.groups = msg.Groups
-	l.loaded = true
-	l.cursor = min(l.cursor, max(len(l.items())-1, 0))
+	l = l.show(msg.Groups)
 	if msg.Note.Text != "" {
 		return l, Say(msg.Note)
 	}
 	return l, nil
+}
+
+// invariant: a group's fold is decided once its rows have answered, so a
+// frame of pending rows never folds a group the full reading leaves open.
+func (l ListScreen) show(groups []Group) ListScreen {
+	l.failure = Status{}
+	for _, g := range groups {
+		if _, seen := l.folded[g.Title]; !seen && g.Title != "" && !pendingIn(g) {
+			l.folded[g.Title] = l.cfg.FoldAllOK && allOK(g)
+		}
+	}
+	l.groups = groups
+	l.loaded = true
+	l.cursor = min(l.cursor, max(len(l.items())-1, 0))
+	return l
+}
+
+func pendingIn(g Group) bool {
+	for _, r := range g.Rows {
+		if r.Row.Mark == present.MarkPending {
+			return true
+		}
+	}
+	return false
 }
 
 func allOK(g Group) bool {

@@ -17,7 +17,8 @@ import (
 const ID = "tools"
 
 type Tools interface {
-	Inventory(ctx context.Context) ([]tools.Report, error)
+	Watch(ctx context.Context) <-chan []tools.Report
+	Forget()
 	CheckInstall(ctx context.Context, names []string) error
 	Install(ctx context.Context, r tools.InstallRequest) ([]tools.Outcome, error)
 	CheckUninstall(names []string) error
@@ -36,7 +37,7 @@ func New(ctx context.Context, t Tools, describe kit.Describe, th theme.Theme) Mo
 	m := Model{ctx: ctx, tools: t}
 	m.list = kit.NewList(kit.ListConfig{
 		ID:        ID,
-		Load:      m.load,
+		Watch:     m.watch,
 		Describe:  describe,
 		Empty:     "none",
 		EmptyHint: "press r to reload the catalogue",
@@ -56,11 +57,14 @@ func New(ctx context.Context, t Tools, describe kit.Describe, th theme.Theme) Mo
 	return m
 }
 
-func (m Model) load() ([]kit.Group, kit.Status, error) {
-	reports, err := m.tools.Inventory(m.ctx)
-	if err != nil {
-		return nil, kit.Status{}, err
+func (m Model) watch(ctx context.Context, fresh bool) <-chan []kit.Group {
+	if fresh {
+		m.tools.Forget()
 	}
+	return kit.Groups(ctx, m.tools.Watch(ctx), groups)
+}
+
+func groups(reports []tools.Report) []kit.Group {
 	byName := make(map[string]tools.Report, len(reports))
 	for _, r := range reports {
 		byName[r.Tool.Name] = r
@@ -73,7 +77,7 @@ func (m Model) load() ([]kit.Group, kit.Status, error) {
 			}
 		}
 	}
-	return groups, kit.Status{}, nil
+	return groups
 }
 
 func (m Model) Init() tea.Cmd { return m.list.Init() }
@@ -81,6 +85,8 @@ func (m Model) Init() tea.Cmd { return m.list.Init() }
 func (m Model) Focus() kit.Focus { return m.list.Focus() }
 
 func (m Model) Busy() bool { return m.list.Busy() }
+
+func (m Model) Loading() bool { return m.list.Loading() }
 
 func (m Model) Keys() []key.Binding { return m.list.Keys() }
 

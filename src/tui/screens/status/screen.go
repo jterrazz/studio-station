@@ -27,13 +27,16 @@ const (
 )
 
 type Status interface {
-	Snapshot(ctx context.Context) (status.Snapshot, error)
+	Watch(ctx context.Context) <-chan status.Snapshot
+	Forget()
 	Sample(ctx context.Context) (status.Sample, error)
 }
 
 type loaded struct {
 	snapshot status.Snapshot
-	err      error
+	gen      int
+	more     <-chan status.Snapshot
+	final    bool
 }
 
 type sampled struct {
@@ -47,16 +50,19 @@ type Model struct {
 	ctx      context.Context
 	status   Status
 	describe kit.Describe
+	failure  kit.Status
 	theme    theme.Theme
 	snapshot status.Snapshot
 	loaded   bool
-	failure  kit.Status
 	sample   status.Sample
 	rx, tx   []float64
 	visible  bool
 	ticking  bool
 	offset   int
 	spinner  spinner.Model
+	gen      int
+	stop     *context.CancelFunc
+	loading  bool
 }
 
 func New(ctx context.Context, s Status, describe kit.Describe, th theme.Theme) Model {
@@ -67,18 +73,42 @@ func New(ctx context.Context, s Status, describe kit.Describe, th theme.Theme) M
 		theme:    th,
 		visible:  true,
 		ticking:  true,
+		loading:  true,
+		stop:     new(context.CancelFunc),
 		spinner:  spinner.New(spinner.WithSpinner(spinner.Dot), spinner.WithStyle(th.Accent)),
 	}
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.spinner.Tick, m.load(), next())
+	return tea.Batch(m.spinner.Tick, m.receive(false), next())
 }
 
-func (m Model) load() tea.Cmd {
+func (m Model) watch(fresh bool) (Model, tea.Cmd) {
+	m.gen, m.loading = m.gen+1, true
+	return m, m.receive(fresh)
+}
+
+// invariant: Init runs on a copy, so the running watch's cancel is held where
+// every copy of the screen sees it.
+func (m Model) receive(fresh bool) tea.Cmd {
+	if *m.stop != nil {
+		(*m.stop)()
+	}
+	ctx, stop := context.WithCancel(m.ctx) //nolint:gosec // outside: held in *m.stop, called when the next watch starts.
+	*m.stop = stop
+	gen, s := m.gen, m.status
 	return func() tea.Msg {
-		snapshot, err := m.status.Snapshot(m.ctx)
-		return loaded{snapshot: snapshot, err: err}
+		if fresh {
+			s.Forget()
+		}
+		return receive(gen, s.Watch(ctx))()
+	}
+}
+
+func receive(gen int, ch <-chan status.Snapshot) tea.Cmd {
+	return func() tea.Msg {
+		snapshot, open := <-ch
+		return loaded{snapshot: snapshot, gen: gen, more: ch, final: !open}
 	}
 }
 
@@ -97,6 +127,8 @@ func (m Model) Focus() kit.Focus { return kit.FocusNormal }
 
 func (m Model) Busy() bool { return false }
 
+func (m Model) Loading() bool { return m.loading }
+
 func (m Model) Keys() []key.Binding {
 	return []key.Binding{kit.Bind("↑↓", "scroll", "up", "down", "k", "j"), kit.Bind("r", "reload", "r")}
 }
@@ -107,14 +139,22 @@ func (m Model) Update(msg tea.Msg) (kit.Screen, tea.Cmd) {
 		m.theme = theme.New(msg.IsDark())
 		m.spinner.Style = m.theme.Accent
 	case loaded:
-		if msg.err != nil {
-			text, hint := m.describe(msg.err)
-			m.failure = kit.Status{Mark: present.MarkBroken, Text: text, Hint: hint}
+		if msg.gen != m.gen {
 			return m, nil
+		}
+		if msg.final {
+			m.loading = false
+			return m, nil
+		}
+		if err := msg.snapshot.Err(); err != nil {
+			text, hint := m.describe(err)
+			m.failure = kit.Status{Mark: present.MarkBroken, Text: text, Hint: hint}
+			return m, receive(msg.gen, msg.more)
 		}
 		m.failure = kit.Status{}
 		m.snapshot, m.loaded = msg.snapshot, true
 		m = m.record(msg.snapshot.System.Sample)
+		return m, receive(msg.gen, msg.more)
 	case sampled:
 		if msg.err == nil {
 			m = m.record(msg.sample)
@@ -132,7 +172,7 @@ func (m Model) Update(msg tea.Msg) (kit.Screen, tea.Cmd) {
 			return m, tea.Batch(m.measure(), next())
 		}
 	case kit.Reload:
-		return m, m.load()
+		return m.watch(true)
 	case spinner.TickMsg:
 		if !m.loaded {
 			var cmd tea.Cmd

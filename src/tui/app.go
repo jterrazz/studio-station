@@ -6,6 +6,7 @@ import (
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
@@ -23,16 +24,26 @@ type App struct {
 	theme   theme.Theme
 	help    help.Model
 	status  kit.Status
+	prefer  func(prefix string)
+	spin    spinner.Model
+	turning bool
 }
 
-func newApp(context string, tabs []kit.Tab, screens []kit.Screen) App {
+func newApp(context string, tabs []kit.Tab, screens []kit.Screen, prefer func(string)) App {
 	t := theme.New(true)
-	return App{tabs: tabs, screens: screens, context: context, width: 80, height: 24, theme: t, help: kit.NewHelp(t)}
+	if prefer == nil {
+		prefer = func(string) {}
+	}
+	return App{
+		tabs: tabs, screens: screens, context: context, width: 80, height: 24, theme: t, help: kit.NewHelp(t), prefer: prefer,
+		spin: spinner.New(spinner.WithSpinner(spinner.Dot), spinner.WithStyle(t.Accent)), turning: true,
+	}
 }
 
 func (a App) Init() tea.Cmd {
-	cmds := make([]tea.Cmd, 0, 1+len(a.screens))
-	cmds = append(cmds, tea.RequestBackgroundColor)
+	a.prefer(a.tabs[a.active].Probes)
+	cmds := make([]tea.Cmd, 0, 2+len(a.screens))
+	cmds = append(cmds, tea.RequestBackgroundColor, a.spin.Tick)
 	for _, s := range a.screens {
 		cmds = append(cmds, s.Init())
 	}
@@ -63,6 +74,19 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.BackgroundColorMsg:
 		a.theme = theme.New(msg.IsDark())
 		a.help = kit.NewHelp(a.theme)
+		a.spin.Style = a.theme.Accent
+	case spinner.TickMsg:
+		if msg.ID == a.spin.ID() {
+			// invariant: the header spinner turns while the shown tab has a probe
+			// pending, and stops, costing no redraw, once it has answered.
+			if !a.screens[a.active].Loading() {
+				a.turning = false
+				return a, nil
+			}
+			var cmd tea.Cmd
+			a.spin, cmd = a.spin.Update(msg)
+			return a, cmd
+		}
 	case kit.Status:
 		a.status = msg
 		return a, nil
@@ -94,7 +118,9 @@ func (a App) key(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "shift+tab":
 		return a.show((a.active + len(a.screens) - 1) % len(a.screens))
 	case "r":
-		return a.forward(kit.Reload{})
+		model, cmd := a.forward(kit.Reload{})
+		app, _ := model.(App)
+		return app.turn(cmd)
 	case "?":
 		a.help.ShowAll = !a.help.ShowAll
 		return a, nil
@@ -119,14 +145,27 @@ func (a App) show(n int) (tea.Model, tea.Cmd) {
 	var hide, show tea.Cmd
 	a.screens[a.active], hide = a.screens[a.active].Update(kit.Shown{Visible: false})
 	a.active = n
+	a.prefer(a.tabs[n].Probes)
 	a.screens[a.active], show = a.screens[a.active].Update(kit.Shown{Visible: true})
-	return a, tea.Batch(hide, show)
+	return a.turn(tea.Batch(hide, show))
+}
+
+func (a App) turn(cmd tea.Cmd) (tea.Model, tea.Cmd) {
+	if a.turning || !a.screens[a.active].Loading() {
+		return a, cmd
+	}
+	a.turning = true
+	return a, tea.Batch(cmd, a.spin.Tick)
 }
 
 func (a App) View() tea.View {
 	t := a.theme
 	current := a.screens[a.active]
-	header := kit.Header(t, a.tabs, a.active, a.context, a.width)
+	spin := ""
+	if current.Loading() {
+		spin = a.spin.View()
+	}
+	header := kit.Header(t, a.tabs, a.active, a.context, spin, a.width)
 	footer := kit.Footer(t, a.help, current.Keys(), globalKeys(), current.Busy(), a.width)
 	bar := kit.StatusLine(t, a.status, a.width)
 	room := max(a.height-lipgloss.Height(header)-lipgloss.Height(footer)-1, 1)

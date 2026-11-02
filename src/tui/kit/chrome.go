@@ -11,11 +11,12 @@ import (
 )
 
 type Tab struct {
-	Label string
-	Fleet bool
+	Label  string
+	Fleet  bool
+	Probes string
 }
 
-func Header(t theme.Theme, tabs []Tab, active int, context string, width int) string {
+func Header(t theme.Theme, tabs []Tab, active int, context, spin string, width int) string {
 	var b strings.Builder
 	b.WriteString(margin + t.Title.Render("station") + "   ")
 	for i, tab := range tabs {
@@ -31,6 +32,9 @@ func Header(t theme.Theme, tabs []Tab, active int, context string, width int) st
 		} else {
 			b.WriteString(t.Subtle.Render(tab.Label))
 		}
+	}
+	if spin != "" {
+		b.WriteString("  " + spin)
 	}
 	left := b.String()
 	gap := max(width-1-lipgloss.Width(left)-lipgloss.Width(context), 1)

@@ -78,6 +78,8 @@ func (m Model) Focus() kit.Focus { return m.list.Focus() }
 
 func (m Model) Busy() bool { return m.list.Busy() }
 
+func (m Model) Loading() bool { return m.list.Loading() }
+
 func (m Model) Keys() []key.Binding { return m.list.Keys() }
 
 func (m Model) View(width, height int) string { return m.list.View(width, height) }

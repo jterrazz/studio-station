@@ -24,6 +24,7 @@ type Screen interface {
 	View(width, height int) string
 	Focus() Focus
 	Busy() bool
+	Loading() bool
 	Keys() []key.Binding
 }
 
