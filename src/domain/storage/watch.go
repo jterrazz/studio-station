@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	subject = "storage"
-	pending = int64(-2)
+	subject     = "storage"
+	pending     = int64(-2)
+	globWorkers = 8
 )
 
 type part struct {
@@ -160,11 +161,10 @@ func (s *Service) plan() plan {
 		p.roots = append(p.roots, abs)
 		return index[abs]
 	}
-	glob := func(pattern string) []string {
-		matches, _ := s.h.FS.Glob(s.o.Expand.Expand(pattern))
-		return matches
-	}
-	for _, e := range s.Placed() {
+	placed := s.Placed()
+	globbed := s.globAll(placed)
+	glob := func(pattern string) []string { return globbed[s.o.Expand.Expand(pattern)] }
+	for _, e := range placed {
 		ep := entryPlan{entry: e, docker: e.Storage.Size == catalog.SizeDockerDF}
 		for _, st := range e.Storage.Paths {
 			if !st.PlacedOn(s.o.Here) {
@@ -201,6 +201,46 @@ func (s *Service) plan() plan {
 		p.other = append(p.other, root(other))
 	}
 	return p
+}
+
+// value: the frame's globs are independent reads of the disk, so they run at
+// once, a few at a time, and the frame costs its slowest, not their sum.
+func (s *Service) globAll(placed []Entry) map[string][]string {
+	var patterns []string
+	for _, e := range placed {
+		for _, st := range e.Storage.Paths {
+			if !st.PlacedOn(s.o.Here) {
+				continue
+			}
+			patterns = append(patterns, s.o.Expand.Expand(st.Path))
+			for _, memo := range st.Memos {
+				patterns = append(patterns, s.o.Expand.Expand(path.Join(st.Path, memo)))
+			}
+		}
+		for _, pattern := range e.Storage.Installed {
+			patterns = append(patterns, s.o.Expand.Expand(pattern))
+		}
+	}
+	out := make(map[string][]string, len(patterns))
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	work := make(chan string)
+	for range globWorkers {
+		wg.Go(func() {
+			for pattern := range work {
+				matches, _ := s.h.FS.Glob(pattern)
+				mu.Lock()
+				out[pattern] = matches
+				mu.Unlock()
+			}
+		})
+	}
+	for _, pattern := range patterns {
+		work <- pattern
+	}
+	close(work)
+	wg.Wait()
+	return out
 }
 
 func (s *Service) assemble(p plan, r reading) Report {
