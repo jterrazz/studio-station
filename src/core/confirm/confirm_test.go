@@ -58,9 +58,11 @@ func TestAYesNoQuestionIsAnsweredByYes(t *testing.T) {
 	if err := confirm.Require(asks, "lazygit", confirm.Yes); err != nil {
 		t.Errorf("--yes did not remove lazygit: %v", err)
 	}
-	var e *fail.Error
-	if err := confirm.Require(asks, "lazygit", ""); !errors.As(err, &e) || e.Code != confirm.YesNeeded || e.Type != fail.NeedsConfirmation {
-		t.Errorf("removing lazygit without --yes: %v, want %s", err, confirm.YesNeeded)
+	for _, given := range []string{"", "no", "lazygit"} {
+		var e *fail.Error
+		if err := confirm.Require(asks, "lazygit", given); !errors.As(err, &e) || e.Code != confirm.YesNeeded || e.Type != fail.NeedsConfirmation {
+			t.Errorf("removing lazygit answered %q: %v, want %s", given, err, confirm.YesNeeded)
+		}
 	}
 	if err := confirm.Require(confirm.For(confirm.Install, machine.Mac), "jq", ""); err != nil {
 		t.Errorf("installing jq asked: %v", err)
