@@ -27,6 +27,13 @@ type Ref struct {
 	On string
 }
 
+func (r Ref) Mac() string {
+	if r.On == "" {
+		return r.Name
+	}
+	return r.On
+}
+
 type Capabilities struct {
 	// invariant: each capability is reported by the one contract that owns
 	// the fact, never derived from a model name.
