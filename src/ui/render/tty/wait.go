@@ -2,6 +2,7 @@ package tty
 
 import (
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -9,18 +10,14 @@ import (
 
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/ui/atom"
+	"github.com/jterrazz/studio-station/src/ui/molecule"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
 func ErrorBlock(e page.Error, colored, dark bool) string {
-	label, hint := "Error:", "Hint:"
-	if colored {
-		st := token.New(dark)
-		label, hint = st.Error.Render(label), st.Muted.Render(hint)
-	}
-	block := label + " " + e.Message + "\n"
-	if e.Hint != "" {
-		block += hint + " " + e.Hint + "\n"
+	block := strings.Join(molecule.ErrorLines(token.New(dark), e), "\n") + "\n"
+	if !colored {
+		return ansi.Strip(block)
 	}
 	return block
 }

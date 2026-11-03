@@ -64,7 +64,11 @@ func Empty(st token.Styles, e page.Empty, m Medium, keys Keys) string {
 }
 
 func ErrorLines(st token.Styles, e page.Error) []string {
-	return []string{st.Error.Render("Error:") + " " + st.Text.Render(e.Message), st.Muted.Render("Hint:") + " " + st.Text.Render(e.Hint)}
+	lines := []string{st.Error.Render("Error:") + " " + st.Text.Render(e.Message)}
+	if e.Hint != "" {
+		lines = append(lines, st.Muted.Render("Hint:")+" "+st.Text.Render(e.Hint))
+	}
+	return lines
 }
 
 func StatusError(st token.Styles, e page.Error, width int) string {
