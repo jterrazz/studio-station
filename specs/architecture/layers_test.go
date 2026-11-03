@@ -305,6 +305,9 @@ func allowedImport(row, pkg, ip string, test bool) bool {
 func ruleRows(w *world) []finding {
 	var out []finding
 	for _, pkg := range sortedKeys(w.packages) {
+		if _, ruled := placeOf(pkg); ruled {
+			continue
+		}
 		if _, ok := rowOf(pkg); !ok {
 			out = append(out, finding{"rows", "src/" + pkg, "no row of the import table names this package"})
 		}
@@ -732,6 +735,7 @@ func rules() []rule {
 		{"TreeScreams", ruleTree, "src/utils/mutant.go", "package utils\n", "src/utils"},
 		{"TreeInside", ruleTree, "src/apps/helpers/mutant.go", "package helpers\n", "src/apps/helpers"},
 		{"TreeApplies", ruleTree, "src/awake/mutant_tree.go", "package awake\n", "src/awake"},
+		{"FamilyImports", ruleFamilyImports, "src/apps/mutant_imports.go", "package apps\n\nimport _ \"os/exec\"\n", "src/apps/mutant_imports.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
 }
