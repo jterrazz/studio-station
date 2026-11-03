@@ -21,6 +21,7 @@ runs:
           see Install bat?
           send y
           see ● installed bat
+          see ● bat  1.0
           screen
           send \x1b[A
           gone ● installed bat
