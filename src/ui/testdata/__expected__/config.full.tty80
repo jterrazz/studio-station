@@ -5,7 +5,7 @@
    ● hushlogin          Silence the terminal login message
    ○ ghostty-dotfiles   The Ghostty config and its Catppuccin themes
      → station config install ghostty-dotfiles
-   ◐ tmux-dotfiles      The tmux config                               differs…
+   ◐ tmux-dotfiles      The tmux config  differs from station's
      → station config install tmux-dotfiles
    ● starship-dotfiles  The Starship prompt config
 

@@ -2,7 +2,7 @@
                       port  url                                                 state    process
    ◐ daemon                                                                     stopped
      → station start
-   ◐ linux-1  5173 → 40001  https://jterrazz-macbook-pro.tail1234.ts.net:40001  unknown  node
+   ◐ linux-1  5173 → 40001  https://jterrazz-macbook-pro.tail1234.ts.net:40001  unknown  node  vite
    ◐ linux-1  5432 → 40002                                                      unknown  postgres
  - mac-mini                                                                                     1 ◐
                state

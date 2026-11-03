@@ -640,7 +640,8 @@
           "key": "tags",
           "kind": "list",
           "keep": 20,
-          "show": "eye"
+          "show": "eye",
+          "whole": true
         }
       ],
       "items": [

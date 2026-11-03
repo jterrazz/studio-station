@@ -3,8 +3,8 @@
 
  Tailnet
    ● tailnet  Running · jterrazz-macbook-pro.tail1234.ts.net
-   ● node     macbook                                               100.98.133…
-   ● cli      /Applications/Tailscale.app/Contents/MacOS/Tailscale  app-store
+   ● node     macbook                                         100.98.133.14
+   ● cli      /Applications/…/Tailscale                       app-store
 
  Peers
      mac-mini  100.98.133.20  online   tag:station

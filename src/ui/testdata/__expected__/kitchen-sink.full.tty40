@@ -19,12 +19,12 @@
    ● old       2026-09-03           45s
    ● url       https://j…
    ● identity  admin@jte…
-   ● path      /Appl…cale
+   ● path      /Applicat…
    ● command   → station tools upgrade --via brew
    ● list      brew …
    ● switch    on                     3
    ● sip       off
-   ◐ unknown   ?
+   ◐ unknown   ?  no answer in 2s
 
  Marks  13 ◐  2 ○  4 ✗
    ◐ outdated     attention  120 outda…
@@ -50,7 +50,7 @@
    ○ waiting      absent     waiting
    ✗ failing      broken     failing ·…
    ✗ refused      broken     refused
-   ✗ down         broken     not runni…
+   ✗ down         broken  not running
    ✗ stale        broken     stale
      → station machines delete linux-2
    ○ absent

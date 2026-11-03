@@ -99,7 +99,7 @@ func Sections(s tailnet.Status) []page.Section {
 	return []page.Section{head,
 		{ID: "peers", Title: "Peers", Columns: []page.Column{
 			{Key: "name", Kind: page.KindListing, Keep: 100}, {Key: "ip", Kind: page.KindIdentity, Keep: 60},
-			{Key: "state", Kind: page.KindText, Keep: 70, Show: page.EyeOnly}, {Key: "tags", Kind: page.KindList, Keep: 20, Show: page.EyeOnly},
+			{Key: "state", Kind: page.KindText, Keep: 70, Show: page.EyeOnly}, {Key: "tags", Kind: page.KindList, Keep: 20, Whole: true, Show: page.EyeOnly},
 		}, Items: listOf(s, "peers", peers)},
 		{ID: "serve", Title: "Serve", Columns: columns(), Items: listOf(s, "serves", serve)},
 	}

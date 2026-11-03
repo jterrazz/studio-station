@@ -179,19 +179,61 @@ func Fit(v page.Value, width int) string {
 	return s
 }
 
-func path(s string, width int) string {
-	parts := strings.Split(s, "/")
-	if len(parts) > 3 {
-		head := parts[0]
-		if head == "" {
-			head = "/" + parts[1]
+func Least(v page.Value) int {
+	// value: the narrowest width a path or URL is cut to while it still says
+	// where it points: a path's first and last segments, a URL's floor.
+	s := Show(v)
+	switch v.Kind {
+	case page.KindPath:
+		if short, ok := shortPath(s); ok {
+			return min(Width(s), Width(short))
 		}
-		short := head + "/" + token.Ellipsis + "/" + parts[len(parts)-1]
-		if Width(short) <= width {
-			return short
-		}
+		return min(Width(s), Floor(page.KindPath))
+	case page.KindURL:
+		return min(Width(s), Floor(page.KindURL))
+	default:
 	}
-	return Middle(s, width)
+	return Width(s)
+}
+
+func pathHead(s string) (head, last string, ok bool) {
+	parts := strings.Split(s, "/")
+	if len(parts) <= 3 {
+		return "", "", false
+	}
+	head = parts[0]
+	if head == "" {
+		head = "/" + parts[1]
+	}
+	return head, parts[len(parts)-1], true
+}
+
+func shortPath(s string) (string, bool) {
+	head, last, ok := pathHead(s)
+	return head + "/" + token.Ellipsis + "/" + last, ok
+}
+
+func path(s string, width int) string {
+	// invariant: a path keeps its first segment and as much of its end as
+	// fits, the file's name last: `/Library/…/com.docker.socket.plist`, else
+	// `/Library/…socket.plist`.
+	if width < Floor(page.KindPath) {
+		return End(s, width)
+	}
+	head, _, ok := pathHead(s)
+	if !ok {
+		return Middle(s, width)
+	}
+	if short, _ := shortPath(s); Width(short) <= width {
+		return short
+	}
+	lead := head + "/" + token.Ellipsis
+	runes := []rune(s)
+	keep := width - Width(lead)
+	if keep < 4 {
+		return Middle(s, width)
+	}
+	return lead + string(runes[len(runes)-keep:])
 }
 
 func url(s string, width int) string {

@@ -28,11 +28,10 @@
 
  Tailnet  4 ●
    ● tailnet          Running · jterrazz-macbook-pro.tail1234.ts.net
-   ● node             macbook
-   ● cli              /Applications/…/Tailscale
+   ● node             macbook  100.98.133.14
+   ● cli              /Applications/…/Tailscale  app-store
      Peers
-   ├─   mac-mini      100.98.133.20                                   online
-        tag:station
-   └─   iphone        100.98.133.30                                   offline
+   ├─   mac-mini      100.98.133.20                                     online
+   └─   iphone        100.98.133.30                                     offline
      Serve
-   └─ ● https 40001/  http://127.0.0.1:40001
+   └─ ● https 40001/  http://127.0.0.1:40001  station

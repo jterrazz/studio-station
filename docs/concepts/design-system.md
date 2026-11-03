@@ -46,7 +46,7 @@ The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinfor
 - The left margin is one space. Headers, rules, section titles and hints start at the margin; rows start two columns in.
 - A blank line precedes every section. A section title is `Accent` and bold, followed by its counts (`58 ●  2 ◐  14 ○`, each in its mark's tone).
 - A row is a mark, a space, then cells separated by two spaces. Column widths are computed per document, so every section lines up, and the last cell is never padded.
-- A cell is a name (strong), a value, a method (muted), then a detail (muted, cut with `…` to the width, never cut in a pipe). A row that is not `●` may end with the one command that repairs it.
+- A cell is a name (strong), a value, a method (muted), then a detail (muted, cut with `…` to the width by its kind, a path in its middle, never cut in a pipe; beside the row's own cells when its last columns are blank and the aligned place would cut it). A long path in a column is cut in the middle before it takes a detail's room. A row that is not `●` may end with the one command that repairs it.
 - Sizes are humanised by one function; numbers are right-aligned.
 - An empty state is one muted row (`none`, `nothing to clean`, `no machines registered`) plus a hint naming the command that fills it.
 

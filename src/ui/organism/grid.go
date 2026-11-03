@@ -373,7 +373,70 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		}
 	}
 	cols = slices.DeleteFunc(cols, func(c column) bool { return c.width < 0 })
+	g.room(entries, cols, labelWidth, avail)
 	return cols, labelWidth
+}
+
+// invariant: a long path never crushes a row's detail: while the details of
+// the rows that fill the last column lack room (up to DetailMin each; the
+// other rows' details sit beside their own cells), a column holding a path is
+// cut in the middle, the least kept first, down to the path's first and last
+// segments and to its other cells' width; it then keeps only the width its
+// cut cells take.
+func (g Grid) room(entries []entry, cols []column, labelWidth, avail int) {
+	rows := make([]page.Row, 0, len(entries))
+	need := 0
+	for _, e := range entries {
+		if e.key == "" || e.link != nil || e.empty != nil {
+			continue
+		}
+		rows = append(rows, e.row)
+		if len(cols) == 0 || atom.Show(cols[len(cols)-1].cell(e.row)) == "" {
+			continue
+		}
+		if d := atom.Width(atom.Show(e.row.Detail)); d > 0 && !e.overflow {
+			need = max(need, token.Gap+min(d, token.DetailMin))
+		}
+	}
+	short := func() int {
+		n := labelWidth + need
+		for _, c := range cols {
+			n += token.Gap + c.width
+		}
+		return n - avail
+	}
+	if need == 0 || short() <= 0 {
+		return
+	}
+	order := make([]int, len(cols))
+	for i := range order {
+		order[i] = i
+	}
+	slices.SortStableFunc(order, func(a, b int) int { return cols[a].keep - cols[b].keep })
+	for _, i := range order {
+		c := &cols[i]
+		floor, middle := 0, false
+		for _, r := range rows {
+			v := c.cell(r)
+			w := atom.Width(atom.Show(v))
+			if v.Kind == page.KindPath {
+				middle = middle || atom.Least(v) < w
+				w = atom.Least(v)
+			}
+			floor = max(floor, w)
+		}
+		if !middle || c.width <= floor {
+			continue
+		}
+		target := max(floor, c.width-short())
+		c.width = 0
+		for _, r := range rows {
+			c.width = max(c.width, atom.Width(atom.Fit(c.cell(r), target)))
+		}
+		if short() <= 0 {
+			return
+		}
+	}
 }
 
 // invariant: per-row overflow: one row's long value (the daemon's two
@@ -416,6 +479,13 @@ func (g Grid) overflow(entries []entry, cols []column, labelWidth, avail int) {
 		entries[widest].overflow = true
 		last.width = max(second, atom.Width(last.label))
 	}
+}
+
+func cut(v page.Value, width int) string {
+	if s := atom.Fit(v, width); atom.Width(s) <= width {
+		return s
+	}
+	return atom.End(atom.Show(v), width)
 }
 
 func (g Grid) avail() int {
@@ -528,6 +598,7 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	var b strings.Builder
 	b.WriteString(lead + st.Strong.Render(label) + atom.Spaces(labelWidth-atom.Width(e.prefix)-atom.Width(label)))
 	used := labelWidth
+	ownLine, ownUsed := lead+st.Strong.Render(label), labelWidth
 	var below []Line
 	for ci, c := range cols {
 		v := c.cell(r)
@@ -550,9 +621,16 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 		if atom.Numeric(c.kind) {
 			b.WriteString(atom.Spaces(token.Gap+c.width-atom.Width(text)) + styled)
 		} else {
-			b.WriteString(atom.Spaces(token.Gap) + styled + atom.Spaces(c.width-atom.Width(text)))
+			b.WriteString(atom.Spaces(token.Gap) + styled)
+			if text != "" {
+				ownLine, ownUsed = b.String(), used+token.Gap+atom.Width(text)
+			}
+			b.WriteString(atom.Spaces(c.width - atom.Width(text)))
 		}
 		used += token.Gap + c.width
+		if text != "" && atom.Numeric(c.kind) {
+			ownLine, ownUsed = b.String(), used
+		}
 	}
 	rest := g.avail() - used
 	detail := atom.Show(r.Detail)
@@ -561,20 +639,28 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 		hint = molecule.Hint(st, *r.Hint, g.Medium, g.Keys)
 		hintWidth = atom.Width(molecule.HintText(*r.Hint, g.Medium, g.Keys))
 	}
+	// invariant: a row whose last columns are blank in it keeps its detail
+	// beside its own cells when the aligned place would cut it and that one
+	// holds it whole.
+	if w := token.Gap + atom.Width(detail); detail != "" && w > rest && ownUsed < used && w <= g.avail()-ownUsed {
+		b.Reset()
+		b.WriteString(ownLine)
+		rest = g.avail() - ownUsed
+	}
 	own := false
 	switch {
 	case detail != "" && hint != "":
 		if room := rest - token.Gap*2 - hintWidth; room >= atom.Width(detail) {
-			b.WriteString(atom.Spaces(token.Gap) + st.Muted.Render(atom.End(detail, room)) + atom.Spaces(token.Gap) + hint)
+			b.WriteString(atom.Spaces(token.Gap) + st.Muted.Render(detail) + atom.Spaces(token.Gap) + hint)
 		} else {
 			if room := rest - token.Gap; room >= 1 {
-				b.WriteString(atom.Spaces(token.Gap) + st.Muted.Render(atom.End(detail, room)))
+				b.WriteString(atom.Spaces(token.Gap) + st.Muted.Render(cut(r.Detail, room)))
 			}
 			own = true
 		}
 	case detail != "":
 		if room := rest - token.Gap; room >= 1 {
-			b.WriteString(atom.Spaces(token.Gap) + st.Muted.Render(atom.End(detail, room)))
+			b.WriteString(atom.Spaces(token.Gap) + st.Muted.Render(cut(r.Detail, room)))
 		}
 	case hint != "":
 		if token.Gap+hintWidth <= rest {

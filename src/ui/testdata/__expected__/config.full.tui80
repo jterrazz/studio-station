@@ -1,8 +1,7 @@
  - Terminal                                                       2 ●  1 ◐  1 ○
    ● hushlogin          Silence the terminal login message
    ○ ghostty-dotfiles   The Ghostty config and its Catppuccin themes  i install
-   ◐ tmux-dotfiles      The tmux config                               differs…
-     i install
+   ◐ tmux-dotfiles      The tmux config  differs from station's  i install
    ● starship-dotfiles  The Starship prompt config
  - Security                                                            1 ◐  1 ○
    ○ git-signing  Sign every commit with a GPG key          i install
