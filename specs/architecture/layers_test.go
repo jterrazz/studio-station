@@ -305,7 +305,7 @@ func allowedImport(row, pkg, ip string, test bool) bool {
 func ruleRows(w *world) []finding {
 	var out []finding
 	for _, pkg := range sortedKeys(w.packages) {
-		if _, ruled := placeOf(pkg); ruled {
+		if p, ruled := placeOf(pkg); ruled && p.row != rowPresentation {
 			continue
 		}
 		if _, ok := rowOf(pkg); !ok {
@@ -710,6 +710,7 @@ type rule struct {
 func rules() []rule {
 	return []rule{
 		{"Rows", ruleRows, "src/mutant/mutant.go", "package mutant\n", "src/mutant"},
+		{"RowsPresentation", ruleRows, "src/ui/mutantleak/leak.go", "package mutantleak\n\nimport _ \"os/exec\"\n", "src/ui/mutantleak"},
 		{"Imports", ruleImports, "src/system/mutant_imports.go", "package system\n\nimport _ \"os/exec\"\n", "src/system/mutant_imports.go"},
 		{"Symbols", ruleSymbols, "src/present/mutant_symbols.go", "package present\n\nimport \"time\"\n\nfunc mutantNow() time.Time { return time.Now() }\n", "src/present/mutant_symbols.go"},
 		{"Systemtest", ruleSystemtest, "src/theme/mutant_systemtest.go", "package theme\n\nimport _ \"" + module + "/src/system/systemtest\"\n", "src/theme/mutant_systemtest.go"},
@@ -783,7 +784,8 @@ func judge(t *testing.T, name string) {
 	})
 }
 
-func TestRows(t *testing.T)       { judge(t, "Rows") }
+func TestRows(t *testing.T)             { judge(t, "Rows") }
+func TestRowsPresentation(t *testing.T) { judge(t, "RowsPresentation") }
 func TestImports(t *testing.T)    { judge(t, "Imports") }
 func TestSymbols(t *testing.T)    { judge(t, "Symbols") }
 func TestSystemtest(t *testing.T) { judge(t, "Systemtest") }
