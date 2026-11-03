@@ -50,12 +50,18 @@ func show(v page.Value) string {
 		return ""
 	case page.KindCount:
 		n := strconv.FormatInt(v.N, 10)
+		if g := Glyph(page.Mark(v.Label)); g != "" && v.Unit == "" {
+			return n + " " + g
+		}
 		if v.Unit == "" {
 			return n
 		}
 		return n + " " + v.Unit
 	case page.KindSize:
-		if v.Unit != "" {
+		switch {
+		case strings.HasPrefix(v.Unit, "/"):
+			return Bytes(v.N) + v.Unit
+		case v.Unit != "":
 			return Bytes(v.N) + " " + v.Unit
 		}
 		return Bytes(v.N)

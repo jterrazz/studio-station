@@ -10,8 +10,6 @@ import (
 	"syscall"
 
 	"charm.land/fang/v2"
-	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/term"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli"
@@ -22,9 +20,10 @@ import (
 	"github.com/jterrazz/studio-station/src/fail"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/present"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/system/host"
+	"github.com/jterrazz/studio-station/src/ui/help"
+	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
 func Run(args, env []string, stdin, stdout, stderr *os.File) int {
@@ -35,14 +34,14 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 			vars[k] = v
 		}
 	}
-	inTTY, outTTY, errTTY := term.IsTerminal(stdin.Fd()), term.IsTerminal(stdout.Fd()), term.IsTerminal(stderr.Fd())
+	inTTY, outTTY, errTTY := token.IsTerminal(stdin), token.IsTerminal(stdout), token.IsTerminal(stderr)
 	dark := true
 	if inTTY && outTTY && len(args) > 0 {
 		// hazard: the background query writes an OSC request and reads the reply
 		// on stdin, so it runs only when both ends are a terminal that answers; bare
 		// `station` opens the TUI, which asks itself, and a key typed early must
 		// reach it rather than be swallowed as the reply.
-		dark = lipgloss.HasDarkBackground(stdin, stdout)
+		dark = token.DetectDark(stdin, stdout)
 	}
 	writer := output.NewWriter(
 		output.Stream{W: stdout, IsTerminal: outTTY, Width: widthOf(stdout, outTTY), Height: heightOf(stdout, outTTY), Dark: dark},
@@ -95,7 +94,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		fang.WithErrorHandler(func(_ io.Writer, _ fang.Styles, err error) {
 			writer.Failure(kit.Translate(err, ""))
 		}),
-		fang.WithColorSchemeFunc(fangScheme),
+		fang.WithColorSchemeFunc(help.FangScheme),
 		fang.WithNotifySignal(os.Interrupt, syscall.SIGTERM),
 	)
 	here.pool.Close()
@@ -116,10 +115,7 @@ func heightOf(f *os.File, isTerminal bool) int {
 	if !isTerminal {
 		return 0
 	}
-	_, h, err := term.GetSize(f.Fd())
-	if err != nil {
-		return 0
-	}
+	_, h := token.Size(f)
 	return h
 }
 
@@ -127,10 +123,7 @@ func widthOf(f *os.File, isTerminal bool) int {
 	if !isTerminal {
 		return 0
 	}
-	w, _, err := term.GetSize(f.Fd())
-	if err != nil {
-		return 0
-	}
+	w, _ := token.Size(f)
 	return w
 }
 
@@ -168,14 +161,13 @@ func withToolBins(env []string) []string {
 }
 
 type machine struct {
-	pool    *probe.Pool
-	host    system.Host
-	vars    map[string]string
-	kind    catalog.MachineKind
-	paths   settings.Paths
-	store   settings.Store
-	context string
-	where   page.Context
+	pool  *probe.Pool
+	host  system.Host
+	vars  map[string]string
+	kind  catalog.MachineKind
+	paths settings.Paths
+	store settings.Store
+	where page.Context
 }
 
 func resolve(h system.Host, vars map[string]string) machine {
@@ -204,14 +196,13 @@ func resolve(h system.Host, vars map[string]string) machine {
 	store := settings.NewStore(h.FS, paths)
 	current, _ := store.Load()
 	return machine{
-		pool:    probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
-		host:    h,
-		vars:    vars,
-		kind:    kind,
-		paths:   paths,
-		store:   store,
-		context: present.MachineContext(current.Here, string(kind), current.Here != ""),
-		where:   page.Context{Machine: current.Here, Kind: string(kind), Registered: current.Here != ""},
+		pool:  probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
+		host:  h,
+		vars:  vars,
+		kind:  kind,
+		paths: paths,
+		store: store,
+		where: page.Context{Machine: current.Here, Kind: string(kind), Registered: current.Here != ""},
 	}
 }
 

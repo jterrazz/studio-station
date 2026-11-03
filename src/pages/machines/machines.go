@@ -30,10 +30,10 @@ func Columns() []page.Column {
 	}
 }
 
-// Section is the Fleet: a host heads its VMs, the one column schema for both
-// levels, and no piped row ends on an empty cell nor grows a hint field, so
-// every record has the same eight fields: a fix rides in the resources cell. Links, when given, hang each VM's services under it.
 func Section(f machines.Fleet, links func(host, vm string) []page.Link) page.Section {
+	// invariant: one column schema for host and VM rows, and no piped row ends on
+	// an empty cell nor grows a hint field, so every record has the same eight
+	// fields: a fix rides in the resources cell.
 	hereVersion := ""
 	for _, h := range f.Hosts {
 		if h.Here {
@@ -138,9 +138,9 @@ func Resources(vm machines.VM) page.Value {
 	return page.List(plural(r.CPUs, "cpu"), Memory(r.MemoryBytes), page.Size(r.DiskBytes))
 }
 
-// invariant: memory reads in binary gigabytes, as macOS and tart count RAM, so the
-// 8 GB a VM was given prints as 8 GB.
 func Memory(n int64) page.Value {
+	// invariant: memory reads in binary gigabytes, as macOS and tart count RAM, so the
+	// 8 GB a VM was given prints as 8 GB.
 	const gib = 1 << 30
 	if n%gib == 0 {
 		return page.Text(strconv.FormatInt(n/gib, 10) + " GB")
@@ -164,7 +164,6 @@ func orDash(s string) page.Value {
 	return page.Identity(s)
 }
 
-// Change is the outcome of add, forget, start, stop, restart: one row.
 func Change(verb, name, change string, here page.Context) page.Page {
 	return pages.Outcome("machines "+verb, here, nil, []page.Row{pages.Done(name, catalog.StateOK, change)}, "machines")
 }
@@ -247,8 +246,6 @@ func CreatedContract(c machines.Created) CreatedJSON {
 	return body
 }
 
-// Created: the name is the second field of the piped row, so `cut -f2` names
-// the VM a script just made; each profile's URL follows on its own row.
 func Created(c machines.Created, here page.Context) page.Page {
 	vm, r := c.VM, c.VM.Resources
 	head := pages.Done(vm.Name, catalog.StateOK, "")
@@ -277,7 +274,8 @@ func Created(c machines.Created, here page.Context) page.Page {
 }
 
 func Deleted(r machines.DeleteReport, here page.Context) page.Page {
-	rows := []page.Row{pages.Done(r.Name, catalog.StateOK, "deleted")}
+	rows := make([]page.Row, 0, 1+len(r.Warnings))
+	rows = append(rows, pages.Done(r.Name, catalog.StateOK, "deleted"))
 	for i, w := range r.Warnings {
 		row := pages.Done(r.Name+"/"+strconv.Itoa(i), catalog.StateDegraded, w)
 		row.Label = r.Name
@@ -295,9 +293,6 @@ type HostChoice struct {
 	Here         bool
 }
 
-// CreateForm: the lifetime is asked, never defaulted, and offers exactly the
-// two lifetimes; the host is a question only when there is a choice, two
-// reachable hosts or more, and it defaults to here.
 func CreateForm(lifetime string, hosts []HostChoice) page.Form {
 	var f page.Form
 	if lifetime == "" {
@@ -322,5 +317,3 @@ func CreateForm(lifetime string, hosts []HostChoice) page.Form {
 func BuildConfirm(image string) page.Confirm {
 	return page.Confirm{Question: "Image " + image + " is not built here. Build " + image + " now? (~3 min)"}
 }
-
-func Count(n int) page.Value { return vmCount(n) }

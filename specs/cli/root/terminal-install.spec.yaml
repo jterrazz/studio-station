@@ -27,7 +27,7 @@ runs:
           send q
       exit: 0
       stdout: |4
-           station   Status · Tools · Config · Storage │ Fleet        host · unregistered
+           station  Home · Tools · Config · Storage │ Fleet · Services               host
            ──────────────────────────────────────────────────────────────────────────────
            / bat
            - CLI Tools                                                               10 ○
@@ -51,7 +51,7 @@ runs:
            ╰──────────────────────────────────────────────────────────╯
 
            ↑↓ move  i install  u uninstall  U upgrade  enter detail  / filter  ? keys
-           station   Status · Tools · Config · Storage │ Fleet        host · unregistered
+           station  Home · Tools · Config · Storage │ Fleet · Services               host
            ──────────────────────────────────────────────────────────────────────────────
            / bat
            - CLI Tools                                                           1 ●  9 ○

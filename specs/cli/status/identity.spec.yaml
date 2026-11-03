@@ -10,7 +10,7 @@ runs:
     - command: 'status | /usr/bin/sed -n ''/^# Identity/,/^# Tools/{/^# Tools/!p;}'''
       exit: 0
       stdout: |
-          # Identity
+          # Identity	5 ●	1 ◐
           ●	git email	admin@jterrazz.com
           ◐	git name	Someone Else	expected Jean-Baptiste Terrazzoni
           ●	git signing	on

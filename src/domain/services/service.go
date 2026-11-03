@@ -150,7 +150,7 @@ func JoinDetail(a, b string) string {
 	case b == "":
 		return a
 	}
-	return a + " · " + b
+	return a + ", " + b
 }
 
 func (s *Service) offline(ctx context.Context) HostView {

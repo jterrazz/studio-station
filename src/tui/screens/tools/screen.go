@@ -9,8 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
-	"github.com/jterrazz/studio-station/src/tui/kit"
-	"github.com/jterrazz/studio-station/src/ui/render/tui"
+	"github.com/jterrazz/studio-station/src/tui/screens/tab"
 )
 
 const ID = "tools"
@@ -27,167 +26,65 @@ type Tools interface {
 }
 
 type Model struct {
-	kit.Paged
-	ctx      context.Context
-	tools    Tools
-	here     page.Context
-	describe kit.Describe
-	browser  tui.Browser
-	loading  bool
-	busy     bool
-	gen      int
-	// invariant: Init runs on a copy, so the running watch's cancel is held
-	// where every copy of the screen sees it.
-	stop *context.CancelFunc
+	tab.View[[]tools.Report]
+	ctx   context.Context
+	tools Tools
 }
 
-type act struct{ key, name string }
-
-type loaded struct {
-	gen   int
-	page  page.Page
-	more  <-chan []tools.Report
-	final bool
-}
-
-func New(ctx context.Context, t Tools, here page.Context, describe kit.Describe) Model {
-	return Model{ctx: ctx, tools: t, here: here, describe: describe, browser: tui.New("Tools", "tools"), loading: true, stop: new(context.CancelFunc)}
-}
-
-func (m Model) Init() tea.Cmd { return m.watch(false) }
-
-func (m Model) watch(fresh bool) tea.Cmd {
-	if *m.stop != nil {
-		(*m.stop)()
-	}
-	ctx, stop := context.WithCancel(context.Background()) //nolint:gosec // outside: held in *m.stop, called when the next watch starts.
-	*m.stop = stop
-	gen, t, here := m.gen, m.tools, m.here
-	return func() tea.Msg {
+func New(ctx context.Context, t Tools, here page.Context, describe tab.Describe) Model {
+	source := func(ctx context.Context, fresh bool) (<-chan []tools.Report, error) {
 		if fresh {
 			t.Forget()
 		}
-		return next(gen, here, t.Watch(ctx))()
+		return t.Watch(ctx), nil
 	}
+	build := func(r []tools.Report) page.Page { return pagetools.Catalogue(r, here) }
+	return Model{View: tab.NewView(ID, "Tools", "tools", here, source, build, describe), ctx: ctx, tools: t}
 }
 
-func next(gen int, here page.Context, ch <-chan []tools.Report) tea.Cmd {
-	return func() tea.Msg {
-		reports, open := <-ch
-		if !open {
-			return loaded{gen: gen, final: true}
-		}
-		return loaded{gen: gen, page: pagetools.Catalogue(reports, here), more: ch}
-	}
-}
-
-func (m Model) Focus() kit.Focus {
-	switch m.browser.Focus() {
-	case tui.Filter:
-		return kit.FocusFilter
-	case tui.Modal, tui.Sheet:
-		return kit.FocusModal
-	case tui.Normal, tui.Detail:
-	}
-	return kit.FocusNormal
-}
-
-func (m Model) Busy() bool { return m.busy }
-
-func (m Model) Loading() bool { return m.loading }
-
-func (m Model) View(width, height int) string { return m.browser.Body(width, height) }
-
-func (m Model) Footer(width int) string { return m.browser.Footer(width, m.busy) }
-
-func (m Model) Update(msg tea.Msg) (kit.Screen, tea.Cmd) {
-	switch msg := msg.(type) {
-	case loaded:
-		if msg.gen != m.gen {
-			return m, nil
-		}
-		if msg.final {
-			m.loading = false
-			return m, nil
-		}
-		m.browser = m.browser.Show(msg.page)
-		return m, next(msg.gen, m.here, msg.more)
-	case kit.Done:
-		if msg.Screen != ID {
-			return m, nil
-		}
-		m.busy = false
-		status := msg.Status
-		if msg.Err != nil {
-			status = kit.Failed(m.describe, msg.Err)
-		}
-		m.loading = true
-		m.gen++
-		return m, tea.Batch(kit.Say(status), m.watch(true))
-	case kit.Reload:
-		if m.busy {
-			return m, nil
-		}
-		m.loading = true
-		m.gen++
-		return m, m.watch(true)
-	case act:
-		m.busy = true
-		return m, m.run(msg)
-	}
-	var cmd tea.Cmd
-	var ev *tui.Event
-	m.browser, cmd, ev = m.browser.Update(msg)
-	if ev == nil || ev.Row == "" || m.busy {
+func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
+	view, cmd, ev := m.View.Update(msg)
+	m.View = view
+	if ev == nil || ev.Row == "" {
 		return m, cmd
 	}
-	do := act{key: ev.Action.Key, name: ev.Row}
-	if ev.Action.Confirm == nil {
-		return m, func() tea.Msg { return do }
+	key, name := ev.Action.Key, ev.Row
+	run := tab.Exec(ID, func() (tab.Status, error) { return m.run(key, name) })
+	var confirm *page.Confirm
+	if ev.Action.Confirm != nil {
+		c := pagetools.Confirm(ev.Action.Confirm.Yes, name)
+		confirm = &c
 	}
-	m.browser = m.browser.Ask(pagetools.Confirm(ev.Action.Confirm.Yes, do.name), func() tea.Msg { return do })
-	return m, cmd
+	var act tea.Cmd
+	m.View, act = m.Act(confirm, run)
+	return m, tea.Batch(cmd, act)
 }
 
-func (m Model) run(a act) tea.Cmd {
-	return kit.Exec(ID, func() (kit.Status, error) {
-		switch a.key {
-		case pagetools.KeyInstall:
-			outcomes, err := m.install(a.name)
-			return outcome("installed", a.name, outcomes), err
-		case pagetools.KeyUninstall:
-			outcomes, err := m.uninstall(a.name)
-			return outcome("uninstalled", a.name, outcomes), err
+func (m Model) run(key, name string) (tab.Status, error) {
+	switch key {
+	case pagetools.KeyInstall:
+		if err := m.tools.CheckInstall(m.ctx, []string{name}); err != nil {
+			return tab.Status{}, err
 		}
-		outcomes, err := m.upgrade(a.name)
-		return outcome("upgraded", a.name, outcomes), err
-	})
-}
-
-func (m Model) install(name string) ([]tools.Outcome, error) {
-	if err := m.tools.CheckInstall(m.ctx, []string{name}); err != nil {
-		return nil, err
+		outcomes, err := m.tools.Install(m.ctx, tools.InstallRequest{Names: []string{name}, Interactive: true})
+		return outcome("installed", name, outcomes), err
+	case pagetools.KeyUninstall:
+		if err := m.tools.CheckUninstall([]string{name}); err != nil {
+			return tab.Status{}, err
+		}
+		outcomes, err := m.tools.Uninstall(m.ctx, []string{name})
+		return outcome("uninstalled", name, outcomes), err
 	}
-	return m.tools.Install(m.ctx, tools.InstallRequest{Names: []string{name}, Interactive: true})
-}
-
-func (m Model) uninstall(name string) ([]tools.Outcome, error) {
-	if err := m.tools.CheckUninstall([]string{name}); err != nil {
-		return nil, err
-	}
-	return m.tools.Uninstall(m.ctx, []string{name})
-}
-
-func (m Model) upgrade(name string) ([]tools.Outcome, error) {
 	if err := m.tools.CheckUpgrade([]string{name}); err != nil {
-		return nil, err
+		return tab.Status{}, err
 	}
-	return m.tools.Upgrade(m.ctx, tools.UpgradeRequest{Names: []string{name}})
+	outcomes, err := m.tools.Upgrade(m.ctx, tools.UpgradeRequest{Names: []string{name}})
+	return outcome("upgraded", name, outcomes), err
 }
 
 // value: the status bar names the tool asked for; a Then step that failed
 // degrades the line rather than hiding behind the tool's own success.
-func outcome(done, name string, outcomes []tools.Outcome) kit.Status {
+func outcome(done, name string, outcomes []tools.Outcome) tab.Status {
 	for _, o := range outcomes {
 		if o.Name != name {
 			continue
@@ -198,7 +95,7 @@ func outcome(done, name string, outcomes []tools.Outcome) kit.Status {
 				state = catalog.StateDegraded
 			}
 		}
-		return kit.Outcome(done, name, state, o.Detail)
+		return tab.Outcome(done, name, state, o.Detail)
 	}
-	return kit.Outcome(done, name, catalog.StateOK, "")
+	return tab.Outcome(done, name, catalog.StateOK, "")
 }

@@ -5,7 +5,7 @@ runs:
     - command: 'status </dev/null | /usr/bin/head -1'
       exit: 0
       stdout: |
-          # Machine
+          # Machine	1 ◐	2 ○
     - command: 'status </dev/null | /usr/bin/grep -c "$(printf ''\033'')"'
       exit: 1
       stdout: |

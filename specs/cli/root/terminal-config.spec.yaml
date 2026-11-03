@@ -9,6 +9,6 @@ runs:
           within 1 see Machine
           send 3
           within 1 see ◌ backup-exclusions
-          within 1 see ○ hushlogin
+          within 1 see + Terminal
           send q
       exit: 0

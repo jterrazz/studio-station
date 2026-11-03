@@ -35,14 +35,14 @@ runs:
     - command: 'status --json | /usr/bin/jq -c ''.daemons | map([.name, .state, .value])'''
       exit: 0
       stdout: |
-          [["ai.jterrazz.gone","absent","not loaded"],["ai.jterrazz.x","ok","running · pid 12"],["ai.jterrazz.y","broken","idle · last exit 1"]]
+          [["ai.jterrazz.gone","absent","not loaded"],["ai.jterrazz.x","ok","running"],["ai.jterrazz.y","broken","failing"]]
     - command: 'status | /usr/bin/sed -n ''/^# Daemons/,/^# Services/p;/^# Tools/q'' | /usr/bin/head -4'
       exit: 0
       stdout: |
-          # Daemons
+          # Daemons	1 ●	1 ○	1 ✗
           ○	ai.jterrazz.gone	not loaded
-          ●	ai.jterrazz.x	running · pid 12
-          ✗	ai.jterrazz.y	idle · last exit 1
+          ●	ai.jterrazz.x	running	pid 12
+          ✗	ai.jterrazz.y	failing	last exit 1
     - command: '--version >/dev/null; /usr/bin/grep -q "^softwareupdate -l$" .calls && echo ran'
       exit: 0
       stdout: |

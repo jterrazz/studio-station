@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
@@ -197,7 +198,7 @@ func parseUvList(stdout string) (map[string]string, error) {
 func parseBunList(stdout string) (map[string]string, error) {
 	out := map[string]string{}
 	for _, line := range strings.Split(stdout, "\n") {
-		entry := strings.TrimLeft(line, "├└│─ \t")
+		entry := strings.TrimLeftFunc(line, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '@' })
 		if entry == line || entry == "" {
 			continue
 		}

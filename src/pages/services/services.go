@@ -22,9 +22,6 @@ func Columns() []page.Column {
 	}
 }
 
-// Sections: one per host, its range the caption; one row schema everywhere:
-// vm, guest port, public URL, host, state, process, detail, the host on every
-// piped row, so `awk -F'\t' '$5=="macbook"'` keeps one host's services.
 func Sections(f services.Fleet) []page.Section {
 	out := make([]page.Section, 0, len(f.Hosts))
 	for _, h := range f.Hosts {
@@ -54,7 +51,7 @@ func Sections(f services.Fleet) []page.Section {
 			}
 			items = append(items, page.Item{Empty: &page.Empty{Noun: "services", Hint: hint}})
 		}
-		out = append(out, page.Section{ID: "host/" + h.Name, Title: h.Name, Role: page.Banner, Caption: Caption(h), Columns: Columns(), Items: items})
+		out = append(out, page.Section{ID: "host-" + h.Name, Title: h.Name, Role: page.Banner, Caption: Caption(h), Columns: Columns(), Items: items})
 	}
 	if len(out) == 0 {
 		out = append(out, page.Section{ID: "services", Title: "Services", Role: page.Banner, Columns: Columns(),
@@ -100,7 +97,7 @@ func markOf(s services.View) (page.Mark, page.Reason) {
 	return page.OK, ""
 }
 
-func ID(vm string, port int) string { return vm + ":" + strconv.Itoa(port) }
+func rowID(vm string, port int) string { return vm + ":" + strconv.Itoa(port) }
 
 func Row(s services.View, host string) page.Row {
 	public := page.URL(s.URLs.Public)
@@ -116,15 +113,13 @@ func Row(s services.View, host string) page.Row {
 		port = page.PortMap(int64(s.GuestPort), int64(s.HostPort))
 	}
 	mark, reason := markOf(s)
-	return page.Row{ID: ID(s.VM, s.GuestPort), Label: s.VM, Mark: mark, Reason: reason,
+	return page.Row{ID: rowID(s.VM, s.GuestPort), Label: s.VM, Mark: mark, Reason: reason,
 		Cells:  []page.Value{port, public, page.Text(host), page.Text(string(s.State)), page.Text(s.Process)},
 		Detail: page.Text(detail)}
 }
 
-// Link is a service as the Fleet tree hangs it under its VM: eye-only, its
-// row on the Services tab.
 func Link(s services.View) page.Link {
-	l := page.Link{Label: strconv.Itoa(s.GuestPort), Value: page.URL(s.URLs.Public), Detail: page.Text(s.Process), Page: "services", Row: ID(s.VM, s.GuestPort)}
+	l := page.Link{Label: strconv.Itoa(s.GuestPort), Value: page.URL(s.URLs.Public), Detail: page.Text(s.Process), Page: "services", Row: rowID(s.VM, s.GuestPort)}
 	if s.HostPort != 0 {
 		l.Value = page.List(page.PortMap(int64(s.GuestPort), int64(s.HostPort)), page.URL(s.URLs.Public))
 	}
@@ -132,7 +127,7 @@ func Link(s services.View) page.Link {
 }
 
 func URL(s services.View, here page.Context) page.Page {
-	row := pages.Done(ID("url", s.GuestPort), catalog.StateOK, "")
+	row := pages.Done(rowID("url", s.GuestPort), catalog.StateOK, "")
 	row.Label = strconv.Itoa(s.GuestPort)
 	row.Cells = []page.Value{page.URL(s.URLs.Public)}
 	return pages.Outcome("services url "+strconv.Itoa(s.GuestPort), here,

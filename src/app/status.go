@@ -9,7 +9,7 @@ import (
 )
 
 func statusCommand(env kit.Env, m machine) *cobra.Command {
-	return statuscmd.Command(statuscmd.Deps{Status: statusService(env, m), Context: m.context}, env)
+	return statuscmd.Command(statuscmd.Deps{Status: statusService(env, m), Here: m.where}, env)
 }
 
 func statusService(env kit.Env, m machine) *status.Service {

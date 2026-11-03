@@ -9,10 +9,9 @@ runs:
       stdin: |
           see station
           send 5
-          see press r to retry
-          see repair the JSON of
+          see Hint: repair the JSON of
           send r
-          see press r to retry
+          see Hint: repair the JSON of
           send 1
           see Machine
           send q

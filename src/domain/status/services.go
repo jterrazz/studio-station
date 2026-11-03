@@ -65,7 +65,7 @@ func (s *Service) runtime(ctx context.Context, sv service, process []string) Che
 		return Check{Name: name, State: catalog.StateBroken, Value: "not running", Detail: "gateway process not found"}
 	}
 	port := sv.port(s.o)
-	detail := "pid " + process[1] + " · user " + process[0] + " · port " + strconv.Itoa(port)
+	detail := "pid " + process[1] + ", user " + process[0] + ", port " + strconv.Itoa(port)
 	if !s.h.Net.Dial(ctx, "127.0.0.1", port, 750*time.Millisecond) {
 		return Check{Name: name, State: catalog.StateDegraded, Value: "running", Detail: detail + " not listening"}
 	}

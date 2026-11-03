@@ -2,65 +2,55 @@ package tui
 
 import (
 	"strconv"
-	"strings"
 
-	"charm.land/bubbles/v2/help"
-	"charm.land/bubbles/v2/key"
-	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 
-	"github.com/jterrazz/studio-station/src/theme"
-	"github.com/jterrazz/studio-station/src/tui/kit"
+	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/tui/screens/tab"
+	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
 type App struct {
-	tabs    []kit.Tab
-	screens []kit.Screen
+	tabs    []Tab
+	screens []tab.Screen
 	active  int
-	context string
+	here    page.Context
 	width   int
 	height  int
-	theme   theme.Theme
-	help    help.Model
-	status  kit.Status
+	chrome  ui.Chrome
+	status  tab.Status
 	prefer  func(prefix string)
-	spin    spinner.Model
 	turning bool
 }
 
-func newApp(context string, tabs []kit.Tab, screens []kit.Screen, prefer func(string)) App {
-	t := theme.New(true)
+func newApp(here page.Context, tabs []Tab, screens []tab.Screen, prefer func(string)) App {
 	if prefer == nil {
 		prefer = func(string) {}
 	}
-	return App{
-		tabs: tabs, screens: screens, context: context, width: 80, height: 24, theme: t, help: kit.NewHelp(t), prefer: prefer,
-		spin: spinner.New(spinner.WithSpinner(spinner.Dot), spinner.WithStyle(t.Accent)), turning: true,
-	}
+	return App{tabs: tabs, screens: screens, here: here, width: 80, height: 24, chrome: ui.NewChrome(), prefer: prefer, turning: true}
 }
 
 func (a App) Init() tea.Cmd {
 	a.prefer(a.tabs[a.active].Probes)
 	cmds := make([]tea.Cmd, 0, 2+len(a.screens))
-	cmds = append(cmds, tea.RequestBackgroundColor, a.spin.Tick)
+	cmds = append(cmds, tea.RequestBackgroundColor, a.chrome.Tick)
 	for _, s := range a.screens {
 		cmds = append(cmds, s.Init())
 	}
 	return tea.Batch(cmds...)
 }
 
-func globalKeys() []key.Binding {
-	return []key.Binding{
-		kit.Bind("tab", "next tab", "tab"),
-		kit.Bind("1-5", "tab", "1", "2", "3", "4", "5"),
-		kit.Bind("r", "reload", "r"),
-		kit.Bind("?", "help", "?"),
-		kit.Bind("q", "quit", "q", "ctrl+c"),
-	}
-}
-
 func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if chrome, cmd, ok := a.chrome.Turn(msg); ok {
+		// invariant: the header spinner turns while the shown tab has a probe
+		// pending, and stops, costing no redraw, once it has answered.
+		if !a.screens[a.active].Loading() {
+			a.turning = false
+			return a, nil
+		}
+		a.chrome = chrome
+		return a, cmd
+	}
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		if msg.Width <= 0 || msg.Height <= 0 {
@@ -72,25 +62,11 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		a.width, a.height = msg.Width, msg.Height
 	case tea.BackgroundColorMsg:
-		a.theme = theme.New(msg.IsDark())
-		a.help = kit.NewHelp(a.theme)
-		a.spin.Style = a.theme.Accent
-	case spinner.TickMsg:
-		if msg.ID == a.spin.ID() {
-			// invariant: the header spinner turns while the shown tab has a probe
-			// pending, and stops, costing no redraw, once it has answered.
-			if !a.screens[a.active].Loading() {
-				a.turning = false
-				return a, nil
-			}
-			var cmd tea.Cmd
-			a.spin, cmd = a.spin.Update(msg)
-			return a, cmd
-		}
-	case kit.Status:
+		a.chrome = a.chrome.Themed(msg.IsDark())
+	case tab.Status:
 		a.status = msg
 		return a, nil
-	case kit.ExecMsg:
+	case tab.ExecMsg:
 		return a, tea.Exec(msg.Command, msg.Done)
 	case tea.KeyPressMsg:
 		return a.key(msg)
@@ -105,9 +81,8 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a App) key(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	a.status = kit.Status{}
-	current := a.screens[a.active]
-	if current.Focus() != kit.FocusNormal {
+	a.status = tab.Status{}
+	if a.screens[a.active].Modal() {
 		return a.forward(k)
 	}
 	switch s := k.String(); s {
@@ -118,15 +93,9 @@ func (a App) key(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "shift+tab":
 		return a.show((a.active + len(a.screens) - 1) % len(a.screens))
 	case "r":
-		model, cmd := a.forward(kit.Reload{})
+		model, cmd := a.forward(tab.Reload{})
 		app, _ := model.(App)
 		return app.turn(cmd)
-	case "?":
-		if _, ok := current.(kit.Chromed); ok {
-			return a.forward(k)
-		}
-		a.help.ShowAll = !a.help.ShowAll
-		return a, nil
 	default:
 		if n, err := strconv.Atoi(s); err == nil && n >= 1 && n <= len(a.screens) {
 			return a.show(n - 1)
@@ -146,10 +115,10 @@ func (a App) show(n int) (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 	var hide, show tea.Cmd
-	a.screens[a.active], hide = a.screens[a.active].Update(kit.Shown{Visible: false})
+	a.screens[a.active], hide = a.screens[a.active].Update(tab.Shown{Visible: false})
 	a.active = n
 	a.prefer(a.tabs[n].Probes)
-	a.screens[a.active], show = a.screens[a.active].Update(kit.Shown{Visible: true})
+	a.screens[a.active], show = a.screens[a.active].Update(tab.Shown{Visible: true})
 	return a.turn(tea.Batch(hide, show))
 }
 
@@ -158,32 +127,18 @@ func (a App) turn(cmd tea.Cmd) (tea.Model, tea.Cmd) {
 		return a, cmd
 	}
 	a.turning = true
-	return a, tea.Batch(cmd, a.spin.Tick)
+	return a, tea.Batch(cmd, a.chrome.Tick)
 }
 
 func (a App) View() tea.View {
-	t := a.theme
 	current := a.screens[a.active]
-	spin := ""
-	if current.Loading() {
-		spin = a.spin.View()
+	labels := make([]ui.Tab, 0, len(a.tabs))
+	for _, t := range a.tabs {
+		labels = append(labels, t.Tab)
 	}
-	header := kit.Header(t, a.tabs, a.active, a.context, spin, a.width)
-	footer := kit.Footer(t, a.help, current.Keys(), globalKeys(), current.Busy(), a.width)
-	if c, ok := current.(kit.Chromed); ok {
-		footer = c.Footer(a.width)
-	}
-	bar := kit.StatusLine(t, a.status, a.width)
-	room := max(a.height-lipgloss.Height(header)-lipgloss.Height(footer)-1, 1)
-	body := current.View(a.width, room)
-	lines := strings.Split(body, "\n")
-	if len(lines) > room {
-		lines = lines[:room]
-	}
-	for len(lines) < room {
-		lines = append(lines, "")
-	}
-	v := tea.NewView(header + "\n" + strings.Join(lines, "\n") + "\n" + bar + "\n" + footer)
+	header := a.chrome.Header(labels, a.active, a.here, current.Loading(), a.width)
+	body := func(room int) string { return current.Body(a.width, room) }
+	v := tea.NewView(a.chrome.Screen(header, body, a.chrome.StatusBar(a.status.Mark, a.status.Text, a.status.Hint, a.width), current.Footer(a.width), a.height))
 	v.AltScreen = true
 	v.WindowTitle = "station"
 	return v

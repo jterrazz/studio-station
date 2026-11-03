@@ -21,8 +21,8 @@ runs:
     - command: 'status --json | /usr/bin/jq -r ''.gateways[] | select(.name | endswith("runtime")) | .detail'''
       exit: 0
       stdout: |
-          pid 4242 · user jterrazz.agent · port 18789 not listening
-          pid 4343 · user jterrazz.agent · port 8642 not listening
+          pid 4242, user jterrazz.agent, port 18789 not listening
+          pid 4343, user jterrazz.agent, port 8642 not listening
     - command: 'status | /usr/bin/grep -c ''^# Gateways'''
       exit: 0
       stdout: |

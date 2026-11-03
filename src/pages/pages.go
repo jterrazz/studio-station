@@ -21,14 +21,10 @@ func MarkOf(s catalog.State) page.Mark {
 	return page.Unjudged
 }
 
-// Failure is the page a read that could not answer at all shows in place of
-// its own: the one error block, its message and its hint.
 func Failure(id page.ID, command string, here page.Context, message, hint string) page.Page {
 	return page.Seal(page.Page{ID: id, Command: command, Context: here, Error: &page.Error{Message: message, Hint: hint}})
 }
 
-// Outcome is every mutating leaf's page: one section of what happened, the
-// one Empty when nothing was to do, then the leaf's own extra sections.
 func Outcome(command string, here page.Context, columns []page.Column, rows []page.Row, empty string, extra ...page.Section) page.Page {
 	items := make([]page.Item, 0, len(rows))
 	for i := range rows {
@@ -48,7 +44,6 @@ func OutcomeColumns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}}
 }
 
-// Done is an outcome row: the thing acted on, its mark, what happened.
 func Done(id string, state catalog.State, detail string) page.Row {
 	r := page.Row{ID: id, Label: id, Mark: MarkOf(state), Detail: page.Text(detail)}
 	switch r.Mark {

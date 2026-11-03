@@ -67,8 +67,6 @@ func columns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 50}}
 }
 
-// Sections: the node, then its peers (an unjudged listing: online is a value)
-// and what it serves, each titled.
 func Sections(s tailnet.Status) []page.Section {
 	rows := Rows(s)
 	if s.CLI != "" {
@@ -145,8 +143,6 @@ func stateValue(s tailnet.Status) page.Value {
 	return page.Texts(s.BackendState, s.DNSName)
 }
 
-// Summary is the one tailnet row the status page carries: the state, then the
-// DNS name, IP, variant and CLI path as one list, which truncates whole items.
 func Summary(s tailnet.Status) page.Row {
 	row := Rows(s)[0]
 	if s.State != catalog.StateOK {

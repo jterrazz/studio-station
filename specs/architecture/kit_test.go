@@ -15,26 +15,6 @@ import (
 	uitoken "github.com/jterrazz/studio-station/src/ui/token"
 )
 
-// invariant: the packages the design-system lot has not migrated yet, judged
-// by the old rules only. The list only shrinks: a package leaves it in the
-// commit that moves it onto src/page and src/ui, and the next maker empties it.
-func notYetMigrated() []string {
-	return []string{
-		"app",
-		"cli/config", "cli/config/*", "cli/daemon", "cli/guest", "cli/images", "cli/images/*",
-		"cli/machines", "cli/machines/*", "cli/run", "cli/run/*", "cli/secrets", "cli/secrets/*",
-		"cli/services", "cli/services/*", "cli/setup", "cli/shell", "cli/status", "cli/storage", "cli/storage/*",
-		"cli/tailnet", "cli/tools/install", "cli/tools/uninstall", "cli/tools/upgrade",
-		"domain/services", "domain/setup", "domain/status", "domain/tools",
-		"output", "present", "present/*", "prompt", "theme", "theme/forms",
-		"tui", "tui/kit", "tui/screens/config", "tui/screens/fleet", "tui/screens/status", "tui/screens/storage",
-	}
-}
-
-func migrated(pkg string) bool {
-	return !slices.ContainsFunc(notYetMigrated(), func(p string) bool { return matches(p, pkg) })
-}
-
 func under(pkg string, patterns ...string) bool {
 	return slices.ContainsFunc(patterns, func(p string) bool { return matches(p, pkg) })
 }
@@ -46,9 +26,6 @@ const qr = "rsc.io/qr"
 func ruleKit(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
-		if !migrated(f.pkg) {
-			continue
-		}
 		for i, ip := range f.imports {
 			lib := func(p string) bool { return ip == p || strings.HasPrefix(ip, p+"/") }
 			ok := true
@@ -217,7 +194,7 @@ func ruleGlyphs(w *world) []finding {
 	var out []finding
 	banned := bannedRunes()
 	for _, f := range w.files {
-		if f.pkg == "ui/token" || (f.test && under(f.pkg, "ui/*", "ui")) || !migrated(f.pkg) {
+		if f.pkg == "ui/token" || (f.test && under(f.pkg, "ui/*", "ui")) {
 			continue
 		}
 		literals(f, func(lit *ast.BasicLit, value string) {
@@ -279,7 +256,7 @@ func keyPress(f *file, e ast.Expr) bool {
 func ruleKeys(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
-		if !under(f.pkg, "tui/screens/*") || !migrated(f.pkg) {
+		if !under(f.pkg, "tui/screens/*") {
 			continue
 		}
 		ast.Inspect(f.syntax, func(n ast.Node) bool {
@@ -305,7 +282,7 @@ func ruleBuilders(w *world) []finding {
 	var out []finding
 	nodes := []string{"Page", "Section", "Row", "Group", "Item"}
 	for _, f := range w.files {
-		if f.test || under(f.pkg, "page", "pages/*", "cmd/generate", "cmd/generate/*") {
+		if f.test || under(f.pkg, "page", "pages", "pages/*", "cmd/generate", "cmd/generate/*") {
 			continue
 		}
 		ast.Inspect(f.syntax, func(n ast.Node) bool {
@@ -333,7 +310,7 @@ func ruleLayout(w *world) []finding {
 	measures := []string{"strings.Repeat", lip + ".Width", ansi + ".StringWidth"}
 	for _, f := range w.files {
 		// value: cmd/generate writes markdown for docs/, never station's output.
-		if under(f.pkg, "ui/*", "ui", "cmd/generate", "cmd/generate/*") || f.test || !migrated(f.pkg) {
+		if under(f.pkg, "ui/*", "ui", "cmd/generate", "cmd/generate/*") || f.test {
 			continue
 		}
 		for i, ip := range f.imports {

@@ -52,7 +52,7 @@ func (s *Service) tools(ctx context.Context, interactive bool) (Step, error) {
 	if wrote {
 		done = append(done, "tailscale wrapper written: "+s.o.Expand.Display(s.wrapperPath()))
 	}
-	step.Detail = strings.Join(done, " · ")
+	step.Detail = strings.Join(done, ", ")
 	step.Changed = len(done) > 0
 	return step, nil
 }

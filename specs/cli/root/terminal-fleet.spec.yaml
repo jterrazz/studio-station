@@ -1,4 +1,4 @@
-description: 'the Fleet tab hints: d on a host says forget, s on a temporary VM says delete, ctrl+r wants the name'
+description: 'each Fleet key binds the rows it acts on: a host restart wants its name, a VM delete asks'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/vm-t/
@@ -11,45 +11,45 @@ runs:
           see Machine
           send 5
           see - Images
+          see └─ ● t
           send \x1b[B
-          send d
-          see forget: f
-          send \x1b[B
-          send s
-          see temporary: delete with d
-          send \x1b[A
           send \x12
-          see Restart x?
+          see type x to confirm
           screen
           send \x1b
-          gone Restart x?
+          gone type x to confirm
+          send \x1b[B
+          send d
+          see Delete t?
+          send n
+          gone Delete t?
           send q
       exit: 0
       stdout: |4
-           station   Status · Tools · Config · Storage │ Fleet                   x · host
+           station  Home · Tools · Config · Storage │ Fleet · Services               host
            ──────────────────────────────────────────────────────────────────────────────
-           - x                                                                   1 ●  1 ◐
-             ◐ x        host                                                     online …
-             ● t        linux                              x          temporary  running…
-           - Services · x  40000-40999 · 0 leased · 1000 free · 20 per VM             1 ◐
-             ◐ daemon                                                 x          not run…
+           - Fleet                                                               1 ●  1 ◐
+             ◐ x     host              online   192.0.2.1  daemon not running …
+             └─ ● t  linux  temporary  running  -          4 cpus · 8 GB · 50.0 GB
            - Images                                                                   1 ●
-             ● linux    2026.11.07                         20.0 GB    1 VM
-           - Secrets
-               none
-               none
-           - Tailnet                                                                  2 ●
-             ● tailnet  Running · macbook.tail1234.ts.net
-             ● node     x                                  192.0.2.1
+                      version        size   VMs
+             ● linux  2026.11.07  20.0 GB  1 VM
+           - Lend list
+             no lent secrets  → station secrets allow <name>
+           - Kept
+             no kept secrets
+           + Tailnet                                                                  3 ●
 
 
-           ┌────────────────────────────────────────────────────────────┐
-           │ ┃ Restart x?                                               │
-           │ ┃ type x to confirm                                        │
-           │ ┃ >                                                        │
-           └────────────────────────────────────────────────────────────┘
+           ╭──────────────────────────────────────────────────────────╮
+           │   Restart x?                                             │
+           │                                                          │
+           │ ┃ type x to confirm                                      │
+           │ ┃ >                                                      │
+           │                                                          │
+           ╰──────────────────────────────────────────────────────────╯
 
-           ↑↓ move · space fold · n create · enter open · s start/stop · ? more
+           ↑↓ move  ctrl+r restart  n create  b build images  enter detail  ? keys
     - command: '--version > /dev/null; /usr/bin/grep -c -E ''^(tart (stop|delete|run)|ssh) '' .calls'
       exit: 1
       stdout: |

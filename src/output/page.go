@@ -44,7 +44,7 @@ func (w *Writer) Page(p page.Page, contract any, want Want) error {
 		return err
 	case c.Mode == TTY:
 	}
-	_, err := tty.Colored(out, w.environ).Write(tty.Render(p, tty.Options{Width: c.Width, Dark: c.Dark}))
+	_, err := w.colored(w.stdout, c).Write(tty.Render(p, tty.Options{Width: c.Width, Dark: c.Dark}))
 	return err
 }
 
@@ -54,7 +54,7 @@ func (w *Writer) LivePage(pages <-chan page.Page) error {
 	// the scrollback holds exactly what a non-live read prints.
 	c := Detect(w.stdout, w.env, false)
 	o := tty.Options{Width: c.Width, Dark: c.Dark}
-	out := tty.Colored(w.stdout.W, w.environ)
+	out := w.colored(w.stdout, c)
 	var (
 		last  page.Page
 		got   bool

@@ -12,7 +12,6 @@ import (
 	"github.com/jterrazz/studio-station/src/fail"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/present"
 )
 
 type Asker interface {
@@ -44,21 +43,16 @@ type IO struct {
 
 func (o IO) Streams() (io.Reader, io.Writer) { return o.in, o.raw }
 
-func (o IO) Answer(a present.Answer) error { return o.out.Answer(a, o.JSON) }
-
 func (o IO) CanLive() bool {
 	// invariant: a read goes live only on a terminal, without --json and without
 	// NO_COLOR; everywhere else it prints one complete document.
 	return !o.JSON && !o.PageJSON && o.out.CanLive()
 }
 
-func (o IO) Live(answers <-chan present.Answer) error { return o.out.Live(answers) }
-
 func (o IO) Page(p page.Page, contract any) error {
 	return o.out.Page(p, contract, output.Want{JSON: o.JSON, Page: o.PageJSON})
 }
 
-// PagePiped prints a page whose piped form is a fixed text, for a script to read whole.
 func (o IO) PagePiped(p page.Page, contract any, piped string) error {
 	return o.out.Page(p, contract, output.Want{JSON: o.JSON, Page: o.PageJSON, Piped: []byte(piped)})
 }
@@ -288,17 +282,6 @@ func path(c *cobra.Command) string {
 
 func didYouMean(suggestions []string) string {
 	return " (did you mean \"" + strings.Join(suggestions, "\" or \"") + "\"?)"
-}
-
-func Answers[T any](values <-chan T, answer func(T) present.Answer) <-chan present.Answer {
-	out := make(chan present.Answer)
-	go func() {
-		defer close(out)
-		for v := range values {
-			out <- answer(v)
-		}
-	}()
-	return out
 }
 
 func Pages[T any](values <-chan T, build func(T) page.Page) <-chan page.Page {

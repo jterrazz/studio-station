@@ -12,6 +12,8 @@ runs:
           send \x20
           see - Package Managers
           send \t
+          see + Terminal
+          send \x20
           see - Terminal
           see hushlogin
           send 4

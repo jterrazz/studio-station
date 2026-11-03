@@ -6,6 +6,7 @@ import (
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
 
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/ui/atom"
@@ -40,6 +41,13 @@ type Browser struct {
 	focus  Focus
 	detail bool
 	ask    *ask
+	form   *form
+}
+
+type form struct {
+	f      *huh.Form
+	read   func() map[string]string
+	submit func(values map[string]string) tea.Cmd
 }
 
 type ask struct {
@@ -61,7 +69,7 @@ func (b Browser) Themed(dark bool) Browser {
 }
 
 func (b Browser) Focus() Focus {
-	if b.ask != nil {
+	if b.ask != nil || b.form != nil {
 		return Modal
 	}
 	return b.focus
@@ -140,9 +148,44 @@ func (b Browser) Ask(c page.Confirm, then tea.Cmd) Browser {
 	return b
 }
 
+func (b Browser) Fill(f page.Form, submit func(values map[string]string) tea.Cmd) (Browser, tea.Cmd) {
+	fields, read := organism.Fields(f)
+	if f.Title != "" {
+		fields = append([]huh.Field{huh.NewNote().Title(f.Title)}, fields...)
+	}
+	h := huh.NewForm(huh.NewGroup(fields...)).WithTheme(huh.ThemeFunc(organism.FormStyles)).WithShowHelp(false).WithWidth(token.ModalWidth - 4)
+	b.form = &form{f: h, read: read, submit: submit}
+	return b, h.Init()
+}
+
+func (b Browser) filling(msg tea.Msg) (Browser, tea.Cmd, *Event) {
+	if k, ok := msg.(tea.KeyPressMsg); ok && (k.String() == "esc" || k.String() == "ctrl+c") {
+		b.form = nil
+		return b, nil, nil
+	}
+	model, cmd := b.form.f.Update(msg)
+	if h, ok := model.(*huh.Form); ok {
+		b.form.f = h
+	}
+	switch b.form.f.State {
+	case huh.StateCompleted:
+		done := b.form
+		b.form = nil
+		return b, done.submit(done.read()), nil
+	case huh.StateAborted:
+		b.form = nil
+		return b, nil, nil
+	case huh.StateNormal:
+	}
+	return b, cmd, nil
+}
+
 func (b Browser) Update(msg tea.Msg) (Browser, tea.Cmd, *Event) {
 	if bg, ok := msg.(tea.BackgroundColorMsg); ok {
 		return b.Themed(bg.IsDark()), nil, nil
+	}
+	if b.form != nil {
+		return b.filling(msg)
 	}
 	k, ok := msg.(tea.KeyPressMsg)
 	if !ok {
@@ -409,8 +452,14 @@ func (b Browser) Body(width, height int) string {
 			list[i] = l
 		}
 	}
-	if b.ask != nil {
-		modal := strings.Split(organism.Modal(st, b.ask.confirm, b.ask.yes, width), "\n")
+	var modal []string
+	switch {
+	case b.ask != nil:
+		modal = strings.Split(organism.Modal(st, b.ask.confirm, b.ask.yes, width), "\n")
+	case b.form != nil:
+		modal = strings.Split(organism.Frame(st, "", strings.Split(strings.TrimRight(b.form.f.View(), "\n"), "\n"), min(width-4, token.ModalWidth)), "\n")
+	}
+	if modal != nil {
 		keep := max(room-len(modal), 0)
 		if len(list) > keep {
 			list = list[:keep]

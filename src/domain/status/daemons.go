@@ -60,9 +60,9 @@ func daemonState(label string, r reply) Check {
 		pid, exit := fields[0], fields[1]
 		switch {
 		case pid != "-":
-			return Check{Name: label, State: catalog.StateOK, Value: "running · pid " + pid}
+			return Check{Name: label, State: catalog.StateOK, Value: "running", Detail: "pid " + pid}
 		case exit != "0" && exit != "-":
-			return Check{Name: label, State: catalog.StateBroken, Value: "idle · last exit " + exit}
+			return Check{Name: label, State: catalog.StateBroken, Value: "failing", Detail: "last exit " + exit}
 		}
 		return Check{Name: label, State: catalog.StateOK, Value: "idle"}
 	}

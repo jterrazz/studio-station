@@ -21,7 +21,7 @@ runs:
           send q
       exit: 0
       stdout: |4
-           station   Status · Tools · Config · Storage │ Fleet        host · unregistered
+           station  Home · Tools · Config · Storage │ Fleet · Services               host
            ──────────────────────────────────────────────────────────────────────────────
            / bat
            bat                                                                         ○

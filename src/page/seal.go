@@ -18,10 +18,12 @@ func Seal(p Page) Page {
 			waits = tally(it, counts) || waits
 		}
 		pending = pending || waits
-		p.Sections[i].Counts = nil
+		// value: an uncounted section keeps the counts it was given: none, or
+		// those of the larger set it sums up (Home's Tools and Config).
 		if p.Sections[i].Uncounted && !waits {
 			continue
 		}
+		p.Sections[i].Counts = nil
 		for _, m := range Marks() {
 			if counts[m] > 0 {
 				p.Sections[i].Counts = append(p.Sections[i].Counts, Tally{Mark: m, N: counts[m]})

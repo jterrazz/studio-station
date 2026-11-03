@@ -15,10 +15,10 @@ runs:
     - command: 'status | /usr/bin/head -4 | /usr/bin/cut -f1-3'
       exit: 0
       stdout: |
-          # Machine
+          # Machine	1 ●	1 ◐
           ○	name	unregistered
           ●	uptime	3d 4h
-          ○	setup	name
+          ◐	setup	name
     - command: 'status | /usr/bin/grep -c -E ''host · Darwin 27.0.0 [a-z0-9_]+ · tester · zsh$'''
       exit: 0
       stdout: |

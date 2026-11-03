@@ -216,7 +216,7 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 		}
 		detail := "restarted"
 		if err == nil && running.Version != version {
-			detail += " (" + running.Version + " → " + version + ")"
+			detail += " (" + running.Version + " to " + version + ")"
 		}
 		return setup.Step{Name: step, State: catalog.StateOK, Detail: detail, Changed: true}, nil
 	}

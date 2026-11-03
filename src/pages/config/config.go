@@ -163,12 +163,9 @@ func InputsForm(name string, inputs []catalog.Input, defaults map[string]string)
 	return f
 }
 
-// Changes is install's and uninstall's outcome: a change with one step reads
-// as one row; several steps follow their item as rows of its group; the facts
-// read before and after follow as a section each.
 func Changes(verb string, changes []config.Change, here page.Context) page.Page {
 	var rows []page.Row
-	var extra []page.Section
+	extra := make([]page.Section, 0, 2*len(changes))
 	for _, c := range changes {
 		head := pages.Done(c.Item, c.Result, "")
 		if len(c.Steps) == 1 {

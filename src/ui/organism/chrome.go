@@ -1,6 +1,7 @@
 package organism
 
 import (
+	"strconv"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -230,7 +231,32 @@ func Detail(st token.Styles, s page.Section, r page.Row, bindings []Binding, wid
 	if len(keys) > 0 {
 		lines = append(lines, indent+st.Strong.Render(atom.Pad("keys", width2))+atom.Spaces(token.Gap)+strings.Join(keys, atom.Spaces(token.Gap)))
 	}
-	return lines
+	return append(lines, qrOf(st, r, width, indent)...)
+}
+
+func qrOf(st token.Styles, r page.Row, width int, indent string) []string {
+	url := ""
+	for _, c := range r.Cells {
+		if c.Kind == page.KindURL && c.Text != "" {
+			url = c.Text
+			break
+		}
+	}
+	if url == "" {
+		return nil
+	}
+	code := atom.QR(url)
+	if len(code) == 0 {
+		return nil
+	}
+	if atom.Width(code[0])+len(indent) > width-1 {
+		return []string{"", indent + st.Muted.Render("widen to "+strconv.Itoa(atom.Width(code[0])+len(indent)+1)+" columns for the QR code")}
+	}
+	out := []string{""}
+	for _, l := range code {
+		out = append(out, indent+st.Text.Render(l))
+	}
+	return append(out, indent+st.Muted.Render("scan with a phone"))
 }
 
 func Full(v page.Value) string {

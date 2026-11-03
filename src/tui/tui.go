@@ -15,17 +15,17 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/theme"
-	"github.com/jterrazz/studio-station/src/tui/kit"
 	configscreen "github.com/jterrazz/studio-station/src/tui/screens/config"
 	fleetscreen "github.com/jterrazz/studio-station/src/tui/screens/fleet"
-	statusscreen "github.com/jterrazz/studio-station/src/tui/screens/status"
+	homescreen "github.com/jterrazz/studio-station/src/tui/screens/home"
+	servicesscreen "github.com/jterrazz/studio-station/src/tui/screens/services"
 	storagescreen "github.com/jterrazz/studio-station/src/tui/screens/storage"
+	"github.com/jterrazz/studio-station/src/tui/screens/tab"
 	toolsscreen "github.com/jterrazz/studio-station/src/tui/screens/tools"
+	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
 type Deps struct {
-	Context  string
 	Here     page.Context
 	Status   *status.Service
 	Tools    *tools.Service
@@ -41,21 +41,35 @@ type Deps struct {
 	Prefer   func(prefix string)
 }
 
-func Tabs() []kit.Tab {
-	return []kit.Tab{{Label: "Status", Probes: "status/"}, {Label: "Tools", Probes: "tools/"}, {Label: "Config"}, {Label: "Storage", Probes: "storage/"}, {Label: "Fleet", Fleet: true}}
+type Tab struct {
+	ui.Tab
+	// value: the probe prefix the shown tab's reads run first under.
+	Probes string
+}
+
+func Tabs() []Tab {
+	return []Tab{
+		{Tab: ui.Tab{Label: "Home"}, Probes: "status/"},
+		{Tab: ui.Tab{Label: "Tools"}, Probes: "tools/"},
+		{Tab: ui.Tab{Label: "Config"}},
+		{Tab: ui.Tab{Label: "Storage"}, Probes: "storage/"},
+		{Tab: ui.Tab{Label: "Fleet", Fleet: true}},
+		{Tab: ui.Tab{Label: "Services", Fleet: true}},
+	}
 }
 
 func Run(ctx context.Context, d Deps) error {
-	t := theme.New(true)
-	app := newApp(d.Context, Tabs(), []kit.Screen{
-		statusscreen.New(ctx, d.Status, d.Describe, t),
-		toolsscreen.New(ctx, d.Tools, d.Here, d.Describe),
-		configscreen.New(ctx, d.Config, d.Describe, t),
-		storagescreen.New(ctx, d.Storage, d.Describe, t),
+	describe := tab.Describe(d.Describe)
+	app := newApp(d.Here, Tabs(), []tab.Screen{
+		homescreen.New(ctx, d.Status, d.Here, describe),
+		toolsscreen.New(ctx, d.Tools, d.Here, describe),
+		configscreen.New(ctx, d.Config, d.Here, describe),
+		storagescreen.New(ctx, d.Storage, d.Here, describe),
 		fleetscreen.New(ctx, fleetscreen.Deps{
 			Machines: d.Machines, Images: d.Images, Secrets: d.Secrets, Services: d.Services, Tailnet: d.Tailnet,
-			Remote: d.Remote, Describe: d.Describe,
-		}, t),
+			Remote: d.Remote, Describe: describe,
+		}, d.Here),
+		servicesscreen.New(ctx, d.Services, d.Here, describe),
 	}, d.Prefer)
 	_, err := tea.NewProgram(app, tea.WithContext(ctx)).Run()
 	return err

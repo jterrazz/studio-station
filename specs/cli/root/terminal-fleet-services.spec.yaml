@@ -1,4 +1,4 @@
-description: 'the Fleet tab''s Services are the fleet''s: every host''s range, another host''s service'
+description: 'the Services tab is the fleet''s: every host''s range, another host''s service'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/terminal/
@@ -8,13 +8,9 @@ runs:
     - command: '--version >/dev/null; terminal "$STATION"'
       stdin: |
           see Machine
-          send 5
-          see - Images
+          send 6
+          see 40000-40099
           screen
-          send \x1b[B
-          send \x1b[B
-          send \x1b[B
-          send \x1b[B
           send \x1b[B
           send \x1b[B
           send \x1b[B
@@ -23,30 +19,30 @@ runs:
           send q
       exit: 0
       stdout: |4
-           station   Status · Tools · Config · Storage │ Fleet                   x · host
+           station  Home · Tools · Config · Storage │ Fleet · Services               host
            ──────────────────────────────────────────────────────────────────────────────
-           - x                                                                        1 ◐
-             ◐ x        host                                                            …
-           - y                                                                        1 ◐
-             ◐ y        host                                                            …
-           - Services · x  40000-40999 · 0 leased · 1000 free · 20 per VM             1 ◐
-             ◐ daemon                                                                   …
-           - Services · y  40000-40099 · 1 leased · 99 free · 20 per VM               1 ●
-             ● w        3000                               https://y.tail1234.ts.net:400…
-           - Images                                                                   1 ●
-             ● linux    2026.11.07                         20.0 GB                      …
-           - Secrets
-               none
-               none
-           - Tailnet                                                                  2 ●
-             ● tailnet  Running · macbook.tail1234.ts.net
-             ● node     x                                  192.0.2.1
+           - x  40000-40999 · 0 leased · 1000 free · 20 per VM
+                       state
+             ◐ daemon  not running  → station setup
+           - y  40000-40099 · 1 leased · 99 free · 20 per VM
+                          port  url                              state      process
+             ● w  3000 → 40000  https://y.tail1234.ts.net:40000  published  node
 
 
 
 
 
-           ↑↓ move · space fold · n create · enter open · s start/stop · ? more
+
+
+
+
+
+
+
+
+
+
+           ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys
     - command: '--version > /dev/null; /usr/bin/grep -o ''y -- sh -c .* station services release w:3000 --yes'' .calls'
       exit: 0
       stdout: |
