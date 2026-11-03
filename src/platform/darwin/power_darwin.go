@@ -1,6 +1,6 @@
 //go:build darwin && cgo
 
-package host
+package darwin
 
 /*
 #cgo CFLAGS: -x objective-c
@@ -125,22 +125,27 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
-	"time"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
-const watchEvery = time.Second
+const Supported = true
 
-type macPower struct {
+type Reading struct {
+	Lid        string
+	Source     string
+	HasBattery bool
+	Percent    int
+	Charging   bool
+	LowPower   bool
+	Thermal    int
+}
+
+type Power struct {
 	mu      sync.Mutex
 	token   C.int
 	tokened bool
 }
 
-func newPower() system.Power { return &macPower{} }
-
-func (p *macPower) HoldIdle(name string) (func(), error) {
+func HoldIdle(name string) (func(), error) {
 	var id C.uint32_t
 	if r := C.station_hold_idle(name, &id); r != 0 {
 		return nil, errors.New("IOPMAssertionCreateWithName returned " + strconv.Itoa(int(r)))
@@ -149,7 +154,7 @@ func (p *macPower) HoldIdle(name string) (func(), error) {
 	return func() { once.Do(func() { C.station_release_idle(id) }) }, nil
 }
 
-func (p *macPower) SetClamshellSleep(disabled bool) error {
+func SetClamshellSleep(disabled bool) error {
 	flag := C.int(0)
 	if disabled {
 		flag = 1
@@ -160,10 +165,10 @@ func (p *macPower) SetClamshellSleep(disabled bool) error {
 	return nil
 }
 
-func (p *macPower) Read() (system.PowerReading, error) {
+func (p *Power) Read() Reading {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	var r system.PowerReading
+	var r Reading
 	switch C.station_lid() {
 	case 0:
 		r.Lid = "open"
@@ -183,15 +188,11 @@ func (p *macPower) Read() (system.PowerReading, error) {
 	if p.tokened {
 		r.Thermal = int(C.station_thermal(p.token))
 	}
-	return r, nil
+	return r
 }
 
-// invariant: the watch compares a reading with the last one a second and on
-// every IOPowerSources notification, and sends one Event per field that moved,
-// so a falling percent ends a session within the second it is posted; Low
-// Power Mode is read by the guard loop's own poll.
-func (p *macPower) Watch(ctx context.Context) <-chan system.PowerEvent {
-	return watchReadings(ctx, p.Read, watchEvery, notified(ctx, C.kIOPSNotifyAnyPowerSource))
+func PowerSourcesChanged(ctx context.Context) <-chan struct{} {
+	return notified(ctx, C.kIOPSNotifyAnyPowerSource)
 }
 
 // invariant: notify(3) writes each post of name on a descriptor this side

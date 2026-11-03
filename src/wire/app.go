@@ -21,7 +21,7 @@ import (
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/system"
-	"github.com/jterrazz/studio-station/src/system/host"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ui/help"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
@@ -48,7 +48,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		output.Stream{W: stderr, IsTerminal: errTTY, Width: widthOf(stderr, errTTY), Dark: dark},
 		vars,
 	)
-	here := resolve(host.New(env, stdin, stdout, stderr), vars)
+	here := resolve(local.New(env, stdin, stdout, stderr), vars)
 	kenv := kit.Env{
 		Out:         writer,
 		Prompt:      output.Terminal(stdin, stderr),

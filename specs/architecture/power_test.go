@@ -9,12 +9,12 @@ import (
 	"strings"
 )
 
-const cgoFile = "src/system/host/power_darwin.go"
+const cgoFile = "src/platform/darwin/power_darwin.go"
 
 func cgoTags() map[string]string {
 	return map[string]string{
-		cgoFile:                          "//go:build darwin && cgo",
-		"src/system/host/power_other.go": "//go:build !darwin || !cgo",
+		cgoFile:                              "//go:build darwin && cgo",
+		"src/platform/darwin/power_other.go": "//go:build !darwin || !cgo",
 	}
 }
 
@@ -41,7 +41,7 @@ func unsafePower() []string {
 }
 
 func powerCode(rel string) bool {
-	for _, dir := range []string{"src/domain/power/", "src/pages/power/", "src/cli/power/", "src/system/host/power_"} {
+	for _, dir := range []string{"src/domain/power/", "src/pages/power/", "src/cli/power/", "src/platform/local/power_", "src/platform/darwin/power_"} {
 		if strings.HasPrefix(rel, dir) {
 			return true
 		}
@@ -93,7 +93,11 @@ func isFS(t types.Type) bool {
 
 func powerRaw(w *world) []finding {
 	var out []finding
-	matches, _ := filepath.Glob(filepath.Join(w.root, "src", "system", "host", "power_*.go"))
+	var matches []string
+	for _, dir := range []string{"local", "darwin"} {
+		found, _ := filepath.Glob(filepath.Join(w.root, "src", "platform", dir, "power_*.go"))
+		matches = append(matches, found...)
+	}
 	for _, m := range matches {
 		data, err := os.ReadFile(m)
 		if err != nil {

@@ -2,6 +2,7 @@ package architecture_test
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -180,12 +181,23 @@ func allowedOutside(p place, ip string, test bool) bool {
 	return false
 }
 
+// invariant: the allowlist of imports: the packages ARCHITECTURE 16 step 1
+// moved into the new tree as they were, and the imports (module-relative, or
+// standard) they still make against their row. It only shrinks; a line no
+// longer true fails the gate until it is removed.
+func importsTolerated() map[string][]string {
+	return map[string][]string{
+		"platform/local": {"platform/darwin", "system"},
+	}
+}
+
 // invariant: rule imports: each family's model pure, adapters isolated,
 // surfaces through calls. The tolerated top-level packages stay under the
 // import table of layers_test.go; a package this table rules imports one
 // only where its row allows it, so no family reaches today's I/O.
 func ruleFamilyImports(w *world) []finding {
 	var out []finding
+	seen := map[said]bool{}
 	for _, f := range w.files {
 		p, ok := placeOf(f.pkg)
 		if !ok {
@@ -193,13 +205,24 @@ func ruleFamilyImports(w *world) []finding {
 		}
 		for i, ip := range f.imports {
 			var allowed bool
-			if rel, mod := strings.CutPrefix(ip, module+"/src/"); mod {
+			rel, mod := strings.CutPrefix(ip, module+"/src/")
+			if mod {
 				allowed = allowedModule(p, f.pkg, rel, f.test)
 			} else {
-				allowed = allowedOutside(p, ip, f.test)
+				rel, allowed = ip, allowedOutside(p, ip, f.test)
+			}
+			if !allowed && slices.Contains(importsTolerated()[f.pkg], rel) {
+				seen[said{f.pkg, rel}], allowed = true, true
 			}
 			if !allowed {
 				out = append(out, finding{"imports", f.at(f.syntax.Imports[i].Pos()), fmt.Sprintf("a %s package (%q) may not import %q", p.row, f.pkg, ip)})
+			}
+		}
+	}
+	for _, pkg := range slices.Sorted(maps.Keys(importsTolerated())) {
+		for _, rel := range importsTolerated()[pkg] {
+			if !seen[said{pkg, rel}] {
+				out = append(out, finding{"imports", "specs/architecture/imports_test.go", fmt.Sprintf("src/%s no longer imports %q against its row: remove it from importsTolerated", pkg, rel)})
 			}
 		}
 	}
@@ -208,3 +231,12 @@ func ruleFamilyImports(w *world) []finding {
 
 func TestFamilyImports(t *testing.T)        { judge(t, "FamilyImports") }
 func TestFamilyImportsOldTree(t *testing.T) { judge(t, "FamilyImportsOldTree") }
+
+func TestImportsAllowlistShrinks(t *testing.T) {
+	clean, _ := worlds(t)
+	pkg := slices.Sorted(maps.Keys(importsTolerated()))[0]
+	got := ruleFamilyImports(withoutPackage(clean, func(p string) bool { return p == pkg }))
+	if !slices.ContainsFunc(got, func(f finding) bool { return strings.Contains(f.what, "src/"+pkg+" no longer imports") }) {
+		t.Errorf("the imports rule kept the lines of src/%s, a package that is gone", pkg)
+	}
+}

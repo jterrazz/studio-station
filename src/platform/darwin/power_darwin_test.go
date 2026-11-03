@@ -1,6 +1,6 @@
 //go:build darwin && cgo
 
-package host
+package darwin
 
 import (
 	"context"
