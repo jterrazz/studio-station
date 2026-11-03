@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/remote"
-	"github.com/jterrazz/studio-station/src/fail"
 )
 
 type On struct {
@@ -43,7 +43,7 @@ func (o *On) Delegate(ctx context.Context, machine string, interactive bool) err
 		return err
 	}
 	if code != 0 {
-		return fail.Silent(fail.Code(code))
+		return fail.Silent(fail.Exit(code))
 	}
 	return nil
 }
@@ -86,10 +86,10 @@ func RefuseOn(env Env) func(*cobra.Command, []string) error {
 		if p == "stop" || p == "start" {
 			// invariant: the agent stop boots out or start bootstraps is this
 			// login's, so neither runs for another host.
-			return fail.Usage("station "+p+" acts on this host only", "ssh "+env.On.Machine+" station "+p)
+			return usage("station "+p+" acts on this host only", "ssh "+env.On.Machine+" station "+p)
 		}
 		if refusesOn(p) {
-			return fail.Usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
+			return usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
 		}
 		if machine, ok := env.On.Target(); ok && c.Annotations[owned] == "" && c.HasParent() {
 			c.Run = nil

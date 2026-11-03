@@ -3,7 +3,7 @@ package kit
 import (
 	"strconv"
 
-	"github.com/jterrazz/studio-station/src/fail"
+	"github.com/jterrazz/studio-station/src/core/fail"
 )
 
 type PartialFailure struct {
@@ -19,7 +19,7 @@ func (p PartialFailure) Error() string {
 func (p PartialFailure) As(target any) bool {
 	t, ok := target.(**fail.Error)
 	if ok {
-		*t = fail.Failed(p.Error(), p.FirstHint, nil)
+		*t = failed(p.Error(), p.FirstHint, nil)
 	}
 	return ok
 }

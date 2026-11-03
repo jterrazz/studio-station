@@ -3,10 +3,10 @@ package kit
 import (
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/fail"
 )
 
 func daemonFailure(err error) (*fail.Error, bool) {
@@ -20,19 +20,19 @@ func daemonFailure(err error) (*fail.Error, bool) {
 	}
 	switch {
 	case errors.As(err, &running):
-		return fail.Usage(running.Error(), "station status shows it"), true
+		return usage(running.Error(), "station status shows it"), true
 	case errors.As(err, &hostOnly):
-		return fail.Usage(hostOnly.Error(), "run it on a host: station setup installs it"), true
+		return usage(hostOnly.Error(), "run it on a host: station setup installs it"), true
 	case errors.As(err, &down):
-		return fail.Failed(down.Error(), "station setup", err), true
+		return failed(down.Error(), "station setup", err), true
 	case errors.As(err, &guestHost):
-		return fail.Usage(guestHost.Error(), "the host's daemon runs it inside each VM"), true
+		return usage(guestHost.Error(), "the host's daemon runs it inside each VM"), true
 	case errors.As(err, &op):
 		switch op.Code {
 		case "unknown_vm", "unknown_op":
-			return fail.Usage(op.Message, op.Hint), true
+			return usage(op.Message, op.Hint), true
 		}
-		return fail.Failed(op.Message, op.Hint, err), true
+		return failed(op.Message, op.Hint, err), true
 	}
 	return servicesFailure(err)
 }
@@ -52,32 +52,32 @@ func servicesFailure(err error) (*fail.Error, bool) {
 	var hereInVM *services.HereInVMError
 	switch {
 	case errors.As(err, &hereInVM):
-		return fail.Usage(hereInVM.Error(), "station services"), true
+		return usage(hereInVM.Error(), "station services"), true
 	case errors.As(err, &full):
-		return fail.Failed(full.Error(), "station services release <port>", err), true
+		return failed(full.Error(), "station services release <port>", err), true
 	case errors.As(err, &perVM):
-		return fail.Failed(perVM.Error(), "station services release <port>", err), true
+		return failed(perVM.Error(), "station services release <port>", err), true
 	case errors.As(err, &noLease):
-		return fail.Usage(noLease.Error(), "station services"), true
+		return usage(noLease.Error(), "station services"), true
 	case errors.As(err, &badPort):
-		return fail.Usage(badPort.Error(), "a port is a number from 1 to 65535"), true
+		return usage(badPort.Error(), "a port is a number from 1 to 65535"), true
 	case errors.As(err, &badTarget):
 		if badTarget.InVM {
-			return fail.Usage(badTarget.Error(), "station services release <port>"), true
+			return usage(badTarget.Error(), "station services release <port>"), true
 		}
-		return fail.Usage(badTarget.Error(), "station services release <vm>:<port>"), true
+		return usage(badTarget.Error(), "station services release <vm>:<port>"), true
 	case errors.As(err, &ignored):
-		return fail.Usage(ignored.Error(), "the host ignores ports below 1024 and 22"), true
+		return usage(ignored.Error(), "the host ignores ports below 1024 and 22"), true
 	case errors.As(err, &away):
-		return fail.Failed(away.Error(), away.Hint(), err), true
+		return failed(away.Error(), away.Hint(), err), true
 	case errors.As(err, &pinned):
-		return fail.Usage(pinned.Error(), "re-run with --yes"), true
+		return usage(pinned.Error(), "re-run with --yes"), true
 	case errors.As(err, &vmOnly):
-		return fail.Usage(vmOnly.Error(), "station services url runs inside a VM; here: station services"), true
+		return usage(vmOnly.Error(), "station services url runs inside a VM; here: station services"), true
 	case errors.As(err, &unknown):
-		return fail.Usage(unknown.Error(), "station services"), true
+		return usage(unknown.Error(), "station services"), true
 	case errors.As(err, &remote):
-		return fail.Silent(fail.Code(remote.Code)), true
+		return fail.Silent(fail.Exit(remote.Code)), true
 	}
 	return nil, false
 }
@@ -91,17 +91,17 @@ func controlFailure(err error) (*fail.Error, bool) {
 	var boot *daemon.BootError
 	switch {
 	case errors.As(err, &notInstalled):
-		return fail.Failed(notInstalled.Error(), "station setup", err), true
+		return failed(notInstalled.Error(), "station setup", err), true
 	case errors.As(err, &offHost):
-		return fail.Usage(offHost.Error(), "ssh <host> station "+offHost.Verb), true
+		return usage(offHost.Error(), "ssh <host> station "+offHost.Verb), true
 	case errors.As(err, &unconfirmed):
-		return fail.Usage(unconfirmed.Error(), "station stop --yes"), true
+		return usage(unconfirmed.Error(), "station stop --yes"), true
 	case errors.As(err, &stuck):
-		return fail.Failed(stuck.Error(), "station machines delete "+stuck.VM, err), true
+		return failed(stuck.Error(), "station machines delete "+stuck.VM, err), true
 	case errors.As(err, &noAnswer):
-		return fail.Failed(noAnswer.Error(), "tail ~/.local/state/station/logs/daemon.log", err), true
+		return failed(noAnswer.Error(), "tail ~/.local/state/station/logs/daemon.log", err), true
 	case errors.As(err, &boot):
-		return fail.Failed(boot.Error(), "launchctl print gui/$(id -u)/"+daemon.Label, err), true
+		return failed(boot.Error(), "launchctl print gui/$(id -u)/"+daemon.Label, err), true
 	}
 	return nil, false
 }

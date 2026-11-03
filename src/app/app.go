@@ -14,10 +14,10 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli"
 	"github.com/jterrazz/studio-station/src/cli/kit"
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/domain/remote"
 	"github.com/jterrazz/studio-station/src/domain/settings"
-	"github.com/jterrazz/studio-station/src/fail"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/system"
@@ -103,9 +103,9 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	)
 	here.pool.Close()
 	if err == nil {
-		return int(fail.CodeOK)
+		return int(fail.ExitOK)
 	}
-	return int(fail.CodeOf(kit.Translate(err, "")))
+	return int(fail.ExitOf(kit.Translate(err, "")))
 }
 
 // value: commands 16 at a time (each is its own process; status starts ~70),

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jterrazz/studio-station/src/fail"
+	"github.com/jterrazz/studio-station/src/core/fail"
 )
 
 func Translate(err error, path string) *fail.Error {
@@ -40,7 +40,7 @@ func Translate(err error, path string) *fail.Error {
 		}
 	}
 	if errors.Is(err, context.Canceled) {
-		return fail.Interrupted()
+		return fail.Interruption()
 	}
 	message := err.Error()
 	if strings.HasPrefix(message, "unknown command ") {
@@ -48,7 +48,7 @@ func Translate(err error, path string) *fail.Error {
 		if s := strings.Fields(suggestions); len(s) > 0 {
 			hint += didYouMean(s)
 		}
-		return fail.Usage(strings.TrimSpace(first), hint)
+		return usage(strings.TrimSpace(first), hint)
 	}
-	return fail.Failed(message, hint, err)
+	return failed(message, hint, err)
 }

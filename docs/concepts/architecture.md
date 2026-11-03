@@ -42,8 +42,20 @@ The ports and the data:
   output/         the only place that knows a terminal: picks tty, pipe or json and renders a page through ui/render, and the one error block
   theme/          the styles of the pages not migrated yet, over ui/token's palette
   prompt/         the conversations on stderr: confirmations and the forms that ask a config item's values
-  fail/           the error type: a message, a hint and a code
   tui/            the unified Bubble Tea app
+```
+
+The shared kernel, which every family will share and which does no I/O:
+
+```text
+  core/
+    machine/      a machine's Ref, Kind and Profile, the capabilities it reports, the Verdict of every applicability rule
+    section/      the sections and section.For(kind), the one table of which kind shows which
+    finding/      one Needs you line, and finding.Rank, its one order
+    confirm/      the graded confirmations: confirm.For(action, kind) and confirm.Require
+    call/         a use case as a Call, Bind (the gate before every call), the Registry, the Router interface
+    contract/     the contracts every family shares: Self, Clock, Preferences
+    fail/         the error type: its type and code, or today's message, hint and exit
 ```
 
 Beside `src/`, `specs/` holds the proofs:

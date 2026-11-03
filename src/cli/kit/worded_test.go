@@ -1,15 +1,11 @@
-package fail_test
+package kit
 
-import (
-	"testing"
-
-	"github.com/jterrazz/studio-station/src/fail"
-)
+import "testing"
 
 func TestAnEmptyHintPanicsUnderTest(t *testing.T) {
 	for name, build := range map[string]func(){
-		"usage":  func() { _ = fail.Usage("unknown tool \"nope\"", "") },
-		"failed": func() { _ = fail.Failed("install failed", "", nil) },
+		"usage":  func() { _ = usage("unknown tool \"nope\"", "") },
+		"failed": func() { _ = failed("install failed", "", nil) },
 	} {
 		t.Run(name, func(t *testing.T) {
 			defer func() {

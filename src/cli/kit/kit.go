@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/jterrazz/studio-station/src/fail"
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 )
@@ -116,7 +116,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 					hint = h
 				}
 			}
-			return fail.Usage(err.Error(), hint)
+			return usage(err.Error(), hint)
 		}
 		return nil
 	}
@@ -213,16 +213,16 @@ func gate(verb string, ask func() (bool, error), o IO) error {
 		ok, err := ask()
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
-				return fail.Interrupted()
+				return fail.Interruption()
 			}
-			return fail.Failed(err.Error(), "re-run with --yes to skip the question", err)
+			return failed(err.Error(), "re-run with --yes to skip the question", err)
 		}
 		if !ok {
-			return fail.Failed(verb+" cancelled", "re-run with --yes to skip the question", nil)
+			return failed(verb+" cancelled", "re-run with --yes to skip the question", nil)
 		}
 		return nil
 	default:
-		return fail.Usage("refusing to "+verb+" without --yes", "re-run with --yes")
+		return usage("refusing to "+verb+" without --yes", "re-run with --yes")
 	}
 }
 
@@ -243,7 +243,7 @@ func Group(use, short, groupID string, env Env, children ...*cobra.Command) *cob
 		if s := c.SuggestionsFor(args[0]); len(s) > 0 {
 			hint += didYouMean(s)
 		}
-		return fail.Usage("unknown command \""+args[0]+"\" for \""+c.CommandPath()+"\"", hint)
+		return usage("unknown command \""+args[0]+"\" for \""+c.CommandPath()+"\"", hint)
 	}
 	return cmd
 }
@@ -265,7 +265,7 @@ func Menu(env Env, cmd *cobra.Command) error {
 		defer cmd.SetOut(nil)
 		_ = cmd.Help()
 	})
-	return fail.Silent(fail.CodeUsage)
+	return fail.Silent(fail.ExitUsage)
 }
 
 func Ask(verb string, ask func() (bool, error), o IO) error {
@@ -275,11 +275,11 @@ func Ask(verb string, ask func() (bool, error), o IO) error {
 }
 
 func Refuse(message, hint string) error {
-	return fail.Usage(message, hint)
+	return usage(message, hint)
 }
 
 func FlagError(c *cobra.Command, err error) error {
-	return fail.Usage(err.Error(), helpHint(c))
+	return usage(err.Error(), helpHint(c))
 }
 
 func helpHint(c *cobra.Command) string {
