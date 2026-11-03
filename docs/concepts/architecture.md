@@ -74,6 +74,8 @@ catalog: imported by domain, present, cli, prompt; imports nothing of the module
 
 What the test holds, in short: `domain` reaches the machine only through `system` ports; only `system/host` imports `os/exec`, the network and the process environment; only `output` writes bytes and only `ui/token` holds a colour; only `app` imports Fang; the catalogue holds values and no function; every domain error type has its wording in `cli/kit`. Each rule has a mutation test, so a rule that stops biting fails the gate.
 
+The tree is moving to families first (machines, apps, settings, ports, awake...), each with its model, `contract/`, `calls/` and `adapter/<tech>/`. Four rules hold that tree: `tree-screams` (`tree_test.go`), `imports` (`imports_test.go`), `technology-words` (`words_test.go`) and `no-model-names` (`models_test.go`). Each lists today's offenders in an allowlist that only shrinks: a line that is no longer true fails the gate until it is removed.
+
 ## The path of a request
 
 `station tools install node`:
