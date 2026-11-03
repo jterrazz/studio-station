@@ -1,6 +1,9 @@
 package pages
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/page"
 )
@@ -77,4 +80,27 @@ func Nest(s page.Section, parts []page.Section) page.Section {
 		s.Items = append(s.Items, page.Item{Group: &page.Group{Head: page.Row{ID: sub.ID, Label: sub.Title}, Items: items, Fold: page.Open}})
 	}
 	return s
+}
+
+// value: a term as the owner says it: whole days, hours and minutes, two
+// units at most (`12h`, `1h 30m`, `7d`).
+func Term(d time.Duration) string {
+	s := int64(d.Seconds())
+	parts := []string{}
+	for _, u := range []struct {
+		n    int64
+		name string
+	}{{86400, "d"}, {3600, "h"}, {60, "m"}} {
+		if s >= u.n && len(parts) < 2 {
+			parts = append(parts, strconv.FormatInt(s/u.n, 10)+u.name)
+			s %= u.n
+		}
+	}
+	if len(parts) == 0 {
+		return "0m"
+	}
+	if len(parts) == 2 {
+		return parts[0] + " " + parts[1]
+	}
+	return parts[0]
 }

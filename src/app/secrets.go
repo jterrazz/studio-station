@@ -8,6 +8,7 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -17,6 +18,7 @@ import (
 	secretsdisallow "github.com/jterrazz/studio-station/src/cli/secrets/disallow"
 	secretslend "github.com/jterrazz/studio-station/src/cli/secrets/lend"
 	secretsrecall "github.com/jterrazz/studio-station/src/cli/secrets/recall"
+	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -45,11 +47,13 @@ func (r vmRecords) IsVM(_ context.Context, name string) (bool, error) {
 	return err == nil, err
 }
 
-func (r vmRecords) RecordLent(name string, names []string) error {
-	return r.update(name, func(lent []string) []string {
-		for _, n := range names {
-			if !slices.Contains(lent, n) {
-				lent = append(lent, n)
+func (r vmRecords) RecordLent(name string, lends []secrets.Lend) error {
+	return r.update(name, func(lent []secrets.Lend) []secrets.Lend {
+		for _, l := range lends {
+			if i := slices.IndexFunc(lent, func(have secrets.Lend) bool { return have.Name == l.Name }); i >= 0 {
+				lent[i] = l
+			} else {
+				lent = append(lent, l)
 			}
 		}
 		return lent
@@ -57,13 +61,13 @@ func (r vmRecords) RecordLent(name string, names []string) error {
 }
 
 func (r vmRecords) RecordRecalled(name string, names []string) error {
-	return r.update(name, func(lent []string) []string {
-		return slices.DeleteFunc(lent, func(n string) bool { return slices.Contains(names, n) })
+	return r.update(name, func(lent []secrets.Lend) []secrets.Lend {
+		return slices.DeleteFunc(lent, func(l secrets.Lend) bool { return slices.Contains(names, l.Name) })
 	})
 }
 
-func (r vmRecords) Holding(names []string) (map[string][]string, error) {
-	held := map[string][]string{}
+func (r vmRecords) Lends() (map[string][]secrets.Lend, error) {
+	held := map[string][]secrets.Lend{}
 	entries, err := r.fs.ReadDir(r.dir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return held, nil
@@ -80,9 +84,6 @@ func (r vmRecords) Holding(names []string) (map[string][]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		if names != nil {
-			lent = slices.DeleteFunc(lent, func(n string) bool { return !slices.Contains(names, n) })
-		}
 		if len(lent) > 0 {
 			held[vm] = lent
 		}
@@ -90,7 +91,7 @@ func (r vmRecords) Holding(names []string) (map[string][]string, error) {
 	return held, nil
 }
 
-func (r vmRecords) update(name string, change func([]string) []string) error {
+func (r vmRecords) update(name string, change func([]secrets.Lend) []secrets.Lend) error {
 	record, lent, err := r.read(name)
 	if err != nil {
 		return err
@@ -112,7 +113,10 @@ func (r vmRecords) update(name string, change func([]string) []string) error {
 	return r.fs.WriteFile(r.file(name), append(data, '\n'), 0o600)
 }
 
-func (r vmRecords) read(name string) (record map[string]json.RawMessage, lent []string, err error) {
+// invariant: a record written before lends expired holds plain names: each
+// reads as lent at the file's mtime for the default term, and the next save
+// writes it in the new form.
+func (r vmRecords) read(name string) (record map[string]json.RawMessage, lent []secrets.Lend, err error) {
 	data, err := r.fs.ReadFile(r.file(name))
 	if err != nil {
 		return nil, nil, err
@@ -121,10 +125,24 @@ func (r vmRecords) read(name string) (record map[string]json.RawMessage, lent []
 	if err := json.Unmarshal(data, &record); err != nil {
 		return nil, nil, err
 	}
-	if raw, ok := record["lent"]; ok {
-		if err := json.Unmarshal(raw, &lent); err != nil {
-			return nil, nil, err
-		}
+	raw, ok := record["lent"]
+	if !ok {
+		return record, nil, nil
+	}
+	var objects []secrets.Lend
+	if json.Unmarshal(raw, &objects) == nil {
+		return record, objects, nil
+	}
+	var names []string
+	if err := json.Unmarshal(raw, &names); err != nil {
+		return nil, nil, err
+	}
+	at := time.Time{}
+	if info, statErr := r.fs.Stat(r.file(name)); statErr == nil {
+		at = info.ModTime().UTC().Truncate(time.Second)
+	}
+	for _, n := range names {
+		lent = append(lent, secrets.Lend{Name: n, At: at, Until: at.Add(secrets.DefaultLend)})
 	}
 	return record, lent, nil
 }

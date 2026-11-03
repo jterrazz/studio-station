@@ -111,7 +111,7 @@ A bare `build` builds every image that is missing or whose recipe changed. See [
 station secrets [--json]                        # the lend list and what was lent where, names only
 station secrets allow <name...>
 station secrets disallow <name...> [--yes]
-station secrets lend --to <vm> [<name...>]
+station secrets lend --to <vm> [<name...>] [--for <duration>]   # 12h by default, 1m to 7d
 station secrets recall --from <vm> [<name...>]
 ```
 

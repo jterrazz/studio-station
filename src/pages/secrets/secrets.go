@@ -13,16 +13,20 @@ import (
 )
 
 type ListJSON struct {
-	Schema   string              `json:"schema"`
-	LendList []string            `json:"lend_list"`
-	Lent     map[string][]string `json:"lent"`
-	Kept     []string            `json:"kept"`
+	Schema   string                    `json:"schema"`
+	LendList []string                  `json:"lend_list"`
+	Lent     map[string][]string       `json:"lent"`
+	Lends    map[string][]secrets.Lend `json:"lends"`
+	Kept     []string                  `json:"kept"`
 }
 
 func ListContract(r secrets.Report) ListJSON {
-	body := ListJSON{Schema: "station.secrets/v1", LendList: nonNil(r.LendList), Lent: map[string][]string{}, Kept: nonNil(r.Kept)}
+	body := ListJSON{Schema: "station.secrets/v1", LendList: nonNil(r.LendList), Lent: map[string][]string{}, Lends: map[string][]secrets.Lend{}, Kept: nonNil(r.Kept)}
 	for vm, names := range r.Lent {
 		body.Lent[vm] = names
+	}
+	for vm, lends := range r.Lends {
+		body.Lends[vm] = lends
 	}
 	return body
 }
@@ -98,7 +102,9 @@ func Change(verb string, names []string, recall secrets.RecallReport, here page.
 func Lent(r secrets.LendReport, here page.Context) page.Page {
 	rows := make([]page.Row, 0, len(r.Names))
 	for _, name := range r.Names {
-		rows = append(rows, pages.Done(name, catalog.StateOK, "lent to "+r.To))
+		row := pages.Done(name, catalog.StateOK, "")
+		row.Detail = page.Texts("lent to "+r.To, "until "+r.Until.Local().Format("15:04")+" ("+pages.Term(r.Until.Sub(r.At))+")")
+		rows = append(rows, row)
 	}
 	p := pages.Outcome("secrets lend", here, nil, rows, "secrets to lend")
 	p.Hints = []page.Hint{*page.Cmd("station secrets recall --from " + r.To)}

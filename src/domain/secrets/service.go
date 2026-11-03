@@ -16,8 +16,11 @@ import (
 )
 
 const (
-	ClaudeToken = "operator:claude:oauth-token"
-	stepBudget  = 2 * time.Minute
+	ClaudeToken  = "operator:claude:oauth-token"
+	stepBudget   = 2 * time.Minute
+	DefaultLend  = 12 * time.Hour
+	ShortestLend = time.Minute
+	LongestLend  = 7 * 24 * time.Hour
 )
 
 var (
@@ -28,12 +31,19 @@ type Options struct{ Here catalog.MachineKind }
 
 type VMs interface {
 	IsVM(ctx context.Context, name string) (bool, error)
-	RecordLent(name string, names []string) error
+	RecordLent(name string, lends []Lend) error
 	RecordRecalled(name string, names []string) error
-	Holding(names []string) (map[string][]string, error)
+	Lends() (map[string][]Lend, error)
+}
+
+type Lend struct {
+	Name  string    `json:"name"`
+	At    time.Time `json:"at"`
+	Until time.Time `json:"until"`
 }
 
 type Service struct {
+	clock system.Clock
 	run   system.Runner
 	store settings.Store
 	vms   VMs
@@ -41,18 +51,21 @@ type Service struct {
 }
 
 func New(h system.Host, store settings.Store, vms VMs, o Options) *Service {
-	return &Service{run: h.Run, store: store, vms: vms, here: o.Here}
+	return &Service{clock: h.Clock, run: h.Run, store: store, vms: vms, here: o.Here}
 }
 
 type Report struct {
 	LendList []string
 	Lent     map[string][]string
+	Lends    map[string][]Lend
 	Kept     []string
 }
 
 type LendReport struct {
 	To    string
 	Names []string
+	At    time.Time
+	Until time.Time
 }
 
 type RecallReport struct {
@@ -65,11 +78,11 @@ func (s *Service) List(_ context.Context) (Report, error) {
 	if err != nil {
 		return Report{}, err
 	}
-	lent, err := s.vms.Holding(nil)
+	lends, err := s.vms.Lends()
 	if err != nil {
 		return Report{}, err
 	}
-	return Report{LendList: append([]string{}, current.LendList...), Lent: lent, Kept: []string{}}, nil
+	return Report{LendList: append([]string{}, current.LendList...), Lent: names(lends, nil), Lends: lends, Kept: []string{}}, nil
 }
 
 func (s *Service) Allow(names []string) error {
@@ -99,7 +112,29 @@ func (s *Service) LendList() []string {
 }
 
 func (s *Service) Held(names []string) (map[string][]string, error) {
-	return s.vms.Holding(names)
+	return s.holding(names)
+}
+
+func (s *Service) Lends() (map[string][]Lend, error) { return s.vms.Lends() }
+
+func (s *Service) holding(only []string) (map[string][]string, error) {
+	lends, err := s.vms.Lends()
+	if err != nil {
+		return nil, err
+	}
+	return names(lends, only), nil
+}
+
+func names(lends map[string][]Lend, only []string) map[string][]string {
+	held := map[string][]string{}
+	for vm, list := range lends {
+		for _, l := range list {
+			if only == nil || slices.Contains(only, l.Name) {
+				held[vm] = append(held[vm], l.Name)
+			}
+		}
+	}
+	return held
 }
 
 func (s *Service) CheckDisallow(names []string) error {
@@ -118,7 +153,7 @@ func (s *Service) Disallow(ctx context.Context, names []string) (RecallReport, e
 	if listErr := onList(current.LendList, names); listErr != nil {
 		return RecallReport{}, listErr
 	}
-	held, err := s.vms.Holding(names)
+	held, err := s.holding(names)
 	if err != nil {
 		return RecallReport{}, err
 	}
@@ -137,7 +172,10 @@ func (s *Service) Disallow(ctx context.Context, names []string) (RecallReport, e
 	return report, nil
 }
 
-func (s *Service) Lend(ctx context.Context, to string, names []string) (LendReport, error) {
+func (s *Service) Lend(ctx context.Context, to string, names []string, term time.Duration) (LendReport, error) {
+	if term == 0 {
+		term = DefaultLend
+	}
 	names, err := s.lendPlan(ctx, to, names)
 	if err != nil {
 		return LendReport{}, err
@@ -161,17 +199,22 @@ func (s *Service) Lend(ctx context.Context, to string, names []string) (LendRepo
 	if err != nil || imported.ExitCode != 0 {
 		return LendReport{}, &StepError{VM: to, Step: "importing the secrets", Cause: failure(err, imported)}
 	}
-	if err := s.vms.RecordLent(to, names); err != nil {
+	at := s.clock.Now().UTC().Truncate(time.Second)
+	lends := make([]Lend, 0, len(names))
+	for _, n := range names {
+		lends = append(lends, Lend{Name: n, At: at, Until: at.Add(term)})
+	}
+	if err := s.vms.RecordLent(to, lends); err != nil {
 		return LendReport{}, err
 	}
-	return LendReport{To: to, Names: names}, nil
+	return LendReport{To: to, Names: names, At: at, Until: at.Add(term)}, nil
 }
 
 func (s *Service) checkRecall(ctx context.Context, from string, names []string) ([]string, error) {
 	if err := s.checkVM(ctx, from); err != nil {
 		return nil, err
 	}
-	held, err := s.vms.Holding(nil)
+	held, err := s.holding(nil)
 	if err != nil {
 		return nil, err
 	}

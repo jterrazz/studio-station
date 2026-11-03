@@ -26,13 +26,14 @@ Deleting a VM is not revoking a token. Use fine-grained, expiring tokens in a VM
 
 ```sh
 station secrets allow session:openpanel
-station secrets lend --to api            # the whole lend list; lending again refreshes
+station secrets lend --to api            # the whole lend list, for 12h; lending again refreshes
+station secrets lend --to api --for 4h   # a term from 1m to 7d
 station secrets recall --from api        # take the copies back out
 station secrets disallow session:openpanel   # off the list, and recalled from every VM
 station secrets                          # names only, never a value
 ```
 
-A lent copy is a snapshot: later captures on the host do not reach it until you lend again. Values pass between the credential stores through a pipe, never through argv and never to disk on the host.
+A lent copy is a snapshot: later captures on the host do not reach it until you lend again. Every lend expires: the VM's record keeps, per name, when it was lent and until when (`secrets --json` lists them under `lends`), lending again resets the term, and a record from before terms existed reads each name as lent at the file's last change for 12h. Values pass between the credential stores through a pipe, never through argv and never to disk on the host.
 
 ## Where to revoke
 
