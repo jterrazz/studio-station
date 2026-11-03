@@ -1,4 +1,4 @@
-package app
+package wire
 
 import (
 	"path/filepath"

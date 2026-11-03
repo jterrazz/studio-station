@@ -33,7 +33,7 @@ func ruleKit(w *world) []finding {
 			case lib(lip), lib(bubble), lib(huh), lib(ansi), lib(cprof), lib(term), lib(qr):
 				ok = under(f.pkg, "ui/*")
 			case lib(fang):
-				ok = under(f.pkg, "ui/help", "app")
+				ok = under(f.pkg, "ui/help", "wire")
 			case lib(tea):
 				ok = under(f.pkg, "tui", "tui/screens/*", "ui/render/tui")
 			}

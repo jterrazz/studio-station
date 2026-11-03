@@ -17,5 +17,5 @@ jobs:
             binary-name: station
             build-path: ./src/cmd/station
             go-version-file: go.mod
-            ldflags: -X github.com/jterrazz/studio-station/src/app.version={tag}
+            ldflags: -X github.com/jterrazz/studio-station/src/wire.version={tag}
             targets: 'darwin/arm64,darwin/amd64,linux/arm64,linux/amd64'

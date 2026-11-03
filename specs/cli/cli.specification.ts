@@ -37,7 +37,7 @@ if (binaryIsStale()) {
         .trim();
     const building = `${STATION_BIN}.${process.pid}`;
     execSync(
-        `go build -ldflags "-X github.com/jterrazz/studio-station/src/app.version=${version}" -o ${building} ./src/cmd/station`,
+        `go build -ldflags "-X github.com/jterrazz/studio-station/src/wire.version=${version}" -o ${building} ./src/cmd/station`,
         { cwd: REPO_ROOT, stdio: 'inherit' },
     );
     renameSync(building, STATION_BIN);

@@ -46,7 +46,7 @@ func powerCode(rel string) bool {
 			return true
 		}
 	}
-	return rel == "src/app/power.go" || rel == "src/domain/daemon/power.go"
+	return rel == "src/wire/power.go" || rel == "src/domain/daemon/power.go"
 }
 
 // invariant: rule 23: Power is safe by construction: no string under src/

@@ -44,10 +44,10 @@ func importTable() map[string][]string {
 	organism := []string{"ui/molecule", "ui/atom", "ui/token", "page", lip, bubble, huh, std}
 	template := append(slices.Clone(organism), "ui/organism")
 	return map[string][]string{
-		"cmd/station":        {"app", "os"},
+		"cmd/station":        {"wire", "os"},
 		"cmd/generate":       {"catalog", "cmd/generate/pages", "page", "ui/render/json", "os", "flag", std},
 		"cmd/generate/pages": {"page", "pages", "pages/*", "domain/*", "catalog", "ui/token", std},
-		"app":                {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", std},
+		"wire":               {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", std},
 		"cli":                {"cli/kit", cobra, std},
 		"cli/kit":            {"output", "page", "core/fail", "domain/*", "catalog", "testing", cobra, pflag, std},
 		"cli/*":              {"cli/kit", "domain/*", "page", "pages/*", "catalog", cobra, pflag, std},
@@ -116,15 +116,15 @@ func symbolRules() []symbolRule {
 		{symbols: []string{"os.Getenv", "os.LookupEnv", "os.Setenv", "os.UserHomeDir", "os.Hostname", "os.Geteuid"}, owners: []string{"system/host"}},
 		{symbols: []string{"os.Environ", "os.Args", "os.Exit", "os.Stdin", "os.Stdout", "os.Stderr"}, owners: []string{"cmd/station"}},
 		{symbols: []string{"os.ReadFile", "os.ReadDir", "os.WriteFile", "os.MkdirAll"}, owners: []string{"system/host", "system/sshclient", "cmd/generate"}, tests: true},
-		{symbols: []string{"os.Getpid", "syscall.SIGTERM"}, owners: []string{"app", "system/host"}},
-		{symbols: []string{"os.File", "os.File.Fd", "os.Interrupt"}, owners: []string{"system/host", "app"}},
+		{symbols: []string{"os.Getpid", "syscall.SIGTERM"}, owners: []string{"wire", "system/host"}},
+		{symbols: []string{"os.File", "os.File.Fd", "os.Interrupt"}, owners: []string{"system/host", "wire"}},
 		{symbols: []string{"os.*", "os/exec.*", "syscall.*", "os/user.*"}, owners: []string{"system/host", "system/sshclient"}},
 		{symbols: []string{"net.*"}, owners: []string{"system/host", "system/sshclient"}},
 		{symbols: []string{"net/http.*"}, owners: []string{"system/host"}},
 		{symbols: []string{sshPkg + ".*", sshPkg + "/knownhosts.*"}, owners: []string{"system/sshclient"}},
 		{symbols: []string{"fmt.Print", "fmt.Println", "fmt.Printf", "log.*", "print", "println"}},
 		{symbols: []string{"fmt.Fprint", "fmt.Fprintln", "fmt.Fprintf", "io.WriteString", "io.Copy", "io.CopyN"}, owners: []string{"output", "ui/render/*", "system/host", "cmd/generate"}},
-		{symbols: cobraWriters(), owners: []string{"cli/kit", "app"}},
+		{symbols: cobraWriters(), owners: []string{"cli/kit", "wire"}},
 		{symbols: []string{"time.Now", "time.Since", "time.Until", "time.Sleep", "time.After", "time.Tick", "time.NewTimer", "time.NewTicker", "time.AfterFunc"}, owners: []string{"system/host", "system/sshclient", "ui/render/tty", "tui", "tui/*"}},
 		{symbols: []string{"path/filepath.Glob", "path/filepath.Walk", "path/filepath.WalkDir", "path/filepath.EvalSymlinks", "path/filepath.Abs", "io/fs.WalkDir", "io/fs.Glob"}, owners: []string{"system/host", "system/systemtest"}},
 		{symbols: paletteSymbols(), owners: []string{"ui/token"}},
@@ -134,9 +134,9 @@ func symbolRules() []symbolRule {
 		{symbols: []string{bubble + "/spinner.*"}, owners: []string{"ui/atom", "ui/render/tty", "ui/render/tui"}},
 		{symbols: []string{tea + ".*", bubble + "/*"}, owners: []string{"ui/organism", "ui/render/tui", "tui", "tui/*"}},
 		{symbols: []string{huh + ".*"}, owners: []string{"ui/organism", "ui/render/tty", "ui/render/tui"}},
-		{symbols: []string{fang + ".*"}, owners: []string{"ui/help", "app"}},
-		{symbols: prefixed(module+"/src/core/fail.", "Silent", "Interruption"), owners: []string{"cli/kit", "app"}},
-		{symbols: append(prefixed(module+"/src/output.", "NewWriter", "Detect", "For"), module+"/src/output.Writer.*"), owners: []string{"cli/kit", "app"}},
+		{symbols: []string{fang + ".*"}, owners: []string{"ui/help", "wire"}},
+		{symbols: prefixed(module+"/src/core/fail.", "Silent", "Interruption"), owners: []string{"cli/kit", "wire"}},
+		{symbols: append(prefixed(module+"/src/output.", "NewWriter", "Detect", "For"), module+"/src/output.Writer.*"), owners: []string{"cli/kit", "wire"}},
 	}
 }
 

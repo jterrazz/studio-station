@@ -1,4 +1,4 @@
-package app
+package wire
 
 import (
 	"github.com/spf13/cobra"

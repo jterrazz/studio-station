@@ -13,7 +13,7 @@ MENUBAR_APP  := .artifacts/menubar/Station.app
 # staged by overriding the probe (`make menubar-check SDK_PROBE=false`).
 SDK_PROBE    ?= xcrun --sdk macosx --show-sdk-path
 MENUBAR_HOME := $(HOME)/Applications/Station.app
-LDFLAGS      := -X github.com/jterrazz/studio-station/src/app.version=$(shell git describe --tags --always --dirty)
+LDFLAGS      := -X github.com/jterrazz/studio-station/src/wire.version=$(shell git describe --tags --always --dirty)
 
 CYAN  := \033[36m
 GREEN := \033[32m
