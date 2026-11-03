@@ -740,6 +740,8 @@ func rules() []rule {
 		{"FamilyImportsOldTree", ruleFamilyImports, "src/apps/mutant_imports_old.go", "package apps\n\nimport _ \"" + module + "/src/system/host\"\n", "src/apps/mutant_imports_old.go"},
 		{"TechnologyWords", ruleTechnologyWords, "src/apps/mutant_words.go", "package apps\n\nconst mutantMethod = \"brew\"\n", "src/apps/mutant_words.go"},
 		{"TechnologyWordsSSH", ruleTechnologyWords, "src/apps/mutant_ssh.go", "package apps\n\nvar mutantArgv = []string{\"ssh\", \"-o\", \"BatchMode=yes\", \"vm\", \"true\"}\n", "src/apps/mutant_ssh.go"},
+		{"TechnologyWordsSSHPath", ruleTechnologyWords, "src/apps/mutant_ssh_path.go", "package apps\n\nconst mutantBinary = \"nohup /usr/bin/ssh vm\"\n", "src/apps/mutant_ssh_path.go"},
+		{"TechnologyWordsSSHLine", ruleTechnologyWords, "src/apps/mutant_ssh_line.go", "package apps\n\nconst mutantLine = \"exec ssh -o BatchMode=yes vm\"\n", "src/apps/mutant_ssh_line.go"},
 		{"NoModelNames", ruleNoModelNames, "src/awake/mutant_models.go", "package awake\n\nfunc mutantLaptop(model string) bool { return model == \"MacBook\" }\n", "src/awake/mutant_models.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}

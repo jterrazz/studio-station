@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/types"
 	"maps"
+	"path"
 	"slices"
 	"strings"
 	"testing"
@@ -136,11 +137,26 @@ func wordAllowed(pkg, word string) bool {
 
 // invariant: ssh is also a product word (the SSH section, machines.ssh,
 // SSHConfig): its identifiers are exempt, an ssh command line is not, and a
-// literal that opens with the bare ssh is one: an exec's name, an argv's
-// first word, a shell line.
+// literal that runs ssh is one: an exec's name or path, an argv's first
+// word, a shell line that calls it.
+func sshCommandLine(fields []string) bool {
+	for i, f := range fields {
+		if path.Base(f) != "ssh" {
+			continue
+		}
+		switch {
+		case i == 0, strings.Contains(f, "/"):
+			return true
+		case slices.Contains([]string{"exec", "sudo", "env", "command", "&&", "||", "|", ";"}, fields[i-1]):
+			return true
+		}
+	}
+	return false
+}
+
 func literalWords(value string) []string {
 	words := splitWords(value)
-	if fields := strings.Fields(value); len(fields) == 0 || fields[0] != "ssh" {
+	if !sshCommandLine(strings.Fields(value)) {
 		words = slices.DeleteFunc(words, func(w string) bool { return w == "ssh" })
 	}
 	return words
@@ -219,5 +235,7 @@ func ruleTechnologyWords(w *world) []finding {
 	return out
 }
 
-func TestTechnologyWords(t *testing.T)    { judge(t, "TechnologyWords") }
-func TestTechnologyWordsSSH(t *testing.T) { judge(t, "TechnologyWordsSSH") }
+func TestTechnologyWords(t *testing.T)        { judge(t, "TechnologyWords") }
+func TestTechnologyWordsSSH(t *testing.T)     { judge(t, "TechnologyWordsSSH") }
+func TestTechnologyWordsSSHPath(t *testing.T) { judge(t, "TechnologyWordsSSHPath") }
+func TestTechnologyWordsSSHLine(t *testing.T) { judge(t, "TechnologyWordsSSHLine") }
