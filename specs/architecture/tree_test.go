@@ -94,3 +94,12 @@ func ruleTree(w *world) []finding {
 func TestTreeScreams(t *testing.T) { judge(t, "TreeScreams") }
 func TestTreeInside(t *testing.T)  { judge(t, "TreeInside") }
 func TestTreeApplies(t *testing.T) { judge(t, "TreeApplies") }
+
+func TestTreeAllowlistShrinks(t *testing.T) {
+	clean, _ := worlds(t)
+	top := toleratedTop()[0]
+	got := ruleTree(withoutPackage(clean, func(pkg string) bool { return topOf(pkg) == top }))
+	if !slices.ContainsFunc(got, func(f finding) bool { return strings.Contains(f.what, "src/"+top+" is gone") }) {
+		t.Errorf("the tree rule kept the line of src/%s, a package that is gone", top)
+	}
+}

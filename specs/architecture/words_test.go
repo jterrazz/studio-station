@@ -239,3 +239,12 @@ func TestTechnologyWords(t *testing.T)        { judge(t, "TechnologyWords") }
 func TestTechnologyWordsSSH(t *testing.T)     { judge(t, "TechnologyWordsSSH") }
 func TestTechnologyWordsSSHPath(t *testing.T) { judge(t, "TechnologyWordsSSHPath") }
 func TestTechnologyWordsSSHLine(t *testing.T) { judge(t, "TechnologyWordsSSHLine") }
+
+func TestTechnologyWordsAllowlistShrinks(t *testing.T) {
+	clean, _ := worlds(t)
+	pkg := slices.Sorted(maps.Keys(wordsTolerated()))[0]
+	got := ruleTechnologyWords(withoutPackage(clean, func(p string) bool { return p == pkg }))
+	if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasPrefix(f.what, "src/"+pkg+" no longer says") }) {
+		t.Errorf("the technology-words rule kept the line of src/%s, a package that is gone", pkg)
+	}
+}
