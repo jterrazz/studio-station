@@ -62,13 +62,13 @@
    [38;2;156;160;176m[m  [1;38;2;76;79;105mstation[m
       [38;2;108;111;133mno background jobs[m
    [38;2;156;160;176m[m  [1;38;2;76;79;105mknown[m
-   [38;2;156;160;176m└─ [m[38;2;64;160;43m●[m [1;38;2;76;79;105mwatchman[m                   [38;2;76;79;105mrunning · pid 3464[m     [38;2;76;79;105muser[m  [38;2;76;79;105mwatchman[m    [38;2;108;111;133m~/…ebook.watchman.plist[m
+   [38;2;156;160;176m└─ [m[38;2;64;160;43m●[m [1;38;2;76;79;105mwatchman[m                   [38;2;76;79;105mrunning · pid 3464[m     [38;2;76;79;105muser[m  [38;2;76;79;105mwatchman[m    [38;2;108;111;133m~/Library/L…chman.plist[m
    [38;2;156;160;176m[m  [1;38;2;76;79;105munknown[m
-   [38;2;156;160;176m└─ [m[38;2;210;15;57m✗[m [1;38;2;76;79;105mcom.jterrazz.brain.x-sna…[m  [38;2;76;79;105mfailing · last exit 2[m  [38;2;76;79;105muser[m              [38;2;108;111;133m~/…ain.x-snapshot.plist[m
+   [38;2;156;160;176m└─ [m[38;2;210;15;57m✗[m [1;38;2;76;79;105mcom.jterrazz.brain.x-sna…[m  [38;2;76;79;105mfailing · last exit 2[m  [38;2;76;79;105muser[m              [38;2;108;111;133m~/Library/L…pshot.plist[m
         [38;2;108;111;133m→ [m[38;2;76;79;105mlaunchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&[m
           [38;2;76;79;105mrm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist[m
    [38;2;156;160;176m[m  [1;38;2;76;79;105morphan[m
-   [38;2;156;160;176m└─ [m[38;2;223;142;29m◐[m [1;38;2;76;79;105msocket[m                     [38;2;76;79;105mnot loaded[m             [38;2;76;79;105mroot[m  [38;2;76;79;105mDocker.app[m  [38;2;108;111;133m/Library/….socket.plist[m
+   [38;2;156;160;176m└─ [m[38;2;223;142;29m◐[m [1;38;2;76;79;105msocket[m                     [38;2;76;79;105mnot loaded[m             [38;2;76;79;105mroot[m  [38;2;76;79;105mDocker.app[m  [38;2;108;111;133m/Library/La…ocket.plist[m
         [38;2;108;111;133m→ [m[38;2;76;79;105msudo launchctl bootout system/com.docker.socket &&[m
           [38;2;76;79;105msudo rm /Library/LaunchDaemons/com.docker.socket.plist[m
 

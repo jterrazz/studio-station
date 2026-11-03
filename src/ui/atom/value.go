@@ -214,26 +214,19 @@ func shortPath(s string) (string, bool) {
 }
 
 func path(s string, width int) string {
-	// invariant: a path keeps its first segment and as much of its end as
-	// fits, the file's name last: `/Library/…/com.docker.socket.plist`, else
-	// `/Library/…socket.plist`.
-	if width < Floor(page.KindPath) {
-		return End(s, width)
-	}
-	head, _, ok := pathHead(s)
-	if !ok {
-		return Middle(s, width)
-	}
-	if short, _ := shortPath(s); Width(short) <= width {
+	// invariant: a path keeps its first and last segments when they fit
+	// (`/Applications/…/Tailscale`), else it is cut in the middle, its end
+	// favored: `~/Library/La…tchman.plist` (§11.2).
+	if short, ok := shortPath(s); ok && Width(short) <= width {
 		return short
 	}
-	lead := head + "/" + token.Ellipsis
-	runes := []rune(s)
-	keep := width - Width(lead)
-	if keep < 4 {
-		return Middle(s, width)
+	if width <= 2 {
+		return End(s, width)
 	}
-	return lead + string(runes[len(runes)-keep:])
+	runes := []rune(s)
+	keep := width - 1
+	head := keep / 2
+	return string(runes[:head]) + token.Ellipsis + string(runes[len(runes)-(keep-head):])
 }
 
 func url(s string, width int) string {

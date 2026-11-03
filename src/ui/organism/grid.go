@@ -647,6 +647,17 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 		b.WriteString(ownLine)
 		rest = g.avail() - ownUsed
 	}
+	// invariant: a detail is never cut below its kind's floor (`~…`): a path
+	// or a URL, which says where something is, goes on its own line under the
+	// row at the label column, cut by its kind; any other detail is lost on
+	// that width, as a dropped column is (§7.1, §11.2).
+	if w := atom.Width(detail); detail != "" && rest-token.Gap < min(w, atom.Floor(r.Detail.Kind)) {
+		if k := r.Detail.Kind; k == page.KindPath || k == page.KindURL {
+			pad := indent + atom.Spaces(atom.Width(e.prefix)+token.MarkWidth)
+			below = append(below, Line{Kind: LineOther, Key: e.key, Text: pad + st.Muted.Render(cut(r.Detail, g.Width-1-atom.Width(pad)))})
+		}
+		detail = ""
+	}
 	own := false
 	switch {
 	case detail != "" && hint != "":
