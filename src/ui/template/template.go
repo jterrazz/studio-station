@@ -19,6 +19,10 @@ func Document(st token.Styles, p page.Page, width int) []string {
 	}
 	for _, s := range p.Sections {
 		lines = append(lines, "")
+		if s.Fold == page.Folded {
+			lines = append(lines, organism.Title(st, s))
+			continue
+		}
 		lines = append(lines, organism.Section(st, s, width)...)
 	}
 	if len(p.Hints) > 0 {

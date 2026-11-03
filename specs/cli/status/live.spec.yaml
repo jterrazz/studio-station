@@ -7,7 +7,7 @@ fixture:
     - ../__fixtures__/slow-gpg/
 env: terminal
 runs:
-    - command: '--version >/dev/null; terminal --size 120x250 /usr/bin/env -u NO_COLOR COLUMNS=120 "$STATION" status | /usr/bin/grep -c "^ station status"'
+    - command: '--version >/dev/null; terminal --size 120x250 /usr/bin/env -u NO_COLOR COLUMNS=120 "$STATION" status --all | /usr/bin/grep -c "^ station status"'
       stdin: |
           within 1 see Machine
           within 1 see ◌ gpg key
