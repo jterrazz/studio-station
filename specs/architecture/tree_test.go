@@ -55,14 +55,21 @@ func familyInside(family, rest string) bool {
 // invariant: rule tree-screams: every top-level package is a family or named
 // plumbing; a family holds only its model, contract/, calls/ and
 // adapter/<tech>/ (the engine adds process/, jobs/ and feeds/); a family with
-// a section has an applies.go.
+// a section has an applies.go once it holds more than its doc.go.
 func ruleTree(w *world) []finding {
 	var out []finding
 	tops := map[string]bool{}
-	applies := map[string]bool{}
+	applies, filled := map[string]bool{}, map[string]bool{}
 	for _, f := range w.files {
-		if !f.test && filepath.Base(f.path) == "applies.go" {
+		if f.test {
+			continue
+		}
+		switch filepath.Base(f.path) {
+		case "applies.go":
 			applies[f.pkg] = true
+		case "doc.go":
+		default:
+			filled[topOf(f.pkg)] = true
 		}
 	}
 	for _, pkg := range sortedKeys(w.packages) {
@@ -79,7 +86,7 @@ func ruleTree(w *world) []finding {
 		}
 	}
 	for _, family := range sectioned() {
-		if tops[family] && !applies[family] {
+		if filled[family] && !applies[family] {
 			out = append(out, finding{"tree-screams", "src/" + family, "a family with a section has an applies.go"})
 		}
 	}
