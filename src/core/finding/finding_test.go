@@ -50,3 +50,34 @@ func TestNeedsYouListsBrokenFirstThenBySectionThenMacBeforeItsVMs(t *testing.T) 
 		t.Error("ranking reordered the read it was given")
 	}
 }
+
+func TestNeedsYouListsEachMacFollowedByItsOwnVMsThenTheNextMac(t *testing.T) {
+	this := machine.Ref{Name: "jterrazz-macbook-pro"}
+	mini := machine.Ref{Name: "jterrazz-mac-mini"}
+	infra := machine.Ref{Name: "infra", On: mini.Name}
+	linux1 := machine.Ref{Name: "linux-1", On: this.Name}
+	line := func(m machine.Ref, subject string) finding.Finding {
+		return finding.Finding{Machine: m, Section: section.Apps, Severity: finding.NeedsALook, Subject: subject}
+	}
+	read := []finding.Finding{
+		line(this, "node"),
+		line(infra, "curl"),
+		line(mini, "git"),
+		line(linux1, "jq"),
+	}
+
+	got := make([]string, 0, len(read))
+	for _, f := range finding.Rank(read) {
+		got = append(got, f.Machine.Name+" "+f.Subject)
+	}
+
+	want := []string{
+		"jterrazz-macbook-pro node",
+		"linux-1 jq",
+		"jterrazz-mac-mini git",
+		"infra curl",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("Needs you ranks\n%v\nwant\n%v", got, want)
+	}
+}
