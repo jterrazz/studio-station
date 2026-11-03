@@ -34,6 +34,7 @@ The ports and the data:
     systemtest/   scripted fakes of every port, for tests
   machines/adapter/
     tart/         the Engine adapter, over Runner
+    ssh/          the connection to a VM, over x/crypto/ssh
   platform/
     local/        the real adapters: the only importer of os/exec, files, the network
     darwin/       the only cgo: IOKit power assertions, the lid, power sources, notify(3)

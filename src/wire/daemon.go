@@ -18,15 +18,15 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
+	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
 	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	"github.com/jterrazz/studio-station/src/system"
-	"github.com/jterrazz/studio-station/src/system/sshclient"
 )
 
 func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 
 func (m machine) daemon(env kit.Env) *daemon.Daemon {
-	return daemon.New(m.host, tart.New(m.host.Run), sshclient.New(), m.machines(false), m.tailnet().Tracked(daemon.ChildrenDir(m.paths)), m.store, daemon.Options{
+	return daemon.New(m.host, tart.New(m.host.Run), ssh.New(), m.machines(false), m.tailnet().Tracked(daemon.ChildrenDir(m.paths)), m.store, daemon.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Pmset: m.pmset(), PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: daemonLends{m.secrets()},
