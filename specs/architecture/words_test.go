@@ -78,7 +78,7 @@ func wordsTolerated() map[string][]string {
 		"domain/setup":                 {"bun", "mise", "npm", "tailscale", "tailscaled"},
 		"domain/shell":                 {"mise"},
 		"domain/shortcuts":             {"docker"},
-		"domain/status":                {"brew", "bun", "docker", "fdesetup", "launchctl", "launchd", "lsof", "npm", "pmset", "security", "sysctl", "tailscale", "tart"},
+		"domain/status":                {"brew", "bun", "docker", "fdesetup", "launchd", "lsof", "npm", "pmset", "security", "sysctl", "tailscale", "tart"},
 		"domain/storage":               {"brew", "docker", "mise"},
 		"domain/tailnet":               {"tailscale"},
 		"domain/tools":                 {"brew", "bun", "mas", "mise", "npm", "uv"},

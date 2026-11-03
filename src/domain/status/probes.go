@@ -10,6 +10,8 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
+const ReadBudget = defaultBudget
+
 const (
 	defaultBudget = 2 * time.Second
 	updateBudget  = 10 * time.Second

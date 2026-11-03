@@ -5,6 +5,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	schedule "github.com/jterrazz/studio-station/src/domain/probe"
@@ -33,6 +34,7 @@ type Sources struct {
 	Storage StorageReader
 	Daemon  DaemonReader
 	Power   PowerReader
+	Jobs    contract.Jobs
 }
 
 type PowerReader interface {
