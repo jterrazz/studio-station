@@ -17,8 +17,8 @@
 #               the screen, as tmux keeps them: a line scrolled off the top joins the
 #               history, and so does the whole screen when it is cleared from its
 #               first cell (tmux's scroll-on-clear, on by default)
-# Then it waits for COMMAND to exit and exits with its code. A wait that times out
-# prints the screen on stderr and exits 124.
+# Then it waits for COMMAND to exit and exits with its code. A wait that times out,
+# or a screen wait COMMAND exits before, prints the screen on stderr and exits 124.
 # usage: terminal [--size COLSxROWS] COMMAND [ARG...]
 import codecs
 import fcntl
@@ -266,12 +266,15 @@ class Screen:
             self.cells = self.main
 
 
-def hold(args):
+def hold(args, cols, rows):
     # invariant: the pseudo-terminal's session leader is a shell's stand-in, never
     # COMMAND: it runs COMMAND as a foreground job and takes the terminal back when
     # it exits, as a shell does, so the hangup of the leader's exit reaches only
     # the leader and what COMMAND leaves running stays alive to be seen.
     try:
+        # invariant: the size is set before COMMAND starts, so its first read of
+        # the size never races the driver's and finds 0x0.
+        fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
         signal.signal(signal.SIGTTOU, signal.SIG_IGN)
         job = os.fork()
         if job == 0:
@@ -300,14 +303,15 @@ def main():
     steps = sys.stdin.read().splitlines()
     pid, fd = pty.fork()
     if pid == 0:
-        hold(args)
-    fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
+        hold(args, cols, rows)
     screen = Screen(cols, rows)
     decoder = codecs.getincrementaldecoder("utf-8")("replace")
     status = None
+    drawn = 0
+    started = time.monotonic()
 
     def pump(seconds):
-        nonlocal status
+        nonlocal status, drawn
         ready, _, _ = select.select([fd], [], [], seconds)
         if ready:
             try:
@@ -315,6 +319,7 @@ def main():
             except OSError:
                 data = b""
             if data:
+                drawn += len(data)
                 screen.feed(decoder.decode(data))
                 if screen.replies:
                     os.write(fd, screen.replies)
@@ -326,14 +331,21 @@ def main():
                 status = os.waitstatus_to_exitcode(code)
 
     def fail(why):
-        sys.stderr.write(why + "; the screen held:\n" + screen.text() + "\n")
+        # value: what the command drew and how long it ran, so a binary that never
+        # started (drew 0 bytes) is told apart from a slow first frame.
+        ran = "%d bytes drawn in %.1f s" % (drawn, time.monotonic() - started)
+        sys.stderr.write(why + " (" + ran + "); the screen held:\n" + screen.text() + "\n")
         if status is None:
             os.kill(pid, signal.SIGKILL)
         sys.exit(124)
 
-    def wait(ok, why, seconds=WAIT):
+    def wait(ok, why, seconds=WAIT, ended=True):
+        # invariant: a screen wait fails as soon as the command has exited, with its
+        # code, since an exited command never draws the text it waits for.
         deadline = time.monotonic() + seconds
         while not ok():
+            if ended and status is not None:
+                fail(why + ": the command exited " + str(status))
             if time.monotonic() > deadline:
                 fail(why)
             pump(0.05)
@@ -344,7 +356,7 @@ def main():
             seconds, _, rest = arg.partition(" ")
             then, _, text = rest.partition(" ")
             if then == "exit":
-                wait(lambda: status is not None, "the command had not exited within " + seconds + " s", float(seconds))
+                wait(lambda: status is not None, "the command had not exited within " + seconds + " s", float(seconds), ended=False)
                 if status != int(text):
                     fail("the command exited " + str(status) + ", not " + text)
                 continue
@@ -357,21 +369,21 @@ def main():
         elif verb == "gone":
             wait(lambda: arg not in screen.text(), "still saw " + repr(arg))
         elif verb == "file":
-            wait(lambda: os.path.isfile(arg) and os.path.getsize(arg) > 0, "never saw the file " + repr(arg))
+            wait(lambda: os.path.isfile(arg) and os.path.getsize(arg) > 0, "never saw the file " + repr(arg), ended=False)
         elif verb == "send":
             os.write(fd, arg.encode().decode("unicode_escape").encode("latin-1"))
         elif verb == "screen":
             pump(0.2)
             print(screen.text())
         elif verb == "scrollback":
-            wait(lambda: status is not None, "the command never exited")
+            wait(lambda: status is not None, "the command never exited", ended=False)
             pump(0.2)
             print(screen.scrollback())
         elif verb:
             # invariant: an unscripted step is refused with exit 97, as every stub refuses one.
             sys.stderr.write("terminal: unknown step " + repr(line) + "\n")
             sys.exit(97)
-    wait(lambda: status is not None, "the command never exited")
+    wait(lambda: status is not None, "the command never exited", ended=False)
     sys.exit(status)
 
 
