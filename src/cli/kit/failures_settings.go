@@ -13,13 +13,13 @@ func settingsFailure(err error) (*fail.Error, bool) {
 	var keychain *settings.KeychainError
 	switch {
 	case errors.As(err, &unreadable):
-		return fail.Failure("cannot read \""+unreadable.Path+"\": "+unreadable.Cause.Error(), "repair the JSON of \""+unreadable.Path+"\", or move it away to start afresh", err), true
+		return failed("cannot read \""+unreadable.Path+"\": "+unreadable.Cause.Error(), "repair the JSON of \""+unreadable.Path+"\", or move it away to start afresh", err), true
 	case errors.As(err, &unwritable):
-		return fail.Failure("cannot write \""+unwritable.Path+"\": "+unwritable.Cause.Error(), "check the permissions of \""+unwritable.Path+"\"", err), true
+		return failed("cannot write \""+unwritable.Path+"\": "+unwritable.Cause.Error(), "check the permissions of \""+unwritable.Path+"\"", err), true
 	case errors.Is(err, settings.ErrNoKeychain):
-		return fail.Usage("kept secrets live only in a host's keychain", "run it on the host: station <command> --on <host>"), true
+		return usage("kept secrets live only in a host's keychain", "run it on the host: station <command> --on <host>"), true
 	case errors.As(err, &keychain):
-		return fail.Failure("keychain account \""+keychain.Account+"\": "+keychain.Cause.Error(), "open Keychain Access and check the station items", err), true
+		return failed("keychain account \""+keychain.Account+"\": "+keychain.Cause.Error(), "open Keychain Access and check the station items", err), true
 	}
 	return nil, false
 }

@@ -49,7 +49,7 @@ func importTable() map[string][]string {
 		"cmd/generate/pages": {"page", "pages", "pages/*", "domain/*", "catalog", "ui/token", std},
 		"app":                {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", std},
 		"cli":                {"cli/kit", cobra, std},
-		"cli/kit":            {"output", "page", "core/fail", "domain/*", "catalog", cobra, pflag, std},
+		"cli/kit":            {"output", "page", "core/fail", "domain/*", "catalog", "testing", cobra, pflag, std},
 		"cli/*":              {"cli/kit", "domain/*", "page", "pages/*", "catalog", cobra, pflag, std},
 		"domain/*":           domain,
 		"domain/setup":       append(slices.Clone(domain), "domain/shell", "domain/storage"),
@@ -78,7 +78,7 @@ func importTable() map[string][]string {
 		"ui/render/tui":      append(slices.Clone(template), "ui/template", tea),
 		"output":             {"page", "ui/render/*", "core/fail", std},
 		"core/*":             {"core/*", std},
-		"core/fail":          {"core/finding", "testing", std},
+		"core/fail":          {"core/finding", std},
 		"tui":                {"tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
 		"tui/*":              {"tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
 	}
@@ -129,7 +129,7 @@ func symbolRules() []symbolRule {
 		{symbols: []string{tea + ".*", bubble + "/*"}, owners: []string{"ui/organism", "ui/render/tui", "tui", "tui/*"}},
 		{symbols: []string{huh + ".*"}, owners: []string{"ui/organism", "ui/render/tty", "ui/render/tui"}},
 		{symbols: []string{fang + ".*"}, owners: []string{"ui/help", "app"}},
-		{symbols: prefixed(module+"/src/core/fail.", "Usage", "Failure", "Silent", "Interruption"), owners: []string{"cli/kit", "app"}},
+		{symbols: prefixed(module+"/src/core/fail.", "Silent", "Interruption"), owners: []string{"cli/kit", "app"}},
 		{symbols: append(prefixed(module+"/src/output.", "NewWriter", "Detect", "For"), module+"/src/output.Writer.*"), owners: []string{"cli/kit", "app"}},
 	}
 }

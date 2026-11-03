@@ -48,7 +48,7 @@ func Translate(err error, path string) *fail.Error {
 		if s := strings.Fields(suggestions); len(s) > 0 {
 			hint += didYouMean(s)
 		}
-		return fail.Usage(strings.TrimSpace(first), hint)
+		return usage(strings.TrimSpace(first), hint)
 	}
-	return fail.Failure(message, hint, err)
+	return failed(message, hint, err)
 }

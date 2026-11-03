@@ -11,9 +11,9 @@ func tailnetFailure(err error) (*fail.Error, bool) {
 	var serve *tailnet.ServeError
 	switch {
 	case errors.Is(err, tailnet.ErrAbsent):
-		return fail.Failure(err.Error(), "station tools install tailscale", err), true
+		return failed(err.Error(), "station tools install tailscale", err), true
 	case errors.As(err, &serve):
-		return fail.Failure(serve.Error(), "docs/reference/services.md#https", err), true
+		return failed(serve.Error(), "docs/reference/services.md#https", err), true
 	}
 	return nil, false
 }

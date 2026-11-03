@@ -10,7 +10,7 @@ import (
 func remoteFailure(err error) (*fail.Error, bool) {
 	var unreachable *remote.UnreachableError
 	if errors.As(err, &unreachable) {
-		return fail.Failure(unreachable.Error(), "station machines probe "+unreachable.Machine, err), true
+		return failed(unreachable.Error(), "station machines probe "+unreachable.Machine, err), true
 	}
 	return nil, false
 }

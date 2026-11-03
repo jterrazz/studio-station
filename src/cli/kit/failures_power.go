@@ -16,23 +16,23 @@ func powerFailure(err error) (*fail.Error, bool) {
 	switch {
 	case errors.As(err, &rng):
 		if rng.Long {
-			return fail.Usage(rng.Error(), "station power awake --for 24h"), true
+			return usage(rng.Error(), "station power awake --for 24h"), true
 		}
-		return fail.Usage(rng.Error(), "station power awake --for 1h"), true
+		return usage(rng.Error(), "station power awake --for 1h"), true
 	case errors.As(err, &off):
-		return fail.Usage(off.Error(), "ssh <host> station power"), true
+		return usage(off.Error(), "ssh <host> station power"), true
 	case errors.As(err, &none):
-		return fail.Usage(none.Error(), "run it on a Mac host"), true
+		return usage(none.Error(), "run it on a Mac host"), true
 	case errors.As(err, &guard):
 		if guard.Guard == power.ReasonLid {
-			return fail.Failure(guard.Error(), "station power awake --lid --battery", err), true
+			return failed(guard.Error(), "station power awake --lid --battery", err), true
 		}
-		return fail.Failure(guard.Error(), "station power", err), true
+		return failed(guard.Error(), "station power", err), true
 	case errors.As(err, &down):
 		if down.Installed {
-			return fail.Failure(down.Error(), "station start", err), true
+			return failed(down.Error(), "station start", err), true
 		}
-		return fail.Failure(down.Error(), "station setup", err), true
+		return failed(down.Error(), "station setup", err), true
 	}
 	return nil, false
 }

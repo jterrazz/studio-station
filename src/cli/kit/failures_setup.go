@@ -19,11 +19,11 @@ func setupFailure(err error) (*fail.Error, bool) {
 	var cross *setup.CrossDeviceError
 	switch {
 	case errors.As(err, &mismatch):
-		return fail.Usage(mismatch.Error(), "run station setup without --name"), true
+		return usage(mismatch.Error(), "run station setup without --name"), true
 	case errors.As(err, &bad):
-		return fail.Usage(bad.Error(), "use lowercase letters, digits and -, 1 to 40 characters"), true
+		return usage(bad.Error(), "use lowercase letters, digits and -, 1 to 40 characters"), true
 	case errors.Is(err, setup.ErrNameOnVM):
-		return fail.Usage(setup.ErrNameOnVM.Error(), "run station setup without --name"), true
+		return usage(setup.ErrNameOnVM.Error(), "run station setup without --name"), true
 	case errors.As(err, &step):
 		hint := "fix it, then run station setup again: it resumes"
 		var underAgent *machines.RunningUnderAgentError
@@ -39,7 +39,7 @@ func setupFailure(err error) (*fail.Error, bool) {
 		case errors.As(err, &cross):
 			hint = "station never copies: move it by hand, then station setup"
 		}
-		return fail.Failure(step.Error(), hint, err), true
+		return failed(step.Error(), hint, err), true
 	}
 	return nil, false
 }

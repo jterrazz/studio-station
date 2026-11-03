@@ -86,10 +86,10 @@ func RefuseOn(env Env) func(*cobra.Command, []string) error {
 		if p == "stop" || p == "start" {
 			// invariant: the agent stop boots out or start bootstraps is this
 			// login's, so neither runs for another host.
-			return fail.Usage("station "+p+" acts on this host only", "ssh "+env.On.Machine+" station "+p)
+			return usage("station "+p+" acts on this host only", "ssh "+env.On.Machine+" station "+p)
 		}
 		if refusesOn(p) {
-			return fail.Usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
+			return usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
 		}
 		if machine, ok := env.On.Target(); ok && c.Annotations[owned] == "" && c.HasParent() {
 			c.Run = nil

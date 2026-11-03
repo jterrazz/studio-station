@@ -19,7 +19,7 @@ func (p PartialFailure) Error() string {
 func (p PartialFailure) As(target any) bool {
 	t, ok := target.(**fail.Error)
 	if ok {
-		*t = fail.Failure(p.Error(), p.FirstHint, nil)
+		*t = failed(p.Error(), p.FirstHint, nil)
 	}
 	return ok
 }

@@ -14,13 +14,13 @@ func shortcutsFailure(err error) (*fail.Error, bool) {
 	var unknown *shortcuts.UnknownShortcutError
 	switch {
 	case errors.As(err, &git):
-		return fail.Failure(git.Error(), "fix what git printed above, then run station run git "+git.Shortcut+" again", err), true
+		return failed(git.Error(), "fix what git printed above, then run station run git "+git.Shortcut+" again", err), true
 	case errors.As(err, &docker):
-		return fail.Failure(docker.Error(), "check that the docker daemon runs, then run it again", err), true
+		return failed(docker.Error(), "check that the docker daemon runs, then run it again", err), true
 	case errors.As(err, &missing):
-		return fail.Failure(missing.Error(), "station tools install "+missing.Tool, err), true
+		return failed(missing.Error(), "station tools install "+missing.Tool, err), true
 	case errors.As(err, &unknown):
-		return fail.Usage(unknown.Error(), "run station run --help"), true
+		return usage(unknown.Error(), "run station run --help"), true
 	}
 	return nil, false
 }

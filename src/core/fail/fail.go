@@ -3,7 +3,6 @@ package fail
 import (
 	"context"
 	"errors"
-	"testing"
 
 	"github.com/jterrazz/studio-station/src/core/finding"
 )
@@ -80,16 +79,6 @@ func (e *Error) Error() string {
 
 func (e *Error) Unwrap() error { return e.Cause }
 
-func Usage(message, hint string) *Error {
-	guard(hint)
-	return &Error{Message: message, Hint: hint, Exit: ExitUsage}
-}
-
-func Failure(message, hint string, cause error) *Error {
-	guard(hint)
-	return &Error{Message: message, Hint: hint, Exit: ExitFailure, Cause: cause}
-}
-
 func Silent(code Exit) *Error {
 	return &Error{Exit: code}
 }
@@ -113,12 +102,4 @@ func ExitOf(err error) Exit {
 		return ExitInterrupted
 	}
 	return ExitFailure
-}
-
-func guard(hint string) {
-	// invariant: every worded error carries its one repair; under test an empty
-	// hint is a bug to fail loudly, at run time kit.Translate fills it in.
-	if hint == "" && testing.Testing() {
-		panic("fail: an error needs a non-empty hint")
-	}
 }

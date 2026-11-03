@@ -22,21 +22,21 @@ func imagesFailure(err error) (*fail.Error, bool) {
 	var build *images.BuildFailedError
 	switch {
 	case errors.As(err, &unknown):
-		return fail.Usage(unknown.Error(), "the images are "+imageNames()+": station images build "+catalog.Images[0].Name), true
+		return usage(unknown.Error(), "the images are "+imageNames()+": station images build "+catalog.Images[0].Name), true
 	case errors.As(err, &version):
-		return fail.Usage(version.Error(), "station images lists the versions"), true
+		return usage(version.Error(), "station images lists the versions"), true
 	case errors.As(err, &notBuilt):
-		return fail.Usage(notBuilt.Error(), "station images build "+notBuilt.Image), true
+		return usage(notBuilt.Error(), "station images build "+notBuilt.Image), true
 	case errors.As(err, &noBinary):
-		return fail.Usage(noBinary.Error(), linuxBinaryHint), true
+		return usage(noBinary.Error(), linuxBinaryHint), true
 	case errors.As(err, &missing):
-		return fail.Usage(missing.Error(), linuxBinaryHint), true
+		return usage(missing.Error(), linuxBinaryHint), true
 	case errors.As(err, &noEngine):
-		return fail.Usage(noEngine.Error(), "station tools install tart"), true
+		return usage(noEngine.Error(), "station tools install tart"), true
 	case errors.As(err, &notHost):
-		return fail.Usage(notHost.Error(), "run it on a host"), true
+		return usage(notHost.Error(), "run it on a host"), true
 	case errors.As(err, &build):
-		return fail.Failure(build.Error(), "station images build "+build.Image, err), true
+		return failed(build.Error(), "station images build "+build.Image, err), true
 	}
 	return nil, false
 }
