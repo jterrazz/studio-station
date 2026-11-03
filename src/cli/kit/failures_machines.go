@@ -40,17 +40,17 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &temporary):
 		return fail.Usage(temporary.Error(), "ssh "+temporary.Name+" sudo reboot"), true
 	case errors.As(err, &unreachable):
-		return fail.Failed(unreachable.Error(), "station machines probe "+unreachable.Name, err), true
+		return fail.Failure(unreachable.Error(), "station machines probe "+unreachable.Name, err), true
 	case errors.As(err, &timeout):
-		return fail.Failed(timeout.Error(), "station machines probe "+timeout.Name, err), true
+		return fail.Failure(timeout.Error(), "station machines probe "+timeout.Name, err), true
 	case errors.As(err, &refused):
-		return fail.Failed(refused.Error(), "check that sudo needs no password for fdesetup on "+refused.Name, err), true
+		return fail.Failure(refused.Error(), "check that sudo needs no password for fdesetup on "+refused.Name, err), true
 	case errors.As(err, &terminal):
 		return fail.Usage(terminal.Error(), "run it on a terminal"), true
 	case errors.As(err, &sshConfig):
-		return fail.Failed(sshConfig.Error(), "check \""+sshConfig.Path+"\" and run it again", err), true
+		return fail.Failure(sshConfig.Error(), "check \""+sshConfig.Path+"\" and run it again", err), true
 	case errors.As(err, &record):
-		return fail.Failed(record.Error(), "repair or move away \""+record.Path+"\"", err), true
+		return fail.Failure(record.Error(), "repair or move away \""+record.Path+"\"", err), true
 	}
 	return nil, false
 }
@@ -89,16 +89,16 @@ func vmFailure(err error) (*fail.Error, bool) {
 	switch {
 	case errors.As(err, &down):
 		if down.Installed {
-			return fail.Failed(down.Error(), "station start", err), true
+			return fail.Failure(down.Error(), "station start", err), true
 		}
-		return fail.Failed(down.Error(), "station setup", err), true
+		return fail.Failure(down.Error(), "station setup", err), true
 	case errors.As(err, &network):
 		if network.Bridge {
 			return fail.Usage(network.Error(), "it lets an iPhone on the Wi-Fi reach the VM; Linux VMs publish their services instead"), true
 		}
 		return fail.Usage(network.Error(), "station machines create --network nat"), true
 	case errors.As(err, &created):
-		return fail.Failed(created.Error(), "fix the cause, then run station machines create again", err), true
+		return fail.Failure(created.Error(), "fix the cause, then run station machines create again", err), true
 	case errors.As(err, &notVM):
 		return fail.Usage(notVM.Error(), notAVMHint(notVM)), true
 	case errors.As(err, &noLifetime):
@@ -143,13 +143,13 @@ func pipeFailure(err error) (*fail.Error, bool) {
 		return fail.Usage(notHere.Error(), "ssh "+notHere.Name+" goes through "+notHere.Host+": station machines"), true
 	case errors.As(err, &stopped):
 		if stopped.Lifetime == machines.Temporary {
-			return fail.Failed(stopped.Error(), "station machines delete "+stopped.Name, err), true
+			return fail.Failure(stopped.Error(), "station machines delete "+stopped.Name, err), true
 		}
-		return fail.Failed(stopped.Error(), "station machines start "+stopped.Name, err), true
+		return fail.Failure(stopped.Error(), "station machines start "+stopped.Name, err), true
 	case errors.As(err, &closed):
-		return fail.Failed(closed.Error(), "station machines probe "+closed.Name, err), true
+		return fail.Failure(closed.Error(), "station machines probe "+closed.Name, err), true
 	case errors.As(err, &running):
-		return fail.Failed(running.Error(), "stop the lasting VMs and delete the temporary ones (station machines), then station setup", err), true
+		return fail.Failure(running.Error(), "stop the lasting VMs and delete the temporary ones (station machines), then station setup", err), true
 	}
 	return nil, false
 }

@@ -41,7 +41,7 @@ func (w *Writer) Failure(err error) {
 	}
 	var e *fail.Error
 	if !errors.As(err, &e) {
-		e = &fail.Error{Message: err.Error(), Code: fail.CodeFailure}
+		e = &fail.Error{Message: err.Error(), Exit: fail.ExitFailure}
 	}
 	if e.Message == "" {
 		return

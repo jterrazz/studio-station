@@ -43,7 +43,7 @@ func (o *On) Delegate(ctx context.Context, machine string, interactive bool) err
 		return err
 	}
 	if code != 0 {
-		return fail.Silent(fail.Code(code))
+		return fail.Silent(fail.Exit(code))
 	}
 	return nil
 }

@@ -4,63 +4,111 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/jterrazz/studio-station/src/core/finding"
 )
 
-type Code int
+type Exit int
 
 const (
-	CodeOK          Code = 0
-	CodeFailure     Code = 1
-	CodeUsage       Code = 2
-	CodeInterrupted Code = 130
+	ExitOK          Exit = 0
+	ExitFailure     Exit = 1
+	ExitUsage       Exit = 2
+	ExitInterrupted Exit = 130
 )
 
+type Type string
+
+const (
+	Refused           Type = "refused"
+	NotFound          Type = "not-found"
+	NotForThisMachine Type = "not-for-this-machine"
+	NeedsConfirmation Type = "needs-confirmation"
+	NeedsTerminal     Type = "needs-terminal"
+	Declined          Type = "declined"
+	Unreachable       Type = "unreachable"
+	EngineStopped     Type = "engine-stopped"
+	FarTooOld         Type = "far-too-old"
+	Failed            Type = "failed"
+	Interrupted       Type = "interrupted"
+)
+
+func (t Type) Exit() Exit {
+	// invariant: SPEC §12.2, the exit code computed once from the type.
+	switch t {
+	case Refused, NotFound, NotForThisMachine, NeedsConfirmation, NeedsTerminal:
+		return ExitUsage
+	case Interrupted:
+		return ExitInterrupted
+	default:
+		return ExitFailure
+	}
+}
+
+type Code string
+
 type Error struct {
+	// invariant: an error carries its Type and Code (v3), or its Message, Hint
+	// and Exit (the errors kit.Translate words today); Type, when set, decides
+	// the exit code.
+	Type    Type
+	Code    Code
+	Subject string
+	Detail  map[string]string
+	Fix     finding.Fix
 	Message string
 	Hint    string
-	Code    Code
+	Exit    Exit
 	Cause   error
 }
 
 func (e *Error) Error() string {
-	if e.Message == "" && e.Cause != nil {
+	switch {
+	case e.Message != "":
+		return e.Message
+	case e.Cause != nil:
 		return e.Cause.Error()
+	case e.Code != "" && e.Subject != "":
+		return string(e.Code) + ": " + e.Subject
 	}
-	return e.Message
+	return string(e.Code)
 }
 
 func (e *Error) Unwrap() error { return e.Cause }
 
 func Usage(message, hint string) *Error {
 	guard(hint)
-	return &Error{Message: message, Hint: hint, Code: CodeUsage}
+	return &Error{Message: message, Hint: hint, Exit: ExitUsage}
 }
 
-func Failed(message, hint string, cause error) *Error {
+func Failure(message, hint string, cause error) *Error {
 	guard(hint)
-	return &Error{Message: message, Hint: hint, Code: CodeFailure, Cause: cause}
+	return &Error{Message: message, Hint: hint, Exit: ExitFailure, Cause: cause}
 }
 
-func Silent(code Code) *Error {
-	return &Error{Code: code}
+func Silent(code Exit) *Error {
+	return &Error{Exit: code}
 }
 
-func Interrupted() *Error {
-	return &Error{Code: CodeInterrupted, Cause: context.Canceled}
+func Interruption() *Error {
+	return &Error{Exit: ExitInterrupted, Cause: context.Canceled}
 }
 
-func CodeOf(err error) Code {
+func ExitOf(err error) Exit {
 	if err == nil {
-		return CodeOK
+		return ExitOK
 	}
 	var e *Error
 	if errors.As(err, &e) {
-		return e.Code
+		if e.Type != "" {
+			return e.Type.Exit()
+		}
+		return e.Exit
 	}
 	if errors.Is(err, context.Canceled) {
-		return CodeInterrupted
+		return ExitInterrupted
 	}
-	return CodeFailure
+	return ExitFailure
 }
 
 func guard(hint string) {

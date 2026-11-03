@@ -39,7 +39,7 @@ func setupFailure(err error) (*fail.Error, bool) {
 		case errors.As(err, &cross):
 			hint = "station never copies: move it by hand, then station setup"
 		}
-		return fail.Failed(step.Error(), hint, err), true
+		return fail.Failure(step.Error(), hint, err), true
 	}
 	return nil, false
 }

@@ -78,7 +78,7 @@ func importTable() map[string][]string {
 		"ui/render/tui":      append(slices.Clone(template), "ui/template", tea),
 		"output":             {"page", "ui/render/*", "core/fail", std},
 		"core/*":             {"core/*", std},
-		"core/fail":          {"testing", std},
+		"core/fail":          {"core/finding", "testing", std},
 		"tui":                {"tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
 		"tui/*":              {"tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
 	}

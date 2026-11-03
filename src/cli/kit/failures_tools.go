@@ -23,7 +23,7 @@ func toolsFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &place):
 		return fail.Usage(place.Error(), placeHint(place)), true
 	case errors.As(err, &missing):
-		return fail.Failed(missing.Error(), "station tools install "+missing.Requires+" "+missing.Tool, err), true
+		return fail.Failure(missing.Error(), "station tools install "+missing.Requires+" "+missing.Tool, err), true
 	case errors.As(err, &irreversible):
 		return fail.Usage(irreversible.Error(), "station installs it but cannot remove it: remove it by hand"), true
 	case errors.As(err, &manual):

@@ -9,7 +9,7 @@ import (
 func TestAnEmptyHintPanicsUnderTest(t *testing.T) {
 	for name, build := range map[string]func(){
 		"usage":  func() { _ = fail.Usage("unknown tool \"nope\"", "") },
-		"failed": func() { _ = fail.Failed("install failed", "", nil) },
+		"failed": func() { _ = fail.Failure("install failed", "", nil) },
 	} {
 		t.Run(name, func(t *testing.T) {
 			defer func() {

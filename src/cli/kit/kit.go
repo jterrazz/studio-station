@@ -213,12 +213,12 @@ func gate(verb string, ask func() (bool, error), o IO) error {
 		ok, err := ask()
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
-				return fail.Interrupted()
+				return fail.Interruption()
 			}
-			return fail.Failed(err.Error(), "re-run with --yes to skip the question", err)
+			return fail.Failure(err.Error(), "re-run with --yes to skip the question", err)
 		}
 		if !ok {
-			return fail.Failed(verb+" cancelled", "re-run with --yes to skip the question", nil)
+			return fail.Failure(verb+" cancelled", "re-run with --yes to skip the question", nil)
 		}
 		return nil
 	default:
@@ -265,7 +265,7 @@ func Menu(env Env, cmd *cobra.Command) error {
 		defer cmd.SetOut(nil)
 		_ = cmd.Help()
 	})
-	return fail.Silent(fail.CodeUsage)
+	return fail.Silent(fail.ExitUsage)
 }
 
 func Ask(verb string, ask func() (bool, error), o IO) error {

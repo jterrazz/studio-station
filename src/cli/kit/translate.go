@@ -40,7 +40,7 @@ func Translate(err error, path string) *fail.Error {
 		}
 	}
 	if errors.Is(err, context.Canceled) {
-		return fail.Interrupted()
+		return fail.Interruption()
 	}
 	message := err.Error()
 	if strings.HasPrefix(message, "unknown command ") {
@@ -50,5 +50,5 @@ func Translate(err error, path string) *fail.Error {
 		}
 		return fail.Usage(strings.TrimSpace(first), hint)
 	}
-	return fail.Failed(message, hint, err)
+	return fail.Failure(message, hint, err)
 }

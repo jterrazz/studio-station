@@ -126,7 +126,7 @@ func createOn(env kit.Env) func(ctx context.Context, host, lifetime string) erro
 			return err
 		}
 		if code != 0 {
-			return fail.Silent(fail.Code(code))
+			return fail.Silent(fail.Exit(code))
 		}
 		return nil
 	}

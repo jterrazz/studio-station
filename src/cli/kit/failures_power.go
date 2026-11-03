@@ -25,14 +25,14 @@ func powerFailure(err error) (*fail.Error, bool) {
 		return fail.Usage(none.Error(), "run it on a Mac host"), true
 	case errors.As(err, &guard):
 		if guard.Guard == power.ReasonLid {
-			return fail.Failed(guard.Error(), "station power awake --lid --battery", err), true
+			return fail.Failure(guard.Error(), "station power awake --lid --battery", err), true
 		}
-		return fail.Failed(guard.Error(), "station power", err), true
+		return fail.Failure(guard.Error(), "station power", err), true
 	case errors.As(err, &down):
 		if down.Installed {
-			return fail.Failed(down.Error(), "station start", err), true
+			return fail.Failure(down.Error(), "station start", err), true
 		}
-		return fail.Failed(down.Error(), "station setup", err), true
+		return fail.Failure(down.Error(), "station setup", err), true
 	}
 	return nil, false
 }

@@ -36,7 +36,7 @@ func imagesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &notHost):
 		return fail.Usage(notHost.Error(), "run it on a host"), true
 	case errors.As(err, &build):
-		return fail.Failed(build.Error(), "station images build "+build.Image, err), true
+		return fail.Failure(build.Error(), "station images build "+build.Image, err), true
 	}
 	return nil, false
 }
