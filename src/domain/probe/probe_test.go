@@ -87,8 +87,8 @@ func TestTheFrameComesFirstAndTheLastValueIsComplete(t *testing.T) {
 		{Key: "a", Do: func(context.Context) func(*report) { return set(0, "fast") }},
 		{Key: "b", Lane: Inline, Do: func(context.Context) func(*report) { <-release; return set(1, "slow") }},
 	}
-	ch := Run(context.Background(), p, report{parts: []string{"·", "·"}}, jobs, clone)
-	if first := <-ch; !slices.Equal(first.parts, []string{"·", "·"}) {
+	ch := Run(context.Background(), p, report{parts: []string{"-", "-"}}, jobs, clone)
+	if first := <-ch; !slices.Equal(first.parts, []string{"-", "-"}) {
 		t.Fatalf("the first value is %v, want the frame", first.parts)
 	}
 	close(release)

@@ -41,33 +41,48 @@ const (
 // forbiddenStd; a forbidden member is re-allowed only by its name in a row.
 func importTable() map[string][]string {
 	domain := []string{"system", "catalog", "domain/settings", "domain/probe", std}
+	organism := []string{"ui/molecule", "ui/atom", "ui/token", "page", lip, bubble, huh, std}
+	template := append(slices.Clone(organism), "ui/organism")
 	return map[string][]string{
-		"cmd/station":       {"app", "os"},
-		"cmd/generate":      {"catalog", "os", "flag", std},
-		"app":               {"*", fang, cobra, lip, term, "os", "os/signal", "syscall", "runtime/debug", std},
-		"cli":               {"cli/kit", cobra, std},
-		"cli/kit":           {"output", "present", "prompt", "fail", "domain/*", "catalog", cobra, pflag, std},
-		"cli/*":             {"cli/kit", "domain/*", "present", "present/*", "catalog", "prompt", cobra, pflag, std},
-		"domain/*":          domain,
-		"domain/setup":      append(slices.Clone(domain), "domain/shell", "domain/storage"),
-		"domain/status":     append(slices.Clone(domain), "domain/tools", "domain/config", "domain/tailnet", "domain/setup", "domain/storage", "domain/services"),
-		"domain/daemon":     append(slices.Clone(domain), "domain/machines", "domain/services", "domain/tailnet"),
-		"domain/guest":      append(slices.Clone(domain), "domain/services"),
-		"system/sshclient":  {"system", sshPkg, sshPkg + "/knownhosts", "os", "net", std},
-		"system":            {std},
-		"system/tart":       {"system", std},
-		"system/host":       {"system", "os", "os/exec", "os/user", "net", "net/http", "syscall", "unsafe", "golang.org/x/sys/unix", std},
-		"system/systemtest": {"system", "testing", "testing/fstest", std},
-		"catalog":           {"embed", std},
-		"present":           {"catalog", std},
-		"present/*":         {"present", "present/*", "domain/*", "catalog", std},
-		"output":            {"present", "theme", "fail", lip, cprof, ansi, std},
-		"theme":             {lip, std},
-		"theme/forms":       {"theme", huh, std},
-		"prompt":            {"theme", "theme/forms", "catalog", huh, bubble + "/key", std},
-		"fail":              {"testing", std},
-		"tui":               {"tui/kit", "tui/screens/*", "domain/*", "present", "present/*", "output", "theme", "theme/forms", "catalog", "fail", tea, bubble, huh, lip, std},
-		"tui/*":             {"tui/kit", "domain/*", "present", "present/*", "output", "theme", "theme/forms", "catalog", "fail", tea, bubble, huh, lip, std},
+		"cmd/station":        {"app", "os"},
+		"cmd/generate":       {"catalog", "cmd/generate/pages", "page", "ui/render/json", "os", "flag", std},
+		"cmd/generate/pages": {"page", "pages/*", "domain/*", "catalog", "ui/token", std},
+		"app":                {"*", fang, cobra, lip, term, "os", "os/signal", "syscall", "runtime/debug", std},
+		"cli":                {"cli/kit", cobra, std},
+		"cli/kit":            {"output", "page", "present", "prompt", "fail", "domain/*", "catalog", cobra, pflag, std},
+		"cli/*":              {"cli/kit", "domain/*", "page", "pages/*", "present", "present/*", "catalog", "prompt", cobra, pflag, std},
+		"domain/*":           domain,
+		"domain/setup":       append(slices.Clone(domain), "domain/shell", "domain/storage"),
+		"domain/status":      append(slices.Clone(domain), "domain/tools", "domain/config", "domain/tailnet", "domain/setup", "domain/storage", "domain/services"),
+		"domain/daemon":      append(slices.Clone(domain), "domain/machines", "domain/services", "domain/tailnet"),
+		"domain/guest":       append(slices.Clone(domain), "domain/services"),
+		"system/sshclient":   {"system", sshPkg, sshPkg + "/knownhosts", "os", "net", std},
+		"system":             {std},
+		"system/tart":        {"system", std},
+		"system/host":        {"system", "os", "os/exec", "os/user", "net", "net/http", "syscall", "unsafe", "golang.org/x/sys/unix", std},
+		"system/systemtest":  {"system", "testing", "testing/fstest", std},
+		"catalog":            {"embed", std},
+		"page":               {std},
+		"pages/*":            {"page", "pages/*", "domain/*", "catalog", std},
+		"ui/token":           {lip, term, std},
+		"ui/atom":            {"ui/token", "page", lip, std},
+		"ui/molecule":        {"ui/atom", "ui/token", "page", lip, std},
+		"ui/organism":        organism,
+		"ui/template":        template,
+		"ui/render":          {"ui/render/*", "page", "ui/token", ansi, std},
+		"ui/render/tty":      append(slices.Clone(template), "ui/template", ansi, cprof),
+		"ui/render/pipe":     {"page", "ui/token", "ui/atom", std},
+		"ui/render/json":     {"page", std},
+		"ui/render/tui":      append(slices.Clone(template), "ui/template", tea),
+		"present":            {"catalog", std},
+		"present/*":          {"present", "present/*", "pages/*", "domain/*", "catalog", std},
+		"output":             {"present", "page", "ui/render/*", "theme", "fail", lip, cprof, ansi, std},
+		"theme":              {"ui/token", lip, std},
+		"theme/forms":        {"theme", huh, std},
+		"prompt":             {"theme", "theme/forms", "catalog", huh, bubble + "/key", std},
+		"fail":               {"testing", std},
+		"tui":                {"tui/kit", "tui/screens/*", "domain/*", "page", "present", "present/*", "output", "theme", "theme/forms", "catalog", "fail", tea, bubble, huh, lip, std},
+		"tui/*":              {"tui/kit", "domain/*", "page", "pages/*", "ui/render/tui", "present", "present/*", "output", "theme", "theme/forms", "catalog", "fail", tea, bubble, huh, lip, std},
 	}
 }
 
@@ -96,7 +111,7 @@ func symbolRules() []symbolRule {
 	return []symbolRule{
 		{symbols: []string{"os.Getenv", "os.LookupEnv", "os.Setenv", "os.UserHomeDir", "os.Hostname", "os.Geteuid"}, owners: []string{"system/host"}},
 		{symbols: []string{"os.Environ", "os.Args", "os.Exit", "os.Stdin", "os.Stdout", "os.Stderr"}, owners: []string{"cmd/station"}},
-		{symbols: []string{"os.ReadFile", "os.WriteFile", "os.MkdirAll"}, owners: []string{"system/host", "system/sshclient", "cmd/generate"}, tests: true},
+		{symbols: []string{"os.ReadFile", "os.ReadDir", "os.WriteFile", "os.MkdirAll"}, owners: []string{"system/host", "system/sshclient", "cmd/generate"}, tests: true},
 		{symbols: []string{"os.Getpid", "syscall.SIGTERM"}, owners: []string{"app", "system/host"}},
 		{symbols: []string{"os.File", "os.File.Fd", "os.Interrupt"}, owners: []string{"system/host", "app"}},
 		{symbols: []string{"os.*", "os/exec.*", "syscall.*", "os/user.*"}, owners: []string{"system/host", "system/sshclient"}},
@@ -108,11 +123,11 @@ func symbolRules() []symbolRule {
 		{symbols: cobraWriters(), owners: []string{"cli/kit", "app"}},
 		{symbols: []string{"time.Now", "time.Since", "time.Until", "time.Sleep", "time.After", "time.Tick", "time.NewTimer", "time.NewTicker", "time.AfterFunc"}, owners: []string{"system/host", "system/sshclient", "output", "tui", "tui/*"}},
 		{symbols: []string{"path/filepath.Glob", "path/filepath.Walk", "path/filepath.WalkDir", "path/filepath.EvalSymlinks", "path/filepath.Abs", "io/fs.WalkDir", "io/fs.Glob"}, owners: []string{"system/host", "system/systemtest"}},
-		{symbols: paletteSymbols(), owners: []string{"theme"}},
-		{symbols: []string{lip + ".*"}, owners: []string{"output", "theme", "tui", "tui/*", "app"}},
-		{symbols: []string{bubble + "/key.*"}, owners: []string{"tui", "tui/*", "prompt"}},
-		{symbols: []string{tea + ".*", bubble + "/*"}, owners: []string{"tui", "tui/*"}},
-		{symbols: []string{huh + ".*"}, owners: []string{"theme/forms", "prompt", "tui/kit"}},
+		{symbols: paletteSymbols(), owners: []string{"ui/token"}},
+		{symbols: []string{lip + ".*"}, owners: []string{"ui/*", "output", "theme", "tui", "tui/*", "app"}},
+		{symbols: []string{bubble + "/key.*"}, owners: []string{"ui/organism", "ui/render/tui", "tui", "tui/*", "prompt"}},
+		{symbols: []string{tea + ".*", bubble + "/*"}, owners: []string{"ui/organism", "ui/render/tui", "tui", "tui/*"}},
+		{symbols: []string{huh + ".*"}, owners: []string{"ui/organism", "ui/render/tty", "ui/render/tui", "theme/forms", "prompt", "tui/kit"}},
 		{symbols: []string{fang + ".*"}, owners: []string{"app"}},
 		{symbols: prefixed(module+"/src/fail.", "Usage", "Failed", "Silent", "Interrupted"), owners: []string{"cli/kit", "app"}},
 		{symbols: append(prefixed(module+"/src/output.", "NewWriter", "Detect", "For"), module+"/src/output.Writer.*"), owners: []string{"cli/kit", "app"}},
@@ -137,10 +152,7 @@ func prefixed(prefix string, names ...string) []string {
 	return out
 }
 
-var (
-	glyphs = []string{"●", "◐", "○", "✗", "✓", "✅", "⚠", "❌", "ℹ", "？", "▶", "▾", "▸"}
-	hexRe  = regexp.MustCompile(`#[0-9a-fA-F]{6}\b`)
-)
+var hexRe = regexp.MustCompile(`#[0-9a-fA-F]{6}\b`)
 
 type file struct {
 	pkg     string
@@ -427,12 +439,12 @@ func ruleANSI(w *world) []finding {
 func rulePalette(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
-		if f.pkg == "theme" {
+		if f.pkg == "ui/token" {
 			continue
 		}
 		literals(f, func(lit *ast.BasicLit, value string) {
 			if hexRe.MatchString(value) {
-				out = append(out, finding{"palette", f.at(lit.Pos()), "a hex color outside theme"})
+				out = append(out, finding{"palette", f.at(lit.Pos()), "a hex color outside ui/token"})
 			}
 		})
 		ast.Inspect(f.syntax, func(n ast.Node) bool {
@@ -440,28 +452,11 @@ func rulePalette(w *world) []finding {
 				if obj := f.info.Uses[id]; obj != nil {
 					key, _ := objectKey(obj)
 					if slices.Contains(paletteSymbols(), key) {
-						out = append(out, finding{"palette", f.at(id.Pos()), key + " outside theme"})
+						out = append(out, finding{"palette", f.at(id.Pos()), key + " outside ui/token"})
 					}
 				}
 			}
 			return true
-		})
-	}
-	return out
-}
-
-func ruleMarks(w *world) []finding {
-	var out []finding
-	for _, f := range w.files {
-		if f.rel == filepath.Join("src", "present", "mark.go") {
-			continue
-		}
-		literals(f, func(lit *ast.BasicLit, value string) {
-			for _, g := range glyphs {
-				if strings.Contains(value, g) {
-					out = append(out, finding{"marks", f.at(lit.Pos()), fmt.Sprintf("the glyph %q outside src/present/mark.go", g)})
-				}
-			}
 		})
 	}
 	return out
@@ -709,11 +704,20 @@ func rules() []rule {
 		{"Systemtest", ruleSystemtest, "src/theme/mutant_systemtest.go", "package theme\n\nimport _ \"" + module + "/src/system/systemtest\"\n", "src/theme/mutant_systemtest.go"},
 		{"ANSI", ruleANSI, "src/present/mutant_ansi.go", "package present\n\nconst mutantBold = \"\\x1b[1m\"\n", "src/present/mutant_ansi.go"},
 		{"Palette", rulePalette, "src/present/mutant_palette.go", "package present\n\nconst mutantRed = \"#ff0000\"\n", "src/present/mutant_palette.go"},
-		{"Marks", ruleMarks, "src/output/mutant_marks.go", "package output\n\nconst mutantTick = \"✓ done\"\n", "src/output/mutant_marks.go"},
 		{"Catalog", ruleCatalog, "src/catalog/mutant_catalog.go", "package catalog\n\ntype mutantEntry struct{ Check func() bool }\n\nvar mutantDefault = mutantEntry{Check: func() bool { return true }}\n", "src/catalog/mutant_catalog.go"},
 		{"Worded", ruleWorded, "src/domain/mutant/mutant.go", "package mutant\n\ntype UnwordedError struct{}\n\nfunc (UnwordedError) Error() string { return \"unworded\" }\n", "src/domain/mutant/mutant.go"},
 		{"Comments", ruleComments, "src/present/mutant_comments.go", "package present\n\n// a comment that states no kind\nconst mutantComment = 1\n", "src/present/mutant_comments.go"},
 		{"Streams", ruleStreams, "src/cli/mutant/mutant_streams.go", "package mutant\n\nimport \"" + module + "/src/cli/kit\"\n\nfunc mutantStreams(o kit.IO) { _, _ = o.Streams() }\n", "src/cli/mutant"},
+		{"Kit", ruleKit, "src/pages/tools/mutant_kit.go", "package tools\n\nimport _ \"" + lip + "\"\n", "src/pages/tools/mutant_kit.go"},
+		{"Levels", ruleLevels, "src/ui/atom/mutant_levels.go", "package atom\n\nimport _ \"" + module + "/src/ui/render/json\"\n", "src/ui/atom/mutant_levels.go"},
+		{"LevelsDomain", ruleLevels, "src/ui/organism/mutant_levels.go", "package organism\n\nimport _ \"" + module + "/src/domain/tools\"\n", "src/ui/organism/mutant_levels.go"},
+		{"Semantic", ruleSemantic, "src/pages/tools/mutant_semantic.go", "package tools\n\nfunc Line() string { return \"\" }\n", "src/pages/tools/mutant_semantic.go"},
+		{"Glyphs", ruleGlyphs, "src/cli/tools/mutant_glyphs.go", "package toolscmd\n\nconst mutantMark = \"\u25cf\"\n", "src/cli/tools/mutant_glyphs.go"},
+		{"Presentation", rulePresentation, "src/page/mutant_presentation.go", "package page\n\ntype mutantStyled struct{ Tone int }\n", "src/page/mutant_presentation.go"},
+		{"Keys", ruleKeys, "src/tui/screens/tools/mutant_keys.go", "package toolsscreen\n\nimport tea \"" + tea + "\"\n\nfunc mutantKey(k tea.KeyPressMsg) bool {\n\tswitch k.String() {\n\tcase \"z\":\n\t\treturn true\n\t}\n\treturn false\n}\n", "src/tui/screens/tools/mutant_keys.go"},
+		{"Builders", ruleBuilders, "src/tui/screens/tools/mutant_builders.go", "package toolsscreen\n\nimport \"" + module + "/src/page\"\n\nvar mutantSection = page.Section{Title: \"x\"}\n", "src/tui/screens/tools/mutant_builders.go"},
+		{"Layout", ruleLayout, "src/cli/tools/mutant_layout.go", "package toolscmd\n\nimport \"fmt\"\n\nfunc mutantPad(x string) string { return fmt.Sprintf(\"%-20s\", x) }\n", "src/cli/tools/mutant_layout.go"},
+		{"LayoutRepeat", ruleLayout, "src/tui/screens/tools/mutant_layout.go", "package toolsscreen\n\nimport \"strings\"\n\nfunc mutantRule(n int) string { return strings.Repeat(\"-\", n) }\n", "src/tui/screens/tools/mutant_layout.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
 }
@@ -763,9 +767,19 @@ func TestSymbols(t *testing.T)    { judge(t, "Symbols") }
 func TestSystemtest(t *testing.T) { judge(t, "Systemtest") }
 func TestANSI(t *testing.T)       { judge(t, "ANSI") }
 func TestPalette(t *testing.T)    { judge(t, "Palette") }
-func TestMarks(t *testing.T)      { judge(t, "Marks") }
 func TestCatalog(t *testing.T)    { judge(t, "Catalog") }
 func TestWorded(t *testing.T)     { judge(t, "Worded") }
 func TestComments(t *testing.T)   { judge(t, "Comments") }
 func TestRegistries(t *testing.T) { judge(t, "Registries") }
 func TestStreams(t *testing.T)    { judge(t, "Streams") }
+
+func TestKit(t *testing.T)          { judge(t, "Kit") }
+func TestLevels(t *testing.T)       { judge(t, "Levels") }
+func TestLevelsDomain(t *testing.T) { judge(t, "LevelsDomain") }
+func TestSemantic(t *testing.T)     { judge(t, "Semantic") }
+func TestGlyphs(t *testing.T)       { judge(t, "Glyphs") }
+func TestPresentation(t *testing.T) { judge(t, "Presentation") }
+func TestKeys(t *testing.T)         { judge(t, "Keys") }
+func TestBuilders(t *testing.T)     { judge(t, "Builders") }
+func TestLayout(t *testing.T)       { judge(t, "Layout") }
+func TestLayoutRepeat(t *testing.T) { judge(t, "LayoutRepeat") }
