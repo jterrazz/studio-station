@@ -12,7 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/page"
 	pageaccounts "github.com/jterrazz/studio-station/src/pages/accounts"
-	"github.com/jterrazz/studio-station/src/tui/screens/tab"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
 const ID = "accounts"

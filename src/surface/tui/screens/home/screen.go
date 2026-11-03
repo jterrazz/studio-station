@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/page"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
-	"github.com/jterrazz/studio-station/src/tui/screens/tab"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
 const (

@@ -8,8 +8,8 @@ import (
 
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	"github.com/jterrazz/studio-station/src/surface/tui"
 	"github.com/jterrazz/studio-station/src/system"
-	"github.com/jterrazz/studio-station/src/tui"
 )
 
 func tuiOpener(env kit.Env, m machine) func(context.Context) error {

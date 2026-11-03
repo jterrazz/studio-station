@@ -8,7 +8,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/page"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
-	"github.com/jterrazz/studio-station/src/tui/screens/tab"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
 const ID = "config"

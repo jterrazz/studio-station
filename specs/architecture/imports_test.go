@@ -193,6 +193,8 @@ func importsTolerated() map[string][]string {
 		"machines/adapter/tart": {"system", "system/systemtest"},
 		"platform/local":        {"platform/darwin", "system"},
 		"surface/cli/*":         {"domain/*", "testing"},
+		"surface/tui":           {"domain/*"},
+		"surface/tui/*":         {"domain/*"},
 	}
 }
 

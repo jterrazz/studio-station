@@ -17,7 +17,7 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
-	"github.com/jterrazz/studio-station/src/tui/screens/tab"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
 const ID = "fleet"

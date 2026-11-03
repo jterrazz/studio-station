@@ -11,7 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/page"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
-	"github.com/jterrazz/studio-station/src/tui/screens/tab"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
 const ID = "power"

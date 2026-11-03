@@ -35,7 +35,7 @@ func ruleKit(w *world) []finding {
 			case lib(fang):
 				ok = under(f.pkg, "ui/help", "wire")
 			case lib(tea):
-				ok = under(f.pkg, "tui", "tui/screens/*", "ui/render/tui")
+				ok = under(f.pkg, "surface/tui", "surface/tui/screens/*", "ui/render/tui")
 			}
 			if !ok {
 				out = append(out, finding{"kit", f.at(f.syntax.Imports[i].Pos()), fmt.Sprintf("%q may not import %q: drawing is the kit's", f.pkg, ip)})
@@ -256,7 +256,7 @@ func keyPress(f *file, e ast.Expr) bool {
 func ruleKeys(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
-		if !under(f.pkg, "tui/screens/*") {
+		if !under(f.pkg, "surface/tui/screens/*") {
 			continue
 		}
 		ast.Inspect(f.syntax, func(n ast.Node) bool {
@@ -327,7 +327,7 @@ func ruleLayout(w *world) []finding {
 			switch {
 			case slices.Contains(measures, key), paddedFormat(f, call, key):
 				out = append(out, finding{"layout", f.at(call.Pos()), key + " lays out text outside the kit"})
-			case key == tea+".NewView" && f.pkg != "tui":
+			case key == tea+".NewView" && f.pkg != "surface/tui":
 				out = append(out, finding{"layout", f.at(call.Pos()), "tea.NewView outside the program's View"})
 			}
 			return true

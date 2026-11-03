@@ -39,6 +39,11 @@ The ports and the data:
   platform/
     local/        the real adapters: the only importer of os/exec, files, the network
     darwin/       the only cgo: IOKit power assertions, the lid, power sources, notify(3)
+```
+
+The data and its presentation:
+
+```text
   catalog/        pure data: tools and their storage rows, config items, managers, shortcuts, images, the embedded dotfiles and recipes
   page/           the page language: one semantic page (sections, rows, groups, values, marks, reasons, actions), Seal and station.page/v1
   pages/          one page function per page: domain data to a page, pure (tools today)
@@ -47,7 +52,7 @@ The ports and the data:
   output/         the only place that knows a terminal: picks tty, pipe or json and renders a page through ui/render, and the one error block
   theme/          the styles of the pages not migrated yet, over ui/token's palette
   prompt/         the conversations on stderr: confirmations and the forms that ask a config item's values
-  tui/            the unified Bubble Tea app
+  surface/tui/    the unified Bubble Tea app
 ```
 
 The shared kernel, which every family will share and which does no I/O:

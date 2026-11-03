@@ -9,7 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/page"
 	pageservices "github.com/jterrazz/studio-station/src/pages/services"
-	"github.com/jterrazz/studio-station/src/tui/screens/tab"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
 const ID = "services"

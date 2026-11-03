@@ -28,7 +28,7 @@ func sectioned() []string {
 // neither a family nor plumbing. It only shrinks; a line whose package is
 // gone fails the gate until it is removed.
 func toleratedTop() []string {
-	return []string{"domain", "system", "tui"}
+	return []string{"domain", "system"}
 }
 
 func topOf(pkg string) string {
