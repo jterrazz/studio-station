@@ -172,9 +172,9 @@ func next[T any](id string, gen int, build func(T) page.Page, ch <-chan T) tea.C
 	}
 }
 
-// invariant: a watch's answer belongs to the one screen that asked for it;
-// every other message may concern any screen.
 func (v View[T]) Owns(msg tea.Msg) bool {
+	// invariant: a watch's answer belongs to the one screen that asked for it;
+	// every other message may concern any screen.
 	l, answer := msg.(owned)
 	return !answer || l.owner() == v.ID
 }

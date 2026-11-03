@@ -75,9 +75,9 @@ func Sections(s tailnet.Status) []page.Section {
 	case s.CLI != "":
 		rows = append(rows, page.Row{ID: "cli", Label: "cli", Mark: page.OK, Cells: []page.Value{page.Path(s.CLI)}, Detail: page.Text(s.Variant)})
 	}
-	out := []page.Section{{ID: "tailnet", Title: "Tailnet", Role: page.Banner, Columns: columns(), Items: itemsOf(rows)}}
+	head := page.Section{ID: "tailnet", Title: "Tailnet", Role: page.Banner, Columns: columns(), Items: itemsOf(rows)}
 	if s.State == catalog.StateAbsent {
-		return out
+		return []page.Section{head}
 	}
 	peers := make([]page.Row, 0, len(s.Peers))
 	for _, p := range s.Peers {
@@ -96,11 +96,12 @@ func Sections(s tailnet.Status) []page.Section {
 		label := "https " + strconv.Itoa(e.Port) + e.Path
 		serve = append(serve, page.Row{ID: label, Label: label, Mark: page.OK, Cells: []page.Value{page.URL(e.Target)}, Detail: page.Text(owner)})
 	}
-	return append(out,
-		page.Section{ID: "peers", Title: "Peers", Columns: []page.Column{
+	return []page.Section{head,
+		{ID: "peers", Title: "Peers", Columns: []page.Column{
 			{Key: "name", Kind: page.KindListing, Keep: 100}, {Key: "ip", Kind: page.KindIdentity, Keep: 60}, {Key: "state", Kind: page.KindText, Keep: 70},
 		}, Items: listOf(s, "peers", peers)},
-		page.Section{ID: "serve", Title: "Serve", Columns: columns(), Items: listOf(s, "serves", serve)})
+		{ID: "serve", Title: "Serve", Columns: columns(), Items: listOf(s, "serves", serve)},
+	}
 }
 
 func itemsOf(rows []page.Row) []page.Item {
