@@ -19,6 +19,7 @@ type Want struct {
 func Terminal(in io.Reader, out io.Writer) *tty.Terminal { return tty.NewTerminal(in, out) }
 
 func (w *Writer) Page(p page.Page, contract any, want Want) error {
+	w.settle()
 	c := Detect(w.stdout, w.env, want.JSON || want.Page)
 	out := w.stdout.W
 	switch {
@@ -52,6 +53,7 @@ func (w *Writer) LivePage(pages <-chan page.Page) error {
 	// invariant: the live region is redrawn in place on every page and erased
 	// when the reading ends; the final page is then printed once, normally, so
 	// the scrollback holds exactly what a non-live read prints.
+	w.settle()
 	c := Detect(w.stdout, w.env, false)
 	o := tty.Options{Width: c.Width, Dark: c.Dark}
 	out := w.colored(w.stdout, c)
