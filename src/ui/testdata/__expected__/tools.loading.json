@@ -190,7 +190,8 @@
           "mark": "pending",
           "n": 7
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "runtimes",
@@ -304,7 +305,8 @@
           "mark": "pending",
           "n": 4
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "ai-apps",
@@ -397,7 +399,8 @@
           "mark": "pending",
           "n": 3
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "agent-skills",
@@ -490,7 +493,8 @@
           "mark": "pending",
           "n": 3
         }
-      ]
+      ],
+      "pipe_counts": true
     }
   ],
   "hints": [

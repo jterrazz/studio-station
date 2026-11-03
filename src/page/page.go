@@ -41,6 +41,10 @@ type Section struct {
 	Counts  []Tally  `json:"counts,omitempty"`
 	// value: a section whose marks are no verdict to sum (storage's sizes) shows no counts.
 	Uncounted bool `json:"uncounted,omitempty"`
+	// value: the pipe prints a title's counts only where its records always
+	// carried them (the tools and config categories, Home's Tools, Config and
+	// Background); every other `# <title>` line stays bare (§20).
+	PipeCounts bool `json:"pipe_counts,omitempty"`
 	// value: a Summary drawn in two columns starts its right one at this item.
 	Break int `json:"break,omitempty"`
 }
@@ -76,6 +80,9 @@ type Show string
 const (
 	Everywhere Show = ""
 	PipeOnly   Show = "pipe"
+	// value: a column for the eye only (a peer's online state, a host's role):
+	// the pipe's records keep the fields they always had (§20).
+	EyeOnly Show = "eye"
 )
 
 type Item struct {

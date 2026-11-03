@@ -71,11 +71,12 @@ func Items(reports []config.Report, here page.Context) page.Page {
 			continue
 		}
 		p.Sections = append(p.Sections, page.Section{
-			ID:      strings.ToLower(string(category)),
-			Title:   string(category),
-			Fold:    page.Auto,
-			Columns: Columns(),
-			Items:   items,
+			ID:         strings.ToLower(string(category)),
+			Title:      string(category),
+			Fold:       page.Auto,
+			Columns:    Columns(),
+			Items:      items,
+			PipeCounts: true,
 		})
 	}
 	if len(p.Sections) == 0 {

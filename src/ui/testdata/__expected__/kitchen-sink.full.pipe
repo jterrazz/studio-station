@@ -1,4 +1,4 @@
-# Values	14 ●	1 ◐
+# Values
 ●	text	plain words	120 outdated
 ●	size	275 B	22.6 KB
 ●	ratio	12.4/17.2 GB	34%
@@ -14,7 +14,7 @@
 ●	switch	on	3
 ●	sip	off
 ◐	unknown	?		no answer in 2s
-# Marks	13 ◐	2 ○	4 ✗
+# Marks
 ◐	outdated	attention	120 outdated · station tools upgrade --via brew
 ◐	stray	attention	out of place · station setup
 ◐	unreachable	attention	unreachable
@@ -34,12 +34,12 @@
 ✗	down	broken	not running
 ✗	stale	broken	stale · station machines delete linux-2
 ○	absent		station tools install mas
-# Fleet	3 ●	1 ○
+# Fleet
 ●	jterrazz-mac-mini	host	jterrazz-mac-mini
 ●	linux-1	lasting	jterrazz-mac-mini
 ●	web	service	jterrazz-mac-mini
 ○	linux-2	lasting	jterrazz-mac-mini
-# Storage	2 ●
+# Storage
 ●	station	data 275 B · kept 546 B
 ●	tart	data 73.3 GB
 # Prose

@@ -597,7 +597,14 @@
         {
           "key": "state",
           "kind": "text",
-          "keep": 70
+          "keep": 70,
+          "show": "eye"
+        },
+        {
+          "key": "tags",
+          "kind": "list",
+          "keep": 20,
+          "show": "eye"
         }
       ],
       "items": [
@@ -613,17 +620,17 @@
               {
                 "kind": "text",
                 "text": "online"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "tag:station"
+                  }
+                ]
               }
-            ],
-            "detail": {
-              "kind": "list",
-              "items": [
-                {
-                  "kind": "text",
-                  "text": "tag:station"
-                }
-              ]
-            }
+            ]
           }
         },
         {
@@ -638,11 +645,11 @@
               {
                 "kind": "text",
                 "text": "offline"
+              },
+              {
+                "kind": "none"
               }
-            ],
-            "detail": {
-              "kind": "none"
-            }
+            ]
           }
         }
       ]

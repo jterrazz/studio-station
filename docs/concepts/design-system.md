@@ -67,7 +67,8 @@ Left, `station` and the command path; right, this machine's name and kind. A rul
 
 When stdout is not a terminal, or `NO_COLOR` is set, a document prints as records, one per line, with no header, rule, footer or padding and no colour sequence. The separator is a tab everywhere:
 
-- a section title is `# <title>`, then its counts as `<n> <glyph>` cells;
+- a section title is `# <title>`; the tools and config categories, and the status Tools, Config and Background sections, follow it with their counts as `<n> <glyph>` cells (every other title is bare, as its records always were);
+- a column for the eye only (a peer's online state and tags, a host's role) is no field: the records keep the fields scripts already cut;
 - a row is `<glyph>` then its cells; a row with no mark starts with an empty field;
 - a key and its value are `<key><TAB><value>`;
 - a blank cell stays (two tabs); trailing empty cells are trimmed.

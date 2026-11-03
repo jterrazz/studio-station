@@ -46,7 +46,7 @@ func Snapshot(s status.Snapshot, here page.Context, all bool) page.Page {
 		detail = append(detail, backgroundSection(s.Background))
 	}
 	if len(s.Gateways) > 0 {
-		detail = append(detail, section("gateways", "Gateways", checkRows(s.Gateways)))
+		detail = append(detail, section("gateways", "Gateways", gatewayRows(s.Gateways)))
 	}
 	detail = append(detail, toolsSection(s), configSection(s))
 	fold := page.Folded
@@ -96,7 +96,7 @@ func toolsSection(s status.Snapshot) page.Section {
 			items = append(items, page.Item{Row: &row})
 		}
 	}
-	return page.Section{ID: "tools", Title: "Tools", Columns: pagetools.Columns(), Items: items, Uncounted: true, Counts: toolCounts(s.Tools)}
+	return page.Section{ID: "tools", Title: "Tools", Columns: pagetools.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: toolCounts(s.Tools)}
 }
 
 func configSection(s status.Snapshot) page.Section {
@@ -110,7 +110,7 @@ func configSection(s status.Snapshot) page.Section {
 			items = append(items, page.Item{Row: &row})
 		}
 	}
-	return page.Section{ID: "config", Title: "Config", Columns: pageconfig.Columns(), Items: items, Uncounted: true, Counts: configCounts(s.Config)}
+	return page.Section{ID: "config", Title: "Config", Columns: pageconfig.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: configCounts(s.Config)}
 }
 
 func tallies(marks []page.Mark) []page.Tally {
@@ -171,6 +171,19 @@ func pending(id, label string) page.Row {
 // value: a protection the owner turned off on purpose is a value, not an absence (M3).
 func offByChoice(c status.Check) bool {
 	return c.State == catalog.StateAbsent && c.Value == "off" && slices.Contains([]string{"sip", "remote-login", "vpn"}, c.Name)
+}
+
+// invariant: a runtime's detail is the domain's comma-joined words (pid, user,
+// port): a list, so every medium joins them with its own separator and the
+// pipe keeps its bytes.
+func gatewayRows(checks []status.Check) []page.Row {
+	rows := checkRows(checks)
+	for i, c := range checks {
+		if strings.HasSuffix(c.Name, " runtime") && strings.Contains(c.Detail, ", ") {
+			rows[i].Detail = page.Texts(strings.Split(c.Detail, ", ")...)
+		}
+	}
+	return rows
 }
 
 func checkRows(checks []status.Check) []page.Row {

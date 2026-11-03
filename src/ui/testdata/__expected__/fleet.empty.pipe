@@ -1,4 +1,4 @@
-# Fleet	1 ●
+# Fleet
 ●	macbook	host			online	-	0 VMs
 # Images
 	none
@@ -6,5 +6,5 @@
 	none
 # Kept
 	none
-# Tailnet	1 ○
+# Tailnet
 ○	tailnet	not installed	station tools install tailscale

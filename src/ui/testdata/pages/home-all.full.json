@@ -1240,7 +1240,8 @@
           "mark": "broken",
           "n": 1
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "gateways",
@@ -1609,7 +1610,8 @@
           "n": 4
         }
       ],
-      "uncounted": true
+      "uncounted": true,
+      "pipe_counts": true
     },
     {
       "id": "config",
@@ -1661,7 +1663,8 @@
           "n": 1
         }
       ],
-      "uncounted": true
+      "uncounted": true,
+      "pipe_counts": true
     }
   ],
   "hints": [

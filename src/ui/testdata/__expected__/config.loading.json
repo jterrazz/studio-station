@@ -94,7 +94,8 @@
           "mark": "pending",
           "n": 4
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "security",
@@ -151,7 +152,8 @@
           "mark": "pending",
           "n": 2
         }
-      ]
+      ],
+      "pipe_counts": true
     }
   ],
   "hints": [

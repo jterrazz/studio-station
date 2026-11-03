@@ -112,7 +112,8 @@
           "mark": "absent",
           "n": 1
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "security",
@@ -183,7 +184,8 @@
           "mark": "absent",
           "n": 1
         }
-      ]
+      ],
+      "pipe_counts": true
     }
   ],
   "hints": [

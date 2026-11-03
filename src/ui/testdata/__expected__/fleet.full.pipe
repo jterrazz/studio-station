@@ -1,9 +1,9 @@
-# Fleet	2 ●	1 ◐	1 ○
+# Fleet
 ●	macbook	host			online	100.98.133.14	2 VMs
 ●	linux-1	linux	macbook	temporary	running	192.168.64.5	4 cpus · 4 GB · 42.9 GB
 ○	api	linux	macbook	lasting	stopped	-	4 cpus · 8 GB · 42.9 GB
 ◐	mac-mini	host			online	100.98.133.20	station v2.0.0-248 here v2.0.0-250
-# Images	2 ●	1 ○
+# Images
 ●	linux	3	6.0 GB	2 VMs	ghcr.io/cirruslabs/ubuntu:24.04
 ○	linux	2	6.0 GB	0 VMs	older: station images delete linux@2
 ●	macos	1	48.0 GB	0 VMs	ghcr.io/cirruslabs/macos-tahoe-base:latest
@@ -14,12 +14,12 @@
 ●	GITHUB_TOKEN	never leaves this host
 ●	NPM_TOKEN	never leaves this host
 ●	OPENAI_API_KEY	never leaves this host
-# Tailnet	3 ●
+# Tailnet
 ●	tailnet	Running · jterrazz-macbook-pro.tail1234.ts.net
 ●	node	macbook	100.98.133.14
 ●	cli	/Applications/Tailscale.app/Contents/MacOS/Tailscale	app-store
 # Peers
-	mac-mini	100.98.133.20	online	tag:station
-	iphone	100.98.133.30	offline
-# Serve	1 ●
+	mac-mini	100.98.133.20
+	iphone	100.98.133.30
+# Serve
 ●	https 40001/	http://127.0.0.1:40001	station

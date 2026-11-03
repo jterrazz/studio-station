@@ -228,7 +228,8 @@
           "mark": "absent",
           "n": 2
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "runtimes",
@@ -376,7 +377,8 @@
           "mark": "attention",
           "n": 4
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "ai-apps",
@@ -493,7 +495,8 @@
           "mark": "absent",
           "n": 1
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "agent-skills",
@@ -611,7 +614,8 @@
           "mark": "absent",
           "n": 1
         }
-      ]
+      ],
+      "pipe_counts": true
     }
   ],
   "hints": [

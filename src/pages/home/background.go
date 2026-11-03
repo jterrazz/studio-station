@@ -44,7 +44,7 @@ func backgroundSection(jobs []status.Job) page.Section {
 		}
 		items = append(items, page.Item{Group: &page.Group{Head: page.Row{ID: "group/" + string(g), Label: string(g)}, Items: children, Fold: page.Open}})
 	}
-	return page.Section{ID: "background", Title: "Background", Columns: backgroundColumns(), Items: items}
+	return page.Section{ID: "background", Title: "Background", Columns: backgroundColumns(), Items: items, PipeCounts: true}
 }
 
 func runOf(j status.Job) page.Value {

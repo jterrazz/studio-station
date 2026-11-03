@@ -34,11 +34,12 @@ func Catalogue(reports []tools.Report, here page.Context) page.Page {
 			continue
 		}
 		p.Sections = append(p.Sections, page.Section{
-			ID:      sectionID(category),
-			Title:   string(category),
-			Fold:    page.Auto,
-			Columns: Columns(),
-			Items:   items,
+			ID:         sectionID(category),
+			Title:      string(category),
+			Fold:       page.Auto,
+			Columns:    Columns(),
+			Items:      items,
+			PipeCounts: true,
 		})
 	}
 	if len(p.Sections) == 0 {

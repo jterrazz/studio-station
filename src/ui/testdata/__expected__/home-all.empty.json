@@ -803,7 +803,8 @@
           "mark": "ok",
           "n": 1
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
       "id": "tools",
@@ -832,7 +833,8 @@
           "n": 1
         }
       ],
-      "uncounted": true
+      "uncounted": true,
+      "pipe_counts": true
     },
     {
       "id": "config",
@@ -856,7 +858,8 @@
           "n": 1
         }
       ],
-      "uncounted": true
+      "uncounted": true,
+      "pipe_counts": true
     }
   ],
   "hints": [

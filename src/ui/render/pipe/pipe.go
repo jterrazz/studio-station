@@ -32,18 +32,23 @@ func section(b *strings.Builder, s page.Section) {
 	case page.Banner:
 	case page.Plain:
 		fields := []string{"# " + s.Title}
-		for _, t := range s.Counts {
-			fields = append(fields, atom.Count(t))
+		if s.PipeCounts {
+			for _, t := range s.Counts {
+				fields = append(fields, atom.Count(t))
+			}
 		}
 		line(b, fields)
 	}
-	cells := max(len(s.Columns)-1, 0)
+	cells := make([]bool, max(len(s.Columns)-1, 0))
+	for i := range cells {
+		cells[i] = s.Columns[i+1].Show != page.EyeOnly
+	}
 	for _, it := range s.Items {
 		item(b, it, cells)
 	}
 }
 
-func item(b *strings.Builder, it page.Item, cells int) {
+func item(b *strings.Builder, it page.Item, cells []bool) {
 	switch {
 	case it.Row != nil:
 		row(b, *it.Row, cells)
@@ -69,10 +74,13 @@ func item(b *strings.Builder, it page.Item, cells int) {
 	}
 }
 
-func row(b *strings.Builder, r page.Row, cells int) {
-	fields := make([]string, 0, cells+3)
+func row(b *strings.Builder, r page.Row, cells []bool) {
+	fields := make([]string, 0, len(cells)+3)
 	fields = append(fields, atom.Glyph(r.Mark), r.Label)
-	for i := range max(cells, len(r.Cells)) {
+	for i := range max(len(cells), len(r.Cells)) {
+		if i < len(cells) && !cells[i] {
+			continue
+		}
 		v := page.None()
 		if i < len(r.Cells) {
 			v = r.Cells[i]

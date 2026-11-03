@@ -23,9 +23,9 @@ runs:
     - command: 'status | /usr/bin/sed -n ''/^# Workspace/,/^# Identity/p'''
       exit: 0
       stdout: |
-          # Workspace	3 ●	1 ◐
+          # Workspace
           ●	repos	3	2 dirty
           ◐	deps	3 outdated	in 2 repos
           ●	docker	running	2 containers · 2 images
           ●	disk	3.0 KB	reclaimable: station storage clean
-          # Identity	2 ●	1 ◐	3 ○
+          # Identity
