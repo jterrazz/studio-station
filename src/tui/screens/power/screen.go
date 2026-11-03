@@ -38,6 +38,19 @@ func New(ctx context.Context, p Power, here page.Context, describe tab.Describe)
 	return Model{View: tab.NewView(ID, "Power", "power", here, source, build, describe), ctx: ctx, power: p, here: here}
 }
 
+func (m Model) Badge() page.Value {
+	// value: the header's badge while a session holds: the Power section's
+	// summary without its time left (awake, then its flags).
+	for _, s := range m.Last.Sections {
+		if s.ID != "power" || s.Role != page.Banner || len(s.Caption) == 0 || len(s.Caption[0].Items) < 2 {
+			continue
+		}
+		items := s.Caption[0].Items
+		return page.List(items[:len(items)-1]...)
+	}
+	return page.None()
+}
+
 func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 	view, cmd, ev := m.View.Update(msg)
 	m.View = view

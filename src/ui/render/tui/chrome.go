@@ -80,10 +80,11 @@ func (c Chrome) tabLine(tabs []Tab, active, numbered int, loading bool) string {
 	return b.String()
 }
 
-func (c Chrome) Header(tabs []Tab, active int, context page.Context, loading bool, width int) string {
+func (c Chrome) Header(tabs []Tab, active int, context page.Context, badge page.Value, loading bool, width int) string {
 	// invariant: the tab line never wraps (UI §7.7): the context shortens to
 	// the machine name, then to the kind; the inactive tabs turn into their
-	// number key one at a time from the last backwards; then the context goes.
+	// number key one at a time from the last backwards; then the context goes,
+	// and a held Power session's badge last of all.
 	short := context.Kind
 	if short == "" {
 		short = "host"
@@ -92,7 +93,22 @@ func (c Chrome) Header(tabs []Tab, active int, context page.Context, loading boo
 	if context.Registered && context.Machine != "" {
 		shortened = []string{context.Machine, short}
 	}
+	mark := ""
+	if !badge.IsNone() {
+		mark = token.Power + " " + atom.Show(badge)
+	}
+	tail := func(ctx string) string {
+		switch {
+		case mark == "":
+			return c.styles.Muted.Render(ctx)
+		case ctx == "":
+			return c.styles.Accent.Render(mark)
+		}
+		return c.styles.Muted.Render(ctx) + atom.Spaces(token.Gap) + c.styles.Accent.Render(mark)
+	}
+	fits := func(left, ctx string) bool { return atom.Width(left)+token.Gap+atom.Width(tail(ctx)) < width }
 	left, ctx := "", ""
+	found := false
 	for n := range tabs {
 		left = c.tabLine(tabs, active, n, loading)
 		candidates := shortened
@@ -100,17 +116,24 @@ func (c Chrome) Header(tabs []Tab, active int, context page.Context, loading boo
 			candidates = append([]string{organism.Context(context)}, shortened...)
 		}
 		for _, x := range candidates {
-			if atom.Width(left)+token.Gap+atom.Width(x)+1 <= width {
-				ctx = x
+			if fits(left, x) {
+				ctx, found = x, true
 				break
 			}
 		}
-		if ctx != "" {
+		if found {
 			break
 		}
 	}
-	gap := max(width-1-atom.Width(left)-atom.Width(ctx), 1)
-	return left + atom.Spaces(gap) + c.styles.Muted.Render(ctx) + "\n" + organism.Rule(c.styles, width)
+	right := ""
+	switch {
+	case found:
+		right = tail(ctx)
+	case mark != "" && fits(left, ""):
+		right = tail("")
+	}
+	gap := max(width-1-atom.Width(left)-atom.Width(right), 1)
+	return left + atom.Spaces(gap) + right + "\n" + organism.Rule(c.styles, width)
 }
 
 func (c Chrome) StatusBar(m page.Mark, text, hint string, width int) string {

@@ -77,7 +77,7 @@ So `cut -f2` is a row's name. `--json` prints the presenter's JSON value, two-sp
 
 ## The TUI
 
-`station` on a terminal opens one Bubble Tea app with the tabs Home, Tools, Config, Storage, then Fleet, Services, Accounts and Power. Each tab renders the same page as its command. The tab line never wraps: when it does not fit, the context shortens to the machine name (then `host`), the inactive tabs turn into their number key one at a time from the last, then the context goes.
+`station` on a terminal opens one Bubble Tea app with the tabs Home, Tools, Config, Storage, then Fleet, Services, Accounts and Power. Each tab renders the same page as its command. The tab line never wraps: when it does not fit, the context shortens to the machine name (then `host`), the inactive tabs turn into their number key one at a time from the last, then the context goes. While a Power session holds, the context ends with `⏻ awake` (`⏻ awake · lid` with `--lid`), the last thing to go.
 
 | Tab      | Holds                                                                                                                   | Keys                                                                                                                                                        |
 | -------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |

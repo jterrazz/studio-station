@@ -174,7 +174,13 @@ func (a App) View() tea.View {
 	for _, t := range a.tabs {
 		labels = append(labels, t.Tab)
 	}
-	header := a.chrome.Header(labels, a.active, a.here, current.Loading(), a.width)
+	badge := page.None()
+	for _, s := range a.screens {
+		if b, ok := s.(interface{ Badge() page.Value }); ok && !b.Badge().IsNone() {
+			badge = b.Badge()
+		}
+	}
+	header := a.chrome.Header(labels, a.active, a.here, badge, current.Loading(), a.width)
 	body := func(room int) string { return current.Body(a.width, room) }
 	v := tea.NewView(a.chrome.Screen(header, body, a.chrome.StatusBar(a.status.Mark, a.status.Text, a.status.Hint, a.width), current.Footer(a.width), a.height))
 	v.AltScreen = true
