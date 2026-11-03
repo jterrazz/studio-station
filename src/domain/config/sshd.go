@@ -2,8 +2,8 @@ package config
 
 import (
 	"context"
-	"strings"
 
+	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
@@ -31,11 +31,10 @@ func (s *Service) remoteLogin(ctx context.Context, state string) (Change, error)
 }
 
 // outside: the check runs as the user, and `systemsetup -getremotelogin` then exits 0
-// with its error on stdout; `launchctl print-disabled system` is readable without root
-// and carries the sshd state systemsetup sets.
+// with its error on stdout; the system domain's overrides are readable without root
+// and carry the sshd state systemsetup sets.
 func (s *Service) checkSshd(ctx context.Context) (state catalog.State, detail string) {
-	out, ok := s.probe(ctx, "launchctl", "print-disabled", "system")
-	if !ok || !strings.Contains(out, `"com.openssh.sshd" => enabled`) {
+	if !s.o.Jobs.Overrides(ctx, contract.Domain{System: true})["com.openssh.sshd"] {
 		return catalog.StateAbsent, ""
 	}
 	return catalog.StateOK, "Remote Login on"

@@ -16,6 +16,8 @@ import (
 
 const probeBudget = 5 * time.Second
 
+const ReadBudget = probeBudget
+
 func (s *Service) probe(ctx context.Context, name string, args ...string) (stdout string, ok bool) {
 	out, err := s.h.Run.Output(ctx, system.Cmd{Name: name, Args: args, Timeout: probeBudget})
 	if err != nil || out.ExitCode != 0 {
