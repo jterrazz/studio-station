@@ -23,7 +23,7 @@ func TestNeedsYouListsBrokenFirstThenBySectionThenMacBeforeItsVMs(t *testing.T) 
 		line(linux1, section.Apps, finding.NeedsALook, "jq"),
 		line(this, section.Apps, finding.NeedsALook, "node"),
 		line(infra, section.Overview, finding.Broken, "health"),
-		line(this, section.Accounts, finding.NeedsALook, "npm"),
+		line(this, section.Accounts, finding.NeedsALook, "github"),
 		line(mini, section.Overview, finding.Broken, "engine"),
 		line(this, section.Settings, finding.NeedsALook, "firewall"),
 	}
@@ -41,7 +41,7 @@ func TestNeedsYouListsBrokenFirstThenBySectionThenMacBeforeItsVMs(t *testing.T) 
 		"linux-1 jq",
 		"jterrazz-macbook-pro starship",
 		"jterrazz-macbook-pro firewall",
-		"jterrazz-macbook-pro npm",
+		"jterrazz-macbook-pro github",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("Needs you ranks\n%v\nwant\n%v", got, want)
