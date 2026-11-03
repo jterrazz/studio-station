@@ -18,9 +18,9 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
+	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/system/sshclient"
-	"github.com/jterrazz/studio-station/src/system/tart"
 )
 
 func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }

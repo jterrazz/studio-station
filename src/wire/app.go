@@ -20,8 +20,8 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/ui/help"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )

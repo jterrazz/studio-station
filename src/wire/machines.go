@@ -24,7 +24,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/remote"
-	"github.com/jterrazz/studio-station/src/system/tart"
+	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 )
 
 const (

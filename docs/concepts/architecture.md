@@ -31,8 +31,9 @@ The ports and the data:
 
 ```text
   system/         the ports: interfaces and value types (Runner, FS, Env, Net, Clock, Host, Engine)
-    tart/         the Engine adapter, over Runner
     systemtest/   scripted fakes of every port, for tests
+  machines/adapter/
+    tart/         the Engine adapter, over Runner
   platform/
     local/        the real adapters: the only importer of os/exec, files, the network
     darwin/       the only cgo: IOKit power assertions, the lid, power sources, notify(3)
@@ -79,7 +80,7 @@ The import table of today's layers and the list of forbidden symbols are Go lite
 ```text
 cmd/station ─> wire ─> cli ─> cli/kit ─> domain ─> system <─ platform/local
                 │       │                 │          ▲
-                │       └─> present <─────┘          └── system/tart
+                │       └─> present <─────┘          └── machines/adapter/tart
                 ├─> output ─> theme
                 ├─> prompt ─> theme/forms
                 └─> tui ─> present, domain, output

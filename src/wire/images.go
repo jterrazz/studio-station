@@ -9,7 +9,7 @@ import (
 	imagesdelete "github.com/jterrazz/studio-station/src/cli/images/delete"
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/images"
-	"github.com/jterrazz/studio-station/src/system/tart"
+	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 )
 
 func (m machine) images() *images.Service {

@@ -90,7 +90,6 @@ func wordsTolerated() map[string][]string {
 		"pages/shortcuts":      {"docker"},
 		"pages/storage":        {"brew"},
 		"pages/tailnet":        {"tailscale"},
-		"system/tart":          {"tart"},
 	}
 }
 
