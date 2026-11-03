@@ -8,7 +8,7 @@
    ◌ Machine    host · Darwin 27.0.0              ◌ Tools     1 ◌
    ◌ Network    192.168.1.152 · vpn on · 4/4 on   ◌ Config    1 ◌
    ◌ Tailnet    off                               ● Storage   27.9 GB reclaimable · 2 strays
-   ◌ Identity   not set                           ◌ Fleet     this host
+   ◌ Identity   not set                           ◌ Fleet     macbook
    ◐ Workspace  2 repos · 14 deps outdated        ◌ Gateways  1 ◌
 
  Machine  1 ●  3 ◌

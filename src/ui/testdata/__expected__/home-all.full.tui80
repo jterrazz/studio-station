@@ -55,7 +55,7 @@
    ● git signing  on
  - Background                                                     1 ●  1 ◐  1 ✗
      station
-   └─   no background jobs
+      no background jobs
      known
    └─ ● watchman                   running · pid 3464     user  watchman    ~/…
      unknown

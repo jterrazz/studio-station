@@ -43,21 +43,43 @@ func Tab(r Reading, here page.Context) page.Page {
 		return []page.Section{s}
 	})...)
 	p.Sections = append(p.Sections, part(r, "secrets", "Secrets", r.Secrets != nil, func() []page.Section {
-		out := pagesecrets.Sections(*r.Secrets)
-		for i := range out {
-			out[i].Fold = page.Auto
-		}
-		return out
+		s := nest(page.Section{ID: "secrets", Title: "Secrets", Uncounted: true}, pagesecrets.Sections(*r.Secrets))
+		return []page.Section{s}
 	})...)
 	p.Sections = append(p.Sections, part(r, "tailnet", "Tailnet", r.Tailnet != nil, func() []page.Section {
-		out := pagetailnet.Sections(*r.Tailnet)
-		for i := range out {
-			out[i].Role, out[i].Fold = page.Plain, page.Auto
-		}
-		return out
+		parts := pagetailnet.Sections(*r.Tailnet)
+		head := parts[0]
+		head.Role = page.Plain
+		return []page.Section{nest(head, parts[1:])}
 	})...)
 	p.Actions = Actions(r)
 	return page.Seal(p)
+}
+
+// invariant: on the Fleet tab a page's sub-lists (Secrets' Lend list and
+// Kept, A19; Tailnet's Peers and Serve) are heading groups of ONE section, so
+// folding the section folds them; the commands keep their titled sections.
+func nest(s page.Section, parts []page.Section) page.Section {
+	s.Fold = page.Auto
+	if len(parts) > 0 && len(s.Columns) < len(parts[0].Columns) {
+		s.Columns = parts[0].Columns
+	}
+	if len(s.Columns) == 0 && len(parts) > 0 {
+		s.Columns = parts[0].Columns
+	}
+	for _, sub := range parts {
+		items := make([]page.Item, 0, len(sub.Items))
+		for _, it := range sub.Items {
+			if it.Row != nil {
+				row := *it.Row
+				row.ID = sub.ID + "/" + row.ID
+				it.Row = &row
+			}
+			items = append(items, it)
+		}
+		s.Items = append(s.Items, page.Item{Group: &page.Group{Head: page.Row{ID: sub.ID, Label: sub.Title}, Items: items, Fold: page.Open}})
+	}
+	return s
 }
 
 func part(r Reading, id, title string, ready bool, build func() []page.Section) []page.Section {

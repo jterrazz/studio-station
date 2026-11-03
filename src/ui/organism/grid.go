@@ -141,6 +141,8 @@ func (g Grid) item(out *[]Line, it page.Item, entries []entry, at int, cols []co
 		n := countEntries(it)
 		for _, e := range entries[at : at+n] {
 			switch {
+			case e.empty != nil && e.key != "" && e.prefix != "":
+				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+token.Indent) + e.prefix + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Keys)})
 			case e.empty != nil && e.key != "":
 				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+token.Indent) + g.Styles.Subtle.Render(e.prefix) + atom.Spaces(token.MarkWidth) + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Keys)})
 			case e.link != nil && e.key != "":
@@ -203,7 +205,7 @@ func (g Grid) entries() []entry {
 	walk = func(items []page.Item, bars string, depth int, hidden bool) {
 		last := -1
 		for i, it := range items {
-			if it.Row != nil || it.Group != nil || (depth > 0 && (it.Link != nil || it.Empty != nil)) {
+			if it.Row != nil || it.Group != nil || (depth > 0 && it.Link != nil) {
 				last = i
 			}
 		}
@@ -213,7 +215,12 @@ func (g Grid) entries() []entry {
 			}
 			prefix := ""
 			next := bars
-			if depth > 0 {
+			switch {
+			case depth > 0 && it.Empty != nil:
+				// invariant: a group's empty child is no branch of the tree: it
+				// sits one step in, without a connector (§13.5 `no VMs`).
+				prefix = bars + atom.Spaces(token.TreeStep)
+			case depth > 0:
 				if i == last {
 					prefix, next = bars+token.TreeEnd, bars+atom.Spaces(token.TreeStep)
 				} else {

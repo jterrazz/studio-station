@@ -202,8 +202,17 @@ func resolve(h system.Host, vars map[string]string) machine {
 		kind:  kind,
 		paths: paths,
 		store: store,
-		where: page.Context{Machine: current.Here, Kind: string(kind), Registered: current.Here != ""},
+		where: page.Context{Machine: hereName(current.Here, h.Env.Hostname()), Kind: string(kind), Registered: current.Here != ""},
 	}
+}
+
+// value: the name the fleet shows this machine by: the one setup gave it, else
+// its hostname, as machines names it (one name in every page, §13.5).
+func hereName(registered, hostname string) string {
+	if registered != "" {
+		return registered
+	}
+	return strings.ToLower(hostname)
 }
 
 func (m machine) or(name, fallback string) string {

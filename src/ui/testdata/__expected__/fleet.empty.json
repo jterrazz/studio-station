@@ -19,7 +19,7 @@
         {
           "key": "kind",
           "kind": "text",
-          "keep": 70
+          "show": "pipe"
         },
         {
           "key": "host",
@@ -29,7 +29,19 @@
         {
           "key": "lifetime",
           "kind": "text",
-          "keep": 60
+          "show": "pipe"
+        },
+        {
+          "key": "class",
+          "kind": "text",
+          "keep": 70,
+          "show": "eye"
+        },
+        {
+          "key": "role",
+          "kind": "text",
+          "keep": 30,
+          "show": "eye"
         },
         {
           "key": "state",
@@ -64,6 +76,14 @@
                 },
                 {
                   "kind": "none"
+                },
+                {
+                  "kind": "text",
+                  "text": "host"
+                },
+                {
+                  "kind": "text",
+                  "text": "here"
                 },
                 {
                   "kind": "text",
@@ -142,8 +162,8 @@
       ]
     },
     {
-      "id": "lend-list",
-      "title": "Lend list",
+      "id": "secrets",
+      "title": "Secrets",
       "fold": "auto",
       "columns": [
         {
@@ -154,31 +174,38 @@
       ],
       "items": [
         {
-          "empty": {
-            "noun": "lent secrets",
-            "hint": {
-              "command": "station secrets allow <name>"
-            }
+          "group": {
+            "head": {
+              "id": "lend-list",
+              "label": "Lend list"
+            },
+            "items": [
+              {
+                "empty": {
+                  "noun": "lent secrets",
+                  "hint": {
+                    "command": "station secrets allow <name>"
+                  }
+                }
+              }
+            ],
+            "fold": "open"
           }
-        }
-      ],
-      "uncounted": true
-    },
-    {
-      "id": "kept",
-      "title": "Kept",
-      "fold": "auto",
-      "columns": [
+        },
         {
-          "key": "name",
-          "kind": "text",
-          "keep": 100
-        }
-      ],
-      "items": [
-        {
-          "empty": {
-            "noun": "kept secrets"
+          "group": {
+            "head": {
+              "id": "kept",
+              "label": "Kept"
+            },
+            "items": [
+              {
+                "empty": {
+                  "noun": "kept secrets"
+                }
+              }
+            ],
+            "fold": "open"
           }
         }
       ],

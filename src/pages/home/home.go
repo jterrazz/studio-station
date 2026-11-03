@@ -645,7 +645,10 @@ func storageValue(w status.Workspace) page.Value {
 func fleetValue(s status.Snapshot) page.Value {
 	d := s.Station.Daemon
 	if d.Value == "" || d.State == catalog.StateAbsent {
-		return page.Text("this host")
+		if s.Machine.Name != "" {
+			return page.Text(s.Machine.Name)
+		}
+		return page.Text(strings.ToLower(s.Machine.Hostname))
 	}
 	return page.Text("daemon " + d.Value)
 }

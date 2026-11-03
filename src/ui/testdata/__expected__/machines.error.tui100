@@ -1,6 +1,6 @@
- - Fleet                                                                                           
-   ◐ macbook     host              online       100.98.133.14  daemon stopped · station start
-   ├─ ● linux-1  linux  temporary  running      192.168.64.5   4 cpus · 4 GB · 42.9 GB
-   └─ ○ api      linux  lasting    stopped      -              4 cpus · 8 GB · 42.9 GB
-   ◐ mac-mini    host              unreachable  100.98.133.20  -
+ - Fleet                                                                              1 ●  2 ◐  1 ○
+   ◐ macbook     host       here  online       100.98.133.14  daemon stopped · station start
+   ├─ ● linux-1  temporary        running      192.168.64.5   4 cpus · 4 GB · 42.9 GB
+   └─ ○ api      lasting          stopped      -              4 cpus · 8 GB · 42.9 GB
+   ◐ mac-mini    host             unreachable  100.98.133.20  -
  ↑↓ move  n create  enter detail  / filter  space fold  r reload  q quit  ? keys

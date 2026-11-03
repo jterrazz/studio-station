@@ -18,12 +18,17 @@ const (
 	KeyEnter   = "e"
 )
 
+// invariant: the pipe keeps SPEC §10.8's fields (kind, host, lifetime); the
+// eye reads one class column (a host's `host`, a VM's lifetime: the tree says
+// the rest) and the host's role (§13.5).
 func Columns() []page.Column {
 	return []page.Column{
 		{Key: "name", Kind: page.KindText, Keep: 100},
-		{Key: "kind", Kind: page.KindText, Keep: 70},
+		{Key: "kind", Kind: page.KindText, Show: page.PipeOnly},
 		{Key: "host", Kind: page.KindText, Show: page.PipeOnly},
-		{Key: "lifetime", Kind: page.KindText, Keep: 60},
+		{Key: "lifetime", Kind: page.KindText, Show: page.PipeOnly},
+		{Key: "class", Kind: page.KindText, Keep: 70, Show: page.EyeOnly},
+		{Key: "role", Kind: page.KindText, Keep: 30, Show: page.EyeOnly},
 		{Key: "state", Kind: page.KindText, Keep: 90},
 		{Key: "ip", Kind: page.KindIdentity, Keep: 50},
 		{Key: "resources", Kind: page.KindList, Keep: 10},
@@ -117,7 +122,11 @@ func hostRow(h machines.HostView, hereVersion string) page.Row {
 		}
 		resources = page.List(page.Text(word), page.Command(fix))
 	}
-	row.Cells = []page.Value{page.Text(string(catalog.Host)), page.Text(""), page.Text(""), state, orDash(h.Node.IP), resources}
+	role := ""
+	if h.Here {
+		role = "here"
+	}
+	row.Cells = []page.Value{page.Text(string(catalog.Host)), page.Text(""), page.Text(""), page.Text(string(catalog.Host)), page.Text(role), state, orDash(h.Node.IP), resources}
 	return row
 }
 
@@ -136,7 +145,7 @@ func vmRow(vm machines.VM) page.Row {
 	case machines.Broken:
 		row.Mark, row.Reason, resources = page.Broken, page.Failing, page.Text(vm.Detail)
 	}
-	row.Cells = []page.Value{page.Text(string(vm.Kind)), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.State)), orDash(vm.IP), resources}
+	row.Cells = []page.Value{page.Text(string(vm.Kind)), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), resources}
 	return row
 }
 

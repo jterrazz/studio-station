@@ -20,7 +20,7 @@
         {
           "key": "kind",
           "kind": "text",
-          "keep": 70
+          "show": "pipe"
         },
         {
           "key": "host",
@@ -30,7 +30,19 @@
         {
           "key": "lifetime",
           "kind": "text",
-          "keep": 60
+          "show": "pipe"
+        },
+        {
+          "key": "class",
+          "kind": "text",
+          "keep": 70,
+          "show": "eye"
+        },
+        {
+          "key": "role",
+          "kind": "text",
+          "keep": 30,
+          "show": "eye"
         },
         {
           "key": "state",

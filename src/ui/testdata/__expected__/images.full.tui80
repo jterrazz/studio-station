@@ -1,4 +1,4 @@
- - Images                                                                      
+ - Images                                                              2 ●  1 ○
             version     size    VMs
    ● linux  3         6.0 GB  2 VMs  ghcr.io/cirruslabs/ubuntu:24.04
    ○ linux  2         6.0 GB  0 VMs  older: station images delete linux@2

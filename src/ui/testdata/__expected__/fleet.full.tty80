@@ -2,13 +2,13 @@
  ──────────────────────────────────────────────────────────────────────────────
 
  Fleet  2 ●  1 ◐  1 ○
-   ● macbook     host              online   100.98.133.14  2 VMs
-   ├─ ● linux-1  linux  temporary  running  192.168.64.5   4 cpus · 4 GB …
+   ● macbook     host       here  online   100.98.133.14  2 VMs
+   ├─ ● linux-1  temporary        running  192.168.64.5   4 cpus · 4 GB …
    │  ├─   5173  5173 → 40001 · https://jterrazz-macbook-pro.tail1234.ts.net:40001  node
    │  └─   5432  5432 → 40002  postgres
-   └─ ○ api      linux  lasting    stopped  -              4 cpus · 8 GB …
-   ◐ mac-mini    host              online   100.98.133.20  station v2.0.0-248…
-   └─   no VMs  → station machines create --on mac-mini
+   └─ ○ api      lasting          stopped  -              4 cpus · 8 GB …
+   ◐ mac-mini    host             online   100.98.133.20  station v2.0.0-248 h…
+      no VMs  → station machines create --on mac-mini
 
  Images  2 ●  1 ○
             version     size    VMs
@@ -16,23 +16,21 @@
    ○ linux  2         6.0 GB  0 VMs  older: station images delete linux@2
    ● macos  1        48.0 GB  0 VMs  ghcr.io/cirruslabs/macos-tahoe-base:latest
 
- Lend list
-   ● GITHUB_TOKEN  lent to linux-1
-   ○ NPM_TOKEN     not lent
+ Secrets
+     Lend list
+   ├─ ● GITHUB_TOKEN    lent to linux-1
+   └─ ○ NPM_TOKEN       not lent
+     Kept
+   ├─ ● GITHUB_TOKEN    never leaves this host
+   ├─ ● NPM_TOKEN       never leaves this host
+   └─ ● OPENAI_API_KEY  never leaves this host
 
- Kept
-   ● GITHUB_TOKEN    never leaves this host
-   ● NPM_TOKEN       never leaves this host
-   ● OPENAI_API_KEY  never leaves this host
-
- Tailnet  3 ●
-   ● tailnet  Running · jterrazz-macbook-pro.tail1234.ts.net
-   ● node     macbook                                               100.98.133…
-   ● cli      /Applications/Tailscale.app/Contents/MacOS/Tailscale  app-store
-
- Peers
-     mac-mini  100.98.133.20  online   tag:station
-     iphone    100.98.133.30  offline
-
- Serve  1 ●
-   ● https 40001/  http://127.0.0.1:40001  station
+ Tailnet  4 ●
+   ● tailnet          Running …
+   ● node             macbook
+   ● cli              /Applications/…/Tailscale
+     Peers
+   ├─   mac-mini      100.98.133.20                             online   tag:s…
+   └─   iphone        100.98.133.30                             offline
+     Serve
+   └─ ● https 40001/  http://127.0.0.1:40001

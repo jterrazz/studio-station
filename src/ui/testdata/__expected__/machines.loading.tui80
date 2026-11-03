@@ -1,7 +1,7 @@
- - Fleet                                                                       
+ - Fleet                                                                    4 ◌
    ◌ macbook
    ├─ ◌ linux-1
    └─ ◌ api
    ◌ mac-mini
-   └─   no VMs  → station machines create --on mac-mini
+      no VMs  → station machines create --on mac-mini
  ↑↓ move  n create  enter detail  / filter  space fold  r reload  ? keys

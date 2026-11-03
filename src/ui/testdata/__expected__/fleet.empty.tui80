@@ -1,11 +1,12 @@
  - Fleet                                                                    1 ●
-   ● macbook  host  online  -  0 VMs
-   └─   no VMs  n create
+   ● macbook  host  here  online  -  0 VMs
+      no VMs  n create
  - Images
    no images  → station images build
- - Lend list
-   no lent secrets  → station secrets allow <name>
- - Kept
-   no kept secrets
+ - Secrets
+     Lend list
+      no lent secrets  → station secrets allow <name>
+     Kept
+      no kept secrets
  + Tailnet                                                                  1 ○
  ↑↓ move  n create  b build images  enter detail  / filter  space fold  ? keys

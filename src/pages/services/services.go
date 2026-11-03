@@ -22,7 +22,7 @@ func Columns() []page.Column {
 	}
 }
 
-func Sections(f services.Fleet) []page.Section {
+func Sections(f services.Fleet, here page.Context) []page.Section {
 	out := make([]page.Section, 0, len(f.Hosts))
 	for _, h := range f.Hosts {
 		var items []page.Item
@@ -56,8 +56,8 @@ func Sections(f services.Fleet) []page.Section {
 			items = append(items, page.Item{Empty: &page.Empty{Noun: "services", Hint: hint}})
 		}
 		title := h.Name
-		if title == "" {
-			title = "this host"
+		if title == "" && h.Here {
+			title = here.Machine
 		}
 		out = append(out, page.Section{ID: "host-" + title, Title: title, Role: page.Banner, Caption: Caption(h), Columns: Columns(), Items: items})
 	}
@@ -80,7 +80,7 @@ func Caption(h services.HostView) []page.Value {
 }
 
 func Fleet(f services.Fleet, here page.Context) page.Page {
-	return page.Seal(page.Page{ID: "services", Command: "services", Context: here, Sections: Sections(f), Actions: Actions(f)})
+	return page.Seal(page.Page{ID: "services", Command: "services", Context: here, Sections: Sections(f, here), Actions: Actions(f)})
 }
 
 func Actions(f services.Fleet) []page.Action {

@@ -20,7 +20,7 @@
         {
           "key": "kind",
           "kind": "text",
-          "keep": 70
+          "show": "pipe"
         },
         {
           "key": "host",
@@ -30,7 +30,19 @@
         {
           "key": "lifetime",
           "kind": "text",
-          "keep": 60
+          "show": "pipe"
+        },
+        {
+          "key": "class",
+          "kind": "text",
+          "keep": 70,
+          "show": "eye"
+        },
+        {
+          "key": "role",
+          "kind": "text",
+          "keep": 30,
+          "show": "eye"
         },
         {
           "key": "state",
@@ -68,6 +80,14 @@
                 },
                 {
                   "kind": "text",
+                  "text": "host"
+                },
+                {
+                  "kind": "text",
+                  "text": "here"
+                },
+                {
+                  "kind": "text",
                   "text": "online"
                 },
                 {
@@ -99,6 +119,13 @@
                     {
                       "kind": "text",
                       "text": "temporary"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "temporary"
+                    },
+                    {
+                      "kind": "none"
                     },
                     {
                       "kind": "text",
@@ -149,6 +176,13 @@
                     },
                     {
                       "kind": "text",
+                      "text": "lasting"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "text",
                       "text": "stopped"
                     },
                     {
@@ -193,6 +227,13 @@
                 },
                 {
                   "kind": "none"
+                },
+                {
+                  "kind": "none"
+                },
+                {
+                  "kind": "text",
+                  "text": "host"
                 },
                 {
                   "kind": "none"

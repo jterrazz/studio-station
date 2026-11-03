@@ -16,9 +16,24 @@ func Caption(st token.Styles, s page.Section) string {
 	return st.Muted.Render(atom.Show(page.List(parts...)))
 }
 
+// value: a banner prints no counts on a terminal (its page is that one list),
+// but a tree's heads are the verdict a reader looks for first (the Fleet), so
+// a banner made of judged groups counts them like any section (§3.3).
+func titleCounts(s page.Section) bool {
+	if s.Role != page.Banner {
+		return true
+	}
+	for _, it := range s.Items {
+		if it.Group != nil && !it.Group.Heading() {
+			return true
+		}
+	}
+	return false
+}
+
 func Title(st token.Styles, s page.Section) string {
 	line := atom.Spaces(token.Margin) + st.Title.Render(s.Title)
-	if s.Role != page.Banner {
+	if titleCounts(s) {
 		if counts := molecule.Counts(st, s.Counts); counts != "" {
 			line += atom.Spaces(token.Gap) + counts
 		}
@@ -38,10 +53,7 @@ func FoldTitle(st token.Styles, s page.Section, folded bool, width int) string {
 	if c := Caption(st, s); c != "" {
 		left += atom.Spaces(token.Gap) + c
 	}
-	right := ""
-	if s.Role != page.Banner {
-		right = molecule.Counts(st, s.Counts)
-	}
+	right := molecule.Counts(st, s.Counts)
 	if right == "" {
 		return left
 	}

@@ -1,16 +1,16 @@
-description: 'on a host setup has not named yet, services titles it this host'
+description: 'on a host setup has not named yet, services titles it by the name machines shows, never an empty title'
 fixture:
     - ../__fixtures__/terminal/
 env: terminal
 runs:
-    - command: '--version >/dev/null; terminal --size 80x12 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" services'
+    - command: '--version >/dev/null; "$STATION" services --page | /usr/bin/jq -r ''.sections[0].title'' >title; "$STATION" machines --json | /usr/bin/jq -r ''.hosts[0].name'' >name; /bin/test -s title && /usr/bin/cmp -s title name && echo same'
+      exit: 0
+      stdout: |
+          same
+    - command: '--version >/dev/null; terminal --size 80x12 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" services | /usr/bin/sed -n ''5,6p'''
       stdin: |
           scrollback
       exit: 0
       stdout: |4
-           station services                                           host · unregistered
-           ──────────────────────────────────────────────────────────────────────────────
-
-           this host  40000-40999 · 0 leased · 1000 free · 20 per VM
                        state
              ◐ daemon  not installed  → station setup

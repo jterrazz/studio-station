@@ -32,7 +32,7 @@ runs:
              ● Machine     host · Darwin 27.0.0 · up 3d 4h   ◐ Tools    2 ●  3 ◐  103 ○
              ◐ Network     192.168.1.2 · vpn on · 4/6 on     ◐ Config   1 ●  1 ◐  17 ○
              ○ Tailnet     off                               ● Storage  2.0 KB reclaimable
-             ● Identity    not set                           ○ Fleet    this host
+             ● Identity    not set                           ○ Fleet    macbook
              ● Workspace   0 repos
              ✗ Background  6 jobs · 1 failing · 2 orphans
 
