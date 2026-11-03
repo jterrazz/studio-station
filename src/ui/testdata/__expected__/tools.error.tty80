@@ -1,0 +1,31 @@
+ station tools                                              host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────
+
+ Package Managers  2 ●  5 ◐
+   ● homebrew   7.0.12-8-g57cac9d  script · system
+   ◐ mise       ?                  brew · system    no answer in 5s
+   ◐ mas        ?                  brew             no answer in 5s
+   ◐ uv         ?                  brew             no answer in 5s
+   ◐ cocoapods  ?                  brew             no answer in 5s
+   ◐ pnpm       ?                  brew             no answer in 5s
+   ● skills     1.5.22             bun
+
+ Runtimes  4 ◐
+   ◐ bun              mise  installed, mise not…  → station tools install mise
+   ◐ go               mise  installed, mise not…  → station tools install mise
+   ◐ java    17.0.20  mise  installed, mise not…  → station tools install mise
+   ◐ python  3.14.6   mise  installed, mise not…  → station tools install mise
+
+ AI Apps  1 ●  1 ◐  1 ○
+   ◐ chatgpt                             cask  on PATH, not managed by cask
+   ● claude-desktop  1.22209.3,babe115…  cask
+   ○ typewhisper                         cask
+     → station tools install typewhisper
+
+ Agent skills  1 ●  1 ◐  1 ○
+   ○ frontend-design      skill  skills not in…  → station tools install skills
+   ● modern-web-guidance  skill  currency unknown
+   ◐ better-ui            skill  outdated
+
+ → station tools install <tool...>
+ → station tools upgrade

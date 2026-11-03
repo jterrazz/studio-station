@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"os"
+	"path/filepath"
 	"strings"
 	"unicode/utf8"
 
@@ -25,6 +26,7 @@ const (
 func main() {
 	path := flag.String("file", defaultPath, "the skill page whose generated blocks are rewritten")
 	page := flag.String("footprint", footprintPath, "the footprint page, rewritten whole")
+	fixtures := flag.String("pages", pagesDir, "the folder the page fixtures are written to")
 	flag.Parse()
 	current, err := os.ReadFile(*path)
 	if err != nil {
@@ -39,6 +41,11 @@ func main() {
 	}
 	if err := os.WriteFile(*page, []byte(footprint()), 0o600); err != nil {
 		panic(err)
+	}
+	for name, body := range pageFixtures() {
+		if err := os.WriteFile(filepath.Join(*fixtures, name), body, 0o600); err != nil {
+			panic(err)
+		}
 	}
 }
 

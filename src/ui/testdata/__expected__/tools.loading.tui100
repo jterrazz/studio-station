@@ -1,0 +1,22 @@
+ - Package Managers                                                                             7 ◌
+   ◌ homebrew   script · system
+   ◌ mise       brew · system
+   ◌ mas        brew
+   ◌ uv         brew
+   ◌ cocoapods  brew
+   ◌ pnpm       brew
+   ◌ skills     bun
+ - Runtimes                                                                                     4 ◌
+   ◌ bun     mise
+   ◌ go      mise
+   ◌ java    mise
+   ◌ python  mise
+ - AI Apps                                                                                      3 ◌
+   ◌ chatgpt         cask
+   ◌ claude-desktop  cask
+   ◌ typewhisper     cask
+ - Agent skills                                                                                 3 ◌
+   ◌ frontend-design      skill
+   ◌ modern-web-guidance  skill
+   ◌ better-ui            skill
+ ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

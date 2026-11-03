@@ -1,0 +1,94 @@
+package pages
+
+import (
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/page"
+	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
+)
+
+func here() page.Context { return page.Context{Kind: "host"} }
+
+type tool struct {
+	name     string
+	category catalog.Category
+	method   catalog.Method
+	system   bool
+	state    catalog.State
+	version  string
+	detail   string
+	why      tools.Why
+	needs    string
+}
+
+func reports(list []tool, pending bool) []tools.Report {
+	out := make([]tools.Report, 0, len(list))
+	for _, t := range list {
+		r := tools.Report{
+			Tool:    catalog.Tool{Name: t.name, Category: t.category, System: t.system},
+			Method:  t.method,
+			State:   t.state,
+			Version: t.version,
+			Managed: t.state == catalog.StateOK,
+			Detail:  t.detail,
+			Why:     t.why,
+			Needs:   t.needs,
+			Pending: pending,
+		}
+		if pending {
+			r.State, r.Version, r.Detail, r.Why, r.Needs = catalog.StatePending, "", "", "", ""
+		}
+		out = append(out, r)
+	}
+	return out
+}
+
+func thisMac() []tool {
+	const (
+		pm   = catalog.CategoryPackageManagers
+		rt   = catalog.CategoryRuntimes
+		apps = catalog.CategoryAIApps
+		sk   = catalog.CategoryAgentSkills
+	)
+	mise := func(name, version string) tool {
+		return tool{name: name, category: rt, method: catalog.MethodMise, state: catalog.StateDegraded, version: version, detail: "installed, mise not installed", why: tools.WhyMissing, needs: "mise"}
+	}
+	return []tool{
+		{name: "homebrew", category: pm, method: catalog.MethodScript, system: true, state: catalog.StateOK, version: "7.0.12-8-g57cac9d"},
+		{name: "mise", category: pm, method: catalog.MethodBrew, system: true, state: catalog.StateAbsent},
+		{name: "mas", category: pm, method: catalog.MethodBrew, state: catalog.StateAbsent},
+		{name: "uv", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "0.12.3"},
+		{name: "cocoapods", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "1.17.0"},
+		{name: "pnpm", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "11.21.0"},
+		{name: "skills", category: pm, method: catalog.MethodBun, state: catalog.StateOK, version: "1.5.22"},
+		mise("bun", ""),
+		mise("go", ""),
+		mise("java", "17.0.20"),
+		mise("python", "3.14.6"),
+		{name: "chatgpt", category: apps, method: catalog.MethodCask, state: catalog.StateDegraded, detail: "on PATH, not managed by cask", why: tools.WhyUnmanaged},
+		{name: "claude-desktop", category: apps, method: catalog.MethodCask, state: catalog.StateOK, version: "1.22209.3,babe11577dfefe3e209c06bd674628d862f0dbae"},
+		{name: "typewhisper", category: apps, method: catalog.MethodCask, state: catalog.StateAbsent},
+		{name: "frontend-design", category: sk, method: catalog.MethodSkill, state: catalog.StateAbsent, detail: "skills not installed", why: tools.WhyMissing, needs: "skills"},
+		{name: "modern-web-guidance", category: sk, method: catalog.MethodSkill, state: catalog.StateOK, detail: "currency unknown"},
+		{name: "better-ui", category: sk, method: catalog.MethodSkill, state: catalog.StateDegraded, detail: "outdated", why: tools.WhyOutdated},
+	}
+}
+
+func lateMac() []tool {
+	out := thisMac()
+	for i := range out {
+		if out[i].method == catalog.MethodBrew {
+			out[i].state, out[i].version, out[i].detail, out[i].why, out[i].needs = catalog.StateUnknown, "", "no answer in 5s", tools.WhyLate, ""
+		}
+	}
+	return out
+}
+
+func Tools() []Fixture {
+	return []Fixture{
+		{"tools.loading", pagetools.Catalogue(reports(thisMac(), true), here())},
+		{"tools.empty", pagetools.Catalogue(nil, here())},
+		{"tools.error", pagetools.Catalogue(reports(lateMac(), false), here())},
+		{"tools.full", pagetools.Catalogue(reports(thisMac(), false), here())},
+	}
+}

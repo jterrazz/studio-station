@@ -1,0 +1,653 @@
+{
+  "schema": "station.page/v1",
+  "id": "tools",
+  "command": "tools",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "package-managers",
+      "title": "Package Managers",
+      "fold": "auto",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "version",
+          "kind": "version",
+          "keep": 50
+        },
+        {
+          "key": "method",
+          "kind": "list",
+          "keep": 30
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "homebrew",
+            "mark": "ok",
+            "label": "homebrew",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "7.0.12-8-g57cac9d"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "script"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "system"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "mise",
+            "mark": "attention",
+            "label": "mise",
+            "cells": [
+              {
+                "kind": "unknown"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "brew"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "system"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "no answer in 5s"
+            },
+            "reason": "late"
+          }
+        },
+        {
+          "row": {
+            "id": "mas",
+            "mark": "attention",
+            "label": "mas",
+            "cells": [
+              {
+                "kind": "unknown"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "brew"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "no answer in 5s"
+            },
+            "reason": "late"
+          }
+        },
+        {
+          "row": {
+            "id": "uv",
+            "mark": "attention",
+            "label": "uv",
+            "cells": [
+              {
+                "kind": "unknown"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "brew"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "no answer in 5s"
+            },
+            "reason": "late"
+          }
+        },
+        {
+          "row": {
+            "id": "cocoapods",
+            "mark": "attention",
+            "label": "cocoapods",
+            "cells": [
+              {
+                "kind": "unknown"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "brew"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "no answer in 5s"
+            },
+            "reason": "late"
+          }
+        },
+        {
+          "row": {
+            "id": "pnpm",
+            "mark": "attention",
+            "label": "pnpm",
+            "cells": [
+              {
+                "kind": "unknown"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "brew"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "no answer in 5s"
+            },
+            "reason": "late"
+          }
+        },
+        {
+          "row": {
+            "id": "skills",
+            "mark": "ok",
+            "label": "skills",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "1.5.22"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "bun"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        },
+        {
+          "mark": "attention",
+          "n": 5
+        }
+      ]
+    },
+    {
+      "id": "runtimes",
+      "title": "Runtimes",
+      "fold": "auto",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "version",
+          "kind": "version",
+          "keep": 50
+        },
+        {
+          "key": "method",
+          "kind": "list",
+          "keep": 30
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "bun",
+            "mark": "attention",
+            "label": "bun",
+            "cells": [
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "mise"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "installed, mise not installed"
+            },
+            "reason": "missing",
+            "hint": {
+              "command": "station tools install mise"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "go",
+            "mark": "attention",
+            "label": "go",
+            "cells": [
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "mise"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "installed, mise not installed"
+            },
+            "reason": "missing",
+            "hint": {
+              "command": "station tools install mise"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "java",
+            "mark": "attention",
+            "label": "java",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "17.0.20"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "mise"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "installed, mise not installed"
+            },
+            "reason": "missing",
+            "hint": {
+              "command": "station tools install mise"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "python",
+            "mark": "attention",
+            "label": "python",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "3.14.6"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "mise"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "installed, mise not installed"
+            },
+            "reason": "missing",
+            "hint": {
+              "command": "station tools install mise"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "attention",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "id": "ai-apps",
+      "title": "AI Apps",
+      "fold": "auto",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "version",
+          "kind": "version",
+          "keep": 50
+        },
+        {
+          "key": "method",
+          "kind": "list",
+          "keep": 30
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "chatgpt",
+            "mark": "attention",
+            "label": "chatgpt",
+            "cells": [
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "cask"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "on PATH, not managed by cask"
+            },
+            "reason": "unmanaged"
+          }
+        },
+        {
+          "row": {
+            "id": "claude-desktop",
+            "mark": "ok",
+            "label": "claude-desktop",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "1.22209.3,babe11577dfefe3e209c06bd674628d862f0dbae"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "cask"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "typewhisper",
+            "mark": "absent",
+            "label": "typewhisper",
+            "cells": [
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "cask"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            },
+            "hint": {
+              "command": "station tools install typewhisper",
+              "key": "i"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        },
+        {
+          "mark": "attention",
+          "n": 1
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "agent-skills",
+      "title": "Agent skills",
+      "fold": "auto",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "version",
+          "kind": "version",
+          "keep": 50
+        },
+        {
+          "key": "method",
+          "kind": "list",
+          "keep": 30
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "frontend-design",
+            "mark": "absent",
+            "label": "frontend-design",
+            "cells": [
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "skill"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "skills not installed"
+            },
+            "reason": "missing",
+            "hint": {
+              "command": "station tools install skills"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "modern-web-guidance",
+            "mark": "ok",
+            "label": "modern-web-guidance",
+            "cells": [
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "skill"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "currency unknown"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "better-ui",
+            "mark": "attention",
+            "label": "better-ui",
+            "cells": [
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "skill"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "outdated"
+            },
+            "reason": "outdated"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        },
+        {
+          "mark": "attention",
+          "n": 1
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station tools install <tool...>"
+    },
+    {
+      "command": "station tools upgrade"
+    }
+  ],
+  "actions": [
+    {
+      "key": "i",
+      "label": "install",
+      "on": "row",
+      "confirm": {
+        "yes": "install"
+      },
+      "priority": 1,
+      "mutates": true
+    },
+    {
+      "key": "u",
+      "label": "uninstall",
+      "on": "row",
+      "confirm": {
+        "yes": "uninstall"
+      },
+      "priority": 2,
+      "mutates": true
+    },
+    {
+      "key": "U",
+      "label": "upgrade",
+      "on": "row",
+      "priority": 3,
+      "mutates": true
+    }
+  ]
+}

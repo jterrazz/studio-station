@@ -23,19 +23,19 @@ The binary reads nothing from the clone: the dotfiles and the VM recipes are emb
 
 ## The make targets
 
-| Target             | Does                                                                                                     |
-| ------------------ | -------------------------------------------------------------------------------------------------------- |
-| `make install`     | Fetch the Go modules and install the npm half (`npm ci`)                                                 |
-| `make build`       | Build `.artifacts/go/station`, its version stamped from `git describe`                                   |
-| `make build-linux` | Build `.artifacts/go/station-linux-arm64`, the binary a VM image carries                                 |
-| `make lint`        | Both halves: `gofmt -l`, `go tool golangci-lint` and `go tool deadcode` over Go, then `typescript check` |
-| `make fix`         | Every fixer: `gofmt -w ./src ./specs`, then `typescript fix`                                             |
-| `make test`        | `go test ./src/... ./specs/...`, then `typescript test`: the `specs/cli` suite against a fresh build     |
-| `make check`       | `lint`, `test`, then `build-linux`: the gate a change passes                                             |
-| `make generate`    | Regenerate the catalogue's projections: the toolbelt skill's rosters and `docs/reference/footprint.md`   |
-| `make provision`   | Build, put `station` in `~/.local/bin`, then run `station setup`                                         |
-| `make deprovision` | Remove the provisioned binary                                                                            |
-| `make clean`       | Remove `.artifacts/`                                                                                     |
+| Target             | Does                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `make install`     | Fetch the Go modules and install the npm half (`npm ci`)                                                                   |
+| `make build`       | Build `.artifacts/go/station`, its version stamped from `git describe`                                                     |
+| `make build-linux` | Build `.artifacts/go/station-linux-arm64`, the binary a VM image carries                                                   |
+| `make lint`        | Both halves: `gofmt -l`, `go tool golangci-lint` and `go tool deadcode` over Go, then `typescript check`                   |
+| `make fix`         | Every fixer: `gofmt -w ./src ./specs`, then `typescript fix`                                                               |
+| `make test`        | `go test ./src/... ./specs/...`, then `typescript test`: the `specs/cli` suite against a fresh build                       |
+| `make check`       | `lint`, `test`, then `build-linux`: the gate a change passes                                                               |
+| `make generate`    | Regenerate the catalogue's projections (the toolbelt skill's rosters, `docs/reference/footprint.md`) and the page fixtures |
+| `make provision`   | Build, put `station` in `~/.local/bin`, then run `station setup`                                                           |
+| `make deprovision` | Remove the provisioned binary                                                                                              |
+| `make clean`       | Remove `.artifacts/`                                                                                                       |
 
 `install`, `build`, `lint`, `fix`, `test` and `check` are the gestures every repository of the estate answers, so a session that never opened this one installs, proves and repairs it the same way; `make install` touches nothing outside the checkout, and putting `station` on the machine is `make provision`'s alone. `make check` is the whole gate, and it fails on the first finding of either half. The Go half runs `golangci-lint` and `deadcode` with `go tool`, at the versions the `tool` directive of `go.mod` declares, so the Go that builds the binary builds its linters and a green run is never a fact about the day it ran. Which linters judge the Go sources, and the four exclusions that carry a reason, are `.golangci.yml`. The TypeScript half is `typescript check` from `@jterrazz/typescript`, whose passes are the toolchain's own [Quality checks](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md).
 

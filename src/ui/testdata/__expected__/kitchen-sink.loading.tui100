@@ -1,0 +1,61 @@
+ - To do                                                                                        1 ◌
+   ◌ brew
+ - Summary                                                                                      1 ◌
+   ◌ Marks
+ - Values  40000-40999                                                                         15 ◌
+               value   number
+   ◌ text
+   ◌ size      275 B  22.6 KB
+   ◌ ratio
+   ◌ percent
+   ◌ version
+   ◌ age
+   ◌ old
+   ◌ url
+   ◌ identity
+   ◌ path
+   ◌ command
+   ◌ list
+   ◌ switch
+   ◌ sip
+   ◌ unknown
+ - Marks                                                                                       19 ◌
+   ◌ outdated
+   ◌ stray
+   ◌ unreachable
+   ◌ mismatch
+   ◌ unmanaged
+   ◌ missing
+   ◌ partial
+   ◌ differs
+   ◌ unset
+   ◌ stopped
+   ◌ late
+   ◌ degraded
+   ◌ orphan
+   ◌ waiting
+   ◌ failing
+   ◌ refused
+   ◌ down
+   ◌ stale
+   ◌ absent
+ - Fleet                                                                                        4 ◌
+   ◌ jterrazz-mac-mini
+   ├─ ◌ linux-1
+   │  ├─   api          8081 → 40002  https://jterrazz-mac-mini.ts.net:40002
+   │  └─ ◌ web
+   └─ ◌ linux-2
+ - Storage                                                                                      2 ◌
+   ◌ station
+   ◌ tart
+ - Prose
+   machine  jterrazz-macbook-pro
+   uptime   22d 14h
+   Serve is off on the tailnet, so no service is reachable from another machine until it is turned
+   on in the admin console.
+   Error: defaults is not installed
+   Hint: run station setup
+   no lent secrets  → station secrets lend <name>
+ - Peers
+   ◌ iphone
+ ↑↓ move  n create  enter detail  / filter  space fold  r reload  q quit  ? keys

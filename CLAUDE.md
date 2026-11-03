@@ -38,7 +38,7 @@ The corpus is `docs/` + `README.md`, mapped by `docs/README.md`. Do not duplicat
 | `@jterrazz` stack conventions                | `docs/concepts/stack.md`             |
 | Repo doctrine (corpus/injection/compiler)    | `docs/concepts/repo-structure.md`    |
 
-The repo-structure doctrine is authored **here** and ships to agents as the `studio-repo-structure` skill. This repo is an application: it adopts the corpus + injection layers and generates no API reference. Its one compiler is `make generate` (`src/cmd/generate/`), which projects the catalogue into the `studio-toolbelt` skill and `docs/reference/footprint.md`.
+The repo-structure doctrine is authored **here** and ships to agents as the `studio-repo-structure` skill. This repo is an application: it adopts the corpus + injection layers and generates no API reference. Its one compiler is `make generate` (`src/cmd/generate/`), which projects the catalogue into the `studio-toolbelt` skill and `docs/reference/footprint.md`, and writes the page fixtures of `src/ui/testdata/pages/` from the real page functions.
 
 ## Setup & commands
 

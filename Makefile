@@ -74,7 +74,7 @@ deprovision: ## Remove the binary from ~/.local/bin; the user data stays
 
 generate: ## Regenerate the catalogue's projections
 	@go run ./src/cmd/generate
-	@printf "$(GREEN)●$(RESET) Regenerated skills/studio-toolbelt/SKILL.md and docs/reference/footprint.md\n"
+	@printf "$(GREEN)●$(RESET) Regenerated skills/studio-toolbelt/SKILL.md, docs/reference/footprint.md and the page fixtures\n"
 
 clean: ## Remove build artifacts
 	@rm -rf .artifacts
