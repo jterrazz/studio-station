@@ -25,7 +25,7 @@ type recordFile struct {
 	CPUs        int               `json:"cpus"`
 	MemoryBytes int64             `json:"memory_bytes"`
 	DiskBytes   int64             `json:"disk_bytes"`
-	Lent        []string          `json:"lent,omitempty"`
+	Lent        json.RawMessage   `json:"lent,omitempty"`
 	CreatedAt   time.Time         `json:"created_at"`
 }
 
@@ -33,8 +33,28 @@ func (r recordFile) record() VMRecord {
 	return VMRecord{
 		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
 		Resources: system.Resources{CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes},
-		Lent:      r.Lent, CreatedAt: r.CreatedAt,
+		Lent:      lentNames(r.Lent), CreatedAt: r.CreatedAt,
 	}
+}
+
+// invariant: the lend entries are the secrets' to write: a record holds them
+// as names (before lends expired) or as {name, at, until}, and machines only
+// reads their names.
+func lentNames(raw json.RawMessage) []string {
+	var names []string
+	if len(raw) == 0 || json.Unmarshal(raw, &names) == nil {
+		return names
+	}
+	var lends []struct {
+		Name string `json:"name"`
+	}
+	if json.Unmarshal(raw, &lends) != nil {
+		return nil
+	}
+	for _, l := range lends {
+		names = append(names, l.Name)
+	}
+	return names
 }
 
 func (s *Service) records() ([]VMRecord, error) {

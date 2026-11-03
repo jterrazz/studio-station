@@ -407,10 +407,16 @@ func (s *Service) writeRecord(r VMRecord) error {
 	if err := s.h.FS.MkdirAll(s.recordsDir(), 0o700); err != nil {
 		return err
 	}
+	// invariant: a save keeps the lend entries on disk as they are: the
+	// secrets write them, and a record held in memory may predate a lend.
+	var held recordFile
+	if current, readErr := s.h.FS.ReadFile(s.recordPath(r.Name)); readErr == nil {
+		_ = json.Unmarshal(current, &held)
+	}
 	data, err := json.MarshalIndent(recordFile{
 		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
 		CPUs: r.Resources.CPUs, MemoryBytes: r.Resources.MemoryBytes, DiskBytes: r.Resources.DiskBytes,
-		Lent: r.Lent, CreatedAt: r.CreatedAt,
+		Lent: held.Lent, CreatedAt: r.CreatedAt,
 	}, "", "  ")
 	if err != nil {
 		return err

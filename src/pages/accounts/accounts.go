@@ -196,6 +196,7 @@ func daemonRow(state string) page.Row {
 }
 
 func Section(r accounts.Report) page.Section {
+	r = r.Resolved()
 	s := page.Section{ID: "accounts", Title: "Accounts", Columns: columns()}
 	vms := 0
 	for _, m := range r.Machines {
@@ -239,6 +240,7 @@ func Actions() []page.Action {
 }
 
 func Records(r accounts.Report) page.Page {
+	r = r.Resolved()
 	s := page.Section{ID: "records", Title: "Accounts", Role: page.Banner, Columns: recordColumns()}
 	for _, m := range r.Machines {
 		if m.Kind == accounts.KindVM && !m.Here && stopped(r) {
@@ -306,6 +308,7 @@ type AccountJSON struct {
 }
 
 func Contract(r accounts.Report) JSON {
+	r = r.Resolved()
 	out := JSON{Schema: "station.accounts/v1", Machines: []MachineJSON{}}
 	if stopped(r) {
 		out.Daemon = r.Daemon

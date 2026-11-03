@@ -6,6 +6,7 @@ import (
 	"path"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -196,12 +197,12 @@ func (s *Service) tailnet(ctx context.Context) Account {
 	switch {
 	case t.State == catalog.StateAbsent:
 		return absent(catalog.ProviderTailscale, ReasonMissing, "not installed")
+	case t.State == catalog.StateBroken:
+		return Account{Provider: catalog.ProviderTailscale, State: catalog.StateBroken, Reason: ReasonFailing, Origin: OriginOwn, Identity: []string{Unknown}, Detail: "tailscale status did not answer"}
+	case t.Problem != "Running":
+		return absent(catalog.ProviderTailscale, ReasonUnset, "not logged in")
 	case t.Login == "":
-		detail := t.Problem
-		if detail == "" {
-			detail = "not logged in"
-		}
-		return Account{Provider: catalog.ProviderTailscale, State: catalog.StateBroken, Reason: ReasonFailing, Origin: OriginOwn, Identity: []string{Unknown}, Detail: detail}
+		t.Login = Unknown
 	}
 	acc := ok(catalog.ProviderTailscale)
 	acc.Identity, acc.Detail = []string{t.Login}, t.Variant
@@ -217,23 +218,27 @@ func (s *Service) entry() Account {
 		keys = s.o.Keys()
 	}
 	acc := ok(catalog.ProviderEntry)
-	var hosts []string
+	n := 0
 	for _, k := range keys {
-		fp, comment, found := Fingerprint(k)
-		if !found {
+		fields := strings.Fields(k)
+		if len(fields) < 2 {
 			continue
 		}
-		acc.Scopes = append(acc.Scopes, comment)
-		hosts = append(hosts, fp)
+		n++
+		if comment := strings.Join(fields[2:], " "); comment != "" && !slices.Contains(acc.Scopes, comment) {
+			acc.Scopes = append(acc.Scopes, comment)
+		}
+		if fp, _, found := Fingerprint(k); found && acc.Detail == "" {
+			acc.Detail = fp
+		}
 	}
-	if len(hosts) == 0 {
+	if n == 0 {
 		return absent(catalog.ProviderEntry, ReasonUnset, "no host key")
 	}
-	n := "1 host key"
-	if len(hosts) > 1 {
-		n = strconv.Itoa(len(hosts)) + " host keys"
+	acc.Identity = []string{strconv.Itoa(n) + " host keys"}
+	if n == 1 {
+		acc.Identity = []string{"1 host key"}
 	}
-	acc.Identity, acc.Detail = []string{n}, hosts[0]
 	return acc
 }
 
@@ -361,7 +366,7 @@ func lentRows(v VM, own []Account, now time.Time) []Account {
 		case lend != nil && acc.State == catalog.StateOK:
 			acc.Origin = OriginBoth
 		case lend != nil:
-			acc.State, acc.Reason, acc.Origin, acc.Detail = catalog.StateOK, "", OriginLent, ""
+			acc.State, acc.Reason, acc.Origin, acc.Detail, acc.Identity = catalog.StateOK, "", OriginLent, "", []string{Unknown}
 		}
 		if lend != nil {
 			l := *lend
@@ -454,3 +459,26 @@ func withHint(a Account, vm string) Account {
 }
 
 func RowID(machine, provider string) string { return machine + "/" + provider }
+
+// value: a lent copy is the host's right, so its identity is the host's for
+// that provider once the host's read has answered.
+func (r Report) Resolved() Report {
+	if len(r.Machines) == 0 || r.Machines[0].Kind != KindHost {
+		return r
+	}
+	host := map[string][]string{}
+	for _, a := range r.Machines[0].Accounts {
+		if a.State == catalog.StateOK {
+			host[a.Provider] = a.Identity
+		}
+	}
+	out := clone(r)
+	for i := range out.Machines {
+		for j, a := range out.Machines[i].Accounts {
+			if a.Lent != nil && len(a.Identity) == 1 && a.Identity[0] == Unknown && host[a.Provider] != nil {
+				out.Machines[i].Accounts[j].Identity = host[a.Provider]
+			}
+		}
+	}
+	return out
+}
