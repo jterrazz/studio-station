@@ -110,3 +110,39 @@ func TestACancelledWalkStops(t *testing.T) {
 		}
 	}
 }
+
+// value: a context cancelled once its first check has passed, so the walk is
+// cancelled while one directory's first batch is being read.
+type cancelledAfterFirst struct {
+	context.Context
+	checks int
+}
+
+func (c *cancelledAfterFirst) Err() error {
+	c.checks++
+	if c.checks > 1 {
+		return context.Canceled
+	}
+	return nil
+}
+
+func TestACancelledWalkStopsInsideOneDirectory(t *testing.T) {
+	dir := t.TempDir()
+	const subs = 12000
+	for i := range subs {
+		if err := os.Mkdir(filepath.Join(dir, "d"+strconv.Itoa(i)), 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_, _, dev := lstat(dir)
+	found := 0
+	readDir(&cancelledAfterFirst{Context: context.Background()}, dir, dev, make([]byte, 256<<10), func(string) { found++ })
+	if found == 0 || found >= subs {
+		t.Fatalf("a walk cancelled after its first batch listed %d of %d directories", found, subs)
+	}
+	all := 0
+	readDir(context.Background(), dir, dev, make([]byte, 256<<10), func(string) { all++ })
+	if all != subs {
+		t.Fatalf("an uncancelled read listed %d of %d directories", all, subs)
+	}
+}

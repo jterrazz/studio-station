@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"encoding/binary"
 	"path/filepath"
 	"unsafe"
@@ -47,7 +48,7 @@ func lstat(path string) (k kind, bytes int64, dev uint64) {
 // attribute set it returned (5 words), the name's reference, the object type,
 // then only the attributes that apply to that object: a directory's mount
 // status, a file's allocated size and data length.
-func readDir(dir string, dev uint64, buf []byte, sub func(string)) int64 {
+func readDir(ctx context.Context, dir string, dev uint64, buf []byte, sub func(string)) int64 {
 	fd, err := unix.Open(dir, unix.O_RDONLY|unix.O_DIRECTORY|unix.O_NOFOLLOW|unix.O_CLOEXEC, 0)
 	if err != nil {
 		return 0
@@ -67,7 +68,9 @@ func readDir(dir string, dev uint64, buf []byte, sub func(string)) int64 {
 		file:        unix.ATTR_FILE_ALLOCSIZE | unix.ATTR_FILE_DATALENGTH,
 	}
 	var total int64
-	for {
+	// invariant: a cancelled walk stops between two batches of one directory,
+	// so a directory of 150 000 entries never holds a worker past cancel.
+	for ctx.Err() == nil {
 		n, _, errno := unix.Syscall6(unix.SYS_GETATTRLISTBULK, uintptr(fd), uintptr(unsafe.Pointer(&attrs)), uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf)), 0, 0) //nolint:gosec,staticcheck // outside: x/sys wraps no getattrlistbulk; the raw call answers on every macOS station supports, and the list and buffer outlive it.
 		if errno != 0 || n == 0 {
 			return total
@@ -79,6 +82,7 @@ func readDir(dir string, dev uint64, buf []byte, sub func(string)) int64 {
 			total += entry(dir, rec, sub)
 		}
 	}
+	return total
 }
 
 func entry(dir string, rec []byte, sub func(string)) int64 {

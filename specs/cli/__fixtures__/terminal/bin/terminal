@@ -5,6 +5,9 @@
 #   see TEXT    wait until the screen shows TEXT
 #   within SECONDS see TEXT
 #               the same, failing when TEXT is not shown within SECONDS
+#   within SECONDS exit CODE
+#               wait for COMMAND to exit, failing when it has not within SECONDS or
+#               exited with another CODE, so a quit that hangs fails fast
 #   gone TEXT   wait until the screen no longer shows TEXT
 #   send KEYS   type KEYS; \r, \x1b and \xNN escapes are keys
 #   file PATH   wait until PATH exists and is not empty, so a step can follow a stub's start
@@ -340,6 +343,11 @@ def main():
         if verb == "within":
             seconds, _, rest = arg.partition(" ")
             then, _, text = rest.partition(" ")
+            if then == "exit":
+                wait(lambda: status is not None, "the command had not exited within " + seconds + " s", float(seconds))
+                if status != int(text):
+                    fail("the command exited " + str(status) + ", not " + text)
+                continue
             if then != "see":
                 sys.stderr.write("terminal: unknown step " + repr(line) + "\n")
                 sys.exit(97)

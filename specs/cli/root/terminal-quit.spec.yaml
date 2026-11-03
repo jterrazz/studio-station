@@ -1,0 +1,18 @@
+description: 'q while a probe ignores TERM exits within 3 s and leaves that probe killed'
+fixture:
+    - ../__fixtures__/terminal/
+    - ./__fixtures__/homebrew/
+    - ../__fixtures__/stubborn-gpg/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 120x80 "$STATION"'
+      stdin: |
+          within 1 see ◌ gpg key
+          file .gpg-pid
+          send q
+          within 3 exit 0
+      exit: 0
+    - command: '--version >/dev/null; /bin/kill -0 "$(/bin/cat .gpg-pid)" 2>/dev/null || echo gone'
+      exit: 0
+      stdout: |
+          gone

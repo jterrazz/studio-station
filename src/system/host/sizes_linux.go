@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 
@@ -21,14 +22,25 @@ func lstat(path string) (k kind, bytes int64, dev uint64) {
 	return kindOther, 0, 0
 }
 
-func readDir(dir string, dev uint64, _ []byte, sub func(string)) int64 {
+func readDir(ctx context.Context, dir string, dev uint64, _ []byte, sub func(string)) int64 {
 	f, err := os.Open(dir)
 	if err != nil {
 		return 0
 	}
 	defer func() { _ = f.Close() }()
-	names, _ := f.Readdirnames(-1)
 	fd := int(f.Fd())
+	var total int64
+	for ctx.Err() == nil {
+		names, _ := f.Readdirnames(1024)
+		if len(names) == 0 {
+			return total
+		}
+		total += entries(fd, dir, dev, names, sub)
+	}
+	return total
+}
+
+func entries(fd int, dir string, dev uint64, names []string, sub func(string)) int64 {
 	var total int64
 	for _, name := range names {
 		var st unix.Stat_t

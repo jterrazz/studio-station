@@ -52,7 +52,7 @@ func (disk) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
 					return
 				}
 				var found []string
-				bytes := readDir(dir, w.devs[i], buf, func(sub string) { found = append(found, sub) })
+				bytes := readDir(w.ctx, dir, w.devs[i], buf, func(sub string) { found = append(found, sub) })
 				if total, done := w.finish(i, bytes, found); done {
 					answer(i, total)
 				}
