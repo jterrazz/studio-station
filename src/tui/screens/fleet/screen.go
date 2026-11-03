@@ -2,6 +2,7 @@ package fleetscreen
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -30,6 +31,8 @@ type Machines interface {
 	Delete(ctx context.Context, name string) (machines.DeleteReport, error)
 	ForgetHost(name string) error
 	Restart(ctx context.Context, name string, progress func(machines.RestartEvent)) (machines.RestartReport, error)
+	Probe(ctx context.Context, name string) (machines.ProbeReport, error)
+	Unlock(ctx context.Context, name string) error
 }
 
 type Images interface {
@@ -199,6 +202,18 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			}
 			return tab.Outcome("started", name, catalog.StateOK, ""), m.d.Machines.Start(m.ctx, name)
 		}))
+	case pagefleet.KeyProbe:
+		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
+			report, err := m.d.Machines.Probe(m.ctx, name)
+			if err != nil {
+				return tab.Status{}, err
+			}
+			return probed(report), nil
+		}))
+	case pagefleet.KeyUnlock:
+		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
+			return tab.Outcome("unlocked", name, catalog.StateOK, ""), m.d.Machines.Unlock(m.ctx, name)
+		}))
 	case pagemachines.KeyEnter:
 		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
 			return tab.Outcome("back from", name, catalog.StateOK, ""), m.d.Remote(m.ctx, name, nil)
@@ -208,6 +223,18 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 }
 
 func (m Model) exec(action func() (tab.Status, error)) tea.Cmd { return tab.Exec(ID, action) }
+
+// value: the status bar names the worst of the probe's checks, or that all answered.
+func probed(r machines.ProbeReport) tab.Status {
+	for _, want := range []catalog.State{catalog.StateBroken, catalog.StateDegraded, catalog.StateAbsent} {
+		for _, c := range r.Checks {
+			if c.State == want {
+				return tab.Outcome("probed", r.Name, catalog.StateDegraded, c.Name+" "+c.Value)
+			}
+		}
+	}
+	return tab.Outcome("probed", r.Name, catalog.StateOK, strconv.Itoa(len(r.Checks))+" checks answered")
+}
 
 func (m Model) isHost(name string) bool {
 	if f := m.Last.Machines; f != nil {

@@ -4,9 +4,11 @@ import (
 	"context"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
+	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/tui"
 )
 
@@ -30,6 +32,13 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 				}
 				return err
 			},
+			Station: func(ctx context.Context, words []string) error {
+				r, err := m.host.Run.Attach(ctx, system.Cmd{Name: m.host.Env.Executable(), Args: words}, system.ToStdout)
+				if err == nil && r.ExitCode != 0 {
+					return &stationExit{words: words, code: r.ExitCode}
+				}
+				return err
+			},
 			Prefer: m.pool.Prefer,
 			Describe: func(err error) (message, hint string) {
 				f := kit.Translate(err, "")
@@ -37,6 +46,15 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 			},
 		})
 	}
+}
+
+type stationExit struct {
+	words []string
+	code  int
+}
+
+func (e *stationExit) Error() string {
+	return "station " + strings.Join(e.words, " ") + " exited " + strconv.Itoa(e.code)
 }
 
 type remoteExit struct {

@@ -229,6 +229,9 @@ func (b Browser) Update(msg tea.Msg) (Browser, tea.Cmd, *Event) {
 	case "?":
 		b.focus = Sheet
 	case "enter":
+		if a, row, found := b.action(key); found && row != "" && !b.detail {
+			return b, nil, &Event{Action: a, Row: row}
+		}
 		b.detail = !b.detail
 		if b.detail {
 			b.focus = Detail
@@ -438,12 +441,12 @@ func (b Browser) Body(width, height int) string {
 	}
 	var list []string
 	if b.detail && isRow && !split {
-		list = organism.Detail(st, section, row, b.Bindings(), width)
+		list = organism.Detail(st, section, row, b.rowBindings(row), width)
 	} else {
 		list = b.list(listWidth, room)
 	}
 	if split {
-		pane := organism.Detail(st, section, row, b.Bindings(), token.PaneWidth)
+		pane := organism.Detail(st, section, row, b.rowBindings(row), token.PaneWidth)
 		for i := range list {
 			l := atom.Pad(list[i], listWidth)
 			if i < len(pane) {
@@ -509,6 +512,24 @@ func (b Browser) list(width, room int) []string {
 	return out
 }
 
+// invariant: a row's detail lists only the keys that act on that row.
+func (b Browser) rowBindings(r page.Row) []organism.Binding {
+	var out []organism.Binding
+	for _, x := range b.Bindings() {
+		if x.Group != organism.GroupTab {
+			out = append(out, x)
+			continue
+		}
+		for _, a := range b.Page.Actions {
+			if a.Key == x.Key && (a.On == page.OnPage || len(a.Rows) == 0 || slices.Contains(a.Rows, r.ID)) {
+				out = append(out, x)
+				break
+			}
+		}
+	}
+	return out
+}
+
 func (b Browser) Bindings() []organism.Binding {
 	var out []organism.Binding
 	actions := slices.Clone(b.Page.Actions)
@@ -547,8 +568,14 @@ func (b Browser) Footer(width int, busy bool) string {
 	}
 	keys = append(keys, organism.Binding{Key: "up/down", Label: "move"})
 	_, row, isRow := b.Current()
+	enter := false
 	for _, x := range b.Bindings() {
 		switch {
+		case x.Group == organism.GroupTab && x.Key == "enter":
+			if _, _, ok := b.action(x.Key); ok && !enter {
+				keys, enter = append(keys, x), true
+			}
+		case x.Key == "enter" && enter:
 		case x.Group == organism.GroupTab:
 			if a, _, ok := b.action(x.Key); ok && (a.On == page.OnPage || (isRow && (len(a.Rows) == 0 || slices.Contains(a.Rows, row.ID)))) {
 				keys = append(keys, x)

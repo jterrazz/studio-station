@@ -37,6 +37,7 @@ type Deps struct {
 	Services *services.Service
 	Tailnet  *tailnet.Service
 	Remote   func(ctx context.Context, machine string, words []string) error
+	Station  func(ctx context.Context, words []string) error
 	Describe func(error) (message, hint string)
 	Prefer   func(prefix string)
 }
@@ -61,7 +62,7 @@ func Tabs() []Tab {
 func Run(ctx context.Context, d Deps) error {
 	describe := tab.Describe(d.Describe)
 	app := newApp(d.Here, Tabs(), []tab.Screen{
-		homescreen.New(ctx, d.Status, d.Here, describe),
+		homescreen.New(ctx, d.Status, d.Station, d.Here, describe),
 		toolsscreen.New(ctx, d.Tools, d.Here, describe),
 		configscreen.New(ctx, d.Config, d.Here, describe),
 		storagescreen.New(ctx, d.Storage, d.Here, describe),

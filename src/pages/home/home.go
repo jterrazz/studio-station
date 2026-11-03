@@ -17,6 +17,20 @@ import (
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 )
 
+const KeyFix = "enter"
+
+// invariant: enter runs an action's fix only when station owns it; an
+// External command (launchctl, sudo) is shown and never run (H3).
+func fixes(actions page.Section) []string {
+	var out []string
+	for _, it := range actions.Items {
+		if it.Row != nil && it.Row.Hint != nil && !it.Row.Hint.External {
+			out = append(out, it.Row.ID)
+		}
+	}
+	return out
+}
+
 func Columns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}
 }
@@ -55,7 +69,11 @@ func Snapshot(s status.Snapshot, here page.Context, all bool) page.Page {
 	if all {
 		p.Hints = p.Hints[1:]
 	}
-	p.Sections = append([]page.Section{todo(sealed.Sections, s.Background), summary(s, sealed.Sections)}, sealed.Sections...)
+	actions := todo(sealed.Sections, s.Background)
+	p.Sections = append([]page.Section{actions, summary(s, sealed.Sections)}, sealed.Sections...)
+	if rows := fixes(actions); len(rows) > 0 {
+		p.Actions = []page.Action{{Key: KeyFix, Label: "fix", On: page.OnRow, Rows: rows, Mutates: true}}
+	}
 	return page.Seal(p)
 }
 

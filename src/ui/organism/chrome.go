@@ -226,6 +226,20 @@ func Detail(st token.Styles, s page.Section, r page.Row, bindings []Binding, wid
 	indent := atom.Spaces(token.Margin + token.Indent)
 	room := max(width-1-len(indent)-width2-token.Gap, 8)
 	for _, f := range facts {
+		if f.key == "fix" && atom.Width(f.value) > room && strings.Contains(f.value, joint) {
+			parts := strings.Split(f.value, joint)
+			for i, part := range parts {
+				key := f.key
+				if i > 0 {
+					key = ""
+				}
+				if i < len(parts)-1 {
+					part += strings.TrimRight(joint, " ")
+				}
+				lines = append(lines, indent+molecule.Fact(st, key, width2, atom.End(part, room)))
+			}
+			continue
+		}
 		lines = append(lines, indent+molecule.Fact(st, f.key, width2, atom.End(f.value, room)))
 	}
 	if len(keys) > 0 {

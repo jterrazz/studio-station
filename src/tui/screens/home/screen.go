@@ -2,6 +2,7 @@ package homescreen
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -26,6 +27,8 @@ type Status interface {
 
 type samples struct{ list []status.Sample }
 
+type Fix func(ctx context.Context, words []string) error
+
 type Model struct {
 	tab.View[status.Snapshot]
 	ctx     context.Context
@@ -34,6 +37,7 @@ type Model struct {
 	live    *samples
 	visible bool
 	ticking bool
+	fix     Fix
 }
 
 type sampled struct {
@@ -43,7 +47,7 @@ type sampled struct {
 
 type tick struct{}
 
-func New(ctx context.Context, s Status, here page.Context, describe tab.Describe) Model {
+func New(ctx context.Context, s Status, fix Fix, here page.Context, describe tab.Describe) Model {
 	live := &samples{}
 	source := func(ctx context.Context, fresh bool) (<-chan status.Snapshot, error) {
 		if fresh {
@@ -58,7 +62,7 @@ func New(ctx context.Context, s Status, here page.Context, describe tab.Describe
 		}
 		return pagehome.Live(pagehome.Snapshot(snap, here, false), list, snap.System.MemoryTotal)
 	}
-	return Model{View: tab.NewView(ID, "Home", "actions", here, source, build, describe), ctx: ctx, status: s, here: here, live: live, visible: true, ticking: true}
+	return Model{View: tab.NewView(ID, "Home", "actions", here, source, build, describe), ctx: ctx, status: s, here: here, live: live, visible: true, ticking: true, fix: fix}
 }
 
 func (m Model) Init() tea.Cmd { return tea.Batch(m.View.Init(), next()) }
@@ -99,7 +103,39 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		}
 		return m, nil
 	}
-	view, cmd, _ := m.View.Update(msg)
+	view, cmd, ev := m.View.Update(msg)
 	m.View = view
-	return m, cmd
+	if ev == nil || ev.Action.Key != pagehome.KeyFix || m.fix == nil {
+		return m, cmd
+	}
+	words := fixOf(m.Browser.Page, ev.Row)
+	if len(words) == 0 {
+		return m, cmd
+	}
+	ctx, fix := m.ctx, m.fix
+	run := tab.Exec(ID, func() (tab.Status, error) {
+		if err := fix(ctx, words); err != nil {
+			return tab.Status{}, err
+		}
+		return tab.Status{Mark: page.OK, Text: "ran station " + strings.Join(words, " ")}, nil
+	})
+	var act tea.Cmd
+	m.View, act = m.Act(nil, run)
+	return m, tea.Batch(cmd, act)
+}
+
+// invariant: the words after `station` of the action's hint; an External one
+// has none, so enter only ever runs station itself.
+func fixOf(p page.Page, row string) []string {
+	for _, s := range p.Sections {
+		if s.Role != page.Actions {
+			continue
+		}
+		for _, it := range s.Items {
+			if it.Row != nil && it.Row.ID == row && it.Row.Hint != nil && !it.Row.Hint.External {
+				return strings.Fields(strings.TrimPrefix(it.Row.Hint.Command, "station "))
+			}
+		}
+	}
+	return nil
 }

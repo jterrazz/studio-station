@@ -72,11 +72,24 @@ func Caption(h services.HostView) []page.Value {
 }
 
 func Fleet(f services.Fleet, here page.Context) page.Page {
-	return page.Seal(page.Page{ID: "services", Command: "services", Context: here, Sections: Sections(f), Actions: Actions()})
+	return page.Seal(page.Page{ID: "services", Command: "services", Context: here, Sections: Sections(f), Actions: Actions(f)})
 }
 
-func Actions() []page.Action {
-	return []page.Action{{Key: KeyRelease, Label: "release", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Yes: "release", Danger: true}}}
+func Actions(f services.Fleet) []page.Action {
+	// invariant: release binds only a lease's row, never a host's or the daemon's.
+	var leases []string
+	for _, h := range f.Hosts {
+		if !h.Reachable {
+			continue
+		}
+		for _, s := range h.Services {
+			leases = append(leases, Row(s, h.Name).ID)
+		}
+	}
+	if len(leases) == 0 {
+		return nil
+	}
+	return []page.Action{{Key: KeyRelease, Label: "release", On: page.OnRow, Rows: leases, Priority: 1, Mutates: true, Confirm: &page.Confirm{Yes: "release", Danger: true}}}
 }
 
 func ReleaseConfirm(vm string, port int) page.Confirm {

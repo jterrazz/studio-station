@@ -1,0 +1,41 @@
+description: 'on Home enter runs a station fix and only shows an External one, the footer saying which'
+fixture:
+    - ../__fixtures__/terminal/
+    - ./__fixtures__/tools-mixed/
+    - ./__fixtures__/mac/
+    - ./__fixtures__/registered/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 100x60 "$STATION" | /usr/bin/sed ''s|gui/[0-9]*/|gui/UID/|'' | /usr/bin/grep -E "enter (fix|detail)|fix   |^ +rm |exited"'
+      stdin: |
+          see To do
+          gone ◌
+          send \x1b[B
+          see enter detail
+          send \r
+          see esc back
+          screen
+          send \x1b
+          gone esc back
+          send \x1b[B
+          see enter fix
+          screen
+          send \r
+          see exited
+          see + Config
+          gone ◌
+          see enter fix
+          screen
+          send q
+      exit: 0
+      stdout: |4
+             fix       launchctl bootout gui/UID/ai.jterrazz.y &&
+                       rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
+           esc back  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys
+                                    rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
+                                    rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
+           ↑↓ move  enter fix  / filter  space fold  r reload  q quit  ? keys
+                                    rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
+                                    rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
+           ✗ station tools upgrade --via brew exited 1  → run station --help
+           ↑↓ move  enter fix  / filter  space fold  r reload  q quit  ? keys
