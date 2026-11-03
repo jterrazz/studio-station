@@ -105,7 +105,15 @@ func row(m accounts.Machine, a accounts.Account, now time.Time) page.Row {
 	if a.Lent != nil {
 		last = until(a, now)
 	}
-	r.Cells = []page.Value{id, origin(a), page.Texts(a.Scopes...), last}
+	scope := page.Texts(a.Scopes...)
+	if a.Provider == catalog.ProviderSSH {
+		// value: ssh's scopes are its keys' comments, as many as the agent
+		// holds; the list reads them as the identity's count and keeps them
+		// for the row's detail, so they never take the room GitHub's scopes
+		// and Claude's plan need (§13.9).
+		scope, r.Detail = page.None(), scope
+	}
+	r.Cells = []page.Value{id, origin(a), scope, last}
 	if r.Mark == page.Attention || r.Mark == page.Broken || r.Mark == page.Absent {
 		r.Reason = reason(a.Reason)
 	}

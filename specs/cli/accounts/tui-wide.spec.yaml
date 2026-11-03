@@ -1,0 +1,71 @@
+description: 'at 120 columns Accounts keeps its scope column, and the ssh key comments wait in the row detail'
+fixture:
+    - ./__fixtures__/accounts/
+    - ../__fixtures__/terminal/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 120x24 "$STATION"'
+      stdin: |
+          see Machine
+          send 7
+          see 6 keys
+          screen
+          send /ssh\r
+          send \x1b[B
+          send \x1b[B
+          send \r
+          see github-actions
+          screen
+          send \x1b
+          gone category
+          send q
+      exit: 0
+      stdout: |4
+           station  Home · Tools · Config · Storage │ Fleet · Services · Accounts · Power             jterrazz-macbook-pro · host
+           ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+           - Accounts                                                                                                         9 ●
+             ● jterrazz-macbook-pro  host
+             ├─ ● GitHub             jterrazz                  own  gist · read:org · repo · workflow  gh · keyring · ssh
+             ├─ ● npm                jterrazz                  own
+             ├─ ● Claude             admin@jterrazz.com        own  max                                claude.ai
+             ├─ ● Tailscale          jterrazz@github           own  tailnet jterrazz.github
+             ├─ ● Cloudflare         admin@jterrazz.com        own  studio                             wrangler
+             ├─ ● git                Jean-Baptiste Terrazzoni  own                                     admin@jterrazz.com
+             ├─ ● ssh                6 keys                    own                                                         admin…
+             └─ ● Docker             deploy                    own  registry.jterrazz.com              osxkeychain
+             no VMs: rights lent to a VM appear here
+
+
+
+
+
+
+
+
+
+
+           ↑↓ move  R reload  enter detail  / filter  space fold  q quit  ? keys
+           station  Home · Tools · Config · Storage │ Fleet · Services · Accounts · Power             jterrazz-macbook-pro · host
+           ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+           / ssh
+           - Accounts                                                            9 ● │ ssh                                     ●
+             ├─ ● GitHub  jterrazz  own  gist · read:org · repo · workflow           │   identity  6 keys
+                  gh · keyring · ssh                                                 │   origin    own
+             ├─ ● ssh     6 keys    own                                       admin… │   category  Accounts
+             no VMs: rights lent to a VM appear here                                 │   detail    admin@jterrazz.com ·
+                                                                                     │             station-image · station-e2e ·
+                                                                                     │             deploy · old-rsa ·
+                                                                                     │             github-actions
+                                                                                     │   keys      l lend  r revoke  R reload
+
+
+
+
+
+
+
+
+
+
+
+           esc back  ↑↓ move  l lend  r revoke  R reload  enter detail  / filter  space fold  q quit  ? keys

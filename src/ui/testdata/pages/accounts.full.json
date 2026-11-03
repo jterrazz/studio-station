@@ -292,38 +292,41 @@
                       "text": "own"
                     },
                     {
-                      "kind": "list",
-                      "items": [
-                        {
-                          "kind": "text",
-                          "text": "admin@jterrazz.com"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "station-image"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "station-e2e"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "deploy"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "old-rsa"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "github-actions"
-                        }
-                      ]
+                      "kind": "none"
                     },
                     {
                       "kind": "none"
                     }
-                  ]
+                  ],
+                  "detail": {
+                    "kind": "list",
+                    "items": [
+                      {
+                        "kind": "text",
+                        "text": "admin@jterrazz.com"
+                      },
+                      {
+                        "kind": "text",
+                        "text": "station-image"
+                      },
+                      {
+                        "kind": "text",
+                        "text": "station-e2e"
+                      },
+                      {
+                        "kind": "text",
+                        "text": "deploy"
+                      },
+                      {
+                        "kind": "text",
+                        "text": "old-rsa"
+                      },
+                      {
+                        "kind": "text",
+                        "text": "github-actions"
+                      }
+                    ]
+                  }
                 }
               },
               {
@@ -577,6 +580,9 @@
                             ]
                           }
                         ],
+                        "detail": {
+                          "kind": "none"
+                        },
                         "reason": "unset"
                       }
                     }

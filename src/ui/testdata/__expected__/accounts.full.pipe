@@ -6,7 +6,7 @@
 ●	tailscale	jterrazz@github	own	tailnet jterrazz.github	app-store
 ○	cloudflare				wrangler not on PATH
 ●	git	Jean-Baptiste Terrazzoni	own		admin@jterrazz.com
-●	ssh	6 keys	own	admin@jterrazz.com · station-image · station-e2e · deploy · old-rsa · github-actions
+●	ssh	6 keys	own			admin@jterrazz.com · station-image · station-e2e · deploy · old-rsa · github-actions
 ●	docker	deploy	own	registry.jterrazz.com	osxkeychain
 ●	linux-1	temporary				guest connected
 ●	claude	admin@jterrazz.com	lent	operator:claude:oauth-token	2026-11-03T22:10:00Z
