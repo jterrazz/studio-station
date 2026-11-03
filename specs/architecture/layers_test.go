@@ -729,6 +729,9 @@ func rules() []rule {
 		{"Cgo", ruleCgo, "src/domain/power/mutant_cgo.go", "package power\n\nimport \"C\"\n", "src/domain/power/mutant_cgo.go"},
 		{"PowerSafe", func(w *world) []finding { return append(rulePowerSafe(w), powerRaw(w)...) }, "src/domain/power/mutant_safe.go", "package power\n\nconst mutantSafe = \"pmset -a disablesleep 1\"\n", "src/domain/power/mutant_safe.go"},
 		{"PowerFiles", rulePowerSafe, "src/domain/power/mutant_files.go", "package power\n\nimport \"github.com/jterrazz/studio-station/src/system\"\n\nfunc mutantWrite(h system.Host) error { return h.FS.WriteFile(\"x\", nil, 0o600) }\n", "src/domain/power/mutant_files.go"},
+		{"TreeScreams", ruleTree, "src/utils/mutant.go", "package utils\n", "src/utils"},
+		{"TreeInside", ruleTree, "src/apps/helpers/mutant.go", "package helpers\n", "src/apps/helpers"},
+		{"TreeApplies", ruleTree, "src/awake/mutant_tree.go", "package awake\n", "src/awake"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
 }
