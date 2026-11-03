@@ -642,6 +642,17 @@ func storageValue(w status.Workspace) page.Value {
 	return storage
 }
 
+func powerValue(s status.Snapshot) page.Value {
+	if !s.Power.Held {
+		return page.Off()
+	}
+	words := []string{"awake"}
+	if s.Power.Lid {
+		words = append(words, "lid")
+	}
+	return page.Texts(append(words, pages.Term(s.Power.Until.Sub(s.GeneratedAt))+" left")...)
+}
+
 func fleetValue(s status.Snapshot) page.Value {
 	d := s.Station.Daemon
 	if d.Value == "" || d.State == catalog.StateAbsent {
@@ -690,16 +701,20 @@ func summary(s status.Snapshot, detail []page.Section) page.Section {
 		area("storage", "Storage", page.OK, storageValue(s.Workspace)),
 		area("fleet", "Fleet", pages.MarkOf(s.Station.Daemon.State), fleetValue(s)),
 	)
+	if s.PowerKnown {
+		items = append(items, area("power", "Power", page.OK, powerValue(s)))
+	}
 	if len(s.Gateways) > 0 {
 		items = append(items, area("gateways", "Gateways", worst(find(detail, "gateways")), counts("gateways")))
 	}
 	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Break: right, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: items}
 }
 
-func Live(p page.Page, samples []status.Sample, memoryTotal int64) page.Page {
+func Live(p page.Page, samples []status.Sample, snap status.Snapshot) page.Page {
 	if len(samples) == 0 {
 		return p
 	}
+	memoryTotal := snap.System.MemoryTotal
 	last := samples[len(samples)-1]
 	strip := page.Strip{GPU: page.Percent(int64(last.GPU * 10))}
 	cpu := func(s status.Sample) float64 {
@@ -749,6 +764,9 @@ func Live(p page.Page, samples []status.Sample, memoryTotal int64) page.Page {
 			Columns: []page.Column{{Key: "name", Kind: page.KindListing, Keep: 100}, {Key: "measure", Kind: page.KindText, Keep: 50}, {Key: "value", Kind: page.KindText, Keep: 60}}, Items: items}
 		at := min(2, len(p.Sections))
 		p.Sections = append(p.Sections[:at:at], append([]page.Section{top}, p.Sections[at:]...)...)
+	}
+	if snap.PowerKnown && snap.Power.Held {
+		strip.Power = page.Texts("awake", pages.Term(snap.Power.Until.Sub(last.At)))
 	}
 	p.Strip = &strip
 	return page.Seal(p)

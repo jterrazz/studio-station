@@ -14,6 +14,7 @@ import (
 	powersleep "github.com/jterrazz/studio-station/src/cli/power/sleep"
 	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/power"
+	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
@@ -113,4 +114,23 @@ func (t tuiPower) Pages(ctx context.Context) <-chan page.Page {
 		}
 	}()
 	return out
+}
+
+type statusPower struct{ s *power.Service }
+
+func (p statusPower) Session(ctx context.Context) (status.PowerState, bool) {
+	if p.s.Check() != nil {
+		return status.PowerState{}, false
+	}
+	var last power.Report
+	for r := range p.s.Read(ctx) {
+		last = r
+	}
+	if last.Daemon != power.DaemonRunning {
+		return status.PowerState{}, false
+	}
+	if last.Session == nil {
+		return status.PowerState{}, true
+	}
+	return status.PowerState{Held: true, Lid: last.Session.Lid, Until: last.Session.Until}, true
 }

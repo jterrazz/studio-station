@@ -30,6 +30,13 @@ type SnapshotJSON struct {
 	Background  []jobJSON              `json:"background"`
 	Gateways    []checkJSON            `json:"gateways"`
 	Tailnet     pagetailnet.ObjectJSON `json:"tailnet"`
+	Power       *powerJSON             `json:"power,omitempty"`
+}
+
+type powerJSON struct {
+	Held  bool   `json:"held"`
+	Lid   bool   `json:"lid,omitempty"`
+	Until string `json:"until,omitempty"`
 }
 
 type jobJSON struct {
@@ -225,6 +232,12 @@ func SnapshotContract(s status.Snapshot) SnapshotJSON {
 	}
 	for _, step := range s.Setup.Steps {
 		body.Setup.Steps = append(body.Setup.Steps, stepJSON{Name: step.Name, State: string(step.State), Detail: step.Detail})
+	}
+	if s.PowerKnown {
+		body.Power = &powerJSON{Held: s.Power.Held, Lid: s.Power.Lid}
+		if s.Power.Held {
+			body.Power.Until = s.Power.Until.UTC().Format(time.RFC3339)
+		}
 	}
 	return body
 }

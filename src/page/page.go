@@ -223,13 +223,15 @@ type Option struct {
 }
 
 type Strip struct {
-	CPU     Value    `json:"cpu,omitzero"`
-	Spark   []int    `json:"spark,omitempty"`
-	Memory  Value    `json:"memory,omitzero"`
-	Battery Value    `json:"battery,omitzero"`
-	GPU     Value    `json:"gpu,omitzero"`
-	Net     []Value  `json:"net,omitempty"`
-	Top     *Section `json:"top,omitempty"`
+	CPU     Value   `json:"cpu,omitzero"`
+	Spark   []int   `json:"spark,omitempty"`
+	Memory  Value   `json:"memory,omitzero"`
+	Battery Value   `json:"battery,omitzero"`
+	GPU     Value   `json:"gpu,omitzero"`
+	Net     []Value `json:"net,omitempty"`
+	// value: a held Power session's word and time left, after the battery.
+	Power Value    `json:"power,omitzero"`
+	Top   *Section `json:"top,omitempty"`
 }
 
 type Tally struct {

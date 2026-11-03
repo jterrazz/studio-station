@@ -27,6 +27,7 @@ const (
 	KeyUp    = "↑"
 	KeyDown  = "↓"
 	Charging = "⚡"
+	Power    = "⏻"
 	Unknown  = "?"
 	Corner   = "┌┐└┘"
 )
@@ -35,6 +36,6 @@ func Glyphs() []string {
 	return []string{
 		MarkOK, MarkAttention, MarkAbsent, MarkBroken, MarkPending,
 		Arrow, "·", Ellipsis, Rule, Divider, "├", "└", Spinner, Spark, GaugeOff, QRUpper, QRLower,
-		KeyUp, KeyDown, Charging, Corner,
+		KeyUp, KeyDown, Charging, Power, Corner,
 	}
 }

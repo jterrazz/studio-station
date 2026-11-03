@@ -32,6 +32,18 @@ type Sources struct {
 	Store   settings.Store
 	Storage StorageReader
 	Daemon  DaemonReader
+	Power   PowerReader
+}
+
+type PowerReader interface {
+	// value: the daemon's Power session on this host; ok false where Power
+	// cannot be read (a VM, no power management, the daemon down).
+	Session(ctx context.Context) (s PowerState, ok bool)
+}
+
+type PowerState struct {
+	Held, Lid bool
+	Until     time.Time
 }
 
 type DaemonReader interface {
@@ -85,6 +97,9 @@ type Snapshot struct {
 	Background  []Job
 	Gateways    []Check
 	Tailnet     tailnet.Status
+	Power       PowerState
+	// value: Power was read (a host that has it, its daemon answering).
+	PowerKnown bool
 	// value: a section whose reading has not answered; never past Snapshot.
 	ToolsPending, ConfigPending bool
 	found                       []Check

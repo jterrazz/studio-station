@@ -60,7 +60,7 @@ func New(ctx context.Context, s Status, fix Fix, here page.Context, describe tab
 		if len(list) == 0 && !snap.System.Sample.At.IsZero() {
 			list = []status.Sample{snap.System.Sample}
 		}
-		return pagehome.Live(pagehome.Snapshot(snap, here, false), list, snap.System.MemoryTotal)
+		return pagehome.Live(pagehome.Snapshot(snap, here, false), list, snap)
 	}
 	return Model{View: tab.NewView(ID, "Home", "actions", here, source, build, describe), ctx: ctx, status: s, here: here, live: live, visible: true, ticking: true, fix: fix}
 }
@@ -87,7 +87,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			m.live.list = m.live.list[len(m.live.list)-history:]
 		}
 		snap := m.Last
-		m.Browser = m.Browser.Show(pagehome.Live(pagehome.Snapshot(snap, m.here, false), m.live.list, snap.System.MemoryTotal))
+		m.Browser = m.Browser.Show(pagehome.Live(pagehome.Snapshot(snap, m.here, false), m.live.list, snap))
 		return m, nil
 	case tick:
 		if !m.visible {

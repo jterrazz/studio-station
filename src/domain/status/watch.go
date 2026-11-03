@@ -182,6 +182,16 @@ func (s *Service) machineJobs() []job {
 			},
 			Late: func(sn *Snapshot) { sn.Station.Daemon = Check{Name: "daemon", State: catalog.StateAbsent} },
 		},
+		{Key: subject + "/machine/power", Budget: defaultBudget + margin,
+			Do: func(ctx context.Context) func(*Snapshot) {
+				if s.o.Here != catalog.Host || s.deps.Power == nil {
+					return func(*Snapshot) {}
+				}
+				p, ok := s.deps.Power.Session(ctx)
+				return func(sn *Snapshot) { sn.Power, sn.PowerKnown = p, ok }
+			},
+			Late: func(*Snapshot) {},
+		},
 	}
 }
 

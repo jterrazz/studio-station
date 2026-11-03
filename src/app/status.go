@@ -21,6 +21,7 @@ func statusService(env kit.Env, m machine) *status.Service {
 		Store:   m.store,
 		Storage: m.storage(env),
 		Daemon:  m.hostDaemon(),
+		Power:   statusPower{s: m.power()},
 	}, status.Options{
 		Pool:         m.pool,
 		Root:         m.systemRoot(),
