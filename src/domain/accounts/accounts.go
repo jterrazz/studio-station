@@ -308,7 +308,7 @@ func clone(r Report) Report {
 
 func (s *Service) vmFrame(v VM, now time.Time) Machine {
 	m := Machine{Name: v.Name, Kind: KindVM, Lifetime: v.Lifetime, Running: v.Running, Pending: v.Running}
-	m.Accounts = lentRows(v, nil, now)
+	m.Accounts = lentRows(v, nil, false, now)
 	return m
 }
 
@@ -339,11 +339,13 @@ func (s *Service) merge(r *Report, vms []VM, reads []VMRead, daemon string) {
 		default:
 			m.Guest = GuestAbsent
 		}
-		m.Accounts = lentRows(v, read.Accounts, r.Now)
+		m.Accounts = lentRows(v, read.Accounts, m.Guest == GuestAbsent, r.Now)
 	}
 }
 
-func lentRows(v VM, own []Account, now time.Time) []Account {
+// invariant: a running VM whose guest is absent keeps its rows from its
+// record: its lent rows whole, every other provider of a VM read `?`.
+func lentRows(v VM, own []Account, unreachable bool, now time.Time) []Account {
 	var out []Account
 	for _, p := range catalog.Providers {
 		if !p.VM {
@@ -358,6 +360,9 @@ func lentRows(v VM, own []Account, now time.Time) []Account {
 		}
 		lend := lendFor(v.Lends, p.ID)
 		switch {
+		case acc == nil && lend == nil && unreachable && p.ID != catalog.ProviderDocker:
+			a := Account{Provider: p.ID, State: catalog.StateDegraded, Reason: ReasonUnreachable, Origin: OriginOwn, Identity: []string{Unknown}, Detail: "guest not connected"}
+			acc = &a
 		case acc == nil && lend == nil:
 			continue
 		case acc == nil:
