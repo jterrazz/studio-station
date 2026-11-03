@@ -11,6 +11,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/fail"
 	"github.com/jterrazz/studio-station/src/output"
+	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/present"
 	"github.com/jterrazz/studio-station/src/prompt"
 )
@@ -27,6 +28,7 @@ type Env struct {
 
 type IO struct {
 	JSON          bool
+	PageJSON      bool
 	Yes           bool
 	Interactive   bool
 	Prompt        prompt.Prompter
@@ -43,10 +45,16 @@ func (o IO) Answer(a present.Answer) error { return o.out.Answer(a, o.JSON) }
 func (o IO) CanLive() bool {
 	// invariant: a read goes live only on a terminal, without --json and without
 	// NO_COLOR; everywhere else it prints one complete document.
-	return !o.JSON && o.out.CanLive()
+	return !o.JSON && !o.PageJSON && o.out.CanLive()
 }
 
 func (o IO) Live(answers <-chan present.Answer) error { return o.out.Live(answers) }
+
+func (o IO) Page(p page.Page, contract any) error {
+	return o.out.Page(p, contract, output.Want{JSON: o.JSON, Page: o.PageJSON})
+}
+
+func (o IO) LivePage(pages <-chan page.Page) error { return o.out.LivePage(pages) }
 
 func (o IO) Raw(p []byte) error              { return o.out.Raw(p) }
 func (o IO) Note(text string)                { o.out.Note(text) }
@@ -72,11 +80,13 @@ type Leaf[I any] struct {
 	Run                 func(ctx context.Context, in *I, io IO) error
 	// value: a leaf that draws its reading as it fills needs no spinner.
 	Live bool
+	// value: a leaf whose answer is a page also prints it as station.page/v1.
+	Pages bool
 }
 
 func Command[I any](l Leaf[I], env Env) *cobra.Command {
 	in := new(I)
-	var wantJSON, yes bool
+	var wantJSON, wantPage, yes bool
 	args := l.Args
 	if args == nil {
 		args = cobra.NoArgs
@@ -114,6 +124,10 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 	if l.Read != nil {
 		cmd.Flags().BoolVar(&wantJSON, "json", false, "print the answer as JSON")
 	}
+	if l.Pages {
+		cmd.Flags().BoolVar(&wantPage, "page", false, "print the page as station.page/v1")
+		_ = cmd.Flags().MarkHidden("page")
+	}
 	if l.Destructive != nil {
 		cmd.Flags().BoolVarP(&yes, "yes", "y", false, "do it without asking")
 	}
@@ -130,6 +144,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 		}
 		o := IO{
 			JSON:          wantJSON,
+			PageJSON:      wantPage,
 			Yes:           yes,
 			Interactive:   env.Interactive,
 			Prompt:        env.Prompt,
@@ -176,7 +191,7 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 			return err
 		}
 	}
-	if l.Read != nil && l.Read(in) && !o.JSON && (!l.Live || !o.CanLive()) {
+	if l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && (!l.Live || !o.CanLive()) {
 		stop := env.Out.Wait("reading")
 		defer stop()
 	}
@@ -272,6 +287,17 @@ func Answers[T any](values <-chan T, answer func(T) present.Answer) <-chan prese
 		defer close(out)
 		for v := range values {
 			out <- answer(v)
+		}
+	}()
+	return out
+}
+
+func Pages[T any](values <-chan T, build func(T) page.Page) <-chan page.Page {
+	out := make(chan page.Page)
+	go func() {
+		defer close(out)
+		for v := range values {
+			out <- build(v)
 		}
 	}()
 	return out

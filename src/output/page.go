@@ -1,0 +1,73 @@
+package output
+
+import (
+	"encoding/json"
+	"io"
+
+	"github.com/jterrazz/studio-station/src/page"
+	pagejson "github.com/jterrazz/studio-station/src/ui/render/json"
+	"github.com/jterrazz/studio-station/src/ui/render/pipe"
+	"github.com/jterrazz/studio-station/src/ui/render/tty"
+)
+
+type Want struct {
+	JSON bool
+	Page bool
+}
+
+func (w *Writer) Page(p page.Page, contract any, want Want) error {
+	c := Detect(w.stdout, w.env, want.JSON || want.Page)
+	out := w.stdout.W
+	switch {
+	case want.Page:
+		_, err := out.Write(pagejson.Render(p))
+		return err
+	case c.Mode == JSON:
+		body, err := json.MarshalIndent(contract, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, err = out.Write(append(body, '\n'))
+		return err
+	case c.Mode == Pipe:
+		body, err := pipe.Render(p)
+		if err != nil {
+			return err
+		}
+		_, err = out.Write(body)
+		return err
+	case c.Mode == TTY:
+	}
+	_, err := tty.Colored(out, w.environ).Write(tty.Render(p, tty.Options{Width: c.Width, Dark: c.Dark}))
+	return err
+}
+
+func (w *Writer) LivePage(pages <-chan page.Page) error {
+	// invariant: the live region is redrawn in place on every page and erased
+	// when the reading ends; the final page is then printed once, normally, so
+	// the scrollback holds exactly what a non-live read prints.
+	c := Detect(w.stdout, w.env, false)
+	o := tty.Options{Width: c.Width, Dark: c.Dark}
+	out := tty.Colored(w.stdout.W, w.environ)
+	var (
+		last  page.Page
+		got   bool
+		drawn int
+	)
+	for p := range pages {
+		last, got = p, true
+		lines := tty.Frame(p, o, w.stdout.Height)
+		if _, err := io.WriteString(out, tty.Draw(lines, drawn)); err != nil {
+			return err
+		}
+		drawn = len(lines)
+	}
+	if _, err := io.WriteString(out, tty.Erase(drawn)); err != nil {
+		return err
+	}
+	if !got {
+		return nil
+	}
+	_, err := out.Write(tty.Render(last, o))
+	return err
+}

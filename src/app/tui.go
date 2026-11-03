@@ -14,6 +14,7 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 	return func(ctx context.Context) error {
 		return tui.Run(ctx, tui.Deps{
 			Context:  m.context,
+			Here:     m.where,
 			Status:   statusService(env, m),
 			Tools:    toolsService(env, m),
 			Config:   configService(m),

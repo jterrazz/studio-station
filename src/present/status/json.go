@@ -6,10 +6,10 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/status"
+	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 	presentconfig "github.com/jterrazz/studio-station/src/present/config"
 	presentstorage "github.com/jterrazz/studio-station/src/present/storage"
 	presenttailnet "github.com/jterrazz/studio-station/src/present/tailnet"
-	presenttools "github.com/jterrazz/studio-station/src/present/tools"
 )
 
 const schema = "station.status/v1"
@@ -22,7 +22,7 @@ type snapshotJSON struct {
 	System      systemJSON               `json:"system"`
 	Environment environmentJSON          `json:"environment"`
 	Workspace   workspaceJSON            `json:"workspace"`
-	Tools       []presenttools.ToolJSON  `json:"tools"`
+	Tools       []pagetools.ToolJSON     `json:"tools"`
 	Config      []presentconfig.ItemJSON `json:"config"`
 	Setup       setupJSON                `json:"setup"`
 	Identity    []checkJSON              `json:"identity"`
@@ -169,7 +169,7 @@ func jsonOf(s status.Snapshot) snapshotJSON {
 			Disk:   make([]diskJSON, 0, len(s.Workspace.Disk)),
 			Strays: presentstorage.Strays(s.Workspace.Strays),
 		},
-		Tools:    make([]presenttools.ToolJSON, 0, len(s.Tools)),
+		Tools:    make([]pagetools.ToolJSON, 0, len(s.Tools)),
 		Config:   make([]presentconfig.ItemJSON, 0, len(s.Config)),
 		Setup:    setupJSON{State: string(s.Setup.State), Steps: make([]stepJSON, 0, len(s.Setup.Steps))},
 		Identity: checks(s.Identity),
@@ -194,7 +194,7 @@ func jsonOf(s status.Snapshot) snapshotJSON {
 		body.Workspace.Disk = append(body.Workspace.Disk, diskJSON{Name: d.Name, Level: string(d.Level), Bytes: d.Bytes})
 	}
 	for _, t := range s.Tools {
-		body.Tools = append(body.Tools, presenttools.ToolObject(t))
+		body.Tools = append(body.Tools, pagetools.ToolObject(t))
 	}
 	for _, c := range s.Config {
 		body.Config = append(body.Config, presentconfig.ItemObject(c))

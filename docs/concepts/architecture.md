@@ -35,9 +35,12 @@ The ports and the data:
     host/         the real adapters: the only importer of os/exec, files, the network
     systemtest/   scripted fakes of every port, for tests
   catalog/        pure data: tools and their storage rows, config items, managers, shortcuts, images, the embedded dotfiles and recipes
-  present/        the Document model (blocks, tones, marks) and one presenter per subject
-  output/         the only place that knows a terminal: tty, pipe or json, and the one error block
-  theme/          the one palette
+  page/           the page language: one semantic page (sections, rows, groups, values, marks, reasons, actions), Seal and station.page/v1
+  pages/          one page function per page: domain data to a page, pure (tools today)
+  ui/             the design system: token, atom, molecule, organism, template, and the renderers tty, pipe, json and tui
+  present/        the Document model of the pages not migrated yet, and one presenter per subject
+  output/         the only place that knows a terminal: picks tty, pipe or json and renders a page through ui/render, and the one error block
+  theme/          the styles of the pages not migrated yet, over ui/token's palette
   prompt/         the conversations on stderr: confirmations and the forms that ask a config item's values
   fail/           the error type: a message, a hint and a code
   tui/            the unified Bubble Tea app
@@ -53,7 +56,7 @@ specs/
 
 A leaf folder `cli/<noun>/<verb>/` holds two files: `input.go` (argv to a typed input) and `command.go` (one domain call, one presenter, one answer). A leaf never prints: it answers through `kit.IO`, and the `output` layer decides the form.
 
-Presenters live in `present/<subject>/`, not in the leaf folder, because the TUI renders the same ones: a `tui` to `cli` import would couple the TUI to cobra.
+Page functions live in `pages/<page>/` (presenters, for the pages not migrated yet, in `present/<subject>/`), not in the leaf folder, because the TUI tab renders the same page: a `tui` to `cli` import would couple the TUI to cobra. How a page looks in each medium is the kit's alone; the design system's rules (the kit's levels, glyphs only in `ui/token`, only pages build pages, no layout outside `ui/`) are rules 13 to 21 of the architecture test, which lists the packages not migrated yet in an allowlist that only shrinks.
 
 ## Who may import whom
 
@@ -69,7 +72,7 @@ cmd/station ─> app ─> cli ─> cli/kit ─> domain ─> system <─ system/h
 catalog: imported by domain, present, cli, prompt; imports nothing of the module
 ```
 
-What the test holds, in short: `domain` reaches the machine only through `system` ports; only `system/host` imports `os/exec`, the network and the process environment; only `output` writes bytes and only `theme` holds a colour; only `app` imports Fang; the catalogue holds values and no function; every domain error type has its wording in `cli/kit`. Each rule has a mutation test, so a rule that stops biting fails the gate.
+What the test holds, in short: `domain` reaches the machine only through `system` ports; only `system/host` imports `os/exec`, the network and the process environment; only `output` writes bytes and only `ui/token` holds a colour; only `app` imports Fang; the catalogue holds values and no function; every domain error type has its wording in `cli/kit`. Each rule has a mutation test, so a rule that stops biting fails the gate.
 
 ## The path of a request
 
@@ -80,8 +83,8 @@ What the test holds, in short: `domain` reaches the machine only through `system
 3. The leaf `cli/tools/install` binds argv to an `Input`, then validates it against the catalogue and the config (refusals are exit 2, before any question, any read and any effect).
 4. The confirm gate runs for a destructive leaf: `--yes`, or a question on a terminal, or a refusal.
 5. The leaf makes one call to the domain service `domain/tools`, which orders dependencies, runs the method table's commands through the `Runner` port and reads the inventory back.
-6. The leaf hands the result to `present/tools`, which returns an answer: a `Document` for a person and a JSON value for `--json`.
-7. `output` prints it in the form the stream allows: tty with colour, pipe as tab-separated records, or json. The form is decided once per stream; `NO_COLOR` degrades a terminal to the pipe form.
+6. The leaf hands the result to its page function, `pages/tools` for `station tools`, which returns a `page.Page`, and to its contract value for `--json`.
+7. `output` prints it in the form the stream allows, through `ui/render`: tty with colour, pipe as tab-separated records, json (the contract), or the page itself as `station.page/v1` under the hidden `--page`. The form is decided once per stream; `NO_COLOR` degrades a terminal to the pipe form.
 
 Multi-step behaviour (install then configure, restart then wait) lives in the domain operation, so a leaf and a TUI action make the same one call.
 

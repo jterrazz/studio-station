@@ -19,7 +19,7 @@ import (
 var update = flag.Bool("update", false, "rewrite the goldens from the renderer")
 
 func TestTheTTYRendererReproducesTheMockups(t *testing.T) {
-	for name, doc := range map[string]present.Document{"status": statusDocument(), "status.pending": pendingDocument(), "tools": toolsDocument()} {
+	for name, doc := range map[string]present.Document{"status": statusDocument(), "status.pending": pendingDocument()} {
 		t.Run(name, func(t *testing.T) {
 			// invariant: the dark-80 golden IS the SPEC mockup, so -update never rewrites it.
 			if got, want := ansi.Strip(output.TTYString(doc, 80, theme.New(true))), read(t, name+".dark80.golden"); got != want {
@@ -156,30 +156,5 @@ func pendingDocument() present.Document {
 				row(pending, name("tailnet"), value(""), detail("")),
 			),
 		},
-	}
-}
-
-func toolsDocument() present.Document {
-	ok, degraded, absent, broken := present.MarkOK, present.MarkDegraded, present.MarkAbsent, present.MarkBroken
-	return present.Document{
-		Command: "station tools",
-		Context: present.MachineContext("macbook", "host", true),
-		Blocks: []present.Block{
-			section("Package Managers", counts(3, 0, 0, 0),
-				row(ok, name("homebrew"), value("5.0.1"), detail("script"), detail("312 formulae, 98 casks")),
-				row(ok, name("mise"), value("2026.10"), detail("brew")),
-				row(ok, name("uv"), value("0.9.2"), detail("brew")),
-			),
-			section("Runtimes", counts(4, 1, 1, 0),
-				row(degraded, name("node"), value("24.11.0"), detail("mise"), detail("on PATH, not managed by mise")),
-				row(ok, name("go"), value("1.27.3"), detail("mise")),
-				row(absent, name("java"), value(""), detail("mise"), detail("station tools install java")),
-			),
-			section("AI Agents", counts(9, 0, 0, 1),
-				row(ok, name("claude"), value("2.1.4"), detail("script")),
-				row(broken, name("hermes"), value(""), detail("script"), detail("hermes --version exited 1")),
-			),
-		},
-		Hints: []string{"station tools install <tool...>", "station tools upgrade"},
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/theme"
 	"github.com/jterrazz/studio-station/src/tui/kit"
 	configscreen "github.com/jterrazz/studio-station/src/tui/screens/config"
@@ -25,6 +26,7 @@ import (
 
 type Deps struct {
 	Context  string
+	Here     page.Context
 	Status   *status.Service
 	Tools    *tools.Service
 	Config   *config.Service
@@ -47,7 +49,7 @@ func Run(ctx context.Context, d Deps) error {
 	t := theme.New(true)
 	app := newApp(d.Context, Tabs(), []kit.Screen{
 		statusscreen.New(ctx, d.Status, d.Describe, t),
-		toolsscreen.New(ctx, d.Tools, d.Describe, t),
+		toolsscreen.New(ctx, d.Tools, d.Here, d.Describe),
 		configscreen.New(ctx, d.Config, d.Describe, t),
 		storagescreen.New(ctx, d.Storage, d.Describe, t),
 		fleetscreen.New(ctx, fleetscreen.Deps{

@@ -22,6 +22,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/theme"
 	"github.com/jterrazz/studio-station/src/tui/kit"
 	configscreen "github.com/jterrazz/studio-station/src/tui/screens/config"
@@ -229,7 +230,7 @@ func newHarness(t *testing.T) *harness {
 	h := &harness{t: t, tools: &fakeTools{}, fleet: &fakeFleet{}, configFails: new(error)}
 	h.app = newApp("macbook · host", Tabs(), []kit.Screen{
 		statusscreen.New(ctx, fakeStatus{}, describe, th),
-		toolsscreen.New(ctx, h.tools, describe, th),
+		toolsscreen.New(ctx, h.tools, page.Context{Kind: "host"}, describe),
 		configscreen.New(ctx, fakeConfig{failLoad: h.configFails}, describe, th),
 		storagescreen.New(ctx, fakeStorage{calls: &h.stored}, describe, th),
 		fleetscreen.New(ctx, fleetscreen.Deps{
@@ -533,7 +534,7 @@ func TestLoadingIsInInitNeverInView(t *testing.T) {
 	}
 	h.contains("reading this machine")
 	h.press("2")
-	h.contains("loading")
+	h.lacks("node")
 	if h.tools.inventories != 0 {
 		t.Fatal("rendering read the catalogue")
 	}
@@ -565,7 +566,6 @@ func TestBusyIgnoresActionKeys(t *testing.T) {
 	if h.app.screens[1].Focus() != kit.FocusNormal {
 		t.Fatal("an action key opened a modal while busy")
 	}
-	h.contains("busy")
 	h.finish(execs[0])
 	h.press("i")
 	h.contains("Install java?")

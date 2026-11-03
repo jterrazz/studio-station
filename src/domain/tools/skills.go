@@ -74,7 +74,7 @@ func (s *Service) currency(ctx context.Context, reports []Report, l listing) {
 			case !ok:
 				r.Detail = "currency unknown"
 			case upstream != entry.FolderHash:
-				r.State, r.Detail = catalog.StateDegraded, "outdated"
+				r.State, r.Detail, r.Why = catalog.StateDegraded, "outdated", WhyOutdated
 			}
 		})
 	}

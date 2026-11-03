@@ -61,7 +61,22 @@ type Report struct {
 	Detail  string
 	Live    string
 	Pending bool
+	// value: why the state is not ok, in a word a page can judge; Needs names
+	// the catalogue tool whose absence explains it.
+	Why   Why
+	Needs string
 }
+
+type Why string
+
+const (
+	WhyMissing   Why = "missing"
+	WhyUnmanaged Why = "unmanaged"
+	WhyOutdated  Why = "outdated"
+	WhyPartial   Why = "partial"
+	WhyLate      Why = "late"
+	WhyFailing   Why = "failing"
+)
 
 type Outcome struct {
 	Name   string

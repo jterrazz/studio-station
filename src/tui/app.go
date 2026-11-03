@@ -122,6 +122,9 @@ func (a App) key(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		app, _ := model.(App)
 		return app.turn(cmd)
 	case "?":
+		if _, ok := current.(kit.Chromed); ok {
+			return a.forward(k)
+		}
 		a.help.ShowAll = !a.help.ShowAll
 		return a, nil
 	default:
@@ -167,6 +170,9 @@ func (a App) View() tea.View {
 	}
 	header := kit.Header(t, a.tabs, a.active, a.context, spin, a.width)
 	footer := kit.Footer(t, a.help, current.Keys(), globalKeys(), current.Busy(), a.width)
+	if c, ok := current.(kit.Chromed); ok {
+		footer = c.Footer(a.width)
+	}
 	bar := kit.StatusLine(t, a.status, a.width)
 	room := max(a.height-lipgloss.Height(header)-lipgloss.Height(footer)-1, 1)
 	body := current.View(a.width, room)

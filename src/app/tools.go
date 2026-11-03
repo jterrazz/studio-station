@@ -21,7 +21,7 @@ import (
 
 func toolsCommand(env kit.Env, m machine) *cobra.Command {
 	service := toolsService(env, m)
-	return toolscmd.Command(toolscmd.Deps{Tools: service, Context: m.context}, env,
+	return toolscmd.Command(toolscmd.Deps{Tools: service, Here: m.where}, env,
 		toolsinstall.Command(toolsinstall.Deps{Tools: service, Context: m.context}, env),
 		toolsuninstall.Command(toolsuninstall.Deps{Tools: service, Context: m.context}, env),
 		toolsupgrade.Command(toolsupgrade.Deps{Tools: service, Context: m.context}, env),

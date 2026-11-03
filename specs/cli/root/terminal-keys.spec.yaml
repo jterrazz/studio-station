@@ -1,0 +1,45 @@
+description: 'the footer ends with ? keys, and ? opens the tab''s keys grouped This tab, List, Global'
+fixture:
+    - ../__fixtures__/terminal/
+    - ./__fixtures__/homebrew/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION"'
+      stdin: |
+          see Machine
+          send 2
+          see + Runtimes
+          see ? keys
+          send ?
+          see This tab
+          screen
+          send x
+          gone This tab
+          see + Runtimes
+          send q
+      exit: 0
+      stdout: |4
+           station   Status · Tools · Config · Storage │ Fleet        host · unregistered
+           ──────────────────────────────────────────────────────────────────────────────
+           ╭────────────────────────────────────────────────────────────────────────────╮
+           │ Keys · Tools                                                               │
+           │ This tab                List                    Global                     │
+           │ i  install              ↑↓     move             r    reload                │
+           │ u  uninstall            enter  detail           q    quit                  │
+           │ U  upgrade              /      filter           1-6  tab                   │
+           │                         space  fold             tab  next tab              │
+           │                         g G    top, bottom                                 │
+           │                         esc    back, clear                                 │
+           │                                                                            │
+           │ any key closes                                                             │
+           ╰────────────────────────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+           ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

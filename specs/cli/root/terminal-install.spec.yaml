@@ -8,7 +8,7 @@ runs:
       stdin: |
           see Machine
           send 2
-          see - Runtimes
+          see + Runtimes
           send /bat\r
           see ○ bat
           send \x1b[B
@@ -31,7 +31,7 @@ runs:
            ──────────────────────────────────────────────────────────────────────────────
            / bat
            - CLI Tools                                                               10 ○
-             ○ bat                                 brew             station tools instal…
+             ○ bat  brew  i install
 
 
 
@@ -44,18 +44,18 @@ runs:
 
 
 
-           ┌────────────────────────────────────────────────────────────┐
-           │ ┃ Install bat?                                             │
-           │ ┃                                                          │
-           │ ┃   Yes  No                                                │
-           └────────────────────────────────────────────────────────────┘
+           ╭──────────────────────────────────────────────────────────╮
+           │ Install bat?                                             │
+           │                                                          │
+           │  install    No                                           │
+           ╰──────────────────────────────────────────────────────────╯
 
-           ↑↓ move · space fold · i install · u uninstall · / filter · ? more
+           ↑↓ move  i install  u uninstall  U upgrade  enter detail  / filter  ? keys
            station   Status · Tools · Config · Storage │ Fleet        host · unregistered
            ──────────────────────────────────────────────────────────────────────────────
            / bat
            - CLI Tools                                                           1 ●  9 ○
-             ● bat                          1.0    brew
+             ● bat  1.0  brew
 
 
 
@@ -74,7 +74,7 @@ runs:
 
 
            ● installed bat
-           ↑↓ move · space fold · i install · u uninstall · / filter · ? more
+           ↑↓ move  i install  u uninstall  U upgrade  enter detail  / filter  ? keys
       files:
           .calls:
               contains:

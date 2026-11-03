@@ -8,12 +8,12 @@ runs:
       stdin: |
           see Machine
           send 2
-          see - Runtimes
+          see + Runtimes
           send /q1i
           see / q1i
-          gone - Runtimes
+          gone + Runtimes
           send \x1b
           gone / q1i
-          see - Runtimes
+          see + Runtimes
           send q
       exit: 0

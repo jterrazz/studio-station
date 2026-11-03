@@ -21,6 +21,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/fail"
 	"github.com/jterrazz/studio-station/src/output"
+	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/present"
 	"github.com/jterrazz/studio-station/src/prompt"
 	"github.com/jterrazz/studio-station/src/system"
@@ -175,6 +176,7 @@ type machine struct {
 	paths   settings.Paths
 	store   settings.Store
 	context string
+	where   page.Context
 }
 
 func resolve(h system.Host, vars map[string]string) machine {
@@ -210,6 +212,7 @@ func resolve(h system.Host, vars map[string]string) machine {
 		paths:   paths,
 		store:   store,
 		context: present.MachineContext(current.Here, string(kind), current.Here != ""),
+		where:   page.Context{Machine: current.Here, Kind: string(kind), Registered: current.Here != ""},
 	}
 }
 

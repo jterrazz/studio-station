@@ -3,15 +3,14 @@ package toolsscreen
 import (
 	"context"
 
-	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/tools"
-	"github.com/jterrazz/studio-station/src/present"
-	presenttools "github.com/jterrazz/studio-station/src/present/tools"
-	"github.com/jterrazz/studio-station/src/theme"
+	"github.com/jterrazz/studio-station/src/page"
+	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 	"github.com/jterrazz/studio-station/src/tui/kit"
+	"github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
 const ID = "tools"
@@ -28,132 +27,162 @@ type Tools interface {
 }
 
 type Model struct {
-	ctx   context.Context
-	tools Tools
-	list  kit.ListScreen
+	kit.Paged
+	ctx      context.Context
+	tools    Tools
+	here     page.Context
+	describe kit.Describe
+	browser  tui.Browser
+	loading  bool
+	busy     bool
+	gen      int
+	// invariant: Init runs on a copy, so the running watch's cancel is held
+	// where every copy of the screen sees it.
+	stop *context.CancelFunc
 }
 
-func New(ctx context.Context, t Tools, describe kit.Describe, th theme.Theme) Model {
-	m := Model{ctx: ctx, tools: t}
-	m.list = kit.NewList(kit.ListConfig{
-		ID:        ID,
-		Watch:     m.watch,
-		Describe:  describe,
-		Empty:     "none",
-		EmptyHint: "press r to reload the catalogue",
-		FoldAllOK: true,
-		Detail: func(r kit.Row) (string, present.Document, bool) {
-			report, ok := r.Data.(tools.Report)
-			return r.Key, presenttools.Detail(report), ok
-		},
-		Keys: []key.Binding{
-			kit.Bind("i", "install", "i"),
-			kit.Bind("u", "uninstall", "u"),
-			kit.FilterKey(),
-			kit.Bind("U", "upgrade", "U"),
-			kit.DetailKey(),
-		},
-	}, th)
-	return m
+type act struct{ key, name string }
+
+type loaded struct {
+	gen   int
+	page  page.Page
+	more  <-chan []tools.Report
+	final bool
 }
 
-func (m Model) watch(ctx context.Context, fresh bool) (<-chan []kit.Group, error) {
-	if fresh {
-		m.tools.Forget()
+func New(ctx context.Context, t Tools, here page.Context, describe kit.Describe) Model {
+	return Model{ctx: ctx, tools: t, here: here, describe: describe, browser: tui.New("Tools", "tools"), loading: true, stop: new(context.CancelFunc)}
+}
+
+func (m Model) Init() tea.Cmd { return m.watch(false) }
+
+func (m Model) watch(fresh bool) tea.Cmd {
+	if *m.stop != nil {
+		(*m.stop)()
 	}
-	return kit.Groups(ctx, m.tools.Watch(ctx), groups), nil
-}
-
-func groups(reports []tools.Report) []kit.Group {
-	byName := make(map[string]tools.Report, len(reports))
-	for _, r := range reports {
-		byName[r.Tool.Name] = r
-	}
-	groups := kit.GroupsOf(presenttools.Catalogue(reports, "").Doc)
-	for gi := range groups {
-		for ri := range groups[gi].Rows {
-			if r, ok := byName[groups[gi].Rows[ri].Key]; ok {
-				groups[gi].Rows[ri].Data = r
-			}
+	ctx, stop := context.WithCancel(context.Background()) //nolint:gosec // outside: held in *m.stop, called when the next watch starts.
+	*m.stop = stop
+	gen, t, here := m.gen, m.tools, m.here
+	return func() tea.Msg {
+		if fresh {
+			t.Forget()
 		}
+		return next(gen, here, t.Watch(ctx))()
 	}
-	return groups
 }
 
-func (m Model) Init() tea.Cmd { return m.list.Init() }
+func next(gen int, here page.Context, ch <-chan []tools.Report) tea.Cmd {
+	return func() tea.Msg {
+		reports, open := <-ch
+		if !open {
+			return loaded{gen: gen, final: true}
+		}
+		return loaded{gen: gen, page: pagetools.Catalogue(reports, here), more: ch}
+	}
+}
 
-func (m Model) Focus() kit.Focus { return m.list.Focus() }
+func (m Model) Focus() kit.Focus {
+	switch m.browser.Focus() {
+	case tui.Filter:
+		return kit.FocusFilter
+	case tui.Modal, tui.Sheet:
+		return kit.FocusModal
+	case tui.Normal, tui.Detail:
+	}
+	return kit.FocusNormal
+}
 
-func (m Model) Busy() bool { return m.list.Busy() }
+func (m Model) Busy() bool { return m.busy }
 
-func (m Model) Loading() bool { return m.list.Loading() }
+func (m Model) Loading() bool { return m.loading }
 
-func (m Model) Keys() []key.Binding { return m.list.Keys() }
+func (m Model) View(width, height int) string { return m.browser.Body(width, height) }
 
-func (m Model) View(width, height int) string { return m.list.View(width, height) }
+func (m Model) Footer(width int) string { return m.browser.Footer(width, m.busy) }
 
 func (m Model) Update(msg tea.Msg) (kit.Screen, tea.Cmd) {
-	if k, ok := msg.(tea.KeyPressMsg); ok && m.list.Focus() == kit.FocusNormal {
-		if cmd, handled := m.action(k); handled {
-			return m, cmd
+	switch msg := msg.(type) {
+	case loaded:
+		if msg.gen != m.gen {
+			return m, nil
 		}
+		if msg.final {
+			m.loading = false
+			return m, nil
+		}
+		m.browser = m.browser.Show(msg.page)
+		return m, next(msg.gen, m.here, msg.more)
+	case kit.Done:
+		if msg.Screen != ID {
+			return m, nil
+		}
+		m.busy = false
+		status := msg.Status
+		if msg.Err != nil {
+			status = kit.Failed(m.describe, msg.Err)
+		}
+		m.loading = true
+		m.gen++
+		return m, tea.Batch(kit.Say(status), m.watch(true))
+	case kit.Reload:
+		if m.busy {
+			return m, nil
+		}
+		m.loading = true
+		m.gen++
+		return m, m.watch(true)
+	case act:
+		m.busy = true
+		return m, m.run(msg)
 	}
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	var ev *tui.Event
+	m.browser, cmd, ev = m.browser.Update(msg)
+	if ev == nil || ev.Row == "" || m.busy {
+		return m, cmd
+	}
+	do := act{key: ev.Action.Key, name: ev.Row}
+	if ev.Action.Confirm == nil {
+		return m, func() tea.Msg { return do }
+	}
+	m.browser = m.browser.Ask(pagetools.Confirm(ev.Action.Confirm.Yes, do.name), func() tea.Msg { return do })
 	return m, cmd
 }
 
-func (m *Model) action(k tea.KeyPressMsg) (tea.Cmd, bool) {
-	switch k.String() {
-	case "i", "u", "U":
-	default:
-		return nil, false
-	}
-	row, ok := m.list.Current()
-	if !ok || m.list.Busy() {
-		return nil, true
-	}
-	name := row.Key
-	var cmd tea.Cmd
-	switch k.String() {
-	case "i":
-		m.list, cmd = m.list.Open(kit.Confirm("Install "+name+"?", m.install(name)))
-	case "u":
-		m.list, cmd = m.list.Open(kit.Confirm("Uninstall "+name+"?", m.uninstall(name)))
-	case "U":
-		m.list, cmd = m.list.Act(m.upgrade(name))
-	}
-	return cmd, true
-}
-
-func (m Model) install(name string) tea.Cmd {
+func (m Model) run(a act) tea.Cmd {
 	return kit.Exec(ID, func() (kit.Status, error) {
-		if err := m.tools.CheckInstall(m.ctx, []string{name}); err != nil {
-			return kit.Status{}, err
+		switch a.key {
+		case pagetools.KeyInstall:
+			outcomes, err := m.install(a.name)
+			return outcome("installed", a.name, outcomes), err
+		case pagetools.KeyUninstall:
+			outcomes, err := m.uninstall(a.name)
+			return outcome("uninstalled", a.name, outcomes), err
 		}
-		outcomes, err := m.tools.Install(m.ctx, tools.InstallRequest{Names: []string{name}, Interactive: true})
-		return outcome("installed", name, outcomes), err
+		outcomes, err := m.upgrade(a.name)
+		return outcome("upgraded", a.name, outcomes), err
 	})
 }
 
-func (m Model) uninstall(name string) tea.Cmd {
-	return kit.Exec(ID, func() (kit.Status, error) {
-		if err := m.tools.CheckUninstall([]string{name}); err != nil {
-			return kit.Status{}, err
-		}
-		outcomes, err := m.tools.Uninstall(m.ctx, []string{name})
-		return outcome("uninstalled", name, outcomes), err
-	})
+func (m Model) install(name string) ([]tools.Outcome, error) {
+	if err := m.tools.CheckInstall(m.ctx, []string{name}); err != nil {
+		return nil, err
+	}
+	return m.tools.Install(m.ctx, tools.InstallRequest{Names: []string{name}, Interactive: true})
 }
 
-func (m Model) upgrade(name string) tea.Cmd {
-	return kit.Exec(ID, func() (kit.Status, error) {
-		if err := m.tools.CheckUpgrade([]string{name}); err != nil {
-			return kit.Status{}, err
-		}
-		outcomes, err := m.tools.Upgrade(m.ctx, tools.UpgradeRequest{Names: []string{name}})
-		return outcome("upgraded", name, outcomes), err
-	})
+func (m Model) uninstall(name string) ([]tools.Outcome, error) {
+	if err := m.tools.CheckUninstall([]string{name}); err != nil {
+		return nil, err
+	}
+	return m.tools.Uninstall(m.ctx, []string{name})
+}
+
+func (m Model) upgrade(name string) ([]tools.Outcome, error) {
+	if err := m.tools.CheckUpgrade([]string{name}); err != nil {
+		return nil, err
+	}
+	return m.tools.Upgrade(m.ctx, tools.UpgradeRequest{Names: []string{name}})
 }
 
 // value: the status bar names the tool asked for; a Then step that failed

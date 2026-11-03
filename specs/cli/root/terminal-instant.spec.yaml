@@ -18,7 +18,7 @@ runs:
           see ◌ gpg key
           see no answer in 2s
           send 2
-          see - Runtimes
+          see + Runtimes
           send 5
           within 1 see Fleet
           send q

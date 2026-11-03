@@ -8,9 +8,9 @@ runs:
       stdin: |
           see Machine
           send 2
-          see - Runtimes
+          see + Runtimes
           send \x20
-          see + Package Managers
+          see - Package Managers
           send \t
           see - Terminal
           see hushlogin

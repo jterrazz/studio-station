@@ -1,0 +1,47 @@
+description: 'enter on a Tools row shows its detail in full with the tab''s keys, and esc goes back'
+fixture:
+    - ../__fixtures__/terminal/
+    - ./__fixtures__/homebrew/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION"'
+      stdin: |
+          see Machine
+          send 2
+          see + Runtimes
+          send /bat\r
+          see ○ bat
+          send \x1b[B
+          send \r
+          see category
+          screen
+          send \x1b
+          gone category
+          see ○ bat
+          send q
+      exit: 0
+      stdout: |4
+           station   Status · Tools · Config · Storage │ Fleet        host · unregistered
+           ──────────────────────────────────────────────────────────────────────────────
+           / bat
+           bat                                                                         ○
+             method    brew
+             category  CLI Tools
+             fix       station tools install bat
+             keys      i install  u uninstall  U upgrade
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+           esc back  ↑↓ move  i install  u uninstall  U upgrade  enter detail  ? keys

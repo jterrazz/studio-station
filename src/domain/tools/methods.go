@@ -230,3 +230,14 @@ func parseMiseList(stdout string) (map[string]string, error) {
 	}
 	return out, nil
 }
+
+func (m method) dependency() string {
+	// value: the catalogue tool that provides the manager's command.
+	switch m.manager {
+	case "brew":
+		return "homebrew"
+	case "npm":
+		return "node"
+	}
+	return m.manager
+}

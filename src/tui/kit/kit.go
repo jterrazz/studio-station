@@ -92,3 +92,16 @@ func Outcome(done, name string, state catalog.State, detail string) Status {
 	}
 	return Status{Mark: mark, Text: text}
 }
+
+type Chromed interface {
+	Footer(width int) string
+}
+
+type Paged struct{}
+
+func (Paged) Keys() []key.Binding { return nil }
+
+func Failed(describe Describe, err error) Status {
+	text, hint := describe(err)
+	return Status{Mark: present.MarkBroken, Text: text, Hint: hint}
+}

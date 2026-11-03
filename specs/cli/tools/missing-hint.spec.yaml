@@ -1,0 +1,7 @@
+description: 'a tool whose manager is missing names the install that fixes it, piped last'
+fixture: ./__fixtures__/node-on-path/
+runs:
+    - command: 'tools | /usr/bin/grep "	node	"'
+      exit: 0
+      stdout: |
+          ◐	node		mise	installed, mise not installed · station tools install mise

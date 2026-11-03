@@ -87,7 +87,7 @@ func (s *Service) watch(ctx context.Context) <-chan []Report {
 					if !(*out)[i].Pending {
 						continue
 					}
-					(*out)[i] = Report{Tool: list[i], Method: m, State: catalog.StateUnknown, Detail: "no answer in " + (inventoryBudget + probeBudget + currencyBudget).String()}
+					(*out)[i] = Report{Tool: list[i], Method: m, State: catalog.StateUnknown, Why: WhyLate, Detail: "no answer in " + (inventoryBudget + probeBudget + currencyBudget).String()}
 				}
 			},
 		})
@@ -190,7 +190,7 @@ func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catal
 			return r
 		}
 		if _, ok := s.h.Run.LookPath("skills"); !ok {
-			r.Detail = "skills not installed"
+			r.Detail, r.Why, r.Needs = "skills not installed", WhyMissing, "skills"
 		}
 		return r
 	case m == catalog.MethodScript || m == catalog.MethodShell:
@@ -201,7 +201,7 @@ func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catal
 		}
 		return r
 	case l.failed:
-		r.State, r.Detail = catalog.StateUnknown, row.manager+" did not answer"
+		r.State, r.Detail, r.Why = catalog.StateUnknown, row.manager+" did not answer", WhyLate
 		return r
 	}
 	if version, ok := l.keys[i.Key()]; ok {
@@ -213,20 +213,20 @@ func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catal
 		return r
 	}
 	if _, ok := listings[catalog.MethodBrew].keys[t.Supersedes]; ok && t.Supersedes != "" && !s.bundled(t) {
-		r.State, r.Detail = catalog.StateDegraded, "formula installed, app absent"
+		r.State, r.Detail, r.Why = catalog.StateDegraded, "formula installed, app absent", WhyPartial
 		return r
 	}
 	if s.present(ctx, t, &r) {
 		r.State = catalog.StateDegraded
 		if l.missing {
-			r.Detail = "installed, " + row.manager + " not installed"
+			r.Detail, r.Why, r.Needs = "installed, "+row.manager+" not installed", WhyMissing, row.dependency()
 		} else {
-			r.Detail = "on PATH, not managed by " + string(m)
+			r.Detail, r.Why = "on PATH, not managed by "+string(m), WhyUnmanaged
 		}
 		return r
 	}
 	if l.missing {
-		r.Detail = row.manager + " not installed"
+		r.Detail, r.Why, r.Needs = row.manager+" not installed", WhyMissing, row.dependency()
 	}
 	return r
 }
@@ -258,7 +258,7 @@ func (s *Service) probed(ctx context.Context, t catalog.Tool, r Report) Report {
 	case ok && code == 0:
 		r.State, r.Version, r.Managed = catalog.StateOK, version, true
 	case ok:
-		r.State, r.Detail = catalog.StateBroken, strings.Join(t.Version.Args, " ")+" exited "+strconv.Itoa(code)
+		r.State, r.Why, r.Detail = catalog.StateBroken, WhyFailing, strings.Join(t.Version.Args, " ")+" exited "+strconv.Itoa(code)
 	}
 	return r
 }
