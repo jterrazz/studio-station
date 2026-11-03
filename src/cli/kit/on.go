@@ -83,6 +83,11 @@ func RefuseOn(env Env) func(*cobra.Command, []string) error {
 			return nil
 		}
 		p := path(c)
+		if p == "stop" || p == "start" {
+			// invariant: the agent stop boots out or start bootstraps is this
+			// login's, so neither runs for another host.
+			return fail.Usage("station "+p+" acts on this host only", "ssh "+env.On.Machine+" station "+p)
+		}
 		if refusesOn(p) {
 			return fail.Usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
 		}

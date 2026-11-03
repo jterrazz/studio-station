@@ -1,0 +1,78 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "stop",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "linux-1",
+            "mark": "ok",
+            "label": "linux-1",
+            "detail": {
+              "kind": "text",
+              "text": "deleted (temporary)"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api",
+            "mark": "ok",
+            "label": "api",
+            "detail": {
+              "kind": "text",
+              "text": "stopped (lasting, disk kept)"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "daemon",
+            "mark": "ok",
+            "label": "daemon",
+            "detail": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "stopped"
+                },
+                {
+                  "kind": "text",
+                  "text": "com.jterrazz.station.daemon booted out"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 3
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station start"
+    }
+  ]
+}

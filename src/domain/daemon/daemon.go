@@ -320,8 +320,10 @@ func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
 		return nil, nil
 	case "accounts":
 		return d.accounts(ctx), nil
+	case "stop_all":
+		return d.stopAll(ctx), nil
 	}
-	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts")
+	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts stop_all")
 }
 
 type VMAccounts struct {
@@ -372,6 +374,67 @@ func (d *Daemon) accounts(ctx context.Context) AccountsView {
 	wg.Wait()
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return AccountsView{VMs: out}
+}
+
+type Stopped struct {
+	Name     string `json:"name"`
+	Lifetime string `json:"lifetime"`
+	Result   string `json:"result"`
+	Detail   string `json:"detail,omitempty"`
+}
+
+const (
+	ResultDeleted = "deleted"
+	ResultStopped = "stopped"
+	ResultFailed  = "failed"
+)
+
+// invariant: stop_all ends every VM of this host at once: a temporary one is
+// deleted, a running lasting one stopped with the wish stopped (its disk
+// kept); each answers its own result, so a VM that would not stop keeps the
+// daemon that supervises it.
+func (d *Daemon) stopAll(ctx context.Context) []Stopped {
+	records, _ := d.m.Records()
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var out []Stopped
+	for _, r := range records {
+		v, err := d.find(r.Name)
+		if err != nil {
+			continue
+		}
+		d.mu.Lock()
+		running := v.state == StateRunning
+		d.mu.Unlock()
+		if r.Lifetime != machines.Temporary && !running {
+			continue
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			s := Stopped{Name: r.Name, Lifetime: string(r.Lifetime), Result: ResultStopped}
+			var err error
+			if r.Lifetime == machines.Temporary {
+				s.Result = ResultDeleted
+				err = d.opDelete(ctx, r.Name)
+			} else {
+				err = d.opStop(ctx, r.Name, true)
+				if err == nil && d.m.EngineRunning(ctx, r.Name) {
+					err = errors.New("the engine still runs it")
+				}
+			}
+			if err != nil {
+				s.Result, s.Detail = ResultFailed, err.Error()
+				d.logf(r.Name, "stop_all: "+err.Error())
+			}
+			mu.Lock()
+			out = append(out, s)
+			mu.Unlock()
+		}()
+	}
+	wg.Wait()
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out
 }
 
 func (d *Daemon) closeAll() {

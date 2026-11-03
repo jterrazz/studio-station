@@ -15,6 +15,9 @@ func daemonFailure(err error) (*fail.Error, bool) {
 	var down *daemon.DownError
 	var op *daemon.OpError
 	var guestHost *guest.HostOnlyRefusedError
+	if f, ok := controlFailure(err); ok {
+		return f, true
+	}
 	switch {
 	case errors.As(err, &running):
 		return fail.Usage(running.Error(), "station status shows it"), true
@@ -75,6 +78,30 @@ func servicesFailure(err error) (*fail.Error, bool) {
 		return fail.Usage(unknown.Error(), "station services"), true
 	case errors.As(err, &remote):
 		return fail.Silent(fail.Code(remote.Code)), true
+	}
+	return nil, false
+}
+
+func controlFailure(err error) (*fail.Error, bool) {
+	var notInstalled *daemon.NotInstalledError
+	var offHost *daemon.OffHostError
+	var unconfirmed *daemon.UnconfirmedError
+	var stuck *daemon.StuckError
+	var noAnswer *daemon.NoAnswerError
+	var boot *daemon.BootError
+	switch {
+	case errors.As(err, &notInstalled):
+		return fail.Failed(notInstalled.Error(), "station setup", err), true
+	case errors.As(err, &offHost):
+		return fail.Usage(offHost.Error(), "ssh <host> station "+offHost.Verb), true
+	case errors.As(err, &unconfirmed):
+		return fail.Usage(unconfirmed.Error(), "station stop --yes"), true
+	case errors.As(err, &stuck):
+		return fail.Failed(stuck.Error(), "station machines delete "+stuck.VM, err), true
+	case errors.As(err, &noAnswer):
+		return fail.Failed(noAnswer.Error(), "tail ~/.local/state/station/logs/daemon.log", err), true
+	case errors.As(err, &boot):
+		return fail.Failed(boot.Error(), "launchctl print gui/$(id -u)/"+daemon.Label, err), true
 	}
 	return nil, false
 }

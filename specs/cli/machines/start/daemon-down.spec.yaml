@@ -6,5 +6,5 @@ runs:
     - command: 'machines start api'
       exit: 1
       stderr: |
-          Error: the station daemon is not running
+          Error: the station daemon is not installed on x
           Hint: station setup

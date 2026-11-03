@@ -33,6 +33,8 @@ runs:
           machines
           secrets
           services
+          start
+          stop
           tailnet
     - command: services --help | /usr/bin/sed -n '/^  COMMANDS/,/^  FLAGS/p' | /usr/bin/grep -oE '^    [a-z]+ ' | /usr/bin/tr -d ' '
       exit: 0

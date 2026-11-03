@@ -1,0 +1,82 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "stop",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "linux-1",
+            "mark": "ok",
+            "label": "linux-1",
+            "detail": {
+              "kind": "text",
+              "text": "deleted (temporary)"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api",
+            "mark": "broken",
+            "label": "api",
+            "detail": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "did not stop"
+                },
+                {
+                  "kind": "text",
+                  "text": "tart stop exited 1"
+                }
+              ]
+            },
+            "reason": "failing"
+          }
+        },
+        {
+          "row": {
+            "id": "daemon",
+            "mark": "absent",
+            "label": "daemon",
+            "detail": {
+              "kind": "text",
+              "text": "kept running: api did not stop"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        },
+        {
+          "mark": "broken",
+          "n": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "stop",
+  "context": {
+    "kind": "host"
+  },
+  "state": "loading",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "linux-1",
+            "mark": "pending",
+            "label": "linux-1",
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api",
+            "mark": "pending",
+            "label": "api",
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "daemon",
+            "mark": "pending",
+            "label": "daemon",
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 3
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station start"
+    }
+  ]
+}

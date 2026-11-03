@@ -268,6 +268,12 @@ func Menu(env Env, cmd *cobra.Command) error {
 	return fail.Silent(fail.CodeUsage)
 }
 
+func Ask(verb string, ask func() (bool, error), o IO) error {
+	// value: a leaf that asks its own question (stop: its Confirm lists what
+	// ends) answers it as the confirm gate does.
+	return gate(verb, ask, o)
+}
+
 func Refuse(message, hint string) error {
 	return fail.Usage(message, hint)
 }

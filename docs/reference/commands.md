@@ -125,6 +125,15 @@ station accounts [--json]                       # who has access to what, here a
 
 One group per machine: this host's GitHub, npm, Claude, Tailscale, Cloudflare, git, ssh and Docker rights, then each VM's, read inside it by its guest, with the lends its record holds (`lent`, until when). Identities and scopes only: no token, cookie or key body is ever read into a value, and anything shaped like one reads `?`. Piped, one record per account: mark, machine, provider, identity, origin, scope, until (RFC 3339), detail, hint. See [Secrets](secrets.md#accounts).
 
+### `station stop` and `station start`
+
+```sh
+station stop [--yes]                            # every VM of this host ended (temporary deleted), then the daemon booted out
+station start                                   # the daemon bootstrapped again, and the lasting VMs it brings back
+```
+
+This host only. See [Machines](machines.md#the-daemon).
+
 ### `station tailnet`
 
 ```sh

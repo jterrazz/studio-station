@@ -17,9 +17,17 @@ const memoryCap = 75
 
 var ErrDaemonDown = errors.New("the station daemon is not running")
 
-type DaemonDownError struct{}
+type DaemonDownError struct {
+	Host      string
+	Installed bool
+}
 
-func (*DaemonDownError) Error() string { return "the station daemon is not running" }
+func (e *DaemonDownError) Error() string {
+	if e.Installed {
+		return "the station daemon is stopped on " + e.Host
+	}
+	return "the station daemon is not installed on " + e.Host
+}
 
 type BadNetworkError struct {
 	Value  string
@@ -202,12 +210,14 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 }
 
 func (s *Service) daemonUp(ctx context.Context) error {
+	_, missing := s.h.FS.Stat(catalog.DaemonPlist(s.h.Env.Home()))
+	down := &DaemonDownError{Host: s.HereName(), Installed: missing == nil}
 	if s.daemon == nil {
-		return &DaemonDownError{}
+		return down
 	}
 	if _, err := s.daemon.Ping(ctx); err != nil {
 		if errors.Is(err, ErrDaemonDown) {
-			return &DaemonDownError{}
+			return down
 		}
 		return err
 	}

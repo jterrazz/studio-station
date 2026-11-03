@@ -1,0 +1,51 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "start",
+  "context": {
+    "kind": "host"
+  },
+  "state": "loading",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "daemon",
+            "mark": "pending",
+            "label": "daemon",
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api",
+            "mark": "pending",
+            "label": "api",
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 2
+        }
+      ]
+    }
+  ]
+}

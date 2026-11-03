@@ -1,0 +1,32 @@
+description: 'start bootstraps the agent and waits for the daemon; again, it only says it runs; without the agent''s plist it refuses'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/launchctl/
+env: daemon
+runs:
+    - command: 'start'
+      exit: 1
+      stderr: |
+          Error: the station daemon is not installed
+          Hint: station setup
+    - command: '--version > /dev/null; /bin/mkdir -p Library/LaunchAgents; : > Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" start | /usr/bin/sed -E ''s/pid [0-9]+/pid N/; s/started · [^ ]+ ·/started · V ·/''; "$STATION" start | /usr/bin/sed -E ''s/pid [0-9]+/pid N/; s/started · [^ ]+ ·/started · V ·/''; /usr/bin/grep -c "^launchctl bootstrap gui/[0-9]* $HOME/Library/LaunchAgents/com.jterrazz.station.daemon.plist" .calls; "$STATION" stop > /dev/null'
+      exit: 0
+      stdout: |
+          ●	daemon	started · V · pid N
+          ●	daemon	running · pid N
+          1
+    - command: '--version > /dev/null; : > launchctl.loaded; "$STATION" start | /usr/bin/sed -E ''s/pid [0-9]+/pid N/; s/started · [^ ]+ ·/started · V ·/''; /usr/bin/grep -c "^launchctl kickstart -k gui/" .calls; "$STATION" stop > /dev/null'
+      exit: 0
+      stdout: |
+          ●	daemon	started · V · pid N
+          1
+    - command: '--version > /dev/null; : > launchctl.silent; "$STATION" start'
+      exit: 1
+      stderr: |
+          Error: the station daemon did not answer in 15s
+          Hint: tail ~/.local/state/station/logs/daemon.log
+    - command: 'start --on mac-mini'
+      exit: 2
+      stderr: |
+          Error: station start acts on this host only
+          Hint: ssh mac-mini station start

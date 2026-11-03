@@ -88,6 +88,9 @@ func vmFailure(err error) (*fail.Error, bool) {
 	}
 	switch {
 	case errors.As(err, &down):
+		if down.Installed {
+			return fail.Failed(down.Error(), "station start", err), true
+		}
 		return fail.Failed(down.Error(), "station setup", err), true
 	case errors.As(err, &network):
 		if network.Bridge {

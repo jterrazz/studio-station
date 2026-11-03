@@ -1,0 +1,66 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "start",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "daemon",
+            "mark": "ok",
+            "label": "daemon",
+            "detail": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "started"
+                },
+                {
+                  "kind": "text",
+                  "text": "v3.1.0"
+                },
+                {
+                  "kind": "text",
+                  "text": "pid 812"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api",
+            "mark": "ok",
+            "label": "api",
+            "detail": {
+              "kind": "text",
+              "text": "started (lasting, wish running)"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+description: 'stop with VMs running refuses piped without --yes, and with it deletes the temporary, stops the lasting (its wish stopped), then boots the daemon out last'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/daemon-vm/
+    - ../__fixtures__/launchctl/
+env: daemon
+serve: sshd
+runs:
+    - command: '--version > /dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41580-41599"}/'' .config/station/settings.json; /bin/mkdir -p Library/LaunchAgents; : > Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" start > /dev/null; "$STATION" machines create --lifetime temporary --name linux-1 > /dev/null; "$STATION" machines create --lifetime lasting --name api > /dev/null; for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do "$STATION" machines --json | /usr/bin/grep -q ''"guest": "connected"'' && break; /bin/sleep 0.2; done; "$STATION" stop; echo "exit $?"; /usr/bin/grep -c bootout .calls; : > .calls; "$STATION" stop --yes; echo "exit $?"; /usr/bin/grep -E "^(tart (delete|stop)|launchctl bootout)" .calls | /usr/bin/sed -E ''s/gui\/[0-9]+/gui\/U/''; /usr/bin/jq -r .want .local/state/station/vms/api.json; /bin/ls .local/state/station/vms; /bin/kill -0 "$(/bin/cat daemon.pid)" 2> /dev/null || echo gone'
+      exit: 0
+      stdout: |
+          exit 2
+          0
+          ●	api	stopped (lasting, disk kept)
+          ●	linux-1	deleted (temporary)
+          ●	daemon	stopped · com.jterrazz.station.daemon booted out
+          exit 0
+          tart stop --timeout 10 linux-1
+          tart delete linux-1
+          launchctl bootout gui/U/com.jterrazz.station.daemon
+          stopped
+          api.json
+          gone
+      stderr: |
+          Error: station stop deletes linux-1 and stops api
+          Hint: station stop --yes

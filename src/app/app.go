@@ -78,6 +78,8 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		tailnetCommand(kenv, here),
 		servicesCommand(kenv, here),
 		accountsCommand(kenv, here),
+		stopCommand(kenv, here),
+		startCommand(kenv, here),
 		daemonCommand(kenv, here),
 		guestCommand(kenv, here),
 		runCommand(kenv, here),

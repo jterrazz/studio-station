@@ -1,0 +1,5 @@
+ station start                                                                  host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Error: the station daemon did not answer in 15s
+ Hint: tail ~/.local/state/station/logs/daemon.log
