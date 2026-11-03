@@ -12,13 +12,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	secretscmd "github.com/jterrazz/studio-station/src/cli/secrets"
-	secretsallow "github.com/jterrazz/studio-station/src/cli/secrets/allow"
-	secretsdisallow "github.com/jterrazz/studio-station/src/cli/secrets/disallow"
-	secretslend "github.com/jterrazz/studio-station/src/cli/secrets/lend"
-	secretsrecall "github.com/jterrazz/studio-station/src/cli/secrets/recall"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	secretscmd "github.com/jterrazz/studio-station/src/surface/cli/secrets"
+	secretsallow "github.com/jterrazz/studio-station/src/surface/cli/secrets/allow"
+	secretsdisallow "github.com/jterrazz/studio-station/src/surface/cli/secrets/disallow"
+	secretslend "github.com/jterrazz/studio-station/src/surface/cli/secrets/lend"
+	secretsrecall "github.com/jterrazz/studio-station/src/surface/cli/secrets/recall"
 	"github.com/jterrazz/studio-station/src/system"
 )
 

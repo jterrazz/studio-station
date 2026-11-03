@@ -6,10 +6,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	guestcmd "github.com/jterrazz/studio-station/src/cli/guest"
-	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/guest"
+	guestcmd "github.com/jterrazz/studio-station/src/surface/cli/guest"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 func (m machine) guest() *guest.Service {

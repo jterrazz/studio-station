@@ -3,11 +3,11 @@ package wire
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	runcmd "github.com/jterrazz/studio-station/src/cli/run"
-	"github.com/jterrazz/studio-station/src/cli/run/docker"
-	"github.com/jterrazz/studio-station/src/cli/run/git"
 	"github.com/jterrazz/studio-station/src/domain/shortcuts"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	runcmd "github.com/jterrazz/studio-station/src/surface/cli/run"
+	"github.com/jterrazz/studio-station/src/surface/cli/run/docker"
+	"github.com/jterrazz/studio-station/src/surface/cli/run/git"
 )
 
 func runCommand(env kit.Env, m machine) *cobra.Command {

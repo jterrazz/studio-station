@@ -48,9 +48,9 @@ func importTable() map[string][]string {
 		"cmd/generate":          {"catalog", "cmd/generate/pages", "page", "ui/render/json", "os", "flag", std},
 		"cmd/generate/pages":    {"page", "pages", "pages/*", "domain/*", "engine", "catalog", "ui/token", std},
 		"wire":                  {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", std},
-		"cli":                   {"cli/kit", cobra, std},
-		"cli/kit":               {"output", "page", "core/fail", "domain/*", "engine", "catalog", "testing", cobra, pflag, std},
-		"cli/*":                 {"cli/kit", "domain/*", "engine", "page", "pages/*", "catalog", cobra, pflag, std},
+		"surface/cli":           {"surface/cli/kit", cobra, std},
+		"surface/cli/kit":       {"output", "page", "core/fail", "domain/*", "engine", "catalog", "testing", cobra, pflag, std},
+		"surface/cli/*":         {"surface/cli/kit", "domain/*", "engine", "page", "pages/*", "catalog", cobra, pflag, std},
 		"domain/*":              domain,
 		"domain/setup":          append(slices.Clone(domain), "domain/shell", "domain/storage"),
 		"domain/status":         append(slices.Clone(domain), "domain/tools", "domain/config", "domain/tailnet", "domain/setup", "domain/storage", "domain/services"),
@@ -124,7 +124,7 @@ func symbolRules() []symbolRule {
 		{symbols: []string{sshPkg + ".*", sshPkg + "/knownhosts.*"}, owners: []string{"machines/adapter/ssh"}},
 		{symbols: []string{"fmt.Print", "fmt.Println", "fmt.Printf", "log.*", "print", "println"}},
 		{symbols: []string{"fmt.Fprint", "fmt.Fprintln", "fmt.Fprintf", "io.WriteString", "io.Copy", "io.CopyN"}, owners: []string{"output", "ui/render/*", "platform/local", "cmd/generate"}},
-		{symbols: cobraWriters(), owners: []string{"cli/kit", "wire"}},
+		{symbols: cobraWriters(), owners: []string{"surface/cli/kit", "wire"}},
 		{symbols: []string{"time.Now", "time.Since", "time.Until", "time.Sleep", "time.After", "time.Tick", "time.NewTimer", "time.NewTicker", "time.AfterFunc"}, owners: []string{"platform/local", "platform/darwin", "machines/adapter/ssh", "ui/render/tty", "tui", "tui/*"}},
 		{symbols: []string{"path/filepath.Glob", "path/filepath.Walk", "path/filepath.WalkDir", "path/filepath.EvalSymlinks", "path/filepath.Abs", "io/fs.WalkDir", "io/fs.Glob"}, owners: []string{"platform/local", "system/systemtest"}},
 		{symbols: paletteSymbols(), owners: []string{"ui/token"}},
@@ -135,8 +135,8 @@ func symbolRules() []symbolRule {
 		{symbols: []string{tea + ".*", bubble + "/*"}, owners: []string{"ui/organism", "ui/render/tui", "tui", "tui/*"}},
 		{symbols: []string{huh + ".*"}, owners: []string{"ui/organism", "ui/render/tty", "ui/render/tui"}},
 		{symbols: []string{fang + ".*"}, owners: []string{"ui/help", "wire"}},
-		{symbols: prefixed(module+"/src/core/fail.", "Silent", "Interruption"), owners: []string{"cli/kit", "wire"}},
-		{symbols: append(prefixed(module+"/src/output.", "NewWriter", "Detect", "For"), module+"/src/output.Writer.*"), owners: []string{"cli/kit", "wire"}},
+		{symbols: prefixed(module+"/src/core/fail.", "Silent", "Interruption"), owners: []string{"surface/cli/kit", "wire"}},
+		{symbols: append(prefixed(module+"/src/output.", "NewWriter", "Detect", "For"), module+"/src/output.Writer.*"), owners: []string{"surface/cli/kit", "wire"}},
 	}
 }
 
@@ -528,7 +528,7 @@ func ruleCatalog(w *world) []finding {
 func ruleWorded(w *world) []finding {
 	worded := map[string]bool{}
 	for _, f := range w.files {
-		if f.pkg != "cli/kit" || !strings.HasPrefix(filepath.Base(f.path), "failures_") {
+		if f.pkg != "surface/cli/kit" || !strings.HasPrefix(filepath.Base(f.path), "failures_") {
 			continue
 		}
 		ast.Inspect(f.syntax, func(n ast.Node) bool {
@@ -576,7 +576,7 @@ func ruleWorded(w *world) []finding {
 					continue
 				}
 				if !worded[f.types.Path()+"."+ts.Name.Name] {
-					out = append(out, finding{"worded", f.at(ts.Pos()), ts.Name.Name + " is no errors.As target of src/cli/kit/failures_*.go"})
+					out = append(out, finding{"worded", f.at(ts.Pos()), ts.Name.Name + " is no errors.As target of src/surface/cli/kit/failures_*.go"})
 				}
 			}
 		}
@@ -666,7 +666,7 @@ func ruleRegistries(w *world) []finding {
 func ruleStreams(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
-		if f.pkg == "cli/kit" || f.test {
+		if f.pkg == "surface/cli/kit" || f.test {
 			continue
 		}
 		plumbing, calls := false, []token.Pos{}
@@ -682,7 +682,7 @@ func ruleStreams(w *world) []finding {
 				if x.Sel.Name != "Streams" {
 					return true
 				}
-				if fn, ok := f.info.Uses[x.Sel].(*types.Func); ok && fn.Pkg() != nil && fn.Pkg().Path() == module+"/src/cli/kit" {
+				if fn, ok := f.info.Uses[x.Sel].(*types.Func); ok && fn.Pkg() != nil && fn.Pkg().Path() == module+"/src/surface/cli/kit" {
 					calls = append(calls, x.Pos())
 				}
 			}
@@ -728,16 +728,16 @@ func rules() []rule {
 		{"Catalog", ruleCatalog, "src/catalog/mutant_catalog.go", "package catalog\n\ntype mutantEntry struct{ Check func() bool }\n\nvar mutantDefault = mutantEntry{Check: func() bool { return true }}\n", "src/catalog/mutant_catalog.go"},
 		{"Worded", ruleWorded, "src/domain/mutant/mutant.go", "package mutant\n\ntype UnwordedError struct{}\n\nfunc (UnwordedError) Error() string { return \"unworded\" }\n", "src/domain/mutant/mutant.go"},
 		{"Comments", ruleComments, "src/present/mutant_comments.go", "package present\n\n// a comment that states no kind\nconst mutantComment = 1\n", "src/present/mutant_comments.go"},
-		{"Streams", ruleStreams, "src/cli/mutant/mutant_streams.go", "package mutant\n\nimport \"" + module + "/src/cli/kit\"\n\nfunc mutantStreams(o kit.IO) { _, _ = o.Streams() }\n", "src/cli/mutant"},
+		{"Streams", ruleStreams, "src/surface/cli/mutant/mutant_streams.go", "package mutant\n\nimport \"" + module + "/src/surface/cli/kit\"\n\nfunc mutantStreams(o kit.IO) { _, _ = o.Streams() }\n", "src/surface/cli/mutant"},
 		{"Kit", ruleKit, "src/pages/tools/mutant_kit.go", "package tools\n\nimport _ \"" + lip + "\"\n", "src/pages/tools/mutant_kit.go"},
 		{"Levels", ruleLevels, "src/ui/atom/mutant_levels.go", "package atom\n\nimport _ \"" + module + "/src/ui/render/json\"\n", "src/ui/atom/mutant_levels.go"},
 		{"LevelsDomain", ruleLevels, "src/ui/organism/mutant_levels.go", "package organism\n\nimport _ \"" + module + "/src/domain/tools\"\n", "src/ui/organism/mutant_levels.go"},
 		{"Semantic", ruleSemantic, "src/pages/tools/mutant_semantic.go", "package tools\n\nfunc Line() string { return \"\" }\n", "src/pages/tools/mutant_semantic.go"},
-		{"Glyphs", ruleGlyphs, "src/cli/tools/mutant_glyphs.go", "package toolscmd\n\nconst mutantMark = \"\u25cf\"\n", "src/cli/tools/mutant_glyphs.go"},
+		{"Glyphs", ruleGlyphs, "src/surface/cli/tools/mutant_glyphs.go", "package toolscmd\n\nconst mutantMark = \"\u25cf\"\n", "src/surface/cli/tools/mutant_glyphs.go"},
 		{"Presentation", rulePresentation, "src/page/mutant_presentation.go", "package page\n\ntype mutantStyled struct{ Tone int }\n", "src/page/mutant_presentation.go"},
 		{"Keys", ruleKeys, "src/tui/screens/tools/mutant_keys.go", "package toolsscreen\n\nimport tea \"" + tea + "\"\n\nfunc mutantKey(k tea.KeyPressMsg) bool {\n\tswitch k.String() {\n\tcase \"z\":\n\t\treturn true\n\t}\n\treturn false\n}\n", "src/tui/screens/tools/mutant_keys.go"},
 		{"Builders", ruleBuilders, "src/tui/screens/tools/mutant_builders.go", "package toolsscreen\n\nimport \"" + module + "/src/page\"\n\nvar mutantSection = page.Section{Title: \"x\"}\n", "src/tui/screens/tools/mutant_builders.go"},
-		{"Layout", ruleLayout, "src/cli/tools/mutant_layout.go", "package toolscmd\n\nimport \"fmt\"\n\nfunc mutantPad(x string) string { return fmt.Sprintf(\"%-20s\", x) }\n", "src/cli/tools/mutant_layout.go"},
+		{"Layout", ruleLayout, "src/surface/cli/tools/mutant_layout.go", "package toolscmd\n\nimport \"fmt\"\n\nfunc mutantPad(x string) string { return fmt.Sprintf(\"%-20s\", x) }\n", "src/surface/cli/tools/mutant_layout.go"},
 		{"LayoutRepeat", ruleLayout, "src/tui/screens/tools/mutant_layout.go", "package toolsscreen\n\nimport \"strings\"\n\nfunc mutantRule(n int) string { return strings.Repeat(\"-\", n) }\n", "src/tui/screens/tools/mutant_layout.go"},
 		{"Cgo", ruleCgo, "src/domain/power/mutant_cgo.go", "package power\n\nimport \"C\"\n", "src/domain/power/mutant_cgo.go"},
 		{"PowerSafe", func(w *world) []finding { return append(rulePowerSafe(w), powerRaw(w)...) }, "src/domain/power/mutant_safe.go", "package power\n\nconst mutantSafe = \"pmset -a disablesleep 1\"\n", "src/domain/power/mutant_safe.go"},

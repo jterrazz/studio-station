@@ -3,10 +3,10 @@ package wire
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	startcmd "github.com/jterrazz/studio-station/src/cli/start"
-	stopcmd "github.com/jterrazz/studio-station/src/cli/stop"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	startcmd "github.com/jterrazz/studio-station/src/surface/cli/start"
+	stopcmd "github.com/jterrazz/studio-station/src/surface/cli/stop"
 )
 
 func (m machine) control() *engine.Control {

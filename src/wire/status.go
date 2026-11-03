@@ -3,9 +3,9 @@ package wire
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	statuscmd "github.com/jterrazz/studio-station/src/cli/status"
 	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	statuscmd "github.com/jterrazz/studio-station/src/surface/cli/status"
 )
 
 func statusCommand(env kit.Env, m machine) *cobra.Command {

@@ -7,13 +7,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	servicescmd "github.com/jterrazz/studio-station/src/cli/services"
-	servicesrelease "github.com/jterrazz/studio-station/src/cli/services/release"
-	servicesurl "github.com/jterrazz/studio-station/src/cli/services/url"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	servicescmd "github.com/jterrazz/studio-station/src/surface/cli/services"
+	servicesrelease "github.com/jterrazz/studio-station/src/surface/cli/services/release"
+	servicesurl "github.com/jterrazz/studio-station/src/surface/cli/services/url"
 )
 
 func (m machine) services(env kit.Env) *services.Service {

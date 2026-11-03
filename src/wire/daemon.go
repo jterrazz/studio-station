@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	daemoncmd "github.com/jterrazz/studio-station/src/cli/daemon"
-	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
@@ -20,6 +18,8 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
 	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
+	daemoncmd "github.com/jterrazz/studio-station/src/surface/cli/daemon"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/system"
 )
 

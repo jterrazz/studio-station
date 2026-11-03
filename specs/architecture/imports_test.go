@@ -182,8 +182,9 @@ func allowedOutside(p place, ip string, test bool) bool {
 }
 
 // invariant: the allowlist of imports: the packages ARCHITECTURE 16 step 1
-// moved into the new tree as they were, and the imports (module-relative, or
-// standard) they still make against their row. It only shrinks; a line no
+// moved into the new tree as they were (a path or `x/*`), and the imports
+// (module-relative or standard, a path or `x/*`) they still make against
+// their row. It only shrinks; a line no
 // longer true fails the gate until it is removed.
 func importsTolerated() map[string][]string {
 	return map[string][]string{
@@ -191,7 +192,23 @@ func importsTolerated() map[string][]string {
 		"machines/adapter/ssh":  {"net", "os", "system"},
 		"machines/adapter/tart": {"system", "system/systemtest"},
 		"platform/local":        {"platform/darwin", "system"},
+		"surface/cli/*":         {"domain/*", "testing"},
 	}
+}
+
+func toleratedImport(pkg, rel string) (key, imp string, ok bool) {
+	for _, key := range slices.Sorted(maps.Keys(importsTolerated())) {
+		imps := importsTolerated()[key]
+		if !matches(key, pkg) {
+			continue
+		}
+		for _, imp := range imps {
+			if matches(imp, rel) {
+				return key, imp, true
+			}
+		}
+	}
+	return "", "", false
 }
 
 // invariant: rule imports: each family's model pure, adapters isolated,
@@ -214,8 +231,10 @@ func ruleFamilyImports(w *world) []finding {
 			} else {
 				rel, allowed = ip, allowedOutside(p, ip, f.test)
 			}
-			if !allowed && slices.Contains(importsTolerated()[f.pkg], rel) {
-				seen[said{f.pkg, rel}], allowed = true, true
+			if !allowed {
+				if key, imp, ok := toleratedImport(f.pkg, rel); ok {
+					seen[said{key, imp}], allowed = true, true
+				}
 			}
 			if !allowed {
 				out = append(out, finding{"imports", f.at(f.syntax.Imports[i].Pos()), fmt.Sprintf("a %s package (%q) may not import %q", p.row, f.pkg, ip)})
@@ -238,7 +257,7 @@ func TestFamilyImportsOldTree(t *testing.T) { judge(t, "FamilyImportsOldTree") }
 func TestImportsAllowlistShrinks(t *testing.T) {
 	clean, _ := worlds(t)
 	pkg := slices.Sorted(maps.Keys(importsTolerated()))[0]
-	got := ruleFamilyImports(withoutPackage(clean, func(p string) bool { return p == pkg }))
+	got := ruleFamilyImports(withoutPackage(clean, func(p string) bool { return matches(pkg, p) }))
 	if !slices.ContainsFunc(got, func(f finding) bool { return strings.Contains(f.what, "src/"+pkg+" no longer imports") }) {
 		t.Errorf("the imports rule kept the lines of src/%s, a package that is gone", pkg)
 	}

@@ -5,11 +5,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	tailnetcmd "github.com/jterrazz/studio-station/src/cli/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	tailnetcmd "github.com/jterrazz/studio-station/src/surface/cli/tailnet"
 )
 
 func (m machine) exposure(ctx context.Context) services.Exposure {

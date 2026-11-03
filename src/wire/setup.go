@@ -7,13 +7,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	setupcmd "github.com/jterrazz/studio-station/src/cli/setup"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	setupcmd "github.com/jterrazz/studio-station/src/surface/cli/setup"
 )
 
 func setupCommand(env kit.Env, m machine) *cobra.Command {

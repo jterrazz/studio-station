@@ -8,16 +8,16 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	powercmd "github.com/jterrazz/studio-station/src/cli/power"
-	powerawake "github.com/jterrazz/studio-station/src/cli/power/awake"
-	powersleep "github.com/jterrazz/studio-station/src/cli/power/sleep"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	powercmd "github.com/jterrazz/studio-station/src/surface/cli/power"
+	powerawake "github.com/jterrazz/studio-station/src/surface/cli/power/awake"
+	powersleep "github.com/jterrazz/studio-station/src/surface/cli/power/sleep"
 )
 
 // value: the pmset a lid close runs, under STATION_SYSTEM_ROOT in a spec so

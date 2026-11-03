@@ -9,11 +9,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	accountscmd "github.com/jterrazz/studio-station/src/cli/accounts"
-	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
+	accountscmd "github.com/jterrazz/studio-station/src/surface/cli/accounts"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 func (m machine) accounts() *accounts.Service {

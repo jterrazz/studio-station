@@ -9,14 +9,14 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	toolscmd "github.com/jterrazz/studio-station/src/cli/tools"
-	"github.com/jterrazz/studio-station/src/cli/tools/install"
-	"github.com/jterrazz/studio-station/src/cli/tools/uninstall"
-	"github.com/jterrazz/studio-station/src/cli/tools/upgrade"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	toolscmd "github.com/jterrazz/studio-station/src/surface/cli/tools"
+	"github.com/jterrazz/studio-station/src/surface/cli/tools/install"
+	"github.com/jterrazz/studio-station/src/surface/cli/tools/uninstall"
+	"github.com/jterrazz/studio-station/src/surface/cli/tools/upgrade"
 )
 
 func toolsCommand(env kit.Env, m machine) *cobra.Command {

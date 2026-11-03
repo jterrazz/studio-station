@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
@@ -13,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 const (

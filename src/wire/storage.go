@@ -7,12 +7,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	storagecmd "github.com/jterrazz/studio-station/src/cli/storage"
-	storageclean "github.com/jterrazz/studio-station/src/cli/storage/clean"
-	storagereset "github.com/jterrazz/studio-station/src/cli/storage/reset"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	storagecmd "github.com/jterrazz/studio-station/src/surface/cli/storage"
+	storageclean "github.com/jterrazz/studio-station/src/surface/cli/storage/clean"
+	storagereset "github.com/jterrazz/studio-station/src/surface/cli/storage/reset"
 )
 
 func storageCommand(env kit.Env, m machine) *cobra.Command {

@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/cli/kit"
-	shellcmd "github.com/jterrazz/studio-station/src/cli/shell"
 	"github.com/jterrazz/studio-station/src/domain/shell"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	shellcmd "github.com/jterrazz/studio-station/src/surface/cli/shell"
 )
 
 func shellCommand(env kit.Env, m machine) *cobra.Command {

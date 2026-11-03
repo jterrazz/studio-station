@@ -7,11 +7,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	configcmd "github.com/jterrazz/studio-station/src/cli/config"
-	configinstall "github.com/jterrazz/studio-station/src/cli/config/install"
-	configuninstall "github.com/jterrazz/studio-station/src/cli/config/uninstall"
-	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/config"
+	configcmd "github.com/jterrazz/studio-station/src/surface/cli/config"
+	configinstall "github.com/jterrazz/studio-station/src/surface/cli/config/install"
+	configuninstall "github.com/jterrazz/studio-station/src/surface/cli/config/uninstall"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 func configCommand(env kit.Env, m machine) *cobra.Command {
