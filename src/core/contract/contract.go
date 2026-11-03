@@ -1,0 +1,24 @@
+package contract
+
+import (
+	"context"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/core/machine"
+)
+
+type Self interface {
+	Read(ctx context.Context) (machine.Ref, machine.Kind, machine.System, machine.Hardware, error)
+}
+
+type Clock interface {
+	Now() time.Time
+	After(d time.Duration) <-chan time.Time
+}
+
+type Preferences interface {
+	// invariant: untyped by group, so core never knows a family's record;
+	// each family types its own group in its contract package.
+	Read(group string, v any) error
+	Write(group string, v any) error
+}
