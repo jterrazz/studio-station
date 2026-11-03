@@ -105,11 +105,7 @@ func Fact(st token.Styles, key string, keyWidth int, value string) string {
 func Confirm(st token.Styles, c page.Confirm, yes bool) []string {
 	lines := []string{st.Title.Render(c.Question)}
 	for _, l := range c.Lines {
-		text := atom.Show(l)
-		if l.Kind == page.KindCommand {
-			text = token.Arrow + " " + text
-		}
-		lines = append(lines, st.Text.Render(text))
+		lines = append(lines, st.Text.Render(atom.Show(l)))
 	}
 	verb := c.Yes
 	if verb == "" {

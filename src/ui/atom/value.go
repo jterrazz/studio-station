@@ -37,6 +37,8 @@ func Show(v page.Value) string {
 		return strconv.FormatInt(v.N, 10) + " " + token.Arrow + " " + strconv.FormatInt(v.Of, 10)
 	case page.KindList:
 		return join(v.Items, Show)
+	case page.KindCommand:
+		return token.Arrow + " " + v.Text
 	case page.KindPending:
 		return ""
 	default:
@@ -99,17 +101,29 @@ func show(v page.Value) string {
 	return v.Text
 }
 
+// invariant: the eye reads a list's command as a hint after a gap
+// (`daemon stopped  → station start`, §13.5); the pipe keeps the separator.
 func join(items []page.Value, f func(page.Value) string) string {
-	parts := make([]string, 0, len(items))
-	for _, it := range items {
-		if s := f(it); s != "" {
-			parts = append(parts, s)
-		}
-	}
+	sep := token.Sep
 	if tallies(items) {
-		return strings.Join(parts, Spaces(token.Gap))
+		sep = Spaces(token.Gap)
 	}
-	return strings.Join(parts, token.Sep)
+	var b strings.Builder
+	for _, it := range items {
+		s := f(it)
+		if s == "" {
+			continue
+		}
+		if b.Len() > 0 {
+			if strings.HasPrefix(s, token.Arrow+" ") && it.Kind == page.KindCommand {
+				b.WriteString(Spaces(token.Gap))
+			} else {
+				b.WriteString(sep)
+			}
+		}
+		b.WriteString(s)
+	}
+	return b.String()
 }
 
 // value: a list of mark counts reads as a section title's counts do, `47 ●  27 ◐`.

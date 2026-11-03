@@ -30,7 +30,7 @@ runs:
            ──────────────────────────────────────────────────────────────────────────────
            - Fleet                                                               1 ●  1 ◐
              ◐ x     host       here  online   192.0.2.1  1 VM
-               daemon not installed · station setup
+               daemon not installed  → station setup
              └─ ● t  temporary        running  -          4 cpus · 8 GB · 50.0 GB
            - Images                                                                   1 ●
                       version        size   VMs
