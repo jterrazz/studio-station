@@ -3,6 +3,9 @@
 BINARY       := station
 BUILD_PATH   := .artifacts/go/$(BINARY)
 LINUX_PATH   := .artifacts/go/$(BINARY)-linux-arm64
+# value: the binary the CLI specs run, built once before the runner starts, so its
+# workers never link it concurrently with the sessions they drive.
+TEST_PATH    := .artifacts/go/$(BINARY)-test
 BIN_DIR      := $(HOME)/.local/bin
 INSTALL_PATH := $(BIN_DIR)/$(BINARY)
 MENUBAR_APP  := .artifacts/menubar/Station.app
@@ -54,7 +57,8 @@ fix: node_modules/.install ## Every fixer: gofmt over Go, then typescript fix
 
 test: node_modules/.install ## The Go tests (modules and the boundary), then the CLI specs against a fresh build of station
 	@go test ./src/... ./specs/...
-	@STATION_FORCE_REBUILD=1 npx typescript test
+	@go build -ldflags "$(LDFLAGS)" -o $(TEST_PATH) ./src/cmd/station && touch $(TEST_PATH)
+	@npx typescript test
 
 check: lint test build-linux menubar-check ## Every gate a change passes
 

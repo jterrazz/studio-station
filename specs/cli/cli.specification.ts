@@ -1,6 +1,6 @@
 import { specification } from '@jterrazz/test';
 import { execSync } from 'node:child_process';
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, renameSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll } from 'vitest';
 
@@ -28,14 +28,19 @@ function binaryIsStale(): boolean {
     return false;
 }
 
-if (process.env.STATION_FORCE_REBUILD === '1' || binaryIsStale()) {
+// invariant: `make test` builds the binary before the runner starts; a direct run that
+// finds it stale builds it beside and renames it into place, so a worker never runs a
+// binary another worker is still writing.
+if (binaryIsStale()) {
     const version = execSync('git describe --tags --always --dirty', { cwd: REPO_ROOT })
         .toString()
         .trim();
+    const building = `${STATION_BIN}.${process.pid}`;
     execSync(
-        `go build -ldflags "-X github.com/jterrazz/studio-station/src/app.version=${version}" -o ${STATION_BIN} ./src/cmd/station`,
+        `go build -ldflags "-X github.com/jterrazz/studio-station/src/app.version=${version}" -o ${building} ./src/cmd/station`,
         { cwd: REPO_ROOT, stdio: 'inherit' },
     );
+    renameSync(building, STATION_BIN);
 }
 
 // invariant: no run reaches the real machine. HOME is the run's own directory, PATH
