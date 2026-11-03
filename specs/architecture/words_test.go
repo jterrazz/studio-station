@@ -166,6 +166,29 @@ func identifierWords(name string) []string {
 	return slices.DeleteFunc(splitWords(name), func(w string) bool { return w == "ssh" })
 }
 
+// invariant: the value of a constant of a named type is a product name, like
+// the SSH section's ID: it is exempt from ssh as an identifier is.
+func namedConstants(f *file) map[ast.Node]bool {
+	named := map[ast.Node]bool{}
+	ast.Inspect(f.syntax, func(n ast.Node) bool {
+		spec, ok := n.(*ast.ValueSpec)
+		if !ok || len(spec.Names) != len(spec.Values) {
+			return true
+		}
+		for i, name := range spec.Names {
+			c, ok := f.info.Defs[name].(*types.Const)
+			if !ok {
+				continue
+			}
+			if _, isNamed := types.Unalias(c.Type()).(*types.Named); isNamed {
+				named[spec.Values[i]] = true
+			}
+		}
+		return true
+	})
+	return named
+}
+
 func adapterPackage(obj types.Object) bool {
 	pn, ok := obj.(*types.PkgName)
 	return ok && isAdapter(strings.TrimPrefix(pn.Imported().Path(), module+"/src/"))
@@ -211,11 +234,16 @@ func technologySaid(w *world) (map[said][]string, []finding) {
 			}
 			return true
 		})
+		named := namedConstants(f)
 		literals(f, func(lit *ast.BasicLit, value string) {
 			if imports[lit] {
 				return
 			}
-			for _, word := range literalWords(value) {
+			words := literalWords(value)
+			if named[lit] {
+				words = identifierWords(value)
+			}
+			for _, word := range words {
 				report(f, f.at(lit.Pos()), word)
 			}
 		})
