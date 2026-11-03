@@ -22,6 +22,8 @@ type installOut struct{ App, State string }
 
 type removeIn struct{ App, Confirm string }
 
+type listIn struct{ Prefix string }
+
 type listOut struct{ Apps []string }
 
 var (
@@ -64,15 +66,18 @@ var remove = call.Call[deps, removeIn, struct{}]{
 	},
 }
 
-var list = call.Watch[deps, struct{}, listOut]{
-	Name: "apps.list", Section: section.Apps, Where: call.AtTarget, Applies: appsSection,
-	Run: func(_ context.Context, _ deps, _ struct{}, _ call.Progress) (<-chan call.Update[listOut], error) {
-		updates := make(chan call.Update[listOut], 2)
-		updates <- call.Update[listOut]{Value: listOut{Apps: []string{"jq"}}}
-		updates <- call.Update[listOut]{Value: listOut{Apps: []string{"jq", "node"}}}
-		close(updates)
-		return updates, nil
-	},
+func lister(ran *int) call.Watch[deps, listIn, listOut] {
+	return call.Watch[deps, listIn, listOut]{
+		Name: "apps.list", Section: section.Apps, Where: call.AtTarget, Applies: machine.All(appsSection, onMacOS),
+		Run: func(_ context.Context, _ deps, _ listIn, _ call.Progress) (<-chan call.Update[listOut], error) {
+			*ran++
+			updates := make(chan call.Update[listOut], 2)
+			updates <- call.Update[listOut]{Value: listOut{Apps: []string{"jq"}}}
+			updates <- call.Update[listOut]{Value: listOut{Apps: []string{"jq", "node"}}}
+			close(updates)
+			return updates, nil
+		},
+	}
 }
 
 type steps []string
@@ -184,7 +189,7 @@ func TestAnInputThatDoesNotDecodeIsRefusedBeforeItRuns(t *testing.T) {
 func TestAWatchFillsTheListUpdateByUpdate(t *testing.T) {
 	ran := 0
 	d := deps{installed: map[string]bool{}}
-	registry, err := call.NewRegistry([]call.Handler{call.BindWatch(list, d)}, []call.Handler{call.Bind(install(&ran), d)})
+	registry, err := call.NewRegistry([]call.Handler{call.BindWatch(lister(&ran), d)}, []call.Handler{call.Bind(install(&ran), d)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,5 +222,43 @@ func TestTwoCallsCannotClaimOneName(t *testing.T) {
 	d := deps{installed: map[string]bool{}}
 	if _, err := call.NewRegistry([]call.Handler{call.Bind(install(&ran), d)}, []call.Handler{call.Bind(install(&ran), d)}); err == nil {
 		t.Error("two families both registered apps.install")
+	}
+}
+
+func TestAWatchIsRefusedByTheSameGateBeforeItStreams(t *testing.T) {
+	for _, c := range []struct {
+		gesture string
+		target  machine.Profile
+		in      string
+		refused func(*testing.T, error)
+	}{
+		{"apps.list on infra", infra, `{}`, func(t *testing.T, err error) {
+			if e := notForThisMachine(t, err); e.Detail["section"] != "apps" || e.Detail["kind"] != "server" {
+				t.Errorf("the refusal names %+v", e.Detail)
+			}
+		}},
+		{"apps.list on linux-1", linux1, `{}`, func(t *testing.T, err error) {
+			if e := notForThisMachine(t, err); e.Detail["why"] != "linux-1 runs Linux: Mac App Store apps live on macOS only" {
+				t.Errorf("the refusal says %q", e.Detail["why"])
+			}
+		}},
+		{"apps.list with a number for a prefix", laptop, `{"Prefix":7}`, func(t *testing.T, err error) {
+			var e *fail.Error
+			if !errors.As(err, &e) || e.Code != call.BadInput || fail.ExitOf(err) != fail.ExitUsage {
+				t.Errorf("got %v, want %s, exit 2", err, call.BadInput)
+			}
+		}},
+	} {
+		t.Run(c.gesture, func(t *testing.T) {
+			ran := 0
+			h := call.BindWatch(lister(&ran), deps{installed: map[string]bool{}})
+
+			updates, err := h.Watch(t.Context(), c.target, json.RawMessage(c.in), nil)
+
+			c.refused(t, err)
+			if updates != nil || ran != 0 {
+				t.Errorf("the watch streamed anyway, ran %d times", ran)
+			}
+		})
 	}
 }
