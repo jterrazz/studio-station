@@ -23,19 +23,21 @@ The binary reads nothing from the clone: the dotfiles and the VM recipes are emb
 
 ## The make targets
 
-| Target             | Does                                                                                                                       |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `make install`     | Fetch the Go modules and install the npm half (`npm ci`)                                                                   |
-| `make build`       | Build `.artifacts/go/station`, its version stamped from `git describe`                                                     |
-| `make build-linux` | Build `.artifacts/go/station-linux-arm64`, the binary a VM image carries                                                   |
-| `make lint`        | Both halves: `gofmt -l`, `go tool golangci-lint` and `go tool deadcode` over Go, then `typescript check`                   |
-| `make fix`         | Every fixer: `gofmt -w ./src ./specs`, then `typescript fix`                                                               |
-| `make test`        | `go test ./src/... ./specs/...`, then `typescript test`: the `specs/cli` suite against a fresh build                       |
-| `make check`       | `lint`, `test`, then `build-linux`: the gate a change passes                                                               |
-| `make generate`    | Regenerate the catalogue's projections (the toolbelt skill's rosters, `docs/reference/footprint.md`) and the page fixtures |
-| `make provision`   | Build, put `station` in `~/.local/bin`, then run `station setup`                                                           |
-| `make deprovision` | Remove the provisioned binary                                                                                              |
-| `make clean`       | Remove `.artifacts/`                                                                                                       |
+| Target               | Does                                                                                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make install`       | Fetch the Go modules and install the npm half (`npm ci`)                                                                                                                                          |
+| `make build`         | Build `.artifacts/go/station`, its version stamped from `git describe`                                                                                                                            |
+| `make build-linux`   | Build `.artifacts/go/station-linux-arm64`, the binary a VM image carries                                                                                                                          |
+| `make lint`          | Both halves: `gofmt -l`, `go tool golangci-lint` and `go tool deadcode` over Go, then `typescript check`                                                                                          |
+| `make fix`           | Every fixer: `gofmt -w ./src ./specs`, then `typescript fix`                                                                                                                                      |
+| `make test`          | `go test ./src/... ./specs/...`, then `typescript test`: the `specs/cli` suite against a fresh build                                                                                              |
+| `make check`         | `lint`, `test`, `build-linux`, then `menubar-check`: the gate a change passes                                                                                                                     |
+| `make menubar-check` | `swift test` over `apps/menubar` (the page fixtures drawn offscreen against PNG goldens), then its bundle; one line of skip without a macOS SDK, a failure then under `STATION_REQUIRE_MENUBAR=1` |
+| `make menubar`       | Build `.artifacts/menubar/Station.app`, signed ad hoc; `make menubar-install` copies it to `~/Applications`, `make menubar-uninstall` unregisters its login item and removes it                   |
+| `make generate`      | Regenerate the catalogue's projections (the toolbelt skill's rosters, `docs/reference/footprint.md`) and the page fixtures                                                                        |
+| `make provision`     | Build, put `station` in `~/.local/bin`, then run `station setup`                                                                                                                                  |
+| `make deprovision`   | Remove the provisioned binary                                                                                                                                                                     |
+| `make clean`         | Remove `.artifacts/`                                                                                                                                                                              |
 
 `install`, `build`, `lint`, `fix`, `test` and `check` are the gestures every repository of the estate answers, so a session that never opened this one installs, proves and repairs it the same way; `make install` touches nothing outside the checkout, and putting `station` on the machine is `make provision`'s alone. `make check` is the whole gate, and it fails on the first finding of either half. The Go half runs `golangci-lint` and `deadcode` with `go tool`, at the versions the `tool` directive of `go.mod` declares, so the Go that builds the binary builds its linters and a green run is never a fact about the day it ran. Which linters judge the Go sources, and the four exclusions that carry a reason, are `.golangci.yml`. The TypeScript half is `typescript check` from `@jterrazz/typescript`, whose passes are the toolchain's own [Quality checks](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md).
 
@@ -43,20 +45,21 @@ The binary reads nothing from the clone: the dotfiles and the VM recipes are emb
 
 Most changes are a catalogue value, not new code ([Architecture](../concepts/architecture.md)). The folder to open:
 
-| Change                                          | Folder                                                                                                           |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| A tool or an agent skill `station tools` offers | `src/catalog/tools.go`, `src/catalog/skills.go`                                                                  |
-| A config item                                   | `src/catalog/config.go`, its procedure in `src/domain/config/`                                                   |
-| What a tool keeps on disk, how it is cleaned    | its row in `src/catalog/storage.go`                                                                              |
-| A manager `--via` knows                         | `src/catalog/managers.go`                                                                                        |
-| A `station run` shortcut                        | `src/catalog/shortcuts.go`                                                                                       |
-| How a method installs                           | `src/domain/tools/methods.go`, the one method table                                                              |
-| A VM image's recipe                             | `src/catalog/images/`                                                                                            |
-| An application's dotfile                        | `src/catalog/dotfiles/`                                                                                          |
-| A new verb                                      | a leaf folder `src/cli/<noun>/<verb>/`, its domain call, its presenter in `src/present/`, its file in `src/app/` |
-| What a document shows                           | `src/present/<subject>/`                                                                                         |
-| What the TUI shows                              | `src/tui/screens/`                                                                                               |
-| The wording of a domain error                   | `src/cli/kit/failures_<noun>.go`                                                                                 |
+| Change                                          | Folder                                                                                                                                                                                                                                                  |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A tool or an agent skill `station tools` offers | `src/catalog/tools.go`, `src/catalog/skills.go`                                                                                                                                                                                                         |
+| A config item                                   | `src/catalog/config.go`, its procedure in `src/domain/config/`                                                                                                                                                                                          |
+| What a tool keeps on disk, how it is cleaned    | its row in `src/catalog/storage.go`                                                                                                                                                                                                                     |
+| A manager `--via` knows                         | `src/catalog/managers.go`                                                                                                                                                                                                                               |
+| A `station run` shortcut                        | `src/catalog/shortcuts.go`                                                                                                                                                                                                                              |
+| How a method installs                           | `src/domain/tools/methods.go`, the one method table                                                                                                                                                                                                     |
+| A VM image's recipe                             | `src/catalog/images/`                                                                                                                                                                                                                                   |
+| An application's dotfile                        | `src/catalog/dotfiles/`                                                                                                                                                                                                                                 |
+| A new verb                                      | a leaf folder `src/cli/<noun>/<verb>/`, its domain call, its presenter in `src/present/`, its file in `src/app/`                                                                                                                                        |
+| What a document shows                           | `src/present/<subject>/`                                                                                                                                                                                                                                |
+| What the TUI shows                              | `src/tui/screens/`                                                                                                                                                                                                                                      |
+| What the menu bar shows                         | the `menubar` page, `src/pages/menubar/`; how it is drawn, the Swift kit in `apps/menubar/sources/station-kit/`; its goldens are rewritten by `STATION_UPDATE_GOLDENS=1 swift test --package-path apps/menubar --scratch-path .artifacts/menubar/build` |
+| The wording of a domain error                   | `src/cli/kit/failures_<noun>.go`                                                                                                                                                                                                                        |
 
 Dependencies flow one way; `specs/architecture/layers_test.go` refuses a change that crosses a layer. The linters run with `go tool`, so `make lint` needs no installed tool.
 

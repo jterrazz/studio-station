@@ -45,7 +45,7 @@ The repo-structure doctrine is authored **here** and ships to agents as the `stu
 ```bash
 make install    # Go modules + the npm half
 make build      # Build .artifacts/go/station
-make check      # lint (gofmt, golangci-lint, deadcode, typescript check), test, then build-linux
+make check      # lint (gofmt, golangci-lint, deadcode, typescript check), test, build-linux, then menubar-check (apps/menubar: swift test, the bundle)
 make fix        # gofmt -w, then typescript fix
 make provision  # put this build on the machine as the real station, then station setup
 ```

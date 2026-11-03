@@ -1,10 +1,15 @@
-.PHONY: help install build build-linux lint fix test check e2e-machine provision deprovision generate clean
+.PHONY: help install build build-linux lint fix test check menubar-check menubar menubar-install menubar-uninstall e2e-machine provision deprovision generate clean
 
 BINARY       := station
 BUILD_PATH   := .artifacts/go/$(BINARY)
 LINUX_PATH   := .artifacts/go/$(BINARY)-linux-arm64
 BIN_DIR      := $(HOME)/.local/bin
 INSTALL_PATH := $(BIN_DIR)/$(BINARY)
+MENUBAR_APP  := .artifacts/menubar/Station.app
+# value: /usr/bin/make on macOS is itself an xcrun shim, so a missing SDK is
+# staged by overriding the probe (`make menubar-check SDK_PROBE=false`).
+SDK_PROBE    ?= xcrun --sdk macosx --show-sdk-path
+MENUBAR_HOME := $(HOME)/Applications/Station.app
 LDFLAGS      := -X github.com/jterrazz/studio-station/src/app.version=$(shell git describe --tags --always --dirty)
 
 CYAN  := \033[36m
@@ -51,7 +56,30 @@ test: node_modules/.install ## The Go tests (modules and the boundary), then the
 	@go test ./src/... ./specs/...
 	@STATION_FORCE_REBUILD=1 npx typescript test
 
-check: lint test build-linux ## Every gate a change passes
+check: lint test build-linux menubar-check ## Every gate a change passes
+
+menubar-check: ## The menu bar's swift test, then its bundle; one line of skip where no macOS SDK resolves
+	@if ! $(SDK_PROBE) >/dev/null 2>&1; then \
+		if [ "$${STATION_REQUIRE_MENUBAR:-}" = 1 ]; then \
+			printf "menubar: no macOS SDK, and STATION_REQUIRE_MENUBAR=1 requires one\n"; exit 1; \
+		fi; \
+		printf "menubar: skipped, no macOS SDK (install Xcode to build apps/menubar)\n"; exit 0; \
+	fi; \
+	swift test --package-path apps/menubar --scratch-path .artifacts/menubar/build && apps/menubar/scripts/build.sh
+
+menubar: ## Build the menu bar's bundle, signed ad hoc, into $(MENUBAR_APP)
+	@apps/menubar/scripts/build.sh
+
+menubar-install: menubar ## Copy the bundle to ~/Applications/Station.app, and nothing else
+	@mkdir -p $(HOME)/Applications
+	@rm -rf "$(MENUBAR_HOME)"
+	@cp -R $(MENUBAR_APP) "$(MENUBAR_HOME)"
+	@printf "$(GREEN)●$(RESET) Installed $(MENUBAR_HOME)\n"
+
+menubar-uninstall: ## Unregister the login item, then remove ~/Applications/Station.app
+	@if [ -x "$(MENUBAR_HOME)/Contents/MacOS/StationMenuBar" ]; then "$(MENUBAR_HOME)/Contents/MacOS/StationMenuBar" --unregister-login-item || true; fi
+	@rm -rf "$(MENUBAR_HOME)"
+	@printf "$(GREEN)●$(RESET) Removed $(MENUBAR_HOME)\n"
 
 e2e-machine: build build-linux ## The machine specs on a real VM of this host: KIND=linux (tier 2) or KIND=macos (tier 3); never in check
 	@specs/machine/run.sh $(KIND)
