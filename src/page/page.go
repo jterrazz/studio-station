@@ -212,6 +212,7 @@ const (
 	FieldText    FieldKind = "text"
 	FieldSecret  FieldKind = "secret"
 	FieldSelect  FieldKind = "select"
+	FieldMulti   FieldKind = "multiselect"
 	FieldConfirm FieldKind = "confirm"
 )
 

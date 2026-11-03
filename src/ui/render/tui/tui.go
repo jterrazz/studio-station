@@ -537,7 +537,14 @@ func (b Browser) Bindings() []organism.Binding {
 	for _, a := range actions {
 		out = append(out, organism.Binding{Key: a.Key, Label: a.Label, Group: organism.GroupTab, Mutates: a.Mutates})
 	}
-	return append(out, keyMap()...)
+	// invariant: a tab that binds a global key itself (Accounts' r, revoke)
+	// owns it: the global meaning is neither listed nor run there.
+	for _, g := range keyMap() {
+		if !slices.ContainsFunc(actions, func(a page.Action) bool { return a.Key == g.Key }) {
+			out = append(out, g)
+		}
+	}
+	return out
 }
 
 func keyMap() []organism.Binding {
@@ -550,7 +557,7 @@ func keyMap() []organism.Binding {
 	return []organism.Binding{
 		list("up/down", "move"), list("enter", "detail"), list("/", "filter"), list("space", "fold"),
 		list("g G", "top, bottom"), list("esc", "back, clear"),
-		global("r", "reload"), global("q", "quit"), global("1-6", "tab"), global("tab", "next tab"),
+		global("r", "reload"), global("q", "quit"), global("1-7", "tab"), global("tab", "next tab"),
 	}
 }
 

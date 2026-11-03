@@ -16,6 +16,9 @@ type Provider struct {
 	Tool      string
 	Reads     []ProviderRead
 	Budget    time.Duration
+	// value: where the owner ends a right station did not lend: shown on a
+	// revoke of an own row, never run.
+	Logout string
 }
 
 const (
@@ -31,17 +34,17 @@ const (
 )
 
 var Providers = []Provider{
-	{ID: ProviderGitHub, Label: "GitHub", Host: true, VM: true, Tool: "gh", Reads: []ProviderRead{{Name: "gh", Args: []string{"auth", "status", "--hostname", "github.com"}}}, Budget: 5 * time.Second},
-	{ID: ProviderNPM, Label: "npm", Host: true, VM: true, Tool: "npm", Reads: []ProviderRead{{Name: "npm", Args: []string{"whoami"}}}, Budget: 5 * time.Second},
-	{ID: ProviderClaude, Label: "Claude", Host: true, VM: true, Tool: "claude", Reads: []ProviderRead{{Name: "claude", Args: []string{"auth", "status"}}}, Budget: 5 * time.Second},
-	{ID: ProviderTailscale, Label: "Tailscale", Host: true},
-	{ID: ProviderCloudflare, Label: "Cloudflare", Host: true, VM: true, Tool: "wrangler", Reads: []ProviderRead{{Name: "wrangler", Args: []string{"whoami"}}}, Budget: 10 * time.Second},
+	{ID: ProviderGitHub, Label: "GitHub", Logout: "gh auth logout", Host: true, VM: true, Tool: "gh", Reads: []ProviderRead{{Name: "gh", Args: []string{"auth", "status", "--hostname", "github.com"}}}, Budget: 5 * time.Second},
+	{ID: ProviderNPM, Label: "npm", Logout: "npm logout", Host: true, VM: true, Tool: "npm", Reads: []ProviderRead{{Name: "npm", Args: []string{"whoami"}}}, Budget: 5 * time.Second},
+	{ID: ProviderClaude, Label: "Claude", Logout: "claude /logout", Host: true, VM: true, Tool: "claude", Reads: []ProviderRead{{Name: "claude", Args: []string{"auth", "status"}}}, Budget: 5 * time.Second},
+	{ID: ProviderTailscale, Label: "Tailscale", Logout: "tailscale logout", Host: true},
+	{ID: ProviderCloudflare, Label: "Cloudflare", Logout: "wrangler logout", Host: true, VM: true, Tool: "wrangler", Reads: []ProviderRead{{Name: "wrangler", Args: []string{"whoami"}}}, Budget: 10 * time.Second},
 	{ID: ProviderGit, Label: "git", Host: true, VM: true, Tool: "git", Reads: []ProviderRead{
 		{Name: "git", Args: []string{"config", "--global", "user.name"}},
 		{Name: "git", Args: []string{"config", "--global", "user.email"}},
 	}, Budget: 2 * time.Second},
-	{ID: ProviderSSH, Label: "ssh", Host: true, VM: true, Tool: "ssh-add", Reads: []ProviderRead{{Name: "ssh-add", Args: []string{"-l"}}}, Budget: 2 * time.Second},
-	{ID: ProviderDocker, Label: "Docker", Host: true, VM: true, Budget: 5 * time.Second},
+	{ID: ProviderSSH, Label: "ssh", Logout: "ssh-add -D", Host: true, VM: true, Tool: "ssh-add", Reads: []ProviderRead{{Name: "ssh-add", Args: []string{"-l"}}}, Budget: 2 * time.Second},
+	{ID: ProviderDocker, Label: "Docker", Logout: "docker logout", Host: true, VM: true, Budget: 5 * time.Second},
 	{ID: ProviderEntry, Label: "entry", VM: true},
 }
 

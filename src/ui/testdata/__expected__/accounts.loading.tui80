@@ -13,4 +13,4 @@
    ◌ api                   lasting
    └─ ◐ Claude             admin@jterrazz.com  lent  42m left
         → station secrets lend --to api operator:claude:oauth-token
- ↑↓ move  R reload  enter detail  / filter  space fold  r reload  ? keys
+ ↑↓ move  R reload  enter detail  / filter  space fold  q quit  ? keys

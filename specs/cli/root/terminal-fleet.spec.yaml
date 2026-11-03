@@ -26,7 +26,7 @@ runs:
           send q
       exit: 0
       stdout: |4
-           station  Home · Tools · Config · Storage │ Fleet · Services               host
+           station  Home · Tools · Config · Storage │ Fleet · Services · Accounts    host
            ──────────────────────────────────────────────────────────────────────────────
            - Fleet                                                               1 ●  1 ◐
              ◐ x     host       here  online   192.0.2.1  1 VM

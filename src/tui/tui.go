@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -15,6 +16,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
+	accountsscreen "github.com/jterrazz/studio-station/src/tui/screens/accounts"
 	configscreen "github.com/jterrazz/studio-station/src/tui/screens/config"
 	fleetscreen "github.com/jterrazz/studio-station/src/tui/screens/fleet"
 	homescreen "github.com/jterrazz/studio-station/src/tui/screens/home"
@@ -36,6 +38,7 @@ type Deps struct {
 	Secrets  *secrets.Service
 	Services *services.Service
 	Tailnet  *tailnet.Service
+	Accounts *accounts.Service
 	Remote   func(ctx context.Context, machine string, words []string) error
 	Station  func(ctx context.Context, words []string) error
 	Describe func(error) (message, hint string)
@@ -57,6 +60,7 @@ func Tabs() []Tab {
 		{Tab: ui.Tab{Label: "Storage"}, Probes: "storage/"},
 		{Tab: ui.Tab{Label: "Fleet", Fleet: true}},
 		{Tab: ui.Tab{Label: "Services", Fleet: true}},
+		{Tab: ui.Tab{Label: "Accounts", Fleet: true}, Probes: "accounts/"},
 	}
 }
 
@@ -72,6 +76,7 @@ func Run(ctx context.Context, d Deps) error {
 			Remote: d.Remote, Describe: describe,
 		}, d.Here),
 		servicesscreen.New(ctx, d.Services, d.Here, describe),
+		accountsscreen.New(ctx, d.Accounts, d.Secrets, d.Here, describe),
 	}, d.Prefer)
 	app.stop = d.Stop
 	_, err := tea.NewProgram(app, tea.WithContext(ctx)).Run()

@@ -2,6 +2,7 @@ package organism
 
 import (
 	"errors"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -92,6 +93,29 @@ func Field(f page.Field) (field huh.Field, read func() string) {
 			s = s.Description(f.Note)
 		}
 		return s, func() string { return value }
+	case page.FieldMulti:
+		// value: a multiselect's answer is its chosen values joined by commas,
+		// its Default the ones checked at first.
+		chosen := strings.Split(value, ",")
+		opts := make([]huh.Option[string], 0, len(f.Options))
+		for _, o := range f.Options {
+			label := o.Label
+			if label == "" {
+				label = o.Value
+			}
+			if o.Note != "" {
+				label += atom.Spaces(token.Gap) + o.Note
+			}
+			opts = append(opts, huh.NewOption(label, o.Value).Selected(slices.Contains(chosen, o.Value)))
+		}
+		picked := make([]string, 0, len(f.Options))
+		for _, o := range f.Options {
+			if slices.Contains(chosen, o.Value) {
+				picked = append(picked, o.Value)
+			}
+		}
+		m := huh.NewMultiSelect[string]().Title(f.Label).Value(&picked).Options(opts...).Height(len(opts) + 2)
+		return m, func() string { return strings.Join(picked, ",") }
 	case page.FieldConfirm:
 		answer := value == strconv.FormatBool(true)
 		c := huh.NewConfirm().Title(f.Label).Value(&answer)

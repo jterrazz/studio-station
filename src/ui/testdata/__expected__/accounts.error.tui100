@@ -11,4 +11,4 @@
    └─ ● Docker             deploy                    own  osxkeychain
    ◐ daemon                stopped
      → station start
- ↑↓ move  R reload  enter detail  / filter  space fold  r reload  q quit  ? keys
+ ↑↓ move  R reload  enter detail  / filter  space fold  q quit  ? keys

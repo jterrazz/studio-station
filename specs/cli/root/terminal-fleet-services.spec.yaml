@@ -19,7 +19,7 @@ runs:
           send q
       exit: 0
       stdout: |4
-           station  Home · Tools · Config · Storage │ Fleet · Services               host
+           station  Home · Tools · Config · Storage │ Fleet · Services · Accounts    host
            ──────────────────────────────────────────────────────────────────────────────
            - x  40000-40999 · 0 leased · 1000 free · 20 per VM                        1 ◐
                        state

@@ -416,6 +416,12 @@ func Lendable(list []string, provider string) []string {
 	return out
 }
 
+func (s *Service) Forget() {
+	if s.pool != nil {
+		s.pool.Forget("accounts/")
+	}
+}
+
 func (s *Service) LendList() []string {
 	if s.p.LendList == nil {
 		return nil
@@ -460,9 +466,9 @@ func withHint(a Account, vm string) Account {
 
 func RowID(machine, provider string) string { return machine + "/" + provider }
 
-// value: a lent copy is the host's right, so its identity is the host's for
-// that provider once the host's read has answered.
 func (r Report) Resolved() Report {
+	// value: a lent copy is the host's right, so its identity is the host's
+	// for that provider once the host's read has answered.
 	if len(r.Machines) == 0 || r.Machines[0].Kind != KindHost {
 		return r
 	}

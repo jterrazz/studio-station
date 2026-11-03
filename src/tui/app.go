@@ -125,6 +125,9 @@ func (a App) key(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "shift+tab":
 		return a.show((a.active + len(a.screens) - 1) % len(a.screens))
 	case "r":
+		if owner, ok := a.screens[a.active].(interface{ OwnsReload() bool }); ok && owner.OwnsReload() {
+			return a.forward(k)
+		}
 		model, cmd := a.forward(tab.Reload{})
 		app, _ := model.(App)
 		return app.turn(cmd)

@@ -13,7 +13,7 @@ runs:
           send ?
           see This tab
           see i  install
-          see 1-6  tab
+          see 1-7  tab
           send x
           gone This tab
           see + Runtimes
