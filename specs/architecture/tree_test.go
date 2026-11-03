@@ -41,10 +41,6 @@ func restOf(pkg string) string {
 	return rest
 }
 
-func tolerated(pkg string) bool {
-	return slices.Contains(toleratedTop(), topOf(pkg))
-}
-
 func familyInside(family, rest string) bool {
 	switch rest {
 	case "", "contract", "contract/contracttest", "calls":

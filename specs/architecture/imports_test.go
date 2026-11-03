@@ -182,8 +182,8 @@ func allowedOutside(p place, ip string, test bool) bool {
 
 // invariant: rule imports: each family's model pure, adapters isolated,
 // surfaces through calls. The tolerated top-level packages stay under the
-// import table of layers_test.go, and importing one is tolerated until it
-// moves: its line in toleratedTop is the allowlist of both rules.
+// import table of layers_test.go; a package this table rules imports one
+// only where its row allows it, so no family reaches today's I/O.
 func ruleFamilyImports(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
@@ -194,7 +194,7 @@ func ruleFamilyImports(w *world) []finding {
 		for i, ip := range f.imports {
 			var allowed bool
 			if rel, mod := strings.CutPrefix(ip, module+"/src/"); mod {
-				allowed = tolerated(rel) || allowedModule(p, f.pkg, rel, f.test)
+				allowed = allowedModule(p, f.pkg, rel, f.test)
 			} else {
 				allowed = allowedOutside(p, ip, f.test)
 			}
@@ -206,4 +206,5 @@ func ruleFamilyImports(w *world) []finding {
 	return out
 }
 
-func TestFamilyImports(t *testing.T) { judge(t, "FamilyImports") }
+func TestFamilyImports(t *testing.T)        { judge(t, "FamilyImports") }
+func TestFamilyImportsOldTree(t *testing.T) { judge(t, "FamilyImportsOldTree") }

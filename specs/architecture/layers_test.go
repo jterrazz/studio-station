@@ -736,6 +736,7 @@ func rules() []rule {
 		{"TreeInside", ruleTree, "src/apps/helpers/mutant.go", "package helpers\n", "src/apps/helpers"},
 		{"TreeApplies", ruleTree, "src/awake/mutant_tree.go", "package awake\n", "src/awake"},
 		{"FamilyImports", ruleFamilyImports, "src/apps/mutant_imports.go", "package apps\n\nimport _ \"os/exec\"\n", "src/apps/mutant_imports.go"},
+		{"FamilyImportsOldTree", ruleFamilyImports, "src/apps/mutant_imports_old.go", "package apps\n\nimport _ \"" + module + "/src/system/host\"\n", "src/apps/mutant_imports_old.go"},
 		{"TechnologyWords", ruleTechnologyWords, "src/apps/mutant_words.go", "package apps\n\nconst mutantMethod = \"brew\"\n", "src/apps/mutant_words.go"},
 		{"TechnologyWordsSSH", ruleTechnologyWords, "src/apps/mutant_ssh.go", "package apps\n\nvar mutantArgv = []string{\"ssh\", \"-o\", \"BatchMode=yes\", \"vm\", \"true\"}\n", "src/apps/mutant_ssh.go"},
 		{"NoModelNames", ruleNoModelNames, "src/awake/mutant_models.go", "package awake\n\nfunc mutantLaptop(model string) bool { return model == \"MacBook\" }\n", "src/awake/mutant_models.go"},
