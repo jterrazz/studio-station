@@ -174,15 +174,31 @@ func (g Grid) item(out *[]Line, it page.Item, entries []entry, at int, cols []co
 	return at
 }
 
+// invariant: a link leads with its Lead (never cut) or its label, its value
+// starts at the first column, cut by its kind (a URL keeps its scheme and
+// port), and its detail is Whole: dropped when the line is short (§13.5).
 func (g Grid) link(prefix string, l page.Link, labelWidth int) string {
 	st := g.Styles
-	label := atom.End(l.Label, max(labelWidth-atom.Width(prefix), 1))
-	line := atom.Spaces(token.Margin+token.Indent) + st.Subtle.Render(prefix) + atom.Spaces(token.MarkWidth) + st.Strong.Render(label) + atom.Spaces(labelWidth-atom.Width(prefix)-atom.Width(label))
-	if s := atom.Show(l.Value); s != "" {
-		line += atom.Spaces(token.Gap) + st.Text.Render(s)
+	end := g.Width - 1
+	slot := labelWidth - atom.Width(prefix) + token.MarkWidth
+	head := atom.Show(l.Lead)
+	if head == "" {
+		head = atom.End(l.Label, max(slot, 1))
 	}
-	if s := atom.Show(l.Detail); s != "" {
-		line += atom.Spaces(token.Gap) + st.Muted.Render(atom.Fit(l.Detail, max(g.avail()-atom.Width(line)+token.Margin+token.Indent+token.MarkWidth, 8)))
+	line := atom.Spaces(token.Margin+token.Indent) + st.Subtle.Render(prefix) + st.Strong.Render(head)
+	at := token.Margin + token.Indent + atom.Width(prefix) + atom.Width(head)
+	value, detail := atom.Show(l.Value), atom.Show(l.Detail)
+	if value != "" {
+		pad := max(slot-atom.Width(head), 0) + token.Gap
+		if detail != "" && at+pad+atom.Width(value)+token.Gap+atom.Width(detail) > end {
+			detail = ""
+		}
+		text := atom.Fit(l.Value, max(end-at-pad, 1))
+		line += atom.Spaces(pad) + st.Text.Render(text)
+		at += pad + atom.Width(text)
+	}
+	if detail != "" && at+token.Gap+atom.Width(detail) <= end {
+		line += atom.Spaces(token.Gap) + st.Muted.Render(detail)
 	}
 	return line
 }

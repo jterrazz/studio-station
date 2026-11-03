@@ -49,7 +49,7 @@
  Fleet  4 ◌
    ◌ jterrazz-mac-mini
    ├─ ◌ linux-1
-   │  ├─   api          8081 → 40002  https://jterrazz-mac-mini.ts.net:40002
+   │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
    │  └─ ◌ web
    └─ ◌ linux-2
 

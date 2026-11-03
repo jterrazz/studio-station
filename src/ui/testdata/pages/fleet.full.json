@@ -201,19 +201,14 @@
                     {
                       "link": {
                         "label": "5173",
+                        "lead": {
+                          "kind": "portmap",
+                          "n": 5173,
+                          "of": 40001
+                        },
                         "value": {
-                          "kind": "list",
-                          "items": [
-                            {
-                              "kind": "portmap",
-                              "n": 5173,
-                              "of": 40001
-                            },
-                            {
-                              "kind": "url",
-                              "text": "https://jterrazz-macbook-pro.tail1234.ts.net:40001"
-                            }
-                          ]
+                          "kind": "url",
+                          "text": "https://jterrazz-macbook-pro.tail1234.ts.net:40001"
                         },
                         "detail": {
                           "kind": "text",
@@ -226,18 +221,13 @@
                     {
                       "link": {
                         "label": "5432",
+                        "lead": {
+                          "kind": "portmap",
+                          "n": 5432,
+                          "of": 40002
+                        },
                         "value": {
-                          "kind": "list",
-                          "items": [
-                            {
-                              "kind": "portmap",
-                              "n": 5432,
-                              "of": 40002
-                            },
-                            {
-                              "kind": "url"
-                            }
-                          ]
+                          "kind": "url"
                         },
                         "detail": {
                           "kind": "text",

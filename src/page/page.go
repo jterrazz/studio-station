@@ -143,8 +143,12 @@ type Note struct {
 }
 
 type Link struct {
-	Label  string `json:"label,omitempty"`
-	Value  Value  `json:"value,omitzero"`
+	Label string `json:"label,omitempty"`
+	// value: what the line leads with in the label's place, never cut (a
+	// service's `5173 → 40001`); Label stays the link's name for the records.
+	Lead  Value `json:"lead,omitzero"`
+	Value Value `json:"value,omitzero"`
+	// value: dropped whole, never cut, when the line is short (a process name).
 	Detail Value  `json:"detail,omitzero"`
 	Page   ID     `json:"page,omitempty"`
 	Row    string `json:"row,omitempty"`

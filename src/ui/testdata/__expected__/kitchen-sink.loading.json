@@ -707,15 +707,19 @@
                   "items": [
                     {
                       "link": {
-                        "label": "api",
-                        "value": {
+                        "label": "8081",
+                        "lead": {
                           "kind": "portmap",
                           "n": 8081,
                           "of": 40002
                         },
-                        "detail": {
+                        "value": {
                           "kind": "url",
                           "text": "https://jterrazz-mac-mini.ts.net:40002"
+                        },
+                        "detail": {
+                          "kind": "text",
+                          "text": "vite"
                         },
                         "page": "services",
                         "row": "api"

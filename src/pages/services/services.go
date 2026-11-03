@@ -140,9 +140,9 @@ func Row(s services.View, host string) page.Row {
 }
 
 func Link(s services.View) page.Link {
-	l := page.Link{Label: strconv.Itoa(s.GuestPort), Value: page.URL(s.URLs.Public), Detail: page.Text(s.Process), Page: "services", Row: rowID(s.VM, s.GuestPort)}
+	l := page.Link{Label: strconv.Itoa(s.GuestPort), Lead: page.Port(int64(s.GuestPort)), Value: page.URL(s.URLs.Public), Detail: page.Text(s.Process), Page: "services", Row: rowID(s.VM, s.GuestPort)}
 	if s.HostPort != 0 {
-		l.Value = page.List(page.PortMap(int64(s.GuestPort), int64(s.HostPort)), page.URL(s.URLs.Public))
+		l.Lead = page.PortMap(int64(s.GuestPort), int64(s.HostPort))
 	}
 	return l
 }

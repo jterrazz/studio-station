@@ -135,7 +135,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 				{Group: &page.Group{
 					Head: row("linux-1", page.OK, page.Text("lasting"), page.Text("jterrazz-mac-mini")),
 					Items: []page.Item{
-						{Link: &page.Link{Label: "api", Value: page.PortMap(8081, 40002), Detail: page.URL("https://jterrazz-mac-mini.ts.net:40002"), Page: "services", Row: "api"}},
+						{Link: &page.Link{Label: "8081", Lead: page.PortMap(8081, 40002), Value: page.URL("https://jterrazz-mac-mini.ts.net:40002"), Detail: page.Text("vite"), Page: "services", Row: "api"}},
 						it(row("web", page.OK, page.Text("service"), page.Text("jterrazz-mac-mini"))),
 					},
 				}},
