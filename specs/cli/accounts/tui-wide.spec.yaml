@@ -8,7 +8,7 @@ runs:
       stdin: |
           see Machine
           send 7
-          see 6 keys
+          see 9 ●
           screen
           send /ssh\r
           send \x1b[B
