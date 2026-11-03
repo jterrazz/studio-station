@@ -1,4 +1,4 @@
-description: 'with tart and no daemon the daemon is not installed, or stopped once its agent exists; without tart it is not needed'
+description: 'with tart and no answer the daemon is not installed, or stopped once its agent exists'
 fixture: ../__fixtures__/vms/
 env: daemon
 runs:

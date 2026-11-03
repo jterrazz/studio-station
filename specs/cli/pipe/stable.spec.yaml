@@ -1,12 +1,6 @@
 description: 'every read piped is the record d653060 printed, but for the changes UI-SPEC §20 lists'
 fixture:
-    - ../machines/__fixtures__/hosts-x-y/
-    - ../machines/__fixtures__/stubs/
-    - ../machines/__fixtures__/fleet-y-answers/
-    - ../machines/__fixtures__/tailnet-nodes/
-    - ../status/__fixtures__/mac/
-    - ../status/__fixtures__/gateway/
-    - ../status/__fixtures__/processes/
+    - ./__fixtures__/estate/
     - ../__fixtures__/serving/
 runs:
     - command: 'status'

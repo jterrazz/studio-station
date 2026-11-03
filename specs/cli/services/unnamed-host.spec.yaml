@@ -1,4 +1,4 @@
-description: 'on a host setup has not named yet, services titles it by the name machines shows, never an empty title'
+description: 'an unnamed host is titled by the name machines shows, never an empty title'
 fixture:
     - ../__fixtures__/terminal/
 env: terminal
