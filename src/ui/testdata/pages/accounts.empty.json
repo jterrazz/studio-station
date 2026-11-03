@@ -1,0 +1,265 @@
+{
+  "schema": "station.page/v1",
+  "id": "accounts",
+  "command": "accounts",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "accounts",
+      "title": "Accounts",
+      "columns": [
+        {
+          "key": "provider",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "identity",
+          "kind": "identity",
+          "keep": 60
+        },
+        {
+          "key": "origin",
+          "kind": "text",
+          "keep": 90
+        },
+        {
+          "key": "scope",
+          "kind": "list",
+          "keep": 20,
+          "whole": true
+        },
+        {
+          "key": "detail",
+          "kind": "text",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "group": {
+            "head": {
+              "id": "jterrazz-macbook-pro",
+              "mark": "ok",
+              "label": "jterrazz-macbook-pro",
+              "cells": [
+                {
+                  "kind": "text",
+                  "text": "host"
+                }
+              ]
+            },
+            "items": [
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/github",
+                  "mark": "absent",
+                  "label": "github",
+                  "short": "GitHub",
+                  "cells": [
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "not logged in"
+                        }
+                      ]
+                    }
+                  ],
+                  "reason": "unset",
+                  "hint": {
+                    "command": "station config install github-login"
+                  }
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/npm",
+                  "mark": "absent",
+                  "label": "npm",
+                  "short": "npm",
+                  "cells": [
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "not logged in"
+                        }
+                      ]
+                    }
+                  ],
+                  "reason": "unset",
+                  "hint": {
+                    "command": "npm login",
+                    "external": true
+                  }
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/claude",
+                  "mark": "absent",
+                  "label": "claude",
+                  "short": "Claude",
+                  "cells": [
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "not logged in"
+                        }
+                      ]
+                    }
+                  ],
+                  "reason": "unset",
+                  "hint": {
+                    "command": "claude /login",
+                    "external": true
+                  }
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/tailscale",
+                  "mark": "absent",
+                  "label": "tailscale",
+                  "short": "Tailscale",
+                  "cells": [
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "not installed"
+                        }
+                      ]
+                    }
+                  ],
+                  "reason": "missing"
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/git",
+                  "mark": "absent",
+                  "label": "git",
+                  "short": "git",
+                  "cells": [
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "none"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "no user.name nor user.email"
+                        }
+                      ]
+                    }
+                  ],
+                  "reason": "unset",
+                  "hint": {
+                    "command": "git config --global user.name <name>",
+                    "external": true
+                  }
+                }
+              }
+            ],
+            "fold": "open"
+          }
+        },
+        {
+          "note": {
+            "text": "no VMs: rights lent to a VM appear here"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        },
+        {
+          "mark": "absent",
+          "n": 5
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station machines create"
+    }
+  ],
+  "actions": [
+    {
+      "key": "l",
+      "label": "lend",
+      "on": "row",
+      "priority": 1,
+      "mutates": true
+    },
+    {
+      "key": "r",
+      "label": "revoke",
+      "on": "row",
+      "priority": 2,
+      "mutates": true
+    },
+    {
+      "key": "R",
+      "label": "reload",
+      "on": "page",
+      "priority": 3
+    }
+  ]
+}

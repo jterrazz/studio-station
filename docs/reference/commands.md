@@ -117,6 +117,14 @@ station secrets recall --from <vm> [<name...>]
 
 See [Secrets](secrets.md).
 
+### `station accounts`
+
+```sh
+station accounts [--json]                       # who has access to what, here and in this host's VMs
+```
+
+One group per machine: this host's GitHub, npm, Claude, Tailscale, Cloudflare, git, ssh and Docker rights, then each VM's, read inside it by its guest, with the lends its record holds (`lent`, until when). Identities and scopes only: no token, cookie or key body is ever read into a value, and anything shaped like one reads `?`. Piped, one record per account: mark, machine, provider, identity, origin, scope, until (RFC 3339), detail, hint. See [Secrets](secrets.md#accounts).
+
 ### `station tailnet`
 
 ```sh

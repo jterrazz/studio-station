@@ -51,6 +51,8 @@ type vmState struct {
 	keys     string
 	lastErr  string
 	gen      int
+	asked    map[string]chan guestMessage
+	seq      int
 }
 
 func (d *Daemon) runsDir() string { return path.Join(d.o.Paths.State, "runs") }
@@ -589,12 +591,15 @@ func (d *Daemon) rehello(v *vmState) {
 }
 
 type guestMessage struct {
-	Type    string `json:"type"`
-	ID      string `json:"id"`
-	Op      string `json:"op"`
-	Port    int    `json:"port"`
-	IP      string `json:"ip"`
-	Process string `json:"process"`
+	Type    string          `json:"type"`
+	ID      string          `json:"id"`
+	OK      bool            `json:"ok"`
+	Result  json.RawMessage `json:"result"`
+	Error   *OpError        `json:"error"`
+	Op      string          `json:"op"`
+	Port    int             `json:"port"`
+	IP      string          `json:"ip"`
+	Process string          `json:"process"`
 	Ports   []struct {
 		Port    int    `json:"port"`
 		IP      string `json:"ip"`
@@ -624,6 +629,14 @@ func (d *Daemon) fromGuest(ctx context.Context, v *vmState, line []byte) {
 		d.listen(ctx, name, m.Port, m.IP, m.Process)
 	case "unlisten":
 		d.unlisten(name, m.Port)
+	case "reply":
+		d.mu.Lock()
+		ch := v.asked[m.ID]
+		delete(v.asked, m.ID)
+		d.mu.Unlock()
+		if ch != nil {
+			ch <- m
+		}
 	case "request":
 		result, err := d.guestRequest(ctx, name, m)
 		reply := map[string]any{"v": 1, "type": "reply", "id": m.ID, "ok": err == nil}
@@ -650,6 +663,38 @@ func (d *Daemon) guestRequest(ctx context.Context, vm string, m guestMessage) (a
 		return d.release(ctx, vm, m.Port)
 	}
 	return nil, fault("unknown_op", "unknown op \""+m.Op+"\"", "station services")
+}
+
+func (d *Daemon) askGuest(ctx context.Context, v *vmState, op string, budget time.Duration) (json.RawMessage, error) {
+	ch := make(chan guestMessage, 1)
+	d.mu.Lock()
+	if v.asked == nil {
+		v.asked = map[string]chan guestMessage{}
+	}
+	v.seq++
+	id := "h" + strconv.Itoa(v.seq)
+	v.asked[id] = ch
+	d.mu.Unlock()
+	defer func() {
+		d.mu.Lock()
+		delete(v.asked, id)
+		d.mu.Unlock()
+	}()
+	d.write(v, map[string]any{"v": 1, "type": "request", "id": id, "op": op})
+	wait, cancel := context.WithTimeout(ctx, budget)
+	defer cancel()
+	select {
+	case m := <-ch:
+		if !m.OK {
+			if m.Error != nil {
+				return nil, m.Error
+			}
+			return nil, fault("internal", v.rec.Name+"'s guest refused "+op, "station machines probe "+v.rec.Name)
+		}
+		return m.Result, nil
+	case <-wait.Done():
+		return nil, fault("guest_timeout", v.rec.Name+"'s guest did not answer "+op+" in "+budget.String(), "station machines probe "+v.rec.Name)
+	}
 }
 
 func hostPort(ip string, port int) string {

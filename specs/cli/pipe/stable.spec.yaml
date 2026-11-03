@@ -403,7 +403,7 @@ runs:
     - command: 'secrets --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
-          {"kept":[],"lend_list":[],"lent":{},"schema":"station.secrets/v1"}
+          {"kept":[],"lend_list":[],"lends":{},"lent":{},"schema":"station.secrets/v1"}
     - command: 'services --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |

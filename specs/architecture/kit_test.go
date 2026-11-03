@@ -417,7 +417,7 @@ func pageStates() []string { return []string{"loading", "empty", "error", "full"
 func pageFamilies() []string {
 	return []string{
 		"home", "home-all", "tools", "config", "storage", "fleet", "machines", "images", "secrets", "tailnet", "services",
-		"outcome-tools-install", "outcome-config", "outcome-storage", "setup", "run", "kitchen-sink",
+		"outcome-tools-install", "outcome-config", "outcome-storage", "setup", "run", "kitchen-sink", "accounts",
 	}
 }
 
@@ -479,8 +479,8 @@ func TestEveryPageHasItsFourFixtures(t *testing.T) {
 	})
 	t.Run("bites", func(t *testing.T) {
 		gone := func(f string) bool { return f == "tailnet.error" || strings.HasPrefix(f, "run.") }
-		got := missingPages(append(slices.Clone(packages), "accounts"), pageFamilies(), append(slices.DeleteFunc(slices.Clone(fixtures), gone), "outcome-tools.full"))
-		if !slices.ContainsFunc(got, func(f finding) bool { return f.where == "src/pages/accounts" }) {
+		got := missingPages(append(slices.Clone(packages), "mutant"), pageFamilies(), append(slices.DeleteFunc(slices.Clone(fixtures), gone), "outcome-tools.full"))
+		if !slices.ContainsFunc(got, func(f finding) bool { return f.where == "src/pages/mutant" }) {
 			t.Error("the fixtures rule did not report a page package with no fixture")
 		}
 		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "tailnet.error.json") }) {

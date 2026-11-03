@@ -1,0 +1,10 @@
+{
+  "here": "jterrazz-macbook-pro",
+  "hosts": {
+    "jterrazz-macbook-pro": {}
+  },
+  "lend_list": [
+    "operator:claude:oauth-token",
+    "session:github"
+  ]
+}

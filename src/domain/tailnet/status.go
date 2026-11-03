@@ -117,6 +117,7 @@ type Status struct {
 
 type rawNode struct {
 	ID           string   `json:"ID"`
+	UserID       int64    `json:"UserID"`
 	HostName     string   `json:"HostName"`
 	DNSName      string   `json:"DNSName"`
 	TailscaleIPs []string `json:"TailscaleIPs"`
@@ -125,10 +126,18 @@ type rawNode struct {
 }
 
 type rawStatus struct {
-	BackendState string              `json:"BackendState"`
-	CertDomains  []string            `json:"CertDomains"`
-	Self         *rawNode            `json:"Self"`
-	Peer         map[string]*rawNode `json:"Peer"`
+	BackendState string `json:"BackendState"`
+	// value: who the node is logged in as, and in which tailnet: the Accounts
+	// page's Tailscale row reads these and nothing else of the user.
+	User map[string]struct {
+		LoginName string `json:"LoginName"`
+	} `json:"User"`
+	CurrentTailnet *struct {
+		Name string `json:"Name"`
+	} `json:"CurrentTailnet"`
+	CertDomains []string            `json:"CertDomains"`
+	Self        *rawNode            `json:"Self"`
+	Peer        map[string]*rawNode `json:"Peer"`
 }
 
 var ErrAbsent = errors.New("tailscale is not installed")
@@ -242,6 +251,33 @@ func (s *Service) Self(ctx context.Context) (Self, error) {
 		out.DNSName = strings.TrimSuffix(st.Self.DNSName, ".")
 	}
 	return out, nil
+}
+
+type Login struct {
+	State                   catalog.State
+	Login, Tailnet, Variant string
+	BackendState            string
+}
+
+func (s *Service) Login(ctx context.Context) Login {
+	out := Login{State: catalog.StateAbsent, Variant: s.CLI().Variant}
+	st, err := s.query(ctx)
+	if err != nil {
+		if !errors.Is(err, ErrAbsent) {
+			out.State = catalog.StateBroken
+		}
+		return out
+	}
+	out.State, out.BackendState = catalog.StateOK, st.BackendState
+	if st.Self != nil {
+		if u, ok := st.User[strconv.FormatInt(st.Self.UserID, 10)]; ok {
+			out.Login = u.LoginName
+		}
+	}
+	if st.CurrentTailnet != nil {
+		out.Tailnet = st.CurrentTailnet.Name
+	}
+	return out
 }
 
 func (s *Service) Status(ctx context.Context) (Status, error) {

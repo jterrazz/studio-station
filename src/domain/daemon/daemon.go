@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -317,8 +318,60 @@ func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
 	case "forget":
 		d.forget(r.VM)
 		return nil, nil
+	case "accounts":
+		return d.accounts(ctx), nil
 	}
-	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete")
+	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts")
+}
+
+type VMAccounts struct {
+	Name     string          `json:"name"`
+	Guest    string          `json:"guest"`
+	Accounts json.RawMessage `json:"accounts,omitempty"`
+}
+
+type AccountsView struct {
+	VMs []VMAccounts `json:"vms"`
+}
+
+const accountsBudget = 12 * time.Second
+
+// invariant: each running VM is asked by its own guest, all at once, each
+// within accountsBudget; a VM whose guest is not connected is "absent" with
+// no rows. Only the guest's parsed rows travel: never a provider's output.
+func (d *Daemon) accounts(ctx context.Context) AccountsView {
+	d.mu.Lock()
+	var running []*vmState
+	for _, v := range d.vms {
+		if v.state == StateRunning {
+			running = append(running, v)
+		}
+	}
+	d.mu.Unlock()
+	out := make([]VMAccounts, len(running))
+	var wg sync.WaitGroup
+	for i, v := range running {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			d.mu.Lock()
+			guest := v.guest
+			d.mu.Unlock()
+			out[i] = VMAccounts{Name: v.rec.Name, Guest: GuestAbsent}
+			if guest != GuestConnected {
+				return
+			}
+			rows, err := d.askGuest(ctx, v, "accounts", accountsBudget)
+			if err != nil {
+				d.logf(v.rec.Name+" accounts", err.Error())
+				return
+			}
+			out[i] = VMAccounts{Name: v.rec.Name, Guest: GuestConnected, Accounts: rows}
+		}()
+	}
+	wg.Wait()
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return AccountsView{VMs: out}
 }
 
 func (d *Daemon) closeAll() {

@@ -30,9 +30,9 @@ func Age(t, now time.Time) Value {
 	return Value{Kind: KindAge, At: t.UTC().Format(time.RFC3339), N: int64(now.Sub(t).Seconds())}
 }
 
-// value: the time left until t, as seen at now (a page never reads the clock):
-// negative once t has passed.
 func Until(t, now time.Time) Value {
+	// value: the time left until t, as seen at now (a page never reads the
+	// clock): negative once t has passed.
 	return Value{Kind: KindUntil, At: t.UTC().Format(time.RFC3339), N: int64(t.Sub(now).Seconds())}
 }
 

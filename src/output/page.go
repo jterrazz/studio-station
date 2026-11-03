@@ -14,6 +14,9 @@ type Want struct {
 	JSON  bool
 	Page  bool
 	Piped []byte
+	// value: the page the pipe prints instead, when the eye's nesting is not
+	// the records' order (Accounts: one record per account, machine first).
+	Records *page.Page
 }
 
 func Terminal(in io.Reader, out io.Writer) *tty.Terminal { return tty.NewTerminal(in, out) }
@@ -37,6 +40,9 @@ func (w *Writer) Page(p page.Page, contract any, want Want) error {
 		_, err := out.Write(want.Piped)
 		return err
 	case c.Mode == Pipe:
+		if want.Records != nil {
+			p = *want.Records
+		}
 		body, err := pipe.Render(p)
 		if err != nil {
 			return err

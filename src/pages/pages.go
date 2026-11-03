@@ -82,9 +82,9 @@ func Nest(s page.Section, parts []page.Section) page.Section {
 	return s
 }
 
-// value: a term as the owner says it: whole days, hours and minutes, two
-// units at most (`12h`, `1h 30m`, `7d`).
 func Term(d time.Duration) string {
+	// value: a term as the owner says it: whole days, hours and minutes, two
+	// units at most (`12h`, `1h 30m`, `7d`).
 	s := int64(d.Seconds())
 	parts := []string{}
 	for _, u := range []struct {

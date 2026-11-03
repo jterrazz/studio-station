@@ -19,12 +19,13 @@ import (
 )
 
 const (
-	keysBegin    = "# >>> station hosts >>>"
-	keysEnd      = "# <<< station hosts <<<"
+	KeysBegin    = "# >>> station hosts >>>"
+	KeysEnd      = "# <<< station hosts <<<"
 	scanEvery    = time.Second
 	snapshotEach = 60
 	dockerEach   = 5
 	relayBudget  = 30 * time.Second
+	readBudget   = 10 * time.Second
 )
 
 type Options struct {
@@ -32,6 +33,9 @@ type Options struct {
 	Paths   settings.Paths
 	Kind    catalog.MachineKind
 	Version string
+	// value: what the host's `accounts` request is answered with: this VM's
+	// providers, parsed into identities and scopes, never a token.
+	Accounts func(ctx context.Context, keys []string) any
 }
 
 type Service struct {
@@ -59,6 +63,7 @@ type message struct {
 	V      int             `json:"v"`
 	Type   string          `json:"type"`
 	ID     string          `json:"id,omitempty"`
+	Op     string          `json:"op,omitempty"`
 	OK     bool            `json:"ok,omitempty"`
 	Result json.RawMessage `json:"result,omitempty"`
 	Error  json.RawMessage `json:"error,omitempty"`
@@ -144,7 +149,9 @@ func (s *Service) Run(ctx context.Context, in io.Reader, out io.Writer) error {
 func (g *session) handle(ctx context.Context, m message) {
 	switch m.Type {
 	case "hello":
+		g.mu.Lock()
 		g.hello = m.Hello
+		g.mu.Unlock()
 		_ = g.s.writeFiles(m.Hello)
 		if !g.ready {
 			g.ready = true
@@ -155,6 +162,8 @@ func (g *session) handle(ctx context.Context, m message) {
 		}
 	case "ping":
 		g.send(map[string]any{"v": 1, "type": "pong"})
+	case "request":
+		go g.answer(ctx, m)
 	case "reply":
 		g.mu.Lock()
 		ch := g.pending[m.ID]
@@ -164,6 +173,21 @@ func (g *session) handle(ctx context.Context, m message) {
 			ch <- m
 		}
 	}
+}
+
+// invariant: a host's request is answered on the same channel, with only the
+// parsed result: the providers' own output never leaves this process.
+func (g *session) answer(ctx context.Context, m message) {
+	if m.Op != "accounts" || g.s.o.Accounts == nil {
+		g.send(map[string]any{"v": 1, "type": "reply", "id": m.ID, "ok": false, "error": map[string]string{"code": "unknown_op", "message": "unknown op \"" + m.Op + "\"", "hint": "station accounts"}})
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, readBudget)
+	defer cancel()
+	g.mu.Lock()
+	keys := g.hello.Keys
+	g.mu.Unlock()
+	g.send(map[string]any{"v": 1, "type": "reply", "id": m.ID, "ok": true, "result": g.s.o.Accounts(ctx, keys)})
 }
 
 func (g *session) watch(ctx context.Context) {
@@ -283,15 +307,15 @@ func (s *Service) writeKeys(file string, keys []string) error {
 	inside := false
 	for _, line := range strings.Split(strings.TrimRight(string(current), "\n"), "\n") {
 		switch {
-		case line == keysBegin:
+		case line == KeysBegin:
 			inside = true
-		case line == keysEnd:
+		case line == KeysEnd:
 			inside = false
 		case !inside && line != "":
 			kept = append(kept, line)
 		}
 	}
-	lines := append(append(append(kept, keysBegin), keys...), keysEnd)
+	lines := append(append(append(kept, KeysBegin), keys...), KeysEnd)
 	if err := s.h.FS.MkdirAll(path.Dir(file), 0o700); err != nil {
 		return err
 	}

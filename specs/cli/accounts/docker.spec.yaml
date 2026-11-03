@@ -1,0 +1,15 @@
+description: 'Docker is listed only where a credential store is configured, and a credential is never fetched'
+fixture:
+    - ../__fixtures__/accounts/
+env: daemon
+runs:
+    - command: 'accounts | /usr/bin/grep docker; /usr/bin/grep -c "docker-credential-osxkeychain list" .calls; /usr/bin/grep -c "docker-credential-osxkeychain get" .calls'
+      exit: 1
+      stdout: |
+          ●	jterrazz-macbook-pro	docker	deploy	own	registry.jterrazz.com		osxkeychain
+          1
+          0
+    - command: '--version > /dev/null; /bin/rm .docker/config.json; "$STATION" accounts | /usr/bin/grep -c docker'
+      exit: 1
+      stdout: |
+          0

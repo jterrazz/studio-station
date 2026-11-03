@@ -1,0 +1,109 @@
+package app
+
+import (
+	"context"
+	"encoding/json"
+	"path"
+	"strings"
+
+	"github.com/spf13/cobra"
+
+	"github.com/jterrazz/studio-station/src/catalog"
+	accountscmd "github.com/jterrazz/studio-station/src/cli/accounts"
+	"github.com/jterrazz/studio-station/src/cli/kit"
+	"github.com/jterrazz/studio-station/src/domain/accounts"
+	"github.com/jterrazz/studio-station/src/domain/daemon"
+	"github.com/jterrazz/studio-station/src/domain/guest"
+)
+
+func (m machine) accounts() *accounts.Service {
+	o := accounts.Options{Here: m.kind, HereName: m.where.Machine, Track: daemon.ChildrenDir(m.paths)}
+	if m.kind != catalog.Host {
+		o.Keys = m.stationHostKeys
+		return accounts.New(m.host, m.pool, accounts.Ports{}, o)
+	}
+	sec := m.secrets()
+	records := vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}
+	tn := m.tailnet()
+	d := daemon.Dial(m.host, m.paths)
+	ports := accounts.Ports{
+		LendList: sec.LendList,
+		Tailnet: func(ctx context.Context) accounts.TailnetAccount {
+			l := tn.Login(ctx)
+			return accounts.TailnetAccount{State: l.State, Login: l.Login, Tailnet: l.Tailnet, Variant: l.Variant, Problem: l.BackendState}
+		},
+		VMs: func(ctx context.Context) ([]accounts.VM, error) {
+			recs, err := m.machines(false).Records()
+			if err != nil {
+				return nil, err
+			}
+			lends, _ := records.Lends()
+			var live []daemon.VMView
+			_ = d.Do(ctx, "vms", daemon.Request{}, &live)
+			out := make([]accounts.VM, 0, len(recs))
+			for _, r := range recs {
+				vm := accounts.VM{Name: r.Name, Lifetime: string(r.Lifetime)}
+				for _, v := range live {
+					if v.Name == r.Name && v.State == daemon.StateRunning {
+						vm.Running = true
+					}
+				}
+				for _, l := range lends[r.Name] {
+					vm.Lends = append(vm.Lends, accounts.Lend(l))
+				}
+				out = append(out, vm)
+			}
+			return out, nil
+		},
+		Daemon: func(ctx context.Context) ([]accounts.VMRead, string) {
+			var view daemon.AccountsView
+			if err := d.Do(ctx, "accounts", daemon.Request{}, &view); err != nil {
+				if _, missing := m.host.FS.Stat(catalog.DaemonPlist(m.host.Env.Home())); missing != nil {
+					return nil, accounts.DaemonAbsent
+				}
+				return nil, accounts.DaemonStopped
+			}
+			out := make([]accounts.VMRead, 0, len(view.VMs))
+			for _, v := range view.VMs {
+				read := accounts.VMRead{Name: v.Name, Guest: v.Guest}
+				var rows []accounts.Account
+				if json.Unmarshal(v.Accounts, &rows) == nil {
+					for _, a := range rows {
+						read.Accounts = append(read.Accounts, accounts.Redact(a))
+					}
+				}
+				out = append(out, read)
+			}
+			return out, accounts.DaemonRunning
+		},
+	}
+	return accounts.New(m.host, m.pool, ports, o)
+}
+
+// value: inside a VM, who may ssh in is the station hosts block the guest
+// writes into authorized_keys.
+func (m machine) stationHostKeys() []string {
+	data, err := m.host.FS.ReadFile(path.Join(m.host.Env.Home(), ".ssh", "authorized_keys"))
+	if err != nil {
+		return nil
+	}
+	var keys []string
+	inside := false
+	for _, line := range strings.Split(string(data), "\n") {
+		switch strings.TrimSpace(line) {
+		case guest.KeysBegin:
+			inside = true
+		case guest.KeysEnd:
+			inside = false
+		default:
+			if inside && strings.TrimSpace(line) != "" {
+				keys = append(keys, strings.TrimSpace(line))
+			}
+		}
+	}
+	return keys
+}
+
+func accountsCommand(env kit.Env, m machine) *cobra.Command {
+	return accountscmd.Command(accountscmd.Deps{Accounts: m.accounts(), Here: m.where}, env)
+}

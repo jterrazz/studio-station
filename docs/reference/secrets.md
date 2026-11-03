@@ -9,6 +9,7 @@ A secret travels only as far as its tier allows: kept on the host, lent to a VM 
 | Where to revoke | Where each service lets you invalidate a token           |
 | Studio in a VM  | What lending needs inside the VM                         |
 | Claude in a VM  | Logging Claude Code in on a VM                           |
+| Accounts        | Who has access to what, and where each right comes from  |
 
 ## The three tiers
 
@@ -59,6 +60,10 @@ A VM cannot open a browser on your host to log in, so the host lends it a token.
 `station secrets recall` and `machines delete` remove the VM's copy; `station config uninstall claude-token` deletes the host's and takes the name off the lend list. Revoke the token itself at claude.ai.
 
 The alternative is a bound login: run `claude /login` inside a lasting VM. The login lives and dies with that VM and is never lent.
+
+## Accounts
+
+`station accounts` (the TUI's Accounts tab) shows who has access to what: each provider's identity on this host, then on each of its VMs, and where the right comes from: `own` (a login done on that machine), `lent` (a copy of a lend-list name, with its `until`), or both. A lend in its last hour is `◐ expiring` with the re-lend command; an expired one the daemon could not recall is `✗ failing` with the recall command. A VM is read by its own guest over the daemon's session, so no provider's output ever leaves the VM: only the parsed identities and scopes do. Each provider's read is an allowlist of named fields (`src/domain/accounts/parse.go`), and every kept value that looks like a token (`gh*_`, `github_pat_`, `sk-ant-`, `npm_`, `xox*-`, a JWT, 32 and more characters of base64 or hex) is replaced by `?`.
 
 ## Related
 

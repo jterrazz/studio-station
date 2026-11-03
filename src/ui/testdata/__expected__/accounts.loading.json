@@ -1,0 +1,307 @@
+{
+  "schema": "station.page/v1",
+  "id": "accounts",
+  "command": "accounts",
+  "context": {
+    "kind": "host"
+  },
+  "state": "loading",
+  "sections": [
+    {
+      "id": "accounts",
+      "title": "Accounts",
+      "columns": [
+        {
+          "key": "provider",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "identity",
+          "kind": "identity",
+          "keep": 60
+        },
+        {
+          "key": "origin",
+          "kind": "text",
+          "keep": 90
+        },
+        {
+          "key": "scope",
+          "kind": "list",
+          "keep": 20,
+          "whole": true
+        },
+        {
+          "key": "detail",
+          "kind": "text",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "group": {
+            "head": {
+              "id": "jterrazz-macbook-pro",
+              "mark": "pending",
+              "label": "jterrazz-macbook-pro",
+              "cells": [
+                {
+                  "kind": "text",
+                  "text": "host"
+                }
+              ]
+            },
+            "items": [
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/github",
+                  "mark": "pending",
+                  "label": "github",
+                  "short": "GitHub",
+                  "cells": [
+                    {
+                      "kind": "pending"
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/npm",
+                  "mark": "pending",
+                  "label": "npm",
+                  "short": "npm",
+                  "cells": [
+                    {
+                      "kind": "pending"
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/claude",
+                  "mark": "pending",
+                  "label": "claude",
+                  "short": "Claude",
+                  "cells": [
+                    {
+                      "kind": "pending"
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/tailscale",
+                  "mark": "pending",
+                  "label": "tailscale",
+                  "short": "Tailscale",
+                  "cells": [
+                    {
+                      "kind": "pending"
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/cloudflare",
+                  "mark": "pending",
+                  "label": "cloudflare",
+                  "short": "Cloudflare",
+                  "cells": [
+                    {
+                      "kind": "pending"
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/git",
+                  "mark": "pending",
+                  "label": "git",
+                  "short": "git",
+                  "cells": [
+                    {
+                      "kind": "pending"
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/ssh",
+                  "mark": "pending",
+                  "label": "ssh",
+                  "short": "ssh",
+                  "cells": [
+                    {
+                      "kind": "pending"
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "jterrazz-macbook-pro/docker",
+                  "mark": "pending",
+                  "label": "docker",
+                  "short": "Docker",
+                  "cells": [
+                    {
+                      "kind": "pending"
+                    }
+                  ]
+                }
+              }
+            ],
+            "fold": "open"
+          }
+        },
+        {
+          "group": {
+            "head": {
+              "id": "linux-1",
+              "mark": "pending",
+              "label": "linux-1",
+              "cells": [
+                {
+                  "kind": "text",
+                  "text": "temporary"
+                }
+              ]
+            },
+            "items": [
+              {
+                "row": {
+                  "id": "linux-1/claude",
+                  "mark": "ok",
+                  "label": "claude",
+                  "short": "Claude",
+                  "cells": [
+                    {
+                      "kind": "identity",
+                      "text": "admin@jterrazz.com"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "lent"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "operator:claude:oauth-token"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "until",
+                      "n": 42000,
+                      "at": "2026-11-03T22:10:00Z"
+                    }
+                  ]
+                }
+              }
+            ],
+            "fold": "open"
+          }
+        },
+        {
+          "group": {
+            "head": {
+              "id": "api",
+              "mark": "pending",
+              "label": "api",
+              "cells": [
+                {
+                  "kind": "text",
+                  "text": "lasting"
+                }
+              ]
+            },
+            "items": [
+              {
+                "row": {
+                  "id": "api/claude",
+                  "mark": "attention",
+                  "label": "claude",
+                  "short": "Claude",
+                  "cells": [
+                    {
+                      "kind": "identity",
+                      "text": "admin@jterrazz.com"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "lent"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "operator:claude:oauth-token"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "until",
+                      "n": 2520,
+                      "at": "2026-11-03T11:12:00Z"
+                    }
+                  ],
+                  "reason": "expiring",
+                  "hint": {
+                    "command": "station secrets lend --to api operator:claude:oauth-token"
+                  }
+                }
+              }
+            ],
+            "fold": "open"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        },
+        {
+          "mark": "attention",
+          "n": 1
+        },
+        {
+          "mark": "pending",
+          "n": 11
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "l",
+      "label": "lend",
+      "on": "row",
+      "priority": 1,
+      "mutates": true
+    },
+    {
+      "key": "r",
+      "label": "revoke",
+      "on": "row",
+      "priority": 2,
+      "mutates": true
+    },
+    {
+      "key": "R",
+      "label": "reload",
+      "on": "page",
+      "priority": 3
+    }
+  ]
+}

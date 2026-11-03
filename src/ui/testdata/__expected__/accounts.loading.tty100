@@ -1,0 +1,18 @@
+ station accounts                                                               host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Accounts  1 ●  1 ◐  11 ◌
+   ◌ jterrazz-macbook-pro  host
+   ├─ ◌ GitHub
+   ├─ ◌ npm
+   ├─ ◌ Claude
+   ├─ ◌ Tailscale
+   ├─ ◌ Cloudflare
+   ├─ ◌ git
+   ├─ ◌ ssh
+   └─ ◌ Docker
+   ◌ linux-1               temporary
+   └─ ● Claude             admin@jterrazz.com  lent  operator:claude:oauth-token  11h 40m left
+   ◌ api                   lasting
+   └─ ◐ Claude             admin@jterrazz.com  lent  operator:claude:oauth-token  42m left
+        → station secrets lend --to api operator:claude:oauth-token

@@ -77,6 +77,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		secretsCommand(kenv, here),
 		tailnetCommand(kenv, here),
 		servicesCommand(kenv, here),
+		accountsCommand(kenv, here),
 		daemonCommand(kenv, here),
 		guestCommand(kenv, here),
 		runCommand(kenv, here),

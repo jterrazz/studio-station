@@ -28,6 +28,7 @@ runs:
     - command: --help | /usr/bin/sed -n '/^  THE FLEET/,/^  SHORTCUTS/p' | /usr/bin/grep -oE '^    [a-z]+ ' | /usr/bin/tr -d ' '
       exit: 0
       stdout: |
+          accounts
           images
           machines
           secrets
@@ -100,7 +101,7 @@ runs:
     - command: 'accounts >/dev/null 2>&1; echo "accounts $?"; "$STATION" power >/dev/null 2>&1; echo "power $?"; "$STATION" --help | /usr/bin/grep -cE ''^    (accounts|power) '''
       exit: 1
       stdout: |
-          accounts 2
+          accounts 0
           power 127
           0
       stderr: |

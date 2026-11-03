@@ -19,10 +19,10 @@ type Deps struct {
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
-		Use:      "lend --to <vm> [<name...>] [--for <duration>]",
-		Short:    "Copy (or refresh) lent secrets into a VM, the whole lend list by default",
-		Example:  "  station secrets lend --to api\n  station secrets lend --to api session:openpanel --for 4h",
-		Args:     cobra.ArbitraryArgs,
+		Use:     "lend --to <vm> [<name...>] [--for <duration>]",
+		Short:   "Copy (or refresh) lent secrets into a VM, the whole lend list by default",
+		Example: "  station secrets lend --to api\n  station secrets lend --to api session:openpanel --for 4h",
+		Args:    cobra.ArbitraryArgs,
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.StringVar(&in.To, "to", "", "the VM to lend to")
 			f.StringVar(&in.For, "for", "", "how long the lend lasts, 1m to 168h (default 12h)")
