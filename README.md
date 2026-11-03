@@ -18,20 +18,24 @@ The binary lives at `~/.local/bin/station`; its files follow the XDG folders. Th
 ## What it does
 
 ```sh
-station                 # on a terminal: the TUI (Status, Tools, Config, Storage, Fleet)
+station                 # on a terminal: the TUI (Home · Tools · Config · Storage │ Fleet · Services · Accounts · Power)
 
 # Here
 station status          # everything about this machine
 station tools           # install, uninstall, upgrade tools and agent skills
 station config          # dotfiles, logins and macOS defaults
 station storage         # what each tool keeps on disk: clean caches, reset data
+station power           # keep this host awake for a while, the lid closed too
 
 # The fleet
 station machines        # hosts and VMs: create, start, stop, delete, probe
 station services        # what the VMs listen on, and each URL
+station accounts        # who has access to what, here and in the VMs: never a token
 station images          # the VM images
 station secrets         # what may be lent to a VM
 station tailnet         # the Tailscale app's node, read only
+station stop            # stop everything station runs here, then station itself
+station start           # start station again, and the VMs meant to run
 
 # Shortcuts
 station run git         # commit, push, sync
@@ -42,6 +46,8 @@ station setup           # register, wire the shell, migrate
 ```
 
 Every command is in [Commands](docs/reference/commands.md); `--on <machine>` runs any of them elsewhere.
+
+The menu bar app, `apps/menubar`, shows the fleet, the To do and Power from this host's daemon. `station setup` never installs it: `make menubar-install` copies it to `~/Applications`, and [Develop](docs/guides/develop.md) holds its targets.
 
 ## Documentation
 
