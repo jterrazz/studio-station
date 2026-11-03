@@ -1,0 +1,16 @@
+description: 'on a host setup has not named yet, services titles it this host'
+fixture:
+    - ../__fixtures__/terminal/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 80x12 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" services'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |4
+           station services                                           host · unregistered
+           ──────────────────────────────────────────────────────────────────────────────
+
+           this host  40000-40999 · 0 leased · 1000 free · 20 per VM
+                       state
+             ◐ daemon  not running  → station setup

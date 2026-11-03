@@ -51,7 +51,11 @@ func Sections(f services.Fleet) []page.Section {
 			}
 			items = append(items, page.Item{Empty: &page.Empty{Noun: "services", Hint: hint}})
 		}
-		out = append(out, page.Section{ID: "host-" + h.Name, Title: h.Name, Role: page.Banner, Caption: Caption(h), Columns: Columns(), Items: items})
+		title := h.Name
+		if title == "" {
+			title = "this host"
+		}
+		out = append(out, page.Section{ID: "host-" + title, Title: title, Role: page.Banner, Caption: Caption(h), Columns: Columns(), Items: items})
 	}
 	if len(out) == 0 {
 		out = append(out, page.Section{ID: "services", Title: "Services", Role: page.Banner, Columns: Columns(),
