@@ -1,0 +1,51 @@
+import AppKit
+import StationKit
+import SwiftUI
+
+@main
+struct StationMenuBarApp: App {
+    @StateObject private var model = Model()
+
+    init() {
+        let args = CommandLine.arguments
+        if args.contains("--login-item-status") {
+            print(LoginItem.status)
+            exit(0)
+        }
+        if args.contains("--unregister-login-item") {
+            do {
+                try LoginItem.unregister()
+                exit(0)
+            } catch {
+                FileHandle.standardError.write(Data("Error: \(error.localizedDescription)\n".utf8))
+                exit(1)
+            }
+        }
+    }
+
+    var body: some Scene {
+        MenuBarExtra {
+            Popover(model.state, handlers: handlers)
+                .stationTheme(.dark)
+                .onAppear { model.opened() }
+        } label: {
+            Image(systemName: model.icon)
+                .accessibilityLabel(model.label)
+                .task { model.start() }
+        }
+        .menuBarExtraStyle(.window)
+    }
+
+    var handlers: PopoverHandlers {
+        PopoverHandlers(
+            run: { action, answers in model.run(action, answers: answers) },
+            confirm: { action in model.state.confirming = action?.id },
+            answer: { id, key, value in model.state.answers[id, default: [:]][key] = value },
+            open: { url in NSWorkspace.shared.open(url) },
+            toggleQR: { url in model.state.qr = model.state.qr == url ? nil : url },
+            toggleMenu: { model.state.menu.toggle() },
+            loginItem: { on in model.setLoginItem(on) },
+            loginItemOn: model.loginItemOn,
+            quit: { NSApplication.shared.terminate(nil) })
+    }
+}
