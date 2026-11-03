@@ -36,9 +36,9 @@ const StationLaunchPrefix = "com.jterrazz.station."
 
 const DaemonLabel = StationLaunchPrefix + "daemon"
 
-// value: the one daemon's launchd agent: setup writes it, a stopped daemon
-// keeps it, so its presence tells "stopped" from "not installed" (R9.D3).
 func DaemonPlist(home string) string {
+	// value: the one daemon's launchd agent: setup writes it, a stopped daemon
+	// keeps it, so its presence tells "stopped" from "not installed" (R9.D3).
 	return path.Join(home, "Library", "LaunchAgents", DaemonLabel+".plist")
 }
 

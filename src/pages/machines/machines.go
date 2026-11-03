@@ -18,12 +18,12 @@ const (
 	KeyEnter   = "e"
 )
 
-// invariant: the pipe keeps SPEC §10.8's eight fields (kind, host, lifetime,
-// and a fix riding in the resources field); the eye reads one class column (a
-// host's `host`, a VM's lifetime: the tree says the rest), the host's role,
-// the resources a short line drops first, and the detail that says why a row
-// is not ● (§13.5).
 func Columns() []page.Column {
+	// invariant: the pipe keeps SPEC §10.8's eight fields (kind, host, lifetime,
+	// and a fix riding in the resources field); the eye reads one class column (a
+	// host's `host`, a VM's lifetime: the tree says the rest), the host's role,
+	// the resources a short line drops first, and the detail that says why a row
+	// is not ● (§13.5).
 	return []page.Column{
 		{Key: "name", Kind: page.KindText, Keep: 100},
 		{Key: "kind", Kind: page.KindText, Show: page.PipeOnly},
