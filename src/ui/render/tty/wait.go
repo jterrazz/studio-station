@@ -23,13 +23,13 @@ func ErrorBlock(e page.Error, colored, dark bool) string {
 }
 
 func Wait(out io.Writer, label string, dark bool) (stop func()) {
-	style := token.New(dark).Muted
+	spin := atom.Spinner(token.New(dark))
 	var mu sync.Mutex
 	var ticker *time.Ticker
 	drawn, stopped := false, false
 	done := make(chan struct{})
 	frame := 0
-	frames := []rune(token.Spinner)
+	frames := spin.Spinner.Frames
 	draw := func() {
 		mu.Lock()
 		defer mu.Unlock()
@@ -37,7 +37,7 @@ func Wait(out io.Writer, label string, dark bool) (stop func()) {
 			return
 		}
 		drawn = true
-		_, _ = io.WriteString(out, "\r"+style.Render(string(frames[frame%len(frames)])+atom.Spaces(1)+label)+ansi.EraseLineRight)
+		_, _ = io.WriteString(out, "\r"+spin.Style.Render(frames[frame%len(frames)]+atom.Spaces(1)+label)+ansi.EraseLineRight)
 		frame++
 	}
 	timer := time.AfterFunc(token.WaitDelay, func() {
@@ -47,7 +47,7 @@ func Wait(out io.Writer, label string, dark bool) (stop func()) {
 			mu.Unlock()
 			return
 		}
-		ticker = time.NewTicker(token.SpinnerFrame)
+		ticker = time.NewTicker(spin.Spinner.FPS)
 		mu.Unlock()
 		go func() {
 			for {

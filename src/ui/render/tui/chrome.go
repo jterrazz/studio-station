@@ -25,16 +25,12 @@ type Chrome struct {
 
 func NewChrome() Chrome {
 	st := token.New(true)
-	frames := make([]string, 0, len(token.Spinner))
-	for _, r := range token.Spinner {
-		frames = append(frames, string(r))
-	}
-	return Chrome{styles: st, spin: spinner.New(spinner.WithSpinner(spinner.Spinner{Frames: frames, FPS: token.SpinnerFrame}), spinner.WithStyle(st.Accent))}
+	return Chrome{styles: st, spin: atom.Spinner(st)}
 }
 
 func (c Chrome) Themed(dark bool) Chrome {
 	c.styles = token.New(dark)
-	c.spin.Style = c.styles.Accent
+	c.spin.Style = atom.Spinner(c.styles).Style
 	return c
 }
 
