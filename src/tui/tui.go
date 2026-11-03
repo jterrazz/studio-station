@@ -40,6 +40,7 @@ type Deps struct {
 	Station  func(ctx context.Context, words []string) error
 	Describe func(error) (message, hint string)
 	Prefer   func(prefix string)
+	Stop     func()
 }
 
 type Tab struct {
@@ -72,6 +73,7 @@ func Run(ctx context.Context, d Deps) error {
 		}, d.Here),
 		servicesscreen.New(ctx, d.Services, d.Here, describe),
 	}, d.Prefer)
+	app.stop = d.Stop
 	_, err := tea.NewProgram(app, tea.WithContext(ctx)).Run()
 	return err
 }

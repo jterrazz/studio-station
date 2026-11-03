@@ -20,6 +20,7 @@ type App struct {
 	chrome  ui.Chrome
 	status  tab.Status
 	prefer  func(prefix string)
+	stop    func()
 	turning bool
 }
 
@@ -87,6 +88,12 @@ func (a App) key(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	}
 	switch s := k.String(); s {
 	case "q", "ctrl+c":
+		// invariant: q stops every read at once (the pool's walks and commands
+		// are cancelled), so the program's own shutdown is not left to share the
+		// machine with them; the pool's Close after the program reaps them.
+		if a.stop != nil {
+			go a.stop()
+		}
 		return a, tea.Quit
 	case "tab":
 		return a.show((a.active + 1) % len(a.screens))

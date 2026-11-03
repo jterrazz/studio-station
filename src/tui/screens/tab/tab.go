@@ -142,11 +142,26 @@ func (v View[T]) watch(fresh bool) tea.Cmd {
 	}
 }
 
+// invariant: the values a watch sent while the last one was being drawn are
+// read at once and only the latest is built, so a burst of answers is one
+// message: the program's queue stays short and a key (q) is never behind it.
 func next[T any](id string, gen int, build func(T) page.Page, ch <-chan T) tea.Cmd {
 	return func() tea.Msg {
 		value, open := <-ch
 		if !open {
 			return loaded[T]{id: id, gen: gen, final: true}
+		}
+		for drained := false; !drained; {
+			select {
+			case v, ok := <-ch:
+				if !ok {
+					drained = true
+					break
+				}
+				value = v
+			default:
+				drained = true
+			}
 		}
 		return loaded[T]{id: id, gen: gen, value: value, page: build(value), more: ch}
 	}

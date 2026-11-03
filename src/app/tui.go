@@ -40,6 +40,7 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 				return err
 			},
 			Prefer: m.pool.Prefer,
+			Stop:   m.pool.Close,
 			Describe: func(err error) (message, hint string) {
 				f := kit.Translate(err, "")
 				return f.Message, f.Hint
