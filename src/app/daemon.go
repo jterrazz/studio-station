@@ -24,15 +24,16 @@ import (
 
 func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 
-func (m machine) daemon() *daemon.Daemon {
+func (m machine) daemon(env kit.Env) *daemon.Daemon {
 	return daemon.New(m.host, tart.New(m.host.Run), sshclient.New(), m.machines(false), m.tailnet().Tracked(daemon.ChildrenDir(m.paths)), m.store, daemon.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
-		Pmset: m.pmset(), PowerPage: m.powerPage,
+		Pmset: m.pmset(), PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
+		Feeds: map[string]daemon.Feed{daemon.PageMenubar: m.menubarFeed(env)},
 	})
 }
 
 func daemonCommand(env kit.Env, m machine) *cobra.Command {
-	return daemoncmd.Command(daemoncmd.Deps{Daemon: m.daemon()}, env)
+	return daemoncmd.Command(daemoncmd.Deps{Daemon: m.daemon(env)}, env)
 }
 
 type hostDaemon struct{ c daemon.Client }

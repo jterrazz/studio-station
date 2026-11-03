@@ -173,6 +173,17 @@ type Action struct {
 	Confirm  *Confirm `json:"confirm,omitempty"`
 	Priority int      `json:"priority,omitempty"`
 	Mutates  bool     `json:"mutates,omitempty"`
+	ID       string   `json:"id,omitempty"`
+	Run      *Run     `json:"run,omitempty"`
+	Form     *Form    `json:"form,omitempty"`
+}
+
+type Run struct {
+	Op   string            `json:"op,omitempty"`
+	Args map[string]string `json:"args,omitempty"`
+	// value: the words after `station`; a Form's answers follow as `--<key> <value>`.
+	Argv     []string `json:"argv,omitempty"`
+	Terminal bool     `json:"terminal,omitempty"`
 }
 
 type Scope string

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"image/color"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -173,7 +174,7 @@ func TestThePipeRefusesAPendingPage(t *testing.T) {
 
 func TestEveryHintIsWholeInEveryMedium(t *testing.T) {
 	for _, f := range fixtures(t) {
-		hints := map[string]bool{}
+		hints, piped := map[string]bool{}, map[string]bool{}
 		var walk func([]page.Item)
 		walk = func(items []page.Item) {
 			for _, it := range items {
@@ -189,9 +190,19 @@ func TestEveryHintIsWholeInEveryMedium(t *testing.T) {
 			}
 		}
 		for _, s := range f.page.Sections {
-			if s.Fold != page.Folded {
-				walk(s.Items)
+			if s.Fold == page.Folded {
+				continue
 			}
+			all := hints
+			hints = map[string]bool{}
+			walk(s.Items)
+			// value: the pipe prints no Actions or Summary section: their hints
+			// are whole on the eye's media only.
+			if s.Role != page.Actions && s.Role != page.Summary {
+				maps.Copy(piped, hints)
+			}
+			maps.Copy(all, hints)
+			hints = all
 		}
 		mediums := map[string]string{
 			"tty80":  joined(ansi.Strip(string(tty.Render(f.page, tty.Options{Width: 80, Dark: true})))),
@@ -201,7 +212,11 @@ func TestEveryHintIsWholeInEveryMedium(t *testing.T) {
 			mediums["pipe"] = string(body)
 		}
 		for medium, text := range mediums {
-			for h := range hints {
+			want := hints
+			if medium == "pipe" {
+				want = piped
+			}
+			for h := range want {
 				if !strings.Contains(text, h) {
 					t.Errorf("%s %s: the hint %q is cut or dropped", f.name, medium, h)
 				}

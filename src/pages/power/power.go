@@ -199,7 +199,7 @@ func items(rows []page.Row) []page.Item {
 	return out
 }
 
-func session(r power.Report) page.Section {
+func Session(r power.Report) page.Section {
 	s := page.Section{ID: "power", Title: "Power", Columns: columns(), Items: items(sessionRows(r))}
 	if r.Session != nil && r.Daemon == power.DaemonRunning {
 		s.Role = page.Banner
@@ -215,7 +215,7 @@ func Page(r power.Report, here page.Context) page.Page {
 		rows = append(rows, guardRow(r, g, false))
 	}
 	p := page.Page{ID: "power", Command: "power", Context: here, Sections: []page.Section{
-		session(r),
+		Session(r),
 		{ID: "guards", Title: "Guards", Columns: columns(), Items: items(rows)},
 		{ID: "reading", Title: "Reading", Uncounted: true, Columns: columns(), Items: reading(r.Reading)},
 	}}

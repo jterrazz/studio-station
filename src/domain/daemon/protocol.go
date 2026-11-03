@@ -52,9 +52,10 @@ type Response struct {
 }
 
 type Ping struct {
-	Version   string    `json:"version"`
-	PID       int       `json:"pid"`
-	StartedAt time.Time `json:"started_at"`
+	Version    string    `json:"version"`
+	PID        int       `json:"pid"`
+	StartedAt  time.Time `json:"started_at"`
+	Executable string    `json:"executable,omitempty"`
 }
 
 type VMView struct {

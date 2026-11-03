@@ -710,10 +710,7 @@ func summary(s status.Snapshot, detail []page.Section) page.Section {
 	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Break: right, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: items}
 }
 
-func Live(p page.Page, samples []status.Sample, snap status.Snapshot) page.Page {
-	if len(samples) == 0 {
-		return p
-	}
+func Strip(samples []status.Sample, snap status.Snapshot) page.Strip {
 	memoryTotal := snap.System.MemoryTotal
 	last := samples[len(samples)-1]
 	strip := page.Strip{GPU: page.Percent(int64(last.GPU * 10))}
@@ -746,6 +743,18 @@ func Live(p page.Page, samples []status.Sample, snap status.Snapshot) page.Page 
 			strip.Net = []page.Value{rx, tx}
 		}
 	}
+	if snap.PowerKnown && snap.Power.Held {
+		strip.Power = page.Texts("awake", pages.Term(snap.Power.Until.Sub(last.At)))
+	}
+	return strip
+}
+
+func Live(p page.Page, samples []status.Sample, snap status.Snapshot) page.Page {
+	if len(samples) == 0 {
+		return p
+	}
+	last := samples[len(samples)-1]
+	strip := Strip(samples, snap)
 	var items []page.Item
 	for i, proc := range last.CPU {
 		if i == 5 {
@@ -764,9 +773,6 @@ func Live(p page.Page, samples []status.Sample, snap status.Snapshot) page.Page 
 			Columns: []page.Column{{Key: "name", Kind: page.KindListing, Keep: 100}, {Key: "measure", Kind: page.KindText, Keep: 50}, {Key: "value", Kind: page.KindText, Keep: 60}}, Items: items}
 		at := min(2, len(p.Sections))
 		p.Sections = append(p.Sections[:at:at], append([]page.Section{top}, p.Sections[at:]...)...)
-	}
-	if snap.PowerKnown && snap.Power.Held {
-		strip.Power = page.Texts("awake", pages.Term(snap.Power.Until.Sub(last.At)))
 	}
 	p.Strip = &strip
 	return page.Seal(p)

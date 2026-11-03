@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"github.com/jterrazz/studio-station/src/cmd/generate/pages"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,6 +28,7 @@ func main() {
 	path := flag.String("file", defaultPath, "the skill page whose generated blocks are rewritten")
 	page := flag.String("footprint", footprintPath, "the footprint page, rewritten whole")
 	fixtures := flag.String("pages", pagesDir, "the folder the page fixtures are written to")
+	stream := flag.String("stream", streamPath, "the recorded menubar stream, rewritten whole")
 	flag.Parse()
 	current, err := os.ReadFile(*path)
 	if err != nil {
@@ -46,6 +48,12 @@ func main() {
 		if err := os.WriteFile(filepath.Join(*fixtures, name), body, 0o600); err != nil {
 			panic(err)
 		}
+	}
+	if err := os.MkdirAll(filepath.Dir(*stream), 0o750); err != nil {
+		panic(err)
+	}
+	if err := os.WriteFile(*stream, pages.MenubarStream(), 0o600); err != nil {
+		panic(err)
 	}
 }
 

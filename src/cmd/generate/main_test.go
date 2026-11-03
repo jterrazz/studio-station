@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"github.com/jterrazz/studio-station/src/cmd/generate/pages"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -53,5 +54,12 @@ func TestThePageFixturesHaveNotDriftedFromThePageFunctions(t *testing.T) {
 		if err != nil || !bytes.Equal(current, body) {
 			t.Errorf("%s/%s is out of sync with its page function: run make generate and commit the result", pagesDir, name)
 		}
+	}
+}
+
+func TestTheRecordedStreamHasNotDriftedFromTheDaemon(t *testing.T) {
+	current, err := os.ReadFile(filepath.Join(root(t), streamPath))
+	if err != nil || !bytes.Equal(current, pages.MenubarStream()) {
+		t.Errorf("%s is out of sync with the daemon's encoder: run make generate and commit the result", streamPath)
 	}
 }

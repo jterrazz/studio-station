@@ -1,0 +1,339 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar",
+  "command": "menubar",
+  "context": {
+    "machine": "jterrazz-macbook-pro",
+    "kind": "host"
+  },
+  "state": "loading",
+  "strip": {
+    "cpu": {
+      "kind": "pending"
+    },
+    "memory": {
+      "kind": "pending"
+    }
+  },
+  "sections": [
+    {
+      "id": "todo",
+      "title": "To do",
+      "role": "actions",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "reading",
+            "mark": "pending",
+            "label": "reading"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "fleet",
+      "title": "Fleet",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "show": "pipe"
+        },
+        {
+          "key": "host",
+          "kind": "text",
+          "show": "pipe"
+        },
+        {
+          "key": "lifetime",
+          "kind": "text",
+          "show": "pipe"
+        },
+        {
+          "key": "class",
+          "kind": "text",
+          "keep": 70,
+          "show": "eye"
+        },
+        {
+          "key": "role",
+          "kind": "text",
+          "keep": 30,
+          "show": "eye"
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 90
+        },
+        {
+          "key": "ip",
+          "kind": "identity",
+          "keep": 50
+        },
+        {
+          "key": "record",
+          "kind": "list",
+          "show": "pipe"
+        },
+        {
+          "key": "resources",
+          "kind": "list",
+          "keep": 10,
+          "show": "eye",
+          "whole": true
+        },
+        {
+          "key": "detail",
+          "kind": "list",
+          "keep": 5,
+          "show": "eye"
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "fleet",
+            "mark": "pending",
+            "label": "reading"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "title": "Power",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "detail",
+          "kind": "text",
+          "keep": 60
+        },
+        {
+          "key": "more",
+          "kind": "text",
+          "keep": 20,
+          "whole": true
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "awake",
+            "mark": "ok",
+            "label": "awake",
+            "cells": [
+              {
+                "kind": "off"
+              },
+              {
+                "kind": "text",
+                "text": "the Mac sleeps as macOS decides"
+              }
+            ],
+            "hint": {
+              "command": "station power awake",
+              "key": "a"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "New VM",
+      "on": "page",
+      "priority": 1,
+      "mutates": true,
+      "id": "new-vm",
+      "run": {
+        "argv": [
+          "machines",
+          "create"
+        ]
+      },
+      "form": {
+        "title": "New VM",
+        "fields": [
+          {
+            "key": "lifetime",
+            "label": "Lifetime",
+            "kind": "select",
+            "options": [
+              {
+                "value": "temporary"
+              },
+              {
+                "value": "lasting"
+              }
+            ],
+            "default": "temporary"
+          },
+          {
+            "key": "memory",
+            "label": "Memory",
+            "kind": "select",
+            "options": [
+              {
+                "value": "4G"
+              },
+              {
+                "value": "8G"
+              }
+            ],
+            "default": "4G"
+          }
+        ]
+      }
+    },
+    {
+      "label": "Open station",
+      "on": "page",
+      "priority": 2,
+      "id": "open-station",
+      "run": {
+        "terminal": true
+      }
+    },
+    {
+      "label": "Stop everything",
+      "on": "page",
+      "confirm": {
+        "question": "Stop everything on this host?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "the daemon stays stopped until station start or the next login"
+          }
+        ],
+        "danger": true,
+        "yes": "Stop"
+      },
+      "priority": 3,
+      "mutates": true,
+      "id": "stop-all",
+      "run": {
+        "argv": [
+          "stop",
+          "--yes"
+        ]
+      }
+    },
+    {
+      "label": "awake",
+      "on": "row",
+      "rows": [
+        "awake"
+      ],
+      "priority": 4,
+      "mutates": true,
+      "id": "power-awake",
+      "run": {
+        "op": "power_awake"
+      },
+      "form": {
+        "title": "Power",
+        "fields": [
+          {
+            "key": "for",
+            "label": "For",
+            "kind": "select",
+            "options": [
+              {
+                "value": "3600",
+                "label": "1h"
+              },
+              {
+                "value": "7200",
+                "label": "2h"
+              },
+              {
+                "value": "14400",
+                "label": "4h"
+              },
+              {
+                "value": "28800",
+                "label": "8h"
+              },
+              {
+                "value": "43200",
+                "label": "12h"
+              },
+              {
+                "value": "86400",
+                "label": "24h"
+              }
+            ],
+            "default": "14400"
+          },
+          {
+            "key": "lid",
+            "label": "Lid",
+            "kind": "select",
+            "options": [
+              {
+                "value": "lid=false",
+                "label": "open only"
+              },
+              {
+                "value": "lid=true",
+                "label": "closed"
+              },
+              {
+                "value": "lid=true battery=true",
+                "label": "closed on battery"
+              }
+            ],
+            "default": "lid=false"
+          }
+        ]
+      }
+    }
+  ]
+}

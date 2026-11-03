@@ -6,7 +6,10 @@ import (
 	pagejson "github.com/jterrazz/studio-station/src/ui/render/json"
 )
 
-const pagesDir = "src/ui/testdata/pages"
+const (
+	pagesDir   = "src/ui/testdata/pages"
+	streamPath = "src/ui/testdata/stream/menubar.jsonl"
+)
 
 // invariant: a fixture is written only after the page passes Seal's checks, so
 // no renderer is proved against a page the binary could not build.

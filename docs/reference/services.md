@@ -101,23 +101,24 @@ With Serve off they hold the local URL, `http://127.0.0.1:<host port>`, and the 
 ← {"v":1,"id":"1","ok":true,"result":{"version":"v3.0.0","pid":812,"started_at":"2026-11-01T09:00:00Z"}}
 ```
 
-| op                           | args                     | result                                                                                  |
-| ---------------------------- | ------------------------ | --------------------------------------------------------------------------------------- |
-| `ping`                       |                          | `version pid started_at`                                                                |
-| `vms`                        |                          | each VM's `name state run_pid guest ip detail`                                          |
-| `run`                        | `vm`                     | supervises a new record; answers when its guest is connected                            |
-| `start` / `stop` / `restart` | `vm`                     | lasting VMs only                                                                        |
-| `delete`                     | `vm`                     | the VM, its files, blocks, leases and serve entries                                     |
-| `services`                   |                          | this host's `station.services/v1` host object                                           |
-| `reserve`                    | `vm, guest_port, pinned` | the lease (an existing one is returned)                                                 |
-| `release`                    | `vm, guest_port`         | the released lease                                                                      |
-| `stop_all`                   |                          | `vms` (each VM's result) and `power_ended`                                              |
-| `power`                      |                          | the Power `session`, `last_end`, `reading` and `guards`                                 |
-| `power_awake`                | `lid, battery, for, by`  | the session (`for` in seconds), `refreshed` when one held                               |
-| `power_sleep`                |                          | `ended`, `after` (seconds)                                                              |
-| `subscribe`                  | `pages` (`power`)        | a stream: one full page per change, `tick` every 15 s, `notice` when a guard ends Power |
+| op                           | args                        | result                                                                                  |
+| ---------------------------- | --------------------------- | --------------------------------------------------------------------------------------- |
+| `ping`                       |                             | `version pid started_at executable` (the station binary a client runs actions with)     |
+| `vms`                        |                             | each VM's `name state run_pid guest ip detail`                                          |
+| `run`                        | `vm`                        | supervises a new record; answers when its guest is connected                            |
+| `start` / `stop` / `restart` | `vm`                        | lasting VMs only                                                                        |
+| `delete`                     | `vm`                        | the VM, its files, blocks, leases and serve entries                                     |
+| `services`                   |                             | this host's `station.services/v1` host object                                           |
+| `reserve`                    | `vm, guest_port, pinned`    | the lease (an existing one is returned)                                                 |
+| `release`                    | `vm, guest_port`            | the released lease                                                                      |
+| `stop_all`                   |                             | `vms` (each VM's result) and `power_ended`                                              |
+| `power`                      |                             | the Power `session`, `last_end`, `reading` and `guards`                                 |
+| `power_awake`                | `lid, battery, for, by`     | the session (`for` in seconds), `refreshed` when one held                               |
+| `power_sleep`                |                             | `ended`, `after` (seconds)                                                              |
+| `subscribe`                  | `pages` (`menubar` `power`) | a stream: one full page per change, `tick` every 15 s, `notice` when a guard ends Power |
+| `refresh`                    | `pages`                     | `{}`: the menu bar's To do is read again now                                            |
 
-An error carries `code` (`unknown_op`, `unknown_vm`, `temporary`, `not_running`, `range_full`, `max_per_vm`, `guest_timeout`, `internal`, `power_guard`, `power_range`, `power_unsupported`, `unknown_page`), a `message` and a `hint`, worded as the CLI prints them. After `subscribe`'s `ok` the connection only streams: a later request line on it gets no answer, so a client sends its actions on a second connection.
+An error carries `code` (`unknown_op`, `unknown_vm`, `temporary`, `not_running`, `range_full`, `max_per_vm`, `guest_timeout`, `internal`, `power_guard`, `power_range`, `power_unsupported`, `unknown_page`), a `message` and a `hint`, worded as the CLI prints them. After `subscribe`'s `ok` the connection only streams: a later request line on it gets no answer, so a client sends its actions on a second connection. The first page is the frame (pending values), then a page whenever one changes, coalesced over 250 ms and never resent unchanged; a client that does not read for 5 s is dropped. The `menubar` page is read only while a client subscribes: the Strip every 2 s, the remote hosts every 30 s, the To do every 15 min or on `refresh`, this host's VMs, leases and Power at once.
 
 ## Related
 

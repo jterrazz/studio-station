@@ -1,0 +1,25 @@
+ station menubar                                            host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────
+
+ To do  10 ◐  2 ✗
+   ✗ Hermes runtime    not running · gateway process not found
+   ✗ brain.x-snapshot  failing · last exit 2
+     → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
+       rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
+   ◐ daemon            not installed  → station setup
+   + 9 more
+
+ Fleet  2 ●  1 ◐  1 ○
+   ● macbook     host       here  online   100.98.133.14
+   ├─ ● linux-1  temporary        running  192.168.64.5
+   │  ├─ 5173 → 40001  https://jterrazz-macbook-pro.tail1234.ts.net:40001  node
+   │  └─ 5432 → 40002  postgres
+   └─ ○ api      lasting          stopped  -
+   ◐ mac-mini    host             online   100.98.133.20
+     station v2.0.0-248 here v2.0.0-250
+      no VMs  → station machines create --on mac-mini
+
+ Power  awake · lid · 3h 12m left
+   ● awake      on      lid · until 14:42 (4h)
+   ● display    sleeps  on lid close: pmset displaysleepnow (no display assert…
+   ● clamshell  held    reset to normal at the end, at every daemon start and…

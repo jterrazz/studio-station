@@ -1,0 +1,19 @@
+description: 'subscribe menubar streams the popover from its frame to ready, read only while subscribed'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/power/
+env: daemon
+runs:
+    - command: '--version > /dev/null; "$STATION" daemon 2> daemon.log & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; : > .calls; /bin/sleep 3; /usr/bin/grep -c -E "^(launchctl|sysctl|tart|tailscale) " .calls; ( printf ''{"v":1,"id":"1","op":"subscribe","pages":["menubar"]}\n''; /bin/sleep 8 ) | /usr/bin/nc -U .local/state/station/daemon.sock > stream.jsonl & s=$!; /bin/sleep 2; printf ''{"v":1,"id":"2","op":"refresh","pages":["menubar"]}\n{"v":1,"id":"3","op":"refresh","pages":["nope"]}\n'' | /usr/bin/nc -U .local/state/station/daemon.sock | /usr/bin/jq -c ''[.id, .ok, .error.code]''; wait $s; /usr/bin/jq -c ''select(.id)|[.id, .ok, .result.pages]'' stream.jsonl; /usr/bin/jq -r ''select(.event=="page")|.page.state'' stream.jsonl | /usr/bin/uniq | /usr/bin/head -2; /usr/bin/jq -c ''select(.event=="page")|[.page.id, [.page.sections[].id]]'' stream.jsonl | /usr/bin/tail -1; /usr/bin/jq -c ''select(.event=="page")|[.page.actions[]|select(.on=="page")|.id]'' stream.jsonl | /usr/bin/tail -1; /usr/bin/jq -c ''select(.event=="page")|[.page.actions[]|select(.on=="row")|[.id, .run.op, .rows]]'' stream.jsonl | /usr/bin/tail -1; /usr/bin/grep -c -E "^(launchctl|sysctl|tart) " .calls | /usr/bin/awk ''{print ($1 > 0)}''; kill $d; wait $d'
+      exit: 0
+      stdout: |
+          0
+          ["2",true,null]
+          ["3",false,"unknown_page"]
+          ["1",true,["menubar"]]
+          loading
+          ready
+          ["menubar",["todo","fleet","power"]]
+          ["new-vm","open-station","stop-all"]
+          [["power-awake","power_awake",["awake"]]]
+          1

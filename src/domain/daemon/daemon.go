@@ -64,6 +64,12 @@ type Options struct {
 	Pmset string
 	// value: the power page a subscription streams, built by the caller's pages.
 	PowerPage func(power.View) any
+	// value: the other pages a subscription streams (the menu bar's), by id.
+	Feeds map[string]Feed
+	// value: the station binary ping names, the one a client runs actions with.
+	Executable string
+	// value: how long a write to a subscriber may block before it is dropped.
+	Stall time.Duration
 }
 
 type Daemon struct {
@@ -173,6 +179,7 @@ func (d *Daemon) step(ctx context.Context, tick int) {
 	}
 	d.tick(ctx)
 	d.power.Tick()
+	d.watchState()
 }
 
 func (d *Daemon) logf(subject, message string) {
@@ -315,7 +322,7 @@ func (d *Daemon) answer(ctx context.Context, line []byte) Response {
 func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
 	switch r.Op {
 	case "ping":
-		return Ping{Version: d.o.Version, PID: d.o.PID, StartedAt: d.started}, nil
+		return Ping{Version: d.o.Version, PID: d.o.PID, StartedAt: d.started, Executable: d.o.Executable}, nil
 	case "vms":
 		return d.vmViews(), nil
 	case "services":
@@ -360,8 +367,14 @@ func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
 		return d.powerAwake(r)
 	case "power_sleep":
 		return d.powerSleep(), nil
+	case "refresh":
+		if err := d.checkPages(r.Pages); err != nil {
+			return nil, err
+		}
+		d.hub.refreshed()
+		return struct{}{}, nil
 	}
-	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts stop_all power power_awake power_sleep subscribe")
+	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts stop_all power power_awake power_sleep subscribe refresh")
 }
 
 type VMAccounts struct {
