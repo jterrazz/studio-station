@@ -93,6 +93,12 @@ func forbiddenStd(path string) bool {
 	return strings.HasPrefix(path, "net/") || strings.HasPrefix(path, "testing/")
 }
 
+// invariant: the standard packages that reach the file system without importing
+// os (filepath.Walk, Glob, EvalSymlinks); core, which does no I/O, imports none.
+func readsFiles(row, path string) bool {
+	return strings.HasPrefix(row, "core") && path == "path/filepath"
+}
+
 var testImports = []string{"testing", "testing/fstest", "flag", "os", "path/filepath", "system/systemtest"}
 
 type symbolRule struct {
@@ -293,7 +299,7 @@ func allowedImport(row, pkg, ip string, test bool) bool {
 		if slices.Contains(allowed, ip) {
 			return true
 		}
-		return slices.Contains(allowed, std) && !forbiddenStd(ip)
+		return slices.Contains(allowed, std) && !forbiddenStd(ip) && !readsFiles(row, ip)
 	}
 	for _, a := range allowed {
 		if ip == a || strings.HasPrefix(ip, a+"/") {
@@ -710,6 +716,7 @@ func rules() []rule {
 		{"Rows", ruleRows, "src/mutant/mutant.go", "package mutant\n", "src/mutant"},
 		{"Imports", ruleImports, "src/system/mutant_imports.go", "package system\n\nimport _ \"os/exec\"\n", "src/system/mutant_imports.go"},
 		{"ImportsCore", ruleImports, "src/core/machine/mutant_imports.go", "package machine\n\nimport _ \"os\"\n", "src/core/machine/mutant_imports.go"},
+		{"ImportsCoreFiles", ruleImports, "src/core/section/mutant_imports.go", "package section\n\nimport _ \"path/filepath\"\n", "src/core/section/mutant_imports.go"},
 		{"Symbols", ruleSymbols, "src/present/mutant_symbols.go", "package present\n\nimport \"time\"\n\nfunc mutantNow() time.Time { return time.Now() }\n", "src/present/mutant_symbols.go"},
 		{"Systemtest", ruleSystemtest, "src/theme/mutant_systemtest.go", "package theme\n\nimport _ \"" + module + "/src/system/systemtest\"\n", "src/theme/mutant_systemtest.go"},
 		{"ANSI", ruleANSI, "src/present/mutant_ansi.go", "package present\n\nconst mutantBold = \"\\x1b[1m\"\n", "src/present/mutant_ansi.go"},
@@ -774,21 +781,23 @@ func judge(t *testing.T, name string) {
 	})
 }
 
-func TestRows(t *testing.T)        { judge(t, "Rows") }
-func TestImports(t *testing.T)     { judge(t, "Imports") }
-func TestImportsCore(t *testing.T) { judge(t, "ImportsCore") }
-func TestSymbols(t *testing.T)     { judge(t, "Symbols") }
-func TestSystemtest(t *testing.T)  { judge(t, "Systemtest") }
-func TestANSI(t *testing.T)        { judge(t, "ANSI") }
-func TestPalette(t *testing.T)     { judge(t, "Palette") }
-func TestCatalog(t *testing.T)     { judge(t, "Catalog") }
-func TestWorded(t *testing.T)      { judge(t, "Worded") }
-func TestComments(t *testing.T)    { judge(t, "Comments") }
-func TestRegistries(t *testing.T)  { judge(t, "Registries") }
-func TestCgo(t *testing.T)         { judge(t, "Cgo") }
-func TestPowerSafe(t *testing.T)   { judge(t, "PowerSafe") }
-func TestPowerFiles(t *testing.T)  { judge(t, "PowerFiles") }
-func TestStreams(t *testing.T)     { judge(t, "Streams") }
+func TestRows(t *testing.T)       { judge(t, "Rows") }
+func TestImports(t *testing.T)    { judge(t, "Imports") }
+func TestSymbols(t *testing.T)    { judge(t, "Symbols") }
+func TestSystemtest(t *testing.T) { judge(t, "Systemtest") }
+func TestANSI(t *testing.T)       { judge(t, "ANSI") }
+func TestPalette(t *testing.T)    { judge(t, "Palette") }
+func TestCatalog(t *testing.T)    { judge(t, "Catalog") }
+func TestWorded(t *testing.T)     { judge(t, "Worded") }
+func TestComments(t *testing.T)   { judge(t, "Comments") }
+func TestRegistries(t *testing.T) { judge(t, "Registries") }
+func TestCgo(t *testing.T)        { judge(t, "Cgo") }
+func TestPowerSafe(t *testing.T)  { judge(t, "PowerSafe") }
+func TestPowerFiles(t *testing.T) { judge(t, "PowerFiles") }
+func TestStreams(t *testing.T)    { judge(t, "Streams") }
+
+func TestImportsCore(t *testing.T)      { judge(t, "ImportsCore") }
+func TestImportsCoreFiles(t *testing.T) { judge(t, "ImportsCoreFiles") }
 
 func TestKit(t *testing.T)          { judge(t, "Kit") }
 func TestLevels(t *testing.T)       { judge(t, "Levels") }
