@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
-	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
 )
@@ -33,8 +33,8 @@ type menubarFeed struct {
 	out chan any
 }
 
-func (m machine) menubarFeed(env kit.Env) daemon.Feed {
-	return func(ctx context.Context, in daemon.FeedInput) <-chan any {
+func (m machine) menubarFeed(env kit.Env) engine.Feed {
+	return func(ctx context.Context, in engine.FeedInput) <-chan any {
 		f := &menubarFeed{m: m, status: statusService(env, m), fleet: m.machines(false), svcs: m.services(env), out: make(chan any, 1)}
 		go f.run(ctx, in)
 		return f.out
@@ -44,11 +44,11 @@ func (m machine) menubarFeed(env kit.Env) daemon.Feed {
 // invariant: the frame goes out at once, then a page each time one of the
 // reads answers; every read runs only while this feed does, so nothing of it
 // runs at rest, and the channel closes when the subscription ends.
-func (f *menubarFeed) run(ctx context.Context, in daemon.FeedInput) {
+func (f *menubarFeed) run(ctx context.Context, in engine.FeedInput) {
 	defer close(f.out)
 	f.update(ctx, func(r *pagemenubar.Reading) { r.Power = f.report(in.Power()) })
 	var wg sync.WaitGroup
-	for _, loop := range []func(context.Context, daemon.FeedInput){f.sample, f.todo, f.remote, f.local} {
+	for _, loop := range []func(context.Context, engine.FeedInput){f.sample, f.todo, f.remote, f.local} {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -77,7 +77,7 @@ func (f *menubarFeed) report(v power.View) *power.Report {
 	return &power.Report{Now: f.m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 }
 
-func (f *menubarFeed) sample(ctx context.Context, _ daemon.FeedInput) {
+func (f *menubarFeed) sample(ctx context.Context, _ engine.FeedInput) {
 	for {
 		if s, err := f.status.Sample(ctx); err == nil {
 			f.update(ctx, func(r *pagemenubar.Reading) {
@@ -93,7 +93,7 @@ func (f *menubarFeed) sample(ctx context.Context, _ daemon.FeedInput) {
 	}
 }
 
-func (f *menubarFeed) todo(ctx context.Context, in daemon.FeedInput) {
+func (f *menubarFeed) todo(ctx context.Context, in engine.FeedInput) {
 	for {
 		for snap := range f.status.Watch(ctx) {
 			f.update(ctx, func(r *pagemenubar.Reading) { r.Home = &snap })
@@ -115,7 +115,7 @@ func (f *menubarFeed) todo(ctx context.Context, in daemon.FeedInput) {
 	}
 }
 
-func (f *menubarFeed) remote(ctx context.Context, _ daemon.FeedInput) {
+func (f *menubarFeed) remote(ctx context.Context, _ engine.FeedInput) {
 	for {
 		fl, ferr := f.fleet.Fleet(ctx, false)
 		sv, serr := f.svcs.List(ctx, false)
@@ -135,7 +135,7 @@ func (f *menubarFeed) remote(ctx context.Context, _ daemon.FeedInput) {
 
 // invariant: a change of the daemon's own state rereads this host only and
 // keeps the remote hosts as last read.
-func (f *menubarFeed) local(ctx context.Context, in daemon.FeedInput) {
+func (f *menubarFeed) local(ctx context.Context, in engine.FeedInput) {
 	for {
 		select {
 		case <-ctx.Done():

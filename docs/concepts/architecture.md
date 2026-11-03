@@ -25,6 +25,7 @@ src/
     kit/          how a leaf and a group are declared; the confirm gate; the wording of every domain error
   domain/         behaviour, never touching the machine except through ports
     settings/ tools/ config/ setup/ status/ storage/ machines/ images/ secrets/ remote/ tailnet/ shortcuts/ shell/
+  engine/         the per-Mac process (the daemon): its runs, its socket and protocol, the guards it holds
 ```
 
 The ports and the data:

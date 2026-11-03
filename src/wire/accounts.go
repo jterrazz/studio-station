@@ -12,12 +12,12 @@ import (
 	accountscmd "github.com/jterrazz/studio-station/src/cli/accounts"
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/accounts"
-	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/guest"
+	"github.com/jterrazz/studio-station/src/engine"
 )
 
 func (m machine) accounts() *accounts.Service {
-	o := accounts.Options{Here: m.kind, HereName: m.where.Machine, Track: daemon.ChildrenDir(m.paths)}
+	o := accounts.Options{Here: m.kind, HereName: m.where.Machine, Track: engine.ChildrenDir(m.paths)}
 	if m.kind != catalog.Host {
 		o.Keys = m.stationHostKeys
 		return accounts.New(m.host, m.pool, accounts.Ports{}, o)
@@ -25,7 +25,7 @@ func (m machine) accounts() *accounts.Service {
 	sec := m.secrets()
 	records := vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}
 	tn := m.tailnet()
-	d := daemon.Dial(m.host, m.paths)
+	d := engine.Dial(m.host, m.paths)
 	ports := accounts.Ports{
 		LendList: sec.LendList,
 		Tailnet: func(ctx context.Context) accounts.TailnetAccount {
@@ -38,13 +38,13 @@ func (m machine) accounts() *accounts.Service {
 				return nil, err
 			}
 			lends, _ := records.Lends()
-			var live []daemon.VMView
-			_ = d.Do(ctx, "vms", daemon.Request{}, &live)
+			var live []engine.VMView
+			_ = d.Do(ctx, "vms", engine.Request{}, &live)
 			out := make([]accounts.VM, 0, len(recs))
 			for _, r := range recs {
 				vm := accounts.VM{Name: r.Name, Lifetime: string(r.Lifetime)}
 				for _, v := range live {
-					if v.Name == r.Name && v.State == daemon.StateRunning {
+					if v.Name == r.Name && v.State == engine.StateRunning {
 						vm.Running = true
 					}
 				}
@@ -56,8 +56,8 @@ func (m machine) accounts() *accounts.Service {
 			return out, nil
 		},
 		Daemon: func(ctx context.Context) ([]accounts.VMRead, string) {
-			var view daemon.AccountsView
-			if err := d.Do(ctx, "accounts", daemon.Request{}, &view); err != nil {
+			var view engine.AccountsView
+			if err := d.Do(ctx, "accounts", engine.Request{}, &view); err != nil {
 				if _, missing := m.host.FS.Stat(catalog.DaemonPlist(m.host.Env.Home())); missing != nil {
 					return nil, accounts.DaemonAbsent
 				}

@@ -6,11 +6,11 @@ import (
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	startcmd "github.com/jterrazz/studio-station/src/cli/start"
 	stopcmd "github.com/jterrazz/studio-station/src/cli/stop"
-	"github.com/jterrazz/studio-station/src/domain/daemon"
+	"github.com/jterrazz/studio-station/src/engine"
 )
 
-func (m machine) control() *daemon.Control {
-	return daemon.NewControl(m.host, daemon.Dial(m.host, m.paths), m.machines(false), daemon.ControlOptions{
+func (m machine) control() *engine.Control {
+	return engine.NewControl(m.host, engine.Dial(m.host, m.paths), m.machines(false), engine.ControlOptions{
 		Here: m.kind, HereName: m.where.Machine, State: m.paths.State,
 	})
 }

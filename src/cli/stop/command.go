@@ -7,13 +7,13 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
-	"github.com/jterrazz/studio-station/src/domain/daemon"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
 	pageoutcome "github.com/jterrazz/studio-station/src/pages/outcome"
 )
 
 type Deps struct {
-	Control *daemon.Control
+	Control *engine.Control
 	Here    page.Context
 }
 
@@ -52,10 +52,10 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	}, env)
 }
 
-func unconfirmed(w daemon.Work) error {
-	e := &daemon.UnconfirmedError{}
+func unconfirmed(w engine.Work) error {
+	e := &engine.UnconfirmedError{}
 	for _, v := range w.VMs {
-		if v.Result == daemon.ResultDeleted {
+		if v.Result == engine.ResultDeleted {
 			e.Deletes = append(e.Deletes, v.Name)
 		} else {
 			e.Stops = append(e.Stops, v.Name)

@@ -6,13 +6,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
-	"github.com/jterrazz/studio-station/src/domain/daemon"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
 	pageoutcome "github.com/jterrazz/studio-station/src/pages/outcome"
 )
 
 type Deps struct {
-	Control *daemon.Control
+	Control *engine.Control
 	Here    page.Context
 }
 

@@ -6,10 +6,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
-	"github.com/jterrazz/studio-station/src/domain/daemon"
+	"github.com/jterrazz/studio-station/src/engine"
 )
 
-type Deps struct{ Daemon *daemon.Daemon }
+type Deps struct{ Daemon *engine.Daemon }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	// invariant: plumbing for the host's one launchd agent: it runs until the

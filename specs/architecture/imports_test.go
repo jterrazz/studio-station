@@ -187,6 +187,7 @@ func allowedOutside(p place, ip string, test bool) bool {
 // longer true fails the gate until it is removed.
 func importsTolerated() map[string][]string {
 	return map[string][]string{
+		"engine":                {"domain/machines", "domain/power", "domain/services", "domain/settings", "domain/tailnet", "io", "io/fs", "system", "system/systemtest"},
 		"machines/adapter/ssh":  {"net", "os", "system"},
 		"machines/adapter/tart": {"system", "system/systemtest"},
 		"platform/local":        {"platform/darwin", "system"},

@@ -12,9 +12,9 @@ import (
 	powercmd "github.com/jterrazz/studio-station/src/cli/power"
 	powerawake "github.com/jterrazz/studio-station/src/cli/power/awake"
 	powersleep "github.com/jterrazz/studio-station/src/cli/power/sleep"
-	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
@@ -32,21 +32,21 @@ func (m machine) powerPage(v power.View) any {
 func powerDown(err error) error { return downAs(err, power.ErrDaemonDown) }
 
 func (m machine) power() *power.Service {
-	c := daemon.Dial(m.host, m.paths)
+	c := engine.Dial(m.host, m.paths)
 	return power.NewService(m.host, power.Ports{
 		View: func(ctx context.Context) (power.View, error) {
 			var v power.View
-			err := c.Do(ctx, "power", daemon.Request{}, &v)
+			err := c.Do(ctx, "power", engine.Request{}, &v)
 			return v, powerDown(err)
 		},
 		Awake: func(ctx context.Context, r power.Request) (power.Awoken, error) {
 			var a power.Awoken
-			err := c.Do(ctx, "power_awake", daemon.Request{Lid: r.Lid, Battery: r.Battery, For: int(r.For / time.Second), By: r.By}, &a)
+			err := c.Do(ctx, "power_awake", engine.Request{Lid: r.Lid, Battery: r.Battery, For: int(r.For / time.Second), By: r.By}, &a)
 			return a, powerDown(err)
 		},
 		Sleep: func(ctx context.Context) (power.Slept, error) {
-			var s daemon.PowerSlept
-			err := c.Do(ctx, "power_sleep", daemon.Request{}, &s)
+			var s engine.PowerSlept
+			err := c.Do(ctx, "power_sleep", engine.Request{}, &s)
 			return power.Slept{Ended: s.Ended, After: time.Duration(s.After) * time.Second}, powerDown(err)
 		},
 		Installed: func() bool {
@@ -94,7 +94,7 @@ func (t tuiPower) Pages(ctx context.Context) <-chan page.Page {
 		if t.read(ctx, out).Daemon != power.DaemonRunning {
 			return
 		}
-		stream, err := daemon.Dial(t.m.host, t.m.paths).Subscribe(ctx, []string{daemon.PagePower})
+		stream, err := engine.Dial(t.m.host, t.m.paths).Subscribe(ctx, []string{engine.PagePower})
 		if err != nil {
 			return
 		}

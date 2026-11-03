@@ -4,16 +4,16 @@ import (
 	"errors"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/engine"
 )
 
 func daemonFailure(err error) (*fail.Error, bool) {
-	var running *daemon.RunningError
-	var hostOnly *daemon.HostOnlyError
-	var down *daemon.DownError
-	var op *daemon.OpError
+	var running *engine.RunningError
+	var hostOnly *engine.HostOnlyError
+	var down *engine.DownError
+	var op *engine.OpError
 	var guestHost *guest.HostOnlyRefusedError
 	if f, ok := controlFailure(err); ok {
 		return f, true
@@ -83,12 +83,12 @@ func servicesFailure(err error) (*fail.Error, bool) {
 }
 
 func controlFailure(err error) (*fail.Error, bool) {
-	var notInstalled *daemon.NotInstalledError
-	var offHost *daemon.OffHostError
-	var unconfirmed *daemon.UnconfirmedError
-	var stuck *daemon.StuckError
-	var noAnswer *daemon.NoAnswerError
-	var boot *daemon.BootError
+	var notInstalled *engine.NotInstalledError
+	var offHost *engine.OffHostError
+	var unconfirmed *engine.UnconfirmedError
+	var stuck *engine.StuckError
+	var noAnswer *engine.NoAnswerError
+	var boot *engine.BootError
 	switch {
 	case errors.As(err, &notInstalled):
 		return failed(notInstalled.Error(), "station setup", err), true
@@ -101,7 +101,7 @@ func controlFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &noAnswer):
 		return failed(noAnswer.Error(), "tail ~/.local/state/station/logs/daemon.log", err), true
 	case errors.As(err, &boot):
-		return failed(boot.Error(), "launchctl print gui/$(id -u)/"+daemon.Label, err), true
+		return failed(boot.Error(), "launchctl print gui/$(id -u)/"+engine.Label, err), true
 	}
 	return nil, false
 }

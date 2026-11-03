@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
 )
@@ -57,15 +57,15 @@ func MenubarStream() []byte {
 	for _, f := range All() {
 		byName[f.Name] = f.Page
 	}
-	result, _ := json.Marshal(map[string]any{"stream": page.Schema, "pages": []string{daemon.PageMenubar}})
+	result, _ := json.Marshal(map[string]any{"stream": page.Schema, "pages": []string{engine.PageMenubar}})
 	frame, _ := json.Marshal(page.Document{Schema: page.Schema, Page: byName["menubar.loading"]})
 	ready, _ := json.Marshal(page.Document{Schema: page.Schema, Page: byName["menubar.full"]})
 	lines := []any{
-		daemon.Response{V: 1, ID: "1", OK: true, Result: result},
-		daemon.Event{V: 1, Event: "page", Page: frame},
-		daemon.Event{V: 1, Event: "page", Page: ready},
-		daemon.Event{V: 1, Event: "tick", At: "2026-11-03T10:30:15Z"},
-		daemon.Event{V: 1, Event: "notice", Notice: &daemon.Notice{Kind: daemon.NoticeEnded, Text: "Power ended: battery 20% on battery"}},
+		engine.Response{V: 1, ID: "1", OK: true, Result: result},
+		engine.Event{V: 1, Event: "page", Page: frame},
+		engine.Event{V: 1, Event: "page", Page: ready},
+		engine.Event{V: 1, Event: "tick", At: "2026-11-03T10:30:15Z"},
+		engine.Event{V: 1, Event: "notice", Notice: &engine.Notice{Kind: engine.NoticeEnded, Text: "Power ended: battery 20% on battery"}},
 	}
 	var out []byte
 	for _, l := range lines {

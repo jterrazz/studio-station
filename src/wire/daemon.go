@@ -13,11 +13,11 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	daemoncmd "github.com/jterrazz/studio-station/src/cli/daemon"
 	"github.com/jterrazz/studio-station/src/cli/kit"
-	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
 	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	"github.com/jterrazz/studio-station/src/system"
@@ -25,12 +25,12 @@ import (
 
 func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 
-func (m machine) daemon(env kit.Env) *daemon.Daemon {
-	return daemon.New(m.host, tart.New(m.host.Run), ssh.New(), m.machines(false), m.tailnet().Tracked(daemon.ChildrenDir(m.paths)), m.store, daemon.Options{
+func (m machine) daemon(env kit.Env) *engine.Daemon {
+	return engine.New(m.host, tart.New(m.host.Run), ssh.New(), m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths)), m.store, engine.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Pmset: m.pmset(), PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: daemonLends{m.secrets()},
-		Feeds: map[string]daemon.Feed{daemon.PageMenubar: m.menubarFeed(env)},
+		Feeds: map[string]engine.Feed{engine.PageMenubar: m.menubarFeed(env)},
 	})
 }
 
@@ -40,12 +40,12 @@ func daemonCommand(env kit.Env, m machine) *cobra.Command {
 
 type daemonLends struct{ s *secrets.Service }
 
-func (l daemonLends) Held() (map[string][]daemon.Lend, error) {
+func (l daemonLends) Held() (map[string][]engine.Lend, error) {
 	held, err := l.s.Lends()
-	out := make(map[string][]daemon.Lend, len(held))
+	out := make(map[string][]engine.Lend, len(held))
 	for vm, list := range held {
 		for _, x := range list {
-			out[vm] = append(out[vm], daemon.Lend{Name: x.Name, Until: x.Until})
+			out[vm] = append(out[vm], engine.Lend{Name: x.Name, Until: x.Until})
 		}
 	}
 	return out, err
@@ -56,12 +56,12 @@ func (l daemonLends) Recall(ctx context.Context, from string, names []string) er
 	return err
 }
 
-type hostDaemon struct{ c daemon.Client }
+type hostDaemon struct{ c engine.Client }
 
-func (m machine) hostDaemon() hostDaemon { return hostDaemon{c: daemon.Dial(m.host, m.paths)} }
+func (m machine) hostDaemon() hostDaemon { return hostDaemon{c: engine.Dial(m.host, m.paths)} }
 
 func downAs(err, sentinel error) error {
-	var down *daemon.DownError
+	var down *engine.DownError
 	if errors.As(err, &down) {
 		return sentinel
 	}
@@ -74,8 +74,8 @@ func (d hostDaemon) Ping(ctx context.Context) (string, error) {
 }
 
 func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, error) {
-	var views []daemon.VMView
-	if err := d.c.Do(ctx, "vms", daemon.Request{}, &views); err != nil {
+	var views []engine.VMView
+	if err := d.c.Do(ctx, "vms", engine.Request{}, &views); err != nil {
 		return nil, downAs(err, machines.ErrDaemonDown)
 	}
 	out := make(map[string]machines.DaemonVM, len(views))
@@ -86,12 +86,12 @@ func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, erro
 }
 
 func (d hostDaemon) Do(ctx context.Context, op, vm string) error {
-	return downAs(d.c.Do(ctx, op, daemon.Request{VM: vm}, nil), machines.ErrDaemonDown)
+	return downAs(d.c.Do(ctx, op, engine.Request{VM: vm}, nil), machines.ErrDaemonDown)
 }
 
 func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile string) (machines.Reserved, error) {
 	var v services.View
-	if err := d.c.Do(ctx, "reserve", daemon.Request{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
+	if err := d.c.Do(ctx, "reserve", engine.Request{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
 		return machines.Reserved{}, downAs(err, machines.ErrDaemonDown)
 	}
 	return machines.Reserved{
@@ -110,23 +110,23 @@ func hostOf(url string) string {
 	return host
 }
 
-type servicesDaemon struct{ c daemon.Client }
+type servicesDaemon struct{ c engine.Client }
 
 func (d servicesDaemon) Services(ctx context.Context) (services.HostView, error) {
 	var v services.HostView
-	err := d.c.Do(ctx, "services", daemon.Request{}, &v)
+	err := d.c.Do(ctx, "services", engine.Request{}, &v)
 	return v, downAs(err, services.ErrDaemonDown)
 }
 
 func (d servicesDaemon) Reserve(ctx context.Context, vm string, port int, pinned bool) (services.View, error) {
 	var v services.View
-	err := d.c.Do(ctx, "reserve", daemon.Request{VM: vm, GuestPort: port, Pinned: pinned}, &v)
+	err := d.c.Do(ctx, "reserve", engine.Request{VM: vm, GuestPort: port, Pinned: pinned}, &v)
 	return v, downAs(err, services.ErrDaemonDown)
 }
 
 func (d servicesDaemon) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
 	var l services.Lease
-	err := d.c.Do(ctx, "release", daemon.Request{VM: vm, GuestPort: port}, &l)
+	err := d.c.Do(ctx, "release", engine.Request{VM: vm, GuestPort: port}, &l)
 	return l, downAs(err, services.ErrDaemonDown)
 }
 
@@ -206,7 +206,7 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 	home := i.m.host.Env.Home()
 	file := catalog.DaemonPlist(home)
 	log := filepath.Join(i.m.paths.State, "logs", "daemon.log")
-	plist := daemon.Plist(i.m.host.Env.Executable(), i.env(), log)
+	plist := engine.Plist(i.m.host.Env.Executable(), i.env(), log)
 	current, _ := i.m.host.FS.ReadFile(file)
 	changed := string(current) != plist
 	for _, dir := range []string{filepath.Dir(file), filepath.Dir(log)} {
@@ -220,7 +220,7 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 		}
 	}
 	domain := "gui/" + strconv.Itoa(i.m.host.Env.Euid())
-	target := domain + "/" + daemon.Label
+	target := domain + "/" + engine.Label
 	version := Version()
 	if out, err := i.launchctl(ctx, "print", target); err != nil || out.ExitCode != 0 {
 		if err := i.mustLaunchctl(ctx, "bootstrap", domain, file); err != nil {

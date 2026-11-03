@@ -3,11 +3,11 @@ package menubar
 import (
 	"strconv"
 
-	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
@@ -146,7 +146,7 @@ func start() page.Action {
 }
 
 func stopAll(r Reading) page.Action {
-	var w daemon.Work
+	var w engine.Work
 	host := "this host"
 	if r.Fleet != nil {
 		for _, h := range r.Fleet.Hosts {
@@ -157,9 +157,9 @@ func stopAll(r Reading) page.Action {
 			for _, vm := range h.VMs {
 				switch {
 				case vm.Lifetime == machines.Temporary:
-					w.VMs = append(w.VMs, daemon.Stopped{Name: vm.Name, Lifetime: string(vm.Lifetime), Result: daemon.ResultDeleted})
+					w.VMs = append(w.VMs, engine.Stopped{Name: vm.Name, Lifetime: string(vm.Lifetime), Result: engine.ResultDeleted})
 				case vm.State == machines.Running:
-					w.VMs = append(w.VMs, daemon.Stopped{Name: vm.Name, Lifetime: string(vm.Lifetime), Result: daemon.ResultStopped})
+					w.VMs = append(w.VMs, engine.Stopped{Name: vm.Name, Lifetime: string(vm.Lifetime), Result: engine.ResultStopped})
 				}
 			}
 		}
