@@ -1,3 +1,9 @@
  - Tailnet                                                                                         
-   ◌ tailnet  the Tailscale app does not answer  → open the Tailscale app and log in
+   ◌ tailnet
+   ◌ node
+   ◌ cli
+ - Peers                                                                                        1 ◌
+   ◌ reading
+ - Serve                                                                                        1 ◌
+   ◌ reading
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

@@ -39,8 +39,8 @@ runs:
            - Kept
              no kept secrets
            + Tailnet                                                                  3 ●
-
-
+           - Peers
+             no peers
            ╭──────────────────────────────────────────────────────────╮
            │   Restart x?                                             │
            │                                                          │

@@ -5,9 +5,54 @@
   "context": {
     "kind": "host"
   },
-  "state": "failed",
-  "error": {
-    "message": "tailscale did not answer in 5s",
-    "hint": "open Tailscale, then station tailnet"
-  }
+  "state": "ready",
+  "sections": [
+    {
+      "id": "tailnet",
+      "title": "Tailnet",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "tailnet",
+            "mark": "absent",
+            "label": "tailnet",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "not installed"
+              }
+            ],
+            "reason": "missing",
+            "hint": {
+              "command": "station tools install tailscale"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "absent",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station tools install tailscale"
+    }
+  ]
 }

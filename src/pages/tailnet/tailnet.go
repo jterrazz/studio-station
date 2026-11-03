@@ -69,42 +69,56 @@ func columns() []page.Column {
 
 func Sections(s tailnet.Status) []page.Section {
 	rows := Rows(s)
-	if s.CLI != "" {
+	switch {
+	case s.State == catalog.StatePending:
+		rows = append(rows, page.Row{ID: "node", Label: "node", Mark: page.Awaiting}, page.Row{ID: "cli", Label: "cli", Mark: page.Awaiting})
+	case s.CLI != "":
 		rows = append(rows, page.Row{ID: "cli", Label: "cli", Mark: page.OK, Cells: []page.Value{page.Path(s.CLI)}, Detail: page.Text(s.Variant)})
 	}
+	out := []page.Section{{ID: "tailnet", Title: "Tailnet", Role: page.Banner, Columns: columns(), Items: itemsOf(rows)}}
+	if s.State == catalog.StateAbsent {
+		return out
+	}
+	peers := make([]page.Row, 0, len(s.Peers))
+	for _, p := range s.Peers {
+		state := page.Text("online")
+		if !p.Online {
+			state = page.Text("offline")
+		}
+		peers = append(peers, page.Row{ID: p.Name, Label: p.Name, Cells: []page.Value{page.Identity(p.IP), state}, Detail: page.Texts(p.Tags...)})
+	}
+	serve := make([]page.Row, 0, len(s.Serve))
+	for _, e := range s.Serve {
+		owner := "not station's"
+		if e.Station {
+			owner = "station"
+		}
+		label := "https " + strconv.Itoa(e.Port) + e.Path
+		serve = append(serve, page.Row{ID: label, Label: label, Mark: page.OK, Cells: []page.Value{page.URL(e.Target)}, Detail: page.Text(owner)})
+	}
+	return append(out,
+		page.Section{ID: "peers", Title: "Peers", Columns: []page.Column{
+			{Key: "name", Kind: page.KindListing, Keep: 100}, {Key: "ip", Kind: page.KindIdentity, Keep: 60}, {Key: "state", Kind: page.KindText, Keep: 70},
+		}, Items: listOf(s, "peers", peers)},
+		page.Section{ID: "serve", Title: "Serve", Columns: columns(), Items: listOf(s, "serves", serve)})
+}
+
+func itemsOf(rows []page.Row) []page.Item {
 	items := make([]page.Item, 0, len(rows))
 	for i := range rows {
 		items = append(items, page.Item{Row: &rows[i]})
 	}
-	out := []page.Section{{ID: "tailnet", Title: "Tailnet", Role: page.Banner, Columns: columns(), Items: items}}
-	if len(s.Peers) > 0 {
-		peers := make([]page.Item, 0, len(s.Peers))
-		for _, p := range s.Peers {
-			state := page.Text("online")
-			if !p.Online {
-				state = page.Text("offline")
-			}
-			row := page.Row{ID: p.Name, Label: p.Name, Cells: []page.Value{page.Identity(p.IP), state}, Detail: page.Texts(p.Tags...)}
-			peers = append(peers, page.Item{Row: &row})
-		}
-		out = append(out, page.Section{ID: "peers", Title: "Peers", Columns: []page.Column{
-			{Key: "name", Kind: page.KindListing, Keep: 100}, {Key: "ip", Kind: page.KindIdentity, Keep: 60}, {Key: "state", Kind: page.KindText, Keep: 70},
-		}, Items: peers})
+	return items
+}
+
+func listOf(s tailnet.Status, noun string, rows []page.Row) []page.Item {
+	switch {
+	case s.State == catalog.StatePending:
+		return []page.Item{{Row: &page.Row{ID: noun, Label: "reading", Mark: page.Awaiting}}}
+	case len(rows) == 0:
+		return []page.Item{{Empty: &page.Empty{Noun: noun}}}
 	}
-	if len(s.Serve) > 0 {
-		serve := make([]page.Item, 0, len(s.Serve))
-		for _, e := range s.Serve {
-			owner := "not station's"
-			if e.Station {
-				owner = "station"
-			}
-			label := "https " + strconv.Itoa(e.Port) + e.Path
-			row := page.Row{ID: label, Label: label, Mark: page.OK, Cells: []page.Value{page.URL(e.Target)}, Detail: page.Text(owner)}
-			serve = append(serve, page.Item{Row: &row})
-		}
-		out = append(out, page.Section{ID: "serve", Title: "Serve", Columns: columns(), Items: serve})
-	}
-	return out
+	return itemsOf(rows)
 }
 
 func Status(s tailnet.Status, here page.Context) page.Page {
@@ -116,6 +130,9 @@ func Status(s tailnet.Status, here page.Context) page.Page {
 }
 
 func Rows(s tailnet.Status) []page.Row {
+	if s.State == catalog.StatePending {
+		return []page.Row{{ID: "tailnet", Label: "tailnet", Mark: page.Awaiting}}
+	}
 	head := page.Row{ID: "tailnet", Label: "tailnet", Mark: pages.MarkOf(s.State), Cells: []page.Value{stateValue(s)}, Hint: repair(s)}
 	switch head.Mark {
 	case page.Attention:
@@ -154,11 +171,11 @@ func Summary(s tailnet.Status) page.Row {
 
 func repair(s tailnet.Status) *page.Hint {
 	switch s.State {
-	case catalog.StateOK:
+	case catalog.StateOK, catalog.StatePending:
 		return nil
 	case catalog.StateAbsent:
 		return page.Cmd("station tools install tailscale")
-	case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown, catalog.StatePending:
+	case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown:
 	}
 	return &page.Hint{Command: "open the Tailscale app and log in", External: true}
 }

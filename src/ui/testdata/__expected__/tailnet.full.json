@@ -154,6 +154,47 @@
           }
         }
       ]
+    },
+    {
+      "id": "serve",
+      "title": "Serve",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "https 40001/",
+            "mark": "ok",
+            "label": "https 40001/",
+            "cells": [
+              {
+                "kind": "url",
+                "text": "http://127.0.0.1:40001"
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "station"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        }
+      ]
     }
   ]
 }

@@ -274,14 +274,15 @@ func tailnetStatus() tailnet.Status {
 			{ID: "1", Name: "mac-mini", IP: "100.98.133.20", Online: true, Tags: []string{"tag:station"}},
 			{ID: "2", Name: "iphone", IP: "100.98.133.30"},
 		},
+		Serve: []tailnet.ServeEntry{{Port: 40001, Path: "/", Target: "http://127.0.0.1:40001", Station: true}},
 	}
 }
 
 func tailnets() []Fixture {
 	return states("tailnet",
 		pagetailnet.Status(tailnet.Status{State: catalog.StatePending}, here()),
+		pagetailnet.Status(tailnet.Status{State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net", IP: "100.98.133.14", Variant: "app-store", CLI: "/Applications/Tailscale.app/Contents/MacOS/Tailscale", ServeOn: true}, here()),
 		pagetailnet.Status(tailnet.Status{State: catalog.StateAbsent}, here()),
-		failure("tailnet", "tailnet", "tailscale did not answer in 5s", "open Tailscale, then station tailnet"),
 		pagetailnet.Status(tailnetStatus(), here()))
 }
 

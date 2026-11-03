@@ -1,5 +1,7 @@
  station tailnet                                                                host · unregistered
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
- Error: tailscale did not answer in 5s
- Hint: open Tailscale, then station tailnet
+ Tailnet
+   ○ tailnet  not installed  → station tools install tailscale
+
+ → station tools install tailscale

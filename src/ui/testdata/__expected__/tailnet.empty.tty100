@@ -2,6 +2,12 @@
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
  Tailnet
-   ○ tailnet  not installed  → station tools install tailscale
+   ● tailnet  Running · jterrazz-macbook-pro.tail1234.ts.net
+   ● node     macbook                                               100.98.133.14
+   ● cli      /Applications/Tailscale.app/Contents/MacOS/Tailscale  app-store
 
- → station tools install tailscale
+ Peers
+   no peers
+
+ Serve
+   no serves
