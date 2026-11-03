@@ -207,7 +207,7 @@ func machineRows(s status.Snapshot) []page.Row {
 	facts := page.Texts(string(m.Kind), strings.TrimSpace(m.OS+" "+m.Arch), m.User, m.Shell)
 	name := page.Row{ID: "name", Label: "name", Mark: page.OK, Cells: []page.Value{page.Text(m.Name)}, Detail: facts}
 	if !m.Registered {
-		name.Mark, name.Cells = page.Absent, []page.Value{page.Text("unregistered")}
+		name.Mark, name.Reason, name.Cells = page.Attention, page.Unset, []page.Value{page.Text("unregistered")}
 	}
 	rows := []page.Row{name}
 	if s.System.Pending {
@@ -417,6 +417,11 @@ func todo(detail []page.Section, jobs []status.Job) page.Section {
 			rows = foldStrays(rows)
 		}
 		for _, r := range rows {
+			// invariant: an unregistered name is one action, the setup row's
+			// `name not set → station setup`; the Machine row only reads it.
+			if s.ID == "machine" && r.ID == "name" {
+				continue
+			}
 			act := action(s.ID, r)
 			switch {
 			case r.Mark == page.Broken:

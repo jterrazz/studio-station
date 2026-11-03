@@ -1,4 +1,4 @@
-description: 'an unregistered machine has a null name, nothing else is null, and its setup says what to run'
+description: 'an unregistered machine has a null name, nothing else is null, and its setup says what to run, once'
 fixture: ./__fixtures__/mac/
 env:
     - USER=tester
@@ -15,10 +15,14 @@ runs:
     - command: 'status | /usr/bin/head -4 | /usr/bin/cut -f1-3'
       exit: 0
       stdout: |
-          # Machine	1 ●	1 ◐
-          ○	name	unregistered
+          # Machine	1 ●	2 ◐
+          ◐	name	unregistered
           ●	uptime	3d 4h
           ◐	setup	name
+    - command: 'status --page | /usr/bin/jq -c ''[.sections[] | select(.id == "todo") | .items[].row.label | select(. == "name" or . == "setup")]'''
+      exit: 0
+      stdout: |
+          ["setup"]
     - command: 'status | /usr/bin/grep -c -E ''host · Darwin 27.0.0 [a-z0-9_]+ · tester · zsh$'''
       exit: 0
       stdout: |
