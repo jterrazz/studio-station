@@ -62,6 +62,10 @@ type Error struct {
 	Cause   error
 }
 
+func New(t Type, code Code, subject string, detail map[string]string) *Error {
+	return &Error{Type: t, Code: code, Subject: subject, Detail: detail}
+}
+
 func (e *Error) Error() string {
 	switch {
 	case e.Message != "":
