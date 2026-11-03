@@ -55,7 +55,7 @@ func technologyWords() []string {
 // gate until it is removed.
 func wordsTolerated() map[string][]string {
 	return map[string][]string{
-		"app":                  {"bun", "launchctl", "launchd", "mise", "pmset", "tart"},
+		"app":                  {"bun", "launchctl", "launchd", "mise", "pmset", "ssh", "tart"},
 		"cli/kit":              {"docker", "fdesetup", "launchctl", "ssh", "tailscale", "tart"},
 		"cli/machines":         {"ssh"},
 		"cli/machines/restart": {"fdesetup"},
@@ -63,14 +63,16 @@ func wordsTolerated() map[string][]string {
 		"cli/run/docker":       {"docker"},
 		"cli/tailnet":          {"tailscale"},
 		"cmd/generate/pages":   {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "security", "ssh", "tailscale", "tart", "uv"},
-		"domain/accounts":      {"docker", "npm", "tailscale"},
+		"domain/accounts":      {"docker", "npm", "ssh", "tailscale"},
 		"domain/config":        {"fdesetup", "launchctl", "pmset", "security", "ssh"},
 		"domain/daemon":        {"launchctl", "pmset", "ssh", "tailscale", "tart"},
 		"domain/guest":         {"docker", "lsof"},
-		"domain/images":        {"scp", "tart"},
+		"domain/images":        {"scp", "ssh", "tart"},
 		"domain/machines":      {"fdesetup", "launchctl", "ssh", "sysctl", "tart"},
 		"domain/power":         {"pmset"},
 		"domain/probe":         {"brew", "docker"},
+		"domain/remote":        {"ssh"},
+		"domain/secrets":       {"ssh"},
 		"domain/settings":      {"security", "sysctl"},
 		"domain/setup":         {"bun", "mise", "npm", "tailscale", "tailscaled"},
 		"domain/shell":         {"mise"},
@@ -81,7 +83,9 @@ func wordsTolerated() map[string][]string {
 		"domain/tools":         {"brew", "bun", "mas", "mise", "npm", "uv"},
 		"pages/config":         {"security"},
 		"pages/home":           {"brew", "docker", "mise", "npm", "security", "tailscale"},
+		"pages/machines":       {"ssh"},
 		"pages/power":          {"pmset"},
+		"pages/services":       {"ssh"},
 		"pages/shortcuts":      {"docker"},
 		"pages/storage":        {"brew"},
 		"pages/tailnet":        {"tailscale"},
@@ -131,10 +135,12 @@ func wordAllowed(pkg, word string) bool {
 }
 
 // invariant: ssh is also a product word (the SSH section, machines.ssh,
-// SSHConfig): its identifiers are exempt, an ssh command line is not.
+// SSHConfig): its identifiers are exempt, an ssh command line is not, and a
+// literal that opens with the bare ssh is one: an exec's name, an argv's
+// first word, a shell line.
 func literalWords(value string) []string {
 	words := splitWords(value)
-	if fields := strings.Fields(value); len(fields) < 2 || fields[0] != "ssh" {
+	if fields := strings.Fields(value); len(fields) == 0 || fields[0] != "ssh" {
 		words = slices.DeleteFunc(words, func(w string) bool { return w == "ssh" })
 	}
 	return words
@@ -213,4 +219,5 @@ func ruleTechnologyWords(w *world) []finding {
 	return out
 }
 
-func TestTechnologyWords(t *testing.T) { judge(t, "TechnologyWords") }
+func TestTechnologyWords(t *testing.T)    { judge(t, "TechnologyWords") }
+func TestTechnologyWordsSSH(t *testing.T) { judge(t, "TechnologyWordsSSH") }
