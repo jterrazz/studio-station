@@ -42,3 +42,7 @@ runs:
       exit: 0
       stdout: |
           station.page/v1	services	ready	true
+    - command: 'accounts --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	accounts	ready	true
