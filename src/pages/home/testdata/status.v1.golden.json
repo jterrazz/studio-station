@@ -168,12 +168,17 @@
       "detail": ""
     }
   ],
-  "daemons": [
+  "background": [
     {
-      "name": "ai.jterrazz.x",
+      "label": "ai.jterrazz.x",
+      "group": "unknown",
       "state": "ok",
-      "value": "running",
-      "detail": "pid 12"
+      "run": "running",
+      "pid": 12,
+      "scope": "user",
+      "owner": "",
+      "plist": "~/Library/LaunchAgents/ai.jterrazz.x.plist",
+      "removal": ""
     }
   ],
   "gateways": [

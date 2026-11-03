@@ -8,12 +8,12 @@ runs:
     - command: 'status --json | /usr/bin/jq -r ''keys | join(" ")'''
       exit: 0
       stdout: |
-          config daemons environment gateways generated_at identity machine schema setup station system tailnet tools workspace
-    - command: 'status --json | /usr/bin/jq -e ''has("generated_at") and has("station") and has("machine") and has("system") and has("environment") and has("workspace") and has("tools") and has("config") and has("setup") and has("identity") and has("daemons") and has("gateways") and has("tailnet") and (has("services") | not)'''
+          background config environment gateways generated_at identity machine schema setup station system tailnet tools workspace
+    - command: 'status --json | /usr/bin/jq -e ''has("generated_at") and has("station") and has("machine") and has("system") and has("environment") and has("workspace") and has("tools") and has("config") and has("setup") and has("identity") and has("background") and has("gateways") and has("tailnet") and (has("services") | not)'''
       exit: 0
       stdout: |
           true
-    - command: 'status --json | /usr/bin/jq -e ''.tools and .config and .setup and .gateways and .tailnet and .workspace and .environment and .identity and .daemons'' > /dev/null'
+    - command: 'status --json | /usr/bin/jq -e ''.tools and .config and .setup and .gateways and .tailnet and .workspace and .environment and .identity and .background'' > /dev/null'
       exit: 0
     - command: 'status --json | /usr/bin/jq -r ''(.gateways | type), (.station.daemon | keys | join(" "))'''
       exit: 0

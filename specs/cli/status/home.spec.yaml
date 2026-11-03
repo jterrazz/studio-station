@@ -1,0 +1,55 @@
+description: 'status on a terminal lists each action with its fix, a job its removal, and a two-column Summary'
+fixture:
+    - ../__fixtures__/terminal/
+    - ./__fixtures__/tools-mixed/
+    - ./__fixtures__/mac/
+    - ./__fixtures__/registered/
+env: terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 100x80 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" status | /usr/bin/sed -e ''s|gui/[0-9]*/|gui/UID/|'''
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |4
+           station status                                                                      macbook · host
+           ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+           To do  6 ◐  1 ✗
+             ✗ ai.jterrazz.y      failing · last exit 1
+                                  → launchctl bootout gui/UID/ai.jterrazz.y &&
+                                    rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
+             ◐ brew               3 outdated  → station tools upgrade --via brew
+             ◐ tools              3 on PATH, not managed by their method  → station tools
+             ◐ macos              1 pending · softwareupdate -l
+             ◐ backup-exclusions  tmutil not found
+             ◐ ai.jterrazz.gone   orphan: its program is missing
+                                  → launchctl bootout gui/UID/ai.jterrazz.gone &&
+                                    rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
+             ◐ com.docker.vmnetd  orphan: Docker.app is gone
+                                  → sudo launchctl bootout system/com.docker.vmnetd &&
+                                    sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
+
+           Summary
+             ● Machine     host · Darwin 27.0.0 · up 3d 4h   ◐ Tools    2 ●  3 ◐  103 ○
+             ◐ Network     192.168.1.2 · vpn on · 4/6 on     ◐ Config   1 ●  1 ◐  17 ○
+             ○ Tailnet     off                               ● Storage  2.0 KB reclaimable
+             ● Identity    not set                           ○ Fleet    this host
+             ● Workspace   0 repos
+             ✗ Background  6 jobs · 1 failing · 2 orphans
+
+           Machine  3 ●  1 ○
+
+           Environment  7 ●  2 ◐  4 ○
+
+           Workspace  1 ●  3 ○
+
+           Identity  6 ○
+
+           Background  3 ●  2 ◐  1 ✗
+
+           Tools  2 ●  3 ◐  103 ○
+
+           Config  1 ●  1 ◐  17 ○
+
+           → station status --all for every row
+           → station status | cat for records

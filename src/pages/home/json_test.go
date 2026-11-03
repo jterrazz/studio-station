@@ -57,9 +57,9 @@ func fixed() status.Snapshot {
 			{Name: "zshrc", State: catalog.StateOK},
 			{Name: "layout", State: catalog.StateOK},
 		}},
-		Identity: []status.Check{{Name: "git-email", State: catalog.StateOK, Value: "admin@jterrazz.com"}},
-		Daemons:  []status.Check{{Name: "ai.jterrazz.x", State: catalog.StateOK, Value: "running", Detail: "pid 12"}},
-		Gateways: []status.Check{{Name: "OpenClaw runtime", State: catalog.StateBroken, Value: "not running", Detail: "gateway process not found"}},
+		Identity:   []status.Check{{Name: "git-email", State: catalog.StateOK, Value: "admin@jterrazz.com"}},
+		Background: []status.Job{{Label: "ai.jterrazz.x", Group: status.GroupUnknown, State: catalog.StateOK, Run: status.JobRunning, PID: 12, Scope: "user", Plist: "~/Library/LaunchAgents/ai.jterrazz.x.plist"}},
+		Gateways:   []status.Check{{Name: "OpenClaw runtime", State: catalog.StateBroken, Value: "not running", Detail: "gateway process not found"}},
 		Tailnet: tailnet.Status{
 			State: catalog.StateOK, Connected: true, BackendState: "Running",
 			Name: "macbook", DNSName: "macbook.tail1234.ts.net", IP: "100.64.0.1",

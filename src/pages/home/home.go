@@ -8,6 +8,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
@@ -27,8 +28,8 @@ func Snapshot(s status.Snapshot, here page.Context, all bool) page.Page {
 		section("workspace", "Workspace", workspaceRows(s.Workspace)),
 		section("identity", "Identity", checkRows(s.Identity)),
 	}
-	if len(s.Daemons) > 0 {
-		detail = append(detail, section("daemons", "Daemons", checkRows(s.Daemons)))
+	if len(s.Background) > 0 {
+		detail = append(detail, backgroundSection(s.Background))
 	}
 	if len(s.Gateways) > 0 {
 		detail = append(detail, section("gateways", "Gateways", checkRows(s.Gateways)))
@@ -54,7 +55,7 @@ func Snapshot(s status.Snapshot, here page.Context, all bool) page.Page {
 	if all {
 		p.Hints = p.Hints[1:]
 	}
-	p.Sections = append([]page.Section{todo(sealed.Sections), summary(s, sealed.Sections)}, sealed.Sections...)
+	p.Sections = append([]page.Section{todo(sealed.Sections, s.Background), summary(s, sealed.Sections)}, sealed.Sections...)
 	return page.Seal(p)
 }
 
@@ -169,9 +170,18 @@ func checkRows(checks []status.Check) []page.Row {
 		if offByChoice(c) {
 			mark, value = page.OK, page.Off()
 		}
-		rows = append(rows, row(c.Name, mark, value, c.Detail))
+		rows = append(rows, fixed(row(c.Name, mark, value, c.Detail)))
 	}
 	return rows
+}
+
+// invariant: a domain detail that is a station command is the row's fix, so
+// it renders as a hint (`→ station setup`) and the pipe's last field is unchanged.
+func fixed(r page.Row) page.Row {
+	if r.Detail.Kind == page.KindText && strings.HasPrefix(r.Detail.Text, "station ") {
+		r.Hint, r.Detail = page.Cmd(r.Detail.Text), page.None()
+	}
+	return r
 }
 
 func machineRows(s status.Snapshot) []page.Row {
@@ -196,7 +206,7 @@ func machineRows(s status.Snapshot) []page.Row {
 	if d := s.Station.Daemon; d.State == catalog.StatePending {
 		rows = append(rows, pending("daemon", "daemon"))
 	} else if d.Value != "" {
-		rows = append(rows, row("daemon", pages.MarkOf(d.State), page.Text(d.Value), d.Detail))
+		rows = append(rows, fixed(row("daemon", pages.MarkOf(d.State), page.Text(d.Value), d.Detail)))
 	}
 	return rows
 }
@@ -350,31 +360,70 @@ func rowsOf(s page.Section) []page.Row {
 	return out
 }
 
-func todo(detail []page.Section) page.Section {
-	var broken, attention []page.Row
+// invariant: an action says what is wrong, its value then its detail, and
+// carries the row's fix; a tools or config row keeps one of the two, its
+// cells being columns of their own page.
+func action(section string, r page.Row) page.Row {
+	act := r
+	act.ID = section + "/" + r.ID
+	act.Cells = nil
+	var parts []page.Value
+	if len(r.Cells) > 0 && !r.Cells[0].IsNone() && (section != "tools" && section != "config" || r.Detail.IsNone()) {
+		parts = append(parts, r.Cells[0])
+	}
+	if !r.Detail.IsNone() {
+		parts = append(parts, r.Detail)
+	}
+	switch {
+	case len(parts) == 2 && r.Reason == page.Unset && parts[0].Kind == page.KindText && parts[1].Kind == page.KindText:
+		act.Detail = page.Text(parts[0].Text + " " + parts[1].Text)
+	case len(parts) == 1:
+		act.Detail = parts[0]
+	case len(parts) > 1:
+		act.Detail = page.List(parts...)
+	}
+	return act
+}
+
+func todo(detail []page.Section, jobs []status.Job) page.Section {
+	var broken, fixes, notes, background []page.Row
 	for _, s := range detail {
+		if s.ID == "background" {
+			continue
+		}
 		rows := rowsOf(s)
-		if s.ID == "tools" {
+		switch s.ID {
+		case "tools":
 			rows = foldTools(rows)
+		case "workspace":
+			rows = foldStrays(rows)
 		}
 		for _, r := range rows {
-			act := r
-			act.ID = s.ID + "/" + r.ID
-			if act.Detail.IsNone() && len(r.Cells) > 0 {
-				act.Detail = r.Cells[0]
-			}
-			act.Cells = nil
-			switch r.Mark {
-			case page.Broken:
+			act := action(s.ID, r)
+			switch {
+			case r.Mark == page.Broken:
 				broken = append(broken, act)
-			case page.Attention:
-				attention = append(attention, act)
-			case page.OK, page.Absent, page.Awaiting, page.Unjudged:
+			case r.Mark == page.Attention && act.Hint != nil:
+				fixes = append(fixes, act)
+			case r.Mark == page.Attention:
+				notes = append(notes, act)
 			}
 		}
 	}
-	items := make([]page.Item, 0, len(broken)+len(attention))
-	for _, list := range [][]page.Row{broken, attention} {
+	var failing []page.Row
+	for _, j := range jobs {
+		switch {
+		case j.State == catalog.StateBroken:
+			failing = append(failing, jobAction(j))
+		case j.State == catalog.StateDegraded && j.Group == status.GroupStation:
+			fixes = append(fixes, jobAction(j))
+		case j.State == catalog.StateDegraded:
+			background = append(background, jobAction(j))
+		}
+	}
+	lists := [][]page.Row{broken, failing, fixes, notes, background}
+	var items []page.Item
+	for _, list := range lists {
 		for i := range list {
 			items = append(items, page.Item{Row: &list[i]})
 		}
@@ -383,6 +432,31 @@ func todo(detail []page.Section) page.Section {
 		items = append(items, page.Item{Empty: &page.Empty{Noun: "actions"}})
 	}
 	return page.Section{ID: "todo", Title: "To do", Role: page.Actions, Fold: page.Open, Columns: []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}}, Items: items}
+}
+
+// invariant: H2 for the workspace: strays sharing a fix are one action, their
+// count and their total size.
+func foldStrays(rows []page.Row) []page.Row {
+	var out, strays []page.Row
+	for _, r := range rows {
+		if r.Reason == page.Stray {
+			strays = append(strays, r)
+			continue
+		}
+		out = append(out, r)
+	}
+	if len(strays) < 2 {
+		return append(out, strays...)
+	}
+	var total int64
+	for _, r := range strays {
+		if r.Detail.Kind == page.KindSize {
+			total += r.Detail.N
+		}
+	}
+	r := page.Row{ID: "strays", Label: "strays", Mark: page.Attention, Reason: page.Stray, Hint: strays[0].Hint,
+		Detail: page.List(page.Count(int64(len(strays)), "folders out of place"), page.Size(total))}
+	return append(out, r)
 }
 
 func foldTools(rows []page.Row) []page.Row {
@@ -448,6 +522,100 @@ func find(sections []page.Section, id string) page.Section {
 	return page.Section{}
 }
 
+func checkValue(checks []status.Check, name string) string {
+	for _, c := range checks {
+		if c.Name == name && c.State == catalog.StateOK {
+			return c.Value
+		}
+	}
+	return ""
+}
+
+func networkValue(e status.Environment) page.Value {
+	parts := page.Texts(checkValue(e.Network, "local ip")).Items
+	if checkValue(e.Network, "vpn") != "" {
+		parts = append(parts, page.Text("vpn on"))
+	}
+	on := 0
+	for _, c := range e.Security {
+		if c.State == catalog.StateOK || offByChoice(c) {
+			on++
+		}
+	}
+	if len(e.Security) > 0 {
+		parts = append(parts, page.Text(strconv.Itoa(on)+"/"+strconv.Itoa(len(e.Security))+" on"))
+	}
+	return page.List(parts...)
+}
+
+func tailnetValue(t tailnet.Status) page.Value {
+	name := t.Name
+	if short, _, _ := strings.Cut(t.DNSName, "."); short != "" {
+		name = short
+	}
+	if !t.Connected {
+		state := strings.ToLower(t.BackendState)
+		if name == "" && state == "" {
+			state = "off"
+		}
+		return page.Texts(name, state)
+	}
+	serve := "Serve off"
+	if t.ServeOn {
+		serve = "Serve on"
+	}
+	return page.Texts(name, serve)
+}
+
+func identityValue(checks []status.Check) page.Value {
+	var parts []string
+	parts = append(parts, checkValue(checks, "git-email"))
+	if checkValue(checks, "git-signing") == "on" {
+		parts = append(parts, "signing on")
+	}
+	if parts[0] == "" && len(parts) == 1 {
+		return page.Text("not set")
+	}
+	return page.Texts(parts...)
+}
+
+func workspaceValue(w status.Workspace) page.Value {
+	parts := []page.Value{page.Count(int64(len(w.Repositories)), "repos")}
+	outdated := 0
+	for _, d := range w.Dependencies {
+		outdated += max(d.Outdated, 0)
+	}
+	if outdated > 0 {
+		parts = append(parts, page.Count(int64(outdated), "deps outdated"))
+	}
+	return page.List(parts...)
+}
+
+func storageValue(w status.Workspace) page.Value {
+	var cache int64
+	for _, d := range w.Disk {
+		if d.Level == catalog.LevelCache {
+			cache += d.Bytes
+		}
+	}
+	storage := page.Size(cache)
+	storage.Unit = "reclaimable"
+	if n := len(w.Strays); n > 0 {
+		return page.List(storage, page.Count(int64(n), "strays"))
+	}
+	return storage
+}
+
+func fleetValue(s status.Snapshot) page.Value {
+	d := s.Station.Daemon
+	if d.Value == "" || d.State == catalog.StateAbsent {
+		return page.Text("this host")
+	}
+	return page.Text("daemon " + d.Value)
+}
+
+// invariant: one row per area, its worst mark and its value (H4), in the order
+// the two columns read: Machine to Background, then Tools to Gateways.
 func summary(s status.Snapshot, detail []page.Section) page.Section {
 	area := func(id, label string, mark page.Mark, value page.Value) page.Item {
 		return page.Item{Row: &page.Row{ID: "summary/" + id, Label: label, Mark: mark, Cells: []page.Value{value}}}
@@ -461,51 +629,32 @@ func summary(s status.Snapshot, detail []page.Section) page.Section {
 		return page.List(parts...)
 	}
 	m := s.Machine
-	machine := page.Texts(string(m.Kind), strings.TrimSpace(m.OS+" "+m.Arch))
+	up := ""
 	if s.System.Uptime != "" {
-		machine = page.Texts(string(m.Kind), strings.TrimSpace(m.OS+" "+m.Arch), "up "+s.System.Uptime)
+		up = "up " + s.System.Uptime
 	}
-	tailnet := page.Text(s.Tailnet.Name)
-	identity := page.None()
-	for _, c := range s.Identity {
-		if c.Value != "" {
-			identity = page.Text(c.Value)
-			break
-		}
-	}
-	repos := page.Count(int64(len(s.Workspace.Repositories)), "repos")
-	var cache int64
-	for _, d := range s.Workspace.Disk {
-		if d.Level == catalog.LevelCache {
-			cache += d.Bytes
-		}
-	}
-	storage := page.Size(cache)
-	storage.Unit = "reclaimable"
-	if n := len(s.Workspace.Strays); n > 0 {
-		storage = page.List(storage, page.Count(int64(n), "strays"))
-	}
-	fleet := page.Text(s.Station.Daemon.Value)
+	machine := page.Texts(string(m.Kind), m.OS, up)
 	items := []page.Item{
 		area("machine", "Machine", worst(find(detail, "machine")), machine),
-		area("network", "Network", worst(find(detail, "environment")), counts("environment")),
-		area("tailnet", "Tailnet", pages.MarkOf(s.Tailnet.State), tailnet),
-		area("identity", "Identity", worst(find(detail, "identity")), identity),
-		area("workspace", "Workspace", worst(find(detail, "workspace")), repos),
+		area("network", "Network", worst(find(detail, "environment")), networkValue(s.Environment)),
+		area("tailnet", "Tailnet", pages.MarkOf(s.Tailnet.State), tailnetValue(s.Tailnet)),
+		area("identity", "Identity", worst(find(detail, "identity")), identityValue(s.Identity)),
+		area("workspace", "Workspace", worst(find(detail, "workspace")), workspaceValue(s.Workspace)),
 	}
-	if len(s.Daemons) > 0 {
-		items = append(items, area("daemons", "Daemons", worst(find(detail, "daemons")), counts("daemons")))
+	if len(s.Background) > 0 {
+		items = append(items, area("background", "Background", backgroundMark(s.Background), backgroundValue(s.Background)))
 	}
+	right := len(items)
 	items = append(items,
 		area("tools", "Tools", worst(find(detail, "tools")), counts("tools")),
 		area("config", "Config", worst(find(detail, "config")), counts("config")),
-		area("storage", "Storage", page.OK, storage),
-		area("fleet", "Fleet", pages.MarkOf(s.Station.Daemon.State), fleet),
+		area("storage", "Storage", page.OK, storageValue(s.Workspace)),
+		area("fleet", "Fleet", pages.MarkOf(s.Station.Daemon.State), fleetValue(s)),
 	)
 	if len(s.Gateways) > 0 {
 		items = append(items, area("gateways", "Gateways", worst(find(detail, "gateways")), counts("gateways")))
 	}
-	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: items}
+	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Break: right, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: items}
 }
 
 func Live(p page.Page, samples []status.Sample, memoryTotal int64) page.Page {

@@ -48,7 +48,9 @@ func item(b *strings.Builder, it page.Item, cells int) {
 	case it.Row != nil:
 		row(b, *it.Row, cells)
 	case it.Group != nil:
-		row(b, it.Group.Head, cells)
+		if !it.Group.Heading() {
+			row(b, it.Group.Head, cells)
+		}
 		for _, c := range it.Group.Items {
 			// invariant: a group's empty child is for the eye: the head's own
 			// fields already say it holds nothing.

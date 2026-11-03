@@ -24,6 +24,9 @@ func Seal(p Page) Page {
 			continue
 		}
 		p.Sections[i].Counts = nil
+		if p.Sections[i].Role == Summary {
+			continue
+		}
 		for _, m := range Marks() {
 			if counts[m] > 0 {
 				p.Sections[i].Counts = append(p.Sections[i].Counts, Tally{Mark: m, N: counts[m]})
@@ -117,7 +120,7 @@ func checkItem(s Section, it Item, judged bool, rows map[string]bool, depth int)
 		if depth > 3 {
 			return errors.New("a group nests 3 levels at most")
 		}
-		if err := checkRow(s, it.Group.Head, judged, rows); err != nil {
+		if err := checkRow(s, it.Group.Head, judged && !it.Group.Heading(), rows); err != nil {
 			return err
 		}
 		for _, child := range it.Group.Items {

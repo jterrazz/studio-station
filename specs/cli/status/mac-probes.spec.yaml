@@ -1,4 +1,4 @@
-description: 'on a Mac the system, network, security, update and daemon probes each read their own tool'
+description: 'on a Mac every status probe reads its own tool, and launchd is only listed and printed'
 fixture:
     - ./__fixtures__/tools-mixed/
     - ./__fixtures__/mac/
@@ -32,17 +32,30 @@ runs:
       exit: 0
       stdout: |
           [[100,"node","3000"],[101,"postgres","5432"]]
-    - command: 'status --json | /usr/bin/jq -c ''.daemons | map([.name, .state, .value])'''
+    - command: 'status --json | /usr/bin/jq -c ''.background | map([.label, .group, .state, .run, .scope, .owner])'''
       exit: 0
       stdout: |
-          [["ai.jterrazz.gone","absent","not loaded"],["ai.jterrazz.x","ok","running"],["ai.jterrazz.y","broken","failing"]]
-    - command: 'status | /usr/bin/sed -n ''/^# Daemons/,/^# Services/p;/^# Tools/q'' | /usr/bin/head -4'
+          [["TC3Q7MAJXF.com.adguard.safari.AdGuard.Helper","known","ok","running","user","AdGuard"],["ai.jterrazz.gone","orphan","degraded","not loaded","user",""],["ai.jterrazz.x","unknown","ok","running","user",""],["ai.jterrazz.y","unknown","broken","failing","user",""],["com.docker.vmnetd","orphan","degraded","not loaded","root","Docker.app"],["dev.orbstack.OrbStack.privhelper","known","ok","idle","root","OrbStack"]]
+    - command: 'status --json | /usr/bin/jq -r ''.background[] | select(.removal != "") | .removal'' | /usr/bin/sed ''s|gui/[0-9]*/|gui/UID/|'''
       exit: 0
       stdout: |
-          # Daemons	1 ●	1 ○	1 ✗
-          ○	ai.jterrazz.gone	not loaded
-          ●	ai.jterrazz.x	running	pid 12
-          ✗	ai.jterrazz.y	failing	last exit 1
+          launchctl bootout gui/UID/ai.jterrazz.gone && rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
+          launchctl bootout gui/UID/ai.jterrazz.y && rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
+          sudo launchctl bootout system/com.docker.vmnetd && sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
+    - command: 'status | /usr/bin/sed -n ''/^# Background/,/^# /p'' | /usr/bin/sed -e ''$d'' -e ''s|gui/[0-9]*/|gui/UID/|'''
+      exit: 0
+      stdout: |
+          # Background	3 ●	2 ◐	1 ✗
+          ●	TC3Q7MAJXF.com.adguard.safari.AdGuard.Helper	known	running · pid 2211	user	AdGuard
+          ●	dev.orbstack.OrbStack.privhelper	known	idle	root	OrbStack	/Library/LaunchDaemons/dev.orbstack.OrbStack.privhelper.plist
+          ●	ai.jterrazz.x	unknown	running · pid 12	user		~/Library/LaunchAgents/ai.jterrazz.x.plist
+          ✗	ai.jterrazz.y	unknown	failing · last exit 1	user		~/Library/LaunchAgents/ai.jterrazz.y.plist · launchctl bootout gui/UID/ai.jterrazz.y && rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
+          ◐	ai.jterrazz.gone	orphan	not loaded	user		~/Library/LaunchAgents/ai.jterrazz.gone.plist · launchctl bootout gui/UID/ai.jterrazz.gone && rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
+          ◐	com.docker.vmnetd	orphan	not loaded	root	Docker.app	/Library/LaunchDaemons/com.docker.vmnetd.plist · sudo launchctl bootout system/com.docker.vmnetd && sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
+    - command: '--version >/dev/null; /usr/bin/grep "^launchctl" .calls | /usr/bin/grep -c -v -E "^launchctl (list|print|print-disabled) ?"'
+      exit: 1
+      stdout: |
+          0
     - command: '--version >/dev/null; /usr/bin/grep -q "^softwareupdate -l$" .calls && echo ran'
       exit: 0
       stdout: |

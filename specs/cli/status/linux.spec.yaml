@@ -5,7 +5,7 @@ fixture:
 env:
     - STATION_MACHINE_KIND=linux
 runs:
-    - command: 'status --json | /usr/bin/jq -c ''[.machine.kind, .machine.os, (.environment.security | length), (.environment.updates | length), (.daemons | length), (.services | length)]'''
+    - command: 'status --json | /usr/bin/jq -c ''[.machine.kind, .machine.os, (.environment.security | length), (.environment.updates | length), (.background | length), (.services | length)]'''
       exit: 0
       stdout: |
           ["linux","Linux 6.8.0",0,0,0,0]

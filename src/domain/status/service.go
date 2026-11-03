@@ -82,7 +82,7 @@ type Snapshot struct {
 	Config      []config.Report
 	Setup       Setup
 	Identity    []Check
-	Daemons     []Check
+	Background  []Job
 	Gateways    []Check
 	Tailnet     tailnet.Status
 	// value: a section whose reading has not answered; never past Snapshot.

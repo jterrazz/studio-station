@@ -41,6 +41,8 @@ type Section struct {
 	Counts  []Tally  `json:"counts,omitempty"`
 	// value: a section whose marks are no verdict to sum (storage's sizes) shows no counts.
 	Uncounted bool `json:"uncounted,omitempty"`
+	// value: a Summary drawn in two columns starts its right one at this item.
+	Break int `json:"break,omitempty"`
 }
 
 type Role string
@@ -87,9 +89,12 @@ type Item struct {
 }
 
 type Row struct {
-	ID     string  `json:"id,omitempty"`
-	Mark   Mark    `json:"mark,omitempty"`
-	Label  string  `json:"label,omitempty"`
+	ID    string `json:"id,omitempty"`
+	Mark  Mark   `json:"mark,omitempty"`
+	Label string `json:"label,omitempty"`
+	// value: the label a terminal shows when the full one is for records
+	// (a launchd label without its owner's prefix); the pipe and json keep Label.
+	Short  string  `json:"short,omitempty"`
 	Cells  []Value `json:"cells,omitempty"`
 	Detail Value   `json:"detail,omitzero"`
 	Reason Reason  `json:"reason,omitempty"`
@@ -105,6 +110,12 @@ type Group struct {
 	Head  Row    `json:"head,omitzero"`
 	Items []Item `json:"items,omitempty"`
 	Fold  Fold   `json:"fold,omitempty"`
+}
+
+func (g Group) Heading() bool {
+	// value: a head with no mark and no cells only names its children's group
+	// (Background's `known`): it carries no verdict and the pipe prints no record for it.
+	return g.Head.Mark == Unjudged && len(g.Head.Cells) == 0
 }
 
 type Empty struct {

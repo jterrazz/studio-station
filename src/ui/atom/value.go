@@ -106,7 +106,20 @@ func join(items []page.Value, f func(page.Value) string) string {
 			parts = append(parts, s)
 		}
 	}
+	if tallies(items) {
+		return strings.Join(parts, Spaces(token.Gap))
+	}
 	return strings.Join(parts, token.Sep)
+}
+
+// value: a list of mark counts reads as a section title's counts do, `47 ●  27 ◐`.
+func tallies(items []page.Value) bool {
+	for _, it := range items {
+		if it.Kind != page.KindCount || it.Unit != "" || Glyph(page.Mark(it.Label)) == "" {
+			return false
+		}
+	}
+	return len(items) > 0
 }
 
 func Numeric(k page.Kind) bool {

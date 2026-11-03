@@ -59,7 +59,7 @@ func (s *Service) frame() Snapshot {
 		Setup:       Setup{State: catalog.StatePending, Steps: []setup.Step{}},
 		System:      System{Pending: true, Sample: Sample{CPU: []Process{}, Memory: []Process{}}},
 		Identity:    append(pendingChecks(s.identityTable()), Check{Name: "ssh-key", State: catalog.StatePending}),
-		Daemons:     []Check{},
+		Background:  []Job{},
 		Gateways:    []Check{},
 		Environment: Environment{Network: pendingChecks(s.networkProbes())},
 		Workspace: Workspace{
@@ -240,10 +240,10 @@ func (s *Service) sectionJobs() []job {
 			},
 			Late: func(sn *Snapshot) { sn.Identity[len(sn.Identity)-1] = late("ssh-key", defaultBudget) },
 		},
-		{Key: subject + "/daemons", Budget: defaultBudget + margin,
+		{Key: subject + "/background", Budget: 2*defaultBudget + margin,
 			Do: func(ctx context.Context) func(*Snapshot) {
-				checks := s.daemons(ctx)
-				return func(sn *Snapshot) { sn.Daemons = checks }
+				jobs := s.background(ctx)
+				return func(sn *Snapshot) { sn.Background = jobs }
 			},
 			Late: func(*Snapshot) {},
 		},

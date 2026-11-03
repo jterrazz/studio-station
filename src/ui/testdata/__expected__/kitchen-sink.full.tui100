@@ -1,7 +1,7 @@
  CPU 34% ▁▁▂▃▅▆█▄▃▂▁▁▁▂▃▃  memory 12.4/17.2 GB  battery 100%  GPU 35%  net ↓ 28.2 KB/s ↑ 14.5 KB/s
  - To do                                                                                        1 ◐
    ◐ brew  120 outdated  → station tools upgrade --via brew
- - Summary                                                                                      1 ✗
+ - Summary
    ✗ Marks  4 broken
  - Values  40000-40999                                                                    14 ●  1 ◐
                value                                                       number
@@ -33,7 +33,8 @@
    ◐ stopped      attention  stopped  → station start
    ◐ late         attention  no answer in 2s
    ◐ degraded     attention  Serve is off on the tailnet
-   ◐ orphan       attention  orphan: Docker.app…  → sudo launchctl bootout system/com.docker.vmnetd
+   ◐ orphan       attention  orphan: Docker.app is gone
+                             → sudo launchctl bootout system/com.docker.vmnetd
    ○ waiting      absent     waiting
    ✗ failing      broken     failing · last exit 2
    ✗ refused      broken     refused

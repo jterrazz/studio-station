@@ -10,6 +10,10 @@ import (
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
+// value: an External command chained by `&&` breaks after each joint when it
+// is wider than the terminal, so it stays whole and copyable (H3, G5).
+const joint = " && "
+
 type LineKind int
 
 const (
@@ -46,6 +50,7 @@ type column struct {
 }
 
 type entry struct {
+	empty  *page.Empty
 	link   *page.Link
 	row    page.Row
 	prefix string
@@ -55,7 +60,58 @@ type entry struct {
 
 func RowKey(section, row string) string { return section + "/" + row }
 
+func shown(r page.Row) string {
+	if r.Short != "" {
+		return r.Short
+	}
+	return r.Label
+}
+
 func (g Grid) Lines() []Line {
+	// invariant: a Summary wider than the narrow width reads as two columns, its
+	// Break or its first half on the left (§13.1); each half keeps its own grid.
+	if g.Section.Role == page.Summary && g.Width > token.NarrowWidth && len(g.Section.Items) > 1 {
+		return g.split()
+	}
+	return g.lines()
+}
+
+func (g Grid) split() []Line {
+	half := (len(g.Section.Items) + 1) / 2
+	if b := g.Section.Break; b > 0 && b < len(g.Section.Items) {
+		half = b
+	}
+	left, right := g, g
+	left.Section.Items, right.Section.Items = g.Section.Items[:half], g.Section.Items[half:]
+	natural := func(lines []Line) int {
+		n := 0
+		for _, l := range lines {
+			n = max(n, atom.Width(l.Text))
+		}
+		return n
+	}
+	lw, rw := natural(left.lines()), natural(right.lines())
+	leftWidth := max(lw+1, token.MinWidth)
+	if lw+rw >= g.Width {
+		leftWidth = max(g.Width/2, g.Width-rw)
+	}
+	if g.Width+1-leftWidth < token.MinWidth {
+		return g.lines()
+	}
+	left.Width, right.Width = leftWidth, g.Width+1-leftWidth
+	l, r := left.lines(), right.lines()
+	out := make([]Line, 0, len(l))
+	for i := range l {
+		line := l[i]
+		if i < len(r) {
+			line.Text += atom.Spaces(leftWidth-1-atom.Width(line.Text)) + r[i].Text
+		}
+		out = append(out, line)
+	}
+	return append(out, r[min(len(l), len(r)):]...)
+}
+
+func (g Grid) lines() []Line {
 	if g.Keys == nil {
 		g.Keys = molecule.NoKeys
 	}
@@ -85,6 +141,8 @@ func (g Grid) item(out *[]Line, it page.Item, entries []entry, at int, cols []co
 		n := countEntries(it)
 		for _, e := range entries[at : at+n] {
 			switch {
+			case e.empty != nil && e.key != "":
+				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+token.Indent) + g.Styles.Subtle.Render(e.prefix) + atom.Spaces(token.MarkWidth) + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Keys)})
 			case e.link != nil && e.key != "":
 				*out = append(*out, Line{Kind: LineOther, Text: g.link(e.prefix, *e.link, labelWidth)})
 			case e.key != "":
@@ -133,7 +191,7 @@ func countEntries(it page.Item) int {
 			n += countEntries(c)
 		}
 		return n
-	case it.Link != nil:
+	case it.Link != nil, it.Empty != nil:
 		return 1
 	}
 	return 0
@@ -145,12 +203,12 @@ func (g Grid) entries() []entry {
 	walk = func(items []page.Item, bars string, depth int, hidden bool) {
 		last := -1
 		for i, it := range items {
-			if it.Row != nil || it.Group != nil || (depth > 0 && it.Link != nil) {
+			if it.Row != nil || it.Group != nil || (depth > 0 && (it.Link != nil || it.Empty != nil)) {
 				last = i
 			}
 		}
 		for i, it := range items {
-			if it.Row == nil && it.Group == nil && (depth == 0 || it.Link == nil) {
+			if it.Row == nil && it.Group == nil && (depth == 0 || (it.Link == nil && it.Empty == nil)) {
 				continue
 			}
 			prefix := ""
@@ -161,6 +219,14 @@ func (g Grid) entries() []entry {
 				} else {
 					prefix, next = bars+token.TreeMid, bars+token.TreeBar
 				}
+			}
+			if it.Empty != nil {
+				e := entry{empty: it.Empty, prefix: prefix, key: "empty"}
+				if hidden {
+					e.key = ""
+				}
+				out = append(out, e)
+				continue
 			}
 			if it.Link != nil {
 				e := entry{link: it.Link, prefix: prefix, key: "link"}
@@ -217,10 +283,10 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		labelWidth = atom.Width(g.Section.Columns[0].Label)
 	}
 	for _, e := range entries {
-		if e.key == "" || e.link != nil {
+		if e.key == "" || e.link != nil || e.empty != nil {
 			continue
 		}
-		labelWidth = max(labelWidth, atom.Width(e.prefix)+atom.Width(e.row.Label))
+		labelWidth = max(labelWidth, atom.Width(e.prefix)+atom.Width(shown(e.row)))
 		for i := range cols {
 			cols[i].width = max(cols[i].width, atom.Width(atom.Show(cols[i].cell(e.row))))
 		}
@@ -324,10 +390,40 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	st, r := g.Styles, e.row
 	indent := atom.Spaces(token.Margin + token.Indent)
 	lead := indent + st.Subtle.Render(e.prefix) + atom.Mark(st, r.Mark)
-	label := atom.End(r.Label, max(labelWidth-atom.Width(e.prefix), 1))
-	hintLine := func() Line {
+	label := atom.End(shown(r), max(labelWidth-atom.Width(e.prefix), 1))
+	under := atom.Width(e.prefix) + token.MarkWidth
+	hintLines := func() []Line {
+		pad := indent + atom.Spaces(under)
 		h := molecule.Hint(st, *r.Hint, g.Medium, g.Keys)
-		return Line{Kind: LineHint, Key: e.key, Text: indent + atom.Spaces(atom.Width(e.prefix)+token.MarkWidth) + h}
+		width := atom.Width(molecule.HintText(*r.Hint, g.Medium, g.Keys))
+		widest := width
+		if strings.Contains(r.Hint.Command, joint) {
+			widest = 0
+			for _, part := range strings.Split(r.Hint.Command, joint) {
+				widest = max(widest, atom.Width(part)+token.Gap+len(joint))
+			}
+		}
+		if atom.Width(pad)+widest >= g.Width {
+			pad = indent + atom.Spaces(atom.Width(e.prefix)+token.MarkWidth)
+		}
+		if atom.Width(pad)+width < g.Width || !strings.Contains(r.Hint.Command, joint) {
+			return []Line{{Kind: LineHint, Key: e.key, Text: pad + h}}
+		}
+		parts := strings.Split(r.Hint.Command, joint)
+		out := make([]Line, 0, len(parts))
+		for i, part := range parts {
+			if i < len(parts)-1 {
+				part += strings.TrimRight(joint, " ")
+			}
+			text := st.Text.Render(part)
+			if i == 0 {
+				text = st.Muted.Render(token.Arrow+" ") + text
+			} else {
+				text = atom.Spaces(token.Gap) + text
+			}
+			out = append(out, Line{Kind: LineHint, Key: e.key, Text: pad + text})
+		}
+		return out
 	}
 	if g.Width < token.MinWidth {
 		lines := []Line{{Kind: LineRow, Key: e.key, Head: e.head, Text: lead + st.Strong.Render(label)}}
@@ -344,7 +440,7 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 			lines = append(lines, Line{Kind: LineOther, Text: indent + atom.Spaces(token.MarkWidth*2) + st.Muted.Render(strings.Join(values, atom.Spaces(token.Gap)))})
 		}
 		if r.Hint != nil {
-			lines = append(lines, hintLine())
+			lines = append(lines, hintLines()...)
 		}
 		return lines
 	}
@@ -369,6 +465,10 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 		used += token.Gap + c.width
 	}
 	rest := g.avail() - used
+	under += labelWidth - atom.Width(e.prefix) + token.Gap
+	for _, c := range cols {
+		under += c.width + token.Gap
+	}
 	detail := atom.Show(r.Detail)
 	hint, hintWidth := "", 0
 	if r.Hint != nil {
@@ -378,7 +478,7 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	own := false
 	switch {
 	case detail != "" && hint != "":
-		if room := rest - token.Gap*2 - hintWidth; room >= atom.Floor(page.KindText) || room >= atom.Width(detail) {
+		if room := rest - token.Gap*2 - hintWidth; room >= atom.Width(detail) {
 			b.WriteString(atom.Spaces(token.Gap) + st.Muted.Render(atom.End(detail, room)) + atom.Spaces(token.Gap) + hint)
 		} else {
 			if room := rest - token.Gap; room >= 1 {
@@ -399,7 +499,7 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	}
 	lines := []Line{{Kind: LineRow, Key: e.key, Head: e.head, Text: strings.TrimRight(b.String(), " ")}}
 	if own {
-		lines = append(lines, hintLine())
+		lines = append(lines, hintLines()...)
 	}
 	return lines
 }

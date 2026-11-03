@@ -103,12 +103,6 @@
             "reason": "failing"
           }
         }
-      ],
-      "counts": [
-        {
-          "mark": "broken",
-          "n": 1
-        }
       ]
     },
     {

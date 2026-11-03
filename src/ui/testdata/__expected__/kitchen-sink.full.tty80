@@ -4,7 +4,7 @@
  To do  1 ◐
    ◐ brew  120 outdated  → station tools upgrade --via brew
 
- Summary  1 ✗
+ Summary
    ✗ Marks  4 broken
 
  Values  14 ●  1 ◐  40000-40999
@@ -31,15 +31,17 @@
    ◐ unreachable  attention  unreachable
    ◐ mismatch     attention  station v2.0.0-240 here v2.0.0-242
    ◐ unmanaged    attention  on PATH, not managed by cask
-   ◐ missing      attention  installed, mise not…  → station tools install mise
+   ◐ missing      attention  installed, mise not installed
+                             → station tools install mise
    ◐ partial      attention  policy partly applied
-   ◐ differs      attention  differs f…  → station config install tart-launcher
+   ◐ differs      attention  differs from station's
+                             → station config install tart-launcher
    ◐ unset        attention  name not set  → station setup
    ◐ stopped      attention  stopped  → station start
    ◐ late         attention  no answer in 2s
    ◐ degraded     attention  Serve is off on the tailnet
    ◐ orphan       attention  orphan: Docker.app is gone
-     → sudo launchctl bootout system/com.docker.vmnetd
+                             → sudo launchctl bootout system/com.docker.vmnetd
    ○ waiting      absent     waiting
    ✗ failing      broken     failing · last exit 2
    ✗ refused      broken     refused

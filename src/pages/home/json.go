@@ -26,9 +26,31 @@ type SnapshotJSON struct {
 	Config      []pageconfig.ItemJSON  `json:"config"`
 	Setup       setupJSON              `json:"setup"`
 	Identity    []checkJSON            `json:"identity"`
-	Daemons     []checkJSON            `json:"daemons"`
+	Background  []jobJSON              `json:"background"`
 	Gateways    []checkJSON            `json:"gateways"`
 	Tailnet     pagetailnet.ObjectJSON `json:"tailnet"`
+}
+
+type jobJSON struct {
+	Label   string `json:"label"`
+	Group   string `json:"group"`
+	State   string `json:"state"`
+	Run     string `json:"run"`
+	PID     int    `json:"pid,omitempty"`
+	Exit    int    `json:"last_exit,omitempty"`
+	Scope   string `json:"scope"`
+	Owner   string `json:"owner"`
+	Plist   string `json:"plist"`
+	Removal string `json:"removal"`
+}
+
+func jobs(in []status.Job) []jobJSON {
+	out := make([]jobJSON, 0, len(in))
+	for _, j := range in {
+		out = append(out, jobJSON{Label: j.Label, Group: string(j.Group), State: string(j.State), Run: string(j.Run), PID: j.PID, Exit: j.Exit,
+			Scope: j.Scope, Owner: j.Owner, Plist: j.Plist, Removal: j.Removal})
+	}
+	return out
 }
 
 type stationJSON struct {
@@ -169,13 +191,13 @@ func SnapshotContract(s status.Snapshot) SnapshotJSON {
 			Disk:   make([]diskJSON, 0, len(s.Workspace.Disk)),
 			Strays: pagestorage.StraysContract(s.Workspace.Strays),
 		},
-		Tools:    make([]pagetools.ToolJSON, 0, len(s.Tools)),
-		Config:   make([]pageconfig.ItemJSON, 0, len(s.Config)),
-		Setup:    setupJSON{State: string(s.Setup.State), Steps: make([]stepJSON, 0, len(s.Setup.Steps))},
-		Identity: checks(s.Identity),
-		Daemons:  checks(s.Daemons),
-		Gateways: checks(s.Gateways),
-		Tailnet:  pagetailnet.ObjectOf(s.Tailnet),
+		Tools:      make([]pagetools.ToolJSON, 0, len(s.Tools)),
+		Config:     make([]pageconfig.ItemJSON, 0, len(s.Config)),
+		Setup:      setupJSON{State: string(s.Setup.State), Steps: make([]stepJSON, 0, len(s.Setup.Steps))},
+		Identity:   checks(s.Identity),
+		Background: jobs(s.Background),
+		Gateways:   checks(s.Gateways),
+		Tailnet:    pagetailnet.ObjectOf(s.Tailnet),
 	}
 	if s.Machine.Registered {
 		name := s.Machine.Name
