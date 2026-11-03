@@ -1,4 +1,3 @@
  - Fleet                                                                       
-   ● macbook  host  online  -  0 VMs
-   └─   no VMs  n create
+   no hosts  → station machines add <name>
  ↑↓ move  n create  enter detail  / filter  space fold  r reload  ? keys

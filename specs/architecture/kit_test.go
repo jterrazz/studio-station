@@ -412,31 +412,41 @@ func familyOf(pkg string) string {
 
 func pageStates() []string { return []string{"loading", "empty", "error", "full"} }
 
-func missingPages(packages, fixtures []string) []finding {
+// value: UI-SPEC §17's fixture families, each proved in its four states; a
+// family is checked because the spec lists it, not because a file exists.
+func pageFamilies() []string {
+	return []string{
+		"home", "home-all", "tools", "config", "storage", "fleet", "machines", "images", "secrets", "tailnet", "services",
+		"outcome-tools-install", "outcome-config", "outcome-storage", "setup", "run", "kitchen-sink",
+	}
+}
+
+func missingPages(packages, families, fixtures []string) []finding {
 	have := map[string]bool{}
-	families := map[string]bool{}
+	present := map[string]bool{}
 	for _, fx := range fixtures {
 		have[fx] = true
 		if cut := strings.LastIndexByte(fx, '.'); cut > 0 {
-			families[fx[:cut]] = true
+			present[fx[:cut]] = true
 		}
 	}
 	var out []finding
 	for _, pkg := range packages {
 		family := familyOf(pkg)
-		found := false
-		for f := range families {
-			found = found || f == family || strings.HasPrefix(f, family+"-")
-		}
-		if !found {
-			out = append(out, finding{"fixtures", "src/pages/" + pkg, "a page package with no fixture family in src/ui/testdata/pages"})
+		if !slices.ContainsFunc(families, func(f string) bool { return f == family || strings.HasPrefix(f, family+"-") }) {
+			out = append(out, finding{"fixtures", "src/pages/" + pkg, "a page package with no fixture family in UI-SPEC §17"})
 		}
 	}
-	for f := range families {
+	for _, f := range families {
 		for _, state := range pageStates() {
 			if !have[f+"."+state] {
-				out = append(out, finding{"fixtures", "src/ui/testdata/pages/" + f + "." + state + ".json", "a fixture family without its " + state + " state"})
+				out = append(out, finding{"fixtures", "src/ui/testdata/pages/" + f + "." + state + ".json", "a §17 fixture family without its " + state + " state"})
 			}
+		}
+	}
+	for f := range present {
+		if !slices.Contains(families, f) {
+			out = append(out, finding{"fixtures", "src/ui/testdata/pages/" + f + ".*.json", "a fixture family UI-SPEC §17 does not list"})
 		}
 	}
 	return out
@@ -463,17 +473,24 @@ func TestEveryPageHasItsFourFixtures(t *testing.T) {
 		fixtures = append(fixtures, strings.TrimSuffix(e.Name(), ".json"))
 	}
 	t.Run("holds", func(t *testing.T) {
-		for _, f := range missingPages(packages, fixtures) {
+		for _, f := range missingPages(packages, pageFamilies(), fixtures) {
 			t.Errorf("%s: %s", f.where, f.what)
 		}
 	})
 	t.Run("bites", func(t *testing.T) {
-		got := missingPages(append(slices.Clone(packages), "accounts"), slices.DeleteFunc(slices.Clone(fixtures), func(f string) bool { return f == "tailnet.error" }))
+		gone := func(f string) bool { return f == "tailnet.error" || strings.HasPrefix(f, "run.") }
+		got := missingPages(append(slices.Clone(packages), "accounts"), pageFamilies(), append(slices.DeleteFunc(slices.Clone(fixtures), gone), "outcome-tools.full"))
 		if !slices.ContainsFunc(got, func(f finding) bool { return f.where == "src/pages/accounts" }) {
 			t.Error("the fixtures rule did not report a page package with no fixture")
 		}
 		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "tailnet.error.json") }) {
 			t.Error("the fixtures rule did not report a family missing its error state")
+		}
+		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "run.loading.json") }) {
+			t.Error("the fixtures rule did not report a listed family with no fixture at all")
+		}
+		if !slices.ContainsFunc(got, func(f finding) bool { return strings.Contains(f.where, "/outcome-tools.*") }) {
+			t.Error("the fixtures rule did not report a family the spec does not list")
 		}
 	})
 }

@@ -50,55 +50,12 @@
       ],
       "items": [
         {
-          "group": {
-            "head": {
-              "id": "macbook",
-              "mark": "ok",
-              "label": "macbook",
-              "cells": [
-                {
-                  "kind": "text",
-                  "text": "host"
-                },
-                {
-                  "kind": "none"
-                },
-                {
-                  "kind": "none"
-                },
-                {
-                  "kind": "text",
-                  "text": "online"
-                },
-                {
-                  "kind": "text",
-                  "text": "-"
-                },
-                {
-                  "kind": "count",
-                  "unit": "VMs"
-                }
-              ]
-            },
-            "items": [
-              {
-                "empty": {
-                  "noun": "VMs",
-                  "hint": {
-                    "command": "station machines create",
-                    "key": "n"
-                  }
-                }
-              }
-            ],
-            "fold": "open"
+          "empty": {
+            "noun": "hosts",
+            "hint": {
+              "command": "station machines add <name>"
+            }
           }
-        }
-      ],
-      "counts": [
-        {
-          "mark": "ok",
-          "n": 1
         }
       ]
     }

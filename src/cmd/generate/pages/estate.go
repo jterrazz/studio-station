@@ -225,6 +225,15 @@ func fleet() machines.Fleet {
 	}}
 }
 
+// value: the fleet whose daemon socket refuses: the agent's plist is there,
+// so this host reads stopped (R9.D3); the mini does not answer its ssh read.
+func stoppedFleet() machines.Fleet {
+	f := fleet()
+	f.Hosts[0].Daemon = machines.DaemonInfo{Known: true, Installed: true}
+	f.Hosts[1] = machines.HostView{Name: "mac-mini", User: "jterrazz", Node: machines.Node{IP: "100.98.133.20"}}
+	return f
+}
+
 func sized(vm machines.VM, cpus int, memoryGB int64) machines.VM {
 	vm.Resources.CPUs, vm.Resources.MemoryBytes, vm.Resources.DiskBytes = cpus, memoryGB*gb, 40*gb
 	return vm
@@ -233,8 +242,8 @@ func sized(vm machines.VM, cpus int, memoryGB int64) machines.VM {
 func machineLists() []Fixture {
 	return states("machines",
 		pending(pagemachines.List(fleet(), nil, here())),
-		pagemachines.List(machines.Fleet{Hosts: []machines.HostView{{Name: "macbook", Here: true, Reachable: true}}}, nil, here()),
-		failure("machines", "machines", "the daemon is not running", "station setup"),
+		pagemachines.List(machines.Fleet{}, nil, here()),
+		pagemachines.List(stoppedFleet(), nil, here()),
 		pagemachines.List(fleet(), []string{"mac-mini: station v2.0.0-248, here v2.0.0-250"}, here()))
 }
 
@@ -299,11 +308,20 @@ func serviceFleet() services.Fleet {
 	}}
 }
 
+func stoppedServices() services.Fleet {
+	f := serviceFleet()
+	f.Hosts[0].Daemon = services.DaemonInfo{Installed: true}
+	for i := range f.Hosts[0].Services {
+		f.Hosts[0].Services[i].State = services.Unknown
+	}
+	return f
+}
+
 func serviceLists() []Fixture {
 	return states("services",
 		pending(pageservices.Fleet(serviceFleet(), here())),
 		pageservices.Fleet(services.Fleet{}, here()),
-		failure("services", "services", "the daemon is not running", "station setup"),
+		pageservices.Fleet(stoppedServices(), here()),
 		pageservices.Fleet(serviceFleet(), here()))
 }
 
@@ -313,7 +331,8 @@ func fleets() []Fixture {
 	none := machines.Fleet{Hosts: []machines.HostView{{Name: "macbook", Here: true, Reachable: true}}}
 	var noImages []images.Report
 	empty := pagefleet.Reading{Machines: &none, Images: &noImages, Secrets: &secrets.Report{}, Tailnet: &tailnet.Status{State: catalog.StateAbsent}}
-	failed := pagefleet.Reading{Machines: &f, Failed: map[string]page.Error{"images": {Message: "tart is not installed", Hint: "station tools install tart"}}}
+	stopped, stoppedSvc := stoppedFleet(), stoppedServices()
+	failed := pagefleet.Reading{Machines: &stopped, Images: &list, Secrets: &sec, Services: &stoppedSvc, Tailnet: &tn}
 	return states("fleet",
 		pagefleet.Tab(pagefleet.Reading{}, here()),
 		pagefleet.Tab(empty, here()),
@@ -335,7 +354,7 @@ func outcomes() []Fixture {
 		{Name: "homebrew", Result: catalog.StateOK, Freed: 26 * gb},
 		{Name: "bun", Result: catalog.StateAbsent, Detail: "nothing to clean"},
 	}
-	out := states("outcome-tools",
+	out := states("outcome-tools-install",
 		pending(pagetools.Outcomes("install", toolOutcomes, here())),
 		pagetools.Outcomes("install", nil, here()),
 		failure("outcome", "tools install", "no tool named jqq", "station tools"),

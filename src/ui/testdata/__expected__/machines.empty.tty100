@@ -2,5 +2,4 @@
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
  Fleet
-   ● macbook  host  online  -  0 VMs
-   └─   no VMs  → station machines create
+   no hosts  → station machines add <name>
