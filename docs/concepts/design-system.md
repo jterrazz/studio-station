@@ -13,7 +13,7 @@ Everything `station` shows, in a terminal, a pipe or the TUI, comes from one pal
 
 ## The palette
 
-Semantic tokens, each a light and a dark value chosen by the terminal's background (Catppuccin Latte and Macchiato, the flavour the dotfiles already use). `src/theme/palette.go` is the only place a colour is written; the layer test refuses a hex or a colour constructor anywhere else.
+Semantic tokens, each a light and a dark value chosen by the terminal's background (Catppuccin Latte and Macchiato, the flavour the dotfiles already use). `src/ui/token/palette.go` is the only place a colour is written; the layer test refuses a hex or a colour constructor anywhere else.
 
 | Token       | Used for                                                      |
 | ----------- | ------------------------------------------------------------- |
@@ -39,7 +39,7 @@ The same tokens colour Fang's help and the forms that ask a config item's values
 | `✗`  | broken               |
 | `◌`  | pending              |
 
-The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. `◌` (Muted) marks a row whose probe has not answered yet, on a terminal and in the TUI only: a pipe, `NO_COLOR` and `--json` wait for every probe, so they never carry it. The glyphs live in `src/present/mark.go` and nowhere else. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
+The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. `◌` (Muted) marks a row whose probe has not answered yet, on a terminal and in the TUI only: a pipe, `NO_COLOR` and `--json` wait for every probe, so they never carry it. Every glyph station prints is a token of `src/ui/token/glyphs.go` (`token.Glyphs`), and the layer test refuses one in any other Go literal of a migrated package. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
 
 ## Typography
 

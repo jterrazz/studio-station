@@ -1,0 +1,93 @@
+package pipe
+
+import (
+	"errors"
+	"strings"
+
+	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/ui/atom"
+	"github.com/jterrazz/studio-station/src/ui/token"
+)
+
+var ErrPending = errors.New("a page with a pending part reached the pipe")
+
+func Render(p page.Page) ([]byte, error) {
+	if p.State == page.Loading {
+		return nil, ErrPending
+	}
+	if p.Error != nil {
+		return nil, nil
+	}
+	var b strings.Builder
+	for _, s := range p.Sections {
+		section(&b, s)
+	}
+	return []byte(b.String()), nil
+}
+
+func section(b *strings.Builder, s page.Section) {
+	switch s.Role {
+	case page.Actions, page.Summary:
+		return
+	case page.Banner:
+	case page.Plain:
+		fields := []string{"# " + s.Title}
+		for _, t := range s.Counts {
+			fields = append(fields, atom.Count(t))
+		}
+		line(b, fields)
+	}
+	cells := max(len(s.Columns)-1, 0)
+	for _, it := range s.Items {
+		item(b, it, cells)
+	}
+}
+
+func item(b *strings.Builder, it page.Item, cells int) {
+	switch {
+	case it.Row != nil:
+		row(b, *it.Row, cells)
+	case it.Group != nil:
+		row(b, it.Group.Head, cells)
+		for _, c := range it.Group.Items {
+			item(b, c, cells)
+		}
+	case it.Fact != nil:
+		line(b, []string{it.Fact.Key, atom.Plain(it.Fact.Value)})
+	case it.Empty != nil:
+		line(b, []string{"", "none"})
+	case it.Error != nil:
+		line(b, []string{token.MarkBroken, "error", it.Error.Message + token.Sep + it.Error.Hint})
+	case it.Note != nil:
+		line(b, []string{"", it.Note.Text})
+	}
+}
+
+func row(b *strings.Builder, r page.Row, cells int) {
+	fields := make([]string, 0, cells+3)
+	fields = append(fields, atom.Glyph(r.Mark), r.Label)
+	for i := range max(cells, len(r.Cells)) {
+		v := page.None()
+		if i < len(r.Cells) {
+			v = r.Cells[i]
+		}
+		fields = append(fields, atom.Plain(v))
+	}
+	var last []string
+	if s := atom.Plain(r.Detail); s != "" {
+		last = append(last, s)
+	}
+	if r.Hint != nil {
+		last = append(last, r.Hint.Command)
+	}
+	fields = append(fields, strings.Join(last, token.Sep))
+	line(b, fields)
+}
+
+func line(b *strings.Builder, fields []string) {
+	for len(fields) > 1 && fields[len(fields)-1] == "" {
+		fields = fields[:len(fields)-1]
+	}
+	b.WriteString(strings.Join(fields, "\t"))
+	b.WriteByte('\n')
+}

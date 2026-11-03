@@ -1,0 +1,273 @@
+package page
+
+const Schema = "station.page/v1"
+
+type Page struct {
+	ID       ID        `json:"id,omitempty"`
+	Command  string    `json:"command,omitempty"`
+	Context  Context   `json:"context,omitzero"`
+	State    State     `json:"state,omitempty"`
+	Strip    *Strip    `json:"strip,omitempty"`
+	Sections []Section `json:"sections,omitempty"`
+	Hints    []Hint    `json:"hints,omitempty"`
+	Error    *Error    `json:"error,omitempty"`
+	Actions  []Action  `json:"actions,omitempty"`
+}
+
+type ID string
+
+type State string
+
+const (
+	Loading State = "loading"
+	Ready   State = "ready"
+	Failed  State = "failed"
+)
+
+type Context struct {
+	Machine    string `json:"machine,omitempty"`
+	Kind       string `json:"kind,omitempty"`
+	Registered bool   `json:"registered,omitempty"`
+}
+
+type Section struct {
+	ID      string   `json:"id,omitempty"`
+	Title   string   `json:"title,omitempty"`
+	Role    Role     `json:"role,omitempty"`
+	Fold    Fold     `json:"fold,omitempty"`
+	Caption []Value  `json:"caption,omitempty"`
+	Columns []Column `json:"columns,omitempty"`
+	Items   []Item   `json:"items,omitempty"`
+	Counts  []Tally  `json:"counts,omitempty"`
+}
+
+type Role string
+
+const (
+	Plain   Role = ""
+	Actions Role = "actions"
+	Summary Role = "summary"
+	Banner  Role = "banner"
+)
+
+type Fold string
+
+const (
+	Open   Fold = "open"
+	Folded Fold = "folded"
+	Auto   Fold = "auto"
+)
+
+type Column struct {
+	Key    string   `json:"key,omitempty"`
+	Label  string   `json:"label,omitempty"`
+	Kind   Kind     `json:"kind,omitempty"`
+	Keep   int      `json:"keep,omitempty"`
+	Show   Show     `json:"show,omitempty"`
+	Levels []string `json:"levels,omitempty"`
+}
+
+type Show string
+
+const (
+	Everywhere Show = ""
+	PipeOnly   Show = "pipe"
+)
+
+type Item struct {
+	Row   *Row   `json:"row,omitempty"`
+	Fact  *Fact  `json:"fact,omitempty"`
+	Group *Group `json:"group,omitempty"`
+	Empty *Empty `json:"empty,omitempty"`
+	Error *Error `json:"error,omitempty"`
+	Note  *Note  `json:"note,omitempty"`
+	Link  *Link  `json:"link,omitempty"`
+}
+
+type Row struct {
+	ID     string  `json:"id,omitempty"`
+	Mark   Mark    `json:"mark,omitempty"`
+	Label  string  `json:"label,omitempty"`
+	Cells  []Value `json:"cells,omitempty"`
+	Detail Value   `json:"detail,omitzero"`
+	Reason Reason  `json:"reason,omitempty"`
+	Hint   *Hint   `json:"hint,omitempty"`
+}
+
+type Fact struct {
+	Key   string `json:"key,omitempty"`
+	Value Value  `json:"value,omitzero"`
+}
+
+type Group struct {
+	Head  Row    `json:"head,omitzero"`
+	Items []Item `json:"items,omitempty"`
+	Fold  Fold   `json:"fold,omitempty"`
+}
+
+type Empty struct {
+	Noun string `json:"noun,omitempty"`
+	Hint *Hint  `json:"hint,omitempty"`
+}
+
+type Error struct {
+	Message string `json:"message,omitempty"`
+	Hint    string `json:"hint,omitempty"`
+}
+
+type Note struct {
+	Text string `json:"text,omitempty"`
+}
+
+type Link struct {
+	Label  string `json:"label,omitempty"`
+	Value  Value  `json:"value,omitzero"`
+	Detail Value  `json:"detail,omitzero"`
+	Page   ID     `json:"page,omitempty"`
+	Row    string `json:"row,omitempty"`
+}
+
+type Hint struct {
+	Command  string `json:"command,omitempty"`
+	External bool   `json:"external,omitempty"`
+	Key      string `json:"key,omitempty"`
+	Text     string `json:"text,omitempty"`
+}
+
+type Action struct {
+	Key      string   `json:"key,omitempty"`
+	Label    string   `json:"label,omitempty"`
+	On       Scope    `json:"on,omitempty"`
+	Rows     []string `json:"rows,omitempty"`
+	Confirm  *Confirm `json:"confirm,omitempty"`
+	Priority int      `json:"priority,omitempty"`
+	Mutates  bool     `json:"mutates,omitempty"`
+}
+
+type Scope string
+
+const (
+	OnRow  Scope = "row"
+	OnPage Scope = "page"
+)
+
+type Confirm struct {
+	Question string  `json:"question,omitempty"`
+	Lines    []Value `json:"lines,omitempty"`
+	Danger   bool    `json:"danger,omitempty"`
+	Type     string  `json:"type,omitempty"`
+	Yes      string  `json:"yes,omitempty"`
+}
+
+type Form struct {
+	Title  string  `json:"title,omitempty"`
+	Fields []Field `json:"fields,omitempty"`
+}
+
+type Field struct {
+	Key     string    `json:"key,omitempty"`
+	Label   string    `json:"label,omitempty"`
+	Kind    FieldKind `json:"kind,omitempty"`
+	Options []Option  `json:"options,omitempty"`
+	Default string    `json:"default,omitempty"`
+	Note    string    `json:"note,omitempty"`
+}
+
+type FieldKind string
+
+type Option struct {
+	Value string `json:"value,omitempty"`
+	Label string `json:"label,omitempty"`
+	Note  string `json:"note,omitempty"`
+}
+
+type Strip struct {
+	CPU     Value    `json:"cpu,omitzero"`
+	Spark   []int    `json:"spark,omitempty"`
+	Memory  Value    `json:"memory,omitzero"`
+	Battery Value    `json:"battery,omitzero"`
+	GPU     Value    `json:"gpu,omitzero"`
+	Net     []Value  `json:"net,omitempty"`
+	Top     *Section `json:"top,omitempty"`
+}
+
+type Tally struct {
+	Mark Mark `json:"mark,omitempty"`
+	N    int  `json:"n,omitempty"`
+}
+
+type Mark string
+
+const (
+	Unjudged  Mark = ""
+	OK        Mark = "ok"
+	Attention Mark = "attention"
+	Absent    Mark = "absent"
+	Broken    Mark = "broken"
+	Awaiting  Mark = "pending"
+)
+
+func Marks() [5]Mark { return [5]Mark{OK, Attention, Absent, Broken, Awaiting} }
+
+type Reason string
+
+const (
+	Outdated    Reason = "outdated"
+	Stray       Reason = "stray"
+	Unreachable Reason = "unreachable"
+	Mismatch    Reason = "mismatch"
+	Unmanaged   Reason = "unmanaged"
+	Missing     Reason = "missing"
+	Partial     Reason = "partial"
+	Differs     Reason = "differs"
+	Unset       Reason = "unset"
+	Stopped     Reason = "stopped"
+	Late        Reason = "late"
+	Degraded    Reason = "degraded"
+	Orphan      Reason = "orphan"
+	Waiting     Reason = "waiting"
+	Failing     Reason = "failing"
+	Refused     Reason = "refused"
+	Down        Reason = "down"
+	Outlived    Reason = "stale"
+)
+
+type Value struct {
+	Kind  Kind    `json:"kind,omitempty"`
+	Text  string  `json:"text,omitempty"`
+	N     int64   `json:"n,omitempty"`
+	Of    int64   `json:"of,omitempty"`
+	At    string  `json:"at,omitempty"`
+	Unit  string  `json:"unit,omitempty"`
+	Label string  `json:"label,omitempty"`
+	Items []Value `json:"items,omitempty"`
+	Stale bool    `json:"stale,omitempty"`
+}
+
+type Kind string
+
+const (
+	KindText     Kind = "text"
+	KindNone     Kind = "none"
+	KindCount    Kind = "count"
+	KindSize     Kind = "size"
+	KindRatio    Kind = "ratio"
+	KindPercent  Kind = "percent"
+	KindVersion  Kind = "version"
+	KindDuration Kind = "duration"
+	KindAge      Kind = "age"
+	KindURL      Kind = "url"
+	KindIdentity Kind = "identity"
+	KindPath     Kind = "path"
+	KindPort     Kind = "port"
+	KindPortMap  Kind = "portmap"
+	KindRange    Kind = "range"
+	KindCommand  Kind = "command"
+	KindList     Kind = "list"
+	KindLevels   Kind = "levels"
+	KindOn       Kind = "on"
+	KindOff      Kind = "off"
+	KindUnknown  Kind = "unknown"
+	KindPending  Kind = "pending"
+	KindListing  Kind = "listing"
+)
