@@ -11,7 +11,8 @@ const walkers = 8
 // of directories, taking from the roots in turn (eight workers in one tree
 // contend on its directories: 9.6 s against 6 s for 192 roots, 2026-11-02), so
 // small roots answer at once; past ctx no worker takes another directory and
-// every unfinished root answers -1.
+// every root not yet answered answers -1, even one whose walk ended while the
+// cancel was being observed, so no size is ever reported after the cancel.
 func (disk) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
 	w := &walk{ctx: ctx, stacks: make([][]string, len(roots)), left: make([]int, len(roots)), total: make([]int64, len(roots)), devs: make([]uint64, len(roots))}
 	w.cond = sync.NewCond(&w.mu)
@@ -22,6 +23,9 @@ func (disk) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
 		defer say.Unlock()
 		if !answered[i] {
 			answered[i] = true
+			if ctx.Err() != nil {
+				bytes = -1
+			}
 			each(i, bytes)
 		}
 	}
