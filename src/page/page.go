@@ -39,6 +39,8 @@ type Section struct {
 	Columns []Column `json:"columns,omitempty"`
 	Items   []Item   `json:"items,omitempty"`
 	Counts  []Tally  `json:"counts,omitempty"`
+	// value: a section whose marks are no verdict to sum (storage's sizes) shows no counts.
+	Uncounted bool `json:"uncounted,omitempty"`
 }
 
 type Role string
@@ -157,6 +159,7 @@ type Confirm struct {
 	Danger   bool    `json:"danger,omitempty"`
 	Type     string  `json:"type,omitempty"`
 	Yes      string  `json:"yes,omitempty"`
+	No       string  `json:"no,omitempty"`
 }
 
 type Form struct {
@@ -165,15 +168,23 @@ type Form struct {
 }
 
 type Field struct {
-	Key     string    `json:"key,omitempty"`
-	Label   string    `json:"label,omitempty"`
-	Kind    FieldKind `json:"kind,omitempty"`
-	Options []Option  `json:"options,omitempty"`
-	Default string    `json:"default,omitempty"`
-	Note    string    `json:"note,omitempty"`
+	Key      string    `json:"key,omitempty"`
+	Label    string    `json:"label,omitempty"`
+	Kind     FieldKind `json:"kind,omitempty"`
+	Options  []Option  `json:"options,omitempty"`
+	Default  string    `json:"default,omitempty"`
+	Note     string    `json:"note,omitempty"`
+	Required bool      `json:"required,omitempty"`
 }
 
 type FieldKind string
+
+const (
+	FieldText    FieldKind = "text"
+	FieldSecret  FieldKind = "secret"
+	FieldSelect  FieldKind = "select"
+	FieldConfirm FieldKind = "confirm"
+)
 
 type Option struct {
 	Value string `json:"value,omitempty"`

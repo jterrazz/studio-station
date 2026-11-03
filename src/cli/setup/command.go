@@ -2,18 +2,20 @@ package setupcmd
 
 import (
 	"context"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/setup"
-	presentsetup "github.com/jterrazz/studio-station/src/present/setup"
+	"github.com/jterrazz/studio-station/src/page"
+	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
 )
 
 type Deps struct {
-	Setup   *setup.Service
-	Context string
+	Setup *setup.Service
+	Here  page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -30,10 +32,13 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			report, err := d.Setup.Run(ctx, setup.Request{
 				Name:        in.Name,
 				Interactive: io.Interactive,
-				AskName:     func() (string, error) { return io.Prompt.AskName(d.Setup.DefaultName(ctx)) },
+				AskName: func() (string, error) {
+					values, err := io.Prompt.Form(pagesetup.NameForm(d.Setup.DefaultName(ctx)))
+					return strings.TrimSpace(values["name"]), err
+				},
 			})
 			if len(report.Steps) > 0 {
-				if answerErr := io.Answer(presentsetup.Outcome(report, d.Context)); answerErr != nil {
+				if answerErr := io.Page(pagesetup.Outcome(report, d.Here), nil); answerErr != nil {
 					return answerErr
 				}
 			}

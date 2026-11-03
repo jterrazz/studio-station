@@ -206,8 +206,8 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		}
 		at := i - 1
 		if c.Kind == page.KindLevels {
-			for _, level := range c.Levels {
-				cols = append(cols, column{kind: page.KindSize, label: level, keep: c.Keep, cell: levelCell(at, level)})
+			for li, level := range c.Levels {
+				cols = append(cols, column{kind: page.KindSize, label: level, keep: c.Keep, cell: levelCell(at, level, li == 0)})
 			}
 			continue
 		}
@@ -276,9 +276,15 @@ func positional(at int) func(page.Row) page.Value {
 	}
 }
 
-func levelCell(at int, level string) func(page.Row) page.Value {
+func levelCell(at int, level string, first bool) func(page.Row) page.Value {
 	return func(r page.Row) page.Value {
 		if at >= len(r.Cells) {
+			return page.None()
+		}
+		if c := r.Cells[at]; c.Kind != page.KindLevels {
+			if first {
+				return c
+			}
 			return page.None()
 		}
 		for _, l := range r.Cells[at].Items {

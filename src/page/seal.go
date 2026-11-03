@@ -13,10 +13,15 @@ func Seal(p Page) Page {
 	pending := false
 	for i := range p.Sections {
 		counts := map[Mark]int{}
+		waits := false
 		for _, it := range p.Sections[i].Items {
-			pending = tally(it, counts) || pending
+			waits = tally(it, counts) || waits
 		}
+		pending = pending || waits
 		p.Sections[i].Counts = nil
+		if p.Sections[i].Uncounted && !waits {
+			continue
+		}
 		for _, m := range Marks() {
 			if counts[m] > 0 {
 				p.Sections[i].Counts = append(p.Sections[i].Counts, Tally{Mark: m, N: counts[m]})
@@ -136,7 +141,7 @@ func checkRow(s Section, r Row, judged bool, rows map[string]bool) error {
 	if judged && s.Role != Summary && r.Mark == Unjudged {
 		return errors.New("row " + r.ID + ": a judged section's row carries a mark")
 	}
-	if (r.Mark == Attention || r.Mark == Broken) && (r.Reason == "" || (r.Detail.IsNone() && r.Hint == nil)) {
+	if (r.Mark == Attention || r.Mark == Broken) && (r.Reason == "" || !explained(r)) {
 		return errors.New("row " + r.ID + ": an attention or broken row carries a reason and a detail or a hint")
 	}
 	if len(s.Columns) > 0 && len(r.Cells) > len(s.Columns)-1 {
@@ -153,6 +158,18 @@ func checkRow(s Section, r Row, judged bool, rows map[string]bool) error {
 		}
 	}
 	return checkHint(r.Hint)
+}
+
+func explained(r Row) bool {
+	if !r.Detail.IsNone() || r.Hint != nil {
+		return true
+	}
+	for _, c := range r.Cells {
+		if c.Kind == KindText && c.Text != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func checkHint(h *Hint) error {

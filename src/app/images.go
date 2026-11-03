@@ -27,8 +27,8 @@ func (m machine) images() *images.Service {
 
 func imagesCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.images()
-	return imagescmd.Command(imagescmd.Deps{Images: service, Context: m.context}, env,
-		imagesbuild.Command(imagesbuild.Deps{Images: service, Context: m.context}, env),
-		imagesdelete.Command(imagesdelete.Deps{Images: service, Context: m.context}, env),
+	return imagescmd.Command(imagescmd.Deps{Images: service, Here: m.where}, env,
+		imagesbuild.Command(imagesbuild.Deps{Images: service, Here: m.where}, env),
+		imagesdelete.Command(imagesdelete.Deps{Images: service, Here: m.where}, env),
 	)
 }

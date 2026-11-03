@@ -4,7 +4,7 @@ runs:
     - command: 'images'
       exit: 0
       stdout: |
-          none built
+          	none
     - command: 'images --json | /usr/bin/jq -c ''[.schema, .images]'''
       exit: 0
       stdout: |

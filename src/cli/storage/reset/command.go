@@ -8,14 +8,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	presentstorage "github.com/jterrazz/studio-station/src/present/storage"
-	"github.com/jterrazz/studio-station/src/prompt"
+	"github.com/jterrazz/studio-station/src/page"
+	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 )
 
 type Deps struct {
 	Storage *storage.Service
-	Ask     prompt.ResetAsker
-	Context string
+	Here    page.Context
 }
 
 type Input struct{ Names []string }
@@ -34,22 +33,14 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Destructive: func(*Input) bool { return true },
 		Confirm:     func(in *Input) string { return "Reset " + strings.Join(in.Names, ", ") + "?" },
 		Ask: func(in *Input) (bool, error) {
-			if d.Ask == nil {
-				return false, nil
-			}
-			plan := d.Storage.Plan(in.Names)
-			lines := make([]prompt.ResetLine, 0, len(plan))
-			for _, p := range plan {
-				lines = append(lines, prompt.ResetLine{Level: string(p.Level), Path: p.Path, Size: presentstorage.Size(p.Bytes)})
-			}
-			return d.Ask.ConfirmReset(in.Names, lines)
+			return env.Prompt.Confirm(pagestorage.ResetConfirm(in.Names, d.Storage.Plan(in.Names)))
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			outcomes, err := d.Storage.Reset(ctx, in.Names)
 			if err != nil {
 				return err
 			}
-			if err := io.Answer(presentstorage.Outcomes("reset", outcomes, d.Context)); err != nil {
+			if err := io.Page(pagestorage.Outcomes("reset", outcomes, d.Here), nil); err != nil {
 				return err
 			}
 			failed, first := storage.Failures(outcomes)

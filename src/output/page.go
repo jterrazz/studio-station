@@ -15,6 +15,8 @@ type Want struct {
 	Page bool
 }
 
+func Terminal(in io.Reader, out io.Writer) *tty.Terminal { return tty.NewTerminal(in, out) }
+
 func (w *Writer) Page(p page.Page, contract any, want Want) error {
 	c := Detect(w.stdout, w.env, want.JSON || want.Page)
 	out := w.stdout.W

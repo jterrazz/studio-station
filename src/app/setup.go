@@ -17,7 +17,7 @@ import (
 )
 
 func setupCommand(env kit.Env, m machine) *cobra.Command {
-	return setupcmd.Command(setupcmd.Deps{Setup: setupService(env, m), Context: m.context}, env)
+	return setupcmd.Command(setupcmd.Deps{Setup: setupService(env, m), Here: m.where}, env)
 }
 
 func setupService(env kit.Env, m machine) *setup.Service {

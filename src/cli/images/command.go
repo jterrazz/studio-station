@@ -7,12 +7,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/images"
-	presentimages "github.com/jterrazz/studio-station/src/present/images"
+	"github.com/jterrazz/studio-station/src/page"
+	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 )
 
 type Deps struct {
-	Images  *images.Service
-	Context string
+	Images *images.Service
+	Here   page.Context
 }
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
@@ -22,12 +23,13 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Example: "  station images\n  station images --json",
 		Group:   "fleet",
 		Read:    func(*struct{}) bool { return true },
+		Pages:   true,
 		Run: func(ctx context.Context, _ *struct{}, io kit.IO) error {
 			reports, err := d.Images.List(ctx)
 			if err != nil {
 				return err
 			}
-			return io.Answer(presentimages.List(reports, d.Context))
+			return io.Page(pageimages.List(reports, d.Here), pageimages.ListContract(reports))
 		},
 	}, env)
 	cmd.AddCommand(children...)

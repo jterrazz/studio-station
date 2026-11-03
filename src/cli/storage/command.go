@@ -7,13 +7,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/present"
-	presentstorage "github.com/jterrazz/studio-station/src/present/storage"
+	"github.com/jterrazz/studio-station/src/page"
+	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 )
 
 type Deps struct {
 	Storage *storage.Service
-	Context string
+	Here    page.Context
 }
 
 type Input struct{}
@@ -26,11 +26,12 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Group:   "here",
 		Read:    func(*Input) bool { return true },
 		Live:    true,
+		Pages:   true,
 		Entry:   kit.Entry("station storage clean", d.Storage.Names),
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
 			if io.CanLive() {
-				if err := io.Live(kit.Answers(d.Storage.Watch(ctx), func(r storage.Report) present.Answer {
-					return presentstorage.List(r, d.Context)
+				if err := io.LivePage(kit.Pages(d.Storage.Watch(ctx), func(r storage.Report) page.Page {
+					return pagestorage.List(r, d.Here)
 				})); err != nil {
 					return err
 				}
@@ -40,7 +41,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Answer(presentstorage.List(report, d.Context))
+			return io.Page(pagestorage.List(report, d.Here), pagestorage.ListContract(report))
 		},
 	}, env)
 	cmd.AddCommand(children...)

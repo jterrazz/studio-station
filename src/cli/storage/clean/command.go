@@ -7,12 +7,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	presentstorage "github.com/jterrazz/studio-station/src/present/storage"
+	"github.com/jterrazz/studio-station/src/page"
+	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 )
 
 type Deps struct {
 	Storage *storage.Service
-	Context string
+	Here    page.Context
 }
 
 type Input struct{ Names []string }
@@ -32,7 +33,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Answer(presentstorage.Outcomes("clean", outcomes, d.Context)); err != nil {
+			if err := io.Page(pagestorage.Outcomes("clean", outcomes, d.Here), nil); err != nil {
 				return err
 			}
 			return partial(outcomes)

@@ -23,7 +23,6 @@ import (
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/present"
-	"github.com/jterrazz/studio-station/src/prompt"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/system/host"
 )
@@ -53,7 +52,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	here := resolve(host.New(env, stdin, stdout, stderr), vars)
 	kenv := kit.Env{
 		Out:         writer,
-		Prompt:      prompt.New(stdin, stderr),
+		Prompt:      output.Terminal(stdin, stderr),
 		Interactive: inTTY && errTTY,
 		Screen:      inTTY && outTTY,
 		On:          &kit.On{Here: here.here(), Args: args, Remote: remote.New(here.host.Run)},

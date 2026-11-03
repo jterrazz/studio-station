@@ -8,12 +8,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/shortcuts"
-	presentshortcuts "github.com/jterrazz/studio-station/src/present/shortcuts"
+	"github.com/jterrazz/studio-station/src/page"
+	pageshortcuts "github.com/jterrazz/studio-station/src/pages/shortcuts"
 )
 
 type Deps struct {
 	Shortcuts *shortcuts.Service
-	Context   string
+	Here      page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -32,7 +33,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Answer(presentshortcuts.Docker(outcome, d.Context))
+			return io.Page(pageshortcuts.Docker(outcome, d.Here), nil)
 		},
 	}, env)
 }

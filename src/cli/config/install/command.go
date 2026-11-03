@@ -8,14 +8,13 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/config"
-	presentconfig "github.com/jterrazz/studio-station/src/present/config"
-	"github.com/jterrazz/studio-station/src/prompt"
+	"github.com/jterrazz/studio-station/src/page"
+	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 )
 
 type Deps struct {
-	Config  *config.Service
-	Ask     prompt.Asker
-	Context string
+	Config *config.Service
+	Here   page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -41,14 +40,14 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			}
 			changes := make([]config.Change, 0, len(items))
 			for _, it := range items {
-				values, err := ask(d, it)
+				values, err := ask(d, it, io)
 				if err != nil {
 					return err
 				}
 				change, _ := d.Config.Install(ctx, it.Name, values, io.Interactive)
 				changes = append(changes, change)
 			}
-			if err := io.Answer(presentconfig.Changes("install", changes, d.Context)); err != nil {
+			if err := io.Page(pageconfig.Changes("install", changes, d.Here), nil); err != nil {
 				return err
 			}
 			failed, hint := 0, ""
@@ -68,9 +67,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	}, env)
 }
 
-func ask(d Deps, it catalog.ConfigItem) (map[string]string, error) {
-	if len(it.Inputs) == 0 {
+func ask(d Deps, it catalog.ConfigItem, io kit.IO) (map[string]string, error) {
+	if len(it.Inputs) == 0 || !io.Interactive {
 		return nil, nil
 	}
-	return d.Ask.Inputs("Configure "+it.Name, it.Inputs, d.Config.Defaults(it.Name))
+	return io.Prompt.Form(pageconfig.InputsForm(it.Name, it.Inputs, d.Config.Defaults(it.Name)))
 }

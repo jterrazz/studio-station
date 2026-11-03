@@ -12,15 +12,13 @@ import (
 	configuninstall "github.com/jterrazz/studio-station/src/cli/config/uninstall"
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/prompt"
 )
 
 func configCommand(env kit.Env, m machine) *cobra.Command {
 	service := configService(m)
-	ask, _ := env.Prompt.(prompt.Asker)
-	return configcmd.Command(configcmd.Deps{Config: service, Context: m.context}, env,
-		configinstall.Command(configinstall.Deps{Config: service, Ask: ask, Context: m.context}, env),
-		configuninstall.Command(configuninstall.Deps{Config: service, Context: m.context}, env),
+	return configcmd.Command(configcmd.Deps{Config: service, Here: m.where}, env,
+		configinstall.Command(configinstall.Deps{Config: service, Here: m.where}, env),
+		configuninstall.Command(configuninstall.Deps{Config: service, Here: m.where}, env),
 	)
 }
 

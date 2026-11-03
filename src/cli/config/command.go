@@ -7,12 +7,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/config"
-	presentconfig "github.com/jterrazz/studio-station/src/present/config"
+	"github.com/jterrazz/studio-station/src/page"
+	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 )
 
 type Deps struct {
-	Config  *config.Service
-	Context string
+	Config *config.Service
+	Here   page.Context
 }
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
@@ -22,6 +23,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Example: "  station config\n  station config --json",
 		Group:   "here",
 		Read:    func(*Input) bool { return true },
+		Pages:   true,
 		Entry: kit.Entry("station config install", func() []string {
 			placed := d.Config.Placed()
 			out := make([]string, 0, len(placed))
@@ -35,7 +37,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Answer(presentconfig.Items(reports, d.Context))
+			return io.Page(pageconfig.Items(reports, d.Here), pageconfig.ItemsContract(reports))
 		},
 	}, env)
 	cmd.AddCommand(children...)

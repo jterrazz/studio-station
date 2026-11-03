@@ -9,12 +9,13 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/config"
-	presentconfig "github.com/jterrazz/studio-station/src/present/config"
+	"github.com/jterrazz/studio-station/src/page"
+	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 )
 
 type Deps struct {
-	Config  *config.Service
-	Context string
+	Config *config.Service
+	Here   page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -46,7 +47,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				change, _ := d.Config.Uninstall(ctx, it.Name)
 				changes = append(changes, change)
 			}
-			if err := io.Answer(presentconfig.Changes("uninstall", changes, d.Context)); err != nil {
+			if err := io.Page(pageconfig.Changes("uninstall", changes, d.Here), nil); err != nil {
 				return err
 			}
 			failed, hint := 0, ""

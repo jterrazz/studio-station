@@ -9,12 +9,13 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/tools"
-	presenttools "github.com/jterrazz/studio-station/src/present/tools"
+	"github.com/jterrazz/studio-station/src/page"
+	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 )
 
 type Deps struct {
-	Tools   *tools.Service
-	Context string
+	Tools *tools.Service
+	Here  page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -40,7 +41,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Answer(presenttools.Outcomes("uninstall", outcomes, d.Context)); err != nil {
+			if err := io.Page(pagetools.Outcomes("uninstall", outcomes, d.Here), nil); err != nil {
 				return err
 			}
 			failed, hint := 0, ""

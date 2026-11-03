@@ -9,5 +9,5 @@ runs:
       exit: 0
     - command: '--version >/dev/null; terminal --size 120x80 /usr/bin/env -u NO_COLOR COLUMNS=120 STATION_MACHINE_KIND=linux "$STATION" storage > /dev/null'
       stdin: |
-          within 1 see ● go       3.0 MB
+          within 1 see ● go  3.0 MB
       exit: 0

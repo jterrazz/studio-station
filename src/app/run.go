@@ -14,6 +14,6 @@ func runCommand(env kit.Env, m machine) *cobra.Command {
 	service := shortcuts.New(m.host)
 	return runcmd.Command(env,
 		rungit.Command(rungit.Deps{Shortcuts: service}, env),
-		rundocker.Command(rundocker.Deps{Shortcuts: service, Context: m.context}, env),
+		rundocker.Command(rundocker.Deps{Shortcuts: service, Here: m.where}, env),
 	)
 }

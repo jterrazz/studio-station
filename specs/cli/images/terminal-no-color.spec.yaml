@@ -6,20 +6,21 @@ env: terminal
 runs:
     - command: '--version >/dev/null; terminal "$STATION" images'
       stdin: |
-          see none built
+          see none
           screen
       exit: 0
-      stdout: |
-          none built
+      stdout: |4
+                  none
     - command: '--version >/dev/null; /usr/bin/env -u NO_COLOR terminal "$STATION" images'
       stdin: |
-          see none built
+          see no images
           screen
       exit: 0
       stdout: |4
            station images                                             host · unregistered
            ──────────────────────────────────────────────────────────────────────────────
 
-             none built
+           Images
+             no images  → station images build
 
            → station images build

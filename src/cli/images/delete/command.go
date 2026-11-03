@@ -9,12 +9,13 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/images"
-	presentimages "github.com/jterrazz/studio-station/src/present/images"
+	"github.com/jterrazz/studio-station/src/page"
+	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 )
 
 type Deps struct {
-	Images  *images.Service
-	Context string
+	Images *images.Service
+	Here   page.Context
 }
 
 type Input struct{ Image, Version string }
@@ -49,7 +50,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Answer(presentimages.Deleted(removed, d.Context))
+			return io.Page(pageimages.Deleted(removed, d.Here), nil)
 		},
 	}, env)
 }

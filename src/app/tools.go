@@ -16,20 +16,23 @@ import (
 	"github.com/jterrazz/studio-station/src/cli/tools/upgrade"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/tools"
-	"github.com/jterrazz/studio-station/src/prompt"
+	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 )
 
 func toolsCommand(env kit.Env, m machine) *cobra.Command {
 	service := toolsService(env, m)
 	return toolscmd.Command(toolscmd.Deps{Tools: service, Here: m.where}, env,
-		toolsinstall.Command(toolsinstall.Deps{Tools: service, Context: m.context}, env),
-		toolsuninstall.Command(toolsuninstall.Deps{Tools: service, Context: m.context}, env),
-		toolsupgrade.Command(toolsupgrade.Deps{Tools: service, Context: m.context}, env),
+		toolsinstall.Command(toolsinstall.Deps{Tools: service, Here: m.where}, env),
+		toolsuninstall.Command(toolsuninstall.Deps{Tools: service, Here: m.where}, env),
+		toolsupgrade.Command(toolsupgrade.Deps{Tools: service, Here: m.where}, env),
 	)
 }
 
 func toolsService(env kit.Env, m machine) *tools.Service {
-	ask, _ := env.Prompt.(prompt.Asker)
+	var ask kit.Asker
+	if env.Interactive {
+		ask = env.Prompt
+	}
 	return tools.New(m.host, catalog.Tools, configurer{config: configService(m), ask: ask}, tools.Options{
 		Pool:        m.pool,
 		Here:        m.kind,
@@ -46,7 +49,7 @@ func toolsService(env kit.Env, m machine) *tools.Service {
 // row naming the command that applies it later, never as a failure.
 type configurer struct {
 	config *config.Service
-	ask    prompt.Asker
+	ask    kit.Asker
 }
 
 func (c configurer) Configure(ctx context.Context, item string, interactive bool) (tools.Step, error) {
@@ -60,7 +63,7 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 	}
 	var values map[string]string
 	if len(it.Inputs) > 0 && c.ask != nil {
-		if values, err = c.ask.Inputs("Configure "+item, it.Inputs, c.config.Defaults(item)); err != nil {
+		if values, err = c.ask.Form(pageconfig.InputsForm(item, it.Inputs, c.config.Defaults(item))); err != nil {
 			return tools.Step{}, err
 		}
 	}

@@ -13,15 +13,13 @@ import (
 	storagereset "github.com/jterrazz/studio-station/src/cli/storage/reset"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tools"
-	"github.com/jterrazz/studio-station/src/prompt"
 )
 
 func storageCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.storage(env)
-	ask, _ := env.Prompt.(prompt.ResetAsker)
-	return storagecmd.Command(storagecmd.Deps{Storage: service, Context: m.context}, env,
-		storageclean.Command(storageclean.Deps{Storage: service, Context: m.context}, env),
-		storagereset.Command(storagereset.Deps{Storage: service, Ask: ask, Context: m.context}, env),
+	return storagecmd.Command(storagecmd.Deps{Storage: service, Here: m.where}, env,
+		storageclean.Command(storageclean.Deps{Storage: service, Here: m.where}, env),
+		storagereset.Command(storagereset.Deps{Storage: service, Here: m.where}, env),
 	)
 }
 

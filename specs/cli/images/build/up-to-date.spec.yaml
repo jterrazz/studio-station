@@ -10,7 +10,7 @@ runs:
     - command: 'images build'
       exit: 0
       stdout: |
-          ●	nothing to build
+          	none
     - command: '--version > /dev/null; /usr/bin/grep -c ''^tart pull'' .calls'
       exit: 0
       stdout: |

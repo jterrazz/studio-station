@@ -13,12 +13,16 @@ import (
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/present"
-	"github.com/jterrazz/studio-station/src/prompt"
 )
+
+type Asker interface {
+	Confirm(c page.Confirm) (bool, error)
+	Form(f page.Form) (map[string]string, error)
+}
 
 type Env struct {
 	Out         *output.Writer
-	Prompt      prompt.Prompter
+	Prompt      Asker
 	Interactive bool
 	Screen      bool
 	On          *On
@@ -31,7 +35,7 @@ type IO struct {
 	PageJSON      bool
 	Yes           bool
 	Interactive   bool
-	Prompt        prompt.Prompter
+	Prompt        Asker
 	ZshCompletion func(w io.Writer) error
 	out           *output.Writer
 	in            io.Reader
@@ -179,7 +183,7 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 		if l.Confirm != nil {
 			question = l.Confirm(in)
 		}
-		ask := func() (bool, error) { return o.Prompt.Confirm(question) }
+		ask := func() (bool, error) { return o.Prompt.Confirm(page.Confirm{Question: question}) }
 		if l.Ask != nil {
 			ask = func() (bool, error) { return l.Ask(in) }
 		}

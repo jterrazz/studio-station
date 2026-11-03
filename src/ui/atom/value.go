@@ -55,6 +55,9 @@ func show(v page.Value) string {
 		}
 		return n + " " + v.Unit
 	case page.KindSize:
+		if v.Unit != "" {
+			return Bytes(v.N) + " " + v.Unit
+		}
 		return Bytes(v.N)
 	case page.KindRatio:
 		used, total := unitOf(v.Of)
