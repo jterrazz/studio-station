@@ -31,6 +31,9 @@ func section(b *strings.Builder, s page.Section) {
 		return
 	case page.Banner:
 	case page.Plain:
+		if s.PipeGroups {
+			break
+		}
 		fields := []string{"# " + s.Title}
 		if s.PipeCounts {
 			for _, t := range s.Counts {
@@ -44,6 +47,13 @@ func section(b *strings.Builder, s page.Section) {
 		cells[i] = s.Columns[i+1].Show != page.EyeOnly
 	}
 	for _, it := range s.Items {
+		if s.PipeGroups && it.Group != nil && it.Group.Heading() {
+			line(b, []string{"# " + it.Group.Head.Label})
+			for _, c := range it.Group.Items {
+				item(b, c, cells)
+			}
+			continue
+		}
 		item(b, it, cells)
 	}
 }

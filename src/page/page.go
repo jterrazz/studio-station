@@ -45,6 +45,10 @@ type Section struct {
 	// carried them (the tools and config categories, Home's Tools, Config and
 	// Background); every other `# <title>` line stays bare (§20).
 	PipeCounts bool `json:"pipe_counts,omitempty"`
+	// value: the pipe prints each heading group as its own titled section
+	// (Secrets' `# Lend list` and `# Kept`), never the section's title: its
+	// records do not depend on how the eye nests them.
+	PipeGroups bool `json:"pipe_groups,omitempty"`
 	// value: a Summary drawn in two columns starts its right one at this item.
 	Break int `json:"break,omitempty"`
 }

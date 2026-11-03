@@ -2,6 +2,9 @@
 ●	macbook	host			online	-	0 VMs
 # Images
 	none
-# Secrets
+# Lend list
+	none
+# Kept
+	none
 # Tailnet
 ○	tailnet	not installed	station tools install tailscale

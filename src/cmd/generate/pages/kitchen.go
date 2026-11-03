@@ -46,7 +46,9 @@ func pendAll(items []page.Item) {
 		case items[i].Row != nil:
 			pend(items[i].Row)
 		case items[i].Group != nil:
-			pend(&items[i].Group.Head)
+			if !items[i].Group.Heading() {
+				pend(&items[i].Group.Head)
+			}
 			pendAll(items[i].Group.Items)
 		}
 	}

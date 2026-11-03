@@ -29,16 +29,21 @@ func ListContract(r secrets.Report) ListJSON {
 
 func columns() []page.Column { return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}} }
 
-func Sections(r secrets.Report) []page.Section {
-	return []page.Section{
-		{ID: "lend-list", Title: "Lend list", Columns: columns(), Items: lendItems(r), Uncounted: true},
-		{ID: "kept", Title: "Kept", Columns: columns(), Items: keptItems(r.Kept), Uncounted: true},
-	}
+func Section(r secrets.Report) page.Section {
+	// invariant: one Secrets section holds the Lend list and Kept groups on
+	// every surface (§13.5, A19); the pipe keeps them the two titled sections
+	// its records always were.
+	s := pages.Nest(page.Section{ID: "secrets", Title: "Secrets", Uncounted: true, PipeGroups: true}, []page.Section{
+		{ID: "lend-list", Title: "Lend list", Columns: columns(), Items: lendItems(r)},
+		{ID: "kept", Title: "Kept", Columns: columns(), Items: keptItems(r.Kept)},
+	})
+	s.Fold = ""
+	return s
 }
 
 func List(r secrets.Report, here page.Context) page.Page {
 	return page.Seal(page.Page{
-		ID: "secrets", Command: "secrets", Context: here, Sections: Sections(r),
+		ID: "secrets", Command: "secrets", Context: here, Sections: []page.Section{Section(r)},
 		Hints: []page.Hint{*page.Cmd("station secrets allow <name...>"), *page.Cmd("station secrets lend --to <vm>")},
 	})
 }

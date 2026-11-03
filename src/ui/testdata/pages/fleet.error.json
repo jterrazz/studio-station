@@ -613,7 +613,8 @@
           }
         }
       ],
-      "uncounted": true
+      "uncounted": true,
+      "pipe_groups": true
     },
     {
       "id": "tailnet",

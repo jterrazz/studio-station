@@ -55,3 +55,26 @@ func Done(id string, state catalog.State, detail string) page.Row {
 	}
 	return r
 }
+
+func Nest(s page.Section, parts []page.Section) page.Section {
+	// invariant: a page's sub-lists (Secrets' Lend list and Kept, A19;
+	// Tailnet's Peers and Serve on the Fleet tab) are heading groups of ONE
+	// section, so folding the section folds them.
+	s.Fold = page.Auto
+	if len(parts) > 0 && len(s.Columns) < len(parts[0].Columns) {
+		s.Columns = parts[0].Columns
+	}
+	for _, sub := range parts {
+		items := make([]page.Item, 0, len(sub.Items))
+		for _, it := range sub.Items {
+			if it.Row != nil {
+				row := *it.Row
+				row.ID = sub.ID + "/" + row.ID
+				it.Row = &row
+			}
+			items = append(items, it)
+		}
+		s.Items = append(s.Items, page.Item{Group: &page.Group{Head: page.Row{ID: sub.ID, Label: sub.Title}, Items: items, Fold: page.Open}})
+	}
+	return s
+}
