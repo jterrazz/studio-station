@@ -447,6 +447,11 @@ func (b Browser) Body(width, height int) string {
 	}
 	if split {
 		pane := organism.Detail(st, section, row, b.rowBindings(row), token.PaneWidth)
+		// invariant: a list shorter than the pane (a filter that kept two rows)
+		// never cuts the pane: the pane takes the body's room, not the list's.
+		for len(list) < min(len(pane), room) {
+			list = append(list, "")
+		}
 		for i := range list {
 			l := atom.Pad(list[i], listWidth)
 			if i < len(pane) {

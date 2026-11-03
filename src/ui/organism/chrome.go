@@ -243,12 +243,41 @@ func Detail(st token.Styles, s page.Section, r page.Row, bindings []Binding, wid
 			}
 			continue
 		}
+		if atom.Width(f.value) > room && strings.Contains(f.value, token.Sep) {
+			// invariant: a list wider than the sheet runs on under its key, whole
+			// items to a line, so the detail holds every item the row cut.
+			for i, part := range pack(strings.Split(f.value, token.Sep), room) {
+				key := f.key
+				if i > 0 {
+					key = ""
+				}
+				lines = append(lines, indent+molecule.Fact(st, key, width2, atom.End(part, room)))
+			}
+			continue
+		}
 		lines = append(lines, indent+molecule.Fact(st, f.key, width2, atom.End(f.value, room)))
 	}
 	if len(keys) > 0 {
 		lines = append(lines, indent+st.Strong.Render(atom.Pad("keys", width2))+atom.Spaces(token.Gap)+strings.Join(keys, atom.Spaces(token.Gap)))
 	}
 	return append(lines, qrOf(st, r, width, indent)...)
+}
+
+func pack(items []string, room int) []string {
+	var lines []string
+	line := ""
+	for _, it := range items {
+		switch next := line + token.Sep + it; {
+		case line == "":
+			line = it
+		case atom.Width(next) <= room:
+			line = next
+		default:
+			lines = append(lines, line+strings.TrimRight(token.Sep, " "))
+			line = it
+		}
+	}
+	return append(lines, line)
 }
 
 func qrOf(st token.Styles, r page.Row, width int, indent string) []string {
