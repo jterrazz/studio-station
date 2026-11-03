@@ -21,7 +21,7 @@ type Input struct{}
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:      "start",
-		Short:    "Start this host's daemon again, and the lasting VMs whose wish is running",
+		Short:    "Start station on this host again, and the lasting VMs whose wish is running",
 		Example:  "  station start",
 		Group:    "fleet",
 		Validate: func(context.Context, *Input) error { return d.Control.Check("start") },

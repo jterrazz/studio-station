@@ -540,7 +540,7 @@ func (b Browser) Bindings() []organism.Binding {
 	// invariant: a tab that binds a global key itself (Accounts' r, revoke)
 	// owns it: the global meaning is neither listed nor run there.
 	for _, g := range keyMap() {
-		if !slices.ContainsFunc(actions, func(a page.Action) bool { return a.Key == g.Key }) {
+		if g.Group != organism.GroupGlobal || !slices.ContainsFunc(actions, func(a page.Action) bool { return a.Key == g.Key }) {
 			out = append(out, g)
 		}
 	}

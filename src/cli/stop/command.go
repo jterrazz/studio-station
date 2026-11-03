@@ -22,7 +22,7 @@ type Input struct{ Yes bool }
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "stop",
-		Short:   "Stop everything station runs on this host: its VMs (temporary deleted), then the daemon",
+		Short:   "Stop everything station runs on this host: its VMs (temporary deleted), then station itself",
 		Example: "  station stop\n  station stop --yes",
 		Group:   "fleet",
 		Declare: func(f *pflag.FlagSet, in *Input) {
