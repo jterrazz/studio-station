@@ -3,7 +3,7 @@ package fail_test
 import (
 	"testing"
 
-	"github.com/jterrazz/studio-station/src/fail"
+	"github.com/jterrazz/studio-station/src/core/fail"
 )
 
 func TestAnEmptyHintPanicsUnderTest(t *testing.T) {

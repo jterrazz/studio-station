@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/images"
-	"github.com/jterrazz/studio-station/src/fail"
 )
 
 const linuxBinaryHint = "make build-linux, then station images build linux --binary .artifacts/go/station-linux-arm64"

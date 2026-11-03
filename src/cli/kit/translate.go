@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jterrazz/studio-station/src/fail"
+	"github.com/jterrazz/studio-station/src/core/fail"
 )
 
 func Translate(err error, path string) *fail.Error {

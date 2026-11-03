@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/remote"
-	"github.com/jterrazz/studio-station/src/fail"
 )
 
 type On struct {

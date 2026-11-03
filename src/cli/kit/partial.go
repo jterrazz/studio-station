@@ -3,7 +3,7 @@ package kit
 import (
 	"strconv"
 
-	"github.com/jterrazz/studio-station/src/fail"
+	"github.com/jterrazz/studio-station/src/core/fail"
 )
 
 type PartialFailure struct {

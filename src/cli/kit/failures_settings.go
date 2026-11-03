@@ -3,8 +3,8 @@ package kit
 import (
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/settings"
-	"github.com/jterrazz/studio-station/src/fail"
 )
 
 func settingsFailure(err error) (*fail.Error, bool) {

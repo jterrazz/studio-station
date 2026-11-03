@@ -3,8 +3,8 @@ package kit
 import (
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/fail"
 )
 
 func configFailure(err error) (*fail.Error, bool) {

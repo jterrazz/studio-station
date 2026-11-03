@@ -42,7 +42,8 @@ The ports and the data:
   output/         the only place that knows a terminal: picks tty, pipe or json and renders a page through ui/render, and the one error block
   theme/          the styles of the pages not migrated yet, over ui/token's palette
   prompt/         the conversations on stderr: confirmations and the forms that ask a config item's values
-  fail/           the error type: a message, a hint and a code
+  core/           the shared kernel every family will share
+    fail/         the error type: a message, a hint and a code
   tui/            the unified Bubble Tea app
 ```
 

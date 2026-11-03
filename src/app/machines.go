@@ -20,10 +20,10 @@ import (
 	machinesstop "github.com/jterrazz/studio-station/src/cli/machines/stop"
 	machinessupervise "github.com/jterrazz/studio-station/src/cli/machines/supervise"
 	machinesunlock "github.com/jterrazz/studio-station/src/cli/machines/unlock"
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/remote"
-	"github.com/jterrazz/studio-station/src/fail"
 	"github.com/jterrazz/studio-station/src/system/tart"
 )
 

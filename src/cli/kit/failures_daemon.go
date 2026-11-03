@@ -3,10 +3,10 @@ package kit
 import (
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/fail"
 )
 
 func daemonFailure(err error) (*fail.Error, bool) {

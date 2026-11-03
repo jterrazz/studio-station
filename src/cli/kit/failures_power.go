@@ -3,8 +3,8 @@ package kit
 import (
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/fail"
 )
 
 func powerFailure(err error) (*fail.Error, bool) {

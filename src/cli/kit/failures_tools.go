@@ -5,8 +5,8 @@ import (
 	"slices"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/tools"
-	"github.com/jterrazz/studio-station/src/fail"
 )
 
 func toolsFailure(err error) (*fail.Error, bool) {
