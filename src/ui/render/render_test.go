@@ -112,6 +112,26 @@ func TestEveryFixtureRendersAsItsGoldenInEveryMedium(t *testing.T) {
 	}
 }
 
+func TestNoLineIsWiderThanItsTerminal(t *testing.T) {
+	for _, f := range fixtures(t) {
+		for renderer, render := range renderings(f) {
+			width, _ := strconv.Atoi(strings.TrimLeft(renderer, "abcdefghijklmnopqrstuvwxyz"))
+			if width < token.NarrowWidth || !strings.HasPrefix(renderer, "t") {
+				continue
+			}
+			got, err := render()
+			if err != nil {
+				t.Fatal(err)
+			}
+			for i, line := range strings.Split(ansi.Strip(got), "\n") {
+				if w := ansi.StringWidth(line); w > width-1 {
+					t.Errorf("%s.%s:%d is %d wide at %d: %q", f.name, renderer, i+1, w, width, line)
+				}
+			}
+		}
+	}
+}
+
 func golden(t *testing.T, name, got string) {
 	t.Helper()
 	path := filepath.Join(goldenDir, name)
