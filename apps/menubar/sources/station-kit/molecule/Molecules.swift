@@ -7,13 +7,15 @@ public struct Layout {
     static func chars(_ v: Value?) -> Int { v.map { Format.show($0).count } ?? 0 }
 
     // invariant: a row that does not fit drops its cells by Keep, lowest
-    // first, never its mark nor its label (G4's order).
+    // first, never its mark nor its label (G4's order); the detail is cut at
+    // the end, so it claims only its first 20 characters, as the tty's does.
+    static let detailMin = 20
     public static func kept(_ row: Row, columns: [Column], width: CGFloat) -> [Int] {
         let cells = row.cells ?? []
         var keep = Array(cells.indices)
         let room = Int((width - markWidth - Token.Space.gap) / charWidth)
         func need() -> Int {
-            (row.short ?? row.label ?? "").count + keep.reduce(0) { $0 + chars(cells[$1]) + 2 } + chars(row.detail) + 2
+            (row.short ?? row.label ?? "").count + keep.reduce(0) { $0 + chars(cells[$1]) + 2 } + min(chars(row.detail), detailMin) + 2
         }
         let order = cells.indices.sorted { a, b in
             let ka = a + 1 < columns.count ? columns[a + 1].keep ?? 0 : 0
