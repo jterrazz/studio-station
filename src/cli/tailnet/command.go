@@ -7,12 +7,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
-	presenttailnet "github.com/jterrazz/studio-station/src/present/tailnet"
+	"github.com/jterrazz/studio-station/src/page"
+	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 )
 
 type Deps struct {
 	Tailnet *tailnet.Service
-	Context string
+	Here    page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -22,12 +23,13 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Example: "  station tailnet\n  station tailnet --json",
 		Group:   "fleet",
 		Read:    func(*struct{}) bool { return true },
+		Pages:   true,
 		Run: func(ctx context.Context, _ *struct{}, io kit.IO) error {
 			status, err := d.Tailnet.Status(ctx)
 			if err != nil {
 				return err
 			}
-			return io.Answer(presenttailnet.Status(status, d.Context))
+			return io.Page(pagetailnet.Status(status, d.Here), pagetailnet.StatusContract(status))
 		},
 	}, env)
 }

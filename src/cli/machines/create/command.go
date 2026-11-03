@@ -10,14 +10,14 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	presentmachines "github.com/jterrazz/studio-station/src/present/machines"
-	"github.com/jterrazz/studio-station/src/prompt"
+	"github.com/jterrazz/studio-station/src/page"
+	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 )
 
 type Deps struct {
 	Machines *machines.Service
-	Context  string
-	Ask      prompt.CreateAsker
+	Here     page.Context
+	Ask      kit.Asker
 	Build    func(ctx context.Context, image string) error
 	On       func(ctx context.Context, host string, lifetime string) error
 }
@@ -90,32 +90,38 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Answer(presentmachines.Created(created, d.Context))
+			return io.Page(pagemachines.Created(created, d.Here), pagemachines.CreatedContract(created))
 		},
 	}, env)
 }
 
 func ask(ctx context.Context, d Deps, in *Input) (done bool, err error) {
-	var hosts []prompt.HostChoice
+	var hosts []pagemachines.HostChoice
 	if fleet, fleetErr := d.Machines.Fleet(ctx, false); fleetErr == nil {
 		for _, h := range fleet.Hosts {
 			if h.Reachable {
-				hosts = append(hosts, prompt.HostChoice{Name: h.Name, Here: h.Here, Detail: vmCount(len(h.VMs))})
+				hosts = append(hosts, pagemachines.HostChoice{Name: h.Name, Here: h.Here, Detail: vmCount(len(h.VMs))})
 			}
 		}
 	}
-	answers, err := d.Ask.AskCreate(in.Lifetime, hosts)
-	if err != nil {
-		return false, err
+	answers := map[string]string{"lifetime": in.Lifetime}
+	if form := pagemachines.CreateForm(in.Lifetime, hosts); len(form.Fields) > 0 {
+		asked, err := d.Ask.Form(form)
+		if err != nil {
+			return false, err
+		}
+		for k, v := range asked {
+			answers[k] = v
+		}
 	}
-	in.request.Lifetime = machines.Lifetime(answers.Lifetime)
+	in.request.Lifetime = machines.Lifetime(answers["lifetime"])
 	for _, h := range hosts {
-		if h.Name == answers.Host && !h.Here {
-			return true, d.On(ctx, h.Name, answers.Lifetime)
+		if h.Name == answers["host"] && !h.Here {
+			return true, d.On(ctx, h.Name, answers["lifetime"])
 		}
 	}
 	if in.buildFirst {
-		build, err := d.Ask.AskBuild(in.request.Image)
+		build, err := d.Ask.Confirm(pagemachines.BuildConfirm(in.request.Image))
 		if err != nil {
 			return false, err
 		}

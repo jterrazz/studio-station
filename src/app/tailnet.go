@@ -29,7 +29,7 @@ func (m machine) tailnet() *tailnet.Service {
 }
 
 func tailnetCommand(env kit.Env, m machine) *cobra.Command {
-	return tailnetcmd.Command(tailnetcmd.Deps{Tailnet: m.tailnet(), Context: m.context}, env)
+	return tailnetcmd.Command(tailnetcmd.Deps{Tailnet: m.tailnet(), Here: m.where}, env)
 }
 
 type hostNodes struct{ service *tailnet.Service }

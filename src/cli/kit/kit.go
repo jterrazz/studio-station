@@ -58,6 +58,11 @@ func (o IO) Page(p page.Page, contract any) error {
 	return o.out.Page(p, contract, output.Want{JSON: o.JSON, Page: o.PageJSON})
 }
 
+// PagePiped prints a page whose piped form is a fixed text, for a script to read whole.
+func (o IO) PagePiped(p page.Page, contract any, piped string) error {
+	return o.out.Page(p, contract, output.Want{JSON: o.JSON, Page: o.PageJSON, Piped: []byte(piped)})
+}
+
 func (o IO) LivePage(pages <-chan page.Page) error { return o.out.LivePage(pages) }
 
 func (o IO) Raw(p []byte) error              { return o.out.Raw(p) }

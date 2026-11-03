@@ -8,12 +8,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	presentservices "github.com/jterrazz/studio-station/src/present/services"
+	"github.com/jterrazz/studio-station/src/page"
+	pageservices "github.com/jterrazz/studio-station/src/pages/services"
 )
 
 type Deps struct {
 	Services *services.Service
-	Context  string
+	Here     page.Context
 }
 
 type Input struct{ Here bool }
@@ -30,13 +31,14 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			f.BoolVar(&in.Here, "here", false, "only this host")
 		},
 		Read:     func(*Input) bool { return true },
+		Pages:    true,
 		Validate: func(_ context.Context, in *Input) error { return d.Services.CheckList(in.Here) },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			fleet, err := d.Services.List(ctx, in.Here)
 			if err != nil {
 				return err
 			}
-			return io.Answer(presentservices.Fleet(fleet, d.Context))
+			return io.Page(pageservices.Fleet(fleet, d.Here), fleet)
 		},
 	}, env)
 	cmd.AddCommand(children...)

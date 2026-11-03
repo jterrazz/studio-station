@@ -9,12 +9,13 @@ import (
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/settings"
-	presentmachines "github.com/jterrazz/studio-station/src/present/machines"
+	"github.com/jterrazz/studio-station/src/page"
+	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 )
 
 type Deps struct {
 	Machines *machines.Service
-	Context  string
+	Here     page.Context
 }
 
 type Input struct{ Name, User, Key string }
@@ -40,7 +41,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err := d.Machines.AddHost(in.Name, settings.Host{User: in.User, Key: in.Key}); err != nil {
 				return err
 			}
-			return io.Answer(presentmachines.Change("add", in.Name, "added, ssh "+in.Name, d.Context))
+			return io.Page(pagemachines.Change("add", in.Name, "added, ssh "+in.Name, d.Here), nil)
 		},
 	}, env)
 }

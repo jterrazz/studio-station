@@ -24,7 +24,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/remote"
 	"github.com/jterrazz/studio-station/src/fail"
-	"github.com/jterrazz/studio-station/src/prompt"
 	"github.com/jterrazz/studio-station/src/system/tart"
 )
 
@@ -71,19 +70,19 @@ func fanOutArgv(target string, words []string) []string {
 
 func machinesCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.machines(env.Interactive)
-	return machinescmd.Command(machinescmd.Deps{Machines: service, Context: m.context}, env,
-		machinesadd.Command(machinesadd.Deps{Machines: service, Context: m.context}, env),
-		machinesforget.Command(machinesforget.Deps{Machines: service, Context: m.context}, env),
+	return machinescmd.Command(machinescmd.Deps{Machines: service, Here: m.where}, env,
+		machinesadd.Command(machinesadd.Deps{Machines: service, Here: m.where}, env),
+		machinesforget.Command(machinesforget.Deps{Machines: service, Here: m.where}, env),
 		machinescreate.Command(machinescreate.Deps{
-			Machines: service, Context: m.context, Ask: createAsker(env),
+			Machines: service, Here: m.where, Ask: createAsker(env),
 			Build: m.buildImage, On: createOn(env),
 		}, env),
-		machinesstart.Command(machinesstart.Deps{Machines: service, Context: m.context}, env),
-		machinesstop.Command(machinesstop.Deps{Machines: service, Context: m.context}, env),
-		machinesrestart.Command(machinesrestart.Deps{Machines: service, Context: m.context}, env),
-		machinesdelete.Command(machinesdelete.Deps{Machines: service, Context: m.context}, env),
-		machinesprobe.Command(machinesprobe.Deps{Machines: service, Context: m.context}, env),
-		machinesunlock.Command(machinesunlock.Deps{Machines: service, Context: m.context}, env),
+		machinesstart.Command(machinesstart.Deps{Machines: service, Here: m.where}, env),
+		machinesstop.Command(machinesstop.Deps{Machines: service, Here: m.where}, env),
+		machinesrestart.Command(machinesrestart.Deps{Machines: service, Here: m.where}, env),
+		machinesdelete.Command(machinesdelete.Deps{Machines: service, Here: m.where}, env),
+		machinesprobe.Command(machinesprobe.Deps{Machines: service, Here: m.where}, env),
+		machinesunlock.Command(machinesunlock.Deps{Machines: service}, env),
 		machinessupervise.Command(env),
 		machinespipe.Command(machinespipe.Deps{Machines: service}, env),
 	)
@@ -105,12 +104,11 @@ func (i fleetImages) Latest(ctx context.Context, image string) (tartName, versio
 	return images.TartName(r.Name, r.Version), r.Version, nil
 }
 
-func createAsker(env kit.Env) prompt.CreateAsker {
+func createAsker(env kit.Env) kit.Asker {
 	if !env.Interactive {
 		return nil
 	}
-	ask, _ := env.Prompt.(prompt.CreateAsker)
-	return ask
+	return env.Prompt
 }
 
 func (m machine) buildImage(ctx context.Context, image string) error {

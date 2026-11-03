@@ -50,7 +50,11 @@ func item(b *strings.Builder, it page.Item, cells int) {
 	case it.Group != nil:
 		row(b, it.Group.Head, cells)
 		for _, c := range it.Group.Items {
-			item(b, c, cells)
+			// invariant: a group's empty child is for the eye: the head's own
+			// fields already say it holds nothing.
+			if c.Empty == nil {
+				item(b, c, cells)
+			}
 		}
 	case it.Fact != nil:
 		line(b, []string{it.Fact.Key, atom.Plain(it.Fact.Value)})

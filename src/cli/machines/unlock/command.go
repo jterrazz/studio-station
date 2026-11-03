@@ -11,7 +11,6 @@ import (
 
 type Deps struct {
 	Machines *machines.Service
-	Context  string
 }
 
 type Input struct{ Name string }

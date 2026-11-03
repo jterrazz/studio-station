@@ -9,8 +9,8 @@ runs:
       exit: 0
       stdout: |
           ●	api	x	lasting	linux 2026.11.07	4 cpus · 8 GB
-          ●	expo	8081	→ https://macbook.tail1234.ts.net:41020
-          ●	vite	5173	→ https://macbook.tail1234.ts.net:41021
+          ●	expo	8081	https://macbook.tail1234.ts.net:41020
+          ●	vite	5173	https://macbook.tail1234.ts.net:41021
       files:
           .local/state/station/vms/api.json:
               contains:

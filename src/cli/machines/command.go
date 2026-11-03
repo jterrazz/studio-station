@@ -8,12 +8,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	presentmachines "github.com/jterrazz/studio-station/src/present/machines"
+	"github.com/jterrazz/studio-station/src/page"
+	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 )
 
 type Deps struct {
 	Machines *machines.Service
-	Context  string
+	Here     page.Context
 }
 
 type Input struct{ Here bool }
@@ -27,7 +28,8 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.Here, "here", false, "this host only, without asking the others")
 		},
-		Read: func(*Input) bool { return true },
+		Read:  func(*Input) bool { return true },
+		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			fleet, err := d.Machines.Fleet(ctx, in.Here)
 			if err != nil {
@@ -39,7 +41,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 					warnings = append(warnings, "ssh config not refreshed: "+refreshErr.Error())
 				}
 			}
-			return io.Answer(presentmachines.Fleet(fleet, warnings, d.Context))
+			return io.Page(pagemachines.List(fleet, warnings, d.Here), machines.ToWire(fleet))
 		},
 	}, env)
 	cmd.AddCommand(children...)

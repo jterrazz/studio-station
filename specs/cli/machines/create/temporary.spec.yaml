@@ -9,8 +9,8 @@ runs:
       exit: 0
       stdout: |
           ●	linux-1	x	temporary	linux 2026.11.07	4 cpus · 8 GB
-          ●	expo	8081	→ https://macbook.tail1234.ts.net:41000
-          ●	vite	5173	→ https://macbook.tail1234.ts.net:41001
+          ●	expo	8081	https://macbook.tail1234.ts.net:41000
+          ●	vite	5173	https://macbook.tail1234.ts.net:41001
       files:
           .calls:
               contains:

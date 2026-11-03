@@ -7,12 +7,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
-	presentsecrets "github.com/jterrazz/studio-station/src/present/secrets"
+	"github.com/jterrazz/studio-station/src/page"
+	pagesecrets "github.com/jterrazz/studio-station/src/pages/secrets"
 )
 
 type Deps struct {
 	Secrets *secrets.Service
-	Context string
+	Here    page.Context
 }
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
@@ -22,12 +23,13 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Example: "  station secrets\n  station secrets --json",
 		Group:   "fleet",
 		Read:    func(*Input) bool { return true },
+		Pages:   true,
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
 			report, err := d.Secrets.List(ctx)
 			if err != nil {
 				return err
 			}
-			return io.Answer(presentsecrets.List(report, d.Context))
+			return io.Page(pagesecrets.List(report, d.Here), pagesecrets.ListContract(report))
 		},
 	}, env)
 	cmd.AddCommand(children...)

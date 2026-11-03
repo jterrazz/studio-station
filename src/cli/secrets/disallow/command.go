@@ -9,12 +9,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
-	presentsecrets "github.com/jterrazz/studio-station/src/present/secrets"
+	"github.com/jterrazz/studio-station/src/page"
+	pagesecrets "github.com/jterrazz/studio-station/src/pages/secrets"
 )
 
 type Deps struct {
 	Secrets *secrets.Service
-	Context string
+	Here    page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -42,7 +43,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Answer(presentsecrets.Change("disallow", in.Names, report, d.Context)); err != nil {
+			if err := io.Page(pagesecrets.Change("disallow", in.Names, report, d.Here), nil); err != nil {
 				return err
 			}
 			if n := len(report.Warnings); n > 0 {

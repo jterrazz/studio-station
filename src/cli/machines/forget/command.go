@@ -7,12 +7,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	presentmachines "github.com/jterrazz/studio-station/src/present/machines"
+	"github.com/jterrazz/studio-station/src/page"
+	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 )
 
 type Deps struct {
 	Machines *machines.Service
-	Context  string
+	Here     page.Context
 }
 
 type Input struct{ Name string }
@@ -41,7 +42,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err := d.Machines.ForgetHost(in.Name); err != nil {
 				return err
 			}
-			return io.Answer(presentmachines.Change("forget", in.Name, "forgotten", d.Context))
+			return io.Page(pagemachines.Change("forget", in.Name, "forgotten", d.Here), nil)
 		},
 	}, env)
 }

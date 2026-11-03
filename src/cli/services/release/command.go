@@ -8,12 +8,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	presentservices "github.com/jterrazz/studio-station/src/present/services"
+	"github.com/jterrazz/studio-station/src/page"
+	pageservices "github.com/jterrazz/studio-station/src/pages/services"
 )
 
 type Deps struct {
 	Services *services.Service
-	Context  string
+	Here     page.Context
 }
 
 type Input struct {
@@ -50,7 +51,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil || in.Host != "" {
 				return err
 			}
-			return io.Answer(presentservices.Released(l, d.Context))
+			return io.Page(pageservices.Released(l, d.Here), nil)
 		},
 	}, env)
 }

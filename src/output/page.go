@@ -11,8 +11,9 @@ import (
 )
 
 type Want struct {
-	JSON bool
-	Page bool
+	JSON  bool
+	Page  bool
+	Piped []byte
 }
 
 func Terminal(in io.Reader, out io.Writer) *tty.Terminal { return tty.NewTerminal(in, out) }
@@ -30,6 +31,9 @@ func (w *Writer) Page(p page.Page, contract any, want Want) error {
 			return err
 		}
 		_, err = out.Write(append(body, '\n'))
+		return err
+	case c.Mode == Pipe && want.Piped != nil:
+		_, err := out.Write(want.Piped)
 		return err
 	case c.Mode == Pipe:
 		body, err := pipe.Render(p)

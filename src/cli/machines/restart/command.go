@@ -8,12 +8,13 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	presentmachines "github.com/jterrazz/studio-station/src/present/machines"
+	"github.com/jterrazz/studio-station/src/page"
+	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 )
 
 type Deps struct {
 	Machines *machines.Service
-	Context  string
+	Here     page.Context
 }
 
 type Input struct {
@@ -60,7 +61,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if _, err := d.Machines.Restart(ctx, in.Name, nil); err != nil {
 				return err
 			}
-			return io.Answer(presentmachines.Restart(in.Name, d.Context))
+			return io.Page(pagemachines.Restarted(in.Name, d.Here), nil)
 		},
 	}, env)
 }
