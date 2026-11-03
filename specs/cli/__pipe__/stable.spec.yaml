@@ -1,0 +1,384 @@
+description: 'every read piped is the record d653060 printed, but for the changes UI-SPEC §20 lists'
+fixture:
+    - ../machines/__fixtures__/hosts-x-y/
+    - ../machines/__fixtures__/stubs/
+    - ../machines/__fixtures__/fleet-y-answers/
+    - ../machines/__fixtures__/tailnet-nodes/
+    - ../status/__fixtures__/mac/
+    - ../status/__fixtures__/gateway/
+    - ../status/__fixtures__/processes/
+    - ../__fixtures__/serving/
+runs:
+    - command: 'status'
+      exit: 0
+      stdout: |
+          # Machine
+          ●	name	x	host · Darwin 27.0.0 arm64 · jterrazz · zsh
+          ●	uptime	3d 4h	battery 92% charging
+          ◐	setup	zshrc	station setup
+          ○	daemon	not needed until tart is installed
+          # Environment
+          ●	local ip	192.168.1.2
+          ○	public ip
+          ●	vpn	Work VPN
+          ●	dns	9.9.9.9, 149.112.112.112
+          ●	filevault	on
+          ○	firewall	off
+          ●	sip	on
+          ●	gatekeeper	on
+          ●	remote login	on
+          ○	encrypted dns	off
+          ◐	macos	1 pending	softwareupdate -l
+          ○	brew	not installed
+          ●	tailnet	Running · 100.64.0.1 · {{workdir}}/bin/tailscale
+          # Workspace
+          ○	repos	none	~/Developer
+          ○	deps	none
+          ○	docker	not installed	station tools install docker
+          ●	disk	2.0 KB	reclaimable: station storage clean
+          # Identity
+          ○	git email
+          ○	git name
+          ○	git signing	off
+          ○	gpg key
+          ○	github
+          ○	ssh key
+          # Background	3 ●	2 ◐	1 ✗
+          ●	TC3Q7MAJXF.com.adguard.safari.AdGuard.Helper	known	running · pid 2211	user	AdGuard
+          ●	dev.orbstack.OrbStack.privhelper	known	idle	root	OrbStack	/Library/LaunchDaemons/dev.orbstack.OrbStack.privhelper.plist
+          ●	ai.jterrazz.x	unknown	running · pid 12	user		~/Library/LaunchAgents/ai.jterrazz.x.plist
+          ✗	ai.jterrazz.y	unknown	failing · last exit 1	user		~/Library/LaunchAgents/ai.jterrazz.y.plist · launchctl bootout gui/501/ai.jterrazz.y && rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
+          ◐	ai.jterrazz.gone	orphan	not loaded	user		~/Library/LaunchAgents/ai.jterrazz.gone.plist · launchctl bootout gui/501/ai.jterrazz.gone && rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
+          ◐	com.docker.vmnetd	orphan	not loaded	root	Docker.app	/Library/LaunchDaemons/com.docker.vmnetd.plist · sudo launchctl bootout system/com.docker.vmnetd && sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
+          # Gateways
+          ◐	OpenClaw runtime	running	pid 4242 · user jterrazz.agent · port 18789 not listening
+          ✗	OpenClaw config	missing	{{workdir}}/.openclaw/openclaw.json
+          ◐	OpenClaw channels	unknown
+          ◐	Hermes runtime	running	pid 4343 · user jterrazz.agent · port 8642 not listening
+          ✗	Hermes config	missing	{{workdir}}/.hermes/config.yaml
+          ◐	Tailscale Serve	off	Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console
+          # Tools	2 ◐	106 ○
+          ○	homebrew		script · system	station tools install homebrew
+          ○	mise		brew · system	brew not installed · station tools install homebrew
+          ○	mas		brew	brew not installed · station tools install homebrew
+          ○	uv		brew	brew not installed · station tools install homebrew
+          ○	cocoapods		brew	brew not installed · station tools install homebrew
+          ○	pnpm		brew	brew not installed · station tools install homebrew
+          ○	skills		bun	bun not installed · station tools install bun
+          ○	bun		mise	mise not installed · station tools install mise
+          ○	go		mise	mise not installed · station tools install mise
+          ○	node		mise	mise not installed · station tools install mise
+          ○	java		mise	mise not installed · station tools install mise
+          ○	python		mise	mise not installed · station tools install mise
+          ○	rust		mise	mise not installed · station tools install mise
+          ○	ghostty		cask	brew not installed · station tools install homebrew
+          ○	ohmyzsh		script	station tools install ohmyzsh
+          ○	tmux		brew	brew not installed · station tools install homebrew
+          ○	starship		brew	brew not installed · station tools install homebrew
+          ○	zoxide		brew	brew not installed · station tools install homebrew
+          ○	yazi		brew	brew not installed · station tools install homebrew
+          ○	bat		brew	brew not installed · station tools install homebrew
+          ○	dust		brew	brew not installed · station tools install homebrew
+          ○	eza		brew	brew not installed · station tools install homebrew
+          ○	fd		brew	brew not installed · station tools install homebrew
+          ○	ripgrep		brew	brew not installed · station tools install homebrew
+          ○	tgrep		brew	brew not installed · station tools install homebrew
+          ○	sd		brew	brew not installed · station tools install homebrew
+          ○	difftastic		brew	brew not installed · station tools install homebrew
+          ○	jq		brew	brew not installed · station tools install homebrew
+          ○	git		shell · system	station tools install git
+          ○	gpg		brew	brew not installed · station tools install homebrew
+          ○	lazygit		brew	brew not installed · station tools install homebrew
+          ○	gh		brew	brew not installed · station tools install homebrew
+          ○	zed		cask	brew not installed · station tools install homebrew
+          ○	cursor		cask	brew not installed · station tools install homebrew
+          ○	android-studio		cask	brew not installed · station tools install homebrew
+          ○	xcode		mas	mas not installed · station tools install mas
+          ○	xcodegen		brew	brew not installed · station tools install homebrew
+          ○	tart		shell · system	station tools install tart
+          ◐	orbstack		cask	installed, brew not installed · station tools install homebrew
+          ○	lens		cask	brew not installed · station tools install homebrew
+          ○	kubectl		brew	brew not installed · station tools install homebrew
+          ○	helm		brew	brew not installed · station tools install homebrew
+          ○	helmfile		brew	brew not installed · station tools install homebrew
+          ○	ansible		brew	brew not installed · station tools install homebrew
+          ○	eas		bun	bun not installed · station tools install bun
+          ○	pulumi		brew	brew not installed · station tools install homebrew
+          ○	terraform		brew	brew not installed · station tools install homebrew
+          ○	claude		script	station tools install claude
+          ○	codex		bun	bun not installed · station tools install bun
+          ○	gemini		brew	brew not installed · station tools install homebrew
+          ○	opencode		brew	brew not installed · station tools install homebrew
+          ○	conductor		cask	brew not installed · station tools install homebrew
+          ○	herdr		brew	brew not installed · station tools install homebrew
+          ○	herdr-app		cask	brew not installed · station tools install homebrew
+          ○	ollama		cask	brew not installed · station tools install homebrew
+          ○	qmd		bun	bun not installed · station tools install bun
+          ○	rtk		brew	brew not installed · station tools install homebrew
+          ○	inferrs		brew	brew not installed · station tools install homebrew
+          ○	plannotator		script	station tools install plannotator
+          ○	chatgpt		cask	brew not installed · station tools install homebrew
+          ○	claude-desktop		cask	brew not installed · station tools install homebrew
+          ○	typewhisper		cask	brew not installed · station tools install homebrew
+          ○	brave		cask	brew not installed · station tools install homebrew
+          ○	dia		app	station tools install dia
+          ○	discord		cask	brew not installed · station tools install homebrew
+          ○	slack		cask	brew not installed · station tools install homebrew
+          ○	whatsapp		cask	brew not installed · station tools install homebrew
+          ○	messenger		app	station tools install messenger
+          ○	linear		cask	brew not installed · station tools install homebrew
+          ○	notion		cask	brew not installed · station tools install homebrew
+          ○	obsidian		cask	brew not installed · station tools install homebrew
+          ○	keynote		mas	mas not installed · station tools install mas
+          ○	numbers		mas	mas not installed · station tools install mas
+          ○	pages		mas	mas not installed · station tools install mas
+          ○	raindrop		mas	mas not installed · station tools install mas
+          ○	broadcasts		mas	mas not installed · station tools install mas
+          ○	compressor		mas	mas not installed · station tools install mas
+          ○	final-cut-pro		mas	mas not installed · station tools install mas
+          ○	lightroom		mas	mas not installed · station tools install mas
+          ○	logic-pro		mas	mas not installed · station tools install mas
+          ○	jump-desktop-connect		cask	brew not installed · station tools install homebrew
+          ○	jump-desktop		cask	brew not installed · station tools install homebrew
+          ◐	tailscale		cask · system	installed, brew not installed · station tools install homebrew
+          ○	bitwarden		cask	brew not installed · station tools install homebrew
+          ○	adguard		mas	mas not installed · station tools install mas
+          ○	passepartout		mas	mas not installed · station tools install mas
+          ○	mole		brew	brew not installed · station tools install homebrew
+          ○	betterdisplay		cask	brew not installed · station tools install homebrew
+          ○	pipifier		mas	mas not installed · station tools install mas
+          ○	snippety		mas	mas not installed · station tools install mas
+          ○	speedtest		mas	mas not installed · station tools install mas
+          ○	frontend-design		skill	skills not installed · station tools install skills
+          ○	upgrading-expo		skill	skills not installed · station tools install skills
+          ○	modern-web-guidance		skill	skills not installed · station tools install skills
+          ○	chrome-extensions		skill	skills not installed · station tools install skills
+          ○	better-interface		skill	skills not installed · station tools install skills
+          ○	better-accessibility		skill	skills not installed · station tools install skills
+          ○	better-layout		skill	skills not installed · station tools install skills
+          ○	better-writing		skill	skills not installed · station tools install skills
+          ○	better-typography		skill	skills not installed · station tools install skills
+          ○	better-colors		skill	skills not installed · station tools install skills
+          ○	better-ui		skill	skills not installed · station tools install skills
+          ○	shadcn		skill	skills not installed · station tools install skills
+          ○	last30days		skill	skills not installed · station tools install skills
+          ○	qmd-skill		skill	skills not installed · station tools install skills
+          ○	agent-browser-skill		skill	skills not installed · station tools install skills
+          ○	vercel-react-best-practices		skill	skills not installed · station tools install skills
+          ○	vercel-react-native-skills		skill	skills not installed · station tools install skills
+          # Config	1 ●	1 ◐	17 ○
+          ○	hushlogin	Silence the terminal login message	station config install hushlogin
+          ○	ghostty-dotfiles	The Ghostty config and its Catppuccin themes	needs ghostty · station tools install ghostty
+          ○	tmux-dotfiles	The tmux config	needs tmux · station tools install tmux
+          ○	starship-dotfiles	The Starship prompt config	needs starship · station tools install starship
+          ○	git-signing	Sign every commit with a GPG key	needs gpg · station tools install gpg
+          ○	ssh-key	An ed25519 SSH key, kept in the Keychain	station config install ssh-key
+          ○	github-login	The GitHub CLI logged in over SSH	needs gh · station tools install gh
+          ○	spotlight-exclude	Exclude ~/Developer from Spotlight (guided, opens Settings)	station config install spotlight-exclude
+          ○	dns	Encrypted DNS via Quad9 (DoH)	station config install dns
+          ○	claude-token	The Claude Code subscription token a VM may borrow	station config install claude-token
+          ○	zed-dotfiles	The Zed settings and its formatter config	needs zed · station tools install zed
+          ○	dock-reset	Reset the dock to the system defaults	run once · station config install dock-reset
+          ○	dock-spacer	Add a small spacer tile to the dock	run once · station config install dock-spacer
+          ○	autologin	GUI auto-login for jterrazz.agent (FileVault-aware)	station config install autologin
+          ○	power	Always-on power policy (no sleep, autorestart, wake)	station config install power
+          ○	lock-after-login	A LaunchAgent that locks the screen ~20s after auto-login	station config install lock-after-login
+          ◐	backup-exclusions	Keep ~/.cache and station's VMs out of Time Machine	tmutil not found
+          ○	tart-launcher	The tart launcher: Tart's home is station's VMs folder	station config install tart-launcher
+    - command: 'tools'
+      exit: 0
+      stdout: |
+          # Package Managers	7 ○
+          ○	homebrew		script · system	station tools install homebrew
+          ○	mise		brew · system	brew not installed · station tools install homebrew
+          ○	mas		brew	brew not installed · station tools install homebrew
+          ○	uv		brew	brew not installed · station tools install homebrew
+          ○	cocoapods		brew	brew not installed · station tools install homebrew
+          ○	pnpm		brew	brew not installed · station tools install homebrew
+          ○	skills		bun	bun not installed · station tools install bun
+          # Runtimes	6 ○
+          ○	bun		mise	mise not installed · station tools install mise
+          ○	go		mise	mise not installed · station tools install mise
+          ○	node		mise	mise not installed · station tools install mise
+          ○	java		mise	mise not installed · station tools install mise
+          ○	python		mise	mise not installed · station tools install mise
+          ○	rust		mise	mise not installed · station tools install mise
+          # Shell & Terminal	5 ○
+          ○	ghostty		cask	brew not installed · station tools install homebrew
+          ○	ohmyzsh		script	station tools install ohmyzsh
+          ○	tmux		brew	brew not installed · station tools install homebrew
+          ○	starship		brew	brew not installed · station tools install homebrew
+          ○	zoxide		brew	brew not installed · station tools install homebrew
+          # CLI Tools	10 ○
+          ○	yazi		brew	brew not installed · station tools install homebrew
+          ○	bat		brew	brew not installed · station tools install homebrew
+          ○	dust		brew	brew not installed · station tools install homebrew
+          ○	eza		brew	brew not installed · station tools install homebrew
+          ○	fd		brew	brew not installed · station tools install homebrew
+          ○	ripgrep		brew	brew not installed · station tools install homebrew
+          ○	tgrep		brew	brew not installed · station tools install homebrew
+          ○	sd		brew	brew not installed · station tools install homebrew
+          ○	difftastic		brew	brew not installed · station tools install homebrew
+          ○	jq		brew	brew not installed · station tools install homebrew
+          # Git	4 ○
+          ○	git		shell · system	station tools install git
+          ○	gpg		brew	brew not installed · station tools install homebrew
+          ○	lazygit		brew	brew not installed · station tools install homebrew
+          ○	gh		brew	brew not installed · station tools install homebrew
+          # Editors & IDEs	5 ○
+          ○	zed		cask	brew not installed · station tools install homebrew
+          ○	cursor		cask	brew not installed · station tools install homebrew
+          ○	android-studio		cask	brew not installed · station tools install homebrew
+          ○	xcode		mas	mas not installed · station tools install mas
+          ○	xcodegen		brew	brew not installed · station tools install homebrew
+          # Containers & VMs	1 ◐	5 ○
+          ○	tart		shell · system	station tools install tart
+          ◐	orbstack		cask	installed, brew not installed · station tools install homebrew
+          ○	lens		cask	brew not installed · station tools install homebrew
+          ○	kubectl		brew	brew not installed · station tools install homebrew
+          ○	helm		brew	brew not installed · station tools install homebrew
+          ○	helmfile		brew	brew not installed · station tools install homebrew
+          # Deploy	4 ○
+          ○	ansible		brew	brew not installed · station tools install homebrew
+          ○	eas		bun	bun not installed · station tools install bun
+          ○	pulumi		brew	brew not installed · station tools install homebrew
+          ○	terraform		brew	brew not installed · station tools install homebrew
+          # AI Agents	7 ○
+          ○	claude		script	station tools install claude
+          ○	codex		bun	bun not installed · station tools install bun
+          ○	gemini		brew	brew not installed · station tools install homebrew
+          ○	opencode		brew	brew not installed · station tools install homebrew
+          ○	conductor		cask	brew not installed · station tools install homebrew
+          ○	herdr		brew	brew not installed · station tools install homebrew
+          ○	herdr-app		cask	brew not installed · station tools install homebrew
+          # AI Tooling	5 ○
+          ○	ollama		cask	brew not installed · station tools install homebrew
+          ○	qmd		bun	bun not installed · station tools install bun
+          ○	rtk		brew	brew not installed · station tools install homebrew
+          ○	inferrs		brew	brew not installed · station tools install homebrew
+          ○	plannotator		script	station tools install plannotator
+          # AI Apps	3 ○
+          ○	chatgpt		cask	brew not installed · station tools install homebrew
+          ○	claude-desktop		cask	brew not installed · station tools install homebrew
+          ○	typewhisper		cask	brew not installed · station tools install homebrew
+          # Browsers	2 ○
+          ○	brave		cask	brew not installed · station tools install homebrew
+          ○	dia		app	station tools install dia
+          # Communication	4 ○
+          ○	discord		cask	brew not installed · station tools install homebrew
+          ○	slack		cask	brew not installed · station tools install homebrew
+          ○	whatsapp		cask	brew not installed · station tools install homebrew
+          ○	messenger		app	station tools install messenger
+          # Productivity	7 ○
+          ○	linear		cask	brew not installed · station tools install homebrew
+          ○	notion		cask	brew not installed · station tools install homebrew
+          ○	obsidian		cask	brew not installed · station tools install homebrew
+          ○	keynote		mas	mas not installed · station tools install mas
+          ○	numbers		mas	mas not installed · station tools install mas
+          ○	pages		mas	mas not installed · station tools install mas
+          ○	raindrop		mas	mas not installed · station tools install mas
+          # Media	5 ○
+          ○	broadcasts		mas	mas not installed · station tools install mas
+          ○	compressor		mas	mas not installed · station tools install mas
+          ○	final-cut-pro		mas	mas not installed · station tools install mas
+          ○	lightroom		mas	mas not installed · station tools install mas
+          ○	logic-pro		mas	mas not installed · station tools install mas
+          # Remote Access	1 ◐	2 ○
+          ○	jump-desktop-connect		cask	brew not installed · station tools install homebrew
+          ○	jump-desktop		cask	brew not installed · station tools install homebrew
+          ◐	tailscale		cask · system	installed, brew not installed · station tools install homebrew
+          # Security	3 ○
+          ○	bitwarden		cask	brew not installed · station tools install homebrew
+          ○	adguard		mas	mas not installed · station tools install mas
+          ○	passepartout		mas	mas not installed · station tools install mas
+          # System Utilities	5 ○
+          ○	mole		brew	brew not installed · station tools install homebrew
+          ○	betterdisplay		cask	brew not installed · station tools install homebrew
+          ○	pipifier		mas	mas not installed · station tools install mas
+          ○	snippety		mas	mas not installed · station tools install mas
+          ○	speedtest		mas	mas not installed · station tools install mas
+          # Agent skills	17 ○
+          ○	frontend-design		skill	skills not installed · station tools install skills
+          ○	upgrading-expo		skill	skills not installed · station tools install skills
+          ○	modern-web-guidance		skill	skills not installed · station tools install skills
+          ○	chrome-extensions		skill	skills not installed · station tools install skills
+          ○	better-interface		skill	skills not installed · station tools install skills
+          ○	better-accessibility		skill	skills not installed · station tools install skills
+          ○	better-layout		skill	skills not installed · station tools install skills
+          ○	better-writing		skill	skills not installed · station tools install skills
+          ○	better-typography		skill	skills not installed · station tools install skills
+          ○	better-colors		skill	skills not installed · station tools install skills
+          ○	better-ui		skill	skills not installed · station tools install skills
+          ○	shadcn		skill	skills not installed · station tools install skills
+          ○	last30days		skill	skills not installed · station tools install skills
+          ○	qmd-skill		skill	skills not installed · station tools install skills
+          ○	agent-browser-skill		skill	skills not installed · station tools install skills
+          ○	vercel-react-best-practices		skill	skills not installed · station tools install skills
+          ○	vercel-react-native-skills		skill	skills not installed · station tools install skills
+    - command: 'config'
+      exit: 0
+      stdout: |
+          # Terminal	4 ○
+          ○	hushlogin	Silence the terminal login message	station config install hushlogin
+          ○	ghostty-dotfiles	The Ghostty config and its Catppuccin themes	needs ghostty · station tools install ghostty
+          ○	tmux-dotfiles	The tmux config	needs tmux · station tools install tmux
+          ○	starship-dotfiles	The Starship prompt config	needs starship · station tools install starship
+          # Security	6 ○
+          ○	git-signing	Sign every commit with a GPG key	needs gpg · station tools install gpg
+          ○	ssh-key	An ed25519 SSH key, kept in the Keychain	station config install ssh-key
+          ○	github-login	The GitHub CLI logged in over SSH	needs gh · station tools install gh
+          ○	spotlight-exclude	Exclude ~/Developer from Spotlight (guided, opens Settings)	station config install spotlight-exclude
+          ○	dns	Encrypted DNS via Quad9 (DoH)	station config install dns
+          ○	claude-token	The Claude Code subscription token a VM may borrow	station config install claude-token
+          # Editor	1 ○
+          ○	zed-dotfiles	The Zed settings and its formatter config	needs zed · station tools install zed
+          # System	1 ◐	3 ○
+          ○	dock-reset	Reset the dock to the system defaults	run once · station config install dock-reset
+          ○	dock-spacer	Add a small spacer tile to the dock	run once · station config install dock-spacer
+          ◐	backup-exclusions	Keep ~/.cache and station's VMs out of Time Machine	tmutil not found
+          ○	tart-launcher	The tart launcher: Tart's home is station's VMs folder	station config install tart-launcher
+          # Headless	1 ●	3 ○
+          ○	autologin	GUI auto-login for jterrazz.agent (FileVault-aware)	station config install autologin
+          ○	power	Always-on power policy (no sleep, autorestart, wake)	station config install power
+          ○	lock-after-login	A LaunchAgent that locks the screen ~20s after auto-login	station config install lock-after-login
+          ●	sshd	macOS Remote Login (sshd)	Remote Login on
+    - command: 'storage'
+      exit: 0
+      stdout: |
+          # Station
+          ●	station	0 B
+          # Package Managers
+          ○	homebrew	2.0 KB
+    - command: 'machines'
+      exit: 0
+      stdout: |
+          ●	x	host			online	100.64.0.1	0 VMs
+          ●	y	host			online	100.64.0.2	1 VM
+          ●	w	linux	y	lasting	running	-	4 cpus · 8 GB · 50.0 GB
+    - command: 'images'
+      exit: 0
+      stdout: |
+          	none
+    - command: 'secrets'
+      exit: 0
+      stdout: |
+          # Lend list
+          	none
+          # Kept
+          	none
+    - command: 'services'
+      exit: 0
+      stdout: |
+          ◐	daemon			x	not installed		station setup
+          ◐	y			y	unreachable		ssh y true
+    - command: 'tailnet'
+      exit: 0
+      stdout: |
+          ●	tailnet	Running
+          ●	node	x	100.64.0.1
+          ●	cli	{{workdir}}/bin/tailscale
+          # Peers
+          	w	100.64.0.9
+          	y	100.64.0.2
+          # Serve
+          	none
