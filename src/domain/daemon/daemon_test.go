@@ -14,6 +14,7 @@ import (
 )
 
 type fakeMachines struct {
+	stuck    map[string]bool
 	records  []machines.VMRecord
 	poweroff map[string]bool
 	saved    []machines.VMRecord
@@ -30,21 +31,23 @@ func (f *fakeMachines) Remove(context.Context, string) (machines.DeleteReport, e
 	return machines.DeleteReport{}, nil
 }
 
-func (f *fakeMachines) PowerOff(context.Context, string) error     { return nil }
-func (f *fakeMachines) EngineRunning(context.Context, string) bool { return false }
-func (f *fakeMachines) DeclaredPoweroff(console string) bool       { return f.poweroff[console] }
-func (f *fakeMachines) KeyPath() string                            { return "/h/.ssh/id_ed25519" }
-func (f *fakeMachines) VMUser() string                             { return "vmu" }
-func (f *fakeMachines) HereName() string                           { return "x" }
-func (f *fakeMachines) ConsolePath(name string) string             { return "/s/consoles/" + name }
-func (f *fakeMachines) LogPath(name string) string                 { return "/s/logs/" + name + ".log" }
-func (f *fakeMachines) KnownHostsPath(name string) string          { return "/s/known_hosts/" + name }
+func (f *fakeMachines) PowerOff(context.Context, string) error            { return nil }
+func (f *fakeMachines) EngineRunning(_ context.Context, name string) bool { return f.stuck[name] }
+func (f *fakeMachines) DeclaredPoweroff(console string) bool              { return f.poweroff[console] }
+func (f *fakeMachines) KeyPath() string                                   { return "/h/.ssh/id_ed25519" }
+func (f *fakeMachines) VMUser() string                                    { return "vmu" }
+func (f *fakeMachines) HereName() string                                  { return "x" }
+func (f *fakeMachines) ConsolePath(name string) string                    { return "/s/consoles/" + name }
+func (f *fakeMachines) LogPath(name string) string                        { return "/s/logs/" + name + ".log" }
+func (f *fakeMachines) KnownHostsPath(name string) string                 { return "/s/known_hosts/" + name }
 
 type fakeEngine struct{ system.Engine }
 
 func (fakeEngine) RunArgv(name, console string, _ system.RunOptions) []string {
 	return []string{"tart", "run", "--serial-path", console, name}
 }
+
+func (fakeEngine) Stop(context.Context, string, time.Duration) error { return nil }
 
 func (fakeEngine) IP(context.Context, string, time.Duration) (string, error) {
 	return "", errors.New("no ip in a module test")
@@ -180,5 +183,25 @@ func TestARunWhoseGuestNeverConnectsAnswersGuestTimeoutAfterAMinute(t *testing.T
 	}
 	if waited := h.clock.At.Sub(began); waited < guestReady {
 		t.Errorf("guest_timeout after %s, want %s", waited, guestReady)
+	}
+}
+
+func TestStopAllAnswersFailedForALastingVMTheEngineStillRuns(t *testing.T) {
+	h := newHarness(t,
+		machines.VMRecord{Name: "api", Lifetime: machines.Lasting, Want: machines.WantRunning},
+		machines.VMRecord{Name: "web", Lifetime: machines.Lasting, Want: machines.WantRunning},
+	)
+	h.m.stuck = map[string]bool{"api": true}
+	for _, name := range []string{"api", "web"} {
+		v, _ := h.d.find(name)
+		v.state = StateRunning
+	}
+	got := h.d.stopAll(t.Context())
+	want := []Stopped{
+		{Name: "api", Lifetime: "lasting", Result: ResultFailed, Detail: "the engine still runs it"},
+		{Name: "web", Lifetime: "lasting", Result: ResultStopped},
+	}
+	if len(got) != 2 || got[0] != want[0] || got[1] != want[1] {
+		t.Errorf("stop_all answered %+v, want %+v", got, want)
 	}
 }

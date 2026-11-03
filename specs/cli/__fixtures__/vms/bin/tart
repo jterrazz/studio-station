@@ -7,7 +7,8 @@
 # guest declared ($HOME/.tart-intents/<vm>) or a script line `intent` writes the
 # intent into the --serial-path file, a line `say <word>` writes the word there, and a
 # line `exit <code>` is its exit (default 0).
-# `ip` answers answers/tart/ip (default 192.168.64.5).
+# `ip` answers answers/tart/ip (default 192.168.64.5); `ip` and `stop` exit with
+# answers/tart/ip.exit and answers/tart/stop.exit when present (a VM that will not stop).
 vms="$HOME/.tart-vms"
 answers="${0%/*}/../answers/tart"
 printf 'tart %s\n' "$*" >> "$HOME/.calls"
@@ -27,9 +28,13 @@ case "$1" in
     clone) echo stopped > "$vms/$3" ;;
     set) ;;
     ip)
+        [ -f "$answers/ip.exit" ] && exit "$(/bin/cat "$answers/ip.exit")"
         if [ -f "$answers/ip" ]; then /bin/cat "$answers/ip"; else echo "192.168.64.5"; fi
         ;;
-    stop) echo stopped > "$vms/$2" ;;
+    stop)
+        if [ -f "$answers/stop.exit" ]; then echo "stub tart: the VM did not stop" >&2; exit "$(/bin/cat "$answers/stop.exit")"; fi
+        echo stopped > "$vms/$2"
+        ;;
     delete) /bin/rm -f "$vms/$2" ;;
     run)
         n=$(/bin/cat "$HOME/.tart-runs" 2> /dev/null || echo 0)
