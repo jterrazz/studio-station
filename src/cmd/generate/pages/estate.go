@@ -72,7 +72,7 @@ func snapshot() status.Snapshot {
 	toolReports := reports(thisMac(), false)
 	return status.Snapshot{
 		GeneratedAt: built,
-		Station:     status.Station{Version: "v2.0.0-250", Daemon: check("daemon", catalog.StateDegraded, "not running", "station setup")},
+		Station:     status.Station{Version: "v2.0.0-250", Daemon: check("daemon", catalog.StateDegraded, "not installed", "station setup")},
 		Machine:     status.Machine{Name: "macbook", Registered: true, Kind: catalog.Host, Hostname: "jterrazz-macbook-pro", OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh"},
 		System:      status.System{Uptime: "22d 14h", Battery: "100% charged", MemoryTotal: 17179869184},
 		Environment: status.Environment{

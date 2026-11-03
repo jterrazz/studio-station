@@ -159,7 +159,7 @@ func RunCmd(argv []string, exitFile string) system.Cmd {
 	return system.Cmd{Name: "sh", Args: append([]string{"-c", `"$@"; echo "$?" >"` + exitFile + `"`, "sh"}, argv...)}
 }
 
-const Label = "com.jterrazz.station.daemon"
+const Label = catalog.DaemonLabel
 
 func Plist(executable string, env map[string]string, logPath string) string {
 	// invariant: one agent per host; KeepAlive restarts the daemon after any exit,

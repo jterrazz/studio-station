@@ -29,7 +29,7 @@ runs:
            station  Home · Tools · Config · Storage │ Fleet · Services               host
            ──────────────────────────────────────────────────────────────────────────────
            - Fleet                                                               1 ●  1 ◐
-             ◐ x     host              online   192.0.2.1  daemon not running …
+             ◐ x     host              online   192.0.2.1  daemon not installed …
              └─ ● t  linux  temporary  running  -          4 cpus · 8 GB · 50.0 GB
            - Images                                                                   1 ●
                       version        size   VMs

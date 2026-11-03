@@ -73,7 +73,7 @@
             "label": "daemon",
             "detail": {
               "kind": "text",
-              "text": "not running"
+              "text": "not installed"
             },
             "reason": "degraded",
             "hint": {
@@ -500,7 +500,7 @@
             "cells": [
               {
                 "kind": "text",
-                "text": "daemon not running"
+                "text": "daemon not installed"
               }
             ]
           }
@@ -620,7 +620,7 @@
             "cells": [
               {
                 "kind": "text",
-                "text": "not running"
+                "text": "not installed"
               }
             ],
             "detail": {

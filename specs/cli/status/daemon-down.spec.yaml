@@ -1,4 +1,4 @@
-description: 'with tart and no daemon the daemon is degraded; without tart it is not needed'
+description: 'with tart and no daemon the daemon is not installed, or stopped once its agent exists; without tart it is not needed'
 fixture: ../__fixtures__/vms/
 env: daemon
 runs:
@@ -9,7 +9,12 @@ runs:
     - command: 'status | /usr/bin/awk -F "\t" ''$2 == "daemon"'''
       exit: 0
       stdout: |
-          ◐	daemon	not running	station setup
+          ◐	daemon	not installed	station setup
+    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" status --json | /usr/bin/jq -c ''.station.daemon''; "$STATION" status | /usr/bin/awk -F "\t" ''$2 == "daemon"'''
+      exit: 0
+      stdout: |
+          {"state":"degraded","running":false,"version":""}
+          ◐	daemon	stopped	station start
     - command: '--version >/dev/null; /bin/rm bin/tart; "$STATION" status --json | /usr/bin/jq -c ''.station.daemon''; "$STATION" status | /usr/bin/awk -F "\t" ''$2 == "daemon"'''
       exit: 0
       stdout: |

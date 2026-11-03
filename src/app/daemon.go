@@ -182,7 +182,7 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 		return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
 	}
 	home := i.m.host.Env.Home()
-	file := filepath.Join(home, "Library", "LaunchAgents", daemon.Label+".plist")
+	file := catalog.DaemonPlist(home)
 	log := filepath.Join(i.m.paths.State, "logs", "daemon.log")
 	plist := daemon.Plist(i.m.host.Env.Executable(), i.env(), log)
 	current, _ := i.m.host.FS.ReadFile(file)

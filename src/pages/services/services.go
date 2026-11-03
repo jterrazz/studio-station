@@ -33,9 +33,13 @@ func Sections(f services.Fleet) []page.Section {
 				Hint:  page.Cmd("ssh " + h.Name + " true")}
 			items = append(items, page.Item{Row: &row})
 		case h.Here && !h.Daemon.Running:
-			row := page.Row{ID: "daemon", Label: "daemon", Mark: page.Attention, Reason: page.Stopped,
-				Cells: []page.Value{page.None(), page.None(), page.Text(h.Name), page.Text("not running")},
-				Hint:  page.Cmd("station setup")}
+			reason, word, fix := page.Stopped, "stopped", "station start"
+			if !h.Daemon.Installed {
+				reason, word, fix = page.Missing, "not installed", "station setup"
+			}
+			row := page.Row{ID: "daemon", Label: "daemon", Mark: page.Attention, Reason: reason,
+				Cells: []page.Value{page.None(), page.None(), page.Text(h.Name), page.Text(word)},
+				Hint:  page.Cmd(fix)}
 			items = append(items, page.Item{Row: &row})
 		}
 		if h.Reachable {

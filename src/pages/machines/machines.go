@@ -108,7 +108,14 @@ func hostRow(h machines.HostView, hereVersion string) page.Row {
 		resources = page.Text("station " + h.StationVersion + " here " + hereVersion)
 	case h.Daemon.Known && !h.Daemon.Running:
 		row.Mark, row.Reason = page.Attention, page.Stopped
-		resources = page.List(page.Text("daemon not running"), page.Command("station setup"))
+		word, fix := "daemon stopped", "station start"
+		switch {
+		case !h.Here:
+			fix = "ssh " + h.Name + " station start"
+		case !h.Daemon.Installed:
+			row.Reason, word, fix = page.Missing, "daemon not installed", "station setup"
+		}
+		resources = page.List(page.Text(word), page.Command(fix))
 	}
 	row.Cells = []page.Value{page.Text(string(catalog.Host)), page.Text(""), page.Text(""), state, orDash(h.Node.IP), resources}
 	return row

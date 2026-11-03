@@ -130,7 +130,10 @@ type VM struct {
 
 type DaemonInfo struct {
 	Known, Running bool
-	Version        string
+	// value: the agent's plist is on this host: a daemon not running is
+	// stopped, not missing (R9.D3); unknown for another host.
+	Installed bool
+	Version   string
 }
 
 type HostView struct {

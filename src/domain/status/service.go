@@ -262,6 +262,11 @@ func shellName(shell string) string {
 	return path.Base(shell)
 }
 
+func (s *Service) agentInstalled() bool {
+	_, err := s.h.FS.Stat(catalog.DaemonPlist(s.h.Env.Home()))
+	return err == nil
+}
+
 // invariant: the daemon matters where VMs can exist: a host with tart; one that
 // does not answer, or answers another version, is degraded, never an error.
 func (s *Service) daemon(ctx context.Context) Check {
@@ -275,8 +280,10 @@ func (s *Service) daemon(ctx context.Context) Check {
 	}
 	version, err := s.deps.Daemon.Ping(ctx)
 	switch {
+	case err != nil && s.agentInstalled():
+		c.State, c.Value, c.Detail = catalog.StateDegraded, "stopped", "station start"
 	case err != nil:
-		c.State, c.Value, c.Detail = catalog.StateDegraded, "not running", "station setup"
+		c.State, c.Value, c.Detail = catalog.StateDegraded, "not installed", "station setup"
 	case version != s.o.Version:
 		c.State, c.Value, c.Detail = catalog.StateDegraded, "runs "+version+", station is "+s.o.Version, "station setup"
 	default:

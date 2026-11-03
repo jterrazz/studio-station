@@ -36,6 +36,9 @@ type View struct {
 type DaemonInfo struct {
 	Running bool   `json:"running"`
 	Version string `json:"version"`
+	// value: the agent's plist is on this host: a daemon not running is
+	// stopped, not missing (R9.D3); never in the services/v1 contract.
+	Installed bool `json:"-"`
 }
 
 type HostView struct {
@@ -184,6 +187,8 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 	view, err := s.d.Services(ctx)
 	if errors.Is(err, ErrDaemonDown) {
 		view, err = s.offline(ctx), nil
+		_, missing := s.h.FS.Stat(catalog.DaemonPlist(s.h.Env.Home()))
+		view.Daemon.Installed = missing == nil
 	}
 	if err != nil {
 		return HostView{}, err

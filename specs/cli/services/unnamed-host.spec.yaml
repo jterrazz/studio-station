@@ -13,4 +13,4 @@ runs:
 
            this host  40000-40999 · 0 leased · 1000 free · 20 per VM
                        state
-             ◐ daemon  not running  → station setup
+             ◐ daemon  not installed  → station setup
