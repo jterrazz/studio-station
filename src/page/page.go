@@ -272,6 +272,7 @@ const (
 	Down        Reason = "down"
 	Outlived    Reason = "stale"
 	Expiring    Reason = "expiring"
+	Guard       Reason = "guard"
 )
 
 type Value struct {

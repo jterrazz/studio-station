@@ -44,7 +44,7 @@ A document may stand on ground of its own: `fixture: ./__fixtures__/<case>/` spr
 
 ## The sandbox
 
-No spec reaches the real machine. The runner sets `HOME` to the run's working directory, `PATH` to its `bin/` alone (the fixture's stubs), and `STATION_SYSTEM_DIRS` to nothing, so a system tool no fixture stubs is "not found" alike on a Mac and on the Linux CI runner, and `STATION_SYSTEM_ROOT` to the run's `root/`, so `/Applications`, `/opt/homebrew` and `/Library` are read there and the owner's own apps are neither listed nor sized. It also pins `NO_COLOR=1`, `COLUMNS=80`, `TZ=UTC` and `STATION_MACHINE_KIND=host`, so every stream is the pipe form and a document means the same thing on every host.
+No spec reaches the real machine. The runner sets `HOME` to the run's working directory, `PATH` to its `bin/` alone (the fixture's stubs), and `STATION_SYSTEM_DIRS` to nothing, so a system tool no fixture stubs is "not found" alike on a Mac and on the Linux CI runner, and `STATION_SYSTEM_ROOT` to the run's `root/`, so `/Applications`, `/opt/homebrew` and `/Library` are read there and the owner's own apps are neither listed nor sized. `STATION_POWER_STUB` points Power at the run's `power/` folder (the `power` fixture writes one): its files are the reading, every assertion and clamshell call is a line of `.calls`, and with no such folder the run has no Power at all, so no spec takes a real assertion. It also pins `NO_COLOR=1`, `COLUMNS=80`, `TZ=UTC` and `STATION_MACHINE_KIND=host`, so every stream is the pipe form and a document means the same thing on every host.
 
 ## The TUI on a terminal
 

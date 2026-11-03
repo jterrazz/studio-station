@@ -692,6 +692,21 @@
         },
         {
           "row": {
+            "id": "guard",
+            "mark": "pending",
+            "label": "guard",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "absent",
             "mark": "pending",
             "label": "absent",
@@ -704,7 +719,7 @@
       "counts": [
         {
           "mark": "pending",
-          "n": 20
+          "n": 21
         }
       ]
     },

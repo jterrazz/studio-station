@@ -2,6 +2,7 @@ package host
 
 import (
 	"io"
+	"path/filepath"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/system"
@@ -26,6 +27,10 @@ func New(env []string, stdin io.Reader, stdout, stderr io.Writer) system.Host {
 			dirs = append(dirs, d)
 		}
 	}
+	power := newPower()
+	if dir := vars["STATION_POWER_STUB"]; filepath.IsAbs(dir) {
+		power = &stubPower{dir: dir, calls: filepath.Join(identity{vars: vars}.Home(), ".calls")}
+	}
 	return system.Host{
 		Run:     &runner{env: env, dirs: dirs, stdin: stdin, stdout: stdout, stderr: stderr},
 		FS:      disk{},
@@ -33,5 +38,6 @@ func New(env []string, stdin io.Reader, stdout, stderr io.Writer) system.Host {
 		Net:     network{},
 		Sockets: sockets{},
 		Clock:   clock{},
+		Power:   power,
 	}
 }

@@ -54,7 +54,7 @@ func importTable() map[string][]string {
 		"domain/*":           domain,
 		"domain/setup":       append(slices.Clone(domain), "domain/shell", "domain/storage"),
 		"domain/status":      append(slices.Clone(domain), "domain/tools", "domain/config", "domain/tailnet", "domain/setup", "domain/storage", "domain/services"),
-		"domain/daemon":      append(slices.Clone(domain), "domain/machines", "domain/services", "domain/tailnet"),
+		"domain/daemon":      append(slices.Clone(domain), "domain/machines", "domain/services", "domain/tailnet", "domain/power"),
 		"domain/guest":       append(slices.Clone(domain), "domain/services"),
 		"system/sshclient":   {"system", sshPkg, sshPkg + "/knownhosts", "os", "net", std},
 		"system":             {std},
@@ -170,6 +170,9 @@ type world struct {
 	root     string
 	files    []*file
 	packages map[string]bool
+	// value: the source files cgo rewrote before compiling (repo-relative):
+	// their syntax reaches the rules only as cgo's output.
+	cgo []string
 }
 
 func repoRoot(t *testing.T) string {
@@ -211,6 +214,13 @@ func load(t *testing.T, overlay map[string]string) *world {
 			continue
 		}
 		w.packages[rel] = true
+		for _, g := range p.GoFiles {
+			if !slices.Contains(p.CompiledGoFiles, g) && !seen["cgo:"+g] {
+				seen["cgo:"+g] = true
+				r, _ := filepath.Rel(root, g)
+				w.cgo = append(w.cgo, r)
+			}
+		}
 		for i, syntax := range p.Syntax {
 			path := p.CompiledGoFiles[i]
 			if seen[path] {
@@ -716,6 +726,9 @@ func rules() []rule {
 		{"Builders", ruleBuilders, "src/tui/screens/tools/mutant_builders.go", "package toolsscreen\n\nimport \"" + module + "/src/page\"\n\nvar mutantSection = page.Section{Title: \"x\"}\n", "src/tui/screens/tools/mutant_builders.go"},
 		{"Layout", ruleLayout, "src/cli/tools/mutant_layout.go", "package toolscmd\n\nimport \"fmt\"\n\nfunc mutantPad(x string) string { return fmt.Sprintf(\"%-20s\", x) }\n", "src/cli/tools/mutant_layout.go"},
 		{"LayoutRepeat", ruleLayout, "src/tui/screens/tools/mutant_layout.go", "package toolsscreen\n\nimport \"strings\"\n\nfunc mutantRule(n int) string { return strings.Repeat(\"-\", n) }\n", "src/tui/screens/tools/mutant_layout.go"},
+		{"Cgo", ruleCgo, "src/domain/power/mutant_cgo.go", "package power\n\nimport \"C\"\n", "src/domain/power/mutant_cgo.go"},
+		{"PowerSafe", func(w *world) []finding { return append(rulePowerSafe(w), powerRaw(w)...) }, "src/domain/power/mutant_safe.go", "package power\n\nconst mutantSafe = \"pmset -a disablesleep 1\"\n", "src/domain/power/mutant_safe.go"},
+		{"PowerFiles", rulePowerSafe, "src/domain/power/mutant_files.go", "package power\n\nimport \"github.com/jterrazz/studio-station/src/system\"\n\nfunc mutantWrite(h system.Host) error { return h.FS.WriteFile(\"x\", nil, 0o600) }\n", "src/domain/power/mutant_files.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
 }
@@ -769,6 +782,9 @@ func TestCatalog(t *testing.T)    { judge(t, "Catalog") }
 func TestWorded(t *testing.T)     { judge(t, "Worded") }
 func TestComments(t *testing.T)   { judge(t, "Comments") }
 func TestRegistries(t *testing.T) { judge(t, "Registries") }
+func TestCgo(t *testing.T)        { judge(t, "Cgo") }
+func TestPowerSafe(t *testing.T)  { judge(t, "PowerSafe") }
+func TestPowerFiles(t *testing.T) { judge(t, "PowerFiles") }
 func TestStreams(t *testing.T)    { judge(t, "Streams") }
 
 func TestKit(t *testing.T)          { judge(t, "Kit") }

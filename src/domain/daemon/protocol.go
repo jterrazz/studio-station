@@ -21,13 +21,18 @@ const (
 )
 
 type Request struct {
-	V         int    `json:"v"`
-	ID        string `json:"id"`
-	Op        string `json:"op"`
-	VM        string `json:"vm,omitempty"`
-	GuestPort int    `json:"guest_port,omitempty"`
-	Pinned    bool   `json:"pinned,omitempty"`
-	Profile   string `json:"profile,omitempty"`
+	V         int      `json:"v"`
+	ID        string   `json:"id"`
+	Op        string   `json:"op"`
+	VM        string   `json:"vm,omitempty"`
+	GuestPort int      `json:"guest_port,omitempty"`
+	Pinned    bool     `json:"pinned,omitempty"`
+	Profile   string   `json:"profile,omitempty"`
+	Pages     []string `json:"pages,omitempty"`
+	Lid       bool     `json:"lid,omitempty"`
+	Battery   bool     `json:"battery,omitempty"`
+	For       int      `json:"for,omitempty"`
+	By        string   `json:"by,omitempty"`
 }
 
 type OpError struct {

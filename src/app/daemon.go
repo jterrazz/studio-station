@@ -27,6 +27,7 @@ func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 func (m machine) daemon() *daemon.Daemon {
 	return daemon.New(m.host, tart.New(m.host.Run), sshclient.New(), m.machines(false), m.tailnet().Tracked(daemon.ChildrenDir(m.paths)), m.store, daemon.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
+		Pmset: m.pmset(), PowerPage: m.powerPage,
 	})
 }
 

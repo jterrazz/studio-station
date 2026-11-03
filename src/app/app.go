@@ -72,6 +72,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		toolsCommand(kenv, here),
 		configCommand(kenv, here),
 		storageCommand(kenv, here),
+		powerCommand(kenv, here),
 		machinesCommand(kenv, here),
 		imagesCommand(kenv, here),
 		secretsCommand(kenv, here),

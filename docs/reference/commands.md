@@ -66,6 +66,16 @@ station storage reset <tool...> [--yes]         # delete a tool's data, back to 
 
 `clean` asks nothing: caches only. `reset` is always named, and refuses while the tool's app runs. A stale VM goes with `station machines delete`, an old image version with `station images delete`. See [Storage](storage.md).
 
+### `station power`
+
+```sh
+station power [--json]                          # the session, its guards, and this Mac's reading (lid, source, battery, thermal)
+station power awake [--lid] [--battery] [--for <d>]   # keep this host awake: 1m..24h, default 4h; held by the daemon
+station power sleep                             # end the session now
+```
+
+The daemon that already runs holds the session, in memory only: a `PreventUserIdleSystemSleep` assertion, and with `--lid` the clamshell sleep disabled (no root, no `pmset -a`, no file). Every end sets the clamshell back to normal, and so does every daemon start and quit. A guard ends the session first: thermal pressure at trapping (or heavy for 5 minutes lid closed on battery), the battery at 20 % on battery, Low Power Mode, or the lid closed on battery without `--battery`; each end is logged in `daemon.log` and kept on the page for 24 hours. With `--lid`, a lid close sleeps the display with `pmset displaysleepnow`, never a display assertion. A guard already past its threshold refuses the start (exit 1). Piped, one record per row: the session (`on`, its flags, until in RFC 3339, who asked), the guards, then the reading as `key<TAB>value`. Unrelated to the `power` config item, the always-on pmset policy of a headless host.
+
 ## The fleet
 
 ### `station machines`

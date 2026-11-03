@@ -43,6 +43,26 @@
         },
         {
           "row": {
+            "id": "power",
+            "mark": "ok",
+            "label": "power",
+            "detail": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "ended"
+                },
+                {
+                  "kind": "text",
+                  "text": "the clamshell reset to normal"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "row": {
             "id": "daemon",
             "mark": "ok",
             "label": "daemon",
@@ -65,7 +85,7 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 3
+          "n": 4
         }
       ]
     }

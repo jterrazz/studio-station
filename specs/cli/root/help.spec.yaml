@@ -53,10 +53,11 @@ runs:
       exit: 0
       stdout: |
           1
-    - command: --help | /usr/bin/sed -n '/^  HERE/,/^  THE FLEET/p' | /usr/bin/grep -oE '^    (status|tools|config|storage) ' | /usr/bin/tr -d ' '
+    - command: --help | /usr/bin/sed -n '/^  HERE/,/^  THE FLEET/p' | /usr/bin/grep -oE '^    (status|tools|config|storage|power) ' | /usr/bin/tr -d ' '
       exit: 0
       stdout: |
           config
+          power
           status
           storage
           tools
@@ -100,11 +101,3 @@ runs:
       exit: 1
       stdout: |
           0
-    - command: 'accounts >/dev/null 2>&1; echo "accounts $?"; "$STATION" power >/dev/null 2>&1; echo "power $?"; "$STATION" --help | /usr/bin/grep -cE ''^    (accounts|power) '''
-      exit: 1
-      stdout: |
-          accounts 0
-          power 127
-          0
-      stderr: |
-          /bin/sh: : command not found

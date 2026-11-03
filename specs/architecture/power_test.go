@@ -1,0 +1,110 @@
+package architecture_test
+
+import (
+	"go/ast"
+	"go/token"
+	"go/types"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+const cgoFile = "src/system/host/power_darwin.go"
+
+func cgoTags() map[string]string {
+	return map[string]string{
+		cgoFile:                          "//go:build darwin && cgo",
+		"src/system/host/power_other.go": "//go:build !darwin || !cgo",
+	}
+}
+
+// invariant: rule 22: cgo lives in one file, built only on darwin with cgo,
+// and its refusal twin builds everywhere else, so a linux binary needs no C.
+func ruleCgo(w *world) []finding {
+	var out []finding
+	for _, rel := range w.cgo {
+		if rel != cgoFile {
+			out = append(out, finding{"cgo", rel, "import \"C\" lives in " + cgoFile + " only"})
+		}
+	}
+	for rel, tag := range cgoTags() {
+		data, err := os.ReadFile(filepath.Join(w.root, rel))
+		if err != nil || !strings.HasPrefix(string(data), tag+"\n") {
+			out = append(out, finding{"cgo", rel, "must open with " + tag})
+		}
+	}
+	return out
+}
+
+func unsafePower() []string {
+	return []string{"disablesleep", "kIOPMAssertPreventUserIdleDisplaySleep", "kIOPMAssertionTypeNoDisplaySleep", "PreventUserIdleDisplaySleep", "NoDisplaySleep"}
+}
+
+func powerCode(rel string) bool {
+	for _, dir := range []string{"src/domain/power/", "src/pages/power/", "src/cli/power/", "src/system/host/power_"} {
+		if strings.HasPrefix(rel, dir) {
+			return true
+		}
+	}
+	return rel == "src/app/power.go" || rel == "src/domain/daemon/power.go"
+}
+
+// invariant: rule 23: Power is safe by construction: no string under src/
+// asks for a display assertion or disablesleep, the power code holds no
+// sudo, and domain/power reaches no file system: no file is written for power.
+func rulePowerSafe(w *world) []finding {
+	var out []finding
+	for _, f := range w.files {
+		if f.test || !strings.HasPrefix(f.rel, "src/") {
+			continue
+		}
+		ast.Inspect(f.syntax, func(n ast.Node) bool {
+			switch n := n.(type) {
+			case *ast.BasicLit:
+				if n.Kind != token.STRING {
+					return true
+				}
+				for _, word := range unsafePower() {
+					if strings.Contains(n.Value, word) {
+						out = append(out, finding{"power", f.at(n.Pos()), "Power never holds " + word})
+					}
+				}
+				if powerCode(f.rel) && strings.Contains(n.Value, "sudo") {
+					out = append(out, finding{"power", f.at(n.Pos()), "the power code never runs sudo"})
+				}
+			case *ast.Ident:
+				if f.pkg != "domain/power" {
+					return true
+				}
+				if obj := f.info.Uses[n]; obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == module+"/src/system" && (obj.Name() == "FS" || isFS(obj.Type())) {
+					out = append(out, finding{"power", f.at(n.Pos()), "domain/power reaches no file system"})
+				}
+			}
+			return true
+		})
+	}
+	return out
+}
+
+func isFS(t types.Type) bool {
+	named, ok := t.(*types.Named)
+	return ok && named.Obj().Name() == "FS"
+}
+
+func powerRaw(w *world) []finding {
+	var out []finding
+	matches, _ := filepath.Glob(filepath.Join(w.root, "src", "system", "host", "power_*.go"))
+	for _, m := range matches {
+		data, err := os.ReadFile(m)
+		if err != nil {
+			continue
+		}
+		for _, word := range unsafePower() {
+			if strings.Contains(string(data), word) {
+				rel, _ := filepath.Rel(w.root, m)
+				out = append(out, finding{"power", rel, "Power never holds " + word})
+			}
+		}
+	}
+	return out
+}

@@ -6,7 +6,7 @@ import (
 )
 
 func controlPages() []Fixture {
-	stopped := daemon.StopReport{Daemon: daemon.DaemonStopped, VMs: []daemon.Stopped{
+	stopped := daemon.StopReport{Daemon: daemon.DaemonStopped, Power: daemon.PowerEnded, VMs: []daemon.Stopped{
 		{Name: "linux-1", Lifetime: "temporary", Result: daemon.ResultDeleted},
 		{Name: "api", Lifetime: "lasting", Result: daemon.ResultStopped},
 	}}

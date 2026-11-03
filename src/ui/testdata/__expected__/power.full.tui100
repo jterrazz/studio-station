@@ -1,0 +1,15 @@
+ - Power  awake · lid · 3h 12m left                                                             3 ●
+   ● awake      on      lid · until 14:42 (4h)
+   ● display    sleeps  on lid close: pmset displaysleepnow (no display assertion)
+   ● clamshell  held    reset to normal at the end, at every daemon start and quit
+ - Guards                                                                                  3 ●  1 ◐
+   ◐ battery    28% · on battery  the session ends at 20%
+   ● low power  off               ends a session when it turns on
+   ● thermal    nominal           ends a session at serious, or heavy for 5m lid closed on battery
+   ● lid        open              closing it on battery ends a --lid session without --battery
+ - Reading
+   lid        open
+   source     battery · 28% · not charging
+   low power  off
+   thermal    nominal (0)
+ ↑↓ move  a awake  s sleep  enter detail  / filter  space fold  r reload  q quit  ? keys

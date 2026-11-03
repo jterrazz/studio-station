@@ -174,10 +174,18 @@ func (c *Control) runAlive(vm string) bool {
 
 type StopReport struct {
 	VMs []Stopped
+	// value: "ended" (the daemon ended a session), "reset" (the CLI set a dead
+	// daemon's clamshell back to normal), or "" (nothing held, or no Power here).
+	Power string
 	// value: "stopped" (booted out now), "already stopped", or "kept" (a VM
 	// would not stop, so the daemon still supervises it).
 	Daemon string
 }
+
+const (
+	PowerEnded = "ended"
+	PowerReset = "reset"
+)
 
 const (
 	DaemonStopped = "stopped"
@@ -188,11 +196,21 @@ const (
 func (c *Control) Stop(ctx context.Context, w Work) (StopReport, error) {
 	var r StopReport
 	if w.Answering {
-		if err := c.c.Do(ctx, "stop_all", Request{}, &r.VMs); err != nil {
+		var all StopAll
+		if err := c.c.Do(ctx, "stop_all", Request{}, &all); err != nil {
 			return r, err
+		}
+		r.VMs = all.VMs
+		if all.PowerEnded {
+			r.Power = PowerEnded
 		}
 	} else {
 		r.VMs = c.stopDirect(ctx, w)
+		// invariant: a clamshell mask a dead daemon left is reset here, by the
+		// same call the daemon makes, so a stop never leaves the lid held.
+		if c.h.Power != nil && c.h.Power.SetClamshellSleep(false) == nil {
+			r.Power = PowerReset
+		}
 	}
 	for _, v := range r.VMs {
 		if v.Result == ResultFailed {

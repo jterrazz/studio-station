@@ -14,6 +14,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/tailnet"
@@ -59,6 +60,10 @@ type Options struct {
 	PID       int
 	Tick      time.Duration
 	GuestPort int
+	// value: the absolute pmset a lid close under --lid runs displaysleepnow with.
+	Pmset string
+	// value: the power page a subscription streams, built by the caller's pages.
+	PowerPage func(power.View) any
 }
 
 type Daemon struct {
@@ -79,6 +84,8 @@ type Daemon struct {
 	issuing bool
 	started time.Time
 	note    func(line string)
+	power   *power.Machine
+	hub     hub
 }
 
 func New(h system.Host, e system.Engine, ssh system.SSH, m Machines, tn Tailnet, store settings.Store, o Options) *Daemon {
@@ -88,7 +95,9 @@ func New(h system.Host, e system.Engine, ssh system.SSH, m Machines, tn Tailnet,
 	if o.GuestPort == 0 {
 		o.GuestPort = 22
 	}
-	return &Daemon{h: h, engine: e, ssh: ssh, m: m, tn: tn, store: store, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}}
+	d := &Daemon{h: h, engine: e, ssh: ssh, m: m, tn: tn, store: store, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}}
+	d.power = d.newPower()
+	return d
 }
 
 func (d *Daemon) Check() error {
@@ -123,6 +132,9 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 	if p, err := DialPath(d.h, sock).Ping(ctx); err == nil {
 		return &RunningError{PID: p.PID}
 	}
+	// invariant: the clamshell is set back to normal before the socket exists,
+	// so a killed daemon's mask is cleared by its successor (launchd restarts it).
+	d.power.Reset()
 	_ = d.h.FS.Remove(sock)
 	if n := d.h.Run.Reap(ChildrenDir(d.o.Paths)); n > 0 {
 		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed daemon left running")
@@ -144,8 +156,10 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 		_ = d.h.FS.Remove(sock)
 	}()
 	go d.accept(ctx, l)
+	go d.watchPower(ctx)
 	for tick := 1; ; tick++ {
 		if err := d.h.Clock.Sleep(ctx, d.o.Tick); err != nil {
+			d.power.Quit()
 			d.closeAll()
 			return nil
 		}
@@ -158,6 +172,7 @@ func (d *Daemon) step(ctx context.Context, tick int) {
 		d.refreshSelf(ctx)
 	}
 	d.tick(ctx)
+	d.power.Tick()
 }
 
 func (d *Daemon) logf(subject, message string) {
@@ -238,14 +253,30 @@ func (d *Daemon) accept(ctx context.Context, l system.Listener) {
 
 func (d *Daemon) serveConn(ctx context.Context, conn system.Conn) {
 	defer func() { _ = conn.Close() }()
+	write := func(v any) error {
+		data, err := json.Marshal(v)
+		if err != nil {
+			return err
+		}
+		_, err = conn.Write(append(data, '\n'))
+		return err
+	}
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
-		resp := d.answer(ctx, scanner.Bytes())
-		data, err := json.Marshal(resp)
-		if err != nil {
+		var r Request
+		if json.Unmarshal(scanner.Bytes(), &r) == nil && r.V == 1 && r.Op == "subscribe" {
+			if err := d.checkPages(r.Pages); err != nil {
+				var op *OpError
+				errors.As(err, &op)
+				if write(Response{V: 1, ID: r.ID, Error: op}) != nil {
+					return
+				}
+				continue
+			}
+			d.stream(ctx, conn, r, write)
 			return
 		}
-		if _, err := conn.Write(append(data, '\n')); err != nil {
+		if write(d.answer(ctx, scanner.Bytes())) != nil {
 			return
 		}
 	}
@@ -321,9 +352,16 @@ func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
 	case "accounts":
 		return d.accounts(ctx), nil
 	case "stop_all":
-		return d.stopAll(ctx), nil
+		vms := d.stopAll(ctx)
+		return StopAll{VMs: vms, PowerEnded: d.power.Stop()}, nil
+	case "power":
+		return d.power.View(), nil
+	case "power_awake":
+		return d.powerAwake(r)
+	case "power_sleep":
+		return d.powerSleep(), nil
 	}
-	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts stop_all")
+	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts stop_all power power_awake power_sleep subscribe")
 }
 
 type VMAccounts struct {

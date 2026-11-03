@@ -1,0 +1,16 @@
+description: 'the battery guard warns at 30% on battery and ends the session at 20%, logged and recorded'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/power/
+env: daemon
+runs:
+    - command: '--version > /dev/null; "$STATION" daemon 2> daemon.log & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" power awake > /dev/null; echo 30 > power/battery; echo battery > power/source; /bin/sleep 1; "$STATION" power | /usr/bin/grep battery; : > .calls; echo 20 > power/battery; echo ac > power/source; /bin/sleep 0.5; echo battery > power/source; /bin/sleep 1.5; /bin/cat .calls; /usr/bin/grep -o "power: ended.*" daemon.log; "$STATION" power --json | /usr/bin/jq -r .last_end.reason; "$STATION" power | /usr/bin/grep awake; kill $d; wait $d'
+      exit: 0
+      stdout: |
+          ◐	battery	30% · on battery	the session ends at 20%
+          source	battery · 30% · not charging
+          power release idle
+          power clamshell normal
+          power: ended (battery: battery 20% on battery)
+          battery
+          ●	awake	off

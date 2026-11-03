@@ -29,7 +29,7 @@
    ● sip       off
    ◐ unknown   ?  no answer in 2s
 
- Marks  14 ◐  2 ○  4 ✗
+ Marks  15 ◐  2 ○  4 ✗
    ◐ outdated     attention  120 outda…
      → station tools upgrade --via brew
    ◐ stray        attention  out of pl…
@@ -58,6 +58,8 @@
      → station machines delete linux-2
    ◐ expiring     attention  42m left
      → station secrets lend --to api operator:claude:oauth-token
+   ◐ guard        attention  28% · on…
+     → station power
    ○ absent
      → station tools install mas
 

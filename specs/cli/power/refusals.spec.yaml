@@ -1,0 +1,44 @@
+description: 'with the daemon stopped power still reads and awake refuses; in a VM power is refused'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/power/
+env: daemon
+runs:
+    - command: 'power'
+      exit: 0
+      stdout: |
+          ◐	awake	?	daemon stopped	station start
+          ●	battery	80% · AC attached
+          ●	low power	off
+          ●	thermal	nominal
+          ●	lid	open
+          # Reading
+          lid	open
+          source	AC · 80% · not charging
+          low power	off
+          thermal	nominal (0)
+    - command: 'power awake'
+      exit: 1
+      stderr: |
+          Error: the station daemon is stopped on x
+          Hint: station start
+    - command: 'power sleep'
+      exit: 1
+      stderr: |
+          Error: the station daemon is stopped on x
+          Hint: station start
+    - command: '--version > /dev/null; /bin/rm Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" power awake'
+      exit: 1
+      stderr: |
+          Error: the station daemon is not installed on x
+          Hint: station setup
+    - command: '--version > /dev/null; STATION_MACHINE_KIND=linux "$STATION" power'
+      exit: 2
+      stderr: |
+          Error: Power runs on a host; here is a VM
+          Hint: ssh <host> station power
+    - command: '--version > /dev/null; /bin/rm -r power; "$STATION" power'
+      exit: 2
+      stderr: |
+          Error: Power runs on a macOS host
+          Hint: run it on a Mac host

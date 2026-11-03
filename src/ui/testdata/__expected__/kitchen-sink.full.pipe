@@ -37,6 +37,7 @@
 ✗	down	broken	not running
 ✗	stale	broken	stale · station machines delete linux-2
 ◐	expiring	attention	42m left · station secrets lend --to api operator:claude:oauth-token
+◐	guard	attention	28% · on battery · station power
 ○	absent		station tools install mas
 # Fleet
 ●	jterrazz-mac-mini	host	jterrazz-mac-mini

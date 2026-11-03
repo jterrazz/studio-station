@@ -825,6 +825,27 @@
         },
         {
           "row": {
+            "id": "guard",
+            "mark": "attention",
+            "label": "guard",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "attention"
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "28% · on battery"
+            },
+            "reason": "guard",
+            "hint": {
+              "command": "station power"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "absent",
             "mark": "absent",
             "label": "absent",
@@ -838,7 +859,7 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 14
+          "n": 15
         },
         {
           "mark": "absent",

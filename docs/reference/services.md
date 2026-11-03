@@ -101,18 +101,23 @@ With Serve off they hold the local URL, `http://127.0.0.1:<host port>`, and the 
 ← {"v":1,"id":"1","ok":true,"result":{"version":"v3.0.0","pid":812,"started_at":"2026-11-01T09:00:00Z"}}
 ```
 
-| op                           | args                     | result                                                       |
-| ---------------------------- | ------------------------ | ------------------------------------------------------------ |
-| `ping`                       |                          | `version pid started_at`                                     |
-| `vms`                        |                          | each VM's `name state run_pid guest ip detail`               |
-| `run`                        | `vm`                     | supervises a new record; answers when its guest is connected |
-| `start` / `stop` / `restart` | `vm`                     | lasting VMs only                                             |
-| `delete`                     | `vm`                     | the VM, its files, blocks, leases and serve entries          |
-| `services`                   |                          | this host's `station.services/v1` host object                |
-| `reserve`                    | `vm, guest_port, pinned` | the lease (an existing one is returned)                      |
-| `release`                    | `vm, guest_port`         | the released lease                                           |
+| op                           | args                     | result                                                                                  |
+| ---------------------------- | ------------------------ | --------------------------------------------------------------------------------------- |
+| `ping`                       |                          | `version pid started_at`                                                                |
+| `vms`                        |                          | each VM's `name state run_pid guest ip detail`                                          |
+| `run`                        | `vm`                     | supervises a new record; answers when its guest is connected                            |
+| `start` / `stop` / `restart` | `vm`                     | lasting VMs only                                                                        |
+| `delete`                     | `vm`                     | the VM, its files, blocks, leases and serve entries                                     |
+| `services`                   |                          | this host's `station.services/v1` host object                                           |
+| `reserve`                    | `vm, guest_port, pinned` | the lease (an existing one is returned)                                                 |
+| `release`                    | `vm, guest_port`         | the released lease                                                                      |
+| `stop_all`                   |                          | `vms` (each VM's result) and `power_ended`                                              |
+| `power`                      |                          | the Power `session`, `last_end`, `reading` and `guards`                                 |
+| `power_awake`                | `lid, battery, for, by`  | the session (`for` in seconds), `refreshed` when one held                               |
+| `power_sleep`                |                          | `ended`, `after` (seconds)                                                              |
+| `subscribe`                  | `pages` (`power`)        | a stream: one full page per change, `tick` every 15 s, `notice` when a guard ends Power |
 
-An error carries `code` (`unknown_op`, `unknown_vm`, `temporary`, `not_running`, `range_full`, `max_per_vm`, `guest_timeout`, `internal`), a `message` and a `hint`, worded as the CLI prints them.
+An error carries `code` (`unknown_op`, `unknown_vm`, `temporary`, `not_running`, `range_full`, `max_per_vm`, `guest_timeout`, `internal`, `power_guard`, `power_range`, `power_unsupported`, `unknown_page`), a `message` and a `hint`, worded as the CLI prints them. After `subscribe`'s `ok` the connection only streams: a later request line on it gets no answer, so a client sends its actions on a second connection.
 
 ## Related
 

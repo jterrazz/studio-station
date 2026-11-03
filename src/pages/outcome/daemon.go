@@ -42,6 +42,14 @@ func Stop(r daemon.StopReport, here page.Context) page.Page {
 			stuck = v.Name
 		}
 	}
+	switch r.Power {
+	case daemon.PowerEnded:
+		p := pages.Done("power", catalog.StateOK, "")
+		p.Detail = page.Texts("ended", "the clamshell reset to normal")
+		rows = append(rows, p)
+	case daemon.PowerReset:
+		rows = append(rows, pages.Done("power", catalog.StateOK, "reset"))
+	}
 	if r.Daemon != "" {
 		rows = append(rows, daemonRow(r.Daemon, stuck))
 	}

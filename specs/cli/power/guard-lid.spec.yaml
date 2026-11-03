@@ -1,0 +1,17 @@
+description: 'the lid guard ends a --lid session closed on battery in either order, unless --battery'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/power/
+env: daemon
+runs:
+    - command: '--version > /dev/null; "$STATION" daemon 2> daemon.log & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" power awake --lid > /dev/null; echo closed > power/lid; /bin/sleep 1; echo battery > power/source; /bin/sleep 1.5; "$STATION" power --json | /usr/bin/jq -r .last_end.reason; echo open > power/lid; /bin/sleep 1; "$STATION" power awake --lid > /dev/null; echo closed > power/lid; /bin/sleep 1.5; "$STATION" power --json | /usr/bin/jq -c ''[.session, .last_end.reason]''; "$STATION" power awake --lid; echo "exit $?"; "$STATION" power awake --lid --battery > /dev/null; echo ac > power/source; /bin/sleep 1; echo battery > power/source; /bin/sleep 1.5; "$STATION" power | /usr/bin/grep -E "^(.	awake|.	lid)" | /usr/bin/sed -E ''s/[0-9T:-]{19}Z/<until>/; s/[0-9]{2}:[0-9]{2}/HH:MM/''; kill $d; wait $d'
+      exit: 0
+      stdout: |
+          lid
+          [null,"lid"]
+          exit 1
+          ●	awake	on	lid	battery	<until>	station power awake --lid --battery
+          ◐	lid	closed on battery	allowed for this session
+      stderr: |
+          Error: Power stays off: the lid is closed on battery
+          Hint: station power awake --lid --battery

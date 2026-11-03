@@ -41,6 +41,16 @@
         },
         {
           "row": {
+            "id": "power",
+            "mark": "pending",
+            "label": "power",
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "daemon",
             "mark": "pending",
             "label": "daemon",
@@ -53,7 +63,7 @@
       "counts": [
         {
           "mark": "pending",
-          "n": 3
+          "n": 4
         }
       ]
     }

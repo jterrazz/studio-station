@@ -122,6 +122,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		{page.Down, page.Broken, "not running", ""},
 		{page.Outlived, page.Broken, "stale", "station machines delete linux-2"},
 		{page.Expiring, page.Attention, "42m left", "station secrets lend --to api operator:claude:oauth-token"},
+		{page.Guard, page.Attention, "28%" + token.Sep + "on battery", "station power"},
 	}
 	for _, r := range reasons {
 		x := row(string(r.reason), r.mark, page.Text(string(r.mark)))

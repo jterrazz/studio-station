@@ -42,7 +42,9 @@ if (process.env.STATION_FORCE_REBUILD === '1' || binaryIsStale()) {
 // holds only the fixture's stubs and STATION_SYSTEM_DIRS adds no system directory, so
 // an unstubbed tool is "not found" alike on a Mac and on the Linux CI runner;
 // STATION_SYSTEM_ROOT reads /Applications, /opt/homebrew, /Library and /usr/local under
-// the run's own `root/`, so the owner's apps are neither listed nor sized nor run; the
+// the run's own `root/`, so the owner's apps are neither listed nor sized nor run;
+// STATION_POWER_STUB points Power at the run's own `power/` (absent: no Power here), so no
+// run takes a real assertion or touches the clamshell; the
 // machine kind is pinned to host unless a document says otherwise; GitHub is a closed
 // port unless a document serves its stub; a VM's sshd is the served stub vm-sshd.
 export const { cleanup, cli } = await specification.cli(STATION_BIN, {
@@ -53,6 +55,7 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
         PATH: '$WORKDIR/bin',
         STATION_GITHUB_API_URL: 'http://127.0.0.1:9',
         STATION_MACHINE_KIND: 'host',
+        STATION_POWER_STUB: '$WORKDIR/power',
         STATION_SYSTEM_DIRS: '',
         STATION_SYSTEM_ROOT: '$WORKDIR/root',
         TZ: 'UTC',

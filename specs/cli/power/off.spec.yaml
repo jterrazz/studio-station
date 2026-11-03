@@ -1,0 +1,21 @@
+description: 'power reads off with this Mac''s shape: the reading, the guards, the daemon running'
+fixture:
+    - ../__fixtures__/vms/
+    - ../__fixtures__/power/
+env: daemon
+runs:
+    - command: '--version > /dev/null; "$STATION" daemon 2> daemon.log & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" power; "$STATION" power --json | /usr/bin/jq -c ''[.schema, .session, .reading.source, .reading.battery_percent, .daemon.running, [.guards[].state]]''; "$STATION" power --page | /usr/bin/jq -r ''[.schema, .id, .state] | @tsv''; kill $d; wait $d'
+      exit: 0
+      stdout: |
+          ●	awake	off
+          ●	battery	80% · AC attached
+          ●	low power	off
+          ●	thermal	nominal
+          ●	lid	open
+          # Reading
+          lid	open
+          source	AC · 80% · not charging
+          low power	off
+          thermal	nominal (0)
+          ["station.power/v1",null,"ac",80,true,["ok","ok","ok","ok"]]
+          station.page/v1	power	ready
