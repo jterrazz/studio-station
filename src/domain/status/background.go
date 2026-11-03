@@ -41,6 +41,7 @@ type Job struct {
 	Owner     string
 	OwnerGone bool
 	Plist     string
+	Program   string
 	Removal   string
 	State     catalog.State
 }
@@ -122,7 +123,7 @@ func (s *Service) background(ctx context.Context) []Job {
 				j.state(l, found)
 			}
 			program := s.programOf(plist)
-			j.Plist = s.unrooted(plist)
+			j.Plist, j.Program = s.unrooted(plist), s.unrooted(program)
 			s.place(&j, program)
 			jobs = append(jobs, j)
 		}

@@ -172,12 +172,14 @@
     {
       "label": "ai.jterrazz.x",
       "group": "unknown",
-      "state": "ok",
-      "run": "running",
+      "state": "running",
+      "mark": "ok",
       "pid": 12,
+      "last_exit": 0,
       "scope": "user",
       "owner": "",
       "plist": "~/Library/LaunchAgents/ai.jterrazz.x.plist",
+      "program": "",
       "removal": ""
     }
   ],

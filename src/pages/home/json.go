@@ -6,6 +6,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/pages"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
@@ -35,20 +36,21 @@ type jobJSON struct {
 	Label   string `json:"label"`
 	Group   string `json:"group"`
 	State   string `json:"state"`
-	Run     string `json:"run"`
-	PID     int    `json:"pid,omitempty"`
-	Exit    int    `json:"last_exit,omitempty"`
+	Mark    string `json:"mark"`
+	PID     int    `json:"pid"`
+	Exit    int    `json:"last_exit"`
 	Scope   string `json:"scope"`
 	Owner   string `json:"owner"`
 	Plist   string `json:"plist"`
+	Program string `json:"program"`
 	Removal string `json:"removal"`
 }
 
 func jobs(in []status.Job) []jobJSON {
 	out := make([]jobJSON, 0, len(in))
 	for _, j := range in {
-		out = append(out, jobJSON{Label: j.Label, Group: string(j.Group), State: string(j.State), Run: string(j.Run), PID: j.PID, Exit: j.Exit,
-			Scope: j.Scope, Owner: j.Owner, Plist: j.Plist, Removal: j.Removal})
+		out = append(out, jobJSON{Label: j.Label, Group: string(j.Group), State: strings.ReplaceAll(string(j.Run), " ", "-"), Mark: string(pages.MarkOf(j.State)),
+			PID: j.PID, Exit: j.Exit, Scope: j.Scope, Owner: j.Owner, Plist: j.Plist, Program: j.Program, Removal: j.Removal})
 	}
 	return out
 }

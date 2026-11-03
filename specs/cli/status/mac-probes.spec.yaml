@@ -32,10 +32,10 @@ runs:
       exit: 0
       stdout: |
           [[100,"node","3000"],[101,"postgres","5432"]]
-    - command: 'status --json | /usr/bin/jq -c ''.background | map([.label, .group, .state, .run, .scope, .owner])'''
+    - command: 'status --json | /usr/bin/jq -c ''.background | map([.label, .group, .state, .mark, .scope, .owner, .program])'''
       exit: 0
       stdout: |
-          [["TC3Q7MAJXF.com.adguard.safari.AdGuard.Helper","known","ok","running","user","AdGuard"],["ai.jterrazz.gone","orphan","degraded","not loaded","user",""],["ai.jterrazz.x","unknown","ok","running","user",""],["ai.jterrazz.y","unknown","broken","failing","user",""],["com.docker.vmnetd","orphan","degraded","not loaded","root","Docker.app"],["dev.orbstack.OrbStack.privhelper","known","ok","idle","root","OrbStack"]]
+          [["TC3Q7MAJXF.com.adguard.safari.AdGuard.Helper","known","running","ok","user","AdGuard",""],["ai.jterrazz.gone","orphan","not-loaded","attention","user","","/opt/gone/bin/agent"],["ai.jterrazz.x","unknown","running","ok","user","",""],["ai.jterrazz.y","unknown","failing","broken","user","",""],["com.docker.vmnetd","orphan","not-loaded","attention","root","Docker.app","/Library/PrivilegedHelperTools/com.docker.vmnetd"],["dev.orbstack.OrbStack.privhelper","known","idle","ok","root","OrbStack","/Library/PrivilegedHelperTools/dev.orbstack.OrbStack.privhelper"]]
     - command: 'status --json | /usr/bin/jq -r ''.background[] | select(.removal != "") | .removal'' | /usr/bin/sed ''s|gui/[0-9]*/|gui/UID/|'''
       exit: 0
       stdout: |
