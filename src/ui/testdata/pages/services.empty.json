@@ -1,0 +1,62 @@
+{
+  "schema": "station.page/v1",
+  "id": "services",
+  "command": "services",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "services",
+      "title": "Services",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "vm",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "port",
+          "label": "port",
+          "kind": "portmap",
+          "keep": 80
+        },
+        {
+          "key": "url",
+          "label": "url",
+          "kind": "url",
+          "keep": 40
+        },
+        {
+          "key": "host",
+          "kind": "text",
+          "show": "pipe"
+        },
+        {
+          "key": "state",
+          "label": "state",
+          "kind": "text",
+          "keep": 70
+        },
+        {
+          "key": "process",
+          "label": "process",
+          "kind": "text",
+          "keep": 20
+        }
+      ],
+      "items": [
+        {
+          "empty": {
+            "noun": "services",
+            "hint": {
+              "command": "station machines create"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -82,6 +82,9 @@ func renderings(f fixture) map[string]func() (string, error) {
 	if f.state == "full" {
 		out["ttylight100"] = func() (string, error) { return string(tty.Render(f.page, tty.Options{Width: 100, Dark: false})), nil }
 	}
+	if strings.HasPrefix(f.name, "fleet.") || strings.HasPrefix(f.name, "services.") {
+		out["tui120"] = func() (string, error) { return browse(f.page, 120), nil }
+	}
 	if strings.HasPrefix(f.name, "kitchen-sink.") {
 		out["tty40"] = func() (string, error) {
 			return ansi.Strip(string(tty.Render(f.page, tty.Options{Width: 40, Dark: true}))), nil
@@ -166,11 +169,13 @@ func TestEveryHintIsWholeInEveryMedium(t *testing.T) {
 			}
 		}
 		for _, s := range f.page.Sections {
-			walk(s.Items)
+			if s.Fold != page.Folded {
+				walk(s.Items)
+			}
 		}
 		mediums := map[string]string{
-			"tty80":  ansi.Strip(string(tty.Render(f.page, tty.Options{Width: 80, Dark: true}))),
-			"tty100": ansi.Strip(string(tty.Render(f.page, tty.Options{Width: 100, Dark: true}))),
+			"tty80":  joined(ansi.Strip(string(tty.Render(f.page, tty.Options{Width: 80, Dark: true})))),
+			"tty100": joined(ansi.Strip(string(tty.Render(f.page, tty.Options{Width: 100, Dark: true})))),
 		}
 		if body, err := pipe.Render(f.page); err == nil {
 			mediums["pipe"] = string(body)
@@ -184,6 +189,11 @@ func TestEveryHintIsWholeInEveryMedium(t *testing.T) {
 		}
 	}
 }
+
+// value: a chained command broken after its `&&` reads whole again (G5).
+var joints = regexp.MustCompile(`&&\n +`)
+
+func joined(text string) string { return joints.ReplaceAllString(text, "&& ") }
 
 type span struct {
 	fg   string

@@ -1,0 +1,127 @@
+{
+  "schema": "station.page/v1",
+  "id": "images",
+  "command": "images",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "images",
+      "title": "Images",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "version",
+          "label": "version",
+          "kind": "version",
+          "keep": 50
+        },
+        {
+          "key": "size",
+          "label": "size",
+          "kind": "size",
+          "keep": 60
+        },
+        {
+          "key": "vms",
+          "label": "VMs",
+          "kind": "count",
+          "keep": 40
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "linux@3",
+            "mark": "ok",
+            "label": "linux",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "3"
+              },
+              {
+                "kind": "size",
+                "n": 6000000000
+              },
+              {
+                "kind": "count",
+                "n": 2,
+                "unit": "VMs"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "linux@2",
+            "mark": "absent",
+            "label": "linux",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "2"
+              },
+              {
+                "kind": "size",
+                "n": 6000000000
+              },
+              {
+                "kind": "count",
+                "unit": "VMs"
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "older: station images delete linux@2"
+            },
+            "reason": "outdated"
+          }
+        },
+        {
+          "row": {
+            "id": "macos@1",
+            "mark": "ok",
+            "label": "macos",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "1"
+              },
+              {
+                "kind": "size",
+                "n": 48000000000
+              },
+              {
+                "kind": "count",
+                "unit": "VMs"
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station images build"
+    }
+  ]
+}

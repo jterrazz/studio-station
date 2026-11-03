@@ -1,0 +1,5 @@
+ station status                                             host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────
+
+ Error: status reads the host it runs on
+ Hint: station status --on <vm>

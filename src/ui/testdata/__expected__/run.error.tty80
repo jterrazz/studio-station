@@ -1,0 +1,5 @@
+ station run docker clean                                   host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────
+
+ Error: docker is not running
+ Hint: open OrbStack, then station run docker clean

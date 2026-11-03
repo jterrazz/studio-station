@@ -1,0 +1,66 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "run docker clean",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "containers",
+            "mark": "ok",
+            "label": "containers",
+            "detail": {
+              "kind": "count",
+              "n": 3,
+              "unit": "removed"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "images",
+            "mark": "ok",
+            "label": "images",
+            "detail": {
+              "kind": "count",
+              "n": 12,
+              "unit": "removed"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "volumes",
+            "mark": "ok",
+            "label": "volumes",
+            "detail": {
+              "kind": "text",
+              "text": "none to remove"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 3
+        }
+      ]
+    }
+  ]
+}

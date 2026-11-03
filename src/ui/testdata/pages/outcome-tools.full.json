@@ -1,0 +1,84 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "tools install",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "jq",
+            "mark": "ok",
+            "label": "jq",
+            "detail": {
+              "kind": "text",
+              "text": "1.8.1"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "mise",
+            "mark": "ok",
+            "label": "mise",
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "mise/activate",
+            "mark": "attention",
+            "label": "activate",
+            "detail": {
+              "kind": "text",
+              "text": "restart the shell"
+            },
+            "reason": "partial"
+          }
+        },
+        {
+          "row": {
+            "id": "typewhisper",
+            "mark": "broken",
+            "label": "typewhisper",
+            "detail": {
+              "kind": "text",
+              "text": "brew bundle exited 1"
+            },
+            "reason": "failing"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        },
+        {
+          "mark": "attention",
+          "n": 1
+        },
+        {
+          "mark": "broken",
+          "n": 1
+        }
+      ]
+    }
+  ]
+}

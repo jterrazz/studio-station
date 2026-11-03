@@ -1,0 +1,13 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "storage clean",
+  "context": {
+    "kind": "host"
+  },
+  "state": "failed",
+  "error": {
+    "message": "no tool named brw",
+    "hint": "station storage"
+  }
+}

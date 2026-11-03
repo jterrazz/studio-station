@@ -1,0 +1,30 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "tools install",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "empty": {
+            "noun": "tools to install"
+          }
+        }
+      ]
+    }
+  ]
+}

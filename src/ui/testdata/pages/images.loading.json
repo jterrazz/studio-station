@@ -1,0 +1,123 @@
+{
+  "schema": "station.page/v1",
+  "id": "images",
+  "command": "images",
+  "context": {
+    "kind": "host"
+  },
+  "state": "loading",
+  "sections": [
+    {
+      "id": "images",
+      "title": "Images",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "version",
+          "label": "version",
+          "kind": "version",
+          "keep": 50
+        },
+        {
+          "key": "size",
+          "label": "size",
+          "kind": "size",
+          "keep": 60
+        },
+        {
+          "key": "vms",
+          "label": "VMs",
+          "kind": "count",
+          "keep": 40
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "linux@3",
+            "mark": "pending",
+            "label": "linux",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "size",
+                "n": 6000000000,
+                "stale": true
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "linux@2",
+            "mark": "pending",
+            "label": "linux",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "size",
+                "n": 6000000000,
+                "stale": true
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "macos@1",
+            "mark": "pending",
+            "label": "macos",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "size",
+                "n": 48000000000,
+                "stale": true
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 3
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station images build"
+    }
+  ]
+}

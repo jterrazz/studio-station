@@ -1,0 +1,21 @@
+ - To do                                                                       
+   no actions
+ - Summary
+   ● Machine     host · Darwin 27.0.0 · up 22d 14h
+   ● Network     192.168.1.152 · vpn on · 4/4 on
+   ● Tailnet     jterrazz-macbook-pro · Serve on
+   ● Identity    admin@jterrazz.com · signing on
+   ● Workspace   2 repos
+   ● Background  1 job
+   ● Tools       1 ●
+   ● Config      1 ●
+   ● Storage     27.9 GB reclaimable
+   ● Fleet       daemon running v2.0.0-250
+ + Machine                                                                  4 ●
+ + Environment                                                              9 ●
+ + Workspace                                                           3 ●  1 ○
+ + Identity                                                                 2 ●
+ + Background                                                               1 ●
+ + Tools                                                                    1 ●
+ + Config                                                                   1 ●
+ ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

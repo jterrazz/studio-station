@@ -1,0 +1,105 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "setup",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "step",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "detail",
+          "kind": "text",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "name",
+            "mark": "ok",
+            "label": "name",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "macbook"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "zshrc",
+            "mark": "ok",
+            "label": "zshrc",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "the station block"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "layout",
+            "mark": "attention",
+            "label": "layout",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "~/.tart left in place"
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "73 GB: move it with station setup --move"
+            },
+            "reason": "partial"
+          }
+        },
+        {
+          "row": {
+            "id": "tools",
+            "mark": "ok",
+            "label": "tools",
+            "cells": [
+              {
+                "kind": "none"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 3
+        },
+        {
+          "mark": "attention",
+          "n": 1
+        }
+      ]
+    }
+  ]
+}

@@ -146,7 +146,7 @@ func checkRow(s Section, r Row, judged bool, rows map[string]bool) error {
 	if judged && s.Role != Summary && r.Mark == Unjudged {
 		return errors.New("row " + r.ID + ": a judged section's row carries a mark")
 	}
-	if (r.Mark == Attention || r.Mark == Broken) && (r.Reason == "" || !explained(r)) {
+	if s.Role != Summary && (r.Mark == Attention || r.Mark == Broken) && (r.Reason == "" || !explained(r)) {
 		return errors.New("row " + r.ID + ": an attention or broken row carries a reason and a detail or a hint")
 	}
 	if len(s.Columns) > 0 && len(r.Cells) > len(s.Columns)-1 {

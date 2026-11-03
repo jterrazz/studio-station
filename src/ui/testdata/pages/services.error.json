@@ -1,0 +1,13 @@
+{
+  "schema": "station.page/v1",
+  "id": "services",
+  "command": "services",
+  "context": {
+    "kind": "host"
+  },
+  "state": "failed",
+  "error": {
+    "message": "the daemon is not running",
+    "hint": "station setup"
+  }
+}

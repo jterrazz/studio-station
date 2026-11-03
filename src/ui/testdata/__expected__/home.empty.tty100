@@ -1,0 +1,30 @@
+ station status                                                                 host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ To do
+   no actions
+
+ Summary
+   ● Machine     host · Darwin 27.0.0 · up 22d 14h   ● Tools    1 ●
+   ● Network     192.168.1.152 · vpn on · 4/4 on     ● Config   1 ●
+   ● Tailnet     jterrazz-macbook-pro · Serve on     ● Storage  27.9 GB reclaimable
+   ● Identity    admin@jterrazz.com · signing on     ● Fleet    daemon running v2.0.0-250
+   ● Workspace   2 repos
+   ● Background  1 job
+
+ Machine  4 ●
+
+ Environment  9 ●
+
+ Workspace  3 ●  1 ○
+
+ Identity  2 ●
+
+ Background  1 ●
+
+ Tools  1 ●
+
+ Config  1 ●
+
+ → station status --all for every row
+ → station status | cat for records

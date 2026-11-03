@@ -1,0 +1,419 @@
+{
+  "schema": "station.page/v1",
+  "id": "fleet",
+  "context": {
+    "kind": "host"
+  },
+  "state": "loading",
+  "sections": [
+    {
+      "id": "fleet",
+      "title": "Fleet",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 70
+        },
+        {
+          "key": "host",
+          "kind": "text",
+          "show": "pipe"
+        },
+        {
+          "key": "lifetime",
+          "kind": "text",
+          "keep": 60
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 90
+        },
+        {
+          "key": "ip",
+          "kind": "identity",
+          "keep": 50
+        },
+        {
+          "key": "resources",
+          "kind": "list",
+          "keep": 10
+        }
+      ],
+      "items": [
+        {
+          "group": {
+            "head": {
+              "id": "macbook",
+              "mark": "ok",
+              "label": "macbook",
+              "cells": [
+                {
+                  "kind": "text",
+                  "text": "host"
+                },
+                {
+                  "kind": "none"
+                },
+                {
+                  "kind": "none"
+                },
+                {
+                  "kind": "text",
+                  "text": "online"
+                },
+                {
+                  "kind": "identity",
+                  "text": "100.98.133.14"
+                },
+                {
+                  "kind": "count",
+                  "n": 2,
+                  "unit": "VMs"
+                }
+              ]
+            },
+            "items": [
+              {
+                "row": {
+                  "id": "linux-1",
+                  "mark": "ok",
+                  "label": "linux-1",
+                  "cells": [
+                    {
+                      "kind": "text",
+                      "text": "linux"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "macbook"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "temporary"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "running"
+                    },
+                    {
+                      "kind": "identity",
+                      "text": "192.168.64.5"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "count",
+                          "n": 4,
+                          "unit": "cpus"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "4 GB"
+                        },
+                        {
+                          "kind": "size",
+                          "n": 42949672960
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "api",
+                  "mark": "absent",
+                  "label": "api",
+                  "cells": [
+                    {
+                      "kind": "text",
+                      "text": "linux"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "macbook"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "lasting"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "stopped"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "-"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "count",
+                          "n": 4,
+                          "unit": "cpus"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "8 GB"
+                        },
+                        {
+                          "kind": "size",
+                          "n": 42949672960
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ],
+            "fold": "open"
+          }
+        },
+        {
+          "group": {
+            "head": {
+              "id": "mac-mini",
+              "mark": "attention",
+              "label": "mac-mini",
+              "cells": [
+                {
+                  "kind": "text",
+                  "text": "host"
+                },
+                {
+                  "kind": "none"
+                },
+                {
+                  "kind": "none"
+                },
+                {
+                  "kind": "text",
+                  "text": "online"
+                },
+                {
+                  "kind": "identity",
+                  "text": "100.98.133.20"
+                },
+                {
+                  "kind": "text",
+                  "text": "station v2.0.0-248 here v2.0.0-250"
+                }
+              ],
+              "reason": "mismatch"
+            },
+            "items": [
+              {
+                "empty": {
+                  "noun": "VMs",
+                  "hint": {
+                    "command": "station machines create --on mac-mini"
+                  }
+                }
+              }
+            ],
+            "fold": "open"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        },
+        {
+          "mark": "attention",
+          "n": 1
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "images",
+      "title": "Images",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "error": {
+            "message": "tart is not installed",
+            "hint": "station tools install tart"
+          }
+        }
+      ]
+    },
+    {
+      "id": "secrets",
+      "title": "Secrets",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "secrets",
+            "mark": "pending",
+            "label": "reading"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "tailnet",
+      "title": "Tailnet",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "tailnet",
+            "mark": "pending",
+            "label": "reading"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "d",
+      "label": "delete",
+      "on": "row",
+      "rows": [
+        "linux-1",
+        "api"
+      ],
+      "confirm": {
+        "danger": true,
+        "yes": "delete"
+      },
+      "priority": 1,
+      "mutates": true
+    },
+    {
+      "key": "ctrl+r",
+      "label": "restart",
+      "on": "row",
+      "rows": [
+        "macbook",
+        "mac-mini",
+        "linux-1",
+        "api"
+      ],
+      "confirm": {
+        "danger": true,
+        "yes": "restart"
+      },
+      "priority": 2,
+      "mutates": true
+    },
+    {
+      "key": "e",
+      "label": "enter",
+      "on": "row",
+      "rows": [
+        "linux-1",
+        "api",
+        "mac-mini"
+      ],
+      "priority": 3,
+      "mutates": true
+    },
+    {
+      "key": "n",
+      "label": "create",
+      "on": "page",
+      "priority": 4,
+      "mutates": true
+    },
+    {
+      "key": "s",
+      "label": "start/stop",
+      "on": "row",
+      "rows": [
+        "api"
+      ],
+      "priority": 5,
+      "mutates": true
+    },
+    {
+      "key": "f",
+      "label": "forget",
+      "on": "row",
+      "rows": [
+        "mac-mini"
+      ],
+      "confirm": {
+        "yes": "forget"
+      },
+      "priority": 6,
+      "mutates": true
+    },
+    {
+      "key": "b",
+      "label": "build images",
+      "on": "page",
+      "priority": 7,
+      "mutates": true
+    },
+    {
+      "key": "p",
+      "label": "probe",
+      "on": "row",
+      "rows": [
+        "linux-1",
+        "api",
+        "mac-mini"
+      ],
+      "priority": 8
+    },
+    {
+      "key": "o",
+      "label": "unlock",
+      "on": "row",
+      "rows": [
+        "mac-mini"
+      ],
+      "priority": 9,
+      "mutates": true
+    }
+  ]
+}

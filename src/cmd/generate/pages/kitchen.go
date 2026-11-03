@@ -13,7 +13,7 @@ type Fixture struct {
 }
 
 func All() []Fixture {
-	return append(Tools(), Kitchen()...)
+	return append(append(Tools(), Kitchen()...), Estate()...)
 }
 
 func row(id string, mark page.Mark, cells ...page.Value) page.Row {

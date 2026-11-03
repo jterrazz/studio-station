@@ -1,0 +1,59 @@
+{
+  "schema": "station.page/v1",
+  "id": "tailnet",
+  "command": "tailnet",
+  "context": {
+    "kind": "host"
+  },
+  "state": "loading",
+  "sections": [
+    {
+      "id": "tailnet",
+      "title": "Tailnet",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "tailnet",
+            "mark": "pending",
+            "label": "tailnet",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "the Tailscale app does not answer"
+              }
+            ],
+            "hint": {
+              "command": "open the Tailscale app and log in",
+              "external": true
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "open the Tailscale app and log in",
+      "external": true
+    }
+  ]
+}

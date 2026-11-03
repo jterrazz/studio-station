@@ -1,0 +1,7 @@
+ station tailnet                                            host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────
+
+ Tailnet
+   ○ tailnet  not installed  → station tools install tailscale
+
+ → station tools install tailscale

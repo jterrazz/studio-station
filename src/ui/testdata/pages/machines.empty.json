@@ -1,0 +1,158 @@
+{
+  "schema": "station.page/v1",
+  "id": "machines",
+  "command": "machines",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "fleet",
+      "title": "Fleet",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 70
+        },
+        {
+          "key": "host",
+          "kind": "text",
+          "show": "pipe"
+        },
+        {
+          "key": "lifetime",
+          "kind": "text",
+          "keep": 60
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 90
+        },
+        {
+          "key": "ip",
+          "kind": "identity",
+          "keep": 50
+        },
+        {
+          "key": "resources",
+          "kind": "list",
+          "keep": 10
+        }
+      ],
+      "items": [
+        {
+          "group": {
+            "head": {
+              "id": "macbook",
+              "mark": "ok",
+              "label": "macbook",
+              "cells": [
+                {
+                  "kind": "text",
+                  "text": "host"
+                },
+                {
+                  "kind": "none"
+                },
+                {
+                  "kind": "none"
+                },
+                {
+                  "kind": "text",
+                  "text": "online"
+                },
+                {
+                  "kind": "text",
+                  "text": "-"
+                },
+                {
+                  "kind": "count",
+                  "unit": "VMs"
+                }
+              ]
+            },
+            "items": [
+              {
+                "empty": {
+                  "noun": "VMs",
+                  "hint": {
+                    "command": "station machines create",
+                    "key": "n"
+                  }
+                }
+              }
+            ],
+            "fold": "open"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "n",
+      "label": "create",
+      "on": "page",
+      "priority": 4,
+      "mutates": true
+    },
+    {
+      "key": "d",
+      "label": "delete",
+      "on": "row",
+      "confirm": {
+        "danger": true,
+        "yes": "delete"
+      },
+      "priority": 1,
+      "mutates": true
+    },
+    {
+      "key": "s",
+      "label": "start",
+      "on": "row",
+      "priority": 5,
+      "mutates": true
+    },
+    {
+      "key": "S",
+      "label": "stop",
+      "on": "row",
+      "priority": 6,
+      "mutates": true
+    },
+    {
+      "key": "ctrl+r",
+      "label": "restart",
+      "on": "row",
+      "confirm": {
+        "danger": true,
+        "yes": "restart"
+      },
+      "priority": 2,
+      "mutates": true
+    },
+    {
+      "key": "e",
+      "label": "enter",
+      "on": "row",
+      "priority": 3,
+      "mutates": true
+    }
+  ]
+}

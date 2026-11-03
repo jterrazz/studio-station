@@ -1,0 +1,9 @@
+ - Terminal                                                                                     4 ◌
+   ◌ hushlogin          Silence the terminal login message
+   ◌ ghostty-dotfiles   The Ghostty config and its Catppuccin themes
+   ◌ tmux-dotfiles      The tmux config
+   ◌ starship-dotfiles  The Starship prompt config
+ - Security                                                                                     2 ◌
+   ◌ git-signing  Sign every commit with a GPG key
+   ◌ ssh-key      An ed25519 SSH key, kept in the Keychain
+ ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

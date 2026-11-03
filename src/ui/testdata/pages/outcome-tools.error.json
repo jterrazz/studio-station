@@ -1,0 +1,13 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "tools install",
+  "context": {
+    "kind": "host"
+  },
+  "state": "failed",
+  "error": {
+    "message": "no tool named jqq",
+    "hint": "station tools"
+  }
+}

@@ -1,0 +1,44 @@
+# Machine	3 ●	1 ◐
+●	name	macbook	host · Darwin 27.0.0 arm64 · jterrazz · zsh
+●	uptime	22d 14h	battery 100% charged
+●	setup	done
+◐	daemon	not running	station setup
+# Environment	7 ●	2 ◐
+●	local ip	192.168.1.152
+●	vpn	Tailscale
+●	filevault	on
+●	firewall	on
+●	sip	off
+●	gatekeeper	on
+◐	macos	2 pending	checked 22m ago
+◐	brew	120 outdated	station tools upgrade --via brew
+●	tailnet	Running · jterrazz-macbook-pro.tail1234.ts.net · 100.98.133.14
+# Workspace	3 ●	3 ◐
+●	repos	2	2 dirty
+◐	deps	14 outdated	in 1 repos
+●	docker	off
+●	disk	27.9 GB	reclaimable: station storage clean
+◐	tart	~/.tart	78.4 GB · station setup
+◐	bun	~/.bun	2.1 GB · station setup
+# Identity	2 ●
+●	git email	admin@jterrazz.com
+●	git signing	on
+# Background	1 ●	1 ◐	1 ✗
+●	com.github.facebook.watchman	known	running · pid 3464	user	watchman	~/Library/LaunchAgents/com.github.facebook.watchman.plist
+✗	com.jterrazz.brain.x-snapshot	unknown	failing · last exit 2	user		~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist · launchctl bootout gui/501/com.jterrazz.brain.x-snapshot && rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
+◐	com.docker.socket	orphan	not loaded	root	Docker.app	/Library/LaunchDaemons/com.docker.socket.plist · sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist
+# Gateways	1 ✗
+✗	Hermes runtime	not running	gateway process not found
+# Tools	7 ●	6 ◐	4 ○
+○	mise		brew · system	station tools install mise
+○	mas		brew	station tools install mas
+◐	bun		mise	installed, mise not installed · station tools install mise
+◐	go		mise	installed, mise not installed · station tools install mise
+◐	java	17.0.20	mise	installed, mise not installed · station tools install mise
+◐	python	3.14.6	mise	installed, mise not installed · station tools install mise
+◐	chatgpt		cask	on PATH, not managed by cask
+○	typewhisper		cask	station tools install typewhisper
+○	frontend-design		skill	skills not installed · station tools install skills
+◐	better-ui		skill	outdated
+# Config	1 ●	1 ◐
+◐	power	Always-on power policy	policy partly applied · station config install power

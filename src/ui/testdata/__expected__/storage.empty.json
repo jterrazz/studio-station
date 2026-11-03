@@ -1,0 +1,58 @@
+{
+  "schema": "station.page/v1",
+  "id": "storage",
+  "command": "storage",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "storage",
+      "title": "Storage",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "cache",
+          "label": "cache",
+          "kind": "size",
+          "keep": 90
+        },
+        {
+          "key": "levels",
+          "kind": "levels",
+          "keep": 80,
+          "levels": [
+            "data",
+            "kept",
+            "installed"
+          ]
+        }
+      ],
+      "items": [
+        {
+          "empty": {
+            "noun": "data stored",
+            "hint": {
+              "command": "station tools install <tool>"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station storage clean <tool...>"
+    },
+    {
+      "command": "station storage reset <tool...>",
+      "text": "asks first"
+    }
+  ]
+}

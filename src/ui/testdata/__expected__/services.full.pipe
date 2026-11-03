@@ -1,0 +1,3 @@
+●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	macbook	published	node	vite
+○	linux-1	5432		macbook	waiting	postgres
+◐	mac-mini			mac-mini	unreachable		ssh mac-mini true

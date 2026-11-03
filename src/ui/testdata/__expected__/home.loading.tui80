@@ -1,0 +1,45 @@
+ - To do                                                                    1 ◐
+   ◐ strays  2 folders out of place · 80.5 GB  → station setup
+ - Summary
+   ◌ Machine    host · Darwin 27.0.0
+   ◌ Network    192.168.1.152 · vpn on · 4/4 on
+   ◌ Tailnet    off
+   ◌ Identity   not set
+   ◐ Workspace  2 repos · 14 deps outdated
+   ◌ Tools      1 ◌
+   ◌ Config     1 ◌
+   ● Storage    27.9 GB reclaimable · 2 strays
+   ◌ Fleet      this host
+   ◌ Gateways   1 ◌
+ - Machine                                                             1 ●  3 ◌
+   ● name    macbook  host · Darwin 27.0.0 arm64 · jterrazz · zsh
+   ◌ uptime
+   ◌ setup
+   ◌ daemon
+ - Environment                                                         6 ●  3 ◌
+   ● local ip    192.168.1.152
+   ● vpn         Tailscale
+   ● filevault   on
+   ● firewall    on
+   ● sip         off
+   ● gatekeeper  on
+   ◌ macos
+   ◌ brew
+   ◌ tailnet
+ - Workspace                                                           2 ◐  4 ◌
+   ◌ repos
+   ◌ deps
+   ◌ docker
+   ◌ disk    27.9 GB
+   ◐ tart    ~/.tart  78.4 GB  → station setup
+   ◐ bun     ~/.bun   2.1 GB  → station setup
+ - Identity                                                                 2 ◌
+   ◌ git email
+   ◌ git signing
+ - Gateways                                                                 1 ◌
+   ◌ Hermes runtime
+ - Tools                                                                    1 ◌
+   ◌ catalogue
+ - Config                                                                   1 ◌
+   ◌ items
+ ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

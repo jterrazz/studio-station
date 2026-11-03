@@ -1,0 +1,7 @@
+ station run docker clean                                                       host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Changes
+   ◌ containers
+   ◌ images
+   ◌ volumes

@@ -1,0 +1,13 @@
+{
+  "schema": "station.page/v1",
+  "id": "tailnet",
+  "command": "tailnet",
+  "context": {
+    "kind": "host"
+  },
+  "state": "failed",
+  "error": {
+    "message": "tailscale did not answer in 5s",
+    "hint": "open Tailscale, then station tailnet"
+  }
+}

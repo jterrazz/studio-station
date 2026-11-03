@@ -1,0 +1,7 @@
+ station run docker clean                                                       host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Changes
+   ● containers  3 removed
+   ● images      12 removed
+   ● volumes     none to remove

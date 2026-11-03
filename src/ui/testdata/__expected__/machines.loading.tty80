@@ -1,0 +1,9 @@
+ station machines                                           host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────
+
+ Fleet
+   ◌ macbook
+   ├─ ◌ linux-1
+   └─ ◌ api
+   ◌ mac-mini
+   └─   no VMs  → station machines create --on mac-mini

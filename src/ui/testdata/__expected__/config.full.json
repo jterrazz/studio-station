@@ -1,0 +1,206 @@
+{
+  "schema": "station.page/v1",
+  "id": "config",
+  "command": "config",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "terminal",
+      "title": "Terminal",
+      "fold": "auto",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "description",
+          "kind": "text",
+          "keep": 20
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "hushlogin",
+            "mark": "ok",
+            "label": "hushlogin",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Silence the terminal login message"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "ghostty-dotfiles",
+            "mark": "absent",
+            "label": "ghostty-dotfiles",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "The Ghostty config and its Catppuccin themes"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            },
+            "hint": {
+              "command": "station config install ghostty-dotfiles",
+              "key": "i"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "tmux-dotfiles",
+            "mark": "attention",
+            "label": "tmux-dotfiles",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "The tmux config"
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "differs from station's"
+            },
+            "reason": "differs",
+            "hint": {
+              "command": "station config install tmux-dotfiles",
+              "key": "i"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "starship-dotfiles",
+            "mark": "ok",
+            "label": "starship-dotfiles",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "The Starship prompt config"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        },
+        {
+          "mark": "attention",
+          "n": 1
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Security",
+      "fold": "auto",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "description",
+          "kind": "text",
+          "keep": 20
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "git-signing",
+            "mark": "absent",
+            "label": "git-signing",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Sign every commit with a GPG key"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            },
+            "hint": {
+              "command": "station config install git-signing",
+              "key": "i"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "ssh-key",
+            "mark": "attention",
+            "label": "ssh-key",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "An ed25519 SSH key, kept in the Keychain"
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "differs from station's"
+            },
+            "reason": "differs",
+            "hint": {
+              "command": "station config install ssh-key",
+              "key": "i"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "attention",
+          "n": 1
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station config install <item...>"
+    },
+    {
+      "command": "station config uninstall <item...>"
+    }
+  ],
+  "actions": [
+    {
+      "key": "i",
+      "label": "install",
+      "on": "row",
+      "priority": 1,
+      "mutates": true
+    }
+  ]
+}

@@ -132,11 +132,18 @@ func backgroundValue(jobs []status.Job) page.Value {
 			orphans++
 		}
 	}
-	parts := []page.Value{page.Count(int64(len(jobs)), "jobs")}
+	unit := "jobs"
+	if len(jobs) == 1 {
+		unit = "job"
+	}
+	parts := []page.Value{page.Count(int64(len(jobs)), unit)}
 	if failing > 0 {
 		parts = append(parts, page.Count(int64(failing), "failing"))
 	}
-	if orphans > 0 {
+	switch {
+	case orphans == 1:
+		parts = append(parts, page.Count(1, "orphan"))
+	case orphans > 1:
 		parts = append(parts, page.Count(int64(orphans), "orphans"))
 	}
 	return page.List(parts...)

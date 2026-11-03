@@ -400,3 +400,80 @@ func TestEveryFixtureHasItsGoldens(t *testing.T) {
 		}
 	})
 }
+
+// value: the fixture family a page package is proved by, where its name is not
+// the package's: the run shortcuts render through pages/shortcuts.
+func familyOf(pkg string) string {
+	if pkg == "shortcuts" {
+		return "run"
+	}
+	return pkg
+}
+
+func pageStates() []string { return []string{"loading", "empty", "error", "full"} }
+
+func missingPages(packages, fixtures []string) []finding {
+	have := map[string]bool{}
+	families := map[string]bool{}
+	for _, fx := range fixtures {
+		have[fx] = true
+		if cut := strings.LastIndexByte(fx, '.'); cut > 0 {
+			families[fx[:cut]] = true
+		}
+	}
+	var out []finding
+	for _, pkg := range packages {
+		family := familyOf(pkg)
+		found := false
+		for f := range families {
+			found = found || f == family || strings.HasPrefix(f, family+"-")
+		}
+		if !found {
+			out = append(out, finding{"fixtures", "src/pages/" + pkg, "a page package with no fixture family in src/ui/testdata/pages"})
+		}
+	}
+	for f := range families {
+		for _, state := range pageStates() {
+			if !have[f+"."+state] {
+				out = append(out, finding{"fixtures", "src/ui/testdata/pages/" + f + "." + state + ".json", "a fixture family without its " + state + " state"})
+			}
+		}
+	}
+	return out
+}
+
+func TestEveryPageHasItsFourFixtures(t *testing.T) {
+	root := repoRoot(t)
+	dirs, err := os.ReadDir(filepath.Join(root, "src", "pages"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var packages []string
+	for _, d := range dirs {
+		if d.IsDir() {
+			packages = append(packages, d.Name())
+		}
+	}
+	entries, err := os.ReadDir(filepath.Join(root, "src", "ui", "testdata", "pages"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixtures := make([]string, 0, len(entries))
+	for _, e := range entries {
+		fixtures = append(fixtures, strings.TrimSuffix(e.Name(), ".json"))
+	}
+	t.Run("holds", func(t *testing.T) {
+		for _, f := range missingPages(packages, fixtures) {
+			t.Errorf("%s: %s", f.where, f.what)
+		}
+	})
+	t.Run("bites", func(t *testing.T) {
+		got := missingPages(append(slices.Clone(packages), "accounts"), slices.DeleteFunc(slices.Clone(fixtures), func(f string) bool { return f == "tailnet.error" }))
+		if !slices.ContainsFunc(got, func(f finding) bool { return f.where == "src/pages/accounts" }) {
+			t.Error("the fixtures rule did not report a page package with no fixture")
+		}
+		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "tailnet.error.json") }) {
+			t.Error("the fixtures rule did not report a family missing its error state")
+		}
+	})
+}

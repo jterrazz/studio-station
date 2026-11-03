@@ -1,0 +1,56 @@
+{
+  "schema": "station.page/v1",
+  "id": "images",
+  "command": "images",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "images",
+      "title": "Images",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "version",
+          "label": "version",
+          "kind": "version",
+          "keep": 50
+        },
+        {
+          "key": "size",
+          "label": "size",
+          "kind": "size",
+          "keep": 60
+        },
+        {
+          "key": "vms",
+          "label": "VMs",
+          "kind": "count",
+          "keep": 40
+        }
+      ],
+      "items": [
+        {
+          "empty": {
+            "noun": "images",
+            "hint": {
+              "command": "station images build"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station images build"
+    }
+  ]
+}

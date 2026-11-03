@@ -1,0 +1,13 @@
+ - Station                                                                                         
+              cache    data
+   ● station    0 B  4.3 GB
+ - Package Managers
+                 cache  installed
+   ● homebrew  27.9 GB     3.2 GB
+ - Runtimes
+           cache
+   ● bun  1.8 GB
+ - Strays
+           path        size
+   ◐ tart  ~/.tart  78.4 GB  → station setup
+ ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

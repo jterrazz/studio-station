@@ -1,0 +1,8 @@
+ station storage                                                                host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Storage
+   no data stored  → station tools install <tool>
+
+ → station storage clean <tool...>
+ → station storage reset <tool...> asks first
