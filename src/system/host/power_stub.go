@@ -83,5 +83,5 @@ func (s *stubPower) Read() (system.PowerReading, error) {
 }
 
 func (s *stubPower) Watch(ctx context.Context) <-chan system.PowerEvent {
-	return watchReadings(ctx, s.Read, stubEvery)
+	return watchReadings(ctx, s.Read, stubEvery, nil)
 }

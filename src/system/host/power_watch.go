@@ -7,7 +7,7 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-func watchReadings(ctx context.Context, read func() (system.PowerReading, error), every time.Duration) <-chan system.PowerEvent {
+func watchReadings(ctx context.Context, read func() (system.PowerReading, error), every time.Duration, wake <-chan struct{}) <-chan system.PowerEvent {
 	out := make(chan system.PowerEvent, 8)
 	go func() {
 		defer close(out)
@@ -19,6 +19,7 @@ func watchReadings(ctx context.Context, read func() (system.PowerReading, error)
 			case <-ctx.Done():
 				return
 			case <-t.C:
+			case <-wake:
 			}
 			now, err := read()
 			if err != nil {
@@ -47,6 +48,9 @@ func moved(a, b system.PowerReading) []string {
 	}
 	if a.Lid != b.Lid {
 		kinds = append(kinds, "lid")
+	}
+	if a.HasBattery != b.HasBattery || a.Percent != b.Percent {
+		kinds = append(kinds, "battery")
 	}
 	return kinds
 }

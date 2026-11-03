@@ -1,0 +1,37 @@
+//go:build darwin && cgo
+
+package host
+
+import (
+	"context"
+	"os/exec"
+	"strconv"
+	"testing"
+	"time"
+)
+
+// value: IOPowerSources posts under com.apple.system, which only the system
+// may post, so the wake is proved on a name of this test's own.
+func TestAPostedNotificationWakesTheWatchAndCancelStopsIt(t *testing.T) {
+	name := "com.jterrazz.station.test." + strconv.Itoa(time.Now().Nanosecond())
+	ctx, cancel := context.WithCancel(context.Background())
+	wake := notified(ctx, name)
+	if err := exec.Command("/usr/bin/notifyutil", "-p", name).Run(); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-wake:
+	case <-time.After(2 * time.Second):
+		t.Fatal("a post of the name never woke the watch")
+	}
+	cancel()
+	time.Sleep(100 * time.Millisecond)
+	if err := exec.Command("/usr/bin/notifyutil", "-p", name).Run(); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-wake:
+		t.Fatal("a post after cancel still woke the watch")
+	case <-time.After(300 * time.Millisecond):
+	}
+}

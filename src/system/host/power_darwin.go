@@ -7,6 +7,7 @@ package host
 #cgo LDFLAGS: -framework IOKit -framework CoreFoundation -framework Foundation
 #include <mach/mach.h>
 #include <notify.h>
+#include <string.h>
 #include <IOKit/IOKitLib.h>
 #include <IOKit/pwr_mgt/IOPMLib.h>
 #include <IOKit/ps/IOPowerSources.h>
@@ -96,6 +97,19 @@ static int station_thermal_token(int *token) {
 	return notify_register_check("com.apple.system.thermalpressurelevel", token);
 }
 
+static int station_notify_fd(_GoString_ name, int *token) {
+	char key[256];
+	size_t n = _GoStringLen(name);
+	if (n >= sizeof key) return -1;
+	memcpy(key, _GoStringPtr(name), n);
+	key[n] = 0;
+	int fd = -1;
+	if (notify_register_file_descriptor(key, &fd, 0, token) != NOTIFY_STATUS_OK) return -1;
+	return fd;
+}
+
+static void station_notify_cancel(int token) { notify_cancel(token); }
+
 static int station_thermal(int token) {
 	uint64_t state = 0;
 	if (notify_get_state(token, &state) != NOTIFY_STATUS_OK) return 0;
@@ -107,8 +121,10 @@ import "C"
 import (
 	"context"
 	"errors"
+	"os"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/system"
@@ -170,9 +186,53 @@ func (p *macPower) Read() (system.PowerReading, error) {
 	return r, nil
 }
 
-// invariant: the watch compares one reading a second with the last and
-// sends one Event per field that moved, so no callback ever crosses from C
-// into Go; Low Power Mode is read by the guard loop's own poll.
+// invariant: the watch compares a reading with the last one a second and on
+// every IOPowerSources notification, and sends one Event per field that moved,
+// so a falling percent ends a session within the second it is posted; Low
+// Power Mode is read by the guard loop's own poll.
 func (p *macPower) Watch(ctx context.Context) <-chan system.PowerEvent {
-	return watchReadings(ctx, p.Read, watchEvery)
+	return watchReadings(ctx, p.Read, watchEvery, notified(ctx, C.kIOPSNotifyAnyPowerSource))
+}
+
+// invariant: notify(3) writes each post of name on a descriptor this side
+// reads, so no callback ever crosses from C into Go; the channel never fires
+// when the name cannot be registered, and the poll alone remains.
+func notified(ctx context.Context, name string) <-chan struct{} {
+	wake := make(chan struct{}, 1)
+	var token C.int
+	fd := C.station_notify_fd(name, &token)
+	if fd < 0 {
+		return wake
+	}
+	// value: a duplicate this side owns and closes, so notify_cancel closing
+	// its own descriptor never races the read.
+	own, err := syscall.Dup(int(fd))
+	if err != nil {
+		C.station_notify_cancel(token)
+		return wake
+	}
+	if err := syscall.SetNonblock(own, true); err != nil {
+		_ = syscall.Close(own)
+		C.station_notify_cancel(token)
+		return wake
+	}
+	f := os.NewFile(uintptr(own), name)
+	go func() {
+		<-ctx.Done()
+		C.station_notify_cancel(token)
+		_ = f.Close()
+	}()
+	go func() {
+		buf := make([]byte, 4)
+		for {
+			if _, err := f.Read(buf); err != nil {
+				return
+			}
+			select {
+			case wake <- struct{}{}:
+			default:
+			}
+		}
+	}()
+	return wake
 }

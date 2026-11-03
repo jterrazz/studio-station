@@ -145,7 +145,7 @@ type PowerReading struct {
 }
 
 type PowerEvent struct {
-	// value: "thermal", "source" or "lid".
+	// value: "thermal", "source", "lid" or "battery" (its percent).
 	Kind string
 }
 
