@@ -1,0 +1,258 @@
+package call
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"slices"
+
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/fail"
+	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/core/section"
+)
+
+type Where string
+
+const (
+	AtTarget  Where = "at-target"
+	InEngine  Where = "in-engine"
+	InProcess Where = "in-process"
+)
+
+const (
+	NotForThisMachine fail.Code = "section.not-for-this-machine"
+	BadInput          fail.Code = "call.bad-input"
+	BadOutput         fail.Code = "call.bad-output"
+)
+
+type Progress interface {
+	Step(task, detail string)
+	Done(task string, err error)
+}
+
+type Call[D, In, Out any] struct {
+	Name string
+	// invariant: empty for a call of no per-machine section, which its
+	// Applies alone gates.
+	Section section.ID
+	Where   Where
+	Applies machine.Applies
+	Confirm confirm.Action
+	Errors  []fail.Code
+	Run     func(ctx context.Context, d D, in In, p Progress) (Out, error)
+}
+
+type Update[Out any] struct {
+	Value Out
+	Err   error
+}
+
+type Watch[D, In, Out any] struct {
+	// invariant: a read that fills progressively: each Update is the whole
+	// value so far, and its producer closes the channel when done.
+	Name    string
+	Section section.ID
+	Where   Where
+	Applies machine.Applies
+	Errors  []fail.Code
+	Run     func(ctx context.Context, d D, in In, p Progress) (<-chan Update[Out], error)
+}
+
+type Meta struct {
+	Name    string
+	Section section.ID
+	Where   Where
+	Applies machine.Applies
+	Confirm confirm.Action
+	Errors  []fail.Code
+	In      string
+	Out     string
+	Watch   bool
+}
+
+type Handler interface {
+	Meta() Meta
+	Invoke(ctx context.Context, target machine.Profile, in json.RawMessage, p Progress) (json.RawMessage, error)
+	Watch(ctx context.Context, target machine.Profile, in json.RawMessage, p Progress) (<-chan Update[json.RawMessage], error)
+}
+
+type Router interface {
+	Invoke(ctx context.Context, target machine.Ref, call string, in, out any, p Progress) error
+	Watch(ctx context.Context, target machine.Ref, call string, in any) (<-chan Update[json.RawMessage], error)
+}
+
+func Invoke[D, In, Out any](ctx context.Context, r Router, target machine.Ref, c Call[D, In, Out], in In, p Progress) (Out, error) {
+	var out Out
+	err := r.Invoke(ctx, target, c.Name, in, &out, p)
+	return out, err
+}
+
+func Bind[D, In, Out any](c Call[D, In, Out], d D) Handler {
+	return bound[D, In, Out]{meta: Meta{
+		Name: c.Name, Section: c.Section, Where: c.Where, Applies: c.Applies, Confirm: c.Confirm, Errors: c.Errors,
+		In: reflect.TypeFor[In]().Name(), Out: reflect.TypeFor[Out]().Name(),
+	}, run: c.Run, deps: d}
+}
+
+func BindWatch[D, In, Out any](w Watch[D, In, Out], d D) Handler {
+	return watched[D, In, Out]{meta: Meta{
+		Name: w.Name, Section: w.Section, Where: w.Where, Applies: w.Applies, Errors: w.Errors,
+		In: reflect.TypeFor[In]().Name(), Out: reflect.TypeFor[Out]().Name(), Watch: true,
+	}, run: w.Run, deps: d}
+}
+
+type bound[D, In, Out any] struct {
+	meta Meta
+	run  func(context.Context, D, In, Progress) (Out, error)
+	deps D
+}
+
+func (b bound[D, In, Out]) Meta() Meta { return b.meta }
+
+func (b bound[D, In, Out]) Invoke(ctx context.Context, target machine.Profile, raw json.RawMessage, p Progress) (json.RawMessage, error) {
+	in, err := admit[In](b.meta, target, raw)
+	if err != nil {
+		return nil, err
+	}
+	out, err := b.run(ctx, b.deps, in, orSilent(p))
+	if err != nil {
+		return nil, err
+	}
+	return encode(b.meta, out)
+}
+
+func (b bound[D, In, Out]) Watch(ctx context.Context, target machine.Profile, raw json.RawMessage, p Progress) (<-chan Update[json.RawMessage], error) {
+	out, err := b.Invoke(ctx, target, raw, p)
+	if err != nil {
+		return nil, err
+	}
+	once := make(chan Update[json.RawMessage], 1)
+	once <- Update[json.RawMessage]{Value: out}
+	close(once)
+	return once, nil
+}
+
+type watched[D, In, Out any] struct {
+	meta Meta
+	run  func(context.Context, D, In, Progress) (<-chan Update[Out], error)
+	deps D
+}
+
+func (w watched[D, In, Out]) Meta() Meta { return w.meta }
+
+func (w watched[D, In, Out]) Watch(ctx context.Context, target machine.Profile, raw json.RawMessage, p Progress) (<-chan Update[json.RawMessage], error) {
+	in, err := admit[In](w.meta, target, raw)
+	if err != nil {
+		return nil, err
+	}
+	updates, err := w.run(ctx, w.deps, in, orSilent(p))
+	if err != nil {
+		return nil, err
+	}
+	out := make(chan Update[json.RawMessage])
+	go func() {
+		defer close(out)
+		for u := range updates {
+			next := Update[json.RawMessage]{Err: u.Err}
+			if u.Err == nil {
+				next.Value, next.Err = encode(w.meta, u.Value)
+			}
+			select {
+			case out <- next:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out, nil
+}
+
+func (w watched[D, In, Out]) Invoke(ctx context.Context, target machine.Profile, raw json.RawMessage, p Progress) (json.RawMessage, error) {
+	updates, err := w.Watch(ctx, target, raw, p)
+	if err != nil {
+		return nil, err
+	}
+	var last json.RawMessage
+	for u := range updates {
+		if u.Err != nil {
+			return nil, u.Err
+		}
+		last = u.Value
+	}
+	return last, ctx.Err()
+}
+
+// invariant: the gate every call passes before it runs, in this order: the
+// section table of the target's kind, the call's own rule, its input.
+func admit[In any](m Meta, target machine.Profile, raw json.RawMessage) (In, error) {
+	var in In
+	if m.Section != "" && !slices.Contains(section.For(target.Kind), m.Section) {
+		return in, fail.New(fail.NotForThisMachine, NotForThisMachine, target.Ref.Name, map[string]string{
+			"call": m.Name, "section": string(m.Section), "kind": string(target.Kind),
+		})
+	}
+	if m.Applies != nil {
+		if v := m.Applies(target); !v.OK {
+			return in, fail.New(fail.NotForThisMachine, NotForThisMachine, target.Ref.Name, map[string]string{
+				"call": m.Name, "why": v.Why,
+			})
+		}
+	}
+	if len(raw) == 0 || string(raw) == "null" {
+		return in, nil
+	}
+	if err := json.Unmarshal(raw, &in); err != nil {
+		e := fail.New(fail.Refused, BadInput, m.Name, map[string]string{"in": m.In})
+		e.Cause = err
+		return in, e
+	}
+	return in, nil
+}
+
+func encode[Out any](m Meta, out Out) (json.RawMessage, error) {
+	raw, err := json.Marshal(out)
+	if err != nil {
+		e := fail.New(fail.Failed, BadOutput, m.Name, map[string]string{"out": m.Out})
+		e.Cause = err
+		return nil, e
+	}
+	return raw, nil
+}
+
+type silent struct{}
+
+func (silent) Step(string, string) {}
+func (silent) Done(string, error)  {}
+func orSilent(p Progress) Progress {
+	if p == nil {
+		return silent{}
+	}
+	return p
+}
+
+type Registry struct {
+	// invariant: built once in wire from every family's All(d); a name is
+	// claimed by one call only.
+	byName map[string]Handler
+}
+
+func NewRegistry(families ...[]Handler) (*Registry, error) {
+	r := &Registry{byName: map[string]Handler{}}
+	for _, family := range families {
+		for _, h := range family {
+			name := h.Meta().Name
+			if _, taken := r.byName[name]; taken {
+				return nil, fmt.Errorf("call: two calls are named %q", name)
+			}
+			r.byName[name] = h
+		}
+	}
+	return r, nil
+}
+
+func (r *Registry) Lookup(name string) (Handler, bool) {
+	h, ok := r.byName[name]
+	return h, ok
+}
