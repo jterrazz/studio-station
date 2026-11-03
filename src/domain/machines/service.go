@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
@@ -22,6 +23,7 @@ type Options struct {
 	Remote    func(target string, words []string) []string
 	Hop       func(host string, words []string) []string
 	GuestPort int
+	Jobs      contract.Jobs
 }
 
 type Node struct {

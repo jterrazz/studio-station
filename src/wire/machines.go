@@ -45,6 +45,7 @@ func (m machine) machines(_ bool) *machines.Service {
 		Remote:    fanOutArgv,
 		Hop:       func(host string, words []string) []string { return remote.Argv(host, false, words) },
 		GuestPort: m.guestPort(),
+		Jobs:      m.jobs(0),
 	})
 }
 

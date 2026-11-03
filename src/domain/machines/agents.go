@@ -3,9 +3,9 @@ package machines
 import (
 	"context"
 	"path"
-	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -35,10 +35,10 @@ func (s *Service) oldAgent(name string) string {
 	return path.Join(s.h.Env.Home(), "Library", "LaunchAgents", agentPrefix+name+".plist")
 }
 
-func (s *Service) guiDomain() string { return "gui/" + strconv.Itoa(s.h.Env.Euid()) }
+func (s *Service) session() contract.Domain { return contract.Domain{UID: s.h.Env.Euid()} }
 
-func (s *Service) launchctl(ctx context.Context, args ...string) (system.Output, error) {
-	return s.h.Run.Output(ctx, system.Cmd{Name: "launchctl", Args: args})
+func (s *Service) oldJob(name string) contract.Ref {
+	return contract.Ref{Domain: s.session(), Label: agentPrefix + name, File: s.oldAgent(name)}
 }
 
 // invariant: a VM still under a round-3 per-VM agent has that agent booted out
@@ -49,8 +49,7 @@ func (s *Service) retireAgent(ctx context.Context, name string) {
 	if _, err := s.h.FS.Stat(file); err != nil {
 		return
 	}
-	_, _ = s.launchctl(ctx, "bootout", s.guiDomain()+"/"+agentPrefix+name)
-	_ = s.h.FS.Remove(file)
+	_ = s.o.Jobs.Remove(ctx, s.oldJob(name))
 }
 
 type RunningUnderAgentError struct{ Names []string }
@@ -88,17 +87,16 @@ func (s *Service) MigrateAgents(ctx context.Context) (AgentMigration, error) {
 	if len(running) > 0 {
 		return AgentMigration{}, &RunningUnderAgentError{Names: running}
 	}
-	disabled, _ := s.launchctl(ctx, "print-disabled", s.guiDomain())
+	overrides := s.o.Jobs.Overrides(ctx, s.session())
 	records, _ := s.records()
 	for _, n := range names {
-		_, _ = s.launchctl(ctx, "bootout", s.guiDomain()+"/"+agentPrefix+n)
-		_ = s.h.FS.Remove(path.Join(dir, agentPrefix+n+".plist"))
+		_ = s.o.Jobs.Remove(ctx, s.oldJob(n))
 		for _, r := range records {
 			if r.Name != n || r.Lifetime != Lasting {
 				continue
 			}
 			r.Want = WantRunning
-			if strings.Contains(disabled.Stdout, `"`+agentPrefix+n+`" => disabled`) || strings.Contains(disabled.Stdout, `"`+agentPrefix+n+`" => true`) {
+			if enabled, listed := overrides[agentPrefix+n]; listed && !enabled {
 				r.Want = WantStopped
 			}
 			_ = s.writeRecord(r)
