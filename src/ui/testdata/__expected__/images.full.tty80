@@ -3,8 +3,8 @@
 
  Images
             version     size    VMs
-   ● linux  3         6.0 GB  2 VMs
+   ● linux  3         6.0 GB  2 VMs  ghcr.io/cirruslabs/ubuntu:24.04
    ○ linux  2         6.0 GB  0 VMs  older: station images delete linux@2
-   ● macos  1        48.0 GB  0 VMs
+   ● macos  1        48.0 GB  0 VMs  ghcr.io/cirruslabs/macos-tahoe-base:latest
 
  → station images build

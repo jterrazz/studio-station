@@ -56,7 +56,11 @@
                 "n": 2,
                 "unit": "VMs"
               }
-            ]
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "ghcr.io/cirruslabs/ubuntu:24.04"
+            }
           }
         },
         {
@@ -103,7 +107,11 @@
                 "kind": "count",
                 "unit": "VMs"
               }
-            ]
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "ghcr.io/cirruslabs/macos-tahoe-base:latest"
+            }
           }
         }
       ],

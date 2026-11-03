@@ -4,9 +4,9 @@
 ○	api	linux	macbook	lasting	stopped	-	4 cpus · 8 GB · 42.9 GB
 ◐	mac-mini	host			online	100.98.133.20	station v2.0.0-248 here v2.0.0-250
 # Images	2 ●	1 ○
-●	linux	3	6.0 GB	2 VMs
+●	linux	3	6.0 GB	2 VMs	ghcr.io/cirruslabs/ubuntu:24.04
 ○	linux	2	6.0 GB	0 VMs	older: station images delete linux@2
-●	macos	1	48.0 GB	0 VMs
+●	macos	1	48.0 GB	0 VMs	ghcr.io/cirruslabs/macos-tahoe-base:latest
 # Lend list
 ●	GITHUB_TOKEN	lent to linux-1
 ○	NPM_TOKEN	not lent

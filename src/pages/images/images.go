@@ -56,7 +56,8 @@ func Section(reports []images.Report) page.Section {
 	for _, r := range reports {
 		row := page.Row{
 			ID: r.Record.Name + "@" + r.Record.Version, Label: r.Record.Name, Mark: page.OK,
-			Cells: []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), vms(len(r.VMs))},
+			Cells:  []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), vms(len(r.VMs))},
+			Detail: page.Text(r.Record.Base),
 		}
 		if !r.Newest {
 			row.Mark, row.Reason = page.Absent, page.Outdated

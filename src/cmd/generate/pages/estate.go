@@ -240,9 +240,9 @@ func machineLists() []Fixture {
 
 func imageReports() []images.Report {
 	return []images.Report{
-		{Record: images.Record{Name: "linux", Version: "3", Base: "ubuntu-24.04", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 6}, Newest: true, VMs: []string{"linux-1", "api"}},
-		{Record: images.Record{Name: "linux", Version: "2", Base: "ubuntu-24.04", Station: "v2.0.0-240", BuiltAt: built.AddDate(0, 0, -20), SizeGB: 6}},
-		{Record: images.Record{Name: "macos", Version: "1", Base: "macos-tahoe", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 48}, Newest: true},
+		{Record: images.Record{Name: "linux", Version: "3", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 6}, Newest: true, VMs: []string{"linux-1", "api"}},
+		{Record: images.Record{Name: "linux", Version: "2", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-240", BuiltAt: built.AddDate(0, 0, -20), SizeGB: 6}},
+		{Record: images.Record{Name: "macos", Version: "1", Base: "ghcr.io/cirruslabs/macos-tahoe-base:latest", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 48}, Newest: true},
 	}
 }
 
