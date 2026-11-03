@@ -73,6 +73,9 @@ type Column struct {
 	Keep   int      `json:"keep,omitempty"`
 	Show   Show     `json:"show,omitempty"`
 	Levels []string `json:"levels,omitempty"`
+	// value: a column a short line drops whole rather than cuts (a process
+	// name, a machine's resources: half of one says nothing, §13.5, §13.6).
+	Whole bool `json:"whole,omitempty"`
 }
 
 type Show string

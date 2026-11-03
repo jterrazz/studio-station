@@ -1,10 +1,11 @@
  - Fleet                                                          1 ●  2 ◐  1 ○
-   ◐ macbook     host       here  online       100.98.133.14  daemon stopped …
-   ├─ ● linux-1  temporary        running      192.168.64.5   4 cpus · 4 GB …
+   ◐ macbook     host       here  online       100.98.133.14
+     daemon stopped · station start
+   ├─ ● linux-1  temporary        running      192.168.64.5
    │  ├─   5173  5173 → 40001 · https://jterrazz-macbook-pro.tail1234.ts.net:40001  node
    │  └─   5432  5432 → 40002  postgres
-   └─ ○ api      lasting          stopped      -              4 cpus · 8 GB …
-   ◐ mac-mini    host             unreachable  100.98.133.20  -
+   └─ ○ api      lasting          stopped      -
+   ◐ mac-mini    host             unreachable  100.98.133.20
  - Images                                                              2 ●  1 ○
             version     size    VMs
    ● linux  3         6.0 GB  2 VMs  ghcr.io/cirruslabs/ubuntu:24.04

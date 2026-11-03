@@ -10,6 +10,7 @@ const (
 	MarkWidth   = 2
 	LabelMin    = 8
 	LabelMax    = 28
+	DetailMin   = 20
 	NarrowWidth = 80
 	SplitWidth  = 110
 	PaneWidth   = 44

@@ -1,7 +1,7 @@
  - macbook  40000-40999 · 2 leased · 998 free · 20 per VM              1 ●  1 ○
-                      port  url                               state      process
-   ● linux-1  5173 → 40001  https://jterrazz-macbook-pro…:4…  published  node
-   ○ linux-1  5432 → 40002                                    waiting    postg…
+                      port  url                                       state
+   ● linux-1  5173 → 40001  https://jterrazz-macbook-pro…:40001       published
+   ○ linux-1  5432 → 40002                                            waiting
  - mac-mini                                                                 1 ◐
                state
    ◐ mac-mini  unreachable  → ssh mac-mini true

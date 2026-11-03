@@ -18,9 +18,11 @@ const (
 	KeyEnter   = "e"
 )
 
-// invariant: the pipe keeps SPEC §10.8's fields (kind, host, lifetime); the
-// eye reads one class column (a host's `host`, a VM's lifetime: the tree says
-// the rest) and the host's role (§13.5).
+// invariant: the pipe keeps SPEC §10.8's eight fields (kind, host, lifetime,
+// and a fix riding in the resources field); the eye reads one class column (a
+// host's `host`, a VM's lifetime: the tree says the rest), the host's role,
+// the resources a short line drops first, and the detail that says why a row
+// is not ● (§13.5).
 func Columns() []page.Column {
 	return []page.Column{
 		{Key: "name", Kind: page.KindText, Keep: 100},
@@ -31,7 +33,9 @@ func Columns() []page.Column {
 		{Key: "role", Kind: page.KindText, Keep: 30, Show: page.EyeOnly},
 		{Key: "state", Kind: page.KindText, Keep: 90},
 		{Key: "ip", Kind: page.KindIdentity, Keep: 50},
-		{Key: "resources", Kind: page.KindList, Keep: 10},
+		{Key: "record", Kind: page.KindList, Show: page.PipeOnly},
+		{Key: "resources", Kind: page.KindList, Keep: 10, Whole: true, Show: page.EyeOnly},
+		{Key: "detail", Kind: page.KindList, Keep: 5, Show: page.EyeOnly},
 	}
 }
 
@@ -104,13 +108,13 @@ func Actions() []page.Action {
 
 func hostRow(h machines.HostView, hereVersion string) page.Row {
 	row := page.Row{ID: h.Name, Label: h.Name, Mark: page.OK}
-	state, resources := page.Text("online"), vmCount(len(h.VMs))
+	state, resources, detail := page.Text("online"), vmCount(len(h.VMs)), page.None()
 	switch {
 	case !h.Reachable:
 		row.Mark, row.Reason, state, resources = page.Attention, page.Unreachable, page.Text("unreachable"), page.Text("-")
 	case h.StationVersion != "" && h.StationVersion != hereVersion:
 		row.Mark, row.Reason = page.Attention, page.Mismatch
-		resources = page.Text("station " + h.StationVersion + " here " + hereVersion)
+		detail = page.Text("station " + h.StationVersion + " here " + hereVersion)
 	case h.Daemon.Known && !h.Daemon.Running:
 		row.Mark, row.Reason = page.Attention, page.Stopped
 		word, fix := "daemon stopped", "station start"
@@ -120,19 +124,19 @@ func hostRow(h machines.HostView, hereVersion string) page.Row {
 		case !h.Daemon.Installed:
 			row.Reason, word, fix = page.Missing, "daemon not installed", "station setup"
 		}
-		resources = page.List(page.Text(word), page.Command(fix))
+		detail = page.List(page.Text(word), page.Command(fix))
 	}
 	role := ""
 	if h.Here {
 		role = "here"
 	}
-	row.Cells = []page.Value{page.Text(string(catalog.Host)), page.Text(""), page.Text(""), page.Text(string(catalog.Host)), page.Text(role), state, orDash(h.Node.IP), resources}
+	row.Cells = []page.Value{page.Text(string(catalog.Host)), page.Text(""), page.Text(""), page.Text(string(catalog.Host)), page.Text(role), state, orDash(h.Node.IP), record(resources, detail), resources, detail}
 	return row
 }
 
 func vmRow(vm machines.VM) page.Row {
 	row := page.Row{ID: vm.Name, Label: vm.Name, Mark: page.OK}
-	resources := Resources(vm)
+	resources, detail := Resources(vm), page.None()
 	switch vm.State {
 	case machines.Running:
 	case machines.Stopped:
@@ -141,11 +145,11 @@ func vmRow(vm machines.VM) page.Row {
 		row.Mark, row.Reason = page.Attention, page.Stopped
 	case machines.Stale:
 		row.Mark, row.Reason = page.Broken, page.Outlived
-		resources = page.Command("station machines delete " + vm.Name)
+		detail = page.Command("station machines delete " + vm.Name)
 	case machines.Broken:
-		row.Mark, row.Reason, resources = page.Broken, page.Failing, page.Text(vm.Detail)
+		row.Mark, row.Reason, detail = page.Broken, page.Failing, page.Text(vm.Detail)
 	}
-	row.Cells = []page.Value{page.Text(string(vm.Kind)), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), resources}
+	row.Cells = []page.Value{page.Text(string(vm.Kind)), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
 	return row
 }
 
@@ -172,6 +176,14 @@ func plural(n int, noun string) page.Value {
 }
 
 func vmCount(n int) page.Value { return plural(n, "VM") }
+
+// value: the pipe's last field: the fix when the row has one, else its resources.
+func record(resources, detail page.Value) page.Value {
+	if !detail.IsNone() {
+		return detail
+	}
+	return resources
+}
 
 func orDash(s string) page.Value {
 	if s == "" {

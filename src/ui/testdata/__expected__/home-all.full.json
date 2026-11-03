@@ -68,12 +68,27 @@
         },
         {
           "row": {
+            "id": "machine/setup",
+            "mark": "attention",
+            "label": "setup",
+            "detail": {
+              "kind": "text",
+              "text": "name not set"
+            },
+            "reason": "unset",
+            "hint": {
+              "command": "station setup"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "machine/daemon",
             "mark": "attention",
             "label": "daemon",
             "detail": {
               "kind": "text",
-              "text": "not installed"
+              "text": "runs v2.0.0-242-gd653060, station is v2.0.0-250"
             },
             "reason": "degraded",
             "hint": {
@@ -240,7 +255,7 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 10
+          "n": 11
         },
         {
           "mark": "broken",
@@ -500,7 +515,7 @@
             "cells": [
               {
                 "kind": "text",
-                "text": "daemon not installed"
+                "text": "daemon runs v2.0.0-242-gd653060, station is v2.0.0-250"
               }
             ]
           }
@@ -548,12 +563,12 @@
         {
           "row": {
             "id": "name",
-            "mark": "ok",
+            "mark": "attention",
             "label": "name",
             "cells": [
               {
                 "kind": "text",
-                "text": "macbook"
+                "text": "unregistered"
               }
             ],
             "detail": {
@@ -576,7 +591,8 @@
                   "text": "zsh"
                 }
               ]
-            }
+            },
+            "reason": "unset"
           }
         },
         {
@@ -599,16 +615,21 @@
         {
           "row": {
             "id": "setup",
-            "mark": "ok",
+            "mark": "attention",
             "label": "setup",
             "cells": [
               {
                 "kind": "text",
-                "text": "done"
+                "text": "name"
               }
             ],
             "detail": {
-              "kind": "none"
+              "kind": "text",
+              "text": "not set"
+            },
+            "reason": "unset",
+            "hint": {
+              "command": "station setup"
             }
           }
         },
@@ -620,7 +641,7 @@
             "cells": [
               {
                 "kind": "text",
-                "text": "not installed"
+                "text": "runs v2.0.0-242-gd653060, station is v2.0.0-250"
               }
             ],
             "detail": {
@@ -636,11 +657,11 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 3
+          "n": 1
         },
         {
           "mark": "attention",
-          "n": 1
+          "n": 3
         }
       ]
     },
@@ -1680,6 +1701,7 @@
       "label": "fix",
       "on": "row",
       "rows": [
+        "machine/setup",
         "machine/daemon",
         "environment/brew",
         "workspace/strays",

@@ -55,9 +55,22 @@
           "keep": 50
         },
         {
+          "key": "record",
+          "kind": "list",
+          "show": "pipe"
+        },
+        {
           "key": "resources",
           "kind": "list",
-          "keep": 10
+          "keep": 10,
+          "show": "eye",
+          "whole": true
+        },
+        {
+          "key": "detail",
+          "kind": "list",
+          "keep": 5,
+          "show": "eye"
         }
       ],
       "items": [

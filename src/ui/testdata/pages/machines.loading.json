@@ -55,9 +55,22 @@
           "keep": 50
         },
         {
+          "key": "record",
+          "kind": "list",
+          "show": "pipe"
+        },
+        {
           "key": "resources",
           "kind": "list",
-          "keep": 10
+          "keep": 10,
+          "show": "eye",
+          "whole": true
+        },
+        {
+          "key": "detail",
+          "kind": "list",
+          "keep": 5,
+          "show": "eye"
         }
       ],
       "items": [
@@ -68,6 +81,12 @@
               "mark": "pending",
               "label": "macbook",
               "cells": [
+                {
+                  "kind": "pending"
+                },
+                {
+                  "kind": "pending"
+                },
                 {
                   "kind": "pending"
                 },
@@ -127,6 +146,12 @@
                     },
                     {
                       "kind": "pending"
+                    },
+                    {
+                      "kind": "pending"
+                    },
+                    {
+                      "kind": "pending"
                     }
                   ],
                   "detail": {
@@ -140,6 +165,12 @@
                   "mark": "pending",
                   "label": "api",
                   "cells": [
+                    {
+                      "kind": "pending"
+                    },
+                    {
+                      "kind": "pending"
+                    },
                     {
                       "kind": "pending"
                     },
@@ -181,6 +212,12 @@
               "mark": "pending",
               "label": "mac-mini",
               "cells": [
+                {
+                  "kind": "pending"
+                },
+                {
+                  "kind": "pending"
+                },
                 {
                   "kind": "pending"
                 },

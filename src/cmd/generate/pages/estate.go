@@ -156,7 +156,18 @@ func homes() []Fixture {
 		pagehome.Snapshot(pendingSnapshot(), here(), true),
 		pagehome.Snapshot(calmSnapshot(), here(), true),
 		failure("home", "status", "the settings file is not valid JSON", "repair the JSON of ~/.config/station/settings.json"),
-		pagehome.Snapshot(snapshot(), here(), true))...)
+		pagehome.Snapshot(unnamedSnapshot(), here(), true))...)
+}
+
+// value: this Mac as it reads before setup names it, its daemon from an
+// older build: the long daemon value is one row's, and no other row's detail
+// gives way to it (§11.2 per-row overflow), and the setup row reads not set.
+func unnamedSnapshot() status.Snapshot {
+	s := snapshot()
+	s.Machine.Name, s.Machine.Registered = "", false
+	s.Setup = status.Setup{State: catalog.StateDegraded, Steps: []setup.Step{{Name: "name", State: catalog.StateDegraded}}}
+	s.Station.Daemon = check("daemon", catalog.StateDegraded, "runs v2.0.0-242-gd653060, station is v2.0.0-250", "station setup")
+	return s
 }
 
 func configReports(state catalog.State) []config.Report {

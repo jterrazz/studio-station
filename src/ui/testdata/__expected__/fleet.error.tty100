@@ -2,7 +2,8 @@
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
  Fleet  1 ●  2 ◐  1 ○
-   ◐ macbook     host       here  online       100.98.133.14  daemon stopped · station start
+   ◐ macbook     host       here  online       100.98.133.14  2 VMs
+     daemon stopped · station start
    ├─ ● linux-1  temporary        running      192.168.64.5   4 cpus · 4 GB · 42.9 GB
    │  ├─   5173  5173 → 40001 · https://jterrazz-macbook-pro.tail1234.ts.net:40001  node
    │  └─   5432  5432 → 40002  postgres
@@ -26,10 +27,10 @@
 
  Tailnet  4 ●
    ● tailnet          Running · jterrazz-macbook-pro.tail1234.ts.net
-   ● node             macbook                                                                     …
-   ● cli              /Applications/Tailscale.app/Contents/MacOS/Tailscale                        …
+   ● node             macbook                                                          100.98.133.…
+   ● cli              /Applications/Tailscale.app/Contents/MacOS/Tailscale             app-store
      Peers
    ├─   mac-mini      100.98.133.20                                         online   tag:station
    └─   iphone        100.98.133.30                                         offline
      Serve
-   └─ ● https 40001/  http://127.0.0.1:40001                                                      …
+   └─ ● https 40001/  http://127.0.0.1:40001                                           station

@@ -54,9 +54,22 @@
           "keep": 50
         },
         {
+          "key": "record",
+          "kind": "list",
+          "show": "pipe"
+        },
+        {
           "key": "resources",
           "kind": "list",
-          "keep": 10
+          "keep": 10,
+          "show": "eye",
+          "whole": true
+        },
+        {
+          "key": "detail",
+          "kind": "list",
+          "keep": 5,
+          "show": "eye"
         }
       ],
       "items": [
@@ -97,6 +110,14 @@
                   "kind": "count",
                   "n": 2,
                   "unit": "VMs"
+                },
+                {
+                  "kind": "count",
+                  "n": 2,
+                  "unit": "VMs"
+                },
+                {
+                  "kind": "none"
                 }
               ]
             },
@@ -152,6 +173,27 @@
                             "n": 42949672960
                           }
                         ]
+                      },
+                      {
+                        "kind": "list",
+                        "items": [
+                          {
+                            "kind": "count",
+                            "n": 4,
+                            "unit": "cpus"
+                          },
+                          {
+                            "kind": "text",
+                            "text": "4 GB"
+                          },
+                          {
+                            "kind": "size",
+                            "n": 42949672960
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "none"
                       }
                     ]
                   },
@@ -259,6 +301,27 @@
                           "n": 42949672960
                         }
                       ]
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "count",
+                          "n": 4,
+                          "unit": "cpus"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "8 GB"
+                        },
+                        {
+                          "kind": "size",
+                          "n": 42949672960
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "none"
                     }
                   ]
                 }
@@ -298,6 +361,14 @@
                 {
                   "kind": "identity",
                   "text": "100.98.133.20"
+                },
+                {
+                  "kind": "text",
+                  "text": "station v2.0.0-248 here v2.0.0-250"
+                },
+                {
+                  "kind": "count",
+                  "unit": "VMs"
                 },
                 {
                   "kind": "text",

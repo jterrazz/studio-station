@@ -2,10 +2,11 @@
  ──────────────────────────────────────────────────────────────────────────────
 
  Fleet  2 ●  1 ◐  1 ○
-   ● macbook     host       here  online   100.98.133.14  2 VMs
-   ├─ ● linux-1  temporary        running  192.168.64.5   4 cpus · 4 GB …
-   └─ ○ api      lasting          stopped  -              4 cpus · 8 GB …
-   ◐ mac-mini    host             online   100.98.133.20  station v2.0.0-248 h…
+   ● macbook     host       here  online   100.98.133.14
+   ├─ ● linux-1  temporary        running  192.168.64.5
+   └─ ○ api      lasting          stopped  -
+   ◐ mac-mini    host             online   100.98.133.20
+     station v2.0.0-248 here v2.0.0-250
       no VMs  → station machines create --on mac-mini
 
  Warnings

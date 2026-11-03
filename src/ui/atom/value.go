@@ -190,12 +190,22 @@ func url(s string, width int) string {
 	if i := strings.LastIndex(host, ":"); i >= 0 {
 		host, port = host[:i], host[i:]
 	}
+	// invariant: only the host is cut: the scheme and the port are what a
+	// reader needs to reach it (G4), so the label shortens before either goes.
 	label, _, _ := strings.Cut(host, ".")
-	short := scheme + "://" + label + token.Ellipsis + port
-	if Width(short) <= width {
-		return short
+	fixed := scheme + "://" + token.Ellipsis + port
+	if room := width - Width(fixed); room >= 1 {
+		return scheme + "://" + fit(label, room) + token.Ellipsis + port
 	}
-	return End(short, width)
+	return End(scheme+"://"+label+token.Ellipsis+port, width)
+}
+
+func fit(s string, width int) string {
+	runes := []rune(s)
+	for len(runes) > 0 && Width(string(runes)) > width {
+		runes = runes[:len(runes)-1]
+	}
+	return string(runes)
 }
 
 func list(items []page.Value, width int) string {

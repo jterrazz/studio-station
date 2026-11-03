@@ -1,9 +1,9 @@
  - macbook  40000-40999 · 2 leased · 998 free · 20 per VM                   3 ◐
-                      port  url                                 state    process
-   ◐ daemon                                                     stopped
+                      port  url                                         state
+   ◐ daemon                                                             stopped
      → station start
-   ◐ linux-1  5173 → 40001  https://jterrazz-macbook-pro…:400…  unknown  node
-   ◐ linux-1  5432 → 40002                                      unknown  postg…
+   ◐ linux-1  5173 → 40001  https://jterrazz-macbook-pro…:40001         unknown
+   ◐ linux-1  5432 → 40002                                              unknown
  - mac-mini                                                                 1 ◐
                state
    ◐ mac-mini  unreachable  → ssh mac-mini true

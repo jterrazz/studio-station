@@ -18,7 +18,7 @@ func Columns() []page.Column {
 		{Key: "url", Label: "url", Kind: page.KindURL, Keep: 40},
 		{Key: "host", Kind: page.KindText, Show: page.PipeOnly},
 		{Key: "state", Label: "state", Kind: page.KindText, Keep: 70},
-		{Key: "process", Label: "process", Kind: page.KindText, Keep: 20},
+		{Key: "process", Label: "process", Kind: page.KindText, Keep: 20, Whole: true},
 	}
 }
 

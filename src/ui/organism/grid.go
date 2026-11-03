@@ -45,6 +45,7 @@ type column struct {
 	kind  page.Kind
 	label string
 	keep  int
+	whole bool
 	width int
 	cell  func(r page.Row) page.Value
 }
@@ -56,6 +57,9 @@ type entry struct {
 	prefix string
 	head   bool
 	key    string
+	// value: this row's last cell is wider than the section can give beside
+	// the others' details: it runs to the line's end on its own (§11.2).
+	overflow bool
 }
 
 func RowKey(section, row string) string { return section + "/" + row }
@@ -284,7 +288,7 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 			}
 			continue
 		}
-		cols = append(cols, column{kind: c.Kind, label: c.Label, keep: c.Keep, cell: positional(at)})
+		cols = append(cols, column{kind: c.Kind, label: c.Label, keep: c.Keep, whole: c.Whole, cell: positional(at)})
 	}
 	if len(g.Section.Columns) > 0 {
 		labelWidth = atom.Width(g.Section.Columns[0].Label)
@@ -306,10 +310,13 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 	}
 	cols = slices.DeleteFunc(cols, func(c column) bool { return c.width == 0 })
 	avail := g.avail()
+	g.overflow(entries, cols, labelWidth, avail)
 	fixed := func() int {
 		n := labelWidth
 		for _, c := range cols {
-			n += token.Gap + c.width
+			if c.width >= 0 {
+				n += token.Gap + c.width
+			}
 		}
 		return n
 	}
@@ -318,8 +325,16 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		order[i] = i
 	}
 	slices.SortStableFunc(order, func(a, b int) int { return cols[a].keep - cols[b].keep })
+	natural := make([]int, len(cols))
+	for i := range cols {
+		natural[i] = cols[i].width
+	}
 	for _, i := range order {
-		if over := fixed() - avail; over > 0 {
+		switch over := fixed() - avail; {
+		case over <= 0:
+		case cols[i].whole:
+			cols[i].width = -1
+		default:
 			cols[i].width = max(cols[i].width-over, min(atom.Floor(cols[i].kind), cols[i].width))
 		}
 	}
@@ -332,8 +347,59 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		}
 		cols[i].width = -1
 	}
+	// invariant: what a dropped column frees goes back to the columns cut
+	// before it, the most kept first, so a drop never leaves a cut cell beside
+	// empty room.
+	for k := len(order) - 1; k >= 0; k-- {
+		i := order[k]
+		if slack := avail - fixed(); slack > 0 && cols[i].width >= 0 && cols[i].width < natural[i] {
+			cols[i].width = min(natural[i], cols[i].width+slack)
+		}
+	}
 	cols = slices.DeleteFunc(cols, func(c column) bool { return c.width < 0 })
 	return cols, labelWidth
+}
+
+// invariant: per-row overflow: one row's long value (the daemon's two
+// versions, a host's mismatch) never takes the room the other rows need:
+// while the line or a detail does not fit, a last-column cell more than twice
+// as wide as any other leaves the column's width and runs to the end of its
+// own line, or under the row when even that is short (§11.2).
+func (g Grid) overflow(entries []entry, cols []column, labelWidth, avail int) {
+	if len(cols) == 0 {
+		return
+	}
+	last := &cols[len(cols)-1]
+	if last.whole || atom.Numeric(last.kind) {
+		return
+	}
+	for {
+		used := labelWidth
+		for _, c := range cols {
+			used += token.Gap + c.width
+		}
+		widest, first, second, need := -1, 0, 0, 0
+		for i, e := range entries {
+			if e.key == "" || e.link != nil || e.empty != nil || e.overflow {
+				continue
+			}
+			if d := atom.Width(atom.Show(e.row.Detail)); d > 0 {
+				need = max(need, token.Gap+d)
+			}
+			switch w := atom.Width(atom.Show(last.cell(e.row))); {
+			case w > first:
+				widest, first, second = i, w, first
+			case w > second:
+				second = w
+			}
+		}
+		short := used > avail || (need > 0 && avail-used < need)
+		if widest < 0 || !short || first <= 2*second {
+			return
+		}
+		entries[widest].overflow = true
+		last.width = max(second, atom.Width(last.label))
+	}
 }
 
 func (g Grid) avail() int {
@@ -446,8 +512,17 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	var b strings.Builder
 	b.WriteString(lead + st.Strong.Render(label) + atom.Spaces(labelWidth-atom.Width(e.prefix)-atom.Width(label)))
 	used := labelWidth
-	for _, c := range cols {
+	var below []Line
+	for ci, c := range cols {
 		v := c.cell(r)
+		if e.overflow && ci == len(cols)-1 {
+			if w := atom.Width(atom.Show(v)); w > g.avail()-used-token.Gap {
+				pad := indent + atom.Spaces(atom.Width(e.prefix)+token.MarkWidth)
+				below = append(below, Line{Kind: LineOther, Key: e.key, Text: pad + st.Text.Render(atom.Fit(v, g.Width-1-atom.Width(pad)))})
+				v = page.None()
+			}
+			c.width = max(min(atom.Width(atom.Show(v)), g.avail()-used-token.Gap), 0)
+		}
 		text := atom.Fit(v, c.width)
 		styled := st.Text.Render(text)
 		if v.Stale {
@@ -492,7 +567,7 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 			own = true
 		}
 	}
-	lines := []Line{{Kind: LineRow, Key: e.key, Head: e.head, Text: strings.TrimRight(b.String(), " ")}}
+	lines := append([]Line{{Kind: LineRow, Key: e.key, Head: e.head, Text: strings.TrimRight(b.String(), " ")}}, below...)
 	if own {
 		lines = append(lines, hintLines()...)
 	}
