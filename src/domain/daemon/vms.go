@@ -615,6 +615,7 @@ func (d *Daemon) fromGuest(ctx context.Context, v *vmState, line []byte) {
 	name := v.rec.Name
 	switch m.Type {
 	case "ready":
+		d.recallBeforeReady(ctx, name)
 		d.mu.Lock()
 		v.guest, v.lastErr = GuestConnected, ""
 		d.mu.Unlock()

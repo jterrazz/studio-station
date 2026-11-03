@@ -70,6 +70,8 @@ type Options struct {
 	Executable string
 	// value: how long a write to a subscriber may block before it is dropped.
 	Stall time.Duration
+	// value: the lend records and the recall a lend past its until goes through.
+	Lends Lends
 }
 
 type Daemon struct {
@@ -92,6 +94,10 @@ type Daemon struct {
 	note    func(line string)
 	power   *power.Machine
 	hub     hub
+
+	lendMu       sync.Mutex
+	lendsAt      time.Time
+	recallFailed map[string]time.Time
 }
 
 func New(h system.Host, e system.Engine, ssh system.SSH, m Machines, tn Tailnet, store settings.Store, o Options) *Daemon {
@@ -101,7 +107,7 @@ func New(h system.Host, e system.Engine, ssh system.SSH, m Machines, tn Tailnet,
 	if o.GuestPort == 0 {
 		o.GuestPort = 22
 	}
-	d := &Daemon{h: h, engine: e, ssh: ssh, m: m, tn: tn, store: store, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}}
+	d := &Daemon{h: h, engine: e, ssh: ssh, m: m, tn: tn, store: store, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, recallFailed: map[string]time.Time{}}
 	d.power = d.newPower()
 	return d
 }
@@ -152,6 +158,7 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 	d.leases, _ = d.leaseStore().Load()
 	d.refreshSelf(ctx)
 	d.adopt(ctx)
+	d.sweepLends(ctx)
 	d.reconcileServe(ctx)
 	l, err := d.h.Sockets.ListenUnix(sock)
 	if err != nil {
@@ -178,6 +185,7 @@ func (d *Daemon) step(ctx context.Context, tick int) {
 		d.refreshSelf(ctx)
 	}
 	d.tick(ctx)
+	d.sweepLends(ctx)
 	d.power.Tick()
 	d.watchState()
 }

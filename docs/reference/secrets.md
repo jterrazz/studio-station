@@ -34,7 +34,7 @@ station secrets disallow session:openpanel   # off the list, and recalled from e
 station secrets                          # names only, never a value
 ```
 
-A lent copy is a snapshot: later captures on the host do not reach it until you lend again. Every lend expires: the VM's record keeps, per name, when it was lent and until when (`secrets --json` lists them under `lends`), lending again resets the term, and a record from before terms existed reads each name as lent at the file's last change for 12h. Values pass between the credential stores through a pipe, never through argv and never to disk on the host.
+A lent copy is a snapshot: later captures on the host do not reach it until you lend again. Every lend expires: the VM's record keeps, per name, when it was lent and until when (`secrets --json` lists them under `lends`), lending again resets the term, and at its until the daemon recalls the copy from a running VM (at its start and every minute; a lasting VM stopped past its until is recalled at its next start, before its guest connects), logging `<vm> lend: recalled <name> (expired)`; a recall that fails keeps the entry and is logged once an hour. A record from before terms existed reads each name as lent at the file's last change for 12h. Values pass between the credential stores through a pipe, never through argv and never to disk on the host.
 
 ## Where to revoke
 

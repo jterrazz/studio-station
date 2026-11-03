@@ -15,6 +15,7 @@ import (
 	"github.com/jterrazz/studio-station/src/cli/kit"
 	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/system"
@@ -28,12 +29,31 @@ func (m machine) daemon(env kit.Env) *daemon.Daemon {
 	return daemon.New(m.host, tart.New(m.host.Run), sshclient.New(), m.machines(false), m.tailnet().Tracked(daemon.ChildrenDir(m.paths)), m.store, daemon.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Pmset: m.pmset(), PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
+		Lends: daemonLends{m.secrets()},
 		Feeds: map[string]daemon.Feed{daemon.PageMenubar: m.menubarFeed(env)},
 	})
 }
 
 func daemonCommand(env kit.Env, m machine) *cobra.Command {
 	return daemoncmd.Command(daemoncmd.Deps{Daemon: m.daemon(env)}, env)
+}
+
+type daemonLends struct{ s *secrets.Service }
+
+func (l daemonLends) Held() (map[string][]daemon.Lend, error) {
+	held, err := l.s.Lends()
+	out := make(map[string][]daemon.Lend, len(held))
+	for vm, list := range held {
+		for _, x := range list {
+			out[vm] = append(out[vm], daemon.Lend{Name: x.Name, Until: x.Until})
+		}
+	}
+	return out, err
+}
+
+func (l daemonLends) Recall(ctx context.Context, from string, names []string) error {
+	_, err := l.s.Recall(ctx, from, names)
+	return err
 }
 
 type hostDaemon struct{ c daemon.Client }
