@@ -47,6 +47,7 @@ type column struct {
 	keep  int
 	whole bool
 	width int
+	firm  int
 	cell  func(r page.Row) page.Value
 }
 
@@ -315,7 +316,11 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		}
 		labelWidth = max(labelWidth, atom.Width(e.prefix)+atom.Width(shown(e.row)))
 		for i := range cols {
-			cols[i].width = max(cols[i].width, atom.Width(atom.Show(cols[i].cell(e.row))))
+			v := cols[i].cell(e.row)
+			cols[i].width = max(cols[i].width, atom.Width(atom.Show(v)))
+			if i == len(cols)-1 && atom.Uncut(v.Kind) {
+				cols[i].firm = max(cols[i].firm, atom.Width(atom.Show(v)))
+			}
 		}
 	}
 	labelWidth = min(labelWidth, token.LabelMax)
@@ -351,7 +356,7 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		case cols[i].whole:
 			cols[i].width = -1
 		default:
-			cols[i].width = max(cols[i].width-over, min(atom.Floor(cols[i].kind), cols[i].width))
+			cols[i].width = max(cols[i].width-over, min(atom.Floor(cols[i].kind), cols[i].width), cols[i].firm)
 		}
 	}
 	if over := fixed() - avail; over > 0 {
@@ -599,6 +604,7 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	b.WriteString(lead + st.Strong.Render(label) + atom.Spaces(labelWidth-atom.Width(e.prefix)-atom.Width(label)))
 	used := labelWidth
 	ownLine, ownUsed := lead+st.Strong.Render(label), labelWidth
+	openLine, openUsed := b.String(), labelWidth
 	var below []Line
 	for ci, c := range cols {
 		v := c.cell(r)
@@ -611,6 +617,14 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 			c.width = max(min(atom.Width(atom.Show(v)), g.avail()-used-token.Gap), 0)
 		}
 		text := atom.Fit(v, c.width)
+		// invariant: a row whose cells end before the last column keeps that
+		// column's cell beside its own cells when the aligned place would cut
+		// it and that one holds it whole.
+		if whole := atom.Show(v); ci == len(cols)-1 && text != whole && openUsed < used && token.Gap+atom.Width(whole) <= g.avail()-openUsed {
+			b.Reset()
+			b.WriteString(openLine)
+			text, used, c.width = whole, openUsed, atom.Width(whole)
+		}
 		styled := st.Text.Render(text)
 		if v.Stale {
 			styled = st.Muted.Render(text)
@@ -630,6 +644,9 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 		used += token.Gap + c.width
 		if text != "" && atom.Numeric(c.kind) {
 			ownLine, ownUsed = b.String(), used
+		}
+		if text != "" {
+			openLine, openUsed = b.String(), used
 		}
 	}
 	rest := g.avail() - used

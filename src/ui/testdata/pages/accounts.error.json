@@ -29,7 +29,7 @@
         {
           "key": "scope",
           "kind": "list",
-          "keep": 20,
+          "keep": 70,
           "whole": true
         },
         {

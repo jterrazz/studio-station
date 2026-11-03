@@ -22,7 +22,7 @@ func columns() []page.Column {
 		{Key: "provider", Kind: page.KindText, Keep: 100},
 		{Key: "identity", Kind: page.KindIdentity, Keep: 60},
 		{Key: "origin", Kind: page.KindText, Keep: 90},
-		{Key: "scope", Kind: page.KindList, Keep: 20, Whole: true},
+		{Key: "scope", Kind: page.KindList, Keep: 70, Whole: true},
 		{Key: "detail", Kind: page.KindText, Keep: 50},
 	}
 }

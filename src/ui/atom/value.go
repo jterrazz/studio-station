@@ -189,6 +189,15 @@ func Fit(v page.Value, width int) string {
 	return s
 }
 
+func Uncut(k page.Kind) bool {
+	switch k {
+	case page.KindPath, page.KindURL, page.KindList, page.KindText, page.KindIdentity, page.KindVersion, page.KindNone, "":
+		return false
+	default:
+	}
+	return true
+}
+
 func Least(v page.Value) int {
 	// value: the narrowest width a path or URL is cut to while it still says
 	// where it points: a path's first and last segments, a URL's floor.
