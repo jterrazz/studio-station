@@ -97,3 +97,11 @@ runs:
       exit: 1
       stdout: |
           0
+    - command: 'accounts >/dev/null 2>&1; echo "accounts $?"; "$STATION" power >/dev/null 2>&1; echo "power $?"; "$STATION" --help | /usr/bin/grep -cE ''^    (accounts|power) '''
+      exit: 1
+      stdout: |
+          accounts 2
+          power 127
+          0
+      stderr: |
+          /bin/sh: : command not found

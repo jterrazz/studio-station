@@ -1,0 +1,44 @@
+description: 'every read answers --page with station.page/v1, its page id, ready and titled sections'
+fixture:
+    - ../__fixtures__/estate/
+runs:
+    - command: 'status --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	home	ready	true
+    - command: 'status --all --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	home	ready	true
+    - command: 'tools --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	tools	ready	true
+    - command: 'config --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	config	ready	true
+    - command: 'storage --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	storage	ready	true
+    - command: 'machines --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	machines	ready	true
+    - command: 'images --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	images	ready	true
+    - command: 'secrets --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	secrets	ready	true
+    - command: 'tailnet --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	tailnet	ready	true
+    - command: 'services --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+      exit: 0
+      stdout: |
+          station.page/v1	services	ready	true
