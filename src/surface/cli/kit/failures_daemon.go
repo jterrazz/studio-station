@@ -101,7 +101,7 @@ func controlFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &noAnswer):
 		return failed(noAnswer.Error(), "tail ~/.local/state/station/logs/daemon.log", err), true
 	case errors.As(err, &boot):
-		return failed(boot.Error(), "launchctl print gui/$(id -u)/"+engine.Label, err), true
+		return failed(boot.Error(), boot.See, err), true
 	}
 	return nil, false
 }

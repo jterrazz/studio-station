@@ -10,7 +10,7 @@ import (
 )
 
 func (m machine) control() *engine.Control {
-	return engine.NewControl(m.host, engine.Dial(m.host, m.paths), m.machines(false), engine.ControlOptions{
+	return engine.NewControl(m.host, engine.Dial(m.host, m.paths), m.machines(false), m.engineJob(), engine.ControlOptions{
 		Here: m.kind, HereName: m.where.Machine, State: m.paths.State,
 	})
 }

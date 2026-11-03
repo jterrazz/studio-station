@@ -56,8 +56,8 @@ func technologyWords() []string {
 // gate until it is removed.
 func wordsTolerated() map[string][]string {
 	return map[string][]string{
-		"wire":                         {"bun", "launchctl", "launchd", "mise", "pmset", "ssh", "tart"},
-		"surface/cli/kit":              {"docker", "fdesetup", "launchctl", "ssh", "tailscale", "tart"},
+		"wire":                         {"bun", "mise", "pmset", "ssh", "tart"},
+		"surface/cli/kit":              {"docker", "fdesetup", "ssh", "tailscale", "tart"},
 		"surface/cli/machines":         {"ssh"},
 		"surface/cli/machines/restart": {"fdesetup"},
 		"surface/cli/run":              {"docker"},
@@ -66,7 +66,7 @@ func wordsTolerated() map[string][]string {
 		"cmd/generate/pages":           {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "security", "ssh", "tailscale", "tart", "uv"},
 		"domain/accounts":              {"docker", "npm", "ssh", "tailscale"},
 		"domain/config":                {"fdesetup", "launchctl", "pmset", "security", "ssh"},
-		"engine":                       {"launchctl", "pmset", "ssh", "tailscale", "tart"},
+		"engine":                       {"pmset", "ssh", "tailscale", "tart"},
 		"domain/guest":                 {"docker", "lsof"},
 		"domain/images":                {"scp", "ssh", "tart"},
 		"domain/machines":              {"fdesetup", "launchctl", "ssh", "sysctl", "tart"},

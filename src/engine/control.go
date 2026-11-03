@@ -14,6 +14,8 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
+const JobBudget = startWait
+
 const (
 	bootoutWait = 10 * time.Second
 	startWait   = 15 * time.Second
@@ -26,6 +28,13 @@ type ControlMachines interface {
 	Remove(ctx context.Context, name string) (machines.DeleteReport, error)
 }
 
+type Job interface {
+	Loaded(ctx context.Context) bool
+	Load(ctx context.Context) error
+	Restart(ctx context.Context) error
+	Stop(ctx context.Context) error
+}
+
 type ControlOptions struct {
 	Here     catalog.MachineKind
 	HereName string
@@ -35,14 +44,15 @@ type ControlOptions struct {
 type Control struct {
 	// value: station stop and station start: the one daemon of this host, its
 	// launchd agent and the VMs it supervises.
-	h system.Host
-	c Client
-	m ControlMachines
-	o ControlOptions
+	h   system.Host
+	c   Client
+	m   ControlMachines
+	job Job
+	o   ControlOptions
 }
 
-func NewControl(h system.Host, c Client, m ControlMachines, o ControlOptions) *Control {
-	return &Control{h: h, c: c, m: m, o: o}
+func NewControl(h system.Host, c Client, m ControlMachines, job Job, o ControlOptions) *Control {
+	return &Control{h: h, c: c, m: m, job: job, o: o}
 }
 
 type NotInstalledError struct{}
@@ -80,11 +90,13 @@ func (e *NoAnswerError) Error() string {
 }
 
 type BootError struct {
-	Verb  string
+	Message string
+	// value: the command line the owner types to read the daemon's job.
+	See   string
 	Cause error
 }
 
-func (e *BootError) Error() string { return "launchctl " + e.Verb + ": " + e.Cause.Error() }
+func (e *BootError) Error() string { return e.Message }
 
 func (e *BootError) Unwrap() error { return e.Cause }
 
@@ -99,31 +111,6 @@ func (c *Control) Check(verb string) error {
 }
 
 func (c *Control) plist() string { return catalog.DaemonPlist(c.h.Env.Home()) }
-
-func (c *Control) target() string { return c.domain() + "/" + Label }
-
-func (c *Control) domain() string { return "gui/" + strconv.Itoa(c.h.Env.Euid()) }
-
-func (c *Control) launchctl(ctx context.Context, args ...string) (system.Output, error) {
-	return c.h.Run.Output(ctx, system.Cmd{Name: "launchctl", Args: args, Timeout: startWait})
-}
-
-func (c *Control) loaded(ctx context.Context) bool {
-	out, err := c.launchctl(ctx, "print", c.target())
-	return err == nil && out.ExitCode == 0
-}
-
-func (c *Control) must(ctx context.Context, args ...string) error {
-	out, err := c.launchctl(ctx, args...)
-	if err == nil && out.ExitCode != 0 {
-		first, _, _ := strings.Cut(strings.TrimSpace(out.Stderr), "\n")
-		err = errors.New("exited " + strconv.Itoa(out.ExitCode) + " " + first)
-	}
-	if err != nil {
-		return &BootError{Verb: args[0], Cause: err}
-	}
-	return nil
-}
 
 type Work struct {
 	Answering bool
@@ -218,11 +205,11 @@ func (c *Control) Stop(ctx context.Context, w Work) (StopReport, error) {
 			return r, &StuckError{VM: v.Name}
 		}
 	}
-	if !w.Answering && !c.loaded(ctx) {
+	if !w.Answering && !c.job.Loaded(ctx) {
 		r.Daemon = DaemonAlready
 		return r, nil
 	}
-	if err := c.must(ctx, "bootout", c.target()); err != nil {
+	if err := c.job.Stop(ctx); err != nil {
 		return r, err
 	}
 	for waited := time.Duration(0); waited < bootoutWait && c.answers(ctx); waited += controlPoll {
@@ -265,11 +252,11 @@ func (c *Control) Start(ctx context.Context) (StartReport, error) {
 	if p, err := c.c.Ping(ctx); err == nil {
 		return StartReport{Already: true, Version: p.Version, PID: p.PID}, nil
 	}
-	if c.loaded(ctx) {
-		if err := c.must(ctx, "kickstart", "-k", c.target()); err != nil {
+	if c.job.Loaded(ctx) {
+		if err := c.job.Restart(ctx); err != nil {
 			return StartReport{}, err
 		}
-	} else if err := c.must(ctx, "bootstrap", c.domain(), c.plist()); err != nil {
+	} else if err := c.job.Load(ctx); err != nil {
 		return StartReport{}, err
 	}
 	for waited := time.Duration(0); waited < startWait; waited += controlPoll {

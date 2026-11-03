@@ -5,11 +5,11 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
@@ -20,7 +20,6 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	daemoncmd "github.com/jterrazz/studio-station/src/surface/cli/daemon"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
@@ -168,27 +167,6 @@ func (i daemonInstaller) env() map[string]string {
 	return env
 }
 
-func (i daemonInstaller) launchctl(ctx context.Context, args ...string) (system.Output, error) {
-	return i.m.host.Run.Output(ctx, system.Cmd{Name: "launchctl", Args: args})
-}
-
-// invariant: a launchctl call that exits non-zero failed: a daemon launchd never
-// loaded or never started is no "running" row.
-func (i daemonInstaller) mustLaunchctl(ctx context.Context, args ...string) error {
-	out, err := i.launchctl(ctx, args...)
-	if err != nil {
-		return err
-	}
-	if out.ExitCode == 0 {
-		return nil
-	}
-	message := "launchctl " + args[0] + " exited " + strconv.Itoa(out.ExitCode)
-	if first, _, _ := strings.Cut(strings.TrimSpace(out.Stderr), "\n"); first != "" {
-		message += ": " + first
-	}
-	return errors.New(message)
-}
-
 // invariant: setup installs ONE daemon per host, after migrating the round-3
 // per-VM agents; it restarts the daemon only when its plist changed or it runs
 // another version, and the VMs survive that restart.
@@ -197,43 +175,33 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 	if _, ok := i.m.host.Run.LookPath("tart"); !ok {
 		return setup.Step{Name: step, State: catalog.StateAbsent, Detail: "not needed until tart is installed"}, nil
 	}
-	if _, ok := i.m.host.Run.LookPath("launchctl"); !ok {
-		return setup.Step{Name: step, State: catalog.StateAbsent, Detail: "launchd is not here to run it"}, nil
+	jobs := i.m.jobs(0)
+	if !jobs.Present() {
+		return setup.Step{Name: step, State: catalog.StateAbsent, Detail: jobs.Names().Manager + " is not here to run it"}, nil
 	}
 	if _, err := i.machines.MigrateAgents(ctx); err != nil {
 		return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
 	}
-	home := i.m.host.Env.Home()
-	file := catalog.DaemonPlist(home)
-	log := filepath.Join(i.m.paths.State, "logs", "daemon.log")
-	plist := engine.Plist(i.m.host.Env.Executable(), i.env(), log)
-	current, _ := i.m.host.FS.ReadFile(file)
-	changed := string(current) != plist
-	for _, dir := range []string{filepath.Dir(file), filepath.Dir(log)} {
-		if err := i.m.host.FS.MkdirAll(dir, 0o700); err != nil {
-			return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
-		}
+	job := i.m.daemonJob()
+	changed, err := jobs.Install(ctx, contract.JobSpec{
+		Label: job.Label, Program: []string{i.m.host.Env.Executable(), "daemon"}, Env: i.env(),
+		AtLogin: true, KeepAlive: true, Log: filepath.Join(i.m.paths.State, "logs", "daemon.log"), File: job.File,
+	})
+	if err != nil {
+		return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
 	}
-	if changed {
-		if err := i.m.host.FS.WriteFile(file, []byte(plist), 0o644); err != nil {
-			return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
-		}
-	}
-	domain := "gui/" + strconv.Itoa(i.m.host.Env.Euid())
-	target := domain + "/" + engine.Label
 	version := Version()
-	if out, err := i.launchctl(ctx, "print", target); err != nil || out.ExitCode != 0 {
-		if err := i.mustLaunchctl(ctx, "bootstrap", domain, file); err != nil {
-			return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
-		}
-		if err := i.mustLaunchctl(ctx, "kickstart", target); err != nil {
-			return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
+	if !jobs.Read(ctx, job).Loaded {
+		for _, run := range []func(context.Context, contract.Ref) error{jobs.Load, jobs.Start} {
+			if runErr := run(ctx, job); runErr != nil {
+				return setup.Step{Name: step, State: catalog.StateBroken, Detail: runErr.Error()}, &setup.StepFailedError{Step: step, Cause: runErr}
+			}
 		}
 		return setup.Step{Name: step, State: catalog.StateOK, Detail: "running " + version, Changed: true}, nil
 	}
 	running, err := i.m.hostDaemon().c.Ping(ctx)
 	if changed || (err == nil && running.Version != version) {
-		if kickErr := i.mustLaunchctl(ctx, "kickstart", "-k", target); kickErr != nil {
+		if kickErr := jobs.Restart(ctx, job); kickErr != nil {
 			return setup.Step{Name: step, State: catalog.StateBroken, Detail: kickErr.Error()}, &setup.StepFailedError{Step: step, Cause: kickErr}
 		}
 		detail := "restarted"
