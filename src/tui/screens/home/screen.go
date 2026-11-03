@@ -96,6 +96,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		}
 		return m, tea.Batch(m.measure(), next())
 	case tab.Shown:
+		m.View, _, _ = m.View.Update(msg)
 		m.visible = msg.Visible
 		if m.visible && !m.ticking {
 			m.ticking = true

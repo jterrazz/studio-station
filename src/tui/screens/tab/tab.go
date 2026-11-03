@@ -20,6 +20,7 @@ type Screen interface {
 	Modal() bool
 	Busy() bool
 	Loading() bool
+	Owns(msg tea.Msg) bool
 }
 
 type Describe func(error) (message, hint string)
@@ -105,6 +106,10 @@ type View[T any] struct {
 	loading  bool
 	busy     bool
 	gen      int
+	// invariant: a hidden tab keeps its latest page unlaid until it is shown,
+	// so answers for tabs nobody sees cost the program no layout.
+	hidden bool
+	held   *page.Page
 	// invariant: Init runs on a copy, so the running watch's cancel is held
 	// where every copy of the tab sees it.
 	stop *context.CancelFunc
@@ -167,6 +172,17 @@ func next[T any](id string, gen int, build func(T) page.Page, ch <-chan T) tea.C
 	}
 }
 
+// invariant: a watch's answer belongs to the one screen that asked for it;
+// every other message may concern any screen.
+func (v View[T]) Owns(msg tea.Msg) bool {
+	l, answer := msg.(owned)
+	return !answer || l.owner() == v.ID
+}
+
+type owned interface{ owner() string }
+
+func (l loaded[T]) owner() string { return l.id }
+
 func (v View[T]) Modal() bool {
 	f := v.Browser.Focus()
 	return f == tui.Modal || f == tui.Filter || f == tui.Sheet
@@ -208,12 +224,18 @@ func (v View[T]) Update(msg tea.Msg) (View[T], tea.Cmd, *tui.Event) {
 		}
 		if msg.more == nil {
 			v.loading = false
-			v.Browser = v.Browser.Show(msg.page)
+			v = v.show(msg.page)
 			return v, nil, nil
 		}
 		v.Last = msg.value
-		v.Browser = v.Browser.Show(msg.page)
+		v = v.show(msg.page)
 		return v, next(msg.id, msg.gen, v.build, msg.more), nil
+	case Shown:
+		v.hidden = !msg.Visible
+		if !v.hidden && v.held != nil {
+			v.Browser, v.held = v.Browser.Show(*v.held), nil
+		}
+		return v, nil, nil
 	case Done:
 		if msg.Screen != v.ID {
 			return v, nil, nil
@@ -247,6 +269,15 @@ func (v View[T]) Update(msg tea.Msg) (View[T], tea.Cmd, *tui.Event) {
 		ev = nil
 	}
 	return v, cmd, ev
+}
+
+func (v View[T]) show(p page.Page) View[T] {
+	if v.hidden {
+		v.held = &p
+		return v
+	}
+	v.Browser, v.held = v.Browser.Show(p), nil
+	return v
 }
 
 func (v View[T]) Ask(c page.Confirm, then tea.Cmd) (View[T], tea.Cmd) {

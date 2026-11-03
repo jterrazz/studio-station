@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"context"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -84,5 +86,25 @@ func TestAHostRestartAsksItsName(t *testing.T) {
 				t.Error("y confirmed a restart that asks the name")
 			}
 		}
+	}
+}
+
+func TestAHiddenTabShowsTheAnswerItHeldOnceShown(t *testing.T) {
+	here := page.Context{Kind: "host"}
+	answer := fleetOf("api")
+	source := func(context.Context, bool) (<-chan pagefleet.Reading, error) {
+		ch := make(chan pagefleet.Reading, 1)
+		ch <- pagefleet.Reading{Machines: &answer}
+		return ch, nil
+	}
+	v := tab.NewView("fleet", "Fleet", "hosts", here, source, func(r pagefleet.Reading) page.Page { return pagefleet.Tab(r, here) }, nil)
+	v, _, _ = v.Update(tab.Shown{Visible: false})
+	v, _, _ = v.Update(v.Init()())
+	if strings.Contains(v.Body(100, 20), "api") {
+		t.Fatal("a hidden tab laid out its answer")
+	}
+	v, _, _ = v.Update(tab.Shown{Visible: true})
+	if !strings.Contains(v.Body(100, 20), "api") {
+		t.Errorf("the shown tab lost the answer it held:\n%s", v.Body(100, 20))
 	}
 }

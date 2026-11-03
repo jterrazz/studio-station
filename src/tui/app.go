@@ -22,13 +22,27 @@ type App struct {
 	prefer  func(prefix string)
 	stop    func()
 	turning bool
+	frame   *frame
+}
+
+// invariant: the frame is drawn again only when a message can change it; an
+// answer for a hidden tab, or a spinner tick with nothing loading, reuses the
+// last one, so a burst of hidden reads never queues a key behind redraws.
+type frame struct {
+	view  tea.View
+	drawn bool
 }
 
 func newApp(here page.Context, tabs []Tab, screens []tab.Screen, prefer func(string)) App {
 	if prefer == nil {
 		prefer = func(string) {}
 	}
-	return App{tabs: tabs, screens: screens, here: here, width: 80, height: 24, chrome: ui.NewChrome(), prefer: prefer, turning: true}
+	for i := range screens {
+		if i > 0 {
+			screens[i], _ = screens[i].Update(tab.Shown{Visible: false})
+		}
+	}
+	return App{tabs: tabs, screens: screens, here: here, width: 80, height: 24, chrome: ui.NewChrome(), prefer: prefer, turning: true, frame: &frame{}}
 }
 
 func (a App) Init() tea.Cmd {
@@ -42,6 +56,16 @@ func (a App) Init() tea.Cmd {
 }
 
 func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if !a.screens[a.active].Owns(msg) {
+		for i, s := range a.screens {
+			if s.Owns(msg) {
+				var cmd tea.Cmd
+				a.screens[i], cmd = s.Update(msg)
+				return a, cmd
+			}
+		}
+		return a, nil
+	}
 	if chrome, cmd, ok := a.chrome.Turn(msg); ok {
 		// invariant: the header spinner turns while the shown tab has a probe
 		// pending, and stops, costing no redraw, once it has answered.
@@ -49,9 +73,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.turning = false
 			return a, nil
 		}
-		a.chrome = chrome
+		a.chrome, a.frame.drawn = chrome, false
 		return a, cmd
 	}
+	a.frame.drawn = false
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		if msg.Width <= 0 || msg.Height <= 0 {
@@ -138,6 +163,9 @@ func (a App) turn(cmd tea.Cmd) (tea.Model, tea.Cmd) {
 }
 
 func (a App) View() tea.View {
+	if a.frame.drawn {
+		return a.frame.view
+	}
 	current := a.screens[a.active]
 	labels := make([]ui.Tab, 0, len(a.tabs))
 	for _, t := range a.tabs {
@@ -148,5 +176,6 @@ func (a App) View() tea.View {
 	v := tea.NewView(a.chrome.Screen(header, body, a.chrome.StatusBar(a.status.Mark, a.status.Text, a.status.Hint, a.width), current.Footer(a.width), a.height))
 	v.AltScreen = true
 	v.WindowTitle = "station"
+	a.frame.view, a.frame.drawn = v, true
 	return v
 }
