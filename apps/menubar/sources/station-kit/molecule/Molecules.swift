@@ -7,8 +7,10 @@ public struct Layout {
     static func chars(_ v: Value?) -> Int { v.map { Format.show($0).count } ?? 0 }
 
     // invariant: a row that does not fit drops its cells by Keep, lowest
-    // first, never its mark nor its label (G4's order); the detail is cut at
-    // the end, so it claims only its first 20 characters, as the tty's does.
+    // first, never its mark nor its label (G4's order); what the drops free
+    // goes back to a dropped cell that fits in it, the most kept first; the
+    // detail is cut at the end, so it claims only its first 20 characters, as
+    // the tty's does.
     static let detailMin = 20
     public static func kept(_ row: Row, columns: [Column], width: CGFloat) -> [Int] {
         let cells = row.cells ?? []
@@ -22,10 +24,16 @@ public struct Layout {
             let kb = b + 1 < columns.count ? columns[b + 1].keep ?? 0 : 0
             return ka == kb ? a > b : ka < kb
         }
+        var dropped: [Int] = []
         for i in order where need() > room {
             keep.removeAll { $0 == i }
+            dropped.append(i)
         }
-        return keep
+        for i in dropped.reversed() {
+            keep.append(i)
+            if need() > room { keep.removeLast() }
+        }
+        return keep.sorted()
     }
 }
 
