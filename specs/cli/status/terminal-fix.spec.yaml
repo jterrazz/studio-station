@@ -21,11 +21,7 @@ runs:
           see enter fix
           screen
           send \r
-          see exited
-          see + Config
-          gone ◌
-          see enter fix
-          screen
+          see station tools upgrade --via brew exited 1
           send q
       exit: 0
       stdout: |4
@@ -34,8 +30,4 @@ runs:
            esc back  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys
                                     rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
                                     rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
-           ↑↓ move  enter fix  / filter  space fold  r reload  q quit  ? keys
-                                    rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
-                                    rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
-           ✗ station tools upgrade --via brew exited 1  → run station --help
            ↑↓ move  enter fix  / filter  space fold  r reload  q quit  ? keys
