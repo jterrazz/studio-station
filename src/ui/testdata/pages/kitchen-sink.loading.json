@@ -211,6 +211,54 @@
         },
         {
           "row": {
+            "id": "until",
+            "mark": "pending",
+            "label": "until",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "soon",
+            "mark": "pending",
+            "label": "soon",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "expired",
+            "mark": "pending",
+            "label": "expired",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "url",
             "mark": "pending",
             "label": "url",
@@ -336,7 +384,7 @@
       "counts": [
         {
           "mark": "pending",
-          "n": 15
+          "n": 18
         }
       ]
     },
@@ -629,6 +677,21 @@
         },
         {
           "row": {
+            "id": "expiring",
+            "mark": "pending",
+            "label": "expiring",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "absent",
             "mark": "pending",
             "label": "absent",
@@ -641,7 +704,7 @@
       "counts": [
         {
           "mark": "pending",
-          "n": 19
+          "n": 20
         }
       ]
     },

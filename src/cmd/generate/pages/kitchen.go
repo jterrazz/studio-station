@@ -82,6 +82,9 @@ func kitchen(edit func(*page.Page)) page.Page {
 			it(row("version", page.OK, page.Version("1.22209.3,babe11577dfefe3e209c06bd674628d862f0dbae"), page.Port(5173))),
 			it(row("age", page.OK, page.Age(now.Add(-22*time.Minute), now), page.PortMap(5173, 40001))),
 			it(row("old", page.OK, page.Age(now.AddDate(0, -2, 0), now), page.Duration(45))),
+			it(row("until", page.OK, page.Until(now.Add(11*time.Hour+40*time.Minute+20*time.Second), now), page.Duration(42))),
+			it(row("soon", page.OK, page.Until(now.Add(40*time.Second), now))),
+			it(row("expired", page.OK, page.Until(now.Add(-time.Minute), now))),
 			it(row("url", page.OK, page.URL("https://jterrazz-macbook-pro.tail1234.ts.net:40001"))),
 			it(row("identity", page.OK, page.Identity("admin@jterrazz.com"))),
 			it(row("path", page.OK, page.Path("/Applications/Tailscale.app/Contents/MacOS/Tailscale"))),
@@ -118,6 +121,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		{page.Refused, page.Broken, "refused", ""},
 		{page.Down, page.Broken, "not running", ""},
 		{page.Outlived, page.Broken, "stale", "station machines delete linux-2"},
+		{page.Expiring, page.Attention, "42m left", "station secrets lend --to api operator:claude:oauth-token"},
 	}
 	for _, r := range reasons {
 		x := row(string(r.reason), r.mark, page.Text(string(r.mark)))

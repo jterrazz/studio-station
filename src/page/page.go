@@ -270,6 +270,7 @@ const (
 	Refused     Reason = "refused"
 	Down        Reason = "down"
 	Outlived    Reason = "stale"
+	Expiring    Reason = "expiring"
 )
 
 type Value struct {
@@ -296,6 +297,7 @@ const (
 	KindVersion  Kind = "version"
 	KindDuration Kind = "duration"
 	KindAge      Kind = "age"
+	KindUntil    Kind = "until"
 	KindURL      Kind = "url"
 	KindIdentity Kind = "identity"
 	KindPath     Kind = "path"

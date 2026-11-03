@@ -261,6 +261,52 @@
         },
         {
           "row": {
+            "id": "until",
+            "mark": "ok",
+            "label": "until",
+            "cells": [
+              {
+                "kind": "until",
+                "n": 42020,
+                "at": "2026-11-03T23:40:20Z"
+              },
+              {
+                "kind": "duration",
+                "n": 42
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "soon",
+            "mark": "ok",
+            "label": "soon",
+            "cells": [
+              {
+                "kind": "until",
+                "n": 40,
+                "at": "2026-11-03T12:00:40Z"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "expired",
+            "mark": "ok",
+            "label": "expired",
+            "cells": [
+              {
+                "kind": "until",
+                "n": -60,
+                "at": "2026-11-03T11:59:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
             "id": "url",
             "mark": "ok",
             "label": "url",
@@ -382,7 +428,7 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 14
+          "n": 17
         },
         {
           "mark": "attention",
@@ -758,6 +804,27 @@
         },
         {
           "row": {
+            "id": "expiring",
+            "mark": "attention",
+            "label": "expiring",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "attention"
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "42m left"
+            },
+            "reason": "expiring",
+            "hint": {
+              "command": "station secrets lend --to api operator:claude:oauth-token"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "absent",
             "mark": "absent",
             "label": "absent",
@@ -771,7 +838,7 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 13
+          "n": 14
         },
         {
           "mark": "absent",

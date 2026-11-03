@@ -24,6 +24,8 @@ func Plain(v page.Value) string {
 		return strings.Join(parts, token.Sep)
 	case page.KindPending:
 		return ""
+	case page.KindUntil:
+		return v.At
 	default:
 	}
 	return show(v)
@@ -82,6 +84,14 @@ func show(v page.Value) string {
 			return v.At[:10]
 		}
 		return Duration(v.N)[:durationHead(v.N)] + " ago"
+	case page.KindUntil:
+		switch {
+		case v.N <= 0:
+			return "expired"
+		case v.N < 60:
+			return "<1m left"
+		}
+		return Duration(v.N-v.N%60) + " left"
 	case page.KindPort:
 		return strconv.FormatInt(v.N, 10)
 	case page.KindRange:
@@ -138,7 +148,7 @@ func tallies(items []page.Value) bool {
 
 func Numeric(k page.Kind) bool {
 	switch k {
-	case page.KindCount, page.KindSize, page.KindRatio, page.KindPercent, page.KindPort, page.KindPortMap, page.KindDuration:
+	case page.KindCount, page.KindSize, page.KindRatio, page.KindPercent, page.KindPort, page.KindPortMap, page.KindDuration, page.KindUntil:
 		return true
 	default:
 	}
