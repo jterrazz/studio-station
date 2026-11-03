@@ -77,6 +77,7 @@ func importTable() map[string][]string {
 		"ui/help":            {"ui/token", fang, lip, std},
 		"ui/render/tui":      append(slices.Clone(template), "ui/template", tea),
 		"output":             {"page", "ui/render/*", "core/fail", std},
+		"core/*":             {"core/*", std},
 		"core/fail":          {"testing", std},
 		"tui":                {"tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
 		"tui/*":              {"tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
@@ -128,7 +129,7 @@ func symbolRules() []symbolRule {
 		{symbols: []string{tea + ".*", bubble + "/*"}, owners: []string{"ui/organism", "ui/render/tui", "tui", "tui/*"}},
 		{symbols: []string{huh + ".*"}, owners: []string{"ui/organism", "ui/render/tty", "ui/render/tui"}},
 		{symbols: []string{fang + ".*"}, owners: []string{"ui/help", "app"}},
-		{symbols: prefixed(module+"/src/core/fail.", "Usage", "Failed", "Silent", "Interrupted"), owners: []string{"cli/kit", "app"}},
+		{symbols: prefixed(module+"/src/core/fail.", "Usage", "Failure", "Silent", "Interruption"), owners: []string{"cli/kit", "app"}},
 		{symbols: append(prefixed(module+"/src/output.", "NewWriter", "Detect", "For"), module+"/src/output.Writer.*"), owners: []string{"cli/kit", "app"}},
 	}
 }
