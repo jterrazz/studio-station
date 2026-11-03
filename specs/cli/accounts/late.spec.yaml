@@ -1,6 +1,6 @@
-description: 'a slow provider never holds the page: gh silent for 30 s is ◐ late within its budget, every other record whole'
+description: 'a provider silent past its budget is ◐ late and never holds the page'
 fixture:
-    - ../__fixtures__/accounts/
+    - ./__fixtures__/accounts/
 env: daemon
 runs:
     - command: '--version > /dev/null; /bin/mkdir -p answers/accounts; echo slow > answers/accounts/gh.mode; echo 30 > answers/accounts/gh.slow; s=$(/bin/date +%s); "$STATION" accounts > out.txt; e=$(/bin/date +%s); [ $((e - s)) -lt 7 ] && echo fast; /usr/bin/awk -F''\t'' ''$3=="github"'' out.txt; /usr/bin/wc -l < out.txt | /usr/bin/tr -d " "'

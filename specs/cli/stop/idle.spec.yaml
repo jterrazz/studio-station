@@ -1,4 +1,4 @@
-description: 'stop with nothing running asks nothing: the agent booted out, the daemon gone; again, already stopped'
+description: 'stop with nothing running asks nothing; again, it is already stopped'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/launchctl/

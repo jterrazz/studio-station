@@ -1,6 +1,6 @@
-description: 'never a token: every stub prints the sentinel on its token line, in a token key and on stderr, and no output of accounts carries it'
+description: 'never a token: the sentinel every stub prints reaches no output of accounts'
 fixture:
-    - ../__fixtures__/accounts/
+    - ./__fixtures__/accounts/
 env: daemon
 runs:
     - command: 'accounts > out.txt 2> err.txt; "$STATION" accounts --json > out.json 2>> err.txt; "$STATION" accounts --page > page.json 2>> err.txt; /usr/bin/grep -c SENTINEL out.txt err.txt out.json page.json; /usr/bin/jq ''[..|strings|select(test("gho_|sk-ant-|npm_|eyJ"))]|length'' out.json; /usr/bin/grep -c "docker-credential-osxkeychain get" .calls'

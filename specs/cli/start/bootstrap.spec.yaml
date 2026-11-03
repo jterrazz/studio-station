@@ -1,4 +1,4 @@
-description: 'start bootstraps the agent and waits for the daemon; again, it only says it runs; without the agent''s plist it refuses'
+description: 'start bootstraps the agent and waits for the daemon; running, it only says so'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/launchctl/

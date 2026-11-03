@@ -1,6 +1,6 @@
-description: 'a VM''s accounts are read inside it by its guest, over its one session, joined with the lends its record holds'
+description: 'a VM''s accounts are read by its guest over its one session, joined with its lends'
 fixture:
-    - ../__fixtures__/accounts/
+    - ./__fixtures__/accounts/
     - ../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon

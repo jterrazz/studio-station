@@ -1,6 +1,6 @@
-description: 'l lends from the Accounts tab: the Form, then the lend itself, and r recalls a lent row but only shows an own one''s logout'
+description: 'the Accounts tab lends with l, recalls a lent row with r and shows an own row''s logout'
 fixture:
-    - ../__fixtures__/accounts/
+    - ./__fixtures__/accounts/
     - ../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
     - ../__fixtures__/terminal/

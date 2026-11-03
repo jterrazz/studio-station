@@ -1,4 +1,4 @@
-description: 'stop with VMs running refuses piped without --yes, and with it deletes the temporary, stops the lasting (its wish stopped), then boots the daemon out last'
+description: 'stop deletes the temporary VMs, stops the lasting ones, then boots the daemon out'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/

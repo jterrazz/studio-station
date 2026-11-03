@@ -1,6 +1,6 @@
 description: 'the host''s providers read as this Mac''s shapes, one record each, and Tailscale costs no second read'
 fixture:
-    - ../__fixtures__/accounts/
+    - ./__fixtures__/accounts/
 env: daemon
 runs:
     - command: 'accounts; /usr/bin/grep -c "^tailscale status --json" .calls'

@@ -1,4 +1,4 @@
-description: 'with the daemon down, stop ends the VMs whose run outlived it by the daemon-less path, then boots the agent out'
+description: 'with the daemon down, stop ends the VMs whose run outlived it, then boots the agent out'
 fixture:
     - ../__fixtures__/vms/
     - ../__fixtures__/launchctl/
