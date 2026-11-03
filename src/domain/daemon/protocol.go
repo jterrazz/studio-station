@@ -197,3 +197,62 @@ func Plist(executable string, env map[string]string, logPath string) string {
 func xmlText(v string) string {
 	return strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", `"`, "&quot;", "'", "&apos;").Replace(v)
 }
+
+func (c Client) Subscribe(ctx context.Context, pages []string) (<-chan json.RawMessage, error) {
+	// invariant: a subscription is its own connection, held until ctx ends or
+	// the daemon goes; each page event's page is sent as the daemon wrote it,
+	// and the channel closes when the stream does.
+	cctx, cancel := context.WithTimeout(ctx, connectBudget)
+	conn, err := c.sockets.DialUnix(cctx, c.path, connectBudget)
+	cancel()
+	if err != nil {
+		return nil, &DownError{}
+	}
+	data, err := json.Marshal(Request{V: 1, ID: "1", Op: "subscribe", Pages: pages})
+	if err != nil {
+		_ = conn.Close()
+		return nil, err
+	}
+	if _, werr := conn.Write(append(data, '\n')); werr != nil {
+		_ = conn.Close()
+		return nil, &DownError{}
+	}
+	r := bufio.NewReader(conn)
+	line, err := r.ReadBytes('\n')
+	if err != nil {
+		_ = conn.Close()
+		return nil, &DownError{}
+	}
+	var resp Response
+	if err := json.Unmarshal(line, &resp); err != nil || !resp.OK {
+		_ = conn.Close()
+		if resp.Error != nil {
+			return nil, resp.Error
+		}
+		return nil, &OpError{Code: "internal", Message: "the daemon refused subscribe"}
+	}
+	out := make(chan json.RawMessage)
+	go func() {
+		<-ctx.Done()
+		_ = conn.Close()
+	}()
+	go func() {
+		defer close(out)
+		for {
+			line, err := r.ReadBytes('\n')
+			if err != nil {
+				return
+			}
+			var ev Event
+			if json.Unmarshal(line, &ev) != nil || ev.Event != "page" {
+				continue
+			}
+			select {
+			case out <- ev.Page:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out, nil
+}

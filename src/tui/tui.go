@@ -20,6 +20,7 @@ import (
 	configscreen "github.com/jterrazz/studio-station/src/tui/screens/config"
 	fleetscreen "github.com/jterrazz/studio-station/src/tui/screens/fleet"
 	homescreen "github.com/jterrazz/studio-station/src/tui/screens/home"
+	powerscreen "github.com/jterrazz/studio-station/src/tui/screens/power"
 	servicesscreen "github.com/jterrazz/studio-station/src/tui/screens/services"
 	storagescreen "github.com/jterrazz/studio-station/src/tui/screens/storage"
 	"github.com/jterrazz/studio-station/src/tui/screens/tab"
@@ -39,6 +40,7 @@ type Deps struct {
 	Services *services.Service
 	Tailnet  *tailnet.Service
 	Accounts *accounts.Service
+	Power    powerscreen.Power
 	Remote   func(ctx context.Context, machine string, words []string) error
 	Station  func(ctx context.Context, words []string) error
 	Describe func(error) (message, hint string)
@@ -61,6 +63,7 @@ func Tabs() []Tab {
 		{Tab: ui.Tab{Label: "Fleet", Fleet: true}},
 		{Tab: ui.Tab{Label: "Services", Fleet: true}},
 		{Tab: ui.Tab{Label: "Accounts", Fleet: true}, Probes: "accounts/"},
+		{Tab: ui.Tab{Label: "Power", Fleet: true}},
 	}
 }
 
@@ -77,6 +80,7 @@ func Run(ctx context.Context, d Deps) error {
 		}, d.Here),
 		servicesscreen.New(ctx, d.Services, d.Here, describe),
 		accountsscreen.New(ctx, d.Accounts, d.Secrets, d.Here, describe),
+		powerscreen.New(ctx, d.Power, d.Here, describe),
 	}, d.Prefer)
 	app.stop = d.Stop
 	_, err := tea.NewProgram(app, tea.WithContext(ctx)).Run()

@@ -77,7 +77,7 @@ So `cut -f2` is a row's name. `--json` prints the presenter's JSON value, two-sp
 
 ## The TUI
 
-`station` on a terminal opens one Bubble Tea app with the tabs Home, Tools, Config, Storage, then Fleet, Services and Accounts. Each tab renders the same page as its command.
+`station` on a terminal opens one Bubble Tea app with the tabs Home, Tools, Config, Storage, then Fleet, Services, Accounts and Power. Each tab renders the same page as its command. The tab line never wraps: when it does not fit, the context shortens to the machine name (then `host`), the inactive tabs turn into their number key one at a time from the last, then the context goes.
 
 | Tab      | Holds                                                                                                                   | Keys                                                                                                                                                        |
 | -------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -88,8 +88,9 @@ So `cut -f2` is a row's name. `--json` prints the presenter's JSON value, two-sp
 | Fleet    | every host and its VMs, images, secrets and the tailnet                                                                 | `n` create, `s` start/stop, `d` delete, `f` forget, `p` probe, `o` unlock a host, `b` build images, `ctrl+r` restart, `e` enter that machine's TUI over ssh |
 | Services | every host's range and its leases, a QR code of the selected lease's URL                                                | `x` releases the selected lease (another host's on that host)                                                                                               |
 | Accounts | this host's and its VMs' identities and scopes, where each right comes from, a lend's time left; never a token          | `l` lends (the lend Form, then `secrets lend --for`), `r` recalls a lent row (an own row shows its logout), `R` reloads: `r` is revoke here                 |
+| Power    | the session, its guards and the reading, on the daemon's `subscribe` stream, so a guard's end redraws it at once        | `a` the awake Form (for, lid, battery), `s` sleep                                                                                                           |
 
-Focus modes: the app holds exactly one. Normal owns the global keys (`tab`, `1` to `7`, `r` but on a tab that binds it, `?`, `q`); Filter gives the text input every key except `esc` and `enter`, so typing `q1i` filters by `q1i`; Modal gives a form every key except `ctrl+c`.
+Focus modes: the app holds exactly one. Normal owns the global keys (`tab`, `1` to `8`, `r` but on a tab that binds it, `?`, `q`); Filter gives the text input every key except `esc` and `enter`, so typing `q1i` filters by `q1i`; Modal gives a form every key except `ctrl+c`.
 
 The action rule: every mutating key releases the screen, makes the one domain call with the real terminal, then restores the screen, shows the outcome in the status bar and reloads. Reads run as commands with a spinner. One action at a time per screen.
 

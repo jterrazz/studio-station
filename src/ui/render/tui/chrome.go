@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strconv"
 	"strings"
 
 	"charm.land/bubbles/v2/spinner"
@@ -46,10 +47,19 @@ func (c Chrome) Turn(msg tea.Msg) (Chrome, tea.Cmd, bool) {
 	return c, cmd, true
 }
 
-func (c Chrome) Header(tabs []Tab, active int, context page.Context, loading bool, width int) string {
+func (c Chrome) tabLine(tabs []Tab, active, numbered int, loading bool) string {
 	st := c.styles
 	var b strings.Builder
 	b.WriteString(atom.Spaces(token.Margin) + st.Title.Render("station") + atom.Spaces(token.Gap))
+	left := numbered
+	shown := make([]string, len(tabs))
+	for i := len(tabs) - 1; i >= 0; i-- {
+		shown[i] = tabs[i].Label
+		if i != active && left > 0 {
+			shown[i] = strconv.Itoa(i + 1)
+			left--
+		}
+	}
 	for i, t := range tabs {
 		if i > 0 {
 			sep := token.Sep
@@ -59,24 +69,48 @@ func (c Chrome) Header(tabs []Tab, active int, context page.Context, loading boo
 			b.WriteString(st.Subtle.Render(sep))
 		}
 		if i == active {
-			b.WriteString(st.Title.Render(t.Label))
+			b.WriteString(st.Title.Render(shown[i]))
 		} else {
-			b.WriteString(st.Muted.Render(t.Label))
+			b.WriteString(st.Muted.Render(shown[i]))
 		}
 	}
 	if loading {
 		b.WriteString(atom.Spaces(token.Gap) + c.spin.View())
 	}
-	left := b.String()
-	ctx := organism.Context(context)
-	if width <= token.NarrowWidth {
-		ctx = context.Kind
-		if ctx == "" {
-			ctx = "host"
+	return b.String()
+}
+
+func (c Chrome) Header(tabs []Tab, active int, context page.Context, loading bool, width int) string {
+	// invariant: the tab line never wraps (UI §7.7): the context shortens to
+	// the machine name, then to the kind; the inactive tabs turn into their
+	// number key one at a time from the last backwards; then the context goes.
+	short := context.Kind
+	if short == "" {
+		short = "host"
+	}
+	shortened := []string{short}
+	if context.Registered && context.Machine != "" {
+		shortened = []string{context.Machine, short}
+	}
+	left, ctx := "", ""
+	for n := range tabs {
+		left = c.tabLine(tabs, active, n, loading)
+		candidates := shortened
+		if n == 0 && width > token.NarrowWidth {
+			candidates = append([]string{organism.Context(context)}, shortened...)
+		}
+		for _, x := range candidates {
+			if atom.Width(left)+token.Gap+atom.Width(x)+1 <= width {
+				ctx = x
+				break
+			}
+		}
+		if ctx != "" {
+			break
 		}
 	}
 	gap := max(width-1-atom.Width(left)-atom.Width(ctx), 1)
-	return left + atom.Spaces(gap) + st.Muted.Render(ctx) + "\n" + organism.Rule(st, width)
+	return left + atom.Spaces(gap) + c.styles.Muted.Render(ctx) + "\n" + organism.Rule(c.styles, width)
 }
 
 func (c Chrome) StatusBar(m page.Mark, text, hint string, width int) string {

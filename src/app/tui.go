@@ -26,6 +26,10 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 			Services: m.services(env),
 			Tailnet:  m.tailnet(),
 			Accounts: m.accounts(),
+			Power: tuiPower{Service: m.power(), m: m, describe: func(err error) (string, string) {
+				f := kit.Translate(err, "")
+				return f.Message, f.Hint
+			}},
 			Remote: func(ctx context.Context, machine string, words []string) error {
 				code, err := env.On.Remote.Run(ctx, machine, true, words)
 				if err == nil && code != 0 {

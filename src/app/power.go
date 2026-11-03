@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,6 +15,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/daemon"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/pages"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
 )
 
@@ -59,4 +61,56 @@ func powerCommand(env kit.Env, m machine) *cobra.Command {
 		powerawake.Command(powerawake.Deps{Power: s, Here: m.where}, env),
 		powersleep.Command(powersleep.Deps{Power: s, Here: m.where}, env),
 	)
+}
+
+type tuiPower struct {
+	*power.Service
+	m        machine
+	describe func(error) (message, hint string)
+}
+
+func (t tuiPower) read(ctx context.Context, out chan<- page.Page) power.Report {
+	var last power.Report
+	for r := range t.Read(ctx) {
+		last = r
+		select {
+		case out <- pagepower.Page(r, t.m.where):
+		case <-ctx.Done():
+		}
+	}
+	return last
+}
+
+func (t tuiPower) Pages(ctx context.Context) <-chan page.Page {
+	out := make(chan page.Page)
+	go func() {
+		defer close(out)
+		if err := t.Check(); err != nil {
+			message, hint := t.describe(err)
+			out <- pages.Failure("power", "power", t.m.where, message, hint)
+			return
+		}
+		if t.read(ctx, out).Daemon != power.DaemonRunning {
+			return
+		}
+		stream, err := daemon.Dial(t.m.host, t.m.paths).Subscribe(ctx, []string{daemon.PagePower})
+		if err != nil {
+			return
+		}
+		for raw := range stream {
+			var d page.Document
+			if json.Unmarshal(raw, &d) != nil {
+				continue
+			}
+			select {
+			case out <- d.Page:
+			case <-ctx.Done():
+				return
+			}
+		}
+		if ctx.Err() == nil {
+			t.read(ctx, out)
+		}
+	}()
+	return out
 }
