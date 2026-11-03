@@ -16,18 +16,17 @@ runs:
 
            To do  6 ◐  1 ✗
              ✗ ai.jterrazz.y      failing · last exit 1
-                                  → launchctl bootout gui/UID/ai.jterrazz.y &&
-                                    rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
+               → launchctl bootout gui/UID/ai.jterrazz.y && rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
              ◐ brew               3 outdated  → station tools upgrade --via brew
              ◐ tools              3 on PATH, not managed by their method  → station tools
              ◐ macos              1 pending · softwareupdate -l
              ◐ backup-exclusions  tmutil not found
              ◐ ai.jterrazz.gone   orphan: its program is missing
-                                  → launchctl bootout gui/UID/ai.jterrazz.gone &&
-                                    rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
+               → launchctl bootout gui/UID/ai.jterrazz.gone &&
+                 rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
              ◐ com.docker.vmnetd  orphan: Docker.app is gone
-                                  → sudo launchctl bootout system/com.docker.vmnetd &&
-                                    sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
+               → sudo launchctl bootout system/com.docker.vmnetd &&
+                 sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
 
            Summary
              ● Machine     host · Darwin 27.0.0 · up 3d 4h   ◐ Tools    2 ●  3 ◐  103 ○

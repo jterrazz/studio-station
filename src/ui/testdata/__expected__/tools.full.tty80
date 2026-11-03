@@ -13,13 +13,13 @@
 
  Runtimes  4 ◐
    ◐ bun              mise  installed, mise not installed
-                            → station tools install mise
+     → station tools install mise
    ◐ go               mise  installed, mise not installed
-                            → station tools install mise
+     → station tools install mise
    ◐ java    17.0.20  mise  installed, mise not installed
-                            → station tools install mise
+     → station tools install mise
    ◐ python  3.14.6   mise  installed, mise not installed
-                            → station tools install mise
+     → station tools install mise
 
  AI Apps  1 ●  1 ◐  1 ○
    ◐ chatgpt                             cask  on PATH, not managed by cask
@@ -29,7 +29,7 @@
 
  Agent skills  1 ●  1 ◐  1 ○
    ○ frontend-design      skill  skills not installed
-                                 → station tools install skills
+     → station tools install skills
    ● modern-web-guidance  skill  currency unknown
    ◐ better-ui            skill  outdated
 

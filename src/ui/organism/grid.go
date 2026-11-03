@@ -391,21 +391,13 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	indent := atom.Spaces(token.Margin + token.Indent)
 	lead := indent + st.Subtle.Render(e.prefix) + atom.Mark(st, r.Mark)
 	label := atom.End(shown(r), max(labelWidth-atom.Width(e.prefix), 1))
-	under := atom.Width(e.prefix) + token.MarkWidth
+	// invariant: a wrapped hint starts at the label's column (G5) in every
+	// section, medium and width: never under a detail whose place depends on
+	// the widest cell of the section.
 	hintLines := func() []Line {
-		pad := indent + atom.Spaces(under)
+		pad := indent + atom.Spaces(atom.Width(e.prefix)+token.MarkWidth)
 		h := molecule.Hint(st, *r.Hint, g.Medium, g.Keys)
 		width := atom.Width(molecule.HintText(*r.Hint, g.Medium, g.Keys))
-		widest := width
-		if strings.Contains(r.Hint.Command, joint) {
-			widest = 0
-			for _, part := range strings.Split(r.Hint.Command, joint) {
-				widest = max(widest, atom.Width(part)+token.Gap+len(joint))
-			}
-		}
-		if atom.Width(pad)+widest >= g.Width {
-			pad = indent + atom.Spaces(atom.Width(e.prefix)+token.MarkWidth)
-		}
 		if atom.Width(pad)+width < g.Width || !strings.Contains(r.Hint.Command, joint) {
 			return []Line{{Kind: LineHint, Key: e.key, Text: pad + h}}
 		}
@@ -465,10 +457,6 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 		used += token.Gap + c.width
 	}
 	rest := g.avail() - used
-	under += labelWidth - atom.Width(e.prefix) + token.Gap
-	for _, c := range cols {
-		under += c.width + token.Gap
-	}
 	detail := atom.Show(r.Detail)
 	hint, hintWidth := "", 0
 	if r.Hint != nil {

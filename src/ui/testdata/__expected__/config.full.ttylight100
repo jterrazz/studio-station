@@ -12,7 +12,7 @@
  [1;38;2;30;102;245mSecurity[m  [38;2;223;142;29m1 ◐[m  [38;2;108;111;133m1 ○[m
    [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mgit-signing[m  [38;2;76;79;105mSign every commit with a GPG key[m          [38;2;108;111;133m→ [m[38;2;76;79;105mstation config install git-signing[m
    [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mssh-key[m      [38;2;76;79;105mAn ed25519 SSH key, kept in the Keychain[m  [38;2;108;111;133mdiffers from station's[m
-                                                            [38;2;108;111;133m→ [m[38;2;76;79;105mstation config install ssh-key[m
+     [38;2;108;111;133m→ [m[38;2;76;79;105mstation config install ssh-key[m
 
  [38;2;108;111;133m→ [m[38;2;76;79;105mstation config install <item...>[m
  [38;2;108;111;133m→ [m[38;2;76;79;105mstation config uninstall <item...>[m

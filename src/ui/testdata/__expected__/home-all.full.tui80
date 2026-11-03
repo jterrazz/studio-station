@@ -72,20 +72,20 @@
    ○ mise                      brew · system  → station tools install mise
    ○ mas                       brew           → station tools install mas
    ◐ bun                       mise           installed, mise not installed
-                                              → station tools install mise
+     → station tools install mise
    ◐ go                        mise           installed, mise not installed
-                                              → station tools install mise
+     → station tools install mise
    ◐ java             17.0.20  mise           installed, mise not installed
-                                              → station tools install mise
+     → station tools install mise
    ◐ python           3.14.6   mise           installed, mise not installed
-                                              → station tools install mise
+     → station tools install mise
    ◐ chatgpt                   cask           on PATH, not managed by cask
    ○ typewhisper               cask
      → station tools install typewhisper
    ○ frontend-design           skill          skills not installed
-                                              → station tools install skills
+     → station tools install skills
    ◐ better-ui                 skill          outdated
  - Config                                                              1 ●  1 ◐
    ◐ power  Always-on power policy  policy partly applied
-                                    → station config install power
+     → station config install power
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

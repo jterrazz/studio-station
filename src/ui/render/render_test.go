@@ -190,6 +190,48 @@ func TestEveryHintIsWholeInEveryMedium(t *testing.T) {
 	}
 }
 
+// invariant: G5: a hint on its own line starts at its row's label column, in
+// every section, medium and width, whatever the section's widest cell.
+func TestAWrappedHintSitsAtTheLabelColumn(t *testing.T) {
+	marks := []rune(token.MarkOK + token.MarkAttention + token.MarkAbsent + token.MarkBroken + token.MarkPending)
+	for _, f := range fixtures(t) {
+		for medium, render := range renderings(f) {
+			if !strings.HasPrefix(medium, "tty") && !strings.HasPrefix(medium, "tui") || medium == "tty40" {
+				continue
+			}
+			text, err := render()
+			if err != nil {
+				continue
+			}
+			label := -1
+			for n, line := range strings.Split(text, "\n") {
+				runes := []rune(line)
+				trimmed := strings.TrimLeft(line, " ")
+				first := len(line) - len(trimmed)
+				switch {
+				case strings.HasPrefix(trimmed, token.Arrow+" "):
+					if label >= 0 && first != label {
+						t.Errorf("%s %s line %d: the hint starts at column %d, its row's label at %d", f.name, medium, n+1, first, label)
+					}
+				case strings.TrimSpace(line) == "":
+					label = -1
+				default:
+					label = -1
+					for i := first; i < len(runes); i++ {
+						if slices.Contains(marks, runes[i]) && i+2 < len(runes) && runes[i+1] == ' ' {
+							label = i + 2
+							break
+						}
+						if !strings.ContainsRune("├└│─▌ ", runes[i]) {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 // value: a chained command broken after its `&&` reads whole again (G5).
 var joints = regexp.MustCompile(`&&\n +`)
 

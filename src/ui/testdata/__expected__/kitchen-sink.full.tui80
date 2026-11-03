@@ -27,16 +27,16 @@
    ◐ mismatch     attention  station v2.0.0-240 here v2.0.0-242
    ◐ unmanaged    attention  on PATH, not managed by cask
    ◐ missing      attention  installed, mise not installed
-                             → station tools install mise
+     → station tools install mise
    ◐ partial      attention  policy partly applied
    ◐ differs      attention  differs from station's
-                             → station config install tart-launcher
+     → station config install tart-launcher
    ◐ unset        attention  name not set  → station setup
    ◐ stopped      attention  stopped  → station start
    ◐ late         attention  no answer in 2s
    ◐ degraded     attention  Serve is off on the tailnet
    ◐ orphan       attention  orphan: Docker.app is gone
-                             → sudo launchctl bootout system/com.docker.vmnetd
+     → sudo launchctl bootout system/com.docker.vmnetd
    ○ waiting      absent     waiting
    ✗ failing      broken     failing · last exit 2
    ✗ refused      broken     refused

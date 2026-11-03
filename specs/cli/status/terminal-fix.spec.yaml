@@ -28,6 +28,5 @@ runs:
              fix       launchctl bootout gui/UID/ai.jterrazz.y &&
                        rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
            esc back  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys
-                                    rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
-                                    rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
+                 rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
            ↑↓ move  enter fix  / filter  space fold  r reload  q quit  ? keys
