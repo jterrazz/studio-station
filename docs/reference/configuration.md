@@ -2,12 +2,12 @@
 
 `station config` sets a machine up: dotfiles, logins and macOS defaults. Each entry is a config item, named by what it sets, and `station`'s own file is `preferences.json`.
 
-| Section       | Answers                                        |
-| ------------- | ---------------------------------------------- |
-| The items     | Every config item, its place and what it does  |
-| Values        | How an item that needs values asks for them    |
+| Section          | Answers                                        |
+| ---------------- | ---------------------------------------------- |
+| The items        | Every config item, its place and what it does  |
+| Values           | How an item that needs values asks for them    |
 | preferences.json | The file station keeps its own choices in      |
-| Environment   | The variables station reads, all resolved once |
+| Environment      | The variables station reads, all resolved once |
 
 ## The items
 

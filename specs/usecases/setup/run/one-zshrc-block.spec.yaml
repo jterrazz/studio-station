@@ -1,4 +1,4 @@
-description: 'setup replaces a v2 station block of ~/.zshrc by the one block, never a second, and keeps the owner''s lines'
+description: 'setup replaces a v2 station block by the one block, never a second, keeping the owner''s lines'
 fixture: ./__fixtures__/v2-zshrc/
 env: fresh-v2
 runs:

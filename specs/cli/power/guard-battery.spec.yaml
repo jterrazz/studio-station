@@ -1,7 +1,7 @@
 description: 'the battery guard warns at 30% on battery and ends the session as the percent falls to 20%'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/power/
+    - ../../__fixtures__/power/
 env: engine
 runs:
     - command: '--version > /dev/null; "$STATION" engine run 2> engine.log & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" power awake > /dev/null; echo 30 > power/battery; echo battery > power/source; /bin/sleep 1; "$STATION" power | /usr/bin/grep battery; : > .calls; echo 25 > power/battery; /bin/sleep 0.5; "$STATION" power --json | /usr/bin/jq -r ".session != null"; echo 20 > power/battery; /bin/sleep 1.5; /bin/cat .calls; /usr/bin/grep -o "power: ended.*" engine.log; "$STATION" power --json | /usr/bin/jq -r .last_end.reason; "$STATION" power | /usr/bin/grep awake; kill $d; wait $d'

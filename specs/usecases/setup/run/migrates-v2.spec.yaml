@@ -1,4 +1,4 @@
-description: 'setup on a v2 install moves settings.json to preferences.json and the engine job to its new label, once; the second run says nothing of it'
+description: 'setup moves a v2 settings.json and engine job once; a second run says nothing of it'
 env: fresh-v2
 runs:
     - command: 'setup'

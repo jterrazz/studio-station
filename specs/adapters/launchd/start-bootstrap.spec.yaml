@@ -1,7 +1,7 @@
 description: 'engine start bootstraps the agent, kicks it and waits for the engine; running, it only says so'
 fixture:
     - ../../__fixtures__/vms/
-    - ../../__fixtures__/launchctl/
+    - ../__fixtures__/launchctl/
 env: engine
 runs:
     - command: 'engine start'

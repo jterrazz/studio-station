@@ -1,4 +1,4 @@
-description: 'when the job manager cannot start the engine, start exits 1 with its last word, and the engine stays stopped'
+description: 'a start the job manager refuses exits 1 with its last word, and the engine stays stopped'
 env: engine-stopped
 runs:
     - command: 'world fault Jobs.Start'

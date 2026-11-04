@@ -1,7 +1,7 @@
 description: 'tab 8 holds Power from its form, badges the header, and a guard''s end redraws it unasked'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/power/
+    - ../../__fixtures__/power/
     - ../../__fixtures__/terminal/
 env: terminal
 runs:

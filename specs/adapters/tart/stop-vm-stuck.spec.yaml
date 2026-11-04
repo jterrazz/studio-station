@@ -1,7 +1,7 @@
 description: 'a VM that will not stop keeps the engine: engine stop exits 1 and boots nothing out'
 fixture:
     - ../../__fixtures__/vms/
-    - ../../__fixtures__/launchctl/
+    - ../__fixtures__/launchctl/
     - ./__fixtures__/stuck/
 env: engine
 runs:

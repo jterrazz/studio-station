@@ -36,7 +36,7 @@
 | [Services](reference/services.md)                 | What a VM listens on: leases, publication, HTTPS, profiles, the engine protocol           |
 | [Images](reference/images.md)                     | The VM images, the recipe, the binary inside                                              |
 | [Secrets](reference/secrets.md)                   | Kept, lent and bound secrets; Claude and studio in a VM                                   |
-| [Configuration](reference/configuration.md)       | The config items, `preferences.json`, the environment variables                              |
+| [Configuration](reference/configuration.md)       | The config items, `preferences.json`, the environment variables                           |
 | [Tools and skills](reference/tools-and-skills.md) | The catalogue, the method table, mise, skills as tools, the toolbelt                      |
 | [Dotfiles](reference/dotfiles.md)                 | The embedded application configs and the `~/.zshrc` block                                 |
 | [Storage](reference/storage.md)                   | The levels, the relocation rule, `station storage`, clean and reset                       |

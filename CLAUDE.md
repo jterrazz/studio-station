@@ -14,29 +14,29 @@ A Go CLI that sets up and runs a Mac and its fleet of VMs: tools, config, hosts,
 
 The corpus is `docs/` + `README.md`, mapped by `docs/README.md`. Do not duplicate it; link to it.
 
-| Working on                                   | Read                                 |
-| -------------------------------------------- | ------------------------------------ |
-| A fresh machine: install, setup, configure   | `docs/start/getting-started.md`      |
-| The layers, the method table                 | `docs/concepts/architecture.md`      |
-| Palette, marks, pipe format, the TUI         | `docs/concepts/design-system.md`     |
-| What a word means                            | `docs/concepts/glossary.md`          |
-| Building, and which folder a change opens    | `docs/guides/develop.md`             |
-| The suites, the spec documents               | `docs/guides/test.md`                |
-| The tagged release, `make provision`         | `docs/guides/release.md`             |
-| Every command and flag                       | `docs/reference/commands.md`         |
+| Working on                                      | Read                                 |
+| ----------------------------------------------- | ------------------------------------ |
+| A fresh machine: install, setup, configure      | `docs/start/getting-started.md`      |
+| The layers, the method table                    | `docs/concepts/architecture.md`      |
+| Palette, marks, pipe format, the TUI            | `docs/concepts/design-system.md`     |
+| What a word means                               | `docs/concepts/glossary.md`          |
+| Building, and which folder a change opens       | `docs/guides/develop.md`             |
+| The suites, the spec documents                  | `docs/guides/test.md`                |
+| The tagged release, `make provision`            | `docs/guides/release.md`             |
+| Every command and flag                          | `docs/reference/commands.md`         |
 | Config items, `preferences.json`, env variables | `docs/reference/configuration.md`    |
-| Tools, methods, skills, the toolbelt         | `docs/reference/tools-and-skills.md` |
-| Hosts, VMs, lifetimes, `--on`, the engine    | `docs/reference/machines.md`         |
-| Services, leases, HTTPS, profiles            | `docs/reference/services.md`         |
-| VM images and their recipe                   | `docs/reference/images.md`           |
-| Kept, lent and bound secrets                 | `docs/reference/secrets.md`          |
-| The `station.status/v1` contract             | `docs/reference/status-json.md`      |
-| The shell block, the embedded dotfiles       | `docs/reference/dotfiles.md`         |
-| What station writes on a machine             | `docs/reference/footprint.md`        |
-| Why a choice was made                        | `docs/decisions/`                    |
-| What is left for later                       | `TODO.md`                            |
-| `@jterrazz` stack conventions                | `docs/concepts/stack.md`             |
-| Repo doctrine (corpus/injection/compiler)    | `docs/concepts/repo-structure.md`    |
+| Tools, methods, skills, the toolbelt            | `docs/reference/tools-and-skills.md` |
+| Hosts, VMs, lifetimes, `--on`, the engine       | `docs/reference/machines.md`         |
+| Services, leases, HTTPS, profiles               | `docs/reference/services.md`         |
+| VM images and their recipe                      | `docs/reference/images.md`           |
+| Kept, lent and bound secrets                    | `docs/reference/secrets.md`          |
+| The `station.status/v1` contract                | `docs/reference/status-json.md`      |
+| The shell block, the embedded dotfiles          | `docs/reference/dotfiles.md`         |
+| What station writes on a machine                | `docs/reference/footprint.md`        |
+| Why a choice was made                           | `docs/decisions/`                    |
+| What is left for later                          | `TODO.md`                            |
+| `@jterrazz` stack conventions                   | `docs/concepts/stack.md`             |
+| Repo doctrine (corpus/injection/compiler)       | `docs/concepts/repo-structure.md`    |
 
 The repo-structure doctrine is authored **here** and ships to agents as the `studio-repo-structure` skill. This repo is an application: it adopts the corpus + injection layers and generates no API reference. Its one compiler is `make generate` (`src/cmd/generate/`), which projects the catalogue into the `studio-toolbelt` skill and `docs/reference/footprint.md`, and writes the page fixtures of `src/ui/testdata/pages/` from the real page functions.
 

@@ -1,7 +1,7 @@
 description: 'status --json carries the Power session: held, lid and until while held, held false off'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/power/
+    - ../../__fixtures__/power/
 env: engine
 runs:
     - command: '--version > /dev/null; "$STATION" engine run 2> engine.log & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" status --json | /usr/bin/jq -c .power; "$STATION" power awake --lid > /dev/null; "$STATION" status --json | /usr/bin/jq -c ''[.power.held, .power.lid, (((.power.until|fromdate) - now) > 14000)]''; "$STATION" status --page | /usr/bin/jq -c ''.sections[] | select(.id == "summary") | .items[].row | select(.label == "Power") | [.mark, [.cells[0].items[].text][0:2]]''; kill $d; wait $d'

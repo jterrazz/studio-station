@@ -20,9 +20,7 @@
                 },
                 "vm_user": "admin"
             },
-            "images": [
-                "ghcr.io/jterrazz/station-linux:1"
-            ],
+            "images": ["ghcr.io/jterrazz/station-linux:1"],
             "vms": {
                 "linux-1": {
                     "kept": {
@@ -68,9 +66,7 @@
                 "here": "jterrazz-mac-mini",
                 "vm_user": "admin"
             },
-            "images": [
-                "ghcr.io/jterrazz/station-linux:1"
-            ],
+            "images": ["ghcr.io/jterrazz/station-linux:1"],
             "vms": {
                 "infra": {
                     "kept": {

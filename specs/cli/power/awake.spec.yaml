@@ -1,7 +1,7 @@
 description: 'power awake holds one idle assertion through the daemon, and only --lid touches the clamshell'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/power/
+    - ../../__fixtures__/power/
 env: engine
 runs:
     - command: '--version > /dev/null; "$STATION" engine run 2> engine.log & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; : > .calls; "$STATION" power awake > /dev/null; /bin/cat .calls; "$STATION" power --json | /usr/bin/jq ''(.session.until|fromdate)-(.session.started_at|fromdate)''; "$STATION" power awake --lid --for 1h | /usr/bin/sed -E ''s/[0-9T:-]{19}Z/<until>/; s/[0-9]{2}:[0-9]{2}/HH:MM/''; /bin/cat .calls; "$STATION" power --json | /usr/bin/jq -c ''[.session.lid, .session.by, ((.session.until|fromdate)-(.session.started_at|fromdate) | . >= 3600 and . <= 3602)]''; kill $d; wait $d'

@@ -1,4 +1,4 @@
-description: 'stop everything stops the running VM, keeps its disk, and stops the engine, which then reads as stopped'
+description: 'stop everything stops the running VM, keeps its disk, and stops the engine'
 env: two-macs
 runs:
     - command: 'engine stop --yes'

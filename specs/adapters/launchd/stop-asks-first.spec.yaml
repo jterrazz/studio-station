@@ -2,7 +2,7 @@ description: 'engine stop on a terminal asks first, No by default: enter decline
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/engine-vm/
-    - ../../__fixtures__/launchctl/
+    - ../__fixtures__/launchctl/
     - ../../__fixtures__/terminal/
 env: terminal
 serve: sshd

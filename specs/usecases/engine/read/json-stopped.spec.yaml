@@ -11,7 +11,7 @@ runs:
               "version": "",
               "up_s": 0,
               "vms": 0,
-              "stopped_at": "2026-11-04T13:40:00Z",
+              "stopped_at": "{{iso8601}}",
               "stopped_by": "the menu bar"
             }
           }

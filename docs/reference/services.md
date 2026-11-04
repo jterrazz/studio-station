@@ -6,7 +6,7 @@ A service is a TCP port something listens on inside a VM. The VM is never on the
 | --------------------- | ------------------------------------------------------------ |
 | How a port gets a URL | The guest, the lease, the publication                        |
 | The commands          | `services`, `services url`, `services release`               |
-| The policy            | The `services` keys of `preferences.json`                       |
+| The policy            | The `services` keys of `preferences.json`                    |
 | Serve and HTTPS       | Serve on or off, the `port` and `path` modes, the admin step |
 | Profiles              | How Expo and Vite learn their public URL                     |
 | The engine protocol   | `station.api/v2`, for every client                           |
