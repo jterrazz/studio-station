@@ -12,7 +12,7 @@ import (
 	schedule "github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
+	"github.com/jterrazz/studio-station/src/ports"
 )
 
 const (
@@ -55,7 +55,7 @@ func (s *Service) frame() Snapshot {
 	snap := Snapshot{
 		GeneratedAt: s.h.Clock.Now().UTC(),
 		Station:     Station{Version: s.o.Version, Commit: s.o.Commit, Daemon: Check{Name: "daemon", State: catalog.StatePending}},
-		Tailnet:     tailnet.Status{State: catalog.StatePending},
+		Tailnet:     ports.Status{State: catalog.StatePending},
 		Setup:       Setup{State: catalog.StatePending, Steps: []setup.Step{}},
 		System:      System{Pending: true, Sample: Sample{CPU: []Process{}, Memory: []Process{}}},
 		Identity:    append(pendingChecks(s.identityTable()), Check{Name: "ssh-key", State: catalog.StatePending}),
@@ -100,8 +100,8 @@ func (s *Service) watch(ctx context.Context) <-chan Snapshot {
 		jobs = append(jobs, s.tableJobs("environment/updates", s.updateProbes(), func(sn *Snapshot) []Check { return sn.Environment.Updates })...)
 		jobs = append(jobs, job{Key: subject + "/environment/ports", Budget: defaultBudget + margin,
 			Do: func(ctx context.Context) func(*Snapshot) {
-				ports := listeningPorts(s.ask(ctx, cmd("lsof", "-iTCP", "-sTCP:LISTEN", "-P", "-n", "-Fpcn"), defaultBudget))
-				return func(sn *Snapshot) { sn.Environment.Ports = ports }
+				found := s.listening(ctx)
+				return func(sn *Snapshot) { sn.Environment.Ports = found }
 			},
 			Late: func(*Snapshot) {},
 		})
@@ -268,11 +268,11 @@ func (s *Service) sectionJobs() []job {
 			Do: func(ctx context.Context) func(*Snapshot) {
 				st, err := s.deps.Tailnet.Status(ctx)
 				if err != nil {
-					st = tailnet.Status{State: catalog.StateUnknown}
+					st = ports.Status{State: catalog.StateUnknown}
 				}
 				return func(sn *Snapshot) { sn.Tailnet = st; s.placeGateways(sn) }
 			},
-			Late: func(sn *Snapshot) { sn.Tailnet = tailnet.Status{State: catalog.StateUnknown} },
+			Late: func(sn *Snapshot) { sn.Tailnet = ports.Status{State: catalog.StateUnknown} },
 		},
 		{Key: subject + "/tools", Lane: schedule.Inline,
 			Do: func(ctx context.Context) func(*Snapshot) {

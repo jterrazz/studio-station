@@ -14,7 +14,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/shortcuts"
 	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
@@ -30,6 +29,7 @@ import (
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
+	"github.com/jterrazz/studio-station/src/ports"
 )
 
 var (
@@ -111,7 +111,7 @@ func snapshot() status.Snapshot {
 				Removal: "sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist"},
 		},
 		Gateways: []status.Check{check("Hermes runtime", catalog.StateBroken, "not running", "gateway process not found")},
-		Tailnet:  tailnet.Status{State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net", IP: "100.98.133.14", ServeOn: true},
+		Tailnet:  ports.Status{State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net", IP: "100.98.133.14", ServeOn: true},
 	}
 }
 
@@ -122,7 +122,7 @@ func pendingSnapshot() status.Snapshot {
 	s.Workspace.ReposPending, s.Workspace.DepsPending, s.Workspace.DiskPending = true, true, true
 	s.Workspace.Docker.State = catalog.StatePending
 	s.Station.Daemon = status.Check{Name: "daemon", State: catalog.StatePending}
-	s.Tailnet = tailnet.Status{State: catalog.StatePending}
+	s.Tailnet = ports.Status{State: catalog.StatePending}
 	s.Setup = status.Setup{State: catalog.StatePending}
 	for _, list := range [][]status.Check{s.Environment.Updates, s.Identity, s.Gateways} {
 		for i := range list {
@@ -286,23 +286,23 @@ func secretLists() []Fixture {
 		pagesecrets.List(secretReport(), here()))
 }
 
-func tailnetStatus() tailnet.Status {
-	return tailnet.Status{
+func tailnetStatus() ports.Status {
+	return ports.Status{
 		State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net",
 		IP: "100.98.133.14", Variant: "app-store", CLI: "/Applications/Tailscale.app/Contents/MacOS/Tailscale", ServeOn: true,
-		Peers: []tailnet.Peer{
+		Peers: []ports.Node{
 			{ID: "1", Name: "mac-mini", IP: "100.98.133.20", Online: true, Tags: []string{"tag:station"}},
 			{ID: "2", Name: "iphone", IP: "100.98.133.30"},
 		},
-		Serve: []tailnet.ServeEntry{{Port: 40001, Path: "/", Target: "http://127.0.0.1:40001", Station: true}},
+		Serve: []ports.Served{{Share: ports.Share{Port: 40001, Path: "/", Scheme: ports.SchemeHTTPS, Target: "http://127.0.0.1:40001"}, Station: true}},
 	}
 }
 
 func tailnets() []Fixture {
 	return states("tailnet",
-		pagetailnet.Status(tailnet.Status{State: catalog.StatePending}, here()),
-		pagetailnet.Status(tailnet.Status{State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net", IP: "100.98.133.14", Variant: "app-store", CLI: "/Applications/Tailscale.app/Contents/MacOS/Tailscale", ServeOn: true}, here()),
-		pagetailnet.Status(tailnet.Status{State: catalog.StateAbsent}, here()),
+		pagetailnet.Status(ports.Status{State: catalog.StatePending}, here()),
+		pagetailnet.Status(ports.Status{State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net", IP: "100.98.133.14", Variant: "app-store", CLI: "/Applications/Tailscale.app/Contents/MacOS/Tailscale", ServeOn: true}, here()),
+		pagetailnet.Status(ports.Status{State: catalog.StateAbsent}, here()),
 		pagetailnet.Status(tailnetStatus(), here()))
 }
 
@@ -341,7 +341,7 @@ func fleets() []Fixture {
 	full := pagefleet.Reading{Machines: &f, Images: &list, Secrets: &sec, Services: &svc, Tailnet: &tn}
 	none := machines.Fleet{Hosts: []machines.HostView{{Name: "macbook", Here: true, Reachable: true}}}
 	var noImages []images.Report
-	empty := pagefleet.Reading{Machines: &none, Images: &noImages, Secrets: &secrets.Report{}, Tailnet: &tailnet.Status{State: catalog.StateAbsent}}
+	empty := pagefleet.Reading{Machines: &none, Images: &noImages, Secrets: &secrets.Report{}, Tailnet: &ports.Status{State: catalog.StateAbsent}}
 	stopped, stoppedSvc := stoppedFleet(), stoppedServices()
 	failed := pagefleet.Reading{Machines: &stopped, Images: &list, Secrets: &sec, Services: &stoppedSvc, Tailnet: &tn}
 	return states("fleet",

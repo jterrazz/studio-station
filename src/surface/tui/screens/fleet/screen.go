@@ -13,10 +13,10 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/page"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
@@ -49,7 +49,7 @@ type Services interface {
 }
 
 type Tailnet interface {
-	Status(ctx context.Context) (tailnet.Status, error)
+	Status(ctx context.Context) (ports.Status, error)
 }
 
 type Remote func(ctx context.Context, machine string, words []string) error

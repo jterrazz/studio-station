@@ -1,7 +1,7 @@
 description: 'with the App Store app and no tailscale on PATH, setup writes the wrapper once, then adopts it'
 fixture:
     - ../__fixtures__/system-tools/
-    - ../__fixtures__/tailscale-app-store/
+    - ../../__fixtures__/tailscale-app-store/
 env: daemon
 runs:
     - command: '--version >/dev/null; /bin/rm bin/tailscale; "$STATION" status --json | /usr/bin/jq -r ''.setup.steps[] | select(.name == "tools") | .state'''

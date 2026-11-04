@@ -15,6 +15,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -29,13 +30,18 @@ const (
 )
 
 type Options struct {
-	Root    string
 	Paths   settings.Paths
 	Kind    catalog.MachineKind
 	Version string
 	// value: what the host's `accounts` request is answered with: this VM's
 	// providers, parsed into identities and scopes, never a token.
 	Accounts func(ctx context.Context, keys []string) any
+	// value: what listens in this VM, read by the adapter of its kind.
+	Listeners Listeners
+}
+
+type Listeners interface {
+	Read(ctx context.Context) ([]ports.Listener, error)
 }
 
 type Service struct {
@@ -215,22 +221,15 @@ func (g *session) watch(ctx context.Context) {
 	}
 }
 
-func (s *Service) root(p string) string { return path.Join(s.o.Root, p) }
-
 // invariant: docker is asked every dockerEach scans, and its last answer is
 // merged into every scan between, so a container's port keeps its name and
 // never flaps (its socket is root's docker-proxy, or none without the proxy).
 func (s *Service) scan(ctx context.Context, h Hello, docker *[]Listener, refresh bool) []Listener {
 	var found []Listener
-	if s.o.Kind == catalog.MacOS {
-		out, err := s.h.Run.Output(ctx, system.Cmd{Name: "lsof", Args: []string{"-nP", "-iTCP", "-sTCP:LISTEN", "-Fpcn"}, Timeout: 5 * time.Second})
-		if err == nil {
-			found = ParseLsof([]byte(out.Stdout))
+	if s.o.Listeners != nil {
+		if ls, err := s.o.Listeners.Read(ctx); err == nil {
+			found = Sockets(ls)
 		}
-	} else {
-		tcp, _ := s.h.FS.ReadFile(s.root("/proc/net/tcp"))
-		tcp6, _ := s.h.FS.ReadFile(s.root("/proc/net/tcp6"))
-		found = s.owners(ParseProcNet(tcp, tcp6))
 	}
 	if refresh {
 		if _, ok := s.h.Run.LookPath("docker"); !ok {
@@ -241,59 +240,6 @@ func (s *Service) scan(ctx context.Context, h Hello, docker *[]Listener, refresh
 	}
 	found = Merge(found, *docker)
 	return Filter(found, h.MinPort, h.Ignored)
-}
-
-func (s *Service) owners(ls []Listener) []Listener {
-	byInode := map[string]int{}
-	for i, l := range ls {
-		if l.inode != "" && l.inode != "0" {
-			byInode["socket:["+l.inode+"]"] = i
-		}
-	}
-	if len(byInode) == 0 {
-		return ls
-	}
-	entries, err := s.h.FS.ReadDir(s.root("/proc"))
-	if err != nil {
-		return ls
-	}
-	for _, e := range entries {
-		pid, err := strconv.Atoi(e.Name())
-		if err != nil {
-			continue
-		}
-		fds, err := s.h.FS.ReadDir(s.root(path.Join("/proc", e.Name(), "fd")))
-		if err != nil {
-			continue
-		}
-		for _, fd := range fds {
-			link, err := s.h.FS.Readlink(s.root(path.Join("/proc", e.Name(), "fd", fd.Name())))
-			if err != nil {
-				data, readErr := s.h.FS.ReadFile(s.root(path.Join("/proc", e.Name(), "fd", fd.Name())))
-				if readErr != nil {
-					continue
-				}
-				link = strings.TrimSpace(string(data))
-			}
-			if i, ok := byInode[link]; ok {
-				ls[i].PID, ls[i].Process = pid, s.program(e.Name())
-			}
-		}
-	}
-	return ls
-}
-
-// invariant: a process is named by its program, argv[0]'s base name, since
-// comm holds the main thread's name a runtime may rename (node-MainThread);
-// an argv[0] rewritten into a title (postgres: checkpointer) leaves comm.
-func (s *Service) program(pid string) string {
-	cmdline, _ := s.h.FS.ReadFile(s.root(path.Join("/proc", pid, "cmdline")))
-	argv0, _, _ := strings.Cut(string(cmdline), "\x00")
-	if argv0 != "" && !strings.ContainsAny(argv0, " :") {
-		return path.Base(argv0)
-	}
-	comm, _ := s.h.FS.ReadFile(s.root(path.Join("/proc", pid, "comm")))
-	return strings.TrimSpace(string(comm))
 }
 
 func (s *Service) writeFiles(h Hello) error {

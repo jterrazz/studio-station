@@ -40,21 +40,21 @@ const (
 // `x/*`, a longer prefix beats a shorter. `std` is the standard library minus
 // forbiddenStd; a forbidden member is re-allowed only by its name in a row.
 func importTable() map[string][]string {
-	domain := []string{"system", "catalog", "domain/settings", "domain/probe", std}
+	domain := []string{"system", "catalog", "domain/settings", "domain/probe", "ports", std}
 	organism := []string{"ui/molecule", "ui/atom", "ui/token", "page", lip, bubble, huh, std}
 	template := append(slices.Clone(organism), "ui/organism")
 	return map[string][]string{
 		"cmd/station":           {"wire", "os"},
 		"cmd/generate":          {"catalog", "cmd/generate/pages", "page", "ui/render/json", "os", "flag", std},
-		"cmd/generate/pages":    {"page", "pages", "pages/*", "domain/*", "engine", "catalog", "ui/token", std},
+		"cmd/generate/pages":    {"page", "pages", "pages/*", "domain/*", "engine", "ports", "catalog", "ui/token", std},
 		"wire":                  {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", std},
 		"surface/cli":           {"surface/cli/kit", cobra, std},
-		"surface/cli/kit":       {"output", "page", "core/fail", "domain/*", "engine", "catalog", "testing", cobra, pflag, std},
-		"surface/cli/*":         {"surface/cli/kit", "domain/*", "engine", "page", "pages/*", "catalog", cobra, pflag, std},
+		"surface/cli/kit":       {"output", "page", "core/fail", "domain/*", "engine", "ports", "catalog", "testing", cobra, pflag, std},
+		"surface/cli/*":         {"surface/cli/kit", "domain/*", "engine", "ports", "page", "pages/*", "catalog", cobra, pflag, std},
 		"domain/*":              domain,
 		"domain/setup":          append(slices.Clone(domain), "domain/shell", "domain/storage"),
-		"domain/status":         append(slices.Clone(domain), "domain/tools", "domain/config", "domain/tailnet", "domain/setup", "domain/storage", "domain/services"),
-		"engine":                append(slices.Clone(domain), "domain/machines", "domain/services", "domain/tailnet", "domain/power", "machines", "net/netip"),
+		"domain/status":         append(slices.Clone(domain), "domain/tools", "domain/config", "domain/setup", "domain/storage", "domain/services"),
+		"engine":                append(slices.Clone(domain), "domain/machines", "domain/services", "domain/power", "machines", "net/netip"),
 		"domain/guest":          append(slices.Clone(domain), "domain/services"),
 		"domain/machines":       append(slices.Clone(domain), "machines", "machines/contract", "images/contract"),
 		"domain/images":         append(slices.Clone(domain), "machines/contract", "images/contract"),
@@ -66,7 +66,7 @@ func importTable() map[string][]string {
 		"catalog":               {"embed", std},
 		"page":                  {std},
 		"pages":                 {"page", "catalog", std},
-		"pages/*":               {"page", "pages", "pages/*", "domain/*", "engine", "catalog", std},
+		"pages/*":               {"page", "pages", "pages/*", "domain/*", "engine", "ports", "catalog", std},
 		"ui/token":              {lip, term, std},
 		"ui/atom":               {"ui/token", "page", lip, qr, bubble + "/spinner", std},
 		"ui/molecule":           {"ui/atom", "ui/token", "page", lip, std},
@@ -81,8 +81,8 @@ func importTable() map[string][]string {
 		"output":                {"page", "ui/render/*", "core/fail", std},
 		"core/*":                {"core/*", std},
 		"core/fail":             {"core/finding", std},
-		"surface/tui":           {"surface/tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
-		"surface/tui/*":         {"surface/tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
+		"surface/tui":           {"surface/tui/screens/*", "domain/*", "ports", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
+		"surface/tui/*":         {"surface/tui/screens/*", "domain/*", "ports", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
 	}
 }
 

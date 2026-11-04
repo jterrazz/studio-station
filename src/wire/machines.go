@@ -32,7 +32,7 @@ const (
 )
 
 func (m machine) machines(_ bool) *machines.Service {
-	return machines.New(m.host, m.hypervisor(), m.store, hostNodes{service: m.tailnet()}, fleetImages{service: m.images()}, m.hostDaemon(), leaseReleaser{m: m}, machines.Options{
+	return machines.New(m.host, m.hypervisor(), m.store, hostNodes{tailnet: m.tailnet()}, fleetImages{service: m.images()}, m.hostDaemon(), leaseReleaser{m: m}, machines.Options{
 		Ports: machines.Ports{
 			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
 			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),

@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	statuscmd "github.com/jterrazz/studio-station/src/surface/cli/status"
 )
@@ -16,13 +17,15 @@ func statusService(env kit.Env, m machine) *status.Service {
 	return status.New(m.host, status.Sources{
 		Tools:      toolsService(env, m),
 		Config:     configService(m),
-		Tailnet:    m.tailnet(),
+		Tailnet:    m.tailnetStatus(),
 		Setup:      setupService(env, m),
 		Store:      m.store,
 		Storage:    m.storage(env),
 		Daemon:     m.hostDaemon(),
 		Power:      statusPower{s: m.power()},
 		Hypervisor: m.hypervisor(),
+		// value: the status page reads listeners on a Mac only.
+		Listeners: lsof.New(m.host.Run),
 	}, status.Options{
 		Pool:         m.pool,
 		Root:         m.systemRoot(),

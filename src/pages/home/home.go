@@ -8,13 +8,13 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/status"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
+	"github.com/jterrazz/studio-station/src/ports"
 )
 
 const KeyFix = "enter"
@@ -584,7 +584,7 @@ func networkValue(e status.Environment) page.Value {
 	return page.List(parts...)
 }
 
-func tailnetValue(t tailnet.Status) page.Value {
+func tailnetValue(t ports.Status) page.Value {
 	name := t.Name
 	if short, _, _ := strings.Cut(t.DNSName, "."); short != "" {
 		name = short

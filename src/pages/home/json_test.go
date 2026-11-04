@@ -12,9 +12,9 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/status"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
+	"github.com/jterrazz/studio-station/src/ports"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden from the presenter")
@@ -60,7 +60,7 @@ func fixed() status.Snapshot {
 		Identity:   []status.Check{{Name: "git-email", State: catalog.StateOK, Value: "admin@jterrazz.com"}},
 		Background: []status.Job{{Label: "ai.jterrazz.x", Group: status.GroupUnknown, State: catalog.StateOK, Run: status.JobRunning, PID: 12, Scope: "user", Plist: "~/Library/LaunchAgents/ai.jterrazz.x.plist"}},
 		Gateways:   []status.Check{{Name: "OpenClaw runtime", State: catalog.StateBroken, Value: "not running", Detail: "gateway process not found"}},
-		Tailnet: tailnet.Status{
+		Tailnet: ports.Status{
 			State: catalog.StateOK, Connected: true, BackendState: "Running",
 			Name: "macbook", DNSName: "macbook.tail1234.ts.net", IP: "100.64.0.1",
 			Variant: "app-store", CLI: "/Applications/Tailscale.app/Contents/MacOS/Tailscale",

@@ -2,7 +2,7 @@ description: 'with no tailscale on its PATH, the daemon serves through the App S
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
-    - ../__fixtures__/tailscale-app-store/
+    - ../../__fixtures__/tailscale-app-store/
 env: daemon
 serve: sshd
 runs:

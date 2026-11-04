@@ -17,7 +17,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/settings"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -44,10 +44,11 @@ type Machines interface {
 }
 
 type Tailnet interface {
-	Self(ctx context.Context) (tailnet.Self, error)
-	Serve(ctx context.Context, args ...string) error
-	ServeStatus(ctx context.Context) (tailnet.ServeConfig, error)
-	Cert(ctx context.Context, host string) error
+	Ready(ctx context.Context) (ports.SharingState, error)
+	Share(ctx context.Context, s ports.Share) (string, error)
+	Unshare(ctx context.Context, s ports.Share) error
+	Shared(ctx context.Context) ([]ports.Share, error)
+	Warm(ctx context.Context) error
 }
 
 type Options struct {
@@ -84,7 +85,7 @@ type Daemon struct {
 	vms     map[string]*vmState
 	svcs    map[string]*svc
 	leases  []services.Lease
-	self    tailnet.Self
+	self    ports.SharingState
 	read    bool
 	issuing bool
 	started time.Time
@@ -197,32 +198,32 @@ func (d *Daemon) logf(subject, message string) {
 // every published lease is served and the entries no lease justifies go; off,
 // no serve runs and every row says so, logged once per change.
 func (d *Daemon) refreshSelf(ctx context.Context) {
-	self, err := d.tn.Self(ctx)
+	self, err := d.tn.Ready(ctx)
 	if err != nil {
-		self = tailnet.Self{}
+		self = ports.SharingState{}
 	}
 	d.mu.Lock()
-	was, first := d.self.ServeOn, !d.read
+	was, first := d.self.On, !d.read
 	d.self, d.read = self, true
 	d.mu.Unlock()
-	if !first && self.ServeOn == was {
+	if !first && self.On == was {
 		return
 	}
-	if self.ServeOn {
-		d.warmCert(ctx, self.DNSName)
+	if self.On {
+		d.warmCert(ctx, self.Host)
 	}
 	switch {
-	case self.ServeOn && !first:
+	case self.On && !first:
 		d.logf("tailnet", "Serve is on: every lease is served on the tailnet")
 		d.serveAll(ctx)
 		d.reconcileServe(ctx)
-	case !self.ServeOn:
+	case !self.On:
 		d.logf("tailnet", catalog.ServeOffDetail+": services are local only")
 		d.unserveAll()
 	}
 }
 
-// invariant: tailscaled issues the host's certificate at the first https
+// invariant: the tailnet issues the host's certificate at the first https
 // request, 34.5 s measured, so the daemon asks for it as Serve turns on, in
 // the background: never blocking a publish, one at a time, within its budget.
 func (d *Daemon) warmCert(ctx context.Context, host string) {
@@ -236,7 +237,7 @@ func (d *Daemon) warmCert(ctx context.Context, host string) {
 	go func() {
 		start := d.h.Clock.Now()
 		wait, cancel := context.WithDeadline(ctx, start.Add(certBudget))
-		err := d.tn.Cert(wait, host)
+		err := d.tn.Warm(wait)
 		cancel()
 		d.mu.Lock()
 		d.issuing = false
