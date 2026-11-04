@@ -17,7 +17,7 @@ runs:
           # Shared with VMs
           ●	github	linux-1	11 h left
           ●	claude	linux-1	11 h left
-    - command: '--version >/dev/null; "$STATION" accounts | /usr/bin/grep -c -e gho_ -e sk-ant'
+    - command: '--version >/dev/null; "$STATION" accounts | /usr/bin/grep -c -e fake-session-github -e fake-claude-token'
       exit: 1
       stdout: |
           0

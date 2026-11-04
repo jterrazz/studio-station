@@ -293,8 +293,8 @@
                 }
             },
             "secrets": {
-                "session:github": "gho_worldSessionGithub0000000000000000",
-                "operator:claude:oauth-token": "sk-ant-oat01-worldClaudeToken000000000000"
+                "session:github": "fake-session-github-of-this-mac",
+                "operator:claude:oauth-token": "fake-claude-token-of-this-mac"
             }
         },
         "jterrazz-mac-mini": {
@@ -389,7 +389,7 @@
                 }
             },
             "secrets": {
-                "session:github": "gho_worldMiniSessionGithub000000000000"
+                "session:github": "fake-session-github-of-the-mini"
             },
             "ssh": {
                 "blocks": {
@@ -426,8 +426,8 @@
                 }
             },
             "secrets": {
-                "session:github": "gho_worldSessionGithub0000000000000000",
-                "operator:claude:oauth-token": "sk-ant-oat01-worldClaudeToken000000000000"
+                "session:github": "fake-session-github-of-this-mac",
+                "operator:claude:oauth-token": "fake-claude-token-of-this-mac"
             }
         },
         "infra": {
