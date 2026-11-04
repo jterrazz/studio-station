@@ -117,6 +117,9 @@ func (r *Reader[Tool, Item, Stray]) readiness(ctx context.Context) []overview.Ch
 		RestartsAfterPowerCut: on(settingPowerPolicy), NeverSleeps: on(settingPowerPolicy), LogsIn: on(settingAutoLogin),
 		EngineKnown: r.d.Here.Agent != nil,
 	}
+	if f.NeverSleeps.State != catalog.StateOK && r.d.Servers != nil {
+		f.HostsServer = r.d.Servers.Hosted(ctx)
+	}
 	if machines.Readiness(f) == nil {
 		return []overview.Check{}
 	}

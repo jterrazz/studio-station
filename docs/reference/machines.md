@@ -145,7 +145,7 @@ On a host, the TUI's probe reports the OpenClaw and Hermes gateways when detecte
 
 ## Mac readiness
 
-The Overview of a Mac that hosts a server, or that never sleeps (its `power` setting applied), ends with Mac readiness, six items in this order, each measured on that Mac: restarts after a power cut and never sleeps (the `power` setting), logs in by itself (`autologin`), disk unlock after a power cut (FileVault on is `◐ needs you`, its fix `station machines unlock <mac>` from the same network), planned restarts unlock themselves (`fdesetup supportsauthrestart`, a fact), engine starts at login (the engine's job installed, else `station setup`). A setting not applied names its fix, and says `as root` where it needs it. Any other Mac has no readiness, and reads no fact for it.
+The Overview of a Mac that hosts a server, or that never sleeps (its `power` setting applied), ends with Mac readiness, six items in this order, each measured on that Mac: restarts after a power cut and never sleeps (the `power` setting), logs in by itself (`autologin`), disk unlock after a power cut (FileVault on is `◐ needs you`, its fix `station machines unlock <mac>` from the same network), planned restarts unlock themselves (`fdesetup supportsauthrestart`, a fact), engine starts at login (the engine's job installed, else `station setup`). A setting not applied names its fix, and says `as root` where it needs it. A Mac hosts a server when one of its running VMs says it is one, asked of its guest's station. Any other Mac has no readiness, and reads no fact for it.
 
 ## Related
 
