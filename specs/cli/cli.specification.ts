@@ -56,14 +56,23 @@ if (binaryIsStale()) {
 // value: one env set per world of specs/usecases/worlds/, named after it: a
 // use-case document that writes `env: two-macs` runs the spec build over a copy of
 // that world, `world.json` in its own directory, read and written by every run.
-const worlds = Object.fromEntries(
-    readdirSync(WORLDS)
-        .filter((name) => name.endsWith('.json'))
-        .map((name) => [
-            name.replace(/\.json$/u, ''),
-            { STATION_WORLD: '$WORKDIR/world.json', STATION_WORLD_SEED: resolve(WORLDS, name) },
-        ]),
-);
+// invariant: AR-02: with STATION_SPEC_HYPERVISOR set (`make test` sets it to vz for
+// its second pass over the machines and engine/keep suites), every world's Macs run
+// the fake of that hypervisor instead of tart's; `two-macs-vz` is two-macs over vz.
+const hypervisor = process.env.STATION_SPEC_HYPERVISOR ?? '';
+const world = (seed: string, over: string) => ({
+    STATION_WORLD: '$WORKDIR/world.json',
+    STATION_WORLD_HYPERVISOR: over,
+    STATION_WORLD_SEED: resolve(WORLDS, seed),
+});
+const worlds = {
+    ...Object.fromEntries(
+        readdirSync(WORLDS)
+            .filter((name) => name.endsWith('.json'))
+            .map((name) => [name.replace(/\.json$/u, ''), world(name, hypervisor)]),
+    ),
+    'two-macs-vz': world('two-macs.json', 'vz'),
+};
 
 export const { cleanup, cli } = await specification.cli(STATION_BIN, {
     defaults: {

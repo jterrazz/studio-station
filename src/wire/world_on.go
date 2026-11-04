@@ -62,7 +62,8 @@ const (
 )
 
 // invariant: the spec build's world: read from $STATION_WORLD at start (seeded
-// from $STATION_WORLD_SEED the first time), every fake over it, each of its
+// from $STATION_WORLD_SEED the first time, its Macs given the hypervisor
+// $STATION_WORLD_HYPERVISOR names when set), every fake over it, each of its
 // Macs built in this process as its own binary would build it there, and
 // the world written back once the command and every engine are done with it.
 type worldRun struct {
@@ -103,6 +104,7 @@ func openWorld(vars map[string]string) (*worldRun, error) {
 	if err != nil {
 		return nil, err
 	}
+	w.UseHypervisor(vars["STATION_WORLD_HYPERVISOR"])
 	return &worldRun{path: path, w: w, macs: map[string]*worldMac{}}, nil
 }
 
@@ -492,8 +494,11 @@ func (c worldClock) Sleep(ctx context.Context, d time.Duration) error {
 	}
 	if ctx.Value(waits{}) == nil {
 		// invariant: what already runs takes its turn before the clock
-		// leaps, so a poll counts the work it waits on, not the scheduler.
+		// leaps, and a moment of real time with it (a fiftieth of the leap,
+		// at most 5 ms), so a poll counts the work it waits on, a guest's
+		// pipe under a loaded gate included, not the scheduler.
 		runtime.Gosched()
+		time.Sleep(min(d/50, 5*time.Millisecond))
 	}
 	c.w.Lock()
 	until := c.w.Now.Add(d)

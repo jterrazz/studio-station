@@ -266,6 +266,20 @@ func (w *World) Encode() ([]byte, error) {
 	return append(data, '\n'), nil
 }
 
+func (w *World) UseHypervisor(hypervisor string) {
+	// invariant: AR-02: the same world over another adapter. Every Mac that
+	// has the hypervisor station is built with gets the one named instead;
+	// a Mac with none installed, or one named already, keeps its own.
+	if hypervisor == "" {
+		return
+	}
+	for _, m := range w.Macs {
+		if m.Hypervisor == "" {
+			m.Hypervisor = hypervisor
+		}
+	}
+}
+
 func (w *World) Mac(name string) *Mac {
 	// invariant: Mac answers the Mac of that name, made empty the first time it
 	// is asked, so a fake writes its slice without checking it exists.
