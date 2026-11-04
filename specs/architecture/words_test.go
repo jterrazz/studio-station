@@ -57,7 +57,7 @@ func technologyWords() []string {
 func wordsTolerated() map[string][]string {
 	return map[string][]string{
 		"wire":                         {"bun", "launchctl", "launchd", "mise", "pmset", "ssh", "tart"},
-		"surface/cli/kit":              {"docker", "fdesetup", "launchctl", "ssh", "tailscale", "tart"},
+		"surface/cli/kit":              {"docker", "fdesetup", "launchctl", "ssh", "tailscale"},
 		"surface/cli/machines":         {"ssh"},
 		"surface/cli/machines/restart": {"fdesetup"},
 		"surface/cli/run":              {"docker"},
@@ -66,9 +66,9 @@ func wordsTolerated() map[string][]string {
 		"cmd/generate/pages":           {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "security", "ssh", "tailscale", "tart", "uv"},
 		"domain/accounts":              {"docker", "npm", "ssh", "tailscale"},
 		"domain/config":                {"fdesetup", "launchctl", "pmset", "security", "ssh"},
-		"engine":                       {"launchctl", "pmset", "ssh", "tailscale", "tart"},
+		"engine":                       {"launchctl", "pmset", "ssh", "tailscale"},
 		"domain/guest":                 {"docker", "lsof"},
-		"domain/images":                {"scp", "ssh", "tart"},
+		"domain/images":                {"scp", "ssh"},
 		"domain/machines":              {"fdesetup", "launchctl", "ssh", "sysctl", "tart"},
 		"domain/power":                 {"pmset"},
 		"domain/probe":                 {"brew", "docker"},

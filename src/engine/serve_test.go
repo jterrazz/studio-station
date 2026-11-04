@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"errors"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"strings"
 	"sync"
 	"testing"
@@ -178,15 +179,14 @@ func TestARunRendersTheProfileEnvironmentAndAnAdoptionKeepsIt(t *testing.T) {
 	yes := true
 	h.d.leases = []services.Lease{{VM: "api", GuestPort: catalog.Profiles[0].Port, HostPort: 40000, HTTP: &yes, Pinned: true, Profile: catalog.Profiles[0].Name}}
 	h.d.refreshSelf(t.Context())
-	h.run.Spawn(4242)
-	_ = h.fs.WriteFile(h.d.pidFile("api"), []byte("4242\n"), 0o600)
+	h.hv.outlived("api")
 	ctx := cancelled(t)
 	h.d.adopt(ctx)
 	if len(h.m.saved) != 0 {
 		t.Fatalf("an adoption rewrote the record: %+v", h.m.saved)
 	}
 	v, _ := h.d.find("api")
-	h.run.Exit(4242)
+	h.hv.end("api", model.RunEnd{Reason: model.GuestReboot})
 	_ = h.d.start(ctx, v)
 	if len(h.m.saved) != 1 || h.m.saved[0].Env["EXPO_PACKAGER_PROXY_URL"] != "https://x.tail1234.ts.net:40000" || h.m.saved[0].Env["STATION_PUBLIC_HOST"] != "x.tail1234.ts.net" {
 		t.Errorf("a run with Serve on saved %+v, want the https URL and the public host", h.m.saved)

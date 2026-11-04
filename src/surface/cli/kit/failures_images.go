@@ -32,7 +32,7 @@ func imagesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &missing):
 		return usage(missing.Error(), linuxBinaryHint), true
 	case errors.As(err, &noEngine):
-		return usage(noEngine.Error(), "station tools install tart"), true
+		return usage(noEngine.Error(), "station tools install "+noEngine.Hypervisor), true
 	case errors.As(err, &notHost):
 		return usage(notHost.Error(), "run it on a host"), true
 	case errors.As(err, &build):

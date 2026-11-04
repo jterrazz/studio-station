@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"io/fs"
 	"path"
 	"sort"
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 type recordFile struct {
@@ -32,7 +32,7 @@ type recordFile struct {
 func (r recordFile) record() VMRecord {
 	return VMRecord{
 		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
-		Resources: system.Resources{CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes},
+		Resources: Resources{CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes},
 		Lent:      lentNames(r.Lent), CreatedAt: r.CreatedAt,
 	}
 }
@@ -103,11 +103,11 @@ func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM
 	if err != nil || len(records) == 0 {
 		return nil, err
 	}
-	engine := map[string]system.VMInfo{}
+	engine := map[string]contract.Disk{}
 	if s.engine != nil {
-		if infos, listErr := s.engine.List(ctx); listErr == nil {
-			for _, i := range infos {
-				engine[i.Name] = i
+		if disks, listErr := s.engine.Disks(ctx); listErr == nil {
+			for _, d := range disks {
+				engine[d.VM] = d
 			}
 		}
 	}
@@ -116,7 +116,7 @@ func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM
 		info := engine[r.Name]
 		vm := VM{
 			Name: r.Name, Image: r.Image, Version: r.Version, Host: host, Kind: kindOfImage(r.Image),
-			Lifetime: r.Lifetime, State: stateOf(r.Lifetime, info), Resources: r.Resources, SizeGB: info.SizeGB,
+			Lifetime: r.Lifetime, State: stateOf(r.Lifetime, info), Resources: r.Resources, SizeGB: int(info.Bytes / 1e9),
 			Network: networkOf(r), Guest: "unknown", Lent: r.Lent, CreatedAt: r.CreatedAt,
 		}
 		if d, ok := live[r.Name]; ok && live != nil {
@@ -137,13 +137,13 @@ func networkOf(r VMRecord) string {
 	return r.Network
 }
 
-func stateOf(l Lifetime, info system.VMInfo) VMState {
-	switch info.State {
-	case system.VMRunning:
+func stateOf(l Lifetime, d contract.Disk) VMState {
+	switch d.State {
+	case contract.DiskRunning:
 		return Running
-	case system.VMSuspended:
+	case contract.DiskSuspended:
 		return Suspended
-	case system.VMStopped, system.VMMissing:
+	case contract.DiskStopped, diskMissing:
 	}
 	if l == Temporary {
 		return Stale

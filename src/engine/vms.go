@@ -5,9 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"io"
 	"maps"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -36,7 +36,8 @@ const (
 
 type vmState struct {
 	rec      machines.VMRecord
-	pid      int
+	run      Run
+	end      *model.RunEnd
 	state    string
 	detail   string
 	reruns   []time.Time
@@ -55,33 +56,6 @@ type vmState struct {
 	seq      int
 }
 
-func (d *Daemon) runsDir() string { return path.Join(d.o.Paths.State, "runs") }
-
-func (d *Daemon) pidFile(vm string) string { return path.Join(d.runsDir(), vm+".pid") }
-
-func (d *Daemon) exitFile(vm string) string { return path.Join(d.runsDir(), vm+".exit") }
-
-func (d *Daemon) readPID(vm string) int {
-	data, err := d.h.FS.ReadFile(d.pidFile(vm))
-	if err != nil {
-		return 0
-	}
-	pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
-	return pid
-}
-
-func (d *Daemon) readExit(vm string) int {
-	data, err := d.h.FS.ReadFile(d.exitFile(vm))
-	if err != nil {
-		return -1
-	}
-	code, err := strconv.Atoi(strings.TrimSpace(string(data)))
-	if err != nil {
-		return -1
-	}
-	return code
-}
-
 // invariant: at start, a live run is ADOPTED (never touched); a dead one or none
 // leaves a temporary VM stale (a host reboot or a power cut ended it) and runs a
 // lasting one its record wants running.
@@ -92,12 +66,11 @@ func (d *Daemon) adopt(ctx context.Context) {
 		d.mu.Lock()
 		d.vms[r.Name] = v
 		d.mu.Unlock()
-		if pid := d.readPID(r.Name); pid > 0 && d.h.Run.Alive(pid) {
-			v.pid, v.state = pid, StateRunning
+		if run, ok := d.hv.Adopt(ctx, r.Name); ok {
+			v.run, v.state = run, StateRunning
 			d.connect(ctx, v)
 			continue
 		}
-		_ = d.h.FS.Remove(d.pidFile(r.Name))
 		switch {
 		case d.m.EngineRunning(ctx, r.Name):
 			v.state = StateRunning
@@ -147,49 +120,15 @@ func (d *Daemon) start(ctx context.Context, v *vmState) error {
 	}
 	d.refreshSelf(ctx)
 	d.renderEnv(v)
-	console := d.m.ConsolePath(name)
-	for _, dir := range []string{d.runsDir(), path.Dir(console), path.Dir(d.m.LogPath(name))} {
-		if err := d.h.FS.MkdirAll(dir, 0o700); err != nil {
-			return err
-		}
-	}
-	if err := d.h.FS.WriteFile(console, nil, 0o600); err != nil {
-		return err
-	}
-	_ = d.h.FS.Remove(d.exitFile(name))
-	opts := system.RunOptions{}
-	if v.rec.Network == machines.Bridged {
-		opts.Bridged = d.defaultInterface(ctx)
-	}
-	argv := d.engine.RunArgv(name, console, opts)
-	if abs, ok := d.h.Run.LookPath(argv[0]); ok {
-		argv[0] = abs
-	}
-	pid, err := d.h.Run.Start(RunCmd(argv, d.exitFile(name)), d.m.LogPath(name))
+	run, err := d.hv.Boot(ctx, name, model.Network{Bridged: v.rec.Network == machines.Bridged})
 	if err != nil {
-		return err
-	}
-	if err := d.h.FS.WriteFile(d.pidFile(name), []byte(strconv.Itoa(pid)+"\n"), 0o600); err != nil {
 		return err
 	}
 	d.mu.Lock()
-	v.pid, v.state, v.detail, v.stopping = pid, StateRunning, "", false
+	v.run, v.end, v.state, v.detail, v.stopping = run, nil, StateRunning, "", false
 	d.mu.Unlock()
 	d.connect(ctx, v)
 	return nil
-}
-
-func (d *Daemon) defaultInterface(ctx context.Context) string {
-	out, err := d.h.Run.Output(ctx, system.Cmd{Name: "route", Args: []string{"-n", "get", "default"}, Timeout: 5 * time.Second})
-	if err != nil {
-		return ""
-	}
-	for _, line := range strings.Split(out.Stdout, "\n") {
-		if k, v, ok := strings.Cut(strings.TrimSpace(line), ":"); ok && k == "interface" {
-			return strings.TrimSpace(v)
-		}
-	}
-	return ""
 }
 
 func (d *Daemon) tick(ctx context.Context) {
@@ -200,7 +139,7 @@ func (d *Daemon) tick(ctx context.Context) {
 		v, _ := d.find(r.Name)
 		d.mu.Lock()
 		v.rec = r
-		ended := v.pid > 0 && !v.stopping && !d.h.Run.Alive(v.pid)
+		ended := v.run != nil && !v.stopping && v.over()
 		later := !v.rerunAt.IsZero() && !d.h.Clock.Now().Before(v.rerunAt)
 		d.mu.Unlock()
 		if ended {
@@ -229,34 +168,35 @@ func (d *Daemon) tick(ctx context.Context) {
 
 func (d *Daemon) ended(ctx context.Context, v *vmState) {
 	name := v.rec.Name
-	code := d.readExit(name)
-	intent := d.m.DeclaredPoweroff(d.m.ConsolePath(name))
 	d.mu.Lock()
-	act, reruns := machines.AfterRun(v.rec.Lifetime, intent, code, v.reruns, d.h.Clock.Now())
-	v.reruns, v.pid = reruns, 0
+	end := unread
+	if v.end != nil {
+		end = *v.end
+	}
+	act, reruns := model.AfterRun(v.rec.Lifetime, end, v.reruns, d.h.Clock.Now())
+	v.reruns, v.run, v.end = reruns, nil, nil
 	d.mu.Unlock()
-	_ = d.h.FS.Remove(d.pidFile(name))
 	d.disconnect(v)
 	d.vmStopped(ctx, name)
 	switch act {
-	case machines.ActRerun:
+	case model.ActRerun:
 		_ = d.start(ctx, v)
-	case machines.ActRerunLater:
+	case model.ActRerunLater:
 		d.mu.Lock()
-		v.state, v.rerunAt = StateStopped, d.h.Clock.Now().Add(machines.CrashDelay)
+		v.state, v.rerunAt = StateStopped, d.h.Clock.Now().Add(model.CrashDelay)
 		d.mu.Unlock()
-	case machines.ActDelete:
+	case model.ActDelete:
 		d.releaseVM(ctx, name)
 		_, _ = d.m.Remove(ctx, name)
 		d.forget(name)
-	case machines.ActStopped:
+	case model.ActStopped:
 		v.rec.Want = machines.WantStopped
 		_ = d.m.Save(v.rec)
 		d.setState(v, StateStopped, "")
-	case machines.ActBroken:
-		d.setState(v, StateBroken, machines.BrokenDetail())
-	case machines.ActStale:
-		d.setState(v, StateStale, "the run ended with exit "+strconv.Itoa(code))
+	case model.ActBroken:
+		d.setState(v, StateBroken, model.BrokenDetail())
+	case model.ActStale:
+		d.setState(v, StateStale, "the run ended with exit "+strconv.Itoa(end.ExitCode))
 	}
 }
 
@@ -280,7 +220,7 @@ func (d *Daemon) vmViews() []VMView {
 	defer d.mu.Unlock()
 	out := make([]VMView, 0, len(d.vms))
 	for name, v := range d.vms {
-		out = append(out, VMView{Name: name, State: v.state, RunPID: v.pid, Guest: v.guest, IP: v.ip, Detail: v.detail})
+		out = append(out, VMView{Name: name, State: v.state, RunPID: v.runPID(), Guest: v.guest, IP: v.ip, Detail: v.detail})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
@@ -298,10 +238,7 @@ func (d *Daemon) opRun(ctx context.Context, vm string) error {
 	if err != nil {
 		return err
 	}
-	d.mu.Lock()
-	running := v.pid > 0 && d.h.Run.Alive(v.pid)
-	d.mu.Unlock()
-	if running {
+	if d.runs(v) {
 		return nil
 	}
 	return d.start(ctx, v)
@@ -317,7 +254,7 @@ func (d *Daemon) awaitGuest(ctx context.Context, vm string) error {
 	}
 	for waited := time.Duration(0); waited < guestReady; waited += pollEvery {
 		d.mu.Lock()
-		connected, ended := v.guest == GuestConnected, v.pid == 0 || !d.h.Run.Alive(v.pid)
+		connected, ended := v.guest == GuestConnected, v.over()
 		d.mu.Unlock()
 		if connected || ended {
 			return nil
@@ -366,14 +303,14 @@ func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
 	}
 	d.mu.Lock()
 	v.stopping = true
-	pid, client := v.pid, v.client
+	run, client := v.run, v.client
 	d.mu.Unlock()
 	defer func() {
 		d.mu.Lock()
 		v.stopping = false
 		d.mu.Unlock()
 	}()
-	if pid == 0 && !d.m.EngineRunning(ctx, vm) {
+	if run == nil && !d.m.EngineRunning(ctx, vm) {
 		d.disconnect(v)
 		d.setState(v, StateStopped, "")
 		return nil
@@ -384,7 +321,7 @@ func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
 		sent = err == nil
 	}
 	if !sent {
-		if pid == 0 {
+		if run == nil {
 			if err := d.m.PowerOff(ctx, vm); err != nil {
 				return err
 			}
@@ -392,17 +329,16 @@ func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
 			go func() { _ = d.m.PowerOff(context.WithoutCancel(ctx), vm) }()
 		}
 	}
-	for waited := time.Duration(0); pid > 0 && d.h.Run.Alive(pid) && waited < stopWait; waited += pollEvery {
+	for waited := time.Duration(0); d.runs(v) && waited < stopWait; waited += pollEvery {
 		if err := d.h.Clock.Sleep(ctx, pollEvery); err != nil {
 			return err
 		}
 	}
-	if pid > 0 && d.h.Run.Alive(pid) {
-		_ = d.engine.Stop(ctx, vm, hardWait)
+	if d.runs(v) {
+		_ = d.hv.Shutdown(ctx, vm, hardWait)
 	}
-	_ = d.h.FS.Remove(d.pidFile(vm))
 	d.mu.Lock()
-	v.pid = 0
+	v.run, v.end = nil, nil
 	d.mu.Unlock()
 	d.disconnect(v)
 	d.vmStopped(ctx, vm)
@@ -461,7 +397,7 @@ func (d *Daemon) current(v *vmState, gen int) bool {
 func (d *Daemon) alive(v *vmState) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return v.pid > 0 && !v.stopping && d.h.Run.Alive(v.pid)
+	return v.run != nil && !v.stopping && !v.over()
 }
 
 func (d *Daemon) session(ctx context.Context, v *vmState, gen int) {
@@ -490,11 +426,12 @@ func (d *Daemon) session(ctx context.Context, v *vmState, gen int) {
 
 func (d *Daemon) guestOnce(ctx context.Context, v *vmState, gen int) {
 	name := v.rec.Name
-	ip, err := d.engine.IP(ctx, name, 5*time.Second)
+	addr, err := d.hv.Address(ctx, name, 5*time.Second)
 	if err != nil {
 		d.guestFailed(ctx, v, "no ip: "+err.Error())
 		return
 	}
+	ip := addr.String()
 	client, err := d.ssh.Dial(ctx, system.SSHTarget{
 		Addr: hostPort(ip, d.o.GuestPort), User: d.m.VMUser(),
 		KeyPath: d.m.KeyPath(), KnownHosts: d.m.KnownHostsPath(name), Name: name,

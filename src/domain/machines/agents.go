@@ -2,6 +2,7 @@ package machines
 
 import (
 	"context"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"path"
 	"strconv"
 	"strings"
@@ -12,10 +13,6 @@ import (
 const agentPrefix = "com.jterrazz.station.vm."
 
 func (s *Service) LogPath(name string) string { return path.Join(s.o.Paths.State, "logs", name+".log") }
-
-func (s *Service) ConsolePath(name string) string {
-	return path.Join(s.o.Paths.State, "consoles", name)
-}
 
 func (s *Service) KnownHostsPath(name string) string { return path.Join(s.knownHostsDir(), name) }
 
@@ -81,7 +78,7 @@ func (s *Service) MigrateAgents(ctx context.Context) (AgentMigration, error) {
 	}
 	var running []string
 	for _, n := range names {
-		if s.engineState(ctx, n) == system.VMRunning {
+		if s.engineState(ctx, n) == contract.DiskRunning {
 			running = append(running, n)
 		}
 	}

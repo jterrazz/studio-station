@@ -3,67 +3,83 @@ package tart
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"net/netip"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/core/call"
+	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
+	"github.com/jterrazz/studio-station/src/machines"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-const commandGrace = 15 * time.Second
+const (
+	name         = "tart"
+	commandGrace = 15 * time.Second
+)
 
-type engine struct {
-	run  system.Runner
-	path string
+type hypervisor struct {
+	run   system.Runner
+	fs    system.FS
+	clock system.Clock
+	path  string
+	files files
 }
 
-func New(run system.Runner) system.Engine {
+func New(run system.Runner, fs system.FS, clock system.Clock, stateDir string) contract.Hypervisor {
 	// invariant: the tart path is resolved here, absolute, because a launchd agent has no PATH of the owner's.
-	path, ok := run.LookPath("tart")
+	path, ok := run.LookPath(name)
 	if !ok {
-		path = "tart"
+		path = name
 	}
-	return &engine{run: run, path: path}
+	return &hypervisor{run: run, fs: fs, clock: clock, path: path, files: files{state: stateDir}}
+}
+
+func (h *hypervisor) Name() string { return name }
+
+func (h *hypervisor) Installed() bool {
+	_, ok := h.run.LookPath(name)
+	return ok
 }
 
 type entry struct {
 	Source string `json:"Source"`
 	Name   string `json:"Name"`
-	Disk   *int   `json:"Disk"`
-	Size   int    `json:"Size"`
+	Size   int64  `json:"Size"`
 	State  string `json:"State"`
 }
 
-func parseList(data string) ([]system.VMInfo, error) {
+func parseList(data string) ([]contract.Disk, error) {
 	var entries []entry
 	if err := json.Unmarshal([]byte(data), &entries); err != nil {
 		return nil, fmt.Errorf("tart list: unreadable output: %w", err)
 	}
-	vms := []system.VMInfo{}
+	disks := []contract.Disk{}
 	for _, e := range entries {
 		if e.Source != "local" {
 			continue
 		}
-		vms = append(vms, system.VMInfo{Name: e.Name, State: stateOf(e.State), DiskGB: e.Disk, SizeGB: e.Size})
+		disks = append(disks, contract.Disk{VM: e.Name, Bytes: e.Size * 1e9, State: stateOf(e.State)})
 	}
-	return vms, nil
+	return disks, nil
 }
 
-func stateOf(s string) system.VMState {
+func stateOf(s string) contract.DiskState {
 	switch strings.ToLower(s) {
 	case "running":
-		return system.VMRunning
+		return contract.DiskRunning
 	case "suspended":
-		return system.VMSuspended
+		return contract.DiskSuspended
 	default:
-		return system.VMStopped
+		return contract.DiskStopped
 	}
 }
 
-func (e *engine) exec(ctx context.Context, timeout time.Duration, args ...string) (string, error) {
-	out, err := e.run.Output(ctx, system.Cmd{Name: e.path, Args: args, Timeout: timeout})
+func (h *hypervisor) exec(ctx context.Context, timeout time.Duration, args ...string) (string, error) {
+	out, err := h.run.Output(ctx, system.Cmd{Name: h.path, Args: args, Timeout: timeout})
 	if err != nil {
 		return "", fmt.Errorf("tart %s: %w", args[0], err)
 	}
@@ -77,71 +93,82 @@ func seconds(d time.Duration) string {
 	return strconv.Itoa(int((d + time.Second - 1) / time.Second))
 }
 
-func (e *engine) Version(ctx context.Context) (string, error) {
-	out, err := e.exec(ctx, 0, "--version")
+func (h *hypervisor) Version(ctx context.Context) (string, error) {
+	out, err := h.exec(ctx, 0, "--version")
 	return strings.TrimSpace(out), err
 }
 
-func (e *engine) List(ctx context.Context) ([]system.VMInfo, error) {
-	out, err := e.exec(ctx, 0, "list", "--source", "local", "--format", "json")
+func (h *hypervisor) Disks(ctx context.Context) ([]contract.Disk, error) {
+	out, err := h.exec(ctx, 0, "list", "--source", "local", "--format", "json")
 	if err != nil {
 		return nil, err
 	}
 	return parseList(out)
 }
 
-func (e *engine) Pull(ctx context.Context, ref string) error {
-	_, err := e.exec(ctx, 0, "pull", ref)
-	return err
-}
-
-func (e *engine) Clone(ctx context.Context, from, to string) error {
-	_, err := e.exec(ctx, 0, "clone", from, to)
-	return err
-}
-
-func (e *engine) Rename(ctx context.Context, from, to string) error {
-	_, err := e.exec(ctx, 0, "rename", from, to)
-	return err
-}
-
-func (e *engine) Resize(ctx context.Context, name string, r system.Resources) error {
-	args := []string{"set", name}
-	if r.CPUs > 0 {
-		args = append(args, "--cpu", strconv.Itoa(r.CPUs))
+func (h *hypervisor) Fetch(ctx context.Context, img imagescontract.ImageLocation, p call.Progress) error {
+	if p != nil {
+		p.Step("fetching", img.Ref)
 	}
-	if r.MemoryBytes > 0 {
-		args = append(args, "--memory", strconv.FormatInt((r.MemoryBytes+1<<20-1)>>20, 10))
+	_, err := h.exec(ctx, 0, "pull", img.Ref)
+	if p != nil {
+		p.Done("fetching", err)
 	}
-	if r.DiskBytes > 0 {
-		args = append(args, "--disk-size", strconv.FormatInt((r.DiskBytes+1e9-1)/1e9, 10))
-	}
-	_, err := e.exec(ctx, 0, args...)
 	return err
 }
 
-func (e *engine) RunArgv(name, console string, o system.RunOptions) []string {
-	argv := []string{e.path, "run", "--no-graphics", "--no-audio", "--serial-path", console}
-	if o.Bridged != "" {
-		argv = append(argv, "--net-bridged="+o.Bridged)
+func (h *hypervisor) Clone(ctx context.Context, from imagescontract.ImageLocation, vm string) error {
+	_, err := h.exec(ctx, 0, "clone", from.Ref, vm)
+	return err
+}
+
+func (h *hypervisor) Rename(ctx context.Context, from, to string) error {
+	if _, err := h.exec(ctx, 0, "rename", from, to); err != nil {
+		return err
 	}
-	return append(argv, name)
+	h.files.drop(h.fs, from)
+	return nil
 }
 
-func (e *engine) Stop(ctx context.Context, name string, wait time.Duration) error {
-	_, err := e.exec(ctx, wait+commandGrace, "stop", "--timeout", seconds(wait), name)
+func (h *hypervisor) Resize(ctx context.Context, vm string, s machines.Size) error {
+	args := []string{"set", vm}
+	if s.CPUs > 0 {
+		args = append(args, "--cpu", strconv.Itoa(s.CPUs))
+	}
+	if s.Memory > 0 {
+		args = append(args, "--memory", strconv.FormatInt((s.Memory+1<<20-1)>>20, 10))
+	}
+	if s.Disk > 0 {
+		args = append(args, "--disk-size", strconv.FormatInt((s.Disk+1e9-1)/1e9, 10))
+	}
+	_, err := h.exec(ctx, 0, args...)
 	return err
 }
 
-func (e *engine) Delete(ctx context.Context, name string) error {
-	_, err := e.exec(ctx, 0, "delete", name)
+func (h *hypervisor) Shutdown(ctx context.Context, vm string, grace time.Duration) error {
+	_, err := h.exec(ctx, grace+commandGrace, "stop", "--timeout", seconds(grace), vm)
 	return err
 }
 
-func (e *engine) IP(ctx context.Context, name string, wait time.Duration) (string, error) {
-	out, err := e.exec(ctx, wait+commandGrace, "ip", name, "--wait", seconds(wait))
+func (h *hypervisor) Delete(ctx context.Context, vm string) error {
+	h.files.drop(h.fs, vm)
+	_, err := h.exec(ctx, 0, "delete", vm)
+	return err
+}
+
+func (h *hypervisor) Discard(ctx context.Context, img imagescontract.ImageLocation) error {
+	_, err := h.exec(ctx, 0, "delete", img.Ref)
+	return err
+}
+
+func (h *hypervisor) Address(ctx context.Context, vm string, wait time.Duration) (netip.Addr, error) {
+	out, err := h.exec(ctx, wait+commandGrace, "ip", vm, "--wait", seconds(wait))
 	if err != nil {
-		return "", errors.Join(system.ErrTimeout, err)
+		return netip.Addr{}, err
 	}
-	return strings.TrimSpace(out), nil
+	addr, err := netip.ParseAddr(strings.TrimSpace(out))
+	if err != nil {
+		return netip.Addr{}, fmt.Errorf("tart ip: unreadable address: %w", err)
+	}
+	return addr, nil
 }

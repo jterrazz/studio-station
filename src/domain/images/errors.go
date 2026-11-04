@@ -30,9 +30,12 @@ type BinaryNotFoundError struct{ Path string }
 
 func (e *BinaryNotFoundError) Error() string { return e.Path + ": no such file" }
 
-type NoEngineError struct{ Cause error }
+type NoEngineError struct {
+	Hypervisor string
+	Cause      error
+}
 
-func (e *NoEngineError) Error() string { return "tart is not installed or does not answer" }
+func (e *NoEngineError) Error() string { return e.Hypervisor + " is not installed or does not answer" }
 
 func (e *NoEngineError) Unwrap() error { return e.Cause }
 

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const FleetSchema = "station.machines/v1"
@@ -92,7 +91,7 @@ func (w WireHost) view(name, user string) HostView {
 		view.VMs = append(view.VMs, VM{
 			Name: vm.Name, Image: vm.Image, Version: vm.Version, Host: name, Kind: catalog.MachineKind(vm.Kind),
 			Lifetime: Lifetime(vm.Lifetime), State: VMState(vm.State),
-			Resources: system.Resources{CPUs: vm.CPUs, MemoryBytes: vm.MemoryBytes, DiskBytes: vm.DiskBytes},
+			Resources: Resources{CPUs: vm.CPUs, MemoryBytes: vm.MemoryBytes, DiskBytes: vm.DiskBytes},
 			IP:        vm.IP, Network: vm.Network, Guest: vm.Guest, Detail: vm.Detail, Lent: vm.Lent, CreatedAt: vm.CreatedAt,
 		})
 	}

@@ -125,7 +125,7 @@ func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
 	h.Clock = clock
 	paths := settings.Paths{Config: "/c", State: "/s"}
 	var n atomic.Int32
-	return New(h, fakeEngine{}, nil, &fakeMachines{}, &fakeTailnet{}, settings.NewStore(files, paths), Options{Paths: paths, Here: catalog.Host,
+	return New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, settings.NewStore(files, paths), Options{Paths: paths, Here: catalog.Host,
 		Feeds: map[string]Feed{PageMenubar: func(ctx context.Context, _ FeedInput) <-chan any {
 			feed := feeds[n.Add(1)-1]
 			out := make(chan any)

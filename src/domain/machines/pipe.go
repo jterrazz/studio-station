@@ -3,11 +3,10 @@ package machines
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"io"
 	"strconv"
 	"time"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const pipeIPWait = 5 * time.Second
@@ -71,18 +70,19 @@ func (s *Service) hostOf(ctx context.Context, name string) (string, bool) {
 
 func (s *Service) Pipe(ctx context.Context, name string, in io.Reader, out io.Writer) error {
 	// invariant: the VM's NAT ip is read at each pipe, never written into a block:
-	// Tart's DHCP lease may change across runs; the pipe needs no daemon.
+	// the hypervisor's DHCP lease may change across runs; the pipe needs no daemon.
 	rec, err := s.CheckPipe(ctx, name)
 	if err != nil {
 		return err
 	}
-	if s.engineState(ctx, name) != system.VMRunning {
+	if s.engineState(ctx, name) != contract.DiskRunning {
 		return &StoppedError{Name: name, Lifetime: rec.Lifetime}
 	}
-	ip, err := s.engine.IP(ctx, name, pipeIPWait)
+	addr, err := s.engine.Address(ctx, name, pipeIPWait)
 	if err != nil {
 		return &SSHDClosedError{Name: name, Addr: name, Cause: err}
 	}
+	ip := addr.String()
 	port := s.o.GuestPort
 	if port == 0 {
 		port = 22

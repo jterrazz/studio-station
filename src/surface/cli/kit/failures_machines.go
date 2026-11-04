@@ -110,7 +110,7 @@ func vmFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &noImage):
 		return usage(noImage.Error(), "station images build "+noImage.Image), true
 	case errors.As(err, &noEngine):
-		return usage(noEngine.Error(), "station tools install tart"), true
+		return usage(noEngine.Error(), "station tools install "+noEngine.Hypervisor), true
 	case errors.As(err, &tooBig):
 		return usage(tooBig.Error(), "ask for less: --memory 8G"), true
 	case errors.As(err, &badSize):

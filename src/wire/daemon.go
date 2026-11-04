@@ -17,7 +17,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
-	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	daemoncmd "github.com/jterrazz/studio-station/src/surface/cli/daemon"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/system"
@@ -26,7 +25,7 @@ import (
 func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 
 func (m machine) daemon(env kit.Env) *engine.Daemon {
-	return engine.New(m.host, tart.New(m.host.Run), ssh.New(), m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths)), m.store, engine.Options{
+	return engine.New(m.host, engineHypervisor{m.hypervisor()}, ssh.New(), m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths)), m.store, engine.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Pmset: m.pmset(), PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: daemonLends{m.secrets()},

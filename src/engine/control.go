@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io/fs"
-	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -35,14 +34,15 @@ type ControlOptions struct {
 type Control struct {
 	// value: station stop and station start: the one daemon of this host, its
 	// launchd agent and the VMs it supervises.
-	h system.Host
-	c Client
-	m ControlMachines
-	o ControlOptions
+	h  system.Host
+	c  Client
+	m  ControlMachines
+	hv Hypervisor
+	o  ControlOptions
 }
 
-func NewControl(h system.Host, c Client, m ControlMachines, o ControlOptions) *Control {
-	return &Control{h: h, c: c, m: m, o: o}
+func NewControl(h system.Host, c Client, m ControlMachines, hv Hypervisor, o ControlOptions) *Control {
+	return &Control{h: h, c: c, m: m, hv: hv, o: o}
 }
 
 type NotInstalledError struct{}
@@ -147,7 +147,7 @@ func (c *Control) Plan(ctx context.Context) (Work, error) {
 		}
 	} else {
 		for _, r := range records {
-			running[r.Name] = c.runAlive(r.Name)
+			_, running[r.Name] = c.hv.Adopt(ctx, r.Name)
 		}
 	}
 	for _, r := range records {
@@ -161,15 +161,6 @@ func (c *Control) Plan(ctx context.Context) (Work, error) {
 		w.VMs = append(w.VMs, s)
 	}
 	return w, nil
-}
-
-func (c *Control) runAlive(vm string) bool {
-	data, err := c.h.FS.ReadFile(path.Join(c.o.State, "runs", vm+".pid"))
-	if err != nil {
-		return false
-	}
-	pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
-	return pid > 0 && c.h.Run.Alive(pid)
 }
 
 type StopReport struct {

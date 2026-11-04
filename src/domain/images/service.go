@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"io/fs"
 	"path"
 	"slices"
@@ -23,12 +25,12 @@ type Options struct {
 
 type Service struct {
 	h    system.Host
-	e    system.Engine
+	e    contract.Hypervisor
 	list []catalog.Image
 	o    Options
 }
 
-func New(h system.Host, e system.Engine, list []catalog.Image, o Options) *Service {
+func New(h system.Host, e contract.Hypervisor, list []catalog.Image, o Options) *Service {
 	return &Service{h: h, e: e, list: list, o: o}
 }
 
@@ -59,9 +61,9 @@ func (s *Service) List(ctx context.Context) ([]Report, error) {
 		return nil, err
 	}
 	sizes := map[string]int{}
-	if vms, err := s.e.List(ctx); err == nil {
-		for _, vm := range vms {
-			sizes[vm.Name] = vm.SizeGB
+	if disks, err := s.e.Disks(ctx); err == nil {
+		for _, d := range disks {
+			sizes[d.VM] = int(d.Bytes / 1e9)
 		}
 	}
 	users, err := s.users()
@@ -75,7 +77,7 @@ func (s *Service) List(ctx context.Context) ([]Report, error) {
 			return nil, err
 		}
 		for i, r := range all {
-			if size, ok := sizes[TartName(r.Name, r.Version)]; ok {
+			if size, ok := sizes[DiskName(r.Name, r.Version)]; ok {
 				r.SizeGB = size
 			}
 			out = append(out, Report{Record: r, Newest: i == 0, VMs: users[r.Name+"@"+r.Version]})
@@ -143,13 +145,13 @@ func (s *Service) Delete(ctx context.Context, image, version string) ([]Record, 
 		return nil, err
 	}
 	if _, err := s.e.Version(ctx); err != nil {
-		return nil, &NoEngineError{Cause: err}
+		return nil, &NoEngineError{Hypervisor: s.e.Name(), Cause: err}
 	}
 	all, err := s.records(image)
 	if err != nil {
 		return nil, err
 	}
-	present, err := s.e.List(ctx)
+	present, err := s.e.Disks(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +160,9 @@ func (s *Service) Delete(ctx context.Context, image, version string) ([]Record, 
 		if version != "" && r.Version != version {
 			continue
 		}
-		name := TartName(r.Name, r.Version)
-		if slices.ContainsFunc(present, func(vm system.VMInfo) bool { return vm.Name == name }) {
-			if err := s.e.Delete(ctx, name); err != nil {
+		name := DiskName(r.Name, r.Version)
+		if slices.ContainsFunc(present, func(d contract.Disk) bool { return d.VM == name }) {
+			if err := s.e.Discard(ctx, s.location(name)); err != nil {
 				return removed, err
 			}
 		}
@@ -170,4 +172,8 @@ func (s *Service) Delete(ctx context.Context, image, version string) ([]Record, 
 		removed = append(removed, r)
 	}
 	return removed, nil
+}
+
+func (s *Service) location(ref string) imagescontract.ImageLocation {
+	return imagescontract.ImageLocation{Hypervisor: s.e.Name(), Ref: ref}
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"path"
 	"slices"
 	"strings"
@@ -90,7 +91,7 @@ func (s *Service) Build(ctx context.Context, r BuildRequest, progress func(Step)
 		return nil, need
 	}
 	if _, err = s.e.Version(ctx); err != nil {
-		return nil, &NoEngineError{Cause: err}
+		return nil, &NoEngineError{Hypervisor: s.e.Name(), Cause: err}
 	}
 	binary, err := s.binary(ctx, r.Binary)
 	if err != nil {
@@ -119,12 +120,10 @@ type session struct {
 
 func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string, progress func(Step)) (Record, error) {
 	vm := buildPrefix + img.Name
-	// invariant: the console only serves the run of this build, so no build leaves it behind.
-	defer func() { _ = s.h.FS.Remove(s.consolePath(img.Name)) }()
 	failed := func(step string, cause error) (Record, error) {
 		// invariant: a failed build leaves no VM behind; the cleanup survives a cancelled ctx.
 		clean := context.WithoutCancel(ctx)
-		_ = s.e.Stop(clean, vm, 10*time.Second)
+		_ = s.e.Shutdown(clean, vm, 10*time.Second)
 		_ = s.e.Delete(clean, vm)
 		return Record{}, &BuildFailedError{Image: img.Name, Step: step, Cause: cause}
 	}
@@ -157,21 +156,22 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 	}
 
 	progress(Step{Label: "pulling " + img.Base})
-	if err = s.e.Pull(ctx, img.Base); err != nil {
+	if err = s.e.Fetch(ctx, s.location(img.Base), nil); err != nil {
 		return failed("pulling the base", err)
 	}
 	progress(Step{Label: "cloning " + vm})
-	if err = s.e.Clone(ctx, img.Base, vm); err != nil {
+	if err = s.e.Clone(ctx, s.location(img.Base), vm); err != nil {
 		return failed("cloning the base", err)
 	}
 	progress(Step{Label: "booting " + vm})
-	if err = s.boot(vm, img.Name); err != nil {
+	if _, err = s.e.Boot(ctx, vm, contract.BootOptions{}); err != nil {
 		return failed("booting the build VM", err)
 	}
-	ip, err := s.e.IP(ctx, vm, sshReady)
+	addr, err := s.e.Address(ctx, vm, sshReady)
 	if err != nil {
 		return failed("waiting for the build VM's address", err)
 	}
+	ip := addr.String()
 	ss := session{s: s, ip: ip, key: key, askpass: askpass}
 
 	progress(Step{Label: "copying station into " + vm})
@@ -191,17 +191,17 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 	if err := s.waitStopped(ctx, vm); err != nil {
 		return failed("waiting for the build VM to power off", err)
 	}
-	_ = s.e.Stop(ctx, vm, 10*time.Second)
+	_ = s.e.Shutdown(ctx, vm, 10*time.Second)
 	progress(Step{Label: "recording " + img.Name + " " + version})
-	final := TartName(img.Name, version)
+	final := DiskName(img.Name, version)
 	if err := s.e.Rename(ctx, vm, final); err != nil {
 		return failed("renaming the build VM", err)
 	}
 	rec := Record{Name: img.Name, Version: version, Base: img.Base, Station: s.o.Version, RecipeSHA: sha, BuiltAt: s.h.Clock.Now().UTC()}
-	if vms, err := s.e.List(ctx); err == nil {
-		for _, info := range vms {
-			if info.Name == final {
-				rec.SizeGB = info.SizeGB
+	if disks, err := s.e.Disks(ctx); err == nil {
+		for _, d := range disks {
+			if d.VM == final {
+				rec.SizeGB = int(d.Bytes / 1e9)
 			}
 		}
 	}
@@ -212,47 +212,25 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 }
 
 func (s *Service) dropLeftover(ctx context.Context, vm string) error {
-	vms, err := s.e.List(ctx)
+	disks, err := s.e.Disks(ctx)
 	if err != nil {
 		return err
 	}
-	if slices.ContainsFunc(vms, func(i system.VMInfo) bool { return i.Name == vm }) {
-		_ = s.e.Stop(ctx, vm, 10*time.Second)
+	if slices.ContainsFunc(disks, func(d contract.Disk) bool { return d.VM == vm }) {
+		_ = s.e.Shutdown(ctx, vm, 10*time.Second)
 		return s.e.Delete(ctx, vm)
 	}
 	return nil
 }
 
-func (s *Service) consolePath(image string) string {
-	return path.Join(s.o.Paths.State, "consoles", buildPrefix+image)
-}
-
-func (s *Service) boot(vm, image string) error {
-	console := s.consolePath(image)
-	logs := path.Join(s.o.Paths.State, "logs")
-	if err := s.h.FS.MkdirAll(path.Dir(console), 0o700); err != nil {
-		return err
-	}
-	if err := s.h.FS.MkdirAll(logs, 0o700); err != nil {
-		return err
-	}
-	// invariant: tart opens --serial-path for reading and writing and refuses to run when the file is missing.
-	if err := s.h.FS.WriteFile(console, nil, 0o600); err != nil {
-		return err
-	}
-	argv := s.e.RunArgv(vm, console, system.RunOptions{})
-	_, err := s.h.Run.Start(system.Cmd{Name: argv[0], Args: argv[1:]}, path.Join(logs, buildPrefix+image+".log"))
-	return err
-}
-
 func (s *Service) waitStopped(ctx context.Context, vm string) error {
 	for range int(stopWait / pollEvery) {
-		vms, err := s.e.List(ctx)
+		disks, err := s.e.Disks(ctx)
 		if err != nil {
 			return err
 		}
-		for _, info := range vms {
-			if info.Name == vm && info.State == system.VMStopped {
+		for _, d := range disks {
+			if d.VM == vm && d.State == contract.DiskStopped {
 				return nil
 			}
 		}

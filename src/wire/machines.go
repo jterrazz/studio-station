@@ -11,7 +11,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/remote"
-	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	machinescmd "github.com/jterrazz/studio-station/src/surface/cli/machines"
 	machinesadd "github.com/jterrazz/studio-station/src/surface/cli/machines/add"
@@ -33,7 +32,7 @@ const (
 )
 
 func (m machine) machines(_ bool) *machines.Service {
-	return machines.New(m.host, tart.New(m.host.Run), m.store, hostNodes{service: m.tailnet()}, fleetImages{service: m.images()}, m.hostDaemon(), leaseReleaser{m: m}, machines.Options{
+	return machines.New(m.host, m.hypervisor(), m.store, hostNodes{service: m.tailnet()}, fleetImages{service: m.images()}, m.hostDaemon(), leaseReleaser{m: m}, machines.Options{
 		Ports: machines.Ports{
 			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
 			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),
@@ -92,7 +91,7 @@ type fleetImages struct{ service *images.Service }
 
 func (i fleetImages) KeyPath() string { return i.service.KeyPath() }
 
-func (i fleetImages) Latest(ctx context.Context, image string) (tartName, version string, err error) {
+func (i fleetImages) Latest(ctx context.Context, image string) (disk, version string, err error) {
 	r, err := i.service.Latest(ctx, image)
 	var unbuilt *images.NotBuiltError
 	if errors.As(err, &unbuilt) {
@@ -101,7 +100,7 @@ func (i fleetImages) Latest(ctx context.Context, image string) (tartName, versio
 	if err != nil {
 		return "", "", err
 	}
-	return images.TartName(r.Name, r.Version), r.Version, nil
+	return images.DiskName(r.Name, r.Version), r.Version, nil
 }
 
 func createAsker(env kit.Env) kit.Asker {

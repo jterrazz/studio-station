@@ -3,9 +3,9 @@ package machines
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 type NotAVMError struct{ Name, Verb string }
@@ -152,12 +152,12 @@ func (s *Service) Remove(ctx context.Context, name string) (DeleteReport, error)
 	// leases and their serve entries are released.
 	report := DeleteReport{Name: name}
 	s.retireAgent(ctx, name)
-	if s.engineState(ctx, name) == system.VMRunning {
-		if err := s.engine.Stop(ctx, name, hardStopWait); err != nil {
+	if s.engineState(ctx, name) == contract.DiskRunning {
+		if err := s.engine.Shutdown(ctx, name, hardStopWait); err != nil {
 			return report, err
 		}
 	}
-	if s.engineState(ctx, name) != system.VMMissing {
+	if s.engineState(ctx, name) != diskMissing {
 		if err := s.engine.Delete(ctx, name); err != nil {
 			return report, err
 		}

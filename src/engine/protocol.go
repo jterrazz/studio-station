@@ -159,12 +159,6 @@ func (c Client) Do(ctx context.Context, op string, args Request, out any) error 
 	return nil
 }
 
-func RunCmd(argv []string, exitFile string) system.Cmd {
-	// invariant: a VM's run is detached from the daemon, and its exit code is written
-	// by its own wrapper, so a daemon restart reads the end of a run it never waited on.
-	return system.Cmd{Name: "sh", Args: append([]string{"-c", `"$@"; echo "$?" >"` + exitFile + `"`, "sh"}, argv...)}
-}
-
 const Label = catalog.DaemonLabel
 
 func Plist(executable string, env map[string]string, logPath string) string {

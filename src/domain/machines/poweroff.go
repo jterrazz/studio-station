@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
 const (
@@ -14,34 +14,36 @@ const (
 	natIPWait     = 10 * time.Second
 )
 
-func (s *Service) engineState(ctx context.Context, name string) system.VMState {
-	infos, err := s.engine.List(ctx)
+const diskMissing contract.DiskState = ""
+
+func (s *Service) engineState(ctx context.Context, name string) contract.DiskState {
+	disks, err := s.engine.Disks(ctx)
 	if err != nil {
-		return system.VMMissing
+		return diskMissing
 	}
-	for _, i := range infos {
-		if i.Name == name {
-			return i.State
+	for _, d := range disks {
+		if d.VM == name {
+			return d.State
 		}
 	}
-	return system.VMMissing
+	return diskMissing
 }
 
 // invariant: a graceful stop is the guest's own poweroff, so its station-intent
 // unit runs and the stop reads as declared; the hard stop is only for a guest
 // that ignored it past the budget.
 func (s *Service) powerOff(ctx context.Context, name, user string) error {
-	if s.engineState(ctx, name) != system.VMRunning {
+	if s.engineState(ctx, name) != contract.DiskRunning {
 		return nil
 	}
-	if ip, err := s.engine.IP(ctx, name, natIPWait); err == nil {
+	if addr, err := s.engine.Address(ctx, name, natIPWait); err == nil {
 		// outside: ssh exits 255 when the poweroff cuts its own session, which is
 		// the success path.
-		if _, err := s.nat(ctx, ip, user, "", 30*time.Second, "sudo", "systemctl", "--no-block", "poweroff"); err != nil {
+		if _, err := s.nat(ctx, addr.String(), user, "", 30*time.Second, "sudo", "systemctl", "--no-block", "poweroff"); err != nil {
 			return err
 		}
 		for waited := time.Duration(0); waited < stoppedBudget; waited += stoppedPoll {
-			if s.engineState(ctx, name) != system.VMRunning {
+			if s.engineState(ctx, name) != contract.DiskRunning {
 				return nil
 			}
 			if err := s.h.Clock.Sleep(ctx, stoppedPoll); err != nil {
@@ -49,7 +51,7 @@ func (s *Service) powerOff(ctx context.Context, name, user string) error {
 			}
 		}
 	}
-	return s.engine.Stop(ctx, name, hardStopWait)
+	return s.engine.Shutdown(ctx, name, hardStopWait)
 }
 
 func (s *Service) PowerOff(ctx context.Context, name string) error {
@@ -57,5 +59,5 @@ func (s *Service) PowerOff(ctx context.Context, name string) error {
 }
 
 func (s *Service) EngineRunning(ctx context.Context, name string) bool {
-	return s.engineState(ctx, name) == system.VMRunning
+	return s.engineState(ctx, name) == contract.DiskRunning
 }

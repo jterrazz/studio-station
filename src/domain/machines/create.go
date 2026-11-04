@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"path"
 	"strconv"
 	"strings"
@@ -45,7 +47,7 @@ type CreateRequest struct {
 	Image, Name string
 	Lifetime    Lifetime
 	Network     string
-	Resources   system.Resources
+	Resources   Resources
 }
 
 type Created struct {
@@ -74,9 +76,12 @@ type NoImageError struct{ Image string }
 
 func (e *NoImageError) Error() string { return "image " + e.Image + " is not built here" }
 
-type NoEngineError struct{ Cause error }
+type NoEngineError struct {
+	Hypervisor string
+	Cause      error
+}
 
-func (*NoEngineError) Error() string { return "tart is not installed or does not answer" }
+func (e *NoEngineError) Error() string { return e.Hypervisor + " is not installed or does not answer" }
 
 func (e *NoEngineError) Unwrap() error { return e.Cause }
 
@@ -105,15 +110,15 @@ type BadSizeError struct{ Flag, Value string }
 
 func (e *BadSizeError) Error() string { return "--" + e.Flag + " \"" + e.Value + "\" is not a size" }
 
-func ParseResources(cpus int, memory, disk string) (system.Resources, error) {
+func ParseResources(cpus int, memory, disk string) (Resources, error) {
 	// invariant: --memory counts in binary units and --disk in decimal ones, as
-	// tart takes them; a bare number is gigabytes, and zero keeps the default.
+	// the hypervisor takes them; a bare number is gigabytes, and zero keeps the default.
 	memoryBytes, err := parseSize("memory", memory, 1024)
 	if err != nil {
-		return system.Resources{}, err
+		return Resources{}, err
 	}
 	diskBytes, err := parseSize("disk", disk, 1000)
-	return system.Resources{CPUs: cpus, MemoryBytes: memoryBytes, DiskBytes: diskBytes}, err
+	return Resources{CPUs: cpus, MemoryBytes: memoryBytes, DiskBytes: diskBytes}, err
 }
 
 func parseSize(flag, value string, base int64) (int64, error) {
@@ -176,7 +181,7 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 		return r, &BadNameError{Name: r.Name}
 	}
 	if _, err := s.engine.Version(ctx); err != nil {
-		return r, &NoEngineError{Cause: err}
+		return r, &NoEngineError{Hypervisor: s.engine.Name(), Cause: err}
 	}
 	if _, _, err := s.img.Latest(ctx, r.Image); err != nil {
 		return r, err
@@ -276,7 +281,7 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		return Created{}, err
 	}
 	img, _ := imageOf(r.Image)
-	tartName, version, err := s.img.Latest(ctx, r.Image)
+	disk, version, err := s.img.Latest(ctx, r.Image)
 	if err != nil {
 		return Created{}, err
 	}
@@ -294,12 +299,12 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		return Created{}, &CreateFailedError{Name: r.Name, Step: step, Cause: cause}
 	}
 
-	say("cloning " + tartName)
-	if err = s.engine.Clone(ctx, tartName, r.Name); err != nil {
+	say("cloning " + disk)
+	if err = s.engine.Clone(ctx, imagescontract.ImageLocation{Hypervisor: s.engine.Name(), Ref: disk}, r.Name); err != nil {
 		return fail("the clone", err)
 	}
 	made.vm = true
-	if err = s.engine.Resize(ctx, r.Name, r.Resources); err != nil {
+	if err = s.engine.Resize(ctx, r.Name, r.Resources.size()); err != nil {
 		return fail("the resize", err)
 	}
 	if err = s.writeRecord(rec); err != nil {
@@ -322,10 +327,11 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		return fail("the start", err)
 	}
 	say("first boot")
-	ip, err := s.engine.IP(ctx, r.Name, ipWait)
+	addr, err := s.engine.Address(ctx, r.Name, ipWait)
 	if err != nil {
 		return fail("the first boot", err)
 	}
+	ip := addr.String()
 	if err := s.firstBoot(ctx, img, ip, user, r.Name, r.Lifetime); err != nil {
 		return fail("the first boot", err)
 	}
@@ -390,8 +396,8 @@ func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
 		_ = s.rel.ReleaseVM(ctx, name)
 	}
 	if m.vm {
-		if s.engineState(ctx, name) == system.VMRunning {
-			_ = s.engine.Stop(ctx, name, hardStopWait)
+		if s.engineState(ctx, name) == contract.DiskRunning {
+			_ = s.engine.Shutdown(ctx, name, hardStopWait)
 		}
 		_ = s.engine.Delete(ctx, name)
 	}
@@ -399,8 +405,7 @@ func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
 }
 
 func (s *Service) removeFiles(name string, record bool) {
-	files := []string{s.LogPath(name), s.ConsolePath(name), s.KnownHostsPath(name),
-		path.Join(s.o.Paths.State, "runs", name+".pid"), path.Join(s.o.Paths.State, "runs", name+".exit")}
+	files := []string{s.LogPath(name), s.KnownHostsPath(name)}
 	if record {
 		files = append(files, s.recordPath(name))
 	}

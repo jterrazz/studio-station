@@ -2,6 +2,8 @@ package machines
 
 import (
 	"context"
+	model "github.com/jterrazz/studio-station/src/machines"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"path"
 	"strings"
 	"time"
@@ -54,13 +56,13 @@ type Releaser interface {
 }
 
 type Images interface {
-	Latest(ctx context.Context, image string) (tartName, version string, err error)
+	Latest(ctx context.Context, image string) (disk, version string, err error)
 	KeyPath() string
 }
 
 type Service struct {
 	h      system.Host
-	engine system.Engine
+	engine contract.Hypervisor
 	store  settings.Store
 	nodes  Nodes
 	img    Images
@@ -69,16 +71,26 @@ type Service struct {
 	o      Options
 }
 
-func New(h system.Host, e system.Engine, store settings.Store, nodes Nodes, img Images, d Daemon, rel Releaser, o Options) *Service {
+func New(h system.Host, e contract.Hypervisor, store settings.Store, nodes Nodes, img Images, d Daemon, rel Releaser, o Options) *Service {
 	return &Service{h: h, engine: e, store: store, nodes: nodes, img: img, daemon: d, rel: rel, o: o}
 }
 
-type Lifetime string
+type Lifetime = model.Lifetime
 
 const (
-	Temporary Lifetime = "temporary"
-	Lasting   Lifetime = "lasting"
+	Temporary = model.Temporary
+	Lasting   = model.Lasting
 )
+
+type Resources struct {
+	CPUs        int
+	MemoryBytes int64
+	DiskBytes   int64
+}
+
+func (r Resources) size() model.Size {
+	return model.Size{CPUs: r.CPUs, Memory: r.MemoryBytes, Disk: r.DiskBytes}
+}
 
 type VMState string
 
@@ -102,7 +114,7 @@ type VMRecord struct {
 	Lifetime             Lifetime
 	Want, Network        string
 	Env                  map[string]string
-	Resources            system.Resources
+	Resources            Resources
 	Lent                 []string
 	CreatedAt            time.Time
 }
@@ -121,7 +133,7 @@ type VM struct {
 	Kind                       catalog.MachineKind
 	Lifetime                   Lifetime
 	State                      VMState
-	Resources                  system.Resources
+	Resources                  Resources
 	SizeGB                     int
 	IP, Network, Guest, Detail string
 	Lent                       []string
