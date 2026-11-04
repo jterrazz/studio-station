@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/accounts/adapter/studio"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
@@ -73,5 +74,5 @@ func (e *remoteExit) Error() string {
 }
 
 func (m machine) secrets() *secrets.Service {
-	return secrets.New(m.host, m.store, vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}, secrets.Options{Here: m.kind})
+	return secrets.New(m.host, m.store, vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}, studio.New(m.host.Run, studio.Options{Budget: secrets.ExportBudget}), secrets.Options{Here: m.kind})
 }

@@ -5,13 +5,15 @@ import (
 	"io/fs"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
-	loaderPath  = "dotfiles/zsh/zshrc.sh"
-	tokenBudget = 2 * time.Second
+	loaderPath = "dotfiles/zsh/zshrc.sh"
+	// value: how long a new shell waits for the Claude token; past it, the shell starts without.
+	TokenBudget = 2 * time.Second
 )
 
 // invariant: mise is activated only when it is on PATH, and the activation comes after the
@@ -27,13 +29,14 @@ type Options struct {
 }
 
 type Service struct {
-	h     system.Host
-	files fs.FS
-	o     Options
+	h      system.Host
+	files  fs.FS
+	source contract.SecretSource
+	o      Options
 }
 
-func New(h system.Host, files fs.FS, o Options) *Service {
-	return &Service{h: h, files: files, o: o}
+func New(h system.Host, files fs.FS, source contract.SecretSource, o Options) *Service {
+	return &Service{h: h, files: files, source: source, o: o}
 }
 
 func (s *Service) Zsh(ctx context.Context, completion string) (string, error) {
@@ -70,14 +73,9 @@ func (s *Service) token(ctx context.Context) (string, bool) {
 	if s.o.Here != catalog.Linux && s.o.Here != catalog.MacOS {
 		return "", false
 	}
-	out, err := s.h.Run.Output(ctx, system.Cmd{
-		Name:    "studio",
-		Args:    []string{"credentials", "export", tokenName},
-		Env:     []string{"STUDIO_CREDENTIALS_BACKEND=file"},
-		Timeout: tokenBudget,
-	})
-	if err != nil || out.ExitCode != 0 {
+	exported, err := s.source.Export(ctx, []string{tokenName})
+	if err != nil {
 		return "", false
 	}
-	return ClaudeTokenLine([]byte(out.Stdout))
+	return ClaudeTokenLine(exported)
 }
