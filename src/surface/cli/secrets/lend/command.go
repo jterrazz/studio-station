@@ -6,15 +6,16 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/jterrazz/studio-station/src/domain/secrets"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pagesecrets "github.com/jterrazz/studio-station/src/pages/secrets"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Secrets *secrets.Service
-	Here    page.Context
+	LendList func() []string
+	Here     page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -28,9 +29,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			f.StringVar(&in.For, "for", "", "how long the lend lasts, 1m to 168h (default 12h)")
 		},
 		Bind:     bind,
-		Complete: func([]string, string) []string { return d.Secrets.LendList() },
+		Complete: func([]string, string) []string { return d.LendList() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			report, err := d.Secrets.Lend(ctx, in.To, in.Names, in.Term)
+			report, err := call.Invoke(ctx, env.Calls, env.Target, accountscalls.Lend, accountscalls.LendIn{To: in.To, Names: in.Names, Term: in.Term}, nil)
 			if err != nil {
 				return err
 			}

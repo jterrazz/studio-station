@@ -9,6 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
+	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
 	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
 	powerscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/power"
 	storagescreen "github.com/jterrazz/studio-station/src/surface/tui/screens/storage"
@@ -18,7 +19,7 @@ import (
 
 func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 	return func(ctx context.Context) error {
-		storage := m.storage(env)
+		storage, accounts := m.storage(env), m.accounts()
 		return tui.Run(ctx, tui.Deps{
 			Here:     m.where,
 			Status:   statusService(env, m),
@@ -30,7 +31,7 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 			Secrets:  m.secrets(),
 			Services: m.services(env),
 			Tailnet:  m.tailnetStatus(),
-			Accounts: m.accounts(),
+			Accounts: accountsscreen.Deps{Calls: env.Calls, Target: env.Target, Forget: accounts.Forget, LendList: accounts.LendList},
 			Power: powerscreen.Deps{Calls: env.Calls, Target: env.Target, Power: tuiPower{Service: m.power(), m: m, describe: func(err error) (string, string) {
 				f := kit.Translate(err, "")
 				return f.Message, f.Hint

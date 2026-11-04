@@ -25,8 +25,8 @@ const (
 	stepBudget   = 2 * time.Minute
 	ExportBudget = stepBudget
 	DefaultLend  = accounts.DefaultShareTerm
-	ShortestLend = time.Minute
-	LongestLend  = 7 * 24 * time.Hour
+	ShortestLend = accounts.ShortestShare
+	LongestLend  = accounts.LongestShare
 )
 
 var (
@@ -63,24 +63,11 @@ func New(h system.Host, guest Guest, st Stores, source contract.SecretSource, o 
 	return &Service{clock: h.Clock, run: h.Run, guest: guest, st: st, source: source, here: o.Here}
 }
 
-type Report struct {
-	LendList []string
-	Lent     map[string][]string
-	Lends    map[string][]Lend
-	Kept     []string
-}
-
-type LendReport struct {
-	To    string
-	Names []string
-	At    time.Time
-	Until time.Time
-}
-
-type RecallReport struct {
-	From     map[string][]string
-	Warnings []string
-}
+type (
+	Report       = accounts.Lending
+	LendReport   = accounts.LendReport
+	RecallReport = accounts.RecallReport
+)
 
 func (s *Service) List(ctx context.Context) (Report, error) {
 	list, err := s.st.ShareList.Get()

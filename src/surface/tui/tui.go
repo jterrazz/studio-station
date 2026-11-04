@@ -5,7 +5,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
@@ -34,7 +33,7 @@ type Deps struct {
 	Secrets  *secrets.Service
 	Services *services.Service
 	Tailnet  fleetscreen.Tailnet
-	Accounts *accounts.Service
+	Accounts accountsscreen.Deps
 	Power    powerscreen.Deps
 	Remote   func(ctx context.Context, machine string, words []string) error
 	Station  func(ctx context.Context, words []string) error
@@ -74,7 +73,7 @@ func Run(ctx context.Context, d Deps) error {
 			Remote: d.Remote, Describe: describe,
 		}, d.Here),
 		servicesscreen.New(ctx, d.Services, d.Here, describe),
-		accountsscreen.New(ctx, d.Accounts, d.Secrets, d.Here, describe),
+		accountsscreen.New(ctx, d.Accounts, d.Here, describe),
 		powerscreen.New(ctx, d.Power, d.Here, describe),
 	}, d.Prefer)
 	app.stop = d.Stop
