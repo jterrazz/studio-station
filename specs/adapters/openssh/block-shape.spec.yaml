@@ -1,9 +1,9 @@
 description: 'each block has its shape: a VM here through its pipe, one elsewhere through its host'
 fixture:
-    - ./__fixtures__/hosts-x-y/
-    - ./__fixtures__/stubs/
-    - ./__fixtures__/fleet-y-answers/
-    - ./__fixtures__/local-vm/
+    - ../../__fixtures__/hosts-x-y/
+    - ../../__fixtures__/machines-stubs/
+    - ../../__fixtures__/fleet-y-answers/
+    - ../../__fixtures__/local-vm/
 runs:
     - command: 'machines > /dev/null; /usr/bin/sed -n ''/^Host /p;/ProxyCommand/p;/IdentityFile/p'' .ssh/config | /usr/bin/sed "s|$PWD|WORKDIR|g"; /usr/bin/grep -c tailscale .ssh/config'
       exit: 1

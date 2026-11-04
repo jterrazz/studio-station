@@ -1,7 +1,7 @@
 description: 'machines pipe refuses before any byte: an unknown name, a host, --on, a VM'
 fixture:
     - ../../../__fixtures__/vms/
-    - ../__fixtures__/local-vm/
+    - ../../../__fixtures__/local-vm/
 env: daemon
 runs:
     - command: 'machines pipe nope'

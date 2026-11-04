@@ -1,6 +1,6 @@
 description: 'storage on a terminal fills a sized row and its mark while a hung tool holds the inventory'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/hung-docker/
     - ./__fixtures__/go/
 env: terminal

@@ -1,6 +1,6 @@
 description: 'on a terminal, setup installs the missing system tools, Homebrew first, then one bundle'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/system-installers/
 env: terminal
 runs:

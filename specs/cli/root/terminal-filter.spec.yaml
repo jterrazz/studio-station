@@ -1,6 +1,6 @@
 description: 'the filter takes every key but esc and enter: q1i filters Tools and neither quits nor moves the tab'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
 env: terminal
 runs:

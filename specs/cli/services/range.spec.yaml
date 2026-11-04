@@ -1,7 +1,7 @@
 description: 'each host heads its services with its range, leased and free, on a terminal and in JSON'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/ten-ports/
 env: terminal
 runs:

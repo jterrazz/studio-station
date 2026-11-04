@@ -1,6 +1,6 @@
 description: 'on a terminal the Claude token reaches studio on stdin and the lend list once; no studio, no token'
 fixture:
-    - ../../__fixtures__/terminal/
+    - ../../../__fixtures__/terminal/
     - ../__fixtures__/studio/
 env: terminal
 runs:

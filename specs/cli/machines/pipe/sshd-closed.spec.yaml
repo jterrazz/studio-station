@@ -2,7 +2,7 @@ description: 'a VM whose sshd does not answer is a failure that names the probe'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/daemon-vm/
-    - ../__fixtures__/local-vm/
+    - ../../../__fixtures__/local-vm/
 env: daemon
 runs:
     - command: '--version >/dev/null; echo running > .tart-vms/linux-1; STATION_GUEST_SSH_PORT=9 "$STATION" machines pipe linux-1 </dev/null'

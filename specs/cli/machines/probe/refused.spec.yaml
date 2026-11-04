@@ -1,5 +1,5 @@
 description: 'probing this machine or an unknown one is refused, exit 2, before anything is reached'
-fixture: ../__fixtures__/hosts-x-y/
+fixture: ../../../__fixtures__/hosts-x-y/
 runs:
     - command: 'machines probe x'
       exit: 2

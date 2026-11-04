@@ -1,6 +1,6 @@
 description: 'every tab draws its rows at once and fills them, a late probe says why, q leaves nothing running'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
     - ../__fixtures__/recording/
     - ../__fixtures__/slow-gpg/

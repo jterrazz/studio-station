@@ -1,6 +1,6 @@
 description: 'tools on a terminal sizes each section to its own rows, never to the widest of the page'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ../../__fixtures__/stubs/
 env: terminal
 runs:

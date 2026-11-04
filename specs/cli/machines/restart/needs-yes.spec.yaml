@@ -1,7 +1,7 @@
 description: 'restarting a host piped without --yes is refused, exit 2, and nothing is reached'
 fixture:
-    - ../__fixtures__/hosts-x-y/
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/hosts-x-y/
+    - ../../../__fixtures__/machines-stubs/
 runs:
     - command: 'machines restart y </dev/null'
       exit: 2

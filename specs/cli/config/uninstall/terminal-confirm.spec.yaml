@@ -1,6 +1,6 @@
 description: 'on a terminal uninstall asks: no is cancelled with one block, ctrl-c exits 130, yes runs it'
 fixture:
-    - ../../__fixtures__/terminal/
+    - ../../../__fixtures__/terminal/
     - ../__fixtures__/tmutil/
 env: terminal
 runs:

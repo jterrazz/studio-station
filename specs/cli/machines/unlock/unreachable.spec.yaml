@@ -1,8 +1,8 @@
 description: 'on a terminal a host that fails the pre-check is unreachable, exit 1, and no session opens'
 fixture:
-    - ../../__fixtures__/terminal/
-    - ../__fixtures__/hosts-x-y/
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/terminal/
+    - ../../../__fixtures__/hosts-x-y/
+    - ../../../__fixtures__/machines-stubs/
     - ./__fixtures__/unreachable/
 env: terminal
 runs:

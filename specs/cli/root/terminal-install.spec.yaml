@@ -1,6 +1,6 @@
 description: 'install asks first, runs brew off the TUI on yes, and the status bar names the outcome'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
 env: terminal
 runs:

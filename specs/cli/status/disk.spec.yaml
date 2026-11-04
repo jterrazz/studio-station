@@ -1,5 +1,5 @@
 description: 'the disk view sizes placed rows by level, and caches no placed row claims as other'
-fixture: ../__fixtures__/terminal/
+fixture: ../../__fixtures__/terminal/
 env: terminal
 runs:
     - command: '--version >/dev/null; /bin/mkdir -p Library/Caches/go-build .local/share/station/vms/cache/OCIs .cache/uv Library/Caches/ms-playwright/chromium-1 .cache/unknown-tool && echo aaaa > Library/Caches/go-build/a && echo bbbb > .local/share/station/vms/cache/OCIs/b && echo cccc > .cache/uv/c && echo dddd > Library/Caches/ms-playwright/chromium-1/d && echo eeeeeeee > .cache/unknown-tool/e'
