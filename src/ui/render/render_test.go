@@ -315,6 +315,7 @@ func TestStateColoursAreOnMarksAndLinesOnRules(t *testing.T) {
 		state := []string{rgb(c.Good), rgb(c.Warn), rgb(c.Bad)}
 		marks := token.MarkOK + token.MarkAttention + token.MarkAbsent + token.MarkBroken + token.MarkPending + "0123456789 "
 		lines := token.Rule + token.Divider + "├└ "
+		notFor := token.MarkNotFor + "0123456789 "
 		for _, f := range fixtures(t) {
 			b := tui.New("Tab", "rows").Themed(dark).Show(f.page)
 			for _, out := range []string{string(tty.Render(f.page, tty.Options{Width: 100, Dark: dark})), b.Body(100, 200) + b.Footer(100, false)} {
@@ -326,8 +327,11 @@ func TestStateColoursAreOnMarksAndLinesOnRules(t *testing.T) {
 					if slices.Contains(state, s.fg) && text != "Error:" && strings.Trim(text, marks) != "" {
 						t.Errorf("%s: a state color on %q (K1)", f.name, text)
 					}
-					if s.fg == rgb(c.Subtle) && strings.Trim(text, lines) != "" {
+					if s.fg == rgb(c.Subtle) && strings.Trim(text, lines) != "" && strings.Trim(text, notFor) != "" {
 						t.Errorf("%s: Subtle on text %q (K2)", f.name, text)
+					}
+					if tone, ok := map[string]string{token.MarkOffHere: rgb(c.Muted), token.MarkNotFor: rgb(c.Subtle)}[text]; ok && s.fg != tone {
+						t.Errorf("%s: the mark %q is not in its token (SPEC §2.3)", f.name, text)
 					}
 				}
 			}

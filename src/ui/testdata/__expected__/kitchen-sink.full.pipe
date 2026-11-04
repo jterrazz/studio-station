@@ -39,6 +39,9 @@
 ◐	expiring	attention	42m left · station secrets lend --to api operator:claude:oauth-token
 ◐	guard	attention	28% · on battery · station power
 ○	absent		station tools install mas
+⊘	off-here	turned off on this machine
+–	not-for-this-machine	Macs only
+?	not-known	does not answer
 # Fleet
 ●	jterrazz-mac-mini	host	jterrazz-mac-mini
 ●	linux-1	lasting	jterrazz-mac-mini

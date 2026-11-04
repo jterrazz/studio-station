@@ -133,7 +133,12 @@ func kitchen(edit func(*page.Page)) page.Page {
 		}
 		marks.Items = append(marks.Items, it(x))
 	}
-	marks.Items = append(marks.Items, it(page.Row{ID: "absent", Mark: page.Absent, Label: "absent", Hint: page.KeyHint("station tools install mas", "i")}))
+	marks.Items = append(marks.Items,
+		it(page.Row{ID: "absent", Mark: page.Absent, Label: "absent", Hint: page.KeyHint("station tools install mas", "i")}),
+		it(row("off-here", page.OffHere, page.Text("turned off on this machine"))),
+		it(row("not-for-this-machine", page.NotForThisMachine, page.Text("Macs only"))),
+		it(row("not-known", page.NotKnown, page.Text("does not answer"))),
+	)
 	fleet := page.Section{
 		ID: "fleet", Title: "Fleet",
 		Columns: []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "kind", Kind: page.KindText, Keep: 40}, {Key: "host", Kind: page.KindText, Keep: 10, Show: page.PipeOnly}},
