@@ -1,6 +1,6 @@
 description: 'a tapped formula is written fully qualified and trusted'
 fixture:
-    - ../__fixtures__/stubs/
+    - ../../__fixtures__/stubs/
     - ./__fixtures__/trusted-tap/
 runs:
     - command: 'tools install terraform'

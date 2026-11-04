@@ -1,5 +1,5 @@
 description: 'a skill without the skills CLI is refused with the install that repairs it'
-fixture: ../__fixtures__/stubs/
+fixture: ../../../__fixtures__/stubs/
 runs:
     - command: 'tools install frontend-design'
       exit: 1

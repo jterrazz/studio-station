@@ -1,5 +1,5 @@
 description: 'names with --via, the deleted --all and an unknown manager are refused'
-fixture: ../__fixtures__/stubs/
+fixture: ../../../__fixtures__/stubs/
 runs:
     - command: 'tools upgrade bat --via brew'
       exit: 2

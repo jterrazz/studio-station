@@ -1,7 +1,7 @@
 description: 'a skill installs as a tool, through the skills CLI'
 fixture:
-    - ../__fixtures__/stubs/
-    - ../__fixtures__/skills-cli/
+    - ../../__fixtures__/stubs/
+    - ../../__fixtures__/skills-cli/
 runs:
     - command: 'tools install frontend-design'
       exit: 0

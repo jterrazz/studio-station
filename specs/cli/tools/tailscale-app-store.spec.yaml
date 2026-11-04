@@ -1,6 +1,6 @@
 description: 'the App Store app counts as tailscale installed, unmanaged: never upgraded nor removed by station'
 fixture:
-    - ./__fixtures__/stubs/
+    - ../../__fixtures__/stubs/
     - ./upgrade/__fixtures__/two-installed/
     - ../../__fixtures__/tailscale-app-store/
 runs:

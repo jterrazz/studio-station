@@ -1,6 +1,6 @@
 description: 'an interactive Then item is skipped off a terminal, as a row naming its command'
 fixture:
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/stubs/
     - ./__fixtures__/then-gpg/
 runs:
     - command: 'tools install gpg </dev/null'

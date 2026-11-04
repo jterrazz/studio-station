@@ -8,6 +8,17 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/apps/adapter/app"
+	"github.com/jterrazz/studio-station/src/apps/adapter/brew"
+	"github.com/jterrazz/studio-station/src/apps/adapter/bun"
+	"github.com/jterrazz/studio-station/src/apps/adapter/mas"
+	"github.com/jterrazz/studio-station/src/apps/adapter/mise"
+	"github.com/jterrazz/studio-station/src/apps/adapter/npm"
+	"github.com/jterrazz/studio-station/src/apps/adapter/script"
+	"github.com/jterrazz/studio-station/src/apps/adapter/shell"
+	"github.com/jterrazz/studio-station/src/apps/adapter/skills"
+	"github.com/jterrazz/studio-station/src/apps/adapter/uv"
+	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/tools"
@@ -33,16 +44,43 @@ func toolsService(env kit.Env, m machine) *tools.Service {
 	if env.Interactive {
 		ask = env.Prompt
 	}
+	registry, bundler := installers(m)
 	return tools.New(m.host, catalog.Tools, configurer{config: configService(m), ask: ask}, tools.Options{
-		Pool:        m.pool,
-		Here:        m.kind,
-		MiseShims:   filepath.Join(m.or("MISE_DATA_DIR", filepath.Join(m.host.Env.Home(), ".local", "share", "mise")), "shims"),
-		Path:        m.vars["PATH"],
-		Root:        m.systemRoot(),
-		APIURL:      m.or("STATION_GITHUB_API_URL", "https://api.github.com"),
-		GitHubToken: m.or("GITHUB_TOKEN", m.vars["GH_TOKEN"]),
-		VMs:         m.machines(env.Interactive),
+		Pool:       m.pool,
+		Here:       m.kind,
+		Root:       m.systemRoot(),
+		Installers: registry,
+		Bundler:    bundler,
+		VMs:        m.machines(env.Interactive),
 	})
+}
+
+func installers(m machine) (contract.Installers, contract.Bundler) {
+	run := m.host.Run
+	shims := filepath.Join(m.or("MISE_DATA_DIR", filepath.Join(m.host.Env.Home(), ".local", "share", "mise")), "shims")
+	// invariant: a bundle runs with mise's shims first once mise is installed,
+	// so a formula's post-install finds the runtimes it pins.
+	bundle := brew.New(run, func() []string {
+		if _, ok := run.LookPath("mise"); ok {
+			return []string{"PATH=" + shims + ":" + m.vars["PATH"]}
+		}
+		return nil
+	})
+	registry := contract.Installers{}
+	for _, i := range []contract.Installer{
+		bundle.Formulae(), bundle.Casks(),
+		mas.New(run, bundle), npm.New(run, bundle), uv.New(run, bundle),
+		bun.New(run), mise.New(run),
+		skills.New(skills.Options{
+			Run: run, FS: m.host.FS, Net: m.host.Net, Home: m.host.Env.Home(),
+			APIURL: m.or("STATION_GITHUB_API_URL", "https://api.github.com"),
+			Token:  m.or("GITHUB_TOKEN", m.vars["GH_TOKEN"]),
+		}),
+		script.New(run), shell.New(run), app.New(),
+	} {
+		registry[i.Method()] = i
+	}
+	return registry, bundle
 }
 
 // invariant: a Then item that asks values or a terminal is skipped off one, as a

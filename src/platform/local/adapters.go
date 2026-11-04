@@ -9,7 +9,11 @@ type (
 	Output = system.Output
 	Runner = system.Runner
 	FS     = system.FS
+	Net    = system.Net
+	Stream = system.Stream
 )
+
+const ToStderr = system.ToStderr
 
 var (
 	ErrNotFound = system.ErrNotFound

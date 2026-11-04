@@ -1,6 +1,6 @@
 description: 'a tool''s Then item runs inside the install: tools install tmux writes the embedded tmux config'
 fixture:
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/stubs/
     - ./__fixtures__/then-tmux/
 runs:
     - command: 'tools install tmux'

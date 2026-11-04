@@ -1,5 +1,5 @@
 description: 'a tool a script installed is refused before the confirm gate'
-fixture: ../__fixtures__/stubs/
+fixture: ../../../__fixtures__/stubs/
 runs:
     - command: 'tools uninstall claude'
       exit: 2

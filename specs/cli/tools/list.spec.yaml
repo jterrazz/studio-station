@@ -1,5 +1,5 @@
 description: 'station tools piped prints records only: sections, tab-separated rows, no colour, no hint'
-fixture: ./__fixtures__/stubs/
+fixture: ../../__fixtures__/stubs/
 runs:
     - command: 'tools | /usr/bin/head -1 | /usr/bin/cut -c1-2'
       exit: 0

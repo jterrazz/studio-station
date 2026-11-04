@@ -2,13 +2,11 @@ package tools
 
 import (
 	"context"
-	"errors"
 	"slices"
-	"strconv"
-	"strings"
 
+	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/core/call"
 )
 
 const (
@@ -46,7 +44,7 @@ func (s *Service) Install(ctx context.Context, r InstallRequest) ([]Outcome, err
 	}
 	for len(pending) > 0 {
 		var batch []catalog.Tool
-		if s.row(pending[0]).bundleLine {
+		if _, ok := s.lined(pending[0]); ok {
 			batch = s.bundleBatch(pending, inRequest, outcomes)
 		} else {
 			batch = []catalog.Tool{pending[0]}
@@ -64,10 +62,10 @@ func (s *Service) Install(ctx context.Context, r InstallRequest) ([]Outcome, err
 			continue
 		}
 		var done []Outcome
-		if s.row(ready[0]).bundleLine {
-			done = s.bundle(ctx, verbInstall, ready, "--no-upgrade")
+		if _, ok := s.lined(ready[0]); ok {
+			done = s.bundle(ctx, verbInstall, ready, false)
 		} else {
-			done = []Outcome{s.run(ctx, verbInstall, ready[0], s.row(ready[0]).install)}
+			done = []Outcome{s.run(ctx, verbInstall, ready[0], contract.Installer.Install)}
 		}
 		for i := range done {
 			o := done[i]
@@ -96,7 +94,7 @@ func (s *Service) Uninstall(ctx context.Context, names []string) ([]Outcome, err
 			out = append(out, Outcome{Name: t.Name, Verb: verbUninstall, Result: catalog.StateAbsent, Detail: "not installed"})
 			continue
 		}
-		out = append(out, s.run(ctx, verbUninstall, t, s.row(t).uninstall))
+		out = append(out, s.run(ctx, verbUninstall, t, contract.Installer.Remove))
 	}
 	return out, nil
 }
@@ -110,19 +108,21 @@ func (s *Service) Upgrade(ctx context.Context, r UpgradeRequest) ([]Outcome, err
 		}
 		candidates = found
 	} else {
-		methods := map[catalog.Method]bool{}
+		via := map[catalog.Method]bool{}
 		for _, mm := range catalog.Managers {
-			if len(r.Via) == 0 || slices.Contains(r.Via, mm.Manager) {
+			if slices.Contains(r.Via, mm.Manager) {
 				for _, m := range mm.Methods {
-					methods[m] = true
+					via[m] = true
 				}
 			}
 		}
-		if len(r.Via) == 0 {
-			methods[catalog.MethodScript] = true
-		}
 		for _, t := range s.Placed() {
-			if methods[s.install(t).Method()] && s.row(t).upgradable() {
+			can := s.installer(t).Can()
+			reached := can.UpdateAll
+			if len(r.Via) > 0 {
+				reached = via[s.install(t).Method()]
+			}
+			if reached && can.Update {
 				candidates = append(candidates, t)
 			}
 		}
@@ -143,17 +143,17 @@ func (s *Service) Upgrade(ctx context.Context, r UpgradeRequest) ([]Outcome, err
 		case !upgradable && len(r.Names) > 0:
 			outcomes = append(outcomes, Outcome{Name: t.Name, Verb: verbUpgrade, Result: catalog.StateAbsent, Detail: "not installed: station tools install " + t.Name})
 		case !upgradable:
-		case s.row(t).bundleLine:
+		case s.isLined(t):
 			bundled = append(bundled, t)
 		default:
 			single = append(single, t)
 		}
 	}
 	if len(bundled) > 0 {
-		outcomes = append(outcomes, s.bundle(ctx, verbUpgrade, bundled, "--upgrade")...)
+		outcomes = append(outcomes, s.bundle(ctx, verbUpgrade, bundled, true)...)
 	}
 	for _, t := range single {
-		outcomes = append(outcomes, s.run(ctx, verbUpgrade, t, s.row(t).upgrade))
+		outcomes = append(outcomes, s.run(ctx, verbUpgrade, t, contract.Installer.Update))
 	}
 	return outcomes, nil
 }
@@ -161,7 +161,7 @@ func (s *Service) Upgrade(ctx context.Context, r UpgradeRequest) ([]Outcome, err
 func (s *Service) bundleBatch(pending []catalog.Tool, inRequest map[string]bool, done map[string]*Outcome) []catalog.Tool {
 	var batch []catalog.Tool
 	for _, t := range pending {
-		if !s.row(t).bundleLine {
+		if !s.isLined(t) {
 			continue
 		}
 		ready := true
@@ -177,27 +177,20 @@ func (s *Service) bundleBatch(pending []catalog.Tool, inRequest map[string]bool,
 	return batch
 }
 
-// hazard: brew's own prompts (a cask's sudo) read /dev/tty, not stdin, so feeding
-// the Brewfile on stdin (--file=-) does not steal them.
-func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, mode string) []Outcome {
+func (s *Service) isLined(t catalog.Tool) bool {
+	_, ok := s.lined(t)
+	return ok
+}
+
+func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, update bool) []Outcome {
 	lines := make([]string, 0, len(list))
 	for _, t := range list {
-		lines = append(lines, brewfileLine(s.install(t)))
+		l, _ := s.lined(t)
+		lines = append(lines, l.Line(s.install(t)))
 	}
-	c := system.Cmd{Name: "brew", Args: []string{"bundle", "install", mode, "--file=-"}, Stdin: strings.Join(lines, "\n") + "\n"}
-	if _, ok := s.h.Run.LookPath("mise"); ok && s.o.MiseShims != "" {
-		c.Env = []string{"PATH=" + s.o.MiseShims + ":" + s.o.Path}
-	}
-	ran, err := s.h.Run.Attach(ctx, c, system.ToStderr)
 	failure := ""
-	switch {
-	case err != nil:
-		failure = "brew bundle: " + err.Error()
-	case ran.ExitCode != 0:
-		failure = "brew bundle exited " + strconv.Itoa(ran.ExitCode)
-		if ran.LastStderr != "" {
-			failure += ": " + ran.LastStderr
-		}
+	if err := s.o.Bundler.Bundle(ctx, lines, update, nil); err != nil {
+		failure = err.Error()
 	}
 	out := make([]Outcome, 0, len(list))
 	if verb == verbUpgrade {
@@ -218,7 +211,7 @@ func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, 
 		if states[t.Name] != catalog.StateOK {
 			o.Result, o.Detail = catalog.StateBroken, failure
 			if failure == "" {
-				o.Detail = "not listed after brew bundle"
+				o.Detail = "not listed after " + s.o.Bundler.Name()
 			}
 		}
 		out = append(out, o)
@@ -226,19 +219,12 @@ func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, 
 	return out
 }
 
-func (s *Service) run(ctx context.Context, verb string, t catalog.Tool, build func(catalog.Install) []system.Cmd) Outcome {
+type verbOf func(contract.Installer, context.Context, []catalog.Install, call.Progress) error
+
+func (s *Service) run(ctx context.Context, verb string, t catalog.Tool, op verbOf) Outcome {
 	o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
-	for _, c := range build(s.install(t)) {
-		ran, err := s.h.Run.Attach(ctx, c, system.ToStderr)
-		code := ran.ExitCode
-		switch {
-		case err != nil:
-			o.Result, o.Detail, o.Err = catalog.StateBroken, c.Name+": "+err.Error(), err
-			return o
-		case code != 0:
-			o.Result, o.Detail = catalog.StateBroken, c.Name+" "+c.Args[0]+" exited "+strconv.Itoa(code)
-			return o
-		}
+	if err := op(s.installer(t), ctx, []catalog.Install{s.install(t)}, nil); err != nil {
+		o.Result, o.Detail = catalog.StateBroken, err.Error()
 	}
 	return o
 }
@@ -261,7 +247,7 @@ func (s *Service) then(ctx context.Context, t catalog.Tool, interactive bool) []
 
 func (s *Service) requirements(t catalog.Tool) []string {
 	reqs := slices.Clone(t.Requires)
-	if needs := s.row(t).needs; needs != "" && needs != t.Name && !slices.Contains(reqs, needs) {
+	if needs := s.installer(t).Manager().Needs; needs != "" && needs != t.Name && !slices.Contains(reqs, needs) {
 		reqs = append([]string{needs}, reqs...)
 	}
 	return reqs
@@ -365,7 +351,7 @@ func (s *Service) Superseded(ctx context.Context) []string {
 	listings := s.listings(ctx, list)
 	var out []string
 	for _, t := range list {
-		if _, listed := listings[catalog.MethodBrew].keys[t.Supersedes]; listed && s.report(ctx, t, listings).State == catalog.StateOK {
+		if listedOld(t, listings) && s.report(ctx, t, listings).State == catalog.StateOK {
 			out = append(out, t.Supersedes)
 		}
 	}
@@ -373,14 +359,10 @@ func (s *Service) Superseded(ctx context.Context) []string {
 }
 
 func (s *Service) RemoveFormula(ctx context.Context, formula string) error {
-	for _, c := range s.table[catalog.MethodBrew].uninstall(catalog.Brew(formula)) {
-		ran, err := s.h.Run.Attach(ctx, c, system.ToStderr)
-		if err != nil {
-			return err
-		}
-		if ran.ExitCode != 0 {
-			return errors.New(c.Name + " " + strings.Join(c.Args, " ") + " exited " + strconv.Itoa(ran.ExitCode))
+	for _, t := range s.Placed() {
+		if old, ok := t.Superseded(); ok && t.Supersedes == formula {
+			return s.o.Installers[old.Method()].Remove(ctx, []catalog.Install{old}, nil)
 		}
 	}
-	return nil
+	return &UnknownToolError{Name: formula}
 }

@@ -80,7 +80,6 @@ func wordsTolerated() map[string][]string {
 		"domain/shortcuts":             {"docker"},
 		"domain/status":                {"brew", "bun", "docker", "fdesetup", "launchd", "npm", "pmset", "security", "sysctl", "tailscale"},
 		"domain/storage":               {"brew", "docker", "mise"},
-		"domain/tools":                 {"brew", "bun", "mas", "mise", "npm", "uv"},
 		"pages/config":                 {"security"},
 		"pages/home":                   {"brew", "docker", "mise", "npm", "security", "tailscale"},
 		"pages/machines":               {"ssh"},
