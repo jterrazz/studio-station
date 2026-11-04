@@ -28,18 +28,27 @@ type ListEngine struct {
 }
 
 type ListVM struct {
-	Name     string    `json:"name"`
-	Kind     string    `json:"kind"`
-	Lifetime string    `json:"lifetime"`
-	State    string    `json:"state"`
-	IP       string    `json:"ip"`
-	Network  string    `json:"network"`
-	Guest    string    `json:"guest"`
-	Size     ListSize  `json:"size"`
-	Image    ListImage `json:"image"`
-	Detail   string    `json:"detail,omitempty"`
-	Lent     []string  `json:"lent"`
-	Created  time.Time `json:"created_at"`
+	Name     string `json:"name"`
+	Kind     string `json:"kind"`
+	Lifetime string `json:"lifetime"`
+	State    string `json:"state"`
+	Wanted   string `json:"wanted"`
+	// value: SPEC §7.2's steps a workspace has, each passed or not.
+	Health   ListHealth `json:"health"`
+	Restarts int        `json:"restarts"`
+	IP       string     `json:"ip"`
+	// value: on its Mac's network; false is behind its Mac.
+	Bridged bool      `json:"bridged"`
+	Size    ListSize  `json:"size"`
+	Image   ListImage `json:"image"`
+	Detail  string    `json:"detail,omitempty"`
+	Created time.Time `json:"created_at"`
+}
+
+type ListHealth struct {
+	Running bool `json:"running"`
+	Address bool `json:"address"`
+	SSH     bool `json:"ssh"`
 }
 
 type ListSize struct {
@@ -69,15 +78,11 @@ func ToList(f Fleet) ListDoc {
 			Engine: ListEngine{State: engineState(h), Version: h.Daemon.Version}, Station: h.StationVersion, VMs: []ListVM{},
 		}
 		for _, vm := range Ordered(h.VMs) {
-			lent := vm.Lent
-			if lent == nil {
-				lent = []string{}
-			}
 			m.VMs = append(m.VMs, ListVM{
 				Name: vm.Name, Kind: "workspace", Lifetime: string(vm.Lifetime), State: string(vm.State),
-				IP: vm.IP, Network: vm.Network, Guest: vm.Guest,
+				Wanted: Wanted(vm), Health: HealthOf(vm), IP: vm.IP, Bridged: vm.Network == "bridged",
 				Size:  ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
-				Image: ListImage{Name: vm.Image, Version: vm.Version}, Detail: vm.Detail, Lent: lent, Created: vm.CreatedAt,
+				Image: ListImage{Name: vm.Image, Version: vm.Version}, Detail: vm.Detail, Created: vm.CreatedAt,
 			})
 		}
 		out.Macs = append(out.Macs, m)
@@ -100,4 +105,17 @@ func engineState(h HostView) string {
 		return "not-set-up"
 	}
 	return "stopped"
+}
+
+func Wanted(vm VM) string {
+	if vm.Want == "running" {
+		return "running"
+	}
+	return "stopped"
+}
+
+func HealthOf(vm VM) ListHealth {
+	// value: a VM that does not run has passed no step.
+	running := vm.State == Running
+	return ListHealth{Running: running, Address: running && vm.IP != "", SSH: running && vm.Guest == "connected"}
 }

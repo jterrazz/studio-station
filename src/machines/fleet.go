@@ -48,7 +48,9 @@ type VM struct {
 	Resources                  Resources
 	SizeGB                     int
 	IP, Network, Guest, Detail string
-	Lent                       []string
+	// value: the state its record asks for, running or stopped.
+	Want      string
+	Lent      []string
 	CreatedAt                  time.Time
 }
 

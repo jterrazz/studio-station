@@ -74,7 +74,7 @@ func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM
 		vm := VM{
 			Name: r.Name, Image: r.Image, Version: r.Version, Host: host, Kind: kindOfImage(r.Image),
 			Lifetime: r.Lifetime, State: stateOf(info), Resources: r.Resources, SizeGB: int(info.Bytes / 1e9),
-			Network: networkOf(r), Guest: "unknown", Lent: r.Lent, CreatedAt: r.CreatedAt,
+			Network: networkOf(r), Guest: "unknown", Want: r.Want, Lent: r.Lent, CreatedAt: r.CreatedAt,
 		}
 		if d, ok := live[r.Name]; ok && live != nil {
 			if d.State != "" {
