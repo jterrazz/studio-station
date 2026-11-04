@@ -6,7 +6,7 @@ runs:
     - command: 'machines unlock y </dev/null'
       exit: 2
       stderr: |
-          Error: unlock needs a terminal
-          Hint: run it on a terminal
+          Error: machines unlock needs a terminal
+          Hint: run it in a terminal
       files:
           .calls: absent

@@ -4,10 +4,10 @@ runs:
     - command: 'machines unlock jterrazz-mac-mini </dev/null'
       exit: 2
       stderr: |
-          Error: unlock needs a terminal
-          Hint: run it on a terminal
+          Error: machines unlock needs a terminal
+          Hint: run it in a terminal
     - command: 'config install autologin </dev/null'
       exit: 2
       stderr: |
           Error: autologin needs a terminal
-          Hint: run it on a terminal
+          Hint: run it in a terminal

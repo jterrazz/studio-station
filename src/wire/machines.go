@@ -155,7 +155,7 @@ func (c machineCalls) CheckRemoteHost(name, verb string) error {
 
 func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool) error {
 	if !interactive {
-		return &machines.NeedsTerminalError{Verb: "unlock"}
+		return &machines.NeedsTerminalError{Verb: "machines unlock"}
 	}
 	return c.Service.Unlock(ctx, name)
 }
