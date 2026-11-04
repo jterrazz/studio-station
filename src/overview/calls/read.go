@@ -9,6 +9,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/activity"
 	appscontract "github.com/jterrazz/studio-station/src/apps/contract"
+	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -143,7 +144,7 @@ func (r *Reader[Tool, Item, Stray]) frame() snapshot[Tool, Item, Stray] {
 		Setup:         overview.Setup{State: catalog.StatePending, Steps: []overview.Step{}},
 		System:        overview.System{Pending: true, Sample: activity.Sample{CPU: []activity.Process{}, Memory: []activity.Process{}}},
 		Identity:      pendingChecks(r.identityRows()),
-		Background:    []overview.Job{},
+		Background:    []background.Task{},
 		Gateways:      []overview.Check{},
 		Environment:   overview.Environment{Network: pendingChecks(r.networkRows())},
 		Workspace:     overview.Workspace[Stray]{Disk: []overview.Disk{}, Strays: []Stray{}, DiskPending: true},

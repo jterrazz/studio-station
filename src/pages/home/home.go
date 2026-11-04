@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/tools"
@@ -329,8 +330,8 @@ func action(section string, r page.Row) page.Row {
 	return act
 }
 
-func todo(detail []page.Section, jobs []overview.Job) page.Section {
-	var broken, fixes, notes, background []page.Row
+func todo(detail []page.Section, jobs []background.Task) page.Section {
+	var broken, fixes, notes, tasks []page.Row
 	for _, s := range detail {
 		if s.ID == "background" {
 			continue
@@ -364,13 +365,13 @@ func todo(detail []page.Section, jobs []overview.Job) page.Section {
 		switch {
 		case j.State == catalog.StateBroken:
 			failing = append(failing, jobAction(j))
-		case j.State == catalog.StateDegraded && j.Group == overview.GroupStation:
+		case j.State == catalog.StateDegraded && j.Group == background.GroupStation:
 			fixes = append(fixes, jobAction(j))
 		case j.State == catalog.StateDegraded:
-			background = append(background, jobAction(j))
+			tasks = append(tasks, jobAction(j))
 		}
 	}
-	lists := [][]page.Row{broken, failing, fixes, notes, background}
+	lists := [][]page.Row{broken, failing, fixes, notes, tasks}
 	var items []page.Item
 	for _, list := range lists {
 		for i := range list {

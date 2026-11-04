@@ -1,36 +1,35 @@
-package overview
+package background
 
 import (
 	"path"
 	"strings"
 
-	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-type JobGroup string
+type Group string
 
 const (
-	GroupStation JobGroup = "station"
-	GroupKnown   JobGroup = "known"
-	GroupUnknown JobGroup = "unknown"
-	GroupOrphan  JobGroup = "orphan"
+	GroupStation Group = "station"
+	GroupKnown   Group = "known"
+	GroupUnknown Group = "unknown"
+	GroupOrphan  Group = "orphan"
 )
 
-type JobRun string
+type Run string
 
 const (
-	JobRunning   JobRun = "running"
-	JobIdle      JobRun = "idle"
-	JobFailing   JobRun = "failing"
-	JobNotLoaded JobRun = "not loaded"
-	JobUnread    JobRun = "unknown"
+	Running   Run = "running"
+	Idle      Run = "idle"
+	Failing   Run = "failing"
+	NotLoaded Run = "not loaded"
+	Unread    Run = "unknown"
 )
 
-type Job struct {
+type Task struct {
 	Label     string
-	Group     JobGroup
-	Run       JobRun
+	Group     Group
+	Run       Run
 	PID       int
 	Exit      int
 	Scope     string
@@ -42,32 +41,33 @@ type Job struct {
 	State     catalog.State
 }
 
-func Jobs(listed []background.Job, root, home string) []Job {
-	// invariant: a station read only reads the job manager; removing a job is
-	// the owner's, through the command its row shows. root and home turn a path
-	// into the one the owner types.
-	jobs := make([]Job, 0, len(listed))
+func Judge(listed []Job, root, home string) []Task {
+	// invariant: judging only reads what the job manager listed. A task keeps
+	// the command that removes it by hand only where that is its fix: failing,
+	// or an orphan, and never station's own. root and home turn a path into the
+	// one the owner types.
+	tasks := make([]Task, 0, len(listed))
 	for _, l := range listed {
-		j := Job{Label: l.Label, Scope: l.Scope, PID: l.PID, Plist: unrooted(l.File, root, home), Program: unrooted(l.Program, root, home), Removal: l.Removal}
+		j := Task{Label: l.Label, Scope: l.Scope, PID: l.PID, Plist: unrooted(l.File, root, home), Program: unrooted(l.Program, root, home), Removal: l.Removal}
 		switch {
 		case l.Unread:
-			j.Run = JobUnread
+			j.Run = Unread
 		case !l.Loaded:
-			j.Run = JobNotLoaded
+			j.Run = NotLoaded
 		case l.Running:
-			j.Run = JobRunning
+			j.Run = Running
 		case l.LastExit != 0:
-			j.Run, j.Exit = JobFailing, l.LastExit
+			j.Run, j.Exit = Failing, l.LastExit
 		default:
-			j.Run = JobIdle
+			j.Run = Idle
 		}
 		place(&j, l)
-		jobs = append(jobs, j)
+		tasks = append(tasks, j)
 	}
-	return jobs
+	return tasks
 }
 
-func place(j *Job, l background.Job) {
+func place(j *Task, l Job) {
 	owner, known := catalog.LaunchOwnerOf(j.Label)
 	if known {
 		j.Owner = owner.App
@@ -85,18 +85,18 @@ func place(j *Job, l background.Job) {
 		j.Group = GroupUnknown
 	}
 	switch {
-	case j.Run == JobFailing:
+	case j.Run == Failing:
 		j.State = catalog.StateBroken
-	case j.Group == GroupOrphan, j.Run == JobUnread:
+	case j.Group == GroupOrphan, j.Run == Unread:
 		j.State = catalog.StateDegraded
-	case j.Run == JobNotLoaded && j.Group == GroupStation:
+	case j.Run == NotLoaded && j.Group == GroupStation:
 		j.State = catalog.StateDegraded
-	case j.Run == JobNotLoaded:
+	case j.Run == NotLoaded:
 		j.State = catalog.StateAbsent
 	default:
 		j.State = catalog.StateOK
 	}
-	if j.Group == GroupStation || (j.Run != JobFailing && j.Group != GroupOrphan) {
+	if j.Group == GroupStation || (j.Run != Failing && j.Group != GroupOrphan) {
 		j.Removal = ""
 	}
 }

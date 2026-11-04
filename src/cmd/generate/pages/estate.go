@@ -3,6 +3,7 @@ package pages
 import (
 	"time"
 
+	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/images"
@@ -100,11 +101,11 @@ func snapshot() pagehome.Overview {
 		},
 		Setup:    overview.Setup{State: catalog.StateOK, Steps: []overview.Step{{Name: "name", State: catalog.StateOK, Detail: "macbook"}}},
 		Identity: []overview.Check{check("git-email", catalog.StateOK, "admin@jterrazz.com", ""), check("git-signing", catalog.StateOK, "on", "")},
-		Background: []overview.Job{
-			{Label: "com.github.facebook.watchman", Group: overview.GroupKnown, Run: overview.JobRunning, PID: 3464, Scope: "user", Owner: "watchman", Plist: "~/Library/LaunchAgents/com.github.facebook.watchman.plist", State: catalog.StateOK},
-			{Label: "com.jterrazz.brain.x-snapshot", Group: overview.GroupUnknown, Run: overview.JobFailing, Exit: 2, Scope: "user", Plist: "~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist", State: catalog.StateBroken,
+		Background: []background.Task{
+			{Label: "com.github.facebook.watchman", Group: background.GroupKnown, Run: background.Running, PID: 3464, Scope: "user", Owner: "watchman", Plist: "~/Library/LaunchAgents/com.github.facebook.watchman.plist", State: catalog.StateOK},
+			{Label: "com.jterrazz.brain.x-snapshot", Group: background.GroupUnknown, Run: background.Failing, Exit: 2, Scope: "user", Plist: "~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist", State: catalog.StateBroken,
 				Removal: "launchctl bootout gui/501/com.jterrazz.brain.x-snapshot && rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist"},
-			{Label: "com.docker.socket", Group: overview.GroupOrphan, Run: overview.JobNotLoaded, Scope: "root", Owner: "Docker.app", OwnerGone: true, Plist: "/Library/LaunchDaemons/com.docker.socket.plist", State: catalog.StateDegraded,
+			{Label: "com.docker.socket", Group: background.GroupOrphan, Run: background.NotLoaded, Scope: "root", Owner: "Docker.app", OwnerGone: true, Plist: "/Library/LaunchDaemons/com.docker.socket.plist", State: catalog.StateDegraded,
 				Removal: "sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist"},
 		},
 		Gateways: []overview.Check{check("Tailscale Serve", catalog.StateOK, "on", "")},

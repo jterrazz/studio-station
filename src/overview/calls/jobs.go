@@ -3,6 +3,7 @@ package calls
 import (
 	"context"
 
+	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -98,10 +99,10 @@ func (r *Reader[Tool, Item, Stray]) sectionJobs() []job[Tool, Item, Stray] {
 	return []job[Tool, Item, Stray]{
 		{Key: subject + "/background", Budget: 2*defaultBudget + margin,
 			Do: func(ctx context.Context) func(*sn) {
-				jobs := []overview.Job{}
+				jobs := []background.Task{}
 				if r.mac() && r.d.Jobs != nil {
 					listed, _ := r.d.Jobs.List(ctx)
-					jobs = overview.Jobs(listed, r.d.Here.Root, r.d.Here.Home)
+					jobs = background.Judge(listed, r.d.Here.Root, r.d.Here.Home)
 				}
 				return func(s *sn) { s.Background = jobs }
 			},

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/tools"
@@ -55,7 +56,7 @@ func fixed() pagehome.Overview {
 			{Name: "layout", State: catalog.StateOK},
 		}},
 		Identity:   []overview.Check{{Name: "git-email", State: catalog.StateOK, Value: "admin@jterrazz.com"}},
-		Background: []overview.Job{{Label: "ai.jterrazz.x", Group: overview.GroupUnknown, State: catalog.StateOK, Run: overview.JobRunning, PID: 12, Scope: "user", Plist: "~/Library/LaunchAgents/ai.jterrazz.x.plist"}},
+		Background: []background.Task{{Label: "ai.jterrazz.x", Group: background.GroupUnknown, State: catalog.StateOK, Run: background.Running, PID: 12, Scope: "user", Plist: "~/Library/LaunchAgents/ai.jterrazz.x.plist"}},
 		Gateways:   []overview.Check{{Name: "Tailscale Serve", State: catalog.StateOK, Value: "on"}},
 		Tailnet: ports.Status{
 			State: catalog.StateOK, Connected: true, BackendState: "Running",
