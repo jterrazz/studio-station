@@ -12,8 +12,8 @@ runs:
           within 1 see ◌ gpg key
           within 2 see ● github
           send 4
-          within 1 see - Station
-          within 1 see ● station
+          within 1 see - Disk
+          within 1 see ● This Mac
           send 1
           see ◌ gpg key
           see no answer in 2s

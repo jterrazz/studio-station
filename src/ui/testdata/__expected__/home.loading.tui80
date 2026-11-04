@@ -1,5 +1,5 @@
  - To do                                                                    1 ◐
-   ◐ strays  2 folders out of place · 80.5 GB  → station setup
+   ◐ strays  2 folders out of place · 80.5 GB  → station disk move ~/.tart
  - Summary
    ◌ Machine   host · Darwin 27.0.0
    ◌ Network   192.168.1.152 · 4/4 on
@@ -26,8 +26,8 @@
    ◌ tailnet
  - Workspace                                                           2 ◐  1 ◌
    ◌ disk  27.9 GB
-   ◐ tart  ~/.tart  78.4 GB  → station setup
-   ◐ bun   ~/.bun   2.1 GB  → station setup
+   ◐ tart  ~/.tart  78.4 GB  → station disk move ~/.tart
+   ◐ bun   ~/.bun   2.1 GB  → station disk move ~/.bun
  - Identity                                                                 2 ◌
    ◌ git email
    ◌ git signing

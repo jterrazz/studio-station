@@ -9,8 +9,8 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
+	pagedisk "github.com/jterrazz/studio-station/src/pages/disk"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
-	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 )
 
@@ -153,11 +153,11 @@ type diskJSON struct {
 type workspaceJSON struct {
 	// invariant: v1 keeps every key it ever had; the workspace is no longer
 	// scanned, so repositories, dependencies and docker read as nothing seen.
-	Repositories []repositoryJSON        `json:"repositories"`
-	Dependencies []dependencyJSON        `json:"dependencies"`
-	Docker       dockerJSON              `json:"docker"`
-	Disk         []diskJSON              `json:"disk"`
-	Strays       []pagestorage.StrayJSON `json:"strays"`
+	Repositories []repositoryJSON     `json:"repositories"`
+	Dependencies []dependencyJSON     `json:"dependencies"`
+	Docker       dockerJSON           `json:"docker"`
+	Disk         []diskJSON           `json:"disk"`
+	Strays       []pagedisk.StrayJSON `json:"strays"`
 }
 
 type stepJSON struct {
@@ -197,7 +197,7 @@ func SnapshotContract(s Overview) SnapshotJSON {
 			Dependencies: []dependencyJSON{},
 			Docker:       dockerJSON{State: string(catalog.StateUnknown)},
 			Disk:         make([]diskJSON, 0, len(s.Workspace.Disk)),
-			Strays:       pagestorage.StraysContract(s.Workspace.Strays),
+			Strays:       pagedisk.StraysContract(s.Workspace.Strays),
 		},
 		Tools:      make([]pageapps.ToolJSON, 0, len(s.Tools)),
 		Config:     make([]pagesettings.ItemJSON, 0, len(s.Config)),

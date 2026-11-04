@@ -1,0 +1,11 @@
+description: 'disk erase xcode --confirm=xcode erases it in a script, nothing asked: its DerivedData is gone'
+env: two-macs
+runs:
+    - command: 'disk erase xcode --confirm=xcode'
+      exit: 0
+      stdout: |
+          ●	xcode	5.8 GB erased
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"].disk.files | {derived: .["~/Library/Developer/Xcode/DerivedData/Station-abc/Build/x"], devices: .["~/Library/Developer/CoreSimulator/Devices/A/data"]}'' world.json'
+      exit: 0
+      stdout: |
+          {"derived":null,"devices":19100000000}

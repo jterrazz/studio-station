@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"github.com/jterrazz/studio-station/src/disk"
@@ -40,6 +41,12 @@ type Options struct {
 	Files     map[catalog.ToolFile]string
 	Inventory Inventory
 	Budget    time.Duration
+	// value: applies the settings a moved folder needs (tart-launcher).
+	Configurer Configurer
+}
+
+type Configurer interface {
+	Configure(ctx context.Context, item string, interactive bool) error
 }
 
 type Service struct {
@@ -59,13 +66,17 @@ type (
 	Entry       = disk.Entry
 	PathReport  = disk.PathReport
 	StrayReport = disk.StrayReport
-	Row         = disk.Row
-	Report      = disk.Report
+	Row         = disk.Tally
+	Report      = disk.Survey
 	Outcome     = disk.Outcome
 )
 
 func (s *Service) Entries() []Entry {
-	out := []Entry{{Name: StationName, Category: StationCategory, Storage: catalog.StationStorage, Places: []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}}}
+	everywhere := []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}
+	out := []Entry{
+		{Name: StationName, Category: StationCategory, Storage: catalog.StationStorage, Places: everywhere},
+		{Name: catalog.KeysRow, Category: StationCategory, Storage: catalog.SSHStorage, Places: everywhere},
+	}
 	for _, t := range s.tools {
 		if t.Storage.Declared() {
 			out = append(out, Entry{Name: t.Name, Category: string(t.Category), Storage: t.Storage, Places: t.Places()})
@@ -108,11 +119,11 @@ func (s *Service) find(name string) (Entry, error) {
 			continue
 		}
 		if !s.placed(e) {
-			return e, &WrongPlaceError{Name: name, Places: e.Places, Here: s.o.Here}
+			return e, &disk.ElsewhereError{Name: name, Places: e.Places, Here: s.o.Here}
 		}
 		return e, nil
 	}
-	return Entry{}, &UnknownToolError{Name: name}
+	return Entry{}, &disk.UnknownError{Name: name}
 }
 
 func (s *Service) installed(ctx context.Context) map[string]bool {
@@ -216,25 +227,17 @@ func (s *Service) strays(e Entry) []StrayReport {
 		if _, err := s.h.FS.Stat(abs); err != nil {
 			continue
 		}
-		out = append(out, StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: s.dirSize(abs), Repair: s.repair(e, st)})
+		out = append(out, s.stray(e, st, abs, s.dirSize(abs)))
 	}
 	return out
 }
 
-func (s *Service) repair(e Entry, st catalog.Stray) string {
-	if s.movable(st) || !s.Relocated(e.Storage) {
-		return "station setup"
+func (s *Service) stray(e Entry, st catalog.Stray, abs string, bytes int64) StrayReport {
+	r := StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: bytes, Repair: "station disk move " + s.o.Expand.Display(abs)}
+	if len(st.Move) > 0 {
+		r.To = s.o.Expand.Display(s.o.Expand.Expand(st.Move[0].To))
 	}
-	return "station storage clean " + e.Name
-}
-
-func (s *Service) movable(st catalog.Stray) bool {
-	for _, m := range st.Move {
-		if s.exists(m.From) {
-			return true
-		}
-	}
-	return false
+	return r
 }
 
 func (s *Service) Relocated(st catalog.Storage) bool {
@@ -270,17 +273,16 @@ func (s *Service) Clean(ctx context.Context, names []string) ([]Outcome, error) 
 			return nil, err
 		}
 		if len(e.Storage.Clean) == 0 && len(e.Storage.Strays) == 0 {
-			return nil, &NoCleanError{Name: name}
+			return nil, &disk.NothingToFreeError{Name: name}
 		}
 		entries = append(entries, e)
 	}
 	installed := s.installed(ctx)
 	if !named {
+		// invariant: a bare free empties every Can rebuild row, the rows
+		// whose caches hold anything, and only those.
 		for _, e := range s.Placed() {
-			if len(e.Storage.Clean) == 0 && len(e.Storage.Strays) == 0 {
-				continue
-			}
-			if installed[e.Name] || s.cacheBytes(e) > 0 || len(s.strays(e)) > 0 {
+			if len(e.Storage.Clean) > 0 && s.levelBytes(e, catalog.LevelCache) > 0 {
 				entries = append(entries, e)
 			}
 		}
@@ -294,8 +296,8 @@ func (s *Service) Clean(ctx context.Context, names []string) ([]Outcome, error) 
 			continue
 		}
 		failure := s.actions(ctx, e.Storage.Clean, present)
-		if !present {
-			failure = first(failure, s.deleteCaches(e))
+		if !present && failure == nil {
+			failure = s.deleteCaches(e)
 		}
 		for _, st := range e.Storage.Strays {
 			if _, err := s.h.FS.Stat(s.o.Expand.Expand(st.Path)); err == nil {
@@ -307,63 +309,146 @@ func (s *Service) Clean(ctx context.Context, names []string) ([]Outcome, error) 
 	return outcomes, nil
 }
 
-func (s *Service) CheckReset(names []string) ([]Entry, error) {
-	if len(names) == 0 {
-		return nil, &NoNameError{}
+func (s *Service) CheckErase(name string) (Entry, error) {
+	// invariant: an erase names one row whose data station can erase: a row
+	// of keys, tokens or settings only is never touched, whatever it is asked.
+	e, err := s.find(name)
+	if err != nil {
+		return e, err
 	}
-	var entries []Entry
-	for _, name := range dedupe(names) {
-		e, err := s.find(name)
-		if err != nil {
-			return nil, err
-		}
-		if len(e.Storage.Reset) == 0 {
-			return nil, &NoResetError{Name: name, Hint: e.Storage.NoReset}
-		}
-		entries = append(entries, e)
+	if len(e.Storage.Reset) > 0 {
+		return e, nil
 	}
-	return entries, nil
+	if kept := s.keptOnly(e); kept != "" {
+		return e, &disk.NeverTouchedError{Name: name, Path: kept}
+	}
+	return e, &disk.NothingToEraseError{Name: name, Hint: e.Storage.NoReset}
 }
 
-func (s *Service) Plan(names []string) []PathReport {
-	entries, _ := s.CheckReset(names)
-	var out []PathReport
-	for _, e := range entries {
-		for _, p := range e.Storage.Paths {
-			if !p.PlacedOn(s.o.Here) || (p.Level != catalog.LevelCache && p.Level != catalog.LevelData) {
-				continue
-			}
-			out = append(out, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: s.storedBytes(p)})
+func (s *Service) keptOnly(e Entry) string {
+	first := ""
+	for _, p := range e.Storage.Paths {
+		if !p.PlacedOn(s.o.Here) {
+			continue
 		}
+		if p.Level != catalog.LevelKept && p.Level != catalog.LevelConfig {
+			return ""
+		}
+		if first == "" && !strings.Contains(p.Path, "*") {
+			first = s.o.Expand.Display(s.o.Expand.Expand(p.Path))
+		}
+	}
+	return cmp.Or(first, e.Name)
+}
+
+func (s *Service) CheckRunning(ctx context.Context, name string) error {
+	e, err := s.CheckErase(name)
+	if err != nil {
+		return err
+	}
+	if e.Storage.Quit != "" && s.running(ctx, e.Storage.Quit) {
+		return &disk.RunningError{Name: name, Process: e.Storage.Quit, Verb: "erase", Subject: name}
+	}
+	return nil
+}
+
+func (s *Service) Plan(name string) []PathReport {
+	e, err := s.CheckErase(name)
+	if err != nil {
+		return nil
+	}
+	var out []PathReport
+	for _, p := range e.Storage.Paths {
+		if !p.PlacedOn(s.o.Here) || (p.Level != catalog.LevelCache && p.Level != catalog.LevelData) {
+			continue
+		}
+		out = append(out, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: s.storedBytes(p)})
 	}
 	return out
 }
 
-func (s *Service) Reset(ctx context.Context, names []string) ([]Outcome, error) {
-	entries, err := s.CheckReset(names)
+func (s *Service) Erase(ctx context.Context, name string) (Outcome, error) {
+	// invariant: the caller checked the erase first (CheckRunning).
+	e, err := s.CheckErase(name)
 	if err != nil {
-		return nil, err
+		return Outcome{}, err
 	}
-	installed := s.installed(ctx)
-	outcomes := make([]Outcome, 0, len(entries))
-	for _, e := range entries {
-		if e.Storage.Quit != "" && s.running(ctx, e.Storage.Quit) {
-			outcomes = append(outcomes, Outcome{
-				Name: e.Name, Result: catalog.StateBroken, Detail: e.Storage.Quit + " is running",
-				Hint: "quit " + e.Storage.Quit + ", then station storage reset " + e.Name,
-			})
+	before := s.levelBytes(e, catalog.LevelCache) + s.levelBytes(e, catalog.LevelData)
+	present := s.isInstalled(ctx, e.Name)
+	failure := first(s.actions(ctx, e.Storage.Clean, present), s.actions(ctx, e.Storage.Reset, present))
+	if !present && failure == nil {
+		failure = s.deleteCaches(e)
+	}
+	after := s.levelBytes(e, catalog.LevelCache) + s.levelBytes(e, catalog.LevelData)
+	return s.outcome(e.Name, failure, before-after, true), nil
+}
+
+func (s *Service) Move(ctx context.Context, folder string) (Outcome, error) {
+	// invariant: a move takes a misplaced folder where its app's own config
+	// says, by renames only, then applies the settings that make the app look
+	// there; the app running refuses it before anything moves.
+	abs := folder
+	if strings.HasPrefix(folder, "~") {
+		abs = s.o.Expand.Expand(folder)
+	}
+	for _, e := range s.Placed() {
+		for _, st := range e.Storage.Strays {
+			if s.o.Expand.Expand(st.Path) != abs || !s.exists(st.Path) {
+				continue
+			}
+			return s.move(ctx, e, st)
+		}
+	}
+	return Outcome{}, &disk.NotMisplacedError{Path: s.o.Expand.Display(abs)}
+}
+
+func (s *Service) move(ctx context.Context, e Entry, st catalog.Stray) (Outcome, error) {
+	shown := s.o.Expand.Display(s.o.Expand.Expand(st.Path))
+	if st.Busy != "" && s.running(ctx, st.Busy) {
+		return Outcome{}, &disk.RunningError{Name: e.Name, Process: st.Busy, Verb: "move", Subject: shown}
+	}
+	var to string
+	for _, m := range st.Move {
+		from, dest := s.o.Expand.Expand(m.From), s.o.Expand.Expand(m.To)
+		pairs := [][2]string{{from, dest}}
+		if strings.HasSuffix(m.From, "/*") {
+			matches, _ := s.h.FS.Glob(from)
+			pairs = pairs[:0]
+			for _, src := range matches {
+				pairs = append(pairs, [2]string{src, path.Join(dest, path.Base(src))})
+			}
+		}
+		for _, p := range pairs {
+			if err := s.o.Disk.Move(ctx, p[0], p[1]); err != nil {
+				return Outcome{}, err
+			}
+			to = s.o.Expand.Display(dest)
+		}
+	}
+	for _, a := range st.Clean {
+		if a.Run == nil {
+			_ = s.action(ctx, a)
+		}
+	}
+	for _, dir := range st.Prune {
+		_ = s.h.FS.Remove(s.o.Expand.Expand(dir))
+	}
+	for _, item := range st.Then {
+		if s.o.Configurer == nil {
 			continue
 		}
-		before := s.levelBytes(e, catalog.LevelCache) + s.levelBytes(e, catalog.LevelData)
-		present := installed[e.Name]
-		failure := first(s.actions(ctx, e.Storage.Clean, present), s.actions(ctx, e.Storage.Reset, present))
-		if !present {
-			failure = first(failure, s.deleteCaches(e))
+		if err := s.o.Configurer.Configure(ctx, item, false); err != nil {
+			return Outcome{}, err
 		}
-		after := s.levelBytes(e, catalog.LevelCache) + s.levelBytes(e, catalog.LevelData)
-		outcomes = append(outcomes, s.outcome(e.Name, failure, before-after, true))
 	}
-	return outcomes, nil
+	if to == "" {
+		return Outcome{Name: shown, Result: catalog.StateOK, Detail: "nothing to move: its caches freed"}, nil
+	}
+	return Outcome{Name: shown, Result: catalog.StateOK, Detail: "moved to " + to}, nil
+}
+
+func (s *Service) Volume(ctx context.Context) (total, free int64, err error) {
+	return s.o.Disk.Volume(ctx)
 }
 
 func (s *Service) outcome(name string, f *actionFailure, freed int64, reset bool) Outcome {

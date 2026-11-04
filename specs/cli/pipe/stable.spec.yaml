@@ -24,7 +24,7 @@ runs:
           ○	brew	not installed
           ●	tailnet	Running · 100.64.0.1 · {{workdir}}/bin/tailscale
           # Workspace
-          ●	disk	2.0 KB	reclaimable: station storage clean
+          ●	disk	2.0 KB	reclaimable: station disk free
           # Identity
           ○	git email
           ○	git name
@@ -308,13 +308,13 @@ runs:
           ○	power	not applied	station settings apply power
           ○	lock-after-login	not applied	station settings apply lock-after-login
           ●	sshd	applied
-    - command: 'storage'
+    - command: 'disk | /usr/bin/sed 1d'
       exit: 0
       stdout: |
-          # Station
-          ●	station	0 B
-          # Package Managers
-          ○	homebrew	2.0 KB
+          # Can rebuild
+          ●	homebrew	2.0 KB
+          # Never touched
+          ●	station	104 B
     - command: 'machines'
       exit: 0
       stdout: |
@@ -361,10 +361,10 @@ runs:
       exit: 0
       stdout: |
           {"findings":[],"schema":"station.settings.list/v1","settings":[{"admin":false,"applied_at":null,"group":"set","label":"Silence the terminal login message","name":"hushlogin","state":"not-applied","where":"~/.hushlogin"},{"admin":false,"applied_at":null,"group":"set","label":"The Ghostty config and its Catppuccin themes","name":"ghostty-dotfiles","state":"not-applied","where":"~/.config/ghostty/config"},{"admin":false,"applied_at":null,"group":"set","label":"The tmux config","name":"tmux-dotfiles","state":"not-applied","where":"~/.tmux.conf"},{"admin":false,"applied_at":null,"group":"set","label":"The Starship prompt config","name":"starship-dotfiles","state":"not-applied","where":"~/.config/starship.toml"},{"admin":false,"applied_at":null,"group":"set","label":"Sign every commit with a GPG key","name":"git-signing","state":"not-applied"},{"admin":false,"applied_at":null,"group":"set","label":"An ed25519 SSH key, kept in the Keychain","name":"ssh-key","state":"not-applied"},{"admin":false,"applied_at":null,"group":"set","label":"The GitHub CLI logged in over SSH","name":"github-login","state":"not-applied"},{"admin":false,"applied_at":null,"group":"set","label":"Exclude ~/Developer from Spotlight (guided, opens Settings)","name":"spotlight-exclude","state":"not-applied"},{"admin":false,"applied_at":null,"group":"set","label":"Encrypted DNS via Quad9 (DoH)","name":"dns","state":"not-applied"},{"admin":false,"applied_at":null,"group":"set","label":"The Claude Code subscription token a VM may borrow","name":"claude-token","state":"not-applied"},{"admin":false,"applied_at":null,"group":"set","label":"The Zed settings and its formatter config","name":"zed-dotfiles","state":"not-applied","where":"~/.config/zed/settings.json"},{"admin":false,"applied_at":null,"group":"set","label":"Reset the dock to the system defaults","name":"dock-reset","state":"not-applied"},{"admin":false,"applied_at":null,"group":"set","label":"Add a small spacer tile to the dock","name":"dock-spacer","state":"not-applied"},{"admin":true,"applied_at":null,"group":"always-on-mac","label":"GUI auto-login for jterrazz.agent (FileVault-aware)","name":"autologin","state":"not-applied"},{"admin":true,"applied_at":null,"group":"always-on-mac","label":"Always-on power policy (no sleep, autorestart, wake)","name":"power","state":"not-applied"},{"admin":true,"applied_at":null,"group":"always-on-mac","label":"A LaunchAgent that locks the screen ~20s after auto-login","name":"lock-after-login","state":"not-applied"},{"admin":true,"applied_at":null,"group":"always-on-mac","label":"macOS Remote Login (sshd)","name":"sshd","state":"applied"},{"admin":false,"applied_at":null,"group":"set","label":"Keep ~/.cache and station's VMs out of Time Machine","name":"backup-exclusions","state":"not-applied"},{"admin":false,"applied_at":null,"group":"set","label":"The tart launcher: Tart's home is station's VMs folder","name":"tart-launcher","state":"not-applied","where":"~/.local/bin/tart"}]}
-    - command: 'storage --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
+    - command: 'disk --json | /usr/bin/jq -S -c ''del(.free_bytes, .total_bytes, .generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
-          {"rows":[{"cache_bytes":0,"category":"Station","clean":true,"config_bytes":952,"data_bytes":0,"installed":true,"installed_bytes":0,"kept_bytes":0,"mark":"ok","name":"station","paths":[{"bytes":0,"level":"cache","path":"~/.cache/station"},{"bytes":0,"level":"cache","path":"~/.local/state/station/logs/*.log"},{"bytes":0,"level":"cache","path":"~/.local/state/station/images/askpass"},{"bytes":0,"level":"cache","path":"~/.local/state/station/dns/quad9-dns.mobileconfig"},{"bytes":0,"level":"data","path":"~/.local/share/station/vms/vms/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/images/*/*.json"},{"bytes":0,"level":"data","path":"~/.local/state/station/known_hosts/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/consoles/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/engine.sock"},{"bytes":0,"level":"data","path":"~/.local/state/station/children/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/runs/*"},{"bytes":0,"level":"config","path":"~/Library/LaunchAgents/com.jterrazz.station.engine.plist"},{"bytes":306,"level":"config","path":"~/.config/station/preferences.json"},{"bytes":0,"level":"config","path":"~/.zshrc"},{"bytes":646,"level":"config","path":"~/.ssh/config"},{"bytes":0,"level":"kept","path":"~/.local/state/station/vms/*.json"},{"bytes":0,"level":"kept","path":"~/.local/state/station/images/key*"},{"bytes":0,"level":"kept","path":"~/.local/state/station/leases.json"}],"reset":false},{"cache_bytes":2000,"category":"Package Managers","clean":true,"config_bytes":0,"data_bytes":0,"installed":false,"installed_bytes":0,"kept_bytes":0,"mark":"absent","name":"homebrew","paths":[{"bytes":2000,"level":"cache","path":"~/Library/Caches/Homebrew"},{"bytes":0,"level":"cache","path":"~/Library/Logs/Homebrew"}],"reset":false}],"schema":"station.storage/v1","strays":[]}
+          {"findings":[],"rows":[{"app":"homebrew","bytes":2000,"group":"can-rebuild","paths":["~/Library/Caches/Homebrew"]},{"app":"station","bytes":952,"group":"never-touched","paths":["~/.config/station/preferences.json","~/.ssh/config"]},{"app":"ssh","bytes":646,"group":"never-touched","paths":["~/.ssh"]}],"schema":"station.disk.read/v1"}
     - command: 'machines --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |

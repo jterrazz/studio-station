@@ -1,0 +1,11 @@
+description: 'disk move --on another Mac puts that Mac''s misplaced ~/go right, and the row leaves there'
+env: two-macs
+runs:
+    - command: 'disk move ~/go --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	~/go	nothing to move: its caches freed
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].disk.files | keys'' world.json'
+      exit: 0
+      stdout: |
+          ["~/.claude/projects/x","~/Library/Caches/Homebrew/downloads/x"]

@@ -1,0 +1,8 @@
+description: 'an erase of an app whose Disk row lives on another kind of machine is refused before it asks'
+env: two-macs
+runs:
+    - command: 'disk erase docker'
+      exit: 2
+      stderr: |
+          Error: docker's place is linux; here is a host
+          Hint: station disk

@@ -96,7 +96,7 @@
             },
             "reason": "stray",
             "hint": {
-              "command": "station setup"
+              "command": "station disk move ~/.tart"
             }
           }
         },
@@ -767,7 +767,7 @@
             ],
             "detail": {
               "kind": "text",
-              "text": "reclaimable: station storage clean"
+              "text": "reclaimable: station disk free"
             }
           }
         },
@@ -788,7 +788,7 @@
             },
             "reason": "stray",
             "hint": {
-              "command": "station setup"
+              "command": "station disk move ~/.tart"
             }
           }
         },
@@ -809,7 +809,7 @@
             },
             "reason": "stray",
             "hint": {
-              "command": "station setup"
+              "command": "station disk move ~/.bun"
             }
           }
         }

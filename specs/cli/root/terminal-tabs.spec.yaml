@@ -17,7 +17,7 @@ runs:
           see - Set by station
           see hushlogin
           send 4
-          see - Station
+          see - Disk
           send 1
           see Machine
           send q

@@ -1,7 +1,9 @@
 package kit
 
 import (
+	"cmp"
 	"strconv"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 )
@@ -9,11 +11,17 @@ import (
 type PartialFailure struct {
 	Failed, Total int
 	Noun          string
-	FirstHint     string
+	// value: what befell the failed ones, "failed" when empty.
+	Verb      string
+	FirstHint string
 }
 
 func (p PartialFailure) Error() string {
-	return strconv.Itoa(p.Failed) + " of " + strconv.Itoa(p.Total) + " " + p.Noun + " failed"
+	words := []string{strconv.Itoa(p.Failed), "of", strconv.Itoa(p.Total)}
+	if p.Noun != "" {
+		words = append(words, p.Noun)
+	}
+	return strings.Join(append(words, cmp.Or(p.Verb, "failed")), " ")
 }
 
 func (p PartialFailure) As(target any) bool {

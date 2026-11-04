@@ -193,7 +193,7 @@ func (s *Service) plan() plan {
 			if _, err := s.h.FS.Stat(abs); err != nil {
 				continue
 			}
-			ep.strays = append(ep.strays, strayPlan{report: StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Repair: s.repair(e, st)}, root: root(abs)})
+			ep.strays = append(ep.strays, strayPlan{report: s.stray(e, st, abs, 0), root: root(abs)})
 		}
 		p.entries = append(p.entries, ep)
 	}

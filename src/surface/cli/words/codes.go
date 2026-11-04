@@ -8,6 +8,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
+	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
@@ -91,6 +92,31 @@ func Codes() map[fail.Code]Wording {
 		},
 		settingscalls.NeedsTerminal: func(e *fail.Error) (string, string) {
 			return e.Subject + " asks a value: run it on a terminal", "station settings apply " + e.Subject
+		},
+		diskcalls.Unknown: func(e *fail.Error) (string, string) {
+			return "no disk row for \"" + e.Subject + "\"", "station disk"
+		},
+		diskcalls.Elsewhere: func(e *fail.Error) (string, string) {
+			return e.Detail["why"], "station disk"
+		},
+		diskcalls.NothingToFree: func(e *fail.Error) (string, string) {
+			return e.Subject + " keeps nothing station can rebuild", "station disk"
+		},
+		diskcalls.NeverTouched: func(e *fail.Error) (string, string) {
+			return e.Detail["path"] + " is never touched: station erases no key, token or setting", "station disk"
+		},
+		diskcalls.NothingToErase: func(e *fail.Error) (string, string) {
+			return e.Subject + " has no data station can erase", cmp.Or(e.Detail["hint"], "station disk")
+		},
+		diskcalls.AppRunning: func(e *fail.Error) (string, string) {
+			process, subject := e.Detail["process"], e.Detail["subject"]
+			if e.Detail["verb"] == "move" {
+				return process + " is running: " + subject + " cannot move now", "quit " + process + ", then station disk move " + subject
+			}
+			return process + " is running: its data cannot be erased now", "quit " + process + ", then station disk erase " + subject
+		},
+		diskcalls.NotMisplaced: func(e *fail.Error) (string, string) {
+			return e.Subject + " is not misplaced", "station disk"
 		},
 		call.FarTooOld: func(e *fail.Error) (string, string) {
 			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"

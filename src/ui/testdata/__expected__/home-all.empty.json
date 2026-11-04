@@ -526,7 +526,7 @@
             ],
             "detail": {
               "kind": "text",
-              "text": "reclaimable: station storage clean"
+              "text": "reclaimable: station disk free"
             }
           }
         }

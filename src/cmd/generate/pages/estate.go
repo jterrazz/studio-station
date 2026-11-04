@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -17,6 +18,7 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
+	pagedisk "github.com/jterrazz/studio-station/src/pages/disk"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
@@ -26,7 +28,6 @@ import (
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
 	pageshortcuts "github.com/jterrazz/studio-station/src/pages/shortcuts"
-	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/settings"
@@ -58,7 +59,7 @@ func failure(id page.ID, command, message, hint string) page.Page {
 
 func Estate() []Fixture {
 	var out []Fixture
-	for _, f := range [][]Fixture{homes(), settingsPages(), storages(), fleets(), machineLists(), imageLists(), secretLists(), tailnets(), serviceLists(), outcomes(), setups(), runs(), accountPages(), controlPages(), powerPages(), menubarPages()} {
+	for _, f := range [][]Fixture{homes(), settingsPages(), disks(), fleets(), machineLists(), imageLists(), secretLists(), tailnets(), serviceLists(), outcomes(), setups(), runs(), accountPages(), controlPages(), powerPages(), menubarPages()} {
 		out = append(out, f...)
 	}
 	return out
@@ -89,8 +90,8 @@ func snapshot() pagehome.Overview {
 		Workspace: pagehome.Workspace{
 			Disk: []overview.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
 			Strays: []storage.StrayReport{
-				{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, Repair: "station setup"},
-				{Name: "bun", Path: "~/.bun", Bytes: 2 * gb, Repair: "station setup"},
+				{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, Repair: "station disk move ~/." + catalog.HypervisorTool},
+				{Name: "bun", Path: "~/.bun", Bytes: 2 * gb, Repair: "station disk move ~/.bun"},
 			},
 		},
 		Tools: toolReports,
@@ -205,12 +206,21 @@ func storageReport(pending bool) storage.Report {
 	entry := func(name, category string) storage.Entry {
 		return storage.Entry{Name: name, Category: category, Places: []catalog.MachineKind{catalog.Host}}
 	}
-	rows := []storage.Row{
-		{Entry: entry(storage.StationName, storage.StationCategory), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelData: 4 * gb, catalog.LevelConfig: 12000}},
-		{Entry: entry("homebrew", string(catalog.CategoryPackageManagers)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 26 * gb}, Install: 3 * gb},
-		{Entry: entry("bun", string(catalog.CategoryRuntimes)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 1700 * (1 << 20)}},
+	at := func(path string, level catalog.Level, bytes int64) storage.PathReport {
+		return storage.PathReport{Path: path, Level: level, Bytes: bytes}
 	}
-	r := storage.Report{Rows: rows, Strays: []storage.StrayReport{{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, Repair: "station setup"}}, Other: 9 * gb}
+	rows := make([]storage.Row, 0, 4)
+	rows = append(rows,
+		storage.Row{Entry: entry(storage.StationName, storage.StationCategory), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelData: 4 * gb, catalog.LevelConfig: 12000},
+			Paths: []storage.PathReport{at("~/.local/share/station/vms/vms/*", catalog.LevelData, 4*gb), at("~/.config/station/preferences.json", catalog.LevelConfig, 12000)}},
+		storage.Row{Entry: entry("homebrew", string(catalog.CategoryPackageManagers)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 26 * gb}, Install: 3 * gb,
+			Paths: []storage.PathReport{at("~/Library/Caches/Homebrew", catalog.LevelCache, 26*gb)}},
+		storage.Row{Entry: entry("bun", string(catalog.CategoryRuntimes)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 1700 * (1 << 20)},
+			Paths: []storage.PathReport{at("~/Library/Caches/bun", catalog.LevelCache, 1700*(1<<20))}},
+	)
+	misplaced := []storage.StrayReport{{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, To: "~/.local/share/station/vms", Repair: "station disk move ~/." + catalog.HypervisorTool}}
+	rows = append(rows, storage.Row{Entry: entry(catalog.HypervisorTool, string(catalog.CategoryContainersVMs)), Installed: true, State: catalog.StateDegraded, Bytes: map[catalog.Level]int64{}, Strays: misplaced})
+	r := storage.Report{Rows: rows, Strays: misplaced, Other: 9 * gb}
 	if pending {
 		for i := range r.Rows {
 			r.Rows[i].Pending, r.Rows[i].State = true, catalog.StatePending
@@ -219,12 +229,15 @@ func storageReport(pending bool) storage.Report {
 	return r
 }
 
-func storages() []Fixture {
-	return states("storage",
-		pagestorage.List(storageReport(true), here()),
-		pagestorage.List(storage.Report{}, here()),
-		failure("storage", "storage", "the walk of ~ was refused: operation not permitted", "grant Full Disk Access to the terminal"),
-		pagestorage.List(storageReport(false), here()))
+func disks() []Fixture {
+	reading := func(pending bool) disk.Reading {
+		return disk.Reading{Total: 994e9, Free: 388e9, Rows: disk.Classify(storageReport(pending)), Pending: pending}
+	}
+	return states("disk",
+		pagedisk.Read(reading(true), here()),
+		pagedisk.Read(disk.Reading{Total: 994e9, Free: 388e9}, here()),
+		failure("disk", "disk", "the walk of ~ was refused: operation not permitted", "grant Full Disk Access to the terminal"),
+		pagedisk.Read(reading(false), here()))
 }
 
 func fleet() machines.Fleet {
@@ -377,11 +390,11 @@ func outcomes() []Fixture {
 		pagesettings.Changes("apply", nil, here()),
 		failure("outcome", "settings apply", "power needs root", "sudo station settings apply power"),
 		pagesettings.Changes("apply", changes, here()))...)
-	return append(out, states("outcome-storage",
-		pending(pagestorage.Outcomes("clean", cleaned, here())),
-		pagestorage.Outcomes("clean", nil, here()),
-		failure("outcome", "storage clean", "no tool named brw", "station storage"),
-		pagestorage.Outcomes("clean", cleaned, here()))...)
+	return append(out, states("outcome-disk-free",
+		pending(pagedisk.Freed(cleaned, here())),
+		pagedisk.Freed(nil, here()),
+		failure("outcome", "disk free", "no disk row for \"brw\"", "station disk"),
+		pagedisk.Freed(cleaned, here()))...)
 }
 
 func setupReport() setup.Report {
