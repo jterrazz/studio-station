@@ -188,6 +188,7 @@ func (d *Daemon) ended(ctx context.Context, v *vmState) {
 		_ = d.start(ctx, v)
 	case model.ActDelete:
 		d.releaseVM(ctx, name)
+		d.forgetShares(ctx, name)
 		_, _ = d.m.Remove(ctx, name)
 		d.forget(name)
 	case model.ActStopped:
@@ -353,6 +354,7 @@ func (d *Daemon) opDelete(ctx context.Context, vm string) error {
 	d.mu.Unlock()
 	d.vmStopped(ctx, vm)
 	d.releaseVM(ctx, vm)
+	d.forgetShares(ctx, vm)
 	_, err = d.m.Remove(ctx, vm)
 	d.forget(vm)
 	return err

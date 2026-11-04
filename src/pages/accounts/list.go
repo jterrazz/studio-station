@@ -1,0 +1,206 @@
+package accounts
+
+import (
+	"strings"
+	"time"
+
+	model "github.com/jterrazz/studio-station/src/accounts"
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/domain/accounts"
+	"github.com/jterrazz/studio-station/src/page"
+)
+
+func stateWord(a accounts.Account) string {
+	switch {
+	case a.State == catalog.StateOK:
+		return "signed in"
+	case a.State == catalog.StateBroken && a.Reason == accounts.ReasonRefused:
+		return "expired"
+	case a.State == catalog.StateAbsent:
+		return "not signed in"
+	case a.State == catalog.StatePending:
+		return "reading"
+	case a.Reason == accounts.ReasonLate:
+		return "late"
+	}
+	return string(mark(a))
+}
+
+func who(a accounts.Account) string {
+	if len(a.Identity) == 1 && a.Identity[0] == accounts.Unknown {
+		return ""
+	}
+	return strings.Join(a.Identity, ", ")
+}
+
+func kindWord(kind string) string {
+	if kind == accounts.KindVM {
+		return "workspace"
+	}
+	return "mac"
+}
+
+func ownRecords(m accounts.Machine) []page.Item {
+	var items []page.Item
+	for _, a := range m.Accounts {
+		if a.Lent != nil && a.Origin == accounts.OriginLent {
+			continue
+		}
+		rec := page.Row{ID: accounts.RowID(m.Name, a.Provider), Label: a.Provider, Mark: mark(a)}
+		rec.Cells = []page.Value{page.Text(stateWord(a)), page.Text(who(a)), page.Texts(a.Scopes...), page.Text(a.Detail), page.Text(a.Hint)}
+		if rec.Mark == page.Attention || rec.Mark == page.Broken {
+			rec.Reason = reason(a.Reason)
+		}
+		items = append(items, page.Item{Row: &rec})
+	}
+	return items
+}
+
+func SharesSection(shared []model.Shared, now time.Time) page.Section {
+	// invariant: every share is listed with its VM and its time left; a Mac
+	// that shares nothing says so in one line.
+	s := page.Section{ID: "shares", Title: "Shared with VMs", Columns: []page.Column{
+		{Key: "account", Kind: page.KindText}, {Key: "vm", Kind: page.KindText}, {Key: "left", Kind: page.KindText},
+	}}
+	for _, sh := range shared {
+		r := page.Row{ID: "share/" + sh.VM + "/" + sh.Account, Label: sh.Account, Short: model.Label(sh.Account), Mark: page.OK,
+			Cells: []page.Value{page.Text(sh.VM), page.Text(left(sh.Until, now))}}
+		s.Items = append(s.Items, page.Item{Row: &r})
+	}
+	if len(s.Items) == 0 {
+		s.Items = []page.Item{{Empty: &page.Empty{Noun: "shares"}}}
+	}
+	return s
+}
+
+// value: the Accounts section as the CLI prints it piped: the machine's own
+// sign-ins, one row per provider, then the shares it holds or makes.
+func List(r accounts.Report, shared []model.Shared) page.Page {
+	r = r.Resolved()
+	s := page.Section{ID: "records", Title: "Accounts", Role: page.Banner, Columns: []page.Column{
+		{Key: "provider", Kind: page.KindText}, {Key: "state", Kind: page.KindText}, {Key: "who", Kind: page.KindText},
+		{Key: "scope", Kind: page.KindText}, {Key: "detail", Kind: page.KindText}, {Key: "hint", Kind: page.KindText},
+	}}
+	if len(r.Machines) > 0 {
+		s.Items = ownRecords(r.Machines[0])
+	}
+	if len(s.Items) == 0 {
+		s.Items = []page.Item{{Empty: &page.Empty{Noun: "accounts"}}}
+	}
+	return page.Seal(page.Page{ID: "accounts", Command: "accounts", Sections: []page.Section{s, SharesSection(shared, r.Now)}})
+}
+
+type MachineBlock struct {
+	// value: one machine of --all-machines: its reading, the shares it
+	// holds, or the line that says why it has none.
+	Name   string
+	Report accounts.Report
+	Shared []model.Shared
+	Note   string
+}
+
+func EveryMachine(blocks []MachineBlock) page.Page {
+	var sections []page.Section
+	for _, b := range blocks {
+		if b.Note != "" {
+			sections = append(sections, page.Section{ID: b.Name, Title: b.Name, Items: []page.Item{{Note: &page.Note{Text: b.Note}}}})
+			continue
+		}
+		one := List(b.Report, b.Shared)
+		own, shares := one.Sections[0], one.Sections[1]
+		own.ID, own.Title, own.Role = b.Name, b.Name, ""
+		shares.ID = b.Name + "/shares"
+		sections = append(sections, own, shares)
+	}
+	return page.Seal(page.Page{ID: "accounts", Command: "accounts", Sections: sections})
+}
+
+type ListJSON struct {
+	Schema    string        `json:"schema"`
+	Machine   MachineRef    `json:"machine"`
+	Accounts  []AccountRow  `json:"accounts"`
+	Shares    []ShareRow    `json:"shares"`
+	ShareList []string      `json:"share_list"`
+	Machines  []ListJSON    `json:"machines,omitempty"`
+	Missing   []MissingNote `json:"unreachable,omitempty"`
+}
+
+type MachineRef struct {
+	Name string `json:"name"`
+	Kind string `json:"kind"`
+}
+
+type AccountRow struct {
+	Name      string `json:"name"`
+	Label     string `json:"label"`
+	State     string `json:"state"`
+	Who       string `json:"who,omitempty"`
+	Scope     string `json:"scope,omitempty"`
+	Detail    string `json:"detail,omitempty"`
+	Fix       string `json:"fix,omitempty"`
+	Shareable bool   `json:"shareable"`
+}
+
+type ShareRow struct {
+	Account string    `json:"account"`
+	VM      string    `json:"vm"`
+	At      time.Time `json:"at"`
+	UntilAt time.Time `json:"until_at"`
+}
+
+type MissingNote struct {
+	Machine string `json:"machine"`
+	Why     string `json:"why"`
+}
+
+func ListContract(schema string, r accounts.Report, shared []model.Shared) ListJSON {
+	// invariant: names, states, who and scopes only: no field of it ever
+	// carries a token, a cookie or a key body.
+	r = r.Resolved()
+	out := ListJSON{Schema: schema, Accounts: []AccountRow{}, Shares: []ShareRow{}, ShareList: r.ShareList}
+	if out.ShareList == nil {
+		out.ShareList = []string{}
+	}
+	if len(r.Machines) > 0 {
+		m := r.Machines[0]
+		out.Machine = MachineRef{Name: m.Name, Kind: kindWord(m.Kind)}
+		for _, a := range m.Accounts {
+			if a.Lent != nil && a.Origin == accounts.OriginLent {
+				continue
+			}
+			secret, ok := model.SecretOf(a.Provider)
+			out.Accounts = append(out.Accounts, AccountRow{
+				Name: a.Provider, Label: model.Label(a.Provider), State: strings.ReplaceAll(stateWord(a), " ", "-"),
+				Who: who(a), Scope: strings.Join(a.Scopes, ", "), Detail: a.Detail, Fix: a.Hint,
+				Shareable: ok && model.Shareable(secret, r.ShareList),
+			})
+		}
+	}
+	for _, sh := range shared {
+		out.Shares = append(out.Shares, ShareRow{Account: sh.Account, VM: sh.VM, At: sh.At, UntilAt: sh.Until})
+	}
+	return out
+}
+
+func Shared(sh model.Shared, now time.Time) page.Page {
+	r := page.Row{ID: "share/" + sh.VM + "/" + sh.Account, Label: sh.Account, Short: model.Label(sh.Account), Mark: page.OK,
+		Cells: []page.Value{page.Text("shared with " + sh.VM), page.Text(model.Left(sh.Until, now))}}
+	return page.Seal(page.Page{ID: "outcome-accounts-share", Command: "accounts share", Sections: []page.Section{{ID: "outcome", Title: "Shared", Role: page.Banner, Columns: []page.Column{
+		{Key: "what", Kind: page.KindText}, {Key: "left", Kind: page.KindText},
+	}, Items: []page.Item{{Row: &r}}}}})
+}
+
+func TakenBack(sh model.Shared) page.Page {
+	r := page.Row{ID: "share/" + sh.VM + "/" + sh.Account, Label: sh.Account, Short: model.Label(sh.Account), Mark: page.OK,
+		Cells: []page.Value{page.Text("taken back from " + sh.VM)}}
+	return page.Seal(page.Page{ID: "outcome-accounts-take-back", Command: "accounts take-back", Sections: []page.Section{{ID: "outcome", Title: "Taken back", Role: page.Banner, Columns: []page.Column{
+		{Key: "what", Kind: page.KindText},
+	}, Items: []page.Item{{Row: &r}}}}})
+}
+
+func left(until, now time.Time) string {
+	if !now.Before(until) {
+		return "ended"
+	}
+	return model.Left(until, now) + " left"
+}

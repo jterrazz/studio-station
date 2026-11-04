@@ -11,31 +11,24 @@ import (
 
 type Deps struct {
 	Accounts Accounts
-	Secrets  Secrets
+	Shares   Shares
 	Kind     machine.Kind
 }
 
 type Accounts interface {
-	Read(ctx context.Context) <-chan accounts.Report
+	// value: withVMs reads each VM's own accounts through the engine too.
+	Read(ctx context.Context, withVMs bool) <-chan accounts.Report
 }
 
-type Secrets interface {
-	List(ctx context.Context) (accounts.Lending, error)
-	Allow(names []string) error
-	CheckDisallow(names []string) error
-	// value: the VMs each name is lent to now.
-	Held(names []string) (map[string][]string, error)
-	Disallow(ctx context.Context, names []string) (accounts.RecallReport, error)
-	Lend(ctx context.Context, to string, names []string, term time.Duration) (accounts.LendReport, error)
-	// value: the names a recall from that VM would take back, every name
-	// lent to it when none is named.
-	CheckRecall(ctx context.Context, from string, names []string) ([]string, error)
-	Recall(ctx context.Context, from string, names []string) (accounts.RecallReport, error)
+type Shares interface {
+	ShareList() []string
+	Shares(ctx context.Context) (map[string][]accounts.Share, error)
+	CheckShare(ctx context.Context, account, vm string) (string, error)
+	Share(ctx context.Context, account, vm string, term time.Duration) (accounts.Shared, error)
+	CheckTakeBack(ctx context.Context, account, vm string) (string, error)
+	TakeBack(ctx context.Context, account, vm string) error
 }
 
 func All(d Deps) []call.Handler {
-	return []call.Handler{
-		call.BindWatch(Read, d), call.Bind(List, d), call.Bind(Allow, d), call.Bind(Disallow, d),
-		call.Bind(Lend, d), call.Bind(Recall, d),
-	}
+	return []call.Handler{call.BindWatch(List, d), call.Bind(Share, d), call.Bind(TakeBack, d)}
 }

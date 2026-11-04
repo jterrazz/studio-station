@@ -4,43 +4,35 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/accounts"
+	"github.com/jterrazz/studio-station/src/accounts/contract"
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/store"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
-
-	"github.com/jterrazz/studio-station/src/accounts/contract"
-	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
-	ClaudeToken  = "operator:claude:oauth-token"
+	ClaudeToken  = catalog.ClaudeTokenName
 	stepBudget   = 2 * time.Minute
 	ExportBudget = stepBudget
-	DefaultLend  = accounts.DefaultShareTerm
-	ShortestLend = accounts.ShortestShare
-	LongestLend  = accounts.LongestShare
 )
 
-var (
-	sessionName = regexp.MustCompile(`^session(:[a-z0-9-]+)+$`)
-)
-
-type Options struct{ Here catalog.MachineKind }
+type Options struct {
+	Here catalog.MachineKind
+	// value: whether a VM of this Mac runs now, as its engine says.
+	Running func(ctx context.Context, vm string) (bool, error)
+}
 
 type Guest interface {
 	// invariant: a command inside a VM rides its engine's one connection to it.
 	GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error)
 }
-
-type Lend = accounts.Share
 
 type Stores struct {
 	ShareList contract.ShareListPrefs
@@ -52,54 +44,18 @@ type Stores struct {
 
 type Service struct {
 	clock  system.Clock
-	run    system.Runner
 	guest  Guest
 	st     Stores
 	source contract.SecretSource
-	here   catalog.MachineKind
+	ids    contract.Identities
+	o      Options
 }
 
-func New(h system.Host, guest Guest, st Stores, source contract.SecretSource, o Options) *Service {
-	return &Service{clock: h.Clock, run: h.Run, guest: guest, st: st, source: source, here: o.Here}
+func New(h system.Host, guest Guest, st Stores, source contract.SecretSource, ids contract.Identities, o Options) *Service {
+	return &Service{clock: h.Clock, guest: guest, st: st, source: source, ids: ids, o: o}
 }
 
-type (
-	Report       = accounts.Lending
-	LendReport   = accounts.LendReport
-	RecallReport = accounts.RecallReport
-)
-
-func (s *Service) List(ctx context.Context) (Report, error) {
-	list, err := s.st.ShareList.Get()
-	if err != nil {
-		return Report{}, err
-	}
-	lends, err := s.st.Shares.List(ctx)
-	if err != nil {
-		return Report{}, err
-	}
-	return Report{LendList: append([]string{}, list...), Lent: names(lends, nil), Lends: lends, Kept: []string{}}, nil
-}
-
-func (s *Service) Allow(names []string) error {
-	for _, name := range names {
-		if name != ClaudeToken && !sessionName.MatchString(name) {
-			return &NotSessionError{Name: name}
-		}
-	}
-	list, err := s.st.ShareList.Get()
-	if err != nil {
-		return err
-	}
-	for _, name := range names {
-		if !slices.Contains(list, name) {
-			list = append(list, name)
-		}
-	}
-	return s.st.ShareList.Set(list)
-}
-
-func (s *Service) LendList() []string {
+func (s *Service) ShareList() []string {
 	list, err := s.st.ShareList.Get()
 	if err != nil {
 		return nil
@@ -107,159 +63,143 @@ func (s *Service) LendList() []string {
 	return list
 }
 
-func (s *Service) Held(names []string) (map[string][]string, error) {
-	return s.holding(names)
+func (s *Service) Shares(ctx context.Context) (map[string][]accounts.Share, error) {
+	return s.st.Shares.List(ctx)
 }
 
-func (s *Service) Lends() (map[string][]Lend, error) { return s.st.Shares.List(context.Background()) }
-
-func (s *Service) holding(only []string) (map[string][]string, error) {
-	lends, err := s.st.Shares.List(context.Background())
-	if err != nil {
-		return nil, err
+func (s *Service) here() string {
+	name, err := s.st.Name.Get()
+	if err != nil || name == "" {
+		return "This Mac"
 	}
-	return names(lends, only), nil
+	return name
 }
 
-func names(lends map[string][]Lend, only []string) map[string][]string {
-	held := map[string][]string{}
-	for vm, list := range lends {
-		for _, l := range list {
-			if only == nil || slices.Contains(only, l.Name) {
-				held[vm] = append(held[vm], l.Name)
+// invariant: a share is refused before anything is read or copied: an
+// unknown account, one the share list does not hold, a VM this Mac does not
+// keep or that is stopped, an account not signed in here.
+func (s *Service) CheckShare(ctx context.Context, account, vm string) (secret string, err error) {
+	if s.o.Here != catalog.Host {
+		return "", &OffHostError{Here: s.o.Here}
+	}
+	if !accounts.Known(account) {
+		return "", &accounts.UnknownError{Account: account}
+	}
+	secret, ok := accounts.SecretOf(account)
+	list, err := s.st.ShareList.Get()
+	if err != nil {
+		return "", err
+	}
+	if !ok || !accounts.Shareable(secret, list) {
+		return "", &accounts.NotShareableError{Account: account}
+	}
+	if err := s.checkVM(ctx, vm); err != nil {
+		return "", err
+	}
+	if s.o.Running != nil {
+		running, err := s.o.Running(ctx, vm)
+		if err != nil {
+			return "", err
+		}
+		if !running {
+			return "", &accounts.VMStoppedError{VM: vm}
+		}
+	}
+	if s.ids != nil {
+		for _, p := range catalog.Providers {
+			if p.ID != account {
+				continue
+			}
+			if id, err := s.ids.Read(ctx, p); err != nil || id.State != catalog.StateOK {
+				return "", &accounts.NotSignedInError{Account: account, Mac: "This Mac"}
 			}
 		}
 	}
-	return held
+	return secret, nil
 }
 
-func (s *Service) CheckDisallow(names []string) error {
-	list, err := s.st.ShareList.Get()
+func (s *Service) Share(ctx context.Context, account, vm string, term time.Duration) (accounts.Shared, error) {
+	if term == 0 {
+		term = accounts.DefaultShareTerm
+	}
+	secret, err := s.CheckShare(ctx, account, vm)
+	if err != nil {
+		return accounts.Shared{}, err
+	}
+	probe, err := s.inVM(ctx, vm, "command -v studio", "")
+	switch {
+	case err != nil:
+		return accounts.Shared{}, &StepError{VM: vm, Step: "reaching it", Cause: err}
+	case probe.ExitCode != 0:
+		return accounts.Shared{}, &NoStudioError{VM: vm}
+	}
+	exported, err := s.source.Export(ctx, []string{secret})
+	if err != nil {
+		return accounts.Shared{}, &accounts.UnreadableError{Account: account, Mac: "This Mac", Cause: err}
+	}
+	// invariant: the secret travels from the export's output to the VM's
+	// stdin and nowhere else: never argv, never a file on the Mac.
+	imported, err := s.inVM(ctx, vm, VMStudio("import"), string(exported))
+	if err != nil || imported.ExitCode != 0 {
+		return accounts.Shared{}, &StepError{VM: vm, Step: "copying " + accounts.Label(account), Cause: failure(err, imported)}
+	}
+	at := s.clock.Now().UTC().Truncate(time.Second)
+	share := accounts.Share{Name: secret, At: at, Until: at.Add(term)}
+	held, err := s.st.Shares.Get(ctx, vm)
+	if err != nil {
+		return accounts.Shared{}, err
+	}
+	held = slices.DeleteFunc(held, func(have accounts.Share) bool { return have.Name == secret })
+	if err := s.st.Shares.Put(ctx, vm, append(held, share)); err != nil {
+		return accounts.Shared{}, err
+	}
+	return accounts.Shared{Account: account, VM: vm, At: share.At, Until: share.Until}, nil
+}
+
+// invariant: a take-back names an account this Mac shares with that VM;
+// anything else is refused before the VM is asked.
+func (s *Service) CheckTakeBack(ctx context.Context, account, vm string) (secret string, err error) {
+	if !accounts.Known(account) {
+		return "", &accounts.UnknownError{Account: account}
+	}
+	if err := s.checkVM(ctx, vm); err != nil {
+		return "", err
+	}
+	held, err := s.st.Shares.Get(ctx, vm)
+	if err != nil {
+		return "", err
+	}
+	secret, _ = accounts.SecretOf(account)
+	if !slices.ContainsFunc(held, func(sh accounts.Share) bool { return sh.Name == secret }) {
+		return "", &accounts.NotSharedError{Account: account, VM: vm}
+	}
+	return secret, nil
+}
+
+func (s *Service) TakeBack(ctx context.Context, account, vm string) error {
+	secret, err := s.CheckTakeBack(ctx, account, vm)
 	if err != nil {
 		return err
 	}
-	return onList(list, names)
+	return s.Expire(ctx, vm, []string{secret})
 }
 
-func (s *Service) Disallow(ctx context.Context, names []string) (RecallReport, error) {
-	list, err := s.st.ShareList.Get()
+func (s *Service) Expire(ctx context.Context, vm string, secrets []string) error {
+	// value: deletes the VM's copies of these secrets, then their shares.
+	out, err := s.inVM(ctx, vm, VMStudio(append([]string{"delete"}, secrets...)...), "")
+	if err != nil || out.ExitCode != 0 {
+		return &StepError{VM: vm, Step: "deleting the copies", Cause: failure(err, out)}
+	}
+	held, err := s.st.Shares.Get(ctx, vm)
 	if err != nil {
-		return RecallReport{}, err
+		return err
 	}
-	if listErr := onList(list, names); listErr != nil {
-		return RecallReport{}, listErr
-	}
-	held, err := s.holding(names)
-	if err != nil {
-		return RecallReport{}, err
-	}
-	if err := s.st.ShareList.Set(slices.DeleteFunc(list, func(n string) bool { return slices.Contains(names, n) })); err != nil {
-		return RecallReport{}, err
-	}
-	report := RecallReport{From: map[string][]string{}}
-	for _, vm := range sortedKeys(held) {
-		if err := s.recallFrom(ctx, vm, held[vm]); err != nil {
-			report.Warnings = append(report.Warnings, err.Error())
-			continue
-		}
-		report.From[vm] = held[vm]
-	}
-	return report, nil
+	return s.st.Shares.Put(ctx, vm, slices.DeleteFunc(held, func(sh accounts.Share) bool { return slices.Contains(secrets, sh.Name) }))
 }
 
-func (s *Service) Lend(ctx context.Context, to string, names []string, term time.Duration) (LendReport, error) {
-	if term == 0 {
-		term = DefaultLend
-	}
-	names, err := s.lendPlan(ctx, to, names)
-	if err != nil {
-		return LendReport{}, err
-	}
-	probe, err := s.inVM(ctx, to, "command -v studio", "")
-	switch {
-	case err != nil:
-		return LendReport{}, &StepError{VM: to, Step: "reaching it over ssh", Cause: err}
-	case probe.ExitCode != 0:
-		return LendReport{}, &NoStudioError{VM: to}
-	}
-	exported, err := s.source.Export(ctx, names)
-	if err != nil {
-		return LendReport{}, &StepError{VM: to, Step: "exporting the secrets", Cause: err}
-	}
-	// invariant: the exported values travel from the first process's output to the
-	// second's stdin and nowhere else: never argv, never a file on the host.
-	imported, err := s.inVM(ctx, to, vmStudio("import"), string(exported))
-	if err != nil || imported.ExitCode != 0 {
-		return LendReport{}, &StepError{VM: to, Step: "importing the secrets", Cause: failure(err, imported)}
-	}
-	at := s.clock.Now().UTC().Truncate(time.Second)
-	lends := make([]Lend, 0, len(names))
-	for _, n := range names {
-		lends = append(lends, Lend{Name: n, At: at, Until: at.Add(term)})
-	}
-	if err := s.recordLent(ctx, to, lends); err != nil {
-		return LendReport{}, err
-	}
-	return LendReport{To: to, Names: names, At: at, Until: at.Add(term)}, nil
-}
-
-func (s *Service) CheckRecall(ctx context.Context, from string, names []string) ([]string, error) {
-	if err := s.checkVM(ctx, from); err != nil {
-		return nil, err
-	}
-	held, err := s.holding(nil)
-	if err != nil {
-		return nil, err
-	}
-	have := held[from]
-	if len(names) == 0 {
-		return have, nil
-	}
-	for _, name := range names {
-		if !slices.Contains(have, name) {
-			return nil, &NotLentError{Name: name, VM: from}
-		}
-	}
-	return names, nil
-}
-
-func (s *Service) Recall(ctx context.Context, from string, names []string) (RecallReport, error) {
-	names, err := s.CheckRecall(ctx, from, names)
-	if err != nil {
-		return RecallReport{}, err
-	}
-	report := RecallReport{From: map[string][]string{}}
-	if len(names) == 0 {
-		return report, nil
-	}
-	if err := s.recallFrom(ctx, from, names); err != nil {
-		return RecallReport{}, err
-	}
-	report.From[from] = names
-	return report, nil
-}
-
-func (s *Service) lendPlan(ctx context.Context, to string, names []string) ([]string, error) {
-	if s.here != catalog.Host {
-		return nil, &OffHostError{Here: s.here}
-	}
-	if err := s.checkVM(ctx, to); err != nil {
-		return nil, err
-	}
-	list, err := s.st.ShareList.Get()
-	if err != nil {
-		return nil, err
-	}
-	if len(names) == 0 {
-		names = list
-	}
-	if len(names) == 0 {
-		return nil, &EmptyLendListError{}
-	}
-	if err := onList(list, names); err != nil {
-		return nil, err
-	}
-	return dedupe(names), nil
+func (s *Service) Forget(ctx context.Context, vm string) error {
+	// value: a deleted VM takes its copies with its disk; its shares go too.
+	return s.st.Shares.Delete(ctx, vm)
 }
 
 func (s *Service) checkVM(ctx context.Context, name string) error {
@@ -273,41 +213,10 @@ func (s *Service) checkVM(ctx context.Context, name string) error {
 	if err != nil {
 		return err
 	}
-	here, err := s.st.Name.Get()
-	if err != nil {
-		return err
-	}
-	if _, host := hosts[name]; host || name == here {
+	if _, host := hosts[name]; host || name == s.here() {
 		return &NotAVMError{Name: name}
 	}
-	return &UnknownVMError{Name: name}
-}
-
-func (s *Service) recallFrom(ctx context.Context, vm string, names []string) error {
-	out, err := s.inVM(ctx, vm, vmStudio(append([]string{"delete"}, names...)...), "")
-	if err != nil || out.ExitCode != 0 {
-		return &StepError{VM: vm, Step: "deleting the copies", Cause: failure(err, out)}
-	}
-	held, err := s.st.Shares.Get(ctx, vm)
-	if err != nil {
-		return err
-	}
-	return s.st.Shares.Put(ctx, vm, slices.DeleteFunc(held, func(l Lend) bool { return slices.Contains(names, l.Name) }))
-}
-
-func (s *Service) recordLent(ctx context.Context, vm string, lends []Lend) error {
-	held, err := s.st.Shares.Get(ctx, vm)
-	if err != nil {
-		return err
-	}
-	for _, l := range lends {
-		if i := slices.IndexFunc(held, func(have Lend) bool { return have.Name == l.Name }); i >= 0 {
-			held[i] = l
-		} else {
-			held = append(held, l)
-		}
-	}
-	return s.st.Shares.Put(ctx, vm, held)
+	return &accounts.UnknownVMError{VM: name}
 }
 
 func (s *Service) inVM(ctx context.Context, vm, line, stdin string) (system.Output, error) {
@@ -316,36 +225,10 @@ func (s *Service) inVM(ctx context.Context, vm, line, stdin string) (system.Outp
 	return s.guest.GuestExec(ctx, vm, line, stdin)
 }
 
-func vmStudio(args ...string) string {
+// value: studio's command line inside a VM, its credential store a file
+// there: import reads the secrets on stdin, delete takes their names.
+func VMStudio(args ...string) string {
 	return strings.Join(append([]string{"STUDIO_CREDENTIALS_BACKEND=file", "studio", "credentials"}, args...), " ")
-}
-
-func onList(list, names []string) error {
-	for _, name := range names {
-		if !slices.Contains(list, name) {
-			return &NotOnLendListError{Name: name}
-		}
-	}
-	return nil
-}
-
-func dedupe(names []string) []string {
-	out := make([]string, 0, len(names))
-	for _, n := range names {
-		if !slices.Contains(out, n) {
-			out = append(out, n)
-		}
-	}
-	return out
-}
-
-func sortedKeys(m map[string][]string) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 func failure(err error, out system.Output) error {

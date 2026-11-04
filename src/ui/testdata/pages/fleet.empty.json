@@ -204,57 +204,6 @@
       ]
     },
     {
-      "id": "secrets",
-      "title": "Secrets",
-      "fold": "auto",
-      "columns": [
-        {
-          "key": "name",
-          "kind": "text",
-          "keep": 100
-        }
-      ],
-      "items": [
-        {
-          "group": {
-            "head": {
-              "id": "lend-list",
-              "label": "Lend list"
-            },
-            "items": [
-              {
-                "empty": {
-                  "noun": "lent secrets",
-                  "hint": {
-                    "command": "station secrets allow <name>"
-                  }
-                }
-              }
-            ],
-            "fold": "open"
-          }
-        },
-        {
-          "group": {
-            "head": {
-              "id": "kept",
-              "label": "Kept"
-            },
-            "items": [
-              {
-                "empty": {
-                  "noun": "kept secrets"
-                }
-              }
-            ],
-            "fold": "open"
-          }
-        }
-      ],
-      "uncounted": true,
-      "pipe_groups": true
-    },
-    {
       "id": "tailnet",
       "title": "Tailnet",
       "fold": "auto",

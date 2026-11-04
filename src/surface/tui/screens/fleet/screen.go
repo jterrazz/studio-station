@@ -8,7 +8,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
@@ -85,14 +84,6 @@ func read(d Deps) tab.Source[pagefleet.Reading] {
 					return
 				}
 				send(func(r *pagefleet.Reading) { r.Images = &list })
-			})
-			run(func() {
-				s, err := call.Invoke(ctx, d.Calls, d.Target, accountscalls.List, accountscalls.ListIn{}, nil)
-				if err != nil {
-					send(fail("secrets", err))
-					return
-				}
-				send(func(r *pagefleet.Reading) { r.Secrets = &s })
 			})
 			run(func() {
 				f, err := call.Invoke(ctx, d.Calls, d.Target, portscalls.List, portscalls.ListIn{}, nil)

@@ -12,13 +12,5 @@
    ○ linux  2026.10.20  4.0 GB  jterrazz-macbook-pro  older: station images delete linux@2026.10.20
    ● linux  2026.11.01  4.0 GB  mac-mini              infra
    ○ macos                                            not built yet
- - Secrets
-     Lend list
-   ├─ ● GITHUB_TOKEN    lent to linux-1
-   └─ ○ NPM_TOKEN       not lent
-     Kept
-   ├─ ● GITHUB_TOKEN    never leaves this host
-   ├─ ● NPM_TOKEN       never leaves this host
-   └─ ● OPENAI_API_KEY  never leaves this host
  + Tailnet                                                                                                          4 ●
  ↑↓ move  n create  b build images  enter detail  / filter  space fold  r reload  q quit  ? keys

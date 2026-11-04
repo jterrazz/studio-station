@@ -14,3 +14,11 @@ var Applies machine.Applies = func(p machine.Profile) machine.Verdict {
 	}
 	return machine.No("accounts are not for this machine")
 }
+
+var SharedFrom machine.Applies = func(p machine.Profile) machine.Verdict {
+	// invariant: a share is a Mac's: its accounts are copied into its own VMs.
+	if p.Kind == machine.Mac {
+		return machine.Yes
+	}
+	return machine.No("accounts are shared from a Mac")
+}

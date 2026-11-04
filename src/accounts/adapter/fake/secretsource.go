@@ -23,6 +23,9 @@ func NewSecretSource(w *world.World, mac string) *SecretSource {
 func (s *SecretSource) Export(_ context.Context, names []string) ([]byte, error) {
 	s.w.Lock()
 	defer s.w.Unlock()
+	if s.w.Fails("SecretSource.Export") {
+		return nil, errors.New("the export failed, as the world scripted it")
+	}
 	kept := mac(s.w, s.mac).Secrets
 	out := make(map[string]string, len(names))
 	for _, n := range names {

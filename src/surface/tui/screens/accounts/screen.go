@@ -37,7 +37,7 @@ func New(ctx context.Context, d Deps, here page.Context, describe tab.Describe) 
 		if fresh {
 			d.Forget()
 		}
-		return tab.Values(call.Follow(ctx, d.Calls, d.Target, accountscalls.Read, accountscalls.ReadIn{}, nil))
+		return tab.Values(call.Follow(ctx, d.Calls, d.Target, accountscalls.List, accountscalls.ListIn{VMs: true}, nil))
 	}
 	build := func(r accounts.Report) page.Page { return pageaccounts.Page(r, here) }
 	return Model{View: tab.NewView(ID, "Accounts", "accounts", here, source, build, describe), ctx: ctx, d: d}
@@ -101,11 +101,11 @@ func (m Model) lend(mc accounts.Machine, a *accounts.Account, cmd tea.Cmd) (tab.
 	if provider != "" {
 		checked = accounts.Lendable(list, provider)
 		if len(checked) == 0 {
-			return m, tea.Batch(cmd, tab.Say(tab.Status{Mark: page.Absent, Text: "nothing on the lend list for " + provider}))
+			return m, tea.Batch(cmd, tab.Say(tab.Status{Mark: page.Absent, Text: "nothing on the share list for " + provider}))
 		}
 	}
 	if len(list) == 0 {
-		return m, tea.Batch(cmd, tab.Say(tab.Status{Mark: page.Absent, Text: "nothing to lend: station secrets allow <name>"}))
+		return m, tea.Batch(cmd, tab.Say(tab.Status{Mark: page.Absent, Text: "nothing on the share list: share_list in preferences.json"}))
 	}
 	vm := mc.Name
 	var fill tea.Cmd
@@ -113,14 +113,18 @@ func (m Model) lend(mc accounts.Machine, a *accounts.Account, cmd tea.Cmd) (tab.
 		names := strings.FieldsFunc(values["names"], func(r rune) bool { return r == ',' })
 		term, err := time.ParseDuration(values["for"])
 		if len(names) == 0 || err != nil {
-			return tab.Say(tab.Status{Mark: page.Absent, Text: "nothing lent"})
+			return tab.Say(tab.Status{Mark: page.Absent, Text: "nothing shared"})
 		}
 		return tab.Exec(ID, func() (tab.Status, error) {
-			r, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, accountscalls.Lend, accountscalls.LendIn{To: vm, Names: names, Term: term}, nil)
-			if err != nil {
-				return tab.Status{}, err
+			var until time.Time
+			for _, name := range names {
+				r, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, accountscalls.Share, accountscalls.ShareIn{Account: accounts.AccountOf(name), With: vm, For: term}, nil)
+				if err != nil {
+					return tab.Status{}, err
+				}
+				until = r.Until
 			}
-			return tab.Status{Mark: page.OK, Text: strings.Join(r.Names, ", ") + "  lent to " + vm + " until " + r.Until.Local().Format("15:04")}, nil
+			return tab.Status{Mark: page.OK, Text: strings.Join(names, ", ") + "  shared with " + vm + " until " + until.Local().Format("15:04")}, nil
 		})
 	})
 	return m, tea.Batch(cmd, fill)
@@ -141,8 +145,8 @@ func (m Model) revoke(mc accounts.Machine, a *accounts.Account, cmd tea.Cmd) (ta
 	}
 	vm, name := mc.Name, a.Lent.Name
 	run := tab.Confirmed(ID, pageaccounts.RecallConfirm(vm, name), func(answer string) (tab.Status, error) {
-		_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, accountscalls.Recall, accountscalls.RecallIn{From: vm, Names: []string{name}, Confirm: answer}, nil)
-		return tab.Outcome("recalled", name, catalog.StateOK, "from "+vm), err
+		_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, accountscalls.TakeBack, accountscalls.TakeBackIn{Account: accounts.AccountOf(name), From: vm, Confirm: answer}, nil)
+		return tab.Outcome("taken back", name, catalog.StateOK, "from "+vm), err
 	})
 	var act tea.Cmd
 	m.View, act = m.Act(run)

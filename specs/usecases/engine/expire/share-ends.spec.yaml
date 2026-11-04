@@ -1,0 +1,25 @@
+description: 'a 4 h share ends by itself: the copy is taken back, and no one is told'
+env:
+    - two-macs
+    - engine
+runs:
+    - command: '--version >/dev/null; /usr/bin/jq ''del(.macs["linux-1"].secrets) | del(.macs["jterrazz-macbook-pro"].stores.shares)'' world.json > w.json && /bin/mv w.json world.json'
+      exit: 0
+    - command: 'accounts share github --with linux-1 --for 4h'
+      exit: 0
+      stdout: |
+          ●	github	shared with linux-1	4 h
+    - command: 'world advance 4h'
+      exit: 0
+    - command: '--version >/dev/null; "$STATION" accounts > /dev/null'
+      exit: 0
+    - command: '--version >/dev/null; /usr/bin/jq -c ''[(.macs["linux-1"].secrets // {} | keys), (.macs["jterrazz-macbook-pro"].stores.shares["linux-1"] // [] | map(.name))]'' world.json; /usr/bin/jq -c ''.told'' world.json'
+      exit: 0
+      stdout: |
+          [[],[]]
+          null
+    - command: 'accounts | /usr/bin/grep -A1 "^# Shared"'
+      exit: 0
+      stdout: |
+          # Shared with VMs
+          	none

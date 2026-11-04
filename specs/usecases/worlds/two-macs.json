@@ -251,6 +251,50 @@
                         "here": true
                     }
                 }
+            },
+            "identities": {
+                "github": {
+                    "State": "ok",
+                    "Who": ["jterrazz"],
+                    "Scopes": ["read:org", "repo"]
+                },
+                "npm": {
+                    "State": "broken",
+                    "Reason": "refused",
+                    "Who": ["?"],
+                    "Detail": "token refused"
+                },
+                "claude": {
+                    "State": "ok",
+                    "Who": ["admin@jterrazz.com"],
+                    "Scopes": ["max"]
+                },
+                "tailscale": {
+                    "State": "ok"
+                },
+                "cloudflare": {
+                    "State": "ok",
+                    "Who": ["admin@jterrazz.com"],
+                    "Source": "wrangler"
+                },
+                "git": {
+                    "State": "ok",
+                    "Who": ["Jean-Baptiste Terrazzoni", "admin@jterrazz.com"]
+                },
+                "ssh": {
+                    "State": "ok",
+                    "Who": ["1 key"],
+                    "Scopes": ["admin@jterrazz.com"]
+                },
+                "docker": {
+                    "State": "absent",
+                    "Reason": "unset",
+                    "Detail": "not signed in"
+                }
+            },
+            "secrets": {
+                "session:github": "gho_worldSessionGithub0000000000000000",
+                "operator:claude:oauth-token": "sk-ant-oat01-worldClaudeToken000000000000"
             }
         },
         "jterrazz-mac-mini": {
@@ -319,6 +363,16 @@
                         "size_gb": 4
                     }
                 ]
+            },
+            "identities": {
+                "github": {
+                    "State": "ok",
+                    "Who": ["jterrazz-agent"],
+                    "Scopes": ["repo"]
+                }
+            },
+            "secrets": {
+                "session:github": "gho_worldMiniSessionGithub000000000000"
             }
         },
         "linux-1": {
@@ -334,6 +388,21 @@
                         "node": "22.11.0"
                     }
                 }
+            },
+            "identities": {
+                "github": {
+                    "State": "ok",
+                    "Who": ["jterrazz"],
+                    "Scopes": ["repo"]
+                },
+                "git": {
+                    "State": "ok",
+                    "Who": ["jterrazz"]
+                }
+            },
+            "secrets": {
+                "session:github": "gho_worldSessionGithub0000000000000000",
+                "operator:claude:oauth-token": "sk-ant-oat01-worldClaudeToken000000000000"
             }
         },
         "infra": {

@@ -59,32 +59,6 @@
       ]
     },
     {
-      "id": "secrets",
-      "title": "Secrets",
-      "columns": [
-        {
-          "key": "name",
-          "kind": "text",
-          "keep": 100
-        }
-      ],
-      "items": [
-        {
-          "row": {
-            "id": "secrets",
-            "mark": "pending",
-            "label": "reading"
-          }
-        }
-      ],
-      "counts": [
-        {
-          "mark": "pending",
-          "n": 1
-        }
-      ]
-    },
-    {
       "id": "tailnet",
       "title": "Tailnet",
       "columns": [

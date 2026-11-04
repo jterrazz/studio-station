@@ -7,8 +7,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/spf13/cobra"
-
 	"github.com/jterrazz/studio-station/src/accounts/adapter/cli"
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -18,8 +16,6 @@ import (
 	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/ports/contract"
-	accountscmd "github.com/jterrazz/studio-station/src/surface/cli/accounts"
-	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 func (m machine) accounts() *accounts.Service {
@@ -33,7 +29,7 @@ func (m machine) accounts() *accounts.Service {
 	tn := m.tailnet()
 	d := m.engineAPI()
 	sources := accounts.Ports{
-		LendList: sec.LendList,
+		LendList: sec.ShareList,
 		Tailnet: func(ctx context.Context) accounts.TailnetAccount {
 			return tailnetAccount(ctx, tn)
 		},
@@ -106,10 +102,6 @@ func (m machine) stationHostKeys() []string {
 		}
 	}
 	return keys
-}
-
-func accountsCommand(env kit.Env, m machine) *cobra.Command {
-	return accountscmd.Command(accountscmd.Deps{Here: m.where}, env)
 }
 
 func tailnetAccount(ctx context.Context, tn contract.Tailnet) accounts.TailnetAccount {

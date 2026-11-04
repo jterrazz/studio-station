@@ -41,6 +41,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/fail"
 	diskfake "github.com/jterrazz/studio-station/src/disk/adapter/fake"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
+	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginefake "github.com/jterrazz/studio-station/src/engine/adapter/fake"
 	imagesfake "github.com/jterrazz/studio-station/src/images/adapter/fake"
@@ -578,6 +579,11 @@ func (g worldGuest) Exec(ctx context.Context, cmd contract.GuestCommand) (contra
 	slice, ok := g.r.w.Macs[g.vm]
 	ok = ok && slice.Self != nil
 	g.r.w.Unlock()
+	if ok {
+		if res, handled, err := g.credentials(cmd); handled {
+			return res, err
+		}
+	}
 	if cmd.Line != unix.Guest || !ok || g.r.far == nil || cmd.Stdin == nil {
 		return g.Guest.Exec(ctx, cmd)
 	}
@@ -754,3 +760,39 @@ func (r rootless) Start(c system.Cmd, logPath string) (int, error) {
 	}
 	return r.Runner.Start(c, logPath)
 }
+
+// invariant: studio inside a VM of the world keeps its credentials in the
+// VM's own slice: the line station runs to import reads them from stdin,
+// the one to delete takes their names; the world's guest answers both, and
+// that studio is there.
+func (g worldGuest) credentials(cmd contract.GuestCommand) (contract.GuestResult, bool, error) {
+	store := accountsfake.CredentialsOf(g.r.w, g.vm)
+	switch {
+	case cmd.Line == "command -v studio":
+		return contract.GuestResult{Stdout: "/usr/local/bin/studio\n"}, true, nil
+	case cmd.Line == secrets.VMStudio("import"):
+		g.r.w.Lock()
+		broke := g.r.w.Fails("Guest.Exec")
+		g.r.w.Unlock()
+		if broke {
+			return contract.GuestResult{}, true, errWorldGuestBroke
+		}
+		var in []byte
+		if cmd.Stdin != nil {
+			var err error
+			if in, err = io.ReadAll(cmd.Stdin); err != nil {
+				return contract.GuestResult{}, true, err
+			}
+		}
+		if err := store.Import(in); err != nil {
+			return contract.GuestResult{Code: 1, Stderr: "studio: " + err.Error() + "\n"}, true, nil
+		}
+		return contract.GuestResult{}, true, nil
+	case strings.HasPrefix(cmd.Line, secrets.VMStudio("delete")+" "):
+		store.Delete(strings.Fields(strings.TrimPrefix(cmd.Line, secrets.VMStudio("delete"))))
+		return contract.GuestResult{}, true, nil
+	}
+	return contract.GuestResult{}, false, nil
+}
+
+var errWorldGuestBroke = errors.New("the guest connection broke, as the world scripted it")

@@ -4,10 +4,5 @@
  - Images                                                                                                           2 ○
    ○ linux  not built yet
    ○ macos  not built yet
- - Secrets
-     Lend list
-      no lent secrets  → station secrets allow <name>
-     Kept
-      no kept secrets
  + Tailnet                                                                                                          1 ○
  ↑↓ move  n create  b build images  enter detail  / filter  space fold  r reload  q quit  ? keys

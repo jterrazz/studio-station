@@ -3,13 +3,11 @@ package fleet
 import (
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
-	pagesecrets "github.com/jterrazz/studio-station/src/pages/secrets"
 	pageservices "github.com/jterrazz/studio-station/src/pages/services"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 	"github.com/jterrazz/studio-station/src/ports"
@@ -25,7 +23,6 @@ const (
 type Reading struct {
 	Machines *machines.Fleet
 	Images   *[]images.Report
-	Secrets  *secrets.Report
 	Services *services.Fleet
 	Tailnet  *ports.Status
 	Failed   map[string]page.Error
@@ -41,11 +38,6 @@ func Tab(r Reading, here page.Context) page.Page {
 	p.Sections = append(p.Sections, part(r, "images", "Images", r.Images != nil, func() []page.Section {
 		s := pageimages.Section(*r.Images)
 		s.Role, s.Fold = page.Plain, page.Open
-		return []page.Section{s}
-	})...)
-	p.Sections = append(p.Sections, part(r, "secrets", "Secrets", r.Secrets != nil, func() []page.Section {
-		s := pagesecrets.Section(*r.Secrets)
-		s.Fold = page.Auto
 		return []page.Section{s}
 	})...)
 	p.Sections = append(p.Sections, part(r, "tailnet", "Tailnet", r.Tailnet != nil, func() []page.Section {

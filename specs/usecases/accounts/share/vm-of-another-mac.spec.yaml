@@ -1,0 +1,12 @@
+description: 'a workspace of the mini is refused from This Mac, exit 2, its hint --on the mini'
+env: mini-workspace
+runs:
+    - command: 'accounts share github --with ci-1'
+      exit: 2
+      stderr: |
+          Error: ci-1 is on jterrazz-mac-mini: share from jterrazz-mac-mini's accounts
+          Hint: station accounts share github --with ci-1 --on jterrazz-mac-mini
+    - command: '--version >/dev/null; /usr/bin/jq -c ''[.macs["ci-1"].secrets, .macs["jterrazz-mac-mini"].stores.shares]'' world.json'
+      exit: 0
+      stdout: |
+          [null,null]

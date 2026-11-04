@@ -1,4 +1,4 @@
-description: 'a share station v2 kept in a VM''s record moves into the accounts'' store once, at setup; a second setup changes nothing'
+description: 'a v2 share in a VM''s record moves to the accounts'' store once, at setup'
 env:
     - two-macs
     - engine

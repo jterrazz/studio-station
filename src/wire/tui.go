@@ -2,6 +2,7 @@ package wire
 
 import (
 	"context"
+	"github.com/jterrazz/studio-station/src/engine"
 	"strconv"
 	"strings"
 
@@ -68,8 +69,8 @@ func (e *stationExit) Error() string {
 	return "station " + strings.Join(e.words, " ") + " exited " + strconv.Itoa(e.code)
 }
 
-func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostDaemon()) }
+func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostDaemon(), m.vmRunning) }
 
-func (m machine) secretsVia(guest secrets.Guest) *secrets.Service {
-	return secrets.New(m.host, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), secrets.Options{Here: m.kind})
+func (m machine) secretsVia(guest secrets.Guest, running func(context.Context, string) (bool, error)) *secrets.Service {
+	return secrets.New(m.host, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), secrets.Options{Here: m.kind, Running: running})
 }

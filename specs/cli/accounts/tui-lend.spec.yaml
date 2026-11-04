@@ -30,7 +30,7 @@ runs:
           see > 12h
           send \r
           send \r
-          see lent to api until
+          see shared with api until
           see 11h 59m left
           send \x1b[B
           send r

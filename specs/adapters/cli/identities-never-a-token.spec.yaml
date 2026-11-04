@@ -134,20 +134,15 @@ runs:
       stdout: |
           on exit 0
           tui exit 0
-          ● github
-          ● npm
-          ● claude
-          ○ cloudflare
-          ● git
-          ● ssh
-          ● entry
-          ●	github
-          ●	npm
-          ●	claude
-          ○	cloudflare
-          ●	git
-          ●	ssh
-          ●	entry
+          ●	signed in
+          ●	signed in
+          ●	signed in
+          ○	not signed in
+          ●	signed in
+          ●	signed in
+          ●	signed in
+          # Shared with VMs
+
           18
           1
           vm.txt:0
