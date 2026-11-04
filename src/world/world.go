@@ -254,7 +254,6 @@ type Kept struct {
 
 func (v *VM) Running() bool { return v.PID != 0 }
 
-// invariant: a run that ends, however it ends, says when in the world.
 func (v *VM) Down(now time.Time, end *machines.RunEnd) {
 	if v.Running() {
 		v.DownAt = now
