@@ -1,11 +1,11 @@
 #!/bin/sh
 # ssh as the machines specs need it: every call is recorded in $HOME/.calls, a host's
 # engine API answers each call from answers/ssh/api-<host>/<call>.json, its Hello
-# naming those calls and the version in api-<host>/version (no folder: unreachable,
-# exit 255), `true` pops its exit codes from answers/ssh/true.codes (then true.exit,
-# default 0) after printing answers/ssh/true.stderr, a password session disconnects
-# with 255 as a pre-boot host does once the disk is unlocked, and every other call
-# exits 97.
+# naming those calls and the version in api-<host>/version, each call answered after
+# the seconds of api-<host>/delay when present (no folder: unreachable, exit 255),
+# `true` pops its exit codes from answers/ssh/true.codes (then true.exit, default 0)
+# after printing answers/ssh/true.stderr, a password session disconnects with 255 as
+# a pre-boot host does once the disk is unlocked, and every other call exits 97.
 answers="${0%/*}/../answers/ssh"
 printf 'ssh %s\n' "$*" >> "$HOME/.calls"
 case "$*" in
@@ -25,6 +25,7 @@ case "$*" in
             if [ -z "$call" ]; then
                 printf '{"v":2,"id":"%s","hello":{"version":"%s","calls":[%s]}}\n' "$id" "$version" "${calls%,}"
             else
+                [ -f "$far/delay" ] && /bin/sleep "$(/bin/cat "$far/delay")"
                 printf '{"v":2,"id":"%s","out":%s}\n' "$id" "$(/bin/cat "$far/$call.json")"
             fi
         done
