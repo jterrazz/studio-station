@@ -174,6 +174,27 @@ func TestAMacWhoseLinkDroppedIsDialedAgainAndOneLiveLinkServesEveryCall(t *testi
 	}
 }
 
+func TestACallTheLinkLacksNeverCutsTheCallsStillRidingIt(t *testing.T) {
+	r, _, _, _ := laptopReaching(t, "v3.0.0")
+	updates, err := r.Watch(t.Context(), machine.Ref{Name: mini}, "activity.read", struct{}{}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := call.Invoke(t.Context(), r, machine.Ref{Name: mini}, portsDeclare, struct{}{}, nil); !isType(err, fail.FarTooOld) {
+		t.Fatalf("ports.declare on the mini at v3.0.0: %v, want far-too-old", err)
+	}
+	read := 0
+	for u := range updates {
+		if u.Err != nil {
+			t.Fatalf("the mini's activity, open while ports.declare was refused: %v after %d samples, want both", u.Err, read)
+		}
+		read++
+	}
+	if read != 2 {
+		t.Errorf("the mini's activity gave %d samples, want 2", read)
+	}
+}
+
 func isType(err error, want fail.Type) bool {
 	var e *fail.Error
 	return errors.As(err, &e) && e.Type == want

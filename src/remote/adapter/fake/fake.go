@@ -6,6 +6,7 @@ import (
 	"errors"
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/fail"
@@ -23,7 +24,7 @@ type Dialer struct {
 	// invariant: a second Mac in this process: its calls run on its own
 	// registry, every value through the wire form, as over ssh. A connection
 	// keeps the Mac it was dialed to, as a far process keeps its binary, and
-	// breaks when that Mac goes down.
+	// breaks when that Mac goes down or when it is closed.
 	mu     sync.Mutex
 	macs   map[string]Mac
 	down   map[string]bool
@@ -53,7 +54,7 @@ func (d *Dialer) Dial(_ context.Context, mac string) (contract.Endpoint, error) 
 	if !ok || d.down[mac] {
 		return nil, fail.New(fail.Unreachable, call.Unreachable, mac, nil)
 	}
-	return endpoint{d: d, name: mac, m: m}, nil
+	return endpoint{d: d, name: mac, m: m, closed: new(atomic.Bool)}, nil
 }
 
 func (d *Dialer) Dialed() []string {
@@ -64,15 +65,16 @@ func (d *Dialer) Dialed() []string {
 }
 
 type endpoint struct {
-	d    *Dialer
-	name string
-	m    Mac
+	d      *Dialer
+	name   string
+	m      Mac
+	closed *atomic.Bool
 }
 
 func (e endpoint) broken() error {
 	e.d.mu.Lock()
 	defer e.d.mu.Unlock()
-	if e.d.down[e.name] {
+	if e.d.down[e.name] || e.closed.Load() {
 		return fail.New(fail.Unreachable, call.Unreachable, e.name, nil)
 	}
 	return nil
@@ -120,6 +122,10 @@ func (e endpoint) Watch(ctx context.Context, _ machine.Ref, name string, in json
 	go func() {
 		defer close(out)
 		for u := range updates {
+			if err := e.broken(); err != nil {
+				out <- call.Update[json.RawMessage]{Err: err}
+				return
+			}
 			next := call.Update[json.RawMessage]{Err: over(u.Err)}
 			if u.Err == nil {
 				next.Value, next.Err = call.Encode(u.Value, worded)
@@ -130,7 +136,10 @@ func (e endpoint) Watch(ctx context.Context, _ machine.Ref, name string, in json
 	return out, nil
 }
 
-func (endpoint) Close() error { return nil }
+func (e endpoint) Close() error {
+	e.closed.Store(true)
+	return nil
+}
 
 func worded(err error) *fail.Error {
 	var e *fail.Error

@@ -40,10 +40,13 @@ type Router struct {
 type link struct {
 	// invariant: one connection to a Mac, shared by every call while it
 	// lives: the callers that wait on one dial share its answer, a failed dial
-	// is never kept, and a connection that broke is dialed again.
-	done chan struct{}
-	ep   contract.Endpoint
-	err  error
+	// is never kept, and a connection that broke or lacks a call is retired,
+	// closed once the calls still riding it end.
+	done    chan struct{}
+	ep      contract.Endpoint
+	err     error
+	users   int
+	retired bool
 }
 
 func NewRouter(registry *call.Registry, here machine.Profile, reach Reach) *Router {
@@ -64,6 +67,7 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 	if err != nil {
 		return err
 	}
+	defer r.release(l)
 	raw, err := json.Marshal(in)
 	if err != nil {
 		return err
@@ -95,20 +99,23 @@ func (r *Router) Watch(ctx context.Context, target machine.Ref, name string, in 
 	}
 	raw, err := json.Marshal(in)
 	if err != nil {
+		r.release(l)
 		return nil, err
 	}
 	updates, err := l.ep.Watch(ctx, t, name, raw, p)
 	if err != nil {
 		r.broke(t.Mac(), l, err)
+		r.release(l)
 		return nil, err
 	}
-	return wire(ctx, updates), nil
+	return wire(ctx, updates, func() { r.release(l) }), nil
 }
 
-func wire(ctx context.Context, updates <-chan call.Update[json.RawMessage]) <-chan call.Update[any] {
+func wire(ctx context.Context, updates <-chan call.Update[json.RawMessage], ended func()) <-chan call.Update[any] {
 	out := make(chan call.Update[any])
 	go func() {
 		defer close(out)
+		defer ended()
 		for u := range updates {
 			next := call.Update[any]{Err: u.Err}
 			if u.Err == nil {
@@ -154,18 +161,21 @@ func (r *Router) endpoint(ctx context.Context, t machine.Ref, name string) (*lin
 	l, hello, fresh, err := r.connect(ctx, t)
 	if err == nil && !fresh && !slices.Contains(hello.Calls, name) {
 		r.drop(t.Mac(), l)
+		r.release(l)
 		l, hello, _, err = r.connect(ctx, t)
 	}
 	if err != nil {
 		return nil, err
 	}
 	if !slices.Contains(hello.Calls, name) {
+		r.release(l)
 		return nil, fail.New(fail.FarTooOld, call.FarTooOld, t.Mac(), map[string]string{"version": hello.Version, "call": name})
 	}
 	return l, nil
 }
 
 func (r *Router) connect(ctx context.Context, t machine.Ref) (l *link, hello contract.Hello, fresh bool, err error) {
+	// invariant: a link it returns is held by the caller until release.
 	dialer, mac := r.reach.Macs, t.Mac()
 	if t.On != "" && t.On == r.here.Ref.Name {
 		dialer = r.reach.Engine
@@ -179,32 +189,36 @@ func (r *Router) connect(ctx context.Context, t machine.Ref) (l *link, hello con
 		l = &link{done: make(chan struct{})}
 		r.open[mac] = l
 	}
+	l.users++
 	r.mu.Unlock()
 	if !kept {
 		l.ep, l.err = dialer.Dial(ctx, mac)
 		if l.err != nil {
-			r.forget(mac, l)
+			r.drop(mac, l)
 		}
 		close(l.done)
 	}
 	select {
 	case <-l.done:
 	case <-ctx.Done():
+		r.release(l)
 		return nil, contract.Hello{}, false, ctx.Err()
 	}
 	if l.err != nil {
+		r.release(l)
 		return nil, contract.Hello{}, false, l.err
 	}
 	hello, err = l.ep.Hello(ctx)
 	if err != nil {
 		r.broke(mac, l, err)
+		r.release(l)
 		return nil, contract.Hello{}, false, err
 	}
 	return l, hello, !kept, nil
 }
 
 func (r *Router) broke(mac string, l *link, err error) {
-	// invariant: only the connection's own end drops it: a far side that
+	// invariant: only the connection's own end retires it: a far side that
 	// answers that one of its VMs is unreachable keeps its connection.
 	var e *fail.Error
 	if errors.As(err, &e) && e.Type == fail.Unreachable && e.Subject == mac {
@@ -213,24 +227,30 @@ func (r *Router) broke(mac string, l *link, err error) {
 }
 
 func (r *Router) drop(mac string, l *link) {
-	if r.forget(mac, l) {
+	r.mu.Lock()
+	if r.open[mac] == l {
+		delete(r.open, mac)
+	}
+	l.retired = true
+	r.mu.Unlock()
+}
+
+func (r *Router) release(l *link) {
+	r.mu.Lock()
+	l.users--
+	unused := l.retired && l.users == 0 && l.ep != nil
+	r.mu.Unlock()
+	if unused {
 		_ = l.ep.Close()
 	}
 }
 
-func (r *Router) forget(mac string, l *link) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.open[mac] != l {
-		return false
-	}
-	delete(r.open, mac)
-	return true
-}
-
 func (r *Router) Hello(ctx context.Context, mac string) (contract.Hello, error) {
 	// value: what the far binary says on the connection open now: its version and its calls.
-	_, hello, _, err := r.connect(ctx, machine.Ref{Name: mac})
+	l, hello, _, err := r.connect(ctx, machine.Ref{Name: mac})
+	if err == nil {
+		r.release(l)
+	}
 	return hello, err
 }
 
@@ -266,6 +286,7 @@ func (r *Router) Serve(ctx context.Context, target machine.Ref, name string, in 
 	if err != nil {
 		return nil, err
 	}
+	defer r.release(l)
 	out, err := l.ep.Invoke(ctx, vm, name, in, p)
 	if err != nil {
 		r.broke(vm.Mac(), l, err)
@@ -285,9 +306,10 @@ func (r *Router) ServeWatch(ctx context.Context, target machine.Ref, name string
 	updates, err := l.ep.Watch(ctx, vm, name, in, p)
 	if err != nil {
 		r.broke(vm.Mac(), l, err)
+		r.release(l)
 		return nil, err
 	}
-	return wire(ctx, updates), nil
+	return wire(ctx, updates, func() { r.release(l) }), nil
 }
 
 func (r *Router) vm(target machine.Ref) (machine.Ref, bool) {
