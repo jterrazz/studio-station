@@ -7,6 +7,7 @@ import (
 	"github.com/jterrazz/studio-station/src/accounts"
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
+	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	backgroundcalls "github.com/jterrazz/studio-station/src/background/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
@@ -133,6 +134,17 @@ func Codes() map[fail.Code]Wording {
 		},
 		accountscalls.UnknownVM: func(e *fail.Error) (string, string) {
 			return "no machine named \"" + e.Subject + "\"", "station machines"
+		},
+		awakecalls.OutOfBounds: func(e *fail.Error) (string, string) {
+			return "\"" + e.Subject + "\" is not between 1 min and 24 h", "station awake 4h"
+		},
+		awakecalls.NoLid: func(e *fail.Error) (string, string) {
+			mac := cmp.Or(e.Detail["label"], e.Subject)
+			return mac + " has no lid: --lid is for laptops", "station awake " + e.Detail["for"] + " --on " + mac
+		},
+		awakecalls.NoBattery: func(e *fail.Error) (string, string) {
+			mac := cmp.Or(e.Detail["label"], e.Subject)
+			return mac + " has no battery: --battery is for laptops", "station awake " + e.Detail["for"] + " --on " + mac
 		},
 		accountscalls.OtherMac: func(e *fail.Error) (string, string) {
 			mac := cmp.Or(e.Detail["label"], e.Detail["mac"])

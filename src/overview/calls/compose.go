@@ -55,9 +55,9 @@ func sectionReads() map[section.ID]sectionRead {
 			out, err := call.Invoke(ctx, r, here, backgroundcalls.List, backgroundcalls.ListIn{}, nil)
 			return overview.BackgroundRead(out, self), err
 		},
-		section.Awake: func(ctx context.Context, r call.Router, _ machine.Ref) (overview.Read, error) {
+		section.Awake: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
 			out, err := call.Read(ctx, r, here, awakecalls.Read, awakecalls.ReadIn{}, nil)
-			return overview.AwakeRead(out), err
+			return overview.AwakeRead(out, self), err
 		},
 		section.SSH: func(_ context.Context, _ call.Router, self machine.Ref) (overview.Read, error) {
 			return overview.SSHRead(self), nil

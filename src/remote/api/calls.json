@@ -109,6 +109,28 @@
       "in": "UpdateIn"
     },
     {
+      "name": "awake.keep",
+      "schema": "station.awake.keep/v1",
+      "where": "in-engine",
+      "in": "Request",
+      "out": "Awoken"
+    },
+    {
+      "name": "awake.off",
+      "schema": "station.awake.off/v1",
+      "where": "in-engine",
+      "in": "OffIn",
+      "out": "Slept"
+    },
+    {
+      "name": "awake.read",
+      "schema": "station.awake.read/v1",
+      "where": "in-engine",
+      "in": "ReadIn",
+      "out": "Report",
+      "watch": true
+    },
+    {
       "name": "background.list",
       "schema": "station.background.list/v1",
       "section": "background",
@@ -401,28 +423,6 @@
       ],
       "in": "StopSharingIn",
       "out": "StopSharingOut"
-    },
-    {
-      "name": "power.awake",
-      "schema": "station.power.awake/v1",
-      "where": "in-engine",
-      "in": "Request",
-      "out": "Awoken"
-    },
-    {
-      "name": "power.read",
-      "schema": "station.power.read/v1",
-      "where": "in-engine",
-      "in": "ReadIn",
-      "out": "Report",
-      "watch": true
-    },
-    {
-      "name": "power.sleep",
-      "schema": "station.power.sleep/v1",
-      "where": "in-engine",
-      "in": "SleepIn",
-      "out": "Slept"
     },
     {
       "name": "run.containers",

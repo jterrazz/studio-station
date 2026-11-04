@@ -8,7 +8,7 @@ runs:
     - command: 'settings --json | /usr/bin/jq -c ''[.schema, .findings, (.settings | length)]'''
       exit: 0
       stdout: |
-          ["station.settings.list/v1",[],19]
+          ["station.settings.list/v1",[],20]
     - command: 'settings --json | /usr/bin/jq -c ''.settings[] | select(.name == "hushlogin" or .name == "power") | .applied_at |= (. != null)'''
       exit: 0
       stdout: |

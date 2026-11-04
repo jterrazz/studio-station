@@ -2,7 +2,6 @@ package wire
 
 import (
 	"context"
-	"time"
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
@@ -47,7 +46,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		overviewcalls.All(sections),
 		accountscalls.All(accountscalls.Deps{Accounts: m.accounts(), Shares: m.secrets(), Kind: kind}),
 		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
-		awakecalls.All(awakecalls.Deps{Power: awakePower{m.power()}}),
+		awakecalls.All(m.awakeDeps()),
 		backgroundcalls.All(m.backgroundDeps()),
 		diskcalls.All(diskcalls.Deps{Disk: m.storage(env), Kind: kind}),
 		enginecalls.All(enginecalls.Deps{Control: m.control(), Kind: kind}),
@@ -101,5 +100,3 @@ func (l *localCalls) Watch(ctx context.Context, _ coremachine.Ref, name string, 
 }
 
 type awakePower struct{ *power.Service }
-
-func (awakePower) CheckFor(term time.Duration) error { return power.CheckFor(term) }

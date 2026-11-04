@@ -49,7 +49,7 @@
               }
             ],
             "hint": {
-              "command": "station power awake",
+              "command": "station awake 4h",
               "key": "a"
             }
           }

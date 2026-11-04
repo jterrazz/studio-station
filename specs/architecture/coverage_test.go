@@ -46,7 +46,7 @@ func engineJobs() []string {
 func uncovered() []string {
 	return []string{
 		"activity.sample", "machines.probe",
-		"power.awake", "power.read", "power.sleep", "run.containers", "run.git",
+		"run.containers", "run.git",
 		"shell.zsh",
 	}
 }

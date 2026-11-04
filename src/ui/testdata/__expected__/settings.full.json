@@ -131,23 +131,6 @@
         },
         {
           "row": {
-            "id": "backup-exclusions",
-            "mark": "absent",
-            "label": "backup-exclusions",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "not applied"
-              }
-            ],
-            "hint": {
-              "command": "station settings apply backup-exclusions",
-              "key": "a"
-            }
-          }
-        },
-        {
-          "row": {
             "id": "hushlogin",
             "mark": "ok",
             "label": "hushlogin",
@@ -240,9 +223,9 @@
         },
         {
           "row": {
-            "id": "tart-launcher",
+            "id": "backup-exclusions",
             "mark": "off-here",
-            "label": "tart-launcher",
+            "label": "backup-exclusions",
             "cells": [
               {
                 "kind": "text",
@@ -263,7 +246,7 @@
         },
         {
           "mark": "absent",
-          "n": 4
+          "n": 3
         },
         {
           "mark": "off-here",
@@ -299,7 +282,7 @@
                 "items": [
                   {
                     "kind": "text",
-                    "text": "4"
+                    "text": "5"
                   },
                   {
                     "kind": "text",
@@ -333,7 +316,7 @@
           "row": {
             "id": "not-for-this-machine",
             "mark": "not-for-this-machine",
-            "label": "2 not for this machine",
+            "label": "3 not for this machine",
             "cells": [
               {
                 "kind": "list",

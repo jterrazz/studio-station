@@ -1,5 +1,5 @@
 # Power
-●	awake	off	the Mac sleeps as macOS decides		station power awake
+●	awake	off	the Mac sleeps as macOS decides		station awake 4h
 # Guards
 ●	battery	80% · AC attached	ends a session at 20% on battery
 ●	low power	off	ends a session when it turns on

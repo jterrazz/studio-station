@@ -74,7 +74,7 @@ func sessionRows(r power.Report) []page.Row {
 	case stopped(r):
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Unknown(), page.Text("engine " + r.Daemon)}, Hint: daemonHint(r)}}
 	case r.Session == nil:
-		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.OK, Cells: []page.Value{page.Off(), ended(r.LastEnd, r.Zone)}, Hint: page.KeyHint("station power awake", KeyAwake)}}
+		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.OK, Cells: []page.Value{page.Off(), ended(r.LastEnd, r.Zone)}, Hint: page.KeyHint("station awake 4h", KeyAwake)}}
 	}
 	s := *r.Session
 	rows := []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.OK, Cells: []page.Value{
@@ -231,82 +231,6 @@ func Actions() []page.Action {
 		{Key: KeyAwake, Label: "awake", On: page.OnPage, Priority: 1, Mutates: true},
 		{Key: KeySleep, Label: "sleep", On: page.OnPage, Priority: 2, Mutates: true},
 	}
-}
-
-func Records(r power.Report) page.Page {
-	var rows []page.Row
-	switch {
-	case r.Session != nil && r.Daemon == power.DaemonRunning:
-		s := *r.Session
-		cells := make([]page.Value, 0, 5)
-		cells = append(cells, page.On())
-		for _, f := range flags(s) {
-			cells = append(cells, page.Text(f))
-		}
-		cells = append(cells, page.Text(s.Until.UTC().Format(time.RFC3339)), page.Text(s.By))
-		rows = append(rows, page.Row{ID: RowAwake, Label: RowAwake, Mark: page.OK, Cells: cells})
-		for _, row := range sessionRows(r)[1:] {
-			row.Cells = row.Cells[:1]
-			rows = append(rows, row)
-		}
-	case r.Session == nil && r.Daemon == power.DaemonRunning:
-		rows = append(rows, page.Row{ID: RowAwake, Label: RowAwake, Mark: page.OK, Cells: []page.Value{page.Off()}})
-	default:
-		row := sessionRows(r)[0]
-		if row.Hint != nil {
-			row.Cells = append(row.Cells, page.Text(row.Hint.Command))
-			row.Hint = nil
-		}
-		rows = append(rows, row)
-	}
-	for _, g := range guards(r) {
-		rows = append(rows, guardRow(r, g, true))
-	}
-	return page.Seal(page.Page{ID: "power", Command: "power", Sections: []page.Section{
-		{ID: "records", Title: "Power", Role: page.Banner, Columns: columns(), Items: items(rows)},
-		{ID: "reading", Title: "Reading", Uncounted: true, Columns: columns(), Items: reading(r.Reading)},
-	}})
-}
-
-type ReadingJSON struct {
-	Lid          string `json:"lid,omitempty"`
-	Source       string `json:"source"`
-	Percent      *int   `json:"battery_percent,omitempty"`
-	Charging     bool   `json:"charging"`
-	LowPower     bool   `json:"low_power"`
-	Thermal      string `json:"thermal"`
-	ThermalLevel int    `json:"thermal_level"`
-}
-
-type DaemonJSON struct {
-	Running bool   `json:"running"`
-	State   string `json:"state,omitempty"`
-}
-
-type JSON struct {
-	Schema  string         `json:"schema"`
-	Session *power.Session `json:"session"`
-	LastEnd *power.End     `json:"last_end"`
-	Reading ReadingJSON    `json:"reading"`
-	Guards  []power.Guard  `json:"guards"`
-	Daemon  DaemonJSON     `json:"daemon"`
-}
-
-func Contract(r power.Report) JSON {
-	rd := r.Reading
-	out := JSON{
-		Schema: "station.power/v1", Session: r.Session, LastEnd: r.LastEnd, Guards: r.Guards,
-		Reading: ReadingJSON{Lid: rd.Lid, Source: rd.Source, Charging: rd.Charging, LowPower: rd.LowPower, Thermal: power.Level(rd.Thermal), ThermalLevel: rd.Thermal},
-		Daemon:  DaemonJSON{Running: r.Daemon == power.DaemonRunning},
-	}
-	if rd.HasBattery {
-		n := rd.Percent
-		out.Reading.Percent = &n
-	}
-	if !out.Daemon.Running {
-		out.Daemon.State = r.Daemon
-	}
-	return out
 }
 
 func AwakeForm(host string) page.Form {

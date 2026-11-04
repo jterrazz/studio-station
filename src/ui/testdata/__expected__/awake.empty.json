@@ -1,0 +1,129 @@
+{
+  "schema": "station.page/v1",
+  "id": "awake",
+  "command": "awake",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "awake",
+      "title": "Awake",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "mode",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro",
+            "mark": "absent",
+            "label": "jterrazz-macbook-pro",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Sleeps normally"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini",
+            "mark": "absent",
+            "label": "jterrazz-mac-mini",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Sleeps normally"
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "absent",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "reading",
+      "title": "jterrazz-macbook-pro",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "mode",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "fact": {
+            "key": "lid",
+            "value": {
+              "kind": "text",
+              "text": "open"
+            }
+          }
+        },
+        {
+          "fact": {
+            "key": "power",
+            "value": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "AC"
+                },
+                {
+                  "kind": "text",
+                  "text": "80 %"
+                },
+                {
+                  "kind": "text",
+                  "text": "not charging"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fact": {
+            "key": "thermal",
+            "value": {
+              "kind": "text",
+              "text": "nominal"
+            }
+          }
+        },
+        {
+          "fact": {
+            "key": "screen",
+            "value": {
+              "kind": "text",
+              "text": "always turns off"
+            }
+          }
+        }
+      ],
+      "uncounted": true
+    }
+  ]
+}

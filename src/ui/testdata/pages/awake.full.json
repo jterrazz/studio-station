@@ -1,0 +1,159 @@
+{
+  "schema": "station.page/v1",
+  "id": "awake",
+  "command": "awake",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "awake",
+      "title": "Awake",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "mode",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro",
+            "mark": "ok",
+            "label": "jterrazz-macbook-pro",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "Awake until 14:42"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "lid closed"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "3h 12m left"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini",
+            "mark": "ok",
+            "label": "jterrazz-mac-mini",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "Never sleeps"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "always-on Mac policy"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "last slept: never in 12d"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "hosts infra (server)"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "reading",
+      "title": "jterrazz-macbook-pro",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "mode",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "fact": {
+            "key": "lid",
+            "value": {
+              "kind": "text",
+              "text": "open"
+            }
+          }
+        },
+        {
+          "fact": {
+            "key": "power",
+            "value": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "AC"
+                },
+                {
+                  "kind": "text",
+                  "text": "80 %"
+                },
+                {
+                  "kind": "text",
+                  "text": "not charging"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fact": {
+            "key": "thermal",
+            "value": {
+              "kind": "text",
+              "text": "nominal"
+            }
+          }
+        },
+        {
+          "fact": {
+            "key": "screen",
+            "value": {
+              "kind": "text",
+              "text": "always turns off"
+            }
+          }
+        }
+      ],
+      "uncounted": true
+    }
+  ]
+}

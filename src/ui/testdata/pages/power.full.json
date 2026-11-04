@@ -78,7 +78,7 @@
               },
               {
                 "kind": "text",
-                "text": "started 10:42 by station power awake --lid"
+                "text": "started 10:42 by station awake 4h --lid"
               }
             ]
           }

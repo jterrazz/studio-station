@@ -1,4 +1,4 @@
-●	awake	on	lid · until 14:42 (4h)	started 10:42 by station power awake --lid
+●	awake	on	lid · until 14:42 (4h)	started 10:42 by station awake 4h --lid
 ●	display	sleeps	on lid close: pmset displaysleepnow (no display assertion)
 ●	clamshell	held	reset to normal at the end, at every engine start and quit
 # Guards

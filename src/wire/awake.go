@@ -1,0 +1,103 @@
+package wire
+
+import (
+	"context"
+	"slices"
+	"strings"
+	"time"
+
+	"github.com/spf13/cobra"
+
+	"github.com/jterrazz/studio-station/src/awake"
+	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/call"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/domain/machines"
+	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
+	"github.com/jterrazz/studio-station/src/remote/each"
+	awakecmd "github.com/jterrazz/studio-station/src/surface/cli/awake"
+	awakeoff "github.com/jterrazz/studio-station/src/surface/cli/awake/off"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+)
+
+func (m machine) awakeDeps() awakecalls.Deps {
+	return awakecalls.Deps{
+		Power: awakePower{m.power()}, Mac: m.profile.Ref.Name, Label: m.label(m.profile.Ref.Name), Caps: m.profile.Caps,
+		Servers:     func(context.Context) []string { return m.servers() },
+		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
+	}
+}
+
+// value: the servers this Mac keeps, by name.
+func (m machine) servers() []string {
+	records, err := m.machines(false).Records()
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, r := range records {
+		if r.Lifetime == machines.AlwaysOn {
+			out = append(out, r.Name)
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+func (m machine) awakeCmdDeps(env kit.Env) awakecmd.Deps {
+	return awakecmd.Deps{Here: m.where, Now: m.host.Clock.Now, Zone: time.Local, Label: m.label,
+		Every: func(ctx context.Context) (pageawake.Fleet, error) { return m.everyMacAwake(ctx, env) }}
+}
+
+func awakeCommand(env kit.Env, m machine) *cobra.Command {
+	return awakecmd.Command(m.awakeCmdDeps(env), env, awakeoff.Command(awakeoff.Deps{Here: m.where, Label: m.label}, env))
+}
+
+// value: station power, power awake and power sleep, the words v2 gave
+// awake, a keep-awake and awake off.
+func awakeAliases(env kit.Env, m machine) []*cobra.Command {
+	return []*cobra.Command{kit.Alias("power", awakecmd.Command(m.awakeCmdDeps(env), env,
+		awakecmd.PowerAwake(m.awakeCmdDeps(env), env),
+		kit.Alias("sleep", awakeoff.Command(awakeoff.Deps{Here: m.where, Label: m.label}, env), "off"),
+	), "awake")}
+}
+
+// invariant: This Mac first, then every other Mac that answers, each Mac's
+// own Awake through its engine; a Mac that does not answer is said so, and
+// This Mac's own refusal is the command's.
+func (m machine) everyMacAwake(ctx context.Context, env kit.Env) (pageawake.Fleet, error) {
+	f := pageawake.Fleet{Now: m.host.Clock.Now(), Zone: time.Local}
+	here, err := call.Read(ctx, env.Calls, env.Self, awakecalls.Read, awakecalls.ReadIn{}, nil)
+	if err != nil {
+		return f, err
+	}
+	here.Here = true
+	f.Reports = append(f.Reports, here)
+	others := m.machines(false).OtherHosts()
+	slices.Sort(others)
+	got := each.All(ctx, others, func(ctx context.Context, mac string) (awake.Report, error) {
+		return call.Read(ctx, env.Calls, coremachine.Ref{Name: mac}, awakecalls.Read, awakecalls.ReadIn{}, nil)
+	})
+	for _, mac := range others {
+		if err := got[mac].Err; err != nil {
+			f.Silent = append(f.Silent, pageawake.Silent{Mac: mac, Why: kit.Translate(err, "awake").Message})
+			continue
+		}
+		f.Reports = append(f.Reports, got[mac].Value)
+	}
+	return f, nil
+}
+
+// value: the servers that pause once Never sleeps is off on the target Mac,
+// in the words of the question that turns it off.
+func (m machine) pauses(env kit.Env, names []string) []string {
+	if !slices.Contains(names, catalog.ProcNeverSleeps.Name()) {
+		return nil
+	}
+	r, err := call.Read(context.Background(), env.Calls, env.Target(), awakecalls.Read, awakecalls.ReadIn{}, nil)
+	if err != nil || len(r.Servers) == 0 {
+		return nil
+	}
+	return []string{strings.Join(r.Servers, ", ") + " pauses while " + m.label(r.Mac) + " sleeps"}
+}

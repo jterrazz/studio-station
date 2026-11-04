@@ -5,7 +5,7 @@ fixture:
     - ../../__fixtures__/power/
 env: engine
 runs:
-    - command: '--version > /dev/null; "$STATION" engine start > /dev/null; "$STATION" power awake --lid > /dev/null; : > .calls; "$STATION" engine stop --yes; echo "exit $?"; /usr/bin/grep -E "^(power|launchctl bootout)" .calls | /usr/bin/sed -E ''s/gui\/[0-9]+/gui\/U/'''
+    - command: '--version > /dev/null; "$STATION" engine start > /dev/null; "$STATION" awake 4h --lid > /dev/null; : > .calls; "$STATION" engine stop --yes; echo "exit $?"; /usr/bin/grep -E "^(power|launchctl bootout)" .calls | /usr/bin/sed -E ''s/gui\/[0-9]+/gui\/U/'''
       exit: 0
       stdout: |
           ●	engine	Awake off · the engine stopped

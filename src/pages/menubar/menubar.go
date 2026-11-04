@@ -133,8 +133,8 @@ func powerSection(r Reading) page.Section {
 const (
 	CallCreate = "machines.create-workspace"
 	CallStop   = "engine.stop"
-	CallAwake  = "power.awake"
-	CallSleep  = "power.sleep"
+	CallAwake  = "awake.keep"
+	CallSleep  = "awake.off"
 )
 
 func gigabytes(n int64) string { return strconv.FormatInt(n<<30, 10) }

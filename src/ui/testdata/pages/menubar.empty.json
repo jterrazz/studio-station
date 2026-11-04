@@ -242,7 +242,7 @@
               }
             ],
             "hint": {
-              "command": "station power awake",
+              "command": "station awake 4h",
               "key": "a"
             }
           }
@@ -350,7 +350,7 @@
       "mutates": true,
       "id": "power-awake",
       "run": {
-        "call": "power.awake"
+        "call": "awake.keep"
       },
       "form": {
         "title": "Power",
