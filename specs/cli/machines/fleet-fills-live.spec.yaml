@@ -9,6 +9,7 @@ runs:
       stdin: |
           within 2 see fast-vm
           see slow-vm
+          within 10 exit 0
           screen
       exit: 0
       stdout: |
