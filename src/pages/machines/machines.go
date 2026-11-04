@@ -226,8 +226,10 @@ const createdSchema = "station.machines.created/v1"
 type CreatedJSON struct {
 	Schema      string            `json:"schema"`
 	Name        string            `json:"name"`
+	Kind        string            `json:"kind"`
 	Host        string            `json:"host"`
 	Lifetime    string            `json:"lifetime"`
+	Check       string            `json:"check,omitempty"`
 	Image       string            `json:"image"`
 	Version     string            `json:"version"`
 	CPUs        int               `json:"cpus"`
@@ -249,7 +251,7 @@ type CreatedService struct {
 func CreatedContract(c machines.Created) CreatedJSON {
 	vm, r := c.VM, c.VM.Resources
 	body := CreatedJSON{
-		Schema: createdSchema, Name: vm.Name, Host: vm.Host, Lifetime: string(vm.Lifetime), Image: vm.Image,
+		Schema: createdSchema, Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Host: vm.Host, Lifetime: string(vm.Lifetime), Check: vm.Check, Image: vm.Image,
 		Version: vm.Version, CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes, IP: vm.IP,
 		Network: vm.Network, Services: []CreatedService{}, Env: c.Env,
 	}
@@ -265,6 +267,9 @@ func CreatedContract(c machines.Created) CreatedJSON {
 func Created(c machines.Created, here page.Context) page.Page {
 	vm, r := c.VM, c.VM.Resources
 	rows := []page.Row{passed(machines.StepRunning, ""), passed(machines.StepAddress, vm.IP), passed(machines.StepSSH, "")}
+	if vm.Lifetime == machines.AlwaysOn {
+		return serverCreated(c, rows, here)
+	}
 	off := false
 	for _, s := range c.Services {
 		row := pages.Done(s.Profile+"/"+strconv.Itoa(s.GuestPort), catalog.StateOK, "")
@@ -296,6 +301,35 @@ func passed(label, detail string) page.Row {
 		row.Cells[0] = page.Text(detail)
 	}
 	return row
+}
+
+// invariant: a server's create says what station will not do inside it; a
+// check that does not answer yet waits, never fails, as what answers it
+// comes with the owner's tooling (SPEC §7.1).
+func serverCreated(c machines.Created, rows []page.Row, here page.Context) page.Page {
+	vm, r := c.VM, c.VM.Resources
+	if vm.Check != "" {
+		rows = append(rows, page.Row{ID: "check", Label: "Check waiting", Mark: page.Attention, Reason: page.Waiting, Cells: []page.Value{page.Text("normal: what answers comes with your tooling")}})
+	}
+	if c.OnALaptop {
+		mac := vm.Host
+		if mac == here.Machine {
+			mac = "This Mac"
+		}
+		rows = append(rows, page.Row{ID: "laptop", Label: mac + " is a laptop", Mark: page.Attention, Reason: page.Degraded, Cells: []page.Value{page.List(page.Text(vm.Name+" stops whenever it sleeps"), page.Text("see Mac readiness"))}})
+	}
+	head := pages.Done(vm.Name, catalog.StateOK, "")
+	head.Cells = []page.Value{page.Text("is a server"), page.List(page.Text("always on"), page.Text(strconv.Itoa(r.CPUs)+" CPU"), Memory(r.MemoryBytes), DiskSize(r.DiskBytes))}
+	rows = append(rows, head)
+	note := page.Row{ID: "inside", Label: "Station sets up nothing inside", Mark: page.OK, Cells: []page.Value{page.Text("no apps, settings or accounts: set it up with your tooling")}}
+	rows = append(rows, note)
+	columns := []page.Column{
+		{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "what", Kind: page.KindText, Keep: 60},
+		{Key: "detail", Kind: page.KindList, Keep: 20},
+	}
+	p := pages.Outcome("machines create", here, columns, rows, "VMs")
+	p.Hints = []page.Hint{*page.Cmd("ssh " + vm.Name), *page.Cmd("station machines " + vm.Name)}
+	return p
 }
 
 func Deleted(r machines.DeleteReport, here page.Context) page.Page {

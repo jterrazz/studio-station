@@ -46,6 +46,7 @@ type file struct {
 	Lifetime    machines.Lifetime `json:"lifetime"`
 	Want        string            `json:"want,omitempty"`
 	Network     string            `json:"network,omitempty"`
+	Check       string            `json:"check,omitempty"`
 	Env         map[string]string `json:"env,omitempty"`
 	CPUs        int               `json:"cpus"`
 	MemoryBytes int64             `json:"memory_bytes"`
@@ -57,7 +58,7 @@ type file struct {
 
 func (f file) record() machines.Record {
 	return machines.Record{
-		Name: f.Name, Image: f.Image, Version: f.Version, Lifetime: f.Lifetime, Want: f.Want, Network: f.Network, Env: f.Env,
+		Name: f.Name, Image: f.Image, Version: f.Version, Lifetime: f.Lifetime, Want: f.Want, Network: f.Network, Check: f.Check, Env: f.Env,
 		CPUs: f.CPUs, MemoryBytes: f.MemoryBytes, DiskBytes: f.DiskBytes, CreatedAt: f.CreatedAt,
 	}
 }
@@ -103,7 +104,7 @@ func (s *Store) Put(_ context.Context, r machines.Record) error {
 		_ = json.Unmarshal(current, &held)
 	}
 	data, err := json.MarshalIndent(file{
-		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
+		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Check: r.Check, Env: r.Env,
 		CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes, Lent: held.Lent, CreatedAt: r.CreatedAt,
 	}, "", "  ")
 	if err != nil {

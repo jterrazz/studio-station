@@ -1,4 +1,4 @@
-description: 'the v2 words create --lifetime and machines probe run the v3 command, named on stderr'
+description: 'the v2 words create --lifetime, --always-on and machines probe run the v3 command, named on stderr'
 env: two-macs
 runs:
     - command: 'machines create box --lifetime lasting | /usr/bin/tail -1'
@@ -7,6 +7,12 @@ runs:
           ●	box	Created	Permanent · 4 CPU · 4 GB · 20 GB
       stderr: |
           → now: station machines create box --permanent
+    - command: 'machines create infra-2 --always-on --on mac-mini | /usr/bin/grep infra-2'
+      exit: 0
+      stdout: |
+          ●	infra-2	is a server	always on · 4 CPU · 8 GB · 50 GB
+      stderr: |
+          → now: station machines create infra-2 --server
     - command: 'machines probe jterrazz-macbook-pro | /usr/bin/head -1'
       exit: 0
       stdout: |

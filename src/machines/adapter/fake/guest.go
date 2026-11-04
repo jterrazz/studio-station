@@ -256,6 +256,9 @@ func (c *guest) Exec(ctx context.Context, cmd contract.GuestCommand) (contract.G
 	if cmd.Line == c.serving && c.serving != "" {
 		return c.serve(ctx, cmd)
 	}
+	if cmd.Line != "true" {
+		c.ran(cmd.Line)
+	}
 	var in []byte
 	if cmd.Stdin != nil {
 		var err error
@@ -294,6 +297,16 @@ func (c *guest) Exec(ctx context.Context, cmd contract.GuestCommand) (contract.G
 		c.poweroff()
 	}
 	return res, nil
+}
+
+func (c *guest) ran(line string) {
+	c.w.Lock()
+	defer c.w.Unlock()
+	if mac := c.w.Holder(c.name); mac != "" {
+		if g := c.w.Macs[mac].VMs[c.name].Guest; g != nil {
+			g.Ran = append(g.Ran, line)
+		}
+	}
 }
 
 func (c *guest) Forward(_ context.Context, _ string, port int) (io.ReadWriteCloser, error) {

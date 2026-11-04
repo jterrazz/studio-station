@@ -49,6 +49,39 @@ type (
 	Step          = model.Step
 )
 
+type KindRuleError struct {
+	// value: a create a VM's kind refuses: Why says the rule, Fix the way out.
+	Why, Fix string
+}
+
+func (e *KindRuleError) Error() string { return e.Why }
+
+var (
+	errServerNeedsName = &KindRuleError{Why: "a server needs a name", Fix: "station machines create <name> --server"}
+	errCheckForServers = &KindRuleError{Why: "a health check is for servers", Fix: "station machines create <name> --server --check <url>"}
+	errServerBridged   = &KindRuleError{Why: "a server stays behind its Mac: --network bridged is for macOS workspaces", Fix: "share its ports instead: station ports share"}
+)
+
+type BadCheckError struct{ Value string }
+
+func (e *BadCheckError) Error() string {
+	return "--check \"" + e.Value + "\" is neither a URL nor host:port"
+}
+
+func validCheck(check string) bool {
+	// invariant: a check is an http(s) URL with a host, or host:port with a
+	// port number (SPEC §7.2).
+	if rest, ok := strings.CutPrefix(check, "https://"); ok {
+		return rest != "" && !strings.HasPrefix(rest, "/")
+	}
+	if rest, ok := strings.CutPrefix(check, "http://"); ok {
+		return rest != "" && !strings.HasPrefix(rest, "/")
+	}
+	host, port, ok := strings.Cut(check, ":")
+	n, err := strconv.Atoi(port)
+	return ok && host != "" && err == nil && n > 0 && n < 65536
+}
+
 type BadLifetimeError struct{ Value string }
 
 func (e *BadLifetimeError) Error() string {
@@ -166,12 +199,24 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if err := s.CheckHost(); err != nil {
 		return r, err
 	}
-	switch r.Lifetime {
-	case "":
+	server := r.Server
+	switch {
+	case server:
+		r.Lifetime = AlwaysOn
+	case r.Lifetime == "":
 		r.Lifetime = Throwaway
-	case Throwaway, Permanent:
-	default:
+	case r.Lifetime != Throwaway && r.Lifetime != Permanent:
 		return r, &BadLifetimeError{Value: string(r.Lifetime)}
+	}
+	switch {
+	case server && r.Name == "":
+		return r, errServerNeedsName
+	case server && r.Network == Bridged:
+		return r, errServerBridged
+	case !server && r.Check != "":
+		return r, errCheckForServers
+	case r.Check != "" && !validCheck(r.Check):
+		return r, &BadCheckError{Value: r.Check}
 	}
 	img, ok := imageOf(r.Image)
 	if !ok {
@@ -201,14 +246,18 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	case !nameFree(r.Name, held):
 		return r, &NameTakenError{Name: r.Name, VM: held[r.Name] == claimVM, Host: held[r.Name] == claimHost, On: on[r.Name]}
 	}
+	size := Resources{CPUs: img.Defaults.CPUs, MemoryBytes: img.Defaults.MemoryBytes, DiskBytes: img.Defaults.DiskBytes}
+	if server {
+		size = model.ServerSize()
+	}
 	if r.Resources.CPUs == 0 {
-		r.Resources.CPUs = img.Defaults.CPUs
+		r.Resources.CPUs = size.CPUs
 	}
 	if r.Resources.MemoryBytes == 0 {
-		r.Resources.MemoryBytes = img.Defaults.MemoryBytes
+		r.Resources.MemoryBytes = size.MemoryBytes
 	}
 	if r.Resources.DiskBytes == 0 {
-		r.Resources.DiskBytes = img.Defaults.DiskBytes
+		r.Resources.DiskBytes = size.DiskBytes
 	}
 	if left, ok := s.memoryLeft(ctx); ok && r.Resources.MemoryBytes > left {
 		return r, &TooBigError{Mac: "This Mac", AskedGB: int(r.Resources.MemoryBytes >> 30), LeftGB: int(max(left, 0) >> 30)}
@@ -308,11 +357,12 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 	if err != nil {
 		return Created{}, err
 	}
+	server := r.Lifetime == AlwaysOn
 	rec := VMRecord{
-		Name: r.Name, Image: r.Image, Version: version, Lifetime: r.Lifetime, Network: r.Network,
+		Name: r.Name, Image: r.Image, Version: version, Lifetime: r.Lifetime, Network: r.Network, Check: r.Check,
 		Resources: r.Resources, CreatedAt: s.h.Clock.Now().UTC().Truncate(time.Second),
 	}
-	if r.Lifetime == Permanent {
+	if r.Lifetime == Permanent || server {
 		rec.Want = WantRunning
 	}
 	made := &made{}
@@ -333,15 +383,18 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		return fail("the record", err)
 	}
 	made.record = true
-	say("reserving its services")
-	made.leases = true
-	reserved, env, err := s.reserveProfiles(ctx, r.Name)
-	if err != nil {
-		return fail("the reservations", err)
-	}
-	rec.Env = env
-	if err = s.writeRecord(rec); err != nil {
-		return fail("the record", err)
+	var reserved []Reserved
+	var env map[string]string
+	if !server {
+		say("reserving its services")
+		made.leases = true
+		if reserved, env, err = s.reserveProfiles(ctx, r.Name); err != nil {
+			return fail("the reservations", err)
+		}
+		rec.Env = env
+		if err = s.writeRecord(rec); err != nil {
+			return fail("the record", err)
+		}
 	}
 	say(model.StepRunning)
 	if err = s.daemon.Do(ctx, "run", r.Name); err != nil {
@@ -354,7 +407,7 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 	}
 	ip := addr.String()
 	say(model.StepSSH)
-	if err := s.firstBoot(ctx, img, r.Name, r.Lifetime); err != nil {
+	if err := s.setUp(ctx, img, r); err != nil {
 		return Created{}, &UnhealthyError{Name: r.Name, Step: model.StepSSH, Detail: strings.TrimSpace(err.Error())}
 	}
 	if fleet, err := s.Fleet(ctx, false); err == nil {
@@ -363,11 +416,29 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 	return Created{
 		VM: VM{
 			Name: r.Name, Image: r.Image, Version: version, Host: s.here(cfg), Kind: img.Kind, Lifetime: r.Lifetime,
-			State: Running, Resources: r.Resources, Network: r.Network, IP: ip, CreatedAt: rec.CreatedAt,
+			State: Running, Resources: r.Resources, Network: r.Network, IP: ip, Check: r.Check, CreatedAt: rec.CreatedAt,
 		},
 		Services: reserved,
 		Env:      env,
 	}, nil
+}
+
+// invariant: a workspace is set up by its image's first boot; a server is
+// set up by its owner's own tooling, so station only waits for its ssh.
+func (s *Service) setUp(ctx context.Context, img catalog.Image, r CreateRequest) error {
+	if r.Lifetime != AlwaysOn {
+		return s.firstBoot(ctx, img, r.Name, r.Lifetime)
+	}
+	ctx, cancel := context.WithTimeout(ctx, sshWait)
+	defer cancel()
+	out, err := s.daemon.GuestExec(ctx, r.Name, "true", "")
+	switch {
+	case err != nil:
+		return err
+	case out.ExitCode != 0:
+		return errors.New("none after 30 s")
+	}
+	return nil
 }
 
 // invariant: once its first run is asked, a VM is kept whatever fails

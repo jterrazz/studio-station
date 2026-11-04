@@ -239,6 +239,7 @@ type Kept struct {
 	Lifetime  machines.Lifetime `json:"lifetime"`
 	Want      string            `json:"want,omitempty"`
 	Network   string            `json:"network,omitempty"`
+	Check     string            `json:"check,omitempty"`
 	Env       map[string]string `json:"env,omitempty"`
 	CreatedAt time.Time         `json:"created_at,omitzero"`
 	// value: the shares station v2 kept in the VM's record, by name, until
@@ -258,6 +259,9 @@ type Guest struct {
 	// value: made from station's image by a create: a command no answer
 	// scripts succeeds, as the image's first boot does.
 	Fresh bool `json:"fresh,omitempty"`
+	// value: every command line station ran in the VM, apart from its own
+	// session and the liveness probe, in the order run: what it set up inside.
+	Ran []string `json:"ran,omitempty"`
 }
 
 type Answer struct {

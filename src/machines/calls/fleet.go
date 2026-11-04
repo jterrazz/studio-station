@@ -55,21 +55,46 @@ var List = call.Watch[Deps, ListIn, ListOut]{
 type CreateIn struct{ Request machines.CreateRequest }
 
 var CreateWorkspace = call.Call[Deps, CreateIn, machines.Created]{
+	// invariant: a workspace, throwaway or permanent; always on is a server's.
 	Name: "machines.create-workspace", Where: call.InEngine, Applies: machines.CanCreate,
 	Run: func(ctx context.Context, d Deps, in CreateIn, p call.Progress) (machines.Created, error) {
-		last := ""
-		created, err := d.Machines.Create(ctx, in.Request, func(s machines.Step) {
-			if last != "" {
-				p.Done(last, nil)
-			}
-			last = s.Label
-			p.Step(s.Label, "")
-		})
-		if last != "" {
-			p.Done(last, err)
-		}
+		r := in.Request
+		r.Server = false
+		return create(ctx, d, r, p)
+	},
+}
+
+type CreateServerIn struct {
+	Name, Image, Network string
+	Resources            machines.Resources
+	// value: its health check, a URL or host:port; empty for none.
+	Check string
+}
+
+var CreateServer = call.Call[Deps, CreateServerIn, machines.Created]{
+	// invariant: a server is always on, behind its Mac, and named; station
+	// sets up nothing inside it (SPEC §7.1).
+	Name: "machines.create-server", Where: call.InEngine, Applies: machines.CanCreate,
+	Run: func(ctx context.Context, d Deps, in CreateServerIn, p call.Progress) (machines.Created, error) {
+		created, err := create(ctx, d, machines.CreateRequest{Image: in.Image, Name: in.Name, Server: true, Network: in.Network, Resources: in.Resources, Check: in.Check}, p)
+		created.OnALaptop = err == nil && d.Laptop
 		return created, err
 	},
+}
+
+func create(ctx context.Context, d Deps, r machines.CreateRequest, p call.Progress) (machines.Created, error) {
+	last := ""
+	created, err := d.Machines.Create(ctx, r, func(s machines.Step) {
+		if last != "" {
+			p.Done(last, nil)
+		}
+		last = s.Label
+		p.Step(s.Label, "")
+	})
+	if last != "" {
+		p.Done(last, err)
+	}
+	return created, err
 }
 
 type ProbeIn struct{ Name string }

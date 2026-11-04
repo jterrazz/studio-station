@@ -251,6 +251,13 @@
       "in": "AddIn"
     },
     {
+      "name": "machines.create-server",
+      "schema": "station.machines.create-server/v1",
+      "where": "in-engine",
+      "in": "CreateServerIn",
+      "out": "Created"
+    },
+    {
       "name": "machines.create-workspace",
       "schema": "station.machines.create-workspace/v1",
       "where": "in-engine",

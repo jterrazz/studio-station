@@ -11,6 +11,9 @@ import (
 type Deps struct {
 	Machines Machines
 	Kind     machine.Kind
+	// value: this Mac reports a battery: a server made here stops whenever
+	// it sleeps.
+	Laptop bool
 }
 
 type Machines interface {
@@ -56,7 +59,7 @@ type Machines interface {
 
 func All(d Deps) []call.Handler {
 	return []call.Handler{
-		call.BindWatch(List, d), call.Bind(CreateWorkspace, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
+		call.BindWatch(List, d), call.Bind(CreateWorkspace, d), call.Bind(CreateServer, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
 		call.Bind(Restart, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d), call.Bind(SSH, d), call.Bind(Edit, d),
 	}
 }

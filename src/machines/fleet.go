@@ -52,7 +52,9 @@ type VM struct {
 	SizeGB                     int
 	IP, Network, Guest, Detail string
 	// value: the state its record asks for, running or stopped.
-	Want      string
+	Want string
+	// value: a server's health check; empty for none.
+	Check     string
 	CreatedAt time.Time
 }
 
@@ -94,15 +96,39 @@ type ProbeReport struct {
 
 type CreateRequest struct {
 	Image, Name string
-	Lifetime    Lifetime
-	Network     string
-	Resources   Resources
+	// value: a workspace's, throwaway or permanent; a server's is always on.
+	Lifetime  Lifetime
+	Network   string
+	Resources Resources
+	// value: the create makes a server, which is always on.
+	Server bool
+	// value: a server's health check, a URL or host:port; empty for none.
+	Check string
+}
+
+type ServerLifetimeError struct {
+	// value: a server create that also asks a workspace's lifetime, by its
+	// flag.
+	Name, Flag string
+}
+
+func (e *ServerLifetimeError) Error() string {
+	return "a server is always on: --" + e.Flag + " is for workspaces"
+}
+
+func ServerSize() Resources {
+	// value: a server's size when the create names none (SPEC §7.1); a
+	// workspace's is its image's.
+	return Resources{CPUs: 4, MemoryBytes: 8 << 30, DiskBytes: 50e9}
 }
 
 type Created struct {
 	VM       VM
 	Services []Reserved
 	Env      map[string]string
+	// value: the Mac it was made on reports a battery: a server there stops
+	// whenever the Mac sleeps.
+	OnALaptop bool
 }
 
 type Step struct{ Label string }
