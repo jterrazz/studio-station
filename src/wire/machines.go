@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -17,6 +18,7 @@ import (
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	"github.com/jterrazz/studio-station/src/system"
 	machinescmd "github.com/jterrazz/studio-station/src/surface/cli/machines"
 	machinesadd "github.com/jterrazz/studio-station/src/surface/cli/machines/add"
 	machinescreate "github.com/jterrazz/studio-station/src/surface/cli/machines/create"
@@ -54,7 +56,23 @@ func (m machine) machines(_ bool) *machines.Service {
 		Jobs:      m.jobs(0),
 		Unlocker:  m.unlocker(knownHosts),
 		SSHConfig: m.sshConfig(knownHosts),
+		Memory:    m.memory,
 	})
+}
+
+// value: the memory this Mac has: as its world says in the spec build, else
+// as sysctl reads it.
+func (m machine) memory(ctx context.Context) int64 {
+	if m.world != nil {
+		_, _, _, hw, _ := m.world.self().Read(ctx)
+		return hw.Memory
+	}
+	out, err := m.host.Run.Output(ctx, system.Cmd{Name: "sysctl", Args: []string{"-n", "hw.memsize"}})
+	if err != nil || out.ExitCode != 0 {
+		return 0
+	}
+	total, _ := strconv.ParseInt(strings.TrimSpace(out.Stdout), 10, 64)
+	return total
 }
 
 func (m machine) unlocker(knownHosts string) contract.Unlocker {

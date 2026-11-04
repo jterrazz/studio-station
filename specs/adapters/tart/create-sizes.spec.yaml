@@ -5,14 +5,14 @@ fixture:
 env: engine
 serve: sshd
 runs:
-    - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --memory 12G --disk 80G --cpus 2; kill $d; wait $d'
+    - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --memory 8G --disk 80G --cpus 2; kill $d; wait $d'
       exit: 0
       stdout: |
-          ●	linux-1	x	throwaway	linux 2026.11.07	2 cpus · 12 GB
+          ●	linux-1	x	throwaway	linux 2026.11.07	2 cpus · 8 GB
           ●	expo	8081	https://macbook.tail1234.ts.net:40000
           ●	vite	5173	https://macbook.tail1234.ts.net:40001
       files:
-          .calls: { contains: 'tart set linux-1 --cpu 2 --memory 12288 --disk-size 80' }
+          .calls: { contains: 'tart set linux-1 --cpu 2 --memory 8192 --disk-size 80' }
     - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --memory 512M --name half; kill $d; wait $d'
       exit: 0
       stdout: |

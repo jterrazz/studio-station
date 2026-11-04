@@ -113,7 +113,10 @@ func vmFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &noEngine):
 		return usage(noEngine.Error(), "station tools install "+noEngine.Hypervisor), true
 	case errors.As(err, &tooBig):
-		return usage(tooBig.Error(), "ask for less: --memory 8G"), true
+		if tooBig.LeftGB < 1 {
+			return usage(tooBig.Error(), "stop a VM first: station machines"), true
+		}
+		return usage(tooBig.Error(), "ask for less: --memory "+strconv.Itoa(tooBig.LeftGB)+"G"), true
 	case errors.As(err, &noUnit):
 		return usage(noUnit.Error(), "--"+noUnit.Flag+" "+noUnit.Value+"G"), true
 	case errors.As(err, &badSize):

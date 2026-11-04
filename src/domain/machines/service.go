@@ -30,6 +30,8 @@ type Options struct {
 	Jobs      background.Jobs
 	Unlocker  contract.Unlocker
 	SSHConfig contract.SSHConfig
+	// value: the memory this Mac has, in bytes; zero when it cannot say.
+	Memory func(ctx context.Context) int64
 }
 
 type Nodes interface {

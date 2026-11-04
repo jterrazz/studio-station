@@ -22,6 +22,14 @@
                 },
                 "vm_user": "admin"
             },
+            "self": {
+                "system": {},
+                "hardware": {
+                    "Model": "Mac16,7",
+                    "Memory": 17179869184,
+                    "CPUs": 12
+                }
+            },
             "images": ["station-image-linux-1"],
             "vms": {
                 "linux-1": {

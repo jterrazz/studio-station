@@ -12,10 +12,10 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
-const memoryCap = 75
+// value: what macOS keeps of a Mac's memory, never given to a VM (SPEC §7.1).
+const keptForMacOS = 4 << 30
 
 var ErrDaemonDown = errors.New("the engine is not running")
 
@@ -72,10 +72,13 @@ func (e *NoEngineError) Error() string { return e.Hypervisor + " is not installe
 
 func (e *NoEngineError) Unwrap() error { return e.Cause }
 
-type TooBigError struct{ MemoryGB, LimitGB int }
+type TooBigError struct {
+	Mac             string
+	AskedGB, LeftGB int
+}
 
 func (e *TooBigError) Error() string {
-	return strconv.Itoa(e.MemoryGB) + " GB of memory is over this host's limit of " + strconv.Itoa(e.LimitGB) + " GB"
+	return "not enough memory on " + e.Mac + ": " + strconv.Itoa(e.AskedGB) + " GB asked, " + strconv.Itoa(e.LeftGB) + " GB left for VMs"
 }
 
 type CreateFailedError struct {
@@ -199,8 +202,8 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if r.Resources.DiskBytes == 0 {
 		r.Resources.DiskBytes = img.Defaults.DiskBytes
 	}
-	if limit, ok := s.memoryLimit(ctx); ok && r.Resources.MemoryBytes > limit {
-		return r, &TooBigError{MemoryGB: int(r.Resources.MemoryBytes >> 30), LimitGB: int(limit >> 30)}
+	if left, ok := s.memoryLeft(ctx); ok && r.Resources.MemoryBytes > left {
+		return r, &TooBigError{Mac: "This Mac", AskedGB: int(r.Resources.MemoryBytes >> 30), LeftGB: int(max(left, 0) >> 30)}
 	}
 	if err := s.EngineUp(ctx); err != nil {
 		return r, err
@@ -251,16 +254,27 @@ func (s *Service) claims(ctx context.Context) (held map[string]claim, on map[str
 	return held, on, nil
 }
 
-func (s *Service) memoryLimit(ctx context.Context) (int64, bool) {
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: "sysctl", Args: []string{"-n", "hw.memsize"}})
-	if err != nil || out.ExitCode != 0 {
+// value: the memory a new VM may take on this Mac: what it has, less what
+// macOS keeps and what its running VMs hold; unknown when the Mac does not
+// say what it has.
+func (s *Service) memoryLeft(ctx context.Context) (int64, bool) {
+	total := int64(0)
+	if s.o.Memory != nil {
+		total = s.o.Memory(ctx)
+	}
+	if total <= 0 {
 		return 0, false
 	}
-	total, err := strconv.ParseInt(strings.TrimSpace(out.Stdout), 10, 64)
-	if err != nil || total <= 0 {
-		return 0, false
+	left := total - keptForMacOS
+	_, live := s.daemonView(ctx)
+	if vms, err := s.vms(ctx, "", live); err == nil {
+		for _, vm := range vms {
+			if vm.State == Running {
+				left -= vm.Resources.MemoryBytes
+			}
+		}
 	}
-	return total * memoryCap / 100, true
+	return left, true
 }
 
 func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Step)) (Created, error) {
