@@ -30,8 +30,13 @@ type Options struct {
 	Jobs      background.Jobs
 	Unlocker  contract.Unlocker
 	SSHConfig contract.SSHConfig
+	// value: whether another Mac's station answers now, on a connection of
+	// its own; nil asks its sshd alone.
+	Answers func(ctx context.Context, mac string) bool
 	// value: the memory this Mac has, in bytes; zero when it cannot say.
 	Memory func(ctx context.Context) int64
+	// value: this Mac's address on your LAN; empty when it cannot say.
+	LAN func(ctx context.Context) string
 }
 
 type Nodes interface {
@@ -132,7 +137,9 @@ type Machine struct {
 	Here      bool
 	Host      string
 	User, Key string
-	Lifetime  Lifetime
+	// value: a Mac's last address on your LAN, as it answered with it.
+	LAN      string
+	Lifetime Lifetime
 }
 
 type (

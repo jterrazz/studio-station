@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
@@ -22,8 +23,8 @@ type Input struct{ Name string }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
-		Use:     "forget <host>",
-		Short:   "Forget a host: its registration and ssh block go, the host is not touched",
+		Use:     "forget <mac>",
+		Short:   "Forget another Mac here: its ssh block goes, nothing changes on it",
 		Example: "  station machines forget mac-mini --yes",
 		Args:    cobra.ExactArgs(1),
 		Bind: func(in *Input, args []string) error {
@@ -35,13 +36,13 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			err := io.Confirmed(func(answer string) error {
-				_, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Forget, machinescalls.ForgetIn{Name: in.Name, Confirm: answer}, nil)
+				_, err := call.Invoke(ctx, env.Calls, machine.Ref{}, machinescalls.Forget, machinescalls.ForgetIn{Name: in.Name, Confirm: answer}, nil)
 				return err
 			})
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Change("forget", in.Name, "forgotten", d.Here), nil)
+			return io.Page(pagemachines.Forgot(in.Name, d.Here), nil)
 		},
 	}, env)
 }

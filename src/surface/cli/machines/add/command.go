@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
@@ -20,26 +21,33 @@ type Deps struct {
 type Input struct{ Name, User, Key string }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
-	return kit.Command(kit.Leaf[Input]{
-		Use:     "add",
-		Short:   "Register another host: its name, and the login and key ssh uses",
-		Example: "  station machines add --name mac-mini --user jterrazz.agent --key ~/.ssh/id_ed25519",
+	cmd := kit.Command(kit.Leaf[Input]{
+		Use:     "add <mac>",
+		Short:   "Add another Mac by its " + catalog.TailnetProduct + " name, once its ssh and its station answer",
+		Example: "  station machines add jterrazz-mac-mini --user jterrazz.agent --key ~/.ssh/id_ed25519",
+		Args:    cobra.MaximumNArgs(1),
 		Declare: func(f *pflag.FlagSet, in *Input) {
-			f.StringVar(&in.Name, "name", "", "the host's name, its ssh Host and its tailnet name (required)")
-			f.StringVar(&in.User, "user", "", "the login on that host, when it differs from yours")
+			f.StringVar(&in.Name, "name", "", "the Mac's name, as station v3.0 took it")
+			f.StringVar(&in.User, "user", "", "the login on that Mac, when it differs from yours")
 			f.StringVar(&in.Key, "key", "", "the ssh key file (default ~/.ssh/id_ed25519)")
 		},
-		Bind: func(in *Input, _ []string) error {
+		Bind: func(in *Input, args []string) error {
+			if len(args) == 1 {
+				in.Name = args[0]
+			}
 			if in.Name == "" {
-				return kit.Refuse("--name is required", "station machines add --name <name>")
+				return kit.Refuse("say which Mac to add", "station machines add <mac>")
 			}
 			return nil
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			if _, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Add, machinescalls.AddIn{Name: in.Name, User: in.User, Key: in.Key}, nil); err != nil {
+			added, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Add, machinescalls.AddIn{Name: in.Name, User: in.User, Key: in.Key}, nil)
+			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Change("add", in.Name, "added, ssh "+in.Name, d.Here), nil)
+			return io.Page(pagemachines.Added(added, d.Here), nil)
 		},
 	}, env)
+	_ = cmd.Flags().MarkHidden("name")
+	return cmd
 }

@@ -209,7 +209,7 @@ runs:
     - command: 'disk --json | /usr/bin/jq -S -c ''del(.free_bytes, .total_bytes, .generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
-          {"findings":[],"rows":[{"app":"homebrew","bytes":2000,"group":"can-rebuild","paths":["~/Library/Caches/Homebrew"]},{"app":"station","bytes":952,"group":"never-touched","paths":["~/.config/station/preferences.json","~/.ssh/config"]},{"app":"ssh","bytes":646,"group":"never-touched","paths":["~/.ssh"]}],"schema":"station.disk.read/v1"}
+          {"findings":[],"rows":[{"app":"homebrew","bytes":2000,"group":"can-rebuild","paths":["~/Library/Caches/Homebrew"]},{"app":"station","bytes":951,"group":"never-touched","paths":["~/.config/station/preferences.json","~/.ssh/config"]},{"app":"ssh","bytes":646,"group":"never-touched","paths":["~/.ssh"]}],"schema":"station.disk.read/v1"}
     - command: 'machines --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |

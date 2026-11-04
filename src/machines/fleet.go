@@ -74,9 +74,11 @@ type HostView struct {
 	Here, Reachable            bool
 	// value: when this Mac last had its answer; zero for one never heard.
 	Answered time.Time
-	Node     Node
-	Daemon   EngineView
-	VMs      []VM
+	// value: its address on your LAN, as it reads it; empty when it cannot say.
+	LAN    string
+	Node   Node
+	Daemon EngineView
+	VMs    []VM
 }
 
 type Fleet struct {

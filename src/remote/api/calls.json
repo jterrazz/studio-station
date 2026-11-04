@@ -248,7 +248,8 @@
       "name": "machines.add",
       "schema": "station.machines.add/v1",
       "where": "in-process",
-      "in": "AddIn"
+      "in": "AddIn",
+      "out": "Added"
     },
     {
       "name": "machines.create-server",
@@ -320,6 +321,17 @@
       "out": "RestartReport"
     },
     {
+      "name": "machines.restart-mac",
+      "schema": "station.machines.restart-mac/v1",
+      "where": "in-process",
+      "confirm": "restart-mac",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "RestartMacIn",
+      "out": "Back"
+    },
+    {
       "name": "machines.ssh",
       "schema": "station.machines.ssh/v1",
       "where": "in-process",
@@ -350,7 +362,8 @@
       "name": "machines.unlock",
       "schema": "station.machines.unlock/v1",
       "where": "in-process",
-      "in": "UnlockIn"
+      "in": "UnlockIn",
+      "out": "Unlocked"
     },
     {
       "name": "overview.read",

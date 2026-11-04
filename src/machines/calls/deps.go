@@ -43,12 +43,25 @@ type Machines interface {
 	CheckRestart(name string) (vm bool, err error)
 	Restart(ctx context.Context, name string) (machines.RestartReport, error)
 	CheckHost() error
-	// value: refuses a name that is no other registered host, worded for verb.
-	CheckRemoteHost(name, verb string) error
+	// value: the registered name of another Mac, which name may say short;
+	// refuses a name that is no other Mac, worded for verb.
+	CheckRemoteHost(name, verb string) (string, error)
 	AddHost(ctx context.Context, name string, h machines.Host) error
+	// value: what a Mac's station says once ssh reaches it; a Mac that does
+	// not answer, or has no station, is the error.
+	Reach(ctx context.Context, name string) (machines.Added, error)
 	ForgetHost(ctx context.Context, name string) error
 	// value: refuses off a terminal, where nobody can type the password.
 	Unlock(ctx context.Context, name string, interactive bool) error
+	// value: whether the Mac's station answers now.
+	Answers(ctx context.Context, name string) bool
+	// value: waits, in the budget of a Mac's boot, for its station to answer.
+	AwaitAnswer(ctx context.Context, name string) bool
+	// value: the VMs of that Mac, as it lists them now.
+	VMsOf(ctx context.Context, name string) ([]machines.VM, error)
+	// value: starts a VM of that Mac through its station; one that runs
+	// already is left as it is.
+	StartOn(ctx context.Context, mac, vm string) error
 	// value: refuses a name that is no known machine.
 	CheckRemote(name string) error
 	Probe(ctx context.Context, name string) (machines.ProbeReport, error)
@@ -60,6 +73,6 @@ type Machines interface {
 func All(d Deps) []call.Handler {
 	return []call.Handler{
 		call.BindWatch(List, d), call.Bind(CreateWorkspace, d), call.Bind(CreateServer, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
-		call.Bind(Restart, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d), call.Bind(SSH, d), call.Bind(Edit, d),
+		call.Bind(Restart, d), call.Bind(RestartMac, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d), call.Bind(SSH, d), call.Bind(Edit, d),
 	}
 }

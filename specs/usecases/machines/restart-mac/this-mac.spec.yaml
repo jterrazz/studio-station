@@ -1,0 +1,13 @@
+description: 'restart refuses This Mac and a name station does not know before any question, exit 2'
+env: two-macs
+runs:
+    - command: 'machines restart jterrazz-macbook-pro --yes'
+      exit: 2
+      stderr: |
+          Error: "jterrazz-macbook-pro" is this machine
+          Hint: pick another machine: run station machines for the fleet
+    - command: 'machines restart nope --yes'
+      exit: 2
+      stderr: |
+          Error: no machine named "nope"
+          Hint: station machines

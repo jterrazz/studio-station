@@ -6,8 +6,10 @@ import (
 )
 
 const (
-	GroupMacs   = "hosts"
-	GroupVMUser = "vm_user"
+	GroupMacs = "macs"
+	// value: the name station v3.0 and earlier kept the other Macs under.
+	RetiredGroupMacs = "hosts"
+	GroupVMUser      = "vm_user"
 )
 
 type MacsPrefs struct{ p core.Preferences }

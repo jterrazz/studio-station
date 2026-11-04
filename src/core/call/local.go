@@ -15,6 +15,8 @@ const (
 	Unreachable fail.Code = "remote.unreachable"
 	// value: a far binary that serves no such call.
 	FarTooOld fail.Code = "remote.far-too-old"
+	// value: a Mac whose ssh answers and that has no station to answer it.
+	NoStation fail.Code = "remote.no-station"
 )
 
 type local interface {

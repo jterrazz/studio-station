@@ -211,6 +211,47 @@ func StopServerForm(name string) page.Form {
 	}
 }
 
+func Added(a machines.Added, here page.Context) page.Page {
+	// value: the Mac added, as ssh and its station answered; a station of
+	// another version is one more row, with what brings them to one.
+	rows := []page.Row{done(a.Label, catalog.StateOK, "added", "ssh answers", "station "+a.Version)}
+	if a.Update != "" {
+		rows = append(rows, done(a.Label, catalog.StateDegraded, "runs "+a.Version, a.Update))
+	}
+	return pages.Outcome("machines add", here, nil, rows, "machines")
+}
+
+func Forgot(name string, here page.Context) page.Page {
+	return pages.Outcome("machines forget", here, nil, []page.Row{done(name, catalog.StateOK, "forgotten", "nothing changed on it")}, "machines")
+}
+
+func done(id string, state catalog.State, said ...string) page.Row {
+	r := pages.Done(id, state, "")
+	r.Detail = page.Texts(said...)
+	return r
+}
+
+func Unlocked(u machines.Unlocked, here page.Context) page.Page {
+	row := done(u.Name, catalog.StateOK, "unlocked", "on "+catalog.TailnetProduct+" again")
+	switch {
+	case u.Already:
+		row = done(u.Name, catalog.StateOK, "already answers: its disk is unlocked")
+	case !u.Answers:
+		row = done(u.Name, catalog.StateDegraded, "unlocked", "not on "+catalog.TailnetProduct+" yet")
+	}
+	return pages.Outcome("machines unlock", here, nil, []page.Row{row}, "machines")
+}
+
+func Back(b machines.Back, here page.Context) page.Page {
+	// value: the Mac back, and each VM it paused as it is now.
+	said := make([]string, 0, 1+len(b.VMs))
+	said = append(said, "back")
+	for _, vm := range b.VMs {
+		said = append(said, vm.Name+" "+strings.ToLower(stateWord(vm.State)))
+	}
+	return pages.Outcome("machines restart "+b.Name, here, nil, []page.Row{done(b.Name, catalog.StateOK, said...)}, "machines")
+}
+
 func Already(verb, name string, running bool, here page.Context) page.Page {
 	// value: a start or stop that found the VM already so: its mark is the state
 	// it is in, running or stopped, and nothing changed.

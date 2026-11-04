@@ -1,5 +1,5 @@
 description: '--on is refused where no call is sent, and a bare station --on is the menu off a terminal'
-fixture: ./__fixtures__/far-mac/
+fixture: ../../__fixtures__/far-mac/
 runs:
     - command: 'shell zsh --on x'
       exit: 2

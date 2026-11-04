@@ -6,13 +6,25 @@ type UnknownMachineError struct{ Name string }
 
 func (e *UnknownMachineError) Error() string { return "no machine named \"" + e.Name + "\"" }
 
-type HereMachineError struct{ Name string }
+type HereMachineError struct{ Name, Verb string }
 
-func (e *HereMachineError) Error() string { return "\"" + e.Name + "\" is this machine" }
+func (e *HereMachineError) Error() string {
+	if e.Verb == verbForget {
+		return "this is This Mac: station forgets only the other Macs"
+	}
+	return "\"" + e.Name + "\" is this machine"
+}
 
 type NotAHostError struct{ Name, Verb string }
 
-func (e *NotAHostError) Error() string { return "\"" + e.Name + "\" is a VM, not a host" }
+func (e *NotAHostError) Error() string {
+	if e.Verb == verbForget {
+		return e.Name + " is a VM: a VM is deleted, never forgotten"
+	}
+	return "\"" + e.Name + "\" is a VM, not a host"
+}
+
+const verbForget = "forget"
 
 type OnlyOnHostError struct{ Here catalog.MachineKind }
 

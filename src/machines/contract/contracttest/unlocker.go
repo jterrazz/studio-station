@@ -9,14 +9,17 @@ import (
 
 const (
 	Mac     = "mac-mini"
+	LAN     = "192.168.1.20"
 	Refusal = "sudo: a password is required"
 )
 
 type UnlockerSubject struct {
 	Unlocker contract.Unlocker
-	// value: the state of Mac for the calls from now on.
-	AtPreBoot, Offline, Answering func(mac string)
-	Refusing                      func(mac, detail string)
+	// value: the state of Mac for the calls from now on; at pre-boot it is
+	// off the tailnet, on your LAN at lan.
+	AtPreBoot          func(mac, lan string)
+	Offline, Answering func(mac string)
+	Refusing           func(mac, detail string)
 	// value: the password sessions macOS's pre-boot prompt was opened for.
 	Sessions func(mac string) int
 	// value: the planned restarts the Mac received.
@@ -26,18 +29,28 @@ type UnlockerSubject struct {
 func Unlocker(t *testing.T, subject func(t *testing.T) UnlockerSubject) {
 	t.Run("a Mac waiting at pre-boot gets the password session of macOS's own prompt", func(t *testing.T) {
 		s := subject(t)
-		s.AtPreBoot(Mac)
-		if err := s.Unlocker.Unlock(t.Context(), Mac); err != nil {
+		s.AtPreBoot(Mac, LAN)
+		if err := s.Unlocker.Unlock(t.Context(), Mac, LAN); err != nil {
 			t.Fatal(err)
 		}
 		if got := s.Sessions(Mac); got != 1 {
 			t.Errorf("%d password sessions opened, want 1", got)
 		}
 	})
+	t.Run("a Mac at pre-boot is off the tailnet: dialed by its name alone it does not answer", func(t *testing.T) {
+		s := subject(t)
+		s.AtPreBoot(Mac, LAN)
+		if err := s.Unlocker.Unlock(t.Context(), Mac, ""); !errors.Is(err, contract.ErrUnreachable) {
+			t.Fatalf("unlocking a Mac at pre-boot by its name returned %v, want ErrUnreachable", err)
+		}
+		if got := s.Sessions(Mac); got != 0 {
+			t.Errorf("%d password sessions opened, want none", got)
+		}
+	})
 	t.Run("a Mac that does not answer is unreachable, and no session opens", func(t *testing.T) {
 		s := subject(t)
 		s.Offline(Mac)
-		if err := s.Unlocker.Unlock(t.Context(), Mac); !errors.Is(err, contract.ErrUnreachable) {
+		if err := s.Unlocker.Unlock(t.Context(), Mac, LAN); !errors.Is(err, contract.ErrUnreachable) {
 			t.Fatalf("unlocking an offline Mac returned %v, want ErrUnreachable", err)
 		}
 		if got := s.Sessions(Mac); got != 0 {

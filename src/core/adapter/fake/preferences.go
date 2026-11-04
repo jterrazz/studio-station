@@ -22,6 +22,8 @@ type Preferences struct {
 	// world Mac's: preferences.json as edited by hand, settings.json as v2
 	// left it.
 	files map[string]string
+	// value: a group's retired name, and the name it is read under now.
+	renamed map[string]string
 }
 
 const (
@@ -50,10 +52,20 @@ func (p *Preferences) Over(files map[string]string) *Preferences {
 	return p
 }
 
+func (p *Preferences) Renaming(retired, now string) *Preferences {
+	if p.renamed == nil {
+		p.renamed = map[string]string{}
+	}
+	p.renamed[retired] = now
+	return p
+}
+
 // invariant: a file edited by hand is read before any group: once it reads,
 // its groups are the preferences; one that does not read stops every call
-// and is left byte for byte as it is.
+// and is left byte for byte as it is. A group under its retired name is
+// kept under its new one.
 func (p *Preferences) load() error {
+	defer p.rename()
 	text, ok := p.files[editedFile]
 	if !ok {
 		return nil
@@ -66,6 +78,19 @@ func (p *Preferences) load() error {
 	maps.Copy(p.kept, doc)
 	delete(p.files, editedFile)
 	return nil
+}
+
+func (p *Preferences) rename() {
+	for retired, now := range p.renamed {
+		raw, ok := p.kept[retired]
+		if !ok {
+			continue
+		}
+		if _, kept := p.kept[now]; !kept {
+			p.kept[now] = raw
+		}
+		delete(p.kept, retired)
+	}
 }
 
 func (p *Preferences) MoveRetired(context.Context) (bool, error) {

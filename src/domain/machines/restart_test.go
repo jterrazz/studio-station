@@ -44,7 +44,7 @@ func service(t *testing.T, run system.Runner) (*machines.Service, *systemtest.Cl
 
 type restarted struct{}
 
-func (restarted) Unlock(context.Context, string) error         { return nil }
+func (restarted) Unlock(context.Context, string, string) error { return nil }
 func (restarted) PlannedRestart(context.Context, string) error { return nil }
 
 type answering struct {

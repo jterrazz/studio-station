@@ -24,6 +24,8 @@ type Preferences struct {
 	files  Files
 	dir    string
 	groups []string
+	// value: a group's retired name, and the name it is read under now.
+	renamed map[string]string
 }
 
 var (
@@ -35,6 +37,17 @@ func NewPreferences(files Files, dir string, groups []string) *Preferences {
 	// invariant: groups are every group station knows, in the order the file
 	// writes them; a key no group names is dropped at the next write.
 	return &Preferences{files: files, dir: dir, groups: slices.Clone(groups)}
+}
+
+func (p *Preferences) Renaming(retired, now string) *Preferences {
+	// invariant: a group kept under its retired name is read under its new
+	// one, and written under it at the next write; the retired name never
+	// shadows a group already kept under the new one.
+	if p.renamed == nil {
+		p.renamed = map[string]string{}
+	}
+	p.renamed[retired] = now
+	return p
 }
 
 func (p *Preferences) File() string { return path.Join(p.dir, FileName) }
@@ -93,9 +106,12 @@ func (p *Preferences) Write(group string, v any) error {
 }
 
 func (p *Preferences) Migrate(context.Context) error {
-	doc, err := p.load()
+	doc, renamed, err := p.read()
 	if err != nil {
 		return store.OnlyNewer(err)
+	}
+	if renamed {
+		return p.save(doc)
 	}
 	for key := range doc {
 		if !slices.Contains(p.groups, key) {
@@ -106,6 +122,30 @@ func (p *Preferences) Migrate(context.Context) error {
 }
 
 func (p *Preferences) load() (map[string]json.RawMessage, error) {
+	doc, _, err := p.read()
+	return doc, err
+}
+
+func (p *Preferences) read() (doc map[string]json.RawMessage, renamed bool, err error) {
+	doc, err = p.parse()
+	if err != nil {
+		return nil, false, err
+	}
+	for retired, now := range p.renamed {
+		raw, ok := doc[retired]
+		if !ok {
+			continue
+		}
+		if _, kept := doc[now]; !kept {
+			doc[now] = raw
+		}
+		delete(doc, retired)
+		renamed = true
+	}
+	return doc, renamed, nil
+}
+
+func (p *Preferences) parse() (map[string]json.RawMessage, error) {
 	doc := map[string]json.RawMessage{}
 	data, err := p.files.ReadFile(p.File())
 	if errors.Is(err, fs.ErrNotExist) {

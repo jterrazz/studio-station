@@ -40,6 +40,9 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 	here := HostView{
 		Name: name, User: user, StationVersion: s.o.Version, Here: true, Reachable: true, Node: nodes[name], Daemon: info, VMs: vms,
 	}
+	if s.o.Here == catalog.Host && s.o.LAN != nil {
+		here.LAN = s.o.LAN(ctx)
+	}
 	if hereOnly || s.o.Here != catalog.Host {
 		return Fleet{Hosts: []HostView{here}}, nil
 	}
@@ -112,7 +115,7 @@ func (s *Service) view(name string, h model.Host, node Node, answers map[string]
 		}
 		return silent
 	}
-	view := HostView{Name: name, User: h.User, StationVersion: far.StationVersion, Reachable: true, Node: far.Node, Daemon: far.Daemon}
+	view := HostView{Name: name, User: h.User, StationVersion: far.StationVersion, Reachable: true, LAN: far.LAN, Node: far.Node, Daemon: far.Daemon}
 	for _, vm := range far.VMs {
 		vm.Host = name
 		view.VMs = append(view.VMs, vm)

@@ -7,6 +7,9 @@ const (
 	FactFirewall   Fact = "firewall"
 	FactSIP        Fact = "sip"
 	FactGatekeeper Fact = "gatekeeper"
+	// value: whether FileVault's planned restart, which unlocks the disk
+	// once, is supported.
+	FactAuthRestart Fact = "authrestart"
 	// value: whether the operating system has updates waiting.
 	FactSystemUpdates Fact = "system-updates"
 	// value: the kernel's name and release ("Darwin 25.0.0").

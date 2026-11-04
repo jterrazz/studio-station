@@ -10,14 +10,17 @@ import (
 	activitycontract "github.com/jterrazz/studio-station/src/activity/contract"
 	"github.com/jterrazz/studio-station/src/apps/adapter/brew"
 	"github.com/jterrazz/studio-station/src/catalog"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
+	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
 	settingscli "github.com/jterrazz/studio-station/src/settings/adapter/cli"
 	settingslinux "github.com/jterrazz/studio-station/src/settings/adapter/linux"
 	settingsmacos "github.com/jterrazz/studio-station/src/settings/adapter/macos"
@@ -81,9 +84,29 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	if m.kind != catalog.Linux {
 		// value: the status page reads listeners, jobs and app updates on a Mac only.
 		d.Listeners, d.Jobs, d.Updates = listening, m.jobs(overviewcalls.ReadBudget), brew.New(h.Run, nil)
+		d.Servers = hostedServers{d: m.hostDaemon()}
 	}
 	d.Facts, d.Meter = facts, meter
 	return d
+}
+
+type hostedServers struct{ d hostDaemon }
+
+func (s hostedServers) Hosted(ctx context.Context) bool {
+	live, err := s.d.VMs(ctx)
+	if err != nil {
+		return false
+	}
+	ask := unix.New(guestRelay(s), nil)
+	for name, vm := range live {
+		if vm.State != engine.StateRunning {
+			continue
+		}
+		if kind, err := ask.KindOf(ctx, name); err == nil && kind == coremachine.Server {
+			return true
+		}
+	}
+	return false
 }
 
 type configRead struct{ *config.Service }

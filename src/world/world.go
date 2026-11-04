@@ -57,6 +57,8 @@ type Mac struct {
 	Locked bool `json:"locked,omitempty"`
 	// value: out of the tailnet's reach.
 	Offline bool `json:"offline,omitempty"`
+	// value: a Mac that restarts does not answer until then.
+	Back time.Time `json:"back,omitzero"`
 	// value: the hypervisor this Mac has: empty, the one station is built
 	// with; none, no hypervisor installed; another name, a second fake that
 	// stands for another adapter (vz).
@@ -309,6 +311,14 @@ func (w *World) UseHypervisor(hypervisor string) {
 			m.Hypervisor = hypervisor
 		}
 	}
+}
+
+func (m *Mac) Reads(f catalog.Fact, value string) {
+	// value: the Mac answers fact f with value from now on.
+	if m.Facts == nil {
+		m.Facts = map[catalog.Fact]settings.Fact{}
+	}
+	m.Facts[f] = settings.Fact{State: catalog.StateOK, Value: value}
 }
 
 func (w *World) Mac(name string) *Mac {

@@ -13,10 +13,11 @@ The fleet is every machine the owner runs: the physical Macs (hosts) and the VMs
 | The engine        | The one process per host that runs the VMs                   |
 | Round 5 migration | What setup retires, and what the owner removes by hand       |
 | Gateways          | The OpenClaw and Hermes gateways a host reports              |
+| Mac readiness     | What a Mac that hosts servers must have, each item measured  |
 
 ## Hosts and VMs
 
-A host registers itself with `station setup --name <name>`; another host is registered with `station machines add --name <name> [--user <login>] [--key <file>]` and forgotten with `forget`, neither touching it. A VM is cloned from an [image](images.md) on a chosen host. The kind of a machine is `host`, `linux` or `macos`, detected at run time (a Linux binary is `linux`; a macOS VM reports `kern.hv_vmm_present`). A VM refuses the commands that only hosts do, with `Hint: run it on a host`.
+A host registers itself with `station setup --name <name>`; another Mac is added by its Tailscale name with `station machines add <mac> [--user <login>] [--key <file>]`, once its ssh and its station answer, and forgotten with `forget`, which never reaches it. A VM is cloned from an [image](images.md) on a chosen host. The kind of a machine is `host`, `linux` or `macos`, detected at run time (a Linux binary is `linux`; a macOS VM reports `kern.hv_vmm_present`). A VM refuses the commands that only hosts do, with `Hint: run it on a host`.
 
 A machine has one name, used for `preferences.json`, the `~/.ssh/config` Host, Herdr and `--on`; a host's name is also its tailnet node. A VM is never on the tailnet: it is reached through its host. Every VM has the fleet's one login, `vm_user`; a host's login is its own `--user`.
 
@@ -62,10 +63,10 @@ station machines stop infra --on mac-mini # a server: asks its name typed (--con
 station machines edit api --memory 16G # applies when api next starts; a disk only grows
 station machines edit infra --check infra:6443 # a server's health check, read by its next health run; --no-check removes it
 station machines ssh api # prints the ssh command: ssh admin@api
-station machines restart mac-mini # a Mac: FileVault-aware, waits for ssh; a VM: power off, run
+station machines restart mac-mini # a Mac: asks naming the VMs that pause, a planned restart that unlocks itself, waits for its station, starts those VMs again; a VM: power off, run
 station machines delete api # destroys the VM, its leases and the secrets lent to it
 station machines api # its Overview, as station overview --on api
-station machines unlock mac-mini # the FileVault pre-boot ssh session
+station machines unlock mac-mini # after a power cut, on its last LAN address: you type its password into macOS's pre-boot prompt
 ```
 
 `create` makes a throwaway workspace unless `--permanent` is given, and asks the host when two or more are reachable. Defaults are 4 CPUs, 4 GB, 20 GB and image `linux`, each size with its unit. A size above what the Mac can give is refused before any effect (`not enough memory on This Mac: 60 GB asked, 4 GB left for VMs`): macOS keeps 4 GB, and the running VMs hold theirs. It reserves the ports of every service [profile](services.md#profiles) before the VM first runs; a step that fails before that rolls everything back. It then prints the health steps as they pass (Running, Has an address, SSH answers), its ports, and `linux-2 Created` with its size. A server (`--server`) is named, always on and behind its Mac (`--permanent` and `--network bridged` are refused), sized 4 CPU · 8 GB · 50 GB unless asked; station reserves no profile port and runs no first boot inside it: after SSH answers, its check is `◐ Check waiting` (what answers it comes with your tooling), then `infra is a server`, `Station sets up nothing inside`. Made on a Mac that reports a battery, it adds `◐ This Mac is a laptop: box stops whenever it sleeps · see Mac readiness`. From the first run on the VM is kept whatever fails: `linux-2 did not boot: …`, or `linux-2 is kept, failing Has an address: none after 60 s`, each with start or delete as the fix. A running workspace whose guest connection fails is a finding, `fails SSH answers`. A Mac that does not answer keeps its row in `station machines`, `Unreachable · last answer 03:12`, and the VMs it held at that answer as `? Unknown`; `station machines <vm>` of such a VM reads `infra is on mac-mini, which does not answer`, exit 0. `--network bridged` is for macOS VMs only (an iPhone on the Wi-Fi reaching the VM); a Linux VM publishes its [services](services.md) instead. With Tailscale HTTPS off, the profiles' variables hold the local URL and `create` adds a `◐ ports` row naming the admin step. `delete` asks the name typed (`--confirm=<name>` in a script, never `--yes`), and takes with the VM the ports declared public for it. With the engine stopped, start, stop, restart, edit and delete are refused (`Hint: station engine start`).
@@ -146,6 +147,10 @@ Left to the owner, by hand and whenever wanted: the old VM tag and its ACL lines
 ## Gateways
 
 On a host, the TUI's probe reports the OpenClaw and Hermes gateways when detected, by their process or their config. `station status` reports, on a host whose tailnet is connected, `Tailscale Serve`, the way every VM service leaves the host: `on`, or `◐ off` with the admin step ([Services](services.md#serve-and-https)) (`status.gateways` in [the contract](status-json.md)). The gateways' ports come from `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT` and `API_SERVER_PORT` ([Configuration](configuration.md)). Designing them as VMs is on the [TODO](../../TODO.md).
+
+## Mac readiness
+
+The Overview of a Mac that hosts a server, or that never sleeps (its `power` setting applied), ends with Mac readiness, six items in this order, each measured on that Mac: restarts after a power cut and never sleeps (the `power` setting), logs in by itself (`autologin`), disk unlock after a power cut (FileVault on is `◐ needs you`, its fix `station machines unlock <mac>` from the same network), planned restarts unlock themselves (`fdesetup supportsauthrestart`, a fact), engine starts at login (the engine's job installed, else `station setup`). A setting not applied names its fix, and says `as root` where it needs it. A Mac hosts a server when one of its running VMs says it is one, asked of its guest's station. Any other Mac has no readiness, and reads no fact for it.
 
 ## Related
 

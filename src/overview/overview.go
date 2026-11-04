@@ -26,7 +26,9 @@ type Snapshot[Tool, Item, Stray any] struct {
 	Background  []background.Task
 	Gateways    []Check
 	Tailnet     ports.Status
-	Power       PowerState
+	// value: the Mac readiness checklist, empty on a Mac that needs none.
+	Readiness []Check
+	Power     PowerState
 	// value: Power was read (a host that has it, its daemon answering).
 	PowerKnown bool
 	// value: a section whose reading has not answered; never past a whole read.

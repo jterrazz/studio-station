@@ -5,17 +5,22 @@ import (
 	"errors"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	settingsmacos "github.com/jterrazz/studio-station/src/settings/adapter/macos"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	machinescmd "github.com/jterrazz/studio-station/src/surface/cli/machines"
 	machinesadd "github.com/jterrazz/studio-station/src/surface/cli/machines/add"
@@ -34,6 +39,7 @@ import (
 )
 
 const (
+	lanBudget           = 2 * time.Second
 	defaultOpenClawPort = 18789
 	defaultHermesPort   = 8642
 )
@@ -53,9 +59,27 @@ func (m machine) machines(_ bool) *machines.Service {
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
 		Unlocker:  m.unlocker(knownHosts),
+		Answers:   m.answers,
 		SSHConfig: m.sshConfig(knownHosts),
 		Memory:    m.memory,
+		LAN:       m.lanAddress,
 	})
+}
+
+// value: this Mac's address on your LAN, as it reads it (its world's in
+// the spec build).
+func (m machine) lanAddress(ctx context.Context) string {
+	var facts settingscontract.Inspector = settingsmacos.New(m.host.Run, m.host.FS, m.host.Clock, settingsmacos.Options{Root: m.systemRoot()})
+	if m.world != nil {
+		facts = m.world.inspector()
+	}
+	ctx, cancel := context.WithTimeout(ctx, lanBudget)
+	defer cancel()
+	got, err := facts.Read(ctx, catalog.FactLocalIP)
+	if err != nil || got.State != catalog.StateOK {
+		return ""
+	}
+	return got.Value
 }
 
 // value: the memory this Mac has, as it reads itself (its world's in the
@@ -67,6 +91,18 @@ func (m machine) memory(ctx context.Context) int64 {
 	}
 	_, _, _, hw, _ := self.Read(ctx)
 	return hw.Memory
+}
+
+// invariant: a Mac answers when its station does, on a connection dialed
+// for the question: one kept from before it went down proves nothing.
+func (m machine) answers(ctx context.Context, mac string) bool {
+	r := m.far.router
+	if r == nil {
+		return false
+	}
+	r.Drop(mac)
+	_, err := r.Hello(ctx, mac)
+	return err == nil
 }
 
 func (m machine) unlocker(knownHosts string) contract.Unlocker {
@@ -113,18 +149,31 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		}, env),
 		machinesstart.Command(machinesstart.Deps{Names: service.Names, Here: m.where}, env),
 		machinesstop.Command(machinesstop.Deps{Names: service.Names, Here: m.where}, env),
-		machinesrestart.Command(machinesrestart.Deps{Names: service.Names, IsVM: func(name string) bool {
+		machinesrestart.Command(machinesrestart.Deps{Names: service.Names, IsMac: func(name string) bool {
 			r, err := service.Remote(name)
-			return err == nil && r.Kind != catalog.Host
-		}, Here: m.where}, env),
+			return err == nil && r.Kind == catalog.Host && !env.Far()
+		}, Pausing: m.pausing(env), Here: m.where}, env),
 		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
 		machinesedit.Command(machinesedit.Deps{Names: service.Names, Resources: machines.ParseResources, Here: m.where}, env),
 		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Overview: overview}, env),
-		machinesunlock.Command(machinesunlock.Deps{Names: service.Names}, env),
+		machinesunlock.Command(machinesunlock.Deps{Names: service.Names, Here: m.where}, env),
 		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),
 		machinessupervise.Command(env),
 		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{service}}, env),
 	)
+}
+
+func (m machine) pausing(env kit.Env) func(mac string) []string {
+	return func(mac string) []string {
+		vms, _ := machineCalls{Service: m.machines(env.Interactive), m: m}.VMsOf(context.Background(), mac)
+		var names []string
+		for _, vm := range model.Ordered(vms) {
+			if vm.State == machines.Running {
+				names = append(names, vm.Name)
+			}
+		}
+		return names
+	}
 }
 
 func createCheck(s *machines.Service) func(ctx context.Context, r machines.CreateRequest) (bool, error) {
@@ -147,7 +196,22 @@ func (p vmPipe) Check(ctx context.Context, vm string) error {
 
 // invariant: the machines calls' Deps over today's service: each check the
 // leaves ran before, worded by the service's own errors.
-type machineCalls struct{ *machines.Service }
+type machineCalls struct {
+	*machines.Service
+	m machine
+}
+
+// invariant: a Mac is reached as every later call reaches it, through this
+// run's Router over its ssh block; its version is judged against this one's
+// by the fleet's own rule.
+func (c machineCalls) Reach(ctx context.Context, name string) (model.Added, error) {
+	hello, err := c.m.far.router.Hello(ctx, name)
+	if err != nil {
+		return model.Added{}, err
+	}
+	update, _ := model.Behind(model.HostView{Name: name, StationVersion: hello.Version}, c.m.stationVersion())
+	return model.Added{Name: name, Label: c.m.label(name), Version: hello.Version, Update: update}, nil
+}
 
 func (c machineCalls) CheckVM(name, verb string) error {
 	_, err := c.VM(name, verb)
@@ -184,9 +248,9 @@ func (c machineCalls) Restart(ctx context.Context, name string) (machines.Restar
 	return c.Service.Restart(ctx, name, nil)
 }
 
-func (c machineCalls) CheckRemoteHost(name, verb string) error {
-	_, err := c.RemoteHost(name, verb)
-	return err
+func (c machineCalls) CheckRemoteHost(name, verb string) (string, error) {
+	m, err := c.RemoteHost(name, verb)
+	return m.Name, err
 }
 
 func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool) error {
@@ -194,6 +258,19 @@ func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool)
 		return &machines.NeedsTerminalError{Verb: "machines unlock"}
 	}
 	return c.Service.Unlock(ctx, name)
+}
+
+func (c machineCalls) VMsOf(ctx context.Context, name string) ([]machines.VM, error) {
+	out, err := call.Read(ctx, c.m.far.router, coremachine.Ref{Name: name}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
+	if err != nil || len(out.Fleet.Hosts) == 0 {
+		return nil, err
+	}
+	return out.Fleet.Hosts[0].VMs, nil
+}
+
+func (c machineCalls) StartOn(ctx context.Context, mac, vm string) error {
+	_, err := call.Invoke(ctx, c.m.far.router, coremachine.Ref{Name: mac}, machinescalls.Start, machinescalls.VMIn{VM: vm}, nil)
+	return err
 }
 
 func (c machineCalls) CheckRemote(name string) error {

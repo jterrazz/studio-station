@@ -229,11 +229,15 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 		}
 	}
 	if l.Asks {
-		question := c.Name() + "?"
-		if l.Confirm != nil {
-			question = l.Confirm(in)
+		ask := func() (bool, error) {
+			// invariant: the question is put together only when it is put:
+			// one that reads a machine reads nothing for a refusal.
+			question := c.Name() + "?"
+			if l.Confirm != nil {
+				question = l.Confirm(in)
+			}
+			return o.Prompt.Confirm(page.Confirm{Question: question})
 		}
-		ask := func() (bool, error) { return o.Prompt.Confirm(page.Confirm{Question: question}) }
 		if l.Ask != nil {
 			ask = func() (bool, error) { return l.Ask(in) }
 		}

@@ -76,7 +76,7 @@ func wrap(err error, name, phase string) error {
 
 func (s *Service) await(ctx context.Context, name string, up bool, budget time.Duration) error {
 	for waited := time.Duration(0); ; waited += pollEvery {
-		if s.sshTrue(ctx, name) == up {
+		if s.answers(ctx, name) == up {
 			return nil
 		}
 		if waited >= budget {
@@ -86,6 +86,19 @@ func (s *Service) await(ctx context.Context, name string, up bool, budget time.D
 			return err
 		}
 	}
+}
+
+func (s *Service) AwaitAnswer(ctx context.Context, mac string) bool {
+	return s.await(ctx, mac, true, returnBudget) == nil
+}
+
+func (s *Service) Answers(ctx context.Context, mac string) bool { return s.answers(ctx, mac) }
+
+func (s *Service) answers(ctx context.Context, mac string) bool {
+	if s.o.Answers != nil {
+		return s.o.Answers(ctx, mac)
+	}
+	return s.sshTrue(ctx, mac)
 }
 
 func firstLine(text string) string {

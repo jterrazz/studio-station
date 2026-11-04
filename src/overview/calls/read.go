@@ -186,6 +186,7 @@ func (r *Reader[Tool, Item, Stray]) watch(ctx context.Context) <-chan snapshot[T
 	jobs = append(jobs, r.diskJob())
 	jobs = append(jobs, r.rowJobs("identity", r.identityRows(), func(sn *snapshot[Tool, Item, Stray]) []overview.Check { return sn.Identity })...)
 	jobs = append(jobs, r.sectionJobs()...)
+	jobs = append(jobs, r.readinessJob())
 	return lanes.Run(ctx, r.d.Pool, r.frame(), jobs, clone[Tool, Item, Stray])
 }
 
@@ -195,6 +196,7 @@ func clone[Tool, Item, Stray any](sn snapshot[Tool, Item, Stray]) snapshot[Tool,
 	sn.Environment.Protections = slices.Clone(sn.Environment.Protections)
 	sn.Environment.Updates = slices.Clone(sn.Environment.Updates)
 	sn.Gateways = slices.Clone(sn.Gateways)
+	sn.Readiness = slices.Clone(sn.Readiness)
 	return sn
 }
 

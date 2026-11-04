@@ -27,7 +27,7 @@ runs:
               equals: |
                   {
                     "here": "base",
-                    "hosts": {
+                    "macs": {
                       "base": {},
                       "mini": {
                         "user": "agent",

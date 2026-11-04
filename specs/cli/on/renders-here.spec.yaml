@@ -1,5 +1,5 @@
 description: '--on runs the call on the other Mac''s engine and renders it here: the same bytes as there'
-fixture: ./__fixtures__/far-mac/
+fixture: ../../__fixtures__/far-mac/
 env: engine
 runs:
     - command: 'apps --json --on x > on.json; echo "on $?"; "$STATION" apps --on x > on.txt; cd far && for out in "--json > ../there.json" "> ../there.txt"; do eval /usr/bin/env -i HOME="$PWD" PATH="$PWD/bin" TZ=UTC NO_COLOR=1 COLUMNS=80 STATION_MACHINE_KIND=host STATION_SYSTEM_DIRS= STATION_SYSTEM_ROOT="$PWD/root" STATION_POWER_STUB="$PWD/power" STATION_GITHUB_API_URL=http://127.0.0.1:9 "$STATION" apps $out; done; echo "there $?"; /usr/bin/cmp ../on.json ../there.json && /usr/bin/cmp ../on.txt ../there.txt && echo same; /usr/bin/jq -r .schema ../on.json'

@@ -1,0 +1,18 @@
+description: 'unlock refuses This Mac, a VM and a name station does not know, exit 2, before any session'
+env: two-macs
+runs:
+    - command: 'machines unlock jterrazz-macbook-pro'
+      exit: 2
+      stderr: |
+          Error: "jterrazz-macbook-pro" is this machine
+          Hint: pick another machine: run station machines for the fleet
+    - command: 'machines unlock linux-1'
+      exit: 2
+      stderr: |
+          Error: "linux-1" is a VM, not a host
+          Hint: run station machines for the hosts
+    - command: 'machines unlock nope'
+      exit: 2
+      stderr: |
+          Error: no machine named "nope"
+          Hint: station machines

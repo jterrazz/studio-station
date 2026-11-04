@@ -1,6 +1,7 @@
 {
     "now": "2026-11-04T10:00:00Z",
     "here": "jterrazz-macbook-pro",
+    "user": "jterrazz",
     "macs": {
         "jterrazz-macbook-pro": {
             "engine": {},
@@ -14,6 +15,18 @@
                 "HasBattery": true,
                 "Percent": 96,
                 "Charging": true
+            }
+        },
+        "jterrazz-mac-mini": {
+            "engine": {
+                "started_at": "2026-10-23T09:00:00Z"
+            },
+            "power": {
+                "Source": "ac"
+            },
+            "preferences": {
+                "here": "jterrazz-mac-mini",
+                "vm_user": "admin"
             }
         }
     }

@@ -1,7 +1,0 @@
-description: 'an unknown machine is refused before the --yes gate, with the machine as the error'
-runs:
-    - command: 'machines forget nope </dev/null'
-      exit: 2
-      stderr: |
-          Error: no machine named "nope"
-          Hint: station machines

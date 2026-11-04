@@ -15,7 +15,7 @@ func (s *Service) Unlock(ctx context.Context, name string) error {
 	if err != nil {
 		return err
 	}
-	if err := s.o.Unlocker.Unlock(ctx, m.Name); errors.Is(err, contract.ErrUnreachable) {
+	if err := s.o.Unlocker.Unlock(ctx, m.Name, m.LAN); errors.Is(err, contract.ErrUnreachable) {
 		return &UnreachableError{Name: name}
 	} else if err != nil {
 		return err

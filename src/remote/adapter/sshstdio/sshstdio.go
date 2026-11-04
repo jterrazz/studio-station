@@ -17,6 +17,8 @@ import (
 
 const (
 	unreachable = 255
+	// value: the far shell found no station to exec.
+	missing     = 127
 	connectWait = 5
 	// value: what the far side is given to end once its stdin is closed.
 	closeWait = 2 * time.Second
@@ -51,6 +53,10 @@ func (d Dialer) Dial(ctx context.Context, mac string) (contract.Endpoint, error)
 				ended = gone(mac, err)
 			case code == unreachable:
 				ended = gone(mac, errors.New(strings.TrimSpace(stderr)))
+			case code == missing:
+				e := fail.New(fail.Failed, call.NoStation, mac, nil)
+				e.Cause = errors.New(strings.TrimSpace(stderr))
+				ended = e
 			default:
 				e := fail.New(fail.Unreachable, call.Unreachable, mac, map[string]string{"exit": strconv.Itoa(code)})
 				e.Cause = errors.New(strings.TrimSpace(stderr))

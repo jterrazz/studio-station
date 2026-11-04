@@ -35,7 +35,7 @@ func New(run local.Runner, dirs Dirs, knownHosts string) contract.Unlocker {
 
 func batch() []string { return []string{"-o", "ConnectTimeout=2", "-o", "BatchMode=yes"} }
 
-func (u *unlocker) Unlock(ctx context.Context, mac string) error {
+func (u *unlocker) Unlock(ctx context.Context, mac, lan string) error {
 	if err := u.dirs.MkdirAll(u.knownHosts, 0o700); err != nil {
 		return err
 	}
@@ -44,6 +44,11 @@ func (u *unlocker) Unlock(ctx context.Context, mac string) error {
 	preboot := []string{
 		"-o", "StrictHostKeyChecking=accept-new",
 		"-o", "UserKnownHostsFile=" + path.Join(u.knownHosts, mac+".preboot"),
+	}
+	// outside: an option given to ssh wins over its block, so HostName dials
+	// the LAN address while the block for mac still names its login and key.
+	if lan != "" {
+		preboot = append(preboot, "-o", "HostName="+lan)
 	}
 	out, err := u.run.Output(ctx, local.Cmd{Name: "ssh", Args: concat(batch(), preboot, []string{mac, "true"})})
 	if err != nil {

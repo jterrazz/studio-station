@@ -1,5 +1,5 @@
 description: 'what needs a terminal, off one, says so: exit 2'
-env: two-macs
+env: mini-offline
 runs:
     - command: 'machines unlock jterrazz-mac-mini </dev/null'
       exit: 2

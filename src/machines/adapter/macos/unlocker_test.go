@@ -26,12 +26,13 @@ type dirs struct{}
 func (dirs) MkdirAll(string, fs.FileMode) error { return nil }
 
 // invariant: ssh as a Mac answers it: the key check passes on a running Mac
-// and is denied at pre-boot, an offline Mac exits 255 to everything, the
+// and is denied at pre-boot, where only its LAN address answers, an offline Mac exits 255 to everything, the
 // password session ends by the Mac dropping it, and its sudo may refuse.
 type macs struct {
 	t                  *testing.T
 	mu                 sync.Mutex
 	states             map[string]state
+	lans               map[string]string
 	refusal            string
 	sessions, restarts map[string]int
 }
@@ -57,7 +58,7 @@ func (m *macs) ssh(c local.Cmd) (local.Output, error) {
 		mac = c.Args[len(c.Args)-2]
 	}
 	st := m.states[mac]
-	if st == offline {
+	if st == offline || st == atPreBoot && !slices.Contains(c.Args, "HostName="+m.lans[mac]) {
 		return local.Output{ExitCode: 255}, nil
 	}
 	switch {
@@ -85,10 +86,15 @@ func (m *macs) ssh(c local.Cmd) (local.Output, error) {
 
 func TestTheMacOSUnlockerKeepsTheContract(t *testing.T) {
 	contracttest.Unlocker(t, func(t *testing.T) contracttest.UnlockerSubject {
-		m := &macs{t: t, states: map[string]state{}, sessions: map[string]int{}, restarts: map[string]int{}}
+		m := &macs{t: t, states: map[string]state{}, lans: map[string]string{}, sessions: map[string]int{}, restarts: map[string]int{}}
 		return contracttest.UnlockerSubject{
-			Unlocker:  New(local.Played(m.ssh, "ssh"), dirs{}, knownHosts),
-			AtPreBoot: func(mac string) { m.set(mac, atPreBoot) },
+			Unlocker: New(local.Played(m.ssh, "ssh"), dirs{}, knownHosts),
+			AtPreBoot: func(mac, lan string) {
+				m.set(mac, atPreBoot)
+				m.mu.Lock()
+				defer m.mu.Unlock()
+				m.lans[mac] = lan
+			},
 			Offline:   func(mac string) { m.set(mac, offline) },
 			Answering: func(mac string) { m.set(mac, answering) },
 			Refusing: func(mac, detail string) {

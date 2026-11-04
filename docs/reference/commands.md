@@ -104,8 +104,8 @@ The engine that already runs holds the session, in memory only: a `PreventUserId
 ```sh
 station machines [--json] # All machines: every Mac, its VMs under it, then Needs you
 station machines <machine> [--json] # that machine's Overview, as station overview --on <machine>
-station machines add --name <name> [--user <login>] [--key <file>]
-station machines forget <host> [--yes]
+station machines add <mac> [--user <login>] [--key <file>]
+station machines forget <mac> [--yes]
 station machines create [<name>] [--permanent] [--image linux] [--cpus <n>] [--memory <size>] [--disk <size>] [--network nat|bridged]
 station machines create <name> --server [--cpus <n>] [--memory <size>] [--disk <size>] [--check <url|host:port>]
 station machines start <vm>
@@ -114,10 +114,10 @@ station machines restart <machine> [--yes]
 station machines edit <vm> [--cpus <n>] [--memory <size>] [--disk <size>] [--check <url|host:port> | --no-check]
 station machines ssh <machine>
 station machines delete <vm> [--confirm=<name>]
-station machines unlock <host>
+station machines unlock <mac>
 ```
 
-`--here` lists This Mac only, with no network. `create` makes a throwaway workspace unless `--permanent` is given, or a server with `--server` (always on, named, behind its Mac, 4 CPU · 8 GB · 50 GB by default; `--check` is its health check, refused on a workspace; `--always-on` is its hidden v2 alias), and asks the Mac on a terminal when two answer; piped it needs no question. `stop` asks a workspace yes or no and a server its name typed (`--confirm=<name>`; `--yes` never answers it), and the VM's own Mac judges the answer. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
+`--here` lists This Mac only, with no network. `unlock` is for a Mac waiting at FileVault after a power cut: a Mac that answers already says so (exit 0); otherwise it needs a terminal and dials the Mac on your LAN, at the address it last answered with (Tailscale starts only once its disk is unlocked), where you type the password into macOS's own pre-boot prompt, then waits for the Mac on Tailscale again. `restart <mac>` asks yes or no naming the VMs that pause, sends a planned restart that unlocks itself, waits for its station to answer again (`did not come back`, exit 1, past 3 minutes), starts those VMs again and says how they are. `create` makes a throwaway workspace unless `--permanent` is given, or a server with `--server` (always on, named, behind its Mac, 4 CPU · 8 GB · 50 GB by default; `--check` is its health check, refused on a workspace; `--always-on` is its hidden v2 alias), and asks the Mac on a terminal when two answer; piped it needs no question. `stop` asks a workspace yes or no and a server its name typed (`--confirm=<name>`; `--yes` never answers it), and the VM's own Mac judges the answer. `add` writes the Mac's ssh block, then reaches it as every later call will: a Mac that does not answer, or answers with no station, is not added and nothing stays written; one that runs another station version is added, with how to bring the two to one. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac, here, whatever `--on` says: it never reaches that Mac, and refuses This Mac and a VM. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
 
 ### `station ports`
 

@@ -52,10 +52,12 @@ type Deps[Tool, Item, Stray any] struct {
 	Listeners    portscontract.Listeners
 	Jobs         backgroundcontract.Jobs
 	// value: the app updates waiting, on a Mac; nil elsewhere.
-	Updates    Updates
-	Tailnet    Tailnet
-	Daemon     Daemon
-	Power      Power
+	Updates Updates
+	Tailnet Tailnet
+	Daemon  Daemon
+	Power   Power
+	// value: the servers this Mac runs; nil where none can run.
+	Servers    Servers
 	Hypervisor Hypervisor
 	Tools      Tools[Tool]
 	Config     Config[Item]
@@ -82,6 +84,11 @@ type Power interface {
 	// value: the daemon's Power session on this host; ok false where Power
 	// cannot be read (a VM, no power management, the daemon down).
 	Session(ctx context.Context) (s overview.PowerState, ok bool)
+}
+
+type Servers interface {
+	// value: whether one of this Mac's VMs says it is a server.
+	Hosted(ctx context.Context) bool
 }
 
 type Hypervisor interface {

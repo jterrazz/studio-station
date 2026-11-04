@@ -2,6 +2,7 @@ package machines
 
 import (
 	"context"
+	"errors"
 	"maps"
 	"sort"
 	"strings"
@@ -13,6 +14,12 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
+type (
+	Added    = model.Added
+	Unlocked = model.Unlocked
+	Back     = model.Back
+)
+
 func (s *Service) Lookup(_ context.Context, name string) (Machine, error) { return s.lookup(name) }
 
 func (s *Service) lookup(name string) (Machine, error) {
@@ -21,7 +28,7 @@ func (s *Service) lookup(name string) (Machine, error) {
 		return Machine{}, err
 	}
 	if h, ok := cfg.Hosts[name]; ok {
-		return Machine{Name: name, Kind: catalog.Host, Here: name == cfg.Here, User: h.User, Key: h.Key}, nil
+		return Machine{Name: name, Kind: catalog.Host, Here: name == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
 	}
 	records, err := s.records()
 	if err != nil {
@@ -36,13 +43,20 @@ func (s *Service) lookup(name string) (Machine, error) {
 	// (mac-mini for jterrazz-mac-mini).
 	if full := s.o.User + "-" + name; s.o.User != "" {
 		if h, ok := cfg.Hosts[full]; ok {
-			return Machine{Name: full, Kind: catalog.Host, Here: full == cfg.Here, User: h.User, Key: h.Key}, nil
+			return Machine{Name: full, Kind: catalog.Host, Here: full == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
 		}
 	}
 	return Machine{}, &UnknownMachineError{Name: name}
 }
 
 func (s *Service) Remote(name string) (Machine, error) {
+	// invariant: another machine is never This Mac, by any of its names,
+	// registered or not.
+	if cfg, err := s.prefs(); err == nil {
+		if here := s.here(cfg); name == here || (s.o.User != "" && s.o.User+"-"+name == here) {
+			return Machine{}, &HereMachineError{Name: name}
+		}
+	}
 	m, err := s.lookup(name)
 	if err != nil {
 		return Machine{}, err
@@ -55,6 +69,10 @@ func (s *Service) Remote(name string) (Machine, error) {
 
 func (s *Service) RemoteHost(name, verb string) (Machine, error) {
 	m, err := s.Remote(name)
+	var here *HereMachineError
+	if errors.As(err, &here) {
+		here.Verb = verb
+	}
 	if err != nil {
 		return Machine{}, err
 	}
@@ -207,6 +225,9 @@ func (s *Service) Remember(_ context.Context, f Fleet) error {
 			seen = append(seen, model.SeenVM{Name: vm.Name, Lifetime: vm.Lifetime, CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes})
 		}
 		known.Answered, known.VMs = s.h.Clock.Now().UTC().Truncate(time.Second), seen
+		if h.LAN != "" {
+			known.LAN = h.LAN
+		}
 		cfg.Hosts[h.Name], changed = known, true
 	}
 	if !changed {

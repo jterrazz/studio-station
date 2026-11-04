@@ -2,12 +2,20 @@ package calls
 
 import (
 	"context"
+	"slices"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/ports"
+)
+
+const (
+	settingPowerPolicy = "power"
+	settingAutoLogin   = "autologin"
 )
 
 func (r *Reader[Tool, Item, Stray]) machineJobs() []job[Tool, Item, Stray] {
@@ -71,6 +79,81 @@ func (r *Reader[Tool, Item, Stray]) machineJobs() []job[Tool, Item, Stray] {
 			Late: func(*sn) {},
 		},
 	}
+}
+
+// invariant: the readiness reads the settings first, and the Mac's facts
+// only when the Mac needs a readiness at all.
+func (r *Reader[Tool, Item, Stray]) readinessJob() job[Tool, Item, Stray] {
+	type sn = snapshot[Tool, Item, Stray]
+	return job[Tool, Item, Stray]{Key: subject + "/readiness", Budget: partBudget,
+		Do: func(ctx context.Context) func(*sn) {
+			if r.d.Here.Kind != catalog.Host {
+				return func(*sn) {}
+			}
+			checks := r.readiness(ctx)
+			return func(s *sn) { s.Readiness = checks }
+		},
+		Late: func(*sn) {},
+	}
+}
+
+func (r *Reader[Tool, Item, Stray]) readiness(ctx context.Context) []overview.Check {
+	states := map[string]catalog.State{}
+	if items, err := r.d.Config.List(ctx); err == nil {
+		for _, it := range items {
+			name, state := r.d.Config.Placed(it)
+			states[name] = state
+		}
+	}
+	on := func(name string) machines.ReadinessSetting {
+		state, ok := states[name]
+		if !ok {
+			state = catalog.StateUnknown
+		}
+		return machines.ReadinessSetting{Name: name, State: state, Root: needsRoot(name)}
+	}
+	f := machines.ReadinessFacts{
+		Mac:                   r.label(),
+		RestartsAfterPowerCut: on(settingPowerPolicy), NeverSleeps: on(settingPowerPolicy), LogsIn: on(settingAutoLogin),
+		EngineKnown: r.d.Here.Agent != nil,
+	}
+	if f.NeverSleeps.State != catalog.StateOK && r.d.Servers != nil {
+		f.HostsServer = r.d.Servers.Hosted(ctx)
+	}
+	if machines.Readiness(f) == nil {
+		return []overview.Check{}
+	}
+	f.FileVault, f.AuthRestart = r.factState(ctx, catalog.FactFileVault), r.factState(ctx, catalog.FactAuthRestart)
+	f.EngineAtLogin = f.EngineKnown && r.d.Here.Agent()
+	items := machines.Readiness(f)
+	out := make([]overview.Check, 0, len(items))
+	for _, it := range items {
+		out = append(out, overview.Check{Name: it.Name, State: it.State, Value: it.Value, Detail: it.Fix})
+	}
+	return out
+}
+
+func needsRoot(setting string) bool {
+	i := slices.IndexFunc(catalog.ConfigItems, func(it catalog.ConfigItem) bool { return it.Name == setting })
+	return i >= 0 && catalog.ConfigItems[i].NeedsRoot
+}
+
+func (r *Reader[Tool, Item, Stray]) factState(ctx context.Context, f catalog.Fact) catalog.State {
+	ctx, cancel := context.WithTimeout(ctx, defaultBudget)
+	defer cancel()
+	got, err := r.d.Facts.Read(ctx, f)
+	if err != nil || ctx.Err() != nil {
+		return catalog.StateUnknown
+	}
+	return got.State
+}
+
+func (r *Reader[Tool, Item, Stray]) label() string {
+	name, _ := r.d.Name.Get()
+	if short, ok := strings.CutPrefix(name, r.d.Here.User+"-"); ok && short != "" && r.d.Here.User != "" {
+		return short
+	}
+	return name
 }
 
 func (r *Reader[Tool, Item, Stray]) diskJob() job[Tool, Item, Stray] {
