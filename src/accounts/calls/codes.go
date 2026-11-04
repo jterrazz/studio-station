@@ -15,10 +15,8 @@ const (
 	Unreadable   fail.Code = "account.unreadable"
 	VMStopped    fail.Code = "account.vm-stopped"
 	UnknownVM    fail.Code = "account.unknown-vm"
-	// value: refused by the surface, which knows the fleet: a VM of another
-	// Mac, and a server.
-	OtherMac fail.Code = "account.other-mac"
-	ToServer fail.Code = "account.to-server"
+	ToServer     fail.Code = "account.to-server"
+	OtherMac     fail.Code = "account.other-mac"
 )
 
 func coded(err error) error {
@@ -31,6 +29,8 @@ func coded(err error) error {
 	var unreadable *accounts.UnreadableError
 	var stopped *accounts.VMStoppedError
 	var unknownVM *accounts.UnknownVMError
+	var toServer *accounts.ToServerError
+	var otherMac *accounts.OtherMacError
 	switch {
 	case errors.As(err, &unknown):
 		return fail.New(fail.NotFound, Unknown, unknown.Account, nil)
@@ -44,6 +44,10 @@ func coded(err error) error {
 		return &fail.Error{Type: fail.Failed, Code: Unreadable, Subject: unreadable.Account, Detail: map[string]string{"mac": unreadable.Mac}, Cause: unreadable.Cause}
 	case errors.As(err, &stopped):
 		return fail.New(fail.Refused, VMStopped, stopped.VM, nil)
+	case errors.As(err, &toServer):
+		return fail.New(fail.Refused, ToServer, toServer.VM, nil)
+	case errors.As(err, &otherMac):
+		return fail.New(fail.Refused, OtherMac, otherMac.VM, map[string]string{"mac": otherMac.Mac, "account": otherMac.Account})
 	case errors.As(err, &unknownVM):
 		return fail.New(fail.NotFound, UnknownVM, unknownVM.VM, nil)
 	}

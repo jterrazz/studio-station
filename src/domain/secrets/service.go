@@ -27,6 +27,9 @@ type Options struct {
 	Here catalog.MachineKind
 	// value: whether a VM of this Mac runs now, as its engine says.
 	Running func(ctx context.Context, vm string) (bool, error)
+	// value: whether a running VM of this Mac keeps accounts, by
+	// accounts.SharedInto over the kind the VM itself says it is.
+	Receives func(ctx context.Context, vm string) (bool, error)
 }
 
 type Guest interface {
@@ -77,8 +80,8 @@ func (s *Service) here() string {
 
 func (s *Service) CheckShare(ctx context.Context, account, vm string) (secret string, err error) {
 	// invariant: a share is refused before anything is read or copied: an
-	// unknown account, one the share list does not hold, a VM this Mac does
-	// not keep or that is stopped, an account not signed in here.
+	// unknown account, one the share list does not hold, a VM that may not
+	// receive it, an account not signed in here.
 	if s.o.Here != catalog.Host {
 		return "", &OffHostError{Here: s.o.Here}
 	}
@@ -93,17 +96,8 @@ func (s *Service) CheckShare(ctx context.Context, account, vm string) (secret st
 	if !ok || !accounts.Shareable(secret, list) {
 		return "", &accounts.NotShareableError{Account: account}
 	}
-	if err := s.checkVM(ctx, vm); err != nil {
+	if err := s.CheckReceiver(ctx, vm); err != nil {
 		return "", err
-	}
-	if s.o.Running != nil {
-		running, err := s.o.Running(ctx, vm)
-		if err != nil {
-			return "", err
-		}
-		if !running {
-			return "", &accounts.VMStoppedError{VM: vm}
-		}
 	}
 	if s.ids != nil {
 		for _, p := range catalog.Providers {
@@ -116,6 +110,45 @@ func (s *Service) CheckShare(ctx context.Context, account, vm string) (secret st
 		}
 	}
 	return secret, nil
+}
+
+func (s *Service) CheckFrom(ctx context.Context, account, vm, from string) error {
+	// invariant: a share is its VM's own Mac's: asked from another Mac, the
+	// VM is judged first, so a server's refusal stands, then it is refused.
+	if from == "" || from == s.here() {
+		return nil
+	}
+	if err := s.CheckReceiver(ctx, vm); err != nil {
+		return err
+	}
+	return &accounts.OtherMacError{Account: account, VM: vm, Mac: s.here()}
+}
+
+func (s *Service) CheckReceiver(ctx context.Context, vm string) error {
+	// invariant: a share lands only in a running VM this Mac keeps that
+	// keeps accounts: a server keeps its own secrets.
+	if err := s.checkVM(ctx, vm); err != nil {
+		return err
+	}
+	if s.o.Running != nil {
+		running, err := s.o.Running(ctx, vm)
+		if err != nil {
+			return err
+		}
+		if !running {
+			return &accounts.VMStoppedError{VM: vm}
+		}
+	}
+	if s.o.Receives != nil {
+		receives, err := s.o.Receives(ctx, vm)
+		if err != nil {
+			return &StepError{VM: vm, Step: "reaching it", Cause: err}
+		}
+		if !receives {
+			return &accounts.ToServerError{VM: vm}
+		}
+	}
+	return nil
 }
 
 func (s *Service) Share(ctx context.Context, account, vm string, term time.Duration) (accounts.Shared, error) {

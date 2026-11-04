@@ -22,3 +22,12 @@ var SharedFrom machine.Applies = func(p machine.Profile) machine.Verdict {
 	}
 	return machine.No("accounts are shared from a Mac")
 }
+
+var SharedInto machine.Applies = func(p machine.Profile) machine.Verdict {
+	// invariant: a share lands only in a machine that keeps accounts: a
+	// server keeps its own secrets, and station shares none with it.
+	if Applies(p).OK {
+		return machine.Yes
+	}
+	return machine.No(p.Ref.Name + " keeps its own secrets")
+}

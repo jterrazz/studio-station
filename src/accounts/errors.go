@@ -34,3 +34,15 @@ func (e *UnknownVMError) Error() string { return "no machine named \"" + e.VM + 
 type VMStoppedError struct{ VM string }
 
 func (e *VMStoppedError) Error() string { return e.VM + " is stopped" }
+
+type ToServerError struct{ VM string }
+
+func (e *ToServerError) Error() string {
+	return e.VM + " is a server: station shares no account with it"
+}
+
+type OtherMacError struct{ Account, VM, Mac string }
+
+func (e *OtherMacError) Error() string {
+	return e.VM + " is on " + e.Mac + ": share from " + e.Mac + "'s accounts"
+}

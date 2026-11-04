@@ -23,6 +23,7 @@ type Accounts interface {
 type Shares interface {
 	ShareList() []string
 	Shares(ctx context.Context) (map[string][]accounts.Share, error)
+	CheckFrom(ctx context.Context, account, vm, from string) error
 	CheckShare(ctx context.Context, account, vm string) (string, error)
 	Share(ctx context.Context, account, vm string, term time.Duration) (accounts.Shared, error)
 	CheckTakeBack(ctx context.Context, account, vm string) (string, error)

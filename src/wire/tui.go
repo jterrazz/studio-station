@@ -2,12 +2,15 @@ package wire
 
 import (
 	"context"
-	"github.com/jterrazz/studio-station/src/engine"
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/accounts/adapter/studio"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
+	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
 	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
@@ -72,5 +75,24 @@ func (e *stationExit) Error() string {
 func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostDaemon(), m.vmRunning) }
 
 func (m machine) secretsVia(guest secrets.Guest, running func(context.Context, string) (bool, error)) *secrets.Service {
-	return secrets.New(m.host, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), secrets.Options{Here: m.kind, Running: running})
+	return secrets.New(m.host, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), secrets.Options{Here: m.kind, Running: running, Receives: receives(guest)})
+}
+
+func receives(guest secrets.Guest) func(context.Context, string) (bool, error) {
+	// value: a VM whose station is older than its kind's answer receives.
+	ask := unix.New(sharedGuest{guest}, nil)
+	return func(ctx context.Context, vm string) (bool, error) {
+		kind, err := ask.KindOf(ctx, vm)
+		if err != nil || kind == "" {
+			return err == nil, err
+		}
+		return accounts.SharedInto(coremachine.Profile{Ref: coremachine.Ref{Name: vm}, Kind: kind}).OK, nil
+	}
+}
+
+type sharedGuest struct{ g secrets.Guest }
+
+func (s sharedGuest) GuestExec(ctx context.Context, vm, line, stdin string) (stdout string, code int, err error) {
+	out, err := s.g.GuestExec(ctx, vm, line, stdin)
+	return out.Stdout, out.ExitCode, err
 }

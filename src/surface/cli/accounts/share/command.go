@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/accounts"
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
-	"github.com/jterrazz/studio-station/src/core/fail"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	pageaccounts "github.com/jterrazz/studio-station/src/pages/accounts"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
@@ -53,20 +53,14 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Bind: bind,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			// invariant: the fleet is asked first: a server, then a VM another
-			// Mac holds, are refused before this Mac's engine is asked.
-			if _, inVM := kit.Holder(ctx, env, env.Target().Name); inVM {
-				return shareAt(ctx, env, d, in, io)
-			}
-			if h, ok := kit.Holder(ctx, env, in.With); ok {
-				switch {
-				case isServer(ctx, env, h):
-					return fail.New(fail.Refused, accountscalls.ToServer, in.With, nil)
-				case !h.OnTarget(env):
-					return fail.New(fail.Refused, accountscalls.OtherMac, in.With, map[string]string{"mac": h.Mac, "account": in.Account})
+			// value: a VM another Mac holds is asked of that Mac, which says
+			// whether this Mac may share with it.
+			if _, inVM := kit.Holder(ctx, env, env.Target().Name); !inVM {
+				if h, ok := kit.Holder(ctx, env, in.With); ok && !h.OnTarget(env) {
+					return shareAt(ctx, env, d, in, machine.Ref{Name: h.Mac}, env.Target().Name, io)
 				}
 			}
-			return shareAt(ctx, env, d, in, io)
+			return shareAt(ctx, env, d, in, env.Target(), "", io)
 		},
 	}, env)
 }
@@ -123,8 +117,8 @@ func Lend(d Deps, env kit.Env) *cobra.Command {
 	return cmd
 }
 
-func shareAt(ctx context.Context, env kit.Env, d Deps, in *Input, io kit.IO) error {
-	shared, err := call.Invoke(ctx, env.Calls, env.Target(), accountscalls.Share, accountscalls.ShareIn{Account: in.Account, With: in.With, For: in.Term}, nil)
+func shareAt(ctx context.Context, env kit.Env, d Deps, in *Input, at machine.Ref, from string, io kit.IO) error {
+	shared, err := call.Invoke(ctx, env.Calls, at, accountscalls.Share, accountscalls.ShareIn{Account: in.Account, With: in.With, For: in.Term, From: from}, nil)
 	if err != nil {
 		return err
 	}

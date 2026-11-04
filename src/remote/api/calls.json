@@ -18,6 +18,8 @@
       "errors": [
         "account.not-shareable",
         "account.not-signed-in",
+        "account.other-mac",
+        "account.to-server",
         "account.unknown",
         "account.unknown-vm",
         "account.unreadable",

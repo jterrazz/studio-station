@@ -15,12 +15,18 @@ type ShareIn struct {
 	Account string
 	With    string
 	For     time.Duration
+	// value: the Mac the owner shares from, when a surface sent the call to
+	// the VM's own Mac because it is another.
+	From string
 }
 
 var Share = call.Call[Deps, ShareIn, accounts.Shared]{
 	Name: "accounts.share", Section: section.Accounts, Where: call.InEngine, Applies: accounts.SharedFrom,
-	Errors: []fail.Code{Unknown, NotShareable, NotSignedIn, Unreadable, VMStopped, UnknownVM},
+	Errors: []fail.Code{Unknown, NotShareable, NotSignedIn, Unreadable, VMStopped, ToServer, OtherMac, UnknownVM},
 	Run: func(ctx context.Context, d Deps, in ShareIn, _ call.Progress) (accounts.Shared, error) {
+		if err := d.Shares.CheckFrom(ctx, in.Account, in.With, in.From); err != nil {
+			return accounts.Shared{}, coded(err)
+		}
 		out, err := d.Shares.Share(ctx, in.Account, in.With, in.For)
 		return out, coded(err)
 	},
