@@ -47,7 +47,7 @@ func lendHarness(t *testing.T, lends *fakeLends) (h harness, log *[]string) {
 		v, _ := h.d.find(name)
 		v.state = StateStopped
 		if name == "api" {
-			v.state = StateRunning
+			v.state, v.guest = StateRunning, GuestConnected
 		}
 	}
 	return h, &lines
@@ -57,7 +57,7 @@ func lend(name string, until time.Time) Lend {
 	return Lend{Name: name, Until: until}
 }
 
-func TestALendPastItsUntilOnARunningVMIsRecalledAndLogged(t *testing.T) {
+func TestALendPastItsUntilOnAConnectedVMIsRecalledAndLogged(t *testing.T) {
 	now := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
 	lends := &fakeLends{held: map[string][]Lend{
 		"api": {lend("operator:claude:oauth-token", now.Add(-time.Minute)), lend("session:github", now.Add(time.Hour))},

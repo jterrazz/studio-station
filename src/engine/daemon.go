@@ -272,6 +272,7 @@ func (d *Daemon) serveConn(ctx context.Context, conn system.Conn) {
 		return err
 	}
 	scanner := bufio.NewScanner(conn)
+	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
 	for scanner.Scan() {
 		var r Request
 		if json.Unmarshal(scanner.Bytes(), &r) == nil && r.V == 1 && r.Op == "subscribe" {
@@ -361,6 +362,8 @@ func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
 		return nil, nil
 	case "accounts":
 		return d.accounts(ctx), nil
+	case "guest_exec":
+		return d.opGuestExec(ctx, r)
 	case "stop_all":
 		vms := d.stopAll(ctx)
 		return StopAll{VMs: vms, PowerEnded: d.power.Stop()}, nil
@@ -377,7 +380,7 @@ func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
 		d.hub.refreshed()
 		return struct{}{}, nil
 	}
-	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts stop_all power power_awake power_sleep subscribe refresh")
+	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts guest_exec stop_all power power_awake power_sleep subscribe refresh")
 }
 
 type VMAccounts struct {

@@ -73,7 +73,6 @@ func wordsTolerated() map[string][]string {
 		"domain/power":                 {"pmset"},
 		"domain/probe":                 {"brew", "docker"},
 		"domain/remote":                {"ssh"},
-		"domain/secrets":               {"ssh"},
 		"domain/settings":              {"security", "sysctl"},
 		"domain/setup":                 {"bun", "mise", "npm", "tailscale", "tailscaled"},
 		"domain/shell":                 {"mise"},

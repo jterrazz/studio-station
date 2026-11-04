@@ -31,6 +31,10 @@ type Request struct {
 	Battery   bool     `json:"battery,omitempty"`
 	For       int      `json:"for,omitempty"`
 	By        string   `json:"by,omitempty"`
+	Line      string   `json:"line,omitempty"`
+	// invariant: what a command inside a VM reads, a secret included: it travels
+	// in the request alone, never in Line.
+	Stdin string `json:"stdin,omitempty"`
 }
 
 type OpError struct {

@@ -19,17 +19,23 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
 	daemoncmd "github.com/jterrazz/studio-station/src/surface/cli/daemon"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	"github.com/jterrazz/studio-station/src/system"
 )
 
 func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 
+// invariant: inside the engine, a recall rides the engine's own connections,
+// never its socket: the lends are bound to the engine they serve.
 func (m machine) daemon(env kit.Env) *engine.Daemon {
-	return engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths)), m.store, engine.Options{
+	lends := &daemonLends{}
+	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths)), m.store, engine.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Pmset: m.pmset(), PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
-		Lends: daemonLends{m.secrets()},
+		Lends: lends,
 		Feeds: map[string]engine.Feed{engine.PageMenubar: m.menubarFeed(env)},
 	})
+	lends.s = m.secretsVia(d)
+	return d
 }
 
 func daemonCommand(env kit.Env, m machine) *cobra.Command {
@@ -38,7 +44,7 @@ func daemonCommand(env kit.Env, m machine) *cobra.Command {
 
 type daemonLends struct{ s *secrets.Service }
 
-func (l daemonLends) Held() (map[string][]engine.Lend, error) {
+func (l *daemonLends) Held() (map[string][]engine.Lend, error) {
 	held, err := l.s.Lends()
 	out := make(map[string][]engine.Lend, len(held))
 	for vm, list := range held {
@@ -49,7 +55,7 @@ func (l daemonLends) Held() (map[string][]engine.Lend, error) {
 	return out, err
 }
 
-func (l daemonLends) Recall(ctx context.Context, from string, names []string) error {
+func (l *daemonLends) Recall(ctx context.Context, from string, names []string) error {
 	_, err := l.s.Recall(ctx, from, names)
 	return err
 }
@@ -81,6 +87,14 @@ func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, erro
 		out[v.Name] = machines.DaemonVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail}
 	}
 	return out, nil
+}
+
+func (d hostDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error) {
+	var ran engine.GuestRan
+	if err := d.c.Do(ctx, "guest_exec", engine.Request{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
+		return system.Output{}, downAs(err, machines.ErrDaemonDown)
+	}
+	return system.Output{Stdout: ran.Stdout, Stderr: ran.Stderr, ExitCode: ran.Code}, nil
 }
 
 func (d hostDaemon) Do(ctx context.Context, op, vm string) error {

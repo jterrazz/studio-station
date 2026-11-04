@@ -29,6 +29,11 @@ var (
 
 type Options struct{ Here catalog.MachineKind }
 
+type Guest interface {
+	// invariant: a command inside a VM rides its engine's one connection to it.
+	GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error)
+}
+
 type VMs interface {
 	IsVM(ctx context.Context, name string) (bool, error)
 	RecordLent(name string, lends []Lend) error
@@ -45,13 +50,14 @@ type Lend struct {
 type Service struct {
 	clock system.Clock
 	run   system.Runner
+	guest Guest
 	store settings.Store
 	vms   VMs
 	here  catalog.MachineKind
 }
 
-func New(h system.Host, store settings.Store, vms VMs, o Options) *Service {
-	return &Service{clock: h.Clock, run: h.Run, store: store, vms: vms, here: o.Here}
+func New(h system.Host, guest Guest, store settings.Store, vms VMs, o Options) *Service {
+	return &Service{clock: h.Clock, run: h.Run, guest: guest, store: store, vms: vms, here: o.Here}
 }
 
 type Report struct {
@@ -180,12 +186,10 @@ func (s *Service) Lend(ctx context.Context, to string, names []string, term time
 	if err != nil {
 		return LendReport{}, err
 	}
-	probe, err := s.run.Output(ctx, system.Cmd{Name: "ssh", Args: []string{to, "command", "-v", "studio"}, Timeout: stepBudget})
+	probe, err := s.inVM(ctx, to, "command -v studio", "")
 	switch {
 	case err != nil:
-		return LendReport{}, &StepError{VM: to, Step: "checking for studio", Cause: err}
-	case probe.ExitCode == 255:
-		return LendReport{}, &StepError{VM: to, Step: "reaching it over ssh", Cause: errors.New(strings.TrimSpace(probe.Stderr))}
+		return LendReport{}, &StepError{VM: to, Step: "reaching it over ssh", Cause: err}
 	case probe.ExitCode != 0:
 		return LendReport{}, &NoStudioError{VM: to}
 	}
@@ -195,7 +199,7 @@ func (s *Service) Lend(ctx context.Context, to string, names []string, term time
 	}
 	// invariant: the exported values travel from the first process's output to the
 	// second's stdin and nowhere else: never argv, never a file on the host.
-	imported, err := s.run.Output(ctx, system.Cmd{Name: "ssh", Args: append([]string{to}, vmStudio("import")...), Stdin: exported.Stdout, Timeout: stepBudget})
+	imported, err := s.inVM(ctx, to, vmStudio("import"), exported.Stdout)
 	if err != nil || imported.ExitCode != 0 {
 		return LendReport{}, &StepError{VM: to, Step: "importing the secrets", Cause: failure(err, imported)}
 	}
@@ -288,16 +292,21 @@ func (s *Service) checkVM(ctx context.Context, name string) error {
 }
 
 func (s *Service) recallFrom(ctx context.Context, vm string, names []string) error {
-	args := append([]string{vm}, vmStudio(append([]string{"delete"}, names...)...)...)
-	out, err := s.run.Output(ctx, system.Cmd{Name: "ssh", Args: args, Timeout: stepBudget})
+	out, err := s.inVM(ctx, vm, vmStudio(append([]string{"delete"}, names...)...), "")
 	if err != nil || out.ExitCode != 0 {
 		return &StepError{VM: vm, Step: "deleting the copies", Cause: failure(err, out)}
 	}
 	return s.vms.RecordRecalled(vm, names)
 }
 
-func vmStudio(args ...string) []string {
-	return append([]string{"env", "STUDIO_CREDENTIALS_BACKEND=file", "studio", "credentials"}, args...)
+func (s *Service) inVM(ctx context.Context, vm, line, stdin string) (system.Output, error) {
+	ctx, cancel := context.WithTimeout(ctx, stepBudget)
+	defer cancel()
+	return s.guest.GuestExec(ctx, vm, line, stdin)
+}
+
+func vmStudio(args ...string) string {
+	return strings.Join(append([]string{"STUDIO_CREDENTIALS_BACKEND=file", "studio", "credentials"}, args...), " ")
 }
 
 func onList(list, names []string) error {
