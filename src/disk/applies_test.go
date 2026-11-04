@@ -1,0 +1,16 @@
+package disk_test
+
+import (
+	"testing"
+
+	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/disk"
+)
+
+func TestAServerHasNoDiskSectionAMacAndAWorkspaceDo(t *testing.T) {
+	for kind, want := range map[machine.Kind]bool{machine.Mac: true, machine.Workspace: true, machine.Server: false} {
+		if got := disk.Applies(machine.Profile{Kind: kind}); got.OK != want || (!got.OK && got.Why == "") {
+			t.Errorf("%s: %+v", kind, got)
+		}
+	}
+}
