@@ -55,7 +55,7 @@ func events() []event {
 		{"hold", []string{"<Contract>.<Method>"}, hold},
 		{"upgrade", []string{"<mac>", "<version>"}, upgrade},
 		{"address", []string{"<vm>", "<ip>"}, address},
-		{"slow", []string{"<machine>", "<duration>"}, nil},
+		{"slow", []string{"<machine>", "<duration>"}, slow},
 		{"certificate", []string{"<mac>", "pending|issued"}, nil},
 	}
 }
@@ -211,6 +211,24 @@ func advance(w *World, args []string) error {
 		return fmt.Errorf("world advance: %w", err)
 	}
 	w.Now = w.Now.Add(d)
+	return nil
+}
+
+// invariant: a slow machine's disk answers each size that late, in real
+// time: a walk the owner watches fill.
+func slow(w *World, args []string) error {
+	m, err := w.known(args[0])
+	if err != nil {
+		return err
+	}
+	d, err := time.ParseDuration(args[1])
+	if err != nil {
+		return fmt.Errorf("world slow: %w", err)
+	}
+	if m.Disk == nil {
+		m.Disk = &Disk{}
+	}
+	m.Disk.Late = d
 	return nil
 }
 

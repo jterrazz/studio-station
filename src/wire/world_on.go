@@ -19,6 +19,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -97,6 +98,8 @@ type worldMac struct {
 	// value: this machine as its own binary builds it inside a VM of the
 	// world, once per run.
 	vm *farMac
+	// value: the run's home, where the world's ~/ files are.
+	home string
 }
 
 func openWorld(vars map[string]string) (*worldRun, error) {
@@ -148,7 +151,8 @@ func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
 func (m *worldMac) host(h system.Host) system.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
-	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home())}
+	m.home = h.Env.Home()
+	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home()), files: m.files()}
 	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User}
 	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
@@ -189,11 +193,13 @@ func (m *worldMac) guests() contract.GuestDialer {
 func (m *worldMac) imageSource(hypervisor string) imagescontract.ImageSource {
 	return imagesfake.SourceOf(m.run.w, hypervisor)
 }
-func (m *worldMac) sshConfig() contract.SSHConfig  { return machinesfake.SSHConfigOf(m.run.w, m.name) }
-func (m *worldMac) unlocker() contract.Unlocker    { return machinesfake.MacsOf(m.run.w) }
-func (m *worldMac) jobs() backgroundcontract.Jobs  { return backgroundfake.New(m.run.w, m.name) }
-func (m *worldMac) meter() activitycontract.Meter  { return activityfake.MeterOf(m.run.w, m.name) }
-func (m *worldMac) disk() diskcontract.DiskUsage   { return diskfake.UsageOf(m.run.w, m.name) }
+func (m *worldMac) sshConfig() contract.SSHConfig { return machinesfake.SSHConfigOf(m.run.w, m.name) }
+func (m *worldMac) unlocker() contract.Unlocker   { return machinesfake.MacsOf(m.run.w) }
+func (m *worldMac) jobs() backgroundcontract.Jobs { return backgroundfake.New(m.run.w, m.name) }
+func (m *worldMac) meter() activitycontract.Meter { return activityfake.MeterOf(m.run.w, m.name) }
+func (m *worldMac) disk() diskcontract.DiskUsage  { return m.files() }
+
+func (m *worldMac) files() *diskfake.Usage         { return diskfake.UsageOf(m.run.w, m.name).At(m.home) }
 func (m *worldMac) tailnet() portscontract.Tailnet { return portsfake.TailnetOf(m.run.w, m.name) }
 func (m *worldMac) bundler() appscontract.Bundler  { return appsfake.BundlerOf(m.run.w, m.name) }
 func (m *worldMac) vault() accountscontract.Vault  { return accountsfake.NewVault(m.run.w, m.name) }
@@ -283,11 +289,18 @@ type worldFS struct {
 	system.FS
 	m     *worldMac
 	plist string
+	// value: the files of the Mac's disk in the world, seen beside the
+	// run's home: what an app keeps there is the world's, never real bytes.
+	files *diskfake.Usage
 }
 
 func (f worldFS) Stat(p string) (fs.FileInfo, error) {
 	if p != f.plist {
-		return f.FS.Stat(p)
+		info, err := f.FS.Stat(p)
+		if err != nil && f.files.Has(p) {
+			return plistInfo{name: filepath.Base(p), dir: f.files.Folder(p)}, nil
+		}
+		return info, err
 	}
 	f.m.run.w.Lock()
 	mac := f.m.run.w.Mac(f.m.name)
@@ -299,13 +312,80 @@ func (f worldFS) Stat(p string) (fs.FileInfo, error) {
 	return plistInfo{name: filepath.Base(p)}, nil
 }
 
-type plistInfo struct{ name string }
+func (f worldFS) Glob(pattern string) ([]string, error) {
+	found, err := f.FS.Glob(pattern)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range f.files.Glob(pattern) {
+		if !slices.Contains(found, p) {
+			found = append(found, p)
+		}
+	}
+	slices.Sort(found)
+	return found, nil
+}
 
-func (i plistInfo) Name() string     { return i.name }
-func (plistInfo) Size() int64        { return 0 }
-func (plistInfo) Mode() fs.FileMode  { return 0o644 }
+func (f worldFS) ReadDir(p string) ([]fs.DirEntry, error) {
+	entries, err := f.FS.ReadDir(p)
+	names := f.files.Children(p)
+	if err != nil && len(names) == 0 {
+		return nil, err
+	}
+	for _, name := range names {
+		if !slices.ContainsFunc(entries, func(e fs.DirEntry) bool { return e.Name() == name }) {
+			full := filepath.Join(p, name)
+			entries = append(entries, fs.FileInfoToDirEntry(plistInfo{name: name, dir: f.files.Folder(full)}))
+		}
+	}
+	slices.SortFunc(entries, func(a, b fs.DirEntry) int { return strings.Compare(a.Name(), b.Name()) })
+	return entries, nil
+}
+
+func (f worldFS) Remove(p string) error {
+	if f.files.Folder(p) {
+		return &fs.PathError{Op: "remove", Path: p, Err: syscall.ENOTEMPTY}
+	}
+	err := f.FS.Remove(p)
+	if f.files.Has(p) {
+		f.files.Drop([]string{p})
+		return nil
+	}
+	return err
+}
+
+func (f worldFS) Rename(from, to string) error {
+	if f.files.Has(from) {
+		if err := f.files.Move(context.Background(), from, to); err != nil {
+			return err
+		}
+		if _, err := f.FS.Stat(from); errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+	}
+	return f.FS.Rename(from, to)
+}
+
+func (f worldFS) RemoveAll(p string) error {
+	f.files.Drop([]string{p})
+	return f.FS.RemoveAll(p)
+}
+
+type plistInfo struct {
+	name string
+	dir  bool
+}
+
+func (i plistInfo) Name() string { return i.name }
+func (plistInfo) Size() int64    { return 0 }
+func (i plistInfo) Mode() fs.FileMode {
+	if i.dir {
+		return fs.ModeDir | 0o755
+	}
+	return 0o644
+}
 func (plistInfo) ModTime() time.Time { return time.Time{} }
-func (plistInfo) IsDir() bool        { return false }
+func (i plistInfo) IsDir() bool      { return i.dir }
 func (plistInfo) Sys() any           { return nil }
 
 func (m *worldMac) macs() remotecontract.EndpointDialer { return worldDialer{r: m.run} }

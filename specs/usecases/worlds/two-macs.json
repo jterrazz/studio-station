@@ -251,6 +251,38 @@
                         "here": true
                     }
                 }
+            },
+            "disk": {
+                "total": 994000000000,
+                "free": 388000000000,
+                "files": {
+                    "~/.tart/vms/linux-dev/disk.img": 73300000000,
+                    "~/Library/Caches/go-build/00/a": 19400000000,
+                    "~/Library/Developer/Xcode/DerivedData/Station-abc/Build/x": 5800000000,
+                    "~/Library/pnpm/store/v10/index": 1800000000,
+                    "~/Library/Caches/Homebrew/downloads/x": 2100000000,
+                    "~/Library/Caches/mise/node/x": 1200000000,
+                    "~/Library/Caches/bun/x": 600000000,
+                    "~/.cache/npm/_cacache/x": 800000000,
+                    "~/.cargo/registry/cache/x": 900000000,
+                    "~/.cache/ghostty/x": 400000000,
+                    "~/.cache/starship/x": 100000000,
+                    "~/.cache/gh/x": 100000000,
+                    "~/Library/Logs/Zed/x": 300000000,
+                    "~/Library/Application Support/Cursor/logs/x": 200000000,
+                    "~/.claude/cache/x": 300000000,
+                    "~/.codex/cache/x": 100000000,
+                    "~/Library/Caches/helm/x": 100000000,
+                    "~/Library/Application Support/discord/Cache/x": 400000000,
+                    "~/Library/Application Support/Notion/Partitions/notion/Cache/x": 200000000,
+                    "~/Library/Developer/CoreSimulator/Devices/A/data": 19100000000,
+                    "~/Library/Group Containers/HUAQ24HBR6.dev.orbstack/data.img": 15800000000,
+                    "~/.claude/projects/x": 3600000000,
+                    "~/Library/Application Support/Zed/db/x": 1200000000,
+                    "~/.ollama/models/x": 1900000000,
+                    "~/.ssh/known_hosts": 100000,
+                    "~/.gnupg/pubring.kbx": 200000
+                }
             }
         },
         "jterrazz-mac-mini": {
@@ -319,6 +351,15 @@
                         "size_gb": 4
                     }
                 ]
+            },
+            "disk": {
+                "total": 1995000000000,
+                "free": 1620000000000,
+                "files": {
+                    "~/Library/Caches/Homebrew/downloads/x": 1100000000,
+                    "~/.claude/projects/x": 2000000000,
+                    "~/go/pkg/mod/cache/x": 2300000000
+                }
             }
         },
         "linux-1": {
@@ -333,6 +374,14 @@
                     "installed": {
                         "node": "22.11.0"
                     }
+                }
+            },
+            "disk": {
+                "total": 20000000000,
+                "free": 12400000000,
+                "files": {
+                    "~/.cache/go-build/x": 1200000000,
+                    "~/.cache/npm/x": 300000000
                 }
             }
         },
