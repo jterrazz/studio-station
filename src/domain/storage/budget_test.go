@@ -23,7 +23,7 @@ func (realClock) Sleep(ctx context.Context, d time.Duration) error {
 }
 
 type slowFS struct {
-	*systemtest.FS
+	systemtest.Disk
 	release chan struct{}
 }
 
@@ -48,7 +48,7 @@ func (f slowFS) Sizes(ctx context.Context, roots []string, each func(int, int64)
 }
 
 func TestARowPastTheBudgetIsUnknownAndDelaysNoOtherRow(t *testing.T) {
-	fs := slowFS{FS: systemtest.NewFS(), release: make(chan struct{})}
+	fs := slowFS{Disk: systemtest.Disk{FS: systemtest.NewFS()}, release: make(chan struct{})}
 	defer close(fs.release)
 	fs.Files["h/slow/tree/f"] = &fstest.MapFile{Data: []byte("x")}
 	fs.Files["h/fast/tree/f"] = &fstest.MapFile{Data: []byte("abc")}
@@ -56,7 +56,7 @@ func TestARowPastTheBudgetIsUnknownAndDelaysNoOtherRow(t *testing.T) {
 		{Name: "slow", Installs: catalog.HostOnly(catalog.Brew("slow")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/slow/*", Level: catalog.LevelCache}}}},
 		{Name: "fast", Installs: catalog.HostOnly(catalog.Brew("fast")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/fast/*", Level: catalog.LevelCache}}}},
 	}
-	s := New(system.Host{FS: fs, Clock: realClock{}}, tools, Options{Here: catalog.Host, Expand: Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
+	s := New(system.Host{FS: fs.FS, Clock: realClock{}}, tools, Options{Disk: fs, Here: catalog.Host, Expand: Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
 
 	waited, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

@@ -30,7 +30,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	lends := &daemonLends{}
 	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths)), m.store, engine.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
-		Pmset: m.pmset(), PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
+		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: lends,
 		Feeds: map[string]engine.Feed{engine.PageMenubar: m.menubarFeed(env)},
 	})

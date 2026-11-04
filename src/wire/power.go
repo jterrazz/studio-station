@@ -20,10 +20,6 @@ import (
 	powersleep "github.com/jterrazz/studio-station/src/surface/cli/power/sleep"
 )
 
-// value: the pmset a lid close runs, under STATION_SYSTEM_ROOT in a spec so
-// the real one never runs there; launchd's PATH is no guide, so it is absolute.
-func (m machine) pmset() string { return m.systemRoot() + "/usr/bin/pmset" }
-
 func (m machine) powerPage(v power.View) any {
 	r := power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	return page.Document{Schema: page.Schema, Page: pagepower.Page(r, m.where)}
@@ -53,7 +49,7 @@ func (m machine) power() *power.Service {
 			_, err := m.host.FS.Stat(catalog.DaemonPlist(m.host.Env.Home()))
 			return err == nil
 		},
-	}, power.ServiceOptions{Here: m.kind, HereName: m.where.Machine, Zone: time.Local})
+	}, power.ServiceOptions{Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, Zone: time.Local})
 }
 
 func powerCommand(env kit.Env, m machine) *cobra.Command {

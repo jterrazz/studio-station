@@ -11,7 +11,7 @@ import (
 
 func (m machine) control() *engine.Control {
 	return engine.NewControl(m.host, engine.Dial(m.host, m.paths), m.machines(false), engineHypervisor{m.hypervisor()}, m.engineJob(), engine.ControlOptions{
-		Here: m.kind, HereName: m.where.Machine, State: m.paths.State,
+		Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, State: m.paths.State,
 	})
 }
 

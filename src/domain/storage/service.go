@@ -3,13 +3,13 @@ package storage
 import (
 	"context"
 	"errors"
-	"io/fs"
 	"path"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -18,7 +18,6 @@ const (
 	StationName     = "station"
 	StationCategory = "Station"
 	dockerDFBudget  = 5 * time.Second
-	quitBudget      = 2 * time.Second
 	sizeBudget      = 10 * time.Second
 	commandLane     = 16
 	walkLane        = 1
@@ -32,6 +31,8 @@ type Inventory interface {
 }
 
 type Options struct {
+	// value: this machine's disk: sizes, erases, and which apps run.
+	Disk      contract.DiskUsage
 	Pool      *probe.Pool
 	Here      catalog.MachineKind
 	Expand    Expander
@@ -249,7 +250,7 @@ func (s *Service) size(pattern string) int64 {
 
 func (s *Service) dirSize(p string) int64 {
 	var bytes int64
-	s.h.FS.Sizes(context.Background(), []string{p}, func(_ int, b int64) { bytes = b })
+	s.o.Disk.Sizes(context.Background(), []string{p}, func(_ int, b int64) { bytes = b })
 	return bytes
 }
 
@@ -423,8 +424,7 @@ func (s *Service) outcome(name string, f *actionFailure, freed int64, reset bool
 }
 
 func (s *Service) running(ctx context.Context, process string) bool {
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: "pgrep", Args: []string{"-x", process}, Timeout: quitBudget})
-	return err == nil && out.ExitCode == 0
+	return s.o.Disk.Running(ctx, process)
 }
 
 func (s *Service) cacheBytes(e Entry) int64 {
@@ -510,26 +510,12 @@ func (s *Service) deleteCaches(e Entry) *actionFailure {
 	return failed
 }
 
-// invariant: a tree the tool wrote read-only (Go's module cache) is made writable and
-// removed again, since without the tool's own clean nothing else can remove it.
 func (s *Service) delete(pattern string) *actionFailure {
 	matches, _ := s.h.FS.Glob(s.o.Expand.Expand(pattern))
-	var failed *actionFailure
-	for _, m := range matches {
-		if s.h.FS.RemoveAll(m) == nil {
-			continue
-		}
-		_ = s.h.FS.WalkDir(m, func(p string, d fs.DirEntry, err error) error {
-			if err == nil && d.IsDir() {
-				_ = s.h.FS.Chmod(p, 0o700)
-			}
-			return nil
-		})
-		if err := s.h.FS.RemoveAll(m); err != nil {
-			failed = first(failed, &actionFailure{detail: err.Error()})
-		}
+	if err := s.o.Disk.Erase(context.Background(), matches); err != nil {
+		return &actionFailure{detail: err.Error()}
 	}
-	return failed
+	return nil
 }
 
 func (s *Service) run(ctx context.Context, a catalog.Action) *actionFailure {

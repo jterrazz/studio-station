@@ -37,7 +37,7 @@ func write(t *testing.T, path string, size int) {
 
 func sizes(ctx context.Context, roots []string) []int64 {
 	got := make([]int64, len(roots))
-	disk{}.Sizes(ctx, roots, func(i int, bytes int64) { got[i] = bytes })
+	Sizes(ctx, roots, func(i int, bytes int64) { got[i] = bytes })
 	return got
 }
 
@@ -94,7 +94,7 @@ func TestACancelledWalkStops(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var answers []int64
-	disk{}.Sizes(ctx, roots, func(_ int, bytes int64) {
+	Sizes(ctx, roots, func(_ int, bytes int64) {
 		answers = append(answers, bytes)
 		cancel()
 	})

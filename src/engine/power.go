@@ -35,8 +35,7 @@ type Event struct {
 }
 
 func (d *Daemon) newPower() *power.Machine {
-	return power.New(d.h.Power, d.h.Run, d.h.Clock, power.Options{
-		Pmset:  d.o.Pmset,
+	return power.New(d.o.Power, d.h.Clock, power.Options{
 		Log:    func(m string) { d.logf("power", m) },
 		Notice: func(e power.End) { d.hub.tell(Notice{Kind: NoticeEnded, Text: "Power ended: " + e.Detail}) },
 		Change: d.hub.changed,
@@ -44,10 +43,10 @@ func (d *Daemon) newPower() *power.Machine {
 }
 
 func (d *Daemon) watchPower(ctx context.Context) {
-	if d.h.Power == nil {
+	if d.o.Power == nil {
 		return
 	}
-	for ev := range d.h.Power.Watch(ctx) {
+	for ev := range d.o.Power.Watch(ctx) {
 		d.power.Observe(ctx, ev)
 	}
 }

@@ -11,8 +11,11 @@ import (
 
 	"charm.land/fang/v2"
 
+	awakemacos "github.com/jterrazz/studio-station/src/awake/adapter/macos"
+	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/fail"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/domain/remote"
 	"github.com/jterrazz/studio-station/src/domain/settings"
@@ -48,7 +51,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		output.Stream{W: stderr, IsTerminal: errTTY, Width: widthOf(stderr, errTTY), Dark: dark},
 		vars,
 	)
-	here := resolve(local.New(env, stdin, stdout, stderr), vars)
+	here := resolve(local.New(env, stdin, stdout, stderr), local.NewPower(env), vars)
 	kenv := kit.Env{
 		Out:         writer,
 		Prompt:      output.Terminal(stdin, stderr),
@@ -165,16 +168,18 @@ func withToolBins(env []string) []string {
 }
 
 type machine struct {
-	pool  *probe.Pool
-	host  system.Host
-	vars  map[string]string
-	kind  catalog.MachineKind
-	paths settings.Paths
-	store settings.Store
-	where page.Context
+	pool      *probe.Pool
+	host      system.Host
+	powerPort awakecontract.Power
+	profile   coremachine.Profile
+	vars      map[string]string
+	kind      catalog.MachineKind
+	paths     settings.Paths
+	store     settings.Store
+	where     page.Context
 }
 
-func resolve(h system.Host, vars map[string]string) machine {
+func resolve(h system.Host, door local.Power, vars map[string]string) machine {
 	home := h.Env.Home()
 	root := func(name, fallback string) string {
 		if dir := vars[name]; filepath.IsAbs(dir) {
@@ -196,18 +201,21 @@ func resolve(h system.Host, vars map[string]string) machine {
 		Bin:    filepath.Join(home, ".local", "bin"),
 		Roots:  roots,
 	}
-	kind := settings.DetectKind(context.Background(), h, vars["STATION_MACHINE_KIND"])
 	store := settings.NewStore(h.FS, paths)
 	current, _ := store.Load()
-	return machine{
+	m := machine{
 		pool:  probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
 		host:  h,
 		vars:  vars,
-		kind:  kind,
 		paths: paths,
 		store: store,
-		where: page.Context{Machine: hereName(current.Here, h.Env.Hostname()), Kind: string(kind), Registered: current.Here != ""},
 	}
+	m.powerPort = awakemacos.New(door, h.Run, m.systemRoot())
+	name := hereName(current.Here, h.Env.Hostname())
+	m.profile = profileOf(context.Background(), h, vars["STATION_MACHINE_KIND"], name, m.powerPort)
+	m.kind = legacyKind(m.profile)
+	m.where = page.Context{Machine: name, Kind: string(m.kind), Registered: current.Here != ""}
+	return m
 }
 
 // value: the name the fleet shows this machine by: the one setup gave it, else

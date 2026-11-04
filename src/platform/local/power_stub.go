@@ -8,8 +8,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const stubEvery = 100 * time.Millisecond
@@ -50,7 +48,7 @@ func (s *stubPower) present() bool {
 
 func (s *stubPower) HoldIdle(name string) (func(), error) {
 	if !s.present() {
-		return nil, system.ErrPowerUnsupported
+		return nil, ErrPowerUnsupported
 	}
 	s.record("power assert idle " + name)
 	var once sync.Once
@@ -59,7 +57,7 @@ func (s *stubPower) HoldIdle(name string) (func(), error) {
 
 func (s *stubPower) SetClamshellSleep(disabled bool) error {
 	if !s.present() {
-		return system.ErrPowerUnsupported
+		return ErrPowerUnsupported
 	}
 	if disabled {
 		s.record("power clamshell disabled")
@@ -69,11 +67,11 @@ func (s *stubPower) SetClamshellSleep(disabled bool) error {
 	return nil
 }
 
-func (s *stubPower) Read() (system.PowerReading, error) {
+func (s *stubPower) Read() (PowerReading, error) {
 	if !s.present() {
-		return system.PowerReading{}, system.ErrPowerUnsupported
+		return PowerReading{}, ErrPowerUnsupported
 	}
-	r := system.PowerReading{Lid: s.word("lid", ""), Source: s.word("source", "ac"), LowPower: s.word("lowpower", "0") == "1"}
+	r := PowerReading{Lid: s.word("lid", ""), Source: s.word("source", "ac"), LowPower: s.word("lowpower", "0") == "1"}
 	if n, err := strconv.Atoi(s.word("battery", "")); err == nil {
 		r.HasBattery, r.Percent = true, n
 	}
@@ -82,6 +80,4 @@ func (s *stubPower) Read() (system.PowerReading, error) {
 	return r, nil
 }
 
-func (s *stubPower) Watch(ctx context.Context) <-chan system.PowerEvent {
-	return watchReadings(ctx, s.Read, stubEvery, nil)
-}
+func (s *stubPower) Ticks(ctx context.Context) <-chan struct{} { return ticks(ctx, stubEvery, nil) }

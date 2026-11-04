@@ -115,3 +115,22 @@ func (f *FS) Rename(from, to string) error {
 	maps.Copy(f.Files, moved)
 	return nil
 }
+
+type Disk struct {
+	// value: a disk over the in-memory files, for a service that sizes and
+	// erases through one; no process runs on it.
+	*FS
+}
+
+func (d Disk) Volume(context.Context) (total, free int64, err error) { return 1 << 40, 1 << 39, nil }
+
+func (d Disk) Erase(_ context.Context, paths []string) error {
+	for _, p := range paths {
+		if err := d.RemoveAll(p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d Disk) Running(context.Context, string) bool { return false }

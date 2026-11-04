@@ -7,6 +7,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/disk/adapter/apfs"
+	"github.com/jterrazz/studio-station/src/disk/adapter/posix"
+	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -25,12 +29,20 @@ func storageCommand(env kit.Env, m machine) *cobra.Command {
 
 func (m machine) storage(env kit.Env) *storage.Service {
 	return storage.New(m.host, catalog.Tools, storage.Options{
+		Disk:      m.disk(),
 		Pool:      m.pool,
 		Here:      m.kind,
 		Expand:    m.expander(),
 		Files:     m.toolFiles(),
 		Inventory: inventory{tools: toolsService(env, m)},
 	})
+}
+
+func (m machine) disk() diskcontract.DiskUsage {
+	if m.profile.System.OS == coremachine.Linux {
+		return posix.New(m.host.Run)
+	}
+	return apfs.New(m.host.Run)
 }
 
 func (m machine) expander() storage.Expander {

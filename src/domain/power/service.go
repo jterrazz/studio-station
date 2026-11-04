@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -45,6 +46,7 @@ type Ports struct {
 }
 
 type ServiceOptions struct {
+	Power    Port
 	Here     catalog.MachineKind
 	HereName string
 	Zone     *time.Location
@@ -78,10 +80,10 @@ func (s *Service) Check() error {
 	if s.o.Here != catalog.Host {
 		return &OffHostError{}
 	}
-	if s.h.Power == nil {
+	if s.o.Power == nil {
 		return &UnsupportedError{}
 	}
-	if _, err := s.h.Power.Read(); errors.Is(err, system.ErrPowerUnsupported) {
+	if _, err := s.o.Power.Read(); errors.Is(err, contract.ErrUnsupported) {
 		return &UnsupportedError{}
 	}
 	return nil
@@ -105,7 +107,7 @@ func (s *Service) Read(ctx context.Context) <-chan Report {
 	out := make(chan Report, 2)
 	go func() {
 		defer close(out)
-		r, _ := s.h.Power.Read()
+		r, _ := s.o.Power.Read()
 		first := Report{Now: s.h.Clock.Now(), Zone: s.o.Zone, Daemon: DaemonPending, Reading: r, Guards: Guards(r, nil)}
 		out <- first
 		v, err := s.p.View(ctx)

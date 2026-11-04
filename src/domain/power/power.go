@@ -8,29 +8,25 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/awake/contract"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
-	Default    = 4 * time.Hour
-	Longest    = 24 * time.Hour
-	Shortest   = time.Minute
-	pollEvery  = 30 * time.Second
-	heavyLimit = 5 * time.Minute
-	keepEnd    = 24 * time.Hour
-	pmsetWait  = 5 * time.Second
-
-	batteryEnds  = 20
-	batteryWarns = 30
-	thermalHeavy = 2
-	thermalEnds  = 3
+	Default   = 4 * time.Hour
+	Longest   = 24 * time.Hour
+	Shortest  = time.Minute
+	pollEvery = 30 * time.Second
+	keepEnd   = 24 * time.Hour
 )
 
 const (
-	ReasonThermal  = "thermal"
-	ReasonBattery  = "battery"
-	ReasonLowPower = "low_power"
-	ReasonLid      = "lid"
+	ReasonThermal  = awake.Thermal
+	ReasonBattery  = awake.Battery
+	ReasonLowPower = awake.LowPower
+	ReasonLid      = awake.Lid
 	ReasonUntil    = "until"
 	ReasonSleep    = "sleep"
 	ReasonStop     = "stop"
@@ -42,7 +38,9 @@ const (
 	GuardNear = "near"
 )
 
-type Reading = system.PowerReading
+type Reading = awake.Reading
+
+type Port = contract.Power
 
 type Request struct {
 	Lid     bool
@@ -112,41 +110,20 @@ func CheckFor(d time.Duration) error {
 	return nil
 }
 
-func Level(n int) string {
-	switch n {
-	case 0:
-		return "nominal"
-	case 1:
-		return "moderate"
-	case thermalHeavy:
-		return "heavy"
-	case thermalEnds:
-		return "trapping"
+func Level(n int) string { return awake.Level(n) }
+
+// invariant: the first active guard past its threshold names the end; a
+// guard is active only when this Mac reports the capability it reads.
+func trip(c machine.Capabilities, r Reading, s *Session, heavyFor time.Duration) (reason, detail, words string) {
+	held := awake.Held{}
+	if s != nil {
+		held = awake.Held{Lid: s.Lid, Battery: s.Battery}
 	}
-	return "sleeping"
-}
-
-func onBattery(r Reading) bool { return r.HasBattery && r.Source == "battery" }
-
-func lidOnBattery(r Reading) bool { return r.Lid == "closed" && onBattery(r) }
-
-// invariant: the first guard past its threshold names the end; a desktop
-// Mac (no battery) never trips the battery guard nor the lid's battery half.
-func trip(r Reading, s *Session, heavyFor time.Duration) (reason, detail, words string) {
-	switch {
-	case r.Thermal >= thermalEnds:
-		return ReasonThermal, "thermal " + Level(r.Thermal), "the Mac is under serious thermal pressure"
-	case r.Thermal == thermalHeavy && heavyFor >= heavyLimit:
-		return ReasonThermal, "thermal heavy for 5m lid closed on battery", "the Mac is under heavy thermal pressure"
-	case onBattery(r) && r.Percent <= batteryEnds:
-		p := strconv.Itoa(r.Percent) + "%"
-		return ReasonBattery, "battery " + p + " on battery", "the battery is at " + p + " on battery"
-	case r.LowPower:
-		return ReasonLowPower, "Low Power Mode on", "Low Power Mode is on"
-	case s != nil && s.Lid && !s.Battery && lidOnBattery(r):
-		return ReasonLid, "lid closed on battery", "the lid is closed on battery"
+	t, ok := awake.Check(c, r, held, heavyFor)
+	if !ok {
+		return "", "", ""
 	}
-	return "", "", ""
+	return t.Guard, t.Detail, t.Words
 }
 
 func Guards(r Reading, s *Session) []Guard {
@@ -157,25 +134,22 @@ func Guards(r Reading, s *Session) []Guard {
 		return GuardOK
 	}
 	return []Guard{
-		{Name: ReasonBattery, State: state(onBattery(r) && r.Percent <= batteryWarns)},
+		{Name: ReasonBattery, State: state(r.OnBattery() && r.Percent <= awake.BatteryWarns)},
 		{Name: ReasonLowPower, State: state(false)},
-		{Name: ReasonThermal, State: state(r.Thermal == thermalHeavy)},
-		{Name: ReasonLid, State: state(s != nil && s.Lid && s.Battery && lidOnBattery(r))},
+		{Name: ReasonThermal, State: state(r.Thermal == awake.ThermalHeavy)},
+		{Name: ReasonLid, State: state(s != nil && s.Lid && s.Battery && r.LidClosedOnBattery())},
 	}
 }
 
 type Options struct {
-	// value: the absolute pmset a lid close runs displaysleepnow with.
-	Pmset string
-	Log   func(message string)
+	Log func(message string)
 	// value: a session a guard, its term or a stop ended; never power sleep.
 	Notice func(End)
 	Change func()
 }
 
 type Machine struct {
-	port  system.Power
-	run   system.Runner
+	port  Port
 	clock system.Clock
 	o     Options
 
@@ -191,22 +165,28 @@ type Machine struct {
 
 type absent struct{}
 
-func (absent) HoldIdle(string) (func(), error) { return nil, system.ErrPowerUnsupported }
-func (absent) SetClamshellSleep(bool) error    { return system.ErrPowerUnsupported }
-func (absent) Read() (system.PowerReading, error) {
-	return system.PowerReading{}, system.ErrPowerUnsupported
+func (absent) Capabilities() contract.PowerCaps { return contract.PowerCaps{} }
+func (absent) Read() (awake.Reading, error)     { return awake.Reading{}, contract.ErrUnsupported }
+func (absent) Hold(string) (func(), error)      { return nil, contract.ErrUnsupported }
+func (absent) Clamshell(bool) error             { return contract.ErrUnsupported }
+func (absent) DisplaySleepNow(context.Context) error {
+	return contract.ErrUnsupported
 }
-func (absent) Watch(context.Context) <-chan system.PowerEvent {
-	out := make(chan system.PowerEvent)
+func (absent) Watch(context.Context) <-chan awake.Event {
+	out := make(chan awake.Event)
 	close(out)
 	return out
 }
 
-func New(port system.Power, run system.Runner, clock system.Clock, o Options) *Machine {
+func New(port Port, clock system.Clock, o Options) *Machine {
 	if port == nil {
 		port = absent{}
 	}
-	return &Machine{port: port, run: run, clock: clock, o: o}
+	return &Machine{port: port, clock: clock, o: o}
+}
+
+func (m *Machine) caps() machine.Capabilities {
+	return m.port.Capabilities().Onto(machine.Capabilities{})
 }
 
 func (m *Machine) log(message string) {
@@ -221,13 +201,13 @@ func (m *Machine) changed() {
 	}
 }
 
-func unsupported(err error) bool { return errors.Is(err, system.ErrPowerUnsupported) }
+func unsupported(err error) bool { return errors.Is(err, contract.ErrUnsupported) }
 
 // invariant: resetting the clamshell is the safe direction, so a reset that
 // fails is retried at every poll until it passes; a Mac with no power
 // management has nothing to reset.
 func (m *Machine) resetLocked() {
-	err := m.port.SetClamshellSleep(false)
+	err := m.port.Clamshell(false)
 	switch {
 	case err == nil:
 		m.unreset = false
@@ -297,7 +277,7 @@ func (m *Machine) Awake(req Request) (Session, bool, error) {
 		return Session{}, false, err
 	}
 	want := Session{Lid: req.Lid, Battery: req.Battery, By: req.By}
-	if reason, _, words := trip(r, &want, 0); reason != "" {
+	if reason, _, words := trip(m.caps(), r, &want, 0); reason != "" {
 		return Session{}, false, &GuardError{Guard: reason, Words: words}
 	}
 	m.mu.Lock()
@@ -312,12 +292,12 @@ func (m *Machine) Awake(req Request) (Session, bool, error) {
 		want.StartedAt = m.session.StartedAt
 		m.session = &want
 		if want.Lid != was {
-			if err := m.port.SetClamshellSleep(want.Lid); err != nil {
+			if err := m.port.Clamshell(want.Lid); err != nil {
 				m.log("clamshell: " + err.Error())
 			}
 		}
 	} else {
-		release, err := m.port.HoldIdle("station: " + req.By)
+		release, err := m.port.Hold("station: " + req.By)
 		if err != nil {
 			if unsupported(err) {
 				return Session{}, false, &UnsupportedError{}
@@ -327,7 +307,7 @@ func (m *Machine) Awake(req Request) (Session, bool, error) {
 		m.release, m.session = release, &want
 		m.heavySince, m.polled = time.Time{}, now
 		if want.Lid {
-			if err := m.port.SetClamshellSleep(true); err != nil {
+			if err := m.port.Clamshell(true); err != nil {
 				m.log("clamshell: " + err.Error())
 			}
 		}
@@ -405,7 +385,7 @@ func (m *Machine) evaluateLocked(r Reading) (reason, detail string) {
 	if m.session == nil {
 		return "", ""
 	}
-	if r.Thermal == thermalHeavy && lidOnBattery(r) {
+	if r.Thermal == awake.ThermalHeavy && r.LidClosedOnBattery() {
 		if m.heavySince.IsZero() {
 			m.heavySince = now
 		}
@@ -416,11 +396,11 @@ func (m *Machine) evaluateLocked(r Reading) (reason, detail string) {
 	if !m.heavySince.IsZero() {
 		heavyFor = now.Sub(m.heavySince)
 	}
-	reason, detail, _ = trip(r, m.session, heavyFor)
+	reason, detail, _ = trip(m.caps(), r, m.session, heavyFor)
 	return reason, detail
 }
 
-func (m *Machine) Observe(ctx context.Context, ev system.PowerEvent) {
+func (m *Machine) Observe(ctx context.Context, ev awake.Event) {
 	r, err := m.port.Read()
 	if err != nil {
 		return
@@ -436,7 +416,7 @@ func (m *Machine) Observe(ctx context.Context, ev system.PowerEvent) {
 	if lidHeld && (ev.Kind == "source" || ev.Kind == "lid") {
 		// invariant: powerd may clear the mask (the safe direction), so it
 		// is set again on every source and lid change while --lid holds.
-		if err := m.port.SetClamshellSleep(true); err != nil {
+		if err := m.port.Clamshell(true); err != nil {
 			m.log("clamshell: " + err.Error())
 		}
 	}
@@ -447,15 +427,9 @@ func (m *Machine) Observe(ctx context.Context, ev system.PowerEvent) {
 	m.changed()
 }
 
-// invariant: the display sleeps by pmset displaysleepnow alone, never a
-// display assertion, so no other app's assertion keeps it lit lid closed.
 func (m *Machine) sleepDisplay(ctx context.Context) {
-	out, err := m.run.Output(ctx, system.Cmd{Name: m.o.Pmset, Args: []string{"displaysleepnow"}, Timeout: pmsetWait})
-	switch {
-	case err != nil:
+	if err := m.port.DisplaySleepNow(ctx); err != nil {
 		m.log("display: " + err.Error())
-	case out.ExitCode != 0:
-		m.log("display: pmset exited " + strconv.Itoa(out.ExitCode))
 	}
 }
 
