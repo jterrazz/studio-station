@@ -20,7 +20,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 - Bare `station` opens the TUI on a terminal; piped, or with `--all` or `--json`, it prints `station overview`, exit 0.
 - A bare noun lists (`tools`, `config`, `storage`, `machines`, `services`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station tools install` hints `station tools install <tool>`.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create --lifetime lasting --name api`).
-- The same verbs everywhere: `install`, `uninstall`, `upgrade`. There are no aliases.
+- The same verbs everywhere: `install`, `uninstall`, `upgrade`. The only other words are the [hidden aliases](#hidden-aliases).
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
 - Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`. With `--json`, the same refusal or failure is also the `station.error/v1` document on stdout (`schema`, `type`, `code`, `subject`, `message`, `hint`, `fix`), the exit code unchanged. A question answered no is `Error: <what> kept: you said no`, exit 1.
 - A word station does not know is `Error: unknown command "<word>"` / `Hint: station help`, exit 2; so is `station help <word>`.
