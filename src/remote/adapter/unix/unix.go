@@ -83,6 +83,24 @@ func (e endpoint) Watch(ctx context.Context, target machine.Ref, name string, in
 	return out, nil
 }
 
+func (d Dialer) KindOf(ctx context.Context, vm string) (machine.Kind, error) {
+	// value: the kind a VM says it is, in the Hello its own station answers.
+	hello, _ := json.Marshal(api.Frame{V: api.Version, ID: "1", Hello: &api.Hello{}})
+	stdout, code, err := d.engine.GuestExec(ctx, vm, Guest, string(hello)+"\n")
+	if err != nil {
+		return "", err
+	}
+	s := bufio.NewScanner(strings.NewReader(stdout))
+	s.Buffer(make([]byte, 0, 64<<10), 64<<20)
+	for s.Scan() {
+		var f api.Frame
+		if json.Unmarshal(s.Bytes(), &f) == nil && f.ID == "1" && f.Hello != nil {
+			return f.Hello.Kind, nil
+		}
+	}
+	return "", lost(machine.Ref{Name: vm}, errors.New("the guest's station did not answer, exit "+strconv.Itoa(code)))
+}
+
 // invariant: one exchange per call: the guest's server reads the hello and
 // the request to the end of its stdin, answers both and exits; a guest whose
 // binary serves no such call is too old, read again at every exchange.

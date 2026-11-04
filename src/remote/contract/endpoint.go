@@ -12,6 +12,9 @@ type Hello struct {
 	Version string `json:"version"`
 	// value: the names of the calls this binary serves.
 	Calls []string `json:"calls"`
+	// value: the kind of the machine that answers, as its own Profile says;
+	// empty from a binary older than the field.
+	Kind machine.Kind `json:"kind,omitempty"`
 }
 
 type EndpointDialer interface {
