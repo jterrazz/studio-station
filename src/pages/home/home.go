@@ -154,7 +154,7 @@ func reasonOf(m page.Mark) page.Reason {
 		return page.Down
 	case page.Absent:
 		return page.Missing
-	case page.OK, page.Awaiting, page.Unjudged:
+	case page.OK, page.Awaiting, page.OffHere, page.NotForThisMachine, page.NotKnown, page.Unjudged:
 	}
 	return ""
 }

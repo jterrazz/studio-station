@@ -54,7 +54,7 @@ func Done(id string, state catalog.State, detail string) page.Row {
 		r.Reason = page.Partial
 	case page.Broken:
 		r.Reason = page.Failing
-	case page.OK, page.Absent, page.Awaiting, page.Unjudged:
+	case page.OK, page.Absent, page.Awaiting, page.OffHere, page.NotForThisMachine, page.NotKnown, page.Unjudged:
 	}
 	return r
 }

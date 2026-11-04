@@ -208,7 +208,7 @@ func Row(r storage.Row) page.Row {
 		}
 	case page.Broken:
 		row.Reason = page.Failing
-	case page.OK, page.Absent, page.Awaiting, page.Unjudged:
+	case page.OK, page.Absent, page.Awaiting, page.OffHere, page.NotForThisMachine, page.NotKnown, page.Unjudged:
 	}
 	return row
 }

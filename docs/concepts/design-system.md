@@ -31,15 +31,18 @@ The same tokens colour Fang's help and the forms that ask a config item's values
 
 ## The marks
 
-| Mark | Means                |
-| ---- | -------------------- |
-| `●`  | ok                   |
-| `◐`  | degraded, or unknown |
-| `○`  | absent               |
-| `✗`  | broken               |
-| `◌`  | pending              |
+| Mark | Means                                       |
+| ---- | ------------------------------------------- |
+| `●`  | ok                                          |
+| `◐`  | degraded, or unknown                        |
+| `○`  | absent                                      |
+| `✗`  | broken                                      |
+| `◌`  | pending                                     |
+| `⊘`  | off here, your choice                       |
+| `–`  | not for this machine                        |
+| `?`  | not managed by station, or not readable now |
 
-The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. `◌` (Muted) marks a row whose probe has not answered yet, on a terminal and in the TUI only: a pipe, `NO_COLOR` and `--json` wait for every probe, so they never carry it. Every glyph station prints is a token of `src/ui/token/glyphs.go` (`token.Glyphs`), and the layer test refuses one in any other Go literal of a migrated package. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
+The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. `◌` (Muted) marks a row whose probe has not answered yet, on a terminal and in the TUI only: a pipe, `NO_COLOR` and `--json` wait for every probe, so they never carry it. `⊘` and `?` are Muted, `–` Subtle, each always followed by its word (`page.OffHere`, `page.NotForThisMachine`, `page.NotKnown`); the families draw them as they take their v3 words. Every glyph station prints is a token of `src/ui/token/glyphs.go` (`token.Glyphs`), and the layer test refuses one in any other Go literal of a migrated package. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
 
 ## Typography
 
