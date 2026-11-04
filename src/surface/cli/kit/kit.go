@@ -70,6 +70,14 @@ func (o IO) Confirmed(do func(answer string) error) error {
 	return do(answer)
 }
 
+func (o IO) YesAnswer() string {
+	// value: what --yes answers a call before it asks: yes, or nothing.
+	if o.Yes {
+		return confirm.Yes
+	}
+	return ""
+}
+
 func (o IO) Streams() (io.Reader, io.Writer) { return o.in, o.raw }
 
 func (o IO) CanLive() bool {

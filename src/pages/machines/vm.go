@@ -31,7 +31,7 @@ func VMPage(o VMOverview, here page.Context) page.Page {
 			ID: "overview", Title: vm.Name, Role: page.Banner, Uncounted: true, Columns: vmColumns(), Items: []page.Item{{Row: &row}},
 		}}})
 	}
-	caption := []page.Value{page.Text("Workspace on " + o.on()), page.Text(titled(string(vm.Lifetime))), page.Text(stateWord(vm.State))}
+	caption := []page.Value{page.Text(machines.KindWord(vm.Lifetime.Kind()) + " on " + o.on()), page.Text(lifetimeWord(vm.Lifetime)), page.Text(stateWord(vm.State))}
 	health := machines.HealthOf(vm)
 	steps := []page.Row{
 		step("running", machines.StepRunning, health.Running, health.Running, ""),
@@ -69,6 +69,13 @@ func step(id, label string, passed, running bool, detail string) page.Row {
 		row.Mark, row.Reason = page.Absent, page.Stopped
 	}
 	return row
+}
+
+func lifetimeWord(l machines.Lifetime) string {
+	if l == machines.AlwaysOn {
+		return l.Word()
+	}
+	return titled(string(l))
 }
 
 func titled(word string) string {
@@ -140,7 +147,7 @@ type VMOverviewJSON struct {
 func VMContract(o VMOverview, schema string) VMOverviewJSON {
 	vm, h := o.VM, machines.HealthOf(o.VM)
 	return VMOverviewJSON{
-		Schema: schema, Machine: VMMachineJSON{Name: vm.Name, Kind: "workspace", On: o.Mac.Name, Reachable: o.Mac.Reachable},
+		Schema: schema, Machine: VMMachineJSON{Name: vm.Name, Kind: string(vm.Lifetime.Kind()), On: o.Mac.Name, Reachable: o.Mac.Reachable},
 		Lifetime: string(vm.Lifetime), State: string(vm.State), Wanted: machines.Wanted(vm),
 		Health: VMHealthJSON{Running: h.Running, Address: h.Address, SSH: h.SSH},
 		Size:   machines.ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},

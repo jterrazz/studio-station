@@ -87,6 +87,20 @@ func Require(l Level, name, given string) error {
 	}
 }
 
+func Ask(a Action, k machine.Kind, name, given string) error {
+	// value: Require for the gesture a on a machine of kind k, its refusal
+	// naming both, so its words can say what was not done.
+	err := Require(For(a, k), name, given)
+	var e *fail.Error
+	if errors.As(err, &e) {
+		e.Detail["action"], e.Detail["kind"] = string(a), string(k)
+		if given == Yes {
+			e.Detail["by"] = "yes"
+		}
+	}
+	return err
+}
+
 func Answer(err error) (string, bool) {
 	// value: the answer a confirmation the use case asked takes, once its
 	// question is answered yes: the name for a typed question, Yes otherwise.

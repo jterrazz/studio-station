@@ -162,7 +162,7 @@ func requires(fn ast.Node, info *types.Info) bool {
 			return true
 		}
 		if sel, ok := ce.Fun.(*ast.SelectorExpr); ok {
-			if obj := info.Uses[sel.Sel]; obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == module+"/src/core/confirm" && obj.Name() == "Require" {
+			if obj := info.Uses[sel.Sel]; obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == module+"/src/core/confirm" && (obj.Name() == "Require" || obj.Name() == "Ask") {
 				found = true
 			}
 		}

@@ -8,7 +8,7 @@ runs:
           ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
           ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
           ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
-          ●	infra	Workspace	jterrazz-mac-mini	Running · permanent	8 CPU	24 GB
+          ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB
     - command: 'machines | /usr/bin/awk -F''\t'' ''$4 == "jterrazz-mac-mini"'' | /usr/bin/cut -f2'
       exit: 0
       stdout: |

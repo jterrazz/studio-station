@@ -13,7 +13,7 @@ runs:
     - command: '--version >/dev/null; "$STATION" machines infra --json > noun.json; "$STATION" overview --on infra --json > on.json; /usr/bin/cmp noun.json on.json && /usr/bin/jq -c ''{schema, machine}'' noun.json'
       exit: 0
       stdout: |
-          {"schema":"station.overview.read/v1","machine":{"name":"infra","kind":"workspace","on":"jterrazz-mac-mini","reachable":true}}
+          {"schema":"station.overview.read/v1","machine":{"name":"infra","kind":"server","on":"jterrazz-mac-mini","reachable":true}}
     - command: 'machines jterrazz-mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
       exit: 0
       stdout: |

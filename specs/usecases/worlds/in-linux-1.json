@@ -289,7 +289,7 @@
                     "kept": {
                         "image": "linux",
                         "version": "2026.11.01",
-                        "lifetime": "permanent",
+                        "lifetime": "always-on",
                         "want": "running",
                         "created_at": "2026-10-23T09:00:00Z"
                     },

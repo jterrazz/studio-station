@@ -107,6 +107,7 @@ type Lifetime = model.Lifetime
 const (
 	Throwaway = model.Throwaway
 	Permanent = model.Permanent
+	AlwaysOn  = model.AlwaysOn
 )
 
 const (

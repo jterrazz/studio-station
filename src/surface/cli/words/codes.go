@@ -21,15 +21,35 @@ import (
 
 type Wording func(e *fail.Error) (message, hint string)
 
+// value: how the refusal of a gesture a typed name answers names the doing
+// and the done, by its action.
+func typedGesture(action string) (doing, done string, ok bool) {
+	switch confirm.Action(action) {
+	case confirm.Stop:
+		return "stopping", "stopped", true
+	case confirm.Delete:
+		return "deleting", "deleted", true
+	default:
+		return "", "", false
+	}
+}
+
 func Codes() map[fail.Code]Wording {
 	// invariant: the one table of every error code's words (rule
 	// every-code-worded): a code raised anywhere is worded here once.
 	all := map[fail.Code]Wording{
 		confirm.Needed: func(e *fail.Error) (string, string) {
+			if doing, _, ok := typedGesture(e.Detail["action"]); ok && e.Detail["by"] == "yes" {
+				return doing + " a " + e.Detail["kind"] + " needs its name", "--confirm=" + e.Subject
+			}
 			return "refusing without the name typed: " + e.Subject, "in a script: --confirm=" + e.Subject
 		},
 		confirm.Mismatch: func(e *fail.Error) (string, string) {
-			return "you typed \"" + e.Detail["typed"] + "\", not \"" + e.Subject + "\"", "in a script: --confirm=" + e.Subject
+			said := "you typed \"" + e.Detail["typed"] + "\", not \"" + e.Subject + "\""
+			if _, done, ok := typedGesture(e.Detail["action"]); ok {
+				said = "not " + done + ": " + said
+			}
+			return said, "in a script: --confirm=" + e.Subject
 		},
 		confirm.YesNeeded: func(e *fail.Error) (string, string) {
 			return "refusing without --yes: " + e.Subject, "re-run with --yes"

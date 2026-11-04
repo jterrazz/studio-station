@@ -135,7 +135,7 @@ func macRow(label string, h machines.HostView, hereVersion string, now time.Time
 
 func listVMRow(mac string, vm machines.VM) page.Row {
 	row := page.Row{ID: vm.Name, Label: vm.Name, Mark: page.OK}
-	lifetime := page.Text(string(vm.Lifetime))
+	lifetime := page.Text(vm.Lifetime.Word())
 	state, detail := page.List(page.Text("Running"), lifetime), page.None()
 	switch vm.State {
 	case machines.Running:
@@ -155,7 +155,7 @@ func listVMRow(mac string, vm machines.VM) page.Row {
 		row.Mark, row.Reason, state = page.NotKnown, page.Unreachable, page.List(page.Text("Unknown"), lifetime)
 	}
 	r := vm.Resources
-	row.Cells = []page.Value{page.Text("Workspace"), page.Text(mac), state, page.Text(strconv.Itoa(r.CPUs) + " CPU"), Memory(r.MemoryBytes), detail}
+	row.Cells = []page.Value{page.Text(machines.KindWord(vm.Lifetime.Kind())), page.Text(mac), state, page.Text(strconv.Itoa(r.CPUs) + " CPU"), Memory(r.MemoryBytes), detail}
 	return row
 }
 

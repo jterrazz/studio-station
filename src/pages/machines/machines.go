@@ -141,7 +141,7 @@ func vmRow(vm machines.VM) page.Row {
 	case machines.Unknown:
 		row.Mark, row.Reason = page.NotKnown, page.Unreachable
 	}
-	row.Cells = []page.Value{page.Text("workspace"), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
+	row.Cells = []page.Value{page.Text(string(vm.Lifetime.Kind())), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
 	return row
 }
 
@@ -186,6 +186,29 @@ func orDash(s string) page.Value {
 
 func Change(verb, name, change string, here page.Context) page.Page {
 	return pages.Outcome("machines "+verb, here, nil, []page.Row{pages.Done(name, catalog.StateOK, change)}, "machines")
+}
+
+func ServerStopped(name, start string, here page.Context) page.Page {
+	// value: a server stopped by hand stays stopped, at its Mac's boot too,
+	// until start sets its wanted state back to Running.
+	row := pages.Done(name, catalog.StateOK, "stopped")
+	row.Detail = page.List(page.Text("stopped"), page.Text("wanted state: Stopped"))
+	p := pages.Outcome("machines stop", here, nil, []page.Row{row}, "machines")
+	p.Hints = []page.Hint{*page.Cmd(start)}
+	return p
+}
+
+func ServerStarted(name string, here page.Context) page.Page {
+	row := pages.Done(name, catalog.StateOK, "started")
+	row.Detail = page.List(page.Text("started"), page.Text("wanted state: Running"))
+	return pages.Outcome("machines start", here, nil, []page.Row{row}, "machines")
+}
+
+func StopServerForm(name string) page.Form {
+	return page.Form{
+		Title:  "Stop " + name + "? It will not start at its Mac's boot nor restart until you start it",
+		Fields: []page.Field{{Key: "name", Label: "Type " + name + " to stop it:", Kind: page.FieldText}},
+	}
 }
 
 func Already(verb, name string, running bool, here page.Context) page.Page {

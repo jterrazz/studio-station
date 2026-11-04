@@ -332,9 +332,12 @@
       "where": "in-engine",
       "confirm": "stop",
       "errors": [
+        "confirm.mismatch",
+        "confirm.needed",
         "confirm.yes-needed"
       ],
-      "in": "StopIn"
+      "in": "StopIn",
+      "out": "StopOut"
     },
     {
       "name": "machines.unlock",

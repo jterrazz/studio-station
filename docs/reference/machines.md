@@ -29,14 +29,14 @@ A machine has one name, used for `preferences.json`, the `~/.ssh/config` Host, H
  ├─ ○ api Workspace Stopped · permanent 4 CPU 8 GB
  └─ ● linux-1 Workspace Running · throwaway 4 CPU 8 GB
  ● mac-mini Mac Engine running
- └─ ● infra Workspace Running · permanent 8 CPU 24 GB
+ └─ ● infra Server Running · always on 8 CPU 24 GB
 ```
 
 `station machines <machine>` is that machine's Overview, the one `station overview --on <machine>` prints.
 
 ## Lifetimes
 
-A workspace is throwaway unless it is made `--permanent` ([Glossary](../concepts/glossary.md)). No workspace restarts by itself (SP-4), and a stop never destroys one (SP-5):
+A workspace is throwaway unless it is made `--permanent` ([Glossary](../concepts/glossary.md)); a server is always on (its record's lifetime is `always-on`, the one mark of its kind). No workspace restarts by itself (SP-4), and a stop never destroys a VM (SP-5). A server whose wanted state is Running starts with its Mac's engine; a stop sets its wanted state to Stopped, so it stays stopped across its Mac's reboots until `start` sets it back to Running. A Mac's servers are listed before its workspaces:
 
 | Event                          | Throwaway workspace                                   | Permanent workspace                             |
 | ------------------------------ | ----------------------------------------------------- | ----------------------------------------------- |
@@ -55,6 +55,7 @@ The VM tells its host when it powers off: a unit in the image writes `station-in
 station machines create api --permanent --memory 12G --disk 80G
 station machines start api # a stopped workspace, its disk as it was left
 station machines stop api # asks yes or no; kept with its disk
+station machines stop infra --on mac-mini # a server: asks its name typed (--confirm=infra), --yes answers nothing
 station machines edit api --memory 16G # applies when api next starts; a disk only grows
 station machines ssh api # prints the ssh command: ssh admin@api
 station machines restart mac-mini # a Mac: FileVault-aware, waits for ssh; a VM: power off, run

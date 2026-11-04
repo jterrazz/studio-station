@@ -27,6 +27,9 @@ type Machines interface {
 	CheckStart(name string) error
 	Start(ctx context.Context, name string) error
 	CheckStop(name string) error
+	// value: the lifetime of a VM of this Mac, which says its kind; empty
+	// for no VM of it.
+	LifetimeOf(name string) machines.Lifetime
 	// value: whether the VM of this Mac runs now.
 	Running(ctx context.Context, name string) (bool, error)
 	Stop(ctx context.Context, name string) error

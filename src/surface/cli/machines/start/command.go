@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
@@ -23,7 +24,7 @@ type Input struct{ Name string }
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "start <vm>",
-		Short:   "Start a stopped workspace, with its disk as it was left",
+		Short:   "Start a stopped VM, with its disk as it was left; a server is always on again",
 		Example: "  station machines start api",
 		Args:    cobra.ExactArgs(1),
 		Bind: func(in *Input, args []string) error {
@@ -40,6 +41,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			}
 			if out.Already {
 				return io.Page(pagemachines.Already("start", in.Name, true, d.Here), nil)
+			}
+			if out.Kind == machine.Server {
+				return io.Page(pagemachines.ServerStarted(in.Name, d.Here), nil)
 			}
 			return io.Page(pagemachines.Change("start", in.Name, "started", d.Here), nil)
 		},

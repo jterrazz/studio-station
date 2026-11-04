@@ -19,7 +19,7 @@ runs:
              ├─ ○ api      Workspace  Stopped · permanent           4 CPU  8 GB
              └─ ● linux-1  Workspace  Running · throwaway           4 CPU  8 GB
              ◐ mac-mini    Mac        Engine running · runs v3.0.0
-             └─ ● infra    Workspace  Running · permanent           8 CPU  24 GB
+             └─ ● infra    Server     Running · always on           8 CPU  24 GB
 
            Needs you
              ◐ mac-mini  runs v3.0.0  update station there (scripts/install.sh)

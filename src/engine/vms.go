@@ -61,7 +61,8 @@ type vmState struct {
 
 // invariant: at start, a live run is ADOPTED (never touched); a dead one or none
 // leaves the workspace stopped and kept, never started again (SP-4): one its
-// record wants running ended with its Mac.
+// record wants running ended with its Mac. A server whose wanted state is
+// Running starts with its Mac's engine: it is always on.
 func (d *Daemon) adopt(ctx context.Context) {
 	records, _ := d.m.Records()
 	for _, r := range records {
@@ -81,6 +82,8 @@ func (d *Daemon) adopt(ctx context.Context) {
 			v.state, v.detail, v.rerunAt = known.State, known.Detail, known.RerunAt
 		case d.m.EngineRunning(ctx, r.Name):
 			v.state = StateRunning
+		case r.Want == machines.WantRunning && r.Lifetime == machines.AlwaysOn:
+			_ = d.start(ctx, v)
 		case r.Want == machines.WantRunning:
 			v.detail = endedWithItsMac
 		}
