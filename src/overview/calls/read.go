@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"slices"
-	"sync"
+	"strconv"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
+	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 	appscontract "github.com/jterrazz/studio-station/src/apps/contract"
+	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
@@ -49,8 +51,8 @@ func (r *Reader[Tool, Item, Stray]) Snapshot(ctx context.Context) (snapshot[Tool
 	return snap, snap.Err
 }
 
-func (r *Reader[Tool, Item, Stray]) Sample(ctx context.Context) (activity.Sample, error) {
-	return r.d.Meter.Sample(ctx)
+func (r *Reader[Tool, Item, Stray]) Sample(ctx context.Context) (activity.Reading, error) {
+	return activitycalls.Read(ctx, r.d.Meter)
 }
 
 func (r *Reader[Tool, Item, Stray]) Forget() {
@@ -142,7 +144,7 @@ func (r *Reader[Tool, Item, Stray]) frame() snapshot[Tool, Item, Stray] {
 		Station:       overview.Station{Version: h.Version, Commit: h.Commit, Daemon: overview.Check{Name: "daemon", State: catalog.StatePending}},
 		Tailnet:       ports.Status{State: catalog.StatePending},
 		Setup:         overview.Setup{State: catalog.StatePending, Steps: []overview.Step{}},
-		System:        overview.System{Pending: true, Sample: activity.Sample{CPU: []activity.Process{}, Memory: []activity.Process{}}},
+		System:        overview.System{Pending: true, Reading: activity.Reading{Top: activity.Busiest{CPU: []activity.Process{}, Memory: []activity.Process{}}}},
 		Identity:      pendingChecks(r.identityRows()),
 		Background:    []background.Task{},
 		Gateways:      []overview.Check{},
@@ -248,24 +250,31 @@ func (r *Reader[Tool, Item, Stray]) kernel(ctx context.Context) string {
 func (r *Reader[Tool, Item, Stray]) system(ctx context.Context) (uptime, battery string, memory int64) {
 	ctx, cancel := context.WithTimeout(ctx, defaultBudget)
 	defer cancel()
-	var wg sync.WaitGroup
-	wg.Add(3)
-	go func() {
-		defer wg.Done()
-		if up, ok := r.d.Meter.Uptime(ctx); ok {
-			uptime = activity.Uptime(up)
+	if s, err := r.d.Meter.Sample(ctx); err == nil {
+		if !s.Boot.IsZero() {
+			uptime = activity.Uptime(s.At.Sub(s.Boot))
 		}
-	}()
-	go func() {
-		defer wg.Done()
-		battery = r.d.Meter.Battery(ctx)
-	}()
-	go func() {
-		defer wg.Done()
-		memory = r.d.Meter.Memory(ctx)
-	}()
-	wg.Wait()
+		memory = s.MemTotal
+	}
+	if r.d.Battery != nil {
+		if b, err := r.d.Battery.Read(); err == nil && b.HasBattery {
+			battery = batteryLine(b)
+		}
+	}
 	return uptime, battery, memory
+}
+
+func batteryLine(b awake.Reading) string {
+	state := "not charging"
+	switch {
+	case b.Charging:
+		state = "charging"
+	case b.OnBattery():
+		state = "on battery"
+	case b.Percent >= 100:
+		state = "charged"
+	}
+	return strconv.Itoa(b.Percent) + "% " + state
 }
 
 func (r *Reader[Tool, Item, Stray]) daemon(ctx context.Context) overview.Check {

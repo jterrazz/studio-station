@@ -184,8 +184,8 @@ func SnapshotContract(s Overview) SnapshotJSON {
 		},
 		System: systemJSON{
 			Uptime: s.System.Uptime, Battery: s.System.Battery,
-			CPU:    processes(s.System.Sample.CPU),
-			Memory: memoryJSON{TotalBytes: s.System.MemoryTotal, Top: processes(s.System.Sample.Memory)},
+			CPU:    processes(s.System.Reading.Top.CPU),
+			Memory: memoryJSON{TotalBytes: s.System.MemoryTotal, Top: processes(s.System.Reading.Top.Memory)},
 		},
 		Environment: environmentJSON{
 			Network:  checks(s.Environment.Network),

@@ -49,7 +49,7 @@
       "section": "activity",
       "where": "at-target",
       "in": "SampleIn",
-      "out": "Sample"
+      "out": "Reading"
     },
     {
       "name": "apps.install",

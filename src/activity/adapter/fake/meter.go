@@ -1,13 +1,16 @@
 package fake
 
 import (
+	"cmp"
 	"context"
+	"errors"
 	"slices"
-	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/world"
 )
+
+var ErrNoProcess = errors.New("no such process")
 
 type Meter struct {
 	// invariant: the counters of one Mac of the world.
@@ -17,30 +20,50 @@ type Meter struct {
 
 func MeterOf(w *world.World, mac string) *Meter { return &Meter{w: w, mac: mac} }
 
-func NewMeter(sample activity.Sample, up time.Duration, battery string, memory int64) *Meter {
-	// value: a machine whose counters read sample, booted up ago, with a
-	// battery reading ("" for none) and memory bytes installed; up 0 never booted.
+func NewMeter(r world.Meter) *Meter {
+	// value: a machine whose kernel answers r; the zero Meter answers nothing.
 	w := &world.World{Here: "here"}
-	w.Mac("here").Meter = &world.Meter{Sample: sample, Uptime: up, Battery: battery, Memory: memory}
+	w.Mac("here").Meter = &r
 	return MeterOf(w, "here")
 }
 
-func (m *Meter) read() world.Meter {
+func (m *Meter) read() (world.Meter, bool) {
 	m.w.Lock()
 	defer m.w.Unlock()
 	if r := m.w.Mac(m.mac).Meter; r != nil {
-		return *r
+		return *r, true
 	}
-	return world.Meter{}
+	return world.Meter{}, false
 }
 
 func (m *Meter) Sample(ctx context.Context) (activity.Sample, error) {
 	if err := ctx.Err(); err != nil {
 		return activity.Sample{}, err
 	}
-	s := m.read().Sample
-	s.CPU, s.Memory = top(s.CPU), top(s.Memory)
+	r, _ := m.read()
+	s := r.Sample
+	s.Thermal, s.Battery, s.DiskFree, s.DiskTotal = activity.ThermalUnknown, nil, 0, 0
 	return s, nil
+}
+
+func (m *Meter) Top(ctx context.Context) (activity.Busiest, error) {
+	if err := ctx.Err(); err != nil {
+		return activity.Busiest{}, err
+	}
+	r, _ := m.read()
+	return activity.Busiest{CPU: top(r.Top.CPU), Memory: top(r.Top.Memory)}, nil
+}
+
+func (m *Meter) Process(ctx context.Context, pid int) (activity.Usage, error) {
+	if err := ctx.Err(); err != nil {
+		return activity.Usage{}, err
+	}
+	r, _ := m.read()
+	u, ok := r.Processes[pid]
+	if !ok {
+		return activity.Usage{}, ErrNoProcess
+	}
+	return u, nil
 }
 
 func top(ps []activity.Process) []activity.Process {
@@ -48,26 +71,6 @@ func top(ps []activity.Process) []activity.Process {
 	if out == nil {
 		out = []activity.Process{}
 	}
-	slices.SortStableFunc(out, func(a, b activity.Process) int {
-		switch {
-		case a.Value > b.Value:
-			return -1
-		case a.Value < b.Value:
-			return 1
-		}
-		return 0
-	})
-	if len(out) > activity.Top {
-		out = out[:activity.Top]
-	}
-	return out
+	slices.SortStableFunc(out, func(a, b activity.Process) int { return cmp.Compare(b.Value, a.Value) })
+	return out[:min(len(out), activity.Top)]
 }
-
-func (m *Meter) Uptime(context.Context) (time.Duration, bool) {
-	up := m.read().Uptime
-	return up, up > 0
-}
-
-func (m *Meter) Battery(context.Context) string { return m.read().Battery }
-
-func (m *Meter) Memory(context.Context) int64 { return m.read().Memory }

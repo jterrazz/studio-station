@@ -33,7 +33,7 @@ const (
 type Reading struct {
 	// value: a nil part is still being read and draws pending.
 	Home     *pagehome.Overview
-	Samples  []activity.Sample
+	Samples  []activity.Reading
 	Fleet    *machines.Fleet
 	Services *services.Fleet
 	Power    *power.Report
@@ -69,7 +69,7 @@ func strip(r Reading) *page.Strip {
 		return &page.Strip{CPU: page.Pending(), Memory: page.Pending()}
 	}
 	s := pagehome.Strip(r.Samples, *r.Home)
-	s.GPU, s.Net = page.Value{}, nil
+	s.Net = nil
 	if r.Power != nil && r.Power.Reading.HasBattery {
 		s.Battery = page.Percent(int64(r.Power.Reading.Percent) * 10)
 	}

@@ -27,7 +27,7 @@ type Deps struct {
 	Target machine.Ref
 }
 
-type samples struct{ list []pagehome.Sample }
+type samples struct{ list []pagehome.Reading }
 
 type Fix func(ctx context.Context, words []string) error
 
@@ -43,7 +43,7 @@ type Model struct {
 }
 
 type sampled struct {
-	sample pagehome.Sample
+	sample pagehome.Reading
 	err    error
 }
 
@@ -74,8 +74,8 @@ func New(ctx context.Context, d Deps, fix Fix, here page.Context, describe tab.D
 	}
 	build := func(snap pagehome.Overview) page.Page {
 		list := live.list
-		if len(list) == 0 && !snap.System.Sample.At.IsZero() {
-			list = []pagehome.Sample{snap.System.Sample}
+		if len(list) == 0 && !snap.System.Reading.Sample.At.IsZero() {
+			list = []pagehome.Reading{snap.System.Reading}
 		}
 		return pagehome.Live(pagehome.Snapshot(snap, here, false), list, snap)
 	}

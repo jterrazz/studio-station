@@ -31,10 +31,10 @@ func fixed() pagehome.Overview {
 		},
 		System: overview.System{
 			Uptime: "3d 4h", Battery: "92% charging", MemoryTotal: 34359738368,
-			Sample: activity.Sample{
+			Reading: activity.Reading{Top: activity.Busiest{
 				CPU:    []activity.Process{{PID: 1, Name: "x", Value: 12.5}},
 				Memory: []activity.Process{{PID: 1, Name: "x", Value: 1048576}},
-			},
+			}},
 		},
 		Environment: overview.Environment{
 			Network:     []overview.Check{{Name: "local ip", State: catalog.StateOK, Value: "192.168.1.2"}},

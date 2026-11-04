@@ -11,5 +11,5 @@ import (
 type (
 	Overview  = overview.Snapshot[tools.Report, config.Report, storage.StrayReport]
 	Workspace = overview.Workspace[storage.StrayReport]
-	Sample    = activity.Sample
+	Reading   = activity.Reading
 )

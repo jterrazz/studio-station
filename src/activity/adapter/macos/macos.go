@@ -1,172 +1,214 @@
 package macos
 
 import (
+	"cmp"
 	"context"
-	"strconv"
+	"errors"
+	"slices"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/activity/contract"
-	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 )
 
-const budget = 2 * time.Second
+const (
+	// value: the shortest time between two process tables a CPU share is
+	// measured over, and the oldest table a share is still measured from.
+	window = 250 * time.Millisecond
+	stale  = time.Minute
+)
 
-type Runner interface {
-	Output(ctx context.Context, c local.Cmd) (local.Output, error)
+var ErrNoProcess = errors.New("no such process")
+
+type Kernel interface {
+	Counters() (darwin.Counters, error)
+	Processes() (darwin.Procs, error)
+	Process(pid int) (darwin.Procs, error)
 }
 
-type Clock interface{ Now() time.Time }
+type Clock interface {
+	Now() time.Time
+	Sleep(ctx context.Context, d time.Duration) error
+}
 
 type Meter struct {
-	run   Runner
-	clock Clock
+	kernel Kernel
+	clock  Clock
+	mu     sync.Mutex
+	// value: the last process table read, the start of the next share.
+	last darwin.Procs
+	cpus int
 }
 
 var _ contract.Meter = (*Meter)(nil)
 
-func New(run Runner, clock Clock) *Meter { return &Meter{run: run, clock: clock} }
-
-func (m *Meter) ask(ctx context.Context, name string, args ...string) (string, bool) {
-	out, err := m.run.Output(ctx, local.Cmd{Name: name, Args: args, Timeout: budget})
-	if err != nil || out.ExitCode != 0 {
-		return "", false
-	}
-	return out.Stdout, true
-}
+func New(k Kernel, clock Clock) *Meter { return &Meter{kernel: k, clock: clock} }
 
 func (m *Meter) Sample(ctx context.Context) (activity.Sample, error) {
 	if err := ctx.Err(); err != nil {
 		return activity.Sample{}, err
 	}
-	sample := activity.Sample{At: m.clock.Now().UTC()}
-	var wg sync.WaitGroup
-	run := func(fn func()) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			fn()
-		}()
+	now := m.clock.Now().UTC()
+	s := activity.Sample{At: now, Thermal: activity.ThermalUnknown}
+	if c, err := m.kernel.Counters(); err == nil {
+		m.fill(&s, c)
 	}
-	run(func() { sample.CPU = processes(m.ask(ctx, "ps", "-arcwwwxo", "pid,%cpu,comm")) })
-	run(func() { sample.Memory = scaleKB(processes(m.ask(ctx, "ps", "-amcwwwxo", "pid,rss,comm"))) })
-	run(func() { sample.NetRx, sample.NetTx = network(m.ask(ctx, "netstat", "-ib")) })
-	run(func() { sample.GPU = gpuLoad(m.ask(ctx, "ioreg", "-r", "-d", "1", "-c", "IOAccelerator")) })
-	wg.Wait()
-	if sample.CPU == nil {
-		sample.CPU = []activity.Process{}
-	}
-	if sample.Memory == nil {
-		sample.Memory = []activity.Process{}
-	}
-	return sample, nil
+	return s, nil
 }
 
-func (m *Meter) Uptime(ctx context.Context) (time.Duration, bool) {
-	text, _ := m.ask(ctx, "sysctl", "-n", "kern.boottime")
-	_, after, ok := strings.Cut(text, "sec = ")
-	if !ok {
-		return 0, false
+func (m *Meter) fill(s *activity.Sample, c darwin.Counters) {
+	for _, t := range c.CPUs {
+		busy := t.User + t.System + t.Nice
+		s.CPUBusy += busy
+		s.CPUTotal += busy + t.Idle
 	}
-	boot, _, _ := strings.Cut(after, ",")
-	sec := parseInt(boot)
-	if sec <= 0 {
-		return 0, false
+	s.CPUs, s.Load = len(c.CPUs), c.Load
+	m.mu.Lock()
+	m.cpus = s.CPUs
+	m.mu.Unlock()
+	p := c.Pages
+	s.MemUsed = bytes((p.Internal - min(p.Purgeable, p.Internal) + p.Wired + p.Compressor) * p.Size)
+	s.MemTotal, s.SwapUsed, s.Pressure = bytes(c.Memsize), bytes(c.SwapUsed), pressure(c.Pressure)
+	for _, d := range c.Disks {
+		if physical(d) {
+			s.DiskRead += d.Read
+			s.DiskWritten += d.Written
+		}
 	}
-	return m.clock.Now().Sub(time.Unix(sec, 0)), true
+	for _, l := range c.Links {
+		if realLink(l.Name) {
+			s.NetIn += l.In
+			s.NetOut += l.Out
+		}
+	}
+	if c.Up > 0 {
+		s.Boot = s.At.Add(-c.Up).Truncate(time.Second)
+	}
 }
 
-func (m *Meter) Battery(ctx context.Context) string {
-	// outside: pmset prints "-InternalBattery-0 (id=...)<TAB>92%; charging; 1:23 remaining";
-	// a desktop prints no such line, and then there is no battery to report.
-	text, ok := m.ask(ctx, "pmset", "-g", "batt")
-	if !ok {
-		return ""
-	}
-	for _, line := range strings.Split(text, "\n") {
-		if !strings.Contains(line, "%") {
-			continue
-		}
-		_, info, ok := strings.Cut(line, "\t")
-		if !ok {
-			continue
-		}
-		parts := strings.SplitN(strings.TrimSpace(info), ";", 3)
-		if len(parts) >= 2 {
-			return strings.TrimSpace(parts[0]) + " " + strings.TrimSpace(parts[1])
-		}
+func bytes(n uint64) int64 { return int64(min(n, 1<<63-1)) } //nolint:gosec // outside: clamped to an int64 first.
+
+// outside: kern.memorystatus_vm_pressure_level says 1 normal, 2 warn, 4 critical.
+func pressure(level int) activity.Pressure {
+	switch level {
+	case 1:
+		return activity.PressureNormal
+	case 2:
+		return activity.PressureWarn
+	case 4:
+		return activity.PressureCritical
 	}
 	return ""
 }
 
-func (m *Meter) Memory(ctx context.Context) int64 {
-	text, _ := m.ask(ctx, "sysctl", "-n", "hw.memsize")
-	return parseInt(text)
+// outside: IOKit says where a block storage device sits: the internal SSD is
+// Internal, a disk image a Virtual Interface in a File, so its bytes count once,
+// on the disk that holds the image.
+func physical(d darwin.BlockDriver) bool {
+	return d.Location == "Internal" && d.Interconnect != "Virtual Interface"
 }
 
-// outside: macOS ps prints a header, then "pid value command" with a command that
-// may hold spaces ("Google Chrome Helper"), already sorted by the flag asked.
-func processes(text string, ok bool) []activity.Process {
-	var out []activity.Process
-	if !ok {
+// outside: Ethernet and Wi-Fi are en*; lo0, utun* (Tailscale, VPNs), bridge*
+// (VM traffic), awdl*, llw*, ap* and anpi* ride or loop over them, so their
+// bytes are counted already.
+func realLink(name string) bool { return strings.HasPrefix(name, "en") }
+
+func (m *Meter) Top(ctx context.Context) (activity.Busiest, error) {
+	empty := activity.Busiest{CPU: []activity.Process{}, Memory: []activity.Process{}}
+	before, after, err := m.measure(ctx, m.kernel.Processes)
+	if err != nil {
+		if ctx.Err() != nil {
+			return activity.Busiest{}, ctx.Err()
+		}
+		return empty, nil
+	}
+	shares := m.shares(before, after)
+	out := empty
+	for _, p := range after.List {
+		out.CPU = append(out.CPU, activity.Process{PID: p.PID, Name: p.Name, Value: shares[p.PID]})
+		out.Memory = append(out.Memory, activity.Process{PID: p.PID, Name: p.Name, Value: float64(p.Resident)})
+	}
+	return activity.Busiest{CPU: busiest(out.CPU), Memory: busiest(out.Memory)}, nil
+}
+
+func (m *Meter) Process(ctx context.Context, pid int) (activity.Usage, error) {
+	read := func() (darwin.Procs, error) { return m.kernel.Process(pid) }
+	before, after, err := m.measure(ctx, read)
+	if err != nil {
+		if ctx.Err() != nil {
+			return activity.Usage{}, ctx.Err()
+		}
+		return activity.Usage{}, ErrNoProcess
+	}
+	return activity.Usage{CPU: m.shares(before, after)[pid], Memory: bytes(after.List[0].Resident)}, nil
+}
+
+func (m *Meter) measure(ctx context.Context, read func() (darwin.Procs, error)) (before, after darwin.Procs, err error) {
+	// invariant: a CPU share is measured between two tables; the last one
+	// read is the start when it is recent enough, else a second table is
+	// read a window after the first.
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return before, after, ctxErr
+	}
+	after, err = read()
+	if err != nil || len(after.List) == 0 {
+		return before, after, cmp.Or(err, ErrNoProcess)
+	}
+	m.mu.Lock()
+	before = m.last
+	m.mu.Unlock()
+	if gap := after.At - before.At; before.List == nil || gap < window || gap > stale {
+		if slept := m.clock.Sleep(ctx, window); slept != nil {
+			return before, after, slept
+		}
+		before = after
+		if after, err = read(); err != nil || len(after.List) == 0 {
+			return before, after, cmp.Or(err, ErrNoProcess)
+		}
+	}
+	if len(after.List) > 1 {
+		m.mu.Lock()
+		m.last = after
+		m.mu.Unlock()
+	}
+	return before, after, nil
+}
+
+func (m *Meter) shares(before, after darwin.Procs) map[int]float64 {
+	// value: each process's CPU share of the whole machine between the two
+	// tables, 0 to 100.
+	m.mu.Lock()
+	cpus := m.cpus
+	m.mu.Unlock()
+	if cpus == 0 {
+		if c, err := m.kernel.Counters(); err == nil {
+			cpus = len(c.CPUs)
+		}
+	}
+	cpus = max(cpus, 1)
+	out := map[int]float64{}
+	elapsed := after.At - before.At
+	if elapsed <= 0 {
 		return out
 	}
-	lines := strings.Split(strings.TrimSpace(text), "\n")
-	for i := 1; i < len(lines) && len(out) < activity.Top; i++ {
-		fields := strings.Fields(lines[i])
-		if len(fields) < 3 {
-			continue
+	used := map[int]time.Duration{}
+	for _, p := range before.List {
+		used[p.PID] = p.CPU
+	}
+	for _, p := range after.List {
+		if was, ok := used[p.PID]; ok && p.CPU > was {
+			out[p.PID] = min(100, 100*float64(p.CPU-was)/float64(elapsed)/float64(cpus))
 		}
-		value, err := parseDecimal(fields[1])
-		if err != nil {
-			continue
-		}
-		out = append(out, activity.Process{PID: int(parseInt(fields[0])), Name: strings.Join(fields[2:], " "), Value: value})
 	}
 	return out
 }
 
-func scaleKB(ps []activity.Process) []activity.Process {
-	for i := range ps {
-		ps[i].Value *= 1024
-	}
-	return ps
-}
-
-// outside: ps prints its decimals in the caller's locale, `69,4` under fr_FR;
-// it is not run under C, which would escape every non-ASCII command name.
-func parseDecimal(s string) (float64, error) {
-	return strconv.ParseFloat(strings.Replace(s, ",", ".", 1), 64)
-}
-
-// outside: the first en0 line carrying <Link#> holds the interface's raw counters.
-func network(text string, _ bool) (rx, tx int64) {
-	for _, line := range strings.Split(text, "\n") {
-		fields := strings.Fields(line)
-		if len(fields) < 10 || !strings.HasPrefix(fields[0], "en0") || !strings.HasPrefix(fields[2], "<Link") {
-			continue
-		}
-		return parseInt(fields[6]), parseInt(fields[9])
-	}
-	return 0, 0
-}
-
-func gpuLoad(text string, _ bool) float64 {
-	_, after, ok := strings.Cut(text, `"Device Utilization %"=`)
-	if !ok {
-		return 0
-	}
-	end := strings.IndexFunc(after, func(c rune) bool { return (c < '0' || c > '9') && c != '.' })
-	if end < 0 {
-		end = len(after)
-	}
-	load, _ := strconv.ParseFloat(after[:end], 64)
-	return load
-}
-
-func parseInt(s string) int64 {
-	n, _ := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
-	return n
+func busiest(ps []activity.Process) []activity.Process {
+	slices.SortStableFunc(ps, func(a, b activity.Process) int {
+		return cmp.Or(cmp.Compare(b.Value, a.Value), cmp.Compare(a.PID, b.PID))
+	})
+	return ps[:min(len(ps), activity.Top)]
 }

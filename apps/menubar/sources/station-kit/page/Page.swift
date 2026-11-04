@@ -192,7 +192,6 @@ public struct Strip: Codable, Equatable, Sendable {
     public var spark: [Int]?
     public var memory: Value?
     public var battery: Value?
-    public var gpu: Value?
     public var net: [Value]?
     public var power: Value?
     public var top: Section?

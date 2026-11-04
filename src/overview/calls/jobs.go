@@ -2,6 +2,7 @@ package calls
 
 import (
 	"context"
+	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -31,13 +32,13 @@ func (r *Reader[Tool, Item, Stray]) machineJobs() []job[Tool, Item, Stray] {
 		},
 		{Key: subject + "/machine/sample", Budget: defaultBudget + margin,
 			Do: func(ctx context.Context) func(*sn) {
-				sample, err := r.d.Meter.Sample(ctx)
+				reading, err := activitycalls.Read(ctx, r.d.Meter)
 				return func(s *sn) {
 					if err != nil {
 						s.Err = err
 						return
 					}
-					s.System.Sample = sample
+					s.System.Reading = reading
 				}
 			},
 			Late: func(*sn) {},

@@ -2,8 +2,9 @@ package pages
 
 import (
 	"encoding/json"
-	"github.com/jterrazz/studio-station/src/catalog"
 	"time"
+
+	"github.com/jterrazz/studio-station/src/catalog"
 
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -14,15 +15,20 @@ import (
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
 )
 
-func samples() []activity.Sample {
+func samples() []activity.Reading {
 	cpu := []float64{12, 18, 25, 34, 30, 22, 41, 55, 48, 36, 28, 31, 44, 38, 29, 34}
-	out := make([]activity.Sample, 0, len(cpu))
+	top := activity.Busiest{
+		CPU:    []activity.Process{{PID: 812, Name: "station", Value: cpu[len(cpu)-1]}},
+		Memory: []activity.Process{{PID: 812, Name: catalog.HypervisorTool, Value: 12.4e9}},
+	}
+	at := func(i int) time.Time { return powerNow.Add(time.Duration(i-len(cpu)) * 2 * time.Second) }
+	out := make([]activity.Reading, 0, len(cpu)+1)
+	out = append(out, activity.Reading{Sample: activity.Sample{At: at(0), CPUTotal: 1000, MemUsed: 12.4e9}, Top: top})
 	for i, c := range cpu {
-		out = append(out, activity.Sample{
-			At:     powerNow.Add(time.Duration(i-len(cpu)+1) * 2 * time.Second),
-			CPU:    []activity.Process{{PID: 812, Name: "station", Value: c}},
-			Memory: []activity.Process{{PID: 812, Name: catalog.HypervisorTool, Value: 12.4e9}},
-		})
+		prev := out[len(out)-1].Sample
+		out = append(out, activity.Reading{Sample: activity.Sample{
+			At: at(i + 1), CPUBusy: prev.CPUBusy + uint64(c*10), CPUTotal: prev.CPUTotal + 1000, MemUsed: 12.4e9,
+		}, Top: top})
 	}
 	return out
 }
