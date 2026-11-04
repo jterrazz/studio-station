@@ -2,47 +2,75 @@ package fake
 
 import (
 	"context"
+	"slices"
 	"sync"
 
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/awake/contract"
+	"github.com/jterrazz/studio-station/src/world"
 )
 
+const here = "here"
+
 type Power struct {
+	// invariant: the power of one Mac of the world: its reading is the world's,
+	// so an event of the world moves it; a Mac with no power slice has no
+	// power management.
+	w        *world.World
+	mac      string
 	mu       sync.Mutex
-	r        awake.Reading
-	none     bool
 	watchers []chan awake.Event
 }
 
-func NewPower(r awake.Reading) *Power { return &Power{r: r} }
+func PowerOf(w *world.World, mac string) *Power { return &Power{w: w, mac: mac} }
 
-func NewNoPower() *Power { return &Power{none: true} }
+func NewPower(r awake.Reading) *Power {
+	w := &world.World{Here: here}
+	w.Mac(here).Power = &world.Power{Reading: r}
+	return PowerOf(w, here)
+}
+
+func NewNoPower() *Power {
+	w := &world.World{Here: here}
+	w.Mac(here)
+	return PowerOf(w, here)
+}
+
+func (p *Power) slice() *world.Power { return p.w.Mac(p.mac).Power }
 
 func (p *Power) Capabilities() contract.PowerCaps {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.none {
+	p.w.Lock()
+	defer p.w.Unlock()
+	s := p.slice()
+	if s == nil {
 		return contract.PowerCaps{}
 	}
-	return contract.PowerCaps{Battery: p.r.HasBattery, Lid: p.r.Lid != "", Thermal: true}
+	return contract.PowerCaps{Battery: s.HasBattery, Lid: s.Lid != "", Thermal: true}
 }
 
 func (p *Power) Read() (awake.Reading, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.none {
+	p.w.Lock()
+	defer p.w.Unlock()
+	s := p.slice()
+	if s == nil {
 		return awake.Reading{}, contract.ErrUnsupported
 	}
-	return p.r, nil
+	return s.Reading, nil
 }
 
 func (p *Power) Set(r awake.Reading) {
 	// invariant: Set moves the reading and tells every watch which fields moved.
+	p.w.Lock()
+	s := p.slice()
+	if s == nil {
+		s = &world.Power{}
+		p.w.Mac(p.mac).Power = s
+	}
+	was := s.Reading
+	s.Reading = r
+	p.w.Unlock()
 	p.mu.Lock()
-	was := p.r
-	p.r = r
-	watchers := append([]chan awake.Event(nil), p.watchers...)
+	watchers := slices.Clone(p.watchers)
 	p.mu.Unlock()
 	var kinds []string
 	if was.Thermal != r.Thermal {
@@ -69,12 +97,15 @@ func (p *Power) Set(r awake.Reading) {
 
 func (p *Power) Watch(ctx context.Context) <-chan awake.Event {
 	out := make(chan awake.Event, 8)
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.none {
+	p.w.Lock()
+	none := p.slice() == nil
+	p.w.Unlock()
+	if none {
 		close(out)
 		return out
 	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.watchers = append(p.watchers, out)
 	context.AfterFunc(ctx, func() {
 		p.mu.Lock()
@@ -90,21 +121,36 @@ func (p *Power) Watch(ctx context.Context) <-chan awake.Event {
 	return out
 }
 
-func (p *Power) Hold(string) (func(), error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.none {
+func (p *Power) Hold(name string) (func(), error) {
+	p.w.Lock()
+	defer p.w.Unlock()
+	s := p.slice()
+	if s == nil {
 		return nil, contract.ErrUnsupported
 	}
-	return func() {}, nil
+	s.Holds = append(s.Holds, name)
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			p.w.Lock()
+			defer p.w.Unlock()
+			if s := p.slice(); s != nil {
+				if i := slices.Index(s.Holds, name); i >= 0 {
+					s.Holds = slices.Delete(s.Holds, i, i+1)
+				}
+			}
+		})
+	}, nil
 }
 
-func (p *Power) Clamshell(bool) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.none {
+func (p *Power) Clamshell(held bool) error {
+	p.w.Lock()
+	defer p.w.Unlock()
+	s := p.slice()
+	if s == nil {
 		return contract.ErrUnsupported
 	}
+	s.Clamshell = held
 	return nil
 }
 
