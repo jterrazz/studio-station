@@ -16,4 +16,4 @@ runs:
     - command: 'tools --on w 2>&1 | /usr/bin/head -n 1'
       exit: 0
       stdout: |
-          Error: y runs station , which has no tools.list
+          Error: y runs station v3.0.0, which has no tools.list
