@@ -2,24 +2,29 @@
 
 Every command of `station`, grouped as `station --help` groups them. The words are the [Glossary](../concepts/glossary.md)'s.
 
-| Section    | Answers                                                |
-| ---------- | ------------------------------------------------------ |
-| Rules      | What holds for every command                           |
-| Here       | `status`, `tools`, `config`, `storage`                 |
-| The fleet  | `machines`, `services`, `images`, `secrets`, `tailnet` |
-| Shortcuts  | `run git` and `run docker`                             |
-| The binary | `setup`, `--version`, `help`                           |
-| Plumbing   | The hidden commands the machine runs for itself        |
-| Exit codes | What 0, 1, 2 and 130 mean                              |
+| Section        | Answers                                                |
+| -------------- | ------------------------------------------------------ |
+| Rules          | What holds for every command                           |
+| Here           | `overview`, `tools`, `config`, `storage`               |
+| The fleet      | `machines`, `services`, `images`, `secrets`, `tailnet` |
+| Shortcuts      | `run git` and `run docker`                             |
+| The binary     | `setup`, `--version`, `help`                           |
+| Hidden aliases | The v2 words that still run, for one release           |
+| Plumbing       | The hidden commands the machine runs for itself        |
+| Exit codes     | What 0, 1, 2 and 130 mean                              |
+
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `tools`, `config`, `storage`, `services`, `tailnet`, `secrets`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `start`, `stop`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
-- A bare noun lists (`tools`, `config`, `storage`, `machines`, `services`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`station`, `run`, `run git`) prints its menu on stderr and exits 2; on a terminal bare `station` opens the TUI.
+- Bare `station` opens the TUI on a terminal; piped, or with `--all` or `--json`, it prints `station overview`, exit 0.
+- A bare noun lists (`tools`, `config`, `storage`, `machines`, `services`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station tools install` hints `station tools install <tool>`.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create --lifetime lasting --name api`).
 - The same verbs everywhere: `install`, `uninstall`, `upgrade`. There are no aliases.
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
-- Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`.
-- A word under `tools`, `config` or `storage` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station config github-login` hints `station config install github-login` (`tools install <tool>`, `storage clean <tool>`).
+- Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`. With `--json`, the same refusal or failure is also the `station.error/v1` document on stdout (`schema`, `type`, `code`, `subject`, `message`, `hint`, `fix`), the exit code unchanged. A question answered no is `Error: <what> kept: you said no`, exit 1.
+- A word station does not know is `Error: unknown command "<word>"` / `Hint: station help`, exit 2; so is `station help <word>`.
+- A word under `tools`, `config` or `storage` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station storage go` is `"go" is a storage row: say what to do with it`, hint `station storage clean go` (`tools install <tool>`, `config install <item>`).
 - `--on <machine>` runs any command below on another machine of the fleet, through its engine, and renders the answer here; see [Machines](machines.md#on-another-machine).
 - A value a command needs from you is never an argv flag when it could be a secret: a config item asks in a form on a terminal ([Configuration](configuration.md)).
 
@@ -27,13 +32,13 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 
 These commands act on the machine they run on, and list only what its kind allows.
 
-### `station status`
+### `station overview`
 
 ```sh
-station status [--json]
+station overview [--all] [--json]
 ```
 
-Everything about this machine: system, environment, disk, identity, background jobs, Tailscale Serve, tools, config and setup; on a terminal it opens with To do (every row needing action and its fix, a failing or orphan launchd job with the exact removal command, never run by station) and a two-column Summary, the sections folded unless `--all`; on a host its Machine section shows station's daemon. `--json` prints the [`station.status/v1`](status-json.md) document `studio doctor` reads. On a terminal, `status`, `tools` and `storage` draw every row at once and fill each as its probe answers ([instant reads](../concepts/design-system.md#instant-reads)); piped or with `--json` they print one complete document.
+Everything about this machine: system, environment, disk, identity, background jobs, Tailscale Serve, tools, config and setup; on a terminal it opens with To do (every row needing action and its fix, a failing or orphan launchd job with the exact removal command, never run by station) and a two-column Summary, the sections folded unless `--all`; on a host its Machine section shows station's daemon. `--json` prints `station.overview.read/v1`, named after its call; the hidden alias `station status --json` keeps printing the [`station.status/v1`](status-json.md) document `studio doctor` reads. On a terminal, `overview`, `tools` and `storage` draw every row at once and fill each as its probe answers ([instant reads](../concepts/design-system.md#instant-reads)); piped or with `--json` they print one complete document.
 
 ### `station tools`
 
@@ -180,7 +185,15 @@ station --version
 station help [command]
 ```
 
-`setup` is the one bootstrap verb, safe to run again: it registers this host in the fleet (asking the name on a terminal, taking `--name` otherwise), writes the one managed block of `~/.zshrc`, and moves `~/.studio/` to the XDG folders. `--version` prints `station version <version> (<commit>)`. See [Getting started](../start/getting-started.md) and [Dotfiles](dotfiles.md).
+`setup` is the one bootstrap verb, safe to run again: it registers this host in the fleet (asking the name on a terminal, taking `--name` otherwise), writes the one managed block of `~/.zshrc`, and moves `~/.studio/` to the XDG folders. `--version` prints `station <version> (<commit>)`. See [Getting started](../start/getting-started.md) and [Dotfiles](dotfiles.md).
+
+## Hidden aliases
+
+A v2 word runs its v3 command with the same arguments, for one release, and prints one muted line on stderr naming it (nothing there with `--json` or `--page`); help and completion never list it.
+
+| Old              | Runs                                                          |
+| ---------------- | ------------------------------------------------------------- |
+| `station status` | `station overview`; `status --json` keeps `station.status/v1` |
 
 ## Plumbing
 
@@ -204,7 +217,9 @@ These commands exist for the machine's own use. They are hidden from help and th
 | 0    | Done                                                |
 | 1    | An operation failed, or a confirmation was declined |
 | 2    | A refusal, before any question or effect            |
-| 130  | Interrupted                                         |
+
+The exit code is computed once, from the error's type (SPEC v3 §12.2): `refused`, `not-found`, `not-for-this-machine`, `needs-confirmation`, `needs-terminal` exit 2; `failed`, `unreachable`, `engine-stopped`, `far-too-old`, `declined` exit 1; `interrupted` exits 130 and prints nothing.
+| 130 | Interrupted |
 
 A command over several items prints every outcome, then exits 1 with `<n> of <m> <noun> failed` if any failed.
 

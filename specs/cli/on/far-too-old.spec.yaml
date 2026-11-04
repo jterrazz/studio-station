@@ -3,6 +3,16 @@ fixture: ./__fixtures__/old-y/
 runs:
     - command: 'tools --json --on y'
       exit: 1
+      stdout: |
+          {
+            "schema": "station.error/v1",
+            "type": "far-too-old",
+            "code": "remote.far-too-old",
+            "subject": "y",
+            "message": "y runs station v3.0.0, which has no tools.list",
+            "hint": "update station on y (scripts/install.sh there)",
+            "fix": null
+          }
       stderr: |
           Error: y runs station v3.0.0, which has no tools.list
           Hint: update station on y (scripts/install.sh there)
