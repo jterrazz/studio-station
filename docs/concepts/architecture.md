@@ -65,6 +65,7 @@ The shared kernel, which every family will share and which does no I/O:
     confirm/      the graded confirmations: confirm.For(action, kind) and confirm.Require
     call/         a use case as a Call, Bind (the gate before every call), the Registry, the Router interface
     contract/     the contracts every family shares: Self, Clock, Preferences
+    store/        what every store shares: its unreadable and unwritable errors, its version, the Migrator setup runs
     fail/         the error type: its type and code, or today's message, hint and exit
 ```
 
@@ -96,7 +97,7 @@ catalog: imported by domain, present, surface, prompt; imports nothing of the mo
 
 What the test holds, in short: `domain` reaches the machine only through `system` ports; only `platform/local` imports `os/exec`, the network and the process environment; only `output` writes bytes and only `ui/token` holds a colour; only `wire` imports Fang; the catalogue holds values and no function; every domain error type has its wording in `surface/cli/kit`. Each rule has a mutation test, so a rule that stops biting fails the gate.
 
-The tree is moving to families first (machines, apps, settings, ports, awake...), each with its model, `contract/`, `calls/` and `adapter/<tech>/`. Five rules hold that tree: `tree-screams` (`tree_test.go`), `imports` (`imports_test.go`), `technology-words` (`words_test.go`), `no-model-names` (`models_test.go`) and `one-way-into-a-vm` (`vm_test.go`: a VM is reached by its engine's one `Guest` connection alone, no `scp`, an `ssh` exec only to a Mac). The five list today's offenders (`imports` the packages moved into the new tree as they were) in an allowlist that only shrinks: a line that is no longer true fails the gate until it is removed.
+The tree is moving to families first (machines, apps, settings, ports, awake...), each with its model, `contract/`, `calls/` and `adapter/<tech>/`. Six rules hold that tree: `tree-screams` (`tree_test.go`), `imports` (`imports_test.go`), `technology-words` (`words_test.go`), `no-model-names` (`models_test.go`), `one-way-into-a-vm` (`vm_test.go`: a VM is reached by its engine's one `Guest` connection alone, no `scp`, an `ssh` exec only to a Mac) and `one-writer-per-store` (`stores_test.go`: only `wire` builds a store's `jsonfile` adapter, and a store or a preference group is written only by its family's calls). The six list today's offenders (`imports` the packages moved into the new tree as they were) in an allowlist that only shrinks: a line that is no longer true fails the gate until it is removed.
 
 `wire` builds this machine's `core/machine.Profile` once: its kind and system from `Self` (`core/adapter/macos` tells a Mac from a macOS VM, `core/adapter/linux`), its battery, lid and thermal from `awake/contract.Power`, and what else it can do from the adapters it wires. A rule reads those capabilities, never a model name: the Awake guards a Mac has are `awake.Active(caps)`, so a desktop Mac has no battery guard because it reports no battery. A machine's disk is `disk/contract.DiskUsage` (`apfs` on macOS, `posix` on Linux).
 
