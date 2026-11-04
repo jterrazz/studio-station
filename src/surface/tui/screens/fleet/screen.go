@@ -29,7 +29,7 @@ type Machines interface {
 	Start(ctx context.Context, name string) error
 	Stop(ctx context.Context, name string) error
 	Delete(ctx context.Context, name string) (machines.DeleteReport, error)
-	ForgetHost(name string) error
+	ForgetHost(ctx context.Context, name string) error
 	Restart(ctx context.Context, name string, progress func(machines.RestartEvent)) (machines.RestartReport, error)
 	Probe(ctx context.Context, name string) (machines.ProbeReport, error)
 	Unlock(ctx context.Context, name string) error
@@ -186,7 +186,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 	case pagefleet.KeyForget:
 		c := pagefleet.ForgetConfirm(name)
 		m.View, act = m.Act(&c, m.exec(func() (tab.Status, error) {
-			return tab.Outcome("forgot", name, catalog.StateOK, ""), m.d.Machines.ForgetHost(name)
+			return tab.Outcome("forgot", name, catalog.StateOK, ""), m.d.Machines.ForgetHost(m.ctx, name)
 		}))
 	case pagemachines.KeyRestart:
 		c := pagefleet.RestartConfirm(name, m.isHost(name))

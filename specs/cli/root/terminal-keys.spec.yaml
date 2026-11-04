@@ -1,6 +1,6 @@
 description: 'the footer ends with ? keys, and ? opens the tab''s keys grouped This tab, List, Global'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
 env: terminal
 runs:

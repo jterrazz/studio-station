@@ -1,7 +1,7 @@
 description: 'the Services tab is the fleet''s: every host''s range, another host''s service'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/fleet-services/
 env: terminal
 runs:

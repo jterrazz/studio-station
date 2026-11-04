@@ -1,7 +1,7 @@
 description: 'a host that does not answer is a degraded row, never a failure'
 fixture:
-    - ./__fixtures__/hosts-x-y/
-    - ./__fixtures__/stubs/
+    - ../../__fixtures__/hosts-x-y/
+    - ../../__fixtures__/machines-stubs/
 runs:
     - command: 'machines'
       exit: 0

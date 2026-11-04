@@ -1,7 +1,7 @@
 description: 'unlock needs a terminal: piped it is refused, exit 2, before any ssh'
 fixture:
-    - ../__fixtures__/hosts-x-y/
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/hosts-x-y/
+    - ../../../__fixtures__/machines-stubs/
 runs:
     - command: 'machines unlock y </dev/null'
       exit: 2

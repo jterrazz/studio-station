@@ -1,5 +1,5 @@
 description: 'a host is forgotten, never deleted: the refusal names the verb'
-fixture: ../__fixtures__/hosts-x-y/
+fixture: ../../../__fixtures__/hosts-x-y/
 runs:
     - command: 'machines delete y --yes'
       exit: 2

@@ -107,3 +107,11 @@ func (s *Service) probeVM(ctx context.Context, m Machine) ProbeReport {
 	report.Checks = append(report.Checks, check)
 	return report
 }
+
+func concat(parts ...[]string) []string {
+	var out []string
+	for _, p := range parts {
+		out = append(out, p...)
+	}
+	return out
+}

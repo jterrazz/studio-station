@@ -11,6 +11,8 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/remote"
+	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
+	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	machinescmd "github.com/jterrazz/studio-station/src/surface/cli/machines"
 	machinesadd "github.com/jterrazz/studio-station/src/surface/cli/machines/add"
@@ -42,9 +44,13 @@ func (m machine) machines(_ bool) *machines.Service {
 		User:      m.host.Env.User(),
 		Version:   Version(),
 		Remote:    fanOutArgv,
-		Hop:       func(host string, words []string) []string { return remote.Argv(host, false, words) },
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
+		Unlocker:  macos.New(m.host.Run, m.host.FS, machines.KnownHostsDir(m.paths)),
+		SSHConfig: openssh.New(m.host.FS, openssh.Options{
+			Home: m.host.Env.Home(), KnownHosts: machines.KnownHostsDir(m.paths), Executable: m.host.Env.Executable(),
+			Hop: func(mac string, words []string) []string { return remote.Argv(mac, false, words) },
+		}),
 	})
 }
 

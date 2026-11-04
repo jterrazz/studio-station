@@ -1,9 +1,9 @@
 description: 'machines --json is station.machines/v1: hosts holding their VMs, no top-level here'
 fixture:
-    - ./__fixtures__/hosts-x-y/
-    - ./__fixtures__/stubs/
-    - ./__fixtures__/fleet-y-answers/
-    - ./__fixtures__/local-vm/
+    - ../../__fixtures__/hosts-x-y/
+    - ../../__fixtures__/machines-stubs/
+    - ../../__fixtures__/fleet-y-answers/
+    - ../../__fixtures__/local-vm/
 runs:
     - command: 'machines --json | /usr/bin/jq -r .schema'
       exit: 0

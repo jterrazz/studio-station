@@ -1,9 +1,9 @@
 description: 'piped, every row has eight tab-separated fields and a VM row names its host'
 fixture:
-    - ./__fixtures__/hosts-x-y/
-    - ./__fixtures__/stubs/
-    - ./__fixtures__/fleet-y-answers/
-    - ./__fixtures__/local-vm/
+    - ../../__fixtures__/hosts-x-y/
+    - ../../__fixtures__/machines-stubs/
+    - ../../__fixtures__/fleet-y-answers/
+    - ../../__fixtures__/local-vm/
 runs:
     - command: 'machines'
       exit: 0

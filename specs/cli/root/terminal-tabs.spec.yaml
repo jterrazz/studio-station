@@ -1,6 +1,6 @@
 description: 'the number keys and tab move between the tabs, each loaded on its own, and space folds a group'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
 env: terminal
 runs:

@@ -23,9 +23,10 @@ type Options struct {
 	User      string
 	Version   string
 	Remote    func(target string, words []string) []string
-	Hop       func(host string, words []string) []string
 	GuestPort int
 	Jobs      background.Jobs
+	Unlocker  contract.Unlocker
+	SSHConfig contract.SSHConfig
 }
 
 type Node struct {
@@ -184,9 +185,7 @@ func (s *Service) vmUser(cfg settings.Settings) string {
 
 func (s *Service) recordsDir() string { return path.Join(s.o.Paths.State, "vms") }
 
-func (s *Service) knownHostsDir() string { return path.Join(s.o.Paths.State, "known_hosts") }
-
-func (s *Service) sshConfig() string { return path.Join(s.h.Env.Home(), ".ssh", "config") }
+func KnownHostsDir(p settings.Paths) string { return path.Join(p.State, "known_hosts") }
 
 func (s *Service) CheckHost() error {
 	if s.o.Here != catalog.Host {

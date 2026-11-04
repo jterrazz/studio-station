@@ -1,6 +1,6 @@
 description: 'status clipped to a short terminal below earlier output leaves one copy in the scrollback'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/workspace/
     - ./__fixtures__/identity/
     - ../__fixtures__/recording/

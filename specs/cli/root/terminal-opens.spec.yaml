@@ -1,6 +1,6 @@
 description: 'bare station on a terminal opens the TUI on Home with six tabs, and q leaves it, exit 0'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
 env: terminal
 runs:

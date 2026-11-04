@@ -1,7 +1,7 @@
 description: 'probe --json is station.machines.probe/v1'
 fixture:
-    - ../__fixtures__/hosts-x-y/
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/hosts-x-y/
+    - ../../../__fixtures__/machines-stubs/
 env:
     - OPENCLAW_GATEWAY_PORT=1
     - HERMES_GATEWAY_PORT=9

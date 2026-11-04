@@ -37,8 +37,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			return nil
 		},
 		Validate: func(context.Context, *Input) error { return d.Machines.CheckHost() },
-		Run: func(_ context.Context, in *Input, io kit.IO) error {
-			if err := d.Machines.AddHost(in.Name, settings.Host{User: in.User, Key: in.Key}); err != nil {
+		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			if err := d.Machines.AddHost(ctx, in.Name, settings.Host{User: in.User, Key: in.Key}); err != nil {
 				return err
 			}
 			return io.Page(pagemachines.Change("add", in.Name, "added, ssh "+in.Name, d.Here), nil)

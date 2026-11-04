@@ -1,6 +1,6 @@
 description: 'a tab whose read fails says why, how to repair it and that r retries, and the TUI stays open'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
     - ./__fixtures__/broken-settings/
 env: terminal

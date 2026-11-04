@@ -3,7 +3,7 @@ fixture:
     - ../../__fixtures__/accounts/
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ../../__fixtures__/lend/
 env: terminal
 serve: sshd

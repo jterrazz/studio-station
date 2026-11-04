@@ -1,6 +1,6 @@
 description: 'the Config tab draws its items at once and fills each as its check answers'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ../__fixtures__/slow-tmutil/
 env: terminal
 runs:

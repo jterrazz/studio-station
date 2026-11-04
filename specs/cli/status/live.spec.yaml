@@ -1,6 +1,6 @@
 description: 'status on a terminal fills in place then prints once, and asks brew and gh once'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/workspace/
     - ./__fixtures__/identity/
     - ../__fixtures__/recording/

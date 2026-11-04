@@ -13,7 +13,10 @@ type (
 	Stream = system.Stream
 )
 
-const ToStderr = system.ToStderr
+const (
+	ToStdout = system.ToStdout
+	ToStderr = system.ToStderr
+)
 
 var (
 	ErrNotFound = system.ErrNotFound

@@ -1,6 +1,6 @@
 description: 'enter on a Tools row shows its detail in full with the tab''s keys, and esc goes back'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
 env: terminal
 runs:

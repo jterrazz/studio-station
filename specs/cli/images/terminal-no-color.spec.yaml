@@ -1,6 +1,6 @@
 description: 'NO_COLOR turns a terminal into the pipe form; without it the same command draws the header'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/stubs/
 env: terminal
 runs:

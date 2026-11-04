@@ -1,7 +1,7 @@
 description: 'the gateway ports come from the environment, and the old port flags are gone'
 fixture:
-    - ../__fixtures__/hosts-x-y/
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/hosts-x-y/
+    - ../../../__fixtures__/machines-stubs/
 env:
     - OPENCLAW_GATEWAY_PORT=1234
     - API_SERVER_PORT=4321

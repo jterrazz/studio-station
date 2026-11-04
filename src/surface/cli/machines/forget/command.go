@@ -38,8 +38,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Destructive: func(*Input) bool { return true },
 		Confirm:     func(in *Input) string { return "Forget " + in.Name + "?" },
 		Complete:    func([]string, string) []string { return d.Machines.Names() },
-		Run: func(_ context.Context, in *Input, io kit.IO) error {
-			if err := d.Machines.ForgetHost(in.Name); err != nil {
+		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			if err := d.Machines.ForgetHost(ctx, in.Name); err != nil {
 				return err
 			}
 			return io.Page(pagemachines.Change("forget", in.Name, "forgotten", d.Here), nil)

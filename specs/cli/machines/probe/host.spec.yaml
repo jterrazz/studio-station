@@ -1,7 +1,7 @@
 description: 'probing a host checks ping, ssh, the two gateways and the console owner'
 fixture:
-    - ../__fixtures__/hosts-x-y/
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/hosts-x-y/
+    - ../../../__fixtures__/machines-stubs/
 env:
     - OPENCLAW_GATEWAY_PORT=1
     - HERMES_GATEWAY_PORT=9

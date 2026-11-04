@@ -1,6 +1,6 @@
 description: 'tools on a terminal draws the catalogue pending at once and fills it as each manager answers'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/slow-cask/
 env: terminal
 runs:

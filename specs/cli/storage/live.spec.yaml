@@ -1,6 +1,6 @@
 description: 'storage on a terminal fills in place, a late size says ?, and last-known sizes are kept'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ./__fixtures__/slow-docker/
     - ./__fixtures__/go/
 env: terminal

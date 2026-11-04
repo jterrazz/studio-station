@@ -1,6 +1,6 @@
 description: 'status on a terminal lists each action with its fix, a job its removal, and a two-column Summary'
 fixture:
-    - ../__fixtures__/terminal/
+    - ../../__fixtures__/terminal/
     - ../../__fixtures__/status-tools-mixed/
     - ../../__fixtures__/status-mac/
     - ../../__fixtures__/status-registered/
