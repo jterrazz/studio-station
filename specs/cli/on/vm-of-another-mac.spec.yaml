@@ -1,6 +1,6 @@
 description: '--on a VM of another Mac rides that Mac''s engine, never ssh to the VM; an unheld name is refused'
 fixture:
-    - ./__fixtures__/far-mac/
+    - ../../__fixtures__/far-mac/
     - ./__fixtures__/far-vm/
 env: engine
 runs:

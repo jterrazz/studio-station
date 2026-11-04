@@ -40,6 +40,9 @@ type Machines interface {
 	// value: refuses a name that is no other registered host, worded for verb.
 	CheckRemoteHost(name, verb string) error
 	AddHost(ctx context.Context, name string, h machines.Host) error
+	// value: what a Mac's station says once ssh reaches it; a Mac that does
+	// not answer, or has no station, is the error.
+	Reach(ctx context.Context, name string) (machines.Added, error)
 	ForgetHost(ctx context.Context, name string) error
 	// value: refuses off a terminal, where nobody can type the password.
 	Unlock(ctx context.Context, name string, interactive bool) error

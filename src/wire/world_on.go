@@ -467,16 +467,21 @@ func (m *worldMac) serve() *remotefake.Dialer {
 // invariant: another Mac of the world answers while it is on the tailnet,
 // unlocked and set up, its engine stopped or not, as `station engine attach`
 // answers over ssh; it is then reached as over ssh, every value through the
-// wire form.
+// wire form. A fault of EndpointDialer.Dial is a Mac whose ssh answers with
+// no station there.
 type worldDialer struct{ r *worldRun }
 
 func (d worldDialer) Dial(ctx context.Context, mac string) (remotecontract.Endpoint, error) {
 	d.r.w.Lock()
 	slice, ok := d.r.w.Macs[mac]
 	reach := ok && !slice.Offline && !slice.Locked && slice.Engine != nil
+	bare := reach && d.r.w.Fails("EndpointDialer.Dial")
 	d.r.w.Unlock()
 	if !reach || d.r.far == nil {
 		return nil, fail.New(fail.Unreachable, call.Unreachable, mac, nil)
+	}
+	if bare {
+		return nil, fail.New(fail.Failed, call.NoStation, mac, nil)
 	}
 	return d.r.mac(mac).serve().Dial(ctx, mac)
 }

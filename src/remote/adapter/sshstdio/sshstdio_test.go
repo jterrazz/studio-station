@@ -22,6 +22,8 @@ import (
 type ssh struct {
 	far  serve.Calls
 	down bool
+	// value: the far Mac answers ssh and has no station: its shell ends 127.
+	bare bool
 	ran  [][]string
 }
 
@@ -37,7 +39,11 @@ func (p *process) Stdout() io.Reader     { return p.out }
 func (p *process) Kill()                 { _ = p.in.Close() }
 func (p *process) Wait() (code int, stderr string, err error) {
 	<-p.done
-	if p.code != 0 {
+	switch p.code {
+	case 0:
+	case 127:
+		return p.code, "sh: station: not found", nil
+	default:
 		return p.code, "ssh: connect to host mac-mini port 22: Host is down", nil
 	}
 	return 0, "", nil
@@ -50,8 +56,11 @@ func (s *ssh) Spawn(ctx context.Context, c local.Cmd) (local.Process, error) {
 	p := &process{in: inW, out: outR, done: make(chan struct{})}
 	go func() {
 		defer close(p.done)
-		if s.down {
+		if s.down || s.bare {
 			p.code = 255
+			if s.bare {
+				p.code = 127
+			}
 			_ = inR.Close()
 			_ = outW.Close()
 			return
@@ -85,5 +94,19 @@ func TestAnotherMacIsReachedOnlyThroughItsEngineInBatchMode(t *testing.T) {
 	want := []string{"ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "mac-mini", "--", "sh", "-c"}
 	if len(s.ran) != 1 || !slices.Equal(s.ran[0][:len(want)], want) || !strings.HasSuffix(strings.Join(s.ran[0], " "), " station engine attach") {
 		t.Errorf("dialing mac-mini ran %q, want one BatchMode ssh to its `station engine attach`", s.ran)
+	}
+}
+
+func TestAMacThatAnswersWithoutStationIsToldApartFromOneThatDoesNotAnswer(t *testing.T) {
+	s := &ssh{far: serve.Local(contracttest.Far(), contracttest.Mini, contracttest.Version), bare: true}
+	ep, err := sshstdio.New(s).Dial(t.Context(), "mac-mini")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = ep.Close() }()
+	_, err = ep.Hello(t.Context())
+	var e *fail.Error
+	if !errors.As(err, &e) || e.Code != call.NoStation || e.Subject != "mac-mini" {
+		t.Fatalf("Hello = %v, want mac-mini's missing station told as %s", err, call.NoStation)
 	}
 }

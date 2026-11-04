@@ -188,6 +188,26 @@ func Change(verb, name, change string, here page.Context) page.Page {
 	return pages.Outcome("machines "+verb, here, nil, []page.Row{pages.Done(name, catalog.StateOK, change)}, "machines")
 }
 
+func Added(a machines.Added, here page.Context) page.Page {
+	// value: the Mac added, as ssh and its station answered; a station of
+	// another version is one more row, with what brings them to one.
+	rows := []page.Row{done(a.Label, catalog.StateOK, "added", "ssh answers", "station "+a.Version)}
+	if a.Update != "" {
+		rows = append(rows, done(a.Label, catalog.StateDegraded, "runs "+a.Version, a.Update))
+	}
+	return pages.Outcome("machines add", here, nil, rows, "machines")
+}
+
+func Forgot(name string, here page.Context) page.Page {
+	return pages.Outcome("machines forget", here, nil, []page.Row{done(name, catalog.StateOK, "forgotten", "nothing changed on it")}, "machines")
+}
+
+func done(id string, state catalog.State, said ...string) page.Row {
+	r := pages.Done(id, state, "")
+	r.Detail = page.Texts(said...)
+	return r
+}
+
 func Already(verb, name string, running bool, here page.Context) page.Page {
 	// value: a start or stop that found the VM already so: its mark is the state
 	// it is in, running or stopped, and nothing changed.

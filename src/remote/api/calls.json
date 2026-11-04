@@ -248,7 +248,8 @@
       "name": "machines.add",
       "schema": "station.machines.add/v1",
       "where": "in-process",
-      "in": "AddIn"
+      "in": "AddIn",
+      "out": "Added"
     },
     {
       "name": "machines.create-workspace",

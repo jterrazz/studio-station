@@ -1,11 +1,24 @@
 {
     "now": "2026-11-04T10:00:00Z",
     "here": "jterrazz-macbook-pro",
+    "user": "jterrazz",
     "macs": {
         "jterrazz-macbook-pro": {
             "engine": {},
             "preferences": {
                 "here": "jterrazz-macbook-pro",
+                "vm_user": "admin"
+            }
+        },
+        "jterrazz-mac-mini": {
+            "engine": {
+                "started_at": "2026-10-23T09:00:00Z"
+            },
+            "power": {
+                "Source": "ac"
+            },
+            "preferences": {
+                "here": "jterrazz-mac-mini",
                 "vm_user": "admin"
             }
         }

@@ -28,6 +28,8 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	switch {
 	case errors.As(err, &unknown):
 		return usage(unknown.Error(), "station machines"), true
+	case errors.As(err, &here) && here.Verb == "forget":
+		return usage(here.Error(), "station machines"), true
 	case errors.As(err, &here):
 		return usage(here.Error(), "pick another machine: run station machines for the fleet"), true
 	case errors.As(err, &notHost):

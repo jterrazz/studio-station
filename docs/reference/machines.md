@@ -16,7 +16,7 @@ The fleet is every machine the owner runs: the physical Macs (hosts) and the VMs
 
 ## Hosts and VMs
 
-A host registers itself with `station setup --name <name>`; another host is registered with `station machines add --name <name> [--user <login>] [--key <file>]` and forgotten with `forget`, neither touching it. A VM is cloned from an [image](images.md) on a chosen host. The kind of a machine is `host`, `linux` or `macos`, detected at run time (a Linux binary is `linux`; a macOS VM reports `kern.hv_vmm_present`). A VM refuses the commands that only hosts do, with `Hint: run it on a host`.
+A host registers itself with `station setup --name <name>`; another Mac is added by its Tailscale name with `station machines add <mac> [--user <login>] [--key <file>]`, once its ssh and its station answer, and forgotten with `forget`, which never reaches it. A VM is cloned from an [image](images.md) on a chosen host. The kind of a machine is `host`, `linux` or `macos`, detected at run time (a Linux binary is `linux`; a macOS VM reports `kern.hv_vmm_present`). A VM refuses the commands that only hosts do, with `Hint: run it on a host`.
 
 A machine has one name, used for `preferences.json`, the `~/.ssh/config` Host, Herdr and `--on`; a host's name is also its tailnet node. A VM is never on the tailnet: it is reached through its host. Every VM has the fleet's one login, `vm_user`; a host's login is its own `--user`.
 

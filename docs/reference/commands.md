@@ -104,8 +104,8 @@ The engine that already runs holds the session, in memory only: a `PreventUserId
 ```sh
 station machines [--json] # All machines: every Mac, its VMs under it, then Needs you
 station machines <machine> [--json] # that machine's Overview, as station overview --on <machine>
-station machines add --name <name> [--user <login>] [--key <file>]
-station machines forget <host> [--yes]
+station machines add <mac> [--user <login>] [--key <file>]
+station machines forget <mac> [--yes]
 station machines create <name> [--permanent] [--image linux] [--cpus <n>] [--memory <size>] [--disk <size>] [--network nat|bridged]
 station machines start <vm>
 station machines stop <vm> [--yes]
@@ -116,7 +116,7 @@ station machines delete <vm> [--confirm=<name>]
 station machines unlock <host>
 ```
 
-`--here` lists This Mac only, with no network. `create` makes a throwaway workspace unless `--permanent` is given, and asks the Mac on a terminal when two answer; piped it needs no question. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
+`--here` lists This Mac only, with no network. `create` makes a throwaway workspace unless `--permanent` is given, and asks the Mac on a terminal when two answer; piped it needs no question. `add` writes the Mac's ssh block, then reaches it as every later call will: a Mac that does not answer, or answers with no station, is not added and nothing stays written; one that runs another station version is added, with how to bring the two to one. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac, here, whatever `--on` says: it never reaches that Mac, and refuses This Mac and a VM. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
 
 ### `station ports`
 

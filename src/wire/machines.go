@@ -12,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
@@ -147,7 +148,22 @@ func (p vmPipe) Check(ctx context.Context, vm string) error {
 
 // invariant: the machines calls' Deps over today's service: each check the
 // leaves ran before, worded by the service's own errors.
-type machineCalls struct{ *machines.Service }
+type machineCalls struct {
+	*machines.Service
+	m machine
+}
+
+// invariant: a Mac is reached as every later call reaches it, through this
+// run's Router over its ssh block; its version is judged against this one's
+// by the fleet's own rule.
+func (c machineCalls) Reach(ctx context.Context, name string) (model.Added, error) {
+	hello, err := c.m.far.router.Hello(ctx, name)
+	if err != nil {
+		return model.Added{}, err
+	}
+	update, _ := model.Behind(model.HostView{Name: name, StationVersion: hello.Version}, c.m.stationVersion())
+	return model.Added{Name: name, Label: c.m.label(name), Version: hello.Version, Update: update}, nil
+}
 
 func (c machineCalls) CheckVM(name, verb string) error {
 	_, err := c.VM(name, verb)

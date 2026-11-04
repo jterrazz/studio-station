@@ -239,7 +239,7 @@ func (r *Router) connect(ctx context.Context, t machine.Ref) (l *link, hello con
 	if err != nil {
 		r.broke(mac, l, err)
 		r.release(l)
-		return nil, contract.Hello{}, false, err
+		return nil, contract.Hello{}, false, r.labeled(mac, err)
 	}
 	return l, hello, !kept, nil
 }
@@ -248,7 +248,7 @@ func (r *Router) broke(mac string, l *link, err error) {
 	// invariant: only the connection's own end retires it: a far side that
 	// answers that one of its VMs is unreachable keeps its connection.
 	var e *fail.Error
-	if errors.As(err, &e) && e.Type == fail.Unreachable && e.Subject == mac {
+	if errors.As(err, &e) && (e.Type == fail.Unreachable || e.Code == call.NoStation) && e.Subject == mac {
 		r.drop(mac, l)
 	}
 }
@@ -390,7 +390,7 @@ func (r *Router) labeled(mac string, err error) error {
 	if r.reach.Label == nil || !errors.As(err, &e) {
 		return err
 	}
-	if (e.Code != call.Unreachable || e.Subject != mac) && e.Detail["mac"] != mac {
+	if (e.Code != call.Unreachable && e.Code != call.NoStation || e.Subject != mac) && e.Detail["mac"] != mac {
 		return err
 	}
 	detail := map[string]string{"label": r.reach.Label(mac)}

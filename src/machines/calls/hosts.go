@@ -16,13 +16,21 @@ type AddIn struct {
 	User, Key string
 }
 
-var Add = call.Call[Deps, AddIn, struct{}]{
-	Name: "machines.add", Where: call.InProcess, Applies: machine.Anywhere,
-	Run: func(ctx context.Context, d Deps, in AddIn, _ call.Progress) (struct{}, error) {
+var Add = call.Call[Deps, AddIn, machines.Added]{
+	Name: "machines.add", Where: call.InProcess, Applies: machines.AddsMacs,
+	Run: func(ctx context.Context, d Deps, in AddIn, _ call.Progress) (machines.Added, error) {
 		if err := d.Machines.CheckHost(); err != nil {
-			return struct{}{}, err
+			return machines.Added{}, err
 		}
-		return struct{}{}, d.Machines.AddHost(ctx, in.Name, machines.Host{User: in.User, Key: in.Key})
+		if err := d.Machines.AddHost(ctx, in.Name, machines.Host{User: in.User, Key: in.Key}); err != nil {
+			return machines.Added{}, err
+		}
+		added, err := d.Machines.Reach(ctx, in.Name)
+		if err != nil {
+			_ = d.Machines.ForgetHost(ctx, in.Name)
+			return machines.Added{}, err
+		}
+		return added, nil
 	},
 }
 
