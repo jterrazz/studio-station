@@ -11,3 +11,13 @@ runs:
       stderr: |
           Error: tart has no data station can erase
           Hint: station's data are VMs and images: station machines delete <vm>, station images delete <image>
+    - command: 'disk erase rust'
+      exit: 2
+      stderr: |
+          Error: rust has no data station can erase
+          Hint: nothing to erase: keys and logins are kept
+    - command: 'disk erase notion'
+      exit: 2
+      stderr: |
+          Error: notion has no data station can erase
+          Hint: an app's data is its account's: erase it in the app
