@@ -13,6 +13,10 @@ func Count(n int64, unit string) Value { return Value{Kind: KindCount, N: n, Uni
 
 func Size(bytes int64) Value { return Value{Kind: KindSize, N: bytes} }
 
+func SizeOf(bytes, total int64, unit string) Value {
+	return Value{Kind: KindSize, N: bytes, Of: total, Unit: unit}
+}
+
 func Ratio(used, total int64) Value { return Value{Kind: KindRatio, N: used, Of: total} }
 
 func Percent(tenths int64) Value { return Value{Kind: KindPercent, N: tenths} }

@@ -6,6 +6,7 @@ runs:
       stdout: |
           accounts
           apps
+          disk
           engine
           help
           images
@@ -17,7 +18,6 @@ runs:
           services
           settings
           setup
-          storage
           tailnet
     - command: 'completion zsh | /usr/bin/grep -c "compdef _station station"'
       exit: 0

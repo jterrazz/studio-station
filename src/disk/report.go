@@ -20,13 +20,15 @@ type PathReport struct {
 }
 
 type StrayReport struct {
-	Name   string
-	Path   string
-	Bytes  int64
+	Name  string
+	Path  string
+	Bytes int64
+	// value: where its move takes it, as the owner reads it.
+	To     string
 	Repair string
 }
 
-type Row struct {
+type Tally struct {
 	Entry     Entry
 	Installed bool
 	Unknown   bool
@@ -37,9 +39,12 @@ type Row struct {
 	Paths     []PathReport
 	Strays    []StrayReport
 	Pending   bool
+	// value: a pending size the walk has never measured, so the row cannot
+	// know yet which groups it will fill.
+	Unmeasured bool
 }
 
-func (r Row) Total() int64 {
+func (r Tally) Total() int64 {
 	total := r.Install
 	for _, b := range r.Bytes {
 		total += b
@@ -50,8 +55,8 @@ func (r Row) Total() int64 {
 	return total
 }
 
-type Report struct {
-	Rows   []Row
+type Survey struct {
+	Rows   []Tally
 	Strays []StrayReport
 	Other  int64
 }

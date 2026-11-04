@@ -11,7 +11,7 @@ runs:
     - command: 'overview </dev/null | /usr/bin/grep "^●	disk"'
       exit: 0
       stdout: |
-          ●	disk	29 B	reclaimable: station storage clean
+          ●	disk	29 B	reclaimable: station disk free
     - command: '--version >/dev/null; STATION_MACHINE_KIND=macos "$STATION" status --json | /usr/bin/jq -c ''.workspace.disk[] | select(.name == "playwright-browsers")'''
       exit: 0
       stdout: |

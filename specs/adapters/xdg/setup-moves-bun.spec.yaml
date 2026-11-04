@@ -25,7 +25,7 @@ runs:
       exit: 0
       stdout: |
           skills-cli
-    - command: 'storage clean bun </dev/null >/dev/null; /bin/ls -a . | /usr/bin/grep -cx .bun'
+    - command: 'disk free bun </dev/null >/dev/null; /bin/ls -a . | /usr/bin/grep -cx .bun'
       exit: 1
       stdout: |
           0

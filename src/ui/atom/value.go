@@ -67,13 +67,17 @@ func show(v page.Value) string {
 		}
 		return n + " " + v.Unit
 	case page.KindSize:
+		s := Bytes(v.N)
 		switch {
 		case strings.HasPrefix(v.Unit, "/"):
-			return Bytes(v.N) + v.Unit
+			s += v.Unit
 		case v.Unit != "":
-			return Bytes(v.N) + " " + v.Unit
+			s += " " + v.Unit
 		}
-		return Bytes(v.N)
+		if v.Of > 0 {
+			s += " of " + Bytes(v.Of)
+		}
+		return s
 	case page.KindRatio:
 		used, total := unitOf(v.Of)
 		return used.of(v.N) + "/" + total

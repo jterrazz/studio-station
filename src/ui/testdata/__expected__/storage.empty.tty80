@@ -1,8 +1,0 @@
- station storage                                            host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Storage
-   no data stored  → station apps install <app>
-
- → station storage clean <tool...>
- → station storage reset <tool...> asks first

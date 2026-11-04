@@ -78,7 +78,6 @@ func wordsTolerated() map[string][]string {
 		"pages/power":                  {"pmset"},
 		"pages/services":               {"ssh"},
 		"pages/shortcuts":              {"docker"},
-		"pages/storage":                {"brew"},
 		"pages/tailnet":                {"tailscale"},
 	}
 }

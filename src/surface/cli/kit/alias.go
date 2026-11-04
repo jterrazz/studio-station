@@ -25,7 +25,7 @@ func Alias(old string, cmd *cobra.Command, now string) *cobra.Command {
 }
 
 // invariant: the notice is the run's own words with every old one replaced,
-// its flags then its arguments; --json and --page keep stderr empty for the script.
+// its arguments then its flags, a value flag as --name=value; --json and --page keep stderr empty for the script.
 func notice(env Env, c *cobra.Command, args []string) {
 	var words []string
 	aliased := false
@@ -46,6 +46,7 @@ func notice(env Env, c *cobra.Command, args []string) {
 			return
 		}
 	}
+	words = append(words, args...)
 	c.Flags().Visit(func(f *pflag.Flag) {
 		if f.Value.Type() == "bool" {
 			words = append(words, "--"+f.Name)
@@ -53,13 +54,12 @@ func notice(env Env, c *cobra.Command, args []string) {
 		}
 		if many, ok := f.Value.(pflag.SliceValue); ok {
 			for _, v := range many.GetSlice() {
-				words = append(words, "--"+f.Name, v)
+				words = append(words, "--"+f.Name+"="+v)
 			}
 			return
 		}
-		words = append(words, "--"+f.Name, f.Value.String())
+		words = append(words, "--"+f.Name+"="+f.Value.String())
 	})
-	words = append(words, args...)
 	env.Out.Now("station " + strings.Join(words, " "))
 }
 

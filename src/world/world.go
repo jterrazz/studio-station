@@ -157,6 +157,8 @@ type Disk struct {
 	Files map[string]int64 `json:"files,omitempty"`
 	// value: the processes that run, by name.
 	Running []string `json:"running,omitempty"`
+	// value: how late each size answers.
+	Late time.Duration `json:"late,omitempty"`
 }
 
 type SSH struct {

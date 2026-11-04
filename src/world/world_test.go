@@ -41,9 +41,9 @@ func TestAnEventOutsideTheClosedListIsRefusedByName(t *testing.T) {
 }
 
 func TestAnEventNoFakeModelsIsRefusedAsSuch(t *testing.T) {
-	err := apply(t, seeded(t, laptop), "slow", "mbp", "5s")
+	err := apply(t, seeded(t, laptop), "certificate", "mbp", "pending")
 	if !errors.Is(err, world.ErrNotModelled) {
-		t.Errorf("slow applied as %v", err)
+		t.Errorf("certificate applied as %v", err)
 	}
 }
 

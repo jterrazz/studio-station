@@ -209,9 +209,9 @@ say "   ~/.bun absent after tools install skills, bun add -g and bunx: bun honou
 
 
 say "-- the footprint test"
-in_vm "$station storage --json" > "$work/storage.json" || fail "storage --json"
+in_vm "$station disk --json" > "$work/disk.json" || fail "disk --json"
 {
-  jq -r '.rows[].paths[].path | select(startswith("~/")) | ltrimstr("~/")' "$work/storage.json"
+  jq -r '.rows[] | select(.group != "misplaced") | .paths[] | select(startswith("~/")) | ltrimstr("~/")' "$work/disk.json"
   sed -n 's/^| `~\/\([^`]*\)`.*/\1/p' "$repo/docs/reference/footprint.md"
   grep -v '^#' "$suite/$kind/os-noise.txt"
   grep -v '^#' "$suite/suite-made.txt"
@@ -233,37 +233,37 @@ say "   $unmatched unmatched paths"
 [ "$unmatched" -eq 0 ] || fail "the footprint test"
 
 
-say "-- storage clean"
-data_sizes() { jq -r '[.rows[].paths[] | select(.level == "data") | "\(.path) \(.bytes)"] | .[]' "$1"; }
-data_sizes "$work/storage.json" > "$work/data-before.txt"
-in_vm "$brew_path $mise_path $station storage clean" >> "$log" 2>&1 || fail "storage clean exited $?"
-in_vm "$station storage --json" > "$work/storage-after.json" || fail "storage --json"
-left=$(jq -r '[.rows[].paths[] | select(.level == "cache" and .bytes > 0) | .path] | .[]' "$work/storage-after.json")
-[ -z "$left" ] || { say "   caches left: $left"; fail "storage clean"; }
-data_sizes "$work/storage-after.json" > "$work/data-after.txt"
-diff "$work/data-before.txt" "$work/data-after.txt" >> "$log" || fail "storage clean touched a data path"
-say "   every cache empty or absent, every data path untouched"
+say "-- disk free"
+data_sizes() { jq -r '.rows[] | select(.group == "your-data") | "\(.app) \(.bytes) \(.paths | join(" "))"' "$1"; }
+data_sizes "$work/disk.json" > "$work/data-before.txt"
+in_vm "$brew_path $mise_path $station disk free" >> "$log" 2>&1 || fail "disk free exited $?"
+in_vm "$station disk --json" > "$work/disk-after.json" || fail "disk --json"
+left=$(jq -r '.rows[] | select(.group == "can-rebuild" and .bytes > 0) | "\(.app) \(.bytes)"' "$work/disk-after.json")
+[ -z "$left" ] || { say "   Can rebuild left: $left"; fail "disk free"; }
+data_sizes "$work/disk-after.json" > "$work/data-after.txt"
+diff "$work/data-before.txt" "$work/data-after.txt" >> "$log" || fail "disk free touched a Your data row"
+say "   every Can rebuild row empty or absent, every Your data row untouched"
 
 
-say "-- storage reset go, on a fresh clone"
+say "-- disk erase go, on a fresh clone"
 # hazard: tart stop can end a Linux guest before it writes its page cache back,
-# so the clone boots an older disk (2026-11-01: go's bin empty, storage clean's
+# so the clone boots an older disk (2026-11-01: go's bin empty, the free's
 # deletions undone); sync first.
 in_vm 'sync' || fail "sync before the clone"
 tart stop "$vm" >> "$log" 2>&1
-reset_vm="station-e2e-$kind-$run_id-reset"
-made+=("$reset_vm")
-tart clone "$vm" "$reset_vm" >> "$log" 2>&1 || fail "clone for the reset"
-ip=$(boot "$reset_vm") || fail "boot $reset_vm"
-in_vm "$station storage --json" > "$work/reset-before.json" || fail "storage --json"
-held=$(jq -r '[.rows[] | select(.name == "go") | .paths[] | select(.path == "~/.local/share/go/bin/*") | .bytes] | add // 0' "$work/reset-before.json")
-[ "$held" -gt 0 ] || fail "go's bin holds nothing before the reset: the check would prove nothing"
-in_vm "$mise_path $station storage reset go --yes" >> "$log" 2>&1 || fail "storage reset go exited $?"
-in_vm "$station storage --json" > "$work/reset-after.json" || fail "storage --json"
-gone=$(jq -r '[.rows[] | select(.name == "go") | .paths[] | select((.level == "data" or .level == "cache") and .bytes > 0) | .path] | .[]' "$work/reset-after.json")
-[ -z "$gone" ] || { say "   go still holds: $gone"; fail "storage reset go"; }
-others() { jq -r '[.rows[] | select(.name != "go") | .paths[] | select(.level == "data") | "\(.path) \(.bytes)"] | .[]' "$1"; }
-diff <(others "$work/reset-before.json") <(others "$work/reset-after.json") >> "$log" || fail "storage reset go touched another tool's data"
+erase_vm="station-e2e-$kind-$run_id-erase"
+made+=("$erase_vm")
+tart clone "$vm" "$erase_vm" >> "$log" 2>&1 || fail "clone for the erase"
+ip=$(boot "$erase_vm") || fail "boot $erase_vm"
+in_vm "$station disk --json" > "$work/erase-before.json" || fail "disk --json"
+held=$(jq -r '[.rows[] | select(.app == "go" and .group == "your-data") | .paths[] | select(. == "~/.local/share/go/bin/*")] | length' "$work/erase-before.json")
+[ "$held" -gt 0 ] || fail "go's bin holds nothing before the erase: the check would prove nothing"
+in_vm "$mise_path $station disk erase go --confirm=go" >> "$log" 2>&1 || fail "disk erase go exited $?"
+in_vm "$station disk --json" > "$work/erase-after.json" || fail "disk --json"
+gone=$(jq -r '.rows[] | select(.app == "go" and (.group == "your-data" or .group == "can-rebuild") and .bytes > 0) | "\(.group) \(.paths | join(" "))"' "$work/erase-after.json")
+[ -z "$gone" ] || { say "   go still holds: $gone"; fail "disk erase go"; }
+others() { jq -r '.rows[] | select(.app != "go" and .group == "your-data") | "\(.app) \(.bytes) \(.paths | join(" "))"' "$1"; }
+diff <(others "$work/erase-before.json") <(others "$work/erase-after.json") >> "$log" || fail "disk erase go touched another app's data"
 say "   only go's data gone"
 
 say "PASS tier $([ "$kind" = linux ] && echo 2 || echo 3): $kind"

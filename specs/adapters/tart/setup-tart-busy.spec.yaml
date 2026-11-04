@@ -1,7 +1,7 @@
 description: 'with tart running, setup moves nothing and names the relocate step and what to stop'
 fixture:
     - ./__fixtures__/tart-store/
-    - ../../__fixtures__/process-running/
+    - ../__fixtures__/process-running/
 runs:
     - command: 'setup --name m </dev/null'
       exit: 1

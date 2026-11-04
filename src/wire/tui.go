@@ -11,9 +11,9 @@ import (
 	"github.com/jterrazz/studio-station/src/surface/tui"
 	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
 	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
+	diskscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/disk"
 	powerscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/power"
 	servicesscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/services"
-	storagescreen "github.com/jterrazz/studio-station/src/surface/tui/screens/storage"
 	toolsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/tools"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -27,7 +27,7 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 			Target:   env.Target(),
 			Tools:    toolsscreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: toolsService(env, m).Forget},
 			Config:   configscreen.Deps{Calls: env.Calls, Target: env.Target(), Defaults: configService(m).Defaults, Now: m.host.Clock.Now},
-			Storage:  storagescreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: storage.Forget, Plan: storage.Plan},
+			Disk:     diskscreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: storage.Forget, Plan: storage.Plan},
 			Services: servicesscreen.Deps{Calls: env.Calls, Target: env.Target()},
 			Accounts: accountsscreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: accounts.Forget, LendList: accounts.LendList},
 			Power: powerscreen.Deps{Calls: env.Calls, Target: env.Target(), Power: tuiPower{Service: m.power(), m: m, describe: func(err error) (string, string) {

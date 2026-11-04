@@ -13,26 +13,26 @@
 
 A setting that does not live on this machine's kind reads Not for this machine, and an apply of it is refused with exit 2. Each that lives here reads Applied (exactly as station applied it), Changed since (applied, then changed by someone: `station settings diff` shows how), Not applied, or Off here (the owner's choice, kept as `off_here` in `preferences.json`). What station applied, its fingerprint and when, is kept under `~/.local/state/station/applied/`.
 
-| Item                        | Place       | Sets                                                                                                  | Reversible |
-| --------------------------- | ----------- | ----------------------------------------------------------------------------------------------------- | ---------- |
-| `hushlogin`                 | all         | `~/.hushlogin`                                                                                        | no         |
-| `tmux-dotfiles`             | all         | `~/.tmux.conf`, reloaded in a running tmux                                                            | no         |
-| `starship-dotfiles`         | all         | `~/.config/starship.toml`                                                                             | no         |
-| `github-login`              | all         | `gh auth login` over ssh; in a VM this token is the VM's own                                          | no         |
-| `ghostty-dotfiles`          | host, macos | `~/.config/ghostty/` config and themes                                                                | no         |
-| `zed-dotfiles`              | host, macos | `~/.config/zed/` config and formatter values                                                          | no         |
-| `git-signing`               | host, macos | GPG commit signing                                                                                    | no         |
-| `spotlight-exclude`         | host, macos | Spotlight exclusions for build folders                                                                | no         |
-| `dock-reset`, `dock-spacer` | host, macos | the Dock                                                                                              | no         |
-| `backup-exclusions`         | host        | `~/.cache` and Tart's VMs out of Time Machine (`tmutil addexclusion`) ([Storage](storage.md#backups)) | yes        |
-| `tart-launcher`             | host        | `~/.local/bin/tart`, the launcher that sets `TART_HOME` ([Storage](storage.md#tart))                  | no         |
-| `ssh-key`                   | host        | `~/.ssh/id_ed25519`                                                                                   | no         |
-| `dns`                       | host        | the Quad9 encrypted DNS profile                                                                       | no         |
-| `autologin`                 | host        | automatic login, for an unattended host; needs root                                                   | yes        |
-| `power`                     | host        | the power policy of an always-on host; needs root                                                     | yes        |
-| `lock-after-login`          | host        | lock the screen after the automatic login; needs root                                                 | yes        |
-| `sshd`                      | host        | Remote Login; needs root                                                                              | yes        |
-| `claude-token`              | host        | the Claude Code token lent to VMs ([Secrets](secrets.md#claude-in-a-vm))                              | yes        |
+| Item                        | Place       | Sets                                                                                            | Reversible |
+| --------------------------- | ----------- | ----------------------------------------------------------------------------------------------- | ---------- |
+| `hushlogin`                 | all         | `~/.hushlogin`                                                                                  | no         |
+| `tmux-dotfiles`             | all         | `~/.tmux.conf`, reloaded in a running tmux                                                      | no         |
+| `starship-dotfiles`         | all         | `~/.config/starship.toml`                                                                       | no         |
+| `github-login`              | all         | `gh auth login` over ssh; in a VM this token is the VM's own                                    | no         |
+| `ghostty-dotfiles`          | host, macos | `~/.config/ghostty/` config and themes                                                          | no         |
+| `zed-dotfiles`              | host, macos | `~/.config/zed/` config and formatter values                                                    | no         |
+| `git-signing`               | host, macos | GPG commit signing                                                                              | no         |
+| `spotlight-exclude`         | host, macos | Spotlight exclusions for build folders                                                          | no         |
+| `dock-reset`, `dock-spacer` | host, macos | the Dock                                                                                        | no         |
+| `backup-exclusions`         | host        | `~/.cache` and Tart's VMs out of Time Machine (`tmutil addexclusion`) ([Disk](disk.md#backups)) | yes        |
+| `tart-launcher`             | host        | `~/.local/bin/tart`, the launcher that sets `TART_HOME` ([Disk](disk.md#tart))                  | no         |
+| `ssh-key`                   | host        | `~/.ssh/id_ed25519`                                                                             | no         |
+| `dns`                       | host        | the Quad9 encrypted DNS profile                                                                 | no         |
+| `autologin`                 | host        | automatic login, for an unattended host; needs root                                             | yes        |
+| `power`                     | host        | the power policy of an always-on host; needs root                                               | yes        |
+| `lock-after-login`          | host        | lock the screen after the automatic login; needs root                                           | yes        |
+| `sshd`                      | host        | Remote Login; needs root                                                                        | yes        |
+| `claude-token`              | host        | the Claude Code token lent to VMs ([Secrets](secrets.md#claude-in-a-vm))                        | yes        |
 
 The settings are Set by station; `autologin`, `power`, `lock-after-login` and `sshd` are its Always-on Mac group, for a Mac that hosts servers: opt-in, applied by name only, one folded line until one of it is applied. A setting that needs root is refused without it with `sudo station settings apply <setting>`.
 
@@ -73,9 +73,9 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 | `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT`      | the gateway ports the TUI's probe checks                                                            |
 | `MISE_DATA_DIR`                                                        | where mise keeps its shims                                                                          |
 | `NO_COLOR`, `COLUMNS`                                                  | the output form and width                                                                           |
-| `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | the folders station uses, when absolute ([Storage](storage.md#the-folders))                         |
+| `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | the folders station uses, when absolute ([Disk](disk.md#the-folders))                               |
 | `GOENV`                                                                | where `station setup` writes Go's env file; `off` writes none                                       |
-| `TART_HOME`                                                            | set by the tart launcher, never by the owner ([Storage](storage.md#tart))                           |
+| `TART_HOME`                                                            | set by the tart launcher, never by the owner ([Disk](disk.md#tart))                                 |
 | `STATION_GITHUB_API_URL`                                               | the GitHub API origin, so a spec can point it at a stub                                             |
 | `STATION_SYSTEM_DIRS`, `STATION_MACHINE_KIND`                          | which system folders count, and the machine kind, for a spec                                        |
 | `STATION_SYSTEM_ROOT`                                                  | the root `/Applications`, `/opt/homebrew`, `/Library` and a VM's `/proc` are read under, for a spec |

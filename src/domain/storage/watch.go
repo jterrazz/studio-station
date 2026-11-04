@@ -54,6 +54,9 @@ type reading struct {
 	installed map[string]bool
 	listed    bool
 	docker    int64
+	// value: no walk has answered on this machine yet, so no row has a
+	// last size to show.
+	fresh bool
 }
 
 func (s *Service) Watch(ctx context.Context) <-chan Report {
@@ -70,6 +73,7 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 	p := s.plan()
 	frame := reading{sizes: make([]int64, len(p.roots)), known: make([]int64, len(p.roots)), docker: pending}
 	known := s.loadKnown()
+	frame.fresh = len(known) == 0
 	for i, root := range p.roots {
 		frame.sizes[i], frame.known[i] = pending, pending
 		if k, ok := known[root]; ok {
@@ -125,7 +129,7 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 		},
 	}
 	readings := probe.Run(ctx, s.o.Pool, frame, jobs, func(r reading) reading {
-		return reading{sizes: slices.Clone(r.sizes), known: r.known, installed: maps.Clone(r.installed), listed: r.listed, docker: r.docker}
+		return reading{sizes: slices.Clone(r.sizes), known: r.known, fresh: r.fresh, installed: maps.Clone(r.installed), listed: r.listed, docker: r.docker}
 	})
 	out := make(chan Report)
 	go func() {
@@ -193,8 +197,9 @@ func (s *Service) plan() plan {
 			if _, err := s.h.FS.Stat(abs); err != nil {
 				continue
 			}
-			ep.strays = append(ep.strays, strayPlan{report: StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Repair: s.repair(e, st)}, root: root(abs)})
+			ep.strays = append(ep.strays, strayPlan{report: s.stray(e, st, abs, 0), root: root(abs)})
 		}
+		ep.exists = ep.exists || len(ep.strays) > 0
 		p.entries = append(p.entries, ep)
 	}
 	for _, other := range s.otherRoots() {
@@ -266,7 +271,7 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 	installed := r.installed[e.Name] || e.Name == StationName
 	_, answered := r.installed[e.Name]
 	marked := r.listed || answered || e.Name == StationName
-	waiting := false
+	waiting, dockerWaits := false, false
 	var within time.Duration
 	value := func(i int) int64 {
 		switch b := r.sizes[i]; b {
@@ -300,7 +305,7 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 	if ep.docker && installed {
 		switch r.docker {
 		case pending:
-			waiting = true
+			waiting, dockerWaits = true, true
 		case Unknown:
 			within = max(within, dockerDFBudget)
 		default:
@@ -325,7 +330,7 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 		return unknown, true
 	}
 	if waiting {
-		row.Pending = true
+		row.Pending, row.Unmeasured = true, dockerWaits || r.fresh
 		return row, e.Name == StationName || ep.exists || (ep.docker && installed)
 	}
 	return row, e.Name == StationName || row.Total() != 0

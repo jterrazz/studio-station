@@ -38,6 +38,19 @@ func (disk) Rename(from, to string) error {
 	return err
 }
 
+func Move(from, to string) error {
+	// invariant: one rename(2), never a copy: the destination's parent is
+	// made, a destination that holds anything is refused, another volume too.
+	if entries, err := os.ReadDir(to); err == nil && len(entries) > 0 {
+		return &fs.PathError{Op: "move", Path: to, Err: fs.ErrExist}
+	}
+	if err := os.MkdirAll(filepath.Dir(to), 0o755); err != nil { //nolint:gosec // outside: a folder the owner's own apps read.
+		return err
+	}
+	_ = os.Remove(to)
+	return disk{}.Rename(from, to)
+}
+
 func Erase(paths []string) error {
 	// invariant: a tree its tool wrote read-only (Go's module cache) is made
 	// writable and removed again; every path is tried, and the first failure is

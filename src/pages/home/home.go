@@ -291,7 +291,7 @@ func diskRow(disk []overview.Disk, waiting bool) page.Row {
 	if total == 0 {
 		return row("disk", page.OK, page.Text("no caches"), "")
 	}
-	return row("disk", page.OK, page.Size(total), "reclaimable: station storage clean")
+	return row("disk", page.OK, page.Size(total), "reclaimable: station disk free")
 }
 
 func rowsOf(s page.Section) []page.Row {

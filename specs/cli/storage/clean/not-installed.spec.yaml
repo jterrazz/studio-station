@@ -1,8 +1,0 @@
-description: 'a named tool that is not installed is a skipped row, exit 0, and nothing runs'
-runs:
-    - command: 'storage clean go'
-      exit: 0
-      stdout: |
-          ○	go	not installed
-      files:
-          .calls: absent

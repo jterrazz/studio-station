@@ -43,7 +43,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		accountscalls.All(accountscalls.Deps{Accounts: m.accounts(), Secrets: m.secrets(), Kind: kind}),
 		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
 		awakecalls.All(awakecalls.Deps{Power: awakePower{m.power()}}),
-		diskcalls.All(diskcalls.Deps{Storage: m.storage(env), Kind: kind}),
+		diskcalls.All(diskcalls.Deps{Disk: m.storage(env), Kind: kind}),
 		enginecalls.All(enginecalls.Deps{Control: m.control(), Kind: kind}),
 		imagescalls.All(imagescalls.Deps{Images: imageBuilds{m.images()}, Kind: kind}),
 		machinescalls.All(machinescalls.Deps{Machines: machineCalls{m.machines(env.Interactive)}, Kind: kind}),

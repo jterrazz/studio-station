@@ -41,7 +41,7 @@
             },
             "reason": "stray",
             "hint": {
-              "command": "station setup"
+              "command": "station disk move ~/.tart"
             }
           }
         }
@@ -505,7 +505,7 @@
             },
             "reason": "stray",
             "hint": {
-              "command": "station setup"
+              "command": "station disk move ~/.tart"
             }
           }
         },
@@ -526,7 +526,7 @@
             },
             "reason": "stray",
             "hint": {
-              "command": "station setup"
+              "command": "station disk move ~/.bun"
             }
           }
         }

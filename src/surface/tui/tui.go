@@ -10,11 +10,11 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
 	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
+	diskscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/disk"
 	fleetscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/fleet"
 	homescreen "github.com/jterrazz/studio-station/src/surface/tui/screens/home"
 	powerscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/power"
 	servicesscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/services"
-	storagescreen "github.com/jterrazz/studio-station/src/surface/tui/screens/storage"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 	toolsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/tools"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
@@ -26,7 +26,7 @@ type Deps struct {
 	Target   machine.Ref
 	Tools    toolsscreen.Deps
 	Config   configscreen.Deps
-	Storage  storagescreen.Deps
+	Disk     diskscreen.Deps
 	Services servicesscreen.Deps
 	Accounts accountsscreen.Deps
 	Power    powerscreen.Deps
@@ -62,7 +62,7 @@ func Run(ctx context.Context, d Deps) error {
 		homescreen.New(ctx, homescreen.Deps{Calls: d.Calls, Target: d.Target}, d.Station, d.Here, describe),
 		toolsscreen.New(ctx, d.Tools, d.Here, describe),
 		configscreen.New(ctx, d.Config, d.Here, describe),
-		storagescreen.New(ctx, d.Storage, d.Here, describe),
+		diskscreen.New(ctx, d.Disk, d.Here, describe),
 		fleetscreen.New(ctx, fleetscreen.Deps{
 			Calls: d.Calls, Target: d.Target,
 			Remote: d.Remote, Describe: describe,

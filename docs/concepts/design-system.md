@@ -51,7 +51,7 @@ The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinfor
 - A row is a mark, a space, then cells separated by two spaces. Column widths are computed per document, so every section lines up, and the last cell is never padded.
 - A cell is a name (strong), a value, a method (muted), then a detail (muted, cut with `…` to the width by its kind, a path in its middle, never cut in a pipe; beside the row's own cells when its last columns are blank and the aligned place would cut it; never cut below its kind's floor: a path or a URL then goes on its own line under the row, any other detail is lost on that width). A long path in a column is cut in the middle before it takes a detail's room. A row that is not `●` may end with the one command that repairs it.
 - Sizes are humanised by one function; numbers are right-aligned.
-- An empty state is one muted row (`none`, `nothing to clean`, `no machines registered`) plus a hint naming the command that fills it.
+- An empty state is one muted row (`none`, `nothing to free`, `no machines registered`) plus a hint naming the command that fills it.
 
 ## Header and footer
 
