@@ -1,4 +1,4 @@
-description: '--on a VM no answering Mac holds, while a Mac is silent, is that Mac''s silence, never an unknown name'
+description: '--on a VM no answering Mac holds is the silent Mac''s error, never an unknown name'
 fixture:
     - ../../__fixtures__/machines-stubs/
     - ./__fixtures__/mini-offline/
