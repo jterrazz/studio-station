@@ -16,7 +16,6 @@ runs:
               contains:
                   - 'tart clone station-image-linux-2026.11.07 linux-1'
                   - 'tart set linux-1 --cpu 4 --memory 8192 --disk-size 50'
-                  - 'tart run --no-graphics --no-audio --serial-path {{workdir}}/.local/state/station/consoles/linux-1 linux-1'
                   - 'vmu@127.0.0.1 sudo bash -s'
           .firstboot.stdin:
               contains:

@@ -13,3 +13,7 @@ runs:
           console before run 1: 0
           console before run 2: 0
           1
+      files:
+          .calls:
+              contains:
+                  - 'tart run --no-graphics --no-audio --serial-path {{workdir}}/.local/state/station/consoles/linux-1 linux-1'
