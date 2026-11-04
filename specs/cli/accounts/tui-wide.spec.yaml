@@ -1,6 +1,6 @@
 description: 'at 120 columns Accounts keeps its scope column, and the ssh key comments wait in the row detail'
 fixture:
-    - ./__fixtures__/accounts/
+    - ../../__fixtures__/accounts/
     - ../__fixtures__/terminal/
 env: terminal
 runs:

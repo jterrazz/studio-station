@@ -1,6 +1,6 @@
 description: 'status without a terminal is tab-separated records, escape-free, with counts in glyph order'
 fixture:
-    - ./__fixtures__/tools-mixed/
+    - ../../__fixtures__/status-tools-mixed/
 runs:
     - command: 'status </dev/null | /usr/bin/head -1'
       exit: 0

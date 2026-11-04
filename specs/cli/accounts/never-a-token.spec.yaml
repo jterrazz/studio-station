@@ -1,6 +1,6 @@
 description: 'never a token: the sentinel every stub prints reaches no output of accounts, here or on a VM'
 fixture:
-    - ./__fixtures__/accounts/
+    - ../../__fixtures__/accounts/
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
     - ../__fixtures__/terminal/

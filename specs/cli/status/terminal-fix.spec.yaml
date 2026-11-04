@@ -1,9 +1,9 @@
 description: 'on Home enter runs a station fix and only shows an External one, the footer saying which'
 fixture:
     - ../__fixtures__/terminal/
-    - ./__fixtures__/tools-mixed/
-    - ./__fixtures__/mac/
-    - ./__fixtures__/registered/
+    - ../../__fixtures__/status-tools-mixed/
+    - ../../__fixtures__/status-mac/
+    - ../../__fixtures__/status-registered/
 env: terminal
 runs:
     - command: '--version >/dev/null; terminal --size 100x60 "$STATION" | /usr/bin/sed ''s|gui/[0-9]*/|gui/UID/|'' | /usr/bin/grep -E "enter (fix|detail)|fix   |^ +rm |exited"'

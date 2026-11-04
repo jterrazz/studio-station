@@ -1,7 +1,7 @@
 description: 'setup moves ~/.studio: settings and dns; the userspace tailscaled is retired, not moved'
 fixture:
-    - ./__fixtures__/stubs/
-    - ./__fixtures__/v1-studio/
+    - ../../__fixtures__/setup-stubs/
+    - ../../__fixtures__/v1-studio/
 env:
     - USER=tester
 runs:
