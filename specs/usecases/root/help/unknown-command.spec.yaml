@@ -16,3 +16,8 @@ runs:
       stderr: |
           Error: unknown command "skills"
           Hint: station help
+    - command: 'clean --all --yes'
+      exit: 2
+      stderr: |
+          Error: unknown command "clean"
+          Hint: station help
