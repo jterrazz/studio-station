@@ -754,6 +754,9 @@ func rules() []rule {
 		{"TechnologyWordsSSH", ruleTechnologyWords, "src/apps/mutant_ssh.go", "package apps\n\nvar mutantArgv = []string{\"ssh\", \"-o\", \"BatchMode=yes\", \"vm\", \"true\"}\n", "src/apps/mutant_ssh.go"},
 		{"TechnologyWordsSSHPath", ruleTechnologyWords, "src/apps/mutant_ssh_path.go", "package apps\n\nconst mutantBinary = \"nohup /usr/bin/ssh vm\"\n", "src/apps/mutant_ssh_path.go"},
 		{"TechnologyWordsSSHLine", ruleTechnologyWords, "src/apps/mutant_ssh_line.go", "package apps\n\nconst mutantLine = \"exec ssh -o BatchMode=yes vm\"\n", "src/apps/mutant_ssh_line.go"},
+		{"OneWayIntoAVM", ruleOneWayIntoAVM, "src/apps/mutant_vm_ssh.go", "package apps\n\ntype mutantCmd struct{ Name string }\n\nvar mutantInto = mutantCmd{Name: \"ssh\"}\n", "src/apps/mutant_vm_ssh.go"},
+		{"OneWayIntoAVMSCP", ruleOneWayIntoAVM, "src/apps/mutant_vm_scp.go", "package apps\n\nvar mutantCopy = []string{\"scp\", \"a\", \"vm:/tmp\"}\n", "src/apps/mutant_vm_scp.go"},
+		{"OneWayIntoAVMDial", ruleOneWayIntoAVM, "src/apps/mutant_vm_dial.go", "package apps\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/machines/contract\"\n)\n\nfunc mutantDial(ctx context.Context, d contract.GuestDialer) { _, _ = d.Dial(ctx, contract.GuestTarget{}) }\n", "src/apps/mutant_vm_dial.go"},
 		{"NoModelNames", ruleNoModelNames, "src/awake/mutant_models.go", "package awake\n\nfunc mutantLaptop(model string) bool { return model == \"MacBook\" }\n", "src/awake/mutant_models.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
