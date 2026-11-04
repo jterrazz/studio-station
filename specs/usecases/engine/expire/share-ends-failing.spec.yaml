@@ -1,0 +1,27 @@
+description: 'an ended share the VM fails to delete keeps its copy and its share, reads failing, and is told'
+env:
+    - two-macs
+    - engine
+runs:
+    - command: '--version >/dev/null; /usr/bin/jq ''del(.macs["linux-1"].secrets) | del(.macs["jterrazz-macbook-pro"].stores.shares)'' world.json > w.json && /bin/mv w.json world.json'
+      exit: 0
+    - command: 'accounts share github --with linux-1 --for 4h'
+      exit: 0
+      stdout: |
+          ●	github	shared with linux-1	4 h
+    - command: 'world fault Guest.Exec'
+      exit: 0
+    - command: 'world advance 4h'
+      exit: 0
+    - command: '--version >/dev/null; "$STATION" accounts > /dev/null'
+      exit: 0
+    - command: '--version >/dev/null; /usr/bin/jq -c ''[(.macs["linux-1"].secrets // {} | keys), (.macs["jterrazz-macbook-pro"].stores.shares["linux-1"] // [] | map(.name))]'' world.json; /usr/bin/jq -c ''[.told[] | [.Kind, .Subject, .Text]] | unique'' world.json'
+      exit: 0
+      stdout: |
+          [["session:github"],["session:github"]]
+          [["lend_recall_failed","linux-1 share","taking GitHub back failed: deleting the copies failed for \"linux-1\": exit 1"]]
+    - command: 'accounts | /usr/bin/grep -A1 "^# Shared"'
+      exit: 0
+      stdout: |
+          # Shared with VMs
+          ✗	github	linux-1	ended	station accounts take-back github --from linux-1

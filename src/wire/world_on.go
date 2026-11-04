@@ -763,8 +763,8 @@ func (r rootless) Start(c system.Cmd, logPath string) (int, error) {
 
 // invariant: studio inside a VM of the world keeps its credentials in the
 // VM's own slice: the line station runs to import reads them from stdin,
-// the one to delete takes their names; the world's guest answers both, and
-// that studio is there.
+// the one to delete takes their names; the world's guest answers both, a
+// scripted Guest.Exec fault breaks either, and that studio is there.
 func (g worldGuest) credentials(cmd contract.GuestCommand) (contract.GuestResult, bool, error) {
 	store := accountsfake.CredentialsOf(g.r.w, g.vm)
 	switch {
@@ -789,6 +789,12 @@ func (g worldGuest) credentials(cmd contract.GuestCommand) (contract.GuestResult
 		}
 		return contract.GuestResult{}, true, nil
 	case strings.HasPrefix(cmd.Line, secrets.VMStudio("delete")+" "):
+		g.r.w.Lock()
+		broke := g.r.w.Fails("Guest.Exec")
+		g.r.w.Unlock()
+		if broke {
+			return contract.GuestResult{Code: 1, Stderr: "studio: the credential store is not writable\n"}, true, nil
+		}
 		store.Delete(strings.Fields(strings.TrimPrefix(cmd.Line, secrets.VMStudio("delete"))))
 		return contract.GuestResult{}, true, nil
 	}

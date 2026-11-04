@@ -57,7 +57,9 @@ func ownRecords(m accounts.Machine) []page.Item {
 }
 
 func SharesSection(shared []model.Shared, now time.Time) page.Section {
-	// invariant: every share is listed with its VM and its time left; a Mac
+	// invariant: every share is listed with its VM and its time left; one in
+	// its last hour is expiring with the share that renews it, an ended one
+	// the engine could not take back is failing with its take-back; a Mac
 	// that shares nothing says so in one line.
 	s := page.Section{ID: "shares", Title: "Shared with VMs", Columns: []page.Column{
 		{Key: "account", Kind: page.KindText}, {Key: "vm", Kind: page.KindText}, {Key: "left", Kind: page.KindText},
@@ -65,6 +67,14 @@ func SharesSection(shared []model.Shared, now time.Time) page.Section {
 	for _, sh := range shared {
 		r := page.Row{ID: "share/" + sh.VM + "/" + sh.Account, Label: sh.Account, Short: model.Label(sh.Account), Mark: page.OK,
 			Cells: []page.Value{page.Text(sh.VM), page.Text(left(sh.Until, now))}}
+		switch {
+		case !now.Before(sh.Until):
+			r.Mark, r.Reason = page.Broken, page.Failing
+			r.Hint = &page.Hint{Command: "station accounts take-back " + sh.Account + " --from " + sh.VM}
+		case sh.Until.Sub(now) <= time.Hour:
+			r.Mark, r.Reason = page.Attention, page.Expiring
+			r.Hint = &page.Hint{Command: "station accounts share " + sh.Account + " --with " + sh.VM}
+		}
 		s.Items = append(s.Items, page.Item{Row: &r})
 	}
 	if len(s.Items) == 0 {
