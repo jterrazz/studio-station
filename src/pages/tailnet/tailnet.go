@@ -4,9 +4,9 @@ import (
 	"strconv"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
+	"github.com/jterrazz/studio-station/src/ports"
 )
 
 type PeerJSON struct {
@@ -41,14 +41,14 @@ type StatusJSON struct {
 	Serve []ServeJSON `json:"serve"`
 }
 
-func ObjectOf(s tailnet.Status) ObjectJSON {
+func ObjectOf(s ports.Status) ObjectJSON {
 	return ObjectJSON{
 		State: string(s.State), Connected: s.Connected, BackendState: s.BackendState,
 		Name: s.Name, DNSName: s.DNSName, IP: s.IP, Variant: s.Variant, CLI: s.CLI,
 	}
 }
 
-func StatusContract(s tailnet.Status) StatusJSON {
+func StatusContract(s ports.Status) StatusJSON {
 	body := StatusJSON{Schema: "station.tailnet/v1", ObjectJSON: ObjectOf(s), Peers: make([]PeerJSON, 0, len(s.Peers)), Serve: make([]ServeJSON, 0, len(s.Serve))}
 	for _, p := range s.Peers {
 		tags := p.Tags
@@ -67,7 +67,7 @@ func columns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 50}}
 }
 
-func Sections(s tailnet.Status) []page.Section {
+func Sections(s ports.Status) []page.Section {
 	rows := Rows(s)
 	switch {
 	case s.State == catalog.StatePending:
@@ -113,7 +113,7 @@ func itemsOf(rows []page.Row) []page.Item {
 	return items
 }
 
-func listOf(s tailnet.Status, noun string, rows []page.Row) []page.Item {
+func listOf(s ports.Status, noun string, rows []page.Row) []page.Item {
 	switch {
 	case s.State == catalog.StatePending:
 		return []page.Item{{Row: &page.Row{ID: noun, Label: "reading", Mark: page.Awaiting}}}
@@ -123,7 +123,7 @@ func listOf(s tailnet.Status, noun string, rows []page.Row) []page.Item {
 	return itemsOf(rows)
 }
 
-func Status(s tailnet.Status, here page.Context) page.Page {
+func Status(s ports.Status, here page.Context) page.Page {
 	var hints []page.Hint
 	if h := repair(s); h != nil {
 		hints = append(hints, *h)
@@ -131,7 +131,7 @@ func Status(s tailnet.Status, here page.Context) page.Page {
 	return page.Seal(page.Page{ID: "tailnet", Command: "tailnet", Context: here, Sections: Sections(s), Hints: hints})
 }
 
-func Rows(s tailnet.Status) []page.Row {
+func Rows(s ports.Status) []page.Row {
 	if s.State == catalog.StatePending {
 		return []page.Row{{ID: "tailnet", Label: "tailnet", Mark: page.Awaiting}}
 	}
@@ -152,7 +152,7 @@ func Rows(s tailnet.Status) []page.Row {
 	return rows
 }
 
-func stateValue(s tailnet.Status) page.Value {
+func stateValue(s ports.Status) page.Value {
 	switch {
 	case s.State == catalog.StateAbsent:
 		return page.Text("not installed")
@@ -162,7 +162,7 @@ func stateValue(s tailnet.Status) page.Value {
 	return page.Texts(s.BackendState, s.DNSName)
 }
 
-func Summary(s tailnet.Status) page.Row {
+func Summary(s ports.Status) page.Row {
 	row := Rows(s)[0]
 	if s.State != catalog.StateOK {
 		return row
@@ -171,7 +171,7 @@ func Summary(s tailnet.Status) page.Row {
 	return row
 }
 
-func repair(s tailnet.Status) *page.Hint {
+func repair(s ports.Status) *page.Hint {
 	switch s.State {
 	case catalog.StateOK, catalog.StatePending:
 		return nil

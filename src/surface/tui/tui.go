@@ -13,7 +13,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
 	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
@@ -38,7 +37,7 @@ type Deps struct {
 	Images   *images.Service
 	Secrets  *secrets.Service
 	Services *services.Service
-	Tailnet  *tailnet.Service
+	Tailnet  fleetscreen.Tailnet
 	Accounts *accounts.Service
 	Power    powerscreen.Power
 	Remote   func(ctx context.Context, machine string, words []string) error

@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"path"
 	"strings"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/ports/contract"
 	accountscmd "github.com/jterrazz/studio-station/src/surface/cli/accounts"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
@@ -26,11 +29,10 @@ func (m machine) accounts() *accounts.Service {
 	records := vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}
 	tn := m.tailnet()
 	d := engine.Dial(m.host, m.paths)
-	ports := accounts.Ports{
+	sources := accounts.Ports{
 		LendList: sec.LendList,
 		Tailnet: func(ctx context.Context) accounts.TailnetAccount {
-			l := tn.Login(ctx)
-			return accounts.TailnetAccount{State: l.State, Login: l.Login, Tailnet: l.Tailnet, Variant: l.Variant, Problem: l.BackendState}
+			return tailnetAccount(ctx, tn)
 		},
 		VMs: func(ctx context.Context) ([]accounts.VM, error) {
 			recs, err := m.machines(false).Records()
@@ -77,7 +79,7 @@ func (m machine) accounts() *accounts.Service {
 			return out, accounts.DaemonRunning
 		},
 	}
-	return accounts.New(m.host, m.pool, ports, o)
+	return accounts.New(m.host, m.pool, sources, o)
 }
 
 // value: inside a VM, who may ssh in is the station hosts block the guest
@@ -106,4 +108,16 @@ func (m machine) stationHostKeys() []string {
 
 func accountsCommand(env kit.Env, m machine) *cobra.Command {
 	return accountscmd.Command(accountscmd.Deps{Accounts: m.accounts(), Here: m.where}, env)
+}
+
+func tailnetAccount(ctx context.Context, tn contract.Tailnet) accounts.TailnetAccount {
+	self, err := tn.Self(ctx)
+	var absent *ports.Absent
+	switch {
+	case errors.As(err, &absent):
+		return accounts.TailnetAccount{State: catalog.StateAbsent, Variant: self.Client.Variant}
+	case err != nil:
+		return accounts.TailnetAccount{State: catalog.StateBroken, Variant: self.Client.Variant}
+	}
+	return accounts.TailnetAccount{State: catalog.StateOK, Login: self.Login, Tailnet: self.Network, Variant: self.Client.Variant, Problem: self.Sharing.Backend}
 }

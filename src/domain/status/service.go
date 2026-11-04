@@ -11,8 +11,8 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -63,7 +63,7 @@ type ConfigLister interface {
 }
 
 type TailnetReader interface {
-	Status(ctx context.Context) (tailnet.Status, error)
+	Status(ctx context.Context) (ports.Status, error)
 }
 
 type SetupChecker interface {
@@ -96,7 +96,7 @@ type Snapshot struct {
 	Identity    []Check
 	Background  []Job
 	Gateways    []Check
-	Tailnet     tailnet.Status
+	Tailnet     ports.Status
 	Power       PowerState
 	// value: Power was read (a host that has it, its daemon answering).
 	PowerKnown bool

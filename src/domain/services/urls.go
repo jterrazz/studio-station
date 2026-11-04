@@ -1,6 +1,10 @@
 package services
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/jterrazz/studio-station/src/ports"
+)
 
 const LocalHost = "127.0.0.1"
 
@@ -14,7 +18,7 @@ func (l Lease) isHTTP() bool { return l.HTTP == nil || *l.HTTP }
 func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
 	// invariant: one shape everywhere. An HTTP service, or one not yet detected,
 	// carries a scheme so a URL parser reads a host; with Serve off the local URL
-	// is the only one there is; a raw TCP service is tailscaled's bytes, no scheme.
+	// is the only one there is; a raw TCP service is the tailnet's bytes, no scheme.
 	port := strconv.Itoa(l.HostPort)
 	u := URLSet{Local: LocalHost + ":" + port}
 	if l.isHTTP() {
@@ -35,25 +39,15 @@ func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
 	return u
 }
 
-func ServeArgs(l Lease, httpsMode string, on bool) []string {
-	port := strconv.Itoa(l.HostPort)
+func ShareOf(l Lease, httpsMode string) ports.Share {
+	s := ports.Share{Port: l.HostPort, Reserved: l.HostPort, Scheme: ports.SchemeHTTPS}
 	switch {
 	case !l.isHTTP():
-		if on {
-			return []string{"--bg", "--tcp=" + port, "tcp://" + LocalHost + ":" + port}
-		}
-		return []string{"--tcp=" + port, "off"}
+		s.Scheme = ports.SchemeTCP
 	case httpsMode == HTTPSPath:
-		p := "--set-path=/" + l.VM + "/" + strconv.Itoa(l.GuestPort)
-		if on {
-			return []string{"--bg", "--https=443", p, "http://" + LocalHost + ":" + port}
-		}
-		return []string{"--https=443", p, "off"}
+		s.Port, s.Path = 443, "/"+l.VM+"/"+strconv.Itoa(l.GuestPort)
 	}
-	if on {
-		return []string{"--bg", "--https=" + port, "http://" + LocalHost + ":" + port}
-	}
-	return []string{"--https=" + port, "off"}
+	return s
 }
 
 func Dialed(ip string) string {

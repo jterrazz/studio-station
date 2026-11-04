@@ -10,6 +10,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -175,9 +176,9 @@ func (d *Daemon) releaseVM(ctx context.Context, vm string) {
 	}
 	httpsMode := d.policy().HTTPS
 	kept, gone := services.Without(d.leases, func(l services.Lease) bool { return l.VM != vm })
-	if d.self.ServeOn {
+	if d.self.On {
 		for _, l := range gone {
-			_ = d.tn.Serve(ctx, services.ServeArgs(l, httpsMode, false)...)
+			_ = d.tn.Unshare(ctx, services.ShareOf(l, httpsMode))
 		}
 	}
 	if len(gone) > 0 {
@@ -187,7 +188,7 @@ func (d *Daemon) releaseVM(ctx context.Context, vm string) {
 }
 
 // invariant: publication binds 127.0.0.1 only, never the tailnet ip or a
-// wildcard: tailscaled carries the tailnet's bytes, so no firewall stands in the
+// wildcard: the tailnet carries its own bytes, so no firewall stands in the
 // way; a pinned lease never moves, an unpinned one moves off a busy port and
 // says so.
 func (d *Daemon) publish(ctx context.Context, s *svc) {
@@ -246,14 +247,17 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 
 // invariant: with Serve off no serve runs: the app would block waiting for the
 // admin; a serve refused while Serve is on leaves the service local, its
-// public URL unchanged, and says tailscale's own line.
+// public URL unchanged, and says the tailnet's own line.
 func (d *Daemon) expose(ctx context.Context, s *svc, lease services.Lease, httpsMode string) {
 	s.serveNote = ""
-	if !d.self.ServeOn {
+	if !d.self.On {
 		return
 	}
-	if err := d.tn.Serve(ctx, services.ServeArgs(lease, httpsMode, true)...); err != nil {
-		s.serveNote = "serve: " + strings.TrimPrefix(err.Error(), "tailscale serve refused: ")
+	if _, err := d.tn.Share(ctx, services.ShareOf(lease, httpsMode)); err != nil {
+		s.serveNote = "serve: " + err.Error()
+		if refused := (*ports.Refused)(nil); errors.As(err, &refused) {
+			s.serveNote = "serve: " + refused.Detail
+		}
 		return
 	}
 	s.served = true
@@ -283,9 +287,9 @@ func (d *Daemon) unpublish(ctx context.Context, s *svc) {
 		_ = l.Close()
 	}
 	s.listeners = nil
-	if s.served && d.self.ServeOn {
+	if s.served && d.self.On {
 		if i := d.leaseIndex(s.vm, s.port); i >= 0 {
-			_ = d.tn.Serve(ctx, services.ServeArgs(d.leases[i], d.policy().HTTPS, false)...)
+			_ = d.tn.Unshare(ctx, services.ShareOf(d.leases[i], d.policy().HTTPS))
 		}
 	}
 	s.served, s.serveNote = false, ""
@@ -371,7 +375,7 @@ func (d *Daemon) detectHTTP(ctx context.Context, s *svc) bool {
 }
 
 func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View {
-	v := services.ViewOf(l, services.ExposureOf(d.self.ServeOn, d.self.DNSName), httpsMode, services.Waiting)
+	v := services.ViewOf(l, services.ExposureOf(d.self.On, d.self.Host), httpsMode, services.Waiting)
 	if s != nil {
 		switch s.st.Phase {
 		case services.Published, services.Closing:
@@ -396,7 +400,7 @@ func (d *Daemon) hostView(vm string) services.HostView {
 	p := d.policy()
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	e := services.ExposureOf(d.self.ServeOn, d.self.DNSName)
+	e := services.ExposureOf(d.self.On, d.self.Host)
 	out := services.HostView{
 		Name: d.m.HereName(), Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true, Version: d.o.Version},
 		PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Services: []services.View{},
@@ -478,12 +482,12 @@ func (d *Daemon) release(ctx context.Context, vm string, port int) (services.Lea
 // Serve to be on.
 func (d *Daemon) reconcileServe(ctx context.Context) {
 	d.mu.Lock()
-	on := d.self.ServeOn
+	on := d.self.On
 	d.mu.Unlock()
 	if !on {
 		return
 	}
-	cfg, err := d.tn.ServeStatus(ctx)
+	shared, err := d.tn.Shared(ctx)
 	if err != nil {
 		return
 	}
@@ -495,19 +499,16 @@ func (d *Daemon) reconcileServe(ctx context.Context) {
 		vms[name] = true
 	}
 	d.mu.Unlock()
-	for _, e := range cfg.Entries {
+	for _, e := range shared {
 		switch {
 		case p.InRange(e.Port):
 			justified := false
 			for _, l := range leases {
 				justified = justified || l.HostPort == e.Port
 			}
-			switch {
-			case justified:
-			case e.TCP:
-				_ = d.tn.Serve(ctx, "--tcp="+strconv.Itoa(e.Port), "off")
-			default:
-				_ = d.tn.Serve(ctx, "--https="+strconv.Itoa(e.Port), "off")
+			if !justified {
+				e.Path = ""
+				_ = d.tn.Unshare(ctx, e)
 			}
 		case e.Port == 443 && strings.Count(e.Path, "/") >= 2:
 			parts := strings.Split(strings.Trim(e.Path, "/"), "/")
@@ -516,7 +517,7 @@ func (d *Daemon) reconcileServe(ctx context.Context) {
 				justified = justified || (l.VM == parts[0] && strconv.Itoa(l.GuestPort) == parts[len(parts)-1])
 			}
 			if vms[parts[0]] && !justified {
-				_ = d.tn.Serve(ctx, "--https=443", "--set-path="+e.Path, "off")
+				_ = d.tn.Unshare(ctx, e)
 			}
 		}
 	}

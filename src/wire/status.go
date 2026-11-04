@@ -16,7 +16,7 @@ func statusService(env kit.Env, m machine) *status.Service {
 	return status.New(m.host, status.Sources{
 		Tools:   toolsService(env, m),
 		Config:  configService(m),
-		Tailnet: m.tailnet(),
+		Tailnet: m.tailnetStatus(),
 		Setup:   setupService(env, m),
 		Store:   m.store,
 		Storage: m.storage(env),

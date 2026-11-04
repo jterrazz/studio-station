@@ -569,7 +569,7 @@ func (d *Daemon) hello(v *vmState) {
 	keys := d.hostKeys()
 	d.mu.Lock()
 	v.keys = strings.Join(keys, "\n")
-	public := services.ExposureOf(d.self.ServeOn, d.self.DNSName).PublicHost
+	public := services.ExposureOf(d.self.On, d.self.Host).PublicHost
 	d.mu.Unlock()
 	env := v.rec.Env
 	if env == nil {
@@ -712,7 +712,7 @@ func hostPort(ip string, port int) string {
 func (d *Daemon) renderEnv(v *vmState) {
 	p := d.policy()
 	d.mu.Lock()
-	e := services.ExposureOf(d.self.ServeOn, d.self.DNSName)
+	e := services.ExposureOf(d.self.On, d.self.Host)
 	var reserved []machines.Reserved
 	for _, pr := range catalog.Profiles {
 		if l, i := services.Find(d.leases, v.rec.Name, pr.Port); i >= 0 {

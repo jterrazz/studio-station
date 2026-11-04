@@ -145,9 +145,9 @@ func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	cfg, _ := r.m.store.Load()
 	mode := services.PolicyOf(cfg.Services).HTTPS
 	tn := r.m.tailnet()
-	if self, err := tn.Self(ctx); err == nil && self.ServeOn {
+	if ready, err := tn.Ready(ctx); err == nil && ready.On {
 		for _, l := range gone {
-			_ = tn.Serve(ctx, services.ServeArgs(l, mode, false)...)
+			_ = tn.Unshare(ctx, services.ShareOf(l, mode))
 		}
 	}
 	return store.Save(kept)

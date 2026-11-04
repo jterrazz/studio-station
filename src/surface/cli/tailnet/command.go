@@ -5,14 +5,18 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/page"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
+type Reader interface {
+	Status(ctx context.Context) (ports.Status, error)
+}
+
 type Deps struct {
-	Tailnet *tailnet.Service
+	Tailnet Reader
 	Here    page.Context
 }
 

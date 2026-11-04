@@ -5,7 +5,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
@@ -13,6 +12,7 @@ import (
 	pagesecrets "github.com/jterrazz/studio-station/src/pages/secrets"
 	pageservices "github.com/jterrazz/studio-station/src/pages/services"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
+	"github.com/jterrazz/studio-station/src/ports"
 )
 
 const (
@@ -27,7 +27,7 @@ type Reading struct {
 	Images   *[]images.Report
 	Secrets  *secrets.Report
 	Services *services.Fleet
-	Tailnet  *tailnet.Status
+	Tailnet  *ports.Status
 	Failed   map[string]page.Error
 }
 

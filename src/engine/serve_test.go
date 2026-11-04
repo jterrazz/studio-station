@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -11,14 +12,14 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 type fakeTailnet struct {
 	mu      sync.Mutex
-	self    tailnet.Self
-	serve   tailnet.ServeConfig
+	sharing ports.SharingState
+	shared  []ports.Share
 	calls   []string
 	certs   []string
 	hold    chan struct{}
@@ -27,8 +28,9 @@ type fakeTailnet struct {
 	entered chan string
 }
 
-func (f *fakeTailnet) Cert(ctx context.Context, host string) error {
+func (f *fakeTailnet) Warm(ctx context.Context) error {
 	f.mu.Lock()
+	host := f.sharing.Host
 	f.certs = append(f.certs, host)
 	hold, err := f.hold, f.certErr
 	f.until, _ = ctx.Deadline()
@@ -48,30 +50,41 @@ func (f *fakeTailnet) issued() []string {
 	return append([]string(nil), f.certs...)
 }
 
-func (f *fakeTailnet) Self(context.Context) (tailnet.Self, error) {
+func (f *fakeTailnet) Ready(context.Context) (ports.SharingState, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return f.self, nil
+	return f.sharing, nil
 }
 
-func (f *fakeTailnet) Serve(_ context.Context, args ...string) error {
+func said(verb string, s ports.Share) string {
+	return verb + " " + s.Scheme + " " + strconv.Itoa(s.Port) + s.Path + " from " + strconv.Itoa(s.Reserved)
+}
+
+func (f *fakeTailnet) Share(_ context.Context, s ports.Share) (string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.calls = append(f.calls, strings.Join(args, " "))
+	f.calls = append(f.calls, said("share", s))
+	return "", nil
+}
+
+func (f *fakeTailnet) Unshare(_ context.Context, s ports.Share) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.calls = append(f.calls, said("unshare", s))
 	return nil
 }
 
-func (f *fakeTailnet) ServeStatus(context.Context) (tailnet.ServeConfig, error) {
+func (f *fakeTailnet) Shared(context.Context) ([]ports.Share, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.calls = append(f.calls, "status")
-	return f.serve, nil
+	f.calls = append(f.calls, "shared")
+	return f.shared, nil
 }
 
 func (f *fakeTailnet) turn(on bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.self.ServeOn = on
+	f.sharing.On = on
 }
 
 func (f *fakeTailnet) taken() []string {
@@ -115,8 +128,8 @@ func (s *loopback) ListenTCP(ip string, _ int) (system.Listener, error) {
 func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 	h := newHarness(t)
 	tn := &fakeTailnet{
-		self:  tailnet.Self{DNSName: "x.tail1234.ts.net", BackendState: "Running"},
-		serve: tailnet.ServeConfig{Entries: []tailnet.ServeEntry{{Port: 40099, TCP: true, Target: "127.0.0.1:40099"}}},
+		sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running},
+		shared:  []ports.Share{{Port: 40099, Scheme: ports.SchemeTCP, Target: "127.0.0.1:40099"}},
 	}
 	sockets := &loopback{}
 	h.d.tn, h.d.h.Sockets = tn, sockets
@@ -144,7 +157,7 @@ func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 	}
 	h.d.step(ctx, serveEvery)
 	<-ready
-	want := []string{"--bg --https=40000 http://127.0.0.1:40000", "status", "--tcp=40099 off"}
+	want := []string{"share https 40000 from 40000", "shared", "unshare tcp 40099 from 0"}
 	if calls := tn.taken(); strings.Join(calls, "|") != strings.Join(want, "|") {
 		t.Fatalf("Serve on at the next read: calls %q, want %q", calls, want)
 	}
@@ -174,7 +187,7 @@ func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 func TestARunRendersTheProfileEnvironmentAndAnAdoptionKeepsIt(t *testing.T) {
 	kept := map[string]string{"EXPO_PACKAGER_PROXY_URL": "http://127.0.0.1:40000"}
 	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Lasting, Want: machines.WantRunning, Env: kept})
-	h.d.tn = &fakeTailnet{self: tailnet.Self{DNSName: "x.tail1234.ts.net", BackendState: "Running", ServeOn: true}}
+	h.d.tn = &fakeTailnet{sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running, On: true}}
 	yes := true
 	h.d.leases = []services.Lease{{VM: "api", GuestPort: catalog.Profiles[0].Port, HostPort: 40000, HTTP: &yes, Pinned: true, Profile: catalog.Profiles[0].Name}}
 	h.d.refreshSelf(t.Context())
@@ -206,8 +219,8 @@ func certLines(d *Daemon) chan string {
 func TestTheCertificateIsWarmedWhenServeTurnsOnOneAtATime(t *testing.T) {
 	h := newHarness(t)
 	tn := &fakeTailnet{
-		self: tailnet.Self{DNSName: "x.tail1234.ts.net", BackendState: "Running", ServeOn: true},
-		hold: make(chan struct{}), entered: make(chan string, 4),
+		sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running, On: true},
+		hold:    make(chan struct{}), entered: make(chan string, 4),
 	}
 	h.d.tn, h.d.h.Sockets = tn, &loopback{}
 	ready := certLines(h.d)
@@ -258,7 +271,7 @@ func TestTheCertificateIsWarmedWhenServeTurnsOnOneAtATime(t *testing.T) {
 
 func TestACertificateNeverIssuedIsCutAtItsBudgetAndSaysSo(t *testing.T) {
 	h := newHarness(t)
-	tn := &fakeTailnet{self: tailnet.Self{DNSName: "x.tail1234.ts.net", BackendState: "Running"}, certErr: context.DeadlineExceeded}
+	tn := &fakeTailnet{sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running}, certErr: context.DeadlineExceeded}
 	h.d.tn = tn
 	var lines []string
 	done := make(chan struct{})

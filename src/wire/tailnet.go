@@ -7,37 +7,63 @@ import (
 
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/domain/tailnet"
+	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/ports/adapter/tailscale"
+	"github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	tailnetcmd "github.com/jterrazz/studio-station/src/surface/cli/tailnet"
 )
 
 func (m machine) exposure(ctx context.Context) services.Exposure {
-	self, err := m.tailnet().Self(ctx)
+	ready, err := m.tailnet().Ready(ctx)
 	if err != nil {
 		return services.ExposureOf(false, "")
 	}
-	return services.ExposureOf(self.ServeOn, self.DNSName)
+	return services.ExposureOf(ready.On, ready.Host)
 }
 
-func (m machine) tailnet() *tailnet.Service {
+func (m machine) tailnet() *tailscale.CLI {
+	return tailscale.New(m.host.Run, m.host.FS, m.systemRoot())
+}
+
+// value: the tailnet as a page reads it, this node and what it shares in
+// one pass, each share told station's when the services policy owns it.
+type tailnetStatus struct {
+	tn   contract.Tailnet
+	owns func(ports.Share) bool
+}
+
+func (m machine) tailnetStatus() tailnetStatus {
 	cfg, _ := m.store.Load()
 	p := services.PolicyOf(cfg.Services)
-	return tailnet.New(m.host, m.systemRoot(), func(e tailnet.ServeEntry) bool {
-		return p.InRange(e.Port) || (p.HTTPS == services.HTTPSPath && e.Port == 443 && e.Path != "/")
-	})
+	return tailnetStatus{tn: m.tailnet(), owns: func(s ports.Share) bool {
+		return p.InRange(s.Port) || (p.HTTPS == services.HTTPSPath && s.Port == 443 && s.Path != "/")
+	}}
+}
+
+func (t tailnetStatus) Status(ctx context.Context) (ports.Status, error) {
+	self, err := t.tn.Self(ctx)
+	var shared []ports.Share
+	if err == nil {
+		shared, _ = t.tn.Shared(ctx)
+	}
+	return ports.StatusOf(self, err, shared, t.owns), nil
 }
 
 func tailnetCommand(env kit.Env, m machine) *cobra.Command {
-	return tailnetcmd.Command(tailnetcmd.Deps{Tailnet: m.tailnet(), Here: m.where}, env)
+	return tailnetcmd.Command(tailnetcmd.Deps{Tailnet: m.tailnetStatus(), Here: m.where}, env)
 }
 
-type hostNodes struct{ service *tailnet.Service }
+type hostNodes struct{ tailnet contract.Tailnet }
 
 func (t hostNodes) Peers(ctx context.Context) (map[string]machines.Node, error) {
-	roster, err := t.service.Roster(ctx)
+	self, err := t.tailnet.Self(ctx)
 	if err != nil {
 		return nil, err
+	}
+	roster := self.Peers
+	if self.Name != "" {
+		roster = append([]ports.Node{self.Node}, roster...)
 	}
 	nodes := make(map[string]machines.Node, len(roster))
 	for _, p := range roster {

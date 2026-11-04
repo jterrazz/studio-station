@@ -24,7 +24,7 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 			Images:   m.images(),
 			Secrets:  m.secrets(),
 			Services: m.services(env),
-			Tailnet:  m.tailnet(),
+			Tailnet:  m.tailnetStatus(),
 			Accounts: m.accounts(),
 			Power: tuiPower{Service: m.power(), m: m, describe: func(err error) (string, string) {
 				f := kit.Translate(err, "")
