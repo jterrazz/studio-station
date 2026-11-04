@@ -13,7 +13,6 @@ func daemonFailure(err error) (*fail.Error, bool) {
 	var running *engine.RunningError
 	var hostOnly *engine.HostOnlyError
 	var down *engine.DownError
-	var op *engine.OpError
 	var guestHost *guest.HostOnlyRefusedError
 	if f, ok := controlFailure(err); ok {
 		return f, true
@@ -27,12 +26,6 @@ func daemonFailure(err error) (*fail.Error, bool) {
 		return failed(down.Error(), "station setup", err), true
 	case errors.As(err, &guestHost):
 		return usage(guestHost.Error(), "the host's daemon runs it inside each VM"), true
-	case errors.As(err, &op):
-		switch op.Code {
-		case "unknown_vm", "unknown_op":
-			return usage(op.Message, op.Hint), true
-		}
-		return failed(op.Message, op.Hint, err), true
 	}
 	return servicesFailure(err)
 }

@@ -59,15 +59,23 @@ func MenubarStream() []byte {
 	for _, f := range All() {
 		byName[f.Name] = f.Page
 	}
-	result, _ := json.Marshal(map[string]any{"stream": page.Schema, "pages": []string{engine.PageMenubar}})
 	frame, _ := json.Marshal(page.Document{Schema: page.Schema, Page: byName["menubar.loading"]})
 	ready, _ := json.Marshal(page.Document{Schema: page.Schema, Page: byName["menubar.full"]})
-	lines := []any{
-		engine.Response{V: 1, ID: "1", OK: true, Result: result},
-		engine.Event{V: 1, Event: "page", Page: frame},
-		engine.Event{V: 1, Event: "page", Page: ready},
-		engine.Event{V: 1, Event: "tick", At: "2026-11-03T10:30:15Z"},
-		engine.Event{V: 1, Event: "notice", Notice: &engine.Notice{Kind: engine.NoticeEnded, Text: "Power ended: battery 20% on battery"}},
+	outs := []any{
+		engine.Opened{Stream: page.Schema, Pages: []string{engine.PageMenubar}},
+		engine.Event{Event: "page", Page: frame},
+		engine.Event{Event: "page", Page: ready},
+		engine.Event{Event: "tick", At: "2026-11-03T10:30:15Z"},
+		engine.Event{Event: "notice", Notice: &engine.Notice{Kind: engine.NoticeEnded, Text: "Power ended: battery 20% on battery"}},
+	}
+	type answer struct {
+		V   int    `json:"v"`
+		ID  string `json:"id"`
+		Out any    `json:"out"`
+	}
+	lines := make([]answer, 0, len(outs))
+	for _, o := range outs {
+		lines = append(lines, answer{V: 2, ID: "1", Out: o})
 	}
 	var out []byte
 	for _, l := range lines {

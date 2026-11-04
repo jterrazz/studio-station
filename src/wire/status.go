@@ -28,10 +28,6 @@ func statusCommand(env kit.Env, m machine) *cobra.Command {
 	return statuscmd.Command(statuscmd.Deps{Here: m.where}, env)
 }
 
-func statusService(env kit.Env, m machine) *overviewcalls.Overview {
-	return overviewcalls.New(statusDeps(env, m))
-}
-
 func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	h := m.host
 	d := overviewcalls.Sections{

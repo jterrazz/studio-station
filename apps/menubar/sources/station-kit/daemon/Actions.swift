@@ -9,55 +9,15 @@ public struct Status: Equatable, Sendable {
     }
 }
 
-public struct Launched: Sendable, Equatable {
-    public var code: Int32
-    public var stderr: String
-    public init(code: Int32, stderr: String) {
-        self.code = code
-        self.stderr = stderr
-    }
-}
-
-public protocol Launcher: Sendable {
-    func run(_ path: String, _ args: [String], environment: [String: String]) async -> Launched
-}
-
-public struct ProcessLauncher: Launcher {
-    public static let budget = 600.0
-
-    public init() {}
-
-    public func run(_ path: String, _ args: [String], environment: [String: String]) async -> Launched {
-        await withCheckedContinuation { c in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let p = Process()
-                p.executableURL = URL(fileURLWithPath: path)
-                p.arguments = args
-                p.environment = ProcessInfo.processInfo.environment.merging(environment) { $1 }
-                p.standardInput = FileHandle.nullDevice
-                p.standardOutput = FileHandle.nullDevice
-                let err = Pipe()
-                p.standardError = err
-                do { try p.run() } catch {
-                    c.resume(returning: Launched(code: 127, stderr: "Error: \(path) could not run"))
-                    return
-                }
-                let timer = DispatchWorkItem { if p.isRunning { p.terminate() } }
-                DispatchQueue.global().asyncAfter(deadline: .now() + Self.budget, execute: timer)
-                let data = err.fileHandleForReading.readDataToEndOfFile()
-                p.waitUntilExit()
-                timer.cancel()
-                c.resume(returning: Launched(code: p.terminationStatus, stderr: String(decoding: data, as: UTF8.self)))
-            }
-        }
-    }
-}
-
 public struct ActionRunner: Sendable {
     public var executable: String
     public var socket: String
     public var launcher: Launcher
     public var terminal: String
+
+    // value: the call that ends the engine answering it: its connection's
+    // end, with no answer, is its success.
+    public static let endsTheEngine = "engine.stop"
 
     public init(executable: String, socket: String, launcher: Launcher = ProcessLauncher(), terminal: String = "Terminal") {
         self.executable = executable
@@ -66,38 +26,29 @@ public struct ActionRunner: Sendable {
         self.terminal = terminal
     }
 
-    public static func filled(_ action: Action, answers: [String: String]) -> [(key: String, value: String)] {
-        (action.form?.fields ?? []).compactMap { f in
-            guard let key = f.key, let value = answers[key] ?? f.default, !value.isEmpty else { return nil }
-            return (key, value)
+    public static func filled(_ action: Action, answers: [String: String]) -> [String: String] {
+        var out: [String: String] = [:]
+        for f in action.form?.fields ?? [] {
+            guard let key = f.key, let value = answers[key] ?? f.default, !value.isEmpty else { continue }
+            out[key] = value
         }
-    }
-
-    public func argv(_ action: Action, answers: [String: String]) -> [String] {
-        (action.run?.argv ?? []) + Self.filled(action, answers: answers).flatMap { ["--\($0.key)", $0.value] }
+        return out
     }
 
     // invariant: the outcome is the status line: nil when the action did what
-    // it said, else the command's own Error and Hint lines.
+    // it said, else the engine's own message and hint. A call goes over the
+    // socket; only a terminal action starts a program, the terminal.
     public func run(_ action: Action, answers: [String: String] = [:]) async -> Status? {
         guard let run = action.run else { return nil }
-        if let op = run.op {
-            let given = Dictionary(Self.filled(action, answers: answers), uniquingKeysWith: { $1 })
-            let reply = await Client.request(path: socket, op: op, args: Client.arguments(given, fixed: run.args))
-            return reply.ok ? nil : Self.failure(reply.message ?? op, reply.hint)
+        if let name = run.call {
+            let reply = await Client.call(path: socket, name: name, input: Client.input(Self.filled(action, answers: answers), fixed: run.in))
+            if reply.ok || (reply.closed && name == Self.endsTheEngine) { return nil }
+            return Self.failure(reply.message ?? name, reply.hint)
         }
-        if run.terminal == true {
-            let done = await launcher.run("/usr/bin/open", ["-a", terminal, executable] , environment: [:])
-            return done.code == 0 ? nil : Self.failure("\(terminal) did not open station", nil)
-        }
-        let done = await launcher.run(executable, argv(action, answers: answers), environment: ["NO_COLOR": "1"])
-        guard done.code != 0 else { return nil }
-        var message = "station exited \(done.code)", hint: String?
-        for line in done.stderr.split(separator: "\n") {
-            if line.hasPrefix("Error: ") { message = String(line.dropFirst(7)) }
-            if line.hasPrefix("Hint: ") { hint = String(line.dropFirst(6)) }
-        }
-        return Self.failure(message, hint)
+        guard run.terminal == true else { return nil }
+        let open = Terminal.opening(terminal, executable: executable, words: run.argv ?? [])
+        let done = await launcher.run(open.path, open.args, environment: [:])
+        return done.code == 0 ? nil : Self.failure("\(terminal) did not open station", nil)
     }
 
     static func failure(_ message: String, _ hint: String?) -> Status {

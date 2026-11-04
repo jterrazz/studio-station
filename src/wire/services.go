@@ -9,7 +9,6 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	servicescmd "github.com/jterrazz/studio-station/src/surface/cli/services"
 	servicesrelease "github.com/jterrazz/studio-station/src/surface/cli/services/release"
@@ -18,12 +17,12 @@ import (
 
 func (m machine) services(env kit.Env) *services.Service {
 	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Remote: fanOutArgv, Exposure: m.exposure}
-	d := servicesDaemon{c: engine.Dial(m.host, m.paths.State)}
+	d := servicesDaemon{c: m.engineAPI()}
 	if m.kind != catalog.Host {
 		g := m.guest()
 		p := g.Placement()
 		o.HereName, o.VMName, o.HostName = p.Host, p.VM, p.Host
-		d = servicesDaemon{c: engine.DialPath(m.host, g.SocketPath())}
+		d = servicesDaemon{c: socketAPI(m.host, g.SocketPath())}
 	}
 	o.Delegate = func(ctx context.Context, host string, words []string) (int, error) {
 		return env.On.Remote.Run(ctx, host, env.Interactive, words)

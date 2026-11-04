@@ -14,6 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/ports/contract"
 	accountscmd "github.com/jterrazz/studio-station/src/surface/cli/accounts"
@@ -29,7 +30,7 @@ func (m machine) accounts() *accounts.Service {
 	}
 	sec := m.secrets()
 	tn := m.tailnet()
-	d := engine.Dial(m.host, m.paths.State)
+	d := m.engineAPI()
 	sources := accounts.Ports{
 		LendList: sec.LendList,
 		Tailnet: func(ctx context.Context) accounts.TailnetAccount {
@@ -41,8 +42,7 @@ func (m machine) accounts() *accounts.Service {
 				return nil, err
 			}
 			lends, _ := m.stores.shares.List(ctx)
-			var live []engine.VMView
-			_ = d.Do(ctx, "vms", engine.Request{}, &live)
+			live, _ := d.VMs(ctx)
 			out := make([]accounts.VM, 0, len(recs))
 			for _, r := range recs {
 				vm := accounts.VM{Name: r.Name, Lifetime: string(r.Lifetime)}
@@ -60,7 +60,7 @@ func (m machine) accounts() *accounts.Service {
 		},
 		Daemon: func(ctx context.Context) ([]accounts.VMRead, string) {
 			var view engine.AccountsView
-			if err := d.Do(ctx, "accounts", engine.Request{}, &view); err != nil {
+			if err := d.do(ctx, process.Accounts, nil, &view); err != nil {
 				if _, missing := m.host.FS.Stat(catalog.DaemonPlist(m.host.Env.Home())); missing != nil {
 					return nil, accounts.DaemonAbsent
 				}

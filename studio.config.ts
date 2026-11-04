@@ -32,6 +32,8 @@ export default defineConfig({
         oxfmt: {
             ignore: {
                 'TODO.md': 'copied verbatim from the design',
+                'src/remote/api/calls.json':
+                    'written by `make generate` from the call registry, byte for byte what the calls-json-fresh test compares',
             },
         },
         roots: {

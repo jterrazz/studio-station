@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
@@ -16,7 +15,6 @@ const (
 	PageMenubar  = "menubar"
 	coalesce     = 250 * time.Millisecond
 	tickEvery    = 15 * time.Second
-	stallLimit   = 5 * time.Second
 	streamSchema = "station.page/v1"
 )
 
@@ -127,10 +125,10 @@ func (d *Daemon) known(id string) bool {
 	return ok
 }
 
-func (d *Daemon) checkPages(pages []string) error {
-	hint := "speak " + Schema + ": subscribe menubar power"
+func (d *Daemon) CheckPages(pages []string) error {
+	hint := "watch page with the pages menubar or power"
 	if len(pages) == 0 {
-		return fault("unknown_page", "subscribe names no page", hint)
+		return fault("unknown_page", "the watch names no page", hint)
 	}
 	for _, id := range pages {
 		if !d.known(id) {
@@ -138,6 +136,11 @@ func (d *Daemon) checkPages(pages []string) error {
 		}
 	}
 	return nil
+}
+
+type Opened struct {
+	Stream string   `json:"stream"`
+	Pages  []string `json:"pages"`
 }
 
 type latest struct {
@@ -181,51 +184,21 @@ func (d *Daemon) feed(ctx context.Context, id string, sub *subscriber, into *lat
 	}
 }
 
-// invariant: a write that does not finish within stallLimit closes the
-// connection: the daemon never blocks on a subscriber that does not read.
-func (d *Daemon) guarded(ctx context.Context, conn system.Conn, write func(any) error) func(any) error {
-	return func(v any) error {
-		wctx, done := context.WithCancel(ctx)
-		defer done()
-		go func() {
-			if d.h.Clock.Sleep(wctx, d.stall()) == nil && wctx.Err() == nil {
-				_ = conn.Close()
-			}
-		}()
-		return write(v)
+func (d *Daemon) Stream(ctx context.Context, pages []string, write func(any) error) error {
+	// invariant: after its opening, a watch of pages only streams: a full page
+	// per change, coalesced over 250 ms (so at most 4 a second) and never resent
+	// unchanged, a tick every 15 s, and the notices.
+	if err := d.CheckPages(pages); err != nil {
+		return err
 	}
-}
-
-func (d *Daemon) stall() time.Duration {
-	if d.o.Stall > 0 {
-		return d.o.Stall
-	}
-	return stallLimit
-}
-
-// invariant: after its ok, a subscription only streams: a full page per
-// change, coalesced over 250 ms (so at most 4 a second) and never resent
-// unchanged, a tick every 15 s, and the notices; a later request line on it
-// is read and ignored.
-func (d *Daemon) stream(ctx context.Context, conn system.Conn, r Request, write func(any) error) {
 	sub := d.hub.add()
 	defer d.hub.remove(sub)
-	pages := slices.Compact(slices.Sorted(slices.Values(r.Pages)))
-	if write(Response{V: 1, ID: r.ID, OK: true, Result: mustJSON(map[string]any{"stream": streamSchema, "pages": pages})}) != nil {
-		return
+	pages = slices.Compact(slices.Sorted(slices.Values(pages)))
+	if err := write(Opened{Stream: streamSchema, Pages: pages}); err != nil {
+		return err
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	write = d.guarded(ctx, conn, write)
-	go func() {
-		buf := make([]byte, 512)
-		for {
-			if _, err := conn.Read(buf); err != nil {
-				cancel()
-				return
-			}
-		}
-	}()
 	fed := &latest{pages: map[string]json.RawMessage{}}
 	frames := map[string]chan json.RawMessage{}
 	var feeds sync.WaitGroup
@@ -266,7 +239,7 @@ func (d *Daemon) stream(ctx context.Context, conn system.Conn, r Request, write 
 				continue
 			}
 			last[id] = string(p)
-			if write(Event{V: 1, Event: "page", Page: p}) != nil {
+			if write(Event{Event: "page", Page: p}) != nil {
 				return false
 			}
 		}
@@ -283,38 +256,38 @@ func (d *Daemon) stream(ctx context.Context, conn system.Conn, r Request, write 
 				continue
 			}
 			last[id] = string(p)
-			if write(Event{V: 1, Event: "page", Page: p}) != nil {
-				return
+			if write(Event{Event: "page", Page: p}) != nil {
+				return nil
 			}
 		case <-ctx.Done():
-			return
+			return nil
 		}
 	}
 	if !send(false) {
-		return
+		return nil
 	}
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		case <-sub.change:
 			if d.h.Clock.Sleep(ctx, coalesce) != nil {
-				return
+				return nil
 			}
 			select {
 			case <-sub.change:
 			default:
 			}
 			if !send(true) {
-				return
+				return nil
 			}
 		case n := <-sub.notice:
-			if write(Event{V: 1, Event: "notice", Notice: &n}) != nil {
-				return
+			if write(Event{Event: "notice", Notice: &n}) != nil {
+				return nil
 			}
 		case <-ticks:
-			if write(Event{V: 1, Event: "tick", At: d.h.Clock.Now().UTC().Format(time.RFC3339)}) != nil {
-				return
+			if write(Event{Event: "tick", At: d.h.Clock.Now().UTC().Format(time.RFC3339)}) != nil {
+				return nil
 			}
 		}
 	}

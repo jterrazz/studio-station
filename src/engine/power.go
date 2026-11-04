@@ -27,7 +27,6 @@ type Notice struct {
 }
 
 type Event struct {
-	V      int             `json:"v"`
 	Event  string          `json:"event"`
 	Page   json.RawMessage `json:"page,omitempty"`
 	At     string          `json:"at,omitempty"`
@@ -51,7 +50,7 @@ func (d *Daemon) watchPower(ctx context.Context) {
 	}
 }
 
-func (d *Daemon) powerAwake(r Request) (power.Awoken, error) {
+func (d *Daemon) powerAwake(r AwakeIn) (power.Awoken, error) {
 	session, refreshed, err := d.power.Awake(power.Request{Lid: r.Lid, Battery: r.Battery, For: time.Duration(r.For) * time.Second, By: r.By})
 	s := power.Awoken{Session: session, Refreshed: refreshed}
 	var rng *power.RangeError

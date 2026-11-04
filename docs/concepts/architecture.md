@@ -18,7 +18,7 @@
 ```text
 src/
   cmd/station/    process entry: reads argv, environment and the three streams once, calls wire
-  cmd/generate/   the compiler: projects the catalogue into the toolbelt skill and the footprint page
+  cmd/generate/   the compiler: projects the catalogue into the toolbelt skill and the footprint page, and the registry into calls.json
   wire/           the composition root: builds adapters and services, resolves every environment
                   variable into a typed option, builds the cobra tree and Fang, maps an error to an exit code
   surface/cli/    the cobra tree, one folder per command word: input -> call -> page
@@ -26,7 +26,8 @@ src/
     words/        the wording of every fail.Code a call raises
   domain/         behaviour, never touching the machine except through ports
     settings/ tools/ config/ setup/ status/ storage/ machines/ images/ secrets/ remote/ tailnet/ shortcuts/ shell/
-  engine/         the per-Mac process (the daemon): its runs, its socket and protocol, the guards it holds
+  engine/         the per-Mac process (the daemon): its runs, its socket, the guards it holds
+    process/      the daemon's own calls over its live state, and its station.api/v2 server: those and the registry's
 ```
 
 The ports and the data:
@@ -68,6 +69,14 @@ The shared kernel, which every family will share and which does no I/O:
     contract/     the contracts every family shares: Self, Clock, Preferences
     store/        what every store shares: its unreadable and unwritable errors, its version, the Migrator setup runs
     fail/         the error type: its type and code, or today's message, hint and exit
+```
+
+The plumbing between machines and processes, which does no I/O of its own:
+
+```text
+  remote/         the Router: a call of this machine runs in this process; given this Mac's engine, one that needs its state runs there
+    api/          station.api/v2: the frames (call, watch, progress, out, error) and the client of a socket
+    serve/        the server of those frames over any connection: the engine's unix socket, never TCP
 ```
 
 Beside `src/`, `specs/` holds the proofs:

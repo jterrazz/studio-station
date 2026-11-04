@@ -179,11 +179,16 @@ type Action struct {
 }
 
 type Run struct {
-	Op   string            `json:"op,omitempty"`
-	Args map[string]string `json:"args,omitempty"`
-	// value: the words after `station`; a Form's answers follow as `--<key> <value>`.
-	Argv     []string `json:"argv,omitempty"`
+	// value: the call the action makes, by its name in calls.json, over the
+	// engine's socket.
+	Call string `json:"call,omitempty"`
+	// value: the call's input the action fixes, by the path of each field
+	// (`Request.Image`); a Form's answers fill the paths their keys name.
+	In map[string]string `json:"in,omitempty"`
+	// value: a new terminal runs station, with these words after it: the one
+	// way an action starts a program.
 	Terminal bool     `json:"terminal,omitempty"`
+	Argv     []string `json:"argv,omitempty"`
 }
 
 type Scope string

@@ -9,7 +9,7 @@ A service is a TCP port something listens on inside a VM. The VM is never on the
 | The policy            | The `services` keys of `settings.json`                       |
 | Serve and HTTPS       | Serve on or off, the `port` and `path` modes, the admin step |
 | Profiles              | How Expo and Vite learn their public URL                     |
-| The daemon protocol   | `station.daemon/v1`, for another client                      |
+| The daemon protocol   | `station.api/v2`, for every client                           |
 
 ## How a port gets a URL
 
@@ -94,31 +94,38 @@ With Serve off they hold the local URL, `http://127.0.0.1:<host port>`, and the 
 
 ## The daemon protocol
 
-`station.daemon/v1`: JSON lines over the unix socket `~/.local/state/station/daemon.sock` (mode 0600), one request and one response per line, answered in order. The CLI is one client; a menu-bar app would be another.
+`station.api/v2`: JSON lines over the unix socket `~/.local/state/station/daemon.sock` (mode 0600; the daemon listens on no TCP port, and the leases' forwarders bind `127.0.0.1` only), one frame per line. A request names a `call` or a `watch` under its `id`; the answer is `progress` frames, then one `out` or one `error`. The calls of one connection are answered in the order they came. The CLI is one client, the menu bar another.
 
 ```text
-→ {"v":1,"id":"1","op":"ping"}
-← {"v":1,"id":"1","ok":true,"result":{"version":"v3.0.0","pid":812,"started_at":"2026-11-01T09:00:00Z"}}
+→ {"v":2,"id":"7","call":"machines.create","in":{"Request":{"Image":"linux","Lifetime":"temporary"}}}
+← {"v":2,"id":"7","progress":{"task":"Booting linux-1"}}
+← {"v":2,"id":"7","out":{"VM":{"Name":"linux-1"}}}
+→ {"v":2,"id":"8","call":"engine.stop","in":{"Confirm":"inf"}}
+← {"v":2,"id":"8","error":{"type":"needs-confirmation","code":"confirm.yes-needed","subject":"stop","message":"refusing without --yes: stop","hint":"re-run with --yes"}}
 ```
 
-| op                           | args                        | result                                                                                  |
-| ---------------------------- | --------------------------- | --------------------------------------------------------------------------------------- |
-| `ping`                       |                             | `version pid started_at executable` (the station binary a client runs actions with)     |
-| `vms`                        |                             | each VM's `name state run_pid guest ip detail`                                          |
-| `run`                        | `vm`                        | supervises a new record; answers when its guest is connected                            |
-| `start` / `stop` / `restart` | `vm`                        | lasting VMs only                                                                        |
-| `delete`                     | `vm`                        | the VM, its files, blocks, leases and serve entries                                     |
-| `services`                   |                             | this host's `station.services/v1` host object                                           |
-| `reserve`                    | `vm, guest_port, pinned`    | the lease (an existing one is returned)                                                 |
-| `release`                    | `vm, guest_port`            | the released lease                                                                      |
-| `stop_all`                   |                             | `vms` (each VM's result) and `power_ended`                                              |
-| `power`                      |                             | the Power `session`, `last_end`, `reading` and `guards`                                 |
-| `power_awake`                | `lid, battery, for, by`     | the session (`for` in seconds), `refreshed` when one held                               |
-| `power_sleep`                |                             | `ended`, `after` (seconds)                                                              |
-| `subscribe`                  | `pages` (`menubar` `power`) | a stream: one full page per change, `tick` every 15 s, `notice` when a guard ends Power |
-| `refresh`                    | `pages`                     | `{}`: the menu bar's To do is read again now                                            |
+The daemon serves every call of [`calls.json`](../../src/remote/api/calls.json) (the registry `make generate` projects: each call's name, its output schema, its section, where it runs, its confirmation and the errors it declares), run on this host as the CLI runs it, and its own calls, which the CLI's reads and the VMs' guests ask of its live state:
 
-An error carries `code` (`unknown_op`, `unknown_vm`, `temporary`, `not_running`, `range_full`, `max_per_vm`, `guest_timeout`, `internal`, `power_guard`, `power_range`, `power_unsupported`, `unknown_page`), a `message` and a `hint`, worded as the CLI prints them. After `subscribe`'s `ok` the connection only streams: a later request line on it gets no answer, so a client sends its actions on a second connection. The first page is the frame (pending values), then a page whenever one changes, coalesced over 250 ms and never resent unchanged; a client that does not read for 5 s is dropped. The `menubar` page is read only while a client subscribes: the Strip every 2 s, the remote hosts every 30 s, the To do every 15 min or on `refresh`, this host's VMs, leases and Power at once.
+| call                                                       | in                                | out                                                                                    |
+| ---------------------------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------- |
+| `engine.hello`                                             |                                   | `version pid started_at executable` and `calls`, the names of `calls.json` it serves   |
+| `engine.vms`                                               |                                   | each VM's `name state run_pid guest ip detail`                                         |
+| `engine.vm-run`                                            | `vm`                              | supervises a new record; answers when its guest is connected                           |
+| `engine.vm-start` / `engine.vm-stop` / `engine.vm-restart` | `vm`                              | lasting VMs only                                                                       |
+| `engine.vm-delete` / `engine.vm-forget`                    | `vm`                              | the VM, its files, blocks, leases and serve entries / its supervision only             |
+| `engine.guest-exec`                                        | `vm, line, stdin`                 | `code stdout stderr` of a command run over the VM's guest connection                   |
+| `engine.accounts`                                          |                                   | each running VM's accounts, read by its guest                                          |
+| `engine.services`                                          |                                   | this host's `station.services/v1` host object                                          |
+| `engine.reserve`                                           | `vm, guest_port, pinned, profile` | the lease (an existing one is returned)                                                |
+| `engine.release`                                           | `vm, guest_port`                  | the released lease                                                                     |
+| `engine.stop-all`                                          |                                   | `vms` (each VM's result) and `power_ended`                                             |
+| `engine.power`                                             |                                   | the Power `session`, `last_end`, `reading` and `guards`                                |
+| `engine.power-awake`                                       | `lid, battery, for, by`           | the session (`for` in seconds), `refreshed` when one held                              |
+| `engine.power-sleep`                                       |                                   | `ended`, `after` (seconds)                                                             |
+| `engine.refresh`                                           | `pages`                           | `{}`: the menu bar's To do is read again now                                           |
+| watch `page`                                               | `pages` (`menubar` `power`)       | an `out` per update: the opening `stream pages`, then `event` `page`, `tick`, `notice` |
+
+An error carries its `type` (which decides the exit code), its `code` (a call's own, `call.unknown`, `call.bad-frame` for a line that is no v2 frame, or the daemon's: `unknown_vm`, `temporary`, `not_running`, `range_full`, `max_per_vm`, `guest_timeout`, `internal`, `power_guard`, `power_range`, `power_unsupported`, `unknown_page`), its `subject` and `detail`, a `message` and a `hint`, worded as the CLI prints them. A watch takes its connection: a later line on it gets no answer, so a client sends its calls on a second connection. The first page is the frame (pending values), then a page whenever one changes, coalesced over 250 ms and never resent unchanged; a client that does not read for 5 s is dropped. The `menubar` page is read only while a client watches it: the Strip every 2 s, the remote hosts every 30 s, the To do every 15 min or on `refresh`, this host's VMs, leases and Power at once. Inside a VM, the guest's socket serves `engine.services`, `engine.reserve` and `engine.release` in the same frames, relayed to the host's daemon.
 
 ## Related
 

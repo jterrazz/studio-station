@@ -2,6 +2,7 @@ package menubar
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -128,12 +129,22 @@ func powerSection(r Reading) page.Section {
 	return pagepower.Session(*r.Power)
 }
 
+// value: the calls the menu bar's actions make, by their calls.json names.
+const (
+	CallCreate = "machines.create"
+	CallStop   = "engine.stop"
+	CallAwake  = "power.awake"
+	CallSleep  = "power.sleep"
+)
+
+func gigabytes(n int64) string { return strconv.FormatInt(n<<30, 10) }
+
 func newVM() page.Action {
 	return page.Action{ID: ActionNewVM, Label: "New VM", On: page.OnPage, Priority: 1, Mutates: true,
-		Run: &page.Run{Argv: []string{"machines", "create"}},
+		Run: &page.Run{Call: CallCreate, In: map[string]string{"Request.Image": "linux", "Request.Network": "nat"}},
 		Form: &page.Form{Title: "New VM", Fields: []page.Field{
-			{Key: "lifetime", Label: "Lifetime", Kind: page.FieldSelect, Default: "temporary", Options: []page.Option{{Value: "temporary"}, {Value: "lasting"}}},
-			{Key: "memory", Label: "Memory", Kind: page.FieldSelect, Default: "4G", Options: []page.Option{{Value: "4G"}, {Value: "8G"}}},
+			{Key: "Request.Lifetime", Label: "Lifetime", Kind: page.FieldSelect, Default: "temporary", Options: []page.Option{{Value: "temporary"}, {Value: "lasting"}}},
+			{Key: "Request.Resources.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4G"}, {Value: gigabytes(8), Label: "8G"}}},
 		}}}
 }
 
@@ -142,7 +153,7 @@ func openStation() page.Action {
 }
 
 func start() page.Action {
-	return page.Action{ID: ActionStart, Label: "Start station", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Argv: []string{"start"}}}
+	return page.Action{ID: ActionStart, Label: "Start station", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Terminal: true, Argv: []string{"start"}}}
 }
 
 func stopAll(r Reading) page.Action {
@@ -165,7 +176,7 @@ func stopAll(r Reading) page.Action {
 		}
 	}
 	confirm := pageoutcome.StopConfirm(w, host)
-	return page.Action{ID: ActionStopAll, Label: "Stop everything", On: page.OnPage, Priority: 3, Mutates: true, Confirm: &confirm, Run: &page.Run{Argv: []string{"stop", "--yes"}}}
+	return page.Action{ID: ActionStopAll, Label: "Stop everything", On: page.OnPage, Priority: 3, Mutates: true, Confirm: &confirm, Run: &page.Run{Call: CallStop, In: map[string]string{"Confirm": "yes"}}}
 }
 
 // invariant: the Power switch is the session row's action, awake with its
@@ -173,7 +184,7 @@ func stopAll(r Reading) page.Action {
 func powerAction(r *power.Report) page.Action {
 	rows := []string{pagepower.RowAwake}
 	if r != nil && r.Session != nil && r.Daemon == power.DaemonRunning {
-		return page.Action{ID: ActionPowerSleep, Label: "sleep", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Op: "power_sleep"}}
+		return page.Action{ID: ActionPowerSleep, Label: "sleep", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallSleep}}
 	}
 	terms := []struct {
 		label string
@@ -181,13 +192,13 @@ func powerAction(r *power.Report) page.Action {
 	}{{"1h", 1}, {"2h", 2}, {"4h", 4}, {"8h", 8}, {"12h", 12}, {"24h", 24}}
 	opts := make([]page.Option, 0, len(terms))
 	for _, t := range terms {
-		opts = append(opts, page.Option{Value: strconv.Itoa(t.hours * 3600), Label: t.label})
+		opts = append(opts, page.Option{Value: strconv.FormatInt(int64(time.Duration(t.hours)*time.Hour), 10), Label: t.label})
 	}
-	return page.Action{ID: ActionPowerAwake, Label: "awake", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Op: "power_awake"},
+	return page.Action{ID: ActionPowerAwake, Label: "awake", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallAwake},
 		Form: &page.Form{Title: "Power", Fields: []page.Field{
-			{Key: "for", Label: "For", Kind: page.FieldSelect, Default: "14400", Options: opts},
-			{Key: "lid", Label: "Lid", Kind: page.FieldSelect, Default: "lid=false", Options: []page.Option{
-				{Value: "lid=false", Label: "open only"}, {Value: "lid=true", Label: "closed"}, {Value: "lid=true battery=true", Label: "closed on battery"},
+			{Key: "For", Label: "For", Kind: page.FieldSelect, Default: strconv.FormatInt(int64(4*time.Hour), 10), Options: opts},
+			{Key: "Lid", Label: "Lid", Kind: page.FieldSelect, Default: "Lid=false", Options: []page.Option{
+				{Value: "Lid=false", Label: "open only"}, {Value: "Lid=true", Label: "closed"}, {Value: "Lid=true Battery=true", Label: "closed on battery"},
 			}},
 		}}}
 }

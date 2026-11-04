@@ -26,6 +26,8 @@ const (
 	NotForThisMachine fail.Code = "section.not-for-this-machine"
 	BadInput          fail.Code = "call.bad-input"
 	BadOutput         fail.Code = "call.bad-output"
+	// value: a line a server cannot read as a request frame.
+	BadFrame fail.Code = "call.bad-frame"
 )
 
 type Progress interface {

@@ -151,10 +151,10 @@ public struct Action: Codable, Equatable, Sendable {
 }
 
 public struct Run: Codable, Equatable, Sendable {
-    public var op: String?
-    public var args: [String: String]?
-    public var argv: [String]?
+    public var call: String?
+    public var `in`: [String: String]?
     public var terminal: Bool?
+    public var argv: [String]?
 }
 
 public struct Confirm: Codable, Equatable, Sendable {
