@@ -6,6 +6,7 @@ runs:
       stdout: |
           accounts
           apps
+          awake
           background
           disk
           engine
@@ -14,7 +15,6 @@ runs:
           machines
           overview
           ports
-          power
           run
           settings
           setup

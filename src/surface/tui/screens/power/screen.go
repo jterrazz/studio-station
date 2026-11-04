@@ -74,7 +74,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			}
 			lid, _ := strconv.ParseBool(values["lid"])
 			battery, _ := strconv.ParseBool(values["battery"])
-			by := "station power awake"
+			by := "station awake"
 			if lid {
 				by += " --lid"
 			}
@@ -92,7 +92,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		return m, tea.Batch(cmd, fill)
 	case pagepower.KeySleep:
 		run := tab.Exec(ID, func() (tab.Status, error) {
-			s, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, awakecalls.Sleep, awakecalls.SleepIn{}, nil)
+			s, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, awakecalls.Off, awakecalls.OffIn{}, nil)
 			if err != nil {
 				return tab.Status{}, err
 			}

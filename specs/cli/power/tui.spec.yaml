@@ -29,12 +29,12 @@ runs:
           send \r
           send \r
           see started
-          within 10 see battery 20% on battery
+          within 10 see battery 20 %
           see 20% · on battery
           send q
       exit: 0
       files:
           .calls:
               contains:
-                  - 'power assert idle station: station power awake'
+                  - 'power assert idle station: station awake'
                   - power release idle

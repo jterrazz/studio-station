@@ -1,0 +1,9 @@
+description: 'with the engine stopped awake reads: This Mac sleeps normally, the mini as usual'
+env: engine-stopped
+runs:
+    - command: 'awake'
+      exit: 0
+      stdout: |
+          # Awake
+          ○	jterrazz-macbook-pro	Sleeps normally · the engine is stopped	station engine start
+          ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy · last slept: never in 12d 5h · hosts infra (server)

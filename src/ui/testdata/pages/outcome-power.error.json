@@ -7,7 +7,7 @@
   },
   "state": "failed",
   "error": {
-    "message": "Power stays off: the battery is at 18% on battery",
-    "hint": "station power"
+    "message": "Awake stays off: the battery is at 18 % on battery",
+    "hint": "station awake"
   }
 }

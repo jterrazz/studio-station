@@ -109,6 +109,7 @@ func (s *Service) Read(ctx context.Context) <-chan Report {
 			last.Daemon = s.daemonState()
 		} else {
 			last.Daemon, last.Session, last.LastEnd = DaemonRunning, v.Session, v.LastEnd
+			last.NeverSleeps, last.NeverSince, last.NeverHeld = v.NeverSleeps, v.NeverSince, v.NeverHeld
 			last.Guards = Guards(r, v.Session)
 		}
 		out <- last

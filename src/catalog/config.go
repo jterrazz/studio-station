@@ -64,6 +64,7 @@ const (
 	ProcDockSpacer       Procedure = "dock-spacer"
 	ProcAutologin        Procedure = "autologin"
 	ProcPower            Procedure = "power"
+	ProcNeverSleeps      Procedure = "never-sleeps"
 	ProcLockAfterLogin   Procedure = "lock-after-login"
 	ProcSshd             Procedure = "sshd"
 	ProcClaudeToken      Procedure = "claude-token"
@@ -74,6 +75,8 @@ func (Touch) Kind() EffectKind    { return EffectTouch }
 func (Dotfiles) Kind() EffectKind { return EffectDotfile }
 
 func (p Procedure) Kind() EffectKind { return EffectKind("procedure:" + string(p)) }
+
+func (p Procedure) Name() string { return string(p) }
 
 type ConfigItem struct {
 	// value: a procedure is its own kind of effect: one Applier each.
@@ -147,6 +150,7 @@ var ConfigItems = []ConfigItem{
 		{Name: "password", Label: "Password of jterrazz.agent", Kind: InputPassword, DefaultEnv: "AGENT_PASSWORD", Required: true},
 	}, Writes: []Stored{noted(kept("/etc/kcpassword"), "the agent user's login password, obfuscated"), noted(conf("/Library/Preferences/com.apple.loginwindow"), "`autoLoginUser` in `com.apple.loginwindow`")}},
 	{Name: "power", Description: "Always-on power policy (no sleep, autorestart, wake)", Category: CategoryHeadless, Places: hostKind, Effect: ProcPower, Sets: []Value{{"autorestart", "1"}, {"sleep", "0"}, {"displaysleep", "5"}, {"disksleep", "0"}, {"powernap", "0"}, {"womp", "1"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist"), "pmset: no sleep, autorestart, wake")}},
+	{Name: "never-sleeps", Description: "Never sleeps: the engine keeps this Mac awake, its servers with it", Category: CategoryHeadless, Places: hostKind, Effect: ProcNeverSleeps, Sets: []Value{{"never sleeps", "held by the engine"}}, Reversible: true, Writes: []Stored{noted(conf("{config}/station/preferences.json"), "`never_sleeps`, the engine holds an idle-sleep assertion while it is set")}},
 	{Name: "lock-after-login", Description: "A LaunchAgent that locks the screen ~20s after auto-login", Category: CategoryHeadless, Places: hostKind, Effect: ProcLockAfterLogin, Sets: []Value{{"agent", "present"}, {"loaded", "yes"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Users/jterrazz.agent/Library/LaunchAgents/ai.jterrazz.lock-after-login.plist"), "the agent user's `lock-after-login.plist`"), noted(cache("/Users/jterrazz.agent/.openclaw/logs"), "its logs")}},
 	{Name: "sshd", Description: "macOS Remote Login (sshd)", Category: CategoryHeadless, Places: hostKind, Effect: ProcSshd, Sets: []Value{{"Remote Login", "on"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/System/Library/LaunchDaemons/ssh.plist"), "Remote Login, through systemsetup")}},
 	{Name: "backup-exclusions", Description: "Keep ~/.cache and station's VMs out of Time Machine", Category: CategorySystem, Places: hostKind, Effect: ProcBackupExclusions, Reversible: true, Writes: []Stored{

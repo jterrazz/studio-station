@@ -1,5 +1,5 @@
  station power awake                                                            host · unregistered
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
- Error: Power stays off: the battery is at 18% on battery
- Hint: station power
+ Error: Awake stays off: the battery is at 18 % on battery
+ Hint: station awake

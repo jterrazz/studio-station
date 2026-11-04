@@ -25,6 +25,8 @@ const (
 type Held struct {
 	Lid     bool
 	Battery bool
+	// value: what is held is the Never sleeps policy, not a keep-awake.
+	NeverSleeps bool
 }
 
 type Trip struct {
@@ -62,13 +64,23 @@ func Active(c machine.Capabilities) []Guard {
 	return out
 }
 
-func Check(c machine.Capabilities, r Reading, h Held, heavyFor time.Duration) (Trip, bool) {
+type Verdict struct {
+	Trip    Trip
+	Tripped bool
+	// value: the trip lets the hold go; false only tells the owner.
+	Ends bool
+}
+
+func Next(c machine.Capabilities, h Held, r Reading, heavyFor time.Duration) Verdict {
+	// invariant: the first active guard past its threshold names the trip;
+	// it ends a keep-awake, and on a Mac that never sleeps it only tells,
+	// except the battery guard of a Mac that reports a battery.
 	for _, g := range Active(c) {
 		if t, ok := g.Trip(r, h, heavyFor); ok {
-			return t, true
+			return Verdict{Trip: t, Tripped: true, Ends: !h.NeverSleeps || g.Name == Battery}
 		}
 	}
-	return Trip{}, false
+	return Verdict{}
 }
 
 func thermal(r Reading, _ Held, heavyFor time.Duration) (Trip, bool) {
@@ -76,7 +88,7 @@ func thermal(r Reading, _ Held, heavyFor time.Duration) (Trip, bool) {
 	case r.Thermal >= ThermalEnds:
 		return Trip{Thermal, "thermal " + Level(r.Thermal), "the Mac is under serious thermal pressure"}, true
 	case r.Thermal == ThermalHeavy && heavyFor >= HeavyLimit:
-		return Trip{Thermal, "thermal heavy for 5m lid closed on battery", "the Mac is under heavy thermal pressure"}, true
+		return Trip{Thermal, "thermal heavy for 5 min", "the Mac is under heavy thermal pressure"}, true
 	}
 	return Trip{}, false
 }
@@ -85,8 +97,8 @@ func battery(r Reading, _ Held, _ time.Duration) (Trip, bool) {
 	if !r.OnBattery() || r.Percent > BatteryEnds {
 		return Trip{}, false
 	}
-	p := strconv.Itoa(r.Percent) + "%"
-	return Trip{Battery, "battery " + p + " on battery", "the battery is at " + p + " on battery"}, true
+	p := strconv.Itoa(r.Percent) + " %"
+	return Trip{Battery, "battery " + p, "the battery is at " + p + " on battery"}, true
 }
 
 func lowPower(r Reading, _ Held, _ time.Duration) (Trip, bool) {

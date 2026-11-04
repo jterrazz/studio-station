@@ -188,8 +188,14 @@ func actions() []page.Action {
 	}
 }
 
-func OffConfirm(names []string) page.Confirm {
-	return page.Confirm{Question: "Turn " + strings.Join(names, ", ") + " off here? station stops applying and watching it on this machine", Yes: "off"}
+func OffConfirm(names []string, also ...string) page.Confirm {
+	// value: also is what else the off does, said in the question: the
+	// servers that pause with a Mac that sleeps again.
+	q := "Turn " + strings.Join(names, ", ") + " off here? station stops applying and watching it on this machine"
+	if len(also) > 0 {
+		q += "; " + strings.Join(also, "; ")
+	}
+	return page.Confirm{Question: q, Yes: "off"}
 }
 
 func ApplyConfirm(names []string) page.Confirm {

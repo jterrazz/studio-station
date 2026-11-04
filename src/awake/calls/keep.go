@@ -5,18 +5,30 @@ import (
 
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/core/call"
-	"github.com/jterrazz/studio-station/src/core/machine"
 )
 
 var Keep = call.Call[Deps, awake.Request, awake.Awoken]{
-	Name: "power.awake", Where: call.InEngine, Applies: machine.Anywhere,
+	Name: "awake.keep", Where: call.InEngine, Applies: awake.Applies,
 	Run: func(ctx context.Context, d Deps, in awake.Request, _ call.Progress) (awake.Awoken, error) {
-		if err := d.Power.CheckFor(in.For); in.For != 0 && err != nil {
-			return awake.Awoken{}, err
+		// invariant: a keep-awake adds nothing to a Mac that never sleeps;
+		// its options are the ones the Mac reports it can take.
+		if in.For == 0 {
+			in.For = awake.DefaultFor
+		}
+		if _, err := awake.Bounded(in.For); err != nil {
+			return awake.Awoken{}, d.refused(err, in)
+		}
+		if err := awake.Options(d.Caps, in.Lid, in.Battery); err != nil {
+			return awake.Awoken{}, d.refused(err, in)
 		}
 		if err := d.Power.Check(); err != nil {
 			return awake.Awoken{}, err
 		}
-		return d.Power.Awake(ctx, in)
+		if d.never() {
+			return awake.Awoken{Mac: d.Mac, NeverSleeps: true}, nil
+		}
+		a, err := d.Power.Awake(ctx, in)
+		a.Mac = d.Mac
+		return a, err
 	},
 }

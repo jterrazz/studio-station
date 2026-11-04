@@ -19,7 +19,7 @@ func powerReport(daemon string, s *power.Session, r power.Reading) power.Report 
 
 func heldSession() *power.Session {
 	start := powerNow.Add(-48 * time.Minute)
-	return &power.Session{Lid: true, StartedAt: start, Until: start.Add(4 * time.Hour), By: "station power awake --lid"}
+	return &power.Session{Lid: true, StartedAt: start, Until: start.Add(4 * time.Hour), By: "station awake 4h --lid"}
 }
 
 func powerPages() []Fixture {
@@ -36,7 +36,7 @@ func powerPages() []Fixture {
 	return append(out, states("outcome-power",
 		pending(pagepower.Awake(awoken, nil, here())),
 		pagepower.Slept(power.Slept{}, here()),
-		failure("outcome", "power awake", "Power stays off: the battery is at 18% on battery", "station power"),
+		failure("outcome", "power awake", "Awake stays off: the battery is at 18 % on battery", "station awake"),
 		pagepower.Awake(awoken, nil, here()),
 	)...)
 }

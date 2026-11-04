@@ -167,7 +167,7 @@ final class ClientTests: XCTestCase {
         let engine = try answered("mb-fail", #"{"v":2,"id":"1","error":{"type":"failed","code":"internal","message":"api did not stop","hint":"station machines"}}"#)
         defer { engine.stop() }
         let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(try fixtureAction("power-awake"), answers: ["Lid": "Lid=true Battery=true"])
-        XCTAssertEqual(engine.received, [#"{"call":"power.awake","id":"1","in":{"Battery":true,"For":14400000000000,"Lid":true},"v":2}"#])
+        XCTAssertEqual(engine.received, [#"{"call":"awake.keep","id":"1","in":{"Battery":true,"For":14400000000000,"Lid":true},"v":2}"#])
         XCTAssertEqual(status, Status("api did not stop  → station machines", failed: true))
     }
 

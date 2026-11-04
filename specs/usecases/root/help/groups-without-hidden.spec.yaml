@@ -16,11 +16,11 @@ runs:
       stdout: |
           accounts
           apps
+          awake
           background
           disk
           overview
           ports
-          power
           run
           settings
     - command: 'help | /usr/bin/sed -n "/^  A MAC/,/^  STATION/p" | /usr/bin/grep -oE "^    [a-z]+ " | /usr/bin/tr -d " "'

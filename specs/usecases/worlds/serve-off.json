@@ -253,6 +253,7 @@
             },
             "preferences": {
                 "here": "jterrazz-mac-mini",
+                "never_sleeps": true,
                 "vm_user": "admin"
             },
             "facts": {

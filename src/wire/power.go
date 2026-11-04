@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/spf13/cobra"
-
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -15,10 +13,6 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
-	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	powercmd "github.com/jterrazz/studio-station/src/surface/cli/power"
-	powerawake "github.com/jterrazz/studio-station/src/surface/cli/power/awake"
-	powersleep "github.com/jterrazz/studio-station/src/surface/cli/power/sleep"
 )
 
 func (m machine) powerPage(v power.View) any {
@@ -51,13 +45,6 @@ func (m machine) power() *power.Service {
 			return err == nil
 		},
 	}, power.ServiceOptions{Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, Zone: time.Local})
-}
-
-func powerCommand(env kit.Env, m machine) *cobra.Command {
-	return powercmd.Command(powercmd.Deps{Here: m.where}, env,
-		powerawake.Command(powerawake.Deps{Zone: time.Local, Here: m.where}, env),
-		powersleep.Command(powersleep.Deps{Here: m.where}, env),
-	)
 }
 
 type tuiPower struct {

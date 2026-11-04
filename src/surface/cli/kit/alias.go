@@ -8,9 +8,17 @@ import (
 )
 
 const (
-	aliasNow  = "station.alias.now"
-	aliasArgs = "station.alias.args"
+	aliasNow        = "station.alias.now"
+	aliasArgs       = "station.alias.args"
+	aliasPositional = "station.alias.positional"
 )
+
+func AliasPositional(f *pflag.FlagSet, name string) {
+	// value: an old flag whose value the new command takes as its argument
+	// (power awake --for 2h is awake 2h): the notice says its value alone,
+	// its default when it was not given.
+	_ = f.SetAnnotation(name, aliasPositional, []string{"yes"})
+}
 
 func Alias(old string, cmd *cobra.Command, now string) *cobra.Command {
 	// value: cmd as the hidden old word of a command for one release (SPEC
@@ -60,7 +68,15 @@ func notice(env Env, c *cobra.Command, args []string) {
 		}
 	}
 	words = append(words, args...)
+	c.Flags().VisitAll(func(f *pflag.Flag) {
+		if _, ok := f.Annotations[aliasPositional]; ok {
+			words = append(words, f.Value.String())
+		}
+	})
 	c.Flags().Visit(func(f *pflag.Flag) {
+		if _, ok := f.Annotations[aliasPositional]; ok {
+			return
+		}
 		if f.Value.Type() == "bool" {
 			words = append(words, "--"+f.Name)
 			return

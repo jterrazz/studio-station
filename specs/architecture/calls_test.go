@@ -22,7 +22,6 @@ import (
 func callWordsTolerated() map[string][]string {
 	return map[string][]string{
 		"settings": {"run", "shell"},
-		"awake":    {"power"},
 	}
 }
 

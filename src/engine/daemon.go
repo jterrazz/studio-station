@@ -62,6 +62,8 @@ type Options struct {
 	GuestPort int
 	// value: this Mac's power, whose sessions the daemon holds; nil is none.
 	Power power.Port
+	// value: the never_sleeps preference, read at start and every 30 ticks.
+	NeverSleeps func() bool
 	// value: the power page a subscription streams, built by the caller's pages.
 	PowerPage func(power.View) any
 	// value: the other pages a subscription streams (the menu bar's), by id.
@@ -103,6 +105,7 @@ type Daemon struct {
 	started time.Time
 	note    func(line string)
 	power   *power.Machine
+	awake   *power.Kept
 	hub     hub
 
 	notifier Notifier
@@ -223,6 +226,9 @@ func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
 	}
 	d.note, d.life = note, ctx
 	d.power.Reset()
+	if d.awake != nil {
+		d.power.Restore(*d.awake)
+	}
 	if n := d.h.Run.Reap(ChildrenDir(d.o.State)); n > 0 {
 		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed engine left running")
 	}
@@ -233,6 +239,7 @@ func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
 	if !d.o.StartedAt.IsZero() {
 		d.started = d.o.StartedAt.UTC().Truncate(time.Second)
 	}
+	d.neverSleeps(d.started)
 	d.leases, _ = d.st.Reservations.List(ctx)
 	d.refreshSelf(ctx)
 	d.adopt(ctx)
@@ -309,6 +316,7 @@ func (d *Daemon) Stop() {
 func (d *Daemon) step(ctx context.Context, tick int) {
 	if tick%serveEvery == 0 {
 		d.refreshSelf(ctx)
+		d.neverSleeps(time.Time{})
 	}
 	d.tick(ctx)
 	d.sweepLends(ctx)

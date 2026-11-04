@@ -1,0 +1,59 @@
+{
+  "schema": "station.page/v1",
+  "id": "awake",
+  "command": "awake",
+  "context": {
+    "kind": "host"
+  },
+  "state": "loading",
+  "sections": [
+    {
+      "id": "awake",
+      "title": "Awake",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "mode",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro",
+            "mark": "pending",
+            "label": "jterrazz-macbook-pro",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini",
+            "mark": "pending",
+            "label": "jterrazz-mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 2
+        }
+      ]
+    }
+  ]
+}

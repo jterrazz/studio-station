@@ -15,5 +15,5 @@ runs:
           ready
           ["menubar",["todo","fleet","power"]]
           [["new-vm","machines.create-workspace"],["open-station","terminal"],["stop-all","engine.stop"]]
-          [["power-awake","power.awake",["awake"]]]
+          [["power-awake","awake.keep",["awake"]]]
           1

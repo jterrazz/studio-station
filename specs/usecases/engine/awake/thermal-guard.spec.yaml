@@ -1,0 +1,18 @@
+description: 'serious thermal pressure ends a keep-awake at once, and says so'
+env: two-macs
+runs:
+    - command: 'awake 4h'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	stays awake until 14:00
+    - command: 'world thermal serious'
+      exit: 0
+    - command: 'awake | /usr/bin/sed -n 1,2p'
+      exit: 0
+      stdout: |
+          # Awake
+          ◐	jterrazz-macbook-pro	Awake stopped · thermal serious
+    - command: '--version >/dev/null; /usr/bin/jq -c ''[.macs["jterrazz-macbook-pro"].power.holds, [.told[] | .Text]]'' world.json'
+      exit: 0
+      stdout: |
+          [null,["Awake stopped: thermal serious"]]

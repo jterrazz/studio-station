@@ -103,7 +103,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		settingsCommand(kenv, here),
 		diskCommand(kenv, here),
 		storageAlias(kenv, here),
-		powerCommand(kenv, here),
+		awakeCommand(kenv, here),
 		machinesCommand(kenv, here),
 		imagesCommand(kenv, here),
 		secretsAlias(kenv, here),
@@ -118,6 +118,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	}
 	commands = append(commands, engineAliases(kenv, here)...)
 	commands = append(commands, settingsAliases(kenv, here)...)
+	commands = append(commands, awakeAliases(kenv, here)...)
 	commands = append(commands, portsCommands(kenv, here)...)
 	if session != nil {
 		commands = append(commands, session.command())

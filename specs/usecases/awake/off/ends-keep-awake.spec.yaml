@@ -1,0 +1,20 @@
+description: 'awake off ends the keep-awake: the assertion goes and the lid sleeps the Mac again'
+env: two-macs
+runs:
+    - command: 'awake 4h --lid'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	stays awake until 14:00 · lid closed
+    - command: 'awake off'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	sleeps normally again
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"].power | {holds, clamshell}'' world.json'
+      exit: 0
+      stdout: |
+          {"holds":null,"clamshell":null}
+    - command: 'awake | /usr/bin/sed -n 1,2p'
+      exit: 0
+      stdout: |
+          # Awake
+          ○	jterrazz-macbook-pro	Sleeps normally

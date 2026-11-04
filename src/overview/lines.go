@@ -130,29 +130,32 @@ func BackgroundRead(tasks []background.Task, m machine.Ref) Read {
 	})}, Findings: background.Findings(tasks, m)}
 }
 
-func AwakeRead(r awake.Report) Read {
+func AwakeRead(r awake.Report, m machine.Ref) Read {
 	// invariant: Awake is the engine's: with the engine stopped its line
 	// says so rather than read off.
 	if r.Daemon != "" && r.Daemon != awake.EngineRunning && r.Daemon != awake.EngineReading {
 		return Unread(section.Awake, "needs the engine")
 	}
-	s := r.Session
-	if s == nil {
-		return Read{Line: Line{Section: section.Awake, Parts: []Part{{State: catalog.StateAbsent, Word: "off"}}}}
-	}
-	held := Part{State: catalog.StateOK, Word: "on"}
-	if !s.Until.IsZero() {
+	var parts []Part
+	switch r.Mode() {
+	case awake.NeverSleeps:
+		parts = []Part{{State: catalog.StateOK, Word: "never sleeps"}}
+	case awake.AwakeUntil:
+		s := r.Session
 		zone := r.Zone
 		if zone == nil {
 			zone = time.UTC
 		}
-		held.Word = "until " + s.Until.In(zone).Format("15:04")
+		parts = []Part{{State: catalog.StateOK, Word: "until " + s.Until.In(zone).Format("15:04")}}
+		if s.Lid {
+			parts = append(parts, Part{Word: "lid closed"})
+		}
+	case awake.StoppedByGuard:
+		parts = []Part{{State: catalog.StateDegraded, Word: "stopped"}, {Word: r.LastEnd.Detail}}
+	case awake.SleepsNormally:
+		parts = []Part{{State: catalog.StateAbsent, Word: "off"}}
 	}
-	parts := []Part{held}
-	if s.Lid {
-		parts = append(parts, Part{Word: "lid closed"})
-	}
-	return Read{Line: Line{Section: section.Awake, Parts: parts}}
+	return Read{Line: Line{Section: section.Awake, Parts: parts}, Findings: awake.Findings(r, m)}
 }
 
 func SSHRead(m machine.Ref) Read {

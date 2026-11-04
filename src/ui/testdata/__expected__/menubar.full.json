@@ -605,7 +605,7 @@
               },
               {
                 "kind": "text",
-                "text": "started 10:42 by station power awake --lid"
+                "text": "started 10:42 by station awake 4h --lid"
               }
             ]
           }
@@ -751,7 +751,7 @@
       "mutates": true,
       "id": "power-sleep",
       "run": {
-        "call": "power.sleep"
+        "call": "awake.off"
       }
     }
   ]

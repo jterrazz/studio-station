@@ -21,4 +21,4 @@ runs:
           ○	backup-exclusions	not applied	station settings apply backup-exclusions
           ○	tart-launcher	not applied	station settings apply tart-launcher
           # Always-on Mac
-          ○	Always-on Mac	4 · for a Mac that hosts servers
+          ○	Always-on Mac	5 · for a Mac that hosts servers
