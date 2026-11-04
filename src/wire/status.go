@@ -11,6 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/adapter/brew"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
+	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -26,11 +27,19 @@ import (
 )
 
 func overviewCommand(env kit.Env, m machine) *cobra.Command {
-	return overviewcmd.Command(overviewcmd.Deps{Here: m.where}, env)
+	return overviewcmd.Command(m.overviewDeps(false), env)
+}
+
+// value: the one Overview `overview --on <vm>` and `machines <vm>` both
+// print (MA-06): a VM is read from All machines.
+func (m machine) overviewDeps(status bool) overviewcmd.Deps {
+	return overviewcmd.Deps{Here: m.where, Status: status, Fleet: func(ctx context.Context) (machines.Fleet, error) {
+		return m.machines(false).Fleet(ctx, false)
+	}}
 }
 
 func statusCommand(env kit.Env, m machine) *cobra.Command {
-	return kit.Alias("status", overviewcmd.Command(overviewcmd.Deps{Here: m.where, Status: true}, env), "overview")
+	return kit.Alias("status", overviewcmd.Command(m.overviewDeps(true), env), "overview")
 }
 
 func statusDeps(env kit.Env, m machine) overviewcalls.Sections {

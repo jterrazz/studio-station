@@ -1,11 +1,24 @@
-description: 'station machines <machine> is the Overview station overview --on <machine> prints'
-env: two-macs
+description: 'station machines <machine> prints byte for byte what station overview --on <machine> prints, a VM of either Mac and a Mac alike'
+env:
+    - two-macs
+    - engine
 runs:
-    - command: 'machines jterrazz-macbook-pro --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+    - command: '--version >/dev/null; "$STATION" machines linux-1 > noun.txt; "$STATION" overview --on linux-1 > on.txt; /usr/bin/cmp noun.txt on.txt && /bin/cat noun.txt'
       exit: 0
       stdout: |
-          {"schema":"station.overview.read/v1","machine":"jterrazz-macbook-pro"}
-    - command: 'overview --on jterrazz-macbook-pro --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
+          ●	Size	4 CPU · 8 GB · 50 GB
+    - command: '--version >/dev/null; "$STATION" machines infra --json > noun.json; "$STATION" overview --on infra --json > on.json; /usr/bin/cmp noun.json on.json && /usr/bin/jq -c ''{schema, machine}'' noun.json'
       exit: 0
       stdout: |
-          {"schema":"station.overview.read/v1","machine":"jterrazz-macbook-pro"}
+          {"schema":"station.overview.read/v1","machine":{"name":"infra","kind":"workspace","on":"jterrazz-mac-mini","reachable":true}}
+    - command: 'machines jterrazz-mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+      exit: 0
+      stdout: |
+          {"schema":"station.overview.read/v1","machine":"jterrazz-mac-mini"}
+    - command: 'overview --on jterrazz-mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+      exit: 0
+      stdout: |
+          {"schema":"station.overview.read/v1","machine":"jterrazz-mac-mini"}

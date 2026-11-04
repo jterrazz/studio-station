@@ -73,12 +73,14 @@ type ConfigItem struct {
 	Places                  []MachineKind
 	Requires                string
 	Inputs                  []Input
-	Effect                  Effect
-	Interactive             bool
-	NeedsRoot               bool
-	Reversible              bool
-	RunOnce                 bool
-	Writes                  []Stored
+	// value: how this machine applies it; never on the wire, so a far
+	// Mac's report of the item decodes here (it holds an interface).
+	Effect      Effect `json:"-"`
+	Interactive bool
+	NeedsRoot   bool
+	Reversible  bool
+	RunOnce     bool
+	Writes      []Stored
 }
 
 var (

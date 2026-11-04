@@ -17,3 +17,12 @@ runs:
       exit: 0
       stdout: |
           {"schema":"station.overview.read/v1","machine":"jterrazz-macbook-pro"}
+    - command: 'machines probe infra'
+      exit: 0
+      stdout: |
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
+          ●	Size	8 CPU · 24 GB · 80 GB
+      stderr: |
+          → now: station machines infra

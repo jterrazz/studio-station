@@ -103,7 +103,7 @@ func (m machine) port(fallback int, names ...string) int {
 func machinesCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.machines(env.Interactive)
 	overview := func(ctx context.Context, io kit.IO) error {
-		return overviewcmd.Run(ctx, overviewcmd.Deps{Here: m.where}, env, false, io)
+		return overviewcmd.Run(ctx, m.overviewDeps(false), env, false, io)
 	}
 	return machinescmd.Command(machinescmd.Deps{Here: m.where, Names: service.Names, Overview: overview}, env,
 		machinesadd.Command(machinesadd.Deps{Here: m.where}, env),
