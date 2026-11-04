@@ -252,7 +252,7 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 	}
 	st := newStores(h.FS, paths)
 	if world != nil {
-		st.prefs, st.machines = world.preferences(), world.machineStore()
+		world.stores(st)
 	}
 	registered, _ := st.name().Get()
 	m := machine{
@@ -266,9 +266,15 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 		paths:  paths,
 		stores: st,
 	}
+	pin, self := vars["STATION_MACHINE_KIND"], selfOf(h)
 	m.powerPort = awakemacos.New(door, h.Run, m.systemRoot())
+	if world != nil {
+		// invariant: a world says what each of its machines is: its Self is
+		// read, never the pin every document runs with.
+		pin, self, m.powerPort = "", world.self(), world.power()
+	}
 	name := hereName(registered, h.Env.Hostname())
-	m.profile = profileOf(context.Background(), h, vars["STATION_MACHINE_KIND"], name, m.powerPort)
+	m.profile = profileOf(context.Background(), self, pin, name, m.powerPort)
 	m.kind = legacyKind(m.profile)
 	m.where = page.Context{Machine: name, Kind: string(m.kind), Registered: registered != ""}
 	return m

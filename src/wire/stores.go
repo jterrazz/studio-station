@@ -10,11 +10,13 @@ import (
 	"github.com/jterrazz/studio-station/src/core/store"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	imagesjsonfile "github.com/jterrazz/studio-station/src/images/adapter/jsonfile"
+	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	machinesjsonfile "github.com/jterrazz/studio-station/src/machines/adapter/jsonfile"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	portsjsonfile "github.com/jterrazz/studio-station/src/ports/adapter/jsonfile"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	settingsjsonfile "github.com/jterrazz/studio-station/src/settings/adapter/jsonfile"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -40,16 +42,41 @@ type machineStore interface {
 	store.Migrator
 }
 
+type imageStore interface {
+	imagescontract.ImageStore
+	store.Migrator
+}
+
+type shareStore interface {
+	accountscontract.ShareStore
+	store.Migrator
+}
+
+type reservationStore interface {
+	portscontract.ReservationStore
+	store.Migrator
+}
+
+type declarationStore interface {
+	portscontract.DeclarationStore
+	store.Migrator
+}
+
+type appliedStore interface {
+	settingscontract.AppliedStore
+	store.Migrator
+}
+
 // value: every store station keeps on this machine, each built once here
 // over its file; nothing else constructs one.
 type stores struct {
 	prefs        preferences
 	machines     machineStore
-	images       *imagesjsonfile.Store
-	shares       *accountsjsonfile.Shares
-	reservations *portsjsonfile.Reservations
-	declarations *portsjsonfile.Declarations
-	applied      *settingsjsonfile.Applied
+	images       imageStore
+	shares       shareStore
+	reservations reservationStore
+	declarations declarationStore
+	applied      appliedStore
 }
 
 func newStores(files system.FS, p settings.Paths) *stores {

@@ -38,12 +38,12 @@ func pinned(word string) (coremachine.Kind, coremachine.OS, bool) {
 // the system from Self (or the pin), the battery, lid and thermal from
 // Power, the job manager, the hypervisor and the engine from which adapters
 // this machine is wired with (launchd and tart on macOS, an engine on a Mac).
-func profileOf(ctx context.Context, h system.Host, pin, name string, power awakecontract.Power) coremachine.Profile {
+func profileOf(ctx context.Context, self contract.Self, pin, name string, power awakecontract.Power) coremachine.Profile {
 	var p coremachine.Profile
 	if kind, os, ok := pinned(pin); ok {
 		p.Kind, p.System.OS = kind, os
 	} else {
-		_, p.Kind, p.System, p.Hardware, _ = selfOf(h).Read(ctx)
+		_, p.Kind, p.System, p.Hardware, _ = self.Read(ctx)
 	}
 	p.Ref = coremachine.Ref{Name: name}
 	mac := p.Kind == coremachine.Mac

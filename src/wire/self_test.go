@@ -8,12 +8,11 @@ import (
 	"github.com/jterrazz/studio-station/src/awake/contract/contracttest"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 func TestALaptopAndADesktopDifferByWhatTheirPowerReports(t *testing.T) {
-	laptop := profileOf(context.Background(), system.Host{}, "host", "macbook", awakefake.NewPower(contracttest.Laptop()))
-	desktop := profileOf(context.Background(), system.Host{}, "host", "mini", awakefake.NewPower(contracttest.Desktop()))
+	laptop := profileOf(context.Background(), nil, "host", "macbook", awakefake.NewPower(contracttest.Laptop()))
+	desktop := profileOf(context.Background(), nil, "host", "mini", awakefake.NewPower(contracttest.Desktop()))
 	if !laptop.Caps.Battery || !laptop.Caps.Lid || !laptop.Caps.Engine || !laptop.Caps.VMs || !laptop.Caps.Jobs {
 		t.Errorf("the laptop's capabilities: %+v", laptop.Caps)
 	}
@@ -27,7 +26,7 @@ func TestALaptopAndADesktopDifferByWhatTheirPowerReports(t *testing.T) {
 
 func TestAPinnedVMRunsNoEngineAndHoldsNoPower(t *testing.T) {
 	for pin, want := range map[string]catalog.MachineKind{"linux": catalog.Linux, "macos": catalog.MacOS} {
-		p := profileOf(context.Background(), system.Host{}, pin, "dev", awakefake.NewPower(contracttest.Laptop()))
+		p := profileOf(context.Background(), nil, pin, "dev", awakefake.NewPower(contracttest.Laptop()))
 		if p.Kind != coremachine.Workspace || legacyKind(p) != want || p.Caps.Engine || p.Caps.Battery {
 			t.Errorf("%s: %+v", pin, p)
 		}

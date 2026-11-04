@@ -29,6 +29,9 @@ func (m machine) guest() *guest.Service {
 }
 
 func (m machine) listeners(root string) guest.Listeners {
+	if m.world != nil {
+		return m.world.listeners()
+	}
 	if m.kind == catalog.MacOS {
 		return lsof.New(m.host.Run)
 	}

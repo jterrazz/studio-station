@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"maps"
 	"net"
-	"net/netip"
 	"os"
 	"slices"
 	"time"
@@ -18,15 +17,32 @@ import (
 
 	accountsfake "github.com/jterrazz/studio-station/src/accounts/adapter/fake"
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
+	activityfake "github.com/jterrazz/studio-station/src/activity/adapter/fake"
+	activitycontract "github.com/jterrazz/studio-station/src/activity/contract"
+	appsfake "github.com/jterrazz/studio-station/src/apps/adapter/fake"
+	appscontract "github.com/jterrazz/studio-station/src/apps/contract"
+	awakefake "github.com/jterrazz/studio-station/src/awake/adapter/fake"
+	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
+	backgroundfake "github.com/jterrazz/studio-station/src/background/adapter/fake"
+	backgroundcontract "github.com/jterrazz/studio-station/src/background/contract"
+	"github.com/jterrazz/studio-station/src/catalog"
 	corefake "github.com/jterrazz/studio-station/src/core/adapter/fake"
 	"github.com/jterrazz/studio-station/src/core/call"
+	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	"github.com/jterrazz/studio-station/src/core/fail"
+	diskfake "github.com/jterrazz/studio-station/src/disk/adapter/fake"
+	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginefake "github.com/jterrazz/studio-station/src/engine/adapter/fake"
+	imagesfake "github.com/jterrazz/studio-station/src/images/adapter/fake"
 	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	portsfake "github.com/jterrazz/studio-station/src/ports/adapter/fake"
+	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotefake "github.com/jterrazz/studio-station/src/remote/adapter/fake"
 	remotecontract "github.com/jterrazz/studio-station/src/remote/contract"
+	settingsfake "github.com/jterrazz/studio-station/src/settings/adapter/fake"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/world"
 )
@@ -120,25 +136,59 @@ func (m *worldMac) hypervisor(name string) contract.Hypervisor {
 	return machinesfake.HypervisorOf(m.run.w, m.name, name)
 }
 
-func (m *worldMac) preferences() preferences {
+// invariant: station's own state in a world is its Mac's slice: every store
+// is the fake over it, never a file of the run's home.
+func (m *worldMac) stores(st *stores) {
 	m.run.w.Lock()
-	defer m.run.w.Unlock()
 	slice := m.run.w.Mac(m.name)
 	if slice.Preferences == nil {
 		slice.Preferences = map[string]json.RawMessage{}
 	}
-	return corefake.PreferencesOver(slice.Preferences, m.name, m.run.w)
+	st.prefs = corefake.PreferencesOver(slice.Preferences, m.name, m.run.w)
+	m.run.w.Unlock()
+	w := m.run.w
+	st.machines = machinesfake.StoreOf(w, m.name)
+	st.images = imagesfake.StoreOf(w, m.name)
+	st.shares = accountsfake.SharesOf(w, m.name)
+	st.reservations = portsfake.ReservationsOf(w, m.name)
+	st.declarations = portsfake.DeclarationsOf(w, m.name)
+	st.applied = settingsfake.AppliedOf(w, m.name)
 }
 
-func (m *worldMac) machineStore() machineStore { return machinesfake.StoreOf(m.run.w, m.name) }
+func (m *worldMac) self() corecontract.Self        { return corefake.SelfOf(m.run.w, m.name) }
+func (m *worldMac) power() awakecontract.Power     { return awakefake.PowerOf(m.run.w, m.name) }
+func (m *worldMac) guests() contract.GuestDialer   { return machinesfake.GuestsOf(m.run.w) }
+func (m *worldMac) sshConfig() contract.SSHConfig  { return machinesfake.SSHConfigOf(m.run.w, m.name) }
+func (m *worldMac) unlocker() contract.Unlocker    { return machinesfake.MacsOf(m.run.w) }
+func (m *worldMac) jobs() backgroundcontract.Jobs  { return backgroundfake.New(m.run.w, m.name) }
+func (m *worldMac) meter() activitycontract.Meter  { return activityfake.MeterOf(m.run.w, m.name) }
+func (m *worldMac) disk() diskcontract.DiskUsage   { return diskfake.UsageOf(m.run.w, m.name) }
+func (m *worldMac) tailnet() portscontract.Tailnet { return portsfake.TailnetOf(m.run.w, m.name) }
+func (m *worldMac) bundler() appscontract.Bundler  { return appsfake.BundlerOf(m.run.w, m.name) }
+func (m *worldMac) vault() accountscontract.Vault  { return accountsfake.NewVault(m.run.w, m.name) }
+func (m *worldMac) listeners() portscontract.Listeners {
+	return portsfake.ListenersOf(m.run.w, m.name)
+}
 
-func (m *worldMac) vault() accountscontract.Vault { return accountsfake.NewVault(m.run.w, m.name) }
+func (m *worldMac) inspector() settingscontract.Inspector {
+	return settingsfake.NewInspector(m.run.w, m.name)
+}
+
+func (m *worldMac) installer(method catalog.Method, lined bool) appscontract.Installer {
+	return appsfake.InstallerOf(m.run.w, m.name, method, lined)
+}
+
+func (m *worldMac) identities() accountscontract.Identities {
+	return accountsfake.NewIdentities(m.run.w, m.name)
+}
+
+func (m *worldMac) secretSource() accountscontract.SecretSource {
+	return accountsfake.NewSecretSource(m.run.w, m.name)
+}
 
 func (m *worldMac) notifier() engine.Notifier {
 	return lockedNotifier{w: m.run.w, n: enginefake.NewNotifier(m.run.w)}
 }
-
-func (*worldMac) guests() engine.Guests { return silentGuests{} }
 
 func (m *worldMac) engineFrom(start func() *engine.Daemon) { m.start = start }
 
@@ -345,13 +395,4 @@ func (l lockedNotifier) Notify(ctx context.Context, n engine.Notification) {
 	l.w.Lock()
 	defer l.w.Unlock()
 	l.n.Notify(ctx, n)
-}
-
-// invariant: no guest of a world answers yet: a dial waits until the run
-// it was for is over, so a VM's guest reads connecting.
-type silentGuests struct{}
-
-func (silentGuests) Dial(ctx context.Context, _ string, _ netip.AddrPort) (engine.Guest, error) {
-	<-ctx.Done()
-	return nil, ctx.Err()
 }

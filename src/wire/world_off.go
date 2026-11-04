@@ -8,9 +8,18 @@ import (
 	"github.com/spf13/cobra"
 
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
+	activitycontract "github.com/jterrazz/studio-station/src/activity/contract"
+	appscontract "github.com/jterrazz/studio-station/src/apps/contract"
+	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
+	backgroundcontract "github.com/jterrazz/studio-station/src/background/contract"
+	"github.com/jterrazz/studio-station/src/catalog"
+	corecontract "github.com/jterrazz/studio-station/src/core/contract"
+	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotecontract "github.com/jterrazz/studio-station/src/remote/contract"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -28,12 +37,25 @@ func (*worldRun) farFrom(func(*worldMac) farMac) {}
 func (*worldRun) command() *cobra.Command        { return nil }
 func (*worldRun) close(context.Context) error    { return nil }
 
-func (*worldMac) host(h system.Host) system.Host        { return h }
-func (*worldMac) hypervisor(string) contract.Hypervisor { return nil }
-func (*worldMac) preferences() preferences              { return nil }
-func (*worldMac) machineStore() machineStore            { return nil }
-func (*worldMac) vault() accountscontract.Vault         { return nil }
-func (*worldMac) notifier() engine.Notifier             { return nil }
-func (*worldMac) guests() engine.Guests                 { return nil }
-func (*worldMac) engineFrom(func() *engine.Daemon)      {}
-func (*worldMac) macs() remotecontract.EndpointDialer   { return nil }
+func (*worldMac) host(h system.Host) system.Host                        { return h }
+func (*worldMac) stores(*stores)                                        {}
+func (*worldMac) self() corecontract.Self                               { return nil }
+func (*worldMac) power() awakecontract.Power                            { return nil }
+func (*worldMac) hypervisor(string) contract.Hypervisor                 { return nil }
+func (*worldMac) guests() contract.GuestDialer                          { return nil }
+func (*worldMac) sshConfig() contract.SSHConfig                         { return nil }
+func (*worldMac) unlocker() contract.Unlocker                           { return nil }
+func (*worldMac) jobs() backgroundcontract.Jobs                         { return nil }
+func (*worldMac) inspector() settingscontract.Inspector                 { return nil }
+func (*worldMac) meter() activitycontract.Meter                         { return nil }
+func (*worldMac) disk() diskcontract.DiskUsage                          { return nil }
+func (*worldMac) listeners() portscontract.Listeners                    { return nil }
+func (*worldMac) tailnet() portscontract.Tailnet                        { return nil }
+func (*worldMac) installer(catalog.Method, bool) appscontract.Installer { return nil }
+func (*worldMac) bundler() appscontract.Bundler                         { return nil }
+func (*worldMac) vault() accountscontract.Vault                         { return nil }
+func (*worldMac) identities() accountscontract.Identities               { return nil }
+func (*worldMac) secretSource() accountscontract.SecretSource           { return nil }
+func (*worldMac) notifier() engine.Notifier                             { return nil }
+func (*worldMac) engineFrom(func() *engine.Daemon)                      {}
+func (*worldMac) macs() remotecontract.EndpointDialer                   { return nil }

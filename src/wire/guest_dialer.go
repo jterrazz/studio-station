@@ -7,8 +7,18 @@ import (
 
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
+
+// invariant: the one way into a VM: ssh, or the world's guests in a spec
+// build.
+func (m machine) guestDialer() contract.GuestDialer {
+	if m.world != nil {
+		return m.world.guests()
+	}
+	return ssh.New()
+}
 
 type engineGuests struct {
 	dialer contract.GuestDialer

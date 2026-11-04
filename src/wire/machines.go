@@ -13,6 +13,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	machinescmd "github.com/jterrazz/studio-station/src/surface/cli/machines"
 	machinesadd "github.com/jterrazz/studio-station/src/surface/cli/machines/add"
@@ -47,10 +48,24 @@ func (m machine) machines(_ bool) *machines.Service {
 		Ask:       m.askFleet,
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
-		Unlocker:  macos.New(m.host.Run, m.host.FS, knownHosts),
-		SSHConfig: openssh.New(m.host.FS, openssh.Options{
-			Home: m.host.Env.Home(), KnownHosts: knownHosts, Executable: m.host.Env.Executable(),
-		}),
+		Unlocker:  m.unlocker(knownHosts),
+		SSHConfig: m.sshConfig(knownHosts),
+	})
+}
+
+func (m machine) unlocker(knownHosts string) contract.Unlocker {
+	if m.world != nil {
+		return m.world.unlocker()
+	}
+	return macos.New(m.host.Run, m.host.FS, knownHosts)
+}
+
+func (m machine) sshConfig(knownHosts string) contract.SSHConfig {
+	if m.world != nil {
+		return m.world.sshConfig()
+	}
+	return openssh.New(m.host.FS, openssh.Options{
+		Home: m.host.Env.Home(), KnownHosts: knownHosts, Executable: m.host.Env.Executable(),
 	})
 }
 

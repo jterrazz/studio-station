@@ -12,7 +12,10 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 )
 
-func (m machine) jobs(budget time.Duration) *launchd.Jobs {
+func (m machine) jobs(budget time.Duration) contract.Jobs {
+	if m.world != nil {
+		return m.world.jobs()
+	}
 	return launchd.New(m.host.Run, m.host.FS, launchd.Options{
 		Home: m.host.Env.Home(), Root: m.systemRoot(), UID: m.host.Env.Euid(), Budget: budget,
 	})

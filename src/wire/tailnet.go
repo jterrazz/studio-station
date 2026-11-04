@@ -22,7 +22,14 @@ func (m machine) exposure(ctx context.Context) services.Exposure {
 	return services.ExposureOf(ready.On, ready.Host)
 }
 
-func (m machine) tailnet() *tailscale.CLI {
+func (m machine) tailnet() contract.Tailnet {
+	if m.world != nil {
+		return m.world.tailnet()
+	}
+	return m.tailscale()
+}
+
+func (m machine) tailscale() *tailscale.CLI {
 	return tailscale.New(m.host.Run, m.host.FS, m.systemRoot())
 }
 

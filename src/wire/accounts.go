@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/accounts/adapter/cli"
+	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/guest"
@@ -125,6 +126,9 @@ func tailnetAccount(ctx context.Context, tn contract.Tailnet) accounts.TailnetAc
 
 // value: who each provider says is signed in here, read by its own tool, each
 // read's process recorded under track.
-func (m machine) identities(track string) *cli.Reads {
+func (m machine) identities(track string) accountscontract.Identities {
+	if m.world != nil {
+		return m.world.identities()
+	}
 	return cli.New(m.host.Run, m.host.FS, cli.Options{Home: m.host.Env.Home(), Track: track})
 }

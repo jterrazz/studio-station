@@ -16,6 +16,7 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
+	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	settingscli "github.com/jterrazz/studio-station/src/settings/adapter/cli"
 	settingslinux "github.com/jterrazz/studio-station/src/settings/adapter/linux"
 	settingsmacos "github.com/jterrazz/studio-station/src/settings/adapter/macos"
@@ -55,12 +56,18 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	}
 	var facts settingscontract.Inspector
 	var meter activitycontract.Meter
+	var listening portscontract.Listeners = lsof.New(h.Run)
 	if m.kind == catalog.Linux {
 		facts, meter = settingslinux.New(h.Run), activitylinux.New(h.Run, h.Clock)
 	} else {
 		facts, meter = settingsmacos.New(h.Run, h.FS, h.Clock, settingsmacos.Options{Root: m.systemRoot()}), activitymacos.New(h.Run, h.Clock)
+	}
+	if m.world != nil {
+		facts, meter, listening = m.world.inspector(), m.world.meter(), m.world.listeners()
+	}
+	if m.kind != catalog.Linux {
 		// value: the status page reads listeners, jobs and app updates on a Mac only.
-		d.Listeners, d.Jobs, d.Updates = lsof.New(h.Run), m.jobs(overviewcalls.ReadBudget), brew.New(h.Run, nil)
+		d.Listeners, d.Jobs, d.Updates = listening, m.jobs(overviewcalls.ReadBudget), brew.New(h.Run, nil)
 	}
 	d.Facts, d.Meter = facts, meter
 	return d

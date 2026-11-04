@@ -91,6 +91,15 @@ func installers(m machine) (contract.Installers, contract.Bundler) {
 	} {
 		registry[i.Method()] = i
 	}
+	if m.world != nil {
+		// invariant: a world's installers are its fakes, one per method the
+		// real registry has, each lined when the real one rides the bundle.
+		for method, real := range registry {
+			_, lined := real.(contract.Lined)
+			registry[method] = m.world.installer(method, lined)
+		}
+		return registry, m.world.bundler()
+	}
 	return registry, bundle
 }
 

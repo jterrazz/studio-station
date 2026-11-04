@@ -39,7 +39,7 @@ func setupService(env kit.Env, m machine) *setup.Service {
 		Files:       m.toolFiles(),
 		Configurer:  setupConfigurer{config: configService(m)},
 		Installer:   systemTools{tools: toolsService(env, m)},
-		AppStoreCLI: m.tailnet().AppStoreCLI,
+		AppStoreCLI: m.tailscale().AppStoreCLI,
 	})
 }
 

@@ -39,6 +39,9 @@ func (m machine) storage(env kit.Env) *storage.Service {
 }
 
 func (m machine) disk() diskcontract.DiskUsage {
+	if m.world != nil {
+		return m.world.disk()
+	}
 	if m.profile.System.OS == coremachine.Linux {
 		return posix.New(m.host.Run)
 	}
