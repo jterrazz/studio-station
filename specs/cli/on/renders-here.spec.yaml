@@ -1,4 +1,4 @@
-description: '--on runs the call on the other Mac, through its engine over ssh, and renders its answer here: the same bytes as there'
+description: '--on runs the call on the other Mac''s engine and renders it here: the same bytes as there'
 fixture: ./__fixtures__/far-mac/
 env: daemon
 runs:

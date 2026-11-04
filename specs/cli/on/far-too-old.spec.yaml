@@ -1,4 +1,4 @@
-description: 'a call the far binary does not serve is refused with its version, read from its Hello at this connection, and how to update it'
+description: 'a call the far Hello lacks is refused with the far version and how to update it'
 fixture: ./__fixtures__/old-y/
 runs:
     - command: 'tools --json --on y'

@@ -1,4 +1,4 @@
-description: 'a far refusal whose code this binary does not know prints the far side''s own words, with its exit'
+description: 'a far refusal of a code this binary does not know prints the far side''s words'
 fixture: ./__fixtures__/old-y/
 runs:
     - command: 'tools upgrade jq --on y'
