@@ -3,6 +3,7 @@ package architecture_test
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"go/types"
 	"maps"
 	"slices"
@@ -187,8 +188,87 @@ func requires(fn ast.Node, info *types.Info) bool {
 	return found
 }
 
+// invariant: the allowlist of confirm-in-usecase: the leaves whose own
+// question is an offer of what to do, not a confirmation a call asks. It
+// only shrinks.
+func offersTolerated() map[string]string {
+	return map[string]string{
+		"surface/cli/machines/create": "builds the missing image first, or not",
+	}
+}
+
+// value: the method obj is, as <package>.<type>.<method>, or "".
+func methodOf(obj types.Object) string {
+	fn, ok := obj.(*types.Func)
+	if !ok || fn.Pkg() == nil {
+		return ""
+	}
+	sig, isSig := fn.Type().(*types.Signature)
+	if !isSig || sig.Recv() == nil {
+		return ""
+	}
+	t := sig.Recv().Type()
+	if p, isPtr := t.(*types.Pointer); isPtr {
+		t = p.Elem()
+	}
+	named, ok := t.(*types.Named)
+	if !ok || named.Obj().Pkg() == nil {
+		return ""
+	}
+	return strings.TrimPrefix(named.Obj().Pkg().Path(), module+"/src/") + "." + named.Obj().Name() + "." + fn.Name()
+}
+
+// value: the spans of the Ask fields of every kit.Leaf literal of a file:
+// the one place a leaf phrases the question its call asked.
+func leafAsks(f *file) [][2]token.Pos {
+	var out [][2]token.Pos
+	ast.Inspect(f.syntax, func(n ast.Node) bool {
+		lit, ok := n.(*ast.CompositeLit)
+		if !ok {
+			return true
+		}
+		named, ok := f.info.TypeOf(lit).(*types.Named)
+		if !ok || named.Obj().Pkg() == nil || named.Obj().Pkg().Path() != module+"/src/surface/cli/kit" || named.Obj().Name() != "Leaf" {
+			return true
+		}
+		for _, e := range lit.Elts {
+			if kv, ok := e.(*ast.KeyValueExpr); ok {
+				if k, ok := kv.Key.(*ast.Ident); ok && k.Name == "Ask" {
+					out = append(out, [2]token.Pos{kv.Value.Pos(), kv.Value.End()})
+				}
+			}
+		}
+		return true
+	})
+	return out
+}
+
+// value: why a selector of a surface decides a confirmation, or "".
+func decides(f *file, n *ast.SelectorExpr, asks [][2]token.Pos, offers bool) string {
+	obj := f.info.Uses[n.Sel]
+	if obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == module+"/src/core/confirm" && obj.Name() == "Yes" && f.pkg != "surface/cli/kit" {
+		return "a surface answers a confirmation before its call asks (confirm.Yes)"
+	}
+	switch methodOf(obj) {
+	case "ui/render/tui.Browser.Ask":
+		if f.pkg != "surface/tui/screens/tab" {
+			return "a screen puts its own question: only tab.Confirmed asks, once the call has"
+		}
+	case "surface/cli/kit.Asker.Confirm":
+		inAsk := slices.ContainsFunc(asks, func(span [2]token.Pos) bool { return n.Pos() >= span[0] && n.End() <= span[1] })
+		if !inAsk && !offers && f.pkg != "surface/cli/kit" {
+			return "a leaf puts a question outside its Leaf's Ask: only kit asks, once the call has"
+		}
+	}
+	return ""
+}
+
 // invariant: rule confirm-in-usecase (SC-07): a call that names a
-// confirmation asks it in its own Run; no surface asks the rule itself.
+// confirmation asks it in its own Run; no surface decides one. A surface
+// neither requires a confirmation nor answers one before its call asks
+// (confirm.Yes is kit's, for --yes); a TUI screen puts a question only
+// through tab.Confirmed, and a CLI leaf only in its Leaf's Ask, which kit
+// calls once the call has asked.
 func ruleConfirmInUsecase(w *world) []finding {
 	var out []finding
 	for _, c := range callValues(w) {
@@ -202,6 +282,23 @@ func ruleConfirmInUsecase(w *world) []finding {
 		}
 		if requires(f.syntax, f.info) {
 			out = append(out, finding{"confirm-in-usecase", f.rel, "a surface decides a confirmation (confirm.Require): only a use case does"})
+		}
+		asks := leafAsks(f)
+		_, offers := offersTolerated()[f.pkg]
+		ast.Inspect(f.syntax, func(node ast.Node) bool {
+			n, isSel := node.(*ast.SelectorExpr)
+			if !isSel {
+				return true
+			}
+			if what := decides(f, n, asks, offers); what != "" {
+				out = append(out, finding{"confirm-in-usecase", f.at(n.Pos()), what})
+			}
+			return true
+		})
+	}
+	for _, pkg := range slices.Sorted(maps.Keys(offersTolerated())) {
+		if !slices.ContainsFunc(w.files, func(f *file) bool { return f.pkg == pkg && !f.test }) {
+			out = append(out, finding{"confirm-in-usecase", "specs/architecture/calls_test.go", "src/" + pkg + " is gone: remove it from offersTolerated"})
 		}
 	}
 	return out
@@ -261,7 +358,16 @@ func isCode(t types.Type) bool {
 
 func TestCallsGated(t *testing.T)       { judge(t, "CallsGated") }
 func TestConfirmInUsecase(t *testing.T) { judge(t, "ConfirmInUsecase") }
-func TestEveryCodeWorded(t *testing.T)  { judge(t, "EveryCodeWorded") }
+func TestNoScreenAnswersAConfirmationBeforeItsCallAsks(t *testing.T) {
+	judge(t, "ConfirmInUsecaseAnswered")
+}
+func TestNoScreenPutsAQuestionItsCallDidNotAsk(t *testing.T) {
+	judge(t, "ConfirmInUsecaseScreenAsks")
+}
+func TestNoLeafPutsAQuestionOutsideItsLeafAsk(t *testing.T) {
+	judge(t, "ConfirmInUsecaseLeafAsks")
+}
+func TestEveryCodeWorded(t *testing.T) { judge(t, "EveryCodeWorded") }
 
 // value: the reference profiles of the worlds: a laptop Mac, a desktop
 // Mac, a workspace, a server.
