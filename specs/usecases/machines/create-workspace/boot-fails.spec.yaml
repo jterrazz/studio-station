@@ -7,7 +7,7 @@ runs:
       exit: 1
       stderr: |
           Error: linux-2 did not boot: the hypervisor refused to boot it, as the world scripted it
-          Hint: station machines start linux-2 · or station machines delete linux-2
+          Hint: station machines start linux-2, or station machines delete linux-2
     - command: 'machines --here'
       exit: 0
       stdout: |

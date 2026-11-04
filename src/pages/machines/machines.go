@@ -6,7 +6,6 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 )
@@ -139,6 +138,8 @@ func vmRow(vm machines.VM) page.Row {
 		detail = page.List(page.Text("ended unexpectedly"), page.Text("start or delete it"))
 	case machines.Broken:
 		row.Mark, row.Reason, detail = page.Broken, page.Failing, page.Text(vm.Detail)
+	case machines.Unknown:
+		row.Mark, row.Reason = page.NotKnown, page.Unreachable
 	}
 	row.Cells = []page.Value{page.Text("workspace"), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
 	return row
@@ -238,11 +239,9 @@ func CreatedContract(c machines.Created) CreatedJSON {
 	return body
 }
 
-// value: the health steps as they passed (SPEC §7.2), the ports reserved,
-// then the VM created, last.
 func Created(c machines.Created, here page.Context) page.Page {
 	vm, r := c.VM, c.VM.Resources
-	rows := []page.Row{passed(model.StepRunning, ""), passed(model.StepAddress, vm.IP), passed(model.StepSSH, "")}
+	rows := []page.Row{passed(machines.StepRunning, ""), passed(machines.StepAddress, vm.IP), passed(machines.StepSSH, "")}
 	off := false
 	for _, s := range c.Services {
 		row := pages.Done(s.Profile+"/"+strconv.Itoa(s.GuestPort), catalog.StateOK, "")

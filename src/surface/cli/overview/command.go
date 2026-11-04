@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/jterrazz/studio-station/src/core/call"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/machines"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
@@ -92,5 +92,6 @@ func (d Deps) vm(ctx context.Context, env kit.Env) (pagemachines.VMOverview, boo
 	if err != nil {
 		return pagemachines.VMOverview{}, false
 	}
-	return pagemachines.FindVM(f, name)
+	h, vm, ok := machines.FindVM(f, name)
+	return pagemachines.VMOverview{Fleet: f, Mac: h, VM: vm}, ok
 }

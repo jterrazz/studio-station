@@ -144,6 +144,7 @@ type (
 	DaemonInfo  = model.EngineView
 	HostView    = model.HostView
 	Fleet       = model.Fleet
+	ListSize    = model.ListSize
 	Check       = model.Check
 	ProbeReport = model.ProbeReport
 	SSHTarget   = model.SSHTarget
@@ -177,3 +178,14 @@ var nameChars = func(r rune) bool { return r == '-' || (r >= 'a' && r <= 'z') ||
 func validName(name string) bool {
 	return len(name) >= 1 && len(name) <= 40 && strings.IndexFunc(name, func(r rune) bool { return !nameChars(r) }) < 0
 }
+
+const (
+	StepRunning = model.StepRunning
+	StepAddress = model.StepAddress
+	StepSSH     = model.StepSSH
+)
+
+var (
+	HealthOf = model.HealthOf
+	Wanted   = model.Wanted
+)

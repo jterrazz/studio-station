@@ -102,7 +102,7 @@ func Findings(f Fleet) []finding.Finding {
 			case Stale:
 				add(ref, finding.NeedsALook, vm.Name, vm.Name+" ended unexpectedly", "station machines start "+vm.Name+on)
 			case Broken:
-				add(ref, finding.Broken, vm.Name, vm.Name+" "+vm.Detail, "station machines delete "+vm.Name+on)
+				add(ref, finding.Broken, vm.Name, vm.Name+" "+vm.Detail+", stopped", "station machines delete "+vm.Name+on)
 			case Running:
 				if h := HealthOf(vm); !h.SSH && vm.Guest == "absent" {
 					add(ref, finding.Broken, vm.Name, vm.Name+" fails "+StepSSH, "station machines restart "+vm.Name+on)

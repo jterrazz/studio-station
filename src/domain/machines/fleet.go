@@ -3,7 +3,6 @@ package machines
 import (
 	"context"
 	"slices"
-	"time"
 
 	model "github.com/jterrazz/studio-station/src/machines"
 
@@ -134,34 +133,6 @@ func (s *Service) Running(ctx context.Context) (map[string]catalog.MachineKind, 
 	return running, nil
 }
 
-// invariant: what this Mac keeps of each other Mac that answered: when, and
-// the VMs it held, so a silent Mac's row keeps them (SPEC §5.2); written only
-// when it changed.
-func (s *Service) Remember(_ context.Context, f Fleet) error {
-	cfg, err := s.prefs()
-	if err != nil {
-		return err
-	}
-	changed := false
-	for _, h := range f.Hosts {
-		known, ok := cfg.Hosts[h.Name]
-		if h.Here || !h.Reachable || !ok {
-			continue
-		}
-		seen := make([]model.SeenVM, 0, len(h.VMs))
-		for _, vm := range model.Ordered(h.VMs) {
-			seen = append(seen, model.SeenVM{Name: vm.Name, Lifetime: vm.Lifetime, CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes})
-		}
-		known.Answered, known.VMs = s.h.Clock.Now().UTC().Truncate(time.Second), seen
-		cfg.Hosts[h.Name], changed = known, true
-	}
-	if !changed {
-		return nil
-	}
-	return s.p.Hosts.Set(cfg.Hosts)
-}
-
-// value: whether mac held vm at its last answer to this Mac.
 func (s *Service) Remembers(mac, vm string) bool {
 	cfg, err := s.prefs()
 	if err != nil {

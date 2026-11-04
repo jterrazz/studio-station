@@ -20,4 +20,4 @@ runs:
           ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
           ✗	linux-1	Workspace	jterrazz-macbook-pro	In a loop · throwaway	4 CPU	8 GB	rebooting in a loop · stopped
           # Needs you
-          ✗	linux-1	rebooting in a loop · stopped	station machines delete linux-1
+          ✗	linux-1	rebooting in a loop, stopped	station machines delete linux-1

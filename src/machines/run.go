@@ -64,7 +64,7 @@ const (
 	ActStale
 )
 
-func BrokenDetail() string { return "rebooting in a loop · stopped" }
+func BrokenDetail() string { return "rebooting in a loop" }
 
 func AfterRun(l Lifetime, end RunEnd, reruns []time.Time, now time.Time) (Action, []time.Time) {
 	// invariant: a workspace never restarts by itself (SP-4). A poweroff its

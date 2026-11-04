@@ -134,3 +134,14 @@ type Edited struct {
 	// value: the VM runs, so the change waits for its next start.
 	Running bool
 }
+
+func FindVM(f Fleet, name string) (HostView, VM, bool) {
+	for _, h := range f.Hosts {
+		for _, vm := range h.VMs {
+			if vm.Name == name {
+				return h, vm, true
+			}
+		}
+	}
+	return HostView{}, VM{}, false
+}

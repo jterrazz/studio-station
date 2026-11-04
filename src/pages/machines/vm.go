@@ -5,26 +5,13 @@ import (
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
 )
 
-// value: the Overview of one VM of All machines, as its Mac reads it.
 type VMOverview struct {
 	Fleet machines.Fleet
 	Mac   machines.HostView
 	VM    machines.VM
-}
-
-func FindVM(f machines.Fleet, name string) (VMOverview, bool) {
-	for _, h := range f.Hosts {
-		for _, vm := range h.VMs {
-			if vm.Name == name {
-				return VMOverview{Fleet: f, Mac: h, VM: vm}, true
-			}
-		}
-	}
-	return VMOverview{}, false
 }
 
 func (o VMOverview) on() string {
@@ -36,8 +23,6 @@ func (o VMOverview) on() string {
 
 func (o VMOverview) unreachable() bool { return !o.Mac.Reachable }
 
-// value: SPEC §5.1's first line and Health and Size of a workspace (§7.2);
-// a VM whose Mac does not answer is that one line, never an error.
 func VMPage(o VMOverview, here page.Context) page.Page {
 	vm := o.VM
 	if o.unreachable() {
@@ -47,11 +32,11 @@ func VMPage(o VMOverview, here page.Context) page.Page {
 		}}})
 	}
 	caption := []page.Value{page.Text("Workspace on " + o.on()), page.Text(titled(string(vm.Lifetime))), page.Text(stateWord(vm.State))}
-	health := model.HealthOf(vm)
+	health := machines.HealthOf(vm)
 	steps := []page.Row{
-		step("running", model.StepRunning, health.Running, health.Running, ""),
-		step("address", model.StepAddress, health.Address, health.Running, vm.IP),
-		step("ssh", model.StepSSH, health.SSH, health.Running, ""),
+		step("running", machines.StepRunning, health.Running, health.Running, ""),
+		step("address", machines.StepAddress, health.Address, health.Running, vm.IP),
+		step("ssh", machines.StepSSH, health.SSH, health.Running, ""),
 	}
 	items := make([]page.Item, 0, len(steps)+1)
 	for i := range steps {
@@ -110,7 +95,6 @@ func stateWord(s machines.VMState) string {
 	return "Unknown"
 }
 
-// value: a disk reads in decimal gigabytes, as the hypervisor sizes it.
 func DiskSize(n int64) page.Value {
 	if n%1e9 == 0 {
 		return page.Text(strconv.FormatInt(n/1e9, 10) + " GB")
@@ -142,24 +126,24 @@ type VMMachineJSON struct {
 }
 
 type VMOverviewJSON struct {
-	Schema   string         `json:"schema"`
-	Machine  VMMachineJSON  `json:"machine"`
-	Lifetime string         `json:"lifetime"`
-	State    string         `json:"state"`
-	Wanted   string         `json:"wanted"`
-	Health   VMHealthJSON   `json:"health"`
-	Restarts int            `json:"restarts"`
-	Size     model.ListSize `json:"size"`
-	Detail   string         `json:"detail,omitempty"`
+	Schema   string            `json:"schema"`
+	Machine  VMMachineJSON     `json:"machine"`
+	Lifetime string            `json:"lifetime"`
+	State    string            `json:"state"`
+	Wanted   string            `json:"wanted"`
+	Health   VMHealthJSON      `json:"health"`
+	Restarts int               `json:"restarts"`
+	Size     machines.ListSize `json:"size"`
+	Detail   string            `json:"detail,omitempty"`
 }
 
 func VMContract(o VMOverview, schema string) VMOverviewJSON {
-	vm, h := o.VM, model.HealthOf(o.VM)
+	vm, h := o.VM, machines.HealthOf(o.VM)
 	return VMOverviewJSON{
 		Schema: schema, Machine: VMMachineJSON{Name: vm.Name, Kind: "workspace", On: o.Mac.Name, Reachable: o.Mac.Reachable},
-		Lifetime: string(vm.Lifetime), State: string(vm.State), Wanted: model.Wanted(vm),
+		Lifetime: string(vm.Lifetime), State: string(vm.State), Wanted: machines.Wanted(vm),
 		Health: VMHealthJSON{Running: h.Running, Address: h.Address, SSH: h.SSH},
-		Size:   model.ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
+		Size:   machines.ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
 		Detail: vm.Detail,
 	}
 }

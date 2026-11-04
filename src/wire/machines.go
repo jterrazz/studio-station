@@ -5,7 +5,6 @@ import (
 	"errors"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -32,7 +31,6 @@ import (
 	machinessupervise "github.com/jterrazz/studio-station/src/surface/cli/machines/supervise"
 	machinesunlock "github.com/jterrazz/studio-station/src/surface/cli/machines/unlock"
 	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
@@ -60,19 +58,15 @@ func (m machine) machines(_ bool) *machines.Service {
 	})
 }
 
-// value: the memory this Mac has: as its world says in the spec build, else
-// as sysctl reads it.
+// value: the memory this Mac has, as it reads itself (its world's in the
+// spec build).
 func (m machine) memory(ctx context.Context) int64 {
+	self := selfOf(m.host)
 	if m.world != nil {
-		_, _, _, hw, _ := m.world.self().Read(ctx)
-		return hw.Memory
+		self = m.world.self()
 	}
-	out, err := m.host.Run.Output(ctx, system.Cmd{Name: "sysctl", Args: []string{"-n", "hw.memsize"}})
-	if err != nil || out.ExitCode != 0 {
-		return 0
-	}
-	total, _ := strconv.ParseInt(strings.TrimSpace(out.Stdout), 10, 64)
-	return total
+	_, _, _, hw, _ := self.Read(ctx)
+	return hw.Memory
 }
 
 func (m machine) unlocker(knownHosts string) contract.Unlocker {

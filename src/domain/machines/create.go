@@ -375,8 +375,6 @@ func (s *Service) unhealthy(ctx context.Context, name string, cause error) error
 	return &UnhealthyError{Name: name, Step: model.StepSSH, Detail: "none after 30 s"}
 }
 
-// value: its cause is words only: what the hypervisor said is no refusal of
-// its own, so the create's words are the ones read.
 type DidNotBootError struct {
 	Name  string
 	Cause error
@@ -393,7 +391,7 @@ func (e *DidNotBootError) Error() string {
 type UnhealthyError struct{ Name, Step, Detail string }
 
 func (e *UnhealthyError) Error() string {
-	return e.Name + " is kept, its health failing: ✗ " + e.Step + " · " + e.Detail
+	return e.Name + " is kept, failing " + e.Step + ": " + e.Detail
 }
 
 func (s *Service) reserveProfiles(ctx context.Context, name string) (reserved []Reserved, env map[string]string, err error) {

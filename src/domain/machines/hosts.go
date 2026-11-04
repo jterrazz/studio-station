@@ -5,6 +5,7 @@ import (
 	"maps"
 	"sort"
 	"strings"
+	"time"
 
 	model "github.com/jterrazz/studio-station/src/machines"
 
@@ -188,4 +189,28 @@ func (s *Service) Names() []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+func (s *Service) Remember(_ context.Context, f Fleet) error {
+	cfg, err := s.prefs()
+	if err != nil {
+		return err
+	}
+	changed := false
+	for _, h := range f.Hosts {
+		known, ok := cfg.Hosts[h.Name]
+		if h.Here || !h.Reachable || !ok {
+			continue
+		}
+		seen := make([]model.SeenVM, 0, len(h.VMs))
+		for _, vm := range model.Ordered(h.VMs) {
+			seen = append(seen, model.SeenVM{Name: vm.Name, Lifetime: vm.Lifetime, CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes})
+		}
+		known.Answered, known.VMs = s.h.Clock.Now().UTC().Truncate(time.Second), seen
+		cfg.Hosts[h.Name], changed = known, true
+	}
+	if !changed {
+		return nil
+	}
+	return s.p.Hosts.Set(cfg.Hosts)
 }

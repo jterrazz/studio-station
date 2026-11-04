@@ -133,7 +133,7 @@ func vmFailure(err error) (*fail.Error, bool) {
 
 // value: the two ways out for a VM a create kept: start it again, or delete it.
 func keptFix(vm string) string {
-	return "station machines start " + vm + " · or station machines delete " + vm
+	return "station machines start " + vm + ", or station machines delete " + vm
 }
 
 func notAVMHint(e *machines.NotAVMError) string {
