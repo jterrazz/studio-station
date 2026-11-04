@@ -49,8 +49,3 @@ func (d *Daemon) GuestExec(ctx context.Context, vm, line, stdin string) (system.
 	}
 	return system.Output{Stdout: out.String(), Stderr: errs.String(), ExitCode: code}, nil
 }
-
-func (d *Daemon) opGuestExec(ctx context.Context, r Request) (GuestRan, error) {
-	out, err := d.GuestExec(ctx, r.VM, r.Line, r.Stdin)
-	return GuestRan{Code: out.ExitCode, Stdout: out.Stdout, Stderr: out.Stderr}, err
-}

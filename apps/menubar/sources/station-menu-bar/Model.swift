@@ -72,7 +72,7 @@ final class Model: ObservableObject {
 
     func opened() {
         if let last = lastPage, Date().timeIntervalSince(last) > 60 {
-            Task { _ = await Client.request(path: socket, op: "refresh", args: ["pages": ["menubar"]]) }
+            Task { _ = await Client.call(path: socket, name: "engine.refresh", input: ["pages": ["menubar"]]) }
         }
     }
 

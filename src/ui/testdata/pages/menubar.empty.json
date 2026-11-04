@@ -264,16 +264,17 @@
       "mutates": true,
       "id": "new-vm",
       "run": {
-        "argv": [
-          "machines",
-          "create"
-        ]
+        "call": "machines.create",
+        "in": {
+          "Request.Image": "linux",
+          "Request.Network": "nat"
+        }
       },
       "form": {
         "title": "New VM",
         "fields": [
           {
-            "key": "lifetime",
+            "key": "Request.Lifetime",
             "label": "Lifetime",
             "kind": "select",
             "options": [
@@ -287,18 +288,20 @@
             "default": "temporary"
           },
           {
-            "key": "memory",
+            "key": "Request.Resources.MemoryBytes",
             "label": "Memory",
             "kind": "select",
             "options": [
               {
-                "value": "4G"
+                "value": "4294967296",
+                "label": "4G"
               },
               {
-                "value": "8G"
+                "value": "8589934592",
+                "label": "8G"
               }
             ],
-            "default": "4G"
+            "default": "4294967296"
           }
         ]
       }
@@ -330,10 +333,10 @@
       "mutates": true,
       "id": "stop-all",
       "run": {
-        "argv": [
-          "stop",
-          "--yes"
-        ]
+        "call": "engine.stop",
+        "in": {
+          "Confirm": "yes"
+        }
       }
     },
     {
@@ -346,62 +349,62 @@
       "mutates": true,
       "id": "power-awake",
       "run": {
-        "op": "power_awake"
+        "call": "power.awake"
       },
       "form": {
         "title": "Power",
         "fields": [
           {
-            "key": "for",
+            "key": "For",
             "label": "For",
             "kind": "select",
             "options": [
               {
-                "value": "3600",
+                "value": "3600000000000",
                 "label": "1h"
               },
               {
-                "value": "7200",
+                "value": "7200000000000",
                 "label": "2h"
               },
               {
-                "value": "14400",
+                "value": "14400000000000",
                 "label": "4h"
               },
               {
-                "value": "28800",
+                "value": "28800000000000",
                 "label": "8h"
               },
               {
-                "value": "43200",
+                "value": "43200000000000",
                 "label": "12h"
               },
               {
-                "value": "86400",
+                "value": "86400000000000",
                 "label": "24h"
               }
             ],
-            "default": "14400"
+            "default": "14400000000000"
           },
           {
-            "key": "lid",
+            "key": "Lid",
             "label": "Lid",
             "kind": "select",
             "options": [
               {
-                "value": "lid=false",
+                "value": "Lid=false",
                 "label": "open only"
               },
               {
-                "value": "lid=true",
+                "value": "Lid=true",
                 "label": "closed"
               },
               {
-                "value": "lid=true battery=true",
+                "value": "Lid=true Battery=true",
                 "label": "closed on battery"
               }
             ],
-            "default": "lid=false"
+            "default": "Lid=false"
           }
         ]
       }

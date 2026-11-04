@@ -17,7 +17,9 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginelog "github.com/jterrazz/studio-station/src/engine/adapter/log"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
+	"github.com/jterrazz/studio-station/src/remote/api"
 	daemoncmd "github.com/jterrazz/studio-station/src/surface/cli/daemon"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/system"
@@ -32,11 +34,12 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths.State)), engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
 		State: m.paths.State, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
-		Lends:    lends,
+		Lends: lends, Peer: m.engineAPI(),
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: m.menubarFeed(env)},
 		Notifier: func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) },
 	})
 	lends.s = m.secretsVia(d)
+	d.Host(m.engineServer(d, m.registry(env)))
 	return d
 }
 
@@ -62,26 +65,27 @@ func (l *daemonLends) Recall(ctx context.Context, from string, names []string) e
 	return err
 }
 
-type hostDaemon struct{ c engine.Client }
+type hostDaemon struct{ c engineAPI }
 
-func (m machine) hostDaemon() hostDaemon { return hostDaemon{c: engine.Dial(m.host, m.paths.State)} }
+func (m machine) hostDaemon() hostDaemon { return hostDaemon{c: m.engineAPI()} }
 
 func downAs(err, sentinel error) error {
 	var down *engine.DownError
-	if errors.As(err, &down) {
+	var gone *api.Down
+	if errors.As(err, &down) || errors.As(err, &gone) {
 		return sentinel
 	}
 	return err
 }
 
 func (d hostDaemon) Ping(ctx context.Context) (string, error) {
-	p, err := d.c.Ping(ctx)
+	p, err := d.c.Hello(ctx)
 	return p.Version, downAs(err, machines.ErrDaemonDown)
 }
 
 func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, error) {
-	var views []engine.VMView
-	if err := d.c.Do(ctx, "vms", engine.Request{}, &views); err != nil {
+	views, err := d.c.VMs(ctx)
+	if err != nil {
 		return nil, downAs(err, machines.ErrDaemonDown)
 	}
 	out := make(map[string]machines.DaemonVM, len(views))
@@ -92,20 +96,20 @@ func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, erro
 }
 
 func (d hostDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error) {
-	var ran engine.GuestRan
-	if err := d.c.Do(ctx, "guest_exec", engine.Request{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
+	var ran process.ExecOut
+	if err := d.c.do(ctx, process.GuestExec, process.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
 		return system.Output{}, downAs(err, machines.ErrDaemonDown)
 	}
 	return system.Output{Stdout: ran.Stdout, Stderr: ran.Stderr, ExitCode: ran.Code}, nil
 }
 
 func (d hostDaemon) Do(ctx context.Context, op, vm string) error {
-	return downAs(d.c.Do(ctx, op, engine.Request{VM: vm}, nil), machines.ErrDaemonDown)
+	return downAs(d.c.do(ctx, process.VM(op), process.VMIn{VM: vm}, nil), machines.ErrDaemonDown)
 }
 
 func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile string) (machines.Reserved, error) {
 	var v services.View
-	if err := d.c.Do(ctx, "reserve", engine.Request{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
+	if err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
 		return machines.Reserved{}, downAs(err, machines.ErrDaemonDown)
 	}
 	return machines.Reserved{
@@ -124,23 +128,23 @@ func hostOf(url string) string {
 	return host
 }
 
-type servicesDaemon struct{ c engine.Client }
+type servicesDaemon struct{ c engineAPI }
 
 func (d servicesDaemon) Services(ctx context.Context) (services.HostView, error) {
 	var v services.HostView
-	err := d.c.Do(ctx, "services", engine.Request{}, &v)
+	err := d.c.do(ctx, process.Services, nil, &v)
 	return v, downAs(err, services.ErrDaemonDown)
 }
 
 func (d servicesDaemon) Reserve(ctx context.Context, vm string, port int, pinned bool) (services.View, error) {
 	var v services.View
-	err := d.c.Do(ctx, "reserve", engine.Request{VM: vm, GuestPort: port, Pinned: pinned}, &v)
+	err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: pinned}, &v)
 	return v, downAs(err, services.ErrDaemonDown)
 }
 
 func (d servicesDaemon) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
 	var l services.Lease
-	err := d.c.Do(ctx, "release", engine.Request{VM: vm, GuestPort: port}, &l)
+	err := d.c.do(ctx, process.Release, process.ReserveIn{VM: vm, GuestPort: port}, &l)
 	return l, downAs(err, services.ErrDaemonDown)
 }
 
@@ -214,7 +218,7 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 		}
 		return setup.Step{Name: step, State: catalog.StateOK, Detail: "running " + version, Changed: true}, nil
 	}
-	running, err := i.m.hostDaemon().c.Ping(ctx)
+	running, err := i.m.engineAPI().Hello(ctx)
 	if changed || (err == nil && running.Version != version) {
 		if kickErr := jobs.Restart(ctx, job); kickErr != nil {
 			return setup.Step{Name: step, State: catalog.StateBroken, Detail: kickErr.Error()}, &setup.StepFailedError{Step: step, Cause: kickErr}

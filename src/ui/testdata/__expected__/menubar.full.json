@@ -661,16 +661,17 @@
       "mutates": true,
       "id": "new-vm",
       "run": {
-        "argv": [
-          "machines",
-          "create"
-        ]
+        "call": "machines.create",
+        "in": {
+          "Request.Image": "linux",
+          "Request.Network": "nat"
+        }
       },
       "form": {
         "title": "New VM",
         "fields": [
           {
-            "key": "lifetime",
+            "key": "Request.Lifetime",
             "label": "Lifetime",
             "kind": "select",
             "options": [
@@ -684,18 +685,20 @@
             "default": "temporary"
           },
           {
-            "key": "memory",
+            "key": "Request.Resources.MemoryBytes",
             "label": "Memory",
             "kind": "select",
             "options": [
               {
-                "value": "4G"
+                "value": "4294967296",
+                "label": "4G"
               },
               {
-                "value": "8G"
+                "value": "8589934592",
+                "label": "8G"
               }
             ],
-            "default": "4G"
+            "default": "4294967296"
           }
         ]
       }
@@ -731,10 +734,10 @@
       "mutates": true,
       "id": "stop-all",
       "run": {
-        "argv": [
-          "stop",
-          "--yes"
-        ]
+        "call": "engine.stop",
+        "in": {
+          "Confirm": "yes"
+        }
       }
     },
     {
@@ -747,7 +750,7 @@
       "mutates": true,
       "id": "power-sleep",
       "run": {
-        "op": "power_sleep"
+        "call": "power.sleep"
       }
     }
   ]

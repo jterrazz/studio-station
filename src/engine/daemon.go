@@ -1,10 +1,10 @@
 package engine
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"path"
 	"sort"
 	"strconv"
@@ -61,10 +61,10 @@ type Options struct {
 	PowerPage func(power.View) any
 	// value: the other pages a subscription streams (the menu bar's), by id.
 	Feeds map[string]Feed
-	// value: the station binary ping names, the one a client runs actions with.
+	// value: the station binary hello names, the one a terminal opens.
 	Executable string
-	// value: how long a write to a subscriber may block before it is dropped.
-	Stall time.Duration
+	// value: this engine as a client sees it: a second engine asks it first.
+	Peer Peer
 	// value: the lend records and the recall a lend past its until goes through.
 	Lends Lends
 	// value: the Notifier the engine tells, built over the engine's own log.
@@ -93,6 +93,7 @@ type Daemon struct {
 	hub     hub
 
 	notifier Notifier
+	serve    func(ctx context.Context, conn io.ReadWriteCloser)
 
 	lendMu       sync.Mutex
 	lendsAt      time.Time
@@ -132,7 +133,11 @@ func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st
 	return d
 }
 
+func (d *Daemon) Host(serve func(ctx context.Context, conn io.ReadWriteCloser)) { d.serve = serve }
+
 func (d *Daemon) Check() error {
+	// value: the server of station.api/v2, run on each connection of the
+	// socket; it is the engine's, built over this daemon, so it is handed after New.
 	if d.o.Here != catalog.Host {
 		return &HostOnlyError{Here: d.o.Here}
 	}
@@ -161,8 +166,10 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 		return err
 	}
 	sock := SocketPath(d.o.State)
-	if p, err := DialPath(d.h, sock).Ping(ctx); err == nil {
-		return &RunningError{PID: p.PID}
+	if d.o.Peer != nil {
+		if p, err := d.o.Peer.Hello(ctx); err == nil {
+			return &RunningError{PID: p.PID}
+		}
 	}
 	// invariant: the clamshell is set back to normal before the socket exists,
 	// so a killed daemon's mask is cleared by its successor (launchd restarts it).
@@ -282,130 +289,13 @@ func (d *Daemon) accept(ctx context.Context, l system.Listener) {
 		if err != nil {
 			return
 		}
-		go d.serveConn(ctx, conn)
-	}
-}
-
-func (d *Daemon) serveConn(ctx context.Context, conn system.Conn) {
-	defer func() { _ = conn.Close() }()
-	write := func(v any) error {
-		data, err := json.Marshal(v)
-		if err != nil {
-			return err
-		}
-		_, err = conn.Write(append(data, '\n'))
-		return err
-	}
-	scanner := bufio.NewScanner(conn)
-	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
-	for scanner.Scan() {
-		var r Request
-		if json.Unmarshal(scanner.Bytes(), &r) == nil && r.V == 1 && r.Op == "subscribe" {
-			if err := d.checkPages(r.Pages); err != nil {
-				var op *OpError
-				errors.As(err, &op)
-				if write(Response{V: 1, ID: r.ID, Error: op}) != nil {
-					return
-				}
-				continue
+		go func() {
+			defer func() { _ = conn.Close() }()
+			if d.serve != nil {
+				d.serve(ctx, conn)
 			}
-			d.stream(ctx, conn, r, write)
-			return
-		}
-		if write(d.answer(ctx, scanner.Bytes())) != nil {
-			return
-		}
+		}()
 	}
-}
-
-func fault(code, message, hint string) *OpError {
-	return &OpError{Code: code, Message: message, Hint: hint}
-}
-
-func (d *Daemon) answer(ctx context.Context, line []byte) Response {
-	var r Request
-	if err := json.Unmarshal(line, &r); err != nil {
-		return Response{V: 1, Error: fault("unknown_op", "the request is not JSON", "speak "+Schema)}
-	}
-	resp := Response{V: 1, ID: r.ID}
-	if r.V != 1 {
-		resp.Error = fault("unknown_op", "unknown protocol version "+strconv.Itoa(r.V), "speak "+Schema)
-		return resp
-	}
-	result, err := d.do(ctx, r)
-	if err != nil {
-		var op *OpError
-		if !errors.As(err, &op) {
-			op = fault("internal", err.Error(), "station machines")
-		}
-		resp.Error = op
-		return resp
-	}
-	resp.OK = true
-	if result != nil {
-		resp.Result, _ = json.Marshal(result)
-	}
-	return resp
-}
-
-func (d *Daemon) do(ctx context.Context, r Request) (any, error) {
-	switch r.Op {
-	case "ping":
-		return Ping{Version: d.o.Version, PID: d.o.PID, StartedAt: d.started, Executable: d.o.Executable}, nil
-	case "vms":
-		return d.vmViews(), nil
-	case "services":
-		return d.hostView(""), nil
-	case "reserve":
-		return d.reserve(ctx, r.VM, r.GuestPort, r.Pinned, r.Profile)
-	case "release":
-		return d.release(ctx, r.VM, r.GuestPort)
-	case "run":
-		if err := d.opRun(ctx, r.VM); err != nil {
-			return nil, err
-		}
-		return nil, d.awaitGuest(ctx, r.VM)
-	case "start":
-		if err := d.opStart(ctx, r.VM); err != nil {
-			return nil, err
-		}
-		return nil, d.awaitGuest(ctx, r.VM)
-	case "stop":
-		return nil, d.opStop(ctx, r.VM, true)
-	case "restart":
-		if err := d.opStop(ctx, r.VM, false); err != nil {
-			return nil, err
-		}
-		if err := d.opRun(ctx, r.VM); err != nil {
-			return nil, err
-		}
-		return nil, d.awaitGuest(ctx, r.VM)
-	case "delete":
-		return nil, d.opDelete(ctx, r.VM)
-	case "forget":
-		d.forget(r.VM)
-		return nil, nil
-	case "accounts":
-		return d.accounts(ctx), nil
-	case "guest_exec":
-		return d.opGuestExec(ctx, r)
-	case "stop_all":
-		vms := d.stopAll(ctx)
-		return StopAll{VMs: vms, PowerEnded: d.power.Stop()}, nil
-	case "power":
-		return d.power.View(), nil
-	case "power_awake":
-		return d.powerAwake(r)
-	case "power_sleep":
-		return d.powerSleep(), nil
-	case "refresh":
-		if err := d.checkPages(r.Pages); err != nil {
-			return nil, err
-		}
-		d.hub.refreshed()
-		return struct{}{}, nil
-	}
-	return nil, fault("unknown_op", "unknown op \""+r.Op+"\"", "speak "+Schema+": ping vms services reserve release run start stop restart delete accounts guest_exec stop_all power power_awake power_sleep subscribe refresh")
 }
 
 type VMAccounts struct {

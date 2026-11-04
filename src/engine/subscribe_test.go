@@ -1,10 +1,7 @@
 package engine
 
 import (
-	"bufio"
 	"context"
-	"encoding/json"
-	"io"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -68,26 +65,8 @@ func (c *manualClock) await(d time.Duration) {
 	}
 }
 
-// invariant: a write that just finished may not have cancelled its stall
-// watch yet; a jump of the clock waits for it, unless it is the stall's own.
-func (c *manualClock) settled(d time.Duration) {
-	for d != stallLimit {
-		c.mu.Lock()
-		busy := false
-		for s := range c.sleepers {
-			busy = busy || s.asked == stallLimit
-		}
-		c.mu.Unlock()
-		if !busy {
-			return
-		}
-		runtime.Gosched()
-	}
-}
-
 func (c *manualClock) advance(d time.Duration) {
 	c.await(d)
-	c.settled(d)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.now = c.now.Add(d)
@@ -97,19 +76,6 @@ func (c *manualClock) advance(d time.Duration) {
 			close(s.release)
 		}
 	}
-}
-
-type pipeConn struct {
-	io.Reader
-	io.Writer
-	closers []io.Closer
-}
-
-func (p pipeConn) Close() error {
-	for _, c := range p.closers {
-		_ = c.Close()
-	}
-	return nil
 }
 
 type streamed struct {
@@ -148,35 +114,30 @@ func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
 		}}})
 }
 
+// value: a watch of the menubar page; a subscriber not reading blocks each
+// of its sends until its watch ends.
 func subscribe(ctx context.Context, t *testing.T, d *Daemon, reading bool) streamed {
 	t.Helper()
-	inR, inW := io.Pipe()
-	outR, outW := io.Pipe()
-	server := pipeConn{Reader: inR, Writer: outW, closers: []io.Closer{inR, outW}}
 	s := streamed{events: make(chan Event, 64), ended: make(chan struct{})}
+	opened := make(chan struct{})
 	go func() {
-		d.serveConn(ctx, server)
-		close(s.ended)
-	}()
-	go func() { _, _ = inW.Write([]byte(`{"v":1,"id":"1","op":"subscribe","pages":["menubar"]}` + "\n")) }()
-	r := bufio.NewReader(outR)
-	if _, err := r.ReadBytes('\n'); err != nil {
-		t.Fatal(err)
-	}
-	if reading {
-		go func() {
-			defer close(s.events)
-			for {
-				line, err := r.ReadBytes('\n')
-				if err != nil {
-					return
-				}
-				var ev Event
-				_ = json.Unmarshal(line, &ev)
-				s.events <- ev
+		defer close(s.ended)
+		defer close(s.events)
+		_ = d.Stream(ctx, []string{PageMenubar}, func(v any) error {
+			if _, ok := v.(Opened); ok {
+				close(opened)
+				return nil
 			}
-		}()
-	}
+			if !reading {
+				<-ctx.Done()
+				return ctx.Err()
+			}
+			ev, _ := v.(Event)
+			s.events <- ev
+			return nil
+		})
+	}()
+	<-opened
 	return s
 }
 
@@ -235,17 +196,14 @@ func TestAStreamTicksEvery15Seconds(t *testing.T) {
 	}
 }
 
-func TestASubscriberThatDoesNotReadIsDroppedWhileAnotherKeepsItsPages(t *testing.T) {
+func TestASubscriberThatDoesNotReadNeverHoldsAnotherBack(t *testing.T) {
 	clock, feedA, feedB := newManualClock(), make(chan any), make(chan any)
 	d := streamDaemon(t, clock, feedA, feedB)
 	reader := subscribe(t.Context(), t, d, true)
 	feedA <- "frame"
 	reader.next(t, "page")
-	clock.settled(0)
-	stalled := subscribe(t.Context(), t, d, false)
+	subscribe(t.Context(), t, d, false)
 	feedB <- "frame"
-	clock.advance(stallLimit)
-	<-stalled.ended
 	settle(feedA, "after")
 	clock.advance(coalesce)
 	if got := reader.next(t, "page"); got != `"after"` {

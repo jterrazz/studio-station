@@ -64,7 +64,7 @@ final class FakeDaemon: @unchecked Sendable {
 
     // value: accepts one client, reads its request line, answers with these
     // bytes, then stops listening so a reconnect is refused.
-    func serveOnce(_ answer: Data, thenClose: Bool) {
+    func serveOnce(_ answer: Data, thenClose: Bool, hangUp: Bool = false) {
         Thread.detachNewThread { [self] in
             let client = accept(fd, nil, nil)
             if thenClose {
@@ -76,7 +76,7 @@ final class FakeDaemon: @unchecked Sendable {
             while read(client, &byte, 1) == 1, byte != 0x0A { line.append(byte) }
             lock.withLock { requests.append(String(decoding: line, as: UTF8.self)) }
             _ = answer.withUnsafeBytes { write(client, $0.baseAddress, $0.count) }
-            while read(client, &byte, 1) == 1 {}
+            while !hangUp, read(client, &byte, 1) == 1 {}
             close(client)
         }
     }
@@ -134,7 +134,7 @@ final class ClientTests: XCTestCase {
             }
         }
         XCTAssertEqual(kinds, ["connected", "page loading", "page ready", "tick", "notice power_ended: Power ended: battery 20% on battery"])
-        XCTAssertEqual(daemon.received, [#"{"id":"1","op":"subscribe","pages":["menubar"],"v":1}"#])
+        XCTAssertEqual(daemon.received, [#"{"id":"1","in":{"pages":["menubar"]},"v":2,"watch":"page"}"#])
         for _ in 0..<200 where clock.backoffs.isEmpty {
             clock.releaseSilence()
             try await Task.sleep(nanoseconds: 10_000_000)
@@ -147,47 +147,48 @@ final class ClientTests: XCTestCase {
         try XCTUnwrap(Tree.page("menubar.full").action(id) ?? Tree.page("menubar.empty").action(id))
     }
 
-    func fake(_ name: String, exit code: Int32) throws -> (path: String, log: String) {
-        let dir = "/private/tmp/station-work"
-        let path = "\(dir)/\(name)-\(getpid()).sh", log = "\(dir)/\(name)-\(getpid()).log"
-        let script = """
-        #!/bin/sh
-        printf '%s\\n' "argv=$*" "NO_COLOR=$NO_COLOR" "stdin=$(cat)" > \(log)
-        if [ \(code) -ne 0 ]; then printf 'Error: api did not stop\\nHint: station machines\\n' >&2; fi
-        exit \(code)
-        """
-        try script.write(toFile: path, atomically: true, encoding: .utf8)
-        chmod(path, 0o755)
-        return (path, log)
+    func answered(_ name: String, _ frame: String, hangUp: Bool = false) throws -> FakeDaemon {
+        let daemon = try FakeDaemon(name)
+        daemon.serveOnce(Data(frame.utf8) + (frame.isEmpty ? [] : [0x0A]), thenClose: false, hangUp: hangUp)
+        return daemon
     }
 
-    func testAnArgvActionRunsStationWithTheFormsAnswersNoColourAndNoStdin() async throws {
-        let (exe, log) = try fake("mb-ok", exit: 0)
-        let status = await ActionRunner(executable: exe, socket: "/nonexistent").run(try fixtureAction("new-vm"), answers: ["lifetime": "lasting"])
-        XCTAssertNil(status)
-        XCTAssertEqual(try String(contentsOfFile: log, encoding: .utf8), "argv=machines create --lifetime lasting --memory 4G\nNO_COLOR=1\nstdin=\n")
-    }
-
-    func testAFailingActionsErrorAndHintMakeTheStatusLine() async throws {
-        let (exe, log) = try fake("mb-fail", exit: 1)
-        let status = await ActionRunner(executable: exe, socket: "/nonexistent").run(try fixtureAction("stop-all"))
-        XCTAssertEqual(status, Status("api did not stop  → station machines", failed: true))
-        XCTAssertTrue(try String(contentsOfFile: log, encoding: .utf8).hasPrefix("argv=stop --yes\n"))
-    }
-
-    func testTheTerminalActionOpensStationInTheTerminal() async throws {
-        let calls = Recorded()
-        let status = await ActionRunner(executable: "/u/bin/station", socket: "/nonexistent", launcher: RecordingLauncher(calls: calls)).run(try fixtureAction("open-station"))
-        XCTAssertNil(status)
-        XCTAssertEqual(calls.all, [["/usr/bin/open", "-a", "Terminal", "/u/bin/station"]])
-    }
-
-    func testAnOpActionIsOneRequestLineOnItsOwnConnection() async throws {
-        let daemon = try FakeDaemon("mb-op")
+    func testACallActionIsOneFrameWithItsFormsAnswersAndStartsNoProgram() async throws {
+        let daemon = try answered("mb-create", #"{"v":2,"id":"1","progress":{"task":"Booting api"}}"# + "\n" + #"{"v":2,"id":"1","out":{"VM":{"Name":"api"}}}"#)
         defer { daemon.stop() }
-        daemon.serveOnce(Data(#"{"v":1,"id":"1","ok":false,"error":{"code":"power_guard","message":"Power stays off: the battery is at 18% on battery","hint":"station power"}}"#.utf8 + [0x0A]), thenClose: false)
-        let status = await ActionRunner(executable: "/u/bin/station", socket: daemon.path).run(try fixtureAction("power-awake"), answers: ["lid": "lid=true battery=true"])
-        XCTAssertEqual(daemon.received, [#"{"battery":true,"for":14400,"id":"1","lid":true,"op":"power_awake","v":1}"#])
-        XCTAssertEqual(status, Status("Power stays off: the battery is at 18% on battery  → station power", failed: true))
+        let calls = Recorded()
+        let status = await ActionRunner(executable: "/u/bin/station", socket: daemon.path, launcher: RecordingLauncher(calls: calls)).run(try fixtureAction("new-vm"), answers: ["Request.Lifetime": "lasting"])
+        XCTAssertNil(status)
+        XCTAssertEqual(daemon.received, [#"{"call":"machines.create","id":"1","in":{"Request":{"Image":"linux","Lifetime":"lasting","Network":"nat","Resources":{"MemoryBytes":4294967296}}},"v":2}"#])
+        XCTAssertEqual(calls.all, [])
+    }
+
+    func testAFailingCallsMessageAndHintMakeTheStatusLine() async throws {
+        let daemon = try answered("mb-fail", #"{"v":2,"id":"1","error":{"type":"failed","code":"internal","message":"api did not stop","hint":"station machines"}}"#)
+        defer { daemon.stop() }
+        let status = await ActionRunner(executable: "/u/bin/station", socket: daemon.path).run(try fixtureAction("power-awake"), answers: ["Lid": "Lid=true Battery=true"])
+        XCTAssertEqual(daemon.received, [#"{"call":"power.awake","id":"1","in":{"Battery":true,"For":14400000000000,"Lid":true},"v":2}"#])
+        XCTAssertEqual(status, Status("api did not stop  → station machines", failed: true))
+    }
+
+    func testStopEverythingIsDoneWhenTheEngineItStoppedHangsUp() async throws {
+        let daemon = try answered("mb-stop", "", hangUp: true)
+        defer { daemon.stop() }
+        let status = await ActionRunner(executable: "/u/bin/station", socket: daemon.path).run(try fixtureAction("stop-all"))
+        XCTAssertEqual(daemon.received, [#"{"call":"engine.stop","id":"1","in":{"Confirm":"yes"},"v":2}"#])
+        XCTAssertNil(status)
+    }
+
+    func testTheTerminalActionsOpenStationInTheTerminalAndNothingElse() async throws {
+        let calls = Recorded()
+        let runner = ActionRunner(executable: "/u/bin/station", socket: "/nonexistent", launcher: RecordingLauncher(calls: calls))
+        let opened = await runner.run(try fixtureAction("open-station"))
+        let started = await runner.run(try XCTUnwrap(Tree.page("menubar.error").action("start")))
+        XCTAssertNil(opened)
+        XCTAssertNil(started)
+        XCTAssertEqual(calls.all, [
+            ["/usr/bin/open", "-a", "Terminal", "/u/bin/station"],
+            ["/usr/bin/osascript", "-e", #"tell application "Terminal" to do script "'/u/bin/station' 'start'""#, "-e", #"tell application "Terminal" to activate"#],
+        ])
     }
 }

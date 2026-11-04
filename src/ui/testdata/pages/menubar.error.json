@@ -55,6 +55,7 @@
       "mutates": true,
       "id": "start",
       "run": {
+        "terminal": true,
         "argv": [
           "start"
         ]

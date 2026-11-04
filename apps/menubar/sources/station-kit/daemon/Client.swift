@@ -11,6 +11,8 @@ public struct SystemClock: StreamClock {
 
 public struct Reply: Sendable {
     public var ok: Bool
+    // value: the connection ended before any answer.
+    public var closed: Bool
     public var result: [String: AnySendable]
     public var message: String?
     public var hint: String?
@@ -40,15 +42,27 @@ public enum Client {
         }
     }
 
-    // value: an argument written `k=v k=v` sets each of those arguments; a
-    // number or true/false is sent as one.
-    public static func arguments(_ answers: [String: String], fixed: [String: String]? = nil) -> [String: Any] {
+    // value: the call's input: each answer sets the field its key's path
+    // names (`Request.Lifetime`), and an answer written `K=v K=v` sets each of
+    // those fields; a number or true/false is sent as one.
+    public static func input(_ answers: [String: String], fixed: [String: String]? = nil) -> [String: Any] {
         var out: [String: Any] = [:]
-        func put(_ key: String, _ value: String) {
-            if let n = Int(value) { out[key] = n } else if value == "true" || value == "false" { out[key] = value == "true" } else { out[key] = value }
+        func set(_ path: [String], _ value: Any, in dict: inout [String: Any]) {
+            guard let head = path.first else { return }
+            if path.count == 1 {
+                dict[head] = value
+                return
+            }
+            var inner = dict[head] as? [String: Any] ?? [:]
+            set(Array(path.dropFirst()), value, in: &inner)
+            dict[head] = inner
         }
-        for (k, v) in fixed ?? [:] { put(k, v) }
-        for (k, v) in answers {
+        func put(_ key: String, _ value: String) {
+            let typed: Any = Int(value).map { $0 as Any } ?? (value == "true" || value == "false" ? (value == "true") as Any : value as Any)
+            set(key.split(separator: ".").map(String.init), typed, in: &out)
+        }
+        for (k, v) in (fixed ?? [:]).sorted(by: { $0.key < $1.key }) { put(k, v) }
+        for (k, v) in answers.sorted(by: { $0.key < $1.key }) {
             if v.contains("=") {
                 for pair in v.split(separator: " ") {
                     let kv = pair.split(separator: "=", maxSplits: 1).map(String.init)
@@ -61,26 +75,34 @@ public enum Client {
         return out
     }
 
-    public static func request(path: String, op: String, args: [String: Any] = [:]) async -> Reply {
-        var body: [String: Any] = ["v": 1, "id": "1", "op": op]
-        for (k, v) in args { body[k] = v }
+    // invariant: one call is one station.api/v2 frame on its own connection;
+    // its progress frames are read past, and its answer is the out or the
+    // error frame that ends it. A connection that ends first is closed.
+    public static func call(path: String, name: String, input: [String: Any] = [:]) async -> Reply {
+        var body: [String: Any] = ["v": 2, "id": "1", "call": name]
+        if !input.isEmpty { body["in"] = input }
         guard let socket = try? UnixSocket.connect(path), let data = try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys]) else {
-            return Reply(ok: false, result: [:], message: "the station daemon is not running", hint: "station start")
+            return Reply(ok: false, closed: false, result: [:], message: "the station engine is not running", hint: "station start")
         }
         do {
             try socket.write(line: data)
-            let line = try await readLine(socket)
-            let obj = (try JSONSerialization.jsonObject(with: line)) as? [String: Any] ?? [:]
-            let error = obj["error"] as? [String: Any]
-            let result = (obj["result"] as? [String: Any] ?? [:]).mapValues { AnySendable(value: $0) }
-            return Reply(ok: obj["ok"] as? Bool ?? false, result: result, message: error?["message"] as? String, hint: error?["hint"] as? String)
+            while true {
+                let line = try await readLine(socket)
+                let obj = (try JSONSerialization.jsonObject(with: line)) as? [String: Any] ?? [:]
+                if obj["progress"] != nil { continue }
+                if let error = obj["error"] as? [String: Any] {
+                    return Reply(ok: false, closed: false, result: [:], message: error["message"] as? String, hint: error["hint"] as? String)
+                }
+                let result = (obj["out"] as? [String: Any] ?? [:]).mapValues { AnySendable(value: $0) }
+                return Reply(ok: true, closed: false, result: result, message: nil, hint: nil)
+            }
         } catch {
-            return Reply(ok: false, result: [:], message: "the station daemon closed the connection", hint: "station start")
+            return Reply(ok: false, closed: true, result: [:], message: "the station engine closed the connection", hint: "station start")
         }
     }
 
     public static func executable(path: String) async -> String? {
-        let reply = await request(path: path, op: "ping")
+        let reply = await call(path: path, name: "engine.hello")
         return reply.result["executable"]?.value as? String
     }
 }
@@ -121,7 +143,7 @@ public final class Subscription: @unchecked Sendable {
     }
 
     func stream(_ socket: UnixSocket) async -> Bool {
-        guard let request = try? JSONSerialization.data(withJSONObject: ["v": 1, "id": "1", "op": "subscribe", "pages": pages], options: [.sortedKeys]),
+        guard let request = try? JSONSerialization.data(withJSONObject: ["v": 2, "id": "1", "watch": "page", "in": ["pages": pages]], options: [.sortedKeys]),
               (try? socket.write(line: request)) != nil else { return false }
         let seen = Seen()
         return await withTaskGroup(of: Void.self) { group in
@@ -138,9 +160,10 @@ public final class Subscription: @unchecked Sendable {
             var streamed = false
             while let line = try? await Client.readLine(socket) {
                 seen.bump()
-                guard let obj = (try? JSONSerialization.jsonObject(with: line)) as? [String: Any] else { continue }
-                if obj["id"] != nil {
-                    guard obj["ok"] as? Bool == true else { break }
+                guard let frame = (try? JSONSerialization.jsonObject(with: line)) as? [String: Any] else { continue }
+                if frame["error"] != nil { break }
+                guard let obj = frame["out"] as? [String: Any] else { continue }
+                if obj["stream"] != nil {
                     streamed = true
                     emit(.connected)
                     continue

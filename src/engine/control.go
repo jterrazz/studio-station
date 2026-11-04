@@ -46,14 +46,14 @@ type Control struct {
 	// value: station stop and station start: the one daemon of this host, its
 	// launchd agent and the VMs it supervises.
 	h   system.Host
-	c   Client
+	c   Peer
 	m   ControlMachines
 	hv  Hypervisor
 	job Job
 	o   ControlOptions
 }
 
-func NewControl(h system.Host, c Client, m ControlMachines, hv Hypervisor, job Job, o ControlOptions) *Control {
+func NewControl(h system.Host, c Peer, m ControlMachines, hv Hypervisor, job Job, o ControlOptions) *Control {
 	return &Control{h: h, c: c, m: m, hv: hv, job: job, o: o}
 }
 
@@ -115,8 +115,7 @@ func (c *Control) Plan(ctx context.Context) (Work, error) {
 	}
 	var w Work
 	running := map[string]bool{}
-	var views []VMView
-	if err := c.c.Do(ctx, "vms", Request{}, &views); err == nil {
+	if views, err := c.c.VMs(ctx); err == nil {
 		w.Answering = true
 		for _, v := range views {
 			running[v.Name] = v.State == StateRunning
@@ -163,8 +162,8 @@ const (
 func (c *Control) Stop(ctx context.Context, w Work) (StopReport, error) {
 	var r StopReport
 	if w.Answering {
-		var all StopAll
-		if err := c.c.Do(ctx, "stop_all", Request{}, &all); err != nil {
+		all, err := c.c.StopAll(ctx)
+		if err != nil {
 			return r, err
 		}
 		r.VMs = all.VMs
@@ -229,7 +228,7 @@ type StartReport struct {
 }
 
 func (c *Control) Start(ctx context.Context) (StartReport, error) {
-	if p, err := c.c.Ping(ctx); err == nil {
+	if p, err := c.c.Hello(ctx); err == nil {
 		return StartReport{Already: true, Version: p.Version, PID: p.PID}, nil
 	}
 	if c.job.Loaded(ctx) {
@@ -240,7 +239,7 @@ func (c *Control) Start(ctx context.Context) (StartReport, error) {
 		return StartReport{}, err
 	}
 	for waited := time.Duration(0); waited < startWait; waited += controlPoll {
-		if p, err := c.c.Ping(ctx); err == nil {
+		if p, err := c.c.Hello(ctx); err == nil {
 			r := StartReport{Version: p.Version, PID: p.PID}
 			r.Back = c.back(ctx)
 			return r, nil
@@ -254,8 +253,7 @@ func (c *Control) Start(ctx context.Context) (StartReport, error) {
 
 func (c *Control) back(ctx context.Context) []string {
 	records, _ := c.m.Records()
-	var views []VMView
-	_ = c.c.Do(ctx, "vms", Request{}, &views)
+	views, _ := c.c.VMs(ctx)
 	var out []string
 	for _, r := range records {
 		for _, v := range views {
@@ -268,6 +266,6 @@ func (c *Control) back(ctx context.Context) []string {
 }
 
 func (c *Control) answers(ctx context.Context) bool {
-	_, err := c.c.Ping(ctx)
+	_, err := c.c.Hello(ctx)
 	return err == nil
 }

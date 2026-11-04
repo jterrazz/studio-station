@@ -1,12 +1,13 @@
-description: 'one daemon, one socket of mode 0600, one protocol of JSON lines'
+description: 'the engine answers v2 frames on one unix socket of mode 0600, never on TCP'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 runs:
-    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41400-41419"}/'' .config/station/settings.json; "$STATION" daemon 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /usr/bin/stat -f %Lp .local/state/station/daemon.sock 2>/dev/null || /usr/bin/stat -c %a .local/state/station/daemon.sock; printf ''{"v":1,"id":"1","op":"ping"}\n{"v":1,"id":"2","op":"nope"}\n'' | /usr/bin/nc -U .local/state/station/daemon.sock | /usr/bin/jq -c ''[.id, .ok, (.result.version != null), (.result.executable == $ENV.STATION), .error.code, (.error.hint != null)]''; kill $d; wait $d'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41400-41419"}/'' .config/station/settings.json; "$STATION" daemon 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /usr/bin/stat -f %Lp .local/state/station/daemon.sock 2>/dev/null || /usr/bin/stat -c %a .local/state/station/daemon.sock; printf ''{"v":2,"id":"1","call":"engine.hello"}\n{"v":2,"id":"2","call":"nope"}\n{"v":1,"id":"3","op":"ping"}\n'' | /usr/bin/nc -U .local/state/station/daemon.sock | /usr/bin/jq -c ''[.id, (.out.version != null), (.out.executable == $ENV.STATION), ((.out.calls // []) | index("machines.create") != null), .error.code, (.error.hint != null)]''; kill $d; wait $d'
       exit: 0
       stdout: |
           600
           ["1",true,true,true,null,false]
-          ["2",false,false,false,"unknown_op",true]
+          ["2",false,false,false,"call.unknown",true]
+          ["3",false,false,false,"call.bad-frame",true]

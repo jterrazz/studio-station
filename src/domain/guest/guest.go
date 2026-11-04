@@ -319,7 +319,7 @@ func (s *Service) Placement() Placement {
 func (s *Service) listen(ctx context.Context, g *session, quit context.CancelFunc) system.Listener {
 	file := s.SocketPath()
 	if conn, err := s.h.Sockets.DialUnix(ctx, file, time.Second); err == nil {
-		_, _ = conn.Write([]byte(`{"v":1,"id":"q","op":"quit"}` + "\n"))
+		_, _ = conn.Write([]byte(`{"v":2,"id":"q","call":"` + callQuit + `"}` + "\n"))
 		_, _ = bufio.NewReader(conn).ReadString('\n')
 		_ = conn.Close()
 	}
@@ -343,11 +343,30 @@ func (s *Service) listen(ctx context.Context, g *session, quit context.CancelFun
 	return l
 }
 
+// value: the calls the socket inside a VM serves, in station.api/v2 frames:
+// the three a command here asks its Mac's engine, relayed over the guest
+// channel, and the quit a newer guest sends the one it replaces.
+const (
+	callServices = "engine.services"
+	callReserve  = "engine.reserve"
+	callRelease  = "engine.release"
+	callQuit     = "guest.quit"
+)
+
 type request struct {
 	V    int    `json:"v"`
 	ID   string `json:"id"`
-	Op   string `json:"op"`
-	Port int    `json:"guest_port"`
+	Call string `json:"call"`
+	In   struct {
+		Port int `json:"guest_port"`
+	} `json:"in"`
+}
+
+type fault struct {
+	Type    string `json:"type"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Hint    string `json:"hint"`
 }
 
 func (g *session) serve(ctx context.Context, conn system.Conn, quit context.CancelFunc) {
@@ -358,27 +377,40 @@ func (g *session) serve(ctx context.Context, conn system.Conn, quit context.Canc
 		if json.Unmarshal(scanner.Bytes(), &r) != nil {
 			continue
 		}
-		if r.Op == "quit" {
-			_, _ = conn.Write([]byte(`{"v":1,"id":"` + r.ID + `","ok":true}` + "\n"))
+		if r.Call == callQuit {
+			_, _ = conn.Write([]byte(`{"v":2,"id":"` + r.ID + `","out":null}` + "\n"))
 			quit()
 			return
 		}
-		reply := g.relay(ctx, r)
-		data, _ := json.Marshal(map[string]any{"v": 1, "id": r.ID, "ok": reply.OK, "result": reply.Result, "error": reply.Error})
+		frame := map[string]any{"v": 2, "id": r.ID}
+		if op, ok := map[string]string{callServices: "services", callReserve: "reserve", callRelease: "release"}[r.Call]; !ok || r.V != 2 {
+			frame["error"] = fault{Type: "refused", Code: "call.unknown", Message: "no call is named " + r.Call, Hint: "station services"}
+		} else if reply := g.relay(ctx, op, r.In.Port); reply.OK {
+			frame["out"] = reply.Result
+		} else {
+			var f fault
+			_ = json.Unmarshal(reply.Error, &f)
+			f.Type = "failed"
+			if strings.HasPrefix(f.Code, "unknown_") {
+				f.Type = "refused"
+			}
+			frame["error"] = f
+		}
+		data, _ := json.Marshal(frame)
 		if _, err := conn.Write(append(data, '\n')); err != nil {
 			return
 		}
 	}
 }
 
-func (g *session) relay(ctx context.Context, r request) message {
+func (g *session) relay(ctx context.Context, op string, port int) message {
 	g.mu.Lock()
 	g.seq++
 	id := "g" + strconv.Itoa(g.seq)
 	ch := make(chan message, 1)
 	g.pending[id] = ch
 	g.mu.Unlock()
-	g.send(map[string]any{"v": 1, "type": "request", "id": id, "op": r.Op, "port": r.Port})
+	g.send(map[string]any{"v": 1, "type": "request", "id": id, "op": op, "port": port})
 	ctx, cancel := context.WithTimeout(ctx, relayBudget)
 	defer cancel()
 	select {
