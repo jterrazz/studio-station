@@ -91,6 +91,13 @@ func TestCasks(t *testing.T) {
 	})
 }
 
+func TestBundle(t *testing.T) {
+	contracttest.Bundler(t, catalog.TrustedBrew("hashicorp/tap/terraform"), func(_ *testing.T, s contracttest.Seed) contracttest.Bundled {
+		b := build(newCellar(s, false), s.Absent)
+		return contracttest.Bundled{Bundler: b, Installer: b.Formulae()}
+	})
+}
+
 func TestAFormulaListedWithSeveralVersionsReadsItsLatest(t *testing.T) {
 	run := local.Played(func(local.Cmd) (local.Output, error) {
 		return local.Output{Stdout: "bat 0.24.0 0.25.0\njq\n"}, nil
