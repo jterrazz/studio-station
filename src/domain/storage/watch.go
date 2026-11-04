@@ -83,7 +83,7 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 			Partial: func(ctx context.Context, emit func(func(*reading))) func(*reading) {
 				var mu sync.Mutex
 				answered := slices.Repeat([]int64{Unknown}, len(p.roots))
-				s.h.FS.Sizes(ctx, p.roots, func(i int, bytes int64) {
+				s.o.Disk.Sizes(ctx, p.roots, func(i int, bytes int64) {
 					mu.Lock()
 					answered[i] = bytes
 					mu.Unlock()

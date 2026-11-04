@@ -37,3 +37,25 @@ func (disk) Rename(from, to string) error {
 	}
 	return err
 }
+
+func Erase(paths []string) error {
+	// invariant: a tree its tool wrote read-only (Go's module cache) is made
+	// writable and removed again; every path is tried, and the first failure is
+	// the one returned.
+	var failed error
+	for _, p := range paths {
+		if os.RemoveAll(p) == nil {
+			continue
+		}
+		_ = filepath.WalkDir(p, func(sub string, d fs.DirEntry, err error) error {
+			if err == nil && d.IsDir() {
+				_ = os.Chmod(sub, 0o700) //nolint:gosec // outside: a directory needs its search bit to be emptied.
+			}
+			return nil
+		})
+		if err := os.RemoveAll(p); err != nil && failed == nil {
+			failed = err
+		}
+	}
+	return failed
+}

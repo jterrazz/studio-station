@@ -28,7 +28,7 @@ func (clock) Sleep(ctx context.Context, d time.Duration) error {
 }
 
 // value: a disk that answers its roots one at a time, 10 ms apart.
-type staggered struct{ *systemtest.FS }
+type staggered struct{ systemtest.Disk }
 
 func (f staggered) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
 	for i, root := range roots {
@@ -60,7 +60,7 @@ func shape(p page.Page) (ids []string, rows map[string]int) {
 }
 
 func TestNoSectionFlickers(t *testing.T) {
-	fs := staggered{FS: systemtest.NewFS()}
+	fs := staggered{Disk: systemtest.Disk{FS: systemtest.NewFS()}}
 	categories := []catalog.Category{catalog.CategoryPackageManagers, catalog.CategoryRuntimes, catalog.CategoryAIApps, catalog.CategoryAgentSkills}
 	tools := make([]catalog.Tool, 0, 40)
 	names := make([]string, 0, 40)
@@ -75,7 +75,7 @@ func TestNoSectionFlickers(t *testing.T) {
 	defer pool.Close()
 	host := systemtest.Host(systemtest.NewRunner(t), fs.FS, systemtest.Env{}, systemtest.NewNet(), &systemtest.Clock{})
 	host.FS, host.Clock = fs, clock{}
-	s := storage.New(host, tools, storage.Options{Pool: pool, Here: catalog.Host, Expand: storage.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: inventory{names: names}})
+	s := storage.New(host, tools, storage.Options{Disk: fs, Pool: pool, Here: catalog.Host, Expand: storage.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: inventory{names: names}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	var pages []page.Page

@@ -72,7 +72,6 @@ type FS interface {
 	ReadDir(path string) ([]fs.DirEntry, error)
 	Glob(pattern string) ([]string, error)
 	WalkDir(root string, fn fs.WalkDirFunc) error
-	Sizes(ctx context.Context, roots []string, each func(i int, bytes int64))
 	Chmod(path string, perm fs.FileMode) error
 	Chown(path string, uid, gid int) error
 	Readlink(path string) (string, error)
