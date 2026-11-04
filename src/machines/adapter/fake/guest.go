@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/world"
 )
@@ -30,15 +31,17 @@ type File struct {
 }
 
 type VM struct {
-	mu       sync.Mutex
-	answers  map[string]Answer
-	received map[string][]byte
-	files    map[string]File
-	services map[int]string
+	mu      sync.Mutex
+	answers map[string]Answer
+	// value: the lines that power the VM off once answered.
+	poweroffs map[string]bool
+	received  map[string][]byte
+	files     map[string]File
+	services  map[int]string
 }
 
 func NewVM() *VM {
-	return &VM{answers: map[string]Answer{}, received: map[string][]byte{}, files: map[string]File{}, services: map[int]string{}}
+	return &VM{answers: map[string]Answer{}, poweroffs: map[string]bool{}, received: map[string][]byte{}, files: map[string]File{}, services: map[int]string{}}
 }
 
 func (v *VM) Program(line string, a Answer) {
@@ -113,17 +116,53 @@ func (g *Guests) Dial(_ context.Context, t contract.GuestTarget) (contract.Guest
 		v = NewVM()
 		for line, a := range answers {
 			v.answers[line] = Answer{Code: a.Code, Stdout: a.Stdout, Stderr: a.Stderr}
+			v.poweroffs[line] = a.Poweroff
 		}
 		g.vms[t.VM] = v
 	}
 	g.mu.Unlock()
-	return &guest{vm: v, done: make(chan struct{})}, nil
+	return &guest{vm: v, name: t.VM, w: g.w, done: make(chan struct{})}, nil
 }
 
 type guest struct {
 	vm   *VM
+	name string
+	w    *world.World
 	done chan struct{}
 	once sync.Once
+}
+
+var ErrGuestBroke = errors.New("the guest connection broke, as the world scripted it")
+
+func (v *VM) answer(line string) (a Answer, poweroff, ok bool) {
+	if a, ok := v.answers[line]; ok {
+		return a, v.poweroffs[line], true
+	}
+	for pattern, a := range v.answers {
+		if prefix, wild := strings.CutSuffix(pattern, "*"); wild && strings.HasPrefix(line, prefix) {
+			return a, v.poweroffs[pattern], true
+		}
+	}
+	return Answer{}, false, false
+}
+
+func (c *guest) fails() bool {
+	c.w.Lock()
+	defer c.w.Unlock()
+	return c.w.Fails("Guest.Exec")
+}
+
+// invariant: a guest that powers its VM off ends the VM's run as a guest
+// poweroff, and the connection with it.
+func (c *guest) poweroff() {
+	c.w.Lock()
+	if mac := c.w.Holder(c.name); mac != "" {
+		if v := c.w.Macs[mac].VMs[c.name]; v.Running() {
+			v.PID, v.Ended = 0, &machines.RunEnd{Reason: machines.GuestPoweroff}
+		}
+	}
+	c.w.Unlock()
+	_ = c.Close()
 }
 
 func (c *guest) closed() bool {
@@ -146,8 +185,11 @@ func (c *guest) Exec(_ context.Context, cmd contract.GuestCommand) (contract.Gue
 			return contract.GuestResult{}, err
 		}
 	}
+	if c.fails() {
+		return contract.GuestResult{}, ErrGuestBroke
+	}
 	c.vm.mu.Lock()
-	a, ok := c.vm.answers[cmd.Line]
+	a, poweroff, ok := c.vm.answer(cmd.Line)
 	if ok {
 		c.vm.received[cmd.Line] = in
 	}
@@ -167,6 +209,9 @@ func (c *guest) Exec(_ context.Context, cmd contract.GuestCommand) (contract.Gue
 			return contract.GuestResult{}, err
 		}
 		res.Stderr = ""
+	}
+	if poweroff {
+		c.poweroff()
 	}
 	return res, nil
 }

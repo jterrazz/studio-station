@@ -60,8 +60,11 @@ type Mac struct {
 	// them: a file edited by hand, a file station v2 left.
 	Files map[string]string `json:"files,omitempty"`
 	// value: the images the hypervisor holds, by reference.
-	Images []string       `json:"images,omitempty"`
-	VMs    map[string]*VM `json:"vms,omitempty"`
+	Images []string `json:"images,omitempty"`
+	// value: a VM freshly cloned from a fetched image, before anything ran
+	// in it: its size and the guest it answers with; nil clones a bare disk.
+	Fresh *VM            `json:"fresh,omitempty"`
+	VMs   map[string]*VM `json:"vms,omitempty"`
 
 	Jobs map[string]*Job `json:"jobs,omitempty"`
 	// value: the job manager's overrides by label: enabled or not.
@@ -219,7 +222,8 @@ type Kept struct {
 func (v *VM) Running() bool { return v.PID != 0 }
 
 type Guest struct {
-	// value: what the guest answers to each command line it is given.
+	// value: what the guest answers to each command line it is given; a
+	// line ending in * answers every line it begins.
 	Answers map[string]Answer `json:"answers,omitempty"`
 }
 
@@ -227,6 +231,8 @@ type Answer struct {
 	Code   int    `json:"code,omitempty"`
 	Stdout string `json:"stdout,omitempty"`
 	Stderr string `json:"stderr,omitempty"`
+	// value: the line powers the VM off once it is answered.
+	Poweroff bool `json:"poweroff,omitempty"`
 }
 
 type Job struct {

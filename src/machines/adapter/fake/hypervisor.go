@@ -85,7 +85,8 @@ func (h *Hypervisor) Clone(_ context.Context, from imagescontract.ImageLocation,
 	h.w.Lock()
 	defer h.w.Unlock()
 	m := h.here()
-	if _, ok := h.disk(from.Ref); !ok && !slices.Contains(m.Images, from.Ref) {
+	_, fromDisk := h.disk(from.Ref)
+	if !fromDisk && !slices.Contains(m.Images, from.Ref) {
 		return ErrNoImage
 	}
 	if _, ok := h.disk(vm); ok {
@@ -97,6 +98,13 @@ func (h *Hypervisor) Clone(_ context.Context, from imagescontract.ImageLocation,
 		m.VMs[vm] = v
 	}
 	v.Disk = true
+	if fresh := m.Fresh; !fromDisk && fresh != nil {
+		v.Size = fresh.Size
+		if v.Guest == nil && fresh.Guest != nil {
+			guest := *fresh.Guest
+			v.Guest = &guest
+		}
+	}
 	return nil
 }
 
