@@ -21,6 +21,7 @@ var (
 	ErrNoImage   = errors.New("no such image")
 	ErrNotBoot   = errors.New("the VM does not run")
 	ErrTwoRuns   = errors.New("the VM already runs")
+	ErrRunning   = errors.New("the VM is running")
 	ErrHeldName  = errors.New("a VM disk already has this name")
 	ErrScripted  = errors.New("the hypervisor refused to boot it, as the world scripted it")
 	ErrNoAddress = errors.New("the VM got no address, as the world scripted it")
@@ -212,6 +213,9 @@ func (h *Hypervisor) Delete(_ context.Context, vm string) error {
 	v, ok := h.disk(vm)
 	if !ok {
 		return ErrNoDisk
+	}
+	if v.Running() {
+		return ErrRunning
 	}
 	v.Disk, v.PID, v.Ended = false, 0, nil
 	if v.Kept == nil {

@@ -24,6 +24,7 @@ type Hypervisor interface {
 	Boot(ctx context.Context, vm string, o BootOptions) (Run, error)
 	Adopt(ctx context.Context, vm string) (Run, bool)
 	Shutdown(ctx context.Context, vm string, grace time.Duration) error
+	// invariant: Delete refuses a running VM; its caller stops the run first.
 	Delete(ctx context.Context, vm string) error
 	Discard(ctx context.Context, img imagescontract.ImageLocation) error
 	Address(ctx context.Context, vm string, wait time.Duration) (netip.Addr, error)
