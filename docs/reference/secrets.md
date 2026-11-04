@@ -23,7 +23,7 @@ Deleting a VM is not revoking a token. Use fine-grained, expiring tokens in a VM
 
 ## The lend list
 
-`lend_list` in `settings.json` names what may be lent: `session:*` names and the one name `operator:claude:oauth-token`. Anything else is refused with a hint that other secrets wait for the secret manager ([TODO](../../TODO.md)).
+`lend_list` in `preferences.json` names what may be lent: `session:*` names and the one name `operator:claude:oauth-token`. Anything else is refused with a hint that other secrets wait for the secret manager ([TODO](../../TODO.md)).
 
 ```sh
 station secrets allow session:openpanel
