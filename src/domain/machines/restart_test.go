@@ -30,8 +30,13 @@ func service(t *testing.T, run system.Runner) (*machines.Service, *systemtest.Cl
 	if err := store.Save(settings.Settings{Here: "mac", Hosts: hosts}); err != nil {
 		t.Fatal(err)
 	}
-	return machines.New(h, nil, store, noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, Paths: paths}), clock
+	return machines.New(h, nil, store, noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, Paths: paths, Unlocker: restarted{}}), clock
 }
+
+type restarted struct{}
+
+func (restarted) Unlock(context.Context, string) error         { return nil }
+func (restarted) PlannedRestart(context.Context, string) error { return nil }
 
 type answering struct {
 	*systemtest.Runner
@@ -49,15 +54,13 @@ func (a *answering) Output(ctx context.Context, c system.Cmd) (system.Output, er
 	return a.Runner.Output(ctx, c)
 }
 
-func restarting(t *testing.T, restart system.Output, polls ...int) (*machines.Service, *systemtest.Clock) {
+func restarting(t *testing.T, polls ...int) (*machines.Service, *systemtest.Clock) {
 	t.Helper()
-	run := systemtest.NewRunner(t)
-	run.On("ssh", "-o", "ConnectTimeout=2", "-o", "BatchMode=yes", "x", "sudo fdesetup authrestart -delayminutes 0").Reply(restart)
-	return service(t, &answering{Runner: run, polls: polls})
+	return service(t, &answering{Runner: systemtest.NewRunner(t), polls: polls})
 }
 
 func TestRestartWaitsForTheHostToGoAwayAndComeBack(t *testing.T) {
-	svc, _ := restarting(t, system.Output{ExitCode: 255}, 0, 0, 255, 255, 0)
+	svc, _ := restarting(t, 0, 0, 255, 255, 0)
 	var seen []string
 
 	report, err := svc.Restart(context.Background(), "x", func(e machines.RestartEvent) { seen = append(seen, e.Phase) })
@@ -74,7 +77,7 @@ func TestRestartWaitsForTheHostToGoAwayAndComeBack(t *testing.T) {
 }
 
 func TestRestartDoesNotTakeAHostThatNeverWentDownForRestarted(t *testing.T) {
-	svc, clock := restarting(t, system.Output{ExitCode: 255}, 0)
+	svc, clock := restarting(t, 0)
 
 	_, err := svc.Restart(context.Background(), "x", nil)
 
@@ -88,7 +91,7 @@ func TestRestartDoesNotTakeAHostThatNeverWentDownForRestarted(t *testing.T) {
 }
 
 func TestRestartGivesUpOnAHostThatNeverComesBack(t *testing.T) {
-	svc, clock := restarting(t, system.Output{ExitCode: 255}, 255)
+	svc, clock := restarting(t, 255)
 
 	_, err := svc.Restart(context.Background(), "x", nil)
 

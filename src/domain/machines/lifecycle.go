@@ -168,7 +168,7 @@ func (s *Service) Remove(ctx context.Context, name string) (DeleteReport, error)
 		}
 	}
 	s.removeFiles(name, true)
-	if err := s.editConfig(nil, false, []string{name}); err != nil {
+	if err := configFailure(s.o.SSHConfig.Remove(ctx, name), false); err != nil {
 		report.Warnings = append(report.Warnings, err.Error())
 	}
 	return report, nil

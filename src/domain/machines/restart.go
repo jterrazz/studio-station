@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
 const (
@@ -44,18 +44,12 @@ func (s *Service) Restart(ctx context.Context, name string, progress func(Restar
 	}
 	started := s.h.Clock.Now()
 
-	say("restarting", "sudo fdesetup authrestart -delayminutes 0")
-	out, err := s.h.Run.Output(ctx, system.Cmd{
-		Name: "ssh", Args: concat(batchSSH(), []string{m.Name, "sudo fdesetup authrestart -delayminutes 0"}),
-		Timeout: 30 * time.Second,
-	})
-	// outside: ssh exits 255 when the Mac drops the connection to reboot, which is
-	// the success path; any other non-zero exit is the Mac refusing.
-	if err != nil && !errors.Is(err, system.ErrTimeout) {
+	say("restarting", "a planned restart that unlocks itself")
+	var refused *contract.RestartRefusedError
+	if err := s.o.Unlocker.PlannedRestart(ctx, m.Name); errors.As(err, &refused) {
+		return RestartReport{}, &RestartRefusedError{Name: name, Detail: refused.Detail}
+	} else if err != nil {
 		return RestartReport{}, err
-	}
-	if err == nil && out.ExitCode != 0 && out.ExitCode != 255 {
-		return RestartReport{}, &RestartRefusedError{Name: name, Detail: firstLine(out.Stderr + out.Stdout)}
 	}
 
 	if err := s.await(ctx, m.Name, false, stopBudget); err != nil {

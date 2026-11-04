@@ -13,7 +13,9 @@ const agentPrefix = "com.jterrazz.station.vm."
 
 func (s *Service) LogPath(name string) string { return path.Join(s.o.Paths.State, "logs", name+".log") }
 
-func (s *Service) KnownHostsPath(name string) string { return path.Join(s.knownHostsDir(), name) }
+func (s *Service) KnownHostsPath(name string) string {
+	return path.Join(KnownHostsDir(s.o.Paths), name)
+}
 
 func (s *Service) KeyPath() string { return s.img.KeyPath() }
 

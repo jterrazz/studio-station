@@ -2,13 +2,13 @@ package machines
 
 import (
 	"context"
-	"errors"
 	"maps"
 	"sort"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
 func (s *Service) Lookup(_ context.Context, name string) (Machine, error) { return s.lookup(name) }
@@ -76,7 +76,7 @@ func (s *Service) Init(name string) error {
 	return s.store.Save(cfg)
 }
 
-func (s *Service) AddHost(name string, h settings.Host) error {
+func (s *Service) AddHost(ctx context.Context, name string, h settings.Host) error {
 	if err := s.CheckHost(); err != nil {
 		return err
 	}
@@ -108,26 +108,14 @@ func (s *Service) AddHost(name string, h settings.Host) error {
 	if err := s.store.Save(cfg); err != nil {
 		return err
 	}
-	if err := s.h.FS.MkdirAll(s.knownHostsDir(), 0o700); err != nil {
-		return s.rollBack(before, err)
-	}
-	if err := s.editConfig([]target{{Name: name, User: h.User, Key: h.Key}}, false, nil); err != nil {
-		return s.rollBack(before, err)
+	if err := s.o.SSHConfig.Put(ctx, []contract.HostBlock{{Name: name, User: h.User, Key: h.Key}}); err != nil {
+		_ = s.store.Save(before)
+		return configFailure(err, true)
 	}
 	return nil
 }
 
-func (s *Service) rollBack(before settings.Settings, cause error) error {
-	_ = s.store.Save(before)
-	var blocked *SSHConfigError
-	if errors.As(cause, &blocked) {
-		blocked.RolledBack = true
-		return blocked
-	}
-	return &SSHConfigError{Path: s.sshConfig(), Cause: cause, RolledBack: true}
-}
-
-func (s *Service) ForgetHost(name string) error {
+func (s *Service) ForgetHost(ctx context.Context, name string) error {
 	if err := s.CheckHost(); err != nil {
 		return err
 	}
@@ -143,7 +131,7 @@ func (s *Service) ForgetHost(name string) error {
 	if err := s.store.Save(cfg); err != nil {
 		return err
 	}
-	return s.editConfig(nil, false, []string{m.Name})
+	return configFailure(s.o.SSHConfig.Remove(ctx, m.Name), false)
 }
 
 func (s *Service) here(cfg settings.Settings) string {
