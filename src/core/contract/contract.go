@@ -2,18 +2,12 @@ package contract
 
 import (
 	"context"
-	"time"
 
 	"github.com/jterrazz/studio-station/src/core/machine"
 )
 
 type Self interface {
 	Read(ctx context.Context) (machine.Ref, machine.Kind, machine.System, machine.Hardware, error)
-}
-
-type Clock interface {
-	Now() time.Time
-	After(d time.Duration) <-chan time.Time
 }
 
 type Preferences interface {
