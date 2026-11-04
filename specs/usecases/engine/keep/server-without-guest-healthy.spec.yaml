@@ -1,5 +1,5 @@
 description: 'a server whose tooling replaced station''s guest passes its health steps: ssh is its connection'
-env: infra-no-guest
+env: server-without-guest
 runs:
     - command: 'machines infra | /usr/bin/grep -A7 "# Health"'
       exit: 0
