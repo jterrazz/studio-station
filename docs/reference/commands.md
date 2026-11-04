@@ -5,7 +5,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Section        | Answers                                                |
 | -------------- | ------------------------------------------------------ |
 | Rules          | What holds for every command                           |
-| Here           | `overview`, `apps`, `settings`, `storage`              |
+| Here           | `overview`, `apps`, `settings`, `disk`                 |
 | The fleet      | `machines`, `services`, `images`, `secrets`, `tailnet` |
 | Shortcuts      | `run git` and `run docker`                             |
 | The binary     | `setup`, `--version`, `help`                           |
@@ -13,18 +13,18 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Plumbing       | The hidden commands the machine runs for itself        |
 | Exit codes     | What 0, 1, 2 and 130 mean                              |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `storage`, `services`, `tailnet`, `secrets`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `services`, `tailnet`, `secrets`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
 - Bare `station` opens the TUI on a terminal; piped, or with `--all` or `--json`, it prints `station overview`, exit 0.
-- A bare noun lists (`apps`, `settings`, `storage`, `machines`, `services`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
+- A bare noun lists (`apps`, `settings`, `disk`, `machines`, `services`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create api --permanent`).
 - The same verbs everywhere: `install`, `uninstall`, `upgrade`, except where a family has taken its v3 words (`apps`: `install`, `update`, `remove`). The only other words are the [hidden aliases](#hidden-aliases).
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
 - Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`. With `--json`, the same refusal or failure is also the `station.error/v1` document on stdout (`schema`, `type`, `code`, `subject`, `message`, `hint`, `fix`), the exit code unchanged. A question answered no is `Error: <what> kept: you said no`, exit 1.
 - A word station does not know is `Error: unknown command "<word>"` / `Hint: station help`, exit 2; so is `station help <word>`.
-- A word under `storage` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station storage go` is `"go" is a storage row: say what to do with it`, hint `station storage clean go`. Under `apps` the entry is a read: `station apps jq` is jq's detail; under `settings`, a setting's name is its read: `station settings dns`.
+- A word under `disk` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station disk go` is `"go" is a disk row: say what to do with it`, hint `station disk free go`. Under `apps` the entry is a read: `station apps jq` is jq's detail; under `settings`, a setting's name is its read: `station settings dns`.
 - `--on <machine>` runs any command below on another machine of the fleet, through its engine, and renders the answer here; see [Machines](machines.md#on-another-machine).
 - A value a command needs from you is never an argv flag when it could be a secret: a config item asks in a form on a terminal ([Configuration](configuration.md)).
 
@@ -38,7 +38,7 @@ These commands act on the machine they run on, and list only what its kind allow
 station overview [--all] [--json]
 ```
 
-Everything about this machine: system, environment, disk, identity, background jobs, Tailscale Serve, apps, config and setup; on a terminal it opens with To do (every row needing action and its fix, a failing or orphan launchd job with the exact removal command, never run by station) and a two-column Summary, the sections folded unless `--all`; on a host its Machine section shows station's engine. `--json` prints `station.overview.read/v1`, named after its call; the hidden alias `station status --json` keeps printing the [`station.status/v1`](status-json.md) document `studio doctor` reads. On a terminal, `overview`, `apps` and `storage` draw every row at once and fill each as its probe answers ([instant reads](../concepts/design-system.md#instant-reads)); piped or with `--json` they print one complete document.
+Everything about this machine: system, environment, disk, identity, background jobs, Tailscale Serve, apps, config and setup; on a terminal it opens with To do (every row needing action and its fix, a failing or orphan launchd job with the exact removal command, never run by station) and a two-column Summary, the sections folded unless `--all`; on a host its Machine section shows station's engine. `--json` prints `station.overview.read/v1`, named after its call; the hidden alias `station status --json` keeps printing the [`station.status/v1`](status-json.md) document `studio doctor` reads. On a terminal, `overview`, `apps` and `disk` draw every row at once and fill each as its probe answers ([instant reads](../concepts/design-system.md#instant-reads)); piped or with `--json` they print one complete document.
 
 ### `station apps`
 
@@ -67,15 +67,16 @@ station settings off <setting...> [--yes] # off here: station neither applies no
 
 A setting that needs values asks them in a form on a terminal and is refused elsewhere (exit 2); a value is never an argument. An apply over a setting changed since asks first, as yours is lost; off removes only what is still exactly station's, a change of yours stays. The Always-on Mac group is applied by name only. `station config`, `config install` and `config uninstall` are hidden aliases of `settings`, `settings apply` and `settings off` for one release. See [Configuration](configuration.md).
 
-### `station storage`
+### `station disk`
 
-```sh
-station storage [--json] # per tool: caches · data · kept · installed, with sizes; nothing runs
-station storage clean [<tool...>] # empty caches with each tool's own command; bare = every row here
-station storage reset <tool...> [--yes] # delete a tool's data, back to factory; asks first
+```bash
+station disk [--json] # the volume, then Misplaced, Can rebuild, Your data, Never touched, with sizes; nothing runs
+station disk free [<app...>] # empty what an app can rebuild with its own command; bare = every Can rebuild row
+station disk erase <app> [--confirm=<app>] # erase an app's data, back to factory; its name typed
+station disk move <folder> # move a misplaced folder where its app's own config says
 ```
 
-`clean` asks nothing: caches only. `reset` is always named, and refuses while the tool's app runs. A stale VM goes with `station machines delete`, an old image version with `station images delete`. See [Storage](storage.md).
+`free` and `move` ask nothing: nothing is lost. `erase` is always one app, its name typed, and refuses while the app runs or on a Never touched row. A stale VM goes with `station machines delete`, an old image version with `station images delete`. The v2 `station storage`, `storage clean` and `storage reset` are hidden aliases for one release. See [Disk](disk.md).
 
 ### `station power`
 
@@ -185,7 +186,7 @@ station run docker <rm|rmi|reset> [--yes]
 | `run docker rmi`                      | remove every image                                                 |
 | `run docker reset`                    | `rm`, then `rmi`                                                   |
 
-`station storage clean docker` prunes Docker's unused data.
+`station disk free docker` prunes Docker's unused data.
 
 ## The binary
 

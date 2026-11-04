@@ -59,7 +59,7 @@ station images build linux --binary .artifacts/go/station-linux-arm64
 
 ## Cleaning
 
-`station images delete <image>[@<version>]` never touches a VM: a VM is an APFS clone, independent of its image once made. Bare `station images` marks every version older than the newest. Deleting never prunes Tart's cache of the base: that cache is Tart's, emptied by `station storage clean tart` ([Storage](storage.md)), and the next build pulls the base again after it.
+`station images delete <image>[@<version>]` never touches a VM: a VM is an APFS clone, independent of its image once made. Bare `station images` marks every version older than the newest. Deleting never prunes Tart's cache of the base: that cache is Tart's, emptied by `station disk free tart` ([Disk](disk.md)), and the next build pulls the base again after it.
 
 ## Related
 
