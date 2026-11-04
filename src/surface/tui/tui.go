@@ -12,7 +12,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
 	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
 	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
@@ -29,7 +28,7 @@ import (
 type Deps struct {
 	Here     page.Context
 	Status   homescreen.Status
-	Tools    *tools.Service
+	Tools    toolsscreen.Deps
 	Config   *config.Service
 	Storage  *storage.Service
 	Machines *machines.Service

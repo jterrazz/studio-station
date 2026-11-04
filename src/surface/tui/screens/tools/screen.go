@@ -5,8 +5,12 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/jterrazz/studio-station/src/apps"
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
@@ -14,32 +18,28 @@ import (
 
 const ID = "tools"
 
-type Tools interface {
-	Watch(ctx context.Context) <-chan []tools.Report
-	Forget()
-	CheckInstall(ctx context.Context, names []string) error
-	Install(ctx context.Context, r tools.InstallRequest) ([]tools.Outcome, error)
-	CheckUninstall(names []string) error
-	Uninstall(ctx context.Context, names []string) ([]tools.Outcome, error)
-	CheckUpgrade(names []string) error
-	Upgrade(ctx context.Context, r tools.UpgradeRequest) ([]tools.Outcome, error)
+type Deps struct {
+	Calls  call.Router
+	Target machine.Ref
+	// value: drops the cached reading, so a fresh one reads again.
+	Forget func()
 }
 
 type Model struct {
-	tab.View[[]tools.Report]
-	ctx   context.Context
-	tools Tools
+	tab.View[[]apps.Report]
+	ctx context.Context
+	d   Deps
 }
 
-func New(ctx context.Context, t Tools, here page.Context, describe tab.Describe) Model {
-	source := func(ctx context.Context, fresh bool) (<-chan []tools.Report, error) {
+func New(ctx context.Context, d Deps, here page.Context, describe tab.Describe) Model {
+	source := func(ctx context.Context, fresh bool) (<-chan []apps.Report, error) {
 		if fresh {
-			t.Forget()
+			d.Forget()
 		}
-		return t.Watch(ctx), nil
+		return tab.Values(call.Follow(ctx, d.Calls, d.Target, appscalls.List, appscalls.ListIn{}, nil))
 	}
-	build := func(r []tools.Report) page.Page { return pagetools.Catalogue(r, here) }
-	return Model{View: tab.NewView(ID, "Tools", "tools", here, source, build, describe), ctx: ctx, tools: t}
+	build := func(r []apps.Report) page.Page { return pagetools.Catalogue(r, here) }
+	return Model{View: tab.NewView(ID, "Tools", "tools", here, source, build, describe), ctx: ctx, d: d}
 }
 
 func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
@@ -50,41 +50,37 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 	}
 	key, name := ev.Action.Key, ev.Row
 	run := tab.Exec(ID, func() (tab.Status, error) { return m.run(key, name) })
-	var confirm *page.Confirm
+	var question *page.Confirm
 	if ev.Action.Confirm != nil {
 		c := pagetools.Confirm(ev.Action.Confirm.Yes, name)
-		confirm = &c
+		question = &c
 	}
 	var act tea.Cmd
-	m.View, act = m.Act(confirm, run)
+	m.View, act = m.Act(question, run)
 	return m, tea.Batch(cmd, act)
 }
 
 func (m Model) run(key, name string) (tab.Status, error) {
+	names := []string{name}
 	switch key {
 	case pagetools.KeyInstall:
-		if err := m.tools.CheckInstall(m.ctx, []string{name}); err != nil {
-			return tab.Status{}, err
-		}
-		outcomes, err := m.tools.Install(m.ctx, tools.InstallRequest{Names: []string{name}, Interactive: true})
+		outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Install, appscalls.InstallIn{Names: names, Interactive: true}, nil)
 		return outcome("installed", name, outcomes), err
 	case pagetools.KeyUninstall:
-		if err := m.tools.CheckUninstall([]string{name}); err != nil {
-			return tab.Status{}, err
-		}
-		outcomes, err := m.tools.Uninstall(m.ctx, []string{name})
+		var outcomes []apps.Outcome
+		err := confirm.Answered(func(answer string) (err error) {
+			outcomes, err = call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Uninstall, appscalls.UninstallIn{Names: names, Confirm: answer}, nil)
+			return err
+		})
 		return outcome("uninstalled", name, outcomes), err
 	}
-	if err := m.tools.CheckUpgrade([]string{name}); err != nil {
-		return tab.Status{}, err
-	}
-	outcomes, err := m.tools.Upgrade(m.ctx, tools.UpgradeRequest{Names: []string{name}})
+	outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Upgrade, appscalls.UpgradeIn{Names: names}, nil)
 	return outcome("upgraded", name, outcomes), err
 }
 
 // value: the status bar names the tool asked for; a Then step that failed
 // degrades the line rather than hiding behind the tool's own success.
-func outcome(done, name string, outcomes []tools.Outcome) tab.Status {
+func outcome(done, name string, outcomes []apps.Outcome) tab.Status {
 	for _, o := range outcomes {
 		if o.Name != name {
 			continue

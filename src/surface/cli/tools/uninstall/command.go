@@ -6,15 +6,17 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/apps"
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Tools *tools.Service
+	Names func() []string
 	Here  page.Context
 }
 
@@ -25,19 +27,16 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Example:     "  station tools uninstall bat --yes",
 		Args:        cobra.MinimumNArgs(1),
 		Bind:        bind,
-		Validate:    func(_ context.Context, in *Input) error { return d.Tools.CheckUninstall(in.Names) },
 		Destructive: func(*Input) bool { return true },
+		ByCall:      true,
 		Confirm:     func(in *Input) string { return "Uninstall " + strings.Join(in.Names, ", ") + "?" },
-		Complete: func([]string, string) []string {
-			placed := d.Tools.Placed()
-			out := make([]string, 0, len(placed))
-			for _, t := range placed {
-				out = append(out, t.Name)
-			}
-			return out
-		},
+		Complete:    func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			outcomes, err := d.Tools.Uninstall(ctx, in.Names)
+			var outcomes []apps.Outcome
+			err := io.Confirmed(func(answer string) (err error) {
+				outcomes, err = call.Invoke(ctx, env.Calls, env.Target, appscalls.Uninstall, appscalls.UninstallIn{Names: in.Names, Confirm: answer}, nil)
+				return err
+			})
 			if err != nil {
 				return err
 			}

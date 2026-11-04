@@ -61,6 +61,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		Stdin:       stdin,
 		Stdout:      stdout,
 	}
+	kenv.Calls, kenv.Target = here.router(kenv), here.profile.Ref
 	kenv.On.Refresh = func(ctx context.Context) error {
 		fleet := here.machines(false)
 		f, err := fleet.Fleet(ctx, false)

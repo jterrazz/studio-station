@@ -31,12 +31,23 @@ import (
 )
 
 func toolsCommand(env kit.Env, m machine) *cobra.Command {
-	service := toolsService(env, m)
-	return toolscmd.Command(toolscmd.Deps{Tools: service, Here: m.where}, env,
-		toolsinstall.Command(toolsinstall.Deps{Tools: service, Here: m.where}, env),
-		toolsuninstall.Command(toolsuninstall.Deps{Tools: service, Here: m.where}, env),
-		toolsupgrade.Command(toolsupgrade.Deps{Tools: service, Here: m.where}, env),
+	names := placedNames(toolsService(env, m))
+	return toolscmd.Command(toolscmd.Deps{Names: names, Here: m.where}, env,
+		toolsinstall.Command(toolsinstall.Deps{Names: names, Here: m.where}, env),
+		toolsuninstall.Command(toolsuninstall.Deps{Names: names, Here: m.where}, env),
+		toolsupgrade.Command(toolsupgrade.Deps{Here: m.where}, env),
 	)
+}
+
+func placedNames(s *tools.Service) func() []string {
+	return func() []string {
+		placed := s.Placed()
+		out := make([]string, 0, len(placed))
+		for _, t := range placed {
+			out = append(out, t.Name)
+		}
+		return out
+	}
 }
 
 func toolsService(env kit.Env, m machine) *tools.Service {
