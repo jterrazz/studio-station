@@ -17,21 +17,23 @@ import (
 )
 
 type Options struct {
-	Paths   settings.Paths
-	Version string
-	User    string
-	Here    catalog.MachineKind
+	Paths     settings.Paths
+	Version   string
+	User      string
+	Here      catalog.MachineKind
+	GuestPort int
 }
 
 type Service struct {
-	h    system.Host
-	e    contract.Hypervisor
-	list []catalog.Image
-	o    Options
+	h      system.Host
+	e      contract.Hypervisor
+	guests contract.GuestDialer
+	list   []catalog.Image
+	o      Options
 }
 
-func New(h system.Host, e contract.Hypervisor, list []catalog.Image, o Options) *Service {
-	return &Service{h: h, e: e, list: list, o: o}
+func New(h system.Host, e contract.Hypervisor, guests contract.GuestDialer, list []catalog.Image, o Options) *Service {
+	return &Service{h: h, e: e, guests: guests, list: list, o: o}
 }
 
 type Report struct {

@@ -2,7 +2,9 @@ description: 'a bare build rebuilds an image whose recipe hash changed, beside t
 fixture:
     - ../__fixtures__/stubs/
     - ./__fixtures__/build/
+    - ./__fixtures__/served/
     - ./__fixtures__/recipe-changed/
+serve: sshd
 runs:
     - command: 'images build --binary $HOME/station-linux'
       exit: 0
