@@ -75,7 +75,7 @@ type Options struct {
 	// value: the Notifier the engine tells, built over the engine's own log.
 	Notifier func(log func(subject, text string)) Notifier
 	// value: what runs a server's health check from this Mac; nil runs none.
-	Checks HealthProbe
+	Checks CheckRunner
 	// value: how the parts of what the engine tells are joined, as the
 	// presentation joins them.
 	Join func(parts ...string) string

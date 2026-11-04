@@ -7,7 +7,7 @@ runs:
       exit: 0
       stdout: |
           1
-    - command: 'world fault HealthProbe.Probe 1 times'
+    - command: 'world fault CheckRunner.Run 1 times'
       exit: 0
     - command: 'world advance 60s'
       exit: 0

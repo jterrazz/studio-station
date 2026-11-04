@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           ●	Check passes	https://infra:6443/readyz
-    - command: 'world fault HealthProbe.Probe'
+    - command: 'world fault CheckRunner.Run'
       exit: 0
     - command: 'world advance 60s'
       exit: 0

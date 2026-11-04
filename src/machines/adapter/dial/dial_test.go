@@ -13,8 +13,8 @@ import (
 
 // invariant: a server that answers every request with 204, on a port of
 // this Mac's loopback, closed for the refusing half.
-func TestTheDialProbeKeepsTheHealthProbeContract(t *testing.T) {
-	contracttest.HealthProbe(t, func(t *testing.T) contracttest.HealthProbeSubject {
+func TestTheDialCheckerKeepsTheCheckRunnerContract(t *testing.T) {
+	contracttest.CheckRunner(t, func(t *testing.T) contracttest.CheckRunnerSubject {
 		host := local.New(nil, nil, io.Discard, io.Discard)
 		l, err := host.Sockets.ListenTCP("127.0.0.1", 0)
 		if err != nil {
@@ -36,8 +36,8 @@ func TestTheDialProbeKeepsTheHealthProbeContract(t *testing.T) {
 		}()
 		t.Cleanup(func() { _ = l.Close() })
 		at := "127.0.0.1:" + strconv.Itoa(l.Port())
-		return contracttest.HealthProbeSubject{
-			Probe: dial.Probe{},
+		return contracttest.CheckRunnerSubject{
+			Runner: dial.Checker{},
 			Answering: func() machines.CheckTarget {
 				return machines.CheckTarget{Dial: at, URL: "http://infra:" + strconv.Itoa(l.Port()) + "/readyz", Name: "infra"}
 			},

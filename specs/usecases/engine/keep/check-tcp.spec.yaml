@@ -11,7 +11,7 @@ runs:
       exit: 0
       stdout: |
           ●	Check passes	infra:6443
-    - command: 'world fault HealthProbe.Probe'
+    - command: 'world fault CheckRunner.Run'
       exit: 0
     - command: 'world advance 60s'
       exit: 0

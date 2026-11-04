@@ -11,19 +11,19 @@ import (
 
 var ErrNoAnswer = errors.New("the check did not answer")
 
-type HealthProbe struct{ w *world.World }
+type CheckRunner struct{ w *world.World }
 
-var _ contract.HealthProbe = (*HealthProbe)(nil)
+var _ contract.CheckRunner = (*CheckRunner)(nil)
 
-func HealthProbeOf(w *world.World) *HealthProbe { return &HealthProbe{w: w} }
+func CheckRunnerOf(w *world.World) *CheckRunner { return &CheckRunner{w: w} }
 
-func (p *HealthProbe) Probe(_ context.Context, t machines.CheckTarget) error {
+func (p *CheckRunner) Run(_ context.Context, t machines.CheckTarget) error {
 	// invariant: a check of the world answers while the VM its name holds
-	// runs, until a scripted fault of HealthProbe.Probe stands for what
+	// runs, until a scripted fault of CheckRunner.Run stands for what
 	// inside stopped answering it; a check on any other name answers.
 	p.w.Lock()
 	defer p.w.Unlock()
-	if p.w.Fails("HealthProbe.Probe") {
+	if p.w.Fails("CheckRunner.Run") {
 		return ErrNoAnswer
 	}
 	if mac := p.w.Holder(t.Name); mac != "" && !p.w.Macs[mac].VMs[t.Name].Running() {

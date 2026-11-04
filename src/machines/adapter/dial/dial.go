@@ -8,10 +8,10 @@ import (
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
-type Probe struct{}
+type Checker struct{}
 
-var _ contract.HealthProbe = Probe{}
+var _ contract.CheckRunner = Checker{}
 
-func (Probe) Probe(ctx context.Context, t machines.CheckTarget) error {
+func (Checker) Run(ctx context.Context, t machines.CheckTarget) error {
 	return local.Answers(ctx, local.Check{Dial: t.Dial, URL: t.URL, Name: t.Name, Verify: t.Verify, Budget: machines.CheckBudget})
 }

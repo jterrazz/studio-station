@@ -11,10 +11,10 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 )
 
-type HealthProbe interface {
+type CheckRunner interface {
 	// invariant: what the engine needs to run a server's check from its
 	// Mac: nil once it answered within its budget.
-	Probe(ctx context.Context, t model.CheckTarget) error
+	Run(ctx context.Context, t model.CheckTarget) error
 }
 
 // value: the closed list of what the engine tells the owner of its
@@ -99,7 +99,7 @@ func (d *Daemon) keep(ctx context.Context, v *vmState) {
 		ctx = d.life
 	}
 	go func() {
-		passed := d.o.Checks.Probe(ctx, target) == nil
+		passed := d.o.Checks.Run(ctx, target) == nil
 		d.mu.Lock()
 		var change model.CheckChange
 		v.check, change = model.Health(v.check, passed, now)

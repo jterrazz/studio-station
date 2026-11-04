@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB
-    - command: 'world fault HealthProbe.Probe 2 times'
+    - command: 'world fault CheckRunner.Run 2 times'
       exit: 0
     - command: 'world advance 60s'
       exit: 0

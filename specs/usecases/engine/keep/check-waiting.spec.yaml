@@ -1,7 +1,7 @@
 description: 'a server whose check never passed since its boot waits; it is not a failure'
 env: two-macs
 runs:
-    - command: 'world fault HealthProbe.Probe'
+    - command: 'world fault CheckRunner.Run'
       exit: 0
     - command: 'world reboot-inside infra'
       exit: 0
