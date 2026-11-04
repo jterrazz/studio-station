@@ -2,6 +2,7 @@ package machinescmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -31,7 +32,12 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Use:     "machines [<machine>]",
 		Short:   "All machines: every Mac, its VMs under it; one machine's Overview",
 		Example: "  station machines\n  station machines linux-1\n  station machines --json",
-		Args:    cobra.MaximumNArgs(1),
+		Args: func(c *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return fmt.Errorf("unknown command %q for %q", args[0], c.CommandPath())
+			}
+			return nil
+		},
 		Bind: func(in *Input, args []string) error {
 			if len(args) == 1 {
 				in.Machine = args[0]
