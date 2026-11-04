@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"sync"
 	"time"
@@ -272,11 +273,16 @@ func (plistInfo) Sys() any           { return nil }
 func (m *worldMac) macs() remotecontract.EndpointDialer { return worldDialer{r: m.run} }
 
 // invariant: a Mac's engine runs in this process while the world says it
-// runs: begun at the first need of it, then stepped over the world's clock
-// until it is quiet, so a story that waits on the engine is deterministic.
+// runs, and ends once it says otherwise: begun at the first need of it,
+// then stepped over the world's clock until it is quiet, so a story that
+// waits on the engine is deterministic.
 func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 	if m.engine != nil {
-		return m.engine, true
+		if m.runs() {
+			return m.engine, true
+		}
+		m.down(false)
+		return nil, false
 	}
 	if m.start == nil && m.name != m.run.w.Here && m.run.far != nil && m.runs() {
 		m.serve()
@@ -474,6 +480,11 @@ func (c worldClock) Now() time.Time {
 func (c worldClock) Sleep(ctx context.Context, d time.Duration) error {
 	if err := ctx.Err(); err != nil {
 		return err
+	}
+	if ctx.Value(waits{}) == nil {
+		// invariant: what already runs takes its turn before the clock
+		// leaps, so a poll counts the work it waits on, not the scheduler.
+		runtime.Gosched()
 	}
 	c.w.Lock()
 	until := c.w.Now.Add(d)
