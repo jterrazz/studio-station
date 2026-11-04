@@ -1,6 +1,7 @@
 package architecture_test
 
 import (
+	"go/ast"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -52,10 +53,29 @@ func familyInside(family, rest string) bool {
 	return ok && tech != "" && !strings.Contains(tech, "/")
 }
 
+func declaresApplies(file *ast.File) bool {
+	for _, d := range file.Decls {
+		switch d := d.(type) {
+		case *ast.FuncDecl:
+			if d.Recv == nil && d.Name.Name == "Applies" {
+				return true
+			}
+		case *ast.GenDecl:
+			for _, spec := range d.Specs {
+				if v, ok := spec.(*ast.ValueSpec); ok && slices.ContainsFunc(v.Names, func(n *ast.Ident) bool { return n.Name == "Applies" }) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 // invariant: rule tree-screams: every top-level package is a family or named
 // plumbing; a family holds only its model, contract/, calls/ and
 // adapter/<tech>/ (the engine adds process/, jobs/ and feeds/); a family with
-// a section has an applies.go once it holds more than its doc.go.
+// a section has an applies.go declaring Applies once it holds more than its
+// doc.go.
 func ruleTree(w *world) []finding {
 	var out []finding
 	tops := map[string]bool{}
@@ -66,7 +86,8 @@ func ruleTree(w *world) []finding {
 		}
 		switch filepath.Base(f.path) {
 		case "applies.go":
-			applies[f.pkg] = true
+			applies[f.pkg] = declaresApplies(f.syntax)
+			filled[topOf(f.pkg)] = true
 		case "doc.go":
 		default:
 			filled[topOf(f.pkg)] = true
@@ -87,7 +108,7 @@ func ruleTree(w *world) []finding {
 	}
 	for _, family := range sectioned() {
 		if filled[family] && !applies[family] {
-			out = append(out, finding{"tree-screams", "src/" + family, "a family with a section has an applies.go"})
+			out = append(out, finding{"tree-screams", "src/" + family, "a family with a section has an applies.go that declares Applies"})
 		}
 	}
 	for _, top := range toleratedTop() {
