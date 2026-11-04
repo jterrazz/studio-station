@@ -1,4 +1,4 @@
-description: 'on a terminal, while the walk runs, every row the last read filled shows its last size Muted, in its group, then fills in place: no row arrives late and none leaves'
+description: 'on a terminal the walk shows every row at its last size Muted, then fills: none arrives or leaves'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

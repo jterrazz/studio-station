@@ -1,6 +1,6 @@
-description: 'disk erase xcode --confirm=xcode erases it in a script, nothing asked: its DerivedData is gone and its simulators are erased'
+description: 'disk erase xcode --confirm=xcode asks nothing in a script: its caches and its simulators go'
 fixture:
-    - ../../../__fixtures__/simulators/
+    - ./__fixtures__/simulators/
 env: two-macs
 runs:
     - command: 'disk erase xcode --confirm=xcode'
