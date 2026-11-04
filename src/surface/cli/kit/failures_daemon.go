@@ -29,7 +29,7 @@ func daemonFailure(err error) (*fail.Error, bool) {
 		return usage(guestHost.Error(), "the host's daemon runs it inside each VM"), true
 	case errors.As(err, &op):
 		switch op.Code {
-		case "unknown_vm", "unknown_op":
+		case "unknown_vm", "unknown_op", engine.VMStopped:
 			return usage(op.Message, op.Hint), true
 		}
 		return failed(op.Message, op.Hint, err), true
@@ -98,4 +98,11 @@ func controlFailure(err error) (*fail.Error, bool) {
 		return failed(boot.Error(), boot.See, err), true
 	}
 	return nil, false
+}
+
+// invariant: a read of a VM that is not running is a finding, the VM named
+// with the verb that starts it; an action there is refused.
+func vmStopped(err error) bool {
+	var op *engine.OpError
+	return errors.As(err, &op) && op.Code == engine.VMStopped
 }

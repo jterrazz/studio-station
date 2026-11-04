@@ -187,6 +187,9 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 			o.in, o.raw = env.Stdin, env.Stdout
 		}
 		err := run(c.Context(), c, l, in, a, env, o)
+		if err != nil && l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && vmStopped(err) {
+			return env.Out.Finding(page.Absent, env.Target().Name+" is stopped", "start it to read its "+strings.Fields(path(c))[0])
+		}
 		if err != nil {
 			return Translate(err, path(c))
 		}
