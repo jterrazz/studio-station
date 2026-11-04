@@ -12,5 +12,5 @@
    ├─ ● git                Jean-Baptiste Terrazzoni  own  admin@jterrazz.com
    ├─ ● ssh                6 keys                    own
    └─ ● Docker             deploy                    own  osxkeychain
-   ◐ daemon                stopped
-     → station start
+   ◐ engine                stopped
+     → station engine start

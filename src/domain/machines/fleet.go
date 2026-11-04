@@ -84,7 +84,7 @@ func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[str
 	}
 	version, err := s.daemon.Ping(ctx)
 	if err != nil {
-		_, missing := s.h.FS.Stat(catalog.DaemonPlist(s.h.Env.Home()))
+		_, missing := s.h.FS.Stat(catalog.EnginePlist(s.h.Env.Home()))
 		return DaemonInfo{Known: true, Installed: missing == nil}, nil
 	}
 	live, err = s.daemon.VMs(ctx)

@@ -17,8 +17,8 @@ final class IconTests: XCTestCase {
         let cases: [(Connection, Page?, String, String)] = [
             (.connecting, nil, "circle.dashed", "station: connecting"),
             (.connecting, full, "circle.dashed", "station: connecting"),
-            (.stopped, stopped, "stop.circle", "station: daemon stopped"),
-            (.notInstalled, stopped, "stop.circle", "station: daemon stopped"),
+            (.stopped, stopped, "stop.circle", "station: engine stopped"),
+            (.notInstalled, stopped, "stop.circle", "station: engine stopped"),
             (.live, full, "power.circle.fill", "station: awake"),
             (.live, broken, "xmark.circle.fill", "station: 4 to do"),
             (.live, warn, "circle.lefthalf.filled", "station: 3 to do"),

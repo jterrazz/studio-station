@@ -111,11 +111,11 @@
                   "items": [
                     {
                       "kind": "text",
-                      "text": "daemon stopped"
+                      "text": "engine stopped"
                     },
                     {
                       "kind": "command",
-                      "text": "station start"
+                      "text": "station engine start"
                     }
                   ]
                 },
@@ -129,11 +129,11 @@
                   "items": [
                     {
                       "kind": "text",
-                      "text": "daemon stopped"
+                      "text": "engine stopped"
                     },
                     {
                       "kind": "command",
-                      "text": "station start"
+                      "text": "station engine start"
                     }
                   ]
                 }

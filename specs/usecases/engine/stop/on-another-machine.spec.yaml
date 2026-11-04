@@ -1,0 +1,7 @@
+description: 'stop everything on another Mac stops its VMs and its engine through that Mac'
+env: two-macs
+runs:
+    - command: 'engine stop --yes --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	engine	stopped 1 VM (infra) · the engine stopped

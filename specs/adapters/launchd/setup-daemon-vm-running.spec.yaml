@@ -2,7 +2,7 @@ description: 'a VM running under its old agent refuses the migration: nothing is
 fixture:
     - ../../__fixtures__/vms/
     - ./__fixtures__/old-agents/
-env: daemon
+env: engine
 runs:
     - command: '--version >/dev/null; echo running > .tart-vms/api; "$STATION" setup </dev/null'
       exit: 1
@@ -12,9 +12,9 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: homebrew mise git tailscale: run station setup on a terminal
-          ✗	daemon	api still runs under its round-3 agent
+          ✗	engine	api still runs under its round-3 agent
       stderr: |
-          Error: setup step daemon: api still runs under its round-3 agent
+          Error: setup step engine: api still runs under its round-3 agent
           Hint: stop the lasting VMs and delete the temporary ones (station machines), then station setup
       files:
           Library/LaunchAgents/com.jterrazz.station.vm.api.plist: exists

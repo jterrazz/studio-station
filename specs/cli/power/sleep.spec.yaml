@@ -1,10 +1,10 @@
 description: 'power sleep ends the session and resets the clamshell; with nothing held it ends nothing'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/power/
-env: daemon
+    - ../../__fixtures__/power/
+env: engine
 runs:
-    - command: '--version > /dev/null; "$STATION" daemon 2> daemon.log & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" power awake --lid > /dev/null; : > .calls; "$STATION" power sleep | /usr/bin/sed -E "s/after [0-9]s$/after Ns/"; /bin/cat .calls; "$STATION" power sleep; echo "exit $?"; "$STATION" power --json | /usr/bin/jq -c ''[.session, .last_end.reason]''; kill $d; wait $d'
+    - command: '--version > /dev/null; "$STATION" engine run 2> engine.log & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" power awake --lid > /dev/null; : > .calls; "$STATION" power sleep | /usr/bin/sed -E "s/after [0-9]s$/after Ns/"; /bin/cat .calls; "$STATION" power sleep; echo "exit $?"; "$STATION" power --json | /usr/bin/jq -c ''[.session, .last_end.reason]''; kill $d; wait $d'
       exit: 0
       stdout: |
           ●	awake	off · ended after Ns

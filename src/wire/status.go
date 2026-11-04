@@ -42,7 +42,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 			Kind: m.kind, Hostname: h.Env.Hostname(), OS: h.Env.GOOS(), Arch: h.Env.GOARCH(), User: h.Env.User(), Shell: h.Env.Shell(),
 			Home: h.Env.Home(), Root: m.systemRoot(), Version: Version(), Commit: Commit(),
 			Agent: func() bool {
-				_, err := h.FS.Stat(catalog.DaemonPlist(h.Env.Home()))
+				_, err := h.FS.Stat(catalog.EnginePlist(h.Env.Home()))
 				return err == nil
 			},
 		},

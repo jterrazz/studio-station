@@ -12,7 +12,7 @@ final class KitBoundaryTests: XCTestCase {
 
     // invariant: the Swift side of the kit's boundary: colours, symbol names
     // and glyphs live in Token only, no AppKit-backed control the offscreen
-    // renderer cannot draw, and Page and Daemon stay Foundation.
+    // renderer cannot draw, and Page and Engine stay Foundation.
     static func scan(_ files: [(path: String, text: String)]) -> [Finding] {
         var out: [Finding] = []
         for (path, text) in files {
@@ -31,9 +31,9 @@ final class KitBoundaryTests: XCTestCase {
             for word in forbidden where text.contains(word) {
                 out.append(Finding(file: path, rule: "\(word) is not drawn offscreen"))
             }
-            if path.hasPrefix("page/") || path.hasPrefix("daemon/") {
+            if path.hasPrefix("page/") || path.hasPrefix("engine/") {
                 for line in text.split(separator: "\n") where line.hasPrefix("import ") && line != "import Foundation" {
-                    out.append(Finding(file: path, rule: "\(line): Page and Daemon import Foundation only"))
+                    out.append(Finding(file: path, rule: "\(line): Page and Engine import Foundation only"))
                 }
             }
         }
@@ -58,7 +58,7 @@ final class KitBoundaryTests: XCTestCase {
         XCTAssertEqual(caught, [
             "a colour outside Token", "ProgressView is not drawn offscreen",
             "a symbol name outside Token", "a glyph outside Token",
-            "import SwiftUI: Page and Daemon import Foundation only",
+            "import SwiftUI: Page and Engine import Foundation only",
         ])
     }
 }

@@ -1,0 +1,17 @@
+description: 'stop everything stops the running VM, keeps its disk, and stops the engine'
+env: two-macs
+runs:
+    - command: 'engine stop --yes'
+      exit: 0
+      stdout: |
+          ●	engine	stopped 1 VM (linux-1) · the engine stopped
+    - command: 'engine'
+      exit: 0
+      stdout: |
+          ◐	engine	stopped · since {{string}} by station engine stop	station engine start
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ◐	jterrazz-macbook-pro	host			online	-	engine stopped · station engine start
+          ○	api	linux	jterrazz-macbook-pro	lasting	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ✗	linux-1	linux	jterrazz-macbook-pro	temporary	stale	-	station machines delete linux-1

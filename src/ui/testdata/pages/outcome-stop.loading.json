@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "stop",
+  "command": "engine stop",
   "context": {
     "kind": "host"
   },
@@ -21,39 +21,9 @@
       "items": [
         {
           "row": {
-            "id": "linux-1",
+            "id": "engine",
             "mark": "pending",
-            "label": "linux-1",
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "api",
-            "mark": "pending",
-            "label": "api",
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "power",
-            "mark": "pending",
-            "label": "power",
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "daemon",
-            "mark": "pending",
-            "label": "daemon",
+            "label": "engine",
             "detail": {
               "kind": "none"
             }
@@ -63,14 +33,14 @@
       "counts": [
         {
           "mark": "pending",
-          "n": 4
+          "n": 1
         }
       ]
     }
   ],
   "hints": [
     {
-      "command": "station start"
+      "command": "station engine start"
     }
   ]
 }

@@ -7,4 +7,4 @@ runs:
           Error: refusing to forget without --yes
           Hint: re-run with --yes
       files:
-          .config/station/settings.json: { contains: '"y"' }
+          .config/station/preferences.json: { contains: '"y"' }

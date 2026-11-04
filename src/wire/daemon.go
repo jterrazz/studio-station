@@ -24,7 +24,7 @@ import (
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/remote"
 	"github.com/jterrazz/studio-station/src/remote/api"
-	daemoncmd "github.com/jterrazz/studio-station/src/surface/cli/daemon"
+	enginerun "github.com/jterrazz/studio-station/src/surface/cli/engine/run"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -53,7 +53,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		tailnet = m.world.tailnet()
 	}
 	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
-		State: m.paths.State, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
+		State: m.paths.State, Here: m.kind, Version: m.engineVersion(), StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: lends, Peer: m.engineAPI(),
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
@@ -64,8 +64,32 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	return d
 }
 
-func daemonCommand(env kit.Env, m machine) *cobra.Command {
-	return daemoncmd.Command(daemoncmd.Deps{Daemon: m.daemon(env)}, env)
+// value: what the engine of a world Mac says of itself, the version it runs
+// and when it started; outside a world, this binary's, started now.
+func (m machine) engineVersion() string {
+	if m.world != nil && m.world.engineVersion() != "" {
+		return m.world.engineVersion()
+	}
+	return Version()
+}
+
+func (m machine) engineStarted() time.Time {
+	if m.world != nil {
+		return m.world.engineStarted()
+	}
+	return time.Time{}
+}
+
+func engineRunCommand(env kit.Env, m machine) *cobra.Command {
+	return enginerun.Command(enginerun.Deps{Engine: m.daemon(env)}, env)
+}
+
+// invariant: a v2 job runs `station daemon` until setup moves it to the
+// engine's label; it runs the engine, hidden, for one release.
+func retiredDaemonCommand(env kit.Env, m machine) *cobra.Command {
+	cmd := engineRunCommand(env, m)
+	cmd.Use = "daemon"
+	return cmd
 }
 
 type daemonLends struct{ s *secrets.Service }
@@ -211,7 +235,7 @@ func (i daemonInstaller) env() map[string]string {
 // per-VM agents; it restarts the daemon only when its plist changed or it runs
 // another version, and the VMs survive that restart.
 func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
-	const step = "daemon"
+	const step = "engine"
 	if hv := i.m.hypervisor(); !hv.Installed() {
 		return setup.Step{Name: step, State: catalog.StateAbsent, Detail: "not needed until " + hv.Name() + " is installed"}, nil
 	}
@@ -222,10 +246,33 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 	if _, err := i.machines.MigrateAgents(ctx); err != nil {
 		return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
 	}
+	moved, err := i.retire(ctx, jobs)
+	if err != nil {
+		return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
+	}
+	s, err := i.install(ctx, jobs)
+	if moved {
+		s.Detail, s.Changed = s.Detail+", its job moved to "+catalog.EngineLabel, true
+	}
+	return s, err
+}
+
+// invariant: the job station v2 named com.jterrazz.station.daemon is
+// removed once, before the engine's own is written: one engine per Mac.
+func (i daemonInstaller) retire(ctx context.Context, jobs contract.Jobs) (bool, error) {
+	ref := contract.Ref{Domain: contract.Domain{UID: i.m.host.Env.Euid()}, Label: catalog.RetiredEngineLabel, File: catalog.RetiredEnginePlist(i.m.host.Env.Home())}
+	if _, err := i.m.host.FS.Stat(ref.File); err != nil && !jobs.Read(ctx, ref).Loaded {
+		return false, nil
+	}
+	return true, jobs.Remove(ctx, ref)
+}
+
+func (i daemonInstaller) install(ctx context.Context, jobs contract.Jobs) (setup.Step, error) {
+	const step = "engine"
 	job := i.m.daemonJob()
 	changed, err := jobs.Install(ctx, contract.JobSpec{
-		Label: job.Label, Program: []string{i.m.host.Env.Executable(), "daemon"}, Env: i.env(),
-		AtLogin: true, KeepAlive: true, Log: filepath.Join(i.m.paths.State, "logs", "daemon.log"), File: job.File,
+		Label: job.Label, Program: []string{i.m.host.Env.Executable(), "engine", "run"}, Env: i.env(),
+		AtLogin: true, KeepAlive: true, Log: filepath.Join(i.m.paths.State, "logs", "engine.log"), File: job.File,
 	})
 	if err != nil {
 		return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}

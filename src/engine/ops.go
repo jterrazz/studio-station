@@ -12,7 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/services"
 )
 
-const Label = catalog.DaemonLabel
+const Label = catalog.EngineLabel
 
 type Hello struct {
 	Version    string    `json:"version"`
@@ -37,25 +37,28 @@ type Peer interface {
 	Hello(ctx context.Context) (Hello, error)
 	VMs(ctx context.Context) ([]VMView, error)
 	StopAll(ctx context.Context) (StopAll, error)
+	Power(ctx context.Context) (power.View, error)
 }
 
 type DownError struct{}
 
-func (*DownError) Error() string { return "the station daemon is not running" }
+func (*DownError) Error() string { return "the engine is not running" }
 
 type RunningError struct{ PID int }
 
 func (e *RunningError) Error() string {
-	return "a station daemon already runs (pid " + strconv.Itoa(e.PID) + ")"
+	return "an engine already runs (pid " + strconv.Itoa(e.PID) + ")"
 }
 
 type HostOnlyError struct{ Here catalog.MachineKind }
 
 func (e *HostOnlyError) Error() string {
-	return "the daemon runs only on a host; here is " + e.Here.Article()
+	return "the engine runs only on a host; here is " + e.Here.Article()
 }
 
-func SocketPath(state string) string { return path.Join(state, "daemon.sock") }
+func SocketPath(state string) string { return path.Join(state, "engine.sock") }
+
+func LogPath(state string) string { return path.Join(state, "logs", "engine.log") }
 
 func ChildrenDir(state string) string { return path.Join(state, "children") }
 
@@ -139,8 +142,13 @@ func (d *Daemon) VM(ctx context.Context, verb, vm string) error {
 func (d *Daemon) Accounts(ctx context.Context) AccountsView { return d.accounts(ctx) }
 
 func (d *Daemon) StopAll(ctx context.Context) StopAll {
+	shared := d.sharedVMs()
 	vms := d.stopAll(ctx)
-	return StopAll{VMs: vms, PowerEnded: d.power.Stop()}
+	all := StopAll{VMs: vms, PowerEnded: d.power.Stop()}
+	for _, v := range vms {
+		all.SharingEnded = all.SharingEnded || v.Result == ResultStopped && shared[v.Name]
+	}
+	return all
 }
 
 func (d *Daemon) Power() power.View { return d.power.View() }

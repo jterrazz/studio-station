@@ -25,7 +25,7 @@ func daemonFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &down):
 		return failed(down.Error(), "station setup", err), true
 	case errors.As(err, &guestHost):
-		return usage(guestHost.Error(), "the host's daemon runs it inside each VM"), true
+		return usage(guestHost.Error(), "the host's engine runs it inside each VM"), true
 	}
 	return servicesFailure(err)
 }
@@ -74,19 +74,13 @@ func servicesFailure(err error) (*fail.Error, bool) {
 
 func controlFailure(err error) (*fail.Error, bool) {
 	var notInstalled *engine.NotInstalledError
-	var offHost *engine.OffHostError
 	var stuck *engine.StuckError
-	var noAnswer *engine.NoAnswerError
 	var boot *engine.BootError
 	switch {
 	case errors.As(err, &notInstalled):
 		return failed(notInstalled.Error(), "station setup", err), true
-	case errors.As(err, &offHost):
-		return usage(offHost.Error(), "ssh <host> station "+offHost.Verb), true
 	case errors.As(err, &stuck):
 		return failed(stuck.Error(), "station machines delete "+stuck.VM, err), true
-	case errors.As(err, &noAnswer):
-		return failed(noAnswer.Error(), "tail ~/.local/state/station/logs/daemon.log", err), true
 	case errors.As(err, &boot):
 		return failed(boot.Error(), boot.See, err), true
 	}

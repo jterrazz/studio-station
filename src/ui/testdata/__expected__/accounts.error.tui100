@@ -9,6 +9,6 @@
    ├─ ● git                Jean-Baptiste Terrazzoni  own  admin@jterrazz.com
    ├─ ● ssh                6 keys                    own
    └─ ● Docker             deploy                    own  registry.jterrazz.com              osxke…
-   ◐ daemon                stopped
-     → station start
+   ◐ engine                stopped
+     → station engine start
  ↑↓ move  R reload  enter detail  / filter  space fold  q quit  ? keys

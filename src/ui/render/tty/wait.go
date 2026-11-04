@@ -22,6 +22,15 @@ func ErrorBlock(e page.Error, colored, dark bool) string {
 	return block
 }
 
+func NowLine(command string, colored, dark bool) string {
+	// value: the one Muted line an old word prints on stderr: the command it is now.
+	line := token.New(dark).Muted.Render(token.Arrow+" now: "+command) + "\n"
+	if !colored {
+		return ansi.Strip(line)
+	}
+	return line
+}
+
 func FindingLine(m page.Mark, parts ...string) string {
 	return atom.Glyph(m) + atom.Spaces(1) + strings.Join(parts, token.Sep) + "\n"
 }
@@ -80,12 +89,4 @@ func Wait(out io.Writer, label string, dark bool) (stop func()) {
 			_, _ = io.WriteString(out, "\r"+ansi.EraseEntireLine)
 		}
 	}
-}
-
-func NowLine(command string, colored, dark bool) string {
-	line := token.Arrow + " now: " + command
-	if !colored {
-		return line + "\n"
-	}
-	return token.New(dark).Muted.Render(line) + "\n"
 }

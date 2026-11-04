@@ -45,7 +45,7 @@
    ◐ unset                 attention
      → station setup
    ◐ stopped               attention
-     → station start
+     → station engine start
    ◐ late                  attention
    ◐ degraded              attention
    ◐ orphan                attention

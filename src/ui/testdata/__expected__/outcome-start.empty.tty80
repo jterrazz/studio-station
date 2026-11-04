@@ -1,5 +1,5 @@
- station start                                              host · unregistered
+ station engine start                                       host · unregistered
  ──────────────────────────────────────────────────────────────────────────────
 
  Changes
-   ● daemon  running · pid 812
+   ● engine  already running · v3.1.0

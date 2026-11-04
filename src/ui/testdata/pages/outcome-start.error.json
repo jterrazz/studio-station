@@ -1,13 +1,13 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "start",
+  "command": "engine start",
   "context": {
     "kind": "host"
   },
   "state": "failed",
   "error": {
-    "message": "the station daemon did not answer in 15s",
-    "hint": "tail ~/.local/state/station/logs/daemon.log"
+    "message": "the engine did not start: launchctl bootstrap exited 5",
+    "hint": "station engine"
   }
 }

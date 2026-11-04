@@ -2,7 +2,7 @@ description: 'tailscale installs as the app, the cask tailscale-app, on a host o
 fixture:
     - ../../../__fixtures__/stubs/
     - ./__fixtures__/tailscale-app/
-env: daemon
+env: engine
 runs:
     - command: 'tools --json | /usr/bin/jq -c ''.tools[] | select(.name == "tailscale") | [.method, .places, .use]'''
       exit: 0

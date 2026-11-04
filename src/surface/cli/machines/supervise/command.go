@@ -14,7 +14,7 @@ func Command(env kit.Env) *cobra.Command {
 	// ends at once, exit 0, instead of looping; it touches nothing.
 	cmd := kit.Command(kit.Leaf[struct{}]{
 		Use:     "supervise <vm>",
-		Short:   "Retired: the daemon supervises VMs",
+		Short:   "Retired: the engine supervises VMs",
 		Args:    cobra.ArbitraryArgs,
 		RawArgs: true,
 		Run: func(_ context.Context, _ *struct{}, io kit.IO) error {

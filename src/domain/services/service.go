@@ -17,7 +17,7 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-var ErrDaemonDown = errors.New("the station daemon is not running")
+var ErrDaemonDown = errors.New("the engine is not running")
 
 type (
 	View       = ports.ServiceView
@@ -156,7 +156,7 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 	view, err := s.d.Services(ctx)
 	if errors.Is(err, ErrDaemonDown) {
 		view, err = s.offline(ctx), nil
-		_, missing := s.h.FS.Stat(catalog.DaemonPlist(s.h.Env.Home()))
+		_, missing := s.h.FS.Stat(catalog.EnginePlist(s.h.Env.Home()))
 		view.Daemon.Installed = missing == nil
 	}
 	if err != nil {

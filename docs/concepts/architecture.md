@@ -26,8 +26,8 @@ src/
     words/        the wording of every fail.Code a call raises
   domain/         behaviour, never touching the machine except through ports
     settings/ tools/ config/ setup/ status/ storage/ machines/ images/ secrets/ remote/ tailnet/ shortcuts/ shell/
-  engine/         the per-Mac process (the daemon): its runs, its socket, the guards it holds
-    process/      the daemon's own calls over its live state, and its station.api/v2 server: those and the registry's
+  engine/         the per-Mac process (the engine): its runs, its socket, the guards it holds
+    process/      the engine's own calls over its live state, and its station.api/v2 server: those and the registry's
 ```
 
 The ports and the data:
@@ -167,7 +167,7 @@ Every catalogue entry carries its place, the kinds of machine it may live on, so
 
 ## The two sources of truth
 
-The binary holds the catalogue: what station knows how to install and configure. The machine holds its own state, in the XDG folders: `~/.config/station/settings.json` (this machine's name, the hosts, the tailnet choice, the lend list), the VM records and image records under `~/.local/state/station/`. Nothing else is consulted for that, and no path inside the clone matters: the dotfiles and the VM recipes are embedded in the binary, so a deleted or moved clone breaks nothing. [Footprint](../reference/footprint.md) lists every file.
+The binary holds the catalogue: what station knows how to install and configure. The machine holds its own state, in the XDG folders: `~/.config/station/preferences.json` (this machine's name, the hosts, the tailnet choice, the lend list), the VM records and image records under `~/.local/state/station/`. Nothing else is consulted for that, and no path inside the clone matters: the dotfiles and the VM recipes are embedded in the binary, so a deleted or moved clone breaks nothing. [Footprint](../reference/footprint.md) lists every file.
 
 ## The compiler
 

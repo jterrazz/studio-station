@@ -1,10 +1,7 @@
- station stop                                               host · unregistered
+ station engine stop                                        host · unregistered
  ──────────────────────────────────────────────────────────────────────────────
 
  Changes
-   ◌ linux-1
-   ◌ api
-   ◌ power
-   ◌ daemon
+   ◌ engine
 
- → station start
+ → station engine start

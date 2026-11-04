@@ -47,9 +47,9 @@
         },
         {
           "row": {
-            "id": "machine/daemon",
+            "id": "machine/engine",
             "mark": "attention",
-            "label": "daemon",
+            "label": "engine",
             "detail": {
               "kind": "text",
               "text": "not installed"
@@ -429,7 +429,7 @@
             "cells": [
               {
                 "kind": "text",
-                "text": "daemon not installed"
+                "text": "engine not installed"
               }
             ]
           }
@@ -543,9 +543,9 @@
         },
         {
           "row": {
-            "id": "daemon",
+            "id": "engine",
             "mark": "attention",
-            "label": "daemon",
+            "label": "engine",
             "cells": [
               {
                 "kind": "text",
@@ -1543,7 +1543,7 @@
       "label": "fix",
       "on": "row",
       "rows": [
-        "machine/daemon",
+        "machine/engine",
         "environment/brew",
         "workspace/strays",
         "tools/missing/station tools install mise",

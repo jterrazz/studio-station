@@ -10,6 +10,6 @@ runs:
           ●	layout	nothing to retire
           ◐	relocate	go env is off (GOENV=off): station writes nothing
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed
       files:
           Library/Application Support/go: absent

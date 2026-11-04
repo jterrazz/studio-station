@@ -1,5 +1,3 @@
- - Changes                                                                            1 ●  1 ○  1 ✗
-   ● linux-1  deleted (temporary)
-   ✗ api      did not stop · tart stop exited 1
-   ○ daemon   kept running: api did not stop
+ - Changes                                                                                      1 ✗
+   ✗ engine  stopped 1 VM (linux-1) · api did not stop · the engine keeps running
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

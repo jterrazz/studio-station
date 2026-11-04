@@ -1,5 +1,5 @@
- station start                                              host · unregistered
+ station engine start                                       host · unregistered
  ──────────────────────────────────────────────────────────────────────────────
 
- Error: the station daemon did not answer in 15s
- Hint: tail ~/.local/state/station/logs/daemon.log
+ Error: the engine did not start: launchctl bootstrap exited 5
+ Hint: station engine

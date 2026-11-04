@@ -216,7 +216,7 @@
             "cells": [
               {
                 "kind": "text",
-                "text": "daemon running v2.0.0-250"
+                "text": "engine running v2.0.0-250"
               }
             ]
           }
@@ -311,9 +311,9 @@
         },
         {
           "row": {
-            "id": "daemon",
+            "id": "engine",
             "mark": "ok",
-            "label": "daemon",
+            "label": "engine",
             "cells": [
               {
                 "kind": "text",

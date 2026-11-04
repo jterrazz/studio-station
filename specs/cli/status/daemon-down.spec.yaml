@@ -1,22 +1,22 @@
 description: 'with tart and no answer the daemon is not installed, or stopped once its agent exists'
 fixture: ../../__fixtures__/vms/
-env: daemon
+env: engine
 runs:
     - command: 'status --json | /usr/bin/jq -c ''.station.daemon'''
       exit: 0
       stdout: |
           {"state":"degraded","running":false,"version":""}
-    - command: 'overview | /usr/bin/awk -F "\t" ''$2 == "daemon"'''
+    - command: 'overview | /usr/bin/awk -F "\t" ''$2 == "engine"'''
       exit: 0
       stdout: |
-          ◐	daemon	not installed	station setup
-    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" status --json | /usr/bin/jq -c ''.station.daemon''; "$STATION" overview | /usr/bin/awk -F "\t" ''$2 == "daemon"'''
+          ◐	engine	not installed	station setup
+    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" status --json | /usr/bin/jq -c ''.station.daemon''; "$STATION" overview | /usr/bin/awk -F "\t" ''$2 == "engine"'''
       exit: 0
       stdout: |
           {"state":"degraded","running":false,"version":""}
-          ◐	daemon	stopped	station start
-    - command: '--version >/dev/null; /bin/rm bin/tart; "$STATION" status --json | /usr/bin/jq -c ''.station.daemon''; "$STATION" overview | /usr/bin/awk -F "\t" ''$2 == "daemon"'''
+          ◐	engine	stopped	station engine start
+    - command: '--version >/dev/null; /bin/rm bin/tart; "$STATION" status --json | /usr/bin/jq -c ''.station.daemon''; "$STATION" overview | /usr/bin/awk -F "\t" ''$2 == "engine"'''
       exit: 0
       stdout: |
           {"state":"absent","running":false,"version":""}
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed

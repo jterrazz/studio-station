@@ -83,7 +83,7 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
     // that installs runs `$INSTALL_SH` from a local file through its one test seam.
     env: {
         ...worlds,
-        daemon: { STATION: STATION_BIN },
+        engine: { STATION: STATION_BIN },
         install: { INSTALL_SH: resolve(REPO_ROOT, 'scripts/install.sh'), STATION: STATION_BIN },
         terminal: { STATION: STATION_BIN, TERM: 'xterm-256color' },
     },

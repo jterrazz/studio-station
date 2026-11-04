@@ -30,7 +30,7 @@ func powerFailure(err error) (*fail.Error, bool) {
 		return failed(guard.Error(), "station power", err), true
 	case errors.As(err, &down):
 		if down.Installed {
-			return failed(down.Error(), "station start", err), true
+			return failed(down.Error(), "station engine start", err), true
 		}
 		return failed(down.Error(), "station setup", err), true
 	}

@@ -34,8 +34,9 @@ station accounts        # who has access to what, here and in the VMs: never a t
 station images          # the VM images
 station secrets         # what may be lent to a VM
 station tailnet         # the Tailscale app's node, read only
-station stop            # stop everything station runs here, then station itself
-station start           # start station again, and the VMs meant to run
+station engine         # this Mac's engine: running, its version, the VMs it runs
+station engine stop    # stop everything on this Mac: its VMs (disks kept), Awake, then the engine
+station engine start   # start the engine again; the VMs it stopped stay stopped
 
 # Shortcuts
 station run git         # commit, push, sync
@@ -47,7 +48,7 @@ station setup           # register, wire the shell, migrate
 
 Every command is in [Commands](docs/reference/commands.md); `--on <machine>` runs any of them elsewhere.
 
-The menu bar app, `apps/menubar`, shows the fleet, the To do and Power from this host's daemon. `station setup` never installs it: `make menubar-install` copies it to `~/Applications`, and [Develop](docs/guides/develop.md) holds its targets.
+The menu bar app, `apps/menubar`, shows the fleet, the To do and Power from this host's engine. `station setup` never installs it: `make menubar-install` copies it to `~/Applications`, and [Develop](docs/guides/develop.md) holds its targets.
 
 ## Documentation
 

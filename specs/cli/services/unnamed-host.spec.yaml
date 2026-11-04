@@ -13,4 +13,4 @@ runs:
       exit: 0
       stdout: |4
                        state
-             ◐ daemon  not installed  → station setup
+             ◐ engine  not installed  → station setup

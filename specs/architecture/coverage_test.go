@@ -46,7 +46,7 @@ func engineJobs() []string {
 func uncovered() []string {
 	return []string{
 		"accounts.read", "activity.sample", "config.install", "config.list", "config.uninstall",
-		"engine.start", "engine.stop", "images.build", "images.delete", "images.list",
+		"images.build", "images.delete", "images.list",
 		"machines.add", "machines.create", "machines.delete", "machines.forget", "machines.list",
 		"machines.probe", "machines.restart", "machines.start", "machines.unlock", "overview.read",
 		"power.awake", "power.read", "power.sleep", "run.containers", "run.git",

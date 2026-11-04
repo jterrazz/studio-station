@@ -124,7 +124,7 @@ func (s *Service) restartVM(ctx context.Context, name string, say func(phase, de
 	if err := s.daemon.Do(ctx, "restart", name); err != nil {
 		return RestartReport{}, err
 	}
-	say("back", "the daemon runs it again")
+	say("back", "the engine runs it again")
 	return RestartReport{Name: name, Waited: s.h.Clock.Now().Sub(started)}, nil
 }
 

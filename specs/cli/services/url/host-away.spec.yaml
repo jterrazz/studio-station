@@ -1,6 +1,6 @@
 description: 'in a VM whose host is not connected, services url names the host'
 fixture: ./__fixtures__/placed/
-env: daemon
+env: engine
 runs:
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" services url 3000'
       exit: 1

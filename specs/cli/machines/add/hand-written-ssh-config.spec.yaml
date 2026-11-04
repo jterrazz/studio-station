@@ -21,7 +21,7 @@ runs:
                     ServerAliveInterval 30
                     ServerAliveCountMax 3
                   # <<< jterrazz machine worker <<<
-          .config/station/settings.json:
+          .config/station/preferences.json:
               equals: |
                   {
                     "here": "x",
@@ -51,7 +51,7 @@ runs:
                     UserKnownHostsFile ~/.local/state/station/known_hosts/worker
                     StrictHostKeyChecking accept-new
                   # <<< jterrazz machine worker <<<
-          .config/station/settings.json:
+          .config/station/preferences.json:
               equals: |
                   {
                     "here": "x",

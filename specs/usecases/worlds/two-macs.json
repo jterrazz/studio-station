@@ -3,7 +3,9 @@
     "here": "jterrazz-macbook-pro",
     "macs": {
         "jterrazz-macbook-pro": {
-            "engine": {},
+            "engine": {
+                "started_at": "2026-11-01T10:00:00Z"
+            },
             "power": {
                 "Lid": "open",
                 "Source": "ac",
@@ -54,7 +56,9 @@
             }
         },
         "jterrazz-mac-mini": {
-            "engine": {},
+            "engine": {
+                "started_at": "2026-10-23T09:00:00Z"
+            },
             "power": {
                 "Source": "ac"
             },

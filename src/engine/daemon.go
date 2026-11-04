@@ -70,6 +70,9 @@ type Options struct {
 	Lends Lends
 	// value: the Notifier the engine tells, built over the engine's own log.
 	Notifier func(log func(subject, text string)) Notifier
+	// value: when the engine process started, for a stepped engine that
+	// stands for one which outlived its command; zero is the Begin.
+	StartedAt time.Time
 }
 
 type Daemon struct {
@@ -96,6 +99,9 @@ type Daemon struct {
 	notifier Notifier
 	serve    func(ctx context.Context, conn io.ReadWriteCloser)
 	memory   Memory
+	// value: the engine's own lifetime, from Begin: the guest sessions it
+	// holds live in it, never in the request that started a VM.
+	life context.Context
 
 	lendMu       sync.Mutex
 	lendsAt      time.Time
@@ -206,15 +212,18 @@ func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
 	if err := d.Check(); err != nil {
 		return err
 	}
-	d.note = note
+	d.note, d.life = note, ctx
 	d.power.Reset()
 	if n := d.h.Run.Reap(ChildrenDir(d.o.State)); n > 0 {
-		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed daemon left running")
+		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed engine left running")
 	}
 	if err := d.h.FS.MkdirAll(d.o.State, 0o700); err != nil {
 		return err
 	}
 	d.started = d.h.Clock.Now().UTC().Truncate(time.Second)
+	if !d.o.StartedAt.IsZero() {
+		d.started = d.o.StartedAt.UTC().Truncate(time.Second)
+	}
 	d.leases, _ = d.st.Reservations.List(ctx)
 	d.refreshSelf(ctx)
 	d.adopt(ctx)
@@ -432,10 +441,10 @@ const (
 	ResultFailed  = "failed"
 )
 
-// invariant: stop_all ends every VM of this host at once: a temporary one is
-// deleted, a running lasting one stopped with the wish stopped (its disk
-// kept); each answers its own result, so a VM that would not stop keeps the
-// daemon that supervises it.
+// invariant: stop_all stops every VM of this host that runs, at once, with
+// the wish stopped and its disk kept, whatever its lifetime: only a delete
+// destroys. Each answers its own result, so a VM that would not stop keeps
+// the engine that supervises it.
 func (d *Daemon) stopAll(ctx context.Context) []Stopped {
 	records, _ := d.m.Records()
 	var wg sync.WaitGroup
@@ -449,22 +458,16 @@ func (d *Daemon) stopAll(ctx context.Context) []Stopped {
 		d.mu.Lock()
 		running := v.state == StateRunning
 		d.mu.Unlock()
-		if r.Lifetime != machines.Temporary && !running {
+		if !running {
 			continue
 		}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			s := Stopped{Name: r.Name, Lifetime: string(r.Lifetime), Result: ResultStopped}
-			var err error
-			if r.Lifetime == machines.Temporary {
-				s.Result = ResultDeleted
-				err = d.opDelete(ctx, r.Name)
-			} else {
-				err = d.opStop(ctx, r.Name, true)
-				if err == nil && d.m.EngineRunning(ctx, r.Name) {
-					err = errors.New("the engine still runs it")
-				}
+			err := d.halt(ctx, v, r.Lifetime == machines.Lasting)
+			if err == nil && d.m.EngineRunning(ctx, r.Name) {
+				err = errors.New("the engine still runs it")
 			}
 			if err != nil {
 				s.Result, s.Detail = ResultFailed, err.Error()
@@ -477,6 +480,16 @@ func (d *Daemon) stopAll(ctx context.Context) []Stopped {
 	}
 	wg.Wait()
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out
+}
+
+func (d *Daemon) sharedVMs() map[string]bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	out := map[string]bool{}
+	for _, l := range d.leases {
+		out[l.VM] = true
+	}
 	return out
 }
 

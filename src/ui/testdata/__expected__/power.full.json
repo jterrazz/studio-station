@@ -112,7 +112,7 @@
               },
               {
                 "kind": "text",
-                "text": "reset to normal at the end, at every daemon start and quit"
+                "text": "reset to normal at the end, at every engine start and quit"
               }
             ]
           }

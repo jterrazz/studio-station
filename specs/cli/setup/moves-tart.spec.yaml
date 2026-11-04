@@ -9,7 +9,7 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	bunfig, go env, mise config, npmrc, moved ~/.tart, ~/.local/opt
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed
       files:
           .local/share/station/vms/vms/station-image-linux-2026.11.01/config.json: { equals: "{\"os\":\"linux\"}\n" }
           .local/share/station/vms/cache/OCIs/ghcr.io/x/disk.img: { equals: "disk\n" }
@@ -26,7 +26,7 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	nothing to do
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed
     - command: '--version >/dev/null; /usr/bin/grep -c -e curl -e "^tar " -e "tart pull" .calls'
       exit: 1
       stdout: |

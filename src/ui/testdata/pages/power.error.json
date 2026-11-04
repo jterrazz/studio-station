@@ -45,12 +45,12 @@
               },
               {
                 "kind": "text",
-                "text": "daemon stopped"
+                "text": "engine stopped"
               }
             ],
             "reason": "stopped",
             "hint": {
-              "command": "station start"
+              "command": "station engine start"
             }
           }
         }

@@ -18,7 +18,7 @@ const (
 	DaemonPending = "pending"
 )
 
-var ErrDaemonDown = errors.New("the station daemon does not answer")
+var ErrDaemonDown = errors.New("the engine does not answer")
 
 type (
 	Report = awake.Report
@@ -58,9 +58,9 @@ type DaemonDownError struct {
 
 func (e *DaemonDownError) Error() string {
 	if e.Installed {
-		return "the station daemon is stopped on " + e.Host
+		return "the engine is stopped on " + e.Host
 	}
-	return "the station daemon is not installed on " + e.Host
+	return "the engine is not installed on " + e.Host
 }
 
 func NewService(h system.Host, p Ports, o ServiceOptions) *Service { return &Service{h: h, p: p, o: o} }

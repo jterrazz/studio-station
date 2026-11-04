@@ -1,6 +1,7 @@
 package wire
 
 import (
+	"context"
 	"path/filepath"
 
 	accountsjsonfile "github.com/jterrazz/studio-station/src/accounts/adapter/jsonfile"
@@ -35,6 +36,9 @@ type preferences interface {
 	corecontract.Preferences
 	store.Migrator
 	File() string
+	// value: moves the file station v2 kept them in, once; moved is whether
+	// this call moved it.
+	MoveRetired(ctx context.Context) (moved bool, err error)
 }
 
 type machineStore interface {

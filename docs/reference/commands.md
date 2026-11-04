@@ -13,7 +13,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Plumbing       | The hidden commands the machine runs for itself        |
 | Exit codes     | What 0, 1, 2 and 130 mean                              |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `tools`, `config`, `storage`, `services`, `tailnet`, `secrets`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `start`, `stop`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `tools`, `config`, `storage`, `services`, `tailnet`, `secrets`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
@@ -38,7 +38,7 @@ These commands act on the machine they run on, and list only what its kind allow
 station overview [--all] [--json]
 ```
 
-Everything about this machine: system, environment, disk, identity, background jobs, Tailscale Serve, tools, config and setup; on a terminal it opens with To do (every row needing action and its fix, a failing or orphan launchd job with the exact removal command, never run by station) and a two-column Summary, the sections folded unless `--all`; on a host its Machine section shows station's daemon. `--json` prints `station.overview.read/v1`, named after its call; the hidden alias `station status --json` keeps printing the [`station.status/v1`](status-json.md) document `studio doctor` reads. On a terminal, `overview`, `tools` and `storage` draw every row at once and fill each as its probe answers ([instant reads](../concepts/design-system.md#instant-reads)); piped or with `--json` they print one complete document.
+Everything about this machine: system, environment, disk, identity, background jobs, Tailscale Serve, tools, config and setup; on a terminal it opens with To do (every row needing action and its fix, a failing or orphan launchd job with the exact removal command, never run by station) and a two-column Summary, the sections folded unless `--all`; on a host its Machine section shows station's engine. `--json` prints `station.overview.read/v1`, named after its call; the hidden alias `station status --json` keeps printing the [`station.status/v1`](status-json.md) document `studio doctor` reads. On a terminal, `overview`, `tools` and `storage` draw every row at once and fill each as its probe answers ([instant reads](../concepts/design-system.md#instant-reads)); piped or with `--json` they print one complete document.
 
 ### `station tools`
 
@@ -75,11 +75,11 @@ station storage reset <tool...> [--yes]         # delete a tool's data, back to 
 
 ```sh
 station power [--json]                          # the session, its guards, and this Mac's reading (lid, source, battery, thermal)
-station power awake [--lid] [--battery] [--for <d>]   # keep this host awake: 1m..24h, default 4h; held by the daemon
+station power awake [--lid] [--battery] [--for <d>]   # keep this host awake: 1m..24h, default 4h; held by the engine
 station power sleep                             # end the session now
 ```
 
-The daemon that already runs holds the session, in memory only: a `PreventUserIdleSystemSleep` assertion, and with `--lid` the clamshell sleep disabled (no root, no `pmset -a`, no file). Every end sets the clamshell back to normal, and so does every daemon start and quit. A guard ends the session first: thermal pressure at trapping (or heavy for 5 minutes lid closed on battery), the battery at 20 % on battery, Low Power Mode, or the lid closed on battery without `--battery`; each end is logged in `daemon.log` and kept on the page for 24 hours. With `--lid`, a lid close sleeps the display with `pmset displaysleepnow`, never a display assertion. A guard already past its threshold refuses the start (exit 1). Piped, one record per row: the session (`on`, its flags, until in RFC 3339, who asked), the guards, then the reading as `key<TAB>value`. Unrelated to the `power` config item, the always-on pmset policy of a headless host.
+The engine that already runs holds the session, in memory only: a `PreventUserIdleSystemSleep` assertion, and with `--lid` the clamshell sleep disabled (no root, no `pmset -a`, no file). Every end sets the clamshell back to normal, and so does every engine start and quit. A guard ends the session first: thermal pressure at trapping (or heavy for 5 minutes lid closed on battery), the battery at 20 % on battery, Low Power Mode, or the lid closed on battery without `--battery`; each end is logged in `engine.log` and kept on the page for 24 hours. With `--lid`, a lid close sleeps the display with `pmset displaysleepnow`, never a display assertion. A guard already past its threshold refuses the start (exit 1). Piped, one record per row: the session (`on`, its flags, until in RFC 3339, who asked), the guards, then the reading as `key<TAB>value`. Unrelated to the `power` config item, the always-on pmset policy of a headless host.
 
 ## The fleet
 
@@ -98,7 +98,7 @@ station machines probe <machine> [--json]
 station machines unlock <host>
 ```
 
-`--here` lists this host only, with no network. `create` asks the lifetime on a terminal and, with two reachable hosts, the host; piped it needs `--lifetime`. `delete` is the only verb that destroys a machine; `forget` only unregisters a host. VMs are made and run on hosts, so these commands except `probe` are refused on a VM. `create`, `start` and `restart` need the host's daemon; `stop` and `delete` act without it. `--network bridged` is for macOS VMs only. See [Machines](machines.md).
+`--here` lists this host only, with no network. `create` asks the lifetime on a terminal and, with two reachable hosts, the host; piped it needs `--lifetime`. `delete` is the only verb that destroys a machine; `forget` only unregisters a host. VMs are made and run on hosts, so these commands except `probe` are refused on a VM. `create`, `start` and `restart` need the host's engine; `stop` and `delete` act without it. `--network bridged` is for macOS VMs only. See [Machines](machines.md).
 
 ### `station services`
 
@@ -140,14 +140,15 @@ station accounts [--json]                       # who has access to what, here a
 
 One group per machine: this host's GitHub, npm, Claude, Tailscale, Cloudflare, git, ssh and Docker rights, then each VM's, read inside it by its guest, with the lends its record holds (`lent`, until when). Identities and scopes only: no token, cookie or key body is ever read into a value, and anything shaped like one reads `?`. Piped, one record per account: mark, machine, provider, identity, origin, scope, until (RFC 3339), detail, hint. See [Secrets](secrets.md#accounts).
 
-### `station stop` and `station start`
+### `station engine`
 
 ```sh
-station stop [--yes]                            # every VM of this host ended (temporary deleted), then the daemon booted out
-station start                                   # the daemon bootstrapped again, and the lasting VMs it brings back
+station engine [--json]                         # running, its version, up, the VMs it runs, Awake; or stopped, since when and by what
+station engine stop [--yes]                     # Stop everything on this Mac: every running VM stopped, its disk kept; Awake and the sharing end; then the engine
+station engine start                            # the engine bootstrapped again; the VMs it stopped stay stopped
 ```
 
-This host only. See [Machines](machines.md#the-daemon).
+`--json` is `station.engine.read/v1`: `{schema, engine: {state, version, up_s, vms, stopped_at, stopped_by}}`, `state` `running`, `stopped` or `not-installed`. An engine running another version than station names both and `station setup`. A Mac only; `--on <mac>` runs it on another Mac. `station stop` and `station start` are hidden aliases of `engine stop` and `engine start` for one release, saying `→ now: station engine stop` on stderr (see [Hidden aliases](#hidden-aliases)). A start the job manager refuses ends in `the engine did not start: <its last word>` (exit 1). See [Machines](machines.md#the-engine).
 
 ### `station tailnet`
 
@@ -194,6 +195,8 @@ A v2 word runs its v3 command with the same arguments, for one release, and prin
 | Old              | Runs                                                          |
 | ---------------- | ------------------------------------------------------------- |
 | `station status` | `station overview`; `status --json` keeps `station.status/v1` |
+| `station stop`   | `station engine stop`                                         |
+| `station start`  | `station engine start`                                        |
 
 ## Plumbing
 
@@ -203,12 +206,12 @@ These commands exist for the machine's own use. They are hidden from help and th
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `station shell zsh`               | the `~/.zshrc` block evaluates it at every shell start: PATH, the mise activation, station's completion, and in a VM the lent Claude token and the [profiles'](services.md#profiles) exports. Output on stdout only; another shell or none is refused |
 | `station completion <shell>`      | cobra's completion script, for a shell the block does not serve                                                                                                                                                                                       |
-| `station daemon`                  | the launchd agent `com.jterrazz.station.daemon` runs it on a host: the VMs and their services ([Machines](machines.md#the-daemon))                                                                                                                    |
-| `station guest`                   | the host's daemon runs it inside each VM over ssh: what listens there ([Services](services.md))                                                                                                                                                       |
+| `station engine run`              | the launchd agent `com.jterrazz.station.engine` runs it on a host: the VMs and their services ([Machines](machines.md#the-engine))                                                                                                                    |
+| `station guest`                   | the host's engine runs it inside each VM over ssh: what listens there ([Services](services.md))                                                                                                                                                       |
 | `station machines pipe <vm>`      | a VM's `~/.ssh/config` ProxyCommand runs it: ssh's bytes to the VM's NAT ip ([Machines](machines.md#ssh-and-herdr))                                                                                                                                   |
 | `station machines supervise <vm>` | retired: an old per-VM agent that still runs it exits at once; `station setup` removes those agents                                                                                                                                                   |
 
-`--on` is refused on `shell`, `completion`, `help`, `man`, `daemon`, `engine`, `guest`, `machines pipe` and `machines supervise`: none of them sends a call.
+`--on` is refused on `shell`, `completion`, `help`, `man`, `daemon`, `engine run`, `engine attach`, `guest`, `machines pipe` and `machines supervise`: none of them sends a call.
 
 ## Exit codes
 

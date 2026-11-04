@@ -4,6 +4,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 )
 
 type Wording func(e *fail.Error) (message, hint string)
@@ -44,6 +45,9 @@ func Codes() map[fail.Code]Wording {
 		},
 		call.Unreachable: func(e *fail.Error) (string, string) {
 			return "cannot reach \"" + e.Subject + "\"", "station machines probe " + e.Subject
+		},
+		enginecalls.StartFailed: func(e *fail.Error) (string, string) {
+			return "the engine did not start: " + e.Detail["last"], "station engine"
 		},
 		call.FarTooOld: func(e *fail.Error) (string, string) {
 			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"

@@ -1,15 +1,15 @@
 description: 'a script reads the new name from the second field, or the created document from --json'
 fixture:
     - ../../../__fixtures__/vms/
-    - ../../../__fixtures__/daemon-vm/
-env: daemon
+    - ../../../__fixtures__/engine-vm/
+env: engine
 serve: sshd
 runs:
-    - command: '--version >/dev/null; "$STATION" daemon 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary | /usr/bin/head -1 | /usr/bin/cut -f2; kill $d; wait $d'
+    - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary | /usr/bin/head -1 | /usr/bin/cut -f2; kill $d; wait $d'
       exit: 0
       stdout: |
           linux-1
-    - command: '--version >/dev/null; "$STATION" daemon 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary --json | /usr/bin/jq -r ''.schema, .name, .host, .lifetime, .version, .memory_bytes, .ip''; kill $d; wait $d'
+    - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary --json | /usr/bin/jq -r ''.schema, .name, .host, .lifetime, .version, .memory_bytes, .ip''; kill $d; wait $d'
       exit: 0
       stdout: |
           station.machines.created/v1

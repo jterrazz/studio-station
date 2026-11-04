@@ -36,7 +36,7 @@ final class TestClock: StreamClock, @unchecked Sendable {
     }
 }
 
-final class FakeDaemon: @unchecked Sendable {
+final class FakeEngine: @unchecked Sendable {
     let path: String
     let fd: Int32
     private let lock = NSLock()
@@ -117,11 +117,11 @@ final class ClientTests: XCTestCase {
     }
 
     func testTheRecordedStreamIsReadInOrderThenSilenceReconnectsWithBackoff() async throws {
-        let daemon = try FakeDaemon("mb-stream")
-        defer { daemon.stop() }
-        daemon.serveOnce(try Data(contentsOf: Tree.stream), thenClose: true)
+        let engine = try FakeEngine("mb-stream")
+        defer { engine.stop() }
+        engine.serveOnce(try Data(contentsOf: Tree.stream), thenClose: true)
         let clock = TestClock(), recorder = Recorder()
-        let sub = Subscription(path: daemon.path, clock: clock) { recorder.add($0) }
+        let sub = Subscription(path: engine.path, clock: clock) { recorder.add($0) }
         let task = Task { await sub.run() }
         await until { recorder.events.count >= 5 }
         let kinds = recorder.events.prefix(5).map { e -> String in
@@ -134,7 +134,7 @@ final class ClientTests: XCTestCase {
             }
         }
         XCTAssertEqual(kinds, ["connected", "page loading", "page ready", "tick", "notice power_ended: Power ended: battery 20% on battery"])
-        XCTAssertEqual(daemon.received, [#"{"id":"1","in":{"pages":["menubar"]},"v":2,"watch":"page"}"#])
+        XCTAssertEqual(engine.received, [#"{"id":"1","in":{"pages":["menubar"]},"v":2,"watch":"page"}"#])
         for _ in 0..<200 where clock.backoffs.isEmpty {
             clock.releaseSilence()
             try await Task.sleep(nanoseconds: 10_000_000)
@@ -147,35 +147,35 @@ final class ClientTests: XCTestCase {
         try XCTUnwrap(Tree.page("menubar.full").action(id) ?? Tree.page("menubar.empty").action(id))
     }
 
-    func answered(_ name: String, _ frame: String, hangUp: Bool = false) throws -> FakeDaemon {
-        let daemon = try FakeDaemon(name)
-        daemon.serveOnce(Data(frame.utf8) + (frame.isEmpty ? [] : [0x0A]), thenClose: false, hangUp: hangUp)
-        return daemon
+    func answered(_ name: String, _ frame: String, hangUp: Bool = false) throws -> FakeEngine {
+        let engine = try FakeEngine(name)
+        engine.serveOnce(Data(frame.utf8) + (frame.isEmpty ? [] : [0x0A]), thenClose: false, hangUp: hangUp)
+        return engine
     }
 
     func testACallActionIsOneFrameWithItsFormsAnswersAndStartsNoProgram() async throws {
-        let daemon = try answered("mb-create", #"{"v":2,"id":"1","progress":{"task":"Booting api"}}"# + "\n" + #"{"v":2,"id":"1","out":{"VM":{"Name":"api"}}}"#)
-        defer { daemon.stop() }
+        let engine = try answered("mb-create", #"{"v":2,"id":"1","progress":{"task":"Booting api"}}"# + "\n" + #"{"v":2,"id":"1","out":{"VM":{"Name":"api"}}}"#)
+        defer { engine.stop() }
         let calls = Recorded()
-        let status = await ActionRunner(executable: "/u/bin/station", socket: daemon.path, launcher: RecordingLauncher(calls: calls)).run(try fixtureAction("new-vm"), answers: ["Request.Lifetime": "lasting"])
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, launcher: RecordingLauncher(calls: calls)).run(try fixtureAction("new-vm"), answers: ["Request.Lifetime": "lasting"])
         XCTAssertNil(status)
-        XCTAssertEqual(daemon.received, [#"{"call":"machines.create","id":"1","in":{"Request":{"Image":"linux","Lifetime":"lasting","Network":"nat","Resources":{"MemoryBytes":4294967296}}},"v":2}"#])
+        XCTAssertEqual(engine.received, [#"{"call":"machines.create","id":"1","in":{"Request":{"Image":"linux","Lifetime":"lasting","Network":"nat","Resources":{"MemoryBytes":4294967296}}},"v":2}"#])
         XCTAssertEqual(calls.all, [])
     }
 
     func testAFailingCallsMessageAndHintMakeTheStatusLine() async throws {
-        let daemon = try answered("mb-fail", #"{"v":2,"id":"1","error":{"type":"failed","code":"internal","message":"api did not stop","hint":"station machines"}}"#)
-        defer { daemon.stop() }
-        let status = await ActionRunner(executable: "/u/bin/station", socket: daemon.path).run(try fixtureAction("power-awake"), answers: ["Lid": "Lid=true Battery=true"])
-        XCTAssertEqual(daemon.received, [#"{"call":"power.awake","id":"1","in":{"Battery":true,"For":14400000000000,"Lid":true},"v":2}"#])
+        let engine = try answered("mb-fail", #"{"v":2,"id":"1","error":{"type":"failed","code":"internal","message":"api did not stop","hint":"station machines"}}"#)
+        defer { engine.stop() }
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(try fixtureAction("power-awake"), answers: ["Lid": "Lid=true Battery=true"])
+        XCTAssertEqual(engine.received, [#"{"call":"power.awake","id":"1","in":{"Battery":true,"For":14400000000000,"Lid":true},"v":2}"#])
         XCTAssertEqual(status, Status("api did not stop  → station machines", failed: true))
     }
 
     func testStopEverythingIsDoneWhenTheEngineItStoppedHangsUp() async throws {
-        let daemon = try answered("mb-stop", "", hangUp: true)
-        defer { daemon.stop() }
-        let status = await ActionRunner(executable: "/u/bin/station", socket: daemon.path).run(try fixtureAction("stop-all"))
-        XCTAssertEqual(daemon.received, [#"{"call":"engine.stop","id":"1","in":{"Confirm":"yes"},"v":2}"#])
+        let engine = try answered("mb-stop", "", hangUp: true)
+        defer { engine.stop() }
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(try fixtureAction("stop-all"))
+        XCTAssertEqual(engine.received, [#"{"call":"engine.stop","id":"1","in":{"By":"the menu bar","Confirm":"yes"},"v":2}"#])
         XCTAssertNil(status)
     }
 
@@ -188,7 +188,7 @@ final class ClientTests: XCTestCase {
         XCTAssertNil(started)
         XCTAssertEqual(calls.all, [
             ["/usr/bin/open", "-a", "Terminal", "/u/bin/station"],
-            ["/usr/bin/osascript", "-e", #"tell application "Terminal" to do script "'/u/bin/station' 'start'""#, "-e", #"tell application "Terminal" to activate"#],
+            ["/usr/bin/osascript", "-e", #"tell application "Terminal" to do script "'/u/bin/station' 'engine' 'start'""#, "-e", #"tell application "Terminal" to activate"#],
         ])
     }
 }

@@ -1,8 +1,8 @@
 description: 'the daemon runs only on a host'
-env: daemon
+env: engine
 runs:
-    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" daemon'
+    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" engine run'
       exit: 2
       stderr: |
-          Error: the daemon runs only on a host; here is a linux VM
+          Error: the engine runs only on a host; here is a linux VM
           Hint: run it on a host: station setup installs it

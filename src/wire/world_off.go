@@ -4,6 +4,7 @@ package wire
 
 import (
 	"context"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -59,3 +60,6 @@ func (*worldMac) secretSource() accountscontract.SecretSource           { return
 func (*worldMac) notifier() engine.Notifier                             { return nil }
 func (*worldMac) engineFrom(func() *engine.Daemon)                      {}
 func (*worldMac) macs() remotecontract.EndpointDialer                   { return nil }
+func (*worldMac) stopMarks() engine.StopMarks                           { return nil }
+func (*worldMac) engineVersion() string                                 { return "" }
+func (*worldMac) engineStarted() time.Time                              { return time.Time{} }

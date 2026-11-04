@@ -331,10 +331,10 @@ func (m *Machine) Sleep() Slept {
 	return Slept{Ended: true, After: after}
 }
 
-func (m *Machine) Stop() bool { return m.finish(ReasonStop, "station stop") }
+func (m *Machine) Stop() bool { return m.finish(ReasonStop, "station engine stop") }
 
 func (m *Machine) Quit() {
-	if !m.finish(ReasonQuit, "the daemon stopped") {
+	if !m.finish(ReasonQuit, "the engine stopped") {
 		m.Reset()
 	}
 }

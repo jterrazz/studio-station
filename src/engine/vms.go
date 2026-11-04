@@ -299,6 +299,13 @@ func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
 	if err := lasting(v); err != nil {
 		return err
 	}
+	return d.halt(ctx, v, want)
+}
+
+// invariant: halt ends a VM's run and keeps its disk; want also keeps the
+// wish stopped, so a lasting VM stays stopped when the engine starts again.
+func (d *Daemon) halt(ctx context.Context, v *vmState, want bool) error {
+	vm := v.rec.Name
 	if want {
 		v.rec.Want = machines.WantStopped
 		if err := d.m.Save(v.rec); err != nil {
@@ -370,6 +377,9 @@ func (d *Daemon) connect(ctx context.Context, v *vmState) {
 	if v.cancel != nil {
 		d.mu.Unlock()
 		return
+	}
+	if d.life != nil {
+		ctx = d.life
 	}
 	gctx, cancel := context.WithCancel(ctx)
 	v.gen++

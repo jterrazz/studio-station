@@ -1,6 +1,6 @@
 description: 'in a VM the shell block ends with the VM''s exports'
 fixture: ./__fixtures__/vm-services/
-env: daemon
+env: engine
 runs:
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" shell zsh | /usr/bin/tail -3'
       exit: 0

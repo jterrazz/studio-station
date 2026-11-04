@@ -2,7 +2,7 @@ description: 'a stopped lasting VM is named, with the verb that starts it'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-api/
-env: daemon
+env: engine
 runs:
     - command: '--version >/dev/null; echo stopped > .tart-vms/api; "$STATION" machines pipe api'
       exit: 1

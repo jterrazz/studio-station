@@ -10,7 +10,7 @@ runs:
           ●	zshrc
           ●	layout	nothing to retire
           ✗	relocate	~/.local/share/station/vms already exists
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed
       stderr: |
           Error: setup step relocate: ~/.local/share/station/vms already exists
           Hint: ~/.local/share/station/vms already exists: move one of them by hand

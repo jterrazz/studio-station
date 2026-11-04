@@ -1,0 +1,22 @@
+description: 'setup moves a v2 settings.json and engine job once; a second run says nothing of it'
+env: fresh-v2
+runs:
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	preferences	moved settings.json to preferences.json
+          ●	name	jterrazz-macbook-pro
+          ●	zshrc
+          ●	layout	nothing to retire
+          ●	relocate	bunfig, go env, mise config, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ●	engine	running {{string}}, its job moved to com.jterrazz.station.engine
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	name	jterrazz-macbook-pro
+          ●	zshrc
+          ●	layout	nothing to retire
+          ●	relocate	nothing to do
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ●	engine	running {{string}}

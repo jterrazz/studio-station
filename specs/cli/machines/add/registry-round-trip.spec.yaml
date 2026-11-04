@@ -56,7 +56,7 @@ runs:
       stdout: |
           ●	mac-mini	forgotten
       files:
-          .config/station/settings.json:
+          .config/station/preferences.json:
               equals: |
                   {
                     "here": "x",

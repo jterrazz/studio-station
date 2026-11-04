@@ -1,13 +1,13 @@
 description: 'a second daemon finds the first answering and refuses'
 fixture:
     - ../../__fixtures__/vms/
-    - ../../__fixtures__/daemon-vm/
-env: daemon
+    - ../../__fixtures__/engine-vm/
+env: engine
 runs:
-    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41420-41439"}/'' .config/station/settings.json; "$STATION" daemon 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" daemon; echo "second daemon exit $?"; kill $d; wait $d'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41420-41439"}/'' .config/station/preferences.json; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" engine run; echo "second daemon exit $?"; kill $d; wait $d'
       exit: 0
       stdout: |
           second daemon exit 2
       stderr: |
-          Error: a station daemon already runs (pid {{int}})
+          Error: an engine already runs (pid {{int}})
           Hint: station overview shows it

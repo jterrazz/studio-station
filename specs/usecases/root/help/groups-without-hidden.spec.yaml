@@ -24,7 +24,12 @@ runs:
           storage
           tailnet
           tools
-    - command: '--help | /usr/bin/grep -cwE "^    (status|shell|daemon|guest|engine|completion|man|world|pipe|supervise)"'
+    - command: 'help | /usr/bin/sed -n "/^  A MAC/,/^  STATION/p" | /usr/bin/grep -oE "^    [a-z]+ " | /usr/bin/tr -d " "'
+      exit: 0
+      stdout: |
+          engine
+          images
+    - command: '--help | /usr/bin/grep -cwE "^    (status|start|stop|shell|daemon|guest|completion|man|world|pipe|supervise)"'
       exit: 1
       stdout: |
           0

@@ -47,7 +47,7 @@ func (m machine) power() *power.Service {
 			return power.Slept{Ended: s.Ended, After: time.Duration(s.After) * time.Second}, powerDown(err)
 		},
 		Installed: func() bool {
-			_, err := m.host.FS.Stat(catalog.DaemonPlist(m.host.Env.Home()))
+			_, err := m.host.FS.Stat(catalog.EnginePlist(m.host.Env.Home()))
 			return err == nil
 		},
 	}, power.ServiceOptions{Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, Zone: time.Local})

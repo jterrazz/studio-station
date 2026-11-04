@@ -235,7 +235,7 @@ public enum MenuBarIcon {
 
     public static func label(connection: Connection, page: Page?) -> String {
         switch connection {
-        case .stopped, .notInstalled: return "station: daemon stopped"
+        case .stopped, .notInstalled: return "station: engine stopped"
         case .connecting: return "station: connecting"
         case .live: break
         }

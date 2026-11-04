@@ -1,13 +1,13 @@
 # Configuration
 
-`station config` sets a machine up: dotfiles, logins and macOS defaults. Each entry is a config item, named by what it sets, and `station`'s own file is `settings.json`.
+`station config` sets a machine up: dotfiles, logins and macOS defaults. Each entry is a config item, named by what it sets, and `station`'s own file is `preferences.json`.
 
-| Section       | Answers                                        |
-| ------------- | ---------------------------------------------- |
-| The items     | Every config item, its place and what it does  |
-| Values        | How an item that needs values asks for them    |
-| settings.json | The file station keeps its own choices in      |
-| Environment   | The variables station reads, all resolved once |
+| Section          | Answers                                        |
+| ---------------- | ---------------------------------------------- |
+| The items        | Every config item, its place and what it does  |
+| Values           | How an item that needs values asks for them    |
+| preferences.json | The file station keeps its own choices in      |
+| Environment      | The variables station reads, all resolved once |
 
 ## The items
 
@@ -42,9 +42,9 @@ An item with inputs (`autologin`, `claude-token`) or an interactive procedure (`
 
 There is no flag to pass a value: a secret never travels in argv or shell history ([ADR-009](../decisions/009-one-bootstrap-verb-and-no-values-in-argv.md)).
 
-## settings.json
+## preferences.json
 
-`~/.config/station/settings.json` holds what station decides for itself:
+`~/.config/station/preferences.json` holds what station decides for itself:
 
 ```json
 {
@@ -80,7 +80,7 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 | `STATION_SYSTEM_DIRS`, `STATION_MACHINE_KIND`                          | which system folders count, and the machine kind, for a spec                                        |
 | `STATION_SYSTEM_ROOT`                                                  | the root `/Applications`, `/opt/homebrew`, `/Library` and a VM's `/proc` are read under, for a spec |
 | `STATION_POWER_STUB`                                                   | a folder whose files are the Power reading and whose calls go to `$HOME/.calls`, for a spec         |
-| `STATION_GUEST_SSH_PORT`                                               | the port the daemon dials a VM's sshd on (default 22), for a spec's stub sshd                       |
+| `STATION_GUEST_SSH_PORT`                                               | the port the engine dials a VM's sshd on (default 22), for a spec's stub sshd                       |
 | `STATION_XDG_DETACHED`                                                 | internal: `setup`'s detached layout step                                                            |
 
 ## Related

@@ -9,6 +9,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/background/contract"
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/world"
 )
 
@@ -64,9 +65,37 @@ func (j *Jobs) List(context.Context) ([]background.Job, error) {
 	return jobs, nil
 }
 
+// invariant: the engine's job is its Mac's engine: it runs while the world
+// says the engine runs, a load sets it up, a start or a restart runs it, and
+// a stop leaves it set up and stopped; a world that seeds an engine has its
+// job without writing it.
+func (j *Jobs) engine(r contract.Ref) bool { return r.Label == catalog.EngineLabel }
+
+func (j *Jobs) setUp() bool {
+	m := j.here()
+	return m.Engine != nil || m.Jobs[catalog.EngineLabel] != nil
+}
+
+func (j *Jobs) run(on bool) {
+	m := j.here()
+	if m.Engine == nil {
+		m.Engine = &world.Engine{Stopped: true}
+	}
+	if on && m.Engine.Stopped {
+		m.Engine.StartedAt = j.w.Now
+	}
+	m.Engine.Stopped = !on
+}
+
 func (j *Jobs) Read(_ context.Context, r contract.Ref) contract.Status {
 	j.w.Lock()
 	defer j.w.Unlock()
+	if j.engine(r) {
+		if m := j.here(); m.EngineRuns() {
+			return contract.Status{Loaded: true, State: "running"}
+		}
+		return contract.Status{}
+	}
 	job := j.here().Jobs[r.Label]
 	switch {
 	case job == nil || !job.Loaded:
@@ -111,6 +140,12 @@ func (j *Jobs) Install(_ context.Context, spec contract.JobSpec) (bool, error) {
 func (j *Jobs) Load(_ context.Context, r contract.Ref) error {
 	j.w.Lock()
 	defer j.w.Unlock()
+	if j.engine(r) && j.setUp() {
+		if j.here().Engine == nil {
+			j.run(false)
+		}
+		return nil
+	}
 	job := j.here().Jobs[r.Label]
 	if job == nil || job.File != r.File {
 		return &contract.Failed{Argv: []string{command, "load", r.Label}, Exit: 1, Stderr: "no definition at " + r.File, See: command + " read " + r.Label}
@@ -123,12 +158,19 @@ func (j *Jobs) Start(_ context.Context, r contract.Ref) error {
 	j.w.Lock()
 	defer j.w.Unlock()
 	if j.w.Fails("Jobs.Start") {
-		return j.failed("start", r)
+		return &contract.Failed{Argv: []string{command, "start", r.Label}, Exit: 5, Stderr: "the job manager could not start it", See: command + " read " + r.Label}
 	}
 	return j.start(r)
 }
 
 func (j *Jobs) start(r contract.Ref) error {
+	if j.engine(r) {
+		if !j.setUp() {
+			return j.failed("start", r)
+		}
+		j.run(true)
+		return nil
+	}
 	job := j.here().Jobs[r.Label]
 	if job == nil || !job.Loaded {
 		return j.failed("start", r)
@@ -143,6 +185,9 @@ func (j *Jobs) start(r contract.Ref) error {
 func (j *Jobs) Restart(_ context.Context, r contract.Ref) error {
 	j.w.Lock()
 	defer j.w.Unlock()
+	if j.engine(r) {
+		return j.start(r)
+	}
 	job := j.here().Jobs[r.Label]
 	if job == nil || !job.Loaded {
 		return j.failed("restart", r)
@@ -158,6 +203,13 @@ func (j *Jobs) Stop(_ context.Context, r contract.Ref) error {
 }
 
 func (j *Jobs) stop(r contract.Ref) error {
+	if j.engine(r) {
+		if !j.here().EngineRuns() {
+			return j.failed("stop", r)
+		}
+		j.run(false)
+		return nil
+	}
 	job := j.here().Jobs[r.Label]
 	if job == nil || !job.Loaded {
 		return j.failed("stop", r)

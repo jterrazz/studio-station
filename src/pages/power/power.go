@@ -64,7 +64,7 @@ func daemonHint(r power.Report) *page.Hint {
 	if r.Daemon == power.DaemonAbsent {
 		return page.Cmd("station setup")
 	}
-	return page.Cmd("station start")
+	return page.Cmd("station engine start")
 }
 
 func sessionRows(r power.Report) []page.Row {
@@ -72,7 +72,7 @@ func sessionRows(r power.Report) []page.Row {
 	case r.Daemon == power.DaemonPending:
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Awaiting, Cells: []page.Value{page.Pending()}}}
 	case stopped(r):
-		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Unknown(), page.Text("daemon " + r.Daemon)}, Hint: daemonHint(r)}}
+		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Unknown(), page.Text("engine " + r.Daemon)}, Hint: daemonHint(r)}}
 	case r.Session == nil:
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.OK, Cells: []page.Value{page.Off(), ended(r.LastEnd, r.Zone)}, Hint: page.KeyHint("station power awake", KeyAwake)}}
 	}
@@ -83,7 +83,7 @@ func sessionRows(r power.Report) []page.Row {
 	if s.Lid {
 		rows = append(rows,
 			page.Row{ID: "display", Label: "display", Mark: page.OK, Cells: []page.Value{page.Text("sleeps"), page.Text("on lid close: pmset displaysleepnow (no display assertion)")}},
-			page.Row{ID: "clamshell", Label: "clamshell", Mark: page.OK, Cells: []page.Value{page.Text("held"), page.Text("reset to normal at the end, at every daemon start and quit")}},
+			page.Row{ID: "clamshell", Label: "clamshell", Mark: page.OK, Cells: []page.Value{page.Text("held"), page.Text("reset to normal at the end, at every engine start and quit")}},
 		)
 	} else {
 		rows = append(rows, page.Row{ID: "display", Label: "display", Mark: page.OK, Cells: []page.Value{page.Text("as set"), page.Text("the display sleeps on its own timer (no display assertion)")}})

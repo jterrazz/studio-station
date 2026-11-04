@@ -2,7 +2,7 @@
    ✗ brain.x-snapshot   failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
-   ◐ daemon             not installed  → station setup
+   ◐ engine             not installed  → station setup
    ◐ brew               120 outdated  → station tools upgrade --via brew
    ◐ strays             2 folders out of place · 80.5 GB  → station setup
    ◐ tools              4 wait for mise  → station tools install mise
@@ -17,7 +17,7 @@
    ◐ Machine     host · Darwin 27.0.0 · up 22d 14h   ◐ Tools     7 ●  6 ◐  4 ○
    ◐ Network     192.168.1.152 · 4/4 on              ◐ Config    1 ●  1 ◐
    ● Tailnet     jterrazz-macbook-pro · Serve on     ● Storage   27.9 GB reclaimable · 2 strays
-   ● Identity    admin@jterrazz.com · signing on     ◐ Fleet     daemon not installed
+   ● Identity    admin@jterrazz.com · signing on     ◐ Fleet     engine not installed
    ✗ Background  3 jobs · 1 failing · 1 orphan       ● Gateways  1 ●
  + Machine                                                                                 3 ●  1 ◐
  + Environment                                                                             6 ●  2 ◐

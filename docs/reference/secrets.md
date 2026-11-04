@@ -23,7 +23,7 @@ Deleting a VM is not revoking a token. Use fine-grained, expiring tokens in a VM
 
 ## The lend list
 
-`lend_list` in `settings.json` names what may be lent: `session:*` names and the one name `operator:claude:oauth-token`. Anything else is refused with a hint that other secrets wait for the secret manager ([TODO](../../TODO.md)).
+`lend_list` in `preferences.json` names what may be lent: `session:*` names and the one name `operator:claude:oauth-token`. Anything else is refused with a hint that other secrets wait for the secret manager ([TODO](../../TODO.md)).
 
 ```sh
 station secrets allow session:openpanel
@@ -34,7 +34,7 @@ station secrets disallow session:openpanel   # off the list, and recalled from e
 station secrets                          # names only, never a value
 ```
 
-A lent copy is a snapshot: later captures on the host do not reach it until you lend again. Every lend expires: the VM's record keeps, per name, when it was lent and until when (`secrets --json` lists them under `lends`), lending again resets the term, and at its until the daemon recalls the copy from a VM whose guest is connected (at its start and every minute; a VM still connecting, or a lasting VM stopped past its until, is recalled as its guest connects, before it is reported ready), logging `<vm> lend: recalled <name> (expired)`; a recall that fails keeps the entry and is logged once an hour. A record from before terms existed reads each name as lent at the file's last change for 12h. Values pass between the credential stores through a pipe, never through argv and never to disk on the host. A lend and a recall run inside the VM over the daemon's one connection to it, so they need the daemon up and the VM's guest connected.
+A lent copy is a snapshot: later captures on the host do not reach it until you lend again. Every lend expires: the VM's record keeps, per name, when it was lent and until when (`secrets --json` lists them under `lends`), lending again resets the term, and at its until the engine recalls the copy from a VM whose guest is connected (at its start and every minute; a VM still connecting, or a lasting VM stopped past its until, is recalled as its guest connects, before it is reported ready), logging `<vm> lend: recalled <name> (expired)`; a recall that fails keeps the entry and is logged once an hour. A record from before terms existed reads each name as lent at the file's last change for 12h. Values pass between the credential stores through a pipe, never through argv and never to disk on the host. A lend and a recall run inside the VM over the engine's one connection to it, so they need the engine up and the VM's guest connected.
 
 ## Where to revoke
 
@@ -63,7 +63,7 @@ The alternative is a bound login: run `claude /login` inside a lasting VM. The l
 
 ## Accounts
 
-`station accounts` (the TUI's Accounts tab) shows who has access to what: each provider's identity on this host, then on each of its VMs, and where the right comes from: `own` (a login done on that machine), `lent` (a copy of a lend-list name, with its `until`), or both. A lend in its last hour is `◐ expiring` with the re-lend command; an expired one the daemon could not recall is `✗ failing` with the recall command. A VM is read by its own guest over the daemon's session, so no provider's output ever leaves the VM: only the parsed identities and scopes do. Each provider's read is an allowlist of named fields (`src/domain/accounts/parse.go`), and every kept value that looks like a token (`gh*_`, `github_pat_`, `sk-ant-`, `npm_`, `xox*-`, a JWT, 32 and more characters of base64 or hex) is replaced by `?`.
+`station accounts` (the TUI's Accounts tab) shows who has access to what: each provider's identity on this host, then on each of its VMs, and where the right comes from: `own` (a login done on that machine), `lent` (a copy of a lend-list name, with its `until`), or both. A lend in its last hour is `◐ expiring` with the re-lend command; an expired one the engine could not recall is `✗ failing` with the recall command. A VM is read by its own guest over the engine's session, so no provider's output ever leaves the VM: only the parsed identities and scopes do. Each provider's read is an allowlist of named fields (`src/domain/accounts/parse.go`), and every kept value that looks like a token (`gh*_`, `github_pat_`, `sk-ant-`, `npm_`, `xox*-`, a JWT, 32 and more characters of base64 or hex) is replaced by `?`.
 
 ## Related
 

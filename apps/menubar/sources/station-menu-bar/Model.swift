@@ -8,7 +8,7 @@ final class Model: ObservableObject {
     @Published var state = PopoverState(page: nil, connection: .connecting)
     @Published var loginItemOn = LoginItem.on
 
-    let socket = DaemonPath.socket()
+    let socket = EnginePath.socket()
     private var lastPage: Date?
     private var subscription: Task<Void, Never>?
     private var clearing: Task<Void, Never>?
@@ -47,7 +47,7 @@ final class Model: ObservableObject {
     }
 
     func showStopped() {
-        let installed = FileManager.default.fileExists(atPath: DaemonPath.agentPlist())
+        let installed = FileManager.default.fileExists(atPath: EnginePath.agentPlist())
         state.connection = installed ? .stopped : .notInstalled
         guard let url = Bundle.main.url(forResource: "stopped", withExtension: "json"),
               let data = try? Data(contentsOf: url), var page = try? Page.decode(data) else { return }

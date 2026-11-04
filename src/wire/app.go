@@ -108,15 +108,14 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		tailnetCommand(kenv, here),
 		servicesCommand(kenv, here),
 		accountsCommand(kenv, here),
-		stopCommand(kenv, here),
-		startCommand(kenv, here),
-		daemonCommand(kenv, here),
+		retiredDaemonCommand(kenv, here),
 		guestCommand(kenv, here),
-		engineCommand(kenv),
+		engineCommand(kenv, here),
 		runCommand(kenv, here),
 		setupCommand(kenv, here),
 		shellcmd.Command(kenv),
 	}
+	commands = append(commands, engineAliases(kenv, here)...)
 	if session != nil {
 		commands = append(commands, session.command())
 	}

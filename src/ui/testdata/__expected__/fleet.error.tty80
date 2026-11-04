@@ -3,7 +3,7 @@
 
  Fleet  1 ●  2 ◐  1 ○
    ◐ macbook     host       here  online       100.98.133.14
-     daemon stopped  → station start
+     engine stopped  → station engine start
    ├─ ● linux-1  temporary        running      192.168.64.5
    │  ├─ 5173 → 40001  https://jterrazz-macbook-pro.tail1234.ts.net:40001  node
    │  └─ 5432 → 40002  postgres

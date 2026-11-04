@@ -45,16 +45,26 @@
       "in": "UninstallIn"
     },
     {
+      "name": "engine.read",
+      "schema": "station.engine.read/v1",
+      "where": "at-target",
+      "in": "ReadIn",
+      "out": "Reading"
+    },
+    {
       "name": "engine.start",
       "schema": "station.engine.start/v1",
-      "where": "in-process",
+      "where": "at-target",
+      "errors": [
+        "engine.start-failed"
+      ],
       "in": "StartIn",
       "out": "StartReport"
     },
     {
       "name": "engine.stop",
       "schema": "station.engine.stop/v1",
-      "where": "in-process",
+      "where": "at-target",
       "confirm": "stop-engine",
       "errors": [
         "confirm.yes-needed"

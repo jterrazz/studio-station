@@ -36,7 +36,7 @@
    ◐ differs               attention                   differs from station's
      → station config install tart-launcher
    ◐ unset                 attention                   name not set  → station setup
-   ◐ stopped               attention                   stopped  → station start
+   ◐ stopped               attention                   stopped  → station engine start
    ◐ late                  attention                   no answer in 2s
    ◐ degraded              attention                   Serve is off on the tailnet
    ◐ orphan                attention                   orphan: Docker.app is gone

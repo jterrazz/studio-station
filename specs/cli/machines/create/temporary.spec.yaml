@@ -1,11 +1,11 @@
 description: 'a temporary VM: cloned, sized, run by the daemon, first boot over its guest, no tailnet, no dir'
 fixture:
     - ../../../__fixtures__/vms/
-    - ../../../__fixtures__/daemon-vm/
-env: daemon
+    - ../../../__fixtures__/engine-vm/
+env: engine
 serve: sshd
 runs:
-    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41000-41019"}/'' .config/station/settings.json; "$STATION" daemon 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary; kill $d; wait $d'
+    - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"vm_user": "vmu"/"vm_user": "vmu", "services": {"range": "41000-41019"}/'' .config/station/preferences.json; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --lifetime temporary; kill $d; wait $d'
       exit: 0
       stdout: |
           ●	linux-1	x	temporary	linux 2026.11.07	4 cpus · 8 GB

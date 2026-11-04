@@ -40,7 +40,7 @@ gateway ports from the environment until then (no flag).
 
 ## Network isolation
 Tart Softnet for VMs that need no LAN (ENGINE.md risk 3; round 5: no
-tailscaled inside a VM any more, so Softnet only has to carry the daemon's
+tailscaled inside a VM any more, so Softnet only has to carry the engine's
 ssh). Until then VMs run on Tart's shared NAT: a VM reaches host
 services bound on 0.0.0.0 AND the other VMs of its host (sshd, published
 Docker ports), whatever the tailnet ACL says.
@@ -48,9 +48,9 @@ Docker ports), whatever the tailnet ACL says.
 ## Smaller follow-ups
 - An image registry (private ghcr) once two hosts build the same image.
 - Memory soak: a Linux VM 8 h under load, host RSS of the VM process (ENGINE.md risk 2).
-- `machines keep <vm>`: turn a temporary VM lasting (rewrite its record; the daemon reads it).
+- `machines keep <vm>`: turn a temporary VM lasting (rewrite its record; the engine reads it).
 - Delete the `machines supervise` retirement shim one release after v3.0.0 (every old per-VM agent is migrated by then).
-- A `watch` op on the daemon's socket, for the menu-bar app (round 5, N3: "a menu-bar app later is another client").
+- A `watch` op on the engine's socket, for the menu-bar app (round 5, N3: "a menu-bar app later is another client").
 - HTTPS mode: if phase B finds the app's `tailscale serve` refusing arbitrary https ports, the default of `catalog.ServicePolicy.HTTPS` becomes `path` (C350).
 - Remove the old Tailscale leftovers by hand when wanted: the `tag:station-vm` tag owner, the VM-join OAuth client, the userspace node of each host (admin console), `brew uninstall tailscale` (the formula; the app replaces it).
 - The poweroff intent over a FIFO instead of a console file, if the macOS guest's console differs.

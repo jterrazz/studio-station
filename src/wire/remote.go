@@ -24,7 +24,6 @@ import (
 	"github.com/jterrazz/studio-station/src/remote/contract"
 	"github.com/jterrazz/studio-station/src/remote/each"
 	"github.com/jterrazz/studio-station/src/remote/serve"
-	enginecmd "github.com/jterrazz/studio-station/src/surface/cli/engine"
 	engineattach "github.com/jterrazz/studio-station/src/surface/cli/engine/attach"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
@@ -178,8 +177,8 @@ func serveFrames(env kit.Env) func(ctx context.Context, in io.Reader, out io.Wri
 	}
 }
 
-func engineCommand(env kit.Env) *cobra.Command {
-	return enginecmd.Command(env, engineattach.Command(engineattach.Deps{Serve: serveFrames(env)}, env))
+func engineCommand(env kit.Env, m machine) *cobra.Command {
+	return engineNoun(env, m, engineRunCommand(env, m), engineattach.Command(engineattach.Deps{Serve: serveFrames(env)}, env))
 }
 
 // value: a run that serves frames on its stdout: nothing else of it may write there.

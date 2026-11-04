@@ -4,7 +4,7 @@
  [1;38;2;30;102;245mPower[m  [38;2;108;111;133mawake · lid · 3h 12m left[m
    [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mawake[m      [38;2;76;79;105mon[m      [38;2;76;79;105mlid · until 14:42 (4h)[m
    [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mdisplay[m    [38;2;76;79;105msleeps[m  [38;2;76;79;105mon lid close: pmset displaysleepnow (no display assertion)[m
-   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mclamshell[m  [38;2;76;79;105mheld[m    [38;2;76;79;105mreset to normal at the end, at every daemon start and quit[m
+   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mclamshell[m  [38;2;76;79;105mheld[m    [38;2;76;79;105mreset to normal at the end, at every engine start and quit[m
 
  [1;38;2;30;102;245mGuards[m  [38;2;64;160;43m3 ●[m  [38;2;223;142;29m1 ◐[m
    [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mbattery[m    [38;2;76;79;105m28% · on battery[m  [38;2;76;79;105mthe session ends at 20%[m

@@ -6,6 +6,7 @@ runs:
       stdout: |
           accounts
           config
+          engine
           help
           images
           machines
@@ -15,8 +16,6 @@ runs:
           secrets
           services
           setup
-          start
-          stop
           storage
           tailnet
           tools

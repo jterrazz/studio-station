@@ -2,7 +2,7 @@ description: 'a rerun with the same plist and the agent loaded neither bootstrap
 fixture:
     - ../../__fixtures__/vms/
     - ./__fixtures__/loaded/
-env: daemon
+env: engine
 runs:
     - command: 'setup </dev/null >/dev/null; /bin/rm -f .calls; "$STATION" setup </dev/null >/dev/null; /usr/bin/grep -c -E "bootstrap|kickstart" .calls'
       exit: 1

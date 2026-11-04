@@ -13,7 +13,7 @@ runs:
           .calls:
               equals: |
                   studio credentials delete operator:claude:oauth-token
-          .config/station/settings.json:
+          .config/station/preferences.json:
               equals: |
                   {
                     "lend_list": [

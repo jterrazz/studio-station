@@ -1,13 +1,13 @@
 description: 'with the daemon stopped power still reads and awake refuses; in a VM power is refused'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/power/
-env: daemon
+    - ../../__fixtures__/power/
+env: engine
 runs:
     - command: 'power'
       exit: 0
       stdout: |
-          ◐	awake	?	daemon stopped	station start
+          ◐	awake	?	engine stopped	station engine start
           ●	battery	80% · AC attached
           ●	low power	off
           ●	thermal	nominal
@@ -20,17 +20,17 @@ runs:
     - command: 'power awake'
       exit: 1
       stderr: |
-          Error: the station daemon is stopped on x
-          Hint: station start
+          Error: the engine is stopped on x
+          Hint: station engine start
     - command: 'power sleep'
       exit: 1
       stderr: |
-          Error: the station daemon is stopped on x
-          Hint: station start
-    - command: '--version > /dev/null; /bin/rm Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" power awake'
+          Error: the engine is stopped on x
+          Hint: station engine start
+    - command: '--version > /dev/null; /bin/rm Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" power awake'
       exit: 1
       stderr: |
-          Error: the station daemon is not installed on x
+          Error: the engine is not installed on x
           Hint: station setup
     - command: '--version > /dev/null; STATION_MACHINE_KIND=linux "$STATION" power'
       exit: 2

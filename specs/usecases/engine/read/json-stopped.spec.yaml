@@ -1,0 +1,21 @@
+description: 'a stopped engine reads as stopped, with when and by what, and the read exits 0'
+env: engine-stopped
+runs:
+    - command: 'engine --json'
+      exit: 0
+      stdout: |
+          {
+            "schema": "station.engine.read/v1",
+            "engine": {
+              "state": "stopped",
+              "version": "",
+              "up_s": 0,
+              "vms": 0,
+              "stopped_at": "{{iso8601}}",
+              "stopped_by": "the menu bar"
+            }
+          }
+    - command: 'engine'
+      exit: 0
+      stdout: |
+          ◐	engine	stopped · since 13:40 by the menu bar	station engine start

@@ -17,7 +17,7 @@ import (
 
 const memoryCap = 75
 
-var ErrDaemonDown = errors.New("the station daemon is not running")
+var ErrDaemonDown = errors.New("the engine is not running")
 
 type DaemonDownError struct {
 	Host      string
@@ -26,9 +26,9 @@ type DaemonDownError struct {
 
 func (e *DaemonDownError) Error() string {
 	if e.Installed {
-		return "the station daemon is stopped on " + e.Host
+		return "the engine is stopped on " + e.Host
 	}
-	return "the station daemon is not installed on " + e.Host
+	return "the engine is not installed on " + e.Host
 }
 
 type BadNetworkError struct {
@@ -206,7 +206,7 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 }
 
 func (s *Service) daemonUp(ctx context.Context) error {
-	_, missing := s.h.FS.Stat(catalog.DaemonPlist(s.h.Env.Home()))
+	_, missing := s.h.FS.Stat(catalog.EnginePlist(s.h.Env.Home()))
 	down := &DaemonDownError{Host: s.HereName(), Installed: missing == nil}
 	if s.daemon == nil {
 		return down

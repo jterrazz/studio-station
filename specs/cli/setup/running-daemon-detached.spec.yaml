@@ -17,7 +17,7 @@ runs:
           ◐	layout	the userspace tailscaled stops in the background	{{workdir}}/.local/state/station/logs/setup.log
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed
       files:
           .studio/tailscale/tailscaled.state: exists
           .local/state/station/logs/setup.log: exists

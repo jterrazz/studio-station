@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "stop",
+  "command": "engine stop",
   "context": {
     "kind": "host"
   },
@@ -21,12 +21,17 @@
       "items": [
         {
           "row": {
-            "id": "daemon",
+            "id": "engine",
             "mark": "ok",
-            "label": "daemon",
+            "label": "engine",
             "detail": {
-              "kind": "text",
-              "text": "already stopped"
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "the engine was already stopped"
+                }
+              ]
             }
           }
         }
@@ -41,7 +46,7 @@
   ],
   "hints": [
     {
-      "command": "station start"
+      "command": "station engine start"
     }
   ]
 }

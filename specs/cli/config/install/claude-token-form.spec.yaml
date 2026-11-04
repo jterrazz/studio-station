@@ -31,11 +31,11 @@ runs:
                   {"operator:claude:oauth-token":"sk-ant-oat01-x"}
                   studio credentials import
                   {"operator:claude:oauth-token":"sk-ant-oat01-x"}
-    - command: '--version >/dev/null; /usr/bin/jq -c .lend_list .config/station/settings.json'
+    - command: '--version >/dev/null; /usr/bin/jq -c .lend_list .config/station/preferences.json'
       exit: 0
       stdout: |
           ["operator:claude:oauth-token"]
-    - command: '--version >/dev/null; /usr/bin/grep -c sk-ant .config/station/settings.json'
+    - command: '--version >/dev/null; /usr/bin/grep -c sk-ant .config/station/preferences.json'
       exit: 1
       stdout: |
           0

@@ -6,12 +6,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/fs"
 	"maps"
 	"net"
 	"os"
+	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -44,6 +48,7 @@ import (
 	remotecontract "github.com/jterrazz/studio-station/src/remote/contract"
 	settingsfake "github.com/jterrazz/studio-station/src/settings/adapter/fake"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/world"
 )
@@ -64,7 +69,8 @@ type worldRun struct {
 	w    *world.World
 	macs map[string]*worldMac
 	// value: builds another Mac of the world: its registry, its engine.
-	far func(w *worldMac) farMac
+	far   func(w *worldMac) farMac
+	moved *moves
 }
 
 // invariant: one Mac of the world as this process sees it: its fakes over
@@ -128,8 +134,9 @@ func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
 func (m *worldMac) host(h system.Host) system.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
+	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home())}
 	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User}
-	h.Clock = worldClock{w: m.run.w}
+	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
 	return h
 }
@@ -146,7 +153,10 @@ func (m *worldMac) stores(st *stores) {
 	if slice.Preferences == nil {
 		slice.Preferences = map[string]json.RawMessage{}
 	}
-	st.prefs = corefake.PreferencesOver(slice.Preferences, m.name, m.run.w)
+	if slice.Files == nil {
+		slice.Files = map[string]string{}
+	}
+	st.prefs = corefake.PreferencesOver(slice.Preferences, m.name, m.run.w).Over(slice.Files)
 	m.run.w.Unlock()
 	w := m.run.w
 	st.machines = machinesfake.StoreOf(w, m.name)
@@ -194,14 +204,88 @@ func (m *worldMac) notifier() engine.Notifier {
 
 func (m *worldMac) engineFrom(start func() *engine.Daemon) { m.start = start }
 
+func (m *worldMac) engineVersion() string {
+	if e := m.slice().Engine; e != nil {
+		return e.Version
+	}
+	return ""
+}
+
+func (m *worldMac) engineStarted() time.Time {
+	if e := m.slice().Engine; e != nil {
+		return e.StartedAt
+	}
+	return time.Time{}
+}
+
+// invariant: a stop the owner asked is kept on the Mac's engine of the
+// world, as the real one keeps it beside its socket.
+func (m *worldMac) stopMarks() engine.StopMarks { return worldMarks{m: m} }
+
+type worldMarks struct{ m *worldMac }
+
+func (w worldMarks) Read() (engine.StopMark, bool) {
+	e := w.m.slice().Engine
+	if e == nil || e.StoppedAt.IsZero() {
+		return engine.StopMark{}, false
+	}
+	return engine.StopMark{At: e.StoppedAt, By: e.StoppedBy}, true
+}
+
+func (w worldMarks) Write(mark engine.StopMark) error {
+	w.m.run.w.Lock()
+	defer w.m.run.w.Unlock()
+	if e := w.m.run.w.Mac(w.m.name).Engine; e != nil {
+		e.StoppedAt, e.StoppedBy = mark.At, mark.By
+	}
+	return nil
+}
+
+// invariant: the engine's job definition is the job manager's file; in a
+// world it is there while the Mac's engine is set up, whatever the run's
+// home holds.
+type worldFS struct {
+	system.FS
+	m     *worldMac
+	plist string
+}
+
+func (f worldFS) Stat(p string) (fs.FileInfo, error) {
+	if p != f.plist {
+		return f.FS.Stat(p)
+	}
+	f.m.run.w.Lock()
+	mac := f.m.run.w.Mac(f.m.name)
+	set := mac.Engine != nil || mac.Jobs[catalog.EngineLabel] != nil
+	f.m.run.w.Unlock()
+	if !set {
+		return nil, &fs.PathError{Op: "stat", Path: p, Err: fs.ErrNotExist}
+	}
+	return plistInfo{name: filepath.Base(p)}, nil
+}
+
+type plistInfo struct{ name string }
+
+func (i plistInfo) Name() string     { return i.name }
+func (plistInfo) Size() int64        { return 0 }
+func (plistInfo) Mode() fs.FileMode  { return 0o644 }
+func (plistInfo) ModTime() time.Time { return time.Time{} }
+func (plistInfo) IsDir() bool        { return false }
+func (plistInfo) Sys() any           { return nil }
+
 func (m *worldMac) macs() remotecontract.EndpointDialer { return worldDialer{r: m.run} }
 
 // invariant: a Mac's engine runs in this process while the world says it
-// runs: begun at the first need of it, then stepped over the world's clock
-// until it is quiet, so a story that waits on the engine is deterministic.
+// runs, and ends once it says otherwise: begun at the first need of it,
+// then stepped over the world's clock until it is quiet, so a story that
+// waits on the engine is deterministic.
 func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 	if m.engine != nil {
-		return m.engine, true
+		if m.runs() {
+			return m.engine, true
+		}
+		m.down(false)
+		return nil, false
 	}
 	if m.start == nil && m.name != m.run.w.Here && m.run.far != nil && m.runs() {
 		m.serve()
@@ -213,7 +297,7 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 	defer func() { m.starting = false }()
 	d := m.start()
 	d.Remember(m.slice().Engine.Memory)
-	if err := d.Begin(ctx, func(string) {}); err != nil {
+	if err := d.Begin(context.WithValue(ctx, waits{}, true), func(string) {}); err != nil {
 		return nil, false
 	}
 	m.engine = d
@@ -225,7 +309,7 @@ func (m *worldMac) settle(ctx context.Context) {
 	quiet := 0
 	for n := 0; n < mostTicks && quiet < quietTicks; n++ {
 		m.tick++
-		_ = worldClock{w: m.run.w}.Sleep(ctx, time.Second)
+		_ = m.run.clock().Sleep(ctx, time.Second)
 		if m.engine.Step(ctx, m.tick) {
 			quiet = 0
 		} else {
@@ -257,21 +341,22 @@ func (m *worldMac) serve() *remotefake.Dialer {
 	if m.served == nil {
 		far := m.run.far(m)
 		m.served = remotefake.New()
-		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: Version()})
+		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: Version(), Word: func(err error) *fail.Error { return kit.Translate(err, "") }})
 		m.start = far.start
 	}
 	return m.served
 }
 
 // invariant: another Mac of the world answers while it is on the tailnet,
-// unlocked and its engine running; it is then reached as over ssh, every
-// value through the wire form.
+// unlocked and set up, its engine stopped or not, as `station engine attach`
+// answers over ssh; it is then reached as over ssh, every value through the
+// wire form.
 type worldDialer struct{ r *worldRun }
 
 func (d worldDialer) Dial(ctx context.Context, mac string) (remotecontract.Endpoint, error) {
 	d.r.w.Lock()
 	slice, ok := d.r.w.Macs[mac]
-	reach := ok && !slice.Offline && slice.EngineRuns()
+	reach := ok && !slice.Offline && !slice.Locked && slice.Engine != nil
 	d.r.w.Unlock()
 	if !reach || d.r.far == nil {
 		return nil, fail.New(fail.Unreachable, call.Unreachable, mac, nil)
@@ -289,6 +374,13 @@ func (r *worldRun) command() *cobra.Command {
 			ev, err := world.Parse(args)
 			if err != nil {
 				return err
+			}
+			if ev.Name == "edit" && len(ev.Args) == 2 {
+				text, readErr := io.ReadAll(c.InOrStdin())
+				if readErr != nil {
+					return readErr
+				}
+				ev.Args = append(ev.Args, string(text))
 			}
 			for _, name := range r.names() {
 				r.mac(name).up(c.Context())
@@ -347,7 +439,41 @@ type worldEnv struct {
 func (e worldEnv) Hostname() string { return e.here }
 func (e worldEnv) User() string     { return e.user }
 
-type worldClock struct{ w *world.World }
+// invariant: the world's clock moves only when the story moves it: a
+// command that waits, a stepped engine's tick, an advance. What an engine
+// runs in its own lifetime (a guest session's backoff) waits for the clock
+// instead of moving it, so no loop of its own runs the clock ahead.
+type worldClock struct {
+	w     *world.World
+	moved *moves
+}
+
+type waits struct{}
+
+type moves struct {
+	mu sync.Mutex
+	ch chan struct{}
+}
+
+func (r *worldRun) clock() worldClock {
+	if r.moved == nil {
+		r.moved = &moves{ch: make(chan struct{})}
+	}
+	return worldClock{w: r.w, moved: r.moved}
+}
+
+func (m *moves) next() <-chan struct{} {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.ch
+}
+
+func (m *moves) tell() {
+	m.mu.Lock()
+	close(m.ch)
+	m.ch = make(chan struct{})
+	m.mu.Unlock()
+}
 
 func (c worldClock) Now() time.Time {
 	c.w.Lock()
@@ -359,10 +485,31 @@ func (c worldClock) Sleep(ctx context.Context, d time.Duration) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	if ctx.Value(waits{}) == nil {
+		// invariant: what already runs takes its turn before the clock
+		// leaps, so a poll counts the work it waits on, not the scheduler.
+		runtime.Gosched()
+	}
 	c.w.Lock()
-	c.w.Now = c.w.Now.Add(d)
+	until := c.w.Now.Add(d)
+	if ctx.Value(waits{}) == nil {
+		c.w.Now = until
+		c.w.Unlock()
+		c.moved.tell()
+		return nil
+	}
 	c.w.Unlock()
-	return nil
+	for {
+		moved := c.moved.next()
+		if !c.Now().Before(until) {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-moved:
+		}
+	}
 }
 
 // invariant: a Mac's engine socket is its engine in this process, reached

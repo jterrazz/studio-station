@@ -56,6 +56,9 @@ type Mac struct {
 	Offline bool `json:"offline,omitempty"`
 	// value: what station keeps in this Mac's preferences, by group.
 	Preferences map[string]json.RawMessage `json:"preferences,omitempty"`
+	// value: station's own files as text, by name, while no store has read
+	// them: a file edited by hand, a file station v2 left.
+	Files map[string]string `json:"files,omitempty"`
 	// value: the images the hypervisor holds, by reference.
 	Images []string       `json:"images,omitempty"`
 	VMs    map[string]*VM `json:"vms,omitempty"`
@@ -167,9 +170,14 @@ func (m *Mac) Store() *Stores {
 }
 
 type Engine struct {
+	// value: the version the engine runs; empty is the binary's own.
 	Version string `json:"version,omitempty"`
-	// value: set up, and stopped by the owner.
-	Stopped bool `json:"stopped,omitempty"`
+	// value: when the engine that runs now started.
+	StartedAt time.Time `json:"started_at,omitzero"`
+	// value: set up, and stopped by the owner: when, and by what.
+	Stopped   bool      `json:"stopped,omitempty"`
+	StoppedAt time.Time `json:"stopped_at,omitzero"`
+	StoppedBy string    `json:"stopped_by,omitempty"`
 	// value: what the engine knows of its VMs between two commands.
 	Memory engine.Memory `json:"memory,omitempty"`
 }
