@@ -59,7 +59,11 @@ func vmCaption(o VMOverview, s *overview.Summary) []page.Value {
 	if s != nil {
 		head = s.Head
 	}
-	parts := []page.Value{pagehome.KindOn(head, o.on()), page.Text(titled(string(vm.Lifetime)))}
+	fate := titled(string(vm.Lifetime))
+	if head.Server() {
+		fate = "always on"
+	}
+	parts := []page.Value{pagehome.KindOn(head, o.on()), page.Text(fate)}
 	switch {
 	case head.Server():
 		mark := page.OK
