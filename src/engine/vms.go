@@ -371,6 +371,9 @@ func (d *Daemon) connect(ctx context.Context, v *vmState) {
 		d.mu.Unlock()
 		return
 	}
+	if d.life != nil {
+		ctx = d.life
+	}
 	gctx, cancel := context.WithCancel(ctx)
 	v.gen++
 	v.cancel, v.guest = cancel, GuestConnecting

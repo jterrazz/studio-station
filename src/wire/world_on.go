@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -63,7 +64,8 @@ type worldRun struct {
 	w    *world.World
 	macs map[string]*worldMac
 	// value: builds another Mac of the world: its registry, its engine.
-	far func(w *worldMac) farMac
+	far   func(w *worldMac) farMac
+	moved *moves
 }
 
 // invariant: one Mac of the world as this process sees it: its fakes over
@@ -127,7 +129,7 @@ func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
 func (m *worldMac) host(h system.Host) system.Host {
 	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User}
-	h.Clock = worldClock{w: m.run.w}
+	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
 	return h
 }
@@ -211,7 +213,7 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 	defer func() { m.starting = false }()
 	d := m.start()
 	d.Remember(m.slice().Engine.Memory)
-	if err := d.Begin(ctx, func(string) {}); err != nil {
+	if err := d.Begin(context.WithValue(ctx, waits{}, true), func(string) {}); err != nil {
 		return nil, false
 	}
 	m.engine = d
@@ -223,7 +225,7 @@ func (m *worldMac) settle(ctx context.Context) {
 	quiet := 0
 	for n := 0; n < mostTicks && quiet < quietTicks; n++ {
 		m.tick++
-		_ = worldClock{w: m.run.w}.Sleep(ctx, time.Second)
+		_ = m.run.clock().Sleep(ctx, time.Second)
 		if m.engine.Step(ctx, m.tick) {
 			quiet = 0
 		} else {
@@ -345,7 +347,41 @@ type worldEnv struct {
 func (e worldEnv) Hostname() string { return e.here }
 func (e worldEnv) User() string     { return e.user }
 
-type worldClock struct{ w *world.World }
+// invariant: the world's clock moves only when the story moves it: a
+// command that waits, a stepped engine's tick, an advance. What an engine
+// runs in its own lifetime (a guest session's backoff) waits for the clock
+// instead of moving it, so no loop of its own runs the clock ahead.
+type worldClock struct {
+	w     *world.World
+	moved *moves
+}
+
+type waits struct{}
+
+type moves struct {
+	mu sync.Mutex
+	ch chan struct{}
+}
+
+func (r *worldRun) clock() worldClock {
+	if r.moved == nil {
+		r.moved = &moves{ch: make(chan struct{})}
+	}
+	return worldClock{w: r.w, moved: r.moved}
+}
+
+func (m *moves) next() <-chan struct{} {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.ch
+}
+
+func (m *moves) tell() {
+	m.mu.Lock()
+	close(m.ch)
+	m.ch = make(chan struct{})
+	m.mu.Unlock()
+}
 
 func (c worldClock) Now() time.Time {
 	c.w.Lock()
@@ -358,9 +394,25 @@ func (c worldClock) Sleep(ctx context.Context, d time.Duration) error {
 		return err
 	}
 	c.w.Lock()
-	c.w.Now = c.w.Now.Add(d)
+	until := c.w.Now.Add(d)
+	if ctx.Value(waits{}) == nil {
+		c.w.Now = until
+		c.w.Unlock()
+		c.moved.tell()
+		return nil
+	}
 	c.w.Unlock()
-	return nil
+	for {
+		moved := c.moved.next()
+		if !c.Now().Before(until) {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-moved:
+		}
+	}
 }
 
 // invariant: a Mac's engine socket is its engine in this process, reached

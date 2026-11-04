@@ -96,6 +96,9 @@ type Daemon struct {
 	notifier Notifier
 	serve    func(ctx context.Context, conn io.ReadWriteCloser)
 	memory   Memory
+	// value: the engine's own lifetime, from Begin: the guest sessions it
+	// holds live in it, never in the request that started a VM.
+	life context.Context
 
 	lendMu       sync.Mutex
 	lendsAt      time.Time
@@ -206,7 +209,7 @@ func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
 	if err := d.Check(); err != nil {
 		return err
 	}
-	d.note = note
+	d.note, d.life = note, ctx
 	d.power.Reset()
 	if n := d.h.Run.Reap(ChildrenDir(d.o.State)); n > 0 {
 		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed engine left running")
