@@ -5,10 +5,10 @@ fixture:
     - ./__fixtures__/stopped-api/
 env: engine
 runs:
-    - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" tools --on api; echo "exit $?"; "$STATION" tools install jq --on api; echo "exit $?"; kill $d; wait $d'
+    - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" apps --on api; echo "exit $?"; "$STATION" apps install jq --on api; echo "exit $?"; kill $d; wait $d'
       exit: 0
       stdout: |
-          ○ api is stopped · start it to read its tools
+          ○ api is stopped · start it to read its apps
           exit 0
           exit 2
       stderr: |

@@ -1,0 +1,18 @@
+description: 'station apps gh is its detail: method, version, where it lives, its category, what it brings and keeps'
+env: two-macs
+runs:
+    - command: 'apps gh'
+      exit: 0
+      stdout: |
+          ◐	gh	2.97.0	brew	update available · station apps update gh
+          # Detail
+          method	brew
+          version	2.97.0
+          lives on	every machine
+          category	Git
+          what	GitHub CLI for repository management
+          brings	github-login
+          keeps	{cache}/gh
+          keeps	{state}/gh
+          keeps	{config}/gh/config.yml
+          keeps	{config}/gh/hosts.yml

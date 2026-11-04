@@ -4,7 +4,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
-	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
+	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 )
 
 func here() page.Context { return page.Context{Kind: "host"} }
@@ -84,11 +84,11 @@ func lateMac() []tool {
 	return out
 }
 
-func Tools() []Fixture {
+func Apps() []Fixture {
 	return []Fixture{
-		{"tools.loading", pagetools.Catalogue(reports(thisMac(), true), here())},
-		{"tools.empty", pagetools.Catalogue(nil, here())},
-		{"tools.error", pagetools.Catalogue(reports(lateMac(), false), here())},
-		{"tools.full", pagetools.Catalogue(reports(thisMac(), false), here())},
+		{"apps.loading", pageapps.List(reports(thisMac(), true), here(), false)},
+		{"apps.empty", pageapps.List(nil, here(), false)},
+		{"apps.error", pageapps.List(reports(lateMac(), false), here(), false)},
+		{"apps.full", pageapps.List(reports(thisMac(), false), here(), false)},
 	}
 }

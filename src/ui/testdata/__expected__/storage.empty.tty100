@@ -2,7 +2,7 @@
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
  Storage
-   no data stored  → station tools install <tool>
+   no data stored  → station apps install <app>
 
  → station storage clean <tool...>
  → station storage reset <tool...> asks first

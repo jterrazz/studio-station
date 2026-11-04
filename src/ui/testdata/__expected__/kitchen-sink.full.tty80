@@ -2,7 +2,7 @@
  ──────────────────────────────────────────────────────────────────────────────
 
  To do  1 ◐
-   ◐ brew  120 outdated  → station tools upgrade --via brew
+   ◐ brew  120 outdated  → station apps update --method brew
 
  Summary
    ✗ Marks  4 broken
@@ -22,7 +22,7 @@
    ● url       https://jterrazz-macbook-pro.tail1234.ts.net:40001
    ● identity  admin@jterrazz.com
    ● path      /Applications/…/Tailscale
-   ● command   → station tools upgrade --via brew
+   ● command   → station apps update --method brew
    ● list      brew · system
    ● switch    on                                                             3
    ● sip       off
@@ -30,14 +30,14 @@
 
  Marks  15 ◐  2 ○  4 ✗  1 ⊘  1 –  1 ?
    ◐ outdated              attention                   120 outdated
-     → station tools upgrade --via brew
+     → station apps update --method brew
    ◐ stray                 attention                   out of place
      → station setup
    ◐ unreachable           attention                   unreachable
    ◐ mismatch              attention  station v2.0.0-240 here v2.0.0-242
    ◐ unmanaged             attention  on PATH, not managed by cask
    ◐ missing               attention  installed, mise not installed
-     → station tools install mise
+     → station apps install mise
    ◐ partial               attention                   policy partly applied
    ◐ differs               attention                   differs from station's
      → station config install tart-launcher
@@ -60,7 +60,7 @@
    ◐ guard                 attention                   28% · on battery
      → station power
    ○ absent
-     → station tools install mas
+     → station apps install mas
    ⊘ off-here              turned off on this machine
    – not-for-this-machine  Macs only
    ? not-known             does not answer
@@ -90,4 +90,4 @@
      iphone  offline
 
  → station overview --all
- → station tools for the catalogue
+ → station apps for the catalogue

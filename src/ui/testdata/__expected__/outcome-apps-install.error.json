@@ -1,0 +1,13 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "apps install",
+  "context": {
+    "kind": "host"
+  },
+  "state": "failed",
+  "error": {
+    "message": "no app named \"jqq\"",
+    "hint": "station apps for every app here"
+  }
+}

@@ -1,0 +1,14 @@
+description: 'an agent skill installs by the skills method, only where it lives'
+env: two-macs
+runs:
+    - command: 'apps install frontend-design'
+      exit: 0
+      stdout: |
+          ●	frontend-design
+    - command: 'apps frontend-design | /usr/bin/head -4'
+      exit: 0
+      stdout: |
+          ●	frontend-design	1.0.0	skill
+          # Detail
+          method	skill
+          version	1.0.0

@@ -1,13 +1,13 @@
  station menubar                                            host · unregistered
  ──────────────────────────────────────────────────────────────────────────────
 
- To do  9 ◐  1 ✗
+ To do  7 ◐  1 ✗
    ✗ brain.x-snapshot  failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
    ◐ engine            not installed  → station setup
-   ◐ brew              120 outdated  → station tools upgrade --via brew
-   + 7 more
+   ◐ brew              120 outdated  → station apps update --method brew
+   + 5 more
 
  Fleet  2 ●  1 ◐  1 ○
    ● macbook     host       here  online   100.98.133.14

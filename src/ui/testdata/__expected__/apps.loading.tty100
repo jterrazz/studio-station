@@ -1,0 +1,31 @@
+ station apps                                                                   host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Summary
+   ● This Mac  17 apps for this machine
+
+ Reading  17 ◌
+   ◌ homebrew             script · system
+   ◌ mise                 brew · system
+   ◌ mas                  brew
+   ◌ uv                   brew
+   ◌ cocoapods            brew
+   ◌ pnpm                 brew
+   ◌ skills               bun
+   ◌ bun                  mise
+   ◌ go                   mise
+   ◌ java                 mise
+   ◌ python               mise
+   ◌ chatgpt              cask
+   ◌ claude-desktop       cask
+   ◌ typewhisper          cask
+   ◌ frontend-design      skill
+   ◌ modern-web-guidance  skill
+   ◌ better-ui            skill
+
+ Not for this machine
+   98 apps live on other machines
+
+ → station apps install <app...>
+ → station apps update
+ → station apps --all for every row

@@ -122,13 +122,13 @@
             },
             "reason": "degraded",
             "hint": {
-              "command": "station tools upgrade --via brew"
+              "command": "station apps update --method brew"
             }
           }
         },
         {
           "link": {
-            "label": "+ 7 more",
+            "label": "+ 5 more",
             "page": "home"
           }
         }
@@ -136,7 +136,7 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 9
+          "n": 7
         },
         {
           "mark": "broken",

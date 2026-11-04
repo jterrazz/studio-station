@@ -5,6 +5,7 @@ runs:
       exit: 0
       stdout: |
           accounts
+          apps
           config
           engine
           help
@@ -18,7 +19,6 @@ runs:
           setup
           storage
           tailnet
-          tools
     - command: 'completion zsh | /usr/bin/grep -c "compdef _station station"'
       exit: 0
       stdout: |

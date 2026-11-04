@@ -238,6 +238,9 @@ func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catal
 			r.Detail, r.Why, r.Needs = "installed, "+manager.Name+" not installed", WhyMissing, manager.App
 		} else {
 			r.Detail, r.Why = "on PATH, not managed by "+string(m), WhyUnmanaged
+			if s.bundled(t) {
+				r.Detail = t.Bundle + ".app in /Applications, not installed by " + string(m)
+			}
 		}
 		return r
 	}

@@ -17,11 +17,10 @@ import (
 )
 
 // invariant: the allowlist of calls-gated: the words a family's calls are
-// still named by before its v3 words land (tools.install in apps). It only
+// still named by before its v3 words land (config.install in settings). It only
 // shrinks; a word no call of its family takes fails the gate.
 func callWordsTolerated() map[string][]string {
 	return map[string][]string{
-		"apps":     {"tools"},
 		"settings": {"config", "run", "shell"},
 		"disk":     {"storage"},
 		"awake":    {"power"},

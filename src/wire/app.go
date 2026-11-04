@@ -98,7 +98,8 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 
 	commands := []*cobra.Command{
 		statusCommand(kenv, here),
-		toolsCommand(kenv, here),
+		appsCommand(kenv, here),
+		toolsAlias(kenv, here),
 		configCommand(kenv, here),
 		storageCommand(kenv, here),
 		powerCommand(kenv, here),

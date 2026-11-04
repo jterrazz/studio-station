@@ -1,0 +1,13 @@
+description: 'station apps update takes only the Update available rows, then every app is up to date'
+env: two-macs
+runs:
+    - command: 'apps update'
+      exit: 0
+      stdout: |
+          ●	ghostty
+          ●	gh
+          ●	node
+    - command: 'apps update'
+      exit: 0
+      stdout: |
+          ●	every app is up to date on This Mac

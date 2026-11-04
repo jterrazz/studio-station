@@ -8,7 +8,7 @@ runs:
       stdin: |
           see Machine
           send 2
-          see + Runtimes
+          see - Not installed
           see ? keys
           send ?
           see This tab
@@ -16,6 +16,6 @@ runs:
           see 1-7  tab
           send x
           gone This tab
-          see + Runtimes
+          see - Not installed
           send q
       exit: 0

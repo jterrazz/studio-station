@@ -21,7 +21,7 @@ runs:
           see enter fix
           screen
           send \r
-          see station tools upgrade --via brew exited 1
+          see station apps update --method brew exited 1
           send q
       exit: 0
       stdout: |4

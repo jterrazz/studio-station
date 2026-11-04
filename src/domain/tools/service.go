@@ -90,10 +90,10 @@ func (s *Service) Find(names []string) ([]catalog.Tool, error) {
 		seen[name] = true
 		t, ok := s.byName[name]
 		if !ok {
-			return nil, &UnknownToolError{Name: name}
+			return nil, &apps.UnknownError{Name: name}
 		}
 		if _, ok := t.InstallOn(s.o.Here); !ok {
-			return nil, &WrongPlaceError{Tool: name, Places: t.Places(), Here: s.o.Here}
+			return nil, &apps.ElsewhereError{App: name, Places: t.Places()}
 		}
 		found = append(found, t)
 	}
@@ -102,16 +102,26 @@ func (s *Service) Find(names []string) ([]catalog.Tool, error) {
 
 func (s *Service) CheckInstall(ctx context.Context, names []string) error {
 	found, err := s.Find(names)
-	var place *WrongPlaceError
+	var place *apps.ElsewhereError
 	if errors.As(err, &place) {
 		place.VM = s.runningVM(ctx, place.Places)
 	}
 	if err != nil {
 		return err
 	}
+	asked := map[string]bool{}
 	for _, t := range found {
-		if !s.installer(t).Can().Install {
+		asked[t.Name] = true
+	}
+	for _, t := range found {
+		inst := s.installer(t)
+		if !inst.Can().Install {
 			return &ManualInstallError{Tool: t.Name, Hint: s.install(t).Key()}
+		}
+		// invariant: an app whose method's manager is missing is refused,
+		// naming the app that brings it, unless that app is asked too.
+		if app := inst.Manager().App; !asked[app] && errors.Is(inst.Ready(ctx), contract.ErrMissing) {
+			return &apps.NeedsError{App: t.Name, Needs: app}
 		}
 	}
 	return nil

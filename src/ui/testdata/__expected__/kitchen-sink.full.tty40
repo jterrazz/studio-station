@@ -3,7 +3,7 @@
 
  To do  1 ◐
    ◐ brew  120 outdated
-     → station tools upgrade --via brew
+     → station apps update --method brew
 
  Summary
    ✗ Marks  4 broken
@@ -23,7 +23,7 @@
    ● url       https://j…
    ● identity  admin@jte…
    ● path      /App…scale
-   ● command   → station tools upgrade --via brew
+   ● command   → station apps update --method brew
    ● list      brew …
    ● switch    on                     3
    ● sip       off
@@ -31,14 +31,14 @@
 
  Marks  15 ◐  2 ○  4 ✗  1 ⊘  1 –  1 ?
    ◐ outdated              attention
-     → station tools upgrade --via brew
+     → station apps update --method brew
    ◐ stray                 attention
      → station setup
    ◐ unreachable           attention
    ◐ mismatch              attention
    ◐ unmanaged             attention
    ◐ missing               attention
-     → station tools install mise
+     → station apps install mise
    ◐ partial               attention
    ◐ differs               attention
      → station config install tart-launcher
@@ -61,7 +61,7 @@
    ◐ guard                 attention
      → station power
    ○ absent
-     → station tools install mas
+     → station apps install mas
    ⊘ off-here              turned off…
    – not-for-this-machine  Macs only
    ? not-known             does not an…
@@ -93,4 +93,4 @@
      iphone  offline
 
  → station overview --all
- → station tools for the catalogue
+ → station apps for the catalogue

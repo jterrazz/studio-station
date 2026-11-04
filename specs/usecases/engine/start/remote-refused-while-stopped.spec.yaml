@@ -13,7 +13,7 @@ runs:
     - command: 'engine --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          ◐	engine	stopped · since 10:00 by station engine stop	station engine start
+          ◐	engine	stopped · since 10:01 by station engine stop	station engine start
     - command: 'engine start --on jterrazz-mac-mini'
       exit: 0
       stdout: |

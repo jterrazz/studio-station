@@ -12,9 +12,9 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
+	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
-	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -93,11 +93,11 @@ func toolsSection(s Overview) page.Section {
 	var items []page.Item
 	for _, r := range s.Tools {
 		if r.State != catalog.StateOK {
-			row := pagetools.Row(r)
+			row := pageapps.Row(r)
 			items = append(items, page.Item{Row: &row})
 		}
 	}
-	return page.Section{ID: "tools", Title: "Tools", Columns: pagetools.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: toolCounts(s.Tools)}
+	return page.Section{ID: "tools", Title: "Tools", Columns: pageapps.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: toolCounts(s.Tools)}
 }
 
 func configSection(s Overview) page.Section {
@@ -439,10 +439,7 @@ func foldTools(rows []page.Row) []page.Row {
 		r := page.Row{ID: string(k.reason) + "/" + k.fix, Label: "tools", Mark: page.Attention, Reason: k.reason, Hint: g[0].Hint}
 		switch k.reason {
 		case page.Missing:
-			r.Detail = page.Count(n, "wait for "+strings.TrimPrefix(k.fix, "station tools install "))
-		case page.Unmanaged:
-			r.Detail = page.Count(n, "on PATH, not managed by their method")
-			r.Hint = page.Cmd("station tools")
+			r.Detail = page.Count(n, "wait for "+strings.TrimPrefix(k.fix, "station apps install "))
 		default:
 			r.Detail = page.Count(n, string(k.reason))
 		}

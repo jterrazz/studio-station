@@ -1,0 +1,32 @@
+description: 'station tools and its verbs run station apps and its verbs, and say the new words on stderr'
+env: two-macs
+runs:
+    - command: 'tools | /usr/bin/head -1'
+      exit: 0
+      stdout: |
+          # Updates	3 ◐
+      stderr: |
+          → now: station apps
+    - command: 'tools install fd'
+      exit: 0
+      stdout: |
+          ●	fd
+      stderr: |
+          → now: station apps install fd
+    - command: 'tools uninstall fd --yes'
+      exit: 0
+      stdout: |
+          ●	fd
+      stderr: |
+          → now: station apps remove --yes fd
+    - command: 'tools upgrade --via brew'
+      exit: 0
+      stdout: |
+          ●	ghostty
+          ●	gh
+      stderr: |
+          → now: station apps update --method brew
+    - command: 'tools --json | /usr/bin/jq -r .schema'
+      exit: 0
+      stdout: |
+          station.apps.list/v1

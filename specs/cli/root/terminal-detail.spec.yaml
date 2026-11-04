@@ -8,15 +8,15 @@ runs:
       stdin: |
           see Machine
           send 2
-          see + Runtimes
+          see - Not installed
           send /bat\r
           see ○ bat
           send \x1b[B
           send \r
-          see category
+          see method
           screen
           send \x1b
-          gone category
+          gone method
           see ○ bat
           send q
       exit: 0
@@ -26,9 +26,9 @@ runs:
            / bat
            bat                                                                         ○
              method    brew
-             category  CLI Tools
-             fix       station tools install bat
-             keys      i install  u uninstall  U upgrade
+             category  Not installed
+             fix       station apps install bat
+             keys      i install  x remove  u update
 
 
 
@@ -44,4 +44,4 @@ runs:
 
 
 
-           esc back  ↑↓ move  i install  u uninstall  U upgrade  enter detail  ? keys
+           esc back  ↑↓ move  i install  x remove  u update  enter detail  ? keys

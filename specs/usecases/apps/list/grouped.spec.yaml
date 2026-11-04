@@ -1,0 +1,17 @@
+description: 'station apps on a terminal sums This Mac first, then Updates, Not installed and OK folded, and counts what lives elsewhere'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 100x200 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" apps | /usr/bin/grep -e "This Mac" -e "Updates" -e "Not installed" -e "OK " -e "live on other machines"'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |4
+             ◐ This Mac  108 apps for this machine · 3 updates · 100 not installed
+           Updates  3 ◐
+           Not installed  100 ○
+           OK  5 ●
+             7 apps live on other machines

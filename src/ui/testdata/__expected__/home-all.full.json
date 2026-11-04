@@ -86,7 +86,7 @@
             },
             "reason": "degraded",
             "hint": {
-              "command": "station tools upgrade --via brew"
+              "command": "station apps update --method brew"
             }
           }
         },
@@ -117,17 +117,17 @@
         },
         {
           "row": {
-            "id": "tools/missing/station tools install mise",
+            "id": "tools/better-ui",
             "mark": "attention",
-            "label": "tools",
+            "label": "better-ui",
             "detail": {
-              "kind": "count",
-              "n": 4,
-              "unit": "wait for mise"
+              "kind": "text",
+              "text": "update available"
             },
-            "reason": "missing",
+            "reason": "outdated",
             "hint": {
-              "command": "station tools install mise"
+              "command": "station apps update better-ui",
+              "key": "u"
             }
           }
         },
@@ -170,30 +170,6 @@
         },
         {
           "row": {
-            "id": "tools/chatgpt",
-            "mark": "attention",
-            "label": "chatgpt",
-            "detail": {
-              "kind": "text",
-              "text": "on PATH, not managed by cask"
-            },
-            "reason": "unmanaged"
-          }
-        },
-        {
-          "row": {
-            "id": "tools/better-ui",
-            "mark": "attention",
-            "label": "better-ui",
-            "detail": {
-              "kind": "text",
-              "text": "outdated"
-            },
-            "reason": "outdated"
-          }
-        },
-        {
-          "row": {
             "id": "background/com.docker.socket",
             "mark": "attention",
             "label": "com.docker.socket",
@@ -212,7 +188,7 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 10
+          "n": 8
         },
         {
           "mark": "broken",
@@ -724,7 +700,7 @@
             },
             "reason": "degraded",
             "hint": {
-              "command": "station tools upgrade --via brew"
+              "command": "station apps update --method brew"
             }
           }
         },
@@ -1215,7 +1191,7 @@
               "kind": "none"
             },
             "hint": {
-              "command": "station tools install mise",
+              "command": "station apps install mise",
               "key": "i"
             }
           }
@@ -1243,7 +1219,7 @@
               "kind": "none"
             },
             "hint": {
-              "command": "station tools install mas",
+              "command": "station apps install mas",
               "key": "i"
             }
           }
@@ -1251,7 +1227,7 @@
         {
           "row": {
             "id": "bun",
-            "mark": "attention",
+            "mark": "unknown",
             "label": "bun",
             "cells": [
               {
@@ -1273,14 +1249,14 @@
             },
             "reason": "missing",
             "hint": {
-              "command": "station tools install mise"
+              "command": "station apps install mise"
             }
           }
         },
         {
           "row": {
             "id": "go",
-            "mark": "attention",
+            "mark": "unknown",
             "label": "go",
             "cells": [
               {
@@ -1302,14 +1278,14 @@
             },
             "reason": "missing",
             "hint": {
-              "command": "station tools install mise"
+              "command": "station apps install mise"
             }
           }
         },
         {
           "row": {
             "id": "java",
-            "mark": "attention",
+            "mark": "unknown",
             "label": "java",
             "cells": [
               {
@@ -1332,14 +1308,14 @@
             },
             "reason": "missing",
             "hint": {
-              "command": "station tools install mise"
+              "command": "station apps install mise"
             }
           }
         },
         {
           "row": {
             "id": "python",
-            "mark": "attention",
+            "mark": "unknown",
             "label": "python",
             "cells": [
               {
@@ -1362,14 +1338,14 @@
             },
             "reason": "missing",
             "hint": {
-              "command": "station tools install mise"
+              "command": "station apps install mise"
             }
           }
         },
         {
           "row": {
             "id": "chatgpt",
-            "mark": "attention",
+            "mark": "unknown",
             "label": "chatgpt",
             "cells": [
               {
@@ -1415,7 +1391,7 @@
               "kind": "none"
             },
             "hint": {
-              "command": "station tools install typewhisper",
+              "command": "station apps install typewhisper",
               "key": "i"
             }
           }
@@ -1445,7 +1421,7 @@
             },
             "reason": "missing",
             "hint": {
-              "command": "station tools install skills"
+              "command": "station apps install skills"
             }
           }
         },
@@ -1470,9 +1446,13 @@
             ],
             "detail": {
               "kind": "text",
-              "text": "outdated"
+              "text": "update available"
             },
-            "reason": "outdated"
+            "reason": "outdated",
+            "hint": {
+              "command": "station apps update better-ui",
+              "key": "u"
+            }
           }
         }
       ],
@@ -1564,7 +1544,7 @@
         "machine/engine",
         "environment/brew",
         "workspace/strays",
-        "tools/missing/station tools install mise",
+        "tools/better-ui",
         "config/power"
       ],
       "mutates": true

@@ -262,7 +262,7 @@
             ],
             "reason": "missing",
             "hint": {
-              "command": "station tools install tailscale"
+              "command": "station apps install tailscale"
             }
           }
         }

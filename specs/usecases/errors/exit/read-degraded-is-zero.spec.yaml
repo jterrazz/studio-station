@@ -14,7 +14,7 @@ runs:
       stdout: |
           ●	jterrazz-macbook-pro	host			online	-	2 VMs
           ○	api	linux	jterrazz-macbook-pro	lasting	stopped	-	4 cpus · 8 GB · 50.0 GB
-          ●	linux-1	linux	jterrazz-macbook-pro	temporary	running	-	4 cpus · 8 GB · 50.0 GB
+          ●	linux-1	linux	jterrazz-macbook-pro	temporary	running	192.168.64.5	4 cpus · 8 GB · 50.0 GB
     - command: 'services'
       exit: 0
       stdout: |

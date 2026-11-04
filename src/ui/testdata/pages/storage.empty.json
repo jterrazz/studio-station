@@ -39,7 +39,7 @@
           "empty": {
             "noun": "data stored",
             "hint": {
-              "command": "station tools install <tool>"
+              "command": "station apps install <app>"
             }
           }
         }

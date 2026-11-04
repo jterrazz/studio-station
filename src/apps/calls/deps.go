@@ -25,5 +25,5 @@ type Apps interface {
 }
 
 func All(d Deps) []call.Handler {
-	return []call.Handler{call.BindWatch(List, d), call.Bind(Install, d), call.Bind(Uninstall, d), call.Bind(Upgrade, d)}
+	return []call.Handler{call.BindWatch(List, d), call.Bind(Show, d), call.Bind(Install, d), call.Bind(Update, d), call.Bind(Remove, d)}
 }

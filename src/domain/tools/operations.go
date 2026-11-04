@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 
+	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
@@ -12,7 +13,7 @@ import (
 const (
 	verbInstall   = "install"
 	verbUninstall = "uninstall"
-	verbUpgrade   = "upgrade"
+	verbUpdate    = "update"
 )
 
 func (s *Service) Install(ctx context.Context, r InstallRequest) ([]Outcome, error) {
@@ -28,7 +29,7 @@ func (s *Service) Install(ctx context.Context, r InstallRequest) ([]Outcome, err
 	for _, t := range requested {
 		for _, dep := range s.requirements(t) {
 			if !inRequest[dep] && !installed(states[dep]) {
-				return nil, &MissingDependencyError{Tool: t.Name, Requires: dep}
+				return nil, &apps.NeedsError{App: t.Name, Needs: dep}
 			}
 		}
 	}
@@ -88,12 +89,13 @@ func (s *Service) Uninstall(ctx context.Context, names []string) ([]Outcome, err
 		return nil, err
 	}
 	states := s.states(ctx, requested)
-	out := make([]Outcome, 0, len(requested))
 	for _, t := range requested {
 		if !installed(states[t.Name]) {
-			out = append(out, Outcome{Name: t.Name, Verb: verbUninstall, Result: catalog.StateAbsent, Detail: "not installed"})
-			continue
+			return nil, &apps.NotInstalledError{App: t.Name}
 		}
+	}
+	out := make([]Outcome, 0, len(requested))
+	for _, t := range requested {
 		out = append(out, s.run(ctx, verbUninstall, t, contract.Installer.Remove))
 	}
 	return out, nil
@@ -134,14 +136,16 @@ func (s *Service) Upgrade(ctx context.Context, r UpgradeRequest) ([]Outcome, err
 	var outcomes []Outcome
 	var bundled, single []catalog.Tool
 	for _, t := range candidates {
-		state := reports[t.Name].State
-		upgradable := state == catalog.StateOK || (len(r.Names) > 0 && state == catalog.StateDegraded)
+		// invariant: a bare update and a method's update take the Update
+		// available rows only; a named app is updated whenever it is installed.
+		state := apps.StateOf(reports[t.Name])
+		upgradable := state == apps.UpdateAvailable || (len(r.Names) > 0 && state.Installed())
 		switch {
 		case reports[t.Name].Detail == DetailAppStore && len(r.Names) > 0:
-			outcomes = append(outcomes, Outcome{Name: t.Name, Verb: verbUpgrade, Result: catalog.StateAbsent, Detail: "the App Store updates it"})
+			outcomes = append(outcomes, Outcome{Name: t.Name, Verb: verbUpdate, Result: catalog.StateAbsent, Detail: "the App Store updates it"})
 		case reports[t.Name].Detail == DetailAppStore:
 		case !upgradable && len(r.Names) > 0:
-			outcomes = append(outcomes, Outcome{Name: t.Name, Verb: verbUpgrade, Result: catalog.StateAbsent, Detail: "not installed: station tools install " + t.Name})
+			return nil, &apps.NotInstalledError{App: t.Name}
 		case !upgradable:
 		case s.isLined(t):
 			bundled = append(bundled, t)
@@ -150,10 +154,10 @@ func (s *Service) Upgrade(ctx context.Context, r UpgradeRequest) ([]Outcome, err
 		}
 	}
 	if len(bundled) > 0 {
-		outcomes = append(outcomes, s.bundle(ctx, verbUpgrade, bundled, true)...)
+		outcomes = append(outcomes, s.bundle(ctx, verbUpdate, bundled, true)...)
 	}
 	for _, t := range single {
-		outcomes = append(outcomes, s.run(ctx, verbUpgrade, t, contract.Installer.Update))
+		outcomes = append(outcomes, s.run(ctx, verbUpdate, t, contract.Installer.Update))
 	}
 	return outcomes, nil
 }
@@ -193,7 +197,7 @@ func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, 
 		failure = s.failed(verb, list, err)
 	}
 	out := make([]Outcome, 0, len(list))
-	if verb == verbUpgrade {
+	if verb == verbUpdate {
 		for _, t := range list {
 			o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
 			if failure != "" {
@@ -364,5 +368,5 @@ func (s *Service) RemoveFormula(ctx context.Context, formula string) error {
 			return s.o.Installers[old.Method()].Remove(ctx, []catalog.Install{old}, nil)
 		}
 	}
-	return &UnknownToolError{Name: formula}
+	return &apps.UnknownError{Name: formula}
 }

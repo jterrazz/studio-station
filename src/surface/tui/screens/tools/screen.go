@@ -11,7 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
-	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
+	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
@@ -37,7 +37,7 @@ func New(ctx context.Context, d Deps, here page.Context, describe tab.Describe) 
 		}
 		return tab.Values(call.Follow(ctx, d.Calls, d.Target, appscalls.List, appscalls.ListIn{}, nil))
 	}
-	build := func(r []apps.Report) page.Page { return pagetools.Catalogue(r, here) }
+	build := func(r []apps.Report) page.Page { return pageapps.List(r, here, false) }
 	return Model{View: tab.NewView(ID, "Tools", "tools", here, source, build, describe), ctx: ctx, d: d}
 }
 
@@ -52,7 +52,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 	if ev.Action.Confirm != nil {
 		verb = ev.Action.Confirm.Yes
 	}
-	run := tab.Confirmed(ID, pagetools.Confirm(verb, name), func(answer string) (tab.Status, error) { return m.run(key, name, answer) })
+	run := tab.Confirmed(ID, pageapps.Confirm(verb, name), func(answer string) (tab.Status, error) { return m.run(key, name, answer) })
 	var act tea.Cmd
 	m.View, act = m.Act(run)
 	return m, tea.Batch(cmd, act)
@@ -61,15 +61,15 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 func (m Model) run(key, name, answer string) (tab.Status, error) {
 	names := []string{name}
 	switch key {
-	case pagetools.KeyInstall:
+	case pageapps.KeyInstall:
 		outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Install, appscalls.InstallIn{Names: names, Interactive: true}, nil)
 		return outcome("installed", name, outcomes), err
-	case pagetools.KeyUninstall:
-		outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Uninstall, appscalls.UninstallIn{Names: names, Confirm: answer}, nil)
-		return outcome("uninstalled", name, outcomes), err
+	case pageapps.KeyRemove:
+		outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Remove, appscalls.RemoveIn{Names: names, Confirm: answer}, nil)
+		return outcome("removed", name, outcomes), err
 	}
-	outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Upgrade, appscalls.UpgradeIn{Names: names}, nil)
-	return outcome("upgraded", name, outcomes), err
+	outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Update, appscalls.UpdateIn{Names: names}, nil)
+	return outcome("updated", name, outcomes), err
 }
 
 // value: the status bar names the tool asked for; a Then step that failed

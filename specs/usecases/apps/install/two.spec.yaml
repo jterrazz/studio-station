@@ -1,0 +1,13 @@
+description: 'station apps install fd eza installs both by their method, and the list then holds them'
+env: two-macs
+runs:
+    - command: 'apps install fd eza'
+      exit: 0
+      stdout: |
+          ●	fd
+          ●	eza
+    - command: 'apps | /usr/bin/grep -e "	fd	" -e "	eza	"'
+      exit: 0
+      stdout: |
+          ●	eza	1.0.0	brew
+          ●	fd	1.0.0	brew

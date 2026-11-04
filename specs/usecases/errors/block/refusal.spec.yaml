@@ -6,11 +6,11 @@ runs:
       stderr: |
           Error: unknown machine "nope"
           Hint: run station machines for the fleet
-    - command: 'tools install'
+    - command: 'apps install'
       exit: 2
       stderr: |
-          Error: station tools install needs a tool
-          Hint: station tools install <tool>
+          Error: station apps install needs an app
+          Hint: station apps install <app>
     - command: 'overview --nope'
       exit: 2
       stderr: |

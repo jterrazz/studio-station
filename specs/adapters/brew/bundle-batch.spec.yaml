@@ -3,7 +3,7 @@ fixture:
     - ../../__fixtures__/stubs/
     - ../__fixtures__/bundle-batch/
 runs:
-    - command: 'tools install bat ghostty'
+    - command: 'apps install bat ghostty'
       exit: 0
       stdout: |
           ●	bat

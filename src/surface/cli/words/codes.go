@@ -1,6 +1,7 @@
 package words
 
 import (
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
@@ -29,7 +30,7 @@ func Codes() map[fail.Code]Wording {
 			if why := e.Detail["why"]; why != "" {
 				return why, "run station overview for what " + e.Subject + " has"
 			}
-			return "a " + e.Detail["kind"] + " has no " + e.Detail["section"] + " section", "run station overview for what " + e.Subject + " has"
+			return e.Subject + " is a " + e.Detail["kind"] + ": station does not manage its " + e.Detail["section"], "run station overview for what " + e.Subject + " has"
 		},
 		call.BadInput: func(e *fail.Error) (string, string) {
 			return e.Subject + " cannot read its input", "check the request against " + e.Detail["in"]
@@ -48,6 +49,25 @@ func Codes() map[fail.Code]Wording {
 		},
 		enginecalls.StartFailed: func(e *fail.Error) (string, string) {
 			return "the engine did not start: " + e.Detail["last"], "station engine"
+		},
+		appscalls.Unknown: func(e *fail.Error) (string, string) {
+			return "no app named \"" + e.Subject + "\"", "station apps for every app here"
+		},
+		appscalls.Elsewhere: func(e *fail.Error) (string, string) {
+			hint := "station apps install " + e.Subject + " --on <mac>"
+			switch {
+			case e.Detail["vm"] != "":
+				hint = "station apps install " + e.Subject + " --on " + e.Detail["vm"]
+			case e.Detail["lives"] != "Macs only":
+				hint = "station machines create"
+			}
+			return e.Subject + " lives on " + e.Detail["lives"], hint
+		},
+		appscalls.Needs: func(e *fail.Error) (string, string) {
+			return e.Subject + " needs " + e.Detail["needs"] + ", which is not installed", "station apps install " + e.Detail["needs"]
+		},
+		appscalls.NotInstalled: func(e *fail.Error) (string, string) {
+			return e.Subject + " is not installed", "station apps install " + e.Subject
 		},
 		call.FarTooOld: func(e *fail.Error) (string, string) {
 			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"

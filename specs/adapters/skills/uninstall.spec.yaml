@@ -4,7 +4,7 @@ fixture:
     - ../../__fixtures__/skills-cli/
     - ../../__fixtures__/skill-lock/
 runs:
-    - command: 'tools uninstall frontend-design --yes'
+    - command: 'apps remove frontend-design --yes'
       exit: 0
       stdout: |
           ●	frontend-design
