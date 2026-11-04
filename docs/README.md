@@ -35,7 +35,7 @@
 | [Machines](reference/machines.md)                 | Hosts, VMs, lifetimes, `--on`, the tailnet, ssh, the engine, the round-5 migration        |
 | [Services](reference/services.md)                 | What a VM listens on: leases, publication, HTTPS, profiles, the engine protocol           |
 | [Images](reference/images.md)                     | The VM images, the recipe, the binary inside                                              |
-| [Secrets](reference/secrets.md)                   | Kept, lent and bound secrets; Claude and studio in a VM                                   |
+| [Secrets](reference/secrets.md)                   | Kept, shared and bound secrets; sharing accounts with a VM; Claude and studio in a VM     |
 | [Configuration](reference/configuration.md)       | The config items, `preferences.json`, the environment variables                           |
 | [Tools and skills](reference/tools-and-skills.md) | The catalogue, the method table, mise, skills as tools, the toolbelt                      |
 | [Dotfiles](reference/dotfiles.md)                 | The embedded application configs and the `~/.zshrc` block                                 |
