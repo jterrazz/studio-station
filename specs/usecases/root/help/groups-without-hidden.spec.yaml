@@ -20,7 +20,6 @@ runs:
           overview
           power
           run
-          secrets
           services
           settings
           tailnet

@@ -40,7 +40,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 	registry, err := call.NewRegistry(
 		activitycalls.All(activitycalls.Deps{Meter: sections.Meter}),
 		overviewcalls.All(sections),
-		accountscalls.All(accountscalls.Deps{Accounts: m.accounts(), Secrets: m.secrets(), Kind: kind}),
+		accountscalls.All(accountscalls.Deps{Accounts: m.accounts(), Shares: m.secrets(), Kind: kind}),
 		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
 		awakecalls.All(awakecalls.Deps{Power: awakePower{m.power()}}),
 		diskcalls.All(diskcalls.Deps{Disk: m.storage(env), Kind: kind}),

@@ -329,10 +329,17 @@ runs:
     - command: 'secrets'
       exit: 0
       stdout: |
-          # Lend list
+          ○	github	not signed in			gh not on PATH	station apps install gh
+          ○	npm	not signed in			npm not on PATH
+          ○	claude	not signed in			claude not on PATH
+          ●	tailscale	signed in
+          ○	cloudflare	not signed in			wrangler not on PATH
+          ○	git	not signed in			git not on PATH
+          ○	ssh	not signed in			ssh-add not on PATH
+          # Shared with VMs
           	none
-          # Kept
-          	none
+      stderr: |
+          → now: station accounts
     - command: 'services'
       exit: 0
       stdout: |
@@ -376,7 +383,7 @@ runs:
     - command: 'secrets --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
-          {"kept":[],"lend_list":[],"lends":{},"lent":{},"schema":"station.secrets/v1"}
+          {"accounts":[{"detail":"gh not on PATH","fix":"station apps install gh","label":"GitHub","name":"github","shareable":true,"state":"not-signed-in"},{"detail":"npm not on PATH","label":"npm","name":"npm","shareable":false,"state":"not-signed-in"},{"detail":"claude not on PATH","label":"Claude","name":"claude","shareable":true,"state":"not-signed-in"},{"label":"Tailscale","name":"tailscale","shareable":false,"state":"signed-in"},{"detail":"wrangler not on PATH","label":"Cloudflare","name":"cloudflare","shareable":false,"state":"not-signed-in"},{"detail":"git not on PATH","label":"git","name":"git","shareable":false,"state":"not-signed-in"},{"detail":"ssh-add not on PATH","label":"ssh","name":"ssh","shareable":false,"state":"not-signed-in"}],"machine":{"kind":"mac","name":"x"},"schema":"station.accounts.list/v1","share_list":["session:*","operator:claude:oauth-token"],"shares":[]}
     - command: 'services --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |

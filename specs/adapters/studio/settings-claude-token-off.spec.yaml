@@ -17,7 +17,7 @@ runs:
           .config/station/preferences.json:
               equals: |
                   {
-                    "lend_list": [
+                    "share_list": [
                       "session:a"
                     ],
                     "off_here": [

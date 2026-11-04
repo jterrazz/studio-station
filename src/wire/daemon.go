@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/accounts"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,7 +60,14 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
 		Notifier: notifier,
 	})
-	lends.s = m.secretsVia(d)
+	lends.s = m.secretsVia(d, func(_ context.Context, vm string) (bool, error) {
+		for _, v := range d.VMs() {
+			if v.Name == vm {
+				return v.State == engine.StateRunning, nil
+			}
+		}
+		return false, nil
+	})
 	d.Host(m.engineServer(d, registry))
 	return d
 }
@@ -101,21 +109,15 @@ func retiredDaemonCommand(env kit.Env, m machine) *cobra.Command {
 
 type daemonLends struct{ s *secrets.Service }
 
-func (l *daemonLends) Held() (map[string][]engine.Lend, error) {
-	held, err := l.s.Lends()
-	out := make(map[string][]engine.Lend, len(held))
-	for vm, list := range held {
-		for _, x := range list {
-			out[vm] = append(out[vm], engine.Lend{Name: x.Name, Until: x.Until})
-		}
-	}
-	return out, err
+func (l *daemonLends) Held() (map[string][]accounts.Share, error) {
+	return l.s.Shares(context.Background())
 }
 
-func (l *daemonLends) Recall(ctx context.Context, from string, names []string) error {
-	_, err := l.s.Recall(ctx, from, names)
-	return err
+func (l *daemonLends) Expire(ctx context.Context, vm string, names []string) error {
+	return l.s.Expire(ctx, vm, names)
 }
+
+func (l *daemonLends) Forget(ctx context.Context, vm string) error { return l.s.Forget(ctx, vm) }
 
 type hostDaemon struct{ c engineAPI }
 

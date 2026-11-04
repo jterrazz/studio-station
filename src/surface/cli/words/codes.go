@@ -4,7 +4,10 @@ import (
 	"cmp"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
@@ -80,6 +83,41 @@ func Codes() map[fail.Code]Wording {
 		},
 		appscalls.NotInstalled: func(e *fail.Error) (string, string) {
 			return e.Subject + " is not installed", "station apps install " + e.Subject
+		},
+		accountscalls.Unknown: func(e *fail.Error) (string, string) {
+			return "no account named \"" + e.Subject + "\"", "station accounts"
+		},
+		accountscalls.NotShareable: func(e *fail.Error) (string, string) {
+			return e.Subject + " is not on the share list", "the share list is share_list in ~/.config/station/preferences.json"
+		},
+		accountscalls.NotSignedIn: func(e *fail.Error) (string, string) {
+			hint := "station accounts"
+			if e.Subject == catalog.ProviderClaude {
+				hint = "station settings apply claude-token"
+			}
+			return accounts.Label(e.Subject) + " is not signed in on " + e.Detail["mac"], hint
+		},
+		accountscalls.NotShared: func(e *fail.Error) (string, string) {
+			return accounts.Label(e.Subject) + " is not shared with " + e.Detail["vm"], "station accounts"
+		},
+		accountscalls.Unreadable: func(e *fail.Error) (string, string) {
+			if e.Detail["log"] == "" {
+				return accounts.Label(e.Subject) + " could not be read on " + e.Detail["mac"], "station accounts"
+			}
+			return accounts.Label(e.Subject) + " could not be read on " + e.Detail["mac"], "why is kept in " + e.Detail["log"]
+		},
+		accountscalls.VMStopped: func(e *fail.Error) (string, string) {
+			return e.Subject + " is stopped", "station machines start " + e.Subject
+		},
+		accountscalls.UnknownVM: func(e *fail.Error) (string, string) {
+			return "no machine named \"" + e.Subject + "\"", "station machines"
+		},
+		accountscalls.OtherMac: func(e *fail.Error) (string, string) {
+			mac := cmp.Or(e.Detail["label"], e.Detail["mac"])
+			return e.Subject + " is on " + mac + ": share from " + mac + "'s accounts", "station accounts share " + e.Detail["account"] + " --with " + e.Subject + " --on " + mac
+		},
+		accountscalls.ToServer: func(e *fail.Error) (string, string) {
+			return e.Subject + " is a server: station shares no account with it", "give it its secrets with your own tooling"
 		},
 		settingscalls.Unknown: func(e *fail.Error) (string, string) {
 			return "no setting named \"" + e.Subject + "\"", "station settings"

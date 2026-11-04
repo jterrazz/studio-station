@@ -283,6 +283,50 @@
                     "~/.ssh/known_hosts": 100000,
                     "~/.gnupg/pubring.kbx": 200000
                 }
+            },
+            "identities": {
+                "github": {
+                    "State": "ok",
+                    "Who": ["jterrazz"],
+                    "Scopes": ["read:org", "repo"]
+                },
+                "npm": {
+                    "State": "broken",
+                    "Reason": "refused",
+                    "Who": ["?"],
+                    "Detail": "token refused"
+                },
+                "claude": {
+                    "State": "ok",
+                    "Who": ["admin@jterrazz.com"],
+                    "Scopes": ["max"]
+                },
+                "tailscale": {
+                    "State": "ok"
+                },
+                "cloudflare": {
+                    "State": "ok",
+                    "Who": ["admin@jterrazz.com"],
+                    "Source": "wrangler"
+                },
+                "git": {
+                    "State": "ok",
+                    "Who": ["Jean-Baptiste Terrazzoni", "admin@jterrazz.com"]
+                },
+                "ssh": {
+                    "State": "ok",
+                    "Who": ["1 key"],
+                    "Scopes": ["admin@jterrazz.com"]
+                },
+                "docker": {
+                    "State": "absent",
+                    "Reason": "unset",
+                    "Detail": "not signed in"
+                }
+            },
+            "secrets": {
+                "session:github": "fake-session-github-of-this-mac",
+                "operator:claude:oauth-token": "fake-claude-token-of-this-mac"
             }
         },
         "jterrazz-mac-mini": {
@@ -360,6 +404,16 @@
                     "~/.claude/projects/x": 2000000000,
                     "~/go/pkg/mod/cache/x": 2300000000
                 }
+            },
+            "identities": {
+                "github": {
+                    "State": "ok",
+                    "Who": ["jterrazz-agent"],
+                    "Scopes": ["repo"]
+                }
+            },
+            "secrets": {
+                "session:github": "fake-session-github-of-the-mini"
             }
         },
         "linux-1": {
@@ -383,6 +437,21 @@
                     "~/.cache/go-build/x": 1200000000,
                     "~/.cache/npm/x": 300000000
                 }
+            },
+            "identities": {
+                "github": {
+                    "State": "ok",
+                    "Who": ["jterrazz"],
+                    "Scopes": ["repo"]
+                },
+                "git": {
+                    "State": "ok",
+                    "Who": ["jterrazz"]
+                }
+            },
+            "secrets": {
+                "session:github": "fake-session-github-of-this-mac",
+                "operator:claude:oauth-token": "fake-claude-token-of-this-mac"
             }
         },
         "infra": {

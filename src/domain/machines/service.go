@@ -122,7 +122,6 @@ type VMRecord struct {
 	Want, Network        string
 	Env                  map[string]string
 	Resources            Resources
-	Lent                 []string
 	CreatedAt            time.Time
 }
 

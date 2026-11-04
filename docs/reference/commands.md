@@ -2,23 +2,23 @@
 
 Every command of `station`, grouped as `station --help` groups them. The words are the [Glossary](../concepts/glossary.md)'s.
 
-| Section        | Answers                                                |
-| -------------- | ------------------------------------------------------ |
-| Rules          | What holds for every command                           |
-| Here           | `overview`, `apps`, `settings`, `disk`                 |
-| The fleet      | `machines`, `services`, `images`, `secrets`, `tailnet` |
-| Shortcuts      | `run git` and `run docker`                             |
-| The binary     | `setup`, `--version`, `help`                           |
-| Hidden aliases | The v2 words that still run, for one release           |
-| Plumbing       | The hidden commands the machine runs for itself        |
-| Exit codes     | What 0, 1, 2 and 130 mean                              |
+| Section        | Answers                                                 |
+| -------------- | ------------------------------------------------------- |
+| Rules          | What holds for every command                            |
+| Here           | `overview`, `apps`, `settings`, `disk`                  |
+| The fleet      | `machines`, `services`, `images`, `accounts`, `tailnet` |
+| Shortcuts      | `run git` and `run docker`                              |
+| The binary     | `setup`, `--version`, `help`                            |
+| Hidden aliases | The v2 words that still run, for one release            |
+| Plumbing       | The hidden commands the machine runs for itself         |
+| Exit codes     | What 0, 1, 2 and 130 mean                               |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `services`, `tailnet`, `secrets`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `services`, `tailnet`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
 - Bare `station` opens the TUI on a terminal; piped, or with `--all` or `--json`, it prints `station overview`, exit 0.
-- A bare noun lists (`apps`, `settings`, `disk`, `machines`, `services`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
+- A bare noun lists (`apps`, `settings`, `disk`, `machines`, `services`, `images`, `accounts`, `tailnet`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create api --permanent`).
 - The same verbs everywhere: `install`, `uninstall`, `upgrade`, except where a family has taken its v3 words (`apps`: `install`, `update`, `remove`). The only other words are the [hidden aliases](#hidden-aliases).
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
@@ -130,25 +130,15 @@ station images delete <image>[@<version>] [--yes]
 
 A bare `build` builds every image that is missing or whose recipe changed; a bare `update` updates every image this Mac holds. An image the catalogue does not hold is `no image "debian"` (exit 2). See [Images](images.md).
 
-### `station secrets`
-
-```sh
-station secrets [--json] # the lend list and what was lent where, names only
-station secrets allow <name...>
-station secrets disallow <name...> [--yes]
-station secrets lend --to <vm> [<name...>] [--for <duration>] # 12h by default, 1m to 7d
-station secrets recall --from <vm> [<name...>]
-```
-
-See [Secrets](secrets.md).
-
 ### `station accounts`
 
 ```sh
-station accounts [--json] # who has access to what, here and in this host's VMs
+station accounts [--all-machines] [--json] # who has access to what here, then the shares with VMs
+station accounts share <account> --with <vm> [--for <duration>] # 12h by default, 1m to 7d
+station accounts take-back <account> --from <vm> [--yes]
 ```
 
-One group per machine: this host's GitHub, npm, Claude, Tailscale, Cloudflare, git, ssh and Docker rights, then each VM's, read inside it by its guest, with the lends its record holds (`lent`, until when). Identities and scopes only: no token, cookie or key body is ever read into a value, and anything shaped like one reads `?`. Piped, one record per account: mark, machine, provider, identity, origin, scope, until (RFC 3339), detail, hint. See [Secrets](secrets.md#accounts).
+This Mac's GitHub, npm, Claude, Tailscale, Cloudflare, git, ssh and Docker sign-ins, then `# Shared with VMs`: each share with its VM and its time left. `--on <vm>` reads a workspace's own sign-ins, by its guest; `--all-machines` prints one block per Mac and workspace, a server named and not listed, a stopped workspace and a Mac that does not answer each its own line. Identities and scopes only: no token, cookie or key body is ever read into a value, and anything shaped like one reads `?`. `--json` is `station.accounts.list/v1`: `{schema, machine, accounts, shares, share_list}`. A share is asked of the VM's own Mac. `station secrets`, `secrets lend --to` and `secrets recall --from` are hidden aliases of `accounts`, `accounts share` and `accounts take-back` for one release; `secrets allow` and `disallow` are retired (exit 2). See [Secrets](secrets.md#sharing-accounts).
 
 ### `station engine`
 
@@ -202,12 +192,13 @@ station help [command]
 
 A v2 word runs its v3 command with the same arguments, for one release, and prints one muted line on stderr naming it (nothing there with `--json` or `--page`); help and completion never list it.
 
-| Old              | Runs                                                                                                                    |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `station status` | `station overview`; `status --json` keeps `station.status/v1`                                                           |
-| `station stop`   | `station engine stop`                                                                                                   |
-| `station start`  | `station engine start`                                                                                                  |
-| `station tools`  | `station apps`; `install`, `uninstall` and `upgrade --via` run `apps install`, `apps remove` and `apps update --method` |
+| Old               | Runs                                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `station status`  | `station overview`; `status --json` keeps `station.status/v1`                                                           |
+| `station stop`    | `station engine stop`                                                                                                   |
+| `station start`   | `station engine start`                                                                                                  |
+| `station tools`   | `station apps`; `install`, `uninstall` and `upgrade --via` run `apps install`, `apps remove` and `apps update --method` |
+| `station secrets` | `station accounts`; `lend --to` and `recall --from` run `accounts share --with` and `accounts take-back --from`         |
 
 ## Plumbing
 

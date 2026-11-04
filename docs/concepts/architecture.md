@@ -167,7 +167,7 @@ Every catalogue entry carries its place, the kinds of machine it may live on, so
 
 ## The two sources of truth
 
-The binary holds the catalogue: what station knows how to install and configure. The machine holds its own state, in the XDG folders: `~/.config/station/preferences.json` (this machine's name, the hosts, the tailnet choice, the lend list), the VM records and image records under `~/.local/state/station/`. Nothing else is consulted for that, and no path inside the clone matters: the dotfiles and the VM recipes are embedded in the binary, so a deleted or moved clone breaks nothing. [Footprint](../reference/footprint.md) lists every file.
+The binary holds the catalogue: what station knows how to install and configure. The machine holds its own state, in the XDG folders: `~/.config/station/preferences.json` (this machine's name, the hosts, the tailnet choice, the share list), the account shares in `shares.json`, the VM records and image records under `~/.local/state/station/`. Nothing else is consulted for that, and no path inside the clone matters: the dotfiles and the VM recipes are embedded in the binary, so a deleted or moved clone breaks nothing. [Footprint](../reference/footprint.md) lists every file.
 
 ## The compiler
 

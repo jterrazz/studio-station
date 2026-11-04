@@ -2,41 +2,17 @@ package secrets
 
 import "github.com/jterrazz/studio-station/src/catalog"
 
-type NotSessionError struct{ Name string }
-
-func (e *NotSessionError) Error() string {
-	return "\"" + e.Name + "\" cannot be lent: only session:<id> names and " + ClaudeToken + " can"
-}
-
-type NotOnLendListError struct{ Name string }
-
-func (e *NotOnLendListError) Error() string { return "\"" + e.Name + "\" is not on the lend list" }
-
-type NotLentError struct{ Name, VM string }
-
-func (e *NotLentError) Error() string {
-	return "\"" + e.Name + "\" is not lent to \"" + e.VM + "\""
-}
-
-type UnknownVMError struct{ Name string }
-
-func (e *UnknownVMError) Error() string { return "unknown VM \"" + e.Name + "\"" }
-
 type NotAVMError struct{ Name string }
 
 func (e *NotAVMError) Error() string {
-	return "\"" + e.Name + "\" is a host: secrets are lent to VMs only"
+	return e.Name + " is a Mac: accounts are shared with VMs only"
 }
 
 type OffHostError struct{ Here catalog.MachineKind }
 
 func (e *OffHostError) Error() string {
-	return "secrets are lent from a host; here is " + e.Here.Article()
+	return "accounts are shared from a Mac; here is " + e.Here.Article()
 }
-
-type EmptyLendListError struct{}
-
-func (e *EmptyLendListError) Error() string { return "the lend list is empty: nothing to lend" }
 
 type NoStudioError struct{ VM string }
 

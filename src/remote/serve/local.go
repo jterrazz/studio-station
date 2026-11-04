@@ -21,7 +21,7 @@ func Local(registry *call.Registry, here machine.Profile, version string) Calls 
 }
 
 func (l local) Hello() api.Hello {
-	h := api.Hello{Version: l.version, Calls: []string{}}
+	h := api.Hello{Version: l.version, Calls: []string{}, Kind: l.here.Kind}
 	for _, m := range l.registry.Metas() {
 		h.Calls = append(h.Calls, m.Name)
 	}

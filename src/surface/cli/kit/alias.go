@@ -7,7 +7,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const aliasNow = "station.alias.now"
+const (
+	aliasNow  = "station.alias.now"
+	aliasArgs = "station.alias.args"
+)
 
 func Alias(old string, cmd *cobra.Command, now string) *cobra.Command {
 	// value: cmd as the hidden old word of a command for one release (SPEC
@@ -24,11 +27,21 @@ func Alias(old string, cmd *cobra.Command, now string) *cobra.Command {
 	return cmd
 }
 
+func AliasArgs(cmd *cobra.Command, now string) *cobra.Command {
+	// value: the arguments the new command takes in place of the old run's,
+	// when the old ones do not carry over (many v2 names, one account now).
+	cmd.Annotations[aliasArgs] = now
+	return cmd
+}
+
 // invariant: the notice is the run's own words with every old one replaced,
 // its arguments then its flags, a value flag as --name=value; --json and --page keep stderr empty for the script.
 func notice(env Env, c *cobra.Command, args []string) {
 	var words []string
 	aliased := false
+	if now, ok := c.Annotations[aliasArgs]; ok {
+		args = []string{now}
+	}
 	for p := c; p != nil && p.HasParent(); p = p.Parent() {
 		word := p.Name()
 		if now, ok := p.Annotations[aliasNow]; ok {

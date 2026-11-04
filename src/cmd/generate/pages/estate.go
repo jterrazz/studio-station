@@ -8,7 +8,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/shortcuts"
@@ -23,7 +22,6 @@ import (
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
-	pagesecrets "github.com/jterrazz/studio-station/src/pages/secrets"
 	pageservices "github.com/jterrazz/studio-station/src/pages/services"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
@@ -59,7 +57,7 @@ func failure(id page.ID, command, message, hint string) page.Page {
 
 func Estate() []Fixture {
 	var out []Fixture
-	for _, f := range [][]Fixture{homes(), settingsPages(), disks(), fleets(), machineLists(), imageLists(), secretLists(), tailnets(), serviceLists(), outcomes(), setups(), runs(), accountPages(), controlPages(), powerPages(), menubarPages()} {
+	for _, f := range [][]Fixture{homes(), settingsPages(), disks(), fleets(), machineLists(), imageLists(), tailnets(), serviceLists(), outcomes(), setups(), runs(), accountPages(), controlPages(), powerPages(), menubarPages()} {
 		out = append(out, f...)
 	}
 	return out
@@ -289,18 +287,6 @@ func imageLists() []Fixture {
 		pageimages.List(imageReports(), here()))
 }
 
-func secretReport() secrets.Report {
-	return secrets.Report{LendList: []string{"GITHUB_TOKEN", "NPM_TOKEN"}, Lent: map[string][]string{"linux-1": {"GITHUB_TOKEN"}}, Kept: []string{"GITHUB_TOKEN", "NPM_TOKEN", "OPENAI_API_KEY"}}
-}
-
-func secretLists() []Fixture {
-	return states("secrets",
-		pending(pagesecrets.List(secretReport(), here())),
-		pagesecrets.List(secrets.Report{}, here()),
-		failure("secrets", "secrets", "the keychain is locked", "unlock the login keychain, then station secrets"),
-		pagesecrets.List(secretReport(), here()))
-}
-
 func tailnetStatus() ports.Status {
 	return ports.Status{
 		State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net",
@@ -352,13 +338,13 @@ func serviceLists() []Fixture {
 }
 
 func fleets() []Fixture {
-	f, list, sec, svc, tn := fleet(), imageReports(), secretReport(), serviceFleet(), tailnetStatus()
-	full := pagefleet.Reading{Machines: &f, Images: &list, Secrets: &sec, Services: &svc, Tailnet: &tn}
+	f, list, svc, tn := fleet(), imageReports(), serviceFleet(), tailnetStatus()
+	full := pagefleet.Reading{Machines: &f, Images: &list, Services: &svc, Tailnet: &tn}
 	none := machines.Fleet{Hosts: []machines.HostView{{Name: "macbook", Here: true, Reachable: true}}}
 	var noImages []images.Report
-	empty := pagefleet.Reading{Machines: &none, Images: &noImages, Secrets: &secrets.Report{}, Tailnet: &ports.Status{State: catalog.StateAbsent}}
+	empty := pagefleet.Reading{Machines: &none, Images: &noImages, Tailnet: &ports.Status{State: catalog.StateAbsent}}
 	stopped, stoppedSvc := stoppedFleet(), stoppedServices()
-	failed := pagefleet.Reading{Machines: &stopped, Images: &list, Secrets: &sec, Services: &stoppedSvc, Tailnet: &tn}
+	failed := pagefleet.Reading{Machines: &stopped, Images: &list, Services: &stoppedSvc, Tailnet: &tn}
 	return states("fleet",
 		pagefleet.Tab(pagefleet.Reading{}, here()),
 		pagefleet.Tab(empty, here()),

@@ -9,11 +9,5 @@
    ○ linux  not built yet
    ○ macos  not built yet
 
- Secrets
-     Lend list
-      no lent secrets  → station secrets allow <name>
-     Kept
-      no kept secrets
-
  Tailnet  1 ○
    ○ tailnet  not installed  → station apps install tailscale

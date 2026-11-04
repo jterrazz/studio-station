@@ -185,7 +185,7 @@ func (s *Service) entry() Account {
 	return acc
 }
 
-func (s *Service) Read(ctx context.Context) <-chan Report {
+func (s *Service) Read(ctx context.Context, withVMs bool) <-chan Report {
 	now := s.h.Clock.Now().UTC()
 	here := Machine{Name: s.o.HereName, Kind: s.where(), Here: true}
 	ps := s.providers()
@@ -220,7 +220,7 @@ func (s *Service) Read(ctx context.Context) <-chan Report {
 			Late: func(r *Report) { r.Machines[0].Accounts[i] = withHint(own(accounts.Late(p)), "") },
 		})
 	}
-	if len(vms) > 0 && s.p.Daemon != nil {
+	if withVMs && len(vms) > 0 && s.p.Daemon != nil {
 		jobs = append(jobs, probe.Job[Report]{
 			Key: "accounts/vms", Lane: probe.Inline, Budget: daemonBudget,
 			Do: func(ctx context.Context) func(*Report) {
@@ -360,15 +360,15 @@ func withHint(a Account, vm string) Account {
 	if a.Lent != nil {
 		switch a.Reason {
 		case ReasonExpiring:
-			a.Hint = "station secrets lend --to " + vm + " " + a.Lent.Name
+			a.Hint = "station accounts share " + accounts.AccountOf(a.Lent.Name) + " --with " + vm
 		case ReasonFailing:
-			a.Hint = "station secrets recall --from " + vm + " " + a.Lent.Name
+			a.Hint = "station accounts take-back " + accounts.AccountOf(a.Lent.Name) + " --from " + vm
 		}
 		return a
 	}
 	switch a.Provider + "/" + a.Reason {
 	case "github/unset":
-		a.Hint = "station config install github-login"
+		a.Hint = "station settings apply github-login"
 		if vm != "" {
 			a.Hint = "ssh " + vm + " gh auth login"
 		}

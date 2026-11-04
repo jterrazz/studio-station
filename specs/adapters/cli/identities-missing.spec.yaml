@@ -1,0 +1,10 @@
+description: 'an absent tool is ○ missing: gh with its install hint, wrangler with no hint (not a catalogue tool)'
+fixture:
+    - ../../__fixtures__/accounts/
+env: engine
+runs:
+    - command: '--version > /dev/null; /bin/rm bin/gh bin/wrangler; "$STATION" accounts | /usr/bin/awk -F''\t'' ''$2=="github"||$2=="cloudflare"'''
+      exit: 0
+      stdout: |
+          ○	github	not signed in			gh not on PATH	station apps install gh
+          ○	cloudflare	not signed in			wrangler not on PATH

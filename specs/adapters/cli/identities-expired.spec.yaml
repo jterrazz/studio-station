@@ -1,0 +1,14 @@
+description: 'a refused credential is ✗ refused, a missing login ○ unset, each with its fix'
+fixture:
+    - ../../__fixtures__/accounts/
+env: engine
+runs:
+    - command: '--version > /dev/null; /bin/mkdir -p answers/accounts; echo e401 > answers/accounts/npm.mode; "$STATION" accounts | /usr/bin/awk -F''\t'' ''$2=="npm"'''
+      exit: 0
+      stdout: |
+          ✗	npm	expired			token refused by registry.npmjs.org	npm login
+    - command: '--version > /dev/null; echo eneedauth > answers/accounts/npm.mode; echo out > answers/accounts/gh.mode; "$STATION" accounts | /usr/bin/awk -F''\t'' ''$2=="npm"||$2=="github"'''
+      exit: 0
+      stdout: |
+          ○	github	not signed in			not logged in	station settings apply github-login
+          ○	npm	not signed in			not logged in	npm login

@@ -49,6 +49,10 @@ type Report struct {
 	// value: the daemon's state when this host's VMs could not be asked.
 	Daemon string
 	Now    time.Time
+	// value: on a Mac, every share it holds with its VMs, and the names its
+	// share list lets it copy.
+	Shares    []Shared
+	ShareList []string
 }
 
 func (r Report) Clone() Report {
@@ -88,11 +92,9 @@ func RowID(machine, provider string) string { return machine + "/" + provider }
 
 func Lendable(list []string, provider string) []string {
 	var out []string
-	for _, n := range list {
-		for _, sc := range catalog.LendScopes {
-			if sc.Name == n && (provider == "" || sc.Provider == provider) {
-				out = append(out, n)
-			}
+	for _, sc := range catalog.LendScopes {
+		if Shareable(sc.Name, list) && (provider == "" || sc.Provider == provider) {
+			out = append(out, sc.Name)
 		}
 	}
 	return out
