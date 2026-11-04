@@ -1,13 +1,26 @@
-description: 'station apps install fd eza installs both by their method, and the list then holds them'
-env: two-macs
+description: 'apps install fd eza says it installed 2 apps on This Mac, each with its version and method'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
 runs:
-    - command: 'apps install fd eza'
+    - command: '--version >/dev/null; NO_COLOR= terminal --size 100x30 "$STATION" apps install fd eza'
+      stdin: |
+          scrollback
       exit: 0
-      stdout: |
-          ●	fd
-          ●	eza
+      stdout: |4
+           station apps install                               jterrazz-macbook-pro · host
+           ──────────────────────────────────────────────────────────────────────────────
+
+           Summary
+             ● Installed 2 apps on This Mac
+
+           Changes
+             ● fd   10.3.0  brew
+             ● eza  0.23.4  brew
     - command: 'apps | /usr/bin/grep -e "	fd	" -e "	eza	"'
       exit: 0
       stdout: |
-          ●	eza	1.0.0	brew
-          ●	fd	1.0.0	brew
+          ●	eza	0.23.4	brew
+          ●	fd	10.3.0	brew

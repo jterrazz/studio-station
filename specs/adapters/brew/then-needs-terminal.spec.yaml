@@ -6,5 +6,5 @@ runs:
     - command: 'apps install gpg </dev/null'
       exit: 0
       stdout: |
-          ●	gpg
-          ○	git-signing	needs a terminal: station config install git-signing
+          ●	gpg	2.4.8	brew
+          ○	git-signing			needs a terminal: station config install git-signing

@@ -16,6 +16,7 @@ type tool struct {
 	system   bool
 	state    catalog.State
 	version  string
+	newest   string
 	detail   string
 	why      tools.Why
 	needs    string
@@ -29,6 +30,7 @@ func reports(list []tool, pending bool) []tools.Report {
 			Method:  t.method,
 			State:   t.state,
 			Version: t.version,
+			Newest:  t.newest,
 			Managed: t.state == catalog.StateOK,
 			Detail:  t.detail,
 			Why:     t.why,
@@ -59,7 +61,7 @@ func thisMac() []tool {
 		{name: "mas", category: pm, method: catalog.MethodBrew, state: catalog.StateAbsent},
 		{name: "uv", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "0.12.3"},
 		{name: "cocoapods", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "1.17.0"},
-		{name: "pnpm", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "11.21.0"},
+		{name: "pnpm", category: pm, method: catalog.MethodBrew, state: catalog.StateDegraded, version: "11.21.0", newest: "11.22.1", detail: "outdated", why: tools.WhyOutdated},
 		{name: "skills", category: pm, method: catalog.MethodBun, state: catalog.StateOK, version: "1.5.22"},
 		mise("bun", ""),
 		mise("go", ""),

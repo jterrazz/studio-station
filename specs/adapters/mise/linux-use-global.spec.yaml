@@ -6,8 +6,8 @@ runs:
     - command: 'apps install gh'
       exit: 0
       stdout: |
-          ●	gh
-          ○	github-login	needs a terminal: station config install github-login
+          ●	gh		mise
+          ○	github-login			needs a terminal: station config install github-login
       files:
           .calls:
               contains:

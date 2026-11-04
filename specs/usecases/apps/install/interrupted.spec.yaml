@@ -19,4 +19,4 @@ runs:
       exit: 0
       stdout: |
           ○	eza		brew	station apps install eza
-          ●	fd	1.0.0	brew
+          ●	fd	10.3.0	brew

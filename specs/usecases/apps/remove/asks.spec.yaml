@@ -14,5 +14,5 @@ runs:
       stdout: |
           ┃ Remove lazygit?
           ┃
-          ●       lazygit
+          ●       lazygit         brew
           ○	lazygit		brew	station apps install lazygit

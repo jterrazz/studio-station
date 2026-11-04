@@ -25,9 +25,10 @@
 ◐	com.docker.socket	orphan	not loaded	root	Docker.app	/Library/LaunchDaemons/com.docker.socket.plist · sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist
 # Gateways
 ●	Tailscale Serve	on
-# Tools	7 ●	6 ◐	4 ○
+# Tools	6 ●	7 ◐	4 ○
 ○	mise		brew · system	station apps install mise
 ○	mas		brew	station apps install mas
+◐	pnpm	11.21.0	brew	update available · station apps update pnpm
 ?	bun		mise	installed, mise not installed · station apps install mise
 ?	go		mise	installed, mise not installed · station apps install mise
 ?	java	17.0.20	mise	installed, mise not installed · station apps install mise

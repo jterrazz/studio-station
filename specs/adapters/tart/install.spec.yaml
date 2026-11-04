@@ -4,8 +4,8 @@ runs:
     - command: 'apps install tart'
       exit: 0
       stdout: |
-          ●	tart
-          ●	tart-launcher	~/.local/bin/tart
+          ●	tart		shell
+          ●	tart-launcher			~/.local/bin/tart
     - command: '--version >/dev/null; /bin/cat .calls'
       exit: 0
       stdout: |

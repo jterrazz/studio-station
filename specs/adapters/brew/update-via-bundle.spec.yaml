@@ -6,7 +6,7 @@ runs:
     - command: 'apps update bat'
       exit: 0
       stdout: |
-          ●	bat
+          ●	bat	0.24.0	brew
       files:
           .calls:
               contains:

@@ -33,9 +33,9 @@ import (
 func appsCommand(env kit.Env, m machine) *cobra.Command {
 	names := placedNames(toolsService(env, m))
 	return appscmd.Command(appscmd.Deps{Names: names, Here: m.where}, env,
-		appsinstall.Command(appsinstall.Deps{Names: names, Here: m.where}, env),
-		appsupdate.Command(appsupdate.Deps{Here: m.where}, env),
-		appsremove.Command(appsremove.Deps{Names: names, Here: m.where}, env),
+		appsinstall.Command(appsinstall.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env),
+		appsupdate.Command(appsupdate.Deps{Here: m.where, Now: m.host.Clock.Now}, env),
+		appsremove.Command(appsremove.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env),
 	)
 }
 
@@ -43,10 +43,10 @@ func appsCommand(env kit.Env, m machine) *cobra.Command {
 // apps for one release (SPEC §4.3); upgrade's --via is update's --method.
 func toolsAlias(env kit.Env, m machine) *cobra.Command {
 	names := placedNames(toolsService(env, m))
-	update := appsupdate.Via(appsupdate.Command(appsupdate.Deps{Here: m.where}, env))
+	update := appsupdate.Via(appsupdate.Command(appsupdate.Deps{Here: m.where, Now: m.host.Clock.Now}, env))
 	return kit.Alias("tools", appscmd.Command(appscmd.Deps{Names: names, Here: m.where}, env,
-		kit.Alias("install", appsinstall.Command(appsinstall.Deps{Names: names, Here: m.where}, env), "install"),
-		kit.Alias("uninstall", appsremove.Command(appsremove.Deps{Names: names, Here: m.where}, env), "remove"),
+		kit.Alias("install", appsinstall.Command(appsinstall.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env), "install"),
+		kit.Alias("uninstall", appsremove.Command(appsremove.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env), "remove"),
 		kit.Alias("upgrade", update, "update"),
 	), "apps")
 }

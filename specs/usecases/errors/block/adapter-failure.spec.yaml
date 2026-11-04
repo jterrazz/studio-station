@@ -6,7 +6,7 @@ runs:
     - command: 'apps install go'
       exit: 0
       stdout: |
-          ●	go	already installed
+          ●	go	1.25.3	mise	already installed
     - command: '--version >/dev/null; /usr/bin/cut -d" " -f2- .local/state/station/logs/apps.log'
       exit: 1
       stderr: |

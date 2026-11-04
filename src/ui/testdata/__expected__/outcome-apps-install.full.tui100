@@ -1,6 +1,8 @@
+ - Summary                                                                                         
+   ✗ Installed 2 apps on This Mac  1 failed · 9s
  - Changes                                                                            2 ●  1 ◐  1 ✗
-   ● jq           1.8.1
-   ● mise
-   ◐ activate     restart the shell
-   ✗ typewhisper  brew bundle exited 1
+   ● jq           1.8.1      brew
+   ● mise         2026.10.1  brew
+   ◐ activate                      restart the shell
+   ✗ typewhisper             cask  brew bundle exited 1
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

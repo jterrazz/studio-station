@@ -2,10 +2,13 @@
  ──────────────────────────────────────────────────────────────────────────────
 
  Summary
-   ◐ This Mac  17 apps for this machine · 1 update · 4 not installed
+   ◐ This Mac  17 apps for this Mac · 2 updates · 4 not installed
 
- Updates  1 ◐
-   ◐ better-ui  skill  update available  → station apps update better-ui
+ Updates  2 ◐
+   ◐ pnpm       11.21.0 → 11.22.1  brew   update available
+     → station apps update pnpm
+   ◐ better-ui                     skill  update available
+     → station apps update better-ui
 
  Not installed  4 ○
    ○ mise             brew · system  → station apps install mise
@@ -25,7 +28,7 @@
      → station apps install mise
    ? chatgpt           cask  on PATH, not managed by cask
 
- OK  7 ●
+ OK  6 ●
 
  Not for this machine
    98 apps live on other machines

@@ -6,8 +6,8 @@ runs:
     - command: 'apps install bat ghostty'
       exit: 1
       stdout: |
-          ●	bat
-          ✗	ghostty	the install failed: its output is in ~/.local/state/station/logs/apps.log
+          ●	bat	0.24.0	brew
+          ✗	ghostty		cask	the install failed: its output is in ~/.local/state/station/logs/apps.log
       stderr: |
           ==> Downloading ghostty
           curl: (22) The requested URL returned error: 404

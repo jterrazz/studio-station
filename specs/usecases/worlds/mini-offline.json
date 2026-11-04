@@ -64,20 +64,21 @@
                         "bat": "0.25.0",
                         "mise": "2026.10.1"
                     },
-                    "behind": ["gh"]
+                    "behind": { "gh": "2.98.0" },
+                    "offers": { "fd": "10.3.0", "eza": "0.23.4", "yazi": "25.5.31" }
                 },
                 "cask": {
                     "installed": {
                         "ghostty": "1.2.0"
                     },
-                    "behind": ["ghostty"]
+                    "behind": { "ghostty": "1.2.1" }
                 },
                 "mise": {
                     "installed": {
                         "node": "22.11.0",
                         "go": "1.25.3"
                     },
-                    "behind": ["node"]
+                    "behind": { "node": "24.11.0" }
                 },
                 "mas": {
                     "absent": true

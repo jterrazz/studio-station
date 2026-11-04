@@ -6,8 +6,8 @@ runs:
     - command: 'apps install tmux'
       exit: 0
       stdout: |
-          ●	tmux
-          ●	tmux-dotfiles	~/.tmux.conf
+          ●	tmux	3.5a	brew
+          ●	tmux-dotfiles			~/.tmux.conf
       files:
           .tmux.conf:
               equals: |

@@ -2,6 +2,7 @@ package appsinstall
 
 import (
 	"context"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -16,6 +17,7 @@ import (
 type Deps struct {
 	Names func() []string
 	Here  page.Context
+	Now   func() time.Time
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -27,13 +29,14 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Bind:     bind,
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			start := d.Now()
 			steps := kit.Steps(io)
 			outcomes, err := call.Invoke(ctx, env.Calls, env.Target(), appscalls.Install, appscalls.InstallIn{Names: in.Names, Interactive: io.Interactive}, steps)
 			steps.Stop()
 			if err != nil {
 				return err
 			}
-			if err := io.Page(pageapps.Outcomes("install", outcomes, d.Here), nil); err != nil {
+			if err := io.Page(pageapps.Outcomes("install", outcomes, ran(env, d.Now().Sub(start)), d.Here), nil); err != nil {
 				return err
 			}
 			return partial(outcomes, "station apps install ")
@@ -47,4 +50,12 @@ func partial(outcomes []apps.Outcome, repair string) error {
 		return nil
 	}
 	return kit.PartialFailure{Failed: n, Total: len(outcomes), Noun: "apps", FirstHint: repair + first}
+}
+
+func ran(env kit.Env, took time.Duration) pageapps.Run {
+	run := pageapps.Run{Took: took}
+	if env.Far() {
+		run.On = env.Target().Name
+	}
+	return run
 }

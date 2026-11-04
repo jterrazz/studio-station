@@ -117,6 +117,22 @@
         },
         {
           "row": {
+            "id": "tools/pnpm",
+            "mark": "attention",
+            "label": "pnpm",
+            "detail": {
+              "kind": "text",
+              "text": "update available"
+            },
+            "reason": "outdated",
+            "hint": {
+              "command": "station apps update pnpm",
+              "key": "u"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "tools/better-ui",
             "mark": "attention",
             "label": "better-ui",
@@ -188,7 +204,7 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 8
+          "n": 9
         },
         {
           "mark": "broken",
@@ -346,12 +362,12 @@
                 "items": [
                   {
                     "kind": "count",
-                    "n": 7,
+                    "n": 6,
                     "label": "ok"
                   },
                   {
                     "kind": "count",
-                    "n": 6,
+                    "n": 7,
                     "label": "attention"
                   },
                   {
@@ -1226,6 +1242,38 @@
         },
         {
           "row": {
+            "id": "pnpm",
+            "mark": "attention",
+            "label": "pnpm",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "11.21.0",
+                "label": "11.22.1"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "brew"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "update available"
+            },
+            "reason": "outdated",
+            "hint": {
+              "command": "station apps update pnpm",
+              "key": "u"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "bun",
             "mark": "unknown",
             "label": "bun",
@@ -1459,11 +1507,11 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 7
+          "n": 6
         },
         {
           "mark": "attention",
-          "n": 6
+          "n": 7
         },
         {
           "mark": "absent",
@@ -1544,6 +1592,7 @@
         "machine/engine",
         "environment/brew",
         "workspace/strays",
+        "tools/pnpm",
         "tools/better-ui",
         "config/power"
       ],

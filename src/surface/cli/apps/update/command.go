@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -22,6 +23,7 @@ import (
 
 type Deps struct {
 	Here page.Context
+	Now  func() time.Time
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -40,13 +42,14 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if in.AllMachines {
 				return everyMachine(ctx, env, d, req, io)
 			}
+			start := d.Now()
 			steps := kit.Steps(io)
 			outcomes, err := call.Invoke(ctx, env.Calls, env.Target(), appscalls.Update, req, steps)
 			steps.Stop()
 			if err != nil {
 				return err
 			}
-			if err := io.Page(pageapps.Updated(outcomes, d.Here), nil); err != nil {
+			if err := io.Page(pageapps.Updated(outcomes, ran(env, d.Now().Sub(start)), d.Here), nil); err != nil {
 				return err
 			}
 			return partial(outcomes, "re-run it: station apps update ")
@@ -123,4 +126,12 @@ func Via(cmd *cobra.Command) *cobra.Command {
 		return pflag.NormalizedName(name)
 	})
 	return cmd
+}
+
+func ran(env kit.Env, took time.Duration) pageapps.Run {
+	run := pageapps.Run{Took: took}
+	if env.Far() {
+		run.On = env.Target().Name
+	}
+	return run
 }

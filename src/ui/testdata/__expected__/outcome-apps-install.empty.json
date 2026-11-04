@@ -16,6 +16,16 @@
           "key": "name",
           "kind": "text",
           "keep": 100
+        },
+        {
+          "key": "version",
+          "kind": "version",
+          "keep": 50
+        },
+        {
+          "key": "method",
+          "kind": "list",
+          "keep": 30
         }
       ],
       "items": [

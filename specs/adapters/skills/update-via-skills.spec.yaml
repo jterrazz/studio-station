@@ -9,7 +9,7 @@ runs:
     - command: 'apps update --method skills'
       exit: 0
       stdout: |
-          ●	shadcn
+          ●	shadcn		skill
       files:
           .calls:
               equals: |

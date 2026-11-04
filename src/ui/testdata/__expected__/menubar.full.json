@@ -128,7 +128,7 @@
         },
         {
           "link": {
-            "label": "+ 5 more",
+            "label": "+ 6 more",
             "page": "home"
           }
         }
@@ -136,7 +136,7 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 7
+          "n": 8
         },
         {
           "mark": "broken",

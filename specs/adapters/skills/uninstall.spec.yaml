@@ -7,7 +7,7 @@ runs:
     - command: 'apps remove frontend-design --yes'
       exit: 0
       stdout: |
-          ●	frontend-design
+          ●	frontend-design		skill
       files:
           .calls:
               contains:

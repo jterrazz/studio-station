@@ -110,9 +110,9 @@ func (k *kind) Outdated(ctx context.Context, keys []string) (map[string]apps.Cur
 	}
 	currency := make(map[string]apps.Currency, len(keys))
 	for _, key := range keys {
-		currency[key] = apps.Current
-		if behind[key] {
-			currency[key] = apps.Behind
+		currency[key] = apps.Currency{Verdict: apps.Current}
+		if newest, ok := behind[key]; ok {
+			currency[key] = apps.Currency{Verdict: apps.Behind, Newest: newest}
 		}
 	}
 	return currency, nil
@@ -197,15 +197,17 @@ func (b *Brew) Behind(ctx context.Context) (int, error) {
 
 type outdatedJSON struct {
 	Formulae []struct {
-		Name   string `json:"name"`
-		Pinned bool   `json:"pinned"`
+		Name    string `json:"name"`
+		Pinned  bool   `json:"pinned"`
+		Current string `json:"current_version"`
 	} `json:"formulae"`
 	Casks []struct {
-		Name string `json:"name"`
+		Name    string `json:"name"`
+		Current string `json:"current_version"`
 	} `json:"casks"`
 }
 
-func (b *Brew) outdated(ctx context.Context, flags ...string) (map[string]bool, error) {
+func (b *Brew) outdated(ctx context.Context, flags ...string) (map[string]string, error) {
 	// invariant: a pinned formula is never behind: station does not update
 	// what its owner pinned.
 	out, err := b.run.Output(ctx, local.Command(command, append([]string{"outdated", "--json=v2"}, flags...)...))
@@ -219,14 +221,14 @@ func (b *Brew) outdated(ctx context.Context, flags ...string) (map[string]bool, 
 	if err := json.Unmarshal([]byte(out.Stdout), &parsed); err != nil {
 		return nil, errors.New("brew outdated: " + err.Error())
 	}
-	behind := map[string]bool{}
+	behind := map[string]string{}
 	for _, f := range parsed.Formulae {
 		if !f.Pinned {
-			behind[lastSegment(f.Name)] = true
+			behind[lastSegment(f.Name)] = f.Current
 		}
 	}
 	for _, c := range parsed.Casks {
-		behind[lastSegment(c.Name)] = true
+		behind[lastSegment(c.Name)] = c.Current
 	}
 	return behind, nil
 }

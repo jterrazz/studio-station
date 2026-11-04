@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/apps"
-	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/page"
 )
 
@@ -96,7 +95,12 @@ func List(reports []apps.Report, here page.Context, all bool) page.Page {
 
 func summary(reports []apps.Report, here page.Context) page.Section {
 	counts := apps.Counts(reports)
-	words := []string{plural(len(reports), "app") + " for this machine"}
+	label := machineLabel(here)
+	whose := label
+	if label == "This Mac" {
+		whose = "this Mac"
+	}
+	words := []string{plural(len(reports), "app") + " for " + whose}
 	if n := counts[apps.UpdateAvailable]; n > 0 {
 		words = append(words, plural(n, "update"))
 	}
@@ -105,10 +109,6 @@ func summary(reports []apps.Report, here page.Context) page.Section {
 	}
 	if n := counts[apps.NotInstalled]; n > 0 {
 		words = append(words, strconv.Itoa(n)+" not installed")
-	}
-	label := here.Machine
-	if here.Kind == string(catalog.Host) || label == "" {
-		label = "This Mac"
 	}
 	mark := page.OK
 	switch {
@@ -150,7 +150,7 @@ func Confirm(verb, name string) page.Confirm {
 
 func Row(r apps.Report) page.Row {
 	name := r.Tool.Name
-	row := page.Row{ID: name, Label: name, Cells: []page.Value{page.Version(r.Version), method(r)}}
+	row := page.Row{ID: name, Label: name, Cells: []page.Value{version(r), method(r)}}
 	state := apps.StateOf(r)
 	if state == apps.Pending {
 		row.Mark, row.Cells[0] = page.Awaiting, page.Pending()
@@ -200,6 +200,13 @@ func reason(w apps.Why) page.Reason {
 	case apps.WhyOutdated, apps.WhyUnmanaged, apps.WhyLate:
 	}
 	return page.Unmanaged
+}
+
+func version(r apps.Report) page.Value {
+	if apps.StateOf(r) == apps.UpdateAvailable {
+		return page.Upgrade(r.Version, r.Newest)
+	}
+	return page.Version(r.Version)
 }
 
 func method(r apps.Report) page.Value {

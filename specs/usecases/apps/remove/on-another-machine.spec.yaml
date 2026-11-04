@@ -6,7 +6,7 @@ runs:
     - command: 'apps remove node --yes --on linux-1'
       exit: 0
       stdout: |
-          ●	node
+          ●	node		mise
     - command: '--version >/dev/null; "$STATION" apps node --on linux-1 | /usr/bin/head -1; "$STATION" apps node | /usr/bin/head -1'
       exit: 0
       stdout: |

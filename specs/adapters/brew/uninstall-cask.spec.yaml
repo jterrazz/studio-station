@@ -6,7 +6,7 @@ runs:
     - command: 'apps remove ghostty --yes'
       exit: 0
       stdout: |
-          ●	ghostty
+          ●	ghostty		cask
       files:
           .calls:
               contains:

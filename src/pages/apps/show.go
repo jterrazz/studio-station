@@ -18,7 +18,7 @@ func Show(r apps.Report, lives bool, here page.Context) page.Page {
 	fact := func(key string, v page.Value) page.Item { return page.Item{Fact: &page.Fact{Key: key, Value: v}} }
 	facts := []page.Item{
 		fact("method", method(r)),
-		fact("version", page.Version(r.Version)),
+		fact("version", version(r)),
 		fact("lives on", page.Text(apps.LivesOn(t.Places()))),
 		fact("category", page.Text(string(t.Category))),
 	}

@@ -4,7 +4,7 @@ runs:
     - command: 'apps remove lazygit --yes'
       exit: 0
       stdout: |
-          ●	lazygit
+          ●	lazygit		brew
     - command: 'apps lazygit | /usr/bin/head -1'
       exit: 0
       stdout: |

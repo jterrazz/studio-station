@@ -3,6 +3,7 @@ package appsremove
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -17,6 +18,7 @@ import (
 type Deps struct {
 	Names func() []string
 	Here  page.Context
+	Now   func() time.Time
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -31,6 +33,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			var outcomes []apps.Outcome
+			start := d.Now()
 			err := io.Confirmed(func(answer string) (err error) {
 				outcomes, err = call.Invoke(ctx, env.Calls, env.Target(), appscalls.Remove, appscalls.RemoveIn{Names: in.Names, Confirm: answer}, nil)
 				return err
@@ -38,7 +41,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Page(pageapps.Outcomes("remove", outcomes, d.Here), nil); err != nil {
+			if err := io.Page(pageapps.Outcomes("remove", outcomes, ran(env, d.Now().Sub(start)), d.Here), nil); err != nil {
 				return err
 			}
 			return partial(outcomes, "re-run it: station apps remove ")
@@ -52,4 +55,12 @@ func partial(outcomes []apps.Outcome, repair string) error {
 		return nil
 	}
 	return kit.PartialFailure{Failed: n, Total: len(outcomes), Noun: "apps", FirstHint: repair + first}
+}
+
+func ran(env kit.Env, took time.Duration) pageapps.Run {
+	run := pageapps.Run{Took: took}
+	if env.Far() {
+		run.On = env.Target().Name
+	}
+	return run
 }

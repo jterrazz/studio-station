@@ -1,7 +1,8 @@
  - Summary                                                                                         
-   ◐ This Mac  17 apps for this machine · 1 update · 4 not installed
- - Updates                                                                                      1 ◐
-   ◐ better-ui  skill  update available  u update
+   ◐ This Mac  17 apps for this Mac · 2 updates · 4 not installed
+ - Updates                                                                                      2 ◐
+   ◐ pnpm       11.21.0 → 11.22.1  brew   update available  u update
+   ◐ better-ui                     skill  update available  u update
  - Not installed                                                                                4 ○
    ○ mise             brew · system  i install
    ○ mas              brew           i install
@@ -13,7 +14,7 @@
    ? java     17.0.20  mise  installed, mise not installed  → station apps install mise
    ? python   3.14.6   mise  installed, mise not installed  → station apps install mise
    ? chatgpt           cask  on PATH, not managed by cask
- + OK                                                                                           7 ●
+ + OK                                                                                           6 ●
  - Not for this machine
    98 apps live on other machines
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

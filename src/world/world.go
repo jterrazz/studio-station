@@ -124,8 +124,10 @@ type Manager struct {
 	// value: the manager itself is not installed.
 	Absent    bool              `json:"absent,omitempty"`
 	Installed map[string]string `json:"installed,omitempty"`
-	// value: the keys a newer version waits for.
-	Behind []string `json:"behind,omitempty"`
+	// value: the keys a newer version waits for, with that version.
+	Behind map[string]string `json:"behind,omitempty"`
+	// value: the version an install of a key brings.
+	Offers map[string]string `json:"offers,omitempty"`
 }
 
 type Meter struct {

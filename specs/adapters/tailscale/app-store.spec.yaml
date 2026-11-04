@@ -11,16 +11,16 @@ runs:
     - command: 'apps install tailscale'
       exit: 0
       stdout: |
-          ●	tailscale	already installed
+          ●	tailscale		cask	already installed
     - command: 'apps update tailscale'
       exit: 0
       stdout: |
-          ○	tailscale	the App Store updates it
+          ○	tailscale		cask	the App Store updates it
     - command: 'apps update'
       exit: 0
       stdout: |
-          ●	bat
-          ●	jq
+          ●	bat	0.24.0	brew
+          ●	jq	1.7.1	brew
       files:
           .calls:
               contains:

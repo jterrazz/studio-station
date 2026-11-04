@@ -306,7 +306,7 @@ func qrOf(st token.Styles, r page.Row, width int, indent string) []string {
 }
 
 func Full(v page.Value) string {
-	if v.Kind == page.KindVersion {
+	if v.Kind == page.KindVersion && v.Label == "" {
 		return v.Text
 	}
 	return atom.Show(v)

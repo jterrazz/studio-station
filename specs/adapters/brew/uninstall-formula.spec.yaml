@@ -6,7 +6,7 @@ runs:
     - command: 'apps remove bat --yes'
       exit: 0
       stdout: |
-          ●	bat
+          ●	bat		brew
       files:
           .calls:
               contains:

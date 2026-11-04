@@ -6,7 +6,7 @@ runs:
     - command: 'apps install frontend-design'
       exit: 0
       stdout: |
-          ●	frontend-design
+          ●	frontend-design		skill
       files:
           .calls:
               contains:

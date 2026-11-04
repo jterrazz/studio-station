@@ -346,10 +346,10 @@ func fleets() []Fixture {
 }
 
 func outcomes() []Fixture {
-	toolOutcomes := []tools.Outcome{
-		{Name: "jq", Verb: "install", Result: catalog.StateOK, Detail: "1.8.1"},
-		{Name: "mise", Verb: "install", Result: catalog.StateOK, Steps: []tools.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
-		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Detail: "brew bundle exited 1"},
+	appOutcomes := []tools.Outcome{
+		{Name: "jq", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "1.8.1"},
+		{Name: "mise", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "2026.10.1", Steps: []tools.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
+		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Method: catalog.MethodCask, Detail: "brew bundle exited 1"},
 	}
 	changes := []config.Change{
 		{Item: "power", Verb: "install", Result: catalog.StateOK, Before: []config.Fact{{Key: "sleep", Value: "10"}}, After: []config.Fact{{Key: "sleep", Value: "0"}}},
@@ -360,10 +360,10 @@ func outcomes() []Fixture {
 		{Name: "bun", Result: catalog.StateAbsent, Detail: "nothing to clean"},
 	}
 	out := states("outcome-apps-install",
-		pending(pageapps.Outcomes("install", toolOutcomes, here())),
-		pageapps.Outcomes("install", nil, here()),
+		pending(pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, here())),
+		pageapps.Outcomes("install", nil, pageapps.Run{}, here()),
 		failure("outcome", "apps install", "no app named \"jqq\"", "station apps for every app here"),
-		pageapps.Outcomes("install", toolOutcomes, here()))
+		pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, here()))
 	out = append(out, states("outcome-config",
 		pending(pageconfig.Changes("install", changes, here())),
 		pageconfig.Changes("install", nil, here()),

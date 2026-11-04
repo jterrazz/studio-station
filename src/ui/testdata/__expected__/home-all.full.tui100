@@ -1,4 +1,4 @@
- - To do                                                                                   8 ◐  1 ✗
+ - To do                                                                                   9 ◐  1 ✗
    ✗ brain.x-snapshot   failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
@@ -6,6 +6,7 @@
    ◐ engine             runs v2.0.0-242-gd653060, station is v2.0.0-250  → station setup
    ◐ brew               120 outdated  → station apps update --method brew
    ◐ strays             2 folders out of place · 80.5 GB  → station setup
+   ◐ pnpm               update available  → station apps update pnpm
    ◐ better-ui          update available  → station apps update better-ui
    ◐ power              policy partly applied  → station config install power
    ◐ macos              2 pending · checked 22m ago
@@ -13,7 +14,7 @@
      → sudo launchctl bootout system/com.docker.socket &&
        sudo rm /Library/LaunchDaemons/com.docker.socket.plist
  - Summary
-   ◐ Machine     host · Darwin 27.0.0 …             ◐ Tools     7 ●  6 ◐  4 ○
+   ◐ Machine     host · Darwin 27.0.0 …             ◐ Tools     6 ●  7 ◐  4 ○
    ◐ Network     192.168.1.152 · 4/4 on             ◐ Config    1 ●  1 ◐
    ● Tailnet     jterrazz-macbook-pro · Serve on    ● Storage   27.9 GB reclaimable · 2 strays
    ● Identity    admin@jterrazz.com · signing on    ◐ Fleet     engine runs v2.0.0-242-gd653060, s…
@@ -55,21 +56,25 @@
           sudo rm /Library/LaunchDaemons/com.docker.socket.plist
  - Gateways                                                                                     1 ●
    ● Tailscale Serve  on
- - Tools                                                                              7 ●  6 ◐  4 ○
-   ○ mise                      brew · system  → station apps install mise
-   ○ mas                       brew           → station apps install mas
-   ? bun                       mise           installed, mise not installed
+ - Tools                                                                              6 ●  7 ◐  4 ○
+   ○ mise                                brew · system  → station apps install mise
+   ○ mas                                 brew           → station apps install mas
+   ◐ pnpm             11.21.0 → 11.22.1  brew           update available
+     → station apps update pnpm
+   ? bun                                 mise           installed, mise not installed
      → station apps install mise
-   ? go                        mise           installed, mise not installed
+   ? go                                  mise           installed, mise not installed
      → station apps install mise
-   ? java             17.0.20  mise           installed, mise not installed
+   ? java             17.0.20            mise           installed, mise not installed
      → station apps install mise
-   ? python           3.14.6   mise           installed, mise not installed
+   ? python           3.14.6             mise           installed, mise not installed
      → station apps install mise
-   ? chatgpt                   cask           on PATH, not managed by cask
-   ○ typewhisper               cask           → station apps install typewhisper
-   ○ frontend-design           skill          skills not installed  → station apps install skills
-   ◐ better-ui                 skill          update available  → station apps update better-ui
+   ? chatgpt                             cask           on PATH, not managed by cask
+   ○ typewhisper                         cask           → station apps install typewhisper
+   ○ frontend-design                     skill          skills not installed
+     → station apps install skills
+   ◐ better-ui                           skill          update available
+     → station apps update better-ui
  - Config                                                                                  1 ●  1 ◐
    ◐ power  Always-on power policy  policy partly applied  → station config install power
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

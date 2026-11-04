@@ -11,7 +11,7 @@ runs:
     - command: 'apps install tailscale'
       exit: 0
       stdout: |
-          ●	tailscale
+          ●	tailscale	1.90.0	cask
       files:
           .calls:
               contains:

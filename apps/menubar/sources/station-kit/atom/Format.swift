@@ -85,6 +85,9 @@ public enum Format {
         case "off": return "off"
         case "unknown": return Token.Glyph.unknown
         case "command": return "\(Token.Glyph.arrow) \(v.text ?? "")"
+        case "version":
+            guard let newest = v.label, !newest.isEmpty else { return v.text ?? "" }
+            return "\(v.text ?? "") \(Token.Glyph.arrow) \(newest)"
         case "levels":
             return (v.items ?? []).map { "\($0.label ?? "") \(show($0, now: now))" }.joined(separator: Token.Glyph.sep)
         case "list":

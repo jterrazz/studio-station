@@ -4,7 +4,7 @@ runs:
     - command: 'apps install frontend-design'
       exit: 0
       stdout: |
-          ●	frontend-design
+          ●	frontend-design	1.0.0	skill
     - command: 'apps frontend-design | /usr/bin/head -4'
       exit: 0
       stdout: |

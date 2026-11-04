@@ -36,11 +36,11 @@
                 "items": [
                   {
                     "kind": "text",
-                    "text": "17 apps for this machine"
+                    "text": "17 apps for this Mac"
                   },
                   {
                     "kind": "text",
-                    "text": "1 update"
+                    "text": "2 updates"
                   },
                   {
                     "kind": "text",
@@ -78,6 +78,38 @@
       "items": [
         {
           "row": {
+            "id": "pnpm",
+            "mark": "attention",
+            "label": "pnpm",
+            "cells": [
+              {
+                "kind": "version",
+                "text": "11.21.0",
+                "label": "11.22.1"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "brew"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "update available"
+            },
+            "reason": "outdated",
+            "hint": {
+              "command": "station apps update pnpm",
+              "key": "u"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "better-ui",
             "mark": "attention",
             "label": "better-ui",
@@ -110,7 +142,7 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 1
+          "n": 2
         }
       ],
       "pipe_counts": true
@@ -541,31 +573,6 @@
         },
         {
           "row": {
-            "id": "pnpm",
-            "mark": "ok",
-            "label": "pnpm",
-            "cells": [
-              {
-                "kind": "version",
-                "text": "11.21.0"
-              },
-              {
-                "kind": "list",
-                "items": [
-                  {
-                    "kind": "text",
-                    "text": "brew"
-                  }
-                ]
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
             "id": "skills",
             "mark": "ok",
             "label": "skills",
@@ -643,7 +650,7 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 7
+          "n": 6
         }
       ],
       "pipe_counts": true

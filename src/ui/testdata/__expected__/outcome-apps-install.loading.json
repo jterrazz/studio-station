@@ -8,6 +8,42 @@
   "state": "loading",
   "sections": [
     {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/install",
+            "mark": "pending",
+            "label": "Installed 2 apps on This Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
       "id": "changes",
       "title": "Changes",
       "role": "banner",
@@ -16,6 +52,16 @@
           "key": "name",
           "kind": "text",
           "keep": 100
+        },
+        {
+          "key": "version",
+          "kind": "version",
+          "keep": 50
+        },
+        {
+          "key": "method",
+          "kind": "list",
+          "keep": 30
         }
       ],
       "items": [
@@ -24,6 +70,14 @@
             "id": "jq",
             "mark": "pending",
             "label": "jq",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
             "detail": {
               "kind": "none"
             }
@@ -34,6 +88,14 @@
             "id": "mise",
             "mark": "pending",
             "label": "mise",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
             "detail": {
               "kind": "none"
             }
@@ -54,6 +116,14 @@
             "id": "typewhisper",
             "mark": "pending",
             "label": "typewhisper",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
             "detail": {
               "kind": "none"
             }

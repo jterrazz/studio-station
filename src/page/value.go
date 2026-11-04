@@ -24,6 +24,15 @@ func Version(s string) Value {
 	return Value{Kind: KindVersion, Text: s}
 }
 
+func Upgrade(from, to string) Value {
+	// value: a version and the newer one that waits for it (`2.97.0 → 2.98.0`);
+	// the pipe keeps the version alone, the field it always had.
+	if to == "" || from == "" {
+		return Version(from)
+	}
+	return Value{Kind: KindVersion, Text: from, Label: to}
+}
+
 func Duration(seconds int64) Value { return Value{Kind: KindDuration, N: seconds} }
 
 func Age(t, now time.Time) Value {

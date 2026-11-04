@@ -38,7 +38,7 @@ func (s *Service) Install(ctx context.Context, r InstallRequest) ([]Outcome, err
 	var pending []catalog.Tool
 	for _, t := range ordered {
 		if states[t.Name] == catalog.StateOK {
-			outcomes[t.Name] = &Outcome{Name: t.Name, Verb: verbInstall, Result: catalog.StateOK, Detail: "already installed"}
+			outcomes[t.Name] = &Outcome{Name: t.Name, Verb: verbInstall, Result: catalog.StateOK, Detail: apps.AlreadyInstalled}
 			continue
 		}
 		pending = append(pending, t)
@@ -80,7 +80,7 @@ func (s *Service) Install(ctx context.Context, r InstallRequest) ([]Outcome, err
 	for _, t := range requested {
 		result = append(result, *outcomes[t.Name])
 	}
-	return result, nil
+	return s.held(ctx, result), nil
 }
 
 func (s *Service) Uninstall(ctx context.Context, names []string) ([]Outcome, error) {
@@ -96,7 +96,9 @@ func (s *Service) Uninstall(ctx context.Context, names []string) ([]Outcome, err
 	}
 	out := make([]Outcome, 0, len(requested))
 	for _, t := range requested {
-		out = append(out, s.run(ctx, verbUninstall, t, contract.Installer.Remove))
+		o := s.run(ctx, verbUninstall, t, contract.Installer.Remove)
+		o.Method = s.install(t).Method()
+		out = append(out, o)
 	}
 	return out, nil
 }
@@ -159,7 +161,33 @@ func (s *Service) Upgrade(ctx context.Context, r UpgradeRequest) ([]Outcome, err
 	for _, t := range single {
 		outcomes = append(outcomes, s.run(ctx, verbUpdate, t, contract.Installer.Update))
 	}
-	return outcomes, nil
+	return s.held(ctx, outcomes), nil
+}
+
+func (s *Service) held(ctx context.Context, outcomes []Outcome) []Outcome {
+	// invariant: an outcome names the method that holds its app and the
+	// version the method lists once the verb has run, read once per method.
+	versions := map[catalog.Method]map[string]string{}
+	for i := range outcomes {
+		t, ok := s.byName[outcomes[i].Name]
+		if !ok {
+			continue
+		}
+		in := s.install(t)
+		outcomes[i].Method = in.Method()
+		if outcomes[i].Result != catalog.StateOK {
+			continue
+		}
+		listed, read := versions[in.Method()]
+		if !read {
+			told, cancel := context.WithTimeout(ctx, inventoryBudget)
+			listed, _ = s.installer(t).Inventory(told)
+			cancel()
+			versions[in.Method()] = listed
+		}
+		outcomes[i].Version = listed[in.Key()]
+	}
+	return outcomes
 }
 
 func (s *Service) bundleBatch(pending []catalog.Tool, inRequest map[string]bool, done map[string]*Outcome) []catalog.Tool {

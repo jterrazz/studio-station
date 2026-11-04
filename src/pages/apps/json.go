@@ -24,6 +24,7 @@ type AppJSON struct {
 	Method   string   `json:"method"`
 	State    string   `json:"state"`
 	Version  string   `json:"version"`
+	Newest   string   `json:"newest,omitempty"`
 	LivesOn  string   `json:"lives_on"`
 	Provides []string `json:"provides"`
 	Detail   string   `json:"detail"`
@@ -46,7 +47,7 @@ func ListContract(schema string, reports []apps.Report) ListJSON {
 		}
 		body.Apps = append(body.Apps, AppJSON{
 			Name: r.Tool.Name, Category: string(r.Tool.Category), Method: string(r.Method),
-			State: string(apps.StateOf(r)), Version: r.Version, LivesOn: apps.LivesOnToken(r.Tool.Places()),
+			State: string(apps.StateOf(r)), Version: r.Version, Newest: r.Newest, LivesOn: apps.LivesOnToken(r.Tool.Places()),
 			Provides: append([]string{}, r.Tool.Provides...), Detail: detail,
 		})
 	}

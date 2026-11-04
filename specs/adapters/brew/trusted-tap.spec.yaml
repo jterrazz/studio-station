@@ -6,7 +6,7 @@ runs:
     - command: 'apps install terraform'
       exit: 0
       stdout: |
-          ●	terraform
+          ●	terraform	1.9.0	brew
       files:
           .calls:
               contains:
