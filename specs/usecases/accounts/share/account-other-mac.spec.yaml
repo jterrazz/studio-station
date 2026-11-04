@@ -4,8 +4,8 @@ runs:
     - command: 'accounts share github --with ci-1'
       exit: 2
       stderr: |
-          Error: ci-1 is on jterrazz-mac-mini: share from jterrazz-mac-mini's accounts
-          Hint: station accounts share github --with ci-1 --on jterrazz-mac-mini
+          Error: ci-1 is on mac-mini: share from mac-mini's accounts
+          Hint: station accounts share github --with ci-1 --on mac-mini
     - command: '--version >/dev/null; /usr/bin/jq -c ''[.macs["ci-1"].secrets, .macs["jterrazz-mac-mini"].stores.shares]'' world.json'
       exit: 0
       stdout: |

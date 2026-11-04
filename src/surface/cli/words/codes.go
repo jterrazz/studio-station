@@ -112,7 +112,8 @@ func Codes() map[fail.Code]Wording {
 			return "no machine named \"" + e.Subject + "\"", "station machines"
 		},
 		accountscalls.OtherMac: func(e *fail.Error) (string, string) {
-			return e.Subject + " is on " + e.Detail["mac"] + ": share from " + e.Detail["mac"] + "'s accounts", "station accounts share " + e.Detail["account"] + " --with " + e.Subject + " --on " + e.Detail["mac"]
+			mac := cmp.Or(e.Detail["label"], e.Detail["mac"])
+			return e.Subject + " is on " + mac + ": share from " + mac + "'s accounts", "station accounts share " + e.Detail["account"] + " --with " + e.Subject + " --on " + mac
 		},
 		accountscalls.ToServer: func(e *fail.Error) (string, string) {
 			return e.Subject + " is a server: station shares no account with it", "give it its secrets with your own tooling"

@@ -90,7 +90,7 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 	answer, err := l.ep.Invoke(ctx, t, name, raw, p)
 	if err != nil {
 		r.broke(t.Mac(), l, err)
-		return err
+		return r.labeled(t.Mac(), err)
 	}
 	if decoded := call.Decode(answer, out); decoded != nil {
 		e := fail.New(fail.Failed, call.BadOutput, name, map[string]string{"out": name})
@@ -383,11 +383,14 @@ func (e engineRow) Watch(ctx context.Context, _ machine.Ref, name string, in any
 	return out, nil
 }
 
-// value: a Mac that does not answer, named as the owner reads it in its
-// words (SPEC §2.5), its full name kept as the subject.
+// value: a Mac that does not answer, or that names itself in its refusal,
+// named as the owner reads it in its words (SPEC §2.5), its full name kept.
 func (r *Router) labeled(mac string, err error) error {
 	var e *fail.Error
-	if r.reach.Label == nil || !errors.As(err, &e) || e.Code != call.Unreachable || e.Subject != mac {
+	if r.reach.Label == nil || !errors.As(err, &e) {
+		return err
+	}
+	if (e.Code != call.Unreachable || e.Subject != mac) && e.Detail["mac"] != mac {
 		return err
 	}
 	detail := map[string]string{"label": r.reach.Label(mac)}
