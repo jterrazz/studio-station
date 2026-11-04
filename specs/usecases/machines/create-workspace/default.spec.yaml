@@ -9,7 +9,6 @@ runs:
           ●	SSH answers
           ●	expo	8081	{{url}}
           ●	vite	5173	{{url}}
-          ◐	ports	Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
           ●	linux-2	Created	Throwaway · 4 CPU · 4 GB · 20 GB
     - command: 'machines --here'
       exit: 0

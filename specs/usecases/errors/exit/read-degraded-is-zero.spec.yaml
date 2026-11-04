@@ -18,5 +18,6 @@ runs:
     - command: 'services'
       exit: 0
       stdout: |
-          	none
+          ○	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	jterrazz-macbook-pro	waiting		vite
+          ○	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	jterrazz-macbook-pro	waiting
           ◐	jterrazz-mac-mini			jterrazz-mac-mini	unreachable		ssh jterrazz-mac-mini true

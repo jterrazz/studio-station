@@ -4,7 +4,7 @@ runs:
     - command: 'engine stop --yes'
       exit: 0
       stdout: |
-          ●	engine	stopped 1 VM (linux-1) · the engine stopped
+          ●	engine	stopped 1 VM (linux-1) · sharing off · the engine stopped
     - command: 'engine'
       exit: 0
       stdout: |
