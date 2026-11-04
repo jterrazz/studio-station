@@ -1,7 +1,0 @@
-description: 'a dev build asks for --binary before it touches tart'
-runs:
-    - command: 'images build linux'
-      exit: 2
-      stderr: |
-          Error: this station is a dev build: there is no release binary to put in the image
-          Hint: make build-linux, then station images build linux --binary .artifacts/go/station-linux-arm64

@@ -30,88 +30,113 @@
           "keep": 60
         },
         {
-          "key": "vms",
-          "label": "VMs",
-          "kind": "count",
+          "key": "on",
+          "label": "on",
+          "kind": "text",
           "keep": 40
         }
       ],
       "items": [
         {
           "row": {
-            "id": "linux@3",
+            "id": "jterrazz-macbook-pro/linux@2026.11.01",
             "mark": "ok",
             "label": "linux",
             "cells": [
               {
                 "kind": "version",
-                "text": "3"
+                "text": "2026.11.01"
               },
               {
                 "kind": "size",
-                "n": 6000000000
+                "n": 4000000000
               },
               {
-                "kind": "count",
-                "n": 2,
-                "unit": "VMs"
+                "kind": "text",
+                "text": "jterrazz-macbook-pro"
               }
             ],
             "detail": {
-              "kind": "text",
-              "text": "ghcr.io/cirruslabs/ubuntu:24.04"
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "linux-1"
+                },
+                {
+                  "kind": "text",
+                  "text": "api"
+                }
+              ]
             }
           }
         },
         {
           "row": {
-            "id": "linux@2",
+            "id": "jterrazz-macbook-pro/linux@2026.10.20",
             "mark": "absent",
             "label": "linux",
             "cells": [
               {
                 "kind": "version",
-                "text": "2"
+                "text": "2026.10.20"
               },
               {
                 "kind": "size",
-                "n": 6000000000
+                "n": 4000000000
               },
               {
-                "kind": "count",
-                "unit": "VMs"
+                "kind": "text",
+                "text": "jterrazz-macbook-pro"
               }
             ],
             "detail": {
               "kind": "text",
-              "text": "older: station images delete linux@2"
+              "text": "older: station images delete linux@2026.10.20"
             },
             "reason": "outdated"
           }
         },
         {
           "row": {
-            "id": "macos@1",
+            "id": "mac-mini/linux@2026.11.01",
             "mark": "ok",
-            "label": "macos",
+            "label": "linux",
             "cells": [
               {
                 "kind": "version",
-                "text": "1"
+                "text": "2026.11.01"
               },
               {
                 "kind": "size",
-                "n": 48000000000
+                "n": 4000000000
               },
               {
-                "kind": "count",
-                "unit": "VMs"
+                "kind": "text",
+                "text": "mac-mini"
               }
             ],
             "detail": {
-              "kind": "text",
-              "text": "ghcr.io/cirruslabs/macos-tahoe-base:latest"
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "infra"
+                }
+              ]
             }
+          }
+        },
+        {
+          "row": {
+            "id": "macos",
+            "mark": "absent",
+            "label": "macos",
+            "detail": {
+              "kind": "text",
+              "text": "not built yet"
+            },
+            "reason": "missing"
           }
         }
       ],
@@ -122,14 +147,14 @@
         },
         {
           "mark": "absent",
-          "n": 1
+          "n": 2
         }
       ]
     }
   ],
   "hints": [
     {
-      "command": "station images build"
+      "command": "station images update"
     }
   ]
 }

@@ -1,0 +1,14 @@
+description: 'images --json is station.images.list/v1: each version with its Mac, size, VMs and newest'
+env: two-macs
+runs:
+    - command: 'images --json | /usr/bin/jq -r ''.schema, (.images[0] | keys | join(" "))'''
+      exit: 0
+      stdout: |
+          station.images.list/v1
+          mac name newest size_bytes version vms
+    - command: 'images --json | /usr/bin/jq -r ''.images[] | "\(.mac) \(.name) \(.version) \(.newest) \(.size_bytes) \(.vms | join(","))"'''
+      exit: 0
+      stdout: |
+          jterrazz-macbook-pro linux 2026.11.01 true 4000000000 api,linux-1
+          jterrazz-macbook-pro linux 2026.10.20 false 3000000000 
+          jterrazz-mac-mini linux 2026.11.01 true 4000000000 infra

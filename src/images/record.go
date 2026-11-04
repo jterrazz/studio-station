@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+type Ref struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+func (r Ref) String() string { return r.Name + "@" + r.Version }
+
 type Record struct {
 	Name      string    `json:"name"`
 	Version   string    `json:"version"`
@@ -14,12 +21,24 @@ type Record struct {
 	RecipeSHA string    `json:"recipe_sha"`
 	BuiltAt   time.Time `json:"built_at"`
 	SizeGB    int       `json:"size_gb"`
+	// value: fetched from where the image is published, not built here.
+	Published bool `json:"published,omitempty"`
 }
+
+func (r Record) Ref() Ref { return Ref{Name: r.Name, Version: r.Version} }
 
 type Report struct {
 	Record Record
 	Newest bool
 	VMs    []string
+	// value: the Mac that holds this version.
+	Mac string
+}
+
+type Update struct {
+	Ref Ref
+	// value: the version was already the newest here: nothing was fetched.
+	Newest bool
 }
 
 func CompareVersions(a, b string) int {
@@ -44,3 +63,7 @@ func part(parts []string, i int) int {
 	}
 	return n
 }
+
+type UnknownError struct{ Image string }
+
+func (e *UnknownError) Error() string { return "no image \"" + e.Image + "\"" }

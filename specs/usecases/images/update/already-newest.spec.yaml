@@ -1,0 +1,15 @@
+description: 'an image at its newest published version is said so, nothing fetched; bare asks every image held'
+env: two-macs
+runs:
+    - command: 'images update linux'
+      exit: 0
+      stdout: |
+          ●	linux	2026.11.03	fetched
+    - command: 'images update'
+      exit: 0
+      stdout: |
+          ●	linux	2026.11.03	is the newest
+    - command: 'images --json | /usr/bin/jq -r ''[.images[] | select(.mac == "jterrazz-macbook-pro")] | length'''
+      exit: 0
+      stdout: |
+          3

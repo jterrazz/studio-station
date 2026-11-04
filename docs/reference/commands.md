@@ -113,12 +113,13 @@ Every host is asked over ssh; `--here` asks none, and is refused in a VM (exit 2
 ### `station images`
 
 ```sh
-station images [--json]
+station images [--json]                                        # every Mac's, one row per version per Mac
 station images build [<image...>] [--binary <linux station binary>]
+station images update [<image...>]                             # the newest published version
 station images delete <image>[@<version>] [--yes]
 ```
 
-A bare `build` builds every image that is missing or whose recipe changed. See [Images](images.md).
+A bare `build` builds every image that is missing or whose recipe changed; a bare `update` updates every image this Mac holds. An image the catalogue does not hold is `no image "debian"` (exit 2). See [Images](images.md).
 
 ### `station secrets`
 
@@ -186,7 +187,7 @@ station --version
 station help [command]
 ```
 
-`setup` is the one bootstrap verb, safe to run again: it registers this host in the fleet (asking the name on a terminal, taking `--name` otherwise), writes the one managed block of `~/.zshrc`, and moves `~/.studio/` to the XDG folders. `--version` prints `station <version> (<commit>)`. See [Getting started](../start/getting-started.md) and [Dotfiles](dotfiles.md).
+`setup` is the one bootstrap verb, safe to run again: it names this Mac (asking the name on a terminal, taking `--name` otherwise; off a terminal, a Mac with no name yet is refused, exit 2, `Hint: station setup --name <name>`), writes the one managed block of `~/.zshrc`, moves `~/.studio/` to the XDG folders, starts the engine, installs this Mac's missing system apps (on a terminal; piped it names them), then applies the Set by station settings that need no value and no admin. The others are listed as next steps, one row each (`next: station settings apply ssh-key`); the Always-on Mac group is opt-in, so setup neither applies nor lists it. Inside a workspace it writes the block and the layout only; inside a server it sets nothing up, the server's own tooling keeps it. `--version` prints `station <version> (<commit>)`. See [Getting started](../start/getting-started.md) and [Dotfiles](dotfiles.md).
 
 ## Hidden aliases
 

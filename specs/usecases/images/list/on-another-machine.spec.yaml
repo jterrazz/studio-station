@@ -1,0 +1,8 @@
+description: 'the images of another Mac read through that Mac, its own alone'
+env: two-macs
+runs:
+    - command: 'images --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	linux	2026.11.01	4.0 GB	jterrazz-mac-mini	infra
+          ○	macos				not built yet

@@ -1,7 +1,7 @@
 description: 'the Tailscale CLI is found by absolute path: Standalone first, App Store bundle next, PATH last'
 fixture:
     - ../../__fixtures__/vms/
-    - ../../__fixtures__/tailscale-standalone/
+    - ./__fixtures__/tailscale-standalone/
     - ../../__fixtures__/tailscale-app-store/
 env: engine
 runs:

@@ -7,11 +7,12 @@
    ◐ mac-mini    host             online   100.98.133.20
      station v2.0.0-248 here v2.0.0-250
       no VMs  → station machines create --on mac-mini
- - Images                                                              2 ●  1 ○
-            version     size    VMs
-   ● linux  3         6.0 GB  2 VMs  ghcr.io/cirruslabs/ubuntu:24.04
-   ○ linux  2         6.0 GB  0 VMs  older: station images delete linux@2
-   ● macos  1        48.0 GB  0 VMs  ghcr.io/cirruslabs/macos-tahoe-base:latest
+ - Images                                                              2 ●  2 ○
+            version       size  on
+   ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  linux-1 · api
+   ○ linux  2026.10.20  4.0 GB  jterrazz-macbook-pro  older: station images de…
+   ● linux  2026.11.01  4.0 GB  mac-mini              infra
+   ○ macos                                            not built yet
  - Secrets
      Lend list
    ├─ ● GITHUB_TOKEN    lent to linux-1

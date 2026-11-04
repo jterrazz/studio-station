@@ -216,12 +216,12 @@ func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	return services.SaveLeases(ctx, store, kept)
 }
 
-type daemonInstaller struct {
+type engineInstaller struct {
 	m        machine
 	machines *machines.Service
 }
 
-func (i daemonInstaller) env() map[string]string {
+func (i engineInstaller) env() map[string]string {
 	env := map[string]string{"HOME": i.m.host.Env.Home()}
 	for _, name := range []string{"PATH", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "STATION_GUEST_SSH_PORT"} {
 		if v := i.m.vars[name]; v != "" {
@@ -234,7 +234,7 @@ func (i daemonInstaller) env() map[string]string {
 // invariant: setup installs ONE daemon per host, after migrating the round-3
 // per-VM agents; it restarts the daemon only when its plist changed or it runs
 // another version, and the VMs survive that restart.
-func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
+func (i engineInstaller) Install(ctx context.Context) (setup.Step, error) {
 	const step = "engine"
 	if hv := i.m.hypervisor(); !hv.Installed() {
 		return setup.Step{Name: step, State: catalog.StateAbsent, Detail: "not needed until " + hv.Name() + " is installed"}, nil
@@ -259,7 +259,7 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 
 // invariant: the job station v2 named com.jterrazz.station.daemon is
 // removed once, before the engine's own is written: one engine per Mac.
-func (i daemonInstaller) retire(ctx context.Context, jobs contract.Jobs) (bool, error) {
+func (i engineInstaller) retire(ctx context.Context, jobs contract.Jobs) (bool, error) {
 	ref := contract.Ref{Domain: contract.Domain{UID: i.m.host.Env.Euid()}, Label: catalog.RetiredEngineLabel, File: catalog.RetiredEnginePlist(i.m.host.Env.Home())}
 	if _, err := i.m.host.FS.Stat(ref.File); err != nil && !jobs.Read(ctx, ref).Loaded {
 		return false, nil
@@ -267,7 +267,7 @@ func (i daemonInstaller) retire(ctx context.Context, jobs contract.Jobs) (bool, 
 	return true, jobs.Remove(ctx, ref)
 }
 
-func (i daemonInstaller) install(ctx context.Context, jobs contract.Jobs) (setup.Step, error) {
+func (i engineInstaller) install(ctx context.Context, jobs contract.Jobs) (setup.Step, error) {
 	const step = "engine"
 	job := i.m.daemonJob()
 	changed, err := jobs.Install(ctx, contract.JobSpec{

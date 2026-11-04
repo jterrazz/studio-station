@@ -1,0 +1,12 @@
+description: 'a delete on another Mac deletes the version there, This Mac''s kept'
+env: two-macs
+runs:
+    - command: 'images delete linux@2026.11.01 --yes --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	linux	2026.11.01	deleted
+    - command: 'images --json | /usr/bin/jq -r ''.images[] | "\(.mac) \(.version)"'''
+      exit: 0
+      stdout: |
+          jterrazz-macbook-pro 2026.11.01
+          jterrazz-macbook-pro 2026.10.20

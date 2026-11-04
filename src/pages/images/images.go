@@ -1,6 +1,8 @@
 package images
 
 import (
+	"slices"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/page"
@@ -10,13 +12,10 @@ import (
 type ImageJSON struct {
 	Name      string   `json:"name"`
 	Version   string   `json:"version"`
-	Base      string   `json:"base"`
-	Station   string   `json:"station"`
-	RecipeSHA string   `json:"recipe_sha"`
-	BuiltAt   string   `json:"built_at"`
 	SizeBytes int64    `json:"size_bytes"`
-	Newest    bool     `json:"newest"`
+	Mac       string   `json:"mac"`
 	VMs       []string `json:"vms"`
+	Newest    bool     `json:"newest"`
 }
 
 type ListJSON struct {
@@ -25,18 +24,15 @@ type ListJSON struct {
 }
 
 func ListContract(reports []images.Report) ListJSON {
-	body := ListJSON{Schema: "station.images/v1", Images: make([]ImageJSON, 0, len(reports))}
+	body := ListJSON{Schema: "station.images.list/v1", Images: make([]ImageJSON, 0, len(reports))}
 	for _, r := range reports {
 		body.Images = append(body.Images, ImageJSON{
 			Name:      r.Record.Name,
 			Version:   r.Record.Version,
-			Base:      r.Record.Base,
-			Station:   r.Record.Station,
-			RecipeSHA: r.Record.RecipeSHA,
-			BuiltAt:   r.Record.BuiltAt.UTC().Format("2006-01-02T15:04:05Z"),
 			SizeBytes: int64(r.Record.SizeGB) * 1_000_000_000,
-			Newest:    r.Newest,
+			Mac:       r.Mac,
 			VMs:       append([]string{}, r.VMs...),
+			Newest:    r.Newest,
 		})
 	}
 	return body
@@ -47,47 +43,70 @@ func Columns() []page.Column {
 		{Key: "name", Kind: page.KindText, Keep: 100},
 		{Key: "version", Label: "version", Kind: page.KindVersion, Keep: 50},
 		{Key: "size", Label: "size", Kind: page.KindSize, Keep: 60},
-		{Key: "vms", Label: "VMs", Kind: page.KindCount, Keep: 40},
+		{Key: "on", Label: "on", Kind: page.KindText, Keep: 40},
 	}
 }
 
 func Section(reports []images.Report) page.Section {
-	items := make([]page.Item, 0, len(reports))
+	// invariant: one row per image per Mac, then one row for each image of
+	// the catalogue no Mac holds.
+	items := make([]page.Item, 0, len(reports)+len(catalog.Images))
 	for _, r := range reports {
 		row := page.Row{
-			ID: r.Record.Name + "@" + r.Record.Version, Label: r.Record.Name, Mark: page.OK,
-			Cells:  []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), vms(len(r.VMs))},
-			Detail: page.Text(r.Record.Base),
+			ID: r.Mac + "/" + r.Record.Name + "@" + r.Record.Version, Label: r.Record.Name, Mark: page.OK,
+			Cells:  []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), page.Text(r.Mac)},
+			Detail: madeFrom(r.VMs),
 		}
 		if !r.Newest {
 			row.Mark, row.Reason = page.Absent, page.Outdated
-			row.Detail = page.Text("older: station images delete " + r.Record.Name + "@" + r.Record.Version)
+			if len(r.VMs) == 0 {
+				row.Detail = page.Text("older: station images delete " + r.Record.Name + "@" + r.Record.Version)
+			}
 		}
 		items = append(items, page.Item{Row: &row})
 	}
-	if len(items) == 0 {
-		items = append(items, page.Item{Empty: &page.Empty{Noun: "images", Hint: page.Cmd("station images build")}})
+	for _, img := range catalog.Images {
+		if slices.ContainsFunc(reports, func(r images.Report) bool { return r.Record.Name == img.Name }) {
+			continue
+		}
+		row := page.Row{ID: img.Name, Label: img.Name, Mark: page.Absent, Reason: page.Missing, Detail: page.Text("not built yet")}
+		items = append(items, page.Item{Row: &row})
 	}
 	return page.Section{ID: "images", Title: "Images", Role: page.Banner, Columns: Columns(), Items: items}
 }
 
-func vms(n int) page.Value {
-	if n == 1 {
-		return page.Count(1, "VM")
+func madeFrom(vms []string) page.Value {
+	if len(vms) == 0 {
+		return page.Text("no VM made from it")
 	}
-	return page.Count(int64(n), "VMs")
+	return page.Texts(vms...)
 }
 
 func List(reports []images.Report, here page.Context) page.Page {
 	return page.Seal(page.Page{
 		ID: "images", Command: "images", Context: here,
 		Sections: []page.Section{Section(reports)},
-		Hints:    []page.Hint{*page.Cmd("station images build")},
+		Hints:    []page.Hint{*page.Cmd("station images update")},
 	})
 }
 
 func Built(records []images.Record, here page.Context) page.Page {
 	return pages.Outcome("images build", here, versioned(), rows(records, "built"), "images to build")
+}
+
+func Updated(updates []images.Update, here page.Context) page.Page {
+	out := make([]page.Row, 0, len(updates))
+	for _, u := range updates {
+		done := "fetched"
+		if u.Newest {
+			done = "is the newest"
+		}
+		row := pages.Done(u.Ref.String(), catalog.StateOK, done)
+		row.Label = u.Ref.Name
+		row.Cells = []page.Value{page.Version(u.Ref.Version)}
+		out = append(out, row)
+	}
+	return pages.Outcome("images update", here, versioned(), out, "images to update")
 }
 
 func Deleted(records []images.Record, here page.Context) page.Page {

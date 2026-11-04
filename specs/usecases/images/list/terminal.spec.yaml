@@ -1,0 +1,33 @@
+description: 'NO_COLOR turns a terminal into the pipe form; without it the same command draws the header'
+fixture: ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION" images'
+      stdin: |
+          see not built yet
+          screen
+      exit: 0
+      stdout: |
+          ●       linux   2026.11.01      4.0 GB  jterrazz-macbook-pro    api · linux-1
+          ○       linux   2026.10.20      3.0 GB  jterrazz-macbook-pro    older: station 0
+          ●       linux   2026.11.01      4.0 GB  jterrazz-mac-mini       infra
+          ○       macos                           not built yet
+    - command: '--version >/dev/null; /usr/bin/env -u NO_COLOR terminal "$STATION" images'
+      stdin: |
+          see not built yet
+          screen
+      exit: 0
+      stdout: |4
+           station images                                     jterrazz-macbook-pro · host
+           ──────────────────────────────────────────────────────────────────────────────
+
+           Images
+                      version       size  on
+             ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  api · linux-1
+             ○ linux  2026.10.20  3.0 GB  jterrazz-macbook-pro  older: station images de…
+             ● linux  2026.11.01  4.0 GB  jterrazz-mac-mini     infra
+             ○ macos                                            not built yet
+
+           → station images update

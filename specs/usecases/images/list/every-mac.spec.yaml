@@ -1,0 +1,10 @@
+description: 'one row per version per Mac with the VMs made from it, and an image no Mac holds not built yet'
+env: two-macs
+runs:
+    - command: 'images'
+      exit: 0
+      stdout: |
+          ●	linux	2026.11.01	4.0 GB	jterrazz-macbook-pro	api · linux-1
+          ○	linux	2026.10.20	3.0 GB	jterrazz-macbook-pro	older: station images delete linux@2026.10.20
+          ●	linux	2026.11.01	4.0 GB	jterrazz-mac-mini	infra
+          ○	macos				not built yet

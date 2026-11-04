@@ -30,16 +30,16 @@
           "keep": 60
         },
         {
-          "key": "vms",
-          "label": "VMs",
-          "kind": "count",
+          "key": "on",
+          "label": "on",
+          "kind": "text",
           "keep": 40
         }
       ],
       "items": [
         {
           "row": {
-            "id": "linux@3",
+            "id": "jterrazz-macbook-pro/linux@2026.11.01",
             "mark": "pending",
             "label": "linux",
             "cells": [
@@ -48,7 +48,7 @@
               },
               {
                 "kind": "size",
-                "n": 6000000000,
+                "n": 4000000000,
                 "stale": true
               },
               {
@@ -62,7 +62,7 @@
         },
         {
           "row": {
-            "id": "linux@2",
+            "id": "jterrazz-macbook-pro/linux@2026.10.20",
             "mark": "pending",
             "label": "linux",
             "cells": [
@@ -71,7 +71,7 @@
               },
               {
                 "kind": "size",
-                "n": 6000000000,
+                "n": 4000000000,
                 "stale": true
               },
               {
@@ -85,22 +85,32 @@
         },
         {
           "row": {
-            "id": "macos@1",
+            "id": "mac-mini/linux@2026.11.01",
+            "mark": "pending",
+            "label": "linux",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "size",
+                "n": 4000000000,
+                "stale": true
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "macos",
             "mark": "pending",
             "label": "macos",
-            "cells": [
-              {
-                "kind": "pending"
-              },
-              {
-                "kind": "size",
-                "n": 48000000000,
-                "stale": true
-              },
-              {
-                "kind": "pending"
-              }
-            ],
             "detail": {
               "kind": "none"
             }
@@ -110,14 +120,14 @@
       "counts": [
         {
           "mark": "pending",
-          "n": 3
+          "n": 4
         }
       ]
     }
   ],
   "hints": [
     {
-      "command": "station images build"
+      "command": "station images update"
     }
   ]
 }

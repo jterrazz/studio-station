@@ -17,6 +17,7 @@ import (
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/engine"
+	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotecontract "github.com/jterrazz/studio-station/src/remote/contract"
@@ -44,6 +45,7 @@ func (*worldMac) self() corecontract.Self                               { return
 func (*worldMac) power() awakecontract.Power                            { return nil }
 func (*worldMac) hypervisor(string) contract.Hypervisor                 { return nil }
 func (*worldMac) guests() contract.GuestDialer                          { return nil }
+func (*worldMac) imageSource(string) imagescontract.ImageSource         { return nil }
 func (*worldMac) sshConfig() contract.SSHConfig                         { return nil }
 func (*worldMac) unlocker() contract.Unlocker                           { return nil }
 func (*worldMac) jobs() backgroundcontract.Jobs                         { return nil }

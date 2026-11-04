@@ -2,9 +2,10 @@
  ──────────────────────────────────────────────────────────────────────────────
 
  Images
-               size
-   ◌ linux   6.0 GB
-   ◌ linux   6.0 GB
-   ◌ macos  48.0 GB
+              size
+   ◌ linux  4.0 GB
+   ◌ linux  4.0 GB
+   ◌ linux  4.0 GB
+   ◌ macos
 
- → station images build
+ → station images update

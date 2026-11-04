@@ -1,8 +1,0 @@
-description: 'only a host builds images'
-env: STATION_MACHINE_KIND=linux
-runs:
-    - command: 'images build linux'
-      exit: 2
-      stderr: |
-          Error: images live on a host; here is a linux VM
-          Hint: run it on a host

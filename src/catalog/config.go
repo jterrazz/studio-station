@@ -75,10 +75,24 @@ type ConfigItem struct {
 	Inputs                  []Input
 	Effect                  Effect
 	Interactive             bool
-	NeedsRoot               bool
-	Reversible              bool
-	RunOnce                 bool
-	Writes                  []Stored
+	// value: it opens System Settings for the owner to finish it.
+	Guided     bool
+	NeedsRoot  bool
+	Reversible bool
+	RunOnce    bool
+	Writes     []Stored
+}
+
+func (it ConfigItem) AlwaysOn() bool {
+	// invariant: Always-on Mac changes how a Mac sleeps, logs in and is
+	// reached, so it is applied by name only, never by setup.
+	return it.Category == CategoryHeadless
+}
+
+func (it ConfigItem) NeedsOwner() bool {
+	// invariant: a value, admin rights, the owner at System Settings, or no
+	// trace to tell it was applied: setup lists it as a next step.
+	return len(it.Inputs) > 0 || it.Interactive || it.Guided || it.NeedsRoot || it.RunOnce
 }
 
 var (
@@ -102,8 +116,8 @@ var ConfigItems = []ConfigItem{
 	{Name: "git-signing", Description: "Sign every commit with a GPG key", Category: CategorySecurity, Places: macKinds, Requires: "gpg", Effect: ProcGitSigning, Interactive: true, Writes: []Stored{kept("~/.gnupg"), noted(conf("~/.gitconfig"), "`git config --global` user.signingkey, commit.gpgsign")}},
 	{Name: "ssh-key", Description: "An ed25519 SSH key, kept in the Keychain", Category: CategorySecurity, Places: hostKind, Effect: ProcSSHKey, Interactive: true, Writes: []Stored{kept("~/.ssh/id_ed25519"), kept("~/.ssh/id_ed25519.pub"), noted(conf("~/.ssh/config"), "the `Host *` stanza: `UseKeychain yes`, `IdentityFile ~/.ssh/id_ed25519`")}},
 	{Name: "github-login", Description: "The GitHub CLI logged in over SSH", Category: CategorySecurity, Places: everyKind, Requires: "gh", Effect: ProcGitHubLogin, Interactive: true, Writes: []Stored{noted(kept("{config}/gh/hosts.yml"), "gh's login")}},
-	{Name: "spotlight-exclude", Description: "Exclude ~/Developer from Spotlight (guided, opens Settings)", Category: CategorySecurity, Places: macKinds, Effect: ProcSpotlight, Writes: []Stored{noted(conf("/System/Volumes/Data/.Spotlight-V100"), "the Spotlight privacy list, through System Settings")}},
-	{Name: "dns", Description: "Encrypted DNS via Quad9 (DoH)", Category: CategorySecurity, Places: hostKind, Effect: ProcDNS, Writes: []Stored{noted(conf("{state}/station/dns/quad9-dns.mobileconfig"), "installed as the profile `com.jterrazz.dns.quad9`")}},
+	{Name: "spotlight-exclude", Description: "Exclude ~/Developer from Spotlight (guided, opens Settings)", Category: CategorySecurity, Places: macKinds, Effect: ProcSpotlight, Guided: true, Writes: []Stored{noted(conf("/System/Volumes/Data/.Spotlight-V100"), "the Spotlight privacy list, through System Settings")}},
+	{Name: "dns", Description: "Encrypted DNS via Quad9 (DoH)", Category: CategorySecurity, Places: hostKind, Effect: ProcDNS, Guided: true, Writes: []Stored{noted(conf("{state}/station/dns/quad9-dns.mobileconfig"), "installed as the profile `com.jterrazz.dns.quad9`")}},
 	{Name: "claude-token", Description: "The Claude Code subscription token a VM may borrow", Help: "run `claude setup-token` and paste the token", Category: CategorySecurity, Places: hostKind, Effect: ProcClaudeToken, Reversible: true, Inputs: []Input{
 		{Name: "token", Label: "Claude Code token", Help: "run `claude setup-token` and paste the token", Kind: InputPassword, Required: true},
 	}, Writes: []Stored{noted(kept("{config}/studio-os"), "`operator:claude:oauth-token` in the OS credential store")}},

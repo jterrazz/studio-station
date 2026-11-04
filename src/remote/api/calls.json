@@ -76,6 +76,9 @@
       "name": "images.build",
       "schema": "station.images.build/v1",
       "where": "in-engine",
+      "errors": [
+        "image.unknown"
+      ],
       "in": "BuildIn"
     },
     {
@@ -84,7 +87,8 @@
       "where": "in-engine",
       "confirm": "delete-image",
       "errors": [
-        "confirm.yes-needed"
+        "confirm.yes-needed",
+        "image.unknown"
       ],
       "in": "DeleteIn"
     },
@@ -93,6 +97,15 @@
       "schema": "station.images.list/v1",
       "where": "at-target",
       "in": "ListIn"
+    },
+    {
+      "name": "images.update",
+      "schema": "station.images.update/v1",
+      "where": "in-engine",
+      "errors": [
+        "image.unknown"
+      ],
+      "in": "UpdateIn"
     },
     {
       "name": "machines.add",

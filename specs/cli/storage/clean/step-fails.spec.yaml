@@ -1,6 +1,6 @@
 description: 'a failing action is its row''s ✗ with its last stderr line; the other rows still clean, exit 1'
 fixture:
-    - ../../__fixtures__/system-tools/
+    - ../../../__fixtures__/system-tools/
     - ../__fixtures__/go/
 runs:
     - command: '--version >/dev/null; echo 1 > tart-prune.exit'

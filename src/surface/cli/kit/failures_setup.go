@@ -22,6 +22,8 @@ func setupFailure(err error) (*fail.Error, bool) {
 		return usage(mismatch.Error(), "run station setup without --name"), true
 	case errors.As(err, &bad):
 		return usage(bad.Error(), "use lowercase letters, digits and -, 1 to 40 characters"), true
+	case errors.Is(err, setup.ErrNeedsName):
+		return usage(setup.ErrNeedsName.Error(), "station setup --name <name>"), true
 	case errors.Is(err, setup.ErrNameOnVM):
 		return usage(setup.ErrNameOnVM.Error(), "run station setup without --name"), true
 	case errors.As(err, &step):
@@ -29,11 +31,11 @@ func setupFailure(err error) (*fail.Error, bool) {
 		var underAgent *machines.RunningUnderAgentError
 		switch {
 		case errors.As(err, &underAgent):
-			hint = "stop the lasting VMs and delete the temporary ones (station machines), then station setup"
+			hint = "stop the permanent VMs and delete the throwaway ones (station machines), then station setup"
 		case errors.As(err, &different):
 			hint = "keep one of the two files, then run station setup again"
 		case errors.As(err, &busy):
-			hint = "stop the lasting VMs and delete the temporary ones (station machines), then station setup"
+			hint = "stop the permanent VMs and delete the throwaway ones (station machines), then station setup"
 		case errors.As(err, &exists):
 			hint = exists.Path + " already exists: move one of them by hand"
 		case errors.As(err, &cross):

@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"errors"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
 	"strings"
 
@@ -26,9 +27,10 @@ func setupCommand(env kit.Env, m machine) *cobra.Command {
 func setupService(env kit.Env, m machine) *setup.Service {
 	fleet := m.machines(env.Interactive)
 	registrar := fleetRegistrar{name: m.stores.name(), machines: fleet}
-	installer := daemonInstaller{m: m, machines: fleet}
+	installer := engineInstaller{m: m, machines: fleet}
 	return setup.New(m.host, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.services(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
-		Here:            m.kind,
+		Kind:            m.kind,
+		Server:          m.profile.Kind == coremachine.Server,
 		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
 		// observable; unset, the running binary is the one re-executed.
@@ -38,6 +40,7 @@ func setupService(env kit.Env, m machine) *setup.Service {
 		Expand:          m.expander(),
 		Files:           m.toolFiles(),
 		Configurer:      setupConfigurer{config: configService(m)},
+		Settings:        setupSettings{config: configService(m)},
 		Installer:       systemTools{tools: toolsService(env, m)},
 		AppStoreCLI:     m.tailnetCLI().AppStoreCLI,
 		MovePreferences: m.stores.prefs.MoveRetired,
@@ -48,6 +51,28 @@ type setupConfigurer struct{ config *config.Service }
 
 func (c setupConfigurer) Configure(ctx context.Context, item string, interactive bool) error {
 	_, err := c.config.Install(ctx, item, nil, interactive)
+	return err
+}
+
+type setupSettings struct{ config *config.Service }
+
+func (c setupSettings) List(ctx context.Context) ([]setup.Setting, error) {
+	reports, err := c.config.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]setup.Setting, 0, len(reports))
+	for _, r := range reports {
+		out = append(out, setup.Setting{
+			Name: r.Item.Name, Due: r.Applies && r.State == catalog.StateAbsent, ChangedSince: r.Applies && r.State == catalog.StateDegraded,
+			AlwaysOn: r.Item.AlwaysOn(), NeedsOwner: r.Item.NeedsOwner(),
+		})
+	}
+	return out, nil
+}
+
+func (c setupSettings) Apply(ctx context.Context, name string) error {
+	_, err := c.config.Install(ctx, name, nil, false)
 	return err
 }
 
