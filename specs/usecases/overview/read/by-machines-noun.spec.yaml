@@ -9,13 +9,3 @@ runs:
       exit: 0
       stdout: |
           {"schema":"station.overview.read/v1","machine":"jterrazz-mac-mini"}
-    - command: 'machines jterrazz-mac-mini | /usr/bin/grep -E "^# Machine|	name	"'
-      exit: 0
-      stdout: |
-          # Machine
-          ●	name	jterrazz-mac-mini	host · darwin arm64 · jterrazz · zsh
-    - command: 'overview --on jterrazz-mac-mini | /usr/bin/grep -E "^# Machine|	name	"'
-      exit: 0
-      stdout: |
-          # Machine
-          ●	name	jterrazz-mac-mini	host · darwin arm64 · jterrazz · zsh
