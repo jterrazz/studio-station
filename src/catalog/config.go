@@ -83,13 +83,15 @@ type ConfigItem struct {
 	Writes     []Stored
 }
 
-// value: Always-on Mac: it changes how a Mac sleeps, logs in and is reached,
-// so it is applied by name only, never by setup.
-func (it ConfigItem) AlwaysOn() bool { return it.Category == CategoryHeadless }
+func (it ConfigItem) AlwaysOn() bool {
+	// invariant: Always-on Mac changes how a Mac sleeps, logs in and is
+	// reached, so it is applied by name only, never by setup.
+	return it.Category == CategoryHeadless
+}
 
-// value: it needs a value, admin rights, the owner at System Settings, or it
-// keeps no trace to tell it was applied: setup lists it as a next step.
 func (it ConfigItem) NeedsOwner() bool {
+	// invariant: a value, admin rights, the owner at System Settings, or no
+	// trace to tell it was applied: setup lists it as a next step.
 	return len(it.Inputs) > 0 || it.Interactive || it.Guided || it.NeedsRoot || it.RunOnce
 }
 
