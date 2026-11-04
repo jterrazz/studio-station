@@ -8,19 +8,40 @@ import (
 	"github.com/jterrazz/studio-station/src/core/store"
 	"github.com/jterrazz/studio-station/src/settings"
 	"github.com/jterrazz/studio-station/src/settings/contract"
+	"github.com/jterrazz/studio-station/src/world"
 )
 
-type Applied struct{ kept map[string]settings.Applied }
+type Applied struct {
+	// invariant: what one Mac of the world keeps of the settings station wrote.
+	w   *world.World
+	mac string
+}
 
 var (
 	_ contract.AppliedStore = (*Applied)(nil)
 	_ store.Migrator        = (*Applied)(nil)
 )
 
-func NewApplied() *Applied { return &Applied{kept: map[string]settings.Applied{}} }
+func AppliedOf(w *world.World, mac string) *Applied { return &Applied{w: w, mac: mac} }
+
+func NewApplied() *Applied {
+	w := &world.World{Here: "here"}
+	w.Mac("here")
+	return AppliedOf(w, "here")
+}
+
+func (a *Applied) kept() map[string]settings.Applied {
+	st := a.w.Mac(a.mac).Store()
+	if st.Applied == nil {
+		st.Applied = map[string]settings.Applied{}
+	}
+	return st.Applied
+}
 
 func (a *Applied) Get(_ context.Context, setting string) (settings.Applied, error) {
-	got, ok := a.kept[setting]
+	a.w.Lock()
+	defer a.w.Unlock()
+	got, ok := a.kept()[setting]
 	if !ok {
 		return settings.Applied{}, store.ErrNotFound
 	}
@@ -28,20 +49,27 @@ func (a *Applied) Get(_ context.Context, setting string) (settings.Applied, erro
 }
 
 func (a *Applied) Put(_ context.Context, applied settings.Applied) error {
-	a.kept[applied.Setting] = applied
+	a.w.Lock()
+	defer a.w.Unlock()
+	a.kept()[applied.Setting] = applied
 	return nil
 }
 
 func (a *Applied) List(context.Context) ([]settings.Applied, error) {
-	out := make([]settings.Applied, 0, len(a.kept))
-	for _, name := range slices.Sorted(maps.Keys(a.kept)) {
-		out = append(out, a.kept[name])
+	a.w.Lock()
+	defer a.w.Unlock()
+	kept := a.kept()
+	out := make([]settings.Applied, 0, len(kept))
+	for _, name := range slices.Sorted(maps.Keys(kept)) {
+		out = append(out, kept[name])
 	}
 	return out, nil
 }
 
 func (a *Applied) Delete(_ context.Context, setting string) error {
-	delete(a.kept, setting)
+	a.w.Lock()
+	defer a.w.Unlock()
+	delete(a.kept(), setting)
 	return nil
 }
 

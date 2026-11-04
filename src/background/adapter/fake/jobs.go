@@ -3,6 +3,7 @@ package fake
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -38,7 +39,11 @@ func (j *Jobs) here() *world.Mac {
 	return m
 }
 
-func (j *Jobs) Present() bool { return j.w.Macs[j.mac] != nil }
+func (j *Jobs) Present() bool {
+	j.w.Lock()
+	defer j.w.Unlock()
+	return j.w.Macs[j.mac] != nil
+}
 
 func (j *Jobs) Names() contract.Names {
 	return contract.Names{Manager: "the job manager", Command: command}
@@ -49,6 +54,8 @@ func (j *Jobs) failed(verb string, r contract.Ref) error {
 }
 
 func (j *Jobs) List(context.Context) ([]background.Job, error) {
+	j.w.Lock()
+	defer j.w.Unlock()
 	jobs := make([]background.Job, 0, len(j.here().Jobs))
 	for _, job := range j.here().Jobs {
 		jobs = append(jobs, job.Job)
@@ -58,6 +65,8 @@ func (j *Jobs) List(context.Context) ([]background.Job, error) {
 }
 
 func (j *Jobs) Read(_ context.Context, r contract.Ref) contract.Status {
+	j.w.Lock()
+	defer j.w.Unlock()
 	job := j.here().Jobs[r.Label]
 	switch {
 	case job == nil || !job.Loaded:
@@ -69,10 +78,17 @@ func (j *Jobs) Read(_ context.Context, r contract.Ref) contract.Status {
 }
 
 func (j *Jobs) Overrides(context.Context, contract.Domain) map[string]bool {
-	return j.here().Overrides
+	j.w.Lock()
+	defer j.w.Unlock()
+	return maps.Clone(j.here().Overrides)
 }
 
 func (j *Jobs) Install(_ context.Context, spec contract.JobSpec) (bool, error) {
+	j.w.Lock()
+	defer j.w.Unlock()
+	if j.w.Fails("Jobs.Install") {
+		return false, &contract.Failed{Argv: []string{command, "install", spec.Label}, Exit: 1, Stderr: "the job manager refused it", See: command + " read " + spec.Label}
+	}
 	definition := fmt.Sprintf("%+v", spec)
 	m := j.here()
 	job := m.Jobs[spec.Label]
@@ -93,6 +109,8 @@ func (j *Jobs) Install(_ context.Context, spec contract.JobSpec) (bool, error) {
 }
 
 func (j *Jobs) Load(_ context.Context, r contract.Ref) error {
+	j.w.Lock()
+	defer j.w.Unlock()
 	job := j.here().Jobs[r.Label]
 	if job == nil || job.File != r.File {
 		return &contract.Failed{Argv: []string{command, "load", r.Label}, Exit: 1, Stderr: "no definition at " + r.File, See: command + " read " + r.Label}
@@ -102,6 +120,15 @@ func (j *Jobs) Load(_ context.Context, r contract.Ref) error {
 }
 
 func (j *Jobs) Start(_ context.Context, r contract.Ref) error {
+	j.w.Lock()
+	defer j.w.Unlock()
+	if j.w.Fails("Jobs.Start") {
+		return j.failed("start", r)
+	}
+	return j.start(r)
+}
+
+func (j *Jobs) start(r contract.Ref) error {
 	job := j.here().Jobs[r.Label]
 	if job == nil || !job.Loaded {
 		return j.failed("start", r)
@@ -113,16 +140,24 @@ func (j *Jobs) Start(_ context.Context, r contract.Ref) error {
 	return nil
 }
 
-func (j *Jobs) Restart(ctx context.Context, r contract.Ref) error {
+func (j *Jobs) Restart(_ context.Context, r contract.Ref) error {
+	j.w.Lock()
+	defer j.w.Unlock()
 	job := j.here().Jobs[r.Label]
 	if job == nil || !job.Loaded {
 		return j.failed("restart", r)
 	}
 	job.Running = false
-	return j.Start(ctx, r)
+	return j.start(r)
 }
 
 func (j *Jobs) Stop(_ context.Context, r contract.Ref) error {
+	j.w.Lock()
+	defer j.w.Unlock()
+	return j.stop(r)
+}
+
+func (j *Jobs) stop(r contract.Ref) error {
 	job := j.here().Jobs[r.Label]
 	if job == nil || !job.Loaded {
 		return j.failed("stop", r)
@@ -131,8 +166,10 @@ func (j *Jobs) Stop(_ context.Context, r contract.Ref) error {
 	return nil
 }
 
-func (j *Jobs) Remove(ctx context.Context, r contract.Ref) error {
-	_ = j.Stop(ctx, r)
+func (j *Jobs) Remove(_ context.Context, r contract.Ref) error {
+	j.w.Lock()
+	defer j.w.Unlock()
+	_ = j.stop(r)
 	delete(j.here().Jobs, r.Label)
 	return nil
 }

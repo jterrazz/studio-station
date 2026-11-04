@@ -7,34 +7,59 @@ import (
 	"github.com/jterrazz/studio-station/src/core/store"
 	"github.com/jterrazz/studio-station/src/images"
 	"github.com/jterrazz/studio-station/src/images/contract"
+	"github.com/jterrazz/studio-station/src/world"
 )
 
-type Store struct{ records map[[2]string]images.Record }
+type Store struct {
+	// invariant: the image records one Mac of the world keeps.
+	w   *world.World
+	mac string
+}
 
 var (
 	_ contract.ImageStore = (*Store)(nil)
 	_ store.Migrator      = (*Store)(nil)
 )
 
-func NewStore() *Store { return &Store{records: map[[2]string]images.Record{}} }
+func StoreOf(w *world.World, mac string) *Store { return &Store{w: w, mac: mac} }
+
+func NewStore() *Store {
+	w := &world.World{Here: "here"}
+	w.Mac("here")
+	return StoreOf(w, "here")
+}
+
+func (s *Store) records() *[]images.Record { return &s.w.Mac(s.mac).Store().Images }
+
+func same(name, version string) func(images.Record) bool {
+	return func(r images.Record) bool { return r.Name == name && r.Version == version }
+}
 
 func (s *Store) Get(_ context.Context, image, version string) (images.Record, error) {
-	r, ok := s.records[[2]string{image, version}]
-	if !ok {
+	s.w.Lock()
+	defer s.w.Unlock()
+	all := *s.records()
+	i := slices.IndexFunc(all, same(image, version))
+	if i < 0 {
 		return images.Record{}, store.ErrNotFound
 	}
-	return r, nil
+	return all[i], nil
 }
 
 func (s *Store) Put(_ context.Context, r images.Record) error {
-	s.records[[2]string{r.Name, r.Version}] = r
+	s.w.Lock()
+	defer s.w.Unlock()
+	all := s.records()
+	*all = append(slices.DeleteFunc(*all, same(r.Name, r.Version)), r)
 	return nil
 }
 
 func (s *Store) List(_ context.Context, image string) ([]images.Record, error) {
+	s.w.Lock()
+	defer s.w.Unlock()
 	var out []images.Record
-	for key, r := range s.records {
-		if key[0] == image {
+	for _, r := range *s.records() {
+		if r.Name == image {
 			out = append(out, r)
 		}
 	}
@@ -43,7 +68,10 @@ func (s *Store) List(_ context.Context, image string) ([]images.Record, error) {
 }
 
 func (s *Store) Delete(_ context.Context, image, version string) error {
-	delete(s.records, [2]string{image, version})
+	s.w.Lock()
+	defer s.w.Unlock()
+	all := s.records()
+	*all = slices.DeleteFunc(*all, same(image, version))
 	return nil
 }
 

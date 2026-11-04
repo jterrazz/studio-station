@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/world"
 )
 
 var (
@@ -66,13 +67,24 @@ func (v *VM) File(path string) (File, bool) {
 }
 
 type Guests struct {
+	// invariant: the guests of the world's VMs: a VM whose slice has a guest
+	// answers what it says, one with none is not reached.
+	w   *world.World
 	mu  sync.Mutex
 	vms map[string]*VM
 }
 
-func NewGuests() *Guests { return &Guests{vms: map[string]*VM{}} }
+func GuestsOf(w *world.World) *Guests { return &Guests{w: w, vms: map[string]*VM{}} }
+
+func NewGuests() *Guests { return GuestsOf(&world.World{Here: "here"}) }
 
 func (g *Guests) Add(vm string) *VM {
+	g.w.Lock()
+	if g.w.Holder(vm) == "" {
+		g.w.Mac(g.w.Here).VMs[vm] = &world.VM{}
+	}
+	g.w.Macs[g.w.Holder(vm)].VMs[vm].Guest = &world.Guest{}
+	g.w.Unlock()
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	v := NewVM()
@@ -80,13 +92,31 @@ func (g *Guests) Add(vm string) *VM {
 	return v
 }
 
+func (g *Guests) answering(vm string) (map[string]world.Answer, bool) {
+	g.w.Lock()
+	defer g.w.Unlock()
+	mac := g.w.Holder(vm)
+	if mac == "" || g.w.Macs[mac].VMs[vm].Guest == nil {
+		return nil, false
+	}
+	return g.w.Macs[mac].VMs[vm].Guest.Answers, true
+}
+
 func (g *Guests) Dial(_ context.Context, t contract.GuestTarget) (contract.Guest, error) {
-	g.mu.Lock()
-	v, ok := g.vms[t.VM]
-	g.mu.Unlock()
+	answers, ok := g.answering(t.VM)
 	if !ok {
 		return nil, ErrNoGuest
 	}
+	g.mu.Lock()
+	v, ok := g.vms[t.VM]
+	if !ok {
+		v = NewVM()
+		for line, a := range answers {
+			v.answers[line] = Answer{Code: a.Code, Stdout: a.Stdout, Stderr: a.Stderr}
+		}
+		g.vms[t.VM] = v
+	}
+	g.mu.Unlock()
 	return &guest{vm: v, done: make(chan struct{})}, nil
 }
 

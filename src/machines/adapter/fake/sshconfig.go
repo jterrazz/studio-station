@@ -3,76 +3,88 @@ package fake
 import (
 	"context"
 	"errors"
+	"maps"
 	"slices"
-	"sync"
 
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/world"
 )
 
 type SSHConfig struct {
-	mu      sync.Mutex
-	blocks  map[string]contract.HostBlock
-	foreign map[string]bool
+	// invariant: the ssh client config of one Mac of the world: its managed
+	// blocks, and the hosts the owner defined outside them.
+	w   *world.World
+	mac string
 }
 
+func SSHConfigOf(w *world.World, mac string) *SSHConfig { return &SSHConfig{w: w, mac: mac} }
+
 func NewSSHConfig() *SSHConfig {
-	return &SSHConfig{blocks: map[string]contract.HostBlock{}, foreign: map[string]bool{}}
+	w := &world.World{Here: "here"}
+	w.Mac("here")
+	return SSHConfigOf(w, "here")
+}
+
+func (c *SSHConfig) config() *world.SSH {
+	m := c.w.Mac(c.mac)
+	if m.SSH == nil {
+		m.SSH = &world.SSH{}
+	}
+	if m.SSH.Blocks == nil {
+		m.SSH.Blocks = map[string]world.HostBlock{}
+	}
+	return m.SSH
 }
 
 func (c *SSHConfig) Foreign(name string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.foreign[name] = true
+	c.w.Lock()
+	defer c.w.Unlock()
+	cfg := c.config()
+	cfg.Foreign = append(cfg.Foreign, name)
 }
 
 func (c *SSHConfig) Managed() []string {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	names := make([]string, 0, len(c.blocks))
-	for name := range c.blocks {
-		names = append(names, name)
-	}
-	slices.Sort(names)
-	return names
+	c.w.Lock()
+	defer c.w.Unlock()
+	return slices.Sorted(maps.Keys(c.config().Blocks))
 }
 
 func (c *SSHConfig) put(blocks []contract.HostBlock) error {
+	cfg := c.config()
 	var refused error
 	for _, b := range blocks {
-		if c.foreign[b.Name] {
+		if slices.Contains(cfg.Foreign, b.Name) {
 			if refused == nil {
 				refused = &contract.SSHConfigError{Path: "~/.ssh/config", Cause: errors.New("Host " + b.Name + " already defined outside any managed block")}
 			}
 			continue
 		}
-		c.blocks[b.Name] = b
+		cfg.Blocks[b.Name] = world.HostBlock{User: b.User, Key: b.Key, Behind: b.Behind, Here: b.Here}
 	}
 	return refused
 }
 
 func (c *SSHConfig) Put(_ context.Context, blocks []contract.HostBlock) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.w.Lock()
+	defer c.w.Unlock()
 	return c.put(blocks)
 }
 
 func (c *SSHConfig) Replace(_ context.Context, blocks []contract.HostBlock) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.w.Lock()
+	defer c.w.Unlock()
 	refused := c.put(blocks)
-	for name := range c.blocks {
-		if !slices.ContainsFunc(blocks, func(b contract.HostBlock) bool { return b.Name == name }) {
-			delete(c.blocks, name)
-		}
-	}
+	maps.DeleteFunc(c.config().Blocks, func(name string, _ world.HostBlock) bool {
+		return !slices.ContainsFunc(blocks, func(b contract.HostBlock) bool { return b.Name == name })
+	})
 	return refused
 }
 
 func (c *SSHConfig) Remove(_ context.Context, names ...string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.w.Lock()
+	defer c.w.Unlock()
 	for _, name := range names {
-		delete(c.blocks, name)
+		delete(c.config().Blocks, name)
 	}
 	return nil
 }

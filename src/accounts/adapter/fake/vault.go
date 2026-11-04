@@ -28,6 +28,8 @@ func (v *Vault) kept() map[string][]byte {
 }
 
 func (v *Vault) Get(_ context.Context, name string) ([]byte, error) {
+	v.w.Lock()
+	defer v.w.Unlock()
 	secret, ok := v.kept()[name]
 	if !ok {
 		return nil, accounts.ErrNotKept
@@ -36,11 +38,15 @@ func (v *Vault) Get(_ context.Context, name string) ([]byte, error) {
 }
 
 func (v *Vault) Put(_ context.Context, name string, secret []byte) error {
+	v.w.Lock()
+	defer v.w.Unlock()
 	v.kept()[name] = slices.Clone(secret)
 	return nil
 }
 
 func (v *Vault) Forget(_ context.Context, name string) error {
+	v.w.Lock()
+	defer v.w.Unlock()
 	if _, ok := v.kept()[name]; !ok {
 		return accounts.ErrNotKept
 	}
@@ -49,5 +55,7 @@ func (v *Vault) Forget(_ context.Context, name string) error {
 }
 
 func (v *Vault) Names(context.Context) ([]string, error) {
+	v.w.Lock()
+	defer v.w.Unlock()
 	return slices.Sorted(maps.Keys(v.kept())), nil
 }
