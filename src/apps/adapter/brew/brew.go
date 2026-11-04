@@ -2,6 +2,7 @@ package brew
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
@@ -32,11 +33,11 @@ func New(run local.Runner, env func() []string) *Brew {
 }
 
 func (b *Brew) Formulae() contract.Installer {
-	return &kind{brew: b, method: catalog.MethodBrew, list: local.Command(command, "list", "--formula", "--versions")}
+	return &kind{brew: b, method: catalog.MethodBrew, flag: "--formula", list: local.Command(command, "list", "--formula", "--versions")}
 }
 
 func (b *Brew) Casks() contract.Installer {
-	return &kind{brew: b, method: catalog.MethodCask, list: local.Command(command, "list", "--cask", "--versions")}
+	return &kind{brew: b, method: catalog.MethodCask, flag: "--cask", list: local.Command(command, "list", "--cask", "--versions")}
 }
 
 func (b *Brew) Name() string { return bundle }
@@ -70,6 +71,7 @@ func (b *Brew) Bundle(ctx context.Context, lines []string, update bool, _ call.P
 type kind struct {
 	brew   *Brew
 	method catalog.Method
+	flag   string
 	list   local.Cmd
 }
 
@@ -101,8 +103,19 @@ func (k *kind) Inventory(ctx context.Context) (map[string]string, error) {
 	return parseList(out.Stdout), nil
 }
 
-func (k *kind) Outdated(context.Context, []string) (map[string]apps.Currency, error) {
-	return nil, nil
+func (k *kind) Outdated(ctx context.Context, keys []string) (map[string]apps.Currency, error) {
+	behind, err := k.brew.outdated(ctx, k.flag)
+	if err != nil {
+		return nil, err
+	}
+	currency := make(map[string]apps.Currency, len(keys))
+	for _, key := range keys {
+		currency[key] = apps.Current
+		if behind[key] {
+			currency[key] = apps.Behind
+		}
+	}
+	return currency, nil
 }
 
 func (k *kind) Install(ctx context.Context, installs []catalog.Install, p call.Progress) error {
@@ -178,12 +191,46 @@ func (b *Brew) Behind(ctx context.Context) (int, error) {
 	if _, ok := b.run.LookPath(command); !ok {
 		return 0, contract.ErrMissing
 	}
-	out, err := b.run.Output(ctx, local.Command(command, "outdated", "--quiet"))
+	behind, err := b.outdated(ctx)
+	return len(behind), err
+}
+
+type outdatedJSON struct {
+	Formulae []struct {
+		Name   string `json:"name"`
+		Pinned bool   `json:"pinned"`
+	} `json:"formulae"`
+	Casks []struct {
+		Name string `json:"name"`
+	} `json:"casks"`
+}
+
+func (b *Brew) outdated(ctx context.Context, flags ...string) (map[string]bool, error) {
+	// invariant: a pinned formula is never behind: station does not update
+	// what its owner pinned.
+	out, err := b.run.Output(ctx, local.Command(command, append([]string{"outdated", "--json=v2"}, flags...)...))
 	switch {
 	case err != nil:
-		return 0, err
+		return nil, err
 	case out.ExitCode != 0:
-		return 0, errors.New("brew outdated exited " + strconv.Itoa(out.ExitCode))
+		return nil, errors.New("brew outdated exited " + strconv.Itoa(out.ExitCode))
 	}
-	return len(strings.Fields(out.Stdout)), nil
+	var parsed outdatedJSON
+	if err := json.Unmarshal([]byte(out.Stdout), &parsed); err != nil {
+		return nil, errors.New("brew outdated: " + err.Error())
+	}
+	behind := map[string]bool{}
+	for _, f := range parsed.Formulae {
+		if !f.Pinned {
+			behind[lastSegment(f.Name)] = true
+		}
+	}
+	for _, c := range parsed.Casks {
+		behind[lastSegment(c.Name)] = true
+	}
+	return behind, nil
+}
+
+func lastSegment(name string) string {
+	return name[strings.LastIndex(name, "/")+1:]
 }

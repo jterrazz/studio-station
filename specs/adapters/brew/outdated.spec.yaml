@@ -1,0 +1,30 @@
+description: 'brew outdated --json=v2 marks the formulae and casks behind, a pinned formula left out, and a bare update takes only those'
+fixture:
+    - ../../__fixtures__/stubs/
+    - ./__fixtures__/outdated/
+runs:
+    - command: 'apps --json | /usr/bin/jq -r ''.apps[] | select(.name | IN("bat", "jq", "terraform", "ghostty")) | "\(.name) \(.state) \(.version) \(.detail)"'''
+      exit: 0
+      stdout: |
+          ghostty update-available 1.1.3 outdated
+          bat update-available 0.24.0 outdated
+          jq ok 1.7.1 
+          terraform update-available 1.9.0 outdated
+    - command: 'apps update'
+      exit: 0
+      stdout: |
+          ●	ghostty
+          ●	bat
+          ●	terraform
+      files:
+          .calls:
+              contains:
+                  - 'brew outdated --json=v2 --formula'
+                  - 'brew outdated --json=v2 --cask'
+    - command: '--version >/dev/null; /usr/bin/grep -E "^(brew|cask) \"|^brew bundle" .calls'
+      exit: 0
+      stdout: |
+          brew bundle install --upgrade --file=-
+          cask "ghostty"
+          brew "bat"
+          brew "hashicorp/tap/terraform", trusted: true

@@ -17,6 +17,9 @@ case "$*" in
         exit "$(/bin/cat "$answers/bundle.exit")"
         ;;
     "uninstall "*) ;;
+    "outdated --json=v2"*)
+        if [ -f "$answers/outdated.json" ]; then /bin/cat "$answers/outdated.json"; else echo '{"formulae":[],"casks":[]}'; fi
+        ;;
     *)
         echo "stub brew: unexpected invocation: $*" >&2
         exit 97

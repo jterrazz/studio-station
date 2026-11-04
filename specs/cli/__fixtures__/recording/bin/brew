@@ -4,7 +4,8 @@
 printf 'brew %s\n' "$*" >> "$HOME/.calls"
 case "$*" in
     "--version") echo "Homebrew 5.0.1" ;;
-    "list --formula --versions" | "list --cask --versions" | "outdated --quiet") ;;
+    "list --formula --versions" | "list --cask --versions") ;;
+    "outdated --json=v2"*) echo '{"formulae":[],"casks":[]}' ;;
     *)
         echo "stub brew: unexpected invocation: $*" >&2
         exit 97
