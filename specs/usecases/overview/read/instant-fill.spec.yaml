@@ -1,0 +1,43 @@
+description: 'a slow read on a terminal: the other lines answer at once, the slow one fills, printed once'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: 'disk > /dev/null'
+      exit: 0
+    - command: 'world slow jterrazz-macbook-pro 3s'
+      exit: 0
+    - command: '--version >/dev/null; terminal --size 120x40 /usr/bin/env -u NO_COLOR COLUMNS=120 "$STATION" overview'
+      stdin: |
+          within 1 see Background  ● 10 · ✗ 1 failing · ◐ 3 orphans
+          within 1 see ◌ Disk
+          gone ◌
+          scrollback
+      exit: 0
+      stdout: |4
+           station overview                                                                           jterrazz-macbook-pro · host
+           ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+           This Mac · jterrazz-macbook-pro · 8 things need you · Engine running
+
+           Needs you
+             ✗ npm sign-in expired           npm login
+             ✗ com.jterrazz.brain.x-snapsh…  station background remove com.jterrazz.brain.x-snapshot
+             ◐ 1 mise update waiting         station apps update --method mise
+             ◐ 2 brew updates waiting        station apps update --method brew
+             ◐ ~/.tart is misplaced          station disk move ~/.tart
+             3 more: station overview --all
+
+               Apps        ● 5 ok · ◐ 3 updates · ○ 100 not installed
+               Settings    set by station · ● 0 of 15
+               Disk        ◐ 388.0 GB free · 34.8 GB can rebuild · ◐ 1 misplaced
+               Ports       Public 0 · Private 2
+               Accounts    ● 6 · ✗ npm
+               Background  ● 10 · ✗ 1 failing · ◐ 3 orphans
+               Awake       ○ off
+               VMs         ○ api stopped · ● linux-1 running
+
+           → station background remove com.jterrazz.brain.x-snapshot
+           → station overview --all for every line
