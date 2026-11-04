@@ -1,6 +1,6 @@
 description: 'disk erase xcode --confirm=xcode asks nothing in a script: its caches and its simulators go'
 fixture:
-    - ./__fixtures__/simulators/
+    - ../../../__fixtures__/disk-xcode/
 env: two-macs
 runs:
     - command: 'disk erase xcode --confirm=xcode'

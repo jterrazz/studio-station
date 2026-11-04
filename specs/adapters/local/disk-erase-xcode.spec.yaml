@@ -1,6 +1,6 @@
 description: 'resetting xcode empties its caches, then shuts down and erases every simulator; the archives stay'
 fixture:
-    - ./__fixtures__/disk-xcode/
+    - ../../__fixtures__/disk-xcode/
     - ./__fixtures__/disk-pgrep-idle/
 runs:
     - command: '--version >/dev/null; /bin/mkdir -p Library/Developer/Xcode/DerivedData/p Library/Developer/Xcode/Archives/a && /bin/dd if=/dev/zero of=Library/Developer/Xcode/DerivedData/p/x bs=1048576 count=2 2>/dev/null && echo a > Library/Developer/Xcode/Archives/a/x'

@@ -1,7 +1,7 @@
 description: 'on a terminal an erase asks the app''s name typed; typed right, xcode''s simulators are erased'
 fixture:
     - ../../../__fixtures__/terminal/
-    - ./__fixtures__/simulators/
+    - ../../../__fixtures__/disk-xcode/
 env:
     - two-macs
     - terminal
