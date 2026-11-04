@@ -24,9 +24,10 @@ type Answer struct {
 }
 
 type GuestSubject struct {
-	// value: dials the one guest the subject runs, its service on GuestPort
-	// greeting with Greeting.
-	Dial func(t *testing.T) contract.Guest
+	// value: the dialer, and the target of the one guest the subject runs,
+	// its service on GuestPort greeting with Greeting.
+	Dialer contract.GuestDialer
+	Target func(t *testing.T) contract.GuestTarget
 	// value: how the guest answers a command line, from now on.
 	Program func(line string, a Answer)
 	// value: the bytes a programmed command read on its stdin.
@@ -37,11 +38,21 @@ type GuestSubject struct {
 	Path string
 }
 
+func (s GuestSubject) dial(t *testing.T) contract.Guest {
+	t.Helper()
+	g, err := s.Dialer.Dial(t.Context(), s.Target(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = g.Close() })
+	return g
+}
+
 func Guest(t *testing.T, subject func(t *testing.T) GuestSubject) {
 	t.Run("a command's exit code, output and errors come back apart", func(t *testing.T) {
 		s := subject(t)
 		s.Program("check", Answer{Code: 3, Stdout: "out\n", Stderr: "err\n"})
-		got, err := s.Dial(t).Exec(t.Context(), contract.GuestCommand{Line: "check"})
+		got, err := s.dial(t).Exec(t.Context(), contract.GuestCommand{Line: "check"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -53,7 +64,7 @@ func Guest(t *testing.T, subject func(t *testing.T) GuestSubject) {
 		s := subject(t)
 		s.Program("check", Answer{Stdout: "out\n", Stderr: "err\n"})
 		var out, errs bytes.Buffer
-		if _, err := s.Dial(t).Exec(t.Context(), contract.GuestCommand{Line: "check", Stdout: &out, Stderr: &errs}); err != nil {
+		if _, err := s.dial(t).Exec(t.Context(), contract.GuestCommand{Line: "check", Stdout: &out, Stderr: &errs}); err != nil {
 			t.Fatal(err)
 		}
 		if out.String() != "out\n" || errs.String() != "err\n" {
@@ -63,7 +74,7 @@ func Guest(t *testing.T, subject func(t *testing.T) GuestSubject) {
 	t.Run("a secret reaches the command by its stdin, whole", func(t *testing.T) {
 		s := subject(t)
 		s.Program("import", Answer{})
-		if _, err := s.Dial(t).Exec(t.Context(), contract.GuestCommand{Line: "import", Stdin: strings.NewReader(Secret)}); err != nil {
+		if _, err := s.dial(t).Exec(t.Context(), contract.GuestCommand{Line: "import", Stdin: strings.NewReader(Secret)}); err != nil {
 			t.Fatal(err)
 		}
 		if got := string(s.Received("import")); got != Secret {
@@ -73,7 +84,7 @@ func Guest(t *testing.T, subject func(t *testing.T) GuestSubject) {
 	t.Run("a file put is in the guest whole, with its mode", func(t *testing.T) {
 		s := subject(t)
 		data := []byte("#!/bin/sh\necho station\n")
-		if err := s.Dial(t).Put(t.Context(), s.Path, data, 0o755); err != nil {
+		if err := s.dial(t).Put(t.Context(), s.Path, data, 0o755); err != nil {
 			t.Fatal(err)
 		}
 		got, mode := s.Read(t, s.Path)
@@ -83,7 +94,7 @@ func Guest(t *testing.T, subject func(t *testing.T) GuestSubject) {
 	})
 	t.Run("a forward reaches a port inside the guest", func(t *testing.T) {
 		s := subject(t)
-		conn, err := s.Dial(t).Forward(t.Context(), "127.0.0.1", GuestPort)
+		conn, err := s.dial(t).Forward(t.Context(), "127.0.0.1", GuestPort)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -94,7 +105,7 @@ func Guest(t *testing.T, subject func(t *testing.T) GuestSubject) {
 		}
 	})
 	t.Run("a closed connection says it is done", func(t *testing.T) {
-		g := subject(t).Dial(t)
+		g := subject(t).dial(t)
 		if err := g.Close(); err != nil {
 			t.Fatal(err)
 		}

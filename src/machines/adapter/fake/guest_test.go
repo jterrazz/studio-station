@@ -14,13 +14,8 @@ func TestTheFakeGuestKeepsTheContract(t *testing.T) {
 		vm := guests.Add("dev")
 		vm.Serve(contracttest.GuestPort, contracttest.Greeting)
 		return contracttest.GuestSubject{
-			Dial: func(t *testing.T) contract.Guest {
-				g, err := guests.Dial(t.Context(), contract.GuestTarget{VM: "dev"})
-				if err != nil {
-					t.Fatal(err)
-				}
-				return g
-			},
+			Dialer:   guests,
+			Target:   func(*testing.T) contract.GuestTarget { return contract.GuestTarget{VM: "dev"} },
 			Program:  func(line string, a contracttest.Answer) { vm.Program(line, Answer(a)) },
 			Received: vm.Received,
 			Read: func(t *testing.T, path string) ([]byte, fs.FileMode) {

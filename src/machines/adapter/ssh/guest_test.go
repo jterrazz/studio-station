@@ -204,14 +204,8 @@ func TestTheSSHGuestKeepsTheContract(t *testing.T) {
 		s := startSSHD(t, newHostKey(t))
 		known := filepath.Join(t.TempDir(), "known_hosts", "dev")
 		return contracttest.GuestSubject{
-			Dial: func(t *testing.T) contract.Guest {
-				g, err := New().Dial(t.Context(), target(t, s, known))
-				if err != nil {
-					t.Fatal(err)
-				}
-				t.Cleanup(func() { _ = g.Close() })
-				return g
-			},
+			Dialer: New(),
+			Target: func(t *testing.T) contract.GuestTarget { return target(t, s, known) },
 			Program: func(line string, a contracttest.Answer) {
 				s.mu.Lock()
 				defer s.mu.Unlock()
