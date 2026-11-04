@@ -81,11 +81,11 @@ func Run(ctx context.Context, d Deps, env kit.Env, all bool, io kit.IO) error {
 	return io.Page(pagehome.Snapshot(snapshot, d.Here, all), contract)
 }
 
-// value: the VM a target names, found in All machines; a Mac, or no target,
-// is none.
+// value: the VM a target names, found in All machines; this machine, or
+// another Mac, is none.
 func (d Deps) vm(ctx context.Context, env kit.Env) (pagemachines.VMOverview, bool) {
 	name := env.Target().Name
-	if d.Fleet == nil || name == "" {
+	if d.Fleet == nil || name == "" || !env.Far() {
 		return pagemachines.VMOverview{}, false
 	}
 	f, err := d.Fleet(ctx)

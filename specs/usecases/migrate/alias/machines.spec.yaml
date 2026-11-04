@@ -1,10 +1,10 @@
 description: 'the v2 words create --lifetime and machines probe run the v3 command, named on stderr'
 env: two-macs
 runs:
-    - command: 'machines create box --lifetime lasting | /usr/bin/head -1'
+    - command: 'machines create box --lifetime lasting | /usr/bin/tail -1'
       exit: 0
       stdout: |
-          ●	box	jterrazz-macbook-pro	permanent	linux 1	4 cpus · 4 GB
+          ●	box	Created	Permanent · 4 CPU · 4 GB · 20 GB
       stderr: |
           → now: station machines create box --permanent
     - command: 'machines probe jterrazz-macbook-pro | /usr/bin/head -1'

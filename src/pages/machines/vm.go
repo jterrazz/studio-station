@@ -49,9 +49,9 @@ func VMPage(o VMOverview, here page.Context) page.Page {
 	caption := []page.Value{page.Text("Workspace on " + o.on()), page.Text(titled(string(vm.Lifetime))), page.Text(stateWord(vm.State))}
 	health := model.HealthOf(vm)
 	steps := []page.Row{
-		step("running", "Running", health.Running, ""),
-		step("address", "Has an address", health.Address, vm.IP),
-		step("ssh", "SSH answers", health.SSH, ""),
+		step("running", model.StepRunning, health.Running, health.Running, ""),
+		step("address", model.StepAddress, health.Address, health.Running, vm.IP),
+		step("ssh", model.StepSSH, health.SSH, health.Running, ""),
 	}
 	items := make([]page.Item, 0, len(steps)+1)
 	for i := range steps {
@@ -69,12 +69,18 @@ func vmColumns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "detail", Kind: page.KindList, Keep: 50}}
 }
 
-func step(id, label string, passed bool, detail string) page.Row {
+// value: a step that did not pass fails while the VM runs; one of a VM
+// that does not run is not taken.
+func step(id, label string, passed, running bool, detail string) page.Row {
 	row := page.Row{ID: id, Label: label, Mark: page.OK, Cells: []page.Value{page.None()}}
 	if detail != "" {
 		row.Cells[0] = page.Text(detail)
 	}
-	if !passed {
+	switch {
+	case passed:
+	case running:
+		row.Mark, row.Reason, row.Cells[0] = page.Broken, page.Failing, page.Text("failing")
+	default:
 		row.Mark, row.Reason = page.Absent, page.Stopped
 	}
 	return row

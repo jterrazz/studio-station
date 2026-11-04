@@ -167,21 +167,21 @@ func TestAtStartALiveRunIsAdoptedNeverRunAgain(t *testing.T) {
 	}
 }
 
-func TestAFourthStopWithinAMinuteLeavesTheVMBroken(t *testing.T) {
+func TestAThirdRebootWithinAMinuteStopsTheVMAsALoop(t *testing.T) {
 	h := newHarness(t, machines.VMRecord{Name: "t", Lifetime: machines.Throwaway})
 	ctx := cancelled(t)
 	v, _ := h.d.find("t")
 	_ = h.d.start(ctx, v)
-	for i := range 4 {
+	for i := range 3 {
 		h.hv.end("t", model.RunEnd{Reason: model.GuestReboot})
 		h.clock.At = h.clock.At.Add(5 * time.Second)
 		h.d.tick(ctx)
-		if i < 3 && h.state("t") != StateRunning {
-			t.Fatalf("stop %d: %s, want a re-run", i+1, h.state("t"))
+		if i < 2 && h.state("t") != StateRunning {
+			t.Fatalf("reboot %d: %s, want a re-run", i+1, h.state("t"))
 		}
 	}
-	if got := h.state("t"); got != StateBroken || h.runs() != 4 {
-		t.Errorf("after 4 stops in 20 s: %s with %d runs, want broken and no fifth run", got, h.runs())
+	if got := h.state("t"); got != StateBroken || h.runs() != 3 {
+		t.Errorf("after 3 reboots in 15 s: %s with %d runs, want a loop stopped and no fourth run", got, h.runs())
 	}
 }
 

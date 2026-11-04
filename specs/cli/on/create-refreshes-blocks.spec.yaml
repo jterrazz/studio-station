@@ -4,7 +4,10 @@ runs:
     - command: 'machines create --permanent --on y'
       exit: 0
       stdout: |
-          ●	linux-1	y	permanent	linux 2026.11.07	4 cpus · 4 GB
+          ●	Running
+          ●	Has an address
+          ●	SSH answers
+          ●	linux-1	Created	Permanent · 4 CPU · 4 GB · 50 GB
       files:
           .ssh/config:
               contains:

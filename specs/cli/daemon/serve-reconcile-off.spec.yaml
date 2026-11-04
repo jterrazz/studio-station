@@ -9,4 +9,4 @@ runs:
       exit: 0
       stdout: |
           0
-          tailnet: Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console: services are local only
+          tailnet: Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console: services are local only

@@ -6,6 +6,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 )
@@ -237,11 +238,11 @@ func CreatedContract(c machines.Created) CreatedJSON {
 	return body
 }
 
+// value: the health steps as they passed (SPEC §7.2), the ports reserved,
+// then the VM created, last.
 func Created(c machines.Created, here page.Context) page.Page {
 	vm, r := c.VM, c.VM.Resources
-	head := pages.Done(vm.Name, catalog.StateOK, "")
-	head.Cells = []page.Value{page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(vm.Image + " " + vm.Version), page.List(plural(r.CPUs, "cpu"), Memory(r.MemoryBytes))}
-	rows := []page.Row{head}
+	rows := []page.Row{passed(model.StepRunning, ""), passed(model.StepAddress, vm.IP), passed(model.StepSSH, "")}
 	off := false
 	for _, s := range c.Services {
 		row := pages.Done(s.Profile+"/"+strconv.Itoa(s.GuestPort), catalog.StateOK, "")
@@ -251,17 +252,28 @@ func Created(c machines.Created, here page.Context) page.Page {
 		off = off || s.ServeOff
 	}
 	if off {
-		row := page.Row{ID: "services", Label: "services", Mark: page.Attention, Reason: page.Degraded, Cells: []page.Value{page.Text(catalog.ServeOffDetail)}}
+		row := page.Row{ID: "ports", Label: "ports", Mark: page.Attention, Reason: page.Degraded, Cells: []page.Value{page.Text(catalog.ServeOffDetail)}}
 		rows = append(rows, row)
 	}
+	head := pages.Done(vm.Name, catalog.StateOK, "")
+	head.Cells = []page.Value{page.Text("Created"), page.List(page.Text(titled(string(vm.Lifetime))), page.Text(strconv.Itoa(r.CPUs)+" CPU"), Memory(r.MemoryBytes), DiskSize(r.DiskBytes))}
+	rows = append(rows, head)
 	columns := []page.Column{
-		{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "host", Kind: page.KindText, Keep: 40},
-		{Key: "lifetime", Kind: page.KindText, Keep: 60}, {Key: "image", Kind: page.KindText, Keep: 30},
-		{Key: "resources", Kind: page.KindList, Keep: 20},
+		{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "what", Kind: page.KindText, Keep: 60},
+		{Key: "detail", Kind: page.KindList, Keep: 20},
 	}
 	p := pages.Outcome("machines create", here, columns, rows, "VMs")
 	p.Hints = []page.Hint{*page.Cmd("ssh " + vm.Name)}
 	return p
+}
+
+func passed(label, detail string) page.Row {
+	row := pages.Done(label, catalog.StateOK, "")
+	row.Cells = []page.Value{page.None(), page.None()}
+	if detail != "" {
+		row.Cells[0] = page.Text(detail)
+	}
+	return row
 }
 
 func Deleted(r machines.DeleteReport, here page.Context) page.Page {

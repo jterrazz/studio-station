@@ -430,6 +430,11 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState, gen int) {
 		return
 	}
 	ip := addr.String()
+	d.mu.Lock()
+	if v.gen == gen {
+		v.ip = ip
+	}
+	d.mu.Unlock()
 	at, err := netip.ParseAddrPort(hostPort(ip, d.o.GuestPort))
 	if err != nil {
 		d.guestFailed(ctx, v, err.Error())
@@ -479,7 +484,7 @@ func (d *Daemon) guestFailed(ctx context.Context, v *vmState, reason string) {
 	}
 	d.mu.Lock()
 	repeated := v.lastErr == reason
-	v.lastErr = reason
+	v.lastErr, v.guest = reason, GuestAbsent
 	d.mu.Unlock()
 	if !repeated {
 		d.logf(v.rec.Name+" guest", reason)

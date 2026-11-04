@@ -1,0 +1,20 @@
+description: 'a running workspace whose guest connection fails fails SSH answers, a finding, its address still read from its Mac'
+env: two-macs
+runs:
+    - command: 'world fault Guest.Dial'
+      exit: 0
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
+          ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
+          ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
+          # Needs you
+          ✗	linux-1	fails SSH answers	station machines restart linux-1
+    - command: 'machines linux-1'
+      exit: 0
+      stdout: |
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ✗	SSH answers	failing
+          ●	Size	4 CPU · 8 GB · 50 GB

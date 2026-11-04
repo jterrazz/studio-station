@@ -1,13 +1,16 @@
-description: 'a bare create makes linux-2: throwaway, 4 CPU, 4 GB, 20 GB, the smallest free name'
+description: 'a bare create makes linux-2, the smallest free name: its health steps as they pass, its ports, then Created, throwaway, 4 CPU, 4 GB, 20 GB'
 env: two-macs
 runs:
     - command: 'machines create'
       exit: 0
       stdout: |
-          ●	linux-2	jterrazz-macbook-pro	throwaway	linux 1	4 cpus · 4 GB
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
           ●	expo	8081	{{url}}
           ●	vite	5173	{{url}}
-          ◐	services	Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console
+          ◐	ports	Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
+          ●	linux-2	Created	Throwaway · 4 CPU · 4 GB · 20 GB
     - command: 'machines --here'
       exit: 0
       stdout: |

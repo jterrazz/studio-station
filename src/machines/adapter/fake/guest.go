@@ -17,6 +17,7 @@ var (
 	ErrNoGuest   = errors.New("no guest answers at this address")
 	ErrClosed    = errors.New("the guest connection is closed")
 	ErrNoService = errors.New("nothing listens on this guest port")
+	ErrRefused   = errors.New("the guest connection is refused, as the world scripted it")
 )
 
 type Answer struct {
@@ -110,6 +111,12 @@ func (g *Guests) answering(vm string) (*world.Guest, bool) {
 }
 
 func (g *Guests) Dial(_ context.Context, t contract.GuestTarget) (contract.Guest, error) {
+	g.w.Lock()
+	refused := g.w.Fails("Guest.Dial")
+	g.w.Unlock()
+	if refused {
+		return nil, ErrRefused
+	}
 	wg, ok := g.answering(t.VM)
 	if !ok {
 		return nil, ErrNoGuest

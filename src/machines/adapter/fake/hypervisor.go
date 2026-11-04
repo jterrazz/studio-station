@@ -17,12 +17,13 @@ import (
 )
 
 var (
-	ErrNoDisk   = errors.New("no such VM disk")
-	ErrNoImage  = errors.New("no such image")
-	ErrNotBoot  = errors.New("the VM does not run")
-	ErrTwoRuns  = errors.New("the VM already runs")
-	ErrHeldName = errors.New("a VM disk already has this name")
-	ErrScripted = errors.New("the hypervisor refused to boot it, as the world scripted it")
+	ErrNoDisk    = errors.New("no such VM disk")
+	ErrNoImage   = errors.New("no such image")
+	ErrNotBoot   = errors.New("the VM does not run")
+	ErrTwoRuns   = errors.New("the VM already runs")
+	ErrHeldName  = errors.New("a VM disk already has this name")
+	ErrScripted  = errors.New("the hypervisor refused to boot it, as the world scripted it")
+	ErrNoAddress = errors.New("the VM got no address, as the world scripted it")
 )
 
 type Hypervisor struct {
@@ -139,7 +140,7 @@ func (h *Hypervisor) Rename(_ context.Context, from, to string) error {
 	return nil
 }
 
-func (h *Hypervisor) Boot(_ context.Context, vm string, _ contract.BootOptions) (contract.Run, error) {
+func (h *Hypervisor) Boot(_ context.Context, vm string, opts contract.BootOptions) (contract.Run, error) {
 	h.w.Lock()
 	defer h.w.Unlock()
 	v, ok := h.disk(vm)
@@ -153,6 +154,7 @@ func (h *Hypervisor) Boot(_ context.Context, vm string, _ contract.BootOptions) 
 		return nil, ErrScripted
 	}
 	v.PID, v.Ended = h.nextPID(), nil
+	v.Booted = &world.Boot{Bridged: opts.Network.Bridged, Folders: []string{}}
 	return &run{h: h, vm: vm, pid: v.PID}, nil
 }
 
@@ -235,6 +237,9 @@ func (h *Hypervisor) Address(_ context.Context, vm string, _ time.Duration) (net
 	v, ok := h.disk(vm)
 	if !ok || !v.Running() {
 		return netip.Addr{}, ErrNotBoot
+	}
+	if h.w.Fails("Hypervisor.Address") {
+		return netip.Addr{}, ErrNoAddress
 	}
 	if v.Address != "" {
 		return netip.ParseAddr(v.Address)

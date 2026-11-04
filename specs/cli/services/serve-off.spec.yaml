@@ -9,11 +9,11 @@ runs:
       exit: 0
       stdout: |
           "off"
-          [5173,"waiting",{"local":"http://127.0.0.1:{{port}}","public":"http://127.0.0.1:{{port}}"},"Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console"]
-          [5432,"published",{"local":"127.0.0.1:{{port}}","public":"127.0.0.1:{{port}}"},"Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console"]
-          [8081,"published",{"local":"http://127.0.0.1:{{port}}","public":"http://127.0.0.1:{{port}}"},"Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console"]
-          ○	api	5173	http://127.0.0.1:{{port}}	x	waiting		Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console
-          ◐	api	5432	127.0.0.1:{{port}}	x	published		Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console
-          ◐	api	8081	http://127.0.0.1:{{port}}	x	published		Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console
+          [5173,"waiting",{"local":"http://127.0.0.1:{{port}}","public":"http://127.0.0.1:{{port}}"},"Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console"]
+          [5432,"published",{"local":"127.0.0.1:{{port}}","public":"127.0.0.1:{{port}}"},"Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console"]
+          [8081,"published",{"local":"http://127.0.0.1:{{port}}","public":"http://127.0.0.1:{{port}}"},"Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console"]
+          ○	api	5173	http://127.0.0.1:{{port}}	x	waiting		Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
+          ◐	api	5432	127.0.0.1:{{port}}	x	published		Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
+          ◐	api	8081	http://127.0.0.1:{{port}}	x	published		Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
           station-test 8081
           0

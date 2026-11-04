@@ -202,13 +202,21 @@ type VM struct {
 	// value: the pid of its run; zero when it does not run.
 	PID int `json:"pid,omitempty"`
 	// value: how its last run ended, kept until a run is read.
-	Ended   *machines.RunEnd `json:"ended,omitempty"`
-	Address string           `json:"address,omitempty"`
+	Ended *machines.RunEnd `json:"ended,omitempty"`
+	// value: what its last boot was asked: its network, and the folders of
+	// its Mac shared into it (SC-06: station never shares one).
+	Booted  *Boot  `json:"booted,omitempty"`
+	Address string `json:"address,omitempty"`
 	// value: its guest, answering over the one way into a VM; nil when no
 	// guest answers.
 	Guest *Guest `json:"guest,omitempty"`
 	// value: what listens inside the VM.
 	Listening []ports.Listener `json:"listening,omitempty"`
+}
+
+type Boot struct {
+	Bridged bool     `json:"bridged"`
+	Folders []string `json:"folders"`
 }
 
 type Kept struct {

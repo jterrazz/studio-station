@@ -61,7 +61,7 @@ func (e *UnknownImageError) Error() string { return "unknown image \"" + e.Image
 
 type NoImageError struct{ Image string }
 
-func (e *NoImageError) Error() string { return "image " + e.Image + " is not built here" }
+func (e *NoImageError) Error() string { return "image " + e.Image + " is not built on This Mac" }
 
 type NoEngineError struct {
 	Hypervisor string
@@ -279,8 +279,9 @@ func (s *Service) memoryLeft(ctx context.Context) (int64, bool) {
 
 func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Step)) (Created, error) {
 	// invariant: the profiles' ports are reserved before the VM first runs, and
-	// their rendered variables go into the record, fixed for the VM's life; any
-	// failure after the clone rolls every made thing back.
+	// their rendered variables go into the record, fixed for the VM's life; a
+	// failure after the clone and before the first run rolls every made thing
+	// back, and from the first run on the VM is kept, with what failed.
 	r, err := s.CheckCreate(ctx, r)
 	if err != nil {
 		return Created{}, err
@@ -334,19 +335,19 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 	if err = s.writeRecord(rec); err != nil {
 		return fail("the record", err)
 	}
-	say("starting it")
-	made.running = true
+	say(model.StepRunning)
 	if err = s.daemon.Do(ctx, "run", r.Name); err != nil {
-		return fail("the start", err)
+		return Created{}, s.unhealthy(ctx, r.Name, err)
 	}
-	say("first boot")
+	say(model.StepAddress)
 	addr, err := s.engine.Address(ctx, r.Name, ipWait)
 	if err != nil {
-		return fail("the first boot", err)
+		return Created{}, &UnhealthyError{Name: r.Name, Step: model.StepAddress, Detail: "none after 60 s"}
 	}
 	ip := addr.String()
+	say(model.StepSSH)
 	if err := s.firstBoot(ctx, img, r.Name, r.Lifetime); err != nil {
-		return fail("the first boot", err)
+		return Created{}, &UnhealthyError{Name: r.Name, Step: model.StepSSH, Detail: strings.TrimSpace(err.Error())}
 	}
 	if fleet, err := s.Fleet(ctx, false); err == nil {
 		_ = s.SSHBlocks(ctx, fleet)
@@ -359,6 +360,40 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		Services: reserved,
 		Env:      env,
 	}, nil
+}
+
+// invariant: once its first run is asked, a VM is kept whatever fails
+// (CR-15, CR-16): a run the hypervisor never began did not boot; one that
+// runs failed the first health step that did not pass (SPEC §7.2).
+func (s *Service) unhealthy(ctx context.Context, name string, cause error) error {
+	if s.engineState(ctx, name) != contract.DiskRunning {
+		return &DidNotBootError{Name: name, Cause: cause}
+	}
+	if _, err := s.engine.Address(ctx, name, 0); err != nil {
+		return &UnhealthyError{Name: name, Step: model.StepAddress, Detail: "none after 60 s"}
+	}
+	return &UnhealthyError{Name: name, Step: model.StepSSH, Detail: "none after 30 s"}
+}
+
+// value: its cause is words only: what the hypervisor said is no refusal of
+// its own, so the create's words are the ones read.
+type DidNotBootError struct {
+	Name  string
+	Cause error
+}
+
+func (e *DidNotBootError) Error() string {
+	text := e.Name + " did not boot"
+	if e.Cause != nil {
+		text += ": " + strings.TrimSpace(e.Cause.Error())
+	}
+	return text
+}
+
+type UnhealthyError struct{ Name, Step, Detail string }
+
+func (e *UnhealthyError) Error() string {
+	return e.Name + " is kept, its health failing: ✗ " + e.Step + " · " + e.Detail
 }
 
 func (s *Service) reserveProfiles(ctx context.Context, name string) (reserved []Reserved, env map[string]string, err error) {
@@ -396,14 +431,11 @@ func render(template string, r Reserved) string {
 	return strings.NewReplacer("{url}", r.URL, "{host}", r.PublicHost, "{port}", strconv.Itoa(r.HostPort)).Replace(template)
 }
 
-type made struct{ vm, record, leases, running bool }
+type made struct{ vm, record, leases bool }
 
 // invariant: the rollback is best effort and runs every step whatever fails, so a
 // half-made VM leaves as little as it can; what it reports is the create's failure.
 func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
-	if m.running {
-		_ = s.daemon.Do(ctx, "forget", name)
-	}
 	if m.leases && s.rel != nil {
 		_ = s.rel.ReleaseVM(ctx, name)
 	}

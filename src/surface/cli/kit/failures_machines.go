@@ -78,6 +78,8 @@ func vmFailure(err error) (*fail.Error, bool) {
 	var badSize *machines.BadSizeError
 	var noUnit *machines.SizeNeedsUnitError
 	var created *machines.CreateFailedError
+	var noBoot *machines.DidNotBootError
+	var unhealthy *machines.UnhealthyError
 	var down *machines.DaemonDownError
 	var network *machines.BadNetworkError
 	var nothing *machines.NothingToChangeError
@@ -100,6 +102,10 @@ func vmFailure(err error) (*fail.Error, bool) {
 			return usage(network.Error(), "share its ports instead: station ports share"), true
 		}
 		return usage(network.Error(), "station machines create, behind its Mac"), true
+	case errors.As(err, &noBoot):
+		return failed(noBoot.Error(), keptFix(noBoot.Name), err), true
+	case errors.As(err, &unhealthy):
+		return failed(unhealthy.Error(), keptFix(unhealthy.Name), err), true
 	case errors.As(err, &created):
 		return failed(created.Error(), "fix the cause, then run station machines create again", err), true
 	case errors.As(err, &notVM):
@@ -111,7 +117,7 @@ func vmFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &noImage):
 		return usage(noImage.Error(), "station images build "+noImage.Image), true
 	case errors.As(err, &noEngine):
-		return usage(noEngine.Error(), "station tools install "+noEngine.Hypervisor), true
+		return usage(noEngine.Error(), "station apps install "+noEngine.Hypervisor), true
 	case errors.As(err, &tooBig):
 		if tooBig.LeftGB < 1 {
 			return usage(tooBig.Error(), "stop a VM first: station machines"), true
@@ -123,6 +129,11 @@ func vmFailure(err error) (*fail.Error, bool) {
 		return usage(badSize.Error(), "write a size with its unit: 512M, 8G, 1T"), true
 	}
 	return nil, false
+}
+
+// value: the two ways out for a VM a create kept: start it again, or delete it.
+func keptFix(vm string) string {
+	return "station machines start " + vm + " · or station machines delete " + vm
 }
 
 func notAVMHint(e *machines.NotAVMError) string {

@@ -108,6 +108,13 @@ type Created struct {
 
 type Step struct{ Label string }
 
+// value: SPEC §7.2's health steps, in order, a workspace's three.
+const (
+	StepRunning = "Running"
+	StepAddress = "Has an address"
+	StepSSH     = "SSH answers"
+)
+
 type DeleteReport struct {
 	Name     string
 	Warnings []string
