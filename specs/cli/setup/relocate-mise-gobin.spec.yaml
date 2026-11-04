@@ -9,7 +9,7 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed
       files:
           .config/mise/config.toml: { equals: "[tools]\ngo = \"1.27.3\"\n\n[settings]\ngo_set_gobin = false\nexperimental = true\n" }
     - command: 'setup </dev/null'
@@ -20,4 +20,4 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	nothing to do
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed

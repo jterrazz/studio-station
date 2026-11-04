@@ -8,4 +8,4 @@
 ●	git	Jean-Baptiste Terrazzoni	own		admin@jterrazz.com
 ●	ssh	6 keys	own			admin@jterrazz.com · station-image · station-e2e · deploy · old-rsa · github-actions
 ●	docker	deploy	own	registry.jterrazz.com	osxkeychain
-◐	daemon	stopped				station start
+◐	engine	stopped				station engine start

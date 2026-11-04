@@ -5,4 +5,4 @@
 ◐	mac-mini	host			online	100.98.133.20	station v2.0.0-248 here v2.0.0-250
 ●	awake	on	lid · until 14:42 (4h)	started 10:42 by station power awake --lid
 ●	display	sleeps	on lid close: pmset displaysleepnow (no display assertion)
-●	clamshell	held	reset to normal at the end, at every daemon start and quit
+●	clamshell	held	reset to normal at the end, at every engine start and quit

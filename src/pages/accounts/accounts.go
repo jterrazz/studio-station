@@ -14,7 +14,7 @@ const (
 	KeyLend   = "l"
 	KeyRevoke = "r"
 	KeyReload = "R"
-	DaemonRow = "daemon"
+	DaemonRow = "engine"
 )
 
 func columns() []page.Column {
@@ -196,7 +196,7 @@ func group(m accounts.Machine, now time.Time) page.Item {
 }
 
 func daemonRow(state string) page.Row {
-	r := page.Row{ID: DaemonRow, Label: DaemonRow, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text(state)}, Hint: page.Cmd("station start")}
+	r := page.Row{ID: DaemonRow, Label: DaemonRow, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text(state)}, Hint: page.Cmd("station engine start")}
 	if state == accounts.DaemonAbsent {
 		r.Hint = page.Cmd("station setup")
 	}
@@ -267,7 +267,7 @@ func Records(r accounts.Report) page.Page {
 		}
 	}
 	if stopped(r) && len(r.Machines) > 0 {
-		hint := "station start"
+		hint := "station engine start"
 		if r.Daemon == accounts.DaemonAbsent {
 			hint = "station setup"
 		}

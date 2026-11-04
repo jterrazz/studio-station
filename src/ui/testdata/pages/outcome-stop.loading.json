@@ -51,9 +51,9 @@
         },
         {
           "row": {
-            "id": "daemon",
+            "id": "engine",
             "mark": "pending",
-            "label": "daemon",
+            "label": "engine",
             "detail": {
               "kind": "none"
             }
@@ -70,7 +70,7 @@
   ],
   "hints": [
     {
-      "command": "station start"
+      "command": "station engine start"
     }
   ]
 }

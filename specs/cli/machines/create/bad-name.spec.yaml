@@ -2,7 +2,7 @@ description: 'a malformed name, a host''s name and a name a VM record holds are 
 fixture:
     - ../../../__fixtures__/vms/
     - ./__fixtures__/other-host/
-env: daemon
+env: engine
 runs:
     - command: 'machines create --lifetime temporary --name Bad_Name'
       exit: 2

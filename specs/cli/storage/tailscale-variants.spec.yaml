@@ -1,7 +1,7 @@
 description: 'the tailscale row sizes both variants'' containers and the wrapper, cleans and resets none'
 fixture:
     - ../../__fixtures__/tailscale-app-store/
-env: daemon
+env: engine
 runs:
     - command: '--version >/dev/null; /bin/mkdir -p Library/Containers/io.tailscale.ipn.macos Library/Containers/io.tailscale.ipn.macsys "Library/Group Containers/W5364U7YZB.group.io.tailscale.ipn.macos" "Library/Group Containers/group.W5364U7YZB.io.tailscale.shared" .local/bin && /bin/dd if=/dev/zero of=Library/Containers/io.tailscale.ipn.macos/x bs=1048576 count=1 2>/dev/null && /bin/dd if=/dev/zero of=Library/Containers/io.tailscale.ipn.macsys/y bs=1048576 count=1 2>/dev/null && echo z > "Library/Group Containers/W5364U7YZB.group.io.tailscale.ipn.macos/z" && echo w > "Library/Group Containers/group.W5364U7YZB.io.tailscale.shared/w" && printf "#!/bin/sh\nexec x \"\$@\"\n" > .local/bin/tailscale'
       exit: 0

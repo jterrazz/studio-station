@@ -2,7 +2,7 @@
    ✗ brain.x-snapshot   failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
-   ◐ daemon             not installed  → station setup
+   ◐ engine             not installed  → station setup
    ◐ brew               120 outdated  → station tools upgrade --via brew
    ◐ strays             2 folders out of place · 80.5 GB  → station setup
    ◐ tools              4 wait for mise  → station tools install mise
@@ -22,7 +22,7 @@
    ◐ Tools       7 ●  6 ◐  4 ○
    ◐ Config      1 ●  1 ◐
    ● Storage     27.9 GB reclaimable · 2 strays
-   ◐ Fleet       daemon not installed
+   ◐ Fleet       engine not installed
    ● Gateways    1 ●
  + Machine                                                             3 ●  1 ◐
  + Environment                                                         6 ●  2 ◐

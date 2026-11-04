@@ -1,6 +1,6 @@
 description: 'the guest reports what listens, minus the ignored ports, then ends with its stdin'
 fixture: ./__fixtures__/vm/
-env: daemon
+env: engine
 runs:
     - command: '--version >/dev/null; echo ''{"v":1,"type":"hello","host":"macbook","vm":"api","public_host":"macbook.tail1234.ts.net","keys":[],"env":{},"ignored":[22],"min_port":1024}'' | HOME=$PWD/vm STATION_MACHINE_KIND=linux STATION_SYSTEM_ROOT=$PWD/vm/root "$STATION" guest | /usr/bin/jq -c ''[.type, ([.ports[]? | [.port, .ip]])]''; /bin/ls vm/.local/state/station'
       exit: 0

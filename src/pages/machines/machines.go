@@ -117,12 +117,12 @@ func hostRow(h machines.HostView, hereVersion string) page.Row {
 		detail = page.Text("station " + h.StationVersion + " here " + hereVersion)
 	case h.Daemon.Known && !h.Daemon.Running:
 		row.Mark, row.Reason = page.Attention, page.Stopped
-		word, fix := "daemon stopped", "station start"
+		word, fix := "engine stopped", "station engine start"
 		switch {
 		case !h.Here:
-			fix = "ssh " + h.Name + " station start"
+			fix = "ssh " + h.Name + " station engine start"
 		case !h.Daemon.Installed:
-			row.Reason, word, fix = page.Missing, "daemon not installed", "station setup"
+			row.Reason, word, fix = page.Missing, "engine not installed", "station setup"
 		}
 		detail = page.List(page.Text(word), page.Command(fix))
 	}

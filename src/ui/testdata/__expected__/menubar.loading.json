@@ -252,7 +252,7 @@
         "lines": [
           {
             "kind": "text",
-            "text": "the daemon stays stopped until station start or the next login"
+            "text": "the engine stays stopped until station engine start or the next login"
           }
         ],
         "danger": true,

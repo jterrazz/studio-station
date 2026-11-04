@@ -72,13 +72,13 @@ public final class UnixSocket: @unchecked Sendable {
     deinit { close(fd) }
 }
 
-public enum DaemonPath {
+public enum EnginePath {
     public static func socket(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {
-        if let state = environment["XDG_STATE_HOME"], !state.isEmpty { return state + "/station/daemon.sock" }
-        return (environment["HOME"] ?? NSHomeDirectory()) + "/.local/state/station/daemon.sock"
+        if let state = environment["XDG_STATE_HOME"], !state.isEmpty { return state + "/station/engine.sock" }
+        return (environment["HOME"] ?? NSHomeDirectory()) + "/.local/state/station/engine.sock"
     }
 
     public static func agentPlist(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {
-        (environment["HOME"] ?? NSHomeDirectory()) + "/Library/LaunchAgents/com.jterrazz.station.daemon.plist"
+        (environment["HOME"] ?? NSHomeDirectory()) + "/Library/LaunchAgents/com.jterrazz.station.engine.plist"
     }
 }

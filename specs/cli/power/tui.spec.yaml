@@ -5,7 +5,7 @@ fixture:
     - ../../__fixtures__/terminal/
 env: terminal
 runs:
-    - command: '--version >/dev/null; "$STATION" daemon 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; ( until [ "$(/usr/bin/grep -c ''power assert'' .calls 2> /dev/null)" = 2 ]; do /bin/sleep 0.2; done; /bin/sleep 1; echo 20 > power/battery; echo battery > power/source ) & w=$!; terminal --size 120x40 "$STATION" > /dev/null; c=$?; kill $w 2> /dev/null; kill $d; wait $d; exit $c'
+    - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; ( until [ "$(/usr/bin/grep -c ''power assert'' .calls 2> /dev/null)" = 2 ]; do /bin/sleep 0.2; done; /bin/sleep 1; echo 20 > power/battery; echo battery > power/source ) & w=$!; terminal --size 120x40 "$STATION" > /dev/null; c=$?; kill $w 2> /dev/null; kill $d; wait $d; exit $c'
       stdin: |
           see ? keys
           send 8

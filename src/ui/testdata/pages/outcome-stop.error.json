@@ -53,9 +53,9 @@
         },
         {
           "row": {
-            "id": "daemon",
+            "id": "engine",
             "mark": "absent",
-            "label": "daemon",
+            "label": "engine",
             "detail": {
               "kind": "text",
               "text": "kept running: api did not stop"

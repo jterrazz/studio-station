@@ -25,7 +25,7 @@ func daemonFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &down):
 		return failed(down.Error(), "station setup", err), true
 	case errors.As(err, &guestHost):
-		return usage(guestHost.Error(), "the host's daemon runs it inside each VM"), true
+		return usage(guestHost.Error(), "the host's engine runs it inside each VM"), true
 	}
 	return servicesFailure(err)
 }
@@ -86,7 +86,7 @@ func controlFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &stuck):
 		return failed(stuck.Error(), "station machines delete "+stuck.VM, err), true
 	case errors.As(err, &noAnswer):
-		return failed(noAnswer.Error(), "tail ~/.local/state/station/logs/daemon.log", err), true
+		return failed(noAnswer.Error(), "tail ~/.local/state/station/logs/engine.log", err), true
 	case errors.As(err, &boot):
 		return failed(boot.Error(), boot.See, err), true
 	}

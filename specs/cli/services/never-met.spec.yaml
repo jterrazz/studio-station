@@ -1,5 +1,5 @@
 description: 'in a VM no host has connected to yet, every services command says so'
-env: daemon
+env: engine
 runs:
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" services'
       exit: 1

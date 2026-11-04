@@ -25,7 +25,7 @@ func controlPages() []Fixture {
 	return append(out, states("outcome-start",
 		pending(pageoutcome.Start(started, here())),
 		pageoutcome.Start(engine.StartReport{Already: true, Version: "v3.1.0", PID: 812}, here()),
-		failure("outcome", "start", "the station daemon did not answer in 15s", "tail ~/.local/state/station/logs/daemon.log"),
+		failure("outcome", "start", "the engine did not answer in 15s", "tail ~/.local/state/station/logs/engine.log"),
 		pageoutcome.Start(started, here()),
 	)...)
 }

@@ -98,9 +98,9 @@
         },
         {
           "row": {
-            "id": "machine/daemon",
+            "id": "machine/engine",
             "mark": "attention",
-            "label": "daemon",
+            "label": "engine",
             "detail": {
               "kind": "text",
               "text": "not installed"
@@ -639,7 +639,7 @@
               },
               {
                 "kind": "text",
-                "text": "reset to normal at the end, at every daemon start and quit"
+                "text": "reset to normal at the end, at every engine start and quit"
               }
             ]
           }
@@ -724,7 +724,7 @@
           },
           {
             "kind": "text",
-            "text": "the daemon stays stopped until station start or the next login"
+            "text": "the engine stays stopped until station engine start or the next login"
           }
         ],
         "danger": true,

@@ -1,6 +1,6 @@
 description: 'a connected host shows the Tailscale Serve gateway on, a VM none, and status runs no serve'
 fixture: ../../__fixtures__/vms/
-env: daemon
+env: engine
 runs:
     - command: 'status --json | /usr/bin/jq -c ''.gateways[] | select(.name == "Tailscale Serve")'''
       exit: 0

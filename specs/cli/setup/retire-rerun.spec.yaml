@@ -15,4 +15,4 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	nothing to do
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed

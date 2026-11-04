@@ -5,6 +5,6 @@
    [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mlinux-1[m  [38;2;108;111;133mdeleted (temporary)[m
    [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mapi[m      [38;2;108;111;133mstopped (lasting, disk kept)[m
    [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mpower[m    [38;2;108;111;133mended · the clamshell reset to normal[m
-   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mdaemon[m   [38;2;108;111;133mstopped · com.jterrazz.station.daemon booted out[m
+   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mengine[m   [38;2;108;111;133mstopped · com.jterrazz.station.engine booted out[m
 
- [38;2;108;111;133m→ [m[38;2;76;79;105mstation start[m
+ [38;2;108;111;133m→ [m[38;2;76;79;105mstation engine start[m

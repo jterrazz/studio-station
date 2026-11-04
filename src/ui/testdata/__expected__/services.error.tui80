@@ -1,7 +1,7 @@
  - macbook  40000-40999 · 2 leased · 998 free · 20 per VM                   3 ◐
                       port  url                                         state
-   ◐ daemon                                                             stopped
-     → station start
+   ◐ engine                                                             stopped
+     → station engine start
    ◐ linux-1  5173 → 40001  https://jterrazz-macbook-pro…:40001         unknown
    ◐ linux-1  5432 → 40002                                              unknown
  - mac-mini                                                                 1 ◐

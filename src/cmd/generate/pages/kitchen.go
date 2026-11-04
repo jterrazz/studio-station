@@ -113,7 +113,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		{page.Partial, page.Attention, "policy partly applied", ""},
 		{page.Differs, page.Attention, "differs from station's", "station config install " + catalog.HypervisorLauncher},
 		{page.Unset, page.Attention, "name not set", "station setup"},
-		{page.Stopped, page.Attention, "stopped", "station start"},
+		{page.Stopped, page.Attention, "stopped", "station engine start"},
 		{page.Late, page.Attention, "no answer in 2s", ""},
 		{page.Degraded, page.Attention, "Serve is off on the tailnet", ""},
 		{page.Orphan, page.Attention, "orphan: Docker.app is gone", "sudo launchctl bootout system/com.docker.vmnetd"},

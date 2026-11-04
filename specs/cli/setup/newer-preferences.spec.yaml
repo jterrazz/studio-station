@@ -13,7 +13,7 @@ runs:
           ✗	layout	cannot read {{workdir}}/.config/station/settings.json: written at version 2 by a newer station, this one knows 1
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed
       stderr: |
           Error: setup step layout: cannot read {{workdir}}/.config/station/settings.json: written at version 2 by a newer station, this one knows 1
           Hint: fix it, then run station setup again: it resumes

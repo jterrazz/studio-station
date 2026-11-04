@@ -16,7 +16,7 @@ func TestTheMacOSNoiseMatchesByShapeAndAStrayIsStillReported(t *testing.T) {
 	dir := t.TempDir()
 	allowed := filepath.Join(dir, "allowed.txt")
 	created := filepath.Join(dir, "created.txt")
-	station := ".config/station/settings.json\n.local/state/station/runs/*\nLibrary/LaunchAgents/com.jterrazz.station.daemon.plist\n"
+	station := ".config/station/settings.json\n.local/state/station/runs/*\nLibrary/LaunchAgents/com.jterrazz.station.engine.plist\n"
 	if err = os.WriteFile(allowed, append(noise, station...), 0o600); err != nil {
 		t.Fatal(err)
 	}

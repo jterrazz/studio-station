@@ -9,16 +9,17 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: homebrew mise git tailscale: run station setup on a terminal
-          ●	daemon	running {{string}}
+          ●	engine	running {{string}}
       files:
-          Library/LaunchAgents/com.jterrazz.station.daemon.plist:
+          Library/LaunchAgents/com.jterrazz.station.engine.plist:
               contains:
-                  - '<string>com.jterrazz.station.daemon</string>'
+                  - '<string>com.jterrazz.station.engine</string>'
                   - |-
                     	<key>ProgramArguments</key>
                     	<array>
                     		<string>{{path}}</string>
-                    		<string>daemon</string>
+                    		<string>engine</string>
+                    		<string>run</string>
                     	</array>
                   - |-
                     		<key>PATH</key>
@@ -34,8 +35,8 @@ runs:
                     \t<key>AbandonProcessGroup</key>
 
                     \t<true/>"
-                  - '<string>{{workdir}}/.local/state/station/logs/daemon.log</string>'
+                  - '<string>{{workdir}}/.local/state/station/logs/engine.log</string>'
           .calls:
               contains:
-                  - 'launchctl bootstrap gui/{{int}} {{workdir}}/Library/LaunchAgents/com.jterrazz.station.daemon.plist'
-                  - 'launchctl kickstart gui/{{int}}/com.jterrazz.station.daemon'
+                  - 'launchctl bootstrap gui/{{int}} {{workdir}}/Library/LaunchAgents/com.jterrazz.station.engine.plist'
+                  - 'launchctl kickstart gui/{{int}}/com.jterrazz.station.engine'

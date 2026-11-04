@@ -3,23 +3,23 @@ fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/launchctl/
     - ../__fixtures__/power/
-env: daemon
+env: engine
 runs:
     - command: '--version > /dev/null; "$STATION" start > /dev/null; "$STATION" power awake --lid > /dev/null; : > .calls; "$STATION" stop --yes; echo "exit $?"; /usr/bin/grep -E "^(power|launchctl bootout)" .calls | /usr/bin/sed -E ''s/gui\/[0-9]+/gui\/U/'''
       exit: 0
       stdout: |
           ●	power	ended · the clamshell reset to normal
-          ●	daemon	stopped · com.jterrazz.station.daemon booted out
+          ●	engine	stopped · com.jterrazz.station.engine booted out
           exit 0
           power release idle
           power clamshell normal
-          launchctl bootout gui/U/com.jterrazz.station.daemon
+          launchctl bootout gui/U/com.jterrazz.station.engine
           power clamshell normal
     - command: '--version > /dev/null; : > launchctl.loaded; : > .calls; "$STATION" stop --yes; echo "exit $?"; /usr/bin/grep -E "^(power|launchctl bootout)" .calls | /usr/bin/sed -E ''s/gui\/[0-9]+/gui\/U/'''
       exit: 0
       stdout: |
           ●	power	reset
-          ●	daemon	stopped · com.jterrazz.station.daemon booted out
+          ●	engine	stopped · com.jterrazz.station.engine booted out
           exit 0
           power clamshell normal
-          launchctl bootout gui/U/com.jterrazz.station.daemon
+          launchctl bootout gui/U/com.jterrazz.station.engine

@@ -1,6 +1,6 @@
  - Fleet                                                          1 ●  2 ◐  1 ○
    ◐ macbook     host       here  online       100.98.133.14
-     daemon stopped  → station start
+     engine stopped  → station engine start
    ├─ ● linux-1  temporary        running      192.168.64.5
    └─ ○ api      lasting          stopped      -
    ◐ mac-mini    host             unreachable  100.98.133.20

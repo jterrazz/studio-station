@@ -1,15 +1,15 @@
 description: 'a stopped daemon is one row in place of the VMs, the host''s records whole, and the read exits 0'
 fixture:
     - ../../__fixtures__/accounts/
-env: daemon
+env: engine
 runs:
-    - command: '--version > /dev/null; /bin/mkdir -p Library/LaunchAgents .local/state/station/vms; : > Library/LaunchAgents/com.jterrazz.station.daemon.plist; printf ''{"name":"api","image":"linux","version":"1","lifetime":"lasting"}\n'' > .local/state/station/vms/api.json; "$STATION" accounts | /usr/bin/tail -2; "$STATION" accounts --json | /usr/bin/jq -c ''[.daemon, [.machines[].name]]'''
+    - command: '--version > /dev/null; /bin/mkdir -p Library/LaunchAgents .local/state/station/vms; : > Library/LaunchAgents/com.jterrazz.station.engine.plist; printf ''{"name":"api","image":"linux","version":"1","lifetime":"lasting"}\n'' > .local/state/station/vms/api.json; "$STATION" accounts | /usr/bin/tail -2; "$STATION" accounts --json | /usr/bin/jq -c ''[.daemon, [.machines[].name]]'''
       exit: 0
       stdout: |
           ●	jterrazz-macbook-pro	docker	deploy	own	registry.jterrazz.com		osxkeychain
-          ◐	jterrazz-macbook-pro	daemon	stopped		station start
+          ◐	jterrazz-macbook-pro	engine	stopped		station engine start
           ["stopped",["jterrazz-macbook-pro"]]
-    - command: '--version > /dev/null; /bin/rm Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" accounts | /usr/bin/tail -1'
+    - command: '--version > /dev/null; /bin/rm Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" accounts | /usr/bin/tail -1'
       exit: 0
       stdout: |
-          ◐	jterrazz-macbook-pro	daemon	not installed		station setup
+          ◐	jterrazz-macbook-pro	engine	not installed		station setup

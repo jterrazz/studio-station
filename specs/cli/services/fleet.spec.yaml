@@ -16,7 +16,7 @@ runs:
     - command: 'services'
       exit: 0
       stdout: |
-          ◐	daemon			x	not installed		station setup
+          ◐	engine			x	not installed		station setup
           ◐	api	3000	https://macbook.tail1234.ts.net:{{port}}	x	unknown
           ◐	api	8081	https://macbook.tail1234.ts.net:{{port}}	x	unknown		expo
           ●	w	3000	https://y.tail1234.ts.net:40000	y	published	node

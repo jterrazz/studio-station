@@ -2,7 +2,7 @@ description: 'machines pipe refuses before any byte: an unknown name, a host, --
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/local-vm/
-env: daemon
+env: engine
 runs:
     - command: 'machines pipe nope'
       exit: 2

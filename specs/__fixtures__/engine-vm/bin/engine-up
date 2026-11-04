@@ -1,10 +1,10 @@
 #!/bin/sh
-# Starts the document's station daemon (its stderr in daemon.log, its pid in .engine.pid)
+# Starts the document's station engine (its stderr in engine.log, its pid in .engine.pid)
 # and waits until a VM's guest is connected, as a spec that lends needs the engine.
-"$STATION" daemon 2>> "$HOME/daemon.log" &
+"$STATION" engine run 2>> "$HOME/engine.log" &
 echo $! > "$HOME/.engine.pid"
 n=0
-while [ ! -S "$HOME/.local/state/station/daemon.sock" ] && [ $n -lt 50 ]; do
+while [ ! -S "$HOME/.local/state/station/engine.sock" ] && [ $n -lt 50 ]; do
     /bin/sleep 0.1
     n=$((n + 1))
 done

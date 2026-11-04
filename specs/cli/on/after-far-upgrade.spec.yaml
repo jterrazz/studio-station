@@ -1,6 +1,6 @@
 description: 'a call an older far side refused runs once that Mac is upgraded: its calls are read again'
 fixture: ./__fixtures__/old-y/
-env: daemon
+env: engine
 runs:
     - command: 'tools --json --on y'
       exit: 1

@@ -2,9 +2,9 @@ description: 'a guard already past its threshold refuses the start, and nothing 
 fixture:
     - ../../__fixtures__/vms/
     - ../__fixtures__/power/
-env: daemon
+env: engine
 runs:
-    - command: '--version > /dev/null; echo 18 > power/battery; echo battery > power/source; "$STATION" daemon 2> daemon.log & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" power awake; echo "exit $?"; echo 80 > power/battery; echo 1 > power/lowpower; "$STATION" power awake; echo "exit $?"; /usr/bin/grep -c "power assert" .calls; kill $d; wait $d'
+    - command: '--version > /dev/null; echo 18 > power/battery; echo battery > power/source; "$STATION" engine run 2> engine.log & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" power awake; echo "exit $?"; echo 80 > power/battery; echo 1 > power/lowpower; "$STATION" power awake; echo "exit $?"; /usr/bin/grep -c "power assert" .calls; kill $d; wait $d'
       exit: 0
       stdout: |
           exit 1

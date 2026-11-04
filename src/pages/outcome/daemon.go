@@ -24,13 +24,13 @@ func vmRow(v engine.Stopped) page.Row {
 func daemonRow(state, stuck string) page.Row {
 	switch state {
 	case engine.DaemonStopped:
-		r := pages.Done("daemon", catalog.StateOK, "")
+		r := pages.Done("engine", catalog.StateOK, "")
 		r.Detail = page.Texts("stopped", engine.Label+" booted out")
 		return r
 	case engine.DaemonAlready:
-		return pages.Done("daemon", catalog.StateOK, "already stopped")
+		return pages.Done("engine", catalog.StateOK, "already stopped")
 	}
-	return pages.Done("daemon", catalog.StateAbsent, "kept running: "+stuck+" did not stop")
+	return pages.Done("engine", catalog.StateAbsent, "kept running: "+stuck+" did not stop")
 }
 
 func Stop(r engine.StopReport, here page.Context) page.Page {
@@ -55,7 +55,7 @@ func Stop(r engine.StopReport, here page.Context) page.Page {
 	}
 	p := pages.Outcome("stop", here, nil, rows, "VMs to stop")
 	if r.Daemon == engine.DaemonStopped || r.Daemon == engine.DaemonAlready {
-		p.Hints = []page.Hint{*page.Cmd("station start")}
+		p.Hints = []page.Hint{*page.Cmd("station engine start")}
 	}
 	return p
 }
@@ -69,13 +69,13 @@ func StopConfirm(w engine.Work, host string) page.Confirm {
 			lines = append(lines, page.Text(v.Name+" ("+v.Lifetime+") will stop; its disk is kept"))
 		}
 	}
-	lines = append(lines, page.Text("the daemon stays stopped until station start or the next login"))
+	lines = append(lines, page.Text("the engine stays stopped until station engine start or the next login"))
 	return page.Confirm{Question: "Stop everything on " + host + "?", Lines: lines, Danger: true, Yes: "Stop"}
 }
 
 func Start(r engine.StartReport, here page.Context) page.Page {
 	pid := "pid " + strconv.Itoa(r.PID)
-	d := pages.Done("daemon", catalog.StateOK, "")
+	d := pages.Done("engine", catalog.StateOK, "")
 	if r.Already {
 		d.Detail = page.Texts("running", pid)
 	} else {
@@ -86,5 +86,5 @@ func Start(r engine.StartReport, here page.Context) page.Page {
 	for _, vm := range r.Back {
 		rows = append(rows, pages.Done(vm, catalog.StateOK, "started (lasting, wish running)"))
 	}
-	return pages.Outcome("start", here, nil, rows, "daemon to start")
+	return pages.Outcome("start", here, nil, rows, "engine to start")
 }

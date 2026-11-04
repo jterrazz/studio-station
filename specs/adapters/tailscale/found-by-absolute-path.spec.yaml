@@ -3,7 +3,7 @@ fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/tailscale-standalone/
     - ../../__fixtures__/tailscale-app-store/
-env: daemon
+env: engine
 runs:
     - command: 'tailnet --json | /usr/bin/jq -c ''[.variant, .cli]'''
       exit: 0

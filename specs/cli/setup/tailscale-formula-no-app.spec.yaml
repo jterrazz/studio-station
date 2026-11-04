@@ -11,6 +11,6 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: tailscale: run station setup on a terminal
-          ○	daemon	launchd is not here to run it
+          ○	engine	launchd is not here to run it
       files:
           .calls: absent

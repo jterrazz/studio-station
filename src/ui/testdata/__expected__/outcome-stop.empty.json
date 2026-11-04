@@ -21,9 +21,9 @@
       "items": [
         {
           "row": {
-            "id": "daemon",
+            "id": "engine",
             "mark": "ok",
-            "label": "daemon",
+            "label": "engine",
             "detail": {
               "kind": "text",
               "text": "already stopped"
@@ -41,7 +41,7 @@
   ],
   "hints": [
     {
-      "command": "station start"
+      "command": "station engine start"
     }
   ]
 }

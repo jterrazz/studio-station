@@ -84,7 +84,7 @@ func DaemonRow(d Daemon, station string) Check {
 	}
 	switch {
 	case d.Err != nil && d.Agent:
-		c.State, c.Value, c.Detail = catalog.StateDegraded, "stopped", "station start"
+		c.State, c.Value, c.Detail = catalog.StateDegraded, "stopped", "station engine start"
 	case d.Err != nil:
 		c.State, c.Value, c.Detail = catalog.StateDegraded, "not installed", "station setup"
 	case d.Version != station:

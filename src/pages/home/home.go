@@ -223,9 +223,9 @@ func machineRows(s Overview) []page.Row {
 	}
 	rows = append(rows, setupRow(s.Setup))
 	if d := s.Station.Daemon; d.State == catalog.StatePending {
-		rows = append(rows, pending("daemon", "daemon"))
+		rows = append(rows, pending("engine", "engine"))
 	} else if d.Value != "" {
-		rows = append(rows, fixed(row("daemon", pages.MarkOf(d.State), page.Text(d.Value), d.Detail)))
+		rows = append(rows, fixed(row("engine", pages.MarkOf(d.State), page.Text(d.Value), d.Detail)))
 	}
 	return rows
 }
@@ -559,7 +559,7 @@ func fleetValue(s Overview) page.Value {
 		}
 		return page.Text(strings.ToLower(s.Machine.Hostname))
 	}
-	return page.Text("daemon " + d.Value)
+	return page.Text("engine " + d.Value)
 }
 
 // invariant: one row per area, its worst mark and its value (H4), in the order

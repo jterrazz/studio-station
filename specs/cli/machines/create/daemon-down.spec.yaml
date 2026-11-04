@@ -4,7 +4,7 @@ runs:
     - command: 'machines create --lifetime temporary'
       exit: 1
       stderr: |
-          Error: the station daemon is not installed on x
+          Error: the engine is not installed on x
           Hint: station setup
     - command: '--version >/dev/null; /usr/bin/grep -c ''tart clone'' .calls'
       exit: 1

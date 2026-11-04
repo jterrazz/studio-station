@@ -63,9 +63,9 @@
         },
         {
           "row": {
-            "id": "daemon",
+            "id": "engine",
             "mark": "ok",
-            "label": "daemon",
+            "label": "engine",
             "detail": {
               "kind": "list",
               "items": [
@@ -75,7 +75,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "com.jterrazz.station.daemon booted out"
+                  "text": "com.jterrazz.station.engine booted out"
                 }
               ]
             }
@@ -92,7 +92,7 @@
   ],
   "hints": [
     {
-      "command": "station start"
+      "command": "station engine start"
     }
   ]
 }

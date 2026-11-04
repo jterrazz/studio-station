@@ -2,7 +2,7 @@
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
  Power  1 ◐
-   ◐ awake  ?  daemon stopped  → station start
+   ◐ awake  ?  engine stopped  → station engine start
 
  Guards  4 ●
    ● battery    80% · AC attached  ends a session at 20% on battery

@@ -26,9 +26,9 @@
       "items": [
         {
           "row": {
-            "id": "daemon",
+            "id": "engine",
             "mark": "attention",
-            "label": "daemon",
+            "label": "engine",
             "cells": [
               {
                 "kind": "text",

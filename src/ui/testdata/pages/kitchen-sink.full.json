@@ -660,7 +660,7 @@
             },
             "reason": "stopped",
             "hint": {
-              "command": "station start"
+              "command": "station engine start"
             }
           }
         },

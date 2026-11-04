@@ -59,7 +59,7 @@ func NewControl(h system.Host, c Peer, m ControlMachines, hv Hypervisor, job Job
 
 type NotInstalledError struct{}
 
-func (*NotInstalledError) Error() string { return "the station daemon is not installed" }
+func (*NotInstalledError) Error() string { return "the engine is not installed" }
 
 type OffHostError struct {
 	Verb string
@@ -70,12 +70,12 @@ func (e *OffHostError) Error() string { return "station " + e.Verb + " runs on a
 
 type StuckError struct{ VM string }
 
-func (e *StuckError) Error() string { return e.VM + " did not stop; the daemon keeps running" }
+func (e *StuckError) Error() string { return e.VM + " did not stop; the engine keeps running" }
 
 type NoAnswerError struct{ Wait time.Duration }
 
 func (e *NoAnswerError) Error() string {
-	return "the station daemon did not answer in " + strconv.Itoa(int(e.Wait.Seconds())) + "s"
+	return "the engine did not answer in " + strconv.Itoa(int(e.Wait.Seconds())) + "s"
 }
 
 type BootError struct {
@@ -99,7 +99,7 @@ func (c *Control) Check(verb string) error {
 	return nil
 }
 
-func (c *Control) plist() string { return catalog.DaemonPlist(c.h.Env.Home()) }
+func (c *Control) plist() string { return catalog.EnginePlist(c.h.Env.Home()) }
 
 type Work struct {
 	Answering bool

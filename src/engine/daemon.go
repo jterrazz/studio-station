@@ -209,7 +209,7 @@ func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
 	d.note = note
 	d.power.Reset()
 	if n := d.h.Run.Reap(ChildrenDir(d.o.State)); n > 0 {
-		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed daemon left running")
+		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed engine left running")
 	}
 	if err := d.h.FS.MkdirAll(d.o.State, 0o700); err != nil {
 		return err

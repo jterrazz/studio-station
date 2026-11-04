@@ -73,9 +73,9 @@
       "items": [
         {
           "row": {
-            "id": "daemon",
+            "id": "engine",
             "mark": "attention",
-            "label": "daemon",
+            "label": "engine",
             "cells": [
               {
                 "kind": "none"
@@ -94,7 +94,7 @@
             ],
             "reason": "stopped",
             "hint": {
-              "command": "station start"
+              "command": "station engine start"
             }
           }
         },

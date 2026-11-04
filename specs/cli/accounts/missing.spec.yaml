@@ -1,7 +1,7 @@
 description: 'an absent tool is ○ missing: gh with its install hint, wrangler with no hint (not a catalogue tool)'
 fixture:
     - ../../__fixtures__/accounts/
-env: daemon
+env: engine
 runs:
     - command: '--version > /dev/null; /bin/rm bin/gh bin/wrangler; "$STATION" accounts | /usr/bin/awk -F''\t'' ''$3=="github"||$3=="cloudflare"'''
       exit: 0

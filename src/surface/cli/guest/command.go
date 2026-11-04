@@ -21,7 +21,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	// stdout are the host's channel.
 	return kit.Command(kit.Leaf[struct{}]{
 		Use:      "guest",
-		Short:    "Report this VM's listening ports to its host's daemon",
+		Short:    "Report this VM's listening ports to its host's engine",
 		Plumbing: true,
 		Validate: func(context.Context, *struct{}) error { return d.Guest.Check() },
 		Run: func(ctx context.Context, _ *struct{}, io kit.IO) error {

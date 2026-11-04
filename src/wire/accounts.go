@@ -62,7 +62,7 @@ func (m machine) accounts() *accounts.Service {
 		Daemon: func(ctx context.Context) ([]accounts.VMRead, string) {
 			var view engine.AccountsView
 			if err := d.do(ctx, process.Accounts, nil, &view); err != nil {
-				if _, missing := m.host.FS.Stat(catalog.DaemonPlist(m.host.Env.Home())); missing != nil {
+				if _, missing := m.host.FS.Stat(catalog.EnginePlist(m.host.Env.Home())); missing != nil {
 					return nil, accounts.DaemonAbsent
 				}
 				return nil, accounts.DaemonStopped

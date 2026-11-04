@@ -178,8 +178,8 @@ func serveFrames(env kit.Env) func(ctx context.Context, in io.Reader, out io.Wri
 	}
 }
 
-func engineCommand(env kit.Env) *cobra.Command {
-	return enginecmd.Command(env, engineattach.Command(engineattach.Deps{Serve: serveFrames(env)}, env))
+func engineCommand(env kit.Env, m machine) *cobra.Command {
+	return enginecmd.Command(env, engineRunCommand(env, m), engineattach.Command(engineattach.Deps{Serve: serveFrames(env)}, env))
 }
 
 // value: a run that serves frames on its stdout: nothing else of it may write there.

@@ -6,7 +6,7 @@ runs:
     - command: 'services | /usr/bin/awk -F "\t" ''{print (NF <= 8), $2, $3, $5}'''
       exit: 0
       stdout: |
-          1 daemon  x
+          1 engine  x
           1 api 3000 x
           1 api 8081 x
           1 w 3000 y

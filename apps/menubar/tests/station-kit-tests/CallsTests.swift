@@ -30,7 +30,7 @@ final class CallsTests: XCTestCase {
     }
 
     static func execs(_ files: [(path: String, text: String)]) -> [String] {
-        files.filter { $0.path != "daemon/Terminal.swift" && ($0.text.contains("Process()") || $0.text.contains("NSTask")) }.map(\.path)
+        files.filter { $0.path != "engine/Terminal.swift" && ($0.text.contains("Process()") || $0.text.contains("NSTask")) }.map(\.path)
     }
 
     func swiftFiles(_ root: URL) -> [(path: String, text: String)] {
@@ -43,6 +43,6 @@ final class CallsTests: XCTestCase {
     // file that opens the terminal and nowhere else, in the kit or the app.
     func testNoCLIExec() {
         XCTAssertEqual(Self.execs(swiftFiles(Tree.sources) + swiftFiles(Tree.app)), [])
-        XCTAssertEqual(Self.execs([("daemon/Actions.swift", "let p = Process()"), ("daemon/Terminal.swift", "let p = Process()")]), ["daemon/Actions.swift"])
+        XCTAssertEqual(Self.execs([("engine/Actions.swift", "let p = Process()"), ("engine/Terminal.swift", "let p = Process()")]), ["engine/Actions.swift"])
     }
 }

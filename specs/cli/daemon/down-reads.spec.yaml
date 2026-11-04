@@ -2,17 +2,17 @@ description: 'with the daemon down the reads degrade: not installed without its 
 fixture:
     - ../../__fixtures__/vms/
     - ../__fixtures__/vm-api/
-env: daemon
+env: engine
 runs:
-    - command: 'machines --json | /usr/bin/jq -c ''.hosts[0].daemon''; "$STATION" machines | /usr/bin/grep daemon; "$STATION" services'
+    - command: 'machines --json | /usr/bin/jq -c ''.hosts[0].daemon''; "$STATION" machines | /usr/bin/grep engine; "$STATION" services'
       exit: 0
       stdout: |
           {"running":false,"version":""}
-          ◐	x	host			online	192.0.2.1	daemon not installed · station setup
-          ◐	daemon			x	not installed		station setup
-    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" status | /usr/bin/awk -F "\t" ''$2 == "daemon"''; "$STATION" machines | /usr/bin/grep daemon; "$STATION" services'
+          ◐	x	host			online	192.0.2.1	engine not installed · station setup
+          ◐	engine			x	not installed		station setup
+    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" status | /usr/bin/awk -F "\t" ''$2 == "engine"''; "$STATION" machines | /usr/bin/grep engine; "$STATION" services'
       exit: 0
       stdout: |
-          ◐	daemon	stopped	station start
-          ◐	x	host			online	192.0.2.1	daemon stopped · station start
-          ◐	daemon			x	stopped		station start
+          ◐	engine	stopped	station engine start
+          ◐	x	host			online	192.0.2.1	engine stopped · station engine start
+          ◐	engine			x	stopped		station engine start

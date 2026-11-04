@@ -22,7 +22,7 @@ func (m machine) jobs(budget time.Duration) contract.Jobs {
 }
 
 func (m machine) daemonJob() contract.Ref {
-	return contract.Ref{Domain: contract.Domain{UID: m.host.Env.Euid()}, Label: engine.Label, File: catalog.DaemonPlist(m.host.Env.Home())}
+	return contract.Ref{Domain: contract.Domain{UID: m.host.Env.Euid()}, Label: engine.Label, File: catalog.EnginePlist(m.host.Env.Home())}
 }
 
 type engineJob struct {

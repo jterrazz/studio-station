@@ -14,7 +14,7 @@ runs:
           ●	layout	userspace tailscaled retired; its node "base" stays at https://login.tailscale.com/admin/machines until you remove it
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed
       files:
           .config/station/settings.json:
               equals: |
@@ -46,6 +46,6 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	nothing to do
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	daemon	not needed until tart is installed
+          ○	engine	not needed until tart is installed
       files:
           .studio: absent

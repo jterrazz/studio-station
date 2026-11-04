@@ -11,7 +11,7 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: homebrew mise git tailscale: run station setup on a terminal
-          ✗	daemon	launchctl kickstart exited 5: Could not kickstart service: 5: Input/output error
+          ✗	engine	launchctl kickstart exited 5: Could not kickstart service: 5: Input/output error
       stderr: |
-          Error: setup step daemon: launchctl kickstart exited 5: Could not kickstart service: 5: Input/output error
+          Error: setup step engine: launchctl kickstart exited 5: Could not kickstart service: 5: Input/output error
           Hint: fix it, then run station setup again: it resumes

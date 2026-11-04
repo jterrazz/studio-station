@@ -2,9 +2,9 @@ description: 'the clamshell is normal at the daemon''s start and SIGTERM, set ag
 fixture:
     - ../../__fixtures__/vms/
     - ../__fixtures__/power/
-env: daemon
+env: engine
 runs:
-    - command: '--version > /dev/null; "$STATION" daemon 2> daemon.log & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /usr/bin/grep "^power" .calls; "$STATION" power awake --lid --battery > /dev/null; echo battery > power/source; /bin/sleep 1; echo closed > power/lid; /bin/sleep 1; echo open > power/lid; /bin/sleep 1; /usr/bin/grep -c "power clamshell disabled" .calls; : > .calls; kill $d; wait $d; /usr/bin/grep -v pmset .calls'
+    - command: '--version > /dev/null; "$STATION" engine run 2> engine.log & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /usr/bin/grep "^power" .calls; "$STATION" power awake --lid --battery > /dev/null; echo battery > power/source; /bin/sleep 1; echo closed > power/lid; /bin/sleep 1; echo open > power/lid; /bin/sleep 1; /usr/bin/grep -c "power clamshell disabled" .calls; : > .calls; kill $d; wait $d; /usr/bin/grep -v pmset .calls'
       exit: 0
       stdout: |
           power clamshell normal

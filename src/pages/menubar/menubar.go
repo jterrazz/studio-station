@@ -49,7 +49,7 @@ func Page(r Reading, here page.Context) page.Page {
 func Stopped(here page.Context, installed bool) page.Page {
 	// invariant: the page the app draws when no daemon answers is bundled into
 	// it, so it holds only what is true without one.
-	row := page.Row{ID: "daemon", Label: "daemon", Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text("stopped")}}
+	row := page.Row{ID: "engine", Label: "engine", Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text("stopped")}}
 	actions := []page.Action{start(), openStation()}
 	if !installed {
 		row.Cells = []page.Value{page.Text("not installed")}

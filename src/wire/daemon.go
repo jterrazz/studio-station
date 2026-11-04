@@ -24,7 +24,7 @@ import (
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/remote"
 	"github.com/jterrazz/studio-station/src/remote/api"
-	daemoncmd "github.com/jterrazz/studio-station/src/surface/cli/daemon"
+	enginerun "github.com/jterrazz/studio-station/src/surface/cli/engine/run"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -64,8 +64,16 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	return d
 }
 
-func daemonCommand(env kit.Env, m machine) *cobra.Command {
-	return daemoncmd.Command(daemoncmd.Deps{Daemon: m.daemon(env)}, env)
+func engineRunCommand(env kit.Env, m machine) *cobra.Command {
+	return enginerun.Command(enginerun.Deps{Engine: m.daemon(env)}, env)
+}
+
+// invariant: a v2 job runs `station daemon` until setup moves it to the
+// engine's label; it runs the engine, hidden, for one release.
+func retiredDaemonCommand(env kit.Env, m machine) *cobra.Command {
+	cmd := engineRunCommand(env, m)
+	cmd.Use = "daemon"
+	return cmd
 }
 
 type daemonLends struct{ s *secrets.Service }
@@ -211,7 +219,7 @@ func (i daemonInstaller) env() map[string]string {
 // per-VM agents; it restarts the daemon only when its plist changed or it runs
 // another version, and the VMs survive that restart.
 func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
-	const step = "daemon"
+	const step = "engine"
 	if hv := i.m.hypervisor(); !hv.Installed() {
 		return setup.Step{Name: step, State: catalog.StateAbsent, Detail: "not needed until " + hv.Name() + " is installed"}, nil
 	}
@@ -224,8 +232,8 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 	}
 	job := i.m.daemonJob()
 	changed, err := jobs.Install(ctx, contract.JobSpec{
-		Label: job.Label, Program: []string{i.m.host.Env.Executable(), "daemon"}, Env: i.env(),
-		AtLogin: true, KeepAlive: true, Log: filepath.Join(i.m.paths.State, "logs", "daemon.log"), File: job.File,
+		Label: job.Label, Program: []string{i.m.host.Env.Executable(), "engine", "run"}, Env: i.env(),
+		AtLogin: true, KeepAlive: true, Log: filepath.Join(i.m.paths.State, "logs", "engine.log"), File: job.File,
 	})
 	if err != nil {
 		return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}

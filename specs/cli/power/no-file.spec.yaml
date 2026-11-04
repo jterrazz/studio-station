@@ -2,7 +2,7 @@ description: 'power writes no file: a session, a guard end, a refresh and a slee
 fixture:
     - ../../__fixtures__/vms/
     - ../__fixtures__/power/
-env: daemon
+env: engine
 runs:
-    - command: '--version > /dev/null; "$STATION" daemon 2> daemon.log & d=$!; n=0; while [ ! -S .local/state/station/daemon.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /bin/sleep 1; : > mark; "$STATION" power awake --lid > /dev/null; echo 3 > power/thermal; /bin/sleep 1.5; echo 0 > power/thermal; "$STATION" power awake > /dev/null; "$STATION" power awake --for 1h > /dev/null; "$STATION" power sleep > /dev/null; /usr/bin/find . -newer mark -type f ! -name .calls ! -name daemon.log ! -path "./power/*" ! -path "./.local/state/station/logs/*"; kill $d; wait $d'
+    - command: '--version > /dev/null; "$STATION" engine run 2> engine.log & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; /bin/sleep 1; : > mark; "$STATION" power awake --lid > /dev/null; echo 3 > power/thermal; /bin/sleep 1.5; echo 0 > power/thermal; "$STATION" power awake > /dev/null; "$STATION" power awake --for 1h > /dev/null; "$STATION" power sleep > /dev/null; /usr/bin/find . -newer mark -type f ! -name .calls ! -name engine.log ! -path "./power/*" ! -path "./.local/state/station/logs/*"; kill $d; wait $d'
       exit: 0

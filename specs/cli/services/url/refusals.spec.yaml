@@ -1,5 +1,5 @@
 description: 'services url refuses a host, an ignored port and what is not a port'
-env: daemon
+env: engine
 runs:
     - command: 'services url 3000'
       exit: 2

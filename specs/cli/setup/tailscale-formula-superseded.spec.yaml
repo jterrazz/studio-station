@@ -2,7 +2,7 @@ description: 'once the app is installed, setup uninstalls the tailscale formula 
 fixture:
     - ../__fixtures__/system-tools/
     - ./__fixtures__/tailscale-formula/
-env: daemon
+env: engine
 runs:
     - command: '--version >/dev/null; /bin/mkdir -p answers/brew; echo "tailscale-app 1.104.4" > answers/brew/cask.txt; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	tools'''
       exit: 0
