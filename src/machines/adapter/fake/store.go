@@ -8,35 +8,76 @@ import (
 	"github.com/jterrazz/studio-station/src/core/store"
 	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/world"
 )
 
-type Store struct{ records map[string]machines.Record }
+type Store struct {
+	// invariant: the VM records one Mac of the world keeps, beside its disks.
+	w   *world.World
+	mac string
+}
 
 var (
 	_ contract.MachineStore = (*Store)(nil)
 	_ store.Migrator        = (*Store)(nil)
 )
 
-func NewStore() *Store { return &Store{records: map[string]machines.Record{}} }
+func NewStore() *Store {
+	// value: a store over a world of its own, for a test that needs no other fake.
+	return StoreOf(&world.World{}, "here")
+}
+
+func StoreOf(w *world.World, mac string) *Store { return &Store{w: w, mac: mac} }
+
+func (s *Store) vms() map[string]*world.VM { return s.w.Mac(s.mac).VMs }
+
+func record(name string, v *world.VM) machines.Record {
+	k := v.Kept
+	return machines.Record{
+		Name: name, Image: k.Image, Version: k.Version, Lifetime: k.Lifetime, Want: k.Want, Network: k.Network,
+		Env: k.Env, CPUs: v.Size.CPUs, MemoryBytes: v.Size.Memory, DiskBytes: v.Size.Disk, CreatedAt: k.CreatedAt,
+		Shares: k.Shares,
+	}
+}
 
 func (s *Store) Get(_ context.Context, name string) (machines.Record, error) {
-	r, ok := s.records[name]
-	if !ok {
+	s.w.Lock()
+	defer s.w.Unlock()
+	v, ok := s.vms()[name]
+	if !ok || v.Kept == nil {
 		return machines.Record{}, store.ErrNotFound
 	}
-	return r, nil
+	return record(name, v), nil
 }
 
 func (s *Store) Put(_ context.Context, r machines.Record) error {
-	r.Shares = s.records[r.Name].Shares
-	s.records[r.Name] = r
+	s.w.Lock()
+	defer s.w.Unlock()
+	v := s.vms()[r.Name]
+	if v == nil {
+		v = &world.VM{}
+		s.vms()[r.Name] = v
+	}
+	var shares []string
+	if v.Kept != nil {
+		shares = v.Kept.Shares
+	}
+	v.Kept = &world.Kept{
+		Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
+		CreatedAt: r.CreatedAt, Shares: shares,
+	}
+	v.Size = machines.Size{CPUs: r.CPUs, Memory: r.MemoryBytes, Disk: r.DiskBytes}
 	return nil
 }
 
 func (s *Store) List(context.Context) ([]machines.Record, error) {
-	out := make([]machines.Record, 0, len(s.records))
-	for _, name := range slices.Sorted(maps.Keys(s.records)) {
-		out = append(out, s.records[name])
+	s.w.Lock()
+	defer s.w.Unlock()
+	out := []machines.Record{}
+	for _, name := range slices.Sorted(maps.Keys(s.vms())) {
+		if v := s.vms()[name]; v.Kept != nil {
+			out = append(out, record(name, v))
+		}
 	}
 	return out, nil
 }
@@ -44,7 +85,16 @@ func (s *Store) List(context.Context) ([]machines.Record, error) {
 func (s *Store) ListReadable(ctx context.Context) ([]machines.Record, error) { return s.List(ctx) }
 
 func (s *Store) Delete(_ context.Context, name string) error {
-	delete(s.records, name)
+	s.w.Lock()
+	defer s.w.Unlock()
+	v, ok := s.vms()[name]
+	if !ok {
+		return nil
+	}
+	v.Kept = nil
+	if !v.Disk {
+		delete(s.vms(), name)
+	}
 	return nil
 }
 

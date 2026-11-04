@@ -3,7 +3,9 @@ package fake
 import (
 	"context"
 	"errors"
+	"maps"
 	"net/netip"
+	"slices"
 	"sync"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/world"
 )
 
 var (
@@ -21,21 +24,17 @@ var (
 	ErrHeldName = errors.New("a VM disk already has this name")
 )
 
-type disk struct {
-	size machines.Size
-	run  *run
-}
-
 type Hypervisor struct {
-	mu     sync.Mutex
-	name   string
-	images map[string]bool
-	disks  map[string]*disk
-	pids   int
+	// invariant: the hypervisor of one Mac of the world: its disks and runs are
+	// that Mac's VMs, so a run outlives the adapter, as a VM outlives its engine,
+	// and an event of the world ends it.
+	w    *world.World
+	mac  string
+	name string
 }
 
-func New(name string) *Hypervisor {
-	return &Hypervisor{name: name, images: map[string]bool{}, disks: map[string]*disk{}}
+func HypervisorOf(w *world.World, mac, name string) *Hypervisor {
+	return &Hypervisor{w: w, mac: mac, name: name}
 }
 
 func (h *Hypervisor) Name() string    { return h.name }
@@ -43,16 +42,27 @@ func (h *Hypervisor) Installed() bool { return true }
 
 func (h *Hypervisor) Version(context.Context) (string, error) { return "1.0.0", nil }
 
+func (h *Hypervisor) here() *world.Mac { return h.w.Mac(h.mac) }
+
+func (h *Hypervisor) disk(vm string) (*world.VM, bool) {
+	v, ok := h.here().VMs[vm]
+	return v, ok && v.Disk
+}
+
 func (h *Hypervisor) Disks(context.Context) ([]contract.Disk, error) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	out := make([]contract.Disk, 0, len(h.disks))
-	for vm, d := range h.disks {
+	h.w.Lock()
+	defer h.w.Unlock()
+	out := []contract.Disk{}
+	for _, vm := range slices.Sorted(maps.Keys(h.here().VMs)) {
+		v := h.here().VMs[vm]
+		if !v.Disk {
+			continue
+		}
 		state := contract.DiskStopped
-		if d.run != nil {
+		if v.Running() {
 			state = contract.DiskRunning
 		}
-		out = append(out, contract.Disk{VM: vm, Bytes: d.size.Disk, State: state})
+		out = append(out, contract.Disk{VM: vm, Bytes: v.Size.Disk, State: state})
 	}
 	return out, nil
 }
@@ -62,136 +72,196 @@ func (h *Hypervisor) Fetch(_ context.Context, img imagescontract.ImageLocation, 
 		p.Step("fetching", img.Ref)
 		defer p.Done("fetching", nil)
 	}
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.images[img.Ref] = true
+	h.w.Lock()
+	defer h.w.Unlock()
+	if m := h.here(); !slices.Contains(m.Images, img.Ref) {
+		m.Images = append(m.Images, img.Ref)
+	}
 	return nil
 }
 
 func (h *Hypervisor) Clone(_ context.Context, from imagescontract.ImageLocation, vm string) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if !h.images[from.Ref] && h.disks[from.Ref] == nil {
+	h.w.Lock()
+	defer h.w.Unlock()
+	m := h.here()
+	if _, ok := h.disk(from.Ref); !ok && !slices.Contains(m.Images, from.Ref) {
 		return ErrNoImage
 	}
-	if h.disks[vm] != nil {
+	if _, ok := h.disk(vm); ok {
 		return ErrHeldName
 	}
-	h.disks[vm] = &disk{}
+	v := m.VMs[vm]
+	if v == nil {
+		v = &world.VM{}
+		m.VMs[vm] = v
+	}
+	v.Disk = true
 	return nil
 }
 
 func (h *Hypervisor) Resize(_ context.Context, vm string, s machines.Size) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	d, ok := h.disks[vm]
+	h.w.Lock()
+	defer h.w.Unlock()
+	v, ok := h.disk(vm)
 	if !ok {
 		return ErrNoDisk
 	}
-	d.size = s
+	v.Size = s
 	return nil
 }
 
 func (h *Hypervisor) Rename(_ context.Context, from, to string) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	d, ok := h.disks[from]
+	h.w.Lock()
+	defer h.w.Unlock()
+	v, ok := h.disk(from)
 	if !ok {
 		return ErrNoDisk
 	}
-	if h.disks[to] != nil {
+	if _, held := h.disk(to); held {
 		return ErrHeldName
 	}
-	delete(h.disks, from)
-	h.disks[to] = d
+	m := h.here()
+	delete(m.VMs, from)
+	if kept := m.VMs[to]; kept != nil {
+		v.Kept = kept.Kept
+	}
+	m.VMs[to] = v
 	return nil
 }
 
 func (h *Hypervisor) Boot(_ context.Context, vm string, _ contract.BootOptions) (contract.Run, error) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	d, ok := h.disks[vm]
+	h.w.Lock()
+	defer h.w.Unlock()
+	v, ok := h.disk(vm)
 	if !ok {
 		return nil, ErrNoDisk
 	}
-	if d.run != nil {
+	if v.Running() {
 		return nil, ErrTwoRuns
 	}
-	h.pids++
-	d.run = &run{vm: vm, pid: 1000 + h.pids, ended: make(chan machines.RunEnd, 1)}
-	return d.run, nil
+	v.PID, v.Ended = h.nextPID(), nil
+	return &run{h: h, vm: vm, pid: v.PID}, nil
+}
+
+// value: pids count up over the whole world, so no two runs share one.
+func (h *Hypervisor) nextPID() int {
+	top := 1000
+	for _, m := range h.w.Macs {
+		for _, v := range m.VMs {
+			top = max(top, v.PID)
+		}
+	}
+	return top + 1
 }
 
 func (h *Hypervisor) Adopt(_ context.Context, vm string) (contract.Run, bool) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if d, ok := h.disks[vm]; ok && d.run != nil {
-		return d.run, true
+	h.w.Lock()
+	defer h.w.Unlock()
+	if v, ok := h.disk(vm); ok && v.Running() {
+		return &run{h: h, vm: vm, pid: v.PID}, true
 	}
 	return nil, false
 }
 
-func (h *Hypervisor) End(vm string, end machines.RunEnd) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.end(vm, end)
+func End(r contract.Run, end machines.RunEnd) {
+	// value: ends r's run the way its guest would, wherever the run was adopted.
+	if r, ok := r.(*run); ok {
+		r.h.end(r.vm, r.pid, end)
+	}
 }
 
-func (h *Hypervisor) end(vm string, end machines.RunEnd) {
-	d, ok := h.disks[vm]
-	if !ok || d.run == nil {
-		return
+func (h *Hypervisor) end(vm string, pid int, end machines.RunEnd) {
+	h.w.Lock()
+	defer h.w.Unlock()
+	if v, ok := h.disk(vm); ok && v.PID == pid {
+		v.PID, v.Ended = 0, &end
 	}
-	d.run.ended <- end
-	close(d.run.ended)
-	d.run = nil
 }
 
 func (h *Hypervisor) Shutdown(_ context.Context, vm string, _ time.Duration) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if _, ok := h.disks[vm]; !ok {
+	h.w.Lock()
+	defer h.w.Unlock()
+	v, ok := h.disk(vm)
+	if !ok {
 		return ErrNoDisk
 	}
-	h.end(vm, machines.RunEnd{Reason: machines.GuestPoweroff})
+	if v.Running() {
+		v.PID, v.Ended = 0, &machines.RunEnd{Reason: machines.GuestPoweroff}
+	}
 	return nil
 }
 
 func (h *Hypervisor) Delete(_ context.Context, vm string) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if _, ok := h.disks[vm]; !ok {
+	h.w.Lock()
+	defer h.w.Unlock()
+	v, ok := h.disk(vm)
+	if !ok {
 		return ErrNoDisk
 	}
-	h.end(vm, machines.RunEnd{Reason: machines.GuestPoweroff})
-	delete(h.disks, vm)
+	v.Disk, v.PID, v.Ended = false, 0, nil
+	if v.Kept == nil {
+		delete(h.here().VMs, vm)
+	}
 	return nil
 }
 
 func (h *Hypervisor) Discard(_ context.Context, img imagescontract.ImageLocation) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	delete(h.images, img.Ref)
-	delete(h.disks, img.Ref)
+	h.w.Lock()
+	defer h.w.Unlock()
+	m := h.here()
+	m.Images = slices.DeleteFunc(m.Images, func(ref string) bool { return ref == img.Ref })
+	if v, ok := m.VMs[img.Ref]; ok && v.Kept == nil {
+		delete(m.VMs, img.Ref)
+	}
 	return nil
 }
 
 func (h *Hypervisor) Address(_ context.Context, vm string, _ time.Duration) (netip.Addr, error) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	d, ok := h.disks[vm]
-	if !ok || d.run == nil {
+	h.w.Lock()
+	defer h.w.Unlock()
+	v, ok := h.disk(vm)
+	if !ok || !v.Running() {
 		return netip.Addr{}, ErrNotBoot
+	}
+	if v.Address != "" {
+		return netip.ParseAddr(v.Address)
 	}
 	return netip.MustParseAddr("192.168.64.5"), nil
 }
 
+// invariant: a run is over once its VM no longer runs under its pid; how it
+// ended is read from the world, once, then kept.
 type run struct {
-	vm    string
-	pid   int
-	ended chan machines.RunEnd
+	h   *Hypervisor
+	vm  string
+	pid int
+
+	once sync.Mutex
+	end  *machines.RunEnd
 }
 
-func (r *run) VM() string                    { return r.vm }
-func (r *run) PID() int                      { return r.pid }
-func (r *run) Ended() <-chan machines.RunEnd { return r.ended }
+func (r *run) VM() string { return r.vm }
+func (r *run) PID() int   { return r.pid }
+
+func (r *run) Ended() <-chan machines.RunEnd {
+	r.once.Lock()
+	defer r.once.Unlock()
+	if r.end == nil {
+		r.h.w.Lock()
+		v, ok := r.h.here().VMs[r.vm]
+		switch {
+		case ok && v.PID == r.pid:
+		case ok && v.Ended != nil:
+			r.end, v.Ended = v.Ended, nil
+		default:
+			r.end = &machines.RunEnd{Reason: machines.Unknown, ExitCode: -1}
+		}
+		r.h.w.Unlock()
+	}
+	ch := make(chan machines.RunEnd, 1)
+	if r.end != nil {
+		ch <- *r.end
+		close(ch)
+	}
+	return ch
+}
