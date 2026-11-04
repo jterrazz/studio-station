@@ -80,7 +80,9 @@ type Handler interface {
 
 type Router interface {
 	Invoke(ctx context.Context, target machine.Ref, call string, in, out any, p Progress) error
-	Watch(ctx context.Context, target machine.Ref, call string, in any) (<-chan Update[json.RawMessage], error)
+	// invariant: each update's value is the call's Out when it ran in this
+	// process, its wire form (json.RawMessage) when it ran elsewhere.
+	Watch(ctx context.Context, target machine.Ref, call string, in any, p Progress) (<-chan Update[any], error)
 }
 
 func Invoke[D, In, Out any](ctx context.Context, r Router, target machine.Ref, c Call[D, In, Out], in In, p Progress) (Out, error) {
@@ -89,24 +91,70 @@ func Invoke[D, In, Out any](ctx context.Context, r Router, target machine.Ref, c
 	return out, err
 }
 
+func Read[D, In, Out any](ctx context.Context, r Router, target machine.Ref, w Watch[D, In, Out], in In, p Progress) (Out, error) {
+	var out Out
+	err := r.Invoke(ctx, target, w.Name, in, &out, p)
+	return out, err
+}
+
+func Follow[D, In, Out any](ctx context.Context, r Router, target machine.Ref, w Watch[D, In, Out], in In, p Progress) (<-chan Update[Out], error) {
+	updates, err := r.Watch(ctx, target, w.Name, in, p)
+	if err != nil {
+		return nil, err
+	}
+	out := make(chan Update[Out])
+	go func() {
+		defer close(out)
+		for u := range updates {
+			next := Update[Out]{Err: u.Err}
+			if u.Err == nil {
+				next.Value, next.Err = valueOf[Out](w.Name, u.Value)
+			}
+			select {
+			case out <- next:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out, nil
+}
+
+func valueOf[Out any](name string, v any) (Out, error) {
+	switch v := v.(type) {
+	case json.RawMessage:
+		var out Out
+		if err := json.Unmarshal(v, &out); err != nil {
+			e := fail.New(fail.Failed, BadOutput, name, map[string]string{"out": reflect.TypeFor[Out]().Name()})
+			e.Cause = err
+			return out, e
+		}
+		return out, nil
+	case Out:
+		return v, nil
+	}
+	var zero Out
+	return zero, fail.New(fail.Failed, BadOutput, name, map[string]string{"out": reflect.TypeFor[Out]().Name()})
+}
+
 func Bind[D, In, Out any](c Call[D, In, Out], d D) Handler {
 	return bound[D, In, Out]{meta: Meta{
 		Name: c.Name, Section: c.Section, Where: c.Where, Applies: c.Applies, Confirm: c.Confirm, Errors: c.Errors,
 		In: reflect.TypeFor[In]().Name(), Out: reflect.TypeFor[Out]().Name(),
-	}, run: c.Run, deps: d}
+	}, runFn: c.Run, deps: d}
 }
 
 func BindWatch[D, In, Out any](w Watch[D, In, Out], d D) Handler {
 	return watched[D, In, Out]{meta: Meta{
 		Name: w.Name, Section: w.Section, Where: w.Where, Applies: w.Applies, Errors: w.Errors,
 		In: reflect.TypeFor[In]().Name(), Out: reflect.TypeFor[Out]().Name(), Watch: true,
-	}, run: w.Run, deps: d}
+	}, runFn: w.Run, deps: d}
 }
 
 type bound[D, In, Out any] struct {
-	meta Meta
-	run  func(context.Context, D, In, Progress) (Out, error)
-	deps D
+	meta  Meta
+	runFn func(context.Context, D, In, Progress) (Out, error)
+	deps  D
 }
 
 func (b bound[D, In, Out]) Meta() Meta { return b.meta }
@@ -116,7 +164,7 @@ func (b bound[D, In, Out]) Invoke(ctx context.Context, target machine.Profile, r
 	if err != nil {
 		return nil, err
 	}
-	out, err := b.run(ctx, b.deps, in, orSilent(p))
+	out, err := b.runFn(ctx, b.deps, in, orSilent(p))
 	if err != nil {
 		return nil, err
 	}
@@ -135,9 +183,9 @@ func (b bound[D, In, Out]) Watch(ctx context.Context, target machine.Profile, ra
 }
 
 type watched[D, In, Out any] struct {
-	meta Meta
-	run  func(context.Context, D, In, Progress) (<-chan Update[Out], error)
-	deps D
+	meta  Meta
+	runFn func(context.Context, D, In, Progress) (<-chan Update[Out], error)
+	deps  D
 }
 
 func (w watched[D, In, Out]) Meta() Meta { return w.meta }
@@ -147,7 +195,7 @@ func (w watched[D, In, Out]) Watch(ctx context.Context, target machine.Profile, 
 	if err != nil {
 		return nil, err
 	}
-	updates, err := w.run(ctx, w.deps, in, orSilent(p))
+	updates, err := w.runFn(ctx, w.deps, in, orSilent(p))
 	if err != nil {
 		return nil, err
 	}
@@ -188,17 +236,8 @@ func (w watched[D, In, Out]) Invoke(ctx context.Context, target machine.Profile,
 // section table of the target's kind, the call's own rule, its input.
 func admit[In any](m Meta, target machine.Profile, raw json.RawMessage) (In, error) {
 	var in In
-	if m.Section != "" && !slices.Contains(section.For(target.Kind), m.Section) {
-		return in, fail.New(fail.NotForThisMachine, NotForThisMachine, target.Ref.Name, map[string]string{
-			"call": m.Name, "section": string(m.Section), "kind": string(target.Kind),
-		})
-	}
-	if m.Applies != nil {
-		if v := m.Applies(target); !v.OK {
-			return in, fail.New(fail.NotForThisMachine, NotForThisMachine, target.Ref.Name, map[string]string{
-				"call": m.Name, "why": v.Why,
-			})
-		}
+	if err := gate(m, target); err != nil {
+		return in, err
 	}
 	if len(raw) == 0 || string(raw) == "null" {
 		return in, nil
@@ -209,6 +248,22 @@ func admit[In any](m Meta, target machine.Profile, raw json.RawMessage) (In, err
 		return in, e
 	}
 	return in, nil
+}
+
+func gate(m Meta, target machine.Profile) error {
+	if m.Section != "" && !slices.Contains(section.For(target.Kind), m.Section) {
+		return fail.New(fail.NotForThisMachine, NotForThisMachine, target.Ref.Name, map[string]string{
+			"call": m.Name, "section": string(m.Section), "kind": string(target.Kind),
+		})
+	}
+	if m.Applies != nil {
+		if v := m.Applies(target); !v.OK {
+			return fail.New(fail.NotForThisMachine, NotForThisMachine, target.Ref.Name, map[string]string{
+				"call": m.Name, "why": v.Why,
+			})
+		}
+	}
+	return nil
 }
 
 func encode[Out any](m Meta, out Out) (json.RawMessage, error) {
@@ -255,4 +310,20 @@ func NewRegistry(families ...[]Handler) (*Registry, error) {
 func (r *Registry) Lookup(name string) (Handler, bool) {
 	h, ok := r.byName[name]
 	return h, ok
+}
+
+func Updates[Out any](ctx context.Context, values <-chan Out) <-chan Update[Out] {
+	// value: a stream of whole values as a watch's updates.
+	out := make(chan Update[Out])
+	go func() {
+		defer close(out)
+		for v := range values {
+			select {
+			case out <- Update[Out]{Value: v}:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out
 }

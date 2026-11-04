@@ -9,7 +9,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 )
@@ -27,6 +30,9 @@ type Env struct {
 	On          *On
 	Stdin       io.Reader
 	Stdout      io.Writer
+	// value: where a leaf's call runs, and the machine it targets.
+	Calls  call.Router
+	Target machine.Ref
 }
 
 type IO struct {
@@ -39,6 +45,22 @@ type IO struct {
 	out           *output.Writer
 	in            io.Reader
 	raw           io.Writer
+	ask           func() error
+}
+
+func (o IO) Confirmed(do func(answer string) error) error {
+	// invariant: the call runs unanswered first; only when its use case asks
+	// a confirmation is the question put (--yes, the terminal, else a
+	// refusal), then the call runs once more with the answer.
+	err := do("")
+	answer, ok := confirm.Answer(err)
+	if !ok || o.ask == nil {
+		return err
+	}
+	if err := o.ask(); err != nil {
+		return err
+	}
+	return do(answer)
 }
 
 func (o IO) Streams() (io.Reader, io.Writer) { return o.in, o.raw }
@@ -89,6 +111,9 @@ type Leaf[I any] struct {
 	Live bool
 	// value: a leaf whose answer is a page also prints it as station.page/v1.
 	Pages bool
+	// value: a leaf whose call asks its own confirmation (io.Confirmed); its
+	// question is put only when the use case asks it.
+	ByCall bool
 }
 
 func Command[I any](l Leaf[I], env Env) *cobra.Command {
@@ -181,7 +206,7 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 			return err
 		}
 	}
-	if l.Destructive != nil && l.Destructive(in) {
+	if l.Destructive != nil && (l.ByCall || l.Destructive(in)) {
 		question := c.Name() + "?"
 		if l.Confirm != nil {
 			question = l.Confirm(in)
@@ -194,7 +219,9 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 		if l.Verb != nil {
 			verb = l.Verb(in)
 		}
-		if err := gate(verb, ask, o); err != nil {
+		if l.ByCall {
+			o.ask = func() error { return gate(verb, ask, o) }
+		} else if err := gate(verb, ask, o); err != nil {
 			return err
 		}
 	}
@@ -300,6 +327,21 @@ func Pages[T any](values <-chan T, build func(T) page.Page) <-chan page.Page {
 		defer close(out)
 		for v := range values {
 			out <- build(v)
+		}
+	}()
+	return out
+}
+
+func Updates[T any](updates <-chan call.Update[T], build func(T) page.Page) <-chan page.Page {
+	// invariant: an update in error draws nothing; the stream is still read
+	// to its end, so its producer never blocks.
+	out := make(chan page.Page)
+	go func() {
+		defer close(out)
+		for u := range updates {
+			if u.Err == nil {
+				out <- build(u.Value)
+			}
 		}
 	}()
 	return out

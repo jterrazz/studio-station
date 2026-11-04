@@ -42,6 +42,13 @@ const (
 func importTable() map[string][]string {
 	domain := []string{"system", "catalog", "domain/settings", "core/call/lanes", "ports", "ports/contract", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract",
 		"machines", "machines/contract", "images", "setup", "setup/contract", "core/store", "core/adapter/fake", "machines/adapter/fake", std}
+	// value: what a surface reaches the use cases by: the kernel's calls,
+	// confirmations and machines, each family's model and calls.
+	calls := make([]string, 0, 3+2*len(families()))
+	calls = append(calls, "core/call", "core/confirm", "core/machine")
+	for _, f := range families() {
+		calls = append(calls, f, f+"/calls")
+	}
 	organism := []string{"ui/molecule", "ui/atom", "ui/token", "page", lip, bubble, huh, std}
 	template := append(slices.Clone(organism), "ui/organism")
 	return map[string][]string{
@@ -50,8 +57,8 @@ func importTable() map[string][]string {
 		"cmd/generate/pages":         {"page", "pages", "pages/*", "domain/*", "engine", "ports", "overview", "activity", "catalog", "ui/token", std},
 		"wire":                       {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", "net/netip", std},
 		"surface/cli":                {"surface/cli/kit", cobra, std},
-		"surface/cli/kit":            {"output", "page", "core/fail", "core/store", "domain/*", "engine", "ports", "accounts", "catalog", "testing", cobra, pflag, std},
-		"surface/cli/*":              {"surface/cli/kit", "domain/*", "engine", "ports", "page", "pages/*", "catalog", cobra, pflag, std},
+		"surface/cli/kit":            append([]string{"output", "page", "core/fail", "core/store", "domain/*", "engine", "catalog", "testing", cobra, pflag, std}, calls...),
+		"surface/cli/*":              append([]string{"surface/cli/kit", "domain/*", "engine", "page", "pages/*", "catalog", cobra, pflag, std}, calls...),
 		"domain/*":                   domain,
 		"domain/setup":               append(slices.Clone(domain), "domain/shell", "domain/storage"),
 		"domain/tools":               append(slices.Clone(domain), "apps", "apps/contract", "apps/adapter/fake", "core/call"),
@@ -86,8 +93,8 @@ func importTable() map[string][]string {
 		"core/adapter/*":             {"core/*", "platform/local", "golang.org/x/sys/unix", std},
 		"core/contract/contracttest": {"core/*", "testing", std},
 		"core/fail":                  {"core/finding", std},
-		"surface/tui":                {"surface/tui/screens/*", "domain/*", "ports", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
-		"surface/tui/*":              {"surface/tui/screens/*", "domain/*", "ports", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
+		"surface/tui":                append([]string{"surface/tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
+		"surface/tui/*":              append([]string{"surface/tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
 	}
 }
 

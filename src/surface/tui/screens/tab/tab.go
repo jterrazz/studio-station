@@ -2,6 +2,7 @@ package tab
 
 import (
 	"context"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"io"
 
 	tea "charm.land/bubbletea/v2"
@@ -300,4 +301,22 @@ func (v View[T]) Fill(f page.Form, submit func(map[string]string) tea.Cmd) (View
 	var cmd tea.Cmd
 	v.Browser, cmd = v.Browser.Fill(f, submit)
 	return v, cmd
+}
+
+func Values[T any](updates <-chan call.Update[T], err error) (<-chan T, error) {
+	// value: a call's updates as the values a View reads; an update in
+	// error draws nothing.
+	if err != nil {
+		return nil, err
+	}
+	out := make(chan T)
+	go func() {
+		defer close(out)
+		for u := range updates {
+			if u.Err == nil {
+				out <- u.Value
+			}
+		}
+	}()
+	return out, nil
 }
