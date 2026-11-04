@@ -1,6 +1,6 @@
 description: 'an OpenClaw whose config exists but whose gateway is gone is broken, Hermes is not listed'
 fixture:
-    - ./__fixtures__/processes/
+    - ../../__fixtures__/status-processes/
     - ./__fixtures__/openclaw-config-only/
 runs:
     - command: 'status --json | /usr/bin/jq -r ''.gateways[] | [.name, .state, .value, .detail] | join("|")'''

@@ -47,16 +47,20 @@ type Options struct {
 }
 
 type Service struct {
-	h        system.Host
-	store    settings.Store
-	keychain settings.Keychain
-	reg      Registrar
-	daemon   DaemonInstaller
-	o        Options
+	h      system.Host
+	store  settings.Store
+	vault  Vault
+	reg    Registrar
+	daemon DaemonInstaller
+	o      Options
 }
 
-func New(h system.Host, store settings.Store, kc settings.Keychain, reg Registrar, d DaemonInstaller, o Options) *Service {
-	return &Service{h: h, store: store, keychain: kc, reg: reg, daemon: d, o: o}
+type Vault interface {
+	Forget(ctx context.Context, name string) error
+}
+
+func New(h system.Host, store settings.Store, v Vault, reg Registrar, d DaemonInstaller, o Options) *Service {
+	return &Service{h: h, store: store, vault: v, reg: reg, daemon: d, o: o}
 }
 
 type Request struct {

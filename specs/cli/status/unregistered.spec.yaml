@@ -1,5 +1,5 @@
 description: 'an unregistered machine has a null name, nothing else is null, and its setup says what to run, once'
-fixture: ./__fixtures__/mac/
+fixture: ../../__fixtures__/status-mac/
 env:
     - USER=tester
     - SHELL=/bin/zsh

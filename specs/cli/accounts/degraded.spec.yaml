@@ -1,6 +1,6 @@
 description: 'a stopped daemon is one row in place of the VMs, the host''s records whole, and the read exits 0'
 fixture:
-    - ./__fixtures__/accounts/
+    - ../../__fixtures__/accounts/
 env: daemon
 runs:
     - command: '--version > /dev/null; /bin/mkdir -p Library/LaunchAgents .local/state/station/vms; : > Library/LaunchAgents/com.jterrazz.station.daemon.plist; printf ''{"name":"api","image":"linux","version":"1","lifetime":"lasting"}\n'' > .local/state/station/vms/api.json; "$STATION" accounts | /usr/bin/tail -2; "$STATION" accounts --json | /usr/bin/jq -c ''[.daemon, [.machines[].name]]'''

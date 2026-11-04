@@ -1,9 +1,9 @@
 description: 'on a Mac every status probe reads its own tool, and launchd is only listed and printed'
 fixture:
-    - ./__fixtures__/tools-mixed/
-    - ./__fixtures__/mac/
-    - ./__fixtures__/processes/
-    - ./__fixtures__/registered/
+    - ../../__fixtures__/status-tools-mixed/
+    - ../../__fixtures__/status-mac/
+    - ../../__fixtures__/status-processes/
+    - ../../__fixtures__/status-registered/
 env:
     - USER=tester
     - SHELL=/bin/zsh

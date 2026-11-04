@@ -1,6 +1,6 @@
 description: 'running OpenClaw and Hermes gateways are detected by process and read from their config'
 fixture:
-    - ./__fixtures__/processes/
+    - ../../__fixtures__/status-processes/
     - ./__fixtures__/gateway/
     - ./__fixtures__/agents/
 runs:

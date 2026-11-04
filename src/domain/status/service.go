@@ -14,6 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/ports"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -38,6 +39,8 @@ type Sources struct {
 	// value: what listens on this Mac, read by its adapter.
 	Listeners ListenersReader
 	Jobs      contract.Jobs
+	// value: the facts of this Mac, read by its adapter.
+	Inspector settingscontract.Inspector
 }
 
 type ListenersReader interface {

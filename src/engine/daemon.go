@@ -67,6 +67,8 @@ type Options struct {
 	Stall time.Duration
 	// value: the lend records and the recall a lend past its until goes through.
 	Lends Lends
+	// value: the Notifier the engine tells, built over the engine's own log.
+	Notifier func(log func(subject, text string)) Notifier
 }
 
 type Daemon struct {
@@ -90,6 +92,8 @@ type Daemon struct {
 	power   *power.Machine
 	hub     hub
 
+	notifier Notifier
+
 	lendMu       sync.Mutex
 	lendsAt      time.Time
 	recallFailed map[string]time.Time
@@ -104,6 +108,9 @@ func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st
 	}
 	d := &Daemon{h: h, hv: hv, guests: guests, m: m, tn: tn, store: store, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, recallFailed: map[string]time.Time{}}
 	d.power = d.newPower()
+	if o.Notifier != nil {
+		d.notifier = o.Notifier(d.logf)
+	}
 	return d
 }
 

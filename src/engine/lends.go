@@ -105,7 +105,7 @@ func (d *Daemon) recall(ctx context.Context, vm string, names []string) {
 			d.mu.Lock()
 			delete(d.recallFailed, key)
 			d.mu.Unlock()
-			d.logf(vm+" lend", "recalled "+n+" (expired)")
+			d.notify(ctx, Notification{Kind: NoticeRecalled, Subject: vm + " lend", Text: "recalled " + n + " (expired)"})
 			d.hub.tell(Notice{Kind: NoticeRecalled, Text: n + " recalled from " + vm + " (expired)"})
 			continue
 		}
@@ -117,7 +117,7 @@ func (d *Daemon) recall(ctx context.Context, vm string, names []string) {
 		}
 		d.mu.Unlock()
 		if retell {
-			d.logf(vm+" lend", "recall of "+n+" failed: "+err.Error())
+			d.notify(ctx, Notification{Kind: NoticeRecallFailed, Subject: vm + " lend", Text: "recall of " + n + " failed: " + err.Error()})
 		}
 	}
 }

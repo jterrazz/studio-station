@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/ports"
@@ -26,13 +27,26 @@ func (s *Service) networkProbes() []probe {
 	}
 }
 
-func securityProbes() []probe {
+func (s *Service) securityProbes() []probe {
 	return []probe{
-		{name: "filevault", cmd: cmd("fdesetup", "status"), interpret: onWhen("FileVault is On")},
-		{name: "firewall", cmd: cmd("socketfilterfw", "--getglobalstate"), interpret: onWhen("enabled")},
-		{name: "sip", cmd: cmd("csrutil", "status"), interpret: onWhen("enabled")},
-		{name: "gatekeeper", cmd: cmd("spctl", "--status"), interpret: onWhen("enabled")},
+		s.factProbe("filevault", catalog.FactFileVault, defaultBudget),
+		s.factProbe("firewall", catalog.FactFirewall, defaultBudget),
+		s.factProbe("sip", catalog.FactSIP, defaultBudget),
+		s.factProbe("gatekeeper", catalog.FactGatekeeper, defaultBudget),
 	}
+}
+
+// invariant: a fact past its budget answers late, whatever the machine says.
+func (s *Service) factProbe(name string, f catalog.Fact, budget time.Duration) probe {
+	return probe{name: name, budget: budget, read: func(ctx context.Context, budget time.Duration) Check {
+		ctx, cancel := context.WithTimeout(ctx, budget)
+		defer cancel()
+		fact, err := s.deps.Inspector.Read(ctx, f)
+		if err != nil {
+			return late(name, budget)
+		}
+		return Check{Name: name, State: fact.State, Value: fact.Value, Detail: fact.Detail}
+	}}
 }
 
 func firstField(name string, r reply) Check {
@@ -110,37 +124,6 @@ func resolvers(name string, r reply, servers []string) Check {
 		return Check{Name: name, State: catalog.StateAbsent}
 	}
 	return Check{Name: name, State: catalog.StateOK, Value: strings.Join(servers, ", ")}
-}
-
-// invariant: a tool that is missing or fails answers unknown, never off: the row
-// must not claim a protection is down on a machine that could not look.
-func onWhen(needle string) func(string, reply) Check {
-	return func(name string, r reply) Check {
-		if !r.ok() {
-			return Check{Name: name, State: catalog.StateUnknown}
-		}
-		if strings.Contains(r.all(), needle) {
-			return Check{Name: name, State: catalog.StateOK, Value: "on"}
-		}
-		return Check{Name: name, State: catalog.StateAbsent, Value: "off"}
-	}
-}
-
-// outside: softwareupdate prints its verdict on stderr, and lists each update as `* Label: ...`.
-func softwareUpdate(name string, r reply) Check {
-	if !r.ok() {
-		return Check{Name: name, State: catalog.StateUnknown}
-	}
-	pending := 0
-	for _, line := range strings.Split(r.all(), "\n") {
-		if strings.HasPrefix(strings.TrimSpace(line), "* ") {
-			pending++
-		}
-	}
-	if pending == 0 {
-		return Check{Name: name, State: catalog.StateOK, Value: "up to date"}
-	}
-	return Check{Name: name, State: catalog.StateDegraded, Value: strconv.Itoa(pending) + " pending", Detail: "softwareupdate -l"}
 }
 
 func brewOutdated(name string, r reply) Check {

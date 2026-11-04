@@ -1,6 +1,6 @@
 description: 'a refused credential is ✗ refused, a missing login ○ unset, each with its fix'
 fixture:
-    - ./__fixtures__/accounts/
+    - ../../__fixtures__/accounts/
 env: daemon
 runs:
     - command: '--version > /dev/null; /bin/mkdir -p answers/accounts; echo e401 > answers/accounts/npm.mode; "$STATION" accounts | /usr/bin/awk -F''\t'' ''$3=="npm"'''

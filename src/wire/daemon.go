@@ -16,6 +16,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/engine"
+	enginelog "github.com/jterrazz/studio-station/src/engine/adapter/log"
 	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
 	daemoncmd "github.com/jterrazz/studio-station/src/surface/cli/daemon"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -31,8 +32,9 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths)), m.store, engine.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
-		Lends: lends,
-		Feeds: map[string]engine.Feed{engine.PageMenubar: m.menubarFeed(env)},
+		Lends:    lends,
+		Feeds:    map[string]engine.Feed{engine.PageMenubar: m.menubarFeed(env)},
+		Notifier: func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) },
 	})
 	lends.s = m.secretsVia(d)
 	return d

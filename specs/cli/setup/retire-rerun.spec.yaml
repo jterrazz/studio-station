@@ -1,7 +1,7 @@
 description: 'a rerun after the retirement finds nothing to retire and prints no retired row'
 fixture:
-    - ./__fixtures__/stubs/
-    - ./__fixtures__/userspace-era/
+    - ../../__fixtures__/setup-stubs/
+    - ../../__fixtures__/userspace-era/
 env:
     - USER=tester
 runs:

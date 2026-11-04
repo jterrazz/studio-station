@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
@@ -18,6 +19,7 @@ import (
 const (
 	ClaudeToken  = "operator:claude:oauth-token"
 	stepBudget   = 2 * time.Minute
+	ExportBudget = stepBudget
 	DefaultLend  = 12 * time.Hour
 	ShortestLend = time.Minute
 	LongestLend  = 7 * 24 * time.Hour
@@ -48,16 +50,17 @@ type Lend struct {
 }
 
 type Service struct {
-	clock system.Clock
-	run   system.Runner
-	guest Guest
-	store settings.Store
-	vms   VMs
-	here  catalog.MachineKind
+	clock  system.Clock
+	run    system.Runner
+	guest  Guest
+	store  settings.Store
+	vms    VMs
+	source contract.SecretSource
+	here   catalog.MachineKind
 }
 
-func New(h system.Host, guest Guest, store settings.Store, vms VMs, o Options) *Service {
-	return &Service{clock: h.Clock, run: h.Run, guest: guest, store: store, vms: vms, here: o.Here}
+func New(h system.Host, guest Guest, store settings.Store, vms VMs, source contract.SecretSource, o Options) *Service {
+	return &Service{clock: h.Clock, run: h.Run, guest: guest, store: store, vms: vms, source: source, here: o.Here}
 }
 
 type Report struct {
@@ -193,13 +196,13 @@ func (s *Service) Lend(ctx context.Context, to string, names []string, term time
 	case probe.ExitCode != 0:
 		return LendReport{}, &NoStudioError{VM: to}
 	}
-	exported, err := s.run.Output(ctx, system.Cmd{Name: "studio", Args: append([]string{"credentials", "export"}, names...), Timeout: stepBudget})
-	if err != nil || exported.ExitCode != 0 {
-		return LendReport{}, &StepError{VM: to, Step: "exporting the secrets", Cause: failure(err, exported)}
+	exported, err := s.source.Export(ctx, names)
+	if err != nil {
+		return LendReport{}, &StepError{VM: to, Step: "exporting the secrets", Cause: err}
 	}
 	// invariant: the exported values travel from the first process's output to the
 	// second's stdin and nowhere else: never argv, never a file on the host.
-	imported, err := s.inVM(ctx, to, vmStudio("import"), exported.Stdout)
+	imported, err := s.inVM(ctx, to, vmStudio("import"), string(exported))
 	if err != nil || imported.ExitCode != 0 {
 		return LendReport{}, &StepError{VM: to, Step: "importing the secrets", Cause: failure(err, imported)}
 	}

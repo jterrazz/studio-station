@@ -1,6 +1,6 @@
 description: 'in a VM whose studio fails, or holds no token, a new shell still starts: no export line, exit 0'
 fixture:
-    - ./__fixtures__/studio/
+    - ../../__fixtures__/studio-cli/
     - ./__fixtures__/studio-fails/
 env:
     - STATION_MACHINE_KIND=macos
