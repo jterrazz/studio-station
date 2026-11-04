@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -126,6 +127,7 @@ func (m *worldMac) slice() world.Mac {
 func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
 func (m *worldMac) host(h system.Host) system.Host {
+	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User}
 	h.Clock = worldClock{w: m.run.w}
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
@@ -395,4 +397,47 @@ func (l lockedNotifier) Notify(ctx context.Context, n engine.Notification) {
 	l.w.Lock()
 	defer l.w.Unlock()
 	l.n.Notify(ctx, n)
+}
+
+// invariant: a Mac of the world runs nothing as root: a command that asks
+// sudo, even inside a shell line, is refused and kept in the world.
+type rootless struct {
+	system.Runner
+	w *world.World
+}
+
+var errRoot = errors.New("this world runs nothing as root")
+
+func (r rootless) refuses(c system.Cmd) bool {
+	line := strings.Join(append([]string{c.Name}, c.Args...), " ")
+	if !slices.Contains(strings.FieldsFunc(line, func(r rune) bool {
+		return r == ' ' || r == ';' || r == '&' || r == '|' || r == '(' || r == '\'' || r == '"'
+	}), "sudo") {
+		return false
+	}
+	r.w.Lock()
+	r.w.AsRoot = append(r.w.AsRoot, line)
+	r.w.Unlock()
+	return true
+}
+
+func (r rootless) Output(ctx context.Context, c system.Cmd) (system.Output, error) {
+	if r.refuses(c) {
+		return system.Output{ExitCode: 1, Stderr: errRoot.Error()}, errRoot
+	}
+	return r.Runner.Output(ctx, c)
+}
+
+func (r rootless) Attach(ctx context.Context, c system.Cmd, out system.Stream) (system.Attached, error) {
+	if r.refuses(c) {
+		return system.Attached{}, errRoot
+	}
+	return r.Runner.Attach(ctx, c, out)
+}
+
+func (r rootless) Start(c system.Cmd, logPath string) (int, error) {
+	if r.refuses(c) {
+		return 0, errRoot
+	}
+	return r.Runner.Start(c, logPath)
 }
