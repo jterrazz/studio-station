@@ -44,6 +44,7 @@ import (
 	imagesfake "github.com/jterrazz/studio-station/src/images/adapter/fake"
 	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/ports"
 	portsfake "github.com/jterrazz/studio-station/src/ports/adapter/fake"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotefake "github.com/jterrazz/studio-station/src/remote/adapter/fake"
@@ -87,6 +88,7 @@ type worldMac struct {
 	engine   *engine.Daemon
 	tick     int
 	served   *remotefake.Dialer
+	bound    map[int]bool
 }
 
 func openWorld(vars map[string]string) (*worldRun, error) {
@@ -524,11 +526,59 @@ func (c worldClock) Sleep(ctx context.Context, d time.Duration) error {
 }
 
 // invariant: a Mac's engine socket is its engine in this process, reached
-// through a pipe; every other socket is the real one's.
+// through a pipe; its loopback ports are the world's, busy when the Mac
+// lists a listener there or the world already bound them, so no run binds a
+// real port another run holds.
 type worldSockets struct {
 	system.Sockets
 	m *worldMac
 }
+
+var errPortBusy = errors.New("the port is busy in the world")
+
+func (s worldSockets) ListenTCP(_ string, port int) (system.Listener, error) {
+	w := s.m.run.w
+	w.Lock()
+	defer w.Unlock()
+	mac := w.Mac(s.m.name)
+	if slices.ContainsFunc(mac.Listening, func(l ports.Listener) bool { return l.Port == port }) {
+		return nil, errPortBusy
+	}
+	if s.m.bound == nil {
+		s.m.bound = map[int]bool{}
+	}
+	if s.m.bound[port] {
+		return nil, errPortBusy
+	}
+	s.m.bound[port] = true
+	return &worldListener{port: port, done: make(chan struct{}), release: func() {
+		w.Lock()
+		defer w.Unlock()
+		delete(s.m.bound, port)
+	}}, nil
+}
+
+type worldListener struct {
+	port    int
+	done    chan struct{}
+	once    sync.Once
+	release func()
+}
+
+func (l *worldListener) Accept() (system.Conn, error) {
+	<-l.done
+	return nil, net.ErrClosed
+}
+
+func (l *worldListener) Close() error {
+	l.once.Do(func() {
+		close(l.done)
+		l.release()
+	})
+	return nil
+}
+
+func (l *worldListener) Port() int { return l.port }
 
 var errEngineDown = errors.New("this Mac's engine does not run in the world")
 
