@@ -1,0 +1,12 @@
+description: 'an update on another Mac fetches the image there, This Mac''s untouched'
+env: two-macs
+runs:
+    - command: 'images update linux --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	linux	2026.11.03	fetched
+    - command: 'images --json | /usr/bin/jq -r ''.images[] | select(.newest) | "\(.mac) \(.version)"'''
+      exit: 0
+      stdout: |
+          jterrazz-macbook-pro 2026.11.01
+          jterrazz-mac-mini 2026.11.03

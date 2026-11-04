@@ -63,3 +63,7 @@ func part(parts []string, i int) int {
 	}
 	return n
 }
+
+type UnknownError struct{ Image string }
+
+func (e *UnknownError) Error() string { return "no image \"" + e.Image + "\"" }

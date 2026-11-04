@@ -1,7 +1,7 @@
 description: 'deleting an image version never prunes Tart''s cache: that is tart''s storage clean'
 fixture:
-    - ../__fixtures__/stubs/
-    - ../__fixtures__/recorded/
+    - ./__fixtures__/images-stubs/
+    - ./__fixtures__/images-recorded/
 runs:
     - command: 'images delete linux@2026.11.01 --yes'
       exit: 0

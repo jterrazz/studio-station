@@ -7,7 +7,10 @@ import (
 	model "github.com/jterrazz/studio-station/src/images"
 )
 
-type Record = model.Record
+type (
+	Record = model.Record
+	Update = model.Update
+)
 
 const (
 	imagePrefix = "station-image-"

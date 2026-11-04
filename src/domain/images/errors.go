@@ -1,14 +1,6 @@
 package images
 
-import (
-	"strings"
-
-	"github.com/jterrazz/studio-station/src/catalog"
-)
-
-type UnknownImageError struct{ Image string }
-
-func (e *UnknownImageError) Error() string { return "unknown image \"" + e.Image + "\"" }
+import "strings"
 
 type UnknownVersionError struct{ Image, Version string }
 
@@ -39,11 +31,37 @@ func (e *NoEngineError) Error() string { return e.Hypervisor + " is not installe
 
 func (e *NoEngineError) Unwrap() error { return e.Cause }
 
-type NotAHostError struct{ Here catalog.MachineKind }
+type NoRecipeError struct{ Image string }
 
-func (e *NotAHostError) Error() string {
-	return "images live on a host; here is " + e.Here.Article()
+func (e *NoRecipeError) Error() string {
+	return "station has no recipe for " + e.Image + ": it is fetched, never built here"
 }
+
+type NotPublishedError struct{ Image string }
+
+func (e *NotPublishedError) Error() string { return "no version of " + e.Image + " is published" }
+
+type RegistryError struct {
+	Image string
+	Cause error
+}
+
+func (e *RegistryError) Error() string {
+	return "the registry did not answer for " + e.Image + ": " + e.Cause.Error()
+}
+
+func (e *RegistryError) Unwrap() error { return e.Cause }
+
+type FetchFailedError struct {
+	Image, Version, Step string
+	Cause                error
+}
+
+func (e *FetchFailedError) Error() string {
+	return "image " + e.Image + " " + e.Version + ": " + e.Step + " failed: " + strings.TrimSpace(e.Cause.Error())
+}
+
+func (e *FetchFailedError) Unwrap() error { return e.Cause }
 
 type BuildFailedError struct {
 	Image, Step string

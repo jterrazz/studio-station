@@ -8,6 +8,8 @@ type ImageDefaults struct {
 }
 
 type Image struct {
+	// value: Recipe, Cleanup and Firstboot empty: station builds no such
+	// image; it is only fetched where it is published.
 	Name, Base, Recipe, Cleanup, Firstboot string
 	Defaults                               ImageDefaults
 	Kind                                   MachineKind
@@ -32,5 +34,10 @@ var Images = []Image{
 		Firstboot: "images/linux-firstboot.sh",
 		Defaults:  ImageDefaults{CPUs: 4, MemoryBytes: 8 * gibibyte, DiskBytes: 50 * gigabyte},
 		Kind:      Linux,
+	},
+	{
+		Name:     "macos",
+		Defaults: ImageDefaults{CPUs: 4, MemoryBytes: 8 * gibibyte, DiskBytes: 80 * gigabyte},
+		Kind:     MacOS,
 	},
 }

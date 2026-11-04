@@ -4,9 +4,10 @@
 ○	api	linux	macbook	lasting	stopped	-	4 cpus · 8 GB · 42.9 GB
 ◐	mac-mini	host			unreachable	100.98.133.20	-
 # Images
-●	linux	3	6.0 GB	2 VMs	ghcr.io/cirruslabs/ubuntu:24.04
-○	linux	2	6.0 GB	0 VMs	older: station images delete linux@2
-●	macos	1	48.0 GB	0 VMs	ghcr.io/cirruslabs/macos-tahoe-base:latest
+●	linux	2026.11.01	4.0 GB	jterrazz-macbook-pro	linux-1 · api
+○	linux	2026.10.20	4.0 GB	jterrazz-macbook-pro	older: station images delete linux@2026.10.20
+●	linux	2026.11.01	4.0 GB	mac-mini	infra
+○	macos				not built yet
 # Lend list
 ●	GITHUB_TOKEN	lent to linux-1
 ○	NPM_TOKEN	not lent

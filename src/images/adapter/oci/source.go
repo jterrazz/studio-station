@@ -12,7 +12,6 @@ import (
 	"github.com/jterrazz/studio-station/src/images/contract"
 )
 
-// value: the one need of the network: an HTTP GET (system.Net's).
 type Getter interface {
 	Get(ctx context.Context, url string, header map[string]string) (status int, body []byte, err error)
 }

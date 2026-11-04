@@ -55,6 +55,9 @@ func (s *Service) selection(ctx context.Context, names []string) ([]catalog.Imag
 			if err != nil {
 				return nil, err
 			}
+			if img.Recipe == "" {
+				return nil, &NoRecipeError{Image: name}
+			}
 			if !slices.ContainsFunc(out, func(i catalog.Image) bool { return i.Name == name }) {
 				out = append(out, img)
 			}
@@ -63,6 +66,9 @@ func (s *Service) selection(ctx context.Context, names []string) ([]catalog.Imag
 	}
 	var out []catalog.Image
 	for _, img := range s.list {
+		if img.Recipe == "" {
+			continue
+		}
 		sha, err := s.recipeSHA(img)
 		if err != nil {
 			return nil, err
@@ -82,9 +88,6 @@ func (s *Service) selection(ctx context.Context, names []string) ([]catalog.Imag
 }
 
 func (s *Service) Build(ctx context.Context, r BuildRequest, progress func(Step)) ([]Record, error) {
-	if err := s.checkHost(); err != nil {
-		return nil, err
-	}
 	wanted, err := s.selection(ctx, r.Images)
 	if err != nil || len(wanted) == 0 {
 		return nil, err

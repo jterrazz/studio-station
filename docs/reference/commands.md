@@ -113,12 +113,13 @@ Every host is asked over ssh; `--here` asks none, and is refused in a VM (exit 2
 ### `station images`
 
 ```sh
-station images [--json]
+station images [--json]                                        # every Mac's, one row per version per Mac
 station images build [<image...>] [--binary <linux station binary>]
+station images update [<image...>]                             # the newest published version
 station images delete <image>[@<version>] [--yes]
 ```
 
-A bare `build` builds every image that is missing or whose recipe changed. See [Images](images.md).
+A bare `build` builds every image that is missing or whose recipe changed; a bare `update` updates every image this Mac holds. An image the catalogue does not hold is `no image "debian"` (exit 2). See [Images](images.md).
 
 ### `station secrets`
 

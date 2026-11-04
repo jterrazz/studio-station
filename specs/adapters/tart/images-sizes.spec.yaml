@@ -1,10 +1,11 @@
-description: 'the bare noun lists every version, newest first, with live size and its VMs'
+description: 'an image version is as large as tart lists its disk, newest first, with the VMs made from it'
 fixture:
-    - ./__fixtures__/stubs/
-    - ./__fixtures__/recorded/
+    - ./__fixtures__/images-stubs/
+    - ./__fixtures__/images-recorded/
 runs:
     - command: 'images'
       exit: 0
       stdout: |
-          ●	linux	2026.11.07	6.0 GB	1 VM	ghcr.io/cirruslabs/ubuntu:24.04
-          ○	linux	2026.11.01	5.0 GB	0 VMs	older: station images delete linux@2026.11.01
+          ●	linux	2026.11.07	6.0 GB	jterrazz-macbook-pro	api
+          ○	linux	2026.11.01	5.0 GB	jterrazz-macbook-pro	older: station images delete linux@2026.11.01
+          ○	macos				not built yet

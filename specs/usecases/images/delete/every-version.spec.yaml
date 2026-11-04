@@ -1,0 +1,16 @@
+description: 'a bare image name deletes every version of it on This Mac; the VMs made from it keep their own disks'
+env: two-macs
+runs:
+    - command: 'images delete linux --yes'
+      exit: 0
+      stdout: |
+          ●	linux	2026.11.01	deleted
+          ●	linux	2026.10.20	deleted
+    - command: 'images --json | /usr/bin/jq -r ''.images[] | "\(.mac) \(.version)"'''
+      exit: 0
+      stdout: |
+          jterrazz-mac-mini 2026.11.01
+    - command: 'machines --here --json | /usr/bin/jq -r ''[.. | objects | select(has("name") and has("lifetime")) | .name] | sort | join(" ")'''
+      exit: 0
+      stdout: |
+          api linux-1

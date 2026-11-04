@@ -40,6 +40,7 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	enginefake "github.com/jterrazz/studio-station/src/engine/adapter/fake"
 	imagesfake "github.com/jterrazz/studio-station/src/images/adapter/fake"
+	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	portsfake "github.com/jterrazz/studio-station/src/ports/adapter/fake"
@@ -167,9 +168,12 @@ func (m *worldMac) stores(st *stores) {
 	st.applied = settingsfake.AppliedOf(w, m.name)
 }
 
-func (m *worldMac) self() corecontract.Self        { return corefake.SelfOf(m.run.w, m.name) }
-func (m *worldMac) power() awakecontract.Power     { return awakefake.PowerOf(m.run.w, m.name) }
-func (m *worldMac) guests() contract.GuestDialer   { return machinesfake.GuestsOf(m.run.w) }
+func (m *worldMac) self() corecontract.Self      { return corefake.SelfOf(m.run.w, m.name) }
+func (m *worldMac) power() awakecontract.Power   { return awakefake.PowerOf(m.run.w, m.name) }
+func (m *worldMac) guests() contract.GuestDialer { return machinesfake.GuestsOf(m.run.w) }
+func (m *worldMac) imageSource(hypervisor string) imagescontract.ImageSource {
+	return imagesfake.SourceOf(m.run.w, hypervisor)
+}
 func (m *worldMac) sshConfig() contract.SSHConfig  { return machinesfake.SSHConfigOf(m.run.w, m.name) }
 func (m *worldMac) unlocker() contract.Unlocker    { return machinesfake.MacsOf(m.run.w) }
 func (m *worldMac) jobs() backgroundcontract.Jobs  { return backgroundfake.New(m.run.w, m.name) }

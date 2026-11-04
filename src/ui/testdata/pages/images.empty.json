@@ -30,27 +30,49 @@
           "keep": 60
         },
         {
-          "key": "vms",
-          "label": "VMs",
-          "kind": "count",
+          "key": "on",
+          "label": "on",
+          "kind": "text",
           "keep": 40
         }
       ],
       "items": [
         {
-          "empty": {
-            "noun": "images",
-            "hint": {
-              "command": "station images build"
-            }
+          "row": {
+            "id": "linux",
+            "mark": "absent",
+            "label": "linux",
+            "detail": {
+              "kind": "text",
+              "text": "not built yet"
+            },
+            "reason": "missing"
           }
+        },
+        {
+          "row": {
+            "id": "macos",
+            "mark": "absent",
+            "label": "macos",
+            "detail": {
+              "kind": "text",
+              "text": "not built yet"
+            },
+            "reason": "missing"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "absent",
+          "n": 2
         }
       ]
     }
   ],
   "hints": [
     {
-      "command": "station images build"
+      "command": "station images update"
     }
   ]
 }

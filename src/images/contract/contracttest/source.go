@@ -8,14 +8,13 @@ import (
 	"github.com/jterrazz/studio-station/src/images/contract"
 )
 
-// value: the hypervisor every source publishes for.
 const Hypervisor = "runner"
 
-// value: a source over a registry where linux is published at each of
-// these versions, and nothing else is.
 type Published func(t *testing.T, versions ...string) contract.ImageSource
 
 func ImageSource(t *testing.T, publish Published) {
+	// value: publish answers a source over a registry where linux is
+	// published at each of these versions, and nothing else is.
 	t.Run("the latest of an image is its newest published version, a day's second build after its first", func(t *testing.T) {
 		s := publish(t, "2026.10.20", "2026.11.01.2", "2026.11.01")
 		got, err := s.Latest(t.Context(), "linux")

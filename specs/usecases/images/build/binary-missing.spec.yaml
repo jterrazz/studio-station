@@ -1,0 +1,12 @@
+description: 'a --binary that does not exist is refused before anything is fetched'
+env: two-macs
+runs:
+    - command: 'images build linux --binary $HOME/nowhere'
+      exit: 2
+      stderr: |
+          Error: {{workdir}}/nowhere: no such file
+          Hint: make build-linux, then station images build linux --binary .artifacts/go/station-linux-arm64
+    - command: 'images --json | /usr/bin/jq -r ''.images | length'''
+      exit: 0
+      stdout: |
+          3

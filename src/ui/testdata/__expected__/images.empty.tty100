@@ -2,6 +2,7 @@
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
  Images
-   no images  → station images build
+   ○ linux  not built yet
+   ○ macos  not built yet
 
- → station images build
+ → station images update

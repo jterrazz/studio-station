@@ -17,15 +17,15 @@ const base = "https://registry.test"
 // of a repository only to that token, latest beside the versions.
 type registry struct{ tags []string }
 
-func (r registry) Get(_ context.Context, url string, header map[string]string) (int, []byte, error) {
+func (r registry) Get(_ context.Context, url string, header map[string]string) (status int, body []byte, err error) {
 	switch {
 	case strings.HasPrefix(url, base+"/token?scope=repository:jterrazz/"):
-		body, err := json.Marshal(map[string]string{"token": "pull"})
+		body, err = json.Marshal(map[string]string{"token": "pull"})
 		return 200, body, err
 	case header["Authorization"] != "Bearer pull":
 		return 401, nil, nil
 	case url == base+"/v2/jterrazz/station-linux/tags/list":
-		body, err := json.Marshal(map[string]any{"name": "jterrazz/station-linux", "tags": append([]string{"latest"}, r.tags...)})
+		body, err = json.Marshal(map[string]any{"name": "jterrazz/station-linux", "tags": append([]string{"latest"}, r.tags...)})
 		return 200, body, err
 	}
 	return 404, []byte(`{"errors":[{"code":"NAME_UNKNOWN"}]}`), nil

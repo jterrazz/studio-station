@@ -5,6 +5,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
+	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 )
 
 type Wording func(e *fail.Error) (message, hint string)
@@ -48,6 +49,9 @@ func Codes() map[fail.Code]Wording {
 		},
 		enginecalls.StartFailed: func(e *fail.Error) (string, string) {
 			return "the engine did not start: " + e.Detail["last"], "station engine"
+		},
+		imagescalls.Unknown: func(e *fail.Error) (string, string) {
+			return "no image \"" + e.Subject + "\"", "station images"
 		},
 		call.FarTooOld: func(e *fail.Error) (string, string) {
 			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"
