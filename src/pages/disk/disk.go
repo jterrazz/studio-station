@@ -74,7 +74,7 @@ func Read(r disk.Reading, here page.Context) page.Page {
 	p := page.Page{ID: "disk", Command: "disk", Context: here, Actions: Actions(r)}
 	misplaced := r.Of(disk.Misplaced)
 	head := page.Row{ID: "volume", Label: machineLabel(here), Mark: page.OK, Cells: []page.Value{
-		page.List(sized(r.Free, "free"), sized(r.Total, "total"), page.Text(plural(len(misplaced), "misplaced folder"))),
+		page.List(page.SizeOf(r.Free, r.Total, "free"), page.Text(plural(len(misplaced), "misplaced folder"))),
 	}}
 	if len(misplaced) > 0 {
 		head.Mark, head.Reason = page.Attention, page.Stray

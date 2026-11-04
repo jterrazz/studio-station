@@ -4,7 +4,7 @@ runs:
     - command: 'disk --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          ◐	jterrazz-mac-mini	1.6 TB free · 2.0 TB total · 1 misplaced folder	station disk move ~/go
+          ◐	jterrazz-mac-mini	1.6 TB free of 2.0 TB · 1 misplaced folder	station disk move ~/go
           # Misplaced
           ◐	~/go	2.3 GB	misplaced · go · station disk move ~/go
           # Can rebuild

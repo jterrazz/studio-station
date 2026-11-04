@@ -4,7 +4,7 @@ runs:
     - command: 'disk'
       exit: 0
       stdout: |
-          ◐	This Mac	388.0 GB free · 994.0 GB total · 1 misplaced folder	station disk move ~/.tart
+          ◐	This Mac	388.0 GB free of 994.0 GB · 1 misplaced folder	station disk move ~/.tart
           # Misplaced
           ◐	~/.tart	73.3 GB	misplaced · tart · station disk move ~/.tart
           # Can rebuild
