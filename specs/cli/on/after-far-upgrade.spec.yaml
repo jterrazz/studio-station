@@ -1,4 +1,4 @@
-description: 'a call refused by an older far side runs once that Mac is upgraded: its calls are read again at each connection'
+description: 'a call an older far side refused runs once that Mac is upgraded: its calls are read again'
 fixture: ./__fixtures__/old-y/
 env: daemon
 runs:
