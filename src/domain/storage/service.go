@@ -442,7 +442,7 @@ func (s *Service) move(ctx context.Context, e Entry, st catalog.Stray) (Outcome,
 		}
 	}
 	if to == "" {
-		return Outcome{Name: shown, Result: catalog.StateOK, Detail: "nothing to move: its caches freed"}, nil
+		return Outcome{Name: shown, Result: catalog.StateOK, Detail: "nothing to move: its rebuildable files freed"}, nil
 	}
 	return Outcome{Name: shown, Result: catalog.StateOK, Detail: "moved to " + to}, nil
 }

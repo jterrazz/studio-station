@@ -182,7 +182,7 @@ func Freed(outcomes []disk.Outcome, here page.Context) page.Page {
 		sum := page.Row{ID: "freed", Label: "Freed", Mark: page.OK, Cells: []page.Value{page.Size(total)}, Detail: page.Text("nothing is lost")}
 		extra = append(extra, page.Section{ID: "freed", Title: "Freed", Role: page.Banner, Uncounted: true, Columns: outcomeColumns(), Items: []page.Item{{Row: &sum}}})
 	}
-	return pages.Outcome("disk free", here, outcomeColumns(), rows, "caches to free", extra...)
+	return pages.Outcome("disk free", here, outcomeColumns(), rows, "files to free", extra...)
 }
 
 func Erased(o disk.Outcome, here page.Context) page.Page {

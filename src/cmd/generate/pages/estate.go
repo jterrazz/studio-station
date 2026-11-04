@@ -378,7 +378,7 @@ func outcomes() []Fixture {
 	}
 	cleaned := []storage.Outcome{
 		{Name: "homebrew", Result: catalog.StateOK, Freed: 26 * gb},
-		{Name: "bun", Result: catalog.StateAbsent, Detail: "nothing to clean"},
+		{Name: "bun", Result: catalog.StateAbsent, Detail: "nothing to free"},
 	}
 	out := states("outcome-apps-install",
 		pending(pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, here())),
