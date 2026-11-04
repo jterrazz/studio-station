@@ -6,3 +6,8 @@ runs:
       stderr: |
           Error: mac-mini does not answer
           Hint: station machines
+    - command: 'overview --on mac-mini'
+      exit: 1
+      stderr: |
+          Error: mac-mini does not answer
+          Hint: station machines

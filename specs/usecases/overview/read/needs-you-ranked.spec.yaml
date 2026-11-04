@@ -1,0 +1,27 @@
+description: 'broken lines first, then those that need a look, each by the one section order'
+env: two-macs
+runs:
+    - command: 'overview --json | /usr/bin/jq -c ''.findings[] | [.severity, .section, .subject]'''
+      exit: 0
+      stdout: |
+          ["broken","accounts","npm"]
+          ["broken","background","com.jterrazz.brain.x-snapshot"]
+          ["needs-a-look","apps","mise"]
+          ["needs-a-look","apps","brew"]
+          ["needs-a-look","disk","~/.tart"]
+          ["needs-a-look","background","com.bjango.istatmenus.installer"]
+          ["needs-a-look","background","com.docker.socket"]
+          ["needs-a-look","background","com.docker.vmnetd"]
+    - command: 'overview --all | /usr/bin/sed -n ''/^# Needs you/,/^	/p'' | /usr/bin/cut -f1,2'
+      exit: 0
+      stdout: |
+          # Needs you
+          ✗	npm sign-in expired
+          ✗	com.jterrazz.brain.x-snapshot is failing, last exit 2
+          ◐	1 mise update waiting
+          ◐	2 brew updates waiting
+          ◐	~/.tart is misplaced
+          ◐	com.bjango.istatmenus.installer is an orphan
+          ◐	com.docker.socket is an orphan
+          ◐	com.docker.vmnetd is an orphan
+          	Apps

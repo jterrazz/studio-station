@@ -348,7 +348,7 @@
       "section": "overview",
       "where": "at-target",
       "in": "ReadIn",
-      "out": "Snapshot[github.com/jterrazz/studio-station/src/apps.Report,github.com/jterrazz/studio-station/src/settings.Report,github.com/jterrazz/studio-station/src/disk.StrayReport]",
+      "out": "ReadOut",
       "watch": true
     },
     {

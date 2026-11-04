@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	DaemonRunning = "running"
+	DaemonRunning = awake.EngineRunning
 	DaemonStopped = "stopped"
 	DaemonAbsent  = "not installed"
-	DaemonPending = "pending"
+	DaemonPending = awake.EngineReading
 )
 
 var ErrDaemonDown = errors.New("the engine does not answer")

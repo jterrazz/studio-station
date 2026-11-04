@@ -54,6 +54,13 @@ func Show(v page.Value) string {
 }
 
 func show(v page.Value) string {
+	// invariant: a value labeled with a mark leads with its glyph (an
+	// Overview's `● 39 ok`), but a bare count, which reads as a title's
+	// counts do, `47 ●`.
+	if g := Glyph(page.Mark(v.Label)); g != "" && v.Kind != page.KindLevels && (v.Kind != page.KindCount || v.Unit != "") {
+		v.Label = ""
+		return g + " " + show(v)
+	}
 	switch v.Kind {
 	case page.KindNone, "", page.KindPending, page.KindListing:
 		return ""

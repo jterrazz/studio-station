@@ -4,7 +4,7 @@ runs:
     - command: 'status 2>notice.txt | /usr/bin/head -1; /bin/cat notice.txt'
       exit: 0
       stdout: |
-          # Machine
+          # Needs you
           → now: station overview
     - command: 'help | /usr/bin/grep -c "status"'
       exit: 1

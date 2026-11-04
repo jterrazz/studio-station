@@ -6,6 +6,13 @@ runs:
     - command: '--version >/dev/null; "$STATION" machines linux-1 > noun.txt; "$STATION" overview --on linux-1 > on.txt; /usr/bin/cmp noun.txt on.txt && /bin/cat noun.txt'
       exit: 0
       stdout: |
+          	On linux-1:
+          	Apps	● 1 ok · ○ 63 not installed
+          	Settings	set by station · ● 0 of 4
+          	Disk	● 12.4 GB free · 1.5 GB can rebuild
+          	Ports	Public 0 · Private 2
+          	Accounts	● 2
+          # Health
           ●	Running
           ●	Has an address	192.168.64.5
           ●	SSH answers
@@ -13,7 +20,7 @@ runs:
     - command: '--version >/dev/null; "$STATION" machines infra --json > noun.json; "$STATION" overview --on infra --json > on.json; /usr/bin/cmp noun.json on.json && /usr/bin/jq -c ''{schema, machine}'' noun.json'
       exit: 0
       stdout: |
-          {"schema":"station.overview.read/v1","machine":{"name":"infra","kind":"workspace","on":"jterrazz-mac-mini","reachable":true}}
+          {"schema":"station.overview.read/v1","machine":{"name":"infra","kind":"server","on":"jterrazz-mac-mini","reachable":true}}
     - command: 'machines jterrazz-mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
       exit: 0
       stdout: |

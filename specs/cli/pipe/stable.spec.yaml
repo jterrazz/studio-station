@@ -3,172 +3,21 @@ fixture:
     - ../__fixtures__/estate/
     - ../../__fixtures__/serving/
 runs:
-    - command: 'overview'
+    - command: 'overview | /usr/bin/sed -E "s/[0-9.]+ [KMGT]?B free/N free/"'
       exit: 0
       stdout: |
-          # Machine
-          ●	name	x	host · Darwin 27.0.0 arm64 · jterrazz · zsh
-          ●	uptime	3d 4h	battery 92% charging
-          ◐	setup	zshrc	station setup
-          ○	engine	not needed until tart is installed
-          # Environment
-          ●	local ip	192.168.1.2
-          ●	dns	9.9.9.9, 149.112.112.112
-          ●	filevault	on
-          ○	firewall	off
-          ●	sip	on
-          ●	gatekeeper	on
-          ●	remote login	on
-          ○	encrypted dns	off
-          ◐	macos	1 pending	softwareupdate -l
-          ○	brew	not installed
-          ●	tailnet	Running · 100.64.0.1 · {{workdir}}/bin/tailscale
-          # Workspace
-          ●	disk	2.0 KB	reclaimable: station disk free
-          # Identity
-          ○	git email
-          ○	git name
-          ○	git signing	off
-          ○	gpg key
-          ○	github
-          ○	ssh key
-          # Background	3 ●	2 ◐	1 ✗
-          ●	TC3Q7MAJXF.com.adguard.safari.AdGuard.Helper	known	running · pid 2211	user	AdGuard
-          ●	dev.orbstack.OrbStack.privhelper	known	idle	root	OrbStack	/Library/LaunchDaemons/dev.orbstack.OrbStack.privhelper.plist
-          ●	ai.jterrazz.x	unknown	running · pid 12	user		~/Library/LaunchAgents/ai.jterrazz.x.plist
-          ✗	ai.jterrazz.y	unknown	failing · last exit 1	user		~/Library/LaunchAgents/ai.jterrazz.y.plist · launchctl bootout gui/501/ai.jterrazz.y && rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
-          ◐	ai.jterrazz.gone	orphan	not loaded	user		~/Library/LaunchAgents/ai.jterrazz.gone.plist · launchctl bootout gui/501/ai.jterrazz.gone && rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
-          ◐	com.docker.vmnetd	orphan	not loaded	root	Docker.app	/Library/LaunchDaemons/com.docker.vmnetd.plist · sudo launchctl bootout system/com.docker.vmnetd && sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
-          # Gateways
-          ◐	Tailscale Serve	off	Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
-          # Tools	2 ◐	106 ○
-          ○	homebrew		script · system	station apps install homebrew
-          ○	mise		brew · system	brew not installed · station apps install homebrew
-          ○	mas		brew	brew not installed · station apps install homebrew
-          ○	uv		brew	brew not installed · station apps install homebrew
-          ○	cocoapods		brew	brew not installed · station apps install homebrew
-          ○	pnpm		brew	brew not installed · station apps install homebrew
-          ○	skills		bun	bun not installed · station apps install bun
-          ○	bun		mise	mise not installed · station apps install mise
-          ○	go		mise	mise not installed · station apps install mise
-          ○	node		mise	mise not installed · station apps install mise
-          ○	java		mise	mise not installed · station apps install mise
-          ○	python		mise	mise not installed · station apps install mise
-          ○	rust		mise	mise not installed · station apps install mise
-          ○	ghostty		cask	brew not installed · station apps install homebrew
-          ○	ohmyzsh		script	station apps install ohmyzsh
-          ○	tmux		brew	brew not installed · station apps install homebrew
-          ○	starship		brew	brew not installed · station apps install homebrew
-          ○	zoxide		brew	brew not installed · station apps install homebrew
-          ○	yazi		brew	brew not installed · station apps install homebrew
-          ○	bat		brew	brew not installed · station apps install homebrew
-          ○	dust		brew	brew not installed · station apps install homebrew
-          ○	eza		brew	brew not installed · station apps install homebrew
-          ○	fd		brew	brew not installed · station apps install homebrew
-          ○	ripgrep		brew	brew not installed · station apps install homebrew
-          ○	tgrep		brew	brew not installed · station apps install homebrew
-          ○	sd		brew	brew not installed · station apps install homebrew
-          ○	difftastic		brew	brew not installed · station apps install homebrew
-          ○	jq		brew	brew not installed · station apps install homebrew
-          ○	git		shell · system	station apps install git
-          ○	gpg		brew	brew not installed · station apps install homebrew
-          ○	lazygit		brew	brew not installed · station apps install homebrew
-          ○	gh		brew	brew not installed · station apps install homebrew
-          ○	zed		cask	brew not installed · station apps install homebrew
-          ○	cursor		cask	brew not installed · station apps install homebrew
-          ○	android-studio		cask	brew not installed · station apps install homebrew
-          ○	xcode		mas	mas not installed · station apps install mas
-          ○	xcodegen		brew	brew not installed · station apps install homebrew
-          ○	tart		shell · system	station apps install tart
-          ?	orbstack		cask	installed, brew not installed · station apps install homebrew
-          ○	lens		cask	brew not installed · station apps install homebrew
-          ○	kubectl		brew	brew not installed · station apps install homebrew
-          ○	helm		brew	brew not installed · station apps install homebrew
-          ○	helmfile		brew	brew not installed · station apps install homebrew
-          ○	ansible		brew	brew not installed · station apps install homebrew
-          ○	eas		bun	bun not installed · station apps install bun
-          ○	pulumi		brew	brew not installed · station apps install homebrew
-          ○	terraform		brew	brew not installed · station apps install homebrew
-          ○	claude		script	station apps install claude
-          ○	codex		bun	bun not installed · station apps install bun
-          ○	gemini		brew	brew not installed · station apps install homebrew
-          ○	opencode		brew	brew not installed · station apps install homebrew
-          ○	conductor		cask	brew not installed · station apps install homebrew
-          ○	herdr		brew	brew not installed · station apps install homebrew
-          ○	herdr-app		cask	brew not installed · station apps install homebrew
-          ○	ollama		cask	brew not installed · station apps install homebrew
-          ○	qmd		bun	bun not installed · station apps install bun
-          ○	rtk		brew	brew not installed · station apps install homebrew
-          ○	inferrs		brew	brew not installed · station apps install homebrew
-          ○	plannotator		script	station apps install plannotator
-          ○	chatgpt		cask	brew not installed · station apps install homebrew
-          ○	claude-desktop		cask	brew not installed · station apps install homebrew
-          ○	typewhisper		cask	brew not installed · station apps install homebrew
-          ○	brave		cask	brew not installed · station apps install homebrew
-          ○	dia		app	station apps install dia
-          ○	discord		cask	brew not installed · station apps install homebrew
-          ○	slack		cask	brew not installed · station apps install homebrew
-          ○	whatsapp		cask	brew not installed · station apps install homebrew
-          ○	messenger		app	station apps install messenger
-          ○	linear		cask	brew not installed · station apps install homebrew
-          ○	notion		cask	brew not installed · station apps install homebrew
-          ○	obsidian		cask	brew not installed · station apps install homebrew
-          ○	keynote		mas	mas not installed · station apps install mas
-          ○	numbers		mas	mas not installed · station apps install mas
-          ○	pages		mas	mas not installed · station apps install mas
-          ○	raindrop		mas	mas not installed · station apps install mas
-          ○	broadcasts		mas	mas not installed · station apps install mas
-          ○	compressor		mas	mas not installed · station apps install mas
-          ○	final-cut-pro		mas	mas not installed · station apps install mas
-          ○	lightroom		mas	mas not installed · station apps install mas
-          ○	logic-pro		mas	mas not installed · station apps install mas
-          ○	jump-desktop-connect		cask	brew not installed · station apps install homebrew
-          ○	jump-desktop		cask	brew not installed · station apps install homebrew
-          ?	tailscale		cask · system	installed, brew not installed · station apps install homebrew
-          ○	bitwarden		cask	brew not installed · station apps install homebrew
-          ○	adguard		mas	mas not installed · station apps install mas
-          ○	passepartout		mas	mas not installed · station apps install mas
-          ○	mole		brew	brew not installed · station apps install homebrew
-          ○	betterdisplay		cask	brew not installed · station apps install homebrew
-          ○	pipifier		mas	mas not installed · station apps install mas
-          ○	snippety		mas	mas not installed · station apps install mas
-          ○	speedtest		mas	mas not installed · station apps install mas
-          ○	frontend-design		skill	skills not installed · station apps install skills
-          ○	upgrading-expo		skill	skills not installed · station apps install skills
-          ○	modern-web-guidance		skill	skills not installed · station apps install skills
-          ○	chrome-extensions		skill	skills not installed · station apps install skills
-          ○	better-interface		skill	skills not installed · station apps install skills
-          ○	better-accessibility		skill	skills not installed · station apps install skills
-          ○	better-layout		skill	skills not installed · station apps install skills
-          ○	better-writing		skill	skills not installed · station apps install skills
-          ○	better-typography		skill	skills not installed · station apps install skills
-          ○	better-colors		skill	skills not installed · station apps install skills
-          ○	better-ui		skill	skills not installed · station apps install skills
-          ○	shadcn		skill	skills not installed · station apps install skills
-          ○	last30days		skill	skills not installed · station apps install skills
-          ○	qmd-skill		skill	skills not installed · station apps install skills
-          ○	agent-browser-skill		skill	skills not installed · station apps install skills
-          ○	vercel-react-best-practices		skill	skills not installed · station apps install skills
-          ○	vercel-react-native-skills		skill	skills not installed · station apps install skills
-          # Config	1 ●	1 ◐	17 ○
-          ○	hushlogin	Silence the terminal login message	station settings apply hushlogin
-          ○	ghostty-dotfiles	The Ghostty config and its Catppuccin themes	needs ghostty · station apps install ghostty
-          ○	tmux-dotfiles	The tmux config	needs tmux · station apps install tmux
-          ○	starship-dotfiles	The Starship prompt config	needs starship · station apps install starship
-          ○	git-signing	Sign every commit with a GPG key	needs gpg · station apps install gpg
-          ○	ssh-key	An ed25519 SSH key, kept in the Keychain	station settings apply ssh-key
-          ○	github-login	The GitHub CLI logged in over SSH	needs gh · station apps install gh
-          ○	spotlight-exclude	Exclude ~/Developer from Spotlight (guided, opens Settings)	station settings apply spotlight-exclude
-          ○	dns	Encrypted DNS via Quad9 (DoH)	station settings apply dns
-          ○	claude-token	The Claude Code subscription token a VM may borrow	station settings apply claude-token
-          ○	zed-dotfiles	The Zed settings and its formatter config	needs zed · station apps install zed
-          ○	dock-reset	Reset the dock to the system defaults	run once · station settings apply dock-reset
-          ○	dock-spacer	Add a small spacer tile to the dock	run once · station settings apply dock-spacer
-          ○	autologin	GUI auto-login for jterrazz.agent (FileVault-aware)	station settings apply autologin
-          ○	power	Always-on power policy (no sleep, autorestart, wake)	station settings apply power
-          ○	lock-after-login	A LaunchAgent that locks the screen ~20s after auto-login	station settings apply lock-after-login
-          ◐	backup-exclusions	Keep ~/.cache and station's VMs out of Time Machine	tmutil not found
-          ○	tart-launcher	The tart launcher: Tart's home is station's VMs folder	station settings apply tart-launcher
+          # Needs you
+          ✗	ai.jterrazz.y is failing, last exit 1	station background remove ai.jterrazz.y
+          ◐	Engine not set up	station setup
+          ◐	ai.jterrazz.gone is an orphan	station background remove ai.jterrazz.gone
+          ◐	com.docker.vmnetd is an orphan	sudo launchctl bootout system/com.docker.vmnetd && sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
+          	Apps	● 0 ok · ? 2 not managed · ○ 106 not installed
+          	Settings	set by station · ● 0 of 15
+          	Disk	● N free · 2.0 KB can rebuild
+          	Ports	Public 0 · Private 0
+          	Accounts	● 1
+          	Background	● 3 · ✗ 1 failing · ◐ 2 orphans
+          	Awake	needs the engine
     - command: 'apps'
       exit: 0
       stdout: |

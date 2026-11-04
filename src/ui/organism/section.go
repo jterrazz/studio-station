@@ -66,7 +66,11 @@ func FoldTitle(st token.Styles, s page.Section, folded bool, width int) string {
 func Section(st token.Styles, s page.Section, width int) []string {
 	body := (Grid{Styles: st, Section: s, Width: width, Medium: molecule.TTY}).Lines()
 	lines := make([]string, 0, len(body)+1)
-	lines = append(lines, Title(st, s))
+	// invariant: a section with no title and no caption reads on as its
+	// rows (an Overview's lines under its Needs you), with no blank head.
+	if s.Title != "" || len(s.Caption) > 0 || len(s.Counts) > 0 {
+		lines = append(lines, Title(st, s))
+	}
 	for _, l := range body {
 		lines = append(lines, l.Text)
 	}

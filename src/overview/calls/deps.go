@@ -7,7 +7,9 @@ import (
 	activitycontract "github.com/jterrazz/studio-station/src/activity/contract"
 	backgroundcontract "github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/ports"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
@@ -33,7 +35,11 @@ type Clock interface{ Now() time.Time }
 type Deps[Tool, Item, Stray any] struct {
 	// value: the reads Overview composes. Tool, Item and Stray are the rows of
 	// the Apps, Settings and Disk reads, until those reads are their families' calls.
-	Pool  *lanes.Pool
+	Pool *lanes.Pool
+	// value: the Router the Overview reads each section of this machine
+	// through, and the machine's kind, which decides its sections.
+	Calls call.Router
+	Kind  machine.Kind
 	Clock Clock
 	Here  Here
 	Name  setupcontract.NamePrefs

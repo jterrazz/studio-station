@@ -42,6 +42,12 @@ type Slept struct {
 	After time.Duration `json:"after"`
 }
 
+// value: a Report's Daemon while its engine answers, and before it has.
+const (
+	EngineRunning = "running"
+	EngineReading = "pending"
+)
+
 type Report struct {
 	Now time.Time
 	// value: the zone a page shows its clock times in (the owner's, read once

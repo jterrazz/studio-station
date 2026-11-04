@@ -7,6 +7,13 @@
             "preferences": {
                 "here": "jterrazz-macbook-pro",
                 "vm_user": "admin"
+            },
+            "power": {
+                "Lid": "open",
+                "Source": "ac",
+                "HasBattery": true,
+                "Percent": 96,
+                "Charging": true
             }
         }
     }

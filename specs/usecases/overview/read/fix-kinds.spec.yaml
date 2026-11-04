@@ -1,0 +1,9 @@
+description: 'each Needs-you line ends with its fix: a station command, the owner''s own, or an admin''s'
+env: two-macs
+runs:
+    - command: 'overview --all | /usr/bin/grep -e "^✗	npm" -e "^◐	1 mise" -e "^◐	com.docker.socket"'
+      exit: 0
+      stdout: |
+          ✗	npm sign-in expired	npm login
+          ◐	1 mise update waiting	station apps update --method mise
+          ◐	com.docker.socket is an orphan	sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist
