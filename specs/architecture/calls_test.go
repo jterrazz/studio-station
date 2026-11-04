@@ -35,7 +35,7 @@ import (
 func callWordsTolerated() map[string][]string {
 	return map[string][]string{
 		"apps":     {"tools"},
-		"settings": {"config", "run"},
+		"settings": {"config", "run", "shell"},
 		"disk":     {"storage"},
 		"awake":    {"power"},
 		"accounts": {"secrets"},

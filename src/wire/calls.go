@@ -53,7 +53,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		machinescalls.All(machinescalls.Deps{Machines: machineCalls{m.machines(env.Interactive)}, Kind: kind}),
 		portscalls.All(portscalls.Deps{Services: m.services(env), Tailnet: m.tailnetStatus(), Kind: kind}),
 		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupService}, Ask: named}),
-		settingscalls.All(settingscalls.Deps{Config: config, Ask: ask, Shortcuts: shortcuts.New(m.host), Kind: kind}),
+		settingscalls.All(settingscalls.Deps{Config: config, Ask: ask, Shortcuts: shortcuts.New(m.host), Shell: m.shell(), Kind: kind}),
 	)
 	if err != nil {
 		panic(err)

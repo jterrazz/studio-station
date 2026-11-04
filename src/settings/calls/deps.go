@@ -15,7 +15,13 @@ type Deps struct {
 	// where nobody is there to answer.
 	Ask       Ask
 	Shortcuts Shortcuts
-	Kind      machine.Kind
+	// value: the script the ~/.zshrc block evaluates.
+	Shell Shell
+	Kind  machine.Kind
+}
+
+type Shell interface {
+	Zsh(ctx context.Context, completion string) (string, error)
 }
 
 type Config interface {
@@ -32,5 +38,5 @@ type Ask interface {
 }
 
 func All(d Deps) []call.Handler {
-	return []call.Handler{call.BindWatch(List, d), call.Bind(Install, d), call.Bind(Uninstall, d), call.Bind(Git, d), call.Bind(Containers, d)}
+	return []call.Handler{call.BindWatch(List, d), call.Bind(Install, d), call.Bind(Uninstall, d), call.Bind(Git, d), call.Bind(Containers, d), call.Bind(Zsh, d)}
 }

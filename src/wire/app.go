@@ -24,6 +24,7 @@ import (
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/surface/cli"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	shellcmd "github.com/jterrazz/studio-station/src/surface/cli/shell"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/ui/help"
 	"github.com/jterrazz/studio-station/src/ui/token"
@@ -89,7 +90,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		guestCommand(kenv, here),
 		runCommand(kenv, here),
 		setupCommand(kenv, here),
-		shellCommand(kenv, here),
+		shellcmd.Command(kenv),
 	)
 	root.SetArgs(args)
 	root.SetIn(stdin)
