@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
@@ -62,7 +60,7 @@ func vmCaption(o VMOverview, s *overview.Summary) []page.Value {
 	if s != nil {
 		head = s.Head
 	}
-	server := vm.Lifetime.Kind() == machine.Server
+	server := vm.Lifetime == machines.AlwaysOn
 	parts := []page.Value{page.Text(machines.KindWord(vm.Lifetime.Kind()) + " on " + o.on()), page.Text(lifetimeWord(vm.Lifetime))}
 	switch {
 	case server:
@@ -123,7 +121,7 @@ func readsSSH(s *overview.Summary) bool {
 		return false
 	}
 	for _, l := range s.Lines {
-		if l.Section == section.SSH && l.Unread == "" {
+		if l.Section == "ssh" && l.Unread == "" {
 			return true
 		}
 	}
