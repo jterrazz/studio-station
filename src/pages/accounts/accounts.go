@@ -356,3 +356,14 @@ func LendForm(vm string, names, checked []string) page.Form {
 		{Key: "for", Label: "For", Kind: page.FieldSelect, Options: durations, Default: "12h"},
 	}}
 }
+
+func RecallConfirm(vm, what string) page.Confirm {
+	return page.Confirm{
+		Question: "Recall " + what + " from " + vm + "?",
+		Lines: []page.Value{
+			page.Text(vm + "'s copy is deleted now (studio credentials delete inside the VM)"),
+			page.Text("the token stays valid at its service: revoke it there to end it everywhere"),
+		},
+		Yes: "Recall",
+	}
+}

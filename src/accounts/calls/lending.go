@@ -71,13 +71,26 @@ var Lend = call.Call[Deps, LendIn, accounts.LendReport]{
 }
 
 type RecallIn struct {
-	From  string
-	Names []string
+	From    string
+	Names   []string
+	Confirm string
 }
 
 var Recall = call.Call[Deps, RecallIn, accounts.RecallReport]{
-	Name: "secrets.recall", Section: section.Accounts, Where: call.InEngine, Applies: accounts.Applies,
+	Name: "secrets.recall", Section: section.Accounts, Where: call.InEngine, Applies: accounts.Applies, Confirm: confirm.TakeBack,
+	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in RecallIn, _ call.Progress) (accounts.RecallReport, error) {
+		// invariant: a VM that holds nothing to take back is answered without
+		// a question; one that holds a copy asks first, since it is deleted.
+		names, err := d.Secrets.CheckRecall(ctx, in.From, in.Names)
+		if err != nil {
+			return accounts.RecallReport{}, err
+		}
+		if len(names) > 0 {
+			if err := confirm.Require(confirm.For(confirm.TakeBack, d.Kind), strings.Join(names, ", "), in.Confirm); err != nil {
+				return accounts.RecallReport{}, err
+			}
+		}
 		return d.Secrets.Recall(ctx, in.From, in.Names)
 	},
 }

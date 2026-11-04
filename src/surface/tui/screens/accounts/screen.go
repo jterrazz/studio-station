@@ -140,8 +140,8 @@ func (m Model) revoke(mc accounts.Machine, a *accounts.Account, cmd tea.Cmd) (ta
 		return m, tea.Batch(cmd, tab.Say(tab.Status{Mark: page.Absent, Text: text}))
 	}
 	vm, name := mc.Name, a.Lent.Name
-	run := tab.Exec(ID, func() (tab.Status, error) {
-		_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, accountscalls.Recall, accountscalls.RecallIn{From: vm, Names: []string{name}}, nil)
+	run := tab.Confirmed(ID, pageaccounts.RecallConfirm(vm, name), func(answer string) (tab.Status, error) {
+		_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, accountscalls.Recall, accountscalls.RecallIn{From: vm, Names: []string{name}, Confirm: answer}, nil)
 		return tab.Outcome("recalled", name, catalog.StateOK, "from "+vm), err
 	})
 	var act tea.Cmd

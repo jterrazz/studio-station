@@ -203,7 +203,7 @@ func (s *Service) Lend(ctx context.Context, to string, names []string, term time
 	return LendReport{To: to, Names: names, At: at, Until: at.Add(term)}, nil
 }
 
-func (s *Service) checkRecall(ctx context.Context, from string, names []string) ([]string, error) {
+func (s *Service) CheckRecall(ctx context.Context, from string, names []string) ([]string, error) {
 	if err := s.checkVM(ctx, from); err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (s *Service) checkRecall(ctx context.Context, from string, names []string) 
 }
 
 func (s *Service) Recall(ctx context.Context, from string, names []string) (RecallReport, error) {
-	names, err := s.checkRecall(ctx, from, names)
+	names, err := s.CheckRecall(ctx, from, names)
 	if err != nil {
 		return RecallReport{}, err
 	}

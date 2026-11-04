@@ -27,6 +27,9 @@ type Secrets interface {
 	Held(names []string) (map[string][]string, error)
 	Disallow(ctx context.Context, names []string) (accounts.RecallReport, error)
 	Lend(ctx context.Context, to string, names []string, term time.Duration) (accounts.LendReport, error)
+	// value: the names a recall from that VM would take back, every name
+	// lent to it when none is named.
+	CheckRecall(ctx context.Context, from string, names []string) ([]string, error)
 	Recall(ctx context.Context, from string, names []string) (accounts.RecallReport, error)
 }
 

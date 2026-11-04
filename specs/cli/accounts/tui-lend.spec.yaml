@@ -34,6 +34,9 @@ runs:
           see 11h 59m left
           send \x1b[B
           send r
+          see Recall operator:claude:oauth-token from api?
+          see the token stays valid at its service
+          send \r
           see operator:claude:oauth-token from api
           gone 11h 59m left
           send g
