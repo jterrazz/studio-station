@@ -7,13 +7,13 @@ runs:
           ●	box	jterrazz-macbook-pro	permanent	linux 1	4 cpus · 4 GB
       stderr: |
           → now: station machines create box --permanent
-    - command: 'machines probe mac-mini | /usr/bin/head -1'
+    - command: 'machines probe jterrazz-macbook-pro | /usr/bin/head -1'
       exit: 0
       stdout: |
           # Machine
       stderr: |
-          → now: station machines mac-mini
-    - command: 'machines probe mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+          → now: station machines jterrazz-macbook-pro
+    - command: 'machines probe jterrazz-macbook-pro --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
       exit: 0
       stdout: |
-          {"schema":"station.overview.read/v1","machine":"jterrazz-mac-mini"}
+          {"schema":"station.overview.read/v1","machine":"jterrazz-macbook-pro"}

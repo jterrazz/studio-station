@@ -1,11 +1,11 @@
 description: 'station machines <machine> is the Overview station overview --on <machine> prints'
 env: two-macs
 runs:
-    - command: 'machines mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+    - command: 'machines jterrazz-macbook-pro --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
       exit: 0
       stdout: |
-          {"schema":"station.overview.read/v1","machine":"jterrazz-mac-mini"}
-    - command: 'overview --on mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+          {"schema":"station.overview.read/v1","machine":"jterrazz-macbook-pro"}
+    - command: 'overview --on jterrazz-macbook-pro --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
       exit: 0
       stdout: |
-          {"schema":"station.overview.read/v1","machine":"jterrazz-mac-mini"}
+          {"schema":"station.overview.read/v1","machine":"jterrazz-macbook-pro"}
