@@ -235,15 +235,24 @@ func address(w *World, args []string) error {
 	return nil
 }
 
+// invariant: what listens in a VM is its record's on its Mac, also when the
+// world holds the VM's own slice for a binary run inside it.
 func (w *World) listening(machine string) (*[]ports.Listener, error) {
+	if v, err := w.vm(machine); err == nil {
+		return &v.Listening, nil
+	}
 	if m, ok := w.Macs[machine]; ok {
 		return &m.Listening, nil
 	}
-	v, err := w.vm(machine)
+	return nil, fmt.Errorf("no machine %q in this world", machine)
+}
+
+func (w *World) Listening(machine string) []ports.Listener {
+	at, err := w.listening(machine)
 	if err != nil {
-		return nil, fmt.Errorf("no machine %q in this world", machine)
+		return nil
 	}
-	return &v.Listening, nil
+	return *at
 }
 
 func listen(w *World, args []string) error {

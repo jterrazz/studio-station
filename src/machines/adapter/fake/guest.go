@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"io/fs"
@@ -157,7 +158,8 @@ type guest struct {
 	once  sync.Once
 }
 
-// invariant: station's session in the fake guest says it is ready, takes
+// invariant: station's session in the fake guest says it is ready, reports
+// what listens in its VM of the world, as the guest's first scan does, takes
 // whatever the engine writes, and lasts until the connection closes.
 func (c *guest) serve(ctx context.Context, cmd contract.GuestCommand) (contract.GuestResult, error) {
 	if cmd.Stdin != nil {
@@ -171,7 +173,7 @@ func (c *guest) serve(ctx context.Context, cmd contract.GuestCommand) (contract.
 		}()
 	}
 	if cmd.Stdout != nil {
-		if _, err := cmd.Stdout.Write([]byte(`{"v":1,"type":"ready"}` + "\n")); err != nil {
+		if _, err := cmd.Stdout.Write(append([]byte(`{"v":1,"type":"ready"}`+"\n"), c.snapshot()...)); err != nil {
 			return contract.GuestResult{}, err
 		}
 	}
@@ -180,6 +182,27 @@ func (c *guest) serve(ctx context.Context, cmd contract.GuestCommand) (contract.
 	case <-c.done:
 	}
 	return contract.GuestResult{}, nil
+}
+
+type reported struct {
+	Port    int    `json:"port"`
+	IP      string `json:"ip"`
+	Process string `json:"process"`
+}
+
+func (c *guest) snapshot() []byte {
+	c.w.Lock()
+	listening := c.w.Listening(c.name)
+	c.w.Unlock()
+	found := make([]reported, 0, len(listening))
+	for _, l := range listening {
+		found = append(found, reported{Port: l.Port, IP: l.Bind, Process: l.Process})
+	}
+	line, err := json.Marshal(map[string]any{"v": 1, "type": "snapshot", "ports": found})
+	if err != nil {
+		return nil
+	}
+	return append(line, '\n')
 }
 
 var ErrGuestBroke = errors.New("the guest connection broke, as the world scripted it")
@@ -280,10 +303,27 @@ func (c *guest) Forward(_ context.Context, _ string, port int) (io.ReadWriteClos
 	c.vm.mu.Lock()
 	greeting, ok := c.vm.services[port]
 	c.vm.mu.Unlock()
+	if !ok && c.listens(port) {
+		greeting, ok = "HTTP/1.1 200 OK", true
+	}
 	if !ok {
 		return nil, errors.Join(ErrNoService, errors.New("port "+strconv.Itoa(port)))
 	}
 	return &stream{Reader: strings.NewReader(greeting + "\n")}, nil
+}
+
+// invariant: a port the world says listens in the VM answers as a web
+// server does, the dev server a workspace runs; a port a story scripts
+// answers its own greeting.
+func (c *guest) listens(port int) bool {
+	c.w.Lock()
+	defer c.w.Unlock()
+	for _, l := range c.w.Listening(c.name) {
+		if l.Port == port {
+			return true
+		}
+	}
+	return false
 }
 
 type stream struct{ *strings.Reader }
