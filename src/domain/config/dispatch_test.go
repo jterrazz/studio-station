@@ -1,9 +1,9 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"testing"
-	"testing/fstest"
 
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	corefake "github.com/jterrazz/studio-station/src/core/adapter/fake"
@@ -11,6 +11,8 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
+	settings2 "github.com/jterrazz/studio-station/src/settings"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
@@ -20,7 +22,7 @@ func newTestService(t *testing.T, here catalog.MachineKind, euid int) (*Service,
 	env := systemtest.Env{HomeDir: "/home/u", UID: euid, OS: "darwin"}
 	h := systemtest.Host(run, files, env, systemtest.NewNet(), &systemtest.Clock{})
 	paths := settings.Paths{Config: "/home/u/.config/station", State: "/home/u/.local/state/station"}
-	svc := New(h, catalog.ConfigItems, fstest.MapFS{}, Prefs{Identity: setupcontract.Identity(corefake.NewPreferences()), ShareList: accountscontract.ShareList(corefake.NewPreferences())}, Options{Here: here, DNSProfile: paths.State + "/dns/quad9-dns.mobileconfig", BackupExclusions: []string{"/home/u/.cache", "/home/u/.local/share/station/vms"}})
+	svc := New(h, catalog.ConfigItems, Prefs{Identity: setupcontract.Identity(corefake.NewPreferences()), ShareList: accountscontract.ShareList(corefake.NewPreferences())}, Options{Here: here, DNSProfile: paths.State + "/dns/quad9-dns.mobileconfig", BackupExclusions: []string{"/home/u/.cache", "/home/u/.local/share/station/vms"}, Appliers: []settingscontract.Applier{fileApplier(catalog.EffectTouch), fileApplier(catalog.EffectDotfile)}})
 	return svc, run, files
 }
 
@@ -53,4 +55,21 @@ func TestAnEffectNobodyHandlesIsAnErrorNotASilentSuccess(t *testing.T) {
 	if _, err := svc.handler(catalog.ConfigItem{Name: "y"}); err == nil {
 		t.Fatal("an item with no effect dispatched")
 	}
+}
+
+// value: an Applier of a file effect, which these tests never run.
+type fileApplier catalog.EffectKind
+
+func (k fileApplier) Kind() catalog.EffectKind { return catalog.EffectKind(k) }
+
+func (fileApplier) Observe(context.Context, catalog.ConfigItem) (settings2.Observation, error) {
+	return settings2.Observation{}, nil
+}
+
+func (fileApplier) Apply(context.Context, catalog.ConfigItem, map[string]string) (settings2.Change, error) {
+	return settings2.Change{}, nil
+}
+
+func (fileApplier) Undo(context.Context, catalog.ConfigItem) (settings2.Change, error) {
+	return settings2.Change{}, nil
 }

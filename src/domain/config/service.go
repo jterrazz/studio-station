@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/jterrazz/studio-station/src/settings"
-	"io/fs"
 	"path"
 	"slices"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	schedule "github.com/jterrazz/studio-station/src/core/call/lanes"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -31,15 +31,17 @@ type Options struct {
 	BackupExclusions []string
 	Defaults         map[string]map[string]string
 	Jobs             contract.Jobs
+	// value: the Appliers of the effects that are no procedure: files.
+	Appliers []settingscontract.Applier
 }
 
 type Service struct {
-	h      system.Host
-	items  []catalog.ConfigItem
-	byName map[string]catalog.ConfigItem
-	files  fs.FS
-	prefs  Prefs
-	o      Options
+	h        system.Host
+	items    []catalog.ConfigItem
+	byName   map[string]catalog.ConfigItem
+	prefs    Prefs
+	o        Options
+	appliers settingscontract.Appliers
 }
 
 type Prefs struct {
@@ -47,12 +49,14 @@ type Prefs struct {
 	ShareList accountscontract.ShareListPrefs
 }
 
-func New(h system.Host, items []catalog.ConfigItem, files fs.FS, prefs Prefs, o Options) *Service {
+func New(h system.Host, items []catalog.ConfigItem, prefs Prefs, o Options) *Service {
 	byName := make(map[string]catalog.ConfigItem, len(items))
 	for _, it := range items {
 		byName[it.Name] = it
 	}
-	return &Service{h: h, items: items, byName: byName, files: files, prefs: prefs, o: o}
+	s := &Service{h: h, items: items, byName: byName, prefs: prefs, o: o}
+	s.appliers = settingscontract.NewAppliers(append(append([]settingscontract.Applier{}, o.Appliers...), s.procedures()...)...)
+	return s
 }
 
 type (

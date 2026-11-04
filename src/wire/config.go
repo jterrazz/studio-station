@@ -10,6 +10,9 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
+	"github.com/jterrazz/studio-station/src/settings/adapter/dotfile"
+	"github.com/jterrazz/studio-station/src/settings/adapter/touch"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	configcmd "github.com/jterrazz/studio-station/src/surface/cli/config"
 	configinstall "github.com/jterrazz/studio-station/src/surface/cli/config/install"
 	configuninstall "github.com/jterrazz/studio-station/src/surface/cli/config/uninstall"
@@ -48,13 +51,17 @@ func (a configAsk) Values(it catalog.ConfigItem) (map[string]string, error) {
 func configService(m machine) *config.Service {
 	// invariant: "dotfiles" is the embedded root, so Sub cannot fail.
 	files, _ := fs.Sub(catalog.DotfilesFS, "dotfiles")
-	return config.New(m.host, catalog.ConfigItems, files, config.Prefs{Identity: m.stores.identity(), ShareList: m.stores.shareList()}, config.Options{
+	return config.New(m.host, catalog.ConfigItems, config.Prefs{Identity: m.stores.identity(), ShareList: m.stores.shareList()}, config.Options{
 		Pool:             m.pool,
 		Here:             m.kind,
 		DNSProfile:       filepath.Join(m.paths.State, "dns", "quad9-dns.mobileconfig"),
 		BackupExclusions: []string{m.paths.Roots.Cache, filepath.Join(m.paths.Data, "vms")},
 		Defaults:         configDefaults(m),
 		Jobs:             m.jobs(config.ReadBudget),
+		Appliers: []settingscontract.Applier{
+			touch.New(m.host.FS, m.host.Env.Home()),
+			dotfile.New(m.host.FS, m.host.Run, dotfile.Options{Home: m.host.Env.Home(), Ours: files}),
+		},
 	})
 }
 

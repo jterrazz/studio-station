@@ -31,7 +31,15 @@ type Input struct {
 	Required          bool
 }
 
-type Effect interface{ isEffect() }
+type Effect interface{ Kind() EffectKind }
+
+// value: how a setting is written: the key of the Applier that writes it.
+type EffectKind string
+
+const (
+	EffectTouch   EffectKind = "touch"
+	EffectDotfile EffectKind = "dotfile"
+)
 
 type Touch struct{ Path string }
 
@@ -63,9 +71,11 @@ const (
 	ProcBackupExclusions Procedure = "backup-exclusions"
 )
 
-func (Touch) isEffect()     {}
-func (Dotfiles) isEffect()  {}
-func (Procedure) isEffect() {}
+func (Touch) Kind() EffectKind    { return EffectTouch }
+func (Dotfiles) Kind() EffectKind { return EffectDotfile }
+
+// value: a procedure is its own kind of effect: one Applier each.
+func (p Procedure) Kind() EffectKind { return EffectKind("procedure:" + string(p)) }
 
 type ConfigItem struct {
 	Name, Description, Help string
