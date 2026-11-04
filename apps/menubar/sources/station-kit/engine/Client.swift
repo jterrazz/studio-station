@@ -82,7 +82,7 @@ public enum Client {
         var body: [String: Any] = ["v": 2, "id": "1", "call": name]
         if !input.isEmpty { body["in"] = input }
         guard let socket = try? UnixSocket.connect(path), let data = try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys]) else {
-            return Reply(ok: false, closed: false, result: [:], message: "the station engine is not running", hint: "station start")
+            return Reply(ok: false, closed: false, result: [:], message: "the station engine is not running", hint: "station engine start")
         }
         do {
             try socket.write(line: data)
@@ -97,7 +97,7 @@ public enum Client {
                 return Reply(ok: true, closed: false, result: result, message: nil, hint: nil)
             }
         } catch {
-            return Reply(ok: false, closed: true, result: [:], message: "the station engine closed the connection", hint: "station start")
+            return Reply(ok: false, closed: true, result: [:], message: "the station engine closed the connection", hint: "station engine start")
         }
     }
 
