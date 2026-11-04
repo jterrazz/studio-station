@@ -6,6 +6,7 @@ import (
 	"slices"
 	"sort"
 
+	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/system"
@@ -14,14 +15,12 @@ import (
 const commandLane = 16
 
 type Options struct {
-	Pool        *probe.Pool
-	Here        catalog.MachineKind
-	MiseShims   string
-	Path        string
-	Root        string
-	APIURL      string
-	GitHubToken string
-	VMs         VMs
+	Pool       *probe.Pool
+	Here       catalog.MachineKind
+	Root       string
+	Installers contract.Installers
+	Bundler    contract.Bundler
+	VMs        VMs
 }
 
 type Configurer interface {
@@ -38,7 +37,6 @@ type Service struct {
 	byName map[string]catalog.Tool
 	cfg    Configurer
 	o      Options
-	table  map[catalog.Method]method
 }
 
 func New(h system.Host, list []catalog.Tool, cfg Configurer, o Options) *Service {
@@ -49,7 +47,7 @@ func New(h system.Host, list []catalog.Tool, cfg Configurer, o Options) *Service
 	if o.Pool == nil {
 		o.Pool = probe.NewPool(context.Background(), h.Clock, commandLane, 1)
 	}
-	return &Service{h: h, tools: list, byName: byName, cfg: cfg, o: o, table: methods()}
+	return &Service{h: h, tools: list, byName: byName, cfg: cfg, o: o}
 }
 
 type Report struct {
@@ -84,7 +82,6 @@ type Outcome struct {
 	Result catalog.State
 	Detail string
 	Steps  []Step
-	Err    error
 }
 
 type Step struct {
@@ -144,9 +141,8 @@ func (s *Service) CheckInstall(ctx context.Context, names []string) error {
 		return err
 	}
 	for _, t := range found {
-		i := s.install(t)
-		if app, ok := i.(catalog.AppInstall); ok {
-			return &ManualInstallError{Tool: t.Name, Hint: app.Hint}
+		if !s.installer(t).Can().Install {
+			return &ManualInstallError{Tool: t.Name, Hint: s.install(t).Key()}
 		}
 	}
 	return nil
@@ -158,7 +154,7 @@ func (s *Service) CheckUninstall(names []string) error {
 		return err
 	}
 	for _, t := range found {
-		if s.row(t).uninstall == nil {
+		if !s.installer(t).Can().Remove {
 			return &NotReversibleError{Tool: t.Name}
 		}
 		if s.fromAppStore(t) {
@@ -174,7 +170,7 @@ func (s *Service) CheckUpgrade(names []string) error {
 		return err
 	}
 	for _, t := range found {
-		if !s.row(t).upgradable() {
+		if !s.installer(t).Can().Update {
 			return &NoUpgradePathError{Tool: t.Name}
 		}
 	}
@@ -186,8 +182,15 @@ func (s *Service) install(t catalog.Tool) catalog.Install {
 	return i
 }
 
-func (s *Service) row(t catalog.Tool) method {
-	return s.table[s.install(t).Method()]
+// invariant: the registry wire builds holds an installer for every method
+// the catalogue places.
+func (s *Service) installer(t catalog.Tool) contract.Installer {
+	return s.o.Installers[s.install(t).Method()]
+}
+
+func (s *Service) lined(t catalog.Tool) (contract.Lined, bool) {
+	l, ok := s.installer(t).(contract.Lined)
+	return l, ok
 }
 
 // invariant: the VM named in a refusal is one that runs now and whose kind is a

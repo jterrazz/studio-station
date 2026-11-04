@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"errors"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -355,7 +354,7 @@ func outcomes() []Fixture {
 	toolOutcomes := []tools.Outcome{
 		{Name: "jq", Verb: "install", Result: catalog.StateOK, Detail: "1.8.1"},
 		{Name: "mise", Verb: "install", Result: catalog.StateOK, Steps: []tools.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
-		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Detail: "brew bundle exited 1", Err: errors.New("brew bundle exited 1")},
+		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Detail: "brew bundle exited 1"},
 	}
 	changes := []config.Change{
 		{Item: "power", Verb: "install", Result: catalog.StateOK, Before: []config.Fact{{Key: "sleep", Value: "10"}}, After: []config.Fact{{Key: "sleep", Value: "0"}}},

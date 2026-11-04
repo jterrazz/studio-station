@@ -7,7 +7,6 @@ import (
 	"path"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/apps/contract"
@@ -16,10 +15,7 @@ import (
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
-const (
-	command        = "skills"
-	currencyBudget = 5 * time.Second
-)
+const command = "skills"
 
 type Options struct {
 	Run    local.Runner
@@ -85,8 +81,6 @@ func (s *Skills) Outdated(ctx context.Context, keys []string) (map[string]apps.C
 	// invariant: the verdict compares git tree SHAs, the oracle the skills CLI updates
 	// by; an inconclusive check (network, non-200, a folder gone upstream) leaves the
 	// skill's currency unknown, never behind.
-	ctx, cancel := context.WithTimeout(ctx, currencyBudget)
-	defer cancel()
 	lock := s.lock()
 	var mu sync.Mutex
 	folders := map[string]map[string]string{}

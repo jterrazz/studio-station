@@ -13,7 +13,10 @@ import (
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
-const command = "brew"
+const (
+	command = "brew"
+	bundle  = command + " bundle"
+)
 
 var manager = contract.Manager{Name: command, App: "homebrew", Needs: "homebrew"}
 
@@ -36,6 +39,8 @@ func (b *Brew) Casks() contract.Installer {
 	return &kind{brew: b, method: catalog.MethodCask, list: local.Command(command, "list", "--cask", "--versions")}
 }
 
+func (b *Brew) Name() string { return bundle }
+
 func (b *Brew) Bundle(ctx context.Context, lines []string, update bool, _ call.Progress) error {
 	// hazard: brew's own prompts (a cask's sudo) read /dev/tty, not stdin, so
 	// feeding the Brewfile on stdin (--file=-) does not steal them.
@@ -51,9 +56,9 @@ func (b *Brew) Bundle(ctx context.Context, lines []string, update bool, _ call.P
 	ran, err := b.run.Attach(ctx, c, local.ToStderr)
 	switch {
 	case err != nil:
-		return errors.New("brew bundle: " + err.Error())
+		return errors.New(bundle + ": " + err.Error())
 	case ran.ExitCode != 0:
-		failure := "brew bundle exited " + strconv.Itoa(ran.ExitCode)
+		failure := bundle + " exited " + strconv.Itoa(ran.ExitCode)
 		if ran.LastStderr != "" {
 			failure += ": " + ran.LastStderr
 		}

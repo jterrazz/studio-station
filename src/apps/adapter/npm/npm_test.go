@@ -42,6 +42,8 @@ func (p *prefix) play(c local.Cmd) (local.Output, error) {
 	return local.Output{ExitCode: 97}, nil
 }
 
+func (p *prefix) Name() string { return "the bundle" }
+
 func (p *prefix) Bundle(_ context.Context, lines []string, _ bool, _ call.Progress) error {
 	if p.fails {
 		return errors.New("the bundle exited 1")

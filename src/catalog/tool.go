@@ -91,6 +91,16 @@ func (t Tool) Places() []MachineKind {
 	return kinds
 }
 
+const AppStoreReceipt = "Contents/_MASReceipt"
+
+func (t Tool) Superseded() (Install, bool) {
+	// invariant: what a tool supersedes is a formula, named by Supersedes.
+	if t.Supersedes == "" {
+		return nil, false
+	}
+	return Brew(t.Supersedes), true
+}
+
 func (t Tool) InstallOn(k MachineKind) (Install, bool) {
 	for _, p := range t.Installs {
 		for _, kind := range p.Kinds {

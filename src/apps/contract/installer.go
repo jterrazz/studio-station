@@ -58,5 +58,7 @@ type Lined interface {
 }
 
 type Bundler interface {
+	// value: the run's name in a verdict: "not listed after brew bundle".
+	Name() string
 	Bundle(ctx context.Context, lines []string, update bool, p call.Progress) error
 }
