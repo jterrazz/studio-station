@@ -1,0 +1,21 @@
+description: 'station machines <machine> is that machine Overview, the one station overview --on <machine> prints; a Mac answers to its short name'
+env: two-macs
+runs:
+    - command: 'machines mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+      exit: 0
+      stdout: |
+          {"schema":"station.overview.read/v1","machine":"jterrazz-mac-mini"}
+    - command: 'overview --on mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+      exit: 0
+      stdout: |
+          {"schema":"station.overview.read/v1","machine":"jterrazz-mac-mini"}
+    - command: 'machines jterrazz-mac-mini | /usr/bin/grep -E "^# Machine|	name	"'
+      exit: 0
+      stdout: |
+          # Machine
+          ●	name	jterrazz-mac-mini	host · darwin arm64 · jterrazz · zsh
+    - command: 'overview --on jterrazz-mac-mini | /usr/bin/grep -E "^# Machine|	name	"'
+      exit: 0
+      stdout: |
+          # Machine
+          ●	name	jterrazz-mac-mini	host · darwin arm64 · jterrazz · zsh

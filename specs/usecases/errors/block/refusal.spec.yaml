@@ -4,8 +4,8 @@ runs:
     - command: 'machines stop nope'
       exit: 2
       stderr: |
-          Error: unknown machine "nope"
-          Hint: run station machines for the fleet
+          Error: no machine named "nope"
+          Hint: station machines
     - command: 'tools install'
       exit: 2
       stderr: |

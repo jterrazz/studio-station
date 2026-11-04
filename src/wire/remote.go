@@ -59,9 +59,9 @@ func (m machine) locate(name string) (coremachine.Ref, bool) {
 	case err != nil:
 		return coremachine.Ref{Name: name}, false
 	case found.Kind != catalog.Host:
-		return coremachine.Ref{Name: name, On: m.profile.Ref.Name}, true
+		return coremachine.Ref{Name: found.Name, On: m.profile.Ref.Name}, true
 	}
-	return coremachine.Ref{Name: name}, true
+	return coremachine.Ref{Name: found.Name}, true
 }
 
 // invariant: a VM of another Mac is found in that Mac's own list, asked of

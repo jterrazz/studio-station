@@ -6,13 +6,13 @@ runs:
     - command: 'tools --on infra'
       exit: 1
       stderr: |
-          Error: cannot reach "z"
-          Hint: station machines probe z
+          Error: z does not answer
+          Hint: station machines
     - command: 'tools install jq --on infra'
       exit: 1
       stderr: |
-          Error: cannot reach "z"
-          Hint: station machines probe z
+          Error: z does not answer
+          Hint: station machines
     - command: 'tools --on w 2>&1 | /usr/bin/head -n 1'
       exit: 0
       stdout: |

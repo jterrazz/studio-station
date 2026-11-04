@@ -18,5 +18,5 @@ runs:
           exit 2
           0
       stderr: |
-          Error: unknown machine "nope"
-          Hint: run station machines for the fleet
+          Error: no machine named "nope"
+          Hint: station machines

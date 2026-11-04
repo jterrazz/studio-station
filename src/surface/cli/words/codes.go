@@ -44,7 +44,7 @@ func Codes() map[fail.Code]Wording {
 			return "the request is not a " + e.Subject + " frame", "send one JSON object per line with v 2 and a call or a watch"
 		},
 		call.Unreachable: func(e *fail.Error) (string, string) {
-			return "cannot reach \"" + e.Subject + "\"", "station machines probe " + e.Subject
+			return e.Subject + " does not answer", "station machines"
 		},
 		enginecalls.StartFailed: func(e *fail.Error) (string, string) {
 			return "the engine did not start: " + e.Detail["last"], "station engine"

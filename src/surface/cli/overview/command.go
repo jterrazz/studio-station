@@ -35,36 +35,40 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Live:  true,
 		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			if io.CanLive() {
-				updates, err := call.Follow(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{}, nil)
-				if err != nil {
-					return err
-				}
-				var last pagehome.Overview
-				err = io.LivePage(kit.Updates(updates, func(s pagehome.Overview) page.Page {
-					last = s
-					return pagehome.Snapshot(s, d.Here, in.All)
-				}))
-				if err != nil {
-					return err
-				}
-				if err := ctx.Err(); err != nil {
-					return err
-				}
-				return last.Err
-			}
-			snapshot, err := call.Read(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{}, nil)
-			if err == nil {
-				err = snapshot.Err
-			}
-			if err != nil {
-				return err
-			}
-			contract := pagehome.SnapshotContract(snapshot)
-			if !d.Status {
-				contract.Schema = call.Schema(overviewcalls.Read.Name)
-			}
-			return io.Page(pagehome.Snapshot(snapshot, d.Here, in.All), contract)
+			return Run(ctx, d, env, in.All, io)
 		},
 	}, env)
+}
+
+func Run(ctx context.Context, d Deps, env kit.Env, all bool, io kit.IO) error {
+	if io.CanLive() {
+		updates, err := call.Follow(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{}, nil)
+		if err != nil {
+			return err
+		}
+		var last pagehome.Overview
+		err = io.LivePage(kit.Updates(updates, func(s pagehome.Overview) page.Page {
+			last = s
+			return pagehome.Snapshot(s, d.Here, all)
+		}))
+		if err != nil {
+			return err
+		}
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		return last.Err
+	}
+	snapshot, err := call.Read(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{}, nil)
+	if err == nil {
+		err = snapshot.Err
+	}
+	if err != nil {
+		return err
+	}
+	contract := pagehome.SnapshotContract(snapshot)
+	if !d.Status {
+		contract.Schema = call.Schema(overviewcalls.Read.Name)
+	}
+	return io.Page(pagehome.Snapshot(snapshot, d.Here, all), contract)
 }

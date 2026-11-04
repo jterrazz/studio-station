@@ -16,16 +16,30 @@ import (
 
 type Deps struct {
 	Here page.Context
+	// value: one machine's Overview, read on the machine env targets.
+	Overview func(ctx context.Context, io kit.IO) error
+	Names    func() []string
 }
 
-type Input struct{ Here bool }
+type Input struct {
+	Here    bool
+	Machine string
+}
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 	cmd := kit.Command(kit.Leaf[Input]{
-		Use:     "machines",
-		Short:   "Every host and the VMs on each",
-		Example: "  station machines\n  station machines --here --json",
-		Group:   kit.Machines,
+		Use:     "machines [<machine>]",
+		Short:   "All machines: every Mac, its VMs under it; one machine's Overview",
+		Example: "  station machines\n  station machines linux-1\n  station machines --json",
+		Args:    cobra.MaximumNArgs(1),
+		Bind: func(in *Input, args []string) error {
+			if len(args) == 1 {
+				in.Machine = args[0]
+			}
+			return nil
+		},
+		Complete: func([]string, string) []string { return d.Names() },
+		Group:    kit.Machines,
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.Here, "here", false, "this host only, without asking the others")
 		},
@@ -33,6 +47,12 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Live:  true,
 		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			if in.Machine != "" {
+				if env.On != nil {
+					env.On.Machine = in.Machine
+				}
+				return d.Overview(ctx, io)
+			}
 			listed := machinescalls.ListIn{Here: in.Here}
 			if !io.CanLive() {
 				out, err := call.Read(ctx, env.Calls, env.Target(), machinescalls.List, listed, nil)

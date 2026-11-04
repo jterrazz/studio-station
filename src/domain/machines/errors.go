@@ -4,7 +4,7 @@ import "github.com/jterrazz/studio-station/src/catalog"
 
 type UnknownMachineError struct{ Name string }
 
-func (e *UnknownMachineError) Error() string { return "unknown machine \"" + e.Name + "\"" }
+func (e *UnknownMachineError) Error() string { return "no machine named \"" + e.Name + "\"" }
 
 type HereMachineError struct{ Name string }
 
@@ -44,7 +44,7 @@ func (e *BadNameError) Error() string { return "\"" + e.Name + "\" is not a vali
 
 type UnreachableError struct{ Name string }
 
-func (e *UnreachableError) Error() string { return "cannot reach \"" + e.Name + "\"" }
+func (e *UnreachableError) Error() string { return e.Name + " does not answer" }
 
 type RestartTimeoutError struct{ Name, Phase string }
 

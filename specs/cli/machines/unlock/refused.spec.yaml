@@ -9,8 +9,8 @@ runs:
     - command: 'machines unlock nope'
       exit: 2
       stderr: |
-          Error: unknown machine "nope"
-          Hint: run station machines for the fleet
+          Error: no machine named "nope"
+          Hint: station machines
     - command: 'machines unlock linux-1'
       exit: 2
       stderr: |

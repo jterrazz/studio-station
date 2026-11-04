@@ -27,7 +27,7 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	}
 	switch {
 	case errors.As(err, &unknown):
-		return usage(unknown.Error(), "run station machines for the fleet"), true
+		return usage(unknown.Error(), "station machines"), true
 	case errors.As(err, &here):
 		return usage(here.Error(), "pick another machine: run station machines for the fleet"), true
 	case errors.As(err, &notHost):
@@ -39,9 +39,9 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &bad):
 		return usage(bad.Error(), "use lowercase letters, digits and \"-\", 1 to 40 characters"), true
 	case errors.As(err, &unreachable):
-		return failed(unreachable.Error(), "station machines probe "+unreachable.Name, err), true
+		return failed(unreachable.Error(), "station machines", err), true
 	case errors.As(err, &timeout):
-		return failed(timeout.Error(), "station machines probe "+timeout.Name, err), true
+		return failed(timeout.Error(), "station machines "+timeout.Name, err), true
 	case errors.As(err, &refused):
 		return failed(refused.Error(), "check that sudo needs no password for fdesetup on "+refused.Name, err), true
 	case errors.As(err, &terminal):
@@ -141,7 +141,7 @@ func pipeFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &stopped):
 		return failed(stopped.Error(), "station machines start "+stopped.Name, err), true
 	case errors.As(err, &closed):
-		return failed(closed.Error(), "station machines probe "+closed.Name, err), true
+		return failed(closed.Error(), "station machines "+closed.Name, err), true
 	case errors.As(err, &running):
 		return failed(running.Error(), "stop the running VMs (station machines), then station setup", err), true
 	}

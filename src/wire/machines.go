@@ -28,6 +28,7 @@ import (
 	machinesstop "github.com/jterrazz/studio-station/src/surface/cli/machines/stop"
 	machinessupervise "github.com/jterrazz/studio-station/src/surface/cli/machines/supervise"
 	machinesunlock "github.com/jterrazz/studio-station/src/surface/cli/machines/unlock"
+	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
 )
 
 const (
@@ -81,7 +82,10 @@ func (m machine) port(fallback int, names ...string) int {
 
 func machinesCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.machines(env.Interactive)
-	return machinescmd.Command(machinescmd.Deps{Here: m.where}, env,
+	overview := func(ctx context.Context, io kit.IO) error {
+		return overviewcmd.Run(ctx, overviewcmd.Deps{Here: m.where}, env, false, io)
+	}
+	return machinescmd.Command(machinescmd.Deps{Here: m.where, Names: service.Names, Overview: overview}, env,
 		machinesadd.Command(machinesadd.Deps{Here: m.where}, env),
 		machinesforget.Command(machinesforget.Deps{Names: service.Names, Here: m.where}, env),
 		machinescreate.Command(machinescreate.Deps{
@@ -98,7 +102,7 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		}, Here: m.where}, env),
 		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
 		machinesedit.Command(machinesedit.Deps{Names: service.Names, Resources: machines.ParseResources, Here: m.where}, env),
-		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Here: m.where}, env),
+		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Overview: overview}, env),
 		machinesunlock.Command(machinesunlock.Deps{Names: service.Names}, env),
 		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),
 		machinessupervise.Command(env),

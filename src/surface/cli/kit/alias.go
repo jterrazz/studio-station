@@ -34,7 +34,9 @@ func notice(env Env, c *cobra.Command, args []string) {
 		if now, ok := p.Annotations[aliasNow]; ok {
 			word, aliased = now, true
 		}
-		words = append([]string{word}, words...)
+		if word != "" {
+			words = append([]string{word}, words...)
+		}
 	}
 	if !aliased {
 		return

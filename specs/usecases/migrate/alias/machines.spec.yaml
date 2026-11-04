@@ -1,4 +1,4 @@
-description: 'create --lifetime lasting runs create --permanent, and says the new words on stderr'
+description: 'create --lifetime lasting runs create --permanent, machines probe <m> runs machines <m>; each says the new words on stderr, never with --json'
 env: two-macs
 runs:
     - command: 'machines create box --lifetime lasting | /usr/bin/head -1'
@@ -7,3 +7,13 @@ runs:
           ●	box	jterrazz-macbook-pro	permanent	linux 1	4 cpus · 4 GB
       stderr: |
           → now: station machines create box --permanent
+    - command: 'machines probe mac-mini | /usr/bin/head -1'
+      exit: 0
+      stdout: |
+          # Machine
+      stderr: |
+          → now: station machines mac-mini
+    - command: 'machines probe mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
+      exit: 0
+      stdout: |
+          {"schema":"station.overview.read/v1","machine":"jterrazz-mac-mini"}
