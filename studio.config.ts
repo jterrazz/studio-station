@@ -5,6 +5,16 @@ export default defineConfig({
     kind: 'cli',
     platform: 'node',
     presets: [test()],
+    test: {
+        projects: {
+            cli: {
+                literate: {
+                    include: ['specs/cli/**/*.spec.yaml', 'specs/adapters/**/*.spec.yaml'],
+                },
+                reason: 'an adapter spec (`specs/adapters/<tech>/`) runs the binary as a cli document does, through the same runner',
+            },
+        },
+    },
     typescript: {
         knip: {
             entry: {

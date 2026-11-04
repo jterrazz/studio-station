@@ -21,7 +21,7 @@ The Go tests come first. The module tests are `*_test.go` files next to the code
 
 Then `make test` runs the CLI specs under `specs/cli/` on Vitest, through `@jterrazz/test`. There is exactly one runner, and every spec drives one binary, `.artifacts/go/station-test`, stamped with the version `git describe` prints. `make test` builds it once before the runner starts, so no worker links it while another drives a session (with one build per worker, nine links ran beside the first sessions). Run directly, `specs/cli/cli.specification.ts` rebuilds it when it is missing or when any file under `src/` is newer than it, beside the binary and renamed into place, so a worker never executes a half-written file. It is an mtime check, so editing the CLI and re-running the suite always exercises the change instead of a stale build.
 
-`vitest.config.ts` is the one line `@jterrazz/test` derives from `studio.config.ts`: its `cli` project collects `specs/cli/`, and every `*.spec.yaml` there becomes a one-test module driving that runner. The runner's defaults are [the sandbox](#the-sandbox).
+`vitest.config.ts` is the one line `@jterrazz/test` derives from `studio.config.ts`: its `cli` project collects `specs/cli/` and `specs/adapters/`, and every `*.spec.yaml` there becomes a one-test module driving that runner. A document of `specs/adapters/<tech>/` proves one adapter speaks its tool (its argv, its parsing, against the stub CLIs a fixture carries): `.calls` assertions belong there, and nowhere else once a family has moved. The runner's defaults are [the sandbox](#the-sandbox).
 
 ## A scenario is a document
 
@@ -54,7 +54,7 @@ The full grammar is `@jterrazz/test`'s [Spec documents](https://github.com/jterr
 
 ## The stubs
 
-A spec copies one `fixture:` directory into its working directory, so stubs live beside the command word that uses them: `specs/cli/<noun>/__fixtures__/<case>/bin/<tool>`. A stub answers by argv from a table, appends `<tool> <argv>` (and the stdin of `brew bundle --file=-`) to `$HOME/.calls`, and exits 97 on anything unscripted. A document asserts `.calls` through `files:` to prove which installer line ran. The GitHub API is a stub backend the runner serves, reached through `STATION_GITHUB_API_URL`; a VM's sshd is the stub `vm-sshd` (`specs/cli/__fixtures__/vm-sshd/`), served to the documents that declare `serve: sshd` and reached through `STATION_GUEST_SSH_PORT`.
+A spec copies one `fixture:` directory into its working directory, so stubs live beside the command word that uses them: `specs/cli/<noun>/__fixtures__/<case>/bin/<tool>`. A fixture both suites read (the VMs `vms/`, the running VM `daemon-vm/`, what Tailscale serves `serving/`, the two Tailscale apps) lives in `specs/__fixtures__/`, the lowest folder `specs/cli/` and `specs/adapters/` share. A stub answers by argv from a table, appends `<tool> <argv>` (and the stdin of `brew bundle --file=-`) to `$HOME/.calls`, and exits 97 on anything unscripted. A document asserts `.calls` through `files:` to prove which installer line ran. The GitHub API is a stub backend the runner serves, reached through `STATION_GITHUB_API_URL`; a VM's sshd is the stub `vm-sshd` (`specs/cli/__fixtures__/vm-sshd/`), served to the documents that declare `serve: sshd` and reached through `STATION_GUEST_SSH_PORT`.
 
 ## What a test is for
 

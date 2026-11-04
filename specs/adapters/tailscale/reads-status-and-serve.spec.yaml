@@ -1,7 +1,7 @@
 description: 'tailnet reads the app and what it serves, and drives nothing'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/serving/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/serving/
 runs:
     - command: 'tailnet --json | /usr/bin/jq -c ''keys, [.serve[] | [.port, .station]]'''
       exit: 0
