@@ -60,7 +60,7 @@ runs:
               equals: |
                   {
                     "here": "x",
-                    "hosts": {
+                    "macs": {
                       "worker": {
                         "user": "deploy",
                         "key": "~/.ssh/deploy_key"

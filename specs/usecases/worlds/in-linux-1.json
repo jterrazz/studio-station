@@ -15,7 +15,7 @@
             },
             "preferences": {
                 "here": "jterrazz-macbook-pro",
-                "hosts": {
+                "macs": {
                     "jterrazz-mac-mini": {
                         "user": "jterrazz.agent"
                     }

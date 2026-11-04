@@ -52,6 +52,21 @@ func TestPreferencesMigration(t *testing.T) {
 			t.Errorf("preferences.json = %s", got)
 		}
 	})
+	t.Run("a group under its retired name is kept under its new one", func(t *testing.T) {
+		dir := t.TempDir()
+		_ = os.WriteFile(filepath.Join(dir, "preferences.json"), []byte(`{"here":"x","hosts":{"mini":{}}}`), 0o600)
+		p := jsonfile.NewPreferences(disk(), dir, []string{"here", "macs"}).Renaming("hosts", "macs")
+		var macs map[string]struct{}
+		if err := p.Read("macs", &macs); err != nil || len(macs) != 1 {
+			t.Fatalf("Read(macs) = %v, %v; want the mini read under its retired name", macs, err)
+		}
+		if err := p.Migrate(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if got, _ := os.ReadFile(filepath.Join(dir, "preferences.json")); string(got) != "{\n  \"here\": \"x\",\n  \"macs\": {\n    \"mini\": {}\n  }\n}\n" {
+			t.Errorf("preferences.json = %s", got)
+		}
+	})
 	t.Run("a file of a newer station is refused, never rewritten", func(t *testing.T) {
 		dir := t.TempDir()
 		_ = os.WriteFile(filepath.Join(dir, "preferences.json"), []byte(`{"v":2,"here":"x"}`), 0o600)

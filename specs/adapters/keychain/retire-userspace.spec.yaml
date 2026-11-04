@@ -33,7 +33,7 @@ runs:
               equals: |
                   {
                     "here": "m",
-                    "hosts": {
+                    "macs": {
                       "m": {}
                     },
                     "vm_user": "tester"

@@ -85,7 +85,7 @@ type stores struct {
 
 func newStores(files system.FS, p settings.Paths) *stores {
 	return &stores{
-		prefs:        corejsonfile.NewPreferences(files, p.Config, preferenceGroups()),
+		prefs:        corejsonfile.NewPreferences(files, p.Config, preferenceGroups()).Renaming(machinescontract.RetiredGroupMacs, machinescontract.GroupMacs),
 		machines:     machinesjsonfile.New(files, filepath.Join(p.State, "vms")),
 		images:       imagesjsonfile.New(files, filepath.Join(p.State, "images")),
 		shares:       accountsjsonfile.NewShares(files, filepath.Join(p.State, "shares.json"), filepath.Join(p.State, "vms")),

@@ -15,7 +15,7 @@
             },
             "preferences": {
                 "here": "jterrazz-macbook-pro",
-                "hosts": {
+                "macs": {
                     "jterrazz-mac-mini": {
                         "user": "jterrazz.agent",
                         "answered": "2026-11-04T03:12:00Z",
