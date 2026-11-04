@@ -1,6 +1,6 @@
 description: 'restart stops a lasting VM gracefully and the daemon runs it again'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

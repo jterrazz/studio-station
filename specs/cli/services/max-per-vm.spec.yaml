@@ -1,6 +1,6 @@
 description: 'a VM past its max refuses its next service with the cause'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

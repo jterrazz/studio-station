@@ -1,6 +1,6 @@
 description: 'a VM running under its old agent refuses the migration: nothing is booted out'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ./__fixtures__/old-agents/
 env: daemon
 runs:

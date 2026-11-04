@@ -1,6 +1,6 @@
 description: 'subscribe streams the power page on each change and a notice on a guard end, refusing unknown pages'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

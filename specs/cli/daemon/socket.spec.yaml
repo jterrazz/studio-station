@@ -1,6 +1,6 @@
 description: 'one daemon, one socket of mode 0600, one protocol of JSON lines'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 runs:

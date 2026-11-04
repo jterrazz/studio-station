@@ -1,6 +1,6 @@
 description: 'a host''s name is held: the next VM takes the next integer; no tailnet is asked'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

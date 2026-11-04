@@ -1,6 +1,6 @@
 description: 'with the daemon down start refuses: nothing runs'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-api/
 runs:
     - command: 'machines start api'

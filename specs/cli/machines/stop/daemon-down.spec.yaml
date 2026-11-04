@@ -1,6 +1,6 @@
 description: 'with the daemon down a stop runs the NAT poweroff itself and records the want'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-api/
 env: daemon
 runs:

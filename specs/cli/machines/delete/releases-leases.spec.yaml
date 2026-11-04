@@ -1,6 +1,6 @@
 description: 'deleting a VM through the daemon releases every lease and its serve entry, https and tcp alike'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

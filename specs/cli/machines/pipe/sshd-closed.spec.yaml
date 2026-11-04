@@ -1,6 +1,6 @@
 description: 'a VM whose sshd does not answer is a failure that names the probe'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
     - ../__fixtures__/local-vm/
 env: daemon

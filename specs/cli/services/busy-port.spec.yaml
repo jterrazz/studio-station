@@ -1,6 +1,6 @@
 description: 'a host port held by another process is skipped: the lease takes the next'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

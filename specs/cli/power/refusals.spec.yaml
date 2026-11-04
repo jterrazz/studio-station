@@ -1,6 +1,6 @@
 description: 'with the daemon stopped power still reads and awake refuses; in a VM power is refused'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

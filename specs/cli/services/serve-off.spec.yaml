@@ -1,6 +1,6 @@
 description: 'with Serve off every lease is local only, says the admin step, and no serve runs'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

@@ -1,6 +1,6 @@
 description: 'a second daemon finds the first answering and refuses'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 runs:

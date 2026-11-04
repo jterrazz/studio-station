@@ -1,5 +1,5 @@
 description: 'a tailnet with Serve off is a degraded gateway with the admin step; logged out, no row'
-fixture: ../__fixtures__/vms/
+fixture: ../../__fixtures__/vms/
 env: daemon
 runs:
     - command: '--version >/dev/null; : > answers/tailscale/status.serve-off; "$STATION" status --json | /usr/bin/jq -c ''.gateways[] | select(.name == "Tailscale Serve")'''

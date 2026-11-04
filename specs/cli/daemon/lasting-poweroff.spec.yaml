@@ -1,6 +1,6 @@
 description: 'a lasting VM''s declared poweroff keeps it, stopped until start'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

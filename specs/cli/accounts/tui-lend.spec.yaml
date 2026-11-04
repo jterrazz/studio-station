@@ -1,7 +1,7 @@
 description: 'the Accounts tab lends with l, recalls a lent row with r and shows an own row''s logout'
 fixture:
     - ./__fixtures__/accounts/
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
     - ../__fixtures__/terminal/
     - ../__fixtures__/lend/

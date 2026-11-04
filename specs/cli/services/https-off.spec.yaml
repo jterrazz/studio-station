@@ -1,6 +1,6 @@
 description: 'https off is gone: read as port, every HTTP lease served on its own port'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

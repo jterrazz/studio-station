@@ -1,5 +1,5 @@
 description: 'off a terminal the lifetime is never defaulted, and only the two lifetimes exist'
-fixture: ../../__fixtures__/vms/
+fixture: ../../../__fixtures__/vms/
 runs:
     - command: 'machines create </dev/null'
       exit: 2

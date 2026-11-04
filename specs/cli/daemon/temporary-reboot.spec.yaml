@@ -1,6 +1,6 @@
 description: 'a temporary VM''s reboot runs it again on a fresh console, its poweroff then deletes it'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
     - ./__fixtures__/reboot/
 env: daemon

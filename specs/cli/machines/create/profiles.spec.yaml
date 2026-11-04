@@ -1,6 +1,6 @@
 description: 'create pre-reserves the profiles, pinned, and the VM exports their URLs for its life'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

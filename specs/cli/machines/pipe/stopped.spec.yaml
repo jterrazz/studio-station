@@ -1,6 +1,6 @@
 description: 'a stopped lasting VM is named, with the verb that starts it'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-api/
 env: daemon
 runs:

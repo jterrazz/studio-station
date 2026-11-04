@@ -1,6 +1,6 @@
 description: 'power sleep ends the session and resets the clamshell; with nothing held it ends nothing'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

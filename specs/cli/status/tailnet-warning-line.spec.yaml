@@ -1,5 +1,5 @@
 description: 'status reads the tailnet and Serve through a CLI that warns on stdout'
-fixture: ../__fixtures__/vms/
+fixture: ../../__fixtures__/vms/
 env: daemon
 runs:
     - command: '--version >/dev/null; : > answers/tailscale/warn; "$STATION" status --json | /usr/bin/jq -c ''[.tailnet.state, (.gateways[] | select(.name == "Tailscale Serve") | .value)]'''

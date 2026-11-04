@@ -1,6 +1,6 @@
 description: 'services url reserves the lease before anything listens, sticky, and prints the public URL alone'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

@@ -1,6 +1,6 @@
 description: 'each Fleet key binds the rows it acts on: a host restart wants its name, a VM delete asks'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/vm-t/
     - ../__fixtures__/terminal/
     - ./__fixtures__/homebrew/

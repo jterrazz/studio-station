@@ -1,6 +1,6 @@
 description: 'a serve refused while Serve is on is degraded with tailscale''s line and keeps its URL'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

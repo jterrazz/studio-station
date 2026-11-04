@@ -1,6 +1,6 @@
 description: 'with the daemon down the reads degrade: not installed without its agent, stopped with it'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/vm-api/
 env: daemon
 runs:

@@ -1,8 +1,8 @@
 description: 'stop deletes the temporary VMs, stops the lasting ones, then boots the daemon out'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
-    - ../__fixtures__/launchctl/
+    - ../../__fixtures__/launchctl/
 env: daemon
 serve: sshd
 runs:

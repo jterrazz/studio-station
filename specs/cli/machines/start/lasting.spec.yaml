@@ -1,6 +1,6 @@
 description: 'start asks the daemon to run a lasting VM again'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

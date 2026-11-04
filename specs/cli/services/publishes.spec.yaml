@@ -1,6 +1,6 @@
 description: 'a listening port is leased and published: reached on 127.0.0.1, served over https'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

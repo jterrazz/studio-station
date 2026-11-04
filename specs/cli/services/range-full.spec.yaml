@@ -1,6 +1,6 @@
 description: 'a full range refuses with its cause'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
     - ./__fixtures__/narrow-range/
 env: daemon

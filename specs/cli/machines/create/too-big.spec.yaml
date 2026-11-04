@@ -1,5 +1,5 @@
 description: 'a VM may take at most three quarters of the host memory, refused before the daemon is asked'
-fixture: ../../__fixtures__/vms/
+fixture: ../../../__fixtures__/vms/
 runs:
     - command: 'machines create --lifetime temporary --memory 999G'
       exit: 2

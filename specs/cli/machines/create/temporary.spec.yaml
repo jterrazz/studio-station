@@ -1,6 +1,6 @@
 description: 'a temporary VM: cloned, sized, run detached by the daemon, one NAT boot, no tailnet, no host folder'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

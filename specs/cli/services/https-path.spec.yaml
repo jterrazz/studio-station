@@ -1,6 +1,6 @@
 description: 'the path mode serves HTTP on 443 under /<vm>/<port>/, a raw TCP one on its own port'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

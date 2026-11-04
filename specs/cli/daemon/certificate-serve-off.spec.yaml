@@ -1,6 +1,6 @@
 description: 'with Serve off the daemon asks for no certificate'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 runs:

@@ -1,5 +1,5 @@
 description: 'with the daemon down create refuses before anything is made'
-fixture: ../../__fixtures__/vms/
+fixture: ../../../__fixtures__/vms/
 runs:
     - command: 'machines create --lifetime temporary'
       exit: 1

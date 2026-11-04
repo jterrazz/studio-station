@@ -1,6 +1,6 @@
 description: 'in a VM release <port> is relayed by the guest to its host'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

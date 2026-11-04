@@ -1,6 +1,6 @@
 description: 'a socket file nobody answers is replaced'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/daemon-vm/
 env: daemon
 runs:

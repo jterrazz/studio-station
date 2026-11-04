@@ -1,6 +1,6 @@
 description: "memory counts binary, disk decimal, a bare number is GB, an unknown unit is refused"
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd

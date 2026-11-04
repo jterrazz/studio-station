@@ -1,5 +1,5 @@
 description: 'without tart the create is refused before anything, and names the tool to install'
-fixture: ../../__fixtures__/vms/
+fixture: ../../../__fixtures__/vms/
 runs:
     - command: '--version > /dev/null; /bin/rm bin/tart'
       exit: 0

@@ -1,6 +1,6 @@
 description: 'a lasting VM: its record wants it running on NAT, and the daemon runs it; no agent of its own'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd
