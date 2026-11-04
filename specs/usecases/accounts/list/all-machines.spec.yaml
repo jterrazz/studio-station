@@ -8,7 +8,7 @@ runs:
           ●	github	signed in	jterrazz	read:org · repo
           ✗	npm	expired			token refused	npm login
           ●	claude	signed in	admin@jterrazz.com	max
-          ●	tailscale	signed in
+          ●	tailscale	signed in			app-store
           ●	cloudflare	signed in	admin@jterrazz.com
           ●	git	signed in	Jean-Baptiste Terrazzoni, admin@jterrazz.com
           ●	ssh	signed in	1 key	admin@jterrazz.com
