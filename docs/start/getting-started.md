@@ -18,7 +18,7 @@ The script reads the latest release tag, downloads `station-<os>-<arch>`, checks
 station setup --name macbook
 ```
 
-Where no terminal can be asked (a script, an ssh command without a terminal), setup on a Mac with no name yet is refused, exit 2, before any step: `--name` is how such a run names it; the install stands. `setup` registers the host in the fleet, writes the managed block of `~/.zshrc` and moves an old `~/.studio/` to the XDG folders. It is safe to run again ([Dotfiles](../reference/dotfiles.md)).
+Where no terminal can be asked (a script, an ssh command without a terminal), setup on a Mac with no name yet is refused, exit 2, before any step: `--name` is how such a run names it; the install stands. `setup` names this Mac, writes the managed block of `~/.zshrc`, moves an old `~/.studio/` to the XDG folders, starts the engine, installs the missing system apps and applies the settings that need nobody; the others it lists as next steps. It is safe to run again ([Dotfiles](../reference/dotfiles.md)).
 
 ## 3. Tools, then config
 

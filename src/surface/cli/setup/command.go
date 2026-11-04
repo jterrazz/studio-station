@@ -20,11 +20,11 @@ type Deps struct {
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "setup",
-		Short:   "Set this machine up: its name, the ~/.zshrc block, the XDG folders",
+		Short:   "Set this machine up: its name, the ~/.zshrc block, the XDG folders, the engine, its apps and settings",
 		Example: "  station setup\n  station setup --name macbook",
 		Group:   kit.StationItself,
 		Declare: func(f *pflag.FlagSet, in *Input) {
-			f.StringVar(&in.Name, "name", "", "name this host in the fleet (asked on a terminal when omitted)")
+			f.StringVar(&in.Name, "name", "", "the name this Mac takes (asked on a terminal when omitted)")
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			report, err := call.Invoke(ctx, env.Calls, env.Target(), setupcalls.Run, setupcalls.RunIn{Name: in.Name, Interactive: io.Interactive}, nil)

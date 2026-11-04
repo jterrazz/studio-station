@@ -9,8 +9,8 @@ import (
 )
 
 type RunIn struct {
-	// value: the name this machine takes in the fleet; empty asks it at a
-	// terminal, or keeps the one it has.
+	// value: the name this Mac takes; empty asks it at a terminal, or keeps
+	// the one it has.
 	Name        string
 	Interactive bool
 }

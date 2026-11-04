@@ -8,10 +8,10 @@ var (
 	ErrNeedsName = errors.New("this Mac needs a name: setup asks it on a terminal")
 )
 
-type NameMismatchError struct{ Here, Asked string }
+type NameMismatchError struct{ Named, Asked string }
 
 func (e *NameMismatchError) Error() string {
-	return "this host is named \"" + e.Here + "\", not \"" + e.Asked + "\""
+	return "this Mac is named \"" + e.Named + "\", not \"" + e.Asked + "\""
 }
 
 type BadNameError struct{ Name string }

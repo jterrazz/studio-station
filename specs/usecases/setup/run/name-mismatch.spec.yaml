@@ -4,7 +4,7 @@ runs:
     - command: 'setup --name other'
       exit: 2
       stderr: |
-          Error: this host is named "jterrazz-macbook-pro", not "other"
+          Error: this Mac is named "jterrazz-macbook-pro", not "other"
           Hint: run station setup without --name
     - command: 'setup --name jterrazz-macbook-pro | /usr/bin/head -1'
       exit: 0

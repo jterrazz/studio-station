@@ -31,11 +31,11 @@ func setupFailure(err error) (*fail.Error, bool) {
 		var underAgent *machines.RunningUnderAgentError
 		switch {
 		case errors.As(err, &underAgent):
-			hint = "stop the lasting VMs and delete the temporary ones (station machines), then station setup"
+			hint = "stop the permanent VMs and delete the throwaway ones (station machines), then station setup"
 		case errors.As(err, &different):
 			hint = "keep one of the two files, then run station setup again"
 		case errors.As(err, &busy):
-			hint = "stop the lasting VMs and delete the temporary ones (station machines), then station setup"
+			hint = "stop the permanent VMs and delete the throwaway ones (station machines), then station setup"
 		case errors.As(err, &exists):
 			hint = exists.Path + " already exists: move one of them by hand"
 		case errors.As(err, &cross):
