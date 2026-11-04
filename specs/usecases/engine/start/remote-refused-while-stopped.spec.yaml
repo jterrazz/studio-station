@@ -1,4 +1,4 @@
-description: 'a Mac whose engine is stopped refuses a start sent from another Mac, reads as stopped through it, and starts again from it'
+description: 'a Mac whose engine is stopped refuses a start sent through --on, reads as stopped, starts again'
 env: two-macs
 runs:
     - command: 'engine stop --yes --on jterrazz-mac-mini'
