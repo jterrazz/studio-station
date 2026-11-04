@@ -39,20 +39,24 @@ func (u *Usage) disk() *world.Disk {
 func under(p, root string) bool { return p == root || strings.HasPrefix(p, root+"/") }
 
 func (u *Usage) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
+	// invariant: each root is told with the world unlocked, since its caller
+	// may wait on a reader that needs the world.
+	totals := make([]int64, len(roots))
 	u.w.Lock()
-	defer u.w.Unlock()
 	for i, root := range roots {
+		for p, n := range u.disk().Files {
+			if under(p, root) {
+				totals[i] += n
+			}
+		}
+	}
+	u.w.Unlock()
+	for i := range roots {
 		if ctx.Err() != nil {
 			each(i, -1)
 			continue
 		}
-		var total int64
-		for p, n := range u.disk().Files {
-			if under(p, root) {
-				total += n
-			}
-		}
-		each(i, total)
+		each(i, totals[i])
 	}
 }
 
