@@ -209,6 +209,9 @@ public struct Tally: Codable, Equatable, Sendable {
 
 public enum Mark: String, Codable, Sendable, CaseIterable {
     case ok, attention, absent, broken, pending
+    case offHere = "off-here"
+    case notForThisMachine = "not-for-this-machine"
+    case notKnown = "unknown"
 
     public init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
@@ -220,8 +223,8 @@ public enum Mark: String, Codable, Sendable, CaseIterable {
         case .broken: 4
         case .attention: 3
         case .pending: 2
-        case .absent: 1
-        case .ok: 0
+        case .absent, .offHere, .notKnown: 1
+        case .ok, .notForThisMachine: 0
         }
     }
 }

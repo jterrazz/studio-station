@@ -35,6 +35,9 @@ public enum Token {
         public static let absent = "circle"
         public static let broken = "xmark.circle.fill"
         public static let pending = "circle.dashed"
+        public static let offHere = "nosign"
+        public static let notForThisMachine = "minus"
+        public static let notKnown = "questionmark"
         public static let error = "xmark.octagon"
         public static let stopped = "stop.circle"
         public static let awake = "power.circle.fill"
@@ -48,6 +51,9 @@ public enum Token {
             case .absent: absent
             case .broken: broken
             case .pending: pending
+            case .offHere: offHere
+            case .notForThisMachine: notForThisMachine
+            case .notKnown: notKnown
             }
         }
     }
@@ -60,7 +66,8 @@ public enum Token {
             case .ok: good
             case .attention: warn
             case .broken: bad
-            case .absent, .pending: muted
+            case .absent, .pending, .offHere, .notKnown: muted
+            case .notForThisMachine: subtle
             }
         }
     }
