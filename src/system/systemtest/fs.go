@@ -134,3 +134,5 @@ func (d Disk) Erase(_ context.Context, paths []string) error {
 }
 
 func (d Disk) Running(context.Context, string) bool { return false }
+
+func (d Disk) Move(_ context.Context, from, to string) error { return d.Rename(from, to) }

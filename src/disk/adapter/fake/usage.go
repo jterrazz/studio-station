@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"io/fs"
 	"maps"
 	"slices"
 	"strings"
@@ -65,6 +66,24 @@ func (u *Usage) Volume(context.Context) (total, free int64, err error) {
 	defer u.w.Unlock()
 	d := u.disk()
 	return d.Total, d.Free, nil
+}
+
+func (u *Usage) Move(_ context.Context, from, to string) error {
+	u.w.Lock()
+	defer u.w.Unlock()
+	d := u.disk()
+	for p := range d.Files {
+		if under(p, to) {
+			return &fs.PathError{Op: "move", Path: to, Err: fs.ErrExist}
+		}
+	}
+	for p, n := range d.Files {
+		if under(p, from) {
+			delete(d.Files, p)
+			d.Files[to+strings.TrimPrefix(p, from)] = n
+		}
+	}
+	return nil
 }
 
 func (u *Usage) Erase(_ context.Context, paths []string) error {
