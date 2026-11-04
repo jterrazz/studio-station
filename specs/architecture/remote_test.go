@@ -3,7 +3,10 @@ package architecture_test
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"regexp"
+	"slices"
+	"strconv"
 	"testing"
 )
 
@@ -22,6 +25,24 @@ func stationLaunchers() map[string]string {
 
 var launchesStation = regexp.MustCompile(`exec station\b|/station [a-z]`)
 
+// value: an argv built of separate words that runs station past ssh's `--`
+// or by ssh itself: {"ssh", host, "--", "station", "apps"}.
+func argvLaunchesStation(words []string) bool {
+	return slices.Contains(words, "station") && (slices.Contains(words, "--") || slices.Contains(words, "ssh"))
+}
+
+func stringWords(exprs []ast.Expr) []string {
+	var out []string
+	for _, e := range exprs {
+		if lit, ok := e.(*ast.BasicLit); ok && lit.Kind == token.STRING {
+			if v, err := strconv.Unquote(lit.Value); err == nil {
+				out = append(out, v)
+			}
+		}
+	}
+	return out
+}
+
 // invariant: rule no-remote-reexec, ARCHITECTURE 13.3 rule 12: --on is a
 // Router target, the fleet a fan-out of calls; nothing relays station's
 // text from another machine.
@@ -31,10 +52,26 @@ func ruleNoRemoteReexec(w *world) []finding {
 		if f.test || stationLaunchers()[f.pkg] != "" {
 			continue
 		}
+		found := func(at token.Pos) {
+			out = append(out, finding{"no-remote-reexec", f.at(at), fmt.Sprintf("%q starts station elsewhere: a call reaches another machine through the Router", f.pkg)})
+		}
 		literals(f, func(lit *ast.BasicLit, value string) {
 			if launchesStation.MatchString(value) {
-				out = append(out, finding{"no-remote-reexec", f.at(lit.Pos()), fmt.Sprintf("%q starts station elsewhere: a call reaches another machine through the Router", f.pkg)})
+				found(lit.Pos())
 			}
+		})
+		ast.Inspect(f.syntax, func(n ast.Node) bool {
+			switch n := n.(type) {
+			case *ast.CompositeLit:
+				if argvLaunchesStation(stringWords(n.Elts)) {
+					found(n.Pos())
+				}
+			case *ast.CallExpr:
+				if argvLaunchesStation(stringWords(n.Args)) {
+					found(n.Pos())
+				}
+			}
+			return true
 		})
 	}
 	return out
