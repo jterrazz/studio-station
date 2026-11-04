@@ -16,7 +16,7 @@ type Deps struct {
 
 type Control interface {
 	// value: refuses a verb off a host, or before the engine's job is installed.
-	Check(verb string) error
+	Check() error
 	Read(ctx context.Context) (engine.Reading, error)
 	Plan(ctx context.Context) (engine.Work, error)
 	Stop(ctx context.Context, w engine.Work, by string) (engine.StopReport, error)

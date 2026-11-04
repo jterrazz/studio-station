@@ -37,7 +37,6 @@ type Job interface {
 type ControlOptions struct {
 	// value: this Mac's power, whose clamshell a stop resets; nil is none.
 	Power    power.Port
-	Here     catalog.MachineKind
 	HereName string
 	State    string
 	// value: this station's version, which a reading compares with the engine's.
@@ -65,15 +64,6 @@ type NotInstalledError struct{}
 
 func (*NotInstalledError) Error() string { return "the engine is not installed" }
 
-type OffHostError struct {
-	Verb string
-	Here catalog.MachineKind
-}
-
-func (e *OffHostError) Error() string {
-	return "station engine " + e.Verb + " runs on a host; here is a VM"
-}
-
 type StuckError struct{ VM string }
 
 func (e *StuckError) Error() string { return e.VM + " did not stop; the engine keeps running" }
@@ -89,10 +79,7 @@ func (e *BootError) Error() string { return e.Message }
 
 func (e *BootError) Unwrap() error { return e.Cause }
 
-func (c *Control) Check(verb string) error {
-	if c.o.Here != catalog.Host {
-		return &OffHostError{Verb: verb, Here: c.o.Here}
-	}
+func (c *Control) Check() error {
 	if !c.installed() {
 		return &NotInstalledError{}
 	}

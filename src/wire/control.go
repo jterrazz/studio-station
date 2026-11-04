@@ -19,7 +19,7 @@ import (
 
 func (m machine) control() *engine.Control {
 	return engine.NewControl(m.host, m.engineAPI(), m.machines(false), engineHypervisor{m.hypervisor()}, m.engineJob(), engine.ControlOptions{
-		Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, State: m.paths.State,
+		Power: m.powerPort, HereName: m.where.Machine, State: m.paths.State,
 		Version: Version(), Marks: m.stopMarks(),
 	})
 }

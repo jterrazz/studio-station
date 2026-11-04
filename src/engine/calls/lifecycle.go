@@ -25,7 +25,7 @@ var Start = call.Call[Deps, StartIn, engine.StartReport]{
 	Name: "engine.start", Where: call.AtTarget, Applies: Applies,
 	Errors: []fail.Code{StartFailed},
 	Run: func(ctx context.Context, d Deps, _ StartIn, _ call.Progress) (engine.StartReport, error) {
-		if err := d.Control.Check("start"); err != nil {
+		if err := d.Control.Check(); err != nil {
 			return engine.StartReport{}, err
 		}
 		report, err := d.Control.Start(ctx)
@@ -57,7 +57,7 @@ var Stop = call.Call[Deps, StopIn, StopOut]{
 	Run: func(ctx context.Context, d Deps, in StopIn, _ call.Progress) (StopOut, error) {
 		// invariant: an engine running no VM stops without a question; one
 		// running VMs asks first, since they stop with it.
-		if err := d.Control.Check("stop"); err != nil {
+		if err := d.Control.Check(); err != nil {
 			return StopOut{}, err
 		}
 		work, err := d.Control.Plan(ctx)
