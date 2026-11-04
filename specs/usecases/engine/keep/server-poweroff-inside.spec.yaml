@@ -1,0 +1,29 @@
+description: 'KP-09: a server something inside powered off stays stopped, wanted stopped, red, and the owner is told'
+env: two-macs
+runs:
+    - command: 'world poweroff-inside infra'
+      exit: 0
+    - command: 'machines'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
+          ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
+          ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
+          ✗	infra	Server	jterrazz-mac-mini	Stopped · always on	8 CPU	24 GB	powered off from inside
+          # Needs you
+          ✗	infra	powered off from inside	station machines start infra --on mac-mini
+    - command: 'world advance 5m'
+      exit: 0
+    - command: 'machines infra --json | /usr/bin/jq -c ''[.state, .wanted, .restarts, .detail]'''
+      exit: 0
+      stdout: |
+          ["stopped","stopped",0,"powered off from inside"]
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].vms.infra | [.pid, .kept.want]'' world.json'
+      exit: 0
+      stdout: |
+          [null,"stopped"]
+    - command: '--version >/dev/null; /usr/bin/jq -c ''[.told[]?.Text]'' world.json'
+      exit: 0
+      stdout: |
+          ["infra powered off from inside · it stays stopped"]

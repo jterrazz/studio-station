@@ -63,3 +63,10 @@ func TestTheRecordedStreamHasNotDriftedFromTheDaemon(t *testing.T) {
 		t.Errorf("%s is out of sync with the daemon's encoder: run make generate and commit the result", streamPath)
 	}
 }
+
+func TestTheRecordedEventsHaveNotDriftedFromTheEngine(t *testing.T) {
+	current, err := os.ReadFile(filepath.Join(root(t), eventsPath))
+	if err != nil || !bytes.Equal(current, pages.EventsStream()) {
+		t.Errorf("%s is out of sync with the engine's events: run make generate and commit the result", eventsPath)
+	}
+}

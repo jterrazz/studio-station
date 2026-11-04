@@ -81,7 +81,7 @@ func ToList(f Fleet) ListDoc {
 		for _, vm := range Ordered(h.VMs) {
 			m.VMs = append(m.VMs, ListVM{
 				Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Lifetime: string(vm.Lifetime), State: string(vm.State),
-				Wanted: Wanted(vm), Health: HealthOf(vm), IP: vm.IP, Bridged: vm.Network == "bridged",
+				Wanted: Wanted(vm), Health: HealthOf(vm), Restarts: vm.Restarts.Count, IP: vm.IP, Bridged: vm.Network == "bridged",
 				Size:  ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
 				Image: ListImage{Name: vm.Image, Version: vm.Version}, Detail: vm.Detail, Created: vm.CreatedAt,
 			})
@@ -118,5 +118,5 @@ func Wanted(vm VM) string {
 func HealthOf(vm VM) ListHealth {
 	// value: a VM that does not run has passed no step.
 	running := vm.State == Running
-	return ListHealth{Running: running, Address: running && vm.IP != "", SSH: running && vm.Guest == "connected"}
+	return ListHealth{Running: running, Address: running && vm.IP != "", SSH: running && (vm.Guest == "connected" || vm.SSH)}
 }

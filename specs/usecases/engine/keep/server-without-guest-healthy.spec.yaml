@@ -1,0 +1,22 @@
+description: 'KP-23: a server whose tooling replaced station''s guest passes its four health steps: SSH answers is its ssh connection; no finding'
+env: infra-no-guest
+runs:
+    - command: 'machines infra | /usr/bin/grep -A7 "# Health"'
+      exit: 0
+      stdout: |
+          # Health
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
+          ●	Check passes	https://infra:6443/readyz
+          ●	Restarts	↺ 0 · none since boot
+          ●	Size	8 CPU · 24 GB · 80 GB
+          ●	Own Tailscale device	infra
+    - command: 'machines'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
+          ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
+          ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
+          ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB

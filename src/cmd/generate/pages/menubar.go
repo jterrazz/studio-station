@@ -2,6 +2,7 @@ package pages
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -13,6 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
+	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
 func samples() []activity.Reading {
@@ -86,6 +88,44 @@ func MenubarStream() []byte {
 	var out []byte
 	for _, l := range lines {
 		data, err := json.Marshal(l)
+		if err != nil {
+			panic(err)
+		}
+		out = append(append(out, data...), '\n')
+	}
+	return out
+}
+
+func EventsStream() []byte {
+	// invariant: the recorded events watch is written by the engine's own
+	// event words, one frame per event of SPEC 10.4 the engine tells today,
+	// so the menu bar's notifications read what an engine sends.
+	var loop machines.Restarts
+	at := time.Date(2026, 11, 3, 14, 0, 0, 0, time.UTC)
+	for i := range 5 {
+		loop = loop.After(time.Second, at.Add(time.Duration(i)*time.Minute))
+	}
+	type told struct {
+		kind  string
+		parts []string
+	}
+	var events []told
+	for _, e := range []func() (string, []string){
+		func() (string, []string) { return engine.Restarting("infra", 3) },
+		func() (string, []string) { return engine.Looping("infra", loop) },
+		func() (string, []string) { return engine.PoweredOff("infra") },
+		func() (string, []string) { return engine.Back("infra") },
+	} {
+		kind, parts := e()
+		events = append(events, told{kind, parts})
+	}
+	var out []byte
+	for _, e := range events {
+		data, err := json.Marshal(struct {
+			V   int          `json:"v"`
+			ID  string       `json:"id"`
+			Out engine.Event `json:"out"`
+		}{V: 2, ID: "1", Out: engine.Event{Event: "notice", Notice: &engine.Notice{Kind: e.kind, Text: strings.Join(e.parts, token.Sep)}}})
 		if err != nil {
 			panic(err)
 		}

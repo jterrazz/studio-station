@@ -3,6 +3,7 @@ package machines
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -48,7 +49,7 @@ func VMPage(o VMOverview, s *overview.Summary, here page.Context, all bool) page
 			state = page.Loading
 		}
 	}
-	sections = append(sections, page.Section{ID: "health", Title: "Health", Uncounted: true, Columns: vmColumns(), Items: healthItems(vm, readsSSH(s))})
+	sections = append(sections, page.Section{ID: "health", Title: "Health", Uncounted: true, Columns: vmColumns(), Items: healthItems(vm, readsSSH(s), o.Fleet.Read)})
 	return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, State: state, Sections: sections, Hints: hints})
 }
 
@@ -77,12 +78,22 @@ func vmCaption(o VMOverview, s *overview.Summary) []page.Value {
 	return parts
 }
 
-func healthItems(vm machines.VM, sshRead bool) []page.Item {
+func healthItems(vm machines.VM, sshRead bool, now time.Time) []page.Item {
 	health := machines.HealthOf(vm)
 	steps := []page.Row{
 		step("running", machines.StepRunning, health.Running, health.Running, ""),
 		step("address", machines.StepAddress, health.Address, health.Running, vm.IP),
 		step("ssh", machines.StepSSH, health.SSH, health.Running, ""),
+	}
+	if vm.Lifetime == machines.AlwaysOn && vm.Check != "" {
+		steps = append(steps, checkStep(vm, health.Running))
+	}
+	if vm.Lifetime == machines.AlwaysOn {
+		restarts := page.Row{ID: "restarts", Label: "Restarts", Mark: page.OK, Cells: []page.Value{page.Texts(vm.Restarts.Words(now)...)}}
+		if vm.Restarts.Looping {
+			restarts.Mark, restarts.Reason = page.Broken, page.Failing
+		}
+		steps = append(steps, restarts)
 	}
 	items := make([]page.Item, 0, len(steps)+1)
 	for i := range steps {
@@ -130,6 +141,22 @@ func readsSSH(s *overview.Summary) bool {
 
 func vmColumns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "detail", Kind: page.KindList, Keep: 50}}
+}
+
+// value: SPEC §7.2's fourth step: a check that never passed since boot
+// waits (not a failure), one that passed then fails says since when.
+func checkStep(vm machines.VM, running bool) page.Row {
+	row := page.Row{ID: "check", Label: machines.StepCheck, Mark: page.OK, Cells: []page.Value{page.Text(vm.Check)}}
+	switch {
+	case !running:
+		row.Mark, row.Reason, row.Cells[0] = page.Absent, page.Stopped, page.None()
+	case vm.CheckStatus.State == machines.CheckFailing:
+		row.Label, row.Mark, row.Reason = "Check failing", page.Attention, page.Failing
+		row.Cells[0] = page.List(page.Text("since "+vm.CheckStatus.Since.Local().Format("15:04")), page.Text(vm.Check))
+	case vm.CheckStatus.State != machines.CheckPassing:
+		row.Label, row.Mark, row.Reason = "Check waiting", page.Attention, page.Waiting
+	}
+	return row
 }
 
 // value: a step that did not pass fails while the VM runs; one of a VM
@@ -198,9 +225,11 @@ type VMHealthJSON struct {
 type VMCheckJSON struct {
 	URL    string `json:"url"`
 	OK     bool   `json:"ok"`
-	Status int    `json:"status"`
-	MS     int    `json:"ms"`
-	At     string `json:"at"`
+	Status int    `json:"status,omitempty"`
+	MS     int    `json:"ms,omitempty"`
+	At     string `json:"at,omitempty"`
+	// value: when a check that passed began to fail.
+	Since string `json:"since,omitempty"`
 }
 
 type VMMachineJSON struct {
@@ -211,14 +240,16 @@ type VMMachineJSON struct {
 }
 
 type VMOverviewJSON struct {
-	Schema   string            `json:"schema"`
-	Machine  VMMachineJSON     `json:"machine"`
-	Lifetime string            `json:"lifetime"`
-	State    string            `json:"state"`
-	Wanted   string            `json:"wanted"`
-	Health   VMHealthJSON      `json:"health"`
-	Restarts int               `json:"restarts"`
-	Size     machines.ListSize `json:"size"`
+	Schema   string        `json:"schema"`
+	Machine  VMMachineJSON `json:"machine"`
+	Lifetime string        `json:"lifetime"`
+	State    string        `json:"state"`
+	Wanted   string        `json:"wanted"`
+	Health   VMHealthJSON  `json:"health"`
+	Restarts int           `json:"restarts"`
+	// value: the seconds a server waited before its last restart.
+	RestartedAfter int               `json:"restarted_after_s,omitempty"`
+	Size           machines.ListSize `json:"size"`
 	// value: a server's own tailnet device; empty for none.
 	Device string `json:"device,omitempty"`
 	Detail string `json:"detail,omitempty"`
@@ -238,10 +269,21 @@ func VMContract(o VMOverview, s *overview.Summary, schema string) VMOverviewJSON
 		Schema: schema, Machine: VMMachineJSON{Name: vm.Name, Kind: string(vm.Lifetime.Kind()), On: o.Mac.Name, Reachable: o.Mac.Reachable},
 		Findings: inside.Findings, Sections: inside.Sections,
 		Lifetime: string(vm.Lifetime), State: string(vm.State), Wanted: machines.Wanted(vm),
-		Health: VMHealthJSON{Running: h.Running, Address: h.Address, SSH: h.SSH},
+		Health: VMHealthJSON{Running: h.Running, Address: h.Address, SSH: h.SSH, Check: checkJSON(vm)}, Restarts: vm.Restarts.Count, RestartedAfter: int(vm.Restarts.Wait.Seconds()),
 		Size:   machines.ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
 		Device: vm.Device, Detail: vm.Detail,
 	}
+}
+
+func checkJSON(vm machines.VM) *VMCheckJSON {
+	if vm.Lifetime != machines.AlwaysOn || vm.Check == "" {
+		return nil
+	}
+	c := &VMCheckJSON{URL: vm.Check, OK: vm.State == machines.Running && vm.CheckStatus.State == machines.CheckPassing}
+	if vm.CheckStatus.State == machines.CheckFailing {
+		c.Since = vm.CheckStatus.Since.UTC().Format(time.RFC3339)
+	}
+	return c
 }
 
 func SSHPage(o VMOverview, target machines.SSHTarget, here page.Context) page.Page {

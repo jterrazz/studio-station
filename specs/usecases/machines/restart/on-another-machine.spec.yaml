@@ -11,4 +11,4 @@ runs:
     - command: 'machines infra --json | /usr/bin/jq -c ''[.machine.on, .state, .health]'''
       exit: 0
       stdout: |
-          ["jterrazz-mac-mini","running",{"running":true,"address":true,"ssh":true,"check":null}]
+          ["jterrazz-mac-mini","running",{"running":true,"address":true,"ssh":true,"check":{"url":"https://infra:6443/readyz","ok":true}}]

@@ -154,6 +154,17 @@ func listVMRow(mac string, vm machines.VM) page.Row {
 	case machines.Unknown:
 		row.Mark, row.Reason, state = page.NotKnown, page.Unreachable, page.List(page.Text("Unknown"), lifetime)
 	}
+	switch {
+	case vm.Lifetime != machines.AlwaysOn:
+	case vm.Restarts.Looping:
+		row.Mark, row.Reason, state = page.Broken, page.Failing, page.List(page.Text("In a loop"), lifetime)
+		detail = page.Texts(vm.Restarts.Words(time.Time{})...)
+	case vm.State == machines.Stopped && vm.Detail == machines.PoweredOffInside:
+		row.Mark, row.Reason = page.Broken, page.Stopped
+	case vm.State == machines.Running && vm.CheckStatus.State == machines.CheckFailing:
+		row.Mark, row.Reason = page.Attention, page.Failing
+		detail = page.Text("check failing since " + vm.CheckStatus.Since.Local().Format("15:04"))
+	}
 	r := vm.Resources
 	row.Cells = []page.Value{page.Text(machines.KindWord(vm.Lifetime.Kind())), page.Text(mac), state, page.Text(strconv.Itoa(r.CPUs) + " CPU"), Memory(r.MemoryBytes), detail}
 	return row

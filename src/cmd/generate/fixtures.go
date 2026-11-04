@@ -9,6 +9,7 @@ import (
 const (
 	pagesDir   = "src/ui/testdata/pages"
 	streamPath = "src/ui/testdata/stream/menubar.jsonl"
+	eventsPath = "src/ui/testdata/stream/events.jsonl"
 )
 
 // invariant: a fixture is written only after the page passes Seal's checks, so

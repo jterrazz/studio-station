@@ -1,0 +1,23 @@
+description: 'KP-08: once a run stayed up 10 min, the next crash waits 5 s again, and the count goes on'
+env: two-macs
+runs:
+    - command: 'world crash infra'
+      exit: 0
+    - command: 'machines infra | /usr/bin/grep Restarts'
+      exit: 0
+      stdout: |
+          ●	Restarts	↺ 1 · last just now
+    - command: 'world crash infra'
+      exit: 0
+    - command: 'machines infra --json | /usr/bin/jq -c ''[.restarts, .restarted_after_s]'''
+      exit: 0
+      stdout: |
+          [2,10]
+    - command: 'world advance 10m'
+      exit: 0
+    - command: 'world crash infra'
+      exit: 0
+    - command: 'machines infra --json | /usr/bin/jq -c ''[.restarts, .restarted_after_s]'''
+      exit: 0
+      stdout: |
+          [3,5]

@@ -29,8 +29,9 @@ const (
 	Awake     = "engine.power-awake"
 	Sleep     = "engine.power-sleep"
 	Refresh   = "engine.refresh"
-	// value: the watch of the engine's pages.
-	Page = "page"
+	// value: the watch of the engine's pages, and of what it tells.
+	Page   = "page"
+	Events = "engine.events"
 )
 
 func VM(verb string) string { return "engine.vm-" + verb }
@@ -165,6 +166,8 @@ func Server(d *engine.Daemon, h Host) serve.Server {
 				}
 			}
 			return worded(d.Stream(ctx, in.Pages, send))
+		}, Events: func(ctx context.Context, _ json.RawMessage, send func(any) error) error {
+			return d.Events(ctx, send)
 		}},
 		Here: h.Here, Word: h.Word, Hint: "station machines", Sleep: h.Sleep,
 	}

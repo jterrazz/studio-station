@@ -34,6 +34,8 @@ runs:
           ●	Running
           ●	Has an address	192.168.64.5
           ●	SSH answers
+          ●	Check passes	https://infra:6443/readyz
+          ●	Restarts	↺ 0 · none since boot
           ●	Size	8 CPU · 24 GB · 80 GB
           ●	Own Tailscale device	infra
       stderr: |

@@ -115,6 +115,10 @@ func Findings(f Fleet) []finding.Finding {
 		}
 		for _, vm := range Ordered(h.VMs) {
 			ref := machine.Ref{Name: vm.Name, On: h.Name}
+			if f, ok := serverFinding(ref, vm, on); ok {
+				out = append(out, f)
+				continue
+			}
 			switch vm.State {
 			case Stale:
 				add(ref, finding.NeedsALook, vm.Name, vm.Name+" ended unexpectedly", "station machines start "+vm.Name+on)
@@ -129,6 +133,26 @@ func Findings(f Fleet) []finding.Finding {
 		}
 	}
 	return finding.Rank(out)
+}
+
+// invariant: a server in a loop or powered off from inside needs you (red);
+// one whose check fails since it passed needs a look, never a restart.
+func serverFinding(ref machine.Ref, vm VM, on string) (finding.Finding, bool) {
+	if vm.Lifetime != AlwaysOn {
+		return finding.Finding{}, false
+	}
+	f := finding.Finding{Machine: ref, Section: section.Overview, Subject: vm.Name}
+	switch {
+	case vm.Restarts.Looping:
+		f.Severity, f.Text = finding.Broken, vm.Name+" is in a loop: "+vm.Restarts.InALoop()
+	case vm.State == Stopped && vm.Detail == PoweredOffInside:
+		f.Severity, f.Text, f.Fix = finding.Broken, vm.Name+" "+PoweredOffInside, finding.Fix{Command: "station machines start " + vm.Name + on}
+	case vm.State == Running && vm.CheckStatus.State == CheckFailing:
+		f.Severity, f.Text = finding.NeedsALook, vm.Name+" check failing since "+vm.CheckStatus.Since.Local().Format("15:04")
+	default:
+		return finding.Finding{}, false
+	}
+	return f, true
 }
 
 // value: whether release a is past release b, both vMAJOR.MINOR.PATCH with
