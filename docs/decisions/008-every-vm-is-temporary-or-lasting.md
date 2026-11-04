@@ -1,6 +1,6 @@
 # ADR-008: Every VM is temporary or lasting
 
-**Status:** Accepted, amended by round 13 (below)
+**Status:** Accepted
 **Date:** 2026-10-31
 
 ## Context
