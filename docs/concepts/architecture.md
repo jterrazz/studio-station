@@ -98,6 +98,8 @@ What the test holds, in short: `domain` reaches the machine only through `system
 
 The tree is moving to families first (machines, apps, settings, ports, awake...), each with its model, `contract/`, `calls/` and `adapter/<tech>/`. Four rules hold that tree: `tree-screams` (`tree_test.go`), `imports` (`imports_test.go`), `technology-words` (`words_test.go`) and `no-model-names` (`models_test.go`). The four list today's offenders (`imports` the packages moved into the new tree as they were) in an allowlist that only shrinks: a line that is no longer true fails the gate until it is removed.
 
+`wire` builds this machine's `core/machine.Profile` once: its kind and system from `Self` (`core/adapter/macos` tells a Mac from a macOS VM, `core/adapter/linux`), its battery, lid and thermal from `awake/contract.Power`, and what else it can do from the adapters it wires. A rule reads those capabilities, never a model name: the Awake guards a Mac has are `awake.Active(caps)`, so a desktop Mac has no battery guard because it reports no battery. A machine's disk is `disk/contract.DiskUsage` (`apfs` on macOS, `posix` on Linux).
+
 ## The path of a request
 
 `station tools install node`:
