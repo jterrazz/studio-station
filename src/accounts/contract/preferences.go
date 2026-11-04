@@ -31,4 +31,10 @@ func (s ShareListPrefs) Get() ([]string, error) {
 	return accounts.DefaultShareList(), nil
 }
 
-func (s ShareListPrefs) Set(names []string) error { return s.p.Write(GroupShareList, names) }
+func (s ShareListPrefs) Set(names []string) error {
+	// invariant: the list is written under its v3 key; the v2 key goes.
+	if err := s.p.Write(GroupShareList, names); err != nil {
+		return err
+	}
+	return s.p.Write(GroupLendList, nil)
+}

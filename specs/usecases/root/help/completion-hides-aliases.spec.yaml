@@ -13,7 +13,6 @@ runs:
           overview
           power
           run
-          secrets
           services
           settings
           setup

@@ -33,7 +33,7 @@ runs:
     - command: 'secrets --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |
-          station.page/v1	secrets	ready	true
+          station.page/v1	accounts	ready	true
     - command: 'tailnet --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |
