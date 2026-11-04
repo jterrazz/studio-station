@@ -1,4 +1,4 @@
-description: 'station background remove of the engine''s own job is refused: the engine is stopped by station engine stop, and it keeps running'
+description: 'removing the engine''s own job is refused with station engine stop, and the engine keeps running'
 env: two-macs
 runs:
     - command: 'background remove com.jterrazz.station.engine --yes'

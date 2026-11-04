@@ -1,4 +1,4 @@
-description: 'station background remove of a root task is refused with the command to run yourself; station never runs sudo and the task stays'
+description: 'removing a root task is refused with the command to run yourself, and the task stays'
 env: two-macs
 runs:
     - command: 'background remove com.docker.vmnetd --yes'

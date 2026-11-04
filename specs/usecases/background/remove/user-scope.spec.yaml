@@ -1,4 +1,4 @@
-description: 'station background remove on a terminal asks yes or no, then boots the task out and deletes its plist; its row leaves'
+description: 'station background remove on a terminal asks, then removes the task and its plist'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

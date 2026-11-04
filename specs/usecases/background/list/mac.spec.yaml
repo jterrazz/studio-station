@@ -1,4 +1,4 @@
-description: 'station background counts the tasks, then lists Failing and Orphans open, Station, Known apps and Unknown folded'
+description: 'station background counts the tasks, then Failing and Orphans open, the other groups folded'
 fixture:
     - ../../../__fixtures__/terminal/
 env:
