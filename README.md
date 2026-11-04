@@ -29,11 +29,10 @@ station power           # keep this host awake for a while, the lid closed too
 
 # The fleet
 station machines        # hosts and VMs: create, start, stop, delete, probe
-station services        # what the VMs listen on, and each URL
+station ports           # what the VMs share on the tailnet, and each URL
 station accounts        # who has access to what, here and in the VMs: never a token
 station images          # the VM images
 station secrets         # what may be lent to a VM
-station tailnet         # the Tailscale app's node, read only
 station engine         # this Mac's engine: running, its version, the VMs it runs
 station engine stop    # stop everything on this Mac: its VMs (disks kept), Awake, then the engine
 station engine start   # start the engine again; the VMs it stopped stay stopped

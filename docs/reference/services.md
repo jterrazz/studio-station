@@ -5,7 +5,7 @@ A service is a TCP port something listens on inside a VM. The VM is never on the
 | Section               | Answers                                                      |
 | --------------------- | ------------------------------------------------------------ |
 | How a port gets a URL | The guest, the lease, the publication                        |
-| The commands          | `services`, `services url`, `services release`               |
+| The commands          | `ports`, `ports share`, `ports stop-sharing`                 |
 | The policy            | The `services` keys of `preferences.json`                    |
 | Serve and HTTPS       | Serve on or off, the `port` and `path` modes, the admin step |
 | Profiles              | How Expo and Vite learn their public URL                     |
@@ -23,9 +23,9 @@ For each reported port the engine takes a **lease**: the lowest free port of the
 | it stops listening                      | unpublished after 5 s (a restart inside them keeps it); lease kept |
 | a VM stops, then runs again             | unpublished, then published again on the same host port            |
 | `machines delete`, a throwaway poweroff | released, its serve entry removed                                  |
-| `station services release`              | released: the next listen gets a new port                          |
+| `station ports stop-sharing`            | released and remembered: not shared again until a share            |
 | 7 days without listening                | released, unless pinned by a [profile](#profiles)                  |
-| the range is full, or the VM holds 20   | refused, `✗` with the cause                                        |
+| the range is full, or the VM holds 20   | waiting, `◐` with the cause and the fix                            |
 | the host port is busy                   | the next free port (a pinned lease waits, retried every 10 s)      |
 | the host reboots                        | the engine publishes every lease again as the guests report        |
 
@@ -34,19 +34,20 @@ The leases live in `~/.local/state/station/leases.json`, a kept file: deleting i
 ## The commands
 
 ```sh
-station services                     # every host's services, asked over ssh; --here for this host only
-station services --json              # station.services/v1
-station services url 3000            # in a VM: reserve 3000's URL now and print it
-station services release api:3000    # on a host; in a VM: station services release 3000
+station ports                        # the Tailscale line, then this Mac's shared ports
+station ports --all-machines         # every Mac's, asked over ssh
+station ports --json                 # station.ports.list/v1
+station ports share api 3000         # reserve 3000's URL now and print it; in a VM: station ports share 3000
+station ports stop-sharing api 3000  # on a Mac; in a VM: station ports stop-sharing 3000
 ```
 
-Rows have one schema, piped tab-separated: mark, VM, guest port, public URL, host, state, process, detail. `●` published, `○` waiting (leased, nothing listens), `✗` refused, `◐` degraded (Serve off, a refused serve, a moved port) or unknown (the host's engine is down). An unreachable host is one `◐` row, never a failure.
+The list begins with the Tailscale line, then one row per port, piped tab-separated: mark, VM, guest port, URL, state, process, profile, fix. `●` shared, `○` not listening (reserved, nothing listens), `◐` waiting (the VM shares 20 already, the range is taken), local only (Serve off, a refused serve) or not shared while the engine is stopped. A Mac that does not answer is one `◐` row, never a failure.
 
-So one command shows what ports exist and what is free across the fleet, each host's group is headed on a terminal by its range: `macbook  40000-40999 · 3 leased · 997 free · 20 per VM`. In `--json` each host carries it as `range` (`low`, `high`, `leased`, `free`, `max_per_vm`), read from that host's policy and lease file, so it is there with the engine down; a host too old to tell its range has none. The piped form stays rows only.
+Each Mac's group is headed on a terminal by its range: `macbook  40000-40999 · 3 reserved · 997 free · 20 per VM`. In `--json` each Mac carries it in `range` (`mac`, `from`, `to`, `reserved`, `free`), read from its policy and lease file, so it is there with the engine down.
 
-`services url <port>` in a VM reserves the lease at once, whether or not anything listens yet, so a value can be computed before the tool starts: `$(station services url 3000)`. On a host it is exit 2 (`Hint: station services url runs inside a VM; here: station services`); with the host's engine away it is exit 1 (`Error: macbook is not connected to this VM`, `Hint: on macbook: station setup`), and in a VM no host has connected to yet, so with no host name to give, every `services` command is exit 1 (`Error: no host has connected to this VM yet`, `Hint: on the VM's host: station setup`).
+`ports share <port>` in a VM reserves the lease at once, whether or not anything listens yet, so a value can be computed before the tool starts: `$(station ports share 3000)`. On a Mac it names its VM, `station ports share api 3000`; with the Mac's engine away it is exit 1 (`Error: macbook is not connected to this VM`, `Hint: on macbook: station setup`), and in a VM no host has connected to yet, so with no host name to give, every `ports` command is exit 1 (`Error: no host has connected to this VM yet`, `Hint: on the VM's host: station setup`).
 
-`services release` gives a lease back. A VM of another host is released on that host, over ssh. A profile's lease asks first (`--yes` piped): its URL is in the VM's environment. With the engine down, a host edits the lease store itself.
+`ports stop-sharing` gives a lease back, after yes or no (`--yes` piped), and is remembered, so the next listen is not shared until `ports share`. A VM of another Mac is released on that Mac, over ssh. With the engine down, a Mac edits the lease store itself.
 
 ## The policy
 
