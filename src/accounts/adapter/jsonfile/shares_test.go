@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/accounts/adapter/jsonfile"
 	"github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/accounts/contract/contracttest"
@@ -55,5 +58,49 @@ func TestAV2RecordsSharesMoveOutOnce(t *testing.T) {
 	}
 	if again, _ := os.ReadFile(file); !bytes.Equal(again, first) {
 		t.Errorf("a second migration rewrote shares.json:\n%s", again)
+	}
+}
+
+type writtenAt struct {
+	jsonfile.Files
+	at time.Time
+}
+
+func (w writtenAt) Stat(p string) (fs.FileInfo, error) {
+	info, err := w.Files.Stat(p)
+	if err != nil {
+		return nil, err
+	}
+	return modTime{FileInfo: info, at: w.at}, nil
+}
+
+type modTime struct {
+	fs.FileInfo
+	at time.Time
+}
+
+func (m modTime) ModTime() time.Time { return m.at }
+
+func TestAV2RecordsPlainNamesMoveOutAsSharedAtTheRecordsTimeForTheDefaultTerm(t *testing.T) {
+	dir := t.TempDir()
+	at := filepath.Join(dir, "api.json")
+	if err := os.WriteFile(at, []byte(`{"name":"api","lent":["session:a","operator:claude:oauth-token"]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	written := time.Date(2026, 10, 30, 8, 0, 0, 0, time.UTC)
+	s := jsonfile.NewShares(writtenAt{Files: local.New(nil, nil, nil, nil).FS, at: written}, filepath.Join(t.TempDir(), "shares.json"), dir)
+	if err := s.Migrate(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	held, err := s.Get(context.Background(), "api")
+	want := []accounts.Share{
+		{Name: "session:a", At: written, Until: written.Add(accounts.DefaultShareTerm)},
+		{Name: "operator:claude:oauth-token", At: written, Until: written.Add(accounts.DefaultShareTerm)},
+	}
+	if err != nil || !reflect.DeepEqual(held, want) {
+		t.Fatalf("Get = %+v, %v; want %+v", held, err, want)
+	}
+	if data, _ := os.ReadFile(at); bytes.Contains(data, []byte("lent")) {
+		t.Errorf("the record still holds its shares:\n%s", data)
 	}
 }

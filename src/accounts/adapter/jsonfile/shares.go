@@ -184,8 +184,9 @@ func (s *Shares) lentIn(vm string) (shares []accounts.Share, rest map[string]jso
 		return nil, nil, false
 	}
 	delete(rest, "lent")
-	if json.Unmarshal(raw, &shares) == nil {
-		return shares, rest, true
+	var timed []accounts.Share
+	if json.Unmarshal(raw, &timed) == nil {
+		return timed, rest, true
 	}
 	var names []string
 	if json.Unmarshal(raw, &names) != nil {
