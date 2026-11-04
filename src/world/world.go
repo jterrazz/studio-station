@@ -44,6 +44,9 @@ type Fault struct {
 	Call string `json:"call"`
 	// value: how many more calls fail; zero fails every call.
 	Times int `json:"times,omitempty"`
+	// value: the next call does its first step, then waits until it is
+	// interrupted, as a long install caught by ctrl-c.
+	Hold bool `json:"hold,omitempty"`
 }
 
 type Mac struct {
@@ -275,7 +278,7 @@ func (w *World) Fails(call string) bool {
 	// invariant: a scripted fault fails its call and is spent; one with no
 	// count fails every call.
 	for i, f := range w.Script {
-		if f.Call != call {
+		if f.Call != call || f.Hold {
 			continue
 		}
 		switch f.Times {
@@ -286,6 +289,17 @@ func (w *World) Fails(call string) bool {
 			w.Script[i].Times--
 		}
 		return true
+	}
+	return false
+}
+
+func (w *World) Holds(call string) bool {
+	// invariant: a scripted hold is spent by the one call it holds.
+	for i, f := range w.Script {
+		if f.Call == call && f.Hold {
+			w.Script = append(w.Script[:i], w.Script[i+1:]...)
+			return true
+		}
 	}
 	return false
 }

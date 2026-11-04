@@ -52,6 +52,7 @@ func events() []event {
 		{"low-power", []string{"on|off"}, lowPower},
 		{"advance", []string{"<duration>"}, advance},
 		{"fault", []string{"<Contract>.<Method>", "[<n>]", "[times]"}, fault},
+		{"hold", []string{"<Contract>.<Method>"}, hold},
 		{"upgrade", []string{"<mac>", "<version>"}, upgrade},
 		{"address", []string{"<vm>", "<ip>"}, address},
 		{"slow", []string{"<machine>", "<duration>"}, nil},
@@ -335,6 +336,14 @@ func lowPower(w *World, args []string) error {
 		}
 		return fmt.Errorf("world low-power takes on or off, not %q", args[0])
 	})(w, args)
+}
+
+func hold(w *World, args []string) error {
+	if contract, method, ok := strings.Cut(args[0], "."); !ok || contract == "" || method == "" {
+		return fmt.Errorf("world hold: %q is not <Contract>.<Method>", args[0])
+	}
+	w.Script = append(w.Script, Fault{Call: args[0], Hold: true})
+	return nil
 }
 
 func fault(w *World, args []string) error {

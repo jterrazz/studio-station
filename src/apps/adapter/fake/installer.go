@@ -122,14 +122,27 @@ func (f *Installer) run(ctx context.Context, verb string, installs []catalog.Ins
 		return err
 	}
 	f.w.Lock()
-	defer f.w.Unlock()
 	if f.w.Fails("Installer." + verb) {
+		f.w.Unlock()
 		return errScripted
 	}
-	for _, i := range installs {
+	held := f.w.Holds("Installer." + verb)
+	for n, i := range installs {
+		if held && n > 0 {
+			break
+		}
 		apply(f.manager(), i.Key())
 	}
-	return nil
+	f.w.Unlock()
+	return wait(ctx, held)
+}
+
+func wait(ctx context.Context, held bool) error {
+	if !held {
+		return nil
+	}
+	<-ctx.Done()
+	return ctx.Err()
 }
 
 func installed(s *world.Manager, k string) { s.Installed[k] = "1.0.0" }
@@ -169,17 +182,30 @@ func BundlerOf(w *world.World, mac string) *Bundler { return &Bundler{w: w, mac:
 
 func (b *Bundler) Name() string { return "the bundle" }
 
-func (b *Bundler) Bundle(_ context.Context, lines []string, update bool, _ call.Progress) error {
+func (b *Bundler) Bundle(ctx context.Context, lines []string, update bool, _ call.Progress) error {
 	b.w.Lock()
-	defer b.w.Unlock()
 	if b.w.Fails("Bundler.Bundle") {
+		b.w.Unlock()
 		return errScripted
 	}
+	held := b.w.Holds("Bundler.Bundle")
+	err := b.apply(lines, update, held)
+	b.w.Unlock()
+	if err != nil {
+		return err
+	}
+	return wait(ctx, held)
+}
+
+func (b *Bundler) apply(lines []string, update, first bool) error {
 	apply := installed
 	if update {
 		apply = updated
 	}
-	for _, line := range lines {
+	for n, line := range lines {
+		if first && n > 0 {
+			break
+		}
 		method, key, ok := strings.Cut(line, " ")
 		if !ok {
 			return errors.New("the bundle cannot read the line " + line)
