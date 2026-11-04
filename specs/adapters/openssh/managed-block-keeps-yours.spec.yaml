@@ -1,4 +1,4 @@
-description: 'add writes one block and keeps the owner''s Host lines around it; forget gives the file back'
+description: 'add writes one block and keeps the owner''s Host lines; forget gives the file back, dialing nothing'
 fixture:
     - ../../__fixtures__/far-mac/
     - ./__fixtures__/owner-ssh-config/
@@ -51,6 +51,10 @@ runs:
       exit: 0
       stdout: |
           ●	mac-mini	forgotten · nothing changed on it
+      files:
+          .calls:
+              equals: |
+                  ssh -o BatchMode=yes -o ConnectTimeout=5 mac-mini -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station engine attach
     - command: '--version >/dev/null; /usr/bin/cmp .ssh/config config-before && echo "byte for byte"'
       exit: 0
       stdout: |
