@@ -10,7 +10,14 @@ import (
 
 type Deps struct {
 	Services Services
+	Tailnet  Node
 	Kind     machine.Kind
+}
+
+type Node interface {
+	// value: this node, its peers and what it shares, each share told
+	// station's when the services policy owns it.
+	Status(ctx context.Context) (ports.Status, error)
 }
 
 type Services interface {
@@ -26,5 +33,5 @@ type Services interface {
 }
 
 func All(d Deps) []call.Handler {
-	return []call.Handler{call.Bind(List, d), call.Bind(URL, d), call.Bind(Release, d)}
+	return []call.Handler{call.Bind(List, d), call.Bind(URL, d), call.Bind(Release, d), call.Bind(Tailnet, d)}
 }

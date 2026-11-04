@@ -19,29 +19,17 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
-	"github.com/jterrazz/studio-station/src/ports"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
 const ID = "fleet"
 
-type Machines interface {
-	// value: the fleet as it is, read without refreshing the ssh blocks.
-	Fleet(ctx context.Context, hereOnly bool) (machines.Fleet, error)
-}
-
-type Tailnet interface {
-	Status(ctx context.Context) (ports.Status, error)
-}
-
 type Remote func(ctx context.Context, machine string, words []string) error
 
 type Deps struct {
 	Calls    call.Router
 	Target   machine.Ref
-	Machines Machines
-	Tailnet  Tailnet
 	Remote   Remote
 	Describe tab.Describe
 }
@@ -83,12 +71,12 @@ func read(d Deps) tab.Source[pagefleet.Reading] {
 				go func() { defer wg.Done(); f() }()
 			}
 			run(func() {
-				f, err := d.Machines.Fleet(ctx, false)
+				l, err := call.Invoke(ctx, d.Calls, d.Target, machinescalls.List, machinescalls.ListIn{Unwritten: true}, nil)
 				if err != nil {
 					send(fail("fleet", err))
 					return
 				}
-				send(func(r *pagefleet.Reading) { r.Machines = &f })
+				send(func(r *pagefleet.Reading) { r.Machines = &l.Fleet })
 			})
 			run(func() {
 				list, err := call.Invoke(ctx, d.Calls, d.Target, imagescalls.List, imagescalls.ListIn{}, nil)
@@ -113,7 +101,7 @@ func read(d Deps) tab.Source[pagefleet.Reading] {
 				}
 			})
 			run(func() {
-				s, err := d.Tailnet.Status(ctx)
+				s, err := call.Invoke(ctx, d.Calls, d.Target, portscalls.Tailnet, portscalls.TailnetIn{}, nil)
 				if err != nil {
 					send(fail("tailnet", err))
 					return

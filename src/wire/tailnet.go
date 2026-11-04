@@ -28,30 +28,27 @@ func (m machine) tailnet() *tailscale.CLI {
 
 // value: the tailnet as a page reads it, this node and what it shares in
 // one pass, each share told station's when the services policy owns it.
-type tailnetStatus struct {
-	tn   contract.Tailnet
-	owns func(ports.Share) bool
-}
+type tailnetStatus struct{ m machine }
 
-func (m machine) tailnetStatus() tailnetStatus {
-	g, _ := m.stores.services().Get()
-	p := services.PolicyOf(g)
-	return tailnetStatus{tn: m.tailnet(), owns: func(s ports.Share) bool {
-		return p.InRange(s.Port) || (p.HTTPS == services.HTTPSPath && s.Port == 443 && s.Path != "/")
-	}}
-}
+func (m machine) tailnetStatus() tailnetStatus { return tailnetStatus{m: m} }
 
 func (t tailnetStatus) Status(ctx context.Context) (ports.Status, error) {
-	self, err := t.tn.Self(ctx)
+	g, _ := t.m.stores.services().Get()
+	p := services.PolicyOf(g)
+	owns := func(s ports.Share) bool {
+		return p.InRange(s.Port) || (p.HTTPS == services.HTTPSPath && s.Port == 443 && s.Path != "/")
+	}
+	tn := t.m.tailnet()
+	self, err := tn.Self(ctx)
 	var shared []ports.Share
 	if err == nil {
-		shared, _ = t.tn.Shared(ctx)
+		shared, _ = tn.Shared(ctx)
 	}
-	return ports.StatusOf(self, err, shared, t.owns), nil
+	return ports.StatusOf(self, err, shared, owns), nil
 }
 
 func tailnetCommand(env kit.Env, m machine) *cobra.Command {
-	return tailnetcmd.Command(tailnetcmd.Deps{Tailnet: m.tailnetStatus(), Here: m.where}, env)
+	return tailnetcmd.Command(tailnetcmd.Deps{Here: m.where}, env)
 }
 
 type hostNodes struct{ tailnet contract.Tailnet }

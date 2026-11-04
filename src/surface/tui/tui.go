@@ -28,9 +28,7 @@ type Deps struct {
 	Tools    toolsscreen.Deps
 	Config   configscreen.Deps
 	Storage  storagescreen.Deps
-	Machines fleetscreen.Machines
 	Services servicesscreen.Deps
-	Tailnet  fleetscreen.Tailnet
 	Accounts accountsscreen.Deps
 	Power    powerscreen.Deps
 	Remote   func(ctx context.Context, machine string, words []string) error
@@ -67,7 +65,7 @@ func Run(ctx context.Context, d Deps) error {
 		configscreen.New(ctx, d.Config, d.Here, describe),
 		storagescreen.New(ctx, d.Storage, d.Here, describe),
 		fleetscreen.New(ctx, fleetscreen.Deps{
-			Calls: d.Calls, Target: d.Target, Machines: d.Machines, Tailnet: d.Tailnet,
+			Calls: d.Calls, Target: d.Target,
 			Remote: d.Remote, Describe: describe,
 		}, d.Here),
 		servicesscreen.New(ctx, d.Services, d.Here, describe),

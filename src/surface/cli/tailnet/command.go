@@ -5,19 +5,15 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
-	"github.com/jterrazz/studio-station/src/ports"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-type Reader interface {
-	Status(ctx context.Context) (ports.Status, error)
-}
-
 type Deps struct {
-	Tailnet Reader
-	Here    page.Context
+	Here page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -29,7 +25,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Read:    func(*struct{}) bool { return true },
 		Pages:   true,
 		Run: func(ctx context.Context, _ *struct{}, io kit.IO) error {
-			status, err := d.Tailnet.Status(ctx)
+			status, err := call.Invoke(ctx, env.Calls, env.Target, portscalls.Tailnet, portscalls.TailnetIn{}, nil)
 			if err != nil {
 				return err
 			}

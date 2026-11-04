@@ -11,6 +11,8 @@ import (
 type ListIn struct {
 	// value: this host only, without asking the others.
 	Here bool
+	// value: the fleet read only, the owner's client blocks left as they are.
+	Unwritten bool
 }
 
 type ListOut struct {
@@ -27,7 +29,7 @@ var List = call.Call[Deps, ListIn, ListOut]{
 			return ListOut{}, err
 		}
 		out := ListOut{Fleet: fleet}
-		if !in.Here {
+		if !in.Here && !in.Unwritten {
 			out.Unrefreshed = d.Machines.SSHBlocks(ctx, fleet)
 		}
 		return out, nil

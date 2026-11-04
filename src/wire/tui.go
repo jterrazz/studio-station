@@ -29,9 +29,7 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 			Tools:    toolsscreen.Deps{Calls: env.Calls, Target: env.Target, Forget: toolsService(env, m).Forget},
 			Config:   configscreen.Deps{Calls: env.Calls, Target: env.Target, Defaults: configService(m).Defaults},
 			Storage:  storagescreen.Deps{Calls: env.Calls, Target: env.Target, Forget: storage.Forget, Plan: storage.Plan},
-			Machines: m.machines(true),
 			Services: servicesscreen.Deps{Calls: env.Calls, Target: env.Target},
-			Tailnet:  m.tailnetStatus(),
 			Accounts: accountsscreen.Deps{Calls: env.Calls, Target: env.Target, Forget: accounts.Forget, LendList: accounts.LendList},
 			Power: powerscreen.Deps{Calls: env.Calls, Target: env.Target, Power: tuiPower{Service: m.power(), m: m, describe: func(err error) (string, string) {
 				f := kit.Translate(err, "")
