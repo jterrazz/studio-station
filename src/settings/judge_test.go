@@ -15,6 +15,7 @@ func TestJudgeSetGivesEachSetByStationStateItsCause(t *testing.T) {
 	same := settings.Observation{State: catalog.StateOK, Digest: "sha256:station", Where: "~/.config/starship.toml"}
 	edited := settings.Observation{State: catalog.StateDegraded, Digest: "sha256:yours", Diff: "-a\n+b\n", Where: "~/.config/starship.toml"}
 	gone := settings.Observation{State: catalog.StateAbsent, Where: "~/.config/starship.toml"}
+	rewritten := settings.Observation{State: catalog.StateOK, Digest: "sha256:yours", Where: "~/.config/starship.toml"}
 	for _, c := range []struct {
 		name    string
 		lives   bool
@@ -27,6 +28,7 @@ func TestJudgeSetGivesEachSetByStationStateItsCause(t *testing.T) {
 		{"applied and untouched since", true, record, same, false, settings.StateApplied, true},
 		{"applied, then edited by hand", true, record, edited, false, settings.StateChangedSince, true},
 		{"applied, then deleted by hand", true, record, gone, false, settings.StateChangedSince, true},
+		{"applied, then rewritten by hand into a version that still reads in place", true, record, rewritten, false, settings.StateChangedSince, true},
 		{"never applied, nothing there", true, nil, gone, false, settings.StateNotApplied, false},
 		{"never applied, a file of your own there", true, nil, edited, false, settings.StateNotApplied, false},
 		{"never recorded, but exactly what station writes", true, nil, same, false, settings.StateApplied, false},
