@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"maps"
@@ -530,6 +531,26 @@ type worldSockets struct {
 }
 
 var errEngineDown = errors.New("this Mac's engine does not run in the world")
+
+// invariant: ssh's bytes reach the VM of this Mac that runs at ip and whose
+// guest answers: its sshd greets with its name; any other address is no
+// sshd. A world never dials the real network.
+func (s worldSockets) Pipe(_ context.Context, ip string, port int, _ io.Reader, out io.Writer) error {
+	w := s.m.run.w
+	w.Lock()
+	defer w.Unlock()
+	for _, name := range slices.Sorted(maps.Keys(w.Mac(s.m.name).VMs)) {
+		v := w.Mac(s.m.name).VMs[name]
+		at := cmp.Or(v.Address, "192.168.64.5")
+		if v.Running() && v.Guest != nil && at == ip {
+			_, err := fmt.Fprintf(out, "SSH-2.0-world %s %s:%d\r\n", name, ip, port)
+			return err
+		}
+	}
+	return errNoSSHD
+}
+
+var errNoSSHD = errors.New("no sshd answers at this address in the world")
 
 func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (system.Conn, error) {
 	d, ok := s.m.up(context.WithoutCancel(ctx))
