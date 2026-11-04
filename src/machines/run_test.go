@@ -23,11 +23,11 @@ func TestAfterRunKeepsEveryVMAStopDidNotDeclare(t *testing.T) {
 		{name: "a throwaway crash keeps it stale", lifetime: Throwaway, end: RunEnd{Reason: Crashed, ExitCode: 137}, now: at(0), want: ActStale},
 		{name: "a throwaway run whose end nobody can read keeps it stale", lifetime: Throwaway, end: RunEnd{Reason: Unknown, ExitCode: -1}, now: at(0), want: ActStale},
 		{name: "a permanent crash keeps it stale: a workspace never restarts by itself", lifetime: Permanent, end: RunEnd{Reason: Crashed, ExitCode: 137}, now: at(0), want: ActStale},
-		{name: "a third re-run within the window still runs", lifetime: Throwaway, end: reboot, reruns: []time.Time{at(0), at(10)}, now: at(20), want: ActRerun},
-		{name: "a fourth stop within the window is broken", lifetime: Throwaway, end: reboot, reruns: []time.Time{at(0), at(10), at(20)}, now: at(30), want: ActBroken},
-		{name: "a permanent reboot loop is broken too", lifetime: Permanent, end: reboot, reruns: []time.Time{at(0), at(10), at(20)}, now: at(30), want: ActBroken},
-		{name: "re-runs older than the window are forgotten", lifetime: Throwaway, end: reboot, reruns: []time.Time{at(0), at(10), at(20)}, now: at(65), want: ActRerun},
-		{name: "the window is a strict 60 seconds", lifetime: Throwaway, end: reboot, reruns: []time.Time{at(0), at(30), at(40)}, now: at(60), want: ActRerun},
+		{name: "a second reboot within the window still runs", lifetime: Throwaway, end: reboot, reruns: []time.Time{at(0)}, now: at(10), want: ActRerun},
+		{name: "a third reboot within the window is a loop", lifetime: Throwaway, end: reboot, reruns: []time.Time{at(0), at(10)}, now: at(20), want: ActBroken},
+		{name: "a permanent reboot loop is stopped too", lifetime: Permanent, end: reboot, reruns: []time.Time{at(0), at(10)}, now: at(20), want: ActBroken},
+		{name: "reboots older than the window are forgotten", lifetime: Throwaway, end: reboot, reruns: []time.Time{at(0), at(10)}, now: at(65), want: ActRerun},
+		{name: "the window is a strict 60 seconds", lifetime: Throwaway, end: reboot, reruns: []time.Time{at(0), at(30)}, now: at(60), want: ActRerun},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			if got, _ := AfterRun(c.lifetime, c.end, c.reruns, c.now); got != c.want {

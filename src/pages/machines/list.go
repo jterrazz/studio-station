@@ -146,7 +146,7 @@ func listVMRow(mac string, vm machines.VM) page.Row {
 	case machines.Stale:
 		row.Mark, row.Reason, state = page.Attention, page.Outlived, page.List(page.Text("Ended unexpectedly"), lifetime)
 	case machines.Broken:
-		row.Mark, row.Reason, state = page.Broken, page.Failing, page.List(page.Text("Broken"), lifetime)
+		row.Mark, row.Reason, state = page.Broken, page.Failing, page.List(page.Text("In a loop"), lifetime)
 		detail = page.Text(vm.Detail)
 	}
 	r := vm.Resources

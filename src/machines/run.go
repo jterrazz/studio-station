@@ -1,9 +1,6 @@
 package machines
 
-import (
-	"strconv"
-	"time"
-)
+import "time"
 
 type Lifetime string
 
@@ -54,7 +51,7 @@ type RunEnd struct {
 
 const (
 	rerunWindow = 60 * time.Second
-	rerunBudget = 3
+	rerunBudget = 2
 )
 
 type Action int
@@ -67,14 +64,13 @@ const (
 	ActStale
 )
 
-func BrokenDetail() string {
-	return "stopped " + strconv.Itoa(rerunBudget+1) + " times within " + strconv.Itoa(int(rerunWindow.Seconds())) + " s"
-}
+func BrokenDetail() string { return "rebooting in a loop · stopped" }
 
 func AfterRun(l Lifetime, end RunEnd, reruns []time.Time, now time.Time) (Action, []time.Time) {
 	// invariant: a workspace never restarts by itself (SP-4). A poweroff its
 	// guest declared deletes a throwaway one and stops a permanent one; a
-	// reboot from inside runs it again, at most 3 times in 60 s; a crash or
+	// reboot from inside runs it again, and the third boot within 60 s that
+	// ends in a reboot is a loop, stopped (SPEC §7.3); a crash or
 	// an end nobody can read keeps it, stale, for the owner to start or delete.
 	switch end.Reason {
 	case GuestPoweroff:
