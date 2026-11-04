@@ -23,7 +23,7 @@ type Input struct{ Name string }
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "start <vm>",
-		Short:   "Start a stopped lasting VM, and keep it starting with its host",
+		Short:   "Start a stopped workspace, with its disk as it was left",
 		Example: "  station machines start api",
 		Args:    cobra.ExactArgs(1),
 		Bind: func(in *Input, args []string) error {

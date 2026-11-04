@@ -44,9 +44,9 @@
 ?	not-known	does not answer
 # Fleet
 ●	jterrazz-mac-mini	host	jterrazz-mac-mini
-●	linux-1	lasting	jterrazz-mac-mini
+●	linux-1	permanent	jterrazz-mac-mini
 ●	web	service	jterrazz-mac-mini
-○	linux-2	lasting	jterrazz-mac-mini
+○	linux-2	permanent	jterrazz-mac-mini
 # Storage
 ●	station	data 275 B · kept 546 B
 ●	tart	data 73.3 GB

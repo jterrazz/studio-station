@@ -24,7 +24,7 @@ type Input struct{ Name string }
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "restart <machine>",
-		Short:   "Restart a host with a FileVault-aware reboot, or a lasting VM with a poweroff and a start",
+		Short:   "Restart a Mac with a FileVault-aware reboot, or a VM with a poweroff and a start",
 		Example: "  station machines restart mac-mini --yes",
 		Args:    cobra.ExactArgs(1),
 		Bind: func(in *Input, args []string) error {

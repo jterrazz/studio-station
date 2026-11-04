@@ -31,7 +31,7 @@ type Machines interface {
 	// value: refuses a name that is no VM of this host, worded for verb.
 	CheckVM(name, verb string) error
 	Delete(ctx context.Context, name string) (machines.DeleteReport, error)
-	// value: whether name is a VM, refusing a temporary one.
+	// value: whether name is a VM rather than a Mac.
 	CheckRestart(name string) (vm bool, err error)
 	Restart(ctx context.Context, name string) (machines.RestartReport, error)
 	CheckHost() error

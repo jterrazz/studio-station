@@ -143,7 +143,7 @@ func pipeFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &closed):
 		return failed(closed.Error(), "station machines probe "+closed.Name, err), true
 	case errors.As(err, &running):
-		return failed(running.Error(), "stop the lasting VMs and delete the temporary ones (station machines), then station setup", err), true
+		return failed(running.Error(), "stop the running VMs (station machines), then station setup", err), true
 	}
 	return nil, false
 }

@@ -83,7 +83,7 @@ var Delete = call.Call[Deps, DeleteIn, machines.DeleteReport]{
 }
 
 type RestartIn struct {
-	// value: a host (a FileVault-aware reboot) or a lasting VM (a poweroff
+	// value: a Mac (a FileVault-aware reboot) or a VM (a poweroff
 	// and a start).
 	Name    string
 	Confirm string

@@ -58,7 +58,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			f.StringVar(&in.Disk, "disk", "", "disk size with its unit, e.g. 50G (default 20G)")
 			f.StringVar(&in.Network, "network", "", "bridged: its own address on your LAN (macOS images only); default behind its Mac")
 			f.StringVar(&in.Name, "name", "", "the workspace's name")
-			f.StringVar(&in.Lifetime, "lifetime", "", "temporary or lasting")
+			f.StringVar(&in.Lifetime, "lifetime", "", "throwaway or permanent (--permanent)")
 			_ = f.MarkHidden("name")
 			_ = f.MarkHidden("lifetime")
 		},
