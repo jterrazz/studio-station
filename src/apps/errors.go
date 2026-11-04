@@ -26,7 +26,7 @@ func (e *NotInstalledError) Error() string { return e.App + " is not installed" 
 
 func LivesOn(places []catalog.MachineKind) string {
 	// value: where an app lives, in the owner's words: a Mac is This Mac and
-	// any Mac of the fleet, a VM a workspace.
+	// any other Mac, a VM a workspace.
 	switch livesOn(places) {
 	case "every-machine":
 		return "every machine"

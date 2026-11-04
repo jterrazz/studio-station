@@ -1,4 +1,4 @@
-description: 'the five apps the fleet depends on say system beside their method; the exploration dev tools do not'
+description: 'the five apps every machine depends on say system beside their method; the dev tools do not'
 fixture: ../../../__fixtures__/stubs/
 runs:
     - command: 'apps --all | /usr/bin/awk -F "\t" ''$4 ~ / · system$/ { print $2 }'' | /usr/bin/sort | /usr/bin/tr "\n" " "'
