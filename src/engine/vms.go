@@ -422,7 +422,7 @@ func (d *Daemon) session(ctx context.Context, v *vmState, gen int) {
 	backoff := time.Second
 	for d.alive(v) {
 		d.guestOnce(ctx, v, gen)
-		if !d.current(v, gen) {
+		if !d.current(v, gen) || ctx.Err() != nil {
 			return
 		}
 		d.vmStopped(ctx, v.rec.Name)

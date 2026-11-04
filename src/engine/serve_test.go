@@ -298,3 +298,34 @@ func TestACertificateNeverIssuedIsCutAtItsBudgetAndSaysSo(t *testing.T) {
 		t.Errorf("daemon.log %q, want the not-issued line", lines)
 	}
 }
+
+func TestAnEngineThatStopsLeavesItsRunningVMsPortsSharedOnTheTailnet(t *testing.T) {
+	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning})
+	h.hv.outlived("api")
+	tn := &fakeTailnet{sharing: ports.SharingState{On: true, Host: "x.tail1234.ts.net", Backend: ports.Running}}
+	h.d.tn, h.d.h.Sockets = tn, &loopback{}
+	ctx := t.Context()
+	h.d.adopt(cancelled(t))
+	yes := true
+	h.d.leases = []services.Lease{{VM: "api", GuestPort: 5173, HostPort: 40001, HTTP: &yes, Pinned: true}}
+	h.d.refreshSelf(ctx)
+	h.d.mu.Lock()
+	s := h.d.svcOf("api", 5173)
+	s.st.Phase = services.Published
+	h.d.publish(ctx, s)
+	h.d.mu.Unlock()
+	tn.taken()
+	v, err := h.d.find("api")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.d.mu.Lock()
+	gen := v.gen
+	h.d.mu.Unlock()
+	h.d.session(cancelled(t), v, gen)
+	for _, call := range tn.taken() {
+		if strings.HasPrefix(call, "unshare") {
+			t.Fatalf("the engine stopping took back %q: api still runs, so its port stays shared", call)
+		}
+	}
+}
