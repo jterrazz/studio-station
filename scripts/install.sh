@@ -59,6 +59,14 @@ rm -f "$HOME/.studio/bin/workstation"
 echo "✓ Installed $INSTALL_DIR/$BINARY ($TAG)"
 
 # outside: ~/.local/bin may not be on PATH yet on a fresh machine, so setup runs by path.
-"$INSTALL_DIR/station" setup
+# Piped from curl, setup asks its questions on the terminal; with none, a Mac with no
+# name yet is refused (exit 2) with the command that names it, and the install stands.
+if [ -t 1 ] && (: </dev/tty) 2>/dev/null; then
+  "$INSTALL_DIR/station" setup </dev/tty
+else
+  status=0
+  "$INSTALL_DIR/station" setup || status=$?
+  [ "$status" -eq 0 ] || [ "$status" -eq 2 ] || exit "$status"
+fi
 
 echo "✓ Done. Run 'exec zsh', then 'station'"

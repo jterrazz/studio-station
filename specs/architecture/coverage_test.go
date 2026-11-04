@@ -50,7 +50,7 @@ func uncovered() []string {
 		"machines.probe", "machines.restart", "machines.start", "machines.unlock", "overview.read",
 		"power.awake", "power.read", "power.sleep", "run.containers", "run.git",
 		"secrets.allow", "secrets.disallow", "secrets.lend", "secrets.list", "secrets.recall",
-		"services.list", "services.release", "services.url", "setup.run", "shell.zsh",
+		"services.list", "services.release", "services.url", "shell.zsh",
 		"storage.clean", "storage.list", "storage.reset", "tailnet.read", "tools.install",
 		"tools.list", "tools.uninstall", "tools.upgrade",
 	}

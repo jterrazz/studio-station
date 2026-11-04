@@ -1,0 +1,27 @@
+description: 'on a terminal, setup on a fresh Mac asks its name, then writes the shell block and the layout, installs the missing system apps and starts the engine'
+fixture: ../../../__fixtures__/terminal/
+env:
+    - fresh
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION" setup'
+      stdin: |
+          see Name this machine
+          send \r
+          see engine
+          screen
+      exit: 0
+      stdout: |
+          ┃ Name this machine
+          ┃ lowercase letters, digits and -, as in macbook or mac-mini
+          ●       name    jterrazz-macbook-pro
+          ●       zshrc
+          ●       layout  nothing to retire
+          ●       relocate        bunfig, go env, mise config, npmrc
+          ●       tools   installed homebrew mise git tart tailscale
+          ●       engine  running {{string}}
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | [.preferences.here, (.jobs | keys), .engine.stopped]'' world.json; /usr/bin/grep -c "^# >>> station >>>$" .zshrc'
+      exit: 0
+      stdout: |
+          ["jterrazz-macbook-pro",["com.jterrazz.station.engine"],null]
+          1

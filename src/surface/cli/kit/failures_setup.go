@@ -22,6 +22,8 @@ func setupFailure(err error) (*fail.Error, bool) {
 		return usage(mismatch.Error(), "run station setup without --name"), true
 	case errors.As(err, &bad):
 		return usage(bad.Error(), "use lowercase letters, digits and -, 1 to 40 characters"), true
+	case errors.Is(err, setup.ErrNeedsName):
+		return usage(setup.ErrNeedsName.Error(), "station setup --name <name>"), true
 	case errors.Is(err, setup.ErrNameOnVM):
 		return usage(setup.ErrNameOnVM.Error(), "run station setup without --name"), true
 	case errors.As(err, &step):

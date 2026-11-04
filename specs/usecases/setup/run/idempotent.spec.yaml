@@ -1,0 +1,18 @@
+description: 'a second setup finds every step as the first left it, and changes nothing in the world'
+env: two-macs
+runs:
+    - command: 'setup > /dev/null; /usr/bin/jq -S ''del(.now)'' world.json > first.json'
+      exit: 0
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	name	jterrazz-macbook-pro
+          ●	zshrc
+          ●	layout	nothing to retire
+          ●	relocate	nothing to do
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ●	engine	running {{string}}
+    - command: '--version >/dev/null; /usr/bin/jq -S ''del(.now)'' world.json | /usr/bin/cmp - first.json && echo unchanged'
+      exit: 0
+      stdout: |
+          unchanged

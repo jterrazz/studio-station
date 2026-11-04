@@ -2,7 +2,7 @@ description: 'on a terminal, setup offers the local host name, made a machine na
 fixture:
     - ../../__fixtures__/terminal/
     - ./__fixtures__/local-host-name/
-    - ../__fixtures__/system-tools/
+    - ../../cli/__fixtures__/system-tools/
 env: terminal
 runs:
     - command: '--version >/dev/null; terminal "$STATION" setup'

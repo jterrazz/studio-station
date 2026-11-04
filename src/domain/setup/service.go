@@ -27,6 +27,7 @@ const (
 	stepName   = "name"
 	stepZshrc  = "zshrc"
 	stepLayout = "layout"
+	stepKind   = "kind"
 
 	stepPreferences = "preferences"
 )
@@ -44,6 +45,8 @@ type DaemonInstaller interface {
 
 type Options struct {
 	Here catalog.MachineKind
+	// value: this machine is a server: its own tooling keeps it, never station.
+	Server bool
 	// value: the preferences' file (a v1 config.json converts only while it
 	// is absent), station's state folder and the user's bin.
 	PreferencesFile, State, Bin string
@@ -171,10 +174,16 @@ func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
 	if err := s.CheckName(r.Name); err != nil {
 		return Report{}, err
 	}
+	if s.o.Server {
+		return Report{Steps: append(moved, Step{Name: stepKind, State: catalog.StateOK, Detail: "server: its own tooling keeps it, station sets nothing up"})}, nil
+	}
 	if !s.isHost() {
 		zshrc, err := s.zshrc()
 		relocate, relocateErr := s.relocate(ctx, r.Interactive)
 		return Report{Steps: append(moved, zshrc, relocate)}, errors.Join(err, relocateErr)
+	}
+	if r.Name == "" && (!r.Interactive || r.AskName == nil) && s.currentHere() == "" && !s.exists(s.settingsPath()) {
+		return Report{Steps: moved}, ErrNeedsName
 	}
 	migrated := s.migrateSettings()
 	name, nameErr := s.name(r, migrated != nil)

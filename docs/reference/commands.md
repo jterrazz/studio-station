@@ -187,7 +187,7 @@ station --version
 station help [command]
 ```
 
-`setup` is the one bootstrap verb, safe to run again: it registers this host in the fleet (asking the name on a terminal, taking `--name` otherwise), writes the one managed block of `~/.zshrc`, and moves `~/.studio/` to the XDG folders. `--version` prints `station <version> (<commit>)`. See [Getting started](../start/getting-started.md) and [Dotfiles](dotfiles.md).
+`setup` is the one bootstrap verb, safe to run again: it registers this host in the fleet (asking the name on a terminal, taking `--name` otherwise; off a terminal, a Mac with no name yet is refused, exit 2, `Hint: station setup --name <name>`), writes the one managed block of `~/.zshrc`, and moves `~/.studio/` to the XDG folders. Inside a workspace it writes the block and the layout only; inside a server it sets nothing up, the server's own tooling keeps it. `--version` prints `station <version> (<commit>)`. See [Getting started](../start/getting-started.md) and [Dotfiles](dotfiles.md).
 
 ## Hidden aliases
 

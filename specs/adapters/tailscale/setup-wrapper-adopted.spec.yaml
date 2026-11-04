@@ -1,6 +1,6 @@
 description: 'with the App Store app and no tailscale on PATH, setup writes the wrapper once, then adopts it'
 fixture:
-    - ../__fixtures__/system-tools/
+    - ../../cli/__fixtures__/system-tools/
     - ../../__fixtures__/tailscale-app-store/
 env: engine
 runs:

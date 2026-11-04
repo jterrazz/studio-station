@@ -7,13 +7,10 @@ runs:
       stdout: |
           Installing station (OS/ARCH)...
           ✓ Installed WORKDIR/.local/bin/station (local)
-          ○	name	not set: station setup --name <name>
-          ●	zshrc
-          ●	layout	nothing to retire
-          ●	relocate	bunfig, go env, mise config, npmrc
-          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ○	engine	not needed until tart is installed
           ✓ Done. Run 'exec zsh', then 'station'
+      stderr: |
+          Error: this Mac needs a name: setup asks it on a terminal
+          Hint: station setup --name <name>
       files:
           .calls: absent
     - command: '--version >/dev/null; .local/bin/station --version >/dev/null && echo answers'

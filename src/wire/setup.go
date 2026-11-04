@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"errors"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
 	"strings"
 
@@ -29,6 +30,7 @@ func setupService(env kit.Env, m machine) *setup.Service {
 	installer := daemonInstaller{m: m, machines: fleet}
 	return setup.New(m.host, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.services(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
 		Here:            m.kind,
+		Server:          m.profile.Kind == coremachine.Server,
 		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
 		// observable; unset, the running binary is the one re-executed.

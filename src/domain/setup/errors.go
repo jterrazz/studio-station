@@ -2,7 +2,11 @@ package setup
 
 import "errors"
 
-var ErrNameOnVM = errors.New("a VM's name is given when it is created")
+var (
+	ErrNameOnVM = errors.New("a VM's name is given when it is created")
+	// value: a Mac with no name yet, set up where nobody can be asked it.
+	ErrNeedsName = errors.New("this Mac needs a name: setup asks it on a terminal")
+)
 
 type NameMismatchError struct{ Here, Asked string }
 

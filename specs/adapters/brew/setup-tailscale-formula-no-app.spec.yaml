@@ -1,6 +1,6 @@
 description: 'the tailscale formula without the app is left alone: setup asks for the app'
 fixture:
-    - ../__fixtures__/system-tools/
+    - ../../cli/__fixtures__/system-tools/
     - ./__fixtures__/tailscale-formula/
 runs:
     - command: 'setup --name m </dev/null'
