@@ -29,6 +29,16 @@ func diskCommand(env kit.Env, m machine) *cobra.Command {
 	)
 }
 
+// invariant: station storage and its verbs are the hidden v2 words of
+// station disk for one release (SPEC §4.3): clean is free, reset is erase.
+func storageAlias(env kit.Env, m machine) *cobra.Command {
+	names := m.storage(env).Names
+	return kit.Alias("storage", diskcmd.Command(diskcmd.Deps{Names: names, Here: m.where}, env,
+		kit.Alias("clean", diskfree.Command(diskfree.Deps{Names: names, Here: m.where}, env), "free"),
+		kit.Alias("reset", diskerase.Command(diskerase.Deps{Names: names, Here: m.where}, env), "erase"),
+	), "disk")
+}
+
 func (m machine) storage(env kit.Env) *storage.Service {
 	return storage.New(m.host, catalog.Tools, storage.Options{
 		Disk:       m.disk(),

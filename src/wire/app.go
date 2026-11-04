@@ -102,6 +102,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		toolsAlias(kenv, here),
 		settingsCommand(kenv, here),
 		diskCommand(kenv, here),
+		storageAlias(kenv, here),
 		powerCommand(kenv, here),
 		machinesCommand(kenv, here),
 		imagesCommand(kenv, here),
