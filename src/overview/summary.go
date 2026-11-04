@@ -21,6 +21,8 @@ type Summary struct {
 	VMs []VM
 	// value: a section has not answered yet.
 	Pending bool
+	// value: SPEC §7.6's Mac readiness, empty on a Mac that needs none.
+	Readiness []Check
 }
 
 type Head struct {

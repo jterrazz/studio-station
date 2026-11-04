@@ -66,10 +66,11 @@ func sectionReads() map[section.ID]sectionRead {
 }
 
 type answer struct {
-	id   section.ID
-	read overview.Read
-	err  error
-	all  *machines.Fleet
+	id        section.ID
+	read      overview.Read
+	err       error
+	all       *machines.Fleet
+	readiness []overview.Check
 }
 
 func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview.Summary {
@@ -118,15 +119,20 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 			}
 			answers <- answer{all: &out.Fleet}
 		}()
+		left++
+		go func() { answers <- answer{readiness: r.readiness(ctx)} }()
 	}
 	out := make(chan overview.Summary)
 	go func() {
 		defer close(out)
 		got := map[section.ID]answer{}
 		var all *machines.Fleet
+		var readiness []overview.Check
 		send := func() bool {
+			sum := summarize(head, ids, got, reading, all)
+			sum.Readiness = readiness
 			select {
-			case out <- summarize(head, ids, got, reading, all):
+			case out <- sum:
 				return true
 			case <-ctx.Done():
 				return false
@@ -145,6 +151,8 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 			switch {
 			case a.all != nil:
 				all = a.all
+			case a.readiness != nil:
+				readiness = a.readiness
 			case a.id != "":
 				got[a.id] = a
 			}
