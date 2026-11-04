@@ -26,7 +26,7 @@ func usage() map[fail.Code]Wording {
 			return "\"" + e.Subject + "\" is " + article(e.Detail["row"]) + " " + e.Detail["row"] + ": say what to do with it", e.Detail["command"] + " " + e.Subject
 		},
 		NeedsTerminal: func(e *fail.Error) (string, string) {
-			return e.Subject + " needs a terminal", "run it in a terminal"
+			return e.Subject + " needs a terminal", "run it on a terminal"
 		},
 	}
 }

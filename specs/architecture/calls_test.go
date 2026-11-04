@@ -292,13 +292,24 @@ func ruleConfirmInUsecase(w *world) []finding {
 }
 
 // invariant: rule every-code-worded (ER-07): every fail.Code constant the
-// tree declares is worded in surface/cli/words, and nothing worded is
-// never raised.
+// tree declares is worded in surface/cli/words, and raised: named by code
+// outside surface/cli/words, whose table and declarations are no raise.
 func ruleEveryCodeWorded(w *world) []finding {
 	var out []finding
 	worded := map[string]bool{}
 	for code := range words.Codes() {
 		worded[string(code)] = true
+	}
+	raised := map[*types.Const]bool{}
+	for _, f := range w.files {
+		if f.test || f.pkg == "surface/cli/words" {
+			continue
+		}
+		for _, obj := range f.info.Uses {
+			if c, ok := obj.(*types.Const); ok && isCode(c.Type()) {
+				raised[c] = true
+			}
+		}
 	}
 	declared := map[string]bool{}
 	for _, f := range w.files {
@@ -325,6 +336,9 @@ func ruleEveryCodeWorded(w *world) []finding {
 					declared[code] = true
 					if !worded[code] {
 						out = append(out, finding{"every-code-worded", f.at(n.Pos()), fmt.Sprintf("%q is worded nowhere in surface/cli/words", code)})
+					}
+					if !raised[c] {
+						out = append(out, finding{"every-code-worded", f.at(n.Pos()), fmt.Sprintf("%q is declared but never raised", code)})
 					}
 				}
 			}
@@ -354,7 +368,8 @@ func TestNoScreenPutsAQuestionItsCallDidNotAsk(t *testing.T) {
 func TestNoLeafPutsAQuestionOutsideItsLeafAsk(t *testing.T) {
 	judge(t, "ConfirmInUsecaseLeafAsks")
 }
-func TestEveryCodeWorded(t *testing.T) { judge(t, "EveryCodeWorded") }
+func TestEveryCodeWorded(t *testing.T)       { judge(t, "EveryCodeWorded") }
+func TestEveryCodeWordedRaised(t *testing.T) { judge(t, "EveryCodeWordedRaised") }
 
 // value: the reference profiles of the worlds: a laptop Mac, a desktop
 // Mac, a workspace, a server.
