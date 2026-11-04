@@ -246,6 +246,29 @@ func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 	if _, err := i.machines.MigrateAgents(ctx); err != nil {
 		return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
 	}
+	moved, err := i.retire(ctx, jobs)
+	if err != nil {
+		return setup.Step{Name: step, State: catalog.StateBroken, Detail: err.Error()}, &setup.StepFailedError{Step: step, Cause: err}
+	}
+	s, err := i.install(ctx, jobs)
+	if moved {
+		s.Detail, s.Changed = s.Detail+", its job moved to "+catalog.EngineLabel, true
+	}
+	return s, err
+}
+
+// invariant: the job station v2 named com.jterrazz.station.daemon is
+// removed once, before the engine's own is written: one engine per Mac.
+func (i daemonInstaller) retire(ctx context.Context, jobs contract.Jobs) (bool, error) {
+	ref := contract.Ref{Domain: contract.Domain{UID: i.m.host.Env.Euid()}, Label: catalog.RetiredEngineLabel, File: catalog.RetiredEnginePlist(i.m.host.Env.Home())}
+	if _, err := i.m.host.FS.Stat(ref.File); err != nil && !jobs.Read(ctx, ref).Loaded {
+		return false, nil
+	}
+	return true, jobs.Remove(ctx, ref)
+}
+
+func (i daemonInstaller) install(ctx context.Context, jobs contract.Jobs) (setup.Step, error) {
+	const step = "engine"
 	job := i.m.daemonJob()
 	changed, err := jobs.Install(ctx, contract.JobSpec{
 		Label: job.Label, Program: []string{i.m.host.Env.Executable(), "engine", "run"}, Env: i.env(),
