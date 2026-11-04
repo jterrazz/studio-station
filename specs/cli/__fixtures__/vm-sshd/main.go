@@ -22,7 +22,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// invariant: the VM a spec talks to: an sshd that accepts any key, offers an
+// invariant: the VM a spec talks to: an sshd that accepts any key or password, offers an
 // ed25519 and an ecdsa host key as OpenSSH does (the ed25519 one written to the
 // document's vm/hostkey.ed25519), runs each exec under the document's vm/ folder, and answers every direct-tcpip itself,
 // so no real listener exists on the runner; each exec and channel is recorded in
@@ -51,7 +51,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	cfg := &ssh.ServerConfig{PublicKeyCallback: func(ssh.ConnMetadata, ssh.PublicKey) (*ssh.Permissions, error) { return nil, nil }}
+	cfg := &ssh.ServerConfig{
+		PublicKeyCallback: func(ssh.ConnMetadata, ssh.PublicKey) (*ssh.Permissions, error) { return nil, nil },
+		PasswordCallback:  func(ssh.ConnMetadata, []byte) (*ssh.Permissions, error) { return nil, nil },
+	}
 	for _, key := range []any{edKey, ecKey} {
 		signer, err := ssh.NewSignerFromKey(key)
 		if err != nil {
@@ -114,12 +117,23 @@ func session(nc ssh.NewChannel) {
 		_ = req.Reply(true, nil)
 		command := string(req.Payload[4:])
 		record("vm-sshd exec " + command)
-		code := run(strings.Replace(command, "/usr/local/bin/station", "station", 1), ch)
+		code := run(inVM(command), ch)
 		status := make([]byte, 4)
 		binary.BigEndian.PutUint32(status, uint32(code))
 		_, _ = ch.SendRequest("exit-status", false, status)
 		return
 	}
+}
+
+// invariant: a command names the VM's own /tmp, which is the document's vm/tmp,
+// so nothing a spec copies in reaches the runner's /tmp.
+func inVM(command string) string {
+	command = strings.Replace(command, "/usr/local/bin/station", "station", 1)
+	tmp := filepath.Join(workdir(), "vm", "tmp")
+	if strings.Contains(command, "'/tmp/") {
+		_ = os.MkdirAll(tmp, 0o700)
+	}
+	return strings.ReplaceAll(command, "'/tmp/", "'"+tmp+"/")
 }
 
 func run(command string, ch ssh.Channel) int {

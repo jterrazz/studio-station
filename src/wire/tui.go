@@ -72,6 +72,8 @@ func (e *remoteExit) Error() string {
 	return "station on " + e.machine + " exited " + strconv.Itoa(e.code)
 }
 
-func (m machine) secrets() *secrets.Service {
-	return secrets.New(m.host, m.store, vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}, secrets.Options{Here: m.kind})
+func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostDaemon()) }
+
+func (m machine) secretsVia(guest secrets.Guest) *secrets.Service {
+	return secrets.New(m.host, guest, m.store, vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}, secrets.Options{Here: m.kind})
 }

@@ -19,20 +19,20 @@ func (s *Service) Probe(ctx context.Context, name string) (ProbeReport, error) {
 	if err != nil {
 		return ProbeReport{}, err
 	}
+	if m.Kind != catalog.Host {
+		return s.probeVM(ctx, m), nil
+	}
 	ip := s.resolve(ctx, name)
 	report := ProbeReport{Name: name, User: m.User, IP: ip}
 
 	report.Checks = append(report.Checks, s.ping(ctx, ip))
 	ssh := s.sshCheck(ctx, name)
-	report.Checks = append(report.Checks, ssh)
-	if m.Kind == catalog.Host {
-		report.Checks = append(report.Checks,
-			s.port(ctx, "openclaw gateway", ip, s.o.Ports.OpenClaw),
-			s.port(ctx, "hermes gateway", ip, s.o.Ports.Hermes),
-		)
-		if ssh.State == catalog.StateOK {
-			report.Console, report.Checks = s.console(ctx, name, report.Checks)
-		}
+	report.Checks = append(report.Checks, ssh,
+		s.port(ctx, "openclaw gateway", ip, s.o.Ports.OpenClaw),
+		s.port(ctx, "hermes gateway", ip, s.o.Ports.Hermes),
+	)
+	if ssh.State == catalog.StateOK {
+		report.Console, report.Checks = s.console(ctx, name, report.Checks)
 	}
 	return report, nil
 }
@@ -88,4 +88,22 @@ func (s *Service) console(ctx context.Context, name string, checks []Check) (str
 func (s *Service) sshTrue(ctx context.Context, name string) bool {
 	out, err := s.h.Run.Output(ctx, system.Cmd{Name: "ssh", Args: concat(batchSSH(), []string{name, "true"})})
 	return err == nil && out.ExitCode == 0
+}
+
+// invariant: a VM is probed through its engine's connection, never by an ssh of
+// its own: its address is the hypervisor's, its ssh check a command over the
+// connection the engine holds.
+func (s *Service) probeVM(ctx context.Context, m Machine) ProbeReport {
+	ip := m.Name
+	if addr, err := s.engine.Address(ctx, m.Name, dialBudget); err == nil {
+		ip = addr.String()
+	}
+	report := ProbeReport{Name: m.Name, User: m.User, IP: ip}
+	report.Checks = append(report.Checks, s.ping(ctx, ip))
+	check := Check{Name: "ssh", State: catalog.StateOK, Value: "guest connection ok"}
+	if out, err := s.daemon.GuestExec(ctx, m.Name, "true", ""); err != nil || out.ExitCode != 0 {
+		check.State, check.Value, check.Detail = catalog.StateBroken, "no guest connection", "station machines start "+m.Name
+	}
+	report.Checks = append(report.Checks, check)
+	return report
 }

@@ -6,13 +6,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/jterrazz/studio-station/src/machines/contract"
+	"math"
+	"net/netip"
 	"path"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -112,10 +114,10 @@ func (s *Service) Build(ctx context.Context, r BuildRequest, progress func(Step)
 }
 
 type session struct {
-	s       *Service
-	ip      string
-	key     string
-	askpass string
+	s   *Service
+	vm  string
+	at  netip.AddrPort
+	key string
 }
 
 func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string, progress func(Step)) (Record, error) {
@@ -147,10 +149,6 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 	if err != nil {
 		return Record{}, &BuildFailedError{Image: img.Name, Step: "making the image key", Cause: err}
 	}
-	askpass, err := s.askpass()
-	if err != nil {
-		return Record{}, &BuildFailedError{Image: img.Name, Step: "writing the ssh helper", Cause: err}
-	}
 	if err = s.dropLeftover(ctx, vm); err != nil {
 		return Record{}, &BuildFailedError{Image: img.Name, Step: "removing the earlier build VM", Cause: err}
 	}
@@ -171,8 +169,7 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 	if err != nil {
 		return failed("waiting for the build VM's address", err)
 	}
-	ip := addr.String()
-	ss := session{s: s, ip: ip, key: key, askpass: askpass}
+	ss := session{s: s, vm: vm, at: netip.AddrPortFrom(addr, s.guestPort()), key: key}
 
 	progress(Step{Label: "copying station into " + vm})
 	if err := ss.copy(ctx, binary); err != nil {
@@ -265,86 +262,93 @@ func (s *Service) imageKey(ctx context.Context) (key, pub string, err error) {
 	return key, string(data), nil
 }
 
-func (s *Service) askpass() (string, error) {
-	file := path.Join(s.o.Paths.State, "images", "askpass")
-	if err := s.h.FS.MkdirAll(path.Dir(file), 0o700); err != nil {
-		return "", err
+func (s *Service) guestPort() uint16 {
+	if s.o.GuestPort > 0 && s.o.GuestPort <= math.MaxUint16 {
+		return uint16(s.o.GuestPort)
 	}
-	if err := s.h.FS.WriteFile(file, []byte("#!/bin/sh\necho "+adminPass+"\n"), 0o700); err != nil {
-		return "", err
+	return 22
+}
+
+// invariant: a build VM is a fresh clone, so its guest is dialed with no host
+// key kept; the base's admin account is reached by its password until the
+// recipe installs the image key, and only then as vm_user.
+func (ss session) dial(ctx context.Context, user string, password bool) (contract.Guest, error) {
+	t := contract.GuestTarget{VM: ss.vm, Address: ss.at, User: user, Key: ss.key}
+	if password {
+		t.Key, t.Password = "", adminPass
 	}
-	return file, s.h.FS.Chmod(file, 0o700)
-}
-
-func natOptions() []string {
-	return []string{"-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "LogLevel=ERROR"}
-}
-
-func (ss session) passwordEnv() []string {
-	return []string{"SSH_ASKPASS=" + ss.askpass, "SSH_ASKPASS_REQUIRE=force"}
-}
-
-func (ss session) passwordOptions() []string {
-	return append(natOptions(), "-o", "BatchMode=no", "-o", "PreferredAuthentications=password", "-o", "PubkeyAuthentication=no", "-o", "NumberOfPasswordPrompts=1")
-}
-
-func (ss session) keyOptions(user string) []string {
-	return append(natOptions(), "-o", "BatchMode=yes", "-o", "IdentitiesOnly=yes", "-i", ss.key, user+"@"+ss.ip)
+	for range int(sshReady / pollEvery) {
+		g, err := ss.s.guests.Dial(ctx, t)
+		if err == nil {
+			return g, nil
+		}
+		if err := ss.s.h.Clock.Sleep(ctx, pollEvery); err != nil {
+			return nil, err
+		}
+	}
+	return nil, errors.New("the build VM did not answer in " + sshReady.String())
 }
 
 func (ss session) copy(ctx context.Context, binary string) error {
-	argv := append(ss.passwordOptions(), binary, adminUser+"@"+ss.ip+":"+remoteBin)
-	for range int(sshReady / pollEvery) {
-		out, err := ss.s.h.Run.Output(ctx, system.Cmd{Name: "scp", Args: argv, Env: ss.passwordEnv(), Timeout: 5 * time.Minute})
-		if err != nil {
-			return err
-		}
-		if out.ExitCode == 0 {
-			return nil
-		}
-		if out.ExitCode != 255 {
-			return outputError("scp", out)
-		}
-		if err := ss.s.h.Clock.Sleep(ctx, pollEvery); err != nil {
-			return err
-		}
-	}
-	return errors.New("sshd did not answer in " + sshReady.String())
-}
-
-func (ss session) admin(ctx context.Context, script, env string) error {
-	argv := append(ss.passwordOptions(), adminUser+"@"+ss.ip, "sudo", "env", env, "bash", "-s")
-	out, err := ss.s.h.Run.Output(ctx, system.Cmd{Name: "ssh", Args: argv, Env: ss.passwordEnv(), Stdin: script, Timeout: recipeWait})
+	data, err := ss.s.h.FS.ReadFile(binary)
 	if err != nil {
 		return err
 	}
-	if out.ExitCode != 0 {
-		return outputError("ssh", out)
+	g, err := ss.dial(ctx, adminUser, true)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = g.Close() }()
+	return g.Put(ctx, remoteBin, data, 0o755)
+}
+
+func (ss session) admin(ctx context.Context, script, env string) error {
+	g, err := ss.dial(ctx, adminUser, true)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = g.Close() }()
+	ctx, cancel := context.WithTimeout(ctx, recipeWait)
+	defer cancel()
+	out, err := g.Exec(ctx, contract.GuestCommand{Line: "sudo env " + env + " bash -s", Stdin: strings.NewReader(script)})
+	if err != nil {
+		return err
+	}
+	if out.Code != 0 {
+		return outputError(out)
 	}
 	return nil
 }
 
 func (ss session) cleanup(ctx context.Context, script, user string) error {
-	argv := append(ss.keyOptions(user), "sudo", "bash", "-s")
-	out, err := ss.s.h.Run.Output(ctx, system.Cmd{Name: "ssh", Args: argv, Stdin: script, Timeout: 5 * time.Minute})
+	g, err := ss.dial(ctx, user, false)
 	if err != nil {
 		return err
 	}
-	// invariant: the cleanup powers the VM off under its own session, so ssh answers 0 or 255 (the connection cut by the poweroff); any other code is a failed cleanup.
-	if out.ExitCode != 0 && out.ExitCode != 255 {
-		return outputError("ssh", out)
+	defer func() { _ = g.Close() }()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+	out, err := g.Exec(ctx, contract.GuestCommand{Line: "sudo bash -s", Stdin: strings.NewReader(script)})
+	// invariant: the cleanup powers the VM off under its own session, so the
+	// session ends with 0 or is cut by the poweroff; any other code is a
+	// failed cleanup.
+	if err != nil && ctx.Err() != nil {
+		return err
+	}
+	if err == nil && out.Code != 0 {
+		return outputError(out)
 	}
 	return nil
 }
 
-func outputError(tool string, out system.Output) error {
+func outputError(out contract.GuestResult) error {
 	tail := strings.TrimSpace(out.Stderr)
 	if tail == "" {
 		tail = strings.TrimSpace(out.Stdout)
 	}
 	lines := strings.Split(tail, "\n")
 	tail = strings.Join(lines[max(0, len(lines)-5):], "\n")
-	return fmt.Errorf("%s exited %d: %s", tool, out.ExitCode, tail)
+	return fmt.Errorf("exited %d: %s", out.Code, tail)
 }
 
 func quote(v string) string { return "'" + strings.ReplaceAll(v, "'", `'\''`) + "'" }

@@ -8,6 +8,7 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 	"io"
 	"maps"
+	"net/netip"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,7 +18,6 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
@@ -45,7 +45,7 @@ type vmState struct {
 	guest    string
 	ip       string
 	stopping bool
-	client   system.SSHClient
+	client   Guest
 	cancel   context.CancelFunc
 	in       io.WriteCloser
 	wmu      sync.Mutex
@@ -432,10 +432,12 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState, gen int) {
 		return
 	}
 	ip := addr.String()
-	client, err := d.ssh.Dial(ctx, system.SSHTarget{
-		Addr: hostPort(ip, d.o.GuestPort), User: d.m.VMUser(),
-		KeyPath: d.m.KeyPath(), KnownHosts: d.m.KnownHostsPath(name), Name: name,
-	})
+	at, err := netip.ParseAddrPort(hostPort(ip, d.o.GuestPort))
+	if err != nil {
+		d.guestFailed(ctx, v, err.Error())
+		return
+	}
+	client, err := d.guests.Dial(ctx, name, at)
 	if err != nil {
 		d.guestFailed(ctx, v, err.Error())
 		return

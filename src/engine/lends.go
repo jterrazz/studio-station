@@ -72,7 +72,7 @@ func (d *Daemon) recallExpired(ctx context.Context, only string) {
 	}
 	sort.Strings(vms)
 	for _, vm := range vms {
-		if only != "" && vm != only || only == "" && !d.isRunning(vm) {
+		if only != "" && vm != only || only == "" && !d.isConnected(vm) {
 			continue
 		}
 		var names []string
@@ -87,11 +87,13 @@ func (d *Daemon) recallExpired(ctx context.Context, only string) {
 	}
 }
 
-func (d *Daemon) isRunning(vm string) bool {
+// invariant: the sweep recalls only through a connected guest; a VM still
+// connecting has its expired lends recalled as it connects, before it is ready.
+func (d *Daemon) isConnected(vm string) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	v := d.vms[vm]
-	return v != nil && v.state == StateRunning
+	return v != nil && v.state == StateRunning && v.guest == GuestConnected
 }
 
 func (d *Daemon) recall(ctx context.Context, vm string, names []string) {

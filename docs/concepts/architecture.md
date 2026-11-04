@@ -96,7 +96,7 @@ catalog: imported by domain, present, surface, prompt; imports nothing of the mo
 
 What the test holds, in short: `domain` reaches the machine only through `system` ports; only `platform/local` imports `os/exec`, the network and the process environment; only `output` writes bytes and only `ui/token` holds a colour; only `wire` imports Fang; the catalogue holds values and no function; every domain error type has its wording in `surface/cli/kit`. Each rule has a mutation test, so a rule that stops biting fails the gate.
 
-The tree is moving to families first (machines, apps, settings, ports, awake...), each with its model, `contract/`, `calls/` and `adapter/<tech>/`. Four rules hold that tree: `tree-screams` (`tree_test.go`), `imports` (`imports_test.go`), `technology-words` (`words_test.go`) and `no-model-names` (`models_test.go`). The four list today's offenders (`imports` the packages moved into the new tree as they were) in an allowlist that only shrinks: a line that is no longer true fails the gate until it is removed.
+The tree is moving to families first (machines, apps, settings, ports, awake...), each with its model, `contract/`, `calls/` and `adapter/<tech>/`. Five rules hold that tree: `tree-screams` (`tree_test.go`), `imports` (`imports_test.go`), `technology-words` (`words_test.go`), `no-model-names` (`models_test.go`) and `one-way-into-a-vm` (`vm_test.go`: a VM is reached by its engine's one `Guest` connection alone, no `scp`, an `ssh` exec only to a Mac). The five list today's offenders (`imports` the packages moved into the new tree as they were) in an allowlist that only shrinks: a line that is no longer true fails the gate until it is removed.
 
 ## The path of a request
 

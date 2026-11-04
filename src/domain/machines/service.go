@@ -51,6 +51,9 @@ type Daemon interface {
 	VMs(ctx context.Context) (map[string]DaemonVM, error)
 	Do(ctx context.Context, op, vm string) error
 	Reserve(ctx context.Context, vm string, port int, profile string) (Reserved, error)
+	// invariant: a command inside a VM of this Mac rides the engine's one
+	// connection to it; station reaches a VM no other way.
+	GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error)
 }
 
 type Releaser interface {

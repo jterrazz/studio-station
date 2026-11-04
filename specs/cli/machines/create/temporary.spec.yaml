@@ -1,4 +1,4 @@
-description: 'a temporary VM: cloned, sized, run detached by the daemon, one NAT boot, no tailnet, no host folder'
+description: 'a temporary VM: cloned, sized, run by the daemon, first boot over its guest, no tailnet, no dir'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/daemon-vm/
@@ -16,7 +16,7 @@ runs:
               contains:
                   - 'tart clone station-image-linux-2026.11.07 linux-1'
                   - 'tart set linux-1 --cpu 4 --memory 8192 --disk-size 50'
-                  - 'vmu@127.0.0.1 sudo bash -s'
+                  - 'vm-sshd exec sudo bash -s'
           .firstboot.stdin:
               contains:
                   - "hostnamectl set-hostname 'linux-1'"

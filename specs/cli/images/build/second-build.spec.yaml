@@ -2,7 +2,9 @@ description: 'a second build the same UTC day is version .2, beside the first'
 fixture:
     - ../__fixtures__/stubs/
     - ./__fixtures__/build/
+    - ./__fixtures__/served/
     - ./__fixtures__/second-build/
+serve: sshd
 runs:
     - command: 'images build linux --binary $HOME/station-linux'
       exit: 0

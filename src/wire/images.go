@@ -5,6 +5,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/images"
+	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
 	imagescmd "github.com/jterrazz/studio-station/src/surface/cli/images"
 	imagesbuild "github.com/jterrazz/studio-station/src/surface/cli/images/build"
 	imagesdelete "github.com/jterrazz/studio-station/src/surface/cli/images/delete"
@@ -16,11 +17,12 @@ func (m machine) images() *images.Service {
 	if current, err := m.store.Load(); err == nil && current.VMUser != "" {
 		user = current.VMUser
 	}
-	return images.New(m.host, m.hypervisor(), catalog.Images, images.Options{
-		Paths:   m.paths,
-		Version: Version(),
-		User:    user,
-		Here:    m.kind,
+	return images.New(m.host, m.hypervisor(), ssh.New(), catalog.Images, images.Options{
+		Paths:     m.paths,
+		Version:   Version(),
+		User:      user,
+		Here:      m.kind,
+		GuestPort: m.guestPort(),
 	})
 }
 

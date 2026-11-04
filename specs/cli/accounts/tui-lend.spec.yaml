@@ -4,7 +4,7 @@ fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
     - ../__fixtures__/terminal/
-    - ../__fixtures__/lend/
+    - ../../__fixtures__/lend/
 env: terminal
 serve: sshd
 runs:
@@ -52,5 +52,5 @@ runs:
           .calls:
               contains:
                   - studio credentials export operator:claude:oauth-token
-                  - ssh api env STUDIO_CREDENTIALS_BACKEND=file studio credentials import
-                  - ssh api env STUDIO_CREDENTIALS_BACKEND=file studio credentials delete operator:claude:oauth-token
+                  - vm-sshd exec STUDIO_CREDENTIALS_BACKEND=file studio credentials import
+                  - vm-sshd exec STUDIO_CREDENTIALS_BACKEND=file studio credentials delete operator:claude:oauth-token

@@ -103,7 +103,7 @@ func (s *Service) StopDirect(ctx context.Context, name string) error {
 	if err := s.writeRecord(rec); err != nil {
 		return err
 	}
-	if err := s.powerOff(ctx, name, s.VMUser()); err != nil {
+	if err := s.powerOff(ctx, name); err != nil {
 		return err
 	}
 	s.retireAgent(ctx, name)

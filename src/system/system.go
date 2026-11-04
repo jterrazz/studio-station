@@ -112,19 +112,6 @@ type Sockets interface {
 	Join(a, b Conn)
 }
 
-type SSHTarget struct{ Addr, User, KeyPath, KnownHosts, Name string }
-
-type SSHClient interface {
-	Exec(ctx context.Context, command string, stdin io.Reader, stdout, stderr io.Writer) (exitCode int, err error)
-	Forward(ctx context.Context, ip string, port int) (Conn, error)
-	Close() error
-	Done() <-chan struct{}
-}
-
-type SSH interface {
-	Dial(ctx context.Context, t SSHTarget) (SSHClient, error)
-}
-
 type Clock interface {
 	Now() time.Time
 	Sleep(ctx context.Context, d time.Duration) error

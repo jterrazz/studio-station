@@ -2,6 +2,8 @@ description: 'a bare build with the current recipe hash does nothing and never c
 fixture:
     - ../__fixtures__/stubs/
     - ./__fixtures__/build/
+    - ./__fixtures__/served/
+serve: sshd
 runs:
     - command: 'images build linux --binary $HOME/station-linux'
       exit: 0
