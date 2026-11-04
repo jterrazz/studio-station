@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/remote/each"
 )
@@ -26,17 +27,32 @@ func TestEveryMacAnswersAsItComesAndAFastOneIsNotKeptWaiting(t *testing.T) {
 	}
 }
 
-func TestAMacSlowerThanItsBudgetIsItsOwnFindingNotTheOthersDelay(t *testing.T) {
+func TestAMiniAnsweringAfterEightSecondsIsCutAtFiveAndTheStudioIsNotKeptWaiting(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		got := each.All(t.Context(), []string{"mac-mini", "studio"}, func(ctx context.Context, mac string) (string, error) {
+		before, cancelBefore := context.WithTimeout(t.Context(), 5*time.Second-time.Millisecond)
+		defer cancelBefore()
+		after, cancelAfter := context.WithTimeout(t.Context(), 5*time.Second+time.Millisecond)
+		defer cancelAfter()
+		for r := range each.Do(t.Context(), []string{"mac-mini", "studio"}, func(ctx context.Context, mac string) (string, error) {
 			if mac == "mac-mini" {
-				<-ctx.Done()
-				return "", ctx.Err()
+				eight, cancel := context.WithTimeout(t.Context(), 8*time.Second)
+				defer cancel()
+				select {
+				case <-eight.Done():
+				case <-ctx.Done():
+					return "", ctx.Err()
+				}
 			}
 			return mac, nil
-		})
-		if !errors.Is(got["mac-mini"].Err, context.DeadlineExceeded) || got["studio"].Value != "studio" {
-			t.Errorf("a mini that never answers and a quick studio: %+v, want the mini out of its budget and the studio answered", got)
+		}) {
+			switch {
+			case r.Mac == "studio" && before.Err() != nil:
+				t.Errorf("the studio's answer was kept waiting past 5s")
+			case r.Mac == "mac-mini" && !errors.Is(r.Err, context.DeadlineExceeded):
+				t.Errorf("the mini that answers after 8s: %v, want out of its budget", r.Err)
+			case r.Mac == "mac-mini" && (before.Err() == nil || after.Err() != nil):
+				t.Errorf("the mini was cut before 5s or after it, want at 5s")
+			}
 		}
 	})
 }
@@ -56,8 +72,8 @@ func TestAtMostFourMacsAreAskedAtOnce(t *testing.T) {
 			close(done)
 		}()
 		synctest.Wait()
-		if n := asking.Load(); n != each.Width {
-			t.Errorf("%d Macs were asked at once, want %d", n, each.Width)
+		if n := asking.Load(); n != 4 {
+			t.Errorf("%d of 7 Macs were asked at once, want 4", n)
 		}
 		close(release)
 		<-done
