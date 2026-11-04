@@ -58,8 +58,8 @@ type Options struct {
 	PID       int
 	Tick      time.Duration
 	GuestPort int
-	// value: the absolute pmset a lid close under --lid runs displaysleepnow with.
-	Pmset string
+	// value: this Mac's power, whose sessions the daemon holds; nil is none.
+	Power power.Port
 	// value: the power page a subscription streams, built by the caller's pages.
 	PowerPage func(power.View) any
 	// value: the other pages a subscription streams (the menu bar's), by id.

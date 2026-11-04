@@ -2,23 +2,73 @@ package local
 
 import (
 	"context"
+	"errors"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/platform/darwin"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const watchEvery = time.Second
 
-type macPower struct {
-	iokit darwin.Power
+var ErrPowerUnsupported = errors.New("no power management here: macOS only")
+
+type PowerReading = darwin.Reading
+
+type Power interface {
+	// value: the door to this Mac's power management an adapter is given: an
+	// idle assertion, the clamshell flag, a reading, and how a watch learns that
+	// the reading moved.
+	HoldIdle(name string) (release func(), err error)
+	SetClamshellSleep(disabled bool) error
+	Read() (PowerReading, error)
+	// invariant: one tick at every period and at every post that the
+	// reading may have moved, until ctx ends; nil where there is no power
+	// management.
+	Ticks(ctx context.Context) <-chan struct{}
 }
 
-func newPower() system.Power {
+func ticks(ctx context.Context, every time.Duration, wake <-chan struct{}) <-chan struct{} {
+	out := make(chan struct{}, 1)
+	go func() {
+		defer close(out)
+		t := time.NewTicker(every)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+			case <-wake:
+			}
+			select {
+			case out <- struct{}{}:
+			default:
+			}
+		}
+	}()
+	return out
+}
+
+func NewPower(env []string) Power {
+	vars := map[string]string{}
+	for _, kv := range env {
+		if k, v, ok := strings.Cut(kv, "="); ok {
+			vars[k] = v
+		}
+	}
+	if dir := vars["STATION_POWER_STUB"]; filepath.IsAbs(dir) {
+		return &stubPower{dir: dir, calls: filepath.Join(identity{vars: vars}.Home(), ".calls")}
+	}
 	if !darwin.Supported {
 		return noPower{}
 	}
 	return &macPower{}
+}
+
+type macPower struct {
+	iokit darwin.Power
 }
 
 func (p *macPower) HoldIdle(name string) (func(), error) { return darwin.HoldIdle(name) }
@@ -27,34 +77,18 @@ func (p *macPower) SetClamshellSleep(disabled bool) error {
 	return darwin.SetClamshellSleep(disabled)
 }
 
-func (p *macPower) Read() (system.PowerReading, error) {
-	r := p.iokit.Read()
-	return system.PowerReading{
-		Lid: r.Lid, Source: r.Source, HasBattery: r.HasBattery, Percent: r.Percent,
-		Charging: r.Charging, LowPower: r.LowPower, Thermal: r.Thermal,
-	}, nil
-}
+func (p *macPower) Read() (PowerReading, error) { return p.iokit.Read(), nil }
 
-// invariant: the watch compares a reading with the last one a second and on
-// every IOPowerSources notification, and sends one Event per field that moved,
-// so a falling percent ends a session within the second it is posted; Low
-// Power Mode is read by the guard loop's own poll.
-func (p *macPower) Watch(ctx context.Context) <-chan system.PowerEvent {
-	return watchReadings(ctx, p.Read, watchEvery, darwin.PowerSourcesChanged(ctx))
+func (p *macPower) Ticks(ctx context.Context) <-chan struct{} {
+	return ticks(ctx, watchEvery, darwin.PowerSourcesChanged(ctx))
 }
 
 type noPower struct{}
 
-func (noPower) HoldIdle(string) (func(), error) { return nil, system.ErrPowerUnsupported }
+func (noPower) HoldIdle(string) (func(), error) { return nil, ErrPowerUnsupported }
 
-func (noPower) SetClamshellSleep(bool) error { return system.ErrPowerUnsupported }
+func (noPower) SetClamshellSleep(bool) error { return ErrPowerUnsupported }
 
-func (noPower) Read() (system.PowerReading, error) {
-	return system.PowerReading{}, system.ErrPowerUnsupported
-}
+func (noPower) Read() (PowerReading, error) { return PowerReading{}, ErrPowerUnsupported }
 
-func (noPower) Watch(context.Context) <-chan system.PowerEvent {
-	out := make(chan system.PowerEvent)
-	close(out)
-	return out
-}
+func (noPower) Ticks(context.Context) <-chan struct{} { return nil }

@@ -26,7 +26,7 @@ func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 func (m machine) daemon(env kit.Env) *engine.Daemon {
 	return engine.New(m.host, engineHypervisor{m.hypervisor()}, ssh.New(), m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths)), m.store, engine.Options{
 		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
-		Pmset: m.pmset(), PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
+		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: daemonLends{m.secrets()},
 		Feeds: map[string]engine.Feed{engine.PageMenubar: m.menubarFeed(env)},
 	})

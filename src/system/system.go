@@ -13,8 +13,6 @@ var (
 	ErrTimeout     = errors.New("command timed out")
 	ErrCrossDevice = errors.New("another volume: a rename cannot move it")
 	ErrWildcard    = errors.New("refused: station never listens on every interface")
-
-	ErrPowerUnsupported = errors.New("no power management here: macOS only")
 )
 
 type Stream int
@@ -130,32 +128,6 @@ type Clock interface {
 	Sleep(ctx context.Context, d time.Duration) error
 }
 
-type PowerReading struct {
-	// value: "open", "closed", or "" on a Mac without a lid.
-	Lid string
-	// value: "ac" or "battery".
-	Source     string
-	HasBattery bool
-	Percent    int
-	Charging   bool
-	LowPower   bool
-	// value: the thermal pressure level, 0 nominal, 1 moderate, 2 heavy,
-	// 3 trapping, 4 sleeping.
-	Thermal int
-}
-
-type PowerEvent struct {
-	// value: "thermal", "source", "lid" or "battery" (its percent).
-	Kind string
-}
-
-type Power interface {
-	HoldIdle(name string) (release func(), err error)
-	SetClamshellSleep(disabled bool) error
-	Read() (PowerReading, error)
-	Watch(ctx context.Context) <-chan PowerEvent
-}
-
 type Host struct {
 	Run     Runner
 	FS      FS
@@ -163,5 +135,4 @@ type Host struct {
 	Net     Net
 	Sockets Sockets
 	Clock   Clock
-	Power   Power
 }

@@ -11,6 +11,8 @@ import (
 
 	"charm.land/fang/v2"
 
+	awakemacos "github.com/jterrazz/studio-station/src/awake/adapter/macos"
+	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/probe"
@@ -48,7 +50,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		output.Stream{W: stderr, IsTerminal: errTTY, Width: widthOf(stderr, errTTY), Dark: dark},
 		vars,
 	)
-	here := resolve(local.New(env, stdin, stdout, stderr), vars)
+	here := resolve(local.New(env, stdin, stdout, stderr), local.NewPower(env), vars)
 	kenv := kit.Env{
 		Out:         writer,
 		Prompt:      output.Terminal(stdin, stderr),
@@ -165,16 +167,17 @@ func withToolBins(env []string) []string {
 }
 
 type machine struct {
-	pool  *probe.Pool
-	host  system.Host
-	vars  map[string]string
-	kind  catalog.MachineKind
-	paths settings.Paths
-	store settings.Store
-	where page.Context
+	pool      *probe.Pool
+	host      system.Host
+	powerPort awakecontract.Power
+	vars      map[string]string
+	kind      catalog.MachineKind
+	paths     settings.Paths
+	store     settings.Store
+	where     page.Context
 }
 
-func resolve(h system.Host, vars map[string]string) machine {
+func resolve(h system.Host, door local.Power, vars map[string]string) machine {
 	home := h.Env.Home()
 	root := func(name, fallback string) string {
 		if dir := vars[name]; filepath.IsAbs(dir) {
@@ -199,7 +202,7 @@ func resolve(h system.Host, vars map[string]string) machine {
 	kind := settings.DetectKind(context.Background(), h, vars["STATION_MACHINE_KIND"])
 	store := settings.NewStore(h.FS, paths)
 	current, _ := store.Load()
-	return machine{
+	m := machine{
 		pool:  probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
 		host:  h,
 		vars:  vars,
@@ -208,6 +211,8 @@ func resolve(h system.Host, vars map[string]string) machine {
 		store: store,
 		where: page.Context{Machine: hereName(current.Here, h.Env.Hostname()), Kind: string(kind), Registered: current.Here != ""},
 	}
+	m.powerPort = awakemacos.New(door, h.Run, m.systemRoot())
+	return m
 }
 
 // value: the name the fleet shows this machine by: the one setup gave it, else

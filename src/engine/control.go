@@ -10,6 +10,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -35,6 +36,8 @@ type Job interface {
 }
 
 type ControlOptions struct {
+	// value: this Mac's power, whose clamshell a stop resets; nil is none.
+	Power    power.Port
 	Here     catalog.MachineKind
 	HereName string
 	State    string
@@ -186,7 +189,7 @@ func (c *Control) Stop(ctx context.Context, w Work) (StopReport, error) {
 		r.VMs = c.stopDirect(ctx, w)
 		// invariant: a clamshell mask a dead daemon left is reset here, by the
 		// same call the daemon makes, so a stop never leaves the lid held.
-		if c.h.Power != nil && c.h.Power.SetClamshellSleep(false) == nil {
+		if c.o.Power != nil && c.o.Power.Clamshell(false) == nil {
 			r.Power = PowerReset
 		}
 	}

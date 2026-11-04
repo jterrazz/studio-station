@@ -8,22 +8,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
 type port struct {
-	r     system.PowerReading
+	r     awake.Reading
 	calls []string
 }
 
-func (p *port) HoldIdle(name string) (func(), error) {
+func (p *port) Capabilities() contract.PowerCaps {
+	return contract.PowerCaps{Battery: p.r.HasBattery, Lid: p.r.Lid != "", Thermal: true}
+}
+
+func (p *port) Hold(name string) (func(), error) {
 	p.calls = append(p.calls, "assert "+name)
 	return func() { p.calls = append(p.calls, "release") }, nil
 }
 
-func (p *port) SetClamshellSleep(disabled bool) error {
+func (p *port) Clamshell(disabled bool) error {
 	if disabled {
 		p.calls = append(p.calls, "clamshell disabled")
 	} else {
@@ -32,9 +37,14 @@ func (p *port) SetClamshellSleep(disabled bool) error {
 	return nil
 }
 
-func (p *port) Read() (system.PowerReading, error) { return p.r, nil }
+func (p *port) Read() (awake.Reading, error) { return p.r, nil }
 
-func (p *port) Watch(context.Context) <-chan system.PowerEvent { return nil }
+func (p *port) Watch(context.Context) <-chan awake.Event { return nil }
+
+func (p *port) DisplaySleepNow(context.Context) error {
+	p.calls = append(p.calls, "display sleep")
+	return nil
+}
 
 func (p *port) count(call string) int {
 	n := 0
@@ -50,19 +60,17 @@ type world struct {
 	t       *testing.T
 	port    *port
 	clock   *systemtest.Clock
-	run     *systemtest.Runner
 	m       *power.Machine
 	notices []power.End
 }
 
-func laptop() system.PowerReading {
-	return system.PowerReading{Lid: "open", Source: "ac", HasBattery: true, Percent: 80}
+func laptop() awake.Reading {
+	return awake.Reading{Lid: "open", Source: "ac", HasBattery: true, Percent: 80}
 }
 
-func newWorld(t *testing.T, r system.PowerReading) *world {
-	w := &world{t: t, port: &port{r: r}, clock: &systemtest.Clock{At: time.Date(2026, 11, 3, 10, 0, 0, 0, time.UTC)}, run: systemtest.NewRunner(t)}
-	w.run.On("/usr/bin/pmset", "displaysleepnow")
-	w.m = power.New(w.port, w.run, w.clock, power.Options{Pmset: "/usr/bin/pmset", Notice: func(e power.End) { w.notices = append(w.notices, e) }})
+func newWorld(t *testing.T, r awake.Reading) *world {
+	w := &world{t: t, port: &port{r: r}, clock: &systemtest.Clock{At: time.Date(2026, 11, 3, 10, 0, 0, 0, time.UTC)}}
+	w.m = power.New(w.port, w.clock, power.Options{Notice: func(e power.End) { w.notices = append(w.notices, e) }})
 	return w
 }
 
@@ -83,7 +91,7 @@ func (w *world) pass(d time.Duration) {
 	}
 }
 
-func (w *world) event(kind string) { w.m.Observe(context.Background(), system.PowerEvent{Kind: kind}) }
+func (w *world) event(kind string) { w.m.Observe(context.Background(), awake.Event{Kind: kind}) }
 
 func (w *world) ended(reason string) {
 	w.t.Helper()
@@ -111,14 +119,14 @@ func (w *world) held() {
 
 func TestEachGuardPastItsThresholdRefusesTheStart(t *testing.T) {
 	for name, c := range map[string]struct {
-		r     func(*system.PowerReading)
+		r     func(*awake.Reading)
 		req   power.Request
 		guard string
 	}{
-		"battery":   {func(r *system.PowerReading) { r.Source, r.Percent = "battery", 18 }, power.Request{}, power.ReasonBattery},
-		"low power": {func(r *system.PowerReading) { r.LowPower = true }, power.Request{}, power.ReasonLowPower},
-		"thermal":   {func(r *system.PowerReading) { r.Thermal = 3 }, power.Request{}, power.ReasonThermal},
-		"lid":       {func(r *system.PowerReading) { r.Source, r.Lid = "battery", "closed" }, power.Request{Lid: true}, power.ReasonLid},
+		"battery":   {func(r *awake.Reading) { r.Source, r.Percent = "battery", 18 }, power.Request{}, power.ReasonBattery},
+		"low power": {func(r *awake.Reading) { r.LowPower = true }, power.Request{}, power.ReasonLowPower},
+		"thermal":   {func(r *awake.Reading) { r.Thermal = 3 }, power.Request{}, power.ReasonThermal},
+		"lid":       {func(r *awake.Reading) { r.Source, r.Lid = "battery", "closed" }, power.Request{Lid: true}, power.ReasonLid},
 	} {
 		t.Run(name, func(t *testing.T) {
 			r := laptop()
@@ -231,9 +239,9 @@ func TestHeavyThermalOnACNeverEnds(t *testing.T) {
 }
 
 func TestTheLidGuardTripsInEitherOrder(t *testing.T) {
-	for name, order := range map[string][2]func(*system.PowerReading){
-		"lid then battery": {func(r *system.PowerReading) { r.Lid = "closed" }, func(r *system.PowerReading) { r.Source = "battery" }},
-		"battery then lid": {func(r *system.PowerReading) { r.Source = "battery" }, func(r *system.PowerReading) { r.Lid = "closed" }},
+	for name, order := range map[string][2]func(*awake.Reading){
+		"lid then battery": {func(r *awake.Reading) { r.Lid = "closed" }, func(r *awake.Reading) { r.Source = "battery" }},
+		"battery then lid": {func(r *awake.Reading) { r.Source = "battery" }, func(r *awake.Reading) { r.Lid = "closed" }},
 	} {
 		t.Run(name, func(t *testing.T) {
 			w := newWorld(t, laptop())
@@ -266,9 +274,8 @@ func TestTheDisplaySleepsOnLidCloseUnderTheLidOnly(t *testing.T) {
 			w.awake(power.Request{Lid: lid})
 			w.port.r.Lid = "closed"
 			w.event("lid")
-			ran := slices.ContainsFunc(w.run.Calls, func(c system.Cmd) bool { return c.Name == "/usr/bin/pmset" })
-			if ran != lid {
-				t.Fatalf("pmset ran = %v, want %v: %v", ran, lid, w.run.Calls)
+			if slept := w.port.count("display sleep") == 1; slept != lid {
+				t.Fatalf("the display slept = %v, want %v: %v", slept, lid, w.port.calls)
 			}
 		})
 	}
@@ -277,7 +284,7 @@ func TestTheDisplaySleepsOnLidCloseUnderTheLidOnly(t *testing.T) {
 func TestAHeldSessionLogsItsHeartbeatEvery30Seconds(t *testing.T) {
 	w := newWorld(t, laptop())
 	var beats []string
-	w.m = power.New(w.port, w.run, w.clock, power.Options{Log: func(line string) {
+	w.m = power.New(w.port, w.clock, power.Options{Log: func(line string) {
 		if strings.HasPrefix(line, "held ") {
 			beats = append(beats, line)
 		}

@@ -6,6 +6,7 @@ import (
 	"go/types"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -41,7 +42,7 @@ func unsafePower() []string {
 }
 
 func powerCode(rel string) bool {
-	for _, dir := range []string{"src/domain/power/", "src/pages/power/", "src/surface/cli/power/", "src/platform/local/power_", "src/platform/darwin/power_"} {
+	for _, dir := range []string{"src/awake/", "src/domain/power/", "src/pages/power/", "src/surface/cli/power/", "src/platform/local/power_", "src/platform/darwin/power_"} {
 		if strings.HasPrefix(rel, dir) {
 			return true
 		}
@@ -49,9 +50,14 @@ func powerCode(rel string) bool {
 	return rel == "src/wire/power.go" || rel == "src/engine/power.go"
 }
 
+func powerPackages() []string {
+	return []string{"awake", "awake/contract", "awake/adapter/macos", "domain/power"}
+}
+
 // invariant: rule 23: Power is safe by construction: no string under src/
 // asks for a display assertion or disablesleep, the power code holds no
-// sudo, and domain/power reaches no file system: no file is written for power.
+// sudo, and the awake family, its macOS adapter and domain/power reach no
+// file system: no file is written for power.
 func rulePowerSafe(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
@@ -73,11 +79,11 @@ func rulePowerSafe(w *world) []finding {
 					out = append(out, finding{"power", f.at(n.Pos()), "the power code never runs sudo"})
 				}
 			case *ast.Ident:
-				if f.pkg != "domain/power" {
+				if !slices.Contains(powerPackages(), f.pkg) {
 					return true
 				}
-				if obj := f.info.Uses[n]; obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == module+"/src/system" && (obj.Name() == "FS" || isFS(obj.Type())) {
-					out = append(out, finding{"power", f.at(n.Pos()), "domain/power reaches no file system"})
+				if obj := f.info.Uses[n]; obj != nil && isFS(obj.Type()) {
+					out = append(out, finding{"power", f.at(n.Pos()), f.pkg + " reaches no file system"})
 				}
 			}
 			return true
@@ -87,8 +93,8 @@ func rulePowerSafe(w *world) []finding {
 }
 
 func isFS(t types.Type) bool {
-	named, ok := t.(*types.Named)
-	return ok && named.Obj().Name() == "FS"
+	named, ok := types.Unalias(t).(*types.Named)
+	return ok && named.Obj().Name() == "FS" && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == module+"/src/system"
 }
 
 func powerRaw(w *world) []finding {
