@@ -9,6 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
+	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
 	toolsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/tools"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -19,7 +20,7 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 			Here:     m.where,
 			Status:   statusService(env, m),
 			Tools:    toolsscreen.Deps{Calls: env.Calls, Target: env.Target, Forget: toolsService(env, m).Forget},
-			Config:   configService(m),
+			Config:   configscreen.Deps{Calls: env.Calls, Target: env.Target, Defaults: configService(m).Defaults},
 			Storage:  m.storage(env),
 			Machines: m.machines(true),
 			Images:   m.images(),

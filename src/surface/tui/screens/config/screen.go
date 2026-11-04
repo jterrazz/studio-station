@@ -5,33 +5,37 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/jterrazz/studio-station/src/domain/config"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
+	"github.com/jterrazz/studio-station/src/settings"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
 const ID = "config"
 
-type Config interface {
-	Watch(ctx context.Context) (<-chan []config.Report, error)
-	Defaults(item string) map[string]string
-	CheckInstall(names []string, interactive bool) error
-	Install(ctx context.Context, name string, values map[string]string, interactive bool) (config.Change, error)
-	CheckUninstall(names []string) error
-	Uninstall(ctx context.Context, name string) (config.Change, error)
+type Deps struct {
+	Calls  call.Router
+	Target machine.Ref
+	// value: the values an item's form starts from.
+	Defaults func(item string) map[string]string
 }
 
 type Model struct {
-	tab.View[[]config.Report]
-	ctx    context.Context
-	config Config
+	tab.View[[]settings.Report]
+	ctx context.Context
+	d   Deps
 }
 
-func New(ctx context.Context, c Config, here page.Context, describe tab.Describe) Model {
-	source := func(watch context.Context, _ bool) (<-chan []config.Report, error) { return c.Watch(watch) }
-	build := func(r []config.Report) page.Page { return pageconfig.Items(r, here) }
-	return Model{View: tab.NewView(ID, "Config", "items", here, source, build, describe), ctx: ctx, config: c}
+func New(ctx context.Context, d Deps, here page.Context, describe tab.Describe) Model {
+	source := func(watch context.Context, _ bool) (<-chan []settings.Report, error) {
+		return tab.Values(call.Follow(watch, d.Calls, d.Target, settingscalls.List, settingscalls.ListIn{}, nil))
+	}
+	build := func(r []settings.Report) page.Page { return pageconfig.Items(r, here) }
+	return Model{View: tab.NewView(ID, "Config", "items", here, source, build, describe), ctx: ctx, d: d}
 }
 
 func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
@@ -48,7 +52,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		for _, r := range m.Last {
 			if r.Item.Name == name && len(r.Item.Inputs) > 0 {
 				inputs = true
-				m.View, act = m.Fill(pageconfig.InputsForm(name, r.Item.Inputs, m.config.Defaults(name)), func(values map[string]string) tea.Cmd {
+				m.View, act = m.Fill(pageconfig.InputsForm(name, r.Item.Inputs, m.d.Defaults(name)), func(values map[string]string) tea.Cmd {
 					return m.start(m.install(name, values))
 				})
 			}
@@ -69,25 +73,31 @@ func (m Model) start(run tea.Cmd) tea.Cmd {
 
 func (m Model) install(name string, values map[string]string) tea.Cmd {
 	return tab.Exec(ID, func() (tab.Status, error) {
-		if err := m.config.CheckInstall([]string{name}, true); err != nil {
-			return tab.Status{}, err
+		in := settingscalls.InstallIn{Names: []string{name}, Interactive: true}
+		if values != nil {
+			in.Values = map[string]map[string]string{name: values}
 		}
-		change, err := m.config.Install(m.ctx, name, values, true)
-		return outcome("installed", change), err
+		changes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, settingscalls.Install, in, nil)
+		return outcome("installed", name, changes), err
 	})
 }
 
 func (m Model) uninstall(name string) tea.Cmd {
 	return tab.Exec(ID, func() (tab.Status, error) {
-		if err := m.config.CheckUninstall([]string{name}); err != nil {
-			return tab.Status{}, err
-		}
-		change, err := m.config.Uninstall(m.ctx, name)
-		return outcome("uninstalled", change), err
+		var changes []settings.Change
+		err := confirm.Answered(func(answer string) (err error) {
+			changes, err = call.Invoke(m.ctx, m.d.Calls, m.d.Target, settingscalls.Uninstall, settingscalls.UninstallIn{Names: []string{name}, Confirm: answer}, nil)
+			return err
+		})
+		return outcome("uninstalled", name, changes), err
 	})
 }
 
-func outcome(done string, c config.Change) tab.Status {
+func outcome(done, name string, changes []settings.Change) tab.Status {
+	c := settings.Change{Item: name}
+	if len(changes) > 0 {
+		c = changes[0]
+	}
 	detail := ""
 	for _, s := range c.Steps {
 		if s.State == c.Result {

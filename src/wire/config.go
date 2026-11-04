@@ -9,6 +9,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
+	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 	configcmd "github.com/jterrazz/studio-station/src/surface/cli/config"
 	configinstall "github.com/jterrazz/studio-station/src/surface/cli/config/install"
 	configuninstall "github.com/jterrazz/studio-station/src/surface/cli/config/uninstall"
@@ -17,10 +18,31 @@ import (
 
 func configCommand(env kit.Env, m machine) *cobra.Command {
 	service := configService(m)
-	return configcmd.Command(configcmd.Deps{Config: service, Here: m.where}, env,
-		configinstall.Command(configinstall.Deps{Config: service, Here: m.where}, env),
-		configuninstall.Command(configuninstall.Deps{Config: service, Here: m.where}, env),
+	names := func(keep func(catalog.ConfigItem) bool) func() []string {
+		return func() []string {
+			var out []string
+			for _, it := range service.Placed() {
+				if keep(it) {
+					out = append(out, it.Name)
+				}
+			}
+			return out
+		}
+	}
+	return configcmd.Command(configcmd.Deps{Names: names(func(catalog.ConfigItem) bool { return true }), Here: m.where}, env,
+		configinstall.Command(configinstall.Deps{Names: names(func(catalog.ConfigItem) bool { return true }), Here: m.where}, env),
+		configuninstall.Command(configuninstall.Deps{Reversible: names(func(it catalog.ConfigItem) bool { return it.Reversible }), Here: m.where}, env),
 	)
+}
+
+// value: an item's values asked in a form at the owner's terminal.
+type configAsk struct {
+	config *config.Service
+	ask    kit.Asker
+}
+
+func (a configAsk) Values(it catalog.ConfigItem) (map[string]string, error) {
+	return a.ask.Form(pageconfig.InputsForm(it.Name, it.Inputs, a.config.Defaults(it.Name)))
 }
 
 func configService(m machine) *config.Service {

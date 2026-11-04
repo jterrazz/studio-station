@@ -6,7 +6,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/domain/accounts"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
@@ -29,7 +28,7 @@ type Deps struct {
 	Here     page.Context
 	Status   homescreen.Status
 	Tools    toolsscreen.Deps
-	Config   *config.Service
+	Config   configscreen.Deps
 	Storage  *storage.Service
 	Machines *machines.Service
 	Images   *images.Service
