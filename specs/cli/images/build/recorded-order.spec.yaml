@@ -1,4 +1,4 @@
-description: "a build copies station in and runs admin's recipe, then vm_user's cleanup, waits for the poweroff, then records"
+description: "a build copies station in, runs the recipe then the cleanup, waits for the poweroff, records"
 fixture:
     - ../__fixtures__/stubs/
     - ./__fixtures__/build/

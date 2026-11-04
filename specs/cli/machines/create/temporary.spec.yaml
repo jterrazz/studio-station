@@ -1,4 +1,4 @@
-description: 'a temporary VM: cloned, sized, run detached by the daemon, one first boot over its guest connection, no tailnet, no host folder'
+description: 'a temporary VM: cloned, sized, run by the daemon, first boot over its guest, no tailnet, no dir'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/daemon-vm/
