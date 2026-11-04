@@ -23,7 +23,7 @@ func sshExecOwners() []string { return []string{"remote/adapter/sshstdio", "mach
 // shrinks; a line no longer true fails the gate until removed.
 func sshExecTolerated() map[string]string {
 	return map[string]string{
-		"src/domain/machines/probe.go": "L16: a Mac's probe, over its engine",
+		"src/domain/machines/probe.go": "L20: a Mac's probe, over its engine, once probe is an alias of the machines calls",
 	}
 }
 
