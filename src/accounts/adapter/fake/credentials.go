@@ -15,10 +15,10 @@ type Credentials struct {
 
 func CredentialsOf(w *world.World, vm string) *Credentials { return &Credentials{w: w, vm: vm} }
 
-func (c *Credentials) Import(stdin []byte) error {
+func (c *Credentials) Import(stdin []byte) (imported bool) {
 	var values map[string]string
-	if err := json.Unmarshal(stdin, &values); err != nil {
-		return err
+	if json.Unmarshal(stdin, &values) != nil {
+		return false
 	}
 	c.w.Lock()
 	defer c.w.Unlock()
@@ -29,7 +29,7 @@ func (c *Credentials) Import(stdin []byte) error {
 	for name, v := range values {
 		m.Secrets[name] = v
 	}
-	return nil
+	return true
 }
 
 func (c *Credentials) Delete(names []string) {

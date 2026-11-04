@@ -73,9 +73,9 @@ func SharesSection(shared []model.Shared, now time.Time) page.Section {
 	return s
 }
 
-// value: the Accounts section as the CLI prints it piped: the machine's own
-// sign-ins, one row per provider, then the shares it holds or makes.
 func List(r accounts.Report, shared []model.Shared) page.Page {
+	// value: the Accounts section as the CLI prints it piped: the machine's
+	// own sign-ins, one row per provider, then the shares it holds or makes.
 	r = r.Resolved()
 	s := page.Section{ID: "records", Title: "Accounts", Role: page.Banner, Columns: []page.Column{
 		{Key: "provider", Kind: page.KindText}, {Key: "state", Kind: page.KindText}, {Key: "who", Kind: page.KindText},

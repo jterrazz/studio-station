@@ -784,8 +784,8 @@ func (g worldGuest) credentials(cmd contract.GuestCommand) (contract.GuestResult
 				return contract.GuestResult{}, true, err
 			}
 		}
-		if err := store.Import(in); err != nil {
-			return contract.GuestResult{Code: 1, Stderr: "studio: " + err.Error() + "\n"}, true, nil
+		if !store.Import(in) {
+			return contract.GuestResult{Code: 1, Stderr: "studio: the import is not a JSON object of names\n"}, true, nil
 		}
 		return contract.GuestResult{}, true, nil
 	case strings.HasPrefix(cmd.Line, secrets.VMStudio("delete")+" "):

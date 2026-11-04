@@ -15,9 +15,11 @@ const (
 	LongestShare     = 7 * 24 * time.Hour
 )
 
-// value: the share list a Mac keeps when its preferences name none: every
-// session secret and the Claude token (decision A4).
-func DefaultShareList() []string { return []string{"session:*", catalog.ClaudeTokenName} }
+func DefaultShareList() []string {
+	// value: the share list a Mac keeps when its preferences name none:
+	// every session secret and the Claude token (decision A4).
+	return []string{"session:*", catalog.ClaudeTokenName}
+}
 
 type Share struct {
 	Name  string    `json:"name"`
@@ -79,9 +81,9 @@ func Shareable(name string, shareList []string) bool {
 	return false
 }
 
-// value: the secret whose copy carries the account's right into a VM; an
-// account with none is shared with no VM.
 func SecretOf(account string) (string, bool) {
+	// value: the secret whose copy carries the account's right into a VM;
+	// an account with none is shared with no VM.
 	i := slices.IndexFunc(catalog.LendScopes, func(sc catalog.LendScope) bool { return sc.Provider == account })
 	if i < 0 {
 		return "", false

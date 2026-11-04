@@ -132,11 +132,8 @@ func (s *Shares) Migrate(context.Context) error {
 	// key move into the one file once, merged by name with any kept there,
 	// and leave the record; a second run finds none and writes nothing.
 	entries, err := s.files.ReadDir(s.records)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
 	if err != nil {
-		return nil
+		return store.OnlyNewer(err)
 	}
 	held, err := s.load()
 	if err != nil {

@@ -1,6 +1,7 @@
 package jsonfile_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -52,7 +53,7 @@ func TestAV2RecordsSharesMoveOutOnce(t *testing.T) {
 	if err := s.Migrate(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if again, _ := os.ReadFile(file); string(again) != string(first) {
+	if again, _ := os.ReadFile(file); !bytes.Equal(again, first) {
 		t.Errorf("a second migration rewrote shares.json:\n%s", again)
 	}
 }

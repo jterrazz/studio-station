@@ -75,10 +75,10 @@ func (s *Service) here() string {
 	return name
 }
 
-// invariant: a share is refused before anything is read or copied: an
-// unknown account, one the share list does not hold, a VM this Mac does not
-// keep or that is stopped, an account not signed in here.
 func (s *Service) CheckShare(ctx context.Context, account, vm string) (secret string, err error) {
+	// invariant: a share is refused before anything is read or copied: an
+	// unknown account, one the share list does not hold, a VM this Mac does
+	// not keep or that is stopped, an account not signed in here.
 	if s.o.Here != catalog.Host {
 		return "", &OffHostError{Here: s.o.Here}
 	}
@@ -156,9 +156,9 @@ func (s *Service) Share(ctx context.Context, account, vm string, term time.Durat
 	return accounts.Shared{Account: account, VM: vm, At: share.At, Until: share.Until}, nil
 }
 
-// invariant: a take-back names an account this Mac shares with that VM;
-// anything else is refused before the VM is asked.
-func (s *Service) CheckTakeBack(ctx context.Context, account, vm string) (secret string, err error) {
+func (s *Service) CheckTakeBack(ctx context.Context, account, vm string) (string, error) {
+	// invariant: a take-back names an account this Mac shares with that VM;
+	// anything else is refused before the VM is asked.
 	if !accounts.Known(account) {
 		return "", &accounts.UnknownError{Account: account}
 	}
@@ -169,7 +169,7 @@ func (s *Service) CheckTakeBack(ctx context.Context, account, vm string) (secret
 	if err != nil {
 		return "", err
 	}
-	secret, _ = accounts.SecretOf(account)
+	secret, _ := accounts.SecretOf(account)
 	if !slices.ContainsFunc(held, func(sh accounts.Share) bool { return sh.Name == secret }) {
 		return "", &accounts.NotSharedError{Account: account, VM: vm}
 	}
@@ -225,9 +225,9 @@ func (s *Service) inVM(ctx context.Context, vm, line, stdin string) (system.Outp
 	return s.guest.GuestExec(ctx, vm, line, stdin)
 }
 
-// value: studio's command line inside a VM, its credential store a file
-// there: import reads the secrets on stdin, delete takes their names.
 func VMStudio(args ...string) string {
+	// value: studio's command line inside a VM, its credential store a file
+	// there: import reads the secrets on stdin, delete takes their names.
 	return strings.Join(append([]string{"STUDIO_CREDENTIALS_BACKEND=file", "studio", "credentials"}, args...), " ")
 }
 
