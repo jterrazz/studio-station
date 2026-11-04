@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/accounts/adapter/cli"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/guest"
@@ -20,10 +21,11 @@ import (
 )
 
 func (m machine) accounts() *accounts.Service {
-	o := accounts.Options{Here: m.kind, HereName: m.where.Machine, Track: engine.ChildrenDir(m.paths)}
+	o := accounts.Options{Here: m.kind, HereName: m.where.Machine}
+	ids := m.identities(engine.ChildrenDir(m.paths))
 	if m.kind != catalog.Host {
 		o.Keys = m.stationHostKeys
-		return accounts.New(m.host, m.pool, accounts.Ports{}, o)
+		return accounts.New(m.host, m.pool, ids, accounts.Ports{}, o)
 	}
 	sec := m.secrets()
 	records := vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}
@@ -79,7 +81,7 @@ func (m machine) accounts() *accounts.Service {
 			return out, accounts.DaemonRunning
 		},
 	}
-	return accounts.New(m.host, m.pool, sources, o)
+	return accounts.New(m.host, m.pool, ids, sources, o)
 }
 
 // value: inside a VM, who may ssh in is the station hosts block the guest
@@ -120,4 +122,10 @@ func tailnetAccount(ctx context.Context, tn contract.Tailnet) accounts.TailnetAc
 		return accounts.TailnetAccount{State: catalog.StateBroken, Variant: self.Client.Variant}
 	}
 	return accounts.TailnetAccount{State: catalog.StateOK, Login: self.Login, Tailnet: self.Network, Variant: self.Client.Variant, Problem: self.Sharing.Backend}
+}
+
+// value: who each provider says is signed in here, read by its own tool, each
+// read's process recorded under track.
+func (m machine) identities(track string) *cli.Reads {
+	return cli.New(m.host.Run, m.host.FS, cli.Options{Home: m.host.Env.Home(), Track: track})
 }

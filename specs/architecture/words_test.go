@@ -31,6 +31,7 @@ func technologies() map[string][]string {
 		"bun":         {"bun"},
 		"uv":          {"uv"},
 		"docker":      {"docker"},
+		"cli":         {"docker", "npm"},
 		"lsof":        {"lsof"},
 		"keychain":    {"security"},
 		"neversleeps": {"pmset"},

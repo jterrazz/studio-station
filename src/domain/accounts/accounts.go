@@ -2,14 +2,14 @@ package accounts
 
 import (
 	"context"
-	"errors"
-	"path"
 	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+	"github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/system"
@@ -78,20 +78,18 @@ type Options struct {
 	HereName string
 	// value: in a VM, the guest's hello keys: who may ssh in.
 	Keys func() []string
-	// value: the folder a provider's process is recorded in while it runs, so
-	// a read past its budget takes the whole process group with it.
-	Track string
 }
 
 type Service struct {
 	h    system.Host
 	pool *probe.Pool
+	ids  contract.Identities
 	p    Ports
 	o    Options
 }
 
-func New(h system.Host, pool *probe.Pool, p Ports, o Options) *Service {
-	return &Service{h: h, pool: pool, p: p, o: o}
+func New(h system.Host, pool *probe.Pool, ids contract.Identities, p Ports, o Options) *Service {
+	return &Service{h: h, pool: pool, ids: ids, p: p, o: o}
 }
 
 func (s *Service) where() string {
@@ -107,22 +105,12 @@ func (s *Service) providers() []catalog.Provider {
 		if s.where() == KindHost && !p.Host || s.where() == KindVM && !p.VM {
 			continue
 		}
-		if p.ID == catalog.ProviderDocker {
-			if _, listed := s.dockerStore(); !listed {
-				continue
-			}
+		if !s.ids.Offers(p) {
+			continue
 		}
 		out = append(out, p)
 	}
 	return out
-}
-
-func (s *Service) dockerStore() (string, bool) {
-	data, err := s.h.FS.ReadFile(path.Join(s.h.Env.Home(), catalog.DockerConfig))
-	if err != nil {
-		return "", false
-	}
-	return DockerStore(data)
 }
 
 func (s *Service) Own(ctx context.Context) []Account {
@@ -148,45 +136,13 @@ func (s *Service) read(ctx context.Context, p catalog.Provider) Account {
 	case catalog.ProviderEntry:
 		acc = s.entry()
 	default:
-		acc = Parse(p.ID, s.answer(ctx, p))
-	}
-	if p.ID == catalog.ProviderDocker && acc.State == catalog.StateOK {
-		acc.Source, _ = s.dockerStore()
+		id, err := s.ids.Read(ctx, p)
+		if err != nil {
+			id = accounts.Broken(p.ID, ReasonFailing, err.Error())
+		}
+		acc = own(id)
 	}
 	return Redact(acc)
-}
-
-func (s *Service) answer(ctx context.Context, p catalog.Provider) Answer {
-	reads := p.Reads
-	if p.ID == catalog.ProviderDocker {
-		store, _ := s.dockerStore()
-		if store == "" {
-			return Answer{Outputs: []system.Output{{Stdout: "{}"}}}
-		}
-		reads = []catalog.ProviderRead{{Name: "docker-credential-" + store, Args: []string{"list"}}}
-	}
-	if p.Tool != "" {
-		if _, found := s.h.Run.LookPath(p.Tool); !found {
-			return Answer{}
-		}
-	}
-	ctx, cancel := context.WithTimeout(ctx, p.Budget)
-	defer cancel()
-	var a Answer
-	for _, r := range reads {
-		if _, found := s.h.Run.LookPath(r.Name); !found {
-			return Answer{}
-		}
-		out, err := s.h.Run.Output(ctx, system.Cmd{Name: r.Name, Args: r.Args, Timeout: p.Budget, Track: s.o.Track})
-		if errors.Is(err, system.ErrTimeout) || ctx.Err() != nil {
-			return Answer{Late: true}
-		}
-		if err != nil {
-			out = system.Output{ExitCode: -1}
-		}
-		a.Outputs = append(a.Outputs, out)
-	}
-	return a
 }
 
 func (s *Service) tailnet(ctx context.Context) Account {
@@ -228,7 +184,7 @@ func (s *Service) entry() Account {
 		if comment := strings.Join(fields[2:], " "); comment != "" && !slices.Contains(acc.Scopes, comment) {
 			acc.Scopes = append(acc.Scopes, comment)
 		}
-		if fp, _, found := Fingerprint(k); found && acc.Detail == "" {
+		if fp, _, found := accounts.Fingerprint(k); found && acc.Detail == "" {
 			acc.Detail = fp
 		}
 	}
@@ -274,7 +230,7 @@ func (s *Service) Read(ctx context.Context) <-chan Report {
 				acc := withHint(s.read(ctx, p), "")
 				return func(r *Report) { r.Machines[0].Accounts[i] = acc }
 			},
-			Late: func(r *Report) { r.Machines[0].Accounts[i] = withHint(Parse(p.ID, Answer{Late: true}), "") },
+			Late: func(r *Report) { r.Machines[0].Accounts[i] = withHint(own(accounts.Late(p)), "") },
 		})
 	}
 	if len(vms) > 0 && s.p.Daemon != nil {
