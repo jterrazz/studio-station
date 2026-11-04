@@ -1,4 +1,4 @@
-description: 'a lasting VM of another Mac stops through that Mac, and stays stopped when the Mac reboots'
+description: 'a permanent workspace of another Mac stops through that Mac, and stays stopped when the Mac reboots'
 env: two-macs
 runs:
     - command: 'machines stop infra --on jterrazz-mac-mini'

@@ -1,4 +1,4 @@
-description: 'a name no machine of the fleet has is refused before anything stops'
+description: 'a name no machine of All machines has is refused before anything stops'
 env: two-macs
 runs:
     - command: 'machines stop nope'
