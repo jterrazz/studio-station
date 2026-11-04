@@ -9,6 +9,13 @@ import (
 )
 
 func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
+	return s.FleetAsItFills(ctx, hereOnly, nil)
+}
+
+func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(Fleet)) (Fleet, error) {
+	// invariant: sofar sees this host first, then this host and every other
+	// Mac that has answered, in name order, after each answer; the fleet
+	// returned holds every Mac, a silent one as unreachable.
 	cfg, err := s.prefs()
 	if err != nil {
 		return Fleet{}, err
@@ -24,23 +31,35 @@ func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
 	if user == "" {
 		user = s.h.Env.User()
 	}
-	fleet := Fleet{Hosts: []HostView{{
+	here := HostView{
 		Name: name, User: user, StationVersion: s.o.Version, Here: true, Reachable: true, Node: nodes[name], Daemon: info, VMs: vms,
-	}}}
+	}
 	if hereOnly || s.o.Here != catalog.Host {
-		return fleet, nil
+		return Fleet{Hosts: []HostView{here}}, nil
 	}
 	others := s.OtherHosts()
-	var answers map[string]HostView
-	if s.o.Ask != nil {
-		answers = s.o.Ask(ctx, others)
+	answers := map[string]HostView{}
+	fleet := func(all bool) Fleet {
+		f := Fleet{Hosts: []HostView{here}}
+		for _, n := range others {
+			if _, ok := answers[n]; ok || all {
+				f.Hosts = append(f.Hosts, s.view(n, cfg.Hosts[n], nodes[n], answers))
+			}
+		}
+		return f
 	}
-	views := make([]HostView, len(others))
-	for i, n := range others {
-		views[i] = s.view(n, cfg.Hosts[n], nodes[n], answers)
+	if sofar != nil {
+		sofar(fleet(false))
 	}
-	fleet.Hosts = append(fleet.Hosts, views...)
-	return fleet, nil
+	if s.o.Ask != nil && len(others) > 0 {
+		s.o.Ask(ctx, others, func(mac string, view HostView) {
+			answers[mac] = view
+			if sofar != nil {
+				sofar(fleet(false))
+			}
+		})
+	}
+	return fleet(true), nil
 }
 
 func (s *Service) nodeMap(ctx context.Context) map[string]Node {

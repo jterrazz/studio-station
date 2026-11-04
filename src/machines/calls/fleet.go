@@ -21,18 +21,33 @@ type ListOut struct {
 	Unrefreshed error
 }
 
-var List = call.Call[Deps, ListIn, ListOut]{
+var List = call.Watch[Deps, ListIn, ListOut]{
+	// invariant: each update is the fleet so far, a row more as each Mac
+	// answers; the last holds every Mac, and the ssh blocks are rewritten
+	// for it alone.
 	Name: "machines.list", Where: call.InProcess, Applies: machine.Anywhere,
-	Run: func(ctx context.Context, d Deps, in ListIn, _ call.Progress) (ListOut, error) {
-		fleet, err := d.Machines.Fleet(ctx, in.Here)
-		if err != nil {
-			return ListOut{}, err
+	Run: func(ctx context.Context, d Deps, in ListIn, _ call.Progress) (<-chan call.Update[ListOut], error) {
+		updates := make(chan call.Update[ListOut])
+		send := func(u call.Update[ListOut]) {
+			select {
+			case updates <- u:
+			case <-ctx.Done():
+			}
 		}
-		out := ListOut{Fleet: fleet}
-		if !in.Here && !in.Unwritten {
-			out.Unrefreshed = d.Machines.SSHBlocks(ctx, fleet)
-		}
-		return out, nil
+		go func() {
+			defer close(updates)
+			fleet, err := d.Machines.FleetAsItFills(ctx, in.Here, func(f machines.Fleet) { send(call.Update[ListOut]{Value: ListOut{Fleet: f}}) })
+			if err != nil {
+				send(call.Update[ListOut]{Err: err})
+				return
+			}
+			out := ListOut{Fleet: fleet}
+			if !in.Here && !in.Unwritten {
+				out.Unrefreshed = d.Machines.SSHBlocks(ctx, fleet)
+			}
+			send(call.Update[ListOut]{Value: out})
+		}()
+		return updates, nil
 	},
 }
 

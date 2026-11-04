@@ -71,7 +71,7 @@ func read(d Deps) tab.Source[pagefleet.Reading] {
 				go func() { defer wg.Done(); f() }()
 			}
 			run(func() {
-				l, err := call.Invoke(ctx, d.Calls, d.Target, machinescalls.List, machinescalls.ListIn{Unwritten: true}, nil)
+				l, err := call.Read(ctx, d.Calls, d.Target, machinescalls.List, machinescalls.ListIn{Unwritten: true}, nil)
 				if err != nil {
 					send(fail("fleet", err))
 					return

@@ -23,8 +23,9 @@ type Options struct {
 	KnownHosts, Logs string
 	User             string
 	Version          string
-	// value: each other Mac's own view of itself, from those that answered.
-	Ask       func(ctx context.Context, macs []string) map[string]HostView
+	// value: asks each other Mac for its own view of itself and hands on
+	// each answer as it comes, one at a time; a silent Mac is never handed on.
+	Ask       func(ctx context.Context, macs []string, answered func(mac string, view HostView))
 	GuestPort int
 	Jobs      background.Jobs
 	Unlocker  contract.Unlocker

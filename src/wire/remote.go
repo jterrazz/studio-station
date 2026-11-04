@@ -69,7 +69,7 @@ func (m machine) holder(ctx context.Context, vm string) (string, error) {
 	r := m.far.router
 	others := m.machines(false).OtherHosts()
 	got := each.All(ctx, others, func(ctx context.Context, mac string) (bool, error) {
-		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
+		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
 		if err != nil {
 			return false, err
 		}
@@ -100,15 +100,14 @@ func (g guestRelay) GuestExec(ctx context.Context, vm, line, stdin string) (stdo
 	return out.Stdout, out.ExitCode, err
 }
 
-func (m machine) askFleet(ctx context.Context, macs []string) map[string]machines.HostView {
+func (m machine) askFleet(ctx context.Context, macs []string, answered func(string, machines.HostView)) {
 	r := m.far.router
-	answers := map[string]machines.HostView{}
-	for mac, got := range each.All(ctx, macs, func(ctx context.Context, mac string) (machines.HostView, error) {
+	for got := range each.Do(ctx, macs, func(ctx context.Context, mac string) (machines.HostView, error) {
 		hello, err := r.Hello(ctx, mac)
 		if err != nil {
 			return machines.HostView{}, err
 		}
-		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
+		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
 		if err != nil || len(out.Fleet.Hosts) == 0 {
 			return machines.HostView{}, orNone(err)
 		}
@@ -117,10 +116,9 @@ func (m machine) askFleet(ctx context.Context, macs []string) map[string]machine
 		return view, nil
 	}) {
 		if got.Err == nil {
-			answers[mac] = got.Value
+			answered(got.Mac, got.Value)
 		}
 	}
-	return answers
 }
 
 func (m machine) askServices(ctx context.Context, hosts []string) map[string]services.HostView {
