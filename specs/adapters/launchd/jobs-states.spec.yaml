@@ -1,4 +1,4 @@
-description: 'station background reads each state launchd prints: running with its pid, failing with its last exit, loaded idle, not loaded, its program missing'
+description: 'station background reads running, failing, idle, not loaded and program-missing tasks'
 fixture:
     - ./__fixtures__/jobs-states/
 runs:
