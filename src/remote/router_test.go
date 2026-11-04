@@ -3,6 +3,7 @@ package remote_test
 import (
 	"context"
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/jterrazz/studio-station/src/core/call"
@@ -10,6 +11,8 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/remote"
+	"github.com/jterrazz/studio-station/src/remote/api"
+	"github.com/jterrazz/studio-station/src/remote/serve"
 )
 
 type installIn struct{ App string }
@@ -121,5 +124,62 @@ func TestACallRunInThisProcessPassesTheGateOfAFrame(t *testing.T) {
 				t.Errorf("the refused call ran %d times", ran)
 			}
 		})
+	}
+}
+
+type pipe struct {
+	io.Reader
+	io.Writer
+	closers []io.Closer
+}
+
+func (p pipe) Close() error {
+	for _, c := range p.closers {
+		_ = c.Close()
+	}
+	return nil
+}
+
+type updated struct{ App string }
+
+// value: an update in each Where, its result plain data, counted where it ran.
+func updates(ran *int) *call.Registry {
+	out := make([]call.Handler, 0, 3)
+	for _, where := range []call.Where{call.AtTarget, call.InEngine, call.InProcess} {
+		out = append(out, call.Bind(call.Call[struct{}, installIn, updated]{
+			Name: "apps.update-" + string(where), Section: section.Apps, Where: where, Applies: onMacOS,
+			Run: func(_ context.Context, _ struct{}, in installIn, _ call.Progress) (updated, error) {
+				*ran++
+				return updated(in), nil
+			},
+		}, struct{}{}))
+	}
+	registry, _ := call.NewRegistry(out)
+	return registry
+}
+
+// value: this Mac's engine: a server of the same calls over a pipe.
+func engineOf(t *testing.T, ran *int) call.Router {
+	t.Helper()
+	s := serve.Server{Calls: updates(ran).Lookup, Here: laptop}
+	return remote.Endpoint(api.NewClient(func(context.Context) (io.ReadWriteCloser, error) {
+		inR, inW := io.Pipe()
+		outR, outW := io.Pipe()
+		go s.Conn(t.Context(), pipe{Reader: inR, Writer: outW, closers: []io.Closer{inR, outW}})
+		return pipe{Reader: outR, Writer: inW, closers: []io.Closer{outR, inW}}, nil
+	}))
+}
+
+func TestACallThatNeedsTheEngineRunsInThisMacsEngineAndTheOthersHere(t *testing.T) {
+	here, there := 0, 0
+	r := remote.NewRouter(updates(&here), laptop).WithEngine(engineOf(t, &there))
+	for _, where := range []call.Where{call.AtTarget, call.InEngine, call.InProcess} {
+		var out updated
+		if err := r.Invoke(t.Context(), laptop.Ref, "apps.update-"+string(where), installIn{App: "jq"}, &out, nil); err != nil || out.App != "jq" {
+			t.Fatalf("updating jq %s: %+v, %v", where, out, err)
+		}
+	}
+	if here != 2 || there != 1 {
+		t.Errorf("ran %d here and %d in the engine, want the in-engine call there and the two others here", here, there)
 	}
 }
