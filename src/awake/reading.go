@@ -10,7 +10,7 @@ type Reading struct {
 	Charging   bool
 	LowPower   bool
 	// value: the thermal pressure level, 0 nominal, 1 moderate, 2 heavy,
-	// 3 trapping, 4 sleeping.
+	// 3 serious (macOS says trapping), 4 sleeping.
 	Thermal int
 }
 
@@ -32,7 +32,7 @@ func Level(n int) string {
 	case ThermalHeavy:
 		return "heavy"
 	case ThermalEnds:
-		return "trapping"
+		return "serious"
 	}
 	return "sleeping"
 }

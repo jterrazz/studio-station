@@ -1,6 +1,10 @@
 package awake
 
-import "time"
+import (
+	"time"
+
+	"github.com/jterrazz/studio-station/src/core/machine"
+)
 
 const DefaultFor = 4 * time.Hour
 
@@ -9,6 +13,9 @@ type Request struct {
 	Battery bool
 	For     time.Duration
 	By      string
+	// value: the term as the owner said it (4h, until 18:00), for the words
+	// of its refusal.
+	Words string
 }
 
 type Session struct {
@@ -35,11 +42,20 @@ type View struct {
 	LastEnd *End         `json:"last_end"`
 	Reading Reading      `json:"reading"`
 	Guards  []GuardState `json:"guards"`
+	// value: the engine holds Never sleeps, and since when it has held it.
+	NeverSleeps bool      `json:"never_sleeps"`
+	NeverSince  time.Time `json:"never_since,omitzero"`
+	// value: the policy's assertion is held now; false while the battery
+	// guard lets it go.
+	NeverHeld bool `json:"never_held"`
 }
 
 type Slept struct {
 	Ended bool          `json:"ended"`
 	After time.Duration `json:"after"`
+	Mac   string        `json:"mac"`
+	// value: the Mac never sleeps, a setting off leaves as it is.
+	NeverSleeps bool `json:"never_sleeps"`
 }
 
 // value: a Report's Daemon while its engine answers, and before it has.
@@ -58,9 +74,23 @@ type Report struct {
 	Session *Session
 	LastEnd *End
 	Guards  []GuardState
+	// value: the Mac this report is of, This Mac's first; its reported
+	// capabilities and the servers it hosts.
+	Mac         string
+	Here        bool
+	Caps        machine.Capabilities
+	NeverSleeps bool
+	NeverSince  time.Time
+	NeverHeld   bool
+	Servers     []string
 }
+
+func (r Report) Mode() Mode { return ModeOf(r.Now, r.NeverSleeps, r.Session, r.LastEnd) }
 
 type Awoken struct {
 	Session
-	Refreshed bool `json:"refreshed"`
+	Refreshed bool   `json:"refreshed"`
+	Mac       string `json:"mac"`
+	// value: the Mac never sleeps: the keep-awake adds nothing.
+	NeverSleeps bool `json:"never_sleeps"`
 }
