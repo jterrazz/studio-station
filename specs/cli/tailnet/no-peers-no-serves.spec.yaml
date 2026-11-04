@@ -1,5 +1,5 @@
 description: 'a tailnet with no peers and no serves still titles both, each with its empty line'
-fixture: ../__fixtures__/vms/
+fixture: ../../__fixtures__/vms/
 runs:
     - command: 'tailnet | /usr/bin/grep -A1 "^# "'
       exit: 0

@@ -1,6 +1,6 @@
 description: 'power awake holds one idle assertion through the daemon, and only --lid touches the clamshell'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

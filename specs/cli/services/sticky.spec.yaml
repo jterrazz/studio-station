@@ -1,7 +1,7 @@
 description: 'a stop of listening unpublishes after the grace and keeps the lease; a listen again reuses it'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd
 runs:

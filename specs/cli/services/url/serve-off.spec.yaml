@@ -1,7 +1,7 @@
 description: 'with Serve off services url prints the local URL, http:// included'
 fixture:
-    - ../../__fixtures__/vms/
-    - ../../__fixtures__/daemon-vm/
+    - ../../../__fixtures__/vms/
+    - ../../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd
 runs:

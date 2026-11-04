@@ -1,7 +1,7 @@
 description: 'a server-first service is served raw by serve --tcp, scheme-less, and released with it'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd
 runs:

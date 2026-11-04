@@ -1,7 +1,7 @@
 description: 'every read piped or --json is what d653060 printed, but for the changes UI-SPEC §20 lists'
 fixture:
     - ../__fixtures__/estate/
-    - ../__fixtures__/serving/
+    - ../../__fixtures__/serving/
 runs:
     - command: 'status'
       exit: 0

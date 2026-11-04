@@ -1,6 +1,6 @@
 description: 'the lid guard ends a --lid session closed on battery in either order, unless --battery'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

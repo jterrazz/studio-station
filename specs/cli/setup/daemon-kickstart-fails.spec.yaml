@@ -1,6 +1,6 @@
 description: 'a daemon launchd loads but cannot start is a failed step, never a running row'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ./__fixtures__/launchctl-fails-kickstart/
 runs:
     - command: 'setup </dev/null'

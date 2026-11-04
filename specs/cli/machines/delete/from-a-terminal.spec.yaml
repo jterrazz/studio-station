@@ -1,7 +1,7 @@
 description: 'delete stops the run and removes the disk, the record, the files, the block and the leases'
 fixture:
-    - ../../__fixtures__/vms/
-    - ../../__fixtures__/daemon-vm/
+    - ../../../__fixtures__/vms/
+    - ../../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd
 runs:

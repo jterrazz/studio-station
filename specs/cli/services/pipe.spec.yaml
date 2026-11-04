@@ -1,6 +1,6 @@
 description: 'piped, every row holds at most 8 fields with its host in field 5; an unreachable host is one row'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ./__fixtures__/fleet/
 runs:
     - command: 'services | /usr/bin/awk -F "\t" ''{print (NF <= 8), $2, $3, $5}'''

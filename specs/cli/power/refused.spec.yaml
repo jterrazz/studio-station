@@ -1,6 +1,6 @@
 description: 'a guard already past its threshold refuses the start, and nothing is asserted'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

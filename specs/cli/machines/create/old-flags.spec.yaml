@@ -1,5 +1,5 @@
 description: 'the round-1 --temporary flag is gone: the lifetime is an option with a value'
-fixture: ../../__fixtures__/vms/
+fixture: ../../../__fixtures__/vms/
 runs:
     - command: 'machines create --temporary'
       exit: 2

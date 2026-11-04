@@ -1,6 +1,6 @@
 description: 'services --json is station.services/v1: every host, every service object whole'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ./__fixtures__/fleet/
 runs:
     - command: 'services --json | /usr/bin/jq -c ''.schema, (.hosts | length), ([.hosts[] | select(.reachable | not) | .name]), ([.hosts[].services[] | keys] | unique)'''

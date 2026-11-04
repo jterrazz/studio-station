@@ -1,6 +1,6 @@
 description: 'status --json carries the Power session: held, lid and until while held, held false off'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

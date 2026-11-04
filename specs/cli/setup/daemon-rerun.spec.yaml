@@ -1,6 +1,6 @@
 description: 'a rerun with the same plist and the agent loaded neither bootstraps nor restarts the daemon'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ./__fixtures__/loaded/
 env: daemon
 runs:

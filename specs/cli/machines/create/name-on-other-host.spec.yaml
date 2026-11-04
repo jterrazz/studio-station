@@ -1,7 +1,7 @@
 description: 'a VM record on another host holds its name, even with its node offline'
 fixture:
-    - ../../__fixtures__/vms/
-    - ../../__fixtures__/daemon-vm/
+    - ../../../__fixtures__/vms/
+    - ../../../__fixtures__/daemon-vm/
     - ./__fixtures__/other-host/
 env: daemon
 serve: sshd

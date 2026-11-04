@@ -1,6 +1,6 @@
 description: 'release refuses an unknown VM, a bare port on a host, a missing lease'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-api/
 runs:
     - command: 'services release nope:1'

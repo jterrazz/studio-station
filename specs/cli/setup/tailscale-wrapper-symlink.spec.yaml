@@ -1,7 +1,7 @@
 description: 'a symlink to the App Store bundle''s CLI crashes, so setup replaces it with the wrapper'
 fixture:
     - ../__fixtures__/system-tools/
-    - ../__fixtures__/tailscale-app-store/
+    - ../../__fixtures__/tailscale-app-store/
 env: daemon
 runs:
     - command: '--version >/dev/null; /bin/rm bin/tailscale; /bin/mkdir -p .local/bin; /bin/ln -s "$PWD/root/Applications/Tailscale.app/Contents/MacOS/Tailscale" .local/bin/tailscale; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	tools''; /bin/ls -l .local/bin/tailscale | /usr/bin/cut -c1'

@@ -1,5 +1,5 @@
 description: 'setup installs the one daemon of a host under its launchd agent, and starts it'
-fixture: ../__fixtures__/vms/
+fixture: ../../__fixtures__/vms/
 runs:
     - command: 'setup </dev/null'
       exit: 0

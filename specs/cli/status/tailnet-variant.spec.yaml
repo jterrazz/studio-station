@@ -1,7 +1,7 @@
 description: 'status reports the app''s variant and the CLI it ran, and nothing with no CLI'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/tailscale-app-store/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/tailscale-app-store/
 env: daemon
 runs:
     - command: '--version >/dev/null; /bin/rm bin/tailscale; "$STATION" status --json | /usr/bin/jq -c ''.tailnet | [.state, .variant, .cli]'''

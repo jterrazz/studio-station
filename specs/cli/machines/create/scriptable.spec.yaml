@@ -1,7 +1,7 @@
 description: 'a script reads the new name from the second field, or the created document from --json'
 fixture:
-    - ../../__fixtures__/vms/
-    - ../../__fixtures__/daemon-vm/
+    - ../../../__fixtures__/vms/
+    - ../../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd
 runs:

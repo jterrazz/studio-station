@@ -1,7 +1,7 @@
 description: 'the daemon logs why a guest does not connect, once per new reason, on its stderr'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
     - ../__fixtures__/vm-api/
 env: daemon
 runs:

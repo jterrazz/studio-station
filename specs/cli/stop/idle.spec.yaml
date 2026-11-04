@@ -1,6 +1,6 @@
 description: 'stop with nothing running asks nothing; again, it is already stopped'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/launchctl/
 env: daemon
 runs:
