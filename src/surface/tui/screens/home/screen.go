@@ -7,7 +7,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/page"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
@@ -20,17 +19,17 @@ const (
 )
 
 type Status interface {
-	Watch(ctx context.Context) <-chan status.Snapshot
+	Watch(ctx context.Context) <-chan pagehome.Overview
 	Forget()
-	Sample(ctx context.Context) (status.Sample, error)
+	Sample(ctx context.Context) (pagehome.Sample, error)
 }
 
-type samples struct{ list []status.Sample }
+type samples struct{ list []pagehome.Sample }
 
 type Fix func(ctx context.Context, words []string) error
 
 type Model struct {
-	tab.View[status.Snapshot]
+	tab.View[pagehome.Overview]
 	ctx     context.Context
 	status  Status
 	here    page.Context
@@ -41,7 +40,7 @@ type Model struct {
 }
 
 type sampled struct {
-	sample status.Sample
+	sample pagehome.Sample
 	err    error
 }
 
@@ -49,16 +48,16 @@ type tick struct{}
 
 func New(ctx context.Context, s Status, fix Fix, here page.Context, describe tab.Describe) Model {
 	live := &samples{}
-	source := func(ctx context.Context, fresh bool) (<-chan status.Snapshot, error) {
+	source := func(ctx context.Context, fresh bool) (<-chan pagehome.Overview, error) {
 		if fresh {
 			s.Forget()
 		}
 		return s.Watch(ctx), nil
 	}
-	build := func(snap status.Snapshot) page.Page {
+	build := func(snap pagehome.Overview) page.Page {
 		list := live.list
 		if len(list) == 0 && !snap.System.Sample.At.IsZero() {
-			list = []status.Sample{snap.System.Sample}
+			list = []pagehome.Sample{snap.System.Sample}
 		}
 		return pagehome.Live(pagehome.Snapshot(snap, here, false), list, snap)
 	}

@@ -13,7 +13,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	schedule "github.com/jterrazz/studio-station/src/domain/probe"
+	schedule "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/system"
 )
 

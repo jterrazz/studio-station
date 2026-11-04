@@ -1,17 +1,11 @@
 #!/bin/sh
-# ps in the three shapes status asks: top by CPU, top by memory and the whole list; the
-# gateway lines are there when answers/gateway exists. Like the real ps, it prints its
-# decimals in the caller's locale.
-answers="${0%/*}/../answers"
+# ps in the two shapes status asks: top by CPU and top by memory. Like the real ps, it
+# prints its decimals in the caller's locale.
 dot=.
 case "${LC_ALL:-${LC_NUMERIC:-$LANG}}" in fr_*) dot=, ;; esac
 case "$*" in
     "-arcwwwxo pid,%cpu,comm") printf '  PID  %%CPU COMMAND\n  301  45%s5 Google Chrome Helper\n  302  12%s0 node\n' "$dot" "$dot" ;;
     "-amcwwwxo pid,rss,comm") printf '  PID    RSS COMMAND\n  302 2097152 node\n  301  524288 Google Chrome Helper\n' ;;
-    "-axo user,pid,ppid,command")
-        printf 'USER PID PPID COMMAND\nroot 1 0 /sbin/launchd\n'
-        if [ -f "$answers/gateway" ]; then /bin/cat "$answers/gateway"; fi
-        ;;
     *)
         echo "stub ps: unexpected invocation: $*" >&2
         exit 97

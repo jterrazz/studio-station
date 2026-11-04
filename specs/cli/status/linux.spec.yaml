@@ -16,7 +16,7 @@ runs:
     - command: 'status --json | /usr/bin/jq -c ''[.environment.network[] | [.name, .state, .value]]'''
       exit: 0
       stdout: |
-          [["local ip","ok","192.168.64.5"],["public ip","absent",""],["dns","ok","10.0.2.3, 1.1.1.1"]]
+          [["local ip","ok","192.168.64.5"],["dns","ok","10.0.2.3, 1.1.1.1"]]
     - command: 'status --json | /usr/bin/jq -c ''[.setup.steps | map(.name)]'''
       exit: 0
       stdout: |

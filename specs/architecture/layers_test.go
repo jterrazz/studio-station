@@ -40,21 +40,20 @@ const (
 // `x/*`, a longer prefix beats a shorter. `std` is the standard library minus
 // forbiddenStd; a forbidden member is re-allowed only by its name in a row.
 func importTable() map[string][]string {
-	domain := []string{"system", "catalog", "domain/settings", "domain/probe", "ports", "ports/contract", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract",
+	domain := []string{"system", "catalog", "domain/settings", "core/call/lanes", "ports", "ports/contract", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract",
 		"machines", "machines/contract", "images", "setup", "setup/contract", "core/store", "core/adapter/fake", "machines/adapter/fake", std}
 	organism := []string{"ui/molecule", "ui/atom", "ui/token", "page", lip, bubble, huh, std}
 	template := append(slices.Clone(organism), "ui/organism")
 	return map[string][]string{
 		"cmd/station":                {"wire", "os"},
 		"cmd/generate":               {"catalog", "cmd/generate/pages", "page", "ui/render/json", "os", "flag", std},
-		"cmd/generate/pages":         {"page", "pages", "pages/*", "domain/*", "engine", "ports", "catalog", "ui/token", std},
+		"cmd/generate/pages":         {"page", "pages", "pages/*", "domain/*", "engine", "ports", "overview", "activity", "catalog", "ui/token", std},
 		"wire":                       {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", "net/netip", std},
 		"surface/cli":                {"surface/cli/kit", cobra, std},
 		"surface/cli/kit":            {"output", "page", "core/fail", "core/store", "domain/*", "engine", "ports", "accounts", "catalog", "testing", cobra, pflag, std},
 		"surface/cli/*":              {"surface/cli/kit", "domain/*", "engine", "ports", "page", "pages/*", "catalog", cobra, pflag, std},
 		"domain/*":                   domain,
 		"domain/setup":               append(slices.Clone(domain), "domain/shell", "domain/storage"),
-		"domain/status":              append(slices.Clone(domain), "domain/tools", "domain/config", "domain/setup", "domain/storage", "domain/services"),
 		"domain/tools":               append(slices.Clone(domain), "apps", "apps/contract", "apps/adapter/fake", "core/call"),
 		"engine":                     append(slices.Clone(domain), "domain/machines", "domain/services", "domain/power", "machines", "machines/contract", "net/netip"),
 		"domain/guest":               append(slices.Clone(domain), "domain/services"),
@@ -70,7 +69,7 @@ func importTable() map[string][]string {
 		"catalog":                    {"embed", std},
 		"page":                       {std},
 		"pages":                      {"page", "catalog", std},
-		"pages/*":                    {"page", "pages", "pages/*", "domain/*", "engine", "ports", "catalog", std},
+		"pages/*":                    {"page", "pages", "pages/*", "domain/*", "core/call/lanes", "engine", "ports", "overview", "activity", "catalog", std},
 		"ui/token":                   {lip, term, std},
 		"ui/atom":                    {"ui/token", "page", lip, qr, bubble + "/spinner", std},
 		"ui/molecule":                {"ui/atom", "ui/token", "page", lip, std},
@@ -752,7 +751,7 @@ func rules() []rule {
 		{"PowerFiles", rulePowerSafe, "src/awake/adapter/macos/mutant_files.go", "package macos\n\nimport \"github.com/jterrazz/studio-station/src/platform/local\"\n\nfunc mutantWrite(files local.FS) error { return files.WriteFile(\"x\", nil, 0o600) }\n", "src/awake/adapter/macos/mutant_files.go"},
 		{"TreeScreams", ruleTree, "src/utils/mutant.go", "package utils\n", "src/utils"},
 		{"TreeInside", ruleTree, "src/apps/helpers/mutant.go", "package helpers\n", "src/apps/helpers"},
-		{"TreeApplies", ruleTree, "src/activity/mutant_tree.go", "package activity\n", "src/activity"},
+		{"TreeApplies", ruleTree, "src/background/applies.go", "package background\n", "src/background"},
 		{"FamilyImports", ruleFamilyImports, "src/apps/mutant_imports.go", "package apps\n\nimport _ \"os/exec\"\n", "src/apps/mutant_imports.go"},
 		{"FamilyImportsOldTree", ruleFamilyImports, "src/disk/mutant_imports_old.go", "package disk\n\nimport _ \"" + module + "/src/domain/tools\"\n", "src/disk/mutant_imports_old.go"},
 		{"TechnologyWords", ruleTechnologyWords, "src/apps/mutant_words.go", "package apps\n\nconst mutantMethod = \"brew\"\n", "src/apps/mutant_words.go"},
@@ -765,6 +764,7 @@ func rules() []rule {
 		{"OneWriterPerStore", ruleOneWriterPerStore, "src/apps/mutant_store.go", "package apps\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/machines/contract\"\n)\n\nfunc mutantForget(ctx context.Context, s contract.MachineStore) { _ = s.Delete(ctx, \"api\") }\n", "src/apps/mutant_store.go"},
 		{"OneWriterPerStoreBuilt", ruleOneWriterPerStore, "src/apps/mutant_store_built.go", "package apps\n\nimport \"" + module + "/src/machines/adapter/jsonfile\"\n\nvar mutantStore = jsonfile.New(nil, \"vms\")\n", "src/apps/mutant_store_built.go"},
 		{"OneWriterPerStoreGroup", ruleOneWriterPerStore, "src/apps/contract/mutant_group.go", "package contract\n\nimport core \"" + module + "/src/core/contract\"\n\nfunc mutantName(p core.Preferences) error { return p.Write(\"here\", \"mutant\") }\n", "src/apps/contract/mutant_group.go"},
+		{"NoOutboundLiterals", ruleNoOutboundLiterals, "src/overview/mutant_outbound.go", "package overview\n\nconst mutantLookup = \"curl -s https://ifconfig.me\"\n", "src/overview/mutant_outbound.go"},
 		{"NoModelNames", ruleNoModelNames, "src/awake/mutant_models.go", "package awake\n\nfunc mutantLaptop(model string) bool { return model == \"MacBook\" }\n", "src/awake/mutant_models.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}

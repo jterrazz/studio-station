@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	schedule "github.com/jterrazz/studio-station/src/domain/probe"
+	schedule "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -32,7 +32,7 @@ func (s *Service) read(ctx context.Context, c system.Cmd) (system.Output, error)
 	if s.o.Pool == nil {
 		return s.h.Run.Output(ctx, c)
 	}
-	return schedule.Output(ctx, s.o.Pool, s.h.Run, c)
+	return schedule.Shared(ctx, s.o.Pool, schedule.Command(c.Name, c.Args), func(ctx context.Context) (system.Output, error) { return s.h.Run.Output(ctx, c) })
 }
 
 func (s *Service) must(ctx context.Context, name string, args ...string) (string, error) {

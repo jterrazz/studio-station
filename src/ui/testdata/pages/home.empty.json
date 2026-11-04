@@ -86,10 +86,6 @@
                   },
                   {
                     "kind": "text",
-                    "text": "vpn on"
-                  },
-                  {
-                    "kind": "text",
                     "text": "4/4 on"
                   }
                 ]
@@ -135,25 +131,6 @@
                   {
                     "kind": "text",
                     "text": "signing on"
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "summary/workspace",
-            "mark": "ok",
-            "label": "Workspace",
-            "cells": [
-              {
-                "kind": "list",
-                "items": [
-                  {
-                    "kind": "count",
-                    "n": 2,
-                    "unit": "repos"
                   }
                 ]
               }
@@ -246,7 +223,7 @@
         }
       ],
       "uncounted": true,
-      "break": 6
+      "break": 5
     },
     {
       "id": "machine",
@@ -391,22 +368,6 @@
         },
         {
           "row": {
-            "id": "vpn",
-            "mark": "ok",
-            "label": "vpn",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "Tailscale"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
             "id": "filevault",
             "mark": "ok",
             "label": "filevault",
@@ -531,7 +492,7 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 9
+          "n": 8
         }
       ]
     },
@@ -554,67 +515,6 @@
       "items": [
         {
           "row": {
-            "id": "repos",
-            "mark": "ok",
-            "label": "repos",
-            "cells": [
-              {
-                "kind": "count",
-                "n": 2
-              }
-            ],
-            "detail": {
-              "kind": "count",
-              "n": 2,
-              "unit": "dirty"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "deps",
-            "mark": "absent",
-            "label": "deps",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "none"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            },
-            "reason": "missing"
-          }
-        },
-        {
-          "row": {
-            "id": "docker",
-            "mark": "ok",
-            "label": "docker",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "running"
-              }
-            ],
-            "detail": {
-              "kind": "list",
-              "items": [
-                {
-                  "kind": "count",
-                  "unit": "containers"
-                },
-                {
-                  "kind": "count",
-                  "unit": "images"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "row": {
             "id": "disk",
             "mark": "ok",
             "label": "disk",
@@ -634,10 +534,6 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 3
-        },
-        {
-          "mark": "absent",
           "n": 1
         }
       ]

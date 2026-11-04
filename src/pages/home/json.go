@@ -4,8 +4,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
@@ -53,7 +54,7 @@ type jobJSON struct {
 	Removal string `json:"removal"`
 }
 
-func jobs(in []status.Job) []jobJSON {
+func jobs(in []overview.Job) []jobJSON {
 	out := make([]jobJSON, 0, len(in))
 	for _, j := range in {
 		out = append(out, jobJSON{Label: j.Label, Group: string(j.Group), State: strings.ReplaceAll(string(j.Run), " ", "-"), Mark: string(pages.MarkOf(j.State)),
@@ -150,6 +151,8 @@ type diskJSON struct {
 }
 
 type workspaceJSON struct {
+	// invariant: v1 keeps every key it ever had; the workspace is no longer
+	// scanned, so repositories, dependencies and docker read as nothing seen.
 	Repositories []repositoryJSON        `json:"repositories"`
 	Dependencies []dependencyJSON        `json:"dependencies"`
 	Docker       dockerJSON              `json:"docker"`
@@ -168,7 +171,7 @@ type setupJSON struct {
 	Steps []stepJSON `json:"steps"`
 }
 
-func SnapshotContract(s status.Snapshot) SnapshotJSON {
+func SnapshotContract(s Overview) SnapshotJSON {
 	// invariant: every array is built with make, so an empty one encodes as [], never null.
 	body := SnapshotJSON{
 		Schema:      schema,
@@ -186,19 +189,15 @@ func SnapshotContract(s status.Snapshot) SnapshotJSON {
 		Environment: environmentJSON{
 			Network:  checks(s.Environment.Network),
 			Ports:    make([]portJSON, 0, len(s.Environment.Ports)),
-			Security: checks(s.Environment.Security),
+			Security: checks(s.Environment.Protections),
 			Updates:  checks(s.Environment.Updates),
 		},
 		Workspace: workspaceJSON{
-			Repositories: make([]repositoryJSON, 0, len(s.Workspace.Repositories)),
-			Dependencies: make([]dependencyJSON, 0, len(s.Workspace.Dependencies)),
-			Docker: dockerJSON{
-				State: string(s.Workspace.Docker.State), Containers: s.Workspace.Docker.Containers,
-				Images: s.Workspace.Docker.Images, Volumes: s.Workspace.Docker.Volumes,
-				DanglingBytes: s.Workspace.Docker.DanglingBytes, TotalBytes: s.Workspace.Docker.TotalBytes,
-			},
-			Disk:   make([]diskJSON, 0, len(s.Workspace.Disk)),
-			Strays: pagestorage.StraysContract(s.Workspace.Strays),
+			Repositories: []repositoryJSON{},
+			Dependencies: []dependencyJSON{},
+			Docker:       dockerJSON{State: string(catalog.StateUnknown)},
+			Disk:         make([]diskJSON, 0, len(s.Workspace.Disk)),
+			Strays:       pagestorage.StraysContract(s.Workspace.Strays),
 		},
 		Tools:      make([]pagetools.ToolJSON, 0, len(s.Tools)),
 		Config:     make([]pageconfig.ItemJSON, 0, len(s.Config)),
@@ -214,12 +213,6 @@ func SnapshotContract(s status.Snapshot) SnapshotJSON {
 	}
 	for _, p := range s.Environment.Ports {
 		body.Environment.Ports = append(body.Environment.Ports, portJSON{PID: p.PID, Name: p.Name, Port: p.Port})
-	}
-	for _, r := range s.Workspace.Repositories {
-		body.Workspace.Repositories = append(body.Workspace.Repositories, repositoryJSON{Path: r.Path, Branch: r.Branch, Dirty: r.Dirty})
-	}
-	for _, d := range s.Workspace.Dependencies {
-		body.Workspace.Dependencies = append(body.Workspace.Dependencies, dependencyJSON{Path: d.Path, Manager: d.Manager, Outdated: d.Outdated})
 	}
 	for _, d := range s.Workspace.Disk {
 		body.Workspace.Disk = append(body.Workspace.Disk, diskJSON{Name: d.Name, Level: string(d.Level), Bytes: d.Bytes})
@@ -242,7 +235,7 @@ func SnapshotContract(s status.Snapshot) SnapshotJSON {
 	return body
 }
 
-func checks(in []status.Check) []checkJSON {
+func checks(in []overview.Check) []checkJSON {
 	out := make([]checkJSON, 0, len(in))
 	for _, c := range in {
 		out = append(out, checkJSON{Name: c.Name, State: string(c.State), Value: c.Value, Detail: c.Detail})
@@ -250,7 +243,7 @@ func checks(in []status.Check) []checkJSON {
 	return out
 }
 
-func processes(in []status.Process) []processJSON {
+func processes(in []activity.Process) []processJSON {
 	out := make([]processJSON, 0, len(in))
 	for _, p := range in {
 		out = append(out, processJSON{PID: p.PID, Name: p.Name, Value: p.Value})
@@ -258,7 +251,7 @@ func processes(in []status.Process) []processJSON {
 	return out
 }
 
-func daemonOf(c status.Check) daemonJSON {
+func daemonOf(c overview.Check) daemonJSON {
 	d := daemonJSON{State: string(c.State), Running: c.State == catalog.StateOK || strings.HasPrefix(c.Value, "runs ")}
 	if d.State == "" {
 		d.State = string(catalog.StateAbsent)

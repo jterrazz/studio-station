@@ -35,6 +35,6 @@ func mac(c local.Cmd) (local.Output, error) {
 func TestInspector(t *testing.T) {
 	contracttest.Inspector(t, func(*testing.T) contracttest.InspectorSubject {
 		i := macos.New(local.Played(mac, "fdesetup", "socketfilterfw"), files{fstest.MapFS{}}, clock{}, macos.Options{})
-		return contracttest.InspectorSubject{Inspector: i, On: catalog.FactFileVault, Off: catalog.FactFirewall, Unreadable: catalog.FactSIP}
+		return contracttest.InspectorSubject{Inspector: i, On: catalog.FactFileVault, Off: catalog.FactFirewall, Unreadable: catalog.FactSIP, Present: catalog.FactFileVault}
 	})
 }

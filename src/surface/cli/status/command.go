@@ -6,14 +6,18 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/page"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
+type Status interface {
+	Watch(ctx context.Context) <-chan pagehome.Overview
+	Snapshot(ctx context.Context) (pagehome.Overview, error)
+}
+
 type Deps struct {
-	Status *status.Service
+	Status Status
 	Here   page.Context
 }
 
@@ -33,8 +37,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			if io.CanLive() {
-				var last status.Snapshot
-				err := io.LivePage(kit.Pages(d.Status.Watch(ctx), func(s status.Snapshot) page.Page {
+				var last pagehome.Overview
+				err := io.LivePage(kit.Pages(d.Status.Watch(ctx), func(s pagehome.Overview) page.Page {
 					last = s
 					return pagehome.Snapshot(s, d.Here, in.All)
 				}))
@@ -44,7 +48,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				if err := ctx.Err(); err != nil {
 					return err
 				}
-				return last.Err()
+				return last.Err
 			}
 			snapshot, err := d.Status.Snapshot(ctx)
 			if err != nil {

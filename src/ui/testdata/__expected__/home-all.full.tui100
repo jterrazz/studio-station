@@ -1,5 +1,4 @@
- - To do                                                                                  11 ◐  2 ✗
-   ✗ Hermes runtime     not running · gateway process not found
+ - To do                                                                                  10 ◐  1 ✗
    ✗ brain.x-snapshot   failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
@@ -10,7 +9,6 @@
    ◐ tools              4 wait for mise  → station tools install mise
    ◐ power              policy partly applied  → station config install power
    ◐ macos              2 pending · checked 22m ago
-   ◐ deps               14 outdated · in 1 repos
    ◐ chatgpt            on PATH, not managed by cask
    ◐ better-ui          outdated
    ◐ com.docker.socket  orphan: Docker.app is gone
@@ -18,19 +16,17 @@
        sudo rm /Library/LaunchDaemons/com.docker.socket.plist
  - Summary
    ◐ Machine     host · Darwin 27.0.0 …             ◐ Tools     7 ●  6 ◐  4 ○
-   ◐ Network     192.168.1.152 · vpn on · 4/4 on    ◐ Config    1 ●  1 ◐
+   ◐ Network     192.168.1.152 · 4/4 on             ◐ Config    1 ●  1 ◐
    ● Tailnet     jterrazz-macbook-pro · Serve on    ● Storage   27.9 GB reclaimable · 2 strays
    ● Identity    admin@jterrazz.com · signing on    ◐ Fleet     daemon runs v2.0.0-242-gd653060, s…
-   ◐ Workspace   2 repos · 14 deps outdated         ✗ Gateways  1 ✗
-   ✗ Background  3 jobs · 1 failing · 1 orphan
+   ✗ Background  3 jobs · 1 failing · 1 orphan      ● Gateways  1 ●
  - Machine                                                                                 1 ●  3 ◐
    ◐ name    unregistered  host · Darwin 27.0.0 arm64 · jterrazz · zsh
    ● uptime  22d 14h       battery 100% charged
    ◐ setup   name          not set  → station setup
    ◐ daemon  runs v2.0.0-242-gd653060, station is v2.0.0-250  → station setup
- - Environment                                                                             7 ●  2 ◐
+ - Environment                                                                             6 ●  2 ◐
    ● local ip    192.168.1.152
-   ● vpn         Tailscale
    ● filevault   on
    ● firewall    on
    ● sip         off
@@ -39,13 +35,10 @@
    ◐ brew        120 outdated
      → station tools upgrade --via brew
    ● tailnet     Running · jterrazz-macbook-pro.tail1234.ts.net · 100.98.133.14
- - Workspace                                                                               3 ●  3 ◐
-   ● repos   2            2 dirty
-   ◐ deps    14 outdated  in 1 repos
-   ● docker  off
-   ● disk    27.9 GB      reclaimable: station storage clean
-   ◐ tart    ~/.tart      78.4 GB  → station setup
-   ◐ bun     ~/.bun       2.1 GB  → station setup
+ - Workspace                                                                               1 ●  2 ◐
+   ● disk  27.9 GB  reclaimable: station storage clean
+   ◐ tart  ~/.tart  78.4 GB  → station setup
+   ◐ bun   ~/.bun   2.1 GB  → station setup
  - Identity                                                                                     2 ●
    ● git email    admin@jterrazz.com
    ● git signing  on
@@ -62,8 +55,8 @@
    └─ ◐ socket                     not loaded             root  Docker.app  /Library/La…ocket.plist
         → sudo launchctl bootout system/com.docker.socket &&
           sudo rm /Library/LaunchDaemons/com.docker.socket.plist
- - Gateways                                                                                     1 ✗
-   ✗ Hermes runtime  not running  gateway process not found
+ - Gateways                                                                                     1 ●
+   ● Tailscale Serve  on
  - Tools                                                                              7 ●  6 ◐  4 ○
    ○ mise                      brew · system  → station tools install mise
    ○ mas                       brew           → station tools install mas

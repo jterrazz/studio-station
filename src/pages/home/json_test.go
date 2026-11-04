@@ -8,58 +8,55 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/domain/setup"
-	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/overview"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden from the presenter")
 
-func fixed() status.Snapshot {
+func fixed() pagehome.Overview {
 	node := catalog.Tool{Name: "node", Category: catalog.CategoryRuntimes, Installs: catalog.Anywhere(catalog.Mise("node", "lts")), Provides: []string{"node", "npm", "npx"}}
-	return status.Snapshot{
+	return pagehome.Overview{
 		GeneratedAt: time.Date(2026, 10, 31, 14, 0, 0, 0, time.UTC),
-		Station:     status.Station{Version: "v3.0.0", Commit: "abc1234", Daemon: status.Check{Name: "daemon", State: catalog.StateOK, Value: "running v3.0.0"}},
-		Machine: status.Machine{
+		Station:     overview.Station{Version: "v3.0.0", Commit: "abc1234", Daemon: overview.Check{Name: "daemon", State: catalog.StateOK, Value: "running v3.0.0"}},
+		Machine: overview.Machine{
 			Name: "macbook", Registered: true, Kind: catalog.Host, Hostname: "macbook",
 			OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh",
 		},
-		System: status.System{
+		System: overview.System{
 			Uptime: "3d 4h", Battery: "92% charging", MemoryTotal: 34359738368,
-			Sample: status.Sample{
-				CPU:    []status.Process{{PID: 1, Name: "x", Value: 12.5}},
-				Memory: []status.Process{{PID: 1, Name: "x", Value: 1048576}},
+			Sample: activity.Sample{
+				CPU:    []activity.Process{{PID: 1, Name: "x", Value: 12.5}},
+				Memory: []activity.Process{{PID: 1, Name: "x", Value: 1048576}},
 			},
 		},
-		Environment: status.Environment{
-			Network:  []status.Check{{Name: "local ip", State: catalog.StateOK, Value: "192.168.1.2"}},
-			Ports:    []status.Port{{PID: 1, Name: "node", Port: "3000"}},
-			Security: []status.Check{{Name: "filevault", State: catalog.StateOK, Value: "on"}},
-			Updates:  []status.Check{{Name: "brew", State: catalog.StateDegraded, Value: "3 outdated"}},
+		Environment: overview.Environment{
+			Network:     []overview.Check{{Name: "local ip", State: catalog.StateOK, Value: "192.168.1.2"}},
+			Ports:       []overview.Port{{PID: 1, Name: "node", Port: "3000"}},
+			Protections: []overview.Check{{Name: "filevault", State: catalog.StateOK, Value: "on"}},
+			Updates:     []overview.Check{{Name: "brew", State: catalog.StateDegraded, Value: "3 outdated"}},
 		},
-		Workspace: status.Workspace{
-			Repositories: []status.Repository{{Path: "jterrazz/x", Branch: "main"}},
-			Dependencies: []status.Dependency{{Path: "jterrazz/x", Manager: "pnpm", Outdated: 2}},
-			Docker:       status.Docker{State: catalog.StateOK},
-			Disk:         []status.Disk{{Name: "homebrew", Bytes: 123}},
+		Workspace: pagehome.Workspace{
+			Disk: []overview.Disk{{Name: "homebrew", Bytes: 123}},
 		},
 		Tools: []tools.Report{{Tool: node, Method: catalog.MethodMise, State: catalog.StateOK, Version: "24.11.0", Managed: true}},
 		Config: []config.Report{{
 			Item:  catalog.ConfigItem{Name: "hushlogin", Category: catalog.CategoryTerminal, Places: []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}},
 			State: catalog.StateOK,
 		}},
-		Setup: status.Setup{State: catalog.StateOK, Steps: []setup.Step{
+		Setup: overview.Setup{State: catalog.StateOK, Steps: []overview.Step{
 			{Name: "name", State: catalog.StateOK, Detail: "macbook"},
 			{Name: "zshrc", State: catalog.StateOK},
 			{Name: "layout", State: catalog.StateOK},
 		}},
-		Identity:   []status.Check{{Name: "git-email", State: catalog.StateOK, Value: "admin@jterrazz.com"}},
-		Background: []status.Job{{Label: "ai.jterrazz.x", Group: status.GroupUnknown, State: catalog.StateOK, Run: status.JobRunning, PID: 12, Scope: "user", Plist: "~/Library/LaunchAgents/ai.jterrazz.x.plist"}},
-		Gateways:   []status.Check{{Name: "OpenClaw runtime", State: catalog.StateBroken, Value: "not running", Detail: "gateway process not found"}},
+		Identity:   []overview.Check{{Name: "git-email", State: catalog.StateOK, Value: "admin@jterrazz.com"}},
+		Background: []overview.Job{{Label: "ai.jterrazz.x", Group: overview.GroupUnknown, State: catalog.StateOK, Run: overview.JobRunning, PID: 12, Scope: "user", Plist: "~/Library/LaunchAgents/ai.jterrazz.x.plist"}},
+		Gateways:   []overview.Check{{Name: "Tailscale Serve", State: catalog.StateOK, Value: "on"}},
 		Tailnet: ports.Status{
 			State: catalog.StateOK, Connected: true, BackendState: "Running",
 			Name: "macbook", DNSName: "macbook.tail1234.ts.net", IP: "100.64.0.1",

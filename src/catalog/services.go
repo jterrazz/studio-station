@@ -29,6 +29,10 @@ var Profiles = []Profile{
 	{Name: "vite", Port: 5173, HTTP: true, Env: []ProfileEnv{{Name: "__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS", Value: "{host}"}}},
 }
 
+const ServeRow = "Tailscale Serve" // value: the row that says whether the tailnet serves this host's VMs.
+
+var SystemListeners = []string{"rapportd", "ControlCenter", "IPNExtension", "mDNSResponder", "launchd", "systemd"} // value: the processes whose listening port is the system's own: noise in a developer's list.
+
 const ServeOffDetail = "Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console"
 
 var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}

@@ -5,10 +5,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
@@ -35,7 +36,7 @@ func Columns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}
 }
 
-func Snapshot(s status.Snapshot, here page.Context, all bool) page.Page {
+func Snapshot(s Overview, here page.Context, all bool) page.Page {
 	detail := []page.Section{
 		section("machine", "Machine", machineRows(s)),
 		section("environment", "Environment", environmentRows(s)),
@@ -46,7 +47,7 @@ func Snapshot(s status.Snapshot, here page.Context, all bool) page.Page {
 		detail = append(detail, backgroundSection(s.Background))
 	}
 	if len(s.Gateways) > 0 {
-		detail = append(detail, section("gateways", "Gateways", gatewayRows(s.Gateways)))
+		detail = append(detail, section("gateways", "Gateways", checkRows(s.Gateways)))
 	}
 	detail = append(detail, toolsSection(s), configSection(s))
 	fold := page.Folded
@@ -85,7 +86,7 @@ func section(id, title string, rows []page.Row) page.Section {
 	return page.Section{ID: id, Title: title, Columns: Columns(), Items: items}
 }
 
-func toolsSection(s status.Snapshot) page.Section {
+func toolsSection(s Overview) page.Section {
 	if s.ToolsPending {
 		return section("tools", "Tools", []page.Row{pending("catalogue", "catalogue")})
 	}
@@ -99,7 +100,7 @@ func toolsSection(s status.Snapshot) page.Section {
 	return page.Section{ID: "tools", Title: "Tools", Columns: pagetools.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: toolCounts(s.Tools)}
 }
 
-func configSection(s status.Snapshot) page.Section {
+func configSection(s Overview) page.Section {
 	if s.ConfigPending {
 		return section("config", "Config", []page.Row{pending("items", "items")})
 	}
@@ -169,24 +170,11 @@ func pending(id, label string) page.Row {
 }
 
 // value: a protection the owner turned off on purpose is a value, not an absence (M3).
-func offByChoice(c status.Check) bool {
-	return c.State == catalog.StateAbsent && c.Value == "off" && slices.Contains([]string{"sip", "remote-login", "vpn"}, c.Name)
+func offByChoice(c overview.Check) bool {
+	return c.State == catalog.StateAbsent && c.Value == "off" && slices.Contains([]string{"sip", "remote-login"}, c.Name)
 }
 
-// invariant: a runtime's detail is the domain's comma-joined words (pid, user,
-// port): a list, so every medium joins them with its own separator and the
-// pipe keeps its bytes.
-func gatewayRows(checks []status.Check) []page.Row {
-	rows := checkRows(checks)
-	for i, c := range checks {
-		if strings.HasSuffix(c.Name, " runtime") && strings.Contains(c.Detail, ", ") {
-			rows[i].Detail = page.Texts(strings.Split(c.Detail, ", ")...)
-		}
-	}
-	return rows
-}
-
-func checkRows(checks []status.Check) []page.Row {
+func checkRows(checks []overview.Check) []page.Row {
 	rows := make([]page.Row, 0, len(checks))
 	for _, c := range checks {
 		if c.State == catalog.StatePending {
@@ -215,7 +203,7 @@ func fixed(r page.Row) page.Row {
 	return r
 }
 
-func machineRows(s status.Snapshot) []page.Row {
+func machineRows(s Overview) []page.Row {
 	m := s.Machine
 	facts := page.Texts(string(m.Kind), strings.TrimSpace(m.OS+" "+m.Arch), m.User, m.Shell)
 	name := page.Row{ID: "name", Label: "name", Mark: page.OK, Cells: []page.Value{page.Text(m.Name)}, Detail: facts}
@@ -242,7 +230,7 @@ func machineRows(s status.Snapshot) []page.Row {
 	return rows
 }
 
-func setupRow(s status.Setup) page.Row {
+func setupRow(s overview.Setup) page.Row {
 	if s.State == catalog.StatePending {
 		return pending("setup", "setup")
 	}
@@ -263,9 +251,9 @@ func setupRow(s status.Setup) page.Row {
 	return row("setup", page.OK, page.Text("done"), "")
 }
 
-func environmentRows(s status.Snapshot) []page.Row {
+func environmentRows(s Overview) []page.Row {
 	rows := checkRows(s.Environment.Network)
-	rows = append(rows, checkRows(s.Environment.Security)...)
+	rows = append(rows, checkRows(s.Environment.Protections)...)
 	rows = append(rows, checkRows(s.Environment.Updates)...)
 	if s.Tailnet.State == catalog.StatePending {
 		return append(rows, pending("tailnet", "tailnet"))
@@ -273,13 +261,9 @@ func environmentRows(s status.Snapshot) []page.Row {
 	return append(rows, pagetailnet.Summary(s.Tailnet))
 }
 
-func workspaceRows(w status.Workspace) []page.Row {
-	rows := make([]page.Row, 0, 4+len(w.Strays))
-	rows = append(rows,
-		pendingOr(w.ReposPending, "repos", reposRow(w.Repositories)),
-		pendingOr(w.DepsPending, "deps", depsRow(w.Dependencies)),
-		pendingOr(w.Docker.State == catalog.StatePending, "docker", dockerRow(w.Docker)),
-		diskRow(w.Disk, w.DiskPending))
+func workspaceRows(w Workspace) []page.Row {
+	rows := make([]page.Row, 0, 1+len(w.Strays))
+	rows = append(rows, diskRow(w.Disk, w.DiskPending))
 	for i, st := range w.Strays {
 		r := page.Row{ID: st.Name + "/" + strconv.Itoa(i), Label: st.Name, Mark: page.Attention, Reason: page.Stray, Cells: []page.Value{page.Path(st.Path)}, Detail: page.Size(st.Bytes)}
 		if st.Repair != "" {
@@ -290,78 +274,7 @@ func workspaceRows(w status.Workspace) []page.Row {
 	return rows
 }
 
-func pendingOr(waiting bool, name string, answered page.Row) page.Row {
-	if waiting {
-		return pending(name, name)
-	}
-	return answered
-}
-
-func reposRow(repos []status.Repository) page.Row {
-	if len(repos) == 0 {
-		return row("repos", page.Absent, page.Text("none"), "~/Developer")
-	}
-	dirty := 0
-	for _, r := range repos {
-		dirty += r.Dirty
-	}
-	r := row("repos", page.OK, page.Count(int64(len(repos)), ""), "")
-	r.Detail = page.Count(int64(dirty), "dirty")
-	return r
-}
-
-func depsRow(deps []status.Dependency) page.Row {
-	if len(deps) == 0 {
-		return row("deps", page.Absent, page.Text("none"), "")
-	}
-	outdated, repos, unscanned := 0, 0, 0
-	for _, d := range deps {
-		switch {
-		case d.Outdated < 0:
-			unscanned++
-		case d.Outdated > 0:
-			outdated += d.Outdated
-			repos++
-		}
-	}
-	late := page.None()
-	if unscanned > 0 {
-		late = page.Count(int64(unscanned), "not scanned in time")
-	}
-	if outdated == 0 {
-		r := row("deps", page.OK, page.Text("up to date"), "")
-		r.Detail = late
-		return r
-	}
-	r := row("deps", page.Attention, page.Count(int64(outdated), "outdated"), "")
-	r.Reason = page.Outdated
-	r.Detail = page.Text("in " + strconv.Itoa(repos) + " repos")
-	if !late.IsNone() {
-		r.Detail = page.List(r.Detail, late)
-	}
-	return r
-}
-
-func dockerRow(d status.Docker) page.Row {
-	switch d.State {
-	case catalog.StateOK:
-		r := row("docker", page.OK, page.Text("running"), "")
-		r.Detail = page.List(page.Count(int64(d.Containers), "containers"), page.Count(int64(d.Images), "images"))
-		return r
-	case catalog.StateAbsent:
-		r := row("docker", page.Absent, page.Text("not installed"), "")
-		r.Hint = page.Cmd("station tools install docker")
-		return r
-	case catalog.StateDegraded:
-		return row("docker", page.OK, page.Off(), "")
-	case catalog.StateBroken, catalog.StateUnknown, catalog.StatePending:
-	}
-	r := row("docker", page.Attention, page.Text("unknown"), "")
-	r.Reason = page.Late
-	return r
-}
-
-func diskRow(disk []status.Disk, waiting bool) page.Row {
+func diskRow(disk []overview.Disk, waiting bool) page.Row {
 	var total int64
 	for _, d := range disk {
 		if d.Level == catalog.LevelCache {
@@ -416,7 +329,7 @@ func action(section string, r page.Row) page.Row {
 	return act
 }
 
-func todo(detail []page.Section, jobs []status.Job) page.Section {
+func todo(detail []page.Section, jobs []overview.Job) page.Section {
 	var broken, fixes, notes, background []page.Row
 	for _, s := range detail {
 		if s.ID == "background" {
@@ -451,7 +364,7 @@ func todo(detail []page.Section, jobs []status.Job) page.Section {
 		switch {
 		case j.State == catalog.StateBroken:
 			failing = append(failing, jobAction(j))
-		case j.State == catalog.StateDegraded && j.Group == status.GroupStation:
+		case j.State == catalog.StateDegraded && j.Group == overview.GroupStation:
 			fixes = append(fixes, jobAction(j))
 		case j.State == catalog.StateDegraded:
 			background = append(background, jobAction(j))
@@ -558,7 +471,7 @@ func find(sections []page.Section, id string) page.Section {
 	return page.Section{}
 }
 
-func checkValue(checks []status.Check, name string) string {
+func checkValue(checks []overview.Check, name string) string {
 	for _, c := range checks {
 		if c.Name == name && c.State == catalog.StateOK {
 			return c.Value
@@ -567,19 +480,16 @@ func checkValue(checks []status.Check, name string) string {
 	return ""
 }
 
-func networkValue(e status.Environment) page.Value {
+func networkValue(e overview.Environment) page.Value {
 	parts := page.Texts(checkValue(e.Network, "local ip")).Items
-	if checkValue(e.Network, "vpn") != "" {
-		parts = append(parts, page.Text("vpn on"))
-	}
 	on := 0
-	for _, c := range e.Security {
+	for _, c := range e.Protections {
 		if c.State == catalog.StateOK || offByChoice(c) {
 			on++
 		}
 	}
-	if len(e.Security) > 0 {
-		parts = append(parts, page.Text(strconv.Itoa(on)+"/"+strconv.Itoa(len(e.Security))+" on"))
+	if len(e.Protections) > 0 {
+		parts = append(parts, page.Text(strconv.Itoa(on)+"/"+strconv.Itoa(len(e.Protections))+" on"))
 	}
 	return page.List(parts...)
 }
@@ -603,7 +513,7 @@ func tailnetValue(t ports.Status) page.Value {
 	return page.Texts(name, serve)
 }
 
-func identityValue(checks []status.Check) page.Value {
+func identityValue(checks []overview.Check) page.Value {
 	var parts []string
 	parts = append(parts, checkValue(checks, "git-email"))
 	if checkValue(checks, "git-signing") == "on" {
@@ -615,19 +525,7 @@ func identityValue(checks []status.Check) page.Value {
 	return page.Texts(parts...)
 }
 
-func workspaceValue(w status.Workspace) page.Value {
-	parts := []page.Value{page.Count(int64(len(w.Repositories)), "repos")}
-	outdated := 0
-	for _, d := range w.Dependencies {
-		outdated += max(d.Outdated, 0)
-	}
-	if outdated > 0 {
-		parts = append(parts, page.Count(int64(outdated), "deps outdated"))
-	}
-	return page.List(parts...)
-}
-
-func storageValue(w status.Workspace) page.Value {
+func storageValue(w Workspace) page.Value {
 	var cache int64
 	for _, d := range w.Disk {
 		if d.Level == catalog.LevelCache {
@@ -642,7 +540,7 @@ func storageValue(w status.Workspace) page.Value {
 	return storage
 }
 
-func powerValue(s status.Snapshot) page.Value {
+func powerValue(s Overview) page.Value {
 	if !s.Power.Held {
 		return page.Off()
 	}
@@ -653,7 +551,7 @@ func powerValue(s status.Snapshot) page.Value {
 	return page.Texts(append(words, pages.Term(s.Power.Until.Sub(s.GeneratedAt))+" left")...)
 }
 
-func fleetValue(s status.Snapshot) page.Value {
+func fleetValue(s Overview) page.Value {
 	d := s.Station.Daemon
 	if d.Value == "" || d.State == catalog.StateAbsent {
 		if s.Machine.Name != "" {
@@ -666,7 +564,7 @@ func fleetValue(s status.Snapshot) page.Value {
 
 // invariant: one row per area, its worst mark and its value (H4), in the order
 // the two columns read: Machine to Background, then Tools to Gateways.
-func summary(s status.Snapshot, detail []page.Section) page.Section {
+func summary(s Overview, detail []page.Section) page.Section {
 	area := func(id, label string, mark page.Mark, value page.Value) page.Item {
 		return page.Item{Row: &page.Row{ID: "summary/" + id, Label: label, Mark: mark, Cells: []page.Value{value}}}
 	}
@@ -689,7 +587,6 @@ func summary(s status.Snapshot, detail []page.Section) page.Section {
 		area("network", "Network", worst(find(detail, "environment")), networkValue(s.Environment)),
 		area("tailnet", "Tailnet", pages.MarkOf(s.Tailnet.State), tailnetValue(s.Tailnet)),
 		area("identity", "Identity", worst(find(detail, "identity")), identityValue(s.Identity)),
-		area("workspace", "Workspace", worst(find(detail, "workspace")), workspaceValue(s.Workspace)),
 	}
 	if len(s.Background) > 0 {
 		items = append(items, area("background", "Background", backgroundMark(s.Background), backgroundValue(s.Background)))
@@ -710,11 +607,11 @@ func summary(s status.Snapshot, detail []page.Section) page.Section {
 	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Break: right, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: items}
 }
 
-func Strip(samples []status.Sample, snap status.Snapshot) page.Strip {
+func Strip(samples []activity.Sample, snap Overview) page.Strip {
 	memoryTotal := snap.System.MemoryTotal
 	last := samples[len(samples)-1]
 	strip := page.Strip{GPU: page.Percent(int64(last.GPU * 10))}
-	cpu := func(s status.Sample) float64 {
+	cpu := func(s activity.Sample) float64 {
 		total := 0.0
 		for _, proc := range s.CPU {
 			total += proc.Value
@@ -749,7 +646,7 @@ func Strip(samples []status.Sample, snap status.Snapshot) page.Strip {
 	return strip
 }
 
-func Live(p page.Page, samples []status.Sample, snap status.Snapshot) page.Page {
+func Live(p page.Page, samples []activity.Sample, snap Overview) page.Page {
 	if len(samples) == 0 {
 		return p
 	}

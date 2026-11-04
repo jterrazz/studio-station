@@ -5,7 +5,6 @@
 ◐	daemon	runs v2.0.0-242-gd653060, station is v2.0.0-250	station setup
 # Environment
 ●	local ip	192.168.1.152
-●	vpn	Tailscale
 ●	filevault	on
 ●	firewall	on
 ●	sip	off
@@ -14,9 +13,6 @@
 ◐	brew	120 outdated	station tools upgrade --via brew
 ●	tailnet	Running · jterrazz-macbook-pro.tail1234.ts.net · 100.98.133.14
 # Workspace
-●	repos	2	2 dirty
-◐	deps	14 outdated	in 1 repos
-●	docker	off
 ●	disk	27.9 GB	reclaimable: station storage clean
 ◐	tart	~/.tart	78.4 GB · station setup
 ◐	bun	~/.bun	2.1 GB · station setup
@@ -28,7 +24,7 @@
 ✗	com.jterrazz.brain.x-snapshot	unknown	failing · last exit 2	user		~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist · launchctl bootout gui/501/com.jterrazz.brain.x-snapshot && rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
 ◐	com.docker.socket	orphan	not loaded	root	Docker.app	/Library/LaunchDaemons/com.docker.socket.plist · sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist
 # Gateways
-✗	Hermes runtime	not running	gateway process not found
+●	Tailscale Serve	on
 # Tools	7 ●	6 ◐	4 ○
 ○	mise		brew · system	station tools install mise
 ○	mas		brew	station tools install mas

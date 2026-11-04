@@ -1,5 +1,4 @@
- - To do                                                              10 ◐  2 ✗
-   ✗ Hermes runtime     not running · gateway process not found
+ - To do                                                               9 ◐  1 ✗
    ✗ brain.x-snapshot   failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
@@ -9,7 +8,6 @@
    ◐ tools              4 wait for mise  → station tools install mise
    ◐ power              policy partly applied  → station config install power
    ◐ macos              2 pending · checked 22m ago
-   ◐ deps               14 outdated · in 1 repos
    ◐ chatgpt            on PATH, not managed by cask
    ◐ better-ui          outdated
    ◐ com.docker.socket  orphan: Docker.app is gone
@@ -17,22 +15,21 @@
        sudo rm /Library/LaunchDaemons/com.docker.socket.plist
  - Summary
    ◐ Machine     host · Darwin 27.0.0 · up 22d 14h
-   ◐ Network     192.168.1.152 · vpn on · 4/4 on
+   ◐ Network     192.168.1.152 · 4/4 on
    ● Tailnet     jterrazz-macbook-pro · Serve on
    ● Identity    admin@jterrazz.com · signing on
-   ◐ Workspace   2 repos · 14 deps outdated
    ✗ Background  3 jobs · 1 failing · 1 orphan
    ◐ Tools       7 ●  6 ◐  4 ○
    ◐ Config      1 ●  1 ◐
    ● Storage     27.9 GB reclaimable · 2 strays
    ◐ Fleet       daemon not installed
-   ✗ Gateways    1 ✗
+   ● Gateways    1 ●
  + Machine                                                             3 ●  1 ◐
- + Environment                                                         7 ●  2 ◐
- + Workspace                                                           3 ●  3 ◐
+ + Environment                                                         6 ●  2 ◐
+ + Workspace                                                           1 ●  2 ◐
  + Identity                                                                 2 ●
  + Background                                                     1 ●  1 ◐  1 ✗
- + Gateways                                                                 1 ✗
+ + Gateways                                                                 1 ●
  + Tools                                                          7 ●  6 ◐  4 ○
  + Config                                                              1 ●  1 ◐
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

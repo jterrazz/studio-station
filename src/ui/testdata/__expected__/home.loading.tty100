@@ -5,17 +5,17 @@
    ◐ strays  2 folders out of place · 80.5 GB  → station setup
 
  Summary
-   ◌ Machine    host · Darwin 27.0.0              ◌ Tools     1 ◌
-   ◌ Network    192.168.1.152 · vpn on · 4/4 on   ◌ Config    1 ◌
-   ◌ Tailnet    off                               ● Storage   27.9 GB reclaimable · 2 strays
-   ◌ Identity   not set                           ◌ Fleet     macbook
-   ◐ Workspace  2 repos · 14 deps outdated        ◌ Gateways  1 ◌
+   ◌ Machine   host · Darwin 27.0.0       ◌ Tools     1 ◌
+   ◌ Network   192.168.1.152 · 4/4 on     ◌ Config    1 ◌
+   ◌ Tailnet   off                        ● Storage   27.9 GB reclaimable · 2 strays
+   ◌ Identity  not set                    ◌ Fleet     macbook
+   ◌ Gateways  1 ◌
 
  Machine  1 ●  3 ◌
 
- Environment  6 ●  3 ◌
+ Environment  5 ●  3 ◌
 
- Workspace  2 ◐  4 ◌
+ Workspace  2 ◐  1 ◌
 
  Identity  2 ◌
 
