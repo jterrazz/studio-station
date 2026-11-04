@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	schedule "github.com/jterrazz/studio-station/src/domain/probe"
+	schedule "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/ports"

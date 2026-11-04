@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	schedule "github.com/jterrazz/studio-station/src/domain/probe"
+	schedule "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -58,7 +58,7 @@ func (s *Service) asked(ctx context.Context, c system.Cmd, budget time.Duration,
 	var out system.Output
 	var err error
 	if shared {
-		out, err = schedule.Output(ctx, s.o.Pool, s.h.Run, c)
+		out, err = schedule.Shared(ctx, s.o.Pool, schedule.Command(c.Name, c.Args), func(ctx context.Context) (system.Output, error) { return s.h.Run.Output(ctx, c) })
 	} else {
 		out, err = s.h.Run.Output(ctx, c)
 	}

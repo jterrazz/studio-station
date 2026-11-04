@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/probe"
+	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 )
 
 const (

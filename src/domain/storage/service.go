@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/disk/contract"
-	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/system"
 )
 

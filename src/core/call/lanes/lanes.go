@@ -1,4 +1,4 @@
-package probe
+package lanes
 
 import (
 	"context"
@@ -7,8 +7,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 type Lane int
@@ -39,11 +37,16 @@ type Job[R any] struct {
 	Late    func(*R)
 }
 
+type Clock interface {
+	Now() time.Time
+	Sleep(ctx context.Context, d time.Duration) error
+}
+
 type Pool struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	work   sync.WaitGroup
-	clock  system.Clock
+	clock  Clock
 	mu     sync.Mutex
 	lanes  [2]*lane
 	prefer string
@@ -62,7 +65,7 @@ type ticket struct {
 	start chan struct{}
 }
 
-func NewPool(ctx context.Context, clock system.Clock, commands, walks int) *Pool {
+func NewPool(ctx context.Context, clock Clock, commands, walks int) *Pool {
 	ctx, cancel := context.WithCancel(ctx)
 	return &Pool{
 		ctx:    ctx,
@@ -286,20 +289,24 @@ func Share[T any](ctx context.Context, p *Pool, key string, fn func(context.Cont
 	return v
 }
 
-func Output(ctx context.Context, p *Pool, run system.Runner, c system.Cmd) (system.Output, error) {
-	// value: one command runs once per pool, shared by every reader that asks
-	// the same words (gh auth status, read by status and by config).
+func Command(name string, args []string) string {
+	// value: the key of one command line, so every reader that asks the same
+	// words (gh auth status, read by status and by config) shares one run.
+	return "cmd/" + name + " " + strings.Join(args, " ")
+}
+
+func Shared[O any](ctx context.Context, p *Pool, key string, run func(context.Context) (O, error)) (O, error) {
 	type result struct {
-		out system.Output
+		out O
 		err error
 	}
-	key := "cmd/" + c.Name + " " + strings.Join(c.Args, " ")
 	r := Share(ctx, p, key, func(ctx context.Context) result {
-		out, err := run.Output(ctx, c)
+		out, err := run(ctx)
 		return result{out: out, err: err}
 	})
 	if err := ctx.Err(); err != nil {
-		return system.Output{}, err
+		var zero O
+		return zero, err
 	}
 	return r.out, r.err
 }
@@ -339,7 +346,7 @@ func Run[R any](ctx context.Context, p *Pool, frame R, jobs []Job[R], clone func
 	return out
 }
 
-func collect[R any](ctx context.Context, clock system.Clock, report R, left int, answers, partials <-chan func(*R), clone func(R) R, out chan<- R) {
+func collect[R any](ctx context.Context, clock Clock, report R, left int, answers, partials <-chan func(*R), clone func(R) R, out chan<- R) {
 	defer close(out)
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()

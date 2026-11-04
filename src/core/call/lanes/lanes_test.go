@@ -1,4 +1,4 @@
-package probe
+package lanes
 
 import (
 	"context"
@@ -191,7 +191,7 @@ func TestPreferredPrefixRunsFirst(t *testing.T) {
 func TestASharedKeyRunsOnce(t *testing.T) {
 	p := NewPool(context.Background(), &manualClock{}, 4, 1)
 	var runs atomic.Int32
-	job := Job[report]{Key: "tools/list/brew", Do: func(context.Context) func(*report) {
+	job := Job[report]{Key: "apps/list/formulae", Do: func(context.Context) func(*report) {
 		runs.Add(1)
 		return set(0, "listed")
 	}}
@@ -203,7 +203,7 @@ func TestASharedKeyRunsOnce(t *testing.T) {
 	if n := runs.Load(); n != 1 {
 		t.Fatalf("the shared key ran %d times, want once", n)
 	}
-	p.Forget("tools/")
+	p.Forget("apps/")
 	Last(Run(context.Background(), p, report{parts: []string{""}}, []Job[report]{job}, clone))
 	if n := runs.Load(); n != 2 {
 		t.Fatalf("after Forget the key ran %d times in all, want a second run", n)
@@ -234,7 +234,7 @@ func TestCloseEndsASharedJobAndWaitsForIt(t *testing.T) {
 	p := NewPool(context.Background(), &manualClock{}, 4, 1)
 	started := make(chan struct{})
 	var reaped atomic.Bool
-	job := Job[report]{Key: "storage/docker", Budget: time.Hour, Do: func(ctx context.Context) func(*report) {
+	job := Job[report]{Key: "disk/walk", Budget: time.Hour, Do: func(ctx context.Context) func(*report) {
 		close(started)
 		<-ctx.Done()
 		reaped.Store(true)
