@@ -1,4 +1,4 @@
-description: 'with the mini silent after a power cut, --all-machines updates the rest and says the mini did not answer, exit 1'
+description: 'with the mini silent, --all-machines updates the rest and says the mini did not answer, exit 1'
 env: mini-offline
 runs:
     - command: 'apps update --all-machines'

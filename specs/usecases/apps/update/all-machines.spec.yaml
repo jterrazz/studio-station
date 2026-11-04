@@ -1,4 +1,4 @@
-description: 'station apps update --all-machines updates every Mac and running workspace; a server and a stopped VM are skipped and said'
+description: '--all-machines updates every Mac and running workspace, saying each server and stopped VM skipped'
 env: two-macs
 runs:
     - command: 'apps update --all-machines'

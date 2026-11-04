@@ -1,4 +1,4 @@
-description: 'ctrl-c during apps install fd eza prints nothing after the interrupt and exits 130; what finished stays installed'
+description: 'ctrl-c during an install prints nothing after it, exits 130, and what finished stays installed'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

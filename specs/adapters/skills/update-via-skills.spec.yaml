@@ -1,8 +1,8 @@
 description: '--method skills re-adds the skills whose folder changed upstream, and nothing else'
 fixture:
     - ../../__fixtures__/stubs/
-    - ../../__fixtures__/skills-cli/
-    - ../../__fixtures__/skill-lock/
+    - ../__fixtures__/skills-cli/
+    - ./__fixtures__/skill-lock/
 serve:
     - github
 runs:

@@ -2,7 +2,7 @@ description: 'the inventory is one call per method: no per-app version probe, no
 fixture:
     - ../../__fixtures__/stubs/
     - ./__fixtures__/bun-cli/
-    - ../../__fixtures__/skills-cli/
+    - ../__fixtures__/skills-cli/
 runs:
     - command: 'apps --json > /dev/null; /usr/bin/sort .calls'
       exit: 0

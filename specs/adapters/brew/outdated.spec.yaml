@@ -1,4 +1,4 @@
-description: 'brew outdated --json=v2 marks the formulae and casks behind, a pinned formula left out, and a bare update takes only those'
+description: 'brew outdated --json=v2 marks formulae and casks behind, pinned left out; update takes only those'
 fixture:
     - ../../__fixtures__/stubs/
     - ./__fixtures__/outdated/

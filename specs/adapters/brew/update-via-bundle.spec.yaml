@@ -1,7 +1,7 @@
 description: 'a named app updates through brew bundle --upgrade'
 fixture:
     - ../../__fixtures__/stubs/
-    - ../../__fixtures__/bat-installed/
+    - ./__fixtures__/bat-installed/
 runs:
     - command: 'apps update bat'
       exit: 0

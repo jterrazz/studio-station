@@ -1,4 +1,4 @@
-description: 'station apps on a terminal sums This Mac first, then Updates, Not installed and OK folded, and counts what lives elsewhere'
+description: 'station apps sums This Mac, then Updates, Not installed, OK folded, and counts what lives elsewhere'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

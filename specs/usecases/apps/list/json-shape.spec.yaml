@@ -1,4 +1,4 @@
-description: 'station apps --json is station.apps.list/v1: each app with its state, method, version and where it lives'
+description: 'station apps --json is station.apps.list/v1: each app''s state, method, version and where it lives'
 env: two-macs
 runs:
     - command: 'apps --json | /usr/bin/jq -c "{schema, elsewhere: .not_for_this_machine, gh: (.apps[] | select(.name == \"gh\"))}"'

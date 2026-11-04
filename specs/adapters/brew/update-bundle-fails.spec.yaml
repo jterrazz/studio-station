@@ -1,7 +1,7 @@
 description: 'a failing brew bundle update is a failure, exit 1'
 fixture:
     - ../../__fixtures__/stubs/
-    - ../../__fixtures__/bat-installed/
+    - ./__fixtures__/bat-installed/
     - ./__fixtures__/bundle-fails/
 runs:
     - command: 'apps update --method brew'

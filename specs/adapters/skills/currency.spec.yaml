@@ -1,7 +1,7 @@
 description: 'a locked skill is ok, an update available when its folder changed upstream, absent unlocked'
 fixture:
     - ../../__fixtures__/stubs/
-    - ../../__fixtures__/skill-lock/
+    - ./__fixtures__/skill-lock/
 serve:
     - github
 runs:

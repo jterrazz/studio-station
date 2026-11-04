@@ -1,4 +1,4 @@
-description: 'station apps --all lists every row of every group, the apps of other machines too, which the bare list only counts'
+description: 'station apps --all lists every row of every group, other machines'' apps too'
 env: two-macs
 runs:
     - command: 'apps | /usr/bin/grep -A1 "^# Not for this machine"'

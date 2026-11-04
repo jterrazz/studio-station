@@ -1,4 +1,4 @@
-description: 'names with --method, a --method without its manager, an unknown manager and the old manager flags are refused, exit 2'
+description: 'names with --method, a bare or unknown --method and the old manager flags are refused, exit 2'
 env: two-macs
 runs:
     - command: 'apps update gh --method brew'

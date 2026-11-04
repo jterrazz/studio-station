@@ -1,4 +1,4 @@
-description: 'an app present outside its method, a dropped .app, is Not managed, and its detail says how it got there'
+description: 'an app present outside its method, a dropped .app, is Not managed, its detail saying how'
 fixture: ./__fixtures__/dropped-app/
 env: two-macs
 runs:

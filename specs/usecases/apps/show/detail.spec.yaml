@@ -1,4 +1,4 @@
-description: 'station apps gh is its detail: method, version, where it lives, its category, what it brings and keeps'
+description: 'station apps gh is its detail: method, version, where it lives, category, what it brings'
 env: two-macs
 runs:
     - command: 'apps gh'
