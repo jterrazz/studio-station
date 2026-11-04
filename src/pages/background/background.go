@@ -133,10 +133,10 @@ func Confirm(label string) page.Confirm {
 	return page.Confirm{Question: "Remove " + label + "?", Yes: "remove"}
 }
 
-// value: a task's state in the words of every surface: running with its
-// pid, failing with its last exit, idle, not loaded; station's own job not
-// loaded is stopped.
 func State(t background.Task) page.Value {
+	// value: a task's state in the words of every surface: running with its
+	// pid, failing with its last exit, idle, not loaded; station's own job
+	// not loaded is stopped.
 	switch t.Run {
 	case background.Running:
 		return page.Texts("running", "pid "+strconv.Itoa(t.PID))
