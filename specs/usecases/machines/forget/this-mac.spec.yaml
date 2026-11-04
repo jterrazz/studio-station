@@ -1,4 +1,4 @@
-description: 'This Mac is never forgotten, by its name or its short one: exit 2, and nothing changes'
+description: 'forget refuses This Mac by its name or its short one: exit 2, nothing changes'
 env: two-macs
 runs:
     - command: 'machines forget jterrazz-macbook-pro --yes'

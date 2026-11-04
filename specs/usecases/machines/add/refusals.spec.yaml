@@ -1,4 +1,4 @@
-description: 'add refuses a missing name, a name station cannot keep and a Mac already added, exit 2, before it reaches any Mac'
+description: 'add refuses no name, a bad name and a Mac already added, exit 2, before it reaches any Mac'
 env: two-macs
 runs:
     - command: 'machines add'

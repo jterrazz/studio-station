@@ -1,4 +1,4 @@
-description: 'restarting a Mac sends the FileVault authrestart, then waits for its station to drop and to answer again'
+description: 'a planned restart sends FileVault''s authrestart, then waits for the station to drop and answer'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/

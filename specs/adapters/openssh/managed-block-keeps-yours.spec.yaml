@@ -1,4 +1,4 @@
-description: 'adding a Mac writes its one block and leaves the owner''s own Host lines, before and after station''s, as they were; forgetting it gives the file back byte for byte'
+description: 'add writes one block and keeps the owner''s Host lines around it; forget gives the file back'
 fixture:
     - ../../__fixtures__/far-mac/
     - ./__fixtures__/owner-ssh-config/

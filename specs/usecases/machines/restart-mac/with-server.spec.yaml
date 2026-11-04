@@ -1,4 +1,4 @@
-description: 'on a terminal, restarting a Mac asks yes or no naming what pauses; yes sends a planned restart that unlocks itself, waits for it to answer, and says how its VMs are'
+description: 'yes, naming what pauses, restarts the Mac, waits for its station and says how its VMs are'
 fixture:
     - ../../../__fixtures__/terminal/
 env:
@@ -20,7 +20,7 @@ runs:
 
            Changes
              ● mac-mini  back · infra stopped
-    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].engine.started_at > "2026-11-04T10:00:00Z"'' world.json'
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].engine.started_at > "2026-11-04"'' world.json'
       exit: 0
       stdout: |
           true

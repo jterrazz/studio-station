@@ -1,4 +1,4 @@
-description: 'add refuses to shadow a Host the owner wrote outside station''s blocks: nothing is written, the preferences rolled back'
+description: 'add never shadows a Host the owner wrote: nothing is written, the preferences rolled back'
 fixture:
     - ../../__fixtures__/far-mac/
     - ./__fixtures__/hand-written-ssh-config/

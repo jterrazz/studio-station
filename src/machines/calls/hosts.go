@@ -87,13 +87,13 @@ type RestartMacIn struct {
 	Confirm string
 }
 
-// invariant: a Mac restarts by a planned restart that unlocks itself, sent
-// from this Mac; the answer waits for it to answer again, and says how the
-// VMs it paused are now.
 var RestartMac = call.Call[Deps, RestartMacIn, machines.Back]{
 	Name: "machines.restart-mac", Where: call.InProcess, Applies: machine.Anywhere, Confirm: confirm.RestartMac,
 	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in RestartMacIn, _ call.Progress) (machines.Back, error) {
+		// invariant: a Mac restarts by a planned restart that unlocks itself,
+		// sent from this Mac; the answer waits for it to answer again, and
+		// says how the VMs it paused are now.
 		if err := d.Machines.CheckHost(); err != nil {
 			return machines.Back{}, err
 		}
@@ -101,7 +101,7 @@ var RestartMac = call.Call[Deps, RestartMacIn, machines.Back]{
 		if err != nil {
 			return machines.Back{}, err
 		}
-		if err := confirm.Require(confirm.For(confirm.RestartMac, d.Kind), in.Name, in.Confirm); err != nil {
+		if err = confirm.Require(confirm.For(confirm.RestartMac, d.Kind), in.Name, in.Confirm); err != nil {
 			return machines.Back{}, err
 		}
 		paused, _ := d.Machines.VMsOf(ctx, mac)

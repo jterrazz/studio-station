@@ -40,11 +40,11 @@ const (
 	ItemEngineAtLogin         = "engine-starts-at-login"
 )
 
-// invariant: SPEC 7.6: a Mac that hosts a server, or holds Never sleeps,
-// has its readiness, six items in the one order, each measured; any other
-// Mac has none. A disk that FileVault guards needs you after a power cut,
-// however ready the rest is.
 func Readiness(f ReadinessFacts) []ReadinessItem {
+	// invariant: SPEC 7.6: a Mac that hosts a server, or holds Never sleeps,
+	// has its readiness, six items in the one order, each measured; any
+	// other Mac has none. A disk that FileVault guards needs you after a
+	// power cut, however ready the rest is.
 	if !f.HostsServer && f.NeverSleeps.State != catalog.StateOK {
 		return nil
 	}

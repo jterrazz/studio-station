@@ -1,4 +1,4 @@
-description: 'a Mac that does not answer is not added: nothing is written, neither its preferences nor its ssh block'
+description: 'a Mac that does not answer is not added: no preference, no ssh block'
 env: one-mac
 runs:
     - command: 'world offline jterrazz-mac-mini'

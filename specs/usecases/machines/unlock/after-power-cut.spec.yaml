@@ -1,4 +1,4 @@
-description: 'on a terminal, unlock opens the pre-boot session of a Mac waiting at FileVault after a power cut; once its disk is unlocked it answers on Tailscale again'
+description: 'on a terminal, unlock opens the pre-boot prompt; once unlocked the Mac is on Tailscale again'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

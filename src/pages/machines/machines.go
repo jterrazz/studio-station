@@ -221,7 +221,8 @@ func Unlocked(u machines.Unlocked, here page.Context) page.Page {
 
 func Back(b machines.Back, here page.Context) page.Page {
 	// value: the Mac back, and each VM it paused as it is now.
-	said := []string{"back"}
+	said := make([]string, 0, 1+len(b.VMs))
+	said = append(said, "back")
 	for _, vm := range b.VMs {
 		said = append(said, vm.Name+" "+strings.ToLower(stateWord(vm.State)))
 	}

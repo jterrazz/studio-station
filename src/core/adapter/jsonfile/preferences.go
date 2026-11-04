@@ -39,10 +39,10 @@ func NewPreferences(files Files, dir string, groups []string) *Preferences {
 	return &Preferences{files: files, dir: dir, groups: slices.Clone(groups)}
 }
 
-// invariant: a group kept under its retired name is read under its new one,
-// and written under it at the next write; the retired name never shadows a
-// group already kept under the new one.
 func (p *Preferences) Renaming(retired, now string) *Preferences {
+	// invariant: a group kept under its retired name is read under its new
+	// one, and written under it at the next write; the retired name never
+	// shadows a group already kept under the new one.
 	if p.renamed == nil {
 		p.renamed = map[string]string{}
 	}
@@ -126,12 +126,11 @@ func (p *Preferences) load() (map[string]json.RawMessage, error) {
 	return doc, err
 }
 
-func (p *Preferences) read() (map[string]json.RawMessage, bool, error) {
-	doc, err := p.parse()
+func (p *Preferences) read() (doc map[string]json.RawMessage, renamed bool, err error) {
+	doc, err = p.parse()
 	if err != nil {
 		return nil, false, err
 	}
-	renamed := false
 	for retired, now := range p.renamed {
 		raw, ok := doc[retired]
 		if !ok {

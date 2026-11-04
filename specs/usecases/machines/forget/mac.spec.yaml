@@ -1,4 +1,4 @@
-description: 'on a terminal, forget asks yes or no; yes removes the Mac and its ssh block here, and nothing changes on it'
+description: 'on a terminal, yes forgets the Mac and its ssh block here; nothing changes on it'
 fixture:
     - ../../../__fixtures__/terminal/
 env:
