@@ -19,6 +19,10 @@ func Translate(err error, path string) *fail.Error {
 		if word, ok := words.Codes()[worded.Code]; ok && worded.Message == "" {
 			worded.Message, worded.Hint = word(worded)
 		}
+		var said *fail.Said
+		if worded.Message == "" && errors.As(worded.Cause, &said) {
+			worded.Message, worded.Hint = said.Message, said.Hint
+		}
 		if worded.Message != "" && worded.Hint == "" {
 			worded.Hint = hint
 		}
