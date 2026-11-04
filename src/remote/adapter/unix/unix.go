@@ -16,8 +16,10 @@ import (
 	"github.com/jterrazz/studio-station/src/remote/contract"
 )
 
-// Guest is the guest's own API, over the one connection its Mac's engine holds.
-const Guest = "/usr/local/bin/station guest serve --stdio"
+const (
+	// value: the guest's own API, over the one connection its Mac's engine holds.
+	Guest = "/usr/local/bin/station guest serve --stdio"
+)
 
 type Engine interface {
 	// value: runs line inside vm over the engine's own connection to it,

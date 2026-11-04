@@ -16,9 +16,11 @@ import (
 
 const Version = "v3.1.0"
 
-// Mini is the far machine of every case: a Mac with jq to install, which
-// asks before it forgets, and two snapshots of its activity.
-var Mini = machine.Profile{Ref: machine.Ref{Name: "mac-mini"}, Kind: machine.Mac, System: machine.System{OS: machine.MacOS}}
+var (
+	// value: the far machine of every case: a Mac with jq to install, which
+	// asks before it forgets, and two snapshots of its activity.
+	Mini = machine.Profile{Ref: machine.Ref{Name: "mac-mini"}, Kind: machine.Mac, System: machine.System{OS: machine.MacOS}}
+)
 
 type InstallIn struct{ App string }
 

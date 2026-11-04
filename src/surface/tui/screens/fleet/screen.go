@@ -24,12 +24,12 @@ import (
 
 const ID = "fleet"
 
-// Remote opens station's own screen on that machine, the terminal handed to it.
 type Remote func(ctx context.Context, machine string) error
 
 type Deps struct {
-	Calls    call.Router
-	Target   machine.Ref
+	Calls  call.Router
+	Target machine.Ref
+	// value: opens station's own screen on that machine, the terminal handed to it.
 	Remote   Remote
 	Describe tab.Describe
 }
