@@ -20,7 +20,7 @@ A tool's state is one of `ok` (the method's manager lists it), `degraded` (found
 
 ## Methods
 
-One registry, `apps/contract.Installers`, holds an installer per method, each its own adapter under `src/apps/adapter/<method>/` with its commands and its parser; nothing else switches on a method. `wire` builds the registry; `domain/tools` asks each installer what it can do.
+One registry, `Installers` in `src/apps/contract/`, holds an installer per method, each its own adapter under `src/apps/adapter/<method>/` with its commands and its parser; nothing else switches on a method. `wire` builds the registry; `domain/tools` asks each installer what it can do.
 
 | Method                | Install                                                            | Uninstall                               | Upgrade                          | Kinds       |
 | --------------------- | ------------------------------------------------------------------ | --------------------------------------- | -------------------------------- | ----------- |
