@@ -83,7 +83,7 @@ func importTable() map[string][]string {
 		"ui/render/tui":              append(slices.Clone(template), "ui/template", tea),
 		"output":                     {"page", "ui/render/*", "core/fail", std},
 		"core/*":                     {"core/*", std},
-		"core/adapter/*":             {"core/*", "platform/local", "golang.org/x/sys/unix", std},
+		"core/adapter/*":             {"core/*", "platform/local", "golang.org/x/sys/unix", "world", std},
 		"core/contract/contracttest": {"core/*", "testing", std},
 		"core/fail":                  {"core/finding", std},
 		"surface/tui":                {"surface/tui/screens/*", "domain/*", "ports", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
