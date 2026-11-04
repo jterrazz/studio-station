@@ -15,6 +15,7 @@ import (
 	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/fail"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/domain/remote"
 	"github.com/jterrazz/studio-station/src/domain/settings"
@@ -170,6 +171,7 @@ type machine struct {
 	pool      *probe.Pool
 	host      system.Host
 	powerPort awakecontract.Power
+	profile   coremachine.Profile
 	vars      map[string]string
 	kind      catalog.MachineKind
 	paths     settings.Paths
@@ -199,19 +201,20 @@ func resolve(h system.Host, door local.Power, vars map[string]string) machine {
 		Bin:    filepath.Join(home, ".local", "bin"),
 		Roots:  roots,
 	}
-	kind := settings.DetectKind(context.Background(), h, vars["STATION_MACHINE_KIND"])
 	store := settings.NewStore(h.FS, paths)
 	current, _ := store.Load()
 	m := machine{
 		pool:  probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
 		host:  h,
 		vars:  vars,
-		kind:  kind,
 		paths: paths,
 		store: store,
-		where: page.Context{Machine: hereName(current.Here, h.Env.Hostname()), Kind: string(kind), Registered: current.Here != ""},
 	}
 	m.powerPort = awakemacos.New(door, h.Run, m.systemRoot())
+	name := hereName(current.Here, h.Env.Hostname())
+	m.profile = profileOf(context.Background(), h, vars["STATION_MACHINE_KIND"], name, m.powerPort)
+	m.kind = legacyKind(m.profile)
+	m.where = page.Context{Machine: name, Kind: string(m.kind), Registered: current.Here != ""}
 	return m
 }
 
