@@ -22,7 +22,7 @@ runs:
              └─ ? infra    Server     Unknown · always on              8 CPU  24 GB
 
            Needs you
-             ✗ mac-mini  does not answer
+             ✗ mac-mini  does not answer  → station machines unlock mac-mini
     - command: 'machines'
       exit: 0
       stdout: |
@@ -32,4 +32,4 @@ runs:
           ✗	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Unreachable · last answer 03:12
           ?	infra	Server	jterrazz-mac-mini	Unknown · always on	8 CPU	24 GB
           # Needs you
-          ✗	mac-mini	does not answer
+          ✗	mac-mini	does not answer	station machines unlock mac-mini

@@ -1,0 +1,31 @@
+description: 'KP-12: after a power cut the mini does not answer and says how to unlock it; once unlocked it answers, and infra starts by itself'
+env: two-macs
+runs:
+    - command: 'machines'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
+          ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
+          ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
+          ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB
+    - command: 'world power-cut jterrazz-mac-mini'
+      exit: 0
+    - command: 'machines | /usr/bin/grep -A1 -E "mac-mini|Needs you"'
+      exit: 0
+      stdout: |
+          ✗	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Unreachable · last answer 10:00
+          ?	infra	Server	jterrazz-mac-mini	Unknown · always on	8 CPU	24 GB
+          # Needs you
+          ✗	mac-mini	does not answer	station machines unlock mac-mini
+    - command: 'world unlock jterrazz-mac-mini'
+      exit: 0
+    - command: 'machines | /usr/bin/grep -E "mac-mini|infra"'
+      exit: 0
+      stdout: |
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
+          ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].vms.infra | [.pid > 0, .kept.want]'' world.json'
+      exit: 0
+      stdout: |
+          [true,"running"]
