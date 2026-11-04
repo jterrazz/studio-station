@@ -1,11 +1,13 @@
 package status
 
 import (
+	"context"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/ports"
 )
 
 func (s *Service) networkProbes() []probe {
@@ -164,37 +166,34 @@ func systemPortProcess(name string) bool {
 	return false
 }
 
-// outside: lsof -F prints one field per line, p<pid>, c<command>, n<address>.
-func listeningPorts(r reply) []Port {
-	ports := []Port{}
-	if !r.ok() {
-		return ports
-	}
-	var pid int
-	var command string
+// invariant: one row per port and process, the system's own listeners left
+// out, in port order.
+func listeningPorts(ls []ports.Listener) []Port {
+	out := []Port{}
 	seen := map[string]bool{}
-	for _, line := range strings.Split(r.text(), "\n") {
-		if line == "" {
+	for _, l := range ls {
+		if l.Process == "" || systemPortProcess(l.Process) {
 			continue
 		}
-		field := line[1:]
-		switch line[0] {
-		case 'p':
-			pid = int(parseInt(field))
-		case 'c':
-			command = field
-		case 'n':
-			i := strings.LastIndex(field, ":")
-			if command == "" || systemPortProcess(command) || i < 0 {
-				continue
-			}
-			port := field[i+1:]
-			if key := port + "/" + command; !seen[key] {
-				seen[key] = true
-				ports = append(ports, Port{PID: pid, Name: command, Port: port})
-			}
+		port := strconv.Itoa(l.Port)
+		if key := port + "/" + l.Process; !seen[key] {
+			seen[key] = true
+			out = append(out, Port{PID: l.PID, Name: l.Process, Port: port})
 		}
 	}
-	sort.SliceStable(ports, func(i, j int) bool { return parseInt(ports[i].Port) < parseInt(ports[j].Port) })
-	return ports
+	sort.SliceStable(out, func(i, j int) bool { return parseInt(out[i].Port) < parseInt(out[j].Port) })
+	return out
+}
+
+func (s *Service) listening(ctx context.Context) []Port {
+	if s.deps.Listeners == nil {
+		return []Port{}
+	}
+	ctx, cancel := context.WithTimeout(ctx, defaultBudget)
+	defer cancel()
+	ls, err := s.deps.Listeners.Read(ctx)
+	if err != nil || ctx.Err() != nil {
+		return []Port{}
+	}
+	return listeningPorts(ls)
 }

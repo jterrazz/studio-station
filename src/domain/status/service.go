@@ -33,6 +33,12 @@ type Sources struct {
 	Storage StorageReader
 	Daemon  DaemonReader
 	Power   PowerReader
+	// value: what listens on this Mac, read by its adapter.
+	Listeners ListenersReader
+}
+
+type ListenersReader interface {
+	Read(ctx context.Context) ([]ports.Listener, error)
 }
 
 type PowerReader interface {

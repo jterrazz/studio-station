@@ -100,8 +100,8 @@ func (s *Service) watch(ctx context.Context) <-chan Snapshot {
 		jobs = append(jobs, s.tableJobs("environment/updates", s.updateProbes(), func(sn *Snapshot) []Check { return sn.Environment.Updates })...)
 		jobs = append(jobs, job{Key: subject + "/environment/ports", Budget: defaultBudget + margin,
 			Do: func(ctx context.Context) func(*Snapshot) {
-				ports := listeningPorts(s.ask(ctx, cmd("lsof", "-iTCP", "-sTCP:LISTEN", "-P", "-n", "-Fpcn"), defaultBudget))
-				return func(sn *Snapshot) { sn.Environment.Ports = ports }
+				found := s.listening(ctx)
+				return func(sn *Snapshot) { sn.Environment.Ports = found }
 			},
 			Late: func(*Snapshot) {},
 		})
