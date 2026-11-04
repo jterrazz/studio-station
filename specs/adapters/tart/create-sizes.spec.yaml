@@ -1,7 +1,7 @@
 description: "memory counts binary, disk decimal, an unknown unit is refused"
 fixture:
-    - ../../../__fixtures__/vms/
-    - ../../../__fixtures__/engine-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/engine-vm/
 env: engine
 serve: sshd
 runs:

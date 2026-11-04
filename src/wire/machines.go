@@ -3,16 +3,18 @@ package wire
 import (
 	"context"
 	"errors"
-	"github.com/jterrazz/studio-station/src/catalog"
 	"path/filepath"
 	"strconv"
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	machinescmd "github.com/jterrazz/studio-station/src/surface/cli/machines"
@@ -91,8 +93,11 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		machinescreate.Command(machinescreate.Deps{
 			Resources: machines.ParseResources, Check: createCheck(service),
 			NotBuilt: func(image string) error { return &machines.NoImageError{Image: image} },
-			Fleet:    func(ctx context.Context) (machines.Fleet, error) { return service.Fleet(ctx, false) },
-			Here:     m.where, Ask: createAsker(env),
+			Admit: func() error {
+				return call.Gate(call.Meta{Name: machinescalls.CreateWorkspace.Name, Applies: machinescalls.CreateWorkspace.Applies}, m.profile)
+			},
+			Fleet: func(ctx context.Context) (machines.Fleet, error) { return service.Fleet(ctx, false) },
+			Here:  m.where, Ask: createAsker(env),
 		}, env),
 		machinesstart.Command(machinesstart.Deps{Names: service.Names, Here: m.where}, env),
 		machinesstop.Command(machinesstop.Deps{Names: service.Names, Here: m.where}, env),

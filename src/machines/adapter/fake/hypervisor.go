@@ -38,8 +38,14 @@ func HypervisorOf(w *world.World, mac, name string) *Hypervisor {
 	return &Hypervisor{w: w, mac: mac, name: name}
 }
 
-func (h *Hypervisor) Name() string    { return h.name }
-func (h *Hypervisor) Installed() bool { return true }
+func (h *Hypervisor) Name() string {
+	if n := h.here().Hypervisor; n != "" && n != "none" {
+		return n
+	}
+	return h.name
+}
+
+func (h *Hypervisor) Installed() bool { return h.here().Hypervisor != "none" }
 
 func (h *Hypervisor) Version(context.Context) (string, error) { return "1.0.0", nil }
 

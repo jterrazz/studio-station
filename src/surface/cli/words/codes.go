@@ -26,6 +26,9 @@ func Codes() map[fail.Code]Wording {
 			return e.Subject + " kept: you said no", "--yes skips the question"
 		},
 		call.NotForThisMachine: func(e *fail.Error) (string, string) {
+			if why, fix := e.Detail["why"], e.Detail["fix"]; why != "" && fix != "" {
+				return why, fix
+			}
 			if why := e.Detail["why"]; why != "" {
 				return why, "run station overview for what " + e.Subject + " has"
 			}

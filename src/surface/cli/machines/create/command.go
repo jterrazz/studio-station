@@ -25,6 +25,9 @@ type Deps struct {
 	Check func(ctx context.Context, r machines.CreateRequest) (unbuilt bool, err error)
 	// value: the refusal of an image the owner chose not to build.
 	NotBuilt func(image string) error
+	// value: refuses this machine when the call's rule says no, before any
+	// check of the request.
+	Admit func() error
 	// value: the fleet, for the host question; read only.
 	Fleet func(ctx context.Context) (machines.Fleet, error)
 	Here  page.Context
@@ -87,6 +90,11 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			return nil
 		},
 		Validate: func(ctx context.Context, in *Input) error {
+			if !env.Far() {
+				if err := d.Admit(); err != nil {
+					return err
+				}
+			}
 			unbuilt, err := d.Check(ctx, in.request)
 			if unbuilt && d.Ask != nil {
 				in.buildFirst = true

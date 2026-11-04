@@ -43,6 +43,9 @@ type Capabilities struct {
 	Jobs    bool
 	VMs     bool
 	Engine  bool
+	// value: the hypervisor a Mac runs its VMs with, by its adapter's name,
+	// installed or not (VMs says which).
+	Hypervisor string
 }
 
 type Hardware struct {
@@ -62,6 +65,8 @@ type Profile struct {
 type Verdict struct {
 	OK  bool
 	Why string
+	// value: the command that makes the rule say yes, when one does.
+	Fix string
 }
 
 var Yes = Verdict{OK: true}

@@ -54,6 +54,10 @@ type Mac struct {
 	Locked bool `json:"locked,omitempty"`
 	// value: out of the tailnet's reach.
 	Offline bool `json:"offline,omitempty"`
+	// value: the hypervisor this Mac has: empty, the one station is built
+	// with; none, no hypervisor installed; another name, a second fake that
+	// stands for another adapter (vz).
+	Hypervisor string `json:"hypervisor,omitempty"`
 	// value: the station version this Mac runs; empty, the spec binary's.
 	Station string `json:"station,omitempty"`
 	// value: what station keeps in this Mac's preferences, by group.

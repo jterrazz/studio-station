@@ -291,7 +291,7 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 		pin, self, m.powerPort = "", world.self(), world.power()
 	}
 	name := hereName(registered, h.Env.Hostname())
-	m.profile = profileOf(context.Background(), self, pin, name, m.powerPort)
+	m.profile = profileOf(context.Background(), self, pin, name, m.powerPort, func() (string, bool) { h := m.hypervisor(); return h.Name(), h.Installed() })
 	m.kind = legacyKind(m.profile)
 	m.where = page.Context{Machine: name, Kind: string(m.kind), Registered: registered != ""}
 	return m
