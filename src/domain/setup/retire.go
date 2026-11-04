@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -80,15 +81,13 @@ func (s *Service) retire(ctx context.Context) (rows []Step, background bool, err
 	}
 	left := false
 	for _, account := range retiredAccounts() {
-		gone, err := s.keychain.Remove(ctx, account)
-		var missing bool
-		if err != nil {
-			missing = errors.Is(err, system.ErrNotFound)
-			if !missing {
-				return nil, false, err
-			}
+		switch err := s.vault.Forget(ctx, account); {
+		case err == nil:
+			left = true
+		case errors.Is(err, accounts.ErrNotKept), errors.Is(err, system.ErrNotFound):
+		default:
+			return nil, false, err
 		}
-		left = left || gone
 	}
 	if left {
 		rows = append(rows, Step{Name: stepLayout, State: catalog.StateOK, Changed: true,

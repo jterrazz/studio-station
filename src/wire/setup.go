@@ -24,7 +24,7 @@ func setupService(env kit.Env, m machine) *setup.Service {
 	fleet := m.machines(env.Interactive)
 	registrar := fleetRegistrar{store: m.store, machines: fleet}
 	installer := daemonInstaller{m: m, machines: fleet}
-	return setup.New(m.host, m.store, settings.NewKeychain(m.host.Run).On(m.kind), registrar, installer, setup.Options{
+	return setup.New(m.host, m.store, m.vault(), registrar, installer, setup.Options{
 		Here:  m.kind,
 		Paths: m.paths,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is

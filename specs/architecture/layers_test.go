@@ -40,7 +40,7 @@ const (
 // `x/*`, a longer prefix beats a shorter. `std` is the standard library minus
 // forbiddenStd; a forbidden member is re-allowed only by its name in a row.
 func importTable() map[string][]string {
-	domain := []string{"system", "catalog", "domain/settings", "domain/probe", "ports", "background", "background/contract", std}
+	domain := []string{"system", "catalog", "domain/settings", "domain/probe", "ports", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract", std}
 	organism := []string{"ui/molecule", "ui/atom", "ui/token", "page", lip, bubble, huh, std}
 	template := append(slices.Clone(organism), "ui/organism")
 	return map[string][]string{
@@ -49,7 +49,7 @@ func importTable() map[string][]string {
 		"cmd/generate/pages":    {"page", "pages", "pages/*", "domain/*", "engine", "ports", "catalog", "ui/token", std},
 		"wire":                  {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", std},
 		"surface/cli":           {"surface/cli/kit", cobra, std},
-		"surface/cli/kit":       {"output", "page", "core/fail", "domain/*", "engine", "ports", "catalog", "testing", cobra, pflag, std},
+		"surface/cli/kit":       {"output", "page", "core/fail", "domain/*", "engine", "ports", "accounts", "catalog", "testing", cobra, pflag, std},
 		"surface/cli/*":         {"surface/cli/kit", "domain/*", "engine", "ports", "page", "pages/*", "catalog", cobra, pflag, std},
 		"domain/*":              domain,
 		"domain/setup":          append(slices.Clone(domain), "domain/shell", "domain/storage"),

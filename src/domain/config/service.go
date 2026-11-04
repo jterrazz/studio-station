@@ -34,7 +34,6 @@ type Service struct {
 	byName map[string]catalog.ConfigItem
 	files  fs.FS
 	store  settings.Store
-	kc     settings.Keychain
 	o      Options
 }
 
@@ -43,7 +42,7 @@ func New(h system.Host, items []catalog.ConfigItem, files fs.FS, store settings.
 	for _, it := range items {
 		byName[it.Name] = it
 	}
-	return &Service{h: h, items: items, byName: byName, files: files, store: store, kc: settings.NewKeychain(h.Run).On(o.Here), o: o}
+	return &Service{h: h, items: items, byName: byName, files: files, store: store, o: o}
 }
 
 type Report struct {
