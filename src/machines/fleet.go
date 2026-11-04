@@ -109,10 +109,10 @@ type RestartReport struct {
 	Waited time.Duration
 }
 
-// value: what an edit changed (the sizes asked, the others zero) and
-// whether the VM runs, so the change waits for its next start.
 type Edited struct {
-	Name    string
+	Name string
+	// value: the sizes the edit asked, the others zero.
 	Changed Resources
+	// value: the VM runs, so the change waits for its next start.
 	Running bool
 }

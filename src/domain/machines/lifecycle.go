@@ -69,9 +69,9 @@ func (s *Service) Stop(ctx context.Context, name string) error {
 	return s.daemon.Do(ctx, "stop", name)
 }
 
-// value: the stop the engine's own Stop everything takes for a run that
-// outlived the engine.
 func (s *Service) StopDirect(ctx context.Context, name string) error {
+	// value: the stop the engine's own Stop everything takes for a run that
+	// outlived the engine.
 	rec, err := s.VM(name, "stop")
 	if err != nil {
 		return err

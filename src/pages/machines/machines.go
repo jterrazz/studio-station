@@ -200,9 +200,9 @@ func Change(verb, name, change string, here page.Context) page.Page {
 	return pages.Outcome("machines "+verb, here, nil, []page.Row{pages.Done(name, catalog.StateOK, change)}, "machines")
 }
 
-// value: a start or stop that found the VM already so: its mark is the state
-// it is in, running or stopped, and nothing changed.
 func Already(verb, name string, running bool, here page.Context) page.Page {
+	// value: a start or stop that found the VM already so: its mark is the state
+	// it is in, running or stopped, and nothing changed.
 	state, said := catalog.StateAbsent, "is already stopped"
 	if running {
 		state, said = catalog.StateOK, "is already running"
@@ -378,9 +378,9 @@ func SSH(name string, t machines.SSHTarget, here page.Context) page.Page {
 	return pages.Outcome("machines ssh "+name, here, []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "command", Kind: page.KindText, Keep: 90}}, []page.Row{row}, "machines")
 }
 
-// value: the sizes an edit changed, and when they apply; a running VM is
-// told the restart that applies them now.
 func Edited(e machines.Edited, here page.Context) page.Page {
+	// value: the sizes an edit changed, and when they apply; a running VM is
+	// told the restart that applies them now.
 	var parts []string
 	if n := e.Changed.CPUs; n == 1 {
 		parts = append(parts, "1 cpu")

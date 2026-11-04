@@ -30,9 +30,9 @@ func (s *Service) CheckEdit(name string, r Resources) error {
 	return nil
 }
 
-// invariant: an edit writes the sizes the VM boots with; a running VM keeps
-// its own until its next start, and a disk is never shrunk.
 func (s *Service) Edit(ctx context.Context, name string, r Resources) (Edited, error) {
+	// invariant: an edit writes the sizes the VM boots with; a running VM keeps
+	// its own until its next start, and a disk is never shrunk.
 	if err := s.CheckEdit(name, r); err != nil {
 		return Edited{}, err
 	}
