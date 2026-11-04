@@ -15,7 +15,7 @@ func recordOf(r model.Record) VMRecord {
 	return VMRecord{
 		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
 		Resources: Resources{CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes},
-		Lent:      r.Shares, CreatedAt: r.CreatedAt,
+		CreatedAt: r.CreatedAt,
 	}
 }
 
@@ -74,7 +74,7 @@ func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM
 		vm := VM{
 			Name: r.Name, Image: r.Image, Version: r.Version, Host: host, Kind: kindOfImage(r.Image),
 			Lifetime: r.Lifetime, State: stateOf(info), Resources: r.Resources, SizeGB: int(info.Bytes / 1e9),
-			Network: networkOf(r), Guest: "unknown", Want: r.Want, Lent: r.Lent, CreatedAt: r.CreatedAt,
+			Network: networkOf(r), Guest: "unknown", Want: r.Want, CreatedAt: r.CreatedAt,
 		}
 		if d, ok := live[r.Name]; ok && live != nil {
 			if d.State != "" {

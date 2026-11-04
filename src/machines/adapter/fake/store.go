@@ -37,7 +37,6 @@ func record(name string, v *world.VM) machines.Record {
 	return machines.Record{
 		Name: name, Image: k.Image, Version: k.Version, Lifetime: k.Lifetime, Want: k.Want, Network: k.Network,
 		Env: k.Env, CPUs: v.Size.CPUs, MemoryBytes: v.Size.Memory, DiskBytes: v.Size.Disk, CreatedAt: k.CreatedAt,
-		Shares: k.Shares,
 	}
 }
 
@@ -59,13 +58,9 @@ func (s *Store) Put(_ context.Context, r machines.Record) error {
 		v = &world.VM{}
 		s.vms()[r.Name] = v
 	}
-	var shares []string
-	if v.Kept != nil {
-		shares = v.Kept.Shares
-	}
 	v.Kept = &world.Kept{
 		Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
-		CreatedAt: r.CreatedAt, Shares: shares,
+		CreatedAt: r.CreatedAt,
 	}
 	v.Size = machines.Size{CPUs: r.CPUs, Memory: r.MemoryBytes, Disk: r.DiskBytes}
 	return nil
@@ -93,9 +88,6 @@ func (s *Store) Delete(_ context.Context, name string) error {
 		return nil
 	}
 	v.Kept = nil
-	if st := s.w.Mac(s.mac).Stores; st != nil {
-		delete(st.Shares, name)
-	}
 	if !v.Disk {
 		delete(s.vms(), name)
 	}

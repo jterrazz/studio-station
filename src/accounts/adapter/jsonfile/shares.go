@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io/fs"
+	"maps"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -14,19 +16,23 @@ import (
 	"github.com/jterrazz/studio-station/src/core/store"
 )
 
+const Version = 1
+
 type Files interface {
 	ReadFile(path string) ([]byte, error)
 	WriteFile(path string, data []byte, perm fs.FileMode) error
+	MkdirAll(path string, perm fs.FileMode) error
 	ReadDir(path string) ([]fs.DirEntry, error)
 	Stat(path string) (fs.FileInfo, error)
 }
 
 type Shares struct {
-	// invariant: the shares live beside each VM's record, under its `lent`
-	// key; only that key is read or written, every other key is carried over
-	// untouched, since the machines' store owns the rest of the file.
-	files Files
-	dir   string
+	// invariant: every share of this Mac lives in one file, by VM; a VM's
+	// record beside it (records) is read to know the VM, and written only by
+	// the migration that moves the shares station v2 kept there.
+	files   Files
+	file    string
+	records string
 }
 
 var (
@@ -34,107 +40,166 @@ var (
 	_ store.Migrator      = (*Shares)(nil)
 )
 
-func NewShares(files Files, dir string) *Shares { return &Shares{files: files, dir: dir} }
+func NewShares(files Files, file, records string) *Shares {
+	return &Shares{files: files, file: file, records: records}
+}
 
-func (s *Shares) file(vm string) string { return path.Join(s.dir, vm+".json") }
+type document struct {
+	V      int                         `json:"v,omitempty"`
+	Shares map[string][]accounts.Share `json:"shares"`
+}
+
+func (s *Shares) load() (map[string][]accounts.Share, error) {
+	data, err := s.files.ReadFile(s.file)
+	if errors.Is(err, fs.ErrNotExist) {
+		return map[string][]accounts.Share{}, nil
+	}
+	if err != nil {
+		return nil, &store.UnreadableError{Path: s.file, Cause: err}
+	}
+	var doc document
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, &store.UnreadableError{Path: s.file, Cause: err, Line: store.LineOf(data, err)}
+	}
+	if _, err := store.Current(doc.V, Version); err != nil {
+		return nil, &store.UnreadableError{Path: s.file, Cause: err}
+	}
+	if doc.Shares == nil {
+		doc.Shares = map[string][]accounts.Share{}
+	}
+	return doc.Shares, nil
+}
+
+func (s *Shares) save(held map[string][]accounts.Share) error {
+	data, err := json.MarshalIndent(document{Shares: held}, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := s.files.MkdirAll(path.Dir(s.file), 0o700); err != nil {
+		return err
+	}
+	return s.files.WriteFile(s.file, append(data, '\n'), 0o600)
+}
+
+func (s *Shares) record(vm string) string { return path.Join(s.records, vm+".json") }
 
 func (s *Shares) Get(_ context.Context, vm string) ([]accounts.Share, error) {
-	_, shares, err := s.read(vm)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
+	held, err := s.load()
+	if err != nil {
+		return nil, err
 	}
-	return shares, err
+	return slices.Clone(held[vm]), nil
 }
 
 func (s *Shares) Put(_ context.Context, vm string, shares []accounts.Share) error {
-	record, _, err := s.read(vm)
+	if _, err := s.files.Stat(s.record(vm)); err != nil {
+		return errors.Join(store.ErrNotFound, errors.New("no VM "+vm))
+	}
+	held, err := s.load()
 	if err != nil {
 		return err
 	}
 	if len(shares) == 0 {
-		delete(record, "lent")
+		delete(held, vm)
 	} else {
-		raw, marshalErr := json.Marshal(shares)
-		if marshalErr != nil {
-			return marshalErr
-		}
-		record["lent"] = raw
+		held[vm] = slices.Clone(shares)
 	}
-	data, err := json.MarshalIndent(record, "", "  ")
-	if err != nil {
-		return err
-	}
-	return s.files.WriteFile(s.file(vm), append(data, '\n'), 0o600)
+	return s.save(held)
 }
 
 func (s *Shares) List(context.Context) (map[string][]accounts.Share, error) {
-	held := map[string][]accounts.Share{}
-	entries, err := s.files.ReadDir(s.dir)
-	if errors.Is(err, fs.ErrNotExist) {
-		return held, nil
-	}
+	held, err := s.load()
 	if err != nil {
 		return nil, err
 	}
-	for _, e := range entries {
-		vm, ok := strings.CutSuffix(e.Name(), ".json")
-		if !ok {
-			continue
-		}
-		_, shares, err := s.read(vm)
-		if err != nil {
-			return nil, err
-		}
-		if len(shares) > 0 {
-			held[vm] = shares
-		}
-	}
-	return held, nil
+	return maps.Clone(held), nil
 }
 
-func (s *Shares) Delete(ctx context.Context, vm string) error {
-	shares, err := s.Get(ctx, vm)
-	if err != nil || len(shares) == 0 {
+func (s *Shares) Delete(_ context.Context, vm string) error {
+	held, err := s.load()
+	if err != nil {
 		return err
 	}
-	return s.Put(ctx, vm, nil)
+	if _, ok := held[vm]; !ok {
+		return nil
+	}
+	delete(held, vm)
+	return s.save(held)
 }
 
-func (s *Shares) Migrate(ctx context.Context) error {
-	_, err := s.List(ctx)
-	return store.OnlyNewer(err)
-}
-
-// invariant: a record written before shares expired holds plain names: each
-// reads as shared at the file's mtime for the default term, and the next put
-// writes it in the new form.
-func (s *Shares) read(vm string) (record map[string]json.RawMessage, shares []accounts.Share, err error) {
-	data, err := s.files.ReadFile(s.file(vm))
+func (s *Shares) Migrate(context.Context) error {
+	// invariant: the shares station v2 kept under each VM record's `lent`
+	// key move into the one file once, merged by name with any kept there,
+	// and leave the record; a second run finds none and writes nothing.
+	entries, err := s.files.ReadDir(s.records)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
 	if err != nil {
-		return nil, nil, err
+		return nil
 	}
-	record = map[string]json.RawMessage{}
-	if err := json.Unmarshal(data, &record); err != nil {
-		return nil, nil, err
+	held, err := s.load()
+	if err != nil {
+		return store.OnlyNewer(err)
 	}
-	raw, ok := record["lent"]
+	for _, e := range entries {
+		vm, ok := strings.CutSuffix(e.Name(), ".json")
+		if !ok || e.IsDir() {
+			continue
+		}
+		shares, rest, found := s.lentIn(vm)
+		if !found {
+			continue
+		}
+		for _, sh := range shares {
+			if !slices.ContainsFunc(held[vm], func(have accounts.Share) bool { return have.Name == sh.Name }) {
+				held[vm] = append(held[vm], sh)
+			}
+		}
+		if err := s.save(held); err != nil {
+			return err
+		}
+		data, err := json.MarshalIndent(rest, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := s.files.WriteFile(s.record(vm), append(data, '\n'), 0o600); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// invariant: a v2 record holds its shares as plain names (before shares
+// expired) or as {name, at, until}; a plain name reads as shared at the
+// record's mtime for the default term.
+func (s *Shares) lentIn(vm string) (shares []accounts.Share, rest map[string]json.RawMessage, found bool) {
+	data, err := s.files.ReadFile(s.record(vm))
+	if err != nil {
+		return nil, nil, false
+	}
+	rest = map[string]json.RawMessage{}
+	if json.Unmarshal(data, &rest) != nil {
+		return nil, nil, false
+	}
+	raw, ok := rest["lent"]
 	if !ok {
-		return record, nil, nil
+		return nil, nil, false
 	}
-	var objects []accounts.Share
-	if json.Unmarshal(raw, &objects) == nil {
-		return record, objects, nil
+	delete(rest, "lent")
+	if json.Unmarshal(raw, &shares) == nil {
+		return shares, rest, true
 	}
 	var names []string
-	if err := json.Unmarshal(raw, &names); err != nil {
-		return nil, nil, err
+	if json.Unmarshal(raw, &names) != nil {
+		return nil, rest, true
 	}
 	at := time.Time{}
-	if info, statErr := s.files.Stat(s.file(vm)); statErr == nil {
+	if info, statErr := s.files.Stat(s.record(vm)); statErr == nil {
 		at = info.ModTime().UTC().Truncate(time.Second)
 	}
 	for _, n := range names {
 		shares = append(shares, accounts.Share{Name: n, At: at, Until: at.Add(accounts.DefaultShareTerm)})
 	}
-	return record, shares, nil
+	return shares, rest, true
 }

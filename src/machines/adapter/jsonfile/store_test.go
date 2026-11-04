@@ -21,16 +21,16 @@ func TestMachineStore(t *testing.T) {
 	})
 }
 
-func TestAPutKeepsTheSharesBesideTheRecord(t *testing.T) {
+func TestAPutKeepsTheV2SharesUntilTheyMoveOut(t *testing.T) {
 	dir := t.TempDir()
 	at := filepath.Join(dir, "api.json")
 	_ = os.WriteFile(at, []byte(`{"name":"api","image":"linux","lent":[{"name":"session:a","at":"2026-11-01T09:00:00Z","until":"2026-11-01T17:00:00Z"}]}`), 0o600)
 	s := jsonfile.New(disk(), dir)
 	r, err := s.Get(context.Background(), "api")
-	if err != nil || len(r.Shares) != 1 || r.Shares[0] != "session:a" {
-		t.Fatalf("Get = %+v, %v; want session:a lent", r, err)
+	if err != nil {
+		t.Fatal(err)
 	}
-	r.Shares, r.Want = nil, "stopped"
+	r.Want = "stopped"
 	if err := s.Put(context.Background(), r); err != nil {
 		t.Fatal(err)
 	}

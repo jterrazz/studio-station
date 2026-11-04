@@ -7,9 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-	"time"
 
-	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/accounts/adapter/jsonfile"
 	"github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/accounts/contract/contracttest"
@@ -24,30 +22,37 @@ func TestShareStore(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		return jsonfile.NewShares(local.New(nil, nil, nil, nil).FS, dir)
+		return jsonfile.NewShares(local.New(nil, nil, nil, nil).FS, filepath.Join(t.TempDir(), "shares.json"), dir)
 	})
 }
 
-func TestASharePutKeepsTheRecordBesideIt(t *testing.T) {
+func TestAV2RecordsSharesMoveOutOnce(t *testing.T) {
 	dir := t.TempDir()
 	at := filepath.Join(dir, "api.json")
-	record := `{"name":"api","image":"linux","cpus":4,"created_at":"2026-11-01T09:00:00Z"}`
+	record := `{"name":"api","image":"linux","cpus":4,"lent":[{"name":"session:a","at":"2026-11-01T09:00:00Z","until":"2026-11-01T21:00:00Z"}]}`
 	if err := os.WriteFile(at, []byte(record), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	s := jsonfile.NewShares(local.New(nil, nil, nil, nil).FS, dir)
-	nine := time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)
-	if err := s.Put(context.Background(), "api", []accounts.Share{{Name: "session:a", At: nine, Until: nine.Add(accounts.DefaultShareTerm)}}); err != nil {
+	file := filepath.Join(t.TempDir(), "shares.json")
+	s := jsonfile.NewShares(local.New(nil, nil, nil, nil).FS, file, dir)
+	if err := s.Migrate(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Put(context.Background(), "api", nil); err != nil {
-		t.Fatal(err)
+	held, err := s.Get(context.Background(), "api")
+	if err != nil || len(held) != 1 || held[0].Name != "session:a" || held[0].Until.Hour() != 21 {
+		t.Fatalf("Get = %+v, %v; want session:a until 21:00, moved out of the record", held, err)
 	}
 	data, _ := os.ReadFile(at)
-	var got, want map[string]any
+	var got map[string]any
 	_ = json.Unmarshal(data, &got)
-	_ = json.Unmarshal([]byte(record), &want)
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("the VM's record changed:\n%s", data)
+	if want := map[string]any{"name": "api", "image": "linux", "cpus": 4.0}; !reflect.DeepEqual(got, want) {
+		t.Errorf("the record keeps more than its own keys:\n%s", data)
+	}
+	first, _ := os.ReadFile(file)
+	if err := s.Migrate(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if again, _ := os.ReadFile(file); string(again) != string(first) {
+		t.Errorf("a second migration rewrote shares.json:\n%s", again)
 	}
 }

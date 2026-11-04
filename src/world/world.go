@@ -239,7 +239,9 @@ type Kept struct {
 	Network   string            `json:"network,omitempty"`
 	Env       map[string]string `json:"env,omitempty"`
 	CreatedAt time.Time         `json:"created_at,omitzero"`
-	Shares    []string          `json:"shares,omitempty"`
+	// value: the shares station v2 kept in the VM's record, by name, until
+	// the accounts' store moves them out once.
+	Lent []string `json:"lent,omitempty"`
 }
 
 func (v *VM) Running() bool { return v.PID != 0 }

@@ -53,7 +53,6 @@ type VM struct {
 	IP, Network, Guest, Detail string
 	// value: the state its record asks for, running or stopped.
 	Want      string
-	Lent      []string
 	CreatedAt time.Time
 }
 

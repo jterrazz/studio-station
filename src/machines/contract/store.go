@@ -10,7 +10,7 @@ type MachineStore interface {
 	// invariant: a VM never put answers store.ErrNotFound.
 	Get(ctx context.Context, name string) (machines.Record, error)
 	// invariant: putting a VM again replaces its record and keeps what
-	// another store keeps beside it; its Lent is never written.
+	// another store keeps beside it; a record never holds a share.
 	Put(ctx context.Context, r machines.Record) error
 	// invariant: every VM put, sorted by name.
 	List(ctx context.Context) ([]machines.Record, error)

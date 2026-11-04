@@ -27,7 +27,7 @@ import (
 func preferenceGroups() []string {
 	return []string{
 		setupcontract.GroupName, machinescontract.GroupMacs, machinescontract.GroupVMUser,
-		accountscontract.GroupShareList, setupcontract.GroupUserEmail, setupcontract.GroupUserName,
+		accountscontract.GroupShareList, accountscontract.GroupLendList, setupcontract.GroupUserEmail, setupcontract.GroupUserName,
 		portscontract.GroupPorts, settingscontract.GroupOffHere,
 	}
 }
@@ -88,7 +88,7 @@ func newStores(files system.FS, p settings.Paths) *stores {
 		prefs:        corejsonfile.NewPreferences(files, p.Config, preferenceGroups()),
 		machines:     machinesjsonfile.New(files, filepath.Join(p.State, "vms")),
 		images:       imagesjsonfile.New(files, filepath.Join(p.State, "images")),
-		shares:       accountsjsonfile.NewShares(files, filepath.Join(p.State, "vms")),
+		shares:       accountsjsonfile.NewShares(files, filepath.Join(p.State, "shares.json"), filepath.Join(p.State, "vms")),
 		reservations: portsjsonfile.NewReservations(files, filepath.Join(p.State, "leases.json")),
 		declarations: portsjsonfile.NewDeclarations(files, filepath.Join(p.Config, "public.json")),
 		applied:      settingsjsonfile.NewApplied(files, filepath.Join(p.State, "applied")),

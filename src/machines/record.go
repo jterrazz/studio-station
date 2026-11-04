@@ -12,9 +12,6 @@ type Record struct {
 	MemoryBytes          int64
 	DiskBytes            int64
 	CreatedAt            time.Time
-	// value: the names of the secrets shared with the VM, read only: the
-	// accounts' store writes them beside the record.
-	Shares []string
 }
 
 type Host struct {

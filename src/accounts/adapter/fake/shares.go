@@ -75,4 +75,23 @@ func (s *Shares) Delete(_ context.Context, vm string) error {
 	return nil
 }
 
-func (s *Shares) Migrate(context.Context) error { return nil }
+func (s *Shares) Migrate(context.Context) error {
+	// invariant: as the file store moves the shares a v2 record kept: each
+	// name a VM's record lends moves into the store once, shared at the
+	// world's now for the default term, and leaves the record.
+	s.w.Lock()
+	defer s.w.Unlock()
+	for _, vm := range slices.Sorted(maps.Keys(s.w.Mac(s.mac).VMs)) {
+		v := s.w.Mac(s.mac).VMs[vm]
+		if v.Kept == nil || len(v.Kept.Lent) == 0 {
+			continue
+		}
+		for _, name := range v.Kept.Lent {
+			if !slices.ContainsFunc(s.kept()[vm], func(have accounts.Share) bool { return have.Name == name }) {
+				s.kept()[vm] = append(s.kept()[vm], accounts.Share{Name: name, At: s.w.Now, Until: s.w.Now.Add(accounts.DefaultShareTerm)})
+			}
+		}
+		v.Kept.Lent = nil
+	}
+	return nil
+}
