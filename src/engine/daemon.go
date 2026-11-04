@@ -37,10 +37,7 @@ type Machines interface {
 	Remove(ctx context.Context, name string) (machines.DeleteReport, error)
 	PowerOff(ctx context.Context, name string) error
 	EngineRunning(ctx context.Context, name string) bool
-	KeyPath() string
-	VMUser() string
 	HereName() string
-	KnownHostsPath(name string) string
 }
 
 type Tailnet interface {
@@ -73,13 +70,13 @@ type Options struct {
 }
 
 type Daemon struct {
-	h     system.Host
-	hv    Hypervisor
-	ssh   system.SSH
-	m     Machines
-	tn    Tailnet
-	store settings.Store
-	o     Options
+	h      system.Host
+	hv     Hypervisor
+	guests Guests
+	m      Machines
+	tn     Tailnet
+	store  settings.Store
+	o      Options
 
 	mu      sync.Mutex
 	vms     map[string]*vmState
@@ -98,14 +95,14 @@ type Daemon struct {
 	recallFailed map[string]time.Time
 }
 
-func New(h system.Host, hv Hypervisor, ssh system.SSH, m Machines, tn Tailnet, store settings.Store, o Options) *Daemon {
+func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, store settings.Store, o Options) *Daemon {
 	if o.Tick == 0 {
 		o.Tick = time.Second
 	}
 	if o.GuestPort == 0 {
 		o.GuestPort = 22
 	}
-	d := &Daemon{h: h, hv: hv, ssh: ssh, m: m, tn: tn, store: store, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, recallFailed: map[string]time.Time{}}
+	d := &Daemon{h: h, hv: hv, guests: guests, m: m, tn: tn, store: store, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, recallFailed: map[string]time.Time{}}
 	d.power = d.newPower()
 	return d
 }

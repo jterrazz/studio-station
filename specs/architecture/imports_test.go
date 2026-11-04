@@ -189,7 +189,7 @@ func allowedOutside(p place, ip string, test bool) bool {
 func importsTolerated() map[string][]string {
 	return map[string][]string{
 		"engine":                {"domain/machines", "domain/power", "domain/services", "domain/settings", "io", "io/fs", "system", "system/systemtest"},
-		"machines/adapter/ssh":  {"net", "os", "system"},
+		"machines/adapter/ssh":  {"net", "os"},
 		"machines/adapter/tart": {"system", "system/systemtest"},
 		"platform/local":        {"platform/darwin", "system"},
 		"surface/cli/*":         {"domain/*", "testing"},

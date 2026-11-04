@@ -1,21 +1,24 @@
 package ssh
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"errors"
 	"io"
+	"io/fs"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
 const (
@@ -25,7 +28,7 @@ const (
 
 type dialer struct{}
 
-func New() system.SSH { return dialer{} }
+func New() contract.GuestDialer { return dialer{} }
 
 type client struct {
 	c    *ssh.Client
@@ -93,8 +96,11 @@ func pinnedAlgorithms(file, name string, remote net.Addr) []string {
 	return algos
 }
 
-func (dialer) Dial(ctx context.Context, t system.SSHTarget) (system.SSHClient, error) {
-	key, err := os.ReadFile(t.KeyPath)
+func auth(t contract.GuestTarget) (ssh.AuthMethod, error) {
+	if t.Password != "" {
+		return ssh.Password(t.Password), nil
+	}
+	key, err := os.ReadFile(t.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -102,19 +108,36 @@ func (dialer) Dial(ctx context.Context, t system.SSHTarget) (system.SSHClient, e
 	if err != nil {
 		return nil, err
 	}
-	cfg := &ssh.ClientConfig{
-		User:            t.User,
-		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
-		HostKeyCallback: hostKeys(t.KnownHosts, t.Name),
-		Timeout:         10 * time.Second,
-	}
-	d := net.Dialer{Timeout: 10 * time.Second}
-	conn, err := d.DialContext(ctx, "tcp", t.Addr)
+	return ssh.PublicKeys(signer), nil
+}
+
+func (dialer) Dial(ctx context.Context, t contract.GuestTarget) (contract.Guest, error) {
+	method, err := auth(t)
 	if err != nil {
 		return nil, err
 	}
-	cfg.HostKeyAlgorithms = pinnedAlgorithms(t.KnownHosts, t.Name, conn.RemoteAddr())
-	c, chans, reqs, err := ssh.NewClientConn(conn, t.Addr, cfg)
+	cfg := &ssh.ClientConfig{
+		User:    t.User,
+		Auth:    []ssh.AuthMethod{method},
+		Timeout: 10 * time.Second,
+	}
+	// invariant: a build VM is a fresh clone of a base image: its host key is new
+	// at every clone, so it is neither checked nor kept.
+	if t.KnownHosts == "" {
+		cfg.HostKeyCallback = ssh.InsecureIgnoreHostKey() //nolint:gosec // outside: the trust of a fresh clone is its image key, as above.
+	} else {
+		cfg.HostKeyCallback = hostKeys(t.KnownHosts, t.VM)
+	}
+	addr := t.Address.String()
+	d := net.Dialer{Timeout: 10 * time.Second}
+	conn, err := d.DialContext(ctx, "tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	if t.KnownHosts != "" {
+		cfg.HostKeyAlgorithms = pinnedAlgorithms(t.KnownHosts, t.VM, conn.RemoteAddr())
+	}
+	c, chans, reqs, err := ssh.NewClientConn(conn, addr, cfg)
 	if err != nil {
 		_ = conn.Close()
 		return nil, err
@@ -152,15 +175,22 @@ func (c *client) keepalive() {
 	}
 }
 
-func (c *client) Exec(ctx context.Context, command string, stdin io.Reader, stdout, stderr io.Writer) (int, error) {
+func (c *client) Exec(ctx context.Context, cmd contract.GuestCommand) (contract.GuestResult, error) {
 	session, err := c.c.NewSession()
 	if err != nil {
-		return 0, err
+		return contract.GuestResult{}, err
 	}
 	defer func() { _ = session.Close() }()
-	session.Stdin, session.Stdout, session.Stderr = stdin, stdout, stderr
-	if err := session.Start(command); err != nil {
-		return 0, err
+	var out, errs bytes.Buffer
+	session.Stdin, session.Stdout, session.Stderr = cmd.Stdin, cmd.Stdout, cmd.Stderr
+	if cmd.Stdout == nil {
+		session.Stdout = &out
+	}
+	if cmd.Stderr == nil {
+		session.Stderr = &errs
+	}
+	if err := session.Start(cmd.Line); err != nil {
+		return contract.GuestResult{}, err
 	}
 	ended := make(chan error, 1)
 	go func() { ended <- session.Wait() }()
@@ -168,17 +198,33 @@ func (c *client) Exec(ctx context.Context, command string, stdin io.Reader, stdo
 	case <-ctx.Done():
 		_ = session.Signal(ssh.SIGTERM)
 		_ = session.Close()
-		return 0, ctx.Err()
+		return contract.GuestResult{}, ctx.Err()
 	case err := <-ended:
+		res := contract.GuestResult{Stdout: out.String(), Stderr: errs.String()}
 		var exit *ssh.ExitError
 		if errors.As(err, &exit) {
-			return exit.ExitStatus(), nil
+			res.Code = exit.ExitStatus()
+			return res, nil
 		}
-		return 0, err
+		return res, err
 	}
 }
 
-func (c *client) Forward(ctx context.Context, ip string, port int) (system.Conn, error) {
+func quote(v string) string { return "'" + strings.ReplaceAll(v, "'", `'\''`) + "'" }
+
+func (c *client) Put(ctx context.Context, path string, data []byte, mode fs.FileMode) error {
+	line := "/bin/cat > " + quote(path) + " && /bin/chmod " + strconv.FormatUint(uint64(mode.Perm()), 8) + " " + quote(path)
+	res, err := c.Exec(ctx, contract.GuestCommand{Line: line, Stdin: bytes.NewReader(data)})
+	if err != nil {
+		return err
+	}
+	if res.Code != 0 {
+		return errors.New("writing " + path + " exited " + strconv.Itoa(res.Code) + ": " + strings.TrimSpace(res.Stderr))
+	}
+	return nil
+}
+
+func (c *client) Forward(ctx context.Context, ip string, port int) (io.ReadWriteCloser, error) {
 	type result struct {
 		conn net.Conn
 		err  error

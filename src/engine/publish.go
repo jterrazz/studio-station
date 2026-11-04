@@ -295,13 +295,13 @@ func (d *Daemon) unpublish(ctx context.Context, s *svc) {
 	s.served, s.serveNote = false, ""
 }
 
-func (d *Daemon) clientOf(vm string) system.SSHClient {
+func (d *Daemon) clientOf(vm string) Guest {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.clientLocked(vm)
 }
 
-func (d *Daemon) clientLocked(vm string) system.SSHClient {
+func (d *Daemon) clientLocked(vm string) Guest {
 	if v, ok := d.vms[vm]; ok {
 		return v.client
 	}

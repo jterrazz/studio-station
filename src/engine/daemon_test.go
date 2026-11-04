@@ -34,10 +34,7 @@ func (f *fakeMachines) Remove(context.Context, string) (machines.DeleteReport, e
 
 func (f *fakeMachines) PowerOff(context.Context, string) error            { return nil }
 func (f *fakeMachines) EngineRunning(_ context.Context, name string) bool { return f.stuck[name] }
-func (f *fakeMachines) KeyPath() string                                   { return "/h/.ssh/id_ed25519" }
-func (f *fakeMachines) VMUser() string                                    { return "vmu" }
 func (f *fakeMachines) HereName() string                                  { return "x" }
-func (f *fakeMachines) KnownHostsPath(name string) string                 { return "/s/known_hosts/" + name }
 
 type fakeRun struct {
 	vm    string
