@@ -1,4 +1,4 @@
-description: 'stop everything on another Mac stops its workspaces through that Mac, and skips its server, for which its engine keeps running'
+description: 'stop everything on another Mac stops its workspaces and skips its server, its engine kept'
 env: mini-workspace
 runs:
     - command: 'engine stop --yes --on jterrazz-mac-mini'

@@ -1,4 +1,4 @@
-description: 'KP-22: a host:port check passes while the port accepts a connection, and fails once it refuses'
+description: 'a host:port check passes while the port accepts a connection, and fails once it refuses'
 env: two-macs
 runs:
     - command: 'machines edit infra --check infra:6443 --on mac-mini'

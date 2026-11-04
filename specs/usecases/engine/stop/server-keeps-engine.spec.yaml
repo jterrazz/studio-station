@@ -1,4 +1,4 @@
-description: 'EN-03: stop everything on a Mac whose server runs skips the server and says so; the engine keeps running for it, and the server with it'
+description: 'stop everything skips a running server and says so; the engine keeps running for it'
 env: two-macs
 runs:
     - command: 'engine stop --on mac-mini --yes'

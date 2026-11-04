@@ -1,4 +1,4 @@
-description: 'MB-10, its engine half: each server event of SPEC 10.4 is told in its words, once, to the Notifier and the watches'
+description: 'each server event is told in its words, once, to the Notifier and the watches'
 env: two-macs
 runs:
     - command: 'world crash infra'

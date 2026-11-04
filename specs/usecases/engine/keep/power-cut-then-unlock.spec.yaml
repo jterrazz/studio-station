@@ -1,4 +1,4 @@
-description: 'KP-12: after a power cut the mini does not answer and says how to unlock it; once unlocked it answers, and infra starts by itself'
+description: 'after a power cut the mini says how to unlock it; unlocked, it answers and infra starts'
 env: two-macs
 runs:
     - command: 'machines'

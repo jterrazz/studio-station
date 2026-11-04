@@ -1,4 +1,4 @@
-description: 'KP-17: a server whose check never passed since its boot waits; it is not a failure'
+description: 'a server whose check never passed since its boot waits; it is not a failure'
 env: two-macs
 runs:
     - command: 'world fault HealthProbe.Probe'

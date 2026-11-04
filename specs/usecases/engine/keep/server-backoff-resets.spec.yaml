@@ -1,4 +1,4 @@
-description: 'KP-08: once a run stayed up 10 min, the next crash waits 5 s again, and the count goes on'
+description: 'once a run stayed up 10 min, the next crash waits 5 s again, and the count goes on'
 env: two-macs
 runs:
     - command: 'world crash infra'

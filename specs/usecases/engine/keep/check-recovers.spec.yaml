@@ -1,4 +1,4 @@
-description: 'KP-20: a failing check that passes again takes its finding away, and the owner is told once that the server is back'
+description: 'a failing check that passes again takes its finding away; the owner is told once it is back'
 env: two-macs
 runs:
     - command: 'machines | /usr/bin/grep infra'

@@ -1,4 +1,4 @@
-description: 'KP-09: a server something inside powered off stays stopped, wanted stopped, red, and the owner is told'
+description: 'a server powered off from inside stays stopped, wanted stopped, red, and the owner is told'
 env: two-macs
 runs:
     - command: 'world poweroff-inside infra'

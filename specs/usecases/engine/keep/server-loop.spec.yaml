@@ -1,4 +1,4 @@
-description: 'KP-07: five crashes within 10 min are a loop: red, told once, and it keeps trying every 60 s'
+description: 'five crashes within 10 min are a loop: red, told once, and it keeps trying every 60 s'
 env: two-macs
 runs:
     - command: 'world crash infra'

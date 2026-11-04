@@ -1,4 +1,4 @@
-description: 'KP-10: a server that reboots from inside boots again at once: counted, no wait, nobody told'
+description: 'a server that reboots from inside boots again at once: counted, no wait, nobody told'
 env: two-macs
 runs:
     - command: 'world reboot-inside infra'

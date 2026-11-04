@@ -1,4 +1,4 @@
-description: 'KP-05: a server whose run crashes boots again after 5 s, counted, and the owner is told'
+description: 'a server whose run crashes boots again after 5 s, counted, and the owner is told'
 env: two-macs
 runs:
     - command: 'world crash infra'
