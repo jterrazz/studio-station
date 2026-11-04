@@ -22,7 +22,7 @@ runs:
                   security delete-generic-password -s station -a vm-join-secret
                   security delete-generic-password -s station -a tailnet-authkey
           .local/state/station/tailscaled: absent
-          .config/station/settings.json:
+          .config/station/preferences.json:
               equals: |
                   {
                     "here": "m",

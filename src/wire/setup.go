@@ -32,14 +32,15 @@ func setupService(env kit.Env, m machine) *setup.Service {
 		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
 		// observable; unset, the running binary is the one re-executed.
-		Executable:  m.or("STATION_EXECUTABLE", m.host.Env.Executable()),
-		Detached:    m.vars["STATION_XDG_DETACHED"] == "1",
-		Tools:       catalog.Tools,
-		Expand:      m.expander(),
-		Files:       m.toolFiles(),
-		Configurer:  setupConfigurer{config: configService(m)},
-		Installer:   systemTools{tools: toolsService(env, m)},
-		AppStoreCLI: m.tailnetCLI().AppStoreCLI,
+		Executable:      m.or("STATION_EXECUTABLE", m.host.Env.Executable()),
+		Detached:        m.vars["STATION_XDG_DETACHED"] == "1",
+		Tools:           catalog.Tools,
+		Expand:          m.expander(),
+		Files:           m.toolFiles(),
+		Configurer:      setupConfigurer{config: configService(m)},
+		Installer:       systemTools{tools: toolsService(env, m)},
+		AppStoreCLI:     m.tailnetCLI().AppStoreCLI,
+		MovePreferences: m.stores.prefs.MoveRetired,
 	})
 }
 

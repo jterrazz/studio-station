@@ -141,7 +141,7 @@ var StationStorage = Storage{
 		noted(data("{state}/station/children/*"), "the engine's `tailscale` calls in flight, `<pid>` holding its start: the next engine start kills what a killed one left"),
 		noted(data("{state}/station/runs/*"), "each running VM's `<vm>.pid` and `<vm>.exit`"),
 		noted(conf("~/Library/LaunchAgents/com.jterrazz.station.engine.plist", Host), "the one engine's launchd agent"),
-		noted(conf("{config}/station/settings.json"), "here, hosts, vm_user, the lend list, the services policy"),
+		noted(conf("{config}/station/preferences.json"), "here, hosts, vm_user, the share list, the ports policy"),
 		noted(conf("{config}/station/services.env", Linux, MacOS), "its profiles' exports, written by the guest"),
 		noted(data("{state}/station/guest.json", Linux, MacOS), "the host that runs it"),
 		noted(data("{state}/station/guest.sock", Linux, MacOS), "the guest's socket, live while it runs"),

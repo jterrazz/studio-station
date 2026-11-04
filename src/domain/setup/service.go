@@ -27,6 +27,8 @@ const (
 	stepName   = "name"
 	stepZshrc  = "zshrc"
 	stepLayout = "layout"
+
+	stepPreferences = "preferences"
 )
 
 var machineName = regexp.MustCompile(`^[a-z0-9-]{1,40}$`)
@@ -53,6 +55,9 @@ type Options struct {
 	Configurer                  Configurer
 	Installer                   Installer
 	AppStoreCLI                 func() string
+	// value: moves the preferences out of the file station v2 kept them in,
+	// once; nil where there is none to move.
+	MovePreferences func(ctx context.Context) (moved bool, err error)
 }
 
 type Prefs struct {
@@ -159,13 +164,17 @@ func sanitize(raw string) string {
 }
 
 func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
+	moved, err := s.movePreferences(ctx)
+	if err != nil {
+		return Report{Steps: moved}, err
+	}
 	if err := s.CheckName(r.Name); err != nil {
 		return Report{}, err
 	}
 	if !s.isHost() {
 		zshrc, err := s.zshrc()
 		relocate, relocateErr := s.relocate(ctx, r.Interactive)
-		return Report{Steps: []Step{zshrc, relocate}}, errors.Join(err, relocateErr)
+		return Report{Steps: append(moved, zshrc, relocate)}, errors.Join(err, relocateErr)
 	}
 	migrated := s.migrateSettings()
 	name, nameErr := s.name(r, migrated != nil)
@@ -187,7 +196,24 @@ func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
 		daemon, daemonErr = s.daemon.Install(ctx)
 		steps = append(steps, daemon)
 	}
-	return Report{Steps: steps}, errors.Join(nameErr, zshrcErr, layoutErr, relocateErr, toolsErr, daemonErr)
+	return Report{Steps: append(moved, steps...)}, errors.Join(nameErr, zshrcErr, layoutErr, relocateErr, toolsErr, daemonErr)
+}
+
+// invariant: the move comes before any step reads a preference, and says so
+// once: a second run has nothing to move, and no row of it.
+func (s *Service) movePreferences(ctx context.Context) ([]Step, error) {
+	if s.o.MovePreferences == nil {
+		return nil, nil
+	}
+	moved, err := s.o.MovePreferences(ctx)
+	if err != nil {
+		step, stepErr := failed(stepPreferences, err)
+		return []Step{step}, stepErr
+	}
+	if !moved {
+		return nil, nil
+	}
+	return []Step{{Name: stepPreferences, State: catalog.StateOK, Detail: "moved settings.json to preferences.json", Changed: true}}, nil
 }
 
 func isStepFailure(err error) bool {

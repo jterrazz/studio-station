@@ -16,7 +16,7 @@ func TestTheMacOSNoiseMatchesByShapeAndAStrayIsStillReported(t *testing.T) {
 	dir := t.TempDir()
 	allowed := filepath.Join(dir, "allowed.txt")
 	created := filepath.Join(dir, "created.txt")
-	station := ".config/station/settings.json\n.local/state/station/runs/*\nLibrary/LaunchAgents/com.jterrazz.station.engine.plist\n"
+	station := ".config/station/preferences.json\n.local/state/station/runs/*\nLibrary/LaunchAgents/com.jterrazz.station.engine.plist\n"
 	if err = os.WriteFile(allowed, append(noise, station...), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func TestTheMacOSNoiseMatchesByShapeAndAStrayIsStillReported(t *testing.T) {
 		"Library/stray.plist",
 		"Library/Keychains/login.keychain-db.bak",
 		".config/station/stray",
-		".config/station/settings.json.sb-1a2b3c4d-AbCdEf",
+		".config/station/preferences.json.sb-1a2b3c4d-AbCdEf",
 	}
 	if err = os.WriteFile(created, []byte(strings.Join(listing, "\n")+"\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -40,7 +40,7 @@ func TestTheMacOSNoiseMatchesByShapeAndAStrayIsStillReported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "stray-e2e-file\nLibrary/stray.plist\nLibrary/Keychains/login.keychain-db.bak\n.config/station/stray\n.config/station/settings.json.sb-1a2b3c4d-AbCdEf\n"
+	want := "stray-e2e-file\nLibrary/stray.plist\nLibrary/Keychains/login.keychain-db.bak\n.config/station/stray\n.config/station/preferences.json.sb-1a2b3c4d-AbCdEf\n"
 	if string(out) != want {
 		t.Fatalf("unmatched:\n%s\nwant:\n%s", out, want)
 	}

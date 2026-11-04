@@ -42,7 +42,7 @@ func events() []event {
 		{"reboot-inside", []string{"<vm>"}, ended(machines.RunEnd{Reason: machines.GuestReboot})},
 		{"listen", []string{"<machine>", "<bind>:<port>", "<process>"}, listen},
 		{"unlisten", []string{"<machine>", "<port>"}, unlisten},
-		{"edit", []string{"<machine>", "<file>"}, nil},
+		{"edit", []string{"<machine>", "<file>", "[<text>]"}, edit},
 		{"unplug", nil, power(battery, func(p *Power) error { p.Source = "battery"; p.Charging = false; return nil })},
 		{"plug", nil, power(battery, func(p *Power) error { p.Source = "ac"; return nil })},
 		{"close-lid", nil, power(lid, func(p *Power) error { p.Lid = "closed"; return nil })},
@@ -184,6 +184,24 @@ func ended(end machines.RunEnd) func(w *World, args []string) error {
 		v.PID, v.Ended = 0, &end
 		return nil
 	}
+}
+
+// invariant: a file the owner edits by hand is the text the story gives it,
+// read by the store that owns it at its next read.
+func edit(w *World, args []string) error {
+	m, err := w.known(args[0])
+	if err != nil {
+		return err
+	}
+	if m.Files == nil {
+		m.Files = map[string]string{}
+	}
+	text := ""
+	if len(args) > 2 {
+		text = args[2]
+	}
+	m.Files[args[1]] = text
+	return nil
 }
 
 func advance(w *World, args []string) error {

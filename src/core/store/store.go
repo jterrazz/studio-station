@@ -1,7 +1,9 @@
 package store
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
 )
@@ -11,10 +13,22 @@ var ErrNotFound = errors.New("no such record")
 type UnreadableError struct {
 	Path  string
 	Cause error
+	// value: the line of the file the cause is on; zero when it names none.
+	Line int
 }
 
 func (e *UnreadableError) Error() string { return "cannot read " + e.Path + ": " + e.Cause.Error() }
 func (e *UnreadableError) Unwrap() error { return e.Cause }
+
+func LineOf(data []byte, err error) int {
+	// value: the line of data a JSON syntax error is on, counted from 1; zero
+	// for any other error.
+	var syntax *json.SyntaxError
+	if !errors.As(err, &syntax) {
+		return 0
+	}
+	return bytes.Count(data[:min(int(syntax.Offset), len(data))], []byte("\n")) + 1
+}
 
 type UnwritableError struct {
 	Path  string

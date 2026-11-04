@@ -1,0 +1,24 @@
+{
+    "now": "2026-11-04T10:00:00Z",
+    "here": "jterrazz-macbook-pro",
+    "macs": {
+        "jterrazz-macbook-pro": {
+            "files": {
+                "settings.json": "{\n  \"here\": \"jterrazz-macbook-pro\",\n  \"hosts\": {\n    \"jterrazz-macbook-pro\": {}\n  },\n  \"vm_user\": \"admin\"\n}\n"
+            },
+            "jobs": {
+                "com.jterrazz.station.daemon": {
+                    "Label": "com.jterrazz.station.daemon",
+                    "Program": "station",
+                    "Scope": "user",
+                    "PID": 41,
+                    "Running": true,
+                    "Loaded": true,
+                    "ProgramExists": true,
+                    "OwnerExists": true
+                }
+            }
+        }
+    },
+    "user": "jterrazz"
+}

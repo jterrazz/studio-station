@@ -16,7 +16,7 @@ runs:
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	engine	not needed until tart is installed
       files:
-          .config/station/settings.json:
+          .config/station/preferences.json:
               equals: |
                   {
                     "here": "base",

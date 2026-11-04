@@ -14,8 +14,10 @@ import (
 )
 
 const (
-	FileName = "settings.json"
-	Version  = 1
+	FileName = "preferences.json"
+	// value: the name station v2 gave the file; setup moves it once.
+	RetiredFileName = "settings.json"
+	Version         = 1
 )
 
 type Preferences struct {
@@ -36,6 +38,27 @@ func NewPreferences(files Files, dir string, groups []string) *Preferences {
 }
 
 func (p *Preferences) File() string { return path.Join(p.dir, FileName) }
+
+func (p *Preferences) MoveRetired(context.Context) (bool, error) {
+	// invariant: settings.json becomes preferences.json once, byte for byte,
+	// and only while preferences.json is not there; it is removed only once
+	// its copy is written.
+	retired := path.Join(p.dir, RetiredFileName)
+	data, err := p.files.ReadFile(retired)
+	if errors.Is(err, fs.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, &store.UnreadableError{Path: retired, Cause: err}
+	}
+	if _, err := p.files.ReadFile(p.File()); err == nil {
+		return false, nil
+	}
+	if err := p.files.WriteFile(p.File(), data, 0o600); err != nil {
+		return false, &store.UnwritableError{Path: p.File(), Cause: err}
+	}
+	return true, p.files.Remove(retired)
+}
 
 func (p *Preferences) Read(group string, v any) error {
 	doc, err := p.load()
@@ -92,7 +115,7 @@ func (p *Preferences) load() (map[string]json.RawMessage, error) {
 		return nil, &store.UnreadableError{Path: p.File(), Cause: err}
 	}
 	if err := json.Unmarshal(data, &doc); err != nil {
-		return nil, &store.UnreadableError{Path: p.File(), Cause: err}
+		return nil, &store.UnreadableError{Path: p.File(), Cause: err, Line: store.LineOf(data, err)}
 	}
 	var version int
 	if raw, ok := doc["v"]; ok {

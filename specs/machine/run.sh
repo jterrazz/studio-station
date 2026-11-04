@@ -62,7 +62,7 @@ ssh_opts=(-o StrictHostKeyChecking=no -o UserKnownHostsFile="$known" -o LogLevel
 if [ "$kind" = linux ]; then
   base=$(tart list --quiet --source local | grep '^station-image-linux-' | sort | tail -1)
   [ -n "$base" ] || fail "no product linux image: station images build"
-  user=$(sed -n 's/.*"vm_user": *"\([^"]*\)".*/\1/p' "${XDG_CONFIG_HOME:-$HOME/.config}/station/settings.json" 2>/dev/null)
+  user=$(sed -n 's/.*"vm_user": *"\([^"]*\)".*/\1/p' "${XDG_CONFIG_HOME:-$HOME/.config}/station/preferences.json" 2>/dev/null)
   user=${user:-$USER}
   image_key="${XDG_STATE_HOME:-$HOME/.local/state}/station/images/key"
   [ -f "$image_key" ] || fail "no image key at $image_key: station images build"

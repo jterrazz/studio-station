@@ -11,17 +11,17 @@ runs:
       stdout: |
           ●	name	elsewhere
           ●	zshrc
-          ✗	layout	{{workdir}}/.config/station/settings.json already exists with different content
+          ✗	layout	{{workdir}}/.config/station/preferences.json already exists with different content
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	engine	not needed until tart is installed
       stderr: |
-          Error: setup step layout: {{workdir}}/.config/station/settings.json already exists with different content
+          Error: setup step layout: {{workdir}}/.config/station/preferences.json already exists with different content
           Hint: keep one of the two files, then run station setup again
       files:
           .studio/config.json: exists
           .calls: absent
-          .config/station/settings.json:
+          .config/station/preferences.json:
               equals: |
                   {
                     "here": "elsewhere",

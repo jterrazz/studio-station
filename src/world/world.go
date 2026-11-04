@@ -53,6 +53,9 @@ type Mac struct {
 	Offline bool `json:"offline,omitempty"`
 	// value: what station keeps in this Mac's preferences, by group.
 	Preferences map[string]json.RawMessage `json:"preferences,omitempty"`
+	// value: station's own files as text, by name, while no store has read
+	// them: a file edited by hand, a file station v2 left.
+	Files map[string]string `json:"files,omitempty"`
 	// value: the images the hypervisor holds, by reference.
 	Images []string       `json:"images,omitempty"`
 	VMs    map[string]*VM `json:"vms,omitempty"`

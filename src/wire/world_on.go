@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/fs"
 	"maps"
 	"net"
@@ -148,7 +149,10 @@ func (m *worldMac) stores(st *stores) {
 	if slice.Preferences == nil {
 		slice.Preferences = map[string]json.RawMessage{}
 	}
-	st.prefs = corefake.PreferencesOver(slice.Preferences, m.name, m.run.w)
+	if slice.Files == nil {
+		slice.Files = map[string]string{}
+	}
+	st.prefs = corefake.PreferencesOver(slice.Preferences, m.name, m.run.w).Over(slice.Files)
 	m.run.w.Unlock()
 	w := m.run.w
 	st.machines = machinesfake.StoreOf(w, m.name)
@@ -360,6 +364,13 @@ func (r *worldRun) command() *cobra.Command {
 			ev, err := world.Parse(args)
 			if err != nil {
 				return err
+			}
+			if ev.Name == "edit" && len(ev.Args) == 2 {
+				text, readErr := io.ReadAll(c.InOrStdin())
+				if readErr != nil {
+					return readErr
+				}
+				ev.Args = append(ev.Args, string(text))
 			}
 			for _, name := range r.names() {
 				r.mac(name).up(c.Context())
