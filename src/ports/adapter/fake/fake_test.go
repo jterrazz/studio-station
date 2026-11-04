@@ -21,3 +21,11 @@ func TestTheFakeTailnetKeepsTheContract(t *testing.T) {
 func TestTheFakeListenersKeepTheContract(t *testing.T) {
 	contracttest.Listeners(t, func(*testing.T) contract.Listeners { return NewListeners(contracttest.Scene()...) })
 }
+
+func TestTheFakeReservationStoreKeepsTheContract(t *testing.T) {
+	contracttest.ReservationStore(t, func(*testing.T) contract.ReservationStore { return NewReservations() })
+}
+
+func TestTheFakeDeclarationStoreKeepsTheContract(t *testing.T) {
+	contracttest.DeclarationStore(t, func(*testing.T) contract.DeclarationStore { return NewDeclarations() })
+}
