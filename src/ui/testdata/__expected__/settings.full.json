@@ -1,0 +1,387 @@
+{
+  "schema": "station.page/v1",
+  "id": "settings",
+  "command": "settings",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "set",
+      "title": "Set by station",
+      "fold": "auto",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "ghostty-dotfiles",
+            "mark": "attention",
+            "label": "ghostty-dotfiles",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "changed since 2 d ago"
+              }
+            ],
+            "reason": "differs",
+            "hint": {
+              "command": "station settings diff ghostty-dotfiles",
+              "key": "d"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "github-login",
+            "mark": "attention",
+            "label": "github-login",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "changed since 2 d ago"
+              }
+            ],
+            "reason": "differs",
+            "hint": {
+              "command": "station settings diff github-login",
+              "key": "d"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "dock-reset",
+            "mark": "attention",
+            "label": "dock-reset",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "changed since 2 d ago"
+              }
+            ],
+            "reason": "differs",
+            "hint": {
+              "command": "station settings diff dock-reset",
+              "key": "d"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "tmux-dotfiles",
+            "mark": "absent",
+            "label": "tmux-dotfiles",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "not applied"
+              }
+            ],
+            "hint": {
+              "command": "station settings apply tmux-dotfiles",
+              "key": "a"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "spotlight-exclude",
+            "mark": "absent",
+            "label": "spotlight-exclude",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "not applied"
+              }
+            ],
+            "hint": {
+              "command": "station settings apply spotlight-exclude",
+              "key": "a"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "dock-spacer",
+            "mark": "absent",
+            "label": "dock-spacer",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "not applied"
+              }
+            ],
+            "hint": {
+              "command": "station settings apply dock-spacer",
+              "key": "a"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "backup-exclusions",
+            "mark": "absent",
+            "label": "backup-exclusions",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "not applied"
+              }
+            ],
+            "hint": {
+              "command": "station settings apply backup-exclusions",
+              "key": "a"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "hushlogin",
+            "mark": "ok",
+            "label": "hushlogin",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "applied"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "~/.hushlogin"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "ssh-key",
+            "mark": "ok",
+            "label": "ssh-key",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "applied"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "~/.ssh-key"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "zed-dotfiles",
+            "mark": "ok",
+            "label": "zed-dotfiles",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "applied"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "~/.zed-dotfiles"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "starship-dotfiles",
+            "mark": "off-here",
+            "label": "starship-dotfiles",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "off here"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "dns",
+            "mark": "off-here",
+            "label": "dns",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "off here"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "tart-launcher",
+            "mark": "off-here",
+            "label": "tart-launcher",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "off here"
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 3
+        },
+        {
+          "mark": "attention",
+          "n": 3
+        },
+        {
+          "mark": "absent",
+          "n": 4
+        },
+        {
+          "mark": "off-here",
+          "n": 3
+        }
+      ],
+      "pipe_counts": true
+    },
+    {
+      "id": "always-on",
+      "title": "Always-on Mac",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "always-on",
+            "mark": "absent",
+            "label": "Always-on Mac",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "4"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "for a Mac that hosts servers"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "not-for-this-machine",
+      "title": "Not for this machine",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "not-for-this-machine",
+            "mark": "not-for-this-machine",
+            "label": "2 not for this machine",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "VMs only"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    }
+  ],
+  "hints": [
+    {
+      "command": "station settings apply"
+    },
+    {
+      "command": "station settings <setting>"
+    }
+  ],
+  "actions": [
+    {
+      "key": "a",
+      "label": "apply",
+      "on": "row",
+      "priority": 1,
+      "mutates": true
+    },
+    {
+      "key": "d",
+      "label": "diff",
+      "on": "row",
+      "priority": 2
+    },
+    {
+      "key": "o",
+      "label": "off here",
+      "on": "row",
+      "confirm": {
+        "yes": "off"
+      },
+      "priority": 3,
+      "mutates": true
+    }
+  ]
+}

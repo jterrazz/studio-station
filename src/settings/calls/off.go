@@ -1,0 +1,75 @@
+package calls
+
+import (
+	"context"
+	"errors"
+	"strings"
+
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/fail"
+	"github.com/jterrazz/studio-station/src/core/section"
+	"github.com/jterrazz/studio-station/src/settings"
+	"github.com/jterrazz/studio-station/src/settings/contract"
+)
+
+type OffIn struct {
+	Names   []string
+	Confirm string
+}
+
+var Off = call.Call[Deps, OffIn, []settings.Change]{
+	Name: "settings.off", Section: section.Settings, Where: call.AtTarget, Applies: settings.Applies, Confirm: confirm.OffHere,
+	Errors: []fail.Code{Unknown, NotForThisMachine, confirm.YesNeeded},
+	Run: func(ctx context.Context, d Deps, in OffIn, _ call.Progress) ([]settings.Change, error) {
+		// invariant: off never destroys a change of the owner's: only a
+		// setting still exactly as station applied it is undone; any other
+		// is left as it is, and every one is Off here after.
+		var items []catalog.ConfigItem
+		for _, name := range in.Names {
+			it, err := find(d, name, true)
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, it)
+		}
+		if err := confirm.Require(confirm.For(confirm.OffHere, d.Kind), strings.Join(in.Names, ", "), in.Confirm); err != nil {
+			return nil, err
+		}
+		off := offHere(d)
+		changes := make([]settings.Change, 0, len(items))
+		for _, it := range items {
+			row, _ := judge(ctx, d, it, map[string]bool{})
+			change := settings.Change{Item: it.Name, Verb: "off", Result: catalog.StateOK}
+			if row.State == settings.StateApplied {
+				if a, ok := d.Appliers.For(it); ok {
+					undone, err := a.Undo(ctx, it)
+					switch {
+					case errors.Is(err, contract.ErrNoUndo):
+						change.Steps = []settings.ChangeStep{{Label: it.Name, State: catalog.StateOK, Detail: "kept: " + err.Error()}}
+					case err != nil:
+						change.Result = catalog.StateBroken
+						change.Steps = []settings.ChangeStep{{Label: "failed", State: catalog.StateBroken, Detail: err.Error()}}
+						changes = append(changes, change)
+						continue
+					default:
+						change.Steps = undone.Steps
+					}
+				}
+			} else if row.State == settings.StateChangedSince {
+				label := row.Where
+				if label == "" {
+					label = it.Name
+				}
+				change.Steps = []settings.ChangeStep{{Label: label, State: catalog.StateOK, Detail: "yours, kept as it is"}}
+			}
+			if err := d.Applied.Delete(ctx, it.Name); err != nil {
+				return changes, err
+			}
+			off[it.Name] = true
+			changes = append(changes, change)
+		}
+		return changes, setOff(d, off)
+	},
+}

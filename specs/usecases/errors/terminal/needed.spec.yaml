@@ -6,8 +6,8 @@ runs:
       stderr: |
           Error: machines unlock needs a terminal
           Hint: run it in a terminal
-    - command: 'config install autologin </dev/null'
+    - command: 'settings apply autologin </dev/null'
       exit: 2
       stderr: |
-          Error: autologin needs a terminal
-          Hint: run it in a terminal
+          Error: autologin asks a value: run it on a terminal
+          Hint: station settings apply autologin

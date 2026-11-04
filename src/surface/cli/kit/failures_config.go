@@ -17,11 +17,15 @@ func configFailure(err error) (*fail.Error, bool) {
 	var studio *config.StudioMissingError
 	switch {
 	case errors.As(err, &unknown):
-		return usage(unknown.Error(), "run station config for the items"), true
+		return usage(unknown.Error(), "station settings"), true
 	case errors.As(err, &root):
-		return failed(root.Error(), "sudo station config "+root.Verb+" "+root.Item, err), true
+		verb := "apply"
+		if root.Verb == "uninstall" {
+			verb = "off"
+		}
+		return failed(root.Error(), "sudo station settings "+verb+" "+root.Item, err), true
 	case errors.As(err, &place):
-		return usage(place.Error(), "run it on a host: station config install "+place.Item+" --on <host>"), true
+		return usage(place.Error(), "station settings apply "+place.Item+" --on this-mac"), true
 	case errors.As(err, &irreversible):
 		return usage(irreversible.Error(), "station applies it but cannot undo it: undo it by hand"), true
 	case errors.As(err, &terminal):

@@ -37,4 +37,4 @@
 ○	frontend-design		skill	skills not installed · station tools install skills
 ◐	better-ui		skill	outdated
 # Config	1 ●	1 ◐
-◐	power	Always-on power policy	policy partly applied · station config install power
+◐	power	Always-on power policy	policy partly applied · station settings apply power

@@ -33,7 +33,7 @@ func (s *Service) installSpotlight(ctx context.Context) (Change, error) {
 	}
 	return Change{Steps: []Step{
 		okStep("System Settings", "opened at Spotlight > Search Privacy"),
-		skipStep("next", "click +, pick ~/Developer, then run station config to confirm"),
+		skipStep("next", "click +, pick ~/Developer, then run station settings to confirm"),
 	}}, nil
 }
 

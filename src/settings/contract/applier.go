@@ -8,8 +8,6 @@ import (
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
-// value: the Undo of an effect station cannot take back (a login, a key):
-// off leaves it as it is.
 var ErrNoUndo = errors.New("station does not undo it")
 
 type Applier interface {
@@ -26,7 +24,6 @@ type Applier interface {
 	Undo(ctx context.Context, it catalog.ConfigItem) (settings.Change, error)
 }
 
-// value: the strategy per effect: the one Applier of each kind.
 type Appliers map[catalog.EffectKind]Applier
 
 func NewAppliers(all ...Applier) Appliers {

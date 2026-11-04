@@ -1,5 +1,0 @@
- station config                                             host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Error: the settings file is not valid JSON
- Hint: repair the JSON of ~/.config/station/settings.json

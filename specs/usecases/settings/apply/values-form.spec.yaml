@@ -1,0 +1,27 @@
+description: 'on a terminal, a setting with a value asks it in a form, the token never echoed, then applies it'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION" settings apply claude-token'
+      stdin: |
+          see ┃ Claude Code token
+          send sk-ant-oat01-x\r
+          see ●
+          screen
+      exit: 0
+      stdout: |
+          Configure claude-token
+          ┃ Claude Code token
+          ┃ run `claude setup-token` and paste the token
+          ●       claude-token    claude-token: applied
+    - command: 'settings claude-token --json | /usr/bin/jq -r .setting.state'
+      exit: 0
+      stdout: |
+          applied
+    - command: '--version >/dev/null; /usr/bin/grep -c sk-ant world.json'
+      exit: 1
+      stdout: |
+          0

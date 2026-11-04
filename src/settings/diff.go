@@ -7,9 +7,9 @@ import (
 
 const diffContext = 2
 
-// value: the unified diff of two texts, station's first ("-") then the
-// machine's ("+"), with two lines of context; empty when they are the same.
 func UnifiedDiff(want, have, wantName, haveName string) string {
+	// value: the unified diff of two texts, station's first ("-") then the
+	// machine's ("+"), with two lines of context; empty when they are the same.
 	if want == have {
 		return ""
 	}

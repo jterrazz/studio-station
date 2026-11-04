@@ -9,7 +9,7 @@
    ◐ brew               120 outdated  → station tools upgrade --via brew
    ◐ strays             2 folders out of place · 80.5 GB  → station setup
    ◐ tools              4 wait for mise  → station tools install mise
-   ◐ power              policy partly applied  → station config install power
+   ◐ power              policy partly applied  → station settings apply power
    ◐ macos              2 pending · checked 22m ago
    ◐ chatgpt            on PATH, not managed by cask
    ◐ better-ui          outdated

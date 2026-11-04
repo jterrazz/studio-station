@@ -1,0 +1,8 @@
+description: 'inside a server, settings are refused: station does not manage a server''s settings'
+env: in-server
+runs:
+    - command: 'settings'
+      exit: 2
+      stderr: |
+          Error: a server has no settings section
+          Hint: run station overview for what infra has

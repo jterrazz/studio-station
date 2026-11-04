@@ -25,7 +25,7 @@
 ◐	unmanaged	attention	on PATH, not managed by cask
 ◐	missing	attention	installed, mise not installed · station tools install mise
 ◐	partial	attention	policy partly applied
-◐	differs	attention	differs from station's · station config install tart-launcher
+◐	differs	attention	differs from station's · station settings apply tart-launcher
 ◐	unset	attention	name not set · station setup
 ◐	stopped	attention	stopped · station engine start
 ◐	late	attention	no answer in 2s

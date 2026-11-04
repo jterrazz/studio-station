@@ -25,6 +25,7 @@ func storeOwners() map[string]string {
 		src + "machines/contract.VMUserPrefs":       "machines/calls",
 		src + "accounts/contract.ShareListPrefs":    "accounts/calls",
 		src + "ports/contract.PortsPrefs":           "ports/calls",
+		src + "settings/contract.OffHerePrefs":      "settings/calls",
 		src + "machines/contract.MachineStore":      "machines/calls",
 		src + "images/contract.ImageStore":          "images/calls",
 		src + "accounts/contract.ShareStore":        "accounts/calls",

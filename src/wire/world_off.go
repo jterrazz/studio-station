@@ -48,6 +48,7 @@ func (*worldMac) sshConfig() contract.SSHConfig                         { return
 func (*worldMac) unlocker() contract.Unlocker                           { return nil }
 func (*worldMac) jobs() backgroundcontract.Jobs                         { return nil }
 func (*worldMac) inspector() settingscontract.Inspector                 { return nil }
+func (*worldMac) procedureAppliers() []settingscontract.Applier         { return nil }
 func (*worldMac) meter() activitycontract.Meter                         { return nil }
 func (*worldMac) disk() diskcontract.DiskUsage                          { return nil }
 func (*worldMac) listeners() portscontract.Listeners                    { return nil }

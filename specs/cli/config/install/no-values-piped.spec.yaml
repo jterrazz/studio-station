@@ -1,7 +1,0 @@
-description: 'items with no values and no terminal question install piped'
-runs:
-    - command: 'config install hushlogin tmux-dotfiles </dev/null'
-      exit: 0
-      stdout: |
-          ●	hushlogin	~/.hushlogin: created
-          ●	tmux-dotfiles	~/.tmux.conf: written

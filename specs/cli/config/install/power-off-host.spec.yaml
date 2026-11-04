@@ -1,9 +1,0 @@
-description: 'a headless item is refused on a VM, which is not its place'
-env:
-    - STATION_MACHINE_KIND=linux
-runs:
-    - command: 'config install power'
-      exit: 2
-      stderr: |
-          Error: power's place is host; here is a linux VM
-          Hint: run it on a host: station config install power --on <host>

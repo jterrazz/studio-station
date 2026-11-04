@@ -26,7 +26,7 @@ func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 			Calls:    env.Calls,
 			Target:   env.Target(),
 			Tools:    toolsscreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: toolsService(env, m).Forget},
-			Config:   configscreen.Deps{Calls: env.Calls, Target: env.Target(), Defaults: configService(m).Defaults},
+			Config:   configscreen.Deps{Calls: env.Calls, Target: env.Target(), Defaults: configService(m).Defaults, Now: m.host.Clock.Now},
 			Storage:  storagescreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: storage.Forget, Plan: storage.Plan},
 			Services: servicesscreen.Deps{Calls: env.Calls, Target: env.Target()},
 			Accounts: accountsscreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: accounts.Forget, LendList: accounts.LendList},

@@ -1,9 +1,0 @@
-description: 'kept secrets never live in a VM: their items are refused there'
-env:
-    - STATION_MACHINE_KIND=linux
-runs:
-    - command: 'config install claude-token'
-      exit: 2
-      stderr: |
-          Error: claude-token's place is host; here is a linux VM
-          Hint: run it on a host: station config install claude-token --on <host>

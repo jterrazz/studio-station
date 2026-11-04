@@ -22,7 +22,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/tools"
-	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
+	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	toolscmd "github.com/jterrazz/studio-station/src/surface/cli/tools"
 	"github.com/jterrazz/studio-station/src/surface/cli/tools/install"
@@ -122,7 +122,7 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 	}
 	var values map[string]string
 	if len(it.Inputs) > 0 && c.ask != nil {
-		if values, err = c.ask.Form(pageconfig.InputsForm(item, it.Inputs, c.config.Defaults(item))); err != nil {
+		if values, err = c.ask.Form(pagesettings.InputsForm(item, it.Inputs, c.config.Defaults(item))); err != nil {
 			return tools.Step{}, err
 		}
 	}

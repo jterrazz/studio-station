@@ -35,7 +35,7 @@
      → station tools install mise
    ◐ partial               attention                   policy partly applied
    ◐ differs               attention                   differs from station's
-     → station config install tart-launcher
+     → station settings apply tart-launcher
    ◐ unset                 attention                   name not set
      → station setup
    ◐ stopped               attention                   stopped

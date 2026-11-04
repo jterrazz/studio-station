@@ -1,0 +1,8 @@
+description: 'inside a server, an apply is refused'
+env: in-server
+runs:
+    - command: 'settings apply'
+      exit: 2
+      stderr: |
+          Error: a server has no settings section
+          Hint: run station overview for what infra has

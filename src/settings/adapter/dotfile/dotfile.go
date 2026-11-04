@@ -35,8 +35,6 @@ type Options struct {
 	Ours fs.FS
 }
 
-// value: the Applier of files station writes whole from its own copies
-// (the Starship, tmux, Ghostty and Zed configs, the tart launcher).
 type Applier struct {
 	files Files
 	run   Runner
@@ -57,9 +55,9 @@ func of(it catalog.ConfigItem) (catalog.Dotfiles, error) {
 	return d, nil
 }
 
-// invariant: the fingerprint covers every file of the setting in its order,
-// a missing one included, so an edit or a removal of any of them shows.
 func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+	// invariant: the fingerprint covers every file of the setting in its order,
+	// a missing one included, so an edit or a removal of any of them shows.
 	d, err := of(it)
 	if err != nil {
 		return settings.Observation{}, err
@@ -136,9 +134,9 @@ func (a *Applier) Apply(ctx context.Context, it catalog.ConfigItem, _ map[string
 	return change, nil
 }
 
-// invariant: Undo removes a file only while it is still exactly station's:
-// off never destroys a change of the owner's.
 func (a *Applier) Undo(_ context.Context, it catalog.ConfigItem) (settings.Change, error) {
+	// invariant: Undo removes a file only while it is still exactly station's:
+	// off never destroys a change of the owner's.
 	d, err := of(it)
 	if err != nil {
 		return settings.Change{}, err

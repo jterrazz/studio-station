@@ -1,0 +1,26 @@
+ station settings                                                               host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Set by station  3 ●  3 ◐  4 ○  3 ⊘
+   ◐ ghostty-dotfiles   changed since 2 d ago      → station settings diff ghostty-dotfiles
+   ◐ github-login       changed since 2 d ago      → station settings diff github-login
+   ◐ dock-reset         changed since 2 d ago      → station settings diff dock-reset
+   ○ tmux-dotfiles      not applied                → station settings apply tmux-dotfiles
+   ○ spotlight-exclude  not applied                → station settings apply spotlight-exclude
+   ○ dock-spacer        not applied                → station settings apply dock-spacer
+   ○ backup-exclusions  not applied                → station settings apply backup-exclusions
+   ● hushlogin          applied · ~/.hushlogin
+   ● ssh-key            applied · ~/.ssh-key
+   ● zed-dotfiles       applied · ~/.zed-dotfiles
+   ⊘ starship-dotfiles  off here
+   ⊘ dns                off here
+   ⊘ tart-launcher      off here
+
+ Always-on Mac
+   ○ Always-on Mac  4 · for a Mac that hosts servers
+
+ Not for this machine
+   – 2 not for this machine  VMs only
+
+ → station settings apply
+ → station settings <setting>

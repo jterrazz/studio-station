@@ -45,7 +45,7 @@ func engineJobs() []string {
 // the gate until its line is removed.
 func uncovered() []string {
 	return []string{
-		"accounts.read", "activity.sample", "config.install", "config.list", "config.uninstall",
+		"accounts.read", "activity.sample",
 		"images.build", "images.delete", "images.list",
 		"machines.add", "machines.create", "machines.delete", "machines.forget", "machines.list",
 		"machines.probe", "machines.restart", "machines.start", "machines.unlock", "overview.read",

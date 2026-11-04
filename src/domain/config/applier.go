@@ -37,6 +37,4 @@ func (a procedureApplier) Undo(ctx context.Context, _ catalog.ConfigItem) (setti
 	return a.h.uninstall(ctx)
 }
 
-// value: the Appliers this service runs its items through: the ones it was
-// given, and its own procedures.
 func (s *Service) Appliers() settingscontract.Appliers { return s.appliers }

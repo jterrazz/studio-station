@@ -31,7 +31,8 @@ type Options struct {
 	BackupExclusions []string
 	Defaults         map[string]map[string]string
 	Jobs             contract.Jobs
-	// value: the Appliers of the effects that are no procedure: files.
+	// value: the Appliers of the effects that are no procedure (files), and
+	// any that stands in for a procedure's own.
 	Appliers []settingscontract.Applier
 }
 
@@ -55,7 +56,7 @@ func New(h system.Host, items []catalog.ConfigItem, prefs Prefs, o Options) *Ser
 		byName[it.Name] = it
 	}
 	s := &Service{h: h, items: items, byName: byName, prefs: prefs, o: o}
-	s.appliers = settingscontract.NewAppliers(append(append([]settingscontract.Applier{}, o.Appliers...), s.procedures()...)...)
+	s.appliers = settingscontract.NewAppliers(append(s.procedures(), o.Appliers...)...)
 	return s
 }
 
@@ -80,6 +81,29 @@ func (s *Service) Placed() []catalog.ConfigItem {
 		}
 	}
 	return placed
+}
+
+func (s *Service) Items() []catalog.ConfigItem { return s.items }
+
+func (s *Service) Lives(it catalog.ConfigItem) bool { return slices.Contains(it.Places, s.o.Here) }
+
+func (s *Service) Needs(it catalog.ConfigItem) string {
+	if s.applies(it) {
+		return ""
+	}
+	return it.Requires
+}
+
+func (s *Service) Admit(name string, interactive bool) error {
+	found, err := s.Find([]string{name})
+	if err != nil {
+		return err
+	}
+	return s.admit(found[0], verbInstall, interactive)
+}
+
+func (s *Service) Apply(ctx context.Context, name string, values map[string]string, interactive bool) (Change, error) {
+	return s.Install(ctx, name, values, interactive)
 }
 
 func (s *Service) List(ctx context.Context) ([]Report, error) {

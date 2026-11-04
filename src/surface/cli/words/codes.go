@@ -1,10 +1,13 @@
 package words
 
 import (
+	"strings"
+
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 )
 
 type Wording func(e *fail.Error) (message, hint string)
@@ -48,6 +51,18 @@ func Codes() map[fail.Code]Wording {
 		},
 		enginecalls.StartFailed: func(e *fail.Error) (string, string) {
 			return "the engine did not start: " + e.Detail["last"], "station engine"
+		},
+		settingscalls.Unknown: func(e *fail.Error) (string, string) {
+			return "no setting named \"" + e.Subject + "\"", "station settings"
+		},
+		settingscalls.NotForThisMachine: func(e *fail.Error) (string, string) {
+			if e.Detail["why"] == "Mac only" {
+				return e.Subject + " is for Macs only", "station settings apply " + e.Subject + " --on this-mac"
+			}
+			return e.Subject + " is for " + strings.TrimSuffix(e.Detail["why"], " only") + " only", "station settings"
+		},
+		settingscalls.NeedsTerminal: func(e *fail.Error) (string, string) {
+			return e.Subject + " asks a value: run it on a terminal", "station settings apply " + e.Subject
 		},
 		call.FarTooOld: func(e *fail.Error) (string, string) {
 			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"

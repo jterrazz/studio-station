@@ -33,7 +33,6 @@ type Input struct {
 
 type Effect interface{ Kind() EffectKind }
 
-// value: how a setting is written: the key of the Applier that writes it.
 type EffectKind string
 
 const (
@@ -74,10 +73,10 @@ const (
 func (Touch) Kind() EffectKind    { return EffectTouch }
 func (Dotfiles) Kind() EffectKind { return EffectDotfile }
 
-// value: a procedure is its own kind of effect: one Applier each.
 func (p Procedure) Kind() EffectKind { return EffectKind("procedure:" + string(p)) }
 
 type ConfigItem struct {
+	// value: a procedure is its own kind of effect: one Applier each.
 	Name, Description, Help string
 	Category                ConfigCategory
 	Places                  []MachineKind

@@ -17,6 +17,7 @@ import (
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	setupcalls "github.com/jterrazz/studio-station/src/setup/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
@@ -48,7 +49,10 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		machinescalls.All(machinescalls.Deps{Machines: machineCalls{m.machines(env.Interactive)}, Kind: kind}),
 		portscalls.All(portscalls.Deps{Services: m.services(env), Tailnet: m.tailnetStatus(), Kind: kind}),
 		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupService}, Ask: named}),
-		settingscalls.All(settingscalls.Deps{Config: config, Ask: ask, Shortcuts: shortcuts.New(m.host), Shell: m.shell(), Kind: kind}),
+		settingscalls.All(settingscalls.Deps{
+			Settings: config, Appliers: config.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),
+			Now: m.host.Clock.Now, Ask: ask, Shortcuts: shortcuts.New(m.host), Shell: m.shell(), Kind: kind,
+		}),
 	)
 	if err != nil {
 		panic(err)

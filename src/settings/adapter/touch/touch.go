@@ -19,8 +19,6 @@ type Files interface {
 	Remove(path string) error
 }
 
-// value: the Applier of an empty file whose presence is the setting
-// (~/.hushlogin).
 type Applier struct {
 	files Files
 	home  string

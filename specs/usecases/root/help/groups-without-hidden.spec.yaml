@@ -15,12 +15,12 @@ runs:
       exit: 0
       stdout: |
           accounts
-          config
           overview
           power
           run
           secrets
           services
+          settings
           storage
           tailnet
           tools

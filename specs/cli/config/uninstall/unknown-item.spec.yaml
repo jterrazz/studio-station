@@ -1,7 +1,0 @@
-description: 'an unknown item is refused, with or without --yes'
-runs:
-    - command: 'config uninstall nope --yes'
-      exit: 2
-      stderr: |
-          Error: unknown config item "nope"
-          Hint: run station config for the items

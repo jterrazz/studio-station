@@ -19,32 +19,6 @@
       "out": "Sample"
     },
     {
-      "name": "config.install",
-      "schema": "station.config.install/v1",
-      "section": "settings",
-      "where": "at-target",
-      "in": "InstallIn"
-    },
-    {
-      "name": "config.list",
-      "schema": "station.config.list/v1",
-      "section": "settings",
-      "where": "at-target",
-      "in": "ListIn",
-      "watch": true
-    },
-    {
-      "name": "config.uninstall",
-      "schema": "station.config.uninstall/v1",
-      "section": "settings",
-      "where": "at-target",
-      "confirm": "off-here",
-      "errors": [
-        "confirm.yes-needed"
-      ],
-      "in": "UninstallIn"
-    },
-    {
       "name": "engine.read",
       "schema": "station.engine.read/v1",
       "where": "at-target",
@@ -298,6 +272,64 @@
       "where": "in-engine",
       "in": "URLIn",
       "out": "ServiceView"
+    },
+    {
+      "name": "settings.apply",
+      "schema": "station.settings.apply/v1",
+      "section": "settings",
+      "where": "at-target",
+      "confirm": "overwrite",
+      "errors": [
+        "confirm.yes-needed",
+        "setting.needs-terminal",
+        "setting.not-for-this-machine",
+        "setting.unknown"
+      ],
+      "in": "ApplyIn"
+    },
+    {
+      "name": "settings.diff",
+      "schema": "station.settings.diff/v1",
+      "section": "settings",
+      "where": "at-target",
+      "errors": [
+        "setting.not-for-this-machine",
+        "setting.unknown"
+      ],
+      "in": "DiffIn",
+      "out": "DiffOut"
+    },
+    {
+      "name": "settings.list",
+      "schema": "station.settings.list/v1",
+      "section": "settings",
+      "where": "at-target",
+      "in": "ListIn",
+      "watch": true
+    },
+    {
+      "name": "settings.off",
+      "schema": "station.settings.off/v1",
+      "section": "settings",
+      "where": "at-target",
+      "confirm": "off-here",
+      "errors": [
+        "confirm.yes-needed",
+        "setting.not-for-this-machine",
+        "setting.unknown"
+      ],
+      "in": "OffIn"
+    },
+    {
+      "name": "settings.show",
+      "schema": "station.settings.show/v1",
+      "section": "settings",
+      "where": "at-target",
+      "errors": [
+        "setting.unknown"
+      ],
+      "in": "ShowIn",
+      "out": "Row"
     },
     {
       "name": "setup.run",

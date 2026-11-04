@@ -142,8 +142,8 @@
             },
             "reason": "partial",
             "hint": {
-              "command": "station config install power",
-              "key": "i"
+              "command": "station settings apply power",
+              "key": "a"
             }
           }
         },
@@ -1527,8 +1527,8 @@
             },
             "reason": "partial",
             "hint": {
-              "command": "station config install power",
-              "key": "i"
+              "command": "station settings apply power",
+              "key": "a"
             }
           }
         }

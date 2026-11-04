@@ -76,6 +76,9 @@ type Mac struct {
 	// value: the facts this Mac answers, by fact; a fact absent here is one
 	// it cannot look at.
 	Facts map[catalog.Fact]settings.Fact `json:"facts,omitempty"`
+	// value: what each setting a procedure writes holds now, by setting:
+	// "station's" as station applied it, or the owner's own text.
+	Settings map[string]string `json:"settings,omitempty"`
 	// value: what Self reads; nil reads a Mac on macOS.
 	Self *Self `json:"self,omitempty"`
 	// value: what the power hardware reads now, its capabilities with it (a

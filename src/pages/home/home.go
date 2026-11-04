@@ -12,7 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
-	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
+	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 	"github.com/jterrazz/studio-station/src/ports"
@@ -107,11 +107,11 @@ func configSection(s Overview) page.Section {
 	var items []page.Item
 	for _, r := range s.Config {
 		if r.State != catalog.StateOK {
-			row := pageconfig.Row(r)
+			row := pagesettings.ReportRow(r)
 			items = append(items, page.Item{Row: &row})
 		}
 	}
-	return page.Section{ID: "config", Title: "Config", Columns: pageconfig.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: configCounts(s.Config)}
+	return page.Section{ID: "config", Title: "Config", Columns: pagesettings.ReportColumns(), Items: items, Uncounted: true, PipeCounts: true, Counts: configCounts(s.Config)}
 }
 
 func tallies(marks []page.Mark) []page.Tally {

@@ -9,7 +9,6 @@ import (
 	"github.com/jterrazz/studio-station/src/settings/contract"
 )
 
-// value: an Applier over a machine of its own, and a setting of its kind.
 type Opened struct {
 	Applier contract.Applier
 	Item    catalog.ConfigItem

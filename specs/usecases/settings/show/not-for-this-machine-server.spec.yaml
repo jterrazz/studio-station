@@ -1,0 +1,8 @@
+description: 'inside a server, a setting''s detail is refused like the list'
+env: in-server
+runs:
+    - command: 'settings hushlogin'
+      exit: 2
+      stderr: |
+          Error: a server has no settings section
+          Hint: run station overview for what infra has

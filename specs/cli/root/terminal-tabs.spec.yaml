@@ -12,9 +12,9 @@ runs:
           send \x20
           see - Package Managers
           send \t
-          see + Terminal
+          see + Set by station
           send \x20
-          see - Terminal
+          see - Set by station
           see hushlogin
           send 4
           see - Station

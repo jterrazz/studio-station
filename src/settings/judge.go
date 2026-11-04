@@ -51,7 +51,8 @@ type Observation struct {
 func (o Observation) Present() bool { return o.State == catalog.StateOK }
 
 type Row struct {
-	Item  catalog.ConfigItem
+	// value: the setting's catalogue name; Item is its whole entry.
+	Name  string
 	Group Group
 	State State
 	// value: ChangedSince and Applied: when station applied it.
@@ -62,6 +63,17 @@ type Row struct {
 	Why string
 	// value: the app it needs that is not installed here.
 	Needs string
+}
+
+func (r Row) Item() catalog.ConfigItem {
+	// value: the catalogue entry of the row's setting; a row travels between
+	// machines by its name, as the catalogue is the same on both.
+	for _, it := range catalog.ConfigItems {
+		if it.Name == r.Name {
+			return it
+		}
+	}
+	return catalog.ConfigItem{Name: r.Name}
 }
 
 func GroupOf(it catalog.ConfigItem) Group {
@@ -85,14 +97,14 @@ func PlaceReason(places []catalog.MachineKind) string {
 	return "Macs and macOS VMs only"
 }
 
-// invariant: one setting's state on one machine, from its place, the owner's
-// Off here, what station recorded when it applied it and what is there now.
-// Off here wins over everything but the place; a record whose fingerprint no
-// longer matches, or whose effect is gone, is Changed since; with no record,
-// a setting already exactly as station writes it is Applied, from before
-// station kept records.
 func JudgeSet(it catalog.ConfigItem, lives bool, applied *Applied, now Observation, off bool) Row {
-	row := Row{Item: it, Group: GroupOf(it), Where: now.Where}
+	// invariant: one setting's state on one machine, from its place, the owner's
+	// Off here, what station recorded when it applied it and what is there now.
+	// Off here wins over everything but the place; a record whose fingerprint no
+	// longer matches, or whose effect is gone, is Changed since; with no record,
+	// a setting already exactly as station writes it is Applied, from before
+	// station kept records.
+	row := Row{Name: it.Name, Group: GroupOf(it), Where: now.Where}
 	switch {
 	case !lives:
 		row.State, row.Where, row.Why = StateNotForThisMachine, "", PlaceReason(it.Places)

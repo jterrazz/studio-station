@@ -1,0 +1,12 @@
+ station settings apply                                     host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────
+
+ Changes
+   ◌ power
+   ◌ tart-launcher
+
+ power before
+   sleep  10
+
+ power after
+   sleep  0

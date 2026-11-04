@@ -4,8 +4,6 @@ import core "github.com/jterrazz/studio-station/src/core/contract"
 
 const GroupOffHere = "off_here"
 
-// value: the settings the owner turned off on this machine: station neither
-// applies nor watches them here.
 type OffHerePrefs struct{ p core.Preferences }
 
 func OffHere(p core.Preferences) OffHerePrefs { return OffHerePrefs{p: p} }
