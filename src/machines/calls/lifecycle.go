@@ -72,10 +72,10 @@ var Delete = call.Call[Deps, DeleteIn, machines.DeleteReport]{
 		if err := d.Machines.CheckVM(in.VM, "delete"); err != nil {
 			return machines.DeleteReport{}, err
 		}
-		if err := d.Machines.EngineUp(ctx); err != nil {
+		if err := confirm.Require(confirm.For(confirm.Delete, machine.Workspace), in.VM, in.Confirm); err != nil {
 			return machines.DeleteReport{}, err
 		}
-		if err := confirm.Require(confirm.For(confirm.Delete, machine.Workspace), in.VM, in.Confirm); err != nil {
+		if err := d.Machines.EngineUp(ctx); err != nil {
 			return machines.DeleteReport{}, err
 		}
 		return d.Machines.Delete(ctx, in.VM)

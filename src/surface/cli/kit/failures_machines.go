@@ -117,9 +117,7 @@ func vmFailure(err error) (*fail.Error, bool) {
 
 func notAVMHint(e *machines.NotAVMError) string {
 	switch e.Verb {
-	case "delete":
-		return "station machines forget " + e.Name
-	case "stop":
+	case "delete", "stop":
 		return "station machines restart " + e.Name
 	}
 	return "run station machines for the VMs"

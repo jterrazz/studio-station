@@ -10,7 +10,7 @@ import (
 
 type NotAVMError struct{ Name, Verb string }
 
-func (e *NotAVMError) Error() string { return "\"" + e.Name + "\" is a host, not a VM" }
+func (e *NotAVMError) Error() string { return e.Name + " is a Mac" }
 
 type DeleteReport = model.DeleteReport
 

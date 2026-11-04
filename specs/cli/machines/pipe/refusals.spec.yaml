@@ -12,7 +12,7 @@ runs:
     - command: 'machines pipe x'
       exit: 2
       stderr: |
-          Error: "x" is a host, not a VM
+          Error: x is a Mac
           Hint: run station machines for the VMs
     - command: 'machines pipe linux-1 --on x'
       exit: 2

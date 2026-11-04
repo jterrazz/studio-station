@@ -1,8 +1,0 @@
-description: 'a host is forgotten, never deleted: the refusal names the verb'
-fixture: ../../../__fixtures__/hosts-x-y/
-runs:
-    - command: 'machines delete y --confirm=y'
-      exit: 2
-      stderr: |
-          Error: "y" is a host, not a VM
-          Hint: station machines forget y

@@ -31,6 +31,13 @@ func (s *Service) lookup(name string) (Machine, error) {
 			return Machine{Name: name, Kind: kindOfImage(r.Image), Host: cfg.Here, User: s.vmUser(cfg), Lifetime: r.Lifetime}, nil
 		}
 	}
+	// value: a Mac answers to its short name too, the one All machines shows
+	// (mac-mini for jterrazz-mac-mini).
+	if full := s.o.User + "-" + name; s.o.User != "" {
+		if h, ok := cfg.Hosts[full]; ok {
+			return Machine{Name: full, Kind: catalog.Host, Here: full == cfg.Here, User: h.User, Key: h.Key}, nil
+		}
+	}
 	return Machine{}, &UnknownMachineError{Name: name}
 }
 
