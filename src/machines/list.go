@@ -53,9 +53,26 @@ func Tally(f Fleet) Counts {
 }
 
 func Ordered(vms []VM) []VM {
+	// invariant: a Mac's servers, then its workspaces, each by name.
 	out := slices.Clone(vms)
-	slices.SortStableFunc(out, func(a, b VM) int { return cmp.Compare(a.Name, b.Name) })
+	slices.SortStableFunc(out, func(a, b VM) int {
+		return cmp.Or(cmp.Compare(rank(a.Lifetime.Kind()), rank(b.Lifetime.Kind())), cmp.Compare(a.Name, b.Name))
+	})
 	return out
+}
+
+func rank(k machine.Kind) int {
+	if k == machine.Server {
+		return 0
+	}
+	return 1
+}
+
+func KindWord(k machine.Kind) string {
+	if k == machine.Server {
+		return "Server"
+	}
+	return "Workspace"
 }
 
 func Behind(h HostView, here string) (fix string, differs bool) {

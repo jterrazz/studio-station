@@ -200,11 +200,6 @@ func vmsValue(vms []overview.VM) page.Value {
 	return page.List(parts...)
 }
 
-func KindOn(h overview.Head, on string) page.Value {
-	// value: a VM's kind and the Mac it is on, as its first line names them.
-	return page.Text(kindWord(h) + " on " + on)
-}
-
 func kindWord(h overview.Head) string {
 	switch {
 	case h.Server():

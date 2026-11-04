@@ -256,10 +256,12 @@ func admit[In any](m Meta, target machine.Profile, raw json.RawMessage) (In, err
 func Gate(m Meta, target machine.Profile) error { return gate(m, target) }
 
 func gate(m Meta, target machine.Profile) error {
-	if m.Section != "" && !slices.Contains(section.For(target.Kind), m.Section) {
-		return fail.New(fail.NotForThisMachine, NotForThisMachine, target.Ref.Name, map[string]string{
-			"call": m.Name, "section": string(m.Section), "kind": string(target.Kind),
-		})
+	if m.Section != "" {
+		if v := section.Shown(m.Section)(target); !v.OK {
+			return fail.New(fail.NotForThisMachine, NotForThisMachine, target.Ref.Name, map[string]string{
+				"call": m.Name, "section": string(m.Section), "kind": string(target.Kind), "why": v.Why, "fix": v.Fix,
+			})
+		}
 	}
 	if m.Applies != nil {
 		if v := m.Applies(target); !v.OK {

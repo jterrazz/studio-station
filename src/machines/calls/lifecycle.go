@@ -13,8 +13,10 @@ import (
 type VMIn struct{ VM string }
 
 type StartOut struct {
-	// value: the workspace already ran; nothing was started.
+	// value: the VM already ran; nothing was started.
 	Already bool
+	// value: what was started: a server's wanted state is Running again.
+	Kind machine.Kind
 }
 
 var Start = call.Call[Deps, VMIn, StartOut]{
@@ -26,10 +28,11 @@ var Start = call.Call[Deps, VMIn, StartOut]{
 		if err := d.Machines.EngineUp(ctx); err != nil {
 			return StartOut{}, err
 		}
+		kind := d.Machines.LifetimeOf(in.VM).Kind()
 		if running, err := d.Machines.Running(ctx, in.VM); err != nil || running {
-			return StartOut{Already: running}, err
+			return StartOut{Already: running, Kind: kind}, err
 		}
-		return StartOut{}, d.Machines.Start(ctx, in.VM)
+		return StartOut{Kind: kind}, d.Machines.Start(ctx, in.VM)
 	},
 }
 
@@ -38,25 +41,35 @@ type StopIn struct {
 	Confirm string
 }
 
-var Stop = call.Call[Deps, StopIn, struct{}]{
-	// invariant: a stop keeps the workspace, throwaway or permanent (SP-5),
-	// and asks yes or no first; one already stopped asks nothing.
+type StopOut struct {
+	// value: the VM was already stopped; nothing was asked or done.
+	Already bool
+	// value: what was stopped: a server's wanted state is Stopped from now on.
+	Kind machine.Kind
+}
+
+var Stop = call.Call[Deps, StopIn, StopOut]{
+	// invariant: a stop keeps the VM, throwaway, permanent or always on
+	// (SP-5); a workspace asks yes or no first, a server its name typed, and
+	// the rule is checked here, on the VM's own Mac, whoever sent the call.
+	// One already stopped asks nothing.
 	Name: "machines.stop", Where: call.InEngine, Applies: machine.Anywhere, Confirm: confirm.Stop,
-	Errors: []fail.Code{confirm.YesNeeded},
-	Run: func(ctx context.Context, d Deps, in StopIn, _ call.Progress) (struct{}, error) {
+	Errors: []fail.Code{confirm.YesNeeded, confirm.Needed, confirm.Mismatch},
+	Run: func(ctx context.Context, d Deps, in StopIn, _ call.Progress) (StopOut, error) {
 		if err := d.Machines.CheckStop(in.VM); err != nil {
-			return struct{}{}, err
+			return StopOut{}, err
 		}
+		kind := d.Machines.LifetimeOf(in.VM).Kind()
 		if err := d.Machines.EngineUp(ctx); err != nil {
-			return struct{}{}, err
+			return StopOut{Kind: kind}, err
 		}
 		if running, err := d.Machines.Running(ctx, in.VM); err != nil || !running {
-			return struct{}{}, err
+			return StopOut{Already: err == nil, Kind: kind}, err
 		}
-		if err := confirm.Require(confirm.For(confirm.Stop, machine.Workspace), in.VM, in.Confirm); err != nil {
-			return struct{}{}, err
+		if err := confirm.Ask(confirm.Stop, kind, in.VM, in.Confirm); err != nil {
+			return StopOut{Kind: kind}, err
 		}
-		return struct{}{}, d.Machines.Stop(ctx, in.VM)
+		return StopOut{Kind: kind}, d.Machines.Stop(ctx, in.VM)
 	},
 }
 
@@ -72,7 +85,7 @@ var Delete = call.Call[Deps, DeleteIn, machines.DeleteReport]{
 		if err := d.Machines.CheckVM(in.VM, "delete"); err != nil {
 			return machines.DeleteReport{}, err
 		}
-		if err := confirm.Require(confirm.For(confirm.Delete, machine.Workspace), in.VM, in.Confirm); err != nil {
+		if err := confirm.Ask(confirm.Delete, d.Machines.LifetimeOf(in.VM).Kind(), in.VM, in.Confirm); err != nil {
 			return machines.DeleteReport{}, err
 		}
 		if err := d.Machines.EngineUp(ctx); err != nil {
@@ -115,14 +128,18 @@ type EditIn struct {
 	VM string
 	// value: the sizes to change; a zero one is kept.
 	Resources machines.Resources
+	// value: a server's health check to set, or NoCheck to remove it.
+	Check   string
+	NoCheck bool
 }
 
 var Edit = call.Call[Deps, EditIn, machines.Edited]{
 	Name: "machines.edit", Where: call.InEngine, Applies: machine.Anywhere,
 	Run: func(ctx context.Context, d Deps, in EditIn, _ call.Progress) (machines.Edited, error) {
-		if err := d.Machines.CheckEdit(in.VM, in.Resources); err != nil {
+		change := machines.Change{Resources: in.Resources, Check: in.Check, NoCheck: in.NoCheck}
+		if err := d.Machines.CheckEdit(in.VM, change); err != nil {
 			return machines.Edited{}, err
 		}
-		return d.Machines.Edit(ctx, in.VM, in.Resources)
+		return d.Machines.Edit(ctx, in.VM, change)
 	},
 }

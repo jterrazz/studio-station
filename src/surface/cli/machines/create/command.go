@@ -1,6 +1,7 @@
 package machinescreate
 
 import (
+	"cmp"
 	"context"
 	"strconv"
 
@@ -35,9 +36,11 @@ type Deps struct {
 }
 
 type Input struct {
-	Image, Name, Memory, Disk, Network string
-	Permanent                          bool
-	CPUs                               int
+	Image, Name, Memory, Disk, Network, Check string
+	Permanent, Server                         bool
+	CPUs                                      int
+	// value: v2's --always-on, kept hidden for one release (SPEC §4.3).
+	AlwaysOn bool
 	// value: v2's --lifetime, kept hidden for one release (SPEC §4.3).
 	Lifetime   string
 	request    machines.CreateRequest
@@ -49,12 +52,16 @@ type Input struct {
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:   "create [<name>]",
-		Short: "Make a workspace on this Mac: throwaway, or kept with --permanent",
+		Short: "Make a workspace on this Mac, throwaway or --permanent; or a server, always on, with --server",
 		Example: "  station machines create\n" +
-			"  station machines create api --permanent --memory 12G",
+			"  station machines create api --permanent --memory 12G\n" +
+			"  station machines create infra --server --check https://infra:6443/readyz --on mac-mini",
 		Args: cobra.MaximumNArgs(1),
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.Permanent, "permanent", false, "kept until you delete it; without it, deleted when it powers off from inside")
+			f.BoolVar(&in.Server, "server", false, "a server: always on, set up by your own tooling, never by station (default 4 CPU, 8G, 50G)")
+			f.StringVar(&in.Check, "check", "", "a server's health check: a URL (https://infra:6443/readyz) or host:port")
+			f.BoolVar(&in.AlwaysOn, "always-on", false, "a server (--server)")
 			f.StringVar(&in.Image, "image", "linux", "the image the workspace is made from")
 			f.IntVar(&in.CPUs, "cpus", 0, "virtual CPUs (default 4)")
 			f.StringVar(&in.Memory, "memory", "", "memory with its unit, e.g. 8G or 512M (default 4G)")
@@ -64,11 +71,23 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			f.StringVar(&in.Lifetime, "lifetime", "", "throwaway or permanent (--permanent)")
 			_ = f.MarkHidden("name")
 			_ = f.MarkHidden("lifetime")
+			_ = f.MarkHidden("always-on")
 		},
 		Read: func(*Input) bool { return false },
 		Bind: func(in *Input, args []string) error {
 			if len(args) == 1 {
 				in.Name = args[0]
+			}
+			if in.AlwaysOn {
+				in.Server = true
+				env.Out.Now(serverWords(in))
+			}
+			if in.Server && (in.Permanent || in.Lifetime != "") {
+				flag := "permanent"
+				if !in.Permanent {
+					flag = "lifetime"
+				}
+				return &machines.ServerLifetimeError{Name: cmp.Or(in.Name, "<name>"), Flag: flag}
 			}
 			r, err := d.Resources(in.CPUs, in.Memory, in.Disk)
 			if err != nil {
@@ -86,7 +105,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 					env.Out.Now(nowWords(in))
 				}
 			}
-			in.request = machines.CreateRequest{Image: in.Image, Name: in.Name, Lifetime: lifetime, Network: in.Network, Resources: r}
+			in.request = machines.CreateRequest{Image: in.Image, Name: in.Name, Lifetime: lifetime, Network: in.Network, Resources: r, Check: in.Check, Server: in.Server}
 			return nil
 		},
 		Validate: func(ctx context.Context, in *Input) error {
@@ -118,7 +137,14 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				}
 			}
 			steps := kit.Steps(io)
-			created, err := call.Invoke(ctx, env.Calls, target, machinescalls.CreateWorkspace, machinescalls.CreateIn{Request: in.request}, steps)
+			var created machines.Created
+			var err error
+			if in.Server {
+				r := in.request
+				created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateServer, machinescalls.CreateServerIn{Name: r.Name, Image: r.Image, Network: r.Network, Resources: r.Resources, Check: r.Check}, steps)
+			} else {
+				created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateWorkspace, machinescalls.CreateIn{Request: in.request}, steps)
+			}
 			steps.Stop()
 			if err != nil {
 				return err
@@ -126,6 +152,15 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			return io.Page(pagemachines.Created(created, d.Here), pagemachines.CreatedContract(created))
 		},
 	}, env)
+}
+
+// value: the v3 words of a create written with v2's --always-on.
+func serverWords(in *Input) string {
+	words := "station machines create"
+	if in.Name != "" {
+		words += " " + in.Name
+	}
+	return words + " --server"
 }
 
 // value: the v3 words of a create written with v2's --lifetime lasting.

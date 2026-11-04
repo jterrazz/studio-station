@@ -7,11 +7,13 @@ type Record struct {
 	Name, Image, Version string
 	Lifetime             Lifetime
 	Want, Network        string
-	Env                  map[string]string
-	CPUs                 int
-	MemoryBytes          int64
-	DiskBytes            int64
-	CreatedAt            time.Time
+	// value: a server's health check, a URL or host:port; empty for none.
+	Check       string
+	Env         map[string]string
+	CPUs        int
+	MemoryBytes int64
+	DiskBytes   int64
+	CreatedAt   time.Time
 }
 
 type Host struct {

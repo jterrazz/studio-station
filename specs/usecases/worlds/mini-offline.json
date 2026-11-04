@@ -22,7 +22,7 @@
                         "vms": [
                             {
                                 "name": "infra",
-                                "lifetime": "permanent",
+                                "lifetime": "always-on",
                                 "cpus": 8,
                                 "memory_bytes": 25769803776
                             }
@@ -181,8 +181,9 @@
                     "kept": {
                         "image": "linux",
                         "version": "1",
-                        "lifetime": "permanent",
+                        "lifetime": "always-on",
                         "want": "running",
+                        "check": "https://infra:6443/readyz",
                         "created_at": "2026-10-23T09:00:00Z"
                     },
                     "disk": true,

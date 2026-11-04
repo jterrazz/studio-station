@@ -37,6 +37,14 @@ func (s *Service) VM(name, verb string) (VMRecord, error) {
 	return VMRecord{}, &UnknownMachineError{Name: name}
 }
 
+func (s *Service) LifetimeOf(name string) Lifetime {
+	rec, err := s.VM(name, "")
+	if err != nil {
+		return ""
+	}
+	return rec.Lifetime
+}
+
 func (s *Service) CheckStart(name string) error {
 	_, err := s.VM(name, "start")
 	return err

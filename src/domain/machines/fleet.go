@@ -28,6 +28,11 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 	if err != nil {
 		return Fleet{}, err
 	}
+	for i, vm := range vms {
+		if _, own := nodes[vm.Name]; own && vm.Lifetime == AlwaysOn {
+			vms[i].Device = vm.Name
+		}
+	}
 	user := cfg.Hosts[cfg.Here].User
 	if user == "" {
 		user = s.h.Env.User()

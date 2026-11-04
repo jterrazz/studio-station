@@ -1,0 +1,22 @@
+description: 'a server started again wants Running: the next reboot of its Mac starts it with the engine'
+env: two-macs
+runs:
+    - command: 'machines stop infra --on mac-mini --confirm=infra'
+      exit: 0
+      stdout: |
+          ●	infra	stopped · wanted state: Stopped
+    - command: 'machines start infra --on mac-mini'
+      exit: 0
+      stdout: |
+          ●	infra	started · wanted state: Running
+    - command: 'world reboot jterrazz-mac-mini'
+      exit: 0
+    - command: 'machines --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
+          ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].vms.infra | {running: (.pid > 0), want: .kept.want}'' world.json'
+      exit: 0
+      stdout: |
+          {"running":true,"want":"running"}

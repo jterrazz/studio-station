@@ -80,7 +80,7 @@ func ToList(f Fleet) ListDoc {
 		}
 		for _, vm := range Ordered(h.VMs) {
 			m.VMs = append(m.VMs, ListVM{
-				Name: vm.Name, Kind: "workspace", Lifetime: string(vm.Lifetime), State: string(vm.State),
+				Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Lifetime: string(vm.Lifetime), State: string(vm.State),
 				Wanted: Wanted(vm), Health: HealthOf(vm), IP: vm.IP, Bridged: vm.Network == "bridged",
 				Size:  ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
 				Image: ListImage{Name: vm.Image, Version: vm.Version}, Detail: vm.Detail, Created: vm.CreatedAt,

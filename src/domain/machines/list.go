@@ -8,9 +8,10 @@ type (
 )
 
 var (
-	Tally   = model.Tally
-	Label   = model.Label
-	Ordered = model.Ordered
-	Behind  = model.Behind
-	Needs   = model.Needs
+	Tally    = model.Tally
+	Label    = model.Label
+	Ordered  = model.Ordered
+	Behind   = model.Behind
+	Needs    = model.Needs
+	KindWord = model.KindWord
 )

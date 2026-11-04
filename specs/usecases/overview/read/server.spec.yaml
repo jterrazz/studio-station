@@ -23,9 +23,10 @@ runs:
 
            Health
              ● Running
-             ● Has an address  192.168.64.5
+             ● Has an address        192.168.64.5
              ● SSH answers
-             ● Size            8 CPU · 24 GB · 80 GB
+             ● Size                  8 CPU · 24 GB · 80 GB
+             ● Own Tailscale device  infra
     - command: 'machines infra --json | /usr/bin/jq -c ''[.machine.kind, [.sections[].id]]'''
       exit: 0
       stdout: |

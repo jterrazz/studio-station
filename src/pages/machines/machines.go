@@ -141,7 +141,7 @@ func vmRow(vm machines.VM) page.Row {
 	case machines.Unknown:
 		row.Mark, row.Reason = page.NotKnown, page.Unreachable
 	}
-	row.Cells = []page.Value{page.Text("workspace"), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
+	row.Cells = []page.Value{page.Text(string(vm.Lifetime.Kind())), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
 	return row
 }
 
@@ -188,6 +188,29 @@ func Change(verb, name, change string, here page.Context) page.Page {
 	return pages.Outcome("machines "+verb, here, nil, []page.Row{pages.Done(name, catalog.StateOK, change)}, "machines")
 }
 
+func ServerStopped(name, start string, here page.Context) page.Page {
+	// value: a server stopped by hand stays stopped, at its Mac's boot too,
+	// until start sets its wanted state back to Running.
+	row := pages.Done(name, catalog.StateOK, "stopped")
+	row.Detail = page.List(page.Text("stopped"), page.Text("wanted state: Stopped"))
+	p := pages.Outcome("machines stop", here, nil, []page.Row{row}, "machines")
+	p.Hints = []page.Hint{*page.Cmd(start)}
+	return p
+}
+
+func ServerStarted(name string, here page.Context) page.Page {
+	row := pages.Done(name, catalog.StateOK, "started")
+	row.Detail = page.List(page.Text("started"), page.Text("wanted state: Running"))
+	return pages.Outcome("machines start", here, nil, []page.Row{row}, "machines")
+}
+
+func StopServerForm(name string) page.Form {
+	return page.Form{
+		Title:  "Stop " + name + "? It will not start at its Mac's boot nor restart until you start it",
+		Fields: []page.Field{{Key: "name", Label: "Type " + name + " to stop it:", Kind: page.FieldText}},
+	}
+}
+
 func Already(verb, name string, running bool, here page.Context) page.Page {
 	// value: a start or stop that found the VM already so: its mark is the state
 	// it is in, running or stopped, and nothing changed.
@@ -203,8 +226,10 @@ const createdSchema = "station.machines.created/v1"
 type CreatedJSON struct {
 	Schema      string            `json:"schema"`
 	Name        string            `json:"name"`
+	Kind        string            `json:"kind"`
 	Host        string            `json:"host"`
 	Lifetime    string            `json:"lifetime"`
+	Check       string            `json:"check,omitempty"`
 	Image       string            `json:"image"`
 	Version     string            `json:"version"`
 	CPUs        int               `json:"cpus"`
@@ -226,7 +251,7 @@ type CreatedService struct {
 func CreatedContract(c machines.Created) CreatedJSON {
 	vm, r := c.VM, c.VM.Resources
 	body := CreatedJSON{
-		Schema: createdSchema, Name: vm.Name, Host: vm.Host, Lifetime: string(vm.Lifetime), Image: vm.Image,
+		Schema: createdSchema, Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Host: vm.Host, Lifetime: string(vm.Lifetime), Check: vm.Check, Image: vm.Image,
 		Version: vm.Version, CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes, IP: vm.IP,
 		Network: vm.Network, Services: []CreatedService{}, Env: c.Env,
 	}
@@ -242,6 +267,9 @@ func CreatedContract(c machines.Created) CreatedJSON {
 func Created(c machines.Created, here page.Context) page.Page {
 	vm, r := c.VM, c.VM.Resources
 	rows := []page.Row{passed(machines.StepRunning, ""), passed(machines.StepAddress, vm.IP), passed(machines.StepSSH, "")}
+	if vm.Lifetime == machines.AlwaysOn {
+		return serverCreated(c, rows, here)
+	}
 	off := false
 	for _, s := range c.Services {
 		row := pages.Done(s.Profile+"/"+strconv.Itoa(s.GuestPort), catalog.StateOK, "")
@@ -273,6 +301,35 @@ func passed(label, detail string) page.Row {
 		row.Cells[0] = page.Text(detail)
 	}
 	return row
+}
+
+// invariant: a server's create says what station will not do inside it; a
+// check that does not answer yet waits, never fails, as what answers it
+// comes with the owner's tooling (SPEC §7.1).
+func serverCreated(c machines.Created, rows []page.Row, here page.Context) page.Page {
+	vm, r := c.VM, c.VM.Resources
+	if vm.Check != "" {
+		rows = append(rows, page.Row{ID: "check", Label: "Check waiting", Mark: page.Attention, Reason: page.Waiting, Cells: []page.Value{page.Text("normal: what answers comes with your tooling")}})
+	}
+	if c.OnALaptop {
+		mac := vm.Host
+		if mac == here.Machine {
+			mac = "This Mac"
+		}
+		rows = append(rows, page.Row{ID: "laptop", Label: mac + " is a laptop", Mark: page.Attention, Reason: page.Degraded, Cells: []page.Value{page.List(page.Text(vm.Name+" stops whenever it sleeps"), page.Text("see Mac readiness"))}})
+	}
+	head := pages.Done(vm.Name, catalog.StateOK, "")
+	head.Cells = []page.Value{page.Text("is a server"), page.List(page.Text("always on"), page.Text(strconv.Itoa(r.CPUs)+" CPU"), Memory(r.MemoryBytes), DiskSize(r.DiskBytes))}
+	rows = append(rows, head)
+	note := page.Row{ID: "inside", Label: "Station sets up nothing inside", Mark: page.OK, Cells: []page.Value{page.Text("no apps, settings or accounts: set it up with your tooling")}}
+	rows = append(rows, note)
+	columns := []page.Column{
+		{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "what", Kind: page.KindText, Keep: 60},
+		{Key: "detail", Kind: page.KindList, Keep: 20},
+	}
+	p := pages.Outcome("machines create", here, columns, rows, "VMs")
+	p.Hints = []page.Hint{*page.Cmd("ssh " + vm.Name), *page.Cmd("station machines " + vm.Name)}
+	return p
 }
 
 func Deleted(r machines.DeleteReport, here page.Context) page.Page {
@@ -358,9 +415,20 @@ func Edited(e machines.Edited, here page.Context) page.Page {
 	if e.Changed.DiskBytes != 0 {
 		parts = append(parts, strconv.FormatFloat(float64(e.Changed.DiskBytes)/1e9, 'f', 1, 64)+" GB disk")
 	}
-	said := strings.Join(parts, ", ") + ", applies when " + e.Name + " next starts"
+	var said string
+	if len(parts) > 0 {
+		said = strings.Join(parts, ", ") + ", applies when " + e.Name + " next starts"
+	}
+	switch check := ""; {
+	case e.NoCheck:
+		check = "no health check: health has three steps"
+		said = strings.TrimPrefix(said+"; "+check, "; ")
+	case e.Check != "":
+		check = "health check " + e.Check + ", from its next health run"
+		said = strings.TrimPrefix(said+"; "+check, "; ")
+	}
 	row := pages.Done(e.Name, catalog.StateOK, said)
-	if e.Running {
+	if e.Running && len(parts) > 0 {
 		row.Detail = page.List(page.Text(said), page.Command("station machines restart "+e.Name))
 	}
 	return pages.Outcome("machines edit "+e.Name, here, nil, []page.Row{row}, "machines")

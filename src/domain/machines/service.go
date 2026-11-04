@@ -107,6 +107,7 @@ type Lifetime = model.Lifetime
 const (
 	Throwaway = model.Throwaway
 	Permanent = model.Permanent
+	AlwaysOn  = model.AlwaysOn
 )
 
 const (
@@ -119,7 +120,7 @@ const (
 type VMRecord struct {
 	Name, Image, Version string
 	Lifetime             Lifetime
-	Want, Network        string
+	Want, Network, Check string
 	Env                  map[string]string
 	Resources            Resources
 	CreatedAt            time.Time

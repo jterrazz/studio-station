@@ -1,13 +1,35 @@
 package machines
 
-import "time"
+import (
+	"time"
+
+	"github.com/jterrazz/studio-station/src/core/machine"
+)
 
 type Lifetime string
 
 const (
 	Throwaway Lifetime = "throwaway"
 	Permanent Lifetime = "permanent"
+	// value: a server's: it starts with its Mac and is never thrown away.
+	AlwaysOn Lifetime = "always-on"
 )
+
+func (l Lifetime) Kind() machine.Kind {
+	// invariant: the lifetime is the one record of a VM's kind: always on is
+	// a server, every other a workspace.
+	if l == AlwaysOn {
+		return machine.Server
+	}
+	return machine.Workspace
+}
+
+func (l Lifetime) Word() string {
+	if l == AlwaysOn {
+		return "always on"
+	}
+	return string(l)
+}
 
 func (l *Lifetime) UnmarshalText(text []byte) error {
 	// invariant: a record station v2 wrote reads in v3's words: temporary

@@ -106,17 +106,18 @@ station machines [--json] # All machines: every Mac, its VMs under it, then Need
 station machines <machine> [--json] # that machine's Overview, as station overview --on <machine>
 station machines add --name <name> [--user <login>] [--key <file>]
 station machines forget <host> [--yes]
-station machines create <name> [--permanent] [--image linux] [--cpus <n>] [--memory <size>] [--disk <size>] [--network nat|bridged]
+station machines create [<name>] [--permanent] [--image linux] [--cpus <n>] [--memory <size>] [--disk <size>] [--network nat|bridged]
+station machines create <name> --server [--cpus <n>] [--memory <size>] [--disk <size>] [--check <url|host:port>]
 station machines start <vm>
-station machines stop <vm> [--yes]
+station machines stop <vm> [--yes | --confirm=<name>]
 station machines restart <machine> [--yes]
-station machines edit <vm> [--cpus <n>] [--memory <size>] [--disk <size>]
+station machines edit <vm> [--cpus <n>] [--memory <size>] [--disk <size>] [--check <url|host:port> | --no-check]
 station machines ssh <machine>
 station machines delete <vm> [--confirm=<name>]
 station machines unlock <host>
 ```
 
-`--here` lists This Mac only, with no network. `create` makes a throwaway workspace unless `--permanent` is given, and asks the Mac on a terminal when two answer; piped it needs no question. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
+`--here` lists This Mac only, with no network. `create` makes a throwaway workspace unless `--permanent` is given, or a server with `--server` (always on, named, behind its Mac, 4 CPU · 8 GB · 50 GB by default; `--check` is its health check, refused on a workspace; `--always-on` is its hidden v2 alias), and asks the Mac on a terminal when two answer; piped it needs no question. `stop` asks a workspace yes or no and a server its name typed (`--confirm=<name>`; `--yes` never answers it), and the VM's own Mac judges the answer. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
 
 ### `station ports`
 

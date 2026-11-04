@@ -6,6 +6,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
@@ -84,6 +85,9 @@ func vmFailure(err error) (*fail.Error, bool) {
 	var network *machines.BadNetworkError
 	var nothing *machines.NothingToChangeError
 	var shrinks *machines.DiskShrinksError
+	var kindRule *machines.KindRuleError
+	var badCheck *machines.BadCheckError
+	var serverLifetime *model.ServerLifetimeError
 	if f, ok := pipeFailure(err); ok {
 		return f, true
 	}
@@ -93,6 +97,12 @@ func vmFailure(err error) (*fail.Error, bool) {
 			return failed(down.Error(), "station engine start", err), true
 		}
 		return failed(down.Error(), "station setup", err), true
+	case errors.As(err, &serverLifetime):
+		return usage(serverLifetime.Error(), "station machines create "+serverLifetime.Name+" --server"), true
+	case errors.As(err, &kindRule):
+		return usage(kindRule.Error(), kindRule.Fix), true
+	case errors.As(err, &badCheck):
+		return usage(badCheck.Error(), "--check https://<name>:6443/readyz, or --check <name>:6443"), true
 	case errors.As(err, &nothing):
 		return usage(nothing.Error(), "station machines edit "+nothing.Name+" --memory 8G"), true
 	case errors.As(err, &shrinks):

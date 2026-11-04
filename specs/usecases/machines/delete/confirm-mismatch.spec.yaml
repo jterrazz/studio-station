@@ -4,5 +4,5 @@ runs:
     - command: 'machines delete linux-1 --confirm=linux'
       exit: 2
       stderr: |
-          Error: you typed "linux", not "linux-1"
+          Error: not deleted: you typed "linux", not "linux-1"
           Hint: in a script: --confirm=linux-1

@@ -23,21 +23,24 @@ type Deps struct {
 }
 
 type Input struct {
-	Name         string
-	CPUs         int
-	Memory, Disk string
+	Name                string
+	CPUs                int
+	Memory, Disk, Check string
+	NoCheck             bool
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "edit <vm>",
-		Short:   "Change a VM's CPUs, memory or disk; it applies when the VM next starts",
-		Example: "  station machines edit linux-1 --memory 8G\n  station machines edit linux-1 --disk 100G",
+		Short:   "Change a VM's CPUs, memory or disk, applied when it next starts; or a server's health check",
+		Example: "  station machines edit linux-1 --memory 8G\n  station machines edit linux-1 --disk 100G\n  station machines edit infra --check infra:6443",
 		Args:    cobra.ExactArgs(1),
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.IntVar(&in.CPUs, "cpus", 0, "virtual CPUs")
 			f.StringVar(&in.Memory, "memory", "", "memory with its unit, e.g. 8G or 512M")
 			f.StringVar(&in.Disk, "disk", "", "disk size with its unit, e.g. 100G; a disk only grows")
+			f.StringVar(&in.Check, "check", "", "a server's health check: a URL (https://infra:6443/readyz) or host:port")
+			f.BoolVar(&in.NoCheck, "no-check", false, "remove a server's health check")
 		},
 		Bind: func(in *Input, args []string) error {
 			in.Name = args[0]
@@ -49,7 +52,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			edited, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Edit, machinescalls.EditIn{VM: in.Name, Resources: r}, nil)
+			edited, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Edit, machinescalls.EditIn{VM: in.Name, Resources: r, Check: in.Check, NoCheck: in.NoCheck}, nil)
 			if err != nil {
 				return err
 			}

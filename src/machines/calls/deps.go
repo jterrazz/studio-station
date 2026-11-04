@@ -11,6 +11,9 @@ import (
 type Deps struct {
 	Machines Machines
 	Kind     machine.Kind
+	// value: this Mac reports a battery: a server made here stops whenever
+	// it sleeps.
+	Laptop bool
 }
 
 type Machines interface {
@@ -27,6 +30,9 @@ type Machines interface {
 	CheckStart(name string) error
 	Start(ctx context.Context, name string) error
 	CheckStop(name string) error
+	// value: the lifetime of a VM of this Mac, which says its kind; empty
+	// for no VM of it.
+	LifetimeOf(name string) machines.Lifetime
 	// value: whether the VM of this Mac runs now.
 	Running(ctx context.Context, name string) (bool, error)
 	Stop(ctx context.Context, name string) error
@@ -47,13 +53,13 @@ type Machines interface {
 	CheckRemote(name string) error
 	Probe(ctx context.Context, name string) (machines.ProbeReport, error)
 	SSH(ctx context.Context, name string) (machines.SSHTarget, error)
-	CheckEdit(name string, r machines.Resources) error
-	Edit(ctx context.Context, name string, r machines.Resources) (machines.Edited, error)
+	CheckEdit(name string, c machines.Change) error
+	Edit(ctx context.Context, name string, c machines.Change) (machines.Edited, error)
 }
 
 func All(d Deps) []call.Handler {
 	return []call.Handler{
-		call.BindWatch(List, d), call.Bind(CreateWorkspace, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
+		call.BindWatch(List, d), call.Bind(CreateWorkspace, d), call.Bind(CreateServer, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
 		call.Bind(Restart, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d), call.Bind(SSH, d), call.Bind(Edit, d),
 	}
 }

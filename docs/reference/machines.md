@@ -29,14 +29,16 @@ A machine has one name, used for `preferences.json`, the `~/.ssh/config` Host, H
  ├─ ○ api Workspace Stopped · permanent 4 CPU 8 GB
  └─ ● linux-1 Workspace Running · throwaway 4 CPU 8 GB
  ● mac-mini Mac Engine running
- └─ ● infra Workspace Running · permanent 8 CPU 24 GB
+ └─ ● infra Server Running · always on 8 CPU 24 GB
 ```
 
 `station machines <machine>` is that machine's Overview, the one `station overview --on <machine>` prints.
 
+A server has four sections: Overview, Activity, Ports and SSH (SPEC §3.2). Its Overview adds `Own Tailscale device` when its tooling put one on the tailnet (station never installs nor blocks it) and its ssh, for debugging; its SSH section is the one door, the path that reaches it and what station leaves to the owner's tooling. Apps, Settings, Disk, Accounts, Background and Awake are refused on it, exit 2: `infra is a server: station does not manage its apps`, `Hint: manage it with your own tooling: ssh infra`. `apps update --all-machines` and `accounts --all-machines` skip a server by its kind and say so.
+
 ## Lifetimes
 
-A workspace is throwaway unless it is made `--permanent` ([Glossary](../concepts/glossary.md)). No workspace restarts by itself (SP-4), and a stop never destroys one (SP-5):
+A workspace is throwaway unless it is made `--permanent` ([Glossary](../concepts/glossary.md)); a server is always on (its record's lifetime is `always-on`, the one mark of its kind). No workspace restarts by itself (SP-4), and a stop never destroys a VM (SP-5). A server whose wanted state is Running starts with its Mac's engine; a stop sets its wanted state to Stopped, so it stays stopped across its Mac's reboots until `start` sets it back to Running. A Mac's servers are listed before its workspaces:
 
 | Event                          | Throwaway workspace                                   | Permanent workspace                             |
 | ------------------------------ | ----------------------------------------------------- | ----------------------------------------------- |
@@ -53,9 +55,12 @@ The VM tells its host when it powers off: a unit in the image writes `station-in
 
 ```sh
 station machines create api --permanent --memory 12G --disk 80G
+station machines create infra --server --check https://infra:6443/readyz --on mac-mini # always on; nothing set up inside
 station machines start api # a stopped workspace, its disk as it was left
 station machines stop api # asks yes or no; kept with its disk
+station machines stop infra --on mac-mini # a server: asks its name typed (--confirm=infra), --yes answers nothing
 station machines edit api --memory 16G # applies when api next starts; a disk only grows
+station machines edit infra --check infra:6443 # a server's health check, read by its next health run; --no-check removes it
 station machines ssh api # prints the ssh command: ssh admin@api
 station machines restart mac-mini # a Mac: FileVault-aware, waits for ssh; a VM: power off, run
 station machines delete api # destroys the VM, its leases and the secrets lent to it
@@ -63,7 +68,7 @@ station machines api # its Overview, as station overview --on api
 station machines unlock mac-mini # the FileVault pre-boot ssh session
 ```
 
-`create` makes a throwaway workspace unless `--permanent` is given, and asks the host when two or more are reachable. Defaults are 4 CPUs, 4 GB, 20 GB and image `linux`, each size with its unit. A size above what the Mac can give is refused before any effect (`not enough memory on This Mac: 60 GB asked, 4 GB left for VMs`): macOS keeps 4 GB, and the running VMs hold theirs. It reserves the ports of every service [profile](services.md#profiles) before the VM first runs; a step that fails before that rolls everything back. It then prints the health steps as they pass (Running, Has an address, SSH answers), its ports, and `linux-2 Created` with its size. From the first run on the VM is kept whatever fails: `linux-2 did not boot: …`, or `linux-2 is kept, failing Has an address: none after 60 s`, each with start or delete as the fix. A running workspace whose guest connection fails is a finding, `fails SSH answers`. A Mac that does not answer keeps its row in `station machines`, `Unreachable · last answer 03:12`, and the VMs it held at that answer as `? Unknown`; `station machines <vm>` of such a VM reads `infra is on mac-mini, which does not answer`, exit 0. `--network bridged` is for macOS VMs only (an iPhone on the Wi-Fi reaching the VM); a Linux VM publishes its [services](services.md) instead. With Tailscale HTTPS off, the profiles' variables hold the local URL and `create` adds a `◐ ports` row naming the admin step. `delete` asks the name typed (`--confirm=<name>` in a script, never `--yes`). With the engine stopped, start, stop, restart, edit and delete are refused (`Hint: station engine start`).
+`create` makes a throwaway workspace unless `--permanent` is given, and asks the host when two or more are reachable. Defaults are 4 CPUs, 4 GB, 20 GB and image `linux`, each size with its unit. A size above what the Mac can give is refused before any effect (`not enough memory on This Mac: 60 GB asked, 4 GB left for VMs`): macOS keeps 4 GB, and the running VMs hold theirs. It reserves the ports of every service [profile](services.md#profiles) before the VM first runs; a step that fails before that rolls everything back. It then prints the health steps as they pass (Running, Has an address, SSH answers), its ports, and `linux-2 Created` with its size. A server (`--server`) is named, always on and behind its Mac (`--permanent` and `--network bridged` are refused), sized 4 CPU · 8 GB · 50 GB unless asked; station reserves no profile port and runs no first boot inside it: after SSH answers, its check is `◐ Check waiting` (what answers it comes with your tooling), then `infra is a server`, `Station sets up nothing inside`. Made on a Mac that reports a battery, it adds `◐ This Mac is a laptop: box stops whenever it sleeps · see Mac readiness`. From the first run on the VM is kept whatever fails: `linux-2 did not boot: …`, or `linux-2 is kept, failing Has an address: none after 60 s`, each with start or delete as the fix. A running workspace whose guest connection fails is a finding, `fails SSH answers`. A Mac that does not answer keeps its row in `station machines`, `Unreachable · last answer 03:12`, and the VMs it held at that answer as `? Unknown`; `station machines <vm>` of such a VM reads `infra is on mac-mini, which does not answer`, exit 0. `--network bridged` is for macOS VMs only (an iPhone on the Wi-Fi reaching the VM); a Linux VM publishes its [services](services.md) instead. With Tailscale HTTPS off, the profiles' variables hold the local URL and `create` adds a `◐ ports` row naming the admin step. `delete` asks the name typed (`--confirm=<name>` in a script, never `--yes`), and takes with the VM the ports declared public for it. With the engine stopped, start, stop, restart, edit and delete are refused (`Hint: station engine start`).
 
 `create`, `start`, `stop`, `restart`, `edit` and `delete` need the [engine](#the-engine): with it down they refuse before any change and the VM is kept (`Error: the engine is stopped on This Mac`, `Hint: station engine start`; without the agent's plist, `is not installed on This Mac` and `station setup`).
 

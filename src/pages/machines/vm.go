@@ -4,6 +4,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
@@ -47,7 +50,7 @@ func VMPage(o VMOverview, s *overview.Summary, here page.Context, all bool) page
 			state = page.Loading
 		}
 	}
-	sections = append(sections, page.Section{ID: "health", Title: "Health", Uncounted: true, Columns: vmColumns(), Items: healthItems(vm)})
+	sections = append(sections, page.Section{ID: "health", Title: "Health", Uncounted: true, Columns: vmColumns(), Items: healthItems(vm, readsSSH(s))})
 	return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, State: state, Sections: sections, Hints: hints})
 }
 
@@ -59,13 +62,10 @@ func vmCaption(o VMOverview, s *overview.Summary) []page.Value {
 	if s != nil {
 		head = s.Head
 	}
-	fate := titled(string(vm.Lifetime))
-	if head.Server() {
-		fate = "always on"
-	}
-	parts := []page.Value{pagehome.KindOn(head, o.on()), page.Text(fate)}
+	server := vm.Lifetime.Kind() == machine.Server
+	parts := []page.Value{page.Text(machines.KindWord(vm.Lifetime.Kind()) + " on " + o.on()), page.Text(lifetimeWord(vm.Lifetime))}
 	switch {
-	case head.Server():
+	case server:
 		mark := page.OK
 		if vm.State != machines.Running {
 			mark = page.Absent
@@ -79,7 +79,7 @@ func vmCaption(o VMOverview, s *overview.Summary) []page.Value {
 	return parts
 }
 
-func healthItems(vm machines.VM) []page.Item {
+func healthItems(vm machines.VM, sshRead bool) []page.Item {
 	health := machines.HealthOf(vm)
 	steps := []page.Row{
 		step("running", machines.StepRunning, health.Running, health.Running, ""),
@@ -92,7 +92,42 @@ func healthItems(vm machines.VM) []page.Item {
 	}
 	r := vm.Resources
 	size := page.Row{ID: "size", Label: "Size", Mark: page.OK, Cells: []page.Value{page.List(page.Text(strconv.Itoa(r.CPUs)+" CPU"), Memory(r.MemoryBytes), DiskSize(r.DiskBytes))}}
-	return append(items, page.Item{Row: &size})
+	items = append(items, page.Item{Row: &size})
+	if vm.Lifetime == machines.AlwaysOn {
+		items = append(items, serverRows(vm, sshRead)...)
+	}
+	return items
+}
+
+// invariant: a server's Overview names its own tailnet device when its
+// tooling installed one, which station never installs nor blocks, and the
+// ssh that is its one door, for debugging (SPEC §7.7), here only when the
+// server's own SSH line was not read inside it.
+func serverRows(vm machines.VM, sshRead bool) []page.Item {
+	var rows []page.Row
+	if vm.Device != "" {
+		rows = append(rows, page.Row{ID: "device", Label: "Own " + catalog.TailnetProduct + " device", Mark: page.OK, Cells: []page.Value{page.Text(vm.Device)}})
+	}
+	if !sshRead {
+		rows = append(rows, page.Row{ID: "ssh", Label: "SSH", Mark: page.OK, Cells: []page.Value{page.List(page.Command("ssh "+vm.Name), page.Text("for debugging"))}})
+	}
+	items := make([]page.Item, 0, len(rows))
+	for i := range rows {
+		items = append(items, page.Item{Row: &rows[i]})
+	}
+	return items
+}
+
+func readsSSH(s *overview.Summary) bool {
+	if s == nil {
+		return false
+	}
+	for _, l := range s.Lines {
+		if l.Section == section.SSH && l.Unread == "" {
+			return true
+		}
+	}
+	return false
 }
 
 func vmColumns() []page.Column {
@@ -114,6 +149,13 @@ func step(id, label string, passed, running bool, detail string) page.Row {
 		row.Mark, row.Reason = page.Absent, page.Stopped
 	}
 	return row
+}
+
+func lifetimeWord(l machines.Lifetime) string {
+	if l == machines.AlwaysOn {
+		return l.Word()
+	}
+	return titled(string(l))
 }
 
 func titled(word string) string {
@@ -179,7 +221,9 @@ type VMOverviewJSON struct {
 	Health   VMHealthJSON      `json:"health"`
 	Restarts int               `json:"restarts"`
 	Size     machines.ListSize `json:"size"`
-	Detail   string            `json:"detail,omitempty"`
+	// value: a server's own tailnet device; empty for none.
+	Device string `json:"device,omitempty"`
+	Detail string `json:"detail,omitempty"`
 	// value: what the VM reads of itself inside: its findings and one count
 	// set per section, as its own Overview carries them.
 	Findings []pagehome.SummaryFindingJSON `json:"findings"`
@@ -193,11 +237,44 @@ func VMContract(o VMOverview, s *overview.Summary, schema string) VMOverviewJSON
 		inside = pagehome.SummaryContract(*s, schema)
 	}
 	return VMOverviewJSON{
-		Schema: schema, Machine: VMMachineJSON{Name: vm.Name, Kind: inside.Machine.Kind, On: o.Mac.Name, Reachable: o.Mac.Reachable},
+		Schema: schema, Machine: VMMachineJSON{Name: vm.Name, Kind: string(vm.Lifetime.Kind()), On: o.Mac.Name, Reachable: o.Mac.Reachable},
 		Findings: inside.Findings, Sections: inside.Sections,
 		Lifetime: string(vm.Lifetime), State: string(vm.State), Wanted: machines.Wanted(vm),
 		Health: VMHealthJSON{Running: h.Running, Address: h.Address, SSH: h.SSH},
 		Size:   machines.ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
-		Detail: vm.Detail,
+		Device: vm.Device, Detail: vm.Detail,
 	}
+}
+
+func SSHPage(o VMOverview, target machines.SSHTarget, here page.Context) page.Page {
+	// invariant: a server's SSH section (SPEC §3.2, §7.7): its one door, the
+	// path that reaches it from This Mac, and what station leaves to the
+	// owner's tooling; station opens it for debugging only.
+	vm, mac := o.VM, o.Mac
+	door := page.Row{ID: "command", Label: target.Command, Mark: page.OK, Cells: []page.Value{page.Text("from any Mac: the block in ~/.ssh/config hops through " + o.on())}}
+	editor := page.Row{ID: "editor", Label: "In an editor", Mark: page.OK, Cells: []page.Value{page.Text("Remote SSH to " + vm.Name)}}
+	reached := []page.Row{
+		{ID: "to-mac", Label: "This Mac to " + o.on(), Mark: page.OK, Cells: []page.Value{page.List(page.Text("over "+catalog.TailnetProduct), page.Text("as "+mac.User))}},
+		{ID: "to-vm", Label: o.on() + " to " + vm.Name, Mark: page.OK, Cells: []page.Value{page.List(page.Text(vm.IP), page.Text("its Mac's private network"))}},
+	}
+	if mac.Here {
+		reached = reached[1:]
+	}
+	if vm.State != machines.Running {
+		door.Mark, door.Reason = page.Absent, page.Stopped
+		door.Cells = []page.Value{page.Text(vm.Name + " is stopped: station machines start " + vm.Name)}
+	}
+	rows := func(rs ...page.Row) []page.Item {
+		items := make([]page.Item, 0, len(rs))
+		for i := range rs {
+			items = append(items, page.Item{Row: &rs[i]})
+		}
+		return items
+	}
+	columns := []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "detail", Kind: page.KindList, Keep: 50}}
+	return page.Seal(page.Page{ID: "ssh", Command: "machines ssh " + vm.Name, Context: here, Sections: []page.Section{
+		{ID: "door", Title: "SSH", Caption: []page.Value{page.Text(vm.Name)}, Uncounted: true, Columns: columns, Items: append(rows(door, editor), page.Item{Note: &page.Note{Text: "No password: your key. Files travel through the same name; no folder of a Mac is shared."}})},
+		{ID: "reached", Title: "How it is reached", Uncounted: true, Columns: columns, Items: rows(reached...)},
+		{ID: "inside", Title: "Inside", Uncounted: true, Items: []page.Item{{Note: &page.Note{Text: "Station opens it for debugging only; your tooling owns what runs inside."}}}},
+	}})
 }

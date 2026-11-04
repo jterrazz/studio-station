@@ -1,6 +1,10 @@
-description: 'a VM of another Mac restarts through that Mac with no question, and runs again'
+description: 'a server of another Mac restarts through that Mac with no question: a new run, still wanted running'
 env: two-macs
 runs:
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].vms.infra | {pid, want: .kept.want}'' world.json'
+      exit: 0
+      stdout: |
+          {"pid":2001,"want":"running"}
     - command: 'machines restart infra --on mac-mini'
       exit: 0
       stdout: |
@@ -8,7 +12,11 @@ runs:
           ●	Has an address	192.168.64.5
           ●	SSH answers
           ●	infra	restarted
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].vms.infra | {pid, want: .kept.want}'' world.json'
+      exit: 0
+      stdout: |
+          {"pid":1002,"want":"running"}
     - command: 'machines | /usr/bin/grep infra'
       exit: 0
       stdout: |
-          ●	infra	Workspace	jterrazz-mac-mini	Running · permanent	8 CPU	24 GB
+          ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB

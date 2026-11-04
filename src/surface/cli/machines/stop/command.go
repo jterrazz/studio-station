@@ -2,10 +2,15 @@ package machinesstop
 
 import (
 	"context"
+	"errors"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/fail"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
@@ -18,14 +23,20 @@ type Deps struct {
 	Here  page.Context
 }
 
-type Input struct{ Name string }
+type Input struct{ Name, Confirm string }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
+	// invariant: a workspace's stop asks yes or no (--yes), a server's its
+	// name typed (--confirm=<name>), which --yes never answers; the VM's own
+	// Mac decides which, so the question is put once its call has refused.
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "stop <vm>",
-		Short:   "Stop a workspace; it is kept, with its disk, until started or deleted",
-		Example: "  station machines stop linux-1 --yes",
+		Short:   "Stop a VM; it is kept, with its disk, until started or deleted",
+		Example: "  station machines stop linux-1 --yes\n  station machines stop infra --confirm=infra",
 		Args:    cobra.ExactArgs(1),
+		Declare: func(f *pflag.FlagSet, in *Input) {
+			f.StringVar(&in.Confirm, "confirm", "", "a server's name, typed, to stop it without the question")
+		},
 		Bind: func(in *Input, args []string) error {
 			in.Name = args[0]
 			return nil
@@ -35,21 +46,62 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Verb:     func(*Input) string { return "stop" },
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			already := false
-			err := io.Confirmed(func(answer string) error {
-				already = answer == ""
+			stopIt := func(answer string) (machinescalls.StopOut, error) {
 				stop := io.Wait("stopping " + in.Name)
 				defer stop()
-				_, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Stop, machinescalls.StopIn{VM: in.Name, Confirm: answer}, nil)
-				return err
-			})
+				return call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Stop, machinescalls.StopIn{VM: in.Name, Confirm: answer}, nil)
+			}
+			first := in.Confirm
+			if first == "" {
+				first = io.YesAnswer()
+			}
+			out, err := stopIt(first)
+			switch {
+			case typedAsked(err) && in.Confirm == "" && !io.Yes && io.Interactive && io.Prompt != nil:
+				out, err = typed(in.Name, io, stopIt)
+			case yesAsked(err):
+				err = io.Confirmed(func(answer string) error {
+					out, err = stopIt(answer)
+					return err
+				})
+			}
 			if err != nil {
 				return err
 			}
-			if already {
+			switch {
+			case out.Already:
 				return io.Page(pagemachines.Already("stop", in.Name, false, d.Here), nil)
+			case out.Kind == machine.Server:
+				start := "station machines start " + in.Name
+				if env.Far() {
+					start += " --on " + env.Target().Name
+				}
+				return io.Page(pagemachines.ServerStopped(in.Name, start, d.Here), nil)
 			}
 			return io.Page(pagemachines.Change("stop", in.Name, "stopped, kept", d.Here), nil)
 		},
 	}, env)
+}
+
+func typed(name string, io kit.IO, stopIt func(string) (machinescalls.StopOut, error)) (machinescalls.StopOut, error) {
+	answers, err := io.Prompt.Form(pagemachines.StopServerForm(name))
+	if err != nil {
+		return machinescalls.StopOut{}, err
+	}
+	out, err := stopIt(answers["name"])
+	var wrong *fail.Error
+	if errors.As(err, &wrong) && wrong.Code == confirm.Mismatch {
+		return out, fail.New(fail.Declined, confirm.Mismatch, wrong.Subject, wrong.Detail)
+	}
+	return out, err
+}
+
+func typedAsked(err error) bool {
+	var e *fail.Error
+	return errors.As(err, &e) && e.Code == confirm.Needed
+}
+
+func yesAsked(err error) bool {
+	var e *fail.Error
+	return errors.As(err, &e) && e.Code == confirm.YesNeeded
 }
