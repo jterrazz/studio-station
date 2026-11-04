@@ -287,9 +287,9 @@ func Deleted(r machines.DeleteReport, here page.Context) page.Page {
 }
 
 func Restarted(r machines.RestartReport, here page.Context) page.Page {
-	var rows []page.Row
+	rows := make([]page.Row, 0, 4)
 	if r.VM {
-		rows = []page.Row{passed(machines.StepRunning, ""), passed(machines.StepAddress, r.IP), passed(machines.StepSSH, "")}
+		rows = append(rows, passed(machines.StepRunning, ""), passed(machines.StepAddress, r.IP), passed(machines.StepSSH, ""))
 	}
 	rows = append(rows, pages.Done(r.Name, catalog.StateOK, "restarted"))
 	return pages.Outcome("machines restart "+r.Name, here, nil, rows, "VMs")
