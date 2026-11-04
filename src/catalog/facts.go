@@ -7,6 +7,15 @@ const (
 	FactFirewall   Fact = "firewall"
 	FactSIP        Fact = "sip"
 	FactGatekeeper Fact = "gatekeeper"
+	// value: macOS installs its security responses by itself: on or off.
+	FactAutoUpdates Fact = "automatic-updates"
+	// value: the seconds the screen locks after the display turns off, or
+	// off; the display's own idle minutes, 0 for never.
+	FactScreenLock   Fact = "screen-lock"
+	FactDisplaySleep Fact = "display-sleep"
+	FactRemoteLogin  Fact = "remote-login"
+	// value: when Time Machine last finished a backup (RFC 3339), or never.
+	FactTimeMachine Fact = "time-machine"
 	// value: whether FileVault's planned restart, which unlocks the disk
 	// once, is supported.
 	FactAuthRestart Fact = "authrestart"

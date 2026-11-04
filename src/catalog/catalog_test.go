@@ -44,6 +44,9 @@ func TestUniqueNamesAcrossToolsSkillsAndConfigItems(t *testing.T) {
 	for _, item := range catalog.ConfigItems {
 		claim(item.Name, "config item")
 	}
+	for _, item := range catalog.CheckedSettings {
+		claim(item.Name, "checked setting")
+	}
 }
 
 func TestEveryRequirementAndThenNamesACatalogueEntry(t *testing.T) {
