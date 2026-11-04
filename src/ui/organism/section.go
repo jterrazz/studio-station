@@ -32,6 +32,9 @@ func titleCounts(s page.Section) bool {
 }
 
 func Title(st token.Styles, s page.Section) string {
+	if s.Joined {
+		return atom.Spaces(token.Margin) + st.Title.Render(atom.Show(page.List(append([]page.Value{page.Text(s.Title)}, s.Caption...)...)))
+	}
 	line := atom.Spaces(token.Margin) + st.Title.Render(s.Title)
 	if titleCounts(s) {
 		if counts := molecule.Counts(st, s.Counts); counts != "" {

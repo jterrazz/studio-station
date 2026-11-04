@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           ●	infra	10 cpus, applies when infra next starts · station machines restart infra
-    - command: 'machines --json | /usr/bin/jq -c ''.hosts[1].vms[] | select(.name == "infra") | .cpus'''
+    - command: 'machines --json | /usr/bin/jq -c ''.macs[1].vms[] | select(.name == "infra") | .size.cpus'''
       exit: 0
       stdout: |
           10

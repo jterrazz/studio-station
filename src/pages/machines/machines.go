@@ -82,20 +82,6 @@ func Section(f machines.Fleet, links func(host, vm string) []page.Link) page.Sec
 	return page.Section{ID: "fleet", Title: "Fleet", Columns: Columns(), Items: items}
 }
 
-func List(f machines.Fleet, warnings []string, here page.Context) page.Page {
-	s := Section(f, nil)
-	s.Role = page.Banner
-	sections := []page.Section{s}
-	if len(warnings) > 0 {
-		notes := make([]page.Item, 0, len(warnings))
-		for _, w := range warnings {
-			notes = append(notes, page.Item{Note: &page.Note{Text: w}})
-		}
-		sections = append(sections, page.Section{ID: "warnings", Title: "Warnings", Role: page.Banner, Items: notes})
-	}
-	return page.Seal(page.Page{ID: "machines", Command: "machines", Context: here, Sections: sections, Actions: Actions()})
-}
-
 func Actions() []page.Action {
 	return []page.Action{
 		{Key: KeyCreate, Label: "create", On: page.OnPage, Priority: 4, Mutates: true},

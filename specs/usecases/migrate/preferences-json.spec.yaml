@@ -8,4 +8,4 @@ runs:
     - command: 'machines --here'
       exit: 0
       stdout: |
-          ●	jterrazz-macbook-pro	mac			online	-	0 VMs
+          ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running

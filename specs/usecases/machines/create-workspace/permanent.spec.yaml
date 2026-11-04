@@ -8,4 +8,4 @@ runs:
     - command: 'machines --here | /usr/bin/grep api-2'
       exit: 0
       stdout: |
-          ●	api-2	workspace	jterrazz-macbook-pro	permanent	running	192.168.64.5	4 cpus · 4 GB · 20.0 GB
+          ●	api-2	Workspace	jterrazz-macbook-pro	Running · permanent	4 CPU	4 GB

@@ -3,6 +3,7 @@
 package wire
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -213,6 +214,8 @@ func (m *worldMac) engineVersion() string {
 	return ""
 }
 
+func (m *worldMac) stationVersion() string { return m.slice().Station }
+
 func (m *worldMac) engineStarted() time.Time {
 	if e := m.slice().Engine; e != nil {
 		return e.StartedAt
@@ -343,7 +346,7 @@ func (m *worldMac) serve() *remotefake.Dialer {
 	if m.served == nil {
 		far := m.run.far(m)
 		m.served = remotefake.New()
-		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: Version(), Word: func(err error) *fail.Error { return kit.Translate(err, "") }})
+		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: cmp.Or(m.stationVersion(), Version()), Word: func(err error) *fail.Error { return kit.Translate(err, "") }})
 		m.start = far.start
 	}
 	return m.served

@@ -8,4 +8,4 @@ runs:
     - command: 'machines --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          ●	jterrazz-mac-mini	mac			online	-	0 VMs
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running

@@ -39,7 +39,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return io.Page(listPage(out, d.Here), machines.ToWire(out.Fleet))
+				return io.Page(listPage(out, d.Here), machines.ToList(out.Fleet))
 			}
 			updates, err := call.Follow(ctx, env.Calls, env.Target(), machinescalls.List, listed, nil)
 			if err != nil {

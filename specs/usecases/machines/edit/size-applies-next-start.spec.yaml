@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           ●	linux-1	16 GB, applies when linux-1 next starts · station machines restart linux-1
-    - command: 'machines --json | /usr/bin/jq -c ''.hosts[0].vms[] | select(.name == "linux-1") | {state, memory_bytes}'''
+    - command: 'machines --json | /usr/bin/jq -c ''.macs[0].vms[] | select(.name == "linux-1") | {state, memory_bytes: .size.memory_bytes}'''
       exit: 0
       stdout: |
           {"state":"running","memory_bytes":17179869184}

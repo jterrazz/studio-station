@@ -1,0 +1,11 @@
+description: 'machines --json is station.machines.list/v1: every Mac with its VMs, their wanted state, size in bytes and the findings'
+env: two-macs
+runs:
+    - command: 'machines --json | /usr/bin/jq -c ''{schema, findings, macs: [.macs[] | {name, label, this_mac, reachable, engine: .engine.state, vms: [.vms[] | {name, kind, lifetime, state, size}]}]}'''
+      exit: 0
+      stdout: |
+          {"schema":"station.machines.list/v1","findings":[],"macs":[{"name":"jterrazz-macbook-pro","label":"This Mac","this_mac":true,"reachable":true,"engine":"running","vms":[{"name":"api","kind":"workspace","lifetime":"permanent","state":"stopped","size":{"cpus":4,"memory_bytes":8589934592,"disk_bytes":50000000000}},{"name":"linux-1","kind":"workspace","lifetime":"throwaway","state":"running","size":{"cpus":4,"memory_bytes":8589934592,"disk_bytes":50000000000}}]},{"name":"jterrazz-mac-mini","label":"mac-mini","this_mac":false,"reachable":true,"engine":"running","vms":[{"name":"infra","kind":"workspace","lifetime":"permanent","state":"running","size":{"cpus":8,"memory_bytes":25769803776,"disk_bytes":80000000000}}]}]}
+    - command: 'machines --json | /usr/bin/jq -r ''.macs[0].vms[0] | keys | join(" ")'''
+      exit: 0
+      stdout: |
+          created_at guest image ip kind lent lifetime name network size state

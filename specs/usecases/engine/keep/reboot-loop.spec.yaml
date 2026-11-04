@@ -12,6 +12,8 @@ runs:
     - command: 'machines --here'
       exit: 0
       stdout: |
-          ●	jterrazz-macbook-pro	mac			online	-	2 VMs
-          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB
-          ✗	linux-1	workspace	jterrazz-macbook-pro	throwaway	broken	-	stopped 4 times within 60 s
+          ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
+          ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
+          ✗	linux-1	Workspace	jterrazz-macbook-pro	Broken · throwaway	4 CPU	8 GB	stopped 4 times within 60 s
+          # Needs you
+          ✗	linux-1	stopped 4 times within 60 s	station machines delete linux-1

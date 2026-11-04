@@ -4,7 +4,7 @@ fixture:
     - ../../__fixtures__/machines-stubs/
     - ../../__fixtures__/fleet-y-answers/
 runs:
-    - command: 'machines --json | /usr/bin/jq -r ''.hosts | length | tostring'''
+    - command: 'machines --json | /usr/bin/jq -r ''.macs | length | tostring'''
       exit: 0
       stdout: |
           2

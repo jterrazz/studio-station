@@ -54,6 +54,8 @@ type Mac struct {
 	Locked bool `json:"locked,omitempty"`
 	// value: out of the tailnet's reach.
 	Offline bool `json:"offline,omitempty"`
+	// value: the station version this Mac runs; empty, the spec binary's.
+	Station string `json:"station,omitempty"`
 	// value: what station keeps in this Mac's preferences, by group.
 	Preferences map[string]json.RawMessage `json:"preferences,omitempty"`
 	// value: station's own files as text, by name, while no store has read

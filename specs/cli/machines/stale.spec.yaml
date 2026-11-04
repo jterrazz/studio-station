@@ -7,9 +7,11 @@ runs:
     - command: 'machines --here'
       exit: 0
       stdout: |
-          ◐	x	mac			online	192.0.2.1	engine not installed · station setup
-          ○	t	workspace	x	throwaway	stopped	-	4 cpus · 8 GB · 50.0 GB
-    - command: 'machines --here --json | /usr/bin/jq -r ''.hosts[0].vms[0] | .name + " " + .state'''
+          ✗	x	Mac	x	Engine not set up
+          ○	t	Workspace	x	Stopped · throwaway	4 CPU	8 GB
+          # Needs you
+          ✗	This Mac	has no engine set up	station setup
+    - command: 'machines --here --json | /usr/bin/jq -r ''.macs[0].vms[0] | .name + " " + .state'''
       exit: 0
       stdout: |
           t stopped

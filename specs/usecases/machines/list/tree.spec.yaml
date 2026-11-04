@@ -1,0 +1,22 @@
+description: 'station machines lists every Mac with its VMs under it, in the columns MACHINE, KIND, STATE, CPU and MEMORY'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 100x30 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" machines'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |4
+           station machines                                                       jterrazz-macbook-pro · host
+           ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+           5 machines · 4 running · 1 stopped · nothing needs you
+               MACHINE     KIND       STATE                CPU    MEMORY
+             ● This Mac    Mac        Engine running
+             ├─ ○ api      Workspace  Stopped · permanent  4 CPU  8 GB
+             └─ ● linux-1  Workspace  Running · throwaway  4 CPU  8 GB
+             ● mac-mini    Mac        Engine running
+             └─ ● infra    Workspace  Running · permanent  8 CPU  24 GB

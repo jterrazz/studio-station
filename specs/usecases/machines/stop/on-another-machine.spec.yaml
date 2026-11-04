@@ -11,5 +11,5 @@ runs:
     - command: 'machines --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          ●	jterrazz-mac-mini	mac			online	-	1 VM
-          ○	infra	workspace	jterrazz-mac-mini	permanent	stopped	-	ended with its Mac
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
+          ○	infra	Workspace	jterrazz-mac-mini	Stopped · permanent	8 CPU	24 GB	ended with its Mac

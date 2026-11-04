@@ -31,11 +31,14 @@ type Context struct {
 }
 
 type Section struct {
-	ID      string   `json:"id,omitempty"`
-	Title   string   `json:"title,omitempty"`
-	Role    Role     `json:"role,omitempty"`
-	Fold    Fold     `json:"fold,omitempty"`
-	Caption []Value  `json:"caption,omitempty"`
+	ID      string  `json:"id,omitempty"`
+	Title   string  `json:"title,omitempty"`
+	Role    Role    `json:"role,omitempty"`
+	Fold    Fold    `json:"fold,omitempty"`
+	Caption []Value `json:"caption,omitempty"`
+	// value: the caption reads on as the title's own words, one list with it
+	// (All machines' first line), not a muted aside.
+	Joined  bool     `json:"joined,omitempty"`
 	Columns []Column `json:"columns,omitempty"`
 	Items   []Item   `json:"items,omitempty"`
 	Counts  []Tally  `json:"counts,omitempty"`
@@ -134,6 +137,8 @@ func (g Group) Heading() bool {
 
 type Empty struct {
 	Noun string `json:"noun,omitempty"`
+	// value: the whole line when "no <noun>" is not it (No VMs yet).
+	Text string `json:"text,omitempty"`
 	Hint *Hint  `json:"hint,omitempty"`
 }
 

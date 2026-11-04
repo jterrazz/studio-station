@@ -3,7 +3,7 @@ fixture:
     - ../../__fixtures__/terminal/
 env: terminal
 runs:
-    - command: '--version >/dev/null; "$STATION" services --page | /usr/bin/jq -r ''.sections[0].title'' >title; "$STATION" machines --json | /usr/bin/jq -r ''.hosts[0].name'' >name; /bin/test -s title && /usr/bin/cmp -s title name && echo same'
+    - command: '--version >/dev/null; "$STATION" services --page | /usr/bin/jq -r ''.sections[0].title'' >title; "$STATION" machines --json | /usr/bin/jq -r ''.macs[0].name'' >name; /bin/test -s title && /usr/bin/cmp -s title name && echo same'
       exit: 0
       stdout: |
           same

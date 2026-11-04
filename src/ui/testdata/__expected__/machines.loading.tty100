@@ -1,9 +1,14 @@
  station machines                                                               host · unregistered
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
- Fleet  4 ◌
-   ◌ macbook
-   ├─ ◌ linux-1
-   └─ ◌ api
+ 4 machines · 3 running · 1 stopped · 1 needs you
+   ◌ This Mac
+   ├─ ◌ api
+   └─ ◌ linux-1
    ◌ mac-mini
-      no VMs  → station machines create --on mac-mini
+      No VMs yet
+
+ Needs you  1 ◌
+   ◌ mac-mini
+
+ → station machines create --on mac-mini

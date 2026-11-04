@@ -62,4 +62,5 @@ func (*worldMac) engineFrom(func() *engine.Daemon)                      {}
 func (*worldMac) macs() remotecontract.EndpointDialer                   { return nil }
 func (*worldMac) stopMarks() engine.StopMarks                           { return nil }
 func (*worldMac) engineVersion() string                                 { return "" }
+func (*worldMac) stationVersion() string                                { return "" }
 func (*worldMac) engineStarted() time.Time                              { return time.Time{} }

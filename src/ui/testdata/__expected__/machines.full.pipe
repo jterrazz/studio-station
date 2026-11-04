@@ -1,5 +1,7 @@
-●	macbook	mac			online	100.98.133.14	2 VMs
-●	linux-1	workspace	macbook	throwaway	running	192.168.64.5	4 cpus · 4 GB · 42.9 GB
-○	api	workspace	macbook	permanent	stopped	-	4 cpus · 8 GB · 42.9 GB
-◐	mac-mini	mac			online	100.98.133.20	station v2.0.0-248 here v2.0.0-250
+●	macbook	Mac	macbook	Engine running
+○	api	Workspace	macbook	Stopped · permanent	4 CPU	8 GB
+●	linux-1	Workspace	macbook	Running · throwaway	4 CPU	4 GB
+◐	mac-mini	Mac	mac-mini	Engine running · runs v2.0.0-248
+# Needs you
+◐	mac-mini	runs v2.0.0-248	update station there (scripts/install.sh)
 	mac-mini: station v2.0.0-248, here v2.0.0-250

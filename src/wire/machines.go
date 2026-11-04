@@ -45,7 +45,7 @@ func (m machine) machines(_ bool) *machines.Service {
 		Here:       m.kind,
 		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.host.Env.User(),
-		Version:   Version(),
+		Version:   m.stationVersion(),
 		Ask:       m.askFleet,
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
