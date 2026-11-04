@@ -41,6 +41,8 @@ func (s *Store) List(context.Context) ([]machines.Record, error) {
 	return out, nil
 }
 
+func (s *Store) ListReadable(ctx context.Context) ([]machines.Record, error) { return s.List(ctx) }
+
 func (s *Store) Delete(_ context.Context, name string) error {
 	delete(s.records, name)
 	return nil

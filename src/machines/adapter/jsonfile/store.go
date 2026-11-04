@@ -136,7 +136,11 @@ func (s *Store) Put(_ context.Context, r machines.Record) error {
 	return s.files.WriteFile(s.recordFile(r.Name), append(data, '\n'), 0o600)
 }
 
-func (s *Store) List(context.Context) ([]machines.Record, error) {
+func (s *Store) List(context.Context) ([]machines.Record, error) { return s.list(false) }
+
+func (s *Store) ListReadable(context.Context) ([]machines.Record, error) { return s.list(true) }
+
+func (s *Store) list(skipDamaged bool) ([]machines.Record, error) {
 	entries, err := s.files.ReadDir(s.dir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
@@ -151,8 +155,11 @@ func (s *Store) List(context.Context) ([]machines.Record, error) {
 		}
 		at := path.Join(s.dir, e.Name())
 		f, err := s.read(at)
+		var unreadable *store.UnreadableError
+		if skipDamaged && errors.As(err, &unreadable) && store.OnlyNewer(err) == nil {
+			continue
+		}
 		if err != nil {
-			var unreadable *store.UnreadableError
 			if !errors.As(err, &unreadable) {
 				err = &store.UnreadableError{Path: at, Cause: err}
 			}

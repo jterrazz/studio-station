@@ -87,7 +87,7 @@ func (s *Service) List(ctx context.Context) ([]Report, error) {
 }
 
 func (s *Service) users() (map[string][]string, error) {
-	records, err := s.vms.List(context.Background())
+	records, err := s.vms.ListReadable(context.Background())
 	if err != nil {
 		return nil, err
 	}

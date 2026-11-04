@@ -38,3 +38,21 @@ func TestAPutKeepsTheSharesBesideTheRecord(t *testing.T) {
 		t.Errorf("the share was lost:\n%s", data)
 	}
 }
+
+func TestAReadableListingSkipsADamagedRecordButNotANewerOne(t *testing.T) {
+	dir := t.TempDir()
+	_ = os.WriteFile(filepath.Join(dir, "api.json"), []byte(`{"name":"api","image":"linux","version":"2026.11.01"}`), 0o600)
+	_ = os.WriteFile(filepath.Join(dir, "x.json"), []byte(`{"name": "x", "ima`), 0o600)
+	s := jsonfile.New(disk(), dir)
+	if _, err := s.List(context.Background()); err == nil {
+		t.Errorf("List passed a damaged record; want it named")
+	}
+	list, err := s.ListReadable(context.Background())
+	if err != nil || len(list) != 1 || list[0].Name != "api" {
+		t.Fatalf("ListReadable = %+v, %v; want api alone", list, err)
+	}
+	_ = os.WriteFile(filepath.Join(dir, "new.json"), []byte(`{"v":2,"name":"new","image":"linux"}`), 0o600)
+	if _, err := s.ListReadable(context.Background()); err == nil {
+		t.Errorf("ListReadable passed a record a newer station wrote; want it refused")
+	}
+}
