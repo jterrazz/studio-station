@@ -157,9 +157,9 @@ final class ClientTests: XCTestCase {
         let engine = try answered("mb-create", #"{"v":2,"id":"1","progress":{"task":"Booting api"}}"# + "\n" + #"{"v":2,"id":"1","out":{"VM":{"Name":"api"}}}"#)
         defer { engine.stop() }
         let calls = Recorded()
-        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, launcher: RecordingLauncher(calls: calls)).run(try fixtureAction("new-vm"), answers: ["Request.Lifetime": "lasting"])
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, launcher: RecordingLauncher(calls: calls)).run(try fixtureAction("new-vm"), answers: ["Request.Lifetime": "permanent"])
         XCTAssertNil(status)
-        XCTAssertEqual(engine.received, [#"{"call":"machines.create","id":"1","in":{"Request":{"Image":"linux","Lifetime":"lasting","Network":"nat","Resources":{"MemoryBytes":4294967296}}},"v":2}"#])
+        XCTAssertEqual(engine.received, [#"{"call":"machines.create-workspace","id":"1","in":{"Request":{"Image":"linux","Lifetime":"permanent","Network":"nat","Resources":{"MemoryBytes":4294967296}}},"v":2}"#])
         XCTAssertEqual(calls.all, [])
     }
 

@@ -8,69 +8,64 @@
   "state": "loading",
   "sections": [
     {
-      "id": "fleet",
-      "title": "Fleet",
+      "id": "machines",
+      "title": "4 machines",
       "role": "banner",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "3 running"
+        },
+        {
+          "kind": "text",
+          "text": "1 stopped"
+        },
+        {
+          "kind": "text",
+          "text": "1 needs you"
+        }
+      ],
+      "joined": true,
       "columns": [
         {
           "key": "name",
+          "label": "MACHINE",
           "kind": "text",
           "keep": 100
         },
         {
           "key": "kind",
+          "label": "KIND",
+          "kind": "text",
+          "keep": 80
+        },
+        {
+          "key": "mac",
           "kind": "text",
           "show": "pipe"
-        },
-        {
-          "key": "host",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "lifetime",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "class",
-          "kind": "text",
-          "keep": 70,
-          "show": "eye"
-        },
-        {
-          "key": "role",
-          "kind": "text",
-          "keep": 30,
-          "show": "eye"
         },
         {
           "key": "state",
-          "kind": "text",
+          "label": "STATE",
+          "kind": "list",
           "keep": 90
         },
         {
-          "key": "ip",
-          "kind": "identity",
-          "keep": 50
+          "key": "cpu",
+          "label": "CPU",
+          "kind": "text",
+          "keep": 40
         },
         {
-          "key": "record",
-          "kind": "list",
-          "show": "pipe"
-        },
-        {
-          "key": "resources",
-          "kind": "list",
-          "keep": 10,
-          "show": "eye",
-          "whole": true
+          "key": "memory",
+          "label": "MEMORY",
+          "kind": "text",
+          "keep": 30
         },
         {
           "key": "detail",
           "kind": "list",
-          "keep": 5,
-          "show": "eye"
+          "keep": 5
         }
       ],
       "items": [
@@ -80,19 +75,8 @@
               "id": "macbook",
               "mark": "pending",
               "label": "macbook",
+              "short": "This Mac",
               "cells": [
-                {
-                  "kind": "pending"
-                },
-                {
-                  "kind": "pending"
-                },
-                {
-                  "kind": "pending"
-                },
-                {
-                  "kind": "pending"
-                },
                 {
                   "kind": "pending"
                 },
@@ -119,22 +103,10 @@
             "items": [
               {
                 "row": {
-                  "id": "linux-1",
+                  "id": "api",
                   "mark": "pending",
-                  "label": "linux-1",
+                  "label": "api",
                   "cells": [
-                    {
-                      "kind": "pending"
-                    },
-                    {
-                      "kind": "pending"
-                    },
-                    {
-                      "kind": "pending"
-                    },
-                    {
-                      "kind": "pending"
-                    },
                     {
                       "kind": "pending"
                     },
@@ -161,22 +133,10 @@
               },
               {
                 "row": {
-                  "id": "api",
+                  "id": "linux-1",
                   "mark": "pending",
-                  "label": "api",
+                  "label": "linux-1",
                   "cells": [
-                    {
-                      "kind": "pending"
-                    },
-                    {
-                      "kind": "pending"
-                    },
-                    {
-                      "kind": "pending"
-                    },
-                    {
-                      "kind": "pending"
-                    },
                     {
                       "kind": "pending"
                     },
@@ -211,19 +171,8 @@
               "id": "mac-mini",
               "mark": "pending",
               "label": "mac-mini",
+              "short": "mac-mini",
               "cells": [
-                {
-                  "kind": "pending"
-                },
-                {
-                  "kind": "pending"
-                },
-                {
-                  "kind": "pending"
-                },
-                {
-                  "kind": "pending"
-                },
                 {
                   "kind": "pending"
                 },
@@ -251,9 +200,7 @@
               {
                 "empty": {
                   "noun": "VMs",
-                  "hint": {
-                    "command": "station machines create --on mac-mini"
-                  }
+                  "text": "No VMs yet"
                 }
               }
             ],
@@ -266,7 +213,61 @@
           "mark": "pending",
           "n": 4
         }
-      ]
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "needs-you",
+      "title": "Needs you",
+      "columns": [
+        {
+          "key": "subject",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "finding",
+          "kind": "list",
+          "keep": 90
+        },
+        {
+          "key": "fix",
+          "kind": "list",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "0-mac-mini",
+            "mark": "pending",
+            "label": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 1
+        }
+      ],
+      "uncounted": true
+    }
+  ],
+  "hints": [
+    {
+      "command": "station machines create --on mac-mini"
     }
   ],
   "actions": [

@@ -33,7 +33,7 @@ const ServeRow = "Tailscale Serve" // value: the row that says whether the tailn
 
 var SystemListeners = []string{"rapportd", "ControlCenter", "IPNExtension", "mDNSResponder", "launchd", "systemd"} // value: the processes whose listening port is the system's own: noise in a developer's list.
 
-const ServeOffDetail = "Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console"
+const ServeOffDetail = "Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console"
 
 var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}
 

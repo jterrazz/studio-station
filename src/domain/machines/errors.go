@@ -4,7 +4,7 @@ import "github.com/jterrazz/studio-station/src/catalog"
 
 type UnknownMachineError struct{ Name string }
 
-func (e *UnknownMachineError) Error() string { return "unknown machine \"" + e.Name + "\"" }
+func (e *UnknownMachineError) Error() string { return "no machine named \"" + e.Name + "\"" }
 
 type HereMachineError struct{ Name string }
 
@@ -24,6 +24,8 @@ type NameTakenError struct {
 	Name string
 	VM   bool
 	Host bool
+	// value: the Mac a VM of that name is on, as the owner reads it.
+	On string
 }
 
 func (e *NameTakenError) Error() string {
@@ -31,7 +33,7 @@ func (e *NameTakenError) Error() string {
 		return "\"" + e.Name + "\" already names a host"
 	}
 	if e.VM {
-		return "\"" + e.Name + "\" already names a VM"
+		return "\"" + e.Name + "\" is taken (on " + e.On + ")"
 	}
 	return "machine \"" + e.Name + "\" already exists"
 }
@@ -40,15 +42,9 @@ type BadNameError struct{ Name string }
 
 func (e *BadNameError) Error() string { return "\"" + e.Name + "\" is not a valid name" }
 
-type TemporaryRestartError struct{ Name string }
-
-func (e *TemporaryRestartError) Error() string {
-	return e.Name + " is temporary: restarting it from the host would delete it"
-}
-
 type UnreachableError struct{ Name string }
 
-func (e *UnreachableError) Error() string { return "cannot reach \"" + e.Name + "\"" }
+func (e *UnreachableError) Error() string { return e.Name + " does not answer" }
 
 type RestartTimeoutError struct{ Name, Phase string }
 

@@ -1,0 +1,27 @@
+description: 'machines ssh prints the command that reaches a VM of another Mac, the same piped'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 100x30 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" machines ssh infra'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          ssh admin@infra
+    - command: 'machines ssh infra'
+      exit: 0
+      stdout: |
+          ssh admin@infra
+    - command: 'machines ssh infra --json'
+      exit: 0
+      stdout: |
+          {
+            "schema": "station.machines.ssh/v1",
+            "name": "infra",
+            "user": "admin",
+            "host": "infra",
+            "command": "ssh admin@infra"
+          }

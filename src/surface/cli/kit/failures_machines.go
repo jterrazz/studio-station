@@ -2,6 +2,7 @@ package kit
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -15,7 +16,6 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	var onlyHost *machines.OnlyOnHostError
 	var taken *machines.NameTakenError
 	var bad *machines.BadNameError
-	var temporary *machines.TemporaryRestartError
 	var unreachable *machines.UnreachableError
 	var timeout *machines.RestartTimeoutError
 	var refused *machines.RestartRefusedError
@@ -27,7 +27,7 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	}
 	switch {
 	case errors.As(err, &unknown):
-		return usage(unknown.Error(), "run station machines for the fleet"), true
+		return usage(unknown.Error(), "station machines"), true
 	case errors.As(err, &here):
 		return usage(here.Error(), "pick another machine: run station machines for the fleet"), true
 	case errors.As(err, &notHost):
@@ -38,12 +38,10 @@ func machinesFailure(err error) (*fail.Error, bool) {
 		return usage(taken.Error(), takenHint(taken)), true
 	case errors.As(err, &bad):
 		return usage(bad.Error(), "use lowercase letters, digits and \"-\", 1 to 40 characters"), true
-	case errors.As(err, &temporary):
-		return usage(temporary.Error(), "ssh "+temporary.Name+" sudo reboot"), true
 	case errors.As(err, &unreachable):
-		return failed(unreachable.Error(), "station machines probe "+unreachable.Name, err), true
+		return failed(unreachable.Error(), "station machines", err), true
 	case errors.As(err, &timeout):
-		return failed(timeout.Error(), "station machines probe "+timeout.Name, err), true
+		return failed(timeout.Error(), "station machines "+timeout.Name, err), true
 	case errors.As(err, &refused):
 		return failed(refused.Error(), "check that sudo needs no password for fdesetup on "+refused.Name, err), true
 	case errors.As(err, &terminal):
@@ -72,18 +70,20 @@ func takenHint(e *machines.NameTakenError) string {
 
 func vmFailure(err error) (*fail.Error, bool) {
 	var notVM *machines.NotAVMError
-	var noLifetime *machines.NoLifetimeError
 	var badLifetime *machines.BadLifetimeError
 	var unknownImage *machines.UnknownImageError
 	var noImage *machines.NoImageError
 	var noEngine *machines.NoEngineError
 	var tooBig *machines.TooBigError
 	var badSize *machines.BadSizeError
-	var stop *machines.TemporaryStopError
-	var start *machines.TemporaryStartError
+	var noUnit *machines.SizeNeedsUnitError
 	var created *machines.CreateFailedError
+	var noBoot *machines.DidNotBootError
+	var unhealthy *machines.UnhealthyError
 	var down *machines.DaemonDownError
 	var network *machines.BadNetworkError
+	var nothing *machines.NothingToChangeError
+	var shrinks *machines.DiskShrinksError
 	if f, ok := pipeFailure(err); ok {
 		return f, true
 	}
@@ -93,19 +93,25 @@ func vmFailure(err error) (*fail.Error, bool) {
 			return failed(down.Error(), "station engine start", err), true
 		}
 		return failed(down.Error(), "station setup", err), true
+	case errors.As(err, &nothing):
+		return usage(nothing.Error(), "station machines edit "+nothing.Name+" --memory 8G"), true
+	case errors.As(err, &shrinks):
+		return usage(shrinks.Error(), shrinks.Name+" has "+strconv.FormatFloat(float64(shrinks.Has)/1e9, 'f', 1, 64)+" GB: ask for more"), true
 	case errors.As(err, &network):
 		if network.Bridge {
-			return usage(network.Error(), "it lets an iPhone on the Wi-Fi reach the VM; Linux VMs publish their services instead"), true
+			return usage(network.Error(), "share its ports instead: station ports share"), true
 		}
-		return usage(network.Error(), "station machines create --network nat"), true
+		return usage(network.Error(), "station machines create, behind its Mac"), true
+	case errors.As(err, &noBoot):
+		return failed(noBoot.Error(), keptFix(noBoot.Name), err), true
+	case errors.As(err, &unhealthy):
+		return failed(unhealthy.Error(), keptFix(unhealthy.Name), err), true
 	case errors.As(err, &created):
 		return failed(created.Error(), "fix the cause, then run station machines create again", err), true
 	case errors.As(err, &notVM):
 		return usage(notVM.Error(), notAVMHint(notVM)), true
-	case errors.As(err, &noLifetime):
-		return usage(noLifetime.Error(), "station machines create --lifetime temporary"), true
 	case errors.As(err, &badLifetime):
-		return usage(badLifetime.Error(), "station machines create --lifetime temporary"), true
+		return usage(badLifetime.Error(), "station machines create --permanent"), true
 	case errors.As(err, &unknownImage):
 		return usage(unknownImage.Error(), "station images for the images"), true
 	case errors.As(err, &noImage):
@@ -113,22 +119,26 @@ func vmFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &noEngine):
 		return usage(noEngine.Error(), "station apps install "+noEngine.Hypervisor), true
 	case errors.As(err, &tooBig):
-		return usage(tooBig.Error(), "ask for less: --memory 8G"), true
+		if tooBig.LeftGB < 1 {
+			return usage(tooBig.Error(), "stop a VM first: station machines"), true
+		}
+		return usage(tooBig.Error(), "ask for less: --memory "+strconv.Itoa(tooBig.LeftGB)+"G"), true
+	case errors.As(err, &noUnit):
+		return usage(noUnit.Error(), "--"+noUnit.Flag+" "+noUnit.Value+"G"), true
 	case errors.As(err, &badSize):
 		return usage(badSize.Error(), "write a size with its unit: 512M, 8G, 1T"), true
-	case errors.As(err, &stop):
-		return usage(stop.Error(), "station machines delete "+stop.Name), true
-	case errors.As(err, &start):
-		return usage(start.Error(), "station machines create --lifetime temporary"), true
 	}
 	return nil, false
 }
 
+// value: the two ways out for a VM a create kept: start it again, or delete it.
+func keptFix(vm string) string {
+	return "station machines start " + vm + ", or station machines delete " + vm
+}
+
 func notAVMHint(e *machines.NotAVMError) string {
 	switch e.Verb {
-	case "delete":
-		return "station machines forget " + e.Name
-	case "stop":
+	case "delete", "stop":
 		return "station machines restart " + e.Name
 	}
 	return "run station machines for the VMs"
@@ -143,14 +153,11 @@ func pipeFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &notHere):
 		return usage(notHere.Error(), "ssh "+notHere.Name+" goes through "+notHere.Host+": station machines"), true
 	case errors.As(err, &stopped):
-		if stopped.Lifetime == machines.Temporary {
-			return failed(stopped.Error(), "station machines delete "+stopped.Name, err), true
-		}
 		return failed(stopped.Error(), "station machines start "+stopped.Name, err), true
 	case errors.As(err, &closed):
-		return failed(closed.Error(), "station machines probe "+closed.Name, err), true
+		return failed(closed.Error(), "station machines "+closed.Name, err), true
 	case errors.As(err, &running):
-		return failed(running.Error(), "stop the lasting VMs and delete the temporary ones (station machines), then station setup", err), true
+		return failed(running.Error(), "stop the permanent VMs and delete the throwaway ones (station machines), then station setup", err), true
 	}
 	return nil, false
 }

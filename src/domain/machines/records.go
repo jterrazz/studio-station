@@ -55,7 +55,7 @@ func (s *Service) Records() ([]VMRecord, error) { return s.records() }
 
 func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM) ([]VM, error) {
 	// invariant: the daemon's view wins; without it, no engine or a listing that
-	// fails means nothing is running: a lasting VM reads stopped, a temporary one stale.
+	// fails means nothing is running: every workspace reads stopped.
 	records, err := s.records()
 	if err != nil || len(records) == 0 {
 		return nil, err
@@ -73,8 +73,8 @@ func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM
 		info := engine[r.Name]
 		vm := VM{
 			Name: r.Name, Image: r.Image, Version: r.Version, Host: host, Kind: kindOfImage(r.Image),
-			Lifetime: r.Lifetime, State: stateOf(r.Lifetime, info), Resources: r.Resources, SizeGB: int(info.Bytes / 1e9),
-			Network: networkOf(r), Guest: "unknown", Lent: r.Lent, CreatedAt: r.CreatedAt,
+			Lifetime: r.Lifetime, State: stateOf(info), Resources: r.Resources, SizeGB: int(info.Bytes / 1e9),
+			Network: networkOf(r), Guest: "unknown", Want: r.Want, Lent: r.Lent, CreatedAt: r.CreatedAt,
 		}
 		if d, ok := live[r.Name]; ok && live != nil {
 			if d.State != "" {
@@ -94,16 +94,13 @@ func networkOf(r VMRecord) string {
 	return r.Network
 }
 
-func stateOf(l Lifetime, d contract.Disk) VMState {
+func stateOf(d contract.Disk) VMState {
 	switch d.State {
 	case contract.DiskRunning:
 		return Running
 	case contract.DiskSuspended:
 		return Suspended
 	case contract.DiskStopped, diskMissing:
-	}
-	if l == Temporary {
-		return Stale
 	}
 	return Stopped
 }

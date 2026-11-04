@@ -18,3 +18,9 @@ Lifetime is asked at every create and never defaulted. The VM says when it power
 - A temporary VM cannot be stopped or restarted from the host, only deleted.
 
 Round 5 (2026-11-01, [ADR-011](011-one-daemon-per-host.md)): the host's one daemon, not a per-VM supervisor, reads the intent.
+
+Round 13 (2026-11-04, the v3 specification's SP-4 and SP-5): the words are throwaway and
+permanent, and two consequences above no longer hold. A workspace never starts by itself,
+not even a permanent one with its Mac (only a server comes back); and a stop from station
+keeps a throwaway workspace, stopped with its disk, so it may be stopped and started. A
+throwaway is destroyed only by `machines delete` or by a poweroff from inside it.

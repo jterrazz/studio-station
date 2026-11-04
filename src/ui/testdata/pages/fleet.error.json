@@ -82,7 +82,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "mac"
                 },
                 {
                   "kind": "none"
@@ -92,7 +92,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 },
                 {
                   "kind": "text",
@@ -150,7 +150,7 @@
                     "cells": [
                       {
                         "kind": "text",
-                        "text": "linux"
+                        "text": "workspace"
                       },
                       {
                         "kind": "text",
@@ -158,11 +158,11 @@
                       },
                       {
                         "kind": "text",
-                        "text": "temporary"
+                        "text": "throwaway"
                       },
                       {
                         "kind": "text",
-                        "text": "temporary"
+                        "text": "throwaway"
                       },
                       {
                         "kind": "none"
@@ -268,7 +268,7 @@
                   "cells": [
                     {
                       "kind": "text",
-                      "text": "linux"
+                      "text": "workspace"
                     },
                     {
                       "kind": "text",
@@ -276,11 +276,11 @@
                     },
                     {
                       "kind": "text",
-                      "text": "lasting"
+                      "text": "permanent"
                     },
                     {
                       "kind": "text",
-                      "text": "lasting"
+                      "text": "permanent"
                     },
                     {
                       "kind": "none"
@@ -348,7 +348,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "mac"
                 },
                 {
                   "kind": "none"
@@ -358,7 +358,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 },
                 {
                   "kind": "none"
@@ -876,6 +876,7 @@
       "label": "start/stop",
       "on": "row",
       "rows": [
+        "linux-1",
         "api"
       ],
       "priority": 5,

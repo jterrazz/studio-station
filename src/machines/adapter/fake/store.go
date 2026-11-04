@@ -12,7 +12,8 @@ import (
 )
 
 type Store struct {
-	// invariant: the VM records one Mac of the world keeps, beside its disks.
+	// invariant: the VM records one Mac of the world keeps, beside its disks;
+	// a record deleted takes its account copies, which live in its file.
 	w   *world.World
 	mac string
 }
@@ -92,6 +93,9 @@ func (s *Store) Delete(_ context.Context, name string) error {
 		return nil
 	}
 	v.Kept = nil
+	if st := s.w.Mac(s.mac).Stores; st != nil {
+		delete(st.Shares, name)
+	}
 	if !v.Disk {
 		delete(s.vms(), name)
 	}

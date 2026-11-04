@@ -82,7 +82,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "mac"
                 },
                 {
                   "kind": "none"
@@ -92,7 +92,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 },
                 {
                   "kind": "text",

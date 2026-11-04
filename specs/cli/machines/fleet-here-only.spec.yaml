@@ -4,7 +4,7 @@ fixture:
     - ../../__fixtures__/machines-stubs/
     - ../../__fixtures__/fleet-y-answers/
 runs:
-    - command: 'machines --here --json | /usr/bin/jq -r ''.hosts | map(.name) | join(" ")'''
+    - command: 'machines --here --json | /usr/bin/jq -r ''.macs | map(.name) | join(" ")'''
       exit: 0
       stdout: |
           x

@@ -136,10 +136,15 @@ func TestTartKeepsTheHypervisorContract(t *testing.T) {
 			delete(m.disks, vm)
 			return system.Output{}
 		})
-		m.run.On(bin, "delete", renamed).Answer(func() system.Output {
-			delete(m.disks, renamed)
-			return system.Output{}
-		})
+		for _, name := range []string{vm, renamed} {
+			m.run.On(bin, "delete", name).Answer(func() system.Output {
+				if m.disks[name] == "running" {
+					return system.Output{ExitCode: 1, Stderr: "Error: VM \"" + name + "\" is running\n"}
+				}
+				delete(m.disks, name)
+				return system.Output{}
+			})
+		}
 		return contracttest.Subject{Hypervisor: m.hypervisor(), End: m.end, Restart: m.hypervisor}
 	})
 }

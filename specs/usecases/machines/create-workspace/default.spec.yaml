@@ -1,0 +1,19 @@
+description: 'a bare create makes linux-2: its health steps, its ports, then Created, throwaway, 4 CPU, 4 GB'
+env: two-macs
+runs:
+    - command: 'machines create'
+      exit: 0
+      stdout: |
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
+          ●	expo	8081	{{url}}
+          ●	vite	5173	{{url}}
+          ●	linux-2	Created	Throwaway · 4 CPU · 4 GB · 20 GB
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
+          ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
+          ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
+          ●	linux-2	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	4 GB

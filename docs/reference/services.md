@@ -21,8 +21,8 @@ For each reported port the engine takes a **lease**: the lowest free port of the
 | --------------------------------------- | ------------------------------------------------------------------ |
 | the port starts listening               | leased and published                                               |
 | it stops listening                      | unpublished after 5 s (a restart inside them keeps it); lease kept |
-| a lasting VM stops, then runs again     | unpublished, then published again on the same host port            |
-| `machines delete`, a temporary poweroff | released, its serve entry removed                                  |
+| a VM stops, then runs again             | unpublished, then published again on the same host port            |
+| `machines delete`, a throwaway poweroff | released, its serve entry removed                                  |
 | `station services release`              | released: the next listen gets a new port                          |
 | 7 days without listening                | released, unless pinned by a [profile](#profiles)                  |
 | the range is full, or the VM holds 20   | refused, `✗` with the cause                                        |
@@ -76,13 +76,13 @@ Unpublishing runs the same line ending `off`. `https` `off`, and any other word,
 
 tailscaled issues the host's certificate at the first https request, 34.5 s measured, so the engine warms it: at its start with Serve on, and when Serve turns on, it runs `tailscale cert --cert-file=- --key-file=- <host>` in the background, its output thrown away (`/dev/null` is refused as not a regular file), one at a time, within 120 s, never holding a publish. Meanwhile every row served `--https` says `issuing certificate` (`◐`, its URL unchanged); `engine.log` then says `certificate for <host> ready in <d>` or `not issued:` with tailscale's line.
 
-With Serve off no serve runs (one would block waiting for the admin): every lease is local only, every row of the host says `Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console`, and every public URL is the local one; `engine.log` says it once per change. Serve turning on serves every published lease at the next read.
+With Serve off no serve runs (one would block waiting for the admin): every lease is local only, every row of the host says `Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console`, and every public URL is the local one; `engine.log` says it once per change. Serve turning on serves every published lease at the next read.
 
 Station owns only the serve entries on its range (both kinds) or under `/<vm>/` of its VMs (`path`), and, while Serve is on, removes the ones no lease justifies at the engine's start and when Serve turns on; it never touches another entry.
 
 ## Profiles
 
-A tool that must know its own public URL gets it from its environment. A profile, data in the catalogue, names a dev tool's default port and the variables that carry the URL; at `machines create` the engine reserves every profile's port for the new VM, and the VM's shell (`station shell zsh`, from `~/.config/station/services.env`) exports the variables. The engine renders them at every run of the VM (create, `start`, `restart`, its own run at boot; never when it adopts a running VM) from Serve's state then, so they are fixed for a run, and a lasting VM picks up the public URLs at its first start after Serve is turned on:
+A tool that must know its own public URL gets it from its environment. A profile, data in the catalogue, names a dev tool's default port and the variables that carry the URL; at `machines create` the engine reserves every profile's port for the new VM, and the VM's shell (`station shell zsh`, from `~/.config/station/services.env`) exports the variables. The engine renders them at every run of the VM (create, `start`, `restart`, its own run at boot; never when it adopts a running VM) from Serve's state then, so they are fixed for a run, and a permanent VM picks up the public URLs at its first start after Serve is turned on:
 
 | Profile  | Guest port | Variable                                 | Value                                                   |
 | -------- | ---------- | ---------------------------------------- | ------------------------------------------------------- |
@@ -97,7 +97,7 @@ With Serve off they hold the local URL, `http://127.0.0.1:<host port>`, and the 
 `station.api/v2`: JSON lines over the unix socket `~/.local/state/station/engine.sock` (mode 0600; the engine listens on no TCP port, and the leases' forwarders bind `127.0.0.1` only), one frame per line. A request names a `call` or a `watch` under its `id`; the answer is `progress` frames, then one `out` or one `error`. The calls of one connection are answered in the order they came. The CLI is one client, the menu bar another.
 
 ```text
-→ {"v":2,"id":"7","call":"machines.create","in":{"Request":{"Image":"linux","Lifetime":"temporary"}}}
+→ {"v":2,"id":"7","call":"machines.create-workspace","in":{"Request":{"Image":"linux","Lifetime":"throwaway"}}}
 ← {"v":2,"id":"7","progress":{"task":"Booting linux-1"}}
 ← {"v":2,"id":"7","out":{"VM":{"Name":"linux-1"}}}
 → {"v":2,"id":"8","call":"engine.stop","in":{"Confirm":"inf"}}
@@ -111,7 +111,7 @@ The engine serves every call of [`calls.json`](../../src/remote/api/calls.json) 
 | `engine.hello`                                             |                                   | `version pid started_at executable` and `calls`, the names of `calls.json` it serves   |
 | `engine.vms`                                               |                                   | each VM's `name state run_pid guest ip detail`                                         |
 | `engine.vm-run`                                            | `vm`                              | supervises a new record; answers when its guest is connected                           |
-| `engine.vm-start` / `engine.vm-stop` / `engine.vm-restart` | `vm`                              | lasting VMs only                                                                       |
+| `engine.vm-start` / `engine.vm-stop` / `engine.vm-restart` | `vm`                              | any VM                                                                                 |
 | `engine.vm-delete` / `engine.vm-forget`                    | `vm`                              | the VM, its files, blocks, leases and serve entries / its supervision only             |
 | `engine.guest-exec`                                        | `vm, line, stdin`                 | `code stdout stderr` of a command run over the VM's guest connection                   |
 | `engine.accounts`                                          |                                   | each running VM's accounts, read by its guest                                          |

@@ -57,6 +57,12 @@ type Mac struct {
 	Locked bool `json:"locked,omitempty"`
 	// value: out of the tailnet's reach.
 	Offline bool `json:"offline,omitempty"`
+	// value: the hypervisor this Mac has: empty, the one station is built
+	// with; none, no hypervisor installed; another name, a second fake that
+	// stands for another adapter (vz).
+	Hypervisor string `json:"hypervisor,omitempty"`
+	// value: the station version this Mac runs; empty, the spec binary's.
+	Station string `json:"station,omitempty"`
 	// value: what station keeps in this Mac's preferences, by group.
 	Preferences map[string]json.RawMessage `json:"preferences,omitempty"`
 	// value: station's own files as text, by name, while no store has read
@@ -65,7 +71,8 @@ type Mac struct {
 	// value: the images the hypervisor holds, by reference.
 	Images []string `json:"images,omitempty"`
 	// value: a VM freshly cloned from a fetched image, before anything ran
-	// in it: its size and the guest it answers with; nil clones a bare disk.
+	// in it: its size and the guest it answers with; nil clones a disk whose
+	// guest is station's image's.
 	Fresh *VM            `json:"fresh,omitempty"`
 	VMs   map[string]*VM `json:"vms,omitempty"`
 
@@ -207,13 +214,21 @@ type VM struct {
 	// value: the pid of its run; zero when it does not run.
 	PID int `json:"pid,omitempty"`
 	// value: how its last run ended, kept until a run is read.
-	Ended   *machines.RunEnd `json:"ended,omitempty"`
-	Address string           `json:"address,omitempty"`
+	Ended *machines.RunEnd `json:"ended,omitempty"`
+	// value: what its last boot was asked: its network, and the folders of
+	// its Mac shared into it (SC-06: station never shares one).
+	Booted  *Boot  `json:"booted,omitempty"`
+	Address string `json:"address,omitempty"`
 	// value: its guest, answering over the one way into a VM; nil when no
 	// guest answers.
 	Guest *Guest `json:"guest,omitempty"`
 	// value: what listens inside the VM.
 	Listening []ports.Listener `json:"listening,omitempty"`
+}
+
+type Boot struct {
+	Bridged bool     `json:"bridged"`
+	Folders []string `json:"folders"`
 }
 
 type Kept struct {
@@ -233,6 +248,12 @@ type Guest struct {
 	// value: what the guest answers to each command line it is given; a
 	// line ending in * answers every line it begins.
 	Answers map[string]Answer `json:"answers,omitempty"`
+	// value: the VM's own tooling replaced station's guest: its ssh answers,
+	// station's session does not.
+	Replaced bool `json:"replaced,omitempty"`
+	// value: made from station's image by a create: a command no answer
+	// scripts succeeds, as the image's first boot does.
+	Fresh bool `json:"fresh,omitempty"`
 }
 
 type Answer struct {
@@ -266,6 +287,20 @@ func (w *World) Encode() ([]byte, error) {
 		return nil, err
 	}
 	return append(data, '\n'), nil
+}
+
+func (w *World) UseHypervisor(hypervisor string) {
+	// invariant: AR-02: the same world over another adapter. Every Mac that
+	// has the hypervisor station is built with gets the one named instead;
+	// a Mac with none installed, or one named already, keeps its own.
+	if hypervisor == "" {
+		return
+	}
+	for _, m := range w.Macs {
+		if m.Hypervisor == "" {
+			m.Hypervisor = hypervisor
+		}
+	}
 }
 
 func (w *World) Mac(name string) *Mac {

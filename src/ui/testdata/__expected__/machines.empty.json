@@ -8,81 +8,77 @@
   "state": "ready",
   "sections": [
     {
-      "id": "fleet",
-      "title": "Fleet",
+      "id": "machines",
+      "title": "0 machines",
       "role": "banner",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "0 running"
+        },
+        {
+          "kind": "text",
+          "text": "0 stopped"
+        },
+        {
+          "kind": "text",
+          "text": "nothing needs you"
+        }
+      ],
+      "joined": true,
       "columns": [
         {
           "key": "name",
+          "label": "MACHINE",
           "kind": "text",
           "keep": 100
         },
         {
           "key": "kind",
+          "label": "KIND",
+          "kind": "text",
+          "keep": 80
+        },
+        {
+          "key": "mac",
           "kind": "text",
           "show": "pipe"
-        },
-        {
-          "key": "host",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "lifetime",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "class",
-          "kind": "text",
-          "keep": 70,
-          "show": "eye"
-        },
-        {
-          "key": "role",
-          "kind": "text",
-          "keep": 30,
-          "show": "eye"
         },
         {
           "key": "state",
-          "kind": "text",
+          "label": "STATE",
+          "kind": "list",
           "keep": 90
         },
         {
-          "key": "ip",
-          "kind": "identity",
-          "keep": 50
+          "key": "cpu",
+          "label": "CPU",
+          "kind": "text",
+          "keep": 40
         },
         {
-          "key": "record",
-          "kind": "list",
-          "show": "pipe"
-        },
-        {
-          "key": "resources",
-          "kind": "list",
-          "keep": 10,
-          "show": "eye",
-          "whole": true
+          "key": "memory",
+          "label": "MEMORY",
+          "kind": "text",
+          "keep": 30
         },
         {
           "key": "detail",
           "kind": "list",
-          "keep": 5,
-          "show": "eye"
+          "keep": 5
         }
       ],
       "items": [
         {
           "empty": {
-            "noun": "hosts",
+            "noun": "Macs",
             "hint": {
-              "command": "station machines add <name>"
+              "command": "station machines add <mac>"
             }
           }
         }
-      ]
+      ],
+      "uncounted": true
     }
   ],
   "actions": [

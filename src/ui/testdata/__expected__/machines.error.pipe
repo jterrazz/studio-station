@@ -1,4 +1,7 @@
-◐	macbook	host			online	100.98.133.14	engine stopped · station engine start
-●	linux-1	linux	macbook	temporary	running	192.168.64.5	4 cpus · 4 GB · 42.9 GB
-○	api	linux	macbook	lasting	stopped	-	4 cpus · 8 GB · 42.9 GB
-◐	mac-mini	host			unreachable	100.98.133.20	-
+✗	macbook	Mac	macbook	Engine stopped
+○	api	Workspace	macbook	Stopped · permanent	4 CPU	8 GB
+●	linux-1	Workspace	macbook	Running · throwaway	4 CPU	4 GB
+✗	mac-mini	Mac	mac-mini	Unreachable
+# Needs you
+✗	This Mac	has its engine stopped	station engine start
+✗	mac-mini	does not answer

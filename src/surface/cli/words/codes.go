@@ -1,6 +1,7 @@
 package words
 
 import (
+	"cmp"
 	"strings"
 
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
@@ -19,10 +20,10 @@ func Codes() map[fail.Code]Wording {
 	// every-code-worded): a code raised anywhere is worded here once.
 	all := map[fail.Code]Wording{
 		confirm.Needed: func(e *fail.Error) (string, string) {
-			return "refusing without the name typed: " + e.Subject, "re-run with --yes"
+			return "refusing without the name typed: " + e.Subject, "in a script: --confirm=" + e.Subject
 		},
 		confirm.Mismatch: func(e *fail.Error) (string, string) {
-			return "\"" + e.Detail["typed"] + "\" is not " + e.Subject, "type the name exactly: " + e.Subject
+			return "you typed \"" + e.Detail["typed"] + "\", not \"" + e.Subject + "\"", "in a script: --confirm=" + e.Subject
 		},
 		confirm.YesNeeded: func(e *fail.Error) (string, string) {
 			return "refusing without --yes: " + e.Subject, "re-run with --yes"
@@ -31,6 +32,9 @@ func Codes() map[fail.Code]Wording {
 			return e.Subject + " kept: you said no", "--yes skips the question"
 		},
 		call.NotForThisMachine: func(e *fail.Error) (string, string) {
+			if why, fix := e.Detail["why"], e.Detail["fix"]; why != "" && fix != "" {
+				return why, fix
+			}
 			if why := e.Detail["why"]; why != "" {
 				return why, "run station overview for what " + e.Subject + " has"
 			}
@@ -49,7 +53,7 @@ func Codes() map[fail.Code]Wording {
 			return "the request is not a " + e.Subject + " frame", "send one JSON object per line with v 2 and a call or a watch"
 		},
 		call.Unreachable: func(e *fail.Error) (string, string) {
-			return "cannot reach \"" + e.Subject + "\"", "station machines probe " + e.Subject
+			return cmp.Or(e.Detail["label"], e.Subject) + " does not answer", "station machines"
 		},
 		enginecalls.StartFailed: func(e *fail.Error) (string, string) {
 			return "the engine did not start: " + e.Detail["last"], "station engine"

@@ -11,8 +11,8 @@
    ├─ ◌ git
    ├─ ◌ ssh
    └─ ◌ Docker
-   ◌ linux-1               temporary
+   ◌ linux-1               throwaway
    └─ ● Claude             admin@jterrazz.com  lent  11h 40m left
-   ◌ api                   lasting
+   ◌ api                   permanent
    └─ ◐ Claude             admin@jterrazz.com  lent  42m left
         → station secrets lend --to api operator:claude:oauth-token

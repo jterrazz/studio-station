@@ -20,4 +20,15 @@ type Record struct {
 type Host struct {
 	User string `json:"user,omitempty"`
 	Key  string `json:"key,omitempty"`
+	// value: when this Mac last had that Mac's answer, and the VMs it then
+	// held: what All machines shows of it while it does not answer.
+	Answered time.Time `json:"answered,omitzero"`
+	VMs      []SeenVM  `json:"vms,omitempty"`
+}
+
+type SeenVM struct {
+	Name        string   `json:"name"`
+	Lifetime    Lifetime `json:"lifetime"`
+	CPUs        int      `json:"cpus"`
+	MemoryBytes int64    `json:"memory_bytes"`
 }

@@ -35,7 +35,7 @@ func secretsFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &noStudio):
 		return failed(noStudio.Error(), "see docs/reference/secrets.md#studio-in-a-vm", err), true
 	case errors.As(err, &step):
-		return failed(step.Error(), "check the VM: station machines probe "+step.VM, err), true
+		return failed(step.Error(), "check the VM: station machines "+step.VM, err), true
 	}
 	return nil, false
 }

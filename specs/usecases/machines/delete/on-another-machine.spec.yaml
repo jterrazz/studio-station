@@ -1,0 +1,11 @@
+description: 'a delete sent with --on takes the workspace of that Mac, its name typed there'
+env: two-macs
+runs:
+    - command: 'machines delete infra --confirm=infra --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	infra	deleted
+    - command: 'machines --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running

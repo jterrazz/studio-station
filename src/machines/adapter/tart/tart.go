@@ -151,9 +151,11 @@ func (h *hypervisor) Shutdown(ctx context.Context, vm string, grace time.Duratio
 }
 
 func (h *hypervisor) Delete(ctx context.Context, vm string) error {
+	if _, err := h.exec(ctx, 0, "delete", vm); err != nil {
+		return err
+	}
 	h.files.drop(h.fs, vm)
-	_, err := h.exec(ctx, 0, "delete", vm)
-	return err
+	return nil
 }
 
 func (h *hypervisor) Discard(ctx context.Context, img imagescontract.ImageLocation) error {

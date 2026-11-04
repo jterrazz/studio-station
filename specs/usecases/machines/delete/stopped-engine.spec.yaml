@@ -1,0 +1,18 @@
+description: 'with the engine stopped a delete is refused like every action, and the VM is kept'
+env: engine-stopped
+runs:
+    - command: 'machines delete api --confirm=api'
+      exit: 1
+      stderr: |
+          Error: the engine is stopped on This Mac
+          Hint: station engine start
+    - command: 'machines'
+      exit: 0
+      stdout: |
+          ✗	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine stopped
+          ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
+          ○	linux-1	Workspace	jterrazz-macbook-pro	Stopped · throwaway	4 CPU	8 GB
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
+          ●	infra	Workspace	jterrazz-mac-mini	Running · permanent	8 CPU	24 GB
+          # Needs you
+          ✗	This Mac	has its engine stopped	station engine start

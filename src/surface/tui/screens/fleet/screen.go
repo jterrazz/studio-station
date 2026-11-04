@@ -145,7 +145,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			return tab.Outcome("built", strings.Join(names, ", "), catalog.StateOK, ""), nil
 		}))
 	case pagemachines.KeyDelete:
-		m.View, act = m.Act(tab.Confirmed(ID, pagefleet.DeleteConfirm(name), func(answer string) (tab.Status, error) {
+		m.View, act = m.Act(tab.ConfirmedInPlace(ID, pagefleet.DeleteConfirm(name), func(answer string) (tab.Status, error) {
 			report, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Delete, machinescalls.DeleteIn{VM: name, Confirm: answer}, nil)
 			if len(report.Warnings) > 0 {
 				return tab.Outcome("deleted", name, catalog.StateDegraded, report.Warnings[0]), err
@@ -153,22 +153,28 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			return tab.Outcome("deleted", name, catalog.StateOK, ""), err
 		}))
 	case pagefleet.KeyForget:
-		m.View, act = m.Act(tab.Confirmed(ID, pagefleet.ForgetConfirm(name), func(answer string) (tab.Status, error) {
+		m.View, act = m.Act(tab.ConfirmedInPlace(ID, pagefleet.ForgetConfirm(name), func(answer string) (tab.Status, error) {
 			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Forget, machinescalls.ForgetIn{Name: name, Confirm: answer}, nil)
 			return tab.Outcome("forgot", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyRestart:
-		m.View, act = m.Act(tab.Confirmed(ID, pagefleet.RestartConfirm(name, m.isHost(name)), func(answer string) (tab.Status, error) {
+		restart := tab.ConfirmedInPlace
+		if m.isFarHost(name) {
+			restart = tab.Confirmed
+		}
+		m.View, act = m.Act(restart(ID, pagefleet.RestartConfirm(name, m.isHost(name)), func(answer string) (tab.Status, error) {
 			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Restart, machinescalls.RestartIn{Name: name, Confirm: answer}, nil)
 			return tab.Outcome("restarted", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyStart:
-		running := m.running(name)
-		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
-			if running {
-				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Stop, machinescalls.VMIn{VM: name}, nil)
+		if m.running(name) {
+			m.View, act = m.Act(tab.ConfirmedInPlace(ID, page.Confirm{Question: "Stop " + name + "? It is kept, stopped, until you start it", Yes: "stop"}, func(answer string) (tab.Status, error) {
+				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Stop, machinescalls.StopIn{VM: name, Confirm: answer}, nil)
 				return tab.Outcome("stopped", name, catalog.StateOK, ""), err
-			}
+			}))
+			break
+		}
+		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
 			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Start, machinescalls.VMIn{VM: name}, nil)
 			return tab.Outcome("started", name, catalog.StateOK, ""), err
 		}))
@@ -181,19 +187,19 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			return probed(report), nil
 		}))
 	case pagefleet.KeyUnlock:
-		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
+		m.View, act = m.Act(tab.Exec(ID, func() (tab.Status, error) {
 			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Unlock, machinescalls.UnlockIn{Name: name, Interactive: true}, nil)
 			return tab.Outcome("unlocked", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyEnter:
-		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
+		m.View, act = m.Act(tab.Exec(ID, func() (tab.Status, error) {
 			return tab.Outcome("back from", name, catalog.StateOK, ""), m.d.Remote(m.ctx, name)
 		}))
 	}
 	return m, tea.Batch(cmd, act)
 }
 
-func (m Model) exec(action func() (tab.Status, error)) tea.Cmd { return tab.Exec(ID, action) }
+func (m Model) exec(action func() (tab.Status, error)) tea.Cmd { return tab.InPlace(ID, action) }
 
 // value: the status bar names the worst of the probe's checks, or that all answered.
 func probed(r machines.ProbeReport) tab.Status {
@@ -212,6 +218,18 @@ func (m Model) isHost(name string) bool {
 		for _, h := range f.Hosts {
 			if h.Name == name {
 				return true
+			}
+		}
+	}
+	return false
+}
+
+// value: a far Mac restarts over ssh, which may ask its password on the terminal.
+func (m Model) isFarHost(name string) bool {
+	if f := m.Last.Machines; f != nil {
+		for _, h := range f.Hosts {
+			if h.Name == name {
+				return !h.Here
 			}
 		}
 	}
@@ -264,7 +282,7 @@ func (m Model) create(values map[string]string) tea.Cmd {
 	}
 	request := machines.CreateRequest{Image: values["image"], Name: values["name"], Lifetime: machines.Lifetime(values["lifetime"])}
 	return m.exec(func() (tab.Status, error) {
-		created, err := call.Invoke(m.ctx, m.d.Calls, target, machinescalls.Create, machinescalls.CreateIn{Request: request}, nil)
+		created, err := call.Invoke(m.ctx, m.d.Calls, target, machinescalls.CreateWorkspace, machinescalls.CreateIn{Request: request}, nil)
 		return tab.Outcome("created", created.VM.Name, catalog.StateOK, "on "+created.VM.Host), err
 	})
 }

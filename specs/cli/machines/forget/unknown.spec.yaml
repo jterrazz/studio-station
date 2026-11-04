@@ -3,5 +3,5 @@ runs:
     - command: 'machines forget nope </dev/null'
       exit: 2
       stderr: |
-          Error: unknown machine "nope"
-          Hint: run station machines for the fleet
+          Error: no machine named "nope"
+          Hint: station machines

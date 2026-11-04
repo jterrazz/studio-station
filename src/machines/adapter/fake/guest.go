@@ -18,6 +18,7 @@ var (
 	ErrNoGuest   = errors.New("no guest answers at this address")
 	ErrClosed    = errors.New("the guest connection is closed")
 	ErrNoService = errors.New("nothing listens on this guest port")
+	ErrRefused   = errors.New("the guest connection is refused, as the world scripted it")
 )
 
 type Answer struct {
@@ -75,6 +76,13 @@ type Guests struct {
 	w   *world.World
 	mu  sync.Mutex
 	vms map[string]*VM
+	// value: the line station's own session runs on in a guest.
+	session string
+}
+
+func (g *Guests) Serving(session string) *Guests {
+	g.session = session
+	return g
 }
 
 func GuestsOf(w *world.World) *Guests { return &Guests{w: w, vms: map[string]*VM{}} }
@@ -95,21 +103,28 @@ func (g *Guests) Add(vm string) *VM {
 	return v
 }
 
-func (g *Guests) answering(vm string) (map[string]world.Answer, bool) {
+func (g *Guests) answering(vm string) (*world.Guest, bool) {
 	g.w.Lock()
 	defer g.w.Unlock()
 	mac := g.w.Holder(vm)
 	if mac == "" || g.w.Macs[mac].VMs[vm].Guest == nil {
 		return nil, false
 	}
-	return g.w.Macs[mac].VMs[vm].Guest.Answers, true
+	return g.w.Macs[mac].VMs[vm].Guest, true
 }
 
 func (g *Guests) Dial(_ context.Context, t contract.GuestTarget) (contract.Guest, error) {
-	answers, ok := g.answering(t.VM)
+	g.w.Lock()
+	refused := g.w.Fails("Guest.Dial")
+	g.w.Unlock()
+	if refused {
+		return nil, ErrRefused
+	}
+	wg, ok := g.answering(t.VM)
 	if !ok {
 		return nil, ErrNoGuest
 	}
+	answers := wg.Answers
 	g.mu.Lock()
 	v, ok := g.vms[t.VM]
 	if !ok {
@@ -121,15 +136,50 @@ func (g *Guests) Dial(_ context.Context, t contract.GuestTarget) (contract.Guest
 		g.vms[t.VM] = v
 	}
 	g.mu.Unlock()
-	return &guest{vm: v, name: t.VM, w: g.w, done: make(chan struct{})}, nil
+	serving := g.session
+	if wg.Replaced {
+		serving = ""
+	}
+	return &guest{vm: v, name: t.VM, w: g.w, serving: serving, fresh: wg.Fresh, done: make(chan struct{})}, nil
 }
 
 type guest struct {
 	vm   *VM
 	name string
 	w    *world.World
-	done chan struct{}
-	once sync.Once
+	// value: the line of station's own session, which this guest runs as its
+	// image installs it; empty when its tooling replaced station's guest.
+	serving string
+	// value: a guest made from station's image: a line no answer scripts
+	// succeeds, as the image's own commands do; `true` succeeds on any guest.
+	fresh bool
+	done  chan struct{}
+	once  sync.Once
+}
+
+// invariant: station's session in the fake guest says it is ready, takes
+// whatever the engine writes, and lasts until the connection closes.
+func (c *guest) serve(ctx context.Context, cmd contract.GuestCommand) (contract.GuestResult, error) {
+	if cmd.Stdin != nil {
+		go func() {
+			buf := make([]byte, 4096)
+			for {
+				if _, err := cmd.Stdin.Read(buf); err != nil {
+					return
+				}
+			}
+		}()
+	}
+	if cmd.Stdout != nil {
+		if _, err := cmd.Stdout.Write([]byte(`{"v":1,"type":"ready"}` + "\n")); err != nil {
+			return contract.GuestResult{}, err
+		}
+	}
+	select {
+	case <-ctx.Done():
+	case <-c.done:
+	}
+	return contract.GuestResult{}, nil
 }
 
 var ErrGuestBroke = errors.New("the guest connection broke, as the world scripted it")
@@ -147,8 +197,7 @@ func (v *VM) answer(line string) (a Answer, poweroff, ok bool) {
 }
 
 // invariant: a scripted Guest.Exec fault breaks a command the guest answers;
-// a line it does not know, as the engine's station session to a world VM, is
-// "not found" and spends no fault.
+// a line it does not know spends no fault.
 func (c *guest) fails() bool {
 	c.w.Lock()
 	defer c.w.Unlock()
@@ -177,9 +226,12 @@ func (c *guest) closed() bool {
 	}
 }
 
-func (c *guest) Exec(_ context.Context, cmd contract.GuestCommand) (contract.GuestResult, error) {
+func (c *guest) Exec(ctx context.Context, cmd contract.GuestCommand) (contract.GuestResult, error) {
 	if c.closed() {
 		return contract.GuestResult{}, ErrClosed
+	}
+	if cmd.Line == c.serving && c.serving != "" {
+		return c.serve(ctx, cmd)
 	}
 	var in []byte
 	if cmd.Stdin != nil {
@@ -192,6 +244,7 @@ func (c *guest) Exec(_ context.Context, cmd contract.GuestCommand) (contract.Gue
 	a, poweroff, ok := c.vm.answer(cmd.Line)
 	c.vm.mu.Unlock()
 	switch {
+	case !ok && (c.fresh || cmd.Line == "true"):
 	case !ok:
 		a = Answer{Code: 127, Stderr: cmd.Line + ": not found\n"}
 	case c.fails():

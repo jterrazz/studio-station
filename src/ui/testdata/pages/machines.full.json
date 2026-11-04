@@ -8,69 +8,64 @@
   "state": "ready",
   "sections": [
     {
-      "id": "fleet",
-      "title": "Fleet",
+      "id": "machines",
+      "title": "4 machines",
       "role": "banner",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "3 running"
+        },
+        {
+          "kind": "text",
+          "text": "1 stopped"
+        },
+        {
+          "kind": "text",
+          "text": "1 needs you"
+        }
+      ],
+      "joined": true,
       "columns": [
         {
           "key": "name",
+          "label": "MACHINE",
           "kind": "text",
           "keep": 100
         },
         {
           "key": "kind",
+          "label": "KIND",
+          "kind": "text",
+          "keep": 80
+        },
+        {
+          "key": "mac",
           "kind": "text",
           "show": "pipe"
-        },
-        {
-          "key": "host",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "lifetime",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "class",
-          "kind": "text",
-          "keep": 70,
-          "show": "eye"
-        },
-        {
-          "key": "role",
-          "kind": "text",
-          "keep": 30,
-          "show": "eye"
         },
         {
           "key": "state",
-          "kind": "text",
+          "label": "STATE",
+          "kind": "list",
           "keep": 90
         },
         {
-          "key": "ip",
-          "kind": "identity",
-          "keep": 50
+          "key": "cpu",
+          "label": "CPU",
+          "kind": "text",
+          "keep": 40
         },
         {
-          "key": "record",
-          "kind": "list",
-          "show": "pipe"
-        },
-        {
-          "key": "resources",
-          "kind": "list",
-          "keep": 10,
-          "show": "eye",
-          "whole": true
+          "key": "memory",
+          "label": "MEMORY",
+          "kind": "text",
+          "keep": 30
         },
         {
           "key": "detail",
           "kind": "list",
-          "keep": 5,
-          "show": "eye"
+          "keep": 5
         }
       ],
       "items": [
@@ -80,42 +75,25 @@
               "id": "macbook",
               "mark": "ok",
               "label": "macbook",
+              "short": "This Mac",
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
+                },
+                {
+                  "kind": "text",
+                  "text": "macbook"
+                },
+                {
+                  "kind": "text",
+                  "text": "Engine running"
                 },
                 {
                   "kind": "none"
                 },
                 {
                   "kind": "none"
-                },
-                {
-                  "kind": "text",
-                  "text": "host"
-                },
-                {
-                  "kind": "text",
-                  "text": "here"
-                },
-                {
-                  "kind": "text",
-                  "text": "online"
-                },
-                {
-                  "kind": "identity",
-                  "text": "100.98.133.14"
-                },
-                {
-                  "kind": "count",
-                  "n": 2,
-                  "unit": "VMs"
-                },
-                {
-                  "kind": "count",
-                  "n": 2,
-                  "unit": "VMs"
                 },
                 {
                   "kind": "none"
@@ -125,72 +103,38 @@
             "items": [
               {
                 "row": {
-                  "id": "linux-1",
-                  "mark": "ok",
-                  "label": "linux-1",
+                  "id": "api",
+                  "mark": "absent",
+                  "label": "api",
                   "cells": [
                     {
                       "kind": "text",
-                      "text": "linux"
+                      "text": "Workspace"
                     },
                     {
                       "kind": "text",
                       "text": "macbook"
                     },
                     {
-                      "kind": "text",
-                      "text": "temporary"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "temporary"
-                    },
-                    {
-                      "kind": "none"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "running"
-                    },
-                    {
-                      "kind": "identity",
-                      "text": "192.168.64.5"
-                    },
-                    {
                       "kind": "list",
                       "items": [
                         {
-                          "kind": "count",
-                          "n": 4,
-                          "unit": "cpus"
+                          "kind": "text",
+                          "text": "Stopped"
                         },
                         {
                           "kind": "text",
-                          "text": "4 GB"
-                        },
-                        {
-                          "kind": "size",
-                          "n": 42949672960
+                          "text": "permanent"
                         }
                       ]
                     },
                     {
-                      "kind": "list",
-                      "items": [
-                        {
-                          "kind": "count",
-                          "n": 4,
-                          "unit": "cpus"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "4 GB"
-                        },
-                        {
-                          "kind": "size",
-                          "n": 42949672960
-                        }
-                      ]
+                      "kind": "text",
+                      "text": "4 CPU"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "8 GB"
                     },
                     {
                       "kind": "none"
@@ -200,72 +144,38 @@
               },
               {
                 "row": {
-                  "id": "api",
-                  "mark": "absent",
-                  "label": "api",
+                  "id": "linux-1",
+                  "mark": "ok",
+                  "label": "linux-1",
                   "cells": [
                     {
                       "kind": "text",
-                      "text": "linux"
+                      "text": "Workspace"
                     },
                     {
                       "kind": "text",
                       "text": "macbook"
                     },
                     {
-                      "kind": "text",
-                      "text": "lasting"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "lasting"
-                    },
-                    {
-                      "kind": "none"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "stopped"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "-"
-                    },
-                    {
                       "kind": "list",
                       "items": [
                         {
-                          "kind": "count",
-                          "n": 4,
-                          "unit": "cpus"
+                          "kind": "text",
+                          "text": "Running"
                         },
                         {
                           "kind": "text",
-                          "text": "8 GB"
-                        },
-                        {
-                          "kind": "size",
-                          "n": 42949672960
+                          "text": "throwaway"
                         }
                       ]
                     },
                     {
-                      "kind": "list",
-                      "items": [
-                        {
-                          "kind": "count",
-                          "n": 4,
-                          "unit": "cpus"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "8 GB"
-                        },
-                        {
-                          "kind": "size",
-                          "n": 42949672960
-                        }
-                      ]
+                      "kind": "text",
+                      "text": "4 CPU"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "4 GB"
                     },
                     {
                       "kind": "none"
@@ -283,10 +193,28 @@
               "id": "mac-mini",
               "mark": "attention",
               "label": "mac-mini",
+              "short": "mac-mini",
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
+                },
+                {
+                  "kind": "text",
+                  "text": "mac-mini"
+                },
+                {
+                  "kind": "list",
+                  "items": [
+                    {
+                      "kind": "text",
+                      "text": "Engine running"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "runs v2.0.0-248"
+                    }
+                  ]
                 },
                 {
                   "kind": "none"
@@ -295,31 +223,7 @@
                   "kind": "none"
                 },
                 {
-                  "kind": "text",
-                  "text": "host"
-                },
-                {
                   "kind": "none"
-                },
-                {
-                  "kind": "text",
-                  "text": "online"
-                },
-                {
-                  "kind": "identity",
-                  "text": "100.98.133.20"
-                },
-                {
-                  "kind": "text",
-                  "text": "station v2.0.0-248 here v2.0.0-250"
-                },
-                {
-                  "kind": "count",
-                  "unit": "VMs"
-                },
-                {
-                  "kind": "text",
-                  "text": "station v2.0.0-248 here v2.0.0-250"
                 }
               ],
               "reason": "mismatch"
@@ -328,9 +232,7 @@
               {
                 "empty": {
                   "noun": "VMs",
-                  "hint": {
-                    "command": "station machines create --on mac-mini"
-                  }
+                  "text": "No VMs yet"
                 }
               }
             ],
@@ -338,20 +240,49 @@
           }
         }
       ],
-      "counts": [
+      "uncounted": true
+    },
+    {
+      "id": "needs-you",
+      "title": "Needs you",
+      "columns": [
         {
-          "mark": "ok",
-          "n": 2
+          "key": "subject",
+          "kind": "text",
+          "keep": 100
         },
         {
-          "mark": "attention",
-          "n": 1
+          "key": "finding",
+          "kind": "list",
+          "keep": 90
         },
         {
-          "mark": "absent",
-          "n": 1
+          "key": "fix",
+          "kind": "list",
+          "keep": 50
         }
-      ]
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "0-mac-mini",
+            "mark": "attention",
+            "label": "mac-mini",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "runs v2.0.0-248"
+              },
+              {
+                "kind": "text",
+                "text": "update station there (scripts/install.sh)"
+              }
+            ],
+            "reason": "degraded"
+          }
+        }
+      ],
+      "uncounted": true
     },
     {
       "id": "warnings",
@@ -364,6 +295,11 @@
           }
         }
       ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station machines create --on mac-mini"
     }
   ],
   "actions": [

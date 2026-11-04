@@ -231,8 +231,8 @@ func fleet() machines.Fleet {
 	return machines.Fleet{Hosts: []machines.HostView{
 		{Name: "macbook", User: "jterrazz", StationVersion: "v2.0.0-250", Here: true, Reachable: true, Daemon: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-250"}, Node: machines.Node{Online: true, IP: "100.98.133.14"},
 			VMs: []machines.VM{
-				sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: machines.Temporary, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", CreatedAt: built}, 4, 4),
-				sized(machines.VM{Name: "api", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: machines.Lasting, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8),
+				sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: machines.Throwaway, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", CreatedAt: built}, 4, 4),
+				sized(machines.VM{Name: "api", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: machines.Permanent, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8),
 			}},
 		{Name: "mac-mini", User: "jterrazz", StationVersion: "v2.0.0-248", Reachable: true, Daemon: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-248"}, Node: machines.Node{Online: true, IP: "100.98.133.20"}},
 	}}

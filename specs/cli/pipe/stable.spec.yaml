@@ -40,7 +40,7 @@ runs:
           ◐	ai.jterrazz.gone	orphan	not loaded	user		~/Library/LaunchAgents/ai.jterrazz.gone.plist · launchctl bootout gui/501/ai.jterrazz.gone && rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
           ◐	com.docker.vmnetd	orphan	not loaded	root	Docker.app	/Library/LaunchDaemons/com.docker.vmnetd.plist · sudo launchctl bootout system/com.docker.vmnetd && sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
           # Gateways
-          ◐	Tailscale Serve	off	Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console
+          ◐	Tailscale Serve	off	Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
           # Tools	2 ◐	106 ○
           ○	homebrew		script · system	station apps install homebrew
           ○	mise		brew · system	brew not installed · station apps install homebrew
@@ -318,9 +318,9 @@ runs:
     - command: 'machines'
       exit: 0
       stdout: |
-          ●	x	host			online	100.64.0.1	0 VMs
-          ●	y	host			online	100.64.0.2	1 VM
-          ●	w	linux	y	lasting	running	-	4 cpus · 8 GB · 50.0 GB
+          ●	x	Mac	x	Online
+          ●	y	Mac	y	Online
+          ●	w	Workspace	y	Running · permanent	4 CPU	8 GB
     - command: 'images'
       exit: 0
       stdout: |
@@ -364,11 +364,11 @@ runs:
     - command: 'storage --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
-          {"rows":[{"cache_bytes":0,"category":"Station","clean":true,"config_bytes":750,"data_bytes":0,"installed":true,"installed_bytes":0,"kept_bytes":0,"mark":"ok","name":"station","paths":[{"bytes":0,"level":"cache","path":"~/.cache/station"},{"bytes":0,"level":"cache","path":"~/.local/state/station/logs/*.log"},{"bytes":0,"level":"cache","path":"~/.local/state/station/images/askpass"},{"bytes":0,"level":"cache","path":"~/.local/state/station/dns/quad9-dns.mobileconfig"},{"bytes":0,"level":"data","path":"~/.local/share/station/vms/vms/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/images/*/*.json"},{"bytes":0,"level":"data","path":"~/.local/state/station/known_hosts/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/consoles/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/engine.sock"},{"bytes":0,"level":"data","path":"~/.local/state/station/children/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/runs/*"},{"bytes":0,"level":"config","path":"~/Library/LaunchAgents/com.jterrazz.station.engine.plist"},{"bytes":104,"level":"config","path":"~/.config/station/preferences.json"},{"bytes":0,"level":"config","path":"~/.zshrc"},{"bytes":646,"level":"config","path":"~/.ssh/config"},{"bytes":0,"level":"kept","path":"~/.local/state/station/vms/*.json"},{"bytes":0,"level":"kept","path":"~/.local/state/station/images/key*"},{"bytes":0,"level":"kept","path":"~/.local/state/station/leases.json"}],"reset":false},{"cache_bytes":2000,"category":"Package Managers","clean":true,"config_bytes":0,"data_bytes":0,"installed":false,"installed_bytes":0,"kept_bytes":0,"mark":"absent","name":"homebrew","paths":[{"bytes":2000,"level":"cache","path":"~/Library/Caches/Homebrew"},{"bytes":0,"level":"cache","path":"~/Library/Logs/Homebrew"}],"reset":false}],"schema":"station.storage/v1","strays":[]}
+          {"rows":[{"cache_bytes":0,"category":"Station","clean":true,"config_bytes":952,"data_bytes":0,"installed":true,"installed_bytes":0,"kept_bytes":0,"mark":"ok","name":"station","paths":[{"bytes":0,"level":"cache","path":"~/.cache/station"},{"bytes":0,"level":"cache","path":"~/.local/state/station/logs/*.log"},{"bytes":0,"level":"cache","path":"~/.local/state/station/images/askpass"},{"bytes":0,"level":"cache","path":"~/.local/state/station/dns/quad9-dns.mobileconfig"},{"bytes":0,"level":"data","path":"~/.local/share/station/vms/vms/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/images/*/*.json"},{"bytes":0,"level":"data","path":"~/.local/state/station/known_hosts/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/consoles/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/engine.sock"},{"bytes":0,"level":"data","path":"~/.local/state/station/children/*"},{"bytes":0,"level":"data","path":"~/.local/state/station/runs/*"},{"bytes":0,"level":"config","path":"~/Library/LaunchAgents/com.jterrazz.station.engine.plist"},{"bytes":306,"level":"config","path":"~/.config/station/preferences.json"},{"bytes":0,"level":"config","path":"~/.zshrc"},{"bytes":646,"level":"config","path":"~/.ssh/config"},{"bytes":0,"level":"kept","path":"~/.local/state/station/vms/*.json"},{"bytes":0,"level":"kept","path":"~/.local/state/station/images/key*"},{"bytes":0,"level":"kept","path":"~/.local/state/station/leases.json"}],"reset":false},{"cache_bytes":2000,"category":"Package Managers","clean":true,"config_bytes":0,"data_bytes":0,"installed":false,"installed_bytes":0,"kept_bytes":0,"mark":"absent","name":"homebrew","paths":[{"bytes":2000,"level":"cache","path":"~/Library/Caches/Homebrew"},{"bytes":0,"level":"cache","path":"~/Library/Logs/Homebrew"}],"reset":false}],"schema":"station.storage/v1","strays":[]}
     - command: 'machines --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
-          {"hosts":[{"here":true,"name":"x","node":{"ip":"100.64.0.1","online":true},"reachable":true,"station_version":"V","user":"jterrazz","vms":[]},{"here":false,"name":"y","node":{"ip":"100.64.0.2","online":true},"reachable":true,"station_version":"V","user":"u","vms":[{"cpus":4,"created_at":"2026-11-07T10:00:00Z","disk_bytes":50000000000,"guest":"","image":"linux","ip":"","kind":"linux","lent":[],"lifetime":"lasting","memory_bytes":8589934592,"name":"w","network":"","state":"running","version":"2026.11.07"}]}],"schema":"station.machines/v1"}
+          {"findings":[],"macs":[{"engine":{"state":"none","version":""},"ip":"100.64.0.1","label":"This Mac","name":"x","reachable":true,"station_version":"V","this_mac":true,"user":"jterrazz","vms":[]},{"engine":{"state":"none","version":""},"ip":"100.64.0.2","label":"y","name":"y","reachable":true,"station_version":"V","this_mac":false,"user":"u","vms":[{"bridged":false,"created_at":"2026-11-07T10:00:00Z","health":{"address":false,"running":true,"ssh":false},"image":{"name":"linux","version":"2026.11.07"},"ip":"","kind":"workspace","lifetime":"permanent","name":"w","restarts":0,"size":{"cpus":4,"disk_bytes":50000000000,"memory_bytes":8589934592},"state":"running","wanted":"stopped"}]}],"schema":"station.machines.list/v1"}
     - command: 'images --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |

@@ -220,7 +220,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "mac"
                 },
                 {
                   "kind": "none"
@@ -230,7 +230,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 },
                 {
                   "kind": "text",
@@ -269,7 +269,7 @@
                     "cells": [
                       {
                         "kind": "text",
-                        "text": "linux"
+                        "text": "workspace"
                       },
                       {
                         "kind": "text",
@@ -277,11 +277,11 @@
                       },
                       {
                         "kind": "text",
-                        "text": "temporary"
+                        "text": "throwaway"
                       },
                       {
                         "kind": "text",
-                        "text": "temporary"
+                        "text": "throwaway"
                       },
                       {
                         "kind": "none"
@@ -387,7 +387,7 @@
                   "cells": [
                     {
                       "kind": "text",
-                      "text": "linux"
+                      "text": "workspace"
                     },
                     {
                       "kind": "text",
@@ -395,11 +395,11 @@
                     },
                     {
                       "kind": "text",
-                      "text": "lasting"
+                      "text": "permanent"
                     },
                     {
                       "kind": "text",
-                      "text": "lasting"
+                      "text": "permanent"
                     },
                     {
                       "kind": "none"
@@ -467,7 +467,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "mac"
                 },
                 {
                   "kind": "none"
@@ -477,7 +477,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 },
                 {
                   "kind": "none"
@@ -661,7 +661,7 @@
       "mutates": true,
       "id": "new-vm",
       "run": {
-        "call": "machines.create",
+        "call": "machines.create-workspace",
         "in": {
           "Request.Image": "linux",
           "Request.Network": "nat"
@@ -676,13 +676,13 @@
             "kind": "select",
             "options": [
               {
-                "value": "temporary"
+                "value": "throwaway"
               },
               {
-                "value": "lasting"
+                "value": "permanent"
               }
             ],
-            "default": "temporary"
+            "default": "throwaway"
           },
           {
             "key": "Request.Resources.MemoryBytes",

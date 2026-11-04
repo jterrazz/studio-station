@@ -149,3 +149,14 @@ func TestAWorldReadsBackAsItWasWritten(t *testing.T) {
 		t.Errorf("the world read back as %+v", again.Macs["mbp"])
 	}
 }
+
+func TestAnotherHypervisorStandsInWhereStationsOwnWas(t *testing.T) {
+	w := seeded(t, `{"here": "mbp", "macs": {"mbp": {}, "bare": {"hypervisor": "none"}}}`)
+	w.UseHypervisor("vz")
+	if got := w.Macs["mbp"].Hypervisor; got != "vz" {
+		t.Errorf("the Mac with station's hypervisor has %q, want vz", got)
+	}
+	if got := w.Macs["bare"].Hypervisor; got != "none" {
+		t.Errorf("the Mac with no hypervisor has %q, want none still", got)
+	}
+}

@@ -93,6 +93,12 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.status = msg
 		return a, nil
 	case tab.ExecMsg:
+		if msg.InPlace {
+			// hazard: tea.Exec restarts the renderer's ticker while the old
+			// renderer may still stop it, and the screen then stays blank for
+			// good (bubbletea v2); an action that needs no terminal keeps it.
+			return a, func() tea.Msg { return msg.Done(msg.Command.Run()) }
+		}
 		return a, tea.Exec(msg.Command, msg.Done)
 	case tea.KeyPressMsg:
 		return a.key(msg)

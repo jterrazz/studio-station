@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
@@ -24,7 +25,7 @@ type Input struct{ Name string }
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "restart <machine>",
-		Short:   "Restart a host with a FileVault-aware reboot, or a lasting VM with a poweroff and a start",
+		Short:   "Restart a Mac with a FileVault-aware reboot, or a VM with a poweroff and a start",
 		Example: "  station machines restart mac-mini --yes",
 		Args:    cobra.ExactArgs(1),
 		Bind: func(in *Input, args []string) error {
@@ -40,14 +41,16 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			var report machines.RestartReport
 			err := io.Confirmed(func(answer string) error {
-				_, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Restart, machinescalls.RestartIn{Name: in.Name, Confirm: answer}, nil)
+				var err error
+				report, err = call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Restart, machinescalls.RestartIn{Name: in.Name, Confirm: answer}, nil)
 				return err
 			})
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Restarted(in.Name, d.Here), nil)
+			return io.Page(pagemachines.Restarted(report, d.Here), nil)
 		},
 	}, env)
 }

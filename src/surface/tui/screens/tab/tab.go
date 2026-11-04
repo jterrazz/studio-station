@@ -47,6 +47,9 @@ type ExecMsg struct {
 	// so the program is the one place that releases the terminal (tea.Exec).
 	Command ExecFunc
 	Done    func(error) tea.Msg
+	// value: the action never reads or writes the terminal, so it runs with the
+	// screen kept drawn.
+	InPlace bool
 }
 
 type ExecFunc func() error
@@ -58,6 +61,14 @@ func (ExecFunc) SetStdout(io.Writer) {}
 func (ExecFunc) SetStderr(io.Writer) {}
 
 func Exec(screen string, action func() (Status, error)) tea.Cmd {
+	return run(screen, action, false)
+}
+
+func InPlace(screen string, action func() (Status, error)) tea.Cmd {
+	return run(screen, action, true)
+}
+
+func run(screen string, action func() (Status, error), inPlace bool) tea.Cmd {
 	var status Status
 	var failure error
 	return func() tea.Msg {
@@ -72,6 +83,7 @@ func Exec(screen string, action func() (Status, error)) tea.Cmd {
 				}
 				return Done{Screen: screen, Status: status, Err: failure}
 			},
+			InPlace: inPlace,
 		}
 	}
 }
@@ -83,6 +95,14 @@ type asked struct {
 }
 
 func Confirmed(screen string, question page.Confirm, action func(answer string) (Status, error)) tea.Cmd {
+	return confirmed(screen, question, action, false)
+}
+
+func ConfirmedInPlace(screen string, question page.Confirm, action func(answer string) (Status, error)) tea.Cmd {
+	return confirmed(screen, question, action, true)
+}
+
+func confirmed(screen string, question page.Confirm, action func(answer string) (Status, error), inPlace bool) tea.Cmd {
 	// invariant: the action runs unanswered first, so its use case decides
 	// whether it asks; only then is the question put, and a yes runs it once
 	// more with the answer the use case asked for.
@@ -99,10 +119,11 @@ func Confirmed(screen string, question page.Confirm, action func(answer string) 
 					return Done{Screen: screen, Err: err}
 				}
 				if answer, ok := confirm.Answer(failure); ok {
-					return asked{id: screen, question: question, then: Exec(screen, func() (Status, error) { return action(answer) })}
+					return asked{id: screen, question: question, then: run(screen, func() (Status, error) { return action(answer) }, inPlace)}
 				}
 				return Done{Screen: screen, Status: status, Err: failure}
 			},
+			InPlace: inPlace,
 		}
 	}
 }

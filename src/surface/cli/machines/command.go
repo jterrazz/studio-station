@@ -2,6 +2,7 @@ package machinescmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -16,16 +17,35 @@ import (
 
 type Deps struct {
 	Here page.Context
+	// value: one machine's Overview, read on the machine env targets.
+	Overview func(ctx context.Context, io kit.IO) error
+	Names    func() []string
 }
 
-type Input struct{ Here bool }
+type Input struct {
+	Here    bool
+	Machine string
+}
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 	cmd := kit.Command(kit.Leaf[Input]{
-		Use:     "machines",
-		Short:   "Every host and the VMs on each",
-		Example: "  station machines\n  station machines --here --json",
-		Group:   kit.Machines,
+		Use:     "machines [<machine>]",
+		Short:   "All machines: every Mac, its VMs under it; one machine's Overview",
+		Example: "  station machines\n  station machines linux-1\n  station machines --json",
+		Args: func(c *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return fmt.Errorf("unknown command %q for %q", args[0], c.CommandPath())
+			}
+			return nil
+		},
+		Bind: func(in *Input, args []string) error {
+			if len(args) == 1 {
+				in.Machine = args[0]
+			}
+			return nil
+		},
+		Complete: func([]string, string) []string { return d.Names() },
+		Group:    kit.Machines,
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.Here, "here", false, "this host only, without asking the others")
 		},
@@ -33,13 +53,19 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Live:  true,
 		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			if in.Machine != "" {
+				if env.On != nil {
+					env.On.Machine = in.Machine
+				}
+				return d.Overview(ctx, io)
+			}
 			listed := machinescalls.ListIn{Here: in.Here}
 			if !io.CanLive() {
 				out, err := call.Read(ctx, env.Calls, env.Target(), machinescalls.List, listed, nil)
 				if err != nil {
 					return err
 				}
-				return io.Page(listPage(out, d.Here), machines.ToWire(out.Fleet))
+				return io.Page(listPage(out, d.Here), machines.ToList(out.Fleet))
 			}
 			updates, err := call.Follow(ctx, env.Calls, env.Target(), machinescalls.List, listed, nil)
 			if err != nil {

@@ -73,6 +73,13 @@ func (m machine) engineVersion() string {
 	return Version()
 }
 
+func (m machine) stationVersion() string {
+	if m.world != nil && m.world.stationVersion() != "" {
+		return m.world.stationVersion()
+	}
+	return Version()
+}
+
 func (m machine) engineStarted() time.Time {
 	if m.world != nil {
 		return m.world.engineStarted()

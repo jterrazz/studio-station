@@ -56,7 +56,11 @@ func Counts(st token.Styles, tallies []page.Tally) string {
 }
 
 func Empty(st token.Styles, e page.Empty, m Medium, keys Keys) string {
-	line := st.Muted.Render("no " + e.Noun)
+	text := "no " + e.Noun
+	if e.Text != "" {
+		text = e.Text
+	}
+	line := st.Muted.Render(text)
 	if e.Hint != nil {
 		line += atom.Spaces(token.Gap) + Hint(st, *e.Hint, m, keys)
 	}

@@ -1,14 +1,15 @@
-description: 'a lasting VM of another Mac stops through that Mac, and stays stopped when the Mac reboots'
+description: 'a permanent workspace of another Mac stops through that Mac, and stays stopped when the Mac reboots'
 env: two-macs
 runs:
     - command: 'machines stop infra --on jterrazz-mac-mini'
-      exit: 0
-      stdout: |
-          ●	infra	stopped
+      exit: 2
+      stderr: |
+          Error: refusing to stop without --yes
+          Hint: re-run with --yes
     - command: 'world reboot jterrazz-mac-mini'
       exit: 0
     - command: 'machines --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          ●	jterrazz-mac-mini	host			online	-	1 VM
-          ○	infra	linux	jterrazz-mac-mini	lasting	stopped	-	8 cpus · 24 GB · 80.0 GB
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
+          ○	infra	Workspace	jterrazz-mac-mini	Stopped · permanent	8 CPU	24 GB	ended with its Mac

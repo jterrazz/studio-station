@@ -2,6 +2,7 @@ package machines
 
 import (
 	"context"
+	"slices"
 
 	model "github.com/jterrazz/studio-station/src/machines"
 
@@ -40,7 +41,7 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 	others := s.OtherHosts()
 	answers := map[string]HostView{}
 	fleet := func(all bool) Fleet {
-		f := Fleet{Hosts: []HostView{here}}
+		f := Fleet{Hosts: []HostView{here}, Read: s.h.Clock.Now()}
 		for _, n := range others {
 			if _, ok := answers[n]; ok || all {
 				f.Hosts = append(f.Hosts, s.view(n, cfg.Hosts[n], nodes[n], answers))
@@ -97,7 +98,14 @@ func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[str
 func (s *Service) view(name string, h model.Host, node Node, answers map[string]HostView) HostView {
 	far, ok := answers[name]
 	if !ok {
-		return HostView{Name: name, User: h.User, Node: node}
+		silent := HostView{Name: name, User: h.User, Node: node, Answered: h.Answered}
+		for _, vm := range h.VMs {
+			silent.VMs = append(silent.VMs, VM{
+				Name: vm.Name, Host: name, Lifetime: vm.Lifetime, State: model.UnknownState,
+				Resources: Resources{CPUs: vm.CPUs, MemoryBytes: vm.MemoryBytes},
+			})
+		}
+		return silent
 	}
 	view := HostView{Name: name, User: h.User, StationVersion: far.StationVersion, Reachable: true, Node: far.Node, Daemon: far.Daemon}
 	for _, vm := range far.VMs {
@@ -123,4 +131,12 @@ func (s *Service) Running(ctx context.Context) (map[string]catalog.MachineKind, 
 		}
 	}
 	return running, nil
+}
+
+func (s *Service) Remembers(mac, vm string) bool {
+	cfg, err := s.prefs()
+	if err != nil {
+		return false
+	}
+	return slices.ContainsFunc(cfg.Hosts[mac].VMs, func(v model.SeenVM) bool { return v.Name == vm })
 }

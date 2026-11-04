@@ -1,9 +1,13 @@
  station machines                                                               host · unregistered
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
- Fleet  1 ●  2 ◐  1 ○
-   ◐ macbook     host       here  online       100.98.133.14  2 VMs
-     engine stopped  → station engine start
-   ├─ ● linux-1  temporary        running      192.168.64.5   4 cpus · 4 GB · 42.9 GB
-   └─ ○ api      lasting          stopped      -              4 cpus · 8 GB · 42.9 GB
-   ◐ mac-mini    host             unreachable  100.98.133.20  -
+ 4 machines · 2 running · 1 stopped · 2 need you
+     MACHINE     KIND       STATE                CPU    MEMORY
+   ✗ This Mac    Mac        Engine stopped
+   ├─ ○ api      Workspace  Stopped · permanent  4 CPU  8 GB
+   └─ ● linux-1  Workspace  Running · throwaway  4 CPU  4 GB
+   ✗ mac-mini    Mac        Unreachable
+
+ Needs you
+   ✗ This Mac  has its engine stopped  → station engine start
+   ✗ mac-mini  does not answer

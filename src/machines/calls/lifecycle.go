@@ -12,22 +12,48 @@ import (
 
 type VMIn struct{ VM string }
 
-var Start = call.Call[Deps, VMIn, struct{}]{
+type StartOut struct {
+	// value: the workspace already ran; nothing was started.
+	Already bool
+}
+
+var Start = call.Call[Deps, VMIn, StartOut]{
 	Name: "machines.start", Where: call.InEngine, Applies: machine.Anywhere,
-	Run: func(ctx context.Context, d Deps, in VMIn, _ call.Progress) (struct{}, error) {
+	Run: func(ctx context.Context, d Deps, in VMIn, _ call.Progress) (StartOut, error) {
 		if err := d.Machines.CheckStart(in.VM); err != nil {
-			return struct{}{}, err
+			return StartOut{}, err
 		}
-		return struct{}{}, d.Machines.Start(ctx, in.VM)
+		if err := d.Machines.EngineUp(ctx); err != nil {
+			return StartOut{}, err
+		}
+		if running, err := d.Machines.Running(ctx, in.VM); err != nil || running {
+			return StartOut{Already: running}, err
+		}
+		return StartOut{}, d.Machines.Start(ctx, in.VM)
 	},
 }
 
-var Stop = call.Call[Deps, VMIn, struct{}]{
-	// invariant: stop never destroys, so it asks nothing yet; a temporary
-	// VM is refused, since its stop would be its end.
-	Name: "machines.stop", Where: call.InEngine, Applies: machine.Anywhere,
-	Run: func(ctx context.Context, d Deps, in VMIn, _ call.Progress) (struct{}, error) {
+type StopIn struct {
+	VM      string
+	Confirm string
+}
+
+var Stop = call.Call[Deps, StopIn, struct{}]{
+	// invariant: a stop keeps the workspace, throwaway or permanent (SP-5),
+	// and asks yes or no first; one already stopped asks nothing.
+	Name: "machines.stop", Where: call.InEngine, Applies: machine.Anywhere, Confirm: confirm.Stop,
+	Errors: []fail.Code{confirm.YesNeeded},
+	Run: func(ctx context.Context, d Deps, in StopIn, _ call.Progress) (struct{}, error) {
 		if err := d.Machines.CheckStop(in.VM); err != nil {
+			return struct{}{}, err
+		}
+		if err := d.Machines.EngineUp(ctx); err != nil {
+			return struct{}{}, err
+		}
+		if running, err := d.Machines.Running(ctx, in.VM); err != nil || !running {
+			return struct{}{}, err
+		}
+		if err := confirm.Require(confirm.For(confirm.Stop, machine.Workspace), in.VM, in.Confirm); err != nil {
 			return struct{}{}, err
 		}
 		return struct{}{}, d.Machines.Stop(ctx, in.VM)
@@ -49,12 +75,15 @@ var Delete = call.Call[Deps, DeleteIn, machines.DeleteReport]{
 		if err := confirm.Require(confirm.For(confirm.Delete, machine.Workspace), in.VM, in.Confirm); err != nil {
 			return machines.DeleteReport{}, err
 		}
+		if err := d.Machines.EngineUp(ctx); err != nil {
+			return machines.DeleteReport{}, err
+		}
 		return d.Machines.Delete(ctx, in.VM)
 	},
 }
 
 type RestartIn struct {
-	// value: a host (a FileVault-aware reboot) or a lasting VM (a poweroff
+	// value: a Mac (a FileVault-aware reboot) or a VM (a poweroff
 	// and a start).
 	Name    string
 	Confirm string
@@ -67,12 +96,33 @@ var Restart = call.Call[Deps, RestartIn, machines.RestartReport]{
 		if err := d.Machines.CheckHost(); err != nil {
 			return machines.RestartReport{}, err
 		}
-		if _, err := d.Machines.CheckRestart(in.Name); err != nil {
+		vm, err := d.Machines.CheckRestart(in.Name)
+		if err != nil {
 			return machines.RestartReport{}, err
 		}
-		if err := confirm.Require(confirm.For(confirm.RestartMac, d.Kind), in.Name, in.Confirm); err != nil {
+		gesture := confirm.RestartMac
+		if vm {
+			gesture = confirm.Restart
+		}
+		if err := confirm.Require(confirm.For(gesture, d.Kind), in.Name, in.Confirm); err != nil {
 			return machines.RestartReport{}, err
 		}
 		return d.Machines.Restart(ctx, in.Name)
+	},
+}
+
+type EditIn struct {
+	VM string
+	// value: the sizes to change; a zero one is kept.
+	Resources machines.Resources
+}
+
+var Edit = call.Call[Deps, EditIn, machines.Edited]{
+	Name: "machines.edit", Where: call.InEngine, Applies: machine.Anywhere,
+	Run: func(ctx context.Context, d Deps, in EditIn, _ call.Progress) (machines.Edited, error) {
+		if err := d.Machines.CheckEdit(in.VM, in.Resources); err != nil {
+			return machines.Edited{}, err
+		}
+		return d.Machines.Edit(ctx, in.VM, in.Resources)
 	},
 }

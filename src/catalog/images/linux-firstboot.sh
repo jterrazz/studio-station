@@ -8,6 +8,6 @@ rm -f /etc/machine-id
 systemd-machine-id-setup
 growpart /dev/vda 1 || true
 resize2fs /dev/vda1 || true
-if [ '{{lifetime}}' = temporary ]; then
-    echo 'temporary VM: poweroff deletes it; reboot keeps it' > /etc/motd
+if [ '{{lifetime}}' = throwaway ]; then
+    echo 'throwaway workspace: a poweroff from inside deletes it; a reboot or a stop keeps it' > /etc/motd
 fi

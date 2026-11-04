@@ -1,13 +1,18 @@
  station machines                                           host · unregistered
  ──────────────────────────────────────────────────────────────────────────────
 
- Fleet  2 ●  1 ◐  1 ○
-   ● macbook     host       here  online   100.98.133.14
-   ├─ ● linux-1  temporary        running  192.168.64.5
-   └─ ○ api      lasting          stopped  -
-   ◐ mac-mini    host             online   100.98.133.20
-     station v2.0.0-248 here v2.0.0-250
-      no VMs  → station machines create --on mac-mini
+ 4 machines · 3 running · 1 stopped · 1 needs you
+     MACHINE     KIND       STATE                             CPU    MEMORY
+   ● This Mac    Mac        Engine running
+   ├─ ○ api      Workspace  Stopped · permanent               4 CPU  8 GB
+   └─ ● linux-1  Workspace  Running · throwaway               4 CPU  4 GB
+   ◐ mac-mini    Mac        Engine running · runs v2.0.0-248
+      No VMs yet
+
+ Needs you
+   ◐ mac-mini  runs v2.0.0-248  update station there (scripts/install.sh)
 
  Warnings
    mac-mini: station v2.0.0-248, here v2.0.0-250
+
+ → station machines create --on mac-mini

@@ -4,9 +4,11 @@ package wire
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"maps"
@@ -45,6 +47,7 @@ import (
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/ports"
 	portsfake "github.com/jterrazz/studio-station/src/ports/adapter/fake"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotefake "github.com/jterrazz/studio-station/src/remote/adapter/fake"
@@ -66,7 +69,8 @@ const (
 )
 
 // invariant: the spec build's world: read from $STATION_WORLD at start (seeded
-// from $STATION_WORLD_SEED the first time), every fake over it, each of its
+// from $STATION_WORLD_SEED the first time, its Macs given the hypervisor
+// $STATION_WORLD_HYPERVISOR names when set), every fake over it, each of its
 // Macs built in this process as its own binary would build it there, and
 // the world written back once the command and every engine are done with it.
 type worldRun struct {
@@ -89,6 +93,7 @@ type worldMac struct {
 	engine   *engine.Daemon
 	tick     int
 	served   *remotefake.Dialer
+	bound    map[int]bool
 	// value: this machine as its own binary builds it inside a VM of the
 	// world, once per run.
 	vm *farMac
@@ -110,6 +115,7 @@ func openWorld(vars map[string]string) (*worldRun, error) {
 	if err != nil {
 		return nil, err
 	}
+	w.UseHypervisor(vars["STATION_WORLD_HYPERVISOR"])
 	return &worldRun{path: path, w: w, macs: map[string]*worldMac{}}, nil
 }
 
@@ -178,7 +184,7 @@ func (m *worldMac) stores(st *stores) {
 func (m *worldMac) self() corecontract.Self    { return corefake.SelfOf(m.run.w, m.name) }
 func (m *worldMac) power() awakecontract.Power { return awakefake.PowerOf(m.run.w, m.name) }
 func (m *worldMac) guests() contract.GuestDialer {
-	return worldGuests{GuestDialer: machinesfake.GuestsOf(m.run.w), r: m.run}
+	return worldGuests{GuestDialer: machinesfake.GuestsOf(m.run.w).Serving(engine.GuestSession), r: m.run}
 }
 func (m *worldMac) imageSource(hypervisor string) imagescontract.ImageSource {
 	return imagesfake.SourceOf(m.run.w, hypervisor)
@@ -237,6 +243,8 @@ func (m *worldMac) engineVersion() string {
 	}
 	return ""
 }
+
+func (m *worldMac) stationVersion() string { return m.slice().Station }
 
 func (m *worldMac) engineStarted() time.Time {
 	if e := m.slice().Engine; e != nil {
@@ -368,7 +376,7 @@ func (m *worldMac) serve() *remotefake.Dialer {
 	if m.served == nil {
 		far := m.run.far(m)
 		m.served = remotefake.New()
-		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: Version(), Word: func(err error) *fail.Error { return kit.Translate(err, "") }, Relay: far.relay})
+		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: cmp.Or(m.stationVersion(), Version()), Word: func(err error) *fail.Error { return kit.Translate(err, "") }, Relay: far.relay})
 		m.start = far.start
 	}
 	return m.served
@@ -514,8 +522,11 @@ func (c worldClock) Sleep(ctx context.Context, d time.Duration) error {
 	}
 	if ctx.Value(waits{}) == nil {
 		// invariant: what already runs takes its turn before the clock
-		// leaps, so a poll counts the work it waits on, not the scheduler.
+		// leaps, and a moment of real time with it (a fiftieth of the leap,
+		// at most 5 ms), so a poll counts the work it waits on, a guest's
+		// pipe under a loaded gate included, not the scheduler.
 		runtime.Gosched()
+		time.Sleep(min(d/50, 5*time.Millisecond))
 	}
 	c.w.Lock()
 	until := c.w.Now.Add(d)
@@ -600,13 +611,81 @@ func (c budgetClock) Sleep(ctx context.Context, d time.Duration) error {
 func (m *worldMac) budgets() probe.Clock { return budgetClock{m.run.clock()} }
 
 // invariant: a Mac's engine socket is its engine in this process, reached
-// through a pipe; every other socket is the real one's.
+// through a pipe; its loopback ports are the world's, busy when the Mac
+// lists a listener there or the world already bound them, so no run binds a
+// real port another run holds.
 type worldSockets struct {
 	system.Sockets
 	m *worldMac
 }
 
+var errPortBusy = errors.New("the port is busy in the world")
+
+func (s worldSockets) ListenTCP(_ string, port int) (system.Listener, error) {
+	w := s.m.run.w
+	w.Lock()
+	defer w.Unlock()
+	mac := w.Mac(s.m.name)
+	if slices.ContainsFunc(mac.Listening, func(l ports.Listener) bool { return l.Port == port }) {
+		return nil, errPortBusy
+	}
+	if s.m.bound == nil {
+		s.m.bound = map[int]bool{}
+	}
+	if s.m.bound[port] {
+		return nil, errPortBusy
+	}
+	s.m.bound[port] = true
+	return &worldListener{port: port, done: make(chan struct{}), release: func() {
+		w.Lock()
+		defer w.Unlock()
+		delete(s.m.bound, port)
+	}}, nil
+}
+
+type worldListener struct {
+	port    int
+	done    chan struct{}
+	once    sync.Once
+	release func()
+}
+
+func (l *worldListener) Accept() (system.Conn, error) {
+	<-l.done
+	return nil, net.ErrClosed
+}
+
+func (l *worldListener) Close() error {
+	l.once.Do(func() {
+		close(l.done)
+		l.release()
+	})
+	return nil
+}
+
+func (l *worldListener) Port() int { return l.port }
+
 var errEngineDown = errors.New("this Mac's engine does not run in the world")
+
+// invariant: ssh's bytes reach the VM of this Mac that runs at ip and whose
+// guest answers: its sshd greets with its name; any other address is no
+// sshd. A world never dials the real network.
+func (s worldSockets) Pipe(_ context.Context, ip string, port int, _ io.Reader, out io.Writer) error {
+	w := s.m.run.w
+	w.Lock()
+	defer w.Unlock()
+	for _, name := range slices.Sorted(maps.Keys(w.Mac(s.m.name).VMs)) {
+		v := w.Mac(s.m.name).VMs[name]
+		at := cmp.Or(v.Address, "192.168.64.5")
+		if v.Running() && v.Guest != nil && at == ip {
+			_, err := fmt.Fprintf(out, "SSH-2.0-world %s %s:%d\r\n", name, ip, port)
+			return err
+		}
+	}
+	return errNoSSHD
+}
+
+var errNoSSHD = errors.New("no sshd answers at this address in the world")
 
 func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (system.Conn, error) {
 	d, ok := s.m.up(context.WithoutCancel(ctx))

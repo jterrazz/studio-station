@@ -1,0 +1,15 @@
+description: 'a throwaway whose run ends for no reason anyone can read is kept, never deleted'
+env: two-macs
+runs:
+    - command: 'world fault Hypervisor.Ended'
+      exit: 0
+    - command: 'world poweroff-inside linux-1'
+      exit: 0
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
+          ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
+          ◐	linux-1	Workspace	jterrazz-macbook-pro	Ended unexpectedly · throwaway	4 CPU	8 GB
+          # Needs you
+          ◐	linux-1	ended unexpectedly	station machines start linux-1

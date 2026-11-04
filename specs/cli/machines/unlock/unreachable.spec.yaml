@@ -8,12 +8,12 @@ env: terminal
 runs:
     - command: '--version >/dev/null; terminal "$STATION" machines unlock y'
       stdin: |
-          see Hint: station machines probe y
+          see Hint: station machines
           screen
       exit: 1
       stdout: |
-          Error: cannot reach "y"
-          Hint: station machines probe y
+          Error: y does not answer
+          Hint: station machines
       files:
           .calls:
               contains:

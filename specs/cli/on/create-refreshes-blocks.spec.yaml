@@ -1,10 +1,13 @@
 description: 'a VM created on another host with --on gets its ssh block here as soon as the create returns'
 fixture: ./__fixtures__/create-on-y/
 runs:
-    - command: 'machines create --lifetime lasting --on y'
+    - command: 'machines create --permanent --on y'
       exit: 0
       stdout: |
-          ●	linux-1	y	lasting	linux 2026.11.07	4 cpus · 4 GB
+          ●	Running
+          ●	Has an address
+          ●	SSH answers
+          ●	linux-1	Created	Permanent · 4 CPU · 4 GB · 50 GB
       files:
           .ssh/config:
               contains:

@@ -1,16 +1,27 @@
 package machines
 
-import (
-	"strconv"
-	"time"
-)
+import "time"
 
 type Lifetime string
 
 const (
-	Temporary Lifetime = "temporary"
-	Lasting   Lifetime = "lasting"
+	Throwaway Lifetime = "throwaway"
+	Permanent Lifetime = "permanent"
 )
+
+func (l *Lifetime) UnmarshalText(text []byte) error {
+	// invariant: a record station v2 wrote reads in v3's words: temporary
+	// is throwaway, lasting is permanent; the next write keeps the new word.
+	switch v := Lifetime(text); v {
+	case "temporary":
+		*l = Throwaway
+	case "lasting":
+		*l = Permanent
+	default:
+		*l = v
+	}
+	return nil
+}
 
 type Size struct {
 	CPUs         int
@@ -40,36 +51,35 @@ type RunEnd struct {
 
 const (
 	rerunWindow = 60 * time.Second
-	rerunBudget = 3
-	CrashDelay  = 10 * time.Second
+	rerunBudget = 2
 )
 
 type Action int
 
 const (
 	ActRerun Action = iota
-	ActRerunLater
 	ActDelete
 	ActStopped
 	ActBroken
 	ActStale
 )
 
-func BrokenDetail() string {
-	return "stopped " + strconv.Itoa(rerunBudget+1) + " times within " + strconv.Itoa(int(rerunWindow.Seconds())) + " s"
-}
+func BrokenDetail() string { return "rebooting in a loop" }
 
 func AfterRun(l Lifetime, end RunEnd, reruns []time.Time, now time.Time) (Action, []time.Time) {
-	// invariant: a temporary VM is deleted only on a poweroff its guest declared; a
-	// reboot runs it again, at most 3 times in 60 s; a crash or an end nobody can
-	// read keeps a temporary VM, stale, and runs a lasting one again after 10 s.
-	clean := end.Reason == GuestReboot
-	switch {
-	case end.Reason == GuestPoweroff && l == Temporary:
-		return ActDelete, reruns
-	case end.Reason == GuestPoweroff:
+	// invariant: a workspace never restarts by itself (SP-4). A poweroff its
+	// guest declared deletes a throwaway one and stops a permanent one; a
+	// reboot from inside runs it again, and the third boot within 60 s that
+	// ends in a reboot is a loop, stopped (SPEC §7.3); a crash or
+	// an end nobody can read keeps it, stale, for the owner to start or delete.
+	switch end.Reason {
+	case GuestPoweroff:
+		if l == Throwaway {
+			return ActDelete, reruns
+		}
 		return ActStopped, reruns
-	case !clean && l == Temporary:
+	case GuestReboot:
+	default:
 		return ActStale, reruns
 	}
 	recent := reruns[:0:0]
@@ -80,9 +90,6 @@ func AfterRun(l Lifetime, end RunEnd, reruns []time.Time, now time.Time) (Action
 	}
 	if len(recent) >= rerunBudget {
 		return ActBroken, recent
-	}
-	if !clean {
-		return ActRerunLater, append(recent, now)
 	}
 	return ActRerun, append(recent, now)
 }

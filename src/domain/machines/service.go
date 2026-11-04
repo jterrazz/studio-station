@@ -30,6 +30,8 @@ type Options struct {
 	Jobs      background.Jobs
 	Unlocker  contract.Unlocker
 	SSHConfig contract.SSHConfig
+	// value: the memory this Mac has, in bytes; zero when it cannot say.
+	Memory func(ctx context.Context) int64
 }
 
 type Nodes interface {
@@ -103,8 +105,8 @@ func New(h system.Host, e contract.Hypervisor, p Prefs, vms contract.MachineStor
 type Lifetime = model.Lifetime
 
 const (
-	Temporary = model.Temporary
-	Lasting   = model.Lasting
+	Throwaway = model.Throwaway
+	Permanent = model.Permanent
 )
 
 const (
@@ -142,8 +144,10 @@ type (
 	DaemonInfo  = model.EngineView
 	HostView    = model.HostView
 	Fleet       = model.Fleet
+	ListSize    = model.ListSize
 	Check       = model.Check
 	ProbeReport = model.ProbeReport
+	SSHTarget   = model.SSHTarget
 )
 
 const (
@@ -152,6 +156,7 @@ const (
 	Suspended = model.Suspended
 	Stale     = model.Stale
 	Broken    = model.Broken
+	Unknown   = model.UnknownState
 )
 
 func (s *Service) vmUser(cfg prefsView) string {
@@ -173,3 +178,14 @@ var nameChars = func(r rune) bool { return r == '-' || (r >= 'a' && r <= 'z') ||
 func validName(name string) bool {
 	return len(name) >= 1 && len(name) <= 40 && strings.IndexFunc(name, func(r rune) bool { return !nameChars(r) }) < 0
 }
+
+const (
+	StepRunning = model.StepRunning
+	StepAddress = model.StepAddress
+	StepSSH     = model.StepSSH
+)
+
+var (
+	HealthOf = model.HealthOf
+	Wanted   = model.Wanted
+)

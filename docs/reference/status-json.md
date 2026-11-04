@@ -37,7 +37,7 @@ The `macos` update reads the list the background check wrote to `/Library/Prefer
 
 `remote-login` and `encrypted-dns` are read from the state of the `sshd` and `dns` config items, so `status` and `station settings` cannot disagree about them. A machine where those items are not placed has no such row.
 
-`Tailscale Serve` is `ok` with value `on` when the tailnet lists a certificate domain, else `degraded`, value `off`, detail `Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console`; the tailnet logged out or absent, or a VM, has no such row.
+`Tailscale Serve` is `ok` with value `on` when the tailnet lists a certificate domain, else `degraded`, value `off`, detail `Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console`; the tailnet logged out or absent, or a VM, has no such row.
 
 ## Rules of the encoding
 

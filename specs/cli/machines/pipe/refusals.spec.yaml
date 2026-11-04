@@ -6,25 +6,21 @@ env: engine
 runs:
     - command: 'machines pipe nope'
       exit: 2
-      stdout: ''
       stderr: |
-          Error: unknown machine "nope"
-          Hint: run station machines for the fleet
+          Error: no machine named "nope"
+          Hint: station machines
     - command: 'machines pipe x'
       exit: 2
-      stdout: ''
       stderr: |
-          Error: "x" is a host, not a VM
+          Error: x is a Mac
           Hint: run station machines for the VMs
     - command: 'machines pipe linux-1 --on x'
       exit: 2
-      stdout: ''
       stderr: |
           Error: --on does not apply to "machines pipe"
           Hint: run it on x itself: ssh x
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" machines pipe a'
       exit: 2
-      stdout: ''
       stderr: |
           Error: only a host does this; here is a linux VM
           Hint: run it on a host

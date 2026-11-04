@@ -2,6 +2,7 @@ package calls
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
@@ -43,7 +44,7 @@ var List = call.Watch[Deps, ListIn, ListOut]{
 			}
 			out := ListOut{Fleet: fleet}
 			if !in.Here && !in.Unwritten {
-				out.Unrefreshed = d.Machines.SSHBlocks(ctx, fleet)
+				out.Unrefreshed = errors.Join(d.Machines.SSHBlocks(ctx, fleet), d.Machines.Remember(ctx, fleet))
 			}
 			send(call.Update[ListOut]{Value: out})
 		}()
@@ -53,8 +54,8 @@ var List = call.Watch[Deps, ListIn, ListOut]{
 
 type CreateIn struct{ Request machines.CreateRequest }
 
-var Create = call.Call[Deps, CreateIn, machines.Created]{
-	Name: "machines.create", Where: call.InEngine, Applies: machine.Anywhere,
+var CreateWorkspace = call.Call[Deps, CreateIn, machines.Created]{
+	Name: "machines.create-workspace", Where: call.InEngine, Applies: machines.CanCreate,
 	Run: func(ctx context.Context, d Deps, in CreateIn, p call.Progress) (machines.Created, error) {
 		last := ""
 		created, err := d.Machines.Create(ctx, in.Request, func(s machines.Step) {

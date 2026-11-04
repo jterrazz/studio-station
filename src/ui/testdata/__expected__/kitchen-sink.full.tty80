@@ -67,10 +67,10 @@
 
  Fleet  3 ●  1 ○
    ● jterrazz-mac-mini  host
-   ├─ ● linux-1         lasting
+   ├─ ● linux-1         permanent
    │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
    │  └─ ● web          service
-   └─ ○ linux-2         lasting
+   └─ ○ linux-2         permanent
 
  Storage  2 ●
      tool        data   kept

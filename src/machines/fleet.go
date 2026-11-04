@@ -38,6 +38,9 @@ const (
 	Suspended VMState = "suspended"
 	Stale     VMState = "stale"
 	Broken    VMState = "broken"
+	// value: on a Mac that does not answer: as it was at its last answer,
+	// its state unknown.
+	UnknownState VMState = "unknown"
 )
 
 type VM struct {
@@ -48,8 +51,10 @@ type VM struct {
 	Resources                  Resources
 	SizeGB                     int
 	IP, Network, Guest, Detail string
-	Lent                       []string
-	CreatedAt                  time.Time
+	// value: the state its record asks for, running or stopped.
+	Want      string
+	Lent      []string
+	CreatedAt time.Time
 }
 
 type EngineView struct {
@@ -63,12 +68,18 @@ type EngineView struct {
 type HostView struct {
 	Name, User, StationVersion string
 	Here, Reachable            bool
-	Node                       Node
-	Daemon                     EngineView
-	VMs                        []VM
+	// value: when this Mac last had its answer; zero for one never heard.
+	Answered time.Time
+	Node     Node
+	Daemon   EngineView
+	VMs      []VM
 }
 
-type Fleet struct{ Hosts []HostView }
+type Fleet struct {
+	Hosts []HostView
+	// value: when it was read.
+	Read time.Time
+}
 
 type Check struct {
 	Name          string
@@ -97,6 +108,13 @@ type Created struct {
 
 type Step struct{ Label string }
 
+// value: SPEC §7.2's health steps, in order, a workspace's three.
+const (
+	StepRunning = "Running"
+	StepAddress = "Has an address"
+	StepSSH     = "SSH answers"
+)
+
 type DeleteReport struct {
 	Name     string
 	Warnings []string
@@ -105,6 +123,28 @@ type DeleteReport struct {
 type RestartEvent struct{ Phase, Detail string }
 
 type RestartReport struct {
-	Name   string
+	Name string
+	// value: a VM was restarted, its health steps passed; IP is its address.
+	VM     bool
+	IP     string
 	Waited time.Duration
+}
+
+type Edited struct {
+	Name string
+	// value: the sizes the edit asked, the others zero.
+	Changed Resources
+	// value: the VM runs, so the change waits for its next start.
+	Running bool
+}
+
+func FindVM(f Fleet, name string) (HostView, VM, bool) {
+	for _, h := range f.Hosts {
+		for _, vm := range h.VMs {
+			if vm.Name == name {
+				return h, vm, true
+			}
+		}
+	}
+	return HostView{}, VM{}, false
 }

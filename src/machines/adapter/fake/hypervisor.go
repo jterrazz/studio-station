@@ -17,12 +17,14 @@ import (
 )
 
 var (
-	ErrNoDisk   = errors.New("no such VM disk")
-	ErrNoImage  = errors.New("no such image")
-	ErrNotBoot  = errors.New("the VM does not run")
-	ErrTwoRuns  = errors.New("the VM already runs")
-	ErrHeldName = errors.New("a VM disk already has this name")
-	ErrScripted = errors.New("the hypervisor refused to boot it, as the world scripted it")
+	ErrNoDisk    = errors.New("no such VM disk")
+	ErrNoImage   = errors.New("no such image")
+	ErrNotBoot   = errors.New("the VM does not run")
+	ErrTwoRuns   = errors.New("the VM already runs")
+	ErrRunning   = errors.New("the VM is running")
+	ErrHeldName  = errors.New("a VM disk already has this name")
+	ErrScripted  = errors.New("the hypervisor refused to boot it, as the world scripted it")
+	ErrNoAddress = errors.New("the VM got no address, as the world scripted it")
 )
 
 type Hypervisor struct {
@@ -38,8 +40,14 @@ func HypervisorOf(w *world.World, mac, name string) *Hypervisor {
 	return &Hypervisor{w: w, mac: mac, name: name}
 }
 
-func (h *Hypervisor) Name() string    { return h.name }
-func (h *Hypervisor) Installed() bool { return true }
+func (h *Hypervisor) Name() string {
+	if n := h.here().Hypervisor; n != "" && n != "none" {
+		return n
+	}
+	return h.name
+}
+
+func (h *Hypervisor) Installed() bool { return h.here().Hypervisor != "none" }
 
 func (h *Hypervisor) Version(context.Context) (string, error) { return "1.0.0", nil }
 
@@ -105,6 +113,9 @@ func (h *Hypervisor) Clone(_ context.Context, from imagescontract.ImageLocation,
 			v.Guest = &guest
 		}
 	}
+	if v.Guest == nil {
+		v.Guest = &world.Guest{Fresh: true}
+	}
 	return nil
 }
 
@@ -138,7 +149,7 @@ func (h *Hypervisor) Rename(_ context.Context, from, to string) error {
 	return nil
 }
 
-func (h *Hypervisor) Boot(_ context.Context, vm string, _ contract.BootOptions) (contract.Run, error) {
+func (h *Hypervisor) Boot(_ context.Context, vm string, opts contract.BootOptions) (contract.Run, error) {
 	h.w.Lock()
 	defer h.w.Unlock()
 	v, ok := h.disk(vm)
@@ -152,6 +163,7 @@ func (h *Hypervisor) Boot(_ context.Context, vm string, _ contract.BootOptions) 
 		return nil, ErrScripted
 	}
 	v.PID, v.Ended = h.nextPID(), nil
+	v.Booted = &world.Boot{Bridged: opts.Network.Bridged, Folders: []string{}}
 	return &run{h: h, vm: vm, pid: v.PID}, nil
 }
 
@@ -210,6 +222,9 @@ func (h *Hypervisor) Delete(_ context.Context, vm string) error {
 	if !ok {
 		return ErrNoDisk
 	}
+	if v.Running() {
+		return ErrRunning
+	}
 	v.Disk, v.PID, v.Ended = false, 0, nil
 	if v.Kept == nil {
 		delete(h.here().VMs, vm)
@@ -234,6 +249,9 @@ func (h *Hypervisor) Address(_ context.Context, vm string, _ time.Duration) (net
 	v, ok := h.disk(vm)
 	if !ok || !v.Running() {
 		return netip.Addr{}, ErrNotBoot
+	}
+	if h.w.Fails("Hypervisor.Address") {
+		return netip.Addr{}, ErrNoAddress
 	}
 	if v.Address != "" {
 		return netip.ParseAddr(v.Address)
@@ -263,6 +281,8 @@ func (r *run) Ended() <-chan machines.RunEnd {
 		v, ok := r.h.here().VMs[r.vm]
 		switch {
 		case ok && v.PID == r.pid:
+		case ok && v.Ended != nil && r.h.w.Fails("Hypervisor.Ended"):
+			r.end, v.Ended = &machines.RunEnd{Reason: machines.Unknown, ExitCode: -1}, nil
 		case ok && v.Ended != nil:
 			r.end, v.Ended = v.Ended, nil
 		default:

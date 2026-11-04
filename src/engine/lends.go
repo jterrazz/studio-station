@@ -49,7 +49,7 @@ func (d *Daemon) sweepLends(ctx context.Context) {
 	}()
 }
 
-// invariant: a lasting VM stopped past a lend's until has that lend recalled
+// invariant: a VM stopped past a lend's until has that lend recalled
 // at its next start, before its guest is reported connected.
 func (d *Daemon) recallBeforeReady(ctx context.Context, vm string) {
 	if d.o.Lends == nil {

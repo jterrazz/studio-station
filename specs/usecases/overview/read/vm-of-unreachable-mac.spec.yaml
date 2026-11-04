@@ -1,0 +1,11 @@
+description: 'the Overview of a VM whose Mac does not answer says where it is, and the read still exits 0'
+env: mini-offline
+runs:
+    - command: 'machines infra'
+      exit: 0
+      stdout: |
+          ✗	infra	is on mac-mini, which does not answer
+    - command: 'machines infra --json | /usr/bin/jq -c ''[.machine, .state]'''
+      exit: 0
+      stdout: |
+          [{"name":"infra","kind":"workspace","on":"jterrazz-mac-mini","reachable":false},"unknown"]

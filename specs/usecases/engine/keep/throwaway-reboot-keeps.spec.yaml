@@ -1,0 +1,21 @@
+description: 'a throwaway workspace whose guest reboots boots again, kept, on the same reserved ports'
+env: two-macs
+runs:
+    - command: 'machines create linux-2 | /usr/bin/tail -1'
+      exit: 0
+      stdout: |
+          ●	linux-2	Created	Throwaway · 4 CPU · 4 GB · 20 GB
+    - command: 'services --json | /usr/bin/jq -c ''[.hosts[].services[] | select(.vm == "linux-2") | [.profile, .guest_port, .host_port]] | sort'''
+      exit: 0
+      stdout: |
+          [["expo",8081,40000],["vite",5173,40003]]
+    - command: 'world reboot-inside linux-2'
+      exit: 0
+    - command: 'machines --here | /usr/bin/grep linux-2'
+      exit: 0
+      stdout: |
+          ●	linux-2	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	4 GB
+    - command: 'services --json | /usr/bin/jq -c ''[.hosts[].services[] | select(.vm == "linux-2") | [.profile, .guest_port, .host_port]] | sort'''
+      exit: 0
+      stdout: |
+          [["expo",8081,40000],["vite",5173,40003]]

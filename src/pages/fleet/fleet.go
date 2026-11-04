@@ -94,7 +94,7 @@ func links(f *services.Fleet) func(host, vm string) []page.Link {
 }
 
 func Actions(r Reading) []page.Action {
-	var vms, lasting, remote, hosts []string
+	var vms, remote, hosts []string
 	if r.Machines != nil {
 		for _, h := range r.Machines.Hosts {
 			hosts = append(hosts, h.Name)
@@ -104,9 +104,6 @@ func Actions(r Reading) []page.Action {
 			for _, vm := range h.VMs {
 				vms = append(vms, vm.Name)
 				remote = append(remote, vm.Name)
-				if vm.Lifetime == machines.Lasting {
-					lasting = append(lasting, vm.Name)
-				}
 			}
 		}
 	}
@@ -121,7 +118,7 @@ func Actions(r Reading) []page.Action {
 	add(page.Action{Key: pagemachines.KeyRestart, Label: "restart", On: page.OnRow, Priority: 2, Mutates: true, Confirm: &page.Confirm{Yes: "restart", Danger: true}}, append(append([]string{}, hosts...), vms...))
 	add(page.Action{Key: pagemachines.KeyEnter, Label: "enter", On: page.OnRow, Priority: 3, Mutates: true}, remote)
 	add(page.Action{Key: pagemachines.KeyCreate, Label: "create", On: page.OnPage, Priority: 4, Mutates: true}, nil)
-	add(page.Action{Key: pagemachines.KeyStart, Label: "start/stop", On: page.OnRow, Priority: 5, Mutates: true}, lasting)
+	add(page.Action{Key: pagemachines.KeyStart, Label: "start/stop", On: page.OnRow, Priority: 5, Mutates: true}, vms)
 	add(page.Action{Key: KeyForget, Label: "forget", On: page.OnRow, Priority: 6, Mutates: true, Confirm: &page.Confirm{Yes: "forget"}}, without(remote, vms))
 	add(page.Action{Key: KeyBuild, Label: "build images", On: page.OnPage, Priority: 7, Mutates: true}, nil)
 	add(page.Action{Key: KeyProbe, Label: "probe", On: page.OnRow, Priority: 8}, remote)

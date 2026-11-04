@@ -80,6 +80,25 @@ func Hypervisor(t *testing.T, subject func(t *testing.T) Subject) {
 			t.Errorf("the adopted run ended as %q, want a reboot", end.Reason)
 		}
 	})
+	t.Run("a running VM is not deleted: the delete is refused until its run has ended", func(t *testing.T) {
+		s := subject(t)
+		created(t, s)
+		r := booted(t, s.Hypervisor)
+		if err := s.Hypervisor.Delete(t.Context(), VM); err == nil {
+			t.Fatal("a running VM was deleted")
+		}
+		if got := state(t, s.Hypervisor, VM); got != contract.DiskRunning {
+			t.Errorf("after a refused delete it reads %q, want running", got)
+		}
+		s.End(r, machines.GuestPoweroff)
+		ended(t, r)
+		if err := s.Hypervisor.Delete(t.Context(), VM); err != nil {
+			t.Fatal(err)
+		}
+		if got := names(t, s.Hypervisor); len(got) != 0 {
+			t.Errorf("after the delete it holds %v, want none", got)
+		}
+	})
 	t.Run("a renamed VM is held under its new name, a deleted one no longer", func(t *testing.T) {
 		s := subject(t)
 		created(t, s)

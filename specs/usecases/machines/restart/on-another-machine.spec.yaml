@@ -1,0 +1,14 @@
+description: 'a restart sent with --on restarts the VM of that Mac, read running again through its Overview'
+env: two-macs
+runs:
+    - command: 'machines restart infra --on mac-mini'
+      exit: 0
+      stdout: |
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
+          ●	infra	restarted
+    - command: 'machines infra --json | /usr/bin/jq -c ''[.machine.on, .state, .health]'''
+      exit: 0
+      stdout: |
+          ["jterrazz-mac-mini","running",{"running":true,"address":true,"ssh":true,"check":null}]

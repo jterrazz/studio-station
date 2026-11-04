@@ -131,7 +131,7 @@ func powerSection(r Reading) page.Section {
 
 // value: the calls the menu bar's actions make, by their calls.json names.
 const (
-	CallCreate = "machines.create"
+	CallCreate = "machines.create-workspace"
 	CallStop   = "engine.stop"
 	CallAwake  = "power.awake"
 	CallSleep  = "power.sleep"
@@ -143,7 +143,7 @@ func newVM() page.Action {
 	return page.Action{ID: ActionNewVM, Label: "New VM", On: page.OnPage, Priority: 1, Mutates: true,
 		Run: &page.Run{Call: CallCreate, In: map[string]string{"Request.Image": "linux", "Request.Network": "nat"}},
 		Form: &page.Form{Title: "New VM", Fields: []page.Field{
-			{Key: "Request.Lifetime", Label: "Lifetime", Kind: page.FieldSelect, Default: "temporary", Options: []page.Option{{Value: "temporary"}, {Value: "lasting"}}},
+			{Key: "Request.Lifetime", Label: "Lifetime", Kind: page.FieldSelect, Default: "throwaway", Options: []page.Option{{Value: "throwaway"}, {Value: "permanent"}}},
 			{Key: "Request.Resources.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4G"}, {Value: gigabytes(8), Label: "8G"}}},
 		}}}
 }

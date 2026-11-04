@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"slices"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -46,9 +47,17 @@ func (m machine) router(env kit.Env) *remote.Router {
 		Locate:  m.locate,
 		Holder:  m.holder,
 		Version: Version(),
+		Label:   m.label,
 	})
 	m.far.router = r
 	return r
+}
+
+func (m machine) label(mac string) string {
+	if short, ok := strings.CutPrefix(mac, m.host.Env.User()+"-"); ok && short != "" {
+		return short
+	}
+	return mac
 }
 
 // invariant: a bare name is a Mac when this Mac holds its host record, a VM
@@ -59,14 +68,15 @@ func (m machine) locate(name string) (coremachine.Ref, bool) {
 	case err != nil:
 		return coremachine.Ref{Name: name}, false
 	case found.Kind != catalog.Host:
-		return coremachine.Ref{Name: name, On: m.profile.Ref.Name}, true
+		return coremachine.Ref{Name: found.Name, On: m.profile.Ref.Name}, true
 	}
-	return coremachine.Ref{Name: name}, true
+	return coremachine.Ref{Name: found.Name}, true
 }
 
 // invariant: a VM of another Mac is found in that Mac's own list, asked of
 // every other Mac at once; a name none of them holds is unknown, and while a
-// Mac is silent the VM may be its own, so that silence is the answer.
+// Mac is silent the VM may be its own, so that silence is the answer: the
+// silent Mac that held it at its last answer first.
 func (m machine) holder(ctx context.Context, vm string) (string, error) {
 	r := m.far.router
 	others := m.machines(false).OtherHosts()
@@ -84,6 +94,11 @@ func (m machine) holder(ctx context.Context, vm string) (string, error) {
 	})
 	for _, mac := range others {
 		if got[mac].Err == nil && got[mac].Value {
+			return mac, nil
+		}
+	}
+	for _, mac := range others {
+		if got[mac].Err != nil && m.machines(false).Remembers(mac, vm) {
 			return mac, nil
 		}
 	}

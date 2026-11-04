@@ -12,10 +12,10 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
-const memoryCap = 75
+// value: what macOS keeps of a Mac's memory, never given to a VM (SPEC §7.1).
+const keptForMacOS = 4 << 30
 
 var ErrDaemonDown = errors.New("the engine is not running")
 
@@ -38,7 +38,7 @@ type BadNetworkError struct {
 
 func (e *BadNetworkError) Error() string {
 	if e.Bridge {
-		return "--network bridged is for macOS VMs"
+		return "--network bridged is for macOS images: a linux workspace stays behind its Mac"
 	}
 	return "unknown network \"" + e.Value + "\": nat or bridged"
 }
@@ -49,14 +49,10 @@ type (
 	Step          = model.Step
 )
 
-type NoLifetimeError struct{}
-
-func (*NoLifetimeError) Error() string { return "a VM needs a lifetime" }
-
 type BadLifetimeError struct{ Value string }
 
 func (e *BadLifetimeError) Error() string {
-	return "unknown lifetime \"" + e.Value + "\": temporary or lasting"
+	return "unknown lifetime \"" + e.Value + "\": throwaway or permanent"
 }
 
 type UnknownImageError struct{ Image string }
@@ -65,7 +61,7 @@ func (e *UnknownImageError) Error() string { return "unknown image \"" + e.Image
 
 type NoImageError struct{ Image string }
 
-func (e *NoImageError) Error() string { return "image " + e.Image + " is not built here" }
+func (e *NoImageError) Error() string { return "image " + e.Image + " is not built on This Mac" }
 
 type NoEngineError struct {
 	Hypervisor string
@@ -76,10 +72,13 @@ func (e *NoEngineError) Error() string { return e.Hypervisor + " is not installe
 
 func (e *NoEngineError) Unwrap() error { return e.Cause }
 
-type TooBigError struct{ MemoryGB, LimitGB int }
+type TooBigError struct {
+	Mac             string
+	AskedGB, LeftGB int
+}
 
 func (e *TooBigError) Error() string {
-	return strconv.Itoa(e.MemoryGB) + " GB of memory is over this host's limit of " + strconv.Itoa(e.LimitGB) + " GB"
+	return "not enough memory on " + e.Mac + ": " + strconv.Itoa(e.AskedGB) + " GB asked, " + strconv.Itoa(e.LeftGB) + " GB left for VMs"
 }
 
 type CreateFailedError struct {
@@ -103,7 +102,7 @@ func (e *BadSizeError) Error() string { return "--" + e.Flag + " \"" + e.Value +
 
 func ParseResources(cpus int, memory, disk string) (Resources, error) {
 	// invariant: --memory counts in binary units and --disk in decimal ones, as
-	// the hypervisor takes them; a bare number is gigabytes, and zero keeps the default.
+	// the hypervisor takes them; a size says its unit, and none keeps the default.
 	memoryBytes, err := parseSize("memory", memory, 1024)
 	if err != nil {
 		return Resources{}, err
@@ -112,11 +111,15 @@ func ParseResources(cpus int, memory, disk string) (Resources, error) {
 	return Resources{CPUs: cpus, MemoryBytes: memoryBytes, DiskBytes: diskBytes}, err
 }
 
+type SizeNeedsUnitError struct{ Flag, Value string }
+
+func (e *SizeNeedsUnitError) Error() string { return "\"" + e.Value + "\" needs a unit" }
+
 func parseSize(flag, value string, base int64) (int64, error) {
 	if value == "" {
 		return 0, nil
 	}
-	text, scale := strings.TrimSuffix(strings.ToUpper(strings.TrimSpace(value)), "B"), base*base*base
+	text, scale := strings.TrimSuffix(strings.ToUpper(strings.TrimSpace(value)), "B"), int64(0)
 	if text != "" {
 		if power := strings.IndexByte("KMGT", text[len(text)-1]); power >= 0 {
 			scale = base
@@ -125,6 +128,9 @@ func parseSize(flag, value string, base int64) (int64, error) {
 			}
 			text = text[:len(text)-1]
 		}
+	}
+	if _, err := strconv.ParseFloat(text, 64); err == nil && scale == 0 {
+		return 0, &SizeNeedsUnitError{Flag: flag, Value: value}
 	}
 	n, err := strconv.ParseFloat(text, 64)
 	if err != nil || n <= 0 {
@@ -142,14 +148,28 @@ func imageOf(name string) (catalog.Image, bool) {
 	return catalog.Image{}, false
 }
 
+func networkFor(img catalog.Image, asked string) (string, error) {
+	switch asked {
+	case "", NetworkNAT:
+		return NetworkNAT, nil
+	case Bridged:
+		if img.Kind != catalog.MacOS {
+			return asked, &BadNetworkError{Value: asked, Bridge: true}
+		}
+		return Bridged, nil
+	default:
+		return asked, &BadNetworkError{Value: asked}
+	}
+}
+
 func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateRequest, error) {
 	if err := s.CheckHost(); err != nil {
 		return r, err
 	}
 	switch r.Lifetime {
-	case Temporary, Lasting:
 	case "":
-		return r, &NoLifetimeError{}
+		r.Lifetime = Throwaway
+	case Throwaway, Permanent:
 	default:
 		return r, &BadLifetimeError{Value: string(r.Lifetime)}
 	}
@@ -157,27 +177,21 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if !ok {
 		return r, &UnknownImageError{Image: r.Image}
 	}
-	switch r.Network {
-	case "":
-		r.Network = NetworkNAT
-	case NetworkNAT:
-	case Bridged:
-		if img.Kind != catalog.MacOS {
-			return r, &BadNetworkError{Value: r.Network, Bridge: true}
-		}
-	default:
-		return r, &BadNetworkError{Value: r.Network}
+	network, err := networkFor(img, r.Network)
+	if err != nil {
+		return r, err
 	}
+	r.Network = network
 	if r.Name != "" && !validName(r.Name) {
 		return r, &BadNameError{Name: r.Name}
 	}
-	if _, err := s.engine.Version(ctx); err != nil {
+	if _, err = s.engine.Version(ctx); err != nil {
 		return r, &NoEngineError{Hypervisor: s.engine.Name(), Cause: err}
 	}
-	if _, _, err := s.img.Latest(ctx, r.Image); err != nil {
+	if _, _, err = s.img.Latest(ctx, r.Image); err != nil {
 		return r, err
 	}
-	held, err := s.claims(ctx)
+	held, on, err := s.claims(ctx)
 	if err != nil {
 		return r, err
 	}
@@ -185,7 +199,7 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	case r.Name == "":
 		r.Name = allocateName(r.Image, held)
 	case !nameFree(r.Name, held):
-		return r, &NameTakenError{Name: r.Name, VM: held[r.Name] == claimVM, Host: held[r.Name] == claimHost}
+		return r, &NameTakenError{Name: r.Name, VM: held[r.Name] == claimVM, Host: held[r.Name] == claimHost, On: on[r.Name]}
 	}
 	if r.Resources.CPUs == 0 {
 		r.Resources.CPUs = img.Defaults.CPUs
@@ -196,18 +210,18 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if r.Resources.DiskBytes == 0 {
 		r.Resources.DiskBytes = img.Defaults.DiskBytes
 	}
-	if limit, ok := s.memoryLimit(ctx); ok && r.Resources.MemoryBytes > limit {
-		return r, &TooBigError{MemoryGB: int(r.Resources.MemoryBytes >> 30), LimitGB: int(limit >> 30)}
+	if left, ok := s.memoryLeft(ctx); ok && r.Resources.MemoryBytes > left {
+		return r, &TooBigError{Mac: "This Mac", AskedGB: int(r.Resources.MemoryBytes >> 30), LeftGB: int(max(left, 0) >> 30)}
 	}
-	if err := s.daemonUp(ctx); err != nil {
+	if err := s.EngineUp(ctx); err != nil {
 		return r, err
 	}
 	return r, nil
 }
 
-func (s *Service) daemonUp(ctx context.Context) error {
+func (s *Service) EngineUp(ctx context.Context) error {
 	_, missing := s.h.FS.Stat(catalog.EnginePlist(s.h.Env.Home()))
-	down := &DaemonDownError{Host: s.HereName(), Installed: missing == nil}
+	down := &DaemonDownError{Host: "This Mac", Installed: missing == nil}
 	if s.daemon == nil {
 		return down
 	}
@@ -220,44 +234,62 @@ func (s *Service) daemonUp(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) claims(ctx context.Context) (map[string]claim, error) {
+// value: every name All machines holds, and for a VM's name the Mac it is
+// on, worded as the owner reads it: This Mac, or that Mac's short name.
+func (s *Service) claims(ctx context.Context) (held map[string]claim, on map[string]string, err error) {
 	fleet, err := s.Fleet(ctx, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	held := map[string]claim{}
+	held, on = map[string]claim{}, map[string]string{}
 	for _, h := range fleet.Hosts {
 		held[h.Name] = claimHost
+		mac := "This Mac"
+		if !h.Here {
+			mac = strings.TrimPrefix(h.Name, s.o.User+"-")
+		}
 		for _, vm := range h.VMs {
-			held[vm.Name] = claimVM
+			held[vm.Name], on[vm.Name] = claimVM, mac
 		}
 	}
 	cfg, err := s.prefs()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for name := range cfg.Hosts {
 		held[name] = claimHost
 	}
-	return held, nil
+	return held, on, nil
 }
 
-func (s *Service) memoryLimit(ctx context.Context) (int64, bool) {
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: "sysctl", Args: []string{"-n", "hw.memsize"}})
-	if err != nil || out.ExitCode != 0 {
+// value: the memory a new VM may take on this Mac: what it has, less what
+// macOS keeps and what its running VMs hold; unknown when the Mac does not
+// say what it has.
+func (s *Service) memoryLeft(ctx context.Context) (int64, bool) {
+	total := int64(0)
+	if s.o.Memory != nil {
+		total = s.o.Memory(ctx)
+	}
+	if total <= 0 {
 		return 0, false
 	}
-	total, err := strconv.ParseInt(strings.TrimSpace(out.Stdout), 10, 64)
-	if err != nil || total <= 0 {
-		return 0, false
+	left := total - keptForMacOS
+	_, live := s.daemonView(ctx)
+	if vms, err := s.vms(ctx, "", live); err == nil {
+		for _, vm := range vms {
+			if vm.State == Running {
+				left -= vm.Resources.MemoryBytes
+			}
+		}
 	}
-	return total * memoryCap / 100, true
+	return left, true
 }
 
 func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Step)) (Created, error) {
 	// invariant: the profiles' ports are reserved before the VM first runs, and
-	// their rendered variables go into the record, fixed for the VM's life; any
-	// failure after the clone rolls every made thing back.
+	// their rendered variables go into the record, fixed for the VM's life; a
+	// failure after the clone and before the first run rolls every made thing
+	// back, and from the first run on the VM is kept, with what failed.
 	r, err := s.CheckCreate(ctx, r)
 	if err != nil {
 		return Created{}, err
@@ -280,7 +312,7 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		Name: r.Name, Image: r.Image, Version: version, Lifetime: r.Lifetime, Network: r.Network,
 		Resources: r.Resources, CreatedAt: s.h.Clock.Now().UTC().Truncate(time.Second),
 	}
-	if r.Lifetime == Lasting {
+	if r.Lifetime == Permanent {
 		rec.Want = WantRunning
 	}
 	made := &made{}
@@ -311,19 +343,19 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 	if err = s.writeRecord(rec); err != nil {
 		return fail("the record", err)
 	}
-	say("starting it")
-	made.running = true
+	say(model.StepRunning)
 	if err = s.daemon.Do(ctx, "run", r.Name); err != nil {
-		return fail("the start", err)
+		return Created{}, s.unhealthy(ctx, r.Name, err)
 	}
-	say("first boot")
+	say(model.StepAddress)
 	addr, err := s.engine.Address(ctx, r.Name, ipWait)
 	if err != nil {
-		return fail("the first boot", err)
+		return Created{}, &UnhealthyError{Name: r.Name, Step: model.StepAddress, Detail: "none after 60 s"}
 	}
 	ip := addr.String()
+	say(model.StepSSH)
 	if err := s.firstBoot(ctx, img, r.Name, r.Lifetime); err != nil {
-		return fail("the first boot", err)
+		return Created{}, &UnhealthyError{Name: r.Name, Step: model.StepSSH, Detail: strings.TrimSpace(err.Error())}
 	}
 	if fleet, err := s.Fleet(ctx, false); err == nil {
 		_ = s.SSHBlocks(ctx, fleet)
@@ -336,6 +368,38 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		Services: reserved,
 		Env:      env,
 	}, nil
+}
+
+// invariant: once its first run is asked, a VM is kept whatever fails
+// (CR-15, CR-16): a run the hypervisor never began did not boot; one that
+// runs failed the first health step that did not pass (SPEC §7.2).
+func (s *Service) unhealthy(ctx context.Context, name string, cause error) error {
+	if s.engineState(ctx, name) != contract.DiskRunning {
+		return &DidNotBootError{Name: name, Cause: cause}
+	}
+	if _, err := s.engine.Address(ctx, name, 0); err != nil {
+		return &UnhealthyError{Name: name, Step: model.StepAddress, Detail: "none after 60 s"}
+	}
+	return &UnhealthyError{Name: name, Step: model.StepSSH, Detail: "none after 30 s"}
+}
+
+type DidNotBootError struct {
+	Name  string
+	Cause error
+}
+
+func (e *DidNotBootError) Error() string {
+	text := e.Name + " did not boot"
+	if e.Cause != nil {
+		text += ": " + strings.TrimSpace(e.Cause.Error())
+	}
+	return text
+}
+
+type UnhealthyError struct{ Name, Step, Detail string }
+
+func (e *UnhealthyError) Error() string {
+	return e.Name + " is kept, failing " + e.Step + ": " + e.Detail
 }
 
 func (s *Service) reserveProfiles(ctx context.Context, name string) (reserved []Reserved, env map[string]string, err error) {
@@ -373,14 +437,11 @@ func render(template string, r Reserved) string {
 	return strings.NewReplacer("{url}", r.URL, "{host}", r.PublicHost, "{port}", strconv.Itoa(r.HostPort)).Replace(template)
 }
 
-type made struct{ vm, record, leases, running bool }
+type made struct{ vm, record, leases bool }
 
 // invariant: the rollback is best effort and runs every step whatever fails, so a
 // half-made VM leaves as little as it can; what it reports is the create's failure.
 func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
-	if m.running {
-		_ = s.daemon.Do(ctx, "forget", name)
-	}
 	if m.leases && s.rel != nil {
 		_ = s.rel.ReleaseVM(ctx, name)
 	}

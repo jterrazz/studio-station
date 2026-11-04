@@ -4,5 +4,5 @@ runs:
     - command: 'apps --on x'
       exit: 1
       stderr: |
-          Error: cannot reach "x"
-          Hint: station machines probe x
+          Error: x does not answer
+          Hint: station machines

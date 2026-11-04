@@ -1,19 +1,14 @@
-description: 'a word the machines family does not know is refused, exit 2'
+description: 'a word the machines family does not know is a machine name, or refused with its verb, exit 2'
 runs:
     - command: 'machines status'
       exit: 2
       stderr: |
-          Error: unknown command "status" for "station machines"
-          Hint: run station machines --help
+          Error: no machine named "status"
+          Hint: station machines
     - command: 'machines remove x'
       exit: 2
       stderr: |
           Error: unknown command "remove" for "station machines"
-          Hint: run station machines --help
-    - command: 'machines ssh x'
-      exit: 2
-      stderr: |
-          Error: unknown command "ssh" for "station machines"
           Hint: run station machines --help
     - command: 'machines shell x'
       exit: 2

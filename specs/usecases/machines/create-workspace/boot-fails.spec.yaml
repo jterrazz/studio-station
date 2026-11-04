@@ -1,0 +1,17 @@
+description: 'a create whose boot fails keeps the VM, says it did not boot, and offers start and delete'
+env: two-macs
+runs:
+    - command: 'world fault Hypervisor.Boot'
+      exit: 0
+    - command: 'machines create'
+      exit: 1
+      stderr: |
+          Error: linux-2 did not boot: the hypervisor refused to boot it, as the world scripted it
+          Hint: station machines start linux-2, or station machines delete linux-2
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
+          ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
+          ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
+          ○	linux-2	Workspace	jterrazz-macbook-pro	Stopped · throwaway	4 CPU	4 GB

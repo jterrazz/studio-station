@@ -9,13 +9,13 @@ runs:
             "type": "refused",
             "code": null,
             "subject": null,
-            "message": "unknown machine \"nope\"",
-            "hint": "run station machines for the fleet",
+            "message": "no machine named \"nope\"",
+            "hint": "station machines",
             "fix": null
           }
       stderr: |
-          Error: unknown machine "nope"
-          Hint: run station machines for the fleet
+          Error: no machine named "nope"
+          Hint: station machines
     - command: 'frobnicate --json'
       exit: 2
       stdout: |

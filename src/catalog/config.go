@@ -82,8 +82,10 @@ type ConfigItem struct {
 	Places                  []MachineKind
 	Requires                string
 	Inputs                  []Input
-	Effect                  Effect
-	Interactive             bool
+	// value: how this machine applies it; never on the wire, so a far
+	// Mac's report of the item decodes here (it holds an interface).
+	Effect      Effect `json:"-"`
+	Interactive bool
 	// value: it opens System Settings for the owner to finish it.
 	Guided     bool
 	NeedsRoot  bool

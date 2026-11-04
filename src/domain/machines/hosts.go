@@ -5,6 +5,7 @@ import (
 	"maps"
 	"sort"
 	"strings"
+	"time"
 
 	model "github.com/jterrazz/studio-station/src/machines"
 
@@ -29,6 +30,13 @@ func (s *Service) lookup(name string) (Machine, error) {
 	for _, r := range records {
 		if r.Name == name {
 			return Machine{Name: name, Kind: kindOfImage(r.Image), Host: cfg.Here, User: s.vmUser(cfg), Lifetime: r.Lifetime}, nil
+		}
+	}
+	// value: a Mac answers to its short name too, the one All machines shows
+	// (mac-mini for jterrazz-mac-mini).
+	if full := s.o.User + "-" + name; s.o.User != "" {
+		if h, ok := cfg.Hosts[full]; ok {
+			return Machine{Name: full, Kind: catalog.Host, Here: full == cfg.Here, User: h.User, Key: h.Key}, nil
 		}
 	}
 	return Machine{}, &UnknownMachineError{Name: name}
@@ -181,4 +189,28 @@ func (s *Service) Names() []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+func (s *Service) Remember(_ context.Context, f Fleet) error {
+	cfg, err := s.prefs()
+	if err != nil {
+		return err
+	}
+	changed := false
+	for _, h := range f.Hosts {
+		known, ok := cfg.Hosts[h.Name]
+		if h.Here || !h.Reachable || !ok {
+			continue
+		}
+		seen := make([]model.SeenVM, 0, len(h.VMs))
+		for _, vm := range model.Ordered(h.VMs) {
+			seen = append(seen, model.SeenVM{Name: vm.Name, Lifetime: vm.Lifetime, CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes})
+		}
+		known.Answered, known.VMs = s.h.Clock.Now().UTC().Truncate(time.Second), seen
+		cfg.Hosts[h.Name], changed = known, true
+	}
+	if !changed {
+		return nil
+	}
+	return s.p.Hosts.Set(cfg.Hosts)
 }

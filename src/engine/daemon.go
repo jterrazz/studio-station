@@ -465,7 +465,7 @@ func (d *Daemon) stopAll(ctx context.Context) []Stopped {
 		go func() {
 			defer wg.Done()
 			s := Stopped{Name: r.Name, Lifetime: string(r.Lifetime), Result: ResultStopped}
-			err := d.halt(ctx, v, r.Lifetime == machines.Lasting)
+			err := d.halt(ctx, v, true)
 			if err == nil && d.m.EngineRunning(ctx, r.Name) {
 				err = errors.New("the engine still runs it")
 			}

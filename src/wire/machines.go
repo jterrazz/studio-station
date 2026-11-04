@@ -3,22 +3,25 @@ package wire
 import (
 	"context"
 	"errors"
-	"github.com/jterrazz/studio-station/src/catalog"
 	"path/filepath"
 	"strconv"
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	machinescmd "github.com/jterrazz/studio-station/src/surface/cli/machines"
 	machinesadd "github.com/jterrazz/studio-station/src/surface/cli/machines/add"
 	machinescreate "github.com/jterrazz/studio-station/src/surface/cli/machines/create"
 	machinesdelete "github.com/jterrazz/studio-station/src/surface/cli/machines/delete"
+	machinesedit "github.com/jterrazz/studio-station/src/surface/cli/machines/edit"
 	machinesforget "github.com/jterrazz/studio-station/src/surface/cli/machines/forget"
 	machinespipe "github.com/jterrazz/studio-station/src/surface/cli/machines/pipe"
 	machinesprobe "github.com/jterrazz/studio-station/src/surface/cli/machines/probe"
@@ -27,6 +30,7 @@ import (
 	machinesstop "github.com/jterrazz/studio-station/src/surface/cli/machines/stop"
 	machinessupervise "github.com/jterrazz/studio-station/src/surface/cli/machines/supervise"
 	machinesunlock "github.com/jterrazz/studio-station/src/surface/cli/machines/unlock"
+	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
 )
 
 const (
@@ -44,13 +48,25 @@ func (m machine) machines(_ bool) *machines.Service {
 		Here:       m.kind,
 		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.host.Env.User(),
-		Version:   Version(),
+		Version:   m.stationVersion(),
 		Ask:       m.askFleet,
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
 		Unlocker:  m.unlocker(knownHosts),
 		SSHConfig: m.sshConfig(knownHosts),
+		Memory:    m.memory,
 	})
+}
+
+// value: the memory this Mac has, as it reads itself (its world's in the
+// spec build).
+func (m machine) memory(ctx context.Context) int64 {
+	self := selfOf(m.host)
+	if m.world != nil {
+		self = m.world.self()
+	}
+	_, _, _, hw, _ := self.Read(ctx)
+	return hw.Memory
 }
 
 func (m machine) unlocker(knownHosts string) contract.Unlocker {
@@ -80,14 +96,20 @@ func (m machine) port(fallback int, names ...string) int {
 
 func machinesCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.machines(env.Interactive)
-	return machinescmd.Command(machinescmd.Deps{Here: m.where}, env,
+	overview := func(ctx context.Context, io kit.IO) error {
+		return overviewcmd.Run(ctx, m.overviewDeps(false), env, false, io)
+	}
+	return machinescmd.Command(machinescmd.Deps{Here: m.where, Names: service.Names, Overview: overview}, env,
 		machinesadd.Command(machinesadd.Deps{Here: m.where}, env),
 		machinesforget.Command(machinesforget.Deps{Names: service.Names, Here: m.where}, env),
 		machinescreate.Command(machinescreate.Deps{
 			Resources: machines.ParseResources, Check: createCheck(service),
 			NotBuilt: func(image string) error { return &machines.NoImageError{Image: image} },
-			Fleet:    func(ctx context.Context) (machines.Fleet, error) { return service.Fleet(ctx, false) },
-			Here:     m.where, Ask: createAsker(env),
+			Admit: func() error {
+				return call.Gate(call.Meta{Name: machinescalls.CreateWorkspace.Name, Applies: machinescalls.CreateWorkspace.Applies}, m.profile)
+			},
+			Fleet: func(ctx context.Context) (machines.Fleet, error) { return service.Fleet(ctx, false) },
+			Here:  m.where, Ask: createAsker(env),
 		}, env),
 		machinesstart.Command(machinesstart.Deps{Names: service.Names, Here: m.where}, env),
 		machinesstop.Command(machinesstop.Deps{Names: service.Names, Here: m.where}, env),
@@ -96,8 +118,10 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 			return err == nil && r.Kind != catalog.Host
 		}, Here: m.where}, env),
 		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
-		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Here: m.where}, env),
+		machinesedit.Command(machinesedit.Deps{Names: service.Names, Resources: machines.ParseResources, Here: m.where}, env),
+		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Overview: overview}, env),
 		machinesunlock.Command(machinesunlock.Deps{Names: service.Names}, env),
+		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),
 		machinessupervise.Command(env),
 		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{service}}, env),
 	)
@@ -138,10 +162,22 @@ func (c machineCalls) CheckRestart(name string) (bool, error) {
 	if r.Kind == catalog.Host {
 		return false, nil
 	}
-	if r.Lifetime == machines.Temporary {
-		return true, &machines.TemporaryRestartError{Name: name}
-	}
 	return true, nil
+}
+
+func (c machineCalls) Running(ctx context.Context, name string) (bool, error) {
+	fleet, err := c.Fleet(ctx, true)
+	if err != nil {
+		return false, err
+	}
+	for _, h := range fleet.Hosts {
+		for _, vm := range h.VMs {
+			if vm.Name == name {
+				return vm.State == machines.Running, nil
+			}
+		}
+	}
+	return false, &machines.UnknownMachineError{Name: name}
 }
 
 func (c machineCalls) Restart(ctx context.Context, name string) (machines.RestartReport, error) {
