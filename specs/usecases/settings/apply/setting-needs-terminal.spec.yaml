@@ -10,3 +10,8 @@ runs:
       exit: 0
       stdout: |
           not-applied
+    - command: 'settings apply ssh-key </dev/null'
+      exit: 2
+      stderr: |
+          Error: ssh-key asks a value: run it on a terminal
+          Hint: station settings apply ssh-key

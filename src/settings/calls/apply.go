@@ -108,7 +108,7 @@ func targetsOf(ctx context.Context, d Deps, in ApplyIn, off map[string]bool) ([]
 		if err != nil {
 			return nil, err
 		}
-		if asks(it) && len(it.Inputs) > 0 && !in.Interactive && in.Values[name] == nil {
+		if asks(it) && !in.Interactive && in.Values[name] == nil {
 			return nil, fail.New(fail.NeedsTerminal, NeedsTerminal, name, nil)
 		}
 		if err := d.Settings.Admit(name, in.Interactive || in.Values[name] != nil); err != nil {
