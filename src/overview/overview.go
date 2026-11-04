@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/ports"
 )
@@ -22,7 +23,7 @@ type Snapshot[Tool, Item, Stray any] struct {
 	Config      []Item
 	Setup       Setup
 	Identity    []Check
-	Background  []Job
+	Background  []background.Task
 	Gateways    []Check
 	Tailnet     ports.Status
 	Power       PowerState

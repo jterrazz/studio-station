@@ -16,6 +16,7 @@ runs:
       stdout: |
           accounts
           apps
+          background
           disk
           overview
           power

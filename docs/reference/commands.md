@@ -5,7 +5,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Section        | Answers                                                 |
 | -------------- | ------------------------------------------------------- |
 | Rules          | What holds for every command                            |
-| Here           | `overview`, `apps`, `settings`, `disk`                  |
+| Here           | `overview`, `apps`, `settings`, `disk`, `background`    |
 | The fleet      | `machines`, `services`, `images`, `accounts`, `tailnet` |
 | Shortcuts      | `run git` and `run docker`                              |
 | The binary     | `setup`, `--version`, `help`                            |
@@ -13,7 +13,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Plumbing       | The hidden commands the machine runs for itself         |
 | Exit codes     | What 0, 1, 2 and 130 mean                               |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `services`, `tailnet`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `services`, `tailnet`, `accounts`, `background`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
@@ -77,6 +77,15 @@ station disk move <folder> # move a misplaced folder where its app's own config 
 ```
 
 `free` and `move` ask nothing: nothing is lost. `erase` is always one app, its name typed, and refuses while the app runs or on a Never touched row. A stale VM goes with `station machines delete`, an old image version with `station images delete`. The v2 `station storage`, `storage clean` and `storage reset` are hidden aliases for one release. See [Disk](disk.md).
+
+### `station background`
+
+```sh
+station background [--all] [--json] # every non-Apple launchd job: Failing, Orphans, then Station, Known apps, Unknown folded
+station background remove <label> [--yes] # a task of your own: boot it out and delete its plist
+```
+
+An orphan is a task whose program is missing or whose app is gone. `remove` asks on a terminal and needs `--yes` off one; it takes only a user-scope task: a root one is refused, exit 2, with the command to run yourself (station never runs sudo), and the engine's own job is refused with `station engine stop`. A Linux workspace has no job manager station reads, so `--on` one is refused; a macOS workspace lists its own launchd tasks. `--json` is `station.background.list/v1`.
 
 ### `station power`
 

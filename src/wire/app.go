@@ -110,6 +110,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		tailnetCommand(kenv, here),
 		servicesCommand(kenv, here),
 		accountsCommand(kenv, here),
+		backgroundCommand(kenv, here),
 		retiredDaemonCommand(kenv, here),
 		guestCommand(kenv, here),
 		engineCommand(kenv, here),

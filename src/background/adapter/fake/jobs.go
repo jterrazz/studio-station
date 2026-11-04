@@ -57,12 +57,35 @@ func (j *Jobs) failed(verb string, r contract.Ref) error {
 func (j *Jobs) List(context.Context) ([]background.Job, error) {
 	j.w.Lock()
 	defer j.w.Unlock()
-	jobs := make([]background.Job, 0, len(j.here().Jobs))
-	for _, job := range j.here().Jobs {
-		jobs = append(jobs, job.Job)
+	m := j.here()
+	jobs := make([]background.Job, 0, len(m.Jobs)+1)
+	for label, job := range m.Jobs {
+		if label != catalog.EngineLabel {
+			jobs = append(jobs, job.Job)
+		}
+	}
+	if j.setUp() {
+		jobs = append(jobs, j.engineJob())
 	}
 	slices.SortFunc(jobs, func(a, b background.Job) int { return strings.Compare(a.Label, b.Label) })
 	return jobs, nil
+}
+
+// value: the pid the engine's job reads while it runs.
+const enginePID = 812
+
+// value: the engine's job as the job manager lists it: loaded and running
+// while the engine runs, its definition where setup wrote it.
+func (j *Jobs) engineJob() background.Job {
+	m := j.here()
+	job := background.Job{Label: catalog.EngineLabel, Scope: background.ScopeUser, File: catalog.EnginePlist("~"), ProgramExists: true, OwnerExists: true}
+	if written := m.Jobs[catalog.EngineLabel]; written != nil {
+		job.File, job.Program = written.File, written.Program
+	}
+	if m.EngineRuns() {
+		job.Loaded, job.Running, job.PID = true, true, enginePID
+	}
+	return job
 }
 
 // invariant: the engine's job is its Mac's engine: it runs while the world

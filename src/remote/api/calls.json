@@ -109,6 +109,28 @@
       "in": "UpdateIn"
     },
     {
+      "name": "background.list",
+      "schema": "station.background.list/v1",
+      "section": "background",
+      "where": "at-target",
+      "in": "ListIn"
+    },
+    {
+      "name": "background.remove",
+      "schema": "station.background.remove/v1",
+      "section": "background",
+      "where": "at-target",
+      "confirm": "remove",
+      "errors": [
+        "background.is-the-engine",
+        "background.root-scope",
+        "background.unknown",
+        "confirm.yes-needed"
+      ],
+      "in": "RemoveIn",
+      "out": "Task"
+    },
+    {
       "name": "disk.erase",
       "schema": "station.disk.erase/v1",
       "section": "disk",

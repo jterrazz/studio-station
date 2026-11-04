@@ -1,13 +1,13 @@
 package home
 
 import (
-	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
+	pagebackground "github.com/jterrazz/studio-station/src/pages/background"
 )
 
 func backgroundColumns() []page.Column {
@@ -20,13 +20,13 @@ func backgroundColumns() []page.Column {
 	}
 }
 
-func groups() []overview.JobGroup {
-	return []overview.JobGroup{overview.GroupStation, overview.GroupKnown, overview.GroupUnknown, overview.GroupOrphan}
+func groups() []background.Group {
+	return []background.Group{background.GroupStation, background.GroupKnown, background.GroupUnknown, background.GroupOrphan}
 }
 
 // invariant: the station group is always drawn, holding the Empty when this
 // Mac has no station agent, so its absence is seen rather than guessed.
-func backgroundSection(jobs []overview.Job) page.Section {
+func backgroundSection(jobs []background.Task) page.Section {
 	var items []page.Item
 	for _, g := range groups() {
 		var children []page.Item
@@ -37,7 +37,7 @@ func backgroundSection(jobs []overview.Job) page.Section {
 			}
 		}
 		if len(children) == 0 {
-			if g != overview.GroupStation {
+			if g != background.GroupStation {
 				continue
 			}
 			children = append(children, page.Item{Empty: &page.Empty{Noun: "background jobs"}})
@@ -47,25 +47,9 @@ func backgroundSection(jobs []overview.Job) page.Section {
 	return page.Section{ID: "background", Title: "Background", Columns: backgroundColumns(), Items: items, PipeCounts: true}
 }
 
-func runOf(j overview.Job) page.Value {
-	switch j.Run {
-	case overview.JobRunning:
-		return page.Texts("running", "pid "+strconv.Itoa(j.PID))
-	case overview.JobFailing:
-		return page.Texts("failing", "last exit "+strconv.Itoa(j.Exit))
-	case overview.JobUnread:
-		return page.Text("?")
-	case overview.JobIdle, overview.JobNotLoaded:
-	}
-	if j.Group == overview.GroupStation && j.Run == overview.JobNotLoaded {
-		return page.Text("stopped")
-	}
-	return page.Text(string(j.Run))
-}
-
-func jobRow(j overview.Job) page.Row {
+func jobRow(j background.Task) page.Row {
 	r := page.Row{ID: j.Label, Label: j.Label, Mark: pages.MarkOf(j.State),
-		Cells: []page.Value{page.Text(string(j.Group)), runOf(j), page.Text(j.Scope), page.Text(j.Owner)}}
+		Cells: []page.Value{page.Text(string(j.Group)), pagebackground.State(j), page.Text(j.Scope), page.Text(j.Owner)}}
 	if j.Plist != "" {
 		r.Detail = page.Path(j.Plist)
 	}
@@ -75,13 +59,13 @@ func jobRow(j overview.Job) page.Row {
 		}
 	}
 	switch {
-	case j.Run == overview.JobFailing:
+	case j.Run == background.Failing:
 		r.Reason = page.Failing
-	case j.Group == overview.GroupOrphan:
+	case j.Group == background.GroupOrphan:
 		r.Reason = page.Orphan
-	case j.Run == overview.JobUnread:
+	case j.Run == background.Unread:
 		r.Reason = page.Late
-	case j.Group == overview.GroupStation && j.Run == overview.JobNotLoaded:
+	case j.Group == background.GroupStation && j.Run == background.NotLoaded:
 		r.Reason = page.Stopped
 	}
 	switch {
@@ -89,7 +73,7 @@ func jobRow(j overview.Job) page.Row {
 		r.Hint = &page.Hint{Command: j.Removal, External: true}
 	case j.Plist == "" && r.Reason != "":
 		r.Detail = page.Text("managed by " + j.Owner + ", remove it from the app")
-	case j.Group == overview.GroupStation && j.Run == overview.JobNotLoaded:
+	case j.Group == background.GroupStation && j.Run == background.NotLoaded:
 		r.Hint = page.Cmd("station setup")
 	}
 	return r
@@ -105,30 +89,30 @@ func shortLabel(label string) string {
 	return label
 }
 
-func jobAction(j overview.Job) page.Row {
+func jobAction(j background.Task) page.Row {
 	r := jobRow(j)
 	r.ID, r.Label, r.Short, r.Cells = "background/"+j.Label, shortLabel(j.Label), "", nil
 	switch {
-	case j.Run == overview.JobFailing:
-		r.Detail = runOf(j)
-	case j.Group == overview.GroupOrphan && j.Owner != "":
+	case j.Run == background.Failing:
+		r.Detail = pagebackground.State(j)
+	case j.Group == background.GroupOrphan && j.Owner != "":
 		r.Detail = page.Text("orphan: " + j.Owner + " is gone")
-	case j.Group == overview.GroupOrphan:
+	case j.Group == background.GroupOrphan:
 		r.Detail = page.Text("orphan: its program is missing")
 	case j.Plist == "":
 	default:
-		r.Detail = runOf(j)
+		r.Detail = pagebackground.State(j)
 	}
 	return r
 }
 
-func backgroundValue(jobs []overview.Job) page.Value {
+func backgroundValue(jobs []background.Task) page.Value {
 	failing, orphans := 0, 0
 	for _, j := range jobs {
-		if j.Run == overview.JobFailing {
+		if j.Run == background.Failing {
 			failing++
 		}
-		if j.Group == overview.GroupOrphan {
+		if j.Group == background.GroupOrphan {
 			orphans++
 		}
 	}
@@ -149,7 +133,7 @@ func backgroundValue(jobs []overview.Job) page.Value {
 	return page.List(parts...)
 }
 
-func backgroundMark(jobs []overview.Job) page.Mark {
+func backgroundMark(jobs []background.Task) page.Mark {
 	m := page.OK
 	for _, j := range jobs {
 		switch j.State {

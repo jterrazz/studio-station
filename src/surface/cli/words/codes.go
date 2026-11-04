@@ -7,6 +7,7 @@ import (
 	"github.com/jterrazz/studio-station/src/accounts"
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
+	backgroundcalls "github.com/jterrazz/studio-station/src/background/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/confirm"
@@ -118,6 +119,15 @@ func Codes() map[fail.Code]Wording {
 		},
 		accountscalls.ToServer: func(e *fail.Error) (string, string) {
 			return e.Subject + " is a server: station shares no account with it", "give it its secrets with your own tooling"
+		},
+		backgroundcalls.Unknown: func(e *fail.Error) (string, string) {
+			return "no background task \"" + e.Subject + "\"", "station background"
+		},
+		backgroundcalls.RootScope: func(e *fail.Error) (string, string) {
+			return e.Subject + " runs as root: station never runs sudo", e.Detail["command"]
+		},
+		backgroundcalls.IsTheEngine: func(*fail.Error) (string, string) {
+			return "that is station's engine", "station engine stop"
 		},
 		settingscalls.Unknown: func(e *fail.Error) (string, string) {
 			return "no setting named \"" + e.Subject + "\"", "station settings"

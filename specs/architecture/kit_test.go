@@ -416,7 +416,7 @@ func pageStates() []string { return []string{"loading", "empty", "error", "full"
 // family is checked because the spec lists it, not because a file exists.
 func pageFamilies() []string {
 	return []string{
-		"home", "home-all", "apps", "settings", "disk", "fleet", "machines", "images", "tailnet", "services",
+		"home", "home-all", "apps", "settings", "background", "disk", "fleet", "machines", "images", "tailnet", "services",
 		"outcome-apps-install", "outcome-settings-apply", "outcome-disk-free", "setup", "run", "kitchen-sink", "accounts", "outcome-stop", "outcome-start", "engine", "power", "outcome-power", "menubar",
 	}
 }

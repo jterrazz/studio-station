@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/pages"
@@ -54,7 +55,7 @@ type jobJSON struct {
 	Removal string `json:"removal"`
 }
 
-func jobs(in []overview.Job) []jobJSON {
+func jobs(in []background.Task) []jobJSON {
 	out := make([]jobJSON, 0, len(in))
 	for _, j := range in {
 		out = append(out, jobJSON{Label: j.Label, Group: string(j.Group), State: strings.ReplaceAll(string(j.Run), " ", "-"), Mark: string(pages.MarkOf(j.State)),
