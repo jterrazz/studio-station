@@ -124,7 +124,7 @@ func reboot(w *World, args []string) error {
 		return err
 	}
 	for _, v := range m.VMs {
-		v.PID, v.Ended = 0, nil
+		v.Down(w.Now, nil)
 	}
 	if m.Engine != nil {
 		m.Engine.Stopped, m.Engine.StartedAt = false, w.Now
@@ -182,7 +182,7 @@ func ended(end machines.RunEnd) func(w *World, args []string) error {
 		if !v.Running() {
 			return fmt.Errorf("%s does not run", args[0])
 		}
-		v.PID, v.Ended = 0, &end
+		v.Down(w.Now, &end)
 		return nil
 	}
 }

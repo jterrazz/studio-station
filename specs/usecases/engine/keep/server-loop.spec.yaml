@@ -47,6 +47,10 @@ runs:
       exit: 0
       stdout: |
           ["running",6,60]
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].vms.infra | ((.up_at | fromdate) - (.down_at | fromdate)) as $down | [$down >= 60, $down <= 61]'' world.json'
+      exit: 0
+      stdout: |
+          [true,true]
     - command: '--version >/dev/null; /usr/bin/jq -c ''[.told[]?.Text]'' world.json'
       exit: 0
       stdout: |
