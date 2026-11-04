@@ -9,9 +9,9 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
+	pageports "github.com/jterrazz/studio-station/src/pages/ports"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
-	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 )
 
 const schema = "station.status/v1"
@@ -30,7 +30,7 @@ type SnapshotJSON struct {
 	Identity    []checkJSON             `json:"identity"`
 	Background  []jobJSON               `json:"background"`
 	Gateways    []checkJSON             `json:"gateways"`
-	Tailnet     pagetailnet.ObjectJSON  `json:"tailnet"`
+	Tailnet     pageports.TailnetJSON   `json:"tailnet"`
 	Power       *powerJSON              `json:"power,omitempty"`
 }
 
@@ -205,7 +205,7 @@ func SnapshotContract(s Overview) SnapshotJSON {
 		Identity:   checks(s.Identity),
 		Background: jobs(s.Background),
 		Gateways:   checks(s.Gateways),
-		Tailnet:    pagetailnet.ObjectOf(s.Tailnet),
+		Tailnet:    pageports.TailnetObject(s.Tailnet),
 	}
 	if s.Machine.Registered {
 		name := s.Machine.Name

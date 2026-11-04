@@ -25,7 +25,6 @@ func callWordsTolerated() map[string][]string {
 		"disk":     {"storage"},
 		"awake":    {"power"},
 		"accounts": {"secrets"},
-		"ports":    {"services", "tailnet"},
 	}
 }
 

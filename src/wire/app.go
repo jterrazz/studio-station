@@ -106,8 +106,6 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		machinesCommand(kenv, here),
 		imagesCommand(kenv, here),
 		secretsCommand(kenv, here),
-		tailnetCommand(kenv, here),
-		servicesCommand(kenv, here),
 		accountsCommand(kenv, here),
 		retiredDaemonCommand(kenv, here),
 		guestCommand(kenv, here),
@@ -118,6 +116,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	}
 	commands = append(commands, engineAliases(kenv, here)...)
 	commands = append(commands, settingsAliases(kenv, here)...)
+	commands = append(commands, portsCommands(kenv, here)...)
 	if session != nil {
 		commands = append(commands, session.command())
 	}

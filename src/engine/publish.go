@@ -52,16 +52,16 @@ func (d *Daemon) busy(p int) bool {
 	return false
 }
 
-func asOp(err error) *OpError {
-	var full *services.RangeFullError
-	var perVM *services.MaxPerVMError
+func asOp(err error) error {
+	var full *ports.RangeFull
+	var perVM *ports.VMFull
 	switch {
 	case errors.As(err, &full):
-		return fault("range_full", err.Error(), "station services release <vm>:<port>")
+		return fault("range_full", err.Error(), "station ports stop-sharing <vm> <port>")
 	case errors.As(err, &perVM):
-		return fault("max_per_vm", err.Error(), "station services release <vm>:<port>")
+		return perVM.Refusal()
 	}
-	return fault("internal", err.Error(), "station services")
+	return fault("internal", err.Error(), "station ports")
 }
 
 func (d *Daemon) svcOf(vm string, port int) *svc {
@@ -97,7 +97,7 @@ func (d *Daemon) apply(ctx context.Context, s *svc, acts []services.Action) {
 
 func (d *Daemon) listen(ctx context.Context, vm string, port int, ip, process string) {
 	p := d.policy()
-	if p.Ignores(port) {
+	if p.Ignores(port) || p.Stopped(vm, port) {
 		return
 	}
 	d.mu.Lock()
@@ -196,14 +196,14 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 	s.detail, s.serveNote, s.refused = "", "", false
 	i := d.leaseIndex(s.vm, s.port)
 	if i < 0 {
-		l, err := services.Allocate(p, d.leases, s.vm, s.port, d.busy)
+		l, err := ports.Reserve(p, d.leases, s.vm, s.port, d.busy)
 		if err != nil {
 			s.st.Phase, s.refused, s.detail = services.Refused, true, err.Error()
 			return
 		}
 		l.ReservedAt = d.h.Clock.Now().UTC().Truncate(time.Second)
 		l.LastSeenAt = l.ReservedAt
-		if pr, ok := services.ProfileOf(s.port); ok {
+		if pr, ok := ports.ProfileOf(s.port); ok {
 			l.HTTP = &pr.HTTP
 		}
 		d.leases = append(d.leases, l)
@@ -220,7 +220,7 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 		}
 		was := lease.HostPort
 		others := append(append([]services.Lease(nil), d.leases[:i]...), d.leases[i+1:]...)
-		moved, allocErr := services.Allocate(p, others, s.vm, s.port, func(hp int) bool { return hp == was || d.busy(hp) })
+		moved, allocErr := ports.Reserve(p, others, s.vm, s.port, func(hp int) bool { return hp == was || d.busy(hp) })
 		if allocErr != nil {
 			s.st.Phase, s.refused, s.detail = services.Refused, true, allocErr.Error()
 			return
@@ -384,7 +384,7 @@ func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View 
 			v.State = services.Refused
 		case services.None, services.Waiting, services.Gone, services.Unknown:
 		}
-		v.Process = s.process
+		v.Process, v.Bind = s.process, s.ip
 		v.Detail = services.JoinDetail(services.JoinDetail(s.detail, s.serveNote), v.Detail)
 		if d.issuing && s.served && l.HTTP != nil && *l.HTTP {
 			v.Detail = services.JoinDetail(v.Detail, issuingDetail)
@@ -436,14 +436,14 @@ func (d *Daemon) reserve(ctx context.Context, vm string, port int, pinned bool, 
 	p := d.policy()
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	l, err := services.Allocate(p, d.leases, vm, port, d.busy)
+	l, err := ports.Reserve(p, d.leases, vm, port, d.busy)
 	if err != nil {
 		return services.View{}, asOp(err)
 	}
 	if i := d.leaseIndex(vm, port); i < 0 {
 		l.ReservedAt = d.h.Clock.Now().UTC().Truncate(time.Second)
 		l.Pinned, l.Profile = pinned, profile
-		if pr, ok := services.ProfileOf(port); ok && profile != "" {
+		if pr, ok := ports.ProfileOf(port); ok && profile != "" {
 			l.HTTP = &pr.HTTP
 		}
 		d.leases = append(d.leases, l)
@@ -456,6 +456,9 @@ func (d *Daemon) reserve(ctx context.Context, vm string, port int, pinned bool, 
 		s.st, acts = services.Next(s.st, services.EvListen, d.h.Clock.Now())
 		d.apply(ctx, s, acts)
 	}
+	if d.self.Backend != ports.Running {
+		return services.View{}, ports.SignedOut(d.m.HereName())
+	}
 	return d.view(l, s, p.HTTPS), nil
 }
 
@@ -464,7 +467,7 @@ func (d *Daemon) release(ctx context.Context, vm string, port int) (services.Lea
 	defer d.mu.Unlock()
 	i := d.leaseIndex(vm, port)
 	if i < 0 {
-		return services.Lease{}, fault("not_running", (&services.NoLeaseError{VM: vm, Port: port}).Error(), "station services")
+		return services.Lease{}, services.NotFound(services.Target{VM: vm, Port: port})
 	}
 	l := d.leases[i]
 	if s, ok := d.svcs[key(vm, port)]; ok {

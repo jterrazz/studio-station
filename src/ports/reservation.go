@@ -33,4 +33,6 @@ type PortsGroup struct {
 	IgnoredPorts []int  `json:"ignored_ports,omitempty"`
 	MinPort      int    `json:"min_port,omitempty"`
 	HTTPS        string `json:"https,omitempty"`
+	// value: the ports the owner stopped sharing, as <vm>:<port>.
+	NotShared []string `json:"not_shared,omitempty"`
 }

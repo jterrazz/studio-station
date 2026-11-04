@@ -29,6 +29,8 @@ var Profiles = []Profile{
 	{Name: "vite", Port: 5173, HTTP: true, Env: []ProfileEnv{{Name: "__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS", Value: "{host}"}}},
 }
 
+const TailnetProduct = "Tailscale" // value: the product that carries a share, as the owner reads its name.
+
 const ServeRow = "Tailscale Serve" // value: the row that says whether the tailnet serves this host's VMs.
 
 var SystemListeners = []string{"rapportd", "ControlCenter", "IPNExtension", "mDNSResponder", "launchd", "systemd"} // value: the processes whose listening port is the system's own: noise in a developer's list.

@@ -25,15 +25,17 @@ type Target struct {
 }
 
 type ServiceView struct {
-	VM         string     `json:"vm"`
-	GuestPort  int        `json:"guest_port"`
-	HostPort   int        `json:"host_port"`
-	State      Phase      `json:"state"`
-	Process    string     `json:"process"`
-	HTTP       bool       `json:"http"`
-	Pinned     bool       `json:"pinned"`
-	Profile    string     `json:"profile"`
-	URLs       URLSet     `json:"urls"`
+	VM        string `json:"vm"`
+	GuestPort int    `json:"guest_port"`
+	HostPort  int    `json:"host_port"`
+	State     Phase  `json:"state"`
+	Process   string `json:"process"`
+	HTTP      bool   `json:"http"`
+	Pinned    bool   `json:"pinned"`
+	Profile   string `json:"profile"`
+	URLs      URLSet `json:"urls"`
+	// value: the address it listens on inside its VM, as its guest reports it.
+	Bind       string     `json:"bind"`
 	LastSeenAt *time.Time `json:"last_seen_at"`
 	Detail     string     `json:"detail"`
 }
@@ -69,4 +71,11 @@ type Range struct {
 type Fleet struct {
 	Schema string         `json:"schema"`
 	Hosts  []HostServices `json:"hosts"`
+}
+
+type Listing struct {
+	Fleet Fleet `json:"fleet"`
+	// value: this Mac's node on the tailnet, zero inside a VM: its Mac's
+	// sharing is said by each of its rows.
+	Tailnet Status `json:"tailnet"`
 }

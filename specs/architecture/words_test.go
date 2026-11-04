@@ -63,7 +63,6 @@ func wordsTolerated() map[string][]string {
 		"surface/cli/machines/restart": {"fdesetup"},
 		"surface/cli/run":              {"docker"},
 		"surface/cli/run/docker":       {"docker"},
-		"surface/cli/tailnet":          {"tailscale"},
 		"cmd/generate/pages":           {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "ssh", "tailscale", "uv"},
 		"domain/accounts":              {"docker", "npm", "ssh", "tailscale"},
 		"engine":                       {"ssh"},
@@ -76,10 +75,8 @@ func wordsTolerated() map[string][]string {
 		"pages/home":                   {"brew", "docker", "mise", "npm", "security", "tailscale"},
 		"pages/machines":               {"ssh"},
 		"pages/power":                  {"pmset"},
-		"pages/services":               {"ssh"},
 		"pages/shortcuts":              {"docker"},
 		"pages/storage":                {"brew"},
-		"pages/tailnet":                {"tailscale"},
 	}
 }
 

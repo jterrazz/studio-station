@@ -246,6 +246,34 @@
       "watch": true
     },
     {
+      "name": "ports.list",
+      "schema": "station.ports.list/v1",
+      "section": "ports",
+      "where": "at-target",
+      "in": "ListIn",
+      "out": "Listing"
+    },
+    {
+      "name": "ports.share",
+      "schema": "station.ports.share/v1",
+      "section": "ports",
+      "where": "in-engine",
+      "in": "ShareIn",
+      "out": "ServiceView"
+    },
+    {
+      "name": "ports.stop-sharing",
+      "schema": "station.ports.stop-sharing/v1",
+      "section": "ports",
+      "where": "in-engine",
+      "confirm": "stop-sharing",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "StopSharingIn",
+      "out": "StopSharingOut"
+    },
+    {
       "name": "power.awake",
       "schema": "station.power.awake/v1",
       "where": "in-engine",
@@ -333,34 +361,6 @@
       ],
       "in": "RecallIn",
       "out": "RecallReport"
-    },
-    {
-      "name": "services.list",
-      "schema": "station.services.list/v1",
-      "section": "ports",
-      "where": "at-target",
-      "in": "ListIn",
-      "out": "Fleet"
-    },
-    {
-      "name": "services.release",
-      "schema": "station.services.release/v1",
-      "section": "ports",
-      "where": "in-engine",
-      "confirm": "stop-sharing",
-      "errors": [
-        "confirm.yes-needed"
-      ],
-      "in": "ReleaseIn",
-      "out": "ReleaseOut"
-    },
-    {
-      "name": "services.url",
-      "schema": "station.services.url/v1",
-      "section": "ports",
-      "where": "in-engine",
-      "in": "URLIn",
-      "out": "ServiceView"
     },
     {
       "name": "settings.apply",
@@ -461,13 +461,6 @@
         "confirm.needed"
       ],
       "in": "ResetIn"
-    },
-    {
-      "name": "tailnet.read",
-      "schema": "station.tailnet.read/v1",
-      "where": "at-target",
-      "in": "TailnetIn",
-      "out": "Status"
     }
   ]
 }

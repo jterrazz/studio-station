@@ -13,8 +13,8 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
+	pageports "github.com/jterrazz/studio-station/src/pages/ports"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
-	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -258,7 +258,7 @@ func environmentRows(s Overview) []page.Row {
 	if s.Tailnet.State == catalog.StatePending {
 		return append(rows, pending("tailnet", "tailnet"))
 	}
-	return append(rows, pagetailnet.Summary(s.Tailnet))
+	return append(rows, pageports.TailnetSummary(s.Tailnet))
 }
 
 func workspaceRows(w Workspace) []page.Row {

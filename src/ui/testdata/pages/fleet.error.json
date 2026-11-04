@@ -233,7 +233,7 @@
                           "kind": "text",
                           "text": "node"
                         },
-                        "page": "services",
+                        "page": "ports",
                         "row": "linux-1:5173"
                       }
                     },
@@ -252,7 +252,7 @@
                           "kind": "text",
                           "text": "postgres"
                         },
-                        "page": "services",
+                        "page": "ports",
                         "row": "linux-1:5432"
                       }
                     }

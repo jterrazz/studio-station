@@ -47,7 +47,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		enginecalls.All(enginecalls.Deps{Control: m.control(), Kind: kind}),
 		imagescalls.All(imagescalls.Deps{Images: imageBuilds{m.images()}, Kind: kind}),
 		machinescalls.All(machinescalls.Deps{Machines: machineCalls{m.machines(env.Interactive)}, Kind: kind}),
-		portscalls.All(portscalls.Deps{Services: m.services(env), Tailnet: m.tailnetStatus(), Kind: kind}),
+		portscalls.All(portscalls.Deps{Ports: m.services(env), Tailnet: m.tailnetStatus(), Kind: kind}),
 		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupService}, Ask: named}),
 		settingscalls.All(settingscalls.Deps{
 			Settings: config, Appliers: config.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),

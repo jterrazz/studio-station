@@ -28,7 +28,7 @@ func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
 	switch {
 	case !isHTTP(l):
 		u.Public = publicHost + ":" + port
-	case httpsMode == HTTPSPath:
+	case httpsMode == ports.HTTPSPath:
 		u.Public = "https://" + publicHost + "/" + l.VM + "/" + strconv.Itoa(l.GuestPort) + "/"
 	default:
 		u.Public = "https://" + publicHost + ":" + port
@@ -41,7 +41,7 @@ func ShareOf(l Lease, httpsMode string) ports.Share {
 	switch {
 	case !isHTTP(l):
 		s.Scheme = ports.SchemeTCP
-	case httpsMode == HTTPSPath:
+	case httpsMode == ports.HTTPSPath:
 		s.Port, s.Path = 443, "/"+l.VM+"/"+strconv.Itoa(l.GuestPort)
 	}
 	return s

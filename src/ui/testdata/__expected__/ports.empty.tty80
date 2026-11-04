@@ -1,0 +1,8 @@
+ station ports                                              host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────
+
+ Tailscale
+   ○ Tailscale  not installed  → station apps install tailscale
+
+ Ports
+   no shared ports  → station machines create

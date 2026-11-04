@@ -136,8 +136,8 @@ func (f *menubar) todo(ctx context.Context, in engine.FeedInput) {
 
 func (f *menubar) read(ctx context.Context, here bool) (fleet machines.Fleet, services ports.Fleet, fleetErr, servicesErr error) {
 	listed, fleetErr := call.Read(ctx, f.o.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{Here: here, Unwritten: true}, nil)
-	services, servicesErr = call.Invoke(ctx, f.o.Calls, machine.Ref{}, portscalls.List, portscalls.ListIn{Here: here}, nil)
-	return listed.Fleet, services, fleetErr, servicesErr
+	shared, servicesErr := call.Invoke(ctx, f.o.Calls, machine.Ref{}, portscalls.List, portscalls.ListIn{AllMachines: !here}, nil)
+	return listed.Fleet, shared.Fleet, fleetErr, servicesErr
 }
 
 func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {

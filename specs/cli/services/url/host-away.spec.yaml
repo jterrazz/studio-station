@@ -1,9 +1,0 @@
-description: 'in a VM whose host is not connected, services url names the host'
-fixture: ./__fixtures__/placed/
-env: engine
-runs:
-    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" services url 3000'
-      exit: 1
-      stderr: |
-          Error: macbook is not connected to this VM
-          Hint: on macbook: station setup

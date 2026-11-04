@@ -9,29 +9,31 @@ import (
 )
 
 type Deps struct {
-	Services Services
-	Tailnet  Node
-	Kind     machine.Kind
+	Ports   Ports
+	Tailnet Node
+	Kind    machine.Kind
 }
 
 type Node interface {
 	// value: this node, its peers and what it shares, each share told
-	// station's when the services policy owns it.
+	// station's when the ports policy owns it.
 	Status(ctx context.Context) (ports.Status, error)
 }
 
-type Services interface {
-	CheckList(hereOnly bool) error
+type Ports interface {
 	List(ctx context.Context, hereOnly bool) (ports.Fleet, error)
-	CheckURL(text string) (int, error)
-	URL(ctx context.Context, port int) (ports.ServiceView, error)
-	ParseTarget(text string) (ports.Target, error)
-	// value: the host the target's VM runs on when it is not this one.
+	// value: the VM this binary runs in, inside one: its share and its stop
+	// of sharing ride the socket its Mac's engine offers there.
+	Placed() (vm string, inside bool)
+	CheckPort(text string) (int, error)
+	// value: the other Mac a VM runs on; empty when it is one of this Mac's.
+	CheckVM(ctx context.Context, vm string) (host string, err error)
+	Share(ctx context.Context, vm string, port int) (ports.ServiceView, error)
+	// value: the other Mac that holds the reservation; empty when this one does.
 	CheckRelease(ctx context.Context, t ports.Target) (host string, err error)
-	Pinned(t ports.Target) bool
 	Release(ctx context.Context, t ports.Target, host string, yes bool) (ports.Reservation, error)
 }
 
 func All(d Deps) []call.Handler {
-	return []call.Handler{call.Bind(List, d), call.Bind(URL, d), call.Bind(Release, d), call.Bind(Tailnet, d)}
+	return []call.Handler{call.Bind(List, d), call.Bind(Share, d), call.Bind(StopSharing, d)}
 }

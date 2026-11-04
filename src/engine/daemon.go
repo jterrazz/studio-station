@@ -49,6 +49,9 @@ type Tailnet interface {
 }
 
 type Options struct {
+	// value: keeps whether the owner stopped sharing a VM's port, so the
+	// next listen there is not shared until a share; nil keeps nothing.
+	Remember func(vm string, port int, stopped bool) error
 	// value: the engine's own state folder: its socket and its children.
 	State     string
 	Here      catalog.MachineKind
@@ -152,12 +155,12 @@ func (d *Daemon) Check() error {
 	return nil
 }
 
-func (d *Daemon) policy() services.Policy {
+func (d *Daemon) policy() ports.Policy {
 	g, err := d.st.Services.Get()
 	if err != nil {
-		return services.PolicyOf(nil)
+		return ports.PolicyOf(nil)
 	}
-	return services.PolicyOf(g)
+	return ports.PolicyOf(g)
 }
 
 func (d *Daemon) saveLeases() {

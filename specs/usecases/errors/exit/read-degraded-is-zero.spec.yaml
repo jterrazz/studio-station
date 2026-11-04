@@ -15,9 +15,10 @@ runs:
           ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
           ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
           ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
-    - command: 'services'
+    - command: 'ports --all-machines'
       exit: 0
       stdout: |
-          ○	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	jterrazz-macbook-pro	waiting		vite
-          ○	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	jterrazz-macbook-pro	waiting
-          ◐	jterrazz-mac-mini			jterrazz-mac-mini	unreachable		ssh jterrazz-mac-mini true
+          ●	Tailscale	signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
+          ●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
+          ●	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server
+          ◐	jterrazz-mac-mini			does not answer		station machines

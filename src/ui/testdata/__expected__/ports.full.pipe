@@ -1,0 +1,4 @@
+●	Tailscale	signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
+●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
+○	linux-1	5432		not listening · reserved 40002	postgres
+◐	mac-mini			does not answer		station machines

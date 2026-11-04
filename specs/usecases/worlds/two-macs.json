@@ -214,6 +214,10 @@
                         "Backend": "Running",
                         "On": true,
                         "Host": "jterrazz-macbook-pro.tail1234.ts.net"
+                    },
+                    "Client": {
+                        "Path": "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+                        "Variant": "app-store"
                     }
                 },
                 "shares": [
@@ -319,6 +323,24 @@
                         "size_gb": 4
                     }
                 ]
+            },
+            "tailnet": {
+                "self": {
+                    "ID": "n2",
+                    "Name": "jterrazz-mac-mini",
+                    "DNSName": "jterrazz-mac-mini.tail1234.ts.net",
+                    "IP": "100.64.0.2",
+                    "Online": true,
+                    "Sharing": {
+                        "Backend": "Running",
+                        "On": true,
+                        "Host": "jterrazz-mac-mini.tail1234.ts.net"
+                    },
+                    "Client": {
+                        "Path": "/usr/local/bin/tailscale",
+                        "Variant": "standalone"
+                    }
+                }
             }
         },
         "linux-1": {

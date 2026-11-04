@@ -1,18 +1,18 @@
 description: 'station help <command> prints that command, its commands, flags and examples'
 env: one-mac
 runs:
-    - command: 'help services | /usr/bin/grep -E "^  [A-Z]|^    [a-z]+ " | /usr/bin/sed -E "s/ +$//"'
+    - command: 'help ports | /usr/bin/grep -E "^  [A-Z]|^    [a-z]+ " | /usr/bin/sed -E "s/ +$//"'
       exit: 0
       stdout: |4
-            What the fleet's VMs listen on, and the URL each is published at
+            What your VMs share on the tailnet, at which URL, and whether the tailnet carries it
             USAGE
-              station services [command] [--flags]
+              station ports [command] [--flags]
             EXAMPLES
-              station services
-              station services --json
-              station services url 3000 # in a VM: the public URL, before anything listens
-              station services release api:3000
+              station ports
+              station ports --all-machines
+              station ports --json
+              station ports share linux-1 3000
+              station ports stop-sharing linux-1 3000
             COMMANDS
-              release <vm>:<port> | <port> [--flags]  Give a service's host port back: its URL changes at its next listen
-              url <port> [--flags]                    In a VM: reserve a port's public URL now, and print it
+              share <vm> <port> [--flags]         Reserve a VM's port now and share it on the tailnet, its URL printed before anything listens; inside a VM, the port alone
             FLAGS

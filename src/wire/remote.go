@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -142,11 +143,11 @@ func (m machine) askServices(ctx context.Context, hosts []string) map[string]ser
 	r := m.far.router
 	answers := map[string]services.HostView{}
 	for host, got := range each.All(ctx, hosts, func(ctx context.Context, host string) (services.HostView, error) {
-		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: host}, portscalls.List, portscalls.ListIn{Here: true}, nil)
-		if err != nil || len(out.Hosts) == 0 {
+		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: host}, portscalls.List, portscalls.ListIn{}, nil)
+		if err != nil || len(out.Fleet.Hosts) == 0 {
 			return services.HostView{}, orNone(err)
 		}
-		return out.Hosts[0], nil
+		return out.Fleet.Hosts[0], nil
 	}) {
 		if got.Err == nil {
 			answers[host] = got.Value
@@ -155,13 +156,13 @@ func (m machine) askServices(ctx context.Context, hosts []string) map[string]ser
 	return answers
 }
 
-func (m machine) releaseOn(ctx context.Context, host, target string, yes bool) (services.Lease, error) {
-	in := portscalls.ReleaseIn{Target: target}
+func (m machine) releaseOn(ctx context.Context, host string, t services.Target, yes bool) (services.Lease, error) {
+	in := portscalls.StopSharingIn{VM: t.VM, Port: strconv.Itoa(t.Port)}
 	if yes {
 		in.Confirm = confirm.Yes
 	}
-	out, err := call.Invoke(ctx, m.far.router, coremachine.Ref{Name: host}, portscalls.Release, in, nil)
-	return out.Lease, err
+	out, err := call.Invoke(ctx, m.far.router, coremachine.Ref{Name: host}, portscalls.StopSharing, in, nil)
+	return out.Reservation, err
 }
 
 func orNone(err error) error {

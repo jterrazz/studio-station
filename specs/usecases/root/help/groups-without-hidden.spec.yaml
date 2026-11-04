@@ -17,13 +17,12 @@ runs:
           accounts
           apps
           overview
+          ports
           power
           run
           secrets
-          services
           settings
           storage
-          tailnet
     - command: 'help | /usr/bin/sed -n "/^  A MAC/,/^  STATION/p" | /usr/bin/grep -oE "^    [a-z]+ " | /usr/bin/tr -d " "'
       exit: 0
       stdout: |

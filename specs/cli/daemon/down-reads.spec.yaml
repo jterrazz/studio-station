@@ -1,18 +1,20 @@
 description: 'with the daemon down the reads degrade: not installed without its agent, stopped with it'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/vm-api/
+    - ../../__fixtures__/vm-api/
 env: engine
 runs:
-    - command: 'machines --json | /usr/bin/jq -c ''.macs[0].engine''; "$STATION" machines | /usr/bin/grep engine; "$STATION" services'
+    - command: 'machines --json | /usr/bin/jq -c ''.macs[0].engine''; "$STATION" machines | /usr/bin/grep engine; "$STATION" ports'
       exit: 0
       stdout: |
           {"state":"not-set-up","version":""}
           ✗	This Mac	has no engine set up	station setup
-          ◐	engine			x	not installed		station setup
-    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" overview | /usr/bin/awk -F "\t" ''$2 == "engine"''; "$STATION" machines | /usr/bin/grep engine; "$STATION" services'
+          ●	Tailscale	signed in · macbook.tail1234.ts.net · ports are shared
+          ◐	engine			the engine is not installed		station setup
+    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" overview | /usr/bin/awk -F "\t" ''$2 == "engine"''; "$STATION" machines | /usr/bin/grep engine; "$STATION" ports'
       exit: 0
       stdout: |
           ◐	engine	stopped	station engine start
           ✗	This Mac	has its engine stopped	station engine start
-          ◐	engine			x	stopped		station engine start
+          ●	Tailscale	signed in · macbook.tail1234.ts.net · ports are shared
+          ◐	engine			not shared while the engine is stopped		station engine start

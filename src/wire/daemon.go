@@ -3,6 +3,8 @@ package wire
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/ports"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,6 +55,9 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		tailnet = m.world.tailnet()
 	}
 	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
+		Remember: func(vm string, port int, stopped bool) error {
+			return portscalls.Remember(m.stores.services(), vm, port, stopped)
+		},
 		State: m.paths.State, Here: m.kind, Version: m.engineVersion(), StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: lends, Peer: m.engineAPI(),
@@ -213,7 +218,7 @@ func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
 		return nil
 	}
 	g, _ := r.m.stores.services().Get()
-	mode := services.PolicyOf(g).HTTPS
+	mode := ports.PolicyOf(g).HTTPS
 	tn := r.m.tailnet()
 	if ready, err := tn.Ready(ctx); err == nil && ready.On {
 		for _, l := range gone {

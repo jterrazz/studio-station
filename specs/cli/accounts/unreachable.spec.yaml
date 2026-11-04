@@ -3,7 +3,7 @@ fixture:
     - ../../__fixtures__/accounts/
     - ../../__fixtures__/vms/
     - ../../__fixtures__/engine-vm/
-    - ../__fixtures__/vm-api/
+    - ../../__fixtures__/vm-api/
 env: engine
 runs:
     - command: '--version >/dev/null; echo stopped > .tart-vms/api; /usr/bin/jq ''.lent=[{"name":"operator:claude:oauth-token","at":(now-3600|todate),"until":(now+39600|todate)}]'' .local/state/station/vms/api.json > r.json && /bin/mv r.json .local/state/station/vms/api.json; STATION_GUEST_SSH_PORT=9 "$STATION" engine run 2> /dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; ("$STATION" machines start api >/dev/null 2>&1 &); n=0; until "$STATION" machines --json 2>/dev/null | /usr/bin/jq -e ''[.macs[].vms[] | select(.state == "running")] | length > 0'' >/dev/null || [ $n -ge 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" accounts | /usr/bin/awk -F''\t'' ''$2=="api"{print $1, $3, $4, $5, $6, $8}''; "$STATION" accounts --json | /usr/bin/jq -c ''.machines[]|select(.name=="api")|[.guest,(.accounts|length)]''; "$STATION" accounts --page | /usr/bin/jq -c ''[..|objects|select(.id?=="api")|[.mark,.reason]]''; kill $d; wait $d; echo stopped > .tart-vms/api'

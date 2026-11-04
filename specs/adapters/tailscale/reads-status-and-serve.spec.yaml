@@ -1,15 +1,15 @@
-description: 'tailnet reads the app and what it serves, and drives nothing'
+description: 'ports reads the app and what it serves, and drives nothing'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/serving/
 runs:
-    - command: 'tailnet --json | /usr/bin/jq -c ''keys, [.serve[] | [.port, .station]]'''
+    - command: 'ports --json | /usr/bin/jq -S -c ''.tailscale'''
       exit: 0
       stdout: |
-          ["backend_state","cli","connected","dns_name","ip","name","peers","schema","serve","state","variant"]
-          [[443,false],[40098,true],[40099,true]]
+          {"cli":"{{workdir}}/bin/tailscale","dns_name":"macbook.tail1234.ts.net","ip":"192.0.2.1","name":"x","serve":"on","state":"on","variant":""}
       files:
           .calls:
               equals: |
+                  tailscale status --json
                   tailscale status --json
                   tailscale serve status --json

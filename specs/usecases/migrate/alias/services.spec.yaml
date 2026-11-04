@@ -1,0 +1,25 @@
+description: 'services and services release run ports and ports stop-sharing, with the new words'
+env: two-macs
+runs:
+    - command: 'services'
+      exit: 0
+      stdout: |
+          ●	Tailscale	signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
+          ●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
+          ●	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server
+      stderr: |
+          → now: station ports
+    - command: 'services release linux-1:7000 --yes'
+      exit: 0
+      stdout: |
+          ●	linux-1:7000	not shared
+      stderr: |
+          → now: station ports stop-sharing --yes linux-1:7000
+    - command: '--version >/dev/null; /usr/bin/jq -c ''[.macs["jterrazz-macbook-pro"].stores.reservations[].guest_port]'' world.json'
+      exit: 0
+      stdout: |
+          [5173]
+    - command: 'services --json | /usr/bin/jq -r .schema'
+      exit: 0
+      stdout: |
+          station.ports.list/v1

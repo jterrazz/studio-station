@@ -11,14 +11,13 @@ runs:
           images
           machines
           overview
+          ports
           power
           run
           secrets
-          services
           settings
           setup
           storage
-          tailnet
     - command: 'completion zsh | /usr/bin/grep -c "compdef _station station"'
       exit: 0
       stdout: |

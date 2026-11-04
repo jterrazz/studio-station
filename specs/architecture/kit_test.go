@@ -346,7 +346,7 @@ func goldensOf(fixture string) []string {
 	if strings.HasPrefix(fixture, "kitchen-sink.") {
 		out = append(out, "tty40")
 	}
-	if strings.HasPrefix(fixture, "fleet.") || strings.HasPrefix(fixture, "services.") {
+	if strings.HasPrefix(fixture, "fleet.") || strings.HasPrefix(fixture, "ports.") {
 		out = append(out, "tui120")
 	}
 	return out
@@ -416,7 +416,7 @@ func pageStates() []string { return []string{"loading", "empty", "error", "full"
 // family is checked because the spec lists it, not because a file exists.
 func pageFamilies() []string {
 	return []string{
-		"home", "home-all", "apps", "settings", "storage", "fleet", "machines", "images", "secrets", "tailnet", "services",
+		"home", "home-all", "apps", "settings", "storage", "fleet", "machines", "images", "secrets", "ports",
 		"outcome-apps-install", "outcome-settings-apply", "outcome-storage", "setup", "run", "kitchen-sink", "accounts", "outcome-stop", "outcome-start", "engine", "power", "outcome-power", "menubar",
 	}
 }
@@ -478,12 +478,12 @@ func TestEveryPageHasItsFourFixtures(t *testing.T) {
 		}
 	})
 	t.Run("bites", func(t *testing.T) {
-		gone := func(f string) bool { return f == "tailnet.error" || strings.HasPrefix(f, "run.") }
+		gone := func(f string) bool { return f == "ports.error" || strings.HasPrefix(f, "run.") }
 		got := missingPages(append(slices.Clone(packages), "mutant"), pageFamilies(), append(slices.DeleteFunc(slices.Clone(fixtures), gone), "outcome-tools.full"))
 		if !slices.ContainsFunc(got, func(f finding) bool { return f.where == "src/pages/mutant" }) {
 			t.Error("the fixtures rule did not report a page package with no fixture")
 		}
-		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "tailnet.error.json") }) {
+		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "ports.error.json") }) {
 			t.Error("the fixtures rule did not report a family missing its error state")
 		}
 		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "run.loading.json") }) {
