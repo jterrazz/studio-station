@@ -257,7 +257,7 @@ func (d *Daemon) awaitGuest(ctx context.Context, vm string) error {
 			return err
 		}
 	}
-	return fault("guest_timeout", vm+"'s guest did not connect in "+strconv.Itoa(int(guestReady.Seconds()))+" s", "station machines probe "+vm)
+	return fault("guest_timeout", vm+"'s guest did not connect in "+strconv.Itoa(int(guestReady.Seconds()))+" s", "station machines "+vm)
 }
 
 func (d *Daemon) opStart(ctx context.Context, vm string) error {
@@ -627,11 +627,11 @@ func (d *Daemon) askGuest(ctx context.Context, v *vmState, op string, budget tim
 			if m.Error != nil {
 				return nil, m.Error
 			}
-			return nil, fault("internal", v.rec.Name+"'s guest refused "+op, "station machines probe "+v.rec.Name)
+			return nil, fault("internal", v.rec.Name+"'s guest refused "+op, "station machines "+v.rec.Name)
 		}
 		return m.Result, nil
 	case <-wait.Done():
-		return nil, fault("guest_timeout", v.rec.Name+"'s guest did not answer "+op+" in "+budget.String(), "station machines probe "+v.rec.Name)
+		return nil, fault("guest_timeout", v.rec.Name+"'s guest did not answer "+op+" in "+budget.String(), "station machines "+v.rec.Name)
 	}
 }
 
