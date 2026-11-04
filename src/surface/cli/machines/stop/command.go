@@ -35,23 +35,21 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Verb:     func(*Input) string { return "stop" },
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			change := "stopped, kept"
+			already := false
 			err := io.Confirmed(func(answer string) error {
-				if answer == "" {
-					change = "already stopped"
-				}
+				already = answer == ""
 				stop := io.Wait("stopping " + in.Name)
 				defer stop()
 				_, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Stop, machinescalls.StopIn{VM: in.Name, Confirm: answer}, nil)
-				if answer != "" {
-					change = "stopped, kept"
-				}
 				return err
 			})
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Change("stop", in.Name, change, d.Here), nil)
+			if already {
+				return io.Page(pagemachines.Already("stop", in.Name, false, d.Here), nil)
+			}
+			return io.Page(pagemachines.Change("stop", in.Name, "stopped, kept", d.Here), nil)
 		},
 	}, env)
 }

@@ -4,4 +4,4 @@ runs:
     - command: 'machines stop api'
       exit: 0
       stdout: |
-          ●	api	already stopped
+          ○	api	is already stopped

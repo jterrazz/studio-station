@@ -2,7 +2,6 @@ package machines
 
 import (
 	"context"
-	"errors"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 
@@ -52,27 +51,26 @@ func (s *Service) Start(ctx context.Context, name string) error {
 	if err := s.CheckStart(name); err != nil {
 		return err
 	}
-	if err := s.daemonUp(ctx); err != nil {
+	if err := s.EngineUp(ctx); err != nil {
 		return err
 	}
 	return s.daemon.Do(ctx, "start", name)
 }
 
 func (s *Service) Stop(ctx context.Context, name string) error {
-	// invariant: a stop keeps the workspace, throwaway or permanent (SP-5); with the daemon down the stop runs here, so a broken daemon
-	// never holds a VM hostage.
+	// invariant: a stop keeps the workspace, throwaway or permanent (SP-5), and
+	// like every action it is refused while the engine is stopped.
 	if err := s.CheckStop(name); err != nil {
 		return err
 	}
-	if s.daemon != nil {
-		err := s.daemon.Do(ctx, "stop", name)
-		if !errors.Is(err, ErrDaemonDown) {
-			return err
-		}
+	if err := s.EngineUp(ctx); err != nil {
+		return err
 	}
-	return s.StopDirect(ctx, name)
+	return s.daemon.Do(ctx, "stop", name)
 }
 
+// value: the stop the engine's own Stop everything takes for a run that
+// outlived the engine.
 func (s *Service) StopDirect(ctx context.Context, name string) error {
 	rec, err := s.VM(name, "stop")
 	if err != nil {
@@ -93,7 +91,7 @@ func (s *Service) restartVM(ctx context.Context, name string, say func(phase, de
 	if _, err := s.VM(name, "restart"); err != nil {
 		return RestartReport{}, err
 	}
-	if err := s.daemonUp(ctx); err != nil {
+	if err := s.EngineUp(ctx); err != nil {
 		return RestartReport{}, err
 	}
 	started := s.h.Clock.Now()
@@ -109,22 +107,19 @@ func (s *Service) Delete(ctx context.Context, name string) (DeleteReport, error)
 	if _, err := s.VM(name, "delete"); err != nil {
 		return DeleteReport{}, err
 	}
-	if s.daemon != nil {
-		err := s.daemon.Do(ctx, "delete", name)
-		if err == nil {
-			return DeleteReport{Name: name}, nil
-		}
-		if !errors.Is(err, ErrDaemonDown) {
-			return DeleteReport{}, err
-		}
+	if err := s.EngineUp(ctx); err != nil {
+		return DeleteReport{}, err
 	}
-	return s.Remove(ctx, name)
+	if err := s.daemon.Do(ctx, "delete", name); err != nil {
+		return DeleteReport{}, err
+	}
+	return DeleteReport{Name: name}, nil
 }
 
 func (s *Service) Remove(ctx context.Context, name string) (DeleteReport, error) {
-	// invariant: Remove is the whole delete, run by the daemon or, when it is down,
-	// by the CLI: the run stops, the disk, record, files and block go, and the VM's
-	// leases and their serve entries are released.
+	// invariant: Remove is the whole delete, run by the engine: the run stops,
+	// the disk, record, files and block go, and the VM's leases and their serve
+	// entries are released.
 	report := DeleteReport{Name: name}
 	s.retireAgent(ctx, name)
 	if s.engineState(ctx, name) == contract.DiskRunning {

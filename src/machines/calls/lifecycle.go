@@ -23,6 +23,9 @@ var Start = call.Call[Deps, VMIn, StartOut]{
 		if err := d.Machines.CheckStart(in.VM); err != nil {
 			return StartOut{}, err
 		}
+		if err := d.Machines.EngineUp(ctx); err != nil {
+			return StartOut{}, err
+		}
 		if running, err := d.Machines.Running(ctx, in.VM); err != nil || running {
 			return StartOut{Already: running}, err
 		}
@@ -42,6 +45,9 @@ var Stop = call.Call[Deps, StopIn, struct{}]{
 	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in StopIn, _ call.Progress) (struct{}, error) {
 		if err := d.Machines.CheckStop(in.VM); err != nil {
+			return struct{}{}, err
+		}
+		if err := d.Machines.EngineUp(ctx); err != nil {
 			return struct{}{}, err
 		}
 		if running, err := d.Machines.Running(ctx, in.VM); err != nil || !running {
@@ -64,6 +70,9 @@ var Delete = call.Call[Deps, DeleteIn, machines.DeleteReport]{
 	Errors: []fail.Code{confirm.Needed, confirm.Mismatch},
 	Run: func(ctx context.Context, d Deps, in DeleteIn, _ call.Progress) (machines.DeleteReport, error) {
 		if err := d.Machines.CheckVM(in.VM, "delete"); err != nil {
+			return machines.DeleteReport{}, err
+		}
+		if err := d.Machines.EngineUp(ctx); err != nil {
 			return machines.DeleteReport{}, err
 		}
 		if err := confirm.Require(confirm.For(confirm.Delete, machine.Workspace), in.VM, in.Confirm); err != nil {

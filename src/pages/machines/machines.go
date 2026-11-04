@@ -199,6 +199,16 @@ func Change(verb, name, change string, here page.Context) page.Page {
 	return pages.Outcome("machines "+verb, here, nil, []page.Row{pages.Done(name, catalog.StateOK, change)}, "machines")
 }
 
+// value: a start or stop that found the VM already so: its mark is the state
+// it is in, running or stopped, and nothing changed.
+func Already(verb, name string, running bool, here page.Context) page.Page {
+	state, said := catalog.StateAbsent, "is already stopped"
+	if running {
+		state, said = catalog.StateOK, "is already running"
+	}
+	return pages.Outcome("machines "+verb, here, nil, []page.Row{pages.Done(name, state, said)}, "machines")
+}
+
 type CheckJSON struct {
 	Name   string `json:"name"`
 	State  string `json:"state"`

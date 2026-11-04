@@ -38,11 +38,10 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			change := "started"
 			if out.Already {
-				change = "already running"
+				return io.Page(pagemachines.Already("start", in.Name, true, d.Here), nil)
 			}
-			return io.Page(pagemachines.Change("start", in.Name, change, d.Here), nil)
+			return io.Page(pagemachines.Change("start", in.Name, "started", d.Here), nil)
 		},
 	}, env)
 }

@@ -202,13 +202,13 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if limit, ok := s.memoryLimit(ctx); ok && r.Resources.MemoryBytes > limit {
 		return r, &TooBigError{MemoryGB: int(r.Resources.MemoryBytes >> 30), LimitGB: int(limit >> 30)}
 	}
-	if err := s.daemonUp(ctx); err != nil {
+	if err := s.EngineUp(ctx); err != nil {
 		return r, err
 	}
 	return r, nil
 }
 
-func (s *Service) daemonUp(ctx context.Context) error {
+func (s *Service) EngineUp(ctx context.Context) error {
 	_, missing := s.h.FS.Stat(catalog.EnginePlist(s.h.Env.Home()))
 	down := &DaemonDownError{Host: "This Mac", Installed: missing == nil}
 	if s.daemon == nil {

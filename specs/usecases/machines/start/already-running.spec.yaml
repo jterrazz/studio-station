@@ -4,4 +4,4 @@ runs:
     - command: 'machines start linux-1'
       exit: 0
       stdout: |
-          ●	linux-1	already running
+          ●	linux-1	is already running

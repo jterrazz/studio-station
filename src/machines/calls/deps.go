@@ -20,6 +20,8 @@ type Machines interface {
 	SSHBlocks(ctx context.Context, f machines.Fleet) error
 	CheckCreate(ctx context.Context, r machines.CreateRequest) (machines.CreateRequest, error)
 	Create(ctx context.Context, r machines.CreateRequest, progress func(machines.Step)) (machines.Created, error)
+	// value: refuses every action while this Mac's engine is stopped.
+	EngineUp(ctx context.Context) error
 	CheckStart(name string) error
 	Start(ctx context.Context, name string) error
 	CheckStop(name string) error

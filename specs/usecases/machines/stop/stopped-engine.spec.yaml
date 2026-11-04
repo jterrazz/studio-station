@@ -1,7 +1,8 @@
-description: 'with the engine stopped a stop still runs here: a stopped engine never holds a VM'
+description: 'with the engine stopped a stop is refused like every action, and the hint starts it'
 env: engine-stopped
 runs:
     - command: 'machines stop linux-1 --yes'
-      exit: 0
-      stdout: |
-          ●	linux-1	stopped, kept
+      exit: 1
+      stderr: |
+          Error: the engine is stopped on This Mac
+          Hint: station engine start
