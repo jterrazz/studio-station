@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	backgroundcontract "github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/settings"
@@ -34,6 +35,13 @@ type Clock interface{ Now() time.Time }
 type Options struct {
 	// value: the system root the machine-wide preferences are read under.
 	Root string
+	// value: the job manager's overrides, where sshd's state is read when
+	// systemsetup refuses the user; nil reads none.
+	Jobs Overrides
+}
+
+type Overrides interface {
+	Overrides(ctx context.Context, d backgroundcontract.Domain) map[string]bool
 }
 
 type Inspector struct {
@@ -79,6 +87,9 @@ func (i *Inspector) Read(ctx context.Context, f catalog.Fact) (settings.Fact, er
 	}
 	if f == catalog.FactLocalIP {
 		return i.first(ctx, local.Command("ipconfig", "getifaddr", "en0"), true)
+	}
+	if read, ok := i.checks()[f]; ok {
+		return read(ctx)
 	}
 	p, ok := protections()[f]
 	if !ok {
