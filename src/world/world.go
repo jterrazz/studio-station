@@ -3,6 +3,8 @@ package world
 import (
 	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/background"
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/settings"
 )
 
 type World struct {
@@ -20,6 +22,9 @@ type Mac struct {
 	// value: who each provider says is signed in, by provider; a provider
 	// absent here has no row on this Mac.
 	Identities map[string]accounts.Identity
+	// value: the facts this Mac answers, by fact; a fact absent here is one
+	// it cannot look at.
+	Facts map[catalog.Fact]settings.Fact
 }
 
 type Job struct {
