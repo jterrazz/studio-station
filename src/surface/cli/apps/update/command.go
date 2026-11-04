@@ -40,7 +40,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if in.AllMachines {
 				return everyMachine(ctx, env, d, req, io)
 			}
-			outcomes, err := call.Invoke(ctx, env.Calls, env.Target(), appscalls.Update, req, nil)
+			steps := kit.Steps(io)
+			outcomes, err := call.Invoke(ctx, env.Calls, env.Target(), appscalls.Update, req, steps)
+			steps.Stop()
 			if err != nil {
 				return err
 			}

@@ -30,6 +30,6 @@ var Remove = call.Call[Deps, RemoveIn, []apps.Outcome]{
 			return nil, err
 		}
 		out, err := d.Apps.Uninstall(ctx, in.Names)
-		return out, coded(err)
+		return interrupted(ctx, out, err)
 	},
 }

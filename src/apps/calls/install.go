@@ -2,6 +2,7 @@ package calls
 
 import (
 	"context"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/core/call"
@@ -18,11 +19,12 @@ type InstallIn struct {
 var Install = call.Call[Deps, InstallIn, []apps.Outcome]{
 	Name: "apps.install", Section: section.Apps, Where: call.AtTarget, Applies: apps.Applies,
 	Errors: []fail.Code{Unknown, Elsewhere, Needs},
-	Run: func(ctx context.Context, d Deps, in InstallIn, _ call.Progress) ([]apps.Outcome, error) {
+	Run: func(ctx context.Context, d Deps, in InstallIn, p call.Progress) ([]apps.Outcome, error) {
 		if err := d.Apps.CheckInstall(ctx, in.Names); err != nil {
 			return nil, coded(err)
 		}
+		step(p, "Installing "+strings.Join(in.Names, ", "))
 		out, err := d.Apps.Install(ctx, apps.InstallRequest{Names: in.Names, Interactive: in.Interactive})
-		return out, coded(err)
+		return interrupted(ctx, out, err)
 	},
 }
