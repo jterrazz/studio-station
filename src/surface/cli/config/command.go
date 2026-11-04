@@ -26,7 +26,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Group:   kit.OnAMachine,
 		Read:    func(*Input) bool { return true },
 		Pages:   true,
-		Entry:   kit.Entry("station config install", d.Names),
+		Entry:   kit.Entry("station config install", "config item", d.Names),
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
 			reports, err := call.Read(ctx, env.Calls, env.Target(), settingscalls.List, settingscalls.ListIn{}, nil)
 			if err != nil {

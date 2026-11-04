@@ -4,7 +4,7 @@ runs:
     - command: 'run git feat'
       exit: 2
       stderr: |
-          Error: requires at least 1 arg(s), only received 0
-          Hint: run station run git feat --help
+          Error: station run git feat needs a message
+          Hint: station run git feat <message>
       files:
           .calls: absent

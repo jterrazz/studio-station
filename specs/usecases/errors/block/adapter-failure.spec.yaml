@@ -1,0 +1,12 @@
+description: 'an installer that fails is told in our words, what failed first, then one block, exit 1'
+env: two-macs
+runs:
+    - command: 'world fault Installer.Install'
+      exit: 0
+    - command: 'tools install go'
+      exit: 1
+      stdout: |
+          ✗	go	the run failed, as the world scripted it
+      stderr: |
+          Error: 1 of 1 tools failed
+          Hint: station tools install go

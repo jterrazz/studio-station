@@ -1,0 +1,13 @@
+description: 'what needs a terminal, off one, says so: exit 2'
+env: two-macs
+runs:
+    - command: 'machines unlock jterrazz-mac-mini </dev/null'
+      exit: 2
+      stderr: |
+          Error: unlock needs a terminal
+          Hint: run it on a terminal
+    - command: 'config install autologin </dev/null'
+      exit: 2
+      stderr: |
+          Error: autologin needs a terminal
+          Hint: run it on a terminal

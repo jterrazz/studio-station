@@ -28,7 +28,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Read:    func(*Input) bool { return true },
 		Live:    true,
 		Pages:   true,
-		Entry:   kit.Entry("station tools install", d.Names),
+		Entry:   kit.Entry("station tools install", "tool", d.Names),
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
 			if io.CanLive() {
 				updates, err := call.Follow(ctx, env.Calls, env.Target(), appscalls.List, appscalls.ListIn{}, nil)

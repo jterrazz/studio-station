@@ -21,6 +21,9 @@ func Codes() map[fail.Code]Wording {
 		confirm.YesNeeded: func(e *fail.Error) (string, string) {
 			return "refusing without --yes: " + e.Subject, "re-run with --yes"
 		},
+		confirm.Declined: func(e *fail.Error) (string, string) {
+			return e.Subject + " kept: you said no", "--yes skips the question"
+		},
 		call.NotForThisMachine: func(e *fail.Error) (string, string) {
 			if why := e.Detail["why"]; why != "" {
 				return why, "run station status for what " + e.Subject + " has"

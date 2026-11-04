@@ -1,0 +1,9 @@
+description: 'a read with a Mac that does not answer still exits 0, the Mac shown as unreachable'
+env: two-macs
+runs:
+    - command: 'world power-cut jterrazz-mac-mini'
+      exit: 0
+    - command: 'machines | /usr/bin/grep jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ◐	jterrazz-mac-mini	host			unreachable	-	-

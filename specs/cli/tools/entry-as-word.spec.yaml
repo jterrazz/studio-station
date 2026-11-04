@@ -3,7 +3,7 @@ runs:
     - command: 'tools jq'
       exit: 2
       stderr: |
-          Error: unknown command "jq" for "station tools"
+          Error: "jq" is a tool: say what to do with it
           Hint: station tools install jq
     - command: 'tools nope'
       exit: 2

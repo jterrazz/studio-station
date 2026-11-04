@@ -43,6 +43,7 @@ const (
 	Needed    fail.Code = "confirm.needed"
 	Mismatch  fail.Code = "confirm.mismatch"
 	YesNeeded fail.Code = "confirm.yes-needed"
+	Declined  fail.Code = "confirm.declined"
 )
 
 func For(a Action, k machine.Kind) Level {

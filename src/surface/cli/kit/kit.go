@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -15,6 +16,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
 type Asker interface {
@@ -115,8 +117,10 @@ type Leaf[I any] struct {
 	// call would do; else the gate's own words.
 	Refuse   func(in *I) error
 	Complete func(args []string, toComplete string) []string
-	Entry    func(word string) string
-	Run      func(ctx context.Context, in *I, io IO) error
+	// value: the refusal of a word that names an entry of the family, the
+	// verb forgotten (SPEC §4.2); nil for any other word.
+	Entry func(word string) error
+	Run   func(ctx context.Context, in *I, io IO) error
 	// value: a leaf that draws its reading as it fills needs no spinner.
 	Live bool
 	// value: a leaf whose answer is a page also prints it as station.page/v1.
@@ -142,13 +146,15 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 	}
 	cmd.Args = func(c *cobra.Command, a []string) error {
 		if err := args(c, a); err != nil {
-			hint := helpHint(c)
 			if l.Entry != nil && len(a) > 0 {
-				if h := l.Entry(a[0]); h != "" {
-					hint = h
+				if refused := l.Entry(a[0]); refused != nil {
+					return refused
 				}
 			}
-			return usage(err.Error(), hint)
+			if what := wanted(c.Use); what != "" && len(a) == 0 {
+				return fail.New(fail.Refused, words.MissingArgument, c.CommandPath(), map[string]string{"what": what})
+			}
+			return usage(err.Error(), helpHint(c))
 		}
 		return nil
 	}
@@ -227,11 +233,15 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 		if l.Verb != nil {
 			verb = l.Verb(in)
 		}
+		kept := strings.Join(args, ", ")
+		if kept == "" {
+			kept = c.Name()
+		}
 		o.ask = func() error {
 			if l.Refuse != nil && !o.Yes && !o.Interactive {
 				return l.Refuse(in)
 			}
-			return gate(verb, ask, o)
+			return gate(verb, kept, ask, o)
 		}
 	}
 	if l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && (!l.Live || !o.CanLive()) {
@@ -241,7 +251,7 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 	return l.Run(ctx, in, o)
 }
 
-func gate(verb string, ask func() (bool, error), o IO) error {
+func gate(verb, kept string, ask func() (bool, error), o IO) error {
 	switch {
 	case o.Yes:
 		return nil
@@ -254,7 +264,7 @@ func gate(verb string, ask func() (bool, error), o IO) error {
 			return failed(err.Error(), "re-run with --yes to skip the question", err)
 		}
 		if !ok {
-			return failed(verb+" cancelled", "re-run with --yes to skip the question", nil)
+			return fail.New(fail.Declined, confirm.Declined, kept, nil)
 		}
 		return nil
 	default:
@@ -284,15 +294,27 @@ func Group(use, short, groupID string, env Env, children ...*cobra.Command) *cob
 	return cmd
 }
 
-func Entry(verb string, names func() []string) func(string) string {
-	return func(word string) string {
-		for _, n := range names() {
-			if n == word {
-				return verb + " " + word
-			}
+func Entry(verb, row string, names func() []string) func(string) error {
+	return func(word string) error {
+		if !slices.Contains(names(), word) {
+			return nil
 		}
+		return fail.New(fail.Refused, words.EntryWithoutVerb, word, map[string]string{"row": row, "command": verb})
+	}
+}
+
+// value: what a leaf's first argument names, from its usage line
+// (`install <tool...>` wants a tool); empty for a leaf that names none.
+func wanted(use string) string {
+	_, after, ok := strings.Cut(use, "<")
+	if !ok {
 		return ""
 	}
+	what, _, _ := strings.Cut(after, ">")
+	if strings.Contains(what, "|") {
+		return ""
+	}
+	return strings.TrimSuffix(what, "...")
 }
 
 func Menu(env Env, cmd *cobra.Command) error {
