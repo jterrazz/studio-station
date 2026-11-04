@@ -221,5 +221,5 @@ Modern replacements are on every machine; prefer them over the defaults:
 ## Always
 
 - Never edit the generated sections: change the catalogue in `src/catalog/` and run `make generate`.
-- The roster is the curated catalogue, not proof of local install state; when a tool is missing, `station tools install <name>` puts it on.
+- The roster is the curated catalogue, not proof of local install state; when a tool is missing, `station apps install <name>` puts it on.
 - Repo-layout doctrine is not here: see the `studio-repo-structure` skill.

@@ -18,7 +18,7 @@ func shortcutsFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &docker):
 		return failed(docker.Error(), "check that the docker daemon runs, then run it again", err), true
 	case errors.As(err, &missing):
-		return failed(missing.Error(), "station tools install "+missing.Tool, err), true
+		return failed(missing.Error(), "station apps install "+missing.Tool, err), true
 	case errors.As(err, &unknown):
 		return usage(unknown.Error(), "run station run --help"), true
 	}

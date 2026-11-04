@@ -5,4 +5,4 @@ runs:
       exit: 0
       stdout: |
           absent
-          ○	tailnet	not installed	station tools install tailscale
+          ○	tailnet	not installed	station apps install tailscale

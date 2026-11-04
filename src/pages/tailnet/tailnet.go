@@ -176,7 +176,7 @@ func repair(s ports.Status) *page.Hint {
 	case catalog.StateOK, catalog.StatePending:
 		return nil
 	case catalog.StateAbsent:
-		return page.Cmd("station tools install tailscale")
+		return page.Cmd("station apps install tailscale")
 	case catalog.StateDegraded, catalog.StateBroken, catalog.StateUnknown:
 	}
 	return &page.Hint{Command: "open the Tailscale app and log in", External: true}
