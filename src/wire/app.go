@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"charm.land/fang/v2"
+	"github.com/spf13/cobra"
 
 	awakemacos "github.com/jterrazz/studio-station/src/awake/adapter/macos"
 	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
@@ -18,6 +19,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/settings"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/platform/local"
@@ -45,6 +47,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		}
 	}
 	inTTY, outTTY, errTTY := token.IsTerminal(stdin), token.IsTerminal(stdout), token.IsTerminal(stderr)
+	session, opened := openWorld(vars)
 	dark := true
 	if inTTY && outTTY && len(args) > 0 {
 		// hazard: the background query writes an OSC request and reads the reply
@@ -58,7 +61,15 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		output.Stream{W: stderr, IsTerminal: errTTY, Width: widthOf(stderr, errTTY), Dark: dark},
 		vars,
 	)
-	here := resolve(local.New(env, childIn, stdout, stderr), local.NewPower(env), vars)
+	if opened != nil {
+		writer.Failure(kit.Translate(opened, ""))
+		return int(fail.ExitFailure)
+	}
+	var world *worldMac
+	if session != nil {
+		world = session.here()
+	}
+	here := resolve(local.New(env, childIn, stdout, stderr), local.NewPower(env), vars, world)
 	kenv := kit.Env{
 		Out:         writer,
 		Prompt:      output.Terminal(stdin, stderr),
@@ -72,6 +83,10 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	router := here.router(kenv)
 	defer router.Close()
 	kenv.Calls = router
+	if session != nil {
+		world.engineFrom(func() *engine.Daemon { return here.daemon(kenv) })
+		session.farFrom(func(w *worldMac) farMac { return here.farMac(kenv, w) })
+	}
 	kenv.On.Refresh = func(ctx context.Context) error {
 		fleet := here.machines(false)
 		f, err := fleet.Fleet(ctx, false)
@@ -81,7 +96,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		return fleet.SSHBlocks(ctx, f)
 	}
 
-	root := cli.NewRoot(kenv, tuiOpener(kenv, here),
+	commands := []*cobra.Command{
 		statusCommand(kenv, here),
 		toolsCommand(kenv, here),
 		configCommand(kenv, here),
@@ -101,7 +116,11 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		runCommand(kenv, here),
 		setupCommand(kenv, here),
 		shellcmd.Command(kenv),
-	)
+	}
+	if session != nil {
+		commands = append(commands, session.command())
+	}
+	root := cli.NewRoot(kenv, tuiOpener(kenv, here), commands...)
 	root.SetArgs(args)
 	root.SetIn(stdin)
 	root.SetOut(stdout)
@@ -117,6 +136,12 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		fang.WithNotifySignal(os.Interrupt, syscall.SIGTERM),
 	)
 	here.pool.Close()
+	if session != nil {
+		if closed := session.close(context.Background()); closed != nil && err == nil {
+			err = closed
+			writer.Failure(kit.Translate(err, ""))
+		}
+	}
 	if err == nil {
 		return int(fail.ExitOK)
 	}
@@ -180,6 +205,13 @@ func withToolBins(env []string) []string {
 }
 
 type machine struct {
+	// value: this machine's Mac of the spec world, its fakes' slice; nil in
+	// every real run.
+	world *worldMac
+	// value: the host and power door before any world wraps them, from which
+	// another Mac of the world is built.
+	raw       system.Host
+	door      local.Power
 	far       *late
 	pool      *probe.Pool
 	host      system.Host
@@ -192,7 +224,11 @@ type machine struct {
 	where     page.Context
 }
 
-func resolve(h system.Host, door local.Power, vars map[string]string) machine {
+func resolve(raw system.Host, door local.Power, vars map[string]string, world *worldMac) machine {
+	h := raw
+	if world != nil {
+		h = world.host(raw)
+	}
 	home := h.Env.Home()
 	root := func(name, fallback string) string {
 		if dir := vars[name]; filepath.IsAbs(dir) {
@@ -215,8 +251,14 @@ func resolve(h system.Host, door local.Power, vars map[string]string) machine {
 		Roots:  roots,
 	}
 	st := newStores(h.FS, paths)
+	if world != nil {
+		st.prefs, st.machines = world.preferences(), world.machineStore()
+	}
 	registered, _ := st.name().Get()
 	m := machine{
+		world:  world,
+		raw:    raw,
+		door:   door,
 		far:    &late{},
 		pool:   probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
 		host:   h,

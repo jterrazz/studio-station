@@ -10,7 +10,11 @@ import (
 )
 
 func (m machine) hypervisor() contract.Hypervisor {
-	return tart.New(m.host.Run, m.host.FS, m.host.Clock, m.paths.State)
+	tool := tart.New(m.host.Run, m.host.FS, m.host.Clock, m.paths.State)
+	if m.world != nil {
+		return m.world.hypervisor(tool.Name())
+	}
+	return tool
 }
 
 type engineHypervisor struct{ contract.Hypervisor }

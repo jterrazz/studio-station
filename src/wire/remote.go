@@ -38,6 +38,9 @@ func (m machine) router(env kit.Env) *remote.Router {
 	if spawn, ok := m.host.Run.(local.Spawner); ok {
 		macs = sshstdio.New(spawn)
 	}
+	if m.world != nil {
+		macs = m.world.macs()
+	}
 	r := remote.NewRouter(m.registry(env), m.profile, remote.Reach{
 		Macs:    macs,
 		Engine:  unix.New(guestRelay{m.hostDaemon()}, func() contract.Hello { return m.far.router.Served() }),

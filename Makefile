@@ -4,8 +4,11 @@ BINARY       := station
 BUILD_PATH   := .artifacts/go/$(BINARY)
 LINUX_PATH   := .artifacts/go/$(BINARY)-linux-arm64
 # value: the binary the CLI specs run, built once before the runner starts, so its
-# workers never link it concurrently with the sessions they drive.
+# workers never link it concurrently with the sessions they drive. It is the spec
+# build (`-tags world`): with $STATION_WORLD set it runs over the fake world of
+# specs/usecases/, without it over the real adapters, as the release build does.
 TEST_PATH    := .artifacts/go/$(BINARY)-test
+SPEC_TAGS    := world
 BIN_DIR      := $(HOME)/.local/bin
 INSTALL_PATH := $(BIN_DIR)/$(BINARY)
 MENUBAR_APP  := .artifacts/menubar/Station.app
@@ -44,7 +47,7 @@ lint: node_modules/.install ## Both halves: gofmt, golangci-lint and deadcode ov
 	@unformatted=$$(gofmt -l ./src ./specs); \
 		if [ -n "$$unformatted" ]; then printf "gofmt would rewrite:\n%s\n" "$$unformatted"; exit 1; fi
 	@go tool golangci-lint run ./src/... ./specs/...
-	@dead=$$(go tool deadcode -test ./src/...); \
+	@dead=$$(go tool deadcode -test -tags $(SPEC_TAGS) ./src/...); \
 		if [ -n "$$dead" ]; then printf "deadcode found unreachable functions:\n%s\n" "$$dead"; exit 1; fi
 	@printf "$(GREEN)●$(RESET) Go lint passed\n"
 	@npm run --silent lint
@@ -57,7 +60,7 @@ fix: node_modules/.install ## Every fixer: gofmt over Go, then typescript fix
 
 test: node_modules/.install ## The Go tests (modules and the boundary), then the CLI specs against a fresh build of station
 	@go test ./src/... ./specs/...
-	@go build -ldflags "$(LDFLAGS)" -o $(TEST_PATH) ./src/cmd/station && touch $(TEST_PATH)
+	@go build -tags $(SPEC_TAGS) -ldflags "$(LDFLAGS)" -o $(TEST_PATH) ./src/cmd/station && touch $(TEST_PATH)
 	@npx typescript test
 
 check: lint test build-linux menubar-check ## Every gate a change passes

@@ -15,6 +15,9 @@ func (m machine) vault() contract.Vault {
 	if m.kind != catalog.Host {
 		return noVault{}
 	}
+	if m.world != nil {
+		return m.world.vault()
+	}
 	return keychain.New(m.host.Run)
 }
 

@@ -6,6 +6,7 @@ import (
 	accountsjsonfile "github.com/jterrazz/studio-station/src/accounts/adapter/jsonfile"
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	corejsonfile "github.com/jterrazz/studio-station/src/core/adapter/jsonfile"
+	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	"github.com/jterrazz/studio-station/src/core/store"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	imagesjsonfile "github.com/jterrazz/studio-station/src/images/adapter/jsonfile"
@@ -28,11 +29,22 @@ func preferenceGroups() []string {
 	}
 }
 
+type preferences interface {
+	corecontract.Preferences
+	store.Migrator
+	File() string
+}
+
+type machineStore interface {
+	machinescontract.MachineStore
+	store.Migrator
+}
+
 // value: every store station keeps on this machine, each built once here
 // over its file; nothing else constructs one.
 type stores struct {
-	prefs        *corejsonfile.Preferences
-	machines     *machinesjsonfile.Store
+	prefs        preferences
+	machines     machineStore
 	images       *imagesjsonfile.Store
 	shares       *accountsjsonfile.Shares
 	reservations *portsjsonfile.Reservations

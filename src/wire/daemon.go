@@ -45,12 +45,18 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	menubar := feeds.Menubar{Calls: calls, Clock: m.host.Clock, Here: m.where, Report: func(v power.View) *power.Report {
 		return &power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	}}
-	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths.State)), engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
+	var guests engine.Guests = engineGuests{dialer: ssh.New(), vms: m.machines(false)}
+	notifier := func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) }
+	if m.world != nil {
+		guests = m.world.guests()
+		notifier = func(func(subject, text string)) engine.Notifier { return m.world.notifier() }
+	}
+	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, guests, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths.State)), engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
 		State: m.paths.State, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: lends, Peer: m.engineAPI(),
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
-		Notifier: func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) },
+		Notifier: notifier,
 	})
 	lends.s = m.secretsVia(d)
 	d.Host(m.engineServer(d, registry))

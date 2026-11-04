@@ -1,5 +1,11 @@
 version: '2'
 
+# value: the spec build's files (`-tags world`, src/wire/world_on.go) are linted
+# with the rest; the release build's world_off.go holds no logic to lint.
+run:
+    build-tags:
+        - world
+
 # invariant: `default: none` makes the roster a decision: a golangci-lint release
 # that adds a linter to a preset cannot change a verdict without a line in this
 # file. The version that reads it is the `tool` directive of go.mod.
