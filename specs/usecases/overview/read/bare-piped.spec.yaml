@@ -1,0 +1,9 @@
+description: 'bare station piped prints the overview as records: titled sections, glyph-led rows, no colour'
+env: two-macs
+runs:
+    - command: '> bare.txt; /usr/bin/head -1 bare.txt; /usr/bin/grep -c "^●	" bare.txt >/dev/null && echo records; /usr/bin/grep -c "$(printf "\033")" bare.txt'
+      exit: 1
+      stdout: |
+          # Machine
+          records
+          0

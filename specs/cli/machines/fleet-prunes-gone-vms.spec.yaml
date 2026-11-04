@@ -14,5 +14,5 @@ runs:
     - command: '/usr/bin/grep -c gone .ssh/config'
       exit: 2
       stderr: |
-          Error: unknown command "/usr/bin/grep" for "station"
-          Hint: run station --help
+          Error: unknown command "/usr/bin/grep"
+          Hint: station help

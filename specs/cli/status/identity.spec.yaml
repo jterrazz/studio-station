@@ -7,7 +7,7 @@ runs:
       exit: 0
       stdout: |
           [["git-email","ok","admin@jterrazz.com",""],["git-name","degraded","Someone Else","expected Jean-Baptiste Terrazzoni"],["git-signing","ok","on",""],["gpg-key","ok","present","~/.gnupg"],["github","ok","octo",""],["ssh-key","ok","present","~/.ssh/id_ed25519"]]
-    - command: 'status | /usr/bin/sed -n ''/^# Identity/,/^# Tools/{/^# Tools/!p;}'''
+    - command: 'overview | /usr/bin/sed -n ''/^# Identity/,/^# Tools/{/^# Tools/!p;}'''
       exit: 0
       stdout: |
           # Identity

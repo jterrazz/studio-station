@@ -3,7 +3,7 @@ fixture:
     - ./__fixtures__/relocated/
     - ./__fixtures__/strays/
 runs:
-    - command: 'status </dev/null | /usr/bin/grep "^◐	go"'
+    - command: 'overview </dev/null | /usr/bin/grep "^◐	go"'
       exit: 0
       stdout: |
           ◐	go	~/go	2 B · station storage clean go

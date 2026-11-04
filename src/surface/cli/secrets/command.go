@@ -21,7 +21,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Use:     "secrets",
 		Short:   "The lend list, and what was lent to which VM",
 		Example: "  station secrets\n  station secrets --json",
-		Group:   "fleet",
+		Group:   kit.OnAMachine,
 		Read:    func(*Input) bool { return true },
 		Pages:   true,
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {

@@ -1,7 +1,7 @@
 description: 'a declared stray is a ◐ row of Workspace naming its tool and its repair; none, no row'
 fixture: ./__fixtures__/strays/
 runs:
-    - command: 'status </dev/null | /usr/bin/grep -e "^◐	go" -e "^◐	tart"'
+    - command: 'overview </dev/null | /usr/bin/grep -e "^◐	go" -e "^◐	tart"'
       exit: 0
       stdout: |
           ◐	go	~/go	2 B · station storage clean go

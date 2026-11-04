@@ -9,7 +9,7 @@ runs:
       exit: 0
       stdout: |
           ["unknown","?","no answer in 2s"]
-    - command: 'status | /usr/bin/grep "gpg key"'
+    - command: 'overview | /usr/bin/grep "gpg key"'
       timeout: 6000
       exit: 0
       stdout: |

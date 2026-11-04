@@ -24,7 +24,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Use:     "tools",
 		Short:   "The catalogue tools this machine may hold, agent skills included",
 		Example: "  station tools\n  station tools --json",
-		Group:   "here",
+		Group:   kit.OnAMachine,
 		Read:    func(*Input) bool { return true },
 		Live:    true,
 		Pages:   true,

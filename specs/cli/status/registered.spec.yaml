@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           ["macbook","ok",0]
-    - command: 'status | /usr/bin/grep -E ''^.	(name|setup)	'' | /usr/bin/cut -f1-3'
+    - command: 'overview | /usr/bin/grep -E ''^.	(name|setup)	'' | /usr/bin/cut -f1-3'
       exit: 0
       stdout: |
           ●	name	macbook

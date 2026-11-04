@@ -21,7 +21,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Use:     "tailnet",
 		Short:   "This host's node in the Tailscale app, its peers and what it serves",
 		Example: "  station tailnet\n  station tailnet --json",
-		Group:   "fleet",
+		Group:   kit.OnAMachine,
 		Read:    func(*struct{}) bool { return true },
 		Pages:   true,
 		Run: func(ctx context.Context, _ *struct{}, io kit.IO) error {

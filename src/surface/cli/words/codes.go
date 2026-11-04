@@ -11,7 +11,7 @@ type Wording func(e *fail.Error) (message, hint string)
 func Codes() map[fail.Code]Wording {
 	// invariant: the one table of every error code's words (rule
 	// every-code-worded): a code raised anywhere is worded here once.
-	return map[fail.Code]Wording{
+	all := map[fail.Code]Wording{
 		confirm.Needed: func(e *fail.Error) (string, string) {
 			return "refusing without the name typed: " + e.Subject, "re-run with --yes"
 		},
@@ -46,4 +46,8 @@ func Codes() map[fail.Code]Wording {
 			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"
 		},
 	}
+	for code, word := range usage() {
+		all[code] = word
+	}
+	return all
 }

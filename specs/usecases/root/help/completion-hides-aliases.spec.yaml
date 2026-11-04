@@ -1,0 +1,26 @@
+description: 'completion offers the commands of the help, never a hidden alias or plumbing'
+env: one-mac
+runs:
+    - command: '__complete "" 2>/dev/null | /usr/bin/grep -v "^:" | /usr/bin/cut -f1'
+      exit: 0
+      stdout: |
+          accounts
+          config
+          help
+          images
+          machines
+          overview
+          power
+          run
+          secrets
+          services
+          setup
+          start
+          stop
+          storage
+          tailnet
+          tools
+    - command: 'completion zsh | /usr/bin/grep -c "compdef _station station"'
+      exit: 0
+      stdout: |
+          1

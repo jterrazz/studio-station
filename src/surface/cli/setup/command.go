@@ -22,7 +22,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Use:     "setup",
 		Short:   "Set this machine up: its name, the ~/.zshrc block, the XDG folders",
 		Example: "  station setup\n  station setup --name macbook",
-		Group:   "binary",
+		Group:   kit.StationItself,
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.StringVar(&in.Name, "name", "", "name this host in the fleet (asked on a terminal when omitted)")
 		},

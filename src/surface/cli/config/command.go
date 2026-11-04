@@ -23,7 +23,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Use:     "config",
 		Short:   "The config items that set this machine up",
 		Example: "  station config\n  station config --json",
-		Group:   "here",
+		Group:   kit.OnAMachine,
 		Read:    func(*Input) bool { return true },
 		Pages:   true,
 		Entry:   kit.Entry("station config install", d.Names),

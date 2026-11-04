@@ -5,8 +5,8 @@ runs:
       stderr: |
           Error: invalid argument "maybe" for "--json" flag: strconv.ParseBool: parsing "maybe": invalid syntax
           Hint: run station status --help
-    - command: 'status tools'
+    - command: 'overview tools'
       exit: 2
       stderr: |
-          Error: unknown command "tools" for "station status"
-          Hint: run station status --help
+          Error: unknown command "tools" for "station overview"
+          Hint: run station overview --help

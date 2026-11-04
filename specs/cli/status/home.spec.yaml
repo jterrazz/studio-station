@@ -6,7 +6,7 @@ fixture:
     - ../../__fixtures__/status-registered/
 env: terminal
 runs:
-    - command: '--version >/dev/null; terminal --size 100x80 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" status | /usr/bin/sed -e ''s|gui/[0-9]*/|gui/UID/|'''
+    - command: '--version >/dev/null; terminal --size 100x80 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" overview | /usr/bin/sed -e ''s|gui/[0-9]*/|gui/UID/|'''
       stdin: |
           scrollback
       exit: 0

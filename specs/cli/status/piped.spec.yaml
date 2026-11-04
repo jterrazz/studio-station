@@ -2,23 +2,23 @@ description: 'status without a terminal is tab-separated records, escape-free, w
 fixture:
     - ../../__fixtures__/status-tools-mixed/
 runs:
-    - command: 'status </dev/null | /usr/bin/head -1'
+    - command: 'overview </dev/null | /usr/bin/head -1'
       exit: 0
       stdout: |
           # Machine
-    - command: 'status </dev/null | /usr/bin/grep -c "$(printf ''\033'')"'
+    - command: 'overview </dev/null | /usr/bin/grep -c "$(printf ''\033'')"'
       exit: 1
       stdout: |
           0
-    - command: 'status | /usr/bin/grep -c -E ''^# Tools([[:space:]][0-9]+ (●|◐|○|✗))+$'''
+    - command: 'overview | /usr/bin/grep -c -E ''^# Tools([[:space:]][0-9]+ (●|◐|○|✗))+$'''
       exit: 0
       stdout: |
           1
-    - command: 'status | /usr/bin/grep ''^# Tools'' | /usr/bin/sed -E ''s/[0-9]+//g'' | /usr/bin/tr ''\t'' ''|'''
+    - command: 'overview | /usr/bin/grep ''^# Tools'' | /usr/bin/sed -E ''s/[0-9]+//g'' | /usr/bin/tr ''\t'' ''|'''
       exit: 0
       stdout: |
           # Tools| ●| ◐| ○
-    - command: 'status | /usr/bin/grep -E ''^# (Machine|Environment|Workspace|Identity|Tools|Config)'' | /usr/bin/cut -f1'
+    - command: 'overview | /usr/bin/grep -E ''^# (Machine|Environment|Workspace|Identity|Tools|Config)'' | /usr/bin/cut -f1'
       exit: 0
       stdout: |
           # Machine

@@ -63,6 +63,14 @@ func (w *Writer) Note(text string) {
 	_, _ = io.WriteString(w.stderr.W, text+"\n")
 }
 
+func (w *Writer) Now(command string) {
+	// value: the one muted line a hidden alias leaves on stderr, naming the
+	// command it ran (SPEC §4.3).
+	w.settle()
+	c := Detect(w.stderr, w.env, false)
+	_, _ = io.WriteString(w.colored(w.stderr, c), tty.NowLine(command, c.Mode == TTY, c.Dark))
+}
+
 func (w *Writer) Menu(render func(io.Writer)) {
 	w.settle()
 	render(w.stderr.W)

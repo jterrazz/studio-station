@@ -3,7 +3,7 @@ fixture:
     - ../__fixtures__/estate/
     - ../../__fixtures__/serving/
 runs:
-    - command: 'status'
+    - command: 'overview'
       exit: 0
       stdout: |
           # Machine

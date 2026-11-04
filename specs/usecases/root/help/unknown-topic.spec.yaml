@@ -1,0 +1,8 @@
+description: 'help on a word station does not know is the unknown command block, exit 2'
+env: one-mac
+runs:
+    - command: 'help frobnicate'
+      exit: 2
+      stderr: |
+          Error: unknown command "frobnicate"
+          Hint: station help

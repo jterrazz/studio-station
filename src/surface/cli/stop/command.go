@@ -28,7 +28,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Use:     "stop",
 		Short:   "Stop everything station runs on this host: its VMs (temporary deleted), then station itself",
 		Example: "  station stop\n  station stop --yes",
-		Group:   "fleet",
+		Group:   kit.ImagesAndEngine,
 		Asks:    true,
 		Ask: func(in *Input) (bool, error) {
 			return env.Prompt.Confirm(pageoutcome.StopConfirm(in.asked.Work, d.Here.Machine))

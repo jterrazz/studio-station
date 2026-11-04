@@ -24,7 +24,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Use:     "accounts",
 		Short:   "Who has access to what, here and in this host's VMs: identities and scopes, never a token",
 		Example: "  station accounts\n  station accounts --json",
-		Group:   "fleet",
+		Group:   kit.OnAMachine,
 		Read:    func(*Input) bool { return true },
 		Live:    true,
 		Pages:   true,

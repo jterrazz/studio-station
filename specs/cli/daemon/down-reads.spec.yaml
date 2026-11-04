@@ -10,7 +10,7 @@ runs:
           {"running":false,"version":""}
           ◐	x	host			online	192.0.2.1	daemon not installed · station setup
           ◐	daemon			x	not installed		station setup
-    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" status | /usr/bin/awk -F "\t" ''$2 == "daemon"''; "$STATION" machines | /usr/bin/grep daemon; "$STATION" services'
+    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.daemon.plist; "$STATION" overview | /usr/bin/awk -F "\t" ''$2 == "daemon"''; "$STATION" machines | /usr/bin/grep daemon; "$STATION" services'
       exit: 0
       stdout: |
           ◐	daemon	stopped	station start

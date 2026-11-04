@@ -1,0 +1,13 @@
+description: 'station --all on a terminal prints the overview unfolded and returns, never the TUI'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal "$STATION" --all | /usr/bin/head -1'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          # Machine

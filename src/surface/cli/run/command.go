@@ -7,5 +7,5 @@ import (
 )
 
 func Command(env kit.Env, children ...*cobra.Command) *cobra.Command {
-	return kit.Group("run", "Canned git and docker command sequences", "shortcuts", env, children...)
+	return kit.Group("run", "Canned git and docker command sequences", kit.OnAMachine, env, children...)
 }

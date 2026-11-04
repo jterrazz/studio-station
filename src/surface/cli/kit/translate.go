@@ -52,6 +52,9 @@ func Translate(err error, path string) *fail.Error {
 	message := err.Error()
 	if strings.HasPrefix(message, "unknown command ") {
 		first, suggestions, _ := strings.Cut(message, "\n\nDid you mean this?\n")
+		if word, ok := strings.CutSuffix(strings.TrimSpace(first), " for \"station\""); ok {
+			return Translate(fail.New(fail.Refused, words.UnknownCommand, strings.Trim(strings.TrimPrefix(word, "unknown command "), "\""), nil), path)
+		}
 		if s := strings.Fields(suggestions); len(s) > 0 {
 			hint += didYouMean(s)
 		}

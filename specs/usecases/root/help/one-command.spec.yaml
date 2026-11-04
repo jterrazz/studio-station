@@ -1,0 +1,18 @@
+description: 'station help <command> prints that command, its commands, flags and examples'
+env: one-mac
+runs:
+    - command: 'help services | /usr/bin/grep -E "^  [A-Z]|^    [a-z]+ " | /usr/bin/sed -E "s/ +$//"'
+      exit: 0
+      stdout: |4
+            What the fleet's VMs listen on, and the URL each is published at
+            USAGE
+              station services [command] [--flags]
+            EXAMPLES
+              station services
+              station services --json
+              station services url 3000 # in a VM: the public URL, before anything listens
+              station services release api:3000
+            COMMANDS
+              release <vm>:<port> | <port> [--flags]  Give a service's host port back: its URL changes at its next listen
+              url <port> [--flags]                    In a VM: reserve a port's public URL now, and print it
+            FLAGS

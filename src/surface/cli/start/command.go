@@ -23,7 +23,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Use:     "start",
 		Short:   "Start station on this host again, and the lasting VMs whose wish is running",
 		Example: "  station start",
-		Group:   "fleet",
+		Group:   kit.ImagesAndEngine,
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
 			report, err := call.Invoke(ctx, env.Calls, env.Target(), enginecalls.Start, enginecalls.StartIn{}, nil)
 			if err != nil {

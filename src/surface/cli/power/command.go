@@ -24,7 +24,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Use:     "power",
 		Short:   "Keep this host awake for a while: the session, its guards and the reading",
 		Example: "  station power\n  station power awake --lid --for 2h\n  station power sleep",
-		Group:   "here",
+		Group:   kit.OnAMachine,
 		Read:    func(*Input) bool { return true },
 		Live:    true,
 		Pages:   true,

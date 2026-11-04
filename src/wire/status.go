@@ -22,11 +22,15 @@ import (
 	settingsmacos "github.com/jterrazz/studio-station/src/settings/adapter/macos"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	statuscmd "github.com/jterrazz/studio-station/src/surface/cli/status"
+	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
 )
 
+func overviewCommand(env kit.Env, m machine) *cobra.Command {
+	return overviewcmd.Command(overviewcmd.Deps{Here: m.where}, env)
+}
+
 func statusCommand(env kit.Env, m machine) *cobra.Command {
-	return statuscmd.Command(statuscmd.Deps{Here: m.where}, env)
+	return kit.Alias("status", overviewcmd.Command(overviewcmd.Deps{Here: m.where, Status: true}, env), "overview")
 }
 
 func statusDeps(env kit.Env, m machine) overviewcalls.Sections {

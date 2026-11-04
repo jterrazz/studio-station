@@ -8,7 +8,7 @@ runs:
       exit: 0
       stdout: |
           ["ok","app-store","{{workdir}}/root/Applications/Tailscale.app/Contents/MacOS/Tailscale"]
-    - command: 'status | /usr/bin/grep -E ''^.	tailnet	'''
+    - command: 'overview | /usr/bin/grep -E ''^.	tailnet	'''
       exit: 0
       stdout: |
           ●	tailnet	Running · macbook.tail1234.ts.net · 192.0.2.1 · app-store · {{workdir}}/root/Applications/Tailscale.app/Contents/MacOS/Tailscale
