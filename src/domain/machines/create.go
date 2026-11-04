@@ -177,17 +177,18 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if !ok {
 		return r, &UnknownImageError{Image: r.Image}
 	}
-	var err error
-	if r.Network, err = networkFor(img, r.Network); err != nil {
+	network, err := networkFor(img, r.Network)
+	if err != nil {
 		return r, err
 	}
+	r.Network = network
 	if r.Name != "" && !validName(r.Name) {
 		return r, &BadNameError{Name: r.Name}
 	}
-	if _, err := s.engine.Version(ctx); err != nil {
+	if _, err = s.engine.Version(ctx); err != nil {
 		return r, &NoEngineError{Hypervisor: s.engine.Name(), Cause: err}
 	}
-	if _, _, err := s.img.Latest(ctx, r.Image); err != nil {
+	if _, _, err = s.img.Latest(ctx, r.Image); err != nil {
 		return r, err
 	}
 	held, on, err := s.claims(ctx)
