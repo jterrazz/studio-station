@@ -104,7 +104,7 @@ With Serve off they hold the local URL, `http://127.0.0.1:<host port>`, and the 
 ← {"v":2,"id":"8","error":{"type":"needs-confirmation","code":"confirm.yes-needed","subject":"stop","message":"refusing without --yes: stop","hint":"re-run with --yes"}}
 ```
 
-The daemon serves every call of [`calls.json`](calls.json) (the registry `make generate` projects: each call's name, its output schema, its section, where it runs, its confirmation and the errors it declares), run on this host as the CLI runs it, and its own calls, which the CLI's reads and the VMs' guests ask of its live state:
+The daemon serves every call of [`calls.json`](../../src/remote/api/calls.json) (the registry `make generate` projects: each call's name, its output schema, its section, where it runs, its confirmation and the errors it declares), run on this host as the CLI runs it, and its own calls, which the CLI's reads and the VMs' guests ask of its live state:
 
 | call                                                       | in                                | out                                                                                    |
 | ---------------------------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------- |

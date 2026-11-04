@@ -1,0 +1,374 @@
+{
+  "schema": "station.calls/v1",
+  "calls": [
+    {
+      "name": "accounts.read",
+      "schema": "station.accounts.read/v1",
+      "section": "accounts",
+      "where": "at-target",
+      "in": "ReadIn",
+      "out": "Report",
+      "watch": true
+    },
+    {
+      "name": "activity.sample",
+      "schema": "station.activity.sample/v1",
+      "section": "activity",
+      "where": "at-target",
+      "in": "SampleIn",
+      "out": "Sample"
+    },
+    {
+      "name": "config.install",
+      "schema": "station.config.install/v1",
+      "section": "settings",
+      "where": "at-target",
+      "in": "InstallIn"
+    },
+    {
+      "name": "config.list",
+      "schema": "station.config.list/v1",
+      "section": "settings",
+      "where": "at-target",
+      "in": "ListIn",
+      "watch": true
+    },
+    {
+      "name": "config.uninstall",
+      "schema": "station.config.uninstall/v1",
+      "section": "settings",
+      "where": "at-target",
+      "confirm": "off-here",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "UninstallIn"
+    },
+    {
+      "name": "engine.start",
+      "schema": "station.engine.start/v1",
+      "where": "in-process",
+      "in": "StartIn",
+      "out": "StartReport"
+    },
+    {
+      "name": "engine.stop",
+      "schema": "station.engine.stop/v1",
+      "where": "in-process",
+      "confirm": "stop-engine",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "StopIn",
+      "out": "StopOut"
+    },
+    {
+      "name": "images.build",
+      "schema": "station.images.build/v1",
+      "where": "in-engine",
+      "in": "BuildIn"
+    },
+    {
+      "name": "images.delete",
+      "schema": "station.images.delete/v1",
+      "where": "in-engine",
+      "confirm": "delete-image",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "DeleteIn"
+    },
+    {
+      "name": "images.list",
+      "schema": "station.images.list/v1",
+      "where": "at-target",
+      "in": "ListIn"
+    },
+    {
+      "name": "machines.add",
+      "schema": "station.machines.add/v1",
+      "where": "in-process",
+      "in": "AddIn"
+    },
+    {
+      "name": "machines.create",
+      "schema": "station.machines.create/v1",
+      "where": "in-engine",
+      "in": "CreateIn",
+      "out": "Created"
+    },
+    {
+      "name": "machines.delete",
+      "schema": "station.machines.delete/v1",
+      "where": "in-engine",
+      "confirm": "delete",
+      "errors": [
+        "confirm.mismatch",
+        "confirm.needed"
+      ],
+      "in": "DeleteIn",
+      "out": "DeleteReport"
+    },
+    {
+      "name": "machines.forget",
+      "schema": "station.machines.forget/v1",
+      "where": "in-process",
+      "confirm": "forget",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "ForgetIn"
+    },
+    {
+      "name": "machines.list",
+      "schema": "station.machines.list/v1",
+      "where": "in-process",
+      "in": "ListIn",
+      "out": "ListOut"
+    },
+    {
+      "name": "machines.probe",
+      "schema": "station.machines.probe/v1",
+      "where": "in-process",
+      "in": "ProbeIn",
+      "out": "ProbeReport"
+    },
+    {
+      "name": "machines.restart",
+      "schema": "station.machines.restart/v1",
+      "where": "at-target",
+      "confirm": "restart-mac",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "RestartIn",
+      "out": "RestartReport"
+    },
+    {
+      "name": "machines.start",
+      "schema": "station.machines.start/v1",
+      "where": "in-engine",
+      "in": "VMIn"
+    },
+    {
+      "name": "machines.stop",
+      "schema": "station.machines.stop/v1",
+      "where": "in-engine",
+      "in": "VMIn"
+    },
+    {
+      "name": "machines.unlock",
+      "schema": "station.machines.unlock/v1",
+      "where": "in-process",
+      "in": "UnlockIn"
+    },
+    {
+      "name": "overview.read",
+      "schema": "station.overview.read/v1",
+      "section": "overview",
+      "where": "at-target",
+      "in": "ReadIn",
+      "out": "Snapshot[github.com/jterrazz/studio-station/src/apps.Report,github.com/jterrazz/studio-station/src/settings.Report,github.com/jterrazz/studio-station/src/disk.StrayReport]",
+      "watch": true
+    },
+    {
+      "name": "power.awake",
+      "schema": "station.power.awake/v1",
+      "where": "in-engine",
+      "in": "Request",
+      "out": "Awoken"
+    },
+    {
+      "name": "power.read",
+      "schema": "station.power.read/v1",
+      "where": "in-engine",
+      "in": "ReadIn",
+      "out": "Report",
+      "watch": true
+    },
+    {
+      "name": "power.sleep",
+      "schema": "station.power.sleep/v1",
+      "where": "in-engine",
+      "in": "SleepIn",
+      "out": "Slept"
+    },
+    {
+      "name": "run.containers",
+      "schema": "station.run.containers/v1",
+      "section": "settings",
+      "where": "at-target",
+      "confirm": "remove",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "ContainersIn",
+      "out": "ContainersOutcome"
+    },
+    {
+      "name": "run.git",
+      "schema": "station.run.git/v1",
+      "section": "settings",
+      "where": "at-target",
+      "in": "GitIn"
+    },
+    {
+      "name": "secrets.allow",
+      "schema": "station.secrets.allow/v1",
+      "section": "accounts",
+      "where": "at-target",
+      "in": "NamesIn",
+      "out": "RecallReport"
+    },
+    {
+      "name": "secrets.disallow",
+      "schema": "station.secrets.disallow/v1",
+      "section": "accounts",
+      "where": "in-engine",
+      "confirm": "take-back",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "DisallowIn",
+      "out": "RecallReport"
+    },
+    {
+      "name": "secrets.lend",
+      "schema": "station.secrets.lend/v1",
+      "section": "accounts",
+      "where": "in-engine",
+      "in": "LendIn",
+      "out": "LendReport"
+    },
+    {
+      "name": "secrets.list",
+      "schema": "station.secrets.list/v1",
+      "section": "accounts",
+      "where": "at-target",
+      "in": "ListIn",
+      "out": "Lending"
+    },
+    {
+      "name": "secrets.recall",
+      "schema": "station.secrets.recall/v1",
+      "section": "accounts",
+      "where": "in-engine",
+      "confirm": "take-back",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "RecallIn",
+      "out": "RecallReport"
+    },
+    {
+      "name": "services.list",
+      "schema": "station.services.list/v1",
+      "section": "ports",
+      "where": "at-target",
+      "in": "ListIn",
+      "out": "Fleet"
+    },
+    {
+      "name": "services.release",
+      "schema": "station.services.release/v1",
+      "section": "ports",
+      "where": "in-engine",
+      "confirm": "stop-sharing",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "ReleaseIn",
+      "out": "ReleaseOut"
+    },
+    {
+      "name": "services.url",
+      "schema": "station.services.url/v1",
+      "section": "ports",
+      "where": "in-engine",
+      "in": "URLIn",
+      "out": "ServiceView"
+    },
+    {
+      "name": "setup.run",
+      "schema": "station.setup.run/v1",
+      "where": "at-target",
+      "in": "RunIn",
+      "out": "Report"
+    },
+    {
+      "name": "shell.zsh",
+      "schema": "station.shell.zsh/v1",
+      "where": "at-target",
+      "in": "ZshIn",
+      "out": "string"
+    },
+    {
+      "name": "storage.clean",
+      "schema": "station.storage.clean/v1",
+      "section": "disk",
+      "where": "at-target",
+      "in": "CleanIn"
+    },
+    {
+      "name": "storage.list",
+      "schema": "station.storage.list/v1",
+      "section": "disk",
+      "where": "at-target",
+      "in": "ListIn",
+      "out": "Report",
+      "watch": true
+    },
+    {
+      "name": "storage.reset",
+      "schema": "station.storage.reset/v1",
+      "section": "disk",
+      "where": "at-target",
+      "confirm": "erase",
+      "errors": [
+        "confirm.mismatch",
+        "confirm.needed"
+      ],
+      "in": "ResetIn"
+    },
+    {
+      "name": "tailnet.read",
+      "schema": "station.tailnet.read/v1",
+      "where": "at-target",
+      "in": "TailnetIn",
+      "out": "Status"
+    },
+    {
+      "name": "tools.install",
+      "schema": "station.tools.install/v1",
+      "section": "apps",
+      "where": "at-target",
+      "in": "InstallIn"
+    },
+    {
+      "name": "tools.list",
+      "schema": "station.tools.list/v1",
+      "section": "apps",
+      "where": "at-target",
+      "in": "ListIn",
+      "watch": true
+    },
+    {
+      "name": "tools.uninstall",
+      "schema": "station.tools.uninstall/v1",
+      "section": "apps",
+      "where": "at-target",
+      "confirm": "remove",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "UninstallIn"
+    },
+    {
+      "name": "tools.upgrade",
+      "schema": "station.tools.upgrade/v1",
+      "section": "apps",
+      "where": "at-target",
+      "in": "UpgradeIn"
+    }
+  ]
+}

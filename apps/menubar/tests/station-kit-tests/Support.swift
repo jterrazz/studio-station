@@ -9,6 +9,8 @@ enum Tree {
     static let stream = root.appendingPathComponent("src/ui/testdata/stream/menubar.jsonl")
     static let goldens = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("testdata")
     static let sources = root.appendingPathComponent("apps/menubar/sources/station-kit")
+    static let app = root.appendingPathComponent("apps/menubar/sources/station-menu-bar")
+    static let calls = root.appendingPathComponent("src/remote/api/calls.json")
 
     static func fixtures() throws -> [(name: String, data: Data)] {
         try FileManager.default.contentsOfDirectory(at: pages, includingPropertiesForKeys: nil)
