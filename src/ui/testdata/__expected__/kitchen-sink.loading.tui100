@@ -22,7 +22,7 @@
    ◌ switch
    ◌ sip
    ◌ unknown
- - Marks                                                                                       21 ◌
+ - Marks                                                                                       24 ◌
    ◌ outdated
    ◌ stray
    ◌ unreachable
@@ -44,6 +44,9 @@
    ◌ expiring
    ◌ guard
    ◌ absent
+   ◌ off-here
+   ◌ not-for-this-machine
+   ◌ not-known
  - Fleet                                                                                        4 ◌
    ◌ jterrazz-mac-mini
    ├─ ◌ linux-1

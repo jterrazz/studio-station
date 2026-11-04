@@ -25,12 +25,18 @@ type Catalogue struct {
 	Calls  []Entry `json:"calls"`
 }
 
+func Schema(name string) string {
+	// value: the schema name of a call's output, after its registry name
+	// (SPEC §11.1): the one place a schema is named.
+	return "station." + name + "/v1"
+}
+
 func (r *Registry) Catalogue() ([]byte, error) {
 	// value: calls.json, the registry's Meta as the API's catalogue: the
 	// names a client calls, the menu bar's action ids, the palette's entries.
 	c := Catalogue{Schema: CatalogueSchema, Calls: []Entry{}}
 	for _, m := range r.Metas() {
-		e := Entry{Name: m.Name, Schema: "station." + m.Name + "/v1", Section: string(m.Section), Where: string(m.Where), Confirm: string(m.Confirm), In: m.In, Out: m.Out, Watch: m.Watch}
+		e := Entry{Name: m.Name, Schema: Schema(m.Name), Section: string(m.Section), Where: string(m.Where), Confirm: string(m.Confirm), In: m.In, Out: m.Out, Watch: m.Watch}
 		for _, code := range m.Errors {
 			e.Errors = append(e.Errors, string(code))
 		}

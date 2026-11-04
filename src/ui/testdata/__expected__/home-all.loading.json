@@ -680,7 +680,7 @@
   ],
   "hints": [
     {
-      "command": "station status | cat",
+      "command": "station overview | cat",
       "external": true,
       "text": "for records"
     }

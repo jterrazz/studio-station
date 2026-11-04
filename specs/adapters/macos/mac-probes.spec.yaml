@@ -42,7 +42,7 @@ runs:
           launchctl bootout gui/UID/ai.jterrazz.gone && rm ~/Library/LaunchAgents/ai.jterrazz.gone.plist
           launchctl bootout gui/UID/ai.jterrazz.y && rm ~/Library/LaunchAgents/ai.jterrazz.y.plist
           sudo launchctl bootout system/com.docker.vmnetd && sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
-    - command: 'status | /usr/bin/sed -n ''/^# Background/,/^# /p'' | /usr/bin/sed -e ''$d'' -e ''s|gui/[0-9]*/|gui/UID/|'''
+    - command: 'overview | /usr/bin/sed -n ''/^# Background/,/^# /p'' | /usr/bin/sed -e ''$d'' -e ''s|gui/[0-9]*/|gui/UID/|'''
       exit: 0
       stdout: |
           # Background	3 ●	2 ◐	1 ✗
@@ -62,7 +62,7 @@ runs:
           ran
     - command: '--version >/dev/null; /bin/rm .calls; /bin/mkdir -p root/Library/Preferences && : > root/Library/Preferences/com.apple.SoftwareUpdate.plist'
       exit: 0
-    - command: 'status | /usr/bin/grep "macos"'
+    - command: 'overview | /usr/bin/grep "macos"'
       exit: 0
       stdout: |
           ◐	macos	2 pending	checked 1h ago

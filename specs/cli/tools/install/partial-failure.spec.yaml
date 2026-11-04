@@ -1,4 +1,4 @@
-description: 'one bundle for two tools: what brew lists after is ok, the rest broken, exit 1 after the document'
+description: 'one bundle for two tools: bat ok, ghostty broken in our words, brew''s error in the log, exit 1'
 fixture:
     - ../../../__fixtures__/stubs/
     - ./__fixtures__/partial-failure/
@@ -7,9 +7,13 @@ runs:
       exit: 1
       stdout: |
           ●	bat
-          ✗	ghostty	brew bundle exited 1: curl: (22) The requested URL returned error: 404
+          ✗	ghostty	the install failed: its output is in ~/.local/state/station/logs/apps.log
       stderr: |
           ==> Downloading ghostty
           curl: (22) The requested URL returned error: 404
           Error: 1 of 2 tools failed
           Hint: station tools install ghostty
+    - command: '--version >/dev/null; /usr/bin/cut -d" " -f2- .local/state/station/logs/apps.log'
+      exit: 0
+      stdout: |
+          install bat ghostty: brew bundle exited 1: curl: (22) The requested URL returned error: 404

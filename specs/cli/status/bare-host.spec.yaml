@@ -4,7 +4,7 @@ runs:
       exit: 0
       stdout: |
           [0,0,0]
-    - command: 'status | /usr/bin/grep -c -E ''^# (Services|Background)'''
+    - command: 'overview | /usr/bin/grep -c -E ''^# (Services|Background)'''
       exit: 1
       stdout: |
           0

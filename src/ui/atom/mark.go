@@ -21,6 +21,12 @@ func Glyph(m page.Mark) string {
 		return token.MarkBroken
 	case page.Awaiting:
 		return token.MarkPending
+	case page.OffHere:
+		return token.MarkOffHere
+	case page.NotForThisMachine:
+		return token.MarkNotFor
+	case page.NotKnown:
+		return token.MarkUnknown
 	case page.Unjudged:
 	}
 	return ""
@@ -34,7 +40,9 @@ func Tone(st token.Styles, m page.Mark) lipgloss.Style {
 		return st.Warn
 	case page.Broken:
 		return st.Bad
-	case page.Absent, page.Awaiting, page.Unjudged:
+	case page.NotForThisMachine:
+		return st.Subtle
+	case page.Absent, page.Awaiting, page.OffHere, page.NotKnown, page.Unjudged:
 	}
 	return st.Muted
 }

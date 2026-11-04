@@ -29,39 +29,42 @@
    ● sip       off
    ◐ unknown   ?  no answer in 2s
 
- Marks  15 ◐  2 ○  4 ✗
-   ◐ outdated     attention  120 outda…
+ Marks  15 ◐  2 ○  4 ✗  1 ⊘  1 –  1 ?
+   ◐ outdated              attention
      → station tools upgrade --via brew
-   ◐ stray        attention  out of pl…
+   ◐ stray                 attention
      → station setup
-   ◐ unreachable  attention  unreachab…
-   ◐ mismatch     attention  station v…
-   ◐ unmanaged    attention  on PATH,…
-   ◐ missing      attention  installed…
+   ◐ unreachable           attention
+   ◐ mismatch              attention
+   ◐ unmanaged             attention
+   ◐ missing               attention
      → station tools install mise
-   ◐ partial      attention  policy pa…
-   ◐ differs      attention  differs f…
+   ◐ partial               attention
+   ◐ differs               attention
      → station config install tart-launcher
-   ◐ unset        attention  name not…
+   ◐ unset                 attention
      → station setup
-   ◐ stopped      attention  stopped
+   ◐ stopped               attention
      → station start
-   ◐ late         attention  no answer…
-   ◐ degraded     attention  Serve is…
-   ◐ orphan       attention  orphan: D…
+   ◐ late                  attention
+   ◐ degraded              attention
+   ◐ orphan                attention
      → sudo launchctl bootout system/com.docker.vmnetd
-   ○ waiting      absent     waiting
-   ✗ failing      broken     failing ·…
-   ✗ refused      broken     refused
-   ✗ down         broken  not running
-   ✗ stale        broken     stale
+   ○ waiting               absent
+   ✗ failing               broken
+   ✗ refused               broken
+   ✗ down                  broken
+   ✗ stale                 broken
      → station machines delete linux-2
-   ◐ expiring     attention  42m left
+   ◐ expiring              attention
      → station secrets lend --to api operator:claude:oauth-token
-   ◐ guard        attention  28% · on…
+   ◐ guard                 attention
      → station power
    ○ absent
      → station tools install mas
+   ⊘ off-here              turned off…
+   – not-for-this-machine  Macs only
+   ? not-known             does not an…
 
  Fleet  3 ●  1 ○
    ● jterrazz-mac-mini  host
@@ -89,5 +92,5 @@
  Peers
      iphone  offline
 
- → station status --all
+ → station overview --all
  → station tools for the catalogue

@@ -26,7 +26,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Example: "  station services\n  station services --json\n" +
 			"  station services url 3000        # in a VM: the public URL, before anything listens\n" +
 			"  station services release api:3000",
-		Group: "fleet",
+		Group: kit.OnAMachine,
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.Here, "here", false, "only this host")
 		},

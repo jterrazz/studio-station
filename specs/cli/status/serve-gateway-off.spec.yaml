@@ -6,7 +6,7 @@ runs:
       exit: 0
       stdout: |
           {"name":"Tailscale Serve","state":"degraded","value":"off","detail":"Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console"}
-    - command: '--version >/dev/null; : > answers/tailscale/status.serve-off; "$STATION" status | /usr/bin/grep "Tailscale Serve"'
+    - command: '--version >/dev/null; : > answers/tailscale/status.serve-off; "$STATION" overview | /usr/bin/grep "Tailscale Serve"'
       exit: 0
       stdout: |
           ◐	Tailscale Serve	off	Serve is off on the tailnet: enable HTTPS certificates in the Tailscale admin console

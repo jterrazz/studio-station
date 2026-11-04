@@ -34,6 +34,9 @@ type World struct {
 	Registry map[string]string `json:"registry,omitempty"`
 	// value: the failures injected into the fakes, in the order scripted.
 	Script []Fault `json:"script,omitempty"`
+	// value: every command station asked a Mac of the world to run as root,
+	// each refused (SC-03: station never runs sudo).
+	AsRoot []string `json:"as_root,omitempty"`
 }
 
 type Fault struct {

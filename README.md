@@ -21,7 +21,7 @@ The binary lives at `~/.local/bin/station`; its files follow the XDG folders. Th
 station                 # on a terminal: the TUI (Home · Tools · Config · Storage │ Fleet · Services · Accounts · Power)
 
 # Here
-station status          # everything about this machine
+station overview        # everything about this machine
 station tools           # install, uninstall, upgrade tools and agent skills
 station config          # dotfiles, logins and macOS defaults
 station storage         # what each tool keeps on disk: clean caches, reset data

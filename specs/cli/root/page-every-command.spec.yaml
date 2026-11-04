@@ -2,11 +2,11 @@ description: 'every read answers --page with station.page/v1, its page id, ready
 fixture:
     - ../__fixtures__/estate/
 runs:
-    - command: 'status --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+    - command: 'overview --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |
           station.page/v1	home	ready	true
-    - command: 'status --all --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+    - command: 'overview --all --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |
           station.page/v1	home	ready	true

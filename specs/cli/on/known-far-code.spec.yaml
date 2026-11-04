@@ -5,4 +5,4 @@ runs:
       exit: 2
       stderr: |
           Error: a server has no apps section
-          Hint: run station status for what y has
+          Hint: run station overview for what y has

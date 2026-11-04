@@ -3,7 +3,7 @@ fixture:
     - ../../__fixtures__/status-registered/
     - ./__fixtures__/studio-left/
 runs:
-    - command: 'status | /usr/bin/grep -E ''^.	setup	'''
+    - command: 'overview | /usr/bin/grep -E ''^.	setup	'''
       exit: 0
       stdout: |
           ◐	setup	layout	station setup

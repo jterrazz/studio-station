@@ -11,7 +11,7 @@ runs:
       stdout: |
           on
           macbook.tail1234.ts.net
-    - command: '--version >/dev/null; "$STATION" status >/dev/null; /usr/bin/grep -c ''tailscale serve --bg'' .calls'
+    - command: '--version >/dev/null; "$STATION" overview >/dev/null; /usr/bin/grep -c ''tailscale serve --bg'' .calls'
       exit: 1
       stdout: |
           0

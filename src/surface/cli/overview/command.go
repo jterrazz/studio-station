@@ -1,4 +1,4 @@
-package statuscmd
+package overviewcmd
 
 import (
 	"context"
@@ -15,18 +15,21 @@ import (
 
 type Deps struct {
 	Here page.Context
+	// value: the hidden status alias, whose --json keeps station.status/v1
+	// for the scripts that decode it (SPEC §11.4).
+	Status bool
 }
 
 type Input struct{ All bool }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
-		Use:     "status",
-		Short:   "Everything about this machine: what needs action first, then each area",
-		Example: "  station status\n  station status --all\n  station status --json",
-		Group:   "here",
+		Use:     "overview",
+		Short:   "This machine at a glance: what needs you first, then each section",
+		Example: "  station overview\n  station overview --all\n  station overview --json",
+		Group:   kit.OnAMachine,
 		Declare: func(f *pflag.FlagSet, in *Input) {
-			f.BoolVar(&in.All, "all", false, "print every section open, not only what needs action")
+			f.BoolVar(&in.All, "all", false, "unfold every section, not only what needs you")
 		},
 		Read:  func(*Input) bool { return true },
 		Live:  true,
@@ -57,7 +60,11 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagehome.Snapshot(snapshot, d.Here, in.All), pagehome.SnapshotContract(snapshot))
+			contract := pagehome.SnapshotContract(snapshot)
+			if !d.Status {
+				contract.Schema = call.Schema(overviewcalls.Read.Name)
+			}
+			return io.Page(pagehome.Snapshot(snapshot, d.Here, in.All), contract)
 		},
 	}, env)
 }

@@ -40,5 +40,5 @@
 
  [1;38;2;30;102;245mConfig[m  [38;2;64;160;43m1 ●[m  [38;2;223;142;29m1 ◐[m
 
- [38;2;108;111;133m→ [m[38;2;76;79;105mstation status --all[m [38;2;108;111;133mfor every row[m
- [38;2;108;111;133m→ [m[38;2;76;79;105mstation status | cat[m [38;2;108;111;133mfor records[m
+ [38;2;108;111;133m→ [m[38;2;76;79;105mstation overview --all[m [38;2;108;111;133mfor every row[m
+ [38;2;108;111;133m→ [m[38;2;76;79;105mstation overview | cat[m [38;2;108;111;133mfor records[m

@@ -81,3 +81,11 @@ func Wait(out io.Writer, label string, dark bool) (stop func()) {
 		}
 	}
 }
+
+func NowLine(command string, colored, dark bool) string {
+	line := token.Arrow + " now: " + command
+	if !colored {
+		return line + "\n"
+	}
+	return token.New(dark).Muted.Render(line) + "\n"
+}

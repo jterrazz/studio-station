@@ -714,12 +714,57 @@
               "kind": "none"
             }
           }
+        },
+        {
+          "row": {
+            "id": "off-here",
+            "mark": "pending",
+            "label": "off-here",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "not-for-this-machine",
+            "mark": "pending",
+            "label": "not-for-this-machine",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "not-known",
+            "mark": "pending",
+            "label": "not-known",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
         }
       ],
       "counts": [
         {
           "mark": "pending",
-          "n": 21
+          "n": 24
         }
       ]
     },
@@ -998,7 +1043,7 @@
   ],
   "hints": [
     {
-      "command": "station status --all"
+      "command": "station overview --all"
     },
     {
       "command": "station tools",

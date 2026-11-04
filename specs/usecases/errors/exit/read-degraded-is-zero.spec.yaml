@@ -1,0 +1,22 @@
+description: 'a read with a Mac that does not answer, or a stopped engine, still exits 0 with its findings'
+env: two-macs
+runs:
+    - command: 'world power-cut jterrazz-mac-mini'
+      exit: 0
+    - command: 'machines | /usr/bin/grep jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ◐	jterrazz-mac-mini	host			unreachable	-	-
+    - command: 'world engine-crash jterrazz-macbook-pro'
+      exit: 0
+    - command: 'machines | /usr/bin/grep jterrazz-macbook-pro'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	host			online	-	2 VMs
+          ○	api	linux	jterrazz-macbook-pro	lasting	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ●	linux-1	linux	jterrazz-macbook-pro	temporary	running	-	4 cpus · 8 GB · 50.0 GB
+    - command: 'services'
+      exit: 0
+      stdout: |
+          	none
+          ◐	jterrazz-mac-mini			jterrazz-mac-mini	unreachable		ssh jterrazz-mac-mini true

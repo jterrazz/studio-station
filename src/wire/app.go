@@ -120,7 +120,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	if session != nil {
 		commands = append(commands, session.command())
 	}
-	root := cli.NewRoot(kenv, tuiOpener(kenv, here), commands...)
+	root := cli.NewRoot(kenv, tuiOpener(kenv, here), overviewCommand(kenv, here), commands...)
 	root.SetArgs(args)
 	root.SetIn(stdin)
 	root.SetOut(stdout)
@@ -130,7 +130,11 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		fang.WithVersion(Version()),
 		fang.WithCommit(Commit()),
 		fang.WithErrorHandler(func(_ io.Writer, _ fang.Styles, err error) {
-			writer.Failure(kit.Translate(err, ""))
+			worded := kit.Translate(err, "")
+			if wantsJSON(args) {
+				writer.FailureJSON(worded)
+			}
+			writer.Failure(worded)
 		}),
 		fang.WithColorSchemeFunc(help.FangScheme),
 		fang.WithNotifySignal(os.Interrupt, syscall.SIGTERM),
@@ -146,6 +150,20 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		return int(fail.ExitOK)
 	}
 	return int(fail.ExitOf(kit.Translate(err, "")))
+}
+
+// value: a run that asked --json, before any `--`: its refusal is a
+// document too, even one cobra refused before any command ran.
+func wantsJSON(args []string) bool {
+	for _, a := range args {
+		switch a {
+		case "--":
+			return false
+		case "--json", "--json=true":
+			return true
+		}
+	}
+	return false
 }
 
 // value: commands 16 at a time (each is its own process; status starts ~70),

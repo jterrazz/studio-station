@@ -8,6 +8,16 @@ runs:
           Hint: on the VM's host: station setup
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" services --json'
       exit: 1
+      stdout: |
+          {
+            "schema": "station.error/v1",
+            "type": "failed",
+            "code": null,
+            "subject": null,
+            "message": "no host has connected to this VM yet",
+            "hint": "on the VM's host: station setup",
+            "fix": null
+          }
       stderr: |
           Error: no host has connected to this VM yet
           Hint: on the VM's host: station setup

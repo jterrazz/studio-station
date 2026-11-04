@@ -25,7 +25,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Use:     "machines",
 		Short:   "Every host and the VMs on each",
 		Example: "  station machines\n  station machines --here --json",
-		Group:   "fleet",
+		Group:   kit.Machines,
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.Here, "here", false, "this host only, without asking the others")
 		},

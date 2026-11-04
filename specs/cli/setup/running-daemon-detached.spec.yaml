@@ -24,7 +24,7 @@ runs:
     - command: '--version'
       exit: 0
       stdout: |
-          station version {{string}} ({{sha}})
+          station {{string}} ({{sha}})
       files:
           .calls:
               equals: |

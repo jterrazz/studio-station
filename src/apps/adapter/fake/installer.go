@@ -14,7 +14,9 @@ import (
 	"github.com/jterrazz/studio-station/src/world"
 )
 
-var errScripted = errors.New("the run failed, as the world scripted it")
+// value: worded as a tool's own stderr, so a test sees whether station
+// shows it raw.
+var errScripted = errors.New("exited 1: Error: the run failed, as the world scripted it")
 
 const here = "here"
 

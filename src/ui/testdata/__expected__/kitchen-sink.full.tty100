@@ -28,29 +28,36 @@
    ● sip       off
    ◐ unknown   ?                                                                   no answer in 2s
 
- Marks  15 ◐  2 ○  4 ✗
-   ◐ outdated     attention  120 outdated  → station tools upgrade --via brew
-   ◐ stray        attention  out of place  → station setup
-   ◐ unreachable  attention  unreachable
-   ◐ mismatch     attention  station v2.0.0-240 here v2.0.0-242
-   ◐ unmanaged    attention  on PATH, not managed by cask
-   ◐ missing      attention  installed, mise not installed  → station tools install mise
-   ◐ partial      attention  policy partly applied
-   ◐ differs      attention  differs from station's  → station config install tart-launcher
-   ◐ unset        attention  name not set  → station setup
-   ◐ stopped      attention  stopped  → station start
-   ◐ late         attention  no answer in 2s
-   ◐ degraded     attention  Serve is off on the tailnet
-   ◐ orphan       attention  orphan: Docker.app is gone
+ Marks  15 ◐  2 ○  4 ✗  1 ⊘  1 –  1 ?
+   ◐ outdated              attention                   120 outdated
+     → station tools upgrade --via brew
+   ◐ stray                 attention                   out of place  → station setup
+   ◐ unreachable           attention                   unreachable
+   ◐ mismatch              attention                   station v2.0.0-240 here v2.0.0-242
+   ◐ unmanaged             attention                   on PATH, not managed by cask
+   ◐ missing               attention                   installed, mise not installed
+     → station tools install mise
+   ◐ partial               attention                   policy partly applied
+   ◐ differs               attention                   differs from station's
+     → station config install tart-launcher
+   ◐ unset                 attention                   name not set  → station setup
+   ◐ stopped               attention                   stopped  → station start
+   ◐ late                  attention                   no answer in 2s
+   ◐ degraded              attention                   Serve is off on the tailnet
+   ◐ orphan                attention                   orphan: Docker.app is gone
      → sudo launchctl bootout system/com.docker.vmnetd
-   ○ waiting      absent     waiting
-   ✗ failing      broken     failing · last exit 2
-   ✗ refused      broken     refused
-   ✗ down         broken     not running
-   ✗ stale        broken     stale  → station machines delete linux-2
-   ◐ expiring     attention  42m left  → station secrets lend --to api operator:claude:oauth-token
-   ◐ guard        attention  28% · on battery  → station power
-   ○ absent                  → station tools install mas
+   ○ waiting               absent                      waiting
+   ✗ failing               broken                      failing · last exit 2
+   ✗ refused               broken                      refused
+   ✗ down                  broken                      not running
+   ✗ stale                 broken                      stale  → station machines delete linux-2
+   ◐ expiring              attention                   42m left
+     → station secrets lend --to api operator:claude:oauth-token
+   ◐ guard                 attention                   28% · on battery  → station power
+   ○ absent                                            → station tools install mas
+   ⊘ off-here              turned off on this machine
+   – not-for-this-machine  Macs only
+   ? not-known             does not answer
 
  Fleet  3 ●  1 ○
    ● jterrazz-mac-mini  host
@@ -76,5 +83,5 @@
  Peers
      iphone  offline
 
- → station status --all
+ → station overview --all
  → station tools for the catalogue

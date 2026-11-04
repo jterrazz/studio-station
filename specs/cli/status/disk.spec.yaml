@@ -8,7 +8,7 @@ runs:
       exit: 0
       stdout: |
           [{"name":"uv","level":"cache","bytes":5},{"name":"go","level":"cache","bytes":5},{"name":"tart","level":"cache","bytes":5},{"name":"other","level":"cache","bytes":14}]
-    - command: 'status </dev/null | /usr/bin/grep "^●	disk"'
+    - command: 'overview </dev/null | /usr/bin/grep "^●	disk"'
       exit: 0
       stdout: |
           ●	disk	29 B	reclaimable: station storage clean

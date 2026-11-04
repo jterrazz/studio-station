@@ -5,6 +5,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/config"
+	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
 func configFailure(err error) (*fail.Error, bool) {
@@ -24,7 +25,7 @@ func configFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &irreversible):
 		return usage(irreversible.Error(), "station applies it but cannot undo it: undo it by hand"), true
 	case errors.As(err, &terminal):
-		return usage(terminal.Error(), "run it on a terminal"), true
+		return Translate(fail.New(fail.NeedsTerminal, words.NeedsTerminal, terminal.Item, nil), ""), true
 	case errors.As(err, &studio):
 		return failed(studio.Error(), "see docs/reference/secrets.md#claude-in-a-vm", err), true
 	}

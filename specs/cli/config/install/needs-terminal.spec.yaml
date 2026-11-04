@@ -8,27 +8,27 @@ runs:
       exit: 2
       stderr: |
           Error: autologin needs a terminal
-          Hint: run it on a terminal
+          Hint: run it in a terminal
       files:
           .calls: absent
     - command: 'config install claude-token </dev/null'
       exit: 2
       stderr: |
           Error: claude-token needs a terminal
-          Hint: run it on a terminal
+          Hint: run it in a terminal
       files:
           .calls: absent
     - command: 'config install git-signing </dev/null'
       exit: 2
       stderr: |
           Error: git-signing needs a terminal
-          Hint: run it on a terminal
+          Hint: run it in a terminal
       files:
           .calls: absent
     - command: 'config install hushlogin git-signing </dev/null'
       exit: 2
       stderr: |
           Error: git-signing needs a terminal
-          Hint: run it on a terminal
+          Hint: run it in a terminal
       files:
           .hushlogin: absent

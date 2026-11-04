@@ -11,7 +11,7 @@ type Wording func(e *fail.Error) (message, hint string)
 func Codes() map[fail.Code]Wording {
 	// invariant: the one table of every error code's words (rule
 	// every-code-worded): a code raised anywhere is worded here once.
-	return map[fail.Code]Wording{
+	all := map[fail.Code]Wording{
 		confirm.Needed: func(e *fail.Error) (string, string) {
 			return "refusing without the name typed: " + e.Subject, "re-run with --yes"
 		},
@@ -21,11 +21,14 @@ func Codes() map[fail.Code]Wording {
 		confirm.YesNeeded: func(e *fail.Error) (string, string) {
 			return "refusing without --yes: " + e.Subject, "re-run with --yes"
 		},
+		confirm.Declined: func(e *fail.Error) (string, string) {
+			return e.Subject + " kept: you said no", "--yes skips the question"
+		},
 		call.NotForThisMachine: func(e *fail.Error) (string, string) {
 			if why := e.Detail["why"]; why != "" {
-				return why, "run station status for what " + e.Subject + " has"
+				return why, "run station overview for what " + e.Subject + " has"
 			}
-			return "a " + e.Detail["kind"] + " has no " + e.Detail["section"] + " section", "run station status for what " + e.Subject + " has"
+			return "a " + e.Detail["kind"] + " has no " + e.Detail["section"] + " section", "run station overview for what " + e.Subject + " has"
 		},
 		call.BadInput: func(e *fail.Error) (string, string) {
 			return e.Subject + " cannot read its input", "check the request against " + e.Detail["in"]
@@ -46,4 +49,8 @@ func Codes() map[fail.Code]Wording {
 			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"
 		},
 	}
+	for code, word := range usage() {
+		all[code] = word
+	}
+	return all
 }

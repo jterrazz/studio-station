@@ -1,0 +1,19 @@
+description: 'station --all on a terminal prints the overview unfolded and returns, never the TUI'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 100x80 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" overview | /usr/bin/grep -o -e "● name" -e "station overview --all for every row"'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          station overview --all for every row
+    - command: '--version >/dev/null; terminal --size 100x80 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" --all | /usr/bin/grep -o -e "● name" -e "station overview --all for every row"'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          ● name

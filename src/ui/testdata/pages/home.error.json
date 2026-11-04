@@ -8,6 +8,6 @@
   "state": "failed",
   "error": {
     "message": "status reads the host it runs on",
-    "hint": "station status --on <vm>"
+    "hint": "station overview --on <vm>"
   }
 }

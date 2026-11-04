@@ -19,7 +19,7 @@ func daemonFailure(err error) (*fail.Error, bool) {
 	}
 	switch {
 	case errors.As(err, &running):
-		return usage(running.Error(), "station status shows it"), true
+		return usage(running.Error(), "station overview shows it"), true
 	case errors.As(err, &hostOnly):
 		return usage(hostOnly.Error(), "run it on a host: station setup installs it"), true
 	case errors.As(err, &down):

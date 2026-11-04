@@ -3,7 +3,7 @@ runs:
     - command: 'storage go'
       exit: 2
       stderr: |
-          Error: unknown command "go" for "station storage"
+          Error: "go" is a storage row: say what to do with it
           Hint: station storage clean go
     - command: 'storage nope'
       exit: 2

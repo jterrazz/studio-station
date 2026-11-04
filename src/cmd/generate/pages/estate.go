@@ -144,7 +144,7 @@ func homes() []Fixture {
 	out := states("home",
 		pagehome.Snapshot(pendingSnapshot(), here(), false),
 		pagehome.Snapshot(calmSnapshot(), here(), false),
-		failure("home", "status", "status reads the host it runs on", "station status --on <vm>"),
+		failure("home", "status", "status reads the host it runs on", "station overview --on <vm>"),
 		pagehome.Snapshot(snapshot(), here(), false))
 	return append(out, states("home-all",
 		pagehome.Snapshot(pendingSnapshot(), here(), true),

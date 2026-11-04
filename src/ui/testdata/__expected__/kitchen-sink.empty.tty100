@@ -25,5 +25,5 @@
  Peers
    no VMs  → station machines create
 
- → station status --all
+ → station overview --all
  → station tools for the catalogue

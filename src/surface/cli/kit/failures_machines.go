@@ -5,6 +5,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
 func machinesFailure(err error) (*fail.Error, bool) {
@@ -46,7 +47,7 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &refused):
 		return failed(refused.Error(), "check that sudo needs no password for fdesetup on "+refused.Name, err), true
 	case errors.As(err, &terminal):
-		return usage(terminal.Error(), "run it on a terminal"), true
+		return Translate(fail.New(fail.NeedsTerminal, words.NeedsTerminal, terminal.Verb, nil), ""), true
 	case errors.As(err, &sshConfig):
 		return failed(sshConfig.Error(), "check \""+sshConfig.Path+"\" and run it again", err), true
 	case errors.As(err, &record):

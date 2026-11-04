@@ -98,4 +98,4 @@
    ◐ power  Always-on power policy  policy partly applied
      → station config install power
 
- → station status | cat for records
+ → station overview | cat for records

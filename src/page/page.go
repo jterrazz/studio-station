@@ -264,9 +264,17 @@ const (
 	Absent    Mark = "absent"
 	Broken    Mark = "broken"
 	Awaiting  Mark = "pending"
+	// value: your choice not to manage it here (Off here).
+	OffHere Mark = "off-here"
+	// value: it does not apply to this machine (Not for this machine).
+	NotForThisMachine Mark = "not-for-this-machine"
+	// value: present but not station's, or not readable now (Not managed, Unknown).
+	NotKnown Mark = "unknown"
 )
 
-func Marks() [5]Mark { return [5]Mark{OK, Attention, Absent, Broken, Awaiting} }
+func Marks() [8]Mark {
+	return [8]Mark{OK, Attention, Absent, Broken, Awaiting, OffHere, NotForThisMachine, NotKnown}
+}
 
 type Reason string
 

@@ -113,7 +113,7 @@ The tree is moving to families first (machines, apps, settings, ports, awake...)
 
 `wire` builds this machine's `core/machine.Profile` once: its kind and system from `Self` (`core/adapter/macos` tells a Mac from a macOS VM, `core/adapter/linux`), its battery, lid and thermal from `awake/contract.Power`, and what else it can do from the adapters it wires. A rule reads those capabilities, never a model name: the Awake guards a Mac has are `awake.Active(caps)`, so a desktop Mac has no battery guard because it reports no battery. A machine's disk is `disk/contract.DiskUsage` (`apfs` on macOS, `posix` on Linux).
 
-`station status` is the Overview's read: `overview/calls` composes every section's read through the `core/call/lanes` pool, each row filling as its read answers, and `pages/home` renders the result (`station.status/v1` is its JSON). The facts it shows are `settings/contract.Inspector`'s (the kernel, the network, the protections and updates, by `macos` or `linux`; the owner's git, gpg, GitHub and ssh key, by `cli`), the counters `activity/contract.Meter`'s.
+`station overview` is the Overview's read: `overview/calls` composes every section's read through the `core/call/lanes` pool, each row filling as its read answers, and `pages/home` renders the result (`station.status/v1` is its JSON). The facts it shows are `settings/contract.Inspector`'s (the kernel, the network, the protections and updates, by `macos` or `linux`; the owner's git, gpg, GitHub and ssh key, by `cli`), the counters `activity/contract.Meter`'s.
 
 ## The path of a request
 

@@ -6,6 +6,9 @@ const (
 	MarkAbsent    = "○"
 	MarkBroken    = "✗"
 	MarkPending   = "◌"
+	MarkOffHere   = "⊘"
+	MarkNotFor    = "–"
+	MarkUnknown   = "?"
 
 	Arrow    = "→"
 	Sep      = " · "
@@ -34,7 +37,7 @@ const (
 
 func Glyphs() []string {
 	return []string{
-		MarkOK, MarkAttention, MarkAbsent, MarkBroken, MarkPending,
+		MarkOK, MarkAttention, MarkAbsent, MarkBroken, MarkPending, MarkOffHere, MarkNotFor, MarkUnknown,
 		Arrow, "·", Ellipsis, Rule, Divider, "├", "└", Spinner, Spark, GaugeOff, QRUpper, QRLower,
 		KeyUp, KeyDown, Charging, Power, Corner,
 	}

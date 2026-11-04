@@ -26,11 +26,11 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Use:     "storage",
 		Short:   "What each tool keeps on this machine, by level: caches, data, kept, installed",
 		Example: "  station storage\n  station storage --json",
-		Group:   "here",
+		Group:   kit.OnAMachine,
 		Read:    func(*Input) bool { return true },
 		Live:    true,
 		Pages:   true,
-		Entry:   kit.Entry("station storage clean", d.Names),
+		Entry:   kit.Entry("station storage clean", "storage row", d.Names),
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
 			if io.CanLive() {
 				updates, err := call.Follow(ctx, env.Calls, env.Target(), diskcalls.List, diskcalls.ListIn{}, nil)

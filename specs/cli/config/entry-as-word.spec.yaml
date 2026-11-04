@@ -3,7 +3,7 @@ runs:
     - command: 'config github-login'
       exit: 2
       stderr: |
-          Error: unknown command "github-login" for "station config"
+          Error: "github-login" is a config item: say what to do with it
           Hint: station config install github-login
     - command: 'config vm-join'
       exit: 2

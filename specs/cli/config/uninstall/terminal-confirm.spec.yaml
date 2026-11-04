@@ -1,4 +1,4 @@
-description: 'on a terminal uninstall asks: no is cancelled with one block, ctrl-c exits 130, yes runs it'
+description: 'on a terminal uninstall asks: no keeps it with one block, ctrl-c exits 130, yes runs it'
 fixture:
     - ../../../__fixtures__/terminal/
     - ../__fixtures__/tmutil/
@@ -8,14 +8,14 @@ runs:
       stdin: |
           see Uninstall backup-exclusions?
           send n
-          see Hint: re-run with --yes to skip the question
+          see Hint: --yes skips the question
           screen
       exit: 1
       stdout: |
           ┃ Uninstall backup-exclusions?
           ┃
-          Error: uninstall cancelled
-          Hint: re-run with --yes to skip the question
+          Error: backup-exclusions kept: you said no
+          Hint: --yes skips the question
       files:
           .calls: absent
     - command: '--version >/dev/null; terminal "$STATION" config uninstall backup-exclusions'

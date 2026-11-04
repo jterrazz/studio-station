@@ -1,0 +1,34 @@
+description: 'station help lists the commands in their groups, and never a hidden alias or plumbing'
+env: one-mac
+runs:
+    - command: 'help | /usr/bin/grep -E "^  [A-Z]" | /usr/bin/sed -E "s/ +$//"'
+      exit: 0
+      stdout: |4
+            Set up and run this Mac, its VMs and your other Macs
+            USAGE
+            MACHINES
+            ON A MACHINE
+            A MAC'S IMAGES AND ENGINE
+            STATION ITSELF
+            FLAGS
+    - command: 'help | /usr/bin/sed -n "/^  ON A MACHINE/,/^  A MAC/p" | /usr/bin/grep -oE "^    [a-z]+ " | /usr/bin/tr -d " "'
+      exit: 0
+      stdout: |
+          accounts
+          config
+          overview
+          power
+          run
+          secrets
+          services
+          storage
+          tailnet
+          tools
+    - command: '--help | /usr/bin/grep -cwE "^    (status|shell|daemon|guest|engine|completion|man|world|pipe|supervise)"'
+      exit: 1
+      stdout: |
+          0
+    - command: 'machines --help | /usr/bin/grep -cwE "supervise|pipe"'
+      exit: 1
+      stdout: |
+          0

@@ -8,36 +8,46 @@ import (
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-func NewRoot(env kit.Env, openTUI func(context.Context) error, children ...*cobra.Command) *cobra.Command {
+func NewRoot(env kit.Env, openTUI func(context.Context) error, overview *cobra.Command, children ...*cobra.Command) *cobra.Command {
+	// invariant: bare station is the TUI on a terminal, else overview, which
+	// it prints piped or with --all or --json (SPEC §4.2).
 	root := &cobra.Command{
 		Use:   "station",
-		Short: "Set up and run this machine and the fleet: tools, config, hosts and VMs",
+		Short: "Set up and run this Mac, its VMs and your other Macs",
 	}
+	var all, json bool
+	root.Flags().BoolVar(&all, "all", false, "print the overview with every section unfolded")
+	root.Flags().BoolVar(&json, "json", false, "print the overview as JSON")
 	root.RunE = func(c *cobra.Command, _ []string) error {
 		if handled, err := kit.Delegates(env, c); handled {
 			return err
 		}
-		if env.Screen {
+		if env.Screen && !all && !json {
 			return openTUI(c.Context())
 		}
-		return kit.Menu(env, c)
+		for name, on := range map[string]bool{"all": all, "json": json} {
+			if on {
+				if err := overview.Flags().Set(name, "true"); err != nil {
+					return err
+				}
+			}
+		}
+		overview.SetContext(c.Context())
+		return overview.RunE(overview, nil)
 	}
-	root.PersistentPreRunE = kit.RefuseOn(env)
+	root.PersistentPreRunE = kit.Aliased(env, kit.RefuseOn(env))
 	var machine string
 	target := &machine
 	if env.On != nil {
 		target = &env.On.Machine
 	}
-	root.PersistentFlags().StringVar(target, "on", "", "run this command on that `machine`, over ssh")
-	root.AddGroup(
-		&cobra.Group{ID: "here", Title: "Here"},
-		&cobra.Group{ID: "fleet", Title: "The fleet"},
-		&cobra.Group{ID: "shortcuts", Title: "Shortcuts"},
-		&cobra.Group{ID: "binary", Title: "The binary"},
-	)
-	root.SetHelpCommandGroupID("binary")
+	root.PersistentFlags().StringVar(target, "on", "", "run this command on that `machine`")
+	root.AddGroup(kit.Groups()...)
+	root.SetHelpCommand(kit.Help())
+	root.SetVersionTemplate("{{.Name}} {{.Version}}\n")
 	root.CompletionOptions.HiddenDefaultCmd = true
 	root.SetFlagErrorFunc(kit.FlagError)
+	root.AddCommand(overview)
 	root.AddCommand(children...)
 	return root
 }

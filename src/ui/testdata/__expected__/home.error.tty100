@@ -2,4 +2,4 @@
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
  Error: status reads the host it runs on
- Hint: station status --on <vm>
+ Hint: station overview --on <vm>

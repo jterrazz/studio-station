@@ -12,18 +12,18 @@ runs:
       exit: 0
       stdout: |
           ["absent",["name","absent","station setup --name <name>"]]
-    - command: 'status | /usr/bin/head -4 | /usr/bin/cut -f1-3'
+    - command: 'overview | /usr/bin/head -4 | /usr/bin/cut -f1-3'
       exit: 0
       stdout: |
           # Machine
           ◐	name	unregistered
           ●	uptime	3d 4h
           ◐	setup	name
-    - command: 'status --page | /usr/bin/jq -c ''[.sections[] | select(.id == "todo") | .items[].row.label | select(. == "name" or . == "setup")]'''
+    - command: 'overview --page | /usr/bin/jq -c ''[.sections[] | select(.id == "todo") | .items[].row.label | select(. == "name" or . == "setup")]'''
       exit: 0
       stdout: |
           ["setup"]
-    - command: 'status | /usr/bin/grep -c -E ''host · Darwin 27.0.0 [a-z0-9_]+ · tester · zsh$'''
+    - command: 'overview | /usr/bin/grep -c -E ''host · Darwin 27.0.0 [a-z0-9_]+ · tester · zsh$'''
       exit: 0
       stdout: |
           1

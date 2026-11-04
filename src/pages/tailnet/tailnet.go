@@ -143,7 +143,7 @@ func Rows(s ports.Status) []page.Row {
 		head.Reason = page.Down
 	case page.Absent:
 		head.Reason = page.Missing
-	case page.OK, page.Awaiting, page.Unjudged:
+	case page.OK, page.Awaiting, page.OffHere, page.NotForThisMachine, page.NotKnown, page.Unjudged:
 	}
 	rows := []page.Row{head}
 	if s.Name != "" {

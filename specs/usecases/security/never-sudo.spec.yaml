@@ -1,0 +1,22 @@
+description: 'no gesture runs sudo: what needs root is refused with its command, and the world records no attempt'
+env: two-macs
+runs:
+    - command: 'config install sshd'
+      exit: 1
+      stderr: |
+          Error: sshd needs root
+          Hint: sudo station config install sshd
+    - command: 'config install power'
+      exit: 1
+      stderr: |
+          Error: power needs root
+          Hint: sudo station config install power
+    - command: 'tools install tart'
+      exit: 0
+      stdout: |
+          ●	tart
+          ●	tart-launcher	~/.local/bin/tart
+    - command: 'setup --name jterrazz-macbook-pro >/dev/null; /usr/bin/grep -c "\"as_root\"" world.json'
+      exit: 1
+      stdout: |
+          0

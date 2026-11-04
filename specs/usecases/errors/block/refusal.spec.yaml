@@ -1,0 +1,18 @@
+description: 'a refusal is one Error line and one Hint line on stderr, stdout empty, exit 2'
+env: two-macs
+runs:
+    - command: 'machines stop nope'
+      exit: 2
+      stderr: |
+          Error: unknown machine "nope"
+          Hint: run station machines for the fleet
+    - command: 'tools install'
+      exit: 2
+      stderr: |
+          Error: station tools install needs a tool
+          Hint: station tools install <tool>
+    - command: 'overview --nope'
+      exit: 2
+      stderr: |
+          Error: unknown flag: --nope
+          Hint: run station overview --help

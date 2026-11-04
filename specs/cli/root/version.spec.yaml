@@ -1,6 +1,0 @@
-description: --version prints the version the build was stamped with, and its commit
-runs:
-    - command: --version
-      exit: 0
-      stdout: |
-          station version {{string}} ({{sha}})

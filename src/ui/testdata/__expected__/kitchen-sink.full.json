@@ -867,6 +867,45 @@
               "key": "i"
             }
           }
+        },
+        {
+          "row": {
+            "id": "off-here",
+            "mark": "off-here",
+            "label": "off-here",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "turned off on this machine"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "not-for-this-machine",
+            "mark": "not-for-this-machine",
+            "label": "not-for-this-machine",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Macs only"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "not-known",
+            "mark": "unknown",
+            "label": "not-known",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "does not answer"
+              }
+            ]
+          }
         }
       ],
       "counts": [
@@ -881,6 +920,18 @@
         {
           "mark": "broken",
           "n": 4
+        },
+        {
+          "mark": "off-here",
+          "n": 1
+        },
+        {
+          "mark": "not-for-this-machine",
+          "n": 1
+        },
+        {
+          "mark": "unknown",
+          "n": 1
         }
       ]
     },
@@ -1163,7 +1214,7 @@
   ],
   "hints": [
     {
-      "command": "station status --all"
+      "command": "station overview --all"
     },
     {
       "command": "station tools",
