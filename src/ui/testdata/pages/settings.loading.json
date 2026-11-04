@@ -184,7 +184,7 @@
       "pipe_counts": true
     },
     {
-      "id": "always-on",
+      "id": "always-on-mac",
       "title": "Always-on Mac",
       "columns": [
         {
@@ -201,7 +201,7 @@
       "items": [
         {
           "row": {
-            "id": "always-on",
+            "id": "always-on-mac",
             "mark": "absent",
             "label": "Always-on Mac",
             "cells": [

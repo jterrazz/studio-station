@@ -181,7 +181,7 @@ func settingRows(reading bool) []settings.Row {
 		case r.State == settings.StateNotForThisMachine:
 			r.Why = settings.PlaceReason([]catalog.MachineKind{catalog.Linux})
 		}
-		if r.Group == settings.AlwaysOn && !reading {
+		if r.Group == settings.AlwaysOnMac && !reading {
 			r.State, r.Since = settings.StateNotApplied, time.Time{}
 		}
 		if r.State == settings.StateApplied || r.State == settings.StateChangedSince {

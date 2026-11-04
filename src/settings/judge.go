@@ -13,7 +13,7 @@ const (
 	SetByStation Group = "set"
 	// value: the opt-in group of Set by station for a Mac that hosts
 	// servers: applied by name only, folded until one of it is applied.
-	AlwaysOn Group = "always-on"
+	AlwaysOnMac Group = "always-on-mac"
 )
 
 type State string
@@ -78,7 +78,7 @@ func (r Row) Item() catalog.ConfigItem {
 
 func GroupOf(it catalog.ConfigItem) Group {
 	if it.Category == catalog.CategoryHeadless {
-		return AlwaysOn
+		return AlwaysOnMac
 	}
 	return SetByStation
 }

@@ -13,4 +13,4 @@ runs:
       exit: 0
       stdout: |
           {"name":"hushlogin","label":"Silence the terminal login message","group":"set","state":"applied","applied_at":true,"where":"~/.hushlogin","admin":false}
-          {"name":"power","label":"Always-on power policy (no sleep, autorestart, wake)","group":"always-on","state":"not-applied","applied_at":false,"admin":true}
+          {"name":"power","label":"Always-on power policy (no sleep, autorestart, wake)","group":"always-on-mac","state":"not-applied","applied_at":false,"admin":true}

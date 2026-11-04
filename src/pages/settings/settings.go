@@ -126,7 +126,7 @@ func contains(list []string, s string) bool {
 
 // value: the Always-on Mac group folded: none of it applied on this machine.
 func alwaysOnFolded(rows []settings.Row) page.Row {
-	return page.Row{ID: "always-on", Label: "Always-on Mac", Mark: page.Absent, Cells: []page.Value{page.Texts(strconv.Itoa(len(rows)), "for a Mac that hosts servers")}}
+	return page.Row{ID: "always-on-mac", Label: "Always-on Mac", Mark: page.Absent, Cells: []page.Value{page.Texts(strconv.Itoa(len(rows)), "for a Mac that hosts servers")}}
 }
 
 func touched(rows []settings.Row) bool {
@@ -147,7 +147,7 @@ func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.
 		switch {
 		case r.State == settings.StateNotForThisMachine:
 			away = append(away, r)
-		case r.Group == settings.AlwaysOn:
+		case r.Group == settings.AlwaysOnMac:
 			always = append(always, r)
 		default:
 			set = append(set, r)
@@ -156,7 +156,7 @@ func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.
 	p := page.Page{ID: ID, Command: "settings", Context: here, Actions: actions()}
 	p.Sections = append(p.Sections, page.Section{ID: "set", Title: "Set by station", Fold: page.Auto, Columns: columns(), Items: items(set, now), PipeCounts: true})
 	if len(always) > 0 {
-		s := page.Section{ID: "always-on", Title: "Always-on Mac", Columns: columns(), PipeCounts: true}
+		s := page.Section{ID: "always-on-mac", Title: "Always-on Mac", Columns: columns(), PipeCounts: true}
 		if all || touched(always) {
 			s.Items = items(always, now)
 		} else {
@@ -205,7 +205,7 @@ func Show(r settings.Row, now time.Time, here page.Context) page.Page {
 	// it does, and the machines it lives on.
 	head := Row(r, now)
 	group := page.Text("Set by station")
-	if r.Group == settings.AlwaysOn {
+	if r.Group == settings.AlwaysOnMac {
 		group = page.Texts("Set by station", "Always-on Mac")
 	}
 	facts := []page.Item{
