@@ -6,19 +6,23 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginelog "github.com/jterrazz/studio-station/src/engine/adapter/log"
+	"github.com/jterrazz/studio-station/src/engine/feeds"
 	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
+	"github.com/jterrazz/studio-station/src/remote"
 	"github.com/jterrazz/studio-station/src/remote/api"
 	daemoncmd "github.com/jterrazz/studio-station/src/surface/cli/daemon"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -31,15 +35,19 @@ func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 // never its socket: the lends are bound to the engine they serve.
 func (m machine) daemon(env kit.Env) *engine.Daemon {
 	lends := &daemonLends{}
+	registry := m.registry(env)
+	menubar := feeds.Menubar{Calls: remote.NewRouter(registry, m.profile), Clock: m.host.Clock, Here: m.where, Report: func(v power.View) *power.Report {
+		return &power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
+	}}
 	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths.State)), engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
 		State: m.paths.State, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: lends, Peer: m.engineAPI(),
-		Feeds:    map[string]engine.Feed{engine.PageMenubar: m.menubarFeed(env)},
+		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
 		Notifier: func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) },
 	})
 	lends.s = m.secretsVia(d)
-	d.Host(m.engineServer(d, m.registry(env)))
+	d.Host(m.engineServer(d, registry))
 	return d
 }
 
