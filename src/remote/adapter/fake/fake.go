@@ -21,7 +21,9 @@ type Mac struct {
 
 type Dialer struct {
 	// invariant: a second Mac in this process: its calls run on its own
-	// registry, every value through the wire form, as over ssh.
+	// registry, every value through the wire form, as over ssh. A connection
+	// keeps the Mac it was dialed to, as a far process keeps its binary, and
+	// breaks when that Mac goes down.
 	mu     sync.Mutex
 	macs   map[string]Mac
 	down   map[string]bool
@@ -34,6 +36,7 @@ func (d *Dialer) Serve(name string, m Mac) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.macs[name] = m
+	delete(d.down, name)
 }
 
 func (d *Dialer) Down(name string) {
@@ -50,7 +53,7 @@ func (d *Dialer) Dial(_ context.Context, mac string) (contract.Endpoint, error) 
 	if !ok || d.down[mac] {
 		return nil, fail.New(fail.Unreachable, call.Unreachable, mac, nil)
 	}
-	return endpoint{m: m}, nil
+	return endpoint{d: d, name: mac, m: m}, nil
 }
 
 func (d *Dialer) Dialed() []string {
@@ -60,9 +63,25 @@ func (d *Dialer) Dialed() []string {
 	return slices.Clone(d.dialed)
 }
 
-type endpoint struct{ m Mac }
+type endpoint struct {
+	d    *Dialer
+	name string
+	m    Mac
+}
+
+func (e endpoint) broken() error {
+	e.d.mu.Lock()
+	defer e.d.mu.Unlock()
+	if e.d.down[e.name] {
+		return fail.New(fail.Unreachable, call.Unreachable, e.name, nil)
+	}
+	return nil
+}
 
 func (e endpoint) Hello(context.Context) (contract.Hello, error) {
+	if err := e.broken(); err != nil {
+		return contract.Hello{}, err
+	}
 	h := contract.Hello{Version: e.m.Version, Calls: []string{}}
 	for _, meta := range e.m.Registry.Metas() {
 		h.Calls = append(h.Calls, meta.Name)
@@ -71,6 +90,9 @@ func (e endpoint) Hello(context.Context) (contract.Hello, error) {
 }
 
 func (e endpoint) Invoke(ctx context.Context, _ machine.Ref, name string, in json.RawMessage, p call.Progress) (json.RawMessage, error) {
+	if err := e.broken(); err != nil {
+		return nil, err
+	}
 	v, err := e.m.Registry.Input(name, in)
 	if err != nil {
 		return nil, over(err)
@@ -83,6 +105,9 @@ func (e endpoint) Invoke(ctx context.Context, _ machine.Ref, name string, in jso
 }
 
 func (e endpoint) Watch(ctx context.Context, _ machine.Ref, name string, in json.RawMessage, p call.Progress) (<-chan call.Update[json.RawMessage], error) {
+	if err := e.broken(); err != nil {
+		return nil, err
+	}
 	v, err := e.m.Registry.Input(name, in)
 	if err != nil {
 		return nil, over(err)

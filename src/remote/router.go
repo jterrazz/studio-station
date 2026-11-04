@@ -3,6 +3,7 @@ package remote
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"slices"
 	"sync"
 
@@ -33,17 +34,20 @@ type Router struct {
 	reach    Reach
 
 	mu   sync.Mutex
-	open map[string]*dialing
+	open map[string]*link
 }
 
-type dialing struct {
-	once sync.Once
+type link struct {
+	// invariant: one connection to a Mac, shared by every call while it
+	// lives: the callers that wait on one dial share its answer, a failed dial
+	// is never kept, and a connection that broke is dialed again.
+	done chan struct{}
 	ep   contract.Endpoint
 	err  error
 }
 
 func NewRouter(registry *call.Registry, here machine.Profile, reach Reach) *Router {
-	return &Router{registry: registry, here: here, reach: reach, open: map[string]*dialing{}}
+	return &Router{registry: registry, here: here, reach: reach, open: map[string]*link{}}
 }
 
 func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in, out any, p call.Progress) error {
@@ -56,7 +60,7 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 		call.Set(out, v)
 		return ran
 	}
-	ep, err := r.endpoint(ctx, t, name)
+	l, err := r.endpoint(ctx, t, name)
 	if err != nil {
 		return err
 	}
@@ -64,8 +68,9 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 	if err != nil {
 		return err
 	}
-	answer, err := ep.Invoke(ctx, t, name, raw, p)
+	answer, err := l.ep.Invoke(ctx, t, name, raw, p)
 	if err != nil {
+		r.broke(t.Mac(), l, err)
 		return err
 	}
 	if decoded := call.Decode(answer, out); decoded != nil {
@@ -84,7 +89,7 @@ func (r *Router) Watch(ctx context.Context, target machine.Ref, name string, in 
 	if r.local(t) {
 		return r.registry.Stream(ctx, r.here, name, in, p)
 	}
-	ep, err := r.endpoint(ctx, t, name)
+	l, err := r.endpoint(ctx, t, name)
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +97,9 @@ func (r *Router) Watch(ctx context.Context, target machine.Ref, name string, in 
 	if err != nil {
 		return nil, err
 	}
-	updates, err := ep.Watch(ctx, t, name, raw, p)
+	updates, err := l.ep.Watch(ctx, t, name, raw, p)
 	if err != nil {
+		r.broke(t.Mac(), l, err)
 		return nil, err
 	}
 	return wire(ctx, updates), nil
@@ -142,54 +148,104 @@ func (r *Router) resolve(ctx context.Context, target machine.Ref) (machine.Ref, 
 
 func (r *Router) local(t machine.Ref) bool { return t == (machine.Ref{}) }
 
-func (r *Router) endpoint(ctx context.Context, t machine.Ref, name string) (contract.Endpoint, error) {
-	ep, hello, err := r.connect(ctx, t)
+func (r *Router) endpoint(ctx context.Context, t machine.Ref, name string) (*link, error) {
+	// invariant: a call the far Hello lacks is asked again of a fresh
+	// connection, so a Mac upgraded since its connection was opened serves it.
+	l, hello, fresh, err := r.connect(ctx, t)
+	if err == nil && !fresh && !slices.Contains(hello.Calls, name) {
+		r.drop(t.Mac(), l)
+		l, hello, _, err = r.connect(ctx, t)
+	}
 	if err != nil {
 		return nil, err
 	}
 	if !slices.Contains(hello.Calls, name) {
 		return nil, fail.New(fail.FarTooOld, call.FarTooOld, t.Mac(), map[string]string{"version": hello.Version, "call": name})
 	}
-	return ep, nil
+	return l, nil
 }
 
-func (r *Router) connect(ctx context.Context, t machine.Ref) (contract.Endpoint, contract.Hello, error) {
+func (r *Router) connect(ctx context.Context, t machine.Ref) (l *link, hello contract.Hello, fresh bool, err error) {
 	dialer, mac := r.reach.Macs, t.Mac()
 	if t.On != "" && t.On == r.here.Ref.Name {
 		dialer = r.reach.Engine
 	}
 	if dialer == nil {
-		return nil, contract.Hello{}, fail.New(fail.Unreachable, call.Unreachable, mac, nil)
+		return nil, contract.Hello{}, false, fail.New(fail.Unreachable, call.Unreachable, mac, nil)
 	}
 	r.mu.Lock()
-	d, ok := r.open[mac]
-	if !ok {
-		d = &dialing{}
-		r.open[mac] = d
+	l, kept := r.open[mac]
+	if !kept {
+		l = &link{done: make(chan struct{})}
+		r.open[mac] = l
 	}
 	r.mu.Unlock()
-	d.once.Do(func() { d.ep, d.err = dialer.Dial(ctx, mac) })
-	if d.err != nil {
-		return nil, contract.Hello{}, d.err
+	if !kept {
+		l.ep, l.err = dialer.Dial(ctx, mac)
+		if l.err != nil {
+			r.forget(mac, l)
+		}
+		close(l.done)
 	}
-	hello, err := d.ep.Hello(ctx)
-	return d.ep, hello, err
+	select {
+	case <-l.done:
+	case <-ctx.Done():
+		return nil, contract.Hello{}, false, ctx.Err()
+	}
+	if l.err != nil {
+		return nil, contract.Hello{}, false, l.err
+	}
+	hello, err = l.ep.Hello(ctx)
+	if err != nil {
+		r.broke(mac, l, err)
+		return nil, contract.Hello{}, false, err
+	}
+	return l, hello, !kept, nil
+}
+
+func (r *Router) broke(mac string, l *link, err error) {
+	// invariant: only the connection's own end drops it: a far side that
+	// answers that one of its VMs is unreachable keeps its connection.
+	var e *fail.Error
+	if errors.As(err, &e) && e.Type == fail.Unreachable && e.Subject == mac {
+		r.drop(mac, l)
+	}
+}
+
+func (r *Router) drop(mac string, l *link) {
+	if r.forget(mac, l) {
+		_ = l.ep.Close()
+	}
+}
+
+func (r *Router) forget(mac string, l *link) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.open[mac] != l {
+		return false
+	}
+	delete(r.open, mac)
+	return true
 }
 
 func (r *Router) Hello(ctx context.Context, mac string) (contract.Hello, error) {
-	// value: what the far binary said at this connection: its version and its calls.
-	_, hello, err := r.connect(ctx, machine.Ref{Name: mac})
+	// value: what the far binary says on the connection open now: its version and its calls.
+	_, hello, _, err := r.connect(ctx, machine.Ref{Name: mac})
 	return hello, err
 }
 
 func (r *Router) Close() {
 	r.mu.Lock()
 	open := r.open
-	r.open = map[string]*dialing{}
+	r.open = map[string]*link{}
 	r.mu.Unlock()
-	for _, d := range open {
-		if d.ep != nil {
-			_ = d.ep.Close()
+	for _, l := range open {
+		select {
+		case <-l.done:
+			if l.ep != nil {
+				_ = l.ep.Close()
+			}
+		default:
 		}
 	}
 }
@@ -206,11 +262,15 @@ func (r *Router) Serve(ctx context.Context, target machine.Ref, name string, in 
 	if !ok {
 		return serve.Local(r.registry, r.here, r.reach.Version).Invoke(ctx, target, name, in, p)
 	}
-	ep, err := r.endpoint(ctx, vm, name)
+	l, err := r.endpoint(ctx, vm, name)
 	if err != nil {
 		return nil, err
 	}
-	return ep.Invoke(ctx, vm, name, in, p)
+	out, err := l.ep.Invoke(ctx, vm, name, in, p)
+	if err != nil {
+		r.broke(vm.Mac(), l, err)
+	}
+	return out, err
 }
 
 func (r *Router) ServeWatch(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (<-chan call.Update[any], error) {
@@ -218,12 +278,13 @@ func (r *Router) ServeWatch(ctx context.Context, target machine.Ref, name string
 	if !ok {
 		return serve.Local(r.registry, r.here, r.reach.Version).Watch(ctx, target, name, in, p)
 	}
-	ep, err := r.endpoint(ctx, vm, name)
+	l, err := r.endpoint(ctx, vm, name)
 	if err != nil {
 		return nil, err
 	}
-	updates, err := ep.Watch(ctx, vm, name, in, p)
+	updates, err := l.ep.Watch(ctx, vm, name, in, p)
 	if err != nil {
+		r.broke(vm.Mac(), l, err)
 		return nil, err
 	}
 	return wire(ctx, updates), nil

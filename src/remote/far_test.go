@@ -129,6 +129,72 @@ func TestANameNoMacHoldsIsRefusedWithoutDiallingIt(t *testing.T) {
 	}
 }
 
+func TestAMacUpgradedWhileTheConnectionLivesServesTheCallItLacked(t *testing.T) {
+	r, macs, _, _ := laptopReaching(t, "v3.0.0")
+	if _, err := call.Invoke(t.Context(), r, machine.Ref{Name: mini}, portsDeclare, struct{}{}, nil); !isType(err, fail.FarTooOld) {
+		t.Fatalf("ports.declare on the mini at v3.0.0: %v, want far-too-old", err)
+	}
+	macs.Serve(mini, fake.Mac{Registry: withPortsDeclare(t), Profile: contracttest.Mini, Version: "v3.1.0"})
+	if _, err := call.Invoke(t.Context(), r, machine.Ref{Name: mini}, portsDeclare, struct{}{}, nil); err != nil {
+		t.Errorf("the same ports.declare after the mini is upgraded to v3.1.0: %v, want it declared", err)
+	}
+}
+
+func TestAMacAsleepAtTheFirstCallAnswersOnceItWakes(t *testing.T) {
+	r, macs, _, _ := laptopReaching(t, "v3.1.0")
+	macs.Down(mini)
+	if _, err := call.Invoke(t.Context(), r, machine.Ref{Name: mini}, farInstall, contracttest.InstallIn{App: "jq"}, nil); !isType(err, fail.Unreachable) {
+		t.Fatalf("a call to the mini asleep: %v, want unreachable", err)
+	}
+	macs.Serve(mini, fake.Mac{Registry: contracttest.Far(), Profile: contracttest.Mini, Version: "v3.1.0"})
+	if out, err := call.Invoke(t.Context(), r, machine.Ref{Name: mini}, farInstall, contracttest.InstallIn{App: "jq"}, nil); err != nil || out.App != "jq" {
+		t.Errorf("the same call once the mini wakes: %+v, %v; want jq installed there", out, err)
+	}
+}
+
+func TestAMacWhoseLinkDroppedIsDialedAgainAndOneLiveLinkServesEveryCall(t *testing.T) {
+	r, macs, _, _ := laptopReaching(t, "v3.1.0")
+	install := func() error {
+		_, err := call.Invoke(t.Context(), r, machine.Ref{Name: mini}, farInstall, contracttest.InstallIn{App: "jq"}, nil)
+		return err
+	}
+	if err := errors.Join(install(), install()); err != nil {
+		t.Fatal(err)
+	}
+	macs.Down(mini)
+	if err := install(); !isType(err, fail.Unreachable) {
+		t.Fatalf("a call after the mini's link dropped: %v, want unreachable", err)
+	}
+	macs.Serve(mini, fake.Mac{Registry: contracttest.Far(), Profile: contracttest.Mini, Version: "v3.1.0"})
+	if err := install(); err != nil {
+		t.Errorf("a call once the mini answers again: %v, want it run there", err)
+	}
+	if got := macs.Dialed(); len(got) != 2 {
+		t.Errorf("the mini was dialed %d times, want 2: once for the two calls that shared a live link, once after it dropped", len(got))
+	}
+}
+
+func isType(err error, want fail.Type) bool {
+	var e *fail.Error
+	return errors.As(err, &e) && e.Type == want
+}
+
+var portsDeclare = call.Call[struct{}, struct{}, struct{}]{Name: "ports.declare"}
+
+// value: the mini's calls once upgraded to v3.1.0, which adds ports.declare.
+func withPortsDeclare(t *testing.T) *call.Registry {
+	t.Helper()
+	handlers := []call.Handler{call.Bind(call.Call[struct{}, struct{}, struct{}]{
+		Name: "ports.declare", Where: call.AtTarget, Applies: machine.Anywhere,
+		Run: func(context.Context, struct{}, struct{}, call.Progress) (struct{}, error) { return struct{}{}, nil },
+	}, struct{}{})}
+	registry, err := call.NewRegistry(handlers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return registry
+}
+
 var errNoMachine = errors.New(`no machine named "nope"`)
 
 var farInstall = call.Call[struct{}, contracttest.InstallIn, contracttest.InstallOut]{Name: "apps.install"}
