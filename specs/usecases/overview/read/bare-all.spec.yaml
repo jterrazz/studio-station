@@ -5,9 +5,15 @@ env:
     - two-macs
     - terminal
 runs:
-    - command: '--version >/dev/null; terminal "$STATION" --all | /usr/bin/head -1'
+    - command: '--version >/dev/null; terminal --size 100x80 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" overview | /usr/bin/grep -o -e "● name" -e "station overview --all for every row"'
       stdin: |
           scrollback
       exit: 0
       stdout: |
-          # Machine
+          station overview --all for every row
+    - command: '--version >/dev/null; terminal --size 100x80 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" --all | /usr/bin/grep -o -e "● name" -e "station overview --all for every row"'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          ● name
