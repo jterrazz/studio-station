@@ -51,6 +51,9 @@ func Snapshot(s Overview, here page.Context, all bool) page.Page {
 		detail = append(detail, section("gateways", "Gateways", checkRows(s.Gateways)))
 	}
 	detail = append(detail, toolsSection(s), configSection(s))
+	if len(s.Readiness) > 0 {
+		detail = append(detail, section("readiness", "Mac readiness", checkRows(s.Readiness)))
+	}
 	fold := page.Folded
 	if all {
 		fold = page.Open

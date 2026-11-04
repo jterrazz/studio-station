@@ -38,3 +38,19 @@ func TestInspector(t *testing.T) {
 		return contracttest.InspectorSubject{Inspector: i, On: catalog.FactFileVault, Off: catalog.FactFirewall, Unreadable: catalog.FactSIP, Present: catalog.FactFileVault}
 	})
 }
+
+func TestFileVaultsPlannedRestartIsReadFromFdesetup(t *testing.T) {
+	for printed, want := range map[string]catalog.State{"true\n": catalog.StateOK, "false\n": catalog.StateAbsent} {
+		run := func(c local.Cmd) (local.Output, error) {
+			if c.Name == "fdesetup" && len(c.Args) == 1 && c.Args[0] == "supportsauthrestart" {
+				return local.Output{Stdout: printed}, nil
+			}
+			return local.Output{ExitCode: 97}, nil
+		}
+		i := macos.New(local.Played(run, "fdesetup"), files{fstest.MapFS{}}, clock{}, macos.Options{})
+		got, err := i.Read(t.Context(), catalog.FactAuthRestart)
+		if err != nil || got.State != want {
+			t.Errorf("fdesetup supportsauthrestart printing %q reads %+v, %v; want %s", printed, got, err, want)
+		}
+	}
+}

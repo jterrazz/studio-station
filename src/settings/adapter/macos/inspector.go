@@ -57,10 +57,11 @@ type protection struct {
 
 func protections() map[catalog.Fact]protection {
 	return map[catalog.Fact]protection{
-		catalog.FactFileVault:  {local.Command("fdesetup", "status"), "FileVault is On"},
-		catalog.FactFirewall:   {local.Command("socketfilterfw", "--getglobalstate"), "enabled"},
-		catalog.FactSIP:        {local.Command("csrutil", "status"), "enabled"},
-		catalog.FactGatekeeper: {local.Command("spctl", "--status"), "enabled"},
+		catalog.FactFileVault:   {local.Command("fdesetup", "status"), "FileVault is On"},
+		catalog.FactFirewall:    {local.Command("socketfilterfw", "--getglobalstate"), "enabled"},
+		catalog.FactSIP:         {local.Command("csrutil", "status"), "enabled"},
+		catalog.FactGatekeeper:  {local.Command("spctl", "--status"), "enabled"},
+		catalog.FactAuthRestart: {local.Command("fdesetup", "supportsauthrestart"), "true"},
 	}
 }
 

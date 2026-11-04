@@ -13,6 +13,7 @@ The fleet is every machine the owner runs: the physical Macs (hosts) and the VMs
 | The engine        | The one process per host that runs the VMs                   |
 | Round 5 migration | What setup retires, and what the owner removes by hand       |
 | Gateways          | The OpenClaw and Hermes gateways a host reports              |
+| Mac readiness     | What a Mac that hosts servers must have, each item measured  |
 
 ## Hosts and VMs
 
@@ -141,6 +142,10 @@ Left to the owner, by hand and whenever wanted: the old VM tag and its ACL lines
 ## Gateways
 
 On a host, the TUI's probe reports the OpenClaw and Hermes gateways when detected, by their process or their config. `station status` reports, on a host whose tailnet is connected, `Tailscale Serve`, the way every VM service leaves the host: `on`, or `◐ off` with the admin step ([Services](services.md#serve-and-https)) (`status.gateways` in [the contract](status-json.md)). The gateways' ports come from `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT` and `API_SERVER_PORT` ([Configuration](configuration.md)). Designing them as VMs is on the [TODO](../../TODO.md).
+
+## Mac readiness
+
+The Overview of a Mac that hosts a server, or that never sleeps (its `power` setting applied), ends with Mac readiness, six items in this order, each measured on that Mac: restarts after a power cut and never sleeps (the `power` setting), logs in by itself (`autologin`), disk unlock after a power cut (FileVault on is `◐ needs you`, its fix `station machines unlock <mac>` from the same network), planned restarts unlock themselves (`fdesetup supportsauthrestart`, a fact), engine starts at login (the engine's job installed, else `station setup`). A setting not applied names its fix, and says `as root` where it needs it. Any other Mac has no readiness, and reads no fact for it.
 
 ## Related
 

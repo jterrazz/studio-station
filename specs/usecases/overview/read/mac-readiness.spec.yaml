@@ -1,0 +1,13 @@
+description: 'the Overview of a Mac that never sleeps has its readiness: six items in order, each measured, FileVault''s disk unlock needing you with its fix'
+env: two-macs
+runs:
+    - command: 'overview --on mac-mini | /usr/bin/sed -n ''/^# Mac readiness/,/^# /p'''
+      exit: 0
+      stdout: |
+          # Mac readiness
+          ●	restarts after a power cut	applied
+          ●	never sleeps	applied
+          ●	logs in by itself	applied
+          ◐	disk unlock after a power cut	needs you	station machines unlock mac-mini (from the same network)
+          ●	planned restarts unlock themselves	supported
+          ●	engine starts at login	installed
