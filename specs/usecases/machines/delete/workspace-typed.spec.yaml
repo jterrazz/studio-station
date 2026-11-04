@@ -1,4 +1,4 @@
-description: 'a delete with its name typed takes the workspace whole: disk, record, reserved ports, Tailscale shares, account copies, ssh block'
+description: 'a delete with its name typed takes the workspace whole, nothing of it left in the world'
 env: two-macs
 runs:
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | {disk: .vms["linux-1"].disk, record: .vms["linux-1"].kept.lifetime, ports: [.stores.reservations[]? | select(.vm == "linux-1") | .host_port], tailscale: [.tailnet.shares[]?.Reserved], accounts: [.stores.shares["linux-1"][]?.name], ssh: .ssh.blocks["linux-1"].behind}'' world.json'

@@ -1,4 +1,4 @@
-description: 'the ports its image profiles declare are reserved at create, each with its URL, and the VM''s shell exports them'
+description: 'a create reserves its profiles'' ports with their URLs, and the VM''s shell exports them'
 env: two-macs
 runs:
     - command: 'machines create | /usr/bin/grep -E "vite|expo"'
