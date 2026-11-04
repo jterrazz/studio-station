@@ -2,18 +2,18 @@
 
 Every command of `station`, grouped as `station --help` groups them. The words are the [Glossary](../concepts/glossary.md)'s.
 
-| Section        | Answers                                                |
-| -------------- | ------------------------------------------------------ |
-| Rules          | What holds for every command                           |
-| Here           | `overview`, `apps`, `settings`, `storage`              |
-| The fleet      | `machines`, `services`, `images`, `secrets`, `tailnet` |
-| Shortcuts      | `run git` and `run docker`                             |
-| The binary     | `setup`, `--version`, `help`                           |
-| Hidden aliases | The v2 words that still run, for one release           |
-| Plumbing       | The hidden commands the machine runs for itself        |
-| Exit codes     | What 0, 1, 2 and 130 mean                              |
+| Section        | Answers                                                 |
+| -------------- | ------------------------------------------------------- |
+| Rules          | What holds for every command                            |
+| Here           | `overview`, `apps`, `settings`, `storage`, `background` |
+| The fleet      | `machines`, `services`, `images`, `secrets`, `tailnet`  |
+| Shortcuts      | `run git` and `run docker`                              |
+| The binary     | `setup`, `--version`, `help`                            |
+| Hidden aliases | The v2 words that still run, for one release            |
+| Plumbing       | The hidden commands the machine runs for itself         |
+| Exit codes     | What 0, 1, 2 and 130 mean                               |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `storage`, `services`, `tailnet`, `secrets`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `storage`, `services`, `tailnet`, `secrets`, `accounts`, `background`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
@@ -76,6 +76,14 @@ station storage reset <tool...> [--yes] # delete a tool's data, back to factory;
 ```
 
 `clean` asks nothing: caches only. `reset` is always named, and refuses while the tool's app runs. A stale VM goes with `station machines delete`, an old image version with `station images delete`. See [Storage](storage.md).
+
+### `station background`
+
+```sh
+station background [--all] [--json] # every non-Apple launchd job: Failing, Orphans, then Station, Known apps, Unknown folded
+```
+
+An orphan is a task whose program is missing or whose app is gone. A Linux workspace has no job manager station reads, so `--on` one is refused; a macOS workspace lists its own launchd tasks. `--json` is `station.background.list/v1`.
 
 ### `station power`
 

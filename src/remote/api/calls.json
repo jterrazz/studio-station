@@ -76,6 +76,13 @@
       "in": "UpdateIn"
     },
     {
+      "name": "background.list",
+      "schema": "station.background.list/v1",
+      "section": "background",
+      "where": "at-target",
+      "in": "ListIn"
+    },
+    {
       "name": "engine.read",
       "schema": "station.engine.read/v1",
       "where": "at-target",

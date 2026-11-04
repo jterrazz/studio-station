@@ -59,7 +59,7 @@ func failure(id page.ID, command, message, hint string) page.Page {
 
 func Estate() []Fixture {
 	var out []Fixture
-	for _, f := range [][]Fixture{homes(), settingsPages(), storages(), fleets(), machineLists(), imageLists(), secretLists(), tailnets(), serviceLists(), outcomes(), setups(), runs(), accountPages(), controlPages(), powerPages(), menubarPages()} {
+	for _, f := range [][]Fixture{homes(), settingsPages(), storages(), fleets(), machineLists(), imageLists(), secretLists(), tailnets(), serviceLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), menubarPages()} {
 		out = append(out, f...)
 	}
 	return out

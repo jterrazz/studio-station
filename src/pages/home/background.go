@@ -1,13 +1,13 @@
 package home
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
+	pagebackground "github.com/jterrazz/studio-station/src/pages/background"
 )
 
 func backgroundColumns() []page.Column {
@@ -47,25 +47,9 @@ func backgroundSection(jobs []background.Task) page.Section {
 	return page.Section{ID: "background", Title: "Background", Columns: backgroundColumns(), Items: items, PipeCounts: true}
 }
 
-func runOf(j background.Task) page.Value {
-	switch j.Run {
-	case background.Running:
-		return page.Texts("running", "pid "+strconv.Itoa(j.PID))
-	case background.Failing:
-		return page.Texts("failing", "last exit "+strconv.Itoa(j.Exit))
-	case background.Unread:
-		return page.Text("?")
-	case background.Idle, background.NotLoaded:
-	}
-	if j.Group == background.GroupStation && j.Run == background.NotLoaded {
-		return page.Text("stopped")
-	}
-	return page.Text(string(j.Run))
-}
-
 func jobRow(j background.Task) page.Row {
 	r := page.Row{ID: j.Label, Label: j.Label, Mark: pages.MarkOf(j.State),
-		Cells: []page.Value{page.Text(string(j.Group)), runOf(j), page.Text(j.Scope), page.Text(j.Owner)}}
+		Cells: []page.Value{page.Text(string(j.Group)), pagebackground.State(j), page.Text(j.Scope), page.Text(j.Owner)}}
 	if j.Plist != "" {
 		r.Detail = page.Path(j.Plist)
 	}
@@ -110,14 +94,14 @@ func jobAction(j background.Task) page.Row {
 	r.ID, r.Label, r.Short, r.Cells = "background/"+j.Label, shortLabel(j.Label), "", nil
 	switch {
 	case j.Run == background.Failing:
-		r.Detail = runOf(j)
+		r.Detail = pagebackground.State(j)
 	case j.Group == background.GroupOrphan && j.Owner != "":
 		r.Detail = page.Text("orphan: " + j.Owner + " is gone")
 	case j.Group == background.GroupOrphan:
 		r.Detail = page.Text("orphan: its program is missing")
 	case j.Plist == "":
 	default:
-		r.Detail = runOf(j)
+		r.Detail = pagebackground.State(j)
 	}
 	return r
 }

@@ -760,7 +760,7 @@ func rules() []rule {
 		{"TreeScreams", ruleTree, "src/utils/mutant.go", "package utils\n", "src/utils"},
 		{"ContractsAreWhole", ruleContracts, "src/disk/contract/mutant_contract.go", "package contract\n\ntype MutantProbe interface{ Probe() }\n", "src/disk/contract/mutant_contract.go"},
 		{"TreeInside", ruleTree, "src/apps/helpers/mutant.go", "package helpers\n", "src/apps/helpers"},
-		{"TreeApplies", ruleTree, "src/background/applies.go", "package background\n", "src/background"},
+		{"TreeApplies", ruleTree, "src/awake/applies.go", "package awake\n", "src/awake"},
 		{"FamilyImports", ruleFamilyImports, "src/apps/mutant_imports.go", "package apps\n\nimport _ \"os/exec\"\n", "src/apps/mutant_imports.go"},
 		{"FamilyImportsOldTree", ruleFamilyImports, "src/disk/mutant_imports_old.go", "package disk\n\nimport _ \"" + module + "/src/domain/tools\"\n", "src/disk/mutant_imports_old.go"},
 		{"FamilyImportsSurfaceEngine", ruleFamilyImports, "src/surface/cli/start/mutant_engine.go", "package startcmd\n\nimport _ \"" + module + "/src/engine\"\n", "src/surface/cli/start/mutant_engine.go"},

@@ -11,6 +11,7 @@ import (
 	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
+	backgroundcalls "github.com/jterrazz/studio-station/src/background/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
@@ -26,7 +27,7 @@ import (
 func allCalls(t *testing.T) *call.Registry {
 	t.Helper()
 	registry, err := call.NewRegistry(
-		accountscalls.All(accountscalls.Deps{}), appscalls.All(appscalls.Deps{}), awakecalls.All(awakecalls.Deps{}),
+		accountscalls.All(accountscalls.Deps{}), appscalls.All(appscalls.Deps{}), awakecalls.All(awakecalls.Deps{}), backgroundcalls.All(backgroundcalls.Deps{}),
 		diskcalls.All(diskcalls.Deps{}), imagescalls.All(imagescalls.Deps{}), machinescalls.All(machinescalls.Deps{}),
 		portscalls.All(portscalls.Deps{}), settingscalls.All(settingscalls.Deps{}), setupcalls.All(setupcalls.Deps{}),
 		activitycalls.All(activitycalls.Deps{}), enginecalls.All(enginecalls.Deps{}), overviewcalls.All(overviewcalls.Sections{}),

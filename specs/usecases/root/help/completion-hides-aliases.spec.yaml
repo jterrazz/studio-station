@@ -6,6 +6,7 @@ runs:
       stdout: |
           accounts
           apps
+          background
           engine
           help
           images

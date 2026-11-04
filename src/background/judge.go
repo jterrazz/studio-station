@@ -38,7 +38,10 @@ type Task struct {
 	Plist     string
 	Program   string
 	Removal   string
-	State     catalog.State
+	// value: the command that removes it by hand, whatever its state;
+	// Removal is that command only where it is the task's fix.
+	ByHand string
+	State  catalog.State
 }
 
 func Judge(listed []Job, root, home string) []Task {
@@ -48,7 +51,7 @@ func Judge(listed []Job, root, home string) []Task {
 	// one the owner types.
 	tasks := make([]Task, 0, len(listed))
 	for _, l := range listed {
-		j := Task{Label: l.Label, Scope: l.Scope, PID: l.PID, Plist: unrooted(l.File, root, home), Program: unrooted(l.Program, root, home), Removal: l.Removal}
+		j := Task{Label: l.Label, Scope: l.Scope, PID: l.PID, Plist: unrooted(l.File, root, home), Program: unrooted(l.Program, root, home), Removal: l.Removal, ByHand: l.Removal}
 		switch {
 		case l.Unread:
 			j.Run = Unread

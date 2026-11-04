@@ -7,6 +7,7 @@ import (
 	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
+	backgroundcalls "github.com/jterrazz/studio-station/src/background/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/domain/power"
@@ -43,6 +44,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		accountscalls.All(accountscalls.Deps{Accounts: m.accounts(), Secrets: m.secrets(), Kind: kind}),
 		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
 		awakecalls.All(awakecalls.Deps{Power: awakePower{m.power()}}),
+		backgroundcalls.All(m.backgroundDeps()),
 		diskcalls.All(diskcalls.Deps{Storage: m.storage(env), Kind: kind}),
 		enginecalls.All(enginecalls.Deps{Control: m.control(), Kind: kind}),
 		imagescalls.All(imagescalls.Deps{Images: imageBuilds{m.images()}, Kind: kind}),
