@@ -4,7 +4,7 @@ fixture:
     - ../../__fixtures__/vm-t/
     - ../__fixtures__/stale-t/
 runs:
-    - command: 'machines delete t --yes'
+    - command: 'machines delete t --confirm=t'
       exit: 0
       stdout: |
           ●	t	deleted

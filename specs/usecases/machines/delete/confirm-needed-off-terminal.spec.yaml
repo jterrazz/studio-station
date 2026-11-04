@@ -1,0 +1,14 @@
+description: 'a delete off a terminal without --confirm is refused before anything is deleted'
+env: two-macs
+runs:
+    - command: 'machines delete linux-1'
+      exit: 2
+      stderr: |
+          Error: refusing without the name typed: linux-1
+          Hint: in a script: --confirm=linux-1
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	mac			online	-	2 VMs
+          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ●	linux-1	workspace	jterrazz-macbook-pro	throwaway	running	192.168.64.5	4 cpus · 8 GB · 50.0 GB

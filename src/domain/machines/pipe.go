@@ -21,9 +21,6 @@ type StoppedError struct {
 }
 
 func (e *StoppedError) Error() string {
-	if e.Lifetime == Temporary {
-		return e.Name + " is stale"
-	}
 	return e.Name + " is stopped"
 }
 

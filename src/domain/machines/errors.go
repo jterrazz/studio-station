@@ -24,6 +24,8 @@ type NameTakenError struct {
 	Name string
 	VM   bool
 	Host bool
+	// value: the Mac a VM of that name is on, as the owner reads it.
+	On string
 }
 
 func (e *NameTakenError) Error() string {
@@ -31,7 +33,7 @@ func (e *NameTakenError) Error() string {
 		return "\"" + e.Name + "\" already names a host"
 	}
 	if e.VM {
-		return "\"" + e.Name + "\" already names a VM"
+		return "\"" + e.Name + "\" is taken (on " + e.On + ")"
 	}
 	return "machine \"" + e.Name + "\" already exists"
 }
@@ -39,12 +41,6 @@ func (e *NameTakenError) Error() string {
 type BadNameError struct{ Name string }
 
 func (e *BadNameError) Error() string { return "\"" + e.Name + "\" is not a valid name" }
-
-type TemporaryRestartError struct{ Name string }
-
-func (e *TemporaryRestartError) Error() string {
-	return e.Name + " is temporary: restarting it from the host would delete it"
-}
 
 type UnreachableError struct{ Name string }
 

@@ -38,7 +38,7 @@ type BadNetworkError struct {
 
 func (e *BadNetworkError) Error() string {
 	if e.Bridge {
-		return "--network bridged is for macOS VMs"
+		return "--network bridged is for macOS images: a linux workspace stays behind its Mac"
 	}
 	return "unknown network \"" + e.Value + "\": nat or bridged"
 }
@@ -49,14 +49,10 @@ type (
 	Step          = model.Step
 )
 
-type NoLifetimeError struct{}
-
-func (*NoLifetimeError) Error() string { return "a VM needs a lifetime" }
-
 type BadLifetimeError struct{ Value string }
 
 func (e *BadLifetimeError) Error() string {
-	return "unknown lifetime \"" + e.Value + "\": temporary or lasting"
+	return "unknown lifetime \"" + e.Value + "\": throwaway or permanent"
 }
 
 type UnknownImageError struct{ Image string }
@@ -103,7 +99,7 @@ func (e *BadSizeError) Error() string { return "--" + e.Flag + " \"" + e.Value +
 
 func ParseResources(cpus int, memory, disk string) (Resources, error) {
 	// invariant: --memory counts in binary units and --disk in decimal ones, as
-	// the hypervisor takes them; a bare number is gigabytes, and zero keeps the default.
+	// the hypervisor takes them; a size says its unit, and none keeps the default.
 	memoryBytes, err := parseSize("memory", memory, 1024)
 	if err != nil {
 		return Resources{}, err
@@ -112,11 +108,15 @@ func ParseResources(cpus int, memory, disk string) (Resources, error) {
 	return Resources{CPUs: cpus, MemoryBytes: memoryBytes, DiskBytes: diskBytes}, err
 }
 
+type SizeNeedsUnitError struct{ Flag, Value string }
+
+func (e *SizeNeedsUnitError) Error() string { return "\"" + e.Value + "\" needs a unit" }
+
 func parseSize(flag, value string, base int64) (int64, error) {
 	if value == "" {
 		return 0, nil
 	}
-	text, scale := strings.TrimSuffix(strings.ToUpper(strings.TrimSpace(value)), "B"), base*base*base
+	text, scale := strings.TrimSuffix(strings.ToUpper(strings.TrimSpace(value)), "B"), int64(0)
 	if text != "" {
 		if power := strings.IndexByte("KMGT", text[len(text)-1]); power >= 0 {
 			scale = base
@@ -125,6 +125,9 @@ func parseSize(flag, value string, base int64) (int64, error) {
 			}
 			text = text[:len(text)-1]
 		}
+	}
+	if _, err := strconv.ParseFloat(text, 64); err == nil && scale == 0 {
+		return 0, &SizeNeedsUnitError{Flag: flag, Value: value}
 	}
 	n, err := strconv.ParseFloat(text, 64)
 	if err != nil || n <= 0 {
@@ -147,9 +150,9 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 		return r, err
 	}
 	switch r.Lifetime {
-	case Temporary, Lasting:
 	case "":
-		return r, &NoLifetimeError{}
+		r.Lifetime = Throwaway
+	case Throwaway, Permanent:
 	default:
 		return r, &BadLifetimeError{Value: string(r.Lifetime)}
 	}
@@ -177,7 +180,7 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if _, _, err := s.img.Latest(ctx, r.Image); err != nil {
 		return r, err
 	}
-	held, err := s.claims(ctx)
+	held, on, err := s.claims(ctx)
 	if err != nil {
 		return r, err
 	}
@@ -185,7 +188,7 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	case r.Name == "":
 		r.Name = allocateName(r.Image, held)
 	case !nameFree(r.Name, held):
-		return r, &NameTakenError{Name: r.Name, VM: held[r.Name] == claimVM, Host: held[r.Name] == claimHost}
+		return r, &NameTakenError{Name: r.Name, VM: held[r.Name] == claimVM, Host: held[r.Name] == claimHost, On: on[r.Name]}
 	}
 	if r.Resources.CPUs == 0 {
 		r.Resources.CPUs = img.Defaults.CPUs
@@ -207,7 +210,7 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 
 func (s *Service) daemonUp(ctx context.Context) error {
 	_, missing := s.h.FS.Stat(catalog.EnginePlist(s.h.Env.Home()))
-	down := &DaemonDownError{Host: s.HereName(), Installed: missing == nil}
+	down := &DaemonDownError{Host: "This Mac", Installed: missing == nil}
 	if s.daemon == nil {
 		return down
 	}
@@ -220,26 +223,32 @@ func (s *Service) daemonUp(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) claims(ctx context.Context) (map[string]claim, error) {
+// value: every name All machines holds, and for a VM's name the Mac it is
+// on, worded as the owner reads it: This Mac, or that Mac's short name.
+func (s *Service) claims(ctx context.Context) (held map[string]claim, on map[string]string, err error) {
 	fleet, err := s.Fleet(ctx, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	held := map[string]claim{}
+	held, on = map[string]claim{}, map[string]string{}
 	for _, h := range fleet.Hosts {
 		held[h.Name] = claimHost
+		mac := "This Mac"
+		if !h.Here {
+			mac = strings.TrimPrefix(h.Name, s.o.User+"-")
+		}
 		for _, vm := range h.VMs {
-			held[vm.Name] = claimVM
+			held[vm.Name], on[vm.Name] = claimVM, mac
 		}
 	}
 	cfg, err := s.prefs()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for name := range cfg.Hosts {
 		held[name] = claimHost
 	}
-	return held, nil
+	return held, on, nil
 }
 
 func (s *Service) memoryLimit(ctx context.Context) (int64, bool) {
@@ -280,7 +289,7 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		Name: r.Name, Image: r.Image, Version: version, Lifetime: r.Lifetime, Network: r.Network,
 		Resources: r.Resources, CreatedAt: s.h.Clock.Now().UTC().Truncate(time.Second),
 	}
-	if r.Lifetime == Lasting {
+	if r.Lifetime == Permanent {
 		rec.Want = WantRunning
 	}
 	made := &made{}

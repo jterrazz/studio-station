@@ -1,0 +1,13 @@
+description: 'a stop from station keeps a throwaway workspace, stopped with its disk; it starts again (SP-5)'
+env: two-macs
+runs:
+    - command: 'machines stop linux-1 --yes'
+      exit: 0
+      stdout: |
+          ●	linux-1	stopped, kept
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	mac			online	-	2 VMs
+          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ○	linux-1	workspace	jterrazz-macbook-pro	throwaway	stopped	-	4 cpus · 8 GB · 50.0 GB

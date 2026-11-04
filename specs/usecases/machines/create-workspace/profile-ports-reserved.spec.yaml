@@ -1,0 +1,8 @@
+description: 'the ports its image profiles declare are reserved at create, each with its URL'
+env: two-macs
+runs:
+    - command: 'machines create | /usr/bin/grep -E "vite|expo"'
+      exit: 0
+      stdout: |
+          ●	expo	8081	{{url}}
+          ●	vite	5173	{{url}}

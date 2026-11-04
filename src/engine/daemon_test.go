@@ -141,29 +141,25 @@ func cancelled(t *testing.T) context.Context {
 	return ctx
 }
 
-func TestAtStartADeadRunLeavesATemporaryVMStaleAndRunsALastingOneItsRecordWants(t *testing.T) {
+func TestAtStartADeadRunLeavesEveryWorkspaceStoppedAndRunsNone(t *testing.T) {
 	h := newHarness(t,
-		machines.VMRecord{Name: "t", Lifetime: machines.Temporary},
-		machines.VMRecord{Name: "api", Lifetime: machines.Lasting, Want: machines.WantRunning},
-		machines.VMRecord{Name: "off", Lifetime: machines.Lasting, Want: machines.WantStopped},
+		machines.VMRecord{Name: "t", Lifetime: machines.Throwaway},
+		machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning},
+		machines.VMRecord{Name: "off", Lifetime: machines.Permanent, Want: machines.WantStopped},
 	)
 	h.d.adopt(cancelled(t))
-	if got := h.state("t"); got != StateStale {
-		t.Errorf("temporary t with no live run: %s, want stale", got)
+	for _, vm := range []string{"t", "api", "off"} {
+		if got := h.state(vm); got != StateStopped {
+			t.Errorf("%s with no live run: %s, want stopped", vm, got)
+		}
 	}
-	if got := h.state("api"); got != StateRunning {
-		t.Errorf("lasting api wanted running: %s, want a new run", got)
-	}
-	if got := h.state("off"); got != StateStopped {
-		t.Errorf("lasting off wanted stopped: %s", got)
-	}
-	if h.runs() != 1 {
-		t.Errorf("%d runs started, want only api's", h.runs())
+	if h.runs() != 0 {
+		t.Errorf("%d runs started, want none: a workspace never restarts by itself", h.runs())
 	}
 }
 
 func TestAtStartALiveRunIsAdoptedNeverRunAgain(t *testing.T) {
-	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Lasting, Want: machines.WantRunning})
+	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning})
 	h.hv.outlived("api")
 	h.d.adopt(cancelled(t))
 	if got := h.state("api"); got != StateRunning || h.runs() != 0 {
@@ -171,29 +167,8 @@ func TestAtStartALiveRunIsAdoptedNeverRunAgain(t *testing.T) {
 	}
 }
 
-func TestALastingCrashRunsAgainAfterTheDelayOnly(t *testing.T) {
-	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Lasting, Want: machines.WantRunning})
-	ctx := cancelled(t)
-	h.d.adopt(ctx)
-	h.hv.end("api", model.RunEnd{Reason: model.Crashed, ExitCode: 1})
-	h.d.tick(ctx)
-	if got := h.state("api"); got != StateStopped || h.runs() != 1 {
-		t.Fatalf("after the crash: %s with %d runs, want stopped and no second run", got, h.runs())
-	}
-	h.clock.At = h.clock.At.Add(model.CrashDelay - time.Second)
-	h.d.tick(ctx)
-	if h.runs() != 1 {
-		t.Fatalf("a run started before the delay")
-	}
-	h.clock.At = h.clock.At.Add(time.Second)
-	h.d.tick(ctx)
-	if got := h.state("api"); got != StateRunning || h.runs() != 2 {
-		t.Errorf("after the delay: %s with %d runs, want running and a second run", got, h.runs())
-	}
-}
-
 func TestAFourthStopWithinAMinuteLeavesTheVMBroken(t *testing.T) {
-	h := newHarness(t, machines.VMRecord{Name: "t", Lifetime: machines.Temporary})
+	h := newHarness(t, machines.VMRecord{Name: "t", Lifetime: machines.Throwaway})
 	ctx := cancelled(t)
 	v, _ := h.d.find("t")
 	_ = h.d.start(ctx, v)
@@ -211,7 +186,7 @@ func TestAFourthStopWithinAMinuteLeavesTheVMBroken(t *testing.T) {
 }
 
 func TestARunWhoseGuestNeverConnectsAnswersGuestTimeoutAfterAMinute(t *testing.T) {
-	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Lasting, Want: machines.WantRunning})
+	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning})
 	h.hv.outlived("api")
 	v, _ := h.d.find("api")
 	v.run, _ = h.hv.Adopt(t.Context(), "api")
@@ -229,8 +204,8 @@ func TestARunWhoseGuestNeverConnectsAnswersGuestTimeoutAfterAMinute(t *testing.T
 
 func TestStopAllAnswersFailedForALastingVMTheEngineStillRuns(t *testing.T) {
 	h := newHarness(t,
-		machines.VMRecord{Name: "api", Lifetime: machines.Lasting, Want: machines.WantRunning},
-		machines.VMRecord{Name: "web", Lifetime: machines.Lasting, Want: machines.WantRunning},
+		machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning},
+		machines.VMRecord{Name: "web", Lifetime: machines.Permanent, Want: machines.WantRunning},
 	)
 	h.m.stuck = map[string]bool{"api": true}
 	for _, name := range []string{"api", "web"} {
@@ -239,8 +214,8 @@ func TestStopAllAnswersFailedForALastingVMTheEngineStillRuns(t *testing.T) {
 	}
 	got := h.d.stopAll(t.Context())
 	want := []Stopped{
-		{Name: "api", Lifetime: "lasting", Result: ResultFailed, Detail: "the engine still runs it"},
-		{Name: "web", Lifetime: "lasting", Result: ResultStopped},
+		{Name: "api", Lifetime: "permanent", Result: ResultFailed, Detail: "the engine still runs it"},
+		{Name: "web", Lifetime: "permanent", Result: ResultStopped},
 	}
 	if len(got) != 2 || got[0] != want[0] || got[1] != want[1] {
 		t.Errorf("stop_all answered %+v, want %+v", got, want)

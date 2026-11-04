@@ -1,0 +1,11 @@
+description: 'an engine that crashes leaves its VMs running, and the next engine adopts them without a restart'
+env: two-macs
+runs:
+    - command: 'world engine-crash jterrazz-macbook-pro'
+      exit: 0
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	mac			online	-	2 VMs
+          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ●	linux-1	workspace	jterrazz-macbook-pro	throwaway	running	192.168.64.5	4 cpus · 8 GB · 50.0 GB

@@ -30,7 +30,7 @@ var Images = []Image{
 		Recipe:    "images/linux.sh",
 		Cleanup:   "images/linux-cleanup.sh",
 		Firstboot: "images/linux-firstboot.sh",
-		Defaults:  ImageDefaults{CPUs: 4, MemoryBytes: 8 * gibibyte, DiskBytes: 50 * gigabyte},
+		Defaults:  ImageDefaults{CPUs: 4, MemoryBytes: 4 * gibibyte, DiskBytes: 20 * gigabyte},
 		Kind:      Linux,
 	},
 }

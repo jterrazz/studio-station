@@ -97,6 +97,9 @@ func (h *Hypervisor) Clone(_ context.Context, from imagescontract.ImageLocation,
 		m.VMs[vm] = v
 	}
 	v.Disk = true
+	if v.Guest == nil {
+		v.Guest = &world.Guest{Fresh: true}
+	}
 	return nil
 }
 
@@ -255,6 +258,8 @@ func (r *run) Ended() <-chan machines.RunEnd {
 		v, ok := r.h.here().VMs[r.vm]
 		switch {
 		case ok && v.PID == r.pid:
+		case ok && v.Ended != nil && r.h.w.Fails("Hypervisor.Ended"):
+			r.end, v.Ended = &machines.RunEnd{Reason: machines.Unknown, ExitCode: -1}, nil
 		case ok && v.Ended != nil:
 			r.end, v.Ended = v.Ended, nil
 		default:

@@ -1,0 +1,7 @@
+description: 'with the engine stopped a stop still runs here: a stopped engine never holds a VM'
+env: engine-stopped
+runs:
+    - command: 'machines stop linux-1 --yes'
+      exit: 0
+      stdout: |
+          ●	linux-1	stopped, kept

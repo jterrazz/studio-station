@@ -9,7 +9,7 @@
    ├─ ● git                Jean-Baptiste Terrazzoni  own   admin@jterrazz.com
    ├─ ● ssh                6 keys                    own
    └─ ● Docker             deploy                    own   osxkeychain
-   ● linux-1               temporary  guest connected
+   ● linux-1               throwaway  guest connected
    ├─ ● Claude             admin@jterrazz.com        lent  11h 40m left
    ├─ ● git                Jean-Baptiste Terrazzoni  own   admin@jterrazz.com
    ├─ ● entry              1 host key                own   SHA256:76MCcfWNZv0I…
@@ -18,7 +18,7 @@
            → ssh linux-1 gh auth login
       ├─ ○ npm                                             npm not on PATH
       └─ ○ ssh                                             no key in the agent
-   ◐ api                   lasting  guest connected
+   ◐ api                   permanent  guest connected
    ├─ ◐ Claude             admin@jterrazz.com        lent  42m left
         → station secrets lend --to api operator:claude:oauth-token
    └─ ● entry              1 host key                own   SHA256:76MCcfWNZv0I…

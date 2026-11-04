@@ -167,9 +167,11 @@ func (m *worldMac) stores(st *stores) {
 	st.applied = settingsfake.AppliedOf(w, m.name)
 }
 
-func (m *worldMac) self() corecontract.Self        { return corefake.SelfOf(m.run.w, m.name) }
-func (m *worldMac) power() awakecontract.Power     { return awakefake.PowerOf(m.run.w, m.name) }
-func (m *worldMac) guests() contract.GuestDialer   { return machinesfake.GuestsOf(m.run.w) }
+func (m *worldMac) self() corecontract.Self    { return corefake.SelfOf(m.run.w, m.name) }
+func (m *worldMac) power() awakecontract.Power { return awakefake.PowerOf(m.run.w, m.name) }
+func (m *worldMac) guests() contract.GuestDialer {
+	return machinesfake.GuestsOf(m.run.w).Serving(engine.GuestSession)
+}
 func (m *worldMac) sshConfig() contract.SSHConfig  { return machinesfake.SSHConfigOf(m.run.w, m.name) }
 func (m *worldMac) unlocker() contract.Unlocker    { return machinesfake.MacsOf(m.run.w) }
 func (m *worldMac) jobs() backgroundcontract.Jobs  { return backgroundfake.New(m.run.w, m.name) }

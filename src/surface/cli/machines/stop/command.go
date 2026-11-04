@@ -21,26 +21,37 @@ type Deps struct {
 type Input struct{ Name string }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
-	// invariant: stop never destroys, so it asks nothing and has no --yes; a
-	// temporary VM is refused, since its stop would be its end.
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "stop <vm>",
-		Short:   "Power a lasting VM off; it stays off until started",
-		Example: "  station machines stop api",
+		Short:   "Stop a workspace; it is kept, with its disk, until started or deleted",
+		Example: "  station machines stop linux-1 --yes",
 		Args:    cobra.ExactArgs(1),
 		Bind: func(in *Input, args []string) error {
 			in.Name = args[0]
 			return nil
 		},
+		Asks:     true,
+		Confirm:  func(in *Input) string { return "Stop " + in.Name + "? It is kept, stopped, until you start it" },
+		Verb:     func(*Input) string { return "stop" },
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			stop := io.Wait("powering " + in.Name + " off")
-			_, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Stop, machinescalls.VMIn{VM: in.Name}, nil)
-			stop()
+			change := "stopped, kept"
+			err := io.Confirmed(func(answer string) error {
+				if answer == "" {
+					change = "already stopped"
+				}
+				stop := io.Wait("stopping " + in.Name)
+				defer stop()
+				_, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Stop, machinescalls.StopIn{VM: in.Name, Confirm: answer}, nil)
+				if answer != "" {
+					change = "stopped, kept"
+				}
+				return err
+			})
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Change("stop", in.Name, "stopped", d.Here), nil)
+			return io.Page(pagemachines.Change("stop", in.Name, change, d.Here), nil)
 		},
 	}, env)
 }

@@ -104,7 +104,7 @@ func Actions(r Reading) []page.Action {
 			for _, vm := range h.VMs {
 				vms = append(vms, vm.Name)
 				remote = append(remote, vm.Name)
-				if vm.Lifetime == machines.Lasting {
+				if vm.Lifetime == machines.Permanent {
 					lasting = append(lasting, vm.Name)
 				}
 			}

@@ -15,7 +15,6 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	var onlyHost *machines.OnlyOnHostError
 	var taken *machines.NameTakenError
 	var bad *machines.BadNameError
-	var temporary *machines.TemporaryRestartError
 	var unreachable *machines.UnreachableError
 	var timeout *machines.RestartTimeoutError
 	var refused *machines.RestartRefusedError
@@ -38,8 +37,6 @@ func machinesFailure(err error) (*fail.Error, bool) {
 		return usage(taken.Error(), takenHint(taken)), true
 	case errors.As(err, &bad):
 		return usage(bad.Error(), "use lowercase letters, digits and \"-\", 1 to 40 characters"), true
-	case errors.As(err, &temporary):
-		return usage(temporary.Error(), "ssh "+temporary.Name+" sudo reboot"), true
 	case errors.As(err, &unreachable):
 		return failed(unreachable.Error(), "station machines probe "+unreachable.Name, err), true
 	case errors.As(err, &timeout):
@@ -72,15 +69,13 @@ func takenHint(e *machines.NameTakenError) string {
 
 func vmFailure(err error) (*fail.Error, bool) {
 	var notVM *machines.NotAVMError
-	var noLifetime *machines.NoLifetimeError
 	var badLifetime *machines.BadLifetimeError
 	var unknownImage *machines.UnknownImageError
 	var noImage *machines.NoImageError
 	var noEngine *machines.NoEngineError
 	var tooBig *machines.TooBigError
 	var badSize *machines.BadSizeError
-	var stop *machines.TemporaryStopError
-	var start *machines.TemporaryStartError
+	var noUnit *machines.SizeNeedsUnitError
 	var created *machines.CreateFailedError
 	var down *machines.DaemonDownError
 	var network *machines.BadNetworkError
@@ -95,17 +90,15 @@ func vmFailure(err error) (*fail.Error, bool) {
 		return failed(down.Error(), "station setup", err), true
 	case errors.As(err, &network):
 		if network.Bridge {
-			return usage(network.Error(), "it lets an iPhone on the Wi-Fi reach the VM; Linux VMs publish their services instead"), true
+			return usage(network.Error(), "share its ports instead: station ports share"), true
 		}
-		return usage(network.Error(), "station machines create --network nat"), true
+		return usage(network.Error(), "station machines create, behind its Mac"), true
 	case errors.As(err, &created):
 		return failed(created.Error(), "fix the cause, then run station machines create again", err), true
 	case errors.As(err, &notVM):
 		return usage(notVM.Error(), notAVMHint(notVM)), true
-	case errors.As(err, &noLifetime):
-		return usage(noLifetime.Error(), "station machines create --lifetime temporary"), true
 	case errors.As(err, &badLifetime):
-		return usage(badLifetime.Error(), "station machines create --lifetime temporary"), true
+		return usage(badLifetime.Error(), "station machines create --permanent"), true
 	case errors.As(err, &unknownImage):
 		return usage(unknownImage.Error(), "station images for the images"), true
 	case errors.As(err, &noImage):
@@ -114,12 +107,10 @@ func vmFailure(err error) (*fail.Error, bool) {
 		return usage(noEngine.Error(), "station tools install "+noEngine.Hypervisor), true
 	case errors.As(err, &tooBig):
 		return usage(tooBig.Error(), "ask for less: --memory 8G"), true
+	case errors.As(err, &noUnit):
+		return usage(noUnit.Error(), "--"+noUnit.Flag+" "+noUnit.Value+"G"), true
 	case errors.As(err, &badSize):
 		return usage(badSize.Error(), "write a size with its unit: 512M, 8G, 1T"), true
-	case errors.As(err, &stop):
-		return usage(stop.Error(), "station machines delete "+stop.Name), true
-	case errors.As(err, &start):
-		return usage(start.Error(), "station machines create --lifetime temporary"), true
 	}
 	return nil, false
 }
@@ -143,9 +134,6 @@ func pipeFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &notHere):
 		return usage(notHere.Error(), "ssh "+notHere.Name+" goes through "+notHere.Host+": station machines"), true
 	case errors.As(err, &stopped):
-		if stopped.Lifetime == machines.Temporary {
-			return failed(stopped.Error(), "station machines delete "+stopped.Name, err), true
-		}
 		return failed(stopped.Error(), "station machines start "+stopped.Name, err), true
 	case errors.As(err, &closed):
 		return failed(closed.Error(), "station machines probe "+closed.Name, err), true

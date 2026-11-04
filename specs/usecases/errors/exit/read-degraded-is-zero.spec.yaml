@@ -6,15 +6,15 @@ runs:
     - command: 'machines | /usr/bin/grep jterrazz-mac-mini'
       exit: 0
       stdout: |
-          ◐	jterrazz-mac-mini	host			unreachable	-	-
+          ◐	jterrazz-mac-mini	mac			unreachable	-	-
     - command: 'world engine-crash jterrazz-macbook-pro'
       exit: 0
     - command: 'machines | /usr/bin/grep jterrazz-macbook-pro'
       exit: 0
       stdout: |
-          ●	jterrazz-macbook-pro	host			online	-	2 VMs
-          ○	api	linux	jterrazz-macbook-pro	lasting	stopped	-	4 cpus · 8 GB · 50.0 GB
-          ●	linux-1	linux	jterrazz-macbook-pro	temporary	running	-	4 cpus · 8 GB · 50.0 GB
+          ●	jterrazz-macbook-pro	mac			online	-	2 VMs
+          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ●	linux-1	workspace	jterrazz-macbook-pro	throwaway	running	192.168.64.5	4 cpus · 8 GB · 50.0 GB
     - command: 'services'
       exit: 0
       stdout: |

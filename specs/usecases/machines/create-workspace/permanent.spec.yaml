@@ -1,0 +1,11 @@
+description: '--permanent makes a workspace kept until deleted, in the outcome and in its record'
+env: two-macs
+runs:
+    - command: 'machines create api-2 --permanent | /usr/bin/head -1'
+      exit: 0
+      stdout: |
+          ●	api-2	jterrazz-macbook-pro	permanent	linux 1	4 cpus · 4 GB
+    - command: 'machines --here | /usr/bin/grep api-2'
+      exit: 0
+      stdout: |
+          ●	api-2	workspace	jterrazz-macbook-pro	permanent	running	192.168.64.5	4 cpus · 4 GB · 20.0 GB

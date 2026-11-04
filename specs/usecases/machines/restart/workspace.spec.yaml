@@ -1,0 +1,13 @@
+description: 'a workspace restarts with no question: a new run, throwaway or permanent'
+env: two-macs
+runs:
+    - command: 'machines restart linux-1'
+      exit: 0
+      stdout: |
+          ●	linux-1	restarted
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	mac			online	-	2 VMs
+          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ●	linux-1	workspace	jterrazz-macbook-pro	throwaway	running	192.168.64.5	4 cpus · 8 GB · 50.0 GB

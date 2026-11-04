@@ -163,12 +163,14 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			return tab.Outcome("restarted", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyStart:
-		running := m.running(name)
-		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
-			if running {
-				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Stop, machinescalls.VMIn{VM: name}, nil)
+		if m.running(name) {
+			m.View, act = m.Act(tab.Confirmed(ID, page.Confirm{Question: "Stop " + name + "? It is kept, stopped, until you start it", Yes: "stop"}, func(answer string) (tab.Status, error) {
+				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Stop, machinescalls.StopIn{VM: name, Confirm: answer}, nil)
 				return tab.Outcome("stopped", name, catalog.StateOK, ""), err
-			}
+			}))
+			break
+		}
+		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
 			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Start, machinescalls.VMIn{VM: name}, nil)
 			return tab.Outcome("started", name, catalog.StateOK, ""), err
 		}))
@@ -264,7 +266,7 @@ func (m Model) create(values map[string]string) tea.Cmd {
 	}
 	request := machines.CreateRequest{Image: values["image"], Name: values["name"], Lifetime: machines.Lifetime(values["lifetime"])}
 	return m.exec(func() (tab.Status, error) {
-		created, err := call.Invoke(m.ctx, m.d.Calls, target, machinescalls.Create, machinescalls.CreateIn{Request: request}, nil)
+		created, err := call.Invoke(m.ctx, m.d.Calls, target, machinescalls.CreateWorkspace, machinescalls.CreateIn{Request: request}, nil)
 		return tab.Outcome("created", created.VM.Name, catalog.StateOK, "on "+created.VM.Host), err
 	})
 }

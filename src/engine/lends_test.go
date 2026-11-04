@@ -40,8 +40,8 @@ func (r *told) Notify(_ context.Context, n Notification) { r.all = append(r.all,
 func lendHarness(t *testing.T, lends *fakeLends) (h harness, owner *told) {
 	t.Helper()
 	h = newHarness(t,
-		machines.VMRecord{Name: "api", Lifetime: machines.Lasting},
-		machines.VMRecord{Name: "off", Lifetime: machines.Lasting},
+		machines.VMRecord{Name: "api", Lifetime: machines.Permanent},
+		machines.VMRecord{Name: "off", Lifetime: machines.Permanent},
 	)
 	h.d.o.Lends = lends
 	owner = &told{}

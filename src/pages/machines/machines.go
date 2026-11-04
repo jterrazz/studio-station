@@ -130,7 +130,7 @@ func hostRow(h machines.HostView, hereVersion string) page.Row {
 	if h.Here {
 		role = "here"
 	}
-	row.Cells = []page.Value{page.Text(string(catalog.Host)), page.Text(""), page.Text(""), page.Text(string(catalog.Host)), page.Text(role), state, orDash(h.Node.IP), record(resources, detail), resources, detail}
+	row.Cells = []page.Value{page.Text("mac"), page.Text(""), page.Text(""), page.Text("Mac"), page.Text(role), state, orDash(h.Node.IP), record(resources, detail), resources, detail}
 	return row
 }
 
@@ -141,15 +141,18 @@ func vmRow(vm machines.VM) page.Row {
 	case machines.Running:
 	case machines.Stopped:
 		row.Mark = page.Absent
+		if vm.Detail != "" {
+			detail = page.Text(vm.Detail)
+		}
 	case machines.Suspended:
 		row.Mark, row.Reason = page.Attention, page.Stopped
 	case machines.Stale:
-		row.Mark, row.Reason = page.Broken, page.Outlived
-		detail = page.Command("station machines delete " + vm.Name)
+		row.Mark, row.Reason = page.Attention, page.Outlived
+		detail = page.List(page.Text("ended unexpectedly"), page.Text("start or delete it"))
 	case machines.Broken:
 		row.Mark, row.Reason, detail = page.Broken, page.Failing, page.Text(vm.Detail)
 	}
-	row.Cells = []page.Value{page.Text(string(vm.Kind)), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
+	row.Cells = []page.Value{page.Text("workspace"), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
 	return row
 }
 
@@ -325,8 +328,8 @@ func CreateForm(lifetime string, hosts []HostChoice) page.Form {
 	var f page.Form
 	if lifetime == "" {
 		f.Fields = append(f.Fields, page.Field{Key: "lifetime", Label: "Will it last?", Kind: page.FieldSelect, Options: []page.Option{
-			{Value: "temporary", Label: "temporary: a poweroff inside it deletes it"},
-			{Value: "lasting", Label: "lasting: it stays until deleted"},
+			{Value: "throwaway", Label: "Throwaway: deleted when it powers off from inside"},
+			{Value: "permanent", Label: "Permanent: kept until you delete it"},
 		}})
 	}
 	if len(hosts) >= 2 {

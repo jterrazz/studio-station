@@ -53,8 +53,8 @@ var List = call.Watch[Deps, ListIn, ListOut]{
 
 type CreateIn struct{ Request machines.CreateRequest }
 
-var Create = call.Call[Deps, CreateIn, machines.Created]{
-	Name: "machines.create", Where: call.InEngine, Applies: machine.Anywhere,
+var CreateWorkspace = call.Call[Deps, CreateIn, machines.Created]{
+	Name: "machines.create-workspace", Where: call.InEngine, Applies: machine.Anywhere,
 	Run: func(ctx context.Context, d Deps, in CreateIn, p call.Progress) (machines.Created, error) {
 		last := ""
 		created, err := d.Machines.Create(ctx, in.Request, func(s machines.Step) {

@@ -1,0 +1,11 @@
+description: 'a start sent with --on starts the workspace of that Mac'
+env: two-macs
+runs:
+    - command: 'machines stop infra --yes --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	infra	stopped, kept
+    - command: 'machines start infra --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	infra	started

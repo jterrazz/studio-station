@@ -12,7 +12,7 @@ runs:
           Error: unknown machine "nope"
           Hint: run station machines for the fleet
     - command: 'machines restart linux-1 --yes'
-      exit: 2
+      exit: 1
       stderr: |
-          Error: linux-1 is temporary: restarting it from the host would delete it
-          Hint: ssh linux-1 sudo reboot
+          Error: the engine is not installed on This Mac
+          Hint: station setup

@@ -1,0 +1,7 @@
+description: 'with the engine stopped a delete still runs here: a stopped engine never holds a VM'
+env: engine-stopped
+runs:
+    - command: 'machines delete api --confirm=api'
+      exit: 0
+      stdout: |
+          ●	api	deleted

@@ -20,7 +20,7 @@ runs:
     - command: 'machines --json | /usr/bin/jq -r ''[.hosts[].vms[] | .name + ":" + .lifetime + ":" + .state + ":" + .created_at] | join(" ")'''
       exit: 0
       stdout: |
-          linux-1:temporary:stale:2026-11-07T10:00:00Z w:lasting:running:2026-11-07T10:00:00Z
+          linux-1:throwaway:stopped:2026-11-07T10:00:00Z w:permanent:running:2026-11-07T10:00:00Z
     - command: 'machines --json | /usr/bin/jq -r ''.hosts[0].vms[0] | keys | join(" ")'''
       exit: 0
       stdout: |

@@ -1,0 +1,9 @@
+description: 'create --lifetime lasting runs create --permanent, and says the new words on stderr'
+env: two-macs
+runs:
+    - command: 'machines create box --lifetime lasting | /usr/bin/head -1'
+      exit: 0
+      stdout: |
+          ●	box	jterrazz-macbook-pro	permanent	linux 1	4 cpus · 4 GB
+      stderr: |
+          → now: station machines create box --permanent

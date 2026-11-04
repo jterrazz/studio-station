@@ -30,9 +30,10 @@ const (
 	GuestConnecting = "connecting"
 	GuestAbsent     = "absent"
 
-	guestCommand = "/usr/local/bin/station guest"
-	maxBackoff   = 30 * time.Second
+	maxBackoff = 30 * time.Second
 )
+
+const GuestSession = "/usr/local/bin/station guest"
 
 type vmState struct {
 	rec      machines.VMRecord
@@ -57,8 +58,8 @@ type vmState struct {
 }
 
 // invariant: at start, a live run is ADOPTED (never touched); a dead one or none
-// leaves a temporary VM stale (a host reboot or a power cut ended it) and runs a
-// lasting one its record wants running.
+// leaves the workspace stopped and kept, never started again (SP-4): one its
+// record wants running ended with its Mac.
 func (d *Daemon) adopt(ctx context.Context) {
 	records, _ := d.m.Records()
 	for _, r := range records {
@@ -74,14 +75,12 @@ func (d *Daemon) adopt(ctx context.Context) {
 			continue
 		}
 		switch {
-		case remembered && (known.State == StateBroken || !known.RerunAt.IsZero()):
+		case remembered && (known.State == StateBroken || known.State == StateStale || !known.RerunAt.IsZero()):
 			v.state, v.detail, v.rerunAt = known.State, known.Detail, known.RerunAt
 		case d.m.EngineRunning(ctx, r.Name):
 			v.state = StateRunning
-		case r.Lifetime == machines.Temporary:
-			v.state = StateStale
-		case r.Want != machines.WantStopped:
-			_ = d.start(ctx, v)
+		case r.Want == machines.WantRunning:
+			v.detail = endedWithItsMac
 		}
 	}
 }
@@ -185,10 +184,6 @@ func (d *Daemon) ended(ctx context.Context, v *vmState) {
 	switch act {
 	case model.ActRerun:
 		_ = d.start(ctx, v)
-	case model.ActRerunLater:
-		d.mu.Lock()
-		v.state, v.rerunAt = StateStopped, d.h.Clock.Now().Add(model.CrashDelay)
-		d.mu.Unlock()
 	case model.ActDelete:
 		d.releaseVM(ctx, name)
 		_, _ = d.m.Remove(ctx, name)
@@ -230,12 +225,7 @@ func (d *Daemon) vmViews() []VMView {
 	return out
 }
 
-func lasting(v *vmState) error {
-	if v.rec.Lifetime != machines.Lasting {
-		return fault("temporary", v.rec.Name+" is temporary", "station machines create --lifetime temporary")
-	}
-	return nil
-}
+const endedWithItsMac = "ended with its Mac"
 
 func (d *Daemon) opRun(ctx context.Context, vm string) error {
 	v, err := d.find(vm)
@@ -275,17 +265,14 @@ func (d *Daemon) opStart(ctx context.Context, vm string) error {
 	if err != nil {
 		return err
 	}
-	if err := lasting(v); err != nil {
-		return err
-	}
-	v.rec.Want = machines.WantRunning
-	if err := d.m.Save(v.rec); err != nil {
-		return err
-	}
 	d.mu.Lock()
 	v.reruns, v.rerunAt = nil, time.Time{}
 	d.mu.Unlock()
-	return d.opRun(ctx, vm)
+	if err := d.opRun(ctx, vm); err != nil {
+		return err
+	}
+	v.rec.Want = machines.WantRunning
+	return d.m.Save(v.rec)
 }
 
 // invariant: a graceful stop is the guest's own poweroff, sent on the VM's one
@@ -294,9 +281,6 @@ func (d *Daemon) opStart(ctx context.Context, vm string) error {
 func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
 	v, err := d.find(vm)
 	if err != nil {
-		return err
-	}
-	if err := lasting(v); err != nil {
 		return err
 	}
 	return d.halt(ctx, v, want)
@@ -467,7 +451,7 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState, gen int) {
 	v.client, v.ip, v.in, v.guest = client, ip, inW, GuestConnecting
 	d.mu.Unlock()
 	go func() {
-		_, _ = client.Exec(ctx, guestCommand, inR, outW, io.Discard)
+		_, _ = client.Exec(ctx, GuestSession, inR, outW, io.Discard)
 		_ = outW.Close()
 		_ = inR.Close()
 	}()

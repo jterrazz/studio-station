@@ -12,6 +12,6 @@ runs:
     - command: 'machines --here'
       exit: 0
       stdout: |
-          ◐	jterrazz-macbook-pro	host			online	-	engine stopped · station engine start
-          ○	api	linux	jterrazz-macbook-pro	lasting	stopped	-	4 cpus · 8 GB · 50.0 GB
-          ✗	linux-1	linux	jterrazz-macbook-pro	temporary	stale	-	station machines delete linux-1
+          ◐	jterrazz-macbook-pro	mac			online	-	engine stopped · station engine start
+          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ○	linux-1	workspace	jterrazz-macbook-pro	throwaway	stopped	-	4 cpus · 8 GB · 50.0 GB

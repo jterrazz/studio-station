@@ -47,8 +47,8 @@ func uncovered() []string {
 	return []string{
 		"accounts.read", "activity.sample", "config.install", "config.list", "config.uninstall",
 		"images.build", "images.delete", "images.list",
-		"machines.add", "machines.create", "machines.delete", "machines.forget", "machines.list",
-		"machines.probe", "machines.restart", "machines.start", "machines.unlock", "overview.read",
+		"machines.add", "machines.forget", "machines.list",
+		"machines.probe", "machines.restart", "machines.unlock", "overview.read",
 		"power.awake", "power.read", "power.sleep", "run.containers", "run.git",
 		"secrets.allow", "secrets.disallow", "secrets.lend", "secrets.list", "secrets.recall",
 		"services.list", "services.release", "services.url", "setup.run", "shell.zsh",

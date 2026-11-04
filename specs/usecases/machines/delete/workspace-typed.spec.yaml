@@ -1,0 +1,12 @@
+description: 'a delete with its name typed takes the workspace whole: its disk, its record and its ssh block'
+env: two-macs
+runs:
+    - command: 'machines delete linux-1 --confirm=linux-1'
+      exit: 0
+      stdout: |
+          ●	linux-1	deleted
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	mac			online	-	1 VM
+          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB

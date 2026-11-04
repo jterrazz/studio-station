@@ -32,48 +32,63 @@ type Deps struct {
 }
 
 type Input struct {
-	Lifetime, Image, Name, Memory, Disk, Network string
-	CPUs                                         int
-	request                                      machines.CreateRequest
-	buildFirst                                   bool
-	// value: another host chosen on a terminal, the create sent there.
+	Image, Name, Memory, Disk, Network string
+	Permanent                          bool
+	CPUs                               int
+	// value: v2's --lifetime, kept hidden for one release (SPEC §4.3).
+	Lifetime   string
+	request    machines.CreateRequest
+	buildFirst bool
+	// value: another Mac chosen on a terminal, the create sent there.
 	host string
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
-		Use:   "create",
-		Short: "Make a VM on this host, from an image",
-		Example: "  station machines create --lifetime temporary\n" +
-			"  station machines create --lifetime lasting --name api --memory 12G",
+		Use:   "create [<name>]",
+		Short: "Make a workspace on this Mac: throwaway, or kept with --permanent",
+		Example: "  station machines create\n" +
+			"  station machines create api --permanent --memory 12G",
+		Args: cobra.MaximumNArgs(1),
 		Declare: func(f *pflag.FlagSet, in *Input) {
-			f.StringVar(&in.Lifetime, "lifetime", "", "temporary (a poweroff inside it deletes it) or lasting; asked on a terminal")
-			f.StringVar(&in.Image, "image", "linux", "the image the VM is made from")
-			f.StringVar(&in.Name, "name", "", "the VM's name (default <image>-<n>)")
-			f.IntVar(&in.CPUs, "cpus", 0, "virtual CPUs (default the image's)")
-			f.StringVar(&in.Memory, "memory", "", "memory, e.g. 8G or 512M; a bare number is GB")
-			f.StringVar(&in.Disk, "disk", "", "disk size, e.g. 50G; a bare number is GB")
-			f.StringVar(&in.Network, "network", "nat", "nat, or bridged (macOS VMs only: an iPhone on the Wi-Fi reaches it)")
+			f.BoolVar(&in.Permanent, "permanent", false, "kept until you delete it; without it, deleted when it powers off from inside")
+			f.StringVar(&in.Image, "image", "linux", "the image the workspace is made from")
+			f.IntVar(&in.CPUs, "cpus", 0, "virtual CPUs (default 4)")
+			f.StringVar(&in.Memory, "memory", "", "memory with its unit, e.g. 8G or 512M (default 4G)")
+			f.StringVar(&in.Disk, "disk", "", "disk size with its unit, e.g. 50G (default 20G)")
+			f.StringVar(&in.Network, "network", "", "bridged: its own address on your LAN (macOS images only); default behind its Mac")
+			f.StringVar(&in.Name, "name", "", "the workspace's name")
+			f.StringVar(&in.Lifetime, "lifetime", "", "temporary or lasting")
+			_ = f.MarkHidden("name")
+			_ = f.MarkHidden("lifetime")
 		},
 		Read: func(*Input) bool { return false },
-		Bind: func(in *Input, _ []string) error {
+		Bind: func(in *Input, args []string) error {
+			if len(args) == 1 {
+				in.Name = args[0]
+			}
 			r, err := d.Resources(in.CPUs, in.Memory, in.Disk)
 			if err != nil {
 				return err
 			}
-			in.request = machines.CreateRequest{Image: in.Image, Name: in.Name, Lifetime: machines.Lifetime(in.Lifetime), Network: in.Network, Resources: r}
+			lifetime := machines.Throwaway
+			if in.Permanent {
+				lifetime = machines.Permanent
+			}
+			if in.Lifetime != "" {
+				var old machines.Lifetime
+				_ = old.UnmarshalText([]byte(in.Lifetime))
+				lifetime = old
+				if old == machines.Permanent {
+					env.Out.Now(nowWords(in))
+				}
+			}
+			in.request = machines.CreateRequest{Image: in.Image, Name: in.Name, Lifetime: lifetime, Network: in.Network, Resources: r}
 			return nil
 		},
 		Validate: func(ctx context.Context, in *Input) error {
-			// invariant: on a terminal the questions come in Run; every refusal a
-			// question cannot answer still comes first, with a lifetime stand-in.
-			check := in.request
-			asking := d.Ask != nil
-			if check.Lifetime == "" && asking {
-				check.Lifetime = machines.Temporary
-			}
-			unbuilt, err := d.Check(ctx, check)
-			if unbuilt && asking {
+			unbuilt, err := d.Check(ctx, in.request)
+			if unbuilt && d.Ask != nil {
 				in.buildFirst = true
 				return nil
 			}
@@ -95,7 +110,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				}
 			}
 			steps := kit.Steps(io)
-			created, err := call.Invoke(ctx, env.Calls, target, machinescalls.Create, machinescalls.CreateIn{Request: in.request}, steps)
+			created, err := call.Invoke(ctx, env.Calls, target, machinescalls.CreateWorkspace, machinescalls.CreateIn{Request: in.request}, steps)
 			steps.Stop()
 			if err != nil {
 				return err
@@ -103,6 +118,15 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			return io.Page(pagemachines.Created(created, d.Here), pagemachines.CreatedContract(created))
 		},
 	}, env)
+}
+
+// value: the v3 words of a create written with v2's --lifetime lasting.
+func nowWords(in *Input) string {
+	words := "station machines create"
+	if in.Name != "" {
+		words += " " + in.Name
+	}
+	return words + " --permanent"
 }
 
 func ask(ctx context.Context, d Deps, in *Input) error {
@@ -114,17 +138,14 @@ func ask(ctx context.Context, d Deps, in *Input) error {
 			}
 		}
 	}
-	answers := map[string]string{"lifetime": in.Lifetime}
-	if form := pagemachines.CreateForm(in.Lifetime, hosts); len(form.Fields) > 0 {
+	answers := map[string]string{}
+	if form := pagemachines.CreateForm(string(in.request.Lifetime), hosts); len(form.Fields) > 0 {
 		asked, err := d.Ask.Form(form)
 		if err != nil {
 			return err
 		}
-		for k, v := range asked {
-			answers[k] = v
-		}
+		answers = asked
 	}
-	in.request.Lifetime = machines.Lifetime(answers["lifetime"])
 	for _, h := range hosts {
 		if h.Name == answers["host"] && !h.Here {
 			in.host = h.Name

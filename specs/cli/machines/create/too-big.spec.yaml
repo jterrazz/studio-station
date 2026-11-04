@@ -1,7 +1,7 @@
 description: 'a VM may take at most three quarters of the host memory, refused before the daemon is asked'
 fixture: ../../../__fixtures__/vms/
 runs:
-    - command: 'machines create --lifetime temporary --memory 999G'
+    - command: 'machines create --memory 999G'
       exit: 2
       stderr: |
           Error: 999 GB of memory is over this host's limit of 12 GB

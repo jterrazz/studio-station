@@ -1,0 +1,11 @@
+description: 'a reboot of its Mac leaves every workspace stopped and kept: a workspace never starts by itself'
+env: two-macs
+runs:
+    - command: 'world reboot jterrazz-macbook-pro'
+      exit: 0
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	mac			online	-	2 VMs
+          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ○	linux-1	workspace	jterrazz-macbook-pro	throwaway	stopped	-	ended with its Mac

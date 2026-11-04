@@ -88,7 +88,7 @@ func (s *Service) MigrateAgents(ctx context.Context) (AgentMigration, error) {
 	for _, n := range names {
 		_ = s.o.Jobs.Remove(ctx, s.oldJob(n))
 		for _, r := range records {
-			if r.Name != n || r.Lifetime != Lasting {
+			if r.Name != n || r.Lifetime != Permanent {
 				continue
 			}
 			r.Want = WantRunning

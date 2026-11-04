@@ -221,6 +221,12 @@ func (v *VM) Running() bool { return v.PID != 0 }
 type Guest struct {
 	// value: what the guest answers to each command line it is given.
 	Answers map[string]Answer `json:"answers,omitempty"`
+	// value: the VM's own tooling replaced station's guest: its ssh answers,
+	// station's session does not.
+	Replaced bool `json:"replaced,omitempty"`
+	// value: made from station's image by a create: a command no answer
+	// scripts succeeds, as the image's first boot does.
+	Fresh bool `json:"fresh,omitempty"`
 }
 
 type Answer struct {

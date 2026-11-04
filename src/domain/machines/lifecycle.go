@@ -13,18 +13,6 @@ type NotAVMError struct{ Name, Verb string }
 
 func (e *NotAVMError) Error() string { return "\"" + e.Name + "\" is a host, not a VM" }
 
-type TemporaryStopError struct{ Name string }
-
-func (e *TemporaryStopError) Error() string {
-	return e.Name + " is temporary: stopping it would delete it"
-}
-
-type TemporaryStartError struct{ Name string }
-
-func (e *TemporaryStartError) Error() string {
-	return e.Name + " is temporary: it runs once, and a stopped one is stale"
-}
-
 type DeleteReport = model.DeleteReport
 
 func (s *Service) VM(name, verb string) (VMRecord, error) {
@@ -51,18 +39,12 @@ func (s *Service) VM(name, verb string) (VMRecord, error) {
 }
 
 func (s *Service) CheckStart(name string) error {
-	rec, err := s.VM(name, "start")
-	if err == nil && rec.Lifetime == Temporary {
-		return &TemporaryStartError{Name: name}
-	}
+	_, err := s.VM(name, "start")
 	return err
 }
 
 func (s *Service) CheckStop(name string) error {
-	rec, err := s.VM(name, "stop")
-	if err == nil && rec.Lifetime == Temporary {
-		return &TemporaryStopError{Name: name}
-	}
+	_, err := s.VM(name, "stop")
 	return err
 }
 
@@ -77,8 +59,7 @@ func (s *Service) Start(ctx context.Context, name string) error {
 }
 
 func (s *Service) Stop(ctx context.Context, name string) error {
-	// invariant: a stopped lasting VM stays stopped until `start`, because its
-	// record says so; with the daemon down the stop runs here, so a broken daemon
+	// invariant: a stop keeps the workspace, throwaway or permanent (SP-5); with the daemon down the stop runs here, so a broken daemon
 	// never holds a VM hostage.
 	if err := s.CheckStop(name); err != nil {
 		return err
@@ -109,12 +90,8 @@ func (s *Service) StopDirect(ctx context.Context, name string) error {
 }
 
 func (s *Service) restartVM(ctx context.Context, name string, say func(phase, detail string)) (RestartReport, error) {
-	rec, err := s.VM(name, "restart")
-	if err != nil {
+	if _, err := s.VM(name, "restart"); err != nil {
 		return RestartReport{}, err
-	}
-	if rec.Lifetime == Temporary {
-		return RestartReport{}, &TemporaryRestartError{Name: name}
 	}
 	if err := s.daemonUp(ctx); err != nil {
 		return RestartReport{}, err

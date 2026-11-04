@@ -8,11 +8,11 @@ runs:
       exit: 0
       stdout: |
           {"running":false,"version":""}
-          ◐	x	host			online	192.0.2.1	engine not installed · station setup
+          ◐	x	mac			online	192.0.2.1	engine not installed · station setup
           ◐	engine			x	not installed		station setup
     - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" overview | /usr/bin/awk -F "\t" ''$2 == "engine"''; "$STATION" machines | /usr/bin/grep engine; "$STATION" services'
       exit: 0
       stdout: |
           ◐	engine	stopped	station engine start
-          ◐	x	host			online	192.0.2.1	engine stopped · station engine start
+          ◐	x	mac			online	192.0.2.1	engine stopped · station engine start
           ◐	engine			x	stopped		station engine start

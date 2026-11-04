@@ -1,0 +1,13 @@
+description: 'a stopped permanent workspace starts once its guest answers, and its record wants it running'
+env: two-macs
+runs:
+    - command: 'machines start api'
+      exit: 0
+      stdout: |
+          ●	api	started
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	mac			online	-	2 VMs
+          ●	api	workspace	jterrazz-macbook-pro	permanent	running	192.168.64.5	4 cpus · 8 GB · 50.0 GB
+          ●	linux-1	workspace	jterrazz-macbook-pro	throwaway	running	192.168.64.5	4 cpus · 8 GB · 50.0 GB

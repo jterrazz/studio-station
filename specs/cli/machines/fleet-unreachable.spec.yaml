@@ -6,8 +6,8 @@ runs:
     - command: 'machines'
       exit: 0
       stdout: |
-          ●	x	host			online	-	0 VMs
-          ◐	y	host			unreachable	-	-
+          ●	x	mac			online	-	0 VMs
+          ◐	y	mac			unreachable	-	-
     - command: 'machines --json | /usr/bin/jq -r ''.hosts[1] | [.name, (.reachable | tostring), (.vms | length | tostring)] | join(" ")'''
       exit: 0
       stdout: |

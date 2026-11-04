@@ -23,6 +23,8 @@ type Machines interface {
 	CheckStart(name string) error
 	Start(ctx context.Context, name string) error
 	CheckStop(name string) error
+	// value: whether the VM of this Mac runs now.
+	Running(ctx context.Context, name string) (bool, error)
 	Stop(ctx context.Context, name string) error
 	// value: refuses a name that is no VM of this host, worded for verb.
 	CheckVM(name, verb string) error
@@ -44,7 +46,7 @@ type Machines interface {
 
 func All(d Deps) []call.Handler {
 	return []call.Handler{
-		call.BindWatch(List, d), call.Bind(Create, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
+		call.BindWatch(List, d), call.Bind(CreateWorkspace, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
 		call.Bind(Restart, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d),
 	}
 }

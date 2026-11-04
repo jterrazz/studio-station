@@ -14,10 +14,10 @@ func Codes() map[fail.Code]Wording {
 	// every-code-worded): a code raised anywhere is worded here once.
 	all := map[fail.Code]Wording{
 		confirm.Needed: func(e *fail.Error) (string, string) {
-			return "refusing without the name typed: " + e.Subject, "re-run with --yes"
+			return "refusing without the name typed: " + e.Subject, "in a script: --confirm=" + e.Subject
 		},
 		confirm.Mismatch: func(e *fail.Error) (string, string) {
-			return "\"" + e.Detail["typed"] + "\" is not " + e.Subject, "type the name exactly: " + e.Subject
+			return "you typed \"" + e.Detail["typed"] + "\", not \"" + e.Subject + "\"", "in a script: --confirm=" + e.Subject
 		},
 		confirm.YesNeeded: func(e *fail.Error) (string, string) {
 			return "refusing without --yes: " + e.Subject, "re-run with --yes"

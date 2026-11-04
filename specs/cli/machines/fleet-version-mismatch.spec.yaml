@@ -7,6 +7,6 @@ runs:
     - command: 'machines'
       exit: 0
       stdout: |
-          ●	x	host			online	-	0 VMs
-          ◐	y	host			online	100.64.0.2	station v0.0.0-other here {{string}}
-          ●	w	linux	y	lasting	running	-	4 cpus · 8 GB · 50.0 GB
+          ●	x	mac			online	-	0 VMs
+          ◐	y	mac			online	100.64.0.2	station v0.0.0-other here {{string}}
+          ●	w	workspace	y	permanent	running	-	4 cpus · 8 GB · 50.0 GB

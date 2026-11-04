@@ -4,7 +4,6 @@ fixture:
     - ../../__fixtures__/vm-api/
 runs:
     - command: 'machines start api'
-      exit: 1
-      stderr: |
-          Error: the engine is not installed on x
-          Hint: station setup
+      exit: 0
+      stdout: |
+          ●	api	already running

@@ -101,8 +101,8 @@
       "in": "AddIn"
     },
     {
-      "name": "machines.create",
-      "schema": "station.machines.create/v1",
+      "name": "machines.create-workspace",
+      "schema": "station.machines.create-workspace/v1",
       "where": "in-engine",
       "in": "CreateIn",
       "out": "Created"
@@ -159,13 +159,18 @@
       "name": "machines.start",
       "schema": "station.machines.start/v1",
       "where": "in-engine",
-      "in": "VMIn"
+      "in": "VMIn",
+      "out": "StartOut"
     },
     {
       "name": "machines.stop",
       "schema": "station.machines.stop/v1",
       "where": "in-engine",
-      "in": "VMIn"
+      "confirm": "stop",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "StopIn"
     },
     {
       "name": "machines.unlock",

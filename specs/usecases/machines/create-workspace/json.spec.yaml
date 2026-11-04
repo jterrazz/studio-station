@@ -1,0 +1,7 @@
+description: 'create --json is the created workspace, its reserved ports with it'
+env: two-macs
+runs:
+    - command: 'machines create --json | /usr/bin/jq -c "[.name, .lifetime, .cpus, .memory_bytes, .disk_bytes, [.services[].guest_port]]"'
+      exit: 0
+      stdout: |
+          ["linux-2","throwaway",4,4294967296,20000000000,[8081,5173]]

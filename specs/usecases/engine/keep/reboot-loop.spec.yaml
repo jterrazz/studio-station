@@ -1,0 +1,17 @@
+description: 'a workspace that reboots four times within a minute is stopped as a loop, and kept'
+env: two-macs
+runs:
+    - command: 'world reboot-inside linux-1'
+      exit: 0
+    - command: 'world reboot-inside linux-1'
+      exit: 0
+    - command: 'world reboot-inside linux-1'
+      exit: 0
+    - command: 'world reboot-inside linux-1'
+      exit: 0
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	mac			online	-	2 VMs
+          ○	api	workspace	jterrazz-macbook-pro	permanent	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ✗	linux-1	workspace	jterrazz-macbook-pro	throwaway	broken	-	stopped 4 times within 60 s

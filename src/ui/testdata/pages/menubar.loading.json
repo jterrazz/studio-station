@@ -193,7 +193,7 @@
       "mutates": true,
       "id": "new-vm",
       "run": {
-        "call": "machines.create",
+        "call": "machines.create-workspace",
         "in": {
           "Request.Image": "linux",
           "Request.Network": "nat"
@@ -208,13 +208,13 @@
             "kind": "select",
             "options": [
               {
-                "value": "temporary"
+                "value": "throwaway"
               },
               {
-                "value": "lasting"
+                "value": "permanent"
               }
             ],
-            "default": "temporary"
+            "default": "throwaway"
           },
           {
             "key": "Request.Resources.MemoryBytes",

@@ -3,7 +3,7 @@ fixture:
     - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-api/
 runs:
-    - command: 'machines delete api --yes'
+    - command: 'machines delete api --confirm=api'
       exit: 0
       stdout: |
           ●	api	deleted

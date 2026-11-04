@@ -4,9 +4,9 @@ fixture:
     - ../../__fixtures__/vm-api/
 env: engine
 runs:
-    - command: '--version >/dev/null; echo running > .tart-vms/api; "$STATION" machines stop api; /usr/bin/jq -r .want .local/state/station/vms/api.json; /usr/bin/grep -c "^tart stop --timeout 60 api$" .calls'
+    - command: '--version >/dev/null; echo running > .tart-vms/api; "$STATION" machines stop api --yes; /usr/bin/jq -r .want .local/state/station/vms/api.json; /usr/bin/grep -c "^tart stop --timeout 60 api$" .calls'
       exit: 0
       stdout: |
-          ●	api	stopped
+          ●	api	stopped, kept
           stopped
           1

@@ -28,7 +28,7 @@ func key(s string) tea.KeyPressMsg {
 func fleetOf(vms ...string) machines.Fleet {
 	h := machines.HostView{Name: "macbook", Here: true, Reachable: true}
 	for _, n := range vms {
-		h.VMs = append(h.VMs, machines.VM{Name: n, Kind: catalog.Linux, Host: "macbook", Lifetime: machines.Lasting, State: machines.Running})
+		h.VMs = append(h.VMs, machines.VM{Name: n, Kind: catalog.Linux, Host: "macbook", Lifetime: machines.Permanent, State: machines.Running})
 	}
 	return machines.Fleet{Hosts: []machines.HostView{h}}
 }

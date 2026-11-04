@@ -6,8 +6,8 @@ runs:
     - command: 'machines delete api </dev/null'
       exit: 2
       stderr: |
-          Error: refusing to delete without --yes
-          Hint: re-run with --yes
+          Error: refusing without the name typed: api
+          Hint: in a script: --confirm=api
       files:
           .calls: absent
           .local/state/station/vms/api.json: exists

@@ -15,4 +15,4 @@ runs:
     - command: 'machines --json | /usr/bin/jq -r ''.hosts[1].vms[0] | [.name, .state, .lifetime, .node.ip] | join(" ")'''
       exit: 0
       stdout: |
-          w running lasting 
+          w running permanent 

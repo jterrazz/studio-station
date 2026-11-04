@@ -7,9 +7,9 @@ runs:
     - command: 'machines --here'
       exit: 0
       stdout: |
-          ◐	x	host			online	192.0.2.1	engine not installed · station setup
-          ✗	t	linux	x	temporary	stale	-	station machines delete t
+          ◐	x	mac			online	192.0.2.1	engine not installed · station setup
+          ○	t	workspace	x	throwaway	stopped	-	4 cpus · 8 GB · 50.0 GB
     - command: 'machines --here --json | /usr/bin/jq -r ''.hosts[0].vms[0] | .name + " " + .state'''
       exit: 0
       stdout: |
-          t stale
+          t stopped

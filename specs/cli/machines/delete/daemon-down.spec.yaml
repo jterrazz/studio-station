@@ -4,7 +4,7 @@ fixture:
     - ../../__fixtures__/vm-api/
     - ../../__fixtures__/api-leases/
 runs:
-    - command: 'machines delete api --yes; /usr/bin/jq -c ".leases" .local/state/station/leases.json; /usr/bin/grep -E "^tart delete|serve --https" .calls'
+    - command: 'machines delete api --confirm=api; /usr/bin/jq -c ".leases" .local/state/station/leases.json; /usr/bin/grep -E "^tart delete|serve --https" .calls'
       exit: 0
       stdout: |
           ●	api	deleted

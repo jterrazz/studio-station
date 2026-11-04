@@ -138,10 +138,22 @@ func (c machineCalls) CheckRestart(name string) (bool, error) {
 	if r.Kind == catalog.Host {
 		return false, nil
 	}
-	if r.Lifetime == machines.Temporary {
-		return true, &machines.TemporaryRestartError{Name: name}
-	}
 	return true, nil
+}
+
+func (c machineCalls) Running(ctx context.Context, name string) (bool, error) {
+	fleet, err := c.Fleet(ctx, true)
+	if err != nil {
+		return false, err
+	}
+	for _, h := range fleet.Hosts {
+		for _, vm := range h.VMs {
+			if vm.Name == name {
+				return vm.State == machines.Running, nil
+			}
+		}
+	}
+	return false, &machines.UnknownMachineError{Name: name}
 }
 
 func (c machineCalls) Restart(ctx context.Context, name string) (machines.RestartReport, error) {

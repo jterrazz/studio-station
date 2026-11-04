@@ -2,13 +2,14 @@ description: 'a lasting VM of another Mac stops through that Mac, and stays stop
 env: two-macs
 runs:
     - command: 'machines stop infra --on jterrazz-mac-mini'
-      exit: 0
-      stdout: |
-          ●	infra	stopped
+      exit: 2
+      stderr: |
+          Error: refusing to stop without --yes
+          Hint: re-run with --yes
     - command: 'world reboot jterrazz-mac-mini'
       exit: 0
     - command: 'machines --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          ●	jterrazz-mac-mini	host			online	-	1 VM
-          ○	infra	linux	jterrazz-mac-mini	lasting	stopped	-	8 cpus · 24 GB · 80.0 GB
+          ●	jterrazz-mac-mini	mac			online	-	1 VM
+          ○	infra	workspace	jterrazz-mac-mini	permanent	stopped	-	ended with its Mac

@@ -103,8 +103,8 @@ func New(h system.Host, e contract.Hypervisor, p Prefs, vms contract.MachineStor
 type Lifetime = model.Lifetime
 
 const (
-	Temporary = model.Temporary
-	Lasting   = model.Lasting
+	Throwaway = model.Throwaway
+	Permanent = model.Permanent
 )
 
 const (
