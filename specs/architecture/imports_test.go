@@ -143,7 +143,7 @@ func allowedModule(p place, pkg, rel string, test bool) bool {
 	case rowPlatform:
 		return topOf(rel) == "platform" && test
 	case rowSurface:
-		return isCalls(rel) || isKernel(rel) || isModel(rel) || rel == "page" || rel == "pages" || strings.HasPrefix(rel, "pages/") ||
+		return isCalls(rel) || isKernel(rel) || (isModel(rel) && rel != "engine") || rel == "page" || rel == "pages" || strings.HasPrefix(rel, "pages/") ||
 			rel == "output" || strings.HasPrefix(rel, "ui/render") || rel == "catalog" || topOf(rel) == "surface"
 	case rowWorld:
 		return isModel(rel) || isKernel(rel) || rel == "catalog"
@@ -192,7 +192,7 @@ func importsTolerated() map[string][]string {
 		"machines/adapter/ssh":  {"net", "os"},
 		"machines/adapter/tart": {"system", "system/systemtest"},
 		"platform/local":        {"platform/darwin", "system"},
-		"surface/cli/kit":       {"domain/*", "testing"},
+		"surface/cli/kit":       {"domain/*", "engine", "testing"},
 	}
 }
 
@@ -253,6 +253,9 @@ func ruleFamilyImports(w *world) []finding {
 
 func TestFamilyImports(t *testing.T)        { judge(t, "FamilyImports") }
 func TestFamilyImportsOldTree(t *testing.T) { judge(t, "FamilyImportsOldTree") }
+func TestASurfaceReachesTheEngineOnlyThroughItsCalls(t *testing.T) {
+	judge(t, "FamilyImportsSurfaceEngine")
+}
 
 func TestImportsAllowlistShrinks(t *testing.T) {
 	clean, _ := worlds(t)

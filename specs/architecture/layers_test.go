@@ -761,6 +761,7 @@ func rules() []rule {
 		{"TreeApplies", ruleTree, "src/background/applies.go", "package background\n", "src/background"},
 		{"FamilyImports", ruleFamilyImports, "src/apps/mutant_imports.go", "package apps\n\nimport _ \"os/exec\"\n", "src/apps/mutant_imports.go"},
 		{"FamilyImportsOldTree", ruleFamilyImports, "src/disk/mutant_imports_old.go", "package disk\n\nimport _ \"" + module + "/src/domain/tools\"\n", "src/disk/mutant_imports_old.go"},
+		{"FamilyImportsSurfaceEngine", ruleFamilyImports, "src/surface/cli/start/mutant_engine.go", "package startcmd\n\nimport _ \"" + module + "/src/engine\"\n", "src/surface/cli/start/mutant_engine.go"},
 		{"TechnologyWords", ruleTechnologyWords, "src/apps/mutant_words.go", "package apps\n\nconst mutantMethod = \"brew\"\n", "src/apps/mutant_words.go"},
 		{"TechnologyWordsSSH", ruleTechnologyWords, "src/apps/mutant_ssh.go", "package apps\n\nvar mutantArgv = []string{\"ssh\", \"-o\", \"BatchMode=yes\", \"vm\", \"true\"}\n", "src/apps/mutant_ssh.go"},
 		{"TechnologyWordsSSHPath", ruleTechnologyWords, "src/apps/mutant_ssh_path.go", "package apps\n\nconst mutantBinary = \"nohup /usr/bin/ssh vm\"\n", "src/apps/mutant_ssh_path.go"},

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io/fs"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -68,19 +67,6 @@ type OffHostError struct {
 }
 
 func (e *OffHostError) Error() string { return "station " + e.Verb + " runs on a host; here is a VM" }
-
-type UnconfirmedError struct{ Deletes, Stops []string }
-
-func (e *UnconfirmedError) Error() string {
-	var parts []string
-	if len(e.Deletes) > 0 {
-		parts = append(parts, "deletes "+strings.Join(e.Deletes, ", "))
-	}
-	if len(e.Stops) > 0 {
-		parts = append(parts, "stops "+strings.Join(e.Stops, ", "))
-	}
-	return "station stop " + strings.Join(parts, " and ")
-}
 
 type StuckError struct{ VM string }
 

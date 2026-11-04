@@ -2,22 +2,26 @@ package stopcmd
 
 import (
 	"context"
+	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
-	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pageoutcome "github.com/jterrazz/studio-station/src/pages/outcome"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Control *engine.Control
-	Here    page.Context
+	Here page.Context
 }
 
-type Input struct{ Yes bool }
+type Input struct {
+	// value: what the call said it would end, when it asked.
+	asked enginecalls.StopOut
+}
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
@@ -25,26 +29,24 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Short:   "Stop everything station runs on this host: its VMs (temporary deleted), then station itself",
 		Example: "  station stop\n  station stop --yes",
 		Group:   "fleet",
-		Declare: func(f *pflag.FlagSet, in *Input) {
-			f.BoolVarP(&in.Yes, "yes", "y", false, "do it without asking")
+		Asks:    true,
+		Ask: func(in *Input) (bool, error) {
+			return env.Prompt.Confirm(pageoutcome.StopConfirm(in.asked.Work, d.Here.Machine))
 		},
-		Validate: func(context.Context, *Input) error { return d.Control.Check("stop") },
+		Refuse: func(in *Input) error { return kit.Refuse(unconfirmed(in.asked), "station stop --yes") },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			work, err := d.Control.Plan(ctx)
-			if err != nil {
+			var out enginecalls.StopOut
+			err := io.Confirmed(func(answer string) (err error) {
+				out, err = call.Invoke(ctx, env.Calls, env.Target, enginecalls.Stop, enginecalls.StopIn{Confirm: answer}, nil)
+				if _, asks := confirm.Answer(err); asks {
+					in.asked = out
+				}
+				return err
+			})
+			if out.Report == nil {
 				return err
 			}
-			if !work.Empty() && !in.Yes {
-				if !io.Interactive {
-					return unconfirmed(work)
-				}
-				ask := func() (bool, error) { return io.Prompt.Confirm(pageoutcome.StopConfirm(work, d.Here.Machine)) }
-				if askErr := kit.Ask("stop", ask, io); askErr != nil {
-					return askErr
-				}
-			}
-			report, err := d.Control.Stop(ctx, work)
-			if pageErr := io.Page(pageoutcome.Stop(report, d.Here), nil); pageErr != nil {
+			if pageErr := io.Page(pageoutcome.Stop(*out.Report, d.Here), nil); pageErr != nil {
 				return pageErr
 			}
 			return err
@@ -52,14 +54,20 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	}, env)
 }
 
-func unconfirmed(w engine.Work) error {
-	e := &engine.UnconfirmedError{}
-	for _, v := range w.VMs {
-		if v.Result == engine.ResultDeleted {
-			e.Deletes = append(e.Deletes, v.Name)
+func unconfirmed(out enginecalls.StopOut) string {
+	var deletes, stops, parts []string
+	for _, v := range out.Work.VMs {
+		if v.Result == enginecalls.Deleted {
+			deletes = append(deletes, v.Name)
 		} else {
-			e.Stops = append(e.Stops, v.Name)
+			stops = append(stops, v.Name)
 		}
 	}
-	return e
+	if len(deletes) > 0 {
+		parts = append(parts, "deletes "+strings.Join(deletes, ", "))
+	}
+	if len(stops) > 0 {
+		parts = append(parts, "stops "+strings.Join(stops, ", "))
+	}
+	return "station stop " + strings.Join(parts, " and ")
 }

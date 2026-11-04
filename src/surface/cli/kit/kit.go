@@ -106,10 +106,13 @@ type Leaf[I any] struct {
 	Read                func(in *I) bool
 	// value: a leaf whose call may ask a confirmation: it takes --yes, and
 	// its question is put only when the use case asks it (io.Confirmed).
-	Asks     bool
-	Confirm  func(in *I) string
-	Verb     func(in *I) string
-	Ask      func(in *I) (bool, error)
+	Asks    bool
+	Confirm func(in *I) string
+	Verb    func(in *I) string
+	Ask     func(in *I) (bool, error)
+	// value: the refusal off a terminal without --yes, when it names what the
+	// call would do; else the gate's own words.
+	Refuse   func(in *I) error
 	Complete func(args []string, toComplete string) []string
 	Entry    func(word string) string
 	Run      func(ctx context.Context, in *I, io IO) error
@@ -222,7 +225,12 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 		if l.Verb != nil {
 			verb = l.Verb(in)
 		}
-		o.ask = func() error { return gate(verb, ask, o) }
+		o.ask = func() error {
+			if l.Refuse != nil && !o.Yes && !o.Interactive {
+				return l.Refuse(in)
+			}
+			return gate(verb, ask, o)
+		}
 	}
 	if l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && (!l.Live || !o.CanLive()) {
 		stop := env.Out.Wait("reading")
@@ -292,12 +300,6 @@ func Menu(env Env, cmd *cobra.Command) error {
 		_ = cmd.Help()
 	})
 	return fail.Silent(fail.ExitUsage)
-}
-
-func Ask(verb string, ask func() (bool, error), o IO) error {
-	// value: a leaf that asks its own question (stop: its Confirm lists what
-	// ends) answers it as the confirm gate does.
-	return gate(verb, ask, o)
 }
 
 func Refuse(message, hint string) error {

@@ -16,9 +16,9 @@ func (m machine) control() *engine.Control {
 }
 
 func stopCommand(env kit.Env, m machine) *cobra.Command {
-	return stopcmd.Command(stopcmd.Deps{Control: m.control(), Here: m.where}, env)
+	return stopcmd.Command(stopcmd.Deps{Here: m.where}, env)
 }
 
 func startCommand(env kit.Env, m machine) *cobra.Command {
-	return startcmd.Command(startcmd.Deps{Control: m.control(), Here: m.where}, env)
+	return startcmd.Command(startcmd.Deps{Here: m.where}, env)
 }
