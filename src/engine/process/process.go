@@ -157,7 +157,7 @@ func Server(d *engine.Daemon, h Host) serve.Server {
 			}
 			return h.Registry.Lookup(name)
 		},
-		Streams: map[string]serve.Stream{Page: func(ctx context.Context, raw json.RawMessage, send func(any) error) error {
+		Streams: map[string]serve.Feed{Page: func(ctx context.Context, raw json.RawMessage, send func(any) error) error {
 			var in PagesIn
 			if len(raw) > 0 {
 				if err := json.Unmarshal(raw, &in); err != nil {

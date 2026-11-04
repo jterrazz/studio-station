@@ -29,7 +29,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Live:    true,
 		Pages:   true,
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
-			updates, err := call.Follow(ctx, env.Calls, env.Target, accountscalls.Read, accountscalls.ReadIn{}, nil)
+			updates, err := call.Follow(ctx, env.Calls, env.Target(), accountscalls.Read, accountscalls.ReadIn{}, nil)
 			if err != nil {
 				return err
 			}

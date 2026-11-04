@@ -1,4 +1,4 @@
-description: 'a host running another station version is a degraded row that says both versions'
+description: 'a host whose Hello names another station version is a degraded row that says both'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/

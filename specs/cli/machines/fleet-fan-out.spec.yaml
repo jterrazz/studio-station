@@ -1,4 +1,4 @@
-description: 'the fleet asks every other host for its own view, in BatchMode, and merges the answers'
+description: 'the fleet asks every other host''s engine for its own view, in BatchMode, and merges the answers'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/
@@ -11,7 +11,7 @@ runs:
       files:
           .calls:
               equals: |
-                  ssh -o BatchMode=yes -o ConnectTimeout=5 y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station machines --here --json
+                  ssh -o BatchMode=yes -o ConnectTimeout=5 y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station engine attach
     - command: 'machines --json | /usr/bin/jq -r ''.hosts[1].vms[0] | [.name, .state, .lifetime, .node.ip] | join(" ")'''
       exit: 0
       stdout: |

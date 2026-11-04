@@ -22,6 +22,10 @@ func ErrorBlock(e page.Error, colored, dark bool) string {
 	return block
 }
 
+func FindingLine(m page.Mark, parts ...string) string {
+	return atom.Glyph(m) + atom.Spaces(1) + strings.Join(parts, token.Sep) + "\n"
+}
+
 func Wait(out io.Writer, label string, dark bool) (stop func()) {
 	spin := atom.Spinner(token.New(dark))
 	var mu sync.Mutex

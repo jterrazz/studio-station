@@ -23,6 +23,8 @@ type Guest interface {
 	Done() <-chan struct{}
 }
 
+const VMStopped = "vm_stopped"
+
 type GuestRan struct {
 	Code   int    `json:"code"`
 	Stdout string `json:"stdout"`
@@ -37,8 +39,11 @@ func (d *Daemon) GuestExec(ctx context.Context, vm, line, stdin string) (system.
 		return system.Output{}, err
 	}
 	d.mu.Lock()
-	client := v.client
+	client, state := v.client, v.state
 	d.mu.Unlock()
+	if client == nil && state == StateStopped {
+		return system.Output{}, fault(VMStopped, vm+" is stopped", "station machines start "+vm)
+	}
 	if client == nil {
 		return system.Output{}, fault("guest_absent", vm+"'s guest is not connected", "station machines start "+vm)
 	}

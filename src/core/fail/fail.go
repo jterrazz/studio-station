@@ -103,3 +103,7 @@ func ExitOf(err error) Exit {
 	}
 	return ExitFailure
 }
+
+type Said struct{ Message, Hint string }
+
+func (s *Said) Error() string { return s.Message }

@@ -32,7 +32,7 @@ func leaf(env kit.Env, sc catalog.GitShortcut) *cobra.Command {
 		RawArgs: true,
 		Bind:    bind,
 		Run: func(ctx context.Context, in *Input, _ kit.IO) error {
-			_, err := call.Invoke(ctx, env.Calls, env.Target, settingscalls.Git, settingscalls.GitIn{Name: sc.Name, Words: in.Words}, nil)
+			_, err := call.Invoke(ctx, env.Calls, env.Target(), settingscalls.Git, settingscalls.GitIn{Name: sc.Name, Words: in.Words}, nil)
 			return err
 		},
 	}, env)

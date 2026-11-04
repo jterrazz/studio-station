@@ -19,14 +19,11 @@ import (
 func sshExecOwners() []string { return []string{"remote/adapter/sshstdio", "machines/adapter/macos"} }
 
 // invariant: the allowlist of one-way-into-a-vm's ssh execs: each file that
-// still runs ssh, with the lot that removes it; each reaches a Mac, but --on,
-// which reaches a VM too by its ssh block until it is a Router target. It only
+// still runs ssh, with the lot that removes it; each reaches a Mac. It only
 // shrinks; a line no longer true fails the gate until removed.
 func sshExecTolerated() map[string]string {
 	return map[string]string{
-		"src/domain/machines/probe.go": "L16: a Mac's probe, over its engine",
-		"src/domain/remote/run.go":     "L16: --on, a Mac or a VM, becomes a Router target",
-		"src/wire/machines.go":         "L16: the fleet fan-out, over each Mac's engine",
+		"src/domain/machines/probe.go": "L20: a Mac's probe, over its engine, once probe is an alias of the machines calls",
 	}
 }
 

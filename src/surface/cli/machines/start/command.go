@@ -33,7 +33,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			stop := io.Wait("starting " + in.Name)
-			_, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Start, machinescalls.VMIn{VM: in.Name}, nil)
+			_, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Start, machinescalls.VMIn{VM: in.Name}, nil)
 			stop()
 			if err != nil {
 				return err

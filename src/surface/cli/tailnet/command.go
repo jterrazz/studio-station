@@ -25,7 +25,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Read:    func(*struct{}) bool { return true },
 		Pages:   true,
 		Run: func(ctx context.Context, _ *struct{}, io kit.IO) error {
-			status, err := call.Invoke(ctx, env.Calls, env.Target, portscalls.Tailnet, portscalls.TailnetIn{}, nil)
+			status, err := call.Invoke(ctx, env.Calls, env.Target(), portscalls.Tailnet, portscalls.TailnetIn{}, nil)
 			if err != nil {
 				return err
 			}

@@ -127,7 +127,7 @@ func valueOf[Out any](name string, v any) (Out, error) {
 	switch v := v.(type) {
 	case json.RawMessage:
 		var out Out
-		if err := json.Unmarshal(v, &out); err != nil {
+		if err := Decode(v, &out); err != nil {
 			e := fail.New(fail.Failed, BadOutput, name, map[string]string{"out": reflect.TypeFor[Out]().Name()})
 			e.Cause = err
 			return out, e

@@ -23,7 +23,7 @@ func Command(env kit.Env) *cobra.Command {
 			if err := io.ZshCompletion(&completion); err != nil {
 				return err
 			}
-			script, err := call.Invoke(ctx, env.Calls, env.Target, settingscalls.Zsh, settingscalls.ZshIn{Completion: completion.String()}, nil)
+			script, err := call.Invoke(ctx, env.Calls, env.Target(), settingscalls.Zsh, settingscalls.ZshIn{Completion: completion.String()}, nil)
 			if err != nil {
 				return err
 			}

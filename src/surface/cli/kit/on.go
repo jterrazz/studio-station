@@ -6,15 +6,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/remote"
+	"github.com/jterrazz/studio-station/src/core/machine"
 )
 
 type On struct {
 	Machine string
 	Here    string
-	Args    []string
-	Remote  *remote.Service
 	Refresh func(ctx context.Context) error
 }
 
@@ -37,24 +34,20 @@ func (o *On) Target() (string, bool) {
 	return o.Machine, true
 }
 
-func (o *On) Delegate(ctx context.Context, machine string, interactive bool) error {
-	code, err := o.Remote.Run(ctx, machine, interactive, remote.Words(o.Args))
-	if err != nil {
-		return err
+func (e Env) Target() machine.Ref {
+	// invariant: --on is a target of the Router: the leaf runs here, its call
+	// runs on that machine and its answer is rendered by this binary.
+	if name, ok := e.On.Target(); ok && name != e.Self.Name {
+		return machine.Ref{Name: name}
 	}
-	if code != 0 {
-		return fail.Silent(fail.Exit(code))
-	}
-	return nil
+	return e.Self
 }
 
+func (e Env) Far() bool { return e.Target() != e.Self }
+
 func Delegates(env Env, c *cobra.Command) (bool, error) {
-	machine, ok := env.On.Target()
-	if !ok {
+	if !env.Far() || env.Screen {
 		return false, nil
-	}
-	if env.Screen {
-		return true, env.On.Delegate(c.Context(), machine, true)
 	}
 	return true, Menu(env, c)
 }
@@ -65,7 +58,7 @@ func refusesOn(path string) bool {
 		return false
 	}
 	switch words[0] {
-	case "shell", "completion", "help", "daemon", "guest":
+	case "shell", "completion", "help", "daemon", "guest", "engine":
 		return true
 	}
 	return len(words) > 1 && words[0] == "machines" && (words[1] == "supervise" || words[1] == "pipe")
@@ -91,21 +84,15 @@ func RefuseOn(env Env) func(*cobra.Command, []string) error {
 		if refusesOn(p) {
 			return usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
 		}
-		if machine, ok := env.On.Target(); ok && c.Annotations[owned] == "" && c.HasParent() {
-			c.Run = nil
-			c.RunE = func(c *cobra.Command, _ []string) error {
-				if err := env.On.Delegate(c.Context(), machine, env.Interactive); err != nil {
-					return Translate(err, p)
-				}
-				return nil
-			}
+		if env.Far() && c.Annotations[owned] == "" && c.HasParent() {
+			return usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
 		}
 		return nil
 	}
 }
 
-// invariant: a command kit built answers --on itself; one it did not (fang's
-// man) runs over ssh in place of its own run.
+// invariant: a command kit built answers --on with its calls; one it did not
+// (fang's man) has none to send, so --on is refused for it.
 const owned = "station.kit"
 
 func rawOn(args []string) string {

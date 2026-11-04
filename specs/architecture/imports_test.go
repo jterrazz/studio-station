@@ -111,9 +111,12 @@ func isKernel(rel string) bool {
 // invariant: the import table of ARCHITECTURE 13.2, owned HERE for the
 // families and the new plumbing; a module import is judged by its path, a
 // standard one by ioStd, a third-party one by the row's own libraries.
+// remote's adapters speak remote/api, its frames, as a family's adapter
+// speaks its model; their tests run remote/serve as the far side, and any
+// test may use its own family's fake.
 func allowedModule(p place, pkg, rel string, test bool) bool {
 	own := topOf(rel) == p.family && p.family != ""
-	if test && (rel == pkg || (own && rel == p.family+"/contract/contracttest") || rel == "world") {
+	if test && (rel == pkg || (own && rel == p.family+"/contract/contracttest") || (own && rel == p.family+"/adapter/fake") || rel == "world") {
 		return true
 	}
 	switch p.row {
@@ -131,7 +134,8 @@ func allowedModule(p place, pkg, rel string, test bool) bool {
 		if isAdapter(rel) {
 			return false
 		}
-		return isContract(rel) || (own && isModel(rel)) || isKernel(rel) || rel == "catalog" || topOf(rel) == "platform" || (p.tech == "fake" && rel == "world")
+		return isContract(rel) || (own && isModel(rel)) || isKernel(rel) || rel == "catalog" || topOf(rel) == "platform" || (p.tech == "fake" && rel == "world") ||
+			(p.family == "remote" && (rel == "remote/api" || (test && rel == "remote/serve")))
 	case rowEngineRun:
 		if p.sub == "feeds" && (rel == "page" || rel == "pages" || strings.HasPrefix(rel, "pages/")) {
 			return true

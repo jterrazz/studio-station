@@ -9,10 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/remote"
 	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -46,13 +44,12 @@ func (m machine) machines(_ bool) *machines.Service {
 		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.host.Env.User(),
 		Version:   Version(),
-		Remote:    fanOutArgv,
+		Ask:       m.askFleet,
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
 		Unlocker:  macos.New(m.host.Run, m.host.FS, knownHosts),
 		SSHConfig: openssh.New(m.host.FS, openssh.Options{
 			Home: m.host.Env.Home(), KnownHosts: knownHosts, Executable: m.host.Env.Executable(),
-			Hop: func(mac string, words []string) []string { return remote.Argv(mac, false, words) },
 		}),
 	})
 }
@@ -66,17 +63,6 @@ func (m machine) port(fallback int, names ...string) int {
 	return fallback
 }
 
-// hazard: the fleet asks every host at once and cannot answer a password prompt,
-// so the ssh call is BatchMode; the words are fixed and need no quoting.
-func fanOutArgv(target string, words []string) []string {
-	argv := make([]string, 0, 11+len(words))
-	argv = append(argv,
-		"ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", target, "--",
-		"sh", "-c", `'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"'`, "station",
-	)
-	return append(argv, words...)
-}
-
 func machinesCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.machines(env.Interactive)
 	return machinescmd.Command(machinescmd.Deps{Here: m.where}, env,
@@ -86,7 +72,7 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 			Resources: machines.ParseResources, Check: createCheck(service),
 			NotBuilt: func(image string) error { return &machines.NoImageError{Image: image} },
 			Fleet:    func(ctx context.Context) (machines.Fleet, error) { return service.Fleet(ctx, false) },
-			Here:     m.where, Ask: createAsker(env), On: createOn(env),
+			Here:     m.where, Ask: createAsker(env),
 		}, env),
 		machinesstart.Command(machinesstart.Deps{Names: service.Names, Here: m.where}, env),
 		machinesstop.Command(machinesstop.Deps{Names: service.Names, Here: m.where}, env),
@@ -185,20 +171,4 @@ func createAsker(env kit.Env) kit.Asker {
 		return nil
 	}
 	return env.Prompt
-}
-
-// invariant: a host chosen on a terminal runs the very request there, as --on
-// would, with the lifetime the owner just answered.
-func createOn(env kit.Env) func(ctx context.Context, host, lifetime string) error {
-	return func(ctx context.Context, host, lifetime string) error {
-		words := append(remote.Words(env.On.Args), "--lifetime", lifetime)
-		code, err := env.On.Remote.Run(ctx, host, true, words)
-		if err != nil {
-			return err
-		}
-		if code != 0 {
-			return fail.Silent(fail.Exit(code))
-		}
-		return nil
-	}
 }

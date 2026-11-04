@@ -56,7 +56,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			in.forSet = flags.Changed("for")
-			a, err := call.Invoke(ctx, env.Calls, env.Target, awakecalls.Keep, awake.Request{Lid: in.Lid, Battery: in.Battery, For: in.For, By: by(in)}, nil)
+			a, err := call.Invoke(ctx, env.Calls, env.Target(), awakecalls.Keep, awake.Request{Lid: in.Lid, Battery: in.Battery, For: in.For, By: by(in)}, nil)
 			if err != nil {
 				return err
 			}

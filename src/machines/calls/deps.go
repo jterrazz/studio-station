@@ -14,7 +14,8 @@ type Deps struct {
 }
 
 type Machines interface {
-	Fleet(ctx context.Context, hereOnly bool) (machines.Fleet, error)
+	// value: sofar sees the fleet after each Mac's answer, the return holds every Mac.
+	FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(machines.Fleet)) (machines.Fleet, error)
 	// value: rewrites the owner's ssh blocks for the fleet just read.
 	SSHBlocks(ctx context.Context, f machines.Fleet) error
 	CheckCreate(ctx context.Context, r machines.CreateRequest) (machines.CreateRequest, error)
@@ -43,7 +44,7 @@ type Machines interface {
 
 func All(d Deps) []call.Handler {
 	return []call.Handler{
-		call.Bind(List, d), call.Bind(Create, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
+		call.BindWatch(List, d), call.Bind(Create, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
 		call.Bind(Restart, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d),
 	}
 }

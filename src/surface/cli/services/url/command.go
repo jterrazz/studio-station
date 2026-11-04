@@ -30,7 +30,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Read: func(*Input) bool { return false },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			v, err := call.Invoke(ctx, env.Calls, env.Target, portscalls.URL, portscalls.URLIn{Port: in.Text}, nil)
+			v, err := call.Invoke(ctx, env.Calls, env.Target(), portscalls.URL, portscalls.URLIn{Port: in.Text}, nil)
 			if err != nil {
 				return err
 			}

@@ -24,7 +24,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Args:    cobra.MinimumNArgs(1),
 		Bind:    bind,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			report, err := call.Invoke(ctx, env.Calls, env.Target, accountscalls.Allow, accountscalls.NamesIn{Names: in.Names}, nil)
+			report, err := call.Invoke(ctx, env.Calls, env.Target(), accountscalls.Allow, accountscalls.NamesIn{Names: in.Names}, nil)
 			if err != nil {
 				return err
 			}

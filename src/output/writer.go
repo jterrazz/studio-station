@@ -52,6 +52,12 @@ func (w *Writer) Failure(err error) {
 	_, _ = io.WriteString(w.colored(w.stderr, c), block)
 }
 
+func (w *Writer) Finding(m page.Mark, parts ...string) error {
+	w.settle()
+	_, err := io.WriteString(w.stdout.W, tty.FindingLine(m, parts...))
+	return err
+}
+
 func (w *Writer) Note(text string) {
 	w.settle()
 	_, _ = io.WriteString(w.stderr.W, text+"\n")

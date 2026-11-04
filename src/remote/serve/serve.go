@@ -4,46 +4,102 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
-	"strconv"
 	"sync"
-	"time"
 
 	"github.com/jterrazz/studio-station/src/core/call"
-	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/remote/api"
 )
 
-const stall = 5 * time.Second
+type Calls interface {
+	// value: what a server runs a frame with: this binary's Router, the
+	// call's In decoded from the frame and its Out handed back as it is.
+	Hello() api.Hello
+	Invoke(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (any, error)
+	Watch(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (<-chan call.Update[any], error)
+}
 
-type Stream func(ctx context.Context, in json.RawMessage, send func(out any) error) error
+const maxFrame = 64 << 20
 
-type Server struct {
-	// value: the calls this server runs, by name: the registry's, and the
-	// host's own.
-	Calls func(name string) (call.Handler, bool)
-	// value: what the server hosts under a watch name of its own: a stream
-	// sends each update and returns when it ends; an error before its first
-	// send is the watch's refusal.
-	Streams map[string]Stream
-	// value: the machine the calls run on: the gate of every call frame.
-	Here machine.Profile
-	// value: words a fault that carries only its code.
-	Word func(*fail.Error) (message, hint string)
-	// value: the hint of an error no table words.
-	Hint string
-	// value: the clock a stall is measured by; nil writes unguarded.
-	Sleep func(ctx context.Context, d time.Duration) error
-	// value: how long a write may block before the connection is dropped.
-	Stall time.Duration
+func Stream(ctx context.Context, r io.Reader, w io.Writer, calls Calls, word call.Wording) error {
+	// invariant: serves frames until the caller closes its side; each
+	// request runs on its own, its answers written whole, one line each, and
+	// the server returns once every request has answered.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	out := &writer{w: w}
+	var running sync.WaitGroup
+	defer running.Wait()
+	s := bufio.NewScanner(r)
+	s.Buffer(make([]byte, 0, 64<<10), maxFrame)
+	for s.Scan() {
+		var f api.Frame
+		if err := json.Unmarshal(s.Bytes(), &f); err != nil {
+			continue
+		}
+		running.Go(func() { answer(ctx, f, out, calls, word) })
+	}
+	return s.Err()
+}
+
+func answer(ctx context.Context, f api.Frame, out *writer, calls Calls, word call.Wording) {
+	reply := func(r api.Frame) {
+		r.V, r.ID = api.Version, f.ID
+		out.write(r)
+	}
+	p := progress{id: f.ID, out: out, word: word}
+	switch {
+	case f.Hello != nil:
+		h := calls.Hello()
+		reply(api.Frame{Hello: &h})
+	case f.Call != "":
+		v, err := calls.Invoke(ctx, f.Target.Ref(), f.Call, f.In, p)
+		if err != nil {
+			reply(api.Frame{Error: call.ToWire(err, word)})
+			return
+		}
+		raw, err := call.Encode(v, word)
+		if err != nil {
+			reply(api.Frame{Error: call.ToWire(err, word)})
+			return
+		}
+		reply(api.Frame{Out: orNull(raw)})
+	case f.Watch != "":
+		updates, err := calls.Watch(ctx, f.Target.Ref(), f.Watch, f.In, p)
+		if err != nil {
+			reply(api.Frame{Error: call.ToWire(err, word)})
+			return
+		}
+		for u := range updates {
+			if u.Err != nil {
+				reply(api.Frame{Error: call.ToWire(u.Err, word)})
+				continue
+			}
+			raw, err := call.Encode(u.Value, word)
+			if err != nil {
+				reply(api.Frame{Error: call.ToWire(err, word)})
+				continue
+			}
+			reply(api.Frame{Out: orNull(raw)})
+		}
+		reply(api.Frame{Done: true})
+	}
+}
+
+func orNull(raw json.RawMessage) json.RawMessage {
+	if len(raw) == 0 {
+		return json.RawMessage("null")
+	}
+	return raw
 }
 
 type writer struct {
-	mu   sync.Mutex
-	conn io.ReadWriteCloser
+	mu sync.Mutex
+	w  io.Writer
 }
+
+func (w *writer) write(f api.Frame) { _ = w.frame(f) }
 
 func (w *writer) frame(f api.Frame) error {
 	f.V = api.Version
@@ -53,172 +109,20 @@ func (w *writer) frame(f api.Frame) error {
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	_, err = w.conn.Write(append(data, '\n'))
+	_, err = w.w.Write(append(data, '\n'))
 	return err
 }
 
-func (s Server) Conn(ctx context.Context, conn io.ReadWriteCloser) {
-	// invariant: the calls of a connection are answered in the order they came;
-	// a watch takes the connection over until either side ends it, and a later
-	// line on it is read and ignored.
-	defer func() { _ = conn.Close() }()
-	w := &writer{conn: conn}
-	scanner := bufio.NewScanner(conn)
-	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
-	for scanner.Scan() {
-		var f api.Frame
-		if err := json.Unmarshal(scanner.Bytes(), &f); err != nil || f.V != api.Version || (f.Call == "") == (f.Watch == "") {
-			if w.frame(api.Frame{ID: f.ID, Error: s.fault(badFrame(f))}) != nil {
-				return
-			}
-			continue
-		}
-		if f.Watch != "" {
-			s.watch(ctx, conn, scanner, w, f)
-			return
-		}
-		if w.frame(s.call(ctx, w, f)) != nil {
-			return
-		}
-	}
-}
-
-func badFrame(f api.Frame) *fail.Error {
-	return fail.New(fail.Refused, call.BadFrame, api.Name, map[string]string{"v": strconv.Itoa(f.V)})
-}
-
-func (s Server) handler(name string) (call.Handler, error) {
-	if s.Calls != nil {
-		if h, ok := s.Calls(name); ok {
-			return h, nil
-		}
-	}
-	return nil, fail.New(fail.NotFound, call.Unknown, name, nil)
-}
-
-func (s Server) call(ctx context.Context, w *writer, f api.Frame) api.Frame {
-	h, err := s.handler(f.Call)
-	if err != nil {
-		return api.Frame{ID: f.ID, Error: s.fault(err)}
-	}
-	out, err := h.Invoke(ctx, s.Here, f.In, progress{id: f.ID, w: w})
-	if err != nil {
-		return api.Frame{ID: f.ID, Error: s.fault(err)}
-	}
-	if len(out) == 0 {
-		out = json.RawMessage("null")
-	}
-	return api.Frame{ID: f.ID, Out: out}
-}
-
 type progress struct {
-	id string
-	w  *writer
+	id   string
+	out  *writer
+	word call.Wording
 }
 
 func (p progress) Step(task, detail string) {
-	_ = p.w.frame(api.Frame{ID: p.id, Progress: &api.Step{Task: task, Detail: detail}})
+	p.out.write(api.Frame{V: api.Version, ID: p.id, Progress: &api.Progress{Task: task, Detail: detail}})
 }
 
 func (p progress) Done(task string, err error) {
-	s := api.Step{Task: task, Done: true}
-	if err != nil {
-		s.Done, s.Failed = false, err.Error()
-	}
-	_ = p.w.frame(api.Frame{ID: p.id, Progress: &s})
-}
-
-func (s Server) watch(ctx context.Context, conn io.ReadWriteCloser, lines *bufio.Scanner, w *writer, f api.Frame) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go func() {
-		for lines.Scan() {
-		}
-		cancel()
-	}()
-	send := s.guarded(ctx, conn, func(out any) error {
-		data, err := json.Marshal(out)
-		if err != nil {
-			return err
-		}
-		return w.frame(api.Frame{ID: f.ID, Out: data})
-	})
-	sent := false
-	counted := func(out any) error {
-		sent = true
-		return send(out)
-	}
-	var err error
-	if stream, ok := s.Streams[f.Watch]; ok {
-		err = stream(ctx, f.In, counted)
-	} else {
-		err = s.updates(ctx, f, counted)
-	}
-	if err != nil && !sent {
-		_ = w.frame(api.Frame{ID: f.ID, Error: s.fault(err)})
-	}
-}
-
-func (s Server) updates(ctx context.Context, f api.Frame, send func(any) error) error {
-	h, err := s.handler(f.Watch)
-	if err != nil {
-		return err
-	}
-	updates, err := h.Watch(ctx, s.Here, f.In, nil)
-	if err != nil {
-		return err
-	}
-	for u := range updates {
-		if u.Err != nil {
-			return u.Err
-		}
-		if err := send(u.Value); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// invariant: a write that does not finish within the stall budget closes
-// the connection: the server never blocks on a client that does not read.
-func (s Server) guarded(ctx context.Context, conn io.Closer, write func(any) error) func(any) error {
-	limit := s.Stall
-	if limit <= 0 {
-		limit = stall
-	}
-	if s.Sleep == nil {
-		return write
-	}
-	return func(v any) error {
-		wctx, done := context.WithCancel(ctx)
-		defer done()
-		go func() {
-			if s.Sleep(wctx, limit) == nil && wctx.Err() == nil {
-				_ = conn.Close()
-			}
-		}()
-		return write(v)
-	}
-}
-
-func (s Server) fault(err error) *api.Fault {
-	var f *api.Fault
-	if errors.As(err, &f) {
-		return f
-	}
-	var e *fail.Error
-	if !errors.As(err, &e) {
-		e = &fail.Error{Type: fail.Failed, Code: "internal", Message: err.Error()}
-	}
-	out := api.FaultOf(e)
-	if out.Message == "" && s.Word != nil {
-		out.Message, out.Hint = s.Word(e)
-	}
-	if out.Message == "" {
-		out.Message = e.Error()
-	}
-	if out.Hint == "" {
-		out.Hint = s.Hint
-	}
-	return out
+	p.out.write(api.Frame{V: api.Version, ID: p.id, Progress: &api.Progress{Task: task, Done: true, Error: call.ToWire(err, p.word)}})
 }

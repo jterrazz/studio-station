@@ -25,7 +25,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Read:    func(*Input) bool { return true },
 		Pages:   true,
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
-			report, err := call.Invoke(ctx, env.Calls, env.Target, accountscalls.List, accountscalls.ListIn{}, nil)
+			report, err := call.Invoke(ctx, env.Calls, env.Target(), accountscalls.List, accountscalls.ListIn{}, nil)
 			if err != nil {
 				return err
 			}

@@ -30,9 +30,10 @@ type Env struct {
 	On          *On
 	Stdin       io.Reader
 	Stdout      io.Writer
-	// value: where a leaf's call runs, and the machine it targets.
-	Calls  call.Router
-	Target machine.Ref
+	// value: where a leaf's call runs, and this machine; Target names the
+	// machine a leaf's calls go to.
+	Calls call.Router
+	Self  machine.Ref
 }
 
 type IO struct {
@@ -173,13 +174,6 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 		if l.RawArgs && len(a) > 0 && (a[0] == "-h" || a[0] == "--help") {
 			return c.Help()
 		}
-		if machine, ok := env.On.Target(); ok {
-			if err := env.On.Delegate(c.Context(), machine, env.Interactive); err != nil {
-				return Translate(err, path(c))
-			}
-			env.On.refresh(c.Context(), path(c))
-			return nil
-		}
 		o := IO{
 			JSON:          wantJSON,
 			PageJSON:      wantPage,
@@ -193,8 +187,14 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 			o.in, o.raw = env.Stdin, env.Stdout
 		}
 		err := run(c.Context(), c, l, in, a, env, o)
+		if err != nil && l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && vmStopped(err) {
+			return env.Out.Finding(page.Absent, env.Target().Name+" is stopped", "start it to read its "+strings.Fields(path(c))[0])
+		}
 		if err != nil {
 			return Translate(err, path(c))
+		}
+		if env.Far() {
+			env.On.refresh(c.Context(), path(c))
 		}
 		return nil
 	}
@@ -207,7 +207,9 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 			return err
 		}
 	}
-	if l.Validate != nil {
+	if l.Validate != nil && !env.Far() {
+		// invariant: Validate checks against this machine; a call sent
+		// elsewhere is checked by its own use case, there.
 		if err := l.Validate(ctx, in); err != nil {
 			return err
 		}

@@ -40,7 +40,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Held, _ = d.Held(in.Names)
 			var report accounts.RecallReport
 			err := io.Confirmed(func(answer string) (err error) {
-				report, err = call.Invoke(ctx, env.Calls, env.Target, accountscalls.Disallow, accountscalls.DisallowIn{Names: in.Names, Confirm: answer}, nil)
+				report, err = call.Invoke(ctx, env.Calls, env.Target(), accountscalls.Disallow, accountscalls.DisallowIn{Names: in.Names, Confirm: answer}, nil)
 				return err
 			})
 			if err != nil {

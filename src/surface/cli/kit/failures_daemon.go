@@ -41,7 +41,6 @@ func servicesFailure(err error) (*fail.Error, bool) {
 	var pinned *services.PinnedError
 	var vmOnly *services.VMOnlyError
 	var unknown *services.UnknownVMError
-	var remote *services.RemoteError
 	var hereInVM *services.HereInVMError
 	switch {
 	case errors.As(err, &hereInVM):
@@ -69,8 +68,6 @@ func servicesFailure(err error) (*fail.Error, bool) {
 		return usage(vmOnly.Error(), "station services url runs inside a VM; here: station services"), true
 	case errors.As(err, &unknown):
 		return usage(unknown.Error(), "station services"), true
-	case errors.As(err, &remote):
-		return fail.Silent(fail.Exit(remote.Code)), true
 	}
 	return nil, false
 }
@@ -94,4 +91,12 @@ func controlFailure(err error) (*fail.Error, bool) {
 		return failed(boot.Error(), boot.See, err), true
 	}
 	return nil, false
+}
+
+// invariant: a read of a VM that is not running is a finding, the VM named
+// with the verb that starts it; an action there is refused.
+func vmStopped(err error) bool {
+	var e *fail.Error
+	var op *engine.OpError
+	return errors.As(err, &e) && e.Code == engine.VMStopped || errors.As(err, &op) && op.Code == engine.VMStopped
 }

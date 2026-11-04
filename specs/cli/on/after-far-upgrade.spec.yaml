@@ -1,0 +1,13 @@
+description: 'a call an older far side refused runs once that Mac is upgraded: its calls are read again'
+fixture: ./__fixtures__/old-y/
+env: daemon
+runs:
+    - command: 'tools --json --on y'
+      exit: 1
+      stderr: |
+          Error: y runs station v3.0.0, which has no tools.list
+          Hint: update station on y (scripts/install.sh there)
+    - command: '--version > /dev/null; printf v3.1.0 > answers/ssh/api-y/version; printf "[]" > answers/ssh/api-y/tools.list.json; "$STATION" tools --json --on y | /usr/bin/jq -r .schema'
+      exit: 0
+      stdout: |
+          station.tools/v1

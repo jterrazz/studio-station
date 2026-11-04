@@ -48,7 +48,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			var removed []images.Record
 			err := io.Confirmed(func(answer string) (err error) {
-				removed, err = call.Invoke(ctx, env.Calls, env.Target, imagescalls.Delete, imagescalls.DeleteIn{Image: in.Image, Version: in.Version, Confirm: answer}, nil)
+				removed, err = call.Invoke(ctx, env.Calls, env.Target(), imagescalls.Delete, imagescalls.DeleteIn{Image: in.Image, Version: in.Version, Confirm: answer}, nil)
 				return err
 			})
 			if err != nil {

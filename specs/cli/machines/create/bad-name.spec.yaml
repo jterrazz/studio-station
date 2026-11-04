@@ -28,7 +28,7 @@ runs:
           Hint: pick another name
       files:
           .calls:
-              contains: 'machines --here --json'
+              contains: 'station engine attach'
     - command: '--version >/dev/null; /usr/bin/grep -c ''tart clone'' .calls'
       exit: 1
       stdout: |

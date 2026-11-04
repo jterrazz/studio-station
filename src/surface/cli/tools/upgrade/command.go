@@ -30,7 +30,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Bind: bind,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			outcomes, err := call.Invoke(ctx, env.Calls, env.Target, appscalls.Upgrade, appscalls.UpgradeIn{Names: in.Names, Via: managers(in.Via)}, nil)
+			outcomes, err := call.Invoke(ctx, env.Calls, env.Target(), appscalls.Upgrade, appscalls.UpgradeIn{Names: in.Names, Via: managers(in.Via)}, nil)
 			if err != nil {
 				return err
 			}

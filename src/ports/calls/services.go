@@ -50,8 +50,7 @@ type ReleaseIn struct {
 
 type ReleaseOut struct {
 	Lease ports.Reservation
-	// value: the host that released it when it is not this one; it printed
-	// its own answer.
+	// value: the host that released it when it is not this one.
 	Host string
 }
 
@@ -60,7 +59,7 @@ var Release = call.Call[Deps, ReleaseIn, ReleaseOut]{
 	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in ReleaseIn, _ call.Progress) (ReleaseOut, error) {
 		// invariant: a pinned port's URL is in its VM's environment, so its
-		// release asks first; a release on another host is answered there.
+		// release asks first; a release on another host runs there.
 		t, err := d.Services.ParseTarget(in.Target)
 		if err != nil {
 			return ReleaseOut{}, err

@@ -24,11 +24,12 @@ import (
 
 const ID = "fleet"
 
-type Remote func(ctx context.Context, machine string, words []string) error
+type Remote func(ctx context.Context, machine string) error
 
 type Deps struct {
-	Calls    call.Router
-	Target   machine.Ref
+	Calls  call.Router
+	Target machine.Ref
+	// value: opens station's own screen on that machine, the terminal handed to it.
 	Remote   Remote
 	Describe tab.Describe
 }
@@ -70,7 +71,7 @@ func read(d Deps) tab.Source[pagefleet.Reading] {
 				go func() { defer wg.Done(); f() }()
 			}
 			run(func() {
-				l, err := call.Invoke(ctx, d.Calls, d.Target, machinescalls.List, machinescalls.ListIn{Unwritten: true}, nil)
+				l, err := call.Read(ctx, d.Calls, d.Target, machinescalls.List, machinescalls.ListIn{Unwritten: true}, nil)
 				if err != nil {
 					send(fail("fleet", err))
 					return
@@ -186,7 +187,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		}))
 	case pagemachines.KeyEnter:
 		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
-			return tab.Outcome("back from", name, catalog.StateOK, ""), m.d.Remote(m.ctx, name, nil)
+			return tab.Outcome("back from", name, catalog.StateOK, ""), m.d.Remote(m.ctx, name)
 		}))
 	}
 	return m, tea.Batch(cmd, act)
@@ -257,19 +258,13 @@ func (m Model) create(values map[string]string) tea.Cmd {
 			here = h.Name
 		}
 	}
-	host := values["host"]
-	if host != "" && host != here {
-		words := []string{"machines", "create", "--lifetime", values["lifetime"], "--image", values["image"]}
-		if values["name"] != "" {
-			words = append(words, "--name", values["name"])
-		}
-		return m.exec(func() (tab.Status, error) {
-			return tab.Outcome("created a VM on", host, catalog.StateOK, ""), m.d.Remote(m.ctx, host, words)
-		})
+	target := m.d.Target
+	if host := values["host"]; host != "" && host != here {
+		target = machine.Ref{Name: host}
 	}
 	request := machines.CreateRequest{Image: values["image"], Name: values["name"], Lifetime: machines.Lifetime(values["lifetime"])}
 	return m.exec(func() (tab.Status, error) {
-		created, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Create, machinescalls.CreateIn{Request: request}, nil)
+		created, err := call.Invoke(m.ctx, m.d.Calls, target, machinescalls.Create, machinescalls.CreateIn{Request: request}, nil)
 		return tab.Outcome("created", created.VM.Name, catalog.StateOK, "on "+created.VM.Host), err
 	})
 }

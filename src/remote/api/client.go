@@ -78,7 +78,7 @@ func (c Client) Call(ctx context.Context, name string, target machine.Ref, in, o
 			}
 			switch {
 			case f.Progress != nil:
-				step(p, *f.Progress)
+				Report(p, f.Progress)
 			case f.Error != nil:
 				return f.Error.Err()
 			default:
@@ -88,20 +88,6 @@ func (c Client) Call(ctx context.Context, name string, target machine.Ref, in, o
 				return nil
 			}
 		}
-	}
-}
-
-func step(p call.Progress, s Step) {
-	if p == nil {
-		return
-	}
-	switch {
-	case s.Failed != "":
-		p.Done(s.Task, &Fault{Message: s.Failed})
-	case s.Done:
-		p.Done(s.Task, nil)
-	default:
-		p.Step(s.Task, s.Detail)
 	}
 }
 

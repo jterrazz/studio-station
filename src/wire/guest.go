@@ -13,6 +13,7 @@ import (
 	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
 	"github.com/jterrazz/studio-station/src/ports/adapter/procnet"
 	guestcmd "github.com/jterrazz/studio-station/src/surface/cli/guest"
+	guestserve "github.com/jterrazz/studio-station/src/surface/cli/guest/serve"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
@@ -35,5 +36,7 @@ func (m machine) listeners(root string) guest.Listeners {
 }
 
 func guestCommand(env kit.Env, m machine) *cobra.Command {
-	return guestcmd.Command(guestcmd.Deps{Guest: m.guest()}, env)
+	cmd := guestcmd.Command(guestcmd.Deps{Guest: m.guest()}, env)
+	cmd.AddCommand(guestserve.Command(guestserve.Deps{Serve: serveFrames(env)}, env))
+	return cmd
 }

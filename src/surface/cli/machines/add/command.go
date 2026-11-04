@@ -36,7 +36,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			return nil
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			if _, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Add, machinescalls.AddIn{Name: in.Name, User: in.User, Key: in.Key}, nil); err != nil {
+			if _, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Add, machinescalls.AddIn{Name: in.Name, User: in.User, Key: in.Key}, nil); err != nil {
 				return err
 			}
 			return io.Page(pagemachines.Change("add", in.Name, "added, ssh "+in.Name, d.Here), nil)

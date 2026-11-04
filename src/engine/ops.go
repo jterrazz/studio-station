@@ -69,7 +69,7 @@ type OpError struct {
 
 func (e *OpError) Error() string { return e.Message }
 
-func (e *OpError) Refused() bool { return strings.HasPrefix(e.Code, "unknown_") }
+func (e *OpError) Refused() bool { return strings.HasPrefix(e.Code, "unknown_") || e.Code == VMStopped }
 
 func fault(code, message, hint string) *OpError {
 	// value: a code the caller got wrong (a VM, a verb, a page it named), not

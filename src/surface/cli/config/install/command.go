@@ -27,7 +27,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Bind:     bind,
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			changes, err := call.Invoke(ctx, env.Calls, env.Target, settingscalls.Install, settingscalls.InstallIn{Names: in.Names, Interactive: io.Interactive}, nil)
+			changes, err := call.Invoke(ctx, env.Calls, env.Target(), settingscalls.Install, settingscalls.InstallIn{Names: in.Names, Interactive: io.Interactive}, nil)
 			if err != nil {
 				return err
 			}

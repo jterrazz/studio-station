@@ -2,6 +2,7 @@ package call
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
@@ -9,14 +10,43 @@ import (
 )
 
 const (
-	Unknown   fail.Code = "call.unknown"
-	Elsewhere fail.Code = "call.elsewhere"
+	Unknown fail.Code = "call.unknown"
+	// value: a machine that does not answer, or whose station API does not.
+	Unreachable fail.Code = "remote.unreachable"
+	// value: a far binary that serves no such call.
+	FarTooOld fail.Code = "remote.far-too-old"
 )
 
 type local interface {
 	run(ctx context.Context, target machine.Profile, in any, p Progress) (any, error)
 	stream(ctx context.Context, target machine.Profile, in any, p Progress) (<-chan Update[any], error)
+	input(raw json.RawMessage) (any, error)
 }
+
+func (r *Registry) Input(name string, raw json.RawMessage) (any, error) {
+	// value: a frame's input as the call's own In, for Run or Stream.
+	h, err := r.local(name)
+	if err != nil {
+		return nil, err
+	}
+	return h.input(raw)
+}
+
+func input[In any](m Meta, raw json.RawMessage) (any, error) {
+	var in In
+	if len(raw) == 0 || string(raw) == "null" {
+		return in, nil
+	}
+	if err := json.Unmarshal(raw, &in); err != nil {
+		e := fail.New(fail.Refused, BadInput, m.Name, map[string]string{"in": m.In})
+		e.Cause = err
+		return nil, e
+	}
+	return in, nil
+}
+
+func (b bound[D, In, Out]) input(raw json.RawMessage) (any, error)   { return input[In](b.meta, raw) }
+func (w watched[D, In, Out]) input(raw json.RawMessage) (any, error) { return input[In](w.meta, raw) }
 
 func (r *Registry) Run(ctx context.Context, target machine.Profile, name string, in any, p Progress) (any, error) {
 	// invariant: a call run in this process passes the same gate as a frame

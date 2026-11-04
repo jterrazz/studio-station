@@ -2,14 +2,11 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/jterrazz/studio-station/src/ports"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/jterrazz/studio-station/src/core/store"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
@@ -19,8 +16,6 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
 )
-
-const fanOutBudget = 5 * time.Second
 
 var ErrDaemonDown = errors.New("the station daemon is not running")
 
@@ -45,10 +40,12 @@ type Options struct {
 	HereName string
 	VMName   string
 	HostName string
-	Remote   func(host string, words []string) []string
-	Delegate func(ctx context.Context, host string, words []string) (int, error)
-	VMHost   func(ctx context.Context, vm string) (host string, here bool, err error)
-	Exposure func(ctx context.Context) Exposure
+	// value: each other host's own services, from those that answered.
+	Ask func(ctx context.Context, hosts []string) map[string]HostView
+	// value: a VM's port released by the host it runs on.
+	ReleaseOn func(ctx context.Context, host, target string, yes bool) (Lease, error)
+	VMHost    func(ctx context.Context, vm string) (host string, here bool, err error)
+	Exposure  func(ctx context.Context) Exposure
 }
 
 type Stores struct {
@@ -216,28 +213,23 @@ func (s *Service) List(ctx context.Context, hereOnly bool) (Fleet, error) {
 		}
 	}
 	sort.Strings(others)
-	views := make([]HostView, len(others))
-	var wg sync.WaitGroup
-	for i, name := range others {
-		wg.Go(func() { views[i] = s.ask(ctx, name) })
+	var answers map[string]HostView
+	if s.o.Ask != nil {
+		answers = s.o.Ask(ctx, others)
 	}
-	wg.Wait()
+	views := make([]HostView, len(others))
+	for i, name := range others {
+		views[i] = answered(name, answers)
+	}
 	fleet.Hosts = append(fleet.Hosts, views...)
 	return fleet, nil
 }
 
-func (s *Service) ask(ctx context.Context, name string) HostView {
-	silent := HostView{Name: name, Services: []View{}}
-	argv := s.o.Remote(name, []string{"services", "--here", "--json"})
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: argv[0], Args: argv[1:], Timeout: fanOutBudget})
-	if err != nil || out.ExitCode != 0 {
-		return silent
+func answered(name string, answers map[string]HostView) HostView {
+	view, ok := answers[name]
+	if !ok {
+		return HostView{Name: name, Services: []View{}}
 	}
-	var doc Fleet
-	if json.Unmarshal([]byte(out.Stdout), &doc) != nil || len(doc.Hosts) == 0 {
-		return silent
-	}
-	view := doc.Hosts[0]
 	view.Name, view.Here, view.Reachable = name, false, true
 	if view.Services == nil {
 		view.Services = []View{}
@@ -330,18 +322,7 @@ func (s *Service) Pinned(t Target) bool {
 
 func (s *Service) Release(ctx context.Context, t Target, host string, yes bool) (Lease, error) {
 	if host != "" {
-		words := []string{"services", "release", t.VM + ":" + strconv.Itoa(t.Port)}
-		if yes {
-			words = append(words, "--yes")
-		}
-		code, err := s.o.Delegate(ctx, host, words)
-		if err != nil {
-			return Lease{}, err
-		}
-		if code != 0 {
-			return Lease{}, &RemoteError{Host: host, Code: code}
-		}
-		return Lease{VM: t.VM, GuestPort: t.Port}, nil
+		return s.o.ReleaseOn(ctx, host, t.VM+":"+strconv.Itoa(t.Port), yes)
 	}
 	l, err := s.d.Release(ctx, t.VM, t.Port)
 	if s.inVM() && err != nil && errors.Is(err, ErrDaemonDown) {

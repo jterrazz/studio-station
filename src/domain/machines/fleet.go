@@ -2,20 +2,20 @@ package machines
 
 import (
 	"context"
-	"encoding/json"
-	"sort"
-	"sync"
-	"time"
 
 	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
-const fanOutBudget = 5 * time.Second
-
 func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
+	return s.FleetAsItFills(ctx, hereOnly, nil)
+}
+
+func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(Fleet)) (Fleet, error) {
+	// invariant: sofar sees this host first, then this host and every other
+	// Mac that has answered, in name order, after each answer; the fleet
+	// returned holds every Mac, a silent one as unreachable.
 	cfg, err := s.prefs()
 	if err != nil {
 		return Fleet{}, err
@@ -31,31 +31,35 @@ func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
 	if user == "" {
 		user = s.h.Env.User()
 	}
-	fleet := Fleet{Hosts: []HostView{{
+	here := HostView{
 		Name: name, User: user, StationVersion: s.o.Version, Here: true, Reachable: true, Node: nodes[name], Daemon: info, VMs: vms,
-	}}}
+	}
 	if hereOnly || s.o.Here != catalog.Host {
-		return fleet, nil
+		return Fleet{Hosts: []HostView{here}}, nil
 	}
-	others := make([]string, 0, len(cfg.Hosts))
-	for n := range cfg.Hosts {
-		if n != cfg.Here {
-			others = append(others, n)
+	others := s.OtherHosts()
+	answers := map[string]HostView{}
+	fleet := func(all bool) Fleet {
+		f := Fleet{Hosts: []HostView{here}}
+		for _, n := range others {
+			if _, ok := answers[n]; ok || all {
+				f.Hosts = append(f.Hosts, s.view(n, cfg.Hosts[n], nodes[n], answers))
+			}
 		}
+		return f
 	}
-	sort.Strings(others)
-	views := make([]HostView, len(others))
-	var wg sync.WaitGroup
-	for i, n := range others {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			views[i] = s.ask(ctx, n, cfg.Hosts[n], nodes[n])
-		}()
+	if sofar != nil {
+		sofar(fleet(false))
 	}
-	wg.Wait()
-	fleet.Hosts = append(fleet.Hosts, views...)
-	return fleet, nil
+	if s.o.Ask != nil && len(others) > 0 {
+		s.o.Ask(ctx, others, func(mac string, view HostView) {
+			answers[mac] = view
+			if sofar != nil {
+				sofar(fleet(false))
+			}
+		})
+	}
+	return fleet(true), nil
 }
 
 func (s *Service) nodeMap(ctx context.Context) map[string]Node {
@@ -90,18 +94,16 @@ func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[str
 	return DaemonInfo{Known: true, Running: true, Version: version}, live
 }
 
-func (s *Service) ask(ctx context.Context, name string, h model.Host, node Node) HostView {
-	silent := HostView{Name: name, User: h.User, Node: node}
-	argv := s.o.Remote(name, []string{"machines", "--here", "--json"})
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: argv[0], Args: argv[1:], Timeout: fanOutBudget})
-	if err != nil || out.ExitCode != 0 {
-		return silent
+func (s *Service) view(name string, h model.Host, node Node, answers map[string]HostView) HostView {
+	far, ok := answers[name]
+	if !ok {
+		return HostView{Name: name, User: h.User, Node: node}
 	}
-	var doc WireFleet
-	if json.Unmarshal([]byte(out.Stdout), &doc) != nil || len(doc.Hosts) == 0 {
-		return silent
+	view := HostView{Name: name, User: h.User, StationVersion: far.StationVersion, Reachable: true, Node: far.Node, Daemon: far.Daemon}
+	for _, vm := range far.VMs {
+		vm.Host = name
+		view.VMs = append(view.VMs, vm)
 	}
-	view := doc.Hosts[0].View(name, h.User)
 	if node.IP != "" || node.Online {
 		view.Node = node
 	}

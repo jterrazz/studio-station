@@ -31,12 +31,18 @@ import (
 
 func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 
-// invariant: inside the engine, a recall rides the engine's own connections,
-// never its socket: the lends are bound to the engine they serve.
+// invariant: inside the engine, the menu bar reads through this run's
+// Router, so its fleet reaches the other Macs as the CLI's does; a recall
+// rides the engine's own connections, never its socket: the lends are bound
+// to the engine they serve.
 func (m machine) daemon(env kit.Env) *engine.Daemon {
 	lends := &daemonLends{}
 	registry := m.registry(env)
-	menubar := feeds.Menubar{Calls: remote.NewRouter(registry, m.profile), Clock: m.host.Clock, Here: m.where, Report: func(v power.View) *power.Report {
+	calls := env.Calls
+	if calls == nil {
+		calls = remote.NewRouter(registry, m.profile, remote.Reach{})
+	}
+	menubar := feeds.Menubar{Calls: calls, Clock: m.host.Clock, Here: m.where, Report: func(v power.View) *power.Report {
 		return &power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	}}
 	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths.State)), engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{

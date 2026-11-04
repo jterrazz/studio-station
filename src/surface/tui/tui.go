@@ -30,7 +30,7 @@ type Deps struct {
 	Services servicesscreen.Deps
 	Accounts accountsscreen.Deps
 	Power    powerscreen.Deps
-	Remote   func(ctx context.Context, machine string, words []string) error
+	Remote   func(ctx context.Context, machine string) error
 	Station  func(ctx context.Context, words []string) error
 	Describe func(error) (message, hint string)
 	Prefer   func(prefix string)

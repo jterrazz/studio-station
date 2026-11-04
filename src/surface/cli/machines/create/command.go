@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
@@ -28,7 +29,6 @@ type Deps struct {
 	Fleet func(ctx context.Context) (machines.Fleet, error)
 	Here  page.Context
 	Ask   kit.Asker
-	On    func(ctx context.Context, host string, lifetime string) error
 }
 
 type Input struct {
@@ -36,6 +36,8 @@ type Input struct {
 	CPUs                                         int
 	request                                      machines.CreateRequest
 	buildFirst                                   bool
+	// value: another host chosen on a terminal, the create sent there.
+	host string
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -79,18 +81,21 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			if d.Ask != nil {
-				done, err := ask(ctx, d, in)
-				if err != nil || done {
+				if err := ask(ctx, d, in); err != nil {
 					return err
 				}
 			}
-			if in.buildFirst {
-				if _, err := call.Invoke(ctx, env.Calls, env.Target, imagescalls.Build, imagescalls.BuildIn{Names: []string{in.request.Image}}, nil); err != nil {
+			target := env.Target()
+			if in.host != "" {
+				target = machine.Ref{Name: in.host}
+			}
+			if in.buildFirst && in.host == "" {
+				if _, err := call.Invoke(ctx, env.Calls, env.Target(), imagescalls.Build, imagescalls.BuildIn{Names: []string{in.request.Image}}, nil); err != nil {
 					return err
 				}
 			}
 			steps := kit.Steps(io)
-			created, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Create, machinescalls.CreateIn{Request: in.request}, steps)
+			created, err := call.Invoke(ctx, env.Calls, target, machinescalls.Create, machinescalls.CreateIn{Request: in.request}, steps)
 			steps.Stop()
 			if err != nil {
 				return err
@@ -100,7 +105,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	}, env)
 }
 
-func ask(ctx context.Context, d Deps, in *Input) (done bool, err error) {
+func ask(ctx context.Context, d Deps, in *Input) error {
 	var hosts []pagemachines.HostChoice
 	if fleet, fleetErr := d.Fleet(ctx); fleetErr == nil {
 		for _, h := range fleet.Hosts {
@@ -113,7 +118,7 @@ func ask(ctx context.Context, d Deps, in *Input) (done bool, err error) {
 	if form := pagemachines.CreateForm(in.Lifetime, hosts); len(form.Fields) > 0 {
 		asked, err := d.Ask.Form(form)
 		if err != nil {
-			return false, err
+			return err
 		}
 		for k, v := range asked {
 			answers[k] = v
@@ -122,19 +127,20 @@ func ask(ctx context.Context, d Deps, in *Input) (done bool, err error) {
 	in.request.Lifetime = machines.Lifetime(answers["lifetime"])
 	for _, h := range hosts {
 		if h.Name == answers["host"] && !h.Here {
-			return true, d.On(ctx, h.Name, answers["lifetime"])
+			in.host = h.Name
+			return nil
 		}
 	}
 	if in.buildFirst {
 		build, err := d.Ask.Confirm(pagemachines.BuildConfirm(in.request.Image))
 		if err != nil {
-			return false, err
+			return err
 		}
 		if !build {
-			return false, d.NotBuilt(in.request.Image)
+			return d.NotBuilt(in.request.Image)
 		}
 	}
-	return false, nil
+	return nil
 }
 
 func vmCount(n int) string {

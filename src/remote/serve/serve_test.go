@@ -71,7 +71,7 @@ func server(t *testing.T) serve.Server {
 	return serve.Server{
 		Calls: func(name string) (call.Handler, bool) { return stop, name == "machines.stop" },
 		Here:  laptop,
-		Streams: map[string]serve.Stream{"page": func(ctx context.Context, _ json.RawMessage, send func(any) error) error {
+		Streams: map[string]serve.Feed{"page": func(ctx context.Context, _ json.RawMessage, send func(any) error) error {
 			for i := 0; ; i++ {
 				if err := send(map[string]int{"page": i}); err != nil {
 					return err
@@ -125,7 +125,7 @@ func TestALineThatIsNoFrameIsRefusedAndTheConnectionAnswersTheNext(t *testing.T)
 		_ = json.Unmarshal(line, &f)
 		switch {
 		case f.Error != nil:
-			answers = append(answers, f.ID+" "+f.Error.Code)
+			answers = append(answers, f.ID+" "+string(f.Error.Code))
 		case f.Out != nil:
 			answers = append(answers, f.ID+" "+string(f.Out))
 		}

@@ -33,7 +33,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			if io.CanLive() {
-				updates, err := call.Follow(ctx, env.Calls, env.Target, overviewcalls.Read, overviewcalls.ReadIn{}, nil)
+				updates, err := call.Follow(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{}, nil)
 				if err != nil {
 					return err
 				}
@@ -50,7 +50,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				}
 				return last.Err
 			}
-			snapshot, err := call.Read(ctx, env.Calls, env.Target, overviewcalls.Read, overviewcalls.ReadIn{}, nil)
+			snapshot, err := call.Read(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{}, nil)
 			if err == nil {
 				err = snapshot.Err
 			}
