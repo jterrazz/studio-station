@@ -35,8 +35,18 @@ func (e *NewerError) Error() string {
 type Migrator interface {
 	// invariant: brings every record of the store to its current version and
 	// leaves a record already there byte for byte; run by setup's layout step
-	// before any call reads the store.
+	// before any call reads the store. A record it cannot read is left as it
+	// is, for the call that reads it to name; only a record a newer station
+	// wrote stops it.
 	Migrate(ctx context.Context) error
+}
+
+func OnlyNewer(err error) error {
+	var newer *NewerError
+	if errors.As(err, &newer) {
+		return err
+	}
+	return nil
 }
 
 func Current(version, known int) (int, error) {

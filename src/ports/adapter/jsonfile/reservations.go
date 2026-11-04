@@ -68,7 +68,7 @@ func (r *Reservations) Delete(_ context.Context, vm string, guestPort int) error
 
 func (r *Reservations) Migrate(context.Context) error {
 	_, err := r.list.load()
-	return err
+	return store.OnlyNewer(err)
 }
 
 func (r *Reservations) save(all []ports.Reservation) error {

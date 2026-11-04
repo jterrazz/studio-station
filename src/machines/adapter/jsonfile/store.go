@@ -171,7 +171,19 @@ func (s *Store) Delete(_ context.Context, name string) error {
 	return nil
 }
 
-func (s *Store) Migrate(ctx context.Context) error {
-	_, err := s.List(ctx)
-	return err
+func (s *Store) Migrate(context.Context) error {
+	entries, err := s.files.ReadDir(s.dir)
+	if err != nil {
+		return store.OnlyNewer(err)
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
+			continue
+		}
+		_, err = s.read(path.Join(s.dir, e.Name()))
+		if store.OnlyNewer(err) != nil {
+			return err
+		}
+	}
+	return nil
 }

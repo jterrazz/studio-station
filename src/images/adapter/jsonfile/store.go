@@ -112,17 +112,25 @@ func (s *Store) Delete(_ context.Context, image, version string) error {
 	return nil
 }
 
-func (s *Store) Migrate(ctx context.Context) error {
-	entries, err := s.files.ReadDir(s.dir)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
+func (s *Store) Migrate(context.Context) error {
+	names, err := s.files.ReadDir(s.dir)
 	if err != nil {
-		return err
+		return store.OnlyNewer(err)
 	}
-	for _, e := range entries {
-		if e.IsDir() {
-			if _, err := s.List(ctx, e.Name()); err != nil {
+	for _, image := range names {
+		if !image.IsDir() {
+			continue
+		}
+		versions, err := s.files.ReadDir(s.imageDir(image.Name()))
+		if err != nil {
+			continue
+		}
+		for _, e := range versions {
+			if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
+				continue
+			}
+			_, err = s.read(path.Join(s.imageDir(image.Name()), e.Name()))
+			if store.OnlyNewer(err) != nil {
 				return err
 			}
 		}

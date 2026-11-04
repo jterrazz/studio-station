@@ -72,7 +72,7 @@ func (p *Preferences) Write(group string, v any) error {
 func (p *Preferences) Migrate(context.Context) error {
 	doc, err := p.load()
 	if err != nil {
-		return err
+		return store.OnlyNewer(err)
 	}
 	for key := range doc {
 		if !slices.Contains(p.groups, key) {

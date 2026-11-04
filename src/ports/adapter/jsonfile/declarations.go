@@ -66,7 +66,7 @@ func (d *Declarations) Delete(_ context.Context, machine string, port int) error
 
 func (d *Declarations) Migrate(context.Context) error {
 	_, err := d.list.load()
-	return err
+	return store.OnlyNewer(err)
 }
 
 func (d *Declarations) save(all []ports.Declaration) error {

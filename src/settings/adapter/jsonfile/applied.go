@@ -110,7 +110,19 @@ func (a *Applied) Delete(_ context.Context, setting string) error {
 	return nil
 }
 
-func (a *Applied) Migrate(ctx context.Context) error {
-	_, err := a.List(ctx)
-	return err
+func (a *Applied) Migrate(context.Context) error {
+	entries, err := a.files.ReadDir(a.dir)
+	if err != nil {
+		return store.OnlyNewer(err)
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
+			continue
+		}
+		_, err = a.read(path.Join(a.dir, e.Name()))
+		if store.OnlyNewer(err) != nil {
+			return err
+		}
+	}
+	return nil
 }

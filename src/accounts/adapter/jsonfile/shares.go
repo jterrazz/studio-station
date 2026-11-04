@@ -102,7 +102,7 @@ func (s *Shares) Delete(ctx context.Context, vm string) error {
 
 func (s *Shares) Migrate(ctx context.Context) error {
 	_, err := s.List(ctx)
-	return err
+	return store.OnlyNewer(err)
 }
 
 // invariant: a record written before shares expired holds plain names: each
