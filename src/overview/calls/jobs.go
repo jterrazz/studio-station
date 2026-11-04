@@ -16,6 +16,7 @@ import (
 
 const (
 	settingPowerPolicy = "power"
+	settingNeverSleeps = "never-sleeps"
 	settingAutoLogin   = "autologin"
 )
 
@@ -115,7 +116,7 @@ func (r *Reader[Tool, Item, Stray]) readiness(ctx context.Context) []overview.Ch
 	}
 	f := machines.ReadinessFacts{
 		Mac:                   r.label(),
-		RestartsAfterPowerCut: on(settingPowerPolicy), NeverSleeps: on(settingPowerPolicy), LogsIn: on(settingAutoLogin),
+		RestartsAfterPowerCut: on(settingPowerPolicy), NeverSleeps: on(settingNeverSleeps), LogsIn: on(settingAutoLogin),
 		EngineKnown: r.d.Here.Agent != nil,
 	}
 	if f.NeverSleeps.State != catalog.StateOK && r.d.Servers != nil {

@@ -129,6 +129,9 @@ func reboot(w *World, args []string) error {
 	if m.Engine != nil {
 		m.Engine.Stopped, m.Engine.StartedAt = false, w.Now
 	}
+	if m.Power != nil {
+		m.Power.Holds, m.Power.Clamshell = nil, false
+	}
 	return nil
 }
 
@@ -169,6 +172,11 @@ func engineCrash(w *World, args []string) error {
 	}
 	if m.Engine == nil {
 		return fmt.Errorf("no engine runs on %s", args[0])
+	}
+	// invariant: the assertions an engine took end with its process; the
+	// clamshell it set stays until its successor resets it.
+	if m.Power != nil {
+		m.Power.Holds = nil
 	}
 	return nil
 }

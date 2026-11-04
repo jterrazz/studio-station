@@ -128,7 +128,11 @@ func (p *Power) Hold(name string) (func(), error) {
 	if s == nil {
 		return nil, contract.ErrUnsupported
 	}
-	s.Holds = append(s.Holds, name)
+	// invariant: one assertion per name, as a process holds it; taking it
+	// again is the same one.
+	if !slices.Contains(s.Holds, name) {
+		s.Holds = append(s.Holds, name)
+	}
 	var once sync.Once
 	return func() {
 		once.Do(func() {
@@ -154,4 +158,14 @@ func (p *Power) Clamshell(held bool) error {
 	return nil
 }
 
-func (p *Power) DisplaySleepNow(context.Context) error { return nil }
+func (p *Power) DisplaySleepNow(context.Context) error {
+	// value: the request is recorded in the world, as the display sleeping.
+	p.w.Lock()
+	defer p.w.Unlock()
+	s := p.slice()
+	if s == nil {
+		return contract.ErrUnsupported
+	}
+	s.DisplaySleeps++
+	return nil
+}

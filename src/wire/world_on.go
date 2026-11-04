@@ -218,7 +218,7 @@ func (m *worldMac) procedureAppliers() []settingscontract.Applier {
 	var out []settingscontract.Applier
 	seen := map[catalog.EffectKind]bool{}
 	for _, it := range catalog.ConfigItems {
-		if p, ok := it.Effect.(catalog.Procedure); ok && !seen[p.Kind()] {
+		if p, ok := it.Effect.(catalog.Procedure); ok && p != catalog.ProcNeverSleeps && !seen[p.Kind()] {
 			seen[p.Kind()] = true
 			out = append(out, settingsfake.ApplierOf(m.run.w, m.name, p.Kind()))
 		}
@@ -420,6 +420,9 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 	defer func() { m.starting = false }()
 	d := m.start()
 	d.Remember(m.slice().Engine.Memory)
+	if kept := m.slice().Engine.Awake; kept != nil {
+		d.RememberAwake(*kept)
+	}
 	if err := d.Begin(context.WithValue(ctx, waits{}, true), func(string) {}); err != nil {
 		return nil, false
 	}
@@ -447,8 +450,13 @@ func (m *worldMac) down(forget bool) {
 	if m.engine == nil {
 		return
 	}
-	m.engine.Stop()
+	kept := m.engine.AwakeKept()
 	memory := m.engine.Memory()
+	if !forget && !m.runs() {
+		m.engine.Stop()
+	} else {
+		m.engine.Suspend()
+	}
 	m.engine = nil
 	if forget {
 		memory = nil
@@ -457,6 +465,10 @@ func (m *worldMac) down(forget bool) {
 	defer m.run.w.Unlock()
 	if e := m.run.w.Mac(m.name).Engine; e != nil {
 		e.Memory = memory
+		e.Awake = &kept
+		if forget || e.Stopped {
+			e.Awake = nil
+		}
 	}
 }
 

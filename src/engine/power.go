@@ -9,7 +9,10 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/power"
 )
 
-const NoticeEnded = "power_ended"
+const (
+	NoticeEnded       = "power_ended"
+	NoticeNeverSleeps = "never_sleeps"
+)
 
 type PowerSlept struct {
 	Ended bool `json:"ended"`
@@ -38,9 +41,40 @@ type Event struct {
 func (d *Daemon) newPower() *power.Machine {
 	return power.New(d.o.Power, d.h.Clock, power.Options{
 		Log:    func(m string) { d.logf("power", m) },
-		Notice: func(e power.End) { d.hub.tell(Notice{Kind: NoticeEnded, Text: "Power ended: " + e.Detail}) },
+		Notice: func(e power.End) { d.told(NoticeEnded, "Awake stopped: "+e.Detail) },
+		Told:   func(text string) { d.told(NoticeNeverSleeps, text) },
 		Change: d.hub.changed,
 	})
+}
+
+// invariant: every end of Awake and every word of Never sleeps is told once,
+// to the open surfaces and to the owner's notifications.
+func (d *Daemon) told(kind, text string) {
+	d.hub.tell(Notice{Kind: kind, Text: text})
+	d.notify(context.Background(), Notification{Kind: kind, Subject: "awake", Text: text})
+}
+
+// invariant: at its start the engine holds Never sleeps before any VM
+// starts, as held since that start.
+func (d *Daemon) neverSleeps(since time.Time) {
+	if d.o.NeverSleeps != nil {
+		d.power.Policy(d.o.NeverSleeps(), since)
+	}
+}
+
+type AwakeKept = power.Kept
+
+func (d *Daemon) AwakeKept() power.Kept {
+	// value: what this engine keeps of Awake, for the stepped engine that
+	// follows it.
+	return d.power.Kept()
+}
+
+func (d *Daemon) RememberAwake(k power.Kept) { d.awake = &k }
+
+func (d *Daemon) Suspend() {
+	d.power.Suspend()
+	d.closeAll()
 }
 
 func (d *Daemon) watchPower(ctx context.Context) {
@@ -60,11 +94,11 @@ func (d *Daemon) powerAwake(r AwakeIn) (power.Awoken, error) {
 	var none *power.UnsupportedError
 	switch {
 	case errors.As(err, &rng):
-		return s, fault("power_range", rng.Error(), "station power awake --for 4h")
+		return s, fault("power_range", rng.Error(), "station awake 4h")
 	case errors.As(err, &guard):
-		hint := "station power"
+		hint := "station awake"
 		if guard.Guard == power.ReasonLid {
-			hint = "station power awake --lid --battery"
+			hint = "station awake 4h --lid --battery"
 		}
 		return s, fault("power_guard", guard.Error(), hint)
 	case errors.As(err, &none):

@@ -1,0 +1,17 @@
+description: 'after a reboot the mini holds Never sleeps again before any VM starts: infra runs'
+env: two-macs
+runs:
+    - command: 'world reboot jterrazz-mac-mini'
+      exit: 0
+    - command: 'awake --on jterrazz-mac-mini --json | /usr/bin/jq -c ''.macs[0] | {mode, servers}'''
+      exit: 0
+      stdout: |
+          {"mode":"never-sleeps","servers":["infra"]}
+    - command: 'machines --on jterrazz-mac-mini | /usr/bin/grep infra'
+      exit: 0
+      stdout: |
+          ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].power.holds'' world.json'
+      exit: 0
+      stdout: |
+          ["station: never sleeps"]

@@ -16,6 +16,7 @@ import (
 	"github.com/jterrazz/studio-station/src/settings/adapter/dotfile"
 	"github.com/jterrazz/studio-station/src/settings/adapter/git"
 	"github.com/jterrazz/studio-station/src/settings/adapter/macos"
+	"github.com/jterrazz/studio-station/src/settings/adapter/neversleeps"
 	"github.com/jterrazz/studio-station/src/settings/adapter/touch"
 	"github.com/jterrazz/studio-station/src/settings/adapter/vault"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
@@ -39,7 +40,7 @@ func settingsCommand(env kit.Env, m machine) *cobra.Command {
 		return []*cobra.Command{
 			settingsdiff.Command(settingsdiff.Deps{Names: all, Here: m.where}, env),
 			settingsapply.Command(settingsapply.Deps{Names: all, Here: m.where}, env),
-			settingsoff.Command(settingsoff.Deps{Names: all, Here: m.where}, env),
+			settingsoff.Command(settingsoff.Deps{Names: all, Here: m.where, Also: func(names []string) []string { return m.pauses(env, names) }}, env),
 		}
 	}
 	return settingscmd.Command(settingscmd.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now}, env, children()...)
@@ -82,6 +83,7 @@ func settingAppliers(m machine) []settingscontract.Applier {
 	appliers := []settingscontract.Applier{
 		touch.New(m.host.FS, m.host.Env.Home()),
 		dotfile.New(m.host.FS, m.host.Run, dotfile.Options{Home: m.host.Env.Home(), Ours: files}),
+		neversleeps.New(m.stores.neverSleeps()),
 	}
 	if m.world != nil {
 		return append(appliers, m.world.procedureAppliers()...)

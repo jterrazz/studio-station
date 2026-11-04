@@ -128,6 +128,8 @@ type Power struct {
 	// value: the awake holds taken now, by name, and whether the lid is held.
 	Holds     []string `json:"holds,omitempty"`
 	Clamshell bool     `json:"clamshell,omitempty"`
+	// value: how many times the display was put to sleep.
+	DisplaySleeps int `json:"display_sleeps,omitempty"`
 }
 
 type Node struct {
@@ -201,6 +203,8 @@ type Engine struct {
 	StoppedBy string    `json:"stopped_by,omitempty"`
 	// value: what the engine knows of its VMs between two commands.
 	Memory engine.Memory `json:"memory,omitempty"`
+	// value: what the engine holds of Awake between two commands.
+	Awake *engine.AwakeKept `json:"awake,omitempty"`
 }
 
 func (m *Mac) EngineRuns() bool {

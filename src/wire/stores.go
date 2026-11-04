@@ -2,6 +2,7 @@ package wire
 
 import (
 	"context"
+	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	"path/filepath"
 
 	accountsjsonfile "github.com/jterrazz/studio-station/src/accounts/adapter/jsonfile"
@@ -107,3 +108,6 @@ func (s *stores) shareList() accountscontract.ShareListPrefs {
 	return accountscontract.ShareList(s.prefs)
 }
 func (s *stores) services() portscontract.PortsPrefs { return portscontract.Ports(s.prefs) }
+func (s *stores) neverSleeps() awakecontract.NeverSleepsPrefs {
+	return awakecontract.NeverSleeps(s.prefs)
+}

@@ -61,7 +61,8 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		},
 		State: m.paths.State, Here: m.kind, Version: m.engineVersion(), StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
-		Lends: lends, Peer: m.engineAPI(),
+		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
+		Lends:       lends, Peer: m.engineAPI(),
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
 		Notifier: notifier,
 	})

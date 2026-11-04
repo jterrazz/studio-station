@@ -1,0 +1,20 @@
+description: 'a --lid keep-awake without --battery ends unplugged with the lid closed; the lid sleeps it'
+env: two-macs
+runs:
+    - command: 'awake 4h --lid'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	stays awake until 14:00 · lid closed
+    - command: 'world close-lid'
+      exit: 0
+    - command: 'world unplug'
+      exit: 0
+    - command: 'awake | /usr/bin/sed -n 1,2p'
+      exit: 0
+      stdout: |
+          # Awake
+          ◐	jterrazz-macbook-pro	Awake stopped · lid closed on battery
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"].power | {holds, clamshell}'' world.json'
+      exit: 0
+      stdout: |
+          {"holds":null,"clamshell":null}
