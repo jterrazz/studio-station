@@ -32,7 +32,7 @@ A setting that does not live on this machine's kind reads Not for this machine, 
 | `power`                     | host        | the power policy of an always-on host; needs root                                                     | yes        |
 | `lock-after-login`          | host        | lock the screen after the automatic login; needs root                                                 | yes        |
 | `sshd`                      | host        | Remote Login; needs root                                                                              | yes        |
-| `claude-token`              | host        | the Claude Code token lent to VMs ([Secrets](secrets.md#claude-in-a-vm))                              | yes        |
+| `claude-token`              | host        | the Claude Code token shared with VMs ([Secrets](secrets.md#claude-in-a-vm))                          | yes        |
 
 The settings are Set by station; `autologin`, `power`, `lock-after-login` and `sshd` are its Always-on Mac group, for a Mac that hosts servers: opt-in, applied by name only, one folded line until one of it is applied. A setting that needs root is refused without it with `sudo station settings apply <setting>`.
 
@@ -54,14 +54,14 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
         "mac-mini": { "user": "jterrazz.agent", "key": "~/.ssh/id_ed25519" }
     },
     "vm_user": "jterrazz",
-    "lend_list": ["session:openpanel"],
+    "share_list": ["session:*", "operator:claude:oauth-token"],
     "user_email": "admin@jterrazz.com",
     "user_name": "Jean-Baptiste Terrazzoni",
     "services": { "max_per_vm": 10 }
 }
 ```
 
-`here` is this machine's name, `hosts` the other hosts it can drive, `vm_user` the one login of every VM in the fleet, `lend_list` the secrets that may be lent, `services` the policy of [published services](services.md#the-policy): `range` the host ports leases take, `max_per_vm` the leases one VM may hold, `ignored_ports` and `min_port` what is never published, `https` `port`, `path` or `off`; every `services` key is optional, the defaults being `40000-40999`, 20, `[22]`, 1024 and `port`. No secret is in it. A key no group names, such as the `tailnet` an earlier round wrote, is dropped at the next save and at setup's layout step. A `v` field names the version of the shape the file was written at; absent, it is version 1, and a file a newer station wrote is refused rather than read.
+`here` is this machine's name, `hosts` the other hosts it can drive, `vm_user` the one login of every VM in the fleet, `share_list` the secrets whose accounts may be shared with a VM, written by hand ([Secrets](secrets.md#sharing-accounts)), `services` the policy of [published services](services.md#the-policy): `range` the host ports leases take, `max_per_vm` the leases one VM may hold, `ignored_ports` and `min_port` what is never published, `https` `port`, `path` or `off`; every `services` key is optional, the defaults being `40000-40999`, 20, `[22]`, 1024 and `port`. No secret is in it. A key no group names, such as the `tailnet` an earlier round wrote, is dropped at the next save and at setup's layout step. A `v` field names the version of the shape the file was written at; absent, it is version 1, and a file a newer station wrote is refused rather than read.
 
 ## Environment
 
