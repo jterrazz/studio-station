@@ -1,0 +1,54 @@
+package contract
+
+import (
+	"context"
+	"net/netip"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/core/call"
+	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
+	"github.com/jterrazz/studio-station/src/machines"
+)
+
+type Hypervisor interface {
+	Name() string
+	// invariant: Installed answers without running anything, so a Mac without
+	// the hypervisor is told so before any call to it.
+	Installed() bool
+	Version(ctx context.Context) (string, error)
+	Disks(ctx context.Context) ([]Disk, error)
+	Fetch(ctx context.Context, img imagescontract.ImageLocation, p call.Progress) error
+	Clone(ctx context.Context, from imagescontract.ImageLocation, vm string) error
+	Resize(ctx context.Context, vm string, s machines.Size) error
+	Rename(ctx context.Context, from, to string) error
+	Boot(ctx context.Context, vm string, o BootOptions) (Run, error)
+	Adopt(ctx context.Context, vm string) (Run, bool)
+	Shutdown(ctx context.Context, vm string, grace time.Duration) error
+	Delete(ctx context.Context, vm string) error
+	Discard(ctx context.Context, img imagescontract.ImageLocation) error
+	Address(ctx context.Context, vm string, wait time.Duration) (netip.Addr, error)
+}
+
+type DiskState string
+
+const (
+	DiskRunning   DiskState = "running"
+	DiskStopped   DiskState = "stopped"
+	DiskSuspended DiskState = "suspended"
+)
+
+type Disk struct {
+	VM    string
+	Bytes int64
+	State DiskState
+}
+
+type BootOptions struct{ Network machines.Network }
+
+type Run interface {
+	VM() string
+	PID() int
+	// invariant: Ended fires once, when the run is over, with how it ended; a
+	// run that outlives its engine is read again by Adopt after a restart.
+	Ended() <-chan machines.RunEnd
+}

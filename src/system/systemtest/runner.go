@@ -26,6 +26,7 @@ type Call struct {
 	args   []string
 	output system.Output
 	err    error
+	answer func() system.Output
 	Seen   int
 }
 
@@ -44,6 +45,13 @@ func (c *Call) Reply(o system.Output) *Call {
 	return c
 }
 
+func (c *Call) Answer(f func() system.Output) *Call {
+	// value: f answers each call in turn, for a tool whose answer follows
+	// what was done to it before.
+	c.answer = f
+	return c
+}
+
 func (c *Call) Fail(err error) *Call {
 	c.err = err
 	return c
@@ -56,6 +64,9 @@ func (r *Runner) answer(c system.Cmd) *Call {
 	for _, call := range r.script {
 		if call.name == c.Name && slices.Equal(call.args, c.Args) {
 			call.Seen++
+			if call.answer != nil {
+				return &Call{output: call.answer(), err: call.err}
+			}
 			return call
 		}
 	}
