@@ -47,7 +47,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	}}
 	guests := engineGuests{dialer: m.guestDialer(), vms: m.machines(false)}
 	notifier := func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) }
-	var tailnet portscontract.Tailnet = m.tailscale().Tracked(engine.ChildrenDir(m.paths.State))
+	var tailnet portscontract.Tailnet = m.tailnetCLI().Tracked(engine.ChildrenDir(m.paths.State))
 	if m.world != nil {
 		notifier = func(func(subject, text string)) engine.Notifier { return m.world.notifier() }
 		tailnet = m.world.tailnet()

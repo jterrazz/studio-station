@@ -26,10 +26,10 @@ func (m machine) tailnet() contract.Tailnet {
 	if m.world != nil {
 		return m.world.tailnet()
 	}
-	return m.tailscale()
+	return m.tailnetCLI()
 }
 
-func (m machine) tailscale() *tailscale.CLI {
+func (m machine) tailnetCLI() *tailscale.CLI {
 	return tailscale.New(m.host.Run, m.host.FS, m.systemRoot())
 }
 
