@@ -1,0 +1,16 @@
+description: 'a VM its hypervisor refuses to boot stays stopped, and the owner reads why'
+env: two-macs
+runs:
+    - command: 'world fault Hypervisor.Boot'
+      exit: 0
+    - command: 'machines start api'
+      exit: 1
+      stderr: |
+          Error: the hypervisor refused to boot it, as the world scripted it
+          Hint: station machines
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	host			online	-	2 VMs
+          ○	api	linux	jterrazz-macbook-pro	lasting	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ●	linux-1	linux	jterrazz-macbook-pro	temporary	running	-	4 cpus · 8 GB · 50.0 GB

@@ -22,6 +22,7 @@ var (
 	ErrNotBoot  = errors.New("the VM does not run")
 	ErrTwoRuns  = errors.New("the VM already runs")
 	ErrHeldName = errors.New("a VM disk already has this name")
+	ErrScripted = errors.New("the hypervisor refused to boot it, as the world scripted it")
 )
 
 type Hypervisor struct {
@@ -138,6 +139,9 @@ func (h *Hypervisor) Boot(_ context.Context, vm string, _ contract.BootOptions) 
 	}
 	if v.Running() {
 		return nil, ErrTwoRuns
+	}
+	if h.w.Fails("Hypervisor.Boot") {
+		return nil, ErrScripted
 	}
 	v.PID, v.Ended = h.nextPID(), nil
 	return &run{h: h, vm: vm, pid: v.PID}, nil

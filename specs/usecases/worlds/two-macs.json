@@ -4,6 +4,13 @@
     "macs": {
         "jterrazz-macbook-pro": {
             "engine": {},
+            "power": {
+                "Lid": "open",
+                "Source": "ac",
+                "HasBattery": true,
+                "Percent": 96,
+                "Charging": true
+            },
             "preferences": {
                 "here": "jterrazz-macbook-pro",
                 "hosts": {
@@ -48,6 +55,9 @@
         },
         "jterrazz-mac-mini": {
             "engine": {},
+            "power": {
+                "Source": "ac"
+            },
             "preferences": {
                 "here": "jterrazz-mac-mini",
                 "vm_user": "admin"
