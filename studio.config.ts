@@ -9,9 +9,13 @@ export default defineConfig({
         projects: {
             cli: {
                 literate: {
-                    include: ['specs/cli/**/*.spec.yaml', 'specs/adapters/**/*.spec.yaml'],
+                    include: [
+                        'specs/cli/**/*.spec.yaml',
+                        'specs/adapters/**/*.spec.yaml',
+                        'specs/usecases/**/*.spec.yaml',
+                    ],
                 },
-                reason: 'the documents of one adapter (`specs/adapters/<tech>/`) record its command lines and run on the CLI runner of `specs/cli/`',
+                reason: 'the documents of one adapter (`specs/adapters/<tech>/`) record its command lines, and those of one use case (`specs/usecases/<family>/<verb>/`) tell it over a seeded world; both run on the CLI runner of `specs/cli/`, the one cli project a repository keeps',
             },
         },
     },

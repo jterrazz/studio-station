@@ -8,6 +8,7 @@ const REPO_ROOT = resolve(import.meta.dirname, '../..');
 const STATION_BIN = resolve(REPO_ROOT, '.artifacts/go/station-test');
 const SOURCES = resolve(REPO_ROOT, 'src');
 const VM_SSHD = resolve(import.meta.dirname, '__fixtures__/vm-sshd');
+const WORLDS = resolve(REPO_ROOT, 'specs/usecases/worlds');
 
 // hazard: a stale binary silently tests old behaviour, so the suite rebuilds when any
 // file under `src/` is newer than the binary: the embedded dotfiles and recipes are
@@ -37,7 +38,7 @@ if (binaryIsStale()) {
         .trim();
     const building = `${STATION_BIN}.${process.pid}`;
     execSync(
-        `go build -ldflags "-X github.com/jterrazz/studio-station/src/wire.version=${version}" -o ${building} ./src/cmd/station`,
+        `go build -tags world -ldflags "-X github.com/jterrazz/studio-station/src/wire.version=${version}" -o ${building} ./src/cmd/station`,
         { cwd: REPO_ROOT, stdio: 'inherit' },
     );
     renameSync(building, STATION_BIN);
@@ -52,6 +53,18 @@ if (binaryIsStale()) {
 // run takes a real assertion or touches the clamshell; the
 // machine kind is pinned to host unless a document says otherwise; GitHub is a closed
 // port unless a document serves its stub; a VM's sshd is the served stub vm-sshd.
+// value: one env set per world of specs/usecases/worlds/, named after it: a
+// use-case document that writes `env: two-macs` runs the spec build over a copy of
+// that world, `world.json` in its own directory, read and written by every run.
+const worlds = Object.fromEntries(
+    readdirSync(WORLDS)
+        .filter((name) => name.endsWith('.json'))
+        .map((name) => [
+            name.replace(/\.json$/u, ''),
+            { STATION_WORLD: '$WORKDIR/world.json', STATION_WORLD_SEED: resolve(WORLDS, name) },
+        ]),
+);
+
 export const { cleanup, cli } = await specification.cli(STATION_BIN, {
     defaults: {
         COLUMNS: '80',
@@ -69,6 +82,7 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
     // pseudo-terminal its fixture's driver opens, since a run is never given a TTY; one
     // that installs runs `$INSTALL_SH` from a local file through its one test seam.
     env: {
+        ...worlds,
         daemon: { STATION: STATION_BIN },
         install: { INSTALL_SH: resolve(REPO_ROOT, 'scripts/install.sh'), STATION: STATION_BIN },
         terminal: { STATION: STATION_BIN, TERM: 'xterm-256color' },
