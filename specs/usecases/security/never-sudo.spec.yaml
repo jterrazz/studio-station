@@ -16,11 +16,6 @@ runs:
       stdout: |
           ●	tart
           ●	tart-launcher	~/.local/bin/tart
-    - command: 'machines restart jterrazz-mac-mini --yes'
-      exit: 1
-      stderr: |
-          Error: jterrazz-mac-mini did not come back
-          Hint: station machines probe jterrazz-mac-mini
     - command: 'setup --name jterrazz-macbook-pro >/dev/null; /usr/bin/grep -c "\"as_root\"" world.json'
       exit: 1
       stdout: |
