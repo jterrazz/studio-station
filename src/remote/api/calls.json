@@ -124,7 +124,8 @@
       "schema": "station.machines.list/v1",
       "where": "in-process",
       "in": "ListIn",
-      "out": "ListOut"
+      "out": "ListOut",
+      "watch": true
     },
     {
       "name": "machines.probe",
