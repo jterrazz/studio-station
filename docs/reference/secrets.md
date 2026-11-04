@@ -38,11 +38,11 @@ A lent copy is a snapshot: later captures on the host do not reach it until you 
 
 ## Where to revoke
 
-| Secret                             | Revoke at                                                                                          |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
-| A VM's GitHub token                | github.com, your account page for developer tokens and authorized apps                             |
-| A lent `session:*` browser session | log out of that service in the host browser; the service's session list shows the others           |
-| The Claude token                   | claude.ai, your account page for sessions and tokens; then `station config uninstall claude-token` |
+| Secret                             | Revoke at                                                                                      |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------- |
+| A VM's GitHub token                | github.com, your account page for developer tokens and authorized apps                         |
+| A lent `session:*` browser session | log out of that service in the host browser; the service's session list shows the others       |
+| The Claude token                   | claude.ai, your account page for sessions and tokens; then `station settings off claude-token` |
 
 ## Studio in a VM
 
@@ -53,11 +53,11 @@ Lending uses the studio CLI's credential store on both ends (`studio credentials
 A VM cannot open a browser on your host to log in, so the host lends it a token.
 
 1. On the host, once: `claude setup-token`. It opens a browser OAuth and prints a long-lived subscription token.
-2. `station config install claude-token`. A form asks for the token, the OS credential store keeps it as `operator:claude:oauth-token` (in the keychain on a Mac), and the name joins the lend list.
+2. `station settings apply claude-token`. A form asks for the token, the OS credential store keeps it as `operator:claude:oauth-token` (in the keychain on a Mac), and the name joins the lend list.
 3. `station secrets lend --to <vm>` copies it.
 4. Inside the VM, `station shell zsh` exports `CLAUDE_CODE_OAUTH_TOKEN` from the VM's credential store at every shell start. With no `studio`, no name or any failure it prints nothing: a shell start never fails.
 
-`station secrets recall` and `machines delete` remove the VM's copy; `station config uninstall claude-token` deletes the host's and takes the name off the lend list. Revoke the token itself at claude.ai.
+`station secrets recall` and `machines delete` remove the VM's copy; `station settings off claude-token` deletes the host's and takes the name off the lend list. Revoke the token itself at claude.ai.
 
 The alternative is a bound login: run `claude /login` inside a lasting VM. The login lives and dies with that VM and is never lent.
 

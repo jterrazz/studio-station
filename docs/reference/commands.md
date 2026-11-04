@@ -24,7 +24,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
 - Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`. With `--json`, the same refusal or failure is also the `station.error/v1` document on stdout (`schema`, `type`, `code`, `subject`, `message`, `hint`, `fix`), the exit code unchanged. A question answered no is `Error: <what> kept: you said no`, exit 1.
 - A word station does not know is `Error: unknown command "<word>"` / `Hint: station help`, exit 2; so is `station help <word>`.
-- A word under `tools`, `config` or `storage` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station storage go` is `"go" is a storage row: say what to do with it`, hint `station storage clean go` (`tools install <tool>`, `config install <item>`).
+- A word under `tools` or `storage` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station storage go` is `"go" is a storage row: say what to do with it`, hint `station storage clean go` (`tools install <tool>`). Under `settings`, a setting's name is its read: `station settings dns`.
 - `--on <machine>` runs any command below on another machine of the fleet, through its engine, and renders the answer here; see [Machines](machines.md#on-another-machine).
 - A value a command needs from you is never an argv flag when it could be a secret: a config item asks in a form on a terminal ([Configuration](configuration.md)).
 
@@ -51,15 +51,17 @@ station tools upgrade [<tool...> | --via <manager>...]
 
 A bare `upgrade` upgrades every installed catalogue tool. `--via` takes a manager (`brew`, `npm`, `bun`, `uv`, `mise`, `skills`) and cannot be combined with names. A tool whose place excludes this machine is refused with a hint naming where it lives. An agent skill is a tool: `station tools install frontend-design`. The model is [Tools and skills](tools-and-skills.md).
 
-### `station config`
+### `station settings`
 
 ```sh
-station config [--json]                         # the config items placed here
-station config install <item...>
-station config uninstall <item...> [--yes]
+station settings [--all] [--json]               # Set by station: applied, changed since, not applied, off here
+station settings <setting> [--json]             # one setting's detail
+station settings diff <setting>                 # what station would write against what is here
+station settings apply [<setting...>] [--yes]   # bare = every setting not applied or changed since that asks nothing
+station settings off <setting...> [--yes]       # off here: station neither applies nor watches it on this machine
 ```
 
-An item that needs values asks them in a form on a terminal and is refused elsewhere. Only reversible items uninstall. See [Configuration](configuration.md).
+A setting that needs values asks them in a form on a terminal and is refused elsewhere (exit 2); a value is never an argument. An apply over a setting changed since asks first, as yours is lost; off removes only what is still exactly station's, a change of yours stays. The Always-on Mac group is applied by name only. `station config`, `config install` and `config uninstall` are hidden aliases of `settings`, `settings apply` and `settings off` for one release. See [Configuration](configuration.md).
 
 ### `station storage`
 
