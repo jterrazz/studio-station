@@ -15,6 +15,6 @@ runs:
           ✗	engine	api still runs under its round-3 agent
       stderr: |
           Error: setup step engine: api still runs under its round-3 agent
-          Hint: stop the lasting VMs and delete the temporary ones (station machines), then station setup
+          Hint: stop the running VMs (station machines), then station setup
       files:
           Library/LaunchAgents/com.jterrazz.station.vm.api.plist: exists
