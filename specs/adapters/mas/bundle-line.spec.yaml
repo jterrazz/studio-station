@@ -1,7 +1,7 @@
 description: 'an exploration dev tool installs on a host, through the one brew bundle'
 fixture:
-    - ../../cli/tools/__fixtures__/stubs/
-    - ../brew/__fixtures__/bundle-batch/
+    - ../../__fixtures__/stubs/
+    - ../__fixtures__/bundle-batch/
     - ./__fixtures__/mas-xcode/
 runs:
     - command: 'tools install xcode'

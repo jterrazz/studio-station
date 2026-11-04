@@ -1,5 +1,5 @@
 description: 'an unknown tool is refused, and brew is never asked to upgrade it'
-fixture: ../__fixtures__/stubs/
+fixture: ../../../__fixtures__/stubs/
 runs:
     - command: 'tools upgrade nope'
       exit: 2

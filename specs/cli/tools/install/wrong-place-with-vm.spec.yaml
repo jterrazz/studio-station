@@ -1,6 +1,6 @@
 description: 'a tool placed in VMs only is refused on a host, and the hint names the running VM it can go to'
 fixture:
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/stubs/
     - ./__fixtures__/vm-api/
 runs:
     - command: 'tools install browser-use'

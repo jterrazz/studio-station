@@ -1,5 +1,5 @@
 description: 'a bun tool without bun is refused with the install that repairs it'
-fixture: ../__fixtures__/stubs/
+fixture: ../../../__fixtures__/stubs/
 runs:
     - command: 'tools install eas'
       exit: 1

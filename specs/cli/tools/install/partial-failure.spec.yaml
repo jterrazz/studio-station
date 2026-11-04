@@ -1,6 +1,6 @@
 description: 'one bundle for two tools: what brew lists after is ok, the rest broken, exit 1 after the document'
 fixture:
-    - ../__fixtures__/stubs/
+    - ../../../__fixtures__/stubs/
     - ./__fixtures__/partial-failure/
 runs:
     - command: 'tools install bat ghostty'

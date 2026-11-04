@@ -1,5 +1,5 @@
 description: 'an unknown tool is refused before anything runs'
-fixture: ../__fixtures__/stubs/
+fixture: ../../../__fixtures__/stubs/
 runs:
     - command: 'tools install nope'
       exit: 2

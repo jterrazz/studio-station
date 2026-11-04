@@ -1,7 +1,7 @@
 description: 'a named tool upgrades through brew bundle --upgrade'
 fixture:
-    - ../../cli/tools/__fixtures__/stubs/
-    - ../../cli/tools/__fixtures__/bat-installed/
+    - ../../__fixtures__/stubs/
+    - ../../__fixtures__/bat-installed/
 runs:
     - command: 'tools upgrade bat'
       exit: 0

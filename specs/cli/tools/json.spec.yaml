@@ -1,5 +1,5 @@
 description: 'tools --json is station.tools/v1: a method per tool, never a kind, clashing skills suffixed'
-fixture: ./__fixtures__/stubs/
+fixture: ../../__fixtures__/stubs/
 runs:
     - command: 'tools --json | /usr/bin/jq -r .schema'
       exit: 0

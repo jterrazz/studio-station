@@ -1,5 +1,5 @@
 description: 'upgrading a tool that is not installed says how to install it, and installs nothing'
-fixture: ../__fixtures__/stubs/
+fixture: ../../../__fixtures__/stubs/
 runs:
     - command: 'tools upgrade bat'
       exit: 0

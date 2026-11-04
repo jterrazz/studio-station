@@ -1,7 +1,7 @@
 description: 'a formula uninstalls with brew uninstall'
 fixture:
-    - ../../cli/tools/__fixtures__/stubs/
-    - ../../cli/tools/__fixtures__/bat-installed/
+    - ../../__fixtures__/stubs/
+    - ../../__fixtures__/bat-installed/
 runs:
     - command: 'tools uninstall bat --yes'
       exit: 0

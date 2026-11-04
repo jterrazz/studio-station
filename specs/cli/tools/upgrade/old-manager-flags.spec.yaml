@@ -1,7 +1,7 @@
 description: 'the old manager flags are gone; --via names the manager'
 fixture:
-    - ../__fixtures__/stubs/
-    - ../__fixtures__/bat-installed/
+    - ../../../__fixtures__/stubs/
+    - ../../../__fixtures__/bat-installed/
 runs:
     - command: 'tools upgrade --brew'
       exit: 2

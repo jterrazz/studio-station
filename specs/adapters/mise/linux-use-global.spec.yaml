@@ -1,5 +1,5 @@
 description: 'on a linux VM a brew tool installs through mise, and brew is never called'
-fixture: ../../cli/tools/__fixtures__/stubs/
+fixture: ../../__fixtures__/stubs/
 env:
     - STATION_MACHINE_KIND=linux
 runs:

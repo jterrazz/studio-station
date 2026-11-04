@@ -1,9 +1,9 @@
 description: 'off a terminal, an uninstall without --yes is refused before anything runs'
 fixture:
-    - ../__fixtures__/stubs/
-    - ../__fixtures__/bat-installed/
-    - ../__fixtures__/skills-cli/
-    - ../__fixtures__/skill-lock/
+    - ../../../__fixtures__/stubs/
+    - ../../../__fixtures__/bat-installed/
+    - ../../../__fixtures__/skills-cli/
+    - ../../../__fixtures__/skill-lock/
 runs:
     - command: 'tools uninstall bat </dev/null'
       exit: 2
