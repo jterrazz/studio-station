@@ -30,9 +30,9 @@ type Here struct {
 
 type Clock interface{ Now() time.Time }
 
-// value: the reads Overview composes. Tool, Item and Stray are the rows of
-// the Apps, Settings and Disk reads, until those reads are their families' calls.
 type Deps[Tool, Item, Stray any] struct {
+	// value: the reads Overview composes. Tool, Item and Stray are the rows of
+	// the Apps, Settings and Disk reads, until those reads are their families' calls.
 	Pool  *lanes.Pool
 	Clock Clock
 	Here  Here

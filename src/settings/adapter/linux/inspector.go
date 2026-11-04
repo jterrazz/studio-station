@@ -23,19 +23,30 @@ var _ contract.Inspector = (*Inspector)(nil)
 func New(run Runner) *Inspector { return &Inspector{run: run} }
 
 func (i *Inspector) Read(ctx context.Context, f catalog.Fact) (settings.Fact, error) {
-	switch f {
-	case catalog.FactKernel:
-		return i.first(ctx, local.Command("uname", "-sr"), false)
-	case catalog.FactLocalIP:
-		return i.first(ctx, local.Command("hostname", "-I"), true)
-	case catalog.FactDNS:
+	if f == catalog.FactDNS {
 		return i.dns(ctx)
+	}
+	if r, ok := firsts()[f]; ok {
+		return i.first(ctx, r.cmd, r.word)
 	}
 	return settings.Unread(), nil
 }
 
-func (i *Inspector) ask(ctx context.Context, c local.Cmd) (local.Output, bool, error) {
-	out, err := i.run.Output(ctx, c)
+type firstRead struct {
+	cmd local.Cmd
+	// value: the fact is the first word printed, not the whole line.
+	word bool
+}
+
+func firsts() map[catalog.Fact]firstRead {
+	return map[catalog.Fact]firstRead{
+		catalog.FactKernel:  {cmd: local.Command("uname", "-sr")},
+		catalog.FactLocalIP: {cmd: local.Command("hostname", "-I"), word: true},
+	}
+}
+
+func (i *Inspector) ask(ctx context.Context, c local.Cmd) (out local.Output, ok bool, err error) {
+	out, err = i.run.Output(ctx, c)
 	if errors.Is(err, local.ErrTimeout) || ctx.Err() != nil {
 		return local.Output{}, false, local.ErrTimeout
 	}

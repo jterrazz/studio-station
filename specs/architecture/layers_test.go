@@ -751,7 +751,7 @@ func rules() []rule {
 		{"PowerFiles", rulePowerSafe, "src/awake/adapter/macos/mutant_files.go", "package macos\n\nimport \"github.com/jterrazz/studio-station/src/platform/local\"\n\nfunc mutantWrite(files local.FS) error { return files.WriteFile(\"x\", nil, 0o600) }\n", "src/awake/adapter/macos/mutant_files.go"},
 		{"TreeScreams", ruleTree, "src/utils/mutant.go", "package utils\n", "src/utils"},
 		{"TreeInside", ruleTree, "src/apps/helpers/mutant.go", "package helpers\n", "src/apps/helpers"},
-		{"TreeApplies", ruleTree, "src/activity/applies.go", "package activity\n", "src/activity"},
+		{"TreeApplies", ruleTree, "src/background/applies.go", "package background\n", "src/background"},
 		{"FamilyImports", ruleFamilyImports, "src/apps/mutant_imports.go", "package apps\n\nimport _ \"os/exec\"\n", "src/apps/mutant_imports.go"},
 		{"FamilyImportsOldTree", ruleFamilyImports, "src/disk/mutant_imports_old.go", "package disk\n\nimport _ \"" + module + "/src/domain/tools\"\n", "src/disk/mutant_imports_old.go"},
 		{"TechnologyWords", ruleTechnologyWords, "src/apps/mutant_words.go", "package apps\n\nconst mutantMethod = \"brew\"\n", "src/apps/mutant_words.go"},

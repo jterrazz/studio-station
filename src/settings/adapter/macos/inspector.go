@@ -67,15 +67,17 @@ func protections() map[catalog.Fact]protection {
 var errUnknownFact = errors.New("no such fact on a Mac")
 
 func (i *Inspector) Read(ctx context.Context, f catalog.Fact) (settings.Fact, error) {
-	switch f {
-	case catalog.FactSystemUpdates:
+	if f == catalog.FactSystemUpdates {
 		return i.updates(ctx)
-	case catalog.FactKernel:
-		return i.first(ctx, local.Command("uname", "-sr"), false)
-	case catalog.FactLocalIP:
-		return i.first(ctx, local.Command("ipconfig", "getifaddr", "en0"), true)
-	case catalog.FactDNS:
+	}
+	if f == catalog.FactDNS {
 		return i.dns(ctx)
+	}
+	if f == catalog.FactKernel {
+		return i.first(ctx, local.Command("uname", "-sr"), false)
+	}
+	if f == catalog.FactLocalIP {
+		return i.first(ctx, local.Command("ipconfig", "getifaddr", "en0"), true)
 	}
 	p, ok := protections()[f]
 	if !ok {

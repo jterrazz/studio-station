@@ -78,9 +78,9 @@ func (m *Meter) Uptime(ctx context.Context) (time.Duration, bool) {
 	return m.clock.Now().Sub(time.Unix(sec, 0)), true
 }
 
-// outside: pmset prints "-InternalBattery-0 (id=...)<TAB>92%; charging; 1:23 remaining";
-// a desktop prints no such line, and then there is no battery to report.
 func (m *Meter) Battery(ctx context.Context) string {
+	// outside: pmset prints "-InternalBattery-0 (id=...)<TAB>92%; charging; 1:23 remaining";
+	// a desktop prints no such line, and then there is no battery to report.
 	text, ok := m.ask(ctx, "pmset", "-g", "batt")
 	if !ok {
 		return ""

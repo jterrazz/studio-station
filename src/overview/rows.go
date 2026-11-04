@@ -15,9 +15,9 @@ func FactRow(name string, f settings.Fact) Check {
 	return Check{Name: name, State: f.State, Value: f.Value, Detail: f.Detail}
 }
 
-// invariant: a global git value that is set but is not the one the owner's
-// preferences expect is degraded, not ok: commits would carry the wrong author.
 func GitValue(name string, f settings.Fact, expected string) Check {
+	// invariant: a global git value that is set but is not the one the owner's
+	// preferences expect is degraded, not ok: commits would carry the wrong author.
 	switch {
 	case f.State != catalog.StateOK || f.Value == "":
 		return Check{Name: name, State: catalog.StateAbsent}
@@ -39,9 +39,9 @@ func AppUpdates(name string, behind int, missing, failed bool) Check {
 	return Check{Name: name, State: catalog.StateOK, Value: "all current"}
 }
 
-// invariant: one row per port and process, the system's own listeners left
-// out, in port order.
 func Listening(ls []ports.Listener) []Port {
+	// invariant: one row per port and process, the system's own listeners left
+	// out, in port order.
 	out := []Port{}
 	seen := map[string]bool{}
 	for _, l := range ls {
@@ -74,9 +74,9 @@ type Daemon struct {
 	Err     error
 }
 
-// invariant: the daemon matters where VMs can exist: a host with its hypervisor; one that
-// does not answer, or answers another version, is degraded, never an error.
 func DaemonRow(d Daemon, station string) Check {
+	// invariant: the daemon matters where VMs can exist: a host with its hypervisor; one that
+	// does not answer, or answers another version, is degraded, never an error.
 	c := Check{Name: "daemon", State: catalog.StateAbsent}
 	if !d.Installed {
 		c.Value = "not needed until " + d.Hypervisor + " is installed"

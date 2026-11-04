@@ -58,26 +58,39 @@ func reads() map[catalog.Fact]read {
 
 func (i *Inspector) Read(ctx context.Context, f catalog.Fact) (settings.Fact, error) {
 	if f == catalog.FactSSHKey {
-		if _, err := i.files.Stat(path.Join(i.o.Home, ".ssh", "id_ed25519")); err != nil {
-			return settings.Fact{State: catalog.StateAbsent}, nil
-		}
-		return settings.Fact{State: catalog.StateOK, Value: "present", Detail: "~/.ssh/id_ed25519"}, nil
+		return i.sshKey(), nil
 	}
 	r, ok := reads()[f]
 	if !ok {
 		return settings.Unread(), nil
 	}
 	out, err := i.output(ctx, r)
-	switch {
-	case errors.Is(err, local.ErrTimeout), ctx.Err() != nil:
+	if errors.Is(err, local.ErrTimeout) || ctx.Err() != nil {
 		return settings.Fact{}, local.ErrTimeout
-	case err != nil, out.ExitCode != 0:
-		if f == catalog.FactGitSigning {
-			return settings.Fact{State: catalog.StateAbsent, Value: "off"}, nil
-		}
-		return settings.Fact{State: catalog.StateAbsent}, nil
+	}
+	if fact, unanswered := unanswered(f, out, err); unanswered {
+		return fact, nil
 	}
 	return r.interpret(out.Stdout + "\x00" + out.Stderr), nil
+}
+
+func (i *Inspector) sshKey() settings.Fact {
+	if _, err := i.files.Stat(path.Join(i.o.Home, ".ssh", "id_ed25519")); err != nil {
+		return settings.Fact{State: catalog.StateAbsent}
+	}
+	return settings.Fact{State: catalog.StateOK, Value: "present", Detail: "~/.ssh/id_ed25519"}
+}
+
+// invariant: a tool that is missing or fails is an answer: the fact is
+// absent (signing off), never an error.
+func unanswered(f catalog.Fact, out local.Output, err error) (settings.Fact, bool) {
+	switch {
+	case err == nil && out.ExitCode == 0:
+		return settings.Fact{}, false
+	case f == catalog.FactGitSigning:
+		return settings.Fact{State: catalog.StateAbsent, Value: "off"}, true
+	}
+	return settings.Fact{State: catalog.StateAbsent}, true
 }
 
 // invariant: a command another reader asks too (gh auth status, read by

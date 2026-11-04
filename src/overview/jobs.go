@@ -42,11 +42,11 @@ type Job struct {
 	State     catalog.State
 }
 
-// invariant: a station read only reads the job manager; removing a job is
-// the owner's, through the command its row shows. root and home turn a path
-// into the one the owner types.
 func Jobs(listed []background.Job, root, home string) []Job {
-	jobs := []Job{}
+	// invariant: a station read only reads the job manager; removing a job is
+	// the owner's, through the command its row shows. root and home turn a path
+	// into the one the owner types.
+	jobs := make([]Job, 0, len(listed))
 	for _, l := range listed {
 		j := Job{Label: l.Label, Scope: l.Scope, PID: l.PID, Plist: unrooted(l.File, root, home), Program: unrooted(l.Program, root, home), Removal: l.Removal}
 		switch {
@@ -103,8 +103,8 @@ func place(j *Job, l background.Job) {
 
 // value: the path the owner types: the system root dropped, the home as `~`.
 func unrooted(p, root, home string) string {
-	if root := path.Join("/", root); root != "/" {
-		if rest, ok := strings.CutPrefix(p, root+"/"); ok {
+	if r := path.Join("/", root); r != "/" {
+		if rest, ok := strings.CutPrefix(p, r+"/"); ok {
 			return "/" + rest
 		}
 	}

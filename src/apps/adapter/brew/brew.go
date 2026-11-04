@@ -172,9 +172,9 @@ func parseList(stdout string) map[string]string {
 
 func (b *Brew) Manager() string { return command }
 
-// invariant: how many installed formulae and casks have a newer version;
-// contract.ErrMissing where brew is not installed.
 func (b *Brew) Behind(ctx context.Context) (int, error) {
+	// invariant: how many installed formulae and casks have a newer version;
+	// contract.ErrMissing where brew is not installed.
 	if _, ok := b.run.LookPath(command); !ok {
 		return 0, contract.ErrMissing
 	}

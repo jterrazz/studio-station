@@ -9,9 +9,9 @@ import (
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
-// value: one reading of this machine. Tool, Item and Stray are the rows of
-// the Apps, Settings and Disk reads, which keep their own types.
 type Snapshot[Tool, Item, Stray any] struct {
+	// value: one reading of this machine. Tool, Item and Stray are the rows of
+	// the Apps, Settings and Disk reads, which keep their own types.
 	GeneratedAt time.Time
 	Station     Station
 	Machine     Machine
@@ -144,10 +144,10 @@ func SetupOf(steps []Step) Setup {
 	return Setup{State: state, Steps: steps}
 }
 
-// invariant: the tailnet's Serve is the way every VM service leaves the host, so a
-// host whose tailnet is connected says whether it is on, and the admin step
-// when it is not.
 func Gateways(here catalog.MachineKind, t ports.Status) []Check {
+	// invariant: the tailnet's Serve is the way every VM service leaves the host, so a
+	// host whose tailnet is connected says whether it is on, and the admin step
+	// when it is not.
 	if here != catalog.Host || !t.Connected {
 		return []Check{}
 	}
@@ -157,9 +157,9 @@ func Gateways(here catalog.MachineKind, t ports.Status) []Check {
 	return []Check{{Name: catalog.ServeRow, State: catalog.StateDegraded, Value: "off", Detail: catalog.ServeOffDetail}}
 }
 
-// invariant: a protection a config item installs is read from that item's own state,
-// so status and `station config` can never disagree about it.
 func Protection(item catalog.State, name string) Check {
+	// invariant: a protection a config item installs is read from that item's own state,
+	// so status and `station config` can never disagree about it.
 	switch item {
 	case catalog.StateOK:
 		return Check{Name: name, State: catalog.StateOK, Value: "on"}
