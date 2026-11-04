@@ -762,6 +762,9 @@ func rules() []rule {
 		{"OneWayIntoAVM", ruleOneWayIntoAVM, "src/apps/mutant_vm_ssh.go", "package apps\n\ntype mutantCmd struct{ Name string }\n\nvar mutantInto = mutantCmd{Name: \"ssh\"}\n", "src/apps/mutant_vm_ssh.go"},
 		{"OneWayIntoAVMSCP", ruleOneWayIntoAVM, "src/apps/mutant_vm_scp.go", "package apps\n\nvar mutantCopy = []string{\"scp\", \"a\", \"vm:/tmp\"}\n", "src/apps/mutant_vm_scp.go"},
 		{"OneWayIntoAVMDial", ruleOneWayIntoAVM, "src/apps/mutant_vm_dial.go", "package apps\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/machines/contract\"\n)\n\nfunc mutantDial(ctx context.Context, d contract.GuestDialer) { _, _ = d.Dial(ctx, contract.GuestTarget{}) }\n", "src/apps/mutant_vm_dial.go"},
+		{"OneWriterPerStore", ruleOneWriterPerStore, "src/apps/mutant_store.go", "package apps\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/machines/contract\"\n)\n\nfunc mutantForget(ctx context.Context, s contract.MachineStore) { _ = s.Delete(ctx, \"api\") }\n", "src/apps/mutant_store.go"},
+		{"OneWriterPerStoreBuilt", ruleOneWriterPerStore, "src/apps/mutant_store_built.go", "package apps\n\nimport \"" + module + "/src/machines/adapter/jsonfile\"\n\nvar mutantStore = jsonfile.New(nil, \"vms\")\n", "src/apps/mutant_store_built.go"},
+		{"OneWriterPerStoreGroup", ruleOneWriterPerStore, "src/apps/contract/mutant_group.go", "package contract\n\nimport core \"" + module + "/src/core/contract\"\n\nfunc mutantName(p core.Preferences) error { return p.Write(\"here\", \"mutant\") }\n", "src/apps/contract/mutant_group.go"},
 		{"NoModelNames", ruleNoModelNames, "src/awake/mutant_models.go", "package awake\n\nfunc mutantLaptop(model string) bool { return model == \"MacBook\" }\n", "src/awake/mutant_models.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
