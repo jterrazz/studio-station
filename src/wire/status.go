@@ -71,16 +71,16 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Daemon:     m.hostDaemon(),
 		Hypervisor: m.hypervisor(),
 	}
-	var facts settingscontract.Inspector
 	var meter activitycontract.Meter
 	var listening portscontract.Listeners = lsof.New(h.Run)
 	if m.kind == catalog.Linux {
-		facts, meter = settingslinux.New(h.Run), activitylinux.New(h.Run, h.Clock)
+		meter = activitylinux.New(h.Run, h.Clock)
 	} else {
-		facts, meter = settingsmacos.New(h.Run, h.FS, h.Clock, settingsmacos.Options{Root: m.systemRoot()}), activitymacos.New(local.NewKernel(m.vars), h.Clock)
+		meter = activitymacos.New(local.NewKernel(m.vars), h.Clock)
 	}
+	facts := m.facts()
 	if m.world != nil {
-		facts, meter, listening = m.world.inspector(), m.world.meter(), m.world.listeners()
+		meter, listening = m.world.meter(), m.world.listeners()
 	}
 	if m.kind != catalog.Linux {
 		// value: the status page reads listeners, jobs and app updates on a Mac only.
@@ -89,6 +89,18 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	}
 	d.Facts, d.Meter, d.Battery = facts, meter, m.powerPort
 	return d
+}
+
+// value: the Inspector of this machine's facts: its system's own tools, or
+// its world's.
+func (m machine) facts() settingscontract.Inspector {
+	switch {
+	case m.world != nil:
+		return m.world.inspector()
+	case m.kind == catalog.Linux:
+		return settingslinux.New(m.host.Run)
+	}
+	return settingsmacos.New(m.host.Run, m.host.FS, m.host.Clock, settingsmacos.Options{Root: m.systemRoot(), Jobs: m.jobs(config.ReadBudget)})
 }
 
 type hostedServers struct{ d hostDaemon }

@@ -16,4 +16,14 @@
    ◌ tart-launcher
  - Always-on Mac
    ○ Always-on Mac  5 · for a Mac that hosts servers
+ - Checked                                                                  9 ◌
+   ◌ filevault
+   ◌ firewall
+   ◌ sip
+   ◌ automatic-updates
+   ◌ screen-lock
+   ◌ gatekeeper
+   ◌ remote-login
+   ◌ time-machine
+   ◌ macos-updates
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

@@ -165,6 +165,9 @@ func Codes() map[fail.Code]Wording {
 		settingscalls.Unknown: func(e *fail.Error) (string, string) {
 			return "no setting named \"" + e.Subject + "\"", "station settings"
 		},
+		settingscalls.IsChecked: func(e *fail.Error) (string, string) {
+			return e.Subject + " is checked, not set: station never runs sudo", e.Detail["fix"]
+		},
 		settingscalls.NotForThisMachine: func(e *fail.Error) (string, string) {
 			if e.Detail["why"] == "Mac only" {
 				return e.Subject + " is for Macs only", "station settings apply " + e.Subject + " --on this-mac"

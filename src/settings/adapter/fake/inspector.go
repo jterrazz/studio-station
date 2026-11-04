@@ -21,6 +21,9 @@ func NewInspector(w *world.World, mac string) *Inspector { return &Inspector{w: 
 func (i *Inspector) Read(_ context.Context, f catalog.Fact) (settings.Fact, error) {
 	i.w.Lock()
 	defer i.w.Unlock()
+	if i.w.Fails("Inspector.Read") {
+		return settings.Fact{}, context.DeadlineExceeded
+	}
 	m := i.w.Macs[i.mac]
 	if m == nil {
 		return settings.Unread(), nil

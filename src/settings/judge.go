@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
 )
 
 type Group string
@@ -14,6 +15,8 @@ const (
 	// value: the opt-in group of Set by station for a Mac that hosts
 	// servers: applied by name only, folded until one of it is applied.
 	AlwaysOnMac Group = "always-on-mac"
+	// value: read from macOS, never applied.
+	Checked Group = "checked"
 )
 
 type State string
@@ -55,6 +58,8 @@ type Row struct {
 	Name  string
 	Group Group
 	State State
+	// value: a row of the Checked group: its state there, State left empty.
+	Checked CheckedState
 	// value: ChangedSince and Applied: when station applied it.
 	Since time.Time
 	Where string
@@ -63,6 +68,11 @@ type Row struct {
 	Why string
 	// value: the app it needs that is not installed here.
 	Needs string
+	// value: a checked setting: what macOS reads ("off", "locks after
+	// 10 min"), what this machine should have instead, and where the owner
+	// fixes it.
+	Value, Expected string
+	Fix             finding.Fix
 }
 
 func (r Row) Item() catalog.ConfigItem {

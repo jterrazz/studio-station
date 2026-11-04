@@ -8,6 +8,7 @@ runs:
           ["broken","background","com.jterrazz.brain.x-snapshot"]
           ["needs-a-look","apps","mise"]
           ["needs-a-look","apps","brew"]
+          ["needs-a-look","settings","firewall"]
           ["needs-a-look","disk","~/.tart"]
           ["needs-a-look","background","com.bjango.istatmenus.installer"]
           ["needs-a-look","background","com.docker.socket"]
@@ -20,6 +21,7 @@ runs:
           ✗	com.jterrazz.brain.x-snapshot is failing, last exit 2
           ◐	1 mise update waiting
           ◐	2 brew updates waiting
+          ◐	Firewall: off
           ◐	~/.tart is misplaced
           ◐	com.bjango.istatmenus.installer is an orphan
           ◐	com.docker.socket is an orphan

@@ -1,0 +1,5 @@
+#!/bin/sh
+case "$*" in
+    --status) if [ -e "$HOME/.off" ]; then echo "assessments disabled"; else echo "assessments enabled"; fi ;;
+    *) echo "stub ${0##*/}: unexpected invocation: $*" >&2; exit 97 ;;
+esac

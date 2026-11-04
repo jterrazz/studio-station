@@ -22,3 +22,13 @@ runs:
           ○	tart-launcher	not applied	station settings apply tart-launcher
           # Always-on Mac
           ○	Always-on Mac	5 · for a Mac that hosts servers
+          # Checked	8 ●	1 ◐
+          ◐	firewall	off	System Settings > Network > Firewall
+          ●	filevault	as expected · on
+          ●	sip	as expected · on
+          ●	automatic-updates	as expected · on
+          ●	screen-lock	as expected · locks after 2 min
+          ●	gatekeeper	as expected · on
+          ●	remote-login	as expected · off
+          ●	time-machine	as expected · last backup 2 d ago
+          ●	macos-updates	as expected · up to date

@@ -297,6 +297,248 @@
       "uncounted": true
     },
     {
+      "id": "checked",
+      "title": "Checked",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "firewall",
+            "mark": "attention",
+            "label": "firewall",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "off"
+                  }
+                ]
+              }
+            ],
+            "reason": "mismatch",
+            "hint": {
+              "command": "System Settings > Network > Firewall",
+              "external": true
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "screen-lock",
+            "mark": "attention",
+            "label": "screen-lock",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "locks after 10 min"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "expected 5 min"
+                  }
+                ]
+              }
+            ],
+            "reason": "mismatch",
+            "hint": {
+              "command": "System Settings > Lock Screen",
+              "external": true
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "time-machine",
+            "mark": "unknown",
+            "label": "time-machine",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "unknown"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "no answer in 2 s"
+                  }
+                ]
+              }
+            ],
+            "reason": "late"
+          }
+        },
+        {
+          "row": {
+            "id": "filevault",
+            "mark": "ok",
+            "label": "filevault",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "as expected"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "on"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "sip",
+            "mark": "ok",
+            "label": "sip",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "as expected"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "on"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "automatic-updates",
+            "mark": "ok",
+            "label": "automatic-updates",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "as expected"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "on"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "remote-login",
+            "mark": "ok",
+            "label": "remote-login",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "as expected"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "off"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "macos-updates",
+            "mark": "ok",
+            "label": "macos-updates",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "as expected"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "up to date"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "gatekeeper",
+            "mark": "off-here",
+            "label": "gatekeeper",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "off here"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "not checked on this machine"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 5
+        },
+        {
+          "mark": "attention",
+          "n": 2
+        },
+        {
+          "mark": "off-here",
+          "n": 1
+        },
+        {
+          "mark": "unknown",
+          "n": 1
+        }
+      ],
+      "pipe_counts": true
+    },
+    {
       "id": "not-for-this-machine",
       "title": "Not for this machine",
       "columns": [
