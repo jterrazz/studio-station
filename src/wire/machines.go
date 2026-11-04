@@ -18,7 +18,6 @@ import (
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	"github.com/jterrazz/studio-station/src/system"
 	machinescmd "github.com/jterrazz/studio-station/src/surface/cli/machines"
 	machinesadd "github.com/jterrazz/studio-station/src/surface/cli/machines/add"
 	machinescreate "github.com/jterrazz/studio-station/src/surface/cli/machines/create"
@@ -33,6 +32,7 @@ import (
 	machinessupervise "github.com/jterrazz/studio-station/src/surface/cli/machines/supervise"
 	machinesunlock "github.com/jterrazz/studio-station/src/surface/cli/machines/unlock"
 	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
+	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (

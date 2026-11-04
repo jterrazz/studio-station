@@ -54,7 +54,7 @@ type VM struct {
 	// value: the state its record asks for, running or stopped.
 	Want      string
 	Lent      []string
-	CreatedAt                  time.Time
+	CreatedAt time.Time
 }
 
 type EngineView struct {
@@ -71,8 +71,8 @@ type HostView struct {
 	// value: when this Mac last had its answer; zero for one never heard.
 	Answered time.Time
 	Node     Node
-	Daemon                     EngineView
-	VMs                        []VM
+	Daemon   EngineView
+	VMs      []VM
 }
 
 type Fleet struct {
