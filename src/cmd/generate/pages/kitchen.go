@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"github.com/jterrazz/studio-station/src/catalog"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/page"
@@ -110,7 +111,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		{page.Unmanaged, page.Attention, "on PATH, not managed by cask", ""},
 		{page.Missing, page.Attention, "installed, mise not installed", "station tools install mise"},
 		{page.Partial, page.Attention, "policy partly applied", ""},
-		{page.Differs, page.Attention, "differs from station's", "station config install tart-launcher"},
+		{page.Differs, page.Attention, "differs from station's", "station config install " + catalog.HypervisorLauncher},
 		{page.Unset, page.Attention, "name not set", "station setup"},
 		{page.Stopped, page.Attention, "stopped", "station start"},
 		{page.Late, page.Attention, "no answer in 2s", ""},
@@ -155,7 +156,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		Columns: []page.Column{{Key: "name", Label: "tool", Kind: page.KindText, Keep: 100}, {Key: "levels", Kind: page.KindLevels, Keep: 80, Levels: []string{"data", "kept"}}},
 		Items: []page.Item{
 			it(row("station", page.OK, page.Levels(page.Labeled("data", page.Size(275)), page.Labeled("kept", page.Size(546))))),
-			it(row("tart", page.OK, page.Levels(page.Labeled("data", page.Size(73300000000))))),
+			it(row(catalog.HypervisorTool, page.OK, page.Levels(page.Labeled("data", page.Size(73300000000))))),
 		},
 	}
 	prose := page.Section{

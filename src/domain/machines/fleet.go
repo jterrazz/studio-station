@@ -68,13 +68,13 @@ func (s *Service) nodeMap(ctx context.Context) map[string]Node {
 	return nodes
 }
 
-// invariant: the daemon matters only where VMs can exist: on a host with tart; a
+// invariant: the daemon matters only where VMs can exist: on a host with its hypervisor; a
 // daemon that does not answer degrades the view, never fails it.
 func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[string]DaemonVM) {
 	if s.o.Here != catalog.Host || s.daemon == nil {
 		return DaemonInfo{}, nil
 	}
-	if _, ok := s.h.Run.LookPath("tart"); !ok {
+	if !s.engine.Installed() {
 		return DaemonInfo{}, nil
 	}
 	version, err := s.daemon.Ping(ctx)

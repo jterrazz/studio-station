@@ -92,7 +92,7 @@ func snapshot() status.Snapshot {
 			Docker:       status.Docker{State: catalog.StateDegraded},
 			Disk:         []status.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
 			Strays: []storage.StrayReport{
-				{Name: "tart", Path: "~/.tart", Bytes: 73 * gb, Repair: "station setup"},
+				{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, Repair: "station setup"},
 				{Name: "bun", Path: "~/.bun", Bytes: 2 * gb, Repair: "station setup"},
 			},
 		},
@@ -208,7 +208,7 @@ func storageReport(pending bool) storage.Report {
 		{Entry: entry("homebrew", string(catalog.CategoryPackageManagers)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 26 * gb}, Install: 3 * gb},
 		{Entry: entry("bun", string(catalog.CategoryRuntimes)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 1700 * (1 << 20)}},
 	}
-	r := storage.Report{Rows: rows, Strays: []storage.StrayReport{{Name: "tart", Path: "~/.tart", Bytes: 73 * gb, Repair: "station setup"}}, Other: 9 * gb}
+	r := storage.Report{Rows: rows, Strays: []storage.StrayReport{{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, Repair: "station setup"}}, Other: 9 * gb}
 	if pending {
 		for i := range r.Rows {
 			r.Rows[i].Pending, r.Rows[i].State = true, catalog.StatePending
@@ -270,7 +270,7 @@ func imageLists() []Fixture {
 	return states("images",
 		pending(pageimages.List(imageReports(), here())),
 		pageimages.List(nil, here()),
-		failure("images", "images", "tart is not installed", "station tools install tart"),
+		failure("images", "images", catalog.HypervisorTool+" is not installed", "station tools install "+catalog.HypervisorTool),
 		pageimages.List(imageReports(), here()))
 }
 
@@ -359,7 +359,7 @@ func outcomes() []Fixture {
 	}
 	changes := []config.Change{
 		{Item: "power", Verb: "install", Result: catalog.StateOK, Before: []config.Fact{{Key: "sleep", Value: "10"}}, After: []config.Fact{{Key: "sleep", Value: "0"}}},
-		{Item: "tart-launcher", Verb: "install", Result: catalog.StateOK},
+		{Item: catalog.HypervisorLauncher, Verb: "install", Result: catalog.StateOK},
 	}
 	cleaned := []storage.Outcome{
 		{Name: "homebrew", Result: catalog.StateOK, Freed: 26 * gb},
@@ -386,7 +386,7 @@ func setupReport() setup.Report {
 	return setup.Report{Steps: []setup.Step{
 		{Name: "name", State: catalog.StateOK, Detail: "macbook"},
 		{Name: "zshrc", State: catalog.StateOK, Detail: "the station block", Changed: true},
-		{Name: "layout", State: catalog.StateDegraded, Detail: "~/.tart left in place", Log: "73 GB: move it with station setup --move"},
+		{Name: "layout", State: catalog.StateDegraded, Detail: "~/." + catalog.HypervisorTool + " left in place", Log: "73 GB: move it with station setup --move"},
 		{Name: "tools", State: catalog.StateOK},
 	}}
 }

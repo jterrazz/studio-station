@@ -193,8 +193,8 @@ func (i daemonInstaller) mustLaunchctl(ctx context.Context, args ...string) erro
 // another version, and the VMs survive that restart.
 func (i daemonInstaller) Install(ctx context.Context) (setup.Step, error) {
 	const step = "daemon"
-	if _, ok := i.m.host.Run.LookPath("tart"); !ok {
-		return setup.Step{Name: step, State: catalog.StateAbsent, Detail: "not needed until tart is installed"}, nil
+	if hv := i.m.hypervisor(); !hv.Installed() {
+		return setup.Step{Name: step, State: catalog.StateAbsent, Detail: "not needed until " + hv.Name() + " is installed"}, nil
 	}
 	if _, ok := i.m.host.Run.LookPath("launchctl"); !ok {
 		return setup.Step{Name: step, State: catalog.StateAbsent, Detail: "launchd is not here to run it"}, nil

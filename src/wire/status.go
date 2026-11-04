@@ -14,14 +14,15 @@ func statusCommand(env kit.Env, m machine) *cobra.Command {
 
 func statusService(env kit.Env, m machine) *status.Service {
 	return status.New(m.host, status.Sources{
-		Tools:   toolsService(env, m),
-		Config:  configService(m),
-		Tailnet: m.tailnet(),
-		Setup:   setupService(env, m),
-		Store:   m.store,
-		Storage: m.storage(env),
-		Daemon:  m.hostDaemon(),
-		Power:   statusPower{s: m.power()},
+		Tools:      toolsService(env, m),
+		Config:     configService(m),
+		Tailnet:    m.tailnet(),
+		Setup:      setupService(env, m),
+		Store:      m.store,
+		Storage:    m.storage(env),
+		Daemon:     m.hostDaemon(),
+		Power:      statusPower{s: m.power()},
+		Hypervisor: m.hypervisor(),
 	}, status.Options{
 		Pool:         m.pool,
 		Root:         m.systemRoot(),

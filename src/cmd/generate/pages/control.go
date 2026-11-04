@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/engine"
 	pageoutcome "github.com/jterrazz/studio-station/src/pages/outcome"
 )
@@ -12,7 +13,7 @@ func controlPages() []Fixture {
 	}}
 	stuck := engine.StopReport{Daemon: engine.DaemonKept, VMs: []engine.Stopped{
 		{Name: "linux-1", Lifetime: "temporary", Result: engine.ResultDeleted},
-		{Name: "api", Lifetime: "lasting", Result: engine.ResultFailed, Detail: "tart stop exited 1"},
+		{Name: "api", Lifetime: "lasting", Result: engine.ResultFailed, Detail: catalog.HypervisorTool + " stop exited 1"},
 	}}
 	started := engine.StartReport{Version: "v3.1.0", PID: 812, Back: []string{"api"}}
 	out := states("outcome-stop",

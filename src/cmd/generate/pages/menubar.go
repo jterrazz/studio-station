@@ -2,6 +2,7 @@ package pages
 
 import (
 	"encoding/json"
+	"github.com/jterrazz/studio-station/src/catalog"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -19,7 +20,7 @@ func samples() []status.Sample {
 		out = append(out, status.Sample{
 			At:     powerNow.Add(time.Duration(i-len(cpu)+1) * 2 * time.Second),
 			CPU:    []status.Process{{PID: 812, Name: "station", Value: c}},
-			Memory: []status.Process{{PID: 812, Name: "tart", Value: 12.4e9}},
+			Memory: []status.Process{{PID: 812, Name: catalog.HypervisorTool, Value: 12.4e9}},
 		})
 	}
 	return out

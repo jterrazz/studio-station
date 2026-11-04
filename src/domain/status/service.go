@@ -25,14 +25,20 @@ type Options struct {
 }
 
 type Sources struct {
-	Tools   ToolsReader
-	Config  ConfigLister
-	Tailnet TailnetReader
-	Setup   SetupChecker
-	Store   settings.Store
-	Storage StorageReader
-	Daemon  DaemonReader
-	Power   PowerReader
+	Tools      ToolsReader
+	Config     ConfigLister
+	Tailnet    TailnetReader
+	Setup      SetupChecker
+	Store      settings.Store
+	Storage    StorageReader
+	Daemon     DaemonReader
+	Power      PowerReader
+	Hypervisor Hypervisor
+}
+
+type Hypervisor interface {
+	Name() string
+	Installed() bool
 }
 
 type PowerReader interface {
@@ -282,15 +288,15 @@ func (s *Service) agentInstalled() bool {
 	return err == nil
 }
 
-// invariant: the daemon matters where VMs can exist: a host with tart; one that
+// invariant: the daemon matters where VMs can exist: a host with its hypervisor; one that
 // does not answer, or answers another version, is degraded, never an error.
 func (s *Service) daemon(ctx context.Context) Check {
 	c := Check{Name: "daemon", State: catalog.StateAbsent}
 	if s.o.Here != catalog.Host || s.deps.Daemon == nil {
 		return c
 	}
-	if _, ok := s.h.Run.LookPath("tart"); !ok {
-		c.Value = "not needed until tart is installed"
+	if hv := s.deps.Hypervisor; !hv.Installed() {
+		c.Value = "not needed until " + hv.Name() + " is installed"
 		return c
 	}
 	version, err := s.deps.Daemon.Ping(ctx)

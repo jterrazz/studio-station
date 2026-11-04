@@ -4,6 +4,11 @@ import "slices"
 
 var Tools = slices.Concat(coreTools, AgentSkills)
 
+const (
+	HypervisorTool     = "tart"
+	HypervisorLauncher = HypervisorTool + "-launcher"
+)
+
 var coreTools = []Tool{
 	{Name: "homebrew", Description: "macOS package manager", Category: CategoryPackageManagers, Installs: Mac(Script("https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh")), Provides: []string{"brew"}, Version: Probe{Args: []string{"brew", "--version"}, Pattern: `^Homebrew (\S+)`}, Storage: storageHomebrew, System: true},
 	{Name: "mise", Description: "Polyglot runtime manager: node, go, python, bun, rust, java", Category: CategoryPackageManagers, Installs: Everywhere(Brew("mise"), Script("https://mise.run")), Provides: []string{"mise"}, Storage: storageMise, System: true},
@@ -48,7 +53,7 @@ var coreTools = []Tool{
 	{Name: "xcode", Description: "Apple development IDE", Category: CategoryEditors, Installs: Mac(Mas("Xcode", 497799835)), Provides: []string{"xcodebuild"}, Bundle: "Xcode", Version: Probe{Args: []string{"xcodebuild", "-version"}, Pattern: `^Xcode (\S+)`}, Storage: storageXcode},
 	{Name: "xcodegen", Description: "Generates Xcode projects from a spec", Category: CategoryEditors, Installs: Mac(Brew("xcodegen")), Provides: []string{"xcodegen"}},
 
-	{Name: "tart", Description: "Virtual machines on Apple silicon: the engine of station's VMs", Category: CategoryContainersVMs, Installs: HostOnly(Shell(`d="$HOME/.local/share"; case "$XDG_DATA_HOME" in /*) d="$XDG_DATA_HOME" ;; esac; mkdir -p "$d/station/tart" "$d/station/vms" "$HOME/.local/bin" && curl -fsSL https://github.com/cirruslabs/tart/releases/latest/download/tart.tar.gz | tar -xz -C "$d/station/tart"`)), Provides: []string{"tart"}, Then: []string{"tart-launcher"}, Version: Probe{Args: []string{"tart", "--version"}, Pattern: `^(\S+)`}, Storage: storageTart, System: true},
+	{Name: HypervisorTool, Description: "Virtual machines on Apple silicon: the engine of station's VMs", Category: CategoryContainersVMs, Installs: HostOnly(Shell(`d="$HOME/.local/share"; case "$XDG_DATA_HOME" in /*) d="$XDG_DATA_HOME" ;; esac; mkdir -p "$d/station/tart" "$d/station/vms" "$HOME/.local/bin" && curl -fsSL https://github.com/cirruslabs/tart/releases/latest/download/tart.tar.gz | tar -xz -C "$d/station/tart"`)), Provides: []string{"tart"}, Then: []string{"tart-launcher"}, Version: Probe{Args: []string{"tart", "--version"}, Pattern: `^(\S+)`}, Storage: storageTart, System: true},
 	{Name: "docker", Description: "Container engine, inside the Linux VM", Category: CategoryContainersVMs, Installs: LinuxOnly(Script("https://get.docker.com")), Provides: []string{"docker"}, Version: Probe{Args: []string{"docker", "--version"}, Pattern: `Docker version ([^,\s]+)`}, Storage: storageDocker},
 	{Name: "orbstack", Description: "Docker and Linux machines on the Mac, for exploration on a host", Category: CategoryContainersVMs, Installs: HostOnly(Cask("orbstack")), Provides: []string{"orb"}, Bundle: "OrbStack", Storage: storageOrbstack},
 	{Name: "lens", Description: "Kubernetes IDE for managing clusters", Category: CategoryContainersVMs, Installs: Mac(Cask("lens")), Bundle: "Lens"},
