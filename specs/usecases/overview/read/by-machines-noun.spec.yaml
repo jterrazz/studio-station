@@ -1,4 +1,4 @@
-description: 'station machines <machine> prints byte for byte what station overview --on <machine> prints, a VM of either Mac and a Mac alike'
+description: 'station machines <machine> is byte for byte station overview --on <machine>, a VM or a Mac'
 env:
     - two-macs
     - engine

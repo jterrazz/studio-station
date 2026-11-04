@@ -1,4 +1,4 @@
-description: 'machines --json is station.machines.list/v1: each Mac, its VMs with their wanted state, health, restarts and size in bytes, the findings'
+description: 'machines --json is station.machines.list/v1: VMs with wanted, health, restarts, sizes in bytes'
 env: two-macs
 runs:
     - command: 'machines --json | /usr/bin/jq -c ''{schema, findings, macs: [.macs[] | {name, label, this_mac, reachable, engine: .engine.state, vms: [.vms[] | {name, kind, lifetime, state, wanted, health, restarts, size}]}]}'''

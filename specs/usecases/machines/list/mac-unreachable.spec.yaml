@@ -1,4 +1,4 @@
-description: 'a Mac that does not answer keeps its row, Unreachable since its last answer, its VMs unknown and never dropped; a finding, and the read still exits 0'
+description: 'a Mac that does not answer keeps its row and its VMs, unknown; a finding, and exit 0'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

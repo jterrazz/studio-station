@@ -1,4 +1,4 @@
-description: 'a running workspace whose guest connection fails fails SSH answers, a finding, its address still read from its Mac'
+description: 'a workspace whose guest connection fails fails SSH answers, a finding'
 env: two-macs
 runs:
     - command: 'world fault Guest.Dial'

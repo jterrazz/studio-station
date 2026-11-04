@@ -1,4 +1,4 @@
-description: 'a bare create makes linux-2, the smallest free name: its health steps as they pass, its ports, then Created, throwaway, 4 CPU, 4 GB, 20 GB'
+description: 'a bare create makes linux-2: its health steps, its ports, then Created, throwaway, 4 CPU, 4 GB'
 env: two-macs
 runs:
     - command: 'machines create'

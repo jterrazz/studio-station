@@ -100,7 +100,7 @@ station machines delete <vm> [--confirm=<name>]
 station machines unlock <host>
 ```
 
-`--here` lists this host only, with no network. `create` asks the lifetime on a terminal and, with two reachable hosts, the host; piped it needs `--lifetime`. `delete` is the only verb that destroys a machine; `forget` only unregisters a host. VMs are made and run on hosts, so these commands except `probe` are refused on a VM. `create`, `start` and `restart` need the host's engine; `stop` and `delete` act without it. `--network bridged` is for macOS VMs only. See [Machines](machines.md).
+`--here` lists This Mac only, with no network. `create` makes a throwaway workspace unless `--permanent` is given, and asks the Mac on a terminal when two answer; piped it needs no question. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
 
 ### `station services`
 

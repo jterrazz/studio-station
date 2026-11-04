@@ -97,7 +97,7 @@ With Serve off they hold the local URL, `http://127.0.0.1:<host port>`, and the 
 `station.api/v2`: JSON lines over the unix socket `~/.local/state/station/engine.sock` (mode 0600; the engine listens on no TCP port, and the leases' forwarders bind `127.0.0.1` only), one frame per line. A request names a `call` or a `watch` under its `id`; the answer is `progress` frames, then one `out` or one `error`. The calls of one connection are answered in the order they came. The CLI is one client, the menu bar another.
 
 ```text
-→ {"v":2,"id":"7","call":"machines.create","in":{"Request":{"Image":"linux","Lifetime":"temporary"}}}
+→ {"v":2,"id":"7","call":"machines.create-workspace","in":{"Request":{"Image":"linux","Lifetime":"throwaway"}}}
 ← {"v":2,"id":"7","progress":{"task":"Booting linux-1"}}
 ← {"v":2,"id":"7","out":{"VM":{"Name":"linux-1"}}}
 → {"v":2,"id":"8","call":"engine.stop","in":{"Confirm":"inf"}}
