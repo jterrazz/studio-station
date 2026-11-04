@@ -15,6 +15,7 @@ runs:
       exit: 0
       stdout: |
           accounts
+          apps
           config
           overview
           power
@@ -23,7 +24,6 @@ runs:
           services
           storage
           tailnet
-          tools
     - command: 'help | /usr/bin/sed -n "/^  A MAC/,/^  STATION/p" | /usr/bin/grep -oE "^    [a-z]+ " | /usr/bin/tr -d " "'
       exit: 0
       stdout: |

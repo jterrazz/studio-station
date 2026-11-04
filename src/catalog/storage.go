@@ -202,7 +202,7 @@ var (
 		Paths:     []Stored{cache("~/Library/Caches/Homebrew"), cache("~/Library/Logs/Homebrew")},
 		Installed: []string{"/opt/homebrew"},
 		Clean:     []Action{runIf("brew", "brew", "cleanup", "--prune=all"), remove("~/Library/Caches/Homebrew/*")},
-		NoReset:   "Homebrew's data are its formulae: station tools uninstall <tool>",
+		NoReset:   "Homebrew's data are its formulae: station apps remove <app>",
 	}
 	miseMemo    = "*/*/bin_paths-*.msgpack.z"
 	storageMise = Storage{
@@ -218,7 +218,7 @@ var (
 			onMac(remove("~/Library/Caches/mise/*", "~/Library/Caches/sigstore-rust/*")),
 			onLinux(remove("{cache}/mise/*", "{cache}/sigstore-rust/*")),
 		},
-		NoReset: "runtimes are tools: station tools uninstall <runtime>",
+		NoReset: "runtimes are apps: station apps remove <runtime>",
 	}
 	storageNode = Storage{
 		Paths: []Stored{cache("{cache}/npm"), noted(conf("~/.npmrc"), "may hold registry tokens")},
@@ -577,11 +577,11 @@ var (
 	}
 	storagePlaywrightBrowsers = Storage{
 		Installed: []string{"~/Library/Caches/ms-playwright", "{cache}/ms-playwright"},
-		NoReset:   "the browsers are the tool: station tools uninstall playwright-browsers",
+		NoReset:   "the browsers are the app: station apps remove playwright-browsers",
 	}
 	storageAgentBrowser = Storage{
 		Installed: []string{"~/.agent-browser/browsers"},
-		NoReset:   "the browsers are the tool: station tools uninstall agent-browser",
+		NoReset:   "the browsers are the app: station apps remove agent-browser",
 	}
 	storageHermes = Storage{
 		Paths:     []Stored{data("~/.hermes/checkpoints"), data("~/.hermes/sessions"), data("~/.hermes/state.db")},
@@ -591,7 +591,7 @@ var (
 	storageSkills = Storage{
 		Paths:     []Stored{conf("~/.agents/.skill-lock.json")},
 		Installed: []string{"~/.agents/skills", "~/.claude/skills"},
-		NoReset:   "skills are tools: station tools uninstall <skill>",
+		NoReset:   "skills are apps: station apps remove <skill>",
 	}
 	storageClaudeDesktop = Storage{
 		Paths: []Stored{

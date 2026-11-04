@@ -284,7 +284,7 @@
       "command": "station overview --all"
     },
     {
-      "command": "station tools",
+      "command": "station apps",
       "text": "for the catalogue"
     }
   ],

@@ -30,7 +30,7 @@ func imagesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &missing):
 		return usage(missing.Error(), linuxBinaryHint), true
 	case errors.As(err, &noEngine):
-		return usage(noEngine.Error(), "station tools install "+noEngine.Hypervisor), true
+		return usage(noEngine.Error(), "station apps install "+noEngine.Hypervisor), true
 	case errors.As(err, &noRecipe):
 		return usage(noRecipe.Error(), "station images update "+noRecipe.Image), true
 	case errors.As(err, &unpublished):

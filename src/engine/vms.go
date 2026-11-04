@@ -46,14 +46,16 @@ type vmState struct {
 	ip       string
 	stopping bool
 	client   Guest
-	cancel   context.CancelFunc
-	in       io.WriteCloser
-	wmu      sync.Mutex
-	keys     string
-	lastErr  string
-	gen      int
-	asked    map[string]chan guestMessage
-	seq      int
+	// value: closed once the session being dialed holds a client, or ends.
+	up      chan struct{}
+	cancel  context.CancelFunc
+	in      io.WriteCloser
+	wmu     sync.Mutex
+	keys    string
+	lastErr string
+	gen     int
+	asked   map[string]chan guestMessage
+	seq     int
 }
 
 // invariant: at start, a live run is ADOPTED (never touched); a dead one or none
@@ -383,7 +385,7 @@ func (d *Daemon) connect(ctx context.Context, v *vmState) {
 	}
 	gctx, cancel := context.WithCancel(ctx)
 	v.gen++
-	v.cancel, v.guest = cancel, GuestConnecting
+	v.cancel, v.guest, v.up = cancel, GuestConnecting, make(chan struct{})
 	gen := v.gen
 	d.mu.Unlock()
 	go d.session(gctx, v, gen)
@@ -400,6 +402,14 @@ func (d *Daemon) disconnect(v *vmState) {
 	}
 	v.gen++
 	v.cancel, v.guest, v.client, v.in = nil, GuestAbsent, nil, nil
+	v.release()
+}
+
+func (v *vmState) release() {
+	if v.up != nil {
+		close(v.up)
+		v.up = nil
+	}
 }
 
 func (d *Daemon) current(v *vmState, gen int) bool {
@@ -419,6 +429,7 @@ func (d *Daemon) session(ctx context.Context, v *vmState, gen int) {
 		d.mu.Lock()
 		if v.gen == gen {
 			v.cancel, v.guest, v.client, v.in = nil, GuestAbsent, nil, nil
+			v.release()
 		}
 		d.mu.Unlock()
 	}()
@@ -465,6 +476,7 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState, gen int) {
 		return
 	}
 	v.client, v.ip, v.in, v.guest = client, ip, inW, GuestConnecting
+	v.release()
 	d.mu.Unlock()
 	go func() {
 		_, _ = client.Exec(ctx, guestCommand, inR, outW, io.Discard)

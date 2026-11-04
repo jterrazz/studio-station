@@ -5,15 +5,15 @@ env:
     - two-macs
     - terminal
 runs:
-    - command: '--version >/dev/null; terminal "$STATION" tools uninstall lazygit'
+    - command: '--version >/dev/null; terminal "$STATION" apps remove lazygit'
       stdin: |
-          see Uninstall lazygit?
+          see Remove lazygit?
           send n
           see Hint:
           screen
       exit: 1
       stdout: |
-          ┃ Uninstall lazygit?
+          ┃ Remove lazygit?
           ┃
           Error: lazygit kept: you said no
           Hint: --yes skips the question

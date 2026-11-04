@@ -215,11 +215,12 @@ func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catal
 	if version, ok := l.keys[i.Key()]; ok {
 		r.State, r.Version, r.Managed = catalog.StateOK, version, true
 		// invariant: an inconclusive currency leaves the app ok, never outdated.
-		switch l.currency[i.Key()] {
+		switch l.currency[i.Key()].Verdict {
 		case apps.Unknown:
 			r.Detail = "currency unknown"
 		case apps.Behind:
 			r.State, r.Detail, r.Why = catalog.StateDegraded, "outdated", WhyOutdated
+			r.Newest = l.currency[i.Key()].Newest
 		case apps.Current:
 		}
 		return r
@@ -238,6 +239,9 @@ func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catal
 			r.Detail, r.Why, r.Needs = "installed, "+manager.Name+" not installed", WhyMissing, manager.App
 		} else {
 			r.Detail, r.Why = "on PATH, not managed by "+string(m), WhyUnmanaged
+			if s.bundled(t) {
+				r.Detail = t.Bundle + ".app in /Applications, not installed by " + string(m)
+			}
 		}
 		return r
 	}

@@ -14,6 +14,8 @@ func Plain(v page.Value) string {
 	switch v.Kind {
 	case page.KindPortMap:
 		return strconv.FormatInt(v.N, 10)
+	case page.KindVersion:
+		return v.Text
 	case page.KindList:
 		return join(v.Items, Plain)
 	case page.KindLevels:
@@ -34,6 +36,9 @@ func Plain(v page.Value) string {
 func Show(v page.Value) string {
 	switch v.Kind {
 	case page.KindVersion:
+		if v.Label != "" {
+			return End(v.Text, versionMax) + " " + token.Arrow + " " + End(v.Label, versionMax)
+		}
 		return End(v.Text, versionMax)
 	case page.KindPortMap:
 		return strconv.FormatInt(v.N, 10) + " " + token.Arrow + " " + strconv.FormatInt(v.Of, 10)

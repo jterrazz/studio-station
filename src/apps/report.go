@@ -7,6 +7,8 @@ type Report struct {
 	Method  catalog.Method
 	State   catalog.State
 	Version string
+	// value: the version an update would bring, when the method names it.
+	Newest  string
 	Managed bool
 	Detail  string
 	Live    string
@@ -16,6 +18,8 @@ type Report struct {
 	Why   Why
 	Needs string
 }
+
+const AlreadyInstalled = "already installed"
 
 type Why string
 
@@ -34,6 +38,10 @@ type Outcome struct {
 	Result catalog.State
 	Detail string
 	Steps  []Step
+	// value: the method that holds the app, and the version it holds once
+	// the verb has run ("" where nothing lists one).
+	Method  catalog.Method
+	Version string
 }
 
 type Step struct {

@@ -8,6 +8,6 @@
   "state": "failed",
   "error": {
     "message": "tart is not installed",
-    "hint": "station tools install tart"
+    "hint": "station apps install tart"
   }
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"maps"
-	"slices"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/apps"
@@ -23,7 +22,7 @@ const here = "here"
 type State struct {
 	Absent    bool
 	Installed map[string]string
-	Behind    []string
+	Behind    map[string]string
 	Fails     bool
 }
 
@@ -51,7 +50,7 @@ func InstallerOf(w *world.World, mac string, m catalog.Method, lined bool) contr
 
 func New(m catalog.Method, s *State) *Installer {
 	w := &world.World{Here: here}
-	w.Mac(here).Apps = map[catalog.Method]*world.Manager{m: {Absent: s.Absent, Installed: maps.Clone(s.Installed), Behind: slices.Clone(s.Behind)}}
+	w.Mac(here).Apps = map[catalog.Method]*world.Manager{m: {Absent: s.Absent, Installed: maps.Clone(s.Installed), Behind: maps.Clone(s.Behind)}}
 	if s.Fails {
 		w.Script = []world.Fault{{Call: "Installer.Install"}, {Call: "Installer.Update"}, {Call: "Installer.Remove"}}
 	}
@@ -109,9 +108,9 @@ func (f *Installer) Outdated(_ context.Context, keys []string) (map[string]apps.
 	defer f.w.Unlock()
 	out := map[string]apps.Currency{}
 	for _, k := range keys {
-		out[k] = apps.Current
-		if slices.Contains(f.manager().Behind, k) {
-			out[k] = apps.Behind
+		out[k] = apps.Currency{Verdict: apps.Current}
+		if newest, ok := f.manager().Behind[k]; ok {
+			out[k] = apps.Currency{Verdict: apps.Behind, Newest: newest}
 		}
 	}
 	return out, nil
@@ -122,20 +121,41 @@ func (f *Installer) run(ctx context.Context, verb string, installs []catalog.Ins
 		return err
 	}
 	f.w.Lock()
-	defer f.w.Unlock()
 	if f.w.Fails("Installer." + verb) {
+		f.w.Unlock()
 		return errScripted
 	}
-	for _, i := range installs {
+	held := f.w.Holds("Installer." + verb)
+	for n, i := range installs {
+		if held && n > 0 {
+			break
+		}
 		apply(f.manager(), i.Key())
 	}
-	return nil
+	f.w.Unlock()
+	return wait(ctx, held)
 }
 
-func installed(s *world.Manager, k string) { s.Installed[k] = "1.0.0" }
+func wait(ctx context.Context, held bool) error {
+	if !held {
+		return nil
+	}
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func installed(s *world.Manager, k string) {
+	s.Installed[k] = "1.0.0"
+	if v, ok := s.Offers[k]; ok {
+		s.Installed[k] = v
+	}
+}
 
 func updated(s *world.Manager, k string) {
-	s.Behind = slices.DeleteFunc(s.Behind, func(b string) bool { return b == k })
+	if v, ok := s.Behind[k]; ok {
+		s.Installed[k] = v
+		delete(s.Behind, k)
+	}
 }
 
 func (f *Installer) Install(ctx context.Context, installs []catalog.Install, _ call.Progress) error {
@@ -169,17 +189,30 @@ func BundlerOf(w *world.World, mac string) *Bundler { return &Bundler{w: w, mac:
 
 func (b *Bundler) Name() string { return "the bundle" }
 
-func (b *Bundler) Bundle(_ context.Context, lines []string, update bool, _ call.Progress) error {
+func (b *Bundler) Bundle(ctx context.Context, lines []string, update bool, _ call.Progress) error {
 	b.w.Lock()
-	defer b.w.Unlock()
 	if b.w.Fails("Bundler.Bundle") {
+		b.w.Unlock()
 		return errScripted
 	}
+	held := b.w.Holds("Bundler.Bundle")
+	err := b.apply(lines, update, held)
+	b.w.Unlock()
+	if err != nil {
+		return err
+	}
+	return wait(ctx, held)
+}
+
+func (b *Bundler) apply(lines []string, update, first bool) error {
 	apply := installed
 	if update {
 		apply = updated
 	}
-	for _, line := range lines {
+	for n, line := range lines {
+		if first && n > 0 {
+			break
+		}
 		method, key, ok := strings.Cut(line, " ")
 		if !ok {
 			return errors.New("the bundle cannot read the line " + line)

@@ -393,9 +393,9 @@ func TestEveryFixtureHasItsGoldens(t *testing.T) {
 	t.Run("bites", func(t *testing.T) {
 		without := map[string]bool{}
 		for k := range goldens {
-			without[k] = k != "tools.full.tui80"
+			without[k] = k != "apps.full.tui80"
 		}
-		if !slices.ContainsFunc(missingGoldens(fixtures, without), func(f finding) bool { return strings.HasSuffix(f.where, "tools.full.tui80") }) {
+		if !slices.ContainsFunc(missingGoldens(fixtures, without), func(f finding) bool { return strings.HasSuffix(f.where, "apps.full.tui80") }) {
 			t.Error("the goldens rule did not report a fixture without its tui80 golden")
 		}
 	})
@@ -416,8 +416,8 @@ func pageStates() []string { return []string{"loading", "empty", "error", "full"
 // family is checked because the spec lists it, not because a file exists.
 func pageFamilies() []string {
 	return []string{
-		"home", "home-all", "tools", "config", "storage", "fleet", "machines", "images", "secrets", "tailnet", "services",
-		"outcome-tools-install", "outcome-config", "outcome-storage", "setup", "run", "kitchen-sink", "accounts", "outcome-stop", "outcome-start", "engine", "power", "outcome-power", "menubar",
+		"home", "home-all", "apps", "config", "storage", "fleet", "machines", "images", "secrets", "tailnet", "services",
+		"outcome-apps-install", "outcome-config", "outcome-storage", "setup", "run", "kitchen-sink", "accounts", "outcome-stop", "outcome-start", "engine", "power", "outcome-power", "menubar",
 	}
 }
 

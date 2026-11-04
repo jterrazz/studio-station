@@ -86,7 +86,7 @@
             },
             "reason": "outdated",
             "hint": {
-              "command": "station tools upgrade --via brew"
+              "command": "station apps update --method brew"
             }
           }
         }
@@ -365,7 +365,7 @@
             "cells": [
               {
                 "kind": "command",
-                "text": "station tools upgrade --via brew"
+                "text": "station apps update --method brew"
               }
             ]
           }
@@ -483,7 +483,7 @@
             },
             "reason": "outdated",
             "hint": {
-              "command": "station tools upgrade --via brew"
+              "command": "station apps update --method brew"
             }
           }
         },
@@ -579,7 +579,7 @@
             },
             "reason": "missing",
             "hint": {
-              "command": "station tools install mise"
+              "command": "station apps install mise"
             }
           }
         },
@@ -863,7 +863,7 @@
             "mark": "absent",
             "label": "absent",
             "hint": {
-              "command": "station tools install mas",
+              "command": "station apps install mas",
               "key": "i"
             }
           }
@@ -1217,7 +1217,7 @@
       "command": "station overview --all"
     },
     {
-      "command": "station tools",
+      "command": "station apps",
       "text": "for the catalogue"
     }
   ],

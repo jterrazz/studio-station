@@ -13,6 +13,8 @@ type farMac struct {
 	registry *call.Registry
 	profile  coremachine.Profile
 	start    func() *engine.Daemon
+	// value: its own Router, which reaches the VMs it holds.
+	relay served
 }
 
 // invariant: a far Mac is built over its own slice of the world, with no
@@ -20,6 +22,7 @@ type farMac struct {
 func (m machine) farMac(env kit.Env, w *worldMac) farMac {
 	there := resolve(m.raw, m.door, m.vars, w)
 	fenv := kit.Env{Out: env.Out, On: &kit.On{Here: there.here()}, Self: there.profile.Ref}
-	fenv.Calls = there.router(fenv)
-	return farMac{registry: there.registry(fenv), profile: there.profile, start: func() *engine.Daemon { return there.daemon(fenv) }}
+	r := there.router(fenv)
+	fenv.Calls = r
+	return farMac{registry: there.registry(fenv), profile: there.profile, start: func() *engine.Daemon { return there.daemon(fenv) }, relay: served{r}}
 }

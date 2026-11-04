@@ -7,6 +7,6 @@ runs:
       exit: 2
       stderr: |
           Error: tart is not installed or does not answer
-          Hint: station tools install tart
+          Hint: station apps install tart
       files:
           .calls: absent

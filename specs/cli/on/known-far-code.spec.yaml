@@ -1,8 +1,8 @@
 description: 'a far refusal of a code this binary knows is worded by this binary''s table, not the far side''s'
 fixture: ./__fixtures__/old-y/
 runs:
-    - command: 'tools install jq --on y'
+    - command: 'apps install jq --on y'
       exit: 2
       stderr: |
-          Error: a server has no apps section
+          Error: y is a server: station does not manage its apps
           Hint: run station overview for what y has

@@ -1,17 +1,16 @@
- - To do                                                              10 ◐  1 ✗
+ - To do                                                               9 ◐  1 ✗
    ✗ brain.x-snapshot   failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
    ◐ setup              name not set  → station setup
    ◐ engine             runs v2.0.0-242-gd653060, station is v2.0.0-250
      → station setup
-   ◐ brew               120 outdated  → station tools upgrade --via brew
+   ◐ brew               120 outdated  → station apps update --method brew
    ◐ strays             2 folders out of place · 80.5 GB  → station setup
-   ◐ tools              4 wait for mise  → station tools install mise
+   ◐ pnpm               update available  → station apps update pnpm
+   ◐ better-ui          update available  → station apps update better-ui
    ◐ power              policy partly applied  → station config install power
    ◐ macos              2 pending · checked 22m ago
-   ◐ chatgpt            on PATH, not managed by cask
-   ◐ better-ui          outdated
    ◐ com.docker.socket  orphan: Docker.app is gone
      → sudo launchctl bootout system/com.docker.socket &&
        sudo rm /Library/LaunchDaemons/com.docker.socket.plist
@@ -21,7 +20,7 @@
    ● Tailnet     jterrazz-macbook-pro · Serve on
    ● Identity    admin@jterrazz.com · signing on
    ✗ Background  3 jobs · 1 failing · 1 orphan
-   ◐ Tools       7 ●  6 ◐  4 ○
+   ◐ Tools       6 ●  7 ◐  4 ○
    ◐ Config      1 ●  1 ◐
    ● Storage     27.9 GB reclaimable · 2 strays
    ◐ Fleet       engine runs v2.0.0-242-gd653060, station is v2.0.0-250
@@ -38,7 +37,7 @@
    ● sip         off
    ● gatekeeper  on
    ◐ macos       2 pending      checked 22m ago
-   ◐ brew        120 outdated   → station tools upgrade --via brew
+   ◐ brew        120 outdated   → station apps update --method brew
    ● tailnet     Running · jterrazz-macbook-pro.tail1234.ts.net · 100.98.133.14
  - Workspace                                                           1 ●  2 ◐
    ● disk  27.9 GB  reclaimable: station storage clean
@@ -65,23 +64,27 @@
           sudo rm /Library/LaunchDaemons/com.docker.socket.plist
  - Gateways                                                                 1 ●
    ● Tailscale Serve  on
- - Tools                                                          7 ●  6 ◐  4 ○
-   ○ mise                      brew · system  → station tools install mise
-   ○ mas                       brew           → station tools install mas
-   ◐ bun                       mise           installed, mise not installed
-     → station tools install mise
-   ◐ go                        mise           installed, mise not installed
-     → station tools install mise
-   ◐ java             17.0.20  mise           installed, mise not installed
-     → station tools install mise
-   ◐ python           3.14.6   mise           installed, mise not installed
-     → station tools install mise
-   ◐ chatgpt                   cask           on PATH, not managed by cask
-   ○ typewhisper               cask
-     → station tools install typewhisper
-   ○ frontend-design           skill          skills not installed
-     → station tools install skills
-   ◐ better-ui                 skill          outdated
+ - Tools                                                          6 ●  7 ◐  4 ○
+   ○ mise                                brew · system
+     → station apps install mise
+   ○ mas                                 brew   → station apps install mas
+   ◐ pnpm             11.21.0 → 11.22.1  brew   update available
+     → station apps update pnpm
+   ? bun                                 mise   installed, mise not installed
+     → station apps install mise
+   ? go                                  mise   installed, mise not installed
+     → station apps install mise
+   ? java             17.0.20            mise   installed, mise not installed
+     → station apps install mise
+   ? python           3.14.6             mise   installed, mise not installed
+     → station apps install mise
+   ? chatgpt                             cask   on PATH, not managed by cask
+   ○ typewhisper                         cask
+     → station apps install typewhisper
+   ○ frontend-design                     skill  skills not installed
+     → station apps install skills
+   ◐ better-ui                           skill  update available
+     → station apps update better-ui
  - Config                                                              1 ●  1 ◐
    ◐ power  Always-on power policy  policy partly applied
      → station config install power

@@ -38,7 +38,7 @@ Paths under `~/.config`, `~/.local/share`, `~/.local/state` and `~/.cache` follo
 | `~/.local/state/station/vms/*.json`                        | kept      | VM records: do not delete                                                                                                                                           |
 | `~/.local/state/station/images/key*`                       | kept      | the only way into a fresh VM: do not delete                                                                                                                         |
 | `~/.local/state/station/leases.json`                       | kept      | the services' host ports: deleting it changes every URL                                                                                                             |
-| `~/.local/bin/station`                                     | installed | removed by `station tools uninstall`                                                                                                                                |
+| `~/.local/bin/station`                                     | installed | removed by `station apps remove`                                                                                                                                    |
 
 The keychain service `station` holds nothing since round 5: `station setup` removed the three tailnet accounts the earlier rounds kept there. It also retired round 3's per-VM launchd agents, `~/Library/LaunchAgents/com.jterrazz.station.vm.*.plist`: booted out and removed, the one engine runs every VM.
 
@@ -46,13 +46,13 @@ The keychain service `station` holds nothing since round 5: `station setup` remo
 
 ### homebrew
 
-| Path                        | Level     | Note                                 |
-| --------------------------- | --------- | ------------------------------------ |
-| `~/Library/Caches/Homebrew` | cache     |                                      |
-| `~/Library/Logs/Homebrew`   | cache     |                                      |
-| `/opt/homebrew`             | installed | removed by `station tools uninstall` |
+| Path                        | Level     | Note                             |
+| --------------------------- | --------- | -------------------------------- |
+| `~/Library/Caches/Homebrew` | cache     |                                  |
+| `~/Library/Logs/Homebrew`   | cache     |                                  |
+| `/opt/homebrew`             | installed | removed by `station apps remove` |
 
-Clean: `brew cleanup --prune=all`, delete `~/Library/Caches/Homebrew/*`. Reset: none (Homebrew's data are its formulae: station tools uninstall <tool>).
+Clean: `brew cleanup --prune=all`, delete `~/Library/Caches/Homebrew/*`. Reset: none (Homebrew's data are its formulae: station apps remove <app>).
 
 ### mise
 
@@ -65,18 +65,18 @@ Clean: `brew cleanup --prune=all`, delete `~/Library/Caches/Homebrew/*`. Reset: 
 | `~/.cache/sigstore-rust`         | cache     | linux; mise's signature checks                                          |
 | `~/.local/state/mise`            | data      |                                                                         |
 | `~/.config/mise/config.toml`     | config    |                                                                         |
-| `~/.local/share/mise/installs`   | installed | removed by `station tools uninstall`                                    |
-| `~/.local/share/mise/shims`      | installed | removed by `station tools uninstall`                                    |
+| `~/.local/share/mise/installs`   | installed | removed by `station apps remove`                                        |
+| `~/.local/share/mise/shims`      | installed | removed by `station apps remove`                                        |
 
-Clean: `mise cache clear`, `mise prune --tools`, delete `~/Library/Caches/mise/*`, delete `~/Library/Caches/sigstore-rust/*`, delete `~/.cache/mise/*`, delete `~/.cache/sigstore-rust/*`. Reset: none (runtimes are tools: station tools uninstall <runtime>).
+Clean: `mise cache clear`, `mise prune --tools`, delete `~/Library/Caches/mise/*`, delete `~/Library/Caches/sigstore-rust/*`, delete `~/.cache/mise/*`, delete `~/.cache/sigstore-rust/*`. Reset: none (runtimes are apps: station apps remove <runtime>).
 
 ### uv
 
-| Path                       | Level     | Note                                 |
-| -------------------------- | --------- | ------------------------------------ |
-| `~/.cache/uv`              | cache     |                                      |
-| `~/.local/share/uv/tools`  | installed | removed by `station tools uninstall` |
-| `~/.local/share/uv/python` | installed | removed by `station tools uninstall` |
+| Path                       | Level     | Note                             |
+| -------------------------- | --------- | -------------------------------- |
+| `~/.cache/uv`              | cache     |                                  |
+| `~/.local/share/uv/tools`  | installed | removed by `station apps remove` |
+| `~/.local/share/uv/python` | installed | removed by `station apps remove` |
 
 Clean: `uv cache clean`. Reset: none (uv's tools are tools).
 
@@ -102,13 +102,13 @@ Clean: `pnpm store prune` when `~/Library/pnpm/store` exists, `pnpm store prune`
 
 ### skills
 
-| Path                         | Level     | Note                                 |
-| ---------------------------- | --------- | ------------------------------------ |
-| `~/.agents/.skill-lock.json` | config    |                                      |
-| `~/.agents/skills`           | installed | removed by `station tools uninstall` |
-| `~/.claude/skills`           | installed | removed by `station tools uninstall` |
+| Path                         | Level     | Note                             |
+| ---------------------------- | --------- | -------------------------------- |
+| `~/.agents/.skill-lock.json` | config    |                                  |
+| `~/.agents/skills`           | installed | removed by `station apps remove` |
+| `~/.claude/skills`           | installed | removed by `station apps remove` |
 
-Reset: none (skills are tools: station tools uninstall <skill>).
+Reset: none (skills are apps: station apps remove <skill>).
 
 ### bun
 
@@ -117,8 +117,8 @@ Reset: none (skills are tools: station tools uninstall <skill>).
 | `~/.cache/bun/install`              | cache     |                                                                                                                                         |
 | `~/Library/Caches/bun`              | cache     | mac                                                                                                                                     |
 | `~/.bunfig.toml`                    | config    |                                                                                                                                         |
-| `~/.local/share/bun/install/global` | installed | removed by `station tools uninstall`                                                                                                    |
-| `~/.local/share/bun/bin`            | installed | removed by `station tools uninstall`                                                                                                    |
+| `~/.local/share/bun/install/global` | installed | removed by `station apps remove`                                                                                                        |
+| `~/.local/share/bun/bin`            | installed | removed by `station apps remove`                                                                                                        |
 | `~/.bun`                            | stray     | stray: `station setup` moves `~/.bun/install/global` to `~/.local/share/bun/install/global`, `~/.bun/bin/*` to `~/.local/share/bun/bin` |
 
 Clean: `bun pm cache rm`, delete `~/Library/Caches/bun/*`. Reset: none (bun's globals are tools).
@@ -165,14 +165,14 @@ Clean: `pip3 cache purge`. Reset: none (nothing to reset: keys and logins are ke
 
 ### rust
 
-| Path                      | Level     | Note                                 |
-| ------------------------- | --------- | ------------------------------------ |
-| `~/.cargo/registry/cache` | cache     |                                      |
-| `~/.cargo/registry/src`   | cache     |                                      |
-| `~/.cargo/git/checkouts`  | cache     |                                      |
-| `~/.cargo/config.toml`    | config    |                                      |
-| `~/.rustup`               | installed | removed by `station tools uninstall` |
-| `~/.cargo/bin`            | installed | removed by `station tools uninstall` |
+| Path                      | Level     | Note                             |
+| ------------------------- | --------- | -------------------------------- |
+| `~/.cargo/registry/cache` | cache     |                                  |
+| `~/.cargo/registry/src`   | cache     |                                  |
+| `~/.cargo/git/checkouts`  | cache     |                                  |
+| `~/.cargo/config.toml`    | config    |                                  |
+| `~/.rustup`               | installed | removed by `station apps remove` |
+| `~/.cargo/bin`            | installed | removed by `station apps remove` |
 
 Clean: delete `~/.cargo/registry/cache/*`, delete `~/.cargo/registry/src/*`, delete `~/.cargo/git/checkouts/*`. Reset: none (nothing to reset: keys and logins are kept).
 
@@ -190,11 +190,11 @@ Clean: delete `~/.cache/ghostty/*`, delete `~/Library/HTTPStorages/com.mitchellh
 
 ### ohmyzsh
 
-| Path                 | Level     | Note                                 |
-| -------------------- | --------- | ------------------------------------ |
-| `~/.oh-my-zsh/cache` | cache     |                                      |
-| `~/.zcompdump*`      | cache     |                                      |
-| `~/.oh-my-zsh`       | installed | removed by `station tools uninstall` |
+| Path                 | Level     | Note                             |
+| -------------------- | --------- | -------------------------------- |
+| `~/.oh-my-zsh/cache` | cache     |                                  |
+| `~/.zcompdump*`      | cache     |                                  |
+| `~/.oh-my-zsh`       | installed | removed by `station apps remove` |
 
 Clean: delete `~/.oh-my-zsh/cache/*`, delete `~/.zcompdump*`. Reset: none (nothing to reset: keys and logins are kept).
 
@@ -307,25 +307,25 @@ Clean: delete `~/Library/Application Support/Cursor/CachedExtensionVSIXs/*`, del
 
 ### android-studio
 
-| Path                               | Level     | Note                                 |
-| ---------------------------------- | --------- | ------------------------------------ |
-| `~/.gradle/caches`                 | cache     |                                      |
-| `~/.gradle/wrapper/dists`          | cache     |                                      |
-| `~/.android/avd`                   | data      |                                      |
-| `/Applications/Android Studio.app` | installed | removed by `station tools uninstall` |
+| Path                               | Level     | Note                             |
+| ---------------------------------- | --------- | -------------------------------- |
+| `~/.gradle/caches`                 | cache     |                                  |
+| `~/.gradle/wrapper/dists`          | cache     |                                  |
+| `~/.android/avd`                   | data      |                                  |
+| `/Applications/Android Studio.app` | installed | removed by `station apps remove` |
 
 Clean: delete `~/.gradle/caches/*`, delete `~/.gradle/wrapper/dists/*`. Reset: delete `~/.android/avd/*`. A reset refuses while `studio` runs.
 
 ### xcode
 
-| Path                                          | Level     | Note                                 |
-| --------------------------------------------- | --------- | ------------------------------------ |
-| `~/Library/Developer/Xcode/DerivedData`       | cache     |                                      |
-| `~/Library/Developer/Xcode/iOS DeviceSupport` | cache     |                                      |
-| `~/Library/Developer/CoreSimulator/Devices`   | data      | every simulator device               |
-| `~/Library/Developer/Xcode/Archives`          | data      |                                      |
-| `/Applications/Xcode.app`                     | installed | removed by `station tools uninstall` |
-| `/Library/Developer/CoreSimulator`            | installed | removed by `station tools uninstall` |
+| Path                                          | Level     | Note                             |
+| --------------------------------------------- | --------- | -------------------------------- |
+| `~/Library/Developer/Xcode/DerivedData`       | cache     |                                  |
+| `~/Library/Developer/Xcode/iOS DeviceSupport` | cache     |                                  |
+| `~/Library/Developer/CoreSimulator/Devices`   | data      | every simulator device           |
+| `~/Library/Developer/Xcode/Archives`          | data      |                                  |
+| `/Applications/Xcode.app`                     | installed | removed by `station apps remove` |
+| `/Library/Developer/CoreSimulator`            | installed | removed by `station apps remove` |
 
 Clean: delete `~/Library/Developer/Xcode/DerivedData/*`, delete `~/Library/Developer/Xcode/iOS DeviceSupport/*`, `xcrun simctl delete unavailable`. Reset: `xcrun simctl shutdown all`, `xcrun simctl erase all`. A reset refuses while `Simulator` runs.
 
@@ -337,8 +337,8 @@ Clean: delete `~/Library/Developer/Xcode/DerivedData/*`, delete `~/Library/Devel
 | `~/.local/share/station/vms/cache/IPSWs`      | cache     |                                                                                                                                                                 |
 | `~/.local/share/station/vms/tmp`              | cache     |                                                                                                                                                                 |
 | `~/Library/Caches/com.github.cirruslabs.tart` | cache     | Tart's NSURLCache                                                                                                                                               |
-| `~/.local/share/station/tart`                 | installed | removed by `station tools uninstall`                                                                                                                            |
-| `~/.local/bin/tart`                           | installed | removed by `station tools uninstall`                                                                                                                            |
+| `~/.local/share/station/tart`                 | installed | removed by `station apps remove`                                                                                                                                |
+| `~/.local/bin/tart`                           | installed | removed by `station apps remove`                                                                                                                                |
 | `~/.tart`                                     | stray     | stray: `station setup` moves `~/.tart` to `~/.local/share/station/vms`                                                                                          |
 | `~/.local/opt`                                | stray     | stray: `station setup` moves `~/.local/opt/tart.app` to `~/.local/share/station/tart/tart.app`, `~/.local/opt/LICENSE` to `~/.local/share/station/tart/LICENSE` |
 
@@ -354,11 +354,11 @@ Clean: `docker container prune -f`, `docker image prune -f`, `docker volume prun
 
 ### orbstack
 
-| Path                                                 | Level     | Note                                 |
-| ---------------------------------------------------- | --------- | ------------------------------------ |
-| `~/Library/Group Containers/HUAQ24HBR6.dev.orbstack` | data      |                                      |
-| `~/.orbstack`                                        | config    |                                      |
-| `/Applications/OrbStack.app`                         | installed | removed by `station tools uninstall` |
+| Path                                                 | Level     | Note                             |
+| ---------------------------------------------------- | --------- | -------------------------------- |
+| `~/Library/Group Containers/HUAQ24HBR6.dev.orbstack` | data      |                                  |
+| `~/.orbstack`                                        | config    |                                  |
+| `/Applications/OrbStack.app`                         | installed | removed by `station apps remove` |
 
 Reset: none (OrbStack resets itself (its Settings)).
 
@@ -417,22 +417,22 @@ Reset: none (nothing to reset: keys and logins are kept).
 
 ### claude
 
-| Path                                 | Level     | Note                                 |
-| ------------------------------------ | --------- | ------------------------------------ |
-| `~/.claude/cache`                    | cache     |                                      |
-| `~/.claude/shell-snapshots`          | cache     |                                      |
-| `~/.claude/paste-cache`              | cache     |                                      |
-| `~/.claude/debug`                    | cache     |                                      |
-| `~/Library/Caches/claude-cli-nodejs` | cache     | mac                                  |
-| `~/.local/state/claude`              | cache     |                                      |
-| `~/.claude/projects`                 | data      |                                      |
-| `~/.claude/history.jsonl`            | data      |                                      |
-| `~/.claude/file-history`             | data      |                                      |
-| `~/.claude/settings.json`            | config    |                                      |
-| `~/.claude.json`                     | config    |                                      |
-| `~/.local/share/claude/versions`     | installed | removed by `station tools uninstall` |
-| `~/.local/bin/claude`                | installed | removed by `station tools uninstall` |
-| `~/.claude/plugins`                  | installed | removed by `station tools uninstall` |
+| Path                                 | Level     | Note                             |
+| ------------------------------------ | --------- | -------------------------------- |
+| `~/.claude/cache`                    | cache     |                                  |
+| `~/.claude/shell-snapshots`          | cache     |                                  |
+| `~/.claude/paste-cache`              | cache     |                                  |
+| `~/.claude/debug`                    | cache     |                                  |
+| `~/Library/Caches/claude-cli-nodejs` | cache     | mac                              |
+| `~/.local/state/claude`              | cache     |                                  |
+| `~/.claude/projects`                 | data      |                                  |
+| `~/.claude/history.jsonl`            | data      |                                  |
+| `~/.claude/file-history`             | data      |                                  |
+| `~/.claude/settings.json`            | config    |                                  |
+| `~/.claude.json`                     | config    |                                  |
+| `~/.local/share/claude/versions`     | installed | removed by `station apps remove` |
+| `~/.local/bin/claude`                | installed | removed by `station apps remove` |
+| `~/.claude/plugins`                  | installed | removed by `station apps remove` |
 
 Clean: delete `~/.claude/cache/*`, delete `~/.claude/shell-snapshots/*`, delete `~/.claude/paste-cache/*`, delete `~/.claude/debug/*`, delete `~/Library/Caches/claude-cli-nodejs/*`, delete `~/.local/state/claude/*`. Reset: delete `~/.claude/projects/*`, delete `~/.claude/history.jsonl`, delete `~/.claude/file-history/*`. A reset refuses while `claude` runs.
 
@@ -449,7 +449,7 @@ Clean: delete `~/.claude/cache/*`, delete `~/.claude/shell-snapshots/*`, delete 
 | `~/.codex/computer-use`            | data      |                                         |
 | `~/.codex/config.toml`             | config    |                                         |
 | `~/.codex/auth.json`               | kept      | the login (HYPOTHESIS: the file's name) |
-| `~/.codex/plugins`                 | installed | removed by `station tools uninstall`    |
+| `~/.codex/plugins`                 | installed | removed by `station apps remove`        |
 
 Clean: delete `~/.codex/cache/*`, delete `~/.codex/logs_2.sqlite`, delete `~/.cache/codex-runtimes/*`. Reset: delete `~/.codex/sessions/*`, delete `~/.codex/archived_sessions/*`, delete `~/.codex/thread_history_1.sqlite`, delete `~/.codex/computer-use/*`. A reset refuses while `codex` runs.
 
@@ -475,12 +475,12 @@ Clean: delete `~/.cache/opencode/*`. Reset: delete `~/.local/share/opencode/*`, 
 
 ### hermes
 
-| Path                     | Level     | Note                                 |
-| ------------------------ | --------- | ------------------------------------ |
-| `~/.hermes/checkpoints`  | data      |                                      |
-| `~/.hermes/sessions`     | data      |                                      |
-| `~/.hermes/state.db`     | data      |                                      |
-| `~/.hermes/hermes-agent` | installed | removed by `station tools uninstall` |
+| Path                     | Level     | Note                             |
+| ------------------------ | --------- | -------------------------------- |
+| `~/.hermes/checkpoints`  | data      |                                  |
+| `~/.hermes/sessions`     | data      |                                  |
+| `~/.hermes/state.db`     | data      |                                  |
+| `~/.hermes/hermes-agent` | installed | removed by `station apps remove` |
 
 Reset: delete `~/.hermes/checkpoints/*`, delete `~/.hermes/sessions/*`, delete `~/.hermes/state.db`.
 
@@ -520,20 +520,20 @@ Reset: delete `~/Library/Application Support/rtk/*`.
 
 ### playwright-browsers
 
-| Path                             | Level     | Note                                 |
-| -------------------------------- | --------- | ------------------------------------ |
-| `~/Library/Caches/ms-playwright` | installed | removed by `station tools uninstall` |
-| `~/.cache/ms-playwright`         | installed | removed by `station tools uninstall` |
+| Path                             | Level     | Note                             |
+| -------------------------------- | --------- | -------------------------------- |
+| `~/Library/Caches/ms-playwright` | installed | removed by `station apps remove` |
+| `~/.cache/ms-playwright`         | installed | removed by `station apps remove` |
 
-Reset: none (the browsers are the tool: station tools uninstall playwright-browsers).
+Reset: none (the browsers are the app: station apps remove playwright-browsers).
 
 ### agent-browser
 
-| Path                        | Level     | Note                                 |
-| --------------------------- | --------- | ------------------------------------ |
-| `~/.agent-browser/browsers` | installed | removed by `station tools uninstall` |
+| Path                        | Level     | Note                             |
+| --------------------------- | --------- | -------------------------------- |
+| `~/.agent-browser/browsers` | installed | removed by `station apps remove` |
 
-Reset: none (the browsers are the tool: station tools uninstall agent-browser).
+Reset: none (the browsers are the app: station apps remove agent-browser).
 
 ### claude-desktop
 
@@ -583,8 +583,8 @@ Reset: none (an app's data is its account's: reset it in the app). A reset refus
 | `~/Library/Group Containers/*io.tailscale.ipn.macsys`    | kept      | host                                                                                               |
 | `~/Library/Group Containers/group.*.io.tailscale.shared` | kept      | host                                                                                               |
 | `~/Library/Application Scripts/*io.tailscale.*`          | kept      | host                                                                                               |
-| `/Applications/Tailscale.app`                            | installed | removed by `station tools uninstall`                                                               |
-| `/usr/local/bin/tailscale`                               | installed | removed by `station tools uninstall`                                                               |
+| `/Applications/Tailscale.app`                            | installed | removed by `station apps remove`                                                                   |
+| `/usr/local/bin/tailscale`                               | installed | removed by `station apps remove`                                                                   |
 | `~/.local/bin/tailscale`                                 | installed | written by `station setup` for the App Store app, whose uninstall station refuses: removed by hand |
 
 Reset: none (nothing to reset: the login is the Tailscale app's).

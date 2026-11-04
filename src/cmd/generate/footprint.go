@@ -110,7 +110,7 @@ func storedRows(s catalog.Storage) [][]string {
 	for _, p := range s.Installed {
 		removal := s.Removal[p]
 		if removal == "" {
-			removal = "removed by `station tools uninstall`"
+			removal = "removed by `station apps remove`"
 		}
 		rows = append(rows, []string{code(shown(p)), "installed", removal})
 	}

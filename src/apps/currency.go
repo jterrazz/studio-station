@@ -1,9 +1,15 @@
 package apps
 
-type Currency string
+type Currency struct {
+	Verdict Verdict
+	// value: the version a newer release would bring, when the method says it.
+	Newest string
+}
+
+type Verdict string
 
 const (
-	Current Currency = "current"
-	Behind  Currency = "behind"
-	Unknown Currency = "unknown"
+	Current Verdict = "current"
+	Behind  Verdict = "behind"
+	Unknown Verdict = "unknown"
 )

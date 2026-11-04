@@ -8,10 +8,10 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/pages"
+	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
-	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 )
 
 const schema = "station.status/v1"
@@ -24,7 +24,7 @@ type SnapshotJSON struct {
 	System      systemJSON             `json:"system"`
 	Environment environmentJSON        `json:"environment"`
 	Workspace   workspaceJSON          `json:"workspace"`
-	Tools       []pagetools.ToolJSON   `json:"tools"`
+	Tools       []pageapps.ToolJSON    `json:"tools"`
 	Config      []pageconfig.ItemJSON  `json:"config"`
 	Setup       setupJSON              `json:"setup"`
 	Identity    []checkJSON            `json:"identity"`
@@ -199,7 +199,7 @@ func SnapshotContract(s Overview) SnapshotJSON {
 			Disk:         make([]diskJSON, 0, len(s.Workspace.Disk)),
 			Strays:       pagestorage.StraysContract(s.Workspace.Strays),
 		},
-		Tools:      make([]pagetools.ToolJSON, 0, len(s.Tools)),
+		Tools:      make([]pageapps.ToolJSON, 0, len(s.Tools)),
 		Config:     make([]pageconfig.ItemJSON, 0, len(s.Config)),
 		Setup:      setupJSON{State: string(s.Setup.State), Steps: make([]stepJSON, 0, len(s.Setup.Steps))},
 		Identity:   checks(s.Identity),
@@ -218,7 +218,7 @@ func SnapshotContract(s Overview) SnapshotJSON {
 		body.Workspace.Disk = append(body.Workspace.Disk, diskJSON{Name: d.Name, Level: string(d.Level), Bytes: d.Bytes})
 	}
 	for _, t := range s.Tools {
-		body.Tools = append(body.Tools, pagetools.ToolObject(t))
+		body.Tools = append(body.Tools, pageapps.ToolObject(t))
 	}
 	for _, c := range s.Config {
 		body.Config = append(body.Config, pageconfig.ItemObject(c))

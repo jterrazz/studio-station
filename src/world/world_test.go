@@ -121,6 +121,22 @@ func TestAFaultFailsItsCallTheTimesScriptedThenIsSpent(t *testing.T) {
 	}
 }
 
+func TestAHoldHoldsOneCallAndNeverFailsIt(t *testing.T) {
+	w := seeded(t, laptop)
+	if err := apply(t, w, "hold", "Bundler.Bundle"); err != nil {
+		t.Fatal(err)
+	}
+	if w.Fails("Bundler.Bundle") {
+		t.Error("a held call failed")
+	}
+	if !w.Holds("Bundler.Bundle") {
+		t.Error("the held call was not held")
+	}
+	if w.Holds("Bundler.Bundle") {
+		t.Error("a hold held a second call")
+	}
+}
+
 func TestAWorldReadsBackAsItWasWritten(t *testing.T) {
 	w := seeded(t, laptop)
 	w.Mac("mbp").Listening = []ports.Listener{{Port: 5000, Bind: "*", Process: "ControlCenter", PID: 1}}

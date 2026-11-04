@@ -374,7 +374,7 @@ func withHint(a Account, vm string) Account {
 		}
 	case "github/missing":
 		if vm == "" {
-			a.Hint = "station tools install gh"
+			a.Hint = "station apps install gh"
 		}
 	case "npm/unset", "npm/refused":
 		a.Hint = "npm login"

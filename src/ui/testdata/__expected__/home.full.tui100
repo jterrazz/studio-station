@@ -1,20 +1,19 @@
- - To do                                                                                   9 ◐  1 ✗
+ - To do                                                                                   8 ◐  1 ✗
    ✗ brain.x-snapshot   failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
    ◐ engine             not installed  → station setup
-   ◐ brew               120 outdated  → station tools upgrade --via brew
+   ◐ brew               120 outdated  → station apps update --method brew
    ◐ strays             2 folders out of place · 80.5 GB  → station setup
-   ◐ tools              4 wait for mise  → station tools install mise
+   ◐ pnpm               update available  → station apps update pnpm
+   ◐ better-ui          update available  → station apps update better-ui
    ◐ power              policy partly applied  → station config install power
    ◐ macos              2 pending · checked 22m ago
-   ◐ chatgpt            on PATH, not managed by cask
-   ◐ better-ui          outdated
    ◐ com.docker.socket  orphan: Docker.app is gone
      → sudo launchctl bootout system/com.docker.socket &&
        sudo rm /Library/LaunchDaemons/com.docker.socket.plist
  - Summary
-   ◐ Machine     host · Darwin 27.0.0 · up 22d 14h   ◐ Tools     7 ●  6 ◐  4 ○
+   ◐ Machine     host · Darwin 27.0.0 · up 22d 14h   ◐ Tools     6 ●  7 ◐  4 ○
    ◐ Network     192.168.1.152 · 4/4 on              ◐ Config    1 ●  1 ◐
    ● Tailnet     jterrazz-macbook-pro · Serve on     ● Storage   27.9 GB reclaimable · 2 strays
    ● Identity    admin@jterrazz.com · signing on     ◐ Fleet     engine not installed
@@ -25,6 +24,6 @@
  + Identity                                                                                     2 ●
  + Background                                                                         1 ●  1 ◐  1 ✗
  + Gateways                                                                                     1 ●
- + Tools                                                                              7 ●  6 ◐  4 ○
+ + Tools                                                                              6 ●  7 ◐  4 ○
  + Config                                                                                  1 ●  1 ◐
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

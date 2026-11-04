@@ -16,6 +16,7 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
+	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
@@ -27,7 +28,6 @@ import (
 	pageshortcuts "github.com/jterrazz/studio-station/src/pages/shortcuts"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
-	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -82,7 +82,7 @@ func snapshot() pagehome.Overview {
 			},
 			Updates: []overview.Check{
 				check("macos", catalog.StateDegraded, "2 pending", "checked 22m ago"),
-				check("brew", catalog.StateDegraded, "120 outdated", "station tools upgrade --via brew"),
+				check("brew", catalog.StateDegraded, "120 outdated", "station apps update --method brew"),
 			},
 		},
 		Workspace: pagehome.Workspace{
@@ -264,7 +264,7 @@ func imageLists() []Fixture {
 	return states("images",
 		pending(pageimages.List(imageReports(), here())),
 		pageimages.List(nil, here()),
-		failure("images", "images", catalog.HypervisorTool+" is not installed", "station tools install "+catalog.HypervisorTool),
+		failure("images", "images", catalog.HypervisorTool+" is not installed", "station apps install "+catalog.HypervisorTool),
 		pageimages.List(imageReports(), here()))
 }
 
@@ -346,10 +346,10 @@ func fleets() []Fixture {
 }
 
 func outcomes() []Fixture {
-	toolOutcomes := []tools.Outcome{
-		{Name: "jq", Verb: "install", Result: catalog.StateOK, Detail: "1.8.1"},
-		{Name: "mise", Verb: "install", Result: catalog.StateOK, Steps: []tools.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
-		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Detail: "brew bundle exited 1"},
+	appOutcomes := []tools.Outcome{
+		{Name: "jq", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "1.8.1"},
+		{Name: "mise", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "2026.10.1", Steps: []tools.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
+		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Method: catalog.MethodCask, Detail: "brew bundle exited 1"},
 	}
 	changes := []config.Change{
 		{Item: "power", Verb: "install", Result: catalog.StateOK, Before: []config.Fact{{Key: "sleep", Value: "10"}}, After: []config.Fact{{Key: "sleep", Value: "0"}}},
@@ -359,11 +359,11 @@ func outcomes() []Fixture {
 		{Name: "homebrew", Result: catalog.StateOK, Freed: 26 * gb},
 		{Name: "bun", Result: catalog.StateAbsent, Detail: "nothing to clean"},
 	}
-	out := states("outcome-tools-install",
-		pending(pagetools.Outcomes("install", toolOutcomes, here())),
-		pagetools.Outcomes("install", nil, here()),
-		failure("outcome", "tools install", "no tool named jqq", "station tools"),
-		pagetools.Outcomes("install", toolOutcomes, here()))
+	out := states("outcome-apps-install",
+		pending(pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, here())),
+		pageapps.Outcomes("install", nil, pageapps.Run{}, here()),
+		failure("outcome", "apps install", "no app named \"jqq\"", "station apps for every app here"),
+		pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, here()))
 	out = append(out, states("outcome-config",
 		pending(pageconfig.Changes("install", changes, here())),
 		pageconfig.Changes("install", nil, here()),

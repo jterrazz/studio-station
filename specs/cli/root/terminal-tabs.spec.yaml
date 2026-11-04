@@ -8,9 +8,9 @@ runs:
       stdin: |
           see Machine
           send 2
-          see + Runtimes
+          see - Summary
           send \x20
-          see - Package Managers
+          see + Summary
           send \t
           see + Terminal
           send \x20

@@ -3,17 +3,17 @@ fixture:
     - ../../__fixtures__/machines-stubs/
     - ./__fixtures__/mini-offline/
 runs:
-    - command: 'tools --on infra'
+    - command: 'apps --on infra'
       exit: 1
       stderr: |
           Error: cannot reach "z"
           Hint: station machines probe z
-    - command: 'tools install jq --on infra'
+    - command: 'apps install jq --on infra'
       exit: 1
       stderr: |
           Error: cannot reach "z"
           Hint: station machines probe z
-    - command: 'tools --on w 2>&1 | /usr/bin/head -n 1'
+    - command: 'apps --on w 2>&1 | /usr/bin/head -n 1'
       exit: 0
       stdout: |
-          Error: y runs station v3.0.0, which has no tools.list
+          Error: y runs station v3.0.0, which has no apps.list

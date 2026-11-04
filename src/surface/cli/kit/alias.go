@@ -49,6 +49,12 @@ func notice(env Env, c *cobra.Command, args []string) {
 			words = append(words, "--"+f.Name)
 			return
 		}
+		if many, ok := f.Value.(pflag.SliceValue); ok {
+			for _, v := range many.GetSlice() {
+				words = append(words, "--"+f.Name, v)
+			}
+			return
+		}
 		words = append(words, "--"+f.Name, f.Value.String())
 	})
 	words = append(words, args...)

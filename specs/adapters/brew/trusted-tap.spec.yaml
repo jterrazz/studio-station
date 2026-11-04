@@ -3,10 +3,10 @@ fixture:
     - ../../__fixtures__/stubs/
     - ./__fixtures__/trusted-tap/
 runs:
-    - command: 'tools install terraform'
+    - command: 'apps install terraform'
       exit: 0
       stdout: |
-          ●	terraform
+          ●	terraform	1.9.0	brew
       files:
           .calls:
               contains:

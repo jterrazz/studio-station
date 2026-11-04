@@ -19,6 +19,63 @@
       "out": "Sample"
     },
     {
+      "name": "apps.install",
+      "schema": "station.apps.install/v1",
+      "section": "apps",
+      "where": "at-target",
+      "errors": [
+        "apps.lives-elsewhere",
+        "apps.needs",
+        "apps.unknown"
+      ],
+      "in": "InstallIn"
+    },
+    {
+      "name": "apps.list",
+      "schema": "station.apps.list/v1",
+      "section": "apps",
+      "where": "at-target",
+      "in": "ListIn",
+      "watch": true
+    },
+    {
+      "name": "apps.remove",
+      "schema": "station.apps.remove/v1",
+      "section": "apps",
+      "where": "at-target",
+      "confirm": "remove",
+      "errors": [
+        "apps.lives-elsewhere",
+        "apps.not-installed",
+        "apps.unknown",
+        "confirm.yes-needed"
+      ],
+      "in": "RemoveIn"
+    },
+    {
+      "name": "apps.show",
+      "schema": "station.apps.show/v1",
+      "section": "apps",
+      "where": "at-target",
+      "errors": [
+        "apps.unknown"
+      ],
+      "in": "ShowIn",
+      "out": "ShowOut"
+    },
+    {
+      "name": "apps.update",
+      "schema": "station.apps.update/v1",
+      "section": "apps",
+      "where": "at-target",
+      "errors": [
+        "apps.lives-elsewhere",
+        "apps.not-installed",
+        "apps.unknown"
+      ],
+      "in": "UpdateIn"
+    },
+    {
       "name": "config.install",
       "schema": "station.config.install/v1",
       "section": "settings",
@@ -360,39 +417,6 @@
       "where": "at-target",
       "in": "TailnetIn",
       "out": "Status"
-    },
-    {
-      "name": "tools.install",
-      "schema": "station.tools.install/v1",
-      "section": "apps",
-      "where": "at-target",
-      "in": "InstallIn"
-    },
-    {
-      "name": "tools.list",
-      "schema": "station.tools.list/v1",
-      "section": "apps",
-      "where": "at-target",
-      "in": "ListIn",
-      "watch": true
-    },
-    {
-      "name": "tools.uninstall",
-      "schema": "station.tools.uninstall/v1",
-      "section": "apps",
-      "where": "at-target",
-      "confirm": "remove",
-      "errors": [
-        "confirm.yes-needed"
-      ],
-      "in": "UninstallIn"
-    },
-    {
-      "name": "tools.upgrade",
-      "schema": "station.tools.upgrade/v1",
-      "section": "apps",
-      "where": "at-target",
-      "in": "UpgradeIn"
     }
   ]
 }

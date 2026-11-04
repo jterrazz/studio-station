@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/netip"
 	"strings"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -38,9 +39,7 @@ func (d *Daemon) GuestExec(ctx context.Context, vm, line, stdin string) (system.
 	if err != nil {
 		return system.Output{}, err
 	}
-	d.mu.Lock()
-	client, state := v.client, v.state
-	d.mu.Unlock()
+	client, state := d.dialed(ctx, v)
 	if client == nil && state == StateStopped {
 		return system.Output{}, fault(VMStopped, vm+" is stopped", "station machines start "+vm)
 	}
@@ -53,4 +52,26 @@ func (d *Daemon) GuestExec(ctx context.Context, vm, line, stdin string) (system.
 		return system.Output{}, err
 	}
 	return system.Output{Stdout: out.String(), Stderr: errs.String(), ExitCode: code}, nil
+}
+
+const guestWait = 10 * time.Second
+
+func (d *Daemon) dialed(ctx context.Context, v *vmState) (client Guest, state string) {
+	// invariant: a call that lands while the guest is being dialed waits for
+	// that dial, within guestWait, rather than being refused as absent.
+	d.mu.Lock()
+	client, state, up := v.client, v.state, v.up
+	d.mu.Unlock()
+	if client != nil || up == nil {
+		return client, state
+	}
+	wait, cancel := context.WithTimeout(ctx, guestWait)
+	defer cancel()
+	select {
+	case <-up:
+	case <-wait.Done():
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return v.client, v.state
 }

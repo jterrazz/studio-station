@@ -51,7 +51,8 @@
                         "Memory": 8589934592,
                         "Disk": 50000000000
                     },
-                    "pid": 1001
+                    "pid": 1001,
+                    "guest": {}
                 },
                 "api": {
                     "kept": {
@@ -106,6 +107,35 @@
                         "size_gb": 4
                     }
                 ]
+            },
+            "apps": {
+                "brew": {
+                    "installed": {
+                        "jq": "1.8.1",
+                        "gh": "2.97.0",
+                        "lazygit": "0.55.1",
+                        "bat": "0.25.0",
+                        "mise": "2026.10.1"
+                    },
+                    "behind": { "gh": "2.98.0" },
+                    "offers": { "fd": "10.3.0", "eza": "0.23.4", "yazi": "25.5.31" }
+                },
+                "cask": {
+                    "installed": {
+                        "ghostty": "1.2.0"
+                    },
+                    "behind": { "ghostty": "1.2.1" }
+                },
+                "mise": {
+                    "installed": {
+                        "node": "22.11.0",
+                        "go": "1.25.3"
+                    },
+                    "behind": { "node": "24.11.0" }
+                },
+                "mas": {
+                    "absent": true
+                }
             }
         },
         "jterrazz-mac-mini": {
@@ -150,7 +180,8 @@
                         "Memory": 25769803776,
                         "Disk": 80000000000
                     },
-                    "pid": 2001
+                    "pid": 2001,
+                    "guest": {}
                 },
                 "station-image-linux-2026.11.01": {
                     "disk": true,
@@ -173,6 +204,29 @@
                         "size_gb": 4
                     }
                 ]
+            }
+        },
+        "linux-1": {
+            "self": {
+                "kind": "workspace",
+                "system": {
+                    "OS": "linux"
+                }
+            },
+            "apps": {
+                "mise": {
+                    "installed": {
+                        "node": "22.11.0"
+                    }
+                }
+            }
+        },
+        "infra": {
+            "self": {
+                "kind": "server",
+                "system": {
+                    "OS": "linux"
+                }
             }
         }
     },

@@ -3,10 +3,10 @@ fixture:
     - ../../__fixtures__/stubs/
     - ./__fixtures__/cask/
 runs:
-    - command: 'tools uninstall ghostty --yes'
+    - command: 'apps remove ghostty --yes'
       exit: 0
       stdout: |
-          ●	ghostty
+          ●	ghostty		cask
       files:
           .calls:
               contains:

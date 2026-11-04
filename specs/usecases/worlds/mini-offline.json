@@ -1,0 +1,147 @@
+{
+    "now": "2026-11-04T10:00:00Z",
+    "here": "jterrazz-macbook-pro",
+    "macs": {
+        "jterrazz-macbook-pro": {
+            "engine": {
+                "started_at": "2026-11-01T10:00:00Z"
+            },
+            "power": {
+                "Lid": "open",
+                "Source": "ac",
+                "HasBattery": true,
+                "Percent": 96,
+                "Charging": true
+            },
+            "preferences": {
+                "here": "jterrazz-macbook-pro",
+                "hosts": {
+                    "jterrazz-mac-mini": {}
+                },
+                "vm_user": "admin"
+            },
+            "images": ["ghcr.io/jterrazz/station-linux:1"],
+            "vms": {
+                "linux-1": {
+                    "kept": {
+                        "image": "linux",
+                        "version": "1",
+                        "lifetime": "temporary",
+                        "want": "running",
+                        "created_at": "2026-11-04T09:00:00Z"
+                    },
+                    "disk": true,
+                    "size": {
+                        "CPUs": 4,
+                        "Memory": 8589934592,
+                        "Disk": 50000000000
+                    },
+                    "pid": 1001,
+                    "guest": {}
+                },
+                "api": {
+                    "kept": {
+                        "image": "linux",
+                        "version": "1",
+                        "lifetime": "lasting",
+                        "want": "stopped",
+                        "created_at": "2026-10-20T09:00:00Z"
+                    },
+                    "disk": true,
+                    "size": {
+                        "CPUs": 4,
+                        "Memory": 8589934592,
+                        "Disk": 50000000000
+                    }
+                }
+            },
+            "apps": {
+                "brew": {
+                    "installed": {
+                        "jq": "1.8.1",
+                        "gh": "2.97.0",
+                        "lazygit": "0.55.1",
+                        "bat": "0.25.0",
+                        "mise": "2026.10.1"
+                    },
+                    "behind": { "gh": "2.98.0" },
+                    "offers": { "fd": "10.3.0", "eza": "0.23.4", "yazi": "25.5.31" }
+                },
+                "cask": {
+                    "installed": {
+                        "ghostty": "1.2.0"
+                    },
+                    "behind": { "ghostty": "1.2.1" }
+                },
+                "mise": {
+                    "installed": {
+                        "node": "22.11.0",
+                        "go": "1.25.3"
+                    },
+                    "behind": { "node": "24.11.0" }
+                },
+                "mas": {
+                    "absent": true
+                }
+            }
+        },
+        "jterrazz-mac-mini": {
+            "engine": {
+                "started_at": "2026-10-23T09:00:00Z"
+            },
+            "power": {
+                "Source": "ac"
+            },
+            "preferences": {
+                "here": "jterrazz-mac-mini",
+                "vm_user": "admin"
+            },
+            "images": ["ghcr.io/jterrazz/station-linux:1"],
+            "vms": {
+                "infra": {
+                    "kept": {
+                        "image": "linux",
+                        "version": "1",
+                        "lifetime": "lasting",
+                        "want": "running",
+                        "created_at": "2026-10-23T09:00:00Z"
+                    },
+                    "disk": true,
+                    "size": {
+                        "CPUs": 8,
+                        "Memory": 25769803776,
+                        "Disk": 80000000000
+                    },
+                    "pid": 2001,
+                    "guest": {}
+                }
+            },
+            "offline": true,
+            "locked": true
+        },
+        "linux-1": {
+            "self": {
+                "kind": "workspace",
+                "system": {
+                    "OS": "linux"
+                }
+            },
+            "apps": {
+                "mise": {
+                    "installed": {
+                        "node": "22.11.0"
+                    }
+                }
+            }
+        },
+        "infra": {
+            "self": {
+                "kind": "server",
+                "system": {
+                    "OS": "linux"
+                }
+            }
+        }
+    },
+    "user": "jterrazz"
+}

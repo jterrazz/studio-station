@@ -4,7 +4,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
-	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
+	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 )
 
 func here() page.Context { return page.Context{Kind: "host"} }
@@ -16,6 +16,7 @@ type tool struct {
 	system   bool
 	state    catalog.State
 	version  string
+	newest   string
 	detail   string
 	why      tools.Why
 	needs    string
@@ -29,6 +30,7 @@ func reports(list []tool, pending bool) []tools.Report {
 			Method:  t.method,
 			State:   t.state,
 			Version: t.version,
+			Newest:  t.newest,
 			Managed: t.state == catalog.StateOK,
 			Detail:  t.detail,
 			Why:     t.why,
@@ -59,7 +61,7 @@ func thisMac() []tool {
 		{name: "mas", category: pm, method: catalog.MethodBrew, state: catalog.StateAbsent},
 		{name: "uv", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "0.12.3"},
 		{name: "cocoapods", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "1.17.0"},
-		{name: "pnpm", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "11.21.0"},
+		{name: "pnpm", category: pm, method: catalog.MethodBrew, state: catalog.StateDegraded, version: "11.21.0", newest: "11.22.1", detail: "outdated", why: tools.WhyOutdated},
 		{name: "skills", category: pm, method: catalog.MethodBun, state: catalog.StateOK, version: "1.5.22"},
 		mise("bun", ""),
 		mise("go", ""),
@@ -84,11 +86,11 @@ func lateMac() []tool {
 	return out
 }
 
-func Tools() []Fixture {
+func Apps() []Fixture {
 	return []Fixture{
-		{"tools.loading", pagetools.Catalogue(reports(thisMac(), true), here())},
-		{"tools.empty", pagetools.Catalogue(nil, here())},
-		{"tools.error", pagetools.Catalogue(reports(lateMac(), false), here())},
-		{"tools.full", pagetools.Catalogue(reports(thisMac(), false), here())},
+		{"apps.loading", pageapps.List(reports(thisMac(), true), here(), false)},
+		{"apps.empty", pageapps.List(nil, here(), false)},
+		{"apps.error", pageapps.List(reports(lateMac(), false), here(), false)},
+		{"apps.full", pageapps.List(reports(thisMac(), false), here(), false)},
 	}
 }

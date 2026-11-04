@@ -11,11 +11,11 @@ runs:
       stderr: |
           Error: power needs root
           Hint: sudo station config install power
-    - command: 'tools install tart'
+    - command: 'apps install tart'
       exit: 0
       stdout: |
-          ●	tart
-          ●	tart-launcher	~/.local/bin/tart
+          ●	tart	1.0.0	shell
+          ●	tart-launcher			~/.local/bin/tart
     - command: 'setup --name jterrazz-macbook-pro >/dev/null; /usr/bin/grep -c "\"as_root\"" world.json'
       exit: 1
       stdout: |

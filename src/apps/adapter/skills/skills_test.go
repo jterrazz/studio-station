@@ -127,12 +127,12 @@ func held(t *testing.T) *agents {
 	return a
 }
 
-func currency(t *testing.T, net local.Net) apps.Currency {
+func currency(t *testing.T, net local.Net) apps.Verdict {
 	got, err := held(t).skills(net).Outdated(context.Background(), []string{"frontend-design"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return got["frontend-design"]
+	return got["frontend-design"].Verdict
 }
 
 func TestASkillWhoseUpstreamFolderMovedOnIsBehind(t *testing.T) {

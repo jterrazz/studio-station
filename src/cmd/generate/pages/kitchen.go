@@ -14,7 +14,7 @@ type Fixture struct {
 }
 
 func All() []Fixture {
-	return append(append(Tools(), Kitchen()...), Estate()...)
+	return append(append(Apps(), Kitchen()...), Estate()...)
 }
 
 func row(id string, mark page.Mark, cells ...page.Value) page.Row {
@@ -89,7 +89,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 			it(row("url", page.OK, page.URL("https://jterrazz-macbook-pro.tail1234.ts.net:40001"))),
 			it(row("identity", page.OK, page.Identity("admin@jterrazz.com"))),
 			it(row("path", page.OK, page.Path("/Applications/Tailscale.app/Contents/MacOS/Tailscale"))),
-			it(row("command", page.OK, page.Command("station tools upgrade --via brew"))),
+			it(row("command", page.OK, page.Command("station apps update --method brew"))),
 			it(row("list", page.OK, page.Texts("brew", "system"))),
 			it(row("switch", page.OK, page.On(), page.Count(3, ""))),
 			it(row("sip", page.OK, page.Off())),
@@ -104,12 +104,12 @@ func kitchen(edit func(*page.Page)) page.Page {
 		detail string
 		hint   string
 	}{
-		{page.Outdated, page.Attention, "120 outdated", "station tools upgrade --via brew"},
+		{page.Outdated, page.Attention, "120 outdated", "station apps update --method brew"},
 		{page.Stray, page.Attention, "out of place", "station setup"},
 		{page.Unreachable, page.Attention, "unreachable", ""},
 		{page.Mismatch, page.Attention, "station v2.0.0-240 here v2.0.0-242", ""},
 		{page.Unmanaged, page.Attention, "on PATH, not managed by cask", ""},
-		{page.Missing, page.Attention, "installed, mise not installed", "station tools install mise"},
+		{page.Missing, page.Attention, "installed, mise not installed", "station apps install mise"},
 		{page.Partial, page.Attention, "policy partly applied", ""},
 		{page.Differs, page.Attention, "differs from station's", "station config install " + catalog.HypervisorLauncher},
 		{page.Unset, page.Attention, "name not set", "station setup"},
@@ -134,7 +134,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		marks.Items = append(marks.Items, it(x))
 	}
 	marks.Items = append(marks.Items,
-		it(page.Row{ID: "absent", Mark: page.Absent, Label: "absent", Hint: page.KeyHint("station tools install mas", "i")}),
+		it(page.Row{ID: "absent", Mark: page.Absent, Label: "absent", Hint: page.KeyHint("station apps install mas", "i")}),
 		it(row("off-here", page.OffHere, page.Text("turned off on this machine"))),
 		it(row("not-for-this-machine", page.NotForThisMachine, page.Text("Macs only"))),
 		it(row("not-known", page.NotKnown, page.Text("does not answer"))),
@@ -181,7 +181,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 	}
 	todo := page.Section{
 		ID: "actions", Title: "To do", Role: page.Actions,
-		Items: []page.Item{it(page.Row{ID: "marks/outdated", Mark: page.Attention, Label: "brew", Reason: page.Outdated, Detail: page.Count(120, "outdated"), Hint: page.Cmd("station tools upgrade --via brew")})},
+		Items: []page.Item{it(page.Row{ID: "marks/outdated", Mark: page.Attention, Label: "brew", Reason: page.Outdated, Detail: page.Count(120, "outdated"), Hint: page.Cmd("station apps update --method brew")})},
 	}
 	summary := page.Section{
 		ID: "summary", Title: "Summary", Role: page.Summary,
@@ -195,7 +195,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 			Net: []page.Value{page.Text("28.2 KB/s"), page.Text("14.5 KB/s")},
 		},
 		Sections: []page.Section{todo, summary, values, marks, fleet, storage, prose, peers},
-		Hints:    []page.Hint{*page.Cmd("station overview --all"), {Command: "station tools", Text: "for the catalogue"}},
+		Hints:    []page.Hint{*page.Cmd("station overview --all"), {Command: "station apps", Text: "for the catalogue"}},
 		Actions: []page.Action{
 			{Key: "enter", Label: "fix", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Question: "Delete linux-1?", Lines: []page.Value{page.Text("its disk is removed"), page.Command("station machines delete linux-1")}, Danger: true, Yes: "delete"}},
 			{Key: "ctrl+r", Label: "restart", On: page.OnRow, Rows: []string{"linux-1"}, Priority: 2, Mutates: true, Confirm: &page.Confirm{Question: "Restart api?", Type: "api", Yes: "restart"}},

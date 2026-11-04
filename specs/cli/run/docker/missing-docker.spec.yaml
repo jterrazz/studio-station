@@ -4,4 +4,4 @@ runs:
       exit: 1
       stderr: |
           Error: docker is not installed
-          Hint: station tools install docker
+          Hint: station apps install docker

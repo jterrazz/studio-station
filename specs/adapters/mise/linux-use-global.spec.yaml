@@ -1,13 +1,13 @@
-description: 'on a linux VM a brew tool installs through mise, and brew is never called'
+description: 'on a linux VM a brew app installs through mise, and brew is never called'
 fixture: ../../__fixtures__/stubs/
 env:
     - STATION_MACHINE_KIND=linux
 runs:
-    - command: 'tools install gh'
+    - command: 'apps install gh'
       exit: 0
       stdout: |
-          ●	gh
-          ○	github-login	needs a terminal: station config install github-login
+          ●	gh		mise
+          ○	github-login			needs a terminal: station config install github-login
       files:
           .calls:
               contains:

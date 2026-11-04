@@ -1,16 +1,16 @@
-description: '--via skills re-adds every installed skill tool, and nothing else'
+description: '--method skills re-adds the skills whose folder changed upstream, and nothing else'
 fixture:
     - ../../__fixtures__/stubs/
-    - ../../__fixtures__/skills-cli/
-    - ../../__fixtures__/skill-lock/
+    - ../__fixtures__/skills-cli/
+    - ./__fixtures__/skill-lock/
+serve:
+    - github
 runs:
-    - command: 'tools upgrade --via skills'
+    - command: 'apps update --method skills'
       exit: 0
       stdout: |
-          ●	frontend-design
-          ●	shadcn
+          ●	shadcn		skill
       files:
           .calls:
               equals: |
-                  skills add anthropics/skills -g -y --skill frontend-design --agent claude-code codex
                   skills add shadcn-ui/ui -g -y --skill shadcn --agent claude-code codex

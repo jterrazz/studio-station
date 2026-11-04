@@ -118,7 +118,7 @@ func (s *Skills) Outdated(ctx context.Context, keys []string) (map[string]apps.C
 				}
 			}
 			mu.Lock()
-			out[key] = verdict
+			out[key] = apps.Currency{Verdict: verdict}
 			mu.Unlock()
 		})
 	}

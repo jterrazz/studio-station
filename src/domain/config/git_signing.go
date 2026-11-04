@@ -22,7 +22,7 @@ func (s *Service) installGitSigning(ctx context.Context) (Change, error) {
 	}
 	email := person.Email()
 	if _, ok := s.h.Run.LookPath("gpg"); !ok {
-		return Change{}, errors.New("gpg is not installed: station tools install gpg")
+		return Change{}, errors.New("gpg is not installed: station apps install gpg")
 	}
 	var change Change
 	if out, ok := s.probe(ctx, "gpg", "--list-secret-keys", "--keyid-format", "long", email); ok && out != "" {

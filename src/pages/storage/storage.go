@@ -135,7 +135,7 @@ func List(r storage.Report, here page.Context) page.Page {
 	}
 	if len(p.Sections) == 0 {
 		p.Sections = []page.Section{{ID: "storage", Title: "Storage", Role: page.Banner, Columns: Columns(),
-			Items: []page.Item{{Empty: &page.Empty{Noun: "data stored", Hint: page.Cmd("station tools install <tool>")}}}}}
+			Items: []page.Item{{Empty: &page.Empty{Noun: "data stored", Hint: page.Cmd("station apps install <app>")}}}}}
 	}
 	return page.Seal(p)
 }

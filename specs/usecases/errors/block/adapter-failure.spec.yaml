@@ -3,14 +3,11 @@ env: two-macs
 runs:
     - command: 'world fault Installer.Install'
       exit: 0
-    - command: 'tools install go'
-      exit: 1
-      stdout: |
-          ✗	go	the install failed: its output is in ~/.local/state/station/logs/apps.log
-      stderr: |
-          Error: 1 of 1 tools failed
-          Hint: station tools install go
-    - command: '--version >/dev/null; /usr/bin/cut -d" " -f2- .local/state/station/logs/apps.log'
+    - command: 'apps install go'
       exit: 0
       stdout: |
-          install go: exited 1: Error: the run failed, as the world scripted it
+          ●	go	1.25.3	mise	already installed
+    - command: '--version >/dev/null; /usr/bin/cut -d" " -f2- .local/state/station/logs/apps.log'
+      exit: 1
+      stderr: |
+          cut: .local/state/station/logs/apps.log: No such file or directory
