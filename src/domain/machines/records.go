@@ -15,7 +15,7 @@ func recordOf(r model.Record) VMRecord {
 	return VMRecord{
 		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
 		Resources: Resources{CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes},
-		Lent:      r.Lent, CreatedAt: r.CreatedAt,
+		Lent:      r.Shares, CreatedAt: r.CreatedAt,
 	}
 }
 

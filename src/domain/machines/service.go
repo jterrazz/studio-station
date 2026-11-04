@@ -81,7 +81,7 @@ type Service struct {
 
 type Prefs struct {
 	Name   setupcontract.NamePrefs
-	Hosts  contract.HostsPrefs
+	Hosts  contract.MacsPrefs
 	VMUser contract.VMUserPrefs
 }
 

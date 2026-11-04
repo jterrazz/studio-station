@@ -28,7 +28,7 @@ func (s *Store) Get(_ context.Context, name string) (machines.Record, error) {
 }
 
 func (s *Store) Put(_ context.Context, r machines.Record) error {
-	r.Lent = s.records[r.Name].Lent
+	r.Shares = s.records[r.Name].Shares
 	s.records[r.Name] = r
 	return nil
 }

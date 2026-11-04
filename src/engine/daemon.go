@@ -105,11 +105,11 @@ type Stores struct {
 }
 
 type Policy interface {
-	Get() (*ports.ServicesGroup, error)
+	Get() (*ports.PortsGroup, error)
 }
 
 type Reservations interface {
-	// value: the reserved ports, kept by their store; the daemon is their one
+	// value: the reserved ports, kept by their store; the engine is their one
 	// writer while it runs.
 	Get(ctx context.Context, vm string, guestPort int) (ports.Reservation, error)
 	Put(ctx context.Context, r ports.Reservation) error

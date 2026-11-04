@@ -21,7 +21,7 @@ type Policy struct {
 	HTTPS                        string
 }
 
-func PolicyOf(s *ports.ServicesGroup) Policy {
+func PolicyOf(s *ports.PortsGroup) Policy {
 	d := catalog.ServicePolicy
 	p := Policy{Low: d.RangeLow, High: d.RangeHigh, MaxPerVM: d.MaxPerVM, MinPort: d.MinPort, Ignored: d.Ignored, HTTPS: d.HTTPS}
 	if s == nil {

@@ -58,14 +58,14 @@ type file struct {
 func (f file) record() machines.Record {
 	return machines.Record{
 		Name: f.Name, Image: f.Image, Version: f.Version, Lifetime: f.Lifetime, Want: f.Want, Network: f.Network, Env: f.Env,
-		CPUs: f.CPUs, MemoryBytes: f.MemoryBytes, DiskBytes: f.DiskBytes, CreatedAt: f.CreatedAt, Lent: lentNames(f.Lent),
+		CPUs: f.CPUs, MemoryBytes: f.MemoryBytes, DiskBytes: f.DiskBytes, CreatedAt: f.CreatedAt, Shares: shareNames(f.Lent),
 	}
 }
 
 // invariant: the shares are the accounts' to write: a record holds them as
 // names (before shares expired) or as {name, at, until}, and this store only
 // reads their names.
-func lentNames(raw json.RawMessage) []string {
+func shareNames(raw json.RawMessage) []string {
 	if len(raw) == 0 {
 		return nil
 	}

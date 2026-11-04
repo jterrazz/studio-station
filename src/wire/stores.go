@@ -22,9 +22,9 @@ import (
 // each group named by its one owner's contract.
 func preferenceGroups() []string {
 	return []string{
-		setupcontract.GroupName, machinescontract.GroupHosts, machinescontract.GroupVMUser,
+		setupcontract.GroupName, machinescontract.GroupMacs, machinescontract.GroupVMUser,
 		accountscontract.GroupShareList, setupcontract.GroupUserEmail, setupcontract.GroupUserName,
-		portscontract.GroupServices,
+		portscontract.GroupPorts,
 	}
 }
 
@@ -58,9 +58,9 @@ func (s *stores) migrators() []store.Migrator {
 
 func (s *stores) name() setupcontract.NamePrefs         { return setupcontract.Name(s.prefs) }
 func (s *stores) identity() setupcontract.IdentityPrefs { return setupcontract.Identity(s.prefs) }
-func (s *stores) hosts() machinescontract.HostsPrefs    { return machinescontract.Hosts(s.prefs) }
+func (s *stores) hosts() machinescontract.MacsPrefs     { return machinescontract.Macs(s.prefs) }
 func (s *stores) vmUser() machinescontract.VMUserPrefs  { return machinescontract.VMUser(s.prefs) }
 func (s *stores) shareList() accountscontract.ShareListPrefs {
 	return accountscontract.ShareList(s.prefs)
 }
-func (s *stores) services() portscontract.ServicesPrefs { return portscontract.Services(s.prefs) }
+func (s *stores) services() portscontract.PortsPrefs { return portscontract.Ports(s.prefs) }

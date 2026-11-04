@@ -27,10 +27,10 @@ func TestAPutKeepsTheSharesBesideTheRecord(t *testing.T) {
 	_ = os.WriteFile(at, []byte(`{"name":"api","image":"linux","lent":[{"name":"session:a","at":"2026-11-01T09:00:00Z","until":"2026-11-01T17:00:00Z"}]}`), 0o600)
 	s := jsonfile.New(disk(), dir)
 	r, err := s.Get(context.Background(), "api")
-	if err != nil || len(r.Lent) != 1 || r.Lent[0] != "session:a" {
+	if err != nil || len(r.Shares) != 1 || r.Shares[0] != "session:a" {
 		t.Fatalf("Get = %+v, %v; want session:a lent", r, err)
 	}
-	r.Lent, r.Want = nil, "stopped"
+	r.Shares, r.Want = nil, "stopped"
 	if err := s.Put(context.Background(), r); err != nil {
 		t.Fatal(err)
 	}

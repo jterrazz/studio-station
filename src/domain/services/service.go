@@ -89,9 +89,9 @@ type Options struct {
 }
 
 type Stores struct {
-	Services     portscontract.ServicesPrefs
+	Services     portscontract.PortsPrefs
 	Name         setupcontract.NamePrefs
-	Hosts        machinescontract.HostsPrefs
+	Hosts        machinescontract.MacsPrefs
 	Reservations Reservations
 }
 

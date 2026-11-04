@@ -27,7 +27,7 @@ type Declaration struct {
 
 func (d Declaration) Key() string { return d.Machine + ":" + strconv.Itoa(d.Port) }
 
-type ServicesGroup struct {
+type PortsGroup struct {
 	Range        string `json:"range,omitempty"`
 	MaxPerVM     int    `json:"max_per_vm,omitempty"`
 	IgnoredPorts []int  `json:"ignored_ports,omitempty"`

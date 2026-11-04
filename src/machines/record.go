@@ -14,7 +14,7 @@ type Record struct {
 	CreatedAt            time.Time
 	// value: the names of the secrets shared with the VM, read only: the
 	// accounts' store writes them beside the record.
-	Lent []string
+	Shares []string
 }
 
 type Host struct {

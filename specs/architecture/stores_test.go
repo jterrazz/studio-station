@@ -21,10 +21,10 @@ func storeOwners() map[string]string {
 		src + "core/contract.Preferences":           "core/contract",
 		src + "setup/contract.NamePrefs":            "setup/calls",
 		src + "setup/contract.IdentityPrefs":        "setup/calls",
-		src + "machines/contract.HostsPrefs":        "machines/calls",
+		src + "machines/contract.MacsPrefs":         "machines/calls",
 		src + "machines/contract.VMUserPrefs":       "machines/calls",
 		src + "accounts/contract.ShareListPrefs":    "accounts/calls",
-		src + "ports/contract.ServicesPrefs":        "ports/calls",
+		src + "ports/contract.PortsPrefs":           "ports/calls",
 		src + "machines/contract.MachineStore":      "machines/calls",
 		src + "images/contract.ImageStore":          "images/calls",
 		src + "accounts/contract.ShareStore":        "accounts/calls",
@@ -51,7 +51,7 @@ func storeWritersTolerated() map[string]string {
 	src := module + "/src/"
 	return map[string]string{
 		"src/domain/machines/hosts.go " + src + "setup/contract.NamePrefs":              "L19: the name is setup's, written by setup.run",
-		"src/domain/machines/hosts.go " + src + "machines/contract.HostsPrefs":          "L14: machines.add and machines.remove become calls",
+		"src/domain/machines/hosts.go " + src + "machines/contract.MacsPrefs":           "L14: machines.add and machines.remove become calls",
 		"src/domain/machines/hosts.go " + src + "machines/contract.VMUserPrefs":         "L14: setup.run hands the VM user to machines' call",
 		"src/domain/machines/create.go " + src + "machines/contract.MachineStore":       "L14: machines.create and machines.delete become calls",
 		"src/domain/images/records.go " + src + "images/contract.ImageStore":            "L14: images.build becomes a call",
@@ -63,7 +63,7 @@ func storeWritersTolerated() map[string]string {
 		"src/domain/services/service.go " + src + "domain/services.Reservations":        "L14: ports.stop-sharing becomes a call",
 		"src/domain/setup/layout.go " + src + "setup/contract.NamePrefs":                "L19: the v1 conversion becomes the Preferences migration",
 		"src/domain/setup/layout.go " + src + "setup/contract.IdentityPrefs":            "L19: the v1 conversion becomes the Preferences migration",
-		"src/domain/setup/layout.go " + src + "machines/contract.HostsPrefs":            "L19: the v1 conversion becomes the Preferences migration",
+		"src/domain/setup/layout.go " + src + "machines/contract.MacsPrefs":             "L19: the v1 conversion becomes the Preferences migration",
 		"src/domain/setup/layout.go " + src + "machines/contract.VMUserPrefs":           "L19: the v1 conversion becomes the Preferences migration",
 	}
 }

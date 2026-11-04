@@ -9,7 +9,7 @@ import (
 
 type noPolicy struct{}
 
-func (noPolicy) Get() (*ports.ServicesGroup, error) { return nil, nil }
+func (noPolicy) Get() (*ports.PortsGroup, error) { return nil, nil }
 
 // value: the reserved ports in memory, as the store keeps them.
 type memReservations struct{ all []ports.Reservation }

@@ -32,7 +32,7 @@ func service(t *testing.T, run system.Runner) (*machines.Service, *systemtest.Cl
 	h := system.Host{Run: run, FS: files, Env: systemtest.Env{HomeDir: "/home"}, Net: systemtest.NewNet(), Clock: clock}
 	paths := settings.Paths{Config: "/config", State: "/state"}
 	prefs := corefake.NewPreferences()
-	p := machines.Prefs{Name: setupcontract.Name(prefs), Hosts: machinescontract.Hosts(prefs), VMUser: machinescontract.VMUser(prefs)}
+	p := machines.Prefs{Name: setupcontract.Name(prefs), Hosts: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
 	if err := p.Name.Set("mac"); err != nil {
 		t.Fatal(err)
 	}

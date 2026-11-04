@@ -57,10 +57,10 @@ type Options struct {
 type Prefs struct {
 	Name      setupcontract.NamePrefs
 	Identity  setupcontract.IdentityPrefs
-	Hosts     machinescontract.HostsPrefs
+	Hosts     machinescontract.MacsPrefs
 	VMUser    machinescontract.VMUserPrefs
 	ShareList accountscontract.ShareListPrefs
-	Services  portscontract.ServicesPrefs
+	Services  portscontract.PortsPrefs
 	// value: every store station keeps, each brought to its version by the
 	// layout step.
 	Stores []store.Migrator

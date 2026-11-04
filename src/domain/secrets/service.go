@@ -44,7 +44,7 @@ type Lend = accounts.Share
 
 type Stores struct {
 	ShareList contract.ShareListPrefs
-	Hosts     machinescontract.HostsPrefs
+	Hosts     machinescontract.MacsPrefs
 	Name      setupcontract.NamePrefs
 	Shares    contract.ShareStore
 	Machines  machinescontract.MachineStore

@@ -6,21 +6,21 @@ import (
 )
 
 const (
-	GroupHosts  = "hosts"
+	GroupMacs   = "hosts"
 	GroupVMUser = "vm_user"
 )
 
-type HostsPrefs struct{ p core.Preferences }
+type MacsPrefs struct{ p core.Preferences }
 
-func Hosts(p core.Preferences) HostsPrefs { return HostsPrefs{p: p} }
+func Macs(p core.Preferences) MacsPrefs { return MacsPrefs{p: p} }
 
-func (h HostsPrefs) Get() (map[string]machines.Host, error) {
+func (h MacsPrefs) Get() (map[string]machines.Host, error) {
 	var hosts map[string]machines.Host
-	err := h.p.Read(GroupHosts, &hosts)
+	err := h.p.Read(GroupMacs, &hosts)
 	return hosts, err
 }
 
-func (h HostsPrefs) Set(hosts map[string]machines.Host) error { return h.p.Write(GroupHosts, hosts) }
+func (h MacsPrefs) Set(hosts map[string]machines.Host) error { return h.p.Write(GroupMacs, hosts) }
 
 type VMUserPrefs struct{ p core.Preferences }
 

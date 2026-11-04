@@ -5,17 +5,17 @@ import (
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
-const GroupServices = "services"
+const GroupPorts = "services"
 
-type ServicesPrefs struct{ p core.Preferences }
+type PortsPrefs struct{ p core.Preferences }
 
-func Services(p core.Preferences) ServicesPrefs { return ServicesPrefs{p: p} }
+func Ports(p core.Preferences) PortsPrefs { return PortsPrefs{p: p} }
 
-func (s ServicesPrefs) Get() (*ports.ServicesGroup, error) {
+func (s PortsPrefs) Get() (*ports.PortsGroup, error) {
 	// invariant: nil when the owner chose nothing, so every default holds.
-	var g *ports.ServicesGroup
-	err := s.p.Read(GroupServices, &g)
+	var g *ports.PortsGroup
+	err := s.p.Read(GroupPorts, &g)
 	return g, err
 }
 
-func (s ServicesPrefs) Set(g *ports.ServicesGroup) error { return s.p.Write(GroupServices, g) }
+func (s PortsPrefs) Set(g *ports.PortsGroup) error { return s.p.Write(GroupPorts, g) }

@@ -14,7 +14,7 @@ type Paths struct {
 
 type Host = machines.Host
 
-type Services = ports.ServicesGroup
+type Services = ports.PortsGroup
 
 type Settings struct {
 	// value: station's preferences as a v1 config.json converts to them, one
