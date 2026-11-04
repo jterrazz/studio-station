@@ -34,14 +34,10 @@ runs:
       exit: 0
       stdout: |
           station.page/v1	accounts	ready	true
-    - command: 'tailnet --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+    - command: 'ports --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |
-          station.page/v1	tailnet	ready	true
-    - command: 'services --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
-      exit: 0
-      stdout: |
-          station.page/v1	services	ready	true
+          station.page/v1	ports	ready	true
     - command: 'accounts --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |

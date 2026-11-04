@@ -83,7 +83,7 @@ func renderings(f fixture) map[string]func() (string, error) {
 	if f.state == "full" {
 		out["ttylight100"] = func() (string, error) { return string(tty.Render(f.page, tty.Options{Width: 100, Dark: false})), nil }
 	}
-	if strings.HasPrefix(f.name, "fleet.") || strings.HasPrefix(f.name, "services.") {
+	if strings.HasPrefix(f.name, "fleet.") || strings.HasPrefix(f.name, "ports.") {
 		out["tui120"] = func() (string, error) { return browse(f.page, 120), nil }
 	}
 	if strings.HasPrefix(f.name, "kitchen-sink.") {

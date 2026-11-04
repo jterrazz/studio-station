@@ -75,7 +75,7 @@ The fleet list asks each other host's engine for its own view (`machines.list`),
 
 ## The tailnet
 
-Each host runs the Tailscale app; the owner logs in through the app. Station only reads it: `station tailnet` shows the node, its MagicDNS name, the CLI it ran and what `tailscale serve` exposes, and station drives nothing but `tailscale serve` for [published services](services.md#serve-and-https) and `tailscale cert`, which [warms the certificate](services.md#serve-and-https). A VM has no node, no key and no tag; the owner's Tailscale policy needs no line for station.
+Each host runs the Tailscale app; the owner logs in through the app. Station only reads it: the first line of `station ports` shows the node, its MagicDNS name, the CLI it ran and what `tailscale serve` exposes, and station drives nothing but `tailscale serve` for [published services](services.md#serve-and-https) and `tailscale cert`, which [warms the certificate](services.md#serve-and-https). A VM has no node, no key and no tag; the owner's Tailscale policy needs no line for station.
 
 The app comes in two variants, and station takes either:
 

@@ -86,18 +86,12 @@ func read(d Deps) tab.Source[pagefleet.Reading] {
 				send(func(r *pagefleet.Reading) { r.Images = &list })
 			})
 			run(func() {
-				f, err := call.Invoke(ctx, d.Calls, d.Target, portscalls.List, portscalls.ListIn{}, nil)
-				if err == nil {
-					send(func(r *pagefleet.Reading) { r.Services = &f })
-				}
-			})
-			run(func() {
-				s, err := call.Invoke(ctx, d.Calls, d.Target, portscalls.Tailnet, portscalls.TailnetIn{}, nil)
+				l, err := call.Invoke(ctx, d.Calls, d.Target, portscalls.List, portscalls.ListIn{AllMachines: true}, nil)
 				if err != nil {
 					send(fail("tailnet", err))
 					return
 				}
-				send(func(r *pagefleet.Reading) { r.Tailnet = &s })
+				send(func(r *pagefleet.Reading) { r.Services, r.Tailnet = &l.Fleet, &l.Tailnet })
 			})
 			wg.Wait()
 		}()

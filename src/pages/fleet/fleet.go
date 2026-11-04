@@ -8,8 +8,7 @@ import (
 	"github.com/jterrazz/studio-station/src/pages"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
-	pageservices "github.com/jterrazz/studio-station/src/pages/services"
-	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
+	pageports "github.com/jterrazz/studio-station/src/pages/ports"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -41,7 +40,7 @@ func Tab(r Reading, here page.Context) page.Page {
 		return []page.Section{s}
 	})...)
 	p.Sections = append(p.Sections, part(r, "tailnet", "Tailnet", r.Tailnet != nil, func() []page.Section {
-		parts := pagetailnet.Sections(*r.Tailnet)
+		parts := pageports.TailnetSections(*r.Tailnet)
 		head := parts[0]
 		head.Role = page.Plain
 		return []page.Section{pages.Nest(head, parts[1:])}
@@ -77,7 +76,7 @@ func links(f *services.Fleet) func(host, vm string) []page.Link {
 			}
 			for _, s := range h.Services {
 				if s.VM == vm {
-					out = append(out, pageservices.Link(s))
+					out = append(out, pageports.Link(s))
 				}
 			}
 		}

@@ -2,6 +2,7 @@ package kit
 
 import (
 	"errors"
+	"github.com/jterrazz/studio-station/src/ports"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/guest"
@@ -31,43 +32,25 @@ func daemonFailure(err error) (*fail.Error, bool) {
 }
 
 func servicesFailure(err error) (*fail.Error, bool) {
-	var full *services.RangeFullError
-	var perVM *services.MaxPerVMError
-	var noLease *services.NoLeaseError
+	var full *ports.RangeFull
+	var perVM *ports.VMFull
 	var badPort *services.BadPortError
-	var badTarget *services.BadTargetError
 	var ignored *services.IgnoredPortError
 	var away *services.HostAwayError
-	var pinned *services.PinnedError
-	var vmOnly *services.VMOnlyError
 	var unknown *services.UnknownVMError
-	var hereInVM *services.HereInVMError
 	switch {
-	case errors.As(err, &hereInVM):
-		return usage(hereInVM.Error(), "station services"), true
 	case errors.As(err, &full):
-		return failed(full.Error(), "station services release <port>", err), true
+		return failed(full.Error(), "station ports stop-sharing <vm> <port>", err), true
 	case errors.As(err, &perVM):
-		return failed(perVM.Error(), "station services release <port>", err), true
-	case errors.As(err, &noLease):
-		return usage(noLease.Error(), "station services"), true
+		return failed(perVM.Error(), "station ports stop-sharing "+perVM.VM+" <port>", err), true
 	case errors.As(err, &badPort):
 		return usage(badPort.Error(), "a port is a number from 1 to 65535"), true
-	case errors.As(err, &badTarget):
-		if badTarget.InVM {
-			return usage(badTarget.Error(), "station services release <port>"), true
-		}
-		return usage(badTarget.Error(), "station services release <vm>:<port>"), true
 	case errors.As(err, &ignored):
-		return usage(ignored.Error(), "the host ignores ports below 1024 and 22"), true
+		return usage(ignored.Error(), "station never shares port 22 nor a port below 1024"), true
 	case errors.As(err, &away):
 		return failed(away.Error(), away.Hint(), err), true
-	case errors.As(err, &pinned):
-		return usage(pinned.Error(), "re-run with --yes"), true
-	case errors.As(err, &vmOnly):
-		return usage(vmOnly.Error(), "station services url runs inside a VM; here: station services"), true
 	case errors.As(err, &unknown):
-		return usage(unknown.Error(), "station services"), true
+		return usage(unknown.Error(), "station machines"), true
 	}
 	return nil, false
 }

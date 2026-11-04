@@ -9,8 +9,8 @@ import (
 )
 
 type Listeners struct {
-	// invariant: what listens on one Mac of the world, so a listen event of
-	// the world is read at the next Read.
+	// invariant: what listens on one machine of the world, a Mac or a VM, so
+	// a listen event of the world is read at the next Read.
 	w   *world.World
 	mac string
 }
@@ -26,5 +26,5 @@ func NewListeners(listening ...ports.Listener) *Listeners {
 func (l *Listeners) Read(context.Context) ([]ports.Listener, error) {
 	l.w.Lock()
 	defer l.w.Unlock()
-	return slices.Clone(l.w.Mac(l.mac).Listening), nil
+	return slices.Clone(l.w.Listening(l.mac)), nil
 }

@@ -23,11 +23,10 @@ import (
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
-	pageservices "github.com/jterrazz/studio-station/src/pages/services"
+	pageports "github.com/jterrazz/studio-station/src/pages/ports"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
 	pageshortcuts "github.com/jterrazz/studio-station/src/pages/shortcuts"
-	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/settings"
 )
@@ -58,7 +57,7 @@ func failure(id page.ID, command, message, hint string) page.Page {
 
 func Estate() []Fixture {
 	var out []Fixture
-	for _, f := range [][]Fixture{homes(), settingsPages(), disks(), fleets(), machineLists(), imageLists(), tailnets(), serviceLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), menubarPages()} {
+	for _, f := range [][]Fixture{homes(), settingsPages(), disks(), fleets(), machineLists(), imageLists(), portLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), menubarPages()} {
 		out = append(out, f...)
 	}
 	return out
@@ -300,14 +299,6 @@ func tailnetStatus() ports.Status {
 	}
 }
 
-func tailnets() []Fixture {
-	return states("tailnet",
-		pagetailnet.Status(ports.Status{State: catalog.StatePending}, here()),
-		pagetailnet.Status(ports.Status{State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net", IP: "100.98.133.14", Variant: "app-store", CLI: "/Applications/Tailscale.app/Contents/MacOS/Tailscale", ServeOn: true}, here()),
-		pagetailnet.Status(ports.Status{State: catalog.StateAbsent}, here()),
-		pagetailnet.Status(tailnetStatus(), here()))
-}
-
 func serviceFleet() services.Fleet {
 	seen := built
 	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
@@ -330,12 +321,12 @@ func stoppedServices() services.Fleet {
 	return f
 }
 
-func serviceLists() []Fixture {
-	return states("services",
-		pending(pageservices.Fleet(serviceFleet(), here())),
-		pageservices.Fleet(services.Fleet{}, here()),
-		pageservices.Fleet(stoppedServices(), here()),
-		pageservices.Fleet(serviceFleet(), here()))
+func portLists() []Fixture {
+	return states("ports",
+		pending(pageports.List(ports.Listing{Fleet: serviceFleet(), Tailnet: tailnetStatus()}, here())),
+		pageports.List(ports.Listing{Tailnet: ports.Status{State: catalog.StateAbsent}}, here()),
+		pageports.List(ports.Listing{Fleet: stoppedServices(), Tailnet: ports.Status{State: catalog.StateOK, BackendState: "NeedsLogin"}}, here()),
+		pageports.List(ports.Listing{Fleet: serviceFleet(), Tailnet: tailnetStatus()}, here()))
 }
 
 func fleets() []Fixture {

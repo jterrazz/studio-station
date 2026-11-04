@@ -340,22 +340,11 @@ runs:
           	none
       stderr: |
           → now: station accounts
-    - command: 'services'
+    - command: 'ports'
       exit: 0
       stdout: |
-          ◐	engine			x	not installed		station setup
-          ◐	y			y	unreachable		ssh y true
-    - command: 'tailnet'
-      exit: 0
-      stdout: |
-          ●	tailnet	Running
-          ●	node	x	100.64.0.1
-          ●	cli	{{workdir}}/bin/tailscale
-          # Peers
-          	w	100.64.0.9
-          	y	100.64.0.2
-          # Serve
-          	none
+          ◐	Tailscale	signed in · ports are local only	Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
+          ◐	engine			the engine is not installed		station setup
     - command: 'status --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
@@ -384,11 +373,7 @@ runs:
       exit: 0
       stdout: |
           {"accounts":[{"detail":"gh not on PATH","fix":"station apps install gh","label":"GitHub","name":"github","shareable":true,"state":"not-signed-in"},{"detail":"npm not on PATH","label":"npm","name":"npm","shareable":false,"state":"not-signed-in"},{"detail":"claude not on PATH","label":"Claude","name":"claude","shareable":true,"state":"not-signed-in"},{"label":"Tailscale","name":"tailscale","shareable":false,"state":"signed-in"},{"detail":"wrangler not on PATH","label":"Cloudflare","name":"cloudflare","shareable":false,"state":"not-signed-in"},{"detail":"git not on PATH","label":"git","name":"git","shareable":false,"state":"not-signed-in"},{"detail":"ssh-add not on PATH","label":"ssh","name":"ssh","shareable":false,"state":"not-signed-in"}],"machine":{"kind":"mac","name":"x"},"schema":"station.accounts.list/v1","share_list":["session:*","operator:claude:oauth-token"],"shares":[]}
-    - command: 'services --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
+    - command: 'ports --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
-          {"hosts":[{"daemon":{"running":false,"version":""},"here":true,"https":"port","name":"x","public_host":"127.0.0.1","range":{"free":1000,"high":40999,"leased":0,"low":40000,"max_per_vm":20},"reachable":true,"serve":"off","services":[]},{"daemon":{"running":false,"version":""},"here":false,"https":"","name":"y","public_host":"","reachable":false,"serve":"","services":[]}],"schema":"station.services/v1"}
-    - command: 'tailnet --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
-      exit: 0
-      stdout: |
-          {"backend_state":"Running","cli":"{{workdir}}/bin/tailscale","connected":true,"dns_name":"","ip":"100.64.0.1","name":"x","peers":[{"ip":"100.64.0.9","name":"w","online":true,"tags":["tag:dev"]},{"ip":"100.64.0.2","name":"y","online":true,"tags":[]}],"schema":"station.tailnet/v1","serve":[],"state":"ok","variant":""}
+          {"findings":[],"local_only":0,"ports":[],"range":[{"free":1000,"from":40000,"mac":"x","reserved":0,"to":40999}],"schema":"station.ports.list/v1","tailscale":{"cli":"{{workdir}}/bin/tailscale","dns_name":"","ip":"100.64.0.1","name":"x","serve":"off","state":"serve-off","variant":""}}

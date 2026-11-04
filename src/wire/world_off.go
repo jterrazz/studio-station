@@ -4,6 +4,7 @@ package wire
 
 import (
 	"context"
+	"github.com/jterrazz/studio-station/src/domain/guest"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -55,6 +56,7 @@ func (*worldMac) procedureAppliers() []settingscontract.Applier         { return
 func (*worldMac) meter() activitycontract.Meter                         { return nil }
 func (*worldMac) disk() diskcontract.DiskUsage                          { return nil }
 func (*worldMac) listeners() portscontract.Listeners                    { return nil }
+func (*worldMac) placement() (guest.Placement, bool)                    { return guest.Placement{}, false }
 func (*worldMac) tailnet() portscontract.Tailnet                        { return nil }
 func (*worldMac) installer(catalog.Method, bool) appscontract.Installer { return nil }
 func (*worldMac) bundler() appscontract.Bundler                         { return nil }

@@ -47,8 +47,7 @@ func uncovered() []string {
 	return []string{
 		"activity.sample", "machines.add", "machines.forget", "machines.probe", "machines.unlock",
 		"power.awake", "power.read", "power.sleep", "run.containers", "run.git",
-		"services.list", "services.release", "services.url", "shell.zsh",
-		"tailnet.read",
+		"shell.zsh",
 	}
 }
 

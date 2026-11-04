@@ -1,0 +1,14 @@
+ station ports                                                                  host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Tailscale
+   ● Tailscale  signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
+
+ macbook  40000-40999 · 2 reserved · 998 free · 20 per VM
+                      port  url                                      state
+   ● linux-1  5173 → 40001  https://jterrazz-macbook-pro…:40001      shared  vite
+   ○ linux-1  5432 → 40002                                           not listening · reserved 40002
+
+ mac-mini
+               state
+   ◐ mac-mini  does not answer  → station machines

@@ -1,0 +1,5 @@
+ - Tailscale                                                                1 ○
+   ○ Tailscale  not installed  → station apps install tailscale
+ - Ports
+   no shared ports  → station machines create
+ ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

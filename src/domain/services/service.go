@@ -6,7 +6,6 @@ import (
 	"github.com/jterrazz/studio-station/src/ports"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/jterrazz/studio-station/src/core/store"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
@@ -43,7 +42,7 @@ type Options struct {
 	// value: each other host's own services, from those that answered.
 	Ask func(ctx context.Context, hosts []string) map[string]HostView
 	// value: a VM's port released by the host it runs on.
-	ReleaseOn func(ctx context.Context, host, target string, yes bool) (Lease, error)
+	ReleaseOn func(ctx context.Context, host string, t Target, yes bool) (Lease, error)
 	VMHost    func(ctx context.Context, vm string) (host string, here bool, err error)
 	Exposure  func(ctx context.Context) Exposure
 }
@@ -68,12 +67,12 @@ func New(h system.Host, st Stores, d Daemon, o Options) *Service {
 
 func (s *Service) inVM() bool { return s.o.Here != catalog.Host }
 
-func (s *Service) policy() Policy {
+func (s *Service) policy() ports.Policy {
 	g, err := s.st.Services.Get()
 	if err != nil {
-		return PolicyOf(nil)
+		return ports.PolicyOf(nil)
 	}
-	return PolicyOf(g)
+	return ports.PolicyOf(g)
 }
 
 const (
@@ -182,13 +181,6 @@ func (s *Service) rangeOf() *Range {
 	return &Range{Low: p.Low, High: p.High, Leased: leased, Free: p.High - p.Low + 1 - leased, MaxPerVM: p.MaxPerVM}
 }
 
-func (s *Service) CheckList(hereOnly bool) error {
-	if hereOnly && s.inVM() {
-		return &HereInVMError{}
-	}
-	return nil
-}
-
 func (s *Service) List(ctx context.Context, hereOnly bool) (Fleet, error) {
 	here, err := s.Here(ctx)
 	if err != nil {
@@ -245,10 +237,15 @@ func ParsePort(text string) (int, error) {
 	return n, nil
 }
 
-func (s *Service) CheckURL(text string) (int, error) {
+func (s *Service) Placed() (vm string, inside bool) {
+	// value: the VM this binary runs in, as its guest placed it, inside one.
 	if !s.inVM() {
-		return 0, &VMOnlyError{}
+		return "", false
 	}
+	return s.o.VMName, true
+}
+
+func (s *Service) CheckPort(text string) (int, error) {
 	port, err := ParsePort(text)
 	if err != nil {
 		return 0, err
@@ -259,32 +256,23 @@ func (s *Service) CheckURL(text string) (int, error) {
 	return port, nil
 }
 
-func (s *Service) URL(ctx context.Context, port int) (View, error) {
-	v, err := s.d.Reserve(ctx, s.o.VMName, port, false)
+func (s *Service) CheckVM(ctx context.Context, vm string) (host string, err error) {
+	// invariant: a VM of another Mac is shared by that Mac's engine: its
+	// name is returned, and its share asked there.
+	host, here, err := s.o.VMHost(ctx, vm)
+	if err != nil || here {
+		return "", err
+	}
+	return host, nil
+}
+
+func (s *Service) Share(ctx context.Context, vm string, port int) (View, error) {
+	v, err := s.d.Reserve(ctx, vm, port, false)
 	var down *HostAwayError
-	if errors.Is(err, ErrDaemonDown) || errors.As(err, &down) {
+	if s.inVM() && (errors.Is(err, ErrDaemonDown) || errors.As(err, &down)) {
 		return View{}, &HostAwayError{Host: s.o.HostName}
 	}
 	return v, err
-}
-
-func (s *Service) ParseTarget(text string) (Target, error) {
-	if s.inVM() {
-		port, err := ParsePort(text)
-		if err != nil {
-			return Target{}, &BadTargetError{Value: text, InVM: true}
-		}
-		return Target{VM: s.o.VMName, Port: port}, nil
-	}
-	vm, portText, ok := strings.Cut(text, ":")
-	if !ok || vm == "" {
-		return Target{}, &BadTargetError{Value: text}
-	}
-	port, err := ParsePort(portText)
-	if err != nil {
-		return Target{}, &BadTargetError{Value: text}
-	}
-	return Target{VM: vm, Port: port}, nil
 }
 
 func (s *Service) CheckRelease(ctx context.Context, t Target) (host string, err error) {
@@ -303,26 +291,16 @@ func (s *Service) CheckRelease(ctx context.Context, t Target) (host string, err 
 		return "", err
 	}
 	if _, i := Find(leases, t.VM, t.Port); i < 0 {
-		return "", &NoLeaseError{VM: t.VM, Port: t.Port}
+		return "", NotFound(t)
 	}
 	return "", nil
 }
 
-func (s *Service) Pinned(t Target) bool {
-	if s.inVM() {
-		return false
-	}
-	leases, err := s.st.Reservations.List(context.Background())
-	if err != nil {
-		return false
-	}
-	l, i := Find(leases, t.VM, t.Port)
-	return i >= 0 && l.Pinned
-}
+func NotFound(t Target) error { return ports.NotFound(t.VM, t.Port) }
 
 func (s *Service) Release(ctx context.Context, t Target, host string, yes bool) (Lease, error) {
 	if host != "" {
-		return s.o.ReleaseOn(ctx, host, t.VM+":"+strconv.Itoa(t.Port), yes)
+		return s.o.ReleaseOn(ctx, host, t, yes)
 	}
 	l, err := s.d.Release(ctx, t.VM, t.Port)
 	if s.inVM() && err != nil && errors.Is(err, ErrDaemonDown) {
@@ -333,7 +311,7 @@ func (s *Service) Release(ctx context.Context, t Target, host string, yes bool) 
 	}
 	l, err = s.st.Reservations.Get(ctx, t.VM, t.Port)
 	if errors.Is(err, store.ErrNotFound) {
-		return Lease{}, &NoLeaseError{VM: t.VM, Port: t.Port}
+		return Lease{}, NotFound(t)
 	}
 	if err != nil {
 		return Lease{}, err

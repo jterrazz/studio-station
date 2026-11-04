@@ -6,7 +6,7 @@ runs:
       exit: 0
       stdout: |
           {"name":"Tailscale Serve","state":"ok","value":"on","detail":""}
-    - command: 'services --json | /usr/bin/jq -r ''.hosts[0].serve, .hosts[0].public_host'''
+    - command: 'ports --json | /usr/bin/jq -r ''.tailscale.serve, .tailscale.dns_name'''
       exit: 0
       stdout: |
           on

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jterrazz/studio-station/src/domain/guest"
 	"io"
 	"io/fs"
 	"maps"
@@ -677,6 +678,23 @@ func (g worldGuest) Exec(ctx context.Context, cmd contract.GuestCommand) (contra
 	return contract.GuestResult{Stdout: out.String()}, err
 }
 
+// value: a VM of the world as its guest's hello placed it: the Mac that
+// holds it and that Mac's name on the tailnet; false for a Mac.
+func (m *worldMac) placement() (guest.Placement, bool) {
+	w := m.run.w
+	w.Lock()
+	defer w.Unlock()
+	mac := w.Holder(m.name)
+	if mac == "" {
+		return guest.Placement{}, false
+	}
+	p := guest.Placement{Host: mac, VM: m.name}
+	if n := w.Macs[mac].Tailnet; n != nil {
+		p.PublicHost = n.Self.Sharing.Host
+	}
+	return p, true
+}
+
 func (m *worldMac) inVM() farMac {
 	if m.vm == nil {
 		far := m.run.far(m)
@@ -773,8 +791,14 @@ func (s worldSockets) Pipe(_ context.Context, ip string, port int, _ io.Reader, 
 
 var errNoSSHD = errors.New("no sshd answers at this address in the world")
 
+// invariant: inside a VM of the world, the socket its Mac's engine offers
+// there is that engine, as the guest relays it.
 func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (system.Conn, error) {
-	d, ok := s.m.up(context.WithoutCancel(ctx))
+	m := s.m
+	if p, inside := m.placement(); inside {
+		m = m.run.mac(p.Host)
+	}
+	d, ok := m.up(context.WithoutCancel(ctx))
 	if !ok {
 		return nil, errEngineDown
 	}

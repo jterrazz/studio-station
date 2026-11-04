@@ -15,6 +15,7 @@ import (
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
+	"github.com/jterrazz/studio-station/src/ports"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 )
 
@@ -165,6 +166,21 @@ func Codes() map[fail.Code]Wording {
 		},
 		diskcalls.NotMisplaced: func(e *fail.Error) (string, string) {
 			return e.Subject + " is not misplaced", "station disk"
+		},
+		ports.CodeRangeFull: func(e *fail.Error) (string, string) {
+			return e.Subject + " has " + e.Detail["max"] + " shared ports, the most a VM may", "station ports stop-sharing " + e.Subject + " <port>"
+		},
+		ports.CodeNotFound: func(e *fail.Error) (string, string) {
+			return "nothing listens on " + e.Subject + " and nothing is reserved", "station ports --on " + e.Detail["vm"]
+		},
+		ports.CodeSignedOut: func(*fail.Error) (string, string) {
+			return catalog.TailnetProduct + " is signed out on This Mac: ports are local only", "open " + catalog.TailnetProduct + " and sign in"
+		},
+		ports.CodeNeedsVM: func(e *fail.Error) (string, string) {
+			return "say which VM's port " + e.Subject + " it is", "station ports share <vm> " + e.Subject
+		},
+		ports.CodeElsewhere: func(e *fail.Error) (string, string) {
+			return e.Subject + " runs on " + e.Detail["mac"], "add --on " + e.Detail["mac"]
 		},
 		call.FarTooOld: func(e *fail.Error) (string, string) {
 			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"

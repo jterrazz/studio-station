@@ -1,0 +1,16 @@
+description: 'ports --on another Mac reads that Mac''s ports and its own Tailscale line'
+env: two-macs
+runs:
+    - command: 'ports share infra 8080 --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          https://jterrazz-mac-mini.tail1234.ts.net:40000
+    - command: 'ports --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	Tailscale	signed in · jterrazz-mac-mini.tail1234.ts.net · ports are shared
+          ○	infra	8080	https://jterrazz-mac-mini.tail1234.ts.net:40000	not listening · reserved 40000
+    - command: 'ports --json | /usr/bin/jq -c ''[.ports[] | .machine] | unique'''
+      exit: 0
+      stdout: |
+          ["linux-1"]

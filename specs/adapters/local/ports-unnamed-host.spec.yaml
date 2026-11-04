@@ -1,0 +1,15 @@
+description: 'an unnamed Mac''s ports are titled by the name machines shows, never an empty title'
+fixture:
+    - ../../__fixtures__/terminal/
+env: terminal
+runs:
+    - command: '--version >/dev/null; "$STATION" ports --page | /usr/bin/jq -r ''[.sections[] | select(.id | startswith("host-"))][0].title'' >title; "$STATION" machines --json | /usr/bin/jq -r ''.macs[0].name'' >name; /bin/test -s title && /usr/bin/cmp -s title name && echo same'
+      exit: 0
+      stdout: |
+          same
+    - command: '--version >/dev/null; terminal --size 80x12 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" ports | /usr/bin/grep -c "engine  the engine is not installed"'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          1

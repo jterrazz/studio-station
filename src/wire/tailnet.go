@@ -3,15 +3,11 @@ package wire
 import (
 	"context"
 
-	"github.com/spf13/cobra"
-
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/ports/adapter/tailscale"
 	"github.com/jterrazz/studio-station/src/ports/contract"
-	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	tailnetcmd "github.com/jterrazz/studio-station/src/surface/cli/tailnet"
 )
 
 func (m machine) exposure(ctx context.Context) services.Exposure {
@@ -34,16 +30,16 @@ func (m machine) tailnetCLI() *tailscale.CLI {
 }
 
 // value: the tailnet as a page reads it, this node and what it shares in
-// one pass, each share told station's when the services policy owns it.
+// one pass, each share told station's when the ports policy owns it.
 type tailnetStatus struct{ m machine }
 
 func (m machine) tailnetStatus() tailnetStatus { return tailnetStatus{m: m} }
 
 func (t tailnetStatus) Status(ctx context.Context) (ports.Status, error) {
 	g, _ := t.m.stores.services().Get()
-	p := services.PolicyOf(g)
+	p := ports.PolicyOf(g)
 	owns := func(s ports.Share) bool {
-		return p.InRange(s.Port) || (p.HTTPS == services.HTTPSPath && s.Port == 443 && s.Path != "/")
+		return p.InRange(s.Port) || (p.HTTPS == ports.HTTPSPath && s.Port == 443 && s.Path != "/")
 	}
 	tn := t.m.tailnet()
 	self, err := tn.Self(ctx)
@@ -52,10 +48,6 @@ func (t tailnetStatus) Status(ctx context.Context) (ports.Status, error) {
 		shared, _ = tn.Shared(ctx)
 	}
 	return ports.StatusOf(self, err, shared, owns), nil
-}
-
-func tailnetCommand(env kit.Env, m machine) *cobra.Command {
-	return tailnetcmd.Command(tailnetcmd.Deps{Here: m.where}, env)
 }
 
 type hostNodes struct{ tailnet contract.Tailnet }

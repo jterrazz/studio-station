@@ -1,0 +1,9 @@
+description: 'station ports begins with the Tailscale line, then each port This Mac shares, at its URL'
+env: two-macs
+runs:
+    - command: 'ports'
+      exit: 0
+      stdout: |
+          ●	Tailscale	signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
+          ●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
+          ●	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server

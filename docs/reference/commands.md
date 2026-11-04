@@ -2,23 +2,23 @@
 
 Every command of `station`, grouped as `station --help` groups them. The words are the [Glossary](../concepts/glossary.md)'s.
 
-| Section        | Answers                                                 |
-| -------------- | ------------------------------------------------------- |
-| Rules          | What holds for every command                            |
-| Here           | `overview`, `apps`, `settings`, `disk`, `background`    |
-| The fleet      | `machines`, `services`, `images`, `accounts`, `tailnet` |
-| Shortcuts      | `run git` and `run docker`                              |
-| The binary     | `setup`, `--version`, `help`                            |
-| Hidden aliases | The v2 words that still run, for one release            |
-| Plumbing       | The hidden commands the machine runs for itself         |
-| Exit codes     | What 0, 1, 2 and 130 mean                               |
+| Section        | Answers                                              |
+| -------------- | ---------------------------------------------------- |
+| Rules          | What holds for every command                         |
+| Here           | `overview`, `apps`, `settings`, `disk`, `background` |
+| The fleet      | `machines`, `ports`, `images`, `accounts`            |
+| Shortcuts      | `run git` and `run docker`                           |
+| The binary     | `setup`, `--version`, `help`                         |
+| Hidden aliases | The v2 words that still run, for one release         |
+| Plumbing       | The hidden commands the machine runs for itself      |
+| Exit codes     | What 0, 1, 2 and 130 mean                            |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `services`, `tailnet`, `accounts`, `background`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `ports`, `accounts`, `background`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
 - Bare `station` opens the TUI on a terminal; piped, or with `--all` or `--json`, it prints `station overview`, exit 0.
-- A bare noun lists (`apps`, `settings`, `disk`, `machines`, `services`, `images`, `accounts`, `tailnet`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
+- A bare noun lists (`apps`, `settings`, `disk`, `machines`, `ports`, `images`, `accounts`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create api --permanent`).
 - The same verbs everywhere: `install`, `uninstall`, `upgrade`, except where a family has taken its v3 words (`apps`: `install`, `update`, `remove`). The only other words are the [hidden aliases](#hidden-aliases).
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
@@ -118,15 +118,15 @@ station machines unlock <host>
 
 `--here` lists This Mac only, with no network. `create` makes a throwaway workspace unless `--permanent` is given, and asks the Mac on a terminal when two answer; piped it needs no question. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
 
-### `station services`
+### `station ports`
 
 ```sh
-station services [--here] [--json] # what the fleet's VMs listen on, and each URL
-station services url <port> [--json] # in a VM: reserve the port's public URL now, and print it
-station services release <vm>:<port> [--yes] # on a host; in a VM: station services release <port>
+station ports [--all-machines] [--json]       # the Tailscale line, then what this Mac shares for its VMs, at which URL
+station ports share <vm> <port> [--json]      # reserve the port now and share it; inside a VM: station ports share <port>
+station ports stop-sharing <vm> <port> [--yes] # release it, and do not share it again until a share; inside a VM: <port>
 ```
 
-Every host is asked over ssh; `--here` asks none, and is refused in a VM (exit 2), which lists only its own services. `url` runs inside a VM only, its piped stdout the URL alone. A profile's lease asks before `release`. See [Services](services.md).
+`--all-machines` asks every Mac over ssh. `share` prints the URL before anything listens, piped the URL alone; a port is refused on a VM that shares 20 already (exit 1, `Hint: station ports stop-sharing <vm> <port>`) and while This Mac is signed out of Tailscale (exit 1, the reservation kept). `stop-sharing` asks yes or no and is remembered in `preferences.json` (`services.not_shared`). `--json` is `station.ports.list/v1`. `services`, `services url`, `services release` and `tailnet` are hidden aliases for one release. See [Services](services.md).
 
 ### `station images`
 
@@ -159,13 +159,9 @@ station engine start # the engine bootstrapped again; the VMs it stopped stay st
 
 `--json` is `station.engine.read/v1`: `{schema, engine: {state, version, up_s, vms, stopped_at, stopped_by}}`, `state` `running`, `stopped` or `not-installed`. An engine running another version than station names both and `station setup`. A Mac only; `--on <mac>` runs it on another Mac. `station stop` and `station start` are hidden aliases of `engine stop` and `engine start` for one release, saying `→ now: station engine stop` on stderr (see [Hidden aliases](#hidden-aliases)). A start the job manager refuses ends in `the engine did not start: <its last word>` (exit 1). See [Machines](machines.md#the-engine).
 
-### `station tailnet`
+### The Tailscale line
 
-```sh
-station tailnet [--json] # the Tailscale app's node, the peers, what serve exposes
-```
-
-Read only: the owner logs in through the Tailscale app, and station never drives it but for [published services](services.md#serve-and-https).
+The first line of `station ports` is This Mac's node: signed in with its name and whether Serve shares, signed out, or not installed. Read only: the owner logs in through the Tailscale app, and station never drives it but for [published services](services.md#serve-and-https).
 
 ## Shortcuts
 

@@ -1,9 +1,0 @@
-description: 'in a VM, services --here is refused before the host is asked'
-fixture: ./url/__fixtures__/placed/
-env: engine
-runs:
-    - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" services --here'
-      exit: 2
-      stderr: |
-          Error: --here is for a host: a VM lists only its own services
-          Hint: station services

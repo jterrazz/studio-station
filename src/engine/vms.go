@@ -600,7 +600,7 @@ func (d *Daemon) fromGuest(ctx context.Context, v *vmState, line []byte) {
 		if err != nil {
 			var op *OpError
 			if !errors.As(err, &op) {
-				op = fault("internal", err.Error(), "station services")
+				op = fault("internal", err.Error(), "station ports")
 			}
 			reply["error"] = op
 		} else {
@@ -615,11 +615,11 @@ func (d *Daemon) guestRequest(ctx context.Context, vm string, m guestMessage) (a
 	case "services":
 		return d.hostView(vm), nil
 	case "reserve":
-		return d.reserve(ctx, vm, m.Port, false, "")
+		return d.shareOf(ctx, vm, m.Port, false, "")
 	case "release":
-		return d.release(ctx, vm, m.Port)
+		return d.stopSharing(ctx, vm, m.Port)
 	}
-	return nil, fault("unknown_op", "unknown op \""+m.Op+"\"", "station services")
+	return nil, fault("unknown_op", "unknown op \""+m.Op+"\"", "station ports")
 }
 
 func (d *Daemon) askGuest(ctx context.Context, v *vmState, op string, budget time.Duration) (json.RawMessage, error) {

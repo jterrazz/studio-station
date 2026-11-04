@@ -1,7 +1,7 @@
 description: 'a VM still under its round-3 agent has the agent booted out and its plist removed by delete'
 fixture:
     - ../../../__fixtures__/vms/
-    - ../../__fixtures__/vm-api/
+    - ../../../__fixtures__/vm-api/
 env: engine
 runs:
     - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines delete api --confirm=api; c=$?; kill $d; wait $d; exit $c'

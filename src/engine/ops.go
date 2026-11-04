@@ -89,11 +89,30 @@ func (d *Daemon) VMs() []VMView { return d.vmViews() }
 func (d *Daemon) Services(vm string) services.HostView { return d.hostView(vm) }
 
 func (d *Daemon) Reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (services.View, error) {
-	return d.reserve(ctx, vm, port, pinned, profile)
+	return d.shareOf(ctx, vm, port, pinned, profile)
 }
 
 func (d *Daemon) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
-	return d.release(ctx, vm, port)
+	return d.stopSharing(ctx, vm, port)
+}
+
+// invariant: a share takes back a stop of sharing, and a stop of sharing is
+// remembered, on this Mac whoever asked: a command here or a VM's guest.
+func (d *Daemon) shareOf(ctx context.Context, vm string, port int, pinned bool, profile string) (services.View, error) {
+	if d.o.Remember != nil {
+		if err := d.o.Remember(vm, port, false); err != nil {
+			return services.View{}, err
+		}
+	}
+	return d.reserve(ctx, vm, port, pinned, profile)
+}
+
+func (d *Daemon) stopSharing(ctx context.Context, vm string, port int) (services.Lease, error) {
+	l, err := d.release(ctx, vm, port)
+	if err != nil || d.o.Remember == nil {
+		return l, err
+	}
+	return l, d.o.Remember(vm, port, true)
 }
 
 // value: what a VM's verb asks of the engine, by the verb's name.

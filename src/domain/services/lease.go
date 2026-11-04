@@ -66,29 +66,3 @@ func Without(leases []Lease, keep func(Lease) bool) (kept, gone []Lease) {
 	}
 	return kept, gone
 }
-
-func Allocate(p Policy, leases []Lease, vm string, port int, busy func(int) bool) (Lease, error) {
-	// invariant: a lease is sticky on (vm, guest port): an existing one is returned
-	// as it is; a new one takes the LOWEST port of the range no lease holds and the
-	// host does not hold either.
-	if l, i := Find(leases, vm, port); i >= 0 {
-		return l, nil
-	}
-	held, mine := map[int]bool{}, 0
-	for _, l := range leases {
-		held[l.HostPort] = true
-		if l.VM == vm {
-			mine++
-		}
-	}
-	if mine >= p.MaxPerVM {
-		return Lease{}, &MaxPerVMError{VM: vm, Max: p.MaxPerVM}
-	}
-	for hp := p.Low; hp <= p.High; hp++ {
-		if held[hp] || (busy != nil && busy(hp)) {
-			continue
-		}
-		return Lease{VM: vm, GuestPort: port, HostPort: hp}, nil
-	}
-	return Lease{}, &RangeFullError{Low: p.Low, High: p.High}
-}

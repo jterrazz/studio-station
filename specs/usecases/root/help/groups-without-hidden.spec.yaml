@@ -19,11 +19,10 @@ runs:
           background
           disk
           overview
+          ports
           power
           run
-          services
           settings
-          tailnet
     - command: 'help | /usr/bin/sed -n "/^  A MAC/,/^  STATION/p" | /usr/bin/grep -oE "^    [a-z]+ " | /usr/bin/tr -d " "'
       exit: 0
       stdout: |
