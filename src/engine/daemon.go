@@ -472,7 +472,7 @@ func (d *Daemon) stopAll(ctx context.Context) []Stopped {
 		d.mu.Lock()
 		running := v.state == StateRunning
 		d.mu.Unlock()
-		if !running {
+		if !running || r.Lifetime == machines.AlwaysOn {
 			continue
 		}
 		wg.Add(1)

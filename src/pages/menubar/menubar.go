@@ -166,7 +166,11 @@ func stopAll(r Reading) page.Action {
 			}
 			host = h.Name
 			for _, vm := range h.VMs {
-				if vm.State == machines.Running {
+				switch {
+				case vm.State != machines.Running:
+				case vm.Lifetime == machines.AlwaysOn:
+					w.Servers = append(w.Servers, vm.Name)
+				default:
 					w.VMs = append(w.VMs, engine.Stopped{Name: vm.Name, Lifetime: string(vm.Lifetime), Result: engine.ResultStopped})
 				}
 			}

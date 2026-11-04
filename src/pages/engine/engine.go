@@ -104,6 +104,9 @@ func Stop(r engine.StopReport, here page.Context) page.Page {
 	if r.Sharing {
 		parts = append(parts, "sharing off")
 	}
+	for _, s := range r.Servers {
+		parts = append(parts, s+" skipped (server)")
+	}
 	state := catalog.StateOK
 	switch r.Engine {
 	case engine.EngineHalted:
@@ -113,6 +116,8 @@ func Stop(r engine.StopReport, here page.Context) page.Page {
 	case engine.EngineKept:
 		state = catalog.StateBroken
 		parts = append(parts, strings.Join(failed, ", ")+" did not stop", "the engine keeps running")
+	case engine.EngineServers:
+		parts = append(parts, "the engine keeps running for "+strings.Join(r.Servers, ", "))
 	}
 	row := pages.Done(Row, state, "")
 	row.Detail = page.Texts(parts...)
@@ -127,6 +132,13 @@ func StopConfirm(w engine.Work, mac string) page.Confirm {
 	lines := make([]page.Value, 0, len(w.VMs)+1)
 	for _, v := range w.VMs {
 		lines = append(lines, page.Text(v.Name+" will stop; its disk is kept"))
+	}
+	for _, s := range w.Servers {
+		lines = append(lines, page.Text(s+" keeps running: a server is never stopped by Stop everything"))
+	}
+	if len(w.Servers) > 0 {
+		lines = append(lines, page.Text("Awake ends, and the engine keeps running for "+strings.Join(w.Servers, ", ")))
+		return page.Confirm{Question: "Stop everything on " + mac + "?", Lines: lines, Danger: true, Yes: "Stop"}
 	}
 	lines = append(lines, page.Text("Awake ends, and the engine stays stopped until station engine start or the next login"))
 	return page.Confirm{Question: "Stop everything on " + mac + "?", Lines: lines, Danger: true, Yes: "Stop"}
