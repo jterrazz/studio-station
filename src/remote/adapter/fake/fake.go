@@ -21,6 +21,14 @@ type Mac struct {
 	// value: how that Mac's binary words its errors; nil words only what
 	// is already worded.
 	Word call.Wording
+	// value: that Mac's own routing, for a call addressed to one of its VMs;
+	// nil runs every call on the Mac itself.
+	Relay Relay
+}
+
+type Relay interface {
+	Invoke(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (any, error)
+	Watch(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (<-chan call.Update[any], error)
 }
 
 type Dialer struct {
@@ -94,9 +102,16 @@ func (e endpoint) Hello(context.Context) (contract.Hello, error) {
 	return h, nil
 }
 
-func (e endpoint) Invoke(ctx context.Context, _ machine.Ref, name string, in json.RawMessage, p call.Progress) (json.RawMessage, error) {
+func (e endpoint) Invoke(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (json.RawMessage, error) {
 	if err := e.broken(); err != nil {
 		return nil, err
+	}
+	if target.On != "" && e.m.Relay != nil {
+		out, err := e.m.Relay.Invoke(ctx, target, name, in, p)
+		if err != nil {
+			return nil, e.over(err)
+		}
+		return call.Encode(out, e.word())
 	}
 	v, err := e.m.Registry.Input(name, in)
 	if err != nil {
@@ -109,15 +124,11 @@ func (e endpoint) Invoke(ctx context.Context, _ machine.Ref, name string, in jso
 	return call.Encode(out, e.word())
 }
 
-func (e endpoint) Watch(ctx context.Context, _ machine.Ref, name string, in json.RawMessage, p call.Progress) (<-chan call.Update[json.RawMessage], error) {
+func (e endpoint) Watch(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (<-chan call.Update[json.RawMessage], error) {
 	if err := e.broken(); err != nil {
 		return nil, err
 	}
-	v, err := e.m.Registry.Input(name, in)
-	if err != nil {
-		return nil, e.over(err)
-	}
-	updates, err := e.m.Registry.Stream(ctx, e.m.Profile, name, v, p)
+	updates, err := e.stream(ctx, target, name, in, p)
 	if err != nil {
 		return nil, e.over(err)
 	}
@@ -137,6 +148,17 @@ func (e endpoint) Watch(ctx context.Context, _ machine.Ref, name string, in json
 		}
 	}()
 	return out, nil
+}
+
+func (e endpoint) stream(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (<-chan call.Update[any], error) {
+	if target.On != "" && e.m.Relay != nil {
+		return e.m.Relay.Watch(ctx, target, name, in, p)
+	}
+	v, err := e.m.Registry.Input(name, in)
+	if err != nil {
+		return nil, err
+	}
+	return e.m.Registry.Stream(ctx, e.m.Profile, name, v, p)
 }
 
 func (e endpoint) Close() error {

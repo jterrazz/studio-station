@@ -3,6 +3,7 @@
 package wire
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -33,6 +34,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	corefake "github.com/jterrazz/studio-station/src/core/adapter/fake"
 	"github.com/jterrazz/studio-station/src/core/call"
+	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	diskfake "github.com/jterrazz/studio-station/src/disk/adapter/fake"
@@ -45,7 +47,9 @@ import (
 	portsfake "github.com/jterrazz/studio-station/src/ports/adapter/fake"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotefake "github.com/jterrazz/studio-station/src/remote/adapter/fake"
+	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
 	remotecontract "github.com/jterrazz/studio-station/src/remote/contract"
+	"github.com/jterrazz/studio-station/src/remote/serve"
 	settingsfake "github.com/jterrazz/studio-station/src/settings/adapter/fake"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -84,6 +88,9 @@ type worldMac struct {
 	engine   *engine.Daemon
 	tick     int
 	served   *remotefake.Dialer
+	// value: this machine as its own binary builds it inside a VM of the
+	// world, once per run.
+	vm *farMac
 }
 
 func openWorld(vars map[string]string) (*worldRun, error) {
@@ -169,7 +176,9 @@ func (m *worldMac) stores(st *stores) {
 
 func (m *worldMac) self() corecontract.Self        { return corefake.SelfOf(m.run.w, m.name) }
 func (m *worldMac) power() awakecontract.Power     { return awakefake.PowerOf(m.run.w, m.name) }
-func (m *worldMac) guests() contract.GuestDialer   { return machinesfake.GuestsOf(m.run.w) }
+func (m *worldMac) guests() contract.GuestDialer {
+	return worldGuests{GuestDialer: machinesfake.GuestsOf(m.run.w), r: m.run}
+}
 func (m *worldMac) sshConfig() contract.SSHConfig  { return machinesfake.SSHConfigOf(m.run.w, m.name) }
 func (m *worldMac) unlocker() contract.Unlocker    { return machinesfake.MacsOf(m.run.w) }
 func (m *worldMac) jobs() backgroundcontract.Jobs  { return backgroundfake.New(m.run.w, m.name) }
@@ -341,7 +350,7 @@ func (m *worldMac) serve() *remotefake.Dialer {
 	if m.served == nil {
 		far := m.run.far(m)
 		m.served = remotefake.New()
-		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: Version(), Word: func(err error) *fail.Error { return kit.Translate(err, "") }})
+		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: Version(), Word: func(err error) *fail.Error { return kit.Translate(err, "") }, Relay: far.relay})
 		m.start = far.start
 	}
 	return m.served
@@ -511,6 +520,66 @@ func (c worldClock) Sleep(ctx context.Context, d time.Duration) error {
 		}
 	}
 }
+
+// invariant: a VM of the world whose own slice says what it is answers
+// station's API as `station guest serve --stdio` answers inside it: its calls
+// run over that slice, every value through the wire form; any other line is
+// the scripted guest's.
+type worldGuests struct {
+	contract.GuestDialer
+	r *worldRun
+}
+
+type worldGuest struct {
+	contract.Guest
+	vm string
+	r  *worldRun
+}
+
+func (g worldGuests) Dial(ctx context.Context, t contract.GuestTarget) (contract.Guest, error) {
+	c, err := g.GuestDialer.Dial(ctx, t)
+	if err != nil {
+		return nil, err
+	}
+	return worldGuest{Guest: c, vm: t.VM, r: g.r}, nil
+}
+
+func (g worldGuest) Exec(ctx context.Context, cmd contract.GuestCommand) (contract.GuestResult, error) {
+	g.r.w.Lock()
+	slice, ok := g.r.w.Macs[g.vm]
+	ok = ok && slice.Self != nil
+	g.r.w.Unlock()
+	if cmd.Line != unix.Guest || !ok || g.r.far == nil || cmd.Stdin == nil {
+		return g.Guest.Exec(ctx, cmd)
+	}
+	far := g.r.mac(g.vm).inVM()
+	var out bytes.Buffer
+	w := cmd.Stdout
+	if w == nil {
+		w = &out
+	}
+	err := serve.Stream(ctx, cmd.Stdin, w, serve.Local(far.registry, far.profile, Version()), func(err error) *fail.Error { return kit.Translate(err, "") })
+	return contract.GuestResult{Stdout: out.String()}, err
+}
+
+func (m *worldMac) inVM() farMac {
+	if m.vm == nil {
+		far := m.run.far(m)
+		m.vm = &far
+	}
+	return *m.vm
+}
+
+// invariant: a probe's budget in a world is a deadline the story moves, never
+// one that leaps the clock: a fake answers before it, however the scheduler
+// orders the two.
+type budgetClock struct{ worldClock }
+
+func (c budgetClock) Sleep(ctx context.Context, d time.Duration) error {
+	return c.worldClock.Sleep(context.WithValue(ctx, waits{}, true), d)
+}
+
+func (m *worldMac) budgets() probe.Clock { return budgetClock{m.run.clock()} }
 
 // invariant: a Mac's engine socket is its engine in this process, reached
 // through a pipe; every other socket is the real one's.

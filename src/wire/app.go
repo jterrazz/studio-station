@@ -272,12 +272,16 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 		world.stores(st)
 	}
 	registered, _ := st.name().Get()
+	var budgets probe.Clock = h.Clock
+	if world != nil {
+		budgets = world.budgets()
+	}
 	m := machine{
 		world:  world,
 		raw:    raw,
 		door:   door,
 		far:    &late{},
-		pool:   probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
+		pool:   probe.NewPool(context.Background(), budgets, commandLane, walkLane),
 		host:   h,
 		vars:   vars,
 		paths:  paths,

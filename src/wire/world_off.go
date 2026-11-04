@@ -14,6 +14,7 @@ import (
 	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	backgroundcontract "github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
+	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -54,6 +55,7 @@ func (*worldMac) listeners() portscontract.Listeners                    { return
 func (*worldMac) tailnet() portscontract.Tailnet                        { return nil }
 func (*worldMac) installer(catalog.Method, bool) appscontract.Installer { return nil }
 func (*worldMac) bundler() appscontract.Bundler                         { return nil }
+func (*worldMac) budgets() probe.Clock                                  { return nil }
 func (*worldMac) vault() accountscontract.Vault                         { return nil }
 func (*worldMac) identities() accountscontract.Identities               { return nil }
 func (*worldMac) secretSource() accountscontract.SecretSource           { return nil }
