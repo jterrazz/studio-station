@@ -8,6 +8,8 @@ import (
 	"path"
 	"reflect"
 
+	setupmodel "github.com/jterrazz/studio-station/src/setup"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
@@ -52,20 +54,61 @@ func (s *Service) migrateSettings() error {
 		return err
 	}
 	if s.exists(s.settingsPath()) {
-		existing, loadErr := s.store.Load()
+		existing, same, loadErr := s.current()
 		if loadErr != nil {
 			return loadErr
 		}
-		if !reflect.DeepEqual(existing, converted) {
+		if !same || !reflect.DeepEqual(existing, converted) {
 			return &DifferentContentError{Path: s.settingsPath()}
 		}
 	}
 	if !s.exists(s.settingsPath()) {
-		if err := s.store.Save(converted); err != nil {
+		if err := s.write(converted); err != nil {
 			return err
 		}
 	}
 	return s.h.FS.Remove(s.v1Path())
+}
+
+// invariant: same is false when the preferences hold a group a v1
+// config.json never converts to (the share list, the services' policy).
+func (s *Service) current() (v settings.Settings, same bool, err error) {
+	if v.Here, err = s.p.Name.Get(); err != nil {
+		return v, false, err
+	}
+	if v.Hosts, err = s.p.Hosts.Get(); err != nil {
+		return v, false, err
+	}
+	if v.VMUser, err = s.p.VMUser.Get(); err != nil {
+		return v, false, err
+	}
+	id, err := s.p.Identity.Get()
+	if err != nil {
+		return v, false, err
+	}
+	v.UserEmail, v.UserName = id.UserEmail, id.UserName
+	list, err := s.p.ShareList.Get()
+	if err != nil {
+		return v, false, err
+	}
+	policy, err := s.p.Services.Get()
+	if err != nil {
+		return v, false, err
+	}
+	return v, len(list) == 0 && policy == nil, nil
+}
+
+func (s *Service) write(v settings.Settings) error {
+	if err := s.p.Name.Set(v.Here); err != nil {
+		return err
+	}
+	if err := s.p.Hosts.Set(v.Hosts); err != nil {
+		return err
+	}
+	if err := s.p.VMUser.Set(v.VMUser); err != nil {
+		return err
+	}
+	return s.p.Identity.Set(setupmodel.Identity{UserEmail: v.UserEmail, UserName: v.UserName})
 }
 
 func (s *Service) layout(ctx context.Context, migrated error) ([]Step, error) {

@@ -93,18 +93,16 @@ func (s *Service) retire(ctx context.Context) (rows []Step, background bool, err
 		rows = append(rows, Step{Name: stepLayout, State: catalog.StateOK, Changed: true,
 			Detail: "the VM-join client and the tailnet auth key left the keychain; revoke the OAuth client at " + oauthConsole})
 	}
-	return rows, false, s.dropTailnetKey()
+	return rows, false, s.migrateStores(ctx)
 }
 
-func (s *Service) dropTailnetKey() error {
-	if data, readErr := s.h.FS.ReadFile(s.settingsPath()); readErr != nil || !strings.Contains(string(data), `"tailnet"`) {
-		return nil //nolint:nilerr // outside: no settings file holds no tailnet key to drop.
+func (s *Service) migrateStores(ctx context.Context) error {
+	for _, m := range s.p.Stores {
+		if err := m.Migrate(ctx); err != nil {
+			return err
+		}
 	}
-	current, err := s.store.Load()
-	if err != nil {
-		return err
-	}
-	return s.store.Save(current)
+	return nil
 }
 
 func (s *Service) stop(ctx context.Context, pid int) error {

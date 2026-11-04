@@ -1,88 +1,50 @@
 package services
 
 import (
-	"encoding/json"
-	"errors"
-	"io/fs"
-	"path"
-	"sort"
-	"strconv"
-	"time"
+	"context"
+	"reflect"
 
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/ports"
+	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 )
 
-const (
-	LeasesSchema = "station.leases/v1"
-	Schema       = "station.services/v1"
-)
+const Schema = "station.services/v1"
 
-type Lease struct {
-	VM         string    `json:"vm"`
-	GuestPort  int       `json:"guest_port"`
-	HostPort   int       `json:"host_port"`
-	Profile    string    `json:"profile,omitempty"`
-	Pinned     bool      `json:"pinned"`
-	HTTP       *bool     `json:"http,omitempty"`
-	ReservedAt time.Time `json:"reserved_at"`
-	LastSeenAt time.Time `json:"last_seen_at,omitzero"`
-}
+type Lease = ports.Reservation
 
-func (l Lease) Key() string { return l.VM + ":" + strconv.Itoa(l.GuestPort) }
+type Reservations = portscontract.ReservationStore
 
-type leaseFile struct {
-	Schema string  `json:"schema"`
-	Leases []Lease `json:"leases"`
-}
-
-type Store struct {
-	fs   system.FS
-	path string
-}
-
-func NewStore(files system.FS, state string) Store {
-	return Store{fs: files, path: path.Join(state, "leases.json")}
-}
-
-func (s Store) Load() ([]Lease, error) {
-	data, err := s.fs.ReadFile(s.path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
-	}
+func SaveLeases(ctx context.Context, r Reservations, leases []Lease) error {
+	// invariant: saving the whole set changes only what moved: a lease gone is
+	// deleted, a lease added or changed is put, each write whole.
+	current, err := r.List(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var f leaseFile
-	if err := json.Unmarshal(data, &f); err != nil {
-		return nil, err
+	want := make(map[string]Lease, len(leases))
+	for _, l := range leases {
+		want[l.Key()] = l
 	}
-	return f.Leases, nil
-}
-
-func (s Store) Save(leases []Lease) error {
-	// invariant: the store is written whole to a temporary file then renamed, so a
-	// reader (the CLI while the daemon writes) never sees half a file.
-	sort.Slice(leases, func(i, j int) bool {
-		if leases[i].VM != leases[j].VM {
-			return leases[i].VM < leases[j].VM
+	for _, c := range current {
+		if _, ok := want[c.Key()]; !ok {
+			if err := r.Delete(ctx, c.VM, c.GuestPort); err != nil {
+				return err
+			}
 		}
-		return leases[i].GuestPort < leases[j].GuestPort
-	})
-	if leases == nil {
-		leases = []Lease{}
 	}
-	data, err := json.MarshalIndent(leaseFile{Schema: LeasesSchema, Leases: leases}, "", "  ")
-	if err != nil {
-		return err
+	had := make(map[string]Lease, len(current))
+	for _, c := range current {
+		had[c.Key()] = c
 	}
-	if err := s.fs.MkdirAll(path.Dir(s.path), 0o700); err != nil {
-		return err
+	for _, l := range leases {
+		if c, ok := had[l.Key()]; ok && reflect.DeepEqual(c, l) {
+			continue
+		}
+		if err := r.Put(ctx, l); err != nil {
+			return err
+		}
 	}
-	tmp := s.path + ".tmp"
-	if err := s.fs.WriteFile(tmp, append(data, '\n'), 0o600); err != nil {
-		return err
-	}
-	return s.fs.Rename(tmp, s.path)
+	return nil
 }
 
 func Find(leases []Lease, vm string, port int) (found Lease, index int) {

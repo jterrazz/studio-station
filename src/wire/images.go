@@ -14,10 +14,10 @@ import (
 
 func (m machine) images() *images.Service {
 	user := m.host.Env.User()
-	if current, err := m.store.Load(); err == nil && current.VMUser != "" {
-		user = current.VMUser
+	if current, err := m.stores.vmUser().Get(); err == nil && current != "" {
+		user = current
 	}
-	return images.New(m.host, m.hypervisor(), ssh.New(), catalog.Images, images.Options{
+	return images.New(m.host, m.hypervisor(), ssh.New(), m.stores.images, catalog.Images, images.Options{
 		Paths:     m.paths,
 		Version:   Version(),
 		User:      user,

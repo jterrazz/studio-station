@@ -10,9 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+	"github.com/jterrazz/studio-station/src/core/store"
+	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
+
 	"github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -20,7 +24,7 @@ const (
 	ClaudeToken  = "operator:claude:oauth-token"
 	stepBudget   = 2 * time.Minute
 	ExportBudget = stepBudget
-	DefaultLend  = 12 * time.Hour
+	DefaultLend  = accounts.DefaultShareTerm
 	ShortestLend = time.Minute
 	LongestLend  = 7 * 24 * time.Hour
 )
@@ -36,31 +40,27 @@ type Guest interface {
 	GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error)
 }
 
-type VMs interface {
-	IsVM(ctx context.Context, name string) (bool, error)
-	RecordLent(name string, lends []Lend) error
-	RecordRecalled(name string, names []string) error
-	Lends() (map[string][]Lend, error)
-}
+type Lend = accounts.Share
 
-type Lend struct {
-	Name  string    `json:"name"`
-	At    time.Time `json:"at"`
-	Until time.Time `json:"until"`
+type Stores struct {
+	ShareList contract.ShareListPrefs
+	Hosts     machinescontract.HostsPrefs
+	Name      setupcontract.NamePrefs
+	Shares    contract.ShareStore
+	Machines  machinescontract.MachineStore
 }
 
 type Service struct {
 	clock  system.Clock
 	run    system.Runner
 	guest  Guest
-	store  settings.Store
-	vms    VMs
+	st     Stores
 	source contract.SecretSource
 	here   catalog.MachineKind
 }
 
-func New(h system.Host, guest Guest, store settings.Store, vms VMs, source contract.SecretSource, o Options) *Service {
-	return &Service{clock: h.Clock, run: h.Run, guest: guest, store: store, vms: vms, source: source, here: o.Here}
+func New(h system.Host, guest Guest, st Stores, source contract.SecretSource, o Options) *Service {
+	return &Service{clock: h.Clock, run: h.Run, guest: guest, st: st, source: source, here: o.Here}
 }
 
 type Report struct {
@@ -82,16 +82,16 @@ type RecallReport struct {
 	Warnings []string
 }
 
-func (s *Service) List(_ context.Context) (Report, error) {
-	current, err := s.store.Load()
+func (s *Service) List(ctx context.Context) (Report, error) {
+	list, err := s.st.ShareList.Get()
 	if err != nil {
 		return Report{}, err
 	}
-	lends, err := s.vms.Lends()
+	lends, err := s.st.Shares.List(ctx)
 	if err != nil {
 		return Report{}, err
 	}
-	return Report{LendList: append([]string{}, current.LendList...), Lent: names(lends, nil), Lends: lends, Kept: []string{}}, nil
+	return Report{LendList: append([]string{}, list...), Lent: names(lends, nil), Lends: lends, Kept: []string{}}, nil
 }
 
 func (s *Service) Allow(names []string) error {
@@ -100,34 +100,34 @@ func (s *Service) Allow(names []string) error {
 			return &NotSessionError{Name: name}
 		}
 	}
-	current, err := s.store.Load()
+	list, err := s.st.ShareList.Get()
 	if err != nil {
 		return err
 	}
 	for _, name := range names {
-		if !slices.Contains(current.LendList, name) {
-			current.LendList = append(current.LendList, name)
+		if !slices.Contains(list, name) {
+			list = append(list, name)
 		}
 	}
-	return s.store.Save(current)
+	return s.st.ShareList.Set(list)
 }
 
 func (s *Service) LendList() []string {
-	current, err := s.store.Load()
+	list, err := s.st.ShareList.Get()
 	if err != nil {
 		return nil
 	}
-	return current.LendList
+	return list
 }
 
 func (s *Service) Held(names []string) (map[string][]string, error) {
 	return s.holding(names)
 }
 
-func (s *Service) Lends() (map[string][]Lend, error) { return s.vms.Lends() }
+func (s *Service) Lends() (map[string][]Lend, error) { return s.st.Shares.List(context.Background()) }
 
 func (s *Service) holding(only []string) (map[string][]string, error) {
-	lends, err := s.vms.Lends()
+	lends, err := s.st.Shares.List(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -147,27 +147,26 @@ func names(lends map[string][]Lend, only []string) map[string][]string {
 }
 
 func (s *Service) CheckDisallow(names []string) error {
-	current, err := s.store.Load()
+	list, err := s.st.ShareList.Get()
 	if err != nil {
 		return err
 	}
-	return onList(current.LendList, names)
+	return onList(list, names)
 }
 
 func (s *Service) Disallow(ctx context.Context, names []string) (RecallReport, error) {
-	current, err := s.store.Load()
+	list, err := s.st.ShareList.Get()
 	if err != nil {
 		return RecallReport{}, err
 	}
-	if listErr := onList(current.LendList, names); listErr != nil {
+	if listErr := onList(list, names); listErr != nil {
 		return RecallReport{}, listErr
 	}
 	held, err := s.holding(names)
 	if err != nil {
 		return RecallReport{}, err
 	}
-	current.LendList = slices.DeleteFunc(current.LendList, func(n string) bool { return slices.Contains(names, n) })
-	if err := s.store.Save(current); err != nil {
+	if err := s.st.ShareList.Set(slices.DeleteFunc(list, func(n string) bool { return slices.Contains(names, n) })); err != nil {
 		return RecallReport{}, err
 	}
 	report := RecallReport{From: map[string][]string{}}
@@ -211,7 +210,7 @@ func (s *Service) Lend(ctx context.Context, to string, names []string, term time
 	for _, n := range names {
 		lends = append(lends, Lend{Name: n, At: at, Until: at.Add(term)})
 	}
-	if err := s.vms.RecordLent(to, lends); err != nil {
+	if err := s.recordLent(ctx, to, lends); err != nil {
 		return LendReport{}, err
 	}
 	return LendReport{To: to, Names: names, At: at, Until: at.Add(term)}, nil
@@ -260,35 +259,38 @@ func (s *Service) lendPlan(ctx context.Context, to string, names []string) ([]st
 	if err := s.checkVM(ctx, to); err != nil {
 		return nil, err
 	}
-	current, err := s.store.Load()
+	list, err := s.st.ShareList.Get()
 	if err != nil {
 		return nil, err
 	}
 	if len(names) == 0 {
-		names = current.LendList
+		names = list
 	}
 	if len(names) == 0 {
 		return nil, &EmptyLendListError{}
 	}
-	if err := onList(current.LendList, names); err != nil {
+	if err := onList(list, names); err != nil {
 		return nil, err
 	}
 	return dedupe(names), nil
 }
 
 func (s *Service) checkVM(ctx context.Context, name string) error {
-	isVM, err := s.vms.IsVM(ctx, name)
-	if err != nil {
-		return err
-	}
-	if isVM {
+	var unreadable *store.UnreadableError
+	if _, err := s.st.Machines.Get(ctx, name); err == nil || errors.As(err, &unreadable) {
 		return nil
+	} else if !errors.Is(err, store.ErrNotFound) {
+		return err
 	}
-	current, err := s.store.Load()
+	hosts, err := s.st.Hosts.Get()
 	if err != nil {
 		return err
 	}
-	if _, host := current.Hosts[name]; host || name == current.Here {
+	here, err := s.st.Name.Get()
+	if err != nil {
+		return err
+	}
+	if _, host := hosts[name]; host || name == here {
 		return &NotAVMError{Name: name}
 	}
 	return &UnknownVMError{Name: name}
@@ -299,7 +301,26 @@ func (s *Service) recallFrom(ctx context.Context, vm string, names []string) err
 	if err != nil || out.ExitCode != 0 {
 		return &StepError{VM: vm, Step: "deleting the copies", Cause: failure(err, out)}
 	}
-	return s.vms.RecordRecalled(vm, names)
+	held, err := s.st.Shares.Get(ctx, vm)
+	if err != nil {
+		return err
+	}
+	return s.st.Shares.Put(ctx, vm, slices.DeleteFunc(held, func(l Lend) bool { return slices.Contains(names, l.Name) }))
+}
+
+func (s *Service) recordLent(ctx context.Context, vm string, lends []Lend) error {
+	held, err := s.st.Shares.Get(ctx, vm)
+	if err != nil {
+		return err
+	}
+	for _, l := range lends {
+		if i := slices.IndexFunc(held, func(have Lend) bool { return have.Name == l.Name }); i >= 0 {
+			held[i] = l
+		} else {
+			held = append(held, l)
+		}
+	}
+	return s.st.Shares.Put(ctx, vm, held)
 }
 
 func (s *Service) inVM(ctx context.Context, vm, line, stdin string) (system.Output, error) {

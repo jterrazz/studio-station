@@ -35,13 +35,12 @@ func (s *Service) installClaudeToken(ctx context.Context, values map[string]stri
 		return Change{}, errors.New("studio credentials import failed: " + firstLine(err.Error()))
 	}
 	change := Change{Steps: []Step{okStep(claudeTokenName, "kept by the studio credential store")}}
-	current, err := s.store.Load()
+	list, err := s.prefs.ShareList.Get()
 	if err != nil {
 		return change, err
 	}
-	if !slices.Contains(current.LendList, claudeTokenName) {
-		current.LendList = append(current.LendList, claudeTokenName)
-		if err := s.store.Save(current); err != nil {
+	if !slices.Contains(list, claudeTokenName) {
+		if err := s.prefs.ShareList.Set(append(list, claudeTokenName)); err != nil {
 			return change, err
 		}
 	}
@@ -57,12 +56,11 @@ func (s *Service) uninstallClaudeToken(ctx context.Context) (Change, error) {
 		return Change{}, err
 	}
 	change := Change{Steps: []Step{okStep(claudeTokenName, "deleted from the studio credential store")}}
-	current, err := s.store.Load()
+	list, err := s.prefs.ShareList.Get()
 	if err != nil {
 		return change, err
 	}
-	current.LendList = slices.DeleteFunc(current.LendList, func(n string) bool { return n == claudeTokenName })
-	if err := s.store.Save(current); err != nil {
+	if err := s.prefs.ShareList.Set(slices.DeleteFunc(list, func(n string) bool { return n == claudeTokenName })); err != nil {
 		return change, err
 	}
 	change.Steps = append(change.Steps, okStep("lend list", "no longer holds "+claudeTokenName))

@@ -6,6 +6,12 @@ import (
 	"testing"
 	"time"
 
+	corefake "github.com/jterrazz/studio-station/src/core/adapter/fake"
+	model "github.com/jterrazz/studio-station/src/machines"
+	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
+	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/settings"
@@ -25,12 +31,15 @@ func service(t *testing.T, run system.Runner) (*machines.Service, *systemtest.Cl
 	clock := &systemtest.Clock{At: time.Unix(0, 0)}
 	h := system.Host{Run: run, FS: files, Env: systemtest.Env{HomeDir: "/home"}, Net: systemtest.NewNet(), Clock: clock}
 	paths := settings.Paths{Config: "/config", State: "/state"}
-	store := settings.NewStore(files, paths)
-	hosts := map[string]settings.Host{"mac": {}, "x": {User: "u"}}
-	if err := store.Save(settings.Settings{Here: "mac", Hosts: hosts}); err != nil {
+	prefs := corefake.NewPreferences()
+	p := machines.Prefs{Name: setupcontract.Name(prefs), Hosts: machinescontract.Hosts(prefs), VMUser: machinescontract.VMUser(prefs)}
+	if err := p.Name.Set("mac"); err != nil {
 		t.Fatal(err)
 	}
-	return machines.New(h, nil, store, noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, Paths: paths}), clock
+	if err := p.Hosts.Set(map[string]model.Host{"mac": {}, "x": {User: "u"}}); err != nil {
+		t.Fatal(err)
+	}
+	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, Paths: paths}), clock
 }
 
 type answering struct {

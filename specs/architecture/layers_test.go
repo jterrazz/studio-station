@@ -40,7 +40,8 @@ const (
 // `x/*`, a longer prefix beats a shorter. `std` is the standard library minus
 // forbiddenStd; a forbidden member is re-allowed only by its name in a row.
 func importTable() map[string][]string {
-	domain := []string{"system", "catalog", "domain/settings", "domain/probe", "ports", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract", std}
+	domain := []string{"system", "catalog", "domain/settings", "domain/probe", "ports", "ports/contract", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract",
+		"machines", "machines/contract", "images", "setup", "setup/contract", "core/store", "core/adapter/fake", "machines/adapter/fake", std}
 	organism := []string{"ui/molecule", "ui/atom", "ui/token", "page", lip, bubble, huh, std}
 	template := append(slices.Clone(organism), "ui/organism")
 	return map[string][]string{
@@ -49,7 +50,7 @@ func importTable() map[string][]string {
 		"cmd/generate/pages":         {"page", "pages", "pages/*", "domain/*", "engine", "ports", "catalog", "ui/token", std},
 		"wire":                       {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", "net/netip", std},
 		"surface/cli":                {"surface/cli/kit", cobra, std},
-		"surface/cli/kit":            {"output", "page", "core/fail", "domain/*", "engine", "ports", "accounts", "catalog", "testing", cobra, pflag, std},
+		"surface/cli/kit":            {"output", "page", "core/fail", "core/store", "domain/*", "engine", "ports", "accounts", "catalog", "testing", cobra, pflag, std},
 		"surface/cli/*":              {"surface/cli/kit", "domain/*", "engine", "ports", "page", "pages/*", "catalog", cobra, pflag, std},
 		"domain/*":                   domain,
 		"domain/setup":               append(slices.Clone(domain), "domain/shell", "domain/storage"),
@@ -83,7 +84,7 @@ func importTable() map[string][]string {
 		"ui/render/tui":              append(slices.Clone(template), "ui/template", tea),
 		"output":                     {"page", "ui/render/*", "core/fail", std},
 		"core/*":                     {"core/*", std},
-		"core/adapter/*":             {"core/*", "platform/local", "golang.org/x/sys/unix", "world", std},
+		"core/adapter/*":             {"core/*", "platform/local", "golang.org/x/sys/unix", std},
 		"core/contract/contracttest": {"core/*", "testing", std},
 		"core/fail":                  {"core/finding", std},
 		"surface/tui":                {"surface/tui/screens/*", "domain/*", "ports", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},

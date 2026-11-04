@@ -26,3 +26,11 @@ type Declaration struct {
 }
 
 func (d Declaration) Key() string { return d.Machine + ":" + strconv.Itoa(d.Port) }
+
+type ServicesGroup struct {
+	Range        string `json:"range,omitempty"`
+	MaxPerVM     int    `json:"max_per_vm,omitempty"`
+	IgnoredPorts []int  `json:"ignored_ports,omitempty"`
+	MinPort      int    `json:"min_port,omitempty"`
+	HTTPS        string `json:"https,omitempty"`
+}

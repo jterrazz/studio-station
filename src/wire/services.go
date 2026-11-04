@@ -18,7 +18,7 @@ import (
 
 func (m machine) services(env kit.Env) *services.Service {
 	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Remote: fanOutArgv, Exposure: m.exposure}
-	d := servicesDaemon{c: engine.Dial(m.host, m.paths)}
+	d := servicesDaemon{c: engine.Dial(m.host, m.paths.State)}
 	if m.kind != catalog.Host {
 		g := m.guest()
 		p := g.Placement()
@@ -47,7 +47,7 @@ func (m machine) services(env kit.Env) *services.Service {
 		}
 		return "", false, &services.UnknownVMError{Name: vm}
 	}
-	return services.New(m.host, m.store, d, o)
+	return services.New(m.host, services.Stores{Services: m.stores.services(), Name: m.stores.name(), Hosts: m.stores.hosts(), Reservations: m.stores.reservations}, d, o)
 }
 
 func servicesCommand(env kit.Env, m machine) *cobra.Command {

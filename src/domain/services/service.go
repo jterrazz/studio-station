@@ -10,8 +10,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/core/store"
+	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
+	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
+
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -84,28 +88,33 @@ type Options struct {
 	Exposure func(ctx context.Context) Exposure
 }
 
-type Service struct {
-	h     system.Host
-	store settings.Store
-	d     Daemon
-	o     Options
+type Stores struct {
+	Services     portscontract.ServicesPrefs
+	Name         setupcontract.NamePrefs
+	Hosts        machinescontract.HostsPrefs
+	Reservations Reservations
 }
 
-func New(h system.Host, store settings.Store, d Daemon, o Options) *Service {
-	return &Service{h: h, store: store, d: d, o: o}
+type Service struct {
+	h  system.Host
+	st Stores
+	d  Daemon
+	o  Options
+}
+
+func New(h system.Host, st Stores, d Daemon, o Options) *Service {
+	return &Service{h: h, st: st, d: d, o: o}
 }
 
 func (s *Service) inVM() bool { return s.o.Here != catalog.Host }
 
 func (s *Service) policy() Policy {
-	cfg, err := s.store.Load()
+	g, err := s.st.Services.Get()
 	if err != nil {
 		return PolicyOf(nil)
 	}
-	return PolicyOf(cfg.Services)
+	return PolicyOf(g)
 }
-
-func (s *Service) leases() Store { return NewStore(s.h.FS, s.o.State) }
 
 const (
 	ServeOn  = "on"
@@ -162,7 +171,7 @@ func (s *Service) offline(ctx context.Context) HostView {
 		e = s.o.Exposure(ctx)
 	}
 	view := HostView{Name: s.o.HereName, Here: true, Reachable: true, PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: s.policy().HTTPS, Services: []View{}}
-	leases, _ := s.leases().Load()
+	leases, _ := s.st.Reservations.List(ctx)
 	for _, l := range leases {
 		view.Services = append(view.Services, ViewOf(l, e, view.HTTPS, Unknown))
 	}
@@ -203,7 +212,7 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 // counted against it.
 func (s *Service) rangeOf() *Range {
 	p := s.policy()
-	leases, _ := s.leases().Load()
+	leases, _ := s.st.Reservations.List(context.Background())
 	leased := 0
 	for _, l := range leases {
 		if l.HostPort >= p.Low && l.HostPort <= p.High {
@@ -229,14 +238,18 @@ func (s *Service) List(ctx context.Context, hereOnly bool) (Fleet, error) {
 	if hereOnly || s.inVM() {
 		return fleet, nil
 	}
-	cfg, err := s.store.Load()
+	hosts, err := s.st.Hosts.Get()
+	if err != nil {
+		return Fleet{}, err
+	}
+	name, err := s.st.Name.Get()
 	if err != nil {
 		return Fleet{}, err
 	}
 	var others []string
-	for name := range cfg.Hosts {
-		if name != cfg.Here {
-			others = append(others, name)
+	for host := range hosts {
+		if host != name {
+			others = append(others, host)
 		}
 	}
 	sort.Strings(others)
@@ -335,7 +348,7 @@ func (s *Service) CheckRelease(ctx context.Context, t Target) (host string, err 
 	if !here {
 		return host, nil
 	}
-	leases, err := s.leases().Load()
+	leases, err := s.st.Reservations.List(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -349,7 +362,7 @@ func (s *Service) Pinned(t Target) bool {
 	if s.inVM() {
 		return false
 	}
-	leases, err := s.leases().Load()
+	leases, err := s.st.Reservations.List(context.Background())
 	if err != nil {
 		return false
 	}
@@ -379,14 +392,12 @@ func (s *Service) Release(ctx context.Context, t Target, host string, yes bool) 
 	if !errors.Is(err, ErrDaemonDown) {
 		return l, err
 	}
-	store := s.leases()
-	leases, err := store.Load()
+	l, err = s.st.Reservations.Get(ctx, t.VM, t.Port)
+	if errors.Is(err, store.ErrNotFound) {
+		return Lease{}, &NoLeaseError{VM: t.VM, Port: t.Port}
+	}
 	if err != nil {
 		return Lease{}, err
 	}
-	l, i := Find(leases, t.VM, t.Port)
-	if i < 0 {
-		return Lease{}, &NoLeaseError{VM: t.VM, Port: t.Port}
-	}
-	return l, store.Save(append(leases[:i:i], leases[i+1:]...))
+	return l, s.st.Reservations.Delete(ctx, t.VM, t.Port)
 }

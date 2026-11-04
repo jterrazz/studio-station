@@ -72,7 +72,7 @@ func (s *Service) tilde(p string) string {
 func (s *Service) SSHBlocks(_ context.Context, f Fleet) error {
 	// hazard: the blocks of machines the fleet no longer holds are pruned only when
 	// every host answered; an unreachable host's VMs are unknown, not gone.
-	cfg, err := s.store.Load()
+	cfg, err := s.prefs()
 	if err != nil {
 		return err
 	}

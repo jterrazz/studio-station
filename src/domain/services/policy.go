@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/ports"
+
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 )
 
 const (
@@ -20,7 +21,7 @@ type Policy struct {
 	HTTPS                        string
 }
 
-func PolicyOf(s *settings.Services) Policy {
+func PolicyOf(s *ports.ServicesGroup) Policy {
 	d := catalog.ServicePolicy
 	p := Policy{Low: d.RangeLow, High: d.RangeHigh, MaxPerVM: d.MaxPerVM, MinPort: d.MinPort, Ignored: d.Ignored, HTTPS: d.HTTPS}
 	if s == nil {

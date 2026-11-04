@@ -72,10 +72,10 @@ func (s *Service) frame() Snapshot {
 		snap.Environment.Security = pendingChecks(s.securityProbes())
 		snap.Environment.Updates = pendingChecks(s.updateProbes())
 	}
-	current, err := s.deps.Store.Load()
+	here, err := s.deps.Name.Get()
 	snap.Machine = Machine{
-		Name:       current.Here,
-		Registered: err == nil && current.Here != "",
+		Name:       here,
+		Registered: err == nil && here != "",
 		Kind:       s.o.Here,
 		Hostname:   s.h.Env.Hostname(),
 		OS:         s.h.Env.GOOS(),

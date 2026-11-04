@@ -7,15 +7,16 @@ import (
 	"sync"
 	"time"
 
+	model "github.com/jterrazz/studio-station/src/machines"
+
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 const fanOutBudget = 5 * time.Second
 
 func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
-	cfg, err := s.store.Load()
+	cfg, err := s.prefs()
 	if err != nil {
 		return Fleet{}, err
 	}
@@ -89,7 +90,7 @@ func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[str
 	return DaemonInfo{Known: true, Running: true, Version: version}, live
 }
 
-func (s *Service) ask(ctx context.Context, name string, h settings.Host, node Node) HostView {
+func (s *Service) ask(ctx context.Context, name string, h model.Host, node Node) HostView {
 	silent := HostView{Name: name, User: h.User, Node: node}
 	argv := s.o.Remote(name, []string{"machines", "--here", "--json"})
 	out, err := s.h.Run.Output(ctx, system.Cmd{Name: argv[0], Args: argv[1:], Timeout: fanOutBudget})

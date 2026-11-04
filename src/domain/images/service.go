@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
-	"github.com/jterrazz/studio-station/src/machines/contract"
 	"io/fs"
 	"path"
 	"slices"
 	"strings"
+
+	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
@@ -28,12 +29,13 @@ type Service struct {
 	h      system.Host
 	e      contract.Hypervisor
 	guests contract.GuestDialer
+	store  imagescontract.ImageStore
 	list   []catalog.Image
 	o      Options
 }
 
-func New(h system.Host, e contract.Hypervisor, guests contract.GuestDialer, list []catalog.Image, o Options) *Service {
-	return &Service{h: h, e: e, guests: guests, list: list, o: o}
+func New(h system.Host, e contract.Hypervisor, guests contract.GuestDialer, store imagescontract.ImageStore, list []catalog.Image, o Options) *Service {
+	return &Service{h: h, e: e, guests: guests, store: store, list: list, o: o}
 }
 
 type Report struct {
@@ -168,7 +170,7 @@ func (s *Service) Delete(ctx context.Context, image, version string) ([]Record, 
 				return removed, err
 			}
 		}
-		if err := s.h.FS.Remove(path.Join(s.imageDir(image), r.Version+".json")); err != nil {
+		if err := s.store.Delete(ctx, image, r.Version); err != nil {
 			return removed, err
 		}
 		removed = append(removed, r)

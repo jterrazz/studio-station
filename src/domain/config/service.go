@@ -8,6 +8,9 @@ import (
 	"slices"
 	"strings"
 
+	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
+
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	schedule "github.com/jterrazz/studio-station/src/domain/probe"
@@ -33,16 +36,21 @@ type Service struct {
 	items  []catalog.ConfigItem
 	byName map[string]catalog.ConfigItem
 	files  fs.FS
-	store  settings.Store
+	prefs  Prefs
 	o      Options
 }
 
-func New(h system.Host, items []catalog.ConfigItem, files fs.FS, store settings.Store, o Options) *Service {
+type Prefs struct {
+	Identity  setupcontract.IdentityPrefs
+	ShareList accountscontract.ShareListPrefs
+}
+
+func New(h system.Host, items []catalog.ConfigItem, files fs.FS, prefs Prefs, o Options) *Service {
 	byName := make(map[string]catalog.ConfigItem, len(items))
 	for _, it := range items {
 		byName[it.Name] = it
 	}
-	return &Service{h: h, items: items, byName: byName, files: files, store: store, o: o}
+	return &Service{h: h, items: items, byName: byName, files: files, prefs: prefs, o: o}
 }
 
 type Report struct {

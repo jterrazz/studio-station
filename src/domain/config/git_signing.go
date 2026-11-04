@@ -16,7 +16,7 @@ func (s *Service) checkGitSigning(ctx context.Context) (state catalog.State, det
 }
 
 func (s *Service) installGitSigning(ctx context.Context) (Change, error) {
-	person, err := s.store.Load()
+	person, err := s.prefs.Identity.Get()
 	if err != nil {
 		return Change{}, err
 	}

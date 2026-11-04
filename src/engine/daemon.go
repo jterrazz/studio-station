@@ -16,7 +16,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -49,7 +48,8 @@ type Tailnet interface {
 }
 
 type Options struct {
-	Paths     settings.Paths
+	// value: the engine's own state folder: its socket and its children.
+	State     string
 	Here      catalog.MachineKind
 	Version   string
 	PID       int
@@ -77,7 +77,7 @@ type Daemon struct {
 	guests Guests
 	m      Machines
 	tn     Tailnet
-	store  settings.Store
+	st     Stores
 	o      Options
 
 	mu      sync.Mutex
@@ -99,14 +99,32 @@ type Daemon struct {
 	recallFailed map[string]time.Time
 }
 
-func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, store settings.Store, o Options) *Daemon {
+type Stores struct {
+	Services     Policy
+	Reservations Reservations
+}
+
+type Policy interface {
+	Get() (*ports.ServicesGroup, error)
+}
+
+type Reservations interface {
+	// value: the reserved ports, kept by their store; the daemon is their one
+	// writer while it runs.
+	Get(ctx context.Context, vm string, guestPort int) (ports.Reservation, error)
+	Put(ctx context.Context, r ports.Reservation) error
+	List(ctx context.Context) ([]ports.Reservation, error)
+	Delete(ctx context.Context, vm string, guestPort int) error
+}
+
+func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st Stores, o Options) *Daemon {
 	if o.Tick == 0 {
 		o.Tick = time.Second
 	}
 	if o.GuestPort == 0 {
 		o.GuestPort = 22
 	}
-	d := &Daemon{h: h, hv: hv, guests: guests, m: m, tn: tn, store: store, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, recallFailed: map[string]time.Time{}}
+	d := &Daemon{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, recallFailed: map[string]time.Time{}}
 	d.power = d.newPower()
 	if o.Notifier != nil {
 		d.notifier = o.Notifier(d.logf)
@@ -122,16 +140,16 @@ func (d *Daemon) Check() error {
 }
 
 func (d *Daemon) policy() services.Policy {
-	cfg, err := d.store.Load()
+	g, err := d.st.Services.Get()
 	if err != nil {
 		return services.PolicyOf(nil)
 	}
-	return services.PolicyOf(cfg.Services)
+	return services.PolicyOf(g)
 }
 
-func (d *Daemon) leaseStore() services.Store { return services.NewStore(d.h.FS, d.o.Paths.State) }
-
-func (d *Daemon) saveLeases() { _ = d.leaseStore().Save(append([]services.Lease(nil), d.leases...)) }
+func (d *Daemon) saveLeases() {
+	_ = services.SaveLeases(context.Background(), d.st.Reservations, append([]services.Lease(nil), d.leases...))
+}
 
 func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 	d.note = note
@@ -142,7 +160,7 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 	if err := d.Check(); err != nil {
 		return err
 	}
-	sock := SocketPath(d.o.Paths)
+	sock := SocketPath(d.o.State)
 	if p, err := DialPath(d.h, sock).Ping(ctx); err == nil {
 		return &RunningError{PID: p.PID}
 	}
@@ -150,14 +168,14 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 	// so a killed daemon's mask is cleared by its successor (launchd restarts it).
 	d.power.Reset()
 	_ = d.h.FS.Remove(sock)
-	if n := d.h.Run.Reap(ChildrenDir(d.o.Paths)); n > 0 {
+	if n := d.h.Run.Reap(ChildrenDir(d.o.State)); n > 0 {
 		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed daemon left running")
 	}
-	if err := d.h.FS.MkdirAll(d.o.Paths.State, 0o700); err != nil {
+	if err := d.h.FS.MkdirAll(d.o.State, 0o700); err != nil {
 		return err
 	}
 	d.started = d.h.Clock.Now().UTC().Truncate(time.Second)
-	d.leases, _ = d.leaseStore().Load()
+	d.leases, _ = d.st.Reservations.List(ctx)
 	d.refreshSelf(ctx)
 	d.adopt(ctx)
 	d.sweepLends(ctx)

@@ -3,6 +3,8 @@ package settings
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/jterrazz/studio-station/src/core/store"
 )
 
 type v1Document struct {
@@ -23,9 +25,9 @@ func ConvertV1(v1 []byte, user string) (Settings, error) {
 	// logs in itself, and station keeps no tailnet secret.
 	var old v1Document
 	if err := json.Unmarshal(v1, &old); err != nil {
-		return Settings{}, &UnreadableError{Path: "config.json", Cause: err}
+		return Settings{}, &store.UnreadableError{Path: "config.json", Cause: err}
 	}
-	s := Defaults()
+	var s Settings
 	s.Here = old.Self
 	s.VMUser = user
 	s.UserEmail = old.UserEmail

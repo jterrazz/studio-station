@@ -3,11 +3,12 @@ package engine
 import (
 	"context"
 	"errors"
-	model "github.com/jterrazz/studio-station/src/machines"
 	"net/netip"
 	"sync"
 	"testing"
 	"time"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -118,7 +119,7 @@ func newHarness(t *testing.T, records ...machines.VMRecord) harness {
 	m := &fakeMachines{records: records}
 	hv := newHypervisor()
 	paths := settings.Paths{Config: "/c", State: "/s"}
-	d := New(h, hv, nil, m, &fakeTailnet{}, settings.NewStore(files, paths), Options{Paths: paths, Here: catalog.Host})
+	d := New(h, hv, nil, m, &fakeTailnet{}, memStores(), Options{State: paths.State, Here: catalog.Host})
 	return harness{d: d, hv: hv, run: run, fs: files, clock: clock, m: m}
 }
 

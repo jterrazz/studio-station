@@ -19,7 +19,7 @@ func (s *Service) checkSSHKey(context.Context) (state catalog.State, detail stri
 }
 
 func (s *Service) installSSHKey(ctx context.Context) (Change, error) {
-	person, err := s.store.Load()
+	person, err := s.prefs.Identity.Get()
 	if err != nil {
 		return Change{}, err
 	}

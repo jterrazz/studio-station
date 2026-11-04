@@ -18,12 +18,12 @@ func (s *Service) KnownHostsPath(name string) string { return path.Join(s.knownH
 func (s *Service) KeyPath() string { return s.img.KeyPath() }
 
 func (s *Service) VMUser() string {
-	cfg, _ := s.store.Load()
+	cfg, _ := s.prefs()
 	return s.vmUser(cfg)
 }
 
 func (s *Service) HereName() string {
-	cfg, _ := s.store.Load()
+	cfg, _ := s.prefs()
 	return s.here(cfg)
 }
 

@@ -25,7 +25,7 @@ func configCommand(env kit.Env, m machine) *cobra.Command {
 func configService(m machine) *config.Service {
 	// invariant: "dotfiles" is the embedded root, so Sub cannot fail.
 	files, _ := fs.Sub(catalog.DotfilesFS, "dotfiles")
-	return config.New(m.host, catalog.ConfigItems, files, m.store, config.Options{
+	return config.New(m.host, catalog.ConfigItems, files, config.Prefs{Identity: m.stores.identity(), ShareList: m.stores.shareList()}, config.Options{
 		Pool:     m.pool,
 		Here:     m.kind,
 		Paths:    m.paths,

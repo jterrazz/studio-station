@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -85,17 +84,17 @@ func (e *HostOnlyError) Error() string {
 	return "the daemon runs only on a host; here is " + e.Here.Article()
 }
 
-func SocketPath(p settings.Paths) string { return path.Join(p.State, "daemon.sock") }
+func SocketPath(state string) string { return path.Join(state, "daemon.sock") }
 
-func ChildrenDir(p settings.Paths) string { return path.Join(p.State, "children") }
+func ChildrenDir(state string) string { return path.Join(state, "children") }
 
 type Client struct {
 	sockets system.Sockets
 	path    string
 }
 
-func Dial(h system.Host, p settings.Paths) Client {
-	return Client{sockets: h.Sockets, path: SocketPath(p)}
+func Dial(h system.Host, state string) Client {
+	return Client{sockets: h.Sockets, path: SocketPath(state)}
 }
 
 func DialPath(h system.Host, file string) Client { return Client{sockets: h.Sockets, path: file} }

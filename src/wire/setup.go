@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
+
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -22,9 +23,9 @@ func setupCommand(env kit.Env, m machine) *cobra.Command {
 
 func setupService(env kit.Env, m machine) *setup.Service {
 	fleet := m.machines(env.Interactive)
-	registrar := fleetRegistrar{store: m.store, machines: fleet}
+	registrar := fleetRegistrar{name: m.stores.name(), machines: fleet}
 	installer := daemonInstaller{m: m, machines: fleet}
-	return setup.New(m.host, m.store, m.vault(), registrar, installer, setup.Options{
+	return setup.New(m.host, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.services(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
 		Here:  m.kind,
 		Paths: m.paths,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
@@ -93,13 +94,13 @@ func (s systemTools) Install(ctx context.Context, names []string) error {
 }
 
 type fleetRegistrar struct {
-	store    settings.Store
+	name     setupcontract.NamePrefs
 	machines *machines.Service
 }
 
 func (r fleetRegistrar) Here() (string, bool) {
-	current, err := r.store.Load()
-	return current.Here, err == nil && current.Here != ""
+	here, err := r.name.Get()
+	return here, err == nil && here != ""
 }
 
 func (r fleetRegistrar) Register(name string) error { return r.machines.Init(name) }
