@@ -16,7 +16,7 @@ git clone https://github.com/jterrazz/studio-station.git
 cd studio-station
 make install              # Go modules and the npm half
 make build                # .artifacts/go/station
-./.artifacts/go/station status  # run the build without installing it
+./.artifacts/go/station overview  # run the build without installing it
 ```
 
 The binary reads nothing from the clone: the dotfiles and the VM recipes are embedded, so any checkout is a checkout to build. Go 1.27+ and npm are the two requirements; `make install` touches nothing outside the checkout. `make provision` puts the build on the machine as the real `station` ([Release](release.md)).
