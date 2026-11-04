@@ -4,5 +4,5 @@ runs:
     - command: 'disk free docker'
       exit: 2
       stderr: |
-          Error: docker's place is linux; here is a host
+          Error: docker is for Linux VMs only
           Hint: station disk

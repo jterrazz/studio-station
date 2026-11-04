@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"context"
 	"errors"
-	"github.com/jterrazz/studio-station/src/disk"
 	"path"
 	"strconv"
 	"strings"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -119,7 +119,7 @@ func (s *Service) find(name string) (Entry, error) {
 			continue
 		}
 		if !s.placed(e) {
-			return e, &disk.ElsewhereError{Name: name, Places: e.Places, Here: s.o.Here}
+			return e, &disk.ElsewhereError{Name: name, Places: e.Places}
 		}
 		return e, nil
 	}

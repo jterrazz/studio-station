@@ -1,8 +1,7 @@
 package disk
 
 import (
-	"strings"
-
+	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
@@ -13,16 +12,9 @@ func (e *UnknownError) Error() string { return "no disk row for \"" + e.Name + "
 type ElsewhereError struct {
 	Name   string
 	Places []catalog.MachineKind
-	Here   catalog.MachineKind
 }
 
-func (e *ElsewhereError) Error() string {
-	places := make([]string, len(e.Places))
-	for i, p := range e.Places {
-		places[i] = string(p)
-	}
-	return e.Name + "'s place is " + strings.Join(places, ", ") + "; here is " + e.Here.Article()
-}
+func (e *ElsewhereError) Error() string { return e.Name + " is for " + apps.LivesOn(e.Places) }
 
 type NothingToFreeError struct{ Name string }
 
