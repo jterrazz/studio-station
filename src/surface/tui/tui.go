@@ -24,7 +24,6 @@ type Deps struct {
 	Here     page.Context
 	Calls    call.Router
 	Target   machine.Ref
-	Status   homescreen.Status
 	Tools    toolsscreen.Deps
 	Config   configscreen.Deps
 	Storage  storagescreen.Deps
@@ -60,7 +59,7 @@ func Tabs() []Tab {
 func Run(ctx context.Context, d Deps) error {
 	describe := tab.Describe(d.Describe)
 	app := newApp(d.Here, Tabs(), []tab.Screen{
-		homescreen.New(ctx, d.Status, d.Station, d.Here, describe),
+		homescreen.New(ctx, homescreen.Deps{Calls: d.Calls, Target: d.Target}, d.Station, d.Here, describe),
 		toolsscreen.New(ctx, d.Tools, d.Here, describe),
 		configscreen.New(ctx, d.Config, d.Here, describe),
 		storagescreen.New(ctx, d.Storage, d.Here, describe),

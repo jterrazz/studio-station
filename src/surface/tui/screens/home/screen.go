@@ -7,6 +7,10 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
+	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
@@ -18,10 +22,9 @@ const (
 	history = 16
 )
 
-type Status interface {
-	Watch(ctx context.Context) <-chan pagehome.Overview
-	Forget()
-	Sample(ctx context.Context) (pagehome.Sample, error)
+type Deps struct {
+	Calls  call.Router
+	Target machine.Ref
 }
 
 type samples struct{ list []pagehome.Sample }
@@ -31,7 +34,7 @@ type Fix func(ctx context.Context, words []string) error
 type Model struct {
 	tab.View[pagehome.Overview]
 	ctx     context.Context
-	status  Status
+	d       Deps
 	here    page.Context
 	live    *samples
 	visible bool
@@ -46,13 +49,28 @@ type sampled struct {
 
 type tick struct{}
 
-func New(ctx context.Context, s Status, fix Fix, here page.Context, describe tab.Describe) Model {
+func New(ctx context.Context, d Deps, fix Fix, here page.Context, describe tab.Describe) Model {
 	live := &samples{}
 	source := func(ctx context.Context, fresh bool) (<-chan pagehome.Overview, error) {
-		if fresh {
-			s.Forget()
+		updates, err := call.Follow(ctx, d.Calls, d.Target, overviewcalls.Read, overviewcalls.ReadIn{Fresh: fresh}, nil)
+		if err != nil {
+			return nil, err
 		}
-		return s.Watch(ctx), nil
+		out := make(chan pagehome.Overview)
+		go func() {
+			defer close(out)
+			for u := range updates {
+				if u.Err != nil {
+					continue
+				}
+				select {
+				case out <- u.Value:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+		return out, nil
 	}
 	build := func(snap pagehome.Overview) page.Page {
 		list := live.list
@@ -61,7 +79,7 @@ func New(ctx context.Context, s Status, fix Fix, here page.Context, describe tab
 		}
 		return pagehome.Live(pagehome.Snapshot(snap, here, false), list, snap)
 	}
-	return Model{View: tab.NewView(ID, "Home", "actions", here, source, build, describe), ctx: ctx, status: s, here: here, live: live, visible: true, ticking: true, fix: fix}
+	return Model{View: tab.NewView(ID, "Home", "actions", here, source, build, describe), ctx: ctx, d: d, here: here, live: live, visible: true, ticking: true, fix: fix}
 }
 
 func (m Model) Init() tea.Cmd { return tea.Batch(m.View.Init(), next()) }
@@ -70,7 +88,7 @@ func next() tea.Cmd { return tea.Tick(every, func(time.Time) tea.Msg { return ti
 
 func (m Model) measure() tea.Cmd {
 	return func() tea.Msg {
-		sample, err := m.status.Sample(m.ctx)
+		sample, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, activitycalls.Sample, activitycalls.SampleIn{}, nil)
 		return sampled{sample: sample, err: err}
 	}
 }

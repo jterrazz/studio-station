@@ -4,6 +4,7 @@ import (
 	"time"
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
@@ -13,6 +14,7 @@ import (
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
+	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"github.com/jterrazz/studio-station/src/remote"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
@@ -38,7 +40,10 @@ func (m machine) registry(env kit.Env) *call.Registry {
 	if env.Interactive {
 		named = setupAsk{setup: setupService, ask: env.Prompt}
 	}
+	sections := statusDeps(env, m)
 	registry, err := call.NewRegistry(
+		activitycalls.All(activitycalls.Deps{Meter: sections.Meter}),
+		overviewcalls.All(sections),
 		accountscalls.All(accountscalls.Deps{Accounts: m.accounts(), Secrets: m.secrets(), Kind: kind}),
 		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
 		awakecalls.All(awakecalls.Deps{Power: awakePower{m.power()}}),

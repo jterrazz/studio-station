@@ -322,17 +322,6 @@ func didYouMean(suggestions []string) string {
 	return " (did you mean \"" + strings.Join(suggestions, "\" or \"") + "\"?)"
 }
 
-func Pages[T any](values <-chan T, build func(T) page.Page) <-chan page.Page {
-	out := make(chan page.Page)
-	go func() {
-		defer close(out)
-		for v := range values {
-			out <- build(v)
-		}
-	}()
-	return out
-}
-
 func Updates[T any](updates <-chan call.Update[T], build func(T) page.Page) <-chan page.Page {
 	// invariant: an update in error draws nothing; the stream is still read
 	// to its end, so its producer never blocks.

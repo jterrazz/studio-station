@@ -11,14 +11,17 @@ import (
 	"testing"
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
+	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	setupcalls "github.com/jterrazz/studio-station/src/setup/calls"
@@ -276,6 +279,7 @@ func TestEveryCallIsRegisteredOnceAndShowsItsSectionWhereverItApplies(t *testing
 		accountscalls.All(accountscalls.Deps{}), appscalls.All(appscalls.Deps{}), awakecalls.All(awakecalls.Deps{}),
 		diskcalls.All(diskcalls.Deps{}), imagescalls.All(imagescalls.Deps{}), machinescalls.All(machinescalls.Deps{}),
 		portscalls.All(portscalls.Deps{}), settingscalls.All(settingscalls.Deps{}), setupcalls.All(setupcalls.Deps{}),
+		activitycalls.All(activitycalls.Deps{}), enginecalls.All(enginecalls.Deps{}), overviewcalls.All(overviewcalls.Sections{}),
 	)
 	if err != nil {
 		t.Fatal(err)

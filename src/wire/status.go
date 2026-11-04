@@ -13,7 +13,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
@@ -25,15 +24,17 @@ import (
 	statuscmd "github.com/jterrazz/studio-station/src/surface/cli/status"
 )
 
-type overviewReader = overviewcalls.Reader[tools.Report, config.Report, storage.StrayReport]
-
 func statusCommand(env kit.Env, m machine) *cobra.Command {
-	return statuscmd.Command(statuscmd.Deps{Status: statusService(env, m), Here: m.where}, env)
+	return statuscmd.Command(statuscmd.Deps{Here: m.where}, env)
 }
 
-func statusService(env kit.Env, m machine) *overviewReader {
+func statusService(env kit.Env, m machine) *overviewcalls.Overview {
+	return overviewcalls.New(statusDeps(env, m))
+}
+
+func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	h := m.host
-	d := overviewcalls.Deps[tools.Report, config.Report, storage.StrayReport]{
+	d := overviewcalls.Sections{
 		Pool:  m.pool,
 		Clock: h.Clock,
 		Here: overviewcalls.Here{
@@ -66,7 +67,7 @@ func statusService(env kit.Env, m machine) *overviewReader {
 		d.Listeners, d.Jobs, d.Updates = lsof.New(h.Run), m.jobs(overviewcalls.ReadBudget), brew.New(h.Run, nil)
 	}
 	d.Facts, d.Meter = facts, meter
-	return overviewcalls.New(d)
+	return d
 }
 
 type configRead struct{ *config.Service }
