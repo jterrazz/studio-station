@@ -148,6 +148,20 @@ func imageOf(name string) (catalog.Image, bool) {
 	return catalog.Image{}, false
 }
 
+func networkFor(img catalog.Image, asked string) (string, error) {
+	switch asked {
+	case "", NetworkNAT:
+		return NetworkNAT, nil
+	case Bridged:
+		if img.Kind != catalog.MacOS {
+			return asked, &BadNetworkError{Value: asked, Bridge: true}
+		}
+		return Bridged, nil
+	default:
+		return asked, &BadNetworkError{Value: asked}
+	}
+}
+
 func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateRequest, error) {
 	if err := s.CheckHost(); err != nil {
 		return r, err
@@ -163,16 +177,9 @@ func (s *Service) CheckCreate(ctx context.Context, r CreateRequest) (CreateReque
 	if !ok {
 		return r, &UnknownImageError{Image: r.Image}
 	}
-	switch r.Network {
-	case "":
-		r.Network = NetworkNAT
-	case NetworkNAT:
-	case Bridged:
-		if img.Kind != catalog.MacOS {
-			return r, &BadNetworkError{Value: r.Network, Bridge: true}
-		}
-	default:
-		return r, &BadNetworkError{Value: r.Network}
+	var err error
+	if r.Network, err = networkFor(img, r.Network); err != nil {
+		return r, err
 	}
 	if r.Name != "" && !validName(r.Name) {
 		return r, &BadNameError{Name: r.Name}
