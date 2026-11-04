@@ -1,5 +1,5 @@
 description: 'with no app bundle, the CLI on PATH answers and the variant is empty'
-fixture: ../__fixtures__/vms/
+fixture: ../../__fixtures__/vms/
 runs:
     - command: 'tailnet --json | /usr/bin/jq -c ''[.variant, .cli]'''
       exit: 0

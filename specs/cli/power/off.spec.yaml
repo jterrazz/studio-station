@@ -1,6 +1,6 @@
 description: 'power reads off with this Mac''s shape: the reading, the guards, the daemon running'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

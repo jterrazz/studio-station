@@ -1,7 +1,7 @@
 description: "a name made again after a delete meets no changed host key"
 fixture:
-    - ../../__fixtures__/vms/
-    - ../../__fixtures__/daemon-vm/
+    - ../../../__fixtures__/vms/
+    - ../../../__fixtures__/daemon-vm/
     - ../../__fixtures__/vm-api/
 env: daemon
 serve: sshd

@@ -1,6 +1,6 @@
 description: 'setup boots out the per-VM agents of stopped VMs; a lasting one stopped by its owner stays so'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ./__fixtures__/old-agents/
 runs:
     - command: 'setup </dev/null'

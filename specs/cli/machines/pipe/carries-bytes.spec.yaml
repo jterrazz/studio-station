@@ -1,7 +1,7 @@
 description: 'machines pipe carries ssh''s bytes to the VM''s current NAT ip'
 fixture:
-    - ../../__fixtures__/vms/
-    - ../../__fixtures__/daemon-vm/
+    - ../../../__fixtures__/vms/
+    - ../../../__fixtures__/daemon-vm/
     - ../__fixtures__/local-vm/
 env: daemon
 serve: sshd

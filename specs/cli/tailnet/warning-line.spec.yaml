@@ -1,5 +1,5 @@
 description: 'a CLI that warns of its daemon''s version on both streams is still read'
-fixture: ../__fixtures__/vms/
+fixture: ../../__fixtures__/vms/
 env: daemon
 runs:
     - command: '--version >/dev/null; : > answers/tailscale/warn; "$STATION" tailnet --json | /usr/bin/jq -c ''[.state, .dns_name]'''

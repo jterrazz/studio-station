@@ -1,6 +1,6 @@
 description: 'the App Store bundle''s executable answers first, run directly, even under launchd''s bare env'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/tailscale-app-store/
 env: daemon
 runs:

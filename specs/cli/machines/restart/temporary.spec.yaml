@@ -1,6 +1,6 @@
 description: 'a temporary VM is not restarted from the host, whose poweroff would end it: its guest reboots it'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-t/
 runs:
     - command: 'machines restart t --yes'

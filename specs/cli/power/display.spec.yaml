@@ -1,6 +1,6 @@
 description: 'the display sleeps on lid close by pmset displaysleepnow alone, and only under --lid'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

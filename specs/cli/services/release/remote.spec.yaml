@@ -1,6 +1,6 @@
 description: 'a VM of another host is released by that host''s station, over ssh'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ./__fixtures__/remote/
 runs:
     - command: 'services release w:3000; /usr/bin/grep ''services release'' .calls'

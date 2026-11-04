@@ -1,7 +1,7 @@
 description: 'stop on a terminal asks first, No by default: enter declines, exits 1 and stops nothing'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
     - ../__fixtures__/launchctl/
     - ../__fixtures__/terminal/
 env: terminal

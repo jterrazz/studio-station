@@ -1,6 +1,6 @@
 description: 'the battery guard warns at 30% on battery and ends the session as the percent falls to 20%'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

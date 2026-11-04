@@ -1,7 +1,7 @@
 description: 'a temporary VM''s declared poweroff deletes it and releases its leases'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd
 runs:

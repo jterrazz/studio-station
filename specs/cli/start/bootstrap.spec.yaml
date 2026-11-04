@@ -1,6 +1,6 @@
 description: 'start bootstraps the agent and waits for the daemon; running, it only says so'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/launchctl/
 env: daemon
 runs:

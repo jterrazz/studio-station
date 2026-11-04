@@ -1,7 +1,7 @@
 description: 'a serve a killed daemon left running is killed at the next daemon start, whatever the locale'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
     - ../__fixtures__/serving/
 env: daemon
 runs:

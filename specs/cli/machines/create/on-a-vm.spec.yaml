@@ -1,5 +1,5 @@
 description: 'only a host makes VMs'
-fixture: ../../__fixtures__/vms/
+fixture: ../../../__fixtures__/vms/
 env: STATION_MACHINE_KIND=linux
 runs:
     - command: 'machines create --lifetime temporary'

@@ -1,6 +1,6 @@
 description: 'subscribe menubar streams the popover from its frame to ready, read only while subscribed'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

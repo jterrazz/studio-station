@@ -1,6 +1,6 @@
 description: "a temporary VM whose run ended without a poweroff shows stale, with its delete"
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/vm-t/
     - ./__fixtures__/stale-t/
 runs:

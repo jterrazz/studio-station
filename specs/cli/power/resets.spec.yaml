@@ -1,6 +1,6 @@
 description: 'the clamshell is normal at the daemon''s start and SIGTERM, set again on each change under --lid'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

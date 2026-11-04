@@ -1,7 +1,7 @@
 description: 'at its start the daemon removes only its range''s serve entries no lease justifies, both kinds'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
     - ../__fixtures__/serving/
 env: daemon
 runs:

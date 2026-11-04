@@ -1,7 +1,7 @@
 description: 'a temporary run that ends with an error keeps the VM, stale'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
     - ./__fixtures__/crash/
 env: daemon
 serve: sshd

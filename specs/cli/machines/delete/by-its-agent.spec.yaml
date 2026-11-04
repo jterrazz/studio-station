@@ -1,6 +1,6 @@
 description: 'a VM still under its round-3 agent has the agent booted out and its plist removed by delete'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-api/
 runs:
     - command: 'machines delete api --yes'

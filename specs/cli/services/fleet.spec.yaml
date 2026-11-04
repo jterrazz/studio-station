@@ -1,6 +1,6 @@
 description: 'the fleet''s services and ranges: every host asked over ssh, an unreachable one shown'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ./__fixtures__/fleet/
 runs:
     - command: 'services --json | /usr/bin/jq -c ''.schema, [.hosts[] | [.name, .here, .reachable]], [.hosts[].services[] | keys]'''

@@ -1,7 +1,7 @@
 description: 'with Serve off the daemon runs no serve at its start, and its log says why once'
 fixture:
-    - ../__fixtures__/vms/
-    - ../__fixtures__/daemon-vm/
+    - ../../__fixtures__/vms/
+    - ../../__fixtures__/daemon-vm/
     - ../__fixtures__/serving/
 env: daemon
 runs:

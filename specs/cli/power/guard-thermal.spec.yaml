@@ -1,6 +1,6 @@
 description: 'serious thermal pressure ends a session at once; heavy alone holds it and reads near'
 fixture:
-    - ../__fixtures__/vms/
+    - ../../__fixtures__/vms/
     - ../__fixtures__/power/
 env: daemon
 runs:

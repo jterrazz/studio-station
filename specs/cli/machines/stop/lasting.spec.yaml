@@ -1,7 +1,7 @@
 description: 'a lasting VM stops by its guest''s own poweroff on the daemon''s connection, and stays stopped'
 fixture:
-    - ../../__fixtures__/vms/
-    - ../../__fixtures__/daemon-vm/
+    - ../../../__fixtures__/vms/
+    - ../../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd
 runs:

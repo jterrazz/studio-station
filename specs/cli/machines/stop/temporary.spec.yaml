@@ -1,6 +1,6 @@
 description: 'stop never destroys: a temporary VM is refused before any question, and stop takes no --yes'
 fixture:
-    - ../../__fixtures__/vms/
+    - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-t/
 runs:
     - command: 'machines stop t'

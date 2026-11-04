@@ -1,7 +1,7 @@
 description: 'start drops the stopped run''s guest session and answers once the new run''s guest connects'
 fixture:
-    - ../../__fixtures__/vms/
-    - ../../__fixtures__/daemon-vm/
+    - ../../../__fixtures__/vms/
+    - ../../../__fixtures__/daemon-vm/
 env: daemon
 serve: sshd
 runs:
