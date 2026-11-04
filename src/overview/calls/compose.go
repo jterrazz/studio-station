@@ -66,10 +66,10 @@ func sectionReads() map[section.ID]sectionRead {
 }
 
 type answer struct {
-	id    section.ID
-	read  overview.Read
-	err   error
-	fleet *machines.Fleet
+	id   section.ID
+	read overview.Read
+	err  error
+	all  *machines.Fleet
 }
 
 func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview.Summary {
@@ -116,17 +116,17 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 				answers <- answer{err: err}
 				return
 			}
-			answers <- answer{fleet: &out.Fleet}
+			answers <- answer{all: &out.Fleet}
 		}()
 	}
 	out := make(chan overview.Summary)
 	go func() {
 		defer close(out)
 		got := map[section.ID]answer{}
-		var fleet *machines.Fleet
+		var all *machines.Fleet
 		send := func() bool {
 			select {
-			case out <- summarize(head, ids, got, reading, fleet):
+			case out <- summarize(head, ids, got, reading, all):
 				return true
 			case <-ctx.Done():
 				return false
@@ -143,8 +143,8 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 				return
 			}
 			switch {
-			case a.fleet != nil:
-				fleet = a.fleet
+			case a.all != nil:
+				all = a.all
 			case a.id != "":
 				got[a.id] = a
 			}
@@ -156,12 +156,12 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 	return out
 }
 
-func summarize(head overview.Head, ids []section.ID, got map[section.ID]answer, reading *engine.Reading, fleet *machines.Fleet) overview.Summary {
+func summarize(head overview.Head, ids []section.ID, got map[section.ID]answer, reading *engine.Reading, all *machines.Fleet) overview.Summary {
 	state, own := engineOf(head, reading)
 	var vms []overview.VM
-	if fleet != nil {
+	if all != nil {
 		var found []finding.Finding
-		found, vms = fleetOf(*fleet)
+		found, vms = thisMacsVMs(*all)
 		own = append(own, found...)
 	}
 	reads := make([]overview.Read, 0, len(ids))
@@ -203,7 +203,7 @@ func engineOf(head overview.Head, r *engine.Reading) (overview.Engine, []finding
 
 // value: what a Mac's Overview reads of All machines: its VMs and their
 // findings; the other Macs are All machines' own.
-func fleetOf(f machines.Fleet) ([]finding.Finding, []overview.VM) {
+func thisMacsVMs(f machines.Fleet) ([]finding.Finding, []overview.VM) {
 	i := slices.IndexFunc(f.Hosts, func(h machines.HostView) bool { return h.Here })
 	if i < 0 {
 		return nil, nil
