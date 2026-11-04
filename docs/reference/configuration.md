@@ -48,16 +48,16 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 
 ```json
 {
-  "here": "macbook",
-  "hosts": {
-    "macbook": {},
-    "mac-mini": { "user": "jterrazz.agent", "key": "~/.ssh/id_ed25519" }
-  },
-  "vm_user": "jterrazz",
-  "share_list": ["session:*", "operator:claude:oauth-token"],
-  "user_email": "admin@jterrazz.com",
-  "user_name": "Jean-Baptiste Terrazzoni",
-  "services": { "max_per_vm": 10 }
+    "here": "macbook",
+    "hosts": {
+        "macbook": {},
+        "mac-mini": { "user": "jterrazz.agent", "key": "~/.ssh/id_ed25519" }
+    },
+    "vm_user": "jterrazz",
+    "share_list": ["session:*", "operator:claude:oauth-token"],
+    "user_email": "admin@jterrazz.com",
+    "user_name": "Jean-Baptiste Terrazzoni",
+    "services": { "max_per_vm": 10 }
 }
 ```
 
