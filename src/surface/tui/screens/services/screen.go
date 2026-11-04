@@ -8,7 +8,6 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
-	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	pageservices "github.com/jterrazz/studio-station/src/pages/services"
@@ -61,17 +60,12 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 				host = h.Name
 			}
 			name := ev.Row
-			run := tab.Exec(ID, func() (tab.Status, error) {
-				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, portscalls.Release, portscalls.ReleaseIn{Target: target, Host: host, Confirm: confirm.Yes}, nil)
+			run := tab.Confirmed(ID, pageservices.ReleaseConfirm(s.VM, s.GuestPort), func(answer string) (tab.Status, error) {
+				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, portscalls.Release, portscalls.ReleaseIn{Target: target, Host: host, Confirm: answer}, nil)
 				return tab.Outcome("released", name, catalog.StateOK, ""), err
 			})
-			var question *page.Confirm
-			if s.Pinned {
-				c := pageservices.ReleaseConfirm(s.VM, s.GuestPort)
-				question = &c
-			}
 			var act tea.Cmd
-			m.View, act = m.Act(question, run)
+			m.View, act = m.Act(run)
 			return m, tea.Batch(cmd, act)
 		}
 	}

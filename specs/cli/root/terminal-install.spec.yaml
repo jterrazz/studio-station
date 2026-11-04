@@ -1,4 +1,4 @@
-description: 'install asks first, runs brew off the TUI on yes, and the status bar names the outcome'
+description: 'install asks nothing (its call confirms nothing), runs brew off the TUI, the status bar names it'
 fixture:
     - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
@@ -13,13 +13,6 @@ runs:
           see ○ bat
           send \x1b[B
           send i
-          see Install bat?
-          screen
-          send n
-          gone Install bat?
-          send i
-          see Install bat?
-          send y
           see ● installed bat
           see ● bat  1.0
           screen
@@ -28,30 +21,6 @@ runs:
           send q
       exit: 0
       stdout: |4
-           station  Home · Tools · Config · Storage │ Fleet · Services · 7 · 8       host
-           ──────────────────────────────────────────────────────────────────────────────
-           / bat
-           - CLI Tools                                                               10 ○
-             ○ bat  brew  i install
-
-
-
-
-
-
-
-
-
-
-
-
-           ╭──────────────────────────────────────────────────────────╮
-           │ Install bat?                                             │
-           │                                                          │
-           │  install    No                                           │
-           ╰──────────────────────────────────────────────────────────╯
-
-           ↑↓ move  i install  u uninstall  U upgrade  enter detail  / filter  ? keys
            station  Home · Tools · Config · Storage │ Fleet · Services · 7 · 8       host
            ──────────────────────────────────────────────────────────────────────────────
            / bat

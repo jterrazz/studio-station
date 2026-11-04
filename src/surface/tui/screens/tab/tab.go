@@ -2,12 +2,13 @@ package tab
 
 import (
 	"context"
-	"github.com/jterrazz/studio-station/src/core/call"
 	"io"
 
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	"github.com/jterrazz/studio-station/src/ui/render/tui"
@@ -68,6 +69,37 @@ func Exec(screen string, action func() (Status, error)) tea.Cmd {
 			Done: func(err error) tea.Msg {
 				if err != nil {
 					return Done{Screen: screen, Err: err}
+				}
+				return Done{Screen: screen, Status: status, Err: failure}
+			},
+		}
+	}
+}
+
+type asked struct {
+	id       string
+	question page.Confirm
+	then     tea.Cmd
+}
+
+func Confirmed(screen string, question page.Confirm, action func(answer string) (Status, error)) tea.Cmd {
+	// invariant: the action runs unanswered first, so its use case decides
+	// whether it asks; only then is the question put, and a yes runs it once
+	// more with the answer the use case asked for.
+	var status Status
+	var failure error
+	return func() tea.Msg {
+		return ExecMsg{
+			Command: func() error {
+				status, failure = action("")
+				return nil
+			},
+			Done: func(err error) tea.Msg {
+				if err != nil {
+					return Done{Screen: screen, Err: err}
+				}
+				if answer, ok := confirm.Answer(failure); ok {
+					return asked{id: screen, question: question, then: Exec(screen, func() (Status, error) { return action(answer) })}
 				}
 				return Done{Screen: screen, Status: status, Err: failure}
 			},
@@ -204,13 +236,9 @@ type start struct {
 
 func Begin(id string, run tea.Cmd) tea.Msg { return start{id: id, run: run} }
 
-func (v View[T]) Act(c *page.Confirm, run tea.Cmd) (View[T], tea.Cmd) {
-	if c == nil {
-		v.busy = true
-		return v, run
-	}
-	id := v.ID
-	return v.Ask(*c, func() tea.Msg { return start{id: id, run: run} })
+func (v View[T]) Act(run tea.Cmd) (View[T], tea.Cmd) {
+	v.busy = true
+	return v, run
 }
 
 func (v View[T]) Update(msg tea.Msg) (View[T], tea.Cmd, *tui.Event) {
@@ -249,6 +277,14 @@ func (v View[T]) Update(msg tea.Msg) (View[T], tea.Cmd, *tui.Event) {
 		v.loading = true
 		v.gen++
 		return v, tea.Batch(Say(status), v.watch(true)), nil
+	case asked:
+		if msg.id != v.ID {
+			return v, nil, nil
+		}
+		v.busy = false
+		id, then := v.ID, msg.then
+		asking, cmd := v.ask(msg.question, func() tea.Msg { return start{id: id, run: then} })
+		return asking, cmd, nil
 	case start:
 		if msg.id != v.ID {
 			return v, nil, nil
@@ -281,7 +317,7 @@ func (v View[T]) show(p page.Page) View[T] {
 	return v
 }
 
-func (v View[T]) Ask(c page.Confirm, then tea.Cmd) (View[T], tea.Cmd) {
+func (v View[T]) ask(c page.Confirm, then tea.Cmd) (View[T], tea.Cmd) {
 	if c.Type == "" {
 		v.Browser = v.Browser.Ask(c, then)
 		return v, nil

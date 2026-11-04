@@ -6,7 +6,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/core/call"
-	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
@@ -58,11 +57,10 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			}
 		}
 		if !inputs {
-			m.View, act = m.Act(nil, m.install(name, nil))
+			m.View, act = m.Act(m.install(name, nil))
 		}
 	case pageconfig.KeyUninstall:
-		c := pageconfig.UninstallConfirm(name)
-		m.View, act = m.Act(&c, m.uninstall(name))
+		m.View, act = m.Act(m.uninstall(name))
 	}
 	return m, tea.Batch(cmd, act)
 }
@@ -83,12 +81,8 @@ func (m Model) install(name string, values map[string]string) tea.Cmd {
 }
 
 func (m Model) uninstall(name string) tea.Cmd {
-	return tab.Exec(ID, func() (tab.Status, error) {
-		var changes []settings.Change
-		err := confirm.Answered(func(answer string) (err error) {
-			changes, err = call.Invoke(m.ctx, m.d.Calls, m.d.Target, settingscalls.Uninstall, settingscalls.UninstallIn{Names: []string{name}, Confirm: answer}, nil)
-			return err
-		})
+	return tab.Confirmed(ID, pageconfig.UninstallConfirm(name), func(answer string) (tab.Status, error) {
+		changes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, settingscalls.Uninstall, settingscalls.UninstallIn{Names: []string{name}, Confirm: answer}, nil)
 		return outcome("uninstalled", name, changes), err
 	})
 }

@@ -8,6 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
@@ -67,25 +68,90 @@ func TestABusyTabReportsNoAction(t *testing.T) {
 	if ev == nil || ev.Row != "api" {
 		t.Fatalf("s on api reported %+v, want the start/stop action", ev)
 	}
-	busy, _ := v.Act(nil, func() tea.Msg { return nil })
+	busy, _ := v.Act(func() tea.Msg { return nil })
 	if _, _, ev := busy.Update(key("s")); ev != nil {
 		t.Errorf("a busy tab reported %+v", ev)
 	}
 }
 
+// value: what the program does with an action's ExecMsg: run it, then its Done.
+func execute(t *testing.T, cmd tea.Cmd) tea.Msg {
+	t.Helper()
+	msg, ok := cmd().(tab.ExecMsg)
+	if !ok {
+		t.Fatal("the action did not release the terminal")
+	}
+	_ = msg.Command()
+	return msg.Done(nil)
+}
+
+// value: a restart whose call asks yes or no, recording each answer it is given.
+func restart(answers *[]string) func(string) (tab.Status, error) {
+	return func(answer string) (tab.Status, error) {
+		*answers = append(*answers, answer)
+		if err := confirm.Require(confirm.YesNo, "macbook", answer); err != nil {
+			return tab.Status{}, err
+		}
+		return tab.Status{Text: "restarted macbook"}, nil
+	}
+}
+
+func TestAnActionItsCallDoesNotConfirmRunsWithoutAQuestion(t *testing.T) {
+	v := view(fleetOf())
+	var answers []string
+	release := tab.Confirmed("fleet", pagefleet.ForgetConfirm("macbook"), func(answer string) (tab.Status, error) {
+		answers = append(answers, answer)
+		return tab.Status{Text: "released"}, nil
+	})
+	v, _ = v.Act(release)
+	msg := execute(t, release)
+	if done, ok := msg.(tab.Done); !ok || done.Status.Text != "released" {
+		t.Fatalf("the action ended with %+v, want its Done", msg)
+	}
+	if v, _, _ = v.Update(msg); v.Modal() || len(answers) != 1 || answers[0] != "" {
+		t.Errorf("an action whose call asks nothing put a question (modal %v) or ran answered: %q", v.Modal(), answers)
+	}
+}
+
+func TestAConfirmationTheCallAsksIsPutAndYesRunsItAgainAnswered(t *testing.T) {
+	v := view(fleetOf())
+	var answers []string
+	run := tab.Confirmed("fleet", pagefleet.RestartConfirm("macbook", false), restart(&answers))
+	v, _ = v.Act(run)
+	v, _, _ = v.Update(execute(t, run))
+	if !v.Modal() {
+		t.Fatal("the call asked a confirmation and no question was put")
+	}
+	v, cmd, _ := v.Update(key("y"))
+	_, cmd, _ = v.Update(cmd())
+	done, ok := execute(t, cmd).(tab.Done)
+	if !ok || done.Err != nil || done.Status.Text != "restarted macbook" {
+		t.Fatalf("yes ended with %+v, want the restart done", done)
+	}
+	if len(answers) != 2 || answers[0] != "" || answers[1] != confirm.Yes {
+		t.Errorf("the call was given %q, want first nothing, then yes", answers)
+	}
+}
+
 func TestAHostRestartAsksItsName(t *testing.T) {
 	v := view(fleetOf())
-	v, _ = v.Ask(pagefleet.RestartConfirm("macbook", true), func() tea.Msg { return nil })
+	var answers []string
+	run := tab.Confirmed("fleet", pagefleet.RestartConfirm("macbook", true), restart(&answers))
+	v, _ = v.Act(run)
+	v, _, _ = v.Update(execute(t, run))
 	if v.Browser.Focus() == 0 || !v.Modal() {
 		t.Fatal("the restart opened no modal")
 	}
 	_, cmd, _ := v.Update(key("y"))
 	if cmd != nil {
 		if msg := cmd(); msg != nil {
-			if _, started := msg.(tab.Done); started {
+			if _, started := msg.(tab.ExecMsg); started {
 				t.Error("y confirmed a restart that asks the name")
 			}
 		}
+	}
+	if len(answers) != 1 {
+		t.Errorf("the restart ran %d times, want once, unanswered", len(answers))
 	}
 }
 

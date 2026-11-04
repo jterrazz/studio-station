@@ -144,8 +144,7 @@ func (m Model) revoke(mc accounts.Machine, a *accounts.Account, cmd tea.Cmd) (ta
 		_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, accountscalls.Recall, accountscalls.RecallIn{From: vm, Names: []string{name}}, nil)
 		return tab.Outcome("recalled", name, catalog.StateOK, "from "+vm), err
 	})
-	c := pageaccounts.RecallConfirm(vm, name)
 	var act tea.Cmd
-	m.View, act = m.Act(&c, run)
+	m.View, act = m.Act(run)
 	return m, tea.Batch(cmd, act)
 }

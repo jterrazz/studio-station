@@ -98,13 +98,3 @@ func Answer(err error) (string, bool) {
 	}
 	return Yes, true
 }
-
-func Answered(do func(answer string) error) error {
-	// invariant: for a surface that has already put its question: the call
-	// runs unanswered first, so it is the use case that decides whether it asks.
-	err := do("")
-	if answer, ok := Answer(err); ok {
-		return do(answer)
-	}
-	return err
-}

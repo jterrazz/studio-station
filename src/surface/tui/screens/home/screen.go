@@ -138,7 +138,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		return tab.Status{Mark: page.OK, Text: "ran station " + strings.Join(words, " ")}, nil
 	})
 	var act tea.Cmd
-	m.View, act = m.Act(nil, run)
+	m.View, act = m.Act(run)
 	return m, tea.Batch(cmd, act)
 }
 

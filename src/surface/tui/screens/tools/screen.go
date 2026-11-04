@@ -9,7 +9,6 @@ import (
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
-	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
@@ -49,29 +48,24 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		return m, cmd
 	}
 	key, name := ev.Action.Key, ev.Row
-	run := tab.Exec(ID, func() (tab.Status, error) { return m.run(key, name) })
-	var question *page.Confirm
+	verb := key
 	if ev.Action.Confirm != nil {
-		c := pagetools.Confirm(ev.Action.Confirm.Yes, name)
-		question = &c
+		verb = ev.Action.Confirm.Yes
 	}
+	run := tab.Confirmed(ID, pagetools.Confirm(verb, name), func(answer string) (tab.Status, error) { return m.run(key, name, answer) })
 	var act tea.Cmd
-	m.View, act = m.Act(question, run)
+	m.View, act = m.Act(run)
 	return m, tea.Batch(cmd, act)
 }
 
-func (m Model) run(key, name string) (tab.Status, error) {
+func (m Model) run(key, name, answer string) (tab.Status, error) {
 	names := []string{name}
 	switch key {
 	case pagetools.KeyInstall:
 		outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Install, appscalls.InstallIn{Names: names, Interactive: true}, nil)
 		return outcome("installed", name, outcomes), err
 	case pagetools.KeyUninstall:
-		var outcomes []apps.Outcome
-		err := confirm.Answered(func(answer string) (err error) {
-			outcomes, err = call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Uninstall, appscalls.UninstallIn{Names: names, Confirm: answer}, nil)
-			return err
-		})
+		outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Uninstall, appscalls.UninstallIn{Names: names, Confirm: answer}, nil)
 		return outcome("uninstalled", name, outcomes), err
 	}
 	outcomes, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, appscalls.Upgrade, appscalls.UpgradeIn{Names: names}, nil)

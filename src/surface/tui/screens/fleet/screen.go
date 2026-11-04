@@ -11,7 +11,6 @@ import (
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
-	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	"github.com/jterrazz/studio-station/src/machines"
@@ -133,7 +132,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			return func() tea.Msg { return tab.Begin(ID, m.create(values)) }
 		})
 	case pagefleet.KeyBuild:
-		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
+		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
 			records, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, imagescalls.Build, imagescalls.BuildIn{}, nil)
 			if err != nil {
 				return tab.Status{}, err
@@ -145,39 +144,26 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			return tab.Outcome("built", strings.Join(names, ", "), catalog.StateOK, ""), nil
 		}))
 	case pagemachines.KeyDelete:
-		c := pagefleet.DeleteConfirm(name)
-		m.View, act = m.Act(&c, m.exec(func() (tab.Status, error) {
-			var report machines.DeleteReport
-			err := confirm.Answered(func(answer string) (err error) {
-				report, err = call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Delete, machinescalls.DeleteIn{VM: name, Confirm: answer}, nil)
-				return err
-			})
+		m.View, act = m.Act(tab.Confirmed(ID, pagefleet.DeleteConfirm(name), func(answer string) (tab.Status, error) {
+			report, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Delete, machinescalls.DeleteIn{VM: name, Confirm: answer}, nil)
 			if len(report.Warnings) > 0 {
 				return tab.Outcome("deleted", name, catalog.StateDegraded, report.Warnings[0]), err
 			}
 			return tab.Outcome("deleted", name, catalog.StateOK, ""), err
 		}))
 	case pagefleet.KeyForget:
-		c := pagefleet.ForgetConfirm(name)
-		m.View, act = m.Act(&c, m.exec(func() (tab.Status, error) {
-			err := confirm.Answered(func(answer string) error {
-				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Forget, machinescalls.ForgetIn{Name: name, Confirm: answer}, nil)
-				return err
-			})
+		m.View, act = m.Act(tab.Confirmed(ID, pagefleet.ForgetConfirm(name), func(answer string) (tab.Status, error) {
+			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Forget, machinescalls.ForgetIn{Name: name, Confirm: answer}, nil)
 			return tab.Outcome("forgot", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyRestart:
-		c := pagefleet.RestartConfirm(name, m.isHost(name))
-		m.View, act = m.Act(&c, m.exec(func() (tab.Status, error) {
-			err := confirm.Answered(func(answer string) error {
-				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Restart, machinescalls.RestartIn{Name: name, Confirm: answer}, nil)
-				return err
-			})
+		m.View, act = m.Act(tab.Confirmed(ID, pagefleet.RestartConfirm(name, m.isHost(name)), func(answer string) (tab.Status, error) {
+			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Restart, machinescalls.RestartIn{Name: name, Confirm: answer}, nil)
 			return tab.Outcome("restarted", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyStart:
 		running := m.running(name)
-		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
+		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
 			if running {
 				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Stop, machinescalls.VMIn{VM: name}, nil)
 				return tab.Outcome("stopped", name, catalog.StateOK, ""), err
@@ -186,7 +172,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			return tab.Outcome("started", name, catalog.StateOK, ""), err
 		}))
 	case pagefleet.KeyProbe:
-		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
+		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
 			report, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Probe, machinescalls.ProbeIn{Name: name}, nil)
 			if err != nil {
 				return tab.Status{}, err
@@ -194,12 +180,12 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			return probed(report), nil
 		}))
 	case pagefleet.KeyUnlock:
-		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
+		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
 			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Unlock, machinescalls.UnlockIn{Name: name, Interactive: true}, nil)
 			return tab.Outcome("unlocked", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyEnter:
-		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
+		m.View, act = m.Act(m.exec(func() (tab.Status, error) {
 			return tab.Outcome("back from", name, catalog.StateOK, ""), m.d.Remote(m.ctx, name, nil)
 		}))
 	}

@@ -102,7 +102,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			return tab.Outcome("ended", "the Power session", catalog.StateOK, ""), nil
 		})
 		var act tea.Cmd
-		m.View, act = m.Act(nil, run)
+		m.View, act = m.Act(run)
 		return m, tea.Batch(cmd, act)
 	}
 	return m, cmd
