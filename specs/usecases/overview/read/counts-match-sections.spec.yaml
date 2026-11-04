@@ -27,3 +27,12 @@ runs:
       stdout: |
           ["~/.tart is misplaced"]
           ["~/.tart is misplaced"]
+    - command: 'settings apply hushlogin'
+      exit: 0
+      stdout: |
+          ●	hushlogin	~/.hushlogin: created
+    - command: '--version >/dev/null; "$STATION" settings --json | /usr/bin/jq -r ''[.settings[] | select(.group == "set")] | "● \(map(select(.state == "applied")) | length) of \(length)"''; "$STATION" overview | /usr/bin/grep "	Settings	" | /usr/bin/cut -f3'
+      exit: 0
+      stdout: |
+          ● 1 of 15
+          set by station · ● 1 of 15
