@@ -29,7 +29,7 @@ Deleting a VM is not revoking a token. Use fine-grained, expiring tokens in a VM
 station secrets allow session:openpanel
 station secrets lend --to api            # the whole lend list, for 12h; lending again refreshes
 station secrets lend --to api --for 4h   # a term from 1m to 7d
-station secrets recall --from api        # take the copies back out
+station secrets recall --from api        # take the copies back out, after a y/n (--yes off a terminal)
 station secrets disallow session:openpanel   # off the list, and recalled from every VM
 station secrets                          # names only, never a value
 ```
