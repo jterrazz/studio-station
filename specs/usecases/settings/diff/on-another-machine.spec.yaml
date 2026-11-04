@@ -14,4 +14,4 @@ runs:
       exit: 0
       stdout: |
           # dns
-          ○	dns	unset	station's
+          ○	encrypted DNS	unset	Quad9 DoH

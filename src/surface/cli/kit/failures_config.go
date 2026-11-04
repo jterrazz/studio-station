@@ -5,6 +5,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/config"
+	"github.com/jterrazz/studio-station/src/settings"
 	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
@@ -14,7 +15,7 @@ func configFailure(err error) (*fail.Error, bool) {
 	var place *config.WrongPlaceError
 	var irreversible *config.NotReversibleError
 	var terminal *config.NeedsTerminalError
-	var studio *config.StudioMissingError
+	var studio *settings.StudioMissingError
 	switch {
 	case errors.As(err, &unknown):
 		return usage(unknown.Error(), "station settings"), true

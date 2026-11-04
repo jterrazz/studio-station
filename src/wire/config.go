@@ -1,6 +1,7 @@
 package wire
 
 import (
+	"context"
 	"io/fs"
 	"path/filepath"
 	"strings"
@@ -8,16 +9,22 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
+	settingsdefaults "github.com/jterrazz/studio-station/src/settings/adapter/defaults"
 	"github.com/jterrazz/studio-station/src/settings/adapter/dotfile"
+	"github.com/jterrazz/studio-station/src/settings/adapter/git"
+	"github.com/jterrazz/studio-station/src/settings/adapter/macos"
 	"github.com/jterrazz/studio-station/src/settings/adapter/touch"
+	"github.com/jterrazz/studio-station/src/settings/adapter/vault"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	settingscmd "github.com/jterrazz/studio-station/src/surface/cli/settings"
 	settingsapply "github.com/jterrazz/studio-station/src/surface/cli/settings/apply"
 	settingsdiff "github.com/jterrazz/studio-station/src/surface/cli/settings/diff"
 	settingsoff "github.com/jterrazz/studio-station/src/surface/cli/settings/off"
+	"github.com/jterrazz/studio-station/src/system"
 )
 
 func settingsCommand(env kit.Env, m machine) *cobra.Command {
@@ -59,6 +66,17 @@ func (a configAsk) Values(it catalog.ConfigItem) (map[string]string, error) {
 }
 
 func configService(m machine) *config.Service {
+	return config.New(m.host, catalog.ConfigItems, config.Options{
+		Here:     m.kind,
+		Defaults: configDefaults(m),
+		Appliers: settingAppliers(m),
+	})
+}
+
+// value: the Applier of every effect of the catalogue on this machine; in
+// a world, every procedure is a fake over the Mac's slice: no world runs a
+// procedure of the real machine.
+func settingAppliers(m machine) []settingscontract.Applier {
 	// invariant: "dotfiles" is the embedded root, so Sub cannot fail.
 	files, _ := fs.Sub(catalog.DotfilesFS, "dotfiles")
 	appliers := []settingscontract.Applier{
@@ -66,17 +84,32 @@ func configService(m machine) *config.Service {
 		dotfile.New(m.host.FS, m.host.Run, dotfile.Options{Home: m.host.Env.Home(), Ours: files}),
 	}
 	if m.world != nil {
-		appliers = append(appliers, m.world.procedureAppliers()...)
+		return append(appliers, m.world.procedureAppliers()...)
 	}
-	return config.New(m.host, catalog.ConfigItems, config.Prefs{Identity: m.stores.identity(), ShareList: m.stores.shareList()}, config.Options{
-		Pool:             m.pool,
-		Here:             m.kind,
+	mac := macos.NewMac(m.host.Run, m.host.FS, macos.MacOptions{
+		Home:             m.host.Env.Home(),
 		DNSProfile:       filepath.Join(m.paths.State, "dns", "quad9-dns.mobileconfig"),
 		BackupExclusions: []string{m.paths.Roots.Cache, filepath.Join(m.paths.Data, "vms")},
-		Defaults:         configDefaults(m),
 		Jobs:             m.jobs(config.ReadBudget),
-		Appliers:         appliers,
+		Identity:         m.stores.identity(),
 	})
+	appliers = append(appliers, mac.Appliers()...)
+	appliers = append(appliers, settingsdefaults.NewDock(m.host.Run)...)
+	return append(appliers,
+		vault.NewClaudeToken(m.host.Run, m.stores.shareList()),
+		git.NewSigning(m.host.Run, m.stores.identity()),
+		git.NewLogin(m.host.Run, m.sharedRead()),
+	)
+}
+
+// value: a read run once per run of the shared pool, whoever asks it.
+func (m machine) sharedRead() git.Read {
+	if m.pool == nil {
+		return nil
+	}
+	return func(ctx context.Context, c system.Cmd) (system.Output, error) {
+		return lanes.Shared(ctx, m.pool, lanes.Command(c.Name, c.Args), func(ctx context.Context) (system.Output, error) { return m.host.Run.Output(ctx, c) })
+	}
 }
 
 func configDefaults(m machine) map[string]map[string]string {

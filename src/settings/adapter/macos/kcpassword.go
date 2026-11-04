@@ -1,4 +1,4 @@
-package config
+package macos
 
 // outside: the public XOR cipher loginwindow uses to obfuscate /etc/kcpassword, stable
 // since Mac OS X 10.4: obfuscation, not a secret.

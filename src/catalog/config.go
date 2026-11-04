@@ -88,7 +88,12 @@ type ConfigItem struct {
 	Reversible              bool
 	RunOnce                 bool
 	Writes                  []Stored
+	// value: a setting that writes no file: the values station sets, as
+	// its Applier reads them back.
+	Sets []Value
 }
+
+type Value struct{ Key, Value string }
 
 var (
 	everyKind = []MachineKind{Host, Linux, MacOS}
@@ -108,26 +113,26 @@ var ConfigItems = []ConfigItem{
 		Reload: []string{"tmux", "source-file", "~/.tmux.conf"},
 	}},
 	{Name: "starship-dotfiles", Description: "The Starship prompt config", Category: CategoryTerminal, Places: everyKind, Requires: "starship", Effect: Dotfiles{Files: []Copy{{From: "starship/starship.toml", To: "~/.config/starship.toml"}}}},
-	{Name: "git-signing", Description: "Sign every commit with a GPG key", Category: CategorySecurity, Places: macKinds, Requires: "gpg", Effect: ProcGitSigning, Interactive: true, Writes: []Stored{kept("~/.gnupg"), noted(conf("~/.gitconfig"), "`git config --global` user.signingkey, commit.gpgsign")}},
-	{Name: "ssh-key", Description: "An ed25519 SSH key, kept in the Keychain", Category: CategorySecurity, Places: hostKind, Effect: ProcSSHKey, Interactive: true, Writes: []Stored{kept("~/.ssh/id_ed25519"), kept("~/.ssh/id_ed25519.pub"), noted(conf("~/.ssh/config"), "the `Host *` stanza: `UseKeychain yes`, `IdentityFile ~/.ssh/id_ed25519`")}},
-	{Name: "github-login", Description: "The GitHub CLI logged in over SSH", Category: CategorySecurity, Places: everyKind, Requires: "gh", Effect: ProcGitHubLogin, Interactive: true, Writes: []Stored{noted(kept("{config}/gh/hosts.yml"), "gh's login")}},
-	{Name: "spotlight-exclude", Description: "Exclude ~/Developer from Spotlight (guided, opens Settings)", Category: CategorySecurity, Places: macKinds, Effect: ProcSpotlight, Writes: []Stored{noted(conf("/System/Volumes/Data/.Spotlight-V100"), "the Spotlight privacy list, through System Settings")}},
-	{Name: "dns", Description: "Encrypted DNS via Quad9 (DoH)", Category: CategorySecurity, Places: hostKind, Effect: ProcDNS, Writes: []Stored{noted(conf("{state}/station/dns/quad9-dns.mobileconfig"), "installed as the profile `com.jterrazz.dns.quad9`")}},
-	{Name: "claude-token", Description: "The Claude Code subscription token a VM may borrow", Help: "run `claude setup-token` and paste the token", Category: CategorySecurity, Places: hostKind, Effect: ProcClaudeToken, Reversible: true, Inputs: []Input{
+	{Name: "git-signing", Description: "Sign every commit with a GPG key", Category: CategorySecurity, Places: macKinds, Requires: "gpg", Effect: ProcGitSigning, Sets: []Value{{"commit.gpgsign", "true"}, {"gpg.program", "gpg"}}, Interactive: true, Writes: []Stored{kept("~/.gnupg"), noted(conf("~/.gitconfig"), "`git config --global` user.signingkey, commit.gpgsign")}},
+	{Name: "ssh-key", Description: "An ed25519 SSH key, kept in the Keychain", Category: CategorySecurity, Places: hostKind, Effect: ProcSSHKey, Sets: []Value{{"~/.ssh/id_ed25519", "present"}, {"~/.ssh/config", "the Keychain stanza"}}, Interactive: true, Writes: []Stored{kept("~/.ssh/id_ed25519"), kept("~/.ssh/id_ed25519.pub"), noted(conf("~/.ssh/config"), "the `Host *` stanza: `UseKeychain yes`, `IdentityFile ~/.ssh/id_ed25519`")}},
+	{Name: "github-login", Description: "The GitHub CLI logged in over SSH", Category: CategorySecurity, Places: everyKind, Requires: "gh", Effect: ProcGitHubLogin, Sets: []Value{{"gh", "logged in"}}, Interactive: true, Writes: []Stored{noted(kept("{config}/gh/hosts.yml"), "gh's login")}},
+	{Name: "spotlight-exclude", Description: "Exclude ~/Developer from Spotlight (guided, opens Settings)", Category: CategorySecurity, Places: macKinds, Effect: ProcSpotlight, Sets: []Value{{"~/Developer", "excluded from Spotlight"}}, Writes: []Stored{noted(conf("/System/Volumes/Data/.Spotlight-V100"), "the Spotlight privacy list, through System Settings")}},
+	{Name: "dns", Description: "Encrypted DNS via Quad9 (DoH)", Category: CategorySecurity, Places: hostKind, Effect: ProcDNS, Sets: []Value{{"encrypted DNS", "Quad9 DoH"}}, Writes: []Stored{noted(conf("{state}/station/dns/quad9-dns.mobileconfig"), "installed as the profile `com.jterrazz.dns.quad9`")}},
+	{Name: "claude-token", Description: "The Claude Code subscription token a VM may borrow", Help: "run `claude setup-token` and paste the token", Category: CategorySecurity, Places: hostKind, Effect: ProcClaudeToken, Sets: []Value{{"token", "kept by the studio credential store"}, {"share list", "holds it"}}, Reversible: true, Inputs: []Input{
 		{Name: "token", Label: "Claude Code token", Help: "run `claude setup-token` and paste the token", Kind: InputPassword, Required: true},
 	}, Writes: []Stored{noted(kept("{config}/studio-os"), "`operator:claude:oauth-token` in the OS credential store")}},
 	{Name: "zed-dotfiles", Description: "The Zed settings and its formatter config", Category: CategoryEditor, Places: macKinds, Requires: "zed", Effect: Dotfiles{Files: []Copy{
 		{From: "zed/settings.json", To: "~/.config/zed/settings.json"},
 		{From: "zed/.oxfmtrc.json", To: "~/.config/zed/.oxfmtrc.json"},
 	}}},
-	{Name: "dock-reset", Description: "Reset the dock to the system defaults", Category: CategorySystem, Places: macKinds, Effect: ProcDockReset, RunOnce: true, Writes: []Stored{noted(conf("~/Library/Preferences/com.apple.dock.plist"), "`com.apple.dock` defaults")}},
-	{Name: "dock-spacer", Description: "Add a small spacer tile to the dock", Category: CategorySystem, Places: macKinds, Effect: ProcDockSpacer, RunOnce: true, Writes: []Stored{noted(conf("~/Library/Preferences/com.apple.dock.plist"), "`com.apple.dock` defaults: a spacer tile")}},
-	{Name: "autologin", Description: "GUI auto-login for jterrazz.agent (FileVault-aware)", Category: CategoryHeadless, Places: hostKind, Effect: ProcAutologin, Interactive: true, NeedsRoot: true, Reversible: true, Inputs: []Input{
+	{Name: "dock-reset", Description: "Reset the dock to the system defaults", Category: CategorySystem, Places: macKinds, Effect: ProcDockReset, Sets: []Value{{"Dock", "reset to the system defaults"}}, RunOnce: true, Writes: []Stored{noted(conf("~/Library/Preferences/com.apple.dock.plist"), "`com.apple.dock` defaults")}},
+	{Name: "dock-spacer", Description: "Add a small spacer tile to the dock", Category: CategorySystem, Places: macKinds, Effect: ProcDockSpacer, Sets: []Value{{"Dock", "spacer tile added"}}, RunOnce: true, Writes: []Stored{noted(conf("~/Library/Preferences/com.apple.dock.plist"), "`com.apple.dock` defaults: a spacer tile")}},
+	{Name: "autologin", Description: "GUI auto-login for jterrazz.agent (FileVault-aware)", Category: CategoryHeadless, Places: hostKind, Effect: ProcAutologin, Sets: []Value{{"autoLoginUser", "jterrazz.agent"}, {"/etc/kcpassword", "present"}}, Interactive: true, NeedsRoot: true, Reversible: true, Inputs: []Input{
 		{Name: "password", Label: "Password of jterrazz.agent", Kind: InputPassword, DefaultEnv: "AGENT_PASSWORD", Required: true},
 	}, Writes: []Stored{noted(kept("/etc/kcpassword"), "the agent user's login password, obfuscated"), noted(conf("/Library/Preferences/com.apple.loginwindow"), "`autoLoginUser` in `com.apple.loginwindow`")}},
-	{Name: "power", Description: "Always-on power policy (no sleep, autorestart, wake)", Category: CategoryHeadless, Places: hostKind, Effect: ProcPower, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist"), "pmset: no sleep, autorestart, wake")}},
-	{Name: "lock-after-login", Description: "A LaunchAgent that locks the screen ~20s after auto-login", Category: CategoryHeadless, Places: hostKind, Effect: ProcLockAfterLogin, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Users/jterrazz.agent/Library/LaunchAgents/ai.jterrazz.lock-after-login.plist"), "the agent user's `lock-after-login.plist`"), noted(cache("/Users/jterrazz.agent/.openclaw/logs"), "its logs")}},
-	{Name: "sshd", Description: "macOS Remote Login (sshd)", Category: CategoryHeadless, Places: hostKind, Effect: ProcSshd, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/System/Library/LaunchDaemons/ssh.plist"), "Remote Login, through systemsetup")}},
+	{Name: "power", Description: "Always-on power policy (no sleep, autorestart, wake)", Category: CategoryHeadless, Places: hostKind, Effect: ProcPower, Sets: []Value{{"autorestart", "1"}, {"sleep", "0"}, {"displaysleep", "5"}, {"disksleep", "0"}, {"powernap", "0"}, {"womp", "1"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist"), "pmset: no sleep, autorestart, wake")}},
+	{Name: "lock-after-login", Description: "A LaunchAgent that locks the screen ~20s after auto-login", Category: CategoryHeadless, Places: hostKind, Effect: ProcLockAfterLogin, Sets: []Value{{"agent", "present"}, {"loaded", "yes"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Users/jterrazz.agent/Library/LaunchAgents/ai.jterrazz.lock-after-login.plist"), "the agent user's `lock-after-login.plist`"), noted(cache("/Users/jterrazz.agent/.openclaw/logs"), "its logs")}},
+	{Name: "sshd", Description: "macOS Remote Login (sshd)", Category: CategoryHeadless, Places: hostKind, Effect: ProcSshd, Sets: []Value{{"Remote Login", "on"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/System/Library/LaunchDaemons/ssh.plist"), "Remote Login, through systemsetup")}},
 	{Name: "backup-exclusions", Description: "Keep ~/.cache and station's VMs out of Time Machine", Category: CategorySystem, Places: hostKind, Effect: ProcBackupExclusions, Reversible: true, Writes: []Stored{
 		noted(conf("{cache}"), "a sticky Time Machine exclusion (`tmutil addexclusion`)"),
 		noted(conf("{data}/station/vms"), "a sticky Time Machine exclusion (`tmutil addexclusion`)"),

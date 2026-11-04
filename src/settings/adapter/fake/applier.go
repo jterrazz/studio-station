@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/settings"
@@ -46,17 +47,46 @@ func (a *Applier) Edit(name, text string) {
 	a.held()[name] = text
 }
 
+// value: what station sets for a setting, the catalogue's values; one that
+// declares none sets station's own text.
+func wants(it catalog.ConfigItem) []settings.KeyValue {
+	if sets := settings.Sets(it); len(sets) > 0 {
+		return sets
+	}
+	return []settings.KeyValue{{Key: it.Name, Value: Ours}}
+}
+
+func encode(values []settings.KeyValue) string {
+	lines := make([]string, len(values))
+	for i, kv := range values {
+		lines[i] = kv.Key + "=" + kv.Value
+	}
+	return strings.Join(lines, "\n")
+}
+
+func decode(name, text string) []settings.KeyValue {
+	var out []settings.KeyValue
+	for _, line := range strings.Split(text, "\n") {
+		k, v, ok := strings.Cut(line, "=")
+		if !ok {
+			return []settings.KeyValue{{Key: name, Value: text}}
+		}
+		out = append(out, settings.KeyValue{Key: k, Value: v})
+	}
+	return out
+}
+
 func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observation, error) {
 	a.w.Lock()
 	defer a.w.Unlock()
+	want := wants(it)
 	text, ok := a.held()[it.Name]
 	if !ok {
-		return settings.Observation{State: catalog.StateAbsent, After: []settings.KeyValue{{Key: it.Name, Value: Ours}}}, nil
+		return settings.Observation{State: catalog.StateAbsent, After: want}, nil
 	}
-	o := settings.Observation{State: catalog.StateOK, Digest: text}
-	if text != Ours {
+	o := settings.Observation{State: catalog.StateOK, Digest: text, Before: decode(it.Name, text), After: want}
+	if text != encode(want) {
 		o.State, o.Detail = catalog.StateDegraded, "differs from station's"
-		o.Before, o.After = []settings.KeyValue{{Key: it.Name, Value: text}}, []settings.KeyValue{{Key: it.Name, Value: Ours}}
 	}
 	return o, nil
 }
@@ -64,14 +94,14 @@ func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Ob
 func (a *Applier) Apply(_ context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
 	a.w.Lock()
 	defer a.w.Unlock()
-	a.held()[it.Name] = Ours
+	a.held()[it.Name] = encode(wants(it))
 	return settings.Change{Steps: []settings.ChangeStep{{Label: it.Name, State: catalog.StateOK, Detail: "applied"}}}, nil
 }
 
 func (a *Applier) Undo(_ context.Context, it catalog.ConfigItem) (settings.Change, error) {
 	a.w.Lock()
 	defer a.w.Unlock()
-	if a.held()[it.Name] != Ours {
+	if a.held()[it.Name] != encode(wants(it)) {
 		return settings.Change{Steps: []settings.ChangeStep{{Label: it.Name, State: catalog.StateOK, Detail: "yours, kept"}}}, nil
 	}
 	delete(a.held(), it.Name)

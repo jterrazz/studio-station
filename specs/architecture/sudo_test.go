@@ -14,7 +14,7 @@ import (
 // §5.13, which security/never-sudo does not cover. It only shrinks.
 func sudoTolerated() []string {
 	return []string{
-		"background/adapter/launchd", "cmd/generate/pages", "domain/config", "domain/images",
+		"background/adapter/launchd", "cmd/generate/pages", "domain/images",
 		"domain/machines", "engine", "machines/adapter/macos", "machines/contract/contracttest",
 		"surface/cli/kit", "surface/cli/machines/restart", "wire",
 	}

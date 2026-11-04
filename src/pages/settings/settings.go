@@ -243,12 +243,14 @@ func livesOn(places []catalog.MachineKind) string {
 
 func Values(r settings.Row, before, after []settings.KeyValue, here page.Context) page.Page {
 	// value: a setting that writes no file, what station would set against
-	// what is there: one row per value, before then after.
+	// what is there: one row per value, before then after; when every value
+	// is already station's, the setting's own row.
 	was := map[string]string{}
 	for _, kv := range before {
 		was[kv.Key] = kv.Value
 	}
 	rows := make([]page.Item, 0, len(after))
+	differs := false
 	for _, kv := range after {
 		now := was[kv.Key]
 		if now == "" {
@@ -257,12 +259,14 @@ func Values(r settings.Row, before, after []settings.KeyValue, here page.Context
 		row := page.Row{ID: kv.Key, Label: kv.Key, Mark: page.Absent, Cells: []page.Value{page.Text(now), page.Text(kv.Value)}}
 		if now == kv.Value {
 			row.Mark = page.OK
+		} else {
+			differs = true
 		}
 		rows = append(rows, page.Item{Row: &row})
 	}
 	cols := []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "before", Kind: page.KindText, Keep: 40}, {Key: "after", Kind: page.KindText, Keep: 40}}
 	s := page.Section{ID: "values", Title: r.Item().Name, Columns: cols, Items: rows}
-	if len(rows) == 0 {
+	if !differs {
 		head := Row(r, time.Time{})
 		s.Items = []page.Item{{Row: &head}}
 	}

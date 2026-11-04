@@ -36,12 +36,6 @@ type NeedsTerminalError struct{ Item string }
 
 func (e *NeedsTerminalError) Error() string { return e.Item + " needs a terminal" }
 
-type StudioMissingError struct{ Item string }
-
-func (e *StudioMissingError) Error() string {
-	return e.Item + " is kept by the studio CLI, which is not on PATH"
-}
-
 type unhandledError struct{ Item string }
 
 func (e *unhandledError) Error() string { return "no handler for config item \"" + e.Item + "\"" }

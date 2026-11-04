@@ -1,4 +1,4 @@
-description: 'off on the Claude token deletes it from studio and the lend list, and it is off here'
+description: 'off on the Claude token deletes it from studio and the share list, and it is off here'
 fixture:
     - ./__fixtures__/settings-studio/
     - ./__fixtures__/settings-lent/
@@ -8,7 +8,7 @@ runs:
       stdout: |
           ●	claude-token
           ●	operator:claude:oauth-token	deleted from the studio credential store
-          ●	lend list	no longer holds operator:claude:oauth-token
+          ●	share list	no longer holds operator:claude:oauth-token
       files:
           .calls:
               equals: |

@@ -66,7 +66,6 @@ func wordsTolerated() map[string][]string {
 		"surface/cli/tailnet":          {"tailscale"},
 		"cmd/generate/pages":           {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "ssh", "tailscale", "uv"},
 		"domain/accounts":              {"docker", "npm", "ssh", "tailscale"},
-		"domain/config":                {"fdesetup", "pmset", "security", "ssh"},
 		"engine":                       {"ssh"},
 		"domain/guest":                 {"docker"},
 		"domain/machines":              {"ssh", "sysctl"},

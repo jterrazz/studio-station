@@ -1,51 +1,18 @@
-package config
+package catalog
 
-import (
-	"context"
-	"strings"
-
-	"github.com/jterrazz/studio-station/src/catalog"
-)
-
+// value: what the procedures write or point at outside this machine: the
+// profile of the dns setting, and the pages of GitHub where a new key is
+// added.
 const (
-	dnsIdentifier = "com.jterrazz.dns.quad9"
-	profilesPane  = "x-apple.systempreferences:com.apple.Profiles-Settings.extension"
+	DNSProfileID  = "com.jterrazz.dns.quad9"
+	GitHubHost    = "github.com"
+	GitHubSSHKeys = "https://github.com/settings/ssh/new"
+	GitHubGPGKeys = "https://github.com/settings/gpg/new"
+	// value: the openclaw script the lock-after-login agent runs.
+	LockAfterLoginScript = "/Users/jterrazz.agent/.openclaw/scripts/lock-after-login.sh"
 )
 
-func (s *Service) checkDNS(ctx context.Context) (state catalog.State, detail string) {
-	if s.dnsInstalled(ctx) {
-		return catalog.StateOK, "Quad9 DoH"
-	}
-	return catalog.StateAbsent, ""
-}
-
-func (s *Service) installDNS(ctx context.Context) (Change, error) {
-	if s.dnsInstalled(ctx) {
-		if _, err := s.must(ctx, "open", profilesPane); err != nil {
-			return Change{}, err
-		}
-		return Change{Steps: []Step{okStep("profile", "already installed: Profiles settings opened")}}, nil
-	}
-	profile := s.o.DNSProfile
-	if err := s.write(profile, []byte(dnsProfile()), 0o600); err != nil {
-		return Change{}, err
-	}
-	if _, err := s.must(ctx, "open", profile); err != nil {
-		return Change{}, err
-	}
-	return Change{Steps: []Step{
-		okStep("profile", "written to "+profile),
-		skipStep("next", "approve the profile in System Settings > Privacy & Security > Profiles"),
-	}}, nil
-}
-
-func (s *Service) dnsInstalled(ctx context.Context) bool {
-	out, ok := s.probe(ctx, "profiles", "-C", "-v")
-	return ok && strings.Contains(out, dnsIdentifier)
-}
-
-func dnsProfile() string {
-	return `<?xml version="1.0" encoding="UTF-8"?>
+const DNSProfile = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -71,7 +38,7 @@ func dnsProfile() string {
 			<key>PayloadDisplayName</key>
 			<string>Quad9 DNS over HTTPS</string>
 			<key>PayloadIdentifier</key>
-			<string>` + dnsIdentifier + `.doh</string>
+			<string>com.jterrazz.dns.quad9.doh</string>
 			<key>PayloadType</key>
 			<string>com.apple.dnsSettings.managed</string>
 			<key>PayloadUUID</key>
@@ -87,7 +54,7 @@ func dnsProfile() string {
 	<key>PayloadDisplayName</key>
 	<string>Quad9 Encrypted DNS</string>
 	<key>PayloadIdentifier</key>
-	<string>` + dnsIdentifier + `</string>
+	<string>com.jterrazz.dns.quad9</string>
 	<key>PayloadRemovalDisallowed</key>
 	<false/>
 	<key>PayloadScope</key>
@@ -100,4 +67,3 @@ func dnsProfile() string {
 	<integer>1</integer>
 </dict>
 </plist>`
-}
