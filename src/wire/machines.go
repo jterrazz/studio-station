@@ -98,6 +98,7 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
 		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Here: m.where}, env),
 		machinesunlock.Command(machinesunlock.Deps{Names: service.Names}, env),
+		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),
 		machinessupervise.Command(env),
 		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{service}}, env),
 	)

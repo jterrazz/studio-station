@@ -10,11 +10,6 @@ runs:
       stderr: |
           Error: unknown command "remove" for "station machines"
           Hint: run station machines --help
-    - command: 'machines ssh x'
-      exit: 2
-      stderr: |
-          Error: unknown command "ssh" for "station machines"
-          Hint: run station machines --help
     - command: 'machines shell x'
       exit: 2
       stderr: |

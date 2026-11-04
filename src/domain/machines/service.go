@@ -144,6 +144,7 @@ type (
 	Fleet       = model.Fleet
 	Check       = model.Check
 	ProbeReport = model.ProbeReport
+	SSHTarget   = model.SSHTarget
 )
 
 const (

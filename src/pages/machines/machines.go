@@ -358,3 +358,21 @@ func CreateForm(lifetime string, hosts []HostChoice) page.Form {
 func BuildConfirm(image string) page.Confirm {
 	return page.Confirm{Question: "Image " + image + " is not built here. Build " + image + " now? (~3 min)"}
 }
+
+type SSHJSON struct {
+	Schema  string `json:"schema"`
+	Name    string `json:"name"`
+	User    string `json:"user"`
+	Host    string `json:"host"`
+	Command string `json:"command"`
+}
+
+func SSHContract(name string, t machines.SSHTarget) SSHJSON {
+	return SSHJSON{Schema: "station.machines.ssh/v1", Name: name, User: t.User, Host: t.Host, Command: t.Command}
+}
+
+func SSH(name string, t machines.SSHTarget, here page.Context) page.Page {
+	row := pages.Done(name, catalog.StateOK, "")
+	row.Cells = []page.Value{page.Command(t.Command)}
+	return pages.Outcome("machines ssh "+name, here, []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "command", Kind: page.KindText, Keep: 90}}, []page.Row{row}, "machines")
+}

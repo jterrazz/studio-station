@@ -66,3 +66,12 @@ var Unlock = call.Call[Deps, UnlockIn, struct{}]{
 		return struct{}{}, d.Machines.Unlock(ctx, in.Name, in.Interactive)
 	},
 }
+
+type SSHIn struct{ Name string }
+
+var SSH = call.Call[Deps, SSHIn, machines.SSHTarget]{
+	Name: "machines.ssh", Where: call.InProcess, Applies: machine.Anywhere,
+	Run: func(ctx context.Context, d Deps, in SSHIn, _ call.Progress) (machines.SSHTarget, error) {
+		return d.Machines.SSH(ctx, in.Name)
+	},
+}

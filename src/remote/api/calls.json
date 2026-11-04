@@ -156,6 +156,13 @@
       "out": "RestartReport"
     },
     {
+      "name": "machines.ssh",
+      "schema": "station.machines.ssh/v1",
+      "where": "in-process",
+      "in": "SSHIn",
+      "out": "SSHTarget"
+    },
+    {
       "name": "machines.start",
       "schema": "station.machines.start/v1",
       "where": "in-engine",

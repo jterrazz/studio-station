@@ -16,7 +16,9 @@
             "preferences": {
                 "here": "jterrazz-macbook-pro",
                 "hosts": {
-                    "jterrazz-mac-mini": {}
+                    "jterrazz-mac-mini": {
+                        "user": "jterrazz.agent"
+                    }
                 },
                 "vm_user": "admin"
             },
