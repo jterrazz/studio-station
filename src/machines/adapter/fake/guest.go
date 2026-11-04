@@ -146,6 +146,9 @@ func (v *VM) answer(line string) (a Answer, poweroff, ok bool) {
 	return Answer{}, false, false
 }
 
+// invariant: a scripted Guest.Exec fault breaks a command the guest answers;
+// a line it does not know, as the engine's station session to a world VM, is
+// "not found" and spends no fault.
 func (c *guest) fails() bool {
 	c.w.Lock()
 	defer c.w.Unlock()
@@ -185,17 +188,18 @@ func (c *guest) Exec(_ context.Context, cmd contract.GuestCommand) (contract.Gue
 			return contract.GuestResult{}, err
 		}
 	}
-	if c.fails() {
-		return contract.GuestResult{}, ErrGuestBroke
-	}
 	c.vm.mu.Lock()
 	a, poweroff, ok := c.vm.answer(cmd.Line)
-	if ok {
-		c.vm.received[cmd.Line] = in
-	}
 	c.vm.mu.Unlock()
-	if !ok {
+	switch {
+	case !ok:
 		a = Answer{Code: 127, Stderr: cmd.Line + ": not found\n"}
+	case c.fails():
+		return contract.GuestResult{}, ErrGuestBroke
+	default:
+		c.vm.mu.Lock()
+		c.vm.received[cmd.Line] = in
+		c.vm.mu.Unlock()
 	}
 	res := contract.GuestResult{Code: a.Code, Stdout: a.Stdout, Stderr: a.Stderr}
 	if cmd.Stdout != nil {

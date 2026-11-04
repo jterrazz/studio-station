@@ -11,7 +11,7 @@ runs:
           ●	layout	nothing to retire
           ●	relocate	nothing to do
           ●	engine	running {{string}}
-          ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ○	apps	missing: homebrew git tart tailscale: run station setup on a terminal
           ●	settings
           ○	ssh-key	next: station settings apply ssh-key
           ○	spotlight-exclude	next: station settings apply spotlight-exclude
