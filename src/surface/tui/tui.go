@@ -32,14 +32,16 @@ type Deps struct {
 	Images   *images.Service
 	Secrets  *secrets.Service
 	Services *services.Service
-	Tailnet  fleetscreen.Tailnet
-	Accounts accountsscreen.Deps
-	Power    powerscreen.Deps
-	Remote   func(ctx context.Context, machine string, words []string) error
-	Station  func(ctx context.Context, words []string) error
-	Describe func(error) (message, hint string)
-	Prefer   func(prefix string)
-	Stop     func()
+	// value: the Services tab, which reads and releases through its calls.
+	ServicesTab servicesscreen.Deps
+	Tailnet     fleetscreen.Tailnet
+	Accounts    accountsscreen.Deps
+	Power       powerscreen.Deps
+	Remote      func(ctx context.Context, machine string, words []string) error
+	Station     func(ctx context.Context, words []string) error
+	Describe    func(error) (message, hint string)
+	Prefer      func(prefix string)
+	Stop        func()
 }
 
 type Tab struct {
@@ -72,7 +74,7 @@ func Run(ctx context.Context, d Deps) error {
 			Machines: d.Machines, Images: d.Images, Secrets: d.Secrets, Services: d.Services, Tailnet: d.Tailnet,
 			Remote: d.Remote, Describe: describe,
 		}, d.Here),
-		servicesscreen.New(ctx, d.Services, d.Here, describe),
+		servicesscreen.New(ctx, d.ServicesTab, d.Here, describe),
 		accountsscreen.New(ctx, d.Accounts, d.Here, describe),
 		powerscreen.New(ctx, d.Power, d.Here, describe),
 	}, d.Prefer)

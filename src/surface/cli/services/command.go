@@ -6,15 +6,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pageservices "github.com/jterrazz/studio-station/src/pages/services"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Services *services.Service
-	Here     page.Context
+	Here page.Context
 }
 
 type Input struct{ Here bool }
@@ -30,11 +30,10 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.Here, "here", false, "only this host")
 		},
-		Read:     func(*Input) bool { return true },
-		Pages:    true,
-		Validate: func(_ context.Context, in *Input) error { return d.Services.CheckList(in.Here) },
+		Read:  func(*Input) bool { return true },
+		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			fleet, err := d.Services.List(ctx, in.Here)
+			fleet, err := call.Invoke(ctx, env.Calls, env.Target, portscalls.List, portscalls.ListIn{Here: in.Here}, nil)
 			if err != nil {
 				return err
 			}

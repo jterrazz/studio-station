@@ -9,6 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/domain/power"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"github.com/jterrazz/studio-station/src/remote"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -32,6 +33,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
 		awakecalls.All(awakecalls.Deps{Power: awakePower{m.power()}}),
 		diskcalls.All(diskcalls.Deps{Storage: m.storage(env), Kind: kind}),
+		portscalls.All(portscalls.Deps{Services: m.services(env), Kind: kind}),
 		settingscalls.All(settingscalls.Deps{Config: config, Ask: ask, Kind: kind}),
 	)
 	if err != nil {

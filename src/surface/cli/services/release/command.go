@@ -6,22 +6,21 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pageservices "github.com/jterrazz/studio-station/src/pages/services"
+	"github.com/jterrazz/studio-station/src/ports"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Services *services.Service
-	Here     page.Context
+	// value: the VM and port a target names, for the question.
+	Target func(text string) (ports.Target, error)
+	Here   page.Context
 }
 
-type Input struct {
-	Text   string
-	Target services.Target
-	Host   string
-}
+type Input struct{ Text string }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
@@ -33,25 +32,22 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Text = args[0]
 			return nil
 		},
-		Validate: func(ctx context.Context, in *Input) error {
-			t, err := d.Services.ParseTarget(in.Text)
-			if err != nil {
-				return err
-			}
-			in.Target = t
-			in.Host, err = d.Services.CheckRelease(ctx, t)
-			return err
-		},
-		Destructive: func(in *Input) bool { return d.Services.Pinned(in.Target) },
+		Destructive: func(*Input) bool { return true },
+		ByCall:      true,
 		Confirm: func(in *Input) string {
-			return "release " + in.Target.VM + ":" + strconv.Itoa(in.Target.Port) + "? its URL is in the VM's environment"
+			t, _ := d.Target(in.Text)
+			return "release " + t.VM + ":" + strconv.Itoa(t.Port) + "? its URL is in the VM's environment"
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			l, err := d.Services.Release(ctx, in.Target, in.Host, io.Yes)
-			if err != nil || in.Host != "" {
+			var out portscalls.ReleaseOut
+			err := io.Confirmed(func(answer string) (err error) {
+				out, err = call.Invoke(ctx, env.Calls, env.Target, portscalls.Release, portscalls.ReleaseIn{Target: in.Text, Confirm: answer}, nil)
+				return err
+			})
+			if err != nil || out.Host != "" {
 				return err
 			}
-			return io.Page(pageservices.Released(l, d.Here), nil)
+			return io.Page(pageservices.Released(out.Lease, d.Here), nil)
 		},
 	}, env)
 }

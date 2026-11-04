@@ -52,8 +52,8 @@ func (m machine) services(env kit.Env) *services.Service {
 
 func servicesCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.services(env)
-	return servicescmd.Command(servicescmd.Deps{Services: service, Here: m.where}, env,
-		servicesurl.Command(servicesurl.Deps{Services: service, Here: m.where}, env),
-		servicesrelease.Command(servicesrelease.Deps{Services: service, Here: m.where}, env),
+	return servicescmd.Command(servicescmd.Deps{Here: m.where}, env,
+		servicesurl.Command(servicesurl.Deps{Here: m.where}, env),
+		servicesrelease.Command(servicesrelease.Deps{Target: service.ParseTarget, Here: m.where}, env),
 	)
 }

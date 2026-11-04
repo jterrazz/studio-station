@@ -1,21 +1,22 @@
 package services
 
 import (
+	"github.com/jterrazz/studio-station/src/ports"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-type Phase string
+type Phase = ports.Phase
 
 const (
-	None      Phase = ""
-	Published Phase = "published"
-	Closing   Phase = "closing"
-	Waiting   Phase = "waiting"
-	Refused   Phase = "refused"
-	Gone      Phase = "gone"
-	Unknown   Phase = "unknown"
+	None      = ports.PhaseNone
+	Published = ports.PhasePublished
+	Closing   = ports.PhaseClosing
+	Waiting   = ports.PhaseWaiting
+	Refused   = ports.PhaseRefused
+	Gone      = ports.PhaseGone
+	Unknown   = ports.PhaseUnknown
 )
 
 type Event int

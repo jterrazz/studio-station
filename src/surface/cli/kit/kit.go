@@ -49,10 +49,14 @@ type IO struct {
 }
 
 func (o IO) Confirmed(do func(answer string) error) error {
-	// invariant: the call runs unanswered first; only when its use case asks
-	// a confirmation is the question put (--yes, the terminal, else a
-	// refusal), then the call runs once more with the answer.
-	err := do("")
+	// invariant: the call runs with --yes's answer, else unanswered; only
+	// when its use case still asks is the question put (--yes, the
+	// terminal, else a refusal), then the call runs once more with the answer.
+	first := ""
+	if o.Yes {
+		first = confirm.Yes
+	}
+	err := do(first)
 	answer, ok := confirm.Answer(err)
 	if !ok || o.ask == nil {
 		return err

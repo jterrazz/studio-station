@@ -8,10 +8,7 @@ import (
 
 const LocalHost = "127.0.0.1"
 
-type URLSet struct {
-	Local  string `json:"local"`
-	Public string `json:"public"`
-}
+type URLSet = ports.URLSet
 
 func isHTTP(l Lease) bool { return l.HTTP == nil || *l.HTTP }
 
