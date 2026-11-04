@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/settings"
 
 	"github.com/jterrazz/studio-station/src/machines"
 )
@@ -56,6 +58,7 @@ func events() []event {
 		{"upgrade", []string{"<mac>", "<version>"}, upgrade},
 		{"address", []string{"<vm>", "<ip>"}, address},
 		{"slow", []string{"<machine>", "<duration>"}, slow},
+		{"reads", []string{"<mac>", "<fact>", "<value>"}, reads},
 		{"certificate", []string{"<mac>", "pending|issued"}, nil},
 	}
 }
@@ -229,6 +232,24 @@ func slow(w *World, args []string) error {
 		m.Disk = &Disk{}
 	}
 	m.Disk.Late = d
+	return nil
+}
+
+// invariant: a Mac whose fact changes outside station (the owner turns the
+// firewall off): a value off or never reads absent, one with updates
+// pending degraded, any other in place.
+func reads(w *World, args []string) error {
+	m, err := w.known(args[0])
+	if err != nil {
+		return err
+	}
+	m.Reads(catalog.Fact(args[1]), args[2])
+	switch value := args[2]; {
+	case value == "off", value == "never":
+		m.Facts[catalog.Fact(args[1])] = settings.Fact{State: catalog.StateAbsent, Value: value}
+	case strings.HasSuffix(value, " pending"):
+		m.Facts[catalog.Fact(args[1])] = settings.Fact{State: catalog.StateDegraded, Value: value}
+	}
 	return nil
 }
 
