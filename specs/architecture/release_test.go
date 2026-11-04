@@ -52,9 +52,23 @@ func TestTheReleaseBinaryLinksNoWorld(t *testing.T) {
 	}
 }
 
-func TestTheSpecBuildLinksTheWorld(t *testing.T) {
+// invariant: ARCHITECTURE 6.3: the spec build wires every family's fake
+// instead of its real adapters, so a fake no build links is a family whose
+// real tools a use case would run.
+func TestTheSpecBuildWiresEveryFamilysFake(t *testing.T) {
 	got := linked(t, "world")
-	if !slices.Contains(got, srcModule+"world") || !slices.Contains(got, srcModule+"machines/adapter/fake") {
-		t.Errorf("the spec build links no world: the release rule proves nothing")
+	if !slices.Contains(got, srcModule+"world") {
+		t.Fatal("the spec build links no world: the release rule proves nothing")
+	}
+	cmd := exec.Command("go", "list", "./src/...")
+	cmd.Dir = repoRoot(t)
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("go list: %v", err)
+	}
+	for _, pkg := range strings.Fields(string(out)) {
+		if strings.HasSuffix(pkg, "/adapter/fake") && !slices.Contains(got, pkg) {
+			t.Errorf("the spec build does not wire %s: a world of it runs the real adapters", strings.TrimPrefix(pkg, srcModule))
+		}
 	}
 }
