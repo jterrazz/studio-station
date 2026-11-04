@@ -108,7 +108,7 @@ func everyMachine(ctx context.Context, env kit.Env, io kit.IO) error {
 	var blocks []pageaccounts.MachineBlock
 	for _, h := range list.Fleet.Hosts {
 		if !h.Reachable && !h.Here {
-			blocks = append(blocks, pageaccounts.MachineBlock{Name: h.Name, Note: h.Name + " does not answer"})
+			blocks = append(blocks, pageaccounts.MachineBlock{Name: h.Name, Mark: page.Broken, Reason: page.Unreachable, State: "does not answer"})
 			continue
 		}
 		mac, err := call.Read(ctx, env.Calls, machine.Ref{Name: h.Name}, accountscalls.List, accountscalls.ListIn{}, nil)
@@ -119,7 +119,7 @@ func everyMachine(ctx context.Context, env kit.Env, io kit.IO) error {
 		blocks = append(blocks, pageaccounts.MachineBlock{Name: h.Name, Report: mac, Shared: mac.Shares})
 		for _, vm := range h.VMs {
 			if vm.State != machines.Running {
-				blocks = append(blocks, pageaccounts.MachineBlock{Name: vm.Name, Note: vm.Name + " is " + string(vm.State)})
+				blocks = append(blocks, pageaccounts.MachineBlock{Name: vm.Name, Mark: page.Absent, Reason: page.Stopped, State: string(vm.State)})
 				continue
 			}
 			r, err := call.Read(ctx, env.Calls, machine.Ref{Name: vm.Name, On: h.Name}, accountscalls.List, accountscalls.ListIn{}, nil)

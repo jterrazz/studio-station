@@ -97,11 +97,21 @@ type MachineBlock struct {
 	Report accounts.Report
 	Shared []model.Shared
 	Note   string
+	// value: a machine not read, marked as every surface marks it: a
+	// stopped VM, a Mac that does not answer; State is its word.
+	Mark   page.Mark
+	Reason page.Reason
+	State  string
 }
 
 func EveryMachine(blocks []MachineBlock) page.Page {
 	var sections []page.Section
 	for _, b := range blocks {
+		if b.Mark != "" {
+			r := page.Row{ID: b.Name, Label: b.Name, Mark: b.Mark, Reason: b.Reason, Cells: []page.Value{page.Text(b.State)}}
+			sections = append(sections, page.Section{ID: b.Name, Title: b.Name, Items: []page.Item{{Row: &r}}})
+			continue
+		}
 		if b.Note != "" {
 			sections = append(sections, page.Section{ID: b.Name, Title: b.Name, Items: []page.Item{{Note: &page.Note{Text: b.Note}}}})
 			continue

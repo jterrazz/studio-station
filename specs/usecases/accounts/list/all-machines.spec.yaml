@@ -1,4 +1,4 @@
-description: '--all-machines: a block per Mac and workspace; a stopped one and a server say so'
+description: '--all-machines: a block per Mac and workspace; a stopped one marked, a server named'
 env: two-macs
 runs:
     - command: 'accounts --all-machines | /usr/bin/grep -e "^#" -e "	"'
@@ -17,7 +17,7 @@ runs:
           ●	github	linux-1	11 h left
           ●	claude	linux-1	11 h left
           # api
-          	api is stopped
+          ○	api	stopped
           # linux-1
           ●	github	signed in	jterrazz	repo
           ●	git	signed in	jterrazz
