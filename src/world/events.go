@@ -4,8 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/ports"
 
 	"github.com/jterrazz/studio-station/src/machines"
 )
@@ -36,18 +40,18 @@ func events() []event {
 		{"crash", []string{"<vm>"}, ended(machines.RunEnd{Reason: machines.Crashed, ExitCode: 1})},
 		{"poweroff-inside", []string{"<vm>"}, ended(machines.RunEnd{Reason: machines.GuestPoweroff})},
 		{"reboot-inside", []string{"<vm>"}, ended(machines.RunEnd{Reason: machines.GuestReboot})},
-		{"listen", []string{"<machine>", "<bind>:<port>", "<process>"}, nil},
-		{"unlisten", []string{"<machine>", "<port>"}, nil},
+		{"listen", []string{"<machine>", "<bind>:<port>", "<process>"}, listen},
+		{"unlisten", []string{"<machine>", "<port>"}, unlisten},
 		{"edit", []string{"<machine>", "<file>"}, nil},
-		{"unplug", nil, nil},
-		{"plug", nil, nil},
-		{"close-lid", nil, nil},
-		{"open-lid", nil, nil},
-		{"thermal", []string{"<level>"}, nil},
-		{"battery", []string{"<percent>"}, nil},
-		{"low-power", []string{"on|off"}, nil},
+		{"unplug", nil, power(battery, func(p *Power) error { p.Source = "battery"; p.Charging = false; return nil })},
+		{"plug", nil, power(battery, func(p *Power) error { p.Source = "ac"; return nil })},
+		{"close-lid", nil, power(lid, func(p *Power) error { p.Lid = "closed"; return nil })},
+		{"open-lid", nil, power(lid, func(p *Power) error { p.Lid = "open"; return nil })},
+		{"thermal", []string{"<level>"}, thermal},
+		{"battery", []string{"<percent>"}, percent},
+		{"low-power", []string{"on|off"}, lowPower},
 		{"advance", []string{"<duration>"}, advance},
-		{"fault", []string{"<Contract>.<Method>", "[<n> times]"}, nil},
+		{"fault", []string{"<Contract>.<Method>", "[<n>]", "[times]"}, fault},
 		{"upgrade", []string{"<mac>", "<version>"}, upgrade},
 		{"address", []string{"<vm>", "<ip>"}, address},
 		{"slow", []string{"<machine>", "<duration>"}, nil},
@@ -205,5 +209,125 @@ func address(w *World, args []string) error {
 		return err
 	}
 	v.Address = args[1]
+	return nil
+}
+
+func (w *World) listening(machine string) (*[]ports.Listener, error) {
+	if m, ok := w.Macs[machine]; ok {
+		return &m.Listening, nil
+	}
+	v, err := w.vm(machine)
+	if err != nil {
+		return nil, fmt.Errorf("no machine %q in this world", machine)
+	}
+	return &v.Listening, nil
+}
+
+func listen(w *World, args []string) error {
+	at, err := w.listening(args[0])
+	if err != nil {
+		return err
+	}
+	i := strings.LastIndex(args[1], ":")
+	port, perr := strconv.Atoi(args[1][i+1:])
+	if i < 0 || perr != nil {
+		return fmt.Errorf("world listen: %q is not <bind>:<port>", args[1])
+	}
+	bind := strings.Trim(args[1][:i], "[]")
+	*at = append(*at, ports.Listener{Port: port, Bind: bind, Process: args[2], PID: 2000 + len(*at)})
+	return nil
+}
+
+func unlisten(w *World, args []string) error {
+	at, err := w.listening(args[0])
+	if err != nil {
+		return err
+	}
+	port, err := strconv.Atoi(args[1])
+	if err != nil {
+		return fmt.Errorf("world unlisten: %q is not a port", args[1])
+	}
+	*at = slices.DeleteFunc(*at, func(l ports.Listener) bool { return l.Port == port })
+	return nil
+}
+
+// value: the capability a power event needs of this Mac.
+type need int
+
+const (
+	anyPower need = iota
+	battery
+	lid
+)
+
+// invariant: a power event moves the reading of the Mac the binary runs on,
+// and is refused on one that has not the capability it moves.
+func power(needs need, move func(p *Power) error) func(w *World, args []string) error {
+	return func(w *World, args []string) error {
+		m, err := w.known(w.Here)
+		if err != nil {
+			return err
+		}
+		p := m.Power
+		switch {
+		case p == nil:
+			return fmt.Errorf("%s has no power management", w.Here)
+		case needs == battery && !p.HasBattery:
+			return fmt.Errorf("%s has no battery", w.Here)
+		case needs == lid && p.Lid == "":
+			return fmt.Errorf("%s has no lid", w.Here)
+		}
+		return move(p)
+	}
+}
+
+func thermal(w *World, args []string) error {
+	return power(anyPower, func(p *Power) error {
+		for n := 0; n <= awake.ThermalEnds+1; n++ {
+			if awake.Level(n) == args[0] || strconv.Itoa(n) == args[0] {
+				p.Thermal = n
+				return nil
+			}
+		}
+		return fmt.Errorf("world thermal: %q is no thermal level", args[0])
+	})(w, args)
+}
+
+func percent(w *World, args []string) error {
+	return power(battery, func(p *Power) error {
+		n, err := strconv.Atoi(strings.TrimSuffix(args[0], "%"))
+		if err != nil || n < 0 || n > 100 {
+			return fmt.Errorf("world battery: %q is no percent", args[0])
+		}
+		p.Percent = n
+		return nil
+	})(w, args)
+}
+
+func lowPower(w *World, args []string) error {
+	return power(anyPower, func(p *Power) error {
+		switch args[0] {
+		case "on", "off":
+			p.LowPower = args[0] == "on"
+			return nil
+		}
+		return fmt.Errorf("world low-power takes on or off, not %q", args[0])
+	})(w, args)
+}
+
+func fault(w *World, args []string) error {
+	call := args[0]
+	if contract, method, ok := strings.Cut(call, "."); !ok || contract == "" || method == "" {
+		return fmt.Errorf("world fault: %q is not <Contract>.<Method>", call)
+	}
+	f := Fault{Call: call}
+	if len(args) > 1 {
+		n, err := strconv.Atoi(args[1])
+		if err != nil || n < 1 || (len(args) == 3 && args[2] != "times" && args[2] != "time") {
+			return fmt.Errorf("world fault %s takes [<n> times], not %q", call, strings.Join(args[1:], " "))
+		}
+		f.Times = n
+	}
+	w.Script = append(w.Script, f)
 	return nil
 }

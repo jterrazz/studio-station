@@ -6,10 +6,15 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/accounts"
+	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/images"
 	"github.com/jterrazz/studio-station/src/machines"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
@@ -25,6 +30,17 @@ type World struct {
 	Macs map[string]*Mac `json:"macs"`
 	// value: what the engine told the owner, in the order told.
 	Told []engine.Notification `json:"told,omitempty"`
+	// value: each image's latest version, as its registry answers it.
+	Registry map[string]string `json:"registry,omitempty"`
+	// value: the failures injected into the fakes, in the order scripted.
+	Script []Fault `json:"script,omitempty"`
+}
+
+type Fault struct {
+	// value: the method that fails, "<Contract>.<Method>": "Installer.Install".
+	Call string `json:"call"`
+	// value: how many more calls fail; zero fails every call.
+	Times int `json:"times,omitempty"`
 }
 
 type Mac struct {
@@ -54,6 +70,97 @@ type Mac struct {
 	// value: the facts this Mac answers, by fact; a fact absent here is one
 	// it cannot look at.
 	Facts map[catalog.Fact]settings.Fact `json:"facts,omitempty"`
+	// value: what Self reads; nil reads a Mac on macOS.
+	Self *Self `json:"self,omitempty"`
+	// value: what the power hardware reads now, its capabilities with it (a
+	// battery, a lid); nil on a machine with no power management.
+	Power *Power `json:"power,omitempty"`
+	// value: what listens on this Mac, one row per listening address.
+	Listening []ports.Listener `json:"listening,omitempty"`
+	// value: this Mac's node on the tailnet; nil when it is signed out.
+	Tailnet *Node `json:"tailnet,omitempty"`
+	// value: each installer's state, by method; a method absent here has its
+	// manager installed and holds nothing.
+	Apps map[catalog.Method]*Manager `json:"apps,omitempty"`
+	// value: the counters that move, read by the meter.
+	Meter *Meter `json:"meter,omitempty"`
+	// value: the volume and the files on it, by absolute path.
+	Disk *Disk `json:"disk,omitempty"`
+	// value: the ssh client config's managed Host blocks, by name, and the
+	// names defined outside them.
+	SSH *SSH `json:"ssh,omitempty"`
+	// value: station's own records kept beside the preferences, by store.
+	Stores *Stores `json:"stores,omitempty"`
+}
+
+type Self struct {
+	Kind     machine.Kind     `json:"kind,omitempty"`
+	System   machine.System   `json:"system"`
+	Hardware machine.Hardware `json:"hardware"`
+}
+
+type Power struct {
+	awake.Reading
+	// value: the awake holds taken now, by name, and whether the lid is held.
+	Holds     []string `json:"holds,omitempty"`
+	Clamshell bool     `json:"clamshell,omitempty"`
+}
+
+type Node struct {
+	Self   ports.Self    `json:"self"`
+	Shares []ports.Share `json:"shares,omitempty"`
+}
+
+type Manager struct {
+	// value: the manager itself is not installed.
+	Absent    bool              `json:"absent,omitempty"`
+	Installed map[string]string `json:"installed,omitempty"`
+	// value: the keys a newer version waits for.
+	Behind []string `json:"behind,omitempty"`
+}
+
+type Meter struct {
+	Sample activity.Sample `json:"sample"`
+	Uptime time.Duration   `json:"uptime,omitempty"`
+	// value: the battery's line ("" for none) and the memory installed.
+	Battery string `json:"battery,omitempty"`
+	Memory  int64  `json:"memory,omitempty"`
+}
+
+type Disk struct {
+	Total int64            `json:"total,omitempty"`
+	Free  int64            `json:"free,omitempty"`
+	Files map[string]int64 `json:"files,omitempty"`
+	// value: the processes that run, by name.
+	Running []string `json:"running,omitempty"`
+}
+
+type SSH struct {
+	Blocks  map[string]HostBlock `json:"blocks,omitempty"`
+	Foreign []string             `json:"foreign,omitempty"`
+}
+
+type HostBlock struct {
+	User   string `json:"user,omitempty"`
+	Key    string `json:"key,omitempty"`
+	Behind string `json:"behind,omitempty"`
+	Here   bool   `json:"here,omitempty"`
+}
+
+type Stores struct {
+	Images       []images.Record             `json:"images,omitempty"`
+	Shares       map[string][]accounts.Share `json:"shares,omitempty"`
+	Reservations []ports.Reservation         `json:"reservations,omitempty"`
+	Declarations []ports.Declaration         `json:"declarations,omitempty"`
+	Applied      map[string]settings.Applied `json:"applied,omitempty"`
+}
+
+func (m *Mac) Store() *Stores {
+	// invariant: the stores of a Mac, made empty the first time they are asked.
+	if m.Stores == nil {
+		m.Stores = &Stores{}
+	}
+	return m.Stores
 }
 
 type Engine struct {
@@ -80,6 +187,11 @@ type VM struct {
 	// value: how its last run ended, kept until a run is read.
 	Ended   *machines.RunEnd `json:"ended,omitempty"`
 	Address string           `json:"address,omitempty"`
+	// value: its guest, answering over the one way into a VM; nil when no
+	// guest answers.
+	Guest *Guest `json:"guest,omitempty"`
+	// value: what listens inside the VM.
+	Listening []ports.Listener `json:"listening,omitempty"`
 }
 
 type Kept struct {
@@ -94,6 +206,17 @@ type Kept struct {
 }
 
 func (v *VM) Running() bool { return v.PID != 0 }
+
+type Guest struct {
+	// value: what the guest answers to each command line it is given.
+	Answers map[string]Answer `json:"answers,omitempty"`
+}
+
+type Answer struct {
+	Code   int    `json:"code,omitempty"`
+	Stdout string `json:"stdout,omitempty"`
+	Stderr string `json:"stderr,omitempty"`
+}
 
 type Job struct {
 	background.Job
@@ -135,6 +258,25 @@ func (w *World) Mac(name string) *Mac {
 		m.VMs = map[string]*VM{}
 	}
 	return m
+}
+
+func (w *World) Fails(call string) bool {
+	// invariant: a scripted fault fails its call and is spent; one with no
+	// count fails every call.
+	for i, f := range w.Script {
+		if f.Call != call {
+			continue
+		}
+		switch {
+		case f.Times == 0:
+		case f.Times == 1:
+			w.Script = append(w.Script[:i], w.Script[i+1:]...)
+		default:
+			w.Script[i].Times--
+		}
+		return true
+	}
+	return false
 }
 
 func (w *World) Holder(vm string) string {
