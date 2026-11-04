@@ -13,6 +13,7 @@ import (
 const (
 	firstbootWait = 5 * time.Minute
 	ipWait        = 60 * time.Second
+	sshWait       = 30 * time.Second
 )
 
 func renderFirstboot(script, name string, l Lifetime) string {

@@ -123,7 +123,10 @@ type DeleteReport struct {
 type RestartEvent struct{ Phase, Detail string }
 
 type RestartReport struct {
-	Name   string
+	Name string
+	// value: a VM was restarted, its health steps passed; IP is its address.
+	VM     bool
+	IP     string
 	Waited time.Duration
 }
 

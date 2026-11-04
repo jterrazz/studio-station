@@ -4,6 +4,9 @@ runs:
     - command: 'machines restart infra --on mac-mini'
       exit: 0
       stdout: |
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
           ●	infra	restarted
     - command: 'machines | /usr/bin/grep infra'
       exit: 0

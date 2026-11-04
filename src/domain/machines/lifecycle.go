@@ -100,7 +100,16 @@ func (s *Service) restartVM(ctx context.Context, name string, say func(phase, de
 		return RestartReport{}, err
 	}
 	say("back", "the engine runs it again")
-	return RestartReport{Name: name, Waited: s.h.Clock.Now().Sub(started)}, nil
+	addr, err := s.engine.Address(ctx, name, ipWait)
+	if err != nil {
+		return RestartReport{}, &UnhealthyError{Name: name, Step: model.StepAddress, Detail: "none after 60 s"}
+	}
+	sshCtx, cancel := context.WithTimeout(ctx, sshWait)
+	defer cancel()
+	if out, err := s.daemon.GuestExec(sshCtx, name, "true", ""); err != nil || out.ExitCode != 0 {
+		return RestartReport{}, &UnhealthyError{Name: name, Step: model.StepSSH, Detail: "none after 30 s"}
+	}
+	return RestartReport{Name: name, VM: true, IP: addr.String(), Waited: s.h.Clock.Now().Sub(started)}, nil
 }
 
 func (s *Service) Delete(ctx context.Context, name string) (DeleteReport, error) {

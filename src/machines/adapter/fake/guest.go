@@ -145,7 +145,7 @@ type guest struct {
 	// image installs it; empty when its tooling replaced station's guest.
 	serving string
 	// value: a guest made from station's image: a line no answer scripts
-	// succeeds, as the image's own commands do.
+	// succeeds, as the image's own commands do; `true` succeeds on any guest.
 	fresh bool
 	done  chan struct{}
 	once  sync.Once
@@ -205,7 +205,7 @@ func (c *guest) Exec(ctx context.Context, cmd contract.GuestCommand) (contract.G
 		c.vm.received[cmd.Line] = in
 	}
 	c.vm.mu.Unlock()
-	if !ok && !c.fresh {
+	if !ok && !c.fresh && cmd.Line != "true" {
 		a = Answer{Code: 127, Stderr: cmd.Line + ": not found\n"}
 	}
 	res := contract.GuestResult{Code: a.Code, Stdout: a.Stdout, Stderr: a.Stderr}

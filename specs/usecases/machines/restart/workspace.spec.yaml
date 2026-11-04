@@ -1,10 +1,21 @@
-description: 'a workspace restarts with no question: a new run, throwaway or permanent'
+description: 'a workspace restarts with no question: a new run, its health steps passed, then restarted'
 env: two-macs
 runs:
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"].vms["linux-1"] | {pid, booted}'' world.json'
+      exit: 0
+      stdout: |
+          {"pid":1001,"booted":null}
     - command: 'machines restart linux-1'
       exit: 0
       stdout: |
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
           ●	linux-1	restarted
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"].vms["linux-1"] | {pid, booted}'' world.json'
+      exit: 0
+      stdout: |
+          {"pid":2002,"booted":{"bridged":false,"folders":[]}}
     - command: 'machines --here'
       exit: 0
       stdout: |

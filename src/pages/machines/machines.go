@@ -286,8 +286,13 @@ func Deleted(r machines.DeleteReport, here page.Context) page.Page {
 	return pages.Outcome("machines delete "+r.Name, here, nil, rows, "VMs")
 }
 
-func Restarted(name string, here page.Context) page.Page {
-	return pages.Outcome("machines restart "+name, here, nil, []page.Row{pages.Done(name, catalog.StateOK, "restarted")}, "VMs")
+func Restarted(r machines.RestartReport, here page.Context) page.Page {
+	var rows []page.Row
+	if r.VM {
+		rows = []page.Row{passed(machines.StepRunning, ""), passed(machines.StepAddress, r.IP), passed(machines.StepSSH, "")}
+	}
+	rows = append(rows, pages.Done(r.Name, catalog.StateOK, "restarted"))
+	return pages.Outcome("machines restart "+r.Name, here, nil, rows, "VMs")
 }
 
 type HostChoice struct {
