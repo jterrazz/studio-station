@@ -4,11 +4,14 @@ import (
 	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
 type World struct {
 	Macs map[string]*Mac
+	// value: what the engine told the owner, in the order told.
+	Told []engine.Notification
 }
 
 type Mac struct {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"slices"
-	"strings"
 	"testing"
 	"time"
 
@@ -34,15 +33,19 @@ func (f *fakeLends) Recall(_ context.Context, vm string, names []string) error {
 	return nil
 }
 
-func lendHarness(t *testing.T, lends *fakeLends) (h harness, log *[]string) {
+type told struct{ all []Notification }
+
+func (r *told) Notify(_ context.Context, n Notification) { r.all = append(r.all, n) }
+
+func lendHarness(t *testing.T, lends *fakeLends) (h harness, owner *told) {
 	t.Helper()
 	h = newHarness(t,
 		machines.VMRecord{Name: "api", Lifetime: machines.Lasting},
 		machines.VMRecord{Name: "off", Lifetime: machines.Lasting},
 	)
 	h.d.o.Lends = lends
-	lines := []string{}
-	h.d.note = func(line string) { lines = append(lines, line) }
+	owner = &told{}
+	h.d.notifier = owner
 	for _, name := range []string{"api", "off"} {
 		v, _ := h.d.find(name)
 		v.state = StateStopped
@@ -50,27 +53,27 @@ func lendHarness(t *testing.T, lends *fakeLends) (h harness, log *[]string) {
 			v.state = StateRunning
 		}
 	}
-	return h, &lines
+	return h, owner
 }
 
 func lend(name string, until time.Time) Lend {
 	return Lend{Name: name, Until: until}
 }
 
-func TestALendPastItsUntilOnARunningVMIsRecalledAndLogged(t *testing.T) {
+func TestALendPastItsUntilOnARunningVMIsRecalledAndTheOwnerTold(t *testing.T) {
 	now := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
 	lends := &fakeLends{held: map[string][]Lend{
 		"api": {lend("operator:claude:oauth-token", now.Add(-time.Minute)), lend("session:github", now.Add(time.Hour))},
 		"off": {lend("operator:claude:oauth-token", now.Add(-time.Minute))},
 	}}
-	h, log := lendHarness(t, lends)
+	h, owner := lendHarness(t, lends)
 	h.d.recallExpired(t.Context(), "")
 	if !slices.Equal(lends.recalled, []string{"api operator:claude:oauth-token"}) {
 		t.Errorf("recalled %v, want only api's expired lend (session:github is current, off is stopped)", lends.recalled)
 	}
-	want := "2026-11-01T10:00:00Z api lend: recalled operator:claude:oauth-token (expired)"
-	if !slices.Contains(*log, want) {
-		t.Errorf("daemon.log %q, want %q", *log, want)
+	want := Notification{Kind: NoticeRecalled, Subject: "api lend", Text: "recalled operator:claude:oauth-token (expired)"}
+	if !slices.Equal(owner.all, []Notification{want}) {
+		t.Errorf("told %v, want %v", owner.all, want)
 	}
 }
 
@@ -89,16 +92,16 @@ func TestTheRecordsAreSweptAtTheStartThenEveryMinute(t *testing.T) {
 	}
 }
 
-func TestAFailedRecallKeepsItsEntryAndIsLoggedOncePerHour(t *testing.T) {
+func TestAFailedRecallKeepsItsEntryAndIsToldOncePerHour(t *testing.T) {
 	now := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
 	lends := &fakeLends{fail: errors.New("api: deleting the copies: exit 1"), held: map[string][]Lend{
 		"api": {lend("operator:claude:oauth-token", now.Add(-time.Minute))},
 	}}
-	h, log := lendHarness(t, lends)
+	h, owner := lendHarness(t, lends)
 	failures := func() int {
 		n := 0
-		for _, l := range *log {
-			if strings.Contains(l, "api lend: recall of operator:claude:oauth-token failed: api: deleting the copies: exit 1") {
+		for _, told := range owner.all {
+			if told == (Notification{Kind: NoticeRecallFailed, Subject: "api lend", Text: "recall of operator:claude:oauth-token failed: api: deleting the copies: exit 1"}) {
 				n++
 			}
 		}
@@ -109,7 +112,7 @@ func TestAFailedRecallKeepsItsEntryAndIsLoggedOncePerHour(t *testing.T) {
 		h.clock.At = h.clock.At.Add(lendEvery)
 	}
 	if got := failures(); got != 1 {
-		t.Errorf("%d failure lines over 3 minutes, want 1", got)
+		t.Errorf("told %d failures over 3 minutes, want 1", got)
 	}
 	if len(lends.held["api"]) != 1 {
 		t.Errorf("the failed lend's entry was dropped: %v", lends.held)
@@ -117,7 +120,7 @@ func TestAFailedRecallKeepsItsEntryAndIsLoggedOncePerHour(t *testing.T) {
 	h.clock.At = now.Add(lendRetell)
 	h.d.recallExpired(t.Context(), "")
 	if got := failures(); got != 2 {
-		t.Errorf("%d failure lines after an hour, want 2", got)
+		t.Errorf("told %d failures after an hour, want 2", got)
 	}
 }
 
