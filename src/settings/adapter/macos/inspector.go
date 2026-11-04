@@ -67,8 +67,15 @@ func protections() map[catalog.Fact]protection {
 var errUnknownFact = errors.New("no such fact on a Mac")
 
 func (i *Inspector) Read(ctx context.Context, f catalog.Fact) (settings.Fact, error) {
-	if f == catalog.FactSystemUpdates {
+	switch f {
+	case catalog.FactSystemUpdates:
 		return i.updates(ctx)
+	case catalog.FactKernel:
+		return i.first(ctx, local.Command("uname", "-sr"), false)
+	case catalog.FactLocalIP:
+		return i.first(ctx, local.Command("ipconfig", "getifaddr", "en0"), true)
+	case catalog.FactDNS:
+		return i.dns(ctx)
 	}
 	p, ok := protections()[f]
 	if !ok {
@@ -98,7 +105,7 @@ func (r reply) ok() bool { return r.found && r.out.ExitCode == 0 }
 // read the deadline ended first is an error.
 func (i *Inspector) ask(ctx context.Context, c local.Cmd) (reply, error) {
 	out, err := i.run.Output(ctx, c)
-	if errors.Is(err, local.ErrTimeout) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
+	if errors.Is(err, local.ErrTimeout) || ctx.Err() != nil {
 		return reply{}, local.ErrTimeout
 	}
 	if err != nil {
@@ -158,4 +165,56 @@ func ago(d time.Duration) string {
 		return strconv.Itoa(int(d.Hours())) + "h"
 	}
 	return strconv.Itoa(int(d.Hours()/24)) + "d"
+}
+
+// invariant: a value a tool prints whole (the kernel) or as its first word
+// (an address); nothing printed is absent.
+func (i *Inspector) first(ctx context.Context, c local.Cmd, word bool) (settings.Fact, error) {
+	r, err := i.ask(ctx, c)
+	if err != nil {
+		return settings.Fact{}, err
+	}
+	value := strings.TrimSpace(r.out.Stdout)
+	if fields := strings.Fields(value); word && len(fields) > 0 {
+		value = fields[0]
+	}
+	if !r.ok() || value == "" {
+		return settings.Fact{State: catalog.StateAbsent}, nil
+	}
+	return settings.Fact{State: catalog.StateOK, Value: value}, nil
+}
+
+// outside: `scutil --dns` lists `nameserver[0] : 9.9.9.9`; loopback and IPv6
+// resolvers are the local stub, not a provider.
+func (i *Inspector) dns(ctx context.Context) (settings.Fact, error) {
+	r, err := i.ask(ctx, local.Command("scutil", "--dns"))
+	if err != nil {
+		return settings.Fact{}, err
+	}
+	var servers []string
+	for _, line := range strings.Split(r.out.Stdout, "\n") {
+		_, server, ok := strings.Cut(line, "nameserver[")
+		if !ok {
+			continue
+		}
+		_, server, ok = strings.Cut(server, "] : ")
+		servers = appendResolver(servers, strings.TrimSpace(server), ok)
+	}
+	if !r.ok() || len(servers) == 0 {
+		return settings.Fact{State: catalog.StateAbsent}, nil
+	}
+	return settings.Fact{State: catalog.StateOK, Value: strings.Join(servers, ", ")}, nil
+}
+
+func appendResolver(servers []string, server string, ok bool) []string {
+	switch {
+	case !ok, server == "", server == "127.0.0.1", strings.Contains(server, ":"), len(servers) >= 2:
+		return servers
+	}
+	for _, have := range servers {
+		if have == server {
+			return servers
+		}
+	}
+	return append(servers, server)
 }
