@@ -6,16 +6,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/settings"
+	"github.com/jterrazz/studio-station/src/core/call"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Machines *machines.Service
-	Here     page.Context
+	Here page.Context
 }
 
 type Input struct{ Name, User, Key string }
@@ -36,9 +35,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			}
 			return nil
 		},
-		Validate: func(context.Context, *Input) error { return d.Machines.CheckHost() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			if err := d.Machines.AddHost(ctx, in.Name, settings.Host{User: in.User, Key: in.Key}); err != nil {
+			if _, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Add, machinescalls.AddIn{Name: in.Name, User: in.User, Key: in.Key}, nil); err != nil {
 				return err
 			}
 			return io.Page(pagemachines.Change("add", in.Name, "added, ssh "+in.Name, d.Here), nil)

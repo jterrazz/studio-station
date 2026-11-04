@@ -8,7 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"

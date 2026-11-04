@@ -11,6 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/shortcuts"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"github.com/jterrazz/studio-station/src/remote"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
@@ -42,6 +43,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		awakecalls.All(awakecalls.Deps{Power: awakePower{m.power()}}),
 		diskcalls.All(diskcalls.Deps{Storage: m.storage(env), Kind: kind}),
 		imagescalls.All(imagescalls.Deps{Images: imageBuilds{m.images()}, Kind: kind}),
+		machinescalls.All(machinescalls.Deps{Machines: machineCalls{m.machines(env.Interactive)}, Kind: kind}),
 		portscalls.All(portscalls.Deps{Services: m.services(env), Kind: kind}),
 		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupService}, Ask: named}),
 		settingscalls.All(settingscalls.Deps{Config: config, Ask: ask, Shortcuts: shortcuts.New(m.host), Kind: kind}),

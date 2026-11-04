@@ -8,44 +8,27 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/images"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
-	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/machine"
+	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
+	"github.com/jterrazz/studio-station/src/machines"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	"github.com/jterrazz/studio-station/src/ports"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
 )
 
 const ID = "fleet"
 
 type Machines interface {
+	// value: the fleet as it is, read without refreshing the ssh blocks.
 	Fleet(ctx context.Context, hereOnly bool) (machines.Fleet, error)
-	CheckCreate(ctx context.Context, r machines.CreateRequest) (machines.CreateRequest, error)
-	Create(ctx context.Context, r machines.CreateRequest, progress func(machines.Step)) (machines.Created, error)
-	Start(ctx context.Context, name string) error
-	Stop(ctx context.Context, name string) error
-	Delete(ctx context.Context, name string) (machines.DeleteReport, error)
-	ForgetHost(ctx context.Context, name string) error
-	Restart(ctx context.Context, name string, progress func(machines.RestartEvent)) (machines.RestartReport, error)
-	Probe(ctx context.Context, name string) (machines.ProbeReport, error)
-	Unlock(ctx context.Context, name string) error
-}
-
-type Images interface {
-	List(ctx context.Context) ([]images.Report, error)
-	Build(ctx context.Context, r images.BuildRequest, progress func(images.Step)) ([]images.Record, error)
-}
-
-type Secrets interface {
-	List(ctx context.Context) (secrets.Report, error)
-}
-
-type Services interface {
-	List(ctx context.Context, hereOnly bool) (services.Fleet, error)
 }
 
 type Tailnet interface {
@@ -55,10 +38,9 @@ type Tailnet interface {
 type Remote func(ctx context.Context, machine string, words []string) error
 
 type Deps struct {
+	Calls    call.Router
+	Target   machine.Ref
 	Machines Machines
-	Images   Images
-	Secrets  Secrets
-	Services Services
 	Tailnet  Tailnet
 	Remote   Remote
 	Describe tab.Describe
@@ -109,7 +91,7 @@ func read(d Deps) tab.Source[pagefleet.Reading] {
 				send(func(r *pagefleet.Reading) { r.Machines = &f })
 			})
 			run(func() {
-				list, err := d.Images.List(ctx)
+				list, err := call.Invoke(ctx, d.Calls, d.Target, imagescalls.List, imagescalls.ListIn{}, nil)
 				if err != nil {
 					send(fail("images", err))
 					return
@@ -117,7 +99,7 @@ func read(d Deps) tab.Source[pagefleet.Reading] {
 				send(func(r *pagefleet.Reading) { r.Images = &list })
 			})
 			run(func() {
-				s, err := d.Secrets.List(ctx)
+				s, err := call.Invoke(ctx, d.Calls, d.Target, accountscalls.List, accountscalls.ListIn{}, nil)
 				if err != nil {
 					send(fail("secrets", err))
 					return
@@ -125,7 +107,7 @@ func read(d Deps) tab.Source[pagefleet.Reading] {
 				send(func(r *pagefleet.Reading) { r.Secrets = &s })
 			})
 			run(func() {
-				f, err := d.Services.List(ctx, false)
+				f, err := call.Invoke(ctx, d.Calls, d.Target, portscalls.List, portscalls.ListIn{}, nil)
 				if err == nil {
 					send(func(r *pagefleet.Reading) { r.Services = &f })
 				}
@@ -164,7 +146,7 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		})
 	case pagefleet.KeyBuild:
 		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
-			records, err := m.d.Images.Build(m.ctx, images.BuildRequest{}, nil)
+			records, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, imagescalls.Build, imagescalls.BuildIn{}, nil)
 			if err != nil {
 				return tab.Status{}, err
 			}
@@ -177,7 +159,11 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 	case pagemachines.KeyDelete:
 		c := pagefleet.DeleteConfirm(name)
 		m.View, act = m.Act(&c, m.exec(func() (tab.Status, error) {
-			report, err := m.d.Machines.Delete(m.ctx, name)
+			var report machines.DeleteReport
+			err := confirm.Answered(func(answer string) (err error) {
+				report, err = call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Delete, machinescalls.DeleteIn{VM: name, Confirm: answer}, nil)
+				return err
+			})
 			if len(report.Warnings) > 0 {
 				return tab.Outcome("deleted", name, catalog.StateDegraded, report.Warnings[0]), err
 			}
@@ -186,25 +172,34 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 	case pagefleet.KeyForget:
 		c := pagefleet.ForgetConfirm(name)
 		m.View, act = m.Act(&c, m.exec(func() (tab.Status, error) {
-			return tab.Outcome("forgot", name, catalog.StateOK, ""), m.d.Machines.ForgetHost(m.ctx, name)
+			err := confirm.Answered(func(answer string) error {
+				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Forget, machinescalls.ForgetIn{Name: name, Confirm: answer}, nil)
+				return err
+			})
+			return tab.Outcome("forgot", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyRestart:
 		c := pagefleet.RestartConfirm(name, m.isHost(name))
 		m.View, act = m.Act(&c, m.exec(func() (tab.Status, error) {
-			_, err := m.d.Machines.Restart(m.ctx, name, nil)
+			err := confirm.Answered(func(answer string) error {
+				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Restart, machinescalls.RestartIn{Name: name, Confirm: answer}, nil)
+				return err
+			})
 			return tab.Outcome("restarted", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyStart:
 		running := m.running(name)
 		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
 			if running {
-				return tab.Outcome("stopped", name, catalog.StateOK, ""), m.d.Machines.Stop(m.ctx, name)
+				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Stop, machinescalls.VMIn{VM: name}, nil)
+				return tab.Outcome("stopped", name, catalog.StateOK, ""), err
 			}
-			return tab.Outcome("started", name, catalog.StateOK, ""), m.d.Machines.Start(m.ctx, name)
+			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Start, machinescalls.VMIn{VM: name}, nil)
+			return tab.Outcome("started", name, catalog.StateOK, ""), err
 		}))
 	case pagefleet.KeyProbe:
 		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
-			report, err := m.d.Machines.Probe(m.ctx, name)
+			report, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Probe, machinescalls.ProbeIn{Name: name}, nil)
 			if err != nil {
 				return tab.Status{}, err
 			}
@@ -212,7 +207,8 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		}))
 	case pagefleet.KeyUnlock:
 		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
-			return tab.Outcome("unlocked", name, catalog.StateOK, ""), m.d.Machines.Unlock(m.ctx, name)
+			_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Unlock, machinescalls.UnlockIn{Name: name, Interactive: true}, nil)
+			return tab.Outcome("unlocked", name, catalog.StateOK, ""), err
 		}))
 	case pagemachines.KeyEnter:
 		m.View, act = m.Act(nil, m.exec(func() (tab.Status, error) {
@@ -299,16 +295,7 @@ func (m Model) create(values map[string]string) tea.Cmd {
 	}
 	request := machines.CreateRequest{Image: values["image"], Name: values["name"], Lifetime: machines.Lifetime(values["lifetime"])}
 	return m.exec(func() (tab.Status, error) {
-		resources, err := machines.ParseResources(0, "", "")
-		if err != nil {
-			return tab.Status{}, err
-		}
-		request.Resources = resources
-		checked, err := m.d.Machines.CheckCreate(m.ctx, request)
-		if err != nil {
-			return tab.Status{}, err
-		}
-		created, err := m.d.Machines.Create(m.ctx, checked, nil)
+		created, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, machinescalls.Create, machinescalls.CreateIn{Request: request}, nil)
 		return tab.Outcome("created", created.VM.Name, catalog.StateOK, "on "+created.VM.Host), err
 	})
 }

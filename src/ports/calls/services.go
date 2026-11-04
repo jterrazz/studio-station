@@ -41,7 +41,10 @@ var URL = call.Call[Deps, URLIn, ports.ServiceView]{
 
 type ReleaseIn struct {
 	// value: <vm>:<port>, or a port inside a VM.
-	Target  string
+	Target string
+	// value: the host the target's VM runs on, when the caller has read the
+	// fleet; empty finds it.
+	Host    string
 	Confirm string
 }
 
@@ -62,9 +65,11 @@ var Release = call.Call[Deps, ReleaseIn, ReleaseOut]{
 		if err != nil {
 			return ReleaseOut{}, err
 		}
-		host, err := d.Services.CheckRelease(ctx, t)
-		if err != nil {
-			return ReleaseOut{}, err
+		host := in.Host
+		if host == "" {
+			if host, err = d.Services.CheckRelease(ctx, t); err != nil {
+				return ReleaseOut{}, err
+			}
 		}
 		if d.Services.Pinned(t) {
 			if refused := confirm.Require(confirm.For(confirm.StopSharing, d.Kind), t.VM+":"+strconv.Itoa(t.Port), in.Confirm); refused != nil {

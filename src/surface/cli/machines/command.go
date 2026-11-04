@@ -6,15 +6,16 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/machines"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Machines *machines.Service
-	Here     page.Context
+	Here page.Context
 }
 
 type Input struct{ Here bool }
@@ -31,17 +32,15 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Read:  func(*Input) bool { return true },
 		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			fleet, err := d.Machines.Fleet(ctx, in.Here)
+			out, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.List, machinescalls.ListIn{Here: in.Here}, nil)
 			if err != nil {
 				return err
 			}
 			var warnings []string
-			if !in.Here {
-				if refreshErr := d.Machines.SSHBlocks(ctx, fleet); refreshErr != nil {
-					warnings = append(warnings, "ssh config not refreshed: "+refreshErr.Error())
-				}
+			if out.Unrefreshed != nil {
+				warnings = append(warnings, "ssh config not refreshed: "+out.Unrefreshed.Error())
 			}
-			return io.Page(pagemachines.List(fleet, warnings, d.Here), machines.ToWire(fleet))
+			return io.Page(pagemachines.List(out.Fleet, warnings, d.Here), machines.ToWire(out.Fleet))
 		},
 	}, env)
 	cmd.AddCommand(children...)

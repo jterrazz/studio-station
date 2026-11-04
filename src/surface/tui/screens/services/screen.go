@@ -56,10 +56,13 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 			if pageservices.Row(s, h.Name).ID != ev.Row {
 				continue
 			}
-			target := s.VM + ":" + strconv.Itoa(s.GuestPort)
+			target, host := s.VM+":"+strconv.Itoa(s.GuestPort), ""
+			if !h.Here {
+				host = h.Name
+			}
 			name := ev.Row
 			run := tab.Exec(ID, func() (tab.Status, error) {
-				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, portscalls.Release, portscalls.ReleaseIn{Target: target, Confirm: confirm.Yes}, nil)
+				_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, portscalls.Release, portscalls.ReleaseIn{Target: target, Host: host, Confirm: confirm.Yes}, nil)
 				return tab.Outcome("released", name, catalog.StateOK, ""), err
 			})
 			var question *page.Confirm

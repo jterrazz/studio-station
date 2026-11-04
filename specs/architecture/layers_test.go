@@ -58,7 +58,7 @@ func importTable() map[string][]string {
 		"wire":                       {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", "net/netip", std},
 		"surface/cli":                {"surface/cli/kit", cobra, std},
 		"surface/cli/kit":            append([]string{"output", "page", "core/fail", "core/store", "domain/*", "engine", "catalog", "testing", cobra, pflag, std}, calls...),
-		"surface/cli/*":              append([]string{"surface/cli/kit", "domain/*", "engine", "page", "pages/*", "catalog", cobra, pflag, std}, calls...),
+		"surface/cli/*":              append([]string{"surface/cli/kit", "engine", "page", "pages/*", "catalog", cobra, pflag, std}, calls...),
 		"domain/*":                   domain,
 		"domain/setup":               append(slices.Clone(domain), "domain/shell", "domain/storage"),
 		"domain/tools":               append(slices.Clone(domain), "apps", "apps/contract", "apps/adapter/fake", "core/call"),
@@ -93,8 +93,8 @@ func importTable() map[string][]string {
 		"core/adapter/*":             {"core/*", "platform/local", "golang.org/x/sys/unix", std},
 		"core/contract/contracttest": {"core/*", "testing", std},
 		"core/fail":                  {"core/finding", std},
-		"surface/tui":                append([]string{"surface/tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
-		"surface/tui/*":              append([]string{"surface/tui/screens/*", "domain/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
+		"surface/tui":                append([]string{"surface/tui/screens/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
+		"surface/tui/*":              append([]string{"surface/tui/screens/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
 	}
 }
 

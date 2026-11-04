@@ -2,24 +2,33 @@ package machinescreate
 
 import (
 	"context"
-	"errors"
 	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/core/call"
+	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
+	"github.com/jterrazz/studio-station/src/machines"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Machines *machines.Service
-	Here     page.Context
-	Ask      kit.Asker
-	Build    func(ctx context.Context, image string) error
-	On       func(ctx context.Context, host string, lifetime string) error
+	// value: the flags' sizes, parsed as the hypervisor takes them.
+	Resources func(cpus int, memory, disk string) (machines.Resources, error)
+	// value: every refusal a question cannot answer; unbuilt when the only
+	// one is the image, not built yet.
+	Check func(ctx context.Context, r machines.CreateRequest) (unbuilt bool, err error)
+	// value: the refusal of an image the owner chose not to build.
+	NotBuilt func(image string) error
+	// value: the fleet, for the host question; read only.
+	Fleet func(ctx context.Context) (machines.Fleet, error)
+	Here  page.Context
+	Ask   kit.Asker
+	On    func(ctx context.Context, host string, lifetime string) error
 }
 
 type Input struct {
@@ -46,7 +55,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Read: func(*Input) bool { return false },
 		Bind: func(in *Input, _ []string) error {
-			r, err := machines.ParseResources(in.CPUs, in.Memory, in.Disk)
+			r, err := d.Resources(in.CPUs, in.Memory, in.Disk)
 			if err != nil {
 				return err
 			}
@@ -61,9 +70,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if check.Lifetime == "" && asking {
 				check.Lifetime = machines.Temporary
 			}
-			_, err := d.Machines.CheckCreate(ctx, check)
-			var unbuilt *machines.NoImageError
-			if errors.As(err, &unbuilt) && asking && d.Build != nil {
+			unbuilt, err := d.Check(ctx, check)
+			if unbuilt && asking {
 				in.buildFirst = true
 				return nil
 			}
@@ -77,16 +85,13 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				}
 			}
 			if in.buildFirst {
-				if err := d.Build(ctx, in.request.Image); err != nil {
+				if _, err := call.Invoke(ctx, env.Calls, env.Target, imagescalls.Build, imagescalls.BuildIn{Names: []string{in.request.Image}}, nil); err != nil {
 					return err
 				}
 			}
-			stop := func() {}
-			created, err := d.Machines.Create(ctx, in.request, func(s machines.Step) {
-				stop()
-				stop = io.Wait(s.Label)
-			})
-			stop()
+			steps := kit.Steps(io)
+			created, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Create, machinescalls.CreateIn{Request: in.request}, steps)
+			steps.Stop()
 			if err != nil {
 				return err
 			}
@@ -97,7 +102,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 
 func ask(ctx context.Context, d Deps, in *Input) (done bool, err error) {
 	var hosts []pagemachines.HostChoice
-	if fleet, fleetErr := d.Machines.Fleet(ctx, false); fleetErr == nil {
+	if fleet, fleetErr := d.Fleet(ctx); fleetErr == nil {
 		for _, h := range fleet.Hosts {
 			if h.Reachable {
 				hosts = append(hosts, pagemachines.HostChoice{Name: h.Name, Here: h.Here, Detail: vmCount(len(h.VMs))})
@@ -126,7 +131,7 @@ func ask(ctx context.Context, d Deps, in *Input) (done bool, err error) {
 			return false, err
 		}
 		if !build {
-			return false, &machines.NoImageError{Image: in.request.Image}
+			return false, d.NotBuilt(in.request.Image)
 		}
 	}
 	return false, nil

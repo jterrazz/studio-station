@@ -5,22 +5,21 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/core/call"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Machines *machines.Service
-	Here     page.Context
+	Names func() []string
+	// value: whether a name is a VM, for the question.
+	IsVM func(name string) bool
+	Here page.Context
 }
 
-type Input struct {
-	Name string
-	VM   bool
-}
+type Input struct{ Name string }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
@@ -32,33 +31,21 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Name = args[0]
 			return nil
 		},
-		Validate: func(_ context.Context, in *Input) error {
-			if err := d.Machines.CheckHost(); err != nil {
-				return err
-			}
-			m, err := d.Machines.Remote(in.Name)
-			if err != nil {
-				return err
-			}
-			if m.Kind == catalog.Host {
-				return nil
-			}
-			in.VM = true
-			if m.Lifetime == machines.Temporary {
-				return &machines.TemporaryRestartError{Name: in.Name}
-			}
-			return nil
-		},
 		Destructive: func(*Input) bool { return true },
+		ByCall:      true,
 		Confirm: func(in *Input) string {
-			if in.VM {
+			if d.IsVM(in.Name) {
 				return "Restart " + in.Name + " (poweroff, then start)?"
 			}
 			return "Restart " + in.Name + " (sudo fdesetup authrestart)?"
 		},
-		Complete: func([]string, string) []string { return d.Machines.Names() },
+		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			if _, err := d.Machines.Restart(ctx, in.Name, nil); err != nil {
+			err := io.Confirmed(func(answer string) error {
+				_, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Restart, machinescalls.RestartIn{Name: in.Name, Confirm: answer}, nil)
+				return err
+			})
+			if err != nil {
 				return err
 			}
 			return io.Page(pagemachines.Restarted(in.Name, d.Here), nil)

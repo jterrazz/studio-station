@@ -72,12 +72,12 @@ func (s *Service) port(ctx context.Context, label, ip string, port int) Check {
 	return Check{Name: label, State: catalog.StateBroken, Value: ip, Detail: "port " + p + " closed"}
 }
 
-func (s *Service) console(ctx context.Context, name string, checks []Check) (string, []Check) {
+func (s *Service) console(ctx context.Context, name string, checks []Check) (owner string, read []Check) {
 	out, err := s.h.Run.Output(ctx, system.Cmd{Name: "ssh", Args: concat(batchSSH(), []string{name, "stat -f %Su /dev/console"})})
 	if err != nil || out.ExitCode != 0 {
 		return "", checks
 	}
-	owner := strings.TrimSpace(out.Stdout)
+	owner = strings.TrimSpace(out.Stdout)
 	check := Check{Name: "console owner", State: catalog.StateOK, Value: owner}
 	if owner == "root" {
 		check.State, check.Detail = catalog.StateDegraded, "loginwindow, no GUI session"

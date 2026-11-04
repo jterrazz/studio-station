@@ -5,10 +5,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/jterrazz/studio-station/src/domain/images"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
-	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
 	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
@@ -24,24 +22,22 @@ import (
 
 type Deps struct {
 	Here     page.Context
+	Calls    call.Router
+	Target   machine.Ref
 	Status   homescreen.Status
 	Tools    toolsscreen.Deps
 	Config   configscreen.Deps
 	Storage  storagescreen.Deps
-	Machines *machines.Service
-	Images   *images.Service
-	Secrets  *secrets.Service
-	Services *services.Service
-	// value: the Services tab, which reads and releases through its calls.
-	ServicesTab servicesscreen.Deps
-	Tailnet     fleetscreen.Tailnet
-	Accounts    accountsscreen.Deps
-	Power       powerscreen.Deps
-	Remote      func(ctx context.Context, machine string, words []string) error
-	Station     func(ctx context.Context, words []string) error
-	Describe    func(error) (message, hint string)
-	Prefer      func(prefix string)
-	Stop        func()
+	Machines fleetscreen.Machines
+	Services servicesscreen.Deps
+	Tailnet  fleetscreen.Tailnet
+	Accounts accountsscreen.Deps
+	Power    powerscreen.Deps
+	Remote   func(ctx context.Context, machine string, words []string) error
+	Station  func(ctx context.Context, words []string) error
+	Describe func(error) (message, hint string)
+	Prefer   func(prefix string)
+	Stop     func()
 }
 
 type Tab struct {
@@ -71,10 +67,10 @@ func Run(ctx context.Context, d Deps) error {
 		configscreen.New(ctx, d.Config, d.Here, describe),
 		storagescreen.New(ctx, d.Storage, d.Here, describe),
 		fleetscreen.New(ctx, fleetscreen.Deps{
-			Machines: d.Machines, Images: d.Images, Secrets: d.Secrets, Services: d.Services, Tailnet: d.Tailnet,
+			Calls: d.Calls, Target: d.Target, Machines: d.Machines, Tailnet: d.Tailnet,
 			Remote: d.Remote, Describe: describe,
 		}, d.Here),
-		servicesscreen.New(ctx, d.ServicesTab, d.Here, describe),
+		servicesscreen.New(ctx, d.Services, d.Here, describe),
 		accountsscreen.New(ctx, d.Accounts, d.Here, describe),
 		powerscreen.New(ctx, d.Power, d.Here, describe),
 	}, d.Prefer)

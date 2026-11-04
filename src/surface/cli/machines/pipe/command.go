@@ -2,14 +2,20 @@ package machinespipe
 
 import (
 	"context"
+	"io"
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-type Deps struct{ Machines *machines.Service }
+type Pipe interface {
+	// value: every refusal, before the first byte.
+	Check(ctx context.Context, vm string) error
+	Pipe(ctx context.Context, vm string, in io.Reader, out io.Writer) error
+}
+
+type Deps struct{ Machines Pipe }
 
 type Input struct{ Name string }
 
@@ -26,8 +32,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			return nil
 		},
 		Validate: func(ctx context.Context, in *Input) error {
-			_, err := d.Machines.CheckPipe(ctx, in.Name)
-			return err
+			return d.Machines.Check(ctx, in.Name)
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			stdin, stdout := io.Streams()
