@@ -2,7 +2,7 @@
 # Starts the document's station engine (its stderr in engine.log, its pid in .engine.pid),
 # starts each permanent VM its record does not want stopped (a workspace never starts by
 # itself, as v2's engine started a lasting one), and waits
-# until a VM's guest is connected, as a spec that lends needs the engine.
+# until a VM answers SSH (its guest is connected), as a spec that lends needs the engine.
 "$STATION" engine run 2>> "$HOME/engine.log" &
 echo $! > "$HOME/.engine.pid"
 n=0
@@ -19,7 +19,7 @@ for record in "$HOME"/.local/state/station/vms/*.json; do
 done
 n=0
 while [ $n -lt 50 ]; do
-    "$STATION" machines --json 2> /dev/null | /usr/bin/grep -q '"guest": "connected"' && exit 0
+    "$STATION" machines --json 2> /dev/null | /usr/bin/grep -q '"ssh": true' && exit 0
     /bin/sleep 0.2
     n=$((n + 1))
 done

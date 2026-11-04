@@ -155,6 +155,7 @@ const (
 	Suspended = model.Suspended
 	Stale     = model.Stale
 	Broken    = model.Broken
+	Unknown   = model.UnknownState
 )
 
 func (s *Service) vmUser(cfg prefsView) string {

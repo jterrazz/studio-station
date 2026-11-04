@@ -17,7 +17,16 @@
                 "here": "jterrazz-macbook-pro",
                 "hosts": {
                     "jterrazz-mac-mini": {
-                        "user": "jterrazz.agent"
+                        "user": "jterrazz.agent",
+                        "answered": "2026-11-04T03:12:00Z",
+                        "vms": [
+                            {
+                                "name": "infra",
+                                "lifetime": "permanent",
+                                "cpus": 8,
+                                "memory_bytes": 25769803776
+                            }
+                        ]
                     }
                 },
                 "vm_user": "admin"

@@ -1,4 +1,4 @@
-description: 'a Mac that does not answer keeps its row, Unreachable, and is a finding; the read still exits 0'
+description: 'a Mac that does not answer keeps its row, Unreachable since its last answer, its VMs unknown and never dropped; a finding, and the read still exits 0'
 fixture:
     - ../../../__fixtures__/terminal/
 env:
@@ -13,12 +13,13 @@ runs:
            station machines                                                       jterrazz-macbook-pro · host
            ──────────────────────────────────────────────────────────────────────────────────────────────────
 
-           4 machines · 2 running · 1 stopped · 1 needs you
-               MACHINE     KIND       STATE                CPU    MEMORY
+           5 machines · 2 running · 1 stopped · 1 needs you
+               MACHINE     KIND       STATE                            CPU    MEMORY
              ● This Mac    Mac        Engine running
-             ├─ ○ api      Workspace  Stopped · permanent  4 CPU  8 GB
-             └─ ● linux-1  Workspace  Running · throwaway  4 CPU  8 GB
-             ✗ mac-mini    Mac        Unreachable
+             ├─ ○ api      Workspace  Stopped · permanent              4 CPU  8 GB
+             └─ ● linux-1  Workspace  Running · throwaway              4 CPU  8 GB
+             ✗ mac-mini    Mac        Unreachable · last answer 03:12
+             └─ ? infra    Workspace  Unknown · permanent              8 CPU  24 GB
 
            Needs you
              ✗ mac-mini  does not answer
@@ -28,6 +29,7 @@ runs:
           ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
           ○	api	Workspace	jterrazz-macbook-pro	Stopped · permanent	4 CPU	8 GB
           ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
-          ✗	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Unreachable
+          ✗	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Unreachable · last answer 03:12
+          ?	infra	Workspace	jterrazz-mac-mini	Unknown · permanent	8 CPU	24 GB
           # Needs you
           ✗	mac-mini	does not answer

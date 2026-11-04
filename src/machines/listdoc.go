@@ -15,6 +15,7 @@ type ListMac struct {
 	Label     string     `json:"label"`
 	ThisMac   bool       `json:"this_mac"`
 	Reachable bool       `json:"reachable"`
+	Answered  time.Time  `json:"last_answer,omitzero"`
 	IP        string     `json:"ip"`
 	User      string     `json:"user"`
 	Engine    ListEngine `json:"engine"`
@@ -74,7 +75,7 @@ func ToList(f Fleet) ListDoc {
 	out := ListDoc{Schema: ListSchema, Macs: make([]ListMac, 0, len(f.Hosts)), Findings: []ListFinding{}}
 	for _, h := range f.Hosts {
 		m := ListMac{
-			Name: h.Name, Label: Label(f, h), ThisMac: h.Here, Reachable: h.Reachable, IP: h.Node.IP, User: h.User,
+			Name: h.Name, Label: Label(f, h), ThisMac: h.Here, Reachable: h.Reachable, Answered: h.Answered, IP: h.Node.IP, User: h.User,
 			Engine: ListEngine{State: engineState(h), Version: h.Daemon.Version}, Station: h.StationVersion, VMs: []ListVM{},
 		}
 		for _, vm := range Ordered(h.VMs) {

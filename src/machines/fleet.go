@@ -38,6 +38,9 @@ const (
 	Suspended VMState = "suspended"
 	Stale     VMState = "stale"
 	Broken    VMState = "broken"
+	// value: on a Mac that does not answer: as it was at its last answer,
+	// its state unknown.
+	UnknownState VMState = "unknown"
 )
 
 type VM struct {
@@ -65,12 +68,18 @@ type EngineView struct {
 type HostView struct {
 	Name, User, StationVersion string
 	Here, Reachable            bool
-	Node                       Node
+	// value: when this Mac last had its answer; zero for one never heard.
+	Answered time.Time
+	Node     Node
 	Daemon                     EngineView
 	VMs                        []VM
 }
 
-type Fleet struct{ Hosts []HostView }
+type Fleet struct {
+	Hosts []HostView
+	// value: when it was read.
+	Read time.Time
+}
 
 type Check struct {
 	Name          string

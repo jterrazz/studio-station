@@ -3,6 +3,7 @@ package machines
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/page"
@@ -31,7 +32,7 @@ func List(f machines.Fleet, warnings []string, here page.Context) page.Page {
 	items := make([]page.Item, 0, len(f.Hosts))
 	var hints []page.Hint
 	for _, h := range f.Hosts {
-		g := page.Group{Head: macRow(machines.Label(f, h), h, hereVersion), Fold: page.Open}
+		g := page.Group{Head: macRow(machines.Label(f, h), h, hereVersion, f.Read), Fold: page.Open}
 		for _, vm := range machines.Ordered(h.VMs) {
 			row := listVMRow(h.Name, vm)
 			g.Items = append(g.Items, page.Item{Row: &row})
@@ -109,10 +110,12 @@ func fixOf(f machines.Need) page.Value {
 	return page.Text(f.Fix)
 }
 
-func macRow(label string, h machines.HostView, hereVersion string) page.Row {
+func macRow(label string, h machines.HostView, hereVersion string, now time.Time) page.Row {
 	row := page.Row{ID: h.Name, Label: h.Name, Short: label, Mark: page.OK}
 	state, detail := page.Text("Online"), page.None()
 	switch {
+	case !h.Reachable && !h.Answered.IsZero():
+		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.List(page.Text("Unreachable"), page.Text("last answer "+lastAnswer(h.Answered, now)))
 	case !h.Reachable:
 		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.Text("Unreachable")
 	case h.Daemon.Known && !h.Daemon.Running && !h.Daemon.Installed && h.Here:
@@ -148,8 +151,20 @@ func listVMRow(mac string, vm machines.VM) page.Row {
 	case machines.Broken:
 		row.Mark, row.Reason, state = page.Broken, page.Failing, page.List(page.Text("In a loop"), lifetime)
 		detail = page.Text(vm.Detail)
+	case machines.Unknown:
+		row.Mark, row.Reason, state = page.NotKnown, page.Unreachable, page.List(page.Text("Unknown"), lifetime)
 	}
 	r := vm.Resources
 	row.Cells = []page.Value{page.Text("Workspace"), page.Text(mac), state, page.Text(strconv.Itoa(r.CPUs) + " CPU"), Memory(r.MemoryBytes), detail}
 	return row
+}
+
+// value: the hour of a Mac's last answer, with its day when that was not
+// today.
+func lastAnswer(at, now time.Time) string {
+	at, now = at.Local(), now.Local()
+	if at.YearDay() == now.YearDay() && at.Year() == now.Year() {
+		return at.Format("15:04")
+	}
+	return at.Format("2 Jan 15:04")
 }

@@ -27,6 +27,8 @@ type Reach struct {
 	Holder func(ctx context.Context, vm string) (mac string, err error)
 	// value: the version Hello answers with.
 	Version string
+	// value: a Mac's name as the owner reads it (mac-mini); nil keeps it whole.
+	Label func(mac string) string
 }
 
 type Router struct {
@@ -231,7 +233,7 @@ func (r *Router) connect(ctx context.Context, t machine.Ref) (l *link, hello con
 	}
 	if l.err != nil {
 		r.release(l)
-		return nil, contract.Hello{}, false, l.err
+		return nil, contract.Hello{}, false, r.labeled(mac, l.err)
 	}
 	hello, err = l.ep.Hello(ctx)
 	if err != nil {
@@ -379,4 +381,18 @@ func (e engineRow) Watch(ctx context.Context, _ machine.Ref, name string, in any
 		}
 	}()
 	return out, nil
+}
+
+// value: a Mac that does not answer, named as the owner reads it in its
+// words (SPEC §2.5), its full name kept as the subject.
+func (r *Router) labeled(mac string, err error) error {
+	var e *fail.Error
+	if r.reach.Label == nil || !errors.As(err, &e) || e.Code != call.Unreachable || e.Subject != mac {
+		return err
+	}
+	detail := map[string]string{"label": r.reach.Label(mac)}
+	for k, v := range e.Detail {
+		detail[k] = v
+	}
+	return fail.New(e.Type, e.Code, e.Subject, detail)
 }

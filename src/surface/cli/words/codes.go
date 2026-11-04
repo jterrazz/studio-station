@@ -1,6 +1,8 @@
 package words
 
 import (
+	"cmp"
+
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
@@ -47,7 +49,7 @@ func Codes() map[fail.Code]Wording {
 			return "the request is not a " + e.Subject + " frame", "send one JSON object per line with v 2 and a call or a watch"
 		},
 		call.Unreachable: func(e *fail.Error) (string, string) {
-			return e.Subject + " does not answer", "station machines"
+			return cmp.Or(e.Detail["label"], e.Subject) + " does not answer", "station machines"
 		},
 		enginecalls.StartFailed: func(e *fail.Error) (string, string) {
 			return "the engine did not start: " + e.Detail["last"], "station engine"

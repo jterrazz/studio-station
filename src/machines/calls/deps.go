@@ -18,6 +18,8 @@ type Machines interface {
 	FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(machines.Fleet)) (machines.Fleet, error)
 	// value: rewrites the owner's ssh blocks for the fleet just read.
 	SSHBlocks(ctx context.Context, f machines.Fleet) error
+	// value: keeps when each other Mac answered, and its VMs then.
+	Remember(ctx context.Context, f machines.Fleet) error
 	CheckCreate(ctx context.Context, r machines.CreateRequest) (machines.CreateRequest, error)
 	Create(ctx context.Context, r machines.CreateRequest, progress func(machines.Step)) (machines.Created, error)
 	// value: refuses every action while this Mac's engine is stopped.

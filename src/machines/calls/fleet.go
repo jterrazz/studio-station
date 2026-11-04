@@ -2,6 +2,7 @@ package calls
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
@@ -43,7 +44,7 @@ var List = call.Watch[Deps, ListIn, ListOut]{
 			}
 			out := ListOut{Fleet: fleet}
 			if !in.Here && !in.Unwritten {
-				out.Unrefreshed = d.Machines.SSHBlocks(ctx, fleet)
+				out.Unrefreshed = errors.Join(d.Machines.SSHBlocks(ctx, fleet), d.Machines.Remember(ctx, fleet))
 			}
 			send(call.Update[ListOut]{Value: out})
 		}()
