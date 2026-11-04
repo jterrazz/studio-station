@@ -1,6 +1,7 @@
-description: 'an erase on a terminal asks the app''s name typed; typed right, xcode''s DerivedData is gone'
+description: 'an erase on a terminal asks the app''s name typed; typed right, xcode''s DerivedData is gone and its simulators are erased'
 fixture:
     - ../../../__fixtures__/terminal/
+    - ../../../__fixtures__/simulators/
 env:
     - two-macs
     - terminal
@@ -19,3 +20,9 @@ runs:
       exit: 0
       stdout: |
           {"derived":null,"devices":19100000000}
+    - command: '--version >/dev/null; /bin/cat .calls'
+      exit: 0
+      stdout: |
+          xcrun simctl delete unavailable
+          xcrun simctl shutdown all
+          xcrun simctl erase all

@@ -1,4 +1,6 @@
-description: 'disk erase xcode --confirm=xcode erases it in a script, nothing asked: its DerivedData is gone'
+description: 'disk erase xcode --confirm=xcode erases it in a script, nothing asked: its DerivedData is gone and its simulators are erased'
+fixture:
+    - ../../../__fixtures__/simulators/
 env: two-macs
 runs:
     - command: 'disk erase xcode --confirm=xcode'
@@ -9,3 +11,9 @@ runs:
       exit: 0
       stdout: |
           {"derived":null,"devices":19100000000}
+    - command: '--version >/dev/null; /bin/cat .calls'
+      exit: 0
+      stdout: |
+          xcrun simctl delete unavailable
+          xcrun simctl shutdown all
+          xcrun simctl erase all
