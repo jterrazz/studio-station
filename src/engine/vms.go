@@ -63,6 +63,8 @@ func (d *Daemon) adopt(ctx context.Context) {
 	records, _ := d.m.Records()
 	for _, r := range records {
 		v := &vmState{rec: r, state: StateStopped, guest: GuestAbsent}
+		known, remembered := d.memory[r.Name]
+		v.reruns = known.Reruns
 		d.mu.Lock()
 		d.vms[r.Name] = v
 		d.mu.Unlock()
@@ -72,6 +74,8 @@ func (d *Daemon) adopt(ctx context.Context) {
 			continue
 		}
 		switch {
+		case remembered && (known.State == StateBroken || !known.RerunAt.IsZero()):
+			v.state, v.detail, v.rerunAt = known.State, known.Detail, known.RerunAt
 		case d.m.EngineRunning(ctx, r.Name):
 			v.state = StateRunning
 		case r.Lifetime == machines.Temporary:

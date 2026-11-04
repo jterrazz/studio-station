@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"path"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -94,6 +95,7 @@ type Daemon struct {
 
 	notifier Notifier
 	serve    func(ctx context.Context, conn io.ReadWriteCloser)
+	memory   Memory
 
 	lendMu       sync.Mutex
 	lendsAt      time.Time
@@ -157,7 +159,6 @@ func (d *Daemon) saveLeases() {
 }
 
 func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
-	d.note = note
 	// invariant: the socket's liveness is the lock: a daemon that answers ping makes
 	// a second one exit; a socket file nobody answers is removed and made again.
 	// The socket is made only once adoption and serve reconciliation are done,
@@ -171,22 +172,10 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 			return &RunningError{PID: p.PID}
 		}
 	}
-	// invariant: the clamshell is set back to normal before the socket exists,
-	// so a killed daemon's mask is cleared by its successor (launchd restarts it).
-	d.power.Reset()
-	_ = d.h.FS.Remove(sock)
-	if n := d.h.Run.Reap(ChildrenDir(d.o.State)); n > 0 {
-		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed daemon left running")
-	}
-	if err := d.h.FS.MkdirAll(d.o.State, 0o700); err != nil {
+	if err := d.Begin(ctx, note); err != nil {
 		return err
 	}
-	d.started = d.h.Clock.Now().UTC().Truncate(time.Second)
-	d.leases, _ = d.st.Reservations.List(ctx)
-	d.refreshSelf(ctx)
-	d.adopt(ctx)
-	d.sweepLends(ctx)
-	d.reconcileServe(ctx)
+	_ = d.h.FS.Remove(sock)
 	l, err := d.h.Sockets.ListenUnix(sock)
 	if err != nil {
 		return err
@@ -205,6 +194,93 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 		}
 		d.step(ctx, tick)
 	}
+}
+
+func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
+	// invariant: Begin is the engine up to its socket: the clamshell set back
+	// to normal (a killed daemon's mask is cleared by its successor), the
+	// children a killed one left reaped, the runs adopted, the lends swept and
+	// Serve reconciled. Run follows it with the socket and a tick a second; a
+	// stepped engine (the spec world) follows it with Step, then Serve per
+	// connection, and Stop.
+	if err := d.Check(); err != nil {
+		return err
+	}
+	d.note = note
+	d.power.Reset()
+	if n := d.h.Run.Reap(ChildrenDir(d.o.State)); n > 0 {
+		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed daemon left running")
+	}
+	if err := d.h.FS.MkdirAll(d.o.State, 0o700); err != nil {
+		return err
+	}
+	d.started = d.h.Clock.Now().UTC().Truncate(time.Second)
+	d.leases, _ = d.st.Reservations.List(ctx)
+	d.refreshSelf(ctx)
+	d.adopt(ctx)
+	d.sweepLends(ctx)
+	d.reconcileServe(ctx)
+	return nil
+}
+
+func (d *Daemon) Step(ctx context.Context, tick int) bool {
+	// value: one tick of a stepped engine; it reports whether it is busy: a VM
+	// changed, or a run waits for its delay.
+	before := d.vmViews()
+	d.step(ctx, tick)
+	return !slices.Equal(before, d.vmViews()) || d.waiting()
+}
+
+func (d *Daemon) waiting() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for _, v := range d.vms {
+		if !v.rerunAt.IsZero() {
+			return true
+		}
+	}
+	return false
+}
+
+type Memory map[string]Remembered
+
+type Remembered struct {
+	// value: what an engine knows of a VM beyond its record and its run:
+	// its state and why, and the runs it started again; a stepped engine
+	// hands it from one command to the next, as a real one keeps it between
+	// ticks.
+	State   string      `json:"state"`
+	Detail  string      `json:"detail,omitempty"`
+	Reruns  []time.Time `json:"reruns,omitempty"`
+	RerunAt time.Time   `json:"rerun_at,omitzero"`
+}
+
+func (d *Daemon) Memory() Memory {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	out := Memory{}
+	for name, v := range d.vms {
+		out[name] = Remembered{State: v.state, Detail: v.detail, Reruns: v.reruns, RerunAt: v.rerunAt}
+	}
+	return out
+}
+
+func (d *Daemon) Remember(m Memory) {
+	// invariant: Remember comes before Begin: a VM it holds broken, or waiting
+	// for its delay, is not run again by the adoption.
+	d.memory = m
+}
+
+func (d *Daemon) Serve(ctx context.Context, conn io.ReadWriteCloser) {
+	defer func() { _ = conn.Close() }()
+	if d.serve != nil {
+		d.serve(ctx, conn)
+	}
+}
+
+func (d *Daemon) Stop() {
+	d.power.Quit()
+	d.closeAll()
 }
 
 func (d *Daemon) step(ctx context.Context, tick int) {
@@ -289,12 +365,7 @@ func (d *Daemon) accept(ctx context.Context, l system.Listener) {
 		if err != nil {
 			return
 		}
-		go func() {
-			defer func() { _ = conn.Close() }()
-			if d.serve != nil {
-				d.serve(ctx, conn)
-			}
-		}()
+		go d.Serve(ctx, conn)
 	}
 }
 
