@@ -41,7 +41,7 @@ func coded(err error) error {
 	case errors.As(err, &notShared):
 		return fail.New(fail.NotFound, NotShared, notShared.Account, map[string]string{"vm": notShared.VM})
 	case errors.As(err, &unreadable):
-		return &fail.Error{Type: fail.Failed, Code: Unreadable, Subject: unreadable.Account, Detail: map[string]string{"mac": unreadable.Mac}, Cause: unreadable.Cause}
+		return &fail.Error{Type: fail.Failed, Code: Unreadable, Subject: unreadable.Account, Detail: map[string]string{"mac": unreadable.Mac, "log": unreadable.Log}, Cause: unreadable.Cause}
 	case errors.As(err, &stopped):
 		return fail.New(fail.Refused, VMStopped, stopped.VM, nil)
 	case errors.As(err, &toServer):

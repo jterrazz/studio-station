@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
+	"path"
 	"slices"
 	"strings"
 	"time"
@@ -30,6 +32,8 @@ type Options struct {
 	// value: whether a running VM of this Mac keeps accounts, by
 	// accounts.SharedInto over the kind the VM itself says it is.
 	Receives func(ctx context.Context, vm string) (bool, error)
+	// value: the file a failed export's cause is kept in, never shown raw.
+	Log string
 }
 
 type Guest interface {
@@ -46,6 +50,7 @@ type Stores struct {
 }
 
 type Service struct {
+	h      system.Host
 	clock  system.Clock
 	guest  Guest
 	st     Stores
@@ -55,7 +60,7 @@ type Service struct {
 }
 
 func New(h system.Host, guest Guest, st Stores, source contract.SecretSource, ids contract.Identities, o Options) *Service {
-	return &Service{clock: h.Clock, guest: guest, st: st, source: source, ids: ids, o: o}
+	return &Service{h: h, clock: h.Clock, guest: guest, st: st, source: source, ids: ids, o: o}
 }
 
 func (s *Service) ShareList() []string {
@@ -168,7 +173,7 @@ func (s *Service) Share(ctx context.Context, account, vm string, term time.Durat
 	}
 	exported, err := s.source.Export(ctx, []string{secret})
 	if err != nil {
-		return accounts.Shared{}, &accounts.UnreadableError{Account: account, Mac: "This Mac", Cause: err}
+		return accounts.Shared{}, &accounts.UnreadableError{Account: account, Mac: "This Mac", Cause: err, Log: s.keep("share "+account+" with "+vm, err)}
 	}
 	// invariant: the secret travels from the export's output to the VM's
 	// stdin and nowhere else: never argv, never a file on the Mac.
@@ -187,6 +192,29 @@ func (s *Service) Share(ctx context.Context, account, vm string, term time.Durat
 		return accounts.Shared{}, err
 	}
 	return accounts.Shared{Account: account, VM: vm, At: share.At, Until: share.Until}, nil
+}
+
+func (s *Service) keep(what string, cause error) string {
+	// invariant: a source's own words go to the log and only there; the
+	// refusal names the file, shown from home, or nothing when none is kept.
+	if s.o.Log == "" {
+		return ""
+	}
+	before, err := s.h.FS.ReadFile(s.o.Log)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return ""
+	}
+	if err := s.h.FS.MkdirAll(path.Dir(s.o.Log), 0o700); err != nil {
+		return ""
+	}
+	line := s.clock.Now().UTC().Format(time.RFC3339) + " " + what + ": " + cause.Error() + "\n"
+	if err := s.h.FS.WriteFile(s.o.Log, append(before, line...), 0o600); err != nil {
+		return ""
+	}
+	if home := s.h.Env.Home(); home != "" && strings.HasPrefix(s.o.Log, home+"/") {
+		return "~" + strings.TrimPrefix(s.o.Log, home)
+	}
+	return s.o.Log
 }
 
 func (s *Service) CheckTakeBack(ctx context.Context, account, vm string) (string, error) {

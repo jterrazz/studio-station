@@ -18,6 +18,7 @@ func (e *NotSharedError) Error() string { return Label(e.Account) + " is not sha
 
 type UnreadableError struct {
 	Account, Mac string
+	Log          string
 	Cause        error
 }
 

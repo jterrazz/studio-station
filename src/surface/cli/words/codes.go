@@ -100,7 +100,10 @@ func Codes() map[fail.Code]Wording {
 			return accounts.Label(e.Subject) + " is not shared with " + e.Detail["vm"], "station accounts"
 		},
 		accountscalls.Unreadable: func(e *fail.Error) (string, string) {
-			return accounts.Label(e.Subject) + " could not be read on " + e.Detail["mac"], "the engine log says why: station engine"
+			if e.Detail["log"] == "" {
+				return accounts.Label(e.Subject) + " could not be read on " + e.Detail["mac"], "station accounts"
+			}
+			return accounts.Label(e.Subject) + " could not be read on " + e.Detail["mac"], "why is kept in " + e.Detail["log"]
 		},
 		accountscalls.VMStopped: func(e *fail.Error) (string, string) {
 			return e.Subject + " is stopped", "station machines start " + e.Subject
