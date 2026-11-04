@@ -12,3 +12,11 @@ runs:
           # Detail
           method	skill
           version	1.0.0
+    - command: 'apps frontend-design | /usr/bin/grep "^category"'
+      exit: 0
+      stdout: |
+          category	Agent skills
+    - command: 'apps --json | /usr/bin/jq -r ''.apps[] | select(.name == "frontend-design") | "\(.category) \(.method) \(.lives_on)"'''
+      exit: 0
+      stdout: |
+          Agent skills skill every-machine
