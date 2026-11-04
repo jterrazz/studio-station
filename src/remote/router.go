@@ -52,9 +52,9 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 		return err
 	}
 	if r.local(t) {
-		v, err := r.registry.Run(ctx, r.here, name, in, p)
+		v, ran := r.registry.Run(ctx, r.here, name, in, p)
 		call.Set(out, v)
-		return err
+		return ran
 	}
 	ep, err := r.endpoint(ctx, t, name)
 	if err != nil {
@@ -121,7 +121,7 @@ func wire(ctx context.Context, updates <-chan call.Update[json.RawMessage]) <-ch
 // invariant: the Router's rows, in order: no target or this machine runs in
 // this process; a VM of this Mac rides this Mac's engine; any other machine
 // rides the engine of the Mac it is on, which resolves it the same way; a
-// name no record here holds is asked of the other Macs, never dialled.
+// name no record here holds is asked of the other Macs, never dialed.
 func (r *Router) resolve(ctx context.Context, target machine.Ref) (machine.Ref, error) {
 	if target == (machine.Ref{}) || target == r.here.Ref || target.Name == r.here.Ref.Name {
 		return machine.Ref{}, nil

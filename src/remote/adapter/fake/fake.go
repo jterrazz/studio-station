@@ -22,10 +22,10 @@ type Mac struct {
 type Dialer struct {
 	// invariant: a second Mac in this process: its calls run on its own
 	// registry, every value through the wire form, as over ssh.
-	mu      sync.Mutex
-	macs    map[string]Mac
-	down    map[string]bool
-	dialled []string
+	mu     sync.Mutex
+	macs   map[string]Mac
+	down   map[string]bool
+	dialed []string
 }
 
 func New() *Dialer { return &Dialer{macs: map[string]Mac{}, down: map[string]bool{}} }
@@ -45,7 +45,7 @@ func (d *Dialer) Down(name string) {
 func (d *Dialer) Dial(_ context.Context, mac string) (contract.Endpoint, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.dialled = append(d.dialled, mac)
+	d.dialed = append(d.dialed, mac)
 	m, ok := d.macs[mac]
 	if !ok || d.down[mac] {
 		return nil, fail.New(fail.Unreachable, call.Unreachable, mac, nil)
@@ -53,11 +53,11 @@ func (d *Dialer) Dial(_ context.Context, mac string) (contract.Endpoint, error) 
 	return endpoint{m: m}, nil
 }
 
-func (d *Dialer) Dialled() []string {
+func (d *Dialer) Dialed() []string {
 	// value: every name Dial was asked for, in order.
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return slices.Clone(d.dialled)
+	return slices.Clone(d.dialed)
 }
 
 type endpoint struct{ m Mac }

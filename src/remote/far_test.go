@@ -113,8 +113,8 @@ func TestAVMOfAnotherMacIsReachedThroughThatMacsEngineNeverByItsOwnName(t *testi
 	if err != nil || out.App != "jq" {
 		t.Fatalf("installing jq on infra, a VM of the mini: %+v, %v; want it run through the mini's engine", out, err)
 	}
-	if got := macs.Dialled(); !slices.Equal(got, []string{mini}) {
-		t.Errorf("reaching infra dialled %q, want the mini alone, never infra by its own name", got)
+	if got := macs.Dialed(); !slices.Equal(got, []string{mini}) {
+		t.Errorf("reaching infra dialed %q, want the mini alone, never infra by its own name", got)
 	}
 }
 
@@ -124,8 +124,8 @@ func TestANameNoMacHoldsIsRefusedWithoutDiallingIt(t *testing.T) {
 	if !errors.Is(err, errNoMachine) {
 		t.Errorf("a call to nope: %v, want the holder's no-machine answer", err)
 	}
-	if got := macs.Dialled(); len(got) != 0 {
-		t.Errorf("a call to nope dialled %q, want nothing dialled", got)
+	if got := macs.Dialed(); len(got) != 0 {
+		t.Errorf("a call to nope dialed %q, want nothing dialed", got)
 	}
 }
 
