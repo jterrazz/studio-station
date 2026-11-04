@@ -10,8 +10,11 @@ func TestTheFakeMacsKeepTheUnlockerContract(t *testing.T) {
 	contracttest.Unlocker(t, func(*testing.T) contracttest.UnlockerSubject {
 		macs := NewMacs()
 		return contracttest.UnlockerSubject{
-			Unlocker:  macs,
-			AtPreBoot: func(mac string) { macs.Set(mac, AtPreBoot) },
+			Unlocker: macs,
+			AtPreBoot: func(mac, lan string) {
+				macs.Set(mac, AtPreBoot)
+				macs.OnLAN(mac, lan)
+			},
 			Offline:   func(mac string) { macs.Set(mac, Offline) },
 			Answering: func(mac string) { macs.Set(mac, Answering) },
 			Refusing:  macs.Refuse,

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/world"
 )
@@ -20,9 +21,9 @@ const (
 
 type Macs struct {
 	// invariant: the Macs of the world as their pre-boot ssh and their sshd
-	// see them: one locked waits at pre-boot, reached on its LAN even off the
-	// tailnet; one off the tailnet and unlocked is not reached; an unlock
-	// lets it boot, a planned restart reboots it.
+	// see them: one locked waits at pre-boot off the tailnet, reached only at
+	// its address on your LAN; one off the tailnet and unlocked is not
+	// reached; an unlock lets it boot, a planned restart reboots it.
 	w        *world.World
 	mu       sync.Mutex
 	refusal  map[string]string
@@ -44,6 +45,12 @@ func (m *Macs) Set(name string, s MacState) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.refusal, name)
+}
+
+func (m *Macs) OnLAN(name, addr string) {
+	m.w.Lock()
+	defer m.w.Unlock()
+	m.w.Mac(name).Reads(catalog.FactLocalIP, addr)
 }
 
 func (m *Macs) Refuse(name, detail string) {
@@ -78,13 +85,16 @@ func (m *Macs) state(name string) MacState {
 	return Answering
 }
 
-func (m *Macs) Unlock(_ context.Context, name string) error {
+func (m *Macs) Unlock(_ context.Context, name, lan string) error {
 	m.w.Lock()
 	defer m.w.Unlock()
 	switch m.state(name) {
 	case Offline:
 		return contract.ErrUnreachable
 	case AtPreBoot:
+		if lan == "" || lan != m.w.Macs[name].Facts[catalog.FactLocalIP].Value {
+			return contract.ErrUnreachable
+		}
 		m.w.Macs[name].Locked, m.w.Macs[name].Offline = false, false
 	case Answering, Refusing:
 	}

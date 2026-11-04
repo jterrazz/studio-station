@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -18,6 +19,8 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	settingsmacos "github.com/jterrazz/studio-station/src/settings/adapter/macos"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	machinescmd "github.com/jterrazz/studio-station/src/surface/cli/machines"
 	machinesadd "github.com/jterrazz/studio-station/src/surface/cli/machines/add"
@@ -36,6 +39,7 @@ import (
 )
 
 const (
+	lanBudget           = 2 * time.Second
 	defaultOpenClawPort = 18789
 	defaultHermesPort   = 8642
 )
@@ -58,7 +62,24 @@ func (m machine) machines(_ bool) *machines.Service {
 		Answers:   m.answers,
 		SSHConfig: m.sshConfig(knownHosts),
 		Memory:    m.memory,
+		LAN:       m.lanAddress,
 	})
+}
+
+// value: this Mac's address on your LAN, as it reads it (its world's in
+// the spec build).
+func (m machine) lanAddress(ctx context.Context) string {
+	var facts settingscontract.Inspector = settingsmacos.New(m.host.Run, m.host.FS, m.host.Clock, settingsmacos.Options{Root: m.systemRoot()})
+	if m.world != nil {
+		facts = m.world.inspector()
+	}
+	ctx, cancel := context.WithTimeout(ctx, lanBudget)
+	defer cancel()
+	got, err := facts.Read(ctx, catalog.FactLocalIP)
+	if err != nil || got.State != catalog.StateOK {
+		return ""
+	}
+	return got.Value
 }
 
 // value: the memory this Mac has, as it reads itself (its world's in the

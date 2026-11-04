@@ -28,7 +28,7 @@ func (s *Service) lookup(name string) (Machine, error) {
 		return Machine{}, err
 	}
 	if h, ok := cfg.Hosts[name]; ok {
-		return Machine{Name: name, Kind: catalog.Host, Here: name == cfg.Here, User: h.User, Key: h.Key}, nil
+		return Machine{Name: name, Kind: catalog.Host, Here: name == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
 	}
 	records, err := s.records()
 	if err != nil {
@@ -43,7 +43,7 @@ func (s *Service) lookup(name string) (Machine, error) {
 	// (mac-mini for jterrazz-mac-mini).
 	if full := s.o.User + "-" + name; s.o.User != "" {
 		if h, ok := cfg.Hosts[full]; ok {
-			return Machine{Name: full, Kind: catalog.Host, Here: full == cfg.Here, User: h.User, Key: h.Key}, nil
+			return Machine{Name: full, Kind: catalog.Host, Here: full == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
 		}
 	}
 	return Machine{}, &UnknownMachineError{Name: name}
@@ -225,6 +225,9 @@ func (s *Service) Remember(_ context.Context, f Fleet) error {
 			seen = append(seen, model.SeenVM{Name: vm.Name, Lifetime: vm.Lifetime, CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes})
 		}
 		known.Answered, known.VMs = s.h.Clock.Now().UTC().Truncate(time.Second), seen
+		if h.LAN != "" {
+			known.LAN = h.LAN
+		}
 		cfg.Hosts[h.Name], changed = known, true
 	}
 	if !changed {

@@ -309,6 +309,14 @@ func (w *World) UseHypervisor(hypervisor string) {
 	}
 }
 
+func (m *Mac) Reads(f catalog.Fact, value string) {
+	// value: the Mac answers fact f with value from now on.
+	if m.Facts == nil {
+		m.Facts = map[catalog.Fact]settings.Fact{}
+	}
+	m.Facts[f] = settings.Fact{State: catalog.StateOK, Value: value}
+}
+
 func (w *World) Mac(name string) *Mac {
 	// invariant: Mac answers the Mac of that name, made empty the first time it
 	// is asked, so a fake writes its slice without checking it exists.

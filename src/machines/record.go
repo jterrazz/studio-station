@@ -21,6 +21,9 @@ type Host struct {
 	// held: what All machines shows of it while it does not answer.
 	Answered time.Time `json:"answered,omitzero"`
 	VMs      []SeenVM  `json:"vms,omitempty"`
+	// value: the address that Mac last answered with on your LAN: unlock
+	// dials it, Tailscale being down until its disk is unlocked.
+	LAN string `json:"lan,omitempty"`
 }
 
 type SeenVM struct {
