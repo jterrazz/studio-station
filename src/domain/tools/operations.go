@@ -190,7 +190,7 @@ func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, 
 	}
 	failure := ""
 	if err := s.o.Bundler.Bundle(ctx, lines, update, nil); err != nil {
-		failure = err.Error()
+		failure = s.failed(verb, list, err)
 	}
 	out := make([]Outcome, 0, len(list))
 	if verb == verbUpgrade {
@@ -224,7 +224,7 @@ type verbOf func(contract.Installer, context.Context, []catalog.Install, call.Pr
 func (s *Service) run(ctx context.Context, verb string, t catalog.Tool, op verbOf) Outcome {
 	o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
 	if err := op(s.installer(t), ctx, []catalog.Install{s.install(t)}, nil); err != nil {
-		o.Result, o.Detail = catalog.StateBroken, err.Error()
+		o.Result, o.Detail = catalog.StateBroken, s.failed(verb, []catalog.Tool{t}, err)
 	}
 	return o
 }

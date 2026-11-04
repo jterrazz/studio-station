@@ -22,6 +22,7 @@ type Options struct {
 	Installers contract.Installers
 	Bundler    contract.Bundler
 	VMs        VMs
+	Log        string
 }
 
 type Configurer interface {

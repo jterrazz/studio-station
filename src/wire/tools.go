@@ -63,6 +63,7 @@ func toolsService(env kit.Env, m machine) *tools.Service {
 		Installers: registry,
 		Bundler:    bundler,
 		VMs:        m.machines(env.Interactive),
+		Log:        filepath.Join(m.paths.State, "logs", "apps.log"),
 	})
 }
 
