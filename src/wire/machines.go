@@ -19,6 +19,7 @@ import (
 	machinesadd "github.com/jterrazz/studio-station/src/surface/cli/machines/add"
 	machinescreate "github.com/jterrazz/studio-station/src/surface/cli/machines/create"
 	machinesdelete "github.com/jterrazz/studio-station/src/surface/cli/machines/delete"
+	machinesedit "github.com/jterrazz/studio-station/src/surface/cli/machines/edit"
 	machinesforget "github.com/jterrazz/studio-station/src/surface/cli/machines/forget"
 	machinespipe "github.com/jterrazz/studio-station/src/surface/cli/machines/pipe"
 	machinesprobe "github.com/jterrazz/studio-station/src/surface/cli/machines/probe"
@@ -96,6 +97,7 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 			return err == nil && r.Kind != catalog.Host
 		}, Here: m.where}, env),
 		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
+		machinesedit.Command(machinesedit.Deps{Names: service.Names, Resources: machines.ParseResources, Here: m.where}, env),
 		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Here: m.where}, env),
 		machinesunlock.Command(machinesunlock.Deps{Names: service.Names}, env),
 		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),

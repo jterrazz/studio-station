@@ -110,3 +110,19 @@ var Restart = call.Call[Deps, RestartIn, machines.RestartReport]{
 		return d.Machines.Restart(ctx, in.Name)
 	},
 }
+
+type EditIn struct {
+	VM string
+	// value: the sizes to change; a zero one is kept.
+	Resources machines.Resources
+}
+
+var Edit = call.Call[Deps, EditIn, machines.Edited]{
+	Name: "machines.edit", Where: call.InEngine, Applies: machine.Anywhere,
+	Run: func(ctx context.Context, d Deps, in EditIn, _ call.Progress) (machines.Edited, error) {
+		if err := d.Machines.CheckEdit(in.VM, in.Resources); err != nil {
+			return machines.Edited{}, err
+		}
+		return d.Machines.Edit(ctx, in.VM, in.Resources)
+	},
+}

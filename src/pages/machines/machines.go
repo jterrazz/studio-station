@@ -2,6 +2,7 @@ package machines
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -375,4 +376,27 @@ func SSH(name string, t machines.SSHTarget, here page.Context) page.Page {
 	row := pages.Done(name, catalog.StateOK, "")
 	row.Cells = []page.Value{page.Command(t.Command)}
 	return pages.Outcome("machines ssh "+name, here, []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "command", Kind: page.KindText, Keep: 90}}, []page.Row{row}, "machines")
+}
+
+// value: the sizes an edit changed, and when they apply; a running VM is
+// told the restart that applies them now.
+func Edited(e machines.Edited, here page.Context) page.Page {
+	var parts []string
+	if n := e.Changed.CPUs; n == 1 {
+		parts = append(parts, "1 cpu")
+	} else if n != 0 {
+		parts = append(parts, strconv.Itoa(n)+" cpus")
+	}
+	if e.Changed.MemoryBytes != 0 {
+		parts = append(parts, Memory(e.Changed.MemoryBytes).Text)
+	}
+	if e.Changed.DiskBytes != 0 {
+		parts = append(parts, strconv.FormatFloat(float64(e.Changed.DiskBytes)/1e9, 'f', 1, 64)+" GB disk")
+	}
+	said := strings.Join(parts, ", ") + ", applies when " + e.Name + " next starts"
+	row := pages.Done(e.Name, catalog.StateOK, said)
+	if e.Running {
+		row.Detail = page.List(page.Text(said), page.Command("station machines restart "+e.Name))
+	}
+	return pages.Outcome("machines edit "+e.Name, here, nil, []page.Row{row}, "machines")
 }

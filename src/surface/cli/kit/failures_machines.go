@@ -2,6 +2,7 @@ package kit
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/machines"
@@ -79,6 +80,8 @@ func vmFailure(err error) (*fail.Error, bool) {
 	var created *machines.CreateFailedError
 	var down *machines.DaemonDownError
 	var network *machines.BadNetworkError
+	var nothing *machines.NothingToChangeError
+	var shrinks *machines.DiskShrinksError
 	if f, ok := pipeFailure(err); ok {
 		return f, true
 	}
@@ -88,6 +91,10 @@ func vmFailure(err error) (*fail.Error, bool) {
 			return failed(down.Error(), "station engine start", err), true
 		}
 		return failed(down.Error(), "station setup", err), true
+	case errors.As(err, &nothing):
+		return usage(nothing.Error(), "station machines edit "+nothing.Name+" --memory 8G"), true
+	case errors.As(err, &shrinks):
+		return usage(shrinks.Error(), shrinks.Name+" has "+strconv.FormatFloat(float64(shrinks.Has)/1e9, 'f', 1, 64)+" GB: ask for more"), true
 	case errors.As(err, &network):
 		if network.Bridge {
 			return usage(network.Error(), "share its ports instead: station ports share"), true

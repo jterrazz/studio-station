@@ -45,11 +45,13 @@ type Machines interface {
 	CheckRemote(name string) error
 	Probe(ctx context.Context, name string) (machines.ProbeReport, error)
 	SSH(ctx context.Context, name string) (machines.SSHTarget, error)
+	CheckEdit(name string, r machines.Resources) error
+	Edit(ctx context.Context, name string, r machines.Resources) (machines.Edited, error)
 }
 
 func All(d Deps) []call.Handler {
 	return []call.Handler{
 		call.BindWatch(List, d), call.Bind(CreateWorkspace, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
-		call.Bind(Restart, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d), call.Bind(SSH, d),
+		call.Bind(Restart, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d), call.Bind(SSH, d), call.Bind(Edit, d),
 	}
 }
