@@ -851,6 +851,7 @@
       "label": "start/stop",
       "on": "row",
       "rows": [
+        "linux-1",
         "api"
       ],
       "priority": 5,
