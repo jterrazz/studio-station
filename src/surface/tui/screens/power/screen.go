@@ -7,8 +7,11 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/jterrazz/studio-station/src/awake"
+	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/power"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
@@ -20,22 +23,26 @@ type Power interface {
 	// value: the tab's pages: this host's own read first, then the daemon's
 	// subscription while it answers, so a guard's end redraws the tab at once.
 	Pages(ctx context.Context) <-chan page.Page
-	Awake(ctx context.Context, r power.Request) (power.Awoken, error)
-	Sleep(ctx context.Context) (power.Slept, error)
 	Zone() *time.Location
+}
+
+type Deps struct {
+	Power  Power
+	Calls  call.Router
+	Target machine.Ref
 }
 
 type Model struct {
 	tab.View[page.Page]
-	ctx   context.Context
-	power Power
-	here  page.Context
+	ctx  context.Context
+	d    Deps
+	here page.Context
 }
 
-func New(ctx context.Context, p Power, here page.Context, describe tab.Describe) Model {
-	source := func(ctx context.Context, _ bool) (<-chan page.Page, error) { return p.Pages(ctx), nil }
+func New(ctx context.Context, d Deps, here page.Context, describe tab.Describe) Model {
+	source := func(ctx context.Context, _ bool) (<-chan page.Page, error) { return d.Power.Pages(ctx), nil }
 	build := func(pg page.Page) page.Page { return pg }
-	return Model{View: tab.NewView(ID, "Power", "power", here, source, build, describe), ctx: ctx, power: p, here: here}
+	return Model{View: tab.NewView(ID, "Power", "power", here, source, build, describe), ctx: ctx, d: d, here: here}
 }
 
 func (m Model) Badge() page.Value {
@@ -75,17 +82,17 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 				by += " --battery"
 			}
 			return tab.Exec(ID, func() (tab.Status, error) {
-				a, err := m.power.Awake(m.ctx, power.Request{Lid: lid, Battery: battery, For: term, By: by})
+				a, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, awakecalls.Keep, awake.Request{Lid: lid, Battery: battery, For: term, By: by}, nil)
 				if err != nil {
 					return tab.Status{}, err
 				}
-				return tab.Outcome("awake", "until", catalog.StateOK, a.Until.In(m.power.Zone()).Format("15:04")), nil
+				return tab.Outcome("awake", "until", catalog.StateOK, a.Until.In(m.d.Power.Zone()).Format("15:04")), nil
 			})
 		})
 		return m, tea.Batch(cmd, fill)
 	case pagepower.KeySleep:
 		run := tab.Exec(ID, func() (tab.Status, error) {
-			s, err := m.power.Sleep(m.ctx)
+			s, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, awakecalls.Sleep, awakecalls.SleepIn{}, nil)
 			if err != nil {
 				return tab.Status{}, err
 			}

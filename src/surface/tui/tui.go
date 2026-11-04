@@ -35,7 +35,7 @@ type Deps struct {
 	Services *services.Service
 	Tailnet  fleetscreen.Tailnet
 	Accounts *accounts.Service
-	Power    powerscreen.Power
+	Power    powerscreen.Deps
 	Remote   func(ctx context.Context, machine string, words []string) error
 	Station  func(ctx context.Context, words []string) error
 	Describe func(error) (message, hint string)

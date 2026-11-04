@@ -3,6 +3,7 @@ package power
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/awake"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/awake/contract"
@@ -19,22 +20,10 @@ const (
 
 var ErrDaemonDown = errors.New("the station daemon does not answer")
 
-type Report struct {
-	Now time.Time
-	// value: the zone a page shows its clock times in (the owner's, read once
-	// by the caller); nil is UTC.
-	Zone    *time.Location
-	Daemon  string
-	Reading Reading
-	Session *Session
-	LastEnd *End
-	Guards  []Guard
-}
-
-type Awoken struct {
-	Session
-	Refreshed bool `json:"refreshed"`
-}
+type (
+	Report = awake.Report
+	Awoken = awake.Awoken
+)
 
 type Ports struct {
 	// value: the daemon's power op; ErrDaemonDown when it does not answer.
