@@ -21,8 +21,8 @@ For each reported port the engine takes a **lease**: the lowest free port of the
 | --------------------------------------- | ------------------------------------------------------------------ |
 | the port starts listening               | leased and published                                               |
 | it stops listening                      | unpublished after 5 s (a restart inside them keeps it); lease kept |
-| a lasting VM stops, then runs again     | unpublished, then published again on the same host port            |
-| `machines delete`, a temporary poweroff | released, its serve entry removed                                  |
+| a VM stops, then runs again             | unpublished, then published again on the same host port            |
+| `machines delete`, a throwaway poweroff | released, its serve entry removed                                  |
 | `station services release`              | released: the next listen gets a new port                          |
 | 7 days without listening                | released, unless pinned by a [profile](#profiles)                  |
 | the range is full, or the VM holds 20   | refused, `✗` with the cause                                        |
@@ -82,7 +82,7 @@ Station owns only the serve entries on its range (both kinds) or under `/<vm>/` 
 
 ## Profiles
 
-A tool that must know its own public URL gets it from its environment. A profile, data in the catalogue, names a dev tool's default port and the variables that carry the URL; at `machines create` the engine reserves every profile's port for the new VM, and the VM's shell (`station shell zsh`, from `~/.config/station/services.env`) exports the variables. The engine renders them at every run of the VM (create, `start`, `restart`, its own run at boot; never when it adopts a running VM) from Serve's state then, so they are fixed for a run, and a lasting VM picks up the public URLs at its first start after Serve is turned on:
+A tool that must know its own public URL gets it from its environment. A profile, data in the catalogue, names a dev tool's default port and the variables that carry the URL; at `machines create` the engine reserves every profile's port for the new VM, and the VM's shell (`station shell zsh`, from `~/.config/station/services.env`) exports the variables. The engine renders them at every run of the VM (create, `start`, `restart`, its own run at boot; never when it adopts a running VM) from Serve's state then, so they are fixed for a run, and a permanent VM picks up the public URLs at its first start after Serve is turned on:
 
 | Profile  | Guest port | Variable                                 | Value                                                   |
 | -------- | ---------- | ---------------------------------------- | ------------------------------------------------------- |
@@ -111,7 +111,7 @@ The engine serves every call of [`calls.json`](../../src/remote/api/calls.json) 
 | `engine.hello`                                             |                                   | `version pid started_at executable` and `calls`, the names of `calls.json` it serves   |
 | `engine.vms`                                               |                                   | each VM's `name state run_pid guest ip detail`                                         |
 | `engine.vm-run`                                            | `vm`                              | supervises a new record; answers when its guest is connected                           |
-| `engine.vm-start` / `engine.vm-stop` / `engine.vm-restart` | `vm`                              | lasting VMs only                                                                       |
+| `engine.vm-start` / `engine.vm-stop` / `engine.vm-restart` | `vm`                              | any VM                                                                                 |
 | `engine.vm-delete` / `engine.vm-forget`                    | `vm`                              | the VM, its files, blocks, leases and serve entries / its supervision only             |
 | `engine.guest-exec`                                        | `vm, line, stdin`                 | `code stdout stderr` of a command run over the VM's guest connection                   |
 | `engine.accounts`                                          |                                   | each running VM's accounts, read by its guest                                          |

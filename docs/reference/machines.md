@@ -24,39 +24,41 @@ A machine has one name, used for `preferences.json`, the `~/.ssh/config` Host, H
 
 ```text
  ●  macbook   host                online   100.101.1.2   2 VMs
- ●  api       linux  macbook  lasting    running  192.168.64.9   4 cpus · 12 GB · 18 GB
- ●  linux-1   linux  macbook  temporary  running  192.168.64.7   4 cpus · 8 GB · 3 GB
+ ●  api       workspace  macbook  permanent  running  192.168.64.9   4 cpus · 12 GB · 18 GB
+ ●  linux-1   workspace  macbook  throwaway  running  192.168.64.7   4 cpus · 4 GB · 20 GB
  ◐  mac-mini  host                unreachable
 ```
 
 ## Lifetimes
 
-Whether a VM is meant to last is asked at every create ([Glossary](../concepts/glossary.md)). The two lifetimes end differently:
+A workspace is throwaway unless it is made `--permanent` ([Glossary](../concepts/glossary.md)). No workspace restarts by itself (SP-4), and a stop never destroys one (SP-5):
 
-| Event                          | Temporary VM                                          | Lasting VM                                 |
-| ------------------------------ | ----------------------------------------------------- | ------------------------------------------ |
-| `poweroff` inside the VM       | deleted: disk, leases, ssh blocks, record             | stays stopped until `start`                |
-| `reboot` inside the VM         | comes back; never deleted                             | comes back                                 |
-| host reboot or power cut       | stale (`✗`), reclaimed by `station machines delete`   | comes back up with the host's engine       |
-| a crash of its run             | stale (`✗`), kept                                     | runs again after 10 s                      |
-| `station machines delete <vm>` | deleted                                               | deleted                                    |
-| `station machines stop <vm>`   | refused: it would delete it (`Hint: machines delete`) | powers off and stays stopped until `start` |
+| Event                          | Throwaway workspace                                   | Permanent workspace                             |
+| ------------------------------ | ----------------------------------------------------- | ----------------------------------------------- |
+| `poweroff` inside the VM       | deleted: disk, leases, ssh blocks, record             | stays stopped until `start`                     |
+| `reboot` inside the VM         | comes back; never deleted                             | comes back                                      |
+| host reboot or power cut       | stopped, `ended with its Mac`                         | stopped, `ended with its Mac`                   |
+| a crash, or an end not read    | kept, `ended unexpectedly · start or delete it`       | kept, `ended unexpectedly · start or delete it` |
+| `station machines stop <vm>`   | stopped, kept with its disk until `start` or `delete` | stopped, kept with its disk until `start`       |
+| `station machines delete <vm>` | deleted                                               | deleted                                         |
 
-The VM tells its host when it powers off: a unit in the image writes `station-intent=poweroff` to its console, and [the engine](#the-engine) reads it when the VM's run ends. The host cannot otherwise tell a reboot from a poweroff, so any stop it cannot read as a poweroff never deletes a temporary VM. A VM that stops again at once, four times in a minute, is reported as broken and kept.
+The VM tells its host when it powers off: a unit in the image writes `station-intent=poweroff` to its console, and [the engine](#the-engine) reads it when the VM's run ends. The host cannot otherwise tell a reboot from a poweroff, so any end it cannot read as a poweroff never deletes a throwaway workspace.
 
 ## The commands
 
 ```sh
-station machines create --lifetime lasting --name api --memory 12G --disk 80G
-station machines start api          # a stopped lasting VM
-station machines stop api           # a lasting VM
-station machines restart mac-mini   # a host: FileVault-aware, waits for ssh; a lasting VM: power off, run
+station machines create api --permanent --memory 12G --disk 80G
+station machines start api          # a stopped workspace, its disk as it was left
+station machines stop api           # asks yes or no; kept with its disk
+station machines edit api --memory 16G   # applies when api next starts; a disk only grows
+station machines ssh api            # prints the ssh command: ssh admin@api
+station machines restart mac-mini   # a Mac: FileVault-aware, waits for ssh; a VM: power off, run
 station machines delete api         # destroys the VM, its leases and the secrets lent to it
 station machines probe api          # reachability without logging in
 station machines unlock mac-mini    # the FileVault pre-boot ssh session
 ```
 
-`create` asks the lifetime on a terminal, then the host when two or more are reachable. Defaults are 4 CPUs, 8 GB, 50 GB and image `linux`; memory is capped at 75 % of the host's. It reserves the ports of every service [profile](services.md#profiles) before the VM first runs, and a step that fails rolls everything back. `--network bridged` is for macOS VMs only (an iPhone on the Wi-Fi reaching the VM); a Linux VM publishes its [services](services.md) instead. With Serve off on the tailnet, the profiles' variables hold the local URL and `create` adds a `◐ services` row naming the admin step. A temporary VM cannot be restarted from the host (`Hint: ssh <vm> sudo reboot`).
+`create` makes a throwaway workspace unless `--permanent` is given, and asks the host when two or more are reachable. Defaults are 4 CPUs, 4 GB, 20 GB and image `linux`, each size with its unit; memory is capped at 75 % of the host's. It reserves the ports of every service [profile](services.md#profiles) before the VM first runs, and a step that fails rolls everything back. `--network bridged` is for macOS VMs only (an iPhone on the Wi-Fi reaching the VM); a Linux VM publishes its [services](services.md) instead. With Serve off on the tailnet, the profiles' variables hold the local URL and `create` adds a `◐ services` row naming the admin step. `delete` asks the name typed (`--confirm=<name>` in a script, never `--yes`). With the engine stopped, start, stop, restart, edit and delete are refused (`Hint: station engine start`).
 
 `create`, `start` and `restart` need the [engine](#the-engine): with it down they refuse before any change (`Error: the engine is stopped on <host>`, `Hint: station engine start`; without the agent's plist, `is not installed on <host>` and `station setup`). `stop` and `delete` act directly when it is down, so a broken engine never holds a VM.
 
@@ -98,7 +100,7 @@ Host api                                       # a VM of mac-mini, seen from mac
   ProxyCommand ssh mac-mini -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station machines pipe api
 ```
 
-`station machines pipe <vm>` (hidden plumbing) carries ssh's bytes to the VM's current NAT ip on its own host; it never needs the engine. A VM trusts its host's key and every line of the host's own `~/.ssh/authorized_keys` through a managed block of its `~/.ssh/authorized_keys` (`# >>> station hosts >>>`), written by the guest, so whoever may log into a host may reach its VMs. Herdr drives that same ssh: `hc machine add api` (add `--temp` for a temporary VM). There is no `ssh` verb in station: a wrapper would be a second way to do one thing.
+`station machines pipe <vm>` (hidden plumbing) carries ssh's bytes to the VM's current NAT ip on its own host; it never needs the engine. A VM trusts its host's key and every line of the host's own `~/.ssh/authorized_keys` through a managed block of its `~/.ssh/authorized_keys` (`# >>> station hosts >>>`), written by the guest, so whoever may log into a host may reach its VMs. Herdr drives that same ssh: `hc machine add api` (add `--temp` for a throwaway workspace). `station machines ssh <machine>` prints the command, never runs it, so `$(station machines ssh api)` does.
 
 ## Files and editors
 
@@ -116,7 +118,7 @@ An editor on a host opens the VM by its Remote SSH to the same name: Zed, VS Cod
 
 One engine per host, under the launchd agent `com.jterrazz.station.engine` that `station setup` installs once tart is there (`○ engine  not needed until tart is installed` before). It runs every VM of the host detached (an engine restart never stops a VM), reads how each run ended (the rules of [Lifetimes](#lifetimes)), adopts the running VMs again at its start (its socket appears only once that and the serve reconciliation are done), keeps one ssh connection per running VM to its [guest](services.md), and holds the leases. `machines create` returns once that guest is connected and has written the VM's keys block and `services.env` (60 s, else it rolls back). `machines start` and `restart` return once the new run's guest is connected too: a stop ends the guest's session with its run. That connection shares the VM's host key pin with `ssh`, whichever key type was pinned first. Why a guest does not connect is written to `~/.local/state/station/logs/engine.log`, one timestamped line per new reason. Its `tailscale` calls die with it: each leads its own process group, killed whole when the call ends or times out, and a call a killed engine left running is killed at the next engine start, from its record under `~/.local/state/station/children/`. The CLI is its client over `~/.local/state/station/engine.sock` (protocol `station.api/v2`, [Services](services.md#the-engine-protocol)). With it down, `machines` and `services` still read the files and show one engine row, and `status` the same row in its Machine section: `◐ engine  not installed  → station setup` when the agent's plist is absent, `◐ engine  stopped  → station engine start` when the plist is there but the job does not answer (another host's stopped engine is read and started through it, `station engine start --on <host>`).
 
-`station engine stop [--yes]` is Stop everything on this Mac: every running VM stops with its disk kept, a temporary one too (only `machines delete` destroys), all at once through the engine's `engine.stop-all`; the Awake session ends and the sharing of their ports with it; then the agent is booted out (`launchctl bootout gui/<uid>/com.jterrazz.station.engine`) and the stop is kept with who asked it, so `station engine` reads `stopped · since 13:40 by the menu bar`. A VM that will not stop keeps the engine running (exit 1). Off a terminal, a stop that would stop a VM needs `--yes`. `station engine start` bootstraps the agent again; the VMs it stopped stay stopped, and a login starts the engine again whatever stopped it.
+`station engine stop [--yes]` is Stop everything on this Mac: every running VM stops with its disk kept, a throwaway one too (only `machines delete` destroys), all at once through the engine's `engine.stop-all`; the Awake session ends and the sharing of their ports with it; then the agent is booted out (`launchctl bootout gui/<uid>/com.jterrazz.station.engine`) and the stop is kept with who asked it, so `station engine` reads `stopped · since 13:40 by the menu bar`. A VM that will not stop keeps the engine running (exit 1). Off a terminal, a stop that would stop a VM needs `--yes`. `station engine start` bootstraps the agent again; the VMs it stopped stay stopped, and a login starts the engine again whatever stopped it.
 
 ## The v3 migration
 
@@ -127,7 +129,7 @@ One engine per host, under the launchd agent `com.jterrazz.station.engine` that 
 `station setup` moves a host from the earlier rounds and says so, row by row:
 
 - `layout`: the userspace tailscaled station ran is stopped (in the background when it carries the session) and its files removed; its node stays in the [admin console](https://login.tailscale.com/admin/machines) until the owner removes it. The three tailnet keychain accounts are deleted, and the row points at the [OAuth client](https://login.tailscale.com/admin/settings/oauth) to revoke. Every store is brought to its version: `preferences.json` loses any key no group names (the `tailnet` key among them); a record setup cannot read is left as it is, for the command that reads it to name, and a record a newer station wrote fails the step.
-- `engine`: every per-VM agent `com.jterrazz.station.vm.<name>` is booted out and its plist removed, a lasting VM keeping its stopped or running wish; with any of those VMs running the step refuses (`Hint: stop the lasting VMs and delete the temporary ones (station machines), then station setup`), never cutting a VM.
+- `engine`: every per-VM agent `com.jterrazz.station.vm.<name>` is booted out and its plist removed, a VM keeping its stopped or running wish; with any of those VMs running the step refuses (`Hint: stop the running VMs (station machines), then station setup`), never cutting a VM.
 
 Left to the owner, by hand and whenever wanted: the old VM tag and its ACL lines, the OAuth client and each host's old userspace node in the admin console. The Homebrew formula `tailscale` is `setup`'s to uninstall once the app is there ([The tailnet](#the-tailnet)).
 
