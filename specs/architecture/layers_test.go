@@ -57,8 +57,8 @@ func importTable() map[string][]string {
 		"cmd/generate/pages":         {"page", "pages", "pages/*", "domain/*", "engine", "ports", "overview", "activity", "catalog", "ui/token", std},
 		"wire":                       {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", "net/netip", std},
 		"surface/cli":                {"surface/cli/kit", cobra, std},
-		"surface/cli/kit":            append([]string{"output", "page", "core/fail", "core/store", "domain/*", "engine", "catalog", "testing", cobra, pflag, std}, calls...),
-		"surface/cli/*":              append([]string{"surface/cli/kit", "engine", "page", "pages/*", "catalog", cobra, pflag, std}, calls...),
+		"surface/cli/kit":            append([]string{"output", "page", "core/fail", "surface/cli/words", "core/store", "domain/*", "engine", "catalog", "testing", cobra, pflag, std}, calls...),
+		"surface/cli/*":              append([]string{"surface/cli/kit", "core/fail", "engine", "page", "pages/*", "catalog", cobra, pflag, std}, calls...),
 		"domain/*":                   domain,
 		"domain/setup":               append(slices.Clone(domain), "domain/shell", "domain/storage"),
 		"domain/tools":               append(slices.Clone(domain), "apps", "apps/contract", "apps/adapter/fake", "core/call"),
@@ -773,6 +773,9 @@ func rules() []rule {
 		{"OneWriterPerStoreGroup", ruleOneWriterPerStore, "src/apps/contract/mutant_group.go", "package contract\n\nimport core \"" + module + "/src/core/contract\"\n\nfunc mutantName(p core.Preferences) error { return p.Write(\"here\", \"mutant\") }\n", "src/apps/contract/mutant_group.go"},
 		{"NoOutboundLiterals", ruleNoOutboundLiterals, "src/overview/mutant_outbound.go", "package overview\n\nconst mutantLookup = \"curl -s https://ifconfig.me\"\n", "src/overview/mutant_outbound.go"},
 		{"NoModelNames", ruleNoModelNames, "src/awake/mutant_models.go", "package awake\n\nfunc mutantLaptop(model string) bool { return model == \"MacBook\" }\n", "src/awake/mutant_models.go"},
+		{"CallsGated", ruleCallsGated, "src/apps/calls/mutant_calls.go", "package calls\n\nimport \"" + module + "/src/core/call\"\n\nvar Mutant = call.Call[Deps, struct{}, struct{}]{Name: \"tools.mutant\"}\n", "src/apps/calls/mutant_calls.go"},
+		{"ConfirmInUsecase", ruleConfirmInUsecase, "src/disk/calls/mutant_confirm.go", "package calls\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/core/call\"\n\t\"" + module + "/src/core/confirm\"\n\t\"" + module + "/src/core/machine\"\n)\n\nvar mutantErase = call.Call[Deps, struct{}, struct{}]{Name: \"storage.mutant\", Applies: machine.Anywhere, Confirm: confirm.Erase,\n\tRun: func(context.Context, Deps, struct{}, call.Progress) (struct{}, error) { return struct{}{}, nil }}\n", "src/disk/calls/mutant_confirm.go"},
+		{"EveryCodeWorded", ruleEveryCodeWorded, "src/apps/mutant_code.go", "package apps\n\nimport \"" + module + "/src/core/fail\"\n\nconst mutantCode fail.Code = \"apps.mutant\"\n", "src/apps/mutant_code.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
 }

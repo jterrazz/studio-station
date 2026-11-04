@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
@@ -325,5 +326,14 @@ func Updates[Out any](ctx context.Context, values <-chan Out) <-chan Update[Out]
 			}
 		}
 	}()
+	return out
+}
+
+func (r *Registry) Metas() []Meta {
+	out := make([]Meta, 0, len(r.byName))
+	for _, h := range r.byName {
+		out = append(out, h.Meta())
+	}
+	slices.SortFunc(out, func(a, b Meta) int { return strings.Compare(a.Name, b.Name) })
 	return out
 }

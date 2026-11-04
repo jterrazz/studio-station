@@ -8,7 +8,10 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 )
 
-const Unknown fail.Code = "call.unknown"
+const (
+	Unknown   fail.Code = "call.unknown"
+	Elsewhere fail.Code = "call.elsewhere"
+)
 
 type local interface {
 	run(ctx context.Context, target machine.Profile, in any, p Progress) (any, error)

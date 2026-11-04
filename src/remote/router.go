@@ -8,8 +8,6 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 )
 
-const Elsewhere fail.Code = "remote.elsewhere"
-
 type Router struct {
 	registry *call.Registry
 	here     machine.Profile
@@ -42,5 +40,5 @@ func (r *Router) reach(target machine.Ref, name string) error {
 	if target == (machine.Ref{}) || target == r.here.Ref {
 		return nil
 	}
-	return fail.New(fail.Unreachable, Elsewhere, target.Name, map[string]string{"call": name})
+	return fail.New(fail.Unreachable, call.Elsewhere, target.Name, map[string]string{"call": name})
 }
