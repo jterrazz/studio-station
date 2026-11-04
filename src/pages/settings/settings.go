@@ -41,6 +41,9 @@ func Row(r settings.Row, now time.Time) page.Row {
 	// lives, and the next step.
 	name := r.Item().Name
 	row := page.Row{ID: name, Label: name}
+	if r.Group == settings.Checked && r.State != settings.StateReading {
+		return checkedRow(r, row)
+	}
 	switch r.State {
 	case settings.StateApplied:
 		row.Mark, row.Cells = page.OK, []page.Value{page.Texts("applied", r.Where)}
@@ -66,6 +69,40 @@ func Row(r settings.Row, now time.Time) page.Row {
 	return row
 }
 
+func checkedRow(r settings.Row, row page.Row) page.Row {
+	switch r.Checked {
+	case settings.AsExpected:
+		row.Mark, row.Cells = page.OK, []page.Value{page.Texts("as expected", r.Value)}
+	case settings.NeedsFix:
+		row.Mark, row.Reason = page.Attention, page.Mismatch
+		row.Cells = []page.Value{page.Texts(r.Value, r.Expected)}
+		row.Hint = page.Cmd(r.Fix.Path)
+	case settings.CheckedUnknown:
+		row.Mark, row.Reason, row.Cells = page.NotKnown, page.Late, []page.Value{page.Texts("unknown", r.Value)}
+	case settings.CheckedOffHere:
+		row.Mark, row.Cells = page.OffHere, []page.Value{page.Texts("off here", "not checked on this machine")}
+	case settings.CheckedNotForThisMachine:
+		row.Mark, row.Cells = page.NotForThisMachine, []page.Value{page.Texts("not for this machine", r.Why)}
+	}
+	return row
+}
+
+func checkedOrder(s settings.CheckedState) int {
+	switch s {
+	case settings.NeedsFix:
+		return 0
+	case settings.CheckedUnknown:
+		return 1
+	case settings.AsExpected:
+		return 2
+	case settings.CheckedOffHere:
+		return 3
+	case settings.CheckedNotForThisMachine:
+		return 5
+	}
+	return 4
+}
+
 func order(s settings.State) int {
 	switch s {
 	case settings.StateChangedSince:
@@ -84,10 +121,17 @@ func order(s settings.State) int {
 	return 6
 }
 
+func rank(r settings.Row) int {
+	if r.Group == settings.Checked && r.State != settings.StateReading {
+		return checkedOrder(r.Checked)
+	}
+	return order(r.State)
+}
+
 func sorted(rows []settings.Row) []settings.Row {
 	out := append([]settings.Row(nil), rows...)
 	for i := 1; i < len(out); i++ {
-		for j := i; j > 0 && order(out[j].State) < order(out[j-1].State); j-- {
+		for j := i; j > 0 && rank(out[j]) < rank(out[j-1]); j-- {
 			out[j], out[j-1] = out[j-1], out[j]
 		}
 	}
@@ -142,9 +186,11 @@ func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.
 	// invariant: the Set by station group, then the Always-on Mac group folded
 	// on one line until one of it is applied here, then what is not for this
 	// machine folded on one line; --all unfolds both.
-	var set, always, away []settings.Row
+	var set, always, away, checked []settings.Row
 	for _, r := range rows {
 		switch {
+		case r.Group == settings.Checked:
+			checked = append(checked, r)
 		case r.State == settings.StateNotForThisMachine:
 			away = append(away, r)
 		case r.Group == settings.AlwaysOnMac:
@@ -166,6 +212,9 @@ func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.
 		}
 		p.Sections = append(p.Sections, s)
 	}
+	if len(checked) > 0 {
+		p.Sections = append(p.Sections, checkedSection(checked, all, now))
+	}
 	if len(away) > 0 {
 		s := page.Section{ID: "not-for-this-machine", Title: "Not for this machine", Columns: columns(), Uncounted: true}
 		if all {
@@ -178,6 +227,23 @@ func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.
 	}
 	p.Hints = []page.Hint{*page.Cmd("station settings apply"), *page.Cmd("station settings <setting>")}
 	return page.Seal(p)
+}
+
+// value: the Checked group; on a machine none of it lives on, one folded
+// line with the reason, unless every group is unfolded.
+func checkedSection(rows []settings.Row, all bool, now time.Time) page.Section {
+	s := page.Section{ID: "checked", Title: "Checked", Columns: columns(), Items: items(rows, now), PipeCounts: true}
+	for _, r := range rows {
+		if r.Checked != settings.CheckedNotForThisMachine {
+			return s
+		}
+	}
+	s.Uncounted, s.PipeCounts = true, false
+	if !all {
+		folded := page.Row{ID: "checked-not-for-this-machine", Label: strconv.Itoa(len(rows)) + " checked", Mark: page.NotForThisMachine, Cells: []page.Value{page.Texts("not for this machine", rows[0].Why)}}
+		s.Items = []page.Item{{Row: &folded}}
+	}
+	return s
 }
 
 func actions() []page.Action {
@@ -204,6 +270,9 @@ func Show(r settings.Row, now time.Time, here page.Context) page.Page {
 	// value: one setting's detail: its group, state, where it lives and what
 	// it does, and the machines it lives on.
 	head := Row(r, now)
+	if r.Group == settings.Checked {
+		return showChecked(r, head, here)
+	}
 	group := page.Text("Set by station")
 	if r.Group == settings.AlwaysOnMac {
 		group = page.Texts("Set by station", "Always-on Mac")
@@ -224,6 +293,23 @@ func Show(r settings.Row, now time.Time, here page.Context) page.Page {
 		{ID: "detail", Title: "Detail", Columns: pages.OutcomeColumns(), Items: facts},
 	}}
 	return page.Seal(p)
+}
+
+func showChecked(r settings.Row, head page.Row, here page.Context) page.Page {
+	it := r.CheckedItem()
+	facts := []page.Item{
+		{Fact: &page.Fact{Key: "group", Value: page.Text("Checked")}},
+		{Fact: &page.Fact{Key: "does", Value: page.Text(it.Description)}},
+		{Fact: &page.Fact{Key: "lives on", Value: page.Text(livesOn(it.Places))}},
+		{Fact: &page.Fact{Key: "fix", Value: page.Text(it.Fix)}},
+	}
+	if r.Expected != "" {
+		facts = append(facts, page.Item{Fact: &page.Fact{Key: "expected", Value: page.Text(r.Expected)}})
+	}
+	return page.Seal(page.Page{ID: ID, Command: "settings " + it.Name, Context: here, Sections: []page.Section{
+		{ID: "setting", Title: it.Name, Role: page.Banner, Columns: columns(), Items: []page.Item{{Row: &head}}},
+		{ID: "detail", Title: "Detail", Columns: pages.OutcomeColumns(), Items: facts},
+	}})
 }
 
 func livesOn(places []catalog.MachineKind) string {
@@ -324,6 +410,8 @@ type SettingJSON struct {
 	Where     string     `json:"where,omitempty"`
 	Why       string     `json:"why,omitempty"`
 	Admin     bool       `json:"admin"`
+	Value     string     `json:"value,omitempty"`
+	Fix       string     `json:"fix,omitempty"`
 }
 
 type ListJSON struct {
@@ -333,6 +421,13 @@ type ListJSON struct {
 }
 
 func Object(r settings.Row) SettingJSON {
+	if r.Group == settings.Checked {
+		state := string(r.Checked)
+		if state == "" {
+			state = string(r.State)
+		}
+		return SettingJSON{Name: r.Name, Label: r.CheckedItem().Label, Group: string(r.Group), State: state, Why: r.Why, Value: r.Value, Fix: r.Fix.Path}
+	}
 	o := SettingJSON{Name: r.Item().Name, Label: r.Item().Description, Group: string(r.Group), State: string(r.State), Where: r.Where, Why: r.Why, Admin: r.Item().NeedsRoot}
 	if !r.Since.IsZero() {
 		at := r.Since.UTC()

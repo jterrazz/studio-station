@@ -25,9 +25,18 @@ var Off = call.Call[Deps, OffIn, []settings.Change]{
 	Run: func(ctx context.Context, d Deps, in OffIn, _ call.Progress) ([]settings.Change, error) {
 		// invariant: off never destroys a change of the owner's: only a
 		// setting still exactly as station applied it is undone; any other
-		// is left as it is, and every one is Off here after.
+		// is left as it is, and every one is Off here after. A checked
+		// setting Off here is only no longer checked here.
 		var items []catalog.ConfigItem
+		var checked []string
 		for _, name := range in.Names {
+			if c, ok := settings.CheckedNamed(name); ok {
+				if !d.Settings.Lives(catalog.ConfigItem{Name: c.Name, Places: c.Places}) {
+					return nil, fail.New(fail.NotForThisMachine, NotForThisMachine, name, map[string]string{"why": settings.PlaceReason(c.Places)})
+				}
+				checked = append(checked, name)
+				continue
+			}
 			it, err := find(d, name, true)
 			if err != nil {
 				return nil, err
@@ -38,7 +47,12 @@ var Off = call.Call[Deps, OffIn, []settings.Change]{
 			return nil, err
 		}
 		off := offHere(d)
-		changes := make([]settings.Change, 0, len(items))
+		changes := make([]settings.Change, 0, len(items)+len(checked))
+		for _, name := range checked {
+			off[name] = true
+			changes = append(changes, settings.Change{Item: name, Verb: "off", Result: catalog.StateOK,
+				Steps: []settings.ChangeStep{{Label: "off here", State: catalog.StateOK, Detail: "not checked on this machine"}}})
+		}
 		for _, it := range items {
 			row, _ := judge(ctx, d, it, map[string]bool{})
 			change := settings.Change{Item: it.Name, Verb: "off", Result: catalog.StateOK}

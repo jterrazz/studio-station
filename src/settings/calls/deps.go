@@ -2,6 +2,7 @@ package calls
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -16,6 +17,8 @@ const (
 	Unknown           fail.Code = "setting.unknown"
 	NotForThisMachine fail.Code = "setting.not-for-this-machine"
 	NeedsTerminal     fail.Code = "setting.needs-terminal"
+	// value: a checked setting named to apply: station reads it, never sets it.
+	IsChecked fail.Code = "setting.checked"
 )
 
 type Deps struct {
@@ -31,6 +34,10 @@ type Deps struct {
 	// value: the script the ~/.zshrc block evaluates.
 	Shell Shell
 	Kind  machine.Kind
+	// value: the facts a checked setting is judged on, and what this machine
+	// reports it has (a battery makes it a laptop).
+	Facts contract.Inspector
+	Caps  machine.Capabilities
 }
 
 type Shell interface {
@@ -115,4 +122,40 @@ func judge(ctx context.Context, d Deps, it catalog.ConfigItem, off map[string]bo
 		row.Needs = d.Settings.Needs(it)
 	}
 	return row, now
+}
+
+// value: one checked setting judged now: its facts read, each in its
+// budget, beside the owner's Off here and what this Mac should have.
+func judgeChecked(ctx context.Context, d Deps, it catalog.CheckedSetting, off map[string]bool, expect settings.Expectation) settings.Row {
+	lives := d.Settings.Lives(catalog.ConfigItem{Name: it.Name, Places: it.Places})
+	facts := map[catalog.Fact]settings.Fact{}
+	if lives && !off[it.Name] && d.Facts != nil {
+		for _, f := range it.Facts {
+			facts[f] = readFact(ctx, d.Facts, f, it.Budget)
+		}
+	}
+	return settings.JudgeChecked(it, lives, facts, expect, off[it.Name])
+}
+
+func readFact(ctx context.Context, i contract.Inspector, f catalog.Fact, budget time.Duration) settings.Fact {
+	ctx, cancel := context.WithTimeout(ctx, budget)
+	defer cancel()
+	got, err := i.Read(ctx, f)
+	if err != nil {
+		return settings.Fact{State: catalog.StateUnknown, Detail: "no answer in " + strconv.Itoa(int(budget/time.Second)) + " s"}
+	}
+	return got
+}
+
+// invariant: an always-on Mac is one whose Never sleeps is applied, as its
+// own row reads it.
+func expectation(ctx context.Context, d Deps, off map[string]bool) settings.Expectation {
+	alwaysOn := false
+	for _, it := range d.Settings.Items() {
+		if it.Effect == catalog.ProcPower {
+			row, _ := judge(ctx, d, it, off)
+			alwaysOn = row.State == settings.StateApplied
+		}
+	}
+	return settings.Expect(d.Caps, alwaysOn, d.Now())
 }

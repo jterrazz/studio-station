@@ -13,6 +13,48 @@
                 "Percent": 96,
                 "Charging": true
             },
+            "facts": {
+                "filevault": {
+                    "State": "ok",
+                    "Value": "on"
+                },
+                "firewall": {
+                    "State": "absent",
+                    "Value": "off"
+                },
+                "sip": {
+                    "State": "ok",
+                    "Value": "on"
+                },
+                "gatekeeper": {
+                    "State": "ok",
+                    "Value": "on"
+                },
+                "automatic-updates": {
+                    "State": "ok",
+                    "Value": "on"
+                },
+                "screen-lock": {
+                    "State": "ok",
+                    "Value": "0"
+                },
+                "display-sleep": {
+                    "State": "ok",
+                    "Value": "2"
+                },
+                "remote-login": {
+                    "State": "absent",
+                    "Value": "off"
+                },
+                "time-machine": {
+                    "State": "ok",
+                    "Value": "2026-11-02T09:00:00Z"
+                },
+                "system-updates": {
+                    "State": "ok",
+                    "Value": "up to date"
+                }
+            },
             "preferences": {
                 "here": "jterrazz-macbook-pro",
                 "macs": {
@@ -498,6 +540,42 @@
                 "local-ip": {
                     "State": "ok",
                     "Value": "192.168.1.20"
+                },
+                "firewall": {
+                    "State": "ok",
+                    "Value": "on"
+                },
+                "sip": {
+                    "State": "ok",
+                    "Value": "on"
+                },
+                "gatekeeper": {
+                    "State": "ok",
+                    "Value": "on"
+                },
+                "automatic-updates": {
+                    "State": "ok",
+                    "Value": "on"
+                },
+                "screen-lock": {
+                    "State": "ok",
+                    "Value": "300"
+                },
+                "display-sleep": {
+                    "State": "ok",
+                    "Value": "10"
+                },
+                "remote-login": {
+                    "State": "ok",
+                    "Value": "on"
+                },
+                "time-machine": {
+                    "State": "ok",
+                    "Value": "2026-11-03T03:00:00Z"
+                },
+                "system-updates": {
+                    "State": "ok",
+                    "Value": "up to date"
                 }
             },
             "settings": {

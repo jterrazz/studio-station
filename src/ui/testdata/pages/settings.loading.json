@@ -223,6 +223,121 @@
         }
       ],
       "uncounted": true
+    },
+    {
+      "id": "checked",
+      "title": "Checked",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "filevault",
+            "mark": "pending",
+            "label": "filevault",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "firewall",
+            "mark": "pending",
+            "label": "firewall",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "sip",
+            "mark": "pending",
+            "label": "sip",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "automatic-updates",
+            "mark": "pending",
+            "label": "automatic-updates",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "screen-lock",
+            "mark": "pending",
+            "label": "screen-lock",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "gatekeeper",
+            "mark": "pending",
+            "label": "gatekeeper",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "remote-login",
+            "mark": "pending",
+            "label": "remote-login",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "time-machine",
+            "mark": "pending",
+            "label": "time-machine",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "macos-updates",
+            "mark": "pending",
+            "label": "macos-updates",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 9
+        }
+      ],
+      "pipe_counts": true
     }
   ],
   "hints": [

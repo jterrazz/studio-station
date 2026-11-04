@@ -451,6 +451,7 @@
       "confirm": "overwrite",
       "errors": [
         "confirm.yes-needed",
+        "setting.checked",
         "setting.needs-terminal",
         "setting.not-for-this-machine",
         "setting.unknown"
@@ -463,6 +464,7 @@
       "section": "settings",
       "where": "at-target",
       "errors": [
+        "setting.checked",
         "setting.not-for-this-machine",
         "setting.unknown"
       ],

@@ -21,5 +21,16 @@
  Always-on Mac
    ○ Always-on Mac  4 · for a Mac that hosts servers
 
+ Checked  9 ◌
+   ◌ filevault
+   ◌ firewall
+   ◌ sip
+   ◌ automatic-updates
+   ◌ screen-lock
+   ◌ gatekeeper
+   ◌ remote-login
+   ◌ time-machine
+   ◌ macos-updates
+
  → station settings apply
  → station settings <setting>

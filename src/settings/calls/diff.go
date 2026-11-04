@@ -21,8 +21,11 @@ type DiffOut struct {
 
 var Diff = call.Call[Deps, DiffIn, DiffOut]{
 	Name: "settings.diff", Section: section.Settings, Where: call.AtTarget, Applies: settings.Applies,
-	Errors: []fail.Code{Unknown, NotForThisMachine},
+	Errors: []fail.Code{Unknown, IsChecked, NotForThisMachine},
 	Run: func(ctx context.Context, d Deps, in DiffIn, _ call.Progress) (DiffOut, error) {
+		if c, ok := settings.CheckedNamed(in.Name); ok {
+			return DiffOut{}, fail.New(fail.Refused, IsChecked, in.Name, map[string]string{"fix": c.Fix})
+		}
 		it, err := find(d, in.Name, true)
 		if err != nil {
 			return DiffOut{}, err

@@ -25,7 +25,7 @@ type ApplyIn struct {
 
 var Apply = call.Call[Deps, ApplyIn, []settings.Change]{
 	Name: "settings.apply", Section: section.Settings, Where: call.AtTarget, Applies: settings.Applies, Confirm: confirm.Overwrite,
-	Errors: []fail.Code{Unknown, NotForThisMachine, NeedsTerminal, confirm.YesNeeded},
+	Errors: []fail.Code{Unknown, IsChecked, NotForThisMachine, NeedsTerminal, confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in ApplyIn, _ call.Progress) ([]settings.Change, error) {
 		// invariant: every setting is judged before any question and any
 		// effect; one over a change of the owner's asks first, as it is lost.
@@ -104,6 +104,9 @@ func targetsOf(ctx context.Context, d Deps, in ApplyIn, off map[string]bool) ([]
 			continue
 		}
 		seen[name] = true
+		if c, ok := settings.CheckedNamed(name); ok {
+			return nil, fail.New(fail.Refused, IsChecked, name, map[string]string{"fix": c.Fix})
+		}
 		it, err := find(d, name, true)
 		if err != nil {
 			return nil, err
@@ -137,6 +140,11 @@ func keep(ctx context.Context, d Deps, it catalog.ConfigItem) error {
 func setOff(d Deps, off map[string]bool) error {
 	names := make([]string, 0, len(off))
 	for _, it := range d.Settings.Items() {
+		if off[it.Name] {
+			names = append(names, it.Name)
+		}
+	}
+	for _, it := range catalog.CheckedSettings {
 		if off[it.Name] {
 			names = append(names, it.Name)
 		}

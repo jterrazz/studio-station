@@ -188,6 +188,34 @@ func settingRows(reading bool) []settings.Row {
 		}
 		out = append(out, r)
 	}
+	return append(out, checkedRows(reading)...)
+}
+
+// value: the checked settings of the estate's Mac, judged from its facts:
+// one needing a fix, one past the laptop's lock time, one with no answer,
+// one off here, the rest as expected.
+func checkedRows(reading bool) []settings.Row {
+	now := time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)
+	fact := func(state catalog.State, value string) settings.Fact {
+		return settings.Fact{State: state, Value: value}
+	}
+	facts := map[catalog.Fact]settings.Fact{
+		catalog.FactFileVault: fact(catalog.StateOK, "on"), catalog.FactFirewall: fact(catalog.StateAbsent, "off"),
+		catalog.FactSIP: fact(catalog.StateOK, "on"), catalog.FactAutoUpdates: fact(catalog.StateOK, "on"),
+		catalog.FactScreenLock: fact(catalog.StateOK, "0"), catalog.FactDisplaySleep: fact(catalog.StateOK, "10"),
+		catalog.FactRemoteLogin:   fact(catalog.StateAbsent, "off"),
+		catalog.FactTimeMachine:   {State: catalog.StateUnknown, Detail: "no answer in 2 s"},
+		catalog.FactSystemUpdates: fact(catalog.StateOK, "up to date"),
+	}
+	expect := settings.Expectation{Laptop: true, Now: now}
+	out := make([]settings.Row, 0, len(catalog.CheckedSettings))
+	for _, it := range catalog.CheckedSettings {
+		r := settings.JudgeChecked(it, true, facts, expect, it.Name == "gatekeeper")
+		if reading {
+			r = settings.Row{Name: it.Name, Group: settings.Checked, State: settings.StateReading}
+		}
+		out = append(out, r)
+	}
 	return out
 }
 

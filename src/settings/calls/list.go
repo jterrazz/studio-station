@@ -3,7 +3,9 @@ package calls
 import (
 	"context"
 	"slices"
+	"sync"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/settings"
@@ -19,11 +21,12 @@ var List = call.Watch[Deps, ListIn, []settings.Row]{
 		// slowest read.
 		items := d.Settings.Items()
 		off := offHere(d)
-		rows := make([]settings.Row, len(items))
-		answers := make(chan struct {
+		type answer struct {
 			i   int
 			row settings.Row
-		}, len(items))
+		}
+		rows := make([]settings.Row, len(items), len(items)+len(catalog.CheckedSettings))
+		answers := make(chan answer, len(items)+len(catalog.CheckedSettings))
 		left := 0
 		for i, it := range items {
 			if !d.Settings.Lives(it) || off[it.Name] {
@@ -34,11 +37,15 @@ var List = call.Watch[Deps, ListIn, []settings.Row]{
 			left++
 			go func() {
 				row, _ := judge(ctx, d, it, off)
-				answers <- struct {
-					i   int
-					row settings.Row
-				}{i, row}
+				answers <- answer{i, row}
 			}()
+		}
+		expect := sync.OnceValue(func() settings.Expectation { return expectation(ctx, d, off) })
+		for _, it := range catalog.CheckedSettings {
+			i := len(rows)
+			rows = append(rows, settings.Row{Name: it.Name, Group: settings.Checked, State: settings.StateReading})
+			left++
+			go func() { answers <- answer{i, judgeChecked(ctx, d, it, off, expect())} }()
 		}
 		out := make(chan []settings.Row)
 		go func() {

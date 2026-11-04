@@ -1,0 +1,11 @@
+#!/bin/sh
+# plutil reading the SoftwareUpdate plist: checked an hour ago with nothing
+# recommended and security responses on; once $HOME/.off exists, last checked
+# 9 days ago and security responses off.
+case "$*" in
+    "-extract LastSuccessfulDate raw -o - "*)
+        if [ -e "$HOME/.off" ]; then /bin/date -u -v-9d +%Y-%m-%dT%H:%M:%SZ; else /bin/date -u -v-1H +%Y-%m-%dT%H:%M:%SZ; fi ;;
+    "-extract RecommendedUpdates raw -o - "*) echo 0 ;;
+    "-extract CriticalUpdateInstall raw -o - "*) if [ -e "$HOME/.off" ]; then echo false; else echo true; fi ;;
+    *) echo "stub ${0##*/}: unexpected invocation: $*" >&2; exit 97 ;;
+esac

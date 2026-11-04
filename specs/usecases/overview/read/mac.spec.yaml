@@ -13,15 +13,15 @@ runs:
            station overview                                   jterrazz-macbook-pro · host
            ──────────────────────────────────────────────────────────────────────────────
 
-           This Mac · jterrazz-macbook-pro · 8 things need you · Engine running
+           This Mac · jterrazz-macbook-pro · 9 things need you · Engine running
 
            Needs you
              ✗ npm sign-in expired           npm login
              ✗ com.jterrazz.brain.x-snapsh…  station background remove com.jterrazz.brai…
              ◐ 1 mise update waiting         station apps update --method mise
              ◐ 2 brew updates waiting        station apps update --method brew
-             ◐ ~/.tart is misplaced          station disk move ~/.tart
-             3 more: station overview --all
+             ◐ Firewall: off                 System Settings > Network > Firewall
+             4 more: station overview --all
 
                Apps        ● 5 ok · ◐ 3 updates · ○ 100 not installed
                Settings    set by station · ● 0 of 15
