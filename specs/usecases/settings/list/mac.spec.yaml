@@ -6,16 +6,16 @@ runs:
       stdout: |
           # Set by station	15 ○
           ○	hushlogin	not applied	station settings apply hushlogin
-          ○	ghostty-dotfiles	not applied · needs ghostty	station tools install ghostty
-          ○	tmux-dotfiles	not applied · needs tmux	station tools install tmux
-          ○	starship-dotfiles	not applied · needs starship	station tools install starship
-          ○	git-signing	not applied · needs gpg	station tools install gpg
+          ○	ghostty-dotfiles	not applied · needs ghostty	station apps install ghostty
+          ○	tmux-dotfiles	not applied · needs tmux	station apps install tmux
+          ○	starship-dotfiles	not applied · needs starship	station apps install starship
+          ○	git-signing	not applied · needs gpg	station apps install gpg
           ○	ssh-key	not applied	station settings apply ssh-key
-          ○	github-login	not applied · needs gh	station tools install gh
+          ○	github-login	not applied · needs gh	station apps install gh
           ○	spotlight-exclude	not applied	station settings apply spotlight-exclude
           ○	dns	not applied	station settings apply dns
           ○	claude-token	not applied	station settings apply claude-token
-          ○	zed-dotfiles	not applied · needs zed	station tools install zed
+          ○	zed-dotfiles	not applied · needs zed	station apps install zed
           ○	dock-reset	not applied	station settings apply dock-reset
           ○	dock-spacer	not applied	station settings apply dock-spacer
           ○	backup-exclusions	not applied	station settings apply backup-exclusions

@@ -4,5 +4,5 @@ runs:
     - command: 'settings diff hushlogin'
       exit: 2
       stderr: |
-          Error: a server has no settings section
+          Error: infra is a server: station does not manage its settings
           Hint: run station overview for what infra has
