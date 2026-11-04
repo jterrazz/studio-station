@@ -95,7 +95,7 @@ func (p *Preferences) load() (map[string]json.RawMessage, error) {
 		return nil, &store.UnreadableError{Path: p.file(), Cause: err}
 	}
 	var version int
-	if raw, ok := doc["version"]; ok {
+	if raw, ok := doc["v"]; ok {
 		if err := json.Unmarshal(raw, &version); err != nil {
 			return nil, &store.UnreadableError{Path: p.file(), Cause: err}
 		}

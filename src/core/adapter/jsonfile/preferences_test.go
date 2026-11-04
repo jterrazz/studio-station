@@ -54,7 +54,7 @@ func TestPreferencesMigration(t *testing.T) {
 	})
 	t.Run("a file of a newer station is refused, never rewritten", func(t *testing.T) {
 		dir := t.TempDir()
-		_ = os.WriteFile(filepath.Join(dir, "settings.json"), []byte(`{"version":2,"here":"x"}`), 0o600)
+		_ = os.WriteFile(filepath.Join(dir, "settings.json"), []byte(`{"v":2,"here":"x"}`), 0o600)
 		var newer *store.NewerError
 		if err := jsonfile.NewPreferences(disk(), dir, []string{"here"}).Migrate(context.Background()); !errors.As(err, &newer) {
 			t.Fatalf("Migrate = %v, want a newer version refused", err)
