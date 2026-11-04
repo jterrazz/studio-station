@@ -10,7 +10,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/page"
 	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
 	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
@@ -29,7 +28,7 @@ type Deps struct {
 	Status   homescreen.Status
 	Tools    toolsscreen.Deps
 	Config   configscreen.Deps
-	Storage  *storage.Service
+	Storage  storagescreen.Deps
 	Machines *machines.Service
 	Images   *images.Service
 	Secrets  *secrets.Service

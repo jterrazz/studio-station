@@ -3,6 +3,7 @@ package wire
 import (
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
+	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/remote"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -23,6 +24,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 	}
 	registry, err := call.NewRegistry(
 		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
+		diskcalls.All(diskcalls.Deps{Storage: m.storage(env), Kind: kind}),
 		settingscalls.All(settingscalls.Deps{Config: config, Ask: ask, Kind: kind}),
 	)
 	if err != nil {

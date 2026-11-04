@@ -6,7 +6,11 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/storage"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/disk"
+	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
@@ -14,29 +18,28 @@ import (
 
 const ID = "storage"
 
-type Storage interface {
-	Watch(ctx context.Context) <-chan storage.Report
-	Forget()
-	Clean(ctx context.Context, names []string) ([]storage.Outcome, error)
-	Reset(ctx context.Context, names []string) ([]storage.Outcome, error)
-	Plan(names []string) []storage.PathReport
+type Deps struct {
+	Calls  call.Router
+	Target machine.Ref
+	Forget func()
+	Plan   func(names []string) []disk.PathReport
 }
 
 type Model struct {
-	tab.View[storage.Report]
-	ctx     context.Context
-	storage Storage
+	tab.View[disk.Report]
+	ctx context.Context
+	d   Deps
 }
 
-func New(ctx context.Context, s Storage, here page.Context, describe tab.Describe) Model {
-	source := func(ctx context.Context, fresh bool) (<-chan storage.Report, error) {
+func New(ctx context.Context, d Deps, here page.Context, describe tab.Describe) Model {
+	source := func(ctx context.Context, fresh bool) (<-chan disk.Report, error) {
 		if fresh {
-			s.Forget()
+			d.Forget()
 		}
-		return s.Watch(ctx), nil
+		return tab.Values(call.Follow(ctx, d.Calls, d.Target, diskcalls.List, diskcalls.ListIn{}, nil))
 	}
-	build := func(r storage.Report) page.Page { return pagestorage.List(r, here) }
-	return Model{View: tab.NewView(ID, "Storage", "data stored", here, source, build, describe), ctx: ctx, storage: s}
+	build := func(r disk.Report) page.Page { return pagestorage.List(r, here) }
+	return Model{View: tab.NewView(ID, "Storage", "data stored", here, source, build, describe), ctx: ctx, d: d}
 }
 
 func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
@@ -49,15 +52,27 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 	var act tea.Cmd
 	switch ev.Action.Key {
 	case pagestorage.KeyClean:
-		m.View, act = m.Act(nil, m.exec("cleaned", name, m.storage.Clean))
+		m.View, act = m.Act(nil, m.exec("cleaned", name, m.clean))
 	case pagestorage.KeyReset:
-		c := pagestorage.ResetConfirm([]string{name}, m.storage.Plan([]string{name}))
-		m.View, act = m.Act(&c, m.exec("reset", name, m.storage.Reset))
+		c := pagestorage.ResetConfirm([]string{name}, m.d.Plan([]string{name}))
+		m.View, act = m.Act(&c, m.exec("reset", name, m.reset))
 	}
 	return m, tea.Batch(cmd, act)
 }
 
-func (m Model) exec(verb, name string, act func(context.Context, []string) ([]storage.Outcome, error)) tea.Cmd {
+func (m Model) clean(ctx context.Context, names []string) ([]disk.Outcome, error) {
+	return call.Invoke(ctx, m.d.Calls, m.d.Target, diskcalls.Clean, diskcalls.CleanIn{Names: names}, nil)
+}
+
+func (m Model) reset(ctx context.Context, names []string) (outcomes []disk.Outcome, err error) {
+	err = confirm.Answered(func(answer string) (err error) {
+		outcomes, err = call.Invoke(ctx, m.d.Calls, m.d.Target, diskcalls.Reset, diskcalls.ResetIn{Names: names, Confirm: answer}, nil)
+		return err
+	})
+	return outcomes, err
+}
+
+func (m Model) exec(verb, name string, act func(context.Context, []string) ([]disk.Outcome, error)) tea.Cmd {
 	return tab.Exec(ID, func() (tab.Status, error) {
 		outcomes, err := act(m.ctx, []string{name})
 		for _, o := range outcomes {

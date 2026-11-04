@@ -10,18 +10,20 @@ import (
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
 	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
+	storagescreen "github.com/jterrazz/studio-station/src/surface/tui/screens/storage"
 	toolsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/tools"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 	return func(ctx context.Context) error {
+		storage := m.storage(env)
 		return tui.Run(ctx, tui.Deps{
 			Here:     m.where,
 			Status:   statusService(env, m),
 			Tools:    toolsscreen.Deps{Calls: env.Calls, Target: env.Target, Forget: toolsService(env, m).Forget},
 			Config:   configscreen.Deps{Calls: env.Calls, Target: env.Target, Defaults: configService(m).Defaults},
-			Storage:  m.storage(env),
+			Storage:  storagescreen.Deps{Calls: env.Calls, Target: env.Target, Forget: storage.Forget, Plan: storage.Plan},
 			Machines: m.machines(true),
 			Images:   m.images(),
 			Secrets:  m.secrets(),
