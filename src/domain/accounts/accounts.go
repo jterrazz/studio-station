@@ -342,8 +342,6 @@ func Scope(name string) string {
 	return ""
 }
 
-func Lendable(list []string, provider string) []string { return accounts.Lendable(list, provider) }
-
 func (s *Service) Forget() {
 	if s.pool != nil {
 		s.pool.Forget("accounts/")

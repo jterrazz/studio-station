@@ -233,12 +233,12 @@ func flags(s Session) string {
 	return " (" + strings.Join(on, ", ") + ")"
 }
 
-func (m *Machine) Awake(req Request) (Session, bool, error) {
+func (m *Machine) Awake(req Request) (held Session, refreshed bool, err error) {
 	if req.For == 0 {
 		req.For = Default
 	}
-	if err := CheckFor(req.For); err != nil {
-		return Session{}, false, err
+	if bad := CheckFor(req.For); bad != nil {
+		return Session{}, false, bad
 	}
 	r, err := m.port.Read()
 	if unsupported(err) {
@@ -257,7 +257,7 @@ func (m *Machine) Awake(req Request) (Session, bool, error) {
 	m.reading = r
 	now := m.clock.Now().UTC().Truncate(time.Second)
 	want.StartedAt, want.Until = now, now.Add(req.For)
-	refreshed := m.session != nil
+	refreshed = m.session != nil
 	if refreshed {
 		was := m.session.Lid
 		want.StartedAt = m.session.StartedAt

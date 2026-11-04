@@ -59,15 +59,15 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		m.View = view
 		return m, tea.Batch(cmd, reload)
 	}
-	machine, account := m.find(ev.Row)
-	if machine == nil {
+	mc, account := m.find(ev.Row)
+	if mc == nil {
 		return m, cmd
 	}
 	switch ev.Action.Key {
 	case pageaccounts.KeyLend:
-		return m.lend(*machine, account, cmd)
+		return m.lend(*mc, account, cmd)
 	case pageaccounts.KeyRevoke:
-		return m.revoke(*machine, account, cmd)
+		return m.revoke(*mc, account, cmd)
 	}
 	return m, cmd
 }

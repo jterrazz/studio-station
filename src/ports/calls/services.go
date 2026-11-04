@@ -67,8 +67,8 @@ var Release = call.Call[Deps, ReleaseIn, ReleaseOut]{
 			return ReleaseOut{}, err
 		}
 		if d.Services.Pinned(t) {
-			if err := confirm.Require(confirm.For(confirm.StopSharing, d.Kind), t.VM+":"+strconv.Itoa(t.Port), in.Confirm); err != nil {
-				return ReleaseOut{}, err
+			if refused := confirm.Require(confirm.For(confirm.StopSharing, d.Kind), t.VM+":"+strconv.Itoa(t.Port), in.Confirm); refused != nil {
+				return ReleaseOut{}, refused
 			}
 		}
 		l, err := d.Services.Release(ctx, t, host, in.Confirm == confirm.Yes)

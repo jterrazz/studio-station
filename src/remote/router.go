@@ -24,11 +24,8 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 		return err
 	}
 	v, err := r.registry.Run(ctx, r.here, name, in, p)
-	if err != nil {
-		return err
-	}
 	call.Set(out, v)
-	return nil
+	return err
 }
 
 func (r *Router) Watch(ctx context.Context, target machine.Ref, name string, in any, p call.Progress) (<-chan call.Update[any], error) {

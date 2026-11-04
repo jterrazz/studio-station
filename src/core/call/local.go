@@ -18,7 +18,8 @@ type local interface {
 func (r *Registry) Run(ctx context.Context, target machine.Profile, name string, in any, p Progress) (any, error) {
 	// invariant: a call run in this process passes the same gate as a frame
 	// (section, rule) and keeps its values as they are: nothing of In or Out
-	// goes through the wire form, so an error inside an Out stays an error.
+	// goes through the wire form, so an error inside an Out stays an error,
+	// and a call that fails part-way still hands back what it did.
 	h, err := r.local(name)
 	if err != nil {
 		return nil, err
@@ -76,10 +77,7 @@ func (b bound[D, In, Out]) run(ctx context.Context, target machine.Profile, in a
 		return nil, err
 	}
 	out, err := b.runFn(ctx, b.deps, v, p)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
+	return out, err
 }
 
 func (b bound[D, In, Out]) stream(ctx context.Context, target machine.Profile, in any, p Progress) (<-chan Update[any], error) {

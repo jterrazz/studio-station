@@ -64,8 +64,6 @@ type (
 	Outcome     = disk.Outcome
 )
 
-func Failures(outcomes []Outcome) (failed int, firstFailed Outcome) { return disk.Failures(outcomes) }
-
 func (s *Service) Entries() []Entry {
 	out := []Entry{{Name: StationName, Category: StationCategory, Storage: catalog.StationStorage, Places: []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}}}
 	for _, t := range s.tools {
