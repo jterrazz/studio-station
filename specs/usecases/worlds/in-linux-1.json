@@ -344,6 +344,9 @@
             }
         },
         "linux-1": {
+            "meter": {
+                "uptime": 7200000000000
+            },
             "self": {
                 "kind": "workspace",
                 "system": {

@@ -14,6 +14,8 @@ runs:
     - command: 'machines linux-1'
       exit: 0
       stdout: |
+          	On linux-1:
+          # Health
           ●	Running
           ●	Has an address	192.168.64.5
           ✗	SSH answers	failing

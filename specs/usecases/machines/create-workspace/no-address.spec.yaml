@@ -11,6 +11,8 @@ runs:
     - command: 'machines linux-2'
       exit: 0
       stdout: |
+          	On linux-2:
+          # Health
           ●	Running
           ✗	Has an address	failing
           ✗	SSH answers	failing

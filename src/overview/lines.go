@@ -154,3 +154,9 @@ func AwakeRead(r awake.Report) Read {
 	}
 	return Read{Line: Line{Section: section.Awake, Parts: parts}}
 }
+
+func SSHRead(m machine.Ref) Read {
+	// invariant: every Mac's ssh config holds a block for each VM by its
+	// name, hopping through its Mac: the one door, from any Mac, is its name.
+	return Read{Line: Line{Section: section.SSH, Parts: []Part{{Word: m.Name}}}}
+}

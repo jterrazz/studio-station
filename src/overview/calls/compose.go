@@ -27,7 +27,7 @@ import (
 type sectionRead func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error)
 
 // value: the read of each section an Overview has a line for, by its call
-// (Activity's is not a call yet, SSH is a server's own part).
+// (Activity's line waits for its model; SSH is the door, by the machine's name).
 func sectionReads() map[section.ID]sectionRead {
 	here := machine.Ref{}
 	return map[section.ID]sectionRead{
@@ -59,6 +59,9 @@ func sectionReads() map[section.ID]sectionRead {
 			out, err := call.Read(ctx, r, here, awakecalls.Read, awakecalls.ReadIn{}, nil)
 			return overview.AwakeRead(out), err
 		},
+		section.SSH: func(_ context.Context, _ call.Router, self machine.Ref) (overview.Read, error) {
+			return overview.SSHRead(self), nil
+		},
 	}
 }
 
@@ -77,6 +80,11 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 	kind := r.d.Kind
 	head := overview.Head{Name: r.d.Here.Hostname, Kind: kind, Here: true}
 	self := machine.Ref{Name: head.Name}
+	if r.d.Meter != nil {
+		if up, ok := r.d.Meter.Uptime(ctx); ok {
+			head.Up = up
+		}
+	}
 	reads := sectionReads()
 	var ids []section.ID
 	for _, id := range section.For(kind) {

@@ -20,6 +20,11 @@ runs:
     - command: 'machines probe infra'
       exit: 0
       stdout: |
+          	On infra:
+          	Ports	Public 0 · Private 0
+          	SSH	ssh infra
+          	Apps, settings, accounts: not managed by station
+          # Health
           ●	Running
           ●	Has an address	192.168.64.5
           ●	SSH answers

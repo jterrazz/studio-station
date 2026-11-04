@@ -116,6 +116,9 @@
             }
         },
         "infra": {
+            "meter": {
+                "uptime": 1036800000000000
+            },
             "self": {
                 "kind": "server",
                 "system": {

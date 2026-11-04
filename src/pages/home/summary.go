@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -18,11 +19,22 @@ func Summary(s overview.Summary, here page.Context, all bool) page.Page {
 	// invariant: SPEC §5.1: the first line sums the machine up, Needs you
 	// comes first, then one line per section in the one order, then the VMs
 	// of a Mac, then one or two next steps.
-	sections := []page.Section{{ID: "overview", Title: title(s), Caption: caption(s), Joined: true, Role: page.Banner, Uncounted: true}}
+	sections := append([]page.Section{{ID: "overview", Title: title(s), Caption: caption(s), Joined: true, Role: page.Banner, Uncounted: true}}, Body(s, all)...)
+	state := page.Ready
+	if s.Pending {
+		state = page.Loading
+	}
+	return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, State: state, Sections: sections, Hints: Hints(s, all)})
+}
+
+func Body(s overview.Summary, all bool) []page.Section {
+	// value: an Overview below its first line: Needs you, then one line per
+	// section, then the VMs of a Mac; a server says what station leaves to you.
+	var sections []page.Section
 	if len(s.Needs) > 0 {
 		sections = append(sections, needsYou(s.Needs, all))
 	}
-	lines := make([]page.Item, 0, len(s.Lines)+1)
+	lines := make([]page.Item, 0, len(s.Lines)+2)
 	for _, l := range s.Lines {
 		row := page.Row{ID: string(l.Section), Label: sectionTitle(string(l.Section)), Cells: []page.Value{lineValue(l)}}
 		if l.Pending {
@@ -34,28 +46,32 @@ func Summary(s overview.Summary, here page.Context, all bool) page.Page {
 		row := page.Row{ID: "vms", Label: "VMs", Cells: []page.Value{vmsValue(s.VMs)}}
 		lines = append(lines, page.Item{Row: &row})
 	}
-	sections = append(sections, page.Section{ID: "sections", Role: page.Banner, Uncounted: true, Columns: []page.Column{
+	if s.Head.Server() {
+		lines = append(lines, page.Item{Note: &page.Note{Text: "Apps, settings, accounts: not managed by station"}})
+	}
+	return append(sections, page.Section{ID: "sections", Role: page.Banner, Uncounted: true, Columns: []page.Column{
 		{Key: "section", Kind: page.KindText, Keep: 100}, {Key: "line", Kind: page.KindList, Keep: 90},
 	}, Items: lines})
-	state := page.Ready
-	if s.Pending {
-		state = page.Loading
-	}
-	return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, State: state, Sections: sections, Hints: hints(s, all)})
 }
 
 func title(s overview.Summary) string {
-	if s.Head.Here && s.Head.Kind == "mac" {
+	if s.Head.Here && s.Head.Mac() {
 		return "This Mac"
 	}
 	return s.Head.Name
 }
 
 func caption(s overview.Summary) []page.Value {
-	parts := []page.Value{}
-	if title(s) != s.Head.Name {
-		parts = append(parts, page.Text(s.Head.Name))
+	if !s.Head.Mac() {
+		// invariant: a VM read inside it names its kind and how long it has
+		// run; which Mac it is on and its lifetime are its Mac's to tell.
+		parts := []page.Value{page.Text(kindWord(s.Head))}
+		if s.Head.Up > 0 {
+			parts = append(parts, Up(s.Head.Up))
+		}
+		return parts
 	}
+	parts := []page.Value{page.Text(s.Head.Name)}
 	switch len(s.Needs) {
 	case 0:
 		parts = append(parts, page.Text("nothing needs you"))
@@ -136,6 +152,8 @@ func lineValue(l overview.Line) page.Value {
 		return page.Pending()
 	case l.Unread != "":
 		return page.Text(l.Unread)
+	case l.Section == "ssh" && len(l.Parts) == 1:
+		return page.Text("ssh " + l.Parts[0].Word)
 	}
 	parts := make([]page.Value, 0, len(l.Parts))
 	for _, p := range l.Parts {
@@ -182,7 +200,33 @@ func vmsValue(vms []overview.VM) page.Value {
 	return page.List(parts...)
 }
 
-func hints(s overview.Summary, all bool) []page.Hint {
+func KindOn(h overview.Head, on string) page.Value {
+	// value: a VM's kind and the Mac it is on, as its first line names them.
+	return page.Text(kindWord(h) + " on " + on)
+}
+
+func kindWord(h overview.Head) string {
+	switch {
+	case h.Server():
+		return "Server"
+	case h.Mac():
+		return "Mac"
+	}
+	return "Workspace"
+}
+
+func Up(d time.Duration) page.Value {
+	// value: how long a machine has run, in the first line's words ("up 2 h").
+	switch {
+	case d >= 24*time.Hour:
+		return page.Text("up " + strconv.Itoa(int(d/(24*time.Hour))) + " d")
+	case d >= time.Hour:
+		return page.Text("up " + strconv.Itoa(int(d/time.Hour)) + " h")
+	}
+	return page.Text("up " + strconv.Itoa(max(int(d/time.Minute), 1)) + " min")
+}
+
+func Hints(s overview.Summary, all bool) []page.Hint {
 	var out []page.Hint
 	for _, n := range s.Needs {
 		if n.Call != "" {
@@ -197,8 +241,11 @@ func hints(s overview.Summary, all bool) []page.Hint {
 }
 
 func sectionTitle(id string) string {
-	if id == "" {
+	switch id {
+	case "":
 		return ""
+	case "ssh":
+		return "SSH"
 	}
 	return strings.ToUpper(id[:1]) + id[1:]
 }

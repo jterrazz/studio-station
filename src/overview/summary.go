@@ -1,6 +1,8 @@
 package overview
 
 import (
+	"time"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/finding"
 	"github.com/jterrazz/studio-station/src/core/machine"
@@ -26,7 +28,13 @@ type Head struct {
 	Name string
 	Kind machine.Kind
 	Here bool
+	// value: how long the machine has run, as Activity's meter reads it;
+	// zero where unknown.
+	Up time.Duration
 }
+
+func (h Head) Mac() bool    { return h.Kind == machine.Mac }
+func (h Head) Server() bool { return h.Kind == machine.Server }
 
 type Engine string
 

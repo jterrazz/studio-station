@@ -1,0 +1,32 @@
+description: 'station machines infra: a server''s Overview has its own parts only'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 80x40 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" machines infra'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |4
+           station overview                                   jterrazz-macbook-pro · host
+           ──────────────────────────────────────────────────────────────────────────────
+
+             On infra:
+
+           infra · Server on mac-mini · Permanent · ● Running
+
+               Ports  Public 0 · Private 0
+               SSH    ssh infra
+             Apps, settings, accounts: not managed by station
+
+           Health
+             ● Running
+             ● Has an address  192.168.64.5
+             ● SSH answers
+             ● Size            8 CPU · 24 GB · 80 GB
+    - command: 'machines infra --json | /usr/bin/jq -c ''[.machine.kind, [.sections[].id]]'''
+      exit: 0
+      stdout: |
+          ["server",["ports","ssh"]]
