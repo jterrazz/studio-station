@@ -25,7 +25,7 @@ runs:
       stdout: |
           ●	xcode	5.8 GB erased
       stderr: |
-          → now: station disk erase --confirm xcode xcode
+          → now: station disk erase xcode --confirm=xcode
     - command: 'storage --json | /usr/bin/jq -r .schema'
       exit: 0
       stdout: |

@@ -18,7 +18,7 @@ runs:
       stdout: |
           ●	hushlogin	~/.hushlogin: removed
       stderr: |
-          → now: station settings off --yes hushlogin
+          → now: station settings off hushlogin --yes
     - command: 'config --json | /usr/bin/jq -r .schema'
       exit: 0
       stdout: |
