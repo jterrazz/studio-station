@@ -1,4 +1,4 @@
-description: 'station machines <machine> is that machine Overview, the one station overview --on <machine> prints; a Mac answers to its short name'
+description: 'station machines <machine> is the Overview station overview --on <machine> prints'
 env: two-macs
 runs:
     - command: 'machines mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''

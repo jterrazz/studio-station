@@ -15,7 +15,7 @@ type Counts struct {
 	Machines, Running, Stopped int
 }
 
-// value: the name All machines shows: This Mac for the one station runs on,
+// Label is the name All machines shows: This Mac for the one station runs on,
 // a Mac without its owner's prefix (mac-mini for jterrazz-mac-mini).
 func Label(f Fleet, h HostView) string {
 	if h.Here {
@@ -47,6 +47,7 @@ func Tally(f Fleet) Counts {
 				c.Running++
 			case Stopped, Suspended:
 				c.Stopped++
+			case Stale, Broken:
 			}
 		}
 	}
@@ -59,8 +60,8 @@ func Ordered(vms []VM) []VM {
 	return out
 }
 
-// value: the far Mac's station version when it is not the one here, and the
-// fix that brings the two together.
+// Behind tells when a far Mac's station is not the one here, and the fix
+// that brings the two together.
 func Behind(h HostView, here string) (fix string, differs bool) {
 	if h.Here || h.StationVersion == "" || here == "" || h.StationVersion == here {
 		return "", false
@@ -106,6 +107,7 @@ func Findings(f Fleet) []finding.Finding {
 				add(ref, finding.NeedsALook, vm.Name, vm.Name+" ended unexpectedly", "station machines start "+vm.Name+on)
 			case Broken:
 				add(ref, finding.Broken, vm.Name, vm.Name+" "+vm.Detail, "station machines delete "+vm.Name+on)
+			case Running, Stopped, Suspended:
 			}
 		}
 	}

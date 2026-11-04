@@ -1,4 +1,4 @@
-description: 'create --lifetime lasting runs create --permanent, machines probe <m> runs machines <m>; each says the new words on stderr, never with --json'
+description: 'the v2 words create --lifetime and machines probe run the v3 command, named on stderr'
 env: two-macs
 runs:
     - command: 'machines create box --lifetime lasting | /usr/bin/head -1'

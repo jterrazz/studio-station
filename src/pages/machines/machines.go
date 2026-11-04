@@ -196,43 +196,6 @@ func Already(verb, name string, running bool, here page.Context) page.Page {
 	return pages.Outcome("machines "+verb, here, nil, []page.Row{pages.Done(name, state, said)}, "machines")
 }
 
-type CheckJSON struct {
-	Name   string `json:"name"`
-	State  string `json:"state"`
-	Value  string `json:"value"`
-	Detail string `json:"detail"`
-}
-
-type ProbeJSON struct {
-	Schema  string      `json:"schema"`
-	Name    string      `json:"name"`
-	User    string      `json:"user"`
-	IP      string      `json:"ip"`
-	Checks  []CheckJSON `json:"checks"`
-	Console string      `json:"console"`
-}
-
-func ProbeContract(r machines.ProbeReport) ProbeJSON {
-	body := ProbeJSON{Schema: "station.machines.probe/v1", Name: r.Name, User: r.User, IP: r.IP, Console: r.Console, Checks: []CheckJSON{}}
-	for _, c := range r.Checks {
-		body.Checks = append(body.Checks, CheckJSON{Name: c.Name, State: string(c.State), Value: c.Value, Detail: c.Detail})
-	}
-	return body
-}
-
-func Probe(r machines.ProbeReport, here page.Context) page.Page {
-	rows := make([]page.Row, 0, len(r.Checks))
-	for _, c := range r.Checks {
-		row := pages.Done(c.Name, c.State, c.Detail)
-		row.Cells = []page.Value{page.Text(c.Value)}
-		if row.Mark == page.Attention || row.Mark == page.Broken {
-			row.Reason = page.Down
-		}
-		rows = append(rows, row)
-	}
-	return pages.Outcome("machines probe "+r.Name, here, []page.Column{{Key: "check", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindText, Keep: 50}}, rows, "checks")
-}
-
 const createdSchema = "station.machines.created/v1"
 
 type CreatedJSON struct {

@@ -1,4 +1,4 @@
-description: 'station machines lists every Mac with its VMs under it, in the columns MACHINE, KIND, STATE, CPU and MEMORY'
+description: 'station machines lists each Mac, its VMs under it, as MACHINE, KIND, STATE, CPU, MEMORY'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

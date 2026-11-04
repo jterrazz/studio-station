@@ -1,4 +1,4 @@
-description: 'piped, each machine is one record: its glyph, name, kind, Mac, state, CPU and memory; cut -f2 is the name, cut -f4 its Mac'
+description: 'piped, each machine is one record: glyph, name, kind, Mac, state, CPU, memory'
 env: two-macs
 runs:
     - command: 'machines'

@@ -1,4 +1,4 @@
-description: 'a Mac that runs an older station says which, and that station is updated there; a finding, the read exits 0'
+description: 'a Mac that runs an older station says which, and to update station there; the read exits 0'
 fixture:
     - ../../../__fixtures__/terminal/
 env:
