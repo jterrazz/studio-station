@@ -9,7 +9,7 @@ An image is a versioned, read-only VM disk that VMs are cloned from. Each Mac ho
 | Updating          | `station images update`, the published versions            |
 | The recipe        | What the image contains, and the two sessions that make it |
 | The binary inside | `--binary` and `make build-linux`                          |
-| Cleaning          | `images delete`; Tart's pull cache is `storage clean tart` |
+| Cleaning          | `images delete`; Tart's pull cache is `disk free tart`     |
 
 ## Listing
 
