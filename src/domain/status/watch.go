@@ -4,8 +4,6 @@ import (
 	"context"
 	"path"
 	"slices"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -71,7 +69,7 @@ func (s *Service) frame() Snapshot {
 	}
 	if s.mac() {
 		snap.Environment.Ports = []Port{}
-		snap.Environment.Security = pendingChecks(securityProbes())
+		snap.Environment.Security = pendingChecks(s.securityProbes())
 		snap.Environment.Updates = pendingChecks(s.updateProbes())
 	}
 	current, err := s.deps.Store.Load()
@@ -96,7 +94,7 @@ func (s *Service) watch(ctx context.Context) <-chan Snapshot {
 	jobs := s.machineJobs()
 	jobs = append(jobs, s.tableJobs("environment/network", s.networkProbes(), func(sn *Snapshot) []Check { return sn.Environment.Network })...)
 	if s.mac() {
-		jobs = append(jobs, s.tableJobs("environment/security", securityProbes(), func(sn *Snapshot) []Check { return sn.Environment.Security })...)
+		jobs = append(jobs, s.tableJobs("environment/security", s.securityProbes(), func(sn *Snapshot) []Check { return sn.Environment.Security })...)
 		jobs = append(jobs, s.tableJobs("environment/updates", s.updateProbes(), func(sn *Snapshot) []Check { return sn.Environment.Updates })...)
 		jobs = append(jobs, job{Key: subject + "/environment/ports", Budget: defaultBudget + margin,
 			Do: func(ctx context.Context) func(*Snapshot) {
@@ -319,50 +317,9 @@ func (s *Service) placeGateways(sn *Snapshot) {
 	}
 }
 
-const (
-	updatesPlist = "/Library/Preferences/com.apple.SoftwareUpdate.plist"
-	staleUpdates = 7 * 24 * time.Hour
-)
-
 func (s *Service) updateProbes() []probe {
 	return []probe{
-		{name: "macos", budget: updateBudget, read: s.macUpdates},
+		s.factProbe("macos", catalog.FactSystemUpdates, updateBudget),
 		{name: "brew", cmd: cmd("brew", "outdated", "--quiet"), budget: updateBudget, interpret: brewOutdated},
 	}
-}
-
-// invariant: macOS updates come from the list the background check wrote to its
-// plist (milliseconds); the network call runs only when that list is missing or
-// older than a week.
-func (s *Service) macUpdates(ctx context.Context, budget time.Duration) Check {
-	plist := path.Join("/", s.o.Root, updatesPlist)
-	if _, err := s.h.FS.Stat(plist); err == nil {
-		at := s.ask(ctx, cmd("plutil", "-extract", "LastSuccessfulDate", "raw", "-o", "-", plist), defaultBudget)
-		list := s.ask(ctx, cmd("plutil", "-extract", "RecommendedUpdates", "raw", "-o", "-", plist), defaultBudget)
-		checked, err := time.Parse(time.RFC3339, strings.TrimSpace(at.text()))
-		pending, countErr := strconv.Atoi(strings.TrimSpace(list.text()))
-		age := s.h.Clock.Now().Sub(checked)
-		if at.ok() && list.ok() && err == nil && countErr == nil && age < staleUpdates {
-			detail := "checked " + ago(age) + " ago"
-			if pending == 0 {
-				return Check{Name: "macos", State: catalog.StateOK, Value: "up to date", Detail: detail}
-			}
-			return Check{Name: "macos", State: catalog.StateDegraded, Value: strconv.Itoa(pending) + " pending", Detail: detail}
-		}
-	}
-	r := s.ask(ctx, cmd("softwareupdate", "-l"), budget)
-	if r.late {
-		return late("macos", budget)
-	}
-	return softwareUpdate("macos", r)
-}
-
-func ago(d time.Duration) string {
-	switch {
-	case d < time.Hour:
-		return strconv.Itoa(max(int(d.Minutes()), 0)) + "m"
-	case d < 24*time.Hour:
-		return strconv.Itoa(int(d.Hours())) + "h"
-	}
-	return strconv.Itoa(int(d.Hours()/24)) + "d"
 }
