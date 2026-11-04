@@ -1,4 +1,4 @@
-description: 'a ~/go that appears at the home root is misplaced at the next read, with the move that puts it right'
+description: 'a ~/go that appears at the home root is misplaced at the next read, with the move that puts it right, and a finding of disk --json says so'
 env: two-macs
 runs:
     - command: 'disk | /usr/bin/grep -c "~/go"'
@@ -14,3 +14,7 @@ runs:
           # Misplaced
           ◐	~/.tart	73.3 GB	misplaced · tart · station disk move ~/.tart
           ◐	~/go	2.3 GB	misplaced · go · station disk move ~/go
+    - command: 'disk --json | /usr/bin/jq -c .findings'
+      exit: 0
+      stdout: |
+          ["~/.tart is misplaced","~/go is misplaced"]
