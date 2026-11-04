@@ -1,0 +1,11 @@
+description: 'station inside linux-1 is the workspace''s own Overview: its sections only, no On line'
+env: in-linux-1
+runs:
+    - command: ''
+      exit: 0
+      stdout: |
+          	Apps	● 1 ok · ○ 63 not installed
+          	Settings	set by station · ● 0 of 4
+          	Disk	● 0 B free · 0 B can rebuild
+          	Ports	Public 0 · Private 2
+          	Accounts	● 0

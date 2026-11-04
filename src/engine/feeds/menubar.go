@@ -108,12 +108,12 @@ func (f *menubar) sample(ctx context.Context, _ engine.FeedInput) {
 func (f *menubar) todo(ctx context.Context, in engine.FeedInput) {
 	fresh := false
 	for {
-		if snaps, err := call.Follow(ctx, f.o.Calls, machine.Ref{}, overviewcalls.Read, overviewcalls.ReadIn{Fresh: fresh}, nil); err == nil {
+		if snaps, err := call.Follow(ctx, f.o.Calls, machine.Ref{}, overviewcalls.Read, overviewcalls.ReadIn{Fresh: fresh, V2: true}, nil); err == nil {
 			for u := range snaps {
-				if u.Err != nil {
+				if u.Err != nil || u.Value.V2 == nil {
 					continue
 				}
-				snap := u.Value
+				snap := *u.Value.V2
 				f.update(ctx, func(r *pagemenubar.Reading) { r.Home = &snap })
 			}
 		}

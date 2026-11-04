@@ -12,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
+
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
@@ -49,36 +50,40 @@ func Run(ctx context.Context, d Deps, env kit.Env, all bool, io kit.IO) error {
 	if vm, ok := d.vm(ctx, env); ok {
 		return io.Page(pagemachines.VMPage(vm, d.Here), pagemachines.VMContract(vm, call.Schema(overviewcalls.Read.Name)))
 	}
+	if d.Status && io.JSON {
+		return status(ctx, env, io)
+	}
 	if io.CanLive() {
 		updates, err := call.Follow(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{}, nil)
 		if err != nil {
 			return err
 		}
-		var last pagehome.Overview
-		err = io.LivePage(kit.Updates(updates, func(s pagehome.Overview) page.Page {
-			last = s
-			return pagehome.Snapshot(s, d.Here, all)
+		err = io.LivePage(kit.Updates(updates, func(out overviewcalls.ReadOut) page.Page {
+			return pagehome.Summary(out.Summary, d.Here, all)
 		}))
 		if err != nil {
 			return err
 		}
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		return last.Err
+		return ctx.Err()
 	}
-	snapshot, err := call.Read(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{}, nil)
-	if err == nil {
-		err = snapshot.Err
+	out, err := call.Read(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{}, nil)
+	if err != nil {
+		return err
+	}
+	return io.Page(pagehome.Summary(out.Summary, d.Here, all), pagehome.SummaryContract(out.Summary, call.Schema(overviewcalls.Read.Name)))
+}
+
+// value: station status --json, station.status/v1 from the v2 reading,
+// for the scripts that decode it (SPEC §11.4).
+func status(ctx context.Context, env kit.Env, io kit.IO) error {
+	out, err := call.Read(ctx, env.Calls, env.Target(), overviewcalls.Read, overviewcalls.ReadIn{V2: true}, nil)
+	if err == nil && out.V2 != nil {
+		err = out.V2.Err
 	}
 	if err != nil {
 		return err
 	}
-	contract := pagehome.SnapshotContract(snapshot)
-	if !d.Status {
-		contract.Schema = call.Schema(overviewcalls.Read.Name)
-	}
-	return io.Page(pagehome.Snapshot(snapshot, d.Here, all), contract)
+	return io.Page(pagehome.Snapshot(*out.V2, page.Context{}, false), pagehome.SnapshotContract(*out.V2))
 }
 
 // value: the VM a target names, found in All machines; this machine, or

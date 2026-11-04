@@ -10,7 +10,7 @@ runs:
     - command: 'machines probe jterrazz-macbook-pro | /usr/bin/head -1'
       exit: 0
       stdout: |
-          # Machine
+          # Needs you
       stderr: |
           → now: station machines jterrazz-macbook-pro
     - command: 'machines probe jterrazz-macbook-pro --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''

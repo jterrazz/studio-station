@@ -3,10 +3,10 @@ fixture:
     - ./__fixtures__/disk-relocated/
     - ./__fixtures__/disk-strays/
 runs:
-    - command: 'overview </dev/null | /usr/bin/grep "^◐	go"'
+    - command: 'overview </dev/null | /usr/bin/grep "~/go"'
       exit: 0
       stdout: |
-          ◐	go	~/go	2 B · station disk move ~/go
+          ◐	~/go is misplaced	station disk move ~/go
     - command: 'disk move ~/go'
       exit: 0
       stdout: |

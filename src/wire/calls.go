@@ -1,6 +1,7 @@
 package wire
 
 import (
+	"context"
 	"time"
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
@@ -9,6 +10,7 @@ import (
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	backgroundcalls "github.com/jterrazz/studio-station/src/background/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/shortcuts"
@@ -38,6 +40,8 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		named = setupAsk{setup: setupService, ask: env.Prompt}
 	}
 	sections := statusDeps(env, m)
+	here := &localCalls{profile: m.profile, late: m.far}
+	sections.Calls, sections.Kind = here, kind
 	registry, err := call.NewRegistry(
 		activitycalls.All(activitycalls.Deps{Meter: sections.Meter}),
 		overviewcalls.All(sections),
@@ -59,7 +63,41 @@ func (m machine) registry(env kit.Env) *call.Registry {
 	if err != nil {
 		panic(err)
 	}
+	here.registry = registry
 	return registry
+}
+
+// value: the Router a call reads this machine's other calls through (the
+// Overview its sections): this process's own once it is built, so a call
+// of the engine reaches the engine; else the registry, past the same gate
+// as a frame.
+type localCalls struct {
+	registry *call.Registry
+	profile  coremachine.Profile
+	late     *late
+}
+
+func (l *localCalls) routed() call.Router {
+	if l.late == nil || l.late.router == nil {
+		return nil
+	}
+	return l.late.router
+}
+
+func (l *localCalls) Invoke(ctx context.Context, _ coremachine.Ref, name string, in, out any, p call.Progress) error {
+	if r := l.routed(); r != nil {
+		return r.Invoke(ctx, coremachine.Ref{}, name, in, out, p)
+	}
+	v, err := l.registry.Run(ctx, l.profile, name, in, p)
+	call.Set(out, v)
+	return err
+}
+
+func (l *localCalls) Watch(ctx context.Context, _ coremachine.Ref, name string, in any, p call.Progress) (<-chan call.Update[any], error) {
+	if r := l.routed(); r != nil {
+		return r.Watch(ctx, coremachine.Ref{}, name, in, p)
+	}
+	return l.registry.Stream(ctx, l.profile, name, in, p)
 }
 
 type awakePower struct{ *power.Service }

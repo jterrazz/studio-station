@@ -11,10 +11,10 @@ runs:
           ✗	This Mac	has no engine set up	station setup
           ●	Tailscale	signed in · macbook.tail1234.ts.net · ports are shared
           ◐	engine			the engine is not installed		station setup
-    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" overview | /usr/bin/awk -F "\t" ''$2 == "engine"''; "$STATION" machines | /usr/bin/grep engine; "$STATION" ports'
+    - command: '--version >/dev/null; /bin/mkdir -p Library/LaunchAgents; : >Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" overview | /usr/bin/grep "Engine"; "$STATION" machines | /usr/bin/grep engine; "$STATION" ports'
       exit: 0
       stdout: |
-          ◐	engine	stopped	station engine start
+          ◐	Engine stopped	station engine start
           ✗	This Mac	has its engine stopped	station engine start
           ●	Tailscale	signed in · macbook.tail1234.ts.net · ports are shared
           ◐	engine			not shared while the engine is stopped		station engine start

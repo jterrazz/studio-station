@@ -52,7 +52,7 @@ type tick struct{}
 func New(ctx context.Context, d Deps, fix Fix, here page.Context, describe tab.Describe) Model {
 	live := &samples{}
 	source := func(ctx context.Context, fresh bool) (<-chan pagehome.Overview, error) {
-		updates, err := call.Follow(ctx, d.Calls, d.Target, overviewcalls.Read, overviewcalls.ReadIn{Fresh: fresh}, nil)
+		updates, err := call.Follow(ctx, d.Calls, d.Target, overviewcalls.Read, overviewcalls.ReadIn{Fresh: fresh, V2: true}, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -60,11 +60,11 @@ func New(ctx context.Context, d Deps, fix Fix, here page.Context, describe tab.D
 		go func() {
 			defer close(out)
 			for u := range updates {
-				if u.Err != nil {
+				if u.Err != nil || u.Value.V2 == nil {
 					continue
 				}
 				select {
-				case out <- u.Value:
+				case out <- *u.Value.V2:
 				case <-ctx.Done():
 					return
 				}

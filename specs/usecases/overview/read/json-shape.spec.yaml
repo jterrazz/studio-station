@@ -1,0 +1,25 @@
+description: 'station overview --json: its schema, each finding with one fix, each section its counts'
+env: two-macs
+runs:
+    - command: 'overview --json | /usr/bin/jq -c ''[.schema, .machine, .engine]'''
+      exit: 0
+      stdout: |
+          ["station.overview.read/v1",{"name":"jterrazz-macbook-pro","kind":"mac","here":true},"running"]
+    - command: 'overview --json | /usr/bin/jq -c ''[.findings[].fix | [has("call"), has("command"), has("path")] | map(select(.)) | length] | unique'''
+      exit: 0
+      stdout: |
+          [1]
+    - command: 'overview --json | /usr/bin/jq -c ''.findings[] | select(.subject == "brew") | .fix'''
+      exit: 0
+      stdout: |
+          {"call":"apps.update","args":{"method":"brew"}}
+    - command: 'overview --json | /usr/bin/jq -c ''.sections[] | [.id, .counts]'''
+      exit: 0
+      stdout: |
+          ["apps",{"not-installed":100,"ok":5,"update-available":3}]
+          ["settings",{"applied":0}]
+          ["disk",{"misplaced":1}]
+          ["ports",{"private":2,"public":0}]
+          ["accounts",{"signed-in":6}]
+          ["background",{"failing":1,"ok":10,"orphan":3}]
+          ["awake",{}]

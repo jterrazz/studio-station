@@ -5,11 +5,11 @@ runs:
     - command: 'overview --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |
-          station.page/v1	home	ready	true
+          station.page/v1	overview	ready	true
     - command: 'overview --all --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |
-          station.page/v1	home	ready	true
+          station.page/v1	overview	ready	true
     - command: 'apps --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |
