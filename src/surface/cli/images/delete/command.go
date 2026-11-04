@@ -7,15 +7,16 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/images"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/images"
+	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Images *images.Service
-	Here   page.Context
+	Here page.Context
 }
 
 type Input struct{ Image, Version string }
@@ -37,8 +38,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			}
 			return names
 		},
-		Validate:    func(_ context.Context, in *Input) error { return d.Images.CheckDelete(in.Image, in.Version) },
 		Destructive: func(*Input) bool { return true },
+		ByCall:      true,
 		Confirm: func(in *Input) string {
 			if in.Version == "" {
 				return "Delete every version of " + in.Image + "?"
@@ -46,7 +47,11 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			return "Delete " + in.Image + "@" + in.Version + "?"
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			removed, err := d.Images.Delete(ctx, in.Image, in.Version)
+			var removed []images.Record
+			err := io.Confirmed(func(answer string) (err error) {
+				removed, err = call.Invoke(ctx, env.Calls, env.Target, imagescalls.Delete, imagescalls.DeleteIn{Image: in.Image, Version: in.Version, Confirm: answer}, nil)
+				return err
+			})
 			if err != nil {
 				return err
 			}

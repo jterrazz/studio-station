@@ -2,14 +2,19 @@ package guestcmd
 
 import (
 	"context"
+	"io"
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-type Deps struct{ Guest *guest.Service }
+type Guest interface {
+	Check() error
+	Run(ctx context.Context, in io.Reader, out io.Writer) error
+}
+
+type Deps struct{ Guest Guest }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	// invariant: plumbing run by the host's daemon inside each VM: its stdin and

@@ -13,8 +13,9 @@ type Deps struct {
 	Config Config
 	// value: the values an item asks, from the owner at a terminal; nil
 	// where nobody is there to answer.
-	Ask  Ask
-	Kind machine.Kind
+	Ask       Ask
+	Shortcuts Shortcuts
+	Kind      machine.Kind
 }
 
 type Config interface {
@@ -31,5 +32,5 @@ type Ask interface {
 }
 
 func All(d Deps) []call.Handler {
-	return []call.Handler{call.BindWatch(List, d), call.Bind(Install, d), call.Bind(Uninstall, d)}
+	return []call.Handler{call.BindWatch(List, d), call.Bind(Install, d), call.Bind(Uninstall, d), call.Bind(Git, d), call.Bind(Containers, d)}
 }

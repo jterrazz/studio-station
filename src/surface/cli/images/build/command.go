@@ -7,15 +7,15 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/images"
+	"github.com/jterrazz/studio-station/src/core/call"
+	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Images *images.Service
-	Here   page.Context
+	Here page.Context
 }
 
 type Input struct {
@@ -38,12 +38,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			return nil
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			stop := func() {}
-			records, err := d.Images.Build(ctx, images.BuildRequest{Images: in.Names, Binary: in.Binary}, func(s images.Step) {
-				stop()
-				stop = io.Wait(s.Label)
-			})
-			stop()
+			steps := kit.Steps(io)
+			records, err := call.Invoke(ctx, env.Calls, env.Target, imagescalls.Build, imagescalls.BuildIn{Names: in.Names, Binary: in.Binary}, steps)
+			steps.Stop()
 			if err != nil {
 				return err
 			}

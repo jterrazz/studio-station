@@ -350,3 +350,21 @@ func Updates[T any](updates <-chan call.Update[T], build func(T) page.Page) <-ch
 	}()
 	return out
 }
+
+type Spinner struct {
+	io   IO
+	stop func()
+}
+
+func Steps(o IO) *Spinner { return &Spinner{io: o, stop: func() {}} }
+
+func (s *Spinner) Step(task, _ string) {
+	// value: a call's Progress on the CLI: each step's label is the one
+	// spinner line, replacing the last.
+	s.stop()
+	s.stop = s.io.Wait(task)
+}
+
+func (*Spinner) Done(string, error) {}
+
+func (s *Spinner) Stop() { s.stop() }

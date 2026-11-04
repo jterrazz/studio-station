@@ -6,11 +6,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/shell"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-type Deps struct{ Shell *shell.Service }
+type Shell interface {
+	Zsh(ctx context.Context, completion string) (string, error)
+}
+
+type Deps struct{ Shell Shell }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	cmd := kit.Command(kit.Leaf[Input]{
