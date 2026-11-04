@@ -1,6 +1,6 @@
 description: 'a symlink to the App Store bundle''s CLI crashes, so setup replaces it with the wrapper'
 fixture:
-    - ../../cli/__fixtures__/system-tools/
+    - ../../__fixtures__/system-tools/
     - ../../__fixtures__/tailscale-app-store/
 env: engine
 runs:

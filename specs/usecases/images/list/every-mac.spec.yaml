@@ -1,4 +1,4 @@
-description: 'the images of every Mac, one row per version per Mac, with the VMs made from it; an image no Mac holds is not built yet'
+description: 'one row per version per Mac with the VMs made from it, and an image no Mac holds not built yet'
 env: two-macs
 runs:
     - command: 'images'

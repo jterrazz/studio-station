@@ -1,4 +1,4 @@
-description: 'a bare image name deletes every version of it on This Mac; the VMs made from it keep their own disks'
+description: 'a bare image name deletes every version of it on This Mac; its VMs keep their own disks'
 env: two-macs
 runs:
     - command: 'images delete linux --yes'

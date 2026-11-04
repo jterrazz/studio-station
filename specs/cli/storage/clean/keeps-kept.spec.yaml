@@ -1,6 +1,6 @@
 description: 'clean never touches a kept or a config file'
 fixture:
-    - ../../__fixtures__/system-tools/
+    - ../../../__fixtures__/system-tools/
     - ../__fixtures__/go/
     - ./__fixtures__/kept/
 runs:

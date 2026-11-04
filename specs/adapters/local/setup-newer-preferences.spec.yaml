@@ -1,6 +1,6 @@
 description: 'setup refuses a settings.json a newer station wrote, and leaves it as it is'
 fixture:
-    - ../../__fixtures__/setup-stubs/
+    - ../__fixtures__/setup-stubs/
     - ./__fixtures__/newer-preferences/
 env:
     - USER=tester

@@ -1,7 +1,7 @@
 description: 'the Standalone app brings its own CLI: setup writes no wrapper'
 fixture:
-    - ../../cli/__fixtures__/system-tools/
-    - ../../__fixtures__/tailscale-standalone/
+    - ../../__fixtures__/system-tools/
+    - ./__fixtures__/tailscale-standalone/
 env: engine
 runs:
     - command: '--version >/dev/null; /bin/rm bin/tailscale; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	tools'''

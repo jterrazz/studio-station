@@ -1,7 +1,7 @@
 description: 'a settings.json that differs from the converted config.json is never overwritten'
 fixture:
-    - ../../__fixtures__/setup-stubs/
-    - ../../__fixtures__/v1-studio/
+    - ../__fixtures__/setup-stubs/
+    - ../__fixtures__/v1-studio/
     - ./__fixtures__/other-settings/
 env:
     - USER=tester

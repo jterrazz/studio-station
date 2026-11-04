@@ -1,6 +1,6 @@
 description: 'once the app is installed, setup uninstalls the tailscale formula it supersedes'
 fixture:
-    - ../../cli/__fixtures__/system-tools/
+    - ../../__fixtures__/system-tools/
     - ./__fixtures__/tailscale-formula/
 env: engine
 runs:

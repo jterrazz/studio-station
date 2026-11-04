@@ -1,4 +1,4 @@
-description: 'on a Mac with only the App Store Tailscale, setup writes ~/.local/bin/tailscale as a two-line script, never a symlink'
+description: 'with only the App Store Tailscale, setup writes ~/.local/bin/tailscale as a script, never a link'
 fixture: ../../../__fixtures__/tailscale-app-store/
 env: fresh
 runs:

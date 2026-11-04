@@ -1,7 +1,7 @@
 description: 'a live userspace tailscaled is stopped and retired by a background re-exec of setup'
 fixture:
-    - ../../__fixtures__/setup-stubs/
-    - ../../__fixtures__/v1-studio/
+    - ../__fixtures__/setup-stubs/
+    - ../__fixtures__/v1-studio/
     - ./__fixtures__/detached/
 env:
     - USER=tester

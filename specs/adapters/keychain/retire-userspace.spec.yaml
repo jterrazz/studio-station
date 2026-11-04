@@ -1,7 +1,7 @@
 description: 'setup retires the userspace era: its tailscaled files, keychain accounts and tailnet key'
 fixture:
-    - ../../__fixtures__/setup-stubs/
-    - ../../__fixtures__/userspace-era/
+    - ../__fixtures__/setup-stubs/
+    - ../__fixtures__/userspace-era/
 env:
     - USER=tester
 runs:

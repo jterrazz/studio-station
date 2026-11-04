@@ -1,4 +1,4 @@
-description: 'a build makes the next version of linux on This Mac from the recipe; the VMs made from the older one keep it'
+description: 'a build makes linux''s next version on This Mac; the VMs made from the older one keep it'
 fixture: ./__fixtures__/build/
 env: two-macs
 runs:

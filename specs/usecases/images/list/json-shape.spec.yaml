@@ -1,4 +1,4 @@
-description: 'images --json is station.images.list/v1: each version with its Mac, its size, the VMs made from it and whether it is the newest'
+description: 'images --json is station.images.list/v1: each version with its Mac, size, VMs and newest'
 env: two-macs
 runs:
     - command: 'images --json | /usr/bin/jq -r ''.schema, (.images[0] | keys | join(" "))'''

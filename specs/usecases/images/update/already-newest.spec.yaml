@@ -1,4 +1,4 @@
-description: 'an image already at its newest published version is said so and nothing is fetched; bare, every image held is asked'
+description: 'an image at its newest published version is said so, nothing fetched; bare asks every image held'
 env: two-macs
 runs:
     - command: 'images update linux'

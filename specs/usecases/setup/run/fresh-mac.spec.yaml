@@ -1,4 +1,4 @@
-description: 'on a terminal, setup on a fresh Mac asks its name, then writes the shell block and the layout, installs the missing system apps and starts the engine'
+description: 'on a terminal, setup on a fresh Mac asks its name, then installs, writes and starts every step'
 fixture: ../../../__fixtures__/terminal/
 env:
     - fresh

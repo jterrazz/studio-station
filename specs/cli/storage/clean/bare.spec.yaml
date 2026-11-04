@@ -1,6 +1,6 @@
 description: 'bare clean empties every installed row''s caches with the official commands, asking nothing'
 fixture:
-    - ../../__fixtures__/system-tools/
+    - ../../../__fixtures__/system-tools/
     - ../__fixtures__/go/
     - ./__fixtures__/node/
 runs:

@@ -1,4 +1,4 @@
-description: 'inside a workspace, setup writes the shell block and the layout, and never names it nor sets up an engine'
+description: 'inside a workspace, setup writes the shell block and the layout, never a name nor an engine'
 env: in-workspace
 runs:
     - command: 'setup'

@@ -1,4 +1,4 @@
-description: 'on a terminal, deleting one version asks, then deletes it alone; the VMs made from the others keep theirs'
+description: 'on a terminal, deleting one version asks, then deletes it alone; the VMs keep theirs'
 fixture: ../../../__fixtures__/terminal/
 env:
     - two-macs

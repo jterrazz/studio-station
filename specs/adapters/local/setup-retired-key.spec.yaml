@@ -1,6 +1,6 @@
 description: 'setup drops the retired tailnet key from settings.json and keeps every other key'
 fixture:
-    - ../../__fixtures__/setup-stubs/
+    - ../__fixtures__/setup-stubs/
     - ./__fixtures__/retired-key/
 env:
     - USER=tester
