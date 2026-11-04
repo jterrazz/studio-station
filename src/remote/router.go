@@ -18,8 +18,11 @@ type Reach struct {
 	Macs contract.EndpointDialer
 	// value: this Mac's engine, which relays a call to one of its VMs (unix).
 	Engine contract.EndpointDialer
-	// value: where a bare name runs: its On set when it is a VM of this Mac.
-	Locate func(name string) machine.Ref
+	// value: where a bare name runs, from this Mac's own records: its On set
+	// when it is a VM of this Mac; known false when no record names it.
+	Locate func(name string) (ref machine.Ref, known bool)
+	// value: the other Mac that holds a VM this Mac has no record of.
+	Holder func(ctx context.Context, vm string) (mac string, err error)
 	// value: the version Hello answers with.
 	Version string
 }
@@ -44,7 +47,10 @@ func NewRouter(registry *call.Registry, here machine.Profile, reach Reach) *Rout
 }
 
 func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in, out any, p call.Progress) error {
-	t := r.resolve(target)
+	t, err := r.resolve(ctx, target)
+	if err != nil {
+		return err
+	}
 	if r.local(t) {
 		v, err := r.registry.Run(ctx, r.here, name, in, p)
 		call.Set(out, v)
@@ -71,7 +77,10 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 }
 
 func (r *Router) Watch(ctx context.Context, target machine.Ref, name string, in any, p call.Progress) (<-chan call.Update[any], error) {
-	t := r.resolve(target)
+	t, err := r.resolve(ctx, target)
+	if err != nil {
+		return nil, err
+	}
 	if r.local(t) {
 		return r.registry.Stream(ctx, r.here, name, in, p)
 	}
@@ -111,15 +120,24 @@ func wire(ctx context.Context, updates <-chan call.Update[json.RawMessage]) <-ch
 
 // invariant: the Router's rows, in order: no target or this machine runs in
 // this process; a VM of this Mac rides this Mac's engine; any other machine
-// rides the engine of the Mac it is on, which resolves it the same way.
-func (r *Router) resolve(target machine.Ref) machine.Ref {
+// rides the engine of the Mac it is on, which resolves it the same way; a
+// name no record here holds is asked of the other Macs, never dialled.
+func (r *Router) resolve(ctx context.Context, target machine.Ref) (machine.Ref, error) {
 	if target == (machine.Ref{}) || target == r.here.Ref || target.Name == r.here.Ref.Name {
-		return machine.Ref{}
+		return machine.Ref{}, nil
 	}
-	if target.On == "" && r.reach.Locate != nil {
-		return r.reach.Locate(target.Name)
+	if target.On != "" || r.reach.Locate == nil {
+		return target, nil
 	}
-	return target
+	t, known := r.reach.Locate(target.Name)
+	if known || r.reach.Holder == nil {
+		return t, nil
+	}
+	mac, err := r.reach.Holder(ctx, target.Name)
+	if err != nil {
+		return machine.Ref{}, err
+	}
+	return machine.Ref{Name: target.Name, On: mac}, nil
 }
 
 func (r *Router) local(t machine.Ref) bool { return t == (machine.Ref{}) }
@@ -215,12 +233,11 @@ func (r *Router) vm(target machine.Ref) (machine.Ref, bool) {
 	if target.Name == "" || target.Name == r.here.Ref.Name {
 		return machine.Ref{}, false
 	}
-	t := target
-	if r.reach.Locate != nil {
-		t = r.reach.Locate(target.Name)
-	}
-	if t.On == "" {
+	if r.reach.Locate == nil {
 		return machine.Ref{}, false
 	}
-	return machine.Ref{Name: t.Name, On: r.here.Ref.Name}, true
+	if t, _ := r.reach.Locate(target.Name); t.On != r.here.Ref.Name {
+		return machine.Ref{}, false
+	}
+	return machine.Ref{Name: target.Name, On: r.here.Ref.Name}, true
 }

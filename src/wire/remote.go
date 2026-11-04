@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"slices"
 
 	"github.com/spf13/cobra"
 
@@ -41,20 +42,55 @@ func (m machine) router(env kit.Env) *remote.Router {
 		Macs:    macs,
 		Engine:  unix.New(guestRelay{m.hostDaemon()}, func() contract.Hello { return m.far.router.Served() }),
 		Locate:  m.locate,
+		Holder:  m.holder,
 		Version: Version(),
 	})
 	m.far.router = r
 	return r
 }
 
-// invariant: a bare name is a VM of this Mac when this Mac holds its record;
-// any other name is a Mac, reached by its own name.
-func (m machine) locate(name string) coremachine.Ref {
+// invariant: a bare name is a Mac when this Mac holds its host record, a VM
+// of this Mac when it holds its VM record; any other name is unknown here.
+func (m machine) locate(name string) (coremachine.Ref, bool) {
 	found, err := m.machines(false).Lookup(context.Background(), name)
-	if err == nil && found.Kind != catalog.Host {
-		return coremachine.Ref{Name: name, On: m.profile.Ref.Name}
+	switch {
+	case err != nil:
+		return coremachine.Ref{Name: name}, false
+	case found.Kind != catalog.Host:
+		return coremachine.Ref{Name: name, On: m.profile.Ref.Name}, true
 	}
-	return coremachine.Ref{Name: name}
+	return coremachine.Ref{Name: name}, true
+}
+
+// invariant: a VM of another Mac is found in that Mac's own list, asked of
+// every other Mac at once; a name none of them holds is unknown, and while a
+// Mac is silent the VM may be its own, so that silence is the answer.
+func (m machine) holder(ctx context.Context, vm string) (string, error) {
+	r := m.far.router
+	others := m.machines(false).OtherHosts()
+	got := each.All(ctx, others, func(ctx context.Context, mac string) (bool, error) {
+		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
+		if err != nil {
+			return false, err
+		}
+		for _, host := range out.Fleet.Hosts {
+			if slices.ContainsFunc(host.VMs, func(v machines.VM) bool { return v.Name == vm }) {
+				return true, nil
+			}
+		}
+		return false, nil
+	})
+	for _, mac := range others {
+		if got[mac].Err == nil && got[mac].Value {
+			return mac, nil
+		}
+	}
+	for _, mac := range others {
+		if err := got[mac].Err; err != nil {
+			return "", err
+		}
+	}
+	return "", &machines.UnknownMachineError{Name: vm}
 }
 
 type guestRelay struct{ d hostDaemon }

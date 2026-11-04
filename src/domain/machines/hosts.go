@@ -148,6 +148,23 @@ func (s *Service) here(cfg prefsView) string {
 	return strings.ToLower(s.h.Env.Hostname())
 }
 
+func (s *Service) OtherHosts() []string {
+	// value: every host of the fleet but this one, by name.
+	cfg, err := s.prefs()
+	if err != nil {
+		return nil
+	}
+	here := s.here(cfg)
+	others := make([]string, 0, len(cfg.Hosts))
+	for n := range cfg.Hosts {
+		if n != here && n != cfg.Here {
+			others = append(others, n)
+		}
+	}
+	sort.Strings(others)
+	return others
+}
+
 func (s *Service) Names() []string {
 	cfg, err := s.prefs()
 	if err != nil {

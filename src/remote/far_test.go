@@ -1,8 +1,10 @@
 package remote_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/jterrazz/studio-station/src/core/call"
@@ -29,11 +31,20 @@ func laptopReaching(t *testing.T, miniVersion string) (r *remote.Router, macs, e
 	engine.Serve(laptop.Ref.Name, fake.Mac{Registry: contracttest.Far(), Profile: linux1, Version: "v3.1.0"})
 	r = remote.NewRouter(registry, laptop, remote.Reach{
 		Macs: macs, Engine: engine, Version: "v3.1.0",
-		Locate: func(name string) machine.Ref {
-			if name == linux1.Ref.Name {
-				return linux1.Ref
+		Locate: func(name string) (machine.Ref, bool) {
+			switch name {
+			case linux1.Ref.Name:
+				return linux1.Ref, true
+			case mini:
+				return machine.Ref{Name: name}, true
 			}
-			return machine.Ref{Name: name}
+			return machine.Ref{Name: name}, false
+		},
+		Holder: func(_ context.Context, vm string) (string, error) {
+			if vm == infra.Ref.Name {
+				return mini, nil
+			}
+			return "", errNoMachine
 		},
 	})
 	t.Cleanup(r.Close)
@@ -93,5 +104,31 @@ func TestAServerRunsAFrameForItsOwnMachineHereAndForItsVMOverItsEngine(t *testin
 		t.Errorf("a frame for linux-1: %v, %v; want it answered by linux-1 over the engine", v, err)
 	}
 }
+
+func TestAVMOfAnotherMacIsReachedThroughThatMacsEngineNeverByItsOwnName(t *testing.T) {
+	r, macs, engine, _ := laptopReaching(t, "v3.1.0")
+	macs.Serve(infra.Ref.Name, fake.Mac{Registry: contracttest.Far(), Profile: infra, Version: "v3.1.0"})
+	engine.Down(laptop.Ref.Name)
+	out, err := call.Invoke(t.Context(), r, machine.Ref{Name: infra.Ref.Name}, farInstall, contracttest.InstallIn{App: "jq"}, nil)
+	if err != nil || out.App != "jq" {
+		t.Fatalf("installing jq on infra, a VM of the mini: %+v, %v; want it run through the mini's engine", out, err)
+	}
+	if got := macs.Dialled(); !slices.Equal(got, []string{mini}) {
+		t.Errorf("reaching infra dialled %q, want the mini alone, never infra by its own name", got)
+	}
+}
+
+func TestANameNoMacHoldsIsRefusedWithoutDiallingIt(t *testing.T) {
+	r, macs, _, _ := laptopReaching(t, "v3.1.0")
+	_, err := call.Invoke(t.Context(), r, machine.Ref{Name: "nope"}, farInstall, contracttest.InstallIn{App: "jq"}, nil)
+	if !errors.Is(err, errNoMachine) {
+		t.Errorf("a call to nope: %v, want the holder's no-machine answer", err)
+	}
+	if got := macs.Dialled(); len(got) != 0 {
+		t.Errorf("a call to nope dialled %q, want nothing dialled", got)
+	}
+}
+
+var errNoMachine = errors.New(`no machine named "nope"`)
 
 var farInstall = call.Call[struct{}, contracttest.InstallIn, contracttest.InstallOut]{Name: "apps.install"}

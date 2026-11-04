@@ -2,7 +2,6 @@ package machines
 
 import (
 	"context"
-	"sort"
 
 	model "github.com/jterrazz/studio-station/src/machines"
 
@@ -31,13 +30,7 @@ func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
 	if hereOnly || s.o.Here != catalog.Host {
 		return fleet, nil
 	}
-	others := make([]string, 0, len(cfg.Hosts))
-	for n := range cfg.Hosts {
-		if n != cfg.Here {
-			others = append(others, n)
-		}
-	}
-	sort.Strings(others)
+	others := s.OtherHosts()
 	var answers map[string]HostView
 	if s.o.Ask != nil {
 		answers = s.o.Ask(ctx, others)
