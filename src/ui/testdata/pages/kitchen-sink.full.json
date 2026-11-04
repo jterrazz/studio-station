@@ -618,7 +618,7 @@
             },
             "reason": "differs",
             "hint": {
-              "command": "station config install tart-launcher"
+              "command": "station settings apply tart-launcher"
             }
           }
         },

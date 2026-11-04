@@ -1,0 +1,3 @@
+ Error: the preferences file is not valid JSON
+ Hint: repair the JSON of ~/.config/station/preferences.json
+ r retry  ↑↓ move  enter detail  / filter  space fold  q quit  ? keys

@@ -100,7 +100,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		statusCommand(kenv, here),
 		appsCommand(kenv, here),
 		toolsAlias(kenv, here),
-		configCommand(kenv, here),
+		settingsCommand(kenv, here),
 		storageCommand(kenv, here),
 		powerCommand(kenv, here),
 		machinesCommand(kenv, here),
@@ -117,6 +117,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		shellcmd.Command(kenv),
 	}
 	commands = append(commands, engineAliases(kenv, here)...)
+	commands = append(commands, settingsAliases(kenv, here)...)
 	if session != nil {
 		commands = append(commands, session.command())
 	}

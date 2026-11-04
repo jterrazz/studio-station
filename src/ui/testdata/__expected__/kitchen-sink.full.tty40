@@ -41,7 +41,7 @@
      → station apps install mise
    ◐ partial               attention
    ◐ differs               attention
-     → station config install tart-launcher
+     → station settings apply tart-launcher
    ◐ unset                 attention
      → station setup
    ◐ stopped               attention

@@ -24,7 +24,7 @@ Where no terminal can be asked (a script, an ssh command without a terminal), se
 
 ```sh
 station apps install homebrew tailscale tart
-station config install ghostty-dotfiles zed-dotfiles hushlogin
+station settings apply ghostty-dotfiles zed-dotfiles hushlogin
 station overview
 ```
 

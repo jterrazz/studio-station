@@ -1,0 +1,25 @@
+ station settings                                           host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────
+
+ Set by station  15 ◌
+   ◌ hushlogin
+   ◌ ghostty-dotfiles
+   ◌ tmux-dotfiles
+   ◌ starship-dotfiles
+   ◌ git-signing
+   ◌ ssh-key
+   ◌ github-login
+   ◌ spotlight-exclude
+   ◌ dns
+   ◌ claude-token
+   ◌ zed-dotfiles
+   ◌ dock-reset
+   ◌ dock-spacer
+   ◌ backup-exclusions
+   ◌ tart-launcher
+
+ Always-on Mac
+   ○ Always-on Mac  4 · for a Mac that hosts servers
+
+ → station settings apply
+ → station settings <setting>

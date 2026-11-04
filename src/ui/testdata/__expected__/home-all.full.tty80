@@ -12,7 +12,7 @@
    ◐ strays             2 folders out of place · 80.5 GB  → station setup
    ◐ pnpm               update available  → station apps update pnpm
    ◐ better-ui          update available  → station apps update better-ui
-   ◐ power              policy partly applied  → station config install power
+   ◐ power              policy partly applied  → station settings apply power
    ◐ macos              2 pending · checked 22m ago
    ◐ com.docker.socket  orphan: Docker.app is gone
      → sudo launchctl bootout system/com.docker.socket &&
@@ -99,6 +99,6 @@
 
  Config  1 ●  1 ◐
    ◐ power  Always-on power policy  policy partly applied
-     → station config install power
+     → station settings apply power
 
  → station overview | cat for records

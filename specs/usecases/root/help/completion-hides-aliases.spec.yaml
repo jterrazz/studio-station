@@ -6,7 +6,6 @@ runs:
       stdout: |
           accounts
           apps
-          config
           engine
           help
           images
@@ -16,6 +15,7 @@ runs:
           run
           secrets
           services
+          settings
           setup
           storage
           tailnet

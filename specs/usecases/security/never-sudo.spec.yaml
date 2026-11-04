@@ -1,16 +1,16 @@
 description: 'no gesture runs sudo: what needs root is refused with its command, and the world records no attempt'
 env: two-macs
 runs:
-    - command: 'config install sshd'
+    - command: 'settings apply sshd'
       exit: 1
       stderr: |
           Error: sshd needs root
-          Hint: sudo station config install sshd
-    - command: 'config install power'
+          Hint: sudo station settings apply sshd
+    - command: 'settings apply power'
       exit: 1
       stderr: |
           Error: power needs root
-          Hint: sudo station config install power
+          Hint: sudo station settings apply power
     - command: 'apps install tart'
       exit: 0
       stdout: |

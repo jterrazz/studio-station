@@ -1,0 +1,13 @@
+description: 'settings diff of a setting that writes no file reads its values on this Mac, then what station sets'
+fixture: ./__fixtures__/settings-pmset/
+runs:
+    - command: 'settings diff power'
+      exit: 0
+      stdout: |
+          # power
+          ○	autorestart	0	1
+          ○	sleep	10	0
+          ●	displaysleep	5	5
+          ○	disksleep	10	0
+          ○	powernap	1	0
+          ●	womp	1	1

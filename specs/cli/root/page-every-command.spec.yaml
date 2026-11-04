@@ -14,10 +14,10 @@ runs:
       exit: 0
       stdout: |
           station.page/v1	apps	ready	true
-    - command: 'config --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
+    - command: 'settings --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |
-          station.page/v1	config	ready	true
+          station.page/v1	settings	ready	true
     - command: 'storage --page | /usr/bin/jq -r ''[.schema, .id, .state, all(.sections[]; .title != "")] | @tsv'''
       exit: 0
       stdout: |

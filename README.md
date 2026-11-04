@@ -23,7 +23,7 @@ station                 # on a terminal: the TUI (Home · Tools · Config · Sto
 # Here
 station overview        # everything about this machine
 station apps            # install, update, remove apps and agent skills
-station config          # dotfiles, logins and macOS defaults
+station settings        # dotfiles, logins and macOS defaults
 station storage         # what each tool keeps on disk: clean caches, reset data
 station power           # keep this host awake for a while, the lid closed too
 

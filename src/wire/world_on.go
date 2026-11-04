@@ -195,6 +195,20 @@ func (m *worldMac) listeners() portscontract.Listeners {
 	return portsfake.ListenersOf(m.run.w, m.name)
 }
 
+// value: every procedure of the catalogue as a fake over the Mac's slice:
+// no world runs a procedure of the real machine.
+func (m *worldMac) procedureAppliers() []settingscontract.Applier {
+	var out []settingscontract.Applier
+	seen := map[catalog.EffectKind]bool{}
+	for _, it := range catalog.ConfigItems {
+		if p, ok := it.Effect.(catalog.Procedure); ok && !seen[p.Kind()] {
+			seen[p.Kind()] = true
+			out = append(out, settingsfake.ApplierOf(m.run.w, m.name, p.Kind()))
+		}
+	}
+	return out
+}
+
 func (m *worldMac) inspector() settingscontract.Inspector {
 	return settingsfake.NewInspector(m.run.w, m.name)
 }

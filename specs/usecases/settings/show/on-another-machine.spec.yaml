@@ -1,0 +1,20 @@
+description: 'a setting''s detail on another Mac is that Mac''s state'
+env: two-macs
+runs:
+    - command: 'settings apply dns --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	dns	dns: applied
+    - command: 'settings dns --on jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	dns	applied
+          # Detail
+          group	Set by station
+          does	Encrypted DNS via Quad9 (DoH)
+          lives on	Macs
+          applied	just now
+    - command: 'settings dns --json | /usr/bin/jq -r .setting.state'
+      exit: 0
+      stdout: |
+          not-applied

@@ -2,57 +2,43 @@ package config
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 )
 
-// invariant: the one type switch over Effect and the one value switch over
-// Procedure, the latter with no default case: the exhaustive linter then names every
-// Procedure a new constant forgets, and dispatch_test.go walks the catalogue.
+const ReadBudget = 5 * time.Second
+
+// invariant: an item runs through the Applier of its effect's kind; an
+// effect no Applier writes is an error, never a silent success.
 func (s *Service) handler(it catalog.ConfigItem) (handler, error) {
-	switch e := it.Effect.(type) {
-	case catalog.Touch:
-		return s.touch(e), nil
-	case catalog.Dotfiles:
-		return s.dotfiles(e), nil
-	case catalog.Procedure:
-		return s.procedure(it, e)
+	a, ok := s.appliers.For(it)
+	if !ok {
+		return handler{}, &unhandledError{Item: it.Name}
 	}
-	return handler{}, &unhandledError{Item: it.Name}
+	h := handler{
+		install: func(ctx context.Context, values map[string]string) (Change, error) { return a.Apply(ctx, it, values) },
+	}
+	if !it.RunOnce {
+		h.check = func(ctx context.Context) (catalog.State, string) {
+			o, err := a.Observe(ctx, it)
+			if err != nil {
+				return catalog.StateBroken, firstLine(err.Error())
+			}
+			return o.State, o.Detail
+		}
+	}
+	if it.Reversible {
+		h.uninstall = func(ctx context.Context) (Change, error) { return a.Undo(ctx, it) }
+	}
+	return h, nil
 }
 
-func (s *Service) procedure(it catalog.ConfigItem, p catalog.Procedure) (handler, error) {
-	switch p {
-	case catalog.ProcGitSigning:
-		return handler{check: s.checkGitSigning, install: bare(s.installGitSigning)}, nil
-	case catalog.ProcSSHKey:
-		return handler{check: s.checkSSHKey, install: bare(s.installSSHKey)}, nil
-	case catalog.ProcGitHubLogin:
-		return handler{check: s.checkGitHubLogin, install: bare(s.installGitHubLogin)}, nil
-	case catalog.ProcSpotlight:
-		return handler{check: s.checkSpotlight, install: bare(s.installSpotlight)}, nil
-	case catalog.ProcDNS:
-		return handler{check: s.checkDNS, install: bare(s.installDNS)}, nil
-	case catalog.ProcDockReset:
-		return handler{install: bare(s.installDockReset)}, nil
-	case catalog.ProcDockSpacer:
-		return handler{install: bare(s.installDockSpacer)}, nil
-	case catalog.ProcAutologin:
-		return handler{check: s.checkAutologin, install: s.installAutologin, uninstall: s.uninstallAutologin}, nil
-	case catalog.ProcPower:
-		return handler{check: s.checkPower, install: bare(s.installPower), uninstall: s.uninstallPower}, nil
-	case catalog.ProcLockAfterLogin:
-		return handler{check: s.checkLockAfterLogin, install: bare(s.installLockAfterLogin), uninstall: s.uninstallLockAfterLogin}, nil
-	case catalog.ProcSshd:
-		return handler{check: s.checkSshd, install: bare(s.installSshd), uninstall: s.uninstallSshd}, nil
-	case catalog.ProcClaudeToken:
-		return handler{check: s.checkClaudeToken, install: s.installClaudeToken, uninstall: s.uninstallClaudeToken}, nil
-	case catalog.ProcBackupExclusions:
-		return handler{check: s.checkBackupExclusions, install: bare(s.installBackupExclusions), uninstall: s.uninstallBackupExclusions}, nil
-	}
-	return handler{}, &unhandledError{Item: it.Name}
-}
+func (s *Service) Appliers() settingscontract.Appliers { return s.appliers }
 
-func bare(fn func(ctx context.Context) (Change, error)) func(context.Context, map[string]string) (Change, error) {
-	return func(ctx context.Context, _ map[string]string) (Change, error) { return fn(ctx) }
+func firstLine(s string) string {
+	line, _, _ := strings.Cut(strings.TrimSpace(s), "\n")
+	return line
 }

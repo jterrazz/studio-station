@@ -1,6 +1,6 @@
 # Configuration
 
-`station config` sets a machine up: dotfiles, logins and macOS defaults. Each entry is a config item, named by what it sets, and `station`'s own file is `preferences.json`.
+`station settings` sets a machine up: dotfiles, logins and macOS defaults. Each entry is a setting, named by what it sets, and `station`'s own file is `preferences.json`.
 
 | Section          | Answers                                        |
 | ---------------- | ---------------------------------------------- |
@@ -11,7 +11,7 @@
 
 ## The items
 
-An item lists only on a machine whose kind is in its place ([Glossary](../concepts/glossary.md)); asked for elsewhere it is refused with exit 2. Only reversible items uninstall.
+A setting that does not live on this machine's kind reads Not for this machine, and an apply of it is refused with exit 2. Each that lives here reads Applied (exactly as station applied it), Changed since (applied, then changed by someone: `station settings diff` shows how), Not applied, or Off here (the owner's choice, kept as `off_here` in `preferences.json`). What station applied, its fingerprint and when, is kept under `~/.local/state/station/applied/`.
 
 | Item                        | Place       | Sets                                                                                                  | Reversible |
 | --------------------------- | ----------- | ----------------------------------------------------------------------------------------------------- | ---------- |
@@ -34,7 +34,7 @@ An item lists only on a machine whose kind is in its place ([Glossary](../concep
 | `sshd`                      | host        | Remote Login; needs root                                                                              | yes        |
 | `claude-token`              | host        | the Claude Code token lent to VMs ([Secrets](secrets.md#claude-in-a-vm))                              | yes        |
 
-Items group by category: Terminal, Security, Editor, System, Network, and Headless (`autologin`, `power`, `lock-after-login` and `sshd`: what an unattended host needs). An item that needs root is refused without it with `sudo station config install <item>`.
+The settings are Set by station; `autologin`, `power`, `lock-after-login` and `sshd` are its Always-on Mac group, for a Mac that hosts servers: opt-in, applied by name only, one folded line until one of it is applied. A setting that needs root is refused without it with `sudo station settings apply <setting>`.
 
 ## Values
 
@@ -85,6 +85,6 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 
 ## Related
 
-- [Commands](commands.md): `station config`.
+- [Commands](commands.md): `station settings`.
 - [Dotfiles](dotfiles.md): the files the dotfile items copy.
 - [Footprint](footprint.md): every file station writes.

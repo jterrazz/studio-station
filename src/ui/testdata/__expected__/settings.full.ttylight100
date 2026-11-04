@@ -1,0 +1,26 @@
+ [1;38;2;30;102;245mstation[m [38;2;76;79;105msettings[m                                                               [38;2;108;111;133mhost · unregistered[m
+ [38;2;156;160;176m──────────────────────────────────────────────────────────────────────────────────────────────────[m
+
+ [1;38;2;30;102;245mSet by station[m  [38;2;64;160;43m3 ●[m  [38;2;223;142;29m3 ◐[m  [38;2;108;111;133m4 ○[m  [38;2;108;111;133m3 ⊘[m
+   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mghostty-dotfiles[m   [38;2;76;79;105mchanged since 2 d ago[m      [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings diff ghostty-dotfiles[m
+   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mgithub-login[m       [38;2;76;79;105mchanged since 2 d ago[m      [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings diff github-login[m
+   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mdock-reset[m         [38;2;76;79;105mchanged since 2 d ago[m      [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings diff dock-reset[m
+   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mtmux-dotfiles[m      [38;2;76;79;105mnot applied[m                [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings apply tmux-dotfiles[m
+   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mspotlight-exclude[m  [38;2;76;79;105mnot applied[m                [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings apply spotlight-exclude[m
+   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mdock-spacer[m        [38;2;76;79;105mnot applied[m                [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings apply dock-spacer[m
+   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mbackup-exclusions[m  [38;2;76;79;105mnot applied[m                [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings apply backup-exclusions[m
+   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mhushlogin[m          [38;2;76;79;105mapplied · ~/.hushlogin[m
+   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mssh-key[m            [38;2;76;79;105mapplied · ~/.ssh-key[m
+   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mzed-dotfiles[m       [38;2;76;79;105mapplied · ~/.zed-dotfiles[m
+   [38;2;156;160;176m[m[38;2;108;111;133m⊘[m [1;38;2;76;79;105mstarship-dotfiles[m  [38;2;76;79;105moff here[m
+   [38;2;156;160;176m[m[38;2;108;111;133m⊘[m [1;38;2;76;79;105mdns[m                [38;2;76;79;105moff here[m
+   [38;2;156;160;176m[m[38;2;108;111;133m⊘[m [1;38;2;76;79;105mtart-launcher[m      [38;2;76;79;105moff here[m
+
+ [1;38;2;30;102;245mAlways-on Mac[m
+   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mAlways-on Mac[m  [38;2;76;79;105m4 · for a Mac that hosts servers[m
+
+ [1;38;2;30;102;245mNot for this machine[m
+   [38;2;156;160;176m[m[38;2;156;160;176m–[m [1;38;2;76;79;105m2 not for this machine[m  [38;2;76;79;105mVMs only[m
+
+ [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings apply[m
+ [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings <setting>[m

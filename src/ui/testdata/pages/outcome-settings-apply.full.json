@@ -1,0 +1,95 @@
+{
+  "schema": "station.page/v1",
+  "id": "outcome",
+  "command": "settings apply",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "changes",
+      "title": "Changes",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "power",
+            "mark": "ok",
+            "label": "power",
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "tart-launcher",
+            "mark": "ok",
+            "label": "tart-launcher",
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "power-before",
+      "title": "power before",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "fact": {
+            "key": "sleep",
+            "value": {
+              "kind": "text",
+              "text": "10"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "power-after",
+      "title": "power after",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "fact": {
+            "key": "sleep",
+            "value": {
+              "kind": "text",
+              "text": "0"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

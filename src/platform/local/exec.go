@@ -83,3 +83,38 @@ func (p played) LookPath(name string) (string, bool) {
 func (p played) Alive(int) bool               { return false }
 func (p played) Signal(int, system.Sig) error { return errors.ErrUnsupported }
 func (p played) Reap(string) int              { return 0 }
+
+func Probe(ctx context.Context, r Runner, c Cmd) (string, bool) {
+	// value: a read: the trimmed stdout, ok only when the command ran and
+	// exited 0.
+	out, err := r.Output(ctx, c)
+	if err != nil || out.ExitCode != 0 {
+		return strings.TrimSpace(out.Stdout), false
+	}
+	return strings.TrimSpace(out.Stdout), true
+}
+
+func Must(ctx context.Context, r Runner, c Cmd) (string, error) {
+	// invariant: a command that exits non-zero fails with its argv and the
+	// first line of why: "systemsetup -setremotelogin on: <why>".
+	out, err := r.Output(ctx, c)
+	if err != nil {
+		return "", err
+	}
+	if out.ExitCode == 0 {
+		return strings.TrimSpace(out.Stdout), nil
+	}
+	reason := firstLine(out.Stderr)
+	if reason == "" {
+		reason = firstLine(out.Stdout)
+	}
+	if reason == "" {
+		reason = "exited " + strconv.Itoa(out.ExitCode)
+	}
+	return strings.TrimSpace(out.Stdout), errors.New(strings.Join(append([]string{c.Name}, c.Args...), " ") + ": " + reason)
+}
+
+func firstLine(s string) string {
+	line, _, _ := strings.Cut(strings.TrimSpace(s), "\n")
+	return line
+}

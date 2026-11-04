@@ -17,18 +17,19 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
-	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	pagesecrets "github.com/jterrazz/studio-station/src/pages/secrets"
 	pageservices "github.com/jterrazz/studio-station/src/pages/services"
+	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
 	pageshortcuts "github.com/jterrazz/studio-station/src/pages/shortcuts"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/settings"
 )
 
 var (
@@ -57,7 +58,7 @@ func failure(id page.ID, command, message, hint string) page.Page {
 
 func Estate() []Fixture {
 	var out []Fixture
-	for _, f := range [][]Fixture{homes(), configs(), storages(), fleets(), machineLists(), imageLists(), secretLists(), tailnets(), serviceLists(), outcomes(), setups(), runs(), accountPages(), controlPages(), powerPages(), menubarPages()} {
+	for _, f := range [][]Fixture{homes(), settingsPages(), storages(), fleets(), machineLists(), imageLists(), secretLists(), tailnets(), serviceLists(), outcomes(), setups(), runs(), accountPages(), controlPages(), powerPages(), menubarPages()} {
 		out = append(out, f...)
 	}
 	return out
@@ -164,33 +165,40 @@ func unnamedSnapshot() pagehome.Overview {
 	return s
 }
 
-func configReports(state catalog.State) []config.Report {
-	items := catalog.ConfigItems
-	if len(items) > 6 {
-		items = items[:6]
-	}
-	out := make([]config.Report, 0, len(items))
-	for i, it := range items {
-		r := config.Report{Item: it, State: state, Applies: true}
-		if state != catalog.StatePending {
-			switch i % 3 {
-			case 1:
-				r.State, r.Detail = catalog.StateAbsent, ""
-			case 2:
-				r.State, r.Detail = catalog.StateDegraded, "differs from station's"
-			}
+// value: the settings of the estate's Mac in every Set by station state,
+// and one of each other group.
+func settingRows(reading bool) []settings.Row {
+	since := time.Date(2026, 11, 2, 10, 0, 0, 0, time.UTC)
+	states := []settings.State{settings.StateApplied, settings.StateChangedSince, settings.StateNotApplied, settings.StateOffHere, settings.StateNotForThisMachine}
+	out := make([]settings.Row, 0, len(catalog.ConfigItems))
+	for i, it := range catalog.ConfigItems {
+		r := settings.Row{Name: it.Name, Group: settings.GroupOf(it), State: states[i%len(states)]}
+		switch {
+		case reading:
+			r.State = settings.StateReading
+		case r.State == settings.StateApplied || r.State == settings.StateChangedSince:
+			r.Since = since
+		case r.State == settings.StateNotForThisMachine:
+			r.Why = settings.PlaceReason([]catalog.MachineKind{catalog.Linux})
+		}
+		if r.Group == settings.AlwaysOnMac && !reading {
+			r.State, r.Since = settings.StateNotApplied, time.Time{}
+		}
+		if r.State == settings.StateApplied || r.State == settings.StateChangedSince {
+			r.Where = "~/." + it.Name
 		}
 		out = append(out, r)
 	}
 	return out
 }
 
-func configs() []Fixture {
-	return states("config",
-		pageconfig.Items(configReports(catalog.StatePending), here()),
-		pageconfig.Items(nil, here()),
-		failure("config", "config", "the settings file is not valid JSON", "repair the JSON of ~/.config/station/settings.json"),
-		pageconfig.Items(configReports(catalog.StateOK), here()))
+func settingsPages() []Fixture {
+	now := time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)
+	return states("settings",
+		pagesettings.List(settingRows(true), now, false, here()),
+		pagesettings.List(nil, now, false, here()),
+		failure(pagesettings.ID, "settings", "the preferences file is not valid JSON", "repair the JSON of ~/.config/station/preferences.json"),
+		pagesettings.List(settingRows(false), now, false, here()))
 }
 
 func storageReport(pending bool) storage.Report {
@@ -351,9 +359,9 @@ func outcomes() []Fixture {
 		{Name: "mise", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "2026.10.1", Steps: []tools.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
 		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Method: catalog.MethodCask, Detail: "brew bundle exited 1"},
 	}
-	changes := []config.Change{
-		{Item: "power", Verb: "install", Result: catalog.StateOK, Before: []config.Fact{{Key: "sleep", Value: "10"}}, After: []config.Fact{{Key: "sleep", Value: "0"}}},
-		{Item: catalog.HypervisorLauncher, Verb: "install", Result: catalog.StateOK},
+	changes := []settings.Change{
+		{Item: "power", Verb: "apply", Result: catalog.StateOK, Before: []settings.KeyValue{{Key: "sleep", Value: "10"}}, After: []settings.KeyValue{{Key: "sleep", Value: "0"}}},
+		{Item: catalog.HypervisorLauncher, Verb: "apply", Result: catalog.StateOK},
 	}
 	cleaned := []storage.Outcome{
 		{Name: "homebrew", Result: catalog.StateOK, Freed: 26 * gb},
@@ -364,11 +372,11 @@ func outcomes() []Fixture {
 		pageapps.Outcomes("install", nil, pageapps.Run{}, here()),
 		failure("outcome", "apps install", "no app named \"jqq\"", "station apps for every app here"),
 		pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, here()))
-	out = append(out, states("outcome-config",
-		pending(pageconfig.Changes("install", changes, here())),
-		pageconfig.Changes("install", nil, here()),
-		failure("outcome", "config install", "power needs root", "run it again; it asks for your password"),
-		pageconfig.Changes("install", changes, here()))...)
+	out = append(out, states("outcome-settings-apply",
+		pending(pagesettings.Changes("apply", changes, here())),
+		pagesettings.Changes("apply", nil, here()),
+		failure("outcome", "settings apply", "power needs root", "sudo station settings apply power"),
+		pagesettings.Changes("apply", changes, here()))...)
 	return append(out, states("outcome-storage",
 		pending(pagestorage.Outcomes("clean", cleaned, here())),
 		pagestorage.Outcomes("clean", nil, here()),

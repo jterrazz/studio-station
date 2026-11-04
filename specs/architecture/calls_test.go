@@ -21,7 +21,7 @@ import (
 // shrinks; a word no call of its family takes fails the gate.
 func callWordsTolerated() map[string][]string {
 	return map[string][]string{
-		"settings": {"config", "run", "shell"},
+		"settings": {"run", "shell"},
 		"disk":     {"storage"},
 		"awake":    {"power"},
 		"accounts": {"secrets"},

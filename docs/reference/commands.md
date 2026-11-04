@@ -5,7 +5,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Section        | Answers                                                |
 | -------------- | ------------------------------------------------------ |
 | Rules          | What holds for every command                           |
-| Here           | `overview`, `apps`, `config`, `storage`                |
+| Here           | `overview`, `apps`, `settings`, `storage`              |
 | The fleet      | `machines`, `services`, `images`, `secrets`, `tailnet` |
 | Shortcuts      | `run git` and `run docker`                             |
 | The binary     | `setup`, `--version`, `help`                           |
@@ -13,18 +13,18 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Plumbing       | The hidden commands the machine runs for itself        |
 | Exit codes     | What 0, 1, 2 and 130 mean                              |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `config`, `storage`, `services`, `tailnet`, `secrets`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `storage`, `services`, `tailnet`, `secrets`, `accounts`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
 - Bare `station` opens the TUI on a terminal; piped, or with `--all` or `--json`, it prints `station overview`, exit 0.
-- A bare noun lists (`apps`, `config`, `storage`, `machines`, `services`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
+- A bare noun lists (`apps`, `settings`, `storage`, `machines`, `services`, `images`, `secrets`, `tailnet`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create --lifetime lasting --name api`).
 - The same verbs everywhere: `install`, `uninstall`, `upgrade`, except where a family has taken its v3 words (`apps`: `install`, `update`, `remove`). The only other words are the [hidden aliases](#hidden-aliases).
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
 - Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`. With `--json`, the same refusal or failure is also the `station.error/v1` document on stdout (`schema`, `type`, `code`, `subject`, `message`, `hint`, `fix`), the exit code unchanged. A question answered no is `Error: <what> kept: you said no`, exit 1.
 - A word station does not know is `Error: unknown command "<word>"` / `Hint: station help`, exit 2; so is `station help <word>`.
-- A word under `config` or `storage` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station storage go` is `"go" is a storage row: say what to do with it`, hint `station storage clean go` (`config install <item>`). Under `apps` the entry is a read: `station apps jq` is jq's detail.
+- A word under `storage` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station storage go` is `"go" is a storage row: say what to do with it`, hint `station storage clean go`. Under `apps` the entry is a read: `station apps jq` is jq's detail; under `settings`, a setting's name is its read: `station settings dns`.
 - `--on <machine>` runs any command below on another machine of the fleet, through its engine, and renders the answer here; see [Machines](machines.md#on-another-machine).
 - A value a command needs from you is never an argv flag when it could be a secret: a config item asks in a form on a terminal ([Configuration](configuration.md)).
 
@@ -55,15 +55,17 @@ The list sums This Mac first (`108 apps for this Mac · 3 updates · 100 not ins
 
 The refusals exit 2: `no app named "jqq"`, `dia lives on Macs only` (hint `--on <mac>`), `lazygit is not installed`, `infra is a server: station does not manage its apps`; an app whose method's manager is missing (`keynote needs mas, which is not installed`, hint `station apps install mas`) exits 1. An agent skill is an app: `station apps install frontend-design`. The model is [Apps and skills](tools-and-skills.md).
 
-### `station config`
+### `station settings`
 
 ```sh
-station config [--json]                         # the config items placed here
-station config install <item...>
-station config uninstall <item...> [--yes]
+station settings [--all] [--json]               # Set by station: applied, changed since, not applied, off here
+station settings <setting> [--json]             # one setting's detail
+station settings diff <setting>                 # what station would write against what is here
+station settings apply [<setting...>] [--yes]   # bare = every setting not applied or changed since that asks nothing
+station settings off <setting...> [--yes]       # off here: station neither applies nor watches it on this machine
 ```
 
-An item that needs values asks them in a form on a terminal and is refused elsewhere. Only reversible items uninstall. See [Configuration](configuration.md).
+A setting that needs values asks them in a form on a terminal and is refused elsewhere (exit 2); a value is never an argument. An apply over a setting changed since asks first, as yours is lost; off removes only what is still exactly station's, a change of yours stays. The Always-on Mac group is applied by name only. `station config`, `config install` and `config uninstall` are hidden aliases of `settings`, `settings apply` and `settings off` for one release. See [Configuration](configuration.md).
 
 ### `station storage`
 

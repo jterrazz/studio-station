@@ -9,7 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
-	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
+	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	pagetailnet "github.com/jterrazz/studio-station/src/pages/tailnet"
 )
@@ -17,21 +17,21 @@ import (
 const schema = "station.status/v1"
 
 type SnapshotJSON struct {
-	Schema      string                 `json:"schema"`
-	GeneratedAt string                 `json:"generated_at"`
-	Station     stationJSON            `json:"station"`
-	Machine     machineJSON            `json:"machine"`
-	System      systemJSON             `json:"system"`
-	Environment environmentJSON        `json:"environment"`
-	Workspace   workspaceJSON          `json:"workspace"`
-	Tools       []pageapps.ToolJSON    `json:"tools"`
-	Config      []pageconfig.ItemJSON  `json:"config"`
-	Setup       setupJSON              `json:"setup"`
-	Identity    []checkJSON            `json:"identity"`
-	Background  []jobJSON              `json:"background"`
-	Gateways    []checkJSON            `json:"gateways"`
-	Tailnet     pagetailnet.ObjectJSON `json:"tailnet"`
-	Power       *powerJSON             `json:"power,omitempty"`
+	Schema      string                  `json:"schema"`
+	GeneratedAt string                  `json:"generated_at"`
+	Station     stationJSON             `json:"station"`
+	Machine     machineJSON             `json:"machine"`
+	System      systemJSON              `json:"system"`
+	Environment environmentJSON         `json:"environment"`
+	Workspace   workspaceJSON           `json:"workspace"`
+	Tools       []pageapps.ToolJSON     `json:"tools"`
+	Config      []pagesettings.ItemJSON `json:"config"`
+	Setup       setupJSON               `json:"setup"`
+	Identity    []checkJSON             `json:"identity"`
+	Background  []jobJSON               `json:"background"`
+	Gateways    []checkJSON             `json:"gateways"`
+	Tailnet     pagetailnet.ObjectJSON  `json:"tailnet"`
+	Power       *powerJSON              `json:"power,omitempty"`
 }
 
 type powerJSON struct {
@@ -200,7 +200,7 @@ func SnapshotContract(s Overview) SnapshotJSON {
 			Strays:       pagestorage.StraysContract(s.Workspace.Strays),
 		},
 		Tools:      make([]pageapps.ToolJSON, 0, len(s.Tools)),
-		Config:     make([]pageconfig.ItemJSON, 0, len(s.Config)),
+		Config:     make([]pagesettings.ItemJSON, 0, len(s.Config)),
 		Setup:      setupJSON{State: string(s.Setup.State), Steps: make([]stepJSON, 0, len(s.Setup.Steps))},
 		Identity:   checks(s.Identity),
 		Background: jobs(s.Background),
@@ -221,7 +221,7 @@ func SnapshotContract(s Overview) SnapshotJSON {
 		body.Tools = append(body.Tools, pageapps.ToolObject(t))
 	}
 	for _, c := range s.Config {
-		body.Config = append(body.Config, pageconfig.ItemObject(c))
+		body.Config = append(body.Config, pagesettings.ItemObject(c))
 	}
 	for _, step := range s.Setup.Steps {
 		body.Setup.Steps = append(body.Setup.Steps, stepJSON{Name: step.Name, State: string(step.State), Detail: step.Detail})

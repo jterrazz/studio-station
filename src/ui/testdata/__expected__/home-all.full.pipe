@@ -38,4 +38,4 @@
 ○	frontend-design		skill	skills not installed · station apps install skills
 ◐	better-ui		skill	update available · station apps update better-ui
 # Config	1 ●	1 ◐
-◐	power	Always-on power policy	policy partly applied · station config install power
+◐	power	Always-on power policy	policy partly applied · station settings apply power

@@ -4,17 +4,11 @@ import (
 	"context"
 	"errors"
 	"github.com/jterrazz/studio-station/src/settings"
-	"io/fs"
-	"path"
 	"slices"
-	"strings"
 
-	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
-	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
-
-	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	schedule "github.com/jterrazz/studio-station/src/core/call/lanes"
+	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -24,35 +18,26 @@ const (
 )
 
 type Options struct {
-	Pool *schedule.Pool
-	Here catalog.MachineKind
-	// value: where the DNS profile is written, and what Time Machine skips.
-	DNSProfile       string
-	BackupExclusions []string
-	Defaults         map[string]map[string]string
-	Jobs             contract.Jobs
+	Here     catalog.MachineKind
+	Defaults map[string]map[string]string
+	// value: the Applier of every effect of the catalogue.
+	Appliers []settingscontract.Applier
 }
 
 type Service struct {
-	h      system.Host
-	items  []catalog.ConfigItem
-	byName map[string]catalog.ConfigItem
-	files  fs.FS
-	prefs  Prefs
-	o      Options
+	h        system.Host
+	items    []catalog.ConfigItem
+	byName   map[string]catalog.ConfigItem
+	o        Options
+	appliers settingscontract.Appliers
 }
 
-type Prefs struct {
-	Identity  setupcontract.IdentityPrefs
-	ShareList accountscontract.ShareListPrefs
-}
-
-func New(h system.Host, items []catalog.ConfigItem, files fs.FS, prefs Prefs, o Options) *Service {
+func New(h system.Host, items []catalog.ConfigItem, o Options) *Service {
 	byName := make(map[string]catalog.ConfigItem, len(items))
 	for _, it := range items {
 		byName[it.Name] = it
 	}
-	return &Service{h: h, items: items, byName: byName, files: files, prefs: prefs, o: o}
+	return &Service{h: h, items: items, byName: byName, o: o, appliers: settingscontract.NewAppliers(o.Appliers...)}
 }
 
 type (
@@ -76,6 +61,29 @@ func (s *Service) Placed() []catalog.ConfigItem {
 		}
 	}
 	return placed
+}
+
+func (s *Service) Items() []catalog.ConfigItem { return s.items }
+
+func (s *Service) Lives(it catalog.ConfigItem) bool { return slices.Contains(it.Places, s.o.Here) }
+
+func (s *Service) Needs(it catalog.ConfigItem) string {
+	if s.applies(it) {
+		return ""
+	}
+	return it.Requires
+}
+
+func (s *Service) Admit(name string, interactive bool) error {
+	found, err := s.Find([]string{name})
+	if err != nil {
+		return err
+	}
+	return s.admit(found[0], verbInstall, interactive)
+}
+
+func (s *Service) Apply(ctx context.Context, name string, values map[string]string, interactive bool) (Change, error) {
+	return s.Install(ctx, name, values, interactive)
 }
 
 func (s *Service) List(ctx context.Context) ([]Report, error) {
@@ -269,25 +277,10 @@ func (s *Service) applies(it catalog.ConfigItem) bool {
 	return ok
 }
 
-func (s *Service) home(p string) string {
-	if p == "~" {
-		return s.h.Env.Home()
-	}
-	if rest, ok := strings.CutPrefix(p, "~/"); ok {
-		return path.Join(s.h.Env.Home(), rest)
-	}
-	return p
-}
-
 func clone(in map[string]string) map[string]string {
 	out := make(map[string]string, len(in))
 	for k, v := range in {
 		out[k] = v
 	}
 	return out
-}
-
-func firstLine(s string) string {
-	line, _, _ := strings.Cut(strings.TrimSpace(s), "\n")
-	return line
 }
