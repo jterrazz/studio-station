@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "start",
+  "command": "engine start",
   "context": {
     "kind": "host"
   },
@@ -29,11 +29,11 @@
               "items": [
                 {
                   "kind": "text",
-                  "text": "running"
+                  "text": "already running"
                 },
                 {
                   "kind": "text",
-                  "text": "pid 812"
+                  "text": "v3.1.0"
                 }
               ]
             }

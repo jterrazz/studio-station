@@ -58,10 +58,11 @@ func refusesOn(path string) bool {
 		return false
 	}
 	switch words[0] {
-	case "shell", "completion", "help", "daemon", "guest", "engine":
+	case "shell", "completion", "help", "daemon", "guest":
 		return true
 	}
-	return len(words) > 1 && words[0] == "machines" && (words[1] == "supervise" || words[1] == "pipe")
+	return len(words) > 1 && (words[0] == "machines" && (words[1] == "supervise" || words[1] == "pipe") ||
+		words[0] == "engine" && (words[1] == "run" || words[1] == "attach"))
 }
 
 func RefuseOn(env Env) func(*cobra.Command, []string) error {
@@ -76,11 +77,6 @@ func RefuseOn(env Env) func(*cobra.Command, []string) error {
 			return nil
 		}
 		p := path(c)
-		if p == "stop" || p == "start" {
-			// invariant: the agent stop boots out or start bootstraps is this
-			// login's, so neither runs for another host.
-			return usage("station "+p+" acts on this host only", "ssh "+env.On.Machine+" station "+p)
-		}
 		if refusesOn(p) {
 			return usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
 		}

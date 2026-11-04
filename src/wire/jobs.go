@@ -38,7 +38,7 @@ func (j engineJob) Loaded(ctx context.Context) bool { return j.jobs.Read(ctx, j.
 
 func (j engineJob) Load(ctx context.Context) error { return booted(j.jobs.Load(ctx, j.ref)) }
 
-func (j engineJob) Restart(ctx context.Context) error { return booted(j.jobs.Restart(ctx, j.ref)) }
+func (j engineJob) Start(ctx context.Context) error { return booted(j.jobs.Start(ctx, j.ref)) }
 
 func (j engineJob) Stop(ctx context.Context) error { return booted(j.jobs.Stop(ctx, j.ref)) }
 

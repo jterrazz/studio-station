@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "start",
+  "command": "engine start",
   "context": {
     "kind": "host"
   },
@@ -29,28 +29,13 @@
               "items": [
                 {
                   "kind": "text",
-                  "text": "started"
+                  "text": "running"
                 },
                 {
                   "kind": "text",
                   "text": "v3.1.0"
-                },
-                {
-                  "kind": "text",
-                  "text": "pid 812"
                 }
               ]
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "api",
-            "mark": "ok",
-            "label": "api",
-            "detail": {
-              "kind": "text",
-              "text": "started (lasting, wish running)"
             }
           }
         }
@@ -58,7 +43,7 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 2
+          "n": 1
         }
       ]
     }

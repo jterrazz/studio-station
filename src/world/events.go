@@ -115,7 +115,8 @@ func (w *World) vm(name string) (*VM, error) {
 }
 
 // invariant: a Mac that goes down ends every run on it with nobody to read
-// how; its engine starts again at login, and finds no run to adopt.
+// how; its engine starts again at login, even one the owner stopped, and
+// finds no run to adopt.
 func reboot(w *World, args []string) error {
 	m, err := w.known(args[0])
 	if err != nil {
@@ -123,6 +124,9 @@ func reboot(w *World, args []string) error {
 	}
 	for _, v := range m.VMs {
 		v.PID, v.Ended = 0, nil
+	}
+	if m.Engine != nil {
+		m.Engine.Stopped, m.Engine.StartedAt = false, w.Now
 	}
 	return nil
 }

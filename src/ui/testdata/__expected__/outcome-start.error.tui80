@@ -1,3 +1,3 @@
- Error: the engine did not answer in 15s
- Hint: tail ~/.local/state/station/logs/engine.log
+ Error: the engine did not start: launchctl bootstrap exited 5
+ Hint: station engine
  r retry  ↑↓ move  enter detail  / filter  space fold  q quit  ? keys

@@ -10,10 +10,10 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
+	pageengine "github.com/jterrazz/studio-station/src/pages/engine"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
-	pageoutcome "github.com/jterrazz/studio-station/src/pages/outcome"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
 )
 
@@ -153,7 +153,7 @@ func openStation() page.Action {
 }
 
 func start() page.Action {
-	return page.Action{ID: ActionStart, Label: "Start station", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Terminal: true, Argv: []string{"start"}}}
+	return page.Action{ID: ActionStart, Label: "Start the engine", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Terminal: true, Argv: []string{"engine", "start"}}}
 }
 
 func stopAll(r Reading) page.Action {
@@ -166,17 +166,14 @@ func stopAll(r Reading) page.Action {
 			}
 			host = h.Name
 			for _, vm := range h.VMs {
-				switch {
-				case vm.Lifetime == machines.Temporary:
-					w.VMs = append(w.VMs, engine.Stopped{Name: vm.Name, Lifetime: string(vm.Lifetime), Result: engine.ResultDeleted})
-				case vm.State == machines.Running:
+				if vm.State == machines.Running {
 					w.VMs = append(w.VMs, engine.Stopped{Name: vm.Name, Lifetime: string(vm.Lifetime), Result: engine.ResultStopped})
 				}
 			}
 		}
 	}
-	confirm := pageoutcome.StopConfirm(w, host)
-	return page.Action{ID: ActionStopAll, Label: "Stop everything", On: page.OnPage, Priority: 3, Mutates: true, Confirm: &confirm, Run: &page.Run{Call: CallStop, In: map[string]string{"Confirm": "yes"}}}
+	confirm := pageengine.StopConfirm(w, host)
+	return page.Action{ID: ActionStopAll, Label: "Stop everything", On: page.OnPage, Priority: 3, Mutates: true, Confirm: &confirm, Run: &page.Run{Call: CallStop, In: map[string]string{"Confirm": "yes", "By": "the menu bar"}}}
 }
 
 // invariant: the Power switch is the session row's action, awake with its

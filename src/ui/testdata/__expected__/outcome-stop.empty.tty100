@@ -1,7 +1,7 @@
- station stop                                                                   host · unregistered
+ station engine stop                                                            host · unregistered
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
  Changes
-   ● engine  already stopped
+   ● engine  the engine was already stopped
 
  → station engine start

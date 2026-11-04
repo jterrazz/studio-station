@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -24,13 +25,12 @@ const (
 type ControlMachines interface {
 	Records() ([]machines.VMRecord, error)
 	StopDirect(ctx context.Context, name string) error
-	Remove(ctx context.Context, name string) (machines.DeleteReport, error)
 }
 
 type Job interface {
 	Loaded(ctx context.Context) bool
 	Load(ctx context.Context) error
-	Restart(ctx context.Context) error
+	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
 }
 
@@ -40,10 +40,14 @@ type ControlOptions struct {
 	Here     catalog.MachineKind
 	HereName string
 	State    string
+	// value: this station's version, which a reading compares with the engine's.
+	Version string
+	// value: where a stop the owner asks is kept, so a reading names it.
+	Marks StopMarks
 }
 
 type Control struct {
-	// value: station stop and station start: the one daemon of this host, its
+	// value: station engine stop and start: the one engine of this Mac, its
 	// launchd agent and the VMs it supervises.
 	h   system.Host
 	c   Peer
@@ -66,21 +70,17 @@ type OffHostError struct {
 	Here catalog.MachineKind
 }
 
-func (e *OffHostError) Error() string { return "station " + e.Verb + " runs on a host; here is a VM" }
+func (e *OffHostError) Error() string {
+	return "station engine " + e.Verb + " runs on a host; here is a VM"
+}
 
 type StuckError struct{ VM string }
 
 func (e *StuckError) Error() string { return e.VM + " did not stop; the engine keeps running" }
 
-type NoAnswerError struct{ Wait time.Duration }
-
-func (e *NoAnswerError) Error() string {
-	return "the engine did not answer in " + strconv.Itoa(int(e.Wait.Seconds())) + "s"
-}
-
 type BootError struct {
 	Message string
-	// value: the command line the owner types to read the daemon's job.
+	// value: the command line the owner types to read the engine's job.
 	See   string
 	Cause error
 }
@@ -93,13 +93,49 @@ func (c *Control) Check(verb string) error {
 	if c.o.Here != catalog.Host {
 		return &OffHostError{Verb: verb, Here: c.o.Here}
 	}
-	if _, err := c.h.FS.Stat(c.plist()); errors.Is(err, fs.ErrNotExist) {
+	if !c.installed() {
 		return &NotInstalledError{}
 	}
 	return nil
 }
 
-func (c *Control) plist() string { return catalog.EnginePlist(c.h.Env.Home()) }
+func (c *Control) installed() bool {
+	_, err := c.h.FS.Stat(catalog.EnginePlist(c.h.Env.Home()))
+	return !errors.Is(err, fs.ErrNotExist)
+}
+
+func (c *Control) Read(ctx context.Context) (Reading, error) {
+	// invariant: a reading never fails for the engine's state: an engine that
+	// does not answer is stopped (its agent kept) or not installed.
+	r := Reading{Station: c.o.Version}
+	hello, err := c.c.Hello(ctx)
+	if err != nil {
+		r.State = EngineNotInstalled
+		if c.installed() {
+			r.State = EngineStopped
+			if c.o.Marks != nil {
+				r.Stopped, _ = c.o.Marks.Read()
+			}
+		}
+		return r, nil
+	}
+	r.State, r.Version = EngineRunning, hello.Version
+	if !hello.StartedAt.IsZero() {
+		r.Up = c.h.Clock.Now().Sub(hello.StartedAt)
+	}
+	if views, err := c.c.VMs(ctx); err == nil {
+		for _, v := range views {
+			if v.State == StateRunning {
+				r.VMs++
+			}
+		}
+	}
+	if v, err := c.c.Power(ctx); err == nil && v.Session != nil {
+		until := v.Session.Until
+		r.AwakeUntil = &until
+	}
+	return r, nil
+}
 
 type Work struct {
 	Answering bool
@@ -109,6 +145,8 @@ type Work struct {
 func (w Work) Empty() bool { return len(w.VMs) == 0 }
 
 func (c *Control) Plan(ctx context.Context) (Work, error) {
+	// invariant: what a stop ends is every VM that runs, whatever its lifetime:
+	// a stop keeps every disk, and only a delete destroys.
 	records, err := c.m.Records()
 	if err != nil {
 		return Work{}, err
@@ -126,26 +164,24 @@ func (c *Control) Plan(ctx context.Context) (Work, error) {
 		}
 	}
 	for _, r := range records {
-		if !running[r.Name] {
-			continue
+		if running[r.Name] {
+			w.VMs = append(w.VMs, Stopped{Name: r.Name, Lifetime: string(r.Lifetime), Result: ResultStopped})
 		}
-		s := Stopped{Name: r.Name, Lifetime: string(r.Lifetime), Result: ResultStopped}
-		if r.Lifetime == machines.Temporary {
-			s.Result = ResultDeleted
-		}
-		w.VMs = append(w.VMs, s)
 	}
 	return w, nil
 }
 
 type StopReport struct {
 	VMs []Stopped
-	// value: "ended" (the daemon ended a session), "reset" (the CLI set a dead
-	// daemon's clamshell back to normal), or "" (nothing held, or no Power here).
+	// value: "ended" (the engine ended the Awake session), "reset" (the CLI
+	// set a dead engine's clamshell back to normal), or "" (nothing held, or
+	// no Power here).
 	Power string
+	// value: the engine stopped sharing the ports of the VMs it stopped.
+	Sharing bool
 	// value: "stopped" (booted out now), "already stopped", or "kept" (a VM
-	// would not stop, so the daemon still supervises it).
-	Daemon string
+	// would not stop, so the engine still supervises it).
+	Engine string
 }
 
 const (
@@ -154,38 +190,38 @@ const (
 )
 
 const (
-	DaemonStopped = "stopped"
-	DaemonAlready = "already stopped"
-	DaemonKept    = "kept"
+	EngineHalted  = "stopped"
+	EngineAlready = "already stopped"
+	EngineKept    = "kept"
 )
 
-func (c *Control) Stop(ctx context.Context, w Work) (StopReport, error) {
+func (c *Control) Stop(ctx context.Context, w Work, by string) (StopReport, error) {
 	var r StopReport
 	if w.Answering {
 		all, err := c.c.StopAll(ctx)
 		if err != nil {
 			return r, err
 		}
-		r.VMs = all.VMs
+		r.VMs, r.Sharing = all.VMs, all.SharingEnded
 		if all.PowerEnded {
 			r.Power = PowerEnded
 		}
 	} else {
 		r.VMs = c.stopDirect(ctx, w)
-		// invariant: a clamshell mask a dead daemon left is reset here, by the
-		// same call the daemon makes, so a stop never leaves the lid held.
+		// invariant: a clamshell mask a dead engine left is reset here, by the
+		// same call the engine makes, so a stop never leaves the lid held.
 		if c.o.Power != nil && c.o.Power.Clamshell(false) == nil {
 			r.Power = PowerReset
 		}
 	}
 	for _, v := range r.VMs {
 		if v.Result == ResultFailed {
-			r.Daemon = DaemonKept
+			r.Engine = EngineKept
 			return r, &StuckError{VM: v.Name}
 		}
 	}
 	if !w.Answering && !c.job.Loaded(ctx) {
-		r.Daemon = DaemonAlready
+		r.Engine = EngineAlready
 		return r, nil
 	}
 	if err := c.job.Stop(ctx); err != nil {
@@ -196,23 +232,20 @@ func (c *Control) Stop(ctx context.Context, w Work) (StopReport, error) {
 			return r, err
 		}
 	}
-	r.Daemon = DaemonStopped
+	r.Engine = EngineHalted
+	if c.o.Marks != nil {
+		_ = c.o.Marks.Write(StopMark{At: c.h.Clock.Now().UTC().Truncate(time.Second), By: by})
+	}
 	return r, nil
 }
 
-// invariant: with the daemon down, a VM whose run outlived it is ended here,
-// by the same path a daemon-less stop and delete take, so nothing station
-// started is left running once stop returns.
+// invariant: with the engine down, a VM whose run outlived it is ended here,
+// by the same path an engine-less stop takes, so nothing station started is
+// left running once stop returns.
 func (c *Control) stopDirect(ctx context.Context, w Work) []Stopped {
 	out := make([]Stopped, 0, len(w.VMs))
 	for _, v := range w.VMs {
-		var err error
-		if v.Result == ResultDeleted {
-			_, err = c.m.Remove(ctx, v.Name)
-		} else {
-			err = c.m.StopDirect(ctx, v.Name)
-		}
-		if err != nil {
+		if err := c.m.StopDirect(ctx, v.Name); err != nil {
 			v.Result, v.Detail = ResultFailed, err.Error()
 		}
 		out = append(out, v)
@@ -224,45 +257,51 @@ type StartReport struct {
 	Already bool
 	Version string
 	PID     int
-	Back    []string
 }
+
+type StartFailedError struct {
+	// value: the last line the engine's log holds, or the job manager's
+	// answer when the log holds none.
+	Last  string
+	Cause error
+}
+
+func (e *StartFailedError) Error() string { return "the engine did not start" }
+
+func (e *StartFailedError) Unwrap() error { return e.Cause }
 
 func (c *Control) Start(ctx context.Context) (StartReport, error) {
 	if p, err := c.c.Hello(ctx); err == nil {
 		return StartReport{Already: true, Version: p.Version, PID: p.PID}, nil
 	}
-	if c.job.Loaded(ctx) {
-		if err := c.job.Restart(ctx); err != nil {
-			return StartReport{}, err
+	if !c.job.Loaded(ctx) {
+		if err := c.job.Load(ctx); err != nil {
+			return StartReport{}, c.failed(err)
 		}
-	} else if err := c.job.Load(ctx); err != nil {
-		return StartReport{}, err
+	}
+	if err := c.job.Start(ctx); err != nil {
+		return StartReport{}, c.failed(err)
 	}
 	for waited := time.Duration(0); waited < startWait; waited += controlPoll {
 		if p, err := c.c.Hello(ctx); err == nil {
-			r := StartReport{Version: p.Version, PID: p.PID}
-			r.Back = c.back(ctx)
-			return r, nil
+			return StartReport{Version: p.Version, PID: p.PID}, nil
 		}
 		if err := c.h.Clock.Sleep(ctx, controlPoll); err != nil {
 			return StartReport{}, err
 		}
 	}
-	return StartReport{}, &NoAnswerError{Wait: startWait}
+	return StartReport{}, c.failed(errors.New("it did not answer in " + strconv.Itoa(int(startWait.Seconds())) + "s"))
 }
 
-func (c *Control) back(ctx context.Context) []string {
-	records, _ := c.m.Records()
-	views, _ := c.c.VMs(ctx)
-	var out []string
-	for _, r := range records {
-		for _, v := range views {
-			if v.Name == r.Name && r.Lifetime == machines.Lasting && v.State == StateRunning {
-				out = append(out, r.Name)
-			}
+func (c *Control) failed(cause error) error {
+	last := cause.Error()
+	if data, err := c.h.FS.ReadFile(LogPath(c.o.State)); err == nil {
+		lines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
+		if line := strings.TrimSpace(lines[len(lines)-1]); line != "" {
+			last = line
 		}
 	}
-	return out
+	return &StartFailedError{Last: last, Cause: cause}
 }
 
 func (c *Control) answers(ctx context.Context) bool {

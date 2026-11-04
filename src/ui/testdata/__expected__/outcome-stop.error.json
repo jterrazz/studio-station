@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "stop",
+  "command": "engine stop",
   "context": {
     "kind": "host"
   },
@@ -21,57 +21,31 @@
       "items": [
         {
           "row": {
-            "id": "linux-1",
-            "mark": "ok",
-            "label": "linux-1",
-            "detail": {
-              "kind": "text",
-              "text": "deleted (temporary)"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "api",
+            "id": "engine",
             "mark": "broken",
-            "label": "api",
+            "label": "engine",
             "detail": {
               "kind": "list",
               "items": [
                 {
                   "kind": "text",
-                  "text": "did not stop"
+                  "text": "stopped 1 VM (linux-1)"
                 },
                 {
                   "kind": "text",
-                  "text": "tart stop exited 1"
+                  "text": "api did not stop"
+                },
+                {
+                  "kind": "text",
+                  "text": "the engine keeps running"
                 }
               ]
             },
             "reason": "failing"
           }
-        },
-        {
-          "row": {
-            "id": "engine",
-            "mark": "absent",
-            "label": "engine",
-            "detail": {
-              "kind": "text",
-              "text": "kept running: api did not stop"
-            }
-          }
         }
       ],
       "counts": [
-        {
-          "mark": "ok",
-          "n": 1
-        },
-        {
-          "mark": "absent",
-          "n": 1
-        },
         {
           "mark": "broken",
           "n": 1

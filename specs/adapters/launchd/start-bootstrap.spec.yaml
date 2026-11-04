@@ -1,32 +1,27 @@
-description: 'start bootstraps the agent and waits for the daemon; running, it only says so'
+description: 'engine start bootstraps the agent, kicks it and waits for the engine; running, it only says so'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/launchctl/
 env: engine
 runs:
-    - command: 'start'
+    - command: 'engine start'
       exit: 1
       stderr: |
           Error: the engine is not installed
           Hint: station setup
-    - command: '--version > /dev/null; /bin/mkdir -p Library/LaunchAgents; : > Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" start | /usr/bin/sed -E ''s/pid [0-9]+/pid N/; s/started · [^ ]+ ·/started · V ·/''; "$STATION" start | /usr/bin/sed -E ''s/pid [0-9]+/pid N/; s/started · [^ ]+ ·/started · V ·/''; /usr/bin/grep -c "^launchctl bootstrap gui/[0-9]* $HOME/Library/LaunchAgents/com.jterrazz.station.engine.plist" .calls; "$STATION" stop > /dev/null'
+    - command: '--version > /dev/null; /bin/mkdir -p Library/LaunchAgents; : > Library/LaunchAgents/com.jterrazz.station.engine.plist; "$STATION" engine start | /usr/bin/sed -E ''s/running · .*/running · V/''; "$STATION" engine start | /usr/bin/sed -E ''s/running · .*/running · V/''; /usr/bin/grep -c "^launchctl bootstrap gui/[0-9]* $HOME/Library/LaunchAgents/com.jterrazz.station.engine.plist" .calls; "$STATION" engine stop > /dev/null'
       exit: 0
       stdout: |
-          ●	engine	started · V · pid N
-          ●	engine	running · pid N
+          ●	engine	running · V
+          ●	engine	already running · V
           1
-    - command: '--version > /dev/null; : > launchctl.loaded; "$STATION" start | /usr/bin/sed -E ''s/pid [0-9]+/pid N/; s/started · [^ ]+ ·/started · V ·/''; /usr/bin/grep -c "^launchctl kickstart -k gui/" .calls; "$STATION" stop > /dev/null'
+    - command: '--version > /dev/null; : > launchctl.loaded; "$STATION" engine start | /usr/bin/sed -E ''s/running · .*/running · V/''; /usr/bin/grep -c "^launchctl kickstart gui/" .calls; "$STATION" engine stop > /dev/null'
       exit: 0
       stdout: |
-          ●	engine	started · V · pid N
-          1
-    - command: '--version > /dev/null; : > launchctl.silent; "$STATION" start'
+          ●	engine	running · V
+          2
+    - command: '--version > /dev/null; : > launchctl.silent; "$STATION" engine start'
       exit: 1
       stderr: |
-          Error: the engine did not answer in 15s
-          Hint: tail ~/.local/state/station/logs/engine.log
-    - command: 'start --on mac-mini'
-      exit: 2
-      stderr: |
-          Error: station start acts on this host only
-          Hint: ssh mac-mini station start
+          Error: the engine did not start: it did not answer in 15s
+          Hint: station engine

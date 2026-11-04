@@ -10,6 +10,7 @@ import (
 	"maps"
 	"net"
 	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"time"
@@ -128,6 +129,7 @@ func (m *worldMac) slice() world.Mac {
 func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
 func (m *worldMac) host(h system.Host) system.Host {
+	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home())}
 	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User}
 	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
@@ -193,6 +195,75 @@ func (m *worldMac) notifier() engine.Notifier {
 }
 
 func (m *worldMac) engineFrom(start func() *engine.Daemon) { m.start = start }
+
+func (m *worldMac) engineVersion() string {
+	if e := m.slice().Engine; e != nil {
+		return e.Version
+	}
+	return ""
+}
+
+func (m *worldMac) engineStarted() time.Time {
+	if e := m.slice().Engine; e != nil {
+		return e.StartedAt
+	}
+	return time.Time{}
+}
+
+// invariant: a stop the owner asked is kept on the Mac's engine of the
+// world, as the real one keeps it beside its socket.
+func (m *worldMac) stopMarks() engine.StopMarks { return worldMarks{m: m} }
+
+type worldMarks struct{ m *worldMac }
+
+func (w worldMarks) Read() (engine.StopMark, bool) {
+	e := w.m.slice().Engine
+	if e == nil || e.StoppedAt.IsZero() {
+		return engine.StopMark{}, false
+	}
+	return engine.StopMark{At: e.StoppedAt, By: e.StoppedBy}, true
+}
+
+func (w worldMarks) Write(mark engine.StopMark) error {
+	w.m.run.w.Lock()
+	defer w.m.run.w.Unlock()
+	if e := w.m.run.w.Mac(w.m.name).Engine; e != nil {
+		e.StoppedAt, e.StoppedBy = mark.At, mark.By
+	}
+	return nil
+}
+
+// invariant: the engine's job definition is the job manager's file; in a
+// world it is there while the Mac's engine is set up, whatever the run's
+// home holds.
+type worldFS struct {
+	system.FS
+	m     *worldMac
+	plist string
+}
+
+func (f worldFS) Stat(p string) (fs.FileInfo, error) {
+	if p != f.plist {
+		return f.FS.Stat(p)
+	}
+	f.m.run.w.Lock()
+	mac := f.m.run.w.Mac(f.m.name)
+	set := mac.Engine != nil || mac.Jobs[catalog.EngineLabel] != nil
+	f.m.run.w.Unlock()
+	if !set {
+		return nil, &fs.PathError{Op: "stat", Path: p, Err: fs.ErrNotExist}
+	}
+	return plistInfo{name: filepath.Base(p)}, nil
+}
+
+type plistInfo struct{ name string }
+
+func (i plistInfo) Name() string     { return i.name }
+func (plistInfo) Size() int64        { return 0 }
+func (plistInfo) Mode() fs.FileMode  { return 0o644 }
+func (plistInfo) ModTime() time.Time { return time.Time{} }
+func (plistInfo) IsDir() bool        { return false }
+func (plistInfo) Sys() any           { return nil }
 
 func (m *worldMac) macs() remotecontract.EndpointDialer { return worldDialer{r: m.run} }
 

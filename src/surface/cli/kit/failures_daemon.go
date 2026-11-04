@@ -76,7 +76,6 @@ func controlFailure(err error) (*fail.Error, bool) {
 	var notInstalled *engine.NotInstalledError
 	var offHost *engine.OffHostError
 	var stuck *engine.StuckError
-	var noAnswer *engine.NoAnswerError
 	var boot *engine.BootError
 	switch {
 	case errors.As(err, &notInstalled):
@@ -85,8 +84,6 @@ func controlFailure(err error) (*fail.Error, bool) {
 		return usage(offHost.Error(), "ssh <host> station "+offHost.Verb), true
 	case errors.As(err, &stuck):
 		return failed(stuck.Error(), "station machines delete "+stuck.VM, err), true
-	case errors.As(err, &noAnswer):
-		return failed(noAnswer.Error(), "tail ~/.local/state/station/logs/engine.log", err), true
 	case errors.As(err, &boot):
 		return failed(boot.Error(), boot.See, err), true
 	}

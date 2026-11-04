@@ -37,6 +37,7 @@ type Peer interface {
 	Hello(ctx context.Context) (Hello, error)
 	VMs(ctx context.Context) ([]VMView, error)
 	StopAll(ctx context.Context) (StopAll, error)
+	Power(ctx context.Context) (power.View, error)
 }
 
 type DownError struct{}
@@ -56,6 +57,8 @@ func (e *HostOnlyError) Error() string {
 }
 
 func SocketPath(state string) string { return path.Join(state, "engine.sock") }
+
+func LogPath(state string) string { return path.Join(state, "logs", "engine.log") }
 
 func ChildrenDir(state string) string { return path.Join(state, "children") }
 
@@ -139,8 +142,13 @@ func (d *Daemon) VM(ctx context.Context, verb, vm string) error {
 func (d *Daemon) Accounts(ctx context.Context) AccountsView { return d.accounts(ctx) }
 
 func (d *Daemon) StopAll(ctx context.Context) StopAll {
+	shared := d.sharedVMs()
 	vms := d.stopAll(ctx)
-	return StopAll{VMs: vms, PowerEnded: d.power.Stop()}
+	all := StopAll{VMs: vms, PowerEnded: d.power.Stop()}
+	for _, v := range vms {
+		all.SharingEnded = all.SharingEnded || v.Result == ResultStopped && shared[v.Name]
+	}
+	return all
 }
 
 func (d *Daemon) Power() power.View { return d.power.View() }

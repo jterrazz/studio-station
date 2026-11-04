@@ -8,6 +8,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/remote/api"
@@ -53,6 +54,12 @@ func (e engineAPI) StopAll(ctx context.Context) (engine.StopAll, error) {
 	var all engine.StopAll
 	err := e.do(ctx, process.StopAll, nil, &all)
 	return all, err
+}
+
+func (e engineAPI) Power(ctx context.Context) (power.View, error) {
+	var v power.View
+	err := e.do(ctx, process.Power, nil, &v)
+	return v, err
 }
 
 func word(e *fail.Error) (message, hint string) {

@@ -19,6 +19,8 @@ type PowerSlept struct {
 type StopAll struct {
 	VMs        []Stopped `json:"vms"`
 	PowerEnded bool      `json:"power_ended"`
+	// value: a port of a VM it stopped was shared, and is no more.
+	SharingEnded bool `json:"sharing_ended,omitempty"`
 }
 
 type Notice struct {

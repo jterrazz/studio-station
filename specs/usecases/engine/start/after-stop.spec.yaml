@@ -1,0 +1,13 @@
+description: 'start runs the engine again; the VMs the stop stopped stay stopped'
+env: engine-stopped
+runs:
+    - command: 'engine start'
+      exit: 0
+      stdout: |
+          ●	engine	running · {{string}}
+    - command: 'machines --here'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	host			online	-	2 VMs
+          ○	api	linux	jterrazz-macbook-pro	lasting	stopped	-	4 cpus · 8 GB · 50.0 GB
+          ✗	linux-1	linux	jterrazz-macbook-pro	temporary	stale	-	station machines delete linux-1

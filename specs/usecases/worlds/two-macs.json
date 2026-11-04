@@ -3,7 +3,9 @@
     "here": "jterrazz-macbook-pro",
     "macs": {
         "jterrazz-macbook-pro": {
-            "engine": {},
+            "engine": {
+                "started_at": "2026-11-01T10:00:00Z"
+            },
             "power": {
                 "Lid": "open",
                 "Source": "ac",
@@ -18,7 +20,9 @@
                 },
                 "vm_user": "admin"
             },
-            "images": ["ghcr.io/jterrazz/station-linux:1"],
+            "images": [
+                "ghcr.io/jterrazz/station-linux:1"
+            ],
             "vms": {
                 "linux-1": {
                     "kept": {
@@ -54,7 +58,9 @@
             }
         },
         "jterrazz-mac-mini": {
-            "engine": {},
+            "engine": {
+                "started_at": "2026-10-23T09:00:00Z"
+            },
             "power": {
                 "Source": "ac"
             },
@@ -62,7 +68,9 @@
                 "here": "jterrazz-mac-mini",
                 "vm_user": "admin"
             },
-            "images": ["ghcr.io/jterrazz/station-linux:1"],
+            "images": [
+                "ghcr.io/jterrazz/station-linux:1"
+            ],
             "vms": {
                 "infra": {
                     "kept": {

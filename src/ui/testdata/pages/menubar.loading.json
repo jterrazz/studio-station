@@ -252,7 +252,7 @@
         "lines": [
           {
             "kind": "text",
-            "text": "the engine stays stopped until station engine start or the next login"
+            "text": "Awake ends, and the engine stays stopped until station engine start or the next login"
           }
         ],
         "danger": true,
@@ -264,6 +264,7 @@
       "run": {
         "call": "engine.stop",
         "in": {
+          "By": "the menu bar",
           "Confirm": "yes"
         }
       }

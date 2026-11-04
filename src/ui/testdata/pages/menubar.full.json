@@ -720,11 +720,11 @@
         "lines": [
           {
             "kind": "text",
-            "text": "linux-1 (temporary) will be deleted"
+            "text": "linux-1 will stop; its disk is kept"
           },
           {
             "kind": "text",
-            "text": "the engine stays stopped until station engine start or the next login"
+            "text": "Awake ends, and the engine stays stopped until station engine start or the next login"
           }
         ],
         "danger": true,
@@ -736,6 +736,7 @@
       "run": {
         "call": "engine.stop",
         "in": {
+          "By": "the menu bar",
           "Confirm": "yes"
         }
       }

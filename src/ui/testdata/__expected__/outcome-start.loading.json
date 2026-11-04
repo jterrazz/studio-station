@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "start",
+  "command": "engine start",
   "context": {
     "kind": "host"
   },
@@ -28,22 +28,12 @@
               "kind": "none"
             }
           }
-        },
-        {
-          "row": {
-            "id": "api",
-            "mark": "pending",
-            "label": "api",
-            "detail": {
-              "kind": "none"
-            }
-          }
         }
       ],
       "counts": [
         {
           "mark": "pending",
-          "n": 2
+          "n": 1
         }
       ]
     }

@@ -58,6 +58,12 @@ func (w *Writer) Finding(m page.Mark, parts ...string) error {
 	return err
 }
 
+func (w *Writer) Now(command string) {
+	w.settle()
+	c := Detect(w.stderr, w.env, false)
+	_, _ = io.WriteString(w.colored(w.stderr, c), tty.NowLine(command, c.Mode == TTY, c.Dark))
+}
+
 func (w *Writer) Note(text string) {
 	w.settle()
 	_, _ = io.WriteString(w.stderr.W, text+"\n")

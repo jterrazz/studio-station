@@ -175,7 +175,7 @@ final class ClientTests: XCTestCase {
         let engine = try answered("mb-stop", "", hangUp: true)
         defer { engine.stop() }
         let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(try fixtureAction("stop-all"))
-        XCTAssertEqual(engine.received, [#"{"call":"engine.stop","id":"1","in":{"Confirm":"yes"},"v":2}"#])
+        XCTAssertEqual(engine.received, [#"{"call":"engine.stop","id":"1","in":{"By":"the menu bar","Confirm":"yes"},"v":2}"#])
         XCTAssertNil(status)
     }
 
@@ -188,7 +188,7 @@ final class ClientTests: XCTestCase {
         XCTAssertNil(started)
         XCTAssertEqual(calls.all, [
             ["/usr/bin/open", "-a", "Terminal", "/u/bin/station"],
-            ["/usr/bin/osascript", "-e", #"tell application "Terminal" to do script "'/u/bin/station' 'start'""#, "-e", #"tell application "Terminal" to activate"#],
+            ["/usr/bin/osascript", "-e", #"tell application "Terminal" to do script "'/u/bin/station' 'engine' 'start'""#, "-e", #"tell application "Terminal" to activate"#],
         ])
     }
 }

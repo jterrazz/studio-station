@@ -1,7 +1,5 @@
- station stop                                                                   host · unregistered
+ station engine stop                                                            host · unregistered
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
  Changes
-   ● linux-1  deleted (temporary)
-   ✗ api      did not stop · tart stop exited 1
-   ○ engine   kept running: api did not stop
+   ✗ engine  stopped 1 VM (linux-1) · api did not stop · the engine keeps running

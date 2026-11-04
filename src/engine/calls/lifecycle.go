@@ -2,29 +2,46 @@ package calls
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/engine"
 )
+
+type ReadIn struct{}
+
+var Read = call.Call[Deps, ReadIn, engine.Reading]{
+	Name: "engine.read", Where: call.AtTarget, Applies: Applies,
+	Run: func(ctx context.Context, d Deps, _ ReadIn, _ call.Progress) (engine.Reading, error) {
+		return d.Control.Read(ctx)
+	},
+}
 
 type StartIn struct{}
 
 var Start = call.Call[Deps, StartIn, engine.StartReport]{
-	Name: "engine.start", Where: call.InProcess, Applies: machine.Anywhere,
+	Name: "engine.start", Where: call.AtTarget, Applies: Applies,
+	Errors: []fail.Code{StartFailed},
 	Run: func(ctx context.Context, d Deps, _ StartIn, _ call.Progress) (engine.StartReport, error) {
 		if err := d.Control.Check("start"); err != nil {
 			return engine.StartReport{}, err
 		}
-		return d.Control.Start(ctx)
+		report, err := d.Control.Start(ctx)
+		if failed := new(engine.StartFailedError); errors.As(err, &failed) {
+			return report, &fail.Error{Type: fail.Failed, Code: StartFailed, Subject: "engine", Detail: map[string]string{"last": failed.Last}, Cause: err}
+		}
+		return report, err
 	},
 }
 
-const Deleted = engine.ResultDeleted
-
-type StopIn struct{ Confirm string }
+type StopIn struct {
+	Confirm string
+	// value: what asked the stop, as a reading names it: the command, or
+	// the menu bar.
+	By string
+}
 
 type StopOut struct {
 	// value: what the stop ends; handed back with the confirmation it asks,
@@ -35,11 +52,11 @@ type StopOut struct {
 }
 
 var Stop = call.Call[Deps, StopIn, StopOut]{
-	Name: "engine.stop", Where: call.InProcess, Applies: machine.Anywhere, Confirm: confirm.StopEngine,
+	Name: "engine.stop", Where: call.AtTarget, Applies: Applies, Confirm: confirm.StopEngine,
 	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in StopIn, _ call.Progress) (StopOut, error) {
 		// invariant: an engine running no VM stops without a question; one
-		// running VMs asks first, since the temporary ones are deleted.
+		// running VMs asks first, since they stop with it.
 		if err := d.Control.Check("stop"); err != nil {
 			return StopOut{}, err
 		}
@@ -52,7 +69,11 @@ var Stop = call.Call[Deps, StopIn, StopOut]{
 				return StopOut{Work: work}, refused
 			}
 		}
-		report, err := d.Control.Stop(ctx, work)
+		by := in.By
+		if by == "" {
+			by = "station engine stop"
+		}
+		report, err := d.Control.Stop(ctx, work, by)
 		return StopOut{Work: work, Report: &report}, err
 	},
 }

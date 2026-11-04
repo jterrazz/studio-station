@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "stop",
+  "command": "engine stop",
   "context": {
     "kind": "host"
   },
@@ -25,8 +25,13 @@
             "mark": "ok",
             "label": "engine",
             "detail": {
-              "kind": "text",
-              "text": "already stopped"
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "the engine was already stopped"
+                }
+              ]
             }
           }
         }

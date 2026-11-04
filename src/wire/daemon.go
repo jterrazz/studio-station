@@ -53,7 +53,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		tailnet = m.world.tailnet()
 	}
 	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
-		State: m.paths.State, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
+		State: m.paths.State, Here: m.kind, Version: m.engineVersion(), StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: lends, Peer: m.engineAPI(),
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
@@ -62,6 +62,22 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	lends.s = m.secretsVia(d)
 	d.Host(m.engineServer(d, registry))
 	return d
+}
+
+// value: what the engine of a world Mac says of itself, the version it runs
+// and when it started; outside a world, this binary's, started now.
+func (m machine) engineVersion() string {
+	if m.world != nil && m.world.engineVersion() != "" {
+		return m.world.engineVersion()
+	}
+	return Version()
+}
+
+func (m machine) engineStarted() time.Time {
+	if m.world != nil {
+		return m.world.engineStarted()
+	}
+	return time.Time{}
 }
 
 func engineRunCommand(env kit.Env, m machine) *cobra.Command {
