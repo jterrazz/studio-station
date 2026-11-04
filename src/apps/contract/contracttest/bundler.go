@@ -8,9 +8,9 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-// value: a bundle and an installer of one method whose lines it runs, over
-// the same seeded state.
 type Bundled struct {
+	// value: a bundle and an installer of one method whose lines it runs,
+	// over the same seeded state.
 	Bundler   contract.Bundler
 	Installer contract.Installer
 }

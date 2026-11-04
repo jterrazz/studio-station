@@ -102,7 +102,7 @@ func TestAFaultFailsItsCallTheTimesScriptedThenIsSpent(t *testing.T) {
 	if err := apply(t, w, "fault", "Installer.Install", "2", "times"); err != nil {
 		t.Fatal(err)
 	}
-	var got []bool
+	got := make([]bool, 0, 3)
 	for range 3 {
 		got = append(got, w.Fails("Installer.Install"))
 	}
@@ -115,7 +115,8 @@ func TestAFaultFailsItsCallTheTimesScriptedThenIsSpent(t *testing.T) {
 	if err := apply(t, w, "fault", "Jobs.Start"); err != nil {
 		t.Fatal(err)
 	}
-	if !w.Fails("Jobs.Start") || !w.Fails("Jobs.Start") {
+	first, second := w.Fails("Jobs.Start"), w.Fails("Jobs.Start")
+	if !first || !second {
 		t.Error("a fault with no count stopped failing")
 	}
 }

@@ -85,6 +85,7 @@ func (m *Macs) Unlock(_ context.Context, name string) error {
 		return contract.ErrUnreachable
 	case AtPreBoot:
 		m.w.Macs[name].Locked, m.w.Macs[name].Offline = false, false
+	case Answering, Refusing:
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()

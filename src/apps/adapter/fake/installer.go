@@ -33,9 +33,11 @@ type Installer struct {
 	method catalog.Method
 }
 
-// invariant: an installer of a method whose installs ride the one bundle,
-// as D7's brew bundle carries brew, cask, mas, npm and uv.
-type LinedInstaller struct{ *Installer }
+type LinedInstaller struct {
+	// invariant: an installer of a method whose installs ride the one
+	// bundle, as D7's brew bundle carries brew, cask, mas, npm and uv.
+	*Installer
+}
 
 func InstallerOf(w *world.World, mac string, m catalog.Method, lined bool) contract.Installer {
 	i := &Installer{w: w, mac: mac, method: m}

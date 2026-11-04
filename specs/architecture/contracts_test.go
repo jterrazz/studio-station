@@ -219,7 +219,7 @@ func ruleContracts(w *world) []finding {
 	}
 	var out []finding
 	for _, c := range contracts {
-		real := slices.ContainsFunc(adapters, func(a adapterType) bool { return a.tech != "fake" && covers(a, c) })
+		hasReal := slices.ContainsFunc(adapters, func(a adapterType) bool { return a.tech != "fake" && covers(a, c) })
 		fake := slices.ContainsFunc(adapters, func(a adapterType) bool { return a.tech == "fake" && covers(a, c) })
 		var byReal, byFake bool
 		for _, suite := range suites[c.family][c.name] {
@@ -227,7 +227,7 @@ func ruleContracts(w *world) []finding {
 			byFake = byFake || ran[c.family+"/"+suite][true]
 		}
 		switch {
-		case !real:
+		case !hasReal:
 			out = append(out, finding{"contracts-are-whole", c.where, c.name + " has no real adapter in src/" + c.family + "/adapter/"})
 		case !fake:
 			out = append(out, finding{"contracts-are-whole", c.where, c.name + " has no fake in src/" + c.family + "/adapter/fake"})

@@ -263,7 +263,7 @@ const (
 // invariant: a power event moves the reading of the Mac the binary runs on,
 // and is refused on one that has not the capability it moves.
 func power(needs need, move func(p *Power) error) func(w *World, args []string) error {
-	return func(w *World, args []string) error {
+	return func(w *World, _ []string) error {
 		m, err := w.known(w.Here)
 		if err != nil {
 			return err

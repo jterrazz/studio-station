@@ -267,9 +267,9 @@ func (w *World) Fails(call string) bool {
 		if f.Call != call {
 			continue
 		}
-		switch {
-		case f.Times == 0:
-		case f.Times == 1:
+		switch f.Times {
+		case 0:
+		case 1:
 			w.Script = append(w.Script[:i], w.Script[i+1:]...)
 		default:
 			w.Script[i].Times--
