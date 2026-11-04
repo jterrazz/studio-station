@@ -5,8 +5,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
 	accountscmd "github.com/jterrazz/studio-station/src/surface/cli/accounts"
 	accountsshare "github.com/jterrazz/studio-station/src/surface/cli/accounts/share"
 	accountstakeback "github.com/jterrazz/studio-station/src/surface/cli/accounts/takeback"
@@ -47,4 +50,23 @@ func (m machine) vmRunning(ctx context.Context, vm string) (bool, error) {
 		return false, err
 	}
 	return live[vm].State == engine.StateRunning, nil
+}
+
+func receives(guest secrets.Guest) func(context.Context, string) (bool, error) {
+	// value: a VM whose station is older than its kind's answer receives.
+	ask := unix.New(sharedGuest{guest}, nil)
+	return func(ctx context.Context, vm string) (bool, error) {
+		kind, err := ask.KindOf(ctx, vm)
+		if err != nil || kind == "" {
+			return err == nil, err
+		}
+		return accounts.SharedInto(coremachine.Profile{Ref: coremachine.Ref{Name: vm}, Kind: kind}).OK, nil
+	}
+}
+
+type sharedGuest struct{ g secrets.Guest }
+
+func (s sharedGuest) GuestExec(ctx context.Context, vm, line, stdin string) (stdout string, code int, err error) {
+	out, err := s.g.GuestExec(ctx, vm, line, stdin)
+	return out.Stdout, out.ExitCode, err
 }
