@@ -1,10 +1,10 @@
-description: 'with the daemon down a stop runs the NAT poweroff itself and records the want'
+description: 'with the daemon down a stop is the hypervisor''s graceful shutdown, and records the want'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../__fixtures__/vm-api/
 env: daemon
 runs:
-    - command: '--version >/dev/null; echo running > .tart-vms/api; "$STATION" machines stop api; /usr/bin/jq -r .want .local/state/station/vms/api.json; /usr/bin/grep -c "sudo systemctl --no-block poweroff" .calls'
+    - command: '--version >/dev/null; echo running > .tart-vms/api; "$STATION" machines stop api; /usr/bin/jq -r .want .local/state/station/vms/api.json; /usr/bin/grep -c "^tart stop --timeout 60 api$" .calls'
       exit: 0
       stdout: |
           ●	api	stopped

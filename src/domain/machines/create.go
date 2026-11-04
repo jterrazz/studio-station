@@ -292,7 +292,6 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 	if r.Lifetime == Lasting {
 		rec.Want = WantRunning
 	}
-	user := s.vmUser(cfg)
 	made := &made{}
 	fail := func(step string, cause error) (Created, error) {
 		s.undoCreate(ctx, r.Name, made)
@@ -332,7 +331,7 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		return fail("the first boot", err)
 	}
 	ip := addr.String()
-	if err := s.firstBoot(ctx, img, ip, user, r.Name, r.Lifetime); err != nil {
+	if err := s.firstBoot(ctx, img, r.Name, r.Lifetime); err != nil {
 		return fail("the first boot", err)
 	}
 	if fleet, err := s.Fleet(ctx, false); err == nil {

@@ -33,7 +33,8 @@ case "$1" in
         ;;
     stop)
         if [ -f "$answers/stop.exit" ]; then echo "stub tart: the VM did not stop" >&2; exit "$(/bin/cat "$answers/stop.exit")"; fi
-        echo stopped > "$vms/$2"
+        eval "vm=\${$#}"
+        echo stopped > "$vms/$vm"
         ;;
     delete) /bin/rm -f "$vms/$2" ;;
     run)
