@@ -39,5 +39,11 @@ func Codes() map[fail.Code]Wording {
 		call.Elsewhere: func(e *fail.Error) (string, string) {
 			return e.Subject + " is not reached by a call yet", "run it there: station --on " + e.Subject + " ..."
 		},
+		call.Unreachable: func(e *fail.Error) (string, string) {
+			return "cannot reach \"" + e.Subject + "\"", "station machines probe " + e.Subject
+		},
+		call.FarTooOld: func(e *fail.Error) (string, string) {
+			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"
+		},
 	}
 }

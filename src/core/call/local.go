@@ -12,6 +12,10 @@ import (
 const (
 	Unknown   fail.Code = "call.unknown"
 	Elsewhere fail.Code = "call.elsewhere"
+	// value: a machine that does not answer, or whose station API does not.
+	Unreachable fail.Code = "remote.unreachable"
+	// value: a far binary that serves no such call.
+	FarTooOld fail.Code = "remote.far-too-old"
 )
 
 type local interface {
