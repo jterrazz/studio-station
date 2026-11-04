@@ -106,7 +106,7 @@ The tree is moving to families first (machines, apps, settings, ports, awake...)
 2. `wire` builds the services over the real adapters and the cobra tree, and runs it under Fang.
 3. The leaf `surface/cli/tools/install` binds argv to an `Input`, then validates it against the catalogue and the config (refusals are exit 2, before any question, any read and any effect).
 4. The confirm gate runs for a destructive leaf: `--yes`, or a question on a terminal, or a refusal.
-5. The leaf makes one call to the domain service `domain/tools`, which orders dependencies, runs the method table's commands through the `Runner` port and reads the inventory back.
+5. The leaf makes one call to the domain service `domain/tools`, which orders dependencies, runs each method's installer from the `Installers` registry and reads the inventory back.
 6. The leaf hands the result to its page function, `pages/tools` for `station tools`, which returns a `page.Page`, and to its contract value for `--json`.
 7. `output` prints it in the form the stream allows, through `ui/render`: tty with colour, pipe as tab-separated records, json (the contract), or the page itself as `station.page/v1` under the hidden `--page`. The form is decided once per stream; `NO_COLOR` degrades a terminal to the pipe form.
 
@@ -144,7 +144,7 @@ The catalogue is values in `src/catalog/`: tools (agent skills included), config
 
 The rule this repository is built on: **add to the catalogue, not to command code**. One tool entry gives the same tool a row in `station tools`, a line in `station status`, an install, an uninstall and an upgrade path, because all of them read the same value. Which file a change opens is [Develop](../guides/develop.md)'s table.
 
-How a tool installs is one table, the method table in `src/domain/tools/methods.go`: one row per method with its install, uninstall, upgrade and inventory commands, and the machine kinds that accept it. No other file switches on a method. `brew bundle` installs and upgrades every method it covers; uninstall is each method's native command ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). The model is [Tools and skills](../reference/tools-and-skills.md)'s.
+How a tool installs is one registry, `Installers` in `src/apps/contract/`: one adapter per method under `src/apps/adapter/<method>/`, with its install, uninstall, update and inventory commands, and what it can do (its abilities, whether it keeps a list, whether its installs ride the bundle). No other code switches on a method; the machine kinds that accept a method are the catalogue's. `brew bundle` installs and upgrades every method it covers; uninstall is each method's native command ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). The model is [Tools and skills](../reference/tools-and-skills.md)'s.
 
 Every catalogue entry carries its place, the kinds of machine it may live on, so one binary on a host, a Linux VM and a macOS VM lists and installs only what fits there ([Glossary](glossary.md)).
 
