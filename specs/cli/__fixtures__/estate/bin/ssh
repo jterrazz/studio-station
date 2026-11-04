@@ -1,6 +1,7 @@
 #!/bin/sh
-# ssh as the machines specs need it: every call is recorded in $HOME/.calls, a host
-# answers the fleet fan-out from answers/ssh/fleet-<host>.json (no file: unreachable,
+# ssh as the machines specs need it: every call is recorded in $HOME/.calls, a host's
+# engine API answers each call from answers/ssh/api-<host>/<call>.json, its Hello
+# naming those calls and the version in api-<host>/version (no folder: unreachable,
 # exit 255), `true` pops its exit codes from answers/ssh/true.codes (then true.exit,
 # default 0) after printing answers/ssh/true.stderr, a password session disconnects
 # with 255 as a pre-boot host does once the disk is unlocked, and every other call
@@ -8,14 +9,25 @@
 answers="${0%/*}/../answers/ssh"
 printf 'ssh %s\n' "$*" >> "$HOME/.calls"
 case "$*" in
-    *"machines --here --json"*)
-        prev=""
-        for arg in "$@"; do
-            if [ "$arg" = "--" ]; then target=$prev; break; fi
+    *" station engine attach")
+        prev=''
+        for arg; do
+            if [ "$arg" = -- ]; then target=$prev; break; fi
             prev=$arg
         done
-        if [ -f "$answers/fleet-$target.json" ]; then /bin/cat "$answers/fleet-$target.json"; exit 0; fi
-        exit 255
+        far="$answers/api-$target"
+        [ -d "$far" ] || exit 255
+        version=$(/bin/cat "$far/version" 2>/dev/null)
+        calls=$(cd "$far" && for f in *.json; do printf '"%s",' "${f%.json}"; done)
+        while IFS= read -r line; do
+            id=$(printf '%s' "$line" | /usr/bin/jq -r .id)
+            call=$(printf '%s' "$line" | /usr/bin/jq -r '.call // empty')
+            if [ -z "$call" ]; then
+                printf '{"v":2,"id":"%s","hello":{"version":"%s","calls":[%s]}}\n' "$id" "$version" "${calls%,}"
+            else
+                printf '{"v":2,"id":"%s","out":%s}\n' "$id" "$(/bin/cat "$far/$call.json")"
+            fi
+        done
         ;;
     "-G "*) echo "hostname 127.0.0.1" ;;
     *"sudo fdesetup authrestart -delayminutes 0")

@@ -16,17 +16,14 @@ import (
 	servicesurl "github.com/jterrazz/studio-station/src/surface/cli/services/url"
 )
 
-func (m machine) services(env kit.Env) *services.Service {
-	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Remote: fanOutArgv, Exposure: m.exposure}
+func (m machine) services(_ kit.Env) *services.Service {
+	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure}
 	d := servicesDaemon{c: engine.Dial(m.host, m.paths.State)}
 	if m.kind != catalog.Host {
 		g := m.guest()
 		p := g.Placement()
 		o.HereName, o.VMName, o.HostName = p.Host, p.VM, p.Host
 		d = servicesDaemon{c: engine.DialPath(m.host, g.SocketPath())}
-	}
-	o.Delegate = func(ctx context.Context, host string, words []string) (int, error) {
-		return env.On.Remote.Run(ctx, host, env.Interactive, words)
 	}
 	fleet := m.machines(false)
 	o.VMHost = func(ctx context.Context, vm string) (string, bool, error) {

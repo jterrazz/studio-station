@@ -34,7 +34,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			var changes []settings.Change
 			err := io.Confirmed(func(answer string) (err error) {
-				changes, err = call.Invoke(ctx, env.Calls, env.Target, settingscalls.Uninstall, settingscalls.UninstallIn{Names: in.Names, Confirm: answer}, nil)
+				changes, err = call.Invoke(ctx, env.Calls, env.Target(), settingscalls.Uninstall, settingscalls.UninstallIn{Names: in.Names, Confirm: answer}, nil)
 				return err
 			})
 			if err != nil {

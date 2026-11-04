@@ -17,7 +17,6 @@ import (
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/remote"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
@@ -32,6 +31,13 @@ import (
 
 func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	env = withToolBins(env)
+	frames, frameIn := stdout, stdin
+	var childIn io.Reader = stdin
+	if serving(args) {
+		// invariant: a run that serves frames owns stdin and stdout for them:
+		// every other write of it goes to stderr, no child reads its stdin.
+		stdout, childIn = stderr, strings.NewReader("")
+	}
 	vars := map[string]string{}
 	for _, kv := range env {
 		if k, v, ok := strings.Cut(kv, "="); ok {
@@ -52,17 +58,20 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		output.Stream{W: stderr, IsTerminal: errTTY, Width: widthOf(stderr, errTTY), Dark: dark},
 		vars,
 	)
-	here := resolve(local.New(env, stdin, stdout, stderr), local.NewPower(env), vars)
+	here := resolve(local.New(env, childIn, stdout, stderr), local.NewPower(env), vars)
 	kenv := kit.Env{
 		Out:         writer,
 		Prompt:      output.Terminal(stdin, stderr),
 		Interactive: inTTY && errTTY,
 		Screen:      inTTY && outTTY,
-		On:          &kit.On{Here: here.here(), Args: args, Remote: remote.New(here.host.Run)},
-		Stdin:       stdin,
-		Stdout:      stdout,
+		On:          &kit.On{Here: here.here()},
+		Stdin:       frameIn,
+		Stdout:      frames,
+		Self:        here.profile.Ref,
 	}
-	kenv.Calls, kenv.Target = here.router(kenv), here.profile.Ref
+	router := here.router(kenv)
+	defer router.Close()
+	kenv.Calls = router
 	kenv.On.Refresh = func(ctx context.Context) error {
 		fleet := here.machines(false)
 		f, err := fleet.Fleet(ctx, false)
@@ -88,6 +97,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		startCommand(kenv, here),
 		daemonCommand(kenv, here),
 		guestCommand(kenv, here),
+		engineCommand(kenv),
 		runCommand(kenv, here),
 		setupCommand(kenv, here),
 		shellcmd.Command(kenv),
@@ -170,6 +180,7 @@ func withToolBins(env []string) []string {
 }
 
 type machine struct {
+	far       *late
 	pool      *probe.Pool
 	host      system.Host
 	powerPort awakecontract.Power
@@ -206,6 +217,7 @@ func resolve(h system.Host, door local.Power, vars map[string]string) machine {
 	st := newStores(h.FS, paths)
 	registered, _ := st.name().Get()
 	m := machine{
+		far:    &late{},
 		pool:   probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
 		host:   h,
 		vars:   vars,

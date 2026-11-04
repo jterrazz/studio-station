@@ -32,7 +32,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			var outcome settings.ContainersOutcome
 			err := io.Confirmed(func(answer string) (err error) {
-				outcome, err = call.Invoke(ctx, env.Calls, env.Target, settingscalls.Containers, settingscalls.ContainersIn{Name: in.Name, Confirm: answer}, nil)
+				outcome, err = call.Invoke(ctx, env.Calls, env.Target(), settingscalls.Containers, settingscalls.ContainersIn{Name: in.Name, Confirm: answer}, nil)
 				return err
 			})
 			if err != nil {

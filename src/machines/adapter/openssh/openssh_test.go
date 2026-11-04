@@ -34,7 +34,6 @@ func (files) MkdirAll(string, fs.FileMode) error { return nil }
 func adapter(f files) contract.SSHConfig {
 	return New(f, Options{
 		Home: home, KnownHosts: home + "/.local/state/station/known_hosts", Executable: "/bin/station",
-		Hop: func(mac string, words []string) []string { return append([]string{mac, "--", "station"}, words...) },
 	})
 }
 

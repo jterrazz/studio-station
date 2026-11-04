@@ -36,9 +36,6 @@ func Codes() map[fail.Code]Wording {
 		call.Unknown: func(e *fail.Error) (string, string) {
 			return "no call is named " + e.Subject, "run station --help"
 		},
-		call.Elsewhere: func(e *fail.Error) (string, string) {
-			return e.Subject + " is not reached by a call yet", "run it there: station --on " + e.Subject + " ..."
-		},
 		call.Unreachable: func(e *fail.Error) (string, string) {
 			return "cannot reach \"" + e.Subject + "\"", "station machines probe " + e.Subject
 		},

@@ -1,0 +1,12 @@
+description: 'a call the far binary does not serve is refused with its version, read from its Hello at this connection, and how to update it'
+fixture: ./__fixtures__/old-y/
+runs:
+    - command: 'tools --json --on y'
+      exit: 1
+      stderr: |
+          Error: y runs station v3.0.0, which has no tools.list
+          Hint: update station on y (scripts/install.sh there)
+      files:
+          .calls:
+              equals: |
+                  ssh -o BatchMode=yes -o ConnectTimeout=5 y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station engine attach

@@ -22,7 +22,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Short:   "End the Power session now: the Mac sleeps as macOS decides",
 		Example: "  station power sleep",
 		Run: func(ctx context.Context, _ *struct{}, io kit.IO) error {
-			s, err := call.Invoke(ctx, env.Calls, env.Target, awakecalls.Sleep, awakecalls.SleepIn{}, nil)
+			s, err := call.Invoke(ctx, env.Calls, env.Target(), awakecalls.Sleep, awakecalls.SleepIn{}, nil)
 			if err != nil {
 				return err
 			}

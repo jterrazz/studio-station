@@ -63,7 +63,7 @@ func routerOn(t *testing.T, here machine.Profile, ran *int) *remote.Router {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return remote.NewRouter(registry, here)
+	return remote.NewRouter(registry, here, remote.Reach{})
 }
 
 func TestEveryCallForThisMachineRunsInThisProcessWithItsValuesWhole(t *testing.T) {
@@ -76,23 +76,6 @@ func TestEveryCallForThisMachineRunsInThisProcessWithItsValuesWhole(t *testing.T
 				t.Errorf("installing jq %s on %q: %+v, %v, ran %d times; want it run here once, its warning still an error", where, target.Name, out, err, ran)
 			}
 		}
-	}
-}
-
-func TestAFarMachineIsRefusedAsElsewhereBeforeAnythingRuns(t *testing.T) {
-	ran := 0
-	r := routerOn(t, laptop, &ran)
-	var out installOut
-	err := r.Invoke(t.Context(), infra.Ref, "apps.install-at-target", installIn{App: "jq"}, &out, nil)
-	_, watchErr := r.Watch(t.Context(), infra.Ref, "apps.list", installIn{}, nil)
-	for _, err := range []error{err, watchErr} {
-		var e *fail.Error
-		if !errors.As(err, &e) || e.Type != fail.Unreachable || e.Code != call.Elsewhere || e.Subject != "infra" {
-			t.Errorf("a call to infra from the laptop: %v, want %s naming infra", err, call.Elsewhere)
-		}
-	}
-	if ran != 0 {
-		t.Errorf("a call to infra ran %d times here", ran)
 	}
 }
 

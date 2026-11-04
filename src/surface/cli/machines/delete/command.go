@@ -41,7 +41,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 					stop := io.Wait("deleting " + in.Name)
 					defer stop()
 				}
-				report, err = call.Invoke(ctx, env.Calls, env.Target, machinescalls.Delete, machinescalls.DeleteIn{VM: in.Name, Confirm: answer}, nil)
+				report, err = call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Delete, machinescalls.DeleteIn{VM: in.Name, Confirm: answer}, nil)
 				return err
 			})
 			if err != nil {

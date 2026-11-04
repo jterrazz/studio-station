@@ -31,9 +31,11 @@ type Options struct {
 	KnownHosts string
 	// value: this station binary, the ProxyCommand of a VM of this Mac.
 	Executable string
-	// value: the argv that runs station's words on another Mac.
-	Hop func(mac string, words []string) []string
 }
+
+// invariant: the owner's own ssh to a VM of another Mac hops through that
+// Mac's station (machines pipe); station's own code never takes this way.
+const hop = `'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"'`
 
 type Files interface {
 	ReadFile(path string) ([]byte, error)
@@ -92,7 +94,7 @@ func (c *config) proxy(b contract.HostBlock) string {
 	if b.Here {
 		return c.o.Executable + " " + strings.Join(words, " ")
 	}
-	return "ssh " + strings.Join(c.o.Hop(b.Behind, words), " ")
+	return "ssh " + strings.Join(append([]string{b.Behind, "--", "sh", "-c", hop, "station"}, words...), " ")
 }
 
 func (c *config) tilde(p string) string {

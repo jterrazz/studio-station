@@ -37,7 +37,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			var out enginecalls.StopOut
 			err := io.Confirmed(func(answer string) (err error) {
-				out, err = call.Invoke(ctx, env.Calls, env.Target, enginecalls.Stop, enginecalls.StopIn{Confirm: answer}, nil)
+				out, err = call.Invoke(ctx, env.Calls, env.Target(), enginecalls.Stop, enginecalls.StopIn{Confirm: answer}, nil)
 				if _, asks := confirm.Answer(err); asks {
 					in.asked = out
 				}

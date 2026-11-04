@@ -32,7 +32,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Read:  func(*Input) bool { return true },
 		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			out, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.List, machinescalls.ListIn{Here: in.Here}, nil)
+			out, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.List, machinescalls.ListIn{Here: in.Here}, nil)
 			if err != nil {
 				return err
 			}

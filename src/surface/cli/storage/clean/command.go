@@ -29,7 +29,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Bind:     func(in *Input, args []string) error { in.Names = args; return nil },
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			outcomes, err := call.Invoke(ctx, env.Calls, env.Target, diskcalls.Clean, diskcalls.CleanIn{Names: in.Names}, nil)
+			outcomes, err := call.Invoke(ctx, env.Calls, env.Target(), diskcalls.Clean, diskcalls.CleanIn{Names: in.Names}, nil)
 			if err != nil {
 				return err
 			}

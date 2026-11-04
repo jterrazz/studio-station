@@ -25,7 +25,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Example: "  station start",
 		Group:   "fleet",
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
-			report, err := call.Invoke(ctx, env.Calls, env.Target, enginecalls.Start, enginecalls.StartIn{}, nil)
+			report, err := call.Invoke(ctx, env.Calls, env.Target(), enginecalls.Start, enginecalls.StartIn{}, nil)
 			if err != nil {
 				return err
 			}

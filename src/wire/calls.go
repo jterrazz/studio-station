@@ -16,7 +16,6 @@ import (
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
-	"github.com/jterrazz/studio-station/src/remote"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	setupcalls "github.com/jterrazz/studio-station/src/setup/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -24,10 +23,6 @@ import (
 
 // invariant: the one registry of this process, every family's All with its
 // Deps; the Router runs its calls on this machine.
-func (m machine) router(env kit.Env) *remote.Router {
-	return remote.NewRouter(m.registry(env), m.profile)
-}
-
 func (m machine) registry(env kit.Env) *call.Registry {
 	kind := m.profile.Kind
 	config := configService(m)

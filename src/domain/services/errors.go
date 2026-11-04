@@ -74,15 +74,6 @@ type UnknownVMError struct{ Name string }
 
 func (e *UnknownVMError) Error() string { return "unknown VM \"" + e.Name + "\"" }
 
-type RemoteError struct {
-	Host string
-	Code int
-}
-
-func (e *RemoteError) Error() string {
-	return "cannot reach \"" + e.Host + "\""
-}
-
 type HereInVMError struct{}
 
 func (*HereInVMError) Error() string { return "--here is for a host: a VM lists only its own services" }

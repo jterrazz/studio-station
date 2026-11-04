@@ -2,18 +2,12 @@ package machines
 
 import (
 	"context"
-	"encoding/json"
 	"sort"
-	"sync"
-	"time"
 
 	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
 )
-
-const fanOutBudget = 5 * time.Second
 
 func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
 	cfg, err := s.prefs()
@@ -44,16 +38,14 @@ func (s *Service) Fleet(ctx context.Context, hereOnly bool) (Fleet, error) {
 		}
 	}
 	sort.Strings(others)
-	views := make([]HostView, len(others))
-	var wg sync.WaitGroup
-	for i, n := range others {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			views[i] = s.ask(ctx, n, cfg.Hosts[n], nodes[n])
-		}()
+	var answers map[string]HostView
+	if s.o.Ask != nil {
+		answers = s.o.Ask(ctx, others)
 	}
-	wg.Wait()
+	views := make([]HostView, len(others))
+	for i, n := range others {
+		views[i] = s.view(n, cfg.Hosts[n], nodes[n], answers)
+	}
 	fleet.Hosts = append(fleet.Hosts, views...)
 	return fleet, nil
 }
@@ -90,18 +82,16 @@ func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[str
 	return DaemonInfo{Known: true, Running: true, Version: version}, live
 }
 
-func (s *Service) ask(ctx context.Context, name string, h model.Host, node Node) HostView {
-	silent := HostView{Name: name, User: h.User, Node: node}
-	argv := s.o.Remote(name, []string{"machines", "--here", "--json"})
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: argv[0], Args: argv[1:], Timeout: fanOutBudget})
-	if err != nil || out.ExitCode != 0 {
-		return silent
+func (s *Service) view(name string, h model.Host, node Node, answers map[string]HostView) HostView {
+	far, ok := answers[name]
+	if !ok {
+		return HostView{Name: name, User: h.User, Node: node}
 	}
-	var doc WireFleet
-	if json.Unmarshal([]byte(out.Stdout), &doc) != nil || len(doc.Hosts) == 0 {
-		return silent
+	view := HostView{Name: name, User: h.User, StationVersion: far.StationVersion, Reachable: true, Node: far.Node, Daemon: far.Daemon}
+	for _, vm := range far.VMs {
+		vm.Host = name
+		view.VMs = append(view.VMs, vm)
 	}
-	view := doc.Hosts[0].View(name, h.User)
 	if node.IP != "" || node.Online {
 		view.Node = node
 	}

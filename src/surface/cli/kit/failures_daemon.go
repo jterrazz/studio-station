@@ -48,7 +48,6 @@ func servicesFailure(err error) (*fail.Error, bool) {
 	var pinned *services.PinnedError
 	var vmOnly *services.VMOnlyError
 	var unknown *services.UnknownVMError
-	var remote *services.RemoteError
 	var hereInVM *services.HereInVMError
 	switch {
 	case errors.As(err, &hereInVM):
@@ -76,8 +75,6 @@ func servicesFailure(err error) (*fail.Error, bool) {
 		return usage(vmOnly.Error(), "station services url runs inside a VM; here: station services"), true
 	case errors.As(err, &unknown):
 		return usage(unknown.Error(), "station services"), true
-	case errors.As(err, &remote):
-		return fail.Silent(fail.Exit(remote.Code)), true
 	}
 	return nil, false
 }

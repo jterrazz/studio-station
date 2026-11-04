@@ -20,7 +20,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
 - Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`.
 - A word under `tools`, `config` or `storage` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station config github-login` hints `station config install github-login` (`tools install <tool>`, `storage clean <tool>`).
-- `--on <machine>` runs any command below on another machine of the fleet, over ssh; see [Machines](machines.md#on-another-machine).
+- `--on <machine>` runs any command below on another machine of the fleet, through its engine, and renders the answer here; see [Machines](machines.md#on-another-machine).
 - A value a command needs from you is never an argv flag when it could be a secret: a config item asks in a form on a terminal ([Configuration](configuration.md)).
 
 ## Here

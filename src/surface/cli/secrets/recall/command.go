@@ -42,7 +42,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			var report accounts.RecallReport
 			err := io.Confirmed(func(answer string) (err error) {
-				report, err = call.Invoke(ctx, env.Calls, env.Target, accountscalls.Recall, accountscalls.RecallIn{From: in.From, Names: in.Names, Confirm: answer}, nil)
+				report, err = call.Invoke(ctx, env.Calls, env.Target(), accountscalls.Recall, accountscalls.RecallIn{From: in.From, Names: in.Names, Confirm: answer}, nil)
 				return err
 			})
 			if err != nil {

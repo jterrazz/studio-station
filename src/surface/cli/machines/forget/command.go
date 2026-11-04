@@ -35,7 +35,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			err := io.Confirmed(func(answer string) error {
-				_, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Forget, machinescalls.ForgetIn{Name: in.Name, Confirm: answer}, nil)
+				_, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Forget, machinescalls.ForgetIn{Name: in.Name, Confirm: answer}, nil)
 				return err
 			})
 			if err != nil {

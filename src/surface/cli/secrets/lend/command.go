@@ -31,7 +31,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Bind:     bind,
 		Complete: func([]string, string) []string { return d.LendList() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			report, err := call.Invoke(ctx, env.Calls, env.Target, accountscalls.Lend, accountscalls.LendIn{To: in.To, Names: in.Names, Term: in.Term}, nil)
+			report, err := call.Invoke(ctx, env.Calls, env.Target(), accountscalls.Lend, accountscalls.LendIn{To: in.To, Names: in.Names, Term: in.Term}, nil)
 			if err != nil {
 				return err
 			}

@@ -23,11 +23,12 @@ type Options struct {
 	KnownHosts, Logs string
 	User             string
 	Version          string
-	Remote           func(target string, words []string) []string
-	GuestPort        int
-	Jobs             background.Jobs
-	Unlocker         contract.Unlocker
-	SSHConfig        contract.SSHConfig
+	// value: each other Mac's own view of itself, from those that answered.
+	Ask       func(ctx context.Context, macs []string) map[string]HostView
+	GuestPort int
+	Jobs      background.Jobs
+	Unlocker  contract.Unlocker
+	SSHConfig contract.SSHConfig
 }
 
 type Nodes interface {

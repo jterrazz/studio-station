@@ -39,7 +39,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			steps := kit.Steps(io)
-			records, err := call.Invoke(ctx, env.Calls, env.Target, imagescalls.Build, imagescalls.BuildIn{Names: in.Names, Binary: in.Binary}, steps)
+			records, err := call.Invoke(ctx, env.Calls, env.Target(), imagescalls.Build, imagescalls.BuildIn{Names: in.Names, Binary: in.Binary}, steps)
 			steps.Stop()
 			if err != nil {
 				return err

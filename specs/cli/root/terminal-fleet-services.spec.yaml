@@ -43,7 +43,7 @@ runs:
 
 
            ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys
-    - command: '--version > /dev/null; /usr/bin/grep -o ''y -- sh -c .* station services release w:3000.*'' .calls'
+    - command: '--version > /dev/null; /usr/bin/grep -o ''y -- sh -c .* station engine attach'' .calls | /usr/bin/sort -u'
       exit: 0
       stdout: |
-          y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station services release w:3000
+          y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station engine attach

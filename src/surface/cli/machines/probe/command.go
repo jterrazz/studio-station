@@ -33,7 +33,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Read:     func(*Input) bool { return true },
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			report, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Probe, machinescalls.ProbeIn{Name: in.Name}, nil)
+			report, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Probe, machinescalls.ProbeIn{Name: in.Name}, nil)
 			if err != nil {
 				return err
 			}

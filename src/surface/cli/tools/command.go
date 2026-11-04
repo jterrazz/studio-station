@@ -31,7 +31,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Entry:   kit.Entry("station tools install", d.Names),
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
 			if io.CanLive() {
-				updates, err := call.Follow(ctx, env.Calls, env.Target, appscalls.List, appscalls.ListIn{}, nil)
+				updates, err := call.Follow(ctx, env.Calls, env.Target(), appscalls.List, appscalls.ListIn{}, nil)
 				if err != nil {
 					return err
 				}
@@ -42,7 +42,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 				}
 				return ctx.Err()
 			}
-			reports, err := call.Read(ctx, env.Calls, env.Target, appscalls.List, appscalls.ListIn{}, nil)
+			reports, err := call.Read(ctx, env.Calls, env.Target(), appscalls.List, appscalls.ListIn{}, nil)
 			if err != nil {
 				return err
 			}
