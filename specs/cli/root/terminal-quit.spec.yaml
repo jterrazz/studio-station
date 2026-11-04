@@ -2,7 +2,7 @@ description: 'q while a probe ignores TERM exits within 3 s and leaves that prob
 fixture:
     - ../../__fixtures__/terminal/
     - ./__fixtures__/homebrew/
-    - ../__fixtures__/stubborn-gpg/
+    - ../../__fixtures__/stubborn-gpg/
 env: terminal
 runs:
     - command: '--version >/dev/null; terminal --size 120x80 "$STATION"'

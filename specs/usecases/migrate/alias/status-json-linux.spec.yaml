@@ -1,7 +1,7 @@
 description: 'on a Linux machine status reads /proc, has no macOS-only section and no broken state'
 fixture:
-    - ./__fixtures__/linux/
-    - ../../__fixtures__/status-registered/
+    - ./__fixtures__/status/linux/
+    - ../../../__fixtures__/status-registered/
 env:
     - STATION_MACHINE_KIND=linux
 runs:
