@@ -10,4 +10,4 @@ runs:
     - command: 'status --json | /usr/bin/jq -c ''[.setup.state, (.setup.steps | map(.name + ":" + .state))]'''
       exit: 0
       stdout: |
-          ["degraded",["name:ok","zshrc:ok","layout:degraded","tools:ok"]]
+          ["degraded",["name:ok","zshrc:ok","layout:degraded","apps:ok"]]

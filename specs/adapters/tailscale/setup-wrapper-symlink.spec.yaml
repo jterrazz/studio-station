@@ -4,10 +4,10 @@ fixture:
     - ../../__fixtures__/tailscale-app-store/
 env: engine
 runs:
-    - command: '--version >/dev/null; /bin/rm bin/tailscale; /bin/mkdir -p .local/bin; /bin/ln -s "$PWD/root/Applications/Tailscale.app/Contents/MacOS/Tailscale" .local/bin/tailscale; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	tools''; /bin/ls -l .local/bin/tailscale | /usr/bin/cut -c1'
+    - command: '--version >/dev/null; /bin/rm bin/tailscale; /bin/mkdir -p .local/bin; /bin/ln -s "$PWD/root/Applications/Tailscale.app/Contents/MacOS/Tailscale" .local/bin/tailscale; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	apps''; /bin/ls -l .local/bin/tailscale | /usr/bin/cut -c1'
       exit: 0
       stdout: |
-          ●	tools	tailscale wrapper written: ~/.local/bin/tailscale
+          ●	apps	tailscale wrapper written: ~/.local/bin/tailscale
           -
       files:
           .local/bin/tailscale:

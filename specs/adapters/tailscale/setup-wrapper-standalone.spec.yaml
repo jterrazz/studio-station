@@ -4,9 +4,9 @@ fixture:
     - ./__fixtures__/tailscale-standalone/
 env: engine
 runs:
-    - command: '--version >/dev/null; /bin/rm bin/tailscale; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	tools'''
+    - command: '--version >/dev/null; /bin/rm bin/tailscale; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	apps'''
       exit: 0
       stdout: |
-          ●	tools
+          ●	apps
       files:
           .local/bin/tailscale: absent

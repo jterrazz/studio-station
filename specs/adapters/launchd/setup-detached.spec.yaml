@@ -16,8 +16,15 @@ runs:
           ●	zshrc
           ◐	layout	the userspace tailscaled stops in the background	{{workdir}}/.local/state/station/logs/setup.log
           ●	relocate	bunfig, go env, mise config, npmrc
-          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	engine	not needed until tart is installed
+          ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ●	settings	applied hushlogin tart-launcher
+          ○	ssh-key	next: station settings apply ssh-key
+          ○	spotlight-exclude	next: station settings apply spotlight-exclude
+          ○	dns	next: station settings apply dns
+          ○	claude-token	next: station settings apply claude-token
+          ○	dock-reset	next: station settings apply dock-reset
+          ○	dock-spacer	next: station settings apply dock-spacer
       files:
           .studio/tailscale/tailscaled.state: exists
           .local/state/station/logs/setup.log: exists

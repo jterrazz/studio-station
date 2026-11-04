@@ -10,8 +10,15 @@ runs:
           ●	zshrc
           ●	layout	nothing to retire
           ●	relocate	bunfig, go env, mise config, npmrc
-          ○	tools	missing: homebrew mise git tailscale: run station setup on a terminal
           ✗	engine	launchctl bootstrap exited 5: Bootstrap failed: 5: Input/output error
+          ○	apps	missing: homebrew mise git tailscale: run station setup on a terminal
+          ●	settings	applied hushlogin tart-launcher
+          ○	ssh-key	next: station settings apply ssh-key
+          ○	spotlight-exclude	next: station settings apply spotlight-exclude
+          ○	dns	next: station settings apply dns
+          ○	claude-token	next: station settings apply claude-token
+          ○	dock-reset	next: station settings apply dock-reset
+          ○	dock-spacer	next: station settings apply dock-spacer
       stderr: |
           Error: setup step engine: launchctl bootstrap exited 5: Bootstrap failed: 5: Input/output error
           Hint: fix it, then run station setup again: it resumes

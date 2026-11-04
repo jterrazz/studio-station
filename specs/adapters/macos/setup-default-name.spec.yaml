@@ -9,7 +9,7 @@ runs:
       stdin: |
           see jean-baptiste-s-macbook-pro
           send \r
-          see tools
+          see settings
       exit: 0
     - command: '--version >/dev/null; /usr/bin/jq -r .here .config/station/preferences.json'
       exit: 0

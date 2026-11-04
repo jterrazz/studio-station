@@ -7,8 +7,15 @@ runs:
           ●	zshrc
           ●	layout	nothing to retire
           ●	relocate	bunfig, go env, mise config, npmrc
-          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	engine	not needed until tart is installed
+          ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ●	settings	applied hushlogin tart-launcher
+          ○	ssh-key	next: station settings apply ssh-key
+          ○	spotlight-exclude	next: station settings apply spotlight-exclude
+          ○	dns	next: station settings apply dns
+          ○	claude-token	next: station settings apply claude-token
+          ○	dock-reset	next: station settings apply dock-reset
+          ○	dock-spacer	next: station settings apply dock-spacer
       files:
           Library/Application Support/go/env: { equals: "GOPATH={{workdir}}/.local/share/go\nGOMODCACHE={{workdir}}/.cache/go/mod\n" }
           .npmrc: { equals: "cache={{workdir}}/.cache/npm\n" }
@@ -21,8 +28,15 @@ runs:
           ●	zshrc
           ●	layout	nothing to retire
           ●	relocate	nothing to do
-          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ○	engine	not needed until tart is installed
+          ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ●	settings
+          ○	ssh-key	next: station settings apply ssh-key
+          ○	spotlight-exclude	next: station settings apply spotlight-exclude
+          ○	dns	next: station settings apply dns
+          ○	claude-token	next: station settings apply claude-token
+          ○	dock-reset	next: station settings apply dock-reset
+          ○	dock-spacer	next: station settings apply dock-spacer
     - command: '--version >/dev/null; /bin/cat "Library/Application Support/go/env" .npmrc'
       exit: 0
       stdout: |

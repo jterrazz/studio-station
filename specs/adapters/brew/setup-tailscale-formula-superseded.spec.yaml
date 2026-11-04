@@ -4,10 +4,10 @@ fixture:
     - ./__fixtures__/tailscale-formula/
 env: engine
 runs:
-    - command: '--version >/dev/null; /bin/mkdir -p answers/brew; echo "tailscale-app 1.104.4" > answers/brew/cask.txt; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	tools'''
+    - command: '--version >/dev/null; /bin/mkdir -p answers/brew; echo "tailscale-app 1.104.4" > answers/brew/cask.txt; "$STATION" setup --name m </dev/null | /usr/bin/grep -E ''^.	apps'''
       exit: 0
       stdout: |
-          ●	tools	tailscale formula uninstalled: the app replaces it
+          ●	apps	tailscale formula uninstalled: the app replaces it
       files:
           .calls:
               equals: |

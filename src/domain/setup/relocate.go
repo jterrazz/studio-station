@@ -58,7 +58,7 @@ func keyLabel(file catalog.ToolFile, key string) string {
 func (s *Service) placedTools() []catalog.Tool {
 	var out []catalog.Tool
 	for _, t := range s.o.Tools {
-		if slices.Contains(t.Places(), s.o.Here) {
+		if slices.Contains(t.Places(), s.o.Kind) {
 			out = append(out, t)
 		}
 	}
@@ -71,7 +71,7 @@ func (s *Service) relocate(ctx context.Context, interactive bool) (Step, error) 
 		return failed(stepRelocate, err)
 	}
 	var moved []string
-	if s.isHost() {
+	if s.onMac() {
 		var moveNotes []string
 		moved, moveNotes, err = s.moveStrays(ctx, interactive)
 		notes = append(notes, moveNotes...)

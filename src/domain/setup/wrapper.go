@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-const stepTools = "tools"
+const stepApps = "apps"
 
 type Installer interface {
 	Missing(ctx context.Context) ([]string, error)
@@ -19,13 +19,13 @@ type Installer interface {
 	RemoveFormula(ctx context.Context, formula string) error
 }
 
-func (s *Service) tools(ctx context.Context, interactive bool) (Step, error) {
-	step := Step{Name: stepTools, State: catalog.StateOK}
+func (s *Service) apps(ctx context.Context, interactive bool) (Step, error) {
+	step := Step{Name: stepApps, State: catalog.StateOK}
 	var done []string
 	if s.o.Installer != nil {
 		missing, err := s.o.Installer.Missing(ctx)
 		if err != nil {
-			return failed(stepTools, err)
+			return failed(stepApps, err)
 		}
 		switch {
 		case len(missing) == 0:
@@ -34,20 +34,20 @@ func (s *Service) tools(ctx context.Context, interactive bool) (Step, error) {
 			done = append(done, "missing: "+strings.Join(missing, " ")+": run station setup on a terminal")
 		default:
 			if err := s.o.Installer.Install(ctx, missing); err != nil {
-				return failed(stepTools, err)
+				return failed(stepApps, err)
 			}
 			done = append(done, "installed "+strings.Join(missing, " "))
 		}
 		for _, formula := range s.o.Installer.Superseded(ctx) {
 			if err := s.o.Installer.RemoveFormula(ctx, formula); err != nil {
-				return failed(stepTools, err)
+				return failed(stepApps, err)
 			}
 			done = append(done, formula+" formula uninstalled: the app replaces it")
 		}
 	}
 	wrote, err := s.writeWrapper()
 	if err != nil {
-		return failed(stepTools, err)
+		return failed(stepApps, err)
 	}
 	if wrote {
 		done = append(done, "tailscale wrapper written: "+s.o.Expand.Display(s.wrapperPath()))
@@ -57,11 +57,11 @@ func (s *Service) tools(ctx context.Context, interactive bool) (Step, error) {
 	return step, nil
 }
 
-func (s *Service) toolsCheck() Step {
+func (s *Service) appsCheck() Step {
 	if s.wrapperDue() {
-		return Step{Name: stepTools, State: catalog.StateDegraded, Detail: "tailscale wrapper due: station setup"}
+		return Step{Name: stepApps, State: catalog.StateDegraded, Detail: "tailscale wrapper due: station setup"}
 	}
-	return Step{Name: stepTools, State: catalog.StateOK}
+	return Step{Name: stepApps, State: catalog.StateOK}
 }
 
 func (s *Service) wrapperPath() string { return path.Join(s.o.Bin, "tailscale") }

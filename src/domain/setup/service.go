@@ -39,12 +39,12 @@ type Registrar interface {
 	Register(name string) error
 }
 
-type DaemonInstaller interface {
+type EngineInstaller interface {
 	Install(ctx context.Context) (Step, error)
 }
 
 type Options struct {
-	Here catalog.MachineKind
+	Kind catalog.MachineKind
 	// value: this machine is a server: its own tooling keeps it, never station.
 	Server bool
 	// value: the preferences' file (a v1 config.json converts only while it
@@ -57,6 +57,7 @@ type Options struct {
 	Files                       map[catalog.ToolFile]string
 	Configurer                  Configurer
 	Installer                   Installer
+	Settings                    Settings
 	AppStoreCLI                 func() string
 	// value: moves the preferences out of the file station v2 kept them in,
 	// once; nil where there is none to move.
@@ -80,7 +81,7 @@ type Service struct {
 	p      Prefs
 	vault  Vault
 	reg    Registrar
-	daemon DaemonInstaller
+	engine EngineInstaller
 	o      Options
 }
 
@@ -88,8 +89,8 @@ type Vault interface {
 	Forget(ctx context.Context, name string) error
 }
 
-func New(h system.Host, p Prefs, v Vault, reg Registrar, d DaemonInstaller, o Options) *Service {
-	return &Service{h: h, p: p, vault: v, reg: reg, daemon: d, o: o}
+func New(h system.Host, p Prefs, v Vault, reg Registrar, e EngineInstaller, o Options) *Service {
+	return &Service{h: h, p: p, vault: v, reg: reg, engine: e, o: o}
 }
 
 type Request struct {
@@ -105,7 +106,7 @@ type (
 
 func ValidName(name string) bool { return machineName.MatchString(name) }
 
-func (s *Service) isHost() bool { return s.o.Here == catalog.Host }
+func (s *Service) onMac() bool { return s.o.Kind == catalog.Host }
 
 func (s *Service) CheckName(name string) error {
 	if name == "" {
@@ -114,16 +115,16 @@ func (s *Service) CheckName(name string) error {
 	if !ValidName(name) {
 		return &BadNameError{Name: name}
 	}
-	if !s.isHost() {
+	if !s.onMac() {
 		return ErrNameOnVM
 	}
 	if here := s.currentHere(); here != "" && here != name {
-		return &NameMismatchError{Here: here, Asked: name}
+		return &NameMismatchError{Named: here, Asked: name}
 	}
 	return nil
 }
 
-// invariant: a host whose settings.json is not written yet but whose v1
+// invariant: a Mac whose settings.json is not written yet but whose v1
 // config.json names it is already registered: the layout step will say so.
 func (s *Service) currentHere() string {
 	if here, ok := s.reg.Here(); ok {
@@ -177,7 +178,7 @@ func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
 	if s.o.Server {
 		return Report{Steps: append(moved, Step{Name: stepKind, State: catalog.StateOK, Detail: "server: its own tooling keeps it, station sets nothing up"})}, nil
 	}
-	if !s.isHost() {
+	if !s.onMac() {
 		zshrc, err := s.zshrc()
 		relocate, relocateErr := s.relocate(ctx, r.Interactive)
 		return Report{Steps: append(moved, zshrc, relocate)}, errors.Join(err, relocateErr)
@@ -194,18 +195,23 @@ func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
 	layout, layoutErr := s.layout(ctx, migrated)
 	relocate, relocateErr := s.relocate(ctx, r.Interactive)
 	steps := append(append([]Step{name, zshrc}, layout...), relocate)
-	toolsErr, daemonErr := error(nil), error(nil)
+	var engineErr, appsErr, settingsErr error
+	if s.engine != nil {
+		var engine Step
+		engine, engineErr = s.engine.Install(ctx)
+		steps = append(steps, engine)
+	}
 	if relocateErr == nil {
-		var tools Step
-		tools, toolsErr = s.tools(ctx, r.Interactive)
-		steps = append(steps, tools)
+		var apps Step
+		apps, appsErr = s.apps(ctx, r.Interactive)
+		steps = append(steps, apps)
+		if appsErr == nil {
+			var set []Step
+			set, settingsErr = s.settings(ctx)
+			steps = append(steps, set...)
+		}
 	}
-	if s.daemon != nil {
-		var daemon Step
-		daemon, daemonErr = s.daemon.Install(ctx)
-		steps = append(steps, daemon)
-	}
-	return Report{Steps: append(moved, steps...)}, errors.Join(nameErr, zshrcErr, layoutErr, relocateErr, toolsErr, daemonErr)
+	return Report{Steps: append(moved, steps...)}, errors.Join(nameErr, zshrcErr, layoutErr, relocateErr, engineErr, appsErr, settingsErr)
 }
 
 // invariant: the move comes before any step reads a preference, and says so
@@ -283,7 +289,7 @@ func (s *Service) zshrc() (Step, error) {
 
 func (s *Service) Check(_ context.Context) (Report, error) {
 	var steps []Step
-	if s.isHost() {
+	if s.onMac() {
 		if here, ok := s.reg.Here(); ok {
 			steps = append(steps, Step{Name: stepName, State: catalog.StateOK, Detail: here})
 		} else {
@@ -295,12 +301,12 @@ func (s *Service) Check(_ context.Context) (Report, error) {
 		zshrc = Step{Name: stepZshrc, State: catalog.StateAbsent, Detail: "station setup"}
 	}
 	steps = append(steps, zshrc)
-	if s.isHost() {
+	if s.onMac() {
 		layout := Step{Name: stepLayout, State: catalog.StateOK}
 		if s.holdsStationFiles() {
 			layout = Step{Name: stepLayout, State: catalog.StateDegraded, Detail: "~/.studio still holds station's files: station setup"}
 		}
-		steps = append(steps, layout, s.toolsCheck())
+		steps = append(steps, layout, s.appsCheck())
 	}
 	return Report{Steps: steps}, nil
 }
