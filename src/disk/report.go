@@ -39,6 +39,9 @@ type Tally struct {
 	Paths     []PathReport
 	Strays    []StrayReport
 	Pending   bool
+	// value: a pending size the walk has never measured, so the row cannot
+	// know yet which groups it will fill.
+	Unmeasured bool
 }
 
 func (r Tally) Total() int64 {

@@ -73,8 +73,9 @@ func Classify(s Survey) []Row {
 	// invariant: one row per app and group it holds bytes in, sorted by size
 	// within its group; a stray is Misplaced whatever it holds; station's own
 	// data are its VMs and images, which machines and images own, never a
-	// row. A row the walk has not answered, or could not size, stays where it
-	// will fill: Can rebuild when its app has caches to free.
+	// row. A pending row keeps its last-known groups, so no row leaves when
+	// the walk answers; one never measured, or not sized, waits in Can
+	// rebuild when its app has a clean command.
 	var out []Row
 	for _, t := range s.Rows {
 		for _, st := range t.Strays {
@@ -100,7 +101,7 @@ func Classify(s Survey) []Row {
 			}
 		}
 		for _, g := range Groups()[1:] {
-			if bytes[g] > 0 || (t.Pending && frees && g == CanRebuild) {
+			if bytes[g] > 0 || (t.Unmeasured && frees && g == CanRebuild) {
 				out = append(out, Row{App: t.Entry.Name, Group: g, Paths: append([]string{}, paths[g]...), Bytes: bytes[g], Pending: t.Pending})
 			}
 		}
