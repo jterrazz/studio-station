@@ -18,6 +18,9 @@ type Mac struct {
 	Registry *call.Registry
 	Profile  machine.Profile
 	Version  string
+	// value: how that Mac's binary words its errors; nil words only what
+	// is already worded.
+	Word call.Wording
 }
 
 type Dialer struct {
@@ -97,13 +100,13 @@ func (e endpoint) Invoke(ctx context.Context, _ machine.Ref, name string, in jso
 	}
 	v, err := e.m.Registry.Input(name, in)
 	if err != nil {
-		return nil, over(err)
+		return nil, e.over(err)
 	}
 	out, err := e.m.Registry.Run(ctx, e.m.Profile, name, v, p)
 	if err != nil {
-		return nil, over(err)
+		return nil, e.over(err)
 	}
-	return call.Encode(out, worded)
+	return call.Encode(out, e.word())
 }
 
 func (e endpoint) Watch(ctx context.Context, _ machine.Ref, name string, in json.RawMessage, p call.Progress) (<-chan call.Update[json.RawMessage], error) {
@@ -112,11 +115,11 @@ func (e endpoint) Watch(ctx context.Context, _ machine.Ref, name string, in json
 	}
 	v, err := e.m.Registry.Input(name, in)
 	if err != nil {
-		return nil, over(err)
+		return nil, e.over(err)
 	}
 	updates, err := e.m.Registry.Stream(ctx, e.m.Profile, name, v, p)
 	if err != nil {
-		return nil, over(err)
+		return nil, e.over(err)
 	}
 	out := make(chan call.Update[json.RawMessage])
 	go func() {
@@ -126,9 +129,9 @@ func (e endpoint) Watch(ctx context.Context, _ machine.Ref, name string, in json
 				out <- call.Update[json.RawMessage]{Err: err}
 				return
 			}
-			next := call.Update[json.RawMessage]{Err: over(u.Err)}
+			next := call.Update[json.RawMessage]{Err: e.over(u.Err)}
 			if u.Err == nil {
-				next.Value, next.Err = call.Encode(u.Value, worded)
+				next.Value, next.Err = call.Encode(u.Value, e.word())
 			}
 			out <- next
 		}
@@ -149,9 +152,16 @@ func worded(err error) *fail.Error {
 	return &fail.Error{Message: err.Error(), Exit: fail.ExitFailure}
 }
 
-func over(err error) error {
+func (e endpoint) word() call.Wording {
+	if e.m.Word != nil {
+		return e.m.Word
+	}
+	return worded
+}
+
+func (e endpoint) over(err error) error {
 	if err == nil {
 		return nil
 	}
-	return call.ToWire(err, worded).Err()
+	return call.ToWire(err, e.word()).Err()
 }

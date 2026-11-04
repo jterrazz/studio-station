@@ -47,6 +47,7 @@ import (
 	remotecontract "github.com/jterrazz/studio-station/src/remote/contract"
 	settingsfake "github.com/jterrazz/studio-station/src/settings/adapter/fake"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
+	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/world"
 )
@@ -338,21 +339,22 @@ func (m *worldMac) serve() *remotefake.Dialer {
 	if m.served == nil {
 		far := m.run.far(m)
 		m.served = remotefake.New()
-		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: Version()})
+		m.served.Serve(m.name, remotefake.Mac{Registry: far.registry, Profile: far.profile, Version: Version(), Word: func(err error) *fail.Error { return kit.Translate(err, "") }})
 		m.start = far.start
 	}
 	return m.served
 }
 
 // invariant: another Mac of the world answers while it is on the tailnet,
-// unlocked and its engine running; it is then reached as over ssh, every
-// value through the wire form.
+// unlocked and set up, its engine stopped or not, as `station engine attach`
+// answers over ssh; it is then reached as over ssh, every value through the
+// wire form.
 type worldDialer struct{ r *worldRun }
 
 func (d worldDialer) Dial(ctx context.Context, mac string) (remotecontract.Endpoint, error) {
 	d.r.w.Lock()
 	slice, ok := d.r.w.Macs[mac]
-	reach := ok && !slice.Offline && slice.EngineRuns()
+	reach := ok && !slice.Offline && !slice.Locked && slice.Engine != nil
 	d.r.w.Unlock()
 	if !reach || d.r.far == nil {
 		return nil, fail.New(fail.Unreachable, call.Unreachable, mac, nil)
