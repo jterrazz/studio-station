@@ -117,14 +117,14 @@ The tree is moving to families first (machines, apps, settings, ports, awake...)
 
 ## The path of a request
 
-`station tools install node`:
+`station apps install node`:
 
 1. `cmd/station` hands argv and the environment to `wire.Run`.
 2. `wire` builds the services over the real adapters and the cobra tree, and runs it under Fang.
-3. The leaf `surface/cli/tools/install` binds argv to an `Input`, then validates it against the catalogue and the config (refusals are exit 2, before any question, any read and any effect).
-4. The leaf invokes one call, `tools.install` of `src/apps/calls`, through the router `wire` built from every family's `All`: this machine's calls run in this process, past the gate of the target's section table and the call's own `Applies`. The call orders dependencies, runs each method's installer from the `Installers` registry and reads the inventory back.
+3. The leaf `surface/cli/apps/install` binds argv to an `Input`, then validates it against the catalogue and the config (refusals are exit 2, before any question, any read and any effect).
+4. The leaf invokes one call, `apps.install` of `src/apps/calls`, through the router `wire` built from every family's `All`: this machine's calls run in this process, past the gate of the target's section table and the call's own `Applies`. The call orders dependencies, runs each method's installer from the `Installers` registry and reads the inventory back.
 5. A call that confirms decides it in its own `Run` (`confirm.Require`); when it refuses with `NeedsConfirmation`, kit answers: `--yes`, or the leaf's question on a terminal (its `Ask`), or a refusal, then invokes it once more with the answer. A TUI tab does the same through `tab.Confirmed`: no surface decides whether to ask.
-6. The leaf hands the result to its page function, `pages/tools` for `station tools`, which returns a `page.Page`, and to its contract value for `--json`.
+6. The leaf hands the result to its page function, `pages/apps` for `station apps`, which returns a `page.Page`, and to its contract value for `--json`.
 7. `output` prints it in the form the stream allows, through `ui/render`: tty with colour, pipe as tab-separated records, json (the contract), or the page itself as `station.page/v1` under the hidden `--page`. The form is decided once per stream; `NO_COLOR` degrades a terminal to the pipe form.
 
 Multi-step behaviour (install then configure, restart then wait) lives in the use case, so a leaf and a TUI action make the same one call.
@@ -134,8 +134,8 @@ Multi-step behaviour (install then configure, restart then wait) lives in the us
 Every failure prints one block on stderr and nothing else writes an error:
 
 ```text
-Error: unknown tool "nope"
-Hint: station tools
+Error: no app named "nope"
+Hint: station apps
 ```
 
 The exit code comes from the returned error, never from a call to exit inside a command:
@@ -157,11 +157,11 @@ Fang renders the help, the version and the completion script, and handles the in
 
 ## The catalogue and methods
 
-The catalogue is values in `src/catalog/`: tools (agent skills included), config items, managers, shortcuts, images, and each tool's storage row. A catalogue value carries no function, and a test says so, because behaviour chosen by data belongs to the domain, chosen by the value's type from a closed union.
+The catalogue is values in `src/catalog/`: apps (agent skills included), config items, managers, shortcuts, images, and each app's storage row. A catalogue value carries no function, and a test says so, because behaviour chosen by data belongs to the domain, chosen by the value's type from a closed union.
 
-The rule this repository is built on: **add to the catalogue, not to command code**. One tool entry gives the same tool a row in `station tools`, a line in `station status`, an install, an uninstall and an upgrade path, because all of them read the same value. Which file a change opens is [Develop](../guides/develop.md)'s table.
+The rule this repository is built on: **add to the catalogue, not to command code**. One app entry gives the same app a row in `station apps`, a line in `station overview`, an install, a remove and an update path, because all of them read the same value. Which file a change opens is [Develop](../guides/develop.md)'s table.
 
-How a tool installs is one registry, `Installers` in `src/apps/contract/`: one adapter per method under `src/apps/adapter/<method>/`, with its install, uninstall, update and inventory commands, and what it can do (its abilities, whether it keeps a list, whether its installs ride the bundle). No other code switches on a method; the machine kinds that accept a method are the catalogue's. `brew bundle` installs and upgrades every method it covers; uninstall is each method's native command ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). The model is [Tools and skills](../reference/tools-and-skills.md)'s.
+How an app installs is one registry, `Installers` in `src/apps/contract/`: one adapter per method under `src/apps/adapter/<method>/`, with its install, uninstall, update and inventory commands, and what it can do (its abilities, whether it keeps a list, whether its installs ride the bundle). No other code switches on a method; the machine kinds that accept a method are the catalogue's. `brew bundle` installs and upgrades every method it covers; uninstall is each method's native command ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). The model is [Apps and skills](../reference/tools-and-skills.md)'s.
 
 Every catalogue entry carries its place, the kinds of machine it may live on, so one binary on a host, a Linux VM and a macOS VM lists and installs only what fits there ([Glossary](glossary.md)).
 

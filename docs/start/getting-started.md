@@ -23,7 +23,7 @@ Piped through `curl | sh`, setup cannot ask the name and leaves it `○`; this i
 ## 3. Tools, then config
 
 ```sh
-station tools install homebrew tailscale tart
+station apps install homebrew tailscale tart
 station config install ghostty-dotfiles zed-dotfiles hushlogin
 station overview
 ```

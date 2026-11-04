@@ -56,7 +56,7 @@ The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinfor
 ## Header and footer
 
 ```text
- station tools                                                macbook · host
+ station apps                                                 macbook · host
  ────────────────────────────────────────────────────────────────────────────
 ```
 
@@ -64,7 +64,7 @@ Left, `station` and the command path; right, this machine's name and kind. A rul
 
 ## Instant reads
 
-`station overview`, `storage` and `tools` on a terminal draw their frame at once: every row the catalogue or a probe table declares, each `◌` with its name only (a size shows its last-known value, Muted, from `~/.cache/station/sizes.json`). Each row fills in place as its probe answers, the region redrawn at most every 50 ms and clipped to the terminal's height with a Muted `… <n> rows pending` last line; a probe past its budget answers `◐ ?` with `no answer in <budget>`. When the last probe answers the region is erased and the final document printed once, so the scrollback holds what a pipe would. The probes run on two bounded lanes (16 commands, one walk of 8 workers), and one reading per run is shared: the tools inventory feeds status, tools and storage; the storage walk feeds the Storage tab and the status `disk` row.
+`station overview`, `storage` and `apps` on a terminal draw their frame at once: every row the catalogue or a probe table declares, each `◌` with its name only (a size shows its last-known value, Muted, from `~/.cache/station/sizes.json`). Each row fills in place as its probe answers, the region redrawn at most every 50 ms and clipped to the terminal's height with a Muted `… <n> rows pending` last line; a probe past its budget answers `◐ ?` with `no answer in <budget>`. When the last probe answers the region is erased and the final document printed once, so the scrollback holds what a pipe would. The probes run on two bounded lanes (16 commands, one walk of 8 workers), and one reading per run is shared: the apps inventory feeds the overview, apps and storage; the storage walk feeds the Storage tab and the status `disk` row.
 
 ## Pipe and JSON
 

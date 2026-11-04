@@ -23,7 +23,7 @@ Every path a tool or station writes has one level, declared in `src/catalog/stor
 | `config` | the tool's own configuration files, many written by a config item     | nobody: a config item's uninstall, where reversible |
 | `kept`   | keys, credentials, the node identity, the VM records                  | nobody                                              |
 
-The files an install put there (an app bundle, a Cellar, mise's installs, bun's and uv's globals, browser builds) are no level: they are sized as `installed` and removed only by `station tools uninstall`.
+The files an install put there (an app bundle, a Cellar, mise's installs, bun's and uv's globals, browser builds) are no level: they are sized as `installed` and removed only by `station apps remove`.
 
 ## The folders
 
@@ -57,7 +57,7 @@ Tart's app and its `LICENSE` live in `~/.local/share/station/tart/`, its home (`
 - A tool that is not installed has no command to run: `clean` and `reset` skip its commands and still delete by path, its cache folders, the cache inside its strays, and for `reset` the data it names. With nothing left to delete, `clean` says `○ <tool> not installed`.
 - `station storage reset <tool...>` deletes a tool's caches and data, back to factory: always named, asked in a form whose default is Keep, `--yes` off a terminal. It refuses while the tool's app runs. Resetting xcode empties DerivedData and erases every simulator device; the archives stay.
 
-A row with no reset names who owns its data instead: station's VMs and images are `station machines delete` and `station images delete`, Homebrew's formulae are `station tools uninstall`.
+A row with no reset names who owns its data instead: station's VMs and images are `station machines delete` and `station images delete`, Homebrew's formulae are `station apps remove`.
 
 ## Strays
 
