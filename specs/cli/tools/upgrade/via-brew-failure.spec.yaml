@@ -7,7 +7,7 @@ runs:
     - command: 'tools upgrade --via brew'
       exit: 1
       stdout: |
-          ✗	bat	brew bundle exited 1
+          ✗	bat	the upgrade failed: its output is in ~/.local/state/station/logs/apps.log
       stderr: |
           Error: 1 of 1 tools failed
           Hint: re-run it: station tools upgrade bat
