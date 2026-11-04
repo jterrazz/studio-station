@@ -1,6 +1,6 @@
 description: 'a formula and a cask install through ONE brew bundle fed on stdin'
 fixture:
-    - ../__fixtures__/stubs/
+    - ../../cli/tools/__fixtures__/stubs/
     - ./__fixtures__/bundle-batch/
 runs:
     - command: 'tools install bat ghostty'

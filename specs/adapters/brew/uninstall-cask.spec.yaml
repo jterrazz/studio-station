@@ -1,6 +1,6 @@
 description: 'a cask uninstalls with brew uninstall --cask'
 fixture:
-    - ../__fixtures__/stubs/
+    - ../../cli/tools/__fixtures__/stubs/
     - ./__fixtures__/cask/
 runs:
     - command: 'tools uninstall ghostty --yes'
