@@ -531,6 +531,13 @@
                 }
             },
             "stores": {
+                "declarations": [
+                    {
+                        "machine": "infra",
+                        "port": 443,
+                        "via": "cloudflare-tunnel"
+                    }
+                ],
                 "images": [
                     {
                         "name": "linux",

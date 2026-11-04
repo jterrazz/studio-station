@@ -111,7 +111,7 @@ station machines create <name> --server [--cpus <n>] [--memory <size>] [--disk <
 station machines start <vm>
 station machines stop <vm> [--yes | --confirm=<name>]
 station machines restart <machine> [--yes]
-station machines edit <vm> [--cpus <n>] [--memory <size>] [--disk <size>]
+station machines edit <vm> [--cpus <n>] [--memory <size>] [--disk <size>] [--check <url|host:port> | --no-check]
 station machines ssh <machine>
 station machines delete <vm> [--confirm=<name>]
 station machines unlock <host>

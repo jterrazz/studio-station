@@ -128,14 +128,18 @@ type EditIn struct {
 	VM string
 	// value: the sizes to change; a zero one is kept.
 	Resources machines.Resources
+	// value: a server's health check to set, or NoCheck to remove it.
+	Check   string
+	NoCheck bool
 }
 
 var Edit = call.Call[Deps, EditIn, machines.Edited]{
 	Name: "machines.edit", Where: call.InEngine, Applies: machine.Anywhere,
 	Run: func(ctx context.Context, d Deps, in EditIn, _ call.Progress) (machines.Edited, error) {
-		if err := d.Machines.CheckEdit(in.VM, in.Resources); err != nil {
+		change := machines.Change{Resources: in.Resources, Check: in.Check, NoCheck: in.NoCheck}
+		if err := d.Machines.CheckEdit(in.VM, change); err != nil {
 			return machines.Edited{}, err
 		}
-		return d.Machines.Edit(ctx, in.VM, in.Resources)
+		return d.Machines.Edit(ctx, in.VM, change)
 	},
 }

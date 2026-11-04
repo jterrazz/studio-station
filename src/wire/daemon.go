@@ -210,6 +210,11 @@ func (d servicesDaemon) Release(ctx context.Context, vm string, port int) (servi
 type leaseReleaser struct{ m machine }
 
 func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
+	// invariant: a VM leaves nothing of its ports on its Mac: its ports
+	// declared public, its reserved ports and their shares.
+	if err := r.forgetDeclarations(ctx, vm); err != nil {
+		return err
+	}
 	store := r.m.stores.reservations
 	leases, err := store.List(ctx)
 	if err != nil {
@@ -228,6 +233,22 @@ func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
 		}
 	}
 	return services.SaveLeases(ctx, store, kept)
+}
+
+func (r leaseReleaser) forgetDeclarations(ctx context.Context, vm string) error {
+	declared, err := r.m.stores.declarations.List(ctx)
+	if err != nil {
+		return err
+	}
+	for _, d := range declared {
+		if d.Machine != vm {
+			continue
+		}
+		if err := r.m.stores.declarations.Delete(ctx, d.Machine, d.Port); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type engineInstaller struct {

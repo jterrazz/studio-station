@@ -155,10 +155,23 @@ type RestartReport struct {
 	Waited time.Duration
 }
 
+type Change struct {
+	// value: the sizes an edit changes; a zero one is kept.
+	Resources Resources
+	// value: a server's health check to set, or NoCheck to remove it.
+	Check   string
+	NoCheck bool
+}
+
+func (c Change) None() bool { return c == Change{} }
+
 type Edited struct {
 	Name string
 	// value: the sizes the edit asked, the others zero.
 	Changed Resources
+	// value: the health check it set, or that it removed one.
+	Check   string
+	NoCheck bool
 	// value: the VM runs, so the change waits for its next start.
 	Running bool
 }

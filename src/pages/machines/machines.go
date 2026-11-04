@@ -415,9 +415,20 @@ func Edited(e machines.Edited, here page.Context) page.Page {
 	if e.Changed.DiskBytes != 0 {
 		parts = append(parts, strconv.FormatFloat(float64(e.Changed.DiskBytes)/1e9, 'f', 1, 64)+" GB disk")
 	}
-	said := strings.Join(parts, ", ") + ", applies when " + e.Name + " next starts"
+	var said string
+	if len(parts) > 0 {
+		said = strings.Join(parts, ", ") + ", applies when " + e.Name + " next starts"
+	}
+	switch check := ""; {
+	case e.NoCheck:
+		check = "no health check: health has three steps"
+		said = strings.TrimPrefix(said+"; "+check, "; ")
+	case e.Check != "":
+		check = "health check " + e.Check + ", from its next health run"
+		said = strings.TrimPrefix(said+"; "+check, "; ")
+	}
 	row := pages.Done(e.Name, catalog.StateOK, said)
-	if e.Running {
+	if e.Running && len(parts) > 0 {
 		row.Detail = page.List(page.Text(said), page.Command("station machines restart "+e.Name))
 	}
 	return pages.Outcome("machines edit "+e.Name, here, nil, []page.Row{row}, "machines")

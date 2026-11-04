@@ -53,8 +53,8 @@ type Machines interface {
 	CheckRemote(name string) error
 	Probe(ctx context.Context, name string) (machines.ProbeReport, error)
 	SSH(ctx context.Context, name string) (machines.SSHTarget, error)
-	CheckEdit(name string, r machines.Resources) error
-	Edit(ctx context.Context, name string, r machines.Resources) (machines.Edited, error)
+	CheckEdit(name string, c machines.Change) error
+	Edit(ctx context.Context, name string, c machines.Change) (machines.Edited, error)
 }
 
 func All(d Deps) []call.Handler {
