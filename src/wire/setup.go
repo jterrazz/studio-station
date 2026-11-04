@@ -26,8 +26,8 @@ func setupService(env kit.Env, m machine) *setup.Service {
 	registrar := fleetRegistrar{name: m.stores.name(), machines: fleet}
 	installer := daemonInstaller{m: m, machines: fleet}
 	return setup.New(m.host, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.services(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
-		Here:  m.kind,
-		Paths: m.paths,
+		Here:            m.kind,
+		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
 		// observable; unset, the running binary is the one re-executed.
 		Executable:  m.or("STATION_EXECUTABLE", m.host.Env.Executable()),

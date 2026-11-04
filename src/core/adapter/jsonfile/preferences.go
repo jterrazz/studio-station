@@ -35,7 +35,7 @@ func NewPreferences(files Files, dir string, groups []string) *Preferences {
 	return &Preferences{files: files, dir: dir, groups: slices.Clone(groups)}
 }
 
-func (p *Preferences) file() string { return path.Join(p.dir, FileName) }
+func (p *Preferences) File() string { return path.Join(p.dir, FileName) }
 
 func (p *Preferences) Read(group string, v any) error {
 	doc, err := p.load()
@@ -47,7 +47,7 @@ func (p *Preferences) Read(group string, v any) error {
 		return nil
 	}
 	if err := json.Unmarshal(raw, v); err != nil {
-		return &store.UnreadableError{Path: p.file(), Cause: err}
+		return &store.UnreadableError{Path: p.File(), Cause: err}
 	}
 	return nil
 }
@@ -84,24 +84,24 @@ func (p *Preferences) Migrate(context.Context) error {
 
 func (p *Preferences) load() (map[string]json.RawMessage, error) {
 	doc := map[string]json.RawMessage{}
-	data, err := p.files.ReadFile(p.file())
+	data, err := p.files.ReadFile(p.File())
 	if errors.Is(err, fs.ErrNotExist) {
 		return doc, nil
 	}
 	if err != nil {
-		return nil, &store.UnreadableError{Path: p.file(), Cause: err}
+		return nil, &store.UnreadableError{Path: p.File(), Cause: err}
 	}
 	if err := json.Unmarshal(data, &doc); err != nil {
-		return nil, &store.UnreadableError{Path: p.file(), Cause: err}
+		return nil, &store.UnreadableError{Path: p.File(), Cause: err}
 	}
 	var version int
 	if raw, ok := doc["v"]; ok {
 		if err := json.Unmarshal(raw, &version); err != nil {
-			return nil, &store.UnreadableError{Path: p.file(), Cause: err}
+			return nil, &store.UnreadableError{Path: p.File(), Cause: err}
 		}
 	}
 	if _, err := store.Current(version, Version); err != nil {
-		return nil, &store.UnreadableError{Path: p.file(), Cause: err}
+		return nil, &store.UnreadableError{Path: p.File(), Cause: err}
 	}
 	return doc, nil
 }
@@ -132,10 +132,10 @@ func (p *Preferences) save(doc map[string]json.RawMessage) error {
 	}
 	out.WriteString("}\n")
 	if err := p.files.MkdirAll(p.dir, 0o700); err != nil {
-		return &store.UnwritableError{Path: p.file(), Cause: err}
+		return &store.UnwritableError{Path: p.File(), Cause: err}
 	}
-	if err := p.files.WriteFile(p.file(), out.Bytes(), 0o600); err != nil {
-		return &store.UnwritableError{Path: p.file(), Cause: err}
+	if err := p.files.WriteFile(p.File(), out.Bytes(), 0o600); err != nil {
+		return &store.UnwritableError{Path: p.File(), Cause: err}
 	}
 	return nil
 }

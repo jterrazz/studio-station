@@ -238,7 +238,7 @@ func (s *Service) waitStopped(ctx context.Context, vm string) error {
 	return fmt.Errorf("still running after %d s", int(stopWait/time.Second))
 }
 
-func (s *Service) KeyPath() string { return path.Join(s.o.Paths.State, "images", "key") }
+func (s *Service) KeyPath() string { return s.o.Key }
 
 func (s *Service) imageKey(ctx context.Context) (key, pub string, err error) {
 	key = s.KeyPath()

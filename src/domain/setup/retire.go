@@ -30,7 +30,7 @@ func legacyNodeState() []string { return []string{legacyTailscale, tailscaledFil
 func retiredAccounts() []string { return []string{"vm-join-id", "vm-join-secret", "tailnet-authkey"} }
 
 func (s *Service) tailscaledDirs() []string {
-	return []string{path.Join(s.o.Paths.State, "tailscaled"), s.legacyPath(legacyTailscale)}
+	return []string{path.Join(s.o.State, "tailscaled"), s.legacyPath(legacyTailscale)}
 }
 
 func (s *Service) livePIDs() []int {

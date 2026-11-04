@@ -11,7 +11,7 @@ import (
 
 const agentPrefix = "com.jterrazz.station.vm."
 
-func (s *Service) LogPath(name string) string { return path.Join(s.o.Paths.State, "logs", name+".log") }
+func (s *Service) LogPath(name string) string { return path.Join(s.o.Logs, name+".log") }
 
 func (s *Service) KnownHostsPath(name string) string { return path.Join(s.knownHostsDir(), name) }
 

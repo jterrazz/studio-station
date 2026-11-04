@@ -2,27 +2,22 @@ package images
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"io/fs"
-	"path"
 	"slices"
-	"strings"
 
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 type Options struct {
-	Paths     settings.Paths
-	Version   string
-	User      string
-	Here      catalog.MachineKind
-	GuestPort int
+	// value: where the release binary is cached, and the build key.
+	Cache, Key string
+	Version    string
+	User       string
+	Here       catalog.MachineKind
+	GuestPort  int
 }
 
 type Service struct {
@@ -30,12 +25,13 @@ type Service struct {
 	e      contract.Hypervisor
 	guests contract.GuestDialer
 	store  imagescontract.ImageStore
+	vms    contract.MachineStore
 	list   []catalog.Image
 	o      Options
 }
 
-func New(h system.Host, e contract.Hypervisor, guests contract.GuestDialer, store imagescontract.ImageStore, list []catalog.Image, o Options) *Service {
-	return &Service{h: h, e: e, guests: guests, store: store, list: list, o: o}
+func New(h system.Host, e contract.Hypervisor, guests contract.GuestDialer, store imagescontract.ImageStore, vms contract.MachineStore, list []catalog.Image, o Options) *Service {
+	return &Service{h: h, e: e, guests: guests, store: store, vms: vms, list: list, o: o}
 }
 
 type Report struct {
@@ -91,32 +87,14 @@ func (s *Service) List(ctx context.Context) ([]Report, error) {
 }
 
 func (s *Service) users() (map[string][]string, error) {
-	dir := path.Join(s.o.Paths.State, "vms")
-	entries, err := s.h.FS.ReadDir(dir)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
-	}
+	records, err := s.vms.List(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	out := map[string][]string{}
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
-			continue
-		}
-		data, err := s.h.FS.ReadFile(path.Join(dir, e.Name()))
-		if err != nil {
-			return nil, err
-		}
-		var rec struct {
-			Image   string `json:"image"`
-			Version string `json:"version"`
-		}
-		if json.Unmarshal(data, &rec) != nil {
-			continue
-		}
+	for _, rec := range records {
 		key := rec.Image + "@" + rec.Version
-		out[key] = append(out[key], strings.TrimSuffix(e.Name(), ".json"))
+		out[key] = append(out[key], rec.Name)
 	}
 	for _, names := range out {
 		slices.Sort(names)

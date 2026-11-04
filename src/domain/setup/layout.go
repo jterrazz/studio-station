@@ -31,8 +31,8 @@ func (s *Service) legacyPath(parts ...string) string {
 }
 
 func (s *Service) v1Path() string       { return s.legacyPath("config.json") }
-func (s *Service) settingsPath() string { return path.Join(s.o.Paths.Config, "settings.json") }
-func (s *Service) logPath() string      { return path.Join(s.o.Paths.State, "logs", "setup.log") }
+func (s *Service) settingsPath() string { return s.o.PreferencesFile }
+func (s *Service) logPath() string      { return path.Join(s.o.State, "logs", "setup.log") }
 
 func (s *Service) exists(p string) bool {
 	_, err := s.h.FS.Stat(p)
@@ -159,7 +159,7 @@ func (s *Service) moveDNS() (bool, error) {
 		if e.IsDir() {
 			continue
 		}
-		if err := s.move(s.legacyPath(legacyDNS, e.Name()), path.Join(s.o.Paths.State, "dns", e.Name())); err != nil {
+		if err := s.move(s.legacyPath(legacyDNS, e.Name()), path.Join(s.o.State, "dns", e.Name())); err != nil {
 			return moved, err
 		}
 		moved = true

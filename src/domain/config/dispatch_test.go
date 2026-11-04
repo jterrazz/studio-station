@@ -20,7 +20,7 @@ func newTestService(t *testing.T, here catalog.MachineKind, euid int) (*Service,
 	env := systemtest.Env{HomeDir: "/home/u", UID: euid, OS: "darwin"}
 	h := systemtest.Host(run, files, env, systemtest.NewNet(), &systemtest.Clock{})
 	paths := settings.Paths{Config: "/home/u/.config/station", State: "/home/u/.local/state/station"}
-	svc := New(h, catalog.ConfigItems, fstest.MapFS{}, Prefs{Identity: setupcontract.Identity(corefake.NewPreferences()), ShareList: accountscontract.ShareList(corefake.NewPreferences())}, Options{Here: here, Paths: paths})
+	svc := New(h, catalog.ConfigItems, fstest.MapFS{}, Prefs{Identity: setupcontract.Identity(corefake.NewPreferences()), ShareList: accountscontract.ShareList(corefake.NewPreferences())}, Options{Here: here, DNSProfile: paths.State + "/dns/quad9-dns.mobileconfig", BackupExclusions: []string{"/home/u/.cache", "/home/u/.local/share/station/vms"}})
 	return svc, run, files
 }
 

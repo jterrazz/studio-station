@@ -2,6 +2,7 @@ package wire
 
 import (
 	"io/fs"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -26,11 +27,12 @@ func configService(m machine) *config.Service {
 	// invariant: "dotfiles" is the embedded root, so Sub cannot fail.
 	files, _ := fs.Sub(catalog.DotfilesFS, "dotfiles")
 	return config.New(m.host, catalog.ConfigItems, files, config.Prefs{Identity: m.stores.identity(), ShareList: m.stores.shareList()}, config.Options{
-		Pool:     m.pool,
-		Here:     m.kind,
-		Paths:    m.paths,
-		Defaults: configDefaults(m),
-		Jobs:     m.jobs(config.ReadBudget),
+		Pool:             m.pool,
+		Here:             m.kind,
+		DNSProfile:       filepath.Join(m.paths.State, "dns", "quad9-dns.mobileconfig"),
+		BackupExclusions: []string{m.paths.Roots.Cache, filepath.Join(m.paths.Data, "vms")},
+		Defaults:         configDefaults(m),
+		Jobs:             m.jobs(config.ReadBudget),
 	})
 }
 

@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -37,8 +38,8 @@ func (m machine) machines(_ bool) *machines.Service {
 			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
 			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),
 		},
-		Here:      m.kind,
-		Paths:     m.paths,
+		Here:       m.kind,
+		KnownHosts: filepath.Join(m.paths.State, "known_hosts"), Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.host.Env.User(),
 		Version:   Version(),
 		Remote:    fanOutArgv,

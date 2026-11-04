@@ -14,7 +14,6 @@ import (
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	schedule "github.com/jterrazz/studio-station/src/domain/probe"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -24,11 +23,13 @@ const (
 )
 
 type Options struct {
-	Pool     *schedule.Pool
-	Here     catalog.MachineKind
-	Paths    settings.Paths
-	Defaults map[string]map[string]string
-	Jobs     contract.Jobs
+	Pool *schedule.Pool
+	Here catalog.MachineKind
+	// value: where the DNS profile is written, and what Time Machine skips.
+	DNSProfile       string
+	BackupExclusions []string
+	Defaults         map[string]map[string]string
+	Jobs             contract.Jobs
 }
 
 type Service struct {

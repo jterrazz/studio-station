@@ -12,22 +12,22 @@ import (
 
 	background "github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 type Ports struct{ OpenClaw, Hermes int }
 
 type Options struct {
-	Ports     Ports
-	Here      catalog.MachineKind
-	Paths     settings.Paths
-	User      string
-	Version   string
-	Remote    func(target string, words []string) []string
-	Hop       func(host string, words []string) []string
-	GuestPort int
-	Jobs      background.Jobs
+	Ports Ports
+	Here  catalog.MachineKind
+	// value: the folders of the VMs' known hosts and of their logs.
+	KnownHosts, Logs string
+	User             string
+	Version          string
+	Remote           func(target string, words []string) []string
+	Hop              func(host string, words []string) []string
+	GuestPort        int
+	Jobs             background.Jobs
 }
 
 type Node struct {
@@ -212,7 +212,7 @@ func (s *Service) vmUser(cfg prefsView) string {
 	return s.o.User
 }
 
-func (s *Service) knownHostsDir() string { return path.Join(s.o.Paths.State, "known_hosts") }
+func (s *Service) knownHostsDir() string { return s.o.KnownHosts }
 
 func (s *Service) sshConfig() string { return path.Join(s.h.Env.Home(), ".ssh", "config") }
 

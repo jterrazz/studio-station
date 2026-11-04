@@ -39,7 +39,7 @@ func service(t *testing.T, run system.Runner) (*machines.Service, *systemtest.Cl
 	if err := p.Hosts.Set(map[string]model.Host{"mac": {}, "x": {User: "u"}}); err != nil {
 		t.Fatal(err)
 	}
-	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, Paths: paths}), clock
+	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, KnownHosts: paths.State + "/known_hosts", Logs: paths.State + "/logs"}), clock
 }
 
 type answering struct {

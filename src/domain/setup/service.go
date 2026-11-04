@@ -40,16 +40,18 @@ type DaemonInstaller interface {
 }
 
 type Options struct {
-	Here        catalog.MachineKind
-	Paths       settings.Paths
-	Executable  string
-	Detached    bool
-	Tools       []catalog.Tool
-	Expand      storage.Expander
-	Files       map[catalog.ToolFile]string
-	Configurer  Configurer
-	Installer   Installer
-	AppStoreCLI func() string
+	Here catalog.MachineKind
+	// value: the preferences' file (a v1 config.json converts only while it
+	// is absent), station's state folder and the user's bin.
+	PreferencesFile, State, Bin string
+	Executable                  string
+	Detached                    bool
+	Tools                       []catalog.Tool
+	Expand                      storage.Expander
+	Files                       map[catalog.ToolFile]string
+	Configurer                  Configurer
+	Installer                   Installer
+	AppStoreCLI                 func() string
 }
 
 type Prefs struct {

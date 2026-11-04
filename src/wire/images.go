@@ -1,6 +1,8 @@
 package wire
 
 import (
+	"path/filepath"
+
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -17,8 +19,8 @@ func (m machine) images() *images.Service {
 	if current, err := m.stores.vmUser().Get(); err == nil && current != "" {
 		user = current
 	}
-	return images.New(m.host, m.hypervisor(), ssh.New(), m.stores.images, catalog.Images, images.Options{
-		Paths:     m.paths,
+	return images.New(m.host, m.hypervisor(), ssh.New(), m.stores.images, m.stores.machines, catalog.Images, images.Options{
+		Cache: m.paths.Cache, Key: filepath.Join(m.paths.State, "images", "key"),
 		Version:   Version(),
 		User:      user,
 		Here:      m.kind,

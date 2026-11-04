@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"path"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -27,7 +26,7 @@ func (s *Service) installDNS(ctx context.Context) (Change, error) {
 		}
 		return Change{Steps: []Step{okStep("profile", "already installed: Profiles settings opened")}}, nil
 	}
-	profile := path.Join(s.o.Paths.State, "dns", "quad9-dns.mobileconfig")
+	profile := s.o.DNSProfile
 	if err := s.write(profile, []byte(dnsProfile()), 0o600); err != nil {
 		return Change{}, err
 	}

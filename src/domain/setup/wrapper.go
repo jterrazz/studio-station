@@ -64,7 +64,7 @@ func (s *Service) toolsCheck() Step {
 	return Step{Name: stepTools, State: catalog.StateOK}
 }
 
-func (s *Service) wrapperPath() string { return path.Join(s.o.Paths.Bin, "tailscale") }
+func (s *Service) wrapperPath() string { return path.Join(s.o.Bin, "tailscale") }
 
 func wrapper(cli string) []byte { return []byte("#!/bin/sh\nexec " + cli + " \"$@\"\n") }
 
@@ -102,7 +102,7 @@ func (s *Service) writeWrapper() (bool, error) {
 	if err := s.h.FS.Remove(at); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return false, err
 	}
-	if err := s.h.FS.MkdirAll(s.o.Paths.Bin, 0o755); err != nil {
+	if err := s.h.FS.MkdirAll(s.o.Bin, 0o755); err != nil {
 		return false, err
 	}
 	if err := s.h.FS.WriteFile(at, wrapper(s.o.AppStoreCLI()), 0o755); err != nil {
