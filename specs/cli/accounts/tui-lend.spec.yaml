@@ -4,7 +4,7 @@ fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
     - ../__fixtures__/terminal/
-    - ../__fixtures__/lend/
+    - ../../__fixtures__/lend/
 env: terminal
 serve: sshd
 runs:

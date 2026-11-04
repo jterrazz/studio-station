@@ -2,7 +2,7 @@ description: 'the daemon recalls an expired lend at its start; a failed recall k
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
-    - ../__fixtures__/lend/
+    - ../../__fixtures__/lend/
 env: daemon
 serve: sshd
 runs:
