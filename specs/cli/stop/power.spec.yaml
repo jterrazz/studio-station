@@ -1,7 +1,7 @@
 description: 'stop ends a Power session first, and with the daemon down resets the clamshell itself'
 fixture:
     - ../../__fixtures__/vms/
-    - ../__fixtures__/launchctl/
+    - ../../__fixtures__/launchctl/
     - ../__fixtures__/power/
 env: daemon
 runs:

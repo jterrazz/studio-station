@@ -26,6 +26,7 @@ func statusService(env kit.Env, m machine) *status.Service {
 		Hypervisor: m.hypervisor(),
 		// value: the status page reads listeners on a Mac only.
 		Listeners: lsof.New(m.host.Run),
+		Jobs:      m.jobs(status.ReadBudget),
 	}, status.Options{
 		Pool:         m.pool,
 		Root:         m.systemRoot(),

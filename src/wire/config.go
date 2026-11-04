@@ -30,6 +30,7 @@ func configService(m machine) *config.Service {
 		Here:     m.kind,
 		Paths:    m.paths,
 		Defaults: configDefaults(m),
+		Jobs:     m.jobs(config.ReadBudget),
 	})
 }
 

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
@@ -43,18 +44,18 @@ func (s *Service) installLockAfterLogin(ctx context.Context) (Change, error) {
 	}
 	change.Steps = append(change.Steps, okStep("plist", lockPlist))
 
+	command := s.o.Jobs.Names().Command
 	owner, _ := s.probe(ctx, "stat", "-f", "%Su", "/dev/console")
 	if owner == agentUser && known {
-		domain := "gui/" + strconv.Itoa(uid)
-		// invariant: bootout first, so installing over a loaded agent succeeds.
-		_, _ = s.probe(ctx, "launchctl", "bootout", domain+"/"+lockLabel)
-		if _, err := s.must(ctx, "launchctl", "bootstrap", domain, lockPlist); err != nil {
-			change.Steps = append(change.Steps, Step{Label: "launchctl bootstrap", State: catalog.StateDegraded, Detail: "it loads at the next auto-login anyway: " + firstLine(err.Error())})
+		// invariant: stopped first, so installing over a loaded agent succeeds.
+		_ = s.o.Jobs.Stop(ctx, lockJob(uid))
+		if err := s.o.Jobs.Load(ctx, lockJob(uid)); err != nil {
+			change.Steps = append(change.Steps, Step{Label: command + " bootstrap", State: catalog.StateDegraded, Detail: "it loads at the next auto-login anyway: " + firstLine(jobFailure(err))})
 		} else {
-			change.Steps = append(change.Steps, okStep("launchctl bootstrap", domain))
+			change.Steps = append(change.Steps, okStep(command+" bootstrap", "gui/"+strconv.Itoa(uid)))
 		}
 	} else {
-		change.Steps = append(change.Steps, skipStep("launchctl", "no GUI session for "+agentUser+": the agent loads at the next auto-login"))
+		change.Steps = append(change.Steps, skipStep(command, "no GUI session for "+agentUser+": the agent loads at the next auto-login"))
 	}
 	change.After = s.lockFacts(ctx)
 	return change, nil
@@ -65,7 +66,7 @@ func (s *Service) uninstallLockAfterLogin(ctx context.Context) (Change, error) {
 		return Change{}, err
 	}
 	if uid, _, known := s.agentIDs(ctx); known {
-		_, _ = s.probe(ctx, "launchctl", "bootout", "gui/"+strconv.Itoa(uid)+"/"+lockLabel)
+		_ = s.o.Jobs.Stop(ctx, lockJob(uid))
 	}
 	if err := s.h.FS.Remove(lockPlist); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return Change{}, err
@@ -78,7 +79,7 @@ func (s *Service) checkLockAfterLogin(ctx context.Context) (state catalog.State,
 		return catalog.StateAbsent, ""
 	}
 	if uid, _, known := s.agentIDs(ctx); known {
-		if _, loaded := s.probe(ctx, "launchctl", "print", "gui/"+strconv.Itoa(uid)+"/"+lockLabel); loaded {
+		if s.o.Jobs.Read(ctx, lockJob(uid)).Loaded {
 			return catalog.StateOK, "agent loaded"
 		}
 	}
@@ -88,20 +89,36 @@ func (s *Service) checkLockAfterLogin(ctx context.Context) (state catalog.State,
 func (s *Service) lockFacts(ctx context.Context) []Fact {
 	facts := []Fact{{Key: "plist", Value: presence(s.exists(lockPlist))}, {Key: "script", Value: presence(s.exists(lockScript))}}
 	if uid, _, known := s.agentIDs(ctx); known {
-		out, loaded := s.probe(ctx, "launchctl", "print", "gui/"+strconv.Itoa(uid)+"/"+lockLabel)
+		status := s.o.Jobs.Read(ctx, lockJob(uid))
 		value := "not loaded in gui/" + strconv.Itoa(uid)
-		if loaded {
+		switch {
+		case status.State != "":
+			value = status.State
+		case status.Loaded:
 			value = "loaded"
-			for _, line := range strings.Split(out, "\n") {
-				if state, ok := strings.CutPrefix(strings.TrimSpace(line), "state = "); ok {
-					value = state
-					break
-				}
-			}
 		}
-		facts = append(facts, Fact{Key: "launchctl", Value: value})
+		facts = append(facts, Fact{Key: s.o.Jobs.Names().Command, Value: value})
 	}
 	return facts
+}
+
+func lockJob(uid int) contract.Ref {
+	return contract.Ref{Domain: contract.Domain{UID: uid}, Label: lockLabel, File: lockPlist}
+}
+
+func jobFailure(err error) string {
+	var failed *contract.Failed
+	if !errors.As(err, &failed) || failed.Err != nil {
+		return err.Error()
+	}
+	reason := failed.Stderr
+	if reason == "" {
+		reason = failed.Stdout
+	}
+	if reason == "" {
+		reason = "exited " + strconv.Itoa(failed.Exit)
+	}
+	return strings.Join(failed.Argv, " ") + ": " + reason
 }
 
 func (s *Service) agentIDs(ctx context.Context) (uid, gid int, known bool) {

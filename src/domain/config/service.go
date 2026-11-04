@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	schedule "github.com/jterrazz/studio-station/src/domain/probe"
 	"github.com/jterrazz/studio-station/src/domain/settings"
@@ -24,6 +25,7 @@ type Options struct {
 	Here     catalog.MachineKind
 	Paths    settings.Paths
 	Defaults map[string]map[string]string
+	Jobs     contract.Jobs
 }
 
 type Service struct {

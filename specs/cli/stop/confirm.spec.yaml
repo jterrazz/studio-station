@@ -2,7 +2,7 @@ description: 'stop on a terminal asks first, No by default: enter declines, exit
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/daemon-vm/
-    - ../__fixtures__/launchctl/
+    - ../../__fixtures__/launchctl/
     - ../__fixtures__/terminal/
 env: terminal
 serve: sshd

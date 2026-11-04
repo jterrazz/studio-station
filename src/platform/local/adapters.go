@@ -7,6 +7,11 @@ import "github.com/jterrazz/studio-station/src/system"
 type (
 	Cmd    = system.Cmd
 	Output = system.Output
+	Runner = system.Runner
+	FS     = system.FS
 )
 
-var ErrTimeout = system.ErrTimeout
+var (
+	ErrNotFound = system.ErrNotFound
+	ErrTimeout  = system.ErrTimeout
+)

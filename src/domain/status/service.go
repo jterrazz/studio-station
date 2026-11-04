@@ -5,6 +5,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	schedule "github.com/jterrazz/studio-station/src/domain/probe"
@@ -36,6 +37,7 @@ type Sources struct {
 	Hypervisor Hypervisor
 	// value: what listens on this Mac, read by its adapter.
 	Listeners ListenersReader
+	Jobs      contract.Jobs
 }
 
 type ListenersReader interface {
