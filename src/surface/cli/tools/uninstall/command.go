@@ -22,15 +22,14 @@ type Deps struct {
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
-		Use:         "uninstall <tool...>",
-		Short:       "Uninstall catalogue tools from here, through the method that installed them",
-		Example:     "  station tools uninstall bat --yes",
-		Args:        cobra.MinimumNArgs(1),
-		Bind:        bind,
-		Destructive: func(*Input) bool { return true },
-		ByCall:      true,
-		Confirm:     func(in *Input) string { return "Uninstall " + strings.Join(in.Names, ", ") + "?" },
-		Complete:    func([]string, string) []string { return d.Names() },
+		Use:      "uninstall <tool...>",
+		Short:    "Uninstall catalogue tools from here, through the method that installed them",
+		Example:  "  station tools uninstall bat --yes",
+		Args:     cobra.MinimumNArgs(1),
+		Bind:     bind,
+		Asks:     true,
+		Confirm:  func(in *Input) string { return "Uninstall " + strings.Join(in.Names, ", ") + "?" },
+		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			var outcomes []apps.Outcome
 			err := io.Confirmed(func(answer string) (err error) {

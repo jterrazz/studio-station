@@ -25,15 +25,14 @@ type Input struct{ Names []string }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
-		Use:         "reset <tool...>",
-		Short:       "Delete the named tools' data and caches, back to factory; asks first",
-		Example:     "  station storage reset zed\n  station storage reset xcode --yes",
-		Args:        cobra.ArbitraryArgs,
-		Bind:        func(in *Input, args []string) error { in.Names = args; return nil },
-		Complete:    func([]string, string) []string { return d.Names() },
-		Destructive: func(*Input) bool { return true },
-		ByCall:      true,
-		Confirm:     func(in *Input) string { return "Reset " + strings.Join(in.Names, ", ") + "?" },
+		Use:      "reset <tool...>",
+		Short:    "Delete the named tools' data and caches, back to factory; asks first",
+		Example:  "  station storage reset zed\n  station storage reset xcode --yes",
+		Args:     cobra.ArbitraryArgs,
+		Bind:     func(in *Input, args []string) error { in.Names = args; return nil },
+		Complete: func([]string, string) []string { return d.Names() },
+		Asks:     true,
+		Confirm:  func(in *Input) string { return "Reset " + strings.Join(in.Names, ", ") + "?" },
 		Ask: func(in *Input) (bool, error) {
 			return env.Prompt.Confirm(pagestorage.ResetConfirm(in.Names, d.Plan(in.Names)))
 		},

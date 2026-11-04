@@ -32,8 +32,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Text = args[0]
 			return nil
 		},
-		Destructive: func(*Input) bool { return true },
-		ByCall:      true,
+		Asks: true,
 		Confirm: func(in *Input) string {
 			t, _ := d.Target(in.Text)
 			return "release " + t.VM + ":" + strconv.Itoa(t.Port) + "? its URL is in the VM's environment"

@@ -31,8 +31,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Name = args[0]
 			return nil
 		},
-		Destructive: func(*Input) bool { return true },
-		ByCall:      true,
+		Asks: true,
 		Confirm: func(in *Input) string {
 			if d.IsVM(in.Name) {
 				return "Restart " + in.Name + " (poweroff, then start)?"

@@ -104,20 +104,19 @@ type Leaf[I any] struct {
 	Bind                func(in *I, args []string) error
 	Validate            func(ctx context.Context, in *I) error
 	Read                func(in *I) bool
-	Destructive         func(in *I) bool
-	Confirm             func(in *I) string
-	Verb                func(in *I) string
-	Ask                 func(in *I) (bool, error)
-	Complete            func(args []string, toComplete string) []string
-	Entry               func(word string) string
-	Run                 func(ctx context.Context, in *I, io IO) error
+	// value: a leaf whose call may ask a confirmation: it takes --yes, and
+	// its question is put only when the use case asks it (io.Confirmed).
+	Asks     bool
+	Confirm  func(in *I) string
+	Verb     func(in *I) string
+	Ask      func(in *I) (bool, error)
+	Complete func(args []string, toComplete string) []string
+	Entry    func(word string) string
+	Run      func(ctx context.Context, in *I, io IO) error
 	// value: a leaf that draws its reading as it fills needs no spinner.
 	Live bool
 	// value: a leaf whose answer is a page also prints it as station.page/v1.
 	Pages bool
-	// value: a leaf whose call asks its own confirmation (io.Confirmed); its
-	// question is put only when the use case asks it.
-	ByCall bool
 }
 
 func Command[I any](l Leaf[I], env Env) *cobra.Command {
@@ -164,7 +163,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 		cmd.Flags().BoolVar(&wantPage, "page", false, "print the page as station.page/v1")
 		_ = cmd.Flags().MarkHidden("page")
 	}
-	if l.Destructive != nil {
+	if l.Asks {
 		cmd.Flags().BoolVarP(&yes, "yes", "y", false, "do it without asking")
 	}
 	cmd.RunE = func(c *cobra.Command, a []string) error {
@@ -210,7 +209,7 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 			return err
 		}
 	}
-	if l.Destructive != nil && (l.ByCall || l.Destructive(in)) {
+	if l.Asks {
 		question := c.Name() + "?"
 		if l.Confirm != nil {
 			question = l.Confirm(in)
@@ -223,11 +222,7 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 		if l.Verb != nil {
 			verb = l.Verb(in)
 		}
-		if l.ByCall {
-			o.ask = func() error { return gate(verb, ask, o) }
-		} else if err := gate(verb, ask, o); err != nil {
-			return err
-		}
+		o.ask = func() error { return gate(verb, ask, o) }
 	}
 	if l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && (!l.Live || !o.CanLive()) {
 		stop := env.Out.Wait("reading")

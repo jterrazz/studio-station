@@ -38,8 +38,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			}
 			return names
 		},
-		Destructive: func(*Input) bool { return true },
-		ByCall:      true,
+		Asks: true,
 		Confirm: func(in *Input) string {
 			if in.Version == "" {
 				return "Delete every version of " + in.Image + "?"

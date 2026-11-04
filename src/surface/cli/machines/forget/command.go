@@ -30,10 +30,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Name = args[0]
 			return nil
 		},
-		Destructive: func(*Input) bool { return true },
-		ByCall:      true,
-		Confirm:     func(in *Input) string { return "Forget " + in.Name + "?" },
-		Complete:    func([]string, string) []string { return d.Names() },
+		Asks:     true,
+		Confirm:  func(in *Input) string { return "Forget " + in.Name + "?" },
+		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			err := io.Confirmed(func(answer string) error {
 				_, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Forget, machinescalls.ForgetIn{Name: in.Name, Confirm: answer}, nil)

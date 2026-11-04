@@ -25,13 +25,12 @@ type Deps struct {
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
-		Use:         "disallow <name...>",
-		Short:       "Take names off the lend list and recall their copies from every VM",
-		Example:     "  station secrets disallow session:openpanel --yes",
-		Args:        cobra.MinimumNArgs(1),
-		Bind:        bind,
-		Destructive: func(in *Input) bool { return len(in.Held) > 0 },
-		ByCall:      true,
+		Use:     "disallow <name...>",
+		Short:   "Take names off the lend list and recall their copies from every VM",
+		Example: "  station secrets disallow session:openpanel --yes",
+		Args:    cobra.MinimumNArgs(1),
+		Bind:    bind,
+		Asks:    true,
 		Confirm: func(in *Input) string {
 			in.Held, _ = d.Held(in.Names)
 			return "Recall " + strings.Join(in.Names, ", ") + " from " + strings.Join(vms(in.Held), ", ") + "?"

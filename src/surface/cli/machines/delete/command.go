@@ -31,10 +31,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Name = args[0]
 			return nil
 		},
-		Destructive: func(*Input) bool { return true },
-		ByCall:      true,
-		Confirm:     func(in *Input) string { return "Delete " + in.Name + " and everything on its disk?" },
-		Complete:    func([]string, string) []string { return d.Names() },
+		Asks:     true,
+		Confirm:  func(in *Input) string { return "Delete " + in.Name + " and everything on its disk?" },
+		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			var report machines.DeleteReport
 			err := io.Confirmed(func(answer string) (err error) {
