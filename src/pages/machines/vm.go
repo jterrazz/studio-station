@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/page"
 )
@@ -45,9 +46,28 @@ func VMPage(o VMOverview, here page.Context) page.Page {
 	r := vm.Resources
 	size := page.Row{ID: "size", Label: "Size", Mark: page.OK, Cells: []page.Value{page.List(page.Text(strconv.Itoa(r.CPUs)+" CPU"), Memory(r.MemoryBytes), DiskSize(r.DiskBytes))}}
 	items = append(items, page.Item{Row: &size})
+	if vm.Lifetime == machines.AlwaysOn {
+		items = append(items, serverRows(vm)...)
+	}
 	return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, Sections: []page.Section{{
 		ID: "overview", Title: vm.Name, Caption: caption, Role: page.Banner, Uncounted: true, Columns: vmColumns(), Items: items,
 	}}})
+}
+
+// invariant: a server's Overview names its own tailnet device when its
+// tooling installed one, which station never installs nor blocks, and the
+// ssh that is its one door, for debugging (SPEC §7.7).
+func serverRows(vm machines.VM) []page.Item {
+	var rows []page.Row
+	if vm.Device != "" {
+		rows = append(rows, page.Row{ID: "device", Label: "Own " + catalog.TailnetProduct + " device", Mark: page.OK, Cells: []page.Value{page.Text(vm.Device)}})
+	}
+	rows = append(rows, page.Row{ID: "ssh", Label: "SSH", Mark: page.OK, Cells: []page.Value{page.List(page.Command("ssh "+vm.Name), page.Text("for debugging"))}})
+	items := make([]page.Item, 0, len(rows))
+	for i := range rows {
+		items = append(items, page.Item{Row: &rows[i]})
+	}
+	return items
 }
 
 func vmColumns() []page.Column {
@@ -141,7 +161,9 @@ type VMOverviewJSON struct {
 	Health   VMHealthJSON      `json:"health"`
 	Restarts int               `json:"restarts"`
 	Size     machines.ListSize `json:"size"`
-	Detail   string            `json:"detail,omitempty"`
+	// value: a server's own tailnet device; empty for none.
+	Device string `json:"device,omitempty"`
+	Detail string `json:"detail,omitempty"`
 }
 
 func VMContract(o VMOverview, schema string) VMOverviewJSON {
@@ -151,6 +173,39 @@ func VMContract(o VMOverview, schema string) VMOverviewJSON {
 		Lifetime: string(vm.Lifetime), State: string(vm.State), Wanted: machines.Wanted(vm),
 		Health: VMHealthJSON{Running: h.Running, Address: h.Address, SSH: h.SSH},
 		Size:   machines.ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
-		Detail: vm.Detail,
+		Device: vm.Device, Detail: vm.Detail,
 	}
+}
+
+func SSHPage(o VMOverview, target machines.SSHTarget, here page.Context) page.Page {
+	// invariant: a server's SSH section (SPEC §3.2, §7.7): its one door, the
+	// path that reaches it from This Mac, and what station leaves to the
+	// owner's tooling; station opens it for debugging only.
+	vm, mac := o.VM, o.Mac
+	door := page.Row{ID: "command", Label: target.Command, Mark: page.OK, Cells: []page.Value{page.Text("from any Mac: the block in ~/.ssh/config hops through " + o.on())}}
+	editor := page.Row{ID: "editor", Label: "In an editor", Mark: page.OK, Cells: []page.Value{page.Text("Remote SSH to " + vm.Name)}}
+	reached := []page.Row{
+		{ID: "to-mac", Label: "This Mac to " + o.on(), Mark: page.OK, Cells: []page.Value{page.List(page.Text("over "+catalog.TailnetProduct), page.Text("as "+mac.User))}},
+		{ID: "to-vm", Label: o.on() + " to " + vm.Name, Mark: page.OK, Cells: []page.Value{page.List(page.Text(vm.IP), page.Text("its Mac's private network"))}},
+	}
+	if mac.Here {
+		reached = reached[1:]
+	}
+	if vm.State != machines.Running {
+		door.Mark, door.Reason = page.Absent, page.Stopped
+		door.Cells = []page.Value{page.Text(vm.Name + " is stopped: station machines start " + vm.Name)}
+	}
+	rows := func(rs ...page.Row) []page.Item {
+		items := make([]page.Item, 0, len(rs))
+		for i := range rs {
+			items = append(items, page.Item{Row: &rs[i]})
+		}
+		return items
+	}
+	columns := []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "detail", Kind: page.KindList, Keep: 50}}
+	return page.Seal(page.Page{ID: "ssh", Command: "machines ssh " + vm.Name, Context: here, Sections: []page.Section{
+		{ID: "door", Title: "SSH", Caption: []page.Value{page.Text(vm.Name)}, Uncounted: true, Columns: columns, Items: append(rows(door, editor), page.Item{Note: &page.Note{Text: "No password: your key. Files travel through the same name; no folder of a Mac is shared."}})},
+		{ID: "reached", Title: "How it is reached", Uncounted: true, Columns: columns, Items: rows(reached...)},
+		{ID: "inside", Title: "Inside", Uncounted: true, Items: []page.Item{{Note: &page.Note{Text: "Station opens it for debugging only; your tooling owns what runs inside."}}}},
+	}})
 }

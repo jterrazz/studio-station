@@ -34,6 +34,8 @@ A machine has one name, used for `preferences.json`, the `~/.ssh/config` Host, H
 
 `station machines <machine>` is that machine's Overview, the one `station overview --on <machine>` prints.
 
+A server has four sections: Overview, Activity, Ports and SSH (SPEC §3.2). Its Overview adds `Own Tailscale device` when its tooling put one on the tailnet (station never installs nor blocks it) and its ssh, for debugging; its SSH section is the one door, the path that reaches it and what station leaves to the owner's tooling. Apps, Settings, Disk, Accounts, Background and Awake are refused on it, exit 2: `infra is a server: station does not manage its apps`, `Hint: manage it with your own tooling: ssh infra`. `apps update --all-machines` and `accounts --all-machines` skip a server by its kind and say so.
+
 ## Lifetimes
 
 A workspace is throwaway unless it is made `--permanent` ([Glossary](../concepts/glossary.md)); a server is always on (its record's lifetime is `always-on`, the one mark of its kind). No workspace restarts by itself (SP-4), and a stop never destroys a VM (SP-5). A server whose wanted state is Running starts with its Mac's engine; a stop sets its wanted state to Stopped, so it stays stopped across its Mac's reboots until `start` sets it back to Running. A Mac's servers are listed before its workspaces:

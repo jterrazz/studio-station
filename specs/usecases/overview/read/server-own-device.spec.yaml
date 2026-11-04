@@ -1,0 +1,26 @@
+description: 'a server''s Overview names its own Tailscale device; station neither installs nor blocks it'
+env: two-macs
+runs:
+    - command: 'machines infra'
+      exit: 0
+      stdout: |
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
+          ●	Size	8 CPU · 24 GB · 80 GB
+          ●	Own Tailscale device	infra
+          ●	SSH	ssh infra · for debugging
+    - command: 'machines create infra-2 --server --on mac-mini >/dev/null'
+      exit: 0
+    - command: 'machines infra-2'
+      exit: 0
+      stdout: |
+          ●	Running
+          ●	Has an address	192.168.64.5
+          ●	SSH answers
+          ●	Size	4 CPU · 8 GB · 50 GB
+          ●	SSH	ssh infra-2 · for debugging
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].tailnet | {peers: [.self.Peers[].Name], shares: .shares}'' world.json'
+      exit: 0
+      stdout: |
+          {"peers":["infra"],"shares":null}

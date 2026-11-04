@@ -57,7 +57,7 @@ func failure(id page.ID, command, message, hint string) page.Page {
 
 func Estate() []Fixture {
 	var out []Fixture
-	for _, f := range [][]Fixture{homes(), settingsPages(), disks(), fleets(), machineLists(), imageLists(), portLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), menubarPages()} {
+	for _, f := range [][]Fixture{homes(), settingsPages(), disks(), fleets(), machineLists(), sshPages(), imageLists(), portLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), menubarPages()} {
 		out = append(out, f...)
 	}
 	return out
@@ -269,6 +269,27 @@ func machineLists() []Fixture {
 		pagemachines.List(machines.Fleet{}, nil, here()),
 		pagemachines.List(stoppedFleet(), nil, here()),
 		pagemachines.List(fleet(), []string{"mac-mini: station v2.0.0-248, here v2.0.0-250"}, here()))
+}
+
+// value: infra, a server of mac-mini, as This Mac reads it for its SSH
+// section: running, then stopped.
+func server() pagemachines.VMOverview {
+	f := fleet()
+	vm := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Host: "mac-mini", Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Want: "running", Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built}, 8, 24)
+	f.Hosts[1].VMs = []machines.VM{vm}
+	f.Hosts[1].User = "jterrazz.agent"
+	return pagemachines.VMOverview{Fleet: f, Mac: f.Hosts[1], VM: vm}
+}
+
+func sshPages() []Fixture {
+	running, stopped := server(), server()
+	stopped.VM.State, stopped.VM.IP = machines.Stopped, ""
+	target := machines.SSHTarget{User: "admin", Host: "infra", Command: "ssh admin@infra"}
+	return states("ssh",
+		pending(pagemachines.SSHPage(running, target, here())),
+		pagemachines.SSHPage(stopped, target, here()),
+		failure("ssh", "machines ssh infra", "infra is on mac-mini, which does not answer", "station machines"),
+		pagemachines.SSHPage(running, target, here()))
 }
 
 func imageReports() []images.Report {

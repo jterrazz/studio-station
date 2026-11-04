@@ -118,6 +118,10 @@ func everyMachine(ctx context.Context, env kit.Env, io kit.IO) error {
 		}
 		blocks = append(blocks, pageaccounts.MachineBlock{Name: h.Name, Report: mac, Shared: mac.Shares})
 		for _, vm := range h.VMs {
+			if vm.Lifetime.Kind() == machine.Server {
+				blocks = append(blocks, pageaccounts.MachineBlock{Name: vm.Name, Note: vm.Name + " is a server: not listed"})
+				continue
+			}
 			if vm.State != machines.Running {
 				blocks = append(blocks, pageaccounts.MachineBlock{Name: vm.Name, Mark: page.Absent, Reason: page.Stopped, State: string(vm.State)})
 				continue

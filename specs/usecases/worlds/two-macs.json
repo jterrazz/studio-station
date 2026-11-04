@@ -571,6 +571,15 @@
             },
             "tailnet": {
                 "self": {
+                    "Peers": [
+                        {
+                            "ID": "n3",
+                            "Name": "infra",
+                            "DNSName": "infra.tail1234.ts.net",
+                            "IP": "100.64.0.3",
+                            "Online": true
+                        }
+                    ],
                     "ID": "n2",
                     "Name": "jterrazz-mac-mini",
                     "DNSName": "jterrazz-mac-mini.tail1234.ts.net",

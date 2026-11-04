@@ -30,5 +30,7 @@ runs:
           ●	Has an address	192.168.64.5
           ●	SSH answers
           ●	Size	8 CPU · 24 GB · 80 GB
+          ●	Own Tailscale device	infra
+          ●	SSH	ssh infra · for debugging
       stderr: |
           → now: station machines infra

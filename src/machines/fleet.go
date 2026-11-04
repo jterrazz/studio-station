@@ -54,7 +54,10 @@ type VM struct {
 	// value: the state its record asks for, running or stopped.
 	Want string
 	// value: a server's health check; empty for none.
-	Check     string
+	Check string
+	// value: a server's own tailnet device, by its name on the tailnet,
+	// which the owner's tooling installed; empty for none.
+	Device    string
 	CreatedAt time.Time
 }
 

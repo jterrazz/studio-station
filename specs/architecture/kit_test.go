@@ -417,7 +417,7 @@ func pageStates() []string { return []string{"loading", "empty", "error", "full"
 func pageFamilies() []string {
 	return []string{
 		"home", "home-all", "apps", "settings", "background", "disk", "fleet", "machines", "images", "ports",
-		"outcome-apps-install", "outcome-settings-apply", "outcome-disk-free", "setup", "run", "kitchen-sink", "accounts", "outcome-stop", "outcome-start", "engine", "power", "outcome-power", "menubar",
+		"outcome-apps-install", "outcome-settings-apply", "outcome-disk-free", "setup", "run", "kitchen-sink", "accounts", "outcome-stop", "outcome-start", "engine", "power", "outcome-power", "menubar", "ssh",
 	}
 }
 

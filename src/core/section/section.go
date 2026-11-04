@@ -1,6 +1,10 @@
 package section
 
-import "github.com/jterrazz/studio-station/src/core/machine"
+import (
+	"slices"
+
+	"github.com/jterrazz/studio-station/src/core/machine"
+)
 
 type ID string
 
@@ -35,5 +39,33 @@ func For(k machine.Kind) []ID {
 		return []ID{Overview, Activity, Ports, SSH}
 	default:
 		return nil
+	}
+}
+
+func Shown(id ID) machine.Applies {
+	// invariant: the one gate of a section (SPEC §3.2, §7.7): a kind the
+	// table does not list it on is refused in words; a server is told to be
+	// managed by its own tooling, through its ssh.
+	return func(p machine.Profile) machine.Verdict {
+		if slices.Contains(For(p.Kind), id) {
+			return machine.Yes
+		}
+		if p.Kind == machine.Server {
+			return machine.Verdict{Why: p.Ref.Name + " is a server: station does not manage its " + noun(id), Fix: "manage it with your own tooling: ssh " + p.Ref.Name}
+		}
+		return machine.No(p.Ref.Name + " is a " + string(p.Kind) + ": it has no " + noun(id) + " section")
+	}
+}
+
+func noun(id ID) string {
+	switch id {
+	case Background:
+		return "background tasks"
+	case Awake:
+		return "Awake"
+	case SSH:
+		return "SSH"
+	default:
+		return string(id)
 	}
 }

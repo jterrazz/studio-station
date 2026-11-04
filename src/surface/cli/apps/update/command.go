@@ -90,7 +90,11 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, req appscalls.Update
 		}
 		run(h.Name, machine.Ref{Name: h.Name})
 		for _, vm := range h.VMs {
-			if vm.State != machines.Running {
+			switch {
+			case vm.Lifetime.Kind() == machine.Server:
+				updates = append(updates, pageapps.MachineUpdate{Machine: vm.Name, Skipped: "server"})
+				continue
+			case vm.State != machines.Running:
 				updates = append(updates, pageapps.MachineUpdate{Machine: vm.Name, Skipped: string(vm.State)})
 				continue
 			}
