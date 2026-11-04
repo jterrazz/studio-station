@@ -57,6 +57,13 @@ type vmState struct {
 	gen     int
 	asked   map[string]chan guestMessage
 	seq     int
+	// value: a server's restarts, when its run began, its health check as
+	// last run and whether one runs now; whether its ssh connection opened.
+	restarts model.Restarts
+	bootAt   time.Time
+	check    model.CheckStatus
+	checking bool
+	ssh      bool
 }
 
 // invariant: at start, a live run is ADOPTED (never touched); a dead one or none
@@ -68,24 +75,29 @@ func (d *Daemon) adopt(ctx context.Context) {
 	for _, r := range records {
 		v := &vmState{rec: r, state: StateStopped, guest: GuestAbsent}
 		known, remembered := d.memory[r.Name]
-		v.reruns = known.Reruns
+		v.reruns, v.restarts, v.bootAt, v.check = known.Reruns, known.Restarts, known.BootAt, known.Check
 		d.mu.Lock()
 		d.vms[r.Name] = v
 		d.mu.Unlock()
-		if run, ok := d.hv.Adopt(ctx, r.Name); ok {
+		run, live := d.hv.Adopt(ctx, r.Name)
+		switch {
+		case live:
 			v.run, v.state = run, StateRunning
 			d.connect(ctx, v)
 			continue
-		}
-		switch {
-		case remembered && (known.State == StateBroken || known.State == StateStale || !known.RerunAt.IsZero()):
+		case remembered && (known.State == StateBroken || known.State == StateStale || !known.RerunAt.IsZero() || known.Detail == model.PoweredOffInside):
 			v.state, v.detail, v.rerunAt = known.State, known.Detail, known.RerunAt
+			continue
 		case d.m.EngineRunning(ctx, r.Name):
 			v.state = StateRunning
-		case r.Want == machines.WantRunning && r.Lifetime == machines.AlwaysOn:
+			continue
+		}
+		switch model.Converge(r.Lifetime, r.Want == machines.WantRunning, false) {
+		case model.Boot:
 			_ = d.start(ctx, v)
-		case r.Want == machines.WantRunning:
+		case model.EndedWithItsMac:
 			v.detail = endedWithItsMac
+		case model.Adopt, model.Stay:
 		}
 	}
 }
@@ -134,6 +146,7 @@ func (d *Daemon) start(ctx context.Context, v *vmState) error {
 	}
 	d.mu.Lock()
 	v.run, v.end, v.state, v.detail, v.stopping = run, nil, StateRunning, "", false
+	v.bootAt, v.check = d.h.Clock.Now(), model.CheckStatus{}
 	d.mu.Unlock()
 	d.connect(ctx, v)
 	return nil
@@ -159,6 +172,7 @@ func (d *Daemon) tick(ctx context.Context) {
 			d.mu.Unlock()
 			_ = d.start(ctx, v)
 		}
+		d.keep(ctx, v)
 		d.rehello(v)
 	}
 	d.mu.Lock()
@@ -181,13 +195,27 @@ func (d *Daemon) ended(ctx context.Context, v *vmState) {
 	if v.end != nil {
 		end = *v.end
 	}
-	act, reruns := model.AfterRun(v.rec.Lifetime, end, v.reruns, d.h.Clock.Now())
+	now := d.h.Clock.Now()
+	act, reruns := model.AfterRun(v.rec.Lifetime, end, v.reruns, now)
 	v.reruns, v.run, v.end = reruns, nil, nil
+	up := now.Sub(v.bootAt)
 	d.mu.Unlock()
 	d.disconnect(v)
 	d.vmStopped(ctx, name)
 	switch act {
+	case model.ActRestart:
+		d.restartLater(ctx, v, up, now)
+	case model.ActPoweredOff:
+		v.rec.Want = machines.WantStopped
+		_ = d.m.Save(v.rec)
+		d.setState(v, StateStopped, model.PoweredOffInside)
+		d.tell(ctx, name, PoweredOff(name))
 	case model.ActRerun:
+		if v.rec.Lifetime == machines.AlwaysOn {
+			d.mu.Lock()
+			v.restarts = v.restarts.Rebooted(now)
+			d.mu.Unlock()
+		}
 		_ = d.start(ctx, v)
 	case model.ActDelete:
 		d.releaseVM(ctx, name)
@@ -225,7 +253,7 @@ func (d *Daemon) vmViews() []VMView {
 	defer d.mu.Unlock()
 	out := make([]VMView, 0, len(d.vms))
 	for name, v := range d.vms {
-		out = append(out, VMView{Name: name, State: v.state, RunPID: v.runPID(), Guest: v.guest, IP: v.ip, Detail: v.detail})
+		out = append(out, VMView{Name: name, State: v.state, RunPID: v.runPID(), Guest: v.guest, IP: v.ip, Detail: v.detail, SSH: v.ssh, Restarts: v.restarts, Check: v.check})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
@@ -273,6 +301,7 @@ func (d *Daemon) opStart(ctx context.Context, vm string) error {
 	}
 	d.mu.Lock()
 	v.reruns, v.rerunAt = nil, time.Time{}
+	v.restarts.Recent, v.restarts.Streak, v.restarts.Looping = nil, 0, false
 	d.mu.Unlock()
 	if err := d.opRun(ctx, vm); err != nil {
 		return err
@@ -390,7 +419,7 @@ func (d *Daemon) disconnect(v *vmState) {
 		v.cancel()
 	}
 	v.gen++
-	v.cancel, v.guest, v.client, v.in = nil, GuestAbsent, nil, nil
+	v.cancel, v.guest, v.client, v.in, v.ssh = nil, GuestAbsent, nil, nil, false
 	v.release()
 }
 
@@ -469,7 +498,7 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState, gen int) {
 		d.mu.Unlock()
 		return
 	}
-	v.client, v.ip, v.in, v.guest = client, ip, inW, GuestConnecting
+	v.client, v.ip, v.in, v.guest, v.ssh = client, ip, inW, GuestConnecting, true
 	v.release()
 	d.mu.Unlock()
 	go func() {
@@ -501,7 +530,7 @@ func (d *Daemon) guestFailed(ctx context.Context, v *vmState, reason string) {
 	}
 	d.mu.Lock()
 	repeated := v.lastErr == reason
-	v.lastErr, v.guest = reason, GuestAbsent
+	v.lastErr, v.guest, v.ssh = reason, GuestAbsent, false
 	d.mu.Unlock()
 	if !repeated {
 		d.logf(v.rec.Name+" guest", reason)

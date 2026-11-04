@@ -106,7 +106,7 @@ func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[str
 func (s *Service) view(name string, h model.Host, node Node, answers map[string]HostView) HostView {
 	far, ok := answers[name]
 	if !ok {
-		silent := HostView{Name: name, User: h.User, Node: node, Answered: h.Answered}
+		silent := HostView{Name: name, User: h.User, Node: node, Answered: h.Answered, LAN: h.LAN}
 		for _, vm := range h.VMs {
 			silent.VMs = append(silent.VMs, VM{
 				Name: vm.Name, Host: name, Lifetime: vm.Lifetime, State: model.UnknownState,

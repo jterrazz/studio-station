@@ -162,7 +162,7 @@ func (h *Hypervisor) Boot(_ context.Context, vm string, opts contract.BootOption
 	if h.w.Fails("Hypervisor.Boot") {
 		return nil, ErrScripted
 	}
-	v.PID, v.Ended = h.nextPID(), nil
+	v.PID, v.Ended, v.UpAt = h.nextPID(), nil, h.w.Now
 	v.Booted = &world.Boot{Bridged: opts.Network.Bridged, Folders: []string{}}
 	return &run{h: h, vm: vm, pid: v.PID}, nil
 }
@@ -198,7 +198,7 @@ func (h *Hypervisor) end(vm string, pid int, end machines.RunEnd) {
 	h.w.Lock()
 	defer h.w.Unlock()
 	if v, ok := h.disk(vm); ok && v.PID == pid {
-		v.PID, v.Ended = 0, &end
+		v.Down(h.w.Now, &end)
 	}
 }
 
@@ -210,7 +210,7 @@ func (h *Hypervisor) Shutdown(_ context.Context, vm string, _ time.Duration) err
 		return ErrNoDisk
 	}
 	if v.Running() {
-		v.PID, v.Ended = 0, &machines.RunEnd{Reason: machines.GuestPoweroff}
+		v.Down(h.w.Now, &machines.RunEnd{Reason: machines.GuestPoweroff})
 	}
 	return nil
 }

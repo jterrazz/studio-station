@@ -43,7 +43,13 @@ type Nodes interface {
 	Peers(ctx context.Context) (map[string]Node, error)
 }
 
-type DaemonVM struct{ State, Guest, IP, Detail string }
+type DaemonVM struct {
+	State, Guest, IP, Detail string
+	// value: its ssh connection opened; a server's restarts and check.
+	SSH      bool
+	Restarts model.Restarts
+	Check    model.CheckStatus
+}
 
 type Daemon interface {
 	Ping(ctx context.Context) (version string, err error)
@@ -155,6 +161,7 @@ type (
 	Check       = model.Check
 	ProbeReport = model.ProbeReport
 	SSHTarget   = model.SSHTarget
+	Restarts    = model.Restarts
 )
 
 const (
@@ -187,9 +194,14 @@ func validName(name string) bool {
 }
 
 const (
-	StepRunning = model.StepRunning
-	StepAddress = model.StepAddress
-	StepSSH     = model.StepSSH
+	StepRunning      = model.StepRunning
+	StepAddress      = model.StepAddress
+	StepSSH          = model.StepSSH
+	StepCheck        = model.StepCheck
+	PoweredOffInside = model.PoweredOffInside
+	CheckWaiting     = model.CheckWaiting
+	CheckPassing     = model.CheckPassing
+	CheckFailing     = model.CheckFailing
 )
 
 var (

@@ -24,12 +24,15 @@ import (
 	enginelog "github.com/jterrazz/studio-station/src/engine/adapter/log"
 	"github.com/jterrazz/studio-station/src/engine/feeds"
 	"github.com/jterrazz/studio-station/src/engine/process"
+	"github.com/jterrazz/studio-station/src/machines/adapter/dial"
+	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/remote"
 	"github.com/jterrazz/studio-station/src/remote/api"
 	enginerun "github.com/jterrazz/studio-station/src/surface/cli/engine/run"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
 func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
@@ -51,9 +54,11 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	guests := engineGuests{dialer: m.guestDialer(), vms: m.machines(false)}
 	notifier := func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) }
 	var tailnet portscontract.Tailnet = m.tailnetCLI().Tracked(engine.ChildrenDir(m.paths.State))
+	var checks machinescontract.CheckRunner = dial.Checker{}
 	if m.world != nil {
 		notifier = func(func(subject, text string)) engine.Notifier { return m.world.notifier() }
 		tailnet = m.world.tailnet()
+		checks = m.world.checks()
 	}
 	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
 		Remember: func(vm string, port int, stopped bool) error {
@@ -63,7 +68,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends: lends, Peer: m.engineAPI(),
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
-		Notifier: notifier,
+		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
 	})
 	lends.s = m.secretsVia(d, func(_ context.Context, vm string) (bool, error) {
 		for _, v := range d.VMs() {
@@ -149,7 +154,7 @@ func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, erro
 	}
 	out := make(map[string]machines.DaemonVM, len(views))
 	for _, v := range views {
-		out[v.Name] = machines.DaemonVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail}
+		out[v.Name] = machines.DaemonVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check}
 	}
 	return out, nil
 }

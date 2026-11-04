@@ -4,7 +4,7 @@ runs:
     - command: 'machines infra --json | /usr/bin/jq -c .health'
       exit: 0
       stdout: |
-          {"running":true,"address":true,"ssh":true,"check":null}
+          {"running":true,"address":true,"ssh":true,"check":{"url":"https://infra:6443/readyz","ok":true}}
     - command: 'machines api --json | /usr/bin/jq -c ''[.state, .wanted, .health]'''
       exit: 0
       stdout: |

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io"
 	"path"
-	"slices"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,6 +17,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -73,6 +74,11 @@ type Options struct {
 	Lends Lends
 	// value: the Notifier the engine tells, built over the engine's own log.
 	Notifier func(log func(subject, text string)) Notifier
+	// value: what runs a server's health check from this Mac; nil runs none.
+	Checks CheckRunner
+	// value: how the parts of what the engine tells are joined, as the
+	// presentation joins them.
+	Join func(parts ...string) string
 	// value: when the engine process started, for a stepped engine that
 	// stands for one which outlived its command; zero is the Begin.
 	StartedAt time.Time
@@ -237,17 +243,17 @@ func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
 
 func (d *Daemon) Step(ctx context.Context, tick int) bool {
 	// value: one tick of a stepped engine; it reports whether it is busy: a VM
-	// changed, or a run waits for its delay.
+	// changed, a run waits for its delay, or a health check runs.
 	before := d.vmViews()
 	d.step(ctx, tick)
-	return !slices.Equal(before, d.vmViews()) || d.waiting()
+	return !reflect.DeepEqual(before, d.vmViews()) || d.waiting()
 }
 
 func (d *Daemon) waiting() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for _, v := range d.vms {
-		if !v.rerunAt.IsZero() {
+		if !v.rerunAt.IsZero() || v.checking {
 			return true
 		}
 	}
@@ -265,6 +271,11 @@ type Remembered struct {
 	Detail  string      `json:"detail,omitempty"`
 	Reruns  []time.Time `json:"reruns,omitempty"`
 	RerunAt time.Time   `json:"rerun_at,omitzero"`
+	// value: a server's restarts since this engine started, when its run
+	// began, and its health check as last run.
+	Restarts model.Restarts    `json:"restarts,omitzero"`
+	BootAt   time.Time         `json:"boot_at,omitzero"`
+	Check    model.CheckStatus `json:"check,omitzero"`
 }
 
 func (d *Daemon) Memory() Memory {
@@ -272,7 +283,7 @@ func (d *Daemon) Memory() Memory {
 	defer d.mu.Unlock()
 	out := Memory{}
 	for name, v := range d.vms {
-		out[name] = Remembered{State: v.state, Detail: v.detail, Reruns: v.reruns, RerunAt: v.rerunAt}
+		out[name] = Remembered{State: v.state, Detail: v.detail, Reruns: v.reruns, RerunAt: v.rerunAt, Restarts: v.restarts, BootAt: v.bootAt, Check: v.check}
 	}
 	return out
 }
@@ -461,7 +472,7 @@ func (d *Daemon) stopAll(ctx context.Context) []Stopped {
 		d.mu.Lock()
 		running := v.state == StateRunning
 		d.mu.Unlock()
-		if !running {
+		if !running || r.Lifetime == machines.AlwaysOn {
 			continue
 		}
 		wg.Add(1)

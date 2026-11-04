@@ -242,6 +242,8 @@ func (m *worldMac) secretSource() accountscontract.SecretSource {
 	return accountsfake.NewSecretSource(m.run.w, m.name)
 }
 
+func (m *worldMac) checks() contract.CheckRunner { return machinesfake.CheckRunnerOf(m.run.w) }
+
 func (m *worldMac) notifier() engine.Notifier {
 	return lockedNotifier{w: m.run.w, n: enginefake.NewNotifier(m.run.w)}
 }

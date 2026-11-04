@@ -65,6 +65,7 @@ func (*worldMac) vault() accountscontract.Vault                         { return
 func (*worldMac) identities() accountscontract.Identities               { return nil }
 func (*worldMac) secretSource() accountscontract.SecretSource           { return nil }
 func (*worldMac) notifier() engine.Notifier                             { return nil }
+func (*worldMac) checks() contract.CheckRunner                          { return nil }
 func (*worldMac) engineFrom(func() *engine.Daemon)                      {}
 func (*worldMac) macs() remotecontract.EndpointDialer                   { return nil }
 func (*worldMac) stopMarks() engine.StopMarks                           { return nil }

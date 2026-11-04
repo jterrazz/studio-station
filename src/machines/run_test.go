@@ -36,3 +36,43 @@ func TestAfterRunKeepsEveryVMAStopDidNotDeclare(t *testing.T) {
 		})
 	}
 }
+
+func TestAServerComesBackUnlessSomethingInsidePoweredItOff(t *testing.T) {
+	now := time.Date(2026, 11, 7, 10, 0, 0, 0, time.UTC)
+	for _, c := range []struct {
+		end  RunEnd
+		want Action
+	}{
+		{RunEnd{Reason: Crashed, ExitCode: 137}, ActRestart},
+		{RunEnd{Reason: Unknown, ExitCode: -1}, ActRestart},
+		{RunEnd{Reason: GuestPoweroff}, ActPoweredOff},
+		{RunEnd{Reason: GuestReboot}, ActRerun},
+	} {
+		if got, _ := AfterRun(AlwaysOn, c.end, nil, now); got != c.want {
+			t.Errorf("a server's %s end: %d, want %d", c.end.Reason, got, c.want)
+		}
+	}
+	if got, _ := AfterRun(AlwaysOn, RunEnd{Reason: GuestReboot}, []time.Time{now, now.Add(10 * time.Second)}, now.Add(20*time.Second)); got != ActBroken {
+		t.Errorf("a server's third reboot within 60 s: %d, want a loop", got)
+	}
+}
+
+func TestAnEngineThatStartsAdoptsRunsAndBootsOnlyServers(t *testing.T) {
+	for _, c := range []struct {
+		lifetime   Lifetime
+		want, live bool
+		got        Convergence
+	}{
+		{AlwaysOn, true, true, Adopt},
+		{Throwaway, true, true, Adopt},
+		{AlwaysOn, true, false, Boot},
+		{AlwaysOn, false, false, Stay},
+		{Throwaway, true, false, EndedWithItsMac},
+		{Permanent, true, false, EndedWithItsMac},
+		{Permanent, false, false, Stay},
+	} {
+		if got := Converge(c.lifetime, c.want, c.live); got != c.got {
+			t.Errorf("Converge(%s, wanted running %v, live %v) = %d, want %d", c.lifetime, c.want, c.live, got, c.got)
+		}
+	}
+}

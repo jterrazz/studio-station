@@ -127,6 +127,9 @@ func (c *Control) Read(ctx context.Context) (Reading, error) {
 type Work struct {
 	Answering bool
 	VMs       []Stopped
+	// value: the servers that run: a stop skips them, and the engine keeps
+	// running for them (SPEC §5.11).
+	Servers []string
 }
 
 func (w Work) Empty() bool { return len(w.VMs) == 0 }
@@ -151,7 +154,11 @@ func (c *Control) Plan(ctx context.Context) (Work, error) {
 		}
 	}
 	for _, r := range records {
-		if running[r.Name] {
+		switch {
+		case !running[r.Name]:
+		case r.Lifetime == machines.AlwaysOn:
+			w.Servers = append(w.Servers, r.Name)
+		default:
 			w.VMs = append(w.VMs, Stopped{Name: r.Name, Lifetime: string(r.Lifetime), Result: ResultStopped})
 		}
 	}
@@ -166,9 +173,12 @@ type StopReport struct {
 	Power string
 	// value: the engine stopped sharing the ports of the VMs it stopped.
 	Sharing bool
-	// value: "stopped" (booted out now), "already stopped", or "kept" (a VM
-	// would not stop, so the engine still supervises it).
+	// value: "stopped" (booted out now), "already stopped", "kept" (a VM
+	// would not stop, so the engine still supervises it), or "for servers"
+	// (a server runs, which the engine keeps running).
 	Engine string
+	// value: the servers it skipped.
+	Servers []string
 }
 
 const (
@@ -180,10 +190,11 @@ const (
 	EngineHalted  = "stopped"
 	EngineAlready = "already stopped"
 	EngineKept    = "kept"
+	EngineServers = "for servers"
 )
 
 func (c *Control) Stop(ctx context.Context, w Work, by string) (StopReport, error) {
-	var r StopReport
+	r := StopReport{Servers: w.Servers}
 	if w.Answering {
 		all, err := c.c.StopAll(ctx)
 		if err != nil {
@@ -206,6 +217,10 @@ func (c *Control) Stop(ctx context.Context, w Work, by string) (StopReport, erro
 			r.Engine = EngineKept
 			return r, &StuckError{VM: v.Name}
 		}
+	}
+	if len(w.Servers) > 0 {
+		r.Engine = EngineServers
+		return r, nil
 	}
 	if !w.Answering && !c.job.Loaded(ctx) {
 		r.Engine = EngineAlready

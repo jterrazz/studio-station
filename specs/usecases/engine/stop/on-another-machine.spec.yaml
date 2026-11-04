@@ -1,7 +1,13 @@
-description: 'stop everything on another Mac stops its VMs and its engine through that Mac'
-env: two-macs
+description: 'stop everything on another Mac stops its workspaces and skips its server, its engine kept'
+env: mini-workspace
 runs:
     - command: 'engine stop --yes --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          ●	engine	stopped 1 VM (infra) · the engine stopped
+          ●	engine	stopped 1 VM (ci-1) · infra skipped (server) · the engine keeps running for infra
+    - command: 'machines | /usr/bin/grep -A2 jterrazz-mac-mini'
+      exit: 0
+      stdout: |
+          ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
+          ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB
+          ○	ci-1	Workspace	jterrazz-mac-mini	Stopped · throwaway	4 CPU	8 GB

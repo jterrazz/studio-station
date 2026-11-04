@@ -1,0 +1,4 @@
+{"v":2,"id":"1","out":{"event":"notice","notice":{"kind":"server_restarting","text":"infra stopped and is restarting (↺ 3)"}}}
+{"v":2,"id":"1","out":{"event":"notice","notice":{"kind":"server_loop","text":"infra is in a loop: 5 restarts in 10 min · waiting 60 s"}}}
+{"v":2,"id":"1","out":{"event":"notice","notice":{"kind":"server_powered_off","text":"infra powered off from inside · it stays stopped"}}}
+{"v":2,"id":"1","out":{"event":"notice","notice":{"kind":"server_back","text":"infra is back · all 4 health steps pass"}}}

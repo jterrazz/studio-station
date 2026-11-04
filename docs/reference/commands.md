@@ -154,7 +154,7 @@ This Mac's GitHub, npm, Claude, Tailscale, Cloudflare, git, ssh and Docker sign-
 
 ```sh
 station engine [--json] # running, its version, up, the VMs it runs, Awake; or stopped, since when and by what
-station engine stop [--yes] # Stop everything on this Mac: every running VM stopped, its disk kept; Awake and the sharing end; then the engine
+station engine stop [--yes] # Stop everything on this Mac: every running workspace stopped, its disk kept; Awake and the sharing end; then the engine, unless a server runs: it is skipped, and the engine keeps running for it
 station engine start # the engine bootstrapped again; the VMs it stopped stay stopped
 ```
 

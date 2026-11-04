@@ -59,6 +59,13 @@ type VM struct {
 	// which the owner's tooling installed; empty for none.
 	Device    string
 	CreatedAt time.Time
+	// value: its ssh connection opened, whether station's guest answers on
+	// it or not (a server's tooling may replace it).
+	SSH bool
+	// value: a server's restarts since its Mac's engine started, and its
+	// health check as last run.
+	Restarts    Restarts
+	CheckStatus CheckStatus
 }
 
 type EngineView struct {

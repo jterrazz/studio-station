@@ -56,6 +56,9 @@ func main() {
 	if err := os.WriteFile(*stream, pages.MenubarStream(), 0o600); err != nil {
 		panic(err)
 	}
+	if err := os.WriteFile(filepath.Join(filepath.Dir(*stream), filepath.Base(eventsPath)), pages.EventsStream(), 0o600); err != nil {
+		panic(err)
+	}
 	if err := os.WriteFile(*catalogue, calls(), 0o600); err != nil {
 		panic(err)
 	}

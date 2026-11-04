@@ -10,6 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
+	model "github.com/jterrazz/studio-station/src/machines"
 )
 
 const Label = catalog.EngineLabel
@@ -30,6 +31,11 @@ type VMView struct {
 	Guest  string `json:"guest"`
 	IP     string `json:"ip"`
 	Detail string `json:"detail"`
+	// value: its ssh connection opened, whether station's guest answers on
+	// it or not; a server's restarts and health check.
+	SSH      bool              `json:"ssh,omitempty"`
+	Restarts model.Restarts    `json:"restarts,omitzero"`
+	Check    model.CheckStatus `json:"check,omitzero"`
 }
 
 type Peer interface {

@@ -12,6 +12,8 @@ runs:
           ●	Running
           ●	Has an address	192.168.64.5
           ●	SSH answers
+          ●	Check passes	https://infra:6443/readyz
+          ●	Restarts	↺ 0 · none since boot
           ●	Size	8 CPU · 24 GB · 80 GB
           ●	Own Tailscale device	infra
     - command: 'machines create infra-2 --server --on mac-mini >/dev/null'
@@ -24,6 +26,7 @@ runs:
           ●	Running
           ●	Has an address	192.168.64.5
           ●	SSH answers
+          ●	Restarts	↺ 0 · none since boot
           ●	Size	4 CPU · 8 GB · 50 GB
           ●	SSH	ssh infra-2 · for debugging
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].tailnet | {peers: [.self.Peers[].Name], shares: .shares}'' world.json'
