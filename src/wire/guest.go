@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"path"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -20,7 +21,7 @@ func (m machine) guest() *guest.Service {
 	if root == "" {
 		root = "/"
 	}
-	return guest.New(m.host, guest.Options{Paths: m.paths, Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Accounts: func(ctx context.Context, keys []string) any {
+	return guest.New(m.host, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Accounts: func(ctx context.Context, keys []string) any {
 		a := accounts.New(m.host, m.pool, m.identities(path.Join(m.paths.State, "children")), accounts.Ports{}, accounts.Options{Here: m.kind, HereName: m.where.Machine, Keys: func() []string { return keys }})
 		return a.Own(ctx)
 	}})

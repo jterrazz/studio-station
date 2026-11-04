@@ -13,7 +13,7 @@ type URLSet struct {
 	Public string `json:"public"`
 }
 
-func (l Lease) isHTTP() bool { return l.HTTP == nil || *l.HTTP }
+func isHTTP(l Lease) bool { return l.HTTP == nil || *l.HTTP }
 
 func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
 	// invariant: one shape everywhere. An HTTP service, or one not yet detected,
@@ -21,7 +21,7 @@ func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
 	// is the only one there is; a raw TCP service is the tailnet's bytes, no scheme.
 	port := strconv.Itoa(l.HostPort)
 	u := URLSet{Local: LocalHost + ":" + port}
-	if l.isHTTP() {
+	if isHTTP(l) {
 		u.Local = "http://" + u.Local
 	}
 	u.Public = u.Local
@@ -29,7 +29,7 @@ func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
 		return u
 	}
 	switch {
-	case !l.isHTTP():
+	case !isHTTP(l):
 		u.Public = publicHost + ":" + port
 	case httpsMode == HTTPSPath:
 		u.Public = "https://" + publicHost + "/" + l.VM + "/" + strconv.Itoa(l.GuestPort) + "/"
@@ -42,7 +42,7 @@ func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
 func ShareOf(l Lease, httpsMode string) ports.Share {
 	s := ports.Share{Port: l.HostPort, Reserved: l.HostPort, Scheme: ports.SchemeHTTPS}
 	switch {
-	case !l.isHTTP():
+	case !isHTTP(l):
 		s.Scheme = ports.SchemeTCP
 	case httpsMode == HTTPSPath:
 		s.Port, s.Path = 443, "/"+l.VM+"/"+strconv.Itoa(l.GuestPort)

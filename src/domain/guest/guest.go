@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -30,9 +29,10 @@ const (
 )
 
 type Options struct {
-	Paths   settings.Paths
-	Kind    catalog.MachineKind
-	Version string
+	// value: the guest's own state folder and the services' env file.
+	State, ServicesEnv string
+	Kind               catalog.MachineKind
+	Version            string
 	// value: what the host's `accounts` request is answered with: this VM's
 	// providers, parsed into identities and scopes, never a token.
 	Accounts func(ctx context.Context, keys []string) any
@@ -83,7 +83,7 @@ func (s *Service) Check() error {
 	return nil
 }
 
-func (s *Service) SocketPath() string { return path.Join(s.o.Paths.State, "guest.sock") }
+func (s *Service) SocketPath() string { return path.Join(s.o.State, "guest.sock") }
 
 type session struct {
 	s       *Service
@@ -283,7 +283,7 @@ func (s *Service) writeEnv(env map[string]string) error {
 	for _, k := range names {
 		b.WriteString("export " + k + "=" + Quote(env[k]) + "\n")
 	}
-	file := path.Join(s.o.Paths.Config, "services.env")
+	file := s.o.ServicesEnv
 	if err := s.h.FS.MkdirAll(path.Dir(file), 0o700); err != nil {
 		return err
 	}
@@ -295,10 +295,10 @@ func (s *Service) writeHost(h Hello) error {
 	if err != nil {
 		return err
 	}
-	if err := s.h.FS.MkdirAll(s.o.Paths.State, 0o700); err != nil {
+	if err := s.h.FS.MkdirAll(s.o.State, 0o700); err != nil {
 		return err
 	}
-	return s.h.FS.WriteFile(path.Join(s.o.Paths.State, "guest.json"), append(data, '\n'), 0o600)
+	return s.h.FS.WriteFile(path.Join(s.o.State, "guest.json"), append(data, '\n'), 0o600)
 }
 
 type Placement struct {
@@ -309,7 +309,7 @@ type Placement struct {
 
 func (s *Service) Placement() Placement {
 	var p Placement
-	data, err := s.h.FS.ReadFile(path.Join(s.o.Paths.State, "guest.json"))
+	data, err := s.h.FS.ReadFile(path.Join(s.o.State, "guest.json"))
 	if err == nil {
 		_ = json.Unmarshal(data, &p)
 	}

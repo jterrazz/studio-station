@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Service) identityTable() []probe {
-	want, _ := s.deps.Store.Load()
+	want, _ := s.deps.Identity.Get()
 	return []probe{
 		{name: "git-email", cmd: cmd("git", "config", "--global", "user.email"), interpret: gitValue(want.Email())},
 		{name: "git-name", cmd: cmd("git", "config", "--global", "user.name"), interpret: gitValue(want.Name())},

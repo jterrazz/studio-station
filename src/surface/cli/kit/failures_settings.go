@@ -5,12 +5,12 @@ import (
 
 	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/settings"
+	"github.com/jterrazz/studio-station/src/core/store"
 )
 
 func settingsFailure(err error) (*fail.Error, bool) {
-	var unreadable *settings.UnreadableError
-	var unwritable *settings.UnwritableError
+	var unreadable *store.UnreadableError
+	var unwritable *store.UnwritableError
 	var vault *accounts.VaultError
 	switch {
 	case errors.As(err, &unreadable):

@@ -9,6 +9,12 @@ import (
 	"strings"
 	"time"
 
+	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
+	"github.com/jterrazz/studio-station/src/core/store"
+	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
+	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/shell"
@@ -34,21 +40,35 @@ type DaemonInstaller interface {
 }
 
 type Options struct {
-	Here        catalog.MachineKind
-	Paths       settings.Paths
-	Executable  string
-	Detached    bool
-	Tools       []catalog.Tool
-	Expand      storage.Expander
-	Files       map[catalog.ToolFile]string
-	Configurer  Configurer
-	Installer   Installer
-	AppStoreCLI func() string
+	Here catalog.MachineKind
+	// value: the preferences' file (a v1 config.json converts only while it
+	// is absent), station's state folder and the user's bin.
+	PreferencesFile, State, Bin string
+	Executable                  string
+	Detached                    bool
+	Tools                       []catalog.Tool
+	Expand                      storage.Expander
+	Files                       map[catalog.ToolFile]string
+	Configurer                  Configurer
+	Installer                   Installer
+	AppStoreCLI                 func() string
+}
+
+type Prefs struct {
+	Name      setupcontract.NamePrefs
+	Identity  setupcontract.IdentityPrefs
+	Hosts     machinescontract.MacsPrefs
+	VMUser    machinescontract.VMUserPrefs
+	ShareList accountscontract.ShareListPrefs
+	Services  portscontract.PortsPrefs
+	// value: every store station keeps, each brought to its version by the
+	// layout step.
+	Stores []store.Migrator
 }
 
 type Service struct {
 	h      system.Host
-	store  settings.Store
+	p      Prefs
 	vault  Vault
 	reg    Registrar
 	daemon DaemonInstaller
@@ -59,8 +79,8 @@ type Vault interface {
 	Forget(ctx context.Context, name string) error
 }
 
-func New(h system.Host, store settings.Store, v Vault, reg Registrar, d DaemonInstaller, o Options) *Service {
-	return &Service{h: h, store: store, vault: v, reg: reg, daemon: d, o: o}
+func New(h system.Host, p Prefs, v Vault, reg Registrar, d DaemonInstaller, o Options) *Service {
+	return &Service{h: h, p: p, vault: v, reg: reg, daemon: d, o: o}
 }
 
 type Request struct {

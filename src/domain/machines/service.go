@@ -2,31 +2,32 @@ package machines
 
 import (
 	"context"
-	model "github.com/jterrazz/studio-station/src/machines"
-	"github.com/jterrazz/studio-station/src/machines/contract"
-	"path"
 	"strings"
 	"time"
 
+	model "github.com/jterrazz/studio-station/src/machines"
+	"github.com/jterrazz/studio-station/src/machines/contract"
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
+
 	background "github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 type Ports struct{ OpenClaw, Hermes int }
 
 type Options struct {
-	Ports     Ports
-	Here      catalog.MachineKind
-	Paths     settings.Paths
-	User      string
-	Version   string
-	Remote    func(target string, words []string) []string
-	GuestPort int
-	Jobs      background.Jobs
-	Unlocker  contract.Unlocker
-	SSHConfig contract.SSHConfig
+	Ports Ports
+	Here  catalog.MachineKind
+	// value: the folders of the VMs' known hosts and of their logs.
+	KnownHosts, Logs string
+	User             string
+	Version          string
+	Remote           func(target string, words []string) []string
+	GuestPort        int
+	Jobs             background.Jobs
+	Unlocker         contract.Unlocker
+	SSHConfig        contract.SSHConfig
 }
 
 type Node struct {
@@ -69,7 +70,8 @@ type Images interface {
 type Service struct {
 	h      system.Host
 	engine contract.Hypervisor
-	store  settings.Store
+	p      Prefs
+	recs   contract.MachineStore
 	nodes  Nodes
 	img    Images
 	daemon Daemon
@@ -77,8 +79,35 @@ type Service struct {
 	o      Options
 }
 
-func New(h system.Host, e contract.Hypervisor, store settings.Store, nodes Nodes, img Images, d Daemon, rel Releaser, o Options) *Service {
-	return &Service{h: h, engine: e, store: store, nodes: nodes, img: img, daemon: d, rel: rel, o: o}
+type Prefs struct {
+	Name   setupcontract.NamePrefs
+	Hosts  contract.MacsPrefs
+	VMUser contract.VMUserPrefs
+}
+
+type prefsView struct {
+	Here   string
+	Hosts  map[string]model.Host
+	VMUser string
+}
+
+func (s *Service) prefs() (prefsView, error) {
+	var v prefsView
+	var err error
+	if v.Here, err = s.p.Name.Get(); err != nil {
+		return prefsView{}, err
+	}
+	if v.Hosts, err = s.p.Hosts.Get(); err != nil {
+		return prefsView{}, err
+	}
+	if v.VMUser, err = s.p.VMUser.Get(); err != nil {
+		return prefsView{}, err
+	}
+	return v, nil
+}
+
+func New(h system.Host, e contract.Hypervisor, p Prefs, vms contract.MachineStore, nodes Nodes, img Images, d Daemon, rel Releaser, o Options) *Service {
+	return &Service{h: h, engine: e, p: p, recs: vms, nodes: nodes, img: img, daemon: d, rel: rel, o: o}
 }
 
 type Lifetime = model.Lifetime
@@ -176,16 +205,12 @@ type ProbeReport struct {
 	Console        string
 }
 
-func (s *Service) vmUser(cfg settings.Settings) string {
+func (s *Service) vmUser(cfg prefsView) string {
 	if cfg.VMUser != "" {
 		return cfg.VMUser
 	}
 	return s.o.User
 }
-
-func (s *Service) recordsDir() string { return path.Join(s.o.Paths.State, "vms") }
-
-func KnownHostsDir(p settings.Paths) string { return path.Join(p.State, "known_hosts") }
 
 func (s *Service) CheckHost() error {
 	if s.o.Here != catalog.Host {

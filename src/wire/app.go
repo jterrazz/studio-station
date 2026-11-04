@@ -175,7 +175,7 @@ type machine struct {
 	vars      map[string]string
 	kind      catalog.MachineKind
 	paths     settings.Paths
-	store     settings.Store
+	stores    *stores
 	where     page.Context
 }
 
@@ -201,20 +201,20 @@ func resolve(h system.Host, door local.Power, vars map[string]string) machine {
 		Bin:    filepath.Join(home, ".local", "bin"),
 		Roots:  roots,
 	}
-	store := settings.NewStore(h.FS, paths)
-	current, _ := store.Load()
+	st := newStores(h.FS, paths)
+	registered, _ := st.name().Get()
 	m := machine{
-		pool:  probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
-		host:  h,
-		vars:  vars,
-		paths: paths,
-		store: store,
+		pool:   probe.NewPool(context.Background(), h.Clock, commandLane, walkLane),
+		host:   h,
+		vars:   vars,
+		paths:  paths,
+		stores: st,
 	}
 	m.powerPort = awakemacos.New(door, h.Run, m.systemRoot())
-	name := hereName(current.Here, h.Env.Hostname())
+	name := hereName(registered, h.Env.Hostname())
 	m.profile = profileOf(context.Background(), h, vars["STATION_MACHINE_KIND"], name, m.powerPort)
 	m.kind = legacyKind(m.profile)
-	m.where = page.Context{Machine: name, Kind: string(m.kind), Registered: current.Here != ""}
+	m.where = page.Context{Machine: name, Kind: string(m.kind), Registered: registered != ""}
 	return m
 }
 
@@ -245,6 +245,6 @@ func (m machine) systemRoot() string {
 }
 
 func (m machine) here() string {
-	current, _ := m.store.Load()
-	return current.Here
+	here, _ := m.stores.name().Get()
+	return here
 }

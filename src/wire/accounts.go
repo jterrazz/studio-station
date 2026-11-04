@@ -22,15 +22,14 @@ import (
 
 func (m machine) accounts() *accounts.Service {
 	o := accounts.Options{Here: m.kind, HereName: m.where.Machine}
-	ids := m.identities(engine.ChildrenDir(m.paths))
+	ids := m.identities(engine.ChildrenDir(m.paths.State))
 	if m.kind != catalog.Host {
 		o.Keys = m.stationHostKeys
 		return accounts.New(m.host, m.pool, ids, accounts.Ports{}, o)
 	}
 	sec := m.secrets()
-	records := vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}
 	tn := m.tailnet()
-	d := engine.Dial(m.host, m.paths)
+	d := engine.Dial(m.host, m.paths.State)
 	sources := accounts.Ports{
 		LendList: sec.LendList,
 		Tailnet: func(ctx context.Context) accounts.TailnetAccount {
@@ -41,7 +40,7 @@ func (m machine) accounts() *accounts.Service {
 			if err != nil {
 				return nil, err
 			}
-			lends, _ := records.Lends()
+			lends, _ := m.stores.shares.List(ctx)
 			var live []engine.VMView
 			_ = d.Do(ctx, "vms", engine.Request{}, &live)
 			out := make([]accounts.VM, 0, len(recs))

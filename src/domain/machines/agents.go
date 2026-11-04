@@ -11,21 +11,19 @@ import (
 
 const agentPrefix = "com.jterrazz.station.vm."
 
-func (s *Service) LogPath(name string) string { return path.Join(s.o.Paths.State, "logs", name+".log") }
+func (s *Service) LogPath(name string) string { return path.Join(s.o.Logs, name+".log") }
 
-func (s *Service) KnownHostsPath(name string) string {
-	return path.Join(KnownHostsDir(s.o.Paths), name)
-}
+func (s *Service) KnownHostsPath(name string) string { return path.Join(s.o.KnownHosts, name) }
 
 func (s *Service) KeyPath() string { return s.img.KeyPath() }
 
 func (s *Service) VMUser() string {
-	cfg, _ := s.store.Load()
+	cfg, _ := s.prefs()
 	return s.vmUser(cfg)
 }
 
 func (s *Service) HereName() string {
-	cfg, _ := s.store.Load()
+	cfg, _ := s.prefs()
 	return s.here(cfg)
 }
 

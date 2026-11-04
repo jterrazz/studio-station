@@ -37,3 +37,7 @@ func TestIdentities(t *testing.T) {
 		}
 	})
 }
+
+func TestShareStore(t *testing.T) {
+	contracttest.ShareStore(t, func(_ *testing.T, vms ...string) contract.ShareStore { return fake.NewShares(vms...) })
+}

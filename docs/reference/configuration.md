@@ -61,7 +61,7 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 }
 ```
 
-`here` is this machine's name, `hosts` the other hosts it can drive, `vm_user` the one login of every VM in the fleet, `lend_list` the secrets that may be lent, `services` the policy of [published services](services.md#the-policy): `range` the host ports leases take, `max_per_vm` the leases one VM may hold, `ignored_ports` and `min_port` what is never published, `https` `port`, `path` or `off`; every `services` key is optional, the defaults being `40000-40999`, 20, `[22]`, 1024 and `port`. No secret is in it. A `tailnet` key an earlier round wrote is dropped at the next save.
+`here` is this machine's name, `hosts` the other hosts it can drive, `vm_user` the one login of every VM in the fleet, `lend_list` the secrets that may be lent, `services` the policy of [published services](services.md#the-policy): `range` the host ports leases take, `max_per_vm` the leases one VM may hold, `ignored_ports` and `min_port` what is never published, `https` `port`, `path` or `off`; every `services` key is optional, the defaults being `40000-40999`, 20, `[22]`, 1024 and `port`. No secret is in it. A key no group names, such as the `tailnet` an earlier round wrote, is dropped at the next save and at setup's layout step. A `v` field names the version of the shape the file was written at; absent, it is version 1, and a file a newer station wrote is refused rather than read.
 
 ## Environment
 

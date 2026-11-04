@@ -5,6 +5,10 @@ import (
 	"testing"
 	"testing/fstest"
 
+	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
+	corefake "github.com/jterrazz/studio-station/src/core/adapter/fake"
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system/systemtest"
@@ -16,7 +20,7 @@ func newTestService(t *testing.T, here catalog.MachineKind, euid int) (*Service,
 	env := systemtest.Env{HomeDir: "/home/u", UID: euid, OS: "darwin"}
 	h := systemtest.Host(run, files, env, systemtest.NewNet(), &systemtest.Clock{})
 	paths := settings.Paths{Config: "/home/u/.config/station", State: "/home/u/.local/state/station"}
-	svc := New(h, catalog.ConfigItems, fstest.MapFS{}, settings.NewStore(files, paths), Options{Here: here, Paths: paths})
+	svc := New(h, catalog.ConfigItems, fstest.MapFS{}, Prefs{Identity: setupcontract.Identity(corefake.NewPreferences()), ShareList: accountscontract.ShareList(corefake.NewPreferences())}, Options{Here: here, DNSProfile: paths.State + "/dns/quad9-dns.mobileconfig", BackupExclusions: []string{"/home/u/.cache", "/home/u/.local/share/station/vms"}})
 	return svc, run, files
 }
 

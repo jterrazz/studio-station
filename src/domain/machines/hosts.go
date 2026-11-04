@@ -6,15 +6,16 @@ import (
 	"sort"
 	"strings"
 
+	model "github.com/jterrazz/studio-station/src/machines"
+
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
 func (s *Service) Lookup(_ context.Context, name string) (Machine, error) { return s.lookup(name) }
 
 func (s *Service) lookup(name string) (Machine, error) {
-	cfg, err := s.store.Load()
+	cfg, err := s.prefs()
 	if err != nil {
 		return Machine{}, err
 	}
@@ -59,31 +60,37 @@ func (s *Service) Init(name string) error {
 	if !validName(name) {
 		return &BadNameError{Name: name}
 	}
-	cfg, err := s.store.Load()
+	cfg, err := s.prefs()
 	if err != nil {
 		return err
 	}
-	cfg.Here = name
-	if cfg.Hosts == nil {
-		cfg.Hosts = map[string]settings.Host{}
+	if err := s.p.Name.Set(name); err != nil {
+		return err
 	}
 	if _, ok := cfg.Hosts[name]; !ok {
-		cfg.Hosts[name] = settings.Host{}
+		hosts := maps.Clone(cfg.Hosts)
+		if hosts == nil {
+			hosts = map[string]model.Host{}
+		}
+		hosts[name] = model.Host{}
+		if err := s.p.Hosts.Set(hosts); err != nil {
+			return err
+		}
 	}
 	if cfg.VMUser == "" {
-		cfg.VMUser = s.o.User
+		return s.p.VMUser.Set(s.o.User)
 	}
-	return s.store.Save(cfg)
+	return nil
 }
 
-func (s *Service) AddHost(ctx context.Context, name string, h settings.Host) error {
+func (s *Service) AddHost(ctx context.Context, name string, h model.Host) error {
 	if err := s.CheckHost(); err != nil {
 		return err
 	}
 	if !validName(name) {
 		return &BadNameError{Name: name}
 	}
-	cfg, err := s.store.Load()
+	cfg, err := s.prefs()
 	if err != nil {
 		return err
 	}
@@ -99,17 +106,17 @@ func (s *Service) AddHost(ctx context.Context, name string, h settings.Host) err
 			return &NameTakenError{Name: name, VM: true}
 		}
 	}
-	before := cfg
-	cfg.Hosts = maps.Clone(cfg.Hosts)
-	if cfg.Hosts == nil {
-		cfg.Hosts = map[string]settings.Host{}
+	before := cfg.Hosts
+	hosts := maps.Clone(cfg.Hosts)
+	if hosts == nil {
+		hosts = map[string]model.Host{}
 	}
-	cfg.Hosts[name] = h
-	if err := s.store.Save(cfg); err != nil {
+	hosts[name] = h
+	if err := s.p.Hosts.Set(hosts); err != nil {
 		return err
 	}
 	if err := s.o.SSHConfig.Put(ctx, []contract.HostBlock{{Name: name, User: h.User, Key: h.Key}}); err != nil {
-		_ = s.store.Save(before)
+		_ = s.p.Hosts.Set(before)
 		return configFailure(err, true)
 	}
 	return nil
@@ -123,18 +130,18 @@ func (s *Service) ForgetHost(ctx context.Context, name string) error {
 	if err != nil {
 		return err
 	}
-	cfg, err := s.store.Load()
+	cfg, err := s.prefs()
 	if err != nil {
 		return err
 	}
 	delete(cfg.Hosts, m.Name)
-	if err := s.store.Save(cfg); err != nil {
+	if err := s.p.Hosts.Set(cfg.Hosts); err != nil {
 		return err
 	}
 	return configFailure(s.o.SSHConfig.Remove(ctx, m.Name), false)
 }
 
-func (s *Service) here(cfg settings.Settings) string {
+func (s *Service) here(cfg prefsView) string {
 	if cfg.Here != "" {
 		return cfg.Here
 	}
@@ -142,7 +149,7 @@ func (s *Service) here(cfg settings.Settings) string {
 }
 
 func (s *Service) Names() []string {
-	cfg, err := s.store.Load()
+	cfg, err := s.prefs()
 	if err != nil {
 		return nil
 	}

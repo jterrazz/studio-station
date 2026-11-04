@@ -29,8 +29,8 @@ func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 // never its socket: the lends are bound to the engine they serve.
 func (m machine) daemon(env kit.Env) *engine.Daemon {
 	lends := &daemonLends{}
-	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths)), m.store, engine.Options{
-		Paths: m.paths, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
+	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, engineGuests{dialer: ssh.New(), vms: m.machines(false)}, m.machines(false), m.tailnet().Tracked(engine.ChildrenDir(m.paths.State)), engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
+		State: m.paths.State, Here: m.kind, Version: Version(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		Lends:    lends,
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: m.menubarFeed(env)},
@@ -64,7 +64,7 @@ func (l *daemonLends) Recall(ctx context.Context, from string, names []string) e
 
 type hostDaemon struct{ c engine.Client }
 
-func (m machine) hostDaemon() hostDaemon { return hostDaemon{c: engine.Dial(m.host, m.paths)} }
+func (m machine) hostDaemon() hostDaemon { return hostDaemon{c: engine.Dial(m.host, m.paths.State)} }
 
 func downAs(err, sentinel error) error {
 	var down *engine.DownError
@@ -147,8 +147,8 @@ func (d servicesDaemon) Release(ctx context.Context, vm string, port int) (servi
 type leaseReleaser struct{ m machine }
 
 func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
-	store := services.NewStore(r.m.host.FS, r.m.paths.State)
-	leases, err := store.Load()
+	store := r.m.stores.reservations
+	leases, err := store.List(ctx)
 	if err != nil {
 		return err
 	}
@@ -156,15 +156,15 @@ func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	if len(gone) == 0 {
 		return nil
 	}
-	cfg, _ := r.m.store.Load()
-	mode := services.PolicyOf(cfg.Services).HTTPS
+	g, _ := r.m.stores.services().Get()
+	mode := services.PolicyOf(g).HTTPS
 	tn := r.m.tailnet()
 	if ready, err := tn.Ready(ctx); err == nil && ready.On {
 		for _, l := range gone {
 			_ = tn.Unshare(ctx, services.ShareOf(l, mode))
 		}
 	}
-	return store.Save(kept)
+	return services.SaveLeases(ctx, store, kept)
 }
 
 type daemonInstaller struct {

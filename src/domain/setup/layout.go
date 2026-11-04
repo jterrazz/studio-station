@@ -8,6 +8,8 @@ import (
 	"path"
 	"reflect"
 
+	setupmodel "github.com/jterrazz/studio-station/src/setup"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
@@ -29,8 +31,8 @@ func (s *Service) legacyPath(parts ...string) string {
 }
 
 func (s *Service) v1Path() string       { return s.legacyPath("config.json") }
-func (s *Service) settingsPath() string { return path.Join(s.o.Paths.Config, "settings.json") }
-func (s *Service) logPath() string      { return path.Join(s.o.Paths.State, "logs", "setup.log") }
+func (s *Service) settingsPath() string { return s.o.PreferencesFile }
+func (s *Service) logPath() string      { return path.Join(s.o.State, "logs", "setup.log") }
 
 func (s *Service) exists(p string) bool {
 	_, err := s.h.FS.Stat(p)
@@ -52,20 +54,61 @@ func (s *Service) migrateSettings() error {
 		return err
 	}
 	if s.exists(s.settingsPath()) {
-		existing, loadErr := s.store.Load()
+		existing, same, loadErr := s.current()
 		if loadErr != nil {
 			return loadErr
 		}
-		if !reflect.DeepEqual(existing, converted) {
+		if !same || !reflect.DeepEqual(existing, converted) {
 			return &DifferentContentError{Path: s.settingsPath()}
 		}
 	}
 	if !s.exists(s.settingsPath()) {
-		if err := s.store.Save(converted); err != nil {
+		if err := s.write(converted); err != nil {
 			return err
 		}
 	}
 	return s.h.FS.Remove(s.v1Path())
+}
+
+// invariant: same is false when the preferences hold a group a v1
+// config.json never converts to (the share list, the services' policy).
+func (s *Service) current() (v settings.Settings, same bool, err error) {
+	if v.Here, err = s.p.Name.Get(); err != nil {
+		return v, false, err
+	}
+	if v.Hosts, err = s.p.Hosts.Get(); err != nil {
+		return v, false, err
+	}
+	if v.VMUser, err = s.p.VMUser.Get(); err != nil {
+		return v, false, err
+	}
+	id, err := s.p.Identity.Get()
+	if err != nil {
+		return v, false, err
+	}
+	v.UserEmail, v.UserName = id.UserEmail, id.UserName
+	list, err := s.p.ShareList.Get()
+	if err != nil {
+		return v, false, err
+	}
+	policy, err := s.p.Services.Get()
+	if err != nil {
+		return v, false, err
+	}
+	return v, len(list) == 0 && policy == nil, nil
+}
+
+func (s *Service) write(v settings.Settings) error {
+	if err := s.p.Name.Set(v.Here); err != nil {
+		return err
+	}
+	if err := s.p.Hosts.Set(v.Hosts); err != nil {
+		return err
+	}
+	if err := s.p.VMUser.Set(v.VMUser); err != nil {
+		return err
+	}
+	return s.p.Identity.Set(setupmodel.Identity{UserEmail: v.UserEmail, UserName: v.UserName})
 }
 
 func (s *Service) layout(ctx context.Context, migrated error) ([]Step, error) {
@@ -116,7 +159,7 @@ func (s *Service) moveDNS() (bool, error) {
 		if e.IsDir() {
 			continue
 		}
-		if err := s.move(s.legacyPath(legacyDNS, e.Name()), path.Join(s.o.Paths.State, "dns", e.Name())); err != nil {
+		if err := s.move(s.legacyPath(legacyDNS, e.Name()), path.Join(s.o.State, "dns", e.Name())); err != nil {
 			return moved, err
 		}
 		moved = true

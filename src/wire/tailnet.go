@@ -34,8 +34,8 @@ type tailnetStatus struct {
 }
 
 func (m machine) tailnetStatus() tailnetStatus {
-	cfg, _ := m.store.Load()
-	p := services.PolicyOf(cfg.Services)
+	g, _ := m.stores.services().Get()
+	p := services.PolicyOf(g)
 	return tailnetStatus{tn: m.tailnet(), owns: func(s ports.Share) bool {
 		return p.InRange(s.Port) || (p.HTTPS == services.HTTPSPath && s.Port == 443 && s.Path != "/")
 	}}

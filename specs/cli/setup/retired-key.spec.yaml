@@ -1,0 +1,26 @@
+description: 'setup drops the retired tailnet key from settings.json and keeps every other key'
+fixture:
+    - ../../__fixtures__/setup-stubs/
+    - ./__fixtures__/retired-key/
+env:
+    - USER=tester
+runs:
+    - command: 'setup'
+      exit: 0
+      stdout: |
+          ●	name	t
+          ●	zshrc
+          ●	layout	nothing to retire
+          ●	relocate	bunfig, go env, mise config, npmrc
+          ○	tools	missing: homebrew mise git tart tailscale: run station setup on a terminal
+          ○	daemon	not needed until tart is installed
+      files:
+          .config/station/settings.json:
+              equals: |
+                  {
+                    "here": "t",
+                    "hosts": {
+                      "t": {}
+                    },
+                    "vm_user": "tester"
+                  }

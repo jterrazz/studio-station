@@ -35,7 +35,7 @@ func (s *Service) binary(ctx context.Context, given string) (string, error) {
 }
 
 func (s *Service) download(ctx context.Context) (string, error) {
-	cached := path.Join(s.o.Paths.Cache, releaseAsset+"-"+s.o.Version)
+	cached := path.Join(s.o.Cache, releaseAsset+"-"+s.o.Version)
 	if _, err := s.h.FS.Stat(cached); err == nil {
 		return cached, nil
 	}
@@ -59,7 +59,7 @@ func (s *Service) download(ctx context.Context) (string, error) {
 	if got := hex.EncodeToString(sum[:]); got != want {
 		return "", fail(fmt.Errorf("checksum mismatch: checksums.txt says %s, the download is %s", want, got))
 	}
-	if err := s.h.FS.MkdirAll(s.o.Paths.Cache, 0o700); err != nil {
+	if err := s.h.FS.MkdirAll(s.o.Cache, 0o700); err != nil {
 		return "", fail(err)
 	}
 	if err := s.h.FS.WriteFile(cached, body, 0o755); err != nil {

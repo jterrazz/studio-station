@@ -28,7 +28,7 @@ func (m machine) powerPage(v power.View) any {
 func powerDown(err error) error { return downAs(err, power.ErrDaemonDown) }
 
 func (m machine) power() *power.Service {
-	c := engine.Dial(m.host, m.paths)
+	c := engine.Dial(m.host, m.paths.State)
 	return power.NewService(m.host, power.Ports{
 		View: func(ctx context.Context) (power.View, error) {
 			var v power.View
@@ -90,7 +90,7 @@ func (t tuiPower) Pages(ctx context.Context) <-chan page.Page {
 		if t.read(ctx, out).Daemon != power.DaemonRunning {
 			return
 		}
-		stream, err := engine.Dial(t.m.host, t.m.paths).Subscribe(ctx, []string{engine.PagePower})
+		stream, err := engine.Dial(t.m.host, t.m.paths.State).Subscribe(ctx, []string{engine.PagePower})
 		if err != nil {
 			return
 		}

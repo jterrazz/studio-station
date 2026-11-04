@@ -5,11 +5,12 @@ import (
 	"path"
 	"time"
 
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
+
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	schedule "github.com/jterrazz/studio-station/src/domain/probe"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tools"
@@ -31,7 +32,8 @@ type Sources struct {
 	Config     ConfigLister
 	Tailnet    TailnetReader
 	Setup      SetupChecker
-	Store      settings.Store
+	Name       setupcontract.NamePrefs
+	Identity   setupcontract.IdentityPrefs
 	Storage    StorageReader
 	Daemon     DaemonReader
 	Power      PowerReader

@@ -2,14 +2,13 @@ package machines
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
-	"github.com/jterrazz/studio-station/src/machines/contract"
-	"path"
 	"strconv"
 	"strings"
 	"time"
+
+	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/system"
@@ -241,7 +240,7 @@ func (s *Service) claims(ctx context.Context) (map[string]claim, error) {
 			held[vm.Name] = claimVM
 		}
 	}
-	cfg, err := s.store.Load()
+	cfg, err := s.prefs()
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +275,7 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 			progress(Step{Label: label})
 		}
 	}
-	cfg, err := s.store.Load()
+	cfg, err := s.prefs()
 	if err != nil {
 		return Created{}, err
 	}
@@ -404,36 +403,14 @@ func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
 }
 
 func (s *Service) removeFiles(name string, record bool) {
-	files := []string{s.LogPath(name), s.KnownHostsPath(name)}
-	if record {
-		files = append(files, s.recordPath(name))
-	}
-	for _, f := range files {
+	for _, f := range []string{s.LogPath(name), s.KnownHostsPath(name)} {
 		_ = s.h.FS.Remove(f)
 	}
+	if record {
+		_ = s.recs.Delete(context.Background(), name)
+	}
 }
-
-func (s *Service) recordPath(name string) string { return path.Join(s.recordsDir(), name+".json") }
 
 func (s *Service) Save(r VMRecord) error { return s.writeRecord(r) }
 
-func (s *Service) writeRecord(r VMRecord) error {
-	if err := s.h.FS.MkdirAll(s.recordsDir(), 0o700); err != nil {
-		return err
-	}
-	// invariant: a save keeps the lend entries on disk as they are: the
-	// secrets write them, and a record held in memory may predate a lend.
-	var held recordFile
-	if current, readErr := s.h.FS.ReadFile(s.recordPath(r.Name)); readErr == nil {
-		_ = json.Unmarshal(current, &held)
-	}
-	data, err := json.MarshalIndent(recordFile{
-		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
-		CPUs: r.Resources.CPUs, MemoryBytes: r.Resources.MemoryBytes, DiskBytes: r.Resources.DiskBytes,
-		Lent: held.Lent, CreatedAt: r.CreatedAt,
-	}, "", "  ")
-	if err != nil {
-		return err
-	}
-	return s.h.FS.WriteFile(s.recordPath(r.Name), append(data, '\n'), 0o600)
-}
+func (s *Service) writeRecord(r VMRecord) error { return s.recs.Put(context.Background(), storedOf(r)) }

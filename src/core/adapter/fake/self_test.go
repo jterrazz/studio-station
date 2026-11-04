@@ -17,3 +17,9 @@ func TestTheFakeSelfKeepsTheContract(t *testing.T) {
 		})
 	}, contracttest.Mac(), contracttest.MacOSWorkspace(), contracttest.LinuxWorkspace())
 }
+
+func TestTheFakePreferencesKeepTheContract(t *testing.T) {
+	contracttest.Preferences(t, func(*testing.T, []string) contract.Preferences {
+		return NewPreferences()
+	})
+}

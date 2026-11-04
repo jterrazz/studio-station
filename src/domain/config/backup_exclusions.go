@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"errors"
-	"path"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -11,7 +10,7 @@ import (
 )
 
 func (s *Service) excluded() []string {
-	return []string{s.o.Paths.Roots.Cache, path.Join(s.o.Paths.Data, "vms")}
+	return s.o.BackupExclusions
 }
 
 func (s *Service) installBackupExclusions(ctx context.Context) (Change, error) {

@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -34,21 +35,22 @@ const (
 )
 
 func (m machine) machines(_ bool) *machines.Service {
-	return machines.New(m.host, m.hypervisor(), m.store, hostNodes{tailnet: m.tailnet()}, fleetImages{service: m.images()}, m.hostDaemon(), leaseReleaser{m: m}, machines.Options{
+	knownHosts := filepath.Join(m.paths.State, "known_hosts")
+	return machines.New(m.host, m.hypervisor(), machines.Prefs{Name: m.stores.name(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser()}, m.stores.machines, hostNodes{tailnet: m.tailnet()}, fleetImages{service: m.images()}, m.hostDaemon(), leaseReleaser{m: m}, machines.Options{
 		Ports: machines.Ports{
 			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
 			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),
 		},
-		Here:      m.kind,
-		Paths:     m.paths,
+		Here:       m.kind,
+		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.host.Env.User(),
 		Version:   Version(),
 		Remote:    fanOutArgv,
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
-		Unlocker:  macos.New(m.host.Run, m.host.FS, machines.KnownHostsDir(m.paths)),
+		Unlocker:  macos.New(m.host.Run, m.host.FS, knownHosts),
 		SSHConfig: openssh.New(m.host.FS, openssh.Options{
-			Home: m.host.Env.Home(), KnownHosts: machines.KnownHostsDir(m.paths), Executable: m.host.Env.Executable(),
+			Home: m.host.Env.Home(), KnownHosts: knownHosts, Executable: m.host.Env.Executable(),
 			Hop: func(mac string, words []string) []string { return remote.Argv(mac, false, words) },
 		}),
 	})

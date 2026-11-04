@@ -2,86 +2,43 @@ package machines
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
+
+	"github.com/jterrazz/studio-station/src/core/store"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
-	"io/fs"
-	"path"
-	"sort"
-	"strings"
-	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-type recordFile struct {
-	Name        string            `json:"name"`
-	Image       string            `json:"image"`
-	Version     string            `json:"version"`
-	Lifetime    Lifetime          `json:"lifetime"`
-	Want        string            `json:"want,omitempty"`
-	Network     string            `json:"network,omitempty"`
-	Env         map[string]string `json:"env,omitempty"`
-	CPUs        int               `json:"cpus"`
-	MemoryBytes int64             `json:"memory_bytes"`
-	DiskBytes   int64             `json:"disk_bytes"`
-	Lent        json.RawMessage   `json:"lent,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
-}
-
-func (r recordFile) record() VMRecord {
+func recordOf(r model.Record) VMRecord {
 	return VMRecord{
 		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
 		Resources: Resources{CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes},
-		Lent:      lentNames(r.Lent), CreatedAt: r.CreatedAt,
+		Lent:      r.Shares, CreatedAt: r.CreatedAt,
 	}
 }
 
-// invariant: the lend entries are the secrets' to write: a record holds them
-// as names (before lends expired) or as {name, at, until}, and machines only
-// reads their names.
-func lentNames(raw json.RawMessage) []string {
-	var names []string
-	if len(raw) == 0 || json.Unmarshal(raw, &names) == nil {
-		return names
+func storedOf(r VMRecord) model.Record {
+	return model.Record{
+		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Env: r.Env,
+		CPUs: r.Resources.CPUs, MemoryBytes: r.Resources.MemoryBytes, DiskBytes: r.Resources.DiskBytes, CreatedAt: r.CreatedAt,
 	}
-	var lends []struct {
-		Name string `json:"name"`
-	}
-	if json.Unmarshal(raw, &lends) != nil {
-		return nil
-	}
-	for _, l := range lends {
-		names = append(names, l.Name)
-	}
-	return names
 }
 
 func (s *Service) records() ([]VMRecord, error) {
-	entries, err := s.h.FS.ReadDir(s.recordsDir())
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
-	}
+	stored, err := s.recs.List(context.Background())
 	if err != nil {
-		return nil, &RecordError{Path: s.recordsDir(), Cause: err}
+		var unreadable *store.UnreadableError
+		if errors.As(err, &unreadable) {
+			return nil, &RecordError{Path: unreadable.Path, Cause: unreadable.Cause}
+		}
+		return nil, err
 	}
-	var out []VMRecord
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
-			continue
-		}
-		file := path.Join(s.recordsDir(), e.Name())
-		data, err := s.h.FS.ReadFile(file)
-		if err != nil {
-			return nil, &RecordError{Path: file, Cause: err}
-		}
-		var rec recordFile
-		if err := json.Unmarshal(data, &rec); err != nil {
-			return nil, &RecordError{Path: file, Cause: err}
-		}
-		out = append(out, rec.record())
+	out := make([]VMRecord, 0, len(stored))
+	for _, r := range stored {
+		out = append(out, recordOf(r))
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out, nil
 }
 

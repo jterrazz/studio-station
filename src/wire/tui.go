@@ -2,7 +2,6 @@ package wire
 
 import (
 	"context"
-	"path"
 	"strconv"
 	"strings"
 
@@ -76,5 +75,5 @@ func (e *remoteExit) Error() string {
 func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostDaemon()) }
 
 func (m machine) secretsVia(guest secrets.Guest) *secrets.Service {
-	return secrets.New(m.host, guest, m.store, vmRecords{fs: m.host.FS, dir: path.Join(m.paths.State, "vms")}, studio.New(m.host.Run, studio.Options{Budget: secrets.ExportBudget}), secrets.Options{Here: m.kind})
+	return secrets.New(m.host, guest, m.secretStores(), studio.New(m.host.Run, studio.Options{Budget: secrets.ExportBudget}), secrets.Options{Here: m.kind})
 }
