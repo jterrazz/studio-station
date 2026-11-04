@@ -26,9 +26,9 @@ func Codes() map[fail.Code]Wording {
 		},
 		call.NotForThisMachine: func(e *fail.Error) (string, string) {
 			if why := e.Detail["why"]; why != "" {
-				return why, "run station status for what " + e.Subject + " has"
+				return why, "run station overview for what " + e.Subject + " has"
 			}
-			return "a " + e.Detail["kind"] + " has no " + e.Detail["section"] + " section", "run station status for what " + e.Subject + " has"
+			return "a " + e.Detail["kind"] + " has no " + e.Detail["section"] + " section", "run station overview for what " + e.Subject + " has"
 		},
 		call.BadInput: func(e *fail.Error) (string, string) {
 			return e.Subject + " cannot read its input", "check the request against " + e.Detail["in"]

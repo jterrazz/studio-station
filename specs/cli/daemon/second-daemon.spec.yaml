@@ -10,4 +10,4 @@ runs:
           second daemon exit 2
       stderr: |
           Error: a station daemon already runs (pid {{int}})
-          Hint: station status shows it
+          Hint: station overview shows it

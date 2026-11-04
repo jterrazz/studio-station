@@ -190,7 +190,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 			Net: []page.Value{page.Text("28.2 KB/s"), page.Text("14.5 KB/s")},
 		},
 		Sections: []page.Section{todo, summary, values, marks, fleet, storage, prose, peers},
-		Hints:    []page.Hint{*page.Cmd("station status --all"), {Command: "station tools", Text: "for the catalogue"}},
+		Hints:    []page.Hint{*page.Cmd("station overview --all"), {Command: "station tools", Text: "for the catalogue"}},
 		Actions: []page.Action{
 			{Key: "enter", Label: "fix", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Question: "Delete linux-1?", Lines: []page.Value{page.Text("its disk is removed"), page.Command("station machines delete linux-1")}, Danger: true, Yes: "delete"}},
 			{Key: "ctrl+r", Label: "restart", On: page.OnRow, Rows: []string{"linux-1"}, Priority: 2, Mutates: true, Confirm: &page.Confirm{Question: "Restart api?", Type: "api", Yes: "restart"}},

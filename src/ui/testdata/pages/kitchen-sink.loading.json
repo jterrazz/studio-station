@@ -998,7 +998,7 @@
   ],
   "hints": [
     {
-      "command": "station status --all"
+      "command": "station overview --all"
     },
     {
       "command": "station tools",

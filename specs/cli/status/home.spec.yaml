@@ -49,5 +49,5 @@ runs:
 
            Config  1 ●  1 ◐  17 ○
 
-           → station status --all for every row
-           → station status | cat for records
+           → station overview --all for every row
+           → station overview | cat for records

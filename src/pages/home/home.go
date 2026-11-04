@@ -63,8 +63,8 @@ func Snapshot(s Overview, here page.Context, all bool) page.Page {
 		Command: "status",
 		Context: here,
 		Hints: []page.Hint{
-			{Command: "station status --all", Text: "for every row"},
-			{Command: "station status | cat", Text: "for records", External: true},
+			{Command: "station overview --all", Text: "for every row"},
+			{Command: "station overview | cat", Text: "for records", External: true},
 		},
 	}
 	if all {
