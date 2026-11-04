@@ -1,0 +1,11 @@
+description: 'station background remove --on a macOS workspace removes its task there; This Mac keeps its own'
+env: bridged-macos
+runs:
+    - command: 'background remove dev.expo.metro --yes --on macos-1'
+      exit: 0
+      stdout: |
+          ●	dev.expo.metro	removed	~/Library/LaunchAgents/dev.expo.metro.plist deleted
+    - command: '--version >/dev/null; /usr/bin/jq -c ''[(.macs["macos-1"].jobs | has("dev.expo.metro")), (.macs["jterrazz-macbook-pro"].jobs | has("com.jterrazz.brain.x-snapshot"))]'' world.json'
+      exit: 0
+      stdout: |
+          [false,true]

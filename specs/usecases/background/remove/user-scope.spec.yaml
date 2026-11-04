@@ -1,0 +1,25 @@
+description: 'station background remove on a terminal asks yes or no, then boots the task out and deletes its plist; its row leaves'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 120x30 "$STATION" background remove com.jterrazz.brain.x-snapshot'
+      stdin: |
+          see Remove com.jterrazz.brain.x-snapshot?
+          send y
+          scrollback
+      exit: 0
+      stdout: |
+          ┃ Remove com.jterrazz.brain.x-snapshot?
+          ┃
+          ●       com.jterrazz.brain.x-snapshot   removed ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist deleted
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"].jobs | [has("com.jterrazz.brain.x-snapshot"), has("com.jterrazz.brain.sync")]'' world.json'
+      exit: 0
+      stdout: |
+          [false,true]
+    - command: 'background | /usr/bin/grep -c -e "x-snapshot" -e "^# Failing"'
+      exit: 1
+      stdout: |
+          0

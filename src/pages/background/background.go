@@ -129,6 +129,10 @@ func Actions() []page.Action {
 	return []page.Action{{Key: KeyRemove, Label: "remove", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Yes: "remove"}}}
 }
 
+func Confirm(label string) page.Confirm {
+	return page.Confirm{Question: "Remove " + label + "?", Yes: "remove"}
+}
+
 // value: a task's state in the words of every surface: running with its
 // pid, failing with its last exit, idle, not loaded; station's own job not
 // loaded is stopped.
@@ -197,6 +201,16 @@ func owner(t background.Task) page.Value {
 		return page.Text(t.Owner + " (gone)")
 	}
 	return page.Text(t.Owner)
+}
+
+func Removed(t background.Task, here page.Context) page.Page {
+	r := page.Row{ID: t.Label, Label: t.Label, Mark: page.OK, Cells: []page.Value{page.Text("removed")}}
+	if t.Plist != "" {
+		r.Cells = append(r.Cells, page.Text(t.Plist+" deleted"))
+	}
+	columns := []page.Column{{Key: "label", Kind: page.KindText, Keep: 100}, {Key: "outcome", Kind: page.KindText, Keep: 90}, {Key: "file", Kind: page.KindText, Keep: 40}}
+	return page.Seal(page.Page{ID: "background-remove", Command: "background remove", Context: here,
+		Sections: []page.Section{{ID: "removed", Title: "Removed", Role: page.Banner, Uncounted: true, Columns: columns, Items: []page.Item{{Row: &r}}}}})
 }
 
 type FixJSON struct {
