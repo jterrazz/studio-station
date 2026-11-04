@@ -75,7 +75,7 @@ type System struct {
 	Uptime      string
 	Battery     string
 	MemoryTotal int64
-	Sample      activity.Sample
+	Reading     activity.Reading
 	Pending     bool
 }
 

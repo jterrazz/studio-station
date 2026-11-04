@@ -169,7 +169,6 @@ func Strip(st token.Styles, s page.Strip, width int) string {
 	if !s.Power.IsNone() {
 		parts = append(parts, st.Accent.Render(token.Power+" "+atom.Show(s.Power)))
 	}
-	add("GPU", s.GPU, "")
 	if len(s.Net) == 2 {
 		parts = append(parts, st.Muted.Render("net")+" "+st.Text.Render(token.KeyDown+" "+atom.Show(s.Net[0])+" "+token.KeyUp+" "+atom.Show(s.Net[1])))
 	}

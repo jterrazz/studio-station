@@ -19,9 +19,22 @@ func All(d Deps) []call.Handler {
 
 type SampleIn struct{}
 
-var Sample = call.Call[Deps, SampleIn, activity.Sample]{
+var Sample = call.Call[Deps, SampleIn, activity.Reading]{
 	Name: "activity.sample", Section: section.Activity, Where: call.AtTarget, Applies: activity.Applies,
-	Run: func(ctx context.Context, d Deps, _ SampleIn, _ call.Progress) (activity.Sample, error) {
-		return d.Meter.Sample(ctx)
+	Run: func(ctx context.Context, d Deps, _ SampleIn, _ call.Progress) (activity.Reading, error) {
+		return Read(ctx, d.Meter)
 	},
+}
+
+func Read(ctx context.Context, m contract.Meter) (activity.Reading, error) {
+	// value: the machine's counters and its busiest processes, read together.
+	s, err := m.Sample(ctx)
+	if err != nil {
+		return activity.Reading{}, err
+	}
+	top, err := m.Top(ctx)
+	if err != nil {
+		return activity.Reading{}, err
+	}
+	return activity.Reading{Sample: s, Top: top}, nil
 }

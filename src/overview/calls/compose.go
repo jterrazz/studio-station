@@ -82,8 +82,8 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 	head := overview.Head{Name: r.d.Here.Hostname, Kind: kind, Here: true}
 	self := machine.Ref{Name: head.Name}
 	if r.d.Meter != nil {
-		if up, ok := r.d.Meter.Uptime(ctx); ok {
-			head.Up = up
+		if sample, err := r.d.Meter.Sample(ctx); err == nil && !sample.Boot.IsZero() {
+			head.Up = sample.At.Sub(sample.Boot)
 		}
 	}
 	reads := sectionReads()

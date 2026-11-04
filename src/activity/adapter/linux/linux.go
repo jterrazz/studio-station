@@ -2,6 +2,7 @@ package linux
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -42,49 +43,100 @@ func (m *Meter) Sample(ctx context.Context) (activity.Sample, error) {
 	if err := ctx.Err(); err != nil {
 		return activity.Sample{}, err
 	}
-	sample := activity.Sample{At: m.clock.Now().UTC()}
+	now := m.clock.Now().UTC()
+	s := activity.Sample{At: now, Thermal: activity.ThermalUnknown}
+	files := map[string]string{"stat": "", "loadavg": "", "meminfo": "", "net/dev": "", "uptime": ""}
+	var mu sync.Mutex
 	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		sample.CPU, sample.Memory = processes(m.ask(ctx, "ps", "-eo", "pid,comm,%cpu,rss"))
-	}()
-	go func() {
-		defer wg.Done()
-		sample.NetRx, sample.NetTx = network(m.ask(ctx, "cat", "/proc/net/dev"))
-	}()
+	for name := range files {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			text, _ := m.ask(ctx, "cat", "/proc/"+name)
+			mu.Lock()
+			files[name] = text
+			mu.Unlock()
+		}()
+	}
 	wg.Wait()
-	if sample.CPU == nil {
-		sample.CPU = []activity.Process{}
+	s.CPUBusy, s.CPUTotal, s.CPUs = ticks(files["stat"])
+	if fields := strings.Fields(files["loadavg"]); len(fields) >= 3 {
+		for i := range s.Load {
+			s.Load[i], _ = strconv.ParseFloat(fields[i], 64)
+		}
 	}
-	if sample.Memory == nil {
-		sample.Memory = []activity.Process{}
+	memory := meminfo(files["meminfo"])
+	s.MemTotal = memory["MemTotal"]
+	if avail, ok := memory["MemAvailable"]; ok {
+		s.MemUsed = max(s.MemTotal-avail, 0)
 	}
-	return sample, nil
+	s.SwapUsed = max(memory["SwapTotal"]-memory["SwapFree"], 0)
+	s.NetIn, s.NetOut = network(files["net/dev"])
+	field, _, _ := strings.Cut(strings.TrimSpace(files["uptime"]), " ")
+	if seconds, err := strconv.ParseFloat(field, 64); err == nil && seconds > 0 {
+		s.Boot = now.Add(-time.Duration(seconds * float64(time.Second))).Truncate(time.Second)
+	}
+	return s, nil
 }
 
-func (m *Meter) Uptime(ctx context.Context) (time.Duration, bool) {
-	text, ok := m.ask(ctx, "cat", "/proc/uptime")
-	field, _, _ := strings.Cut(strings.TrimSpace(text), " ")
-	seconds, err := strconv.ParseFloat(field, 64)
-	if !ok || err != nil {
-		return 0, false
+func (m *Meter) Top(ctx context.Context) (activity.Busiest, error) {
+	if err := ctx.Err(); err != nil {
+		return activity.Busiest{}, err
 	}
-	return time.Duration(seconds * float64(time.Second)), true
+	cpu, memory := processes(m.ask(ctx, "ps", "-eo", "pid,comm,%cpu,rss"))
+	if cpu == nil {
+		cpu, memory = []activity.Process{}, []activity.Process{}
+	}
+	return activity.Busiest{CPU: top(cpu), Memory: top(memory)}, nil
 }
 
-func (m *Meter) Battery(context.Context) string { return "" }
+func (m *Meter) Process(ctx context.Context, pid int) (activity.Usage, error) {
+	if err := ctx.Err(); err != nil {
+		return activity.Usage{}, err
+	}
+	cpu, memory := processes(m.ask(ctx, "ps", "-eo", "pid,comm,%cpu,rss"))
+	for i, p := range cpu {
+		if p.PID == pid {
+			return activity.Usage{CPU: p.Value, Memory: int64(memory[i].Value)}, nil
+		}
+	}
+	return activity.Usage{}, ErrNoProcess
+}
 
-func (m *Meter) Memory(ctx context.Context) int64 {
-	text, _ := m.ask(ctx, "cat", "/proc/meminfo")
+var ErrNoProcess = errors.New("no such process")
+
+// outside: the first line of /proc/stat sums every CPU's ticks: user nice
+// system idle iowait irq softirq steal; one cpuN line follows per CPU.
+func ticks(text string) (busy, total uint64, cpus int) {
 	for _, line := range strings.Split(text, "\n") {
-		if rest, ok := strings.CutPrefix(line, "MemTotal:"); ok {
-			if fields := strings.Fields(rest); len(fields) > 0 {
-				return parseInt(fields[0]) * 1024
+		fields := strings.Fields(line)
+		if len(fields) < 5 || !strings.HasPrefix(fields[0], "cpu") {
+			continue
+		}
+		if fields[0] != "cpu" {
+			cpus++
+			continue
+		}
+		for i, f := range fields[1:min(len(fields), 9)] {
+			n, _ := strconv.ParseUint(f, 10, 64)
+			total += n
+			if i != 3 && i != 4 {
+				busy += n
 			}
 		}
 	}
-	return 0
+	return busy, total, cpus
+}
+
+func meminfo(text string) map[string]int64 {
+	out := map[string]int64{}
+	for _, line := range strings.Split(text, "\n") {
+		key, rest, ok := strings.Cut(line, ":")
+		if fields := strings.Fields(rest); ok && len(fields) > 0 {
+			out[key] = parseInt(fields[0]) * 1024
+		}
+	}
+	return out
 }
 
 func processes(text string, ok bool) (cpu, memory []activity.Process) {
@@ -111,7 +163,7 @@ func processes(text string, ok bool) (cpu, memory []activity.Process) {
 	for i, p := range all {
 		byMemory[i] = activity.Process{PID: p.PID, Name: p.Name, Value: rss[i]}
 	}
-	return top(all), top(byMemory)
+	return all, byMemory
 }
 
 // outside: ps prints its decimals in the caller's locale, `69,4` under fr_FR.
@@ -120,7 +172,7 @@ func parseDecimal(s string) (float64, error) {
 }
 
 func top(ps []activity.Process) []activity.Process {
-	sorted := append([]activity.Process(nil), ps...)
+	sorted := append([]activity.Process{}, ps...)
 	sort.SliceStable(sorted, func(i, j int) bool { return sorted[i].Value > sorted[j].Value })
 	if len(sorted) > activity.Top {
 		sorted = sorted[:activity.Top]
@@ -128,15 +180,15 @@ func top(ps []activity.Process) []activity.Process {
 	return sorted
 }
 
-func network(text string, _ bool) (rx, tx int64) {
+func network(text string) (rx, tx uint64) {
 	for _, line := range strings.Split(text, "\n") {
 		name, counters, ok := strings.Cut(line, ":")
 		fields := strings.Fields(counters)
 		if !ok || strings.TrimSpace(name) == "lo" || len(fields) < 9 {
 			continue
 		}
-		rx += parseInt(fields[0])
-		tx += parseInt(fields[8])
+		rx += uint64(max(parseInt(fields[0]), 0))
+		tx += uint64(max(parseInt(fields[8]), 0))
 	}
 	return rx, tx
 }

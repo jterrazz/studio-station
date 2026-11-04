@@ -146,11 +146,10 @@ type Manager struct {
 }
 
 type Meter struct {
-	Sample activity.Sample `json:"sample"`
-	Uptime time.Duration   `json:"uptime,omitempty"`
-	// value: the battery's line ("" for none) and the memory installed.
-	Battery string `json:"battery,omitempty"`
-	Memory  int64  `json:"memory,omitempty"`
+	Sample activity.Sample  `json:"sample"`
+	Top    activity.Busiest `json:"top"`
+	// value: the processes that run, by pid.
+	Processes map[int]activity.Usage `json:"processes,omitempty"`
 }
 
 type Disk struct {

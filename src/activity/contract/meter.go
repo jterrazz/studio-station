@@ -2,19 +2,19 @@ package contract
 
 import (
 	"context"
-	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
 )
 
 type Meter interface {
-	// invariant: the busiest processes by CPU and by memory, at most
-	// activity.Top each, busiest first; a list no tool answered is empty.
+	// invariant: the machine's counters, read without starting a process; a
+	// counter the machine did not answer is zero, never an error. Thermal is
+	// activity.ThermalUnknown, Battery nil and DiskFree zero: those are Power's
+	// and the Disk family's readings, composed in by the sample job.
 	Sample(ctx context.Context) (activity.Sample, error)
-	// invariant: ok is false when the machine did not say when it booted.
-	Uptime(ctx context.Context) (up time.Duration, ok bool)
-	// value: the battery's level and state ("92% charging"); "" where there is none.
-	Battery(ctx context.Context) string
-	// value: the memory installed, in bytes; 0 when unread.
-	Memory(ctx context.Context) int64
+	// invariant: the busiest processes by CPU and by memory, at most
+	// activity.Top each, busiest first; a list nothing answered is empty.
+	Top(ctx context.Context) (activity.Busiest, error)
+	// invariant: one process's usage; an error when no such process runs.
+	Process(ctx context.Context, pid int) (activity.Usage, error)
 }

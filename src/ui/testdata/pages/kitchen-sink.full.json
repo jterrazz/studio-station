@@ -40,10 +40,6 @@
       "kind": "percent",
       "n": 1000
     },
-    "gpu": {
-      "kind": "percent",
-      "n": 350
-    },
     "net": [
       {
         "kind": "text",

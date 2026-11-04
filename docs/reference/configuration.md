@@ -79,6 +79,7 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 | `STATION_GITHUB_API_URL`                                               | the GitHub API origin, so a spec can point it at a stub                                             |
 | `STATION_SYSTEM_DIRS`, `STATION_MACHINE_KIND`                          | which system folders count, and the machine kind, for a spec                                        |
 | `STATION_SYSTEM_ROOT`                                                  | the root `/Applications`, `/opt/homebrew`, `/Library` and a VM's `/proc` are read under, for a spec |
+| `STATION_KERNEL_STUB`                                                  | a folder of recorded kernel tables a Mac's activity is read from, for a spec                        |
 | `STATION_POWER_STUB`                                                   | a folder whose files are the Power reading and whose calls go to `$HOME/.calls`, for a spec         |
 | `STATION_GUEST_SSH_PORT`                                               | the port the engine dials a VM's sshd on (default 22), for a spec's stub sshd                       |
 | `STATION_XDG_DETACHED`                                                 | internal: `setup`'s detached layout step                                                            |

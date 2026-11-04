@@ -1,6 +1,7 @@
 package home
 
 import (
+	"cmp"
 	"slices"
 	"strconv"
 	"strings"
@@ -608,38 +609,28 @@ func summary(s Overview, detail []page.Section) page.Section {
 	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Break: right, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: items}
 }
 
-func Strip(samples []activity.Sample, snap Overview) page.Strip {
-	memoryTotal := snap.System.MemoryTotal
-	last := samples[len(samples)-1]
-	strip := page.Strip{GPU: page.Percent(int64(last.GPU * 10))}
-	cpu := func(s activity.Sample) float64 {
-		total := 0.0
-		for _, proc := range s.CPU {
-			total += proc.Value
-		}
-		return min(total, 100)
-	}
-	strip.CPU = page.Percent(int64(cpu(last) * 10))
-	for _, s := range samples {
-		strip.Spark = append(strip.Spark, int(cpu(s)))
+func Strip(readings []activity.Reading, snap Overview) page.Strip {
+	// invariant: a CPU share and a rate are between two readings; one
+	// reading alone draws memory only.
+	last := readings[len(readings)-1].Sample
+	var strip page.Strip
+	between := func(i int) activity.Rates { return activity.Between(readings[i-1].Sample, readings[i].Sample) }
+	for i := 1; i < len(readings); i++ {
+		strip.Spark = append(strip.Spark, int(between(i).CPU))
 	}
 	if len(strip.Spark) > 16 {
 		strip.Spark = strip.Spark[len(strip.Spark)-16:]
 	}
-	var used int64
-	for _, proc := range last.Memory {
-		used += int64(proc.Value)
+	if n := len(readings); n > 1 {
+		r := between(n - 1)
+		strip.CPU = page.Percent(int64(r.CPU * 10))
+		rx, tx := page.Size(int64(r.NetIn)), page.Size(int64(r.NetOut))
+		rx.Unit, tx.Unit = "/s", "/s"
+		strip.Net = []page.Value{rx, tx}
 	}
-	if memoryTotal > 0 {
-		strip.Memory = page.Ratio(min(used, memoryTotal), memoryTotal)
-	}
-	if len(samples) > 1 {
-		prev := samples[len(samples)-2]
-		if dt := last.At.Sub(prev.At).Seconds(); dt > 0 {
-			rx, tx := page.Size(int64(float64(max(last.NetRx-prev.NetRx, 0))/dt)), page.Size(int64(float64(max(last.NetTx-prev.NetTx, 0))/dt))
-			rx.Unit, tx.Unit = "/s", "/s"
-			strip.Net = []page.Value{rx, tx}
-		}
+	total := cmp.Or(last.MemTotal, snap.System.MemoryTotal)
+	if total > 0 && last.MemUsed > 0 {
+		strip.Memory = page.Ratio(min(last.MemUsed, total), total)
 	}
 	if snap.PowerKnown && snap.Power.Held {
 		strip.Power = page.Texts("awake", pages.Term(snap.Power.Until.Sub(last.At)))
@@ -647,12 +638,12 @@ func Strip(samples []activity.Sample, snap Overview) page.Strip {
 	return strip
 }
 
-func Live(p page.Page, samples []activity.Sample, snap Overview) page.Page {
-	if len(samples) == 0 {
+func Live(p page.Page, readings []activity.Reading, snap Overview) page.Page {
+	if len(readings) == 0 {
 		return p
 	}
-	last := samples[len(samples)-1]
-	strip := Strip(samples, snap)
+	last := readings[len(readings)-1].Top
+	strip := Strip(readings, snap)
 	var items []page.Item
 	for i, proc := range last.CPU {
 		if i == 5 {

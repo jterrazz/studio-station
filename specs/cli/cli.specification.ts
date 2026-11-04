@@ -50,7 +50,9 @@ if (binaryIsStale()) {
 // STATION_SYSTEM_ROOT reads /Applications, /opt/homebrew, /Library and /usr/local under
 // the run's own `root/`, so the owner's apps are neither listed nor sized nor run;
 // STATION_POWER_STUB points Power at the run's own `power/` (absent: no Power here), so no
-// run takes a real assertion or touches the clamshell; the
+// run takes a real assertion or touches the clamshell; STATION_KERNEL_STUB points the
+// Mac's counters and process tables at the run's own `kernel/` (absent: the kernel
+// answers nothing), so no run reads the real machine's activity; the
 // machine kind is pinned to host unless a document says otherwise; GitHub is a closed
 // port unless a document serves its stub; a VM's sshd is the served stub vm-sshd.
 // value: one env set per world of specs/usecases/worlds/, named after it: a
@@ -82,6 +84,7 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
         PATH: '$WORKDIR/bin',
         STATION_GITHUB_API_URL: 'http://127.0.0.1:9',
         STATION_MACHINE_KIND: 'host',
+        STATION_KERNEL_STUB: '$WORKDIR/kernel',
         STATION_POWER_STUB: '$WORKDIR/power',
         STATION_SYSTEM_DIRS: '',
         STATION_SYSTEM_ROOT: '$WORKDIR/root',

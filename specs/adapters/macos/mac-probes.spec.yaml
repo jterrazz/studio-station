@@ -2,7 +2,7 @@ description: 'on a Mac every status probe reads its own tool, and launchd is onl
 fixture:
     - ../../__fixtures__/status-tools-mixed/
     - ../../__fixtures__/status-mac/
-    - ../../__fixtures__/status-processes/
+    - ./__fixtures__/status-processes/
     - ../../__fixtures__/status-registered/
 env:
     - USER=tester

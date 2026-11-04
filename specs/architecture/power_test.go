@@ -10,22 +10,27 @@ import (
 	"strings"
 )
 
-const cgoFile = "src/platform/darwin/power_darwin.go"
-
-func cgoTags() map[string]string {
-	return map[string]string{
-		cgoFile:                              "//go:build darwin && cgo",
-		"src/platform/darwin/power_other.go": "//go:build !darwin || !cgo",
-	}
+func cgoFiles() []string {
+	return []string{"src/platform/darwin/power_darwin.go", "src/platform/darwin/kernel_darwin.go"}
 }
 
-// invariant: rule 22: cgo lives in one file, built only on darwin with cgo,
-// and its refusal twin builds everywhere else, so a linux binary needs no C.
+func cgoTags() map[string]string {
+	tags := map[string]string{}
+	for _, rel := range cgoFiles() {
+		tags[rel] = "//go:build darwin && cgo"
+		tags[strings.TrimSuffix(rel, "_darwin.go")+"_other.go"] = "//go:build !darwin || !cgo"
+	}
+	return tags
+}
+
+// invariant: rule 22: cgo lives in platform/darwin's named files, each built
+// only on darwin with cgo, and each one's refusal twin builds everywhere
+// else, so a linux binary needs no C.
 func ruleCgo(w *world) []finding {
 	var out []finding
 	for _, rel := range w.cgo {
-		if rel != cgoFile {
-			out = append(out, finding{"cgo", rel, "import \"C\" lives in " + cgoFile + " only"})
+		if !slices.Contains(cgoFiles(), rel) {
+			out = append(out, finding{"cgo", rel, "import \"C\" lives in " + strings.Join(cgoFiles(), ", ") + " only"})
 		}
 	}
 	for rel, tag := range cgoTags() {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	activitycontract "github.com/jterrazz/studio-station/src/activity/contract"
+	"github.com/jterrazz/studio-station/src/awake"
 	backgroundcontract "github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
@@ -49,8 +50,10 @@ type Deps[Tool, Item, Stray any] struct {
 	// updates), and those of its owner (git, gpg, GitHub, the ssh key).
 	Facts, Owner settingscontract.Inspector
 	Meter        activitycontract.Meter
-	Listeners    portscontract.Listeners
-	Jobs         backgroundcontract.Jobs
+	// value: this Mac's battery, as Power reads it; nil where there is none.
+	Battery   Battery
+	Listeners portscontract.Listeners
+	Jobs      backgroundcontract.Jobs
 	// value: the app updates waiting, on a Mac; nil elsewhere.
 	Updates Updates
 	Tailnet Tailnet
@@ -89,6 +92,10 @@ type Power interface {
 type Servers interface {
 	// value: whether one of this Mac's VMs says it is a server.
 	Hosted(ctx context.Context) bool
+}
+
+type Battery interface {
+	Read() (awake.Reading, error)
 }
 
 type Hypervisor interface {

@@ -1,10 +1,4 @@
 #!/bin/sh
-# sysctl answering the two keys status reads; the boot time is 3 days and 4 hours ago.
-case "$*" in
-    "-n hw.memsize") echo 34359738368 ;;
-    "-n kern.boottime") echo "{ sec = $(( $(/bin/date +%s) - 3 * 86400 - 4 * 3600 - 120 )), usec = 0 } Sat Oct 28 10:00:00 2026" ;;
-    *)
-        echo "stub ${0##*/}: unexpected invocation: $*" >&2
-        exit 97
-        ;;
-esac
+# sysctl answering no key: the counters status reads are the kernel tables of kernel/.
+echo "stub ${0##*/}: unexpected invocation: $*" >&2
+exit 97

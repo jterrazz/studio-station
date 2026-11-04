@@ -18,6 +18,7 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
@@ -76,7 +77,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	if m.kind == catalog.Linux {
 		facts, meter = settingslinux.New(h.Run), activitylinux.New(h.Run, h.Clock)
 	} else {
-		facts, meter = settingsmacos.New(h.Run, h.FS, h.Clock, settingsmacos.Options{Root: m.systemRoot()}), activitymacos.New(h.Run, h.Clock)
+		facts, meter = settingsmacos.New(h.Run, h.FS, h.Clock, settingsmacos.Options{Root: m.systemRoot()}), activitymacos.New(local.NewKernel(m.vars), h.Clock)
 	}
 	if m.world != nil {
 		facts, meter, listening = m.world.inspector(), m.world.meter(), m.world.listeners()
@@ -86,7 +87,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		d.Listeners, d.Jobs, d.Updates = listening, m.jobs(overviewcalls.ReadBudget), brew.New(h.Run, nil)
 		d.Servers = hostedServers{d: m.hostDaemon()}
 	}
-	d.Facts, d.Meter = facts, meter
+	d.Facts, d.Meter, d.Battery = facts, meter, m.powerPort
 	return d
 }
 
