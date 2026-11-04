@@ -60,6 +60,8 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err := io.LivePage(pages); err != nil {
 				return err
 			}
+			for range pages {
+			}
 			if failed != nil {
 				return failed
 			}

@@ -22,8 +22,9 @@ type Result[T any] struct {
 func Do[T any](ctx context.Context, macs []string, ask func(ctx context.Context, mac string) (T, error)) <-chan Result[T] {
 	// invariant: the All machines fan-out: Width Macs at a time, each within
 	// its Budget, every answer handed on as it comes; a Mac that does not
-	// answer in time is its own result's error, never the others' delay.
-	out := make(chan Result[T])
+	// answer in time is its own result's error, never the others' delay; a
+	// reader that stops early never holds a Mac's goroutine.
+	out := make(chan Result[T], len(macs))
 	lanes := make(chan struct{}, Width)
 	var wg sync.WaitGroup
 	for _, mac := range macs {
