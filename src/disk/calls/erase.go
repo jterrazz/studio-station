@@ -21,13 +21,13 @@ var Erase = call.Call[Deps, EraseIn, disk.Outcome]{
 	Run: func(ctx context.Context, d Deps, in EraseIn, _ call.Progress) (disk.Outcome, error) {
 		// invariant: an erase refuses what it never erases and an app that
 		// runs before it asks the name typed, so nothing is typed in vain.
-		if err := d.Storage.CheckRunning(ctx, in.App); err != nil {
+		if err := d.Disk.CheckRunning(ctx, in.App); err != nil {
 			return disk.Outcome{}, coded(err)
 		}
 		if err := confirm.Require(confirm.For(confirm.Erase, d.Kind), in.App, in.Confirm); err != nil {
 			return disk.Outcome{}, err
 		}
-		out, err := d.Storage.Erase(ctx, in.App)
+		out, err := d.Disk.Erase(ctx, in.App)
 		return out, coded(err)
 	},
 }

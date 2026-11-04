@@ -9,14 +9,14 @@ import (
 )
 
 type Deps struct {
-	Storage Storage
-	Kind    machine.Kind
+	Disk Disk
+	Kind machine.Kind
 }
 
-type Storage interface {
+type Disk interface {
 	Watch(ctx context.Context) <-chan disk.Survey
 	Volume(ctx context.Context) (total, free int64, err error)
-	Clean(ctx context.Context, names []string) ([]disk.Outcome, error)
+	Free(ctx context.Context, names []string) ([]disk.Outcome, error)
 	CheckRunning(ctx context.Context, name string) error
 	Erase(ctx context.Context, name string) (disk.Outcome, error)
 	Move(ctx context.Context, folder string) (disk.Outcome, error)

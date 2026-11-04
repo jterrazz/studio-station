@@ -264,7 +264,7 @@ func (s *Service) Relocated(st catalog.Storage) bool {
 	return true
 }
 
-func (s *Service) Clean(ctx context.Context, names []string) ([]Outcome, error) {
+func (s *Service) Free(ctx context.Context, names []string) ([]Outcome, error) {
 	var entries []Entry
 	named := len(names) > 0
 	for _, name := range dedupe(names) {

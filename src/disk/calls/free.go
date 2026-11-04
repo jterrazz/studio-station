@@ -18,7 +18,7 @@ var Free = call.Call[Deps, FreeIn, []disk.Outcome]{
 	Name: "disk.free", Section: section.Disk, Where: call.AtTarget, Applies: disk.Applies,
 	Errors: []fail.Code{Unknown, Elsewhere, NothingToFree},
 	Run: func(ctx context.Context, d Deps, in FreeIn, _ call.Progress) ([]disk.Outcome, error) {
-		out, err := d.Storage.Clean(ctx, in.Apps)
+		out, err := d.Disk.Free(ctx, in.Apps)
 		return out, coded(err)
 	},
 }

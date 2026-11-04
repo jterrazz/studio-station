@@ -13,11 +13,11 @@ type ReadIn struct{}
 var Read = call.Watch[Deps, ReadIn, disk.Reading]{
 	Name: "disk.read", Section: section.Disk, Where: call.AtTarget, Applies: disk.Applies,
 	Run: func(ctx context.Context, d Deps, _ ReadIn, _ call.Progress) (<-chan call.Update[disk.Reading], error) {
-		total, free, err := d.Storage.Volume(ctx)
+		total, free, err := d.Disk.Volume(ctx)
 		if err != nil {
 			return nil, err
 		}
-		surveys := d.Storage.Watch(ctx)
+		surveys := d.Disk.Watch(ctx)
 		readings := make(chan disk.Reading)
 		go func() {
 			defer close(readings)
