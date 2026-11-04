@@ -5,15 +5,15 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/secrets"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pagesecrets "github.com/jterrazz/studio-station/src/pages/secrets"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Secrets *secrets.Service
-	Here    page.Context
+	Here page.Context
 }
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
@@ -25,7 +25,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Read:    func(*Input) bool { return true },
 		Pages:   true,
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
-			report, err := d.Secrets.List(ctx)
+			report, err := call.Invoke(ctx, env.Calls, env.Target, accountscalls.List, accountscalls.ListIn{}, nil)
 			if err != nil {
 				return err
 			}

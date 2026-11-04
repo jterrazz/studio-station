@@ -6,19 +6,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/jterrazz/studio-station/src/core/call"
+	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-type Status interface {
-	Watch(ctx context.Context) <-chan pagehome.Overview
-	Snapshot(ctx context.Context) (pagehome.Overview, error)
-}
-
 type Deps struct {
-	Status Status
-	Here   page.Context
+	Here page.Context
 }
 
 type Input struct{ All bool }
@@ -37,8 +33,12 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			if io.CanLive() {
+				updates, err := call.Follow(ctx, env.Calls, env.Target, overviewcalls.Read, overviewcalls.ReadIn{}, nil)
+				if err != nil {
+					return err
+				}
 				var last pagehome.Overview
-				err := io.LivePage(kit.Pages(d.Status.Watch(ctx), func(s pagehome.Overview) page.Page {
+				err = io.LivePage(kit.Updates(updates, func(s pagehome.Overview) page.Page {
 					last = s
 					return pagehome.Snapshot(s, d.Here, in.All)
 				}))
@@ -50,7 +50,10 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				}
 				return last.Err
 			}
-			snapshot, err := d.Status.Snapshot(ctx)
+			snapshot, err := call.Read(ctx, env.Calls, env.Target, overviewcalls.Read, overviewcalls.ReadIn{}, nil)
+			if err == nil {
+				err = snapshot.Err
+			}
 			if err != nil {
 				return err
 			}

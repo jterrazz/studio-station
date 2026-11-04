@@ -3,6 +3,7 @@ package machines
 import (
 	"context"
 	"errors"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"strconv"
 	"strings"
 	"time"
@@ -42,20 +43,11 @@ func (e *BadNetworkError) Error() string {
 	return "unknown network \"" + e.Value + "\": nat or bridged"
 }
 
-type CreateRequest struct {
-	Image, Name string
-	Lifetime    Lifetime
-	Network     string
-	Resources   Resources
-}
-
-type Created struct {
-	VM       VM
-	Services []Reserved
-	Env      map[string]string
-}
-
-type Step struct{ Label string }
+type (
+	CreateRequest = model.CreateRequest
+	Created       = model.Created
+	Step          = model.Step
+)
 
 type NoLifetimeError struct{}
 
@@ -302,7 +294,7 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 		return fail("the clone", err)
 	}
 	made.vm = true
-	if err = s.engine.Resize(ctx, r.Name, r.Resources.size()); err != nil {
+	if err = s.engine.Resize(ctx, r.Name, r.Resources.Size()); err != nil {
 		return fail("the resize", err)
 	}
 	if err = s.writeRecord(rec); err != nil {
@@ -346,8 +338,7 @@ func (s *Service) Create(ctx context.Context, r CreateRequest, progress func(Ste
 	}, nil
 }
 
-func (s *Service) reserveProfiles(ctx context.Context, name string) ([]Reserved, map[string]string, error) {
-	var reserved []Reserved
+func (s *Service) reserveProfiles(ctx context.Context, name string) (reserved []Reserved, env map[string]string, err error) {
 	for _, p := range catalog.Profiles {
 		got, err := s.daemon.Reserve(ctx, name, p.Port, p.Name)
 		if err != nil {

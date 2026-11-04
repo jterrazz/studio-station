@@ -21,8 +21,9 @@ src/
   cmd/generate/   the compiler: projects the catalogue into the toolbelt skill and the footprint page
   wire/           the composition root: builds adapters and services, resolves every environment
                   variable into a typed option, builds the cobra tree and Fang, maps an error to an exit code
-  surface/cli/    the cobra tree, one folder per command word: input -> command -> presenter
-    kit/          how a leaf and a group are declared; the confirm gate; the wording of every domain error
+  surface/cli/    the cobra tree, one folder per command word: input -> call -> page
+    kit/          how a leaf and a group are declared; how a leaf answers the confirmation its call asks; the wording of every domain error
+    words/        the wording of every fail.Code a call raises
   domain/         behaviour, never touching the machine except through ports
     settings/ tools/ config/ setup/ status/ storage/ machines/ images/ secrets/ remote/ tailnet/ shortcuts/ shell/
   engine/         the per-Mac process (the daemon): its runs, its socket and protocol, the guards it holds
@@ -77,7 +78,7 @@ specs/
   cli/            the end-to-end spec documents
 ```
 
-A leaf folder `surface/cli/<noun>/<verb>/` holds two files: `input.go` (argv to a typed input) and `command.go` (one domain call, one presenter, one answer). A leaf never prints: it answers through `kit.IO`, and the `output` layer decides the form.
+A leaf folder `surface/cli/<noun>/<verb>/` holds two files: `input.go` (argv to a typed input) and `command.go` (one call through the router, one page, one answer). A leaf never prints: it answers through `kit.IO`, and the `output` layer decides the form.
 
 Page functions live in `pages/<page>/` (presenters, for the pages not migrated yet, in `present/<subject>/`), not in the leaf folder, because the TUI tab renders the same page: a `tui` to `cli` import would couple the TUI to cobra. How a page looks in each medium is the kit's alone; the design system's rules (the kit's levels, glyphs only in `ui/token`, only pages build pages, no layout outside `ui/`) are rules 13 to 21 of the architecture test, which lists the packages not migrated yet in an allowlist that only shrinks.
 
@@ -97,7 +98,7 @@ catalog: imported by domain, present, surface, prompt; imports nothing of the mo
 
 What the test holds, in short: `domain` reaches the machine only through `system` ports; only `platform/local` imports `os/exec`, the network and the process environment; only `output` writes bytes and only `ui/token` holds a colour; only `wire` imports Fang; the catalogue holds values and no function; every domain error type has its wording in `surface/cli/kit`. Each rule has a mutation test, so a rule that stops biting fails the gate.
 
-The tree is moving to families first (machines, apps, settings, ports, awake...), each with its model, `contract/`, `calls/` and `adapter/<tech>/`. Seven rules hold that tree: `tree-screams` (`tree_test.go`), `imports` (`imports_test.go`), `technology-words` (`words_test.go`), `no-model-names` (`models_test.go`), `one-way-into-a-vm` (`vm_test.go`: a VM is reached by its engine's one `Guest` connection alone, no `scp`, an `ssh` exec only to a Mac) `one-writer-per-store` (`stores_test.go`: only `wire` builds a store's `jsonfile` adapter, and a store or a preference group is written only by its family's calls) and `no-outbound-literals` (`outbound_test.go`: no package a machine's read runs through, the Overview and the adapters of the contracts it reads, spells an internet host, so a read calls no third-party service). All but the last list today's offenders (`imports` the packages moved into the new tree as they were) in an allowlist that only shrinks: a line that is no longer true fails the gate until it is removed.
+The tree is moving to families first (machines, apps, settings, ports, awake...), each with its model, `contract/`, `calls/` and `adapter/<tech>/`. Ten rules hold that tree: `tree-screams` (`tree_test.go`), `imports` (`imports_test.go`), `technology-words` (`words_test.go`), `no-model-names` (`models_test.go`), `one-way-into-a-vm` (`vm_test.go`: a VM is reached by its engine's one `Guest` connection alone, no `scp`, an `ssh` exec only to a Mac) `one-writer-per-store` (`stores_test.go`: only `wire` builds a store's `jsonfile` adapter, and a store or a preference group is written only by its family's calls) `no-outbound-literals` (`outbound_test.go`: no package a machine's read runs through, the Overview and the adapters of the contracts it reads, spells an internet host, so a read calls no third-party service), and three in `calls_test.go`: `calls-gated` (every exported Call or Watch is in its family's `All`, named `<family>.<verb>` once, today's words allowlisted, and sets its `Applies`), `confirm-in-usecase` (a call naming a confirmation requires it in its `Run`; no surface requires one, answers one before its call asks, or puts a question but kit's `Ask` and `tab.Confirmed`) and `every-code-worded` (every `fail.Code` has its words in `surface/cli/words`, and nothing worded is never raised). `imports` also keeps a surface off the engine model: it reaches the engine through `src/engine/calls`. All but `no-outbound-literals` list today's offenders (`imports` the packages moved into the new tree as they were) in an allowlist that only shrinks: a line that is no longer true fails the gate until it is removed.
 
 `wire` builds this machine's `core/machine.Profile` once: its kind and system from `Self` (`core/adapter/macos` tells a Mac from a macOS VM, `core/adapter/linux`), its battery, lid and thermal from `awake/contract.Power`, and what else it can do from the adapters it wires. A rule reads those capabilities, never a model name: the Awake guards a Mac has are `awake.Active(caps)`, so a desktop Mac has no battery guard because it reports no battery. A machine's disk is `disk/contract.DiskUsage` (`apfs` on macOS, `posix` on Linux).
 
@@ -110,12 +111,12 @@ The tree is moving to families first (machines, apps, settings, ports, awake...)
 1. `cmd/station` hands argv and the environment to `wire.Run`.
 2. `wire` builds the services over the real adapters and the cobra tree, and runs it under Fang.
 3. The leaf `surface/cli/tools/install` binds argv to an `Input`, then validates it against the catalogue and the config (refusals are exit 2, before any question, any read and any effect).
-4. The confirm gate runs for a destructive leaf: `--yes`, or a question on a terminal, or a refusal.
-5. The leaf makes one call to the domain service `domain/tools`, which orders dependencies, runs each method's installer from the `Installers` registry and reads the inventory back.
+4. The leaf invokes one call, `tools.install` of `src/apps/calls`, through the router `wire` built from every family's `All`: this machine's calls run in this process, past the gate of the target's section table and the call's own `Applies`. The call orders dependencies, runs each method's installer from the `Installers` registry and reads the inventory back.
+5. A call that confirms decides it in its own `Run` (`confirm.Require`); when it refuses with `NeedsConfirmation`, kit answers: `--yes`, or the leaf's question on a terminal (its `Ask`), or a refusal, then invokes it once more with the answer. A TUI tab does the same through `tab.Confirmed`: no surface decides whether to ask.
 6. The leaf hands the result to its page function, `pages/tools` for `station tools`, which returns a `page.Page`, and to its contract value for `--json`.
 7. `output` prints it in the form the stream allows, through `ui/render`: tty with colour, pipe as tab-separated records, json (the contract), or the page itself as `station.page/v1` under the hidden `--page`. The form is decided once per stream; `NO_COLOR` degrades a terminal to the pipe form.
 
-Multi-step behaviour (install then configure, restart then wait) lives in the domain operation, so a leaf and a TUI action make the same one call.
+Multi-step behaviour (install then configure, restart then wait) lives in the use case, so a leaf and a TUI action make the same one call.
 
 ## The error block
 

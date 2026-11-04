@@ -5,15 +5,17 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/core/call"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Machines *machines.Service
-	Here     page.Context
+	// value: the machines known here, for completion.
+	Names func() []string
+	Here  page.Context
 }
 
 type Input struct{ Name string }
@@ -30,11 +32,10 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Name = args[0]
 			return nil
 		},
-		Validate: func(_ context.Context, in *Input) error { return d.Machines.CheckStop(in.Name) },
-		Complete: func([]string, string) []string { return d.Machines.Names() },
+		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			stop := io.Wait("powering " + in.Name + " off")
-			err := d.Machines.Stop(ctx, in.Name)
+			_, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Stop, machinescalls.VMIn{VM: in.Name}, nil)
 			stop()
 			if err != nil {
 				return err

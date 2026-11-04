@@ -5,12 +5,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/core/call"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Machines *machines.Service
+	Names func() []string
 }
 
 type Input struct{ Name string }
@@ -25,21 +26,10 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Name = args[0]
 			return nil
 		},
-		Validate: func(_ context.Context, in *Input) error {
-			if err := d.Machines.CheckHost(); err != nil {
-				return err
-			}
-			if _, err := d.Machines.RemoteHost(in.Name, "unlock"); err != nil {
-				return err
-			}
-			if !env.Interactive {
-				return &machines.NeedsTerminalError{Verb: "unlock"}
-			}
-			return nil
-		},
-		Complete: func([]string, string) []string { return d.Machines.Names() },
-		Run: func(ctx context.Context, in *Input, _ kit.IO) error {
-			return d.Machines.Unlock(ctx, in.Name)
+		Complete: func([]string, string) []string { return d.Names() },
+		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			_, err := call.Invoke(ctx, env.Calls, env.Target, machinescalls.Unlock, machinescalls.UnlockIn{Name: in.Name, Interactive: io.Interactive}, nil)
+			return err
 		},
 	}, env)
 }

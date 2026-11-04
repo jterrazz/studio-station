@@ -9,6 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/engine"
+	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -23,7 +24,7 @@ const (
 
 type menubarFeed struct {
 	m      machine
-	status *overviewReader
+	status *overviewcalls.Overview
 	fleet  *machines.Service
 	svcs   *services.Service
 

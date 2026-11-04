@@ -3,6 +3,7 @@ package machines
 import (
 	"context"
 	"errors"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"strings"
 	"time"
 
@@ -19,12 +20,10 @@ const (
 	returnBudget = 180 * time.Second
 )
 
-type RestartEvent struct{ Phase, Detail string }
-
-type RestartReport struct {
-	Name   string
-	Waited time.Duration
-}
+type (
+	RestartEvent  = model.RestartEvent
+	RestartReport = model.RestartReport
+)
 
 func (s *Service) Restart(ctx context.Context, name string, progress func(RestartEvent)) (RestartReport, error) {
 	if err := s.CheckHost(); err != nil {

@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/catalog"
 	"path/filepath"
 	"strconv"
 
@@ -78,22 +79,89 @@ func fanOutArgv(target string, words []string) []string {
 
 func machinesCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.machines(env.Interactive)
-	return machinescmd.Command(machinescmd.Deps{Machines: service, Here: m.where}, env,
-		machinesadd.Command(machinesadd.Deps{Machines: service, Here: m.where}, env),
-		machinesforget.Command(machinesforget.Deps{Machines: service, Here: m.where}, env),
+	return machinescmd.Command(machinescmd.Deps{Here: m.where}, env,
+		machinesadd.Command(machinesadd.Deps{Here: m.where}, env),
+		machinesforget.Command(machinesforget.Deps{Names: service.Names, Here: m.where}, env),
 		machinescreate.Command(machinescreate.Deps{
-			Machines: service, Here: m.where, Ask: createAsker(env),
-			Build: m.buildImage, On: createOn(env),
+			Resources: machines.ParseResources, Check: createCheck(service),
+			NotBuilt: func(image string) error { return &machines.NoImageError{Image: image} },
+			Fleet:    func(ctx context.Context) (machines.Fleet, error) { return service.Fleet(ctx, false) },
+			Here:     m.where, Ask: createAsker(env), On: createOn(env),
 		}, env),
-		machinesstart.Command(machinesstart.Deps{Machines: service, Here: m.where}, env),
-		machinesstop.Command(machinesstop.Deps{Machines: service, Here: m.where}, env),
-		machinesrestart.Command(machinesrestart.Deps{Machines: service, Here: m.where}, env),
-		machinesdelete.Command(machinesdelete.Deps{Machines: service, Here: m.where}, env),
-		machinesprobe.Command(machinesprobe.Deps{Machines: service, Here: m.where}, env),
-		machinesunlock.Command(machinesunlock.Deps{Machines: service}, env),
+		machinesstart.Command(machinesstart.Deps{Names: service.Names, Here: m.where}, env),
+		machinesstop.Command(machinesstop.Deps{Names: service.Names, Here: m.where}, env),
+		machinesrestart.Command(machinesrestart.Deps{Names: service.Names, IsVM: func(name string) bool {
+			r, err := service.Remote(name)
+			return err == nil && r.Kind != catalog.Host
+		}, Here: m.where}, env),
+		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
+		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Here: m.where}, env),
+		machinesunlock.Command(machinesunlock.Deps{Names: service.Names}, env),
 		machinessupervise.Command(env),
-		machinespipe.Command(machinespipe.Deps{Machines: service}, env),
+		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{service}}, env),
 	)
+}
+
+func createCheck(s *machines.Service) func(ctx context.Context, r machines.CreateRequest) (bool, error) {
+	return func(ctx context.Context, r machines.CreateRequest) (bool, error) {
+		_, err := s.CheckCreate(ctx, r)
+		var unbuilt *machines.NoImageError
+		if errors.As(err, &unbuilt) {
+			return true, err
+		}
+		return false, err
+	}
+}
+
+type vmPipe struct{ *machines.Service }
+
+func (p vmPipe) Check(ctx context.Context, vm string) error {
+	_, err := p.CheckPipe(ctx, vm)
+	return err
+}
+
+// invariant: the machines calls' Deps over today's service: each check the
+// leaves ran before, worded by the service's own errors.
+type machineCalls struct{ *machines.Service }
+
+func (c machineCalls) CheckVM(name, verb string) error {
+	_, err := c.VM(name, verb)
+	return err
+}
+
+func (c machineCalls) CheckRestart(name string) (bool, error) {
+	r, err := c.Remote(name)
+	if err != nil {
+		return false, err
+	}
+	if r.Kind == catalog.Host {
+		return false, nil
+	}
+	if r.Lifetime == machines.Temporary {
+		return true, &machines.TemporaryRestartError{Name: name}
+	}
+	return true, nil
+}
+
+func (c machineCalls) Restart(ctx context.Context, name string) (machines.RestartReport, error) {
+	return c.Service.Restart(ctx, name, nil)
+}
+
+func (c machineCalls) CheckRemoteHost(name, verb string) error {
+	_, err := c.RemoteHost(name, verb)
+	return err
+}
+
+func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool) error {
+	if !interactive {
+		return &machines.NeedsTerminalError{Verb: "unlock"}
+	}
+	return c.Service.Unlock(ctx, name)
+}
+
+func (c machineCalls) CheckRemote(name string) error {
+	_, err := c.Remote(name)
+	return err
 }
 
 type fleetImages struct{ service *images.Service }
@@ -117,11 +185,6 @@ func createAsker(env kit.Env) kit.Asker {
 		return nil
 	}
 	return env.Prompt
-}
-
-func (m machine) buildImage(ctx context.Context, image string) error {
-	_, err := m.images().Build(ctx, images.BuildRequest{Images: []string{image}}, nil)
-	return err
 }
 
 // invariant: a host chosen on a terminal runs the very request there, as --on

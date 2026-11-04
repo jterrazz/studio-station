@@ -14,11 +14,11 @@ import (
 
 func secretsCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.secrets()
-	return secretscmd.Command(secretscmd.Deps{Secrets: service, Here: m.where}, env,
-		secretsallow.Command(secretsallow.Deps{Secrets: service, Here: m.where}, env),
-		secretsdisallow.Command(secretsdisallow.Deps{Secrets: service, Here: m.where}, env),
-		secretslend.Command(secretslend.Deps{Secrets: service, Here: m.where}, env),
-		secretsrecall.Command(secretsrecall.Deps{Secrets: service, Here: m.where}, env),
+	return secretscmd.Command(secretscmd.Deps{Here: m.where}, env,
+		secretsallow.Command(secretsallow.Deps{Here: m.where}, env),
+		secretsdisallow.Command(secretsdisallow.Deps{LendList: service.LendList, Held: service.Held, Here: m.where}, env),
+		secretslend.Command(secretslend.Deps{LendList: service.LendList, Here: m.where}, env),
+		secretsrecall.Command(secretsrecall.Deps{LendList: service.LendList, Here: m.where}, env),
 	)
 }
 

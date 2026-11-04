@@ -5,25 +5,24 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/power"
+	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Power *power.Service
-	Here  page.Context
+	Here page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[struct{}]{
-		Use:      "sleep",
-		Short:    "End the Power session now: the Mac sleeps as macOS decides",
-		Example:  "  station power sleep",
-		Validate: func(context.Context, *struct{}) error { return d.Power.Check() },
+		Use:     "sleep",
+		Short:   "End the Power session now: the Mac sleeps as macOS decides",
+		Example: "  station power sleep",
 		Run: func(ctx context.Context, _ *struct{}, io kit.IO) error {
-			s, err := d.Power.Sleep(ctx)
+			s, err := call.Invoke(ctx, env.Calls, env.Target, awakecalls.Sleep, awakecalls.SleepIn{}, nil)
 			if err != nil {
 				return err
 			}

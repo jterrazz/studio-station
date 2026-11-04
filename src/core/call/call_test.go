@@ -80,6 +80,11 @@ func lister(ran *int) call.Watch[deps, listIn, listOut] {
 	}
 }
 
+func wire(v any) string {
+	raw, _ := v.(json.RawMessage)
+	return string(raw)
+}
+
 type steps []string
 
 func (s *steps) Step(task, detail string)  { *s = append(*s, task+" "+detail) }
@@ -103,13 +108,24 @@ func (r router) Invoke(ctx context.Context, target machine.Ref, name string, in,
 	return json.Unmarshal(res, out)
 }
 
-func (r router) Watch(ctx context.Context, target machine.Ref, name string, in any) (<-chan call.Update[json.RawMessage], error) {
+func (r router) Watch(ctx context.Context, target machine.Ref, name string, in any, p call.Progress) (<-chan call.Update[any], error) {
 	h, _ := r.registry.Lookup(name)
 	raw, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
-	return h.Watch(ctx, r.machines[target.Name], raw, nil)
+	frames, err := h.Watch(ctx, r.machines[target.Name], raw, p)
+	if err != nil {
+		return nil, err
+	}
+	out := make(chan call.Update[any])
+	go func() {
+		defer close(out)
+		for f := range frames {
+			out <- call.Update[any]{Value: f.Value, Err: f.Err}
+		}
+	}()
+	return out, nil
 }
 
 func notForThisMachine(t *testing.T, err error) *fail.Error {
@@ -195,13 +211,13 @@ func TestAWatchFillsTheListUpdateByUpdate(t *testing.T) {
 	}
 	r := router{registry: registry, machines: map[string]machine.Profile{laptop.Ref.Name: laptop}}
 
-	updates, err := r.Watch(t.Context(), laptop.Ref, "apps.list", nil)
+	updates, err := r.Watch(t.Context(), laptop.Ref, "apps.list", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var seen []string
 	for u := range updates {
-		seen = append(seen, string(u.Value))
+		seen = append(seen, wire(u.Value))
 	}
 	if !slices.Equal(seen, []string{`{"Apps":["jq"]}`, `{"Apps":["jq","node"]}`}) {
 		t.Errorf("apps.list streamed %v", seen)
@@ -211,8 +227,8 @@ func TestAWatchFillsTheListUpdateByUpdate(t *testing.T) {
 	if failed := r.Invoke(t.Context(), laptop.Ref, "apps.list", nil, &last, nil); failed != nil || !slices.Equal(last.Apps, []string{"jq", "node"}) {
 		t.Errorf("apps.list invoked once answered %+v, %v", last, failed)
 	}
-	once, err := r.Watch(t.Context(), laptop.Ref, "apps.install", installIn{App: "jq"})
-	if u := <-once; err != nil || string(u.Value) != `{"App":"jq","State":"installed"}` {
+	once, err := r.Watch(t.Context(), laptop.Ref, "apps.install", installIn{App: "jq"}, nil)
+	if u := <-once; err != nil || wire(u.Value) != `{"App":"jq","State":"installed"}` {
 		t.Errorf("apps.install watched answered %s, %v", u.Value, err)
 	}
 }

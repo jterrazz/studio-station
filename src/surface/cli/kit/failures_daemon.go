@@ -85,7 +85,6 @@ func servicesFailure(err error) (*fail.Error, bool) {
 func controlFailure(err error) (*fail.Error, bool) {
 	var notInstalled *engine.NotInstalledError
 	var offHost *engine.OffHostError
-	var unconfirmed *engine.UnconfirmedError
 	var stuck *engine.StuckError
 	var noAnswer *engine.NoAnswerError
 	var boot *engine.BootError
@@ -94,8 +93,6 @@ func controlFailure(err error) (*fail.Error, bool) {
 		return failed(notInstalled.Error(), "station setup", err), true
 	case errors.As(err, &offHost):
 		return usage(offHost.Error(), "ssh <host> station "+offHost.Verb), true
-	case errors.As(err, &unconfirmed):
-		return usage(unconfirmed.Error(), "station stop --yes"), true
 	case errors.As(err, &stuck):
 		return failed(stuck.Error(), "station machines delete "+stuck.VM, err), true
 	case errors.As(err, &noAnswer):

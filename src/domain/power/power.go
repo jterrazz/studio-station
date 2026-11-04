@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	Default   = 4 * time.Hour
+	Default   = awake.DefaultFor
 	Longest   = 24 * time.Hour
 	Shortest  = time.Minute
 	pollEvery = 30 * time.Second
@@ -42,43 +42,14 @@ type Reading = awake.Reading
 
 type Port = contract.Power
 
-type Request struct {
-	Lid     bool
-	Battery bool
-	For     time.Duration
-	By      string
-}
-
-type Session struct {
-	Lid       bool      `json:"lid"`
-	Battery   bool      `json:"battery"`
-	StartedAt time.Time `json:"started_at"`
-	Until     time.Time `json:"until"`
-	By        string    `json:"by"`
-}
-
-type End struct {
-	At     time.Time `json:"at"`
-	Reason string    `json:"reason"`
-	Detail string    `json:"detail"`
-}
-
-type Guard struct {
-	Name  string `json:"name"`
-	State string `json:"state"`
-}
-
-type View struct {
-	Session *Session `json:"session"`
-	LastEnd *End     `json:"last_end"`
-	Reading Reading  `json:"reading"`
-	Guards  []Guard  `json:"guards"`
-}
-
-type Slept struct {
-	Ended bool          `json:"ended"`
-	After time.Duration `json:"after"`
-}
+type (
+	Request = awake.Request
+	Session = awake.Session
+	End     = awake.End
+	Guard   = awake.GuardState
+	View    = awake.View
+	Slept   = awake.Slept
+)
 
 type RangeError struct{ Long bool }
 
@@ -262,12 +233,12 @@ func flags(s Session) string {
 	return " (" + strings.Join(on, ", ") + ")"
 }
 
-func (m *Machine) Awake(req Request) (Session, bool, error) {
+func (m *Machine) Awake(req Request) (held Session, refreshed bool, err error) {
 	if req.For == 0 {
 		req.For = Default
 	}
-	if err := CheckFor(req.For); err != nil {
-		return Session{}, false, err
+	if bad := CheckFor(req.For); bad != nil {
+		return Session{}, false, bad
 	}
 	r, err := m.port.Read()
 	if unsupported(err) {
@@ -286,7 +257,7 @@ func (m *Machine) Awake(req Request) (Session, bool, error) {
 	m.reading = r
 	now := m.clock.Now().UTC().Truncate(time.Second)
 	want.StartedAt, want.Until = now, now.Add(req.For)
-	refreshed := m.session != nil
+	refreshed = m.session != nil
 	if refreshed {
 		was := m.session.Lid
 		want.StartedAt = m.session.StartedAt

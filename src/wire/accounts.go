@@ -108,7 +108,7 @@ func (m machine) stationHostKeys() []string {
 }
 
 func accountsCommand(env kit.Env, m machine) *cobra.Command {
-	return accountscmd.Command(accountscmd.Deps{Accounts: m.accounts(), Here: m.where}, env)
+	return accountscmd.Command(accountscmd.Deps{Here: m.where}, env)
 }
 
 func tailnetAccount(ctx context.Context, tn contract.Tailnet) accounts.TailnetAccount {

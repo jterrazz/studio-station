@@ -9,27 +9,31 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
+	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
+	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
+	powerscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/power"
+	servicesscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/services"
+	storagescreen "github.com/jterrazz/studio-station/src/surface/tui/screens/storage"
+	toolsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/tools"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
 func tuiOpener(env kit.Env, m machine) func(context.Context) error {
 	return func(ctx context.Context) error {
+		storage, accounts := m.storage(env), m.accounts()
 		return tui.Run(ctx, tui.Deps{
 			Here:     m.where,
-			Status:   statusService(env, m),
-			Tools:    toolsService(env, m),
-			Config:   configService(m),
-			Storage:  m.storage(env),
-			Machines: m.machines(true),
-			Images:   m.images(),
-			Secrets:  m.secrets(),
-			Services: m.services(env),
-			Tailnet:  m.tailnetStatus(),
-			Accounts: m.accounts(),
-			Power: tuiPower{Service: m.power(), m: m, describe: func(err error) (string, string) {
+			Calls:    env.Calls,
+			Target:   env.Target,
+			Tools:    toolsscreen.Deps{Calls: env.Calls, Target: env.Target, Forget: toolsService(env, m).Forget},
+			Config:   configscreen.Deps{Calls: env.Calls, Target: env.Target, Defaults: configService(m).Defaults},
+			Storage:  storagescreen.Deps{Calls: env.Calls, Target: env.Target, Forget: storage.Forget, Plan: storage.Plan},
+			Services: servicesscreen.Deps{Calls: env.Calls, Target: env.Target},
+			Accounts: accountsscreen.Deps{Calls: env.Calls, Target: env.Target, Forget: accounts.Forget, LendList: accounts.LendList},
+			Power: powerscreen.Deps{Calls: env.Calls, Target: env.Target, Power: tuiPower{Service: m.power(), m: m, describe: func(err error) (string, string) {
 				f := kit.Translate(err, "")
 				return f.Message, f.Hint
-			}},
+			}}},
 			Remote: func(ctx context.Context, machine string, words []string) error {
 				code, err := env.On.Remote.Run(ctx, machine, true, words)
 				if err == nil && code != 0 {

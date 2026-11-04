@@ -2,6 +2,7 @@ package images
 
 import (
 	"context"
+	model "github.com/jterrazz/studio-station/src/images"
 	"slices"
 
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
@@ -34,11 +35,7 @@ func New(h system.Host, e contract.Hypervisor, guests contract.GuestDialer, stor
 	return &Service{h: h, e: e, guests: guests, store: store, vms: vms, list: list, o: o}
 }
 
-type Report struct {
-	Record Record
-	Newest bool
-	VMs    []string
-}
+type Report = model.Report
 
 func (s *Service) checkHost() error {
 	if s.o.Here != catalog.Host {

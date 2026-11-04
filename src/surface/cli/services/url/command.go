@@ -5,21 +5,18 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pageservices "github.com/jterrazz/studio-station/src/pages/services"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Services *services.Service
-	Here     page.Context
+	Here page.Context
 }
 
-type Input struct {
-	Text string
-	Port int
-}
+type Input struct{ Text string }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
@@ -31,14 +28,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			in.Text = args[0]
 			return nil
 		},
-		Validate: func(_ context.Context, in *Input) error {
-			port, err := d.Services.CheckURL(in.Text)
-			in.Port = port
-			return err
-		},
 		Read: func(*Input) bool { return false },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			v, err := d.Services.URL(ctx, in.Port)
+			v, err := call.Invoke(ctx, env.Calls, env.Target, portscalls.URL, portscalls.URLIn{Port: in.Text}, nil)
 			if err != nil {
 				return err
 			}

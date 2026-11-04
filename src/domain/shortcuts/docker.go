@@ -3,22 +3,18 @@ package shortcuts
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/settings"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-type Outcome struct {
-	Shortcut string
-	Removals []Removal
-}
+type (
+	Outcome = settings.ContainersOutcome
+	Removal = settings.ContainersRemoval
+)
 
-type Removal struct {
-	What  string
-	Count int
-}
-
-func (s *Service) Docker(ctx context.Context, name string) (Outcome, error) {
+func (s *Service) Containers(ctx context.Context, name string) (Outcome, error) {
 	var steps []func(context.Context) (Removal, error)
 	switch name {
 	case "rm":

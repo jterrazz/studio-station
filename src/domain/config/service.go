@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/settings"
 	"io/fs"
 	"path"
 	"slices"
@@ -54,29 +55,12 @@ func New(h system.Host, items []catalog.ConfigItem, files fs.FS, prefs Prefs, o 
 	return &Service{h: h, items: items, byName: byName, files: files, prefs: prefs, o: o}
 }
 
-type Report struct {
-	Item    catalog.ConfigItem
-	State   catalog.State
-	Detail  string
-	Applies bool
-}
-
-type Change struct {
-	Item   string
-	Verb   string
-	Result catalog.State
-	Before []Fact
-	After  []Fact
-	Steps  []Step
-}
-
-type Fact struct{ Key, Value string }
-
-type Step struct {
-	Label  string
-	State  catalog.State
-	Detail string
-}
+type (
+	Report = settings.Report
+	Change = settings.Change
+	Fact   = settings.KeyValue
+	Step   = settings.ChangeStep
+)
 
 type handler struct {
 	check     func(ctx context.Context) (catalog.State, string)

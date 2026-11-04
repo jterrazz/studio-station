@@ -53,10 +53,9 @@ func (m machine) power() *power.Service {
 }
 
 func powerCommand(env kit.Env, m machine) *cobra.Command {
-	s := m.power()
-	return powercmd.Command(powercmd.Deps{Power: s, Here: m.where}, env,
-		powerawake.Command(powerawake.Deps{Power: s, Here: m.where}, env),
-		powersleep.Command(powersleep.Deps{Power: s, Here: m.where}, env),
+	return powercmd.Command(powercmd.Deps{Here: m.where}, env,
+		powerawake.Command(powerawake.Deps{Zone: time.Local, Here: m.where}, env),
+		powersleep.Command(powersleep.Deps{Here: m.where}, env),
 	)
 }
 

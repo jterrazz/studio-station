@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	KindHost = "host"
-	KindVM   = "vm"
+	KindHost = accounts.KindHost
+	KindVM   = accounts.KindVM
 
 	DaemonRunning   = "running"
 	DaemonStopped   = "stopped"
@@ -29,23 +29,10 @@ const (
 	providerReserve = 500 * time.Millisecond
 )
 
-type Machine struct {
-	Name     string    `json:"name"`
-	Kind     string    `json:"kind"`
-	Here     bool      `json:"here,omitempty"`
-	Lifetime string    `json:"lifetime,omitempty"`
-	Guest    string    `json:"guest,omitempty"`
-	Running  bool      `json:"-"`
-	Pending  bool      `json:"-"`
-	Accounts []Account `json:"accounts"`
-}
-
-type Report struct {
-	Machines []Machine
-	// value: the daemon's state when this host's VMs could not be asked.
-	Daemon string
-	Now    time.Time
-}
+type (
+	Machine = accounts.Machine
+	Report  = accounts.Report
+)
 
 type VM struct {
 	// value: a VM of this host as its record and the daemon's list say.
@@ -249,17 +236,7 @@ func (s *Service) Read(ctx context.Context) <-chan Report {
 		close(out)
 		return out
 	}
-	return probe.Run(ctx, s.pool, frame, jobs, clone)
-}
-
-func clone(r Report) Report {
-	out := r
-	out.Machines = make([]Machine, len(r.Machines))
-	for i, m := range r.Machines {
-		m.Accounts = slices.Clone(m.Accounts)
-		out.Machines[i] = m
-	}
-	return out
+	return probe.Run(ctx, s.pool, frame, jobs, Report.Clone)
 }
 
 func (s *Service) vmFrame(v VM, now time.Time) Machine {
@@ -365,18 +342,6 @@ func Scope(name string) string {
 	return ""
 }
 
-func Lendable(list []string, provider string) []string {
-	var out []string
-	for _, n := range list {
-		for _, sc := range catalog.LendScopes {
-			if sc.Name == n && (provider == "" || sc.Provider == provider) {
-				out = append(out, n)
-			}
-		}
-	}
-	return out
-}
-
 func (s *Service) Forget() {
 	if s.pool != nil {
 		s.pool.Forget("accounts/")
@@ -425,27 +390,4 @@ func withHint(a Account, vm string) Account {
 	return a
 }
 
-func RowID(machine, provider string) string { return machine + "/" + provider }
-
-func (r Report) Resolved() Report {
-	// value: a lent copy is the host's right, so its identity is the host's
-	// for that provider once the host's read has answered.
-	if len(r.Machines) == 0 || r.Machines[0].Kind != KindHost {
-		return r
-	}
-	host := map[string][]string{}
-	for _, a := range r.Machines[0].Accounts {
-		if a.State == catalog.StateOK {
-			host[a.Provider] = a.Identity
-		}
-	}
-	out := clone(r)
-	for i := range out.Machines {
-		for j, a := range out.Machines[i].Accounts {
-			if a.Lent != nil && len(a.Identity) == 1 && a.Identity[0] == Unknown && host[a.Provider] != nil {
-				out.Machines[i].Accounts[j].Identity = host[a.Provider]
-			}
-		}
-	}
-	return out
-}
+func RowID(machine, provider string) string { return accounts.RowID(machine, provider) }

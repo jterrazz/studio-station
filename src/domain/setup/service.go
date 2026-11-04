@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/setup"
 	"io/fs"
 	"path"
 	"regexp"
@@ -89,15 +90,10 @@ type Request struct {
 	AskName     func() (string, error)
 }
 
-type Step struct {
-	Name    string
-	State   catalog.State
-	Detail  string
-	Log     string
-	Changed bool
-}
-
-type Report struct{ Steps []Step }
+type (
+	Step   = setup.Step
+	Report = setup.Report
+)
 
 func ValidName(name string) bool { return machineName.MatchString(name) }
 

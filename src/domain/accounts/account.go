@@ -1,8 +1,6 @@
 package accounts
 
 import (
-	"time"
-
 	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/catalog"
 )
@@ -24,26 +22,10 @@ const (
 	Unknown = accounts.Unknown
 )
 
-type Account struct {
-	Provider string        `json:"provider"`
-	State    catalog.State `json:"state"`
-	Reason   string        `json:"reason,omitempty"`
-	Identity []string      `json:"identity,omitempty"`
-	Origin   string        `json:"origin,omitempty"`
-	Scopes   []string      `json:"scopes,omitempty"`
-	Source   string        `json:"source,omitempty"`
-	Detail   string        `json:"detail,omitempty"`
-	Notes    []string      `json:"notes,omitempty"`
-	Hint     string        `json:"hint,omitempty"`
-	Lent     *Lend         `json:"lent,omitempty"`
-	Redacted bool          `json:"-"`
-}
-
-type Lend struct {
-	Name  string    `json:"name"`
-	At    time.Time `json:"at"`
-	Until time.Time `json:"until"`
-}
+type (
+	Account = accounts.Account
+	Lend    = accounts.Lend
+)
 
 // invariant: a provider's own read is the owner's own right once it is
 // signed in or failing; absent or late, it is no one's yet.

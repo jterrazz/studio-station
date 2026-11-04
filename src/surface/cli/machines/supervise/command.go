@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 

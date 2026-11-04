@@ -1,4 +1,4 @@
-description: 'each Fleet key binds the rows it acts on: a host restart wants its name, a VM delete asks'
+description: 'each Fleet key binds its rows: a VM delete asks, restarting this Mac is refused before any question'
 fixture:
     - ../../__fixtures__/vms/
     - ../__fixtures__/vm-t/
@@ -13,43 +13,16 @@ runs:
           see - Images
           see └─ ● t
           send \x1b[B
-          send \x12
-          see type x to confirm
-          screen
-          send \x1b
-          gone type x to confirm
           send \x1b[B
           send d
           see Delete t?
           send n
           gone Delete t?
+          send \x1b[A
+          send \x12
+          see ✗ "x" is this mac
           send q
       exit: 0
-      stdout: |4
-           station  Home · Tools · Config · Storage │ Fleet · Services · Accounts · 8   x
-           ──────────────────────────────────────────────────────────────────────────────
-           - Fleet                                                               1 ●  1 ◐
-             ◐ x     host       here  online   192.0.2.1  1 VM
-               daemon not installed  → station setup
-             └─ ● t  temporary        running  -          4 cpus · 8 GB · 50.0 GB
-           - Images                                                                   1 ●
-                      version        size   VMs
-             ● linux  2026.11.07  20.0 GB  1 VM  ghcr.io/cirruslabs/ubuntu:24.04
-           - Secrets
-               Lend list
-                no lent secrets  → station secrets allow <name>
-               Kept
-                no kept secrets
-           + Tailnet                                                                  3 ●
-           ╭──────────────────────────────────────────────────────────╮
-           │   Restart x?                                             │
-           │                                                          │
-           │ ┃ type x to confirm                                      │
-           │ ┃ >                                                      │
-           │                                                          │
-           ╰──────────────────────────────────────────────────────────╯
-
-           ↑↓ move  ctrl+r restart  n create  b build images  enter detail  ? keys
     - command: '--version > /dev/null; /usr/bin/grep -c -E ''^(tart (stop|delete|run)|ssh) '' .calls'
       exit: 1
       stdout: |

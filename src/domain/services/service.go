@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/jterrazz/studio-station/src/ports"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,52 +24,14 @@ const fanOutBudget = 5 * time.Second
 
 var ErrDaemonDown = errors.New("the station daemon is not running")
 
-type View struct {
-	VM         string     `json:"vm"`
-	GuestPort  int        `json:"guest_port"`
-	HostPort   int        `json:"host_port"`
-	State      Phase      `json:"state"`
-	Process    string     `json:"process"`
-	HTTP       bool       `json:"http"`
-	Pinned     bool       `json:"pinned"`
-	Profile    string     `json:"profile"`
-	URLs       URLSet     `json:"urls"`
-	LastSeenAt *time.Time `json:"last_seen_at"`
-	Detail     string     `json:"detail"`
-}
-
-type DaemonInfo struct {
-	Running bool   `json:"running"`
-	Version string `json:"version"`
-	// value: the agent's plist is on this host: a daemon not running is
-	// stopped, not missing (R9.D3); never in the services/v1 contract.
-	Installed bool `json:"-"`
-}
-
-type HostView struct {
-	Name       string     `json:"name"`
-	Here       bool       `json:"here"`
-	Reachable  bool       `json:"reachable"`
-	Daemon     DaemonInfo `json:"daemon"`
-	PublicHost string     `json:"public_host"`
-	Serve      string     `json:"serve"`
-	HTTPS      string     `json:"https"`
-	Range      *Range     `json:"range,omitempty"`
-	Services   []View     `json:"services"`
-}
-
-type Range struct {
-	Low      int `json:"low"`
-	High     int `json:"high"`
-	Leased   int `json:"leased"`
-	Free     int `json:"free"`
-	MaxPerVM int `json:"max_per_vm"`
-}
-
-type Fleet struct {
-	Schema string     `json:"schema"`
-	Hosts  []HostView `json:"hosts"`
-}
+type (
+	View       = ports.ServiceView
+	DaemonInfo = ports.EngineInfo
+	HostView   = ports.HostServices
+	Range      = ports.Range
+	Fleet      = ports.Fleet
+	Target     = ports.Target
+)
 
 type Daemon interface {
 	Services(ctx context.Context) (HostView, error)
@@ -311,11 +274,6 @@ func (s *Service) URL(ctx context.Context, port int) (View, error) {
 		return View{}, &HostAwayError{Host: s.o.HostName}
 	}
 	return v, err
-}
-
-type Target struct {
-	VM   string
-	Port int
 }
 
 func (s *Service) ParseTarget(text string) (Target, error) {

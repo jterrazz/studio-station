@@ -42,6 +42,13 @@ const (
 func importTable() map[string][]string {
 	domain := []string{"system", "catalog", "domain/settings", "core/call/lanes", "ports", "ports/contract", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract",
 		"machines", "machines/contract", "images", "setup", "setup/contract", "core/store", "core/adapter/fake", "machines/adapter/fake", std}
+	// value: what a surface reaches the use cases by: the kernel's calls,
+	// confirmations and machines, each family's model and calls.
+	calls := make([]string, 0, 3+2*len(families()))
+	calls = append(calls, "core/call", "core/confirm", "core/machine")
+	for _, f := range families() {
+		calls = append(calls, f, f+"/calls")
+	}
 	organism := []string{"ui/molecule", "ui/atom", "ui/token", "page", lip, bubble, huh, std}
 	template := append(slices.Clone(organism), "ui/organism")
 	return map[string][]string{
@@ -50,15 +57,15 @@ func importTable() map[string][]string {
 		"cmd/generate/pages":         {"page", "pages", "pages/*", "domain/*", "engine", "ports", "overview", "activity", "catalog", "ui/token", std},
 		"wire":                       {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", "net/netip", std},
 		"surface/cli":                {"surface/cli/kit", cobra, std},
-		"surface/cli/kit":            {"output", "page", "core/fail", "core/store", "domain/*", "engine", "ports", "accounts", "catalog", "testing", cobra, pflag, std},
-		"surface/cli/*":              {"surface/cli/kit", "domain/*", "engine", "ports", "page", "pages/*", "catalog", cobra, pflag, std},
+		"surface/cli/kit":            append([]string{"output", "page", "core/fail", "surface/cli/words", "core/store", "domain/*", "engine", "catalog", "testing", cobra, pflag, std}, calls...),
+		"surface/cli/*":              append([]string{"surface/cli/kit", "core/fail", "engine", "page", "pages/*", "catalog", cobra, pflag, std}, calls...),
 		"domain/*":                   domain,
 		"domain/setup":               append(slices.Clone(domain), "domain/shell", "domain/storage"),
 		"domain/tools":               append(slices.Clone(domain), "apps", "apps/contract", "apps/adapter/fake", "core/call"),
 		"engine":                     append(slices.Clone(domain), "domain/machines", "domain/services", "domain/power", "machines", "machines/contract", "net/netip"),
 		"domain/guest":               append(slices.Clone(domain), "domain/services"),
 		"domain/power":               append(slices.Clone(domain), "awake", "awake/contract", "core/machine"),
-		"domain/storage":             append(slices.Clone(domain), "disk/contract"),
+		"domain/storage":             append(slices.Clone(domain), "disk", "disk/contract"),
 		"domain/machines":            append(slices.Clone(domain), "machines", "machines/contract", "images/contract"),
 		"domain/images":              append(slices.Clone(domain), "machines/contract", "images/contract", "net/netip"),
 		"machines/adapter/ssh":       {"machines/contract", "machines/contract/contracttest", sshPkg, sshPkg + "/knownhosts", "os", "net", "net/netip", std},
@@ -86,8 +93,8 @@ func importTable() map[string][]string {
 		"core/adapter/*":             {"core/*", "platform/local", "golang.org/x/sys/unix", std},
 		"core/contract/contracttest": {"core/*", "testing", std},
 		"core/fail":                  {"core/finding", std},
-		"surface/tui":                {"surface/tui/screens/*", "domain/*", "ports", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
-		"surface/tui/*":              {"surface/tui/screens/*", "domain/*", "ports", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std},
+		"surface/tui":                append([]string{"surface/tui/screens/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
+		"surface/tui/*":              append([]string{"surface/tui/screens/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
 	}
 }
 
@@ -754,6 +761,7 @@ func rules() []rule {
 		{"TreeApplies", ruleTree, "src/background/applies.go", "package background\n", "src/background"},
 		{"FamilyImports", ruleFamilyImports, "src/apps/mutant_imports.go", "package apps\n\nimport _ \"os/exec\"\n", "src/apps/mutant_imports.go"},
 		{"FamilyImportsOldTree", ruleFamilyImports, "src/disk/mutant_imports_old.go", "package disk\n\nimport _ \"" + module + "/src/domain/tools\"\n", "src/disk/mutant_imports_old.go"},
+		{"FamilyImportsSurfaceEngine", ruleFamilyImports, "src/surface/cli/start/mutant_engine.go", "package startcmd\n\nimport _ \"" + module + "/src/engine\"\n", "src/surface/cli/start/mutant_engine.go"},
 		{"TechnologyWords", ruleTechnologyWords, "src/apps/mutant_words.go", "package apps\n\nconst mutantMethod = \"brew\"\n", "src/apps/mutant_words.go"},
 		{"TechnologyWordsSSH", ruleTechnologyWords, "src/apps/mutant_ssh.go", "package apps\n\nvar mutantArgv = []string{\"ssh\", \"-o\", \"BatchMode=yes\", \"vm\", \"true\"}\n", "src/apps/mutant_ssh.go"},
 		{"TechnologyWordsSSHPath", ruleTechnologyWords, "src/apps/mutant_ssh_path.go", "package apps\n\nconst mutantBinary = \"nohup /usr/bin/ssh vm\"\n", "src/apps/mutant_ssh_path.go"},
@@ -766,6 +774,12 @@ func rules() []rule {
 		{"OneWriterPerStoreGroup", ruleOneWriterPerStore, "src/apps/contract/mutant_group.go", "package contract\n\nimport core \"" + module + "/src/core/contract\"\n\nfunc mutantName(p core.Preferences) error { return p.Write(\"here\", \"mutant\") }\n", "src/apps/contract/mutant_group.go"},
 		{"NoOutboundLiterals", ruleNoOutboundLiterals, "src/overview/mutant_outbound.go", "package overview\n\nconst mutantLookup = \"curl -s https://ifconfig.me\"\n", "src/overview/mutant_outbound.go"},
 		{"NoModelNames", ruleNoModelNames, "src/awake/mutant_models.go", "package awake\n\nfunc mutantLaptop(model string) bool { return model == \"MacBook\" }\n", "src/awake/mutant_models.go"},
+		{"CallsGated", ruleCallsGated, "src/apps/calls/mutant_calls.go", "package calls\n\nimport \"" + module + "/src/core/call\"\n\nvar Mutant = call.Call[Deps, struct{}, struct{}]{Name: \"tools.mutant\"}\n", "src/apps/calls/mutant_calls.go"},
+		{"ConfirmInUsecase", ruleConfirmInUsecase, "src/disk/calls/mutant_confirm.go", "package calls\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/core/call\"\n\t\"" + module + "/src/core/confirm\"\n\t\"" + module + "/src/core/machine\"\n)\n\nvar mutantErase = call.Call[Deps, struct{}, struct{}]{Name: \"storage.mutant\", Applies: machine.Anywhere, Confirm: confirm.Erase,\n\tRun: func(context.Context, Deps, struct{}, call.Progress) (struct{}, error) { return struct{}{}, nil }}\n", "src/disk/calls/mutant_confirm.go"},
+		{"ConfirmInUsecaseAnswered", ruleConfirmInUsecase, "src/surface/tui/screens/services/mutant_answer.go", "package servicesscreen\n\nimport \"" + module + "/src/core/confirm\"\n\nvar mutantAnswer = confirm.Yes\n", "src/surface/tui/screens/services/mutant_answer.go"},
+		{"ConfirmInUsecaseScreenAsks", ruleConfirmInUsecase, "src/surface/tui/screens/accounts/mutant_ask.go", "package accountsscreen\n\nimport (\n\t\"" + module + "/src/page\"\n\t\"" + module + "/src/ui/render/tui\"\n)\n\nfunc mutantAsk(b tui.Browser) tui.Browser { return b.Ask(page.Confirm{}, nil) }\n", "src/surface/tui/screens/accounts/mutant_ask.go"},
+		{"ConfirmInUsecaseLeafAsks", ruleConfirmInUsecase, "src/surface/cli/stop/mutant_ask.go", "package stopcmd\n\nimport (\n\t\"" + module + "/src/page\"\n\t\"" + module + "/src/surface/cli/kit\"\n)\n\nfunc mutantAsk(a kit.Asker) { _, _ = a.Confirm(page.Confirm{}) }\n", "src/surface/cli/stop/mutant_ask.go"},
+		{"EveryCodeWorded", ruleEveryCodeWorded, "src/apps/mutant_code.go", "package apps\n\nimport \"" + module + "/src/core/fail\"\n\nconst mutantCode fail.Code = \"apps.mutant\"\n", "src/apps/mutant_code.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
 }

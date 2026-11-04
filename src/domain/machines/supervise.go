@@ -1,3 +1,5 @@
 package machines
 
-const SuperviseRetired = "supervise is retired: the daemon supervises VMs (station setup)"
+import model "github.com/jterrazz/studio-station/src/machines"
+
+const SuperviseRetired = model.SuperviseRetired

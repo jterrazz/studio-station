@@ -7,16 +7,16 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Tools *tools.Service
-	Here  page.Context
+	Here page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -29,14 +29,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			f.StringArrayVar(&in.Via, "via", nil, "upgrade every installed tool of a manager: "+strings.Join(managerNames(), ", "))
 		},
 		Bind: bind,
-		Validate: func(_ context.Context, in *Input) error {
-			if len(in.Names) == 0 {
-				return nil
-			}
-			return d.Tools.CheckUpgrade(in.Names)
-		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			outcomes, err := d.Tools.Upgrade(ctx, tools.UpgradeRequest{Names: in.Names, All: len(in.Names) == 0 && len(in.Via) == 0, Via: managers(in.Via)})
+			outcomes, err := call.Invoke(ctx, env.Calls, env.Target, appscalls.Upgrade, appscalls.UpgradeIn{Names: in.Names, Via: managers(in.Via)}, nil)
 			if err != nil {
 				return err
 			}

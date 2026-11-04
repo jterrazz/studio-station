@@ -6,13 +6,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/shell"
+	"github.com/jterrazz/studio-station/src/core/call"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-type Deps struct{ Shell *shell.Service }
-
-func Command(d Deps, env kit.Env) *cobra.Command {
+func Command(env kit.Env) *cobra.Command {
 	cmd := kit.Command(kit.Leaf[Input]{
 		Use:       "shell <zsh>",
 		Short:     "The script the ~/.zshrc block evaluates",
@@ -24,7 +23,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err := io.ZshCompletion(&completion); err != nil {
 				return err
 			}
-			script, err := d.Shell.Zsh(ctx, completion.String())
+			script, err := call.Invoke(ctx, env.Calls, env.Target, settingscalls.Zsh, settingscalls.ZshIn{Completion: completion.String()}, nil)
 			if err != nil {
 				return err
 			}

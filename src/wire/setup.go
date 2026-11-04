@@ -3,6 +3,8 @@ package wire
 import (
 	"context"
 	"errors"
+	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
+	"strings"
 
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 
@@ -18,7 +20,7 @@ import (
 )
 
 func setupCommand(env kit.Env, m machine) *cobra.Command {
-	return setupcmd.Command(setupcmd.Deps{Setup: setupService(env, m), Here: m.where}, env)
+	return setupcmd.Command(setupcmd.Deps{Here: m.where}, env)
 }
 
 func setupService(env kit.Env, m machine) *setup.Service {
@@ -104,3 +106,21 @@ func (r fleetRegistrar) Here() (string, bool) {
 }
 
 func (r fleetRegistrar) Register(name string) error { return r.machines.Init(name) }
+
+type setupRun struct{ *setup.Service }
+
+func (s setupRun) Run(ctx context.Context, name string, interactive bool, ask func() (string, error)) (setup.Report, error) {
+	return s.Service.Run(ctx, setup.Request{Name: name, Interactive: interactive, AskName: ask})
+}
+
+// value: the name asked in a form at the owner's terminal, from the one
+// this machine would take.
+type setupAsk struct {
+	setup *setup.Service
+	ask   kit.Asker
+}
+
+func (a setupAsk) Name(ctx context.Context) (string, error) {
+	values, err := a.ask.Form(pagesetup.NameForm(a.setup.DefaultName(ctx)))
+	return strings.TrimSpace(values["name"]), err
+}

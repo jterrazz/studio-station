@@ -9,7 +9,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 )
@@ -27,6 +30,9 @@ type Env struct {
 	On          *On
 	Stdin       io.Reader
 	Stdout      io.Writer
+	// value: where a leaf's call runs, and the machine it targets.
+	Calls  call.Router
+	Target machine.Ref
 }
 
 type IO struct {
@@ -39,6 +45,26 @@ type IO struct {
 	out           *output.Writer
 	in            io.Reader
 	raw           io.Writer
+	ask           func() error
+}
+
+func (o IO) Confirmed(do func(answer string) error) error {
+	// invariant: the call runs with --yes's answer, else unanswered; only
+	// when its use case still asks is the question put (--yes, the
+	// terminal, else a refusal), then the call runs once more with the answer.
+	first := ""
+	if o.Yes {
+		first = confirm.Yes
+	}
+	err := do(first)
+	answer, ok := confirm.Answer(err)
+	if !ok || o.ask == nil {
+		return err
+	}
+	if err := o.ask(); err != nil {
+		return err
+	}
+	return do(answer)
 }
 
 func (o IO) Streams() (io.Reader, io.Writer) { return o.in, o.raw }
@@ -78,13 +104,18 @@ type Leaf[I any] struct {
 	Bind                func(in *I, args []string) error
 	Validate            func(ctx context.Context, in *I) error
 	Read                func(in *I) bool
-	Destructive         func(in *I) bool
-	Confirm             func(in *I) string
-	Verb                func(in *I) string
-	Ask                 func(in *I) (bool, error)
-	Complete            func(args []string, toComplete string) []string
-	Entry               func(word string) string
-	Run                 func(ctx context.Context, in *I, io IO) error
+	// value: a leaf whose call may ask a confirmation: it takes --yes, and
+	// its question is put only when the use case asks it (io.Confirmed).
+	Asks    bool
+	Confirm func(in *I) string
+	Verb    func(in *I) string
+	Ask     func(in *I) (bool, error)
+	// value: the refusal off a terminal without --yes, when it names what the
+	// call would do; else the gate's own words.
+	Refuse   func(in *I) error
+	Complete func(args []string, toComplete string) []string
+	Entry    func(word string) string
+	Run      func(ctx context.Context, in *I, io IO) error
 	// value: a leaf that draws its reading as it fills needs no spinner.
 	Live bool
 	// value: a leaf whose answer is a page also prints it as station.page/v1.
@@ -135,7 +166,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 		cmd.Flags().BoolVar(&wantPage, "page", false, "print the page as station.page/v1")
 		_ = cmd.Flags().MarkHidden("page")
 	}
-	if l.Destructive != nil {
+	if l.Asks {
 		cmd.Flags().BoolVarP(&yes, "yes", "y", false, "do it without asking")
 	}
 	cmd.RunE = func(c *cobra.Command, a []string) error {
@@ -181,7 +212,7 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 			return err
 		}
 	}
-	if l.Destructive != nil && l.Destructive(in) {
+	if l.Asks {
 		question := c.Name() + "?"
 		if l.Confirm != nil {
 			question = l.Confirm(in)
@@ -194,8 +225,11 @@ func run[I any](ctx context.Context, c *cobra.Command, l Leaf[I], in *I, args []
 		if l.Verb != nil {
 			verb = l.Verb(in)
 		}
-		if err := gate(verb, ask, o); err != nil {
-			return err
+		o.ask = func() error {
+			if l.Refuse != nil && !o.Yes && !o.Interactive {
+				return l.Refuse(in)
+			}
+			return gate(verb, ask, o)
 		}
 	}
 	if l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && (!l.Live || !o.CanLive()) {
@@ -268,12 +302,6 @@ func Menu(env Env, cmd *cobra.Command) error {
 	return fail.Silent(fail.ExitUsage)
 }
 
-func Ask(verb string, ask func() (bool, error), o IO) error {
-	// value: a leaf that asks its own question (stop: its Confirm lists what
-	// ends) answers it as the confirm gate does.
-	return gate(verb, ask, o)
-}
-
 func Refuse(message, hint string) error {
 	return usage(message, hint)
 }
@@ -294,13 +322,35 @@ func didYouMean(suggestions []string) string {
 	return " (did you mean \"" + strings.Join(suggestions, "\" or \"") + "\"?)"
 }
 
-func Pages[T any](values <-chan T, build func(T) page.Page) <-chan page.Page {
+func Updates[T any](updates <-chan call.Update[T], build func(T) page.Page) <-chan page.Page {
+	// invariant: an update in error draws nothing; the stream is still read
+	// to its end, so its producer never blocks.
 	out := make(chan page.Page)
 	go func() {
 		defer close(out)
-		for v := range values {
-			out <- build(v)
+		for u := range updates {
+			if u.Err == nil {
+				out <- build(u.Value)
+			}
 		}
 	}()
 	return out
 }
+
+type Spinner struct {
+	io   IO
+	stop func()
+}
+
+func Steps(o IO) *Spinner { return &Spinner{io: o, stop: func() {}} }
+
+func (s *Spinner) Step(task, _ string) {
+	// value: a call's Progress on the CLI: each step's label is the one
+	// spinner line, replacing the last.
+	s.stop()
+	s.stop = s.io.Wait(task)
+}
+
+func (*Spinner) Done(string, error) {}
+
+func (s *Spinner) Stop() { s.stop() }

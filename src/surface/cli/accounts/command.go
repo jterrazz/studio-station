@@ -5,15 +5,16 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/accounts"
+	"github.com/jterrazz/studio-station/src/accounts"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pageaccounts "github.com/jterrazz/studio-station/src/pages/accounts"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Accounts *accounts.Service
-	Here     page.Context
+	Here page.Context
 }
 
 type Input struct{}
@@ -28,14 +29,18 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Live:    true,
 		Pages:   true,
 		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
+			updates, err := call.Follow(ctx, env.Calls, env.Target, accountscalls.Read, accountscalls.ReadIn{}, nil)
+			if err != nil {
+				return err
+			}
 			if io.CanLive() {
-				return io.LivePage(kit.Pages(d.Accounts.Read(ctx), func(r accounts.Report) page.Page {
+				return io.LivePage(kit.Updates(updates, func(r accounts.Report) page.Page {
 					return pageaccounts.Page(r, d.Here)
 				}))
 			}
 			var last accounts.Report
-			for r := range d.Accounts.Read(ctx) {
-				last = r
+			for u := range updates {
+				last = u.Value
 			}
 			if err := ctx.Err(); err != nil {
 				return err

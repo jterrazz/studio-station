@@ -7,9 +7,11 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/accounts"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	pageaccounts "github.com/jterrazz/studio-station/src/pages/accounts"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/tab"
@@ -17,33 +19,28 @@ import (
 
 const ID = "accounts"
 
-type Accounts interface {
-	Read(ctx context.Context) <-chan accounts.Report
-	LendList() []string
-	Forget()
-}
-
-type Secrets interface {
-	Lend(ctx context.Context, to string, names []string, term time.Duration) (secrets.LendReport, error)
-	Recall(ctx context.Context, from string, names []string) (secrets.RecallReport, error)
+type Deps struct {
+	Calls    call.Router
+	Target   machine.Ref
+	Forget   func()
+	LendList func() []string
 }
 
 type Model struct {
 	tab.View[accounts.Report]
-	ctx      context.Context
-	accounts Accounts
-	secrets  Secrets
+	ctx context.Context
+	d   Deps
 }
 
-func New(ctx context.Context, a Accounts, s Secrets, here page.Context, describe tab.Describe) Model {
+func New(ctx context.Context, d Deps, here page.Context, describe tab.Describe) Model {
 	source := func(ctx context.Context, fresh bool) (<-chan accounts.Report, error) {
 		if fresh {
-			a.Forget()
+			d.Forget()
 		}
-		return a.Read(ctx), nil
+		return tab.Values(call.Follow(ctx, d.Calls, d.Target, accountscalls.Read, accountscalls.ReadIn{}, nil))
 	}
 	build := func(r accounts.Report) page.Page { return pageaccounts.Page(r, here) }
-	return Model{View: tab.NewView(ID, "Accounts", "accounts", here, source, build, describe), ctx: ctx, accounts: a, secrets: s}
+	return Model{View: tab.NewView(ID, "Accounts", "accounts", here, source, build, describe), ctx: ctx, d: d}
 }
 
 func (Model) OwnsReload() bool {
@@ -62,15 +59,15 @@ func (m Model) Update(msg tea.Msg) (tab.Screen, tea.Cmd) {
 		m.View = view
 		return m, tea.Batch(cmd, reload)
 	}
-	machine, account := m.find(ev.Row)
-	if machine == nil {
+	mc, account := m.find(ev.Row)
+	if mc == nil {
 		return m, cmd
 	}
 	switch ev.Action.Key {
 	case pageaccounts.KeyLend:
-		return m.lend(*machine, account, cmd)
+		return m.lend(*mc, account, cmd)
 	case pageaccounts.KeyRevoke:
-		return m.revoke(*machine, account, cmd)
+		return m.revoke(*mc, account, cmd)
 	}
 	return m, cmd
 }
@@ -95,7 +92,7 @@ func (m Model) lend(mc accounts.Machine, a *accounts.Account, cmd tea.Cmd) (tab.
 	if mc.Kind != accounts.KindVM {
 		return m, tea.Batch(cmd, tab.Say(tab.Status{Mark: page.Absent, Text: "lend to a VM: select one of its rows"}))
 	}
-	list := accounts.Lendable(m.accounts.LendList(), "")
+	list := accounts.Lendable(m.d.LendList(), "")
 	provider := ""
 	if a != nil {
 		provider = a.Provider
@@ -119,7 +116,7 @@ func (m Model) lend(mc accounts.Machine, a *accounts.Account, cmd tea.Cmd) (tab.
 			return tab.Say(tab.Status{Mark: page.Absent, Text: "nothing lent"})
 		}
 		return tab.Exec(ID, func() (tab.Status, error) {
-			r, err := m.secrets.Lend(m.ctx, vm, names, term)
+			r, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, accountscalls.Lend, accountscalls.LendIn{To: vm, Names: names, Term: term}, nil)
 			if err != nil {
 				return tab.Status{}, err
 			}
@@ -143,12 +140,11 @@ func (m Model) revoke(mc accounts.Machine, a *accounts.Account, cmd tea.Cmd) (ta
 		return m, tea.Batch(cmd, tab.Say(tab.Status{Mark: page.Absent, Text: text}))
 	}
 	vm, name := mc.Name, a.Lent.Name
-	run := tab.Exec(ID, func() (tab.Status, error) {
-		_, err := m.secrets.Recall(m.ctx, vm, []string{name})
+	run := tab.Confirmed(ID, pageaccounts.RecallConfirm(vm, name), func(answer string) (tab.Status, error) {
+		_, err := call.Invoke(m.ctx, m.d.Calls, m.d.Target, accountscalls.Recall, accountscalls.RecallIn{From: vm, Names: []string{name}, Confirm: answer}, nil)
 		return tab.Outcome("recalled", name, catalog.StateOK, "from "+vm), err
 	})
-	c := pageaccounts.RecallConfirm(vm, name)
 	var act tea.Cmd
-	m.View, act = m.Act(&c, run)
+	m.View, act = m.Act(run)
 	return m, tea.Batch(cmd, act)
 }

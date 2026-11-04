@@ -1,6 +1,8 @@
 package confirm
 
 import (
+	"errors"
+
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/core/machine"
 )
@@ -82,4 +84,17 @@ func Require(l Level, name, given string) error {
 		}
 		return fail.New(fail.NeedsConfirmation, YesNeeded, name, detail)
 	}
+}
+
+func Answer(err error) (string, bool) {
+	// value: the answer a confirmation the use case asked takes, once its
+	// question is answered yes: the name for a typed question, Yes otherwise.
+	var e *fail.Error
+	if !errors.As(err, &e) || e.Type != fail.NeedsConfirmation || e.Code == Mismatch {
+		return "", false
+	}
+	if Level(e.Detail["level"]) == TypeName {
+		return e.Subject, true
+	}
+	return Yes, true
 }

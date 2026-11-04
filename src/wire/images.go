@@ -1,6 +1,7 @@
 package wire
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -29,9 +30,14 @@ func (m machine) images() *images.Service {
 }
 
 func imagesCommand(env kit.Env, m machine) *cobra.Command {
-	service := m.images()
-	return imagescmd.Command(imagescmd.Deps{Images: service, Here: m.where}, env,
-		imagesbuild.Command(imagesbuild.Deps{Images: service, Here: m.where}, env),
-		imagesdelete.Command(imagesdelete.Deps{Images: service, Here: m.where}, env),
+	return imagescmd.Command(imagescmd.Deps{Here: m.where}, env,
+		imagesbuild.Command(imagesbuild.Deps{Here: m.where}, env),
+		imagesdelete.Command(imagesdelete.Deps{Here: m.where}, env),
 	)
+}
+
+type imageBuilds struct{ *images.Service }
+
+func (s imageBuilds) Build(ctx context.Context, names []string, binary string, step func(label string)) ([]images.Record, error) {
+	return s.Service.Build(ctx, images.BuildRequest{Images: names, Binary: binary}, func(st images.Step) { step(st.Label) })
 }

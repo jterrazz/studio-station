@@ -21,9 +21,9 @@ import (
 
 func storageCommand(env kit.Env, m machine) *cobra.Command {
 	service := m.storage(env)
-	return storagecmd.Command(storagecmd.Deps{Storage: service, Here: m.where}, env,
-		storageclean.Command(storageclean.Deps{Storage: service, Here: m.where}, env),
-		storagereset.Command(storagereset.Deps{Storage: service, Here: m.where}, env),
+	return storagecmd.Command(storagecmd.Deps{Names: service.Names, Here: m.where}, env,
+		storageclean.Command(storageclean.Deps{Names: service.Names, Here: m.where}, env),
+		storagereset.Command(storagereset.Deps{Names: service.Names, Plan: service.Plan, Here: m.where}, env),
 	)
 }
 

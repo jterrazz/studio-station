@@ -30,23 +30,11 @@ type Options struct {
 	SSHConfig        contract.SSHConfig
 }
 
-type Node struct {
-	Online bool
-	IP     string
-}
-
 type Nodes interface {
 	Peers(ctx context.Context) (map[string]Node, error)
 }
 
 type DaemonVM struct{ State, Guest, IP, Detail string }
-
-type Reserved struct {
-	GuestPort, HostPort int
-	Profile, URL        string
-	PublicHost          string
-	ServeOff            bool
-}
 
 type Daemon interface {
 	Ping(ctx context.Context) (version string, err error)
@@ -117,26 +105,6 @@ const (
 	Lasting   = model.Lasting
 )
 
-type Resources struct {
-	CPUs        int
-	MemoryBytes int64
-	DiskBytes   int64
-}
-
-func (r Resources) size() model.Size {
-	return model.Size{CPUs: r.CPUs, Memory: r.MemoryBytes, Disk: r.DiskBytes}
-}
-
-type VMState string
-
-const (
-	Running   VMState = "running"
-	Stopped   VMState = "stopped"
-	Suspended VMState = "suspended"
-	Stale     VMState = "stale"
-	Broken    VMState = "broken"
-)
-
 const (
 	WantRunning = "running"
 	WantStopped = "stopped"
@@ -163,47 +131,26 @@ type Machine struct {
 	Lifetime  Lifetime
 }
 
-type VM struct {
-	Name, Image, Version, Host string
-	Kind                       catalog.MachineKind
-	Lifetime                   Lifetime
-	State                      VMState
-	Resources                  Resources
-	SizeGB                     int
-	IP, Network, Guest, Detail string
-	Lent                       []string
-	CreatedAt                  time.Time
-}
+type (
+	Node        = model.Node
+	Reserved    = model.Reserved
+	Resources   = model.Resources
+	VMState     = model.VMState
+	VM          = model.VM
+	DaemonInfo  = model.EngineView
+	HostView    = model.HostView
+	Fleet       = model.Fleet
+	Check       = model.Check
+	ProbeReport = model.ProbeReport
+)
 
-type DaemonInfo struct {
-	Known, Running bool
-	// value: the agent's plist is on this host: a daemon not running is
-	// stopped, not missing (R9.D3); unknown for another host.
-	Installed bool
-	Version   string
-}
-
-type HostView struct {
-	Name, User, StationVersion string
-	Here, Reachable            bool
-	Node                       Node
-	Daemon                     DaemonInfo
-	VMs                        []VM
-}
-
-type Fleet struct{ Hosts []HostView }
-
-type Check struct {
-	Name          string
-	State         catalog.State
-	Value, Detail string
-}
-
-type ProbeReport struct {
-	Name, User, IP string
-	Checks         []Check
-	Console        string
-}
+const (
+	Running   = model.Running
+	Stopped   = model.Stopped
+	Suspended = model.Suspended
+	Stale     = model.Stale
+	Broken    = model.Broken
+)
 
 func (s *Service) vmUser(cfg prefsView) string {
 	if cfg.VMUser != "" {

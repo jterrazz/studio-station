@@ -5,15 +5,17 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/apps"
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pagetools "github.com/jterrazz/studio-station/src/pages/tools"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Tools *tools.Service
+	Names func() []string
 	Here  page.Context
 }
 
@@ -24,10 +26,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Example:  "  station tools install node gh\n  station tools install frontend-design",
 		Args:     cobra.MinimumNArgs(1),
 		Bind:     bind,
-		Complete: names(d.Tools),
-		Validate: func(ctx context.Context, in *Input) error { return d.Tools.CheckInstall(ctx, in.Names) },
+		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			outcomes, err := d.Tools.Install(ctx, tools.InstallRequest{Names: in.Names, Interactive: io.Interactive})
+			outcomes, err := call.Invoke(ctx, env.Calls, env.Target, appscalls.Install, appscalls.InstallIn{Names: in.Names, Interactive: io.Interactive}, nil)
 			if err != nil {
 				return err
 			}
@@ -39,18 +40,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	}, env)
 }
 
-func names(s *tools.Service) func([]string, string) []string {
-	return func([]string, string) []string {
-		placed := s.Placed()
-		out := make([]string, 0, len(placed))
-		for _, t := range placed {
-			out = append(out, t.Name)
-		}
-		return out
-	}
-}
-
-func partial(outcomes []tools.Outcome, repair string) error {
+func partial(outcomes []apps.Outcome, repair string) error {
 	failed, hint := 0, ""
 	for _, o := range outcomes {
 		if o.Result == catalog.StateBroken {

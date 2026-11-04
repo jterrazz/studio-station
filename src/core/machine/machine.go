@@ -80,3 +80,10 @@ func All(rules ...Applies) Applies {
 		return Yes
 	}
 }
+
+func Anywhere(Profile) Verdict {
+	// value: the rule of a call every machine may ask; a call whose service
+	// still refuses a machine in its own words carries it until its family
+	// takes that rule.
+	return Yes
+}

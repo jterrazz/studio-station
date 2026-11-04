@@ -25,8 +25,8 @@ const (
 	stepBudget   = 2 * time.Minute
 	ExportBudget = stepBudget
 	DefaultLend  = accounts.DefaultShareTerm
-	ShortestLend = time.Minute
-	LongestLend  = 7 * 24 * time.Hour
+	ShortestLend = accounts.ShortestShare
+	LongestLend  = accounts.LongestShare
 )
 
 var (
@@ -63,24 +63,11 @@ func New(h system.Host, guest Guest, st Stores, source contract.SecretSource, o 
 	return &Service{clock: h.Clock, run: h.Run, guest: guest, st: st, source: source, here: o.Here}
 }
 
-type Report struct {
-	LendList []string
-	Lent     map[string][]string
-	Lends    map[string][]Lend
-	Kept     []string
-}
-
-type LendReport struct {
-	To    string
-	Names []string
-	At    time.Time
-	Until time.Time
-}
-
-type RecallReport struct {
-	From     map[string][]string
-	Warnings []string
-}
+type (
+	Report       = accounts.Lending
+	LendReport   = accounts.LendReport
+	RecallReport = accounts.RecallReport
+)
 
 func (s *Service) List(ctx context.Context) (Report, error) {
 	list, err := s.st.ShareList.Get()
@@ -216,7 +203,7 @@ func (s *Service) Lend(ctx context.Context, to string, names []string, term time
 	return LendReport{To: to, Names: names, At: at, Until: at.Add(term)}, nil
 }
 
-func (s *Service) checkRecall(ctx context.Context, from string, names []string) ([]string, error) {
+func (s *Service) CheckRecall(ctx context.Context, from string, names []string) ([]string, error) {
 	if err := s.checkVM(ctx, from); err != nil {
 		return nil, err
 	}
@@ -237,7 +224,7 @@ func (s *Service) checkRecall(ctx context.Context, from string, names []string) 
 }
 
 func (s *Service) Recall(ctx context.Context, from string, names []string) (RecallReport, error) {
-	names, err := s.checkRecall(ctx, from, names)
+	names, err := s.CheckRecall(ctx, from, names)
 	if err != nil {
 		return RecallReport{}, err
 	}

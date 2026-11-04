@@ -6,15 +6,19 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/storage"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/disk"
+	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Storage *storage.Service
-	Here    page.Context
+	Names func() []string
+	// value: what a reset would delete, for its question.
+	Plan func(names []string) []disk.PathReport
+	Here page.Context
 }
 
 type Input struct{ Names []string }
@@ -26,24 +30,25 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Example:  "  station storage reset zed\n  station storage reset xcode --yes",
 		Args:     cobra.ArbitraryArgs,
 		Bind:     func(in *Input, args []string) error { in.Names = args; return nil },
-		Validate: func(_ context.Context, in *Input) error { _, err := d.Storage.CheckReset(in.Names); return err },
-		Complete: func([]string, string) []string {
-			return d.Storage.Names()
-		},
-		Destructive: func(*Input) bool { return true },
-		Confirm:     func(in *Input) string { return "Reset " + strings.Join(in.Names, ", ") + "?" },
+		Complete: func([]string, string) []string { return d.Names() },
+		Asks:     true,
+		Confirm:  func(in *Input) string { return "Reset " + strings.Join(in.Names, ", ") + "?" },
 		Ask: func(in *Input) (bool, error) {
-			return env.Prompt.Confirm(pagestorage.ResetConfirm(in.Names, d.Storage.Plan(in.Names)))
+			return env.Prompt.Confirm(pagestorage.ResetConfirm(in.Names, d.Plan(in.Names)))
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			outcomes, err := d.Storage.Reset(ctx, in.Names)
+			var outcomes []disk.Outcome
+			err := io.Confirmed(func(answer string) (err error) {
+				outcomes, err = call.Invoke(ctx, env.Calls, env.Target, diskcalls.Reset, diskcalls.ResetIn{Names: in.Names, Confirm: answer}, nil)
+				return err
+			})
 			if err != nil {
 				return err
 			}
 			if err := io.Page(pagestorage.Outcomes("reset", outcomes, d.Here), nil); err != nil {
 				return err
 			}
-			failed, first := storage.Failures(outcomes)
+			failed, first := disk.Failures(outcomes)
 			if failed == 0 {
 				return nil
 			}

@@ -101,7 +101,7 @@ func (s *Service) ask(ctx context.Context, name string, h model.Host, node Node)
 	if json.Unmarshal([]byte(out.Stdout), &doc) != nil || len(doc.Hosts) == 0 {
 		return silent
 	}
-	view := doc.Hosts[0].view(name, h.User)
+	view := doc.Hosts[0].View(name, h.User)
 	if node.IP != "" || node.Online {
 		view.Node = node
 	}

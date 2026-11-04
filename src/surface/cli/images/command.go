@@ -5,15 +5,15 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/images"
+	"github.com/jterrazz/studio-station/src/core/call"
+	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
 type Deps struct {
-	Images *images.Service
-	Here   page.Context
+	Here page.Context
 }
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
@@ -25,7 +25,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Read:    func(*struct{}) bool { return true },
 		Pages:   true,
 		Run: func(ctx context.Context, _ *struct{}, io kit.IO) error {
-			reports, err := d.Images.List(ctx)
+			reports, err := call.Invoke(ctx, env.Calls, env.Target, imagescalls.List, imagescalls.ListIn{}, nil)
 			if err != nil {
 				return err
 			}

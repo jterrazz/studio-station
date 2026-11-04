@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"github.com/jterrazz/studio-station/src/disk"
 	"path"
 	"strconv"
 	"strings"
@@ -54,65 +55,14 @@ func New(h system.Host, tools []catalog.Tool, o Options) *Service {
 	return &Service{h: h, tools: tools, o: o}
 }
 
-type Entry struct {
-	Name     string
-	Category string
-	Storage  catalog.Storage
-	Places   []catalog.MachineKind
-}
-
-type PathReport struct {
-	Path  string
-	Level catalog.Level
-	Bytes int64
-}
-
-type StrayReport struct {
-	Name   string
-	Path   string
-	Bytes  int64
-	Repair string
-}
-
-type Row struct {
-	Entry     Entry
-	Installed bool
-	Unknown   bool
-	Within    time.Duration
-	State     catalog.State
-	Bytes     map[catalog.Level]int64
-	Install   int64
-	Paths     []PathReport
-	Strays    []StrayReport
-	Pending   bool
-}
-
-func (r Row) Total() int64 {
-	total := r.Install
-	for _, b := range r.Bytes {
-		total += b
-	}
-	for _, s := range r.Strays {
-		total += s.Bytes
-	}
-	return total
-}
-
-type Report struct {
-	Rows   []Row
-	Strays []StrayReport
-	Other  int64
-}
-
-type Outcome struct {
-	Name   string
-	Result catalog.State
-	Detail string
-	Reason string
-	Hint   string
-	Freed  int64
-	Reset  bool
-}
+type (
+	Entry       = disk.Entry
+	PathReport  = disk.PathReport
+	StrayReport = disk.StrayReport
+	Row         = disk.Row
+	Report      = disk.Report
+	Outcome     = disk.Outcome
+)
 
 func (s *Service) Entries() []Entry {
 	out := []Entry{{Name: StationName, Category: StationCategory, Storage: catalog.StationStorage, Places: []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}}}
@@ -594,17 +544,4 @@ func dedupe(names []string) []string {
 		}
 	}
 	return out
-}
-
-func Failures(outcomes []Outcome) (failed int, firstFailed Outcome) {
-	for _, o := range outcomes {
-		if o.Result != catalog.StateBroken {
-			continue
-		}
-		if failed == 0 {
-			firstFailed = o
-		}
-		failed++
-	}
-	return failed, firstFailed
 }

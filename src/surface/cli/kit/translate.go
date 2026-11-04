@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
+	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
 func Translate(err error, path string) *fail.Error {
@@ -15,6 +16,9 @@ func Translate(err error, path string) *fail.Error {
 	hint := "run " + strings.TrimSpace("station "+path) + " --help"
 	var worded *fail.Error
 	if errors.As(err, &worded) {
+		if word, ok := words.Codes()[worded.Code]; ok && worded.Message == "" {
+			worded.Message, worded.Hint = word(worded)
+		}
 		if worded.Message != "" && worded.Hint == "" {
 			worded.Hint = hint
 		}

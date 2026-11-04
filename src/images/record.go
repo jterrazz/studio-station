@@ -16,6 +16,12 @@ type Record struct {
 	SizeGB    int       `json:"size_gb"`
 }
 
+type Report struct {
+	Record Record
+	Newest bool
+	VMs    []string
+}
+
 func CompareVersions(a, b string) int {
 	// invariant: versions are dotted numbers (2026.11.01, 2026.11.01.2); a
 	// missing part counts as 1, so a day's first build sorts before its second.

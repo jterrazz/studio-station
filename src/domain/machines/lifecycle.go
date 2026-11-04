@@ -3,6 +3,7 @@ package machines
 import (
 	"context"
 	"errors"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -24,10 +25,7 @@ func (e *TemporaryStartError) Error() string {
 	return e.Name + " is temporary: it runs once, and a stopped one is stale"
 }
 
-type DeleteReport struct {
-	Name     string
-	Warnings []string
-}
+type DeleteReport = model.DeleteReport
 
 func (s *Service) VM(name, verb string) (VMRecord, error) {
 	if err := s.CheckHost(); err != nil {
