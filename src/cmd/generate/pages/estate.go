@@ -11,9 +11,9 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/shortcuts"
-	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
@@ -63,30 +63,30 @@ func Estate() []Fixture {
 	return out
 }
 
-func check(name string, state catalog.State, value, detail string) status.Check {
-	return status.Check{Name: name, State: state, Value: value, Detail: detail}
+func check(name string, state catalog.State, value, detail string) overview.Check {
+	return overview.Check{Name: name, State: state, Value: value, Detail: detail}
 }
 
-func snapshot() status.Snapshot {
+func snapshot() pagehome.Overview {
 	toolReports := reports(thisMac(), false)
-	return status.Snapshot{
+	return pagehome.Overview{
 		GeneratedAt: built,
-		Station:     status.Station{Version: "v2.0.0-250", Daemon: check("daemon", catalog.StateDegraded, "not installed", "station setup")},
-		Machine:     status.Machine{Name: "macbook", Registered: true, Kind: catalog.Host, Hostname: "jterrazz-macbook-pro", OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh"},
-		System:      status.System{Uptime: "22d 14h", Battery: "100% charged", MemoryTotal: 17179869184},
-		Environment: status.Environment{
-			Network: []status.Check{check("local ip", catalog.StateOK, "192.168.1.152", "")},
-			Security: []status.Check{
+		Station:     overview.Station{Version: "v2.0.0-250", Daemon: check("daemon", catalog.StateDegraded, "not installed", "station setup")},
+		Machine:     overview.Machine{Name: "macbook", Registered: true, Kind: catalog.Host, Hostname: "jterrazz-macbook-pro", OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh"},
+		System:      overview.System{Uptime: "22d 14h", Battery: "100% charged", MemoryTotal: 17179869184},
+		Environment: overview.Environment{
+			Network: []overview.Check{check("local ip", catalog.StateOK, "192.168.1.152", "")},
+			Protections: []overview.Check{
 				check("filevault", catalog.StateOK, "on", ""), check("firewall", catalog.StateOK, "on", ""),
 				check("sip", catalog.StateAbsent, "off", ""), check("gatekeeper", catalog.StateOK, "on", ""),
 			},
-			Updates: []status.Check{
+			Updates: []overview.Check{
 				check("macos", catalog.StateDegraded, "2 pending", "checked 22m ago"),
 				check("brew", catalog.StateDegraded, "120 outdated", "station tools upgrade --via brew"),
 			},
 		},
-		Workspace: status.Workspace{
-			Disk: []status.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
+		Workspace: pagehome.Workspace{
+			Disk: []overview.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
 			Strays: []storage.StrayReport{
 				{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, Repair: "station setup"},
 				{Name: "bun", Path: "~/.bun", Bytes: 2 * gb, Repair: "station setup"},
@@ -97,41 +97,41 @@ func snapshot() status.Snapshot {
 			{Item: catalog.ConfigItem{Name: "hushlogin", Description: "Silence the login banner"}, State: catalog.StateOK, Applies: true},
 			{Item: catalog.ConfigItem{Name: "power", Description: "Always-on power policy"}, State: catalog.StateDegraded, Detail: "policy partly applied", Applies: true},
 		},
-		Setup:    status.Setup{State: catalog.StateOK, Steps: []setup.Step{{Name: "name", State: catalog.StateOK, Detail: "macbook"}}},
-		Identity: []status.Check{check("git-email", catalog.StateOK, "admin@jterrazz.com", ""), check("git-signing", catalog.StateOK, "on", "")},
-		Background: []status.Job{
-			{Label: "com.github.facebook.watchman", Group: status.GroupKnown, Run: status.JobRunning, PID: 3464, Scope: "user", Owner: "watchman", Plist: "~/Library/LaunchAgents/com.github.facebook.watchman.plist", State: catalog.StateOK},
-			{Label: "com.jterrazz.brain.x-snapshot", Group: status.GroupUnknown, Run: status.JobFailing, Exit: 2, Scope: "user", Plist: "~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist", State: catalog.StateBroken,
+		Setup:    overview.Setup{State: catalog.StateOK, Steps: []overview.Step{{Name: "name", State: catalog.StateOK, Detail: "macbook"}}},
+		Identity: []overview.Check{check("git-email", catalog.StateOK, "admin@jterrazz.com", ""), check("git-signing", catalog.StateOK, "on", "")},
+		Background: []overview.Job{
+			{Label: "com.github.facebook.watchman", Group: overview.GroupKnown, Run: overview.JobRunning, PID: 3464, Scope: "user", Owner: "watchman", Plist: "~/Library/LaunchAgents/com.github.facebook.watchman.plist", State: catalog.StateOK},
+			{Label: "com.jterrazz.brain.x-snapshot", Group: overview.GroupUnknown, Run: overview.JobFailing, Exit: 2, Scope: "user", Plist: "~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist", State: catalog.StateBroken,
 				Removal: "launchctl bootout gui/501/com.jterrazz.brain.x-snapshot && rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist"},
-			{Label: "com.docker.socket", Group: status.GroupOrphan, Run: status.JobNotLoaded, Scope: "root", Owner: "Docker.app", OwnerGone: true, Plist: "/Library/LaunchDaemons/com.docker.socket.plist", State: catalog.StateDegraded,
+			{Label: "com.docker.socket", Group: overview.GroupOrphan, Run: overview.JobNotLoaded, Scope: "root", Owner: "Docker.app", OwnerGone: true, Plist: "/Library/LaunchDaemons/com.docker.socket.plist", State: catalog.StateDegraded,
 				Removal: "sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist"},
 		},
-		Gateways: []status.Check{check("Tailscale Serve", catalog.StateOK, "on", "")},
+		Gateways: []overview.Check{check("Tailscale Serve", catalog.StateOK, "on", "")},
 		Tailnet:  ports.Status{State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net", IP: "100.98.133.14", ServeOn: true},
 	}
 }
 
-func pendingSnapshot() status.Snapshot {
+func pendingSnapshot() pagehome.Overview {
 	s := snapshot()
-	s.System = status.System{Pending: true}
+	s.System = overview.System{Pending: true}
 	s.ToolsPending, s.ConfigPending = true, true
 	s.Workspace.DiskPending = true
-	s.Station.Daemon = status.Check{Name: "daemon", State: catalog.StatePending}
+	s.Station.Daemon = overview.Check{Name: "daemon", State: catalog.StatePending}
 	s.Tailnet = ports.Status{State: catalog.StatePending}
-	s.Setup = status.Setup{State: catalog.StatePending}
-	for _, list := range [][]status.Check{s.Environment.Updates, s.Identity, s.Gateways} {
+	s.Setup = overview.Setup{State: catalog.StatePending}
+	for _, list := range [][]overview.Check{s.Environment.Updates, s.Identity, s.Gateways} {
 		for i := range list {
-			list[i] = status.Check{Name: list[i].Name, State: catalog.StatePending}
+			list[i] = overview.Check{Name: list[i].Name, State: catalog.StatePending}
 		}
 	}
 	s.Background = nil
 	return s
 }
 
-func calmSnapshot() status.Snapshot {
+func calmSnapshot() pagehome.Overview {
 	s := snapshot()
 	s.Station.Daemon = check("daemon", catalog.StateOK, "running v2.0.0-250", "")
-	s.Environment.Updates = []status.Check{check("macos", catalog.StateOK, "up to date", "checked 22m ago"), check("brew", catalog.StateOK, "up to date", "")}
+	s.Environment.Updates = []overview.Check{check("macos", catalog.StateOK, "up to date", "checked 22m ago"), check("brew", catalog.StateOK, "up to date", "")}
 	s.Workspace.Strays = nil
 	s.Tools = reports([]tool{{name: "homebrew", category: catalog.CategoryPackageManagers, method: catalog.MethodScript, system: true, state: catalog.StateOK, version: "7.0.12"}}, false)
 	s.Config = s.Config[:1]
@@ -156,10 +156,10 @@ func homes() []Fixture {
 // value: this Mac as it reads before setup names it, its daemon from an
 // older build: the long daemon value is one row's, and no other row's detail
 // gives way to it (§11.2 per-row overflow), and the setup row reads not set.
-func unnamedSnapshot() status.Snapshot {
+func unnamedSnapshot() pagehome.Overview {
 	s := snapshot()
 	s.Machine.Name, s.Machine.Registered = "", false
-	s.Setup = status.Setup{State: catalog.StateDegraded, Steps: []setup.Step{{Name: "name", State: catalog.StateDegraded}}}
+	s.Setup = overview.Setup{State: catalog.StateDegraded, Steps: []overview.Step{{Name: "name", State: catalog.StateDegraded}}}
 	s.Station.Daemon = check("daemon", catalog.StateDegraded, "runs v2.0.0-242-gd653060, station is v2.0.0-250", "station setup")
 	return s
 }

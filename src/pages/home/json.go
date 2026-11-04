@@ -4,8 +4,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/status"
+	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageconfig "github.com/jterrazz/studio-station/src/pages/config"
 	pagestorage "github.com/jterrazz/studio-station/src/pages/storage"
@@ -53,7 +54,7 @@ type jobJSON struct {
 	Removal string `json:"removal"`
 }
 
-func jobs(in []status.Job) []jobJSON {
+func jobs(in []overview.Job) []jobJSON {
 	out := make([]jobJSON, 0, len(in))
 	for _, j := range in {
 		out = append(out, jobJSON{Label: j.Label, Group: string(j.Group), State: strings.ReplaceAll(string(j.Run), " ", "-"), Mark: string(pages.MarkOf(j.State)),
@@ -170,7 +171,7 @@ type setupJSON struct {
 	Steps []stepJSON `json:"steps"`
 }
 
-func SnapshotContract(s status.Snapshot) SnapshotJSON {
+func SnapshotContract(s Overview) SnapshotJSON {
 	// invariant: every array is built with make, so an empty one encodes as [], never null.
 	body := SnapshotJSON{
 		Schema:      schema,
@@ -188,7 +189,7 @@ func SnapshotContract(s status.Snapshot) SnapshotJSON {
 		Environment: environmentJSON{
 			Network:  checks(s.Environment.Network),
 			Ports:    make([]portJSON, 0, len(s.Environment.Ports)),
-			Security: checks(s.Environment.Security),
+			Security: checks(s.Environment.Protections),
 			Updates:  checks(s.Environment.Updates),
 		},
 		Workspace: workspaceJSON{
@@ -234,7 +235,7 @@ func SnapshotContract(s status.Snapshot) SnapshotJSON {
 	return body
 }
 
-func checks(in []status.Check) []checkJSON {
+func checks(in []overview.Check) []checkJSON {
 	out := make([]checkJSON, 0, len(in))
 	for _, c := range in {
 		out = append(out, checkJSON{Name: c.Name, State: string(c.State), Value: c.Value, Detail: c.Detail})
@@ -242,7 +243,7 @@ func checks(in []status.Check) []checkJSON {
 	return out
 }
 
-func processes(in []status.Process) []processJSON {
+func processes(in []activity.Process) []processJSON {
 	out := make([]processJSON, 0, len(in))
 	for _, p := range in {
 		out = append(out, processJSON{PID: p.PID, Name: p.Name, Value: p.Value})
@@ -250,7 +251,7 @@ func processes(in []status.Process) []processJSON {
 	return out
 }
 
-func daemonOf(c status.Check) daemonJSON {
+func daemonOf(c overview.Check) daemonJSON {
 	d := daemonJSON{State: string(c.State), Running: c.State == catalog.StateOK || strings.HasPrefix(c.Value, "runs ")}
 	if d.State == "" {
 		d.State = string(catalog.StateAbsent)

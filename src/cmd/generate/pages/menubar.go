@@ -5,22 +5,23 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
 )
 
-func samples() []status.Sample {
+func samples() []activity.Sample {
 	cpu := []float64{12, 18, 25, 34, 30, 22, 41, 55, 48, 36, 28, 31, 44, 38, 29, 34}
-	out := make([]status.Sample, 0, len(cpu))
+	out := make([]activity.Sample, 0, len(cpu))
 	for i, c := range cpu {
-		out = append(out, status.Sample{
+		out = append(out, activity.Sample{
 			At:     powerNow.Add(time.Duration(i-len(cpu)+1) * 2 * time.Second),
-			CPU:    []status.Process{{PID: 812, Name: "station", Value: c}},
-			Memory: []status.Process{{PID: 812, Name: catalog.HypervisorTool, Value: 12.4e9}},
+			CPU:    []activity.Process{{PID: 812, Name: "station", Value: c}},
+			Memory: []activity.Process{{PID: 812, Name: catalog.HypervisorTool, Value: 12.4e9}},
 		})
 	}
 	return out
@@ -33,7 +34,7 @@ func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
 	held := powerReport(power.DaemonRunning, heldSession(), thisMacReading())
 	off := powerReport(power.DaemonRunning, nil, thisMacReading())
 	busy, calm := snapshot(), calmSnapshot()
-	busy.PowerKnown, busy.Power = true, status.PowerState{Held: true, Lid: true, Until: held.Session.Until}
+	busy.PowerKnown, busy.Power = true, overview.PowerState{Held: true, Lid: true, Until: held.Session.Until}
 	alone := machines.Fleet{Hosts: []machines.HostView{f.Hosts[0]}}
 	alone.Hosts[0].VMs = nil
 	frame = pagemenubar.Reading{Power: &off}

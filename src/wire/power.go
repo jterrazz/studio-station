@@ -9,8 +9,8 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
@@ -114,19 +114,19 @@ func (t tuiPower) Pages(ctx context.Context) <-chan page.Page {
 
 type statusPower struct{ s *power.Service }
 
-func (p statusPower) Session(ctx context.Context) (status.PowerState, bool) {
+func (p statusPower) Session(ctx context.Context) (overview.PowerState, bool) {
 	if p.s.Check() != nil {
-		return status.PowerState{}, false
+		return overview.PowerState{}, false
 	}
 	var last power.Report
 	for r := range p.s.Read(ctx) {
 		last = r
 	}
 	if last.Daemon != power.DaemonRunning {
-		return status.PowerState{}, false
+		return overview.PowerState{}, false
 	}
 	if last.Session == nil {
-		return status.PowerState{}, true
+		return overview.PowerState{}, true
 	}
-	return status.PowerState{Held: true, Lid: last.Session.Lid, Until: last.Session.Until}, true
+	return overview.PowerState{Held: true, Lid: last.Session.Lid, Until: last.Session.Until}, true
 }

@@ -169,3 +169,21 @@ func parseList(stdout string) map[string]string {
 	}
 	return out
 }
+
+func (b *Brew) Manager() string { return command }
+
+// invariant: how many installed formulae and casks have a newer version;
+// contract.ErrMissing where brew is not installed.
+func (b *Brew) Behind(ctx context.Context) (int, error) {
+	if _, ok := b.run.LookPath(command); !ok {
+		return 0, contract.ErrMissing
+	}
+	out, err := b.run.Output(ctx, local.Command(command, "outdated", "--quiet"))
+	switch {
+	case err != nil:
+		return 0, err
+	case out.ExitCode != 0:
+		return 0, errors.New("brew outdated exited " + strconv.Itoa(out.ExitCode))
+	}
+	return len(strings.Fields(out.Stdout)), nil
+}

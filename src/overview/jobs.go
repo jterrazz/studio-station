@@ -1,7 +1,6 @@
-package status
+package overview
 
 import (
-	"context"
 	"path"
 	"strings"
 
@@ -44,15 +43,12 @@ type Job struct {
 }
 
 // invariant: a station read only reads the job manager; removing a job is
-// the owner's, through the command its row shows.
-func (s *Service) background(ctx context.Context) []Job {
+// the owner's, through the command its row shows. root and home turn a path
+// into the one the owner types.
+func Jobs(listed []background.Job, root, home string) []Job {
 	jobs := []Job{}
-	if !s.mac() {
-		return jobs
-	}
-	listed, _ := s.deps.Jobs.List(ctx)
 	for _, l := range listed {
-		j := Job{Label: l.Label, Scope: l.Scope, PID: l.PID, Plist: s.unrooted(l.File), Program: s.unrooted(l.Program), Removal: l.Removal}
+		j := Job{Label: l.Label, Scope: l.Scope, PID: l.PID, Plist: unrooted(l.File, root, home), Program: unrooted(l.Program, root, home), Removal: l.Removal}
 		switch {
 		case l.Unread:
 			j.Run = JobUnread
@@ -65,13 +61,13 @@ func (s *Service) background(ctx context.Context) []Job {
 		default:
 			j.Run = JobIdle
 		}
-		s.place(&j, l)
+		place(&j, l)
 		jobs = append(jobs, j)
 	}
 	return jobs
 }
 
-func (s *Service) place(j *Job, l background.Job) {
+func place(j *Job, l background.Job) {
 	owner, known := catalog.LaunchOwnerOf(j.Label)
 	if known {
 		j.Owner = owner.App
@@ -106,13 +102,13 @@ func (s *Service) place(j *Job, l background.Job) {
 }
 
 // value: the path the owner types: the system root dropped, the home as `~`.
-func (s *Service) unrooted(p string) string {
-	if root := path.Join("/", s.o.Root); root != "/" {
+func unrooted(p, root, home string) string {
+	if root := path.Join("/", root); root != "/" {
 		if rest, ok := strings.CutPrefix(p, root+"/"); ok {
 			return "/" + rest
 		}
 	}
-	if rest, ok := strings.CutPrefix(p, s.h.Env.Home()+"/"); ok {
+	if rest, ok := strings.CutPrefix(p, home+"/"); ok {
 		return "~/" + rest
 	}
 	return p

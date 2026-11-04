@@ -3,10 +3,10 @@ package menubar
 import (
 	"strconv"
 
+	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/domain/status"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/page"
 	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
@@ -31,8 +31,8 @@ const (
 
 type Reading struct {
 	// value: a nil part is still being read and draws pending.
-	Home     *status.Snapshot
-	Samples  []status.Sample
+	Home     *pagehome.Overview
+	Samples  []activity.Sample
 	Fleet    *machines.Fleet
 	Services *services.Fleet
 	Power    *power.Report
