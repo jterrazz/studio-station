@@ -15,8 +15,6 @@ type Counts struct {
 	Machines, Running, Stopped int
 }
 
-// Label is the name All machines shows: This Mac for the one station runs on,
-// a Mac without its owner's prefix (mac-mini for jterrazz-mac-mini).
 func Label(f Fleet, h HostView) string {
 	if h.Here {
 		return "This Mac"
@@ -60,8 +58,6 @@ func Ordered(vms []VM) []VM {
 	return out
 }
 
-// Behind tells when a far Mac's station is not the one here, and the fix
-// that brings the two together.
 func Behind(h HostView, here string) (fix string, differs bool) {
 	if h.Here || h.StationVersion == "" || here == "" || h.StationVersion == here {
 		return "", false
