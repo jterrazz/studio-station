@@ -9,7 +9,7 @@ runs:
       stdin: |
           see Uninstall lazygit?
           send \x03
-          screen
+          scrollback
       exit: 130
       stdout: |
           ┃ Uninstall lazygit?
