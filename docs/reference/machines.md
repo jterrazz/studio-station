@@ -57,10 +57,10 @@ station machines start api # a stopped workspace, its disk as it was left
 station machines stop api # asks yes or no; kept with its disk
 station machines edit api --memory 16G # applies when api next starts; a disk only grows
 station machines ssh api # prints the ssh command: ssh admin@api
-station machines restart mac-mini # a Mac: FileVault-aware, waits for ssh; a VM: power off, run
+station machines restart mac-mini # a Mac: asks naming the VMs that pause, a planned restart that unlocks itself, waits for its station; a VM: power off, run
 station machines delete api # destroys the VM, its leases and the secrets lent to it
 station machines api # its Overview, as station overview --on api
-station machines unlock mac-mini # the FileVault pre-boot ssh session
+station machines unlock mac-mini # after a power cut: you type its password into macOS's pre-boot prompt
 ```
 
 `create` makes a throwaway workspace unless `--permanent` is given, and asks the host when two or more are reachable. Defaults are 4 CPUs, 4 GB, 20 GB and image `linux`, each size with its unit. A size above what the Mac can give is refused before any effect (`not enough memory on This Mac: 60 GB asked, 4 GB left for VMs`): macOS keeps 4 GB, and the running VMs hold theirs. It reserves the ports of every service [profile](services.md#profiles) before the VM first runs; a step that fails before that rolls everything back. It then prints the health steps as they pass (Running, Has an address, SSH answers), its ports, and `linux-2 Created` with its size. From the first run on the VM is kept whatever fails: `linux-2 did not boot: …`, or `linux-2 is kept, failing Has an address: none after 60 s`, each with start or delete as the fix. A running workspace whose guest connection fails is a finding, `fails SSH answers`. A Mac that does not answer keeps its row in `station machines`, `Unreachable · last answer 03:12`, and the VMs it held at that answer as `? Unknown`; `station machines <vm>` of such a VM reads `infra is on mac-mini, which does not answer`, exit 0. `--network bridged` is for macOS VMs only (an iPhone on the Wi-Fi reaching the VM); a Linux VM publishes its [services](services.md) instead. With Tailscale HTTPS off, the profiles' variables hold the local URL and `create` adds a `◐ ports` row naming the admin step. `delete` asks the name typed (`--confirm=<name>` in a script, never `--yes`). With the engine stopped, start, stop, restart, edit and delete are refused (`Hint: station engine start`).

@@ -208,6 +208,26 @@ func done(id string, state catalog.State, said ...string) page.Row {
 	return r
 }
 
+func Unlocked(u machines.Unlocked, here page.Context) page.Page {
+	row := done(u.Name, catalog.StateOK, "unlocked", "on "+catalog.TailnetProduct+" again")
+	switch {
+	case u.Already:
+		row = done(u.Name, catalog.StateOK, "already answers: its disk is unlocked")
+	case !u.Answers:
+		row = done(u.Name, catalog.StateDegraded, "unlocked", "not on "+catalog.TailnetProduct+" yet")
+	}
+	return pages.Outcome("machines unlock", here, nil, []page.Row{row}, "machines")
+}
+
+func Back(b machines.Back, here page.Context) page.Page {
+	// value: the Mac back, and each VM it paused as it is now.
+	said := []string{"back"}
+	for _, vm := range b.VMs {
+		said = append(said, vm.Name+" "+strings.ToLower(stateWord(vm.State)))
+	}
+	return pages.Outcome("machines restart "+b.Name, here, nil, []page.Row{done(b.Name, catalog.StateOK, said...)}, "machines")
+}
+
 func Already(verb, name string, running bool, here page.Context) page.Page {
 	// value: a start or stop that found the VM already so: its mark is the state
 	// it is in, running or stopped, and nothing changed.

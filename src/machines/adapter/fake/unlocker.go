@@ -3,6 +3,7 @@ package fake
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/world"
@@ -71,7 +72,7 @@ func (m *Macs) state(name string) MacState {
 		return Offline
 	case mac.Locked:
 		return AtPreBoot
-	case mac.Offline:
+	case mac.Offline, m.w.Now.Before(mac.Back):
 		return Offline
 	}
 	return Answering
@@ -110,5 +111,17 @@ func (m *Macs) PlannedRestart(_ context.Context, name string) error {
 		return nil
 	}
 	m.restarts[name]++
-	return m.w.Apply(world.Event{Name: "reboot", Args: []string{name}})
+	if err := m.w.Apply(world.Event{Name: "reboot", Args: []string{name}}); err != nil {
+		return err
+	}
+	// invariant: a Mac answers again a minute after its planned restart; a
+	// hold of the restart is one that never comes back.
+	mac := m.w.Macs[name]
+	mac.Back = m.w.Now.Add(restartTakes)
+	if m.w.Holds("Unlocker.PlannedRestart") {
+		mac.Back, mac.Offline = time.Time{}, true
+	}
+	return nil
 }
+
+const restartTakes = time.Minute

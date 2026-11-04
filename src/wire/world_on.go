@@ -94,9 +94,12 @@ type worldMac struct {
 	start    func() *engine.Daemon
 	starting bool
 	engine   *engine.Daemon
-	tick     int
-	served   *remotefake.Dialer
-	bound    map[int]bool
+	// value: when the world says the running engine started: a Mac rebooted
+	// under it, inside the command, ends it with its process.
+	began  time.Time
+	tick   int
+	served *remotefake.Dialer
+	bound  map[int]bool
 	// value: this machine as its own binary builds it inside a VM of the
 	// world, once per run.
 	vm *farMac
@@ -393,10 +396,13 @@ func (plistInfo) Sys() any           { return nil }
 func (m *worldMac) macs() remotecontract.EndpointDialer { return worldDialer{r: m.run} }
 
 // invariant: a Mac's engine runs in this process while the world says it
-// runs, and ends once it says otherwise: begun at the first need of it,
+// runs, and ends once it says otherwise or says it started since: begun at the first need of it,
 // then stepped over the world's clock until it is quiet, so a story that
 // waits on the engine is deterministic.
 func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
+	if m.engine != nil && m.runs() && !m.engineStarted().Equal(m.began) {
+		m.down(true)
+	}
 	if m.engine != nil {
 		if m.runs() {
 			return m.engine, true
@@ -417,7 +423,7 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 	if err := d.Begin(context.WithValue(ctx, waits{}, true), func(string) {}); err != nil {
 		return nil, false
 	}
-	m.engine = d
+	m.engine, m.began = d, m.engineStarted()
 	m.settle(ctx)
 	return d, true
 }
@@ -474,7 +480,7 @@ type worldDialer struct{ r *worldRun }
 func (d worldDialer) Dial(ctx context.Context, mac string) (remotecontract.Endpoint, error) {
 	d.r.w.Lock()
 	slice, ok := d.r.w.Macs[mac]
-	reach := ok && !slice.Offline && !slice.Locked && slice.Engine != nil
+	reach := ok && !slice.Offline && !slice.Locked && slice.Engine != nil && !d.r.w.Now.Before(slice.Back)
 	bare := reach && d.r.w.Fails("EndpointDialer.Dial")
 	d.r.w.Unlock()
 	if !reach || d.r.far == nil {

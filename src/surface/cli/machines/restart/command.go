@@ -2,10 +2,12 @@ package machinesrestart
 
 import (
 	"context"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
@@ -15,9 +17,12 @@ import (
 
 type Deps struct {
 	Names func() []string
-	// value: whether a name is a VM, for the question.
-	IsVM func(name string) bool
-	Here page.Context
+	// value: whether a name is another Mac, restarted from here; any other
+	// name is a VM's.
+	IsMac func(name string) bool
+	// value: the VMs that run on a Mac now, which its restart pauses.
+	Pausing func(mac string) []string
+	Here    page.Context
 }
 
 type Input struct{ Name string }
@@ -34,13 +39,28 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Asks: true,
 		Confirm: func(in *Input) string {
-			if d.IsVM(in.Name) {
+			if !d.IsMac(in.Name) {
 				return "Restart " + in.Name + " (poweroff, then start)?"
 			}
-			return "Restart " + in.Name + " (sudo fdesetup authrestart)?"
+			if paused := d.Pausing(in.Name); len(paused) > 0 {
+				return "Restart " + in.Name + "? " + strings.Join(paused, ", ") + " pauses until it is back"
+			}
+			return "Restart " + in.Name + "?"
 		},
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			if d.IsMac(in.Name) {
+				var back machines.Back
+				err := io.Confirmed(func(answer string) error {
+					var err error
+					back, err = call.Invoke(ctx, env.Calls, machine.Ref{}, machinescalls.RestartMac, machinescalls.RestartMacIn{Name: in.Name, Confirm: answer}, nil)
+					return err
+				})
+				if err != nil {
+					return err
+				}
+				return io.Page(pagemachines.Back(back, d.Here), nil)
+			}
 			var report machines.RestartReport
 			err := io.Confirmed(func(answer string) error {
 				var err error

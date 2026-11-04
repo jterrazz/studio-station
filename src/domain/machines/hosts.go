@@ -14,7 +14,11 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
-type Added = model.Added
+type (
+	Added    = model.Added
+	Unlocked = model.Unlocked
+	Back     = model.Back
+)
 
 func (s *Service) Lookup(_ context.Context, name string) (Machine, error) { return s.lookup(name) }
 
@@ -46,6 +50,13 @@ func (s *Service) lookup(name string) (Machine, error) {
 }
 
 func (s *Service) Remote(name string) (Machine, error) {
+	// invariant: another machine is never This Mac, by any of its names,
+	// registered or not.
+	if cfg, err := s.prefs(); err == nil {
+		if here := s.here(cfg); name == here || (s.o.User != "" && s.o.User+"-"+name == here) {
+			return Machine{}, &HereMachineError{Name: name}
+		}
+	}
 	m, err := s.lookup(name)
 	if err != nil {
 		return Machine{}, err
@@ -57,13 +68,6 @@ func (s *Service) Remote(name string) (Machine, error) {
 }
 
 func (s *Service) RemoteHost(name, verb string) (Machine, error) {
-	// invariant: a verb of another Mac refuses This Mac by any of its names,
-	// registered or not, before it looks the name up.
-	if cfg, err := s.prefs(); err == nil {
-		if here := s.here(cfg); name == here || (s.o.User != "" && s.o.User+"-"+name == here) {
-			return Machine{}, &HereMachineError{Name: name, Verb: verb}
-		}
-	}
 	m, err := s.Remote(name)
 	var here *HereMachineError
 	if errors.As(err, &here) {

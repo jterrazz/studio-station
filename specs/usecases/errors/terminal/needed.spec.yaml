@@ -1,5 +1,5 @@
-description: 'what needs a terminal, off one, says so: exit 2'
-env: two-macs
+description: 'what needs a terminal, off one, says so: exit 2 (the unlock of a Mac that waits at pre-boot, a setting that asks a value)'
+env: mini-offline
 runs:
     - command: 'machines unlock jterrazz-mac-mini </dev/null'
       exit: 2

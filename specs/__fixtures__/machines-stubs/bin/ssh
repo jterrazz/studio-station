@@ -5,11 +5,19 @@
 # the seconds of api-<host>/delay when present (no folder: unreachable, exit 255),
 # `true` pops its exit codes from answers/ssh/true.codes (then true.exit, default 0)
 # after printing answers/ssh/true.stderr, a password session disconnects with 255 as
-# a pre-boot host does once the disk is unlocked, and every other call exits 97.
+# a pre-boot host does once the disk is unlocked, and every other call exits 97. An
+# attach pops its exit code from answers/ssh/attach.codes first: 0 goes on, any
+# other code is that attach's end, as a Mac that is down or rebooting ends ssh.
 answers="${0%/*}/../answers/ssh"
 printf 'ssh %s\n' "$*" >> "$HOME/.calls"
 case "$*" in
     *" station engine attach")
+        if [ -s "$answers/attach.codes" ]; then
+            code=$(/usr/bin/head -n 1 "$answers/attach.codes")
+            /usr/bin/tail -n +2 "$answers/attach.codes" > "$answers/attach.codes.next"
+            /bin/mv "$answers/attach.codes.next" "$answers/attach.codes"
+            [ "$code" = 0 ] || exit "$code"
+        fi
         prev=''
         for arg; do
             if [ "$arg" = -- ]; then target=$prev; break; fi

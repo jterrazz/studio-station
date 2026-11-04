@@ -281,6 +281,22 @@ func (r *Router) Hello(ctx context.Context, mac string) (contract.Hello, error) 
 	return hello, err
 }
 
+func (r *Router) Drop(mac string) {
+	// value: the connection to mac is not kept: the next call dials it again.
+	r.mu.Lock()
+	l, ok := r.open[mac]
+	r.mu.Unlock()
+	if ok {
+		r.drop(mac, l)
+		r.mu.Lock()
+		unused := l.users == 0 && l.ep != nil
+		r.mu.Unlock()
+		if unused {
+			_ = l.ep.Close()
+		}
+	}
+}
+
 func (r *Router) Close() {
 	r.mu.Lock()
 	open := r.open

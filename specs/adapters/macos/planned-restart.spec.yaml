@@ -1,4 +1,4 @@
-description: 'restarting a host sends the FileVault authrestart, then waits for ssh to drop and to answer again'
+description: 'restarting a Mac sends the FileVault authrestart, then waits for its station to drop and to answer again'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/
@@ -7,10 +7,12 @@ runs:
     - command: 'machines restart y --yes'
       exit: 0
       stdout: |
-          ●	y	restarted
-      files:
-          .calls:
-              equals: |
-                  ssh -o ConnectTimeout=2 -o BatchMode=yes y sudo fdesetup authrestart -delayminutes 0
-                  ssh -o ConnectTimeout=2 -o BatchMode=yes y true
-                  ssh -o ConnectTimeout=2 -o BatchMode=yes y true
+          ●	y	back
+    - command: '--version >/dev/null; /bin/cat .calls'
+      exit: 0
+      stdout: |
+          ssh -o BatchMode=yes -o ConnectTimeout=5 y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station engine attach
+          ssh -o ConnectTimeout=2 -o BatchMode=yes y sudo fdesetup authrestart -delayminutes 0
+          ssh -o BatchMode=yes -o ConnectTimeout=5 y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station engine attach
+          ssh -o BatchMode=yes -o ConnectTimeout=5 y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station engine attach
+          ssh -o BatchMode=yes -o ConnectTimeout=5 y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station engine attach

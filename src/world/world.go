@@ -57,6 +57,8 @@ type Mac struct {
 	Locked bool `json:"locked,omitempty"`
 	// value: out of the tailnet's reach.
 	Offline bool `json:"offline,omitempty"`
+	// value: a Mac that restarts does not answer until then.
+	Back time.Time `json:"back,omitzero"`
 	// value: the hypervisor this Mac has: empty, the one station is built
 	// with; none, no hypervisor installed; another name, a second fake that
 	// stands for another adapter (vz).

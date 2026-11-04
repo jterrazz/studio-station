@@ -46,7 +46,7 @@ var Forget = call.Call[Deps, ForgetIn, struct{}]{
 		if err := d.Machines.CheckHost(); err != nil {
 			return struct{}{}, err
 		}
-		if err := d.Machines.CheckRemoteHost(in.Name, "forget"); err != nil {
+		if _, err := d.Machines.CheckRemoteHost(in.Name, "forget"); err != nil {
 			return struct{}{}, err
 		}
 		if err := confirm.Require(confirm.For(confirm.Forget, d.Kind), in.Name, in.Confirm); err != nil {
@@ -62,17 +62,74 @@ type UnlockIn struct {
 	Interactive bool
 }
 
-var Unlock = call.Call[Deps, UnlockIn, struct{}]{
+var Unlock = call.Call[Deps, UnlockIn, machines.Unlocked]{
 	Name: "machines.unlock", Where: call.InProcess, Applies: machine.Anywhere,
-	Run: func(ctx context.Context, d Deps, in UnlockIn, _ call.Progress) (struct{}, error) {
+	Run: func(ctx context.Context, d Deps, in UnlockIn, _ call.Progress) (machines.Unlocked, error) {
 		if err := d.Machines.CheckHost(); err != nil {
-			return struct{}{}, err
+			return machines.Unlocked{}, err
 		}
-		if err := d.Machines.CheckRemoteHost(in.Name, "unlock"); err != nil {
-			return struct{}{}, err
+		mac, err := d.Machines.CheckRemoteHost(in.Name, "unlock")
+		if err != nil {
+			return machines.Unlocked{}, err
 		}
-		return struct{}{}, d.Machines.Unlock(ctx, in.Name, in.Interactive)
+		if d.Machines.Answers(ctx, mac) {
+			return machines.Unlocked{Name: in.Name, Already: true}, nil
+		}
+		if err := d.Machines.Unlock(ctx, in.Name, in.Interactive); err != nil {
+			return machines.Unlocked{}, err
+		}
+		return machines.Unlocked{Name: in.Name, Answers: d.Machines.AwaitAnswer(ctx, mac)}, nil
 	},
+}
+
+type RestartMacIn struct {
+	Name    string
+	Confirm string
+}
+
+// invariant: a Mac restarts by a planned restart that unlocks itself, sent
+// from this Mac; the answer waits for it to answer again, and says how the
+// VMs it paused are now.
+var RestartMac = call.Call[Deps, RestartMacIn, machines.Back]{
+	Name: "machines.restart-mac", Where: call.InProcess, Applies: machine.Anywhere, Confirm: confirm.RestartMac,
+	Errors: []fail.Code{confirm.YesNeeded},
+	Run: func(ctx context.Context, d Deps, in RestartMacIn, _ call.Progress) (machines.Back, error) {
+		if err := d.Machines.CheckHost(); err != nil {
+			return machines.Back{}, err
+		}
+		mac, err := d.Machines.CheckRemoteHost(in.Name, "restart")
+		if err != nil {
+			return machines.Back{}, err
+		}
+		if err := confirm.Require(confirm.For(confirm.RestartMac, d.Kind), in.Name, in.Confirm); err != nil {
+			return machines.Back{}, err
+		}
+		paused, _ := d.Machines.VMsOf(ctx, mac)
+		report, err := d.Machines.Restart(ctx, in.Name)
+		if err != nil {
+			return machines.Back{}, err
+		}
+		now, _ := d.Machines.VMsOf(ctx, mac)
+		return machines.Back{Name: in.Name, Waited: report.Waited, VMs: pausedNow(paused, now)}, nil
+	},
+}
+
+func pausedNow(paused, now []machines.VM) []machines.VM {
+	var out []machines.VM
+	for _, before := range machines.Ordered(paused) {
+		if before.State != machines.Running {
+			continue
+		}
+		after := before
+		after.State = machines.UnknownState
+		for _, vm := range now {
+			if vm.Name == before.Name {
+				after = vm
+			}
+		}
+		out = append(out, after)
+	}
+	return out
 }
 
 type SSHIn struct{ Name string }

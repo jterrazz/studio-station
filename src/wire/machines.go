@@ -10,6 +10,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	model "github.com/jterrazz/studio-station/src/machines"
@@ -54,6 +55,7 @@ func (m machine) machines(_ bool) *machines.Service {
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
 		Unlocker:  m.unlocker(knownHosts),
+		Answers:   m.answers,
 		SSHConfig: m.sshConfig(knownHosts),
 		Memory:    m.memory,
 	})
@@ -68,6 +70,18 @@ func (m machine) memory(ctx context.Context) int64 {
 	}
 	_, _, _, hw, _ := self.Read(ctx)
 	return hw.Memory
+}
+
+// invariant: a Mac answers when its station does, on a connection dialed
+// for the question: one kept from before it went down proves nothing.
+func (m machine) answers(ctx context.Context, mac string) bool {
+	r := m.far.router
+	if r == nil {
+		return false
+	}
+	r.Drop(mac)
+	_, err := r.Hello(ctx, mac)
+	return err == nil
 }
 
 func (m machine) unlocker(knownHosts string) contract.Unlocker {
@@ -114,18 +128,31 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		}, env),
 		machinesstart.Command(machinesstart.Deps{Names: service.Names, Here: m.where}, env),
 		machinesstop.Command(machinesstop.Deps{Names: service.Names, Here: m.where}, env),
-		machinesrestart.Command(machinesrestart.Deps{Names: service.Names, IsVM: func(name string) bool {
+		machinesrestart.Command(machinesrestart.Deps{Names: service.Names, IsMac: func(name string) bool {
 			r, err := service.Remote(name)
-			return err == nil && r.Kind != catalog.Host
-		}, Here: m.where}, env),
+			return err == nil && r.Kind == catalog.Host && !env.Far()
+		}, Pausing: m.pausing(env), Here: m.where}, env),
 		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
 		machinesedit.Command(machinesedit.Deps{Names: service.Names, Resources: machines.ParseResources, Here: m.where}, env),
 		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Overview: overview}, env),
-		machinesunlock.Command(machinesunlock.Deps{Names: service.Names}, env),
+		machinesunlock.Command(machinesunlock.Deps{Names: service.Names, Here: m.where}, env),
 		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),
 		machinessupervise.Command(env),
 		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{service}}, env),
 	)
+}
+
+func (m machine) pausing(env kit.Env) func(mac string) []string {
+	return func(mac string) []string {
+		vms, _ := machineCalls{Service: m.machines(env.Interactive), m: m}.VMsOf(context.Background(), mac)
+		var names []string
+		for _, vm := range model.Ordered(vms) {
+			if vm.State == machines.Running {
+				names = append(names, vm.Name)
+			}
+		}
+		return names
+	}
 }
 
 func createCheck(s *machines.Service) func(ctx context.Context, r machines.CreateRequest) (bool, error) {
@@ -200,9 +227,9 @@ func (c machineCalls) Restart(ctx context.Context, name string) (machines.Restar
 	return c.Service.Restart(ctx, name, nil)
 }
 
-func (c machineCalls) CheckRemoteHost(name, verb string) error {
-	_, err := c.RemoteHost(name, verb)
-	return err
+func (c machineCalls) CheckRemoteHost(name, verb string) (string, error) {
+	m, err := c.RemoteHost(name, verb)
+	return m.Name, err
 }
 
 func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool) error {
@@ -210,6 +237,14 @@ func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool)
 		return &machines.NeedsTerminalError{Verb: "machines unlock"}
 	}
 	return c.Service.Unlock(ctx, name)
+}
+
+func (c machineCalls) VMsOf(ctx context.Context, name string) ([]machines.VM, error) {
+	out, err := call.Read(ctx, c.m.far.router, coremachine.Ref{Name: name}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
+	if err != nil || len(out.Fleet.Hosts) == 0 {
+		return nil, err
+	}
+	return out.Fleet.Hosts[0].VMs, nil
 }
 
 func (c machineCalls) CheckRemote(name string) error {
