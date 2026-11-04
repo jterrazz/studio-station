@@ -1,0 +1,19 @@
+description: '--on a VM no answering Mac holds, while a Mac is silent, is that Mac''s silence, never an unknown name'
+fixture:
+    - ../../__fixtures__/machines-stubs/
+    - ./__fixtures__/mini-offline/
+runs:
+    - command: 'tools --on infra'
+      exit: 1
+      stderr: |
+          Error: cannot reach "z"
+          Hint: station machines probe z
+    - command: 'tools install jq --on infra'
+      exit: 1
+      stderr: |
+          Error: cannot reach "z"
+          Hint: station machines probe z
+    - command: 'tools --on w 2>&1 | /usr/bin/head -n 1'
+      exit: 0
+      stdout: |
+          Error: y runs station , which has no tools.list
