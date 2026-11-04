@@ -6,10 +6,9 @@
 
  Summary
    ● Machine     host · Darwin 27.0.0 · up 22d 14h
-   ● Network     192.168.1.152 · vpn on · 4/4 on
+   ● Network     192.168.1.152 · 4/4 on
    ● Tailnet     jterrazz-macbook-pro · Serve on
    ● Identity    admin@jterrazz.com · signing on
-   ● Workspace   2 repos
    ● Background  1 job
    ● Tools       1 ●
    ● Config      1 ●
@@ -22,9 +21,8 @@
    ● setup   done
    ● daemon  running v2.0.0-250
 
- Environment  9 ●
+ Environment  8 ●
    ● local ip    192.168.1.152
-   ● vpn         Tailscale
    ● filevault   on
    ● firewall    on
    ● sip         off
@@ -33,11 +31,8 @@
    ● brew        up to date
    ● tailnet     Running · jterrazz-macbook-pro.tail1234.ts.net · 100.98.133.14
 
- Workspace  3 ●  1 ○
-   ● repos   2        2 dirty
-   ○ deps    none
-   ● docker  running  0 containers · 0 images
-   ● disk    27.9 GB  reclaimable: station storage clean
+ Workspace  1 ●
+   ● disk  27.9 GB  reclaimable: station storage clean
 
  Identity  2 ●
    ● git email    admin@jterrazz.com

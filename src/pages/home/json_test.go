@@ -42,10 +42,7 @@ func fixed() status.Snapshot {
 			Updates:  []status.Check{{Name: "brew", State: catalog.StateDegraded, Value: "3 outdated"}},
 		},
 		Workspace: status.Workspace{
-			Repositories: []status.Repository{{Path: "jterrazz/x", Branch: "main"}},
-			Dependencies: []status.Dependency{{Path: "jterrazz/x", Manager: "pnpm", Outdated: 2}},
-			Docker:       status.Docker{State: catalog.StateOK},
-			Disk:         []status.Disk{{Name: "homebrew", Bytes: 123}},
+			Disk: []status.Disk{{Name: "homebrew", Bytes: 123}},
 		},
 		Tools: []tools.Report{{Tool: node, Method: catalog.MethodMise, State: catalog.StateOK, Version: "24.11.0", Managed: true}},
 		Config: []config.Report{{
@@ -59,7 +56,7 @@ func fixed() status.Snapshot {
 		}},
 		Identity:   []status.Check{{Name: "git-email", State: catalog.StateOK, Value: "admin@jterrazz.com"}},
 		Background: []status.Job{{Label: "ai.jterrazz.x", Group: status.GroupUnknown, State: catalog.StateOK, Run: status.JobRunning, PID: 12, Scope: "user", Plist: "~/Library/LaunchAgents/ai.jterrazz.x.plist"}},
-		Gateways:   []status.Check{{Name: "OpenClaw runtime", State: catalog.StateBroken, Value: "not running", Detail: "gateway process not found"}},
+		Gateways:   []status.Check{{Name: "Tailscale Serve", State: catalog.StateOK, Value: "on"}},
 		Tailnet: ports.Status{
 			State: catalog.StateOK, Connected: true, BackendState: "Running",
 			Name: "macbook", DNSName: "macbook.tail1234.ts.net", IP: "100.64.0.1",

@@ -75,7 +75,7 @@ func snapshot() status.Snapshot {
 		Machine:     status.Machine{Name: "macbook", Registered: true, Kind: catalog.Host, Hostname: "jterrazz-macbook-pro", OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh"},
 		System:      status.System{Uptime: "22d 14h", Battery: "100% charged", MemoryTotal: 17179869184},
 		Environment: status.Environment{
-			Network: []status.Check{check("local ip", catalog.StateOK, "192.168.1.152", ""), check("vpn", catalog.StateOK, "Tailscale", "")},
+			Network: []status.Check{check("local ip", catalog.StateOK, "192.168.1.152", "")},
 			Security: []status.Check{
 				check("filevault", catalog.StateOK, "on", ""), check("firewall", catalog.StateOK, "on", ""),
 				check("sip", catalog.StateAbsent, "off", ""), check("gatekeeper", catalog.StateOK, "on", ""),
@@ -86,10 +86,7 @@ func snapshot() status.Snapshot {
 			},
 		},
 		Workspace: status.Workspace{
-			Repositories: []status.Repository{{Path: "jterrazz/station", Branch: "main"}, {Path: "jterrazz/web", Branch: "main", Dirty: 2}},
-			Dependencies: []status.Dependency{{Path: "jterrazz/web", Manager: "pnpm", Outdated: 14}},
-			Docker:       status.Docker{State: catalog.StateDegraded},
-			Disk:         []status.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
+			Disk: []status.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
 			Strays: []storage.StrayReport{
 				{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, Repair: "station setup"},
 				{Name: "bun", Path: "~/.bun", Bytes: 2 * gb, Repair: "station setup"},
@@ -109,7 +106,7 @@ func snapshot() status.Snapshot {
 			{Label: "com.docker.socket", Group: status.GroupOrphan, Run: status.JobNotLoaded, Scope: "root", Owner: "Docker.app", OwnerGone: true, Plist: "/Library/LaunchDaemons/com.docker.socket.plist", State: catalog.StateDegraded,
 				Removal: "sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist"},
 		},
-		Gateways: []status.Check{check("Hermes runtime", catalog.StateBroken, "not running", "gateway process not found")},
+		Gateways: []status.Check{check("Tailscale Serve", catalog.StateOK, "on", "")},
 		Tailnet:  ports.Status{State: catalog.StateOK, Connected: true, BackendState: "Running", Name: "macbook", DNSName: "jterrazz-macbook-pro.tail1234.ts.net", IP: "100.98.133.14", ServeOn: true},
 	}
 }
@@ -118,8 +115,7 @@ func pendingSnapshot() status.Snapshot {
 	s := snapshot()
 	s.System = status.System{Pending: true}
 	s.ToolsPending, s.ConfigPending = true, true
-	s.Workspace.ReposPending, s.Workspace.DepsPending, s.Workspace.DiskPending = true, true, true
-	s.Workspace.Docker.State = catalog.StatePending
+	s.Workspace.DiskPending = true
 	s.Station.Daemon = status.Check{Name: "daemon", State: catalog.StatePending}
 	s.Tailnet = ports.Status{State: catalog.StatePending}
 	s.Setup = status.Setup{State: catalog.StatePending}
@@ -136,8 +132,7 @@ func calmSnapshot() status.Snapshot {
 	s := snapshot()
 	s.Station.Daemon = check("daemon", catalog.StateOK, "running v2.0.0-250", "")
 	s.Environment.Updates = []status.Check{check("macos", catalog.StateOK, "up to date", "checked 22m ago"), check("brew", catalog.StateOK, "up to date", "")}
-	s.Workspace.Dependencies, s.Workspace.Strays = nil, nil
-	s.Workspace.Docker.State = catalog.StateOK
+	s.Workspace.Strays = nil
 	s.Tools = reports([]tool{{name: "homebrew", category: catalog.CategoryPackageManagers, method: catalog.MethodScript, system: true, state: catalog.StateOK, version: "7.0.12"}}, false)
 	s.Config = s.Config[:1]
 	s.Background = s.Background[:1]

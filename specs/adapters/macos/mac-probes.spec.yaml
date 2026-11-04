@@ -19,7 +19,7 @@ runs:
     - command: 'status --json | /usr/bin/jq -c ''.environment.network | map([.name, .state, .value])'''
       exit: 0
       stdout: |
-          [["local ip","ok","192.168.1.2"],["public ip","absent",""],["vpn","ok","Work VPN"],["dns","ok","9.9.9.9, 149.112.112.112"]]
+          [["local ip","ok","192.168.1.2"],["dns","ok","9.9.9.9, 149.112.112.112"]]
     - command: 'status --json | /usr/bin/jq -c ''.environment.security | map([.name, .state, .value])'''
       exit: 0
       stdout: |

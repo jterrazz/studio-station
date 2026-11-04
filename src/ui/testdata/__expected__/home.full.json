@@ -22,27 +22,6 @@
       "items": [
         {
           "row": {
-            "id": "gateways/Hermes runtime",
-            "mark": "broken",
-            "label": "Hermes runtime",
-            "detail": {
-              "kind": "list",
-              "items": [
-                {
-                  "kind": "text",
-                  "text": "not running"
-                },
-                {
-                  "kind": "text",
-                  "text": "gateway process not found"
-                }
-              ]
-            },
-            "reason": "down"
-          }
-        },
-        {
-          "row": {
             "id": "background/com.jterrazz.brain.x-snapshot",
             "mark": "broken",
             "label": "brain.x-snapshot",
@@ -176,28 +155,6 @@
         },
         {
           "row": {
-            "id": "workspace/deps",
-            "mark": "attention",
-            "label": "deps",
-            "detail": {
-              "kind": "list",
-              "items": [
-                {
-                  "kind": "count",
-                  "n": 14,
-                  "unit": "outdated"
-                },
-                {
-                  "kind": "text",
-                  "text": "in 1 repos"
-                }
-              ]
-            },
-            "reason": "outdated"
-          }
-        },
-        {
-          "row": {
             "id": "tools/chatgpt",
             "mark": "attention",
             "label": "chatgpt",
@@ -240,11 +197,11 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 10
+          "n": 9
         },
         {
           "mark": "broken",
-          "n": 2
+          "n": 1
         }
       ]
     },
@@ -307,10 +264,6 @@
                   },
                   {
                     "kind": "text",
-                    "text": "vpn on"
-                  },
-                  {
-                    "kind": "text",
                     "text": "4/4 on"
                   }
                 ]
@@ -356,30 +309,6 @@
                   {
                     "kind": "text",
                     "text": "signing on"
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "summary/workspace",
-            "mark": "attention",
-            "label": "Workspace",
-            "cells": [
-              {
-                "kind": "list",
-                "items": [
-                  {
-                    "kind": "count",
-                    "n": 2,
-                    "unit": "repos"
-                  },
-                  {
-                    "kind": "count",
-                    "n": 14,
-                    "unit": "deps outdated"
                   }
                 ]
               }
@@ -508,7 +437,7 @@
         {
           "row": {
             "id": "summary/gateways",
-            "mark": "broken",
+            "mark": "ok",
             "label": "Gateways",
             "cells": [
               {
@@ -517,7 +446,7 @@
                   {
                     "kind": "count",
                     "n": 1,
-                    "label": "broken"
+                    "label": "ok"
                   }
                 ]
               }
@@ -526,7 +455,7 @@
         }
       ],
       "uncounted": true,
-      "break": 6
+      "break": 5
     },
     {
       "id": "machine",
@@ -679,22 +608,6 @@
         },
         {
           "row": {
-            "id": "vpn",
-            "mark": "ok",
-            "label": "vpn",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "Tailscale"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
             "id": "filevault",
             "mark": "ok",
             "label": "filevault",
@@ -824,7 +737,7 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 7
+          "n": 6
         },
         {
           "mark": "attention",
@@ -849,58 +762,6 @@
         }
       ],
       "items": [
-        {
-          "row": {
-            "id": "repos",
-            "mark": "ok",
-            "label": "repos",
-            "cells": [
-              {
-                "kind": "count",
-                "n": 2
-              }
-            ],
-            "detail": {
-              "kind": "count",
-              "n": 2,
-              "unit": "dirty"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "deps",
-            "mark": "attention",
-            "label": "deps",
-            "cells": [
-              {
-                "kind": "count",
-                "n": 14,
-                "unit": "outdated"
-              }
-            ],
-            "detail": {
-              "kind": "text",
-              "text": "in 1 repos"
-            },
-            "reason": "outdated"
-          }
-        },
-        {
-          "row": {
-            "id": "docker",
-            "mark": "ok",
-            "label": "docker",
-            "cells": [
-              {
-                "kind": "off"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
         {
           "row": {
             "id": "disk",
@@ -964,11 +825,11 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 3
+          "n": 1
         },
         {
           "mark": "attention",
-          "n": 3
+          "n": 2
         }
       ]
     },
@@ -1262,26 +1123,24 @@
       "items": [
         {
           "row": {
-            "id": "Hermes runtime",
-            "mark": "broken",
-            "label": "Hermes runtime",
+            "id": "Tailscale Serve",
+            "mark": "ok",
+            "label": "Tailscale Serve",
             "cells": [
               {
                 "kind": "text",
-                "text": "not running"
+                "text": "on"
               }
             ],
             "detail": {
-              "kind": "text",
-              "text": "gateway process not found"
-            },
-            "reason": "down"
+              "kind": "none"
+            }
           }
         }
       ],
       "counts": [
         {
-          "mark": "broken",
+          "mark": "ok",
           "n": 1
         }
       ]

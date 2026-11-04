@@ -5,7 +5,6 @@
 ●	daemon	running v2.0.0-250
 # Environment
 ●	local ip	192.168.1.152
-●	vpn	Tailscale
 ●	filevault	on
 ●	firewall	on
 ●	sip	off
@@ -14,9 +13,6 @@
 ●	brew	up to date
 ●	tailnet	Running · jterrazz-macbook-pro.tail1234.ts.net · 100.98.133.14
 # Workspace
-●	repos	2	2 dirty
-○	deps	none
-●	docker	running	0 containers · 0 images
 ●	disk	27.9 GB	reclaimable: station storage clean
 # Identity
 ●	git email	admin@jterrazz.com

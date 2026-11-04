@@ -74,22 +74,10 @@
     ]
   },
   "workspace": {
-    "repositories": [
-      {
-        "path": "jterrazz/x",
-        "branch": "main",
-        "dirty": 0
-      }
-    ],
-    "dependencies": [
-      {
-        "path": "jterrazz/x",
-        "manager": "pnpm",
-        "outdated": 2
-      }
-    ],
+    "repositories": [],
+    "dependencies": [],
     "docker": {
-      "state": "ok",
+      "state": "unknown",
       "containers": 0,
       "images": 0,
       "volumes": 0,
@@ -185,10 +173,10 @@
   ],
   "gateways": [
     {
-      "name": "OpenClaw runtime",
-      "state": "broken",
-      "value": "not running",
-      "detail": "gateway process not found"
+      "name": "Tailscale Serve",
+      "state": "ok",
+      "value": "on",
+      "detail": ""
     }
   ],
   "tailnet": {

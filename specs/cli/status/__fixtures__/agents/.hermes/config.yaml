@@ -1,6 +1,0 @@
-# hermes
-model:
-  provider: anthropic
-  default: "hermes-4"
-other:
-  default: nope

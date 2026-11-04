@@ -15,14 +15,11 @@ func (s *Service) networkProbes() []probe {
 	if !s.mac() {
 		return []probe{
 			{name: "local ip", cmd: cmd("hostname", "-I"), interpret: firstField},
-			{name: "public ip", cmd: cmd("curl", "-s", "--max-time", "2", "-4", "ifconfig.me"), budget: defaultBudget + defaultBudget/2, interpret: firstField},
 			{name: "dns", cmd: cmd("cat", "/etc/resolv.conf"), interpret: resolvConf},
 		}
 	}
 	return []probe{
 		{name: "local ip", cmd: cmd("ipconfig", "getifaddr", "en0"), interpret: firstField},
-		{name: "public ip", cmd: cmd("curl", "-s", "--max-time", "2", "-4", "ifconfig.me"), budget: defaultBudget + defaultBudget/2, interpret: firstField},
-		{name: "vpn", cmd: cmd("scutil", "--nc", "list"), interpret: vpns},
 		{name: "dns", cmd: cmd("scutil", "--dns"), interpret: scutilDNS},
 	}
 }
@@ -55,30 +52,6 @@ func firstField(name string, r reply) Check {
 		return Check{Name: name, State: catalog.StateAbsent}
 	}
 	return Check{Name: name, State: catalog.StateOK, Value: fields[0]}
-}
-
-// outside: scutil lists a connection as `* (Connected) <id> VPN (...) "Name" [...]`.
-func vpns(name string, r reply) Check {
-	if !r.ok() {
-		return Check{Name: name, State: catalog.StateUnknown}
-	}
-	var names []string
-	for _, line := range strings.Split(r.text(), "\n") {
-		if !strings.Contains(line, "(Connected)") {
-			continue
-		}
-		label := "connected"
-		if end := strings.LastIndex(line, `"`); end > 0 {
-			if start := strings.LastIndex(line[:end], `"`); start >= 0 {
-				label = line[start+1 : end]
-			}
-		}
-		names = append(names, label)
-	}
-	if len(names) == 0 {
-		return Check{Name: name, State: catalog.StateAbsent, Value: "off"}
-	}
-	return Check{Name: name, State: catalog.StateOK, Value: strings.Join(names, ", ")}
 }
 
 // outside: `scutil --dns` lists `nameserver[0] : 9.9.9.9`; loopback and IPv6 resolvers
@@ -179,4 +152,14 @@ func (s *Service) listening(ctx context.Context) []Port {
 		return []Port{}
 	}
 	return listeningPorts(ls)
+}
+
+// invariant: Tailscale Serve is the way every VM service leaves the host, so a
+// host whose tailnet is connected says whether it is on, and the admin step
+// when it is not.
+func serveGateway(on bool) Check {
+	if on {
+		return Check{Name: "Tailscale Serve", State: catalog.StateOK, Value: "on"}
+	}
+	return Check{Name: "Tailscale Serve", State: catalog.StateDegraded, Value: "off", Detail: catalog.ServeOffDetail}
 }

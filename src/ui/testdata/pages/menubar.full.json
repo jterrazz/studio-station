@@ -73,27 +73,6 @@
       "items": [
         {
           "row": {
-            "id": "gateways/Hermes runtime",
-            "mark": "broken",
-            "label": "Hermes runtime",
-            "detail": {
-              "kind": "list",
-              "items": [
-                {
-                  "kind": "text",
-                  "text": "not running"
-                },
-                {
-                  "kind": "text",
-                  "text": "gateway process not found"
-                }
-              ]
-            },
-            "reason": "down"
-          }
-        },
-        {
-          "row": {
             "id": "background/com.jterrazz.brain.x-snapshot",
             "mark": "broken",
             "label": "brain.x-snapshot",
@@ -133,8 +112,23 @@
           }
         },
         {
+          "row": {
+            "id": "environment/brew",
+            "mark": "attention",
+            "label": "brew",
+            "detail": {
+              "kind": "text",
+              "text": "120 outdated"
+            },
+            "reason": "degraded",
+            "hint": {
+              "command": "station tools upgrade --via brew"
+            }
+          }
+        },
+        {
           "link": {
-            "label": "+ 9 more",
+            "label": "+ 7 more",
             "page": "home"
           }
         }
@@ -142,11 +136,11 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 10
+          "n": 9
         },
         {
           "mark": "broken",
-          "n": 2
+          "n": 1
         }
       ],
       "uncounted": true

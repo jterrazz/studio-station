@@ -1,9 +1,0 @@
-#!/bin/sh
-# go list -m -u: two modules, one of them with an update.
-case "$*" in
-    "list -m -u -json all") printf '{"Path":"a"}\n{"Path":"b","Update":{"Version":"v2"}}\n' ;;
-    *)
-        echo "stub ${0##*/}: unexpected invocation: $*" >&2
-        exit 97
-        ;;
-esac

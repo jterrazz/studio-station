@@ -31,12 +31,10 @@ func statusService(env kit.Env, m machine) *status.Service {
 		Jobs:      m.jobs(status.ReadBudget),
 		Inspector: macos.New(m.host.Run, m.host.FS, m.host.Clock, macos.Options{Root: m.systemRoot()}),
 	}, status.Options{
-		Pool:         m.pool,
-		Root:         m.systemRoot(),
-		Here:         m.kind,
-		OpenClawPort: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
-		HermesPort:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),
-		Version:      Version(),
-		Commit:       Commit(),
+		Pool:    m.pool,
+		Root:    m.systemRoot(),
+		Here:    m.kind,
+		Version: Version(),
+		Commit:  Commit(),
 	})
 }

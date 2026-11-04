@@ -2,7 +2,6 @@ package status
 
 import (
 	"context"
-	"path"
 	"slices"
 	"time"
 
@@ -51,19 +50,16 @@ func budgetOf(p probe) time.Duration {
 // it, so a slow tool delays only its own row.
 func (s *Service) frame() Snapshot {
 	snap := Snapshot{
-		GeneratedAt: s.h.Clock.Now().UTC(),
-		Station:     Station{Version: s.o.Version, Commit: s.o.Commit, Daemon: Check{Name: "daemon", State: catalog.StatePending}},
-		Tailnet:     ports.Status{State: catalog.StatePending},
-		Setup:       Setup{State: catalog.StatePending, Steps: []setup.Step{}},
-		System:      System{Pending: true, Sample: Sample{CPU: []Process{}, Memory: []Process{}}},
-		Identity:    append(pendingChecks(s.identityTable()), Check{Name: "ssh-key", State: catalog.StatePending}),
-		Background:  []Job{},
-		Gateways:    []Check{},
-		Environment: Environment{Network: pendingChecks(s.networkProbes())},
-		Workspace: Workspace{
-			Repositories: []Repository{}, Dependencies: []Dependency{}, Docker: Docker{State: catalog.StatePending},
-			Disk: []Disk{}, Strays: []storage.StrayReport{}, ReposPending: true, DepsPending: true, DiskPending: true,
-		},
+		GeneratedAt:   s.h.Clock.Now().UTC(),
+		Station:       Station{Version: s.o.Version, Commit: s.o.Commit, Daemon: Check{Name: "daemon", State: catalog.StatePending}},
+		Tailnet:       ports.Status{State: catalog.StatePending},
+		Setup:         Setup{State: catalog.StatePending, Steps: []setup.Step{}},
+		System:        System{Pending: true, Sample: Sample{CPU: []Process{}, Memory: []Process{}}},
+		Identity:      append(pendingChecks(s.identityTable()), Check{Name: "ssh-key", State: catalog.StatePending}),
+		Background:    []Job{},
+		Gateways:      []Check{},
+		Environment:   Environment{Network: pendingChecks(s.networkProbes())},
+		Workspace:     Workspace{Disk: []Disk{}, Strays: []storage.StrayReport{}, DiskPending: true},
 		ToolsPending:  true,
 		ConfigPending: true,
 	}
@@ -194,29 +190,7 @@ func (s *Service) machineJobs() []job {
 }
 
 func (s *Service) workspaceJobs() []job {
-	root := path.Join(s.h.Env.Home(), "Developer")
 	return []job{
-		{Key: subject + "/workspace/repos", Budget: defaultBudget + margin,
-			Do: func(ctx context.Context) func(*Snapshot) {
-				repos := s.repositories(ctx, root, s.findRepos(root, 0))
-				return func(sn *Snapshot) { sn.Workspace.Repositories, sn.Workspace.ReposPending = repos, false }
-			},
-			Late: func(sn *Snapshot) { sn.Workspace.ReposPending = false },
-		},
-		{Key: subject + "/workspace/deps", Budget: scanBudget + margin,
-			Do: func(ctx context.Context) func(*Snapshot) {
-				deps := s.dependencies(ctx, root, s.findRepos(root, 0))
-				return func(sn *Snapshot) { sn.Workspace.Dependencies, sn.Workspace.DepsPending = deps, false }
-			},
-			Late: func(sn *Snapshot) { sn.Workspace.DepsPending = false },
-		},
-		{Key: subject + "/workspace/docker", Budget: defaultBudget + margin,
-			Do: func(ctx context.Context) func(*Snapshot) {
-				d := s.docker(ctx)
-				return func(sn *Snapshot) { sn.Workspace.Docker = d }
-			},
-			Late: func(sn *Snapshot) { sn.Workspace.Docker = Docker{State: catalog.StateUnknown} },
-		},
 		{Key: subject + "/workspace/disk", Lane: schedule.Inline,
 			// invariant: the disk row follows the run's one storage reading, so its
 			// frame shows the last-known total until the walk answers.
@@ -252,13 +226,6 @@ func (s *Service) sectionJobs() []job {
 			Do: func(ctx context.Context) func(*Snapshot) {
 				jobs := s.background(ctx)
 				return func(sn *Snapshot) { sn.Background = jobs }
-			},
-			Late: func(*Snapshot) {},
-		},
-		{Key: subject + "/gateways", Budget: defaultBudget + margin,
-			Do: func(ctx context.Context) func(*Snapshot) {
-				checks := s.gateways(ctx)
-				return func(sn *Snapshot) { sn.found = checks; s.placeGateways(sn) }
 			},
 			Late: func(*Snapshot) {},
 		},
@@ -308,10 +275,7 @@ func (s *Service) sectionJobs() []job {
 }
 
 func (s *Service) placeGateways(sn *Snapshot) {
-	sn.Gateways = slices.Clone(sn.found)
-	if sn.Gateways == nil {
-		sn.Gateways = []Check{}
-	}
+	sn.Gateways = []Check{}
 	if s.o.Here == catalog.Host && sn.Tailnet.Connected {
 		sn.Gateways = append(sn.Gateways, serveGateway(sn.Tailnet.ServeOn))
 	}

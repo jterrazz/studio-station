@@ -127,7 +127,7 @@ Left to the owner, by hand and whenever wanted: the old VM tag and its ACL lines
 
 ## Gateways
 
-On a host, `station status` and `machines probe` report the OpenClaw and Hermes gateways when detected, by their process or their config: the runtime, the config and the channels for OpenClaw, the runtime and the config for Hermes; and, on a host whose tailnet is connected, `Tailscale Serve`, the way every VM service leaves the host: `on`, or `◐ off` with the admin step ([Services](services.md#serve-and-https)) (`status.gateways` in [the contract](status-json.md)). Their ports come from `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT` and `API_SERVER_PORT` ([Configuration](configuration.md)). Designing them as VMs is on the [TODO](../../TODO.md).
+On a host, `machines probe` reports the OpenClaw and Hermes gateways when detected, by their process or their config. `station status` reports, on a host whose tailnet is connected, `Tailscale Serve`, the way every VM service leaves the host: `on`, or `◐ off` with the admin step ([Services](services.md#serve-and-https)) (`status.gateways` in [the contract](status-json.md)). The gateways' ports come from `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT` and `API_SERVER_PORT` ([Configuration](configuration.md)). Designing them as VMs is on the [TODO](../../TODO.md).
 
 ## Related
 

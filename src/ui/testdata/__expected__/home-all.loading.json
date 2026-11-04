@@ -108,10 +108,6 @@
                   },
                   {
                     "kind": "text",
-                    "text": "vpn on"
-                  },
-                  {
-                    "kind": "text",
                     "text": "4/4 on"
                   }
                 ]
@@ -146,30 +142,6 @@
               {
                 "kind": "text",
                 "text": "not set"
-              }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "summary/workspace",
-            "mark": "attention",
-            "label": "Workspace",
-            "cells": [
-              {
-                "kind": "list",
-                "items": [
-                  {
-                    "kind": "count",
-                    "n": 2,
-                    "unit": "repos"
-                  },
-                  {
-                    "kind": "count",
-                    "n": 14,
-                    "unit": "deps outdated"
-                  }
-                ]
               }
             ]
           }
@@ -270,7 +242,7 @@
         }
       ],
       "uncounted": true,
-      "break": 5
+      "break": 4
     },
     {
       "id": "machine",
@@ -391,22 +363,6 @@
         },
         {
           "row": {
-            "id": "vpn",
-            "mark": "ok",
-            "label": "vpn",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "Tailscale"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
             "id": "filevault",
             "mark": "ok",
             "label": "filevault",
@@ -493,7 +449,7 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 6
+          "n": 5
         },
         {
           "mark": "pending",
@@ -518,27 +474,6 @@
         }
       ],
       "items": [
-        {
-          "row": {
-            "id": "repos",
-            "mark": "pending",
-            "label": "repos"
-          }
-        },
-        {
-          "row": {
-            "id": "deps",
-            "mark": "pending",
-            "label": "deps"
-          }
-        },
-        {
-          "row": {
-            "id": "docker",
-            "mark": "pending",
-            "label": "docker"
-          }
-        },
         {
           "row": {
             "id": "disk",
@@ -603,7 +538,7 @@
         },
         {
           "mark": "pending",
-          "n": 4
+          "n": 1
         }
       ]
     },
@@ -665,9 +600,9 @@
       "items": [
         {
           "row": {
-            "id": "Hermes runtime",
+            "id": "Tailscale Serve",
             "mark": "pending",
-            "label": "Hermes runtime"
+            "label": "Tailscale Serve"
           }
         }
       ],

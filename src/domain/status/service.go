@@ -20,11 +20,10 @@ import (
 )
 
 type Options struct {
-	Pool                     *schedule.Pool
-	Root                     string
-	Here                     catalog.MachineKind
-	OpenClawPort, HermesPort int
-	Version, Commit          string
+	Pool            *schedule.Pool
+	Root            string
+	Here            catalog.MachineKind
+	Version, Commit string
 }
 
 type Sources struct {
@@ -121,7 +120,6 @@ type Snapshot struct {
 	PowerKnown bool
 	// value: a section whose reading has not answered; never past Snapshot.
 	ToolsPending, ConfigPending bool
-	found                       []Check
 	err                         error
 }
 
@@ -187,24 +185,6 @@ type Environment struct {
 	Updates  []Check
 }
 
-type Repository struct {
-	Path   string
-	Branch string
-	Dirty  int
-}
-
-type Dependency struct {
-	Path     string
-	Manager  string
-	Outdated int
-}
-
-type Docker struct {
-	State                       catalog.State
-	Containers, Images, Volumes int
-	DanglingBytes, TotalBytes   int64
-}
-
 type Disk struct {
 	Name  string
 	Level catalog.Level
@@ -212,13 +192,10 @@ type Disk struct {
 }
 
 type Workspace struct {
-	Repositories []Repository
-	Dependencies []Dependency
-	Docker       Docker
-	Disk         []Disk
-	Strays       []storage.StrayReport
-	// value: a row whose reading has not answered; never past Snapshot.
-	ReposPending, DepsPending, DiskPending bool
+	Disk   []Disk
+	Strays []storage.StrayReport
+	// value: the disk row has not answered; never past Snapshot.
+	DiskPending bool
 }
 
 func (s *Service) mac() bool { return s.o.Here != catalog.Linux }

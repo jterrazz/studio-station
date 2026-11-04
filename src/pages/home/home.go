@@ -46,7 +46,7 @@ func Snapshot(s status.Snapshot, here page.Context, all bool) page.Page {
 		detail = append(detail, backgroundSection(s.Background))
 	}
 	if len(s.Gateways) > 0 {
-		detail = append(detail, section("gateways", "Gateways", gatewayRows(s.Gateways)))
+		detail = append(detail, section("gateways", "Gateways", checkRows(s.Gateways)))
 	}
 	detail = append(detail, toolsSection(s), configSection(s))
 	fold := page.Folded
@@ -170,20 +170,7 @@ func pending(id, label string) page.Row {
 
 // value: a protection the owner turned off on purpose is a value, not an absence (M3).
 func offByChoice(c status.Check) bool {
-	return c.State == catalog.StateAbsent && c.Value == "off" && slices.Contains([]string{"sip", "remote-login", "vpn"}, c.Name)
-}
-
-// invariant: a runtime's detail is the domain's comma-joined words (pid, user,
-// port): a list, so every medium joins them with its own separator and the
-// pipe keeps its bytes.
-func gatewayRows(checks []status.Check) []page.Row {
-	rows := checkRows(checks)
-	for i, c := range checks {
-		if strings.HasSuffix(c.Name, " runtime") && strings.Contains(c.Detail, ", ") {
-			rows[i].Detail = page.Texts(strings.Split(c.Detail, ", ")...)
-		}
-	}
-	return rows
+	return c.State == catalog.StateAbsent && c.Value == "off" && slices.Contains([]string{"sip", "remote-login"}, c.Name)
 }
 
 func checkRows(checks []status.Check) []page.Row {
@@ -274,12 +261,8 @@ func environmentRows(s status.Snapshot) []page.Row {
 }
 
 func workspaceRows(w status.Workspace) []page.Row {
-	rows := make([]page.Row, 0, 4+len(w.Strays))
-	rows = append(rows,
-		pendingOr(w.ReposPending, "repos", reposRow(w.Repositories)),
-		pendingOr(w.DepsPending, "deps", depsRow(w.Dependencies)),
-		pendingOr(w.Docker.State == catalog.StatePending, "docker", dockerRow(w.Docker)),
-		diskRow(w.Disk, w.DiskPending))
+	rows := make([]page.Row, 0, 1+len(w.Strays))
+	rows = append(rows, diskRow(w.Disk, w.DiskPending))
 	for i, st := range w.Strays {
 		r := page.Row{ID: st.Name + "/" + strconv.Itoa(i), Label: st.Name, Mark: page.Attention, Reason: page.Stray, Cells: []page.Value{page.Path(st.Path)}, Detail: page.Size(st.Bytes)}
 		if st.Repair != "" {
@@ -288,77 +271,6 @@ func workspaceRows(w status.Workspace) []page.Row {
 		rows = append(rows, r)
 	}
 	return rows
-}
-
-func pendingOr(waiting bool, name string, answered page.Row) page.Row {
-	if waiting {
-		return pending(name, name)
-	}
-	return answered
-}
-
-func reposRow(repos []status.Repository) page.Row {
-	if len(repos) == 0 {
-		return row("repos", page.Absent, page.Text("none"), "~/Developer")
-	}
-	dirty := 0
-	for _, r := range repos {
-		dirty += r.Dirty
-	}
-	r := row("repos", page.OK, page.Count(int64(len(repos)), ""), "")
-	r.Detail = page.Count(int64(dirty), "dirty")
-	return r
-}
-
-func depsRow(deps []status.Dependency) page.Row {
-	if len(deps) == 0 {
-		return row("deps", page.Absent, page.Text("none"), "")
-	}
-	outdated, repos, unscanned := 0, 0, 0
-	for _, d := range deps {
-		switch {
-		case d.Outdated < 0:
-			unscanned++
-		case d.Outdated > 0:
-			outdated += d.Outdated
-			repos++
-		}
-	}
-	late := page.None()
-	if unscanned > 0 {
-		late = page.Count(int64(unscanned), "not scanned in time")
-	}
-	if outdated == 0 {
-		r := row("deps", page.OK, page.Text("up to date"), "")
-		r.Detail = late
-		return r
-	}
-	r := row("deps", page.Attention, page.Count(int64(outdated), "outdated"), "")
-	r.Reason = page.Outdated
-	r.Detail = page.Text("in " + strconv.Itoa(repos) + " repos")
-	if !late.IsNone() {
-		r.Detail = page.List(r.Detail, late)
-	}
-	return r
-}
-
-func dockerRow(d status.Docker) page.Row {
-	switch d.State {
-	case catalog.StateOK:
-		r := row("docker", page.OK, page.Text("running"), "")
-		r.Detail = page.List(page.Count(int64(d.Containers), "containers"), page.Count(int64(d.Images), "images"))
-		return r
-	case catalog.StateAbsent:
-		r := row("docker", page.Absent, page.Text("not installed"), "")
-		r.Hint = page.Cmd("station tools install docker")
-		return r
-	case catalog.StateDegraded:
-		return row("docker", page.OK, page.Off(), "")
-	case catalog.StateBroken, catalog.StateUnknown, catalog.StatePending:
-	}
-	r := row("docker", page.Attention, page.Text("unknown"), "")
-	r.Reason = page.Late
-	return r
 }
 
 func diskRow(disk []status.Disk, waiting bool) page.Row {
@@ -569,9 +481,6 @@ func checkValue(checks []status.Check, name string) string {
 
 func networkValue(e status.Environment) page.Value {
 	parts := page.Texts(checkValue(e.Network, "local ip")).Items
-	if checkValue(e.Network, "vpn") != "" {
-		parts = append(parts, page.Text("vpn on"))
-	}
 	on := 0
 	for _, c := range e.Security {
 		if c.State == catalog.StateOK || offByChoice(c) {
@@ -613,18 +522,6 @@ func identityValue(checks []status.Check) page.Value {
 		return page.Text("not set")
 	}
 	return page.Texts(parts...)
-}
-
-func workspaceValue(w status.Workspace) page.Value {
-	parts := []page.Value{page.Count(int64(len(w.Repositories)), "repos")}
-	outdated := 0
-	for _, d := range w.Dependencies {
-		outdated += max(d.Outdated, 0)
-	}
-	if outdated > 0 {
-		parts = append(parts, page.Count(int64(outdated), "deps outdated"))
-	}
-	return page.List(parts...)
 }
 
 func storageValue(w status.Workspace) page.Value {
@@ -689,7 +586,6 @@ func summary(s status.Snapshot, detail []page.Section) page.Section {
 		area("network", "Network", worst(find(detail, "environment")), networkValue(s.Environment)),
 		area("tailnet", "Tailnet", pages.MarkOf(s.Tailnet.State), tailnetValue(s.Tailnet)),
 		area("identity", "Identity", worst(find(detail, "identity")), identityValue(s.Identity)),
-		area("workspace", "Workspace", worst(find(detail, "workspace")), workspaceValue(s.Workspace)),
 	}
 	if len(s.Background) > 0 {
 		items = append(items, area("background", "Background", backgroundMark(s.Background), backgroundValue(s.Background)))

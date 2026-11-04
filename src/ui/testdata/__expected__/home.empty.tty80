@@ -6,10 +6,9 @@
 
  Summary
    ● Machine     host · Darwin 27.0.0 · up 22d 14h
-   ● Network     192.168.1.152 · vpn on · 4/4 on
+   ● Network     192.168.1.152 · 4/4 on
    ● Tailnet     jterrazz-macbook-pro · Serve on
    ● Identity    admin@jterrazz.com · signing on
-   ● Workspace   2 repos
    ● Background  1 job
    ● Tools       1 ●
    ● Config      1 ●
@@ -18,9 +17,9 @@
 
  Machine  4 ●
 
- Environment  9 ●
+ Environment  8 ●
 
- Workspace  3 ●  1 ○
+ Workspace  1 ●
 
  Identity  2 ●
 

@@ -150,6 +150,8 @@ type diskJSON struct {
 }
 
 type workspaceJSON struct {
+	// invariant: v1 keeps every key it ever had; the workspace is no longer
+	// scanned, so repositories, dependencies and docker read as nothing seen.
 	Repositories []repositoryJSON        `json:"repositories"`
 	Dependencies []dependencyJSON        `json:"dependencies"`
 	Docker       dockerJSON              `json:"docker"`
@@ -190,15 +192,11 @@ func SnapshotContract(s status.Snapshot) SnapshotJSON {
 			Updates:  checks(s.Environment.Updates),
 		},
 		Workspace: workspaceJSON{
-			Repositories: make([]repositoryJSON, 0, len(s.Workspace.Repositories)),
-			Dependencies: make([]dependencyJSON, 0, len(s.Workspace.Dependencies)),
-			Docker: dockerJSON{
-				State: string(s.Workspace.Docker.State), Containers: s.Workspace.Docker.Containers,
-				Images: s.Workspace.Docker.Images, Volumes: s.Workspace.Docker.Volumes,
-				DanglingBytes: s.Workspace.Docker.DanglingBytes, TotalBytes: s.Workspace.Docker.TotalBytes,
-			},
-			Disk:   make([]diskJSON, 0, len(s.Workspace.Disk)),
-			Strays: pagestorage.StraysContract(s.Workspace.Strays),
+			Repositories: []repositoryJSON{},
+			Dependencies: []dependencyJSON{},
+			Docker:       dockerJSON{State: string(catalog.StateUnknown)},
+			Disk:         make([]diskJSON, 0, len(s.Workspace.Disk)),
+			Strays:       pagestorage.StraysContract(s.Workspace.Strays),
 		},
 		Tools:      make([]pagetools.ToolJSON, 0, len(s.Tools)),
 		Config:     make([]pageconfig.ItemJSON, 0, len(s.Config)),
@@ -214,12 +212,6 @@ func SnapshotContract(s status.Snapshot) SnapshotJSON {
 	}
 	for _, p := range s.Environment.Ports {
 		body.Environment.Ports = append(body.Environment.Ports, portJSON{PID: p.PID, Name: p.Name, Port: p.Port})
-	}
-	for _, r := range s.Workspace.Repositories {
-		body.Workspace.Repositories = append(body.Workspace.Repositories, repositoryJSON{Path: r.Path, Branch: r.Branch, Dirty: r.Dirty})
-	}
-	for _, d := range s.Workspace.Dependencies {
-		body.Workspace.Dependencies = append(body.Workspace.Dependencies, dependencyJSON{Path: d.Path, Manager: d.Manager, Outdated: d.Outdated})
 	}
 	for _, d := range s.Workspace.Disk {
 		body.Workspace.Disk = append(body.Workspace.Disk, diskJSON{Name: d.Name, Level: string(d.Level), Bytes: d.Bytes})
