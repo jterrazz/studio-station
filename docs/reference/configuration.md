@@ -70,7 +70,7 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 | Variable                                                               | Read for                                                                                            |
 | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `AGENT_PASSWORD`                                                       | pre-fills the `autologin` form                                                                      |
-| `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT`      | the gateway ports `machines probe` checks                                                           |
+| `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT`      | the gateway ports the TUI's probe checks                                                            |
 | `MISE_DATA_DIR`                                                        | where mise keeps its shims                                                                          |
 | `NO_COLOR`, `COLUMNS`                                                  | the output form and width                                                                           |
 | `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | the folders station uses, when absolute ([Storage](storage.md#the-folders))                         |

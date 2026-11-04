@@ -20,14 +20,19 @@ A host registers itself with `station setup --name <name>`; another host is regi
 
 A machine has one name, used for `preferences.json`, the `~/.ssh/config` Host, Herdr and `--on`; a host's name is also its tailnet node. A VM is never on the tailnet: it is reached through its host. Every VM has the fleet's one login, `vm_user`; a host's login is its own `--user`.
 
-`station machines` lists the fleet, one column schema for every row, a host unreachable in 5 seconds being a `◐` row and not a failure. A VM's ip is its NAT address on its host:
+`station machines` is All machines: a first line that counts the machines, the running, the stopped and what needs you; each Mac with its VMs under it, in the columns MACHINE, KIND, STATE, CPU and MEMORY; then Needs you. A Mac that does not answer in 5 seconds keeps its row, `✗ Unreachable`, and is a finding, never a failure; a Mac that runs another station says which and where to update it. Piped, each machine is one record (glyph, name, kind, its Mac, state, CPU, memory); `--json` is `station.machines.list/v1`.
 
 ```text
- ●  macbook   host                online   100.101.1.2   2 VMs
- ●  api       workspace  macbook  permanent  running  192.168.64.9   4 cpus · 12 GB · 18 GB
- ●  linux-1   workspace  macbook  throwaway  running  192.168.64.7   4 cpus · 4 GB · 20 GB
- ◐  mac-mini  host                unreachable
+5 machines · 4 running · 1 stopped · nothing needs you
+    MACHINE     KIND       STATE                CPU    MEMORY
+  ● This Mac    Mac        Engine running
+  ├─ ○ api      Workspace  Stopped · permanent  4 CPU  8 GB
+  └─ ● linux-1  Workspace  Running · throwaway  4 CPU  8 GB
+  ● mac-mini    Mac        Engine running
+  └─ ● infra    Workspace  Running · permanent  8 CPU  24 GB
 ```
+
+`station machines <machine>` is that machine's Overview, the one `station overview --on <machine>` prints.
 
 ## Lifetimes
 
@@ -54,7 +59,7 @@ station machines edit api --memory 16G   # applies when api next starts; a disk 
 station machines ssh api            # prints the ssh command: ssh admin@api
 station machines restart mac-mini   # a Mac: FileVault-aware, waits for ssh; a VM: power off, run
 station machines delete api         # destroys the VM, its leases and the secrets lent to it
-station machines probe api          # reachability without logging in
+station machines api                # its Overview, as station overview --on api
 station machines unlock mac-mini    # the FileVault pre-boot ssh session
 ```
 
@@ -64,7 +69,7 @@ station machines unlock mac-mini    # the FileVault pre-boot ssh session
 
 ## On another machine
 
-`--on <machine>` runs the command's call there and renders its answer here: `station status --on mac-mini`, `station tools install gh --on api`. Another Mac is reached through its engine: one `ssh -o BatchMode=yes <mac> station engine attach`, which speaks `station.api/v2` frames over ssh's stdio; a VM of this Mac through this Mac's engine, which runs `station guest serve --stdio` over its one connection to the VM. A VM of another Mac rides that Mac's engine: its name is looked up in this Mac's own records first, then asked of every other host at once (`machines.list`, 4 at a time, 5 s each); station never runs `ssh <vm>`. A name no host holds is `Error: unknown machine "<name>"`, `Hint: run station machines for the fleet`, exit 2, with nothing dialed under that name; while a host is silent the VM may be its own, so the answer is that host's `cannot reach`. The far side returns data, so the output is this binary's, in tty, pipe and JSON alike. Each connection opens with `Hello`, the far binary's version and the calls it serves: a call it lacks is `Error: <mac> runs station <version>, which has no <call>`, `Hint: update station on <mac> (scripts/install.sh there)`, exit 1. A connection to a Mac serves every call while it answers, and nothing outlives it: a Mac asleep at one call, or whose link dropped, is dialed again at the next, and a call the open connection's `Hello` lacks is asked again of a fresh one, so a Mac upgraded meanwhile serves it. A far refusal is worded by this binary's table; a code this binary does not know keeps the far side's own words. An unreachable machine is `Error: cannot reach "<machine>"`, `Hint: station machines probe <machine>`, exit 1. It is refused on `shell`, `completion`, `help`, `man` and the hidden plumbing (`engine`, `engine`, `guest`, `machines pipe`, `machines supervise`). Bare `station --on api` opens the TUI here, its calls on that machine. After a remote create, delete, add or forget, the local ssh blocks refresh.
+`--on <machine>` runs the command's call there and renders its answer here: `station status --on mac-mini`, `station tools install gh --on api`. Another Mac is reached through its engine: one `ssh -o BatchMode=yes <mac> station engine attach`, which speaks `station.api/v2` frames over ssh's stdio; a VM of this Mac through this Mac's engine, which runs `station guest serve --stdio` over its one connection to the VM. A VM of another Mac rides that Mac's engine: its name is looked up in this Mac's own records first, then asked of every other host at once (`machines.list`, 4 at a time, 5 s each); station never runs `ssh <vm>`. A name no host holds is `Error: no machine named "<name>"`, `Hint: station machines`, exit 2, with nothing dialed under that name; while a host is silent the VM may be its own, so the answer is that host's `does not answer`. The far side returns data, so the output is this binary's, in tty, pipe and JSON alike. Each connection opens with `Hello`, the far binary's version and the calls it serves: a call it lacks is `Error: <mac> runs station <version>, which has no <call>`, `Hint: update station on <mac> (scripts/install.sh there)`, exit 1. A connection to a Mac serves every call while it answers, and nothing outlives it: a Mac asleep at one call, or whose link dropped, is dialed again at the next, and a call the open connection's `Hello` lacks is asked again of a fresh one, so a Mac upgraded meanwhile serves it. A far refusal is worded by this binary's table; a code this binary does not know keeps the far side's own words. An unreachable machine is `Error: <machine> does not answer`, `Hint: station machines`, exit 1. It is refused on `shell`, `completion`, `help`, `man` and the hidden plumbing (`engine`, `engine`, `guest`, `machines pipe`, `machines supervise`). Bare `station --on api` opens the TUI here, its calls on that machine. After a remote create, delete, add or forget, the local ssh blocks refresh.
 
 The fleet list asks each other host's engine for its own view (`machines.list`), 4 at a time, 5 s each; a host that does not answer is a row of its own, never the others' delay. On a terminal the rows fill as each host answers; piped and in JSON the list prints once, whole.
 
@@ -135,7 +140,7 @@ Left to the owner, by hand and whenever wanted: the old VM tag and its ACL lines
 
 ## Gateways
 
-On a host, `machines probe` reports the OpenClaw and Hermes gateways when detected, by their process or their config. `station status` reports, on a host whose tailnet is connected, `Tailscale Serve`, the way every VM service leaves the host: `on`, or `◐ off` with the admin step ([Services](services.md#serve-and-https)) (`status.gateways` in [the contract](status-json.md)). The gateways' ports come from `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT` and `API_SERVER_PORT` ([Configuration](configuration.md)). Designing them as VMs is on the [TODO](../../TODO.md).
+On a host, the TUI's probe reports the OpenClaw and Hermes gateways when detected, by their process or their config. `station status` reports, on a host whose tailnet is connected, `Tailscale Serve`, the way every VM service leaves the host: `on`, or `◐ off` with the admin step ([Services](services.md#serve-and-https)) (`status.gateways` in [the contract](status-json.md)). The gateways' ports come from `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT` and `API_SERVER_PORT` ([Configuration](configuration.md)). Designing them as VMs is on the [TODO](../../TODO.md).
 
 ## Related
 

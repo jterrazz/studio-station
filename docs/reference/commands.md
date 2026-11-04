@@ -86,7 +86,8 @@ The engine that already runs holds the session, in memory only: a `PreventUserId
 ### `station machines`
 
 ```sh
-station machines [--here] [--json]              # every host and the VMs on each
+station machines [--json]                       # All machines: every Mac, its VMs under it, then Needs you
+station machines <machine> [--json]             # that machine's Overview, as station overview --on <machine>
 station machines add --name <name> [--user <login>] [--key <file>]
 station machines forget <host> [--yes]
 station machines create <name> [--permanent] [--image linux] [--cpus <n>] [--memory <size>] [--disk <size>] [--network nat|bridged]
@@ -96,7 +97,6 @@ station machines restart <machine> [--yes]
 station machines edit <vm> [--cpus <n>] [--memory <size>] [--disk <size>]
 station machines ssh <machine>
 station machines delete <vm> [--confirm=<name>]
-station machines probe <machine> [--json]
 station machines unlock <host>
 ```
 
