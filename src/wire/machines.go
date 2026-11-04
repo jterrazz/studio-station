@@ -247,6 +247,11 @@ func (c machineCalls) VMsOf(ctx context.Context, name string) ([]machines.VM, er
 	return out.Fleet.Hosts[0].VMs, nil
 }
 
+func (c machineCalls) StartOn(ctx context.Context, mac, vm string) error {
+	_, err := call.Invoke(ctx, c.m.far.router, coremachine.Ref{Name: mac}, machinescalls.Start, machinescalls.VMIn{VM: vm}, nil)
+	return err
+}
+
 func (c machineCalls) CheckRemote(name string) error {
 	_, err := c.Remote(name)
 	return err

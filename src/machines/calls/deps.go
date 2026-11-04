@@ -53,6 +53,9 @@ type Machines interface {
 	AwaitAnswer(ctx context.Context, name string) bool
 	// value: the VMs of that Mac, as it lists them now.
 	VMsOf(ctx context.Context, name string) ([]machines.VM, error)
+	// value: starts a VM of that Mac through its station; one that runs
+	// already is left as it is.
+	StartOn(ctx context.Context, mac, vm string) error
 	// value: refuses a name that is no known machine.
 	CheckRemote(name string) error
 	Probe(ctx context.Context, name string) (machines.ProbeReport, error)

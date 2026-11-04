@@ -92,8 +92,8 @@ var RestartMac = call.Call[Deps, RestartMacIn, machines.Back]{
 	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in RestartMacIn, _ call.Progress) (machines.Back, error) {
 		// invariant: a Mac restarts by a planned restart that unlocks itself,
-		// sent from this Mac; the answer waits for it to answer again, and
-		// says how the VMs it paused are now.
+		// sent from this Mac; the answer waits for it to answer again, runs
+		// again each VM it paused, and says how they are now.
 		if err := d.Machines.CheckHost(); err != nil {
 			return machines.Back{}, err
 		}
@@ -108,6 +108,11 @@ var RestartMac = call.Call[Deps, RestartMacIn, machines.Back]{
 		report, err := d.Machines.Restart(ctx, in.Name)
 		if err != nil {
 			return machines.Back{}, err
+		}
+		for _, vm := range paused {
+			if vm.State == machines.Running {
+				_ = d.Machines.StartOn(ctx, mac, vm.Name)
+			}
 		}
 		now, _ := d.Machines.VMsOf(ctx, mac)
 		return machines.Back{Name: in.Name, Waited: report.Waited, VMs: pausedNow(paused, now)}, nil

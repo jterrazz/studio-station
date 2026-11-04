@@ -58,7 +58,7 @@ station machines start api # a stopped workspace, its disk as it was left
 station machines stop api # asks yes or no; kept with its disk
 station machines edit api --memory 16G # applies when api next starts; a disk only grows
 station machines ssh api # prints the ssh command: ssh admin@api
-station machines restart mac-mini # a Mac: asks naming the VMs that pause, a planned restart that unlocks itself, waits for its station; a VM: power off, run
+station machines restart mac-mini # a Mac: asks naming the VMs that pause, a planned restart that unlocks itself, waits for its station, starts those VMs again; a VM: power off, run
 station machines delete api # destroys the VM, its leases and the secrets lent to it
 station machines api # its Overview, as station overview --on api
 station machines unlock mac-mini # after a power cut: you type its password into macOS's pre-boot prompt
