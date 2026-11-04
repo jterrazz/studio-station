@@ -10,3 +10,8 @@ runs:
       exit: 0
       stdout: |
           [{"name":"infra","kind":"workspace","on":"jterrazz-mac-mini","reachable":false},"unknown"]
+    - command: 'overview --on infra'
+      exit: 0
+      stdout: |
+          	On infra:
+          ✗	infra	is on mac-mini, which does not answer
