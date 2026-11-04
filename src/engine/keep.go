@@ -26,32 +26,37 @@ const (
 	EventBack       = "server_back"
 )
 
-// value: each event's words, in the parts its text joins (SPEC §10.4).
-func Restarting(vm string, count int) (string, []string) {
-	return EventRestarting, []string{vm + " stopped and is restarting (↺ " + strconv.Itoa(count) + ")"}
+type Told struct {
+	// value: an event of SPEC 10.4: its name, and the parts its text joins.
+	Kind  string
+	Parts []string
 }
 
-func Looping(vm string, r model.Restarts) (string, []string) {
-	return EventLoop, []string{vm + " is in a loop: " + strconv.Itoa(len(r.Recent)) + " restarts in " + strconv.Itoa(int(model.LoopWindow.Minutes())) + " min", "waiting " + strconv.Itoa(int(r.Wait.Seconds())) + " s"}
+func Restarting(vm string, count int) Told {
+	return Told{EventRestarting, []string{vm + " stopped and is restarting (↺ " + strconv.Itoa(count) + ")"}}
 }
 
-func PoweredOff(vm string) (string, []string) {
-	return EventPoweredOff, []string{vm + " " + model.PoweredOffInside, "it stays stopped"}
+func Looping(vm string, r model.Restarts) Told {
+	return Told{EventLoop, []string{vm + " is in a loop: " + strconv.Itoa(len(r.Recent)) + " restarts in " + strconv.Itoa(int(model.LoopWindow.Minutes())) + " min", "waiting " + strconv.Itoa(int(r.Wait.Seconds())) + " s"}}
 }
 
-func Back(vm string) (string, []string) {
-	return EventBack, []string{vm + " is back", "all 4 health steps pass"}
+func PoweredOff(vm string) Told {
+	return Told{EventPoweredOff, []string{vm + " " + model.PoweredOffInside, "it stays stopped"}}
+}
+
+func Back(vm string) Told {
+	return Told{EventBack, []string{vm + " is back", "all 4 health steps pass"}}
 }
 
 // invariant: what the engine tells goes to the Notifier and to every open
 // watch alike, its parts joined as the presentation joins them.
-func (d *Daemon) tell(ctx context.Context, vm, kind string, parts []string) {
-	text := strings.Join(parts, ", ")
+func (d *Daemon) tell(ctx context.Context, vm string, t Told) {
+	text := strings.Join(t.Parts, ", ")
 	if d.o.Join != nil {
-		text = d.o.Join(parts...)
+		text = d.o.Join(t.Parts...)
 	}
-	d.notify(ctx, Notification{Kind: kind, Subject: vm, Text: text})
-	d.hub.tell(Notice{Kind: kind, Text: text})
+	d.notify(ctx, Notification{Kind: t.Kind, Subject: vm, Text: text})
+	d.hub.tell(Notice{Kind: t.Kind, Text: text})
 }
 
 // invariant: a server whose run ended unexpectedly boots again after its
@@ -66,11 +71,9 @@ func (d *Daemon) restartLater(ctx context.Context, v *vmState, up time.Duration,
 	d.mu.Unlock()
 	switch {
 	case r.Looping && !was:
-		kind, parts := Looping(v.rec.Name, r)
-		d.tell(ctx, v.rec.Name, kind, parts)
+		d.tell(ctx, v.rec.Name, Looping(v.rec.Name, r))
 	case !r.Looping:
-		kind, parts := Restarting(v.rec.Name, r.Count)
-		d.tell(ctx, v.rec.Name, kind, parts)
+		d.tell(ctx, v.rec.Name, Restarting(v.rec.Name, r.Count))
 	}
 }
 
@@ -106,16 +109,15 @@ func (d *Daemon) keep(ctx context.Context, v *vmState) {
 		case model.CheckFails:
 			d.logf(v.rec.Name, "its check fails: "+v.rec.Check)
 		case model.CheckBack:
-			kind, parts := Back(v.rec.Name)
-			d.tell(ctx, v.rec.Name, kind, parts)
+			d.tell(ctx, v.rec.Name, Back(v.rec.Name))
 		case model.CheckSame:
 		}
 	}()
 }
 
-// invariant: the events watch streams what the engine tells, each once, as
-// it is told, until the watcher leaves (the menu bar's notifications).
 func (d *Daemon) Events(ctx context.Context, send func(any) error) error {
+	// invariant: the events watch streams what the engine tells, each once,
+	// as it is told, until the watcher leaves (the menu bar's notifications).
 	sub := d.hub.add()
 	defer d.hub.remove(sub)
 	for {

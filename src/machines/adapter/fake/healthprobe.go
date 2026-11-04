@@ -17,10 +17,10 @@ var _ contract.HealthProbe = (*HealthProbe)(nil)
 
 func HealthProbeOf(w *world.World) *HealthProbe { return &HealthProbe{w: w} }
 
-// invariant: a check of the world answers while the VM its name holds runs,
-// until a scripted fault of HealthProbe.Probe stands for what inside stopped
-// answering it; a check on any other name answers.
 func (p *HealthProbe) Probe(_ context.Context, t machines.CheckTarget) error {
+	// invariant: a check of the world answers while the VM its name holds
+	// runs, until a scripted fault of HealthProbe.Probe stands for what
+	// inside stopped answering it; a check on any other name answers.
 	p.w.Lock()
 	defer p.w.Unlock()
 	if p.w.Fails("HealthProbe.Probe") {

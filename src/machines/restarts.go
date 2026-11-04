@@ -12,9 +12,11 @@ func restartWaits() [5]time.Duration {
 }
 
 const (
-	SteadyRun  = 10 * time.Minute
-	LoopWindow = 10 * time.Minute
-	LoopBudget = 5
+	// value: the detail of a server something inside powered off.
+	PoweredOffInside = "powered off from inside"
+	SteadyRun        = 10 * time.Minute
+	LoopWindow       = 10 * time.Minute
+	LoopBudget       = 5
 )
 
 type Restarts struct {
@@ -44,7 +46,8 @@ func (r Restarts) After(up time.Duration, now time.Time) Restarts {
 			recent = append(recent, at)
 		}
 	}
-	r.Recent = append(recent, now)
+	recent = append(recent, now)
+	r.Recent = recent
 	waits := restartWaits()
 	r.Wait = waits[min(r.Streak, len(waits)-1)]
 	r.Streak++
@@ -109,6 +112,3 @@ func ago(d time.Duration) string {
 	}
 	return strconv.Itoa(int(d.Hours()/24)) + " d ago"
 }
-
-// value: the detail of a server something inside powered off.
-const PoweredOffInside = "powered off from inside"

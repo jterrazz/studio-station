@@ -9,7 +9,7 @@ import (
 func TestAServerWaitsLongerAtEachRestartUntilAMinute(t *testing.T) {
 	now := time.Date(2026, 11, 7, 14, 0, 0, 0, time.UTC)
 	var r Restarts
-	var waits []time.Duration
+	waits := make([]time.Duration, 0, 6)
 	for range 6 {
 		r = r.After(30*time.Second, now)
 		waits = append(waits, r.Wait)

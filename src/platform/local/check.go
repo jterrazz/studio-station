@@ -44,7 +44,7 @@ func Answers(ctx context.Context, c Check) error {
 	}
 	defer transport.CloseIdleConnections()
 	client := http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.URL, http.NoBody)
 	if err != nil {
 		return err
 	}

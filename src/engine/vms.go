@@ -209,8 +209,7 @@ func (d *Daemon) ended(ctx context.Context, v *vmState) {
 		v.rec.Want = machines.WantStopped
 		_ = d.m.Save(v.rec)
 		d.setState(v, StateStopped, model.PoweredOffInside)
-		kind, parts := PoweredOff(name)
-		d.tell(ctx, name, kind, parts)
+		d.tell(ctx, name, PoweredOff(name))
 	case model.ActRerun:
 		if v.rec.Lifetime == machines.AlwaysOn {
 			d.mu.Lock()

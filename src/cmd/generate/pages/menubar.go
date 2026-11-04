@@ -105,27 +105,14 @@ func EventsStream() []byte {
 	for i := range 5 {
 		loop = loop.After(time.Second, at.Add(time.Duration(i)*time.Minute))
 	}
-	type told struct {
-		kind  string
-		parts []string
-	}
-	var events []told
-	for _, e := range []func() (string, []string){
-		func() (string, []string) { return engine.Restarting("infra", 3) },
-		func() (string, []string) { return engine.Looping("infra", loop) },
-		func() (string, []string) { return engine.PoweredOff("infra") },
-		func() (string, []string) { return engine.Back("infra") },
-	} {
-		kind, parts := e()
-		events = append(events, told{kind, parts})
-	}
+	events := []engine.Told{engine.Restarting("infra", 3), engine.Looping("infra", loop), engine.PoweredOff("infra"), engine.Back("infra")}
 	var out []byte
 	for _, e := range events {
 		data, err := json.Marshal(struct {
 			V   int          `json:"v"`
 			ID  string       `json:"id"`
 			Out engine.Event `json:"out"`
-		}{V: 2, ID: "1", Out: engine.Event{Event: "notice", Notice: &engine.Notice{Kind: e.kind, Text: strings.Join(e.parts, token.Sep)}}})
+		}{V: 2, ID: "1", Out: engine.Event{Event: "notice", Notice: &engine.Notice{Kind: e.Kind, Text: strings.Join(e.Parts, token.Sep)}}})
 		if err != nil {
 			panic(err)
 		}
