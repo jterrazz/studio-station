@@ -1,0 +1,11 @@
+description: 'a VM of another Mac restarts through that Mac with no question, and runs again'
+env: two-macs
+runs:
+    - command: 'machines restart infra --on mac-mini'
+      exit: 0
+      stdout: |
+          ●	infra	restarted
+    - command: 'machines | /usr/bin/grep infra'
+      exit: 0
+      stdout: |
+          ●	infra	Workspace	jterrazz-mac-mini	Running · permanent	8 CPU	24 GB
