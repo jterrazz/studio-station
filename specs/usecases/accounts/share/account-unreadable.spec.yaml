@@ -1,4 +1,4 @@
-description: 'a GitHub session that cannot be exported fails, exit 1, its cause in the log, nothing copied or listed'
+description: 'a GitHub session that cannot be exported fails, exit 1, its cause logged, nothing copied or listed'
 env: two-macs
 runs:
     - command: '--version >/dev/null; /usr/bin/jq ''del(.macs["linux-1"].secrets) | del(.macs["jterrazz-macbook-pro"].stores.shares)'' world.json > w.json && /bin/mv w.json world.json'
