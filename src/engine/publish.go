@@ -1,8 +1,10 @@
 package engine
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,13 +17,13 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
+const issuingDetail = "issuing certificate"
+
 const (
 	bannerWait = 300 * time.Millisecond
 	headWait   = 2 * time.Second
 	busyRetry  = 10 * time.Second
 )
-
-const issuingDetail = "issuing certificate"
 
 type svc struct {
 	vm        string
@@ -71,7 +73,7 @@ func (d *Daemon) svcOf(vm string, port int) *svc {
 		s = &svc{vm: vm, port: port}
 		if i := d.leaseIndex(vm, port); i >= 0 {
 			s.st.Pinned = d.leases[i].Pinned
-			s.st.LastSeenAt = d.leases[i].LastSeenAt
+			s.st.LastSeenAt = cmp.Or(d.leases[i].LastSeenAt, d.leases[i].ReservedAt)
 			s.st.Phase = services.Waiting
 		}
 		d.svcs[key(vm, port)] = s
@@ -146,13 +148,23 @@ func (d *Daemon) unlistenExcept(vm string, seen map[int]bool) {
 }
 
 func (d *Daemon) tickServices(ctx context.Context) {
+	// invariant: every reserved port ticks, listened on in this engine's
+	// life or not, so one idle past its days is released, and one served
+	// that its VM says nothing listens on is unshared.
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	now := d.h.Clock.Now()
+	for _, l := range slices.Clone(d.leases) {
+		d.svcOf(l.VM, l.GuestPort)
+	}
 	for _, s := range d.svcs {
 		var acts []services.Action
 		s.st, acts = services.Next(s.st, services.EvTick, now)
 		d.apply(ctx, s, acts)
+		_, told := d.heard[s.vm]
+		if v := d.vms[s.vm]; s.st.Phase == services.Waiting && s.served && (told || v == nil || v.state != StateRunning) {
+			d.unpublish(ctx, s)
+		}
 		if s.st.Phase == services.Published && len(s.listeners) == 0 && !s.retryAt.IsZero() && !now.Before(s.retryAt) {
 			d.publish(ctx, s)
 		}
@@ -522,7 +534,9 @@ func (d *Daemon) reconcileServe(ctx context.Context) {
 			if !justified {
 				e.Path = ""
 				_ = d.tn.Unshare(ctx, e)
+				continue
 			}
+			d.servedBefore(e.Port)
 		case e.Port == 443 && strings.Count(e.Path, "/") >= 2:
 			parts := strings.Split(strings.Trim(e.Path, "/"), "/")
 			justified := false
@@ -531,6 +545,20 @@ func (d *Daemon) reconcileServe(ctx context.Context) {
 			}
 			if vms[parts[0]] && !justified {
 				_ = d.tn.Unshare(ctx, e)
+			}
+		}
+	}
+}
+
+// invariant: a reserved port the tailnet already serves when the engine
+// starts is served until its VM says it no longer listens there.
+func (d *Daemon) servedBefore(hostPort int) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for _, l := range d.leases {
+		if l.HostPort == hostPort {
+			if s := d.svcOf(l.VM, l.GuestPort); s.st.Phase != services.Published {
+				s.served = true
 			}
 		}
 	}
