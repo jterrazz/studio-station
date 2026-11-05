@@ -40,17 +40,7 @@ func Ports(l ports.Listing, of PortsOf, here page.Context) page.Page {
 	if of.Machine != "" && len(p.Sections) > 0 && p.Sections[0].ID == "summary" {
 		p.Sections[0].Items[0].Row.Label = of.Machine
 	}
-	var red []string
-	for _, s := range p.Sections {
-		for _, it := range s.Items {
-			if it.Row != nil && s.ID == "needs-you" {
-				red = append(red, it.Row.ID)
-			}
-		}
-	}
-	if len(red) > 0 {
-		p.Actions = append(p.Actions, review(of.Machine, red))
-	}
+	p.Actions = append(p.Actions, reviews(p, l, of)...)
 	if !of.Workspace {
 		p.Actions = append(p.Actions, declarePublic(l))
 	}
@@ -63,6 +53,49 @@ func Ports(l ports.Listing, of PortsOf, here page.Context) page.Page {
 		}
 	}
 	return page.Seal(p)
+}
+
+// invariant: Review opens a terminal on the ports of the Mac its red rows
+// are on: the page's Mac, or each Mac of a page of every Mac, This Mac's
+// without --on.
+func reviews(p page.Page, l ports.Listing, of PortsOf) []page.Action {
+	red := map[string]bool{}
+	for _, s := range p.Sections {
+		for _, it := range s.Items {
+			if it.Row != nil && s.ID == "needs-you" {
+				red[it.Row.ID] = true
+			}
+		}
+	}
+	var out []page.Action
+	var hosts []string
+	for _, h := range l.Fleet.Hosts {
+		var rows []string
+		for _, port := range h.Ports {
+			if red[port.Key()] {
+				rows = append(rows, port.Key())
+			}
+		}
+		if len(rows) == 0 {
+			continue
+		}
+		machine := of.Machine
+		if machine == "" && !h.Here {
+			machine = h.Name
+		}
+		if of.Machine != "" && len(out) > 0 {
+			out[0].Rows = append(out[0].Rows, rows...)
+			continue
+		}
+		out = append(out, review(machine, rows))
+		hosts = append(hosts, h.Name)
+	}
+	if len(out) > 1 {
+		for i := range out {
+			out[i].ID = ActionReview + ":" + hosts[i]
+		}
+	}
+	return out
 }
 
 func review(machine string, rows []string) page.Action {
