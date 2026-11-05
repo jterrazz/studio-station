@@ -11,7 +11,9 @@ runs:
           send \x1b
           see No VMs yet. Press n to create one.
           send n
-          see ✗ Creating a workspace failed: image linux is not built on This Mac
+          see ▸ Kind          ← Workspace →
+          send \r
+          see ✗ Creating linux-1, a workspace on This Mac failed: image linux is not
           see b build linux
           send q
       exit: 0

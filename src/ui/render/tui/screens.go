@@ -165,9 +165,12 @@ func (a Ask) Panel() Panel {
 
 type Form struct {
 	// value: a form on the screen, its fields' labels, answers and notes, the
-	// cursor on one.
+	// cursor on one; a secret's answer is drawn masked, a choice's with the
+	// values it turns through.
 	Title                 string
 	Labels, Values, Notes []string
+	Secret                []bool
+	Options               [][]string
 	At                    int
 }
 
@@ -179,12 +182,27 @@ func (f Form) Panel() Panel {
 		if i == f.At {
 			lead = token.Cursor + " "
 		}
-		line := " " + lead + atom.Pad(l, 14) + f.Values[i]
-		if i == f.At {
-			line += "_"
+		value := f.Values[i]
+		if i < len(f.Secret) && f.Secret[i] {
+			value = strings.Repeat("•", len([]rune(value)))
 		}
-		if i < len(f.Notes) && f.Notes[i] != "" {
-			line += "   " + f.Notes[i]
+		choice := i < len(f.Options) && len(f.Options[i]) > 0
+		switch {
+		case choice:
+			value = token.KeyLeft + " " + value + " " + token.KeyRight
+		case i == f.At:
+			value += "_"
+		}
+		line := " " + lead + atom.Pad(l, 14) + value
+		note := ""
+		if i < len(f.Notes) {
+			note = f.Notes[i]
+		}
+		if choice && note == "" {
+			note = strings.Join(f.Options[i], token.Sep)
+		}
+		if note != "" {
+			line += "   " + note
 		}
 		lines = append(lines, line)
 	}

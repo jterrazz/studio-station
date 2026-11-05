@@ -5,7 +5,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
 	diskscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/disk"
@@ -117,28 +116,6 @@ func (s shell) reveal(key string) shell {
 
 // value: n makes a workspace on the Mac shown, or the Mac of the VM shown,
 // in the Progress strip (SPEC §9.3).
-func (s shell) createForm(_ machine.Kind) (tea.Model, tea.Cmd) { return s.create() }
-
-func (s shell) create() (tea.Model, tea.Cmd) {
-	n := s.current()
-	mac := n.mac
-	switch {
-	case n.all():
-		mac = s.deps.Here.Machine
-	case n.kind == machine.Mac:
-		mac = n.name
-	}
-	words := []string{"machines", "create"}
-	what := "a workspace"
-	if m, ok := find(s.nodes, mac); ok && !m.here {
-		words, what = append(words, "--on", mac), what+" on "+m.label
-	}
-	st := gesture.Step{Words: words, Doing: "Creating " + what, Done: "Created " + what}
-	return s.start(task{step: st, n: 1, total: 1, stale: s.stale()}, Answer{})
-}
-
-// value: the keys the shown section answers, with their labels, so an
-// empty line names the one that fills it.
 func (s shell) bound() func(key string) (string, bool) {
 	var labels map[string]string
 	return func(key string) (string, bool) {

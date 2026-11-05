@@ -100,10 +100,17 @@ type Form struct {
 	Fields []Field
 	// value: the call's words from the answers, one per field in order.
 	Words func(answers []string) []string
+	// value: the form a choice changes it to (a server asks a health check,
+	// not a lifetime); nil keeps its fields.
+	Reshape func(answers []string) *Form
 }
 
 type Field struct {
 	Label, Value, Note string
+	// value: the values a choice takes, left and right turn through them.
+	Options []string
+	// invariant: a secret is drawn masked, and the form drops it once sent.
+	Secret bool
 }
 
 type Screen interface {

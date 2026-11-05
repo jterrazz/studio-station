@@ -233,22 +233,33 @@ func (s shell) asking(k tea.KeyPressMsg) (shell, tea.Cmd) {
 	}
 	switch {
 	case c.Form != nil:
-		switch key {
-		case "tab", "down":
+		options := c.Form.Fields[d.at].Options
+		switch {
+		case key == "tab" || key == "down":
 			d.at = (d.at + 1) % len(d.answers)
-		case "shift+tab", "up":
+		case key == "shift+tab" || key == "up":
 			d.at = (d.at + len(d.answers) - 1) % len(d.answers)
-		case "backspace":
+		case len(options) > 0 && (key == "left" || key == "right" || key == "space"):
+			step := 1
+			if key == "left" {
+				step = len(options) - 1
+			}
+			i := max(slices.Index(options, d.answers[d.at]), 0)
+			d.answers = set(d.answers, d.at, options[(i+step)%len(options)])
+			d = d.reshaped()
+		case key == "enter":
+			s.dialog = nil
+			answers := d.answers
+			if d.then != nil {
+				return s.perform(d.then(answers))
+			}
+			c.Words, c.Form = c.Form.Words(answers), nil
+			return s.call(c)
+		case len(options) > 0:
+		case key == "backspace":
 			if r := []rune(d.answers[d.at]); len(r) > 0 {
 				d.answers = set(d.answers, d.at, string(r[:len(r)-1]))
 			}
-		case "enter":
-			s.dialog = nil
-			if d.then != nil {
-				return s.perform(d.then(d.answers))
-			}
-			c.Words, c.Form = c.Form.Words(d.answers), nil
-			return s.call(c)
 		default:
 			if t := k.Key().Text; t != "" {
 				d.answers = set(d.answers, d.at, d.answers[d.at]+t)
@@ -282,6 +293,37 @@ func (s shell) asking(k tea.KeyPressMsg) (shell, tea.Cmd) {
 	return s, nil
 }
 
+// invariant: a choice that reshapes the form keeps every answer the owner
+// changed whose field the new form still has, by its label; the others take
+// the new form's own (a server's name and size).
+func (d dialog) reshaped() dialog {
+	f := d.call.Form
+	if f.Reshape == nil {
+		return d
+	}
+	next := f.Reshape(d.answers)
+	if next == nil {
+		return d
+	}
+	kept := map[string]string{}
+	for i, field := range f.Fields {
+		if d.answers[i] != field.Value || i == d.at {
+			kept[field.Label] = d.answers[i]
+		}
+	}
+	answers := make([]string, 0, len(next.Fields))
+	for _, field := range next.Fields {
+		v, ok := kept[field.Label]
+		if !ok {
+			v = field.Value
+		}
+		answers = append(answers, v)
+	}
+	at := min(d.at, len(answers)-1)
+	d.call.Form, d.answers, d.at = next, answers, at
+	return d
+}
+
 func set(xs []string, i int, x string) []string {
 	out := append([]string(nil), xs...)
 	out[i] = x
@@ -298,6 +340,7 @@ func (s shell) dialogPanel() *ui.Panel {
 		form := ui.Form{Title: f.Title, Values: d.answers, At: d.at}
 		for _, field := range f.Fields {
 			form.Labels, form.Notes = append(form.Labels, field.Label), append(form.Notes, field.Note)
+			form.Secret, form.Options = append(form.Secret, field.Secret), append(form.Options, field.Options)
 		}
 		p = form.Panel()
 	} else {
