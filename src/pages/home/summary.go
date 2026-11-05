@@ -50,7 +50,7 @@ func Body(s overview.Summary, all bool) []page.Section {
 		lines = append(lines, page.Item{Note: &page.Note{Text: "Apps, settings, accounts: not managed by station"}})
 	}
 	sections = append(sections, page.Section{ID: "sections", Role: page.Banner, Uncounted: true, Columns: []page.Column{
-		{Key: "section", Kind: page.KindText, Keep: 100}, {Key: "line", Kind: page.KindList, Keep: 90},
+		{Key: "section", Kind: page.KindListing, Keep: 100}, {Key: "line", Kind: page.KindList, Keep: 90},
 	}, Items: lines})
 	if len(s.Readiness) > 0 {
 		sections = append(sections, section("readiness", "Mac readiness", checkRows(s.Readiness)))
