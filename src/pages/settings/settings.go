@@ -459,8 +459,9 @@ func ShowContract(r settings.Row) ShowJSON {
 	return ShowJSON{Schema: "station.settings.show/v1", Setting: Object(r)}
 }
 
-func Removed(o settings.ContainersOutcome, here page.Context) page.Page {
-	// value: what one of the Docker shortcuts removed, by what it removes.
+func Removed(o settings.ContainersOutcome, command string, here page.Context) page.Page {
+	// value: what one of the Docker shortcuts removed, by what it removes,
+	// under the command that ran it.
 	rows := make([]page.Row, 0, len(o.Removals))
 	for _, r := range o.Removals {
 		detail := page.Text("none to remove")
@@ -471,5 +472,5 @@ func Removed(o settings.ContainersOutcome, here page.Context) page.Page {
 		row.Detail = detail
 		rows = append(rows, row)
 	}
-	return pages.Outcome(o.Shortcut, here, nil, rows, "steps")
+	return pages.Outcome(command, here, nil, rows, "steps")
 }

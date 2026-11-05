@@ -465,8 +465,8 @@ func setups() []Fixture {
 func runs() []Fixture {
 	run := settings.ContainersOutcome{Shortcut: "dreset", Removals: []settings.ContainersRemoval{{What: "containers", Count: 3}, {What: "images", Count: 12}}}
 	return states("run",
-		pending(pagesettings.Removed(run, here())),
-		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, here()),
-		failure("outcome", "dreset", "docker ps failed: Cannot connect to the Docker daemon", "check that the docker daemon runs, then run it again"),
-		pagesettings.Removed(run, here()))
+		pending(pagesettings.Removed(run, "run docker reset", here())),
+		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, "run docker reset", here()),
+		failure("outcome", "run docker reset", "docker ps failed: Cannot connect to the Docker daemon", "check that the docker daemon runs, then run it again"),
+		pagesettings.Removed(run, "run docker reset", here()))
 }

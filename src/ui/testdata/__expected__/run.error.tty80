@@ -1,4 +1,4 @@
- station dreset                                             host · unregistered
+ station run docker reset                                   host · unregistered
  ──────────────────────────────────────────────────────────────────────────────
 
  Error: docker ps failed: Cannot connect to the Docker daemon

@@ -106,7 +106,7 @@ func containerLeaf(env kit.Env, here page.Context, sc containerShortcut) *cobra.
 			if err != nil {
 				return err
 			}
-			return io.Page(pagesettings.Removed(outcome, here), nil)
+			return io.Page(pagesettings.Removed(outcome, "run "+catalog.ContainerShortcutsWas+" "+sc.old, here), nil)
 		},
 	}, env), sc.function)
 }
