@@ -1,4 +1,4 @@
-description: 'infra''s Overview: its state, what it was created with, its last hour, its ssh, its Health and Ports beside (under it at 80 columns); enter opens its Activity'
+description: 'infra''s Overview, with its Health and Ports beside (under it at 80 columns); enter opens Activity'
 fixture:
     - ../../__fixtures__/terminal/
 env:

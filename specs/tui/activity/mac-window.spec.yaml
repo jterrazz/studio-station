@@ -1,4 +1,4 @@
-description: 'this Mac''s Activity, a graph per measure and its readings; w changes the window drawn; while shown, the engine samples it every 2 s'
+description: 'this Mac''s Activity graphs and readings, w picks their window, sampled every 2 s while shown'
 fixture:
     - ../../__fixtures__/terminal/
 env:
