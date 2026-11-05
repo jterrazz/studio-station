@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/surface/tui/screens"
-	"github.com/jterrazz/studio-station/src/ui/atom"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
@@ -27,9 +26,9 @@ func (Screen) Live() time.Duration {
 	return time.Second
 }
 
-func (Screen) Words(_ screens.Machine, words []string, _ screens.State) []string { return words }
+func (Screen) Words(_ screen.Machine, words []string, _ screen.State) []string { return words }
 
-func (Screen) Title(v screens.View) string {
+func (Screen) Title(v screen.View) string {
 	n := 0
 	for _, s := range v.Page.Sections {
 		if s.ID == "awake" {
@@ -39,14 +38,14 @@ func (Screen) Title(v screens.View) string {
 	return "Awake" + ui.Sep + "every Mac" + ui.Sep + strconv.Itoa(n)
 }
 
-func (Screen) Lines(screens.View) ([]string, bool) { return nil, false }
+func (Screen) Lines(screen.View) ([]string, bool) { return nil, false }
 
-func (Screen) Keys(v screens.View) []ui.Binding {
+func (Screen) Keys(v screen.View) []ui.Binding {
 	if _, ok := mac(v); !ok {
 		return nil
 	}
-	return []ui.Binding{screens.Bind("1", "1 h"), screens.Bind("4", "4 h"), screens.Bind("u", "until…"), screens.Bind("o", "off"),
-		screens.Bind("l", "lid"), screens.Bind("b", "battery"), screens.Bind("c", "change the policy…")}
+	return []ui.Binding{screen.Bind("1", "1 h"), screen.Bind("4", "4 h"), screen.Bind("u", "until"+ui.Ellipsis), screen.Bind("o", "off"),
+		screen.Bind("l", "lid"), screen.Bind("b", "battery"), screen.Bind("c", "change the policy"+ui.Ellipsis)}
 }
 
 type target struct {
@@ -56,20 +55,20 @@ type target struct {
 	detail      []string
 }
 
-func mac(v screens.View) (target, bool) {
+func mac(v screen.View) (target, bool) {
 	if !v.HasRow || v.Of.ID != "awake" {
 		return target{}, false
 	}
 	t := target{name: v.Row.ID, label: cmp.Or(v.Row.Short, v.Row.Label)}
 	t.here = t.label == "This Mac"
 	for _, w := range v.Row.Cells[0].Items {
-		t.words = append(t.words, atom.Plain(w))
+		t.words = append(t.words, ui.Plain(w))
 	}
 	if len(t.words) == 0 && len(v.Row.Cells) > 0 {
-		t.words = []string{atom.Plain(v.Row.Cells[0])}
+		t.words = []string{ui.Plain(v.Row.Cells[0])}
 	}
 	for _, w := range v.Row.Detail.Items {
-		t.detail = append(t.detail, atom.Plain(w))
+		t.detail = append(t.detail, ui.Plain(w))
 	}
 	return t, true
 }
@@ -96,7 +95,7 @@ func (t target) until() string {
 
 func (t target) held(word string) bool { return slices.Contains(t.words, word) }
 
-func flags(st screens.State) []string {
+func flags(st screen.State) []string {
 	var out []string
 	if st[lid] == on {
 		out = append(out, "--lid")
@@ -107,43 +106,43 @@ func flags(st screens.State) []string {
 	return out
 }
 
-func (t target) keep(st screens.State, how []string, said string) *screens.Call {
+func (t target) keep(st screen.State, how []string, said string) *screen.Call {
 	words := append(append(append([]string{"awake"}, how...), flags(st)...), t.on()...)
-	return &screens.Call{Words: words, Doing: "Keeping " + t.label + " awake " + said, Done: t.label + " stays awake " + said}
+	return &screen.Call{Words: words, Doing: "Keeping " + t.label + " awake " + said, Done: t.label + " stays awake " + said}
 }
 
-func (Screen) Press(key string, v screens.View) (screens.Effect, bool) {
+func (Screen) Press(key string, v screen.View) (screen.Effect, bool) {
 	t, ok := mac(v)
 	if !ok {
-		return screens.Effect{}, false
+		return screen.Effect{}, false
 	}
 	st := v.State
 	switch key {
 	case "1":
-		return screens.Effect{Call: t.keep(st, []string{"1h"}, "for 1 h")}, true
+		return screen.Effect{Call: t.keep(st, []string{"1h"}, "for 1 h")}, true
 	case "4":
-		return screens.Effect{Call: t.keep(st, []string{"4h"}, "for 4 h")}, true
+		return screen.Effect{Call: t.keep(st, []string{"4h"}, "for 4 h")}, true
 	case "u":
 		c := t.keep(st, nil, "until then")
-		c.Form = &screens.Form{Title: "Keep " + t.label + " awake until", Fields: []screens.Field{{Label: "Until", Value: "18:00", Note: "a time today, or tomorrow once it has passed"}},
+		c.Form = &screen.Form{Title: "Keep " + t.label + " awake until", Fields: []screen.Field{{Label: "Until", Value: "18:00", Note: "a time today, or tomorrow once it has passed"}},
 			Words: func(answers []string) []string {
 				return append(append([]string{"awake", "until", strings.TrimSpace(answers[0])}, flags(st)...), t.on()...)
 			}}
-		return screens.Effect{Call: c}, true
+		return screen.Effect{Call: c}, true
 	case "o":
-		return screens.Effect{Call: &screens.Call{Words: append([]string{"awake", "off"}, t.on()...), Doing: "Letting " + t.label + " sleep", Done: t.label + " sleeps normally again"}}, true
+		return screen.Effect{Call: &screen.Call{Words: append([]string{"awake", "off"}, t.on()...), Doing: "Letting " + t.label + " sleep", Done: t.label + " sleeps normally again"}}, true
 	case "l", "b":
 		return toggle(t, st, map[string]string{"l": lid, "b": battery}[key]), true
 	case "c":
 		return change(t), true
 	}
-	return screens.Effect{}, false
+	return screen.Effect{}, false
 }
 
 // invariant: lid and battery are the keep-awake's own: while one is held
 // the toggle holds it again to the same end with the other flags, else it
 // is kept for the next one.
-func toggle(t target, st screens.State, which string) screens.Effect {
+func toggle(t target, st screen.State, which string) screen.Effect {
 	words := map[string]string{lid: "lid closed", battery: "on battery allowed"}
 	now := st[which] == on
 	if until := t.until(); until != "" {
@@ -155,9 +154,9 @@ func toggle(t target, st screens.State, which string) screens.Effect {
 	if until := t.until(); until != "" {
 		c := t.keep(st, []string{"until", until}, "until "+until)
 		c.Done = t.label + ": " + said
-		return screens.Effect{State: st, Call: c}
+		return screen.Effect{State: st, Call: c}
 	}
-	return screens.Effect{State: st, Say: said + " for the next keep-awake"}
+	return screen.Effect{State: st, Say: said + " for the next keep-awake"}
 }
 
 func onOff(b bool) string {
@@ -169,7 +168,7 @@ func onOff(b bool) string {
 
 // invariant: SPEC §9.4, AW-19: changing a Mac's policy asks yes or no, and
 // names the servers it hosts, which pause while it sleeps.
-func change(t target) screens.Effect {
+func change(t target) screen.Effect {
 	var hosts []string
 	for _, d := range t.detail {
 		if h, ok := strings.CutPrefix(d, "hosts "); ok {
@@ -181,15 +180,15 @@ func change(t target) screens.Effect {
 		on = nil
 	}
 	if len(t.words) > 0 && t.words[0] == "Never sleeps" {
-		ask := &screens.Ask{Question: "Let " + t.label + " sleep again?", Yes: "allow sleep"}
+		ask := &screen.Ask{Question: "Let " + t.label + " sleep again?", Yes: "allow sleep"}
 		for _, h := range hosts {
 			name, _, _ := strings.Cut(h, " ")
 			ask.Lines = append(ask.Lines, "It hosts "+h+": "+name+" pauses while "+t.label+" sleeps.")
 		}
-		return screens.Effect{Call: &screens.Call{Words: append([]string{"settings", "off", "never-sleeps", "--yes"}, on...), Ask: ask,
+		return screen.Effect{Call: &screen.Call{Words: append([]string{"settings", "off", "never-sleeps", "--yes"}, on...), Ask: ask,
 			Doing: "Letting " + t.label + " sleep again", Done: t.label + " sleeps normally"}}
 	}
-	ask := &screens.Ask{Question: "Keep " + t.label + " awake for good?", Lines: []string{"Never sleeps: the always-on Mac policy, until you change it again."}, Yes: "never sleep"}
-	return screens.Effect{Call: &screens.Call{Words: append([]string{"settings", "apply", "never-sleeps", "--yes"}, on...), Ask: ask,
+	ask := &screen.Ask{Question: "Keep " + t.label + " awake for good?", Lines: []string{"Never sleeps: the always-on Mac policy, until you change it again."}, Yes: "never sleep"}
+	return screen.Effect{Call: &screen.Call{Words: append([]string{"settings", "apply", "never-sleeps", "--yes"}, on...), Ask: ask,
 		Doing: "Keeping " + t.label + " awake for good", Done: t.label + " never sleeps"}}
 }

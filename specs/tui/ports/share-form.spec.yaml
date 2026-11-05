@@ -20,7 +20,7 @@ runs:
           see Share a port of linux-1
           send 3000
           send \r
-          see Shared it on Tailscale
+          see Shared it
           see 3000 → 40000
           run "$STATION" ports --all-machines | /usr/bin/grep -q "linux-1	3000	private	https://jterrazz-macbook-pro.tail1234.ts.net:40000"
           send q

@@ -4,20 +4,18 @@ import (
 	"context"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/surface/tui/screens"
 	activityscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/activity"
 	awakescreen "github.com/jterrazz/studio-station/src/surface/tui/screens/awake"
 	portsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/ports"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	serverscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/server"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
-	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
 type Calls func(ctx context.Context, words []string) (string, error)
@@ -43,7 +41,7 @@ type job struct {
 
 // value: a question or a form on the screen, and the call it leads to.
 type dialog struct {
-	call    screens.Call
+	call    screen.Call
 	input   string
 	answers []string
 	at      int
@@ -51,14 +49,9 @@ type dialog struct {
 
 const toastFor = 4 * time.Second
 
-func spinner() string {
-	r, _ := utf8.DecodeRuneInString(token.Spinner)
-	return string(r)
-}
-
-func screenFor(n node, id section.ID) screens.Screen {
+func screenFor(n node, id section.ID) screen.Screen {
 	vm := n.kind == machine.Workspace || n.kind == machine.Server
-	own := map[section.ID]screens.Screen{section.Activity: activityscreen.Screen{}, section.Awake: awakescreen.Screen{}, section.Ports: portsscreen.Screen{}}
+	own := map[section.ID]screen.Screen{section.Activity: activityscreen.Screen{}, section.Awake: awakescreen.Screen{}, section.Ports: portsscreen.Screen{}}
 	if sc, ok := own[id]; ok {
 		return sc
 	}
@@ -68,10 +61,10 @@ func screenFor(n node, id section.ID) screens.Screen {
 	return nil
 }
 
-func (s shell) screen() screens.Screen { return screenFor(s.current(), s.section()) }
+func (s shell) screen() screen.Screen { return screenFor(s.current(), s.section()) }
 
-func (s shell) machineOf(n node) screens.Machine {
-	m := screens.Machine{Name: n.name, Label: n.label, Kind: n.kind, Mac: n.mac, Here: n.here}
+func (s shell) machineOf(n node) screen.Machine {
+	m := screen.Machine{Name: n.name, Label: n.label, Kind: n.kind, Mac: n.mac, Here: n.here}
 	if mac, ok := find(s.nodes, n.mac); ok {
 		m.MacLabel, m.MacHere = mac.label, mac.here
 	}
@@ -88,16 +81,16 @@ func (s shell) words(n node, id section.ID) []string {
 	return w
 }
 
-func (s shell) view() screens.View {
+func (s shell) view() screen.View {
 	key := s.key(s.current(), s.section())
 	l := s.list(key)
-	v := screens.View{Machine: s.machineOf(s.current()), Section: s.section(), Page: l.Page, Width: s.masterWidth() - 2,
+	v := screen.View{Machine: s.machineOf(s.current()), Section: s.section(), Page: l.Page, Width: s.masterWidth() - 2,
 		Room: max(s.height-7, 1), Dark: s.dark, NoColor: s.deps.NoColor, State: s.states[key]}
 	v.Of, v.Row, v.HasRow = l.Current()
 	return v
 }
 
-func (s shell) effect(e screens.Effect) (shell, tea.Cmd) {
+func (s shell) effect(e screen.Effect) (shell, tea.Cmd) {
 	key := s.key(s.current(), s.section())
 	if e.State != nil {
 		s.states = with(s.states, key, e.State)
@@ -147,7 +140,7 @@ func (s shell) effect(e screens.Effect) (shell, tea.Cmd) {
 	return s, tea.Batch(cmds...)
 }
 
-func (s shell) start(c screens.Call) (shell, tea.Cmd) {
+func (s shell) start(c screen.Call) (shell, tea.Cmd) {
 	s.seq++
 	j := job{id: s.seq, doing: c.Doing, done: c.Done, copy: c.Copy}
 	s.jobs = append(append([]job(nil), s.jobs...), j)
@@ -282,67 +275,25 @@ func (s shell) dialogPanel() *ui.Panel {
 		return nil
 	}
 	d, c := s.dialog, s.dialog.call
+	var p ui.Panel
 	if f := c.Form; f != nil {
-		lines := []string{""}
-		for i, field := range f.Fields {
-			lead := "  "
-			if i == d.at {
-				lead = token.Cursor + " "
-			}
-			line := " " + lead + pad(field.Label, 14) + d.answers[i]
-			if i == d.at {
-				line += "_"
-			}
-			if field.Note != "" {
-				line += "   " + field.Note
-			}
-			lines = append(lines, line)
+		form := ui.Form{Title: f.Title, Values: d.answers, At: d.at}
+		for _, field := range f.Fields {
+			form.Labels, form.Notes = append(form.Labels, field.Label), append(form.Notes, field.Note)
 		}
-		lines = append(lines, "", " enter "+strings.ToLower(f.Title)+"   tab next field   esc cancel")
-		return &ui.Panel{Title: f.Title, Lines: lines}
+		p = form.Panel()
+	} else {
+		p = ui.Ask{Question: c.Ask.Question, Lines: c.Ask.Lines, Yes: c.Ask.Yes, Type: c.Ask.Type, Input: d.input}.Panel()
 	}
-	a := c.Ask
-	lines := []string{"", " " + a.Question}
-	for _, l := range a.Lines {
-		lines = append(lines, " "+l)
-	}
-	yes := a.Yes
-	if yes == "" {
-		yes = "yes"
-	}
-	if a.Type != "" {
-		lines = append(lines, "", " Type "+a.Type+" to confirm: "+d.input+"_")
-		if d.input == a.Type {
-			lines = append(lines, "", " enter "+yes+"   esc keep it")
-		} else {
-			lines = append(lines, "", " enter is off until you type "+a.Type+"   esc keep it")
-		}
-		return &ui.Panel{Title: a.Question, Lines: lines}
-	}
-	lines = append(lines, "", " y "+yes+"   n no")
-	return &ui.Panel{Title: a.Question, Lines: lines}
-}
-
-func pad(s string, n int) string {
-	if len([]rune(s)) >= n {
-		return s + " "
-	}
-	return s + strings.Repeat(" ", n-len([]rune(s)))
+	return &p
 }
 
 func (s shell) progress() []string {
-	var out []string
-	parts := make([]string, 0, len(s.jobs)+1)
+	doing := make([]string, 0, len(s.jobs))
 	for _, j := range s.jobs {
-		parts = append(parts, spinner()+" "+j.doing)
+		doing = append(doing, j.doing)
 	}
-	if s.said != "" {
-		parts = append(parts, s.said)
-	}
-	if len(parts) > 0 {
-		out = append(out, "Progress  "+strings.Join(parts, "   "))
-	}
-	return out
+	return ui.Progress(doing, s.said)
 }
 
 // invariant: a live section is read again while it is shown, one chain of

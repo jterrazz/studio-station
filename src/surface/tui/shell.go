@@ -12,7 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/surface/tui/screens"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
@@ -54,7 +54,7 @@ type shell struct {
 	filtering bool
 	sheet     bool
 	// value: each screen's own state, by its read's key.
-	states map[string]screens.State
+	states map[string]screen.State
 	dialog *dialog
 	jobs   []job
 	// value: the Progress strip's last word (a call's end, a copy), and
@@ -71,7 +71,7 @@ func newShell(ctx context.Context, d Deps) shell {
 	ctx, cancel := context.WithCancel(ctx)
 	s := shell{ctx: ctx, cancel: cancel, deps: d, width: 110, height: 30, dark: true, at: d.Here.Machine,
 		focus: ui.PaneMaster, reads: map[string]read{}, lists: map[string]ui.List{}, asked: map[string]bool{}, samples: map[string][]int{},
-		states: map[string]screens.State{}, gens: map[string]int{}}
+		states: map[string]screen.State{}, gens: map[string]int{}}
 	s.nodes = tree(d.Here, nil)
 	s.side = s.sectionEntry()
 	s.asked[s.key(s.current(), s.section())] = true
