@@ -32,7 +32,7 @@ import (
 )
 
 func Run(args, env []string, stdin, stdout, stderr *os.File) int {
-	env = withToolBins(env)
+	env = withToolBins(env, len(args) > 0 && args[0] == "guest")
 	frames, frameIn := stdout, stdin
 	var childIn io.Reader = stdin
 	if serving(args) {
@@ -198,15 +198,19 @@ func widthOf(f *os.File, isTerminal bool) int {
 	return w
 }
 
-// value: the shell loader puts these bins on an interactive PATH (zsh/zshrc.sh);
+// value: the shell loader puts bun's and go's global bins on an interactive PATH;
 // station appends them to its own, so what it installed there answers a
-// non-interactive caller too, and the caller's PATH still wins.
-func withToolBins(env []string) []string {
-	home, path, at := "", "", -1
+// non-interactive caller too, and the caller's PATH still wins. A VM's guest is
+// started over ssh with the system's PATH, which also lacks the shell block's
+// ~/.local/bin and mise's runtimes: it appends those first.
+func withToolBins(env []string, guest bool) []string {
+	home, mise, path, at := "", "", "", -1
 	for i, kv := range env {
 		switch k, v, _ := strings.Cut(kv, "="); k {
 		case "HOME":
 			home = v
+		case "MISE_DATA_DIR":
+			mise = v
 		case "PATH":
 			path, at = v, i
 		}
@@ -214,9 +218,17 @@ func withToolBins(env []string) []string {
 	if home == "" {
 		return env
 	}
+	if !filepath.IsAbs(mise) {
+		mise = filepath.Join(home, ".local", "share", "mise")
+	}
 	have := strings.Split(path, ":")
-	for _, dir := range []string{filepath.Join(".local", "share", "bun", "bin"), filepath.Join(".local", "share", "go", "bin")} {
-		if dir = filepath.Join(home, dir); !slices.Contains(have, dir) {
+	var dirs []string
+	if guest {
+		dirs = append(dirs, filepath.Join(home, ".local", "bin"), filepath.Join(mise, "shims"))
+	}
+	dirs = append(dirs, filepath.Join(home, ".local", "share", "bun", "bin"), filepath.Join(home, ".local", "share", "go", "bin"))
+	for _, dir := range dirs {
+		if !slices.Contains(have, dir) {
 			if path != "" {
 				path += ":"
 			}
