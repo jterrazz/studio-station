@@ -9,6 +9,7 @@ final class KitBoundaryTests: XCTestCase {
 
     static let forbidden = ["ProgressView", "Gauge(", "List(", "List {", ".toggleStyle(.switch)", "WindowGroup", "NSWindow(", "Settings {"]
     static let models = ["\"laptopcomputer", "\"macmini", "\"macbook", "\"macpro", "\"imac", "\"macstudio"]
+    static let glass = ["glassEffect", "GlassEffectContainer", ".buttonStyle(.glass", "Material", ".containerBackground", "RoundedRectangle(cornerRadius: Token.Tile.radius", "RoundedRectangle(cornerRadius: Token.Glass.radius"]
     static let glyphs: [Character] = ["→", "·", "…", "⏻", "⚡", "●", "◐", "○", "✗", "◌"]
 
     // invariant: the Swift side of the kit's boundary: colours, symbol names
@@ -36,6 +37,17 @@ final class KitBoundaryTests: XCTestCase {
             for word in forbidden where text.contains(word) {
                 out.append(Finding(file: path, rule: "\(word) is not drawn offscreen"))
             }
+            // invariant: the panel is the system's glass, so no view
+            // paints a surface behind it, and every tile, card and button
+            // is glass through the kit's one modifier (molecule/Glass).
+            if path != "molecule/Glass.swift" {
+                for word in glass where text.contains(word) {
+                    out.append(Finding(file: path, rule: "\(word) outside the kit's glass"))
+                }
+                if text.range(of: #"\.background\(palette\.(?!qrLight)"#, options: .regularExpression) != nil {
+                    out.append(Finding(file: path, rule: "a painted background"))
+                }
+            }
             if path.hasPrefix("page/") || path.hasPrefix("engine/") {
                 for line in text.split(separator: "\n") where line.hasPrefix("import ") && line != "import Foundation" {
                     out.append(Finding(file: path, rule: "\(line): Page and Engine import Foundation only"))
@@ -60,12 +72,14 @@ final class KitBoundaryTests: XCTestCase {
             ("molecule/Row.swift", "Image(systemName: \"circle\"); Text(\"→\")"),
             ("page/Page.swift", "import SwiftUI"),
             ("token/Token.swift", "static let mini = \"macmini\""),
+            ("template/Panel.swift", "x.background(palette.surface).glassEffect(.regular)"),
         ]).map(\.rule)
         XCTAssertEqual(caught, [
             "a colour outside Token", "ProgressView is not drawn offscreen",
             "a symbol name outside Token", "a glyph outside Token",
             "import SwiftUI: Page and Engine import Foundation only",
             "macmini draws a Mac's model, which no capability reports",
+            "glassEffect outside the kit's glass", "a painted background",
         ])
     }
 }
