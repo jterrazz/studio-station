@@ -18,28 +18,25 @@ func tuiOpener(_ kit.Env, m machine, noColor bool) func(context.Context) error {
 		if m.world != nil {
 			m.world.standAside()
 		}
-		b := binary{m: m, world: m.world != nil}
+		b := binary{m: m}
 		return tui.Run(ctx, tui.Deps{Here: m.where, Pages: b.pages, Do: b.do, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close})
 	}
 }
 
 // invariant: a screen is the page its command prints and an action the
 // command it runs: the TUI runs this very binary for the CLI's words, so a
-// page and a gesture each have one function.
+// page and a gesture each have one function. An action runs alone, on
+// every host: a read that started before it would show the state it is
+// changing, and in a spec world, which each run reads at its start and
+// writes back at its end, it would write the action's effect away.
 type binary struct {
-	m machine
-	// value: in a spec world every run reads the world at its start and
-	// writes it back at its end, so an action runs alone: a read that
-	// started before it would write its effect away.
-	world bool
+	m     machine
 	turns sync.RWMutex
 }
 
 func (b *binary) pages(ctx context.Context, words []string) (page.Page, error) {
-	if b.world {
-		b.turns.RLock()
-		defer b.turns.RUnlock()
-	}
+	b.turns.RLock()
+	defer b.turns.RUnlock()
 	out, err := b.run(ctx, append(words, "--page"))
 	if err != nil {
 		return page.Page{}, err
@@ -52,11 +49,9 @@ func (b *binary) pages(ctx context.Context, words []string) (page.Page, error) {
 
 var typed = regexp.MustCompile(`--confirm=(\S+)`)
 
-func (b *binary) do(ctx context.Context, words []string, a tui.Answer) error {
-	if b.world {
-		b.turns.Lock()
-		defer b.turns.Unlock()
-	}
+func (b *binary) do(ctx context.Context, words []string, a tui.Answer) ([]string, error) {
+	b.turns.Lock()
+	defer b.turns.Unlock()
 	switch {
 	case a.Typed != "":
 		words = append(words, "--confirm="+a.Typed)
@@ -65,10 +60,10 @@ func (b *binary) do(ctx context.Context, words []string, a tui.Answer) error {
 	}
 	out, err := b.run(ctx, words)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if out.ExitCode == 0 {
-		return nil
+		return skipped(out.Stdout), nil
 	}
 	f := failed(out.Stderr)
 	if why := broken(out.Stdout); why != "" {
@@ -76,13 +71,27 @@ func (b *binary) do(ctx context.Context, words []string, a tui.Answer) error {
 	}
 	if out.ExitCode == 2 && !a.Yes && a.Typed == "" {
 		if name := typed.FindStringSubmatch(f.Hint); name != nil {
-			return &tui.Asked{Message: f.Message, Name: name[1]}
+			return nil, &tui.Asked{Message: f.Message, Name: name[1]}
 		}
 		if strings.Contains(f.Hint, "--yes") {
-			return &tui.Asked{Message: f.Message}
+			return nil, &tui.Asked{Message: f.Message}
 		}
 	}
-	return f
+	return nil, f
+}
+
+// value: the records a command printed for what it left alone (`–	infra
+//
+//	skipped (server)`), each as `infra skipped (server)`.
+func skipped(stdout string) []string {
+	var out []string
+	for _, line := range strings.Split(stdout, "\n") {
+		fields := strings.Split(line, "\t")
+		if len(fields) >= 3 && fields[0] == token.MarkNotFor && strings.HasPrefix(fields[len(fields)-1], "skipped") {
+			out = append(out, fields[1]+" "+fields[len(fields)-1])
+		}
+	}
+	return out
 }
 
 func (b *binary) run(ctx context.Context, args []string) (system.Output, error) {

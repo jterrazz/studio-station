@@ -64,6 +64,8 @@ func KeyName(key string) string {
 	switch key {
 	case "up/down":
 		return token.KeyUp + token.KeyDown
+	case "left/right":
+		return token.KeyLeft + token.KeyRight
 	case "up":
 		return token.KeyUp
 	case "down":

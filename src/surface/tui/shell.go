@@ -53,6 +53,12 @@ type shell struct {
 	filtering bool
 	sheet     bool
 	acts      acts
+	// value: the views a key turned on, by section key (Disk by name).
+	views map[string]map[string]bool
+	// value: the matrix's cursor, by section key: its row and column.
+	cells map[string]ui.Matrix
+	// value: the row a section's cursor goes to once its page answers.
+	want map[string]string
 }
 
 const machinesKey = "\x00machines"
@@ -167,6 +173,7 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 	if l, ok := s.lists[msg.key]; ok || r.err == nil {
 		s.lists = with(s.lists, msg.key, l.Show(r.page))
 	}
+	s = s.reveal(msg.key)
 	var cmd tea.Cmd
 	s, cmd = s.ask(machinesKey, []string{"machines"})
 	return s, tea.Batch(append(cmds, cmd)...)
@@ -210,6 +217,8 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return s.again()
 	case "esc":
 		return s.back()
+	case "n":
+		return s.create()
 	default:
 		if s.focus == ui.PaneSidebar {
 			return s.sidebar(key)
@@ -323,9 +332,20 @@ func (s shell) master(key string) (tea.Model, tea.Cmd) {
 	if key == "space" {
 		return s.tick(), nil
 	}
-	if _, folded := l.Unfold(); key != "enter" || (!folded && !s.table()) {
+	if _, folded := l.Unfold(); key != "enter" || s.matrix() || (!folded && !s.table()) {
 		if acted, cmd, ok := s.act(key); ok {
 			return acted, cmd
+		}
+	}
+	if s.matrix() && s.focus == ui.PaneMaster {
+		steps := map[string][2]int{"up": {-1, 0}, "k": {-1, 0}, "down": {1, 0}, "j": {1, 0}, "pgup": {-10, 0}, "pgdown": {10, 0},
+			"left": {0, -1}, "h": {0, -1}, "right": {0, 1}, "l": {0, 1}}
+		if step, ok := steps[key]; ok {
+			moved, inside := s.moveCell(step[0], step[1])
+			if !inside && s.sidebarShown() {
+				moved.focus = ui.PaneSidebar
+			}
+			return moved, nil
 		}
 	}
 	switch key {
@@ -380,7 +400,9 @@ func (s shell) listed() bool {
 	}
 }
 
-func (s shell) detailed() bool { return (s.listed() && !s.table()) || s.detailShown() != nil }
+func (s shell) detailed() bool {
+	return (s.listed() && !s.table() && !s.matrix()) || s.detailShown() != nil
+}
 
 // value: what the section's detail pane shows in place of the row's own
 // detail, while its row has the cursor.
@@ -394,7 +416,7 @@ func (s shell) detailShown() *shown {
 }
 
 func (s shell) cursorRow(key string) string {
-	_, r, _ := s.list(key).Current()
+	r, _ := s.focused(key)
 	return r.ID
 }
 
@@ -734,6 +756,10 @@ func (s shell) frame() ui.Shell {
 	key := s.key(s.current(), s.section())
 	l, r := s.list(key), s.reads[key]
 	title := l.Title(s.section().Title()) + ui.Sep + s.current().label
+	if words := s.viewTitle(key); words != "" {
+		title += ui.Sep + words
+	}
+	l.Bound = s.bound()
 	room := max(s.height-5, 1)
 	width := s.masterWidth()
 	detail := s.detailed() && (s.width >= ui.ThreePanes || s.focus == ui.PaneDetail)
@@ -742,6 +768,9 @@ func (s shell) frame() ui.Shell {
 		f.Master = ui.Panel{Title: title, Lines: []string{" " + ui.Glyph(page.Awaiting) + " " + s.section().Title() + ui.Sep + "reading " + s.current().label}}
 	case r.err != nil:
 		f.Master = ui.Panel{Title: title, Lines: ui.ErrorBlock(*r.err, s.dark)}
+	case s.matrix():
+		m := s.cell(key)
+		f.Master = ui.Panel{Title: m.Title(s.section().Title(), s.current().label), Lines: m.Lines(f, width, room, s.focus == ui.PaneMaster || s.focus == ui.PaneDetail)}
 	default:
 		l.Ticked = s.acts.ticked[key]
 		f.Master = ui.Panel{Title: title, Lines: l.Lines(f, width, room, s.focus == ui.PaneMaster || s.focus == ui.PaneDetail)}

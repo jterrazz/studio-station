@@ -33,12 +33,12 @@ runs:
           ┃   tab        next pane                                                                                     ┃
           ┃   shift+tab  previous pane                                                                                 ┃
           ┃   [ ]        section                                                                                       ┃
+          ┃   n          new VM                                                                                        ┃
           ┃   ctrl+r     read again                                                                                    ┃
           ┃   q          quit                                                                                          ┃
           ┃   ?          every key                                                                                     ┃
           ┃                                                                                                            ┃
           ┃ any key closes                                                                                             ┃
-          ┃                                                                                                            ┃
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃

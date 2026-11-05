@@ -29,6 +29,8 @@ const (
 	QRFull   = "█"
 	KeyUp    = "↑"
 	KeyDown  = "↓"
+	KeyLeft  = "←"
+	KeyRight = Arrow
 	Charging = "⚡"
 	Power    = "⏻"
 	Unknown  = "?"
@@ -48,6 +50,6 @@ func Glyphs() []string {
 	return []string{
 		MarkOK, MarkAttention, MarkAbsent, MarkBroken, MarkPending, MarkOffHere, MarkNotFor, MarkUnknown,
 		Arrow, "·", Ellipsis, Rule, Divider, "├", "└", Spinner, Spark, GaugeOff, QRUpper, QRLower,
-		KeyUp, KeyDown, Charging, Power, Corner, Cursor, Fleet, Typed, Tick,
+		KeyUp, KeyDown, KeyLeft, Charging, Power, Corner, Cursor, Fleet, Typed, Tick,
 	}
 }

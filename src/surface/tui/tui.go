@@ -17,7 +17,7 @@ type Answer struct {
 	Typed string
 }
 
-type Do func(ctx context.Context, words []string, a Answer) error
+type Do func(ctx context.Context, words []string, a Answer) (said []string, err error)
 
 type Asked struct {
 	// value: the command did nothing yet: it asks first, yes or no, or the name
@@ -33,7 +33,9 @@ type Deps struct {
 	// words, so a screen is the same page function as its command.
 	Pages Pages
 	// invariant: the TUI's one gesture is the command the CLI runs for these
-	// words: the call asks its own question, the TUI only puts it.
+	// words: the call asks its own question, the TUI only puts it. It says,
+	// one line each, what it did besides its verdict, as the toast says it
+	// after its own words: what it skipped (infra skipped (server)).
 	Do Do
 	// value: opens a URL or a file with its app (a System Settings pane).
 	Open func(ctx context.Context, target string) error

@@ -29,15 +29,26 @@ type Gesture struct {
 	// value: the page the detail pane shows (a row's full page, a diff, a
 	// folder's own rows).
 	Read []string
-	// value: lines the detail pane shows; nothing runs (a fix that is yours).
-	Note []string
-	Copy string
+	// value: lines the detail pane shows under Title (Fix when none); nothing
+	// runs (a fix that is yours, a folder's own rows).
+	Note  []string
+	Title string
+	Copy  string
 	// value: a URL or a file opened with its app (a System Settings pane).
 	Open string
 	// value: a line a new terminal runs.
 	Terminal string
 	// value: a choice put first; the gesture of the option picked follows.
 	Pick *Pick
+	// value: a way of showing the section, turned on or off; nothing runs
+	// (Disk sorted by name, the matrix's only what needs a look).
+	View string
+	// value: another machine's section shown, its cursor on a row.
+	Visit *Visit
+}
+
+type Visit struct {
+	Machine, Section, Row string
 }
 
 type Pick struct {

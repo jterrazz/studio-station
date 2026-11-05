@@ -39,7 +39,11 @@ func List(f machines.Fleet, warnings []string, here page.Context) page.Page {
 			g.Items = append(g.Items, page.Item{Row: &row})
 		}
 		if len(h.VMs) == 0 && h.Reachable {
-			g.Items = append(g.Items, page.Item{Empty: &page.Empty{Noun: "VMs", Text: "No VMs yet"}})
+			empty := &page.Empty{Noun: "VMs", Text: "No VMs yet"}
+			if h.Here {
+				empty.Hint = &page.Hint{Key: KeyCreate, Text: "create one"}
+			}
+			g.Items = append(g.Items, page.Item{Empty: empty})
 			create := "station machines create"
 			if !h.Here {
 				create += " --on " + machines.Label(f, h)

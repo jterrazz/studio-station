@@ -27,6 +27,14 @@ func (s shell) paneKeys() []ui.Binding {
 	case s.focus == ui.PaneDetail:
 		return []ui.Binding{bind("left", "list"), bind("esc", "back")}
 	}
+	if s.matrix() {
+		keys := append([]ui.Binding{bind("up/down", "move"), bind("left/right", "machine")}, s.actionKeys()...)
+		keys = append(keys, bind("/", "filter"))
+		if s.sidebarShown() {
+			keys = append(keys, bind("left", "sidebar, from the first machine"))
+		}
+		return keys
+	}
 	keys := []ui.Binding{bind("up/down", "move")}
 	if s.ticks() {
 		keys = append(keys, bind("space", "tick"))
@@ -63,7 +71,7 @@ func (s shell) everywhere() []ui.Binding {
 		return nil
 	}
 	return []ui.Binding{bind("tab", "next pane"), bind("shift+tab", "previous pane"), bind("[ ]", "section"),
-		bind("ctrl+r", "read again"), bind("q", "quit")}
+		bind("n", "new VM"), bind("ctrl+r", "read again"), bind("q", "quit")}
 }
 
 func (s shell) aliases() []ui.Binding {

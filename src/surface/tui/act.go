@@ -17,6 +17,7 @@ import (
 	diskscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/disk"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/gesture"
 	imagesscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/images"
+	matrixscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/matrix"
 	overviewscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/overview"
 	settingsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/settings"
 	sshscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/ssh"
@@ -79,8 +80,9 @@ type shown struct {
 }
 
 type stepped struct {
-	t   task
-	err error
+	t    task
+	said []string
+	err  error
 }
 
 type toasted struct{ id int }
@@ -99,7 +101,7 @@ func (s shell) action(key string) (page.Action, []page.Row, bool) {
 		return page.Action{}, nil, false
 	}
 	l := s.list(k)
-	_, cur, onRow := l.Current()
+	cur, onRow := s.focused(k)
 	for _, a := range p.Actions {
 		if a.Key != key {
 			continue
@@ -147,9 +149,13 @@ func (s shell) gesture(a page.Action, rows []page.Row) (gesture.Gesture, bool) {
 	case section.Apps:
 		return appsscreen.Gesture(p, a, rows)
 	case section.Settings:
+		if s.matrix() {
+			_, machine, _ := s.cell(s.key(s.current(), s.section())).Current()
+			return matrixscreen.Gesture(a, rows, machine)
+		}
 		return settingsscreen.Gesture(a, rows)
 	case section.Disk:
-		return diskscreen.Gesture(a, rows)
+		return diskscreen.Gesture(p, a, rows)
 	case section.Accounts:
 		return accountsscreen.Gesture(p, a, rows)
 	case section.Background:
@@ -179,8 +185,18 @@ func (s shell) act(key string) (shell, tea.Cmd, bool) {
 
 func (s shell) perform(g gesture.Gesture) (shell, tea.Cmd) {
 	k := s.key(s.current(), s.section())
-	_, cur, _ := s.list(k).Current()
+	cur, _ := s.focused(k)
 	switch {
+	case g.View != "":
+		on := map[string]bool{}
+		for v, set := range s.views[k] {
+			on[v] = set
+		}
+		on[g.View] = !on[g.View]
+		s.views = with(s.views, k, on)
+		return s, nil
+	case g.Visit != nil:
+		return s.visit(*g.Visit)
 	case g.Pick != nil:
 		s.acts.modal = &modal{question: g.Pick.Title, options: g.Pick.Options, pick: g.Pick.Then}
 		return s, nil
@@ -191,7 +207,11 @@ func (s shell) perform(g gesture.Gesture) (shell, tea.Cmd) {
 		s.focus = ui.PaneDetail
 		return s.ask(rk, g.Read)
 	case g.Note != nil:
-		s.acts.shown = with(s.acts.shown, k, shown{cursor: cur.ID, title: "Fix", note: g.Note})
+		title := g.Title
+		if title == "" {
+			title = "Fix"
+		}
+		s.acts.shown = with(s.acts.shown, k, shown{cursor: cur.ID, title: title, note: g.Note})
 		s.focus = ui.PaneDetail
 		return s, nil
 	case g.Copy != "":
@@ -249,7 +269,10 @@ func (s shell) start(t task, a Answer) (shell, tea.Cmd) {
 	t.state = running
 	s.acts.tasks = append(slices.DeleteFunc(slices.Clone(s.acts.tasks), func(x task) bool { return x.id == t.id }), t)
 	ctx, do, words := s.ctx, s.deps.Do, t.step.Words
-	return s, func() tea.Msg { return stepped{t: t, err: do(ctx, words, a)} }
+	return s, func() tea.Msg {
+		said, err := do(ctx, words, a)
+		return stepped{t: t, said: said, err: err}
+	}
 }
 
 func (s shell) stepDone(msg stepped) (tea.Model, tea.Cmd) {
@@ -269,6 +292,9 @@ func (s shell) stepDone(msg stepped) (tea.Model, tea.Cmd) {
 		t.state, t.err = failedTask, worded(msg.err)
 	} else {
 		t.state = succeeded
+		if len(msg.said) > 0 {
+			t.step.Done += ui.Sep + strings.Join(msg.said, ui.Sep)
+		}
 		cmds = append(cmds, s.fade(t.id))
 	}
 	s.acts.tasks = slices.Clone(s.acts.tasks)

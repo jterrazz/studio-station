@@ -63,10 +63,25 @@ func Empty(st token.Styles, e page.Empty, m Medium, keys Keys) string {
 		text = e.Text
 	}
 	line := st.Muted.Render(text)
-	if e.Hint != nil {
-		line += atom.Spaces(token.Gap) + Hint(st, *e.Hint, m, keys)
+	if e.Hint == nil {
+		return line
 	}
-	return line
+	// invariant: TU-20: on the TUI an empty line names the key that fills
+	// it (`No VMs yet. Press n to create one.`); a key the screen does not
+	// answer is never named, and a hint with no command is the TUI's alone.
+	if m == TUI && e.Hint.Key != "" && !e.Hint.External {
+		if label, ok := keys(e.Hint.Key); ok {
+			what := e.Hint.Text
+			if what == "" {
+				what = label
+			}
+			return st.Muted.Render(text+". Press ") + st.Accent.Render(atom.KeyName(e.Hint.Key)) + st.Muted.Render(" to "+what+".")
+		}
+	}
+	if e.Hint.Command == "" {
+		return line
+	}
+	return line + atom.Spaces(token.Gap) + Hint(st, *e.Hint, m, keys)
 }
 
 func ErrorLines(st token.Styles, e page.Error) []string {
