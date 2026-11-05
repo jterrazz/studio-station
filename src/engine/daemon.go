@@ -99,19 +99,20 @@ type Daemon struct {
 	st     Stores
 	o      Options
 
-	mu      sync.Mutex
-	vms     map[string]*vmState
-	svcs    map[string]*svc
-	leases  []services.Lease
-	self    ports.SharingState
-	read    bool
-	issuing bool
-	started time.Time
-	note    func(line string)
-	power   *power.Machine
-	awake   *power.Kept
-	hub     hub
-	history *activity.History
+	mu       sync.Mutex
+	vms      map[string]*vmState
+	svcs     map[string]*svc
+	leases   []services.Lease
+	self     ports.SharingState
+	read     bool
+	issuing  bool
+	started  time.Time
+	note     func(line string)
+	power    *power.Machine
+	awake    *power.Kept
+	hub      hub
+	history  *activity.History
+	watchers watchers
 
 	notifier Notifier
 	serve    func(ctx context.Context, conn io.ReadWriteCloser)

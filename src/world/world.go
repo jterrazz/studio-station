@@ -208,9 +208,13 @@ type Engine struct {
 	// value: the activity the engine holds in its memory between two
 	// commands, by machine; its successor after a restart holds none.
 	Activity map[string]activity.Kept `json:"activity,omitempty"`
-	// value: a surface watches this engine between two commands: the menu
-	// bar open, a terminal UI on Activity.
-	Watched bool `json:"watched,omitempty"`
+	// value: the menu bar runs against this engine between two commands,
+	// "closed" or "open": closed it holds its page and events watches,
+	// open it watches This Mac's activity too.
+	MenuBar string `json:"menubar,omitempty"`
+	// value: the machines a terminal UI shows the Activity of between two
+	// commands.
+	Watching []string `json:"watching,omitempty"`
 }
 
 func (m *Mac) EngineRuns() bool {

@@ -54,7 +54,6 @@ func (*worldMac) jobs() backgroundcontract.Jobs                         { return
 func (*worldMac) inspector() settingscontract.Inspector                 { return nil }
 func (*worldMac) procedureAppliers() []settingscontract.Applier         { return nil }
 func (*worldMac) meter() activitycontract.Meter                         { return nil }
-func (*worldMac) watched() bool                                         { return false }
 func (*worldMac) disk() diskcontract.DiskUsage                          { return nil }
 func (*worldMac) listeners() portscontract.Listeners                    { return nil }
 func (*worldMac) placement() (guest.Placement, bool)                    { return guest.Placement{}, false }

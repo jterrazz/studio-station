@@ -105,6 +105,8 @@ type worldMac struct {
 	vm *farMac
 	// value: the run's home, where the world's ~/ files are.
 	home string
+	// value: ends the surfaces the world holds open on the running engine.
+	leave func()
 }
 
 func openWorld(vars map[string]string) (*worldRun, error) {
@@ -153,11 +155,6 @@ func (m *worldMac) slice() world.Mac {
 }
 
 func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
-
-func (m *worldMac) watched() bool {
-	mac := m.slice()
-	return mac.Engine != nil && mac.Engine.Watched
-}
 
 func (m *worldMac) host(h system.Host) system.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
@@ -437,8 +434,50 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 		d.History().Take(kept)
 	}
 	m.engine, m.began = d, m.engineStarted()
+	m.surfaces(ctx, d)
 	m.settle(ctx)
 	return d, true
+}
+
+// invariant: the surfaces the world says watch this engine hold the very
+// watches the real ones hold, over the engine's own streams, for as long as
+// it runs in the command: the menu bar its page and events watches from
+// launch, and This Mac's activity only while open.
+func (m *worldMac) surfaces(ctx context.Context, d *engine.Daemon) {
+	e := m.slice().Engine
+	ctx, cancel := context.WithCancel(context.WithValue(ctx, waits{}, true))
+	var held sync.WaitGroup
+	hold := func(watch func(ctx context.Context, send func(any) error) error) {
+		opened := make(chan struct{})
+		var once sync.Once
+		held.Add(1)
+		go func() {
+			defer held.Done()
+			defer once.Do(func() { close(opened) })
+			_ = watch(ctx, func(any) error { once.Do(func() { close(opened) }); return nil })
+		}()
+		<-opened
+	}
+	events := func(ctx context.Context, send func(any) error) error {
+		_ = send(nil)
+		return d.Events(ctx, send)
+	}
+	if e.MenuBar != "" {
+		hold(func(ctx context.Context, send func(any) error) error {
+			return d.Stream(ctx, []string{engine.PageMenubar}, send)
+		})
+		hold(events)
+	}
+	if e.MenuBar == "open" {
+		hold(func(ctx context.Context, send func(any) error) error { return d.Watch(ctx, nil, send) })
+	}
+	if len(e.Watching) > 0 {
+		hold(func(ctx context.Context, send func(any) error) error { return d.Watch(ctx, e.Watching, send) })
+	}
+	m.leave = func() {
+		cancel()
+		held.Wait()
+	}
 }
 
 func (m *worldMac) settle(ctx context.Context) {
@@ -463,6 +502,10 @@ func (m *worldMac) down(forget bool) {
 	kept := m.engine.AwakeKept()
 	memory := m.engine.Memory()
 	activity := m.engine.History().Hand()
+	if m.leave != nil {
+		m.leave()
+		m.leave = nil
+	}
 	if !forget && !m.runs() {
 		m.engine.Stop()
 	} else {

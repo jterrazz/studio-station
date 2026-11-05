@@ -67,8 +67,10 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	sample := &enginejobs.Sample{
 		Calls: calls, Meter: m.meter(), Clock: m.host.Clock,
 		History: func() *activity.History { return d.History() },
-		Watched: func() bool { return d.Watched() || m.watchedInWorld() },
-		Tell:    func(subject, text string) { d.Tell(subject, text) },
+		Watched: func(r coremachine.Ref) bool {
+			return d.Watched(r.Name) || (r.On == "" && d.Watched(engine.ThisMac))
+		},
+		Tell: func(subject, text string) { d.Tell(subject, text) },
 		Seen: func() []enginejobs.Seen {
 			running := d.Running()
 			seen := make([]enginejobs.Seen, 0, 1+len(running))
@@ -360,5 +362,3 @@ func (i engineInstaller) install(ctx context.Context, jobs contract.Jobs) (setup
 	}
 	return setup.Step{Name: step, State: catalog.StateOK, Detail: "running " + version}, nil
 }
-
-func (m machine) watchedInWorld() bool { return m.world != nil && m.world.watched() }

@@ -37,8 +37,9 @@ type Sample struct {
 	// is silent.
 	Meter contract.Meter
 	// value: this Mac first, then each VM of it that runs.
-	Seen    func() []Seen
-	Watched func() bool
+	Seen func() []Seen
+	// value: a surface watches this machine now (SPEC §6.3).
+	Watched func(m machine.Ref) bool
 	Clock   Clock
 	History func() *activity.History
 	// value: tells the owner a finding that broke, once until it clears.
@@ -82,7 +83,6 @@ func (s *Sample) Run(ctx context.Context) {
 		return
 	}
 	now := s.Clock.Now()
-	every := Every(s.Watched())
 	seen := s.Seen()
 	vms := map[int]string{}
 	for _, m := range seen {
@@ -91,7 +91,7 @@ func (s *Sample) Run(ctx context.Context) {
 		}
 	}
 	for _, m := range seen {
-		if !s.due(h, m.Ref.Name, now, every) {
+		if !s.due(h, m.Ref.Name, now, Every(s.Watched(m.Ref))) {
 			continue
 		}
 		r, ok := s.read(ctx, m, now)

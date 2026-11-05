@@ -20,8 +20,6 @@ func (d *Daemon) History() *activity.History {
 	return d.history
 }
 
-func (d *Daemon) Watched() bool { return d.hub.listening() }
-
 type Running struct {
 	Name     string
 	Lifetime machines.Lifetime

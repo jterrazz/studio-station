@@ -36,6 +36,9 @@ const (
 	// value: the watch of the engine's pages, and of what it tells.
 	Page   = "page"
 	Events = "engine.events"
+	// value: the watch a surface holds while it shows a machine's activity:
+	// that machine is sampled every 2 s until it leaves.
+	Watch = "engine.watch"
 )
 
 func VM(verb string) string { return "engine.vm-" + verb }
@@ -89,6 +92,11 @@ func activityOf(d *engine.Daemon) ActivityOut {
 		out.Machines = append(out.Machines, Kept{Machine: name, Last: k.Last, Fine: k.Series.Fine(), Coarse: k.Series.Coarse()})
 	}
 	return out
+}
+
+type WatchIn struct {
+	// value: the machines watched by name; none is This Mac.
+	Machines []string `json:"machines,omitempty"`
 }
 
 type PagesIn struct {
@@ -199,6 +207,14 @@ func Server(d *engine.Daemon, h Host) serve.Server {
 			return worded(d.Stream(ctx, in.Pages, send))
 		}, Events: func(ctx context.Context, _ json.RawMessage, send func(any) error) error {
 			return d.Events(ctx, send)
+		}, Watch: func(ctx context.Context, raw json.RawMessage, send func(any) error) error {
+			var in WatchIn
+			if len(raw) > 0 {
+				if err := json.Unmarshal(raw, &in); err != nil {
+					return err
+				}
+			}
+			return d.Watch(ctx, in.Machines, send)
 		}},
 		Here: h.Here, Word: h.Word, Hint: "station machines", Sleep: h.Sleep,
 	}

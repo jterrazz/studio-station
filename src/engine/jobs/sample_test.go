@@ -41,16 +41,16 @@ func (m *machines) Watch(context.Context, machine.Ref, string, any, call.Progres
 
 func TestTwentyIdleVMsAreSampledOnceAMinuteEach(t *testing.T) {
 	c := &clock{now: time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)}
-	fleet := &machines{clock: c, asked: map[string]int{}}
+	guests := &machines{clock: c, asked: map[string]int{}}
 	seen := make([]Seen, 0, 21)
 	seen = append(seen, Seen{Ref: machine.Ref{Name: "mac"}, Kind: machine.Mac})
 	for i := range 20 {
 		seen = append(seen, Seen{Ref: machine.Ref{Name: "vm-" + strconv.Itoa(i), On: "mac"}, Kind: machine.Workspace, PID: 1000 + i, Guest: true})
 	}
-	watched := false
+	watched := ""
 	h := activity.NewHistory(c.now)
 	s := &Sample{
-		Calls: fleet, Clock: c, Seen: func() []Seen { return seen }, Watched: func() bool { return watched },
+		Calls: guests, Clock: c, Seen: func() []Seen { return seen }, Watched: func(m machine.Ref) bool { return m.Name == watched },
 		History: func() *activity.History { return h }, Tell: func(string, string) {},
 	}
 	tick := func(seconds int) {
@@ -61,15 +61,19 @@ func TestTwentyIdleVMsAreSampledOnceAMinuteEach(t *testing.T) {
 	}
 	tick(600)
 	for _, m := range seen {
-		if got := fleet.asked[m.Ref.Name]; got != 10 {
+		if got := guests.asked[m.Ref.Name]; got != 10 {
 			t.Errorf("%s was sampled %d times in 10 idle minutes; want 10, once a minute", m.Ref.Name, got)
 		}
 	}
-	watched = true
+	watched = "vm-3"
 	tick(60)
 	for _, m := range seen {
-		if got := fleet.asked[m.Ref.Name] - 10; got != 30 {
-			t.Errorf("%s was sampled %d times in a watched minute; want 30, every 2 s", m.Ref.Name, got)
+		want, every := 1, "once, the others unwatched"
+		if m.Ref.Name == watched {
+			want, every = 30, "30, every 2 s"
+		}
+		if got := guests.asked[m.Ref.Name] - 10; got != want {
+			t.Errorf("%s was sampled %d times in the minute vm-3 was watched; want %s", m.Ref.Name, got, every)
 		}
 	}
 }

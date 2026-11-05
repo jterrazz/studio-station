@@ -12,6 +12,7 @@ final class Model: ObservableObject {
     private var lastPage: Date?
     private var subscription: Task<Void, Never>?
     private var clearing: Task<Void, Never>?
+    private var watching: Task<Void, Never>?
     private var asked = false
 
     var icon: String { MenuBarIcon.symbol(connection: state.connection, page: state.page) }
@@ -71,9 +72,17 @@ final class Model: ObservableObject {
     }
 
     func opened() {
+        let socket = self.socket
+        watching?.cancel()
+        watching = Task.detached { await Client.hold(path: socket, watch: "engine.watch") }
         if let last = lastPage, Date().timeIntervalSince(last) > 60 {
             Task { _ = await Client.call(path: socket, name: "engine.refresh", input: ["pages": ["menubar"]]) }
         }
+    }
+
+    func closed() {
+        watching?.cancel()
+        watching = nil
     }
 
     func run(_ action: Action, answers: [String: String]) {
