@@ -66,11 +66,11 @@ func tuiWatch(ctx context.Context, m machine) func([]string) func() {
 		if m.world != nil {
 			return m.world.watch(held)
 		}
-		ctx, cancel := context.WithCancel(ctx)
+		watch, cancel := context.WithCancel(ctx)
 		done := make(chan struct{})
 		go func() {
 			defer close(done)
-			updates, err := m.engineAPI().c.Watch(ctx, process.Watch, process.WatchIn{Machines: held})
+			updates, err := m.engineAPI().c.Watch(watch, process.Watch, process.WatchIn{Machines: held})
 			if err != nil {
 				return
 			}
