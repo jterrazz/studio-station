@@ -17,7 +17,7 @@ func spawning() []string {
 // run a tool per sample. It only shrinks; a line no longer true fails the gate
 // until it is removed.
 func sampleTolerated() []string {
-	return []string{"activity/adapter/linux"}
+	return nil
 }
 
 // invariant: rule no-subprocess-in-sample (13.3 rule 10, SPEC §6.3): the

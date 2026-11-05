@@ -1,7 +1,10 @@
 package wire
 
 import (
+	"cmp"
 	"context"
+	"io/fs"
+	"path"
 
 	"github.com/spf13/cobra"
 
@@ -28,6 +31,7 @@ import (
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
+	"github.com/jterrazz/studio-station/src/system"
 )
 
 func overviewCommand(env kit.Env, m machine) *cobra.Command {
@@ -74,7 +78,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	var meter activitycontract.Meter
 	var listening portscontract.Listeners = lsof.New(h.Run)
 	if m.kind == catalog.Linux {
-		meter = activitylinux.New(h.Run, h.Clock)
+		meter = activitylinux.New(rootFS{fs: h.FS, root: cmp.Or(m.systemRoot(), "/")}, h.Clock)
 	} else {
 		meter = activitymacos.New(local.NewKernel(m.vars), h.Clock)
 	}
@@ -177,4 +181,20 @@ func diskOf(report storage.Report) overviewcalls.DiskReading[storage.StrayReport
 		rows = append(rows, overview.Disk{Name: "other", Level: catalog.LevelCache, Bytes: report.Other})
 	}
 	return overviewcalls.DiskReading[storage.StrayReport]{Rows: rows, Strays: append(make([]storage.StrayReport, 0, len(report.Strays)), report.Strays...)}
+}
+
+// value: the machine's files under its root, as the Linux Meter reads /proc.
+type rootFS struct {
+	fs   system.FS
+	root string
+}
+
+func (r rootFS) Open(name string) (fs.File, error) {
+	return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
+}
+
+func (r rootFS) ReadFile(name string) ([]byte, error) { return r.fs.ReadFile(path.Join(r.root, name)) }
+
+func (r rootFS) ReadDir(name string) ([]fs.DirEntry, error) {
+	return r.fs.ReadDir(path.Join(r.root, name))
 }
