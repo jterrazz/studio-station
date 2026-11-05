@@ -236,11 +236,12 @@ func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, 
 		return out
 	}
 	// invariant: one exit code answers for N tools, so each tool's verdict is
-	// whether the inventory lists it once the bundle has run.
+	// whether the inventory lists it installed once the bundle has run, behind
+	// its newest or not: a bundle uses what is there and upgrades nothing.
 	states := s.states(ctx, list)
 	for _, t := range list {
 		o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
-		if states[t.Name] != catalog.StateOK {
+		if !installed(states[t.Name]) {
 			o.Result, o.Detail = catalog.StateBroken, failure
 			if failure == "" {
 				o.Detail = "not listed after " + s.o.Bundler.Name()
