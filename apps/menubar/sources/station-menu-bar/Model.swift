@@ -24,6 +24,7 @@ final class Model: ObservableObject {
     private var clearing: Task<Void, Never>?
     private var watching: Task<Void, Never>?
     private var pushing: Task<Void, Never>?
+    private var watched: String?
     private var asked = false
 
     var icon: MenuBarIcon { MenuBarIcon.of(connection: state.connection, page: state.page, sparkline: sparkline) }
@@ -55,6 +56,7 @@ final class Model: ObservableObject {
     func push(_ page: String) {
         pushing?.cancel()
         state.confirming = nil
+        watched = page
         let sub = Subscription(path: socket, pages: [page]) { event in
             guard case .page(let p) = event else { return }
             Task { @MainActor in self.state.pushed = p }
@@ -76,6 +78,7 @@ final class Model: ObservableObject {
     func back() {
         pushing?.cancel()
         pushing = nil
+        watched = nil
         state.pushed = nil
         state.search = ""
         state.confirming = nil
@@ -136,7 +139,7 @@ final class Model: ObservableObject {
         watching?.cancel()
         watching = Task.detached { await Client.hold(path: socket, watch: "engine.watch") }
         if let last = lastPage, Date().timeIntervalSince(last) > 60 {
-            Task { _ = await Client.call(path: socket, name: "engine.refresh", input: ["pages": ["menubar"]]) }
+            Task { _ = await Client.call(path: socket, name: ActionRunner.refresh, input: ["pages": [PageID.home]]) }
         }
     }
 
@@ -150,9 +153,10 @@ final class Model: ObservableObject {
         state.running = action.id
         state.status = nil
         let socket = self.socket
+        let reread = watched.map { [$0] } ?? []
         Task {
             let executable = await Client.executable(path: socket) ?? Self.fallbackExecutable
-            let status = await ActionRunner(executable: executable, socket: socket).run(action, answers: answers)
+            let status = await ActionRunner(executable: executable, socket: socket, reread: reread).run(action, answers: answers)
             state.running = nil
             state.status = status
             if let text = status?.posted { notify(text) }

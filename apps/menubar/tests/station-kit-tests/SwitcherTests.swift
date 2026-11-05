@@ -19,8 +19,8 @@ final class SwitcherTests: XCTestCase {
 
     func texts(_ values: [Value]?) -> [String] { (values ?? []).compactMap(\.text) }
 
-    // invariant: MB-13: Add a Mac… asks the Mac's name, and its Add sends
-    // machines.add with that name as typed.
+    // invariant: MB-13: Add a Mac… asks the Mac's name, its Add sends
+    // machines.add with that name as typed, then reads the switcher again.
     func testSwitcherAddMac() async throws {
         let page = try Tree.page("menubar.switcher.two-macs")
         let add = try XCTUnwrap(page.action("add-mac"))
@@ -31,9 +31,13 @@ final class SwitcherTests: XCTestCase {
         XCTAssertNil(try Golden.check("sheet.add-mac", AnyView(Popover(state, scrolls: false)), scheme: .dark))
         let engine = try FakeEngine("mb-add-mac")
         engine.serveOnce(Data(#"{"v":2,"id":"1","out":{"Name":"studio-1"}}"#.utf8) + [0x0A], thenClose: false)
+        engine.serveOnce(Data(#"{"v":2,"id":"1","out":{}}"#.utf8) + [0x0A], thenClose: false)
         defer { engine.stop() }
-        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(add, answers: ["Name": "studio-1"])
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, reread: [PageID.switcher]).run(add, answers: ["Name": "studio-1"])
         XCTAssertNil(status)
-        XCTAssertEqual(engine.received, [#"{"call":"machines.add","id":"1","in":{"Name":"studio-1"},"v":2}"#])
+        XCTAssertEqual(engine.received, [
+            #"{"call":"machines.add","id":"1","in":{"Name":"studio-1"},"v":2}"#,
+            #"{"call":"engine.refresh","id":"1","in":{"pages":["menubar.switcher"]},"v":2}"#,
+        ])
     }
 }

@@ -19,15 +19,21 @@ final class PagesTests: XCTestCase {
     // against an engine that answers ok, and returns the frame it got and the
     // programs started.
     func sent(_ action: Action, answers: [String: String] = [:], label: String) async throws -> (Sent, [[String]]) {
+        let (frames, calls) = try await sentAll(action, answers: answers, label: label)
+        return (try XCTUnwrap(frames.first), calls)
+    }
+
+    // value: every frame the engine got while the action ran on a page
+    // watched, which reads that page again once the call returns.
+    func sentAll(_ action: Action, answers: [String: String] = [:], label: String, reread: [String] = []) async throws -> ([Sent], [[String]]) {
         let engine = try FakeEngine(label)
-        engine.serveOnce(Data(#"{"v":2,"id":"1","out":{}}"#.utf8) + [0x0A], thenClose: false)
+        for _ in 0...reread.count { engine.serveOnce(Data(#"{"v":2,"id":"1","out":{}}"#.utf8) + [0x0A], thenClose: false) }
         defer { engine.stop() }
         let calls = Recorded()
-        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, launcher: RecordingLauncher(calls: calls)).run(action, answers: answers)
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, launcher: RecordingLauncher(calls: calls), reread: reread).run(action, answers: answers)
         XCTAssertNil(status)
-        let line = try XCTUnwrap(engine.received.first)
-        let frame = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any])
-        return (Sent(frame: frame), calls.all)
+        let frames = try engine.received.map { try XCTUnwrap(JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any]) }
+        return (frames.map(Sent.init(frame:)), calls.all)
     }
 
     func drawn(_ name: String, _ state: PopoverState) throws {
@@ -132,9 +138,10 @@ final class PagesTests: XCTestCase {
         XCTAssertEqual(take.confirm?.question, "Take back GitHub from linux-1?")
         XCTAssertNil(take.confirm?.type)
         try drawn("sheet.take-back", try pushed("menubar.vm.linux-1", confirming: take.id))
-        let (frame, _) = try await sent(take, label: "mb-take-back")
-        XCTAssertEqual(frame.call, "accounts.take-back")
-        XCTAssertEqual(frame.input, ["Account": "github", "From": "linux-1", "Confirm": "yes"])
+        let (frames, _) = try await sentAll(take, label: "mb-take-back", reread: [PageID.of("linux-1")])
+        XCTAssertEqual(frames.map(\.call), ["accounts.take-back", "engine.refresh"])
+        XCTAssertEqual(frames.first?.input, ["Account": "github", "From": "linux-1", "Confirm": "yes"])
+        XCTAssertEqual(frames.last?.input, ["pages": ["menubar.machine:linux-1"]])
     }
 
     // invariant: MB-15: Open in Terminal on linux-1's page runs station on
