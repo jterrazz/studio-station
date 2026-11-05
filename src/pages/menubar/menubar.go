@@ -248,3 +248,13 @@ func powerAction(r *power.Report) page.Action {
 			}},
 		}}}
 }
+
+func Opening(id page.ID, here page.Context) page.Page {
+	// invariant: the frame of one of the menu bar's own pages, before its
+	// first read.
+	return page.Page{ID: id, Context: here, State: page.Loading}
+}
+
+func Unread(id page.ID, here page.Context, err error) page.Page {
+	return page.Seal(page.Page{ID: id, Context: here, Error: &page.Error{Message: err.Error()}})
+}

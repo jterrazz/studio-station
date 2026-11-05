@@ -27,7 +27,7 @@ func (o Menubar) Ports() engine.Feed {
 			}
 			l, err := call.Invoke(ctx, o.Calls, target, portscalls.List, list, nil)
 			if err != nil {
-				return failed(pagemenubar.PortsID, o.Here, err)
+				return pagemenubar.Unread(pagemenubar.PortsID, o.Here, err)
 			}
 			return pagemenubar.Ports(l, of, o.Here)
 		}
@@ -43,7 +43,7 @@ func (o Menubar) Awake() engine.Feed {
 		read := func(ctx context.Context) page.Page {
 			f, err := o.EveryMac(ctx)
 			if err != nil {
-				return failed(pagemenubar.AwakeID, o.Here, err)
+				return pagemenubar.Unread(pagemenubar.AwakeID, o.Here, err)
 			}
 			return pagemenubar.Awake(f, o.Here)
 		}
@@ -56,16 +56,19 @@ func (o Menubar) Activity() engine.Feed {
 	// window the page names after its colon (1 h unless named), read from the
 	// activity watch every 2 s while the page is open.
 	return func(ctx context.Context, in engine.FeedInput) <-chan any {
-		window := pagemenubar.Window(in.Subject)
+		window, err := time.ParseDuration(in.Subject)
+		if err != nil || window <= 0 {
+			window = time.Hour
+		}
 		read := func(ctx context.Context) page.Page {
 			v := pageactivity.View{Name: o.Here.Machine, Label: "This Mac", Kind: string(machine.Mac), ThisMac: true, Graph: window}
 			snaps, err := call.Follow(ctx, o.Calls, machine.Ref{}, activitycalls.Read, activitycalls.ReadIn{Graph: window}, nil)
 			if err != nil {
-				return failed(pagemenubar.ActivityID, o.Here, err)
+				return pagemenubar.Unread(pagemenubar.ActivityID, o.Here, err)
 			}
 			for u := range snaps {
 				if u.Err != nil {
-					return failed(pagemenubar.ActivityID, o.Here, u.Err)
+					return pagemenubar.Unread(pagemenubar.ActivityID, o.Here, u.Err)
 				}
 				v.Report = u.Value
 			}
@@ -82,7 +85,7 @@ func (o Menubar) reread(ctx context.Context, in engine.FeedInput, id page.ID, ev
 	out := make(chan any, 1)
 	go func() {
 		defer close(out)
-		out <- page.Document{Schema: page.Schema, Page: page.Page{ID: id, Context: o.Here, State: page.Loading}}
+		out <- page.Document{Schema: page.Schema, Page: pagemenubar.Opening(id, o.Here)}
 		for {
 			p := read(ctx)
 			if ctx.Err() != nil {
@@ -114,10 +117,6 @@ func (o Menubar) reread(ctx context.Context, in engine.FeedInput, id page.ID, ev
 		}
 	}()
 	return out
-}
-
-func failed(id page.ID, here page.Context, err error) page.Page {
-	return page.Seal(page.Page{ID: id, Context: here, Error: &page.Error{Message: err.Error()}})
 }
 
 type EveryMac func(ctx context.Context) (pageawake.Fleet, error)
