@@ -24,7 +24,7 @@ runs:
             keeps     {state}/gh
             keeps     {config}/gh/config.yml
             keeps     {config}/gh/hosts.yml
-    - command: 'apps --json | /usr/bin/jq -r ''.apps[] | select(.name == "gh") | "\(.state) \(.version) \(.newest)"'''
+    - command: 'apps --json | /usr/bin/jq -r ''.apps[] | select(.name == "gh") | "\(.state) \(.installed) \(.newest)"'''
       exit: 0
       stdout: |
           update-available 2.97.0 2.98.0

@@ -6,7 +6,7 @@ fixture:
 env:
     - STATION_MACHINE_KIND=macos
 runs:
-    - command: 'apps --json | /usr/bin/jq -r ''.apps[] | select(.name | IN("codex", "qmd", "markitdown")) | "\(.name) \(.state) \(.version)"'''
+    - command: 'apps --json | /usr/bin/jq -r ''.apps[] | select(.name | IN("codex", "qmd", "markitdown")) | "\(.name) \(.state) \(.installed)"'''
       exit: 0
       stdout: |
           codex ok 0.154.0
