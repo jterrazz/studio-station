@@ -24,6 +24,10 @@ runs:
           ┃   left  sidebar                                                                                            ┃
           ┃   esc   up a level                                                                                         ┃
           ┃                                                                                                            ┃
+          ┃ ALSO                                                                                                       ┃
+          ┃   k/j  move up/down                                                                                        ┃
+          ┃   h/l  left/right                                                                                          ┃
+          ┃                                                                                                            ┃
           ┃ EVERYWHERE                                                                                                 ┃
           ┃   tab        next pane                                                                                     ┃
           ┃   shift+tab  previous pane                                                                                 ┃
@@ -33,10 +37,6 @@ runs:
           ┃   ?          every key                                                                                     ┃
           ┃                                                                                                            ┃
           ┃ any key closes                                                                                             ┃
-          ┃                                                                                                            ┃
-          ┃                                                                                                            ┃
-          ┃                                                                                                            ┃
-          ┃                                                                                                            ┃
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃

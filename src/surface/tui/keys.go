@@ -47,6 +47,15 @@ func (s shell) everywhere() []ui.Binding {
 		bind("ctrl+r", "read again"), bind("q", "quit")}
 }
 
+func (s shell) aliases() []ui.Binding {
+	// invariant: every key the shell answers is on the sheet, its aliases too.
+	keys := []ui.Binding{bind("k/j", "move up/down"), bind("h/l", "left/right")}
+	if s.focus == ui.PaneMaster && s.listed() {
+		keys = append(keys, bind("pgup/pgdown", "move ten rows"))
+	}
+	return keys
+}
+
 func (s shell) footer() []ui.Binding {
 	keys := s.paneKeys()
 	if s.filtering {
@@ -59,6 +68,7 @@ func (s shell) keySheet() *ui.Sheet {
 	pane := map[ui.Pane]string{ui.PaneSidebar: "Sidebar", ui.PaneMaster: s.section().Title(), ui.PaneDetail: "Detail"}[s.focus]
 	return &ui.Sheet{Title: "Keys" + ui.Sep + pane, Groups: []ui.SheetGroup{
 		{Title: pane, Keys: s.paneKeys()},
+		{Title: "Also", Keys: s.aliases()},
 		{Title: "Everywhere", Keys: append(s.everywhere(), bind("?", "every key"))},
 	}}
 }
