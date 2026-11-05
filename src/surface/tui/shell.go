@@ -732,6 +732,9 @@ func (s shell) frame() ui.Shell {
 	sc := s.screen()
 	if sc != nil && r.done && r.err == nil {
 		title = sc.Title(s.view())
+		if l.Filter != "" {
+			title += " (/" + l.Filter + ")"
+		}
 	}
 	room := max(s.height-5, 1)
 	width := s.masterWidth()

@@ -12,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/surface/tui/screens"
 	activityscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/activity"
 	awakescreen "github.com/jterrazz/studio-station/src/surface/tui/screens/awake"
+	portsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/ports"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
@@ -55,6 +56,8 @@ func screenFor(n node, id section.ID) screens.Screen {
 		return activityscreen.Screen{}
 	case section.Awake:
 		return awakescreen.Screen{}
+	case section.Ports:
+		return portsscreen.Screen{}
 	}
 	return nil
 }

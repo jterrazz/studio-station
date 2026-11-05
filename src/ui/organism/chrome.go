@@ -187,6 +187,10 @@ func qrOf(st token.Styles, r page.Row, width int, indent string) []string {
 	if len(code) == 0 {
 		return nil
 	}
+	if atom.Width(code[0])+len(indent) > width-1 && atom.Width(code[0]) <= width-1 {
+		// value: in a narrow pane the code's own quiet zone is its margin.
+		indent = ""
+	}
 	if atom.Width(code[0])+len(indent) > width-1 {
 		return []string{"", indent + st.Muted.Render("widen to "+strconv.Itoa(atom.Width(code[0])+len(indent)+1)+" columns for the QR code")}
 	}
