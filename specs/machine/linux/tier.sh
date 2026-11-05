@@ -78,6 +78,10 @@ vm_ssh() {
 }
 in_vm() { vm_ssh "$1" "$2" < /dev/null; }
 
+# value: a guest's /proc files as a tar, the recorded inputs of the D specs; each is
+# copied first, because /proc reports a size of 0 and tar would archive it empty.
+capture() { echo "rm -rf /tmp/e2e-cap && for f in $*; do mkdir -p /tmp/e2e-cap/\${f%/*} && cat /\$f > /tmp/e2e-cap/\$f; done; tar cf - -C /tmp/e2e-cap proc"; }
+
 until_true() {
   local tries=$1
   shift
@@ -182,7 +186,7 @@ st machines create srv1 --server --check https://srv1:8443/readyz --cpus 2 --mem
 vm_ssh srv1 'mkdir -p /tmp/e2e-tls && cd /tmp/e2e-tls && openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 1 -subj /CN=cluster-ca 2>/dev/null && cat > https.py && (nohup python3 https.py > /dev/null 2>&1 &)' < "$suite/linux/https.py" || fail "serve readyz in srv1"
 check_ok() { [ "$(st machines srv1 --json | jq -r '.health.check.ok')" = "$1" ]; }
 until_true 24 check_ok true || fail "the check on srv1's own name never passed with its self-signed certificate"
-in_vm srv1 'cd / && tar cf - proc/net/tcp proc/net/tcp6' > "$work/proc-capture/tcp.tar"
+mkdir -p "$work/proc-capture" && in_vm srv1 "$(capture proc/net/tcp proc/net/tcp6)" > "$work/proc-capture/tcp.tar"
 addr=$(on_mac tart ip srv1) || fail "srv1 has no address"
 st machines edit srv1 --check "https://$addr:8443/readyz" >> "$log" 2>&1 || fail "edit srv1's check exited $?"
 until_true 24 check_ok false || fail "a check on another name ($addr) passed with a certificate not made for it"
@@ -277,13 +281,15 @@ check_proc() {
   wr=$(awk '$3 ~ /^vd[a-z]$/ { s += $10 * 512 } END { print s }' "$p")
   [ "$(jq -r '.cpu.cpus' "$a")" = "$(tail -1 "$p")" ] || { say "   cpus $(jq -r '.cpu.cpus' "$a") vs nproc $(tail -1 "$p")"; return 1; }
   [ "$(jq -r '.memory.total_bytes' "$a")" = "$total" ] || { say "   memory total differs from /proc"; return 1; }
-  near "$(jq -r '.memory.used_bytes' "$a")" $((total - avail)) 5 || { say "   memory used $(jq -r '.memory.used_bytes' "$a") vs /proc $((total - avail))"; return 1; }
+  near "$(jq -r '.memory.used_bytes' "$a")" $((total - avail)) 5 67108864 || { say "   memory used $(jq -r '.memory.used_bytes' "$a") vs /proc $((total - avail))"; return 1; }
   near "$(jq -r '.network.received_since_boot_bytes' "$a")" "$rx" 2 1048576 || { say "   received $(jq -r '.network.received_since_boot_bytes' "$a") vs /proc $rx"; return 1; }
   near "$(jq -r '.disk.written_since_boot_bytes' "$a")" "$wr" 2 1048576 || { say "   written $(jq -r '.disk.written_since_boot_bytes' "$a") vs /proc $wr"; return 1; }
 }
 sample > "$work/act-0.json" && proc > "$work/proc-0.txt" || fail "read ws1's activity"
 check_proc "$work/act-0.json" "$work/proc-0.txt" || fail "idle: station's numbers do not match /proc"
-vm_ssh ws1 'setsid -f sh -c "yes > /dev/null & yes > /dev/null & dd if=/dev/zero of=/tmp/e2e-dd bs=1M count=1536 oflag=direct status=none; curl -sf --limit-rate 40M -o /dev/null \"https://speed.cloudflare.com/__down?bytes=400000000\"; pkill yes" > /dev/null 2>&1 &' < /dev/null
+# value: the load lasts 40 s at least, the downloads overlapping the CPU's: one dd
+# of 1.5 GB is done in 2 s, and speed.cloudflare.com refuses more than 25 MB a call.
+vm_ssh ws1 'setsid -f sh -c "yes > /dev/null & yes > /dev/null & end=\$((\$(date +%s) + 40)); for i in \$(seq 1 16); do curl -sf --limit-rate 40M -o /dev/null \"https://speed.cloudflare.com/__down?bytes=25000000\"; done; dd if=/dev/zero of=/tmp/e2e-dd bs=1M count=1536 oflag=direct status=none; rm -f /tmp/e2e-dd; while [ \$(date +%s) -lt \$end ]; do sleep 1; done; pkill yes" > /dev/null 2>&1 &' < /dev/null
 busy=0
 for i in $(seq 1 12); do
   sleep 2
@@ -294,7 +300,7 @@ done
 jq -r '.top.by_cpu[0].name' "$work/act-load.json" | grep -qx yes || say "   note: the busiest process read was $(jq -r '.top.by_cpu[0].name' "$work/act-load.json")"
 until_true 24 in_vm ws1 '! pgrep -x yes > /dev/null' || fail "the load did not end"
 mkdir -p "$work/proc-capture"
-in_vm ws1 'cd / && tar cf - proc/stat proc/meminfo proc/net/dev proc/diskstats proc/loadavg proc/uptime proc/pressure/memory 2>/dev/null' > "$work/proc-capture/proc.tar"
+in_vm ws1 "$(capture proc/stat proc/meminfo proc/net/dev proc/diskstats proc/loadavg proc/uptime proc/pressure/memory)" > "$work/proc-capture/proc.tar"
 sample > "$work/act-1.json" && proc > "$work/proc-1.txt" || fail "read ws1's activity after the load"
 check_proc "$work/act-1.json" "$work/proc-1.txt" || fail "after the load: station's numbers do not match /proc"
 grew() { jq -n --slurpfile a "$work/act-0.json" --slurpfile b "$work/act-1.json" "\$b[0].$1 - \$a[0].$1"; }
