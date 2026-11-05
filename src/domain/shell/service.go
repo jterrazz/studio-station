@@ -48,9 +48,11 @@ func (s *Service) Zsh(ctx context.Context, completion string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// invariant: the completion is guarded by `$+functions[compdef]`, so a shell without
-	// compinit gets none and no `command not found: compdef`.
+	// invariant: an interactive shell that ran no compinit (a fresh Mac, no oh-my-zsh)
+	// gets it from the block, so the completion is there; a script's shell runs none,
+	// and the completion is guarded by `$+functions[compdef]`.
 	script := string(loader) + "\n" + miseBlock + "\n" +
+		"if (( ! $+functions[compdef] )) && [[ -o interactive ]]; then\n  autoload -Uz compinit && compinit -i\nfi\n" +
 		"if (( $+functions[compdef] )); then\n" + completion + "\nfi\n"
 	if line, ok := s.token(ctx); ok {
 		script += "\n" + line + "\n"
