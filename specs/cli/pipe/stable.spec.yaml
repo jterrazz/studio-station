@@ -13,6 +13,7 @@ runs:
           ◐	Firewall: off	System Settings > Network > Firewall
           ◐	Remote login: on, not expected on a laptop	System Settings > General > Sharing > Remote Login
           	3 more: station overview --all
+          	Activity	memory 11.6 of 32 GB · N free
           	Apps	● 0 ok · ? 2 not managed · ○ 106 not installed
           	Settings	set by station · ● 0 of 15
           	Disk	● N free · 2.0 KB can rebuild

@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	backgroundcalls "github.com/jterrazz/studio-station/src/background/calls"
@@ -27,10 +28,14 @@ import (
 type sectionRead func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error)
 
 // value: the read of each section an Overview has a line for, by its call
-// (Activity's line waits for its model; SSH is the door, by the machine's name).
+// (SSH is the door, by the machine's name).
 func sectionReads() map[section.ID]sectionRead {
 	here := machine.Ref{}
 	return map[section.ID]sectionRead{
+		section.Activity: func(ctx context.Context, r call.Router, _ machine.Ref) (overview.Read, error) {
+			out, err := call.Read(ctx, r, here, activitycalls.Read, activitycalls.ReadIn{Quick: true}, nil)
+			return overview.ActivityRead(out), err
+		},
 		section.Apps: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
 			out, err := call.Read(ctx, r, here, appscalls.List, appscalls.ListIn{}, nil)
 			return overview.AppsRead(out, self), err
