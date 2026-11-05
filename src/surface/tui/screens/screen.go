@@ -14,8 +14,11 @@ import (
 type Machine struct {
 	Name, Label string
 	Kind        machine.Kind
-	Mac         string
-	Here        bool
+	// value: the Mac a VM is on, by name and as the sidebar says it, and
+	// whether it is this one.
+	Mac, MacLabel string
+	MacHere       bool
+	Here          bool
 }
 
 // value: a screen's own memory (the window a graph draws, a sort), kept

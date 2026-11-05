@@ -16,7 +16,7 @@ runs:
           send \r
           send d
           see Declare jterrazz-mac-mini 5000 public
-          see Route       lan_
+          see Route         lan_
           send \r
           see Declared jterrazz-mac-mini 5000 public
           gone Needs you: reachable outside Tailscale

@@ -7,12 +7,14 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens"
 	activityscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/activity"
 	awakescreen "github.com/jterrazz/studio-station/src/surface/tui/screens/awake"
 	portsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/ports"
+	serverscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/server"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
@@ -58,6 +60,10 @@ func screenFor(n node, id section.ID) screens.Screen {
 		return awakescreen.Screen{}
 	case section.Ports:
 		return portsscreen.Screen{}
+	case section.Overview, section.SSH:
+		if n.kind == machine.Workspace || n.kind == machine.Server {
+			return serverscreen.Screen{}
+		}
 	}
 	return nil
 }
@@ -65,7 +71,11 @@ func screenFor(n node, id section.ID) screens.Screen {
 func (s shell) screen() screens.Screen { return screenFor(s.current(), s.section()) }
 
 func (s shell) machineOf(n node) screens.Machine {
-	return screens.Machine{Name: n.name, Label: n.label, Kind: n.kind, Mac: n.mac, Here: n.here}
+	m := screens.Machine{Name: n.name, Label: n.label, Kind: n.kind, Mac: n.mac, Here: n.here}
+	if mac, ok := find(s.nodes, n.mac); ok {
+		m.MacLabel, m.MacHere = mac.label, mac.here
+	}
+	return m
 }
 
 // invariant: a screen reads the CLI's page for its words, and adds to them
@@ -279,7 +289,7 @@ func (s shell) dialogPanel() *ui.Panel {
 			if i == d.at {
 				lead = token.Cursor + " "
 			}
-			line := " " + lead + pad(field.Label, 12) + d.answers[i]
+			line := " " + lead + pad(field.Label, 14) + d.answers[i]
 			if i == d.at {
 				line += "_"
 			}
