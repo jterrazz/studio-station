@@ -139,7 +139,7 @@ type ErrorJSON struct {
 	Message string `json:"message"`
 }
 
-type FleetJSON struct {
+type AllMachinesJSON struct {
 	Schema      string        `json:"schema"`
 	GeneratedAt string        `json:"generated_at"`
 	Findings    []FindingJSON `json:"findings"`

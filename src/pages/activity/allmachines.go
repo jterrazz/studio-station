@@ -9,7 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 )
 
-func fleetColumns() []page.Column {
+func everyColumns() []page.Column {
 	return []page.Column{
 		{Key: "machine", Kind: page.KindText, Keep: 100},
 		{Key: "kind", Label: "KIND", Kind: page.KindText, Keep: 90},
@@ -26,7 +26,7 @@ func pair(a, b float64) string {
 	return mb(a) + "/" + mb(b) + " MB/s"
 }
 
-func fleetRow(v View) page.Row {
+func everyRow(v View) page.Row {
 	// invariant: one row per machine (SPEC §6.4): a stopped VM says so, a
 	// Mac that does not answer is its own row and the others are filled.
 	r := page.Row{ID: v.Name, Label: v.Label, Mark: page.OK, Cells: []page.Value{page.Text(kindWord(v.Kind))}}
@@ -65,7 +65,7 @@ func fleetRow(v View) page.Row {
 	return r
 }
 
-func Fleet(views []View, here page.Context) page.Page {
+func AllMachines(views []View, here page.Context) page.Page {
 	p := page.Page{ID: "activity-all", Command: "activity --all-machines", Context: here}
 	answering := 0
 	var kept, direct time.Duration
@@ -90,24 +90,24 @@ func Fleet(views []View, here page.Context) page.Page {
 	items := make([]page.Item, 0, len(views))
 	needs := make([]page.Item, 0, len(views))
 	for _, v := range views {
-		r := fleetRow(v)
+		r := everyRow(v)
 		items = append(items, page.Item{Row: &r})
 		needs = append(needs, Needs(v)...)
 	}
 	for i := range needs {
 		needs[i].Row.ID = "finding-" + strconv.Itoa(i)
 	}
-	banner := page.Row{ID: "fleet", Label: "All machines", Mark: page.OK, Cells: []page.Value{page.Texts(words...)}}
-	p.Sections = append(p.Sections, page.Section{ID: "fleet", Title: "Activity", Role: page.Banner, Uncounted: true, Columns: columns(), Items: []page.Item{{Row: &banner}}})
+	banner := page.Row{ID: "all-machines", Label: "All machines", Mark: page.OK, Cells: []page.Value{page.Texts(words...)}}
+	p.Sections = append(p.Sections, page.Section{ID: "all-machines", Title: "Activity", Role: page.Banner, Uncounted: true, Columns: columns(), Items: []page.Item{{Row: &banner}}})
 	if len(needs) > 0 {
 		p.Sections = append(p.Sections, page.Section{ID: "needs", Title: "Needs you", Uncounted: true, Columns: columns()[:1], Items: needs})
 	}
-	p.Sections = append(p.Sections, page.Section{ID: "machines", Title: "Machines", Uncounted: true, Columns: fleetColumns(), Items: items})
+	p.Sections = append(p.Sections, page.Section{ID: "machines", Title: "Machines", Uncounted: true, Columns: everyColumns(), Items: items})
 	return page.Seal(p)
 }
 
-func FleetContract(views []View, now time.Time) FleetJSON {
-	out := FleetJSON{Schema: Schema, GeneratedAt: now.UTC().Format(time.RFC3339), Findings: []FindingJSON{}, Machines: []EveryJSON{}}
+func AllMachinesContract(views []View, now time.Time) AllMachinesJSON {
+	out := AllMachinesJSON{Schema: Schema, GeneratedAt: now.UTC().Format(time.RFC3339), Findings: []FindingJSON{}, Machines: []EveryJSON{}}
 	for _, v := range views {
 		e := EveryJSON{Machine: machineOf(v), Body: body(v)}
 		out.Findings = append(out.Findings, e.Findings...)
