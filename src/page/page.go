@@ -356,7 +356,7 @@ const (
 
 const OnSection = "on"
 
-// value: the line an output for another machine starts with (SPEC §8.1).
 func OnMachine(machine string) Section {
+	// value: the line an output for another machine starts with (SPEC §8.1).
 	return Section{ID: OnSection, Role: Banner, Uncounted: true, Items: []Item{{Note: &Note{Text: "On " + machine + ":"}}}}
 }
