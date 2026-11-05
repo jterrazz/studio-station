@@ -22,7 +22,7 @@ runs:
             4 more: station overview --all
           {bold Activity}    memory 12.4 of 16 GB · 388 GB free
           {bold Apps}        {good ●} 5 ok · {warn ◐} 3 updates · {muted ○} 100 not installed
-          {bold Settings}    set by station · {good ●} 0 of 17 · checked · {good ●} 8 of 9
+          {bold Settings}    set by station · {muted ○} 0 of 17 · checked · {good ●} 8 of 9
           {bold Disk}        {warn ◐} 388 GB free · 34.8 GB can rebuild · {warn ◐} 1 misplaced
           {bold Ports}       Public 0 · Private 2
           {bold Accounts}    {good ●} 6 · {bad ✗} npm
