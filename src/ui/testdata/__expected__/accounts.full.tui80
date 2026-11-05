@@ -1,6 +1,7 @@
- - Summary                                                                     
+ Summary
    ● This Mac  8 accounts · 6 signed in · 1 needs you · shared with 2 VMs
- - Accounts                                                 11 ●  2 ◐  4 ○  2 ✗
+
+ Accounts
    ✗ jterrazz-macbook-pro  Mac
    ├─ ● GitHub             jterrazz                  own     gh · keyring · ssh
    ├─ ✗ npm                ?                         own     token refused by…
@@ -24,4 +25,3 @@
    ├─ ◐ Claude             admin@jterrazz.com        shared  42m left
         → station accounts share claude --with api
    └─ ● entry              1 SSH key                 own     SHA256:76MCcfWNZv…
- ↑↓ move  R reload  enter detail  / filter  space fold  q quit  ? keys

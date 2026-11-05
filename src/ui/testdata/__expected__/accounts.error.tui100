@@ -1,6 +1,7 @@
- - Summary                                                                                         
+ Summary
    ● This Mac  8 accounts · 6 signed in · 1 needs you · shared with 2 VMs
- - Accounts                                                                      6 ●  1 ◐  1 ○  2 ✗
+
+ Accounts
    ✗ jterrazz-macbook-pro  Mac
    ├─ ● GitHub             jterrazz                  own  gist · read:org · repo · workflow  gh …
    ├─ ✗ npm                ?                         own  token refused by registry.npmjs.org
@@ -13,4 +14,3 @@
    └─ ● Docker             deploy                    own  registry.jterrazz.com              osxke…
    ◐ engine                stopped
      → station engine start
- ↑↓ move  R reload  enter detail  / filter  space fold  q quit  ? keys

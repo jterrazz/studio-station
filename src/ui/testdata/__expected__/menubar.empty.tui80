@@ -1,9 +1,11 @@
  CPU 34% ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃  memory 12.4/17.2 GB  battery 80%
- - To do                                                                       
+
+ To do
    no actions
- - All machines                                                             1 ●
+
+ All machines
    ● macbook  Mac  here  online  100.98.133.14  0 VMs
       no VMs  → station machines create
- - Awake                                                                    1 ●
+
+ Awake
    ● awake  off  the Mac sleeps as macOS decides  → station awake 4h
- ↑↓ move   New VM   Open station   Stop everything   awake  ? keys

@@ -1,10 +1,10 @@
- SSH  2 ◌  infra
+ SSH  infra
    ◌ ssh admin@infra
    ◌ In an editor
    No password: your key. Files travel through the same name; no folder of a
    Mac is shared.
 
- How it is reached  2 ◌
+ How it is reached
    ◌ This Mac to mac-mini
    ◌ mac-mini to infra
 

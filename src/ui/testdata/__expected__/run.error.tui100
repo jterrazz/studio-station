@@ -1,3 +1,2 @@
- Error: docker ps failed: Docker is not running
- Hint: start Docker, then run it again
- r retry  ↑↓ move  enter detail  / filter  space fold  q quit  ? keys
+Error: docker ps failed: Docker is not running
+Hint: start Docker, then run it again

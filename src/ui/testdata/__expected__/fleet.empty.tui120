@@ -1,8 +1,9 @@
- - All machines                                                                                                     1 ●
+ All machines
    ● macbook  Mac  here  online  -  0 VMs
-      no VMs  n create
- - Images                                                                                                           2 ○
+      no VMs  → station machines create
+
+ Images
    ○ linux  not built yet
    ○ macos  not built yet
+
  + Tailscale                                                                                                        1 ○
- ↑↓ move  n create  b build images  enter detail  / filter  space fold  r reload  q quit  ? keys

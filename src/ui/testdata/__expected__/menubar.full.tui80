@@ -1,12 +1,14 @@
  CPU 34% ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃  memory 12.4/17.2 GB  battery 80%  ⏻ awake · 3h 12m
- - To do                                                               8 ◐  1 ✗
+
+ To do
    ✗ brain.x-snapshot  failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
    ◐ engine            not installed  → station setup
    ◐ brew              120 outdated  → station apps update --method brew
    + 6 more
- - All machines                                                   2 ●  1 ◐  1 ○
+
+ All machines
    ● macbook     Mac        here  online   100.98.133.14
    ├─ ● linux-1  throwaway        running  192.168.64.5
    │  ├─ 5173 → 40001  https://jterrazz-macbook-pro.tail1234.ts.net:40001  node
@@ -15,8 +17,8 @@
    ◐ mac-mini    Mac              online   100.98.133.20
      station v2.0.0-248 here v2.0.0-250
       no VMs  → station machines create --on mac-mini
- - Awake  awake · lid · 3h 12m left                                         3 ●
+
+ Awake  awake · lid · 3h 12m left
    ● awake      on      lid · until 14:42 (4h)
    ● display    sleeps  on lid close: pmset displaysleepnow (no display assert…
    ● clamshell  held    back to normal at the end, at every engine start and q…
- ↑↓ move   New VM   Open station   Stop everything   sleep  ? keys

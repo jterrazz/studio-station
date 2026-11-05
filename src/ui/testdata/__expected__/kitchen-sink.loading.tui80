@@ -1,8 +1,10 @@
- - To do                                                                    1 ◌
+ To do
    ◌ brew
- - Summary
+
+ Summary
    ◌ Marks
- - Values  40000-40999                                                     18 ◌
+
+ Values  40000-40999
                value   number
    ◌ text
    ◌ size      275 B  22.6 KB
@@ -22,7 +24,8 @@
    ◌ switch
    ◌ sip
    ◌ unknown
- - Marks                                                                   24 ◌
+
+ Marks
    ◌ outdated
    ◌ misplaced
    ◌ unreachable
@@ -47,16 +50,19 @@
    ◌ off-here
    ◌ not-for-this-machine
    ◌ not-known
- - All machines                                                             4 ◌
+
+ All machines
    ◌ jterrazz-mac-mini
    ├─ ◌ linux-1
    │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
    │  └─ ◌ web
    └─ ◌ linux-2
- - Disk                                                                     2 ◌
+
+ Disk
    ◌ station
    ◌ tart
- - Prose
+
+ Prose
    machine  jterrazz-macbook-pro
    uptime   22d 14h
    Serve is off on Tailscale, so no shared port is reachable from another
@@ -64,6 +70,6 @@
    Error: defaults is not installed
    Hint: run station setup
    no shared accounts  → station accounts share <account> --with <vm>
- - Peers                                                                    1 ◌
+
+ Peers
    ◌ iphone
- ↑↓ move  n create  enter detail  / filter  space fold  r reload  ? keys

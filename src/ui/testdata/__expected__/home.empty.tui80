@@ -1,6 +1,7 @@
- - To do                                                                       
+ To do
    no actions
- - Summary
+
+ Summary
    ● Machine       Mac · Darwin 27.0.0 · up 22d 14h
    ● Network       192.168.1.152 · 4/4 on
    ● Tailscale     jterrazz-macbook-pro · Serve on
@@ -10,11 +11,17 @@
    ● Settings      1 ●
    ● Disk          27.9 GB reclaimable
    ● All machines  engine running v2.0.0-250
+
  + Machine                                                                  4 ●
+
  + Environment                                                              8 ●
+
  + Workspace                                                                1 ●
+
  + Identity                                                                 2 ●
+
  + Background                                                               1 ●
+
  + Apps                                                                     1 ●
+
  + Settings                                                                 1 ●
- ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys
