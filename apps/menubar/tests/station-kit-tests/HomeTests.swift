@@ -24,7 +24,7 @@ final class HomeTests: XCTestCase {
         XCTAssertEqual(stop.run?.in, ["Confirm": "yes", "By": "the menu bar"])
         var state = Snapshot.state("menubar.home.two-macs", page)
         state.confirming = stop.id
-        XCTAssertNil(try Golden.check("sheet.stop-everything", AnyView(Popover(state, scrolls: false)), scheme: .dark))
+        XCTAssertNil(try Golden.check("sheet.stop-everything", AnyView(Popover(state, scrolls: false))))
     }
 
     // invariant: AC-25: Home draws CPU, Memory and Network, each with its
@@ -59,7 +59,7 @@ final class HomeTests: XCTestCase {
     }
 
     func drawn(_ name: String, _ state: PopoverState) throws {
-        XCTAssertNil(try Golden.check(name, AnyView(Popover(state, scrolls: false)), scheme: .dark))
+        XCTAssertNil(try Golden.check(name, AnyView(Popover(state, scrolls: false))))
     }
 
     // invariant: MB-05: Home is the switcher's pill, the three measures,

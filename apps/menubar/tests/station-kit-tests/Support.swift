@@ -136,6 +136,19 @@ enum Golden {
         try? FileManager.default.removeItem(at: actual)
         return nil
     }
+
+    // invariant: a state of the menu bar is proved in both schemes, and
+    // in each it stays glass: under 40 % of it painted opaque.
+    @MainActor
+    static func check(_ name: String, _ view: AnyView) throws -> String? {
+        var failures: [String] = []
+        for scheme in [ColorScheme.dark, .light] {
+            if let f = try check(name, view, scheme: scheme) { failures.append(f) }
+            let share = GlassTests.opaque(view, scheme: scheme) ?? 1
+            if share >= 0.4 { failures.append("\(name) \(scheme): \(Int(share * 100)) % of it is opaque") }
+        }
+        return failures.isEmpty ? nil : failures.joined(separator: "; ")
+    }
 }
 
 struct Desk: View {

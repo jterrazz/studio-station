@@ -14,7 +14,7 @@ final class SwitcherTests: XCTestCase {
         XCTAssertEqual((tree.items ?? []).compactMap(\.group?.head?.label), ["This Mac", "mac-mini"])
         XCTAssertEqual((tree.items ?? []).compactMap { texts($0.group?.head?.cells?.last?.items) }, [["Engine running"], ["Engine running"]])
         XCTAssertEqual(page.pageActions.map(\.label), ["Add a Mac"])
-        XCTAssertNil(try Golden.check("menubar.switcher.two-macs", AnyView(Popover(Snapshot.state("menubar.switcher.two-macs", page), scrolls: false)), scheme: .dark))
+        XCTAssertNil(try Golden.check("menubar.switcher.two-macs", AnyView(Popover(Snapshot.state("menubar.switcher.two-macs", page), scrolls: false))))
     }
 
     func texts(_ values: [Value]?) -> [String] { (values ?? []).compactMap(\.text) }
@@ -28,7 +28,7 @@ final class SwitcherTests: XCTestCase {
         var state = Snapshot.state("menubar.switcher.two-macs", page)
         state.confirming = add.id
         state.answers[add.id ?? ""] = ["Name": "studio-1"]
-        XCTAssertNil(try Golden.check("sheet.add-mac", AnyView(Popover(state, scrolls: false)), scheme: .dark))
+        XCTAssertNil(try Golden.check("sheet.add-mac", AnyView(Popover(state, scrolls: false))))
         let engine = try FakeEngine("mb-add-mac")
         engine.serveOnce(Data(#"{"v":2,"id":"1","out":{"Name":"studio-1"}}"#.utf8) + [0x0A], thenClose: false)
         engine.serveOnce(Data(#"{"v":2,"id":"1","out":{}}"#.utf8) + [0x0A], thenClose: false)
