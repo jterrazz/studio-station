@@ -1,0 +1,76 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar",
+  "command": "menubar",
+  "context": {
+    "machine": "jterrazz-macbook-pro",
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "todo",
+      "title": "To do",
+      "role": "actions",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "engine",
+            "mark": "attention",
+            "label": "engine",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "stopped"
+              }
+            ],
+            "reason": "stopped"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "attention",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Start the engine",
+      "on": "page",
+      "priority": 1,
+      "mutates": true,
+      "id": "start",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "engine",
+          "start"
+        ]
+      }
+    },
+    {
+      "label": "Open station",
+      "on": "page",
+      "priority": 2,
+      "id": "open-station",
+      "run": {
+        "terminal": true
+      }
+    }
+  ]
+}

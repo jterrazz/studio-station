@@ -17,7 +17,7 @@ runs:
     - command: '--version >/dev/null; /usr/bin/jq -c ''[.macs["jterrazz-macbook-pro"].power.holds, [.told[] | .Text]]'' world.json'
       exit: 0
       stdout: |
-          [null,["Awake stopped: battery 20 %"]]
+          [null,["Awake stopped on This Mac: battery 20 %"]]
     - command: 'overview --all | /usr/bin/grep -e ''Awake stopped'' -e ''	Awake'''
       exit: 0
       stdout: |
@@ -33,4 +33,4 @@ runs:
     - command: '--version >/dev/null; /usr/bin/jq -c ''[.told[] | .Text]'' world.json'
       exit: 0
       stdout: |
-          ["Awake stopped: battery 20 %"]
+          ["Awake stopped on This Mac: battery 20 %"]

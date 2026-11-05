@@ -1,0 +1,24 @@
+ CPU 34% ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃  memory 12.4/17.2 GB  battery 80%  ⏻ awake · 3h 12m
+
+ To do  4 ◐  1 ✗
+   ✗ brain.x-snapshot  failing · last exit 2
+     → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
+       rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
+   ◐ brew              120 outdated  → station apps update --method brew
+   ◐ misplaced         2 misplaced folders · 80.5 GB  → station disk move ~/.tart
+   + 2 more
+
+ All machines  3 ●  1 ◐  1 ○
+   ● macbook     Mac        This Mac  online   100.98.133.14  2 VMs
+   ├─ ● linux-1  throwaway            running  192.168.64.5   4 cpus · 4 GB · 42.9 GB
+   │  ├─ 5173 → 40001  https://jterrazz-macbook-pro.tail1234.ts.net:40001  node
+   │  └─ 5432 → 40002  postgres
+   └─ ○ api      permanent            stopped  -              4 cpus · 8 GB · 42.9 GB
+   ◐ mac-mini    Mac                  online   100.98.133.20  1 VM
+     station v2.0.0-248, This Mac v2.0.0-250
+   └─ ● infra    always-on            running  192.168.64.7   8 cpus · 24 GB · 42.9 GB
+
+ Awake  awake · lid · 3h 12m left
+   ● awake      on      lid · until 14:42 (4h)
+   ● display    sleeps  on lid close: pmset displaysleepnow (no display assertion)
+   ● clamshell  held    back to normal at the end, at every engine start and quit

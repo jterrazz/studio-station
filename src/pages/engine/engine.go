@@ -134,7 +134,7 @@ func StopConfirm(w engine.Work, mac string) page.Confirm {
 		lines = append(lines, page.Text(v.Name+" will stop; its disk is kept"))
 	}
 	for _, s := range w.Servers {
-		lines = append(lines, page.Text(s+" keeps running: a server is never stopped by Stop everything"))
+		lines = append(lines, page.Text(s+" skipped (server)"))
 	}
 	if len(w.Servers) > 0 {
 		lines = append(lines, page.Text("Awake ends, and the engine keeps running for "+strings.Join(w.Servers, ", ")))

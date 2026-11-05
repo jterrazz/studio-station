@@ -168,6 +168,25 @@ func hostsServer(h HostView) bool {
 	return slices.ContainsFunc(h.VMs, func(vm VM) bool { return vm.Lifetime == AlwaysOn })
 }
 
+func Down(vm VM) bool {
+	// value: a server is down when it is in a loop, powered off from inside,
+	// or not running while its record wants it running (SPEC §10.1's red
+	// badge).
+	if vm.Lifetime != AlwaysOn {
+		return false
+	}
+	switch vm.State {
+	case Broken, Stale:
+		return true
+	case Stopped:
+		return vm.Restarts.Looping || vm.Detail == PoweredOffInside || Wanted(vm) == "running"
+	case Running:
+		return vm.Restarts.Looping
+	case Suspended, UnknownState:
+	}
+	return false
+}
+
 // invariant: a server in a loop or powered off from inside needs you (red);
 // one whose check fails since it passed needs a look, never a restart.
 func serverFinding(ref machine.Ref, vm VM, on string) (finding.Finding, bool) {

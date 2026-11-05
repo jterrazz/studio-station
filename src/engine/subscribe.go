@@ -140,7 +140,7 @@ func (d *Daemon) CheckPages(pages []string) error {
 
 type Opened struct {
 	Stream string   `json:"stream"`
-	Pages  []string `json:"pages"`
+	Pages  []string `json:"pages,omitempty"`
 }
 
 type latest struct {

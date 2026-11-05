@@ -8,7 +8,10 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 )
 
-const NoticeActivity = "activity"
+const (
+	NoticeActivity = "activity"
+	EventDiskLow   = "disk_low"
+)
 
 type Tick func(ctx context.Context)
 
@@ -42,9 +45,14 @@ func (d *Daemon) Running() []Running {
 	return out
 }
 
-func (d *Daemon) Tell(subject, text string) {
+func (d *Daemon) Tell(machine, finding, text string) {
 	// invariant: told once, to the open surfaces and to the owner's
-	// notifications, as every word the engine says by itself.
-	d.hub.tell(Notice{Kind: NoticeActivity, Text: text})
-	d.notify(context.Background(), Notification{Kind: NoticeActivity, Subject: subject, Text: text})
+	// notifications, as every word the engine says by itself; a disk under
+	// its floor is the event of SPEC §10.4, any other finding the activity's.
+	kind := NoticeActivity
+	if finding == activity.SubjectDisk {
+		kind = EventDiskLow
+	}
+	d.hub.tell(Notice{Kind: kind, Text: text})
+	d.notify(context.Background(), Notification{Kind: kind, Subject: machine, Text: text})
 }

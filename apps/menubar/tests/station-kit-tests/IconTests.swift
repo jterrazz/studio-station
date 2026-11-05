@@ -1,35 +1,69 @@
 import StationKit
+import SwiftUI
 import XCTest
 
+@MainActor
 final class IconTests: XCTestCase {
-    func testTheIconFollowsTheTablesOrder() throws {
-        let full = try Tree.page("menubar.full")
-        let empty = try Tree.page("menubar.empty")
-        let loading = try Tree.page("menubar.loading")
-        let stopped = try Tree.page("menubar.error")
-        var warn = full
-        warn.sections = full.sections?.filter { $0.id != "power" }
-        warn.sections?[0].counts = [Tally(mark: .attention, n: 3)]
-        var broken = warn
-        broken.sections?[0].counts = [Tally(mark: .broken, n: 1), Tally(mark: .attention, n: 3)]
-        var calm = empty
-        calm.sections = empty.sections?.filter { $0.id != "fleet" }
-        let cases: [(Connection, Page?, String, String)] = [
-            (.connecting, nil, "circle.dashed", "station: connecting"),
-            (.connecting, full, "circle.dashed", "station: connecting"),
-            (.stopped, stopped, "stop.circle", "station: engine stopped"),
-            (.notInstalled, stopped, "stop.circle", "station: engine stopped"),
-            (.live, full, "power.circle.fill", "station: awake"),
-            (.live, broken, "xmark.circle.fill", "station: 4 to do"),
-            (.live, warn, "circle.lefthalf.filled", "station: 3 to do"),
-            (.live, calm, "circle.fill", "station: 0 to do"),
-            (.live, loading, "circle.fill", "station: 0 to do"),
-            (.live, nil, "circle.dashed", "station: 0 to do"),
-            (.live, empty, "circle.fill", "station: 0 to do"),
-        ]
-        for (i, (connection, page, symbol, label)) in cases.enumerated() {
-            XCTAssertEqual(MenuBarIcon.symbol(connection: connection, page: page), symbol, "case \(i)")
-            XCTAssertEqual(MenuBarIcon.label(connection: connection, page: page), label, "case \(i)")
+    func icon(_ fixture: String, _ connection: Connection = .live, sparkline: Bool = false) throws -> MenuBarIcon {
+        MenuBarIcon.of(connection: connection, page: try Tree.page(fixture), sparkline: sparkline)
+    }
+
+    func drawn(_ name: String, _ icon: MenuBarIcon) throws {
+        for scheme in [ColorScheme.dark, .light] {
+            XCTAssertNil(try Golden.check("icon." + name, AnyView(MenuBarIconView(icon, scheme: scheme)), scheme: scheme))
         }
+    }
+
+    // invariant: MB-01: nothing needs you on This Mac alone: the symbol
+    // alone, tinted by macOS.
+    func testIconPlain() throws {
+        let icon = try icon("menubar.home.one-mac")
+        XCTAssertEqual(icon, MenuBarIcon(.plain))
+        XCTAssertEqual(icon.label, "station: nothing needs you")
+        XCTAssertTrue(icon.template)
+        try drawn("plain", icon)
+    }
+
+    // invariant: MB-02: five findings and no server down: the orange 5.
+    func testIconOrangeCount() throws {
+        let icon = try icon("menubar.home.two-macs")
+        XCTAssertEqual(icon, MenuBarIcon(.needs(5)))
+        XCTAssertEqual(icon.label, "station: 5 things need you")
+        XCTAssertFalse(icon.template)
+        try drawn("needs", icon)
+    }
+
+    // invariant: MB-03: infra in a loop on the mini: the red !, whatever
+    // the count beside it.
+    func testIconRedServerDown() throws {
+        let page = try Tree.page("menubar.home.infra-down")
+        XCTAssertEqual(page.badge?.needs, 5)
+        let icon = try icon("menubar.home.infra-down")
+        XCTAssertEqual(icon, MenuBarIcon(.down))
+        XCTAssertEqual(icon.label, "station: a server is down")
+        try drawn("down", icon)
+    }
+
+    // invariant: MB-04: the CPU line is the owner's option, This Mac's CPU
+    // from the page's strip, beside the symbol and its badge.
+    func testIconCPUSpark() throws {
+        let spark = try XCTUnwrap(Tree.page("menubar.home.two-macs").strip?.spark)
+        XCTAssertFalse(spark.isEmpty)
+        let icon = try icon("menubar.home.two-macs", sparkline: true)
+        XCTAssertEqual(icon, MenuBarIcon(.needs(5), spark: spark))
+        try drawn("spark", icon)
+        XCTAssertEqual(try self.icon("menubar.home.engine-stopped", .stopped, sparkline: true).spark, nil)
+    }
+
+    // invariant: EN-10, MB-11: the engine stopped dims the symbol and says
+    // so; a connection still being made says that, with no badge either way.
+    func testIconEngineStopped() throws {
+        let stopped = try icon("menubar.home.engine-stopped", .stopped)
+        XCTAssertEqual(stopped, MenuBarIcon(.stopped))
+        XCTAssertEqual(stopped.label, "station: engine stopped")
+        XCTAssertEqual(try icon("menubar.home.two-macs", .notInstalled), MenuBarIcon(.stopped))
+        XCTAssertEqual(try icon("menubar.home.infra-down", .connecting).label, "station: connecting")
+        XCTAssertEqual(MenuBarIcon.of(connection: .live, page: try Tree.page("menubar.loading")), MenuBarIcon(.plain))
+        try drawn("stopped", stopped)
     }
 }

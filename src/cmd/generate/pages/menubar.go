@@ -2,6 +2,7 @@ package pages
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 	"time"
 
@@ -13,7 +14,9 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
+	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
@@ -53,11 +56,49 @@ func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
 
 func menubarPages() []Fixture {
 	frame, quiet, full := menubarReadings()
-	return states("menubar",
+	return append(states("menubar",
 		pagemenubar.Page(frame, menubarHere()),
 		pagemenubar.Page(quiet, menubarHere()),
 		pagemenubar.Stopped(here(), true),
-		pagemenubar.Page(full, menubarHere()))
+		pagemenubar.Page(full, menubarHere())), menubarWorlds()...)
+}
+
+// value: This Mac in the two-macs world: its engine runs, and five things
+// need you (MB-02).
+func twoMacsHome() pagehome.Overview {
+	s := snapshot()
+	s.PowerKnown, s.Power = true, overview.PowerState{Held: true, Lid: true, Until: heldSession().Until}
+	s.Station.Daemon = check("daemon", catalog.StateOK, "running v2.0.0-250", "")
+	s.Environment.Updates[0] = check("macos", catalog.StateOK, "up to date", "checked 22m ago")
+	s.Config = s.Config[:1]
+	s.Background = s.Background[:2]
+	return s
+}
+
+// value: the menu bar's Home as each world of USE-CASES §0.2 the menu bar's
+// proofs cite draws it, named menubar.home.<world>.
+func menubarWorlds() []Fixture {
+	_, quiet, full := menubarReadings()
+	f := *full.Fleet
+	f.Hosts = slices.Clone(f.Hosts)
+	f.Hosts[1].VMs = []machines.VM{server().VM}
+	two := full
+	home := twoMacsHome()
+	two.Home, two.Fleet = &home, &f
+	down := f
+	down.Hosts = slices.Clone(f.Hosts)
+	infra := server().VM
+	infra.State, infra.Detail = machines.Stopped, "restarting"
+	infra.Restarts = machines.Restarts{Count: 5, Streak: 5, Looping: true, Wait: time.Minute}
+	down.Hosts[1].VMs = []machines.VM{infra}
+	infraDown := two
+	infraDown.Fleet = &down
+	return []Fixture{
+		{Name: "menubar.home.one-mac", Page: pagemenubar.Page(quiet, menubarHere())},
+		{Name: "menubar.home.two-macs", Page: pagemenubar.Page(two, menubarHere())},
+		{Name: "menubar.home.infra-down", Page: pagemenubar.Page(infraDown, menubarHere())},
+		{Name: "menubar.home.engine-stopped", Page: pagemenubar.Stopped(menubarHere(), true)},
+	}
 }
 
 func MenubarStream() []byte {
@@ -98,21 +139,33 @@ func MenubarStream() []byte {
 
 func EventsStream() []byte {
 	// invariant: the recorded events watch is written by the engine's own
-	// event words, one frame per event of SPEC 10.4 the engine tells today,
-	// so the menu bar's notifications read what an engine sends.
+	// event words, one frame per event of SPEC 10.4 the engine tells, so the
+	// menu bar's notifications read what an engine sends.
 	var loop machines.Restarts
 	at := time.Date(2026, 11, 3, 14, 0, 0, 0, time.UTC)
 	for i := range 5 {
 		loop = loop.After(time.Second, at.Add(time.Duration(i)*time.Minute))
 	}
-	events := []engine.Told{engine.Restarting("infra", 3), engine.Looping("infra", loop), engine.PoweredOff("infra"), engine.Back("infra")}
-	var out []byte
+	exposed := ports.Exposed(ports.Survey([]ports.Machine{ports.MacOf("mac-mini", []ports.Listener{{Port: 5000, Bind: "*", Process: "ControlCenter"}})}, nil))
+	low := activity.Sample{DiskFree: 3_000_000_000, DiskTotal: 100_000_000_000}
+	events := []engine.Told{
+		engine.Restarting("infra", 3), engine.Looping("infra", loop), engine.PoweredOff("infra"), engine.Back("infra"),
+		{Kind: engine.NoticeEnded, Parts: []string{engine.AwakeStopped("battery 20 %")}},
+		{Kind: engine.EventExposed, Parts: []string{ports.Told(exposed[0])}},
+		{Kind: engine.EventDiskLow, Parts: []string{activity.DiskFreeTold("This Mac", low)}},
+	}
+	outs := make([]any, 0, 1+len(events))
+	outs = append(outs, engine.Opened{Stream: engine.EventsStream})
 	for _, e := range events {
+		outs = append(outs, engine.Event{Event: "notice", Notice: &engine.Notice{Kind: e.Kind, Text: strings.Join(e.Parts, token.Sep)}})
+	}
+	var out []byte
+	for _, o := range outs {
 		data, err := json.Marshal(struct {
-			V   int          `json:"v"`
-			ID  string       `json:"id"`
-			Out engine.Event `json:"out"`
-		}{V: 2, ID: "1", Out: engine.Event{Event: "notice", Notice: &engine.Notice{Kind: e.Kind, Text: strings.Join(e.Parts, token.Sep)}}})
+			V   int    `json:"v"`
+			ID  string `json:"id"`
+			Out any    `json:"out"`
+		}{V: 2, ID: "1", Out: o})
 		if err != nil {
 			panic(err)
 		}

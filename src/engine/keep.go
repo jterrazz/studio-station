@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"net/netip"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +26,14 @@ const (
 	EventPoweredOff = "server_powered_off"
 	EventBack       = "server_back"
 )
+
+const EventsStream = "engine.events" // value: the name the events watch opens with, as a page watch with its schema.
+
+func Notifies(kind string) bool {
+	// value: the closed list of SPEC §10.4: the events the engine's events
+	// watch streams, which the menu bar posts as its notifications.
+	return slices.Contains([]string{EventRestarting, EventLoop, EventPoweredOff, EventBack, NoticeEnded, EventExposed, EventDiskLow}, kind)
+}
 
 type Told struct {
 	// value: an event of SPEC 10.4: its name, and the parts its text joins.
@@ -116,15 +125,22 @@ func (d *Daemon) keep(ctx context.Context, v *vmState) {
 }
 
 func (d *Daemon) Events(ctx context.Context, send func(any) error) error {
-	// invariant: the events watch streams what the engine tells, each once,
-	// as it is told, until the watcher leaves (the menu bar's notifications).
+	// invariant: the events watch streams each event of the closed list the
+	// engine tells, once, as it is told, until the watcher leaves (the menu
+	// bar's notifications); any other word it says is not one.
 	sub := d.hub.add()
 	defer d.hub.remove(sub)
+	if send(Opened{Stream: EventsStream}) != nil {
+		return nil
+	}
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case n := <-sub.notice:
+			if !Notifies(n.Kind) {
+				continue
+			}
 			if err := send(Event{Event: "notice", Notice: &n}); err != nil {
 				return nil
 			}

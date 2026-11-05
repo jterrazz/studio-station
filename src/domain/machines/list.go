@@ -14,4 +14,5 @@ var (
 	Behind   = model.Behind
 	Needs    = model.Needs
 	KindWord = model.KindWord
+	Down     = model.Down
 )

@@ -40,7 +40,7 @@ const (
 	LastSettings = "engine.settings-last"
 	// value: the watch of the engine's pages, and of what it tells.
 	Page   = "page"
-	Events = "engine.events"
+	Events = engine.EventsStream
 	// value: the watch a surface holds while it shows a machine's activity:
 	// that machine is sampled every 2 s until it leaves.
 	Watch = "engine.watch"

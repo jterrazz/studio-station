@@ -10,6 +10,26 @@ public enum Token {
         public static let unknown = "?"
         public static let dash = "-"
         public static let slash = "/"
+        public static let down = "!"
+    }
+
+    // value: the menu bar icon of the vision: the station symbol, 16 pt, its
+    // badge on its top right corner, and the CPU line beside it.
+    public enum Icon {
+        public static let symbol: CGFloat = 16
+        public static let line: CGFloat = 1.6
+        public static let badge: CGFloat = 14
+        public static let badgeText: CGFloat = 9.5
+        public static let badgeShift = CGSize(width: 5, height: -3)
+        public static let sparkWidth: CGFloat = 22
+        public static let sparkHeight: CGFloat = 12
+        public static let gap: CGFloat = 4
+        public static let dimmed = 0.45
+
+        public static func needs(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0xFFAD1F : 0xF29D0B) }
+        public static func down(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0xFF4F45 : 0xEC3B30) }
+        public static let badgeInk = Token.hex(0xFFFFFF)
+        public static func ink(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0xFFFFFF : 0x000000) }
     }
 
     public enum Space {

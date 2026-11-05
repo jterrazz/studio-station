@@ -7,16 +7,30 @@ import UserNotifications
 final class Model: ObservableObject {
     @Published var state = PopoverState(page: nil, connection: .connecting)
     @Published var loginItemOn = LoginItem.on
+    @Published var sparkline = UserDefaults.standard.bool(forKey: Model.sparklineKey)
+
+    // value: the menu bar's own display option, in its macOS user defaults,
+    // never in station's preferences.
+    static let sparklineKey = "cpuSparkline"
 
     let socket = EnginePath.socket()
     private var lastPage: Date?
     private var subscription: Task<Void, Never>?
+    private var events: Task<Void, Never>?
     private var clearing: Task<Void, Never>?
     private var watching: Task<Void, Never>?
     private var asked = false
 
-    var icon: String { MenuBarIcon.symbol(connection: state.connection, page: state.page) }
-    var label: String { MenuBarIcon.label(connection: state.connection, page: state.page) }
+    var icon: MenuBarIcon { MenuBarIcon.of(connection: state.connection, page: state.page, sparkline: sparkline) }
+
+    func iconImage(dark: Bool) -> NSImage {
+        let icon = self.icon
+        guard let cg = icon.image(scheme: dark ? .dark : .light) else { return NSImage() }
+        let image = NSImage(cgImage: cg, size: NSSize(width: CGFloat(cg.width) / 2, height: CGFloat(cg.height) / 2))
+        image.isTemplate = icon.template
+        image.accessibilityDescription = icon.label
+        return image
+    }
 
     func start() {
         guard subscription == nil else { return }
@@ -24,6 +38,16 @@ final class Model: ObservableObject {
             Task { @MainActor in self.receive(event) }
         }
         subscription = Task.detached { await sub.run() }
+        let told = Subscription(path: socket, watch: Notifications.watch) { event in
+            guard let text = Notifications.posted(event, from: Notifications.watch) else { return }
+            Task { @MainActor in self.notify(text) }
+        }
+        events = Task.detached { await told.run() }
+    }
+
+    func setSparkline(_ on: Bool) {
+        UserDefaults.standard.set(on, forKey: Self.sparklineKey)
+        sparkline = on
     }
 
     func receive(_ event: StreamEvent) {
@@ -37,7 +61,7 @@ final class Model: ObservableObject {
         case .tick:
             break
         case .notice(_, let text):
-            notify(text)
+            state.status = Status(text, failed: false)
         case .down:
             if FileManager.default.fileExists(atPath: socket) && state.page != nil && state.connection == .live {
                 state.connection = .connecting
@@ -94,6 +118,7 @@ final class Model: ObservableObject {
             let status = await ActionRunner(executable: executable, socket: socket).run(action, answers: answers)
             state.running = nil
             state.status = status
+            if let text = status?.posted { notify(text) }
             clearing?.cancel()
             if status != nil {
                 clearing = Task {
@@ -116,7 +141,6 @@ final class Model: ObservableObject {
     }
 
     func notify(_ text: String) {
-        state.status = Status(text, failed: false)
         let center = UNUserNotificationCenter.current()
         let post = {
             let content = UNMutableNotificationContent()

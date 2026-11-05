@@ -248,7 +248,7 @@
       "label": "Stop everything",
       "on": "page",
       "confirm": {
-        "question": "Stop everything on this Mac?",
+        "question": "Stop everything on This Mac?",
         "lines": [
           {
             "kind": "text",

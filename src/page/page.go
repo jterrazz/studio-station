@@ -14,6 +14,14 @@ type Page struct {
 	Hints    []Hint    `json:"hints,omitempty"`
 	Error    *Error    `json:"error,omitempty"`
 	Actions  []Action  `json:"actions,omitempty"`
+	Badge    *Badge    `json:"badge,omitempty"`
+}
+
+type Badge struct {
+	// value: what the menu bar's icon says of the page's machines: how many
+	// things need you, and whether a server is down, which wins over the count.
+	Needs int  `json:"needs"`
+	Down  bool `json:"down,omitempty"`
 }
 
 type ID string
@@ -378,13 +386,18 @@ func OnMachine(machine string) Section {
 	return Section{ID: OnSection, Role: Banner, Uncounted: true, Items: []Item{{Note: &Note{Text: "On " + machine + ":"}}}}
 }
 
+const (
+	// value: the interface's name for the Mac you are on (SPEC §2).
+	ThisMac = "This Mac"
+)
+
 func MacName(name, self string) string {
 	// invariant: how the interface names a Mac (SPEC §2.5): This Mac for the
 	// one this binary runs on, named self, and every other by its name
 	// without the `<user>-` both names start with (`mac-mini` for
 	// `jterrazz-mac-mini`).
 	if name == self && self != "" {
-		return "This Mac"
+		return ThisMac
 	}
 	owner, _, ok := strings.Cut(self, "-")
 	if !ok || owner == "" {

@@ -13,6 +13,7 @@ public struct Page: Codable, Equatable, Sendable {
     public var hints: [Hint]?
     public var error: PageError?
     public var actions: [Action]?
+    public var badge: Badge?
 
     public static func decode(_ data: Data) throws -> Page {
         let page = try JSONDecoder().decode(Page.self, from: data)
@@ -30,6 +31,15 @@ public struct Page: Codable, Equatable, Sendable {
     public func section(_ id: String) -> Section? { sections?.first { $0.id == id } }
     public func action(_ id: String) -> Action? { actions?.first { $0.id == id } }
     public var pageActions: [Action] { (actions ?? []).filter { $0.on == "page" && $0.run != nil } }
+}
+
+public struct Badge: Codable, Equatable, Sendable {
+    public init(needs: Int?, down: Bool? = nil) {
+        self.needs = needs
+        self.down = down
+    }
+    public var needs: Int?
+    public var down: Bool?
 }
 
 public enum DecodeError: Error, Equatable {
