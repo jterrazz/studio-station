@@ -7,7 +7,7 @@
   },
   "state": "failed",
   "error": {
-    "message": "a VM is named by its host",
-    "hint": "station setup on the host"
+    "message": "a VM is named by its Mac",
+    "hint": "station setup on its Mac"
   }
 }

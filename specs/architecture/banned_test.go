@@ -16,7 +16,9 @@ type banned struct {
 	// value: the word as written counts only in that case (`Tasks` for the
 	// strip, `NAT`), not as the plain English word it also is.
 	exact bool
-	// value: the phrases SPEC §2.2 keeps, taken out of a text before it is read.
+	// value: the phrases SPEC §2.2 keeps, taken out of a text before it is
+	// read, and another program's own command line (`git config`, a fix the
+	// owner types).
 	allowed []string
 }
 
@@ -29,7 +31,7 @@ func bannedWords() []banned {
 		{word: "daemon"},
 		{word: "tool"},
 		{word: "tools"},
-		{word: "config", allowed: []string{".config/"}},
+		{word: "config", allowed: []string{".config/", "git config"}},
 		{word: "storage"},
 		{word: "service"},
 		{word: "lease"},
@@ -112,8 +114,6 @@ func bannedIn(texts []string) []string {
 // fails the gate until it is removed.
 func bannedTolerated() map[string][]string {
 	return map[string][]string{
-		"accounts":      {"config", "host", "lend", "tailnet"},
-		"background":    {"Tasks"},
 		"fleet":         {"fleet", "probe", "tailnet"},
 		"home":          {"config", "fleet", "host", "place", "storage", "tailnet", "tools"},
 		"home-all":      {"config", "fleet", "host", "place", "storage", "tailnet", "tools"},
@@ -122,8 +122,6 @@ func bannedTolerated() map[string][]string {
 		"outcome-power": {"power"},
 		"power":         {"power", "reset"},
 		"run":           {"daemon", "reset"},
-		"setup":         {"host", "place", "tools"},
-		"ssh":           {"config"},
 	}
 }
 

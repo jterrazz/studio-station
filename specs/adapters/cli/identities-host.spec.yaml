@@ -9,7 +9,7 @@ runs:
           ●	github	signed in	jterrazz	gist · read:org · repo · workflow
           ●	npm	signed in	jterrazz
           ●	claude	signed in	admin@jterrazz.com	max	claude.ai
-          ●	tailscale	signed in	jterrazz@github	tailnet jterrazz.github
+          ●	tailscale	signed in	jterrazz@github	jterrazz.github
           ●	cloudflare	signed in	admin@jterrazz.com	studio
           ●	git	signed in	Jean-Baptiste Terrazzoni, admin@jterrazz.com
           ●	ssh	signed in	6 keys	admin@jterrazz.com · station-image · station-e2e · deploy · old-rsa · github-actions

@@ -1,13 +1,14 @@
- Accounts  6 ●  1 ◐  1 ○  2 ✗
-   ✗ jterrazz-macbook-pro  host
+ - Accounts                                                                      6 ●  1 ◐  1 ○  2 ✗
+   ✗ jterrazz-macbook-pro  Mac
    ├─ ● GitHub             jterrazz                  own  gist · read:org · repo · workflow  gh …
    ├─ ✗ npm                ?                         own  token refused by registry.npmjs.org
         → npm login
    ├─ ● Claude             admin@jterrazz.com        own  max                                claud…
-   ├─ ● Tailscale          jterrazz@github           own  tailnet jterrazz.github            app-s…
+   ├─ ● Tailscale          jterrazz@github           own  jterrazz.github                    app-s…
    ├─ ○ Cloudflare         wrangler not on PATH
    ├─ ● git                Jean-Baptiste Terrazzoni  own  admin@jterrazz.com
    ├─ ● ssh                6 keys                    own
    └─ ● Docker             deploy                    own  registry.jterrazz.com              osxke…
    ◐ engine                stopped
      → station engine start
+ ↑↓ move  R reload  enter detail  / filter  space fold  q quit  ? keys

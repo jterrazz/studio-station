@@ -58,7 +58,7 @@ func List(tasks []background.Task, here page.Context, all bool) page.Page {
 	}
 	p.Sections = append(p.Sections, summary(tasks, here))
 	if len(tasks) == 0 {
-		p.Sections = append(p.Sections, page.Section{ID: "tasks", Title: "Tasks", Columns: columns(), Items: []page.Item{{Empty: &page.Empty{Noun: "background tasks"}}}})
+		p.Sections = append(p.Sections, page.Section{ID: "tasks", Title: "Background", Columns: columns(), Items: []page.Item{{Empty: &page.Empty{Noun: "background tasks"}}}})
 	}
 	for _, g := range groups() {
 		var items []page.Item

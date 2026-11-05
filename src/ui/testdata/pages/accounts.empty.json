@@ -48,7 +48,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 }
               ]
             },
@@ -81,7 +81,7 @@
                   ],
                   "reason": "unset",
                   "hint": {
-                    "command": "station config install github-login"
+                    "command": "station settings apply github-login"
                   }
                 }
               },
@@ -219,7 +219,7 @@
         },
         {
           "note": {
-            "text": "no VMs: rights lent to a VM appear here"
+            "text": "no VMs: accounts shared with a VM appear here"
           }
         }
       ],
@@ -243,7 +243,7 @@
   "actions": [
     {
       "key": "l",
-      "label": "lend",
+      "label": "share",
       "on": "row",
       "priority": 1,
       "mutates": true

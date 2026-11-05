@@ -1,5 +1,6 @@
- Changes
+ - Changes                                                                                 3 ●  1 ◐
    ● name    macbook
    ● zshrc   the station block
-   ◐ layout  ~/.tart left in place  73 GB: move it with station setup --move
-   ● tools
+   ◐ layout  ~/.tart not moved  73 GB: move it with station setup --move
+   ● apps
+ ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

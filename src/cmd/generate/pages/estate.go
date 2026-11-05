@@ -480,8 +480,8 @@ func setupReport() setup.Report {
 	return setup.Report{Steps: []setup.Step{
 		{Name: "name", State: catalog.StateOK, Detail: "macbook"},
 		{Name: "zshrc", State: catalog.StateOK, Detail: "the station block", Changed: true},
-		{Name: "layout", State: catalog.StateDegraded, Detail: "~/." + catalog.HypervisorTool + " left in place", Log: "73 GB: move it with station setup --move"},
-		{Name: "tools", State: catalog.StateOK},
+		{Name: "layout", State: catalog.StateDegraded, Detail: "~/." + catalog.HypervisorTool + " not moved", Log: "73 GB: move it with station setup --move"},
+		{Name: "apps", State: catalog.StateOK},
 	}}
 }
 
@@ -489,7 +489,7 @@ func setups() []Fixture {
 	return states("setup",
 		pending(pagesetup.Outcome(setupReport(), here())),
 		pagesetup.Outcome(setup.Report{}, here()),
-		failure("outcome", "setup", "a VM is named by its host", "station setup on the host"),
+		failure("outcome", "setup", "a VM is named by its Mac", "station setup on its Mac"),
 		pagesetup.Outcome(setupReport(), here()))
 }
 

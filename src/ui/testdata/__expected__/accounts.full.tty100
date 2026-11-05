@@ -1,10 +1,10 @@
 Accounts
-  ✗ jterrazz-macbook-pro  host
+  ✗ jterrazz-macbook-pro  Mac
   ├─ ● GitHub             jterrazz            own   gist · read:org · repo · workflow  gh …
   ├─ ✗ npm                ?                   own   token refused by registry.npmjs.org
        → npm login
   ├─ ● Claude             admin@jterrazz.com  own   max                                claude.ai
-  ├─ ● Tailscale          jterrazz@github     own   tailnet jterrazz.github            app-store
+  ├─ ● Tailscale          jterrazz@github     own   jterrazz.github                    app-store
   ├─ ○ Cloudflare         wrangler not on PATH
   ├─ ● git                Jean-Baptiste Ter…  own   admin@jterrazz.com
   ├─ ● ssh                6 keys              own
@@ -12,12 +12,12 @@ Accounts
   ● linux-1               throwaway  guest connected
   ├─ ● Claude             admin@jterrazz.com  lent  operator:claude:oauth-token        11h 40m left
   ├─ ● git                Jean-Baptiste Ter…  own   admin@jterrazz.com
-  ├─ ● entry              1 host key          own   jterrazz-macbook-pro               SHA256:76MC…
+  ├─ ● entry              1 SSH key           own   jterrazz-macbook-pro               SHA256:76MC…
   └─   not set here
      ├─ ○ GitHub          not logged in  → ssh linux-1 gh auth login
      ├─ ○ npm             npm not on PATH
      └─ ○ ssh             no key in the agent
   ◐ api                   permanent  guest connected
   ├─ ◐ Claude             admin@jterrazz.com  lent  operator:claude:oauth-token        42m left
-       → station secrets lend --to api operator:claude:oauth-token
-  └─ ● entry              1 host key          own   jterrazz-macbook-pro               SHA256:76MC…
+       → station accounts share claude --with api
+  └─ ● entry              1 SSH key           own   jterrazz-macbook-pro               SHA256:76MC…

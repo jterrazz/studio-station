@@ -48,7 +48,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 }
               ]
             },
@@ -257,7 +257,7 @@
                   ],
                   "reason": "expiring",
                   "hint": {
-                    "command": "station secrets lend --to api operator:claude:oauth-token"
+                    "command": "station accounts share claude --with api"
                   }
                 }
               }
@@ -285,7 +285,7 @@
   "actions": [
     {
       "key": "l",
-      "label": "lend",
+      "label": "share",
       "on": "row",
       "priority": 1,
       "mutates": true

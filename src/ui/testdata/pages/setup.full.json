@@ -64,7 +64,7 @@
             "cells": [
               {
                 "kind": "text",
-                "text": "~/.tart left in place"
+                "text": "~/.tart not moved"
               }
             ],
             "detail": {
@@ -76,9 +76,9 @@
         },
         {
           "row": {
-            "id": "tools",
+            "id": "apps",
             "mark": "ok",
-            "label": "tools",
+            "label": "apps",
             "cells": [
               {
                 "kind": "none"

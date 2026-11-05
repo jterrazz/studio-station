@@ -140,8 +140,11 @@ func worst(rows []page.Row) page.Mark {
 func head(m accounts.Machine, rows []page.Row) page.Row {
 	h := page.Row{ID: m.Name, Label: m.Name, Mark: worst(rows)}
 	kind := m.Kind
-	if m.Kind == accounts.KindVM {
+	switch m.Kind {
+	case accounts.KindVM:
 		kind = m.Lifetime
+	case accounts.KindHost:
+		kind = "Mac"
 	}
 	cells := []page.Value{page.Text(kind)}
 	switch {
@@ -220,7 +223,7 @@ func Section(r accounts.Report) page.Section {
 		d := daemonRow(r.Daemon)
 		s.Items = append(s.Items, page.Item{Row: &d})
 	case vms == 0 && len(r.Machines) > 0 && r.Machines[0].Kind == accounts.KindHost:
-		s.Items = append(s.Items, page.Item{Note: &page.Note{Text: "no VMs: rights lent to a VM appear here"}})
+		s.Items = append(s.Items, page.Item{Note: &page.Note{Text: "no VMs: accounts shared with a VM appear here"}})
 	}
 	return s
 }
@@ -240,7 +243,7 @@ func Page(r accounts.Report, here page.Context) page.Page {
 
 func Actions() []page.Action {
 	return []page.Action{
-		{Key: KeyLend, Label: "lend", On: page.OnRow, Priority: 1, Mutates: true},
+		{Key: KeyLend, Label: "share", On: page.OnRow, Priority: 1, Mutates: true},
 		{Key: KeyRevoke, Label: "revoke", On: page.OnRow, Priority: 2, Mutates: true},
 		{Key: KeyReload, Label: "reload", On: page.OnPage, Priority: 3},
 	}

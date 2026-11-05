@@ -71,9 +71,9 @@
         },
         {
           "row": {
-            "id": "tools",
+            "id": "apps",
             "mark": "pending",
-            "label": "tools",
+            "label": "apps",
             "cells": [
               {
                 "kind": "pending"

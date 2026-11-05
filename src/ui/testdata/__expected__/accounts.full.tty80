@@ -1,5 +1,5 @@
 Accounts
-  ✗ jterrazz-macbook-pro  host
+  ✗ jterrazz-macbook-pro  Mac
   ├─ ● GitHub             jterrazz                  own   gh · keyring · ssh
   ├─ ✗ npm                ?                         own   token refused by reg…
        → npm login
@@ -12,7 +12,7 @@ Accounts
   ● linux-1               throwaway  guest connected
   ├─ ● Claude             admin@jterrazz.com        lent  11h 40m left
   ├─ ● git                Jean-Baptiste Terrazzoni  own   admin@jterrazz.com
-  ├─ ● entry              1 host key                own   SHA256:76MCcfWNZv0Ix…
+  ├─ ● entry              1 SSH key                 own   SHA256:76MCcfWNZv0Ix…
   └─   not set here
      ├─ ○ GitHub                                          not logged in
           → ssh linux-1 gh auth login
@@ -20,5 +20,5 @@ Accounts
      └─ ○ ssh                                             no key in the agent
   ◐ api                   permanent  guest connected
   ├─ ◐ Claude             admin@jterrazz.com        lent  42m left
-       → station secrets lend --to api operator:claude:oauth-token
-  └─ ● entry              1 host key                own   SHA256:76MCcfWNZv0Ix…
+       → station accounts share claude --with api
+  └─ ● entry              1 SSH key                 own   SHA256:76MCcfWNZv0Ix…

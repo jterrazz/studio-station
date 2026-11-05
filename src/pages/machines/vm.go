@@ -291,7 +291,7 @@ func SSHPage(o VMOverview, target machines.SSHTarget, here page.Context) page.Pa
 	// path that reaches it from This Mac, and what station leaves to the
 	// owner's tooling; station opens it for debugging only.
 	vm, mac := o.VM, o.Mac
-	door := page.Row{ID: "command", Label: target.Command, Mark: page.OK, Cells: []page.Value{page.Text("from any Mac: the block in ~/.ssh/config hops through " + o.on())}}
+	door := page.Row{ID: "command", Label: target.Command, Mark: page.OK, Cells: []page.Value{page.Text("from any Mac: station's SSH block hops through " + o.on())}}
 	editor := page.Row{ID: "editor", Label: "In an editor", Mark: page.OK, Cells: []page.Value{page.Text("Remote SSH to " + vm.Name)}}
 	reached := []page.Row{
 		{ID: "to-mac", Label: "This Mac to " + o.on(), Mark: page.OK, Cells: []page.Value{page.List(page.Text("over "+catalog.TailnetProduct), page.Text("as "+mac.User))}},

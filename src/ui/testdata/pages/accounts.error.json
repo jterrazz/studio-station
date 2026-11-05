@@ -48,7 +48,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 }
               ],
               "reason": "degraded"
@@ -201,7 +201,7 @@
                       "items": [
                         {
                           "kind": "text",
-                          "text": "tailnet jterrazz.github"
+                          "text": "jterrazz.github"
                         }
                       ]
                     },
@@ -410,7 +410,7 @@
   "actions": [
     {
       "key": "l",
-      "label": "lend",
+      "label": "share",
       "on": "row",
       "priority": 1,
       "mutates": true

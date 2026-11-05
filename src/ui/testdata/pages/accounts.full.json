@@ -48,7 +48,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 }
               ],
               "reason": "degraded"
@@ -201,7 +201,7 @@
                       "items": [
                         {
                           "kind": "text",
-                          "text": "tailnet jterrazz.github"
+                          "text": "jterrazz.github"
                         }
                       ]
                     },
@@ -458,7 +458,7 @@
                   "cells": [
                     {
                       "kind": "identity",
-                      "text": "1 host key"
+                      "text": "1 SSH key"
                     },
                     {
                       "kind": "text",
@@ -645,7 +645,7 @@
                   ],
                   "reason": "expiring",
                   "hint": {
-                    "command": "station secrets lend --to api operator:claude:oauth-token"
+                    "command": "station accounts share claude --with api"
                   }
                 }
               },
@@ -658,7 +658,7 @@
                   "cells": [
                     {
                       "kind": "identity",
-                      "text": "1 host key"
+                      "text": "1 SSH key"
                     },
                     {
                       "kind": "text",
@@ -713,7 +713,7 @@
   "actions": [
     {
       "key": "l",
-      "label": "lend",
+      "label": "share",
       "on": "row",
       "priority": 1,
       "mutates": true
