@@ -1,4 +1,4 @@
-description: 'infra › Activity while its guest is silent: the title says from mac-mini; its process''s CPU and memory only, no disk or network line, never zeros'
+description: 'infra''s Activity with its guest silent: from mac-mini, its process''s CPU and memory, no zeros'
 fixture:
     - ../../__fixtures__/terminal/
 env:

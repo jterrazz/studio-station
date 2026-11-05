@@ -1,4 +1,4 @@
-description: 'x on a shared port stops sharing it after a yes, and it stays listed as not shared; u on a declared one undeclares it after a yes, and it moves out of Public'
+description: 'x stops sharing a port after a yes; u undeclares a public one after a yes, and it leaves Public'
 fixture:
     - ../../__fixtures__/terminal/
 env:

@@ -1,4 +1,4 @@
-description: 'Awake''s keys on the Mac under the cursor: 1 h, 4 h, lid, battery, off, until…, and the policy change that asks y/n naming infra'
+description: 'the Awake keys 1, 4, l, b, o, u on the Mac under the cursor, and c asking y/n naming infra'
 fixture:
     - ../../__fixtures__/terminal/
 env:

@@ -1,4 +1,4 @@
-description: 'S on infra''s Overview asks its name typed: enter is off until infra is typed exactly, then infra stops'
+description: 'S on infra asks its name typed: enter stays off until infra is typed, then infra stops'
 fixture:
     - ../../__fixtures__/terminal/
 env:

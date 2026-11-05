@@ -1,4 +1,4 @@
-description: 'This Mac › Activity: a sparkline per measure, the disk bar, thermal, battery, up, the top processes; w cycles 6 min · 1 h · 24 h and the title says it'
+description: 'this Mac''s Activity: a graph per measure, thermal, battery, up, top processes; w cycles the window'
 fixture:
     - ../../__fixtures__/terminal/
 env:

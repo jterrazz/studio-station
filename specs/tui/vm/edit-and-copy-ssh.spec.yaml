@@ -1,4 +1,4 @@
-description: 'e on linux-1''s Overview edits its size in a form, c copies its ssh command; e on infra''s adds its health check'
+description: 'e edits linux-1''s size in a form, c copies its ssh command; e on infra edits its health check'
 fixture:
     - ../../__fixtures__/terminal/
 env:

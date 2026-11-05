@@ -1,4 +1,4 @@
-description: 'All machines › Activity: one row per machine with DISK R/W and NET IN/OUT; enter opens that machine''s Activity'
+description: 'all machines'' Activity: a row per machine with DISK R/W and NET IN/OUT; enter opens its Activity'
 fixture:
     - ../../__fixtures__/terminal/
 env:
