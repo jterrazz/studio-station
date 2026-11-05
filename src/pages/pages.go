@@ -2,6 +2,7 @@ package pages
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -114,4 +115,22 @@ func LastAnswer(at, now time.Time) string {
 		return at.Format("15:04")
 	}
 	return at.Format("2 Jan 15:04")
+}
+
+func MacName(name, self string) string {
+	// invariant: how the interface names a Mac (SPEC §2.5): This Mac for the
+	// one this binary runs on, named self, and every other by its name
+	// without the `<user>-` both names start with (`mac-mini` for
+	// `jterrazz-mac-mini`).
+	if name == self && self != "" {
+		return "This Mac"
+	}
+	owner, _, ok := strings.Cut(self, "-")
+	if !ok || owner == "" {
+		return name
+	}
+	if short, ok := strings.CutPrefix(name, owner+"-"); ok && short != "" {
+		return short
+	}
+	return name
 }

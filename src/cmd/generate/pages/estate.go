@@ -354,16 +354,20 @@ func imageReports() []images.Report {
 	return []images.Report{
 		{Record: images.Record{Name: "linux", Version: "2026.11.01", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 4}, Newest: true, VMs: []string{"linux-1", "api"}, Mac: "jterrazz-macbook-pro"},
 		{Record: images.Record{Name: "linux", Version: "2026.10.20", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-240", BuiltAt: built.AddDate(0, 0, -20), SizeGB: 4}, Mac: "jterrazz-macbook-pro"},
-		{Record: images.Record{Name: "linux", Version: "2026.11.01", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 4}, Newest: true, VMs: []string{"infra"}, Mac: "mac-mini"},
+		{Record: images.Record{Name: "linux", Version: "2026.11.01", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 4}, Newest: true, VMs: []string{"infra"}, Mac: "jterrazz-mac-mini"},
 	}
 }
 
 func imageLists() []Fixture {
 	return states("images",
-		pending(pageimages.List(imageReports(), here())),
-		pageimages.List(nil, here()),
+		pending(pageimages.List(imageReports(), thisMacImages())),
+		pageimages.List(nil, thisMacImages()),
 		failure("images", "images", catalog.HypervisorTool+" is not installed", "station apps install "+catalog.HypervisorTool),
-		pageimages.List(imageReports(), here()))
+		pageimages.List(imageReports(), thisMacImages()))
+}
+
+func thisMacImages() page.Context {
+	return page.Context{Kind: "host", Machine: "jterrazz-macbook-pro", Registered: true}
 }
 
 func tailnetStatus() ports.Status {

@@ -44,18 +44,19 @@ func Columns() []page.Column {
 		{Key: "name", Kind: page.KindText, Keep: 100},
 		{Key: "version", Label: "version", Kind: page.KindVersion, Keep: 50},
 		{Key: "size", Label: "size", Kind: page.KindSize, Keep: 60},
-		{Key: "on", Label: "on", Kind: page.KindText, Keep: 40},
+		{Key: "mac", Label: "on", Kind: page.KindText, Keep: 40, Show: page.EyeOnly},
+		{Key: "on", Label: "on", Kind: page.KindText, Keep: 40, Show: page.PipeOnly},
 	}
 }
 
-func Section(reports []images.Report) page.Section {
+func Section(reports []images.Report, here page.Context) page.Section {
 	// invariant: one row per image per Mac, then one row for each image of
 	// the catalogue no Mac holds.
 	items := make([]page.Item, 0, len(reports)+len(catalog.Images))
 	for _, r := range reports {
 		row := page.Row{
 			ID: r.Mac + "/" + r.Record.Name + "@" + r.Record.Version, Label: r.Record.Name, Mark: page.OK,
-			Cells:  []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), page.Text(r.Mac)},
+			Cells:  []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), page.Text(pages.MacName(r.Mac, here.Machine)), page.Text(r.Mac)},
 			Detail: madeFrom(r.VMs),
 		}
 		if !r.Newest {
@@ -87,7 +88,7 @@ func madeFrom(vms []string) page.Value {
 func List(reports []images.Report, here page.Context) page.Page {
 	return page.Seal(page.Page{
 		ID: "images", Command: "images", Context: here,
-		Sections: []page.Section{firstLine(reports), Section(reports)},
+		Sections: []page.Section{firstLine(reports), Section(reports, here)},
 		Hints:    []page.Hint{*page.Cmd("station images update")},
 	})
 }

@@ -65,7 +65,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return io.Page(listPage(out, d.Here), machines.ToList(out.Fleet))
+				return io.Page(listPage(out, d.Here, env.Far()), machines.ToList(out.Fleet))
 			}
 			updates, err := call.Follow(ctx, env.Calls, env.Target(), machinescalls.List, listed, nil)
 			if err != nil {
@@ -80,7 +80,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 						failed = u.Err
 						continue
 					}
-					pages <- listPage(u.Value, d.Here)
+					pages <- listPage(u.Value, d.Here, env.Far())
 				}
 			}()
 			if err := io.LivePage(pages); err != nil {
@@ -98,7 +98,10 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func listPage(out machinescalls.ListOut, here page.Context) page.Page {
+func listPage(out machinescalls.ListOut, here page.Context, far bool) page.Page {
+	if far {
+		out.Fleet = machines.Elsewhere(out.Fleet)
+	}
 	var warnings []string
 	if out.Unrefreshed != nil {
 		warnings = append(warnings, "ssh config not refreshed: "+out.Unrefreshed.Error())

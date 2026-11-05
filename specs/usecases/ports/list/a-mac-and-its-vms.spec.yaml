@@ -20,5 +20,5 @@ runs:
           ●	infra	443	public	traefik	*:443 all interfaces	Cloudflare Tunnel · tunnel seen
           # Private: shared with you on Tailscale	1 ●
           ●	infra	6443	private		own Tailscale device: infra	Kubernetes API
-          	Reserved on jterrazz-mac-mini: 0 of 1000 (40000-40999), 1000 free
+          	Reserved on mac-mini: 0 of 1000 (40000-40999), 1000 free
           	1 more listens on its machine only

@@ -26,5 +26,5 @@ runs:
           ●	linux-1	7000	private	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server
           ●	infra	6443	private		own Tailscale device: infra	Kubernetes API
           	Reserved on This Mac: 2 of 1000 (40000-40999), 998 free
-          	Reserved on jterrazz-mac-mini: 0 of 1000 (40000-40999), 1000 free
+          	Reserved on mac-mini: 0 of 1000 (40000-40999), 1000 free
           	3 more listen on their machine only

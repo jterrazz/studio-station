@@ -24,10 +24,10 @@ runs:
 
           Images
                      version       size  on
-            ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  api · linux-1
-            ○ linux  2026.10.20  3.0 GB  jterrazz-macbook-pro  older
+            ● linux  2026.11.01  4.0 GB  This Mac  api · linux-1
+            ○ linux  2026.10.20  3.0 GB  This Mac  older
               → station images delete linux@2026.10.20
-            ● linux  2026.11.01  4.0 GB  jterrazz-mac-mini     infra
-            ○ macos                                            not built yet
+            ● linux  2026.11.01  4.0 GB  mac-mini  infra
+            ○ macos                                not built yet
 
           → station images update

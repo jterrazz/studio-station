@@ -35,7 +35,7 @@ func Tab(r Reading, here page.Context) page.Page {
 		return []page.Section{s}
 	})...)
 	p.Sections = append(p.Sections, part(r, "images", "Images", r.Images != nil, func() []page.Section {
-		s := pageimages.Section(*r.Images)
+		s := pageimages.Section(*r.Images, here)
 		s.Role, s.Fold = page.Plain, page.Open
 		return []page.Section{s}
 	})...)

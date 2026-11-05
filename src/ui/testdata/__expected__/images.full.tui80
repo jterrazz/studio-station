@@ -2,9 +2,9 @@
    ● 3 images on 2 Macs  1 older · macos not built yet
  - Images                                                              2 ●  2 ○
             version       size  on
-   ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  linux-1 · api
-   ○ linux  2026.10.20  4.0 GB  jterrazz-macbook-pro  older
+   ● linux  2026.11.01  4.0 GB  This Mac  linux-1 · api
+   ○ linux  2026.10.20  4.0 GB  This Mac  older
      → station images delete linux@2026.10.20
-   ● linux  2026.11.01  4.0 GB  mac-mini              infra
-   ○ macos                                            not built yet
+   ● linux  2026.11.01  4.0 GB  mac-mini  infra
+   ○ macos                                not built yet
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

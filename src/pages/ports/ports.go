@@ -240,8 +240,8 @@ func PrivateRow(p ports.Port) page.Row {
 }
 
 func reserved(h ports.HostServices, here page.Context) string {
-	r, mac := h.Range, h.Name
-	if mac == here.Machine || mac == "" && h.Here {
+	r, mac := h.Range, pages.MacName(h.Name, here.Machine)
+	if mac == "" && h.Here {
 		mac = "This Mac"
 	}
 	size := r.High - r.Low + 1
@@ -344,7 +344,7 @@ func whose(f ports.Fleet, here page.Context) string {
 	case len(f.Hosts) > 1:
 		return "Every Mac"
 	case len(f.Hosts) == 1 && here.Machine != "" && f.Hosts[0].Name != here.Machine:
-		return f.Hosts[0].Name
+		return pages.MacName(f.Hosts[0].Name, here.Machine)
 	case here.Machine != "" && here.Kind != string(catalog.Host):
 		return here.Machine
 	}

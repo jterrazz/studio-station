@@ -3,7 +3,9 @@
   "id": "images",
   "command": "images",
   "context": {
-    "kind": "host"
+    "machine": "jterrazz-macbook-pro",
+    "kind": "host",
+    "registered": true
   },
   "state": "ready",
   "sections": [
@@ -73,10 +75,18 @@
           "keep": 60
         },
         {
+          "key": "mac",
+          "label": "on",
+          "kind": "text",
+          "keep": 40,
+          "show": "eye"
+        },
+        {
           "key": "on",
           "label": "on",
           "kind": "text",
-          "keep": 40
+          "keep": 40,
+          "show": "pipe"
         }
       ],
       "items": [

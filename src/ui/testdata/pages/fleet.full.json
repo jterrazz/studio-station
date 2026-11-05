@@ -419,10 +419,18 @@
           "keep": 60
         },
         {
+          "key": "mac",
+          "label": "on",
+          "kind": "text",
+          "keep": 40,
+          "show": "eye"
+        },
+        {
           "key": "on",
           "label": "on",
           "kind": "text",
-          "keep": 40
+          "keep": 40,
+          "show": "pipe"
         }
       ],
       "items": [
@@ -439,6 +447,10 @@
               {
                 "kind": "size",
                 "n": 4000000000
+              },
+              {
+                "kind": "text",
+                "text": "jterrazz-macbook-pro"
               },
               {
                 "kind": "text",
@@ -477,6 +489,10 @@
               {
                 "kind": "text",
                 "text": "jterrazz-macbook-pro"
+              },
+              {
+                "kind": "text",
+                "text": "jterrazz-macbook-pro"
               }
             ],
             "detail": {
@@ -491,7 +507,7 @@
         },
         {
           "row": {
-            "id": "mac-mini/linux@2026.11.01",
+            "id": "jterrazz-mac-mini/linux@2026.11.01",
             "mark": "ok",
             "label": "linux",
             "cells": [
@@ -505,7 +521,11 @@
               },
               {
                 "kind": "text",
-                "text": "mac-mini"
+                "text": "jterrazz-mac-mini"
+              },
+              {
+                "kind": "text",
+                "text": "jterrazz-mac-mini"
               }
             ],
             "detail": {

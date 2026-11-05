@@ -95,8 +95,7 @@ runs:
       exit: 0
       stdout: |
           On mac-mini:
-          jterrazz-mac-mini · Mac · 1 thing needs you
-            Engine running
+          mac-mini · Mac · 1 thing needs you · Engine running
 
           Needs you
             ◐ ~/go is misplaced  station disk move ~/go
