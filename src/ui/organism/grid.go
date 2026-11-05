@@ -584,6 +584,35 @@ func (g Grid) overflow(entries []entry, cols []column, labelWidth, avail int) {
 	}
 }
 
+// invariant: on a terminal an Overview's section line is never cut: each
+// part of it carries a mark and a state word (`◐ 1 misplaced`), so a list
+// its line cannot hold goes on under its first part (OU-05).
+func (g Grid) wraps(ci int, cols []column, v page.Value) bool {
+	return g.flush() && ci == len(cols)-1 && v.Kind == page.KindList && atom.Width(atom.Show(v)) > cols[ci].width
+}
+
+// value: a list in lines of room columns, as many of its items on each as
+// it holds; an item wider than room has a line of its own.
+func wrapList(v page.Value, room int) []page.Value {
+	var parts []page.Value
+	var line []page.Value
+	for _, it := range v.Items {
+		if atom.Show(it) == "" {
+			continue
+		}
+		if next := append(slices.Clone(line), it); len(line) == 0 || atom.Width(atom.Show(page.List(next...))) <= room {
+			line = next
+			continue
+		}
+		parts = append(parts, page.List(line...))
+		line = []page.Value{it}
+	}
+	if len(line) > 0 {
+		parts = append(parts, page.List(line...))
+	}
+	return parts
+}
+
 func cut(v page.Value, width int) string {
 	if s := atom.Fit(v, width); atom.Width(s) <= width {
 		return s
@@ -745,6 +774,16 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 				v = page.None()
 			}
 			c.width = max(min(atom.Width(atom.Show(v)), g.avail()-used-token.Gap), 0)
+		}
+		if g.wraps(ci, cols, v) {
+			if parts := wrapList(v, g.avail()-used-token.Gap); len(parts) > 1 {
+				pad := atom.Spaces(token.Margin + g.indent() + g.markWidth() + used + token.Gap)
+				for _, part := range parts[1:] {
+					below = append(below, Line{Kind: LineOther, Key: e.key, Text: pad + st.Text.Render(atom.Show(part))})
+				}
+				v = parts[0]
+				c.width = max(c.width, atom.Width(atom.Show(v)))
+			}
 		}
 		text := atom.Fit(v, c.width)
 		// invariant: a row whose cells end before the last column keeps that
