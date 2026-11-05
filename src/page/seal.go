@@ -77,6 +77,20 @@ func rowPending(r Row) bool {
 	return false
 }
 
+// value: a banner of notes only, the `On <machine>:` line a page of another
+// machine starts with (SPEC §8.1): it needs no title.
+func onLine(s Section) bool {
+	if s.Role != Banner || len(s.Items) == 0 {
+		return false
+	}
+	for _, it := range s.Items {
+		if it.Note == nil {
+			return false
+		}
+	}
+	return true
+}
+
 func Check(p Page) error {
 	ids := map[string]bool{}
 	for _, s := range p.Sections {
@@ -84,7 +98,7 @@ func Check(p Page) error {
 			return errors.New("section " + strconv.Quote(s.ID) + ": an ID unique in the page is required")
 		}
 		ids[s.ID] = true
-		if s.Title == "" {
+		if s.Title == "" && !onLine(s) {
 			return errors.New("section " + s.ID + ": a title is required")
 		}
 		judged := len(s.Columns) == 0 || s.Columns[0].Kind != KindListing

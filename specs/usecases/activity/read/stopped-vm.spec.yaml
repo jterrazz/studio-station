@@ -4,6 +4,7 @@ runs:
     - command: 'activity --on api'
       exit: 0
       stdout: |
+          	On api:
           # Activity
           ○	api is stopped
     - command: 'activity --on api --json | /usr/bin/jq -c ''{machine: .machine.name, state, cpu}'''

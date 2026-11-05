@@ -4,6 +4,7 @@ runs:
     - command: 'activity --on infra'
       exit: 0
       stdout: |
+          	On infra:
           ●	infra	Server · up 12d 0h · rates over 1 s
           # Now
           	CPU	18 % of 8 CPU · load 1.4 1.5 1.6

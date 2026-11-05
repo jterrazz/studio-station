@@ -4,6 +4,7 @@ runs:
     - command: 'activity --on linux-1'
       exit: 0
       stdout: |
+          	On linux-1:
           ●	linux-1	Workspace · up 2h 0m · rates over 1 s
           # Now
           	CPU	8 % of 4 CPU · load 0.3 0.4 0.4

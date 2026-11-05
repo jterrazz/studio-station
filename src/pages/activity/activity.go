@@ -90,11 +90,15 @@ func kindWord(k string) string {
 
 func Page(v View, here page.Context) page.Page {
 	// invariant: SPEC §6.2, the CLI half of §6.4: the last values and rates,
-	// "since boot" in words, the top processes; a stopped VM has none.
+	// "since boot" in words, the top processes; a stopped VM has none. Any
+	// machine but this one starts with `On <it>:` (SPEC §8.1).
 	p := page.Page{ID: "activity", Command: "activity", Context: here}
+	if !v.ThisMac {
+		p.Sections = append(p.Sections, page.Section{ID: "on", Role: page.Banner, Uncounted: true, Items: []page.Item{{Note: &page.Note{Text: "On " + v.Label + ":"}}}})
+	}
 	if v.Stopped {
 		r := page.Row{ID: "stopped", Label: v.Label + " is stopped", Mark: page.Absent, Reason: page.Stopped}
-		p.Sections = []page.Section{{ID: "activity", Title: "Activity", Uncounted: true, Columns: columns()[:1], Items: []page.Item{{Row: &r}}}}
+		p.Sections = append(p.Sections, page.Section{ID: "activity", Title: "Activity", Uncounted: true, Columns: columns()[:1], Items: []page.Item{{Row: &r}}})
 		return page.Seal(p)
 	}
 	banner := page.Row{ID: "machine", Label: v.Label, Mark: page.OK, Cells: []page.Value{page.Texts(head(v)...)}}

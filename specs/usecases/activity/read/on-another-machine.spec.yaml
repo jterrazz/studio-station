@@ -4,6 +4,7 @@ runs:
     - command: 'activity --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	jterrazz-mac-mini	up 12d 0h · rates over 1 s
           # Now
           	CPU	21 % of 10 CPU · load 1.9 2.0 2.1
