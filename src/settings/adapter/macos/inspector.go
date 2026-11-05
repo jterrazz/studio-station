@@ -61,15 +61,17 @@ type protection struct {
 	cmd local.Cmd
 	// value: what the tool prints, on stdout or stderr, when the protection is on.
 	on string
+	// value: what it prints when off, for a tool whose off is a non-zero exit.
+	off string
 }
 
 func protections() map[catalog.Fact]protection {
 	return map[catalog.Fact]protection{
-		catalog.FactFileVault:   {local.Command("fdesetup", "status"), "FileVault is On"},
-		catalog.FactFirewall:    {local.Command("socketfilterfw", "--getglobalstate"), "enabled"},
-		catalog.FactSIP:         {local.Command("csrutil", "status"), "enabled"},
-		catalog.FactGatekeeper:  {local.Command("spctl", "--status"), "enabled"},
-		catalog.FactAuthRestart: {local.Command("fdesetup", "supportsauthrestart"), "true"},
+		catalog.FactFileVault:   {local.Command("fdesetup", "status"), "FileVault is On", ""},
+		catalog.FactFirewall:    {local.Command("socketfilterfw", "--getglobalstate"), "enabled", ""},
+		catalog.FactSIP:         {local.Command("csrutil", "status"), "enabled", ""},
+		catalog.FactGatekeeper:  {local.Command("spctl", "--status"), "enabled", "disabled"},
+		catalog.FactAuthRestart: {local.Command("fdesetup", "supportsauthrestart"), "true", ""},
 	}
 }
 
@@ -99,10 +101,13 @@ func (i *Inspector) Read(ctx context.Context, f catalog.Fact) (settings.Fact, er
 	if err != nil {
 		return settings.Fact{}, err
 	}
+	said := r.out.Stdout + r.out.Stderr
 	switch {
+	case r.found && p.off != "" && strings.Contains(said, p.off):
+		return settings.Fact{State: catalog.StateAbsent, Value: "off"}, nil
 	case !r.ok():
 		return settings.Unread(), nil
-	case strings.Contains(r.out.Stdout+r.out.Stderr, p.on):
+	case strings.Contains(said, p.on):
 		return settings.Fact{State: catalog.StateOK, Value: "on"}, nil
 	}
 	return settings.Fact{State: catalog.StateAbsent, Value: "off"}, nil
