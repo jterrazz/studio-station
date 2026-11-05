@@ -51,6 +51,9 @@ type Proc struct {
 	Name     string        `json:"name"`
 	CPU      time.Duration `json:"cpu"`
 	Resident uint64        `json:"resident"`
+	// value: when the process started; read for one process by its pid,
+	// zero in a whole table.
+	Started time.Time `json:"started,omitzero"`
 }
 
 type Procs struct {

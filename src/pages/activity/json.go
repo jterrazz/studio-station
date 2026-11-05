@@ -211,6 +211,9 @@ func body(v View) Body {
 	}
 	if run := r.Last.Run; run != nil {
 		b.Run = &RunJSON{CPU: run.CPU, Memory: run.Memory, Mac: v.On}
+		if !run.Started.IsZero() {
+			b.Up = ptr(int64(s.At.Sub(run.Started).Seconds()))
+		}
 		return b
 	}
 	rated := r.Window > 0

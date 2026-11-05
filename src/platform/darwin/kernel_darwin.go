@@ -198,6 +198,14 @@ static int station_proc(int pid, station_proc_t *out) {
 	return 0;
 }
 
+static int station_started(int pid, uint64_t *sec, uint64_t *usec) {
+	struct proc_bsdinfo info;
+	if (proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, sizeof info) != (int)sizeof info) return -1;
+	*sec = info.pbi_start_tvsec;
+	*usec = info.pbi_start_tvusec;
+	return 0;
+}
+
 static station_proc_t *station_procs(int *count) {
 	*count = 0;
 	int want = proc_listallpids(NULL, 0);
@@ -296,7 +304,12 @@ func (Kernel) Process(pid int) (Procs, error) {
 	if C.station_proc(C.int(pid), &p) != 0 {
 		return Procs{}, errUnread
 	}
-	return Procs{At: time.Duration(C.station_now()), List: []Proc{proc(p)}}, nil
+	one := proc(p)
+	var sec, usec C.uint64_t
+	if C.station_started(C.int(pid), &sec, &usec) == 0 && sec > 0 {
+		one.Started = time.Unix(int64(sec), int64(usec)*1000).UTC()
+	}
+	return Procs{At: time.Duration(C.station_now()), List: []Proc{one}}, nil
 }
 
 func proc(p C.station_proc_t) Proc {

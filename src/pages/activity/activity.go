@@ -60,8 +60,12 @@ func head(v View) []string {
 	if v.Kind != mac {
 		words = append(words, kindWord(v.Kind))
 	}
-	if b := r.Last.Sample.Boot; !b.IsZero() && r.Last.Run == nil && !r.Silent {
-		words = append(words, "up "+activity.Uptime(r.Last.Sample.At.Sub(b)))
+	switch run := r.Last.Run; {
+	case r.Silent:
+	case run != nil && !run.Started.IsZero():
+		words = append(words, "up "+activity.Uptime(r.Last.Sample.At.Sub(run.Started))+" (since its run started)")
+	case run == nil && !r.Last.Sample.Boot.IsZero():
+		words = append(words, "up "+activity.Uptime(r.Last.Sample.At.Sub(r.Last.Sample.Boot)))
 	}
 	switch {
 	case r.Silent:

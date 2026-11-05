@@ -79,9 +79,11 @@ type Busiest struct {
 }
 
 type Usage struct {
-	// value: one process's CPU share of the whole machine and its resident bytes.
-	CPU    float64 `json:"cpu"`
-	Memory int64   `json:"memory"`
+	// value: one process's CPU share of the whole machine, its resident
+	// bytes and when it started (zero when the kernel does not say).
+	CPU     float64   `json:"cpu"`
+	Memory  int64     `json:"memory"`
+	Started time.Time `json:"started,omitzero"`
 }
 
 func Uptime(d time.Duration) string {
