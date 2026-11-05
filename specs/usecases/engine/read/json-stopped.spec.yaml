@@ -17,8 +17,8 @@ runs:
             "findings": [],
             "engine": {
               "state": "stopped",
-              "version": "",
-              "up_s": 0,
+              "version": null,
+              "up_s": null,
               "vms": 0,
               "stopped_at": "{{iso8601}}",
               "stopped_by": "the menu bar"
