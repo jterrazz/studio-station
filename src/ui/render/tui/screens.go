@@ -89,7 +89,7 @@ func measure(r page.Row, width, room int) string {
 		}
 		graph = atom.Graph(samples, width)
 	}
-	return head + atom.PadLeft(graph, width) + "  " + atom.End(text, max(room-width, 1))
+	return head + atom.Pad(graph, width) + "  " + atom.End(text, max(room-width, 1))
 }
 
 func cell(s page.Section, r page.Row, key string) page.Value {
