@@ -32,7 +32,7 @@ func TestMeter(t *testing.T) {
 	contracttest.Meter(t, func(*testing.T) contracttest.MeterSubject {
 		return contracttest.MeterSubject{
 			Meter: New(vm, clock{}), Want: contracttest.Totals{DiskRead: 2000 * 512, DiskWritten: 4000 * 512, NetIn: 9000, NetOut: 4000, Pressure: activity.PressureWarn},
-			Running: 42, Silent: New(fstest.MapFS{}, clock{}),
+			Running: 42, Started: time.Unix(1_800_000_000-3600, 0), Silent: New(fstest.MapFS{}, clock{}),
 		}
 	})
 	s, _ := New(vm, clock{}).Sample(t.Context())

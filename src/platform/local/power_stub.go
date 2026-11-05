@@ -76,6 +76,10 @@ func (s *stubPower) Read() (PowerReading, error) {
 		r.HasBattery, r.Percent = true, n
 	}
 	r.Charging = s.word("charging", "0") == "1"
+	if r.HasBattery {
+		r.Health, _ = strconv.Atoi(s.word("health", "0"))
+		r.Cycles, _ = strconv.Atoi(s.word("cycles", "0"))
+	}
 	r.Thermal, _ = strconv.Atoi(s.word("thermal", "0"))
 	return r, nil
 }

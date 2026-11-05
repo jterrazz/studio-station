@@ -2,10 +2,12 @@ package overview
 
 import (
 	"strconv"
+	"strings"
 
 	"time"
 
 	"github.com/jterrazz/studio-station/src/accounts"
+	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/background"
@@ -27,6 +29,35 @@ func counted(parts []Part) []Part {
 		}
 	}
 	return out
+}
+
+func ActivityRead(r activity.Report) Read {
+	// invariant: SPEC §5.1's one line: CPU, memory, disk free, network in,
+	// each left out until it is known; a Meter that does not answer says so.
+	if r.Silent {
+		return Read{Line: Line{Section: section.Activity, Parts: []Part{{State: catalog.StateUnknown, Word: "no answer in 2 s"}}}, Findings: r.Findings}
+	}
+	s := r.Last.Sample
+	var parts []Part
+	if r.Window > 0 {
+		parts = append(parts, Part{Word: "CPU " + activity.Percent(r.Rates.CPU)})
+	}
+	if s.MemTotal > 0 {
+		parts = append(parts, Part{Word: "memory " + strings.TrimSuffix(activity.Memory(s.MemUsed), " GB") + " of " + activity.Memory(s.MemTotal)})
+	}
+	if s.DiskTotal > 0 {
+		parts = append(parts, Part{Bytes: s.DiskFree, Word: "free"})
+	}
+	if r.Window > 0 {
+		parts = append(parts, Part{Word: "in " + activity.Rate(r.Rates.NetIn)})
+	}
+	if run := r.Last.Run; run != nil {
+		parts = []Part{{Word: "CPU " + activity.Percent(run.CPU) + " of its Mac"}, {Word: activity.Memory(run.Memory) + " resident"}}
+	}
+	if len(parts) == 0 {
+		return Read{Findings: r.Findings}
+	}
+	return Read{Line: Line{Section: section.Activity, Parts: parts}, Findings: r.Findings}
 }
 
 func AppsRead(reports []apps.Report, m machine.Ref) Read {

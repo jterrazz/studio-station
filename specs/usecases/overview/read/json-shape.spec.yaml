@@ -16,6 +16,7 @@ runs:
     - command: 'overview --json | /usr/bin/jq -c ''.sections[] | [.id, .counts]'''
       exit: 0
       stdout: |
+          ["activity",{}]
           ["apps",{"not-installed":100,"ok":5,"update-available":3}]
           ["settings",{"applied":0}]
           ["disk",{"misplaced":1}]

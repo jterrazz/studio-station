@@ -14,6 +14,7 @@ import (
 type kernel struct {
 	counters darwin.Counters
 	tables   []darwin.Procs
+	started  map[int]time.Time
 	read     int
 }
 
@@ -37,6 +38,7 @@ func (k *kernel) Process(pid int) (darwin.Procs, error) {
 	t, err := k.Processes()
 	for _, p := range t.List {
 		if p.PID == pid {
+			p.Started = k.started[pid]
 			return darwin.Procs{At: t.At, List: []darwin.Proc{p}}, err
 		}
 	}
@@ -62,6 +64,7 @@ func mac() *kernel {
 			},
 			Links: []darwin.Link{{Name: "lo0", In: 7e8, Out: 7e8}, {Name: "en0", In: 38e9, Out: 4.6e9}, {Name: "utun4", In: 1e9, Out: 1e9}, {Name: "bridge100", In: 2e9, Out: 2e9}},
 		},
+		started: map[int]time.Time{302: time.Unix(1_799_000_000, 0)},
 		tables: []darwin.Procs{
 			{At: time.Second, List: []darwin.Proc{{PID: 301, Name: "Zed", CPU: time.Second, Resident: 1.9e9}, {PID: 302, Name: "node", CPU: 2 * time.Second, Resident: 4.1e9}}},
 			{At: 2 * time.Second, List: []darwin.Proc{{PID: 301, Name: "Zed", CPU: 1100 * time.Millisecond, Resident: 1.9e9}, {PID: 302, Name: "node", CPU: 2360 * time.Millisecond, Resident: 4.1e9}}},
@@ -75,6 +78,7 @@ func TestMeter(t *testing.T) {
 			Meter:   New(mac(), clock{}),
 			Want:    contracttest.Totals{DiskRead: 182e9, DiskWritten: 96e9, NetIn: 38e9, NetOut: 4.6e9, Pressure: activity.PressureCritical},
 			Running: 302,
+			Started: time.Unix(1_799_000_000, 0),
 			Silent:  New(&kernel{}, clock{}),
 		}
 	})

@@ -17,8 +17,9 @@ runs:
 
            infra · Server on mac-mini · always on · ● Running
 
-               Ports  Public 0 · Private 0
-               SSH    ssh infra
+               Activity  memory 15 of 24 GB · 44.0 GB free
+               Ports     Public 0 · Private 0
+               SSH       ssh infra
              Apps, settings, accounts: not managed by station
 
            Health
@@ -32,4 +33,4 @@ runs:
     - command: 'machines infra --json | /usr/bin/jq -c ''[.machine.kind, [.sections[].id]]'''
       exit: 0
       stdout: |
-          ["server",["ports","ssh"]]
+          ["server",["activity","ports","ssh"]]

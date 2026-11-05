@@ -44,6 +44,15 @@
       "out": "Shared"
     },
     {
+      "name": "activity.read",
+      "schema": "station.activity.read/v1",
+      "section": "activity",
+      "where": "at-target",
+      "in": "ReadIn",
+      "out": "Report",
+      "watch": true
+    },
+    {
       "name": "activity.sample",
       "schema": "station.activity.sample/v1",
       "section": "activity",

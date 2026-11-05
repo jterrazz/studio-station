@@ -80,3 +80,14 @@ func TestSealCountsTheMarksAndSetsTheState(t *testing.T) {
 		t.Errorf("an empty page is %s", p.State)
 	}
 }
+
+func TestTheOnLineOfAnotherMachineNeedsNoTitle(t *testing.T) {
+	on := page.Section{ID: "on", Role: page.Banner, Items: []page.Item{{Note: &page.Note{Text: "On infra:"}}}}
+	if err := page.Check(page.Page{Sections: []page.Section{on}}); err != nil {
+		t.Errorf("Check(the On line) = %v; want it kept untitled", err)
+	}
+	on.Role = ""
+	if err := page.Check(page.Page{Sections: []page.Section{on}}); err == nil {
+		t.Error("Check kept an untitled section that is no banner")
+	}
+}

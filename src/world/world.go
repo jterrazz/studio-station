@@ -158,8 +158,11 @@ type Manager struct {
 }
 
 type Meter struct {
-	Sample activity.Sample  `json:"sample"`
-	Top    activity.Busiest `json:"top"`
+	Sample activity.Sample `json:"sample"`
+	// value: how much each counter of Sample grows a second from Sample's
+	// time, so two reads apart in the world's time give a rate.
+	PerSecond *activity.Sample `json:"per_second,omitempty"`
+	Top       activity.Busiest `json:"top"`
 	// value: the processes that run, by pid.
 	Processes map[int]activity.Usage `json:"processes,omitempty"`
 }

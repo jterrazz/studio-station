@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 )
@@ -13,6 +14,7 @@ type Held struct {
 	VM, Mac   string
 	MacIsHere bool
 	Running   bool
+	Kind      machine.Kind
 }
 
 func Holder(ctx context.Context, env Env, vm string) (Held, bool) {
@@ -23,7 +25,7 @@ func Holder(ctx context.Context, env Env, vm string) (Held, bool) {
 	for _, h := range list.Fleet.Hosts {
 		for _, v := range h.VMs {
 			if v.Name == vm {
-				return Held{VM: vm, Mac: h.Name, MacIsHere: h.Here, Running: v.State == machines.Running}, true
+				return Held{VM: vm, Mac: h.Name, MacIsHere: h.Here, Running: v.State == machines.Running, Kind: v.Lifetime.Kind()}, true
 			}
 		}
 	}

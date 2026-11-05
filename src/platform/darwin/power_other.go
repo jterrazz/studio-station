@@ -19,6 +19,8 @@ type Reading struct {
 	Charging   bool
 	LowPower   bool
 	Thermal    int
+	Health     int
+	Cycles     int
 }
 
 type Power struct{}

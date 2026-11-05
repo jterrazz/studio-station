@@ -143,7 +143,7 @@ func (m *Meter) Process(ctx context.Context, pid int) (activity.Usage, error) {
 		}
 		return activity.Usage{}, ErrNoProcess
 	}
-	return activity.Usage{CPU: m.shares(before, after)[pid], Memory: bytes(after.List[0].Resident)}, nil
+	return activity.Usage{CPU: m.shares(before, after)[pid], Memory: bytes(after.List[0].Resident), Started: after.List[0].Started}, nil
 }
 
 func (m *Meter) measure(ctx context.Context, read func() (darwin.Procs, error)) (before, after darwin.Procs, err error) {

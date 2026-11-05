@@ -97,7 +97,7 @@ func (m *Meter) Process(ctx context.Context, pid int) (activity.Usage, error) {
 	}
 	for _, p := range m.processes() {
 		if p.pid == pid {
-			return activity.Usage{CPU: p.cpu, Memory: p.rss}, nil
+			return activity.Usage{CPU: p.cpu, Memory: p.rss, Started: p.started}, nil
 		}
 	}
 	return activity.Usage{}, ErrNoProcess
@@ -106,10 +106,11 @@ func (m *Meter) Process(ctx context.Context, pid int) (activity.Usage, error) {
 var ErrNoProcess = errors.New("no such process")
 
 type proc struct {
-	pid  int
-	name string
-	cpu  float64
-	rss  int64
+	pid     int
+	name    string
+	cpu     float64
+	rss     int64
+	started time.Time
 }
 
 // invariant: a process's CPU share is of the whole machine: the ticks it
@@ -122,6 +123,7 @@ func (m *Meter) processes() []proc {
 	}
 	_, total, cpus := ticks(m.read("stat"))
 	up := uptime(m.read("uptime"))
+	now := m.clock.Now().UTC()
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	seen := map[int]uint64{}
@@ -136,6 +138,9 @@ func (m *Meter) processes() []proc {
 			continue
 		}
 		p := proc{pid: pid, name: name}
+		if up > 0 {
+			p.started = now.Add(-time.Duration((up - float64(started)/hz) * float64(time.Second))).Truncate(time.Second)
+		}
 		if fields := strings.Fields(m.read(e.Name() + "/statm")); len(fields) >= 2 {
 			p.rss = parseInt(fields[1]) * page
 		}

@@ -21,12 +21,13 @@ func TestMeter(t *testing.T) {
 				CPU:    []activity.Process{{PID: 2, Name: "node", Value: 12}, {PID: 1, Name: "station", Value: 40}},
 				Memory: []activity.Process{{PID: 2, Name: "node", Value: 2e9}},
 			},
-			Processes: map[int]activity.Usage{2: {CPU: 12, Memory: 2e9}},
+			Processes: map[int]activity.Usage{2: {CPU: 12, Memory: 2e9, Started: time.Unix(1_799_000_000, 0)}},
 		}
 		return contracttest.MeterSubject{
 			Meter:   NewMeter(busy),
 			Want:    contracttest.Totals{DiskRead: 182e9, DiskWritten: 96e9, NetIn: 38e9, NetOut: 4.6e9, Pressure: activity.PressureNormal},
 			Running: 2,
+			Started: time.Unix(1_799_000_000, 0),
 			Silent:  NewMeter(world.Meter{}),
 		}
 	})

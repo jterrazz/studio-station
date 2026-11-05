@@ -113,6 +113,11 @@ func Summarize(m Head, engine Engine, own []finding.Finding, reads []Read, vms [
 			all = append(all, r.Findings...)
 		}
 	}
+	for _, r := range reads {
+		if r.Line.Section == "" {
+			all = append(all, r.Findings...)
+		}
+	}
 	for _, f := range finding.Rank(all) {
 		s.Needs = append(s.Needs, Need{Machine: f.Machine.Name, Section: f.Section, Broken: f.Severity == finding.Broken, Severity: f.Severity,
 			Subject: f.Subject, Text: f.Text, Call: f.Fix.Call, Args: f.Fix.Args, Command: f.Fix.Command, Path: f.Fix.Path})

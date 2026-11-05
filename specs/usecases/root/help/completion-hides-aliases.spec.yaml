@@ -5,6 +5,7 @@ runs:
       exit: 0
       stdout: |
           accounts
+          activity
           apps
           awake
           background

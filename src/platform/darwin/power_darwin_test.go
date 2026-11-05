@@ -35,3 +35,14 @@ func TestAPostedNotificationWakesTheWatchAndCancelStopsIt(t *testing.T) {
 	case <-time.After(300 * time.Millisecond):
 	}
 }
+
+func TestALaptopsBatteryReadsItsHealthAndCycles(t *testing.T) {
+	var p Power
+	r := p.Read()
+	if !r.HasBattery {
+		t.Skip("this Mac has no battery")
+	}
+	if r.Health < 1 || r.Health > 100 || r.Cycles < 1 {
+		t.Errorf("Read() health = %d, cycles = %d; want the AppleSmartBattery's, 1-100 %% and its cycle count", r.Health, r.Cycles)
+	}
+}

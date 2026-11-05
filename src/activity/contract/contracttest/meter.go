@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/activity/contract"
@@ -21,8 +22,9 @@ type MeterSubject struct {
 	// value: the counters the subject's machine holds on its disks and links
 	// that count, while its disk images, partitions and virtual links count too.
 	Want Totals
-	// value: a pid of a process the machine runs.
+	// value: a pid of a process the machine runs, and when it started.
 	Running int
+	Started time.Time
 	// value: a meter of the same machine whose kernel answers nothing.
 	Silent contract.Meter
 }
@@ -75,8 +77,8 @@ func Meter(t *testing.T, subject func(t *testing.T) MeterSubject) {
 
 	t.Run("one process is read by its pid, and a gone one is an error", func(t *testing.T) {
 		s := subject(t)
-		if got, err := s.Meter.Process(ctx, s.Running); err != nil || got.Memory <= 0 {
-			t.Errorf("Process(%d) = %+v, %v; want its resident memory", s.Running, got, err)
+		if got, err := s.Meter.Process(ctx, s.Running); err != nil || got.Memory <= 0 || !got.Started.Equal(s.Started) {
+			t.Errorf("Process(%d) = %+v, %v; want its resident memory, started at %v", s.Running, got, err, s.Started)
 		}
 		if _, err := s.Meter.Process(ctx, 999_999); err == nil {
 			t.Error("Process() of a pid that runs nothing answered")

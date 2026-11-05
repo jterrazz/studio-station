@@ -52,7 +52,7 @@ func (r *Reader[Tool, Item, Stray]) Snapshot(ctx context.Context) (snapshot[Tool
 }
 
 func (r *Reader[Tool, Item, Stray]) Sample(ctx context.Context) (activity.Reading, error) {
-	return activitycalls.Read(ctx, r.d.Meter)
+	return activitycalls.Measure(ctx, r.d.Meter)
 }
 
 func (r *Reader[Tool, Item, Stray]) Forget() {
