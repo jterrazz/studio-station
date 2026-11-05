@@ -1,4 +1,4 @@
-description: 'a port idle since before the engine restarted is still released after 7 days, unless a profile pins it'
+description: 'a port idle since before the engine restarted is released after 7 days, unless pinned'
 env: two-macs
 runs:
     - command: 'world unlisten linux-1 5173'
