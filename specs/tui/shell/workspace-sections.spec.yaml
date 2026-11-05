@@ -1,4 +1,4 @@
-description: 'linux-1 selected, its sections are Overview to Accounts: a Linux workspace has no job manager, so no Background, and no Awake'
+description: 'linux-1 selected, its sections end at Accounts: no job manager, so no Background'
 fixture:
     - ../../__fixtures__/terminal/
 env:

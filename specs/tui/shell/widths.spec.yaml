@@ -1,4 +1,4 @@
-description: 'three panes at 110, the detail over the list at 105, the All machines table leaving columns out at 85 and saying which, no sidebar at 70, one line under 60'
+description: 'three panes at 110, overlay at 105, columns left out at 85, no sidebar at 70, one line under 60'
 fixture:
     - ../../__fixtures__/terminal/
 env:

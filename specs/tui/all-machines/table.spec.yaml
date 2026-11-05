@@ -1,4 +1,4 @@
-description: 'the All machines table: KIND, a CPU sparkline, PORTS public · private, AWAKE and NEED per machine; enter opens a machine, with or without the sidebar'
+description: 'the All machines table: KIND, CPU, PORTS, AWAKE, NEED; enter opens a machine, sidebar or not'
 fixture:
     - ../../__fixtures__/terminal/
 env:
