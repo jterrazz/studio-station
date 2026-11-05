@@ -205,7 +205,7 @@ func (f Form) Panel() Panel {
 		case i == f.At:
 			value += "_"
 		}
-		line := " " + lead + atom.Pad(l, 14) + value
+		line := " " + lead + atom.Pad(l, max(14, len([]rune(l))+2)) + value
 		note := ""
 		if i < len(f.Notes) {
 			note = f.Notes[i]
