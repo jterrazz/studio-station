@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,6 +14,9 @@ import (
 const (
 	PagePower    = "power"
 	PageMenubar  = "menubar"
+	PageSwitcher = "menubar.switcher"
+	// value: one machine's page, watched as `menubar.machine:<name>`.
+	PageMachine  = "menubar.machine"
 	coalesce     = 250 * time.Millisecond
 	tickEvery    = 15 * time.Second
 	streamSchema = "station.page/v1"
@@ -23,6 +27,15 @@ type FeedInput struct {
 	Changed <-chan struct{}
 	Refresh <-chan struct{}
 	Power   func() power.View
+	// value: the machine a page of one machine is of, after its page's name
+	// (`menubar.machine:infra`); empty for every other page.
+	Subject string
+}
+
+// value: a watched page's feed and its subject, `<feed>:<subject>`.
+func feedOf(id string) (feed, subject string) {
+	feed, subject, _ = strings.Cut(id, ":")
+	return feed, subject
 }
 
 type Feed func(ctx context.Context, in FeedInput) <-chan any
@@ -122,11 +135,14 @@ func (d *Daemon) known(id string) bool {
 		return d.o.PowerPage != nil
 	}
 	_, ok := d.o.Feeds[id]
+	if feed, subject := feedOf(id); !ok && subject != "" {
+		_, ok = d.o.Feeds[feed]
+	}
 	return ok
 }
 
 func (d *Daemon) CheckPages(pages []string) error {
-	hint := "watch page with the pages menubar or power"
+	hint := "watch page with the pages menubar, menubar.switcher, menubar.machine:<name> or power"
 	if len(pages) == 0 {
 		return fault("unknown_page", "the watch names no page", hint)
 	}
@@ -165,8 +181,14 @@ func (l *latest) get(id string) (json.RawMessage, bool) {
 // other, never coalesced away by the reads that answer right after it.
 func (d *Daemon) feed(ctx context.Context, id string, sub *subscriber, into *latest, first chan<- json.RawMessage) {
 	in := FeedInput{Changed: sub.state, Refresh: sub.refresh, Power: d.power.View}
+	feed, ok := d.o.Feeds[id]
+	if !ok {
+		var name string
+		name, in.Subject = feedOf(id)
+		feed = d.o.Feeds[name]
+	}
 	framed := false
-	for p := range d.o.Feeds[id](ctx, in) {
+	for p := range feed(ctx, in) {
 		data, err := json.Marshal(p)
 		if err != nil {
 			continue

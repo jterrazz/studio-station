@@ -89,7 +89,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
 		Lends:       lends, Peer: m.engineAPI(),
-		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
+		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed(), engine.PageSwitcher: menubar.Switcher(), engine.PageMachine: menubar.Machine()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
 		Listening: m.listeners("/").Read, Declarations: m.stores.declarations.List,
 		Jobs: []engine.Tick{sample.Run},
