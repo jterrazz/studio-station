@@ -73,7 +73,7 @@ When stdout is not a terminal, or `NO_COLOR` is set, a document prints as record
 - a key and its value are `<key><TAB><value>`;
 - a blank cell stays (two tabs); trailing empty cells are trimmed.
 
-So `cut -f2` is a row's name. `--json` prints the presenter's JSON value, two-space indented, with a trailing newline; the key conventions are `name`, `ip`, `*_at`, `*_bytes`, `share_list` and `vms`, one key per concept across every schema.
+So `cut -f2` is a row's name. `--json` prints the call's document, `station.<call>/v1`, two-space indented, with a trailing newline. Every document opens with the same four keys, in this order, filled by `output.Document` from what the leaf knows: `schema`, `generated_at` (RFC 3339 UTC, the machine's clock), `machine` (`{name, label, kind, on, this_mac}`, the machine the call ran on as the interface names it; what the call already said of it wins) and `findings` (its section's Needs-you lines, `[]` when it has none); the call's body follows in its own order. `station.status/v1` and `station.error/v1` are printed as they are. An `--all-machines` document holds `machines: [{machine, …, error}]`, `error` (`{type, code, message}`) set for a machine that did not answer. The key conventions are `name`, `ip`, `*_at`, `*_bytes`, `share_list` and `vms`, one key per concept across every schema.
 
 ## The TUI
 

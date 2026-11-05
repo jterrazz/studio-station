@@ -20,6 +20,15 @@ runs:
       stdout: |
           {
             "schema": "station.machines.ssh/v1",
+            "generated_at": "{{iso8601}}",
+            "machine": {
+              "name": "jterrazz-macbook-pro",
+              "label": "This Mac",
+              "kind": "mac",
+              "on": null,
+              "this_mac": true
+            },
+            "findings": [],
             "name": "infra",
             "user": "admin",
             "host": "infra",

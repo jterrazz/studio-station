@@ -31,7 +31,6 @@ type SummarySectionJSON struct {
 type SummaryMachineJSON struct {
 	Name string `json:"name"`
 	Kind string `json:"kind"`
-	Here bool   `json:"here"`
 }
 
 type SummaryVMJSON struct {
@@ -49,7 +48,7 @@ type SummaryJSON struct {
 }
 
 func SummaryContract(s overview.Summary, schema string) SummaryJSON {
-	out := SummaryJSON{Schema: schema, Machine: SummaryMachineJSON{Name: s.Head.Name, Kind: string(s.Head.Kind), Here: s.Head.Here}, Engine: string(s.Engine),
+	out := SummaryJSON{Schema: schema, Machine: SummaryMachineJSON{Name: s.Head.Name, Kind: string(s.Head.Kind)}, Engine: string(s.Engine),
 		Findings: make([]SummaryFindingJSON, 0, len(s.Needs)), Sections: make([]SummarySectionJSON, 0, len(s.Lines))}
 	for _, n := range s.Needs {
 		out.Findings = append(out.Findings, SummaryFindingJSON{Machine: n.Machine, Section: string(n.Section), Severity: string(n.Severity), Subject: n.Subject, Text: n.Text,

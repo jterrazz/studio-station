@@ -6,6 +6,15 @@ runs:
       stdout: |
           {
             "schema": "station.engine.read/v1",
+            "generated_at": "{{iso8601}}",
+            "machine": {
+              "name": "jterrazz-macbook-pro",
+              "label": "This Mac",
+              "kind": "mac",
+              "on": null,
+              "this_mac": true
+            },
+            "findings": [],
             "engine": {
               "state": "stopped",
               "version": "",

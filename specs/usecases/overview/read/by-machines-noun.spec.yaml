@@ -18,10 +18,10 @@ runs:
           ●	Has an address	192.168.64.5
           ●	SSH answers
           ●	Size	4 CPU · 8 GB · 50 GB
-    - command: '--version >/dev/null; "$STATION" machines infra --json > noun.json; "$STATION" overview --on infra --json > on.json; /usr/bin/cmp noun.json on.json && /usr/bin/jq -c ''{schema, machine}'' noun.json'
+    - command: '--version >/dev/null; "$STATION" machines infra --json | /usr/bin/jq ''del(.generated_at)'' > noun.json; "$STATION" overview --on infra --json | /usr/bin/jq ''del(.generated_at)'' > on.json; /usr/bin/cmp noun.json on.json && /usr/bin/jq -c ''{schema, machine}'' noun.json'
       exit: 0
       stdout: |
-          {"schema":"station.overview.read/v1","machine":{"name":"infra","kind":"server","on":"jterrazz-mac-mini","reachable":true}}
+          {"schema":"station.overview.read/v1","machine":{"name":"infra","label":"infra","kind":"server","on":"jterrazz-mac-mini","this_mac":false,"reachable":true}}
     - command: 'machines jterrazz-mac-mini --json | /usr/bin/jq -c ''{schema, machine: .machine.name}'''
       exit: 0
       stdout: |
