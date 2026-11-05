@@ -110,14 +110,28 @@ func TestAVMWhoseGuestIsSilentKeepsAGapInItsHistoryNeverZeros(t *testing.T) {
 	}
 }
 
-type hung struct{ machines }
+type hung struct {
+	machines
+	waiting  sync.WaitGroup
+	inFlight sync.Mutex
+	at       int
+	most     int
+}
 
 func (h *hung) Invoke(ctx context.Context, target machine.Ref, name string, in, out any, p call.Progress) error {
-	if target.On != "" {
-		<-ctx.Done()
-		return ctx.Err()
+	if target.On == "" {
+		return h.machines.Invoke(ctx, target, name, in, out, p)
 	}
-	return h.machines.Invoke(ctx, target, name, in, out, p)
+	h.inFlight.Lock()
+	h.at++
+	h.most = max(h.most, h.at)
+	h.inFlight.Unlock()
+	h.waiting.Done()
+	<-ctx.Done()
+	h.inFlight.Lock()
+	h.at--
+	h.inFlight.Unlock()
+	return ctx.Err()
 }
 
 func TestTwentyHungGuestsCostATickOneBudgetNotTwenty(t *testing.T) {
@@ -128,15 +142,24 @@ func TestTwentyHungGuestsCostATickOneBudgetNotTwenty(t *testing.T) {
 		seen = append(seen, Seen{Ref: machine.Ref{Name: "vm-" + strconv.Itoa(i), On: "mac"}, Kind: machine.Workspace, Guest: true})
 	}
 	h := activity.NewHistory(c.now)
+	guests := &hung{machines: machines{clock: c, asked: map[string]int{}}}
+	guests.waiting.Add(20)
 	s := &Sample{
-		Calls: &hung{machines{clock: c, asked: map[string]int{}}}, Clock: c,
+		Calls: guests, Clock: c,
 		Seen: func() []Seen { return seen }, Watched: func(machine.Ref) bool { return false },
 		History: func() *activity.History { return h }, Tell: func(string, string) {},
 	}
-	began := time.Now()
-	s.Run(t.Context())
-	if took := time.Since(began); took > 2*budget {
-		t.Errorf("a tick with 20 hung guests took %s; want one budget, %s", took.Round(time.Second), budget)
+	ctx, cancel := context.WithCancel(t.Context())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		s.Run(ctx)
+	}()
+	guests.waiting.Wait()
+	cancel()
+	<-done
+	if guests.most != 20 {
+		t.Errorf("at most %d of the 20 hung guests were waited on at once; want all 20, one budget for the tick", guests.most)
 	}
 	if _, ok := h.Of("mac"); !ok {
 		t.Error("This Mac was not sampled in the tick its VMs hung")
