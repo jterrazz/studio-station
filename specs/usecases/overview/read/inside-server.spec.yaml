@@ -15,10 +15,11 @@ runs:
 
            infra · Server · up 12 d
 
-               Ports  Public 0 · Private 0
-               SSH    ssh infra
+               Activity  ? not measured
+               Ports     Public 0 · Private 0
+               SSH       ssh infra
              Apps, settings, accounts: not managed by station
     - command: 'overview --json | /usr/bin/jq -c ''[.machine.kind, [.sections[].id], .findings]'''
       exit: 0
       stdout: |
-          ["server",["ports","ssh"],[]]
+          ["server",["activity","ports","ssh"],[]]

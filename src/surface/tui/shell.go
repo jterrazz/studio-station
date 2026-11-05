@@ -84,7 +84,7 @@ func (s shell) current() node {
 }
 
 func (s shell) section() section.ID {
-	secs := s.current().sections()
+	secs := s.sections(s.current())
 	return secs[min(s.sec, len(secs)-1)]
 }
 
@@ -259,7 +259,7 @@ func (s shell) open(name string) (tea.Model, tea.Cmd) {
 }
 
 func (s shell) show(i int) (tea.Model, tea.Cmd) {
-	n := len(s.current().sections())
+	n := len(s.sections(s.current()))
 	s.sec = (i%n + n) % n
 	s.side = s.sectionEntry()
 	if s.focus == ui.PaneDetail && !s.listed() {
@@ -345,6 +345,42 @@ func (s shell) listed() bool {
 	}
 }
 
+func (s shell) page(n node, id section.ID) (page.Page, bool) {
+	r, ok := s.reads[s.key(n, id)]
+	return r.page, ok && r.done && r.err == nil
+}
+
+// invariant: a machine's sections are those its own Overview has a line
+// for: the machine gates each read by its capabilities, and its Overview
+// leaves out what it refused (a Linux workspace has no job manager, so no
+// Background). Its kind's table stands in until that Overview answers, and
+// while the machine answers no read (a stopped VM) (SPEC §3.2, round 13 E1).
+func (s shell) sections(n node) []section.ID {
+	if n.all() {
+		return section.AllMachines()
+	}
+	kind := section.For(n.kind)
+	p, ok := s.page(n, section.Overview)
+	if !ok {
+		return kind
+	}
+	var lines []section.ID
+	for _, sec := range p.Sections {
+		for _, it := range sec.Items {
+			if it.Row == nil {
+				continue
+			}
+			if id := section.ID(it.Row.ID); id != section.Overview && slices.Contains(kind, id) {
+				lines = append(lines, id)
+			}
+		}
+	}
+	if len(lines) == 0 {
+		return kind
+	}
+	return slices.DeleteFunc(kind, func(id section.ID) bool { return id != section.Overview && !slices.Contains(lines, id) })
+}
+
 func (s shell) cycle(step int) ui.Pane {
 	var panes []ui.Pane
 	if s.sidebarShown() {
@@ -395,7 +431,7 @@ func (s shell) entries() []entry {
 	}
 	cur := s.current()
 	out = append(out, entry{}, entry{Entry: ui.Entry{Label: cur.heading(), Heading: true}})
-	for i, id := range cur.sections() {
+	for i, id := range s.sections(cur) {
 		badge, tone := s.badge(cur, id)
 		out = append(out, entry{Entry: ui.Entry{Label: id.Title(), Badge: badge, Tone: tone, Current: i == s.sec}, isSection: true, sec: i})
 	}

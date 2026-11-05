@@ -24,13 +24,6 @@ const allMachines = "All machines"
 
 func (n node) all() bool { return n.kind == "" }
 
-func (n node) sections() []section.ID {
-	if n.all() {
-		return section.AllMachines()
-	}
-	return section.For(n.kind)
-}
-
 func (n node) heading() string {
 	switch n.kind {
 	case "":

@@ -1,4 +1,4 @@
-description: 'linux-1 selected, its sections are Overview to Background, without Awake'
+description: 'linux-1 selected, its sections are Overview to Accounts: a Linux workspace has no job manager, so no Background, and no Awake'
 fixture:
     - ../../__fixtures__/terminal/
 env:
@@ -25,7 +25,7 @@ runs:
           ┃ Disk                 
           ┃ Ports                
           ┃ Accounts             
-          ┃ Background           
+          ┃                      
           ┃                      
           ┃                      
           ┃                      
