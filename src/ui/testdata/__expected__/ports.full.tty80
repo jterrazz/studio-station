@@ -1,6 +1,4 @@
-Tailscale
-  ● Tailscale
-    signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
+Tailscale · signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
 
 Needs you: reachable outside Tailscale, not declared public
               port  class      what              listens on            declared

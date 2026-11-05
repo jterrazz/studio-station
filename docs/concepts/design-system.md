@@ -46,7 +46,7 @@ The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinfor
 
 ## Typography
 
-- On a terminal, a CLI page starts at the first column with the line that sums it up (`This Mac · 108 apps for this Mac · 2 updates`), then one blank line; its sections read on without one, rows two columns in, and a section with nothing to do is one line. The TUI keeps a one-space margin.
+- On a terminal, a CLI page starts at the first column with the line that sums it up (`This Mac · 108 apps for this Mac · 2 updates`), in plain text, then one blank line; the line is never cut: a part it cannot hold goes on the next line, two columns in; its sections read on without one, rows two columns in, and a section with nothing to do is one line. The TUI keeps a one-space margin.
 - A section title is `Accent` and bold. An open section's title counts nothing; a folded one is one line: its title, its count by mark (`○ 34`), then as many of its rows' names as fit (`yazi, dust, eza, …`). A brief section (`page.Brief`) is folded so on a terminal and open in the TUI. A section that only says something is one line on a terminal too, its title then its words (`Not for this machine  7 apps live on other machines`).
 - Another machine's output starts with `On <machine>:`, the machine `--on` named (tty and pipe).
 - A row is a mark, a space, then cells separated by two spaces. Column widths are computed per document, so every section lines up, and the last cell is never padded.

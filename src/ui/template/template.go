@@ -42,14 +42,17 @@ func body(st token.Styles, p page.Page, width int) []string {
 			lines = append(lines, "")
 		}
 		switch {
-		case i == first && len(s.Items) == 1 && s.Items[0].Row != nil && !s.Joined && atom.Width(summed(st, *s.Items[0].Row)) < width-token.Margin:
-			lines = append(lines, summed(st, *s.Items[0].Row))
+		case i == first && len(s.Items) == 1 && s.Items[0].Row != nil && !s.Joined:
+			lines = append(lines, summed(st, *s.Items[0].Row, width)...)
 			if h := s.Items[0].Row.Hint; h != nil && !elsewhere(p, i, h.Command) {
 				lines = append(lines, atom.Spaces(token.Margin+token.Indent)+molecule.PageHint(st, *h, 0))
 			}
-		case i == first && s.Joined && len(s.Items) > 0:
-			lines = append(lines, organism.Title(st, s), "")
-			lines = append(lines, organism.Rows(st, s, width)...)
+		case i == first && s.Joined:
+			lines = append(lines, sums(st, append([]page.Value{page.Text(s.Title)}, s.Caption...), width)...)
+			if len(s.Items) > 0 {
+				lines = append(lines, "")
+				lines = append(lines, organism.Rows(st, s, width)...)
+			}
 		case s.Fold == page.Folded || s.Fold == page.Brief:
 			lines = append(lines, folded(st, s, fold, width))
 		case noted(s) && atom.Width(atom.Pad(s.Title, fold))+token.Gap+atom.Width(s.Items[0].Note.Text) < width-token.Margin:
@@ -90,15 +93,44 @@ func firstLine(sections []page.Section) int {
 }
 
 // value: a page summed up by one machine's row reads as its first line,
-// `This Mac · 108 apps for this Mac · 2 updates` (vision 07 "station apps"),
-// when the line holds it whole; a longer one stays its section.
-func summed(st token.Styles, r page.Row) string {
+// `This Mac · 108 apps for this Mac · 2 updates` (vision 07 "station apps").
+func summed(st token.Styles, r page.Row, width int) []string {
 	parts := []page.Value{page.Text(r.Label)}
-	parts = append(parts, r.Cells...)
-	if !r.Detail.IsNone() {
-		parts = append(parts, r.Detail)
+	for _, c := range append(r.Cells, r.Detail) {
+		if c.Kind == page.KindList {
+			parts = append(parts, c.Items...)
+		} else if !c.IsNone() {
+			parts = append(parts, c)
+		}
 	}
-	return atom.Spaces(token.Margin) + st.Title.Render(atom.Show(page.List(parts...)))
+	return sums(st, parts, width)
+}
+
+// invariant: a first line is plain text, as vision 07 draws it, and never
+// cut: a part the line cannot hold goes on the next one, two columns in
+// (`This Mac · jterrazz-macbook-pro · 9 things need you` / `  Engine running`).
+func sums(st token.Styles, parts []page.Value, width int) []string {
+	room := width - 1 - token.Margin
+	var lines []string
+	line := ""
+	for _, v := range parts {
+		text := atom.Show(v)
+		switch {
+		case text == "":
+		case line == "":
+			line = text
+		case atom.Width(line)+atom.Width(token.Sep)+atom.Width(text) <= room:
+			line += token.Sep + text
+		default:
+			lines = append(lines, line)
+			line = atom.Spaces(token.Indent) + text
+		}
+	}
+	lines = append(lines, line)
+	for i, l := range lines {
+		lines[i] = atom.Spaces(token.Margin) + st.Text.Render(l)
+	}
+	return lines
 }
 
 // value: whether a hint the first line leaves out is on another row of the

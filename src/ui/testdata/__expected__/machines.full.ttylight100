@@ -1,4 +1,4 @@
-[1;38;2;30;102;245m4 machines · 3 running · 1 stopped · 1 needs you[m
+[38;2;76;79;105m4 machines · 3 running · 1 stopped · 1 needs you[m
 
 [38;2;108;111;133m    MACHINE     KIND       STATE                             CPU    MEMORY[m
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mThis Mac[m    [38;2;76;79;105mMac[m        [38;2;76;79;105mEngine running[m
