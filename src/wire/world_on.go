@@ -91,7 +91,8 @@ type worldRun struct {
 	// a command a TUI runs beside its live reads loses no write to them.
 	held *os.File
 	// value: the run handed its world to the commands it runs as children
-	// (the TUI): its own copy is stale and is never written again.
+	// (the TUI), or only looks at it (a page the TUI reads): its copy is
+	// never written back.
 	lent bool
 }
 
@@ -119,7 +120,10 @@ type worldMac struct {
 	leave func()
 }
 
-func openWorld(vars map[string]string) (*worldRun, error) {
+// invariant: a run that only looks (a page the TUI reads, --page) reads the
+// world under the lock and lets go of it at once: it writes nothing back,
+// so a slow look never holds a call up, nor undoes one.
+func openWorld(vars map[string]string, look bool) (*worldRun, error) {
 	path := vars["STATION_WORLD"]
 	if path == "" {
 		return nil, nil
@@ -139,6 +143,10 @@ func openWorld(vars map[string]string) (*worldRun, error) {
 		return nil, err
 	}
 	w.UseHypervisor(vars["STATION_WORLD_HYPERVISOR"])
+	if look {
+		unlockWorld(held)
+		return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, lent: true}, nil
+	}
 	return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, held: held}, nil
 }
 

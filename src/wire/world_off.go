@@ -35,7 +35,7 @@ type (
 	worldMac struct{}
 )
 
-func openWorld(map[string]string) (*worldRun, error) { return nil, nil }
+func openWorld(map[string]string, bool) (*worldRun, error) { return nil, nil }
 
 func (*worldRun) here() *worldMac                { return nil }
 func (*worldRun) farFrom(func(*worldMac) farMac) {}
