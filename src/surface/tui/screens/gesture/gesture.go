@@ -45,6 +45,23 @@ type Gesture struct {
 	View string
 	// value: another machine's section shown, its cursor on a row.
 	Visit *Visit
+	// value: a form put first, its answers handed to the one command it runs.
+	Values *Values
+}
+
+type Values struct {
+	// invariant: the answers go to the command on its stdin, never in its
+	// words, and the shell keeps none of them once the command has run.
+	Title  string
+	Fields []Field
+	Step   Step
+}
+
+type Field struct {
+	// value: the input's name the command reads the answer by, and what the
+	// form shows of it; a secret is drawn masked.
+	Name, Label, Note string
+	Secret            bool
 }
 
 type Visit struct {

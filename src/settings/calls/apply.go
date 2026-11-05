@@ -53,7 +53,7 @@ var Apply = call.Call[Deps, ApplyIn, []settings.Change]{
 					return nil, err
 				}
 			}
-			change, err := d.Settings.Apply(ctx, t.it.Name, values, in.Interactive)
+			change, err := d.Settings.Apply(ctx, t.it.Name, values, in.Interactive || answered(t.it, in))
 			change.Item, change.Verb = t.it.Name, "apply"
 			if err != nil {
 				change.Result = catalog.StateBroken
@@ -84,6 +84,12 @@ var Apply = call.Call[Deps, ApplyIn, []settings.Change]{
 		}
 		return changes, nil
 	},
+}
+
+// invariant: values given stand for the terminal only for a setting whose
+// one question is its form: one that runs its own dialog still needs one.
+func answered(it catalog.ConfigItem, in ApplyIn) bool {
+	return in.Values[it.Name] != nil && !it.Interactive
 }
 
 type target struct {
@@ -118,13 +124,13 @@ func targetsOf(ctx context.Context, d Deps, in ApplyIn, off map[string]bool) ([]
 		if err != nil {
 			return nil, err
 		}
-		if asks(it) && !in.Interactive && in.Values[name] == nil {
+		if asks(it) && !in.Interactive && !answered(it, in) {
 			return nil, fail.New(fail.NeedsTerminal, NeedsTerminal, name, nil)
 		}
 		if err := admitted(d, it, "apply"); err != nil {
 			return nil, err
 		}
-		if err := d.Settings.Admit(name, in.Interactive || in.Values[name] != nil); err != nil {
+		if err := d.Settings.Admit(name, in.Interactive || answered(it, in)); err != nil {
 			return nil, err
 		}
 		row, _ := judge(ctx, d, it, map[string]bool{})

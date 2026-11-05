@@ -16,6 +16,9 @@ type Answer struct {
 	// name typed; the zero Answer runs the command unanswered.
 	Yes   bool
 	Typed string
+	// value: what the owner typed in the command's form, by its input's
+	// name: the command reads it on its stdin, never in its words.
+	Values map[string]string
 }
 
 type Do func(ctx context.Context, words []string, a Answer) (said []string, err error)

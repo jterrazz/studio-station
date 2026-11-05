@@ -31,6 +31,7 @@ type Target struct {
 
 type Field struct {
 	Label, Value, Note string
+	Secret             bool
 }
 
 type Item struct {

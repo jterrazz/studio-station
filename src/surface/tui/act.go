@@ -19,6 +19,7 @@ import (
 	imagesscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/images"
 	matrixscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/matrix"
 	overviewscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/overview"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	settingsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/settings"
 	sshscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/ssh"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
@@ -64,6 +65,9 @@ type modal struct {
 	at       int
 	pick     func(string) gesture.Gesture
 	task     task
+	// value: the answers of the form the task's command asked first, held
+	// while its question is put, then dropped with the modal.
+	values map[string]string
 	// value: the question q asks while a call of this session still runs.
 	quit bool
 }
@@ -93,9 +97,10 @@ type shown struct {
 }
 
 type stepped struct {
-	t    task
-	said []string
-	err  error
+	t      task
+	values map[string]string
+	said   []string
+	err    error
 }
 
 type toasted struct{ id int }
@@ -212,6 +217,13 @@ func (s shell) perform(g gesture.Gesture) (shell, tea.Cmd) {
 		return s, nil
 	case g.Visit != nil:
 		return s.visit(*g.Visit)
+	case g.Values != nil:
+		f := &screen.Form{Title: g.Values.Title}
+		for _, x := range g.Values.Fields {
+			f.Fields = append(f.Fields, screen.Field{Label: x.Label, Note: x.Note, Secret: x.Secret})
+		}
+		s.dialog = &dialog{call: screen.Call{Form: f}, answers: make([]string, len(f.Fields)), values: g.Values}
+		return s, nil
 	case g.Pick != nil:
 		s.acts.modal = &modal{question: g.Pick.Title, options: g.Pick.Options, pick: g.Pick.Then}
 		return s, nil
@@ -286,8 +298,22 @@ func (s shell) start(t task, a Answer) (shell, tea.Cmd) {
 	ctx, do, words := s.ctx, s.deps.Do, t.step.Words
 	return s, func() tea.Msg {
 		said, err := do(ctx, words, a)
-		return stepped{t: t, said: said, err: err}
+		msg := stepped{t: t, said: said, err: err}
+		if _, asked := errors.AsType[*Asked](err); asked {
+			msg.values = a.Values
+		}
+		return msg
 	}
+}
+
+// value: the form's answers by their input's name, handed to its command;
+// the dialog that held them is gone.
+func (s shell) handed(v gesture.Values, answers []string) (shell, tea.Cmd) {
+	values := make(map[string]string, len(v.Fields))
+	for i, f := range v.Fields {
+		values[f.Name] = answers[i]
+	}
+	return s.start(task{step: v.Step, n: 1, total: 1, stale: s.stale()}, Answer{Values: values})
 }
 
 func (s shell) stepDone(msg stepped) (tea.Model, tea.Cmd) {
@@ -295,7 +321,7 @@ func (s shell) stepDone(msg stepped) (tea.Model, tea.Cmd) {
 	var asked *Asked
 	if errors.As(msg.err, &asked) {
 		s.acts.tasks = slices.DeleteFunc(slices.Clone(s.acts.tasks), func(x task) bool { return x.id == t.id })
-		m := &modal{question: question(t.step), name: asked.Name, task: t}
+		m := &modal{question: question(t.step), name: asked.Name, task: t, values: msg.values}
 		if asked.Name != "" {
 			m.lines = []string{asked.Message}
 		}
@@ -418,7 +444,7 @@ func (s shell) answering(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				return s, nil
 			}
 			s.acts.modal = nil
-			return s.start(m.task, Answer{Typed: m.typed})
+			return s.start(m.task, Answer{Typed: m.typed, Values: m.values})
 		case "backspace":
 			if r := []rune(m.typed); len(r) > 0 {
 				m.typed = string(r[:len(r)-1])
@@ -433,7 +459,7 @@ func (s shell) answering(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			if m.quit {
 				return s.leave()
 			}
-			return s.start(m.task, Answer{Yes: true})
+			return s.start(m.task, Answer{Yes: true, Values: m.values})
 		case "n":
 			s.acts.modal = nil
 			return s, nil

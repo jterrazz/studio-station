@@ -115,7 +115,7 @@ func (s shell) runAction(it palette.Item) (tea.Model, tea.Cmd) {
 	case it.Then != nil:
 		f := &screen.Form{Title: strings.TrimSuffix(it.Label, ui.Ellipsis)}
 		for _, x := range it.Fields {
-			f.Fields = append(f.Fields, screen.Field{Label: x.Label, Value: x.Value, Note: x.Note})
+			f.Fields = append(f.Fields, screen.Field{Label: x.Label, Value: x.Value, Note: x.Note, Secret: x.Secret})
 		}
 		d := &dialog{call: screen.Call{Form: f}, then: it.Then}
 		for _, x := range f.Fields {

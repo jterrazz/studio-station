@@ -2,6 +2,7 @@ package wire
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"strings"
 	"sync"
@@ -67,7 +68,15 @@ func (b *binary) do(ctx context.Context, words []string, a tui.Answer) ([]string
 	case a.Yes:
 		words = append(words, "--yes")
 	}
-	out, err := b.run(ctx, words)
+	var stdin string
+	if a.Values != nil {
+		raw, err := json.Marshal(a.Values)
+		if err != nil {
+			return nil, err
+		}
+		words, stdin = append(words, "--"+kit.ValuesOnStdin), string(raw)
+	}
+	out, err := b.runIn(ctx, words, stdin)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +113,11 @@ func skipped(stdout string) []string {
 }
 
 func (b *binary) run(ctx context.Context, args []string) (system.Output, error) {
-	return b.m.host.Run.Output(ctx, system.Cmd{Name: b.m.host.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}})
+	return b.runIn(ctx, args, "")
+}
+
+func (b *binary) runIn(ctx context.Context, args []string, stdin string) (system.Output, error) {
+	return b.m.host.Run.Output(ctx, system.Cmd{Name: b.m.host.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}, Stdin: stdin})
 }
 
 func (b *binary) open(ctx context.Context, target string) error {

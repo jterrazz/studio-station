@@ -41,6 +41,8 @@ type dialog struct {
 	at      int
 	// value: the gesture the form's answers make, in place of its call.
 	then func(answers []string) gesture.Gesture
+	// value: the command the form's answers are handed to, on its stdin.
+	values *gesture.Values
 }
 
 func screenFor(n node, id section.ID) screen.Screen {
@@ -250,6 +252,9 @@ func (s shell) asking(k tea.KeyPressMsg) (shell, tea.Cmd) {
 		case key == "enter":
 			s.dialog = nil
 			answers := d.answers
+			if d.values != nil {
+				return s.handed(*d.values, answers)
+			}
 			if d.then != nil {
 				return s.perform(d.then(answers))
 			}
