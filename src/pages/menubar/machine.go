@@ -130,9 +130,23 @@ func vmPage(m Machine, h machines.HostView, vm machines.VM) page.Page {
 }
 
 // value: Activity's three measures of the machine, as its last two
-// readings give them; pending until they are read.
+// readings give them, each led into its series over the readings kept
+// (0 to 100: CPU's share, memory's and disk's use of their total), so a
+// tile draws its bar meter; pending until they are read.
 func activitySection(readings []activity.Reading, title string) page.Section {
 	cpu, memory, disk := page.Pending(), page.Pending(), page.Pending()
+	var cpus, memories, disks []int
+	for i, r := range readings {
+		if i > 0 {
+			cpus = append(cpus, int(activity.Between(readings[i-1].Sample, r.Sample).CPU))
+		}
+		if s := r.Sample; s.MemTotal > 0 {
+			memories = append(memories, int(min(s.MemUsed, s.MemTotal)*100/s.MemTotal))
+		}
+		if s := r.Sample; s.DiskTotal > 0 {
+			disks = append(disks, int((s.DiskTotal-s.DiskFree)*100/s.DiskTotal))
+		}
+	}
 	if n := len(readings); n > 0 {
 		last := readings[n-1].Sample
 		if n > 1 {
@@ -146,8 +160,16 @@ func activitySection(readings []activity.Reading, title string) page.Section {
 			disk = page.Ratio(last.DiskTotal-last.DiskFree, last.DiskTotal)
 		}
 	}
-	rows := []page.Row{{ID: "cpu", Label: "CPU", Cells: []page.Value{cpu}}, {ID: "memory", Label: "Memory", Cells: []page.Value{memory}}, {ID: "disk", Label: "Disk", Cells: []page.Value{disk}}}
-	return page.Section{ID: SectionActivity, Title: title, Role: page.Summary, Columns: columns(), Items: items(rows)}
+	measure := func(id, label string, now page.Value, series []int) page.Row {
+		row := page.Row{ID: id, Label: label, Cells: []page.Value{now}}
+		if len(series) > 1 {
+			row.Cells = append(row.Cells, page.Spark(series, page.None()))
+		}
+		return row
+	}
+	rows := []page.Row{measure("cpu", "CPU", cpu, cpus), measure("memory", "Memory", memory, memories), measure("disk", "Disk", disk, disks)}
+	cols := append(columns(), page.Column{Key: "graph", Kind: page.KindSpark, Keep: 50})
+	return page.Section{ID: SectionActivity, Title: title, Role: page.Summary, Columns: cols, Items: items(rows)}
 }
 
 func items(rows []page.Row) []page.Item {
