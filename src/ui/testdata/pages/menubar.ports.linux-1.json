@@ -1,0 +1,326 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.ports",
+  "command": "ports",
+  "context": {
+    "machine": "linux-1",
+    "kind": "workspace"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/ports",
+            "mark": "ok",
+            "label": "linux-1",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "2 ports"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "nothing needs you"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "private",
+      "title": "Private: shared with you on Tailscale",
+      "columns": [
+        {
+          "key": "vm",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "port",
+          "label": "port",
+          "kind": "portmap",
+          "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
+          "key": "url",
+          "label": "url",
+          "kind": "url",
+          "keep": 40
+        },
+        {
+          "key": "state",
+          "label": "state",
+          "kind": "text",
+          "keep": 70
+        },
+        {
+          "key": "process",
+          "label": "process",
+          "kind": "text",
+          "keep": 20,
+          "whole": true
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "linux-1:5173",
+            "mark": "ok",
+            "label": "linux-1",
+            "cells": [
+              {
+                "kind": "portmap",
+                "n": 5173,
+                "of": 40001
+              },
+              {
+                "kind": "text",
+                "text": "private"
+              },
+              {
+                "kind": "url",
+                "text": "https://jterrazz-macbook-pro.tail1234.ts.net:40001"
+              },
+              {
+                "kind": "text",
+                "text": "shared"
+              },
+              {
+                "kind": "text",
+                "text": "node"
+              }
+            ],
+            "detail": {
+              "kind": "text",
+              "text": "vite"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "linux-1:5432",
+            "mark": "absent",
+            "label": "linux-1",
+            "cells": [
+              {
+                "kind": "portmap",
+                "n": 5432,
+                "of": 40002
+              },
+              {
+                "kind": "text",
+                "text": "private"
+              },
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "not listening"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "reserved 40002"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": "postgres"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            },
+            "reason": "waiting"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        }
+      ],
+      "pipe_counts": true
+    },
+    {
+      "id": "ranges",
+      "title": "Reserved ports",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "vm",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "port",
+          "label": "port",
+          "kind": "portmap",
+          "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
+          "key": "url",
+          "label": "url",
+          "kind": "url",
+          "keep": 40
+        },
+        {
+          "key": "state",
+          "label": "state",
+          "kind": "text",
+          "keep": 70
+        },
+        {
+          "key": "process",
+          "label": "process",
+          "kind": "text",
+          "keep": 20,
+          "whole": true
+        }
+      ],
+      "items": [
+        {
+          "note": {
+            "text": "Reserved on macbook: 2 of 1000 (40000-40999), 998 free"
+          }
+        }
+      ],
+      "uncounted": true
+    }
+  ],
+  "actions": [
+    {
+      "label": "Share a port",
+      "on": "page",
+      "priority": 2,
+      "mutates": true,
+      "id": "share-port",
+      "run": {
+        "call": "ports.share",
+        "in": {
+          "VM": "\"linux-1\""
+        }
+      },
+      "form": {
+        "title": "Share a port of linux-1",
+        "fields": [
+          {
+            "key": "Port",
+            "label": "Port",
+            "kind": "text",
+            "note": "the port it listens on, inside linux-1",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "Stop sharing",
+      "on": "row",
+      "rows": [
+        "linux-1:5173"
+      ],
+      "confirm": {
+        "question": "Stop sharing linux-1's port 5173?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its link stops working on Tailscale, and reserved port 40001 is let go."
+          }
+        ],
+        "danger": true,
+        "yes": "Stop sharing",
+        "no": "Cancel"
+      },
+      "priority": 3,
+      "mutates": true,
+      "id": "stop-sharing:linux-1:5173",
+      "run": {
+        "call": "ports.stop-sharing",
+        "in": {
+          "Confirm": "yes",
+          "Host": "\"macbook\"",
+          "Port": "\"5173\"",
+          "VM": "\"linux-1\""
+        }
+      }
+    },
+    {
+      "label": "Stop sharing",
+      "on": "row",
+      "rows": [
+        "linux-1:5432"
+      ],
+      "confirm": {
+        "question": "Stop sharing linux-1's port 5432?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its link stops working on Tailscale, and reserved port 40002 is let go."
+          }
+        ],
+        "danger": true,
+        "yes": "Stop sharing",
+        "no": "Cancel"
+      },
+      "priority": 3,
+      "mutates": true,
+      "id": "stop-sharing:linux-1:5432",
+      "run": {
+        "call": "ports.stop-sharing",
+        "in": {
+          "Confirm": "yes",
+          "Host": "\"macbook\"",
+          "Port": "\"5432\"",
+          "VM": "\"linux-1\""
+        }
+      }
+    }
+  ]
+}

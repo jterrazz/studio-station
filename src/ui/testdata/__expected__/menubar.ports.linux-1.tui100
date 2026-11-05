@@ -1,0 +1,10 @@
+ Summary
+   ● linux-1  2 ports · nothing needs you
+
+ Private: shared with you on Tailscale  1 ●  1 ○
+                      port  class    url                             state
+   ● linux-1  5173 → 40001  private  https://jterrazz-macboo…:40001  shared  vite
+   ○ linux-1  5432 → 40002  private                                  not listening · reserved 40002
+
+ Reserved ports
+   Reserved on macbook: 2 of 1000 (40000-40999), 998 free

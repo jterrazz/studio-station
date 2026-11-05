@@ -81,6 +81,7 @@ enum Snapshot {
     @MainActor
     static func view(_ name: String, _ page: Page) -> AnyView {
         if page.id == "menubar" { return AnyView(Popover(state(name, page), scrolls: false)) }
+        if let own = MenuPage.view(state(name, page)) { return own }
         return AnyView(PageView(page))
     }
 

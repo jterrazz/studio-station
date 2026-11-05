@@ -415,7 +415,12 @@ func pageFamilies() []string {
 // value: the fixtures named by the world they draw rather than by a state:
 // the menu bar's proofs of USE-CASES §23 cite them by those names.
 func worldFamilies() map[string][]string {
-	return map[string][]string{"menubar.home": {"one-mac", "two-macs", "infra-down", "engine-stopped"}}
+	return map[string][]string{
+		"menubar.home":     {"one-mac", "two-macs", "infra-down", "engine-stopped"},
+		"menubar.ports":    {"mini", "linux-1"},
+		"menubar.awake":    {"two-macs"},
+		"menubar.activity": {"mac"},
+	}
 }
 
 func missingPages(packages, families, fixtures []string) []finding {
