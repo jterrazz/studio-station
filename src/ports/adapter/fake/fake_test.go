@@ -29,3 +29,14 @@ func TestTheFakeReservationStoreKeepsTheContract(t *testing.T) {
 func TestTheFakeDeclarationStoreKeepsTheContract(t *testing.T) {
 	contracttest.DeclarationStore(t, func(*testing.T) contract.DeclarationStore { return NewDeclarations() })
 }
+
+func TestTheFakeRouteKeepsTheContract(t *testing.T) {
+	contracttest.PublicRoute(t, func(*testing.T) contracttest.RouteScene {
+		return contracttest.RouteScene{
+			Route:    NewRoute("stand-in"),
+			Declared: ports.Declaration{Machine: "mini", Port: 5000, Via: "stand-in"},
+			Seen:     ports.MacOf("mini", []ports.Listener{{Port: 5000, Bind: "*", Process: "node"}}),
+			Unseen:   ports.MacOf("mini", nil),
+		}
+	})
+}

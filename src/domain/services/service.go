@@ -278,6 +278,26 @@ func (s *Service) CheckPort(text string) (int, error) {
 	return port, nil
 }
 
+func (s *Service) ParsePort(text string) (int, error) { return ParsePort(text) }
+
+func (s *Service) Keeper(ctx context.Context, name string) (named, mac string, err error) {
+	// invariant: this Mac keeps its own declarations and its VMs'; another
+	// Mac of the fleet keeps its own and its VMs'.
+	if name == "" || name == s.o.HereName {
+		return s.o.HereName, "", nil
+	}
+	if hosts, read := s.st.Hosts.Get(); read == nil {
+		if _, ok := hosts[name]; ok {
+			return name, name, nil
+		}
+	}
+	host, here, err := s.o.VMHost(ctx, name)
+	if err != nil || here {
+		return name, "", err
+	}
+	return name, host, nil
+}
+
 func (s *Service) CheckVM(ctx context.Context, vm string) (host string, err error) {
 	// invariant: a VM of another Mac is shared by that Mac's engine: its
 	// name is returned, and its share asked there.

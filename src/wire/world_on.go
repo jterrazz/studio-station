@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jterrazz/studio-station/src/domain/guest"
+	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
 	"io"
 	"io/fs"
 	"maps"
@@ -208,6 +209,7 @@ func (m *worldMac) disk() diskcontract.DiskUsage  { return m.files() }
 
 func (m *worldMac) files() *diskfake.Usage         { return diskfake.UsageOf(m.run.w, m.name).At(m.home) }
 func (m *worldMac) tailnet() portscontract.Tailnet { return portsfake.TailnetOf(m.run.w, m.name) }
+func (m *worldMac) funnel() funnel.Config          { return portsfake.TailnetOf(m.run.w, m.name) }
 func (m *worldMac) bundler() appscontract.Bundler  { return appsfake.BundlerOf(m.run.w, m.name) }
 func (m *worldMac) vault() accountscontract.Vault  { return accountsfake.NewVault(m.run.w, m.name) }
 func (m *worldMac) listeners() portscontract.Listeners {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -349,6 +350,7 @@ type rawServe struct {
 			Proxy string `json:"Proxy"`
 		} `json:"Handlers"`
 	} `json:"Web"`
+	AllowFunnel map[string]bool `json:"AllowFunnel"`
 }
 
 func (t *CLI) Shared(ctx context.Context) ([]ports.Share, error) {
@@ -360,6 +362,38 @@ func (t *CLI) Shared(ctx context.Context) ([]ports.Share, error) {
 		return nil, refused(firstLine(out.Stderr))
 	}
 	return parseServe([]byte(out.Stdout))
+}
+
+func (t *CLI) Funneled(ctx context.Context) ([]int, error) {
+	out, err := t.call(ctx, queryBudget, "serve", "status", "--json")
+	if err != nil {
+		return nil, err
+	}
+	if out.ExitCode != 0 {
+		return nil, refused(firstLine(out.Stderr))
+	}
+	return parseFunnel([]byte(out.Stdout))
+}
+
+// invariant: a port is funneled when the config allows Funnel on it for
+// any of the node's names ("host:443": true).
+func parseFunnel(data []byte) ([]int, error) {
+	var raw rawServe
+	if strings.TrimSpace(string(data)) == "" {
+		return nil, nil
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	var open []int
+	for hostPort, on := range raw.AllowFunnel {
+		_, portText, _ := strings.Cut(hostPort, ":")
+		if port, err := strconv.Atoi(portText); err == nil && on && !slices.Contains(open, port) {
+			open = append(open, port)
+		}
+	}
+	slices.Sort(open)
+	return open, nil
 }
 
 func parseServe(data []byte) ([]ports.Share, error) {

@@ -137,6 +137,8 @@ type Node struct {
 	Shares []ports.Share `json:"shares,omitempty"`
 	// value: the host's certificate is asked for and not issued yet.
 	CertificatePending bool `json:"certificate_pending,omitempty"`
+	// value: the ports its Funnel config opens to the internet.
+	Funnel []int `json:"funnel,omitempty"`
 }
 
 type Manager struct {

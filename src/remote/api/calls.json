@@ -397,6 +397,14 @@
       "watch": true
     },
     {
+      "name": "ports.declare",
+      "schema": "station.ports.declare/v1",
+      "section": "ports",
+      "where": "at-target",
+      "in": "DeclareIn",
+      "out": "DeclareOut"
+    },
+    {
       "name": "ports.list",
       "schema": "station.ports.list/v1",
       "section": "ports",
@@ -423,6 +431,18 @@
       ],
       "in": "StopSharingIn",
       "out": "StopSharingOut"
+    },
+    {
+      "name": "ports.undeclare",
+      "schema": "station.ports.undeclare/v1",
+      "section": "ports",
+      "where": "at-target",
+      "confirm": "undeclare",
+      "errors": [
+        "confirm.yes-needed"
+      ],
+      "in": "UndeclareIn",
+      "out": "UndeclareOut"
     },
     {
       "name": "run.containers",

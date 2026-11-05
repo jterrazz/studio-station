@@ -214,6 +214,15 @@ func Codes() map[fail.Code]Wording {
 		ports.CodeNeedsVM: func(e *fail.Error) (string, string) {
 			return "say which VM's port " + e.Subject + " it is", "station ports share <vm> " + e.Subject
 		},
+		ports.CodeNeedsRoute: func(e *fail.Error) (string, string) {
+			return "say how " + e.Subject + " is reached from elsewhere", "add --via, one of " + e.Detail["routes"]
+		},
+		ports.CodeUnknownRoute: func(e *fail.Error) (string, string) {
+			return `"` + e.Subject + `" is not a route station knows`, "--via is one of " + e.Detail["routes"]
+		},
+		ports.CodeNotDeclared: func(e *fail.Error) (string, string) {
+			return e.Subject + " is not declared public", "station ports --on " + e.Detail["machine"]
+		},
 		ports.CodeElsewhere: func(e *fail.Error) (string, string) {
 			return e.Subject + " runs on " + e.Detail["mac"], "add --on " + e.Detail["mac"]
 		},

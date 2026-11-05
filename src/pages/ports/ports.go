@@ -306,6 +306,19 @@ func Shared(s ports.ServiceView, here page.Context) page.Page {
 		[]page.Column{{Key: "port", Kind: page.KindText, Keep: 100}, {Key: "url", Kind: page.KindURL, Keep: 90}}, []page.Row{row}, "shared ports")
 }
 
+func Declared(d ports.Declaration, here page.Context) page.Page {
+	r, _ := catalog.RouteNamed(d.Via)
+	row := pages.Done(d.Key(), catalog.StateOK, "declared public ("+r.Label+")")
+	row.Label = strconv.Itoa(d.Port) + " on " + d.Machine
+	return pages.Outcome("ports declare", here, nil, []page.Row{row}, "declared ports")
+}
+
+func Undeclared(d ports.Declaration, here page.Context) page.Page {
+	row := pages.Done(d.Key(), catalog.StateOK, "not declared")
+	row.Label = strconv.Itoa(d.Port) + " on " + d.Machine
+	return pages.Outcome("ports undeclare", here, nil, []page.Row{row}, "declared ports")
+}
+
 func Stopped(r ports.Reservation, here page.Context) page.Page {
 	return pages.Outcome("ports stop-sharing", here, nil, []page.Row{pages.Done(r.Key(), catalog.StateOK, "not shared")}, "shared ports")
 }

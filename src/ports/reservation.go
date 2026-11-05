@@ -23,6 +23,8 @@ type Declaration struct {
 	Machine string `json:"machine"`
 	Port    int    `json:"port"`
 	Via     string `json:"via"`
+	// value: the setting that declared it; empty when the owner did.
+	By string `json:"by,omitempty"`
 }
 
 func (d Declaration) Key() string { return d.Machine + ":" + strconv.Itoa(d.Port) }

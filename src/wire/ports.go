@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"errors"
+
 	"github.com/jterrazz/studio-station/src/domain/guest"
 
 	"github.com/spf13/cobra"
@@ -12,8 +13,10 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	portscmd "github.com/jterrazz/studio-station/src/surface/cli/ports"
+	portsdeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/declare"
 	portsshare "github.com/jterrazz/studio-station/src/surface/cli/ports/share"
 	portsstopsharing "github.com/jterrazz/studio-station/src/surface/cli/ports/stopsharing"
+	portsundeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/undeclare"
 )
 
 func (m machine) services(_ kit.Env) *services.Service {
@@ -69,8 +72,10 @@ func portsCommands(env kit.Env, m machine) []*cobra.Command {
 	}
 	share := func() *cobra.Command { return portsshare.Command(portsshare.Deps{Here: m.where}, env) }
 	stop := func() *cobra.Command { return portsstopsharing.Command(portsstopsharing.Deps{Here: m.where}, env) }
+	declare := portsdeclare.Command(portsdeclare.Deps{Here: m.where}, env)
+	undeclare := portsundeclare.Command(portsundeclare.Deps{Here: m.where}, env)
 	return []*cobra.Command{
-		list(share(), stop()),
+		list(share(), stop(), declare, undeclare),
 		kit.Alias("services", list(kit.Alias("url", share(), "share"), kit.Alias("release", stop(), "stop-sharing")), "ports"),
 		kit.Alias("tailnet", list(), "ports"),
 	}
