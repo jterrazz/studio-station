@@ -289,9 +289,9 @@
         },
         {
           "row": {
-            "id": "path",
+            "id": "file",
             "mark": "pending",
-            "label": "path",
+            "label": "file",
             "cells": [
               {
                 "kind": "pending"

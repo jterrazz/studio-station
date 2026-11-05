@@ -16,7 +16,6 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/pages"
 	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
@@ -230,7 +229,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 			out:           env.Out,
 		}
 		if env.Far() {
-			o.on = pages.MacName(env.Target().Name, env.Self.Name)
+			o.on = page.MacName(env.Target().Name, env.Self.Name)
 		}
 		if l.Plumbing {
 			o.in, o.raw = env.Stdin, env.Stdout

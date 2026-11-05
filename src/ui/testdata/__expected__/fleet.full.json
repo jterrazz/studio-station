@@ -96,7 +96,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "here"
+                  "text": "This Mac"
                 },
                 {
                   "kind": "text",
@@ -354,7 +354,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "station v2.0.0-248 here v2.0.0-250"
+                  "text": "station v2.0.0-248, This Mac v2.0.0-250"
                 },
                 {
                   "kind": "count",
@@ -362,7 +362,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "station v2.0.0-248 here v2.0.0-250"
+                  "text": "station v2.0.0-248, This Mac v2.0.0-250"
                 }
               ],
               "reason": "mismatch"

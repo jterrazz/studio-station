@@ -101,7 +101,7 @@ func hostRow(h machines.HostView, hereVersion string) page.Row {
 		row.Mark, row.Reason, state, resources = page.Attention, page.Unreachable, page.Text("unreachable"), page.Text("-")
 	case h.StationVersion != "" && h.StationVersion != hereVersion:
 		row.Mark, row.Reason = page.Attention, page.Mismatch
-		detail = page.Text("station " + h.StationVersion + " here " + hereVersion)
+		detail = page.Text("station " + h.StationVersion + ", This Mac " + hereVersion)
 	case h.Daemon.Known && !h.Daemon.Running:
 		row.Mark, row.Reason = page.Attention, page.Stopped
 		word, fix := "engine stopped", "station engine start"
@@ -115,7 +115,7 @@ func hostRow(h machines.HostView, hereVersion string) page.Row {
 	}
 	role := ""
 	if h.Here {
-		role = "here"
+		role = "This Mac"
 	}
 	row.Cells = []page.Value{page.Text("mac"), page.Text(""), page.Text(""), page.Text("Mac"), page.Text(role), state, orDash(h.Node.IP), record(resources, detail), resources, detail}
 	return row
@@ -407,7 +407,7 @@ func CreateForm(lifetime string, hosts []HostChoice) page.Form {
 		}})
 	}
 	if len(hosts) >= 2 {
-		field := page.Field{Key: "host", Label: "On which host?", Kind: page.FieldSelect}
+		field := page.Field{Key: "host", Label: "On which Mac?", Kind: page.FieldSelect}
 		for _, h := range hosts {
 			field.Options = append(field.Options, page.Option{Value: h.Name, Label: h.Name, Note: h.Detail})
 			if h.Here {

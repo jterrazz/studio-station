@@ -56,7 +56,7 @@ func Section(reports []images.Report, here page.Context) page.Section {
 	for _, r := range reports {
 		row := page.Row{
 			ID: r.Mac + "/" + r.Record.Name + "@" + r.Record.Version, Label: r.Record.Name, Mark: page.OK,
-			Cells:  []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), page.Text(pages.MacName(r.Mac, here.Machine)), page.Text(r.Mac)},
+			Cells:  []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), page.Text(page.MacName(r.Mac, here.Machine)), page.Text(r.Mac)},
 			Detail: madeFrom(r.VMs),
 		}
 		if !r.Newest {

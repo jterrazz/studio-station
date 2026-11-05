@@ -326,7 +326,7 @@ func machineLists() []Fixture {
 		pending(pagemachines.List(fleet(), nil, here())),
 		pagemachines.List(machines.Fleet{}, nil, here()),
 		pagemachines.List(stoppedFleet(), nil, here()),
-		pagemachines.List(fleet(), []string{"mac-mini: station v2.0.0-248, here v2.0.0-250"}, here()))
+		pagemachines.List(fleet(), []string{"mac-mini: station v2.0.0-248, This Mac v2.0.0-250"}, here()))
 }
 
 // value: infra, a server of mac-mini, as This Mac reads it for its SSH

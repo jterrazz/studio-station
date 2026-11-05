@@ -342,9 +342,9 @@
         },
         {
           "row": {
-            "id": "path",
+            "id": "file",
             "mark": "ok",
-            "label": "path",
+            "label": "file",
             "cells": [
               {
                 "kind": "path",
@@ -535,7 +535,7 @@
             ],
             "detail": {
               "kind": "text",
-              "text": "station v2.0.0-240 here v2.0.0-242"
+              "text": "station v2.0.0-240, This Mac v2.0.0-242"
             },
             "reason": "mismatch"
           }

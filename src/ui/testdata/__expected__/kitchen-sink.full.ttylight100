@@ -16,7 +16,7 @@
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mexpired[m   [38;2;76;79;105mexpired[m
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105murl[m       [38;2;76;79;105mhttps://jterrazz-macbook-pro.tail1234.ts.net:40001[m
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105midentity[m  [38;2;76;79;105madmin@jterrazz.com[m
-  [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mpath[m      [38;2;76;79;105m/Applications/Tailscale.app/Contents/MacOS/Tailscale[m
+  [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mfile[m      [38;2;76;79;105m/Applications/Tailscale.app/Contents/MacOS/Tailscale[m
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mcommand[m   [38;2;76;79;105m→ station apps update --method brew[m
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mlist[m      [38;2;76;79;105mbrew · system[m
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mswitch[m    [38;2;76;79;105mon[m                                                               [38;2;76;79;105m3[m
@@ -27,7 +27,7 @@
     [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps update --method brew[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mmisplaced[m             [38;2;76;79;105mattention[m                   [38;2;108;111;133mmisplaced[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation disk move ~/.bun[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105munreachable[m           [38;2;76;79;105mattention[m                   [38;2;108;111;133munreachable[m
-  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mmismatch[m              [38;2;76;79;105mattention[m                   [38;2;108;111;133mstation v2.0.0-240 here v2.0.0-242[m
+  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mmismatch[m              [38;2;76;79;105mattention[m                   [38;2;108;111;133mstation v2.0.0-240, This Mac v2.0.0-242[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105munmanaged[m             [38;2;76;79;105mattention[m                   [38;2;108;111;133mon PATH, not managed by cask[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mmissing[m               [38;2;76;79;105mattention[m                   [38;2;108;111;133minstalled, mise not installed[m
     [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install mise[m

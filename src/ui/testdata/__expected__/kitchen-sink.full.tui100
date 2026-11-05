@@ -20,7 +20,7 @@
    ● expired   expired
    ● url       https://jterrazz-macbook-pro.tail1234.ts.net:40001
    ● identity  admin@jterrazz.com
-   ● path      /Applications/Tailscale.app/Contents/MacOS/Tailscale
+   ● file      /Applications/Tailscale.app/Contents/MacOS/Tailscale
    ● command   → station apps update --method brew
    ● list      brew · system
    ● switch    on                                                               3
@@ -32,7 +32,7 @@
      → station apps update --method brew
    ◐ misplaced             attention                   misplaced  → station disk move ~/.bun
    ◐ unreachable           attention                   unreachable
-   ◐ mismatch              attention                   station v2.0.0-240 here v2.0.0-242
+   ◐ mismatch              attention                   station v2.0.0-240, This Mac v2.0.0-242
    ◐ unmanaged             attention                   on PATH, not managed by cask
    ◐ missing               attention                   installed, mise not installed
      → station apps install mise

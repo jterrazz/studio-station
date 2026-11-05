@@ -69,7 +69,7 @@ func title(s overview.Summary, here page.Context) string {
 		return "This Mac"
 	}
 	if s.Head.Mac() && s.Head.Name != here.Machine {
-		return pages.MacName(s.Head.Name, here.Machine)
+		return page.MacName(s.Head.Name, here.Machine)
 	}
 	return s.Head.Name
 }

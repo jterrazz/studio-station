@@ -1,5 +1,7 @@
 package page
 
+import "strings"
+
 const Schema = "station.page/v1"
 
 type Page struct {
@@ -371,4 +373,22 @@ const OnSection = "on"
 func OnMachine(machine string) Section {
 	// value: the line an output for another machine starts with (SPEC §8.1).
 	return Section{ID: OnSection, Role: Banner, Uncounted: true, Items: []Item{{Note: &Note{Text: "On " + machine + ":"}}}}
+}
+
+func MacName(name, self string) string {
+	// invariant: how the interface names a Mac (SPEC §2.5): This Mac for the
+	// one this binary runs on, named self, and every other by its name
+	// without the `<user>-` both names start with (`mac-mini` for
+	// `jterrazz-mac-mini`).
+	if name == self && self != "" {
+		return "This Mac"
+	}
+	owner, _, ok := strings.Cut(self, "-")
+	if !ok || owner == "" {
+		return name
+	}
+	if short, ok := strings.CutPrefix(name, owner+"-"); ok && short != "" {
+		return short
+	}
+	return name
 }

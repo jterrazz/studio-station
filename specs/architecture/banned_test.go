@@ -23,6 +23,10 @@ type banned struct {
 	// value: the word's other forms, each the same retired word (`lent`
 	// for `lend`).
 	forms []string
+	// value: a word that is also plain English ("off here", "set by station
+	// here") is retired only where it names something: `here` as a machine's
+	// name, a value of its own or before the Mac's version.
+	only string
 }
 
 // invariant: rule words, SPEC §2.2: the words v3 retired, each for the
@@ -31,6 +35,7 @@ func bannedWords() []banned {
 	return []banned{
 		{word: "host", allowed: []string{"host:port"}},
 		{word: "fleet", forms: []string{"fleets"}},
+		{word: "here", only: `^here$|\bhere v\d`},
 		{word: "daemon", forms: []string{"daemons"}},
 		{word: "tool"},
 		{word: "tools"},
@@ -57,6 +62,7 @@ func bannedWords() []banned {
 		{word: "production"},
 		{word: "OrbStack", exact: true},
 		{word: "a check"},
+		{word: "path", forms: []string{"paths"}, exact: true},
 		{word: "VM engine"},
 		{word: "NAT", exact: true},
 		{word: "tailnet", forms: []string{"tailnets"}},
@@ -99,6 +105,9 @@ func bannedIn(texts []string) []string {
 			words = append(words, regexp.QuoteMeta(f))
 		}
 		pattern := `\b(?:` + strings.Join(words, "|") + `)\b`
+		if b.only != "" {
+			pattern = b.only
+		}
 		if !b.exact {
 			pattern = `(?i)` + pattern
 		}
