@@ -1115,5 +1115,100 @@
       "command": "station settings --all-machines --all",
       "text": "every row"
     }
+  ],
+  "actions": [
+    {
+      "key": "a",
+      "label": "apply across",
+      "on": "row",
+      "rows": [
+        "hushlogin",
+        "ghostty-dotfiles",
+        "tmux-dotfiles",
+        "starship-dotfiles",
+        "git-signing",
+        "ssh-key",
+        "github-login",
+        "spotlight-exclude",
+        "dns",
+        "claude-token",
+        "zed-dotfiles",
+        "dock-reset",
+        "dock-spacer",
+        "autologin",
+        "restart-after-power-cut",
+        "never-sleeps",
+        "lock-after-login",
+        "sshd",
+        "backup-exclusions",
+        "tart-launcher",
+        "git-shortcuts",
+        "docker-shortcuts"
+      ],
+      "priority": 1,
+      "mutates": true
+    },
+    {
+      "key": "enter",
+      "label": "open on that machine",
+      "on": "row",
+      "rows": [
+        "hushlogin",
+        "ghostty-dotfiles",
+        "tmux-dotfiles",
+        "starship-dotfiles",
+        "git-signing",
+        "ssh-key",
+        "github-login",
+        "spotlight-exclude",
+        "dns",
+        "claude-token",
+        "zed-dotfiles",
+        "dock-reset",
+        "dock-spacer",
+        "autologin",
+        "restart-after-power-cut",
+        "never-sleeps",
+        "lock-after-login",
+        "sshd",
+        "backup-exclusions",
+        "tart-launcher",
+        "git-shortcuts",
+        "docker-shortcuts",
+        "filevault",
+        "firewall",
+        "sip",
+        "automatic-updates",
+        "screen-lock",
+        "gatekeeper",
+        "remote-login",
+        "time-machine",
+        "macos-updates"
+      ],
+      "priority": 2
+    },
+    {
+      "key": "F",
+      "label": "only what needs a look",
+      "on": "page",
+      "priority": 3
+    },
+    {
+      "key": "f",
+      "label": "open the fix",
+      "on": "row",
+      "rows": [
+        "filevault",
+        "firewall",
+        "sip",
+        "automatic-updates",
+        "screen-lock",
+        "gatekeeper",
+        "remote-login",
+        "time-machine",
+        "macos-updates"
+      ],
+      "priority": 4
+    }
   ]
 }
