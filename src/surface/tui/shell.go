@@ -12,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/surface/tui/palette"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
@@ -67,6 +68,8 @@ type shell struct {
 	held   *held
 	sw     *switcher
 	seen   visited
+	pal    *actionsState
+	recent []palette.Item
 }
 
 const machinesKey = "\x00machines"
@@ -230,6 +233,9 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if s.sw != nil {
 		return s.switching(k)
 	}
+	if s.pal != nil {
+		return s.choosing(k)
+	}
 	if s.dialog != nil {
 		return s.asking(k)
 	}
@@ -263,6 +269,8 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return s.create()
 	case "m":
 		s.sw = &switcher{}
+	case "ctrl+p":
+		return s.actions()
 	case "-":
 		return s.previous()
 	default:
@@ -917,6 +925,9 @@ func (s shell) frame() ui.Shell {
 	}
 	f.Dialog = s.dialogPanel()
 	if p := s.switcherPanel(); p != nil {
+		f.Dialog = p
+	}
+	if p := s.actionsPanel(); p != nil {
 		f.Dialog = p
 	}
 	return f

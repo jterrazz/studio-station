@@ -39,6 +39,8 @@ type dialog struct {
 	input   string
 	answers []string
 	at      int
+	// value: the gesture the form's answers make, in place of its call.
+	then func(answers []string) gesture.Gesture
 }
 
 func screenFor(n node, id section.ID) screen.Screen {
@@ -241,8 +243,11 @@ func (s shell) asking(k tea.KeyPressMsg) (shell, tea.Cmd) {
 				d.answers = set(d.answers, d.at, string(r[:len(r)-1]))
 			}
 		case "enter":
-			c.Words, c.Form = c.Form.Words(d.answers), nil
 			s.dialog = nil
+			if d.then != nil {
+				return s.perform(d.then(d.answers))
+			}
+			c.Words, c.Form = c.Form.Words(d.answers), nil
 			return s.call(c)
 		default:
 			if t := k.Key().Text; t != "" {

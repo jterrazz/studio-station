@@ -28,7 +28,7 @@ func tuiOpener(env kit.Env, m machine, noColor bool) func(context.Context) error
 		if env.On != nil {
 			opens = env.On.Used
 		}
-		return tui.Run(ctx, tui.Deps{Here: m.where, Opens: opens, Pages: b.pages, Do: b.do, Run: b.call, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close, Watch: tuiWatch(ctx, m)})
+		return tui.Run(ctx, tui.Deps{Here: m.where, Opens: opens, Calls: m.registry(env).Metas(), Pages: b.pages, Do: b.do, Run: b.call, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close, Watch: tuiWatch(ctx, m)})
 	}
 }
 

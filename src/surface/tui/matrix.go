@@ -117,6 +117,8 @@ func (s shell) reveal(key string) shell {
 
 // value: n makes a workspace on the Mac shown, or the Mac of the VM shown,
 // in the Progress strip (SPEC §9.3).
+func (s shell) createForm(_ machine.Kind) (tea.Model, tea.Cmd) { return s.create() }
+
 func (s shell) create() (tea.Model, tea.Cmd) {
 	n := s.current()
 	mac := n.mac

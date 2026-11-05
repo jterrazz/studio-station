@@ -72,7 +72,7 @@ func (s shell) everywhere() []ui.Binding {
 		return nil
 	}
 	return []ui.Binding{bind("tab", "next pane"), bind("shift+tab", "previous pane"), bind("[ ]", "section"),
-		bind("n", "new VM"), bind("m", "switch machine"), bind("-", "previous machine"), bind("ctrl+r", "read again"), bind("q", "quit")}
+		bind("n", "new VM"), bind("m", "switch machine"), bind("-", "previous machine"), bind("ctrl+p", "actions"), bind("ctrl+r", "read again"), bind("q", "quit")}
 }
 
 func (s shell) aliases() []ui.Binding {
@@ -94,6 +94,9 @@ func (s shell) screenKeys() []ui.Binding {
 func (s shell) footer() []ui.Binding {
 	if s.sw != nil {
 		return s.switcherKeys()
+	}
+	if s.pal != nil {
+		return s.actionsKeys()
 	}
 	if s.dialog != nil {
 		return nil

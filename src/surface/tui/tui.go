@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 )
 
@@ -48,6 +49,8 @@ type Deps struct {
 	// makes, and answers what it printed.
 	Run     Calls
 	NoColor bool
+	// value: the registry's Meta, the palette's entries (calls.json).
+	Calls []call.Meta
 	// value: stops every read still running, so q leaves nothing behind.
 	Stop func()
 	// value: holds the engine's watch on these machines, by name, until the
