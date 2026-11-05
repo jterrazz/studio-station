@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
@@ -33,9 +34,15 @@ func Columns() []page.Column {
 func List(l ports.Listing, here page.Context) page.Page { return Listed(l, here, false) }
 
 func Listed(l ports.Listing, here page.Context, all bool) page.Page {
+	// invariant: OU-01: what needs you comes first, before the Tailscale
+	// line, as on every page.
 	sections := Sections(l.Fleet, here, all)
 	if line := TailnetLine(l.Tailnet); line != nil {
-		sections = append([]page.Section{*line}, sections...)
+		at := 0
+		if len(sections) > 0 && sections[0].ID == "needs-you" {
+			at = 1
+		}
+		sections = slices.Insert(sections, at, *line)
 	}
 	sections = append([]page.Section{firstLine(sections, whose(l.Fleet, here))}, sections...)
 	return page.Seal(page.Page{ID: "ports", Command: "ports", Context: here, Sections: sections, Actions: Actions(l.Fleet)})
@@ -89,17 +96,17 @@ func Sections(f ports.Fleet, here page.Context, all bool) []page.Section {
 		for _, p := range h.Ports {
 			switch {
 			case p.Red():
-				row := RedRow(p)
+				row := named(RedRow(p), here)
 				red = append(red, page.Item{Row: &row})
 			case p.Declared != nil:
-				row := PublicRow(p)
+				row := named(PublicRow(p), here)
 				public = append(public, page.Item{Row: &row})
 			case shared[p.Key()]:
 			case p.Reach == ports.ThisMachine:
-				row := LocalRow(p)
+				row := named(LocalRow(p), here)
 				local = append(local, page.Item{Row: &row})
 			default:
-				row := PrivateRow(p)
+				row := named(PrivateRow(p), here)
 				private = append(private, page.Item{Row: &row})
 			}
 		}
@@ -188,6 +195,15 @@ func ListensOn(p ports.Port) page.Value {
 		}
 	}
 	return page.Texts(words...)
+}
+
+// value: a port's row names its machine as the interface does on a
+// terminal (SPEC §2.5: This Mac, mac-mini); its records keep the full name.
+func named(r page.Row, here page.Context) page.Row {
+	if short := page.MacName(r.Label, here.Machine); short != r.Label {
+		r.Short = short
+	}
+	return r
 }
 
 func RedRow(p ports.Port) page.Row {

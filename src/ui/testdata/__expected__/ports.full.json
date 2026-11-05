@@ -52,57 +52,6 @@
       "uncounted": true
     },
     {
-      "id": "tailnet",
-      "title": "Tailscale",
-      "role": "banner",
-      "columns": [
-        {
-          "key": "name",
-          "kind": "text",
-          "keep": 100
-        },
-        {
-          "key": "state",
-          "kind": "text",
-          "keep": 90
-        }
-      ],
-      "items": [
-        {
-          "row": {
-            "id": "tailnet",
-            "mark": "ok",
-            "label": "Tailscale",
-            "cells": [
-              {
-                "kind": "list",
-                "items": [
-                  {
-                    "kind": "text",
-                    "text": "signed in"
-                  },
-                  {
-                    "kind": "text",
-                    "text": "jterrazz-macbook-pro.tail1234.ts.net"
-                  },
-                  {
-                    "kind": "text",
-                    "text": "ports are shared"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      ],
-      "counts": [
-        {
-          "mark": "ok",
-          "n": 1
-        }
-      ]
-    },
-    {
       "id": "needs-you",
       "title": "Needs you: reachable outside Tailscale, not declared public",
       "columns": [
@@ -190,6 +139,57 @@
         }
       ],
       "pipe_counts": true
+    },
+    {
+      "id": "tailnet",
+      "title": "Tailscale",
+      "role": "banner",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 90
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "tailnet",
+            "mark": "ok",
+            "label": "Tailscale",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "signed in"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "jterrazz-macbook-pro.tail1234.ts.net"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "ports are shared"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        }
+      ]
     },
     {
       "id": "public",

@@ -1,10 +1,10 @@
 Every Mac · 5 ports · 1 needs you
 
-Tailscale  ● signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
 Needs you: reachable outside Tailscale, not declared public
               port  class      what              listens on             declared
   ✗ mac-mini  5000  needs you  AirPlay Receiver  *:5000 all interfaces  declared no
     → System Settings > General > AirDrop & Handoff > AirPlay Receiver
+Tailscale  ● signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
 Public: reachable from anywhere else, internet or LAN, declared
               port  class   what  listens on           declared
   ● mac-mini    22  public  SSH   *:22 all interfaces  your LAN · Remote login · by Settings
