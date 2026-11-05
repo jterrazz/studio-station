@@ -1,4 +1,4 @@
-description: 'a bridged VM that starts listening on every interface needs you as soon as its guest reports it, not 5 minutes later'
+description: 'a bridged VM listening on every interface needs you once its guest says so, not 5 min later'
 env: bridged-macos
 runs:
     - command: 'world advance 1m'
