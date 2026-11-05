@@ -4,6 +4,7 @@ runs:
     - command: 'setup --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	name	jterrazz-mac-mini
           ●	zshrc
           ●	layout	nothing to retire

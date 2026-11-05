@@ -4,6 +4,7 @@ runs:
     - command: 'accounts share github --with ci-1 --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	github	shared with ci-1	12 h
     - command: '--version >/dev/null; /usr/bin/jq -c ''[(.macs["ci-1"].secrets["session:github"] == .macs["jterrazz-mac-mini"].secrets["session:github"]), [.macs["jterrazz-mac-mini"].stores.shares["ci-1"][].name], .macs["jterrazz-macbook-pro"].stores.shares["ci-1"]]'' world.json'
       exit: 0

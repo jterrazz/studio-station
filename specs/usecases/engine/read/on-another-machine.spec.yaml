@@ -4,4 +4,5 @@ runs:
     - command: 'engine --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	engine	running · {{string}} · up 12 d · 1 VM

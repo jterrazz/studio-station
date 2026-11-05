@@ -4,10 +4,12 @@ runs:
     - command: 'engine stop --on mac-mini --yes'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	engine	infra skipped (server) · the engine keeps running for infra
     - command: 'engine --on mac-mini | /usr/bin/cut -f1,2'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	engine
     - command: 'machines | /usr/bin/grep infra'
       exit: 0

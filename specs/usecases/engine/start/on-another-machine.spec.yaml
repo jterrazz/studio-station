@@ -4,4 +4,5 @@ runs:
     - command: 'engine start --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	engine	already running · {{string}}

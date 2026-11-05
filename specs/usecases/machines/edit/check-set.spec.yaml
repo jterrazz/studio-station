@@ -4,6 +4,7 @@ runs:
     - command: 'machines edit infra --on mac-mini --check infra:6443'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	infra	health check infra:6443, from its next health run
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].vms.infra | {check: .kept.check, running: (.pid > 0)}'' world.json'
       exit: 0

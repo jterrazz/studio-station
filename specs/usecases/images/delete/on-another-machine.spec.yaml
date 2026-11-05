@@ -4,6 +4,7 @@ runs:
     - command: 'images delete linux@2026.11.01 --yes --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	linux	2026.11.01	deleted
     - command: 'images --json | /usr/bin/jq -r ''.images[] | "\(.mac) \(.version)"'''
       exit: 0

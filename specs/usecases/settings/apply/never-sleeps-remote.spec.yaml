@@ -4,6 +4,7 @@ runs:
     - command: 'settings off never-sleeps --on jterrazz-mac-mini --yes'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	never-sleeps	never-sleeps: the Mac sleeps normally
     - command: 'awake | /usr/bin/grep mac-mini'
       exit: 0
@@ -12,6 +13,7 @@ runs:
     - command: 'settings apply never-sleeps --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	never-sleeps	never-sleeps: held by the engine
           # never-sleeps before
           never sleeps	off

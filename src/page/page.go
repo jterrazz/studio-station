@@ -350,3 +350,10 @@ const (
 	KindListing  Kind = "listing"
 	KindSpark    Kind = "spark"
 )
+
+const OnSection = "on"
+
+// value: the line an output for another machine starts with (SPEC §8.1).
+func OnMachine(machine string) Section {
+	return Section{ID: OnSection, Role: Banner, Uncounted: true, Items: []Item{{Note: &Note{Text: "On " + machine + ":"}}}}
+}

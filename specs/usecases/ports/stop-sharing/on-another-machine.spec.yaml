@@ -8,6 +8,7 @@ runs:
     - command: 'ports stop-sharing infra 8080 --on jterrazz-mac-mini --yes'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	infra:8080	not shared
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs | {mini: [.["jterrazz-mac-mini"].stores.reservations[]?], remembered: .["jterrazz-mac-mini"].preferences.services.not_shared, here: .["jterrazz-macbook-pro"].preferences.services}'' world.json'
       exit: 0

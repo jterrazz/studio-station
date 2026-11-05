@@ -4,5 +4,6 @@ runs:
     - command: 'background --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           # Station	1 ●
           ●	com.jterrazz.station.engine	user	running · pid 812		~/Library/LaunchAgents/com.jterrazz.station.engine.plist

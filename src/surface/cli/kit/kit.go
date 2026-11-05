@@ -50,6 +50,8 @@ type IO struct {
 	in            io.Reader
 	raw           io.Writer
 	ask           func() error
+	// value: the machine a far call ran on; its output starts with `On <it>:`.
+	on string
 }
 
 func (o IO) Confirmed(do func(answer string) error) error {
@@ -88,18 +90,44 @@ func (o IO) CanLive() bool {
 }
 
 func (o IO) Page(p page.Page, contract any) error {
-	return o.out.Page(p, contract, output.Want{JSON: o.JSON, Page: o.PageJSON})
+	return o.out.Page(o.onLine(p), contract, output.Want{JSON: o.JSON, Page: o.PageJSON})
 }
 
 func (o IO) PagePiped(p page.Page, contract any, piped string) error {
-	return o.out.Page(p, contract, output.Want{JSON: o.JSON, Page: o.PageJSON, Piped: []byte(piped)})
+	return o.out.Page(o.onLine(p), contract, output.Want{JSON: o.JSON, Page: o.PageJSON, Piped: []byte(piped)})
 }
 
 func (o IO) PageRecords(p, records page.Page, contract any) error {
-	return o.out.Page(p, contract, output.Want{JSON: o.JSON, Page: o.PageJSON, Records: &records})
+	return o.out.Page(o.onLine(p), contract, output.Want{JSON: o.JSON, Page: o.PageJSON, Records: &records})
 }
 
-func (o IO) LivePage(pages <-chan page.Page) error { return o.out.LivePage(pages) }
+func (o IO) LivePage(pages <-chan page.Page) error {
+	if o.on == "" {
+		return o.out.LivePage(pages)
+	}
+	named := make(chan page.Page)
+	go func() {
+		defer close(named)
+		for p := range pages {
+			named <- o.onLine(p)
+		}
+	}()
+	return o.out.LivePage(named)
+}
+
+// invariant: SPEC §8.1: every output for another machine starts with
+// `On <that machine>:`, the machine --on named, in place of a page's own.
+func (o IO) onLine(p page.Page) page.Page {
+	if o.on == "" {
+		return p
+	}
+	sections := p.Sections
+	if len(sections) > 0 && sections[0].ID == page.OnSection {
+		sections = sections[1:]
+	}
+	p.Sections = append([]page.Section{page.OnMachine(o.on)}, sections...)
+	return p
+}
 
 func (o IO) Raw(p []byte) error              { return o.out.Raw(p) }
 func (o IO) Note(text string)                { o.out.Note(text) }
@@ -197,6 +225,9 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 			Prompt:        env.Prompt,
 			ZshCompletion: c.Root().GenZshCompletion,
 			out:           env.Out,
+		}
+		if env.Far() {
+			o.on = env.Target().Name
 		}
 		if l.Plumbing {
 			o.in, o.raw = env.Stdin, env.Stdout

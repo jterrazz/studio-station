@@ -4,10 +4,12 @@ runs:
     - command: 'machines stop infra --on jterrazz-mac-mini --confirm=infra'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	infra	stopped · wanted state: Stopped
     - command: 'engine stop --yes --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	engine	the engine stopped
     - command: 'machines start infra --on jterrazz-mac-mini'
       exit: 1
@@ -17,8 +19,10 @@ runs:
     - command: 'engine --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ◐	engine	stopped · since 10:01 by station engine stop	station engine start
     - command: 'engine start --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	engine	running · {{string}}

@@ -4,6 +4,7 @@ runs:
     - command: 'disk free homebrew --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	homebrew	1.1 GB freed
           ●	Freed	1.1 GB	nothing is lost
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs | {mini: .["jterrazz-mac-mini"].disk.files["~/Library/Caches/Homebrew/downloads/x"], here: .["jterrazz-macbook-pro"].disk.files["~/Library/Caches/Homebrew/downloads/x"]}'' world.json'

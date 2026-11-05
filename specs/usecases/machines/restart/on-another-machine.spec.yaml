@@ -4,6 +4,7 @@ runs:
     - command: 'machines restart infra --on mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	Running
           ●	Has an address	192.168.64.5
           ●	SSH answers

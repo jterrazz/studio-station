@@ -32,7 +32,7 @@ func VMPage(o VMOverview, s *overview.Summary, here page.Context, all bool) page
 	// machine, its first line from All machines, then its sections as it reads
 	// them inside (nil while it does not run or does not answer), then health.
 	vm := o.VM
-	on := page.Section{ID: "on", Role: page.Banner, Uncounted: true, Items: []page.Item{{Note: &page.Note{Text: "On " + vm.Name + ":"}}}}
+	on := page.OnMachine(vm.Name)
 	if o.unreachable() {
 		row := page.Row{ID: vm.Name, Label: vm.Name, Mark: page.Broken, Reason: page.Unreachable, Cells: []page.Value{page.Text("is on " + o.on() + ", which does not answer")}}
 		return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, Sections: []page.Section{on, {

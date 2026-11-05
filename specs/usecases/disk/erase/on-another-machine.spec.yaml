@@ -4,6 +4,7 @@ runs:
     - command: 'disk erase claude --confirm=claude --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	claude	2.0 GB erased
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs | {mini: .["jterrazz-mac-mini"].disk.files["~/.claude/projects/x"], here: .["jterrazz-macbook-pro"].disk.files["~/.claude/projects/x"]}'' world.json'
       exit: 0

@@ -6,6 +6,7 @@ runs:
     - command: 'ports declare 7000 --via lan --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On jterrazz-mac-mini:
           ●	7000 on jterrazz-mac-mini	declared public (your LAN)
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs | {mini: [.["jterrazz-mac-mini"].stores.declarations[] | .machine + ":" + (.port|tostring)], here: .["jterrazz-macbook-pro"].stores.declarations}'' world.json'
       exit: 0

@@ -1,0 +1,24 @@
+description: 'another machine''s output starts with the On line naming the machine --on named, on a terminal and in a pipe; This Mac is named for itself'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 80x40 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" overview --on mac-mini | /usr/bin/head -6'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |4
+           station overview                                   jterrazz-macbook-pro · host
+           ──────────────────────────────────────────────────────────────────────────────
+
+             On mac-mini:
+
+           jterrazz-mac-mini · Mac · 1 thing needs you · Engine running
+    - command: '--version >/dev/null; "$STATION" apps --on mac-mini | /usr/bin/head -1; "$STATION" disk --on linux-1 | /usr/bin/head -1; "$STATION" apps | /usr/bin/head -1'
+      exit: 0
+      stdout: |
+          	On mac-mini:
+          	On linux-1:
+          # Updates	3 ◐
