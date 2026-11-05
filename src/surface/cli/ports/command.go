@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pageports "github.com/jterrazz/studio-station/src/pages/ports"
@@ -22,7 +23,7 @@ type Input struct{ AllMachines, All bool }
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 	cmd := kit.Command(kit.Leaf[Input]{
 		Use:   "ports",
-		Short: "What listens on your machines, who reaches it, and what your VMs share on Tailscale",
+		Short: "What listens on your machines, who reaches it, and what your VMs share on " + catalog.TailnetProduct,
 		Example: "  station ports\n  station ports --all-machines\n  station ports --all\n  station ports --json\n" +
 			"  station ports share linux-1 3000\n  station ports stop-sharing linux-1 3000",
 		Group: kit.OnAMachine,
