@@ -316,8 +316,8 @@ func (c *guest) Forward(_ context.Context, _ string, port int) (io.ReadWriteClos
 	c.vm.mu.Lock()
 	greeting, ok := c.vm.services[port]
 	c.vm.mu.Unlock()
-	if !ok && c.listens(port) {
-		greeting, ok = "HTTP/1.1 200 OK", true
+	if !ok {
+		greeting, ok = c.answers(port)
 	}
 	if !ok {
 		return nil, errors.Join(ErrNoService, errors.New("port "+strconv.Itoa(port)))
@@ -325,18 +325,33 @@ func (c *guest) Forward(_ context.Context, _ string, port int) (io.ReadWriteClos
 	return &stream{Reader: strings.NewReader(greeting + "\n")}, nil
 }
 
+// value: what a program that is no web server answers first, by its name.
+func speaksFirst(process string) (string, bool) {
+	switch process {
+	case "redis-server":
+		return "-ERR unknown command 'HEAD'", true
+	case "sshd":
+		return "SSH-2.0-OpenSSH_9.6", true
+	}
+	return "", false
+}
+
 // invariant: a port the world says listens in the VM answers as a web
-// server does, the dev server a workspace runs; a port a story scripts
-// answers its own greeting.
-func (c *guest) listens(port int) bool {
+// server does, the dev server a workspace runs, unless its program is one
+// that speaks its own protocol first; a port a story scripts answers its
+// own greeting.
+func (c *guest) answers(port int) (string, bool) {
 	c.w.Lock()
 	defer c.w.Unlock()
 	for _, l := range c.w.Listening(c.name) {
 		if l.Port == port {
-			return true
+			if g, ok := speaksFirst(l.Process); ok {
+				return g, true
+			}
+			return "HTTP/1.1 200 OK", true
 		}
 	}
-	return false
+	return "", false
 }
 
 type stream struct{ *strings.Reader }
