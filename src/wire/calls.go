@@ -107,7 +107,7 @@ type awakePower struct{ *power.Service }
 // Mac its thermal and battery from Power: a VM's are its Mac's.
 func (m machine) activityDeps(meter activitycontract.Meter) activitycalls.Deps {
 	d := activitycalls.Deps{Meter: meter, Volume: m.disk()}
-	if m.profile.Kind == coremachine.Mac && m.powerPort != nil {
+	if m.powerPort != nil && (m.profile.Caps.Thermal || m.profile.Caps.Battery) {
 		d.Power = m.powerPort
 	}
 	return d
