@@ -137,8 +137,6 @@ func Needs(v View) []page.Item {
 		r := page.Row{ID: "finding-" + strconv.Itoa(i), Label: text, Mark: mark, Reason: reason}
 		if f.Fix.Command != "" {
 			r.Hint = page.Cmd(f.Fix.Command)
-		} else {
-			r.Detail = page.Text(f.Subject)
 		}
 		out = append(out, page.Item{Row: &r})
 	}
