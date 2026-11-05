@@ -412,6 +412,9 @@ func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View 
 			v.State = services.Refused
 		}
 	}
+	if vs := d.vms[l.VM]; v.State == services.Waiting && vs != nil && vs.state != StateRunning {
+		v.Detail = services.JoinDetail(catalog.StoppedDetail(l.VM), v.Detail)
+	}
 	return v
 }
 

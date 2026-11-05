@@ -35,6 +35,9 @@ const ServeRow = "Tailscale Serve" // value: the row that says whether the tailn
 
 var SystemListeners = []string{"rapportd", "ControlCenter", "IPNExtension", "mDNSResponder", "launchd", "systemd"} // value: the processes whose listening port is the system's own: noise in a developer's list.
 
+// value: why a reserved port of a VM that does not run is not shared.
+func StoppedDetail(vm string) string { return "not shared while " + vm + " is stopped" }
+
 const ServeOffDetail = "Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console"
 
 var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}

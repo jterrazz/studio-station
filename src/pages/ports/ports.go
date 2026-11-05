@@ -253,6 +253,8 @@ func stateOf(s ports.ServiceView) (page.Mark, page.Reason, page.Value, *page.Hin
 		return page.Attention, page.Waiting, page.Texts("waiting", s.Detail), page.Cmd("station ports stop-sharing " + s.VM + " <port>")
 	case s.State == ports.PhaseUnknown:
 		return page.Attention, page.Late, page.Texts("not shared while the engine is stopped", reserved), nil
+	case s.State == ports.PhaseWaiting && strings.HasPrefix(s.Detail, catalog.StoppedDetail(s.VM)):
+		return page.Absent, page.Stopped, page.Texts(s.Detail, reserved), nil
 	case s.State == ports.PhaseWaiting:
 		return page.Absent, page.Waiting, page.Texts("not listening", reserved), nil
 	case s.Detail != "":
