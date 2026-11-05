@@ -18,7 +18,8 @@ runs:
           send j
           see d diff
           send d
-          see ~/.hushlogin
+          see ○ ~/.hushlogin
+          see absent  present
           send \x1b
           settle
           send a
