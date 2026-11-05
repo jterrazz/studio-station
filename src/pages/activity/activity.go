@@ -3,6 +3,7 @@ package activity
 import (
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/jterrazz/studio-station/src/activity"
@@ -22,6 +23,8 @@ type View struct {
 	// the Mac it is on (empty for a Mac) by name and as the owner reads it.
 	Name  string
 	Label string
+	// value: the name a terminal shows of a Mac its records name whole.
+	Short string
 	// value: "mac", "workspace" or "server".
 	Kind    string
 	Mac     string
@@ -32,6 +35,9 @@ type View struct {
 	Stopped bool
 	// value: a Mac that does not answer, in its words.
 	Silent string
+	// value: the window the TUI's graphs draw; zero on the CLI's page,
+	// which draws none (SPEC §6.4).
+	Graph time.Duration
 }
 
 func silent() page.Value { return page.Texts("?", "no answer in 2 s") }
@@ -116,6 +122,9 @@ func Page(v View, here page.Context) page.Page {
 	p.Sections = append(p.Sections, page.Section{ID: "values", Title: "Now", Uncounted: true, Columns: listing(), Items: values(v)})
 	if top := busiest(v); len(top) > 0 {
 		p.Sections = append(p.Sections, page.Section{ID: "top", Title: "Top processes", Uncounted: true, Columns: listing(), Items: top})
+	}
+	if v.Graph > 0 {
+		p.Sections = append(p.Sections, graphs(v)...)
 	}
 	if v.ThisMac {
 		p.Hints = append(p.Hints, page.Hint{Command: "station activity --all-machines", Text: "every machine"})

@@ -15,7 +15,7 @@ func tuiOpener(_ kit.Env, m machine, noColor bool) func(context.Context) error {
 		if err := m.world.lend(ctx); err != nil {
 			return err
 		}
-		return tui.Run(ctx, tui.Deps{Here: m.where, Pages: tuiPages(m), NoColor: noColor, Stop: m.pool.Close})
+		return tui.Run(ctx, tui.Deps{Here: m.where, Pages: tuiPages(m), Run: tuiCalls(m), NoColor: noColor, Stop: m.pool.Close})
 	}
 }
 
@@ -31,6 +31,21 @@ func tuiPages(m machine) tui.Pages {
 			return page.Page{}, failed(out.Stderr)
 		}
 		return page.Decode([]byte(out.Stdout))
+	}
+}
+
+// invariant: a key's call is the CLI's command for its words, run as this
+// very binary, so a call has one function on every surface.
+func tuiCalls(m machine) tui.Calls {
+	return func(ctx context.Context, words []string) (string, error) {
+		out, err := m.host.Run.Output(ctx, system.Cmd{Name: m.host.Env.Executable(), Args: words})
+		if err != nil {
+			return "", err
+		}
+		if out.ExitCode != 0 {
+			return "", failed(out.Stderr)
+		}
+		return out.Stdout, nil
 	}
 }
 

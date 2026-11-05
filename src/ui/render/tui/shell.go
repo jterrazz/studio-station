@@ -80,6 +80,11 @@ type Shell struct {
 	Focus         Pane
 	Footer        []organism.Binding
 	Sheet         *Sheet
+	// value: a question or a form, over the panes until it is answered.
+	Dialog *Panel
+	// value: the Progress strip's lines, above the footer, only while there
+	// is something to say (SPEC §9.1).
+	Progress []string
 }
 
 func Fits(width, height int) bool { return width >= LeastWidth && height >= LeastHeight }
@@ -94,17 +99,22 @@ func (s Shell) Render() string {
 	if !Fits(s.Width, s.Height) {
 		return lipgloss.NewStyle().Width(max(s.Width, 1)).Render(TooSmall(s.Width, s.Height))
 	}
-	room := max(s.Height-3, 3)
-	lines := make([]string, 0, room+3)
+	room := max(s.Height-3-len(s.Progress), 3)
+	lines := make([]string, 0, room+3+len(s.Progress))
 	lines = append(lines, s.header(st), " "+st.Muted.Render(strings.Join(s.Crumbs, token.Crumb)))
 	var body []string
 	switch {
 	case s.Sheet != nil:
 		body = s.box(st, s.Sheet.Title, s.sheetLines(st), s.Width, room, true)
+	case s.Dialog != nil:
+		body = s.box(st, s.Dialog.Title, s.Dialog.Lines, s.Width, room, true)
 	default:
 		body = s.panes(st, room)
 	}
 	lines = append(lines, body...)
+	for _, p := range s.Progress {
+		lines = append(lines, fit(" "+p, s.Width))
+	}
 	lines = append(lines, organism.Footer(st, s.Footer, false, s.Width))
 	return strings.Join(lines, "\n")
 }

@@ -14,7 +14,9 @@ type Deps struct {
 	Here page.Context
 	// invariant: the TUI's one read is the page the CLI prints for these
 	// words, so a screen is the same page function as its command.
-	Pages   Pages
+	Pages Pages
+	// value: the calls a key makes, by the CLI's words.
+	Run     Calls
 	NoColor bool
 	// value: stops every read still running, so q leaves nothing behind.
 	Stop func()

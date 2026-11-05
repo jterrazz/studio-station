@@ -21,6 +21,9 @@ type ReadIn struct {
 	Kind    machine.Kind `json:"kind,omitempty"`
 	// value: the 24 h series of the engine that keeps it, for scripts.
 	History bool `json:"history,omitempty"`
+	// value: the window a screen's graphs draw (6 min, 1 h, 24 h): the
+	// points of it the engine keeps.
+	Graph time.Duration `json:"graph,omitempty"`
 	// value: what the engine keeps, else one sample now: a read that never
 	// waits (an Overview's line).
 	Quick bool `json:"quick,omitempty"`
@@ -58,7 +61,7 @@ func (d Deps) read(ctx context.Context, in ReadIn) activity.Report {
 		if k, at, ok, err := d.Kept(ctx, name); err == nil && ok {
 			if r, usable := fromHistory(k, at, in, d.Now()); usable {
 				r.Findings = findings(ref, kind, &k.Series)
-				return r
+				return graphed(r, &k.Series, in, d.Now())
 			}
 			kept, since = &k, at
 		}
@@ -75,6 +78,14 @@ func (d Deps) read(ctx context.Context, in ReadIn) activity.Report {
 		if in.History {
 			r.History = kept.Series.Coarse()
 		}
+		r = graphed(r, &kept.Series, in, d.Now())
+	}
+	return r
+}
+
+func graphed(r activity.Report, s *activity.Series, in ReadIn, now time.Time) activity.Report {
+	if in.Graph > 0 {
+		r.Graph = s.Graph(in.Graph, now)
 	}
 	return r
 }

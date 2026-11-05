@@ -77,6 +77,23 @@ func (s *Series) Fine() []Sample {
 
 func (s *Series) Coarse() []Sample { return s.coarse.ordered() }
 
+func (s *Series) Graph(window time.Duration, now time.Time) []Sample {
+	// invariant: SPEC §6.4: the points a graph of the last window draws,
+	// oldest first: the fine ring's 2 s points for a window it spans, else
+	// the coarse ring's minutes.
+	points := s.Coarse()
+	if fine := s.Fine(); window <= FineEvery*FinePoints && len(fine) > 1 {
+		points = fine
+	}
+	from := now.Add(-window)
+	for i, x := range points {
+		if !x.At.Before(from) {
+			return points[i:]
+		}
+	}
+	return nil
+}
+
 func (s *Series) Last() (Sample, bool) {
 	fine, okFine := s.fine.last()
 	coarse, okCoarse := s.coarse.last()

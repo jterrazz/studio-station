@@ -25,7 +25,11 @@ type Deps struct {
 	Label func(mac string) string
 }
 
-type Input struct{ AllMachines, History bool }
+type Input struct {
+	AllMachines, History bool
+	// value: the window the TUI's graphs draw; a screen's flag, never shown.
+	Graph time.Duration
+}
 
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
@@ -36,6 +40,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.AllMachines, "all-machines", false, "one row per machine")
 			f.BoolVar(&in.History, "history", false, "with --json: the 24 h series the engine keeps")
+			f.DurationVar(&in.Graph, "graph", 0, "the window the TUI's graphs draw")
+			_ = f.MarkHidden("graph")
 		},
 		Read:  func(*Input) bool { return true },
 		Pages: true,
@@ -53,7 +59,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				}
 				return io.Page(pageactivity.AllMachines(views, d.Here), pageactivity.AllMachinesContract(views, d.Now()))
 			}
-			v, err := one(ctx, d, env, env.Target(), in.History)
+			v, err := one(ctx, d, env, env.Target(), read{history: in.History, graph: in.Graph})
 			if err != nil {
 				return err
 			}
@@ -62,54 +68,62 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	}, env)
 }
 
-func mac(ctx context.Context, env kit.Env, ref machine.Ref, label string, history bool) (pageactivity.View, error) {
-	v := pageactivity.View{Name: ref.Name, Label: label, Kind: string(machine.Mac), ThisMac: ref == env.Self}
+type read struct {
+	history bool
+	graph   time.Duration
+}
+
+func mac(ctx context.Context, env kit.Env, ref machine.Ref, label string, how read) (pageactivity.View, error) {
+	v := pageactivity.View{Name: ref.Name, Label: label, Kind: string(machine.Mac), ThisMac: ref == env.Self, Graph: how.graph}
 	if v.ThisMac {
 		v.Label = "This Mac"
 	}
-	r, err := call.Read(ctx, env.Calls, ref, activitycalls.Read, activitycalls.ReadIn{History: history}, nil)
+	r, err := call.Read(ctx, env.Calls, ref, activitycalls.Read, activitycalls.ReadIn{History: how.history, Graph: how.graph}, nil)
 	v.Report = r
 	return v, err
 }
 
-func one(ctx context.Context, d Deps, env kit.Env, target machine.Ref, history bool) (pageactivity.View, error) {
+func one(ctx context.Context, d Deps, env kit.Env, target machine.Ref, how read) (pageactivity.View, error) {
 	if target == env.Self {
-		return mac(ctx, env, env.Self, env.Self.Name, history)
+		return mac(ctx, env, env.Self, env.Self.Name, how)
 	}
 	held, ok := kit.Holder(ctx, env, target.Name)
 	if !ok {
-		return mac(ctx, env, target, target.Name, history)
+		return mac(ctx, env, target, target.Name, how)
 	}
 	holder := machine.Ref{Name: held.Mac}
 	if held.MacIsHere {
 		holder = env.Self
 	}
-	return vm(ctx, d, env, holder, held.VM, held.Kind, held.Running, history)
+	return vm(ctx, d, env, holder, held.VM, held.Kind, held.Running, how)
 }
 
-func vm(ctx context.Context, d Deps, env kit.Env, holder machine.Ref, name string, kind machine.Kind, running, history bool) (pageactivity.View, error) {
+func vm(ctx context.Context, d Deps, env kit.Env, holder machine.Ref, name string, kind machine.Kind, running bool, how read) (pageactivity.View, error) {
 	// invariant: a VM's history is its Mac's engine's, and so is the word
 	// that its guest does not answer (the relay into it is that engine's);
 	// one it holds no last 10 s of is read inside the VM, twice 1 s apart,
 	// its series still that engine's.
-	v := pageactivity.View{Name: name, Label: name, Kind: string(kind), Mac: holder.Name, On: d.Label(holder.Name), Stopped: !running}
+	v := pageactivity.View{Name: name, Label: name, Kind: string(kind), Mac: holder.Name, On: d.Label(holder.Name), Stopped: !running, Graph: how.graph}
 	if holder == env.Self {
 		v.On = "This Mac"
 	}
 	if !running {
 		return v, nil
 	}
-	in := activitycalls.ReadIn{Of: name, Machine: machine.Ref{Name: name, On: holder.Name}, Kind: kind, History: history}
+	in := activitycalls.ReadIn{Of: name, Machine: machine.Ref{Name: name, On: holder.Name}, Kind: kind, History: how.history, Graph: how.graph}
 	r, err := call.Read(ctx, env.Calls, holder, activitycalls.Read, in, nil)
 	if err == nil && r.Source != activity.NotKept {
 		v.Report = r
 		return v, nil
 	}
 	kept := r
-	in.Of, in.History = "", false
+	in.Of, in.History, in.Graph = "", false, 0
 	r, err = call.Read(ctx, env.Calls, in.Machine, activitycalls.Read, in, nil)
 	if kept.History != nil {
 		r.Since, r.History = kept.Since, kept.History
+	}
+	if kept.Graph != nil {
+		r.Graph = kept.Graph
 	}
 	r.Findings = activity.Lasting(r.Findings, kept.Findings)
 	v.Report = r
@@ -131,16 +145,19 @@ func every(ctx context.Context, d Deps, env kit.Env) ([]pageactivity.View, error
 			ref = env.Self
 		}
 		if !h.Reachable && !h.Here {
-			views = append(views, pageactivity.View{Name: h.Name, Label: h.Name, Kind: string(machine.Mac), Silent: "does not answer"})
+			views = append(views, pageactivity.View{Name: h.Name, Label: h.Name, Short: d.Label(h.Name), Kind: string(machine.Mac), Silent: "does not answer"})
 			continue
 		}
-		v, err := mac(ctx, env, ref, h.Name, false)
+		v, err := mac(ctx, env, ref, h.Name, read{})
+		if !v.ThisMac {
+			v.Short = d.Label(h.Name)
+		}
 		if err != nil {
 			v.Silent = kit.Translate(err, "").Message
 		}
 		views = append(views, v)
 		for _, m := range h.VMs {
-			v, err := vm(ctx, d, env, ref, m.Name, m.Lifetime.Kind(), m.State == machines.Running, false)
+			v, err := vm(ctx, d, env, ref, m.Name, m.Lifetime.Kind(), m.State == machines.Running, read{})
 			if err != nil {
 				v.Silent = kit.Translate(err, "").Message
 			}

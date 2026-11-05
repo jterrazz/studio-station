@@ -29,7 +29,7 @@ func pair(a, b float64) string {
 func everyRow(v View) page.Row {
 	// invariant: one row per machine (SPEC §6.4): a stopped VM says so, a
 	// Mac that does not answer is its own row and the others are filled.
-	r := page.Row{ID: v.Name, Label: v.Label, Mark: page.OK, Cells: []page.Value{page.Text(kindWord(v.Kind))}}
+	r := page.Row{ID: v.Name, Label: v.Label, Short: v.Short, Mark: page.OK, Cells: []page.Value{page.Text(kindWord(v.Kind))}}
 	rep := v.Report
 	switch {
 	case v.Silent != "":

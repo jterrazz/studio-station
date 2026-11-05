@@ -31,14 +31,17 @@ func (s shell) joined() []joinedRead {
 
 func (s shell) load() (shell, tea.Cmd) {
 	n, id := s.current(), s.section()
-	s, cmd := s.ask(s.key(n, id), words(n, id))
+	if sc := s.screen(); sc != nil && sc.Live() > 0 {
+		s.asked = with(s.asked, s.key(n, id), false)
+	}
+	s, cmd := s.ask(s.key(n, id), s.words(n, id))
 	if !s.table() {
 		return s, cmd
 	}
 	cmds := []tea.Cmd{cmd}
 	for _, j := range s.joined() {
 		var c tea.Cmd
-		s, c = s.ask(s.key(j.n, j.id), words(j.n, j.id))
+		s, c = s.ask(s.key(j.n, j.id), s.words(j.n, j.id))
 		cmds = append(cmds, c)
 	}
 	return s, tea.Batch(cmds...)
