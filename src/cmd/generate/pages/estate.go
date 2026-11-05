@@ -376,13 +376,13 @@ func portLists() []Fixture {
 		pending(pageports.List(ports.Listing{Fleet: serviceFleet(), Tailnet: tailnetStatus()}, here())),
 		pageports.List(ports.Listing{Tailnet: ports.Status{State: catalog.StateAbsent}}, here()),
 		pageports.List(ports.Listing{Fleet: stoppedServices(), Tailnet: ports.Status{State: catalog.StateOK, BackendState: "NeedsLogin"}}, here()),
-		pageports.List(ports.Listing{Fleet: portsFleet(), Tailnet: tailnetStatus()}, here()))
+		pageports.List(ports.Listing{Fleet: estatePorts(), Tailnet: tailnetStatus()}, here()))
 }
 
-// value: the reference fleet's ports in their two classes: the mini's AirPlay
+// value: the reference estate's ports in their two classes: the mini's AirPlay
 // Receiver red, infra's API on its own tailnet device, a database on This
 // Mac's loopback folded.
-func portsFleet() services.Fleet {
+func estatePorts() services.Fleet {
 	f := serviceFleet()
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
 	f.Hosts[0].Ports = []ports.Port{
