@@ -30,6 +30,8 @@ func TestWhoReachesAPortDependsOnItsAddressAndWhereItsMachineSits(t *testing.T) 
 		{ports.OnMac, []string{"*"}, true, ports.Public, ports.Outside},
 		{ports.OnMac, []string{"127.0.0.1", "192.168.1.20"}, true, ports.Public, ports.Outside},
 		{ports.OnMac, []string{"::"}, true, ports.Public, ports.Outside},
+		{ports.OnMac, []string{"*", "127.0.0.1"}, true, ports.Public, ports.Outside},
+		{ports.OnMac, []string{"100.64.0.2", "::1"}, false, ports.Private, ports.Tailnet},
 		{ports.BehindMac, []string{"0.0.0.0"}, false, ports.Private, ports.Tailnet},
 		{ports.BehindMac, []string{"127.0.0.1"}, false, ports.Private, ports.ThisMachine},
 		{ports.Bridged, []string{"0.0.0.0"}, true, ports.Public, ports.Outside},
