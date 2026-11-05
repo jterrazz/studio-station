@@ -59,7 +59,7 @@ func events() []event {
 		{"address", []string{"<vm>", "<ip>"}, address},
 		{"slow", []string{"<machine>", "<duration>"}, slow},
 		{"reads", []string{"<mac>", "<fact>", "<value>"}, reads},
-		{"certificate", []string{"<mac>", "pending|issued"}, nil},
+		{"certificate", []string{"<mac>", "pending|issued"}, certificate},
 	}
 }
 
@@ -417,4 +417,20 @@ func fault(w *World, args []string) error {
 	}
 	w.Script = append(w.Script, f)
 	return nil
+}
+
+func certificate(w *World, args []string) error {
+	m, err := w.known(args[0])
+	if err != nil {
+		return err
+	}
+	if m.Tailnet == nil {
+		return fmt.Errorf("world certificate: %s is not on the tailnet", args[0])
+	}
+	switch args[1] {
+	case "pending", "issued":
+		m.Tailnet.CertificatePending = args[1] == "pending"
+		return nil
+	}
+	return fmt.Errorf("world certificate: %q is not pending or issued", args[1])
 }

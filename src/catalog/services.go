@@ -38,6 +38,8 @@ var SystemListeners = []string{"rapportd", "ControlCenter", "IPNExtension", "mDN
 // value: why a reserved port of a VM that does not run is not shared.
 func StoppedDetail(vm string) string { return "not shared while " + vm + " is stopped" }
 
+const IssuingDetail = "issuing certificate" // value: a share whose host certificate the tailnet has not issued yet.
+
 const ServeOffDetail = "Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console"
 
 var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}

@@ -1,0 +1,17 @@
+description: 'while This Mac''s certificate is not issued its https share says so, then is shared at its https URL'
+env: two-macs
+runs:
+    - command: 'world certificate jterrazz-macbook-pro pending'
+      exit: 0
+    - command: 'ports | /usr/bin/grep linux-1'
+      exit: 0
+      stdout: |
+          ◐	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	issuing certificate	node	vite
+          ●	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server
+    - command: 'world certificate jterrazz-macbook-pro issued'
+      exit: 0
+    - command: 'ports | /usr/bin/grep linux-1'
+      exit: 0
+      stdout: |
+          ●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
+          ●	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server

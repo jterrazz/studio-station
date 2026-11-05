@@ -135,6 +135,8 @@ type Power struct {
 type Node struct {
 	Self   ports.Self    `json:"self"`
 	Shares []ports.Share `json:"shares,omitempty"`
+	// value: the host's certificate is asked for and not issued yet.
+	CertificatePending bool `json:"certificate_pending,omitempty"`
 }
 
 type Manager struct {

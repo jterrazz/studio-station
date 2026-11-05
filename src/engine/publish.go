@@ -17,8 +17,6 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-const issuingDetail = "issuing certificate"
-
 const (
 	bannerWait = 300 * time.Millisecond
 	headWait   = 2 * time.Second
@@ -406,7 +404,7 @@ func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View 
 		v.Process, v.Bind = s.process, s.ip
 		v.Detail = services.JoinDetail(services.JoinDetail(s.detail, s.serveNote), v.Detail)
 		if d.issuing && s.served && l.HTTP != nil && *l.HTTP {
-			v.Detail = services.JoinDetail(v.Detail, issuingDetail)
+			v.Detail = services.JoinDetail(v.Detail, catalog.IssuingDetail)
 		}
 		if s.refused {
 			v.State = services.Refused

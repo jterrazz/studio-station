@@ -257,6 +257,8 @@ func stateOf(s ports.ServiceView) (page.Mark, page.Reason, page.Value, *page.Hin
 		return page.Absent, page.Stopped, page.Texts(s.Detail, reserved), nil
 	case s.State == ports.PhaseWaiting:
 		return page.Absent, page.Waiting, page.Texts("not listening", reserved), nil
+	case s.Detail == catalog.IssuingDetail:
+		return page.Attention, page.Waiting, page.Text(s.Detail), nil
 	case s.Detail != "":
 		return page.Attention, page.Degraded, page.Texts("local only", s.Detail), nil
 	}
