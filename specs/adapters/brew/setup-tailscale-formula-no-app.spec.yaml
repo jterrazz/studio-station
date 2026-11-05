@@ -12,7 +12,7 @@ runs:
           ●	relocate	bunfig, go env, mise config, npmrc
           ○	engine	launchd is not here to run it
           ○	apps	missing: tailscale: run station setup on a terminal
-          ●	settings	applied hushlogin tart-launcher
+          ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts
           ○	ssh-key	next: station settings apply ssh-key
           ○	spotlight-exclude	next: station settings apply spotlight-exclude
           ○	dns	next: station settings apply dns

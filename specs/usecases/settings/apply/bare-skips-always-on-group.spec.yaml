@@ -1,7 +1,7 @@
 description: 'a bare apply leaves the opt-in Always-on Mac group alone, one folded line'
 env: two-macs
 runs:
-    - command: 'settings apply --yes | /usr/bin/grep -cE ''autologin|power|lock-after-login|sshd'''
+    - command: 'settings apply --yes | /usr/bin/grep -cE ''autologin|restart-after-power-cut|lock-after-login|sshd'''
       exit: 1
       stdout: |
           0
@@ -16,6 +16,6 @@ runs:
       stdout: |
           # Always-on Mac	5 ○
           ○	autologin	not applied	station settings apply autologin
-          ○	power	not applied	station settings apply power
+          ○	restart-after-power-cut	not applied	station settings apply restart-after-power-cut
           ○	never-sleeps	not applied	station settings apply never-sleeps
           ○	lock-after-login	not applied	station settings apply lock-after-login

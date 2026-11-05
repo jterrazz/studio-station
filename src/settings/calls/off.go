@@ -21,7 +21,7 @@ type OffIn struct {
 
 var Off = call.Call[Deps, OffIn, []settings.Change]{
 	Name: "settings.off", Section: section.Settings, Where: call.AtTarget, Applies: settings.Applies, Confirm: confirm.OffHere,
-	Errors: []fail.Code{Unknown, NotForThisMachine, confirm.YesNeeded},
+	Errors: []fail.Code{Unknown, NotForThisMachine, NeedsAdmin, confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in OffIn, _ call.Progress) ([]settings.Change, error) {
 		// invariant: off never destroys a change of the owner's: only a
 		// setting still exactly as station applied it is undone; any other
@@ -39,6 +39,9 @@ var Off = call.Call[Deps, OffIn, []settings.Change]{
 			}
 			it, err := find(d, name, true)
 			if err != nil {
+				return nil, err
+			}
+			if err := admitted(d, it, "off"); err != nil {
 				return nil, err
 			}
 			items = append(items, it)

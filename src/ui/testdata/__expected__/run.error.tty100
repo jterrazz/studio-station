@@ -1,5 +1,5 @@
- station run docker clean                                                       host · unregistered
+ station run docker reset                                                       host · unregistered
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
- Error: docker is not running
- Hint: open OrbStack, then station run docker clean
+ Error: docker ps failed: Cannot connect to the Docker daemon
+ Hint: check that the docker daemon runs, then run it again

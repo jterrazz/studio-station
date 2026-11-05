@@ -1,8 +1,8 @@
  - Changes                                                                                      2 ◌
-   ◌ power
+   ◌ restart-after-power-cut
    ◌ tart-launcher
- - power before
-   sleep  10
- - power after
-   sleep  0
+ - restart-after-power-cut before
+   autorestart  0
+ - restart-after-power-cut after
+   autorestart  1
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

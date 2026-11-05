@@ -2,15 +2,15 @@ description: 'no gesture runs sudo: what needs root is refused with its command,
 env: two-macs
 runs:
     - command: 'settings apply sshd'
-      exit: 1
+      exit: 2
       stderr: |
-          Error: sshd needs root
+          Error: sshd needs admin rights
           Hint: sudo station settings apply sshd
-    - command: 'settings apply power'
-      exit: 1
+    - command: 'settings apply restart-after-power-cut'
+      exit: 2
       stderr: |
-          Error: power needs root
-          Hint: sudo station settings apply power
+          Error: restart-after-power-cut needs admin rights
+          Hint: sudo station settings apply restart-after-power-cut
     - command: 'apps install tart'
       exit: 0
       stdout: |

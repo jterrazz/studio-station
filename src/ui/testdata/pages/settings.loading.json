@@ -173,12 +173,32 @@
               "kind": "pending"
             }
           }
+        },
+        {
+          "row": {
+            "id": "git-shortcuts",
+            "mark": "pending",
+            "label": "git-shortcuts",
+            "detail": {
+              "kind": "pending"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "docker-shortcuts",
+            "mark": "pending",
+            "label": "docker-shortcuts",
+            "detail": {
+              "kind": "pending"
+            }
+          }
         }
       ],
       "counts": [
         {
           "mark": "pending",
-          "n": 15
+          "n": 17
         }
       ],
       "pipe_counts": true

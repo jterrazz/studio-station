@@ -109,7 +109,7 @@ func TestAProcedureReadsItsValuesNowBesideTheOnesStationSets(t *testing.T) {
 	run := played(map[string]local.Output{
 		"pmset -g custom": {Stdout: "AC Power:\n autorestart 0\n sleep 0\n displaysleep 5\n disksleep 0\n powernap 0\n womp 1\n"},
 	}, "pmset")
-	power := setting(t, "power")
+	power := setting(t, "restart-after-power-cut")
 
 	o, err := applierOf(t, run, &memory{files: map[string][]byte{}}, power).Observe(context.Background(), power)
 

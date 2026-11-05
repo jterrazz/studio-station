@@ -174,6 +174,16 @@ func Codes() map[fail.Code]Wording {
 			}
 			return e.Subject + " is for " + strings.TrimSuffix(e.Detail["why"], " only") + " only", "station settings"
 		},
+		settingscalls.NeedsAdmin: func(e *fail.Error) (string, string) {
+			line := "sudo station settings " + cmp.Or(e.Detail["verb"], "apply") + " " + e.Subject
+			if mac := e.Detail["label"]; mac != "" {
+				line = "ssh -t " + mac + " " + line
+			}
+			return e.Subject + " needs admin rights", line
+		},
+		settingscalls.NotApplied: func(e *fail.Error) (string, string) {
+			return e.Subject + " is not applied here", "station settings apply " + e.Subject
+		},
 		settingscalls.NeedsTerminal: func(e *fail.Error) (string, string) {
 			return e.Subject + " asks a value: run it on a terminal", "station settings apply " + e.Subject
 		},

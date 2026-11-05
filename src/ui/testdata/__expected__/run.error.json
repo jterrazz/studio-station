@@ -1,13 +1,13 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "run docker clean",
+  "command": "run docker reset",
   "context": {
     "kind": "host"
   },
   "state": "failed",
   "error": {
-    "message": "docker is not running",
-    "hint": "open OrbStack, then station run docker clean"
+    "message": "docker ps failed: Cannot connect to the Docker daemon",
+    "hint": "check that the docker daemon runs, then run it again"
   }
 }

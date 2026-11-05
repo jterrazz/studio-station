@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "run docker clean",
+  "command": "run docker reset",
   "context": {
     "kind": "host"
   },

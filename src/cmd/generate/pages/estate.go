@@ -12,7 +12,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
-	"github.com/jterrazz/studio-station/src/domain/shortcuts"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -27,7 +26,6 @@ import (
 	pageports "github.com/jterrazz/studio-station/src/pages/ports"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
-	pageshortcuts "github.com/jterrazz/studio-station/src/pages/shortcuts"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/settings"
 )
@@ -96,7 +94,7 @@ func snapshot() pagehome.Overview {
 		Tools: toolReports,
 		Config: []config.Report{
 			{Item: catalog.ConfigItem{Name: "hushlogin", Description: "Silence the login banner"}, State: catalog.StateOK, Applies: true},
-			{Item: catalog.ConfigItem{Name: "power", Description: "Always-on power policy"}, State: catalog.StateDegraded, Detail: "policy partly applied", Applies: true},
+			{Item: catalog.ConfigItem{Name: "restart-after-power-cut", Description: "Restarts after a power cut, and wakes for the network"}, State: catalog.StateDegraded, Detail: "partly applied", Applies: true},
 		},
 		Setup:    overview.Setup{State: catalog.StateOK, Steps: []overview.Step{{Name: "name", State: catalog.StateOK, Detail: "macbook"}}},
 		Identity: []overview.Check{check("git-email", catalog.StateOK, "admin@jterrazz.com", ""), check("git-signing", catalog.StateOK, "on", "")},
@@ -423,7 +421,7 @@ func outcomes() []Fixture {
 		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Method: catalog.MethodCask, Detail: "brew bundle exited 1"},
 	}
 	changes := []settings.Change{
-		{Item: "power", Verb: "apply", Result: catalog.StateOK, Before: []settings.KeyValue{{Key: "sleep", Value: "10"}}, After: []settings.KeyValue{{Key: "sleep", Value: "0"}}},
+		{Item: "restart-after-power-cut", Verb: "apply", Result: catalog.StateOK, Before: []settings.KeyValue{{Key: "autorestart", Value: "0"}}, After: []settings.KeyValue{{Key: "autorestart", Value: "1"}}},
 		{Item: catalog.HypervisorLauncher, Verb: "apply", Result: catalog.StateOK},
 	}
 	cleaned := []storage.Outcome{
@@ -438,7 +436,7 @@ func outcomes() []Fixture {
 	out = append(out, states("outcome-settings-apply",
 		pending(pagesettings.Changes("apply", changes, here())),
 		pagesettings.Changes("apply", nil, here()),
-		failure("outcome", "settings apply", "power needs root", "sudo station settings apply power"),
+		failure("outcome", "settings apply", "restart-after-power-cut needs admin rights", "sudo station settings apply restart-after-power-cut"),
 		pagesettings.Changes("apply", changes, here()))...)
 	return append(out, states("outcome-disk-free",
 		pending(pagedisk.Freed(cleaned, here())),
@@ -465,10 +463,10 @@ func setups() []Fixture {
 }
 
 func runs() []Fixture {
-	run := shortcuts.Outcome{Shortcut: "clean", Removals: []shortcuts.Removal{{What: "containers", Count: 3}, {What: "images", Count: 12}, {What: "volumes"}}}
+	run := settings.ContainersOutcome{Shortcut: "dreset", Removals: []settings.ContainersRemoval{{What: "containers", Count: 3}, {What: "images", Count: 12}}}
 	return states("run",
-		pending(pageshortcuts.Docker(run, here())),
-		pageshortcuts.Docker(shortcuts.Outcome{Shortcut: "clean"}, here()),
-		failure("outcome", "run docker clean", "docker is not running", "open OrbStack, then station run docker clean"),
-		pageshortcuts.Docker(run, here()))
+		pending(pagesettings.Removed(run, "run docker reset", here())),
+		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, "run docker reset", here()),
+		failure("outcome", "run docker reset", "docker ps failed: Cannot connect to the Docker daemon", "check that the docker daemon runs, then run it again"),
+		pagesettings.Removed(run, "run docker reset", here()))
 }

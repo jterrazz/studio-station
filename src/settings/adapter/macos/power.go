@@ -11,7 +11,7 @@ import (
 // outside: on Apple Silicon SleepOnPowerButton and hibernatemode are firmware-controlled
 // and absent from `pmset -g custom`, so they are neither set nor checked.
 func (m *Mac) observePower(ctx context.Context, want []settings.KeyValue) settings.Observation {
-	return judged(m.powerValues(ctx, want), want, "always-on policy applied", "policy partly applied")
+	return judged(m.powerValues(ctx, want), want, "restarts after a power cut", "partly applied")
 }
 
 func (m *Mac) applyPower(ctx context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
@@ -35,10 +35,17 @@ func (m *Mac) applyPower(ctx context.Context, it catalog.ConfigItem, _ map[strin
 func (m *Mac) undoPower(ctx context.Context, it catalog.ConfigItem) (settings.Change, error) {
 	policy := settings.Sets(it)
 	change := settings.Change{Before: m.powerValues(ctx, policy)}
-	if _, err := m.must(ctx, "pmset", "-a", "-resetdefaults"); err != nil {
+	args := make([]string, 0, 1+2*len(policy))
+	args = append(args, "-a")
+	for _, kv := range policy {
+		args = append(args, kv.Key, "0")
+	}
+	if _, err := m.must(ctx, "pmset", args...); err != nil {
 		return change, err
 	}
-	change.Steps = []settings.ChangeStep{done("pmset", "reset to the macOS defaults")}
+	for _, kv := range policy {
+		change.Steps = append(change.Steps, done(kv.Key+"=0", ""))
+	}
 	change.After = m.powerValues(ctx, policy)
 	return change, nil
 }

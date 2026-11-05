@@ -149,16 +149,16 @@
         },
         {
           "row": {
-            "id": "config/power",
+            "id": "config/restart-after-power-cut",
             "mark": "attention",
-            "label": "power",
+            "label": "restart-after-power-cut",
             "detail": {
               "kind": "text",
-              "text": "policy partly applied"
+              "text": "partly applied"
             },
             "reason": "partial",
             "hint": {
-              "command": "station settings apply power",
+              "command": "station settings apply restart-after-power-cut",
               "key": "a"
             }
           }
@@ -1540,22 +1540,22 @@
       "items": [
         {
           "row": {
-            "id": "power",
+            "id": "restart-after-power-cut",
             "mark": "attention",
-            "label": "power",
+            "label": "restart-after-power-cut",
             "cells": [
               {
                 "kind": "text",
-                "text": "Always-on power policy"
+                "text": "Restarts after a power cut, and wakes for the network"
               }
             ],
             "detail": {
               "kind": "text",
-              "text": "policy partly applied"
+              "text": "partly applied"
             },
             "reason": "partial",
             "hint": {
-              "command": "station settings apply power",
+              "command": "station settings apply restart-after-power-cut",
               "key": "a"
             }
           }
@@ -1594,7 +1594,7 @@
         "workspace/strays",
         "tools/pnpm",
         "tools/better-ui",
-        "config/power"
+        "config/restart-after-power-cut"
       ],
       "mutates": true
     }

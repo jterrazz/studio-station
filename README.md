@@ -37,10 +37,6 @@ station engine         # this Mac's engine: running, its version, the VMs it run
 station engine stop    # stop everything on this Mac: its VMs (disks kept), Awake, then the engine
 station engine start   # start the engine again; the VMs it stopped stay stopped
 
-# Shortcuts
-station run git         # commit, push, sync
-station run docker      # remove containers and images
-
 # The binary
 station setup           # register, wire the shell, migrate
 ```

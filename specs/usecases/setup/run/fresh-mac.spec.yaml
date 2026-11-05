@@ -20,7 +20,7 @@ runs:
           ●       relocate        bunfig, go env, mise config, npmrc
           ●       engine  running {{string}}
           ●       apps    installed homebrew mise git tart tailscale
-          ●       settings        applied hushlogin backup-exclusions
+          ●       settings        applied hushlogin backup-exclusions git-shortcuts dockes
           ○       ssh-key next: station settings apply ssh-key
           ○       spotlight-exclude       next: station settings apply spotlight-exclude
           ○       dns     next: station settings apply dns

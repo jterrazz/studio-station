@@ -2,6 +2,8 @@ package wire
 
 import (
 	"context"
+	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
+	"github.com/jterrazz/studio-station/src/settings/adapter/zshblock"
 	"io/fs"
 	"path/filepath"
 	"strings"
@@ -82,6 +84,8 @@ func settingAppliers(m machine) []settingscontract.Applier {
 	files, _ := fs.Sub(catalog.DotfilesFS, "dotfiles")
 	appliers := []settingscontract.Applier{
 		touch.New(m.host.FS, m.host.Env.Home()),
+		gitaliases.New(m.host.FS, m.host.Env.Home()),
+		zshblock.New(m.host.FS, zshblock.Options{Dir: m.zshDir(), Ours: files}),
 		dotfile.New(m.host.FS, m.host.Run, dotfile.Options{Home: m.host.Env.Home(), Ours: files}),
 		neversleeps.New(m.stores.neverSleeps()),
 	}

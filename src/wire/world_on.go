@@ -160,7 +160,7 @@ func (m *worldMac) host(h system.Host) system.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	m.home = h.Env.Home()
 	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home()), files: m.files()}
-	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User}
+	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.Here}
 	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
 	return h
@@ -632,10 +632,19 @@ func (r *worldRun) close(ctx context.Context) error {
 type worldEnv struct {
 	system.Env
 	here, user string
+	// value: this run has admin rights, on This Mac's own terminal.
+	admin bool
 }
 
 func (e worldEnv) Hostname() string { return e.here }
 func (e worldEnv) User() string     { return e.user }
+
+func (e worldEnv) Euid() int {
+	if e.admin {
+		return 0
+	}
+	return e.Env.Euid()
+}
 
 // invariant: the world's clock moves only when the story moves it: a
 // command that waits, a stepped engine's tick, an advance. What an engine

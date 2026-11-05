@@ -7,18 +7,17 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Rules          | What holds for every command                         |
 | Here           | `overview`, `apps`, `settings`, `disk`, `background` |
 | The fleet      | `machines`, `ports`, `images`, `accounts`            |
-| Shortcuts      | `run git` and `run docker`                           |
 | The binary     | `setup`, `--version`, `help`                         |
 | Hidden aliases | The v2 words that still run, for one release         |
 | Plumbing       | The hidden commands the machine runs for itself      |
 | Exit codes     | What 0, 1, 2 and 130 mean                            |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `ports`, `accounts`, `background`, `power`, `run`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `ports`, `accounts`, `background`, `power`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
 - Bare `station` opens the TUI on a terminal; piped, or with `--all` or `--json`, it prints `station overview`, exit 0.
-- A bare noun lists (`apps`, `settings`, `disk`, `machines`, `ports`, `images`, `accounts`). A bare group with nothing to list (`run`, `run git`) prints its menu on stderr and exits 2. A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
+- A bare noun lists (`apps`, `settings`, `disk`, `machines`, `ports`, `images`, `accounts`). A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create api --permanent`).
 - The same verbs everywhere: `install`, `uninstall`, `upgrade`, except where a family has taken its v3 words (`apps`: `install`, `update`, `remove`). The only other words are the [hidden aliases](#hidden-aliases).
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
@@ -96,7 +95,7 @@ station power awake [--lid] [--battery] [--for <d>] # keep this host awake: 1m..
 station power sleep # end the session now
 ```
 
-The engine that already runs holds the session, in memory only: a `PreventUserIdleSystemSleep` assertion, and with `--lid` the clamshell sleep disabled (no root, no `pmset -a`, no file). Every end sets the clamshell back to normal, and so does every engine start and quit. A guard ends the session first: thermal pressure at trapping (or heavy for 5 minutes lid closed on battery), the battery at 20 % on battery, Low Power Mode, or the lid closed on battery without `--battery`; each end is logged in `engine.log` and kept on the page for 24 hours. With `--lid`, a lid close sleeps the display with `pmset displaysleepnow`, never a display assertion. A guard already past its threshold refuses the start (exit 1). Piped, one record per row: the session (`on`, its flags, until in RFC 3339, who asked), the guards, then the reading as `key<TAB>value`. Unrelated to the `power` config item, the always-on pmset policy of a headless host.
+The engine that already runs holds the session, in memory only: a `PreventUserIdleSystemSleep` assertion, and with `--lid` the clamshell sleep disabled (no root, no `pmset -a`, no file). Every end sets the clamshell back to normal, and so does every engine start and quit. A guard ends the session first: thermal pressure at trapping (or heavy for 5 minutes lid closed on battery), the battery at 20 % on battery, Low Power Mode, or the lid closed on battery without `--battery`; each end is logged in `engine.log` and kept on the page for 24 hours. With `--lid`, a lid close sleeps the display with `pmset displaysleepnow`, never a display assertion. A guard already past its threshold refuses the start (exit 1). Piped, one record per row: the session (`on`, its flags, until in RFC 3339, who asked), the guards, then the reading as `key<TAB>value`. Unrelated to the `restart-after-power-cut` setting, the admin pmset policy of an always-on Mac.
 
 ## The fleet
 
@@ -165,24 +164,6 @@ station engine start # the engine bootstrapped again; the VMs it stopped stay st
 
 The first line of `station ports` is This Mac's node: signed in with its name and whether Serve shares, signed out, or not installed. Read only: the owner logs in through the Tailscale app, and station never drives it but for [published services](services.md#serve-and-https).
 
-## Shortcuts
-
-```sh
-station run git <branches|chore|feat|fix|log|push|status|sync|unwip|wip> [args]
-station run docker <rm|rmi|reset> [--yes]
-```
-
-| Shortcut                              | Does                                                               |
-| ------------------------------------- | ------------------------------------------------------------------ |
-| `run git feat "message"`              | `git add .`, then commit `feat: message` (`fix`, `chore` alike)    |
-| `run git wip` / `unwip`               | commit everything as `WIP` / undo that commit, keeping the changes |
-| `run git push`                        | `git push -u origin HEAD`                                          |
-| `run git sync`                        | fetch with prune, then pull                                        |
-| `run git status` / `log` / `branches` | git's own, `log` the last 10 one-line                              |
-| `run docker rm`                       | remove every container                                             |
-| `run docker rmi`                      | remove every image                                                 |
-| `run docker reset`                    | `rm`, then `rmi`                                                   |
-
 `station disk free docker` prunes Docker's unused data.
 
 ## The binary
@@ -199,13 +180,15 @@ station help [command]
 
 A v2 word runs its v3 command with the same arguments, for one release, and prints one muted line on stderr naming it (nothing there with `--json` or `--page`); help and completion never list it.
 
-| Old               | Runs                                                                                                                    |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `station status`  | `station overview`; `status --json` keeps `station.status/v1`                                                           |
-| `station stop`    | `station engine stop`                                                                                                   |
-| `station start`   | `station engine start`                                                                                                  |
-| `station tools`   | `station apps`; `install`, `uninstall` and `upgrade --via` run `apps install`, `apps remove` and `apps update --method` |
-| `station secrets` | `station accounts`; `lend --to` and `recall --from` run `accounts share --with` and `accounts take-back --from`         |
+| Old                                 | Runs                                                                                                                                                                                                           |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `station status`                    | `station overview`; `status --json` keeps `station.status/v1`                                                                                                                                                  |
+| `station stop`                      | `station engine stop`                                                                                                                                                                                          |
+| `station start`                     | `station engine start`                                                                                                                                                                                         |
+| `station tools`                     | `station apps`; `install`, `uninstall` and `upgrade --via` run `apps install`, `apps remove` and `apps update --method`                                                                                        |
+| `station secrets`                   | `station accounts`; `lend --to` and `recall --from` run `accounts share --with` and `accounts take-back --from`                                                                                                |
+| `station run git <shortcut>`        | `git <alias>`, the [Git shortcuts](configuration.md#the-items) setting's alias (`log`, `push`, `status` are `lg`, `pushup`, `st`); refused with `station settings apply git-shortcuts` while it is not applied |
+| `station run docker rm\|rmi\|reset` | the steps of `dclean`, `dclean-images`, `dreset`, the [Docker shortcuts](configuration.md#the-items), asking as before (`--yes` off a terminal)                                                                |
 
 ## Plumbing
 

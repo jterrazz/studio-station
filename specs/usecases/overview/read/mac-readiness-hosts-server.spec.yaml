@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           # Mac readiness
-          ○	restarts after a power cut	not applied, as root	station settings apply power
+          ○	restarts after a power cut	not applied, as root	station settings apply restart-after-power-cut
           ○	never sleeps	not applied	station settings apply never-sleeps
           ●	logs in by itself	applied
           ◐	disk unlock after a power cut	needs you	station machines unlock mac-mini (from the same network)

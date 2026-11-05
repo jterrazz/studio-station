@@ -25,7 +25,7 @@ src/
     kit/          how a leaf and a group are declared; how a leaf answers the confirmation its call asks; the wording of every domain error
     words/        the wording of every fail.Code a call raises
   domain/         behaviour, never touching the machine except through ports
-    settings/ tools/ config/ setup/ status/ storage/ machines/ images/ secrets/ remote/ tailnet/ shortcuts/ shell/
+    settings/ tools/ config/ setup/ status/ storage/ machines/ images/ secrets/ remote/ tailnet/ shell/
   engine/         the per-Mac process (the engine): its runs, its socket, the guards it holds
     process/      the engine's own calls over its live state, and its station.api/v2 server: those and the registry's
 ```
@@ -46,7 +46,7 @@ The ports and the data:
 The data and its presentation:
 
 ```text
-  catalog/        pure data: tools and their storage rows, config items, managers, shortcuts, images, the embedded dotfiles and recipes
+  catalog/        pure data: tools and their storage rows, config items, managers, images, the embedded dotfiles and recipes
   page/           the page language: one semantic page (sections, rows, groups, values, marks, reasons, actions), Seal and station.page/v1
   pages/          one page function per page: domain data to a page, pure (tools today)
   ui/             the design system: token, atom, molecule, organism, template, and the renderers tty, pipe, json and tui
@@ -147,7 +147,7 @@ The exit code comes from the returned error, never from a call to exit inside a 
 | 2    | A refusal: argv, the catalogue, the config or the place said no, before any question and any effect |
 | 130  | Interrupted; no block is printed                                                                    |
 
-A bare group (`station run`) prints its menu on stderr and exits 2, with no block. The wording of every domain error (message and one hint) lives in `surface/cli/kit`'s `failures_<noun>.go` files, and the layer test requires one for every exported error type.
+A bare group with nothing to list prints its menu on stderr and exits 2, with no block. The wording of every domain error (message and one hint) lives in `surface/cli/kit`'s `failures_<noun>.go` files, and the layer test requires one for every exported error type.
 
 ## Fang behind the CLI
 
@@ -157,7 +157,7 @@ Fang renders the help, the version and the completion script, and handles the in
 
 ## The catalogue and methods
 
-The catalogue is values in `src/catalog/`: apps (agent skills included), config items, managers, shortcuts, images, and each app's storage row. A catalogue value carries no function, and a test says so, because behaviour chosen by data belongs to the domain, chosen by the value's type from a closed union.
+The catalogue is values in `src/catalog/`: apps (agent skills included), config items, managers, images, and each app's storage row. A catalogue value carries no function, and a test says so, because behaviour chosen by data belongs to the domain, chosen by the value's type from a closed union.
 
 The rule this repository is built on: **add to the catalogue, not to command code**. One app entry gives the same app a row in `station apps`, a line in `station overview`, an install, a remove and an update path, because all of them read the same value. Which file a change opens is [Develop](../guides/develop.md)'s table.
 

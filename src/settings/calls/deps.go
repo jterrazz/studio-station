@@ -19,6 +19,11 @@ const (
 	NeedsTerminal     fail.Code = "setting.needs-terminal"
 	// value: a checked setting named to apply: station reads it, never sets it.
 	IsChecked fail.Code = "setting.checked"
+	// value: an admin setting named by a run without admin rights: station
+	// never calls sudo, the owner runs it so on that Mac's own terminal.
+	NeedsAdmin fail.Code = "setting.needs-admin"
+	// value: a gesture that needs a setting this machine has not applied.
+	NotApplied fail.Code = "setting.not-applied"
 )
 
 type Deps struct {
@@ -29,8 +34,9 @@ type Deps struct {
 	Now      func() time.Time
 	// value: the values a setting asks, from the owner at a terminal; nil
 	// where nobody is there to answer.
-	Ask       Ask
-	Shortcuts Shortcuts
+	Ask        Ask
+	Shortcuts  Shortcuts
+	GitAliases GitAliases
 	// value: the script the ~/.zshrc block evaluates.
 	Shell Shell
 	Kind  machine.Kind
@@ -38,6 +44,10 @@ type Deps struct {
 	// reports it has (a battery makes it a laptop).
 	Facts contract.Inspector
 	Caps  machine.Capabilities
+	// value: this run has admin rights (it runs under sudo), and the name
+	// of the machine it runs on.
+	Admin bool
+	Mac   string
 }
 
 type Shell interface {
@@ -84,6 +94,16 @@ func find(d Deps, name string, living bool) (catalog.ConfigItem, error) {
 		return it, nil
 	}
 	return catalog.ConfigItem{}, fail.New(fail.Refused, Unknown, name, nil)
+}
+
+// invariant: an admin setting is refused, before any effect, to a run
+// without admin rights; the refusal names the Mac, so a run through --on
+// says the ssh line to that Mac.
+func admitted(d Deps, it catalog.ConfigItem, verb string) error {
+	if !it.NeedsRoot || d.Admin {
+		return nil
+	}
+	return fail.New(fail.Refused, NeedsAdmin, it.Name, map[string]string{"mac": d.Mac, "verb": verb})
 }
 
 func offHere(d Deps) map[string]bool {
@@ -152,7 +172,7 @@ func readFact(ctx context.Context, i contract.Inspector, f catalog.Fact, budget 
 func expectation(ctx context.Context, d Deps, off map[string]bool) settings.Expectation {
 	alwaysOn := false
 	for _, it := range d.Settings.Items() {
-		if it.Effect == catalog.ProcPower {
+		if it.Effect == catalog.ProcNeverSleeps {
 			row, _ := judge(ctx, d, it, off)
 			alwaysOn = row.State == settings.StateApplied
 		}

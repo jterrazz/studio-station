@@ -25,7 +25,7 @@ type ApplyIn struct {
 
 var Apply = call.Call[Deps, ApplyIn, []settings.Change]{
 	Name: "settings.apply", Section: section.Settings, Where: call.AtTarget, Applies: settings.Applies, Confirm: confirm.Overwrite,
-	Errors: []fail.Code{Unknown, IsChecked, NotForThisMachine, NeedsTerminal, confirm.YesNeeded},
+	Errors: []fail.Code{Unknown, IsChecked, NotForThisMachine, NeedsAdmin, NeedsTerminal, confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in ApplyIn, _ call.Progress) ([]settings.Change, error) {
 		// invariant: every setting is judged before any question and any
 		// effect; one over a change of the owner's asks first, as it is lost.
@@ -113,6 +113,9 @@ func targetsOf(ctx context.Context, d Deps, in ApplyIn, off map[string]bool) ([]
 		}
 		if asks(it) && !in.Interactive && in.Values[name] == nil {
 			return nil, fail.New(fail.NeedsTerminal, NeedsTerminal, name, nil)
+		}
+		if err := admitted(d, it, "apply"); err != nil {
+			return nil, err
 		}
 		if err := d.Settings.Admit(name, in.Interactive || in.Values[name] != nil); err != nil {
 			return nil, err

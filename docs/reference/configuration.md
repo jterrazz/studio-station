@@ -13,28 +13,31 @@
 
 A setting that does not live on this machine's kind reads Not for this machine, and an apply of it is refused with exit 2. Each that lives here reads Applied (exactly as station applied it), Changed since (applied, then changed by someone: `station settings diff` shows how), Not applied, or Off here (the owner's choice, kept as `off_here` in `preferences.json`). What station applied, its fingerprint and when, is kept under `~/.local/state/station/applied/`.
 
-| Item                        | Place       | Sets                                                                                            | Reversible |
-| --------------------------- | ----------- | ----------------------------------------------------------------------------------------------- | ---------- |
-| `hushlogin`                 | all         | `~/.hushlogin`                                                                                  | no         |
-| `tmux-dotfiles`             | all         | `~/.tmux.conf`, reloaded in a running tmux                                                      | no         |
-| `starship-dotfiles`         | all         | `~/.config/starship.toml`                                                                       | no         |
-| `github-login`              | all         | `gh auth login` over ssh; in a VM this token is the VM's own                                    | no         |
-| `ghostty-dotfiles`          | host, macos | `~/.config/ghostty/` config and themes                                                          | no         |
-| `zed-dotfiles`              | host, macos | `~/.config/zed/` config and formatter values                                                    | no         |
-| `git-signing`               | host, macos | GPG commit signing                                                                              | no         |
-| `spotlight-exclude`         | host, macos | Spotlight exclusions for build folders                                                          | no         |
-| `dock-reset`, `dock-spacer` | host, macos | the Dock                                                                                        | no         |
-| `backup-exclusions`         | host        | `~/.cache` and Tart's VMs out of Time Machine (`tmutil addexclusion`) ([Disk](disk.md#backups)) | yes        |
-| `tart-launcher`             | host        | `~/.local/bin/tart`, the launcher that sets `TART_HOME` ([Disk](disk.md#tart))                  | no         |
-| `ssh-key`                   | host        | `~/.ssh/id_ed25519`                                                                             | no         |
-| `dns`                       | host        | the Quad9 encrypted DNS profile                                                                 | no         |
-| `autologin`                 | host        | automatic login, for an unattended host; needs root                                             | yes        |
-| `power`                     | host        | the power policy of an always-on host; needs root                                               | yes        |
-| `lock-after-login`          | host        | lock the screen after the automatic login; needs root                                           | yes        |
-| `sshd`                      | host        | Remote Login; needs root                                                                        | yes        |
-| `claude-token`              | host        | the Claude Code token shared with VMs ([Secrets](secrets.md#claude-in-a-vm))                    | yes        |
+| Item                        | Place       | Sets                                                                                                                                                   | Reversible |
+| --------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| `hushlogin`                 | all         | `~/.hushlogin`                                                                                                                                         | no         |
+| `tmux-dotfiles`             | all         | `~/.tmux.conf`, reloaded in a running tmux                                                                                                             | no         |
+| `starship-dotfiles`         | all         | `~/.config/starship.toml`                                                                                                                              | no         |
+| `github-login`              | all         | `gh auth login` over ssh; in a VM this token is the VM's own                                                                                           | no         |
+| `ghostty-dotfiles`          | host, macos | `~/.config/ghostty/` config and themes                                                                                                                 | no         |
+| `zed-dotfiles`              | host, macos | `~/.config/zed/` config and formatter values                                                                                                           | no         |
+| `git-signing`               | host, macos | GPG commit signing                                                                                                                                     | no         |
+| `spotlight-exclude`         | host, macos | Spotlight exclusions for build folders                                                                                                                 | no         |
+| `dock-reset`, `dock-spacer` | host, macos | the Dock                                                                                                                                               | no         |
+| `backup-exclusions`         | host        | `~/.cache` and Tart's VMs out of Time Machine (`tmutil addexclusion`) ([Disk](disk.md#backups))                                                        | yes        |
+| `tart-launcher`             | host        | `~/.local/bin/tart`, the launcher that sets `TART_HOME` ([Disk](disk.md#tart))                                                                         | no         |
+| `ssh-key`                   | host        | `~/.ssh/id_ed25519`                                                                                                                                    | no         |
+| `dns`                       | host        | the Quad9 encrypted DNS profile                                                                                                                        | no         |
+| `autologin`                 | host        | automatic login, for an unattended host; admin                                                                                                         | yes        |
+| `restart-after-power-cut`   | host        | `pmset` autorestart and wake for network, so the Mac comes back after a power cut; admin                                                               | yes        |
+| `never-sleeps`              | host        | the engine keeps the Mac awake, its servers with it; no admin, applied from any Mac                                                                    | yes        |
+| `lock-after-login`          | host        | lock the screen after the automatic login; admin                                                                                                       | yes        |
+| `sshd`                      | host        | Remote Login; admin                                                                                                                                    | yes        |
+| `claude-token`              | host        | the Claude Code token shared with VMs ([Secrets](secrets.md#claude-in-a-vm))                                                                           | yes        |
+| `git-shortcuts`             | all         | station's `[alias]` block in `~/.gitconfig`: wip, unwip, sync, feat, fix, chore, branches, lg, st, pushup                                              | yes        |
+| `docker-shortcuts`          | all         | `dclean`, `dclean-images`, `dreset` in station's zsh block (`~/.config/station/zsh/`), each asks y/n before it removes every container, image, or both | yes        |
 
-The settings are Set by station; `autologin`, `power`, `lock-after-login` and `sshd` are its Always-on Mac group, for a Mac that hosts servers: opt-in, applied by name only, one folded line until one of it is applied. A setting that needs root is refused without it with `sudo station settings apply <setting>`.
+The settings are Set by station; `autologin`, `restart-after-power-cut`, `never-sleeps`, `lock-after-login` and `sshd` are its Always-on Mac group, for a Mac that hosts servers: opt-in, applied by name only, one folded line until one of it is applied. An admin setting (all of the group but `never-sleeps`) applies only when you run station with admin rights on that Mac's own terminal: without them it is refused, exit 2, with the line that does it, `sudo station settings apply <setting>`, or through `--on`, `ssh -t <mac> sudo station settings apply <setting>`. station never calls sudo itself.
 
 ## Values
 

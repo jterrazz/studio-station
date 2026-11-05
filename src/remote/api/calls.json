@@ -441,6 +441,9 @@
       "schema": "station.run.git/v1",
       "section": "settings",
       "where": "at-target",
+      "errors": [
+        "setting.not-applied"
+      ],
       "in": "GitIn"
     },
     {
@@ -452,6 +455,7 @@
       "errors": [
         "confirm.yes-needed",
         "setting.checked",
+        "setting.needs-admin",
         "setting.needs-terminal",
         "setting.not-for-this-machine",
         "setting.unknown"
@@ -487,6 +491,7 @@
       "confirm": "off-here",
       "errors": [
         "confirm.yes-needed",
+        "setting.needs-admin",
         "setting.not-for-this-machine",
         "setting.unknown"
       ],

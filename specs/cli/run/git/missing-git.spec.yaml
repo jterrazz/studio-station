@@ -1,7 +1,0 @@
-description: 'without git on PATH a shortcut says so and points at the tool, exit 1'
-runs:
-    - command: 'run git status'
-      exit: 1
-      stderr: |
-          Error: git is not installed
-          Hint: station apps install git

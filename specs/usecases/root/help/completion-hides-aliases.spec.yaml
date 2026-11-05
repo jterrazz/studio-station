@@ -15,7 +15,6 @@ runs:
           machines
           overview
           ports
-          run
           settings
           setup
           use

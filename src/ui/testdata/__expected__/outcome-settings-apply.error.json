@@ -7,7 +7,7 @@
   },
   "state": "failed",
   "error": {
-    "message": "power needs root",
-    "hint": "sudo station settings apply power"
+    "message": "restart-after-power-cut needs admin rights",
+    "hint": "sudo station settings apply restart-after-power-cut"
   }
 }

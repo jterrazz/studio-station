@@ -1,7 +1,6 @@
- station run docker clean                                   host · unregistered
+ station run docker reset                                   host · unregistered
  ──────────────────────────────────────────────────────────────────────────────
 
  Changes
    ◌ containers
    ◌ images
-   ◌ volumes

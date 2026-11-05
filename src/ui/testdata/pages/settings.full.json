@@ -80,6 +80,24 @@
         },
         {
           "row": {
+            "id": "docker-shortcuts",
+            "mark": "attention",
+            "label": "docker-shortcuts",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "changed since 2 d ago"
+              }
+            ],
+            "reason": "differs",
+            "hint": {
+              "command": "station settings diff docker-shortcuts",
+              "key": "d"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "tmux-dotfiles",
             "mark": "absent",
             "label": "tmux-dotfiles",
@@ -197,6 +215,28 @@
         },
         {
           "row": {
+            "id": "git-shortcuts",
+            "mark": "ok",
+            "label": "git-shortcuts",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "applied"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "~/.git-shortcuts"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
             "id": "starship-dotfiles",
             "mark": "off-here",
             "label": "starship-dotfiles",
@@ -238,11 +278,11 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 3
+          "n": 4
         },
         {
           "mark": "attention",
-          "n": 3
+          "n": 4
         },
         {
           "mark": "absent",

@@ -5,7 +5,7 @@ A Go CLI that sets up and runs a Mac and its fleet of VMs: tools, config, hosts,
 ## Mental model
 
 - **Layers.** input, command, domain, pure presenter, one output layer. A test refuses an import that crosses them ([`docs/concepts/architecture.md`](docs/concepts/architecture.md)).
-- **Add to the catalogue, not to command code.** Tools (agent skills included, each with its storage row), config items, shortcuts and images are values in `src/catalog/`.
+- **Add to the catalogue, not to command code.** Tools (agent skills included, each with its storage row), config items (the Git and Docker shortcuts among them) and images are values in `src/catalog/`.
 - **The binary is hermetic.** Dotfiles and VM recipes are embedded; nothing reads a path inside the clone.
 - **The words are the glossary's.** One word per concept ([`docs/concepts/glossary.md`](docs/concepts/glossary.md)).
 - **Specs drive the real binary.** Every behaviour has a `<case>.spec.yaml` document under `specs/cli/`; module tests exist only where a spec cannot reach.
