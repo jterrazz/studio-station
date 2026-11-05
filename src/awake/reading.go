@@ -9,6 +9,10 @@ type Reading struct {
 	Percent    int
 	Charging   bool
 	LowPower   bool
+	// value: the battery's health in percent of its design capacity and
+	// its cycle count, as AppleSmartBattery reports them; 0 unread.
+	Health int `json:",omitempty"`
+	Cycles int `json:",omitempty"`
 	// value: the thermal pressure level, 0 nominal, 1 moderate, 2 heavy,
 	// 3 serious (macOS says trapping), 4 sleeping.
 	Thermal int

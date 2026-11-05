@@ -55,7 +55,7 @@ func (p *Power) Read() (awake.Reading, error) {
 	}
 	return awake.Reading{
 		Lid: r.Lid, Source: r.Source, HasBattery: r.HasBattery, Percent: r.Percent,
-		Charging: r.Charging, LowPower: r.LowPower, Thermal: r.Thermal,
+		Charging: r.Charging, LowPower: r.LowPower, Thermal: r.Thermal, Health: r.Health, Cycles: r.Cycles,
 	}, nil
 }
 

@@ -87,6 +87,33 @@ static station_sources_t station_sources(void) {
 	return s;
 }
 
+typedef struct {
+	int health;
+	int cycles;
+} station_battery_t;
+
+static int station_int(io_service_t s, CFStringRef key) {
+	int out = 0;
+	CFTypeRef v = IORegistryEntryCreateCFProperty(s, key, kCFAllocatorDefault, 0);
+	if (!v) return 0;
+	if (CFGetTypeID(v) == CFNumberGetTypeID()) CFNumberGetValue((CFNumberRef)v, kCFNumberIntType, &out);
+	CFRelease(v);
+	return out;
+}
+
+static station_battery_t station_battery(void) {
+	station_battery_t b = {0, 0};
+	io_service_t s = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"));
+	if (!s) return b;
+	int design = station_int(s, CFSTR("DesignCapacity"));
+	int max = station_int(s, CFSTR("AppleRawMaxCapacity"));
+	if (design > 0 && max > 0) b.health = (max * 100 + design / 2) / design;
+	if (b.health > 100) b.health = 100;
+	b.cycles = station_int(s, CFSTR("CycleCount"));
+	IOObjectRelease(s);
+	return b;
+}
+
 static int station_low_power(void) {
 	@autoreleasepool {
 		return [[NSProcessInfo processInfo] isLowPowerModeEnabled] ? 1 : 0;
@@ -137,6 +164,8 @@ type Reading struct {
 	Charging   bool
 	LowPower   bool
 	Thermal    int
+	Health     int
+	Cycles     int
 }
 
 type Power struct {
@@ -181,6 +210,10 @@ func (p *Power) Read() Reading {
 		r.Source = "battery"
 	}
 	r.HasBattery, r.Percent, r.Charging = s.has_battery != 0, int(s.percent), s.charging != 0
+	if r.HasBattery {
+		b := C.station_battery()
+		r.Health, r.Cycles = int(b.health), int(b.cycles)
+	}
 	r.LowPower = C.station_low_power() != 0
 	if !p.tokened && C.station_thermal_token(&p.token) == 0 {
 		p.tokened = true
