@@ -12,7 +12,7 @@ runs:
     - command: '--version >/dev/null; "$STATION" engine run 2>/dev/null & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; "$STATION" machines create --json | /usr/bin/jq -r ''.schema, .name, .host, .lifetime, .version, .memory_bytes, .ip''; kill $d; wait $d'
       exit: 0
       stdout: |
-          station.machines.created/v1
+          station.machines.create-workspace/v1
           linux-2
           x
           throwaway

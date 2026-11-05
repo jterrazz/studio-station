@@ -1,7 +1,7 @@
-description: 'create --json is the created workspace, its reserved ports with it'
+description: 'create --json is station.machines.create-workspace/v1: the workspace, its health, its reserved ports'
 env: two-macs
 runs:
-    - command: 'machines create --json | /usr/bin/jq -c "[.name, .lifetime, .cpus, .memory_bytes, .disk_bytes, [.services[].guest_port]]"'
+    - command: 'machines create --json | /usr/bin/jq -c "[.schema, .name, .lifetime, .cpus, .memory_bytes, .disk_bytes, .health, [.services[] | [.guest_port, .host_port]]]"'
       exit: 0
       stdout: |
-          ["linux-2","throwaway",4,4294967296,20000000000,[8081,5173]]
+          ["station.machines.create-workspace/v1","linux-2","throwaway",4,4294967296,20000000000,{"running":true,"address":true,"ssh":true},[[8081,40000],[5173,40003]]]
