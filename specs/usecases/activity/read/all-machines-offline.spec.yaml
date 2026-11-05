@@ -1,4 +1,4 @@
-description: 'an offline Mac is its own row, does not answer; the others are filled and the read exits 0'
+description: 'an offline Mac is its own row; the others are filled, a meter that counted nothing reads ?'
 env:
     - mini-offline
     - engine
@@ -10,7 +10,7 @@ runs:
           # Machines
           ●	This Mac	Mac	34 %	12.4/16 GB	4.1/1.3 MB/s	2.1/0.2 MB/s
           ○	api	Workspace	Stopped
-          ●	linux-1	Workspace	0 %	0 B/0 B	0.0/0.0 MB/s	0.0/0.0 MB/s
+          ●	linux-1	Workspace	?	?	?	?
           ✗	jterrazz-mac-mini	Mac	does not answer
     - command: 'activity --all-machines --json | /usr/bin/jq -c ''.machines[] | [.machine.name, .state, .error]'''
       exit: 0

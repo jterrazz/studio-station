@@ -49,8 +49,8 @@ func fleetRow(v View) page.Row {
 		return r
 	}
 	s := rep.Last.Sample
-	cpu, disk, net := "?", "?", "?"
-	if rep.Window > 0 {
+	cpu, disk, net, memory := "?", "?", "?", "?"
+	if rep.Window > 0 && counted(s) {
 		cpu = activity.Percent(rep.Rates.CPU)
 		disk, net = pair(rep.Rates.DiskRead, rep.Rates.DiskWrite), pair(rep.Rates.NetIn, rep.Rates.NetOut)
 	}
@@ -58,8 +58,10 @@ func fleetRow(v View) page.Row {
 	if s.DiskTotal > 0 {
 		free = page.Text(activity.Bytes(s.DiskFree))
 	}
-	used := strings.TrimSuffix(activity.Memory(s.MemUsed), " GB")
-	r.Cells = append(r.Cells, page.Text(cpu), page.Text(used+"/"+activity.Memory(s.MemTotal)), page.Text(disk), page.Text(net), free)
+	if s.MemTotal > 0 {
+		memory = strings.TrimSuffix(activity.Memory(s.MemUsed), " GB") + "/" + activity.Memory(s.MemTotal)
+	}
+	r.Cells = append(r.Cells, page.Text(cpu), page.Text(memory), page.Text(disk), page.Text(net), free)
 	return r
 }
 

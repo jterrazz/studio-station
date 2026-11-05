@@ -167,7 +167,7 @@ func values(v View) []page.Item {
 			row("memory", "Memory", page.Unjudged, activity.Memory(run.Memory)+" resident"),
 		}
 	}
-	rated := r.Window > 0
+	rated := r.Window > 0 && counted(s)
 	rate := func(perSecond float64) string {
 		if !rated {
 			return "?"
@@ -180,7 +180,7 @@ func values(v View) []page.Item {
 	}
 	out := []page.Item{
 		row("cpu", "CPU", page.Unjudged, cpu+" of "+strconv.Itoa(s.CPUs)+" CPU", "load "+activity.Load(s.Load)),
-		row("memory", "Memory", page.Unjudged, strings.TrimSuffix(activity.Memory(s.MemUsed), " GB")+" of "+activity.Memory(s.MemTotal), "pressure "+pressure(s.Pressure), "swap "+activity.Memory(s.SwapUsed)),
+		row("memory", "Memory", page.Unjudged, memory(s), "pressure "+pressure(s.Pressure), "swap "+activity.Memory(s.SwapUsed)),
 	}
 	if s.DiskTotal > 0 {
 		out = append(out, row("disk", "Disk", page.Unjudged, activity.Bytes(s.DiskFree)+" free of "+activity.Bytes(s.DiskTotal)))
@@ -216,6 +216,17 @@ func values(v View) []page.Item {
 		out = append(out, row("battery", "Battery", page.Unjudged, words...))
 	}
 	return out
+}
+
+// value: a sample whose kernel counted nothing (no CPU ticks, no memory)
+// was not read: its values are unknown, never zeros.
+func counted(s activity.Sample) bool { return s.CPUTotal > 0 || s.MemTotal > 0 }
+
+func memory(s activity.Sample) string {
+	if s.MemTotal <= 0 {
+		return "?"
+	}
+	return strings.TrimSuffix(activity.Memory(s.MemUsed), " GB") + " of " + activity.Memory(s.MemTotal)
 }
 
 func pressure(p activity.Pressure) string {

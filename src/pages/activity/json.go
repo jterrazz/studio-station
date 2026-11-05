@@ -216,7 +216,7 @@ func body(v View) Body {
 		}
 		return b
 	}
-	rated := r.Window > 0
+	rated := r.Window > 0 && counted(s)
 	rate := func(x float64) *float64 {
 		if !rated {
 			return nil
