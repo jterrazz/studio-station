@@ -51,7 +51,7 @@ func (s shell) paneKeys() []ui.Binding {
 	case s.table():
 		keys = append(keys, bind("enter", "open"))
 	case slices.ContainsFunc(acts, func(b ui.Binding) bool { return b.Key == "enter" }):
-	case s.listed():
+	case s.detailed():
 		keys = append(keys, bind("enter", "detail"))
 	}
 	if s.listed() {
@@ -83,9 +83,22 @@ func (s shell) aliases() []ui.Binding {
 	return keys
 }
 
+func (s shell) screenKeys() []ui.Binding {
+	if sc := s.screen(); sc != nil && s.read() && s.focus != ui.PaneSidebar {
+		return sc.Keys(s.view())
+	}
+	return nil
+}
+
 func (s shell) footer() []ui.Binding {
-	keys := s.paneKeys()
-	if s.filtering || s.acts.modal != nil || s.focus == ui.PaneProgress {
+	if s.dialog != nil {
+		return nil
+	}
+	if s.acts.modal != nil || s.focus == ui.PaneProgress {
+		return s.paneKeys()
+	}
+	keys := append(s.screenKeys(), s.paneKeys()...)
+	if s.filtering {
 		return keys
 	}
 	return append(keys, bind("tab", "next pane"), bind("[ ]", "section"))
@@ -94,7 +107,7 @@ func (s shell) footer() []ui.Binding {
 func (s shell) keySheet() *ui.Sheet {
 	pane := map[ui.Pane]string{ui.PaneSidebar: "Sidebar", ui.PaneMaster: s.section().Title(), ui.PaneDetail: "Detail"}[s.focus]
 	return &ui.Sheet{Title: "Keys" + ui.Sep + pane, Groups: []ui.SheetGroup{
-		{Title: pane, Keys: s.paneKeys()},
+		{Title: pane, Keys: append(s.screenKeys(), s.paneKeys()...)},
 		{Title: "Also", Keys: s.aliases()},
 		{Title: "Everywhere", Keys: append(s.everywhere(), bind("?", "every key"))},
 	}}

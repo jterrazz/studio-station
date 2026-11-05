@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	Cursor = token.Cursor
-	Tick   = token.Tick
-	Typed  = token.Typed
+	Pointer = token.Cursor
+	Tick    = token.Tick
+	Typed   = token.Typed
 )
 
 type Task struct {

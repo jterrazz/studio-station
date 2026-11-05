@@ -77,10 +77,17 @@ type Shell struct {
 	ShowSidebar   bool
 	Master        Panel
 	Detail        *Panel
-	Overlay       bool
-	Focus         Pane
-	Footer        []organism.Binding
-	Sheet         *Sheet
+	// value: the fixed panes of a page section at the right of the master
+	// pane, top to bottom, when there is no detail (a server's Health and
+	// Ports).
+	Beside  []Panel
+	Overlay bool
+	Focus   Pane
+	Footer  []organism.Binding
+	Sheet   *Sheet
+	// value: a form or a screen's question, over the panes until it is
+	// answered.
+	Dialog *Panel
 	// value: the Progress strip, above the footer, only while not empty.
 	Progress []Task
 	// value: the question put, drawn over the master pane.
@@ -107,6 +114,8 @@ func (s Shell) Render() string {
 	switch {
 	case s.Sheet != nil:
 		body = s.box(st, s.Sheet.Title, s.sheetLines(st), s.Width, room, true)
+	case s.Dialog != nil:
+		body = s.box(st, s.Dialog.Title, s.Dialog.Lines, s.Width, room, true)
 	default:
 		body = s.panes(st, room)
 	}
@@ -159,6 +168,10 @@ func (s Shell) panes(st token.Styles, room int) []string {
 		masterWidth = width - DetailWidth
 		right = s.box(st, s.Detail.Title, s.Detail.Lines, DetailWidth, room, s.Focus == PaneDetail)
 	}
+	if s.Detail == nil && len(s.Beside) > 0 {
+		masterWidth = width - DetailWidth
+		right = s.stack(st, room)
+	}
 	master := s.box(st, s.Master.Title, s.Master.Lines, masterWidth, room, s.Focus == PaneMaster)
 	if s.Modal != nil {
 		master = s.box(st, s.Modal.Title, s.Modal.Lines, masterWidth, room, true)
@@ -180,6 +193,26 @@ func (s Shell) panes(st token.Styles, room int) []string {
 			line += right[i]
 		}
 		out[i] = line
+	}
+	return out
+}
+
+// invariant: each fixed pane takes the lines it has, the last one the room
+// left, so the column is as tall as the master pane.
+func (s Shell) stack(st token.Styles, room int) []string {
+	out := make([]string, 0, room)
+	for i, p := range s.Beside {
+		height := min(len(p.Lines)+2, room-len(out))
+		if i == len(s.Beside)-1 {
+			height = room - len(out)
+		}
+		if height < 2 {
+			break
+		}
+		out = append(out, s.box(st, p.Title, p.Lines, DetailWidth, height, false)...)
+	}
+	for len(out) < room {
+		out = append(out, atom.Spaces(DetailWidth))
 	}
 	return out
 }
@@ -295,4 +328,7 @@ func Glyph(m page.Mark) string { return atom.Glyph(m) }
 
 type Binding = organism.Binding
 
-const Sep = token.Sep
+const (
+	Sep   = token.Sep
+	Crumb = token.Crumb
+)

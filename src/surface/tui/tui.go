@@ -41,13 +41,21 @@ type Deps struct {
 	Open func(ctx context.Context, target string) error
 	// value: a new terminal window runs this command line.
 	Terminal func(ctx context.Context, line string) error
-	NoColor  bool
+	// value: runs station with the CLI's words, the call a screen's key
+	// makes, and answers what it printed.
+	Run     Calls
+	NoColor bool
 	// value: stops every read still running, so q leaves nothing behind.
 	Stop func()
+	// value: holds the engine's watch on these machines, by name, until the
+	// func it answers is called (SPEC §6.3).
+	Watch func(machines []string) (release func())
 }
 
 func Run(ctx context.Context, d Deps) error {
-	_, err := tea.NewProgram(newShell(ctx, d), tea.WithContext(ctx)).Run()
+	s := newShell(ctx, d)
+	_, err := tea.NewProgram(s, tea.WithContext(ctx)).Run()
+	s.held.end()
 	if d.Stop != nil {
 		d.Stop()
 	}

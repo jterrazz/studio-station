@@ -12,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
@@ -59,6 +60,11 @@ type shell struct {
 	cells map[string]ui.Matrix
 	// value: the row a section's cursor goes to once its page answers.
 	want map[string]string
+	// value: each screen's own state, by its read's key.
+	states map[string]screen.State
+	dialog *dialog
+	gens   map[string]int
+	held   *held
 }
 
 const machinesKey = "\x00machines"
@@ -66,7 +72,8 @@ const machinesKey = "\x00machines"
 func newShell(ctx context.Context, d Deps) shell {
 	ctx, cancel := context.WithCancel(ctx)
 	s := shell{ctx: ctx, cancel: cancel, deps: d, width: 110, height: 30, dark: true, at: d.Here.Machine,
-		focus: ui.PaneMaster, reads: map[string]read{}, lists: map[string]ui.List{}, asked: map[string]bool{}, samples: map[string][]int{}}
+		focus: ui.PaneMaster, reads: map[string]read{}, lists: map[string]ui.List{}, asked: map[string]bool{}, samples: map[string][]int{},
+		states: map[string]screen.State{}, gens: map[string]int{}, held: &held{}}
 	s.nodes = tree(d.Here, nil)
 	s.side = s.sectionEntry()
 	s.asked[s.key(s.current(), s.section())] = true
@@ -76,7 +83,8 @@ func newShell(ctx context.Context, d Deps) shell {
 func (s shell) Init() tea.Cmd {
 	// invariant: the shown section is read first; All machines and the other
 	// Macs' Needs you follow once it has answered (SPEC §9.10).
-	return tea.Batch(tea.RequestBackgroundColor, s.fetch(s.key(s.current(), s.section()), words(s.current(), s.section())))
+	s.hold()
+	return tea.Batch(tea.RequestBackgroundColor, s.fetch(s.key(s.current(), s.section()), s.words(s.current(), s.section())))
 }
 
 func (s shell) key(n node, id section.ID) string {
@@ -115,6 +123,14 @@ func (s shell) fetch(key string, w []string) tea.Cmd {
 }
 
 func (s shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m, cmd := s.update(msg)
+	if next, ok := m.(shell); ok {
+		next.hold()
+	}
+	return m, cmd
+}
+
+func (s shell) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		if msg.Width > 0 && msg.Height > 0 {
@@ -128,6 +144,10 @@ func (s shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return s.stepDone(msg)
 	case toasted:
 		return s.faded(msg.id), nil
+	case called:
+		return s.finished(msg)
+	case ticked:
+		return s.relive(msg)
 	case tea.KeyPressMsg:
 		return s.press(msg)
 	}
@@ -162,7 +182,7 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 		for _, n := range s.nodes {
 			if n.kind == machine.Mac && !n.here {
 				var cmd tea.Cmd
-				s, cmd = s.ask(s.key(n, section.Overview), words(n, section.Overview))
+				s, cmd = s.ask(s.key(n, section.Overview), s.words(n, section.Overview))
 				cmds = append(cmds, cmd)
 			}
 		}
@@ -171,11 +191,14 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 		s.samples = sampled(s.samples, msg.page)
 	}
 	if l, ok := s.lists[msg.key]; ok || r.err == nil {
+		l.Skip = s.skips(msg.key)
 		s.lists = with(s.lists, msg.key, l.Show(r.page))
 	}
 	s = s.reveal(msg.key)
 	var cmd tea.Cmd
 	s, cmd = s.ask(machinesKey, []string{"machines"})
+	cmds = append(cmds, cmd)
+	s, cmd = s.live(msg.key)
 	return s, tea.Batch(append(cmds, cmd)...)
 }
 
@@ -190,6 +213,9 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if s.sheet {
 		s.sheet = false
 		return s, nil
+	}
+	if s.dialog != nil {
+		return s.asking(k)
 	}
 	if s.acts.modal != nil {
 		return s.answering(k)
@@ -223,9 +249,19 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if s.focus == ui.PaneSidebar {
 			return s.sidebar(key)
 		}
+		if sc := s.screen(); sc != nil && s.read() {
+			if e, ok := sc.Press(key, s.view()); ok {
+				return s.effect(e)
+			}
+		}
 		return s.master(key)
 	}
 	return s, nil
+}
+
+func (s shell) read() bool {
+	r := s.reads[s.key(s.current(), s.section())]
+	return r.done && r.err == nil
 }
 
 func (s shell) quit() (tea.Model, tea.Cmd) {
@@ -393,7 +429,9 @@ func (s shell) listed() bool {
 		return true
 	}
 	switch s.section() {
-	case section.Overview, section.Activity, section.Awake, section.SSH:
+	case section.Activity:
+		return s.current().all()
+	case section.Overview, section.SSH:
 		return false
 	default:
 		return true
@@ -401,7 +439,7 @@ func (s shell) listed() bool {
 }
 
 func (s shell) detailed() bool {
-	return (s.listed() && !s.table() && !s.matrix()) || s.detailShown() != nil
+	return (s.listed() && !s.table() && !s.matrix() && s.section() != section.Awake && (s.section() != section.Activity || !s.current().all())) || s.detailShown() != nil
 }
 
 // value: what the section's detail pane shows in place of the row's own
@@ -425,10 +463,33 @@ func (s shell) masterWidth() int {
 	if s.sidebarShown() {
 		width -= ui.SidebarWidth
 	}
-	if s.detailed() && s.width >= ui.ThreePanes {
+	if ((s.detailed() && !s.wide()) || s.paned()) && s.width >= ui.ThreePanes {
 		width -= ui.DetailWidth
 	}
 	return width
+}
+
+// value: the sections the screen a read is for keeps its cursor off.
+func (s shell) skips(key string) func(page.Section) bool {
+	for _, n := range s.nodes {
+		for _, id := range s.sections(n) {
+			if s.key(n, id) != key {
+				continue
+			}
+			if sk, ok := screenFor(n, id).(screen.Skips); ok {
+				m := s.machineOf(n)
+				return func(p page.Section) bool { return sk.Skips(m, p) }
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+// value: the shown screen draws one wide pane, its detail opened over it.
+func (s shell) wide() bool {
+	w, ok := s.screen().(screen.Wide)
+	return ok && w.Wide(s.machineOf(s.current()))
 }
 
 func (s shell) page(n node, id section.ID) (page.Page, bool) {
@@ -760,9 +821,16 @@ func (s shell) frame() ui.Shell {
 		title += ui.Sep + words
 	}
 	l.Bound = s.bound()
+	sc := s.screen()
+	if sc != nil && r.done && r.err == nil {
+		title = sc.Title(s.view())
+		if l.Filter != "" {
+			title += " (/" + l.Filter + ")"
+		}
+	}
 	room := max(s.height-5, 1)
 	width := s.masterWidth()
-	detail := s.detailed() && (s.width >= ui.ThreePanes || s.focus == ui.PaneDetail)
+	detail := s.detailed() && ((s.width >= ui.ThreePanes && !s.wide()) || s.focus == ui.PaneDetail)
 	switch {
 	case !r.done:
 		f.Master = ui.Panel{Title: title, Lines: []string{" " + ui.Glyph(page.Awaiting) + " " + s.section().Title() + ui.Sep + "reading " + s.current().label}}
@@ -774,6 +842,20 @@ func (s shell) frame() ui.Shell {
 	default:
 		l.Ticked = s.acts.ticked[key]
 		f.Master = ui.Panel{Title: title, Lines: l.Lines(f, width, room, s.focus == ui.PaneMaster || s.focus == ui.PaneDetail)}
+		if sc != nil {
+			if lines, ok := sc.Lines(s.view()); ok {
+				f.Master.Lines = lines
+			}
+		}
+		// invariant: a narrow terminal draws the fixed panes under the
+		// master pane's lines, never drops one.
+		if panes := s.panes(); s.width >= ui.ThreePanes {
+			f.Beside = panes
+		} else {
+			for _, p := range panes {
+				f.Master.Lines = append(append(f.Master.Lines, "", " "+p.Title), p.Lines...)
+			}
+		}
 	}
 	if detail {
 		pane := ui.Panel{Title: "Detail"}
@@ -786,7 +868,7 @@ func (s shell) frame() ui.Shell {
 		if o := s.detailShown(); o != nil {
 			pane = s.openedPanel(f, *o, room)
 		}
-		f.Detail, f.Overlay = &pane, s.width < ui.ThreePanes
+		f.Detail, f.Overlay = &pane, s.width < ui.ThreePanes || s.wide()
 	}
 	f.Progress = s.strip()
 	if s.acts.modal != nil {
@@ -797,6 +879,7 @@ func (s shell) frame() ui.Shell {
 	if s.sheet {
 		f.Sheet = s.keySheet()
 	}
+	f.Dialog = s.dialogPanel()
 	return f
 }
 

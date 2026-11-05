@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
@@ -15,11 +17,11 @@ import (
 
 func tuiOpener(_ kit.Env, m machine, noColor bool) func(context.Context) error {
 	return func(ctx context.Context) error {
-		if m.world != nil {
-			m.world.standAside()
+		if err := m.world.lend(ctx); err != nil {
+			return err
 		}
 		b := binary{m: m}
-		return tui.Run(ctx, tui.Deps{Here: m.where, Pages: b.pages, Do: b.do, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close})
+		return tui.Run(ctx, tui.Deps{Here: m.where, Pages: b.pages, Do: b.do, Run: b.call, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close, Watch: tuiWatch(ctx, m)})
 	}
 }
 
@@ -134,6 +136,55 @@ func broken(stdout string) string {
 		return ""
 	}
 	return why[0]
+}
+
+// invariant: a key's call is the CLI's command for its words, run as this
+// very binary and alone, as a gesture is, so a call has one function on
+// every surface.
+func (b *binary) call(ctx context.Context, words []string) (string, error) {
+	b.turns.Lock()
+	defer b.turns.Unlock()
+	out, err := b.run(ctx, words)
+	if err != nil {
+		return "", err
+	}
+	if out.ExitCode != 0 {
+		return "", failed(out.Stderr)
+	}
+	return out.Stdout, nil
+}
+
+// invariant: the TUI's watch is the menu bar's: engine.watch held open on
+// this Mac's engine for the machines it shows, This Mac by the engine's own
+// name for it, until the screen leaves them.
+func tuiWatch(ctx context.Context, m machine) func([]string) func() {
+	return func(names []string) func() {
+		held := make([]string, 0, len(names))
+		for _, n := range names {
+			if n == m.where.Machine {
+				n = engine.ThisMac
+			}
+			held = append(held, n)
+		}
+		if m.world != nil {
+			return m.world.watch(held)
+		}
+		watch, cancel := context.WithCancel(ctx)
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			updates, err := m.engineAPI().c.Watch(watch, process.Watch, process.WatchIn{Machines: held})
+			if err != nil {
+				return
+			}
+			for range updates {
+			}
+		}()
+		return func() {
+			cancel()
+			<-done
+		}
+	}
 }
 
 func failed(stderr string) *tui.Failed {

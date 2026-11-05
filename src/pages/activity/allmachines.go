@@ -29,7 +29,7 @@ func pair(a, b float64) string {
 func everyRow(v View) page.Row {
 	// invariant: one row per machine (SPEC §6.4): a stopped VM says so, a
 	// Mac that does not answer is its own row and the others are filled.
-	r := page.Row{ID: v.Name, Label: v.Label, Mark: page.OK, Cells: []page.Value{page.Text(kindWord(v.Kind))}}
+	r := page.Row{ID: v.Name, Label: v.Label, Short: v.Short, Mark: page.OK, Cells: []page.Value{page.Text(kindWord(v.Kind))}}
 	rep := v.Report
 	switch {
 	case v.Silent != "":
@@ -65,7 +65,40 @@ func everyRow(v View) page.Row {
 	return r
 }
 
-func AllMachines(views []View, here page.Context) page.Page {
+// value: the section a screen's page adds of each Mac's thermal state and
+// battery, which the TUI draws under the machines.
+const (
+	Macs = "macs"
+)
+
+func macs(views []View) page.Section {
+	var items []page.Item
+	for _, v := range views {
+		s := v.Report.Last.Sample
+		if v.Kind != mac || v.Silent != "" || v.Report.Silent {
+			continue
+		}
+		r := page.Row{ID: v.Name, Label: v.Label, Short: v.Short, Mark: page.NotKnown, Cells: []page.Value{page.Text("?"), page.None()}}
+		if s.Thermal != activity.ThermalUnknown {
+			r.Mark, r.Cells[0] = page.OK, page.Text(activity.Thermal(s.Thermal))
+			switch {
+			case s.Thermal >= activity.ThermalCritical:
+				r.Mark = page.Broken
+			case s.Thermal == activity.ThermalSerious:
+				r.Mark = page.Attention
+			}
+		}
+		if b := s.Battery; b != nil {
+			r.Cells[1] = page.Text(strconv.Itoa(b.Percent) + " % " + activity.BatteryState(*b))
+		}
+		items = append(items, page.Item{Row: &r})
+	}
+	return page.Section{ID: Macs, Title: "Thermal and battery", Uncounted: true, Columns: []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "thermal", Kind: page.KindText, Keep: 100}, {Key: "battery", Kind: page.KindText, Keep: 100}}, Items: items}
+}
+
+func AllMachines(views []View, here page.Context, graph bool) page.Page {
+	// value: graph is the TUI's: its screen draws each Mac's thermal state
+	// and battery, which the CLI's page leaves to each machine's own.
 	p := page.Page{ID: "activity-all", Command: "activity --all-machines", Context: here}
 	answering := 0
 	var kept, direct time.Duration
@@ -103,6 +136,9 @@ func AllMachines(views []View, here page.Context) page.Page {
 		p.Sections = append(p.Sections, page.Section{ID: "needs", Title: "Needs you", Uncounted: true, Columns: columns()[:1], Items: needs})
 	}
 	p.Sections = append(p.Sections, page.Section{ID: "machines", Title: "Machines", Uncounted: true, Columns: everyColumns(), Items: items})
+	if graph {
+		p.Sections = append(p.Sections, macs(views))
+	}
 	return page.Seal(p)
 }
 

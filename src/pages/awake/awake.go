@@ -183,13 +183,36 @@ func Page(f Fleet, here page.Context) page.Page {
 	if len(f.Reports) > 0 && f.Reports[0].Here && !stopped(f.Reports[0]) && f.Reports[0].Daemon != awake.EngineReading {
 		sections = append(sections, reading(f.Reports[0], f.name(f.Reports[0])))
 	}
-	p := page.Page{ID: "awake", Command: "awake", Context: here, Sections: sections, Hints: f.next()}
+	p := page.Page{ID: "awake", Command: "awake", Context: here, Sections: sections, Hints: f.next(), Actions: f.actions()}
 	for _, r := range f.Reports {
 		if r.Daemon == awake.EngineReading {
 			p.State = page.Loading
 		}
 	}
 	return page.Seal(p)
+}
+
+const (
+	KeyLid     = "l"
+	KeyBattery = "b"
+)
+
+// invariant: E1: a keep-awake holds the lid closed or runs on battery only
+// on the Macs whose report says they have a lid or a battery.
+func (f Fleet) actions() []page.Action {
+	var lid, battery []string
+	for _, r := range f.Reports {
+		if r.Caps.Lid {
+			lid = append(lid, r.Mac)
+		}
+		if r.Caps.Battery {
+			battery = append(battery, r.Mac)
+		}
+	}
+	return []page.Action{
+		{Key: KeyLid, Label: "lid", On: page.OnRow, Rows: lid},
+		{Key: KeyBattery, Label: "battery", On: page.OnRow, Rows: battery},
+	}
 }
 
 type CapsJSON struct {

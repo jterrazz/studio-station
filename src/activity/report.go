@@ -43,6 +43,9 @@ type Report struct {
 	Silent bool `json:"silent,omitempty"`
 	// value: the coarse series, when the read asked for the history.
 	History []Sample `json:"history,omitempty"`
+	// value: the points of the window a screen's graphs draw, when the read
+	// asked for one.
+	Graph []Sample `json:"graph,omitempty"`
 	// invariant: never nil: SPEC §6.5's findings over the series read.
 	Findings []finding.Finding `json:"findings"`
 }

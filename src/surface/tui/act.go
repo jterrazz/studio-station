@@ -47,6 +47,8 @@ type task struct {
 	// value: the commands left of the gesture once this one is done.
 	then     []gesture.Step
 	n, total int
+	// value: the call prints what its toast copies (a VM's ssh command).
+	copy bool
 }
 
 // value: a question put, the one modal of the shell (SPEC §9.8): yes or no,
@@ -142,6 +144,9 @@ func (s shell) tickedRows(key string, l ui.List) []page.Row {
 // invariant: a section's actions are its screen's: each maps the page's
 // Action to what it runs, shows, copies or opens.
 func (s shell) gesture(a page.Action, rows []page.Row) (gesture.Gesture, bool) {
+	if s.screen() != nil {
+		return gesture.Gesture{}, false
+	}
 	p, _ := s.pageOf(s.key(s.current(), s.section()))
 	switch s.section() {
 	case section.Overview:
@@ -339,7 +344,7 @@ func (s shell) refresh(keys []string) (shell, tea.Cmd) {
 			continue
 		}
 		var c tea.Cmd
-		s, c = s.ask(k, words(n, id))
+		s, c = s.ask(k, s.words(n, id))
 		cmds = append(cmds, c)
 	}
 	return s, tea.Batch(cmds...)
@@ -437,7 +442,7 @@ func (m modal) panel() ui.Panel {
 		for i, o := range m.options {
 			lead := "   "
 			if i == m.at {
-				lead = " " + ui.Cursor + " "
+				lead = " " + ui.Pointer + " "
 			}
 			p.Lines = append(p.Lines, lead+o)
 		}

@@ -22,6 +22,9 @@ type List struct {
 	// value: the keys the screen answers, each with its label, so an empty
 	// line can name the one that fills it.
 	Bound func(key string) (label string, ok bool)
+	// value: the sections the cursor never walks, as the screen that draws
+	// the pane says.
+	Skip func(page.Section) bool
 }
 
 func (l List) Keys() []string { return l.keys() }
@@ -211,6 +214,8 @@ func (l List) keys() []string {
 	return keys
 }
 
+func (l List) Matches(r page.Row) bool { return l.match(r) }
+
 func (l List) match(r page.Row) bool {
 	needle := strings.ToLower(l.Filter)
 	if needle == "" {
@@ -230,7 +235,7 @@ func (l List) match(r page.Row) bool {
 func (l List) lines(st token.Styles, width, columns int) []organism.Line {
 	var out []organism.Line
 	for _, s := range l.Page.Sections {
-		if s.Role == page.Lifted {
+		if s.Role == page.Lifted || (l.Skip != nil && l.Skip(s)) {
 			continue
 		}
 		g := organism.Grid{Styles: st, Section: s, Width: width, Medium: molecule.TUI, Keys: molecule.NoKeys, Empties: l.Bound, Folded: l.folded, Match: l.match}

@@ -35,7 +35,7 @@ type (
 	worldMac struct{}
 )
 
-func openWorld(map[string]string) (*worldRun, error) { return nil, nil }
+func openWorld(map[string]string, bool) (*worldRun, error) { return nil, nil }
 
 func (*worldRun) here() *worldMac                { return nil }
 func (*worldRun) farFrom(func(*worldMac) farMac) {}
@@ -43,6 +43,8 @@ func (*worldRun) command() *cobra.Command        { return nil }
 func (*worldRun) close(context.Context) error    { return nil }
 
 func (*worldMac) host(h system.Host) system.Host                        { return h }
+func (*worldMac) lend(context.Context) error                            { return nil }
+func (*worldMac) watch([]string) func()                                 { return func() {} }
 func (*worldMac) stores(*stores)                                        {}
 func (*worldMac) self() corecontract.Self                               { return nil }
 func (*worldMac) power() awakecontract.Power                            { return nil }
@@ -74,4 +76,3 @@ func (*worldMac) stopMarks() engine.StopMarks                           { return
 func (*worldMac) engineVersion() string                                 { return "" }
 func (*worldMac) stationVersion() string                                { return "" }
 func (*worldMac) engineStarted() time.Time                              { return time.Time{} }
-func (*worldMac) standAside()                                           {}

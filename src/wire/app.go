@@ -47,7 +47,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		}
 	}
 	inTTY, outTTY, errTTY := token.IsTerminal(stdin), token.IsTerminal(stdout), token.IsTerminal(stderr)
-	session, opened := openWorld(vars)
+	session, opened := openWorld(vars, slices.Contains(args, "--page"))
 	dark := true
 	if inTTY && outTTY && len(args) > 0 {
 		// hazard: the background query writes an OSC request and reads the reply

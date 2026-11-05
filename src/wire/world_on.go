@@ -87,10 +87,13 @@ type worldRun struct {
 	// value: builds another Mac of the world: its registry, its engine.
 	far   func(w *worldMac) farMac
 	moved *moves
-	// value: the run only drives other runs of the binary (the TUI): the
-	// world is theirs to write, and this run's copy, read at its start, is
-	// never written back over what they did.
-	aside bool
+	// value: the lock this run holds on its world file from open to close, so
+	// a command a TUI runs beside its live reads loses no write to them.
+	held *os.File
+	// value: the run handed its world to the commands it runs as children
+	// (the TUI), or only looks at it (a page the TUI reads): its copy is
+	// never written back.
+	lent bool
 }
 
 // invariant: one Mac of the world as this process sees it: its fakes over
@@ -117,24 +120,103 @@ type worldMac struct {
 	leave func()
 }
 
-func openWorld(vars map[string]string) (*worldRun, error) {
+// invariant: a run that only looks (a page the TUI reads, --page) reads the
+// world under the lock and lets go of it at once: it writes nothing back,
+// so a slow look never holds a call up, nor undoes one.
+func openWorld(vars map[string]string, look bool) (*worldRun, error) {
 	path := vars["STATION_WORLD"]
 	if path == "" {
 		return nil, nil
 	}
+	held := lockWorld(path)
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) && vars["STATION_WORLD_SEED"] != "" {
 		data, err = os.ReadFile(vars["STATION_WORLD_SEED"])
 	}
 	if err != nil {
+		unlockWorld(held)
 		return nil, err
 	}
 	w, err := world.Decode(data)
 	if err != nil {
+		unlockWorld(held)
 		return nil, err
 	}
 	w.UseHypervisor(vars["STATION_WORLD_HYPERVISOR"])
-	return &worldRun{path: path, w: w, macs: map[string]*worldMac{}}, nil
+	if look {
+		unlockWorld(held)
+		return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, lent: true}, nil
+	}
+	return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, held: held}, nil
+}
+
+// hazard: a run that runs station as a child while it holds its world would
+// wait on it for ever: the wait is bounded, and past it the run goes on
+// without the lock, as every run did before it.
+func lockWorld(path string) *os.File {
+	f, err := os.OpenFile(path+".lock", os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil
+	}
+	for deadline := time.Now().Add(3 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+		if syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB) == nil {
+			return f
+		}
+	}
+	_ = f.Close()
+	return nil
+}
+
+func unlockWorld(f *os.File) {
+	if f != nil {
+		_ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+		_ = f.Close()
+	}
+}
+
+// invariant: the TUI's own process reads every page through a child, so it
+// writes its world back once, before its first child, and lets go of it.
+func (m *worldMac) lend(ctx context.Context) error {
+	if m == nil {
+		return nil
+	}
+	err := m.run.close(ctx)
+	m.run.lent = true
+	return err
+}
+
+// invariant: a terminal UI of the world holds its watch in the world, as
+// the engine's watching, so every command run meanwhile steps its engine
+// with that watch held, and lets go of it when its screen leaves.
+func (m *worldMac) watch(machines []string) func() {
+	edit := func(change func(e *world.Engine)) {
+		held := lockWorld(m.run.path)
+		defer unlockWorld(held)
+		data, err := os.ReadFile(m.run.path)
+		if err != nil {
+			return
+		}
+		w, err := world.Decode(data)
+		if err != nil {
+			return
+		}
+		if e := w.Mac(m.name).Engine; e != nil {
+			change(e)
+		}
+		if data, err = w.Encode(); err == nil {
+			_ = os.WriteFile(m.run.path, data, 0o600)
+		}
+	}
+	edit(func(e *world.Engine) { e.Watching = append(e.Watching, machines...) })
+	return func() {
+		edit(func(e *world.Engine) {
+			for _, name := range machines {
+				if i := slices.Index(e.Watching, name); i >= 0 {
+					e.Watching = slices.Delete(e.Watching, i, i+1)
+				}
+			}
+		})
+	}
 }
 
 func (r *worldRun) mac(name string) *worldMac {
@@ -633,15 +715,16 @@ func restarts(ev world.Event, mac string) bool {
 // turn on it, as the real ones run beside every command, then the world is
 // written back.
 func (r *worldRun) close(ctx context.Context) error {
+	if r.lent {
+		return nil
+	}
+	defer func() { unlockWorld(r.held); r.held = nil }()
 	for _, name := range r.names() {
 		m := r.mac(name)
 		if _, ok := m.up(ctx); ok {
 			m.settle(ctx)
 			m.down(false)
 		}
-	}
-	if r.aside {
-		return nil
 	}
 	r.w.Lock()
 	data, err := r.w.Encode()
@@ -651,8 +734,6 @@ func (r *worldRun) close(ctx context.Context) error {
 	}
 	return os.WriteFile(r.path, data, 0o600)
 }
-
-func (m *worldMac) standAside() { m.run.aside = true }
 
 type worldEnv struct {
 	system.Env

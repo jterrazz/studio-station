@@ -127,9 +127,12 @@ type Machine struct {
 	clock system.Clock
 	o     Options
 
-	mu         sync.Mutex
-	session    *Session
-	release    func()
+	mu      sync.Mutex
+	session *Session
+	release func()
+	// value: the name the session's assertion was taken under: the first
+	// command's, kept while a later one refreshes the session.
+	held       string
 	lastEnd    *End
 	reading    Reading
 	heavySince time.Time
@@ -154,6 +157,9 @@ type Kept struct {
 	Lid string `json:"lid,omitempty"`
 	// value: the policy's assertion was held when the engine paused.
 	NeverHeld bool `json:"never_held,omitempty"`
+	// value: the name the session's assertion is held under, which a
+	// refresh keeps: the next engine takes the same one again.
+	Held string `json:"held,omitempty"`
 }
 
 const neverSleepsHold = "station: never sleeps"
@@ -292,7 +298,8 @@ func (m *Machine) Awake(req Request) (held Session, refreshed bool, err error) {
 			}
 		}
 	} else {
-		release, err := m.port.Hold("station: " + req.By)
+		m.held = "station: " + req.By
+		release, err := m.port.Hold(m.held)
 		if err != nil {
 			if unsupported(err) {
 				return Session{}, false, &UnsupportedError{}
@@ -320,7 +327,7 @@ func (m *Machine) endLocked(reason, detail string) (End, time.Duration) {
 	if m.release != nil {
 		m.release()
 	}
-	m.release, m.session, m.heavySince = nil, nil, time.Time{}
+	m.release, m.session, m.heavySince, m.held = nil, nil, time.Time{}, ""
 	m.resetLocked()
 	e := End{At: now, Reason: reason, Detail: detail}
 	m.lastEnd = &e
@@ -601,7 +608,7 @@ func (m *Machine) NeverSleeps() bool {
 func (m *Machine) Kept() Kept {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	k := Kept{NeverSince: m.neverSince, NeverTrip: m.neverTrip, HeavySince: m.heavySince, Lid: m.reading.Lid, NeverHeld: m.neverRelease != nil}
+	k := Kept{NeverSince: m.neverSince, NeverTrip: m.neverTrip, HeavySince: m.heavySince, Lid: m.reading.Lid, NeverHeld: m.neverRelease != nil, Held: m.held}
 	if m.session != nil {
 		s := *m.session
 		k.Session = &s
@@ -629,10 +636,15 @@ func (m *Machine) Restore(k Kept) {
 	if k.Session == nil {
 		return
 	}
-	release, err := m.port.Hold("station: " + k.Session.By)
+	held := k.Held
+	if held == "" {
+		held = "station: " + k.Session.By
+	}
+	release, err := m.port.Hold(held)
 	if err != nil {
 		return
 	}
+	m.held = held
 	s := *k.Session
 	m.release, m.session, m.polled = release, &s, time.Time{}
 	if s.Lid {
