@@ -27,7 +27,8 @@ user=admin
 say "-- base $base"
 
 # value: a fresh macOS guest knows only admin/admin; the first ssh answers the
-# password through SSH_ASKPASS and installs this run's key, every later ssh uses it.
+# password through SSH_ASKPASS and installs this run's key, every later ssh uses it;
+# ssh keeps the first value of an option, so BatchMode is turned off in place.
 askpass="$work/askpass"
 printf '#!/bin/sh\necho admin\n' > "$askpass"
 chmod 700 "$askpass"
@@ -36,7 +37,7 @@ boot() {
   tart run --no-graphics "$vm" >> "$work/$vm.tart.log" 2>&1 &
   ip=$(tart ip "$vm" --wait 180) || return 1
   until SSH_ASKPASS="$askpass" SSH_ASKPASS_REQUIRE=force DISPLAY=none \
-    ssh "${ssh_opts[@]}" -o BatchMode=no -o PubkeyAuthentication=no "$user@$ip" \
+    ssh "${ssh_opts[@]/BatchMode=yes/BatchMode=no}" -o PubkeyAuthentication=no "$user@$ip" \
     "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys" < "$ssh_key.pub" 2> /dev/null; do
     n=$((n + 1))
     [ $n -lt 60 ] || return 1
