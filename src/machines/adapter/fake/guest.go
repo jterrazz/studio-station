@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -188,15 +189,26 @@ type reported struct {
 	Port    int    `json:"port"`
 	IP      string `json:"ip"`
 	Process string `json:"process"`
+	Source  string `json:"source"`
 }
 
+// invariant: a guest reports a port once: a container's published port is
+// named by its container, over the proxy Docker may run on it.
 func (c *guest) snapshot() []byte {
 	c.w.Lock()
 	listening := c.w.Listening(c.name)
+	containers := c.w.Containers(c.name)
 	c.w.Unlock()
 	found := make([]reported, 0, len(listening))
 	for _, l := range listening {
-		found = append(found, reported{Port: l.Port, IP: l.Bind, Process: l.Process})
+		if !slices.ContainsFunc(containers, func(k world.Container) bool { return slices.Contains(k.Published, l.Port) }) {
+			found = append(found, reported{Port: l.Port, IP: l.Bind, Process: l.Process, Source: "socket"})
+		}
+	}
+	for _, k := range containers {
+		for _, port := range k.Published {
+			found = append(found, reported{Port: port, IP: "0.0.0.0", Process: k.Name, Source: "docker"})
+		}
 	}
 	line, err := json.Marshal(map[string]any{"v": 1, "type": "snapshot", "ports": found})
 	if err != nil {
@@ -350,6 +362,9 @@ func (c *guest) answers(port int) (string, bool) {
 			}
 			return "HTTP/1.1 200 OK", true
 		}
+	}
+	if slices.ContainsFunc(c.w.Containers(c.name), func(k world.Container) bool { return slices.Contains(k.Published, port) }) {
+		return "HTTP/1.1 200 OK", true
 	}
 	return "", false
 }
