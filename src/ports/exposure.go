@@ -171,7 +171,7 @@ func Exposed(ps []Port) []finding.Finding {
 // value: a red port's finding in the words told beyond its machine's own
 // page: always naming its machine.
 func Told(f finding.Finding) string {
-	if f.Machine.On != "" {
+	if f.Machine.On != "" || f.Machine.Name == "" {
 		return f.Text
 	}
 	return f.Machine.Name + ": " + f.Text
