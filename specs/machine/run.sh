@@ -33,7 +33,8 @@ done
 tart_bin="$HOME/.local/bin/tart"
 [ -x "$tart_bin" ] || tart_bin=$(command -v tart || true)
 [ -n "$tart_bin" ] || fail "tart is not installed: station apps install tart"
-tart() { "$tart_bin" "$@"; }
+# value: the store is the owner's: a clone never prunes its other images to make room.
+tart() { TART_NO_AUTO_PRUNE=1 "$tart_bin" "$@"; }
 
 cleanup_tier() { :; }
 # invariant: whatever happens, every VM this run made is stopped and deleted and

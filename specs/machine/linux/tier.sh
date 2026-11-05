@@ -27,7 +27,9 @@ home_of() {
     "$h/.config/station" "$h/power" "$h/root"
   ln -s "$real_tart" "$h/.local/share/station/tart/tart.app"
   # value: the OCI cache is the owner's, read when the base image is already
-  # pulled; the VMs and images this run makes stay in its own store.
+  # pulled; the VMs and images this run makes stay in its own store, and tart's
+  # automatic pruning is off (TART_NO_AUTO_PRUNE in as), or a clone of this run
+  # deletes the owner's other base images to make room.
   [ -z "$real_cache" ] || ln -s "$real_cache" "$h/.local/share/station/vms/cache"
   cp "$repo/src/catalog/dotfiles/tart/tart" "$h/.local/bin/tart"
   cp "$repo/.artifacts/go/station" "$h/.local/bin/station"
@@ -39,7 +41,7 @@ as() {
   local h=$1
   shift
   env -i HOME="$h" PATH="$h/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin" TERM=dumb TZ=UTC NO_COLOR=1 \
-    STATION_MACHINE_KIND=host STATION_POWER_STUB="$h/power" STATION_SYSTEM_ROOT="$h/root" "$@"
+    TART_NO_AUTO_PRUNE=1 STATION_MACHINE_KIND=host STATION_POWER_STUB="$h/power" STATION_SYSTEM_ROOT="$h/root" "$@"
 }
 # value: as, in place of the caller: a process started in the background is then
 # the one its pid names, and the cleanup's kill reaches it.
@@ -47,7 +49,7 @@ as_exec() {
   local h=$1
   shift
   exec env -i HOME="$h" PATH="$h/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin" TERM=dumb TZ=UTC NO_COLOR=1 \
-    STATION_MACHINE_KIND=host STATION_POWER_STUB="$h/power" STATION_SYSTEM_ROOT="$h/root" "$@"
+    TART_NO_AUTO_PRUNE=1 STATION_MACHINE_KIND=host STATION_POWER_STUB="$h/power" STATION_SYSTEM_ROOT="$h/root" "$@"
 }
 on_mac() { as "$mac" "$@"; }
 on_far() { as "$far" "$@"; }
