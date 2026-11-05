@@ -88,27 +88,42 @@ static station_sources_t station_sources(void) {
 }
 
 typedef struct {
-	int health;
+	int design;
+	int full;
 	int cycles;
 } station_battery_t;
 
-static int station_int(io_service_t s, CFStringRef key) {
+static int station_number(CFTypeRef v) {
 	int out = 0;
+	if (v && CFGetTypeID(v) == CFNumberGetTypeID()) CFNumberGetValue((CFNumberRef)v, kCFNumberIntType, &out);
+	return out;
+}
+
+static int station_int(io_service_t s, CFStringRef key) {
 	CFTypeRef v = IORegistryEntryCreateCFProperty(s, key, kCFAllocatorDefault, 0);
 	if (!v) return 0;
-	if (CFGetTypeID(v) == CFNumberGetTypeID()) CFNumberGetValue((CFNumberRef)v, kCFNumberIntType, &out);
+	int out = station_number(v);
 	CFRelease(v);
 	return out;
 }
 
+static int station_in(CFTypeRef dict, CFStringRef key) {
+	if (!dict || CFGetTypeID(dict) != CFDictionaryGetTypeID()) return 0;
+	return station_number(CFDictionaryGetValue((CFDictionaryRef)dict, key));
+}
+
 static station_battery_t station_battery(void) {
-	station_battery_t b = {0, 0};
+	station_battery_t b = {0, 0, 0};
 	io_service_t s = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"));
 	if (!s) return b;
-	int design = station_int(s, CFSTR("DesignCapacity"));
-	int max = station_int(s, CFSTR("AppleRawMaxCapacity"));
-	if (design > 0 && max > 0) b.health = (max * 100 + design / 2) / design;
-	if (b.health > 100) b.health = 100;
+	CFTypeRef data = IORegistryEntryCreateCFProperty(s, CFSTR("BatteryData"), kCFAllocatorDefault, 0);
+	b.design = station_in(data, CFSTR("DesignCapacity"));
+	b.full = station_in(data, CFSTR("NominalChargeCapacity"));
+	if (data) CFRelease(data);
+	if (b.design <= 0 || b.full <= 0) {
+		b.design = station_int(s, CFSTR("DesignCapacity"));
+		b.full = station_int(s, CFSTR("AppleRawMaxCapacity"));
+	}
 	b.cycles = station_int(s, CFSTR("CycleCount"));
 	IOObjectRelease(s);
 	return b;
@@ -212,7 +227,7 @@ func (p *Power) Read() Reading {
 	r.HasBattery, r.Percent, r.Charging = s.has_battery != 0, int(s.percent), s.charging != 0
 	if r.HasBattery {
 		b := C.station_battery()
-		r.Health, r.Cycles = int(b.health), int(b.cycles)
+		r.Health, r.Cycles = BatteryHealth(int(b.full), int(b.design)), int(b.cycles)
 	}
 	r.LowPower = C.station_low_power() != 0
 	if !p.tokened && C.station_thermal_token(&p.token) == 0 {
