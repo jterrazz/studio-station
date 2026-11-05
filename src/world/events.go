@@ -1,7 +1,6 @@
 package world
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -27,10 +26,8 @@ type event struct {
 	apply func(w *World, args []string) error
 }
 
-var ErrNotModelled = errors.New("this world does not model it yet")
-
-// invariant: the closed list of world events (USE-CASES §0.2); an event the
-// fakes do not model yet is known, and refused as such.
+// invariant: the closed list of world events (USE-CASES §0.2), each one
+// modelled by the fakes.
 func events() []event {
 	return []event{
 		{"reboot", []string{"<mac>"}, reboot},
@@ -97,9 +94,6 @@ func (w *World) Apply(ev Event) error {
 	i := slices.IndexFunc(events(), func(e event) bool { return e.name == ev.Name })
 	if i < 0 {
 		return fmt.Errorf("unknown world event %q", ev.Name)
-	}
-	if events()[i].apply == nil {
-		return fmt.Errorf("world %s: %w", ev.Name, ErrNotModelled)
 	}
 	return events()[i].apply(w, ev.Args)
 }
