@@ -1,22 +1,17 @@
- station activity                                           host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+This Mac
 
- Activity
-   ◌ This Mac
+Now
+  ◌ CPU
+  ◌ Memory
+  ◌ Disk
+  ◌ Disk read
+  ◌ Disk write
+  ◌ Network
+  ◌ Network total
+  ◌ Thermal
+  ◌ Battery
+Top processes
+  ◌ Top by CPU
+  ◌ Top by memory
 
- Now  9 ◌
-   ◌ CPU
-   ◌ Memory
-   ◌ Disk
-   ◌ Disk read
-   ◌ Disk write
-   ◌ Network
-   ◌ Network total
-   ◌ Thermal
-   ◌ Battery
-
- Top processes  2 ◌
-   ◌ Top by CPU
-   ◌ Top by memory
-
- → station activity --all-machines every machine
+→ station activity --all-machines  every machine

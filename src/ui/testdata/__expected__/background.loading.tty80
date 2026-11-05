@@ -1,19 +1,11 @@
- station background                                         host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+This Mac
 
- Summary
-   ◌ This Mac
+Failing
+  ◌ com.jterrazz.brain.x-snapsh…
+Orphans
+  ◌ com.bjango.istatmenus.insta…
+Station     ◌ 1 · com.jterrazz.station.engine
+Known apps  ◌ 1 · com.github.facebook.watchman
+Unknown     ◌ 2 · com.jterrazz.brain.sync, com.jterrazz.brain.late
 
- Failing  1 ◌
-   ◌ com.jterrazz.brain.x-snapsh…
-
- Orphans  1 ◌
-   ◌ com.bjango.istatmenus.insta…
-
- Station  1 ◌
-
- Known apps  1 ◌
-
- Unknown  2 ◌
-
- → station background --all for every row
+→ station background --all  for every row

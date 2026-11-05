@@ -1,8 +1,5 @@
- station setup                                              host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Changes
-   ● name    macbook
-   ● zshrc   the station block
-   ◐ layout  ~/.tart left in place  73 GB: move it with station setup --move
-   ● tools
+Changes
+  ● name    macbook
+  ● zshrc   the station block
+  ◐ layout  ~/.tart left in place  73 GB: move it with station setup --move
+  ● tools

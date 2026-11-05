@@ -8,6 +8,6 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-           station settings                                           host · unregistered
+      stdout: |
+          Set by station
           no spinner

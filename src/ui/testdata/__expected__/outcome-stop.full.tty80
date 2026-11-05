@@ -1,7 +1,4 @@
- station engine stop                                        host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+Changes
+  ● engine  stopped 2 VMs (linux-1, api) · Awake off · sharing off …
 
- Changes
-   ● engine  stopped 2 VMs (linux-1, api) · Awake off · sharing off …
-
- → station engine start
+→ station engine start

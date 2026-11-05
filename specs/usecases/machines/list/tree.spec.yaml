@@ -9,14 +9,12 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-           station machines                                                       jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────────────────────────
+      stdout: |
+          5 machines · 4 running · 1 stopped · nothing needs you
 
-           5 machines · 4 running · 1 stopped · nothing needs you
-               MACHINE     KIND       STATE                CPU    MEMORY
-             ● This Mac    Mac        Engine running
-             ├─ ○ api      Workspace  Stopped · permanent  4 CPU  8 GB
-             └─ ● linux-1  Workspace  Running · throwaway  4 CPU  8 GB
-             ● mac-mini    Mac        Engine running
-             └─ ● infra    Server     Running · always on  8 CPU  24 GB
+              MACHINE     KIND       STATE                CPU    MEMORY
+            ● This Mac    Mac        Engine running
+            ├─ ○ api      Workspace  Stopped · permanent  4 CPU  8 GB
+            └─ ● linux-1  Workspace  Running · throwaway  4 CPU  8 GB
+            ● mac-mini    Mac        Engine running
+            └─ ● infra    Server     Running · always on  8 CPU  24 GB

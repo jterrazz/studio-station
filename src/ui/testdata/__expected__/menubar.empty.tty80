@@ -1,12 +1,7 @@
- station menubar                                            host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- To do
-   no actions
-
- Fleet  1 ●
-   ● macbook  Mac  here  online  100.98.133.14  0 VMs
-      no VMs  → station machines create
-
- Power  1 ●
-   ● awake  off  the Mac sleeps as macOS decides  → station awake 4h
+To do
+  no actions
+Fleet
+  ● macbook  Mac  here  online  100.98.133.14  0 VMs
+     no VMs  → station machines create
+Power
+  ● awake  off  the Mac sleeps as macOS decides  → station awake 4h

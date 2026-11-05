@@ -1,5 +1,2 @@
- station disk free                                          host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Error: no disk row for "brw"
- Hint: station disk
+Error: no disk row for "brw"
+Hint: station disk

@@ -1,8 +1,5 @@
- station ports                                              host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+Tailscale · not installed
+  → station apps install tailscale
 
- Tailscale
-   ○ Tailscale  not installed  → station apps install tailscale
-
- Private: shared with you on Tailscale
-   no shared ports  → station machines create
+Private: shared with you on Tailscale
+  no shared ports  → station machines create

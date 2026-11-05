@@ -37,10 +37,12 @@ func Hint(st token.Styles, h page.Hint, m Medium, keys Keys) string {
 	return st.Muted.Render(token.Arrow+" ") + st.Text.Render(h.Command)
 }
 
-func PageHint(st token.Styles, h page.Hint) string {
+// value: a next step, its words after the command at a column `at` wide
+// (the widest command of the page's steps), so the steps read as one list.
+func PageHint(st token.Styles, h page.Hint, at int) string {
 	line := st.Muted.Render(token.Arrow+" ") + st.Text.Render(h.Command)
 	if h.Text != "" {
-		line += " " + st.Muted.Render(h.Text)
+		line += atom.Spaces(max(at-atom.Width(h.Command), 0)+token.Gap) + st.Muted.Render(h.Text)
 	}
 	return line
 }

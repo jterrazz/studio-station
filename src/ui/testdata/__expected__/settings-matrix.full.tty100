@@ -1,67 +1,60 @@
- station settings --all-machines                                                host · unregistered
- ──────────────────────────────────────────────────────────────────────────────────────────────────
-
- Machines  31 settings · 4 machines · 20 need a look
-   ● This Mac  Mac        read
-   ● mac-mini  Mac        read
-   ● linux-1   Workspace  read
-   ○ api       Workspace  stopped · last read 2 h ago
-   – infra     Server     not checked: station does not manage its settings
-
- Needs a look  20 ◐
-   ◐ This Mac  ghostty-dotfiles  changed since 2 d ago
-     → station settings diff ghostty-dotfiles
-   ◐ This Mac  github-login      changed since 2 d ago
-     → station settings diff github-login
-   ◐ This Mac  dock-reset        changed since 2 d ago
-     → station settings diff dock-reset
-   ◐ This Mac  docker-shortcuts  changed since 2 d ago
-     → station settings diff docker-shortcuts
-   ◐ This Mac  firewall          off
-     → System Settings > Network > Firewall
-   ◐ This Mac  screen-lock       locks after 10 min · expected 5 min
-     → System Settings > Lock Screen
-   ◐ mac-mini  ghostty-dotfiles  changed since 2 d ago
-     → station settings diff ghostty-dotfiles --on jterrazz-mac-mini
-   ◐ mac-mini  github-login      changed since 2 d ago
-     → station settings diff github-login --on jterrazz-mac-mini
-   ◐ mac-mini  dock-reset        changed since 2 d ago
-     → station settings diff dock-reset --on jterrazz-mac-mini
-   ◐ mac-mini  docker-shortcuts  changed since 2 d ago
-     → station settings diff docker-shortcuts --on jterrazz-mac-mini
-   ◐ mac-mini  firewall          off
-     → System Settings > Network > Firewall
-   ◐ mac-mini  screen-lock       locks after 10 min · expected 5 min
-     → System Settings > Lock Screen
-   ◐ linux-1   ghostty-dotfiles  changed since 2 d ago
-     → station settings diff ghostty-dotfiles --on linux-1
-   ◐ linux-1   github-login      changed since 2 d ago
-     → station settings diff github-login --on linux-1
-   ◐ linux-1   dock-reset        changed since 2 d ago
-     → station settings diff dock-reset --on linux-1
-   ◐ linux-1   docker-shortcuts  changed since 2 d ago
-     → station settings diff docker-shortcuts --on linux-1
-   ◐ api       ghostty-dotfiles  changed since 2 d ago                → station machines start api
-   ◐ api       github-login      changed since 2 d ago                → station machines start api
-   ◐ api       dock-reset        changed since 2 d ago                → station machines start api
-   ◐ api       docker-shortcuts  changed since 2 d ago                → station machines start api
-
- Set by station
-                       This Mac  mac-mini  linux-1  api     OK
-   ◐ ghostty-dotfiles  ◐         ◐         ◐        ◐       0/4
-   ◐ github-login      ◐         ◐         ◐        ◐       0/4
-   ◐ dock-reset        ◐         ◐         ◐        ◐       0/4
-   ◐ docker-shortcuts  ◐         ◐         ◐        ◐       0/4
-   ○ 13 more           ○ 4/10    ○ 4/10    ○ 4/10   ○ 4/10  16/40
-
- Always-on Mac
+Machines  31 settings · 4 machines · 20 need a look
+  ● This Mac  Mac        read
+  ● mac-mini  Mac        read
+  ● linux-1   Workspace  read
+  ○ api       Workspace  stopped · last read 2 h ago
+  – infra     Server     not checked: station does not manage its settings
+Needs a look
+  ◐ This Mac  ghostty-dotfiles  changed since 2 d ago
+    → station settings diff ghostty-dotfiles
+  ◐ This Mac  github-login      changed since 2 d ago
+    → station settings diff github-login
+  ◐ This Mac  dock-reset        changed since 2 d ago
+    → station settings diff dock-reset
+  ◐ This Mac  docker-shortcuts  changed since 2 d ago
+    → station settings diff docker-shortcuts
+  ◐ This Mac  firewall          off
+    → System Settings > Network > Firewall
+  ◐ This Mac  screen-lock       locks after 10 min · expected 5 min
+    → System Settings > Lock Screen
+  ◐ mac-mini  ghostty-dotfiles  changed since 2 d ago
+    → station settings diff ghostty-dotfiles --on jterrazz-mac-mini
+  ◐ mac-mini  github-login      changed since 2 d ago
+    → station settings diff github-login --on jterrazz-mac-mini
+  ◐ mac-mini  dock-reset        changed since 2 d ago
+    → station settings diff dock-reset --on jterrazz-mac-mini
+  ◐ mac-mini  docker-shortcuts  changed since 2 d ago
+    → station settings diff docker-shortcuts --on jterrazz-mac-mini
+  ◐ mac-mini  firewall          off
+    → System Settings > Network > Firewall
+  ◐ mac-mini  screen-lock       locks after 10 min · expected 5 min
+    → System Settings > Lock Screen
+  ◐ linux-1   ghostty-dotfiles  changed since 2 d ago
+    → station settings diff ghostty-dotfiles --on linux-1
+  ◐ linux-1   github-login      changed since 2 d ago
+    → station settings diff github-login --on linux-1
+  ◐ linux-1   dock-reset        changed since 2 d ago
+    → station settings diff dock-reset --on linux-1
+  ◐ linux-1   docker-shortcuts  changed since 2 d ago
+    → station settings diff docker-shortcuts --on linux-1
+  ◐ api       ghostty-dotfiles  changed since 2 d ago                → station machines start api
+  ◐ api       github-login      changed since 2 d ago                → station machines start api
+  ◐ api       dock-reset        changed since 2 d ago                → station machines start api
+  ◐ api       docker-shortcuts  changed since 2 d ago                → station machines start api
+Set by station
+                      This Mac  mac-mini  linux-1  api     OK
+  ◐ ghostty-dotfiles  ◐         ◐         ◐        ◐       0/4
+  ◐ github-login      ◐         ◐         ◐        ◐       0/4
+  ◐ dock-reset        ◐         ◐         ◐        ◐       0/4
+  ◐ docker-shortcuts  ◐         ◐         ◐        ◐       0/4
+  ○ 13 more           ○ 4/10    ○ 4/10    ○ 4/10   ○ 4/10  16/40
+Always-on Mac
+                This Mac  mac-mini  linux-1  api  OK
+  ○ 5 settings  ○         ○         –        –    –
+Checked
                  This Mac  mac-mini  linux-1  api  OK
-   ○ 5 settings  ○         ○         –        –    –
+  ◐ firewall     ◐         ◐         –        –    0/2
+  ◐ screen-lock  ◐         ◐         –        –    0/2
+  ⊘ 7 more       ⊘ 5/7     ⊘ 5/7     –        –    10/14
 
- Checked
-                  This Mac  mac-mini  linux-1  api  OK
-   ◐ firewall     ◐         ◐         –        –    0/2
-   ◐ screen-lock  ◐         ◐         –        –    0/2
-   ⊘ 7 more       ⊘ 5/7     ⊘ 5/7     –        –    10/14
-
- → station settings --all-machines --all every row
+→ station settings --all-machines --all  every row

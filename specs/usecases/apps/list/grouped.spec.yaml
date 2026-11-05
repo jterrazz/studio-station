@@ -9,9 +9,9 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-             ◐ This Mac  108 apps for this Mac · 3 updates · 100 not installed
-           Updates  3 ◐
-           Not installed  100 ○
-           OK  5 ●
-             7 apps live on other machines
+      stdout: |
+          This Mac · 108 apps for this Mac · 3 updates · 100 not installed
+          Updates
+          Not installed
+          OK  ● 5 · mise, go, bat, jq, lazygit
+            7 apps live on other machines

@@ -16,12 +16,8 @@ runs:
           within 20 exit 0
           screen
       exit: 0
-      stdout: |4
-           station machines unlock                                                jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────────────────────────
-
-           Changes
-             ● mac-mini  unlocked · on Tailscale again
+      stdout: |
+          mac-mini · unlocked · on Tailscale again
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"] | [.locked, .offline]'' world.json'
       exit: 0
       stdout: |

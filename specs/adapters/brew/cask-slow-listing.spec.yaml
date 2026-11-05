@@ -4,7 +4,7 @@ fixture:
     - ./__fixtures__/slow-cask/
 env: terminal
 runs:
-    - command: '--version >/dev/null; terminal --size 120x200 /usr/bin/env -u NO_COLOR COLUMNS=120 "$STATION" apps | /usr/bin/grep -c "^ station apps"'
+    - command: '--version >/dev/null; terminal --size 120x200 /usr/bin/env -u NO_COLOR COLUMNS=120 "$STATION" apps | /usr/bin/grep -c "^This Mac · "'
       stdin: |
           within 1 see Reading
           within 1 see ◌ ghostty

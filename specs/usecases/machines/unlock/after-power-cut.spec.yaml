@@ -10,12 +10,8 @@ runs:
           within 20 exit 0
           screen
       exit: 0
-      stdout: |4
-           station machines unlock                                                jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────────────────────────
-
-           Changes
-             ● mac-mini  unlocked · on Tailscale again
+      stdout: |
+          mac-mini · unlocked · on Tailscale again
     - command: 'machines | /usr/bin/grep mac-mini'
       exit: 0
       stdout: |

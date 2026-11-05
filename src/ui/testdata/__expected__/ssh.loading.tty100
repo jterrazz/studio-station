@@ -1,14 +1,9 @@
- station machines ssh infra                                                     host · unregistered
- ──────────────────────────────────────────────────────────────────────────────────────────────────
-
- SSH  2 ◌  infra
-   ◌ ssh admin@infra
-   ◌ In an editor
-   No password: your key. Files travel through the same name; no folder of a Mac is shared.
-
- How it is reached  2 ◌
-   ◌ This Mac to mac-mini
-   ◌ mac-mini to infra
-
- Inside
-   Station opens it for debugging only; your tooling owns what runs inside.
+SSH  infra
+  ◌ ssh admin@infra
+  ◌ In an editor
+  No password: your key. Files travel through the same name; no folder of a Mac is shared.
+How it is reached
+  ◌ This Mac to mac-mini
+  ◌ mac-mini to infra
+Inside
+  Station opens it for debugging only; your tooling owns what runs inside.

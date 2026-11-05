@@ -1,16 +1,13 @@
- station accounts                                           host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Accounts  6 ●  1 ◐  1 ○  2 ✗
-   ✗ jterrazz-macbook-pro  host
-   ├─ ● GitHub             jterrazz                  own  gh · keyring · ssh
-   ├─ ✗ npm                ?                         own  token refused by reg…
-        → npm login
-   ├─ ● Claude             admin@jterrazz.com        own  claude.ai
-   ├─ ● Tailscale          jterrazz@github           own  app-store
-   ├─ ○ Cloudflare                                        wrangler not on PATH
-   ├─ ● git                Jean-Baptiste Terrazzoni  own  admin@jterrazz.com
-   ├─ ● ssh                6 keys                    own
-   └─ ● Docker             deploy                    own  osxkeychain
-   ◐ engine                stopped
-     → station engine start
+Accounts
+  ✗ jterrazz-macbook-pro  host
+  ├─ ● GitHub             jterrazz                  own  gh · keyring · ssh
+  ├─ ✗ npm                ?                         own  token refused by regi…
+       → npm login
+  ├─ ● Claude             admin@jterrazz.com        own  claude.ai
+  ├─ ● Tailscale          jterrazz@github           own  app-store
+  ├─ ○ Cloudflare                                        wrangler not on PATH
+  ├─ ● git                Jean-Baptiste Terrazzoni  own  admin@jterrazz.com
+  ├─ ● ssh                6 keys                    own
+  └─ ● Docker             deploy                    own  osxkeychain
+  ◐ engine                stopped
+    → station engine start

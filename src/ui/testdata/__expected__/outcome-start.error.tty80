@@ -1,5 +1,2 @@
- station engine start                                       host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Error: the engine did not start: launchctl bootstrap exited 5
- Hint: station engine
+Error: the engine did not start: launchctl bootstrap exited 5
+Hint: station engine

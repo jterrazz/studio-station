@@ -16,96 +16,80 @@ runs:
           gone ◌
           scrollback
       exit: 0
-      stdout: |4
-           station disk                                                                               jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+      stdout: |
+          This Mac · 388.0 GB free of 994.0 GB · 1 misplaced folder
 
-           Disk
-                                                                   size
-             ◐ This Mac  388.0 GB free of 994.0 GB · 1 misplaced folder  → station disk move ~/.tart
-
-           Misplaced  1 ◌
-                           size
-             ◌ ~/.tart  73.3 GB  misplaced · tart  → station disk move ~/.tart
-
-           Can rebuild  18 ◌
-                             size
-             ◌ go         19.4 GB
-             ◌ xcode       5.8 GB
-             ◌ homebrew    2.1 GB
-             ◌ pnpm        1.8 GB
-             ◌ mise        1.2 GB
-             ◌ rust      900.0 MB
-             ◌ node      800.0 MB
-             ◌ bun       600.0 MB
-             ◌ discord   400.0 MB
-             ◌ ghostty   400.0 MB
-             ◌ claude    300.0 MB
-             ◌ zed       300.0 MB
-             ◌ cursor    200.0 MB
-             ◌ notion    200.0 MB
-             ◌ codex     100.0 MB
-             ◌ gh        100.0 MB
-             ◌ helm      100.0 MB
-             ◌ starship  100.0 MB
-
-           Your data  5 ◌
+          Misplaced
+                          size
+            ◌ ~/.tart  73.3 GB  misplaced · tart  → station disk move ~/.tart
+          Can rebuild
                             size
-             ◌ xcode     19.1 GB
-             ◌ orbstack  15.8 GB
-             ◌ claude     3.6 GB
-             ◌ ollama     1.9 GB
-             ◌ zed        1.2 GB
-
-           Never touched  2 ◌
-                        size
-             ◌ gpg  200.0 KB
-             ◌ ssh  100.0 KB
-
-           → station disk free frees every Can rebuild row, nothing is lost
-           station disk                                                                               jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-           Disk
-                                                                   size
-             ◐ This Mac  388.0 GB free of 994.0 GB · 1 misplaced folder  → station disk move ~/.tart
-
-           Misplaced
+            ◌ go         19.4 GB
+            ◌ xcode       5.8 GB
+            ◌ homebrew    2.1 GB
+            ◌ pnpm        1.8 GB
+            ◌ mise        1.2 GB
+            ◌ rust      900.0 MB
+            ◌ node      800.0 MB
+            ◌ bun       600.0 MB
+            ◌ discord   400.0 MB
+            ◌ ghostty   400.0 MB
+            ◌ claude    300.0 MB
+            ◌ zed       300.0 MB
+            ◌ cursor    200.0 MB
+            ◌ notion    200.0 MB
+            ◌ codex     100.0 MB
+            ◌ gh        100.0 MB
+            ◌ helm      100.0 MB
+            ◌ starship  100.0 MB
+          Your data
                            size
-             ◐ ~/.tart  73.3 GB  misplaced · tart  → station disk move ~/.tart
+            ◌ xcode     19.1 GB
+            ◌ orbstack  15.8 GB
+            ◌ claude     3.6 GB
+            ◌ ollama     1.9 GB
+            ◌ zed        1.2 GB
+          Never touched
+                       size
+            ◌ gpg  200.0 KB
+            ◌ ssh  100.0 KB
 
-           Can rebuild
-                             size
-             ● go         19.4 GB
-             ● xcode       5.8 GB
-             ● homebrew    2.1 GB
-             ● pnpm        1.8 GB
-             ● mise        1.2 GB
-             ● rust      900.0 MB
-             ● node      800.0 MB
-             ● bun       600.0 MB
-             ● discord   400.0 MB
-             ● ghostty   400.0 MB
-             ● claude    300.0 MB
-             ● zed       300.0 MB
-             ● cursor    200.0 MB
-             ● notion    200.0 MB
-             ● codex     100.0 MB
-             ● gh        100.0 MB
-             ● helm      100.0 MB
-             ● starship  100.0 MB
+          → station disk free  frees every Can rebuild row, nothing is lost
+          This Mac · 388.0 GB free of 994.0 GB · 1 misplaced folder
 
-           Your data
+          Misplaced
+                          size
+            ◐ ~/.tart  73.3 GB  misplaced · tart  → station disk move ~/.tart
+          Can rebuild
                             size
-             ● xcode     19.1 GB
-             ● orbstack  15.8 GB
-             ● claude     3.6 GB
-             ● ollama     1.9 GB
-             ● zed        1.2 GB
+            ● go         19.4 GB
+            ● xcode       5.8 GB
+            ● homebrew    2.1 GB
+            ● pnpm        1.8 GB
+            ● mise        1.2 GB
+            ● rust      900.0 MB
+            ● node      800.0 MB
+            ● bun       600.0 MB
+            ● discord   400.0 MB
+            ● ghostty   400.0 MB
+            ● claude    300.0 MB
+            ● zed       300.0 MB
+            ● cursor    200.0 MB
+            ● notion    200.0 MB
+            ● codex     100.0 MB
+            ● gh        100.0 MB
+            ● helm      100.0 MB
+            ● starship  100.0 MB
+          Your data
+                           size
+            ● xcode     19.1 GB
+            ● orbstack  15.8 GB
+            ● claude     3.6 GB
+            ● ollama     1.9 GB
+            ● zed        1.2 GB
+          Never touched
+                       size
+            ● gpg  200.0 KB
+            ● ssh  100.0 KB
 
-           Never touched
-                        size
-             ● gpg  200.0 KB
-             ● ssh  100.0 KB
-
-           → station disk free frees every Can rebuild row, nothing is lost
+          → station disk free  frees every Can rebuild row, nothing is lost

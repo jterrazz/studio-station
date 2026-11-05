@@ -1,47 +1,41 @@
- station settings                                           host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+Set by station
+  ◐ ghostty-dotfiles   changed since 2 d ago
+    → station settings diff ghostty-dotfiles
+  ◐ github-login       changed since 2 d ago
+    → station settings diff github-login
+  ◐ dock-reset         changed since 2 d ago
+    → station settings diff dock-reset
+  ◐ docker-shortcuts   changed since 2 d ago
+    → station settings diff docker-shortcuts
+  ○ tmux-dotfiles      not applied
+    → station settings apply tmux-dotfiles
+  ○ spotlight-exclude  not applied
+    → station settings apply spotlight-exclude
+  ○ dock-spacer        not applied
+    → station settings apply dock-spacer
+  ● hushlogin          applied · ~/.hushlogin
+  ● ssh-key            applied · ~/.ssh-key
+  ● zed-dotfiles       applied · ~/.zed-dotfiles
+  ● git-shortcuts      applied · ~/.git-shortcuts
+  ⊘ starship-dotfiles  off here
+  ⊘ dns                off here
+  ⊘ backup-exclusions  off here
+Always-on Mac
+  ○ Always-on Mac  5 · for a Mac that hosts servers
+Checked
+  ◐ firewall           off
+    → System Settings > Network > Firewall
+  ◐ screen-lock        locks after 10 min · expected 5 min
+    → System Settings > Lock Screen
+  ? time-machine       unknown · no answer in 2 s
+  ● filevault          as expected · on
+  ● sip                as expected · on
+  ● automatic-updates  as expected · on
+  ● remote-login       as expected · off
+  ● macos-updates      as expected · up to date
+  ⊘ gatekeeper         off here · not checked on this machine
+Not for this machine
+  – 3 not for this machine  VMs only
 
- Set by station  4 ●  4 ◐  3 ○  3 ⊘
-   ◐ ghostty-dotfiles   changed since 2 d ago
-     → station settings diff ghostty-dotfiles
-   ◐ github-login       changed since 2 d ago
-     → station settings diff github-login
-   ◐ dock-reset         changed since 2 d ago
-     → station settings diff dock-reset
-   ◐ docker-shortcuts   changed since 2 d ago
-     → station settings diff docker-shortcuts
-   ○ tmux-dotfiles      not applied
-     → station settings apply tmux-dotfiles
-   ○ spotlight-exclude  not applied
-     → station settings apply spotlight-exclude
-   ○ dock-spacer        not applied
-     → station settings apply dock-spacer
-   ● hushlogin          applied · ~/.hushlogin
-   ● ssh-key            applied · ~/.ssh-key
-   ● zed-dotfiles       applied · ~/.zed-dotfiles
-   ● git-shortcuts      applied · ~/.git-shortcuts
-   ⊘ starship-dotfiles  off here
-   ⊘ dns                off here
-   ⊘ backup-exclusions  off here
-
- Always-on Mac
-   ○ Always-on Mac  5 · for a Mac that hosts servers
-
- Checked  5 ●  2 ◐  1 ⊘  1 ?
-   ◐ firewall           off
-     → System Settings > Network > Firewall
-   ◐ screen-lock        locks after 10 min · expected 5 min
-     → System Settings > Lock Screen
-   ? time-machine       unknown · no answer in 2 s
-   ● filevault          as expected · on
-   ● sip                as expected · on
-   ● automatic-updates  as expected · on
-   ● remote-login       as expected · off
-   ● macos-updates      as expected · up to date
-   ⊘ gatekeeper         off here · not checked on this machine
-
- Not for this machine
-   – 3 not for this machine  VMs only
-
- → station settings apply
- → station settings <setting>
+→ station settings apply
+→ station settings <setting>

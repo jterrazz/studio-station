@@ -9,16 +9,11 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-             ✗ This Mac  14 background tasks · 1 failing · 3 orphans
-           Failing  1 ✗
-             ✗ com.jterrazz.brain.x-snapsh…  user  failing · last exit 2  ~/Library/LaunchA….x-snapshot.plist
-               → station background remove com.jterrazz.brain.x-snapshot
-           Orphans  3 ◐
-           Station  1 ●
-           Known apps  7 ●
-           Unknown  2 ●
-           → station background --all for every row
+      stdout: |
+          This Mac · 14 background tasks · 1 failing · 3 orphans
+            ✗ com.jterrazz.brain.x-snapsh…  user  failing · last exit 2  ~/Library/LaunchA…n.x-snapshot.plist
+              → station background remove com.jterrazz.brain.x-snapshot
+          → station background --all  for every row
     - command: 'background | /usr/bin/grep -e "^#" -e "docker.vmnetd" -e "station.engine"'
       exit: 0
       stdout: |
@@ -34,24 +29,4 @@ runs:
           scrollback
       exit: 0
       stdout: |4
-             ✗ This Mac  14 background tasks · 1 failing · 3 orphans
-           Failing  1 ✗
-             ✗ com.jterrazz.brain.x-snapsh…  user  failing · last exit 2  ~/Library/LaunchA….x-snapshot.plist
-               → station background remove com.jterrazz.brain.x-snapshot
-           Orphans  3 ◐
-             ◐ com.bjango.istatmenus.insta…  root  not loaded  iStat Menus (gone)  /Library/Lau…staller.plist
-             ◐ com.docker.socket             root  idle        Docker.app (gone)   /Library/Lau….socket.plist
-             ◐ com.docker.vmnetd             root  idle        Docker.app (gone)   /Library/Lau….vmnetd.plist
-           Station  1 ●
-             ● com.jterrazz.station.engine  user  running · pid 812  ~/…/com.jterrazz.station.engine.plist
-           Known apps  7 ●
-             ● com.adguard.mac.adguard.log…  user  running · pid 702   AdGuard         ~/Library/…elper.plist
-             ● com.discord.helper            user  idle                Discord         ~/Library/…elper.plist
-             ● com.github.facebook.watchman  user  running · pid 3464  watchman        ~/Library/…chman.plist
-             ● com.google.keystone.agent     user  idle                Google Updater  ~/Library/…agent.plist
-             ● com.microsoft.update.agent    user  idle                Microsoft       ~/Library/…agent.plist
-             ● dev.orbstack.OrbStack.privh…  root  idle                OrbStack        /Library/L…elper.plist
-             ● io.tailscale.ipn.macsys.log…  user  running · pid 611   Tailscale       ~/Library/…elper.plist
-           Unknown  2 ●
-             ● com.jterrazz.brain.sync      user  running · pid 4120  ~/…/com.jterrazz.brain.sync.plist
-             ● homebrew.mxcl.postgresql@16  user  running · pid 901   ~/…/homebrew.mxcl.postgresql@16.plist
+              → station background remove com.jterrazz.brain.x-snapshot

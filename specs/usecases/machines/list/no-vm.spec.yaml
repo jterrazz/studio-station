@@ -9,13 +9,11 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-           station machines                                                       jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────────────────────────
+      stdout: |
+          1 machine · 1 running · 0 stopped · nothing needs you
 
-           1 machine · 1 running · 0 stopped · nothing needs you
-               MACHINE   KIND  STATE
-             ● This Mac  Mac   Engine running
-                No VMs yet
+              MACHINE   KIND  STATE
+            ● This Mac  Mac   Engine running
+               No VMs yet
 
-           → station machines create
+          → station machines create

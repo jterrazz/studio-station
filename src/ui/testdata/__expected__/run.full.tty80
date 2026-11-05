@@ -1,6 +1,3 @@
- station run docker reset                                   host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Changes
-   ● containers  3 removed
-   ● images      12 removed
+Changes
+  ● containers  3 removed
+  ● images      12 removed

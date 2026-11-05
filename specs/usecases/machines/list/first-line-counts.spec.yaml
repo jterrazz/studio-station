@@ -9,5 +9,5 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-           5 machines · 3 running · 1 stopped · 1 needs you
+      stdout: |
+          5 machines · 3 running · 1 stopped · 1 needs you

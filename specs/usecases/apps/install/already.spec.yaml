@@ -9,12 +9,8 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-           station apps install                               jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────
-
-           Changes
-             ● jq  1.8.1  brew  already installed
+      stdout: |
+          jq · 1.8.1 · brew · already installed
     - command: 'apps install jq'
       exit: 0
       stdout: |

@@ -1,9 +1,6 @@
- station apps                                                                   host · unregistered
- ──────────────────────────────────────────────────────────────────────────────────────────────────
+Apps
+  no apps
 
- Apps
-   no apps
-
- → station apps install <app...>
- → station apps update
- → station apps --all for every row
+→ station apps install <app...>
+→ station apps update
+→ station apps --all  for every row

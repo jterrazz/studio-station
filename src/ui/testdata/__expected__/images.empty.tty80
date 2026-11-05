@@ -1,8 +1,5 @@
- station images                                             host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+Images
+  ○ linux  not built yet
+  ○ macos  not built yet
 
- Images
-   ○ linux  not built yet
-   ○ macos  not built yet
-
- → station images update
+→ station images update

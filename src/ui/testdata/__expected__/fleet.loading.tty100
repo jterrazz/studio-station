@@ -1,11 +1,6 @@
- station                                                                        host · unregistered
- ──────────────────────────────────────────────────────────────────────────────────────────────────
-
- Fleet  1 ◌
-   ◌ reading
-
- Images  1 ◌
-   ◌ reading
-
- Tailnet  1 ◌
-   ◌ reading
+Fleet
+  ◌ reading
+Images
+  ◌ reading
+Tailnet
+  ◌ reading

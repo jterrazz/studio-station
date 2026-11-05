@@ -1,5 +1,2 @@
- station settings apply                                                         host · unregistered
- ──────────────────────────────────────────────────────────────────────────────────────────────────
-
- Error: restart-after-power-cut needs admin rights
- Hint: sudo station settings apply restart-after-power-cut
+Error: restart-after-power-cut needs admin rights
+Hint: sudo station settings apply restart-after-power-cut

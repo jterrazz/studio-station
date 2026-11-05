@@ -19,15 +19,12 @@ runs:
           see not built yet
           screen
       exit: 0
-      stdout: |4
-           station images                                     jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────
+      stdout: |
+          Images
+                     version       size  on
+            ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  api · linux-1
+            ○ linux  2026.10.20  3.0 GB  jterrazz-macbook-pro  older: station images del…
+            ● linux  2026.11.01  4.0 GB  jterrazz-mac-mini     infra
+            ○ macos                                            not built yet
 
-           Images
-                      version       size  on
-             ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  api · linux-1
-             ○ linux  2026.10.20  3.0 GB  jterrazz-macbook-pro  older: station images de…
-             ● linux  2026.11.01  4.0 GB  jterrazz-mac-mini     infra
-             ○ macos                                            not built yet
-
-           → station images update
+          → station images update
