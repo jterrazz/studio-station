@@ -1,5 +1,7 @@
 package page
 
+import "strings"
+
 const Schema = "station.page/v1"
 
 type Page struct {
@@ -57,6 +59,11 @@ type Section struct {
 	// value: a line too short for every column says which it left out
 	// (All machines' table, SPEC §9.9).
 	SaysDropped bool `json:"says_dropped,omitempty"`
+	// value: on a terminal's page, the rows shown before Rest, the one row
+	// that sums the others (vision 07 "station disk": `+ 15 more  7.8 GB`);
+	// the TUI and the menu bar show every row, --all unfolds it.
+	Top  int   `json:"top,omitempty"`
+	Rest *Item `json:"rest,omitempty"`
 }
 
 type Role string
@@ -66,6 +73,10 @@ const (
 	Actions Role = "actions"
 	Summary Role = "summary"
 	Banner  Role = "banner"
+	// value: what needs a look, lifted first on a terminal's page from the
+	// sections its rows stay in (vision 07 "station settings"): the pipe, the
+	// TUI and the menu bar read those rows where they are.
+	Lifted Role = "lifted"
 )
 
 type Fold string
@@ -74,6 +85,12 @@ const (
 	Open   Fold = "open"
 	Folded Fold = "folded"
 	Auto   Fold = "auto"
+	// value: one line on a terminal's page, open in the TUI and the menu bar
+	// (vision 07 "station apps" folds Not installed; screen 2 lists it).
+	Brief Fold = "brief"
+	// value: one line on a terminal's page, folded in the TUI while every
+	// row is calm, as Auto is (Settings' Set by station).
+	Calm Fold = "calm"
 )
 
 type Column struct {
@@ -350,3 +367,28 @@ const (
 	KindListing  Kind = "listing"
 	KindSpark    Kind = "spark"
 )
+
+const OnSection = "on"
+
+func OnMachine(machine string) Section {
+	// value: the line an output for another machine starts with (SPEC §8.1).
+	return Section{ID: OnSection, Role: Banner, Uncounted: true, Items: []Item{{Note: &Note{Text: "On " + machine + ":"}}}}
+}
+
+func MacName(name, self string) string {
+	// invariant: how the interface names a Mac (SPEC §2.5): This Mac for the
+	// one this binary runs on, named self, and every other by its name
+	// without the `<user>-` both names start with (`mac-mini` for
+	// `jterrazz-mac-mini`).
+	if name == self && self != "" {
+		return "This Mac"
+	}
+	owner, _, ok := strings.Cut(self, "-")
+	if !ok || owner == "" {
+		return name
+	}
+	if short, ok := strings.CutPrefix(name, owner+"-"); ok && short != "" {
+		return short
+	}
+	return name
+}

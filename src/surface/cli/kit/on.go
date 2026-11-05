@@ -32,6 +32,9 @@ func (o *On) refresh(ctx context.Context, path string) {
 	}
 }
 
+// value: the name any command accepts for the Mac it runs on (SPEC §2.5).
+const thisMac = "this-mac"
+
 func (o *On) Target() (string, bool) {
 	if o == nil {
 		return "", false
@@ -40,7 +43,7 @@ func (o *On) Target() (string, bool) {
 	if name == "" {
 		name = o.Used
 	}
-	if name == "" || name == o.Here {
+	if name == "" || name == o.Here || name == thisMac {
 		return "", false
 	}
 	return name, true

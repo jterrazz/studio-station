@@ -61,6 +61,10 @@ type entry struct {
 	// value: this row's last cell is wider than the section can give beside
 	// the others' details: it runs to the line's end on its own (§11.2).
 	overflow bool
+	// value: on a terminal, this row's name does not fit its column, or its
+	// command does not fit beside the names: the name is written whole and
+	// what follows it goes on the lines under it (OU-05).
+	stack bool
 }
 
 func RowKey(section, row string) string { return section + "/" + row }
@@ -140,16 +144,16 @@ func (g Grid) lines() []Line {
 }
 
 func (g Grid) item(out *[]Line, it page.Item, entries []entry, at int, cols []column, labelWidth, factWidth int) int {
-	st, indent := g.Styles, atom.Spaces(token.Margin+token.Indent)
+	st, indent := g.Styles, atom.Spaces(token.Margin+g.indent())
 	switch {
 	case it.Row != nil, it.Group != nil:
 		n := countEntries(it)
 		for _, e := range entries[at : at+n] {
 			switch {
 			case e.empty != nil && e.key != "" && e.prefix != "":
-				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+token.Indent) + e.prefix + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Keys)})
+				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+g.indent()) + e.prefix + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Keys)})
 			case e.empty != nil && e.key != "":
-				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+token.Indent) + g.Styles.Subtle.Render(e.prefix) + atom.Spaces(token.MarkWidth) + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Keys)})
+				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+g.indent()) + g.Styles.Subtle.Render(e.prefix) + atom.Spaces(token.MarkWidth) + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Keys)})
 			case e.link != nil && e.key != "":
 				*out = append(*out, Line{Kind: LineOther, Text: g.link(e.prefix, *e.link, labelWidth)})
 			case e.key != "":
@@ -181,13 +185,13 @@ func (g Grid) item(out *[]Line, it page.Item, entries []entry, at int, cols []co
 func (g Grid) link(prefix string, l page.Link, labelWidth int) string {
 	st := g.Styles
 	end := g.Width - 1
-	slot := labelWidth - atom.Width(prefix) + token.MarkWidth
+	slot := labelWidth - atom.Width(prefix) + g.markWidth()
 	head := atom.Show(l.Lead)
 	if head == "" {
 		head = atom.End(l.Label, max(slot, 1))
 	}
-	line := atom.Spaces(token.Margin+token.Indent) + st.Subtle.Render(prefix) + st.Strong.Render(head)
-	at := token.Margin + token.Indent + atom.Width(prefix) + atom.Width(head)
+	line := atom.Spaces(token.Margin+g.indent()) + st.Subtle.Render(prefix) + st.Strong.Render(head)
+	at := token.Margin + g.indent() + atom.Width(prefix) + atom.Width(head)
 	value, detail := atom.Show(l.Value), atom.Show(l.Detail)
 	if value != "" {
 		pad := max(slot-atom.Width(head), 0) + token.Gap
@@ -293,7 +297,8 @@ func (g Grid) entry(r page.Row, prefix string, head, hidden bool) entry {
 	return entry{row: r, prefix: prefix, head: head, key: key}
 }
 
-func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
+func (g Grid) columns() []column {
+	var cols []column
 	for i, c := range g.Section.Columns {
 		if i == 0 || c.Show == page.PipeOnly {
 			continue
@@ -307,11 +312,17 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		}
 		cols = append(cols, column{kind: c.Kind, label: c.Label, keep: c.Keep, whole: c.Whole, cell: positional(at)})
 	}
+	return cols
+}
+
+func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
+	cols = g.columns()
 	if len(g.Section.Columns) > 0 {
 		labelWidth = atom.Width(g.Section.Columns[0].Label)
 	}
+	g.stacks(entries, cols)
 	for _, e := range entries {
-		if e.key == "" || e.link != nil || e.empty != nil {
+		if e.key == "" || e.link != nil || e.empty != nil || e.stack {
 			continue
 		}
 		labelWidth = max(labelWidth, atom.Width(e.prefix)+atom.Width(shown(e.row)))
@@ -356,7 +367,7 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		case cols[i].whole:
 			cols[i].width = -1
 		default:
-			cols[i].width = max(cols[i].width-over, min(atom.Floor(cols[i].kind), cols[i].width), cols[i].firm)
+			cols[i].width = max(cols[i].width-over, min(g.floor(cols[i]), cols[i].width), cols[i].firm)
 		}
 	}
 	if over := fixed() - avail; over > 0 {
@@ -365,6 +376,9 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 	for _, i := range order {
 		if fixed() <= avail {
 			break
+		}
+		if g.whole(cols[i]) {
+			continue
 		}
 		cols[i].width = -1
 	}
@@ -379,6 +393,13 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 	}
 	cols = slices.DeleteFunc(cols, func(c column) bool { return c.width < 0 })
 	g.room(entries, cols, labelWidth, avail)
+	if g.Medium == molecule.TTY {
+		for i, e := range entries {
+			if e.row.Label != "" && atom.Width(e.prefix)+atom.Width(shown(e.row)) > labelWidth {
+				entries[i].stack = true
+			}
+		}
+	}
 	return cols, labelWidth
 }
 
@@ -398,6 +419,76 @@ func (g Grid) Dropped() []string {
 	return out
 }
 
+// value: a command column on a terminal: a command cut no longer runs, so
+// it is never cut nor dropped (OU-05).
+func (g Grid) whole(c column) bool {
+	return g.Medium == molecule.TTY && c.kind == page.KindCommand
+}
+
+// value: the narrowest a column is cut to: only a terminal's page keeps a
+// command whole (OU-05); the TUI's list cuts it as it cuts a text.
+func (g Grid) floor(c column) int {
+	if c.kind == page.KindCommand && !g.whole(c) {
+		return atom.Floor(page.KindText)
+	}
+	return atom.Floor(c.kind)
+}
+
+// invariant: on a terminal a name is never cut nor a command: a row whose
+// name is wider than a name column may be, or whose command does not fit
+// beside the names, stacks, the widest command first, until the others fit
+// side by side, each column at its floor (OU-05).
+func (g Grid) stacks(entries []entry, cols []column) {
+	if g.Medium != molecule.TTY {
+		return
+	}
+	live := func(e entry) bool { return e.key != "" && e.link == nil && e.empty == nil && !e.stack }
+	for i, e := range entries {
+		if live(e) && atom.Width(e.prefix)+atom.Width(shown(e.row)) > token.LabelMax {
+			entries[i].stack = true
+		}
+	}
+	commands := func(e entry) int {
+		n := 0
+		for _, c := range cols {
+			if g.whole(c) {
+				n += atom.Width(atom.Show(c.cell(e.row)))
+			}
+		}
+		return n
+	}
+	for {
+		labelWidth, widths := 0, make([]int, len(cols))
+		widest, most := -1, 0
+		for i, e := range entries {
+			if !live(e) {
+				continue
+			}
+			labelWidth = max(labelWidth, atom.Width(e.prefix)+atom.Width(shown(e.row)))
+			for ci, c := range cols {
+				w := atom.Width(atom.Show(c.cell(e.row)))
+				if !g.whole(c) {
+					w = min(w, atom.Floor(c.kind))
+				}
+				widths[ci] = max(widths[ci], w)
+			}
+			if n := commands(e); n > most {
+				widest, most = i, n
+			}
+		}
+		used := labelWidth
+		for _, w := range widths {
+			if w > 0 {
+				used += token.Gap + w
+			}
+		}
+		if widest < 0 || used <= g.avail() {
+			return
+		}
+		entries[widest].stack = true
+	}
+}
+
 // invariant: a long path never crushes a row's detail: while the details of
 // the rows that fill the last column lack room (up to DetailMin each; the
 // other rows' details sit beside their own cells), a column holding a path is
@@ -408,7 +499,7 @@ func (g Grid) room(entries []entry, cols []column, labelWidth, avail int) {
 	rows := make([]page.Row, 0, len(entries))
 	need := 0
 	for _, e := range entries {
-		if e.key == "" || e.link != nil || e.empty != nil {
+		if e.key == "" || e.link != nil || e.empty != nil || e.stack {
 			continue
 		}
 		rows = append(rows, e.row)
@@ -480,7 +571,7 @@ func (g Grid) overflow(entries []entry, cols []column, labelWidth, avail int) {
 		}
 		widest, first, second, need := -1, 0, 0, 0
 		for i, e := range entries {
-			if e.key == "" || e.link != nil || e.empty != nil || e.overflow {
+			if e.key == "" || e.link != nil || e.empty != nil || e.overflow || e.stack {
 				continue
 			}
 			if d := atom.Width(atom.Show(e.row.Detail)); d > 0 {
@@ -502,6 +593,35 @@ func (g Grid) overflow(entries []entry, cols []column, labelWidth, avail int) {
 	}
 }
 
+// invariant: on a terminal an Overview's section line is never cut: each
+// part of it carries a mark and a state word (`◐ 1 misplaced`), so a list
+// its line cannot hold goes on under its first part (OU-05).
+func (g Grid) wraps(ci int, cols []column, v page.Value) bool {
+	return g.flush() && ci == len(cols)-1 && v.Kind == page.KindList && atom.Width(atom.Show(v)) > cols[ci].width
+}
+
+// value: a list in lines of room columns, as many of its items on each as
+// it holds; an item wider than room has a line of its own.
+func wrapList(v page.Value, room int) []page.Value {
+	var parts []page.Value
+	var line []page.Value
+	for _, it := range v.Items {
+		if atom.Show(it) == "" {
+			continue
+		}
+		if next := append(slices.Clone(line), it); len(line) == 0 || atom.Width(atom.Show(page.List(next...))) <= room {
+			line = next
+			continue
+		}
+		parts = append(parts, page.List(line...))
+		line = []page.Value{it}
+	}
+	if len(line) > 0 {
+		parts = append(parts, page.List(line...))
+	}
+	return parts
+}
+
 func cut(v page.Value, width int) string {
 	if s := atom.Fit(v, width); atom.Width(s) <= width {
 		return s
@@ -509,8 +629,34 @@ func cut(v page.Value, width int) string {
 	return atom.End(atom.Show(v), width)
 }
 
+// invariant: on a terminal, a banner with no title (an Overview's section
+// lines, the On line) is drawn flush at the margin, as the vision's CLI pages
+// are, and keeps no column for a mark none of its rows carries.
+func (g Grid) flush() bool {
+	return g.Medium == molecule.TTY && g.Section.Role == page.Banner && g.Section.Title == "" && len(g.Section.Caption) == 0
+}
+
+func (g Grid) indent() int {
+	if g.flush() {
+		return 0
+	}
+	return token.Indent
+}
+
+func (g Grid) markWidth() int {
+	if !g.flush() {
+		return token.MarkWidth
+	}
+	for _, it := range g.Section.Items {
+		if it.Row != nil && it.Row.Mark != page.Unjudged || it.Group != nil {
+			return token.MarkWidth
+		}
+	}
+	return 0
+}
+
 func (g Grid) avail() int {
-	return g.Width - 1 - token.Margin - token.Indent - token.MarkWidth
+	return g.Width - 1 - token.Margin - g.indent() - g.markWidth()
 }
 
 func positional(at int) func(page.Row) page.Value {
@@ -555,7 +701,7 @@ func (g Grid) header(cols []column, labelWidth int) string {
 		label = g.Section.Columns[0].Label
 	}
 	var line strings.Builder
-	line.WriteString(atom.Spaces(token.Margin+token.Indent+token.MarkWidth) + atom.Pad(label, labelWidth))
+	line.WriteString(atom.Spaces(token.Margin+g.indent()+g.markWidth()) + atom.Pad(label, labelWidth))
 	for _, c := range cols {
 		cell := atom.Pad(c.label, c.width)
 		if atom.Numeric(c.kind) {
@@ -568,14 +714,17 @@ func (g Grid) header(cols []column, labelWidth int) string {
 
 func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	st, r := g.Styles, e.row
-	indent := atom.Spaces(token.Margin + token.Indent)
+	indent := atom.Spaces(token.Margin + g.indent())
 	lead := indent + st.Subtle.Render(e.prefix) + atom.Mark(st, r.Mark)
+	if g.markWidth() == 0 {
+		lead = indent + st.Subtle.Render(e.prefix)
+	}
 	label := atom.End(shown(r), max(labelWidth-atom.Width(e.prefix), 1))
 	// invariant: a wrapped hint starts at the label's column (G5) in every
 	// section, medium and width: never under a detail whose place depends on
 	// the widest cell of the section.
 	hintLines := func() []Line {
-		pad := indent + atom.Spaces(atom.Width(e.prefix)+token.MarkWidth)
+		pad := indent + atom.Spaces(atom.Width(e.prefix)+g.markWidth())
 		h := molecule.Hint(st, *r.Hint, g.Medium, g.Keys)
 		width := atom.Width(molecule.HintText(*r.Hint, g.Medium, g.Keys))
 		if atom.Width(pad)+width < g.Width || !strings.Contains(r.Hint.Command, joint) {
@@ -596,6 +745,9 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 			out = append(out, Line{Kind: LineHint, Key: e.key, Text: pad + text})
 		}
 		return out
+	}
+	if e.stack {
+		return g.stacked(e, lead, hintLines)
 	}
 	if g.Width < token.MinWidth {
 		lines := []Line{{Kind: LineRow, Key: e.key, Head: e.head, Text: lead + st.Strong.Render(label)}}
@@ -626,11 +778,21 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 		v := c.cell(r)
 		if e.overflow && ci == len(cols)-1 {
 			if w := atom.Width(atom.Show(v)); w > g.avail()-used-token.Gap {
-				pad := indent + atom.Spaces(atom.Width(e.prefix)+token.MarkWidth)
+				pad := indent + atom.Spaces(atom.Width(e.prefix)+g.markWidth())
 				below = append(below, Line{Kind: LineOther, Key: e.key, Text: pad + st.Text.Render(atom.Fit(v, g.Width-1-atom.Width(pad)))})
 				v = page.None()
 			}
 			c.width = max(min(atom.Width(atom.Show(v)), g.avail()-used-token.Gap), 0)
+		}
+		if g.wraps(ci, cols, v) {
+			if parts := wrapList(v, g.avail()-used-token.Gap); len(parts) > 1 {
+				pad := atom.Spaces(token.Margin + g.indent() + g.markWidth() + used + token.Gap)
+				for _, part := range parts[1:] {
+					below = append(below, Line{Kind: LineOther, Key: e.key, Text: pad + atom.Paint(st, st.Text, part, atom.Show(part))})
+				}
+				v = parts[0]
+				c.width = max(c.width, atom.Width(atom.Show(v)))
+			}
 		}
 		text := atom.Fit(v, c.width)
 		// invariant: a row whose cells end before the last column keeps that
@@ -641,12 +803,9 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 			b.WriteString(openLine)
 			text, used, c.width = whole, openUsed, atom.Width(whole)
 		}
-		styled := st.Text.Render(text)
+		styled := atom.Paint(st, st.Text, v, text)
 		if v.Stale {
 			styled = st.Muted.Render(text)
-		}
-		if m := page.Mark(v.Label); v.Kind == page.KindText && v.Text == "" && text == atom.Glyph(m) {
-			styled = atom.Tone(st, m).Render(text)
 		}
 		if text == "" {
 			styled = ""
@@ -689,7 +848,7 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	// that width, as a dropped column is (§7.1, §11.2).
 	if w := atom.Width(detail); detail != "" && rest-token.Gap < min(w, atom.Floor(r.Detail.Kind)) {
 		if k := r.Detail.Kind; k == page.KindPath || k == page.KindURL {
-			pad := indent + atom.Spaces(atom.Width(e.prefix)+token.MarkWidth)
+			pad := indent + atom.Spaces(atom.Width(e.prefix)+g.markWidth())
 			below = append(below, Line{Kind: LineOther, Key: e.key, Text: pad + st.Muted.Render(cut(r.Detail, g.Width-1-atom.Width(pad)))})
 		}
 		detail = ""
@@ -720,5 +879,60 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 	if own {
 		lines = append(lines, hintLines()...)
 	}
+	return lines
+}
+
+// invariant: a stacked row writes its name whole, then its cells, its detail
+// and its hint under it at the name's column, each whole when its line holds
+// it, else on a line of its own; only a detail is cut there, by its kind.
+func (g Grid) stacked(e entry, lead string, hintLines func() []Line) []Line {
+	st, r := g.Styles, e.row
+	lines := []Line{{Kind: LineRow, Key: e.key, Head: e.head, Text: lead + st.Strong.Render(shown(r))}}
+	pad := atom.Spaces(token.Margin + g.indent() + atom.Width(e.prefix) + g.markWidth())
+	room := g.Width - 1 - atom.Width(pad)
+	line, used := "", 0
+	flush := func() {
+		if line != "" {
+			lines = append(lines, Line{Kind: LineOther, Key: e.key, Text: pad + line})
+		}
+		line, used = "", 0
+	}
+	put := func(v page.Value, muted, cuts bool) {
+		text := atom.Show(v)
+		if text == "" {
+			return
+		}
+		gap := 0
+		if used > 0 {
+			gap = token.Gap
+		}
+		if used+gap+atom.Width(text) > room && used > 0 {
+			flush()
+			gap = 0
+		}
+		if cuts {
+			text = cut(v, room)
+		}
+		style := st.Text
+		if muted {
+			style = st.Muted
+		}
+		line += atom.Spaces(gap) + atom.Paint(st, style, v, text)
+		used += gap + atom.Width(text)
+	}
+	for _, c := range g.columns() {
+		put(c.cell(r), false, !g.whole(c) && !atom.Uncut(c.kind))
+	}
+	put(r.Detail, true, !atom.Uncut(r.Detail.Kind))
+	if r.Hint != nil {
+		if w := atom.Width(molecule.HintText(*r.Hint, g.Medium, g.Keys)); used > 0 && used+token.Gap+w <= room {
+			line += atom.Spaces(token.Gap) + molecule.Hint(st, *r.Hint, g.Medium, g.Keys)
+			flush()
+			return lines
+		}
+		flush()
+		return append(lines, hintLines()...)
+	}
+	flush()
 	return lines
 }

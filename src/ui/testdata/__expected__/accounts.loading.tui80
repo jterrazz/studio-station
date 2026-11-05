@@ -1,5 +1,8 @@
+ Summary
+   ● This Mac  8 accounts · 0 signed in · reading · shared with 2 VMs
+
  Accounts  1 ●  1 ◐  11 ◌
-   ◌ jterrazz-macbook-pro  host
+   ◌ jterrazz-macbook-pro  Mac
    ├─ ◌ GitHub
    ├─ ◌ npm
    ├─ ◌ Claude
@@ -9,7 +12,7 @@
    ├─ ◌ ssh
    └─ ◌ Docker
    ◌ linux-1               throwaway
-   └─ ● Claude             admin@jterrazz.com  lent  11h 40m left
+   └─ ● Claude             admin@jterrazz.com  shared  11h 40m left
    ◌ api                   permanent
-   └─ ◐ Claude             admin@jterrazz.com  lent  42m left
-        → station secrets lend --to api operator:claude:oauth-token
+   └─ ◐ Claude             admin@jterrazz.com  shared  42m left
+        → station accounts share claude --with api

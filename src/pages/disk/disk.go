@@ -70,7 +70,11 @@ func plural(n int, word string) string {
 	return strconv.Itoa(n) + " " + word + "s"
 }
 
-func Read(r disk.Reading, here page.Context) page.Page {
+// value: the Can rebuild rows a terminal shows before the one that sums
+// the rest (vision 07 "station disk").
+const top = 3
+
+func Read(r disk.Reading, here page.Context, all bool) page.Page {
 	p := page.Page{ID: "disk", Command: "disk", Context: here, Actions: Actions(r)}
 	misplaced := r.Of(disk.Misplaced)
 	head := page.Row{ID: "volume", Label: machineLabel(here), Mark: page.OK, Cells: []page.Value{
@@ -91,12 +95,34 @@ func Read(r disk.Reading, here page.Context) page.Page {
 			pr := Row(row)
 			items = append(items, page.Item{Row: &pr})
 		}
-		p.Sections = append(p.Sections, page.Section{ID: string(g), Title: title(g), Fold: page.Open, Columns: columns(), Items: items, Uncounted: true})
+		p.Sections = append(p.Sections, group(g, rows, items, all))
 	}
 	if disk.Sum(r.Of(disk.CanRebuild)) > 0 {
 		p.Hints = append(p.Hints, page.Hint{Command: "station disk free", Text: "frees every Can rebuild row, nothing is lost"})
 	}
 	return page.Seal(p)
+}
+
+// invariant: a group with nothing to do is one line on a terminal (SPEC
+// §5.5, vision 07 "station disk": `Your data · 41.6 GB · xcode 19.1, …`);
+// Can rebuild, which frees, shows its largest rows then one for the rest;
+// Misplaced is open; --all unfolds every group.
+func group(g disk.Group, rows []disk.Row, items []page.Item, all bool) page.Section {
+	s := page.Section{ID: string(g), Title: title(g), Fold: page.Open, Columns: columns(), Items: items, Uncounted: true}
+	if g == disk.Misplaced || all {
+		return s
+	}
+	s.Caption, s.Joined = []page.Value{page.Size(disk.Sum(rows))}, true
+	if g != disk.CanRebuild {
+		s.Fold = page.Brief
+		return s
+	}
+	if len(rows) > top+1 {
+		rest := rows[top:]
+		s.Top = top
+		s.Rest = &page.Item{Row: &page.Row{ID: string(g) + "/more", Label: "+ " + strconv.Itoa(len(rest)) + " more", Cells: []page.Value{page.Size(disk.Sum(rest))}}}
+	}
+	return s
 }
 
 func sized(n int64, unit string) page.Value {

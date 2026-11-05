@@ -1,5 +1,2 @@
- station status                                             host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Error: status reads the host it runs on
- Hint: station overview --on <vm>
+Error: status reads the Mac it runs on
+Hint: station overview --on <vm>

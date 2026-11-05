@@ -82,6 +82,7 @@ func read(ctx context.Context, d Deps, env kit.Env, io kit.IO) error {
 		}
 		f = every
 	}
+	f.Label, f.Far = d.Label, env.Far()
 	return io.Page(pageawake.Page(f, d.Here), pageawake.Contract(f))
 }
 

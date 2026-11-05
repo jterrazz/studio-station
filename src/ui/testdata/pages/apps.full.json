@@ -150,7 +150,7 @@
     {
       "id": "not-installed",
       "title": "Not installed",
-      "fold": "open",
+      "fold": "brief",
       "columns": [
         {
           "key": "name",
@@ -298,7 +298,7 @@
     {
       "id": "not-managed",
       "title": "Not managed",
-      "fold": "open",
+      "fold": "brief",
       "columns": [
         {
           "key": "name",
@@ -689,14 +689,12 @@
   ],
   "hints": [
     {
-      "command": "station apps install <app...>"
+      "command": "station apps update",
+      "text": "the 2 updates"
     },
     {
-      "command": "station apps update"
-    },
-    {
-      "command": "station apps --all",
-      "text": "for every row"
+      "command": "station apps install <app...>",
+      "text": "install some"
     }
   ],
   "actions": [

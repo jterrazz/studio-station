@@ -16,5 +16,5 @@ runs:
     - command: 'awake | /usr/bin/sed -n 1,2p'
       exit: 0
       stdout: |
-          # Awake
           ○	jterrazz-macbook-pro	Sleeps normally
+          ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy	last slept: never in 12d 1h · hosts infra (server)

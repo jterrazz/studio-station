@@ -342,9 +342,9 @@
         },
         {
           "row": {
-            "id": "path",
+            "id": "file",
             "mark": "ok",
-            "label": "path",
+            "label": "file",
             "cells": [
               {
                 "kind": "path",
@@ -487,7 +487,7 @@
           "row": {
             "id": "stray",
             "mark": "attention",
-            "label": "stray",
+            "label": "misplaced",
             "cells": [
               {
                 "kind": "text",
@@ -496,11 +496,11 @@
             ],
             "detail": {
               "kind": "text",
-              "text": "out of place"
+              "text": "misplaced"
             },
             "reason": "stray",
             "hint": {
-              "command": "station setup"
+              "command": "station disk move ~/.bun"
             }
           }
         },
@@ -535,7 +535,7 @@
             ],
             "detail": {
               "kind": "text",
-              "text": "station v2.0.0-240 here v2.0.0-242"
+              "text": "station v2.0.0-240, This Mac v2.0.0-242"
             },
             "reason": "mismatch"
           }
@@ -691,7 +691,7 @@
             ],
             "detail": {
               "kind": "text",
-              "text": "Serve is off on the tailnet"
+              "text": "Serve is off on Tailscale"
             },
             "reason": "degraded"
           }
@@ -828,7 +828,7 @@
             },
             "reason": "expiring",
             "hint": {
-              "command": "station secrets lend --to api operator:claude:oauth-token"
+              "command": "station accounts share claude --with api"
             }
           }
         },
@@ -849,7 +849,7 @@
             },
             "reason": "guard",
             "hint": {
-              "command": "station power"
+              "command": "station awake"
             }
           }
         },
@@ -933,7 +933,7 @@
     },
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "columns": [
         {
           "key": "name",
@@ -962,7 +962,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 },
                 {
                   "kind": "text",
@@ -1017,7 +1017,7 @@
                         "cells": [
                           {
                             "kind": "text",
-                            "text": "service"
+                            "text": "server"
                           },
                           {
                             "kind": "text",
@@ -1063,11 +1063,11 @@
     },
     {
       "id": "storage",
-      "title": "Storage",
+      "title": "Disk",
       "columns": [
         {
           "key": "name",
-          "label": "tool",
+          "label": "app",
           "kind": "text",
           "keep": 100
         },
@@ -1157,7 +1157,7 @@
         },
         {
           "note": {
-            "text": "Serve is off on the tailnet, so no service is reachable from another machine until it is turned on in the admin console."
+            "text": "Serve is off on Tailscale, so no shared port is reachable from another machine until it is turned on in the admin console."
           }
         },
         {
@@ -1168,9 +1168,9 @@
         },
         {
           "empty": {
-            "noun": "lent secrets",
+            "noun": "shared accounts",
             "hint": {
-              "command": "station secrets lend <name>"
+              "command": "station accounts share <account> --with <vm>"
             }
           }
         }

@@ -1,16 +1,16 @@
  To do  1 ◐
-   ◐ strays  2 folders out of place · 80.5 GB  → station disk move ~/.tart
+   ◐ misplaced  2 misplaced folders · 80.5 GB  → station disk move ~/.tart
 
  Summary
-   ◌ Machine   host · Darwin 27.0.0
-   ◌ Network   192.168.1.152 · 4/4 on
-   ◌ Tailnet   off
-   ◌ Identity  not set
-   ◌ Tools     1 ◌
-   ◌ Config    1 ◌
-   ● Storage   27.9 GB reclaimable · 2 strays
-   ◌ Fleet     macbook
-   ◌ Gateways  1 ◌
+   ◌ Machine       Mac · Darwin 27.0.0
+   ◌ Network       192.168.1.152 · 4/4 on
+   ◌ Tailscale     off
+   ◌ Identity      not set
+   ◌ Apps          1 ◌
+   ◌ Settings      1 ◌
+   ● Disk          27.9 GB reclaimable · 2 misplaced
+   ◌ All machines  macbook
+   ◌ Gateways      1 ◌
 
  + Machine                                                             1 ●  3 ◌
 
@@ -22,6 +22,6 @@
 
  + Gateways                                                                 1 ◌
 
- + Tools                                                                    1 ◌
+ + Apps                                                                     1 ◌
 
- + Config                                                                   1 ◌
+ + Settings                                                                 1 ◌

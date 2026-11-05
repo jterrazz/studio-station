@@ -1,9 +1,8 @@
- Awake  2 ○
-   ○ jterrazz-macbook-pro  Sleeps normally
-   ○ jterrazz-mac-mini     Sleeps normally
+   ○ This Mac  Sleeps normally
+   ○ mac-mini  Sleeps normally
 
- jterrazz-macbook-pro
-   lid      open
-   power    AC · 80 % · not charging
-   thermal  nominal
-   screen   always turns off
+ This Mac
+   lid           open
+   power source  AC · 80 % · not charging
+   thermal       nominal
+   screen        always turns off

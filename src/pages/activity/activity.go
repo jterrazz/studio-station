@@ -98,7 +98,7 @@ func Page(v View, here page.Context) page.Page {
 	// machine but this one starts with `On <it>:` (SPEC §8.1).
 	p := page.Page{ID: "activity", Command: "activity", Context: here}
 	if !v.ThisMac {
-		p.Sections = append(p.Sections, page.Section{ID: "on", Role: page.Banner, Uncounted: true, Items: []page.Item{{Note: &page.Note{Text: "On " + v.Label + ":"}}}})
+		p.Sections = append(p.Sections, page.OnMachine(v.Label))
 	}
 	if v.Stopped {
 		r := page.Row{ID: "stopped", Label: v.Label + " is stopped", Mark: page.Absent, Reason: page.Stopped}

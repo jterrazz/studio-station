@@ -13,7 +13,7 @@ import (
 func awakeFleet(daemon string, held bool) pageawake.Fleet {
 	laptop := awake.Report{Now: powerNow, Daemon: daemon, Mac: "jterrazz-macbook-pro", Here: true, Reading: thisMacReading(),
 		Caps: machine.Capabilities{Battery: true, Lid: true, Thermal: true, Engine: true}}
-	mini := awake.Report{Now: powerNow, Daemon: daemon, Mac: "jterrazz-mac-mini", Reading: awake.Reading{Source: "ac"},
+	mini := awake.Report{Now: powerNow, Daemon: daemon, Mac: "mac-mini", Reading: awake.Reading{Source: "ac"},
 		Caps: machine.Capabilities{Thermal: true, Engine: true}, Servers: []string{"infra"}}
 	if held {
 		laptop.Session = heldSession()

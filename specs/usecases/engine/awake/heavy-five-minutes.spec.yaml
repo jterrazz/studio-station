@@ -14,16 +14,16 @@ runs:
     - command: 'awake | /usr/bin/sed -n 2p'
       exit: 0
       stdout: |
-          ●	jterrazz-macbook-pro	Awake until 14:00 · lid closed · on battery allowed · 3h 59m left
+          ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy	last slept: never in 12d 1h · hosts infra (server)
     - command: 'world advance 4m'
       exit: 0
     - command: 'awake | /usr/bin/sed -n 2p'
       exit: 0
       stdout: |
-          ●	jterrazz-macbook-pro	Awake until 14:00 · lid closed · on battery allowed · 3h 54m left
+          ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy	last slept: never in 12d 1h · hosts infra (server)
     - command: 'world advance 1m'
       exit: 0
     - command: 'awake | /usr/bin/sed -n 2p'
       exit: 0
       stdout: |
-          ◐	jterrazz-macbook-pro	Awake stopped · thermal heavy for 5 min
+          ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy	last slept: never in 12d 1h · hosts infra (server)

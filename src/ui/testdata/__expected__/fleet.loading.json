@@ -8,7 +8,7 @@
   "sections": [
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "columns": [
         {
           "key": "name",
@@ -60,7 +60,7 @@
     },
     {
       "id": "tailnet",
-      "title": "Tailnet",
+      "title": "Tailscale",
       "columns": [
         {
           "key": "name",

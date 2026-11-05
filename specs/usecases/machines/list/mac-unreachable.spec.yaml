@@ -9,20 +9,18 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-           station machines                                                       jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────────────────────────
+      stdout: |
+          5 machines · 2 running · 1 stopped · 1 needs you
 
-           5 machines · 2 running · 1 stopped · 1 needs you
-               MACHINE     KIND       STATE                            CPU    MEMORY
-             ● This Mac    Mac        Engine running
-             ├─ ○ api      Workspace  Stopped · permanent              4 CPU  8 GB
-             └─ ● linux-1  Workspace  Running · throwaway              4 CPU  8 GB
-             ✗ mac-mini    Mac        Unreachable · last answer 03:12
-             └─ ? infra    Server     Unknown · always on              8 CPU  24 GB
+              MACHINE     KIND       STATE                            CPU    MEMORY
+            ● This Mac    Mac        Engine running
+            ├─ ○ api      Workspace  Stopped · permanent              4 CPU  8 GB
+            └─ ● linux-1  Workspace  Running · throwaway              4 CPU  8 GB
+            ✗ mac-mini    Mac        Unreachable · last answer 03:12
+            └─ ? infra    Server     Unknown · always on              8 CPU  24 GB
 
-           Needs you
-             ✗ mac-mini  does not answer  → station machines unlock mac-mini
+          Needs you
+            ✗ mac-mini  does not answer  → station machines unlock mac-mini
     - command: 'machines'
       exit: 0
       stdout: |

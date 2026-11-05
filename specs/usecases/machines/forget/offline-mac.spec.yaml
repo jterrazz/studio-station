@@ -4,6 +4,7 @@ runs:
     - command: 'machines forget mac-mini --on linux-1 --yes'
       exit: 0
       stdout: |
+          	On linux-1:
           ●	mac-mini	forgotten · nothing changed on it
     - command: '--version >/dev/null; /usr/bin/jq -c ''[.macs["jterrazz-macbook-pro"].preferences.macs, .macs["jterrazz-mac-mini"].locked]'' world.json'
       exit: 0

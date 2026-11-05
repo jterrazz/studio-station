@@ -8,6 +8,49 @@
   "state": "ready",
   "sections": [
     {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/accounts",
+            "mark": "ok",
+            "label": "This Mac",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "5 accounts"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "0 signed in"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
       "id": "accounts",
       "title": "Accounts",
       "columns": [
@@ -48,7 +91,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 }
               ]
             },
@@ -81,7 +124,7 @@
                   ],
                   "reason": "unset",
                   "hint": {
-                    "command": "station config install github-login"
+                    "command": "station settings apply github-login"
                   }
                 }
               },
@@ -219,7 +262,7 @@
         },
         {
           "note": {
-            "text": "no VMs: rights lent to a VM appear here"
+            "text": "no VMs: accounts shared with a VM appear here"
           }
         }
       ],
@@ -243,7 +286,7 @@
   "actions": [
     {
       "key": "l",
-      "label": "lend",
+      "label": "share",
       "on": "row",
       "priority": 1,
       "mutates": true

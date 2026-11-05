@@ -4,10 +4,12 @@ runs:
     - command: 'settings off never-sleeps --on jterrazz-mac-mini --yes'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	never-sleeps	never-sleeps: the Mac sleeps normally
     - command: 'awake 2h --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	jterrazz-mac-mini	stays awake until 12:00
     - command: '--version >/dev/null; /usr/bin/jq -c ''[.macs["jterrazz-mac-mini"].power.holds, .macs["jterrazz-macbook-pro"].power.holds]'' world.json'
       exit: 0

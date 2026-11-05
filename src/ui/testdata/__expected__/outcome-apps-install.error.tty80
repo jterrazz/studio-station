@@ -1,5 +1,2 @@
- station apps install                                       host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Error: no app named "jqq"
- Hint: station apps for every app here
+Error: no app named "jqq"
+Hint: station apps for every app here

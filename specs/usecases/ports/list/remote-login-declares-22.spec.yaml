@@ -12,6 +12,7 @@ runs:
     - command: 'settings apply sshd --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	sshd	sshd: applied
     - command: 'ports --on jterrazz-mac-mini | /usr/bin/grep -e 22 -e "^# Public"'
       exit: 0
@@ -25,6 +26,7 @@ runs:
     - command: 'settings off sshd --on jterrazz-mac-mini --yes'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	sshd	sshd: undone
     - command: 'ports --on jterrazz-mac-mini | /usr/bin/grep 22'
       exit: 0

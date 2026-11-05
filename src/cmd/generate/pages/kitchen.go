@@ -88,7 +88,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 			it(row("expired", page.OK, page.Until(now.Add(-time.Minute), now))),
 			it(row("url", page.OK, page.URL("https://jterrazz-macbook-pro.tail1234.ts.net:40001"))),
 			it(row("identity", page.OK, page.Identity("admin@jterrazz.com"))),
-			it(row("path", page.OK, page.Path("/Applications/Tailscale.app/Contents/MacOS/Tailscale"))),
+			it(row("file", page.OK, page.Path("/Applications/Tailscale.app/Contents/MacOS/Tailscale"))),
 			it(row("command", page.OK, page.Command("station apps update --method brew"))),
 			it(row("list", page.OK, page.Texts("brew", "system"))),
 			it(row("switch", page.OK, page.On(), page.Count(3, ""))),
@@ -105,9 +105,9 @@ func kitchen(edit func(*page.Page)) page.Page {
 		hint   string
 	}{
 		{page.Outdated, page.Attention, "120 outdated", "station apps update --method brew"},
-		{page.Stray, page.Attention, "out of place", "station setup"},
+		{page.Stray, page.Attention, "misplaced", "station disk move ~/.bun"},
 		{page.Unreachable, page.Attention, "unreachable", ""},
-		{page.Mismatch, page.Attention, "station v2.0.0-240 here v2.0.0-242", ""},
+		{page.Mismatch, page.Attention, "station v2.0.0-240, This Mac v2.0.0-242", ""},
 		{page.Unmanaged, page.Attention, "on PATH, not managed by cask", ""},
 		{page.Missing, page.Attention, "installed, mise not installed", "station apps install mise"},
 		{page.Partial, page.Attention, "policy partly applied", ""},
@@ -115,19 +115,22 @@ func kitchen(edit func(*page.Page)) page.Page {
 		{page.Unset, page.Attention, "name not set", "station setup"},
 		{page.Stopped, page.Attention, "stopped", "station engine start"},
 		{page.Late, page.Attention, "no answer in 2s", ""},
-		{page.Degraded, page.Attention, "Serve is off on the tailnet", ""},
+		{page.Degraded, page.Attention, "Serve is off on Tailscale", ""},
 		{page.Orphan, page.Attention, "orphan: Docker.app is gone", "sudo launchctl bootout system/com.docker.vmnetd"},
 		{page.Waiting, page.Absent, "waiting", ""},
 		{page.Failing, page.Broken, "failing" + token.Sep + "last exit 2", ""},
 		{page.Refused, page.Broken, "refused", ""},
 		{page.Down, page.Broken, "not running", ""},
 		{page.Outlived, page.Broken, "stale", "station machines delete linux-2"},
-		{page.Expiring, page.Attention, "42m left", "station secrets lend --to api operator:claude:oauth-token"},
-		{page.Guard, page.Attention, "28%" + token.Sep + "on battery", "station power"},
+		{page.Expiring, page.Attention, "42m left", "station accounts share claude --with api"},
+		{page.Guard, page.Attention, "28%" + token.Sep + "on battery", "station awake"},
 	}
 	for _, r := range reasons {
 		x := row(string(r.reason), r.mark, page.Text(string(r.mark)))
 		x.Reason, x.Detail = r.reason, page.Text(r.detail)
+		if r.reason == page.Stray {
+			x.Label = "misplaced"
+		}
 		if r.hint != "" {
 			x.Hint = page.Cmd(r.hint)
 		}
@@ -140,16 +143,16 @@ func kitchen(edit func(*page.Page)) page.Page {
 		it(row("not-known", page.NotKnown, page.Text("does not answer"))),
 	)
 	fleet := page.Section{
-		ID: "fleet", Title: "Fleet",
+		ID: "fleet", Title: "All machines",
 		Columns: []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "kind", Kind: page.KindText, Keep: 40}, {Key: "host", Kind: page.KindText, Keep: 10, Show: page.PipeOnly}},
 		Items: []page.Item{{Group: &page.Group{
-			Head: row("jterrazz-mac-mini", page.OK, page.Text("host"), page.Text("jterrazz-mac-mini")),
+			Head: row("jterrazz-mac-mini", page.OK, page.Text("Mac"), page.Text("jterrazz-mac-mini")),
 			Items: []page.Item{
 				{Group: &page.Group{
 					Head: row("linux-1", page.OK, page.Text("permanent"), page.Text("jterrazz-mac-mini")),
 					Items: []page.Item{
 						{Link: &page.Link{Label: "8081", Lead: page.PortMap(8081, 40002), Value: page.URL("https://jterrazz-mac-mini.ts.net:40002"), Detail: page.Text("vite"), Page: "services", Row: "api"}},
-						it(row("web", page.OK, page.Text("service"), page.Text("jterrazz-mac-mini"))),
+						it(row("web", page.OK, page.Text("server"), page.Text("jterrazz-mac-mini"))),
 					},
 				}},
 				it(row("linux-2", page.Absent, page.Text("permanent"), page.Text("jterrazz-mac-mini"))),
@@ -157,8 +160,8 @@ func kitchen(edit func(*page.Page)) page.Page {
 		}}},
 	}
 	storage := page.Section{
-		ID: "storage", Title: "Storage",
-		Columns: []page.Column{{Key: "name", Label: "tool", Kind: page.KindText, Keep: 100}, {Key: "levels", Kind: page.KindLevels, Keep: 80, Levels: []string{"data", "kept"}}},
+		ID: "storage", Title: "Disk",
+		Columns: []page.Column{{Key: "name", Label: "app", Kind: page.KindText, Keep: 100}, {Key: "levels", Kind: page.KindLevels, Keep: 80, Levels: []string{"data", "kept"}}},
 		Items: []page.Item{
 			it(row("station", page.OK, page.Levels(page.Labeled("data", page.Size(275)), page.Labeled("kept", page.Size(546))))),
 			it(row(catalog.HypervisorTool, page.OK, page.Levels(page.Labeled("data", page.Size(73300000000))))),
@@ -169,9 +172,9 @@ func kitchen(edit func(*page.Page)) page.Page {
 		Items: []page.Item{
 			{Fact: &page.Fact{Key: "machine", Value: page.Text("jterrazz-macbook-pro")}},
 			{Fact: &page.Fact{Key: "uptime", Value: page.Duration(1951200)}},
-			{Note: &page.Note{Text: "Serve is off on the tailnet, so no service is reachable from another machine until it is turned on in the admin console."}},
+			{Note: &page.Note{Text: "Serve is off on Tailscale, so no shared port is reachable from another machine until it is turned on in the admin console."}},
 			{Error: &page.Error{Message: "defaults is not installed", Hint: "run station setup"}},
-			{Empty: &page.Empty{Noun: "lent secrets", Hint: page.Cmd("station secrets lend <name>")}},
+			{Empty: &page.Empty{Noun: "shared accounts", Hint: page.Cmd("station accounts share <account> --with <vm>")}},
 		},
 	}
 	peers := page.Section{

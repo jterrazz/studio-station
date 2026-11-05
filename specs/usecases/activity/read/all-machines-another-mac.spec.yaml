@@ -13,7 +13,7 @@ runs:
       exit: 0
       stdout: |
           ["jterrazz-mac-mini","jterrazz-mac-mini: disk almost full: 3 % free","station disk --on jterrazz-mac-mini"]
-    - command: 'disk --on jterrazz-mac-mini | /usr/bin/head -1'
+    - command: 'disk --on jterrazz-mac-mini | /usr/bin/sed -n 2p'
       exit: 0
       stdout: |
           ◐	jterrazz-mac-mini	79.0 GB free of 2.0 TB · 1 misplaced folder	station disk move ~/go

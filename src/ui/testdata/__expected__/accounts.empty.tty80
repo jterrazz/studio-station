@@ -1,15 +1,14 @@
- station accounts                                           host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+This Mac · 5 accounts · 0 signed in
 
- Accounts  1 ●  5 ○
-   ● jterrazz-macbook-pro  host
-   ├─ ○ GitHub                   not logged in
-        → station config install github-login
-   ├─ ○ npm                      not logged in                → npm login
-   ├─ ○ Claude                   not logged in                → claude /login
-   ├─ ○ Tailscale                not installed
-   └─ ○ git                      no user.name nor user.email
-        → git config --global user.name <name>
-   no VMs: rights lent to a VM appear here
+Accounts
+  ● jterrazz-macbook-pro  Mac
+  ├─ ○ GitHub                  not logged in
+       → station settings apply github-login
+  ├─ ○ npm                     not logged in                → npm login
+  ├─ ○ Claude                  not logged in                → claude /login
+  ├─ ○ Tailscale               not installed
+  └─ ○ git                     no user.name nor user.email
+       → git config --global user.name <name>
+  no VMs: accounts shared with a VM appear here
 
- → station machines create
+→ station machines create

@@ -22,7 +22,7 @@ runs:
           lives on	Macs
           fix	System Settings > General > Sharing > Remote Login
           expected	not expected on a laptop
-    - command: 'settings remote-login --on jterrazz-mac-mini | /usr/bin/head -1'
+    - command: 'settings remote-login --on jterrazz-mac-mini | /usr/bin/sed -n 2p'
       exit: 0
       stdout: |
           ●	remote-login	as expected · on

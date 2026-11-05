@@ -11,7 +11,7 @@
 ●	expired	2026-11-03T11:59:00Z
 ●	url	https://jterrazz-macbook-pro.tail1234.ts.net:40001
 ●	identity	admin@jterrazz.com
-●	path	/Applications/Tailscale.app/Contents/MacOS/Tailscale
+●	file	/Applications/Tailscale.app/Contents/MacOS/Tailscale
 ●	command	station apps update --method brew
 ●	list	brew · system
 ●	switch	on	3
@@ -19,9 +19,9 @@
 ◐	unknown	?		no answer in 2s
 # Marks
 ◐	outdated	attention	120 outdated · station apps update --method brew
-◐	stray	attention	out of place · station setup
+◐	misplaced	attention	misplaced · station disk move ~/.bun
 ◐	unreachable	attention	unreachable
-◐	mismatch	attention	station v2.0.0-240 here v2.0.0-242
+◐	mismatch	attention	station v2.0.0-240, This Mac v2.0.0-242
 ◐	unmanaged	attention	on PATH, not managed by cask
 ◐	missing	attention	installed, mise not installed · station apps install mise
 ◐	partial	attention	policy partly applied
@@ -29,31 +29,31 @@
 ◐	unset	attention	name not set · station setup
 ◐	stopped	attention	stopped · station engine start
 ◐	late	attention	no answer in 2s
-◐	degraded	attention	Serve is off on the tailnet
+◐	degraded	attention	Serve is off on Tailscale
 ◐	orphan	attention	orphan: Docker.app is gone · sudo launchctl bootout system/com.docker.vmnetd
 ○	waiting	absent	waiting
 ✗	failing	broken	failing · last exit 2
 ✗	refused	broken	refused
 ✗	down	broken	not running
 ✗	stale	broken	stale · station machines delete linux-2
-◐	expiring	attention	42m left · station secrets lend --to api operator:claude:oauth-token
-◐	guard	attention	28% · on battery · station power
+◐	expiring	attention	42m left · station accounts share claude --with api
+◐	guard	attention	28% · on battery · station awake
 ○	absent		station apps install mas
 ⊘	off-here	turned off on this machine
 –	not-for-this-machine	Macs only
 ?	not-known	does not answer
-# Fleet
-●	jterrazz-mac-mini	host	jterrazz-mac-mini
+# All machines
+●	jterrazz-mac-mini	Mac	jterrazz-mac-mini
 ●	linux-1	permanent	jterrazz-mac-mini
-●	web	service	jterrazz-mac-mini
+●	web	server	jterrazz-mac-mini
 ○	linux-2	permanent	jterrazz-mac-mini
-# Storage
+# Disk
 ●	station	data 275 B · kept 546 B
 ●	tart	data 73.3 GB
 # Prose
 machine	jterrazz-macbook-pro
 uptime	22d 14h
-	Serve is off on the tailnet, so no service is reachable from another machine until it is turned on in the admin console.
+	Serve is off on Tailscale, so no shared port is reachable from another machine until it is turned on in the admin console.
 ✗	error	defaults is not installed · run station setup
 	none
 	iphone	offline

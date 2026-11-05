@@ -7,7 +7,7 @@ env: terminal
 runs:
     - command: '--version >/dev/null; /bin/mkdir -p .cache/go-build && echo x > .cache/go-build/a'
       exit: 0
-    - command: '--version >/dev/null; terminal --size 120x80 /usr/bin/env -u NO_COLOR COLUMNS=120 STATION_MACHINE_KIND=linux "$STATION" disk | /usr/bin/grep -c "^ station disk"'
+    - command: '--version >/dev/null; terminal --size 120x80 /usr/bin/env -u NO_COLOR COLUMNS=120 STATION_MACHINE_KIND=linux "$STATION" disk | /usr/bin/grep -c " free of "'
       stdin: |
           within 1 see ● go
           within 1 see ◌ docker

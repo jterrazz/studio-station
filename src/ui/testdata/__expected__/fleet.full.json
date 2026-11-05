@@ -8,7 +8,7 @@
   "sections": [
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "fold": "open",
       "columns": [
         {
@@ -96,7 +96,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "here"
+                  "text": "This Mac"
                 },
                 {
                   "kind": "text",
@@ -354,7 +354,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "station v2.0.0-248 here v2.0.0-250"
+                  "text": "station v2.0.0-248, This Mac v2.0.0-250"
                 },
                 {
                   "kind": "count",
@@ -362,7 +362,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "station v2.0.0-248 here v2.0.0-250"
+                  "text": "station v2.0.0-248, This Mac v2.0.0-250"
                 }
               ],
               "reason": "mismatch"
@@ -419,10 +419,18 @@
           "keep": 60
         },
         {
+          "key": "mac",
+          "label": "on",
+          "kind": "text",
+          "keep": 40,
+          "show": "eye"
+        },
+        {
           "key": "on",
           "label": "on",
           "kind": "text",
-          "keep": 40
+          "keep": 40,
+          "show": "pipe"
         }
       ],
       "items": [
@@ -439,6 +447,10 @@
               {
                 "kind": "size",
                 "n": 4000000000
+              },
+              {
+                "kind": "text",
+                "text": "jterrazz-macbook-pro"
               },
               {
                 "kind": "text",
@@ -477,18 +489,25 @@
               {
                 "kind": "text",
                 "text": "jterrazz-macbook-pro"
+              },
+              {
+                "kind": "text",
+                "text": "jterrazz-macbook-pro"
               }
             ],
             "detail": {
               "kind": "text",
-              "text": "older: station images delete linux@2026.10.20"
+              "text": "older"
             },
-            "reason": "outdated"
+            "reason": "outdated",
+            "hint": {
+              "command": "station images delete linux@2026.10.20"
+            }
           }
         },
         {
           "row": {
-            "id": "mac-mini/linux@2026.11.01",
+            "id": "jterrazz-mac-mini/linux@2026.11.01",
             "mark": "ok",
             "label": "linux",
             "cells": [
@@ -502,7 +521,11 @@
               },
               {
                 "kind": "text",
-                "text": "mac-mini"
+                "text": "jterrazz-mac-mini"
+              },
+              {
+                "kind": "text",
+                "text": "jterrazz-mac-mini"
               }
             ],
             "detail": {
@@ -542,7 +565,7 @@
     },
     {
       "id": "tailnet",
-      "title": "Tailnet",
+      "title": "Tailscale",
       "fold": "auto",
       "columns": [
         {
@@ -574,7 +597,7 @@
           "row": {
             "id": "tailnet",
             "mark": "ok",
-            "label": "tailnet",
+            "label": "Tailscale",
             "cells": [
               {
                 "kind": "list",
@@ -803,7 +826,7 @@
     },
     {
       "key": "p",
-      "label": "probe",
+      "label": "health",
       "on": "row",
       "rows": [
         "linux-1",

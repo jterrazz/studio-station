@@ -8,151 +8,41 @@
   "state": "ready",
   "sections": [
     {
-      "id": "machines",
-      "title": "Machines",
-      "caption": [
-        {
-          "kind": "text",
-          "text": "31 settings"
-        },
-        {
-          "kind": "text",
-          "text": "4 machines"
-        },
-        {
-          "kind": "text",
-          "text": "20 need a look"
-        }
-      ],
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
       "columns": [
         {
-          "key": "name",
+          "key": "area",
           "kind": "text",
           "keep": 100
         },
         {
-          "key": "kind",
-          "kind": "text",
-          "keep": 40
-        },
-        {
-          "key": "state",
-          "kind": "text",
+          "key": "value",
+          "kind": "list",
           "keep": 60
         }
       ],
       "items": [
         {
           "row": {
-            "id": "jterrazz-macbook-pro",
+            "id": "summary/settings",
             "mark": "ok",
-            "label": "jterrazz-macbook-pro",
-            "short": "This Mac",
+            "label": "31 settings on 4 machines",
             "cells": [
-              {
-                "kind": "text",
-                "text": "Mac"
-              },
               {
                 "kind": "list",
                 "items": [
                   {
                     "kind": "text",
-                    "text": "read"
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "jterrazz-mac-mini",
-            "mark": "ok",
-            "label": "jterrazz-mac-mini",
-            "short": "mac-mini",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "Mac"
-              },
-              {
-                "kind": "list",
-                "items": [
-                  {
-                    "kind": "text",
-                    "text": "read"
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "linux-1",
-            "mark": "ok",
-            "label": "linux-1",
-            "short": "linux-1",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "Workspace"
-              },
-              {
-                "kind": "list",
-                "items": [
-                  {
-                    "kind": "text",
-                    "text": "read"
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "api",
-            "mark": "absent",
-            "label": "api",
-            "short": "api",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "Workspace"
-              },
-              {
-                "kind": "list",
-                "items": [
-                  {
-                    "kind": "text",
-                    "text": "stopped"
+                    "text": "20 need a look"
                   },
                   {
                     "kind": "text",
-                    "text": "last read 2 h ago"
+                    "text": "infra is a server: not checked"
                   }
                 ]
-              }
-            ],
-            "reason": "stopped"
-          }
-        },
-        {
-          "row": {
-            "id": "infra",
-            "mark": "not-for-this-machine",
-            "label": "infra",
-            "short": "infra",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "Server"
-              },
-              {
-                "kind": "text",
-                "text": "not checked: station does not manage its settings"
               }
             ]
           }
@@ -658,6 +548,159 @@
         {
           "mark": "attention",
           "n": 20
+        }
+      ]
+    },
+    {
+      "id": "machines",
+      "title": "Machines",
+      "fold": "brief",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 40
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro",
+            "mark": "ok",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Mac"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "read"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini",
+            "mark": "ok",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Mac"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "read"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "linux-1",
+            "mark": "ok",
+            "label": "linux-1",
+            "short": "linux-1",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Workspace"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "read"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "api",
+            "mark": "absent",
+            "label": "api",
+            "short": "api",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Workspace"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "stopped"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "last read 2 h ago"
+                  }
+                ]
+              }
+            ],
+            "reason": "stopped"
+          }
+        },
+        {
+          "row": {
+            "id": "infra",
+            "mark": "not-for-this-machine",
+            "label": "infra",
+            "short": "infra",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Server"
+              },
+              {
+                "kind": "text",
+                "text": "not checked: station does not manage its settings"
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 3
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        },
+        {
+          "mark": "not-for-this-machine",
+          "n": 1
         }
       ]
     },

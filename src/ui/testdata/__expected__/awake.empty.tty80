@@ -1,12 +1,11 @@
- station awake                                              host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+○ This Mac  Sleeps normally
+○ mac-mini  Sleeps normally
 
- Awake  2 ○
-   ○ jterrazz-macbook-pro  Sleeps normally
-   ○ jterrazz-mac-mini     Sleeps normally
+This Mac
+  lid           open
+  power source  AC · 80 % · not charging
+  thermal       nominal
+  screen        always turns off
 
- jterrazz-macbook-pro
-   lid      open
-   power    AC · 80 % · not charging
-   thermal  nominal
-   screen   always turns off
+→ station awake 4h --lid          this Mac
+→ station awake 4h --on mac-mini  another Mac

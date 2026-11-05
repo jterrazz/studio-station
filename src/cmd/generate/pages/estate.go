@@ -57,7 +57,7 @@ func failure(id page.ID, command, message, hint string) page.Page {
 
 func Estate() []Fixture {
 	var out []Fixture
-	for _, f := range [][]Fixture{homes(), settingsPages(), settingsMatrix(), disks(), fleets(), machineLists(), sshPages(), imageLists(), portLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), awakePages(), activityPages(), menubarPages()} {
+	for _, f := range [][]Fixture{homes(), overviewPages(), settingsPages(), settingsMatrix(), disks(), fleets(), machineLists(), sshPages(), imageLists(), portLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), awakePages(), activityPages(), menubarPages()} {
 		out = append(out, f...)
 	}
 	return out
@@ -144,7 +144,7 @@ func homes() []Fixture {
 	out := states("home",
 		pagehome.Snapshot(pendingSnapshot(), here(), false),
 		pagehome.Snapshot(calmSnapshot(), here(), false),
-		failure("home", "status", "status reads the host it runs on", "station overview --on <vm>"),
+		failure("home", "status", "status reads the Mac it runs on", "station overview --on <vm>"),
 		pagehome.Snapshot(snapshot(), here(), false))
 	return append(out, states("home-all",
 		pagehome.Snapshot(pendingSnapshot(), here(), true),
@@ -290,10 +290,10 @@ func disks() []Fixture {
 		return disk.Reading{Total: 994e9, Free: 388e9, Rows: disk.Classify(storageReport(pending)), Pending: pending}
 	}
 	return states("disk",
-		pagedisk.Read(reading(true), here()),
-		pagedisk.Read(disk.Reading{Total: 994e9, Free: 388e9}, here()),
+		pagedisk.Read(reading(true), here(), false),
+		pagedisk.Read(disk.Reading{Total: 994e9, Free: 388e9}, here(), false),
 		failure("disk", "disk", "the walk of ~ was refused: operation not permitted", "grant Full Disk Access to the terminal"),
-		pagedisk.Read(reading(false), here()))
+		pagedisk.Read(reading(false), here(), false))
 }
 
 func fleet() machines.Fleet {
@@ -326,7 +326,7 @@ func machineLists() []Fixture {
 		pending(pagemachines.List(fleet(), nil, here())),
 		pagemachines.List(machines.Fleet{}, nil, here()),
 		pagemachines.List(stoppedFleet(), nil, here()),
-		pagemachines.List(fleet(), []string{"mac-mini: station v2.0.0-248, here v2.0.0-250"}, here()))
+		pagemachines.List(fleet(), []string{"mac-mini: station v2.0.0-248, This Mac v2.0.0-250"}, here()))
 }
 
 // value: infra, a server of mac-mini, as This Mac reads it for its SSH
@@ -354,16 +354,20 @@ func imageReports() []images.Report {
 	return []images.Report{
 		{Record: images.Record{Name: "linux", Version: "2026.11.01", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 4}, Newest: true, VMs: []string{"linux-1", "api"}, Mac: "jterrazz-macbook-pro"},
 		{Record: images.Record{Name: "linux", Version: "2026.10.20", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-240", BuiltAt: built.AddDate(0, 0, -20), SizeGB: 4}, Mac: "jterrazz-macbook-pro"},
-		{Record: images.Record{Name: "linux", Version: "2026.11.01", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 4}, Newest: true, VMs: []string{"infra"}, Mac: "mac-mini"},
+		{Record: images.Record{Name: "linux", Version: "2026.11.01", Base: "ghcr.io/cirruslabs/ubuntu:24.04", Station: "v2.0.0-250", BuiltAt: built, SizeGB: 4}, Newest: true, VMs: []string{"infra"}, Mac: "jterrazz-mac-mini"},
 	}
 }
 
 func imageLists() []Fixture {
 	return states("images",
-		pending(pageimages.List(imageReports(), here())),
-		pageimages.List(nil, here()),
+		pending(pageimages.List(imageReports(), thisMacImages())),
+		pageimages.List(nil, thisMacImages()),
 		failure("images", "images", catalog.HypervisorTool+" is not installed", "station apps install "+catalog.HypervisorTool),
-		pageimages.List(imageReports(), here()))
+		pageimages.List(imageReports(), thisMacImages()))
+}
+
+func thisMacImages() page.Context {
+	return page.Context{Kind: "host", Machine: "jterrazz-macbook-pro", Registered: true}
 }
 
 func tailnetStatus() ports.Status {
@@ -480,8 +484,8 @@ func setupReport() setup.Report {
 	return setup.Report{Steps: []setup.Step{
 		{Name: "name", State: catalog.StateOK, Detail: "macbook"},
 		{Name: "zshrc", State: catalog.StateOK, Detail: "the station block", Changed: true},
-		{Name: "layout", State: catalog.StateDegraded, Detail: "~/." + catalog.HypervisorTool + " left in place", Log: "73 GB: move it with station setup --move"},
-		{Name: "tools", State: catalog.StateOK},
+		{Name: "layout", State: catalog.StateDegraded, Detail: "~/." + catalog.HypervisorTool + " not moved", Log: "73 GB: move it with station setup --move"},
+		{Name: "apps", State: catalog.StateOK},
 	}}
 }
 
@@ -489,15 +493,15 @@ func setups() []Fixture {
 	return states("setup",
 		pending(pagesetup.Outcome(setupReport(), here())),
 		pagesetup.Outcome(setup.Report{}, here()),
-		failure("outcome", "setup", "a VM is named by its host", "station setup on the host"),
+		failure("outcome", "setup", "a VM is named by its Mac", "station setup on its Mac"),
 		pagesetup.Outcome(setupReport(), here()))
 }
 
 func runs() []Fixture {
 	run := settings.ContainersOutcome{Shortcut: "dreset", Removals: []settings.ContainersRemoval{{What: "containers", Count: 3}, {What: "images", Count: 12}}}
 	return states("run",
-		pending(pagesettings.Removed(run, "run docker reset", here())),
-		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, "run docker reset", here()),
-		failure("outcome", "run docker reset", "docker ps failed: Cannot connect to the Docker daemon", "check that the docker daemon runs, then run it again"),
-		pagesettings.Removed(run, "run docker reset", here()))
+		pending(pagesettings.Removed(run, "run dreset", here())),
+		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, "run dreset", here()),
+		failure("outcome", "run dreset", "docker ps failed: Docker is not running", "start Docker, then run it again"),
+		pagesettings.Removed(run, "run dreset", here()))
 }

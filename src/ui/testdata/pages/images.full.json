@@ -3,10 +3,55 @@
   "id": "images",
   "command": "images",
   "context": {
-    "kind": "host"
+    "machine": "jterrazz-macbook-pro",
+    "kind": "host",
+    "registered": true
   },
   "state": "ready",
   "sections": [
+    {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/images",
+            "mark": "ok",
+            "label": "3 images on 2 Macs",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "1 older"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "macos not built yet"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
     {
       "id": "images",
       "title": "Images",
@@ -30,10 +75,18 @@
           "keep": 60
         },
         {
+          "key": "mac",
+          "label": "on",
+          "kind": "text",
+          "keep": 40,
+          "show": "eye"
+        },
+        {
           "key": "on",
           "label": "on",
           "kind": "text",
-          "keep": 40
+          "keep": 40,
+          "show": "pipe"
         }
       ],
       "items": [
@@ -50,6 +103,10 @@
               {
                 "kind": "size",
                 "n": 4000000000
+              },
+              {
+                "kind": "text",
+                "text": "This Mac"
               },
               {
                 "kind": "text",
@@ -87,19 +144,26 @@
               },
               {
                 "kind": "text",
+                "text": "This Mac"
+              },
+              {
+                "kind": "text",
                 "text": "jterrazz-macbook-pro"
               }
             ],
             "detail": {
               "kind": "text",
-              "text": "older: station images delete linux@2026.10.20"
+              "text": "older"
             },
-            "reason": "outdated"
+            "reason": "outdated",
+            "hint": {
+              "command": "station images delete linux@2026.10.20"
+            }
           }
         },
         {
           "row": {
-            "id": "mac-mini/linux@2026.11.01",
+            "id": "jterrazz-mac-mini/linux@2026.11.01",
             "mark": "ok",
             "label": "linux",
             "cells": [
@@ -114,6 +178,10 @@
               {
                 "kind": "text",
                 "text": "mac-mini"
+              },
+              {
+                "kind": "text",
+                "text": "jterrazz-mac-mini"
               }
             ],
             "detail": {

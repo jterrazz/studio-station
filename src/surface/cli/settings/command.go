@@ -69,7 +69,11 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagesettings.List(rows, d.Now(), in.All, d.Here), pagesettings.ListContract(rows))
+			here := d.Here
+			if env.Far() {
+				here = page.Context{Machine: env.Target().Name}
+			}
+			return io.Page(pagesettings.List(rows, d.Now(), in.All, here), pagesettings.ListContract(rows))
 		},
 	}, env)
 	cmd.AddCommand(children...)

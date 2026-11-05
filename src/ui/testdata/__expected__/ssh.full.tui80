@@ -1,6 +1,5 @@
  SSH  infra
-   ● ssh admin@infra
-     from any Mac: the block in ~/.ssh/config hops through mac-mini
+   ● ssh admin@infra  from any Mac: station's SSH block hops through mac-mini
    ● In an editor     Remote SSH to infra
    No password: your key. Files travel through the same name; no folder of a
    Mac is shared.

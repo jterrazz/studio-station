@@ -1,17 +1,12 @@
- station power                                              host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Power  1 ◌
-   ◌ awake
-
- Guards  4 ●
-   ● battery    80% · AC attached  ends a session at 20% on battery
-   ● low power  off                ends a session when it turns on
-   ● thermal    nominal            ends a session at serious, or heavy for 5m…
-   ● lid        open               closing it on battery ends a --lid session…
-
- Reading
-   lid        open
-   source     AC · 80% · not charging
-   low power  off
-   thermal    nominal (0)
+Awake
+  ◌ awake
+Guards
+  ● battery         80% · AC attached  ends a session at 20% on battery
+  ● low power mode  off                ends a session when it turns on
+  ● thermal         nominal            ends a session at serious, or heavy for…
+  ● lid             open               closing it on battery ends a --lid sess…
+Reading
+  lid             open
+  source          AC · 80% · not charging
+  low power mode  off
+  thermal         nominal (0)

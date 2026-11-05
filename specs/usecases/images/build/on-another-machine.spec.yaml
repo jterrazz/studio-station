@@ -5,6 +5,7 @@ runs:
     - command: 'images build linux --binary $HOME/station-linux --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	linux	2026.11.04	built
     - command: 'images --json | /usr/bin/jq -r ''.images[] | "\(.mac) \(.version)"'''
       exit: 0

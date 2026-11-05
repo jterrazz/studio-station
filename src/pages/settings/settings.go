@@ -183,11 +183,16 @@ func touched(rows []settings.Row) bool {
 }
 
 func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.Page {
-	// invariant: the Set by station group, then the Always-on Mac group folded
-	// on one line until one of it is applied here, then what is not for this
-	// machine folded on one line; --all unfolds both.
-	var set, always, away, checked []settings.Row
+	// invariant: the first line sums the machine up, then Needs a look lifts
+	// every row that needs one first, whatever its group; then the Set by station
+	// group, the Always-on Mac group folded on one line until one of it is
+	// applied here, the Checked group and what is not for this machine, each
+	// one line on a terminal (vision 07); --all unfolds them.
+	var set, always, away, checked, look []settings.Row
 	for _, r := range rows {
+		if lookAt(r) {
+			look = append(look, r)
+		}
 		switch {
 		case r.Group == settings.Checked:
 			checked = append(checked, r)
@@ -200,11 +205,21 @@ func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.
 		}
 	}
 	p := page.Page{ID: ID, Command: "settings", Context: here, Actions: actions()}
-	p.Sections = append(p.Sections, page.Section{ID: "set", Title: "Set by station", Fold: page.Auto, Columns: columns(), Items: items(set, now), PipeCounts: true})
+	p.Sections = append(p.Sections, firstLine(rows, len(look), here))
+	if len(look) > 0 {
+		p.Sections = append(p.Sections, page.Section{ID: "needs-a-look", Title: "Needs a look", Role: page.Lifted, Fold: page.Open, Columns: columns(), Items: items(look, now)})
+	}
+	if len(set) > 0 {
+		fold := page.Calm
+		if all {
+			fold = page.Open
+		}
+		p.Sections = append(p.Sections, page.Section{ID: "set", Title: "Set by station", Fold: fold, Columns: columns(), Items: items(set, now), PipeCounts: true})
+	}
 	if len(always) > 0 {
 		s := page.Section{ID: "always-on-mac", Title: "Always-on Mac", Columns: columns(), PipeCounts: true}
 		if all || touched(always) {
-			s.Items = items(always, now)
+			s.Fold, s.Items = brief(all), items(always, now)
 		} else {
 			s.Uncounted, s.PipeCounts = true, false
 			folded := alwaysOnFolded(always)
@@ -225,20 +240,95 @@ func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.
 		}
 		p.Sections = append(p.Sections, s)
 	}
-	p.Hints = []page.Hint{*page.Cmd("station settings apply"), *page.Cmd("station settings <setting>")}
+	p.Hints = next(set, all)
 	return page.Seal(p)
+}
+
+// invariant: one or two next steps (SPEC §5): apply what station sets,
+// counted when some of it waits, then every row, or one setting's detail
+// once every row shows.
+func next(set []settings.Row, all bool) []page.Hint {
+	apply := page.Hint{Command: "station settings apply"}
+	n := 0
+	for _, r := range set {
+		if r.State == settings.StateNotApplied || r.State == settings.StateChangedSince {
+			n++
+		}
+	}
+	if n > 0 {
+		apply.Text = "apply the " + strconv.Itoa(n)
+	}
+	if all {
+		return []page.Hint{apply, *page.Cmd("station settings <setting>")}
+	}
+	return []page.Hint{apply, {Command: "station settings --all", Text: "for every row"}}
+}
+
+// value: a row that needs a look: changed since it was applied, a checked
+// setting that is not as expected, or one that failed.
+func lookAt(r settings.Row) bool {
+	if r.Group == settings.Checked && r.State != settings.StateReading {
+		return r.Checked == settings.NeedsFix
+	}
+	return r.State == settings.StateChangedSince
+}
+
+// value: a calm group is one line on a terminal's page, open in the TUI
+// and the menu bar; --all unfolds it everywhere.
+func brief(all bool) page.Fold {
+	if all {
+		return page.Open
+	}
+	return page.Brief
+}
+
+// value: the first line: the machine, what station sets on it, what it
+// checks, and what needs a look (vision 07 "station settings").
+func firstLine(rows []settings.Row, look int, here page.Context) page.Section {
+	set, checked := 0, 0
+	for _, r := range rows {
+		switch {
+		case r.State == settings.StateNotForThisMachine, r.Group == settings.Checked && r.Checked == settings.CheckedNotForThisMachine:
+		case r.Group == settings.Checked:
+			checked++
+		case r.Group == settings.SetByStation:
+			set++
+		}
+	}
+	label := "This Mac"
+	if here.Machine != "" && here.Kind != string(catalog.Host) {
+		label = here.Machine
+	}
+	words := []string{strconv.Itoa(set) + " set by station here"}
+	if checked > 0 {
+		words = append(words, strconv.Itoa(checked)+" checked")
+	}
+	switch look {
+	case 0:
+		words = append(words, "nothing needs a look")
+	case 1:
+		words = append(words, "1 needs a look")
+	default:
+		words = append(words, strconv.Itoa(look)+" need a look")
+	}
+	mark := page.OK
+	if look > 0 {
+		mark = page.Attention
+	}
+	row := page.Row{ID: "summary/settings", Label: label, Mark: mark, Cells: []page.Value{page.Texts(words...)}}
+	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: []page.Item{{Row: &row}}}
 }
 
 // value: the Checked group; on a machine none of it lives on, one folded
 // line with the reason, unless every group is unfolded.
 func checkedSection(rows []settings.Row, all bool, now time.Time) page.Section {
-	s := page.Section{ID: "checked", Title: "Checked", Columns: columns(), Items: items(rows, now), PipeCounts: true}
+	s := page.Section{ID: "checked", Title: "Checked", Fold: brief(all), Columns: columns(), Items: items(rows, now), PipeCounts: true}
 	for _, r := range rows {
 		if r.Checked != settings.CheckedNotForThisMachine {
 			return s
 		}
 	}
-	s.Uncounted, s.PipeCounts = true, false
+	s.Fold, s.Uncounted, s.PipeCounts = "", true, false
 	if !all {
 		folded := page.Row{ID: "checked-not-for-this-machine", Label: strconv.Itoa(len(rows)) + " checked", Mark: page.NotForThisMachine, Cells: []page.Value{page.Texts("not for this machine", rows[0].Why)}}
 		s.Items = []page.Item{{Row: &folded}}

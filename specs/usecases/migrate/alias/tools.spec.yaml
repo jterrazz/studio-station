@@ -30,4 +30,3 @@ runs:
       exit: 0
       stdout: |
           station.apps.list/v1
-      stderr: ''

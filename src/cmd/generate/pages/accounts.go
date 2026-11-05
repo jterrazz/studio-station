@@ -26,7 +26,7 @@ func hostAccounts() accounts.Machine {
 		github(),
 		{Provider: catalog.ProviderNPM, State: catalog.StateBroken, Reason: accounts.ReasonRefused, Origin: accounts.OriginOwn, Identity: []string{"?"}, Detail: "token refused by registry.npmjs.org", Hint: "npm login"},
 		own(catalog.ProviderClaude, []string{"admin@jterrazz.com"}, []string{"max"}, "", "claude.ai"),
-		own(catalog.ProviderTailscale, []string{"jterrazz@github"}, []string{"tailnet jterrazz.github"}, "", "app-store"),
+		own(catalog.ProviderTailscale, []string{"jterrazz@github"}, []string{"jterrazz.github"}, "", "app-store"),
 		{Provider: catalog.ProviderCloudflare, State: catalog.StateAbsent, Reason: accounts.ReasonMissing, Detail: "wrangler not on PATH"},
 		own(catalog.ProviderGit, []string{"Jean-Baptiste Terrazzoni", "admin@jterrazz.com"}, nil, "", ""),
 		own(catalog.ProviderSSH, []string{"6 keys"}, []string{"admin@jterrazz.com", "station-image", "station-e2e", "deploy", "old-rsa", "github-actions"}, "", ""),
@@ -35,7 +35,7 @@ func hostAccounts() accounts.Machine {
 }
 
 func entryAccount() accounts.Account {
-	return own(catalog.ProviderEntry, []string{"1 host key"}, []string{"jterrazz-macbook-pro"}, "", "SHA256:76MCcfWNZv0Ixcc4fM0b6Ue1o8l7W1Xo0n3zKhK1Vy4")
+	return own(catalog.ProviderEntry, []string{"1 SSH key"}, []string{"jterrazz-macbook-pro"}, "", "SHA256:76MCcfWNZv0Ixcc4fM0b6Ue1o8l7W1Xo0n3zKhK1Vy4")
 }
 
 func accountsReport() accounts.Report {
@@ -50,7 +50,7 @@ func accountsReport() accounts.Report {
 			entryAccount(),
 		}},
 		{Name: "api", Kind: accounts.KindVM, Lifetime: "permanent", Running: true, Guest: accounts.GuestConnected, Accounts: []accounts.Account{
-			lent(catalog.ProviderClaude, catalog.ClaudeTokenName, 42*time.Minute, catalog.StateDegraded, accounts.ReasonExpiring, "station secrets lend --to api "+catalog.ClaudeTokenName),
+			lent(catalog.ProviderClaude, catalog.ClaudeTokenName, 42*time.Minute, catalog.StateDegraded, accounts.ReasonExpiring, "station accounts share claude --with api"),
 			entryAccount(),
 		}},
 	}}
@@ -58,7 +58,7 @@ func accountsReport() accounts.Report {
 
 func emptyAccounts() accounts.Report {
 	return accounts.Report{Now: accountsNow, Daemon: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "jterrazz-macbook-pro", Kind: accounts.KindHost, Here: true, Accounts: []accounts.Account{
-		{Provider: catalog.ProviderGitHub, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "station config install github-login"},
+		{Provider: catalog.ProviderGitHub, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "station settings apply github-login"},
 		{Provider: catalog.ProviderNPM, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "npm login"},
 		{Provider: catalog.ProviderClaude, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "claude /login"},
 		{Provider: catalog.ProviderTailscale, State: catalog.StateAbsent, Reason: accounts.ReasonMissing, Detail: "not installed"},

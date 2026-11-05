@@ -32,7 +32,7 @@ func VMPage(o VMOverview, s *overview.Summary, here page.Context, all bool) page
 	// machine, its first line from All machines, then its sections as it reads
 	// them inside (nil while it does not run or does not answer), then health.
 	vm := o.VM
-	on := page.Section{ID: "on", Role: page.Banner, Uncounted: true, Items: []page.Item{{Note: &page.Note{Text: "On " + vm.Name + ":"}}}}
+	on := page.OnMachine(vm.Name)
 	if o.unreachable() {
 		row := page.Row{ID: vm.Name, Label: vm.Name, Mark: page.Broken, Reason: page.Unreachable, Cells: []page.Value{page.Text("is on " + o.on() + ", which does not answer")}}
 		return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, Sections: []page.Section{on, {
@@ -291,7 +291,7 @@ func SSHPage(o VMOverview, target machines.SSHTarget, here page.Context) page.Pa
 	// path that reaches it from This Mac, and what station leaves to the
 	// owner's tooling; station opens it for debugging only.
 	vm, mac := o.VM, o.Mac
-	door := page.Row{ID: "command", Label: target.Command, Mark: page.OK, Cells: []page.Value{page.Text("from any Mac: the block in ~/.ssh/config hops through " + o.on())}}
+	door := page.Row{ID: "command", Label: target.Command, Mark: page.OK, Cells: []page.Value{page.Text("from any Mac: station's SSH block hops through " + o.on())}}
 	editor := page.Row{ID: "editor", Label: "In an editor", Mark: page.OK, Cells: []page.Value{page.Text("Remote SSH to " + vm.Name)}}
 	reached := []page.Row{
 		{ID: "to-mac", Label: "This Mac to " + o.on(), Mark: page.OK, Cells: []page.Value{page.List(page.Text("over "+catalog.TailnetProduct), page.Text("as "+mac.User))}},

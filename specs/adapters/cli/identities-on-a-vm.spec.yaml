@@ -6,4 +6,4 @@ runs:
     - command: '--version > /dev/null; /bin/mkdir -p .ssh; printf ''# >>> station hosts >>>\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl jterrazz-macbook-pro\n# <<< station hosts <<<\n'' > .ssh/authorized_keys; STATION_MACHINE_KIND=linux "$STATION" accounts --json | /usr/bin/jq -c ''[.machine.kind, [.accounts[].name], (.accounts[]|select(.name=="entry")|[.who, .scope, .detail])]'''
       exit: 0
       stdout: |
-          ["workspace",["github","npm","claude","cloudflare","git","ssh","docker","entry"],["1 host key","jterrazz-macbook-pro","SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU"]]
+          ["workspace",["github","npm","claude","cloudflare","git","ssh","docker","entry"],["1 SSH key","jterrazz-macbook-pro","SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU"]]

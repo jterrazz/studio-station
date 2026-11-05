@@ -188,6 +188,9 @@ func (l List) match(r page.Row) bool {
 func (l List) lines(st token.Styles, width, columns int) []organism.Line {
 	var out []organism.Line
 	for _, s := range l.Page.Sections {
+		if s.Role == page.Lifted {
+			continue
+		}
 		g := organism.Grid{Styles: st, Section: s, Width: width, Medium: molecule.TUI, Keys: molecule.NoKeys, Folded: l.folded, Match: l.match}
 		body := g.Lines()
 		rows := slices.ContainsFunc(body, func(x organism.Line) bool { return x.Kind == organism.LineRow && x.Key != "" })
@@ -198,7 +201,7 @@ func (l List) lines(st token.Styles, width, columns int) []organism.Line {
 			out = append(out, organism.Line{Kind: organism.LineOther})
 		}
 		if s.Title != "" || len(s.Caption) > 0 {
-			title := organism.Title(st, s)
+			title := organism.CountedTitle(st, s)
 			key := ""
 			if organism.AutoFolded(s) {
 				title, key = organism.FoldTitle(st, s, l.folded(s.ID), width), s.ID

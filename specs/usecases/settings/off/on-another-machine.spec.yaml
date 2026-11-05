@@ -4,10 +4,12 @@ runs:
     - command: 'settings apply dns --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	dns	dns: applied
     - command: 'settings off dns --yes --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	dns	dns: undone
     - command: 'settings dns --on jterrazz-mac-mini --json | /usr/bin/jq -r .setting.state'
       exit: 0

@@ -22,7 +22,7 @@ type Input struct{ Names []string }
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:       "update [<image>...]",
-		Short:     "Fetch the newest published version of images; bare, of every image held here",
+		Short:     "Fetch the newest released version of images; bare, of every image held here",
 		Example:   "  station images update\n  station images update linux",
 		Args:      cobra.ArbitraryArgs,
 		ValidArgs: imageNames(),

@@ -1,7 +1,7 @@
-# Fleet
+# All machines
 ●	macbook	mac			online	-	0 VMs
 # Images
 ○	linux				not built yet
 ○	macos				not built yet
-# Tailnet
-○	tailnet	not installed	station apps install tailscale
+# Tailscale
+○	Tailscale	not installed	station apps install tailscale

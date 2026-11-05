@@ -1,4 +1,4 @@
- SSH  2 ◌  infra
+ SSH  infra  2 ◌
    ◌ ssh admin@infra
    ◌ In an editor
    No password: your key. Files travel through the same name; no folder of a

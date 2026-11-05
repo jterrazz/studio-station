@@ -9,6 +9,42 @@
   "state": "loading",
   "sections": [
     {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/ports",
+            "mark": "pending",
+            "label": "Every Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
       "id": "tailnet",
       "title": "Tailscale",
       "role": "banner",

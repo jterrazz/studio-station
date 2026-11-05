@@ -1,33 +1,18 @@
- station status                                             host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+To do
+  no actions
+Summary
+  ● Machine     Mac · Darwin 27.0.0 …    ● Apps          1 ●
+  ● Network     192.168.1.152 · 4/4 on   ● Settings      1 ●
+  ● Tailscale   jterrazz-macbook-pro …   ● Disk          27.9 GB reclaimable
+  ● Identity    admin@jterrazz.com …     ● All machines  engine running v2.0.0…
+  ● Background  1 job
+Machine      ● 4 · name, uptime, setup, engine
+Environment  ● 8 · local ip, filevault, firewall, sip, gatekeeper, macos, …
+Workspace    ● 1 · disk
+Identity     ● 2 · git email, git signing
+Background   ● 1
+Apps         ● 1
+Settings     ● 1
 
- To do
-   no actions
-
- Summary
-   ● Machine     host · Darwin 27.0.0 · up 22d 14h
-   ● Network     192.168.1.152 · 4/4 on
-   ● Tailnet     jterrazz-macbook-pro · Serve on
-   ● Identity    admin@jterrazz.com · signing on
-   ● Background  1 job
-   ● Tools       1 ●
-   ● Config      1 ●
-   ● Storage     27.9 GB reclaimable
-   ● Fleet       engine running v2.0.0-250
-
- Machine  4 ●
-
- Environment  8 ●
-
- Workspace  1 ●
-
- Identity  2 ●
-
- Background  1 ●
-
- Tools  1 ●
-
- Config  1 ●
-
- → station overview --all for every row
- → station overview | cat for records
+→ station overview --all  for every row
+→ station overview | cat  for records

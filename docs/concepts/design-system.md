@@ -22,7 +22,7 @@ Semantic tokens, each a light and a dark value chosen by the terminal's backgrou
 | `Subtle`    | rules and unfocused borders only; never text that carries meaning |
 | `Surface`   | borders and the modal frame                                       |
 | `Selection` | the cursor row's background                                       |
-| `Accent`    | the focused border, section titles, the header name               |
+| `Accent`    | the focused border, the header name                               |
 | `Good`      | `●`                                                               |
 | `Warn`      | `◐`                                                               |
 | `Bad`       | `✗` and `Error:`                                                  |
@@ -46,21 +46,18 @@ The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinfor
 
 ## Typography
 
-- The left margin is one space. Headers, rules, section titles and hints start at the margin; rows start two columns in.
-- A blank line precedes every section. A section title is `Accent` and bold, followed by its counts (`58 ●  2 ◐  14 ○`, each in its mark's tone).
+- On a terminal, a CLI page starts at the first column with the line that sums it up (`This Mac · 108 apps for this Mac · 2 updates`), in plain text, then one blank line; the line is never cut: a part it cannot hold goes on the next line, two columns in; its sections read on without one, rows two columns in, and a section with nothing to do is one line. The TUI keeps a one-space margin.
+- A section title is `Text` and bold, bright with no hue (vision 07). A titled first line leads with its machine in bold (`This Mac`); its counts stay `Text`, as state colours are on marks only (K1). In a value, only a glyph takes its mark's colour, the words around it stay `Text` (`● 39 ok`). An open section's title counts nothing; a folded one is one line: its title, its count by mark (`○ 34`), then as many of its rows' names as fit (`yazi, dust, eza, …`). A brief section (`page.Brief`) is folded so on a terminal and open in the TUI; a calm one (`page.Calm`) is folded so on a terminal and, in the TUI, folded while every row is calm, as an `Auto` one is. A section that only says something is one line on a terminal too, its title then its words (`Not for this machine  7 apps live on other machines`), and so is a calm section of one row with nothing to do: its title, the row's mark and its words (`Always-on Mac   ○ 5 · for a Mac that hosts servers`), or the row alone when its label already says the title (`– 12 not for this machine · Mac only`); a table, whose columns are headed, keeps its heads.
+- What needs you comes first. A page whose rows that need a look stay in their own groups lifts them first on a terminal, in a section of the role `page.Lifted` (Settings' `Needs a look`); the pipe, the TUI and the menu bar read those rows where they are, so a record is printed once.
+- Another machine's output starts with `On <machine>:`, the machine `--on` named (tty and pipe).
 - A row is a mark, a space, then cells separated by two spaces. Column widths are computed per document, so every section lines up, and the last cell is never padded.
-- A cell is a name (strong), a value, a method (muted), then a detail (muted, cut with `…` to the width by its kind, a path in its middle, never cut in a pipe; beside the row's own cells when its last columns are blank and the aligned place would cut it; never cut below its kind's floor: a path or a URL then goes on its own line under the row, any other detail is lost on that width). A long path in a column is cut in the middle before it takes a detail's room. A row that is not `●` may end with the one command that repairs it.
+- A cell is a name (strong), a value, a method (muted), then a detail (muted, cut with `…` to the width by its kind, a path in its middle, never cut in a pipe; beside the row's own cells when its last columns are blank and the aligned place would cut it; never cut below its kind's floor: a path or a URL then goes on its own line under the row, any other detail is lost on that width). A long path in a column is cut in the middle before it takes a detail's room. A row that is not `●` may end with the one command that repairs it. On a terminal a name is never cut, nor a command (a column of `page.KindCommand`, as Needs you's fixes): a row whose name is wider than the name column, or whose command does not fit beside the names, writes its name whole and its cells, detail and hint on the lines under it, at the name's column.
 - Sizes are humanised by one function; numbers are right-aligned.
 - An empty state is one muted row (`none`, `nothing to free`, `no machines registered`) plus a hint naming the command that fills it.
 
 ## Header and footer
 
-```text
- station apps                                                 macbook · host
- ────────────────────────────────────────────────────────────────────────────
-```
-
-Left, `station` and the command path; right, this machine's name and kind. A rule runs under it. The footer is a blank line, then the hints, one per line, each prefixed `→ `.
+A CLI page has no header: its first line says where it is (`This Mac · …`, `On mac-mini:`). The TUI draws its own header (UI-SPEC). The footer is a blank line, then the next steps, one per line, each prefixed `→ `, their words after the command at one column for the page.
 
 ## Instant reads
 
@@ -68,7 +65,7 @@ Left, `station` and the command path; right, this machine's name and kind. A rul
 
 ## Pipe and JSON
 
-When stdout is not a terminal, or `NO_COLOR` is set, a document prints as records, one per line, with no header, rule, footer or padding and no colour sequence. The separator is a tab everywhere:
+When stdout is not a terminal, or `NO_COLOR` is set, a document prints as records, one per line, with no rule, footer or padding and no colour sequence. The separator is a tab everywhere:
 
 - a section title is `# <title>`; the tools and config categories, and the status Tools, Config and Background sections, follow it with their counts as `<n> <glyph>` cells (every other title is bare, as its records always were); Secrets' Lend list and Kept, one section on a terminal and in the TUI, pipe as the two titled sections `# Lend list` and `# Kept`;
 - a column for the eye only (a peer's online state and tags, a host's role) is no field: the records keep the fields scripts already cut;

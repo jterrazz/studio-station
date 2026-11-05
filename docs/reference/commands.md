@@ -12,7 +12,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Plumbing       | The hidden commands the machine runs for itself      |
 | Exit codes     | What 0, 1, 2 and 130 mean                            |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `ports`, `accounts`, `background`, `power`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `activity`, `apps`, `settings`, `disk`, `ports`, `accounts`, `background`, `awake`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
@@ -82,7 +82,7 @@ A setting that needs values asks them in a form on a terminal and is refused els
 station disk [--json] # the volume, then Misplaced, Can rebuild, Your data, Never touched, with sizes; nothing runs
 station disk free [<app...>] # empty what an app can rebuild with its own command; bare = every Can rebuild row
 station disk erase <app> [--confirm=<app>] # erase an app's data, back to factory; its name typed
-station disk move <folder> # move a misplaced folder where its app's own config says
+station disk move <folder> # move a misplaced folder where its app expects it
 ```
 
 `free` and `move` ask nothing: nothing is lost. `erase` is always one app, its name typed, and refuses while the app runs or on a Never touched row. A stale VM goes with `station machines delete`, an old image version with `station images delete`. The v2 `station storage`, `storage clean` and `storage reset` are hidden aliases for one release. See [Disk](disk.md).
@@ -145,7 +145,7 @@ station ports undeclare [<machine>] <port> [--yes]     # take the declaration ba
 ```sh
 station images [--json] # every Mac's, one row per version per Mac
 station images build [<image...>] [--binary <linux station binary>]
-station images update [<image...>] # the newest published version
+station images update [<image...>] # the newest released version
 station images delete <image>[@<version>] [--yes]
 ```
 

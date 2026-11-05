@@ -4,6 +4,7 @@ runs:
     - command: 'machines create --permanent --on y'
       exit: 0
       stdout: |
+          	On y:
           ●	Running
           ●	Has an address
           ●	SSH answers

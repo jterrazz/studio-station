@@ -4,6 +4,7 @@ runs:
     - command: 'disk move ~/go --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	~/go	nothing to move: its rebuildable files freed
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].disk.files | keys'' world.json'
       exit: 0

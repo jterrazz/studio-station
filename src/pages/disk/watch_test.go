@@ -81,7 +81,7 @@ func TestNoSectionFlickers(t *testing.T) {
 	defer cancel()
 	var pages []page.Page
 	for r := range s.Watch(ctx) {
-		pages = append(pages, Read(disk.Reading{Rows: disk.Classify(r)}, page.Context{Kind: "host"}))
+		pages = append(pages, Read(disk.Reading{Rows: disk.Classify(r)}, page.Context{Kind: "host"}, false))
 	}
 	if len(pages) < 5 {
 		t.Fatalf("the watch sent %d values, want one per staggered answer", len(pages))

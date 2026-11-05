@@ -1,13 +1,11 @@
- station machines                                                               host · unregistered
- ──────────────────────────────────────────────────────────────────────────────────────────────────
+4 machines · 2 running · 1 stopped · 2 need you
 
- 4 machines · 2 running · 1 stopped · 2 need you
-     MACHINE     KIND       STATE                CPU    MEMORY
-   ✗ This Mac    Mac        Engine stopped
-   ├─ ○ api      Workspace  Stopped · permanent  4 CPU  8 GB
-   └─ ● linux-1  Workspace  Running · throwaway  4 CPU  4 GB
-   ✗ mac-mini    Mac        Unreachable
+    MACHINE     KIND       STATE                CPU    MEMORY
+  ✗ This Mac    Mac        Engine stopped
+  ├─ ○ api      Workspace  Stopped · permanent  4 CPU  8 GB
+  └─ ● linux-1  Workspace  Running · throwaway  4 CPU  4 GB
+  ✗ mac-mini    Mac        Unreachable
 
- Needs you
-   ✗ This Mac  has its engine stopped  → station engine start
-   ✗ mac-mini  does not answer
+Needs you
+  ✗ This Mac  has its engine stopped  → station engine start
+  ✗ mac-mini  does not answer

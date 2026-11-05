@@ -8,6 +8,6 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-           station settings                                           host · unregistered
+      stdout: |
+          This Mac · 17 set by station here · 9 checked · nothing needs a look
           no spinner

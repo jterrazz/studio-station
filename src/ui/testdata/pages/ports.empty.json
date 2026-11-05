@@ -9,6 +9,49 @@
   "state": "ready",
   "sections": [
     {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/ports",
+            "mark": "ok",
+            "label": "This Mac",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "0 ports"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "nothing needs you"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
       "id": "tailnet",
       "title": "Tailscale",
       "role": "banner",

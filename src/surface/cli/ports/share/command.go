@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 	pageports "github.com/jterrazz/studio-station/src/pages/ports"
@@ -21,7 +22,7 @@ type Input struct{ VM, Port string }
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:   "share <vm> <port>",
-		Short: "Reserve a VM's port now and share it on the tailnet, its URL printed before anything listens; inside a VM, the port alone",
+		Short: "Reserve a VM's port now and share it on " + catalog.TailnetProduct + ", its URL printed before anything listens; inside a VM, the port alone",
 		Example: "  station ports share linux-1 3000\n" +
 			"  API_URL=$(station ports share 3000) pnpm dev     # inside a VM",
 		Args: cobra.RangeArgs(1, 2),

@@ -12,16 +12,24 @@ import (
 )
 
 func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) string, here page.Context) page.Page {
-	// invariant: the machines first, each read now, kept from its last read
-	// or said silent, and the servers that are no column; then what needs a
-	// look, with its gesture; then one row per setting and one column per
+	// invariant: the first line counts the settings, the machines and what
+	// needs a look; then what needs a look, with its gesture; then the
+	// machines, each read now, kept from its last read or said silent, and
+	// the servers that are no column, one line while each answers; then one
+	// row per setting and one column per
 	// machine, a group's rows that need no look folded on one line unless
 	// every row is unfolded.
 	p := page.Page{ID: ID, Command: "settings --all-machines", Context: here}
-	p.Sections = append(p.Sections, machinesSection(m, now, label))
+	machines := machinesSection(m, now, label)
+	p.Sections = append(p.Sections, matrixLine(m, machines.Caption))
+	machines.Caption = nil
+	if !all && calm(machines) {
+		machines.Fold, machines.Uncounted = page.Brief, false
+	}
 	if look := lookSection(m, now, label); len(look.Items) > 0 {
 		p.Sections = append(p.Sections, look)
 	}
+	p.Sections = append(p.Sections, machines)
 	for _, g := range []struct {
 		group settings.Group
 		id    string
@@ -37,6 +45,34 @@ func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) strin
 	return page.Seal(p)
 }
 
+// value: the first line: how many settings on how many machines, what
+// needs a look, and the servers station checks nothing on (vision 07
+// "station settings --all-machines").
+func matrixLine(m settings.Matrix, caption []page.Value) page.Section {
+	words := []string{}
+	for _, c := range caption[2:] {
+		words = append(words, c.Text)
+	}
+	if len(words) == 0 {
+		words = append(words, "nothing needs a look")
+	}
+	for _, name := range m.Servers {
+		words = append(words, name+" is a server: not checked")
+	}
+	row := page.Row{ID: "summary/settings", Label: caption[0].Text + " on " + caption[1].Text, Mark: page.OK, Cells: []page.Value{page.Texts(words...)}}
+	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: []page.Item{{Row: &row}}}
+}
+
+// value: a machines section with no machine that fails to answer.
+func calm(s page.Section) bool {
+	for _, it := range s.Items {
+		if it.Row == nil || it.Row.Mark == page.Broken {
+			return false
+		}
+	}
+	return true
+}
+
 func machinesSection(m settings.Matrix, now time.Time, label func(string) string) page.Section {
 	looks := 0
 	for _, r := range m.Rows {
@@ -49,6 +85,9 @@ func machinesSection(m settings.Matrix, now time.Time, label func(string) string
 	caption := []page.Value{page.Text(strconv.Itoa(len(m.Rows)) + " settings"), page.Text(strconv.Itoa(len(m.Columns)) + " machines")}
 	if looks > 0 {
 		caption = append(caption, page.Text(strconv.Itoa(looks)+" need a look"))
+		if looks == 1 {
+			caption[2] = page.Text("1 needs a look")
+		}
 	}
 	cols := []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "kind", Kind: page.KindText, Keep: 40}, {Key: "state", Kind: page.KindText, Keep: 60}}
 	s := page.Section{ID: "machines", Title: "Machines", Caption: caption, Columns: cols, Uncounted: true}

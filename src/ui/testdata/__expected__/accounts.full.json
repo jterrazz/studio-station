@@ -8,6 +8,57 @@
   "state": "ready",
   "sections": [
     {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/accounts",
+            "mark": "ok",
+            "label": "This Mac",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "8 accounts"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "6 signed in"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "1 needs you"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "shared with 2 VMs"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
       "id": "accounts",
       "title": "Accounts",
       "columns": [
@@ -48,7 +99,7 @@
               "cells": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 }
               ],
               "reason": "degraded"
@@ -201,7 +252,7 @@
                       "items": [
                         {
                           "kind": "text",
-                          "text": "tailnet jterrazz.github"
+                          "text": "jterrazz.github"
                         }
                       ]
                     },
@@ -400,7 +451,7 @@
                     },
                     {
                       "kind": "text",
-                      "text": "lent"
+                      "text": "shared"
                     },
                     {
                       "kind": "list",
@@ -458,7 +509,7 @@
                   "cells": [
                     {
                       "kind": "identity",
-                      "text": "1 host key"
+                      "text": "1 SSH key"
                     },
                     {
                       "kind": "text",
@@ -626,7 +677,7 @@
                     },
                     {
                       "kind": "text",
-                      "text": "lent"
+                      "text": "shared"
                     },
                     {
                       "kind": "list",
@@ -645,7 +696,7 @@
                   ],
                   "reason": "expiring",
                   "hint": {
-                    "command": "station secrets lend --to api operator:claude:oauth-token"
+                    "command": "station accounts share claude --with api"
                   }
                 }
               },
@@ -658,7 +709,7 @@
                   "cells": [
                     {
                       "kind": "identity",
-                      "text": "1 host key"
+                      "text": "1 SSH key"
                     },
                     {
                       "kind": "text",
@@ -713,7 +764,7 @@
   "actions": [
     {
       "key": "l",
-      "label": "lend",
+      "label": "share",
       "on": "row",
       "priority": 1,
       "mutates": true

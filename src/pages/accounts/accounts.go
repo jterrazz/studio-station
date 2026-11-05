@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -61,12 +62,19 @@ func detail(a accounts.Account, more ...string) page.Value {
 	return page.Texts(append(append(more, a.Source, a.Detail), a.Notes...)...)
 }
 
+// invariant: a copy shared with a VM says so (SPEC §2.2: `lend` retired);
+// the contract keeps its origin values.
 func origin(a accounts.Account) page.Value {
-	if a.Origin == accounts.OriginBoth {
-		return page.Texts(accounts.OriginOwn, accounts.OriginLent)
+	switch a.Origin {
+	case accounts.OriginBoth:
+		return page.Texts(accounts.OriginOwn, shared)
+	case accounts.OriginLent:
+		return page.Text(shared)
 	}
 	return page.Text(a.Origin)
 }
+
+const shared = "shared"
 
 func identity(a accounts.Account) page.Value {
 	if len(a.Identity) == 0 {
@@ -140,8 +148,11 @@ func worst(rows []page.Row) page.Mark {
 func head(m accounts.Machine, rows []page.Row) page.Row {
 	h := page.Row{ID: m.Name, Label: m.Name, Mark: worst(rows)}
 	kind := m.Kind
-	if m.Kind == accounts.KindVM {
+	switch m.Kind {
+	case accounts.KindVM:
 		kind = m.Lifetime
+	case accounts.KindHost:
+		kind = "Mac"
 	}
 	cells := []page.Value{page.Text(kind)}
 	switch {
@@ -220,7 +231,7 @@ func Section(r accounts.Report) page.Section {
 		d := daemonRow(r.Daemon)
 		s.Items = append(s.Items, page.Item{Row: &d})
 	case vms == 0 && len(r.Machines) > 0 && r.Machines[0].Kind == accounts.KindHost:
-		s.Items = append(s.Items, page.Item{Note: &page.Note{Text: "no VMs: rights lent to a VM appear here"}})
+		s.Items = append(s.Items, page.Item{Note: &page.Note{Text: "no VMs: accounts shared with a VM appear here"}})
 	}
 	return s
 }
@@ -230,7 +241,7 @@ func stopped(r accounts.Report) bool {
 }
 
 func Page(r accounts.Report, here page.Context) page.Page {
-	p := page.Page{ID: "accounts", Command: "accounts", Context: here, Sections: []page.Section{Section(r)}}
+	p := page.Page{ID: "accounts", Command: "accounts", Context: here, Sections: []page.Section{firstLine(r, here), Section(r)}}
 	if len(r.Machines) == 1 && r.Machines[0].Kind == accounts.KindHost && !stopped(r) {
 		p.Hints = []page.Hint{*page.Cmd("station machines create")}
 	}
@@ -240,8 +251,67 @@ func Page(r accounts.Report, here page.Context) page.Page {
 
 func Actions() []page.Action {
 	return []page.Action{
-		{Key: KeyLend, Label: "lend", On: page.OnRow, Priority: 1, Mutates: true},
+		{Key: KeyLend, Label: "share", On: page.OnRow, Priority: 1, Mutates: true},
 		{Key: KeyRevoke, Label: "revoke", On: page.OnRow, Priority: 2, Mutates: true},
 		{Key: KeyReload, Label: "reload", On: page.OnPage, Priority: 3},
 	}
+}
+
+// value: the first line: the machine, its accounts, what needs you and the
+// VMs its accounts are shared with.
+func firstLine(r accounts.Report, here page.Context) page.Section {
+	r = r.Resolved()
+	label := "This Mac"
+	if here.Machine != "" && here.Kind != string(accounts.KindHost) {
+		label = here.Machine
+	}
+	var words []string
+	shared := 0
+	for _, m := range r.Machines {
+		if !m.Here {
+			for _, a := range m.Accounts {
+				if a.Lent != nil {
+					shared++
+					break
+				}
+			}
+			continue
+		}
+		in, needs, reading := 0, 0, false
+		for _, a := range m.Accounts {
+			switch mark(a) {
+			case page.OK:
+				in++
+			case page.Broken, page.Attention:
+				needs++
+			case page.Awaiting:
+				reading = true
+			case page.Unjudged, page.Absent, page.OffHere, page.NotForThisMachine, page.NotKnown:
+			}
+		}
+		switch len(m.Accounts) {
+		case 0:
+			words = append(words, "no account yet")
+		case 1:
+			words = append(words, "1 account", strconv.Itoa(in)+" signed in")
+		default:
+			words = append(words, strconv.Itoa(len(m.Accounts))+" accounts", strconv.Itoa(in)+" signed in")
+		}
+		switch {
+		case reading:
+			words = append(words, "reading")
+		case needs == 1:
+			words = append(words, "1 needs you")
+		case needs > 1:
+			words = append(words, strconv.Itoa(needs)+" need you")
+		}
+	}
+	switch {
+	case shared == 1:
+		words = append(words, "shared with 1 VM")
+	case shared > 1:
+		words = append(words, "shared with "+strconv.Itoa(shared)+" VMs")
+	}
+	row := page.Row{ID: "summary/accounts", Label: label, Mark: page.OK, Cells: []page.Value{page.Texts(words...)}}
+	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: []page.Item{{Row: &row}}}
 }

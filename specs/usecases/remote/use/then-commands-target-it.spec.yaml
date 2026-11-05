@@ -9,13 +9,10 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-           station use                                        jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────
+      stdout: |
+          On linux-1 in this terminal. Other terminals stay on This Mac.
 
-             On linux-1 in this terminal. Other terminals stay on This Mac.
-
-           → station use - to go back
+          → station use -  to go back
     - command: 'settings > used.txt; "$STATION" settings --on linux-1 | /usr/bin/cmp used.txt -'
       exit: 0
     - command: 'settings > used.txt; "$STATION" settings --on jterrazz-macbook-pro | /usr/bin/cmp -s used.txt - || echo not This Mac'

@@ -2,6 +2,7 @@ package atom
 
 import (
 	"strconv"
+	"strings"
 
 	"charm.land/lipgloss/v2"
 
@@ -72,3 +73,44 @@ func KeyName(key string) string {
 }
 
 func Count(t page.Tally) string { return strconv.Itoa(t.N) + " " + Glyph(t.Mark) }
+
+func Paint(st token.Styles, base lipgloss.Style, v page.Value, text string) string {
+	// invariant: OU-01: in a value's text only its glyphs take their mark's
+	// tone; the words around them stay in base, so a one-line section reads
+	// `● 5 ok · ◐ 3 updates` with its two glyphs toned and nothing else.
+	marks := map[string]page.Mark{}
+	marksOf(v, marks)
+	if len(marks) == 0 || text == "" {
+		return base.Render(text)
+	}
+	var b, run strings.Builder
+	flush := func() {
+		if run.Len() > 0 {
+			b.WriteString(base.Render(run.String()))
+			run.Reset()
+		}
+	}
+	words := strings.Split(text, " ")
+	for i, w := range words {
+		if i > 0 {
+			run.WriteString(" ")
+		}
+		if m, ok := marks[w]; ok {
+			flush()
+			b.WriteString(Tone(st, m).Render(w))
+			continue
+		}
+		run.WriteString(w)
+	}
+	flush()
+	return b.String()
+}
+
+func marksOf(v page.Value, out map[string]page.Mark) {
+	if g := Glyph(page.Mark(v.Label)); g != "" && v.Kind != page.KindLevels {
+		out[g] = page.Mark(v.Label)
+	}
+	for _, it := range v.Items {
+		marksOf(it, out)
+	}
+}

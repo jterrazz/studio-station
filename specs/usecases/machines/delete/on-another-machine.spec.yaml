@@ -4,8 +4,10 @@ runs:
     - command: 'machines delete infra --confirm=infra --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	infra	deleted
     - command: 'machines --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running

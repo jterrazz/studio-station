@@ -1,21 +1,12 @@
- station disk                                                                   host · unregistered
- ──────────────────────────────────────────────────────────────────────────────────────────────────
+This Mac · 388 GB free of 994 GB · 1 misplaced folder
 
- Disk
-                                                         size
-   ◐ This Mac  388.0 GB free of 994.0 GB · 1 misplaced folder  → station disk move ~/.tart
-
- Misplaced  1 ◌
+Misplaced
+                size
+  ◌ ~/.tart  78.4 GB  misplaced · tart  → station disk move ~/.tart
+Can rebuild · 29.7 GB
                  size
-   ◌ ~/.tart  78.4 GB  misplaced · tart  → station disk move ~/.tart
+  ◌ homebrew  27.9 GB
+  ◌ bun        1.8 GB
+Never touched · 12.0 KB · station 12.0
 
- Can rebuild  2 ◌
-                  size
-   ◌ homebrew  27.9 GB
-   ◌ bun        1.8 GB
-
- Never touched  1 ◌
-                 size
-   ◌ station  12.0 KB
-
- → station disk free frees every Can rebuild row, nothing is lost
+→ station disk free  frees every Can rebuild row, nothing is lost

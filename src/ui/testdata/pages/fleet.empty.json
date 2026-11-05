@@ -8,7 +8,7 @@
   "sections": [
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "fold": "open",
       "columns": [
         {
@@ -96,7 +96,7 @@
                 },
                 {
                   "kind": "text",
-                  "text": "here"
+                  "text": "This Mac"
                 },
                 {
                   "kind": "text",
@@ -164,10 +164,18 @@
           "keep": 60
         },
         {
+          "key": "mac",
+          "label": "on",
+          "kind": "text",
+          "keep": 40,
+          "show": "eye"
+        },
+        {
           "key": "on",
           "label": "on",
           "kind": "text",
-          "keep": 40
+          "keep": 40,
+          "show": "pipe"
         }
       ],
       "items": [
@@ -205,7 +213,7 @@
     },
     {
       "id": "tailnet",
-      "title": "Tailnet",
+      "title": "Tailscale",
       "fold": "auto",
       "columns": [
         {
@@ -224,7 +232,7 @@
           "row": {
             "id": "tailnet",
             "mark": "absent",
-            "label": "tailnet",
+            "label": "Tailscale",
             "cells": [
               {
                 "kind": "text",

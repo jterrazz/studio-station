@@ -1,7 +1,6 @@
- station settings --all-machines                            host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
+0 settings on 0 machines · nothing needs a look
 
- Machines  0 settings · 0 machines
-   no machines
+Machines
+  no machines
 
- → station settings --all-machines --all every row
+→ station settings --all-machines --all  every row

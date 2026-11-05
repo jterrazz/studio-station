@@ -3,10 +3,55 @@
   "id": "images",
   "command": "images",
   "context": {
-    "kind": "host"
+    "machine": "jterrazz-macbook-pro",
+    "kind": "host",
+    "registered": true
   },
   "state": "ready",
   "sections": [
+    {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/images",
+            "mark": "ok",
+            "label": "No image yet",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "linux not built yet"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "macos not built yet"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
     {
       "id": "images",
       "title": "Images",
@@ -30,10 +75,18 @@
           "keep": 60
         },
         {
+          "key": "mac",
+          "label": "on",
+          "kind": "text",
+          "keep": 40,
+          "show": "eye"
+        },
+        {
           "key": "on",
           "label": "on",
           "kind": "text",
-          "keep": 40
+          "keep": 40,
+          "show": "pipe"
         }
       ],
       "items": [

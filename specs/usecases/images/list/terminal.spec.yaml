@@ -11,7 +11,7 @@ runs:
       exit: 0
       stdout: |
           ●       linux   2026.11.01      4.0 GB  jterrazz-macbook-pro    api · linux-1
-          ○       linux   2026.10.20      3.0 GB  jterrazz-macbook-pro    older: station 0
+          ○       linux   2026.10.20      3.0 GB  jterrazz-macbook-pro    older · station0
           ●       linux   2026.11.01      4.0 GB  jterrazz-mac-mini       infra
           ○       macos                           not built yet
     - command: '--version >/dev/null; /usr/bin/env -u NO_COLOR terminal "$STATION" images'
@@ -19,15 +19,15 @@ runs:
           see not built yet
           screen
       exit: 0
-      stdout: |4
-           station images                                     jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────
+      stdout: |
+          3 images on 2 Macs · 1 older · macos not built yet
 
-           Images
-                      version       size  on
-             ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  api · linux-1
-             ○ linux  2026.10.20  3.0 GB  jterrazz-macbook-pro  older: station images de…
-             ● linux  2026.11.01  4.0 GB  jterrazz-mac-mini     infra
-             ○ macos                                            not built yet
+          Images
+                     version       size  on
+            ● linux  2026.11.01  4.0 GB  This Mac  api · linux-1
+            ○ linux  2026.10.20  3.0 GB  This Mac  older
+              → station images delete linux@2026.10.20
+            ● linux  2026.11.01  4.0 GB  mac-mini  infra
+            ○ macos                                not built yet
 
-           → station images update
+          → station images update

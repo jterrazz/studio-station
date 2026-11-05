@@ -334,7 +334,13 @@ func Bytes(n int64) string {
 		value /= unit
 		suffix++
 	}
-	return strconv.FormatFloat(value, 'f', 1, 64) + " " + string(byteSuffixes[suffix]) + "B"
+	// value: three figures at most, as the vision prints sizes: 388 GB,
+	// 73.3 GB, 5.8 GB.
+	digits := 1
+	if value >= 99.95 {
+		digits = 0
+	}
+	return strconv.FormatFloat(value, 'f', digits, 64) + " " + string(byteSuffixes[suffix]) + "B"
 }
 
 const byteSuffixes = "KMGTPE"

@@ -22,7 +22,7 @@ Paths under ` + "`~/.config`, `~/.local/share`, `~/.local/state` and `~/.cache`"
 
 func footprint() string {
 	levels := table([]string{"Group", "Who removes it"}, [][]string{
-		{"misplaced", "`station disk move <folder>` moves it where its app's own config says, with no question"},
+		{"misplaced", "`station disk move <folder>` moves it where its app expects it, with no question"},
 		{"can rebuild", "`station disk free`, with no question"},
 		{"your data", "`station disk erase <app>`, its name typed"},
 		{"never touched", "nobody: keys, tokens, settings and VM records; a setting's `off` where reversible"},

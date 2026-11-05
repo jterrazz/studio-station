@@ -4,5 +4,6 @@ runs:
     - command: 'images --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	linux	2026.11.01	4.0 GB	jterrazz-mac-mini	infra
           ○	macos				not built yet

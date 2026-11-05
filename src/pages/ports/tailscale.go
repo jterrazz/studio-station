@@ -40,7 +40,7 @@ func TailnetSections(s ports.Status) []page.Section {
 	case s.CLI != "":
 		rows = append(rows, page.Row{ID: "cli", Label: "cli", Mark: page.OK, Cells: []page.Value{page.Path(s.CLI)}, Detail: page.Text(s.Variant)})
 	}
-	head := page.Section{ID: "tailnet", Title: "Tailnet", Role: page.Banner, Columns: tailnetColumns(), Items: tailnetItems(rows)}
+	head := page.Section{ID: "tailnet", Title: catalog.TailnetProduct, Role: page.Banner, Columns: tailnetColumns(), Items: tailnetItems(rows)}
 	if s.State == catalog.StateAbsent {
 		return []page.Section{head}
 	}
@@ -90,9 +90,9 @@ func tailnetList(s ports.Status, noun string, rows []page.Row) []page.Item {
 
 func tailnetRows(s ports.Status) []page.Row {
 	if s.State == catalog.StatePending {
-		return []page.Row{{ID: "tailnet", Label: "tailnet", Mark: page.Awaiting}}
+		return []page.Row{{ID: "tailnet", Label: catalog.TailnetProduct, Mark: page.Awaiting}}
 	}
-	head := page.Row{ID: "tailnet", Label: "tailnet", Mark: pages.MarkOf(s.State), Cells: []page.Value{stateValue(s)}, Hint: repair(s)}
+	head := page.Row{ID: "tailnet", Label: catalog.TailnetProduct, Mark: pages.MarkOf(s.State), Cells: []page.Value{stateValue(s)}, Hint: repair(s)}
 	switch head.Mark {
 	case page.Attention:
 		head.Reason = page.Degraded

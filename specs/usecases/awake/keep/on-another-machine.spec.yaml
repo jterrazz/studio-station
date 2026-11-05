@@ -4,6 +4,7 @@ runs:
     - command: 'awake 30m --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	jterrazz-mac-mini	stays awake until 10:30
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].power.holds'' world.json'
       exit: 0

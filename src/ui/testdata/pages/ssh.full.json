@@ -37,7 +37,7 @@
             "cells": [
               {
                 "kind": "text",
-                "text": "from any Mac: the block in ~/.ssh/config hops through mac-mini"
+                "text": "from any Mac: station's SSH block hops through mac-mini"
               }
             ]
           }

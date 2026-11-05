@@ -3,10 +3,48 @@
   "id": "images",
   "command": "images",
   "context": {
-    "kind": "host"
+    "machine": "jterrazz-macbook-pro",
+    "kind": "host",
+    "registered": true
   },
   "state": "loading",
   "sections": [
+    {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/images",
+            "mark": "pending",
+            "label": "3 images on 2 Macs",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "uncounted": true
+    },
     {
       "id": "images",
       "title": "Images",
@@ -30,10 +68,18 @@
           "keep": 60
         },
         {
+          "key": "mac",
+          "label": "on",
+          "kind": "text",
+          "keep": 40,
+          "show": "eye"
+        },
+        {
           "key": "on",
           "label": "on",
           "kind": "text",
-          "keep": 40
+          "keep": 40,
+          "show": "pipe"
         }
       ],
       "items": [
@@ -50,6 +96,9 @@
                 "kind": "size",
                 "n": 4000000000,
                 "stale": true
+              },
+              {
+                "kind": "pending"
               },
               {
                 "kind": "pending"
@@ -76,6 +125,9 @@
               },
               {
                 "kind": "pending"
+              },
+              {
+                "kind": "pending"
               }
             ],
             "detail": {
@@ -85,7 +137,7 @@
         },
         {
           "row": {
-            "id": "mac-mini/linux@2026.11.01",
+            "id": "jterrazz-mac-mini/linux@2026.11.01",
             "mark": "pending",
             "label": "linux",
             "cells": [
@@ -96,6 +148,9 @@
                 "kind": "size",
                 "n": 4000000000,
                 "stale": true
+              },
+              {
+                "kind": "pending"
               },
               {
                 "kind": "pending"

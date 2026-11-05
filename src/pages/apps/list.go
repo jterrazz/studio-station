@@ -38,18 +38,15 @@ func groupOf(s apps.State) group {
 }
 
 func List(reports []apps.Report, here page.Context, all bool) page.Page {
-	// invariant: the Apps page groups by attention (SPEC §5.3): Updates,
-	// Failed, Not installed, Not managed, then OK folded; what lives
+	// invariant: the Apps page groups by attention (SPEC §5.3): Updates and
+	// Failed open, then Not installed, Not managed and OK folded; what lives
 	// elsewhere is a count, unfolded with --all.
 	p := page.Page{
 		ID:      "apps",
 		Command: "apps",
 		Context: here,
-		Hints:   []page.Hint{*page.Cmd("station apps install <app...>"), *page.Cmd("station apps update")},
+		Hints:   next(reports, all),
 		Actions: Actions(),
-	}
-	if !all {
-		p.Hints = append(p.Hints, page.Hint{Command: "station apps --all", Text: "for every row"})
 	}
 	if len(reports) == 0 {
 		p.Sections = []page.Section{{ID: "apps", Title: "Apps", Role: page.Banner, Columns: Columns(), Items: []page.Item{{Empty: &page.Empty{Noun: "apps"}}}}}
@@ -71,8 +68,12 @@ func List(reports []apps.Report, here page.Context, all bool) page.Page {
 		}
 		g := groupOf(state)
 		fold := page.Open
-		if state == apps.OK && !all {
+		switch {
+		case all:
+		case state == apps.OK:
 			fold = page.Folded
+		case state == apps.NotInstalled, state == apps.NotManaged:
+			fold = page.Brief
 		}
 		p.Sections = append(p.Sections, page.Section{ID: g.id, Title: g.title, Fold: fold, Columns: Columns(), Items: items, PipeCounts: true})
 	}
@@ -90,6 +91,27 @@ func List(reports []apps.Report, here page.Context, all bool) page.Page {
 		p.Sections = append(p.Sections, s)
 	}
 	return page.Seal(p)
+}
+
+// invariant: one or two next steps (vision 07 "station apps"): the updates
+// that wait, then installing what is not installed, else every row.
+func next(reports []apps.Report, all bool) []page.Hint {
+	counts := apps.Counts(reports)
+	var hints []page.Hint
+	if n := counts[apps.UpdateAvailable]; n > 0 {
+		text := "the update"
+		if n > 1 {
+			text = "the " + strconv.Itoa(n) + " updates"
+		}
+		hints = append(hints, page.Hint{Command: "station apps update", Text: text})
+	}
+	if counts[apps.NotInstalled] > 0 || len(reports) == 0 {
+		hints = append(hints, page.Hint{Command: "station apps install <app...>", Text: "install some"})
+	}
+	if len(hints) < 2 && !all && len(reports) > 0 {
+		hints = append(hints, page.Hint{Command: "station apps --all", Text: "for every row"})
+	}
+	return hints
 }
 
 func summary(reports []apps.Report, here page.Context) page.Section {

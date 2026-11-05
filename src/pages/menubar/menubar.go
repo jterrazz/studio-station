@@ -116,7 +116,7 @@ func todo(r Reading, here page.Context) page.Section {
 
 func fleet(r Reading) page.Section {
 	if r.Fleet == nil {
-		return page.Section{ID: "fleet", Title: "Fleet", Columns: pagemachines.Columns(),
+		return page.Section{ID: "fleet", Title: "All machines", Columns: pagemachines.Columns(),
 			Items: []page.Item{{Row: &page.Row{ID: "fleet", Label: "reading", Mark: page.Awaiting}}}}
 	}
 	return pagefleet.Machines(*r.Fleet, r.Services)
@@ -158,7 +158,7 @@ func start() page.Action {
 
 func stopAll(r Reading) page.Action {
 	var w engine.Work
-	host := "this host"
+	host := "this Mac"
 	if r.Fleet != nil {
 		for _, h := range r.Fleet.Hosts {
 			if !h.Here {
@@ -196,7 +196,7 @@ func powerAction(r *power.Report) page.Action {
 		opts = append(opts, page.Option{Value: strconv.FormatInt(int64(time.Duration(t.hours)*time.Hour), 10), Label: t.label})
 	}
 	return page.Action{ID: ActionPowerAwake, Label: "awake", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallAwake},
-		Form: &page.Form{Title: "Power", Fields: []page.Field{
+		Form: &page.Form{Title: "Awake", Fields: []page.Field{
 			{Key: "For", Label: "For", Kind: page.FieldSelect, Default: strconv.FormatInt(int64(4*time.Hour), 10), Options: opts},
 			{Key: "Lid", Label: "Lid", Kind: page.FieldSelect, Default: "Lid=false", Options: []page.Option{
 				{Value: "Lid=false", Label: "open only"}, {Value: "Lid=true", Label: "closed"}, {Value: "Lid=true Battery=true", Label: "closed on battery"},

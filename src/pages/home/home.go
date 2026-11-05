@@ -93,7 +93,7 @@ func section(id, title string, rows []page.Row) page.Section {
 
 func toolsSection(s Overview) page.Section {
 	if s.ToolsPending {
-		return section("tools", "Tools", []page.Row{pending("catalogue", "catalogue")})
+		return section("tools", "Apps", []page.Row{pending("catalogue", "catalogue")})
 	}
 	var items []page.Item
 	for _, r := range s.Tools {
@@ -102,12 +102,12 @@ func toolsSection(s Overview) page.Section {
 			items = append(items, page.Item{Row: &row})
 		}
 	}
-	return page.Section{ID: "tools", Title: "Tools", Columns: pageapps.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: toolCounts(s.Tools)}
+	return page.Section{ID: "tools", Title: "Apps", Columns: pageapps.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: toolCounts(s.Tools)}
 }
 
 func configSection(s Overview) page.Section {
 	if s.ConfigPending {
-		return section("config", "Config", []page.Row{pending("items", "items")})
+		return section("config", "Settings", []page.Row{pending("items", "items")})
 	}
 	var items []page.Item
 	for _, r := range s.Config {
@@ -116,7 +116,7 @@ func configSection(s Overview) page.Section {
 			items = append(items, page.Item{Row: &row})
 		}
 	}
-	return page.Section{ID: "config", Title: "Config", Columns: pagesettings.ReportColumns(), Items: items, Uncounted: true, PipeCounts: true, Counts: configCounts(s.Config)}
+	return page.Section{ID: "config", Title: "Settings", Columns: pagesettings.ReportColumns(), Items: items, Uncounted: true, PipeCounts: true, Counts: configCounts(s.Config)}
 }
 
 func tallies(marks []page.Mark) []page.Tally {
@@ -210,7 +210,7 @@ func fixed(r page.Row) page.Row {
 
 func machineRows(s Overview) []page.Row {
 	m := s.Machine
-	facts := page.Texts(string(m.Kind), strings.TrimSpace(m.OS+" "+m.Arch), m.User, m.Shell)
+	facts := page.Texts(machineWord(m.Kind), strings.TrimSpace(m.OS+" "+m.Arch), m.User, m.Shell)
 	name := page.Row{ID: "name", Label: "name", Mark: page.OK, Cells: []page.Value{page.Text(m.Name)}, Detail: facts}
 	if !m.Registered {
 		name.Mark, name.Reason, name.Cells = page.Attention, page.Unset, []page.Value{page.Text("unregistered")}
@@ -261,7 +261,7 @@ func environmentRows(s Overview) []page.Row {
 	rows = append(rows, checkRows(s.Environment.Protections)...)
 	rows = append(rows, checkRows(s.Environment.Updates)...)
 	if s.Tailnet.State == catalog.StatePending {
-		return append(rows, pending("tailnet", "tailnet"))
+		return append(rows, pending("tailnet", catalog.TailnetProduct))
 	}
 	return append(rows, pageports.TailnetSummary(s.Tailnet))
 }
@@ -408,8 +408,8 @@ func foldStrays(rows []page.Row) []page.Row {
 			total += r.Detail.N
 		}
 	}
-	r := page.Row{ID: "strays", Label: "strays", Mark: page.Attention, Reason: page.Stray, Hint: strays[0].Hint,
-		Detail: page.List(page.Count(int64(len(strays)), "folders out of place"), page.Size(total))}
+	r := page.Row{ID: "strays", Label: "misplaced", Mark: page.Attention, Reason: page.Stray, Hint: strays[0].Hint,
+		Detail: page.List(page.Count(int64(len(strays)), "misplaced folders"), page.Size(total))}
 	return append(out, r)
 }
 
@@ -537,7 +537,7 @@ func storageValue(w Workspace) page.Value {
 	storage := page.Size(cache)
 	storage.Unit = "reclaimable"
 	if n := len(w.Strays); n > 0 {
-		return page.List(storage, page.Count(int64(n), "strays"))
+		return page.List(storage, page.Count(int64(n), "misplaced"))
 	}
 	return storage
 }
@@ -583,11 +583,11 @@ func summary(s Overview, detail []page.Section) page.Section {
 	if s.System.Uptime != "" {
 		up = "up " + s.System.Uptime
 	}
-	machine := page.Texts(string(m.Kind), m.OS, up)
+	machine := page.Texts(machineWord(m.Kind), m.OS, up)
 	items := []page.Item{
 		area("machine", "Machine", worst(find(detail, "machine")), machine),
 		area("network", "Network", worst(find(detail, "environment")), networkValue(s.Environment)),
-		area("tailnet", "Tailnet", pages.MarkOf(s.Tailnet.State), tailnetValue(s.Tailnet)),
+		area("tailnet", catalog.TailnetProduct, pages.MarkOf(s.Tailnet.State), tailnetValue(s.Tailnet)),
 		area("identity", "Identity", worst(find(detail, "identity")), identityValue(s.Identity)),
 	}
 	if len(s.Background) > 0 {
@@ -595,13 +595,13 @@ func summary(s Overview, detail []page.Section) page.Section {
 	}
 	right := len(items)
 	items = append(items,
-		area("tools", "Tools", worst(find(detail, "tools")), counts("tools")),
-		area("config", "Config", worst(find(detail, "config")), counts("config")),
-		area("storage", "Storage", page.OK, storageValue(s.Workspace)),
-		area("fleet", "Fleet", pages.MarkOf(s.Station.Daemon.State), fleetValue(s)),
+		area("tools", "Apps", worst(find(detail, "tools")), counts("tools")),
+		area("config", "Settings", worst(find(detail, "config")), counts("config")),
+		area("storage", "Disk", page.OK, storageValue(s.Workspace)),
+		area("fleet", "All machines", pages.MarkOf(s.Station.Daemon.State), fleetValue(s)),
 	)
 	if s.PowerKnown {
-		items = append(items, area("power", "Power", page.OK, powerValue(s)))
+		items = append(items, area("power", "Awake", page.OK, powerValue(s)))
 	}
 	if len(s.Gateways) > 0 {
 		items = append(items, area("gateways", "Gateways", worst(find(detail, "gateways")), counts("gateways")))
@@ -636,4 +636,16 @@ func Strip(readings []activity.Reading, snap Overview) page.Strip {
 		strip.Power = page.Texts("awake", pages.Term(snap.Power.Until.Sub(last.At)))
 	}
 	return strip
+}
+
+func machineWord(k catalog.MachineKind) string {
+	switch k {
+	case catalog.Host:
+		return "Mac"
+	case catalog.Linux:
+		return "Linux VM"
+	case catalog.MacOS:
+		return "macOS VM"
+	}
+	return string(k)
 }

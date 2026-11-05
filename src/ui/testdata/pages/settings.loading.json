@@ -8,9 +8,56 @@
   "state": "loading",
   "sections": [
     {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/settings",
+            "mark": "ok",
+            "label": "This Mac",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "17 set by station here"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "9 checked"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "nothing needs a look"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
       "id": "set",
       "title": "Set by station",
-      "fold": "auto",
+      "fold": "calm",
       "columns": [
         {
           "key": "name",
@@ -247,6 +294,7 @@
     {
       "id": "checked",
       "title": "Checked",
+      "fold": "brief",
       "columns": [
         {
           "key": "name",
@@ -365,7 +413,8 @@
       "command": "station settings apply"
     },
     {
-      "command": "station settings <setting>"
+      "command": "station settings --all",
+      "text": "for every row"
     }
   ],
   "actions": [

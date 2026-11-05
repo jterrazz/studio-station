@@ -37,7 +37,8 @@
           "key": "kind",
           "label": "KIND",
           "kind": "text",
-          "keep": 80
+          "keep": 80,
+          "whole": true
         },
         {
           "key": "mac",
@@ -291,7 +292,7 @@
       "items": [
         {
           "note": {
-            "text": "mac-mini: station v2.0.0-248, here v2.0.0-250"
+            "text": "mac-mini: station v2.0.0-248, This Mac v2.0.0-250"
           }
         }
       ]

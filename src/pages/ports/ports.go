@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
@@ -33,10 +34,17 @@ func Columns() []page.Column {
 func List(l ports.Listing, here page.Context) page.Page { return Listed(l, here, false) }
 
 func Listed(l ports.Listing, here page.Context, all bool) page.Page {
+	// invariant: OU-01: what needs you comes first, before the Tailscale
+	// line, as on every page.
 	sections := Sections(l.Fleet, here, all)
 	if line := TailnetLine(l.Tailnet); line != nil {
-		sections = append([]page.Section{*line}, sections...)
+		at := 0
+		if len(sections) > 0 && sections[0].ID == "needs-you" {
+			at = 1
+		}
+		sections = slices.Insert(sections, at, *line)
 	}
+	sections = append([]page.Section{firstLine(sections, whose(l.Fleet, here))}, sections...)
 	return page.Seal(page.Page{ID: "ports", Command: "ports", Context: here, Sections: sections, Actions: Actions(l.Fleet)})
 }
 
@@ -88,17 +96,17 @@ func Sections(f ports.Fleet, here page.Context, all bool) []page.Section {
 		for _, p := range h.Ports {
 			switch {
 			case p.Red():
-				row := RedRow(p)
+				row := named(RedRow(p), here)
 				red = append(red, page.Item{Row: &row})
 			case p.Declared != nil:
-				row := PublicRow(p)
+				row := named(PublicRow(p), here)
 				public = append(public, page.Item{Row: &row})
 			case shared[p.Key()]:
 			case p.Reach == ports.ThisMachine:
-				row := LocalRow(p)
+				row := named(LocalRow(p), here)
 				local = append(local, page.Item{Row: &row})
 			default:
-				row := PrivateRow(p)
+				row := named(PrivateRow(p), here)
 				private = append(private, page.Item{Row: &row})
 			}
 		}
@@ -189,6 +197,15 @@ func ListensOn(p ports.Port) page.Value {
 	return page.Texts(words...)
 }
 
+// value: a port's row names its machine as the interface does on a
+// terminal (SPEC §2.5: This Mac, mac-mini); its records keep the full name.
+func named(r page.Row, here page.Context) page.Row {
+	if short := page.MacName(r.Label, here.Machine); short != r.Label {
+		r.Short = short
+	}
+	return r
+}
+
 func RedRow(p ports.Port) page.Row {
 	row := page.Row{ID: p.Key(), Label: p.Machine.Name, Mark: page.Broken, Reason: page.Exposed,
 		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(ClassNeedsYou), page.Text(p.What()), ListensOn(p), page.Text("declared no")}}
@@ -239,8 +256,8 @@ func PrivateRow(p ports.Port) page.Row {
 }
 
 func reserved(h ports.HostServices, here page.Context) string {
-	r, mac := h.Range, h.Name
-	if mac == here.Machine || mac == "" && h.Here {
+	r, mac := h.Range, page.MacName(h.Name, here.Machine)
+	if mac == "" && h.Here {
 		mac = "This Mac"
 	}
 	size := r.High - r.Low + 1
@@ -333,4 +350,51 @@ func Undeclared(d ports.Declaration, here page.Context) page.Page {
 
 func Stopped(r ports.Reservation, here page.Context) page.Page {
 	return pages.Outcome("ports stop-sharing", here, nil, []page.Row{pages.Done(r.Key(), catalog.StateOK, "not shared")}, "shared ports")
+}
+
+// value: the first line: whose ports, how many, and how many need you
+// (vision 07 "station ports": `mac-mini and infra · 9 ports · 4 need you`).
+// value: whose ports a list holds: every Mac's, another Mac's, This Mac's.
+func whose(f ports.Fleet, here page.Context) string {
+	switch {
+	case len(f.Hosts) > 1:
+		return "Every Mac"
+	case len(f.Hosts) == 1 && here.Machine != "" && f.Hosts[0].Name != here.Machine:
+		return page.MacName(f.Hosts[0].Name, here.Machine)
+	case here.Machine != "" && here.Kind != string(catalog.Host):
+		return here.Machine
+	}
+	return "This Mac"
+}
+
+func firstLine(sections []page.Section, label string) page.Section {
+	n, needs := 0, 0
+	for _, s := range sections {
+		if s.ID == "tailnet" || s.ID == "ranges" {
+			continue
+		}
+		for _, it := range s.Items {
+			if it.Row == nil && it.Link == nil {
+				continue
+			}
+			n++
+			if it.Row != nil && (it.Row.Mark == page.Broken || it.Row.Mark == page.Attention) {
+				needs++
+			}
+		}
+	}
+	words := []string{strconv.Itoa(n) + " ports"}
+	if n == 1 {
+		words[0] = "1 port"
+	}
+	switch needs {
+	case 0:
+		words = append(words, "nothing needs you")
+	case 1:
+		words = append(words, "1 needs you")
+	default:
+		words = append(words, strconv.Itoa(needs)+" need you")
+	}
+	row := page.Row{ID: "summary/ports", Label: label, Mark: page.OK, Cells: []page.Value{page.Texts(words...)}}
+	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: []page.Item{{Row: &row}}}
 }

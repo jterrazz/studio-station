@@ -8,18 +8,47 @@
   "state": "ready",
   "sections": [
     {
-      "id": "machines",
-      "title": "Machines",
-      "caption": [
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
         {
+          "key": "area",
           "kind": "text",
-          "text": "0 settings"
+          "keep": 100
         },
         {
-          "kind": "text",
-          "text": "0 machines"
+          "key": "value",
+          "kind": "list",
+          "keep": 60
         }
       ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/settings",
+            "mark": "ok",
+            "label": "0 settings on 0 machines",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "nothing needs a look"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "machines",
+      "title": "Machines",
       "columns": [
         {
           "key": "name",

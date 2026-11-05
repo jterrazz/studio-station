@@ -8,6 +8,7 @@ runs:
     - command: 'machines delete infra --on mac-mini --confirm=infra'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	infra	deleted
     - command: '--version >/dev/null; /usr/bin/jq -c ''{vm: (.macs["jterrazz-mac-mini"].vms.infra.kept.lifetime), disk: .macs["jterrazz-mac-mini"].vms.infra.disk, declared: [.macs["jterrazz-mac-mini"].stores.declarations[]? | select(.machine == "infra") | .port], ssh: .macs["jterrazz-macbook-pro"].ssh.blocks.infra.behind}'' world.json'
       exit: 0
@@ -16,4 +17,5 @@ runs:
     - command: 'machines --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running

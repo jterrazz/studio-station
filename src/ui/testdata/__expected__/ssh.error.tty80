@@ -1,5 +1,2 @@
- station machines ssh infra                                 host · unregistered
- ──────────────────────────────────────────────────────────────────────────────
-
- Error: infra is on mac-mini, which does not answer
- Hint: station machines
+Error: infra is on mac-mini, which does not answer
+Hint: station machines

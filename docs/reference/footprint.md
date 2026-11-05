@@ -4,12 +4,12 @@
 
 Everything `station` and the catalogue's apps write on a machine, by Disk group: what an erase would lose. The groups, the relocation rule and the commands that free, erase and move are [Disk](disk.md)'s.
 
-| Group         | Who removes it                                                                          |
-| ------------- | --------------------------------------------------------------------------------------- |
-| misplaced     | `station disk move <folder>` moves it where its app's own config says, with no question |
-| can rebuild   | `station disk free`, with no question                                                   |
-| your data     | `station disk erase <app>`, its name typed                                              |
-| never touched | nobody: keys, tokens, settings and VM records; a setting's `off` where reversible       |
+| Group         | Who removes it                                                                    |
+| ------------- | --------------------------------------------------------------------------------- |
+| misplaced     | `station disk move <folder>` moves it where its app expects it, with no question  |
+| can rebuild   | `station disk free`, with no question                                             |
+| your data     | `station disk erase <app>`, its name typed                                        |
+| never touched | nobody: keys, tokens, settings and VM records; a setting's `off` where reversible |
 
 Paths under `~/.config`, `~/.local/share`, `~/.local/state` and `~/.cache` follow their `XDG_*_HOME` variable when it is set and absolute. A path marked macOS lives on a Mac and a macOS VM; linux, on a Linux VM; vm, in every VM and never on a Mac; Mac, on a Mac only.
 

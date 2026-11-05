@@ -4,6 +4,7 @@ runs:
     - command: 'settings apply starship-dotfiles --on linux-1'
       exit: 0
       stdout: |
+          	On linux-1:
           ●	starship-dotfiles	~/.config/starship.toml: written
     - command: 'settings --all-machines --all | /usr/bin/grep -e "	Workspace	" -e "starship-dotfiles"'
       exit: 0

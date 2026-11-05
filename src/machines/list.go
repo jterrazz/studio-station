@@ -19,16 +19,40 @@ func Label(f Fleet, h HostView) string {
 	if h.Here {
 		return "This Mac"
 	}
-	owner := ""
-	for _, o := range f.Hosts {
-		if o.Here {
-			owner = o.User
-		}
-	}
+	owner := f.owner()
 	if short, ok := strings.CutPrefix(h.Name, owner+"-"); ok && owner != "" && short != "" {
 		return short
 	}
 	return h.Name
+}
+
+// value: the user every Mac's name starts with: This Mac's, or the one all
+// the Macs share when the fleet was read on another Mac (SPEC §2.5).
+func (f Fleet) owner() string {
+	users := map[string]bool{}
+	for _, h := range f.Hosts {
+		if h.Here {
+			return h.User
+		}
+		users[h.User] = true
+	}
+	if len(users) != 1 {
+		return ""
+	}
+	for u := range users {
+		return u
+	}
+	return ""
+}
+
+func Elsewhere(f Fleet) Fleet {
+	// invariant: a fleet another Mac's engine read, as this binary shows it:
+	// none of its Macs is This Mac (SPEC §2.5, §8.1: rendered here).
+	f.Hosts = slices.Clone(f.Hosts)
+	for i := range f.Hosts {
+		f.Hosts[i].Here = false
+	}
+	return f
 }
 
 func Tally(f Fleet) Counts {

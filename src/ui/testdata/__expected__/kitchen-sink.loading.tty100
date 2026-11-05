@@ -1,81 +1,71 @@
- station status                                                         jterrazz-macbook-pro · host
- ──────────────────────────────────────────────────────────────────────────────────────────────────
+To do
+  ◌ brew
+Summary
+  ◌ Marks
+Values  40000-40999
+              value   number
+  ◌ text
+  ◌ size      275 B  22.6 KB
+  ◌ ratio
+  ◌ percent
+  ◌ version
+  ◌ age
+  ◌ old
+  ◌ until
+  ◌ soon
+  ◌ expired
+  ◌ url
+  ◌ identity
+  ◌ file
+  ◌ command
+  ◌ list
+  ◌ switch
+  ◌ sip
+  ◌ unknown
+Marks
+  ◌ outdated
+  ◌ misplaced
+  ◌ unreachable
+  ◌ mismatch
+  ◌ unmanaged
+  ◌ missing
+  ◌ partial
+  ◌ differs
+  ◌ unset
+  ◌ stopped
+  ◌ late
+  ◌ degraded
+  ◌ orphan
+  ◌ waiting
+  ◌ failing
+  ◌ refused
+  ◌ down
+  ◌ stale
+  ◌ expiring
+  ◌ guard
+  ◌ absent
+  ◌ off-here
+  ◌ not-for-this-machine
+  ◌ not-known
+All machines
+  ◌ jterrazz-mac-mini
+  ├─ ◌ linux-1
+  │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
+  │  └─ ◌ web
+  └─ ◌ linux-2
+Disk
+  ◌ station
+  ◌ tart
+Prose
+  machine  jterrazz-macbook-pro
+  uptime   22d 14h
+  Serve is off on Tailscale, so no shared port is reachable from another machine until it is turned
+  on in the admin console.
+  Error: defaults is not installed
+  Hint: run station setup
+  no shared accounts  → station accounts share <account> --with <vm>
+Peers
+  ◌ iphone
 
- To do  1 ◌
-   ◌ brew
-
- Summary
-   ◌ Marks
-
- Values  18 ◌  40000-40999
-               value   number
-   ◌ text
-   ◌ size      275 B  22.6 KB
-   ◌ ratio
-   ◌ percent
-   ◌ version
-   ◌ age
-   ◌ old
-   ◌ until
-   ◌ soon
-   ◌ expired
-   ◌ url
-   ◌ identity
-   ◌ path
-   ◌ command
-   ◌ list
-   ◌ switch
-   ◌ sip
-   ◌ unknown
-
- Marks  24 ◌
-   ◌ outdated
-   ◌ stray
-   ◌ unreachable
-   ◌ mismatch
-   ◌ unmanaged
-   ◌ missing
-   ◌ partial
-   ◌ differs
-   ◌ unset
-   ◌ stopped
-   ◌ late
-   ◌ degraded
-   ◌ orphan
-   ◌ waiting
-   ◌ failing
-   ◌ refused
-   ◌ down
-   ◌ stale
-   ◌ expiring
-   ◌ guard
-   ◌ absent
-   ◌ off-here
-   ◌ not-for-this-machine
-   ◌ not-known
-
- Fleet  4 ◌
-   ◌ jterrazz-mac-mini
-   ├─ ◌ linux-1
-   │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
-   │  └─ ◌ web
-   └─ ◌ linux-2
-
- Storage  2 ◌
-   ◌ station
-   ◌ tart
-
- Prose
-   machine  jterrazz-macbook-pro
-   uptime   22d 14h
-   Serve is off on the tailnet, so no service is reachable from another machine until it is turned
-   on in the admin console.
-   Error: defaults is not installed
-   Hint: run station setup
-   no lent secrets  → station secrets lend <name>
-
- Peers
-   ◌ iphone
-
- → station overview --all
- → station apps for the catalogue
+→ station overview --all
+→ station apps  for the catalogue

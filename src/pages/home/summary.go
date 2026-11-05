@@ -19,7 +19,7 @@ func Summary(s overview.Summary, here page.Context, all bool) page.Page {
 	// invariant: SPEC §5.1: the first line sums the machine up, Needs you
 	// comes first, then one line per section in the one order, then the VMs
 	// of a Mac, then one or two next steps.
-	sections := append([]page.Section{{ID: "overview", Title: title(s), Caption: caption(s), Joined: true, Role: page.Banner, Uncounted: true}}, Body(s, all)...)
+	sections := append([]page.Section{{ID: "overview", Title: title(s, here), Caption: caption(s, here), Joined: true, Role: page.Banner, Uncounted: true}}, Body(s, all)...)
 	state := page.Ready
 	if s.Pending {
 		state = page.Loading
@@ -50,7 +50,7 @@ func Body(s overview.Summary, all bool) []page.Section {
 		lines = append(lines, page.Item{Note: &page.Note{Text: "Apps, settings, accounts: not managed by station"}})
 	}
 	sections = append(sections, page.Section{ID: "sections", Role: page.Banner, Uncounted: true, Columns: []page.Column{
-		{Key: "section", Kind: page.KindText, Keep: 100}, {Key: "line", Kind: page.KindList, Keep: 90},
+		{Key: "section", Kind: page.KindListing, Keep: 100}, {Key: "line", Kind: page.KindList, Keep: 90},
 	}, Items: lines})
 	if len(s.Readiness) > 0 {
 		sections = append(sections, section("readiness", "Mac readiness", checkRows(s.Readiness)))
@@ -58,14 +58,23 @@ func Body(s overview.Summary, all bool) []page.Section {
 	return sections
 }
 
-func title(s overview.Summary) string {
-	if s.Head.Here && s.Head.Mac() {
+// value: the Mac this binary runs on; another Mac read through --on is
+// itself "here" on its side and goes by its name on this one.
+func thisMac(s overview.Summary, here page.Context) bool {
+	return s.Head.Here && s.Head.Mac() && (!here.Registered || here.Machine == "" || here.Machine == s.Head.Name)
+}
+
+func title(s overview.Summary, here page.Context) string {
+	if thisMac(s, here) {
 		return "This Mac"
+	}
+	if s.Head.Mac() && s.Head.Name != here.Machine {
+		return page.MacName(s.Head.Name, here.Machine)
 	}
 	return s.Head.Name
 }
 
-func caption(s overview.Summary) []page.Value {
+func caption(s overview.Summary, here page.Context) []page.Value {
 	if !s.Head.Mac() {
 		// invariant: a VM read inside it names its kind and how long it has
 		// run; which Mac it is on and its lifetime are its Mac's to tell.
@@ -76,6 +85,9 @@ func caption(s overview.Summary) []page.Value {
 		return parts
 	}
 	parts := []page.Value{page.Text(s.Head.Name)}
+	if !thisMac(s, here) {
+		parts = []page.Value{page.Text(kindWord(s.Head))}
+	}
 	switch len(s.Needs) {
 	case 0:
 		parts = append(parts, page.Text("nothing needs you"))
@@ -108,7 +120,7 @@ func needsYou(needs []overview.Need, all bool) page.Section {
 		row := page.Row{ID: strconv.Itoa(i) + "-" + n.Subject, Label: n.Text, Mark: mark, Reason: reason, Cells: []page.Value{fixValue(n)}}
 		items = append(items, page.Item{Row: &row})
 	}
-	columns := []page.Column{{Key: "finding", Kind: page.KindText, Keep: 100}, {Key: "fix", Kind: page.KindList, Keep: 50}}
+	columns := []page.Column{{Key: "finding", Kind: page.KindText, Keep: 100}, {Key: "fix", Kind: page.KindCommand, Keep: 50}}
 	return page.Section{ID: "needs-you", Title: "Needs you", Uncounted: true, Columns: columns, Items: items}
 }
 

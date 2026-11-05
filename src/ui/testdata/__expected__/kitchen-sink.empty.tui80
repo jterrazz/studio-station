@@ -12,10 +12,10 @@
  Marks
    no VMs  → station machines create
 
- Fleet
+ All machines
    no VMs  → station machines create
 
- Storage
+ Disk
    no VMs  → station machines create
 
  Prose

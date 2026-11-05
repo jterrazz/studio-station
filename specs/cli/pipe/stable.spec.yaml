@@ -15,7 +15,7 @@ runs:
           	3 more: station overview --all
           	Activity	memory 11.6 of 32 GB · N free
           	Apps	● 0 ok · ? 2 not managed · ○ 106 not installed
-          	Settings	set by station · ● 0 of 17
+          	Settings	set by station · ○ 0 of 17 · checked · ● 3 of 9
           	Disk	● N free · 2.0 KB can rebuild
           	Ports	Public 1 · Private 0
           	Accounts	● 1
@@ -208,9 +208,9 @@ runs:
     - command: 'ports'
       exit: 0
       stdout: |
-          ◐	Tailscale	signed in · ports are local only	Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console
           # Needs you: reachable outside Tailscale, not declared public	1 ✗
           ✗	x	3000	needs you	node	*:3000 all interfaces	declared no
+          ◐	Tailscale	signed in · ports are local only	Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console
           # Private: shared with you on Tailscale	1 ◐
           ◐	engine				the engine is not installed		station setup
           	Reserved on This Mac: 0 of 1000 (40000-40999), 1000 free

@@ -2,10 +2,10 @@
    no actions
 
  Summary
-   ● Machine     host · Darwin 27.0.0 · up 22d 14h   ● Tools    1 ●
-   ● Network     192.168.1.152 · 4/4 on              ● Config   1 ●
-   ● Tailnet     jterrazz-macbook-pro · Serve on     ● Storage  27.9 GB reclaimable
-   ● Identity    admin@jterrazz.com · signing on     ● Fleet    engine running v2.0.0-250
+   ● Machine     Mac · Darwin 27.0.0 · up 22d 14h   ● Apps          1 ●
+   ● Network     192.168.1.152 · 4/4 on             ● Settings      1 ●
+   ● Tailscale   jterrazz-macbook-pro · Serve on    ● Disk          27.9 GB reclaimable
+   ● Identity    admin@jterrazz.com · signing on    ● All machines  engine running v2.0.0-250
    ● Background  1 job
 
  + Machine                                                                                      4 ●
@@ -18,6 +18,6 @@
 
  + Background                                                                                   1 ●
 
- + Tools                                                                                        1 ●
+ + Apps                                                                                         1 ●
 
- + Config                                                                                       1 ●
+ + Settings                                                                                     1 ●

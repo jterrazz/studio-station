@@ -1,31 +1,12 @@
- [1;38;2;30;102;245mstation[m [38;2;76;79;105mapps[m                                                                   [38;2;108;111;133mhost · unregistered[m
- [38;2;156;160;176m──────────────────────────────────────────────────────────────────────────────────────────────────[m
+[38;2;76;79;105mThis Mac[m[38;2;76;79;105m · [m[38;2;76;79;105m17 apps for this Mac[m[38;2;76;79;105m · [m[38;2;76;79;105m2 updates[m[38;2;76;79;105m · [m[38;2;76;79;105m4 not installed[m
 
- [1;38;2;30;102;245mSummary[m
-   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mThis Mac[m  [38;2;76;79;105m17 apps for this Mac · 2 updates · 4 not installed[m
+[1;38;2;76;79;105mUpdates[m
+  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mpnpm[m       [38;2;76;79;105m11.21.0 → 11.22.1[m  [38;2;76;79;105mbrew[m   [38;2;108;111;133mupdate available[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps update pnpm[m
+  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mbetter-ui[m                     [38;2;76;79;105mskill[m  [38;2;108;111;133mupdate available[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps update better-ui[m
+[1;38;2;76;79;105mNot installed[m  [38;2;108;111;133m○[m [38;2;76;79;105m4[m[38;2;108;111;133m · mise, mas, typewhisper, frontend-design[m
+[1;38;2;76;79;105mNot managed  [m  [38;2;108;111;133m?[m [38;2;76;79;105m5[m[38;2;108;111;133m · bun, go, java, python, chatgpt[m
+[1;38;2;76;79;105mOK           [m  [38;2;64;160;43m●[m [38;2;76;79;105m6[m[38;2;108;111;133m · homebrew, uv, cocoapods, skills, claude-desktop, modern-web-guidance[m
+[1;38;2;76;79;105mNot for this machine[m  [38;2;108;111;133m98 apps live on other machines[m
 
- [1;38;2;30;102;245mUpdates[m  [38;2;223;142;29m2 ◐[m
-   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mpnpm[m       [38;2;76;79;105m11.21.0 → 11.22.1[m  [38;2;76;79;105mbrew[m   [38;2;108;111;133mupdate available[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps update pnpm[m
-   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mbetter-ui[m                     [38;2;76;79;105mskill[m  [38;2;108;111;133mupdate available[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps update better-ui[m
-
- [1;38;2;30;102;245mNot installed[m  [38;2;108;111;133m4 ○[m
-   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mmise[m             [38;2;76;79;105mbrew · system[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install mise[m
-   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mmas[m              [38;2;76;79;105mbrew[m           [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install mas[m
-   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mtypewhisper[m      [38;2;76;79;105mcask[m           [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install typewhisper[m
-   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mfrontend-design[m  [38;2;76;79;105mskill[m          [38;2;108;111;133mskills not installed[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install skills[m
-
- [1;38;2;30;102;245mNot managed[m  [38;2;108;111;133m5 ?[m
-   [38;2;156;160;176m[m[38;2;108;111;133m?[m [1;38;2;76;79;105mbun[m               [38;2;76;79;105mmise[m  [38;2;108;111;133minstalled, mise not installed[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install mise[m
-   [38;2;156;160;176m[m[38;2;108;111;133m?[m [1;38;2;76;79;105mgo[m                [38;2;76;79;105mmise[m  [38;2;108;111;133minstalled, mise not installed[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install mise[m
-   [38;2;156;160;176m[m[38;2;108;111;133m?[m [1;38;2;76;79;105mjava[m     [38;2;76;79;105m17.0.20[m  [38;2;76;79;105mmise[m  [38;2;108;111;133minstalled, mise not installed[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install mise[m
-   [38;2;156;160;176m[m[38;2;108;111;133m?[m [1;38;2;76;79;105mpython[m   [38;2;76;79;105m3.14.6[m   [38;2;76;79;105mmise[m  [38;2;108;111;133minstalled, mise not installed[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install mise[m
-   [38;2;156;160;176m[m[38;2;108;111;133m?[m [1;38;2;76;79;105mchatgpt[m           [38;2;76;79;105mcask[m  [38;2;108;111;133mon PATH, not managed by cask[m
-
- [1;38;2;30;102;245mOK[m  [38;2;64;160;43m6 ●[m
-
- [1;38;2;30;102;245mNot for this machine[m
-   [38;2;76;79;105m98 apps live on other machines[m
-
- [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install <app...>[m
- [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps update[m
- [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps --all[m [38;2;108;111;133mfor every row[m
+[38;2;108;111;133m→ [m[38;2;76;79;105mstation apps update[m            [38;2;108;111;133mthe 2 updates[m
+[38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install <app...>[m  [38;2;108;111;133minstall some[m

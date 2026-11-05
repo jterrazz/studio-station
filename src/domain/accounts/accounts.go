@@ -150,7 +150,7 @@ func (s *Service) tailnet(ctx context.Context) Account {
 	acc := ok(catalog.ProviderTailscale)
 	acc.Identity, acc.Detail = []string{t.Login}, t.Variant
 	if t.Tailnet != "" {
-		acc.Scopes = []string{"tailnet " + t.Tailnet}
+		acc.Scopes = []string{t.Tailnet}
 	}
 	return acc
 }
@@ -176,11 +176,11 @@ func (s *Service) entry() Account {
 		}
 	}
 	if n == 0 {
-		return absent(catalog.ProviderEntry, ReasonUnset, "no host key")
+		return absent(catalog.ProviderEntry, ReasonUnset, "no SSH key")
 	}
-	acc.Identity = []string{strconv.Itoa(n) + " host keys"}
+	acc.Identity = []string{strconv.Itoa(n) + " SSH keys"}
 	if n == 1 {
-		acc.Identity = []string{"1 host key"}
+		acc.Identity = []string{"1 SSH key"}
 	}
 	return acc
 }

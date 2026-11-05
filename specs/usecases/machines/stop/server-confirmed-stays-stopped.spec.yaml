@@ -10,19 +10,17 @@ runs:
           within 20 exit 0
           screen
       exit: 0
-      stdout: |4
-           station machines stop                                                  jterrazz-macbook-pro · host
-           ──────────────────────────────────────────────────────────────────────────────────────────────────
+      stdout: |
+          On mac-mini:
+          infra · stopped · wanted state: Stopped
 
-           Changes
-             ● infra  stopped · wanted state: Stopped
-
-           → station machines start infra --on mac-mini
+          → station machines start infra --on mac-mini
     - command: 'world reboot jterrazz-mac-mini'
       exit: 0
     - command: 'machines --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
           ○	infra	Server	jterrazz-mac-mini	Stopped · always on	8 CPU	24 GB
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].vms.infra | {running: (.pid > 0), want: .kept.want}'' world.json'

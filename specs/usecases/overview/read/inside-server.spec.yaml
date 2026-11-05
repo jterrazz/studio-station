@@ -9,16 +9,13 @@ runs:
       stdin: |
           scrollback
       exit: 0
-      stdout: |4
-           station overview                                          linux · unregistered
-           ──────────────────────────────────────────────────────────────────────────────
+      stdout: |
+          infra · Server · up 12 d
 
-           infra · Server · up 12 d
-
-               Activity  ? not measured
-               Ports     Public 0 · Private 0
-               SSH       ssh infra
-             Apps, settings, accounts: not managed by station
+          Activity  ? not measured
+          Ports     Public 0 · Private 0
+          SSH       ssh infra
+          Apps, settings, accounts: not managed by station
     - command: 'overview --json | /usr/bin/jq -c ''[.machine.kind, [.sections[].id], .findings]'''
       exit: 0
       stdout: |

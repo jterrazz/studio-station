@@ -4,10 +4,12 @@ runs:
     - command: 'settings apply dns --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           ●	dns	dns: applied
     - command: 'settings diff dns --on jterrazz-mac-mini'
       exit: 0
       stdout: |
+          	On mac-mini:
           # dns
           ●	dns	applied
     - command: 'settings diff dns'

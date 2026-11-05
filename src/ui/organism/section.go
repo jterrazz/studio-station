@@ -16,9 +16,33 @@ func Caption(st token.Styles, s page.Section) string {
 	return st.Muted.Render(atom.Show(page.List(parts...)))
 }
 
-// value: a banner prints no counts on a terminal (its page is that one list),
-// but a tree's heads are the verdict a reader looks for first (the Fleet), so
-// a banner made of judged groups counts them like any section (§3.3).
+func Title(st token.Styles, s page.Section) string {
+	if s.Joined {
+		return atom.Spaces(token.Margin) + st.Strong.Render(atom.Show(page.List(append([]page.Value{page.Text(s.Title)}, s.Caption...)...)))
+	}
+	// invariant: an open section's title counts nothing: its rows are there
+	// to read (vision 07 "Updates"); a folded one counts them on its line.
+	line := atom.Spaces(token.Margin) + st.Strong.Render(s.Title)
+	if c := Caption(st, s); c != "" {
+		line += atom.Spaces(token.Gap) + c
+	}
+	return line
+}
+
+func CountedTitle(st token.Styles, s page.Section) string {
+	// value: the TUI's title of an open section: its counts follow it, the
+	// verdict a pane's reader looks for first, except on a banner whose
+	// groups are only headings.
+	line := Title(st, s)
+	if s.Joined || !titleCounts(s) {
+		return line
+	}
+	if counts := molecule.Counts(st, s.Counts); counts != "" {
+		line += atom.Spaces(token.Gap) + counts
+	}
+	return line
+}
+
 func titleCounts(s page.Section) bool {
 	if s.Role != page.Banner {
 		return true
@@ -31,28 +55,12 @@ func titleCounts(s page.Section) bool {
 	return false
 }
 
-func Title(st token.Styles, s page.Section) string {
-	if s.Joined {
-		return atom.Spaces(token.Margin) + st.Title.Render(atom.Show(page.List(append([]page.Value{page.Text(s.Title)}, s.Caption...)...)))
-	}
-	line := atom.Spaces(token.Margin) + st.Title.Render(s.Title)
-	if titleCounts(s) {
-		if counts := molecule.Counts(st, s.Counts); counts != "" {
-			line += atom.Spaces(token.Gap) + counts
-		}
-	}
-	if c := Caption(st, s); c != "" {
-		line += atom.Spaces(token.Gap) + c
-	}
-	return line
-}
-
 func FoldTitle(st token.Styles, s page.Section, folded bool, width int) string {
 	sign := token.FoldOpen
 	if folded {
 		sign = token.FoldShut
 	}
-	left := atom.Spaces(token.Margin) + st.Muted.Render(sign) + " " + st.Title.Render(s.Title)
+	left := atom.Spaces(token.Margin) + st.Muted.Render(sign) + " " + st.Strong.Render(s.Title)
 	if c := Caption(st, s); c != "" {
 		left += atom.Spaces(token.Gap) + c
 	}
@@ -63,27 +71,34 @@ func FoldTitle(st token.Styles, s page.Section, folded bool, width int) string {
 	return left + atom.Spaces(max(width-1-atom.Width(left)-atom.Width(right), token.Gap)) + right
 }
 
-func Section(st token.Styles, s page.Section, width int) []string {
+func Rows(st token.Styles, s page.Section, width int) []string {
 	body := (Grid{Styles: st, Section: s, Width: width, Medium: molecule.TTY}).Lines()
-	lines := make([]string, 0, len(body)+1)
-	// invariant: a section with no title and no caption reads on as its
-	// rows (an Overview's lines under its Needs you), with no blank head.
-	if s.Title != "" || len(s.Caption) > 0 || len(s.Counts) > 0 {
-		lines = append(lines, Title(st, s))
-	}
+	lines := make([]string, 0, len(body))
 	for _, l := range body {
 		lines = append(lines, l.Text)
 	}
 	return lines
 }
 
+func Section(st token.Styles, s page.Section, width int) []string {
+	body := Rows(st, s, width)
+	lines := make([]string, 0, len(body)+1)
+	// invariant: a section with no title and no caption reads on as its
+	// rows (an Overview's lines under its Needs you, Awake's Macs), with no
+	// blank head, whatever it counts.
+	if s.Title != "" || len(s.Caption) > 0 {
+		lines = append(lines, Title(st, s))
+	}
+	return append(lines, body...)
+}
+
 func AutoFolded(s page.Section) bool {
 	switch s.Fold {
 	case page.Folded:
 		return true
-	case page.Open:
+	case page.Open, page.Brief:
 		return false
-	case page.Auto:
+	case page.Auto, page.Calm:
 		rows := 0
 		for _, t := range s.Counts {
 			if t.Mark != page.OK && t.Mark != page.Absent {

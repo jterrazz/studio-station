@@ -4,4 +4,5 @@ runs:
     - command: 'apps update node --on linux-1'
       exit: 0
       stdout: |
+          	On linux-1:
           ●	node	22.11.0	mise

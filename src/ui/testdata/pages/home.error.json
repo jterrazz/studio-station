@@ -7,7 +7,7 @@
   },
   "state": "failed",
   "error": {
-    "message": "status reads the host it runs on",
+    "message": "status reads the Mac it runs on",
     "hint": "station overview --on <vm>"
   }
 }

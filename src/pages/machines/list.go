@@ -13,7 +13,7 @@ import (
 func listColumns() []page.Column {
 	return []page.Column{
 		{Key: "name", Label: "MACHINE", Kind: page.KindText, Keep: 100},
-		{Key: "kind", Label: "KIND", Kind: page.KindText, Keep: 80},
+		{Key: "kind", Label: "KIND", Kind: page.KindText, Keep: 80, Whole: true},
 		{Key: "mac", Kind: page.KindText, Show: page.PipeOnly},
 		{Key: "state", Label: "STATE", Kind: page.KindList, Keep: 90},
 		{Key: "cpu", Label: "CPU", Kind: page.KindText, Keep: 40},
