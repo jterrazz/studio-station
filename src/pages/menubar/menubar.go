@@ -182,13 +182,11 @@ func start() page.Action {
 
 func stopAll(r Reading) page.Action {
 	var w engine.Work
-	host := "this Mac"
 	if r.Fleet != nil {
 		for _, h := range r.Fleet.Hosts {
 			if !h.Here {
 				continue
 			}
-			host = h.Name
 			for _, vm := range h.VMs {
 				switch {
 				case vm.State != machines.Running:
@@ -200,7 +198,7 @@ func stopAll(r Reading) page.Action {
 			}
 		}
 	}
-	confirm := pageengine.StopConfirm(w, host)
+	confirm := pageengine.StopConfirm(w, page.ThisMac)
 	return page.Action{ID: ActionStopAll, Label: "Stop everything", On: page.OnPage, Priority: 3, Mutates: true, Confirm: &confirm, Run: &page.Run{Call: CallStop, In: map[string]string{"Confirm": "yes", "By": "the menu bar"}}}
 }
 

@@ -319,7 +319,7 @@
       "label": "Stop everything",
       "on": "page",
       "confirm": {
-        "question": "Stop everything on macbook?",
+        "question": "Stop everything on This Mac?",
         "lines": [
           {
             "kind": "text",

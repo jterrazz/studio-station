@@ -14,7 +14,7 @@ final class HomeTests: XCTestCase {
         let page = try Tree.page("menubar.home.two-macs")
         let stop = try XCTUnwrap(page.action("stop-all"))
         let confirm = try XCTUnwrap(stop.confirm)
-        XCTAssertEqual(confirm.question, "Stop everything on macbook?")
+        XCTAssertEqual(confirm.question, "Stop everything on This Mac?")
         XCTAssertEqual(texts(confirm.lines), [
             "linux-1 will stop; its disk is kept",
             "Awake ends, and the engine stays stopped until station engine start or the next login",
