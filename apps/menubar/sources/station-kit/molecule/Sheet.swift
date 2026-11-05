@@ -30,8 +30,7 @@ public struct TypedField: View {
         .font(.system(size: Token.Space.text))
         .padding(.horizontal, Token.Tile.padding + 1)
         .padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: Token.Tile.pill + 2, style: .continuous).fill(palette.well))
-        .overlay(RoundedRectangle(cornerRadius: Token.Tile.pill + 2, style: .continuous).strokeBorder(palette.hover, lineWidth: 0.6))
+        .stationWell(radius: Token.Tile.pill + 2)
     }
 
     @ViewBuilder
@@ -106,7 +105,7 @@ public struct ConfirmSheet: View {
             }
         }
         .padding(Token.Tile.padding + 2)
-        .background(RoundedRectangle(cornerRadius: Token.Tile.sheet, style: .continuous).fill(palette.hover))
+        .stationGlass(radius: Token.Tile.sheet)
     }
 }
 
@@ -157,7 +156,7 @@ public struct FormSheet: View {
             }
         }
         .padding(Token.Tile.padding + 2)
-        .background(RoundedRectangle(cornerRadius: Token.Tile.sheet, style: .continuous).fill(palette.hover))
+        .stationGlass(radius: Token.Tile.sheet)
     }
 }
 
@@ -207,6 +206,6 @@ public struct Segments: View {
             }
         }
         .padding(2)
-        .background(RoundedRectangle(cornerRadius: Token.Tile.pill, style: .continuous).fill(palette.faint))
+        .stationWell(radius: Token.Tile.pill)
     }
 }

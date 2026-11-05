@@ -66,9 +66,35 @@ extension View {
         modifier(StationGlass(shape: Capsule(), tint: tint, id: id, interactive: true))
     }
 
+    // value: a sunken well of glass a field, an address or a picker's
+    // options sit in: live, the system's clear glass; drawn still, a
+    // shade deeper than what lies behind, its rim lit from below.
+    public func stationWell(radius: CGFloat = Token.Tile.hover) -> some View {
+        modifier(StationWell(shape: RoundedRectangle(cornerRadius: radius, style: .continuous)))
+    }
+
     // value: the panel's own window: the MenuBarExtra's system glass shows
     // through live, so nothing is painted; a snapshot draws that window.
     public func stationPanel() -> some View { modifier(PanelGlass()) }
+}
+
+struct StationWell<S: InsettableShape>: ViewModifier {
+    let shape: S
+    @Environment(\.stationStill) private var still
+    @Environment(\.colorScheme) private var scheme
+
+    func body(content: Content) -> some View {
+        if still {
+            content.background {
+                ZStack {
+                    shape.fill(LinearGradient(colors: Token.Glass.sunken(scheme), startPoint: .top, endPoint: .bottom))
+                    shape.strokeBorder(LinearGradient(colors: Token.Glass.sunkenRim(scheme), startPoint: .top, endPoint: .bottom), lineWidth: 0.6)
+                }
+            }
+        } else {
+            content.glassEffect(.clear, in: shape)
+        }
+    }
 }
 
 struct PanelGlass: ViewModifier {
@@ -484,7 +510,7 @@ public struct LinkField: View {
             Text(text).font(.system(size: Token.Space.small, design: .monospaced)).foregroundStyle(palette.text).lineLimit(1).truncationMode(.middle)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 9).padding(.vertical, 7)
-                .background(RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(palette.well))
+                .stationWell()
             RoundButton(Token.Symbol.copy, tap: copy)
             if let toggleQR { RoundButton(Token.Symbol.qr, picked: qr, tap: toggleQR) }
             if let open { RoundButton(Token.Symbol.open, tap: open) }

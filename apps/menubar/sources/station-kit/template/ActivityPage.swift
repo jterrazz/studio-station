@@ -115,13 +115,25 @@ public struct ActivityPage: View {
         }
     }
 
+    // value: why a process has no figure in a column: the engine ranks
+    // the busiest by CPU and by memory apart, and names a figure only
+    // where its list holds the process.
+    static func missing(_ key: String) -> String {
+        "Not among the busiest by \(key == "cpu" ? "CPU" : key)"
+    }
+
     func process(_ s: Section, _ r: Row) -> some View {
         HStack(spacing: Token.Space.gap) {
             Text(r.label ?? "").font(.system(size: Token.Space.text)).foregroundStyle(palette.text).lineLimit(1)
             if let what = s.cell(r, "what") { Text(Format.show(what)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted) }
             Spacer(minLength: 0)
             ForEach(["cpu", "memory"], id: \.self) { key in
-                Text(s.cell(r, key).map { Format.show($0) } ?? Token.Glyph.dash).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).monospacedDigit().frame(width: 52, alignment: .trailing)
+                if let v = s.cell(r, key) {
+                    Text(Format.show(v)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).monospacedDigit().frame(width: 52, alignment: .trailing)
+                } else {
+                    Text(Token.Glyph.missing).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle).frame(width: 52, alignment: .trailing)
+                        .help(Self.missing(key))
+                }
             }
         }
         .frame(minHeight: Token.Space.row + 8)

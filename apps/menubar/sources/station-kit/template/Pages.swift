@@ -29,27 +29,40 @@ struct MetricTile: View {
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationNow) private var now
 
+    // value: whether the measure is still being read: no value yet, or
+    // the page's pending one.
+    var waiting: Bool { value == nil || value?.kind == "pending" }
+
     var body: some View {
         let (number, unit, of) = Self.parts(value.map { Format.show($0, now: now) } ?? "")
         GlassCard(id: id, fill: true) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(label).font(.system(size: Token.Space.small + 1, weight: .medium)).foregroundStyle(palette.muted).lineLimit(1)
-                Self.figure(number, unit, palette: palette).frame(height: Token.Tile.figure + 4, alignment: .leading)
-                if let spark, spark.count > 1 {
+                if waiting || number.isEmpty {
+                    Self.figure(Token.Glyph.missing, "", palette: palette, ink: palette.subtle).frame(height: Token.Tile.figure + 4, alignment: .leading)
+                } else {
+                    Self.figure(number, unit, palette: palette).frame(height: Token.Tile.figure + 4, alignment: .leading)
+                }
+                if waiting {
+                    Bars.pending().padding(.vertical, 1)
+                } else if let spark, spark.count > 1 {
                     Bars(Array(spark.suffix(12))).padding(.vertical, 1)
                 }
-                if let line = caption ?? of {
+                if let line = waiting ? Self.reading : caption ?? of {
                     Text(line).font(.system(size: Token.Space.small - 1)).foregroundStyle(palette.muted).lineLimit(1).minimumScaleFactor(0.8).monospacedDigit()
                 }
             }
         }
     }
 
+    // value: the secondary line of a tile whose measure is not read yet.
+    static let reading = "Reading" + Token.Glyph.ellipsis
+
     // value: a figure as the references draw one: the number 22 pt, its
     // unit after it 11 pt secondary.
-    static func figure(_ number: String, _ unit: String, palette: Token.Palette) -> some View {
+    static func figure(_ number: String, _ unit: String, palette: Token.Palette, ink: Color? = nil) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 2) {
-            Text(number).font(.system(size: Token.Tile.figure, weight: .semibold)).foregroundStyle(palette.text)
+            Text(number).font(.system(size: Token.Tile.figure, weight: .semibold)).foregroundStyle(ink ?? palette.text)
                 .monospacedDigit().contentTransition(.numericText())
             if !unit.isEmpty {
                 Text(unit).font(.system(size: Token.Space.small, weight: .medium)).foregroundStyle(palette.muted)
@@ -576,7 +589,8 @@ struct MachineContent: View {
         case "activity":
             HStack(spacing: Token.Glass.spacing) {
                 ForEach(Array((s.items ?? []).compactMap(\.row).enumerated()), id: \.offset) { _, r in
-                    MetricTile(label: r.label ?? "", value: r.cells?.first, spark: nil)
+                    let spark = r.cells?.dropFirst().first?.points
+                    MetricTile(label: r.label ?? "", value: r.cells?.first, spark: spark, caption: r.id == "cpu" ? MetricTile.peak(spark) { "\($0) %" } : nil)
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
