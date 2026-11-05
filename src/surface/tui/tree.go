@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"cmp"
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/core/machine"
@@ -41,22 +42,14 @@ func tree(here page.Context, p *page.Page) []node {
 	if p == nil {
 		return append(nodes, this)
 	}
-	prefix, _, _ := strings.Cut(here.Machine, "-")
 	for _, s := range p.Sections {
 		for _, it := range s.Items {
 			if it.Group == nil {
 				continue
 			}
 			h := it.Group.Head
-			mac := node{name: h.ID, label: h.Label, kind: machine.Mac, mark: h.Mark}
-			if h.ID == here.Machine {
-				mac.label, mac.here = "This Mac", true
-			} else if short, ok := strings.CutPrefix(h.Label, prefix+"-"); ok && short != "" {
-				mac.label = short
-			}
-			if len(h.Cells) > 2 {
-				mac.engine = ui.Plain(h.Cells[2])
-			}
+			mac := node{name: h.ID, label: cmp.Or(h.Short, h.Label), kind: machine.Mac, mark: h.Mark, here: h.ID == here.Machine}
+			mac.engine = ui.Plain(column(s, h, "state"))
 			mac.facts = []string{h.ID}
 			nodes = append(nodes, mac)
 			var servers, workspaces []node
@@ -65,16 +58,12 @@ func tree(here page.Context, p *page.Page) []node {
 					continue
 				}
 				r := *v.Row
-				vm := node{name: r.ID, label: r.Label, mark: r.Mark, mac: mac.name}
-				if len(r.Cells) > 0 {
-					vm.kind = machine.Kind(strings.ToLower(ui.Plain(r.Cells[0])))
-					vm.facts = append(vm.facts, ui.Plain(r.Cells[0]))
-				}
-				if len(r.Cells) > 2 {
-					for _, w := range r.Cells[2].Items {
-						word := ui.Plain(w)
-						vm.facts = append(vm.facts, strings.ToUpper(word[:1])+word[1:])
-					}
+				kind := ui.Plain(column(s, r, "kind"))
+				vm := node{name: r.ID, label: r.Label, mark: r.Mark, mac: mac.name, kind: machine.Kind(strings.ToLower(kind))}
+				vm.facts = append(vm.facts, kind)
+				for _, w := range column(s, r, "state").Items {
+					word := ui.Plain(w)
+					vm.facts = append(vm.facts, strings.ToUpper(word[:1])+word[1:])
 				}
 				vm.facts = append(vm.facts, "on "+mac.label)
 				if vm.kind == machine.Server {
@@ -87,6 +76,16 @@ func tree(here page.Context, p *page.Page) []node {
 		}
 	}
 	return nodes
+}
+
+// value: a row's cell by its column's key, never by its place.
+func column(sec page.Section, r page.Row, key string) page.Value {
+	for i, c := range sec.Columns {
+		if c.Key == key && i > 0 && i-1 < len(r.Cells) {
+			return r.Cells[i-1]
+		}
+	}
+	return page.None()
 }
 
 func find(nodes []node, name string) (node, bool) {
