@@ -1,0 +1,282 @@
+package feeds_test
+
+import (
+	"context"
+	"reflect"
+	"slices"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/accounts"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+	"github.com/jterrazz/studio-station/src/activity"
+	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/feeds"
+	"github.com/jterrazz/studio-station/src/machines"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
+	"github.com/jterrazz/studio-station/src/overview"
+	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
+	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/ports"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
+)
+
+const (
+	laptop = "jterrazz-macbook-pro"
+	mini   = "jterrazz-mac-mini"
+	gb     = int64(1) << 30
+)
+
+type steps struct {
+	mu    sync.Mutex
+	wakes map[time.Duration]chan struct{}
+}
+
+func newSteps() *steps {
+	return &steps{wakes: map[time.Duration]chan struct{}{2 * time.Second: make(chan struct{}), 30 * time.Second: make(chan struct{})}}
+}
+
+func (s *steps) Sleep(ctx context.Context, d time.Duration) error {
+	s.mu.Lock()
+	wake := s.wakes[d]
+	s.mu.Unlock()
+	select {
+	case <-wake:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (s *steps) Now() time.Time { return time.Date(2026, 11, 3, 10, 30, 0, 0, time.UTC) }
+
+func (s *steps) pass(t *testing.T, d time.Duration) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	select {
+	case s.wakes[d] <- struct{}{}:
+	case <-ctx.Done():
+		t.Fatalf("nothing of the page waits %s", d)
+	}
+}
+
+type world struct {
+	mu       sync.Mutex
+	infra    []machines.VM
+	beside   []machines.VM
+	asked    map[string][]string
+	activity map[string]uint64
+}
+
+func (w *world) fleet() machines.Fleet {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	infra := w.infra[0]
+	if len(w.infra) > 1 {
+		w.infra = w.infra[1:]
+	}
+	return machines.Fleet{Hosts: []machines.HostView{
+		{Name: laptop, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}},
+		{Name: mini, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: append([]machines.VM{infra}, w.beside...)},
+	}}
+}
+
+func (w *world) answer(name string, target machine.Ref) any {
+	w.mu.Lock()
+	at := target.Name
+	if at == "" {
+		at = laptop
+	}
+	w.asked[name] = append(w.asked[name], at)
+	w.mu.Unlock()
+	switch name {
+	case machinescalls.List.Name:
+		return machinescalls.ListOut{Fleet: w.fleet()}
+	case portscalls.List.Name:
+		return ports.Listing{}
+	case accountscalls.List.Name:
+		return accounts.Report{}
+	case overviewcalls.Read.Name:
+		need := map[string]string{laptop: "a sign-in expired", mini: "port 5000 is reachable from outside", "infra": "a container exited"}[at]
+		return overviewcalls.ReadOut{Summary: overview.Summary{Head: overview.Head{Name: at}, Needs: []overview.Need{{Machine: at, Section: "ports", Broken: true, Text: need}}}}
+	case activitycalls.Sample.Name:
+		memory := map[string]int64{laptop: 16 * gb, mini: 64 * gb, "infra": 24 * gb}[at]
+		w.mu.Lock()
+		w.activity[at]++
+		n := w.activity[at]
+		w.mu.Unlock()
+		return activity.Reading{Sample: activity.Sample{CPUBusy: n * 300, CPUTotal: n * 1000, MemUsed: memory / 2, MemTotal: memory}}
+	}
+	return nil
+}
+
+func (w *world) Invoke(_ context.Context, target machine.Ref, name string, _, out any, _ call.Progress) error {
+	reflect.ValueOf(out).Elem().Set(reflect.ValueOf(w.answer(name, target)))
+	return nil
+}
+
+func (w *world) Watch(context.Context, machine.Ref, string, any, call.Progress) (<-chan call.Update[any], error) {
+	return nil, nil
+}
+
+func (w *world) askedOf(name string) []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return slices.Clone(w.asked[name])
+}
+
+func infraAt(state machines.VMState, restarts int) machines.VM {
+	return machines.VM{Name: "infra", Host: mini, Lifetime: machines.AlwaysOn, State: state, Want: "running", Guest: "connected", IP: "192.168.64.7", Check: "https://infra:6443/readyz", Device: "infra",
+		Restarts: machines.Restarts{Count: restarts}, CheckStatus: machines.CheckStatus{State: machines.CheckPassing}}
+}
+
+func watch(t *testing.T, w *world, clock *steps, subject string) <-chan any {
+	t.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	o := feeds.Menubar{Calls: w, Clock: clock}
+	return o.Machine()(ctx, engine.FeedInput{Subject: subject})
+}
+
+func until(t *testing.T, pages <-chan any, what string, ok func(page.Page) bool) page.Page {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	for {
+		select {
+		case v := <-pages:
+			d, isPage := v.(page.Document)
+			if !isPage {
+				t.Fatalf("the feed sent %T, want a page", v)
+			}
+			if ok(d.Page) {
+				return d.Page
+			}
+		case <-ctx.Done():
+			t.Fatalf("the page never showed %s", what)
+		}
+	}
+}
+
+func find(items []page.Item, id string) *page.Row {
+	for _, it := range items {
+		if it.Row != nil && it.Row.ID == id {
+			return it.Row
+		}
+		if it.Group != nil {
+			if it.Group.Head.ID == id {
+				return &it.Group.Head
+			}
+			if r := find(it.Group.Items, id); r != nil {
+				return r
+			}
+		}
+	}
+	return nil
+}
+
+func row(p page.Page, section, id string) *page.Row {
+	for _, s := range p.Sections {
+		if s.ID == section {
+			return find(s.Items, id)
+		}
+	}
+	return nil
+}
+
+func needs(p page.Page) []string {
+	var out []string
+	for _, s := range p.Sections {
+		if s.ID != "needs-you" {
+			continue
+		}
+		for _, it := range s.Items {
+			if it.Row != nil {
+				out = append(out, it.Row.Label)
+			}
+		}
+	}
+	return out
+}
+
+func TestTheMacMinisPageOpenFromThisMacIsTheMinisOwnAnswer(t *testing.T) {
+	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, asked: map[string][]string{}, activity: map[string]uint64{}}
+	p := until(t, watch(t, w, newSteps(), mini), "mac-mini's Needs you", func(p page.Page) bool { return len(needs(p)) > 0 })
+	if got := needs(p); !slices.Equal(got, []string{"port 5000 is reachable from outside"}) {
+		t.Errorf("mac-mini's page needs you for %q, want only the mini's own port 5000", got)
+	}
+	if got := w.askedOf(overviewcalls.Read.Name); !slices.Equal(got, []string{mini}) {
+		t.Errorf("the overview was read on %q, want on mac-mini only", got)
+	}
+}
+
+func TestInfrasPageFollowsItLiveWhileItRestarts(t *testing.T) {
+	w := &world{infra: []machines.VM{infraAt(machines.Running, 0), infraAt(machines.Stopped, 0), infraAt(machines.Running, 1)}, asked: map[string][]string{}, activity: map[string]uint64{}}
+	clock := newSteps()
+	pages := watch(t, w, clock, "infra")
+	memory := func(p page.Page) page.Value {
+		if r := row(p, "activity", "memory"); r != nil {
+			return r.Cells[0]
+		}
+		return page.Value{}
+	}
+	p := until(t, pages, "infra running with its own memory", func(p page.Page) bool {
+		return memory(p).Kind == page.KindRatio && row(p, "machine", "state").Mark == page.OK
+	})
+	if got := memory(p); got.Of != 24*gb {
+		t.Errorf("infra's memory is %d of %d bytes, want infra's own 24 GB", got.N, got.Of)
+	}
+	if got := needs(p); len(got) != 0 {
+		t.Errorf("infra's page draws Needs you %q", got)
+	}
+	clock.pass(t, 2*time.Second)
+	until(t, pages, "infra's CPU after its second reading", func(p page.Page) bool { return row(p, "activity", "cpu").Cells[0].Kind == page.KindPercent })
+	if got := w.askedOf(machinescalls.List.Name); len(got) != 1 {
+		t.Errorf("two seconds re-read the fleet %d times, want it read once, at the page's opening", len(got))
+	}
+	clock.pass(t, 30*time.Second)
+	until(t, pages, "infra down while it restarts", func(p page.Page) bool { return row(p, "machine", "state").Mark == page.Broken })
+	clock.pass(t, 30*time.Second)
+	p = until(t, pages, "infra back", func(p page.Page) bool { return row(p, "machine", "state").Mark == page.OK })
+	if r := row(p, "up", "restarts"); r == nil || r.Cells[0].Items[0].N != 1 {
+		t.Errorf("infra back counts %+v restarts, want 1", r)
+	}
+	for _, name := range []string{activitycalls.Sample.Name, overviewcalls.Read.Name} {
+		for _, at := range w.askedOf(name) {
+			if at != "infra" {
+				t.Errorf("%s was read on %s, want every read on infra, through its Mac", name, at)
+			}
+		}
+	}
+}
+
+func TestTheSwitcherDrawsEachMacsServersThenWorkspacesAndRereadsEveryThirtySeconds(t *testing.T) {
+	build := machines.VM{Name: "build", Host: mini, Lifetime: machines.Throwaway, State: machines.Running}
+	w := &world{infra: []machines.VM{infraAt(machines.Running, 0), infraAt(machines.Stopped, 0)}, beside: []machines.VM{build}, asked: map[string][]string{}, activity: map[string]uint64{}}
+	clock := newSteps()
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	pages := feeds.Menubar{Calls: w, Clock: clock}.Switcher()(ctx, engine.FeedInput{})
+	p := until(t, pages, "the fleet", func(p page.Page) bool { return row(p, "machines", "infra") != nil })
+	var groups []string
+	for _, it := range p.Sections[0].Items {
+		if it.Group != nil && it.Group.Head.ID == mini {
+			for _, g := range it.Group.Items {
+				groups = append(groups, g.Group.Head.Label)
+			}
+		}
+	}
+	if !slices.Equal(groups, []string{"Servers", "Workspaces"}) {
+		t.Errorf("mac-mini's groups are %q, want its Servers then its Workspaces", groups)
+	}
+	if r := row(p, "machines", "infra"); r.Mark != page.OK {
+		t.Errorf("infra is drawn %q before it stopped", r.Mark)
+	}
+	clock.pass(t, 30*time.Second)
+	until(t, pages, "infra down thirty seconds later", func(p page.Page) bool { return row(p, "machines", "infra").Mark == page.Broken })
+}
