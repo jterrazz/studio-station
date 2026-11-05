@@ -43,6 +43,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if in.History && !io.JSON {
 				return kit.Refuse("--history is for scripts: it needs --json", "station activity --json --history")
 			}
+			if in.AllMachines && env.Far() {
+				return kit.Refuse("--all-machines reads every machine: it takes no --on", "station activity --all-machines")
+			}
 			if in.AllMachines {
 				views, err := every(ctx, d, env)
 				if err != nil {
