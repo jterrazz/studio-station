@@ -250,9 +250,9 @@ func keyPress(f *file, e ast.Expr) bool {
 	return t != nil && strings.HasSuffix(t.String(), "bubbletea/v2.KeyPressMsg")
 }
 
-// invariant: rule 19: a migrated tab binds no key of its own: its keys are its
-// page's Actions and the Browser's key map, the two the key sheet is built from,
-// so a key cannot exist without appearing on the sheet.
+// invariant: rule 19: a section screen binds no key of its own: its keys are
+// its page's Actions and the shell's, the two the key sheet is built from, so
+// a key cannot exist without appearing on the sheet.
 func ruleKeys(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {

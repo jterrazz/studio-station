@@ -245,8 +245,8 @@ func decides(f *file, n *ast.SelectorExpr, asks [][2]token.Pos, offers bool) str
 // confirmation asks it in its own Run; no surface decides one. A surface
 // neither requires a confirmation nor answers one before its call asks
 // (confirm.Yes is kit's, for --yes); a TUI screen puts a question only
-// through tab.Confirmed, and a CLI leaf only in its Leaf's Ask, which kit
-// calls once the call has asked.
+// once its call has asked it, and a CLI leaf only in its Leaf's Ask, which
+// kit calls once the call has asked.
 func ruleConfirmInUsecase(w *world) []finding {
 	var out []finding
 	for _, c := range callValues(w) {
