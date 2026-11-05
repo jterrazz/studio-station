@@ -323,12 +323,18 @@ func Off(s awake.Slept, label string, here page.Context) page.Page {
 }
 
 // value: the next steps (vision 07 "station awake"): keep This Mac awake,
-// or another Mac.
+// with its lid closed where it reports a lid (SPEC §5.9, E1), or another Mac.
 func (f Fleet) next() []page.Hint {
 	if f.Far {
 		return nil
 	}
-	hints := []page.Hint{{Command: "station awake 4h --lid", Text: "this Mac"}}
+	keep := "station awake 4h"
+	for _, r := range f.Reports {
+		if r.Here && r.Caps.Lid {
+			keep = "station awake 4h --lid"
+		}
+	}
+	hints := []page.Hint{{Command: keep, Text: "this Mac"}}
 	for _, r := range f.Reports {
 		if !r.Here {
 			return append(hints, page.Hint{Command: "station awake 4h --on " + f.name(r), Text: "another Mac"})
