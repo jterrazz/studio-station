@@ -27,7 +27,7 @@ type event struct {
 }
 
 // invariant: the closed list of world events (USE-CASES §0.2), each one
-// modelled by the fakes.
+// played by the fakes.
 func events() []event {
 	return []event{
 		{"reboot", []string{"<mac>"}, reboot},
