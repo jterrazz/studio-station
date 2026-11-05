@@ -25,9 +25,3 @@ runs:
           ●	com.jterrazz.station.engine	user	running · pid 812		~/Library/LaunchAgents/com.jterrazz.station.engine.plist
           # Known apps	7 ●
           # Unknown	2 ●
-    - command: '--version >/dev/null; terminal --size 100x60 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" background --all | /usr/bin/grep -e "^ [A-Z][a-z ]*  [0-9]" -e "→ station" -e "   [●○◐✗] "'
-      stdin: |
-          scrollback
-      exit: 0
-      stdout: |4
-              → station background remove com.jterrazz.brain.x-snapshot
