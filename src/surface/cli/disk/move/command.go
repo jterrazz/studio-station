@@ -25,7 +25,7 @@ type Input struct{ Folder string }
 func Command(d Deps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[Input]{
 		Use:     "move <folder>",
-		Short:   "Move a misplaced folder where its app's own config says; nothing is lost",
+		Short:   "Move a misplaced folder where its app expects it; nothing is lost",
 		Example: "  station disk move ~/go",
 		Args:    cobra.ExactArgs(1),
 		Bind: func(in *Input, args []string) error {

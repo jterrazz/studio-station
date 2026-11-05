@@ -22,7 +22,7 @@ type Input struct{ AllMachines, All bool }
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 	cmd := kit.Command(kit.Leaf[Input]{
 		Use:   "ports",
-		Short: "What listens on your machines, who reaches it, and what your VMs share on the tailnet",
+		Short: "What listens on your machines, who reaches it, and what your VMs share on Tailscale",
 		Example: "  station ports\n  station ports --all-machines\n  station ports --all\n  station ports --json\n" +
 			"  station ports share linux-1 3000\n  station ports stop-sharing linux-1 3000",
 		Group: kit.OnAMachine,

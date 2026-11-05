@@ -4,7 +4,7 @@ runs:
     - command: 'help ports | /usr/bin/grep -E "^  [A-Z]|^    [a-z]+ " | /usr/bin/sed -E "s/ +$//"'
       exit: 0
       stdout: |4
-            What listens on your machines, who reaches it, and what your VMs share on the tailnet
+            What listens on your machines, who reaches it, and what your VMs share on Tailscale
             USAGE
               station ports [command] [--flags]
             EXAMPLES
@@ -16,6 +16,6 @@ runs:
               station ports stop-sharing linux-1 3000
             COMMANDS
               declare <machine> <port> [--flags]    Declare a port public: it is meant to be reached from outside Tailscale, by the route --via names (cloudflare-tunnel, tailscale-funnel, lan)
-              share <vm> <port> [--flags]           Reserve a VM's port now and share it on the tailnet, its URL printed before anything listens; inside a VM, the port alone
+              share <vm> <port> [--flags]           Reserve a VM's port now and share it on Tailscale, its URL printed before anything listens; inside a VM, the port alone
               undeclare <machine> <port> [--flags]  Take back a port's declaration: it is red again while it listens where something outside Tailscale reaches it
             FLAGS

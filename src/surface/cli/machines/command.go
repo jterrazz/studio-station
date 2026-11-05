@@ -47,7 +47,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Complete: func([]string, string) []string { return d.Names() },
 		Group:    kit.Machines,
 		Declare: func(f *pflag.FlagSet, in *Input) {
-			f.BoolVar(&in.Here, "here", false, "this host only, without asking the others")
+			f.BoolVar(&in.Here, "here", false, "This Mac only, without asking the other Macs")
 		},
 		Read:  func(*Input) bool { return true },
 		Live:  true,

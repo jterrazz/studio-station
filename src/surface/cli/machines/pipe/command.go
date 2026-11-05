@@ -24,7 +24,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	// every refusal comes before the first byte and nothing else is printed.
 	return kit.Command(kit.Leaf[Input]{
 		Use:      "pipe <vm>",
-		Short:    "Carry ssh's bytes to a VM of this host",
+		Short:    "Carry ssh's bytes to a VM of this Mac",
 		Plumbing: true,
 		Args:     cobra.ExactArgs(1),
 		Bind: func(in *Input, args []string) error {
