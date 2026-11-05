@@ -24,7 +24,7 @@ func (s shell) paneKeys() []ui.Binding {
 		keys = append(keys, bind("enter", "unfold"))
 	} else if s.table() {
 		keys = append(keys, bind("enter", "open"))
-	} else if s.listed() {
+	} else if s.detailed() {
 		keys = append(keys, bind("enter", "detail"))
 	}
 	if s.listed() {
