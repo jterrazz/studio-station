@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"errors"
 	"slices"
 
 	"github.com/jterrazz/studio-station/src/ports"
@@ -23,8 +24,15 @@ func NewListeners(listening ...ports.Listener) *Listeners {
 	return ListenersOf(w, here)
 }
 
+// value: what a scripted fault of Listeners.Read answers, as lsof that
+// fails would.
+var errListeners = errors.New("lsof failed: what listens could not be read")
+
 func (l *Listeners) Read(context.Context) ([]ports.Listener, error) {
 	l.w.Lock()
 	defer l.w.Unlock()
+	if l.w.Fails("Listeners.Read") {
+		return nil, errListeners
+	}
 	return slices.Clone(l.w.Listening(l.mac)), nil
 }
