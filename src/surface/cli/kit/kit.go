@@ -41,6 +41,9 @@ type Env struct {
 	// value: what this machine is, and the clock a document is dated by.
 	Kind machine.Kind
 	Now  func() time.Time
+	// value: a name as this Mac's records hold it: a Mac by its full name,
+	// a VM of this Mac with On set; false for any other name.
+	Locate func(name string) (machine.Ref, bool)
 }
 
 type IO struct {

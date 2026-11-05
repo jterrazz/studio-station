@@ -82,6 +82,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		Self:        here.profile.Ref,
 		Kind:        here.profile.Kind,
 		Now:         here.host.Clock.Now,
+		Locate:      here.locate,
 	}
 	router := here.router(kenv)
 	defer router.Close()

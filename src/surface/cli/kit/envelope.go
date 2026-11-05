@@ -31,22 +31,37 @@ func (e Env) envelope(ctx context.Context) *output.Envelope {
 		return out
 	}
 	out.Machine = output.Machine{Name: target.Name, Label: target.Name, Kind: string(machine.Mac)}
-	list, err := call.Read(ctx, e.Calls, e.Self, machinescalls.List, machinescalls.ListIn{Unwritten: true}, nil)
+	if e.Locate != nil {
+		if ref, ok := e.Locate(target.Name); ok && ref.On == "" {
+			out.Machine = output.Machine{Name: ref.Name, Label: page.MacName(ref.Name, e.Self.Name), Kind: string(machine.Mac)}
+			return out
+		}
+	}
+	if m, ok := e.named(ctx, target, machinescalls.ListIn{Here: true}); ok {
+		out.Machine = m
+	} else if m, ok := e.named(ctx, target, machinescalls.ListIn{Unwritten: true}); ok {
+		out.Machine = m
+	}
+	return out
+}
+
+func (e Env) named(ctx context.Context, target machine.Ref, in machinescalls.ListIn) (output.Machine, bool) {
+	// invariant: a Mac and this Mac's own VMs are named from this Mac's
+	// records; only a VM another Mac holds is asked of the fleet.
+	list, err := call.Read(ctx, e.Calls, e.Self, machinescalls.List, in, nil)
 	if err != nil {
-		return out
+		return output.Machine{}, false
 	}
 	for _, h := range list.Fleet.Hosts {
 		if h.Name == target.Name || page.MacName(h.Name, e.Self.Name) == target.Name {
-			out.Machine = output.Machine{Name: h.Name, Label: page.MacName(h.Name, e.Self.Name), Kind: string(machine.Mac), ThisMac: h.Here}
-			return out
+			return output.Machine{Name: h.Name, Label: page.MacName(h.Name, e.Self.Name), Kind: string(machine.Mac), ThisMac: h.Here}, true
 		}
 		for _, vm := range h.VMs {
 			if vm.Name == target.Name {
 				mac := h.Name
-				out.Machine = output.Machine{Name: vm.Name, Label: vm.Name, Kind: string(vm.Lifetime.Kind()), On: &mac}
-				return out
+				return output.Machine{Name: vm.Name, Label: vm.Name, Kind: string(vm.Lifetime.Kind()), On: &mac}, true
 			}
 		}
 	}
-	return out
+	return output.Machine{}, false
 }
