@@ -22,4 +22,5 @@ const (
 var (
 	ErrNotFound = system.ErrNotFound
 	ErrTimeout  = system.ErrTimeout
+	ErrSilent   = system.ErrSilent
 )

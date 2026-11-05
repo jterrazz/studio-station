@@ -3,6 +3,7 @@ package local
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -18,7 +19,7 @@ func Attach(ctx context.Context, r Runner, c Cmd) error {
 	ran, err := r.Attach(ctx, c, ToStderr)
 	switch {
 	case err != nil:
-		return errors.New(c.Name + ": " + err.Error())
+		return fmt.Errorf("%s: %w", c.Name, err)
 	case ran.ExitCode != 0:
 		return &ExitError{Step: c.Name + " " + first(c.Args), Code: ran.ExitCode, LastStderr: ran.LastStderr}
 	}

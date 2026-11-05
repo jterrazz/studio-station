@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -157,8 +158,75 @@ func (r *runner) Attach(ctx context.Context, c system.Cmd, out system.Stream) (s
 	if c.Stdin != "" {
 		cmd.Stdin = strings.NewReader(c.Stdin)
 	}
+	var silent *answer
+	if c.Answer > 0 {
+		silent = awaitAnswer(cmd, c.Answer)
+		defer silent.stop()
+	}
 	code, err := exitOf(ctx, run(cmd, c.Track))
+	if silent.passed() {
+		return system.Attached{ExitCode: -1, LastStderr: stderr.last()}, system.ErrSilent
+	}
 	return system.Attached{ExitCode: code, LastStderr: stderr.last()}, err
+}
+
+// invariant: a command that owes a first word within its bound leads its own
+// process group, and the whole group is told to stop (SIGTERM, which sudo
+// relays to what it runs as root) when the bound passes in silence; a
+// grandchild that keeps the output open cannot hold the run past WaitDelay.
+// Whatever the command says after its first word is free.
+type answer struct {
+	timer  *time.Timer
+	heard  atomic.Bool
+	silent atomic.Bool
+	ended  atomic.Bool
+}
+
+func awaitAnswer(cmd *exec.Cmd, bound time.Duration) *answer {
+	a := &answer{}
+	cmd.Stdout = &heard{w: cmd.Stdout, a: a}
+	cmd.Stderr = &heard{w: cmd.Stderr, a: a}
+	if cmd.SysProcAttr == nil {
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+	}
+	cmd.SysProcAttr.Setpgid = true
+	cmd.WaitDelay = 5 * time.Second
+	a.timer = time.AfterFunc(bound, func() {
+		if a.heard.Load() || cmd.Process == nil {
+			return
+		}
+		a.silent.Store(true)
+		group := -cmd.Process.Pid
+		_ = syscall.Kill(group, syscall.SIGTERM)
+		time.AfterFunc(5*time.Second, func() {
+			if !a.ended.Load() {
+				_ = syscall.Kill(group, syscall.SIGKILL)
+			}
+		})
+	})
+	return a
+}
+
+func (a *answer) stop() {
+	a.ended.Store(true)
+	a.timer.Stop()
+}
+
+func (a *answer) passed() bool { return a != nil && a.silent.Load() }
+
+type heard struct {
+	w io.Writer
+	a *answer
+}
+
+func (h *heard) Write(p []byte) (int, error) {
+	if len(p) > 0 {
+		h.a.heard.Store(true)
+	}
+	if h.w == nil {
+		return len(p), nil
+	}
+	return h.w.Write(p)
 }
 
 type lastLine struct {
