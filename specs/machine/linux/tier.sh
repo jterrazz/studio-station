@@ -288,8 +288,9 @@ check_proc() {
 sample > "$work/act-0.json" && proc > "$work/proc-0.txt" || fail "read ws1's activity"
 check_proc "$work/act-0.json" "$work/proc-0.txt" || fail "idle: station's numbers do not match /proc"
 # value: the load lasts 40 s at least, the downloads overlapping the CPU's: one dd
-# of 1.5 GB is done in 2 s, and speed.cloudflare.com refuses more than 25 MB a call.
-vm_ssh ws1 'setsid -f sh -c "yes > /dev/null & yes > /dev/null & end=\$((\$(date +%s) + 40)); for i in \$(seq 1 16); do curl -sf --limit-rate 40M -o /dev/null \"https://speed.cloudflare.com/__down?bytes=25000000\"; done; dd if=/dev/zero of=/tmp/e2e-dd bs=1M count=1536 oflag=direct status=none; rm -f /tmp/e2e-dd; while [ \$(date +%s) -lt \$end ]; do sleep 1; done; pkill yes" > /dev/null 2>&1 &' < /dev/null
+# of 1.5 GB is done in 2 s, and speed.cloudflare.com refuses more than 25 MB a call
+# and some calls of a burst: /tmp/e2e-got holds the bytes each call received.
+vm_ssh ws1 'setsid -f sh -c "yes > /dev/null & yes > /dev/null & end=\$((\$(date +%s) + 40)); rm -f /tmp/e2e-got; for i in \$(seq 1 16); do curl -sf --limit-rate 40M -w \"%{size_download}\\n\" -o /dev/null \"https://speed.cloudflare.com/__down?bytes=25000000\" >> /tmp/e2e-got; done; dd if=/dev/zero of=/tmp/e2e-dd bs=1M count=1536 oflag=direct status=none; rm -f /tmp/e2e-dd; while [ \$(date +%s) -lt \$end ]; do sleep 1; done; pkill yes" > /dev/null 2>&1 &' < /dev/null
 busy=0
 for i in $(seq 1 12); do
   sleep 2
@@ -305,8 +306,10 @@ sample > "$work/act-1.json" && proc > "$work/proc-1.txt" || fail "read ws1's act
 check_proc "$work/act-1.json" "$work/proc-1.txt" || fail "after the load: station's numbers do not match /proc"
 grew() { jq -n --slurpfile a "$work/act-0.json" --slurpfile b "$work/act-1.json" "\$b[0].$1 - \$a[0].$1"; }
 [ "$(grew disk.written_since_boot_bytes)" -ge 1500000000 ] || fail "written grew $(grew disk.written_since_boot_bytes) under a 1.5 GB dd"
-[ "$(grew network.received_since_boot_bytes)" -ge 390000000 ] || fail "received grew $(grew network.received_since_boot_bytes) under a 400 MB download"
-say "   matches /proc idle and after; written +$(grew disk.written_since_boot_bytes) B, received +$(grew network.received_since_boot_bytes) B"
+got=$(in_vm ws1 'awk "{ s += \$1 } END { print s + 0 }" /tmp/e2e-got')
+[ "${got:-0}" -ge 100000000 ] || fail "the downloads received ${got:-nothing} B: speed.cloudflare.com refused them"
+[ "$(grew network.received_since_boot_bytes)" -ge "$got" ] || fail "received grew $(grew network.received_since_boot_bytes) under downloads of $got B"
+say "   matches /proc idle and after; written +$(grew disk.written_since_boot_bytes) B, received +$(grew network.received_since_boot_bytes) B for downloads of $got B"
 case_pass
 
 
