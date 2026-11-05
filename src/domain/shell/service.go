@@ -3,6 +3,7 @@ package shell
 import (
 	"context"
 	"io/fs"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/accounts/contract"
@@ -26,6 +27,9 @@ fi
 type Options struct {
 	Here     catalog.MachineKind
 	Services string
+	// value: the scripts of the shell functions settings applied here; one
+	// not written is skipped.
+	Functions []string
 }
 
 type Service struct {
@@ -51,7 +55,19 @@ func (s *Service) Zsh(ctx context.Context, completion string) (string, error) {
 	if line, ok := s.token(ctx); ok {
 		script += "\n" + line + "\n"
 	}
-	return script + s.services(), nil
+	return script + s.services() + s.functions(), nil
+}
+
+// invariant: the functions of an applied setting are a file read, like the
+// profiles' exports: a shell start never waits on anything.
+func (s *Service) functions() string {
+	var out strings.Builder
+	for _, f := range s.o.Functions {
+		if data, err := s.h.FS.ReadFile(f); err == nil && len(data) > 0 {
+			out.WriteString("\n" + string(data))
+		}
+	}
+	return out.String()
 }
 
 // invariant: in a VM the profiles' exports the guest wrote are a file read, never

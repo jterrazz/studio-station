@@ -10,7 +10,7 @@ runs:
           ◐	relocate	mise go_set_gobin set by hand to true; station leaves it
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ●	settings	applied hushlogin tart-launcher git-shortcuts
+          ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts
           ○	ssh-key	next: station settings apply ssh-key
           ○	spotlight-exclude	next: station settings apply spotlight-exclude
           ○	dns	next: station settings apply dns

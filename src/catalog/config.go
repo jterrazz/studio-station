@@ -36,9 +36,10 @@ type Effect interface{ Kind() EffectKind }
 type EffectKind string
 
 const (
-	EffectTouch      EffectKind = "touch"
-	EffectDotfile    EffectKind = "dotfile"
-	EffectGitAliases EffectKind = "git-aliases"
+	EffectTouch        EffectKind = "touch"
+	EffectDotfile      EffectKind = "dotfile"
+	EffectGitAliases   EffectKind = "git-aliases"
+	EffectZshFunctions EffectKind = "zsh-functions"
 )
 
 type Touch struct{ Path string }
@@ -61,6 +62,12 @@ type GitAliases struct {
 
 type GitAlias struct{ Name, Command string }
 
+type ZshFunctions struct {
+	// value: the embedded script of the functions station's zsh block defines.
+	From      string
+	Functions []string
+}
+
 type Procedure string
 
 const (
@@ -80,9 +87,10 @@ const (
 	ProcBackupExclusions     Procedure = "backup-exclusions"
 )
 
-func (Touch) Kind() EffectKind      { return EffectTouch }
-func (Dotfiles) Kind() EffectKind   { return EffectDotfile }
-func (GitAliases) Kind() EffectKind { return EffectGitAliases }
+func (Touch) Kind() EffectKind        { return EffectTouch }
+func (Dotfiles) Kind() EffectKind     { return EffectDotfile }
+func (GitAliases) Kind() EffectKind   { return EffectGitAliases }
+func (ZshFunctions) Kind() EffectKind { return EffectZshFunctions }
 
 func (p Procedure) Kind() EffectKind { return EffectKind("procedure:" + string(p)) }
 
@@ -169,6 +177,7 @@ var ConfigItems = []ConfigItem{
 	}},
 	{Name: "tart-launcher", Description: "The tart launcher: Tart's home is station's VMs folder", Category: CategorySystem, Places: hostKind, Effect: Dotfiles{Files: []Copy{{From: "tart/tart", To: "~/.local/bin/tart", Mode: 0o755}}}},
 	{Name: GitShortcutsSetting, Description: "Git shortcuts: git wip, unwip, sync, feat, fix, chore, branches, lg, st, pushup", Category: CategoryShell, Places: everyKind, Effect: GitShortcuts, Reversible: true, Writes: []Stored{noted(conf("~/.gitconfig"), "station's `[alias]` block")}},
+	{Name: "docker-shortcuts", Description: "Docker shortcuts: dclean, dclean-images, dreset, each asks first", Category: CategoryShell, Places: everyKind, Effect: DockerShortcuts, Reversible: true, Writes: []Stored{noted(conf("{config}/station/zsh/docker-shortcuts.zsh"), "the functions station's zsh block defines")}},
 }
 
 const GitShortcutsSetting = "git-shortcuts"
@@ -185,6 +194,10 @@ var GitShortcuts = GitAliases{File: "~/.gitconfig", Aliases: []GitAlias{
 	{Name: "st", Command: "status"},
 	{Name: "pushup", Command: "push -u origin HEAD"},
 }}
+
+const ContainerShortcutsWas = "docker"
+
+var DockerShortcuts = ZshFunctions{From: "zsh/docker-shortcuts.zsh", Functions: []string{"dclean", "dclean-images", "dreset"}}
 
 func commitAs(prefix string) string {
 	return `!f() { git add . && git commit -m "` + prefix + `: $*"; }; f`

@@ -458,3 +458,18 @@ type ShowJSON struct {
 func ShowContract(r settings.Row) ShowJSON {
 	return ShowJSON{Schema: "station.settings.show/v1", Setting: Object(r)}
 }
+
+func Removed(o settings.ContainersOutcome, here page.Context) page.Page {
+	// value: what one of the Docker shortcuts removed, by what it removes.
+	rows := make([]page.Row, 0, len(o.Removals))
+	for _, r := range o.Removals {
+		detail := page.Text("none to remove")
+		if r.Count > 0 {
+			detail = page.Count(int64(r.Count), "removed")
+		}
+		row := pages.Done(r.What, catalog.StateOK, "")
+		row.Detail = detail
+		rows = append(rows, row)
+	}
+	return pages.Outcome(o.Shortcut, here, nil, rows, "steps")
+}

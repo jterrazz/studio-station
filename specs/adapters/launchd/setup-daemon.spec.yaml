@@ -10,7 +10,7 @@ runs:
           ●	relocate	bunfig, go env, mise config, npmrc
           ●	engine	running {{string}}
           ○	apps	missing: homebrew mise git tailscale: run station setup on a terminal
-          ●	settings	applied hushlogin tart-launcher git-shortcuts
+          ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts
           ○	ssh-key	next: station settings apply ssh-key
           ○	spotlight-exclude	next: station settings apply spotlight-exclude
           ○	dns	next: station settings apply dns

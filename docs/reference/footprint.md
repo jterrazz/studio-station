@@ -351,7 +351,7 @@ Free: `tart prune --entries=caches --older-than=0`, delete `~/Library/Caches/com
 | ----------- | ------------- | ---- |
 | `~/.docker` | never touched |      |
 
-Free: `docker container prune -f`, `docker image prune -f`, `docker volume prune -f`, `docker network prune -f`, `docker builder prune -f`. Erase: none (station run docker reset).
+Free: `docker container prune -f`, `docker image prune -f`, `docker volume prune -f`, `docker network prune -f`, `docker builder prune -f`. Erase: none (dreset, the Docker shortcuts).
 
 ### orbstack
 
@@ -634,6 +634,7 @@ Free: delete `~/.cache/mole/*`, delete `~/Library/Logs/mole/*`. Erase: none (not
 | backup-exclusions       | `~/.local/share/station/vms`                                                    | never touched | a sticky Time Machine exclusion (`tmutil addexclusion`)                  |
 | tart-launcher           | `~/.local/bin/tart`                                                             | never touched | the embedded `tart/tart`                                                 |
 | git-shortcuts           | `~/.gitconfig`                                                                  | never touched | station's `[alias]` block                                                |
+| docker-shortcuts        | `~/.config/station/zsh/docker-shortcuts.zsh`                                    | never touched | the functions station's zsh block defines                                |
 
 ## Home-root exceptions
 

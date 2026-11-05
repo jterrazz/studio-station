@@ -2,6 +2,7 @@ package wire
 
 import (
 	"context"
+	"github.com/jterrazz/studio-station/src/settings/adapter/docker"
 	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
@@ -14,7 +15,6 @@ import (
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/domain/shortcuts"
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
@@ -58,7 +58,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupService}, Ask: named}),
 		settingscalls.All(settingscalls.Deps{
 			Settings: config, Appliers: config.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),
-			Now: m.host.Clock.Now, Ask: ask, Shortcuts: shortcuts.New(m.host), GitAliases: gitaliases.NewShortcuts(m.host.Run), Shell: m.shell(), Kind: kind,
+			Now: m.host.Clock.Now, Ask: ask, Shortcuts: docker.New(m.host.Run), GitAliases: gitaliases.NewShortcuts(m.host.Run), Shell: m.shell(), Kind: kind,
 			Facts: m.facts(), Caps: m.profile.Caps, Admin: m.host.Env.Euid() == 0, Mac: m.profile.Ref.Name,
 		}),
 	)

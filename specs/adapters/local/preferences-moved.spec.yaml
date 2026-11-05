@@ -8,6 +8,7 @@ runs:
           ●	preferences	moved settings.json to preferences.json
           ●	name	x
           preferences.json
+          zsh
           {
             "here": "x",
             "vm_user": "vmu"

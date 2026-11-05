@@ -16,7 +16,7 @@ runs:
            linux-1 · Workspace · up 2 h
 
                Apps      ● 1 ok · ○ 63 not installed
-               Settings  set by station · ● 0 of 5
+               Settings  set by station · ● 0 of 6
                Disk      ● 0 B free · 0 B can rebuild
                Ports     Public 0 · Private 2
                Accounts  ● 0
@@ -24,7 +24,7 @@ runs:
       exit: 0
       stdout: |
           	Apps	● 1 ok · ○ 63 not installed
-          	Settings	set by station · ● 0 of 5
+          	Settings	set by station · ● 0 of 6
           	Disk	● 0 B free · 0 B can rebuild
           	Ports	Public 0 · Private 2
           	Accounts	● 0

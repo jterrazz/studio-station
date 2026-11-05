@@ -583,7 +583,7 @@ var (
 			runIf("docker", "docker", "network", "prune", "-f"),
 			runIf("docker", "docker", "builder", "prune", "-f"),
 		},
-		NoReset: "station run docker reset",
+		NoReset: "dreset, the Docker shortcuts",
 	}
 	storagePlaywrightBrowsers = Storage{
 		Installed: []string{"~/Library/Caches/ms-playwright", "{cache}/ms-playwright"},

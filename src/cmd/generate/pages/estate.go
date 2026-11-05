@@ -12,7 +12,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
-	"github.com/jterrazz/studio-station/src/domain/shortcuts"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -27,7 +26,6 @@ import (
 	pageports "github.com/jterrazz/studio-station/src/pages/ports"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
-	pageshortcuts "github.com/jterrazz/studio-station/src/pages/shortcuts"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/settings"
 )
@@ -465,10 +463,10 @@ func setups() []Fixture {
 }
 
 func runs() []Fixture {
-	run := shortcuts.Outcome{Shortcut: "clean", Removals: []shortcuts.Removal{{What: "containers", Count: 3}, {What: "images", Count: 12}, {What: "volumes"}}}
+	run := settings.ContainersOutcome{Shortcut: "dreset", Removals: []settings.ContainersRemoval{{What: "containers", Count: 3}, {What: "images", Count: 12}}}
 	return states("run",
-		pending(pageshortcuts.Docker(run, here())),
-		pageshortcuts.Docker(shortcuts.Outcome{Shortcut: "clean"}, here()),
-		failure("outcome", "run docker clean", "docker is not running", "open OrbStack, then station run docker clean"),
-		pageshortcuts.Docker(run, here()))
+		pending(pagesettings.Removed(run, here())),
+		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, here()),
+		failure("outcome", "dreset", "docker ps failed: Cannot connect to the Docker daemon", "check that the docker daemon runs, then run it again"),
+		pagesettings.Removed(run, here()))
 }

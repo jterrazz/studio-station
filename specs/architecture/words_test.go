@@ -57,24 +57,20 @@ func technologyWords() []string {
 // gate until it is removed.
 func wordsTolerated() map[string][]string {
 	return map[string][]string{
-		"wire":                   {"bun", "mise"},
-		"surface/cli/kit":        {"docker", "fdesetup", "ssh"},
-		"surface/cli/machines":   {"ssh"},
-		"surface/cli/run":        {"docker"},
-		"surface/cli/run/docker": {"docker"},
-		"cmd/generate/pages":     {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "ssh", "tailscale", "uv"},
-		"domain/accounts":        {"docker", "npm", "ssh", "tailscale"},
-		"engine":                 {"ssh"},
-		"domain/guest":           {"docker"},
-		"domain/machines":        {"ssh"},
-		"domain/setup":           {"bun", "mise", "npm", "tailscale", "tailscaled"},
-		"domain/shell":           {"mise"},
-		"domain/shortcuts":       {"docker"},
-		"domain/storage":         {"brew", "docker", "mise"},
-		"pages/home":             {"brew", "docker", "mise", "npm", "security", "ssh", "tailscale"},
-		"pages/machines":         {"ssh"},
-		"pages/power":            {"pmset"},
-		"pages/shortcuts":        {"docker"},
+		"wire":                 {"bun", "mise"},
+		"surface/cli/kit":      {"fdesetup", "ssh"},
+		"surface/cli/machines": {"ssh"},
+		"cmd/generate/pages":   {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "ssh", "tailscale", "uv"},
+		"domain/accounts":      {"docker", "npm", "ssh", "tailscale"},
+		"engine":               {"ssh"},
+		"domain/guest":         {"docker"},
+		"domain/machines":      {"ssh"},
+		"domain/setup":         {"bun", "mise", "npm", "tailscale", "tailscaled"},
+		"domain/shell":         {"mise"},
+		"domain/storage":       {"brew", "docker", "mise"},
+		"pages/home":           {"brew", "docker", "mise", "npm", "security", "ssh", "tailscale"},
+		"pages/machines":       {"ssh"},
+		"pages/power":          {"pmset"},
 	}
 }
 

@@ -80,6 +80,24 @@
         },
         {
           "row": {
+            "id": "docker-shortcuts",
+            "mark": "attention",
+            "label": "docker-shortcuts",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "changed since 2 d ago"
+              }
+            ],
+            "reason": "differs",
+            "hint": {
+              "command": "station settings diff docker-shortcuts",
+              "key": "d"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "tmux-dotfiles",
             "mark": "absent",
             "label": "tmux-dotfiles",
@@ -264,7 +282,7 @@
         },
         {
           "mark": "attention",
-          "n": 3
+          "n": 4
         },
         {
           "mark": "absent",

@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "run docker clean",
+  "command": "dreset",
   "context": {
     "kind": "host"
   },
@@ -42,23 +42,12 @@
               "unit": "removed"
             }
           }
-        },
-        {
-          "row": {
-            "id": "volumes",
-            "mark": "ok",
-            "label": "volumes",
-            "detail": {
-              "kind": "text",
-              "text": "none to remove"
-            }
-          }
         }
       ],
       "counts": [
         {
           "mark": "ok",
-          "n": 3
+          "n": 2
         }
       ]
     }

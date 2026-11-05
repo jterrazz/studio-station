@@ -401,15 +401,6 @@ func TestEveryFixtureHasItsGoldens(t *testing.T) {
 	})
 }
 
-// value: the fixture family a page package is proved by, where its name is not
-// the package's: the run shortcuts render through pages/shortcuts.
-func familyOf(pkg string) string {
-	if pkg == "shortcuts" {
-		return "run"
-	}
-	return pkg
-}
-
 func pageStates() []string { return []string{"loading", "empty", "error", "full"} }
 
 // value: UI-SPEC §17's fixture families, each proved in its four states; a
@@ -432,8 +423,7 @@ func missingPages(packages, families, fixtures []string) []finding {
 	}
 	var out []finding
 	for _, pkg := range packages {
-		family := familyOf(pkg)
-		if !slices.ContainsFunc(families, func(f string) bool { return f == family || strings.HasPrefix(f, family+"-") }) {
+		if !slices.ContainsFunc(families, func(f string) bool { return f == pkg || strings.HasPrefix(f, pkg+"-") }) {
 			out = append(out, finding{"fixtures", "src/pages/" + pkg, "a page package with no fixture family in UI-SPEC §17"})
 		}
 	}

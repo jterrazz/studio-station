@@ -7,6 +7,7 @@ import (
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/shell"
+	"github.com/jterrazz/studio-station/src/settings/adapter/zshblock"
 )
 
 func (m machine) secretSource(o studio.Options) accountscontract.SecretSource {
@@ -17,5 +18,19 @@ func (m machine) secretSource(o studio.Options) accountscontract.SecretSource {
 }
 
 func (m machine) shell() *shell.Service {
-	return shell.New(m.host, catalog.DotfilesFS, m.secretSource(studio.Options{FileBackend: true, Budget: shell.TokenBudget}), shell.Options{Here: m.kind, Services: filepath.Join(m.paths.Config, "services.env")})
+	return shell.New(m.host, catalog.DotfilesFS, m.secretSource(studio.Options{FileBackend: true, Budget: shell.TokenBudget}), shell.Options{Here: m.kind, Services: filepath.Join(m.paths.Config, "services.env"), Functions: m.zshFunctions()})
 }
+
+// value: the script of every setting that defines shell functions, where
+// its Applier writes it.
+func (m machine) zshFunctions() []string {
+	var out []string
+	for _, it := range catalog.ConfigItems {
+		if _, ok := it.Effect.(catalog.ZshFunctions); ok {
+			out = append(out, zshblock.Script(m.zshDir(), it.Name))
+		}
+	}
+	return out
+}
+
+func (m machine) zshDir() string { return filepath.Join(m.paths.Config, "zsh") }
