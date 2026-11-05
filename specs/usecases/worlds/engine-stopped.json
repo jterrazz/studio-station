@@ -23,7 +23,9 @@
                 },
                 "vm_user": "admin"
             },
-            "images": ["station-image-linux-1"],
+            "images": [
+                "station-image-linux-1"
+            ],
             "vms": {
                 "linux-1": {
                     "kept": {
@@ -69,7 +71,43 @@
                         "built_at": "2026-10-20T09:00:00Z",
                         "size_gb": 12
                     }
+                ],
+                "reservations": [
+                    {
+                        "vm": "linux-1",
+                        "guest_port": 5173,
+                        "host_port": 40001,
+                        "profile": "vite",
+                        "pinned": true,
+                        "http": true,
+                        "reserved_at": "2026-11-04T09:00:00Z"
+                    },
+                    {
+                        "vm": "linux-1",
+                        "guest_port": 7000,
+                        "host_port": 40002,
+                        "http": false,
+                        "reserved_at": "2026-11-04T09:05:00Z"
+                    }
                 ]
+            },
+            "tailnet": {
+                "self": {
+                    "ID": "n1",
+                    "Name": "jterrazz-macbook-pro",
+                    "DNSName": "jterrazz-macbook-pro.tail1234.ts.net",
+                    "IP": "100.64.0.1",
+                    "Online": true,
+                    "Sharing": {
+                        "Backend": "Running",
+                        "On": true,
+                        "Host": "jterrazz-macbook-pro.tail1234.ts.net"
+                    },
+                    "Client": {
+                        "Path": "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+                        "Variant": "app-store"
+                    }
+                }
             }
         },
         "jterrazz-mac-mini": {
@@ -98,7 +136,9 @@
                 "power": "autorestart=1\nsleep=0\ndisplaysleep=5\ndisksleep=0\npowernap=0\nwomp=1",
                 "autologin": "autoLoginUser=jterrazz.agent\n/etc/kcpassword=present"
             },
-            "images": ["station-image-linux-1"],
+            "images": [
+                "station-image-linux-1"
+            ],
             "vms": {
                 "infra": {
                     "kept": {
