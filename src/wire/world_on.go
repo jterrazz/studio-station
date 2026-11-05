@@ -79,7 +79,10 @@ const (
 type worldRun struct {
 	path string
 	w    *world.World
-	macs map[string]*worldMac
+	// invariant: macs is read and written under macsMu: an engine's guest
+	// session asks for its VM's Mac while the command asks for another.
+	macsMu sync.Mutex
+	macs   map[string]*worldMac
 	// value: builds another Mac of the world: its registry, its engine.
 	far   func(w *worldMac) farMac
 	moved *moves
@@ -130,6 +133,8 @@ func openWorld(vars map[string]string) (*worldRun, error) {
 }
 
 func (r *worldRun) mac(name string) *worldMac {
+	r.macsMu.Lock()
+	defer r.macsMu.Unlock()
 	if m, ok := r.macs[name]; ok {
 		return m
 	}
