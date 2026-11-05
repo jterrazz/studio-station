@@ -144,9 +144,6 @@ func (s shell) tickedRows(key string, l ui.List) []page.Row {
 // invariant: a section's actions are its screen's: each maps the page's
 // Action to what it runs, shows, copies or opens.
 func (s shell) gesture(a page.Action, rows []page.Row) (gesture.Gesture, bool) {
-	if s.screen() != nil {
-		return gesture.Gesture{}, false
-	}
 	p, _ := s.pageOf(s.key(s.current(), s.section()))
 	switch s.section() {
 	case section.Overview:
@@ -602,7 +599,11 @@ func (s shell) actionKeys() []ui.Binding {
 		return nil
 	}
 	var out []ui.Binding
+	own := s.screenKeys()
 	for _, a := range p.Actions {
+		if slices.ContainsFunc(own, func(b ui.Binding) bool { return b.Key == a.Key }) {
+			continue
+		}
 		if _, rows, ok := s.action(a.Key); ok {
 			if _, does := s.gesture(a, rows); does {
 				out = append(out, ui.Binding{Key: a.Key, Label: a.Label, Mutates: a.Mutates})
