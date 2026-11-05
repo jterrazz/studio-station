@@ -122,7 +122,8 @@ func (h *hung) Invoke(ctx context.Context, target machine.Ref, name string, in, 
 
 func TestTwentyHungGuestsCostATickOneBudgetNotTwenty(t *testing.T) {
 	c := &clock{now: time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)}
-	seen := []Seen{{Ref: machine.Ref{Name: "mac"}, Kind: machine.Mac}}
+	seen := make([]Seen, 0, 21)
+	seen = append(seen, Seen{Ref: machine.Ref{Name: "mac"}, Kind: machine.Mac})
 	for i := range 20 {
 		seen = append(seen, Seen{Ref: machine.Ref{Name: "vm-" + strconv.Itoa(i), On: "mac"}, Kind: machine.Workspace, Guest: true})
 	}

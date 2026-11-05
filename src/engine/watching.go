@@ -6,9 +6,11 @@ import (
 	"sync"
 )
 
-// value: the machine a watch of activity means when it names none: This
-// Mac, the engine's own.
-const ThisMac = ""
+const (
+	// value: the machine a watch of activity means when it names none: This
+	// Mac, the engine's own.
+	ThisMac = ""
+)
 
 type watchers struct {
 	mu sync.Mutex
