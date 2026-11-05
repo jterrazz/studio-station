@@ -119,7 +119,7 @@ Host linux-1 # a VM of this host: no hop
  ProxyCommand /Users/jterrazz/.local/bin/station machines pipe linux-1
 
 Host api # a VM of mac-mini, seen from macbook: one hop
- ProxyCommand ssh mac-mini -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station machines pipe api
+ ProxyCommand ssh mac-mini -- "sh -c 'PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\" exec station \"\$@\"' station machines pipe api"
 ```
 
 `station machines pipe <vm>` (hidden plumbing) carries ssh's bytes to the VM's current NAT ip on its own host; it never needs the engine. A VM trusts its host's key and every line of the host's own `~/.ssh/authorized_keys` through a managed block of its `~/.ssh/authorized_keys` (`# >>> station hosts >>>`), written by the guest, so whoever may log into a host may reach its VMs. Herdr drives that same ssh: `hc machine add api` (add `--temp` for a throwaway workspace). `station machines ssh <machine>` prints the command, never runs it, so `$(station machines ssh api)` does.
