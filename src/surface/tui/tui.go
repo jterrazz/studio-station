@@ -21,10 +21,15 @@ type Deps struct {
 	NoColor bool
 	// value: stops every read still running, so q leaves nothing behind.
 	Stop func()
+	// value: holds the engine's watch on these machines, by name, until the
+	// func it answers is called (SPEC §6.3).
+	Watch func(machines []string) (release func())
 }
 
 func Run(ctx context.Context, d Deps) error {
-	_, err := tea.NewProgram(newShell(ctx, d), tea.WithContext(ctx)).Run()
+	s := newShell(ctx, d)
+	_, err := tea.NewProgram(s, tea.WithContext(ctx)).Run()
+	s.held.end()
 	if d.Stop != nil {
 		d.Stop()
 	}

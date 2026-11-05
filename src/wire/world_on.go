@@ -185,6 +185,40 @@ func (m *worldMac) lend(ctx context.Context) error {
 	return err
 }
 
+// invariant: a terminal UI of the world holds its watch in the world, as
+// the engine's watching, so every command run meanwhile steps its engine
+// with that watch held, and lets go of it when its screen leaves.
+func (m *worldMac) watch(machines []string) func() {
+	edit := func(change func(e *world.Engine)) {
+		held := lockWorld(m.run.path)
+		defer unlockWorld(held)
+		data, err := os.ReadFile(m.run.path)
+		if err != nil {
+			return
+		}
+		w, err := world.Decode(data)
+		if err != nil {
+			return
+		}
+		if e := w.Mac(m.name).Engine; e != nil {
+			change(e)
+		}
+		if data, err = w.Encode(); err == nil {
+			_ = os.WriteFile(m.run.path, data, 0o600)
+		}
+	}
+	edit(func(e *world.Engine) { e.Watching = append(e.Watching, machines...) })
+	return func() {
+		edit(func(e *world.Engine) {
+			for _, name := range machines {
+				if i := slices.Index(e.Watching, name); i >= 0 {
+					e.Watching = slices.Delete(e.Watching, i, i+1)
+				}
+			}
+		})
+	}
+}
+
 func (r *worldRun) mac(name string) *worldMac {
 	r.macsMu.Lock()
 	defer r.macsMu.Unlock()

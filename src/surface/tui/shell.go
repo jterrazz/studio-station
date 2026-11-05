@@ -63,6 +63,7 @@ type shell struct {
 	saidID int
 	seq    int
 	gens   map[string]int
+	held   *held
 }
 
 const machinesKey = "\x00machines"
@@ -71,7 +72,7 @@ func newShell(ctx context.Context, d Deps) shell {
 	ctx, cancel := context.WithCancel(ctx)
 	s := shell{ctx: ctx, cancel: cancel, deps: d, width: 110, height: 30, dark: true, at: d.Here.Machine,
 		focus: ui.PaneMaster, reads: map[string]read{}, lists: map[string]ui.List{}, asked: map[string]bool{}, samples: map[string][]int{},
-		states: map[string]screen.State{}, gens: map[string]int{}}
+		states: map[string]screen.State{}, gens: map[string]int{}, held: &held{}}
 	s.nodes = tree(d.Here, nil)
 	s.side = s.sectionEntry()
 	s.asked[s.key(s.current(), s.section())] = true
@@ -81,6 +82,7 @@ func newShell(ctx context.Context, d Deps) shell {
 func (s shell) Init() tea.Cmd {
 	// invariant: the shown section is read first; All machines and the other
 	// Macs' Needs you follow once it has answered (SPEC §9.10).
+	s.hold()
 	return tea.Batch(tea.RequestBackgroundColor, s.fetch(s.key(s.current(), s.section()), s.words(s.current(), s.section())))
 }
 
@@ -120,6 +122,14 @@ func (s shell) fetch(key string, w []string) tea.Cmd {
 }
 
 func (s shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m, cmd := s.update(msg)
+	if next, ok := m.(shell); ok {
+		next.hold()
+	}
+	return m, cmd
+}
+
+func (s shell) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		if msg.Width > 0 && msg.Height > 0 {
