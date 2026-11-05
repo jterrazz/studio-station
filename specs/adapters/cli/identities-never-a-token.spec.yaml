@@ -27,7 +27,7 @@ runs:
       exit: 0
       stdout: |
           on exit 0
-          tui exit 124
+          tui exit 0
           ●	signed in
           ●	signed in
           ●	signed in

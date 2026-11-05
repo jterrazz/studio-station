@@ -12,13 +12,13 @@
    ● Disk          27.9 GB reclaimable
    ● All machines  engine running v2.0.0-250
 
- Machine
+ Machine  4 ●
    ● name    macbook             Mac · Darwin 27.0.0 arm64 · jterrazz · zsh
    ● uptime  22d 14h             battery 100% charged
    ● setup   done
    ● engine  running v2.0.0-250
 
- Environment
+ Environment  8 ●
    ● local ip    192.168.1.152
    ● filevault   on
    ● firewall    on
@@ -28,19 +28,19 @@
    ● brew        up to date
    ● Tailscale   Running · jterrazz-macbook-pro.tail1234.ts.net · 100.98.133.14
 
- Workspace
+ Workspace  1 ●
    ● disk  27.9 GB  reclaimable: station disk free
 
- Identity
+ Identity  2 ●
    ● git email    admin@jterrazz.com
    ● git signing  on
 
- Background
+ Background  1 ●
      station
       no background jobs
      known
    └─ ● watchman  running · pid 3464  user  watchman  ~/Library/La…tchman.plist
 
- Apps
+ Apps  1 ●
 
- Settings
+ Settings  1 ●

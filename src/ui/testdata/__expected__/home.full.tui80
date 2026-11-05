@@ -1,4 +1,4 @@
- To do
+ To do  8 ◐  1 ✗
    ✗ brain.x-snapshot         failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist

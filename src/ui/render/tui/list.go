@@ -201,7 +201,7 @@ func (l List) lines(st token.Styles, width, columns int) []organism.Line {
 			out = append(out, organism.Line{Kind: organism.LineOther})
 		}
 		if s.Title != "" || len(s.Caption) > 0 {
-			title := organism.Title(st, s)
+			title := organism.CountedTitle(st, s)
 			key := ""
 			if organism.AutoFolded(s) {
 				title, key = organism.FoldTitle(st, s, l.folded(s.ID), width), s.ID

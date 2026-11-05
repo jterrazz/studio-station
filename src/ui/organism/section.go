@@ -29,6 +29,32 @@ func Title(st token.Styles, s page.Section) string {
 	return line
 }
 
+func CountedTitle(st token.Styles, s page.Section) string {
+	// value: the TUI's title of an open section: its counts follow it, the
+	// verdict a pane's reader looks for first, except on a banner whose
+	// groups are only headings.
+	line := Title(st, s)
+	if s.Joined || !titleCounts(s) {
+		return line
+	}
+	if counts := molecule.Counts(st, s.Counts); counts != "" {
+		line += atom.Spaces(token.Gap) + counts
+	}
+	return line
+}
+
+func titleCounts(s page.Section) bool {
+	if s.Role != page.Banner {
+		return true
+	}
+	for _, it := range s.Items {
+		if it.Group != nil && !it.Group.Heading() {
+			return true
+		}
+	}
+	return false
+}
+
 func FoldTitle(st token.Styles, s page.Section, folded bool, width int) string {
 	sign := token.FoldOpen
 	if folded {

@@ -1,4 +1,4 @@
- All machines
+ All machines  2 ●  1 ◐  1 ○
    ● macbook     Mac        here  online   100.98.133.14  2 VMs
    ├─ ● linux-1  throwaway        running  192.168.64.5   4 cpus · 4 GB · 42.9 GB
    │  ├─ 5173 → 40001  https://jterrazz-macbook-pro.tail1234.ts.net:40001  node
@@ -8,7 +8,7 @@
      station v2.0.0-248 here v2.0.0-250
       no VMs  → station machines create --on mac-mini
 
- Images
+ Images  2 ●  2 ○
             version       size  on
    ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  linux-1 · api
    ○ linux  2026.10.20  4.0 GB  jterrazz-macbook-pro  older

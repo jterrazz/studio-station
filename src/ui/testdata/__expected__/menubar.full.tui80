@@ -1,6 +1,6 @@
  CPU 34% ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃  memory 12.4/17.2 GB  battery 80%  ⏻ awake · 3h 12m
 
- To do
+ To do  8 ◐  1 ✗
    ✗ brain.x-snapshot  failing · last exit 2
      → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
        rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
@@ -8,7 +8,7 @@
    ◐ brew              120 outdated  → station apps update --method brew
    + 6 more
 
- All machines
+ All machines  2 ●  1 ◐  1 ○
    ● macbook     Mac        here  online   100.98.133.14
    ├─ ● linux-1  throwaway        running  192.168.64.5
    │  ├─ 5173 → 40001  https://jterrazz-macbook-pro.tail1234.ts.net:40001  node

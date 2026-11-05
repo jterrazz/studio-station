@@ -1,7 +1,7 @@
  Summary
    ● 31 settings on 4 machines  20 need a look · infra is a server: not checked
 
- Needs a look
+ Needs a look  20 ◐
    ◐ This Mac  ghostty-dotfiles  changed since 2 d ago
      → station settings diff ghostty-dotfiles
    ◐ This Mac  github-login      changed since 2 d ago
@@ -39,7 +39,7 @@
    ◐ api       dock-reset        changed since 2 d ago                → station machines start api
    ◐ api       docker-shortcuts  changed since 2 d ago                → station machines start api
 
- Machines
+ Machines  3 ●  1 ○  1 –
    ● This Mac  Mac        read
    ● mac-mini  Mac        read
    ● linux-1   Workspace  read

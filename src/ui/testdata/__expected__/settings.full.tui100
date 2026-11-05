@@ -1,7 +1,7 @@
  Summary
    ◐ This Mac  14 set by station here · 9 checked · 6 need a look
 
- Set by station
+ Set by station  4 ●  4 ◐  3 ○  3 ⊘
    ◐ ghostty-dotfiles   changed since 2 d ago       → station settings diff ghostty-dotfiles
    ◐ github-login       changed since 2 d ago       → station settings diff github-login
    ◐ dock-reset         changed since 2 d ago       → station settings diff dock-reset
@@ -20,7 +20,7 @@
  Always-on Mac
    ○ Always-on Mac  5 · for a Mac that hosts servers
 
- Checked
+ Checked  5 ●  2 ◐  1 ⊘  1 ?
    ◐ firewall           off
      → System Settings > Network > Firewall
    ◐ screen-lock        locks after 10 min · expected 5 min     → System Settings > Lock Screen

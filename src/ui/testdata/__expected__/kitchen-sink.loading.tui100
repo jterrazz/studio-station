@@ -1,10 +1,10 @@
- To do
+ To do  1 ◌
    ◌ brew
 
  Summary
    ◌ Marks
 
- Values  40000-40999
+ Values  40000-40999  18 ◌
                value   number
    ◌ text
    ◌ size      275 B  22.6 KB
@@ -25,7 +25,7 @@
    ◌ sip
    ◌ unknown
 
- Marks
+ Marks  24 ◌
    ◌ outdated
    ◌ misplaced
    ◌ unreachable
@@ -51,14 +51,14 @@
    ◌ not-for-this-machine
    ◌ not-known
 
- All machines
+ All machines  4 ◌
    ◌ jterrazz-mac-mini
    ├─ ◌ linux-1
    │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
    │  └─ ◌ web
    └─ ◌ linux-2
 
- Disk
+ Disk  2 ◌
    ◌ station
    ◌ tart
 

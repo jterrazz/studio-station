@@ -367,7 +367,7 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 		case cols[i].whole:
 			cols[i].width = -1
 		default:
-			cols[i].width = max(cols[i].width-over, min(atom.Floor(cols[i].kind), cols[i].width), cols[i].firm)
+			cols[i].width = max(cols[i].width-over, min(g.floor(cols[i]), cols[i].width), cols[i].firm)
 		}
 	}
 	if over := fixed() - avail; over > 0 {
@@ -423,6 +423,15 @@ func (g Grid) Dropped() []string {
 // it is never cut nor dropped (OU-05).
 func (g Grid) whole(c column) bool {
 	return g.Medium == molecule.TTY && c.kind == page.KindCommand
+}
+
+// value: the narrowest a column is cut to: only a terminal's page keeps a
+// command whole (OU-05); the TUI's list cuts it as it cuts a text.
+func (g Grid) floor(c column) int {
+	if c.kind == page.KindCommand && !g.whole(c) {
+		return atom.Floor(page.KindText)
+	}
+	return atom.Floor(c.kind)
 }
 
 // invariant: on a terminal a name is never cut nor a command: a row whose
