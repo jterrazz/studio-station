@@ -31,22 +31,20 @@ public struct ActivityPage: View {
     public var body: some View {
         let banner = page.section("machine")?.rows.first
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
-            PushedHeader(back: banner?.label ?? page.context?.machine ?? "", title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()), action: handlers.back)
-            HStack(spacing: 4) {
-                ForEach(Array(Self.picker(page, handlers: handlers).enumerated()), id: \.offset) { _, w in
-                    Pill(w.words, picked: w.picked, action: w.tap)
-                }
-                Spacer(minLength: 0)
-            }
+            PushedHeader(back: banner?.label ?? page.context?.machine ?? "", title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()),
+                         symbol: Token.Symbol.cpu, tint: palette.accent, id: Navigation.activity, action: handlers.back)
+            Segments(options: Self.picker(page, handlers: handlers).map { ($0.words, $0.picked, $0.tap) })
             if let graphs = page.section("graphs") {
-                GlassCard {
+                GlassCard(padding: 12, spacing: 12) {
                     ForEach(Array(graphs.rows.enumerated()), id: \.offset) { _, r in measure(r) }
                 }
             }
             if let top = page.section("processes") {
                 SectionHead(top.title ?? "")
-                GlassCard {
-                    ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { _, r in process(top, r) }
+                GlassCard(padding: 12, spacing: 0) {
+                    ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { i, r in
+                        process(top, r).overlay(alignment: .top) { if i > 0 { Rule() } }
+                    }
                 }
             }
         }
@@ -58,16 +56,17 @@ public struct ActivityPage: View {
         let ratio = r.cells?.dropFirst().first.flatMap { $0.kind == "ratio" ? $0 : nil }
         return VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
-                Text(r.label ?? "").font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.text)
+                Text(r.label ?? "").font(.system(size: Token.Space.small, weight: .semibold)).foregroundStyle(palette.muted)
                 Spacer(minLength: Token.Space.gap)
-                Text(words).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(1).monospacedDigit()
+                Text(words).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text).lineLimit(1).monospacedDigit()
+                    .contentTransition(.numericText())
             }
             if points.count > 1 {
                 Graph(points)
             } else if let ratio, let of = ratio.of, of > 0 {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(palette.text.opacity(0.1))
+                        Capsule().fill(palette.faint)
                         Capsule().fill(palette.accent).frame(width: geo.size.width * CGFloat(ratio.n ?? 0) / CGFloat(of))
                     }
                 }
@@ -85,5 +84,6 @@ public struct ActivityPage: View {
                 Text(s.cell(r, key).map { Format.show($0) } ?? Token.Glyph.dash).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).monospacedDigit().frame(width: 52, alignment: .trailing)
             }
         }
+        .frame(minHeight: Token.Space.row + 8)
     }
 }

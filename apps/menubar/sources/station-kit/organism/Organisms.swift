@@ -25,26 +25,47 @@ public struct LinkView: View {
     var key: String { link.label ?? Format.show(link.lead ?? Value()) }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: Token.Space.gap) {
-                if let lead = link.lead, !lead.isNone {
-                    ValueText(lead)
-                } else {
-                    Text(link.label ?? "").font(.system(size: Token.Space.text)).foregroundStyle(palette.accent)
+                VStack(alignment: .leading, spacing: 1) {
+                    if let lead = link.lead, !lead.isNone {
+                        ValueText(lead).fontWeight(.medium)
+                    } else {
+                        Text(link.label ?? "").font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.text)
+                    }
+                    if let value = link.value {
+                        Text(Format.show(value)).font(.system(size: Token.Space.small, design: .monospaced)).foregroundStyle(palette.accent).lineLimit(1).truncationMode(.middle)
+                    }
                 }
                 Spacer(minLength: Token.Space.gap)
                 if let actions, let url = link.value.flatMap(Format.url) {
-                    Button("open") { actions.open(url) }.buttonStyle(.plain).foregroundStyle(palette.accent).font(.system(size: Token.Space.small))
-                    Text(Token.Glyph.sep.trimmingCharacters(in: .whitespaces)).foregroundStyle(palette.subtle)
-                    Button("QR") { actions.toggleQR(url.absoluteString) }.buttonStyle(.plain).foregroundStyle(palette.accent).font(.system(size: Token.Space.small))
-                } else if let value = link.value {
-                    ValueText(value, muted: true)
+                    LinkButton(symbol: Token.Symbol.qr, picked: actions.qr == url.absoluteString) { actions.toggleQR(url.absoluteString) }
+                    LinkButton(symbol: Token.Symbol.open, picked: false) { actions.open(url) }
                 }
             }
+            .padding(.vertical, 3)
             if let actions, let url = link.value.flatMap(Format.url), actions.qr == url.absoluteString {
-                QRView(url.absoluteString)
+                QRView(url.absoluteString).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)).frame(maxWidth: .infinity)
             }
         }
+    }
+}
+
+// value: a small square button beside a link, 26 pt, 8 pt round.
+struct LinkButton: View {
+    let symbol: String
+    let picked: Bool
+    let tap: () -> Void
+    @Environment(\.stationPalette) private var palette
+
+    var body: some View {
+        Button(action: tap) {
+            Image(systemName: symbol).font(.system(size: Token.Space.small + 1, weight: .medium))
+                .foregroundStyle(picked ? palette.onTint : palette.text)
+                .frame(width: Token.Tile.circle, height: Token.Tile.circle)
+                .background(RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(picked ? palette.accent : palette.hover))
+        }
+        .buttonStyle(.plain)
     }
 }
 

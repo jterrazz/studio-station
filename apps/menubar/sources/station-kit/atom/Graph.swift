@@ -1,37 +1,49 @@
+import Charts
 import SwiftUI
 
 // invariant: a measure's graph over its window: its points 0 to 100,
-// oldest first, a line over a filled area as wide as it is given.
+// oldest first, a 1.5 pt catmull-rom line over an area fading to nothing,
+// no axes, as wide as it is given.
 public struct Graph: View {
     let points: [Int]
+    let height: CGFloat
+    let tint: Color?
+    let fit: Bool
     @Environment(\.stationPalette) private var palette
 
-    public init(_ points: [Int]) { self.points = points }
+    public init(_ points: [Int], height: CGFloat = Token.Space.graphHeight, tint: Color? = nil, fit: Bool = false) {
+        self.points = points
+        self.height = height
+        self.tint = tint
+        self.fit = fit
+    }
 
-    func path(in size: CGSize, closed: Bool) -> Path {
-        Path { path in
-            guard points.count > 1 else { return }
-            let step = size.width / CGFloat(points.count - 1)
-            let y = { (p: Int) in size.height - size.height * CGFloat(min(max(p, 0), 100)) / 100 }
-            path.move(to: CGPoint(x: 0, y: closed ? size.height : y(points[0])))
-            for (i, p) in points.enumerated() {
-                path.addLine(to: CGPoint(x: CGFloat(i) * step, y: y(p)))
-            }
-            if closed {
-                path.addLine(to: CGPoint(x: size.width, y: size.height))
-                path.closeSubpath()
-            }
-        }
+    // value: the graph's scale: 0 to 100, or for a sparkline the band its
+    // points move in, so a steady series still shows its swing.
+    var domain: ClosedRange<Int> {
+        guard fit, let lo = points.min(), let hi = points.max() else { return 0...100 }
+        let pad = max(hi - lo, 10)
+        return max(lo - pad, 0)...min(hi + pad / 2, 100)
     }
 
     public var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                path(in: geo.size, closed: true).fill(LinearGradient(colors: [palette.accent.opacity(0.35), palette.accent.opacity(0.02)], startPoint: .top, endPoint: .bottom))
-                path(in: geo.size, closed: false).stroke(palette.accent, style: StrokeStyle(lineWidth: 1.2, lineJoin: .round))
-            }
+        let ink = tint ?? palette.accent
+        Chart(Array(points.enumerated()), id: \.offset) { i, p in
+            AreaMark(x: .value("t", i), yStart: .value("floor", domain.lowerBound), yEnd: .value("v", min(max(p, 0), 100)))
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(LinearGradient(colors: [ink.opacity(0.38), ink.opacity(0)], startPoint: .top, endPoint: .bottom))
+            LineMark(x: .value("t", i), y: .value("v", min(max(p, 0), 100)))
+                .interpolationMethod(.catmullRom)
+                .lineStyle(StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                .foregroundStyle(ink)
         }
-        .frame(height: Token.Space.graphHeight)
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartLegend(.hidden)
+        .chartYScale(domain: domain)
+        .chartXScale(domain: 0...max(points.count - 1, 1))
+        .chartPlotStyle { $0.frame(maxWidth: .infinity) }
+        .frame(height: height)
     }
 }
 

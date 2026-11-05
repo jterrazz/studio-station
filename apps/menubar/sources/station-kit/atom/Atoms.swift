@@ -31,13 +31,12 @@ public struct PendingDot: View {
     var still: Bool { pinned || frozen }
 
     public var body: some View {
-        TimelineView(.animation(paused: still)) { context in
-            Image(systemName: Token.Symbol.pending)
-                .font(.system(size: Token.Space.mark))
-                .foregroundStyle(palette.muted)
-                .rotationEffect(.degrees(still ? 0 : context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1) * 360))
-                .frame(width: Token.Space.mark + 2)
-        }
+        Image(systemName: Token.Symbol.pending)
+            .font(.system(size: Token.Space.mark))
+            .foregroundStyle(palette.muted)
+            .symbolEffect(.rotate, isActive: !still)
+            .symbolEffect(.pulse, isActive: !still)
+            .frame(width: Token.Space.mark + 2)
     }
 }
 
@@ -61,6 +60,7 @@ public struct ValueText: View {
             } else {
                 let text = Text(Format.show(value, now: now))
                     .font(.system(size: size))
+                    .contentTransition(.numericText())
                     .foregroundStyle(muted || value.kind == "command" || value.stale == true ? palette.muted : palette.text)
                     .lineLimit(1)
                     .truncationMode(value.kind == "path" ? .middle : .tail)
@@ -78,39 +78,33 @@ public struct Meter: View {
 
     public var body: some View {
         ZStack(alignment: .leading) {
-            Capsule().fill(palette.subtle)
+            Capsule().fill(palette.faint)
             Capsule().fill(palette.accent).frame(width: Token.Space.meterWidth * fraction)
         }
         .frame(width: Token.Space.meterWidth, height: Token.Space.meterHeight)
     }
 }
 
+// value: a measure's sparkline, as wide as it is given: Swift Charts'
+// catmull-rom line over an area fading down, its axes hidden.
 public struct Spark: View {
     let points: [Int]
-    let w: CGFloat
     let h: CGFloat
+    let tint: Color?
     @Environment(\.stationPalette) private var palette
 
-    public init(_ points: [Int], width: CGFloat = Token.Space.sparkWidth, height: CGFloat = Token.Space.sparkHeight) {
+    public init(_ points: [Int], height: CGFloat = Token.Space.sparkHeight, tint: Color? = nil) {
         self.points = points
-        w = width
         h = height
+        self.tint = tint
     }
 
     public var body: some View {
-        Path { path in
-            guard points.count > 1 else { return }
-            let step = w / CGFloat(points.count - 1)
-            for (i, p) in points.enumerated() {
-                let pt = CGPoint(x: CGFloat(i) * step, y: h - h * CGFloat(min(max(p, 0), 100)) / 100)
-                if i == 0 { path.move(to: pt) } else { path.addLine(to: pt) }
-            }
-        }
-        .stroke(palette.accent, lineWidth: 1.2)
-        .frame(width: Token.Space.sparkWidth, height: Token.Space.sparkHeight)
+        Graph(points, height: h, tint: tint, fit: true)
     }
 }
 
+// invariant: a switch as macOS draws it: green when on, its knob white.
 public struct Switch: View {
     let on: Bool
     @Environment(\.stationPalette) private var palette
@@ -119,9 +113,10 @@ public struct Switch: View {
 
     public var body: some View {
         ZStack(alignment: on ? .trailing : .leading) {
-            Capsule().fill(on ? palette.accent : palette.subtle).frame(width: 30, height: 16)
-            Circle().fill(palette.text).frame(width: 12, height: 12).padding(.horizontal, 2)
+            Capsule().fill(on ? palette.good : palette.faint).frame(width: 38, height: 22)
+            Circle().fill(palette.onTint).frame(width: 18, height: 18).shadow(color: palette.subtle, radius: 1.5, y: 1).padding(.horizontal, 2)
         }
+        .animation(.snappy, value: on)
     }
 }
 

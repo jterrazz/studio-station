@@ -92,9 +92,13 @@ enum Snapshot {
         return AnyView(PageView(page))
     }
 
+    // invariant: a page is drawn over a fixed colourful desk, the vision's,
+    // so its glass reads in the PNG; the menu bar icon is drawn bare.
     @MainActor
-    static func render(_ view: AnyView, scheme: ColorScheme) -> (png: Data, bitmap: Bitmap)? {
-        let renderer = ImageRenderer(content: view.stationTheme(scheme).environment(\.stationNow, now).environment(\.stationStill, true))
+    static func render(_ view: AnyView, scheme: ColorScheme, desk: Bool = true) -> (png: Data, bitmap: Bitmap)? {
+        let themed = view.stationTheme(scheme).environment(\.stationNow, now).environment(\.stationStill, true)
+        let content = desk ? AnyView(themed.fixedSize().padding(24).background(Desk(scheme: scheme))) : AnyView(themed)
+        let renderer = ImageRenderer(content: content)
         renderer.scale = 2
         guard let image = renderer.cgImage, let bitmap = Bitmap(image) else { return nil }
         let rep = NSBitmapImageRep(cgImage: image)
@@ -109,10 +113,10 @@ enum Golden {
     // invariant: a view is proved by its golden PNG, drawn offscreen: nil
     // when it matches within 0.1 % of its pixels, else what differs.
     @MainActor
-    static func check(_ name: String, _ view: AnyView, scheme: ColorScheme) throws -> String? {
+    static func check(_ name: String, _ view: AnyView, scheme: ColorScheme, desk: Bool = true) throws -> String? {
         let file = "\(name).\(scheme == .dark ? "dark" : "light")"
         let golden = Tree.goldens.appendingPathComponent(file + ".png")
-        guard let (png, bitmap) = Snapshot.render(view, scheme: scheme) else { return "\(file): no image rendered" }
+        guard let (png, bitmap) = Snapshot.render(view, scheme: scheme, desk: desk) else { return "\(file): no image rendered" }
         if bitmap.placeholder >= 20 { return "\(file): \(bitmap.placeholder) pixels of the unsupported placeholder" }
         if update {
             try png.write(to: golden)
@@ -131,5 +135,21 @@ enum Golden {
         }
         try? FileManager.default.removeItem(at: actual)
         return nil
+    }
+}
+
+struct Desk: View {
+    let scheme: ColorScheme
+
+    var body: some View {
+        GeometryReader { geo in
+            let side = max(geo.size.width, geo.size.height)
+            ZStack {
+                LinearGradient(colors: Token.Glass.wallBase(scheme), startPoint: UnitPoint(x: 0.3, y: 0), endPoint: UnitPoint(x: 0.7, y: 1))
+                ForEach(Array(Token.Glass.wallpaper(scheme).enumerated()), id: \.offset) { _, blob in
+                    RadialGradient(colors: [blob.0, blob.0.opacity(0)], center: blob.1, startRadius: 0, endRadius: side * blob.2)
+                }
+            }
+        }
     }
 }

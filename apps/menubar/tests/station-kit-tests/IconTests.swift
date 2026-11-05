@@ -10,7 +10,7 @@ final class IconTests: XCTestCase {
 
     func drawn(_ name: String, _ icon: MenuBarIcon) throws {
         for scheme in [ColorScheme.dark, .light] {
-            XCTAssertNil(try Golden.check("icon." + name, AnyView(MenuBarIconView(icon, scheme: scheme)), scheme: scheme))
+            XCTAssertNil(try Golden.check("icon." + name, AnyView(MenuBarIconView(icon, scheme: scheme)), scheme: scheme, desk: false))
         }
     }
 
