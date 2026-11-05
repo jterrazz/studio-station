@@ -34,14 +34,14 @@ runs:
           ┃   shift+tab  previous pane                                                                                 ┃
           ┃   [ ]        section                                                                                       ┃
           ┃   n          new VM                                                                                        ┃
+          ┃   m          switch machine                                                                                ┃
+          ┃   -          previous machine                                                                              ┃
+          ┃   ctrl+p     actions                                                                                       ┃
           ┃   ctrl+r     read again                                                                                    ┃
           ┃   q          quit                                                                                          ┃
           ┃   ?          every key                                                                                     ┃
           ┃                                                                                                            ┃
           ┃ any key closes                                                                                             ┃
-          ┃                                                                                                            ┃
-          ┃                                                                                                            ┃
-          ┃                                                                                                            ┃
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃

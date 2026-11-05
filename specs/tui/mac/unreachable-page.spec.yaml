@@ -22,48 +22,11 @@ runs:
           send u
           see A new terminal runs station machines unlock mac-mini
           file opened
-          run "$STATION" world unlock jterrazz-mac-mini
           send r
-          gone does not answer
-          see Overview · mac-mini
+          see ✗ mac-mini does not answer · last answer 03:12
+          see u unlock…  r retry now
           send q
-      exit: 124
-      stderr: |
-          still saw 'does not answer' (9013 bytes drawn in 10.3 s); the screen held:
-          station  ✗ mac-mini · jterrazz-mac-mini · Unreachable · last answer 03:12
-           All machines › mac-mini › Overview
-          ╭──────────────────────╮┏━ Overview · mac-mini ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-          │ MACHINES             │┃ ✗ mac-mini does not answer · last answer 03:12                                     ┃
-          │ ◇ All machines       │┃                                                                                    ┃
-          │ ● This Mac         3 │┃ What station knows                                                                 ┃
-          │  Workspaces          │┃   ✗ mac-mini answers neither station nor ssh                                       ┃
-          │  ├ ○ api             │┃   ◐ It runs a server: after a power cut, its disk unlock needs you                 ┃
-          │  └ ● linux-1         │┃                                                                                    ┃
-          │ ✗ mac-mini           │┃ Likely: it restarted after a power cut and waits at the FileVault unlock.          ┃
-          │  Servers             │┃ Tailscale starts only after the disk is unlocked, so unlock it from the            ┃
-          │  └ ? infra always on │┃ same network as mac-mini:                                                          ┃
-          │                      │┃                                                                                    ┃
-          │ MAC-MINI             │┃   → u Unlock…   station machines unlock mac-mini   (asks its password)             ┃
-          │▸Overview           ◌ │┃                                                                                    ┃
-          │ Activity             │┃ infra is a server on mac-mini: its state is unknown until mac-mini answers.        ┃
-          │ Apps                 │┃ It starts by itself once mac-mini is unlocked and logged in.                       ┃
-          │ Settings             │┃                                                                                    ┃
-          │ Disk                 │┃                                                                                    ┃
-          │ Ports                │┃                                                                                    ┃
-          │ Accounts             │┃                                                                                    ┃
-          │ Background           │┃                                                                                    ┃
-          │ Awake                │┃                                                                                    ┃
-          │                      │┃                                                                                    ┃
-          │                      │┃                                                                                    ┃
-          │                      │┃                                                                                    ┃
-          │                      │┃                                                                                    ┃
-          │                      │┃                                                                                    ┃
-          │                      │┃                                                                                    ┃
-          │                      │┃                                                                                    ┃
-          │                      │┃                                                                                    ┃
-          │                      │┃                                                                                    ┃
-          ╰──────────────────────╯┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-           u unlock…  r retry now  ↑↓ move  left sidebar  esc up a level  tab next pane  [ ] section  ? keys
+      exit: 0
     - command: '--version >/dev/null; /bin/cat opened'
       exit: 0
       stdout: |

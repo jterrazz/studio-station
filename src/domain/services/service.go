@@ -180,13 +180,14 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 
 // invariant: this Mac's ports and its VMs', each in its class: the Mac's
 // read here, its VMs' as its engine heard them, nothing of a VM while the
-// engine is stopped. What listens here that cannot be read fails the read:
-// an empty list would say nothing listens.
+// engine is stopped. What listens here that cannot be read fails the read,
+// as an empty list would say nothing listens; a Mac with no reader of its
+// listeners has nothing to say of them.
 func (s *Service) survey(ctx context.Context, vms []ports.Machine) ([]ports.Port, error) {
 	var mine []ports.Listener
 	if s.o.Listening != nil {
 		var err error
-		if mine, err = s.o.Listening(ctx); err != nil {
+		if mine, err = s.o.Listening(ctx); err != nil && !errors.Is(err, system.ErrNotFound) {
 			return nil, err
 		}
 	}
