@@ -28,6 +28,9 @@ func Summary(s overview.Summary, here page.Context, all bool) page.Page {
 	if len(s.Needs) > 0 {
 		p.Actions = []page.Action{{Key: KeyFix, Label: "fix", On: page.OnRow, Rows: needsRows(sections), Priority: 1, Mutates: true}}
 	}
+	if s.Engine == overview.EngineStopped {
+		p.Actions = append(p.Actions, page.Action{Key: KeyStartEngine, Label: "start the engine", On: page.OnPage, Priority: 2, Mutates: true, ID: ActionStartEngine, Run: &page.Run{Call: CallStartEngine}})
+	}
 	return page.Seal(p)
 }
 

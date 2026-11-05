@@ -22,6 +22,14 @@ import (
 
 const KeyFix = "enter"
 
+// value: a Mac whose engine is stopped starts it from its Overview (SPEC
+// §9.10), with the call the menu bar's Start the engine makes.
+const (
+	KeyStartEngine    = "s"
+	ActionStartEngine = "start-engine"
+	CallStartEngine   = "engine.start"
+)
+
 // invariant: enter runs an action's fix only when station owns it; an
 // External command (launchctl, sudo) is shown and never run (H3).
 func fixes(actions page.Section) []string {

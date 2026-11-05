@@ -23,6 +23,10 @@ type node struct {
 
 const allMachines = "All machines"
 
+// value: the state word of a Mac whose engine is stopped: it is ◐, not
+// broken, as the owner stopped it (SPEC §9.2).
+const engineStopped = "Engine stopped"
+
 func (n node) all() bool { return n.kind == "" }
 
 func (n node) heading() string {
@@ -50,6 +54,9 @@ func tree(here page.Context, p *page.Page) []node {
 			h := it.Group.Head
 			mac := node{name: h.ID, label: cmp.Or(h.Short, h.Label), kind: machine.Mac, mark: h.Mark, here: h.ID == here.Machine}
 			mac.engine = ui.Plain(column(s, h, "state"))
+			if mac.engine == engineStopped {
+				mac.mark = page.Attention
+			}
 			mac.facts = []string{h.ID}
 			nodes = append(nodes, mac)
 			var servers, workspaces []node
