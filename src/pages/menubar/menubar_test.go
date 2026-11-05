@@ -53,3 +53,33 @@ func TestUpdateAllLeavesNeedsYouAndTheBadgeDropsByOne(t *testing.T) {
 		t.Fatalf("Update all before %v, after %v", has(was), has(is))
 	}
 }
+
+// invariant: MA-14: Home draws each Mac's servers, then its workspaces,
+// whatever order its engine lists them in.
+func TestHomeDrawsAMacsServersThenItsWorkspaces(t *testing.T) {
+	fleet := &machines.Fleet{Hosts: []machines.HostView{
+		{Name: "jterrazz-mac-mini", Here: true, Reachable: true, VMs: []machines.VM{
+			{Name: "build", Lifetime: machines.Throwaway, State: machines.Running},
+			{Name: "infra", Lifetime: machines.AlwaysOn, State: machines.Running},
+		}},
+	}}
+	p := Page(Reading{Fleet: fleet}, page.Context{})
+	var drawn []string
+	for _, s := range p.Sections {
+		if s.ID != SectionMachines {
+			continue
+		}
+		for _, mac := range s.Items {
+			for _, g := range mac.Group.Items {
+				names := []string{g.Group.Head.Label}
+				for _, vm := range g.Group.Items {
+					names = append(names, vm.Row.Label)
+				}
+				drawn = append(drawn, names...)
+			}
+		}
+	}
+	if want := []string{GroupServers, "infra", GroupSpaces, "build"}; !slices.Equal(drawn, want) {
+		t.Fatalf("Home draws %q, want %q", drawn, want)
+	}
+}
