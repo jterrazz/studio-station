@@ -1,5 +1,5 @@
 ◌ This Mac
-◌ jterrazz-mac-mini
+◌ mac-mini
 
-→ station awake 4h --lid                   this Mac
-→ station awake 4h --on jterrazz-mac-mini  another Mac
+→ station awake 4h --lid          this Mac
+→ station awake 4h --on mac-mini  another Mac

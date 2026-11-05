@@ -1,5 +1,5 @@
-○ This Mac           Sleeps normally
-○ jterrazz-mac-mini  Sleeps normally
+○ This Mac  Sleeps normally
+○ mac-mini  Sleeps normally
 
 This Mac
   lid           open
@@ -7,5 +7,5 @@ This Mac
   thermal       nominal
   screen        always turns off
 
-→ station awake 4h --lid                   this Mac
-→ station awake 4h --on jterrazz-mac-mini  another Mac
+→ station awake 4h --lid          this Mac
+→ station awake 4h --on mac-mini  another Mac

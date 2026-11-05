@@ -52,10 +52,10 @@
         },
         {
           "row": {
-            "id": "jterrazz-mac-mini",
+            "id": "mac-mini",
             "mark": "ok",
-            "label": "jterrazz-mac-mini",
-            "short": "jterrazz-mac-mini",
+            "label": "mac-mini",
+            "short": "mac-mini",
             "cells": [
               {
                 "kind": "list",
@@ -169,7 +169,7 @@
       "text": "this Mac"
     },
     {
-      "command": "station awake 4h --on jterrazz-mac-mini",
+      "command": "station awake 4h --on mac-mini",
       "text": "another Mac"
     }
   ]

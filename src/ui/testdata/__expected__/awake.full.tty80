@@ -1,5 +1,5 @@
-● This Mac           Awake until 14:42 · lid closed · 3h 12m left
-● jterrazz-mac-mini  Never sleeps · always-on Mac policy           last slept:…
+● This Mac  Awake until 14:42 · lid closed · 3h 12m left
+● mac-mini  Never sleeps · always-on Mac policy           last slept: never in…
 
 This Mac
   lid           open
@@ -7,5 +7,5 @@ This Mac
   thermal       nominal
   screen        always turns off
 
-→ station awake 4h --lid                   this Mac
-→ station awake 4h --on jterrazz-mac-mini  another Mac
+→ station awake 4h --lid          this Mac
+→ station awake 4h --on mac-mini  another Mac
