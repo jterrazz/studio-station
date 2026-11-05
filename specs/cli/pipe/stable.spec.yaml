@@ -207,9 +207,9 @@ runs:
       stdout: |
           ◐	Tailscale	signed in · ports are local only	Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console
           # Needs you: reachable outside Tailscale, not declared public	1 ✗
-          ✗	x	3000	node	*:3000 all interfaces	declared no
+          ✗	x	3000	needs you	node	*:3000 all interfaces	declared no
           # Private: shared with you on Tailscale	1 ◐
-          ◐	engine			the engine is not installed		station setup
+          ◐	engine				the engine is not installed		station setup
           	Reserved on This Mac: 0 of 1000 (40000-40999), 1000 free
           	1 more listens on its machine only
     - command: 'status --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
