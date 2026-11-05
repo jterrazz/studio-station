@@ -287,10 +287,12 @@ check_proc() {
 }
 sample > "$work/act-0.json" && proc > "$work/proc-0.txt" || fail "read ws1's activity"
 check_proc "$work/act-0.json" "$work/proc-0.txt" || fail "idle: station's numbers do not match /proc"
-# value: the load lasts 40 s at least, the downloads overlapping the CPU's: one dd
-# of 1.5 GB is done in 2 s, and speed.cloudflare.com refuses more than 25 MB a call
-# and some calls of a burst: /tmp/e2e-got holds the bytes each call received.
-vm_ssh ws1 'setsid -f sh -c "yes > /dev/null & yes > /dev/null & end=\$((\$(date +%s) + 40)); rm -f /tmp/e2e-got; for i in \$(seq 1 16); do curl -sf --limit-rate 40M -w \"%{size_download}\\n\" -o /dev/null \"https://speed.cloudflare.com/__down?bytes=25000000\" >> /tmp/e2e-got; done; dd if=/dev/zero of=/tmp/e2e-dd bs=1M count=1536 oflag=direct status=none; rm -f /tmp/e2e-dd; while [ \$(date +%s) -lt \$end ]; do sleep 1; done; pkill yes" > /dev/null 2>&1 &' < /dev/null
+# value: the load lasts 40 s, the CPU's overlapping the disk's and the network's: the
+# dd of 1.5 GB is done in 2 s, and the 400 MB received are sent by this Mac over
+# ssh, 10 MB a quarter second, since speed.cloudflare.com refuses calls of a burst.
+vm_ssh ws1 'setsid -f sh -c "yes > /dev/null & yes > /dev/null & end=\$((\$(date +%s) + 40)); dd if=/dev/zero of=/tmp/e2e-dd bs=1M count=1536 oflag=direct status=none; rm -f /tmp/e2e-dd; while [ \$(date +%s) -lt \$end ]; do sleep 1; done; pkill yes" > /dev/null 2>&1 &' < /dev/null
+(for i in $(seq 1 40); do head -c 10000000 /dev/zero; sleep 0.25; done | vm_ssh ws1 'cat > /dev/null') &
+feed=$!
 busy=0
 for i in $(seq 1 12); do
   sleep 2
@@ -300,16 +302,15 @@ done
 [ $busy -eq 1 ] || fail "under load: no sample shows CPU over 40 % with disk or network over its idle rate"
 jq -r '.top.by_cpu[0].name' "$work/act-load.json" | grep -qx yes || say "   note: the busiest process read was $(jq -r '.top.by_cpu[0].name' "$work/act-load.json")"
 until_true 24 in_vm ws1 '! pgrep -x yes > /dev/null' || fail "the load did not end"
+wait "$feed" || fail "the 400 MB sent to ws1 over ssh did not all arrive"
 mkdir -p "$work/proc-capture"
 in_vm ws1 "$(capture proc/stat proc/meminfo proc/net/dev proc/diskstats proc/loadavg proc/uptime proc/pressure/memory)" > "$work/proc-capture/proc.tar"
 sample > "$work/act-1.json" && proc > "$work/proc-1.txt" || fail "read ws1's activity after the load"
 check_proc "$work/act-1.json" "$work/proc-1.txt" || fail "after the load: station's numbers do not match /proc"
 grew() { jq -n --slurpfile a "$work/act-0.json" --slurpfile b "$work/act-1.json" "\$b[0].$1 - \$a[0].$1"; }
 [ "$(grew disk.written_since_boot_bytes)" -ge 1500000000 ] || fail "written grew $(grew disk.written_since_boot_bytes) under a 1.5 GB dd"
-got=$(in_vm ws1 'awk "{ s += \$1 } END { print s + 0 }" /tmp/e2e-got')
-[ "${got:-0}" -ge 100000000 ] || fail "the downloads received ${got:-nothing} B: speed.cloudflare.com refused them"
-[ "$(grew network.received_since_boot_bytes)" -ge "$got" ] || fail "received grew $(grew network.received_since_boot_bytes) under downloads of $got B"
-say "   matches /proc idle and after; written +$(grew disk.written_since_boot_bytes) B, received +$(grew network.received_since_boot_bytes) B for downloads of $got B"
+[ "$(grew network.received_since_boot_bytes)" -ge 400000000 ] || fail "received grew $(grew network.received_since_boot_bytes) under 400 MB sent"
+say "   matches /proc idle and after; written +$(grew disk.written_since_boot_bytes) B, received +$(grew network.received_since_boot_bytes) B"
 case_pass
 
 
