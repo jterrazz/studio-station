@@ -11,6 +11,9 @@
 #   gone TEXT   wait until the screen no longer shows TEXT
 #   send KEYS   type KEYS; \r, \x1b and \xNN escapes are keys
 #   file PATH   wait until PATH exists and is not empty, so a step can follow a stub's start
+#   run COMMAND run COMMAND with sh beside the binary, the screen still read, and fail
+#               when it exits other than 0: a world event while a screen is shown, or
+#               a look at what a key changed
 #   screen      once COMMAND has drawn nothing for 0.2 s (1 s at most), print the
 #               screen's text, each line's trailing blanks and the blank bottom
 #               lines trimmed
@@ -23,9 +26,12 @@
 #               {NAME text}, one with an SGR left unnamed {SGR text}, and the name
 #               plain leaves its runs bare, so a document names its palette and
 #               shows exactly what is coloured
+# A copy the binary asks of the terminal (OSC 52) is written to ./clipboard, the
+# terminal's clipboard, so a document can read what a key copied.
 # Then it waits for COMMAND to exit and exits with its code. A wait that times out,
 # or a screen wait COMMAND exits before, prints the screen on stderr and exits 124.
 # usage: terminal [--size COLSxROWS] COMMAND [ARG...]
+import base64
 import codecs
 import fcntl
 import os
@@ -33,6 +39,7 @@ import pty
 import re
 import select
 import signal
+import subprocess
 import struct
 import sys
 import termios
@@ -283,6 +290,9 @@ class Screen:
         # does, so a binary never waits on a reply a real terminal gives at once.
         if body == "11;?":
             self.replies += b"\x1b]11;rgb:0000/0000/0000\x1b\\"
+        elif body.startswith("52;"):
+            with open("clipboard", "wb") as f:
+                f.write(base64.b64decode(body.split(";", 2)[-1]))
 
     def painted(self, names):
         rows = self.rows_kept + list(self.cells)
@@ -438,6 +448,11 @@ def main():
             wait(lambda: arg not in screen.text(), "still saw " + repr(arg))
         elif verb == "file":
             wait(lambda: os.path.isfile(arg) and os.path.getsize(arg) > 0, "never saw the file " + repr(arg), ended=False)
+        elif verb == "run":
+            child = subprocess.Popen(["/bin/sh", "-c", arg])
+            wait(lambda: child.poll() is not None, "the step never ended: " + repr(arg), ended=False)
+            if child.returncode != 0:
+                fail("the step " + repr(arg) + " exited " + str(child.returncode))
         elif verb == "send":
             os.write(fd, arg.encode().decode("unicode_escape").encode("latin-1"))
         elif verb == "screen":

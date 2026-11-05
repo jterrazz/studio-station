@@ -87,6 +87,12 @@ type worldRun struct {
 	// value: builds another Mac of the world: its registry, its engine.
 	far   func(w *worldMac) farMac
 	moved *moves
+	// value: the lock this run holds on its world file from open to close, so
+	// a command a TUI runs beside its live reads loses no write to them.
+	held *os.File
+	// value: the run handed its world to the commands it runs as children
+	// (the TUI): its own copy is stale and is never written again.
+	lent bool
 }
 
 // invariant: one Mac of the world as this process sees it: its fakes over
@@ -118,19 +124,57 @@ func openWorld(vars map[string]string) (*worldRun, error) {
 	if path == "" {
 		return nil, nil
 	}
+	held := lockWorld(path)
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) && vars["STATION_WORLD_SEED"] != "" {
 		data, err = os.ReadFile(vars["STATION_WORLD_SEED"])
 	}
 	if err != nil {
+		unlockWorld(held)
 		return nil, err
 	}
 	w, err := world.Decode(data)
 	if err != nil {
+		unlockWorld(held)
 		return nil, err
 	}
 	w.UseHypervisor(vars["STATION_WORLD_HYPERVISOR"])
-	return &worldRun{path: path, w: w, macs: map[string]*worldMac{}}, nil
+	return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, held: held}, nil
+}
+
+// hazard: a run that runs station as a child while it holds its world would
+// wait on it for ever: the wait is bounded, and past it the run goes on
+// without the lock, as every run did before it.
+func lockWorld(path string) *os.File {
+	f, err := os.OpenFile(path+".lock", os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil
+	}
+	for deadline := time.Now().Add(3 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+		if syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB) == nil {
+			return f
+		}
+	}
+	_ = f.Close()
+	return nil
+}
+
+func unlockWorld(f *os.File) {
+	if f != nil {
+		_ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+		_ = f.Close()
+	}
+}
+
+// invariant: the TUI's own process reads every page through a child, so it
+// writes its world back once, before its first child, and lets go of it.
+func (m *worldMac) lend(ctx context.Context) error {
+	if m == nil {
+		return nil
+	}
+	err := m.run.close(ctx)
+	m.run.lent = true
+	return err
 }
 
 func (r *worldRun) mac(name string) *worldMac {
@@ -629,6 +673,10 @@ func restarts(ev world.Event, mac string) bool {
 // turn on it, as the real ones run beside every command, then the world is
 // written back.
 func (r *worldRun) close(ctx context.Context) error {
+	if r.lent {
+		return nil
+	}
+	defer func() { unlockWorld(r.held); r.held = nil }()
 	for _, name := range r.names() {
 		m := r.mac(name)
 		if _, ok := m.up(ctx); ok {

@@ -12,6 +12,9 @@ import (
 
 func tuiOpener(_ kit.Env, m machine, noColor bool) func(context.Context) error {
 	return func(ctx context.Context) error {
+		if err := m.world.lend(ctx); err != nil {
+			return err
+		}
 		return tui.Run(ctx, tui.Deps{Here: m.where, Pages: tuiPages(m), NoColor: noColor, Stop: m.pool.Close})
 	}
 }
