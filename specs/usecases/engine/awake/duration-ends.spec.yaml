@@ -15,4 +15,4 @@ runs:
     - command: '--version >/dev/null; /usr/bin/jq -c ''[(.macs["jterrazz-macbook-pro"].power | {holds, clamshell}), [.told[] | .Text]]'' world.json'
       exit: 0
       stdout: |
-          [{"holds":null,"clamshell":null},["Awake stopped: its 4h ended"]]
+          [{"holds":null,"clamshell":null},["Awake stopped on This Mac: its 4h ended"]]

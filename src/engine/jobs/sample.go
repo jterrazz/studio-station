@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"strconv"
 	"sync"
 	"time"
 
@@ -42,8 +41,9 @@ type Sample struct {
 	Watched func(m machine.Ref) bool
 	Clock   Clock
 	History func() *activity.History
-	// value: tells the owner a finding that broke, once until it clears.
-	Tell func(subject, text string)
+	// value: tells the owner a finding that broke, once until it clears:
+	// the machine, the finding's subject, its words.
+	Tell func(machine, finding, text string)
 
 	mu   sync.Mutex
 	last map[string]time.Time
@@ -162,7 +162,7 @@ func (s *Sample) judge(h *activity.History, m Seen, found []finding.Finding, las
 		}
 	}
 	for _, subject := range h.Raise(m.Ref.Name, broken) {
-		s.Tell(m.Ref.Name, told(m, bySubject[subject], last))
+		s.Tell(m.Ref.Name, subject, told(m, bySubject[subject], last))
 	}
 }
 
@@ -171,8 +171,8 @@ func told(m Seen, f finding.Finding, last activity.Sample) string {
 	if m.Ref.On == "" {
 		name = "This Mac"
 	}
-	if f.Subject == "disk" && last.DiskTotal > 0 {
-		return name + ": " + strconv.Itoa(int(float64(last.DiskFree)/float64(last.DiskTotal)*100)) + " % of its disk is free"
+	if f.Subject == activity.SubjectDisk && last.DiskTotal > 0 {
+		return activity.DiskFreeTold(name, last)
 	}
 	return name + ": " + f.Text
 }

@@ -14,5 +14,5 @@ runs:
           off
           on
           off
-          {"kind":"power_ended","text":"Awake stopped: battery 20 %"}
+          {"kind":"power_ended","text":"Awake stopped on This Mac: battery 20 %"}
           [true,"unknown_page"]

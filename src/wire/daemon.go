@@ -70,7 +70,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		Watched: func(r coremachine.Ref) bool {
 			return d.Watched(r.Name) || (r.On == "" && d.Watched(engine.ThisMac))
 		},
-		Tell: func(subject, text string) { d.Tell(subject, text) },
+		Tell: func(machine, finding, text string) { d.Tell(machine, finding, text) },
 		Seen: func() []enginejobs.Seen {
 			running := d.Running()
 			seen := make([]enginejobs.Seen, 0, 1+len(running))

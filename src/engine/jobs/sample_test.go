@@ -51,7 +51,7 @@ func TestTwentyIdleVMsAreSampledOnceAMinuteEach(t *testing.T) {
 	h := activity.NewHistory(c.now)
 	s := &Sample{
 		Calls: guests, Clock: c, Seen: func() []Seen { return seen }, Watched: func(m machine.Ref) bool { return m.Name == watched },
-		History: func() *activity.History { return h }, Tell: func(string, string) {},
+		History: func() *activity.History { return h }, Tell: func(string, string, string) {},
 	}
 	tick := func(seconds int) {
 		for range seconds {
@@ -95,7 +95,7 @@ func TestAVMWhoseGuestIsSilentKeepsAGapInItsHistoryNeverZeros(t *testing.T) {
 			return []Seen{{Ref: machine.Ref{Name: "linux-1", On: "mac"}, Kind: machine.Workspace, PID: 4242}}
 		},
 		Watched: func(machine.Ref) bool { return true },
-		History: func() *activity.History { return h }, Tell: func(string, string) {},
+		History: func() *activity.History { return h }, Tell: func(string, string, string) {},
 	}
 	for range 10 {
 		s.Run(t.Context())
@@ -147,7 +147,7 @@ func TestTwentyHungGuestsCostATickOneBudgetNotTwenty(t *testing.T) {
 	s := &Sample{
 		Calls: guests, Clock: c,
 		Seen: func() []Seen { return seen }, Watched: func(machine.Ref) bool { return false },
-		History: func() *activity.History { return h }, Tell: func(string, string) {},
+		History: func() *activity.History { return h }, Tell: func(string, string, string) {},
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	done := make(chan struct{})

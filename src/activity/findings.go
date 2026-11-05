@@ -16,7 +16,14 @@ const (
 	BusyFor     = 10 * time.Minute
 	BusyCPU     = 95
 	LowBattery  = 20
+	SubjectDisk = "disk"
 )
+
+func DiskFreeTold(name string, last Sample) string {
+	// value: a disk under its floor in the words told beyond its machine's
+	// page (SPEC §10.4).
+	return name + ": " + strconv.Itoa(int(float64(last.DiskFree)/float64(last.DiskTotal)*100)) + " % of its disk is free"
+}
 
 func Findings(m machine.Ref, kind machine.Kind, s *Series) []finding.Finding {
 	// invariant: SPEC §6.5, read from the series alone: what holds now is
@@ -42,9 +49,9 @@ func Findings(m machine.Ref, kind machine.Kind, s *Series) []finding.Finding {
 		text := "Disk almost full: " + strconv.Itoa(int(free*100)) + " % free"
 		switch {
 		case free < 0.05:
-			add(finding.Broken, "disk", text, fix)
+			add(finding.Broken, SubjectDisk, text, fix)
 		case free < 0.10:
-			add(finding.NeedsALook, "disk", text, fix)
+			add(finding.NeedsALook, SubjectDisk, text, fix)
 		}
 	}
 	points := merged(s)

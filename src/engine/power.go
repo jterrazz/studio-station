@@ -41,10 +41,16 @@ type Event struct {
 func (d *Daemon) newPower() *power.Machine {
 	return power.New(d.o.Power, d.h.Clock, power.Options{
 		Log:    func(m string) { d.logf("power", m) },
-		Notice: func(e power.End) { d.told(NoticeEnded, "Awake stopped: "+e.Detail) },
+		Notice: func(e power.End) { d.told(NoticeEnded, AwakeStopped(e.Detail)) },
 		Told:   func(text string) { d.told(NoticeNeverSleeps, text) },
 		Change: d.hub.changed,
 	})
+}
+
+func AwakeStopped(detail string) string {
+	// value: the words of SPEC §10.4 for Awake a guard stopped on the
+	// engine's own Mac.
+	return "Awake stopped on This Mac: " + detail
 }
 
 // invariant: every end of Awake and every word of Never sleeps is told once,

@@ -14,6 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
@@ -98,14 +99,21 @@ func MenubarStream() []byte {
 
 func EventsStream() []byte {
 	// invariant: the recorded events watch is written by the engine's own
-	// event words, one frame per event of SPEC 10.4 the engine tells today,
-	// so the menu bar's notifications read what an engine sends.
+	// event words, one frame per event of SPEC 10.4 the engine tells, so the
+	// menu bar's notifications read what an engine sends.
 	var loop machines.Restarts
 	at := time.Date(2026, 11, 3, 14, 0, 0, 0, time.UTC)
 	for i := range 5 {
 		loop = loop.After(time.Second, at.Add(time.Duration(i)*time.Minute))
 	}
-	events := []engine.Told{engine.Restarting("infra", 3), engine.Looping("infra", loop), engine.PoweredOff("infra"), engine.Back("infra")}
+	exposed := ports.Exposed(ports.Survey([]ports.Machine{ports.MacOf("mac-mini", []ports.Listener{{Port: 5000, Bind: "*", Process: "ControlCenter"}})}, nil))
+	low := activity.Sample{DiskFree: 3_000_000_000, DiskTotal: 100_000_000_000}
+	events := []engine.Told{
+		engine.Restarting("infra", 3), engine.Looping("infra", loop), engine.PoweredOff("infra"), engine.Back("infra"),
+		{Kind: engine.NoticeEnded, Parts: []string{engine.AwakeStopped("battery 20 %")}},
+		{Kind: engine.EventExposed, Parts: []string{ports.Told(exposed[0])}},
+		{Kind: engine.EventDiskLow, Parts: []string{activity.DiskFreeTold("This Mac", low)}},
+	}
 	var out []byte
 	for _, e := range events {
 		data, err := json.Marshal(struct {
