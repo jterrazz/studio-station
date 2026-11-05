@@ -5,25 +5,33 @@ import SwiftUI
 public struct TypedField: View {
     let placeholder: String
     let symbol: String?
+    let key: String?
     @Binding var text: String
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationStill) private var still
 
-    public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil) {
+    public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil, key: String? = nil) {
         self.placeholder = placeholder
         self.symbol = symbol
+        self.key = key
         _text = text
     }
 
     public var body: some View {
-        HStack(spacing: 6) {
-            if let symbol { Image(systemName: symbol).font(.system(size: Token.Space.small + 1, weight: .medium)).foregroundStyle(palette.muted) }
+        HStack(spacing: 7) {
+            if let symbol { Image(systemName: symbol).font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.muted) }
             field
+            if let key {
+                Text(key).font(.system(size: Token.Space.small - 1, weight: .semibold)).foregroundStyle(palette.muted)
+                    .padding(.horizontal, 5).padding(.vertical, 1.5)
+                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(palette.subtle, lineWidth: 0.8))
+            }
         }
         .font(.system(size: Token.Space.text))
-        .padding(.horizontal, Token.Tile.padding)
-        .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: Token.Tile.pill, style: .continuous).fill(palette.hover))
+        .padding(.horizontal, Token.Tile.padding + 1)
+        .padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: Token.Tile.pill + 2, style: .continuous).fill(palette.well))
+        .overlay(RoundedRectangle(cornerRadius: Token.Tile.pill + 2, style: .continuous).strokeBorder(palette.hover, lineWidth: 0.6))
     }
 
     @ViewBuilder

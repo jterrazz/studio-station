@@ -24,12 +24,10 @@ public struct PortsPage: View {
                          symbol: Token.Symbol.port, tint: palette.accent, id: Navigation.ports, action: handlers.back)
             if let red = page.section("needs-you") { needsYou(red) }
             if let public_ = page.section("public") {
-                SectionHead(public_.title ?? "")
-                GlassCard(padding: 12) { ForEach(Array(public_.rows.enumerated()), id: \.offset) { _, r in plainRow(public_, r, symbol: Token.Symbol.globe) } }
+                GroupCard(public_.title ?? "", count: public_.rows.count, spacing: 6) { ForEach(Array(public_.rows.enumerated()), id: \.offset) { _, r in plainRow(public_, r, symbol: Token.Symbol.globe) } }
             }
             if let private_ = page.section("private") {
-                SectionHead(private_.title ?? "")
-                GlassCard(padding: 12) { ForEach(Array(private_.rows.enumerated()), id: \.offset) { i, r in privateRow(private_, r).overlay(alignment: .top) { if i > 0 { Rule().offset(y: -4) } } } }
+                GroupCard(private_.title ?? "", count: private_.rows.count, spacing: 8) { ForEach(Array(private_.rows.enumerated()), id: \.offset) { i, r in privateRow(private_, r).overlay(alignment: .top) { if i > 0 { Rule().offset(y: -4) } } } }
             }
             if let ranges = page.section("ranges") {
                 ForEach(Array(ranges.notes.enumerated()), id: \.offset) { _, n in note(n) }
@@ -79,7 +77,7 @@ public struct PortsPage: View {
             }
         }()
         return HStack(alignment: .center, spacing: Token.Space.gap + 2) {
-            IconCircle(symbol ?? Token.Symbol.port, tint: tint, size: Token.Tile.smallCircle + 2)
+            IconTile(symbol ?? Token.Symbol.port, tint: tint)
             VStack(alignment: .leading, spacing: 1) {
                 Text(title).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text).lineLimit(1)
                 Text(detail).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(2)
@@ -145,7 +143,9 @@ public struct PortsPage: View {
                 .frame(width: Token.Space.qr, height: Token.Space.qr)
                 .padding(12)
                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(palette.qrLight))
-            Text(url.absoluteString).font(.system(size: Token.Space.small, design: .monospaced)).foregroundStyle(palette.accent).lineLimit(2).multilineTextAlignment(.center)
+            Text(url.absoluteString).font(.system(size: Token.Space.small, design: .monospaced)).foregroundStyle(palette.text).lineLimit(2).multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity).padding(.horizontal, 9).padding(.vertical, 7)
+                .background(RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(palette.well))
             Text("Scan with your phone. Works on your Tailscale devices.").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: Token.Glass.spacing) {
