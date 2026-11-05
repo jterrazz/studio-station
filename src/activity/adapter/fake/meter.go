@@ -10,7 +10,11 @@ import (
 	"github.com/jterrazz/studio-station/src/world"
 )
 
-var ErrNoProcess = errors.New("no such process")
+var (
+	ErrNoProcess = errors.New("no such process")
+	// value: a Meter the world scripted silent (world fault Meter.Sample).
+	ErrSilent = errors.New("the meter does not answer")
+)
 
 type Meter struct {
 	// invariant: the counters of one Mac of the world.
@@ -34,6 +38,9 @@ func (m *Meter) read() (world.Meter, bool) {
 	defer m.w.Unlock()
 	if r := m.w.Mac(m.mac).Meter; r != nil {
 		out := *r
+		if r.PerSecond != nil && !r.Sample.At.IsZero() {
+			out.Sample = grown(r.Sample, *r.PerSecond, m.w.Now.Sub(r.Sample.At).Seconds())
+		}
 		out.Sample.At = m.w.Now
 		return out, true
 	}
@@ -43,6 +50,12 @@ func (m *Meter) read() (world.Meter, bool) {
 func (m *Meter) Sample(ctx context.Context) (activity.Sample, error) {
 	if err := ctx.Err(); err != nil {
 		return activity.Sample{}, err
+	}
+	m.w.Lock()
+	silent := m.w.Fails("Meter.Sample")
+	m.w.Unlock()
+	if silent {
+		return activity.Sample{}, ErrSilent
 	}
 	r, _ := m.read()
 	s := r.Sample
@@ -77,4 +90,16 @@ func top(ps []activity.Process) []activity.Process {
 	}
 	slices.SortStableFunc(out, func(a, b activity.Process) int { return cmp.Compare(b.Value, a.Value) })
 	return out[:min(len(out), activity.Top)]
+}
+
+func grown(s, rate activity.Sample, seconds float64) activity.Sample {
+	if seconds < 0 {
+		seconds = 0
+	}
+	by := func(n, per uint64) uint64 { return n + uint64(float64(per)*seconds) }
+	s.CPUBusy, s.CPUTotal = by(s.CPUBusy, rate.CPUBusy), by(s.CPUTotal, rate.CPUTotal)
+	s.DiskRead, s.DiskWritten = by(s.DiskRead, rate.DiskRead), by(s.DiskWritten, rate.DiskWritten)
+	s.NetIn, s.NetOut = by(s.NetIn, rate.NetIn), by(s.NetOut, rate.NetOut)
+	s.SwapUsed += int64(float64(rate.SwapUsed) * seconds)
+	return s
 }
