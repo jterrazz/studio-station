@@ -28,9 +28,9 @@ import (
 )
 
 const (
-	laptop = "jterrazz-macbook-pro"
-	mini   = "jterrazz-mac-mini"
-	gb     = int64(1) << 30
+	thisMac = "jterrazz-macbook-pro"
+	mini    = "jterrazz-mac-mini"
+	gb      = int64(1) << 30
 )
 
 type steps struct {
@@ -79,7 +79,7 @@ type world struct {
 	activity map[string]uint64
 }
 
-func (w *world) fleet(here bool) machines.Fleet {
+func (w *world) machines(here bool) machines.Fleet {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	infra := w.infra[0]
@@ -87,10 +87,10 @@ func (w *world) fleet(here bool) machines.Fleet {
 		w.infra = w.infra[1:]
 	}
 	if here {
-		return machines.Fleet{Hosts: []machines.HostView{{Name: laptop, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here}}}
+		return machines.Fleet{Hosts: []machines.HostView{{Name: thisMac, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here}}}
 	}
 	return machines.Fleet{Hosts: append([]machines.HostView{
-		{Name: laptop, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here},
+		{Name: thisMac, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here},
 		{Name: mini, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: append([]machines.VM{infra}, w.beside...)},
 	}, w.added...)}
 }
@@ -99,14 +99,14 @@ func (w *world) answer(name string, target machine.Ref, in any) any {
 	w.mu.Lock()
 	at := target.Name
 	if at == "" {
-		at = laptop
+		at = thisMac
 	}
 	w.asked[name] = append(w.asked[name], at)
 	w.mu.Unlock()
 	switch name {
 	case machinescalls.List.Name:
 		listed, _ := in.(machinescalls.ListIn)
-		return machinescalls.ListOut{Fleet: w.fleet(listed.Here)}
+		return machinescalls.ListOut{Fleet: w.machines(listed.Here)}
 	case portscalls.List.Name:
 		return ports.Listing{}
 	case accountscalls.List.Name:
@@ -114,16 +114,16 @@ func (w *world) answer(name string, target machine.Ref, in any) any {
 		defer w.mu.Unlock()
 		return w.lent
 	case overviewcalls.Read.Name:
-		need := map[string]string{laptop: "a sign-in expired", mini: "port 5000 is reachable from outside", "infra": "a container exited"}[at]
+		need := map[string]string{thisMac: "a sign-in expired", mini: "port 5000 is reachable from outside", "infra": "a container exited"}[at]
 		needs := []overview.Need{{Machine: at, Section: "ports", Broken: true, Text: need}}
 		w.mu.Lock()
-		if at == laptop && w.updates {
+		if at == thisMac && w.updates {
 			needs = append(needs, overview.Need{Machine: at, Section: "apps", Subject: "updates", Text: "2 app updates", Call: "apps.update"})
 		}
 		w.mu.Unlock()
 		return overviewcalls.ReadOut{Summary: overview.Summary{Head: overview.Head{Name: at}, Needs: needs}}
 	case activitycalls.Sample.Name:
-		memory := map[string]int64{laptop: 16 * gb, mini: 64 * gb, "infra": 24 * gb}[at]
+		memory := map[string]int64{thisMac: 16 * gb, mini: 64 * gb, "infra": 24 * gb}[at]
 		w.mu.Lock()
 		w.activity[at]++
 		n := w.activity[at]
@@ -269,7 +269,7 @@ func TestInfrasPageFollowsItLiveWhileItRestarts(t *testing.T) {
 	clock.pass(t, 2*time.Second)
 	until(t, pages, "infra's CPU after its second reading", func(p page.Page) bool { return row(p, "activity", "cpu").Cells[0].Kind == page.KindPercent })
 	if got := w.askedOf(machinescalls.List.Name); len(got) != 1 {
-		t.Errorf("two seconds re-read the fleet %d times, want it read once, at the page's opening", len(got))
+		t.Errorf("two seconds re-read the machines %d times, want it read once, at the page's opening", len(got))
 	}
 	clock.pass(t, 30*time.Second)
 	until(t, pages, "infra down while it restarts", func(p page.Page) bool { return row(p, "machine", "state").Mark == page.Broken })
@@ -294,7 +294,7 @@ func TestTheSwitcherDrawsEachMacsServersThenWorkspacesAndRereadsEveryThirtySecon
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	pages := feeds.Menubar{Calls: w, Clock: clock}.Switcher()(ctx, engine.FeedInput{})
-	p := until(t, pages, "the fleet", func(p page.Page) bool { return row(p, "machines", "infra") != nil })
+	p := until(t, pages, "every Mac", func(p page.Page) bool { return row(p, "machines", "infra") != nil })
 	var groups []string
 	for _, it := range p.Sections[0].Items {
 		if it.Group != nil && it.Group.Head.ID == mini {
@@ -338,7 +338,7 @@ func shared(p page.Page) []string {
 }
 
 func TestAnAccountTakenBackLeavesLinux1sPageOnceTheCallReturns(t *testing.T) {
-	linux := machines.VM{Name: "linux-1", Host: laptop, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}
+	linux := machines.VM{Name: "linux-1", Host: thisMac, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}
 	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, here: []machines.VM{linux}, lent: lentTo("linux-1", "github", "claude"), asked: map[string][]string{}, activity: map[string]uint64{}}
 	refresh := make(chan struct{}, 1)
 	pages := watchWith(t, w, newSteps(), engine.FeedInput{Subject: "linux-1", Refresh: refresh})
@@ -361,7 +361,7 @@ func TestAMacAddedReachesTheSwitcherOnceTheCallReturns(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	pages := feeds.Menubar{Calls: w, Clock: newSteps()}.Switcher()(ctx, engine.FeedInput{Refresh: refresh})
-	until(t, pages, "the fleet", func(p page.Page) bool { return row(p, "machines", mini) != nil })
+	until(t, pages, "every Mac", func(p page.Page) bool { return row(p, "machines", mini) != nil })
 	w.mu.Lock()
 	w.added = []machines.HostView{{Name: "studio-1", Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}}}
 	w.mu.Unlock()
@@ -370,7 +370,7 @@ func TestAMacAddedReachesTheSwitcherOnceTheCallReturns(t *testing.T) {
 }
 
 func TestAWorkspaceStartedOnThisMacReachesItsPageWhenTheEngineMoves(t *testing.T) {
-	linux := machines.VM{Name: "linux-1", Host: laptop, Lifetime: machines.Permanent, State: machines.Stopped}
+	linux := machines.VM{Name: "linux-1", Host: thisMac, Lifetime: machines.Permanent, State: machines.Stopped}
 	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, here: []machines.VM{linux}, asked: map[string][]string{}, activity: map[string]uint64{}}
 	changed := make(chan struct{}, 1)
 	pages := watchWith(t, w, newSteps(), engine.FeedInput{Subject: "linux-1", Changed: changed})
@@ -393,9 +393,9 @@ func TestAWorkspaceCreatedFromTheMenuBarAppearsInHomeWhenTheEngineMoves(t *testi
 	in := engine.FeedInput{Changed: changed}
 	in.Power = nothing(in.Power)
 	pages := o.Feed()(ctx, in)
-	until(t, pages, "the fleet", func(p page.Page) bool { return row(p, "machines", mini) != nil })
+	until(t, pages, "every Mac", func(p page.Page) bool { return row(p, "machines", mini) != nil })
 	w.mu.Lock()
-	w.here = []machines.VM{{Name: "linux-2", Host: laptop, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}}
+	w.here = []machines.VM{{Name: "linux-2", Host: thisMac, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}}
 	w.mu.Unlock()
 	changed <- struct{}{}
 	p := until(t, pages, "linux-2 in Home", func(p page.Page) bool { return row(p, "machines", "linux-2") != nil })

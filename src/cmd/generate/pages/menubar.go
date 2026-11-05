@@ -60,7 +60,7 @@ const (
 // value: the two-macs world of USE-CASES §0.2 as the menu bar reads it:
 // This Mac with linux-1 (running, two ports shared) and api (stopped), the
 // mini with infra, a healthy server.
-func twoMacsFleet() machines.Fleet {
+func twoMacs() machines.Fleet {
 	linux1 := sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Host: thisMacName, Kind: catalog.Linux, Lifetime: machines.Throwaway, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", Guest: "connected", CreatedAt: built}, 4, 4)
 	api := sized(machines.VM{Name: "api", Image: "linux", Version: "3", Host: thisMacName, Kind: catalog.Linux, Lifetime: machines.Permanent, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8)
 	infra := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Host: miniName, Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Guest: "connected", Want: "running",
@@ -110,7 +110,7 @@ func miniAwake() awake.Report {
 }
 
 func twoMacsReading(updates bool) pagemenubar.Reading {
-	f, svc, home := twoMacsFleet(), twoMacsServices(), twoMacsSummary(updates)
+	f, svc, home := twoMacs(), twoMacsServices(), twoMacsSummary(updates)
 	return pagemenubar.Reading{Home: &home, Samples: samples(), Fleet: &f, Services: &svc, Power: thisMacAwake(), Macs: []awake.Report{miniAwake()}}
 }
 
@@ -120,7 +120,7 @@ func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
 	calm := overviewOf(false)
 	calm.Lines = calm.Lines[:1]
 	calm.VMs = nil
-	f := twoMacsFleet()
+	f := twoMacs()
 	alone := machines.Fleet{Hosts: []machines.HostView{f.Hosts[0]}}
 	alone.Hosts[0].VMs = nil
 	frame = pagemenubar.Reading{Power: &off}
@@ -167,7 +167,7 @@ func menubarWorlds() []Fixture {
 // value: linux-1's page: its Overview read inside it, GitHub and Claude
 // shared from This Mac, its two ports shared.
 func linux1Page() pagemenubar.Machine {
-	f, svc := twoMacsFleet(), twoMacsServices()
+	f, svc := twoMacs(), twoMacsServices()
 	inside := overview.Summary{Head: overview.Head{Name: "linux-1", Kind: coremachine.Workspace, Up: 2 * time.Hour}, Lines: []overview.Line{
 		{Section: "apps", Parts: []overview.Part{overview.Count(catalog.StateOK, 38, "installed", "ok")}},
 		{Section: "settings", Parts: []overview.Part{overview.Count(catalog.StateDegraded, 2, "need a look", "attention")}},
@@ -183,7 +183,7 @@ func linux1Page() pagemenubar.Machine {
 // value: infra's page from This Mac: up 12 days, its four health steps
 // passing, one public port and two private.
 func infraPage() pagemenubar.Machine {
-	f, svc := twoMacsFleet(), twoMacsServices()
+	f, svc := twoMacs(), twoMacsServices()
 	inside := overview.Summary{Head: overview.Head{Name: "infra", Kind: coremachine.Server, Up: 12*24*time.Hour + 4*time.Hour}, Lines: []overview.Line{
 		{Section: "ports", Parts: []overview.Part{{Word: "Public", N: 1, Key: "public", Counted: true}, {Word: "Private", N: 2, Key: "private", Counted: true}}},
 		{Section: "ssh", Parts: []overview.Part{{Word: "admin@infra"}}},
@@ -195,7 +195,7 @@ func infraPage() pagemenubar.Machine {
 // readiness all applied, infra, and the port that needs you; offline, the
 // mini waits at pre-boot for its disk's password.
 func miniPage(offline bool) pagemenubar.Machine {
-	f, svc := twoMacsFleet(), twoMacsServices()
+	f, svc := twoMacs(), twoMacsServices()
 	ready := func(name, value string) overview.Check {
 		return overview.Check{Name: name, State: catalog.StateOK, Value: value}
 	}

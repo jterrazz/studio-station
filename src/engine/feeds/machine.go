@@ -45,9 +45,9 @@ func (o Menubar) Machine() engine.Feed {
 }
 
 func (o Menubar) Switcher() engine.Feed {
-	// invariant: the switcher is the fleet as a tree, read when it opens, every
-	// 30 s while it stays open, and again as soon as the engine's state moves
-	// or a refresh names it.
+	// invariant: the switcher is every Mac and its machines as a tree, read
+	// when it opens, every 30 s while it stays open, and again as soon as the
+	// engine's state moves or a refresh names it.
 	return func(ctx context.Context, in engine.FeedInput) <-chan any {
 		out := make(chan any, 1)
 		go func() {
