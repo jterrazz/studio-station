@@ -69,7 +69,7 @@ Free: `brew cleanup --prune=all`, delete `~/Library/Caches/Homebrew/*`. Erase: n
 | `~/.local/share/mise/installs`   | installed     | removed by `station apps remove`                                        |
 | `~/.local/share/mise/shims`      | installed     | removed by `station apps remove`                                        |
 
-Free: `mise cache clear`, `mise prune --tools`, delete `~/Library/Caches/mise/*`, delete `~/Library/Caches/sigstore-rust/*`, delete `~/.cache/mise/*`, delete `~/.cache/sigstore-rust/*`. Erase: none (runtimes are apps: station apps remove <runtime>).
+Free: `mise cache clear`, `mise prune --tools --yes`, delete `~/Library/Caches/mise/*`, delete `~/Library/Caches/sigstore-rust/*`, delete `~/.cache/mise/*`, delete `~/.cache/sigstore-rust/*`. Erase: none (runtimes are apps: station apps remove <runtime>).
 
 ### uv
 

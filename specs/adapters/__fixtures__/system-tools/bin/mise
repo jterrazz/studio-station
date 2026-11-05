@@ -4,7 +4,7 @@
 case "$*" in
     "--version") echo "2026.10.25 macos-arm64" ;;
     "ls --global --json") echo "{}" ;;
-    "cache clear" | "prune --tools") printf 'mise %s\n' "$*" >> "$HOME/.calls" ;;
+    "cache clear" | "prune --tools --yes") printf 'mise %s\n' "$*" >> "$HOME/.calls" ;;
     *)
         echo "stub mise: unexpected invocation: $*" >&2
         exit 97
