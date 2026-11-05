@@ -70,6 +70,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		Lends:       lends, Peer: m.engineAPI(),
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
+		Listening: m.macListeners().Read, Declarations: m.stores.declarations.List,
 	})
 	lends.s = m.secretsVia(d, func(_ context.Context, vm string) (bool, error) {
 		for _, v := range d.VMs() {

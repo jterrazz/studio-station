@@ -81,6 +81,10 @@ type Options struct {
 	// value: how the parts of what the engine tells are joined, as the
 	// presentation joins them.
 	Join func(parts ...string) string
+	// value: what listens on this Mac, and what the owner declared public;
+	// nil reads nothing, and the exposure job does not run.
+	Listening    func(ctx context.Context) ([]ports.Listener, error)
+	Declarations func(ctx context.Context) ([]ports.Declaration, error)
 	// value: when the engine process started, for a stepped engine that
 	// stands for one which outlived its command; zero is the Begin.
 	StartedAt time.Time
@@ -101,15 +105,19 @@ type Daemon struct {
 	// value: every address each running VM listens on, as its guest
 	// reported it, shared or not.
 	heard   map[string][]ports.Listener
-	leases  []services.Lease
-	self    ports.SharingState
-	read    bool
-	issuing bool
-	started time.Time
-	note    func(line string)
-	power   *power.Machine
-	awake   *power.Kept
-	hub     hub
+	reheard bool
+	// value: when the exposure job last read, and the red ports it told.
+	exposedAt time.Time
+	red       []string
+	leases    []services.Lease
+	self      ports.SharingState
+	read      bool
+	issuing   bool
+	started   time.Time
+	note      func(line string)
+	power     *power.Machine
+	awake     *power.Kept
+	hub       hub
 
 	notifier Notifier
 	serve    func(ctx context.Context, conn io.ReadWriteCloser)
@@ -323,6 +331,7 @@ func (d *Daemon) step(ctx context.Context, tick int) {
 	}
 	d.tick(ctx)
 	d.sweepLends(ctx)
+	d.watchExposure(ctx)
 	d.power.Tick()
 	d.watchState()
 }

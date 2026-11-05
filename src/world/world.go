@@ -205,6 +205,8 @@ type Engine struct {
 	Memory engine.Memory `json:"memory,omitempty"`
 	// value: what the engine holds of Awake between two commands.
 	Awake *engine.AwakeKept `json:"awake,omitempty"`
+	// value: what the exposure job knows between two commands.
+	Exposure *engine.ExposureKept `json:"exposure,omitempty"`
 }
 
 func (m *Mac) EngineRuns() bool {
