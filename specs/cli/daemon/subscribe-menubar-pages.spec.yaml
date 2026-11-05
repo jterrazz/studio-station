@@ -1,4 +1,4 @@
-description: 'AC-25, AW-21, PO-34: the menu bar opens Ports, Awake and Activity: the engine streams each from its frame to its read, Activity over the window picked after its colon'
+description: 'the engine streams Ports, Awake and Activity, Activity over the window after its colon'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/power/
