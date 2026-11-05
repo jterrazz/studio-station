@@ -1,4 +1,4 @@
-description: 'the /proc of a real Ubuntu 24.04 VM, recorded by tier 2 after its load, reads as its own numbers: four CPUs, MemTotal less MemAvailable, enp0s1 without lo nor docker0, vda without its partitions'
+description: 'a real Ubuntu 24.04 VM''s recorded /proc reads as its own numbers'
 fixture: ./__fixtures__/meter-ubuntu/
 env: engine
 runs:

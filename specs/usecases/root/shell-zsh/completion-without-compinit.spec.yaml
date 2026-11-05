@@ -1,4 +1,4 @@
-description: 'on a fresh Mac whose ~/.zshrc holds only the station block, an interactive zsh has the station completion: the block runs compinit when nothing did'
+description: 'a fresh Mac''s interactive zsh has the completion: the block runs compinit when nothing did'
 fixture: ../../../__fixtures__/studio-cli/
 env: engine
 runs:

@@ -1,4 +1,4 @@
-description: 'a dock item applied while the Dock is down, just restarted, is done: launchd relaunches it with the change'
+description: 'a dock item applied while the Dock is down, just restarted, is done'
 fixture: ./__fixtures__/settings-dock-down/
 runs:
     - command: 'settings apply dock-spacer'

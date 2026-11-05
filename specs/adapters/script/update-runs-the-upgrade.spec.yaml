@@ -1,4 +1,4 @@
-description: 'an update of oh-my-zsh runs its own upgrade, never the installer again, which refuses a folder already there'
+description: 'an update of oh-my-zsh runs its own upgrade, never its installer again'
 fixture: ./__fixtures__/script-upgrade/
 runs:
     - command: 'apps update ohmyzsh'

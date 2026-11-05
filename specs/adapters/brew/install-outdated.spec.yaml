@@ -1,4 +1,4 @@
-description: 'an install of an app already there but behind is done: brew bundle uses it, it reads installed with its update waiting, exit 0'
+description: 'an install of an app already there but behind is done: it reads installed, exit 0'
 fixture:
     - ../../__fixtures__/stubs/
     - ./__fixtures__/outdated/

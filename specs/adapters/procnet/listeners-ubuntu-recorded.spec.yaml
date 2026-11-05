@@ -1,4 +1,4 @@
-description: 'the tcp tables of a real Ubuntu 24.04 VM, recorded with three listeners, read as those three: its established and closing rows, sshd and the resolver under 1024 are not listeners to share'
+description: 'a real Ubuntu 24.04 VM''s recorded tcp tables read as its three listeners'
 fixture: ./__fixtures__/ubuntu/
 env: engine
 runs:
