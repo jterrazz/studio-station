@@ -26,6 +26,7 @@ struct MetricTile: View {
     let spark: [Int]?
     var id: String? = nil
     var caption: String? = nil
+    var meter: Bars? = nil
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationNow) private var now
 
@@ -47,6 +48,8 @@ struct MetricTile: View {
                     Bars.pending().padding(.vertical, 1)
                 } else if let spark, spark.count > 1 {
                     Bars(Array(spark.suffix(12))).padding(.vertical, 1)
+                } else if let meter {
+                    meter.padding(.vertical, 1)
                 }
                 if let line = waiting ? Self.reading : caption ?? of {
                     Text(line).font(.system(size: Token.Space.small - 1)).foregroundStyle(palette.muted).lineLimit(1).minimumScaleFactor(0.8).monospacedDigit()
@@ -606,7 +609,7 @@ struct MachineContent: View {
         case "up":
             HStack(spacing: Token.Glass.spacing) {
                 ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in
-                    MetricTile(label: r.label ?? "", value: r.cells?.first, spark: nil)
+                    upTile(r)
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -625,6 +628,29 @@ struct MachineContent: View {
             }
         }
     }
+
+    // value: an Overview tile: Up with its whole meter lit while its span
+    // is known, Restarts with one bar lit per restart.
+    func upTile(_ r: Row) -> MetricTile {
+        let value = r.cells?.first
+        if r.id == "up" {
+            let lit = value?.isNone ?? true ? 0 : Bars.slots
+            return MetricTile(label: r.label ?? "", value: Self.span(value), spark: nil, caption: Self.since, meter: Bars.meter(lit, of: Bars.slots, tint: palette.teal))
+        }
+        let count = Int(value?.items?.first?.n ?? 0)
+        return MetricTile(label: r.label ?? "", value: value, spark: nil, meter: Bars.meter(count, of: Bars.slots, tint: palette.warn))
+    }
+
+    // value: the Up tile's figure without the word its label already says:
+    // `up 12 d` is shown 12 d.
+    static func span(_ v: Value?) -> Value? {
+        guard var v, let text = v.text, text.hasPrefix("up ") else { return v }
+        v.text = String(text.dropFirst(3))
+        return v
+    }
+
+    // value: the Up tile's secondary line.
+    static let since = "Running since its last boot"
 
     // value: the calm line under the accounts a VM holds (SPEC §5.7: never
     // a token shown, every share ends by itself).
