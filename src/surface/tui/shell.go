@@ -691,7 +691,7 @@ func (s shell) frame() ui.Shell {
 	detail := s.detailed() && (s.width >= ui.ThreePanes || s.focus == ui.PaneDetail)
 	switch {
 	case !r.done:
-		f.Master = ui.Panel{Title: title, Lines: []string{" " + ui.Glyph(page.Awaiting) + " " + s.section().Title() + ui.Sep + "reading " + strings.Join(words(s.current(), s.section()), " ")}}
+		f.Master = ui.Panel{Title: title, Lines: []string{" " + ui.Glyph(page.Awaiting) + " " + s.section().Title() + ui.Sep + "reading " + s.current().label}}
 	case r.err != nil:
 		f.Master = ui.Panel{Title: title, Lines: ui.ErrorBlock(*r.err, s.dark)}
 	default:
