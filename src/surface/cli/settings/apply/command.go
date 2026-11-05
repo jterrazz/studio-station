@@ -3,6 +3,7 @@ package settingsapply
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -91,10 +92,7 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, in *Input, io kit.IO
 			if len(names) == 0 && len(in.Names) > 0 {
 				break
 			}
-			err := io.Confirmed(func(answer string) (err error) {
-				a.Changes, err = call.Invoke(ctx, env.Calls, p.Ref, settingscalls.Apply, settingscalls.ApplyIn{Names: names, Interactive: io.Interactive, Confirm: answer}, nil)
-				return err
-			})
+			err := applyLiving(ctx, env, p, names, io, &a)
 			var refused *fail.Error
 			switch {
 			case errors.As(err, &refused) && refused.Type == fail.NotForThisMachine:
@@ -122,6 +120,27 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, in *Input, io kit.IO
 		return kit.PartialFailure{Failed: failed, Total: len(applies), Noun: "machines", FirstHint: "station machines"}
 	}
 	return nil
+}
+
+// invariant: a setting that does not live on the machine is dropped and
+// said, and the rest are applied there; the machine is asked again, as it
+// alone knows which of its settings live there.
+func applyLiving(ctx context.Context, env kit.Env, p settings.Place, names []string, io kit.IO, a *pagesettings.MachineApply) error {
+	for {
+		err := io.Confirmed(func(answer string) (err error) {
+			a.Changes, err = call.Invoke(ctx, env.Calls, p.Ref, settingscalls.Apply, settingscalls.ApplyIn{Names: names, Interactive: io.Interactive, Confirm: answer}, nil)
+			return err
+		})
+		var refused *fail.Error
+		if !errors.As(err, &refused) || refused.Code != settingscalls.NotForThisMachine || !slices.Contains(names, refused.Subject) {
+			return err
+		}
+		a.Elsewhere = append(a.Elsewhere, pagesettings.Elsewhere{Name: refused.Subject, Why: kit.Translate(err, "settings apply").Message})
+		names = slices.DeleteFunc(slices.Clone(names), func(n string) bool { return n == refused.Subject })
+		if len(names) == 0 {
+			return nil
+		}
+	}
 }
 
 // value: the names a Mac is asked to apply, and the admin settings among

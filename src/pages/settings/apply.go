@@ -13,18 +13,22 @@ type MachineApply struct {
 	// value: what the machine answered; Skipped, Admin and Err say why it
 	// did not: a server, a stopped workspace, a setting it needs admin
 	// rights for (with the command that applies it), a Mac that does not
-	// answer.
-	Changes []settings.Change
-	Skipped string
-	Admin   []AdminSetting
-	Err     string
+	// answer; Elsewhere, each setting named that does not live there.
+	Changes   []settings.Change
+	Skipped   string
+	Admin     []AdminSetting
+	Elsewhere []Elsewhere
+	Err       string
 }
 
 type AdminSetting struct{ Name, Command string }
 
+type Elsewhere struct{ Name, Why string }
+
 func EveryMachine(applies []MachineApply, here page.Context) page.Page {
 	// invariant: --all-machines tells each machine in turn: each setting
-	// applied there, each admin setting with the command that applies it,
+	// applied there, each admin setting with the command that applies it, each
+	// setting that does not live there,
 	// why the machine was skipped, or that it did not answer.
 	var rows []page.Row
 	for _, a := range applies {
@@ -40,6 +44,9 @@ func EveryMachine(applies []MachineApply, here page.Context) page.Page {
 			row := pages.Done(a.Machine+"/"+c.Item, c.Result, "")
 			row.Label, row.Detail = a.Machine, page.Texts(c.Item, summary(c))
 			rows = append(rows, row)
+		}
+		for _, e := range a.Elsewhere {
+			rows = append(rows, page.Row{ID: a.Machine + "/" + e.Name, Label: a.Machine, Mark: page.NotForThisMachine, Detail: page.Text("skipped (" + e.Why + ")")})
 		}
 		for _, s := range a.Admin {
 			rows = append(rows, page.Row{ID: a.Machine + "/" + s.Name, Label: a.Machine, Mark: page.Absent, Detail: page.Texts(s.Name, "needs admin rights"), Hint: page.Cmd(s.Command)})

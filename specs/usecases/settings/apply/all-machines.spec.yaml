@@ -1,4 +1,4 @@
-description: 'apply --all-machines: applied where it lives, a server skipped, each admin setting with its command'
+description: 'apply --all-machines: applied where it lives, skipped per setting where not'
 env: two-macs
 runs:
     - command: 'settings apply starship-dotfiles --all-machines'
@@ -21,6 +21,29 @@ runs:
       exit: 0
       stdout: |
           applied
+    - command: 'settings --on jterrazz-mac-mini --json | /usr/bin/jq -r ''.settings[] | select(.name == "dns") | .state'''
+      exit: 0
+      stdout: |
+          not-applied
+    - command: 'settings apply starship-dotfiles dns --all-machines'
+      exit: 0
+      stdout: |
+          ●	jterrazz-macbook-pro	starship-dotfiles · ~/.config/starship.toml: written
+          ●	jterrazz-macbook-pro	dns · dns: applied
+          ●	jterrazz-mac-mini	starship-dotfiles · ~/.config/starship.toml: written
+          ●	jterrazz-mac-mini	dns · dns: applied
+          ●	linux-1	starship-dotfiles · ~/.config/starship.toml: written
+          –	linux-1	skipped (dns is for Macs only)
+          –	api	skipped (stopped)
+          –	infra	skipped (server)
+    - command: 'settings --on jterrazz-mac-mini --json | /usr/bin/jq -r ''.settings[] | select(.name == "dns") | .state'''
+      exit: 0
+      stdout: |
+          applied
+    - command: 'settings --on linux-1 --json | /usr/bin/jq -r ''.settings[] | select(.name == "dns") | .state'''
+      exit: 0
+      stdout: |
+          not-for-this-machine
     - command: 'settings apply sshd dns --all-machines'
       exit: 0
       stdout: |
@@ -29,6 +52,7 @@ runs:
           ●	jterrazz-mac-mini	dns · dns: applied
           ○	jterrazz-mac-mini	sshd · needs admin rights · ssh -t jterrazz-mac-mini sudo station settings apply sshd
           –	linux-1	skipped (sshd is for Macs only)
+          –	linux-1	skipped (dns is for Macs only)
           –	api	skipped (stopped)
           –	infra	skipped (server)
     - command: 'settings --on jterrazz-mac-mini --json | /usr/bin/jq -r ''.settings[] | select(.name == "sshd") | .state'''
