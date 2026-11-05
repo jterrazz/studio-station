@@ -65,6 +65,8 @@ type shell struct {
 	dialog *dialog
 	gens   map[string]int
 	held   *held
+	sw     *switcher
+	seen   visited
 }
 
 const machinesKey = "\x00machines"
@@ -75,6 +77,9 @@ func newShell(ctx context.Context, d Deps) shell {
 		focus: ui.PaneMaster, reads: map[string]read{}, lists: map[string]ui.List{}, asked: map[string]bool{}, samples: map[string][]int{},
 		states: map[string]screen.State{}, gens: map[string]int{}, held: &held{}}
 	s.nodes = tree(d.Here, nil)
+	if d.Opens != "" && d.Opens != d.Here.Machine {
+		s.at = d.Opens
+	}
 	s.side = s.sectionEntry()
 	s.asked[s.key(s.current(), s.section())] = true
 	return s
@@ -191,6 +196,9 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, cmd)
 			}
 		}
+		var cmd tea.Cmd
+		s, cmd = s.load()
+		cmds = append(cmds, cmd)
 	}
 	if msg.key == s.key(s.nodes[0], section.Activity) && r.err == nil {
 		s.samples = sampled(s.samples, msg.page)
@@ -218,6 +226,9 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if s.sheet {
 		s.sheet = false
 		return s, nil
+	}
+	if s.sw != nil {
+		return s.switching(k)
 	}
 	if s.dialog != nil {
 		return s.asking(k)
@@ -250,6 +261,10 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return s.back()
 	case "n":
 		return s.create()
+	case "m":
+		s.sw = &switcher{}
+	case "-":
+		return s.previous()
 	default:
 		if s.focus == ui.PaneSidebar {
 			return s.sidebar(key)
@@ -334,6 +349,7 @@ func (s shell) back() (tea.Model, tea.Cmd) {
 }
 
 func (s shell) open(name string) (tea.Model, tea.Cmd) {
+	s.seen = s.seen.left(s.current().name, name)
 	s.at, s.sec = name, 0
 	s.side = s.sectionEntry()
 	if s.focus == ui.PaneDetail {
@@ -900,6 +916,9 @@ func (s shell) frame() ui.Shell {
 		f.Sheet = s.keySheet()
 	}
 	f.Dialog = s.dialogPanel()
+	if p := s.switcherPanel(); p != nil {
+		f.Dialog = p
+	}
 	return f
 }
 

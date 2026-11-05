@@ -29,6 +29,9 @@ func (a *Asked) Error() string { return a.Message }
 
 type Deps struct {
 	Here page.Context
+	// value: the machine the TUI opens on, by name: the one this terminal
+	// uses; empty is This Mac.
+	Opens string
 	// invariant: the TUI's one read is the page the CLI prints for these
 	// words, so a screen is the same page function as its command.
 	Pages Pages

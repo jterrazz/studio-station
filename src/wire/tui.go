@@ -15,13 +15,20 @@ import (
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
-func tuiOpener(_ kit.Env, m machine, noColor bool) func(context.Context) error {
+// invariant: SPEC §8.2: the TUI opens on the machine this terminal uses,
+// and moving it elsewhere changes nothing of that choice: its own reads and
+// calls name their machine, never the terminal's.
+func tuiOpener(env kit.Env, m machine, noColor bool) func(context.Context) error {
 	return func(ctx context.Context) error {
 		if err := m.world.lend(ctx); err != nil {
 			return err
 		}
 		b := binary{m: m}
-		return tui.Run(ctx, tui.Deps{Here: m.where, Pages: b.pages, Do: b.do, Run: b.call, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close, Watch: tuiWatch(ctx, m)})
+		var opens string
+		if env.On != nil {
+			opens = env.On.Used
+		}
+		return tui.Run(ctx, tui.Deps{Here: m.where, Opens: opens, Pages: b.pages, Do: b.do, Run: b.call, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close, Watch: tuiWatch(ctx, m)})
 	}
 }
 
@@ -97,7 +104,7 @@ func skipped(stdout string) []string {
 }
 
 func (b *binary) run(ctx context.Context, args []string) (system.Output, error) {
-	return b.m.host.Run.Output(ctx, system.Cmd{Name: b.m.host.Env.Executable(), Args: args})
+	return b.m.host.Run.Output(ctx, system.Cmd{Name: b.m.host.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}})
 }
 
 func (b *binary) open(ctx context.Context, target string) error {
