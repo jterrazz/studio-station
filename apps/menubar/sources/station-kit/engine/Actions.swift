@@ -3,9 +3,13 @@ import Foundation
 public struct Status: Equatable, Sendable {
     public var line: String
     public var failed: Bool
-    public init(_ line: String, failed: Bool) {
+    // value: the notification a failed call started from the menu bar posts
+    // (SPEC §10.4); nil for every other outcome.
+    public var posted: String?
+    public init(_ line: String, failed: Bool, posted: String? = nil) {
         self.line = line
         self.failed = failed
+        self.posted = posted
     }
 }
 
@@ -36,14 +40,18 @@ public struct ActionRunner: Sendable {
     }
 
     // invariant: the outcome is the status line: nil when the action did what
-    // it said, else the engine's own message and hint. A call goes over the
+    // it said, else the engine's own message and hint; a failed call also
+    // names the notification it posts. A call goes over the
     // socket; only a terminal action starts a program, the terminal.
     public func run(_ action: Action, answers: [String: String] = [:]) async -> Status? {
         guard let run = action.run else { return nil }
         if let name = run.call {
             let reply = await Client.call(path: socket, name: name, input: Client.input(Self.filled(action, answers: answers), fixed: run.in))
             if reply.ok || (reply.closed && name == Self.endsTheEngine) { return nil }
-            return Self.failure(reply.message ?? name, reply.hint)
+            let message = reply.message ?? name
+            var status = Self.failure(message, reply.hint)
+            status.posted = Notifications.failedCall(reply.task ?? action.label ?? name, message)
+            return status
         }
         guard run.terminal == true else { return nil }
         let open = Terminal.opening(terminal, executable: executable, words: run.argv ?? [])

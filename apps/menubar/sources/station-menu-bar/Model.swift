@@ -118,6 +118,7 @@ final class Model: ObservableObject {
             let status = await ActionRunner(executable: executable, socket: socket).run(action, answers: answers)
             state.running = nil
             state.status = status
+            if let text = status?.posted { notify(text) }
             clearing?.cancel()
             if status != nil {
                 clearing = Task {

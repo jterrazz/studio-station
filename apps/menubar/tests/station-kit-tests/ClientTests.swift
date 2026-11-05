@@ -186,7 +186,7 @@ final class ClientTests: XCTestCase {
         defer { engine.stop() }
         let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(try fixtureAction("power-awake"), answers: ["Lid": "Lid=true Battery=true"])
         XCTAssertEqual(engine.received, [#"{"call":"awake.keep","id":"1","in":{"Battery":true,"For":14400000000000,"Lid":true},"v":2}"#])
-        XCTAssertEqual(status, Status("api did not stop  → station machines", failed: true))
+        XCTAssertEqual(status, Status("api did not stop  → station machines", failed: true, posted: "awake failed: api did not stop"))
     }
 
     func testStopEverythingIsDoneWhenTheEngineItStoppedHangsUp() async throws {

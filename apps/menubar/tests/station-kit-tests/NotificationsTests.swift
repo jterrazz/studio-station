@@ -35,6 +35,24 @@ final class NotificationsTests: XCTestCase {
         ])
     }
 
+    // invariant: MB-10: the eighth event of SPEC §10.4: a call started from
+    // the menu bar that fails posts what it was doing and the engine's
+    // message, the hint staying on the status line.
+    func testAFailedMenuBarCallIsPosted() async throws {
+        let engine = try FakeEngine("mb-call-failed")
+        defer { engine.stop() }
+        let frames = [
+            #"{"v":2,"id":"1","progress":{"task":"Installing jq"}}"#,
+            #"{"v":2,"id":"1","error":{"type":"refused","code":"apps.needs","message":"brew is not installed","hint":"station apps install brew"}}"#,
+        ]
+        engine.serveOnce(Data(frames.joined(separator: "\n").utf8) + [0x0A], thenClose: false)
+        let install = try JSONDecoder().decode(Action.self, from: Data(#"{"id":"install","label":"Install","run":{"call":"apps.install","in":{"Names":"jq"}}}"#.utf8))
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(install)
+        XCTAssertEqual(status?.posted, "Installing jq failed: brew is not installed")
+        XCTAssertEqual(status?.line, "brew is not installed  → station apps install brew")
+        XCTAssertEqual(status?.failed, true)
+    }
+
     func testAPageWatchNoticeIsNeverPosted() throws {
         let page = StreamEvent.notice(kind: "power_ended", text: "Power ended: battery 20% on battery")
         XCTAssertNil(Notifications.posted(page, from: Subscription.pageWatch))

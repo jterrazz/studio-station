@@ -9,10 +9,16 @@ public enum Notifications {
 
     // invariant: SPEC §10.4: a notification is an event of the engine's
     // events watch, which streams the closed list alone, posted in the
-    // engine's words, once per event; a notice of the page watch draws the
-    // status line and is never posted.
+    // engine's words, once per event, or a failed call (failedCall); a
+    // notice of the page watch draws the status line and is never posted.
     public static func posted(_ event: StreamEvent, from watch: String) -> String? {
         guard watch == Self.watch, case .notice(let kind, let text) = event, !kind.isEmpty, !text.isEmpty else { return nil }
         return text
+    }
+
+    // invariant: SPEC §10.4's eighth event, a call started from the menu bar
+    // failed: what the call was doing, then the engine's message.
+    public static func failedCall(_ doing: String, _ message: String) -> String {
+        "\(doing) failed: \(message)"
     }
 }

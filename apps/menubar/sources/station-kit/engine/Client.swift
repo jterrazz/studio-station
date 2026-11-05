@@ -16,6 +16,8 @@ public struct Reply: Sendable {
     public var result: [String: AnySendable]
     public var message: String?
     public var hint: String?
+    // value: the task of the call's last progress frame, what it was doing.
+    public var task: String? = nil
 }
 
 public struct AnySendable: @unchecked Sendable {
@@ -86,12 +88,16 @@ public enum Client {
         }
         do {
             try socket.write(line: data)
+            var task: String?
             while true {
                 let line = try await readLine(socket)
                 let obj = (try JSONSerialization.jsonObject(with: line)) as? [String: Any] ?? [:]
-                if obj["progress"] != nil { continue }
+                if let progress = obj["progress"] {
+                    task = ((progress as? [String: Any])?["task"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? task
+                    continue
+                }
                 if let error = obj["error"] as? [String: Any] {
-                    return Reply(ok: false, closed: false, result: [:], message: error["message"] as? String, hint: error["hint"] as? String)
+                    return Reply(ok: false, closed: false, result: [:], message: error["message"] as? String, hint: error["hint"] as? String, task: task)
                 }
                 let result = (obj["out"] as? [String: Any] ?? [:]).mapValues { AnySendable(value: $0) }
                 return Reply(ok: true, closed: false, result: result, message: nil, hint: nil)
