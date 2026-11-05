@@ -88,7 +88,7 @@ public enum Token {
         public static let battery = "battery.75percent"
         public static let thermo = "thermometer.medium"
         public static let screen = "display"
-        public static let mini = "macmini"
+        public static let otherMac = "desktopcomputer"
 
         public static func of(_ mark: Mark) -> String {
             switch mark {

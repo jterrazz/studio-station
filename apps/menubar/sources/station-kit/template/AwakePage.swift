@@ -113,7 +113,7 @@ public struct AwakePage: View {
         let change = page.actions(for: r.id ?? "").first { $0.id?.hasPrefix("change:") == true }
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top, spacing: Token.Space.gap) {
-                Image(systemName: Token.Symbol.mini).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).frame(width: 16)
+                Image(systemName: Token.Symbol.otherMac).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).frame(width: 16)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(r.short ?? r.label ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
                     Text(words(r.cells?.first)).font(.system(size: Token.Space.small)).foregroundStyle(palette.text)
