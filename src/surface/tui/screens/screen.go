@@ -9,9 +9,9 @@ import (
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
-// value: the machine a screen shows, as the sidebar names it; a Kind of ""
-// is All machines.
 type Machine struct {
+	// value: the machine a screen shows, as the sidebar names it; a Kind
+	// of "" is All machines.
 	Name, Label string
 	Kind        machine.Kind
 	// value: the Mac a VM is on, by name and as the sidebar says it, and
@@ -21,11 +21,11 @@ type Machine struct {
 	Here          bool
 }
 
-// value: a screen's own memory (the window a graph draws, a sort), kept
-// per machine and section while the TUI runs.
 type State map[string]string
 
 func (s State) With(key, value string) State {
+	// value: a screen's own memory (the window a graph draws, a sort), kept
+	// per machine and section while the TUI runs.
 	out := make(State, len(s)+1)
 	for k, v := range s {
 		out[k] = v
@@ -65,9 +65,9 @@ type Open struct {
 	Section section.ID
 }
 
-// value: a call the TUI makes by the CLI's own words, after its question or
-// its form when it has one, said in the Progress strip while it runs.
 type Call struct {
+	// value: the CLI's own words of the call a key makes, after its question
+	// or its form when it has one, said in the Progress strip while it runs.
 	Words       []string
 	Doing, Done string
 	Ask         *Ask
@@ -76,9 +76,9 @@ type Call struct {
 	Copy bool
 }
 
-// value: a yes/no question, or, with Type, the name to type exactly before
-// enter does it (SPEC §9.8).
 type Ask struct {
+	// value: a yes/no question, or, with Type, the name to type exactly
+	// before enter does it (SPEC §9.8).
 	Question string
 	Lines    []string
 	Type     string
@@ -109,16 +109,8 @@ type Screen interface {
 	Live() time.Duration
 }
 
-// value: how a machine is named after --on: none for This Mac.
-func On(m Machine) []string {
-	if m.Here || m.Name == "" {
-		return nil
-	}
-	return []string{"--on", m.Name}
-}
-
-// value: a row's cell by its column's key, never by its place.
 func Cell(s page.Section, r page.Row, key string) page.Value {
+	// value: a row's cell by its column's key, never by its place.
 	for i, c := range s.Columns {
 		if c.Key == key && i > 0 && i-1 < len(r.Cells) {
 			return r.Cells[i-1]

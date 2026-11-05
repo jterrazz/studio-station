@@ -18,12 +18,14 @@ const (
 	on      = "on"
 )
 
-// value: SPEC §9.4's Awake keys, on the Mac under the cursor; the page is
-// read again every second while shown, so a guard's end shows at once
-// (AW-20).
 type Screen struct{}
 
-func (Screen) Live() time.Duration { return time.Second }
+func (Screen) Live() time.Duration {
+	// invariant: SPEC §9.4's Awake keys act on the Mac under the cursor; the
+	// page is read again every second while shown, so a guard's end shows
+	// at once (AW-20).
+	return time.Second
+}
 
 func (Screen) Words(_ screens.Machine, words []string, _ screens.State) []string { return words }
 

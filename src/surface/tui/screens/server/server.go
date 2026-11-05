@@ -12,10 +12,6 @@ import (
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
-// value: SPEC §9.4's keys on a VM's Overview and its SSH: a workspace
-// stops after a yes, a server only once its name is typed (SPEC §9.8);
-// restart asks nothing; e edits what it was created with; c copies its ssh
-// command.
 type Screen struct{}
 
 func (Screen) Live() time.Duration { return 0 }
@@ -47,6 +43,9 @@ func on(m screens.Machine) []string {
 }
 
 func (Screen) Press(key string, v screens.View) (screens.Effect, bool) {
+	// invariant: SPEC §9.4, §9.8: a workspace stops after a yes, a server
+	// only once its name is typed; restart asks nothing; e edits what it was
+	// created with; c copies its ssh command.
 	m := v.Machine
 	name := m.Name
 	if key == "c" {

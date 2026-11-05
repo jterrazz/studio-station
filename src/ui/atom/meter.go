@@ -39,7 +39,7 @@ func Graph(samples []int, width int) string {
 }
 
 func Bar(used, total int64, width int) string {
-	// invariant: the bar's shape carries the share, never its colour alone:
+	// invariant: the bar's shape carries the share, never its color alone:
 	// full blocks for the used part, light ones for the rest.
 	if width <= 0 || total <= 0 {
 		return ""

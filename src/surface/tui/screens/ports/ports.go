@@ -23,8 +23,6 @@ const (
 // value: the routes a public port is declared by.
 var routes = []string{"cloudflare-tunnel", "tailscale-funnel", "lan"}
 
-// value: SPEC §9.4's Ports keys, each on the row it acts on; enter opens
-// the row's detail, with its QR code, as every list does.
 type Screen struct{}
 
 func (Screen) Live() time.Duration { return 0 }
@@ -77,6 +75,8 @@ func port(v screens.View) (name, number string, ok bool) {
 }
 
 func (Screen) Press(key string, v screens.View) (screens.Effect, bool) {
+	// invariant: SPEC §9.4: each key on the row it acts on; enter opens the
+	// row's detail, with its QR code, as every list does.
 	name, number, onPort := port(v)
 	what := name + " " + number
 	switch {

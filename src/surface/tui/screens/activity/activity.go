@@ -211,7 +211,8 @@ func processes(st token.Styles, s page.Section, sort string, width int) []string
 	slices.SortStableFunc(rows, func(a, b page.Row) int {
 		return cmp.Compare(screens.Cell(s, b, key).N, screens.Cell(s, a, key).N)
 	})
-	out := []string{title}
+	out := make([]string, 0, 1+len(rows))
+	out = append(out, title)
 	for _, r := range rows {
 		line := "   " + atom.Pad(atom.End(r.Label, 16), 16) + atom.Pad(atom.Plain(screens.Cell(s, r, "what")), 14) +
 			atom.Pad(dash(screens.Cell(s, r, "cpu")), 8) + dash(screens.Cell(s, r, "memory"))

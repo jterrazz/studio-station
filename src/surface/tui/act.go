@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -19,8 +20,6 @@ import (
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
-// value: runs station with the CLI's words, the call a key makes, and
-// answers what it printed.
 type Calls func(ctx context.Context, words []string) (string, error)
 
 type called struct {
@@ -52,18 +51,19 @@ type dialog struct {
 
 const toastFor = 4 * time.Second
 
+func spinner() string {
+	r, _ := utf8.DecodeRuneInString(token.Spinner)
+	return string(r)
+}
+
 func screenFor(n node, id section.ID) screens.Screen {
-	switch id {
-	case section.Activity:
-		return activityscreen.Screen{}
-	case section.Awake:
-		return awakescreen.Screen{}
-	case section.Ports:
-		return portsscreen.Screen{}
-	case section.Overview, section.SSH:
-		if n.kind == machine.Workspace || n.kind == machine.Server {
-			return serverscreen.Screen{}
-		}
+	vm := n.kind == machine.Workspace || n.kind == machine.Server
+	own := map[section.ID]screens.Screen{section.Activity: activityscreen.Screen{}, section.Awake: awakescreen.Screen{}, section.Ports: portsscreen.Screen{}}
+	if sc, ok := own[id]; ok {
+		return sc
+	}
+	if vm && (id == section.Overview || id == section.SSH) {
+		return serverscreen.Screen{}
 	}
 	return nil
 }
@@ -120,11 +120,11 @@ func (s shell) effect(e screens.Effect) (shell, tea.Cmd) {
 	}
 	if e.Open != nil {
 		m, cmd := s.open(e.Open.Machine)
-		s = m.(shell)
+		s, _ = m.(shell)
 		for i, id := range s.sections(s.current()) {
 			if id == e.Open.Section {
 				m, cmd = s.show(i)
-				s = m.(shell)
+				s, _ = m.(shell)
 			}
 		}
 		cmds = append(cmds, cmd)
@@ -334,7 +334,7 @@ func (s shell) progress() []string {
 	var out []string
 	parts := make([]string, 0, len(s.jobs)+1)
 	for _, j := range s.jobs {
-		parts = append(parts, string([]rune(token.Spinner)[0])+" "+j.doing)
+		parts = append(parts, spinner()+" "+j.doing)
 	}
 	if s.said != "" {
 		parts = append(parts, s.said)
