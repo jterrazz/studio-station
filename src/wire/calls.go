@@ -2,6 +2,10 @@ package wire
 
 import (
 	"context"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/engine/process"
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
@@ -103,10 +107,33 @@ func (l *localCalls) Watch(ctx context.Context, _ coremachine.Ref, name string, 
 
 type awakePower struct{ *power.Service }
 
+// invariant: the history a Mac's engine keeps, asked over its socket.
+func engineKept(api engineAPI) func(ctx context.Context, name string) (activity.Kept, time.Time, bool, error) {
+	return func(ctx context.Context, name string) (activity.Kept, time.Time, bool, error) {
+		return keptOf(ctx, api, name)
+	}
+}
+
+func keptOf(ctx context.Context, api engineAPI, name string) (activity.Kept, time.Time, bool, error) {
+	var out process.ActivityOut
+	if err := api.do(ctx, process.Activity, nil, &out); err != nil {
+		return activity.Kept{}, time.Time{}, false, err
+	}
+	for _, kept := range out.Machines {
+		if kept.Machine == name {
+			return activity.Kept{Last: kept.Last, Series: activity.SeriesOf(kept.Fine, kept.Coarse)}, out.Since, true, nil
+		}
+	}
+	return activity.Kept{}, out.Since, false, nil
+}
+
 // value: a sample composes its free space from the Disk family, and on a
 // Mac its thermal and battery from Power: a VM's are its Mac's.
 func (m machine) activityDeps(meter activitycontract.Meter) activitycalls.Deps {
-	d := activitycalls.Deps{Meter: meter, Volume: m.disk()}
+	d := activitycalls.Deps{Meter: meter, Volume: m.disk(), Name: m.profile.Ref.Name, Kind: m.profile.Kind, Sleep: m.host.Clock.Sleep}
+	if m.profile.Kind == coremachine.Mac {
+		d.Kept = engineKept(m.engineAPI())
+	}
 	if m.powerPort != nil && (m.profile.Caps.Thermal || m.profile.Caps.Battery) {
 		d.Power = m.powerPort
 	}

@@ -1,0 +1,16 @@
+description: 'infra''s guest silent: its CPU and memory are its process on mac-mini; no disk, no network'
+env:
+    - server-without-guest
+    - engine
+runs:
+    - command: '--version >/dev/null; /usr/bin/jq ''.macs["jterrazz-mac-mini"].meter = {"sample": {}, "top": {"cpu": [], "memory": []}, "processes": {"2001": {"cpu": 18, "memory": 16106127360}}}'' world.json > w.json && /bin/mv w.json world.json; "$STATION" world advance 1m; "$STATION" activity --on infra'
+      exit: 0
+      stdout: |
+          ●	infra	Server · from mac-mini (its guest does not answer)
+          # Now
+          	CPU	18 % of mac-mini
+          	Memory	15 GB resident
+    - command: 'activity --on infra --json | /usr/bin/jq -c ''{source, run, disk, network}'''
+      exit: 0
+      stdout: |
+          {"source":"mac-process","run":{"cpu_percent":18,"resident_bytes":16106127360,"mac":"mac-mini"},"disk":null,"network":null}

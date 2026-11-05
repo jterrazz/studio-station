@@ -41,7 +41,7 @@ func (r *Reader[Tool, Item, Stray]) machineJobs() []job[Tool, Item, Stray] {
 		},
 		{Key: subject + "/machine/sample", Budget: defaultBudget + margin,
 			Do: func(ctx context.Context) func(*sn) {
-				reading, err := activitycalls.Read(ctx, r.d.Meter)
+				reading, err := activitycalls.Measure(ctx, r.d.Meter)
 				return func(s *sn) {
 					if err != nil {
 						s.Err = err

@@ -1,0 +1,33 @@
+{
+  "schema": "station.page/v1",
+  "id": "activity",
+  "command": "activity",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "activity",
+      "title": "Activity",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "stopped",
+            "mark": "absent",
+            "label": "api is stopped",
+            "reason": "stopped"
+          }
+        }
+      ],
+      "uncounted": true
+    }
+  ]
+}

@@ -41,6 +41,14 @@ station overview [--all] [--json]
 
 This machine at a glance (SPEC §5.1): a first line that sums it up (`This Mac · jterrazz-macbook-pro · 5 things need you · Engine running`; a VM's names its kind and how long it has run), then Needs you, every section's findings ranked broken first and then by the one section order, five of them unless `--all`; then one line per section the machine has, in that order (a Mac: Apps, Settings, Disk, Ports, Accounts, Background, Awake, then its VMs; a workspace: the sections it has; a server: Ports and SSH, and `Apps, settings, accounts: not managed by station`); then one or two `→` next steps. Each line is that section's own read, so its counts equal what the section's own command prints. `station overview --on <vm>` and `station machines <vm>` print the same bytes: `On <vm>:`, the VM's first line from its Mac (`linux-1 · Workspace on This Mac · Throwaway · up 2 h`), the sections it reads inside it, then its Health; a VM that does not run, or whose guest does not answer, shows its first line and Health alone. `--json` prints `station.overview.read/v1`: `machine`, `findings[]` (each `fix` one of `call`, `command`, `path`) and `sections[]` with their counts; the hidden alias `station status --json` keeps printing the [`station.status/v1`](status-json.md) document `studio doctor` reads. On a terminal, `overview`, `apps` and `disk` draw every row at once and fill each as its read answers ([instant reads](../concepts/design-system.md#instant-reads)); piped or with `--json` they print one complete document.
 
+### `station activity`
+
+```sh
+station activity [--all-machines] [--json [--history]]
+```
+
+What a machine is doing now (SPEC §6): CPU of the whole machine and its load, memory used of total with its pressure and swap, free space, disk read and write and network in and out with what the kernel counted since boot, thermal and battery on a Mac, how long it has been up, and the five busiest processes by CPU and by memory (a VM's hypervisor process named by its VM). The rates are the mean of the last 10 s of the history the engine keeps (a VM's is its Mac's engine's); with the engine stopped, or for a VM it keeps nothing of, two samples 1 s apart, said `rates over 1 s`. A VM whose guest does not answer shows its process on its Mac, `from mac-mini (its guest does not answer)`, and no disk or network values; a stopped VM says `○ api is stopped` and exits 0; a Meter that does not answer in 2 s turns every value to `? · no answer in 2 s` and the read still exits 0. What it raises in Needs you (disk almost full, memory pressure critical, swap growing, running hot, battery low, a busy server) heads the page with its fix. `--all-machines` is one row per machine, a Mac that does not answer its own row. `--json` prints `station.activity.read/v1`; `--history` adds the engine's 24 h series in 60 s points and needs `--json` (exit 2 without).
+
 ### `station apps`
 
 ```sh

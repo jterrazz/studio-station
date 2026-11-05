@@ -11,7 +11,9 @@
                 "Source": "ac",
                 "HasBattery": true,
                 "Percent": 96,
-                "Charging": true
+                "Charging": true,
+                "Health": 98,
+                "Cycles": 112
             },
             "facts": {
                 "filevault": {
@@ -515,6 +517,77 @@
                     "OwnerExists": true,
                     "Removal": "launchctl bootout gui/501/homebrew.mxcl.postgresql@16 && rm ~/Library/LaunchAgents/homebrew.mxcl.postgresql@16.plist"
                 }
+            },
+            "meter": {
+                "sample": {
+                    "at": "2026-11-04T10:00:00Z",
+                    "cpu_busy": 3400000,
+                    "cpu_total": 10000000,
+                    "cpus": 10,
+                    "load": [2.8, 3.1, 2.9],
+                    "mem_used": 13314398618,
+                    "mem_total": 17179869184,
+                    "pressure": "normal",
+                    "swap_used": 1288490188,
+                    "disk_read": 182000000000,
+                    "disk_written": 96000000000,
+                    "net_in": 38000000000,
+                    "net_out": 4600000000,
+                    "thermal": 0,
+                    "boot": "2026-11-01T06:00:00Z"
+                },
+                "per_second": {
+                    "at": "0001-01-01T00:00:00Z",
+                    "cpu_busy": 340,
+                    "cpu_total": 1000,
+                    "cpus": 0,
+                    "load": [0, 0, 0],
+                    "mem_used": 0,
+                    "mem_total": 0,
+                    "swap_used": 0,
+                    "disk_read": 4100000,
+                    "disk_written": 1300000,
+                    "net_in": 2100000,
+                    "net_out": 210000,
+                    "thermal": 0,
+                    "boot": "0001-01-01T00:00:00Z"
+                },
+                "top": {
+                    "cpu": [
+                        {
+                            "pid": 1001,
+                            "name": "tart",
+                            "value": 18
+                        },
+                        {
+                            "pid": 4100,
+                            "name": "Zed",
+                            "value": 9
+                        },
+                        {
+                            "pid": 310,
+                            "name": "WindowServer",
+                            "value": 4
+                        }
+                    ],
+                    "memory": [
+                        {
+                            "pid": 1001,
+                            "name": "tart",
+                            "value": 4402341478
+                        },
+                        {
+                            "pid": 4100,
+                            "name": "Zed",
+                            "value": 2040109465
+                        },
+                        {
+                            "pid": 310,
+                            "name": "WindowServer",
+                            "value": 644245094
+                        }
+                    ]
+                }
             }
         },
         "jterrazz-mac-mini": {
@@ -692,13 +765,129 @@
                         "Variant": "standalone"
                     }
                 }
+            },
+            "meter": {
+                "sample": {
+                    "at": "2026-11-04T10:00:00Z",
+                    "cpu_busy": 2100000,
+                    "cpu_total": 10000000,
+                    "cpus": 10,
+                    "load": [1.9, 2.0, 2.1],
+                    "mem_used": 27917287424,
+                    "mem_total": 68719476736,
+                    "pressure": "normal",
+                    "swap_used": 0,
+                    "disk_read": 900000000000,
+                    "disk_written": 1400000000000,
+                    "net_in": 120000000000,
+                    "net_out": 210000000000,
+                    "thermal": 0,
+                    "boot": "2026-10-23T10:00:00Z"
+                },
+                "per_second": {
+                    "at": "0001-01-01T00:00:00Z",
+                    "cpu_busy": 210,
+                    "cpu_total": 1000,
+                    "cpus": 0,
+                    "load": [0, 0, 0],
+                    "mem_used": 0,
+                    "mem_total": 0,
+                    "swap_used": 0,
+                    "disk_read": 1800000,
+                    "disk_written": 6200000,
+                    "net_in": 900000,
+                    "net_out": 1400000,
+                    "thermal": 0,
+                    "boot": "0001-01-01T00:00:00Z"
+                },
+                "top": {
+                    "cpu": [
+                        {
+                            "pid": 2001,
+                            "name": "tart",
+                            "value": 18
+                        },
+                        {
+                            "pid": 512,
+                            "name": "AirPlayXPCHelper",
+                            "value": 1
+                        }
+                    ],
+                    "memory": [
+                        {
+                            "pid": 2001,
+                            "name": "tart",
+                            "value": 16106127360
+                        },
+                        {
+                            "pid": 512,
+                            "name": "AirPlayXPCHelper",
+                            "value": 52428800
+                        }
+                    ]
+                }
             }
         },
         "linux-1": {
             "meter": {
                 "sample": {
                     "at": "2026-11-04T10:00:00Z",
+                    "cpu_busy": 80000,
+                    "cpu_total": 1000000,
+                    "cpus": 4,
+                    "load": [0.3, 0.4, 0.4],
+                    "mem_used": 1181116006,
+                    "mem_total": 4294967296,
+                    "pressure": "normal",
+                    "swap_used": 0,
+                    "disk_read": 3000000000,
+                    "disk_written": 5000000000,
+                    "net_in": 900000000,
+                    "net_out": 400000000,
+                    "thermal": 0,
                     "boot": "2026-11-04T08:00:00Z"
+                },
+                "per_second": {
+                    "at": "0001-01-01T00:00:00Z",
+                    "cpu_busy": 32,
+                    "cpu_total": 400,
+                    "cpus": 0,
+                    "load": [0, 0, 0],
+                    "mem_used": 0,
+                    "mem_total": 0,
+                    "swap_used": 0,
+                    "disk_read": 200000,
+                    "disk_written": 400000,
+                    "net_in": 300000,
+                    "net_out": 100000,
+                    "thermal": 0,
+                    "boot": "0001-01-01T00:00:00Z"
+                },
+                "top": {
+                    "cpu": [
+                        {
+                            "pid": 812,
+                            "name": "node",
+                            "value": 6
+                        },
+                        {
+                            "pid": 640,
+                            "name": "vite",
+                            "value": 2
+                        }
+                    ],
+                    "memory": [
+                        {
+                            "pid": 812,
+                            "name": "node",
+                            "value": 524288000
+                        },
+                        {
+                            "pid": 640,
+                            "name": "vite",
+                            "value": 209715200
+                        }
+                    ]
                 }
             },
             "self": {
@@ -742,7 +931,72 @@
             "meter": {
                 "sample": {
                     "at": "2026-11-04T10:00:00Z",
+                    "cpu_busy": 1800000,
+                    "cpu_total": 10000000,
+                    "cpus": 8,
+                    "load": [1.4, 1.5, 1.6],
+                    "mem_used": 16106127360,
+                    "mem_total": 25769803776,
+                    "pressure": "normal",
+                    "swap_used": 0,
+                    "disk_read": 610000000000,
+                    "disk_written": 2300000000000,
+                    "net_in": 96000000000,
+                    "net_out": 141000000000,
+                    "thermal": 0,
                     "boot": "2026-10-23T10:00:00Z"
+                },
+                "per_second": {
+                    "at": "0001-01-01T00:00:00Z",
+                    "cpu_busy": 144,
+                    "cpu_total": 800,
+                    "cpus": 0,
+                    "load": [0, 0, 0],
+                    "mem_used": 0,
+                    "mem_total": 0,
+                    "swap_used": 0,
+                    "disk_read": 1100000,
+                    "disk_written": 5900000,
+                    "net_in": 800000,
+                    "net_out": 1300000,
+                    "thermal": 0,
+                    "boot": "0001-01-01T00:00:00Z"
+                },
+                "top": {
+                    "cpu": [
+                        {
+                            "pid": 901,
+                            "name": "k3s-server",
+                            "value": 9
+                        },
+                        {
+                            "pid": 902,
+                            "name": "containerd",
+                            "value": 3
+                        },
+                        {
+                            "pid": 903,
+                            "name": "traefik",
+                            "value": 1
+                        }
+                    ],
+                    "memory": [
+                        {
+                            "pid": 901,
+                            "name": "k3s-server",
+                            "value": 2254857830
+                        },
+                        {
+                            "pid": 904,
+                            "name": "postgres",
+                            "value": 1503238553
+                        },
+                        {
+                            "pid": 902,
+                            "name": "containerd",
+                            "value": 322122547
+                        }
+                    ]
                 }
             },
             "self": {
@@ -750,6 +1004,10 @@
                 "system": {
                     "OS": "linux"
                 }
+            },
+            "disk": {
+                "total": 80000000000,
+                "free": 44000000000
             }
         }
     },
