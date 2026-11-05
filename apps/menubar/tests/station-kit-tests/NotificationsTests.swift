@@ -53,6 +53,27 @@ final class NotificationsTests: XCTestCase {
         XCTAssertEqual(status?.failed, true)
     }
 
+    // invariant: MB-16: Update all on Home is the apps.update call; when
+    // one app's update fails and the others are done, one notification
+    // says which and why, and the status line says it too.
+    func testNotificationOnFailedCall() async throws {
+        let page = try Tree.page("menubar.home.two-macs")
+        let update = try XCTUnwrap(page.action("update-all"))
+        XCTAssertEqual(update.label, "Update all")
+        XCTAssertEqual(update.run?.call, "apps.update")
+        let engine = try FakeEngine("mb-update")
+        defer { engine.stop() }
+        let frames = [
+            #"{"v":2,"id":"1","progress":{"task":"Updating the apps with an update"}}"#,
+            #"{"v":2,"id":"1","out":[{"Name":"ghostty","Verb":"update","Result":"ok"},{"Name":"gh","Verb":"update","Result":"broken","Detail":"brew said no"},{"Name":"node","Verb":"update","Result":"ok"}]}"#,
+        ]
+        engine.serveOnce(Data(frames.joined(separator: "\n").utf8) + [0x0A], thenClose: false)
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(update)
+        XCTAssertEqual(engine.received, [#"{"call":"apps.update","id":"1","v":2}"#])
+        XCTAssertEqual(status?.posted, "Updating gh failed: brew said no")
+        XCTAssertEqual(status?.failed, true)
+    }
+
     func testAPageWatchNoticeIsNeverPosted() throws {
         let page = StreamEvent.notice(kind: "power_ended", text: "Power ended: battery 20% on battery")
         XCTAssertNil(Notifications.posted(page, from: Subscription.pageWatch))

@@ -29,6 +29,7 @@ import (
 	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/machines/adapter/dial"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
+	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/remote"
 	"github.com/jterrazz/studio-station/src/remote/api"
@@ -53,6 +54,10 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	}
 	menubar := feeds.Menubar{Calls: calls, Clock: m.host.Clock, Here: m.where, Report: func(v power.View) *power.Report {
 		return &power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
+	}, EveryMac: func(ctx context.Context) (pageawake.Fleet, error) {
+		inside := env
+		inside.Calls = calls
+		return m.everyMacAwake(ctx, inside)
 	}}
 	guests := engineGuests{dialer: m.guestDialer(), vms: m.machines(false)}
 	notifier := func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) }
@@ -89,7 +94,8 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
 		Lends:       lends, Peer: m.engineAPI(),
-		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed(), engine.PageSwitcher: menubar.Switcher(), engine.PageMachine: menubar.Machine()},
+		Feeds: map[string]engine.Feed{engine.PageMenubar: menubar.Feed(), engine.PageSwitcher: menubar.Switcher(), engine.PageMachine: menubar.Machine(),
+			engine.PagePorts: menubar.Ports(), engine.PageAwake: menubar.Awake(), engine.PageActivity: menubar.Activity()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
 		Listening: m.listeners("/").Read, Declarations: m.stores.declarations.List,
 		Jobs: []engine.Tick{sample.Run},

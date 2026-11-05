@@ -74,11 +74,12 @@ struct Bitmap {
 enum Snapshot {
     static let now = ISO8601DateFormatter().date(from: "2026-11-03T10:30:00Z")!
 
-    // value: the popover as a fixture shows it: Home, or a page pushed
-    // over it, the switcher with infra opened last.
+    // value: the popover as a fixture shows it: Home or a page of the menu
+    // bar's own, or the switcher or a machine's page pushed over Home, the
+    // switcher with infra opened last.
     static func state(_ name: String, _ page: Page) -> PopoverState {
         let connection: Connection = name.hasSuffix(".error") || name.hasSuffix(".engine-stopped") ? .stopped : .live
-        guard page.id != PageID.home else { return PopoverState(page: page, connection: connection) }
+        guard page.id == PageID.switcher || page.id == PageID.machine else { return PopoverState(page: page, connection: connection) }
         return PopoverState(page: nil, connection: connection, pushed: page, recent: page.id == PageID.switcher ? ["infra"] : [])
     }
 
@@ -87,6 +88,7 @@ enum Snapshot {
     @MainActor
     static func view(_ name: String, _ page: Page) -> AnyView {
         if popover(page) { return AnyView(Popover(state(name, page), scrolls: false)) }
+        if let own = MenuPage.view(state(name, page)) { return own }
         return AnyView(PageView(page))
     }
 

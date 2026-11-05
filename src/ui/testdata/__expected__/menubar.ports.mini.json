@@ -1,0 +1,460 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.ports",
+  "command": "ports",
+  "context": {
+    "machine": "jterrazz-macbook-pro",
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/ports",
+            "mark": "ok",
+            "label": "mac-mini",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "5 ports"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "2 need you"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "needs-you",
+      "title": "Needs you: reachable outside Tailscale, not declared public",
+      "columns": [
+        {
+          "key": "machine",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "port",
+          "label": "port",
+          "kind": "port",
+          "keep": 90
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
+          "key": "what",
+          "label": "what",
+          "kind": "text",
+          "keep": 60
+        },
+        {
+          "key": "listens",
+          "label": "listens on",
+          "kind": "text",
+          "keep": 50
+        },
+        {
+          "key": "declared",
+          "label": "declared",
+          "kind": "text",
+          "keep": 70
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "mac-mini:5000",
+            "mark": "broken",
+            "label": "mac-mini",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 5000
+              },
+              {
+                "kind": "text",
+                "text": "needs you"
+              },
+              {
+                "kind": "text",
+                "text": "AirPlay Receiver"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "*:5000 all interfaces"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": "declared no"
+              }
+            ],
+            "reason": "exposed",
+            "hint": {
+              "command": "System Settings > General > AirDrop & Handoff > AirPlay Receiver",
+              "external": true
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "infra:10250",
+            "mark": "broken",
+            "label": "infra",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 10250
+              },
+              {
+                "kind": "text",
+                "text": "needs you"
+              },
+              {
+                "kind": "text",
+                "text": "kubelet"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "*:10250 all interfaces"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": "declared no"
+              }
+            ],
+            "reason": "exposed"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "broken",
+          "n": 2
+        }
+      ],
+      "pipe_counts": true
+    },
+    {
+      "id": "public",
+      "title": "Public: reachable from anywhere else, internet or LAN, declared",
+      "columns": [
+        {
+          "key": "machine",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "port",
+          "label": "port",
+          "kind": "port",
+          "keep": 90
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
+          "key": "what",
+          "label": "what",
+          "kind": "text",
+          "keep": 60
+        },
+        {
+          "key": "listens",
+          "label": "listens on",
+          "kind": "text",
+          "keep": 50
+        },
+        {
+          "key": "declared",
+          "label": "declared",
+          "kind": "text",
+          "keep": 70
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "infra:443",
+            "mark": "ok",
+            "label": "infra",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 443
+              },
+              {
+                "kind": "text",
+                "text": "public"
+              },
+              {
+                "kind": "text",
+                "text": "nginx"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "*:443 all interfaces"
+                  }
+                ]
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "Cloudflare Tunnel"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "tunnel seen"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        }
+      ],
+      "pipe_counts": true
+    },
+    {
+      "id": "private",
+      "title": "Private: shared with you on Tailscale",
+      "columns": [
+        {
+          "key": "vm",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "port",
+          "label": "port",
+          "kind": "portmap",
+          "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
+          "key": "url",
+          "label": "url",
+          "kind": "url",
+          "keep": 40
+        },
+        {
+          "key": "state",
+          "label": "state",
+          "kind": "text",
+          "keep": 70
+        },
+        {
+          "key": "process",
+          "label": "process",
+          "kind": "text",
+          "keep": 20,
+          "whole": true
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "mac-mini:5900",
+            "mark": "ok",
+            "label": "mac-mini",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 5900
+              },
+              {
+                "kind": "text",
+                "text": "private"
+              },
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "text",
+                "text": "on Tailscale"
+              },
+              {
+                "kind": "text",
+                "text": "Screen Sharing"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "infra:6443",
+            "mark": "ok",
+            "label": "infra",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 6443
+              },
+              {
+                "kind": "text",
+                "text": "private"
+              },
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "text",
+                "text": "own Tailscale device: infra"
+              },
+              {
+                "kind": "text",
+                "text": "Kubernetes API"
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        }
+      ],
+      "pipe_counts": true
+    }
+  ],
+  "actions": [
+    {
+      "label": "Review",
+      "on": "row",
+      "rows": [
+        "mac-mini:5000",
+        "infra:10250"
+      ],
+      "priority": 1,
+      "id": "review",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "ports",
+          "--on",
+          "mac-mini"
+        ]
+      }
+    },
+    {
+      "label": "Declare public",
+      "on": "page",
+      "priority": 2,
+      "mutates": true,
+      "id": "declare-public",
+      "run": {
+        "call": "ports.declare"
+      },
+      "form": {
+        "title": "Declare a port public",
+        "fields": [
+          {
+            "key": "Port",
+            "label": "Port",
+            "kind": "select",
+            "options": [
+              {
+                "value": "Machine=\"mac-mini\" Port=\"5000\"",
+                "label": "mac-mini:5000"
+              },
+              {
+                "value": "Machine=\"infra\" Port=\"10250\"",
+                "label": "infra:10250"
+              },
+              {
+                "value": "Machine=\"mac-mini\" Port=\"5900\"",
+                "label": "mac-mini:5900"
+              },
+              {
+                "value": "Machine=\"infra\" Port=\"6443\"",
+                "label": "infra:6443"
+              }
+            ],
+            "default": "Machine=\"mac-mini\" Port=\"5000\"",
+            "required": true
+          },
+          {
+            "key": "Via",
+            "label": "Via",
+            "kind": "select",
+            "options": [
+              {
+                "value": "cloudflare-tunnel",
+                "label": "Cloudflare Tunnel"
+              },
+              {
+                "value": "tailscale-funnel",
+                "label": "Tailscale Funnel"
+              },
+              {
+                "value": "lan",
+                "label": "your LAN"
+              }
+            ],
+            "default": "cloudflare-tunnel",
+            "required": true
+          }
+        ]
+      }
+    }
+  ]
+}

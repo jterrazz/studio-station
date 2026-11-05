@@ -38,7 +38,7 @@ struct StationMenuBarApp: App {
     }
 
     var handlers: PopoverHandlers {
-        PopoverHandlers(
+        model.navigation.wire(PopoverHandlers(
             run: { action, answers in model.run(action, answers: answers) },
             confirm: { action in model.state.confirming = action?.id },
             answer: { id, key, value in model.state.answers[id, default: [:]][key] = value },
@@ -52,7 +52,10 @@ struct StationMenuBarApp: App {
             quit: { NSApplication.shared.terminate(nil) },
             openMachine: { name in model.openMachine(name) },
             openSwitcher: { model.openSwitcher() },
-            back: { model.back() },
-            search: { text in model.state.search = text })
+            search: { text in model.state.search = text },
+            copy: { text in
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+            }))
     }
 }

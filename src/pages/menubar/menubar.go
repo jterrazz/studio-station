@@ -180,8 +180,9 @@ func things(n int) string {
 	return strconv.Itoa(n) + " things need you"
 }
 
-// invariant: a Needs you line whose fix is the apps' update gets Update
-// all, which runs that call on This Mac with no name: every update there.
+// invariant: MB-16: a Needs you line whose fix is the apps' update gets
+// Update all, which runs that call on This Mac with no name: every update
+// there; what fails stays in Needs you with its fix.
 func updateAll(needs page.Section, home *overview.Summary) *page.Action {
 	if home == nil {
 		return nil
@@ -407,4 +408,14 @@ func titled(s string) string {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+func Opening(id page.ID, here page.Context) page.Page {
+	// invariant: the frame of one of the menu bar's own pages, before its
+	// first read.
+	return page.Page{ID: id, Context: here, State: page.Loading}
+}
+
+func Unread(id page.ID, here page.Context, err error) page.Page {
+	return page.Seal(page.Page{ID: id, Context: here, Error: &page.Error{Message: err.Error()}})
 }

@@ -128,6 +128,34 @@ final class PagesTests: XCTestCase {
         XCTAssertEqual(started, [])
     }
 
+    // invariant: PO-45: linux-1's page, opened from Home, is the engine's
+    // watch of menubar.machine:linux-1; Share a port… there asks the port as
+    // text and sends ports.share for linux-1, and a shared port is a link.
+    func testWorkspaceSharePort() async throws {
+        let engine = try FakeEngine("mb-share-open")
+        defer { engine.stop() }
+        let watch = PageID.of("linux-1")
+        engine.serveOnce(try Streamed.answer(watch, "menubar.vm.linux-1"), thenClose: false)
+        let shown = Shown()
+        let nav = Navigation(socket: engine.path, clock: TestClock()) { shown.add($0, $1) }
+        nav.open(watch)
+        for _ in 0..<500 where shown.all.isEmpty { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(engine.received, [Streamed.watch("menubar.machine:linux-1")])
+        XCTAssertEqual(shown.all, ["menubar.machine:linux-1 menubar.machine"])
+        nav.back()
+
+        let page = try Tree.page("menubar.vm.linux-1")
+        XCTAssertNil(page.action("declare-public"))
+        let share = try XCTUnwrap(page.action("share-port"))
+        XCTAssertEqual(share.form?.fields?.map(\.kind), ["text"])
+        let (frames, _) = try await sentAll(share, answers: ["Port": "3000"], label: "mb-share", reread: [watch])
+        XCTAssertEqual(frames.map(\.call), ["ports.share", "engine.refresh"])
+        XCTAssertEqual(frames.first?.input, ["VM": "linux-1", "Port": "3000"])
+        XCTAssertTrue(frames.first?.frame["in"].flatMap { ($0 as? [String: Any])?["Port"] } is String)
+        XCTAssertEqual(page.section("ports")?.items?.first?.link?.value?.text, "https://jterrazz-macbook-pro.tail77a797.ts.net:40001")
+        try drawn("sheet.share-port", try pushed("menubar.vm.linux-1", confirming: share.id))
+    }
+
     // invariant: AU-15: Take back on linux-1's page asks yes or no, then
     // takes the account back from linux-1.
     func testAccountTakeBack() async throws {

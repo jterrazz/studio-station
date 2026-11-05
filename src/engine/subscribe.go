@@ -12,11 +12,17 @@ import (
 )
 
 const (
-	PagePower    = "power"
-	PageMenubar  = "menubar"
+	PagePower   = "power"
+	PageMenubar = "menubar"
+	// value: the menu bar's pages of SPEC §10.2, each watched by its name
+	// and, after a colon, its subject: `menubar.machine:infra`, that
+	// machine's page; `menubar.ports:jterrazz-mac-mini`, the ports of that
+	// Mac; `menubar.activity:6m`, This Mac over 6 min.
 	PageSwitcher = "menubar.switcher"
-	// value: one machine's page, watched as `menubar.machine:<name>`.
 	PageMachine  = "menubar.machine"
+	PagePorts    = "menubar.ports"
+	PageAwake    = "menubar.awake"
+	PageActivity = "menubar.activity"
 	coalesce     = 250 * time.Millisecond
 	tickEvery    = 15 * time.Second
 	streamSchema = "station.page/v1"
@@ -27,8 +33,8 @@ type FeedInput struct {
 	Changed <-chan struct{}
 	Refresh <-chan struct{}
 	Power   func() power.View
-	// value: the machine a page of one machine is of, after its page's name
-	// (`menubar.machine:infra`); empty for every other page.
+	// value: what a page is of, after its page's name (`menubar.machine:infra`,
+	// `menubar.ports:jterrazz-mac-mini`); empty for every other page.
 	Subject string
 }
 
@@ -157,7 +163,7 @@ func (d *Daemon) known(id string) bool {
 }
 
 func (d *Daemon) CheckPages(pages []string) error {
-	hint := "watch page with the pages menubar, menubar.switcher, menubar.machine:<name> or power"
+	hint := "watch page with the pages menubar, menubar.switcher, menubar.machine:<name>, menubar.ports[:<mac>], menubar.awake, menubar.activity[:<window>] or power"
 	if len(pages) == 0 {
 		return fault("unknown_page", "the watch names no page", hint)
 	}

@@ -23,10 +23,24 @@ final class Model: ObservableObject {
     private var events: Task<Void, Never>?
     private var clearing: Task<Void, Never>?
     private var watching: Task<Void, Never>?
-    private var pushing: Task<Void, Never>?
-    private var watched: String?
-    private var generation = 0
     private var asked = false
+    private(set) var navigation: Navigation!
+
+    init() {
+        navigation = Navigation(socket: socket) { [weak self] page, shown in
+            Task { @MainActor in self?.show(page, shown) }
+        }
+    }
+
+    // invariant: a pushed page is shown only while its watch is the one held.
+    func show(_ watch: String, _ page: Page?) {
+        guard navigation.watched == (page == nil ? nil : watch) else { return }
+        state.pushed = page
+        if page == nil {
+            state.confirming = nil
+            state.search = ""
+        }
+    }
 
     var icon: MenuBarIcon { MenuBarIcon.of(connection: state.connection, page: state.page, sparkline: sparkline) }
 
@@ -56,18 +70,8 @@ final class Model: ObservableObject {
     // another or going back ends its watch (SPEC §10.3), and a page of the
     // watch ended never comes back.
     func push(_ page: String) {
-        pushing?.cancel()
         state.confirming = nil
-        generation += 1
-        let mine = generation
-        watched = page
-        let sub = Subscription(path: socket, pages: [page]) { event in
-            guard case .page(let p) = event else { return }
-            Task { @MainActor in
-                if self.generation == mine { self.state.pushed = p }
-            }
-        }
-        pushing = Task.detached { await sub.run() }
+        navigation.open(page)
     }
 
     func openMachine(_ name: String) {
@@ -79,16 +83,6 @@ final class Model: ObservableObject {
     func openSwitcher() {
         state.recent = UserDefaults.standard.stringArray(forKey: Self.recentKey) ?? []
         push(PageID.switcher)
-    }
-
-    func back() {
-        pushing?.cancel()
-        pushing = nil
-        generation += 1
-        watched = nil
-        state.pushed = nil
-        state.search = ""
-        state.confirming = nil
     }
 
     func setSparkline(_ on: Bool) {
@@ -153,14 +147,14 @@ final class Model: ObservableObject {
     func closed() {
         watching?.cancel()
         watching = nil
-        back()
+        navigation.back()
     }
 
     func run(_ action: Action, answers: [String: String]) {
         state.running = action.id
         state.status = nil
         let socket = self.socket
-        let reread = [PageID.shown(watched)]
+        let reread = [PageID.shown(navigation.watched)]
         Task {
             let executable = await Client.executable(path: socket) ?? Self.fallbackExecutable
             let status = await ActionRunner(executable: executable, socket: socket, reread: reread).run(action, answers: answers)

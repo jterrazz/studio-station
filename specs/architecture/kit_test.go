@@ -420,6 +420,9 @@ func worldFamilies() map[string][]string {
 		"menubar.switcher": {"two-macs"},
 		"menubar.vm":       {"linux-1", "infra"},
 		"menubar.mac":      {"mini", "mini-offline"},
+		"menubar.ports":    {"mini", "linux-1"},
+		"menubar.awake":    {"two-macs"},
+		"menubar.activity": {"mac"},
 	}
 }
 

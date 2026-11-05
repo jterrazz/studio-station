@@ -18,6 +18,8 @@ public struct Reply: Sendable {
     public var hint: String?
     // value: the task of the call's last progress frame, what it was doing.
     public var task: String? = nil
+    // value: the out of a call that answers a list, one entry per item.
+    public var listed: [[String: AnySendable]] = []
 }
 
 public struct AnySendable: @unchecked Sendable {
@@ -46,7 +48,8 @@ public enum Client {
 
     // value: the call's input: each answer sets the field its key's path
     // names (`Request.Lifetime`), and an answer written `K=v K=v` sets each of
-    // those fields; a number or true/false is sent as one, except under the
+    // those fields; a value written as JSON (`"5173"`, `["never-sleeps"]`)
+    // is sent as that JSON, a number or true/false as one, except under the
     // keys of words, what the owner typed, sent as written.
     public static func input(_ answers: [String: String], fixed: [String: String]? = nil, words: Set<String> = []) -> [String: Any] {
         var out: [String: Any] = [:]
@@ -61,8 +64,7 @@ public enum Client {
             dict[head] = inner
         }
         func put(_ key: String, _ value: String) {
-            let typed: Any = words.contains(key) ? value : Int(value).map { $0 as Any } ?? (value == "true" || value == "false" ? (value == "true") as Any : value as Any)
-            set(key.split(separator: ".").map(String.init), typed, in: &out)
+            set(key.split(separator: ".").map(String.init), words.contains(key) ? value : typed(value), in: &out)
         }
         for (k, v) in (fixed ?? [:]).sorted(by: { $0.key < $1.key }) { put(k, v) }
         for (k, v) in answers.sorted(by: { $0.key < $1.key }) {
@@ -76,6 +78,16 @@ public enum Client {
             }
         }
         return out
+    }
+
+    static func typed(_ value: String) -> Any {
+        if let first = value.first, first == "\"" || first == "[" || first == "{",
+           let json = try? JSONSerialization.jsonObject(with: Data(value.utf8), options: [.fragmentsAllowed]) {
+            return json
+        }
+        if let n = Int(value) { return n }
+        if value == "true" || value == "false" { return value == "true" }
+        return value
     }
 
     // invariant: one call is one station.api/v2 frame on its own connection;
@@ -107,7 +119,8 @@ public enum Client {
                     return Reply(ok: false, closed: false, result: [:], message: error["message"] as? String, hint: error["hint"] as? String, task: task)
                 }
                 let result = (obj["out"] as? [String: Any] ?? [:]).mapValues { AnySendable(value: $0) }
-                return Reply(ok: true, closed: false, result: result, message: nil, hint: nil)
+                let listed = (obj["out"] as? [[String: Any]] ?? []).map { $0.mapValues { AnySendable(value: $0) } }
+                return Reply(ok: true, closed: false, result: result, message: nil, hint: nil, task: task, listed: listed)
             }
         } catch {
             return Reply(ok: false, closed: true, result: [:], message: "the station engine closed the connection", hint: "station engine start")

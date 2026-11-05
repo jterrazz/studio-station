@@ -59,17 +59,23 @@ public struct PopoverHandlers {
     public var sparkline: (Bool) -> Void
     public var sparklineOn: Bool
     public var quit: () -> Void
-    // value: navigation: open a machine's page, the switcher, back to Home.
+    public var search: (String) -> Void
+    public var copy: (String) -> Void
+    // value: navigation: open a machine's page, the switcher, a page by its
+    // watch name, Activity's window, back to Home.
     public var openMachine: (String) -> Void
     public var openSwitcher: () -> Void
+    public var push: (String) -> Void
+    public var window: (String) -> Void
     public var back: () -> Void
-    public var search: (String) -> Void
 
     public init(run: @escaping (Action, [String: String]) -> Void = { _, _ in }, confirm: @escaping (Action?) -> Void = { _ in },
                 answer: @escaping (String, String, String) -> Void = { _, _, _ in }, open: @escaping (URL) -> Void = { _ in },
                 toggleQR: @escaping (String) -> Void = { _ in }, toggleMenu: @escaping () -> Void = {}, loginItem: @escaping (Bool) -> Void = { _ in }, loginItemOn: Bool = false,
                 sparkline: @escaping (Bool) -> Void = { _ in }, sparklineOn: Bool = false, quit: @escaping () -> Void = {},
-                openMachine: @escaping (String) -> Void = { _ in }, openSwitcher: @escaping () -> Void = {}, back: @escaping () -> Void = {}, search: @escaping (String) -> Void = { _ in }) {
+                openMachine: @escaping (String) -> Void = { _ in }, openSwitcher: @escaping () -> Void = {}, search: @escaping (String) -> Void = { _ in },
+                copy: @escaping (String) -> Void = { _ in }, window: @escaping (String) -> Void = { _ in },
+                push: @escaping (String) -> Void = { _ in }, back: @escaping () -> Void = {}) {
         self.run = run
         self.confirm = confirm
         self.answer = answer
@@ -83,8 +89,11 @@ public struct PopoverHandlers {
         self.quit = quit
         self.openMachine = openMachine
         self.openSwitcher = openSwitcher
-        self.back = back
         self.search = search
+        self.copy = copy
+        self.window = window
+        self.push = push
+        self.back = back
     }
 }
 
@@ -117,9 +126,32 @@ public struct Popover: View {
         self.scrolls = scrolls
     }
 
+    // value: the menu bar's own pages Home opens: This Mac's Activity over
+    // 1 h, every Mac's Awake, every Mac's Ports.
+    public static let pages: [(label: String, watch: String)] = [
+        ("Activity", Navigation.activity), ("Awake", Navigation.awake), ("Ports", Navigation.ports),
+    ]
+
     var inner: CGFloat { Token.Space.width - Token.Space.margin * 2 }
 
     public var body: some View {
+        if let own = pushedView {
+            own
+        } else {
+            panel
+        }
+    }
+
+    // value: a page of the menu bar's own (Ports, Awake, Activity) drawn in
+    // place of Home while it is pushed.
+    var pushedView: AnyView? {
+        guard let pushed = state.pushed else { return nil }
+        var shown = state
+        shown.page = pushed
+        return MenuPage.view(shown, handlers: handlers)
+    }
+
+    var panel: some View {
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
             header
             if state.menu { menu }

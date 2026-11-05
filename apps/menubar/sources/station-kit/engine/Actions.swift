@@ -69,6 +69,9 @@ public struct ActionRunner: Sendable {
             if !reread.isEmpty, !reply.closed {
                 _ = await Client.call(path: socket, name: Self.refresh, input: ["pages": reread])
             }
+            if reply.ok, let posted = Notifications.failedItems(reply.listed) {
+                return Status(posted, failed: true, posted: posted)
+            }
             if reply.ok || (reply.closed && name == Self.endsTheEngine) { return nil }
             let message = reply.message ?? name
             var status = Self.failure(message, reply.hint)

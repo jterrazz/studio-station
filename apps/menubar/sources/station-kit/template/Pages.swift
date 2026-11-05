@@ -223,6 +223,14 @@ struct HomeContent: View {
                 if let awake = page.section("awake") { awakeTile(awake) }
                 if let accounts = page.section("accounts") { accountsTile(accounts) }
             }
+            if state.connection == .live || state.connection == .connecting {
+                HStack(spacing: 4) {
+                    ForEach(Array(Popover.pages.enumerated()), id: \.offset) { _, p in
+                        Pill(p.label) { handlers.push(p.watch) }
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
             SheetFor(page: page, state: state, handlers: handlers)
             if state.confirming == nil || page.action(state.confirming ?? "")?.on == "row" {
                 menu
