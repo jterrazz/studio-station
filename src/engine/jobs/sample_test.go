@@ -109,3 +109,35 @@ func TestAVMWhoseGuestIsSilentKeepsAGapInItsHistoryNeverZeros(t *testing.T) {
 		t.Errorf("linux-1's history holds %d and %d points while its guest was silent; want none, a gap", len(fine), len(coarse))
 	}
 }
+
+type hung struct{ machines }
+
+func (h *hung) Invoke(ctx context.Context, target machine.Ref, name string, in, out any, p call.Progress) error {
+	if target.On != "" {
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	return h.machines.Invoke(ctx, target, name, in, out, p)
+}
+
+func TestTwentyHungGuestsCostATickOneBudgetNotTwenty(t *testing.T) {
+	c := &clock{now: time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)}
+	seen := []Seen{{Ref: machine.Ref{Name: "mac"}, Kind: machine.Mac}}
+	for i := range 20 {
+		seen = append(seen, Seen{Ref: machine.Ref{Name: "vm-" + strconv.Itoa(i), On: "mac"}, Kind: machine.Workspace, Guest: true})
+	}
+	h := activity.NewHistory(c.now)
+	s := &Sample{
+		Calls: &hung{machines{clock: c, asked: map[string]int{}}}, Clock: c,
+		Seen: func() []Seen { return seen }, Watched: func(machine.Ref) bool { return false },
+		History: func() *activity.History { return h }, Tell: func(string, string) {},
+	}
+	began := time.Now()
+	s.Run(t.Context())
+	if took := time.Since(began); took > 2*budget {
+		t.Errorf("a tick with 20 hung guests took %s; want one budget, %s", took.Round(time.Second), budget)
+	}
+	if _, ok := h.Of("mac"); !ok {
+		t.Error("This Mac was not sampled in the tick its VMs hung")
+	}
+}

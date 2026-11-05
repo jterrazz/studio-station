@@ -90,11 +90,26 @@ func (s *Sample) Run(ctx context.Context) {
 			vms[m.PID] = m.Ref.Name
 		}
 	}
-	for _, m := range seen {
+	type read struct {
+		r  activity.Reading
+		ok bool
+	}
+	reads := make([]read, len(seen))
+	var all sync.WaitGroup
+	for i, m := range seen {
 		if !s.due(h, m.Ref.Name, now, Every(s.Watched(m.Ref))) {
 			continue
 		}
-		r, ok := s.read(ctx, m, now)
+		all.Go(func() {
+			r, ok := s.read(ctx, m, now)
+			reads[i] = read{r, ok}
+		})
+	}
+	// invariant: the machines are read together, so a tick costs one
+	// budget however many guests hang; what they answer is kept in order.
+	all.Wait()
+	for i, m := range seen {
+		r, ok := reads[i].r, reads[i].ok
 		if !ok {
 			continue
 		}
