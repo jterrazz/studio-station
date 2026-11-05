@@ -1,4 +1,4 @@
-description: 'x removes a user task after yes or no; c copies a root task''s command'
+description: 'x removes a user task after yes or no; c copies a root task''s command, x on it does nothing'
 fixture:
     - ../../__fixtures__/terminal/
 env:
@@ -25,6 +25,10 @@ runs:
           send c
           clipboard sudo launchctl bootout system/com.bjango.istatmenus.installer && sudo rm /Library/LaunchDaemons/com.bjango.istatmenus.installer.plist
           see ✓ Copied sudo launchctl bootout
+          gone x remove
+          send x
+          settle
+          gone Remove com.bjango
           send q
       exit: 0
     - command: 'background | /usr/bin/grep -c -e x-snapshot -e istatmenus'
