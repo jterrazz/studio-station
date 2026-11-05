@@ -75,13 +75,6 @@ func ErrorLines(st token.Styles, e page.Error) []string {
 	return lines
 }
 
-func StatusError(st token.Styles, e page.Error, width int) string {
-	head := atom.Tone(st, page.Broken).Render(token.MarkBroken) + " "
-	hint := atom.Spaces(token.Gap) + st.Muted.Render(token.Arrow+" "+e.Hint)
-	room := max(width-atom.Width(head)-atom.Width(hint)-1, 1)
-	return head + st.Text.Render(atom.End(e.Message, room)) + hint
-}
-
 func Note(st token.Styles, n page.Note, width int) []string {
 	var lines []string
 	line := ""
@@ -104,20 +97,4 @@ func Note(st token.Styles, n page.Note, width int) []string {
 
 func Fact(st token.Styles, key string, keyWidth int, value string) string {
 	return st.Strong.Render(atom.Pad(key, keyWidth)) + atom.Spaces(token.Gap) + st.Text.Render(value)
-}
-
-func Confirm(st token.Styles, c page.Confirm, yes bool) []string {
-	lines := []string{st.Title.Render(c.Question)}
-	for _, l := range c.Lines {
-		lines = append(lines, st.Text.Render(atom.Show(l)))
-	}
-	verb := c.Yes
-	if verb == "" {
-		verb = "Yes"
-	}
-	yesStyle, noStyle := st.Button, st.Idle
-	if !yes {
-		yesStyle, noStyle = st.Idle, st.Button
-	}
-	return append(lines, "", yesStyle.Render(verb)+atom.Spaces(token.Gap)+noStyle.Render("No"))
 }

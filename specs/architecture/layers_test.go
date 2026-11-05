@@ -94,8 +94,8 @@ func importTable() map[string][]string {
 		"core/adapter/fake":          {"core/*", "world", std},
 		"core/contract/contracttest": {"core/*", "testing", std},
 		"core/fail":                  {"core/finding", std},
-		"surface/tui":                append([]string{"surface/tui/screens/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
-		"surface/tui/*":              append([]string{"surface/tui/screens/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
+		"surface/tui":                append([]string{"surface/tui/screens/*", "core/section", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
+		"surface/tui/*":              append([]string{"surface/tui/screens/*", "core/section", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
 	}
 }
 
@@ -748,6 +748,8 @@ func rules() []rule {
 		{"Levels", ruleLevels, "src/ui/atom/mutant_levels.go", "package atom\n\nimport _ \"" + module + "/src/ui/render/json\"\n", "src/ui/atom/mutant_levels.go"},
 		{"LevelsDomain", ruleLevels, "src/ui/organism/mutant_levels.go", "package organism\n\nimport _ \"" + module + "/src/domain/tools\"\n", "src/ui/organism/mutant_levels.go"},
 		{"Semantic", ruleSemantic, "src/pages/tools/mutant_semantic.go", "package tools\n\nfunc Line() string { return \"\" }\n", "src/pages/tools/mutant_semantic.go"},
+		{"TUILoadingLaw", ruleTUILoading, "src/surface/tui/mutant_loading.go", "package tui\n\nimport \"context\"\n\nfunc (s shell) mutantView() string {\n\tp, _ := s.deps.Pages(context.Background(), nil)\n\treturn p.Command\n}\n", "src/surface/tui/mutant_loading.go"},
+		{"TUILoadingLawCalls", ruleTUILoading, "src/surface/tui/mutant_loading_calls.go", "package tui\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/core/call\"\n\t\"" + module + "/src/core/machine\"\n\tenginecalls \"" + module + "/src/engine/calls\"\n)\n\nfunc (s shell) mutantCallView() bool {\n\t_, err := call.Invoke(context.Background(), nil, machine.Ref{}, enginecalls.Read, enginecalls.ReadIn{}, nil)\n\treturn err == nil\n}\n", "src/surface/tui/mutant_loading_calls.go"},
 		{"Glyphs", ruleGlyphs, "src/surface/cli/tools/mutant_glyphs.go", "package toolscmd\n\nconst mutantMark = \"\u25cf\"\n", "src/surface/cli/tools/mutant_glyphs.go"},
 		{"Presentation", rulePresentation, "src/page/mutant_presentation.go", "package page\n\ntype mutantStyled struct{ Tone int }\n", "src/page/mutant_presentation.go"},
 		{"Keys", ruleKeys, "src/surface/tui/screens/tools/mutant_keys.go", "package toolsscreen\n\nimport tea \"" + tea + "\"\n\nfunc mutantKey(k tea.KeyPressMsg) bool {\n\tswitch k.String() {\n\tcase \"z\":\n\t\treturn true\n\t}\n\treturn false\n}\n", "src/surface/tui/screens/tools/mutant_keys.go"},
@@ -783,7 +785,6 @@ func rules() []rule {
 		{"CallsGated", ruleCallsGated, "src/apps/calls/mutant_calls.go", "package calls\n\nimport \"" + module + "/src/core/call\"\n\nvar Mutant = call.Call[Deps, struct{}, struct{}]{Name: \"tools.mutant\"}\n", "src/apps/calls/mutant_calls.go"},
 		{"ConfirmInUsecase", ruleConfirmInUsecase, "src/disk/calls/mutant_confirm.go", "package calls\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/core/call\"\n\t\"" + module + "/src/core/confirm\"\n\t\"" + module + "/src/core/machine\"\n)\n\nvar mutantErase = call.Call[Deps, struct{}, struct{}]{Name: \"storage.mutant\", Applies: machine.Anywhere, Confirm: confirm.Erase,\n\tRun: func(context.Context, Deps, struct{}, call.Progress) (struct{}, error) { return struct{}{}, nil }}\n", "src/disk/calls/mutant_confirm.go"},
 		{"ConfirmInUsecaseAnswered", ruleConfirmInUsecase, "src/surface/tui/screens/services/mutant_answer.go", "package servicesscreen\n\nimport \"" + module + "/src/core/confirm\"\n\nvar mutantAnswer = confirm.Yes\n", "src/surface/tui/screens/services/mutant_answer.go"},
-		{"ConfirmInUsecaseScreenAsks", ruleConfirmInUsecase, "src/surface/tui/screens/accounts/mutant_ask.go", "package accountsscreen\n\nimport (\n\t\"" + module + "/src/page\"\n\t\"" + module + "/src/ui/render/tui\"\n)\n\nfunc mutantAsk(b tui.Browser) tui.Browser { return b.Ask(page.Confirm{}, nil) }\n", "src/surface/tui/screens/accounts/mutant_ask.go"},
 		{"ConfirmInUsecaseLeafAsks", ruleConfirmInUsecase, "src/surface/cli/stop/mutant_ask.go", "package stopcmd\n\nimport (\n\t\"" + module + "/src/page\"\n\t\"" + module + "/src/surface/cli/kit\"\n)\n\nfunc mutantAsk(a kit.Asker) { _, _ = a.Confirm(page.Confirm{}) }\n", "src/surface/cli/stop/mutant_ask.go"},
 		{"EveryCodeWorded", ruleEveryCodeWorded, "src/apps/mutant_code.go", "package apps\n\nimport \"" + module + "/src/core/fail\"\n\nconst mutantCode fail.Code = \"apps.mutant\"\n", "src/apps/mutant_code.go"},
 		{"EveryCodeWordedRaised", ruleEveryCodeWorded, "src/surface/cli/words/mutant_unraised.go", "package words\n\nimport \"" + module + "/src/core/fail\"\n\nconst mutantUnraised fail.Code = \"usage.needs-terminal\"\n", "src/surface/cli/words/mutant_unraised.go"},

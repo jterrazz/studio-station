@@ -1,4 +1,4 @@
- - Accounts                                                  6 ●  1 ◐  1 ○  2 ✗
+ Accounts  6 ●  1 ◐  1 ○  2 ✗
    ✗ jterrazz-macbook-pro  host
    ├─ ● GitHub             jterrazz                  own  gh · keyring · ssh
    ├─ ✗ npm                ?                         own  token refused by reg…
@@ -11,4 +11,3 @@
    └─ ● Docker             deploy                    own  osxkeychain
    ◐ engine                stopped
      → station engine start
- ↑↓ move  R reload  enter detail  / filter  space fold  q quit  ? keys

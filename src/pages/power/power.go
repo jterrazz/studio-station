@@ -233,19 +233,6 @@ func Actions() []page.Action {
 	}
 }
 
-func AwakeForm(host string) page.Form {
-	terms := []string{"1h", "2h", "4h", "8h", "12h", "24h"}
-	opts := make([]page.Option, 0, len(terms))
-	for _, t := range terms {
-		opts = append(opts, page.Option{Value: t})
-	}
-	return page.Form{Title: "Keep " + host + " awake", Fields: []page.Field{
-		{Key: "for", Label: "For", Kind: page.FieldSelect, Options: opts, Default: "4h"},
-		{Key: "lid", Label: "Lid", Kind: page.FieldConfirm, Note: "keep awake with the lid closed (the display sleeps)"},
-		{Key: "battery", Label: "Battery", Kind: page.FieldConfirm, Note: "allow the lid closed on battery for this session"},
-	}}
-}
-
 func Awake(a power.Awoken, zone *time.Location, here page.Context) page.Page {
 	r := pages.Done(RowAwake, catalog.StateOK, "")
 	words := []string{"on"}

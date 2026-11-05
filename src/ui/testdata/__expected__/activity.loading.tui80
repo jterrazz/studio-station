@@ -1,6 +1,7 @@
- - Activity                                                                 1 ◌
+ Activity
    ◌ This Mac
- - Now                                                                      9 ◌
+
+ Now  9 ◌
    ◌ CPU
    ◌ Memory
    ◌ Disk
@@ -10,7 +11,7 @@
    ◌ Network total
    ◌ Thermal
    ◌ Battery
- - Top processes                                                            2 ◌
+
+ Top processes  2 ◌
    ◌ Top by CPU
    ◌ Top by memory
- ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

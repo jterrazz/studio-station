@@ -1,10 +1,11 @@
- - Machines  31 settings · 4 machines · 20 need a look                                          5 ◌
+ Machines  5 ◌  31 settings · 4 machines · 20 need a look
    ◌ This Mac
    ◌ mac-mini
    ◌ linux-1
    ◌ api
    ◌ infra
- - Needs a look                                                                                20 ◌
+
+ Needs a look  20 ◌
    ◌ This Mac
    ◌ This Mac
    ◌ This Mac
@@ -25,16 +26,18 @@
    ◌ api
    ◌ api
    ◌ api
- - Set by station                                                                               5 ◌
+
+ Set by station  5 ◌
    ◌ ghostty-dotfiles
    ◌ github-login
    ◌ dock-reset
    ◌ docker-shortcuts
    ◌ 13 more
- - Always-on Mac                                                                                1 ◌
+
+ Always-on Mac  1 ◌
    ◌ 5 settings
- - Checked                                                                                      3 ◌
+
+ Checked  3 ◌
    ◌ firewall
    ◌ screen-lock
    ◌ 7 more
- ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

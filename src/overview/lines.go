@@ -55,7 +55,9 @@ func ActivityRead(r activity.Report) Read {
 		parts = []Part{{Word: "CPU " + activity.Percent(run.CPU) + " of its Mac"}, {Word: activity.Memory(run.Memory) + " resident"}}
 	}
 	if len(parts) == 0 {
-		return Read{Findings: r.Findings}
+		// invariant: a section that applies keeps its line, so a surface
+		// can tell what applies from the lines alone (SPEC §3.2).
+		parts = []Part{{State: catalog.StateUnknown, Word: "not measured"}}
 	}
 	return Read{Line: Line{Section: section.Activity, Parts: parts}, Findings: r.Findings}
 }

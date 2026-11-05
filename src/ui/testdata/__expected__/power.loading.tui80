@@ -1,13 +1,14 @@
- - Power                                                                    1 ◌
+ Power  1 ◌
    ◌ awake
- - Guards                                                                   4 ●
+
+ Guards  4 ●
    ● battery    80% · AC attached  ends a session at 20% on battery
    ● low power  off                ends a session when it turns on
    ● thermal    nominal            ends a session at serious, or heavy for 5m…
    ● lid        open               closing it on battery ends a --lid session…
- - Reading
+
+ Reading
    lid        open
    source     AC · 80% · not charging
    low power  off
    thermal    nominal (0)
- ↑↓ move  a awake  s sleep  enter detail  / filter  space fold  ? keys

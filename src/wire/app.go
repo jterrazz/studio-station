@@ -126,7 +126,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	if session != nil {
 		commands = append(commands, session.command())
 	}
-	root := cli.NewRoot(kenv, tuiOpener(kenv, here), overviewCommand(kenv, here), commands...)
+	root := cli.NewRoot(kenv, tuiOpener(kenv, here, vars["NO_COLOR"] != ""), overviewCommand(kenv, here), commands...)
 	root.SetArgs(args)
 	root.SetIn(stdin)
 	root.SetOut(stdout)

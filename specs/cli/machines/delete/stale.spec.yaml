@@ -1,7 +1,7 @@
 description: 'a stale temporary VM is deleted by its verb: the VM goes from tart, with no tailnet call'
 fixture:
     - ../../../__fixtures__/vms/
-    - ../../__fixtures__/vm-t/
+    - ../__fixtures__/vm-t/
     - ../__fixtures__/stale-t/
 env: engine
 runs:

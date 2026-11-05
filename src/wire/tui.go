@@ -2,76 +2,47 @@ package wire
 
 import (
 	"context"
-	"path/filepath"
-	"strconv"
 	"strings"
 
-	"github.com/jterrazz/studio-station/src/accounts/adapter/studio"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
-	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
-	accountsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/accounts"
-	configscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/config"
-	diskscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/disk"
-	powerscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/power"
-	servicesscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/services"
-	toolsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/tools"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-func tuiOpener(env kit.Env, m machine) func(context.Context) error {
+func tuiOpener(_ kit.Env, m machine, noColor bool) func(context.Context) error {
 	return func(ctx context.Context) error {
-		storage, accounts := m.storage(env), m.accounts()
-		return tui.Run(ctx, tui.Deps{
-			Here:     m.where,
-			Calls:    env.Calls,
-			Target:   env.Target(),
-			Tools:    toolsscreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: toolsService(env, m).Forget},
-			Config:   configscreen.Deps{Calls: env.Calls, Target: env.Target(), Defaults: configService(m).Defaults, Now: m.host.Clock.Now},
-			Disk:     diskscreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: storage.Forget, Plan: storage.Plan},
-			Services: servicesscreen.Deps{Calls: env.Calls, Target: env.Target()},
-			Accounts: accountsscreen.Deps{Calls: env.Calls, Target: env.Target(), Forget: accounts.Forget, LendList: accounts.LendList},
-			Power: powerscreen.Deps{Calls: env.Calls, Target: env.Target(), Power: tuiPower{Service: m.power(), m: m, describe: func(err error) (string, string) {
-				f := kit.Translate(err, "")
-				return f.Message, f.Hint
-			}}},
-			Remote: func(ctx context.Context, machine string) error {
-				words := []string{"--on", machine}
-				r, err := m.host.Run.Attach(ctx, system.Cmd{Name: m.host.Env.Executable(), Args: words}, system.ToStdout)
-				if err == nil && r.ExitCode != 0 {
-					return &stationExit{words: words, code: r.ExitCode}
-				}
-				return err
-			},
-			Station: func(ctx context.Context, words []string) error {
-				r, err := m.host.Run.Attach(ctx, system.Cmd{Name: m.host.Env.Executable(), Args: words}, system.ToStdout)
-				if err == nil && r.ExitCode != 0 {
-					return &stationExit{words: words, code: r.ExitCode}
-				}
-				return err
-			},
-			Prefer: m.pool.Prefer,
-			Stop:   m.pool.Close,
-			Describe: func(err error) (message, hint string) {
-				f := kit.Translate(err, "")
-				return f.Message, f.Hint
-			},
-		})
+		return tui.Run(ctx, tui.Deps{Here: m.where, Pages: tuiPages(m), NoColor: noColor, Stop: m.pool.Close})
 	}
 }
 
-type stationExit struct {
-	words []string
-	code  int
+// invariant: a screen is the page its command prints: the TUI runs this very
+// binary for the CLI's words with --page, so a page has one function.
+func tuiPages(m machine) tui.Pages {
+	return func(ctx context.Context, words []string) (page.Page, error) {
+		out, err := m.host.Run.Output(ctx, system.Cmd{Name: m.host.Env.Executable(), Args: append(words, "--page")})
+		if err != nil {
+			return page.Page{}, err
+		}
+		if out.ExitCode != 0 {
+			return page.Page{}, failed(out.Stderr)
+		}
+		return page.Decode([]byte(out.Stdout))
+	}
 }
 
-func (e *stationExit) Error() string {
-	return "station " + strings.Join(e.words, " ") + " exited " + strconv.Itoa(e.code)
-}
-
-func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostDaemon(), m.vmRunning) }
-
-func (m machine) secretsVia(guest secrets.Guest, running func(context.Context, string) (bool, error)) *secrets.Service {
-	return secrets.New(m.host, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), secrets.Options{Here: m.kind, Running: running, Receives: receives(guest), Log: filepath.Join(m.paths.State, "logs", "accounts.log")})
+func failed(stderr string) *tui.Failed {
+	f := &tui.Failed{}
+	for _, line := range strings.Split(strings.TrimSpace(stderr), "\n") {
+		line = strings.TrimSpace(line)
+		switch {
+		case strings.HasPrefix(line, "Error:"):
+			f.Message = strings.TrimSpace(strings.TrimPrefix(line, "Error:"))
+		case strings.HasPrefix(line, "Hint:"):
+			f.Hint = strings.TrimSpace(strings.TrimPrefix(line, "Hint:"))
+		case f.Message == "":
+			f.Message = line
+		}
+	}
+	return f
 }

@@ -637,32 +637,3 @@ func Strip(readings []activity.Reading, snap Overview) page.Strip {
 	}
 	return strip
 }
-
-func Live(p page.Page, readings []activity.Reading, snap Overview) page.Page {
-	if len(readings) == 0 {
-		return p
-	}
-	last := readings[len(readings)-1].Top
-	strip := Strip(readings, snap)
-	var items []page.Item
-	for i, proc := range last.CPU {
-		if i == 5 {
-			break
-		}
-		items = append(items, page.Item{Row: &page.Row{ID: "cpu/" + strconv.Itoa(proc.PID), Label: proc.Name, Cells: []page.Value{page.Text("cpu"), page.Percent(int64(proc.Value * 10))}}})
-	}
-	for i, proc := range last.Memory {
-		if i == 5 {
-			break
-		}
-		items = append(items, page.Item{Row: &page.Row{ID: "memory/" + strconv.Itoa(proc.PID), Label: proc.Name, Cells: []page.Value{page.Text("memory"), page.Size(int64(proc.Value))}}})
-	}
-	if len(items) > 0 {
-		top := page.Section{ID: "processes", Title: "Processes", Fold: page.Folded, Caption: []page.Value{page.Text("top 5 cpu, memory")},
-			Columns: []page.Column{{Key: "name", Kind: page.KindListing, Keep: 100}, {Key: "measure", Kind: page.KindText, Keep: 50}, {Key: "value", Kind: page.KindText, Keep: 60}}, Items: items}
-		at := min(2, len(p.Sections))
-		p.Sections = append(p.Sections[:at:at], append([]page.Section{top}, p.Sections[at:]...)...)
-	}
-	p.Strip = &strip
-	return page.Seal(p)
-}

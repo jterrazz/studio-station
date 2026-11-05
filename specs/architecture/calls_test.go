@@ -231,16 +231,12 @@ func decides(f *file, n *ast.SelectorExpr, asks [][2]token.Pos, offers bool) str
 	if obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == module+"/src/core/confirm" && obj.Name() == "Yes" && f.pkg != "surface/cli/kit" {
 		return "a surface answers a confirmation before its call asks (confirm.Yes)"
 	}
-	switch methodOf(obj) {
-	case "ui/render/tui.Browser.Ask":
-		if f.pkg != "surface/tui/screens/tab" {
-			return "a screen puts its own question: only tab.Confirmed asks, once the call has"
-		}
-	case "surface/cli/kit.Asker.Confirm":
-		inAsk := slices.ContainsFunc(asks, func(span [2]token.Pos) bool { return n.Pos() >= span[0] && n.End() <= span[1] })
-		if !inAsk && !offers && f.pkg != "surface/cli/kit" {
-			return "a leaf puts a question outside its Leaf's Ask: only kit asks, once the call has"
-		}
+	if methodOf(obj) != "surface/cli/kit.Asker.Confirm" {
+		return ""
+	}
+	inAsk := slices.ContainsFunc(asks, func(span [2]token.Pos) bool { return n.Pos() >= span[0] && n.End() <= span[1] })
+	if !inAsk && !offers && f.pkg != "surface/cli/kit" {
+		return "a leaf puts a question outside its Leaf's Ask: only kit asks, once the call has"
 	}
 	return ""
 }
@@ -249,8 +245,8 @@ func decides(f *file, n *ast.SelectorExpr, asks [][2]token.Pos, offers bool) str
 // confirmation asks it in its own Run; no surface decides one. A surface
 // neither requires a confirmation nor answers one before its call asks
 // (confirm.Yes is kit's, for --yes); a TUI screen puts a question only
-// through tab.Confirmed, and a CLI leaf only in its Leaf's Ask, which kit
-// calls once the call has asked.
+// once its call has asked it, and a CLI leaf only in its Leaf's Ask, which
+// kit calls once the call has asked.
 func ruleConfirmInUsecase(w *world) []finding {
 	var out []finding
 	for _, c := range callValues(w) {
@@ -356,9 +352,6 @@ func TestCallsGated(t *testing.T)       { judge(t, "CallsGated") }
 func TestConfirmInUsecase(t *testing.T) { judge(t, "ConfirmInUsecase") }
 func TestNoScreenAnswersAConfirmationBeforeItsCallAsks(t *testing.T) {
 	judge(t, "ConfirmInUsecaseAnswered")
-}
-func TestNoScreenPutsAQuestionItsCallDidNotAsk(t *testing.T) {
-	judge(t, "ConfirmInUsecaseScreenAsks")
 }
 func TestNoLeafPutsAQuestionOutsideItsLeafAsk(t *testing.T) {
 	judge(t, "ConfirmInUsecaseLeafAsks")

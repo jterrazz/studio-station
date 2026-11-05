@@ -1,8 +1,0 @@
-{
-  "here": "x",
-  "hosts": {
-    "x": {},
-    "y": {"user": "u"}
-  },
-  "vm_user": "vmu"
-}

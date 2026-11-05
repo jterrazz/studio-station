@@ -1,8 +1,10 @@
- - To do                                                                                        1 ◌
+ To do  1 ◌
    ◌ brew
- - Summary
+
+ Summary
    ◌ Marks
- - Values  40000-40999                                                                         18 ◌
+
+ Values  18 ◌  40000-40999
                value   number
    ◌ text
    ◌ size      275 B  22.6 KB
@@ -22,7 +24,8 @@
    ◌ switch
    ◌ sip
    ◌ unknown
- - Marks                                                                                       24 ◌
+
+ Marks  24 ◌
    ◌ outdated
    ◌ stray
    ◌ unreachable
@@ -47,16 +50,19 @@
    ◌ off-here
    ◌ not-for-this-machine
    ◌ not-known
- - Fleet                                                                                        4 ◌
+
+ Fleet  4 ◌
    ◌ jterrazz-mac-mini
    ├─ ◌ linux-1
    │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
    │  └─ ◌ web
    └─ ◌ linux-2
- - Storage                                                                                      2 ◌
+
+ Storage  2 ◌
    ◌ station
    ◌ tart
- - Prose
+
+ Prose
    machine  jterrazz-macbook-pro
    uptime   22d 14h
    Serve is off on the tailnet, so no service is reachable from another machine until it is turned
@@ -64,6 +70,6 @@
    Error: defaults is not installed
    Hint: run station setup
    no lent secrets  → station secrets lend <name>
- - Peers                                                                                        1 ◌
+
+ Peers
    ◌ iphone
- ↑↓ move  n create  enter detail  / filter  space fold  r reload  q quit  ? keys

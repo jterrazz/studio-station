@@ -1,4 +1,4 @@
- - Set by station                                                          17 ◌
+ Set by station  17 ◌
    ◌ hushlogin
    ◌ ghostty-dotfiles
    ◌ tmux-dotfiles
@@ -16,9 +16,11 @@
    ◌ tart-launcher
    ◌ git-shortcuts
    ◌ docker-shortcuts
- - Always-on Mac
+
+ Always-on Mac
    ○ Always-on Mac  5 · for a Mac that hosts servers
- - Checked                                                                  9 ◌
+
+ Checked  9 ◌
    ◌ filevault
    ◌ firewall
    ◌ sip
@@ -28,4 +30,3 @@
    ◌ remote-login
    ◌ time-machine
    ◌ macos-updates
- ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

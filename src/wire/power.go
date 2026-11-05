@@ -2,7 +2,6 @@ package wire
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -11,7 +10,6 @@ import (
 	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/pages"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
 )
 
@@ -45,59 +43,6 @@ func (m machine) power() *power.Service {
 			return err == nil
 		},
 	}, power.ServiceOptions{Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, Zone: time.Local})
-}
-
-type tuiPower struct {
-	*power.Service
-	m        machine
-	describe func(error) (message, hint string)
-}
-
-func (t tuiPower) read(ctx context.Context, out chan<- page.Page) power.Report {
-	var last power.Report
-	for r := range t.Read(ctx) {
-		last = r
-		select {
-		case out <- pagepower.Page(r, t.m.where):
-		case <-ctx.Done():
-		}
-	}
-	return last
-}
-
-func (t tuiPower) Pages(ctx context.Context) <-chan page.Page {
-	out := make(chan page.Page)
-	go func() {
-		defer close(out)
-		if err := t.Check(); err != nil {
-			message, hint := t.describe(err)
-			out <- pages.Failure("power", "power", t.m.where, message, hint)
-			return
-		}
-		if t.read(ctx, out).Daemon != power.DaemonRunning {
-			return
-		}
-		stream, err := t.m.engineAPI().c.Watch(ctx, process.Page, process.PagesIn{Pages: []string{engine.PagePower}})
-		if err != nil {
-			return
-		}
-		for raw := range stream {
-			var ev engine.Event
-			var d page.Document
-			if json.Unmarshal(raw, &ev) != nil || ev.Event != "page" || json.Unmarshal(ev.Page, &d) != nil {
-				continue
-			}
-			select {
-			case out <- d.Page:
-			case <-ctx.Done():
-				return
-			}
-		}
-		if ctx.Err() == nil {
-			t.read(ctx, out)
-		}
-	}()
-	return out
 }
 
 type statusPower struct{ s *power.Service }

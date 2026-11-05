@@ -1,4 +1,4 @@
- - Fleet                                                          1 ●  2 ◐  1 ○
+ Fleet  1 ●  2 ◐  1 ○
    ◐ macbook     Mac        here  online       100.98.133.14
      engine stopped  → station engine start
    ├─ ● linux-1  throwaway        running      192.168.64.5
@@ -6,11 +6,12 @@
    │  └─ 5432 → 40002  postgres
    └─ ○ api      permanent        stopped      -
    ◐ mac-mini    Mac              unreachable  100.98.133.20
- - Images                                                              2 ●  2 ○
+
+ Images  2 ●  2 ○
             version       size  on
    ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  linux-1 · api
    ○ linux  2026.10.20  4.0 GB  jterrazz-macbook-pro  older: station images de…
    ● linux  2026.11.01  4.0 GB  mac-mini              infra
    ○ macos                                            not built yet
+
  + Tailnet                                                                  4 ●
- ↑↓ move  n create  b build images  enter detail  / filter  space fold  ? keys

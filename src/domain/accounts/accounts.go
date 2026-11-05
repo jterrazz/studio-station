@@ -333,15 +333,6 @@ func lendFor(lends []Lend, provider string) *Lend {
 	return nil
 }
 
-func Scope(name string) string {
-	for _, sc := range catalog.LendScopes {
-		if sc.Name == name {
-			return sc.Scope
-		}
-	}
-	return ""
-}
-
 func (s *Service) Forget() {
 	if s.pool != nil {
 		s.pool.Forget("accounts/")

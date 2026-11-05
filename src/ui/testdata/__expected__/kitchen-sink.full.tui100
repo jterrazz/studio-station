@@ -1,9 +1,12 @@
  CPU 34% ▁▁▂▃▅▆█▄▃▂▁▁▁▂▃▃  memory 12.4/17.2 GB  battery 100%  ⏻ awake · 3h 12m
- - To do                                                                                        1 ◐
+
+ To do  1 ◐
    ◐ brew  120 outdated  → station apps update --method brew
- - Summary
+
+ Summary
    ✗ Marks  4 broken
- - Values  40000-40999                                                                    17 ●  1 ◐
+
+ Values  17 ●  1 ◐  40000-40999
                value                                                       number
    ● text      plain words                                           120 outdated
    ● size      275 B                                                      22.6 KB
@@ -23,7 +26,8 @@
    ● switch    on                                                               3
    ● sip       off
    ◐ unknown   ?                                                                   no answer in 2s
- - Marks                                                              15 ◐  2 ○  4 ✗  1 ⊘  1 –  1 ?
+
+ Marks  15 ◐  2 ○  4 ✗  1 ⊘  1 –  1 ?
    ◐ outdated              attention                   120 outdated
      → station apps update --method brew
    ◐ stray                 attention                   out of place  → station setup
@@ -53,17 +57,20 @@
    ⊘ off-here              turned off on this machine
    – not-for-this-machine  Macs only
    ? not-known             does not answer
- - Fleet                                                                                   3 ●  1 ○
+
+ Fleet  3 ●  1 ○
    ● jterrazz-mac-mini  host
    ├─ ● linux-1         permanent
    │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
    │  └─ ● web          service
    └─ ○ linux-2         permanent
- - Storage                                                                                      2 ●
+
+ Storage  2 ●
      tool        data   kept
    ● station    275 B  546 B
    ● tart     73.3 GB
- - Prose
+
+ Prose
    machine  jterrazz-macbook-pro
    uptime   22d 14h
    Serve is off on the tailnet, so no service is reachable from another machine until it is turned
@@ -71,6 +78,6 @@
    Error: defaults is not installed
    Hint: run station setup
    no lent secrets  → station secrets lend <name>
- - Peers
+
+ Peers
      iphone  offline
- ↑↓ move  n create  enter detail  / filter  space fold  r reload  q quit  ? keys

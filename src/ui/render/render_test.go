@@ -95,8 +95,11 @@ func renderings(f fixture) map[string]func() (string, error) {
 }
 
 func browse(p page.Page, width int) string {
-	b := tui.New("Tab", "rows").Show(p)
-	return ansi.Strip(b.Body(width, 200) + "\n" + b.Footer(width, false) + "\n")
+	return ansi.Strip(master(p, width, true) + "\n")
+}
+
+func master(p page.Page, width int, dark bool) string {
+	return strings.Join(tui.List{}.Show(p).Lines(tui.Shell{Dark: dark}, width, 200, false), "\n")
 }
 
 func TestEveryFixtureRendersAsItsGoldenInEveryMedium(t *testing.T) {
@@ -317,8 +320,7 @@ func TestStateColoursAreOnMarksAndLinesOnRules(t *testing.T) {
 		lines := token.Rule + token.Divider + "├└ "
 		notFor := token.MarkNotFor + "0123456789 "
 		for _, f := range fixtures(t) {
-			b := tui.New("Tab", "rows").Themed(dark).Show(f.page)
-			for _, out := range []string{string(tty.Render(f.page, tty.Options{Width: 100, Dark: dark})), b.Body(100, 200) + b.Footer(100, false)} {
+			for _, out := range []string{string(tty.Render(f.page, tty.Options{Width: 100, Dark: dark})), master(f.page, 100, dark)} {
 				for _, s := range spans(out) {
 					text := strings.TrimSpace(s.text)
 					if text == "" {

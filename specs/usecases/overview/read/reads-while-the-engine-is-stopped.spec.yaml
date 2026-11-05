@@ -6,6 +6,7 @@ runs:
       stdout: |
           # Needs you
           ◐	Engine stopped	station engine start
+          	Activity	? not measured
           	Apps	● 0 ok · ○ 108 not installed
           	Settings	set by station · ● 0 of 17
           	Disk	● 0 B free · 0 B can rebuild

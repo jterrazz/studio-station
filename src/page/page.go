@@ -54,6 +54,9 @@ type Section struct {
 	PipeGroups bool `json:"pipe_groups,omitempty"`
 	// value: a Summary drawn in two columns starts its right one at this item.
 	Break int `json:"break,omitempty"`
+	// value: a line too short for every column says which it left out
+	// (All machines' table, SPEC §9.9).
+	SaysDropped bool `json:"says_dropped,omitempty"`
 }
 
 type Role string
@@ -345,4 +348,5 @@ const (
 	KindUnknown  Kind = "unknown"
 	KindPending  Kind = "pending"
 	KindListing  Kind = "listing"
+	KindSpark    Kind = "spark"
 )

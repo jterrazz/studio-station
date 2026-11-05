@@ -159,15 +159,6 @@ func Actions(r disk.Reading) []page.Action {
 	return out
 }
 
-func EraseConfirm(app string, plan []disk.PathReport) page.Confirm {
-	c := page.Confirm{Question: "Erase " + app + "?", Danger: true, Yes: "erase", No: "Keep", Type: app}
-	for _, p := range plan {
-		c.Lines = append(c.Lines, page.List(page.Text(title(disk.GroupOf(p.Level))), page.Path(p.Path), page.Size(p.Bytes)))
-	}
-	c.Lines = append(c.Lines, page.Text("its settings and keys stay"))
-	return c
-}
-
 func Freed(outcomes []disk.Outcome, here page.Context) page.Page {
 	rows := make([]page.Row, 0, len(outcomes))
 	var total int64
