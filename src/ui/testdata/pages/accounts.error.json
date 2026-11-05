@@ -460,16 +460,19 @@
   ],
   "actions": [
     {
-      "key": "l",
-      "label": "share",
+      "key": "s",
+      "label": "share with a VM",
       "on": "row",
       "priority": 1,
       "mutates": true
     },
     {
-      "key": "r",
-      "label": "revoke",
+      "key": "t",
+      "label": "take back",
       "on": "row",
+      "confirm": {
+        "yes": "take back"
+      },
       "priority": 2,
       "mutates": true
     },

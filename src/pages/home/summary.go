@@ -24,7 +24,26 @@ func Summary(s overview.Summary, here page.Context, all bool) page.Page {
 	if s.Pending {
 		state = page.Loading
 	}
-	return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, State: state, Sections: sections, Hints: Hints(s, all)})
+	p := page.Page{ID: "overview", Command: "overview", Context: here, State: state, Sections: sections, Hints: Hints(s, all)}
+	if len(s.Needs) > 0 {
+		p.Actions = []page.Action{{Key: KeyFix, Label: "fix", On: page.OnRow, Rows: needsRows(sections), Priority: 1, Mutates: true}}
+	}
+	return page.Seal(p)
+}
+
+func needsRows(sections []page.Section) []string {
+	var rows []string
+	for _, s := range sections {
+		if s.ID != "needs-you" {
+			continue
+		}
+		for _, it := range s.Items {
+			if it.Row != nil {
+				rows = append(rows, it.Row.ID)
+			}
+		}
+	}
+	return rows
 }
 
 func Body(s overview.Summary, all bool) []page.Section {

@@ -27,10 +27,14 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Args:     cobra.ExactArgs(1),
 		Bind:     func(in *Input, args []string) error { in.Name = args[0]; return nil },
 		Complete: func([]string, string) []string { return d.Names() },
+		Pages:    true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			out, err := call.Invoke(ctx, env.Calls, env.Target(), settingscalls.Diff, settingscalls.DiffIn{Name: in.Name}, nil)
 			if err != nil {
 				return err
+			}
+			if out.Diff != "" && io.PageJSON {
+				return io.Page(pagesettings.Diff(in.Name, out.Diff, d.Here), nil)
 			}
 			if out.Diff != "" {
 				return io.Raw([]byte(out.Diff))

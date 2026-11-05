@@ -366,6 +366,12 @@
       },
       "priority": 1,
       "mutates": true
+    },
+    {
+      "key": "c",
+      "label": "copy the command",
+      "on": "row",
+      "priority": 2
     }
   ]
 }

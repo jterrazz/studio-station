@@ -378,5 +378,21 @@
     {
       "command": "station apps update --method brew"
     }
+  ],
+  "actions": [
+    {
+      "key": "enter",
+      "label": "fix",
+      "on": "row",
+      "rows": [
+        "0-brew",
+        "1-npm",
+        "2-~/.tart",
+        "3-firewall",
+        "4-com.jterrazz.brain.x-snapshot"
+      ],
+      "priority": 1,
+      "mutates": true
+    }
   ]
 }

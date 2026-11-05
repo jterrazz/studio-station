@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	KeyLend   = "l"
-	KeyRevoke = "r"
-	KeyReload = "R"
-	DaemonRow = "engine"
+	KeyShare    = "s"
+	KeyTakeBack = "t"
+	KeyReload   = "R"
+	DaemonRow   = "engine"
 )
 
 func columns() []page.Column {
@@ -251,8 +251,8 @@ func Page(r accounts.Report, here page.Context) page.Page {
 
 func Actions() []page.Action {
 	return []page.Action{
-		{Key: KeyLend, Label: "share", On: page.OnRow, Priority: 1, Mutates: true},
-		{Key: KeyRevoke, Label: "revoke", On: page.OnRow, Priority: 2, Mutates: true},
+		{Key: KeyShare, Label: "share with a VM", On: page.OnRow, Priority: 1, Mutates: true},
+		{Key: KeyTakeBack, Label: "take back", On: page.OnRow, Priority: 2, Mutates: true, Confirm: &page.Confirm{Yes: "take back"}},
 		{Key: KeyReload, Label: "reload", On: page.OnPage, Priority: 3},
 	}
 }

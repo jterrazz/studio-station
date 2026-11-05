@@ -9,7 +9,10 @@ import (
 	"github.com/jterrazz/studio-station/src/pages"
 )
 
-const KeyRemove = "x"
+const (
+	KeyRemove = "x"
+	KeyCopy   = "c"
+)
 
 const Schema = "station.background.list/v1"
 
@@ -126,7 +129,10 @@ func plural(n int, word string) string {
 }
 
 func Actions() []page.Action {
-	return []page.Action{{Key: KeyRemove, Label: "remove", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Yes: "remove"}}}
+	return []page.Action{
+		{Key: KeyRemove, Label: "remove", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Yes: "remove"}},
+		{Key: KeyCopy, Label: "copy the command", On: page.OnRow, Priority: 2},
+	}
 }
 
 func Confirm(label string) page.Confirm {
