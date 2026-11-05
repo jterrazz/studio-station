@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	"github.com/jterrazz/studio-station/src/settings"
@@ -513,9 +515,9 @@ type SettingJSON struct {
 }
 
 type ListJSON struct {
-	Schema   string        `json:"schema"`
-	Findings []string      `json:"findings"`
-	Settings []SettingJSON `json:"settings"`
+	Schema   string         `json:"schema"`
+	Findings []finding.JSON `json:"findings"`
+	Settings []SettingJSON  `json:"settings"`
 }
 
 func Object(r settings.Row) SettingJSON {
@@ -535,7 +537,7 @@ func Object(r settings.Row) SettingJSON {
 }
 
 func ListContract(rows []settings.Row) ListJSON {
-	body := ListJSON{Schema: "station.settings.list/v1", Findings: []string{}, Settings: make([]SettingJSON, 0, len(rows))}
+	body := ListJSON{Schema: "station.settings.list/v1", Findings: finding.Doc(settings.Findings(rows, machine.Ref{})), Settings: make([]SettingJSON, 0, len(rows))}
 	for _, r := range rows {
 		body.Settings = append(body.Settings, Object(r))
 	}

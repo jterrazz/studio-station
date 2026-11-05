@@ -3,10 +3,10 @@ env: two-macs
 runs:
     - command: 'world reboot jterrazz-mac-mini'
       exit: 0
-    - command: 'awake --on jterrazz-mac-mini --json | /usr/bin/jq -c ''.macs[0] | {mode, servers}'''
+    - command: 'awake --on jterrazz-mac-mini --json | /usr/bin/jq -c ''.macs[0] | {mode, hosts_servers}'''
       exit: 0
       stdout: |
-          {"mode":"never-sleeps","servers":["infra"]}
+          {"mode":"never-sleeps","hosts_servers":["infra"]}
     - command: 'machines --on jterrazz-mac-mini | /usr/bin/grep infra'
       exit: 0
       stdout: |

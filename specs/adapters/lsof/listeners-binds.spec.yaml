@@ -4,4 +4,4 @@ runs:
     - command: 'ports --json | /usr/bin/jq -c ''[.local_only, [.ports[] | [.port, .process, .bind, .class]], .findings]'''
       exit: 0
       stdout: |
-          [1,[[3000,"node",["0.0.0.0","::"],"public"],[8000,"python3",["192.168.1.20"],"public"],[8443,"caddy",["100.101.102.103"],"private"]],["port 3000 is reachable outside Tailscale","port 8000 is reachable outside Tailscale"]]
+          [1,[[3000,"node",["0.0.0.0","::"],"public"],[8000,"python3",["192.168.1.20"],"public"],[8443,"caddy",["100.101.102.103"],"private"]],[{"severity":"broken","section":"ports","subject":":3000","text":"port 3000 is reachable outside Tailscale","fix":{"call":null,"command":null,"path":null}},{"severity":"broken","section":"ports","subject":":8000","text":"port 8000 is reachable outside Tailscale","fix":{"call":null,"command":null,"path":null}}]]

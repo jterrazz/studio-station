@@ -46,15 +46,24 @@ type ReadingJSON struct {
 
 type EngineJSON struct {
 	State     string     `json:"state"`
-	Version   string     `json:"version"`
-	UpS       int64      `json:"up_s"`
+	Version   *string    `json:"version"`
+	UpS       *int64     `json:"up_s"`
 	VMs       int        `json:"vms"`
 	StoppedAt *time.Time `json:"stopped_at"`
 	StoppedBy *string    `json:"stopped_by"`
 }
 
 func (r Reading) JSON() ReadingJSON {
-	e := EngineJSON{State: r.State, Version: r.Version, UpS: int64(r.Up / time.Second), VMs: r.VMs}
+	// invariant: SPEC §11.1: a version or an uptime the engine did not say
+	// is null, never "" or 0.
+	e := EngineJSON{State: r.State, VMs: r.VMs}
+	if r.Version != "" {
+		e.Version = &r.Version
+	}
+	if r.State == EngineRunning {
+		up := int64(r.Up / time.Second)
+		e.UpS = &up
+	}
 	if r.State == EngineStopped && !r.Stopped.At.IsZero() {
 		at, by := r.Stopped.At.UTC(), r.Stopped.By
 		e.StoppedAt, e.StoppedBy = &at, &by

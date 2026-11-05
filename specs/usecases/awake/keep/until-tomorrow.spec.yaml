@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           ●	jterrazz-macbook-pro	stays awake until 09:00 tomorrow (Thu 5 Nov)
-    - command: 'awake --json | /usr/bin/jq -r ''.macs[0].until[0:16]'''
+    - command: 'awake --json | /usr/bin/jq -r ''.macs[0].until_at[0:16]'''
       exit: 0
       stdout: |
           2026-11-05T09:00

@@ -1,13 +1,17 @@
 package machines
 
-import "time"
+import (
+	"time"
+
+	"github.com/jterrazz/studio-station/src/core/finding"
+)
 
 const ListSchema = "station.machines.list/v1"
 
 type ListDoc struct {
-	Schema   string        `json:"schema"`
-	Macs     []ListMac     `json:"macs"`
-	Findings []ListFinding `json:"findings"`
+	Schema   string         `json:"schema"`
+	Macs     []ListMac      `json:"macs"`
+	Findings []finding.JSON `json:"findings"`
 }
 
 type ListMac struct {
@@ -35,9 +39,9 @@ type ListVM struct {
 	State    string `json:"state"`
 	Wanted   string `json:"wanted"`
 	// value: SPEC §7.2's steps a workspace has, each passed or not.
-	Health   ListHealth `json:"health"`
-	Restarts int        `json:"restarts"`
-	IP       string     `json:"ip"`
+	Health   ListHealth   `json:"health"`
+	Restarts ListRestarts `json:"restarts"`
+	IP       string       `json:"ip"`
 	// value: on its Mac's network; false is behind its Mac.
 	Bridged bool      `json:"bridged"`
 	Size    ListSize  `json:"size"`
@@ -63,16 +67,24 @@ type ListImage struct {
 	Version string `json:"version"`
 }
 
-type ListFinding struct {
-	Severity string `json:"severity"`
-	Section  string `json:"section"`
-	Subject  string `json:"subject"`
-	Text     string `json:"text"`
-	Fix      string `json:"fix,omitempty"`
+type ListRestarts struct {
+	Count   int        `json:"count"`
+	LastAt  *time.Time `json:"last_at"`
+	Looping bool       `json:"looping"`
+	WaitS   int64      `json:"wait_s"`
+}
+
+func restartsOf(r Restarts) ListRestarts {
+	out := ListRestarts{Count: r.Count, Looping: r.Looping, WaitS: int64(r.Wait.Seconds())}
+	if !r.Last.IsZero() {
+		last := r.Last.UTC()
+		out.LastAt = &last
+	}
+	return out
 }
 
 func ToList(f Fleet) ListDoc {
-	out := ListDoc{Schema: ListSchema, Macs: make([]ListMac, 0, len(f.Hosts)), Findings: []ListFinding{}}
+	out := ListDoc{Schema: ListSchema, Macs: make([]ListMac, 0, len(f.Hosts)), Findings: finding.FleetDoc(Findings(f))}
 	for _, h := range f.Hosts {
 		m := ListMac{
 			Name: h.Name, Label: Label(f, h), ThisMac: h.Here, Reachable: h.Reachable, Answered: h.Answered, IP: h.Node.IP, User: h.User,
@@ -81,15 +93,12 @@ func ToList(f Fleet) ListDoc {
 		for _, vm := range Ordered(h.VMs) {
 			m.VMs = append(m.VMs, ListVM{
 				Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Lifetime: string(vm.Lifetime), State: string(vm.State),
-				Wanted: Wanted(vm), Health: HealthOf(vm), Restarts: vm.Restarts.Count, IP: vm.IP, Bridged: vm.Network == "bridged",
+				Wanted: Wanted(vm), Health: HealthOf(vm), Restarts: restartsOf(vm.Restarts), IP: vm.IP, Bridged: vm.Network == "bridged",
 				Size:  ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
 				Image: ListImage{Name: vm.Image, Version: vm.Version}, Detail: vm.Detail, Created: vm.CreatedAt,
 			})
 		}
 		out.Macs = append(out.Macs, m)
-	}
-	for _, fd := range Findings(f) {
-		out.Findings = append(out.Findings, ListFinding{Severity: string(fd.Severity), Section: string(fd.Section), Subject: fd.Subject, Text: fd.Text, Fix: fd.Fix.Command + fd.Fix.Path})
 	}
 	return out
 }

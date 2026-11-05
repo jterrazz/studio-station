@@ -265,8 +265,6 @@ func Already(verb, name string, running bool, here page.Context) page.Page {
 	return pages.Outcome("machines "+verb, here, nil, []page.Row{pages.Done(name, state, said)}, "machines")
 }
 
-const createdSchema = "station.machines.created/v1"
-
 type CreatedJSON struct {
 	Schema      string            `json:"schema"`
 	Name        string            `json:"name"`
@@ -281,8 +279,15 @@ type CreatedJSON struct {
 	DiskBytes   int64             `json:"disk_bytes"`
 	IP          string            `json:"ip"`
 	Network     string            `json:"network"`
+	Health      CreatedHealth     `json:"health"`
 	Services    []CreatedService  `json:"services"`
 	Env         map[string]string `json:"env"`
+}
+
+type CreatedHealth struct {
+	Running bool `json:"running"`
+	Address bool `json:"address"`
+	SSH     bool `json:"ssh"`
 }
 
 type CreatedService struct {
@@ -292,10 +297,12 @@ type CreatedService struct {
 	URL       string `json:"url"`
 }
 
-func CreatedContract(c machines.Created) CreatedJSON {
+func CreatedContract(schema string, c machines.Created) CreatedJSON {
+	// invariant: a VM is created once it runs, has its address and answers
+	// ssh: the three steps its page passes.
 	vm, r := c.VM, c.VM.Resources
 	body := CreatedJSON{
-		Schema: createdSchema, Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Host: vm.Host, Lifetime: string(vm.Lifetime), Check: vm.Check, Image: vm.Image,
+		Schema: schema, Health: CreatedHealth{Running: true, Address: vm.IP != "", SSH: true}, Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Host: vm.Host, Lifetime: string(vm.Lifetime), Check: vm.Check, Image: vm.Image,
 		Version: vm.Version, CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes, IP: vm.IP,
 		Network: vm.Network, Services: []CreatedService{}, Env: c.Env,
 	}

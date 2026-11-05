@@ -6,6 +6,7 @@ import (
 	"io"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -37,6 +38,12 @@ type Env struct {
 	// machine a leaf's calls go to.
 	Calls call.Router
 	Self  machine.Ref
+	// value: what this machine is, and the clock a document is dated by.
+	Kind machine.Kind
+	Now  func() time.Time
+	// value: a name as this Mac's records hold it: a Mac by its full name,
+	// a VM of this Mac with On set; false for any other name.
+	Locate func(name string) (machine.Ref, bool)
 }
 
 type IO struct {
@@ -51,7 +58,8 @@ type IO struct {
 	raw           io.Writer
 	ask           func() error
 	// value: the machine a far call ran on; its output starts with `On <it>:`.
-	on string
+	on       string
+	envelope func() *output.Envelope
 }
 
 func (o IO) Confirmed(do func(answer string) error) error {
@@ -90,15 +98,23 @@ func (o IO) CanLive() bool {
 }
 
 func (o IO) Page(p page.Page, contract any) error {
-	return o.out.Page(o.onLine(p), contract, output.Want{JSON: o.JSON, Page: o.PageJSON})
+	return o.out.Page(o.onLine(p), contract, o.want(output.Want{}))
 }
 
 func (o IO) PagePiped(p page.Page, contract any, piped string) error {
-	return o.out.Page(o.onLine(p), contract, output.Want{JSON: o.JSON, Page: o.PageJSON, Piped: []byte(piped)})
+	return o.out.Page(o.onLine(p), contract, o.want(output.Want{Piped: []byte(piped)}))
 }
 
 func (o IO) PageRecords(p, records page.Page, contract any) error {
-	return o.out.Page(o.onLine(p), contract, output.Want{JSON: o.JSON, Page: o.PageJSON, Records: &records})
+	return o.out.Page(o.onLine(p), contract, o.want(output.Want{Records: &records}))
+}
+
+func (o IO) want(w output.Want) output.Want {
+	w.JSON, w.Page = o.JSON, o.PageJSON
+	if o.JSON && o.envelope != nil {
+		w.Envelope = o.envelope()
+	}
+	return w
 }
 
 func (o IO) LivePage(pages <-chan page.Page) error {
@@ -227,6 +243,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 			Prompt:        env.Prompt,
 			ZshCompletion: c.Root().GenZshCompletion,
 			out:           env.Out,
+			envelope:      func() *output.Envelope { return env.envelope(c.Context()) },
 		}
 		if env.Far() {
 			o.on = page.MacName(env.Target().Name, env.Self.Name)

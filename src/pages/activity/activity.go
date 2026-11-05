@@ -33,8 +33,10 @@ type View struct {
 	Report  activity.Report
 	// value: a VM that does not run: it has no activity.
 	Stopped bool
-	// value: a Mac that does not answer, in its words.
-	Silent string
+	// value: a Mac that does not answer, in its words, and the type and code
+	// of the error it answered.
+	Silent                 string
+	SilentType, SilentCode string
 	// value: the window the TUI's graphs draw; zero on the CLI's page,
 	// which draws none (SPEC §6.4).
 	Graph time.Duration

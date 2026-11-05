@@ -4,6 +4,8 @@ import (
 	"strconv"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
@@ -40,19 +42,16 @@ type RowJSON struct {
 }
 
 type ReadJSON struct {
-	Schema   string    `json:"schema"`
-	Findings []string  `json:"findings"`
-	Free     int64     `json:"free_bytes"`
-	Total    int64     `json:"total_bytes"`
-	Rows     []RowJSON `json:"rows"`
+	Schema   string         `json:"schema"`
+	Findings []finding.JSON `json:"findings"`
+	Free     int64          `json:"free_bytes"`
+	Total    int64          `json:"total_bytes"`
+	Rows     []RowJSON      `json:"rows"`
 }
 
 func ReadContract(r disk.Reading) ReadJSON {
-	out := ReadJSON{Schema: "station.disk.read/v1", Findings: []string{}, Free: r.Free, Total: r.Total, Rows: make([]RowJSON, 0, len(r.Rows))}
+	out := ReadJSON{Schema: "station.disk.read/v1", Findings: finding.Doc(disk.Findings(r, machine.Ref{})), Free: r.Free, Total: r.Total, Rows: make([]RowJSON, 0, len(r.Rows))}
 	for _, row := range r.Rows {
-		if row.Group == disk.Misplaced {
-			out.Findings = append(out.Findings, row.Paths[0]+" is misplaced")
-		}
 		out.Rows = append(out.Rows, RowJSON{App: row.App, Group: string(row.Group), Bytes: row.Bytes, Paths: row.Paths, MoveTo: row.MoveTo})
 	}
 	return out

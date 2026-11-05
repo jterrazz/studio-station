@@ -5,6 +5,8 @@ import (
 
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 )
@@ -235,17 +237,10 @@ type TaskJSON struct {
 	Fix      *FixJSON `json:"fix"`
 }
 
-type FindingJSON struct {
-	Severity string `json:"severity"`
-	Subject  string `json:"subject"`
-	Text     string `json:"text"`
-	Fix      string `json:"fix"`
-}
-
 type ListJSON struct {
-	Schema   string        `json:"schema"`
-	Findings []FindingJSON `json:"findings"`
-	Tasks    []TaskJSON    `json:"tasks"`
+	Schema   string         `json:"schema"`
+	Findings []finding.JSON `json:"findings"`
+	Tasks    []TaskJSON     `json:"tasks"`
 }
 
 func stateWord(t background.Task) string {
@@ -264,7 +259,7 @@ func stateWord(t background.Task) string {
 }
 
 func ListContract(tasks []background.Task) ListJSON {
-	body := ListJSON{Schema: Schema, Findings: []FindingJSON{}, Tasks: make([]TaskJSON, 0, len(tasks))}
+	body := ListJSON{Schema: Schema, Findings: finding.Doc(background.Findings(tasks, machine.Ref{})), Tasks: make([]TaskJSON, 0, len(tasks))}
 	for _, t := range tasks {
 		o := TaskJSON{Label: t.Label, Group: string(t.Group), Scope: t.Scope, Owner: t.Owner, State: stateWord(t), Plist: t.Plist}
 		switch t.Run {
@@ -278,12 +273,6 @@ func ListContract(tasks []background.Task) ListJSON {
 			o.Fix = &FixJSON{Command: fix}
 		}
 		body.Tasks = append(body.Tasks, o)
-		switch {
-		case t.Run == background.Failing:
-			body.Findings = append(body.Findings, FindingJSON{Severity: "broken", Subject: t.Label, Text: t.Label + " is failing, last exit " + strconv.Itoa(t.Exit), Fix: fixOf(t)})
-		case t.Group == background.GroupOrphan:
-			body.Findings = append(body.Findings, FindingJSON{Severity: "needs-a-look", Subject: t.Label, Text: t.Label + " is an orphan", Fix: fixOf(t)})
-		}
 	}
 	return body
 }

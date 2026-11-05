@@ -107,48 +107,68 @@ func everyMachine(ctx context.Context, env kit.Env, io kit.IO) error {
 	}
 	var blocks []pageaccounts.MachineBlock
 	for _, h := range list.Fleet.Hosts {
+		mac := pageaccounts.MachineBlock{Name: h.Name, Label: page.MacName(h.Name, env.Self.Name), Kind: string(machine.Mac), ThisMac: h.Here}
 		if !h.Reachable && !h.Here {
-			blocks = append(blocks, pageaccounts.MachineBlock{Name: h.Name, Mark: page.Broken, Reason: page.Unreachable, State: "does not answer"})
+			mac.Mark, mac.Reason, mac.State, mac.Fault = page.Broken, page.Unreachable, "does not answer", pageaccounts.Fault{Type: string(fail.Unreachable)}
+			blocks = append(blocks, mac)
 			continue
 		}
-		mac, err := call.Read(ctx, env.Calls, machine.Ref{Name: h.Name}, accountscalls.List, accountscalls.ListIn{}, nil)
+		read, err := call.Read(ctx, env.Calls, machine.Ref{Name: h.Name}, accountscalls.List, accountscalls.ListIn{}, nil)
 		if err != nil {
-			blocks = append(blocks, pageaccounts.MachineBlock{Name: h.Name, Note: kit.Translate(err, "").Message})
+			blocks = append(blocks, faulted(mac, err))
 			continue
 		}
-		blocks = append(blocks, pageaccounts.MachineBlock{Name: h.Name, Report: mac, Shared: mac.Shares})
+		mac.Report, mac.Shared = read, read.Shares
+		blocks = append(blocks, mac)
 		for _, vm := range h.VMs {
+			b := pageaccounts.MachineBlock{Name: vm.Name, Label: vm.Name, Kind: string(vm.Lifetime.Kind()), On: h.Name}
 			if vm.Lifetime.Kind() == machine.Server {
-				blocks = append(blocks, pageaccounts.MachineBlock{Name: vm.Name, Note: vm.Name + " is a server: not listed"})
+				b.Note, b.Server = vm.Name+" is a server: not listed", true
+				blocks = append(blocks, b)
 				continue
 			}
 			if vm.State != machines.Running {
-				blocks = append(blocks, pageaccounts.MachineBlock{Name: vm.Name, Mark: page.Absent, Reason: page.Stopped, State: string(vm.State)})
+				b.Mark, b.Reason, b.State = page.Absent, page.Stopped, string(vm.State)
+				b.Fault = pageaccounts.Fault{Type: string(fail.Refused), Code: string(accountscalls.VMStopped)}
+				b.Note = vm.Name + " is stopped"
+				blocks = append(blocks, b)
 				continue
 			}
 			r, err := call.Read(ctx, env.Calls, machine.Ref{Name: vm.Name, On: h.Name}, accountscalls.List, accountscalls.ListIn{}, nil)
 			var refused *fail.Error
 			if errors.As(err, &refused) && refused.Type == fail.NotForThisMachine {
-				blocks = append(blocks, pageaccounts.MachineBlock{Name: vm.Name, Note: vm.Name + " is a server: not listed"})
+				b.Note, b.Server = vm.Name+" is a server: not listed", true
+				blocks = append(blocks, b)
 				continue
 			}
 			if err != nil {
-				blocks = append(blocks, pageaccounts.MachineBlock{Name: vm.Name, Note: kit.Translate(err, "").Message})
+				blocks = append(blocks, faulted(b, err))
 				continue
 			}
 			var shared []accounts.Shared
-			for _, sh := range mac.Shares {
+			for _, sh := range read.Shares {
 				if sh.VM == vm.Name {
 					shared = append(shared, sh)
 				}
 			}
-			blocks = append(blocks, pageaccounts.MachineBlock{Name: vm.Name, Report: r, Shared: shared})
+			b.Report, b.Shared = r, shared
+			blocks = append(blocks, b)
 		}
 	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	return io.Page(pageaccounts.EveryMachine(blocks), nil)
+	return io.Page(pageaccounts.EveryMachine(blocks), pageaccounts.EveryMachineContract(call.Schema(accountscalls.List.Name), blocks))
+}
+
+func faulted(b pageaccounts.MachineBlock, err error) pageaccounts.MachineBlock {
+	worded := kit.Translate(err, "")
+	b.Note = worded.Message
+	b.Fault = pageaccounts.Fault{Type: string(worded.Type), Code: string(worded.Code)}
+	if b.Fault.Type == "" {
+		b.Fault.Type = string(fail.Failed)
+	}
+	return b
 }
 
 func Retired(verb string, env kit.Env) *cobra.Command {

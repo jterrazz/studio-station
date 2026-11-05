@@ -4,15 +4,15 @@ runs:
     - command: 'overview --json | /usr/bin/jq -c ''[.schema, .machine, .engine]'''
       exit: 0
       stdout: |
-          ["station.overview.read/v1",{"name":"jterrazz-macbook-pro","kind":"mac","here":true},"running"]
-    - command: 'overview --json | /usr/bin/jq -c ''[.findings[].fix | [has("call"), has("command"), has("path")] | map(select(.)) | length] | unique'''
+          ["station.overview.read/v1",{"name":"jterrazz-macbook-pro","label":"This Mac","kind":"mac","on":null,"this_mac":true},"running"]
+    - command: 'overview --json | /usr/bin/jq -c ''[.findings[].fix | [.call, .command, .path] | map(select(. != null)) | length] | unique'''
       exit: 0
       stdout: |
           [1]
     - command: 'overview --json | /usr/bin/jq -c ''.findings[] | select(.subject == "brew") | .fix'''
       exit: 0
       stdout: |
-          {"call":"apps.update","args":{"method":"brew"}}
+          {"call":"apps.update","args":{"method":"brew"},"command":null,"path":null}
     - command: 'overview --json | /usr/bin/jq -c ''.sections[] | [.id, .counts]'''
       exit: 0
       stdout: |

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/core/finding"
 )
 
 type MachineJSON struct {
@@ -12,19 +13,6 @@ type MachineJSON struct {
 	Kind    string  `json:"kind"`
 	On      *string `json:"on"`
 	ThisMac bool    `json:"this_mac"`
-}
-
-type FixJSON struct {
-	Command *string `json:"command"`
-}
-
-type FindingJSON struct {
-	Machine  *string `json:"machine,omitempty"`
-	Severity string  `json:"severity"`
-	Section  string  `json:"section"`
-	Subject  string  `json:"subject"`
-	Text     string  `json:"text"`
-	Fix      FixJSON `json:"fix"`
 }
 
 type CPUJSON struct {
@@ -105,22 +93,22 @@ type HistoryJSON struct {
 }
 
 type Body struct {
-	Source   string        `json:"source"`
-	State    string        `json:"state"`
-	Window   *float64      `json:"window_s"`
-	Since    *time.Time    `json:"history_since_at"`
-	CPU      *CPUJSON      `json:"cpu"`
-	Memory   *MemoryJSON   `json:"memory"`
-	Disk     *DiskJSON     `json:"disk"`
-	Network  *NetworkJSON  `json:"network"`
-	Thermal  *ThermalJSON  `json:"thermal"`
-	Battery  *BatteryJSON  `json:"battery"`
-	Up       *int64        `json:"up_s"`
-	Boot     *time.Time    `json:"boot_at"`
-	Top      TopJSON       `json:"top"`
-	Run      *RunJSON      `json:"run"`
-	History  *HistoryJSON  `json:"history"`
-	Findings []FindingJSON `json:"findings"`
+	Source   string         `json:"source"`
+	State    string         `json:"state"`
+	Window   *float64       `json:"window_s"`
+	Since    *time.Time     `json:"history_since_at"`
+	CPU      *CPUJSON       `json:"cpu"`
+	Memory   *MemoryJSON    `json:"memory"`
+	Disk     *DiskJSON      `json:"disk"`
+	Network  *NetworkJSON   `json:"network"`
+	Thermal  *ThermalJSON   `json:"thermal"`
+	Battery  *BatteryJSON   `json:"battery"`
+	Up       *int64         `json:"up_s"`
+	Boot     *time.Time     `json:"boot_at"`
+	Top      TopJSON        `json:"top"`
+	Run      *RunJSON       `json:"run"`
+	History  *HistoryJSON   `json:"history"`
+	Findings []finding.JSON `json:"findings"`
 }
 
 type ReadJSON struct {
@@ -137,14 +125,16 @@ type EveryJSON struct {
 }
 
 type ErrorJSON struct {
-	Message string `json:"message"`
+	Type    string  `json:"type"`
+	Code    *string `json:"code"`
+	Message string  `json:"message"`
 }
 
 type AllMachinesJSON struct {
-	Schema      string        `json:"schema"`
-	GeneratedAt string        `json:"generated_at"`
-	Findings    []FindingJSON `json:"findings"`
-	Machines    []EveryJSON   `json:"machines"`
+	Schema      string         `json:"schema"`
+	GeneratedAt string         `json:"generated_at"`
+	Findings    []finding.JSON `json:"findings"`
+	Machines    []EveryJSON    `json:"machines"`
 }
 
 func ptr[T any](v T) *T { return &v }
@@ -161,15 +151,11 @@ func Contract(v View, now time.Time) ReadJSON {
 	return ReadJSON{Schema: Schema, GeneratedAt: now.UTC().Format(time.RFC3339), Machine: machineOf(v), Body: body(v)}
 }
 
-func findings(v View) []FindingJSON {
+func findings(v View) []finding.JSON {
 	fs := seen(v)
-	out := make([]FindingJSON, 0, len(fs))
+	out := make([]finding.JSON, 0, len(fs))
 	for _, f := range fs {
-		j := FindingJSON{Severity: f.Severity, Section: f.Section, Subject: f.Subject, Text: f.Text}
-		if f.Fix != "" {
-			j.Fix.Command = ptr(f.Fix)
-		}
-		out = append(out, j)
+		out = append(out, finding.JSON{Severity: f.Severity, Section: f.Section, Subject: f.Subject, Text: f.Text, Fix: finding.Fix{Command: f.Fix}.JSON()})
 	}
 	return out
 }

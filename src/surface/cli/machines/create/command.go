@@ -139,8 +139,10 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			steps := kit.Steps(io)
 			var created machines.Created
 			var err error
+			schema := call.Schema(machinescalls.CreateWorkspace.Name)
 			if in.Server {
 				r := in.request
+				schema = call.Schema(machinescalls.CreateServer.Name)
 				created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateServer, machinescalls.CreateServerIn{Name: r.Name, Image: r.Image, Network: r.Network, Resources: r.Resources, Check: r.Check}, steps)
 			} else {
 				created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateWorkspace, machinescalls.CreateIn{Request: in.request}, steps)
@@ -149,7 +151,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Created(created, d.Here), pagemachines.CreatedContract(created))
+			return io.Page(pagemachines.Created(created, d.Here), pagemachines.CreatedContract(schema, created))
 		},
 	}, env)
 }

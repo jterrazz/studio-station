@@ -10,6 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/activity"
 	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
@@ -145,24 +146,30 @@ func every(ctx context.Context, d Deps, env kit.Env) ([]pageactivity.View, error
 			ref = env.Self
 		}
 		if !h.Reachable && !h.Here {
-			views = append(views, pageactivity.View{Name: h.Name, Label: h.Name, Short: d.Label(h.Name), Kind: string(machine.Mac), Silent: "does not answer"})
+			views = append(views, pageactivity.View{Name: h.Name, Label: h.Name, Short: d.Label(h.Name), Kind: string(machine.Mac), Silent: "does not answer", SilentType: string(fail.Unreachable)})
 			continue
 		}
 		v, err := mac(ctx, env, ref, h.Name, read{})
 		if !v.ThisMac {
 			v.Short = d.Label(h.Name)
 		}
-		if err != nil {
-			v.Silent = kit.Translate(err, "").Message
-		}
-		views = append(views, v)
+		views = append(views, silenced(v, err))
 		for _, m := range h.VMs {
 			v, err := vm(ctx, d, env, ref, m.Name, m.Lifetime.Kind(), m.State == machines.Running, read{})
-			if err != nil {
-				v.Silent = kit.Translate(err, "").Message
-			}
-			views = append(views, v)
+			views = append(views, silenced(v, err))
 		}
 	}
 	return views, ctx.Err()
+}
+
+func silenced(v pageactivity.View, err error) pageactivity.View {
+	if err == nil {
+		return v
+	}
+	worded := kit.Translate(err, "")
+	v.Silent, v.SilentType, v.SilentCode = worded.Message, string(worded.Type), string(worded.Code)
+	if v.SilentType == "" {
+		v.SilentType = string(fail.Failed)
+	}
+	return v
 }

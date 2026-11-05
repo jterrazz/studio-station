@@ -4,7 +4,7 @@ runs:
     - command: 'background --json | /usr/bin/jq -c ''[.schema, (.tasks | length), (.findings | map(.subject))]'''
       exit: 0
       stdout: |
-          ["station.background.list/v1",14,["com.bjango.istatmenus.installer","com.docker.socket","com.docker.vmnetd","com.jterrazz.brain.x-snapshot"]]
+          ["station.background.list/v1",14,["com.jterrazz.brain.x-snapshot","com.bjango.istatmenus.installer","com.docker.socket","com.docker.vmnetd"]]
     - command: 'background --json | /usr/bin/jq -c ''.tasks[] | select(.label == "com.docker.vmnetd" or .label == "com.jterrazz.brain.x-snapshot")'''
       exit: 0
       stdout: |

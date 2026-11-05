@@ -1,7 +1,6 @@
 package output
 
 import (
-	"encoding/json"
 	"io"
 
 	"github.com/jterrazz/studio-station/src/page"
@@ -17,6 +16,9 @@ type Want struct {
 	// value: the page the pipe prints instead, when the eye's nesting is not
 	// the records' order (Accounts: one record per account, machine first).
 	Records *page.Page
+	// value: what every document opens with, the machine and the time it
+	// was read; nil for a document printed as its call gave it.
+	Envelope *Envelope
 }
 
 func Terminal(in io.Reader, out io.Writer) *tty.Terminal { return tty.NewTerminal(in, out) }
@@ -30,11 +32,11 @@ func (w *Writer) Page(p page.Page, contract any, want Want) error {
 		_, err := out.Write(pagejson.Render(p))
 		return err
 	case c.Mode == JSON:
-		body, err := json.MarshalIndent(contract, "", "  ")
+		body, err := Document(contract, want.Envelope)
 		if err != nil {
 			return err
 		}
-		_, err = out.Write(append(body, '\n'))
+		_, err = out.Write(body)
 		return err
 	case c.Mode == Pipe && want.Piped != nil:
 		_, err := out.Write(want.Piped)

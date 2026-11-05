@@ -22,7 +22,7 @@ runs:
       stdout: |
           2
           2
-    - command: 'overview --json > o.json; "$STATION" disk --json | /usr/bin/jq -c ''.findings''; /usr/bin/jq -c ''[.findings[] | select(.section == "disk") | .text]'' o.json'
+    - command: 'overview --json > o.json; "$STATION" disk --json | /usr/bin/jq -c ''[.findings[].text]''; /usr/bin/jq -c ''[.findings[] | select(.section == "disk") | .text]'' o.json'
       exit: 0
       stdout: |
           ["~/.tart is misplaced"]

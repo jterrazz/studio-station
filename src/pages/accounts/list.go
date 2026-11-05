@@ -6,6 +6,8 @@ import (
 
 	model "github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/page"
 )
@@ -112,7 +114,15 @@ type MachineBlock struct {
 	Mark   page.Mark
 	Reason page.Reason
 	State  string
+	// value: how its document names it (SPEC §11.1), and why it was not
+	// read: the type and code of the error it answered, or that it is a server.
+	Label, Kind, On string
+	ThisMac         bool
+	Fault           Fault
+	Server          bool
 }
+
+type Fault struct{ Type, Code string }
 
 func EveryMachine(blocks []MachineBlock) page.Page {
 	var sections []page.Section
@@ -136,13 +146,46 @@ func EveryMachine(blocks []MachineBlock) page.Page {
 }
 
 type ListJSON struct {
-	Schema    string        `json:"schema"`
-	Machine   MachineRef    `json:"machine"`
-	Accounts  []AccountRow  `json:"accounts"`
-	Shares    []ShareRow    `json:"shares"`
-	ShareList []string      `json:"share_list"`
-	Machines  []ListJSON    `json:"machines,omitempty"`
-	Missing   []MissingNote `json:"unreachable,omitempty"`
+	Schema    string         `json:"schema"`
+	Machine   MachineRef     `json:"machine"`
+	Findings  []finding.JSON `json:"findings"`
+	Accounts  []AccountRow   `json:"accounts"`
+	Shares    []ShareRow     `json:"shares"`
+	ShareList []string       `json:"share_list"`
+}
+
+type EveryJSON struct {
+	Schema   string         `json:"schema"`
+	Findings []finding.JSON `json:"findings"`
+	Machines []MachineJSON  `json:"machines"`
+	Skipped  []SkippedJSON  `json:"skipped"`
+}
+
+type MachineJSON struct {
+	Machine   MachineName  `json:"machine"`
+	Accounts  []AccountRow `json:"accounts"`
+	Shares    []ShareRow   `json:"shares"`
+	ShareList []string     `json:"share_list"`
+	Error     *ErrorJSON   `json:"error"`
+}
+
+type MachineName struct {
+	Name    string  `json:"name"`
+	Label   string  `json:"label"`
+	Kind    string  `json:"kind"`
+	On      *string `json:"on"`
+	ThisMac bool    `json:"this_mac"`
+}
+
+type ErrorJSON struct {
+	Type    string  `json:"type"`
+	Code    *string `json:"code"`
+	Message string  `json:"message"`
+}
+
+type SkippedJSON struct {
+	Name string `json:"name"`
+	Why  string `json:"why"`
 }
 
 type MachineRef struct {
@@ -168,16 +211,11 @@ type ShareRow struct {
 	UntilAt time.Time `json:"until_at"`
 }
 
-type MissingNote struct {
-	Machine string `json:"machine"`
-	Why     string `json:"why"`
-}
-
 func ListContract(schema string, r accounts.Report, shared []model.Shared) ListJSON {
 	// invariant: names, states, who and scopes only: no field of it ever
 	// carries a token, a cookie or a key body.
 	r = r.Resolved()
-	out := ListJSON{Schema: schema, Accounts: []AccountRow{}, Shares: []ShareRow{}, ShareList: r.ShareList}
+	out := ListJSON{Schema: schema, Findings: finding.Doc(model.Findings(r, machine.Ref{})), Accounts: []AccountRow{}, Shares: []ShareRow{}, ShareList: r.ShareList}
 	if out.ShareList == nil {
 		out.ShareList = []string{}
 	}
@@ -199,6 +237,45 @@ func ListContract(schema string, r accounts.Report, shared []model.Shared) ListJ
 	for _, sh := range shared {
 		out.Shares = append(out.Shares, ShareRow{Account: sh.Account, VM: sh.VM, At: sh.At, UntilAt: sh.Until})
 	}
+	return out
+}
+
+func EveryMachineContract(schema string, blocks []MachineBlock) EveryJSON {
+	// invariant: one entry per Mac and workspace read, in the order of the
+	// page; one that did not answer keeps its place with its error, a
+	// server is skipped and said (SPEC §11.1).
+	out := EveryJSON{Schema: schema, Machines: []MachineJSON{}, Skipped: []SkippedJSON{}}
+	var fs []finding.Finding
+	for _, b := range blocks {
+		if b.Server {
+			out.Skipped = append(out.Skipped, SkippedJSON{Name: b.Name, Why: "server"})
+			continue
+		}
+		name := MachineName{Name: b.Name, Label: b.Label, Kind: b.Kind, ThisMac: b.ThisMac}
+		if b.On != "" {
+			on := b.On
+			name.On = &on
+		}
+		m := MachineJSON{Machine: name, Accounts: []AccountRow{}, Shares: []ShareRow{}, ShareList: []string{}}
+		if b.Mark != "" || b.Note != "" {
+			e := ErrorJSON{Type: b.Fault.Type, Message: b.Note}
+			if b.Fault.Code != "" {
+				code := b.Fault.Code
+				e.Code = &code
+			}
+			if e.Message == "" {
+				e.Message = b.State
+			}
+			m.Error = &e
+			out.Machines = append(out.Machines, m)
+			continue
+		}
+		one := ListContract(schema, b.Report, b.Shared)
+		m.Accounts, m.Shares, m.ShareList = one.Accounts, one.Shares, one.ShareList
+		out.Machines = append(out.Machines, m)
+		fs = append(fs, model.Findings(b.Report, machine.Ref{Name: b.Name, On: b.On})...)
+	}
+	out.Findings = finding.FleetDoc(fs)
 	return out
 }
 

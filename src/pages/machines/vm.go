@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
@@ -255,13 +256,13 @@ type VMOverviewJSON struct {
 	Detail string `json:"detail,omitempty"`
 	// value: what the VM reads of itself inside: its findings and one count
 	// set per section, as its own Overview carries them.
-	Findings []pagehome.SummaryFindingJSON `json:"findings"`
+	Findings []finding.JSON                `json:"findings"`
 	Sections []pagehome.SummarySectionJSON `json:"sections"`
 }
 
 func VMContract(o VMOverview, s *overview.Summary, schema string) VMOverviewJSON {
 	vm, h := o.VM, machines.HealthOf(o.VM)
-	inside := pagehome.SummaryJSON{Machine: pagehome.SummaryMachineJSON{Kind: "workspace"}, Findings: []pagehome.SummaryFindingJSON{}, Sections: []pagehome.SummarySectionJSON{}}
+	inside := pagehome.SummaryJSON{Machine: pagehome.SummaryMachineJSON{Kind: "workspace"}, Findings: []finding.JSON{}, Sections: []pagehome.SummarySectionJSON{}}
 	if s != nil {
 		inside = pagehome.SummaryContract(*s, schema)
 	}

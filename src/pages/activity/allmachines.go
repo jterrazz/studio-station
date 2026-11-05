@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/core/finding"
 	"github.com/jterrazz/studio-station/src/page"
 )
 
@@ -143,7 +144,7 @@ func AllMachines(views []View, here page.Context, graph bool) page.Page {
 }
 
 func AllMachinesContract(views []View, now time.Time) AllMachinesJSON {
-	out := AllMachinesJSON{Schema: Schema, GeneratedAt: now.UTC().Format(time.RFC3339), Findings: []FindingJSON{}, Machines: []EveryJSON{}}
+	out := AllMachinesJSON{Schema: Schema, GeneratedAt: now.UTC().Format(time.RFC3339), Findings: []finding.JSON{}, Machines: []EveryJSON{}}
 	for _, v := range views {
 		e := EveryJSON{Machine: machineOf(v), Body: body(v)}
 		for _, f := range e.Findings {
@@ -151,7 +152,10 @@ func AllMachinesContract(views []View, now time.Time) AllMachinesJSON {
 			out.Findings = append(out.Findings, f)
 		}
 		if v.Silent != "" {
-			e.Error = &ErrorJSON{Message: v.Silent}
+			e.Error = &ErrorJSON{Type: v.SilentType, Code: ptr(v.SilentCode), Message: v.Silent}
+			if v.SilentCode == "" {
+				e.Error.Code = nil
+			}
 		}
 		out.Machines = append(out.Machines, e)
 	}
