@@ -11,6 +11,10 @@
 #   gone TEXT   wait until the screen no longer shows TEXT
 #   send KEYS   type KEYS; \r, \x1b and \xNN escapes are keys
 #   file PATH   wait until PATH exists and is not empty, so a step can follow a stub's start
+#   settle      wait until COMMAND has drawn nothing for 0.2 s (1 s at most), so
+#               the next key reaches the frame the last one drew
+#   clipboard TEXT
+#               wait until COMMAND has set the clipboard to TEXT (OSC 52)
 #   screen      once COMMAND has drawn nothing for 0.2 s (1 s at most), print the
 #               screen's text, each line's trailing blanks and the blank bottom
 #               lines trimmed
@@ -26,6 +30,7 @@
 # Then it waits for COMMAND to exit and exits with its code. A wait that times out,
 # or a screen wait COMMAND exits before, prints the screen on stderr and exits 124.
 # usage: terminal [--size COLSxROWS] COMMAND [ARG...]
+import base64
 import codecs
 import fcntl
 import os
@@ -68,6 +73,7 @@ class Screen:
         self.state = "ground"
         self.seq = ""
         self.replies = b""
+        self.clipboard = None
 
     def blank(self):
         return [[" "] * self.cols for _ in range(self.rows)]
@@ -283,6 +289,13 @@ class Screen:
         # does, so a binary never waits on a reply a real terminal gives at once.
         if body == "11;?":
             self.replies += b"\x1b]11;rgb:0000/0000/0000\x1b\\"
+        # value: what the command copied, as a terminal keeps it for OSC 52.
+        if body.startswith("52;"):
+            data = body.split(";", 2)[-1]
+            try:
+                self.clipboard = base64.b64decode(data).decode()
+            except ValueError:
+                self.clipboard = None
 
     def painted(self, names):
         rows = self.rows_kept + list(self.cells)
@@ -440,6 +453,10 @@ def main():
             wait(lambda: os.path.isfile(arg) and os.path.getsize(arg) > 0, "never saw the file " + repr(arg), ended=False)
         elif verb == "send":
             os.write(fd, arg.encode().decode("unicode_escape").encode("latin-1"))
+        elif verb == "settle":
+            settle()
+        elif verb == "clipboard":
+            wait(lambda: screen.clipboard == arg, "the clipboard never held " + repr(arg) + ", it held " + repr(screen.clipboard))
         elif verb == "screen":
             settle()
             print(screen.text())
