@@ -35,9 +35,9 @@ type ListVM struct {
 	State    string `json:"state"`
 	Wanted   string `json:"wanted"`
 	// value: SPEC §7.2's steps a workspace has, each passed or not.
-	Health   ListHealth `json:"health"`
-	Restarts int        `json:"restarts"`
-	IP       string     `json:"ip"`
+	Health   ListHealth   `json:"health"`
+	Restarts ListRestarts `json:"restarts"`
+	IP       string       `json:"ip"`
 	// value: on its Mac's network; false is behind its Mac.
 	Bridged bool      `json:"bridged"`
 	Size    ListSize  `json:"size"`
@@ -63,6 +63,22 @@ type ListImage struct {
 	Version string `json:"version"`
 }
 
+type ListRestarts struct {
+	Count   int        `json:"count"`
+	LastAt  *time.Time `json:"last_at"`
+	Looping bool       `json:"looping"`
+	WaitS   int64      `json:"wait_s"`
+}
+
+func restartsOf(r Restarts) ListRestarts {
+	out := ListRestarts{Count: r.Count, Looping: r.Looping, WaitS: int64(r.Wait.Seconds())}
+	if !r.Last.IsZero() {
+		last := r.Last.UTC()
+		out.LastAt = &last
+	}
+	return out
+}
+
 type ListFinding struct {
 	Severity string `json:"severity"`
 	Section  string `json:"section"`
@@ -81,7 +97,7 @@ func ToList(f Fleet) ListDoc {
 		for _, vm := range Ordered(h.VMs) {
 			m.VMs = append(m.VMs, ListVM{
 				Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Lifetime: string(vm.Lifetime), State: string(vm.State),
-				Wanted: Wanted(vm), Health: HealthOf(vm), Restarts: vm.Restarts.Count, IP: vm.IP, Bridged: vm.Network == "bridged",
+				Wanted: Wanted(vm), Health: HealthOf(vm), Restarts: restartsOf(vm.Restarts), IP: vm.IP, Bridged: vm.Network == "bridged",
 				Size:  ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
 				Image: ListImage{Name: vm.Image, Version: vm.Version}, Detail: vm.Detail, Created: vm.CreatedAt,
 			})
