@@ -57,6 +57,9 @@ type Mac struct {
 	Locked bool `json:"locked,omitempty"`
 	// value: out of the tailnet's reach.
 	Offline bool `json:"offline,omitempty"`
+	// value: the owner runs station as root on this Mac (sudo station), as a
+	// setting that needs root asks; station itself never runs sudo.
+	Root bool `json:"root,omitempty"`
 	// value: a Mac that restarts does not answer until then.
 	Back time.Time `json:"back,omitzero"`
 	// value: the hypervisor this Mac has: empty, the one station is built

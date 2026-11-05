@@ -62,7 +62,7 @@ A VM behind its Mac is reached through Tailscale only, so its ports are Private 
 | `tailscale-funnel`  | the Mac's Funnel config (`tailscale serve status --json`, `AllowFunnel`) lists the port; a VM's own device is not read |
 | `lan`               | the port listens where the machine's network reaches it: every interface or a LAN address                              |
 
-No `--via` and an unknown route are refused (exit 2) with the three routes. `undeclare` asks yes or no, then the port is red again while it is still reachable outside Tailscale; a port never declared is refused (exit 2). Inside a VM both are refused: its Mac keeps them. In `--json` a declared port carries `declared: {via, by, seen, missing}`.
+No `--via` and an unknown route are refused (exit 2) with the three routes. `undeclare` asks yes or no, then the port is red again while it is still reachable outside Tailscale; a port never declared is refused (exit 2). Inside a VM both are refused: its Mac keeps them. The Remote login setting (`sshd`), applied on a Mac, declares its `22` through `ports.declare` (`your LAN · Remote login · by Settings`), and `settings off sshd` takes it back. In `--json` a declared port carries `declared: {via, by, seen, missing}`.
 
 Each Mac's reserved ports are one line at the end: `Reserved on This Mac: 2 of 1000 (40000-40999), 998 free`, one per Mac with `--all-machines`. In `--json` each Mac carries it in `range` (`mac`, `from`, `to`, `reserved`, `free`), read from its policy and lease file, so it is there with the engine down.
 

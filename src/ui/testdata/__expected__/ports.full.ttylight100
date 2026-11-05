@@ -11,7 +11,7 @@
 
  [1;38;2;30;102;245mPublic: reachable from anywhere else, internet or LAN, declared[m  [38;2;64;160;43m1 ●[m
 [38;2;108;111;133m               port  class   what  listens on           declared[m
-   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mmac-mini[m    [38;2;76;79;105m22[m  [38;2;76;79;105mpublic[m  [38;2;76;79;105mSSH[m   [38;2;76;79;105m*:22 all interfaces[m  [38;2;76;79;105mdeclared · lan[m
+   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mmac-mini[m    [38;2;76;79;105m22[m  [38;2;76;79;105mpublic[m  [38;2;76;79;105mSSH[m   [38;2;76;79;105m*:22 all interfaces[m  [38;2;76;79;105myour LAN · Remote login · by Settings[m
 
  [1;38;2;30;102;245mPrivate: shared with you on Tailscale[m  [38;2;64;160;43m2 ●[m  [38;2;108;111;133m1 ○[m
 [38;2;108;111;133m                      port  class    url                             state[m

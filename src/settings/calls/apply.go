@@ -73,6 +73,11 @@ var Apply = call.Call[Deps, ApplyIn, []settings.Change]{
 			if err := keep(ctx, d, t.it); err != nil {
 				return changes, err
 			}
+			if t.it.Declares != nil && d.Public != nil {
+				if err := d.Public.Declare(ctx, *t.it.Declares, t.it.Name); err != nil {
+					return changes, err
+				}
+			}
 			changes = append(changes, change)
 		}
 		return changes, nil

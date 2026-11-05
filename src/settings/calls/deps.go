@@ -38,6 +38,13 @@ type Deps struct {
 	// reports it has (a battery makes it a laptop).
 	Facts contract.Inspector
 	Caps  machine.Capabilities
+	// value: the ports family, which keeps what a setting declares public.
+	Public Public
+}
+
+type Public interface {
+	Declare(ctx context.Context, d catalog.Declares, by string) error
+	Undeclare(ctx context.Context, d catalog.Declares) error
 }
 
 type Shell interface {

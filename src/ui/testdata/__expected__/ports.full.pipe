@@ -2,7 +2,7 @@
 # Needs you: reachable outside Tailscale, not declared public	1 ✗
 ✗	mac-mini	5000	needs you	AirPlay Receiver	*:5000 all interfaces	declared no	System Settings > General > AirDrop & Handoff > AirPlay Receiver
 # Public: reachable from anywhere else, internet or LAN, declared	1 ●
-●	mac-mini	22	public	SSH	*:22 all interfaces	declared · lan
+●	mac-mini	22	public	SSH	*:22 all interfaces	your LAN · Remote login · by Settings
 # Private: shared with you on Tailscale	2 ●	1 ○
 ●	linux-1	5173	private	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
 ○	linux-1	5432	private		not listening · reserved 40002	postgres

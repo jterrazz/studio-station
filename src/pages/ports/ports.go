@@ -209,6 +209,9 @@ func PublicRow(p ports.Port) page.Row {
 	case !v.Seen:
 		row.Mark, row.Reason = page.Attention, page.Degraded
 		row.Cells[4] = page.Text("declared, but " + v.Missing)
+	case p.Declared.By != "":
+		r, _ := catalog.RouteNamed(p.Declared.Via)
+		row.Cells[4] = page.Texts(r.Label, catalog.DeclaredBy(p.Declared.By), "by Settings")
 	default:
 		r, _ := catalog.RouteNamed(p.Declared.Via)
 		row.Cells[4] = page.Texts(r.Label, r.Seen)

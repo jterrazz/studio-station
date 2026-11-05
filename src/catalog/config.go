@@ -78,13 +78,23 @@ func (p Procedure) Kind() EffectKind { return EffectKind("procedure:" + string(p
 
 func (p Procedure) Name() string { return string(p) }
 
+type Declares struct {
+	Port int
+	// value: the public route that reaches it, by its --via name, and the
+	// owner's words for the setting on the port's row.
+	Via, Label string
+}
+
 type ConfigItem struct {
 	// value: a procedure is its own kind of effect: one Applier each.
 	Name, Description, Help string
-	Category                ConfigCategory
-	Places                  []MachineKind
-	Requires                string
-	Inputs                  []Input
+	// value: the port the setting opens to the machine's network: applied,
+	// it is declared public; off, its declaration is taken back.
+	Declares *Declares `json:"-"`
+	Category ConfigCategory
+	Places   []MachineKind
+	Requires string
+	Inputs   []Input
 	// value: how this machine applies it; never on the wire, so a far
 	// Mac's report of the item decodes here (it holds an interface).
 	Effect      Effect `json:"-"`
@@ -152,7 +162,7 @@ var ConfigItems = []ConfigItem{
 	{Name: "power", Description: "Always-on power policy (no sleep, autorestart, wake)", Category: CategoryHeadless, Places: hostKind, Effect: ProcPower, Sets: []Value{{"autorestart", "1"}, {"sleep", "0"}, {"displaysleep", "5"}, {"disksleep", "0"}, {"powernap", "0"}, {"womp", "1"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist"), "pmset: no sleep, autorestart, wake")}},
 	{Name: "never-sleeps", Description: "Never sleeps: the engine keeps this Mac awake, its servers with it", Category: CategoryHeadless, Places: hostKind, Effect: ProcNeverSleeps, Sets: []Value{{"never sleeps", "held by the engine"}}, Reversible: true, Writes: []Stored{noted(conf("{config}/station/preferences.json"), "`never_sleeps`, the engine holds an idle-sleep assertion while it is set")}},
 	{Name: "lock-after-login", Description: "A LaunchAgent that locks the screen ~20s after auto-login", Category: CategoryHeadless, Places: hostKind, Effect: ProcLockAfterLogin, Sets: []Value{{"agent", "present"}, {"loaded", "yes"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Users/jterrazz.agent/Library/LaunchAgents/ai.jterrazz.lock-after-login.plist"), "the agent user's `lock-after-login.plist`"), noted(cache("/Users/jterrazz.agent/.openclaw/logs"), "its logs")}},
-	{Name: "sshd", Description: "macOS Remote Login (sshd)", Category: CategoryHeadless, Places: hostKind, Effect: ProcSshd, Sets: []Value{{"Remote Login", "on"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/System/Library/LaunchDaemons/ssh.plist"), "Remote Login, through systemsetup")}},
+	{Name: "sshd", Description: "macOS Remote Login (sshd)", Category: CategoryHeadless, Places: hostKind, Effect: ProcSshd, Declares: &Declares{Port: 22, Via: RouteLAN, Label: "Remote login"}, Sets: []Value{{"Remote Login", "on"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/System/Library/LaunchDaemons/ssh.plist"), "Remote Login, through systemsetup")}},
 	{Name: "backup-exclusions", Description: "Keep ~/.cache and station's VMs out of Time Machine", Category: CategorySystem, Places: hostKind, Effect: ProcBackupExclusions, Reversible: true, Writes: []Stored{
 		noted(conf("{cache}"), "a sticky Time Machine exclusion (`tmutil addexclusion`)"),
 		noted(conf("{data}/station/vms"), "a sticky Time Machine exclusion (`tmutil addexclusion`)"),

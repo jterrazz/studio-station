@@ -3,8 +3,15 @@ package wire
 import (
 	"context"
 	"errors"
+	"strconv"
 
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/fail"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/guest"
+	"github.com/jterrazz/studio-station/src/ports"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 
 	"github.com/spf13/cobra"
 
@@ -79,4 +86,23 @@ func portsCommands(env kit.Env, m machine) []*cobra.Command {
 		kit.Alias("services", list(kit.Alias("url", share(), "share"), kit.Alias("release", stop(), "stop-sharing")), "ports"),
 		kit.Alias("tailnet", list(), "ports"),
 	}
+}
+
+// invariant: what a setting declares public goes through ports' own calls,
+// on this Mac: the declarations are the ports family's to write.
+type settingsPublic struct{ calls call.Router }
+
+func (p settingsPublic) Declare(ctx context.Context, d catalog.Declares, by string) error {
+	in := portscalls.DeclareIn{Port: strconv.Itoa(d.Port), Via: d.Via, By: by}
+	_, err := call.Invoke(ctx, p.calls, coremachine.Ref{}, portscalls.Declare, in, nil)
+	return err
+}
+
+func (p settingsPublic) Undeclare(ctx context.Context, d catalog.Declares) error {
+	in := portscalls.UndeclareIn{Port: strconv.Itoa(d.Port), Confirm: confirm.Yes}
+	_, err := call.Invoke(ctx, p.calls, coremachine.Ref{}, portscalls.Undeclare, in, nil)
+	if f, ok := errors.AsType[*fail.Error](err); ok && f.Code == ports.CodeNotDeclared {
+		return nil
+	}
+	return err
 }
