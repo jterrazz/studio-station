@@ -1,4 +1,4 @@
-description: 'a call spins in the Progress strip with its seconds while every key works; a success toasts'
+description: 'a call spins in the Progress strip with its seconds while every key works; a success toasts for 4 s'
 fixture:
     - ../../__fixtures__/terminal/
 env:
@@ -17,6 +17,8 @@ runs:
           send j
           see i install
           send i
+          see Progress  ✓ Installed fd
+          run /bin/sleep 3
           see Progress  ✓ Installed fd
           gone ✓ Installed fd
           send q
