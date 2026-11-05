@@ -67,6 +67,7 @@ public struct Bars: View {
     let accented: Int
     let tint: Color?
     var waiting = false
+    var full = false
     @Environment(\.stationPalette) private var palette
 
     public init(_ points: [Int], height: CGFloat = Token.Tile.bars, accented: Int = 1, tint: Color? = nil) {
@@ -80,6 +81,7 @@ public struct Bars: View {
     // a steady series still shows its swing; a level one, half.
     func level(_ p: Int) -> Double {
         guard !waiting else { return 0.25 }
+        guard !full else { return 1 }
         guard let hi = points.max(), let low = points.min(), hi != low else { return 0.5 }
         let top = Double(max(hi, 1)), lo = Double(low)
         let floor = max(lo - max(top - lo, top / 10), 0)
@@ -91,6 +93,16 @@ public struct Bars: View {
     public static func pending(height: CGFloat = Token.Tile.bars) -> Bars {
         var bars = Bars(Array(repeating: 1, count: 12), height: height, accented: 0)
         bars.waiting = true
+        return bars
+    }
+
+    // value: the meter of a figure with no series: `slots` level bars, the
+    // last `lit` of them in the tint, every bar at full height, so a count reads as a filled share.
+    public static let slots = 12
+
+    public static func meter(_ lit: Int, of count: Int, height: CGFloat = Token.Tile.bars, tint: Color? = nil) -> Bars {
+        var bars = Bars(Array(repeating: 1, count: count), height: height, accented: min(max(lit, 0), count), tint: tint)
+        bars.full = true
         return bars
     }
 
