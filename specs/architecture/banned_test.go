@@ -20,6 +20,9 @@ type banned struct {
 	// read, and another program's own command line (`git config`, a fix the
 	// owner types).
 	allowed []string
+	// value: the word's other forms, each the same retired word (`lent`
+	// for `lend`).
+	forms []string
 }
 
 // invariant: rule words, SPEC §2.2: the words v3 retired, each for the
@@ -36,7 +39,7 @@ func bannedWords() []banned {
 		{word: "service"},
 		{word: "lease"},
 		{word: "publish"},
-		{word: "lend"},
+		{word: "lend", forms: []string{"lent", "lends", "lending"}},
 		{word: "recall"},
 		{word: "wish"},
 		{word: "probe"},
@@ -91,7 +94,11 @@ func visible(v any, skip bool, out *[]string) {
 func bannedIn(texts []string) []string {
 	var found []string
 	for _, b := range bannedWords() {
-		pattern := `\b` + regexp.QuoteMeta(b.word) + `\b`
+		words := []string{regexp.QuoteMeta(b.word)}
+		for _, f := range b.forms {
+			words = append(words, regexp.QuoteMeta(f))
+		}
+		pattern := `\b(?:` + strings.Join(words, "|") + `)\b`
 		if !b.exact {
 			pattern = `(?i)` + pattern
 		}
@@ -182,11 +189,11 @@ func TestBannedWordsBite(t *testing.T) {
 	page := map[string]any{
 		"id":       "fleet",
 		"context":  map[string]any{"kind": "host"},
-		"sections": []any{map[string]any{"title": "The fleet", "items": []any{map[string]any{"row": map[string]any{"label": "Dock reset", "cells": []any{map[string]any{"text": "storage"}}}}}}},
+		"sections": []any{map[string]any{"title": "The fleet", "items": []any{map[string]any{"row": map[string]any{"label": "Dock reset", "cells": []any{map[string]any{"text": "storage"}, map[string]any{"text": "lent"}}}}}}},
 	}
 	var texts []string
 	visible(page, false, &texts)
-	if got := bannedIn(texts); !slices.Equal(got, []string{"fleet", "storage"}) {
-		t.Errorf("a planted page says %v, want [fleet storage]: the id, the kind and Dock reset are not read", got)
+	if got := bannedIn(texts); !slices.Equal(got, []string{"fleet", "storage", "lend"}) {
+		t.Errorf("a planted page says %v, want [fleet storage lend]: the id, the kind and Dock reset are not read, lent is lend", got)
 	}
 }

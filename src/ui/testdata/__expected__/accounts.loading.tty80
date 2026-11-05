@@ -11,7 +11,7 @@ Accounts
   ├─ ◌ ssh
   └─ ◌ Docker
   ◌ linux-1               throwaway
-  └─ ● Claude             admin@jterrazz.com  lent  11h 40m left
+  └─ ● Claude             admin@jterrazz.com  shared  11h 40m left
   ◌ api                   permanent
-  └─ ◐ Claude             admin@jterrazz.com  lent  42m left
+  └─ ◐ Claude             admin@jterrazz.com  shared  42m left
        → station accounts share claude --with api

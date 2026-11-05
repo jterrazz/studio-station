@@ -62,12 +62,19 @@ func detail(a accounts.Account, more ...string) page.Value {
 	return page.Texts(append(append(more, a.Source, a.Detail), a.Notes...)...)
 }
 
+// invariant: a copy shared with a VM says so (SPEC §2.2: `lend` retired);
+// the contract keeps its origin values.
 func origin(a accounts.Account) page.Value {
-	if a.Origin == accounts.OriginBoth {
-		return page.Texts(accounts.OriginOwn, accounts.OriginLent)
+	switch a.Origin {
+	case accounts.OriginBoth:
+		return page.Texts(accounts.OriginOwn, shared)
+	case accounts.OriginLent:
+		return page.Text(shared)
 	}
 	return page.Text(a.Origin)
 }
+
+const shared = "shared"
 
 func identity(a accounts.Account) page.Value {
 	if len(a.Identity) == 0 {
