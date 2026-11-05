@@ -62,6 +62,9 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if env.Use != nil {
+				env.Use.Gone(in.Name, env.Use.Now())
+			}
 			return io.Page(pagemachines.Deleted(report, d.Here), nil)
 		},
 	}, env)

@@ -13,12 +13,15 @@ import (
 
 func Command(env kit.Env) *cobra.Command {
 	cmd := kit.Command(kit.Leaf[Input]{
-		Use:       "shell <zsh>",
-		Short:     "The script the ~/.zshrc block evaluates",
+		Use:       "shell <zsh|prompt>",
+		Short:     "The script the ~/.zshrc block evaluates, and its prompt segment",
 		Args:      cobra.ArbitraryArgs,
-		ValidArgs: []string{"zsh"},
+		ValidArgs: []string{"zsh", "prompt"},
 		Bind:      bind,
-		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
+		Run: func(ctx context.Context, in *Input, io kit.IO) error {
+			if in.Shell == prompt {
+				return io.Raw([]byte(segment(env)))
+			}
 			var completion bytes.Buffer
 			if err := io.ZshCompletion(&completion); err != nil {
 				return err
@@ -32,4 +35,17 @@ func Command(env kit.Env) *cobra.Command {
 	}, env)
 	cmd.Hidden = true
 	return cmd
+}
+
+// invariant: the segment reads the choice and never marks it used: a prompt
+// drawn is no command, so a terminal left alone still forgets it (SPEC §8.2).
+func segment(env kit.Env) string {
+	if env.Use == nil {
+		return ""
+	}
+	c, ok := env.Use.Read()
+	if !ok || c.Machine == "" || !c.Gone.IsZero() {
+		return ""
+	}
+	return "on " + c.Machine + "\n"
 }

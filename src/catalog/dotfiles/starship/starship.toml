@@ -12,6 +12,7 @@
 add_newline = true
 
 format = """
+${custom.station}\
 $directory\
 $git_branch\
 $git_status\
@@ -29,6 +30,13 @@ right_format = """$cmd_duration"""
 
 [fill]
 symbol = ' '
+
+[custom.station]
+when = 'test -n "$STATION_TERMINAL" && test -f "${XDG_STATE_HOME:-$HOME/.local/state}/station/use/$STATION_TERMINAL"'
+command = 'station shell prompt'
+shell = ['sh']
+style = 'yellow bold'
+format = '[$output]($style) '
 
 [directory]
 style = 'blue bold'

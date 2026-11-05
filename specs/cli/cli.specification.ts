@@ -62,10 +62,13 @@ if (binaryIsStale()) {
 // its second pass over the machines and engine/keep suites), every world's Macs run
 // the fake of that hypervisor instead of tart's; `two-macs-vz` is two-macs over vz.
 const hypervisor = process.env.STATION_SPEC_HYPERVISOR ?? '';
-const world = (seed: string, over: string) => ({
+// value: a world runs in a terminal with the station block (STATION_TERMINAL set);
+// `no-block` is two-macs from a terminal without it.
+const world = (seed: string, over: string, block = true) => ({
     STATION_WORLD: '$WORKDIR/world.json',
     STATION_WORLD_HYPERVISOR: over,
     STATION_WORLD_SEED: resolve(WORLDS, seed),
+    ...(block ? { STATION_TERMINAL: 'spec-terminal' } : {}),
 });
 const worlds = {
     ...Object.fromEntries(
@@ -73,6 +76,7 @@ const worlds = {
             .filter((name) => name.endsWith('.json'))
             .map((name) => [name.replace(/\.json$/u, ''), world(name, hypervisor)]),
     ),
+    'no-block': world('two-macs.json', hypervisor, false),
     'two-macs-vz': world('two-macs.json', 'vz'),
 };
 

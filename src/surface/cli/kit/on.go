@@ -11,8 +11,13 @@ import (
 
 type On struct {
 	Machine string
+	// value: the machine this terminal uses, when no --on names one.
+	Used    string
 	Here    string
 	Refresh func(ctx context.Context) error
+	// value: whether a machine of that name exists; an error when it cannot
+	// be told (a Mac that does not answer).
+	Known func(ctx context.Context, name string) (bool, error)
 }
 
 // invariant: the remote's answer is the outcome; a refresh that fails leaves the
@@ -28,10 +33,17 @@ func (o *On) refresh(ctx context.Context, path string) {
 }
 
 func (o *On) Target() (string, bool) {
-	if o == nil || o.Machine == "" || o.Machine == o.Here {
+	if o == nil {
 		return "", false
 	}
-	return o.Machine, true
+	name := o.Machine
+	if name == "" {
+		name = o.Used
+	}
+	if name == "" || name == o.Here {
+		return "", false
+	}
+	return name, true
 }
 
 func (e Env) Target() machine.Ref {
@@ -58,7 +70,7 @@ func refusesOn(path string) bool {
 		return false
 	}
 	switch words[0] {
-	case "shell", "completion", "help", "daemon", "guest":
+	case "shell", "completion", "help", "daemon", "guest", "use":
 		return true
 	}
 	return len(words) > 1 && (words[0] == "machines" && (words[1] == "supervise" || words[1] == "pipe") ||

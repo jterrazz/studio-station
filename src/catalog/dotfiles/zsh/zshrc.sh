@@ -9,6 +9,10 @@ if [[ -d /opt/homebrew/bin && ":$PATH:" != *":/opt/homebrew/bin:"* ]]; then
     export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
 fi
 
+# invariant: each shell start makes this terminal's id, which `station use` keeps its
+# machine under, so a new terminal starts on This Mac.
+export STATION_TERMINAL="${$}x${RANDOM}${RANDOM}"
+
 # invariant: a fresh machine without starship still gets a usable, path-only prompt.
 if command -v starship &>/dev/null; then
     export STARSHIP_CONFIG="$HOME/.config/starship.toml"
