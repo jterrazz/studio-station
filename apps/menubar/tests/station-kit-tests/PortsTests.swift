@@ -8,8 +8,8 @@ final class PortsTests: XCTestCase {
     func texts(_ values: [Value]?) -> [String] { (values ?? []).compactMap(\.text) }
 
     // invariant: PO-33: a shared port's row unfolds its link, its QR, Copy
-    // link and Open, which run nothing, and Stop sharing, a y/n whose yes is
-    // the ports.stop-sharing call of that port.
+    // link, which copies the link, Open, which opens it, and Stop sharing, a
+    // y/n whose yes is the ports.stop-sharing call of that port.
     func testPortRowQR() async throws {
         let page = try Tree.page("menubar.ports.linux-1")
         let row = try XCTUnwrap(page.section("private")?.rows.first)
@@ -29,6 +29,13 @@ final class PortsTests: XCTestCase {
         state.confirming = stop.id
         XCTAssertNil(try Golden.check("sheet.stop-sharing", try XCTUnwrap(MenuPage.view(state, handlers: handlers)), scheme: .dark))
         XCTAssertEqual(copied + opened.map(\.absoluteString) + asked.compactMap { $0 }, [])
+        let link = PortsPage.link(try XCTUnwrap(URL(string: url)), handlers: handlers)
+        XCTAssertEqual(link.map(\.label), ["Copy link", "Open"])
+        link[0].tap()
+        XCTAssertEqual(copied, [url])
+        XCTAssertEqual(opened, [])
+        link[1].tap()
+        XCTAssertEqual(opened.map(\.absoluteString), [url])
     }
 
     // invariant: PO-34: mac-mini's Ports: red on top, then Public, then
@@ -56,6 +63,7 @@ final class PortsTests: XCTestCase {
         XCTAssertEqual(fields.map(\.key), ["Port", "Via"])
         XCTAssertEqual(fields[0].options?.map(\.label), ["mac-mini:5000", "infra:10250", "mac-mini:5900", "infra:6443"])
         XCTAssertEqual(fields[1].options?.map(\.label), ["Cloudflare Tunnel", "Tailscale Funnel", "your LAN"])
+        XCTAssertEqual(PortsPage.routes(declare), "To open a port on purpose, declare it public by Cloudflare Tunnel, Tailscale Funnel or your LAN.")
         let input = Client.input(ActionRunner.filled(declare, answers: [:]), fixed: declare.run?.in)
         XCTAssertEqual(input as NSDictionary, ["Machine": "mac-mini", "Port": "5000", "Via": "cloudflare-tunnel"] as NSDictionary)
         var state = Snapshot.state("menubar.ports.mini", page)

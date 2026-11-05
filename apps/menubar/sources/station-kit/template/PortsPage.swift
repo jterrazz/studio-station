@@ -20,7 +20,7 @@ public struct PortsPage: View {
     public var body: some View {
         let summary = page.summary()
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
-            PushedHeader(back: summary?.label ?? page.context?.machine ?? "", title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()))
+            PushedHeader(back: summary?.label ?? page.context?.machine ?? "", title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()), action: handlers.back)
             if let red = page.section("needs-you") { needsYou(red) }
             if let public_ = page.section("public") {
                 SectionHead(public_.title ?? "")
@@ -112,6 +112,20 @@ public struct PortsPage: View {
 
     func state_qr(_ url: URL) -> Bool { state.qr == url.absoluteString }
 
+    // value: what a shared port's unfolded row does with its link: Copy
+    // link puts it on the pasteboard, Open opens it.
+    public static func link(_ url: URL, handlers: PopoverHandlers) -> [(label: String, tap: () -> Void)] {
+        [("Copy link", { handlers.copy(url.absoluteString) }), ("Open", { handlers.open(url) })]
+    }
+
+    // value: the note over Declare public, the routes in the words its form
+    // offers them.
+    public static func routes(_ declare: Action) -> String {
+        let labels = (declare.form?.fields?.first { $0.key == "Via" }?.options ?? []).compactMap(\.label)
+        let words = labels.count > 1 ? labels.dropLast().joined(separator: ", ") + " or " + labels[labels.count - 1] : labels.joined()
+        return "To open a port on purpose, declare it public by \(words)."
+    }
+
     func unfolded(_ r: Row, _ url: URL) -> some View {
         let stop = page.actions(for: r.id ?? "").first { $0.id?.hasPrefix("stop-sharing:") == true }
         return VStack(alignment: .leading, spacing: Token.Space.gap) {
@@ -121,8 +135,9 @@ public struct PortsPage: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Scan with your phone. Works on your Tailscale devices.").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 4) {
-                        Pill("Copy link") { handlers.copy(url.absoluteString) }
-                        Pill("Open", role: .primary) { handlers.open(url) }
+                        ForEach(Array(Self.link(url, handlers: handlers).enumerated()), id: \.offset) { i, l in
+                            Pill(l.label, role: i == 0 ? .plain : .primary, action: l.tap)
+                        }
                     }
                     if let stop { Pill(stop.label ?? "", role: .danger) { act.tap(stop) } }
                 }
@@ -137,7 +152,7 @@ public struct PortsPage: View {
         let share = page.action("share-port")
         return VStack(alignment: .leading, spacing: Token.Space.gap) {
             if let declare {
-                note("To open a port on purpose, declare it public: a Cloudflare Tunnel or Tailscale Funnel.")
+                note(Self.routes(declare))
                 if act.open(declare) { act.sheet(declare) } else { HStack { Pill(act.label(declare)) { act.tap(declare) }; Spacer() } }
             }
             if let share {
