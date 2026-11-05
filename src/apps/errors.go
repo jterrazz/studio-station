@@ -1,6 +1,11 @@
 package apps
 
-import "github.com/jterrazz/studio-station/src/catalog"
+import (
+	"strconv"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/catalog"
+)
 
 type UnknownError struct{ Name string }
 
@@ -72,4 +77,16 @@ func livesOn(places []catalog.MachineKind) string {
 		return "macos-vms-only"
 	}
 	return "no-machine"
+}
+
+type SignedOutError struct {
+	// value: a manager that waits on a sign-in it cannot ask for, read from
+	// its silence: the App Store queues nothing while it is signed out.
+	Manager string
+	Waited  time.Duration
+	Hint    string
+}
+
+func (e *SignedOutError) Error() string {
+	return e.Manager + " did not answer in " + strconv.Itoa(int(e.Waited.Seconds())) + " s, as when it is signed out: " + e.Hint
 }

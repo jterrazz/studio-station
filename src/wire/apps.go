@@ -93,7 +93,7 @@ func installers(m machine) (contract.Installers, contract.Bundler) {
 	registry := contract.Installers{}
 	for _, i := range []contract.Installer{
 		bundle.Formulae(), bundle.Casks(),
-		mas.New(run, bundle), npm.New(run, bundle), uv.New(run, bundle),
+		mas.New(run), npm.New(run, bundle), uv.New(run, bundle),
 		bun.New(run), mise.New(run),
 		skills.New(skills.Options{
 			Run: run, FS: m.host.FS, Net: m.host.Net, Home: m.host.Env.Home(),
