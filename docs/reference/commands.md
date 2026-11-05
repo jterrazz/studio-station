@@ -122,12 +122,12 @@ station machines unlock <mac>
 ### `station ports`
 
 ```sh
-station ports [--all-machines] [--json]       # the Tailscale line, then what this Mac shares for its VMs, at which URL
+station ports [--all-machines] [--all] [--json] # every listening port in its class: Needs you, Public, Private
 station ports share <vm> <port> [--json]      # reserve the port now and share it; inside a VM: station ports share <port>
 station ports stop-sharing <vm> <port> [--yes] # release it, and do not share it again until a share; inside a VM: <port>
 ```
 
-`--all-machines` asks every Mac over ssh. `share` prints the URL before anything listens, piped the URL alone; a port is refused on a VM that shares 20 already (exit 1, `Hint: station ports stop-sharing <vm> <port>`) and while This Mac is signed out of Tailscale (exit 1, the reservation kept). `stop-sharing` asks yes or no and is remembered in `preferences.json` (`services.not_shared`). `--json` is `station.ports.list/v1`. `services`, `services url`, `services release` and `tailnet` are hidden aliases for one release. See [Services](services.md).
+`--all-machines` asks every Mac over ssh; `--all` lists the ports that listen on their machine only, otherwise counted on one line. `share` prints the URL before anything listens, piped the URL alone; a port is refused on a VM that shares 20 already (exit 1, `Hint: station ports stop-sharing <vm> <port>`) and while This Mac is signed out of Tailscale (exit 1, the reservation kept). `stop-sharing` asks yes or no and is remembered in `preferences.json` (`services.not_shared`). `--json` is `station.ports.list/v1`. `services`, `services url`, `services release` and `tailnet` are hidden aliases for one release. See [Services](services.md).
 
 ### `station images`
 

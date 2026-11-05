@@ -12,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
 	"github.com/jterrazz/studio-station/src/ports/adapter/procnet"
+	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	guestcmd "github.com/jterrazz/studio-station/src/surface/cli/guest"
 	guestserve "github.com/jterrazz/studio-station/src/surface/cli/guest/serve"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -28,14 +29,16 @@ func (m machine) guest() *guest.Service {
 	}})
 }
 
-func (m machine) listeners(root string) guest.Listeners {
+// value: what listens here, read the way this system can: a Linux kernel's
+// /proc/net tables under root, a Mac's lsof.
+func (m machine) listeners(root string) portscontract.Listeners {
 	if m.world != nil {
 		return m.world.listeners()
 	}
-	if m.kind == catalog.MacOS {
-		return lsof.New(m.host.Run)
+	if m.kind == catalog.Linux {
+		return procnet.New(m.host.FS, root)
 	}
-	return procnet.New(m.host.FS, root)
+	return lsof.New(m.host.Run)
 }
 
 func guestCommand(env kit.Env, m machine) *cobra.Command {

@@ -9,6 +9,7 @@ import (
 	"io"
 	"maps"
 	"net/netip"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/ports"
 )
 
 const (
@@ -609,14 +611,19 @@ func (d *Daemon) fromGuest(ctx context.Context, v *vmState, line []byte) {
 		d.mu.Unlock()
 	case "snapshot":
 		seen := map[int]bool{}
+		heard := make([]ports.Listener, 0, len(m.Ports))
 		for _, p := range m.Ports {
 			seen[p.Port] = true
+			heard = append(heard, ports.Listener{Port: p.Port, Bind: p.IP, Process: p.Process})
 			d.listen(ctx, name, p.Port, p.IP, p.Process)
 		}
+		d.hear(name, heard)
 		d.unlistenExcept(name, seen)
 	case "listen":
+		d.hear(name, append(d.heardOf(name), ports.Listener{Port: m.Port, Bind: m.IP, Process: m.Process}))
 		d.listen(ctx, name, m.Port, m.IP, m.Process)
 	case "unlisten":
+		d.hear(name, slices.DeleteFunc(d.heardOf(name), func(l ports.Listener) bool { return l.Port == m.Port }))
 		d.unlisten(name, m.Port)
 	case "reply":
 		d.mu.Lock()
@@ -700,7 +707,7 @@ func hostPort(ip string, port int) string {
 func (d *Daemon) renderEnv(v *vmState) {
 	p := d.policy()
 	d.mu.Lock()
-	e := services.ExposureOf(d.self.On, d.self.Host)
+	e := d.exposureLocked()
 	var reserved []machines.Reserved
 	for _, pr := range catalog.Profiles {
 		if l, i := services.Find(d.leases, v.rec.Name, pr.Port); i >= 0 {

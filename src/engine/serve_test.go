@@ -235,8 +235,8 @@ func TestTheCertificateIsWarmedWhenServeTurnsOnOneAtATime(t *testing.T) {
 	h.d.publish(ctx, s)
 	h.d.mu.Unlock()
 	defer h.d.closeAll()
-	if r := h.d.hostView("").Services[0]; r.Detail != issuingDetail || r.URLs.Public != "https://x.tail1234.ts.net:40000" {
-		t.Fatalf("while the certificate is issued: row %+v, want the https URL with %q", r, issuingDetail)
+	if r := h.d.hostView("").Services[0]; r.Detail != catalog.IssuingDetail || r.URLs.Public != "https://x.tail1234.ts.net:40000" {
+		t.Fatalf("while the certificate is issued: row %+v, want the https URL with %q", r, catalog.IssuingDetail)
 	}
 	tn.turn(false)
 	h.d.step(ctx, serveEvery)

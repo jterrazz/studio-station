@@ -70,6 +70,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		Lends:       lends, Peer: m.engineAPI(),
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
+		Listening: m.listeners("/").Read, Declarations: m.stores.declarations.List,
 	})
 	lends.s = m.secretsVia(d, func(_ context.Context, vm string) (bool, error) {
 		for _, v := range d.VMs() {
@@ -179,7 +180,7 @@ func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile st
 	}
 	return machines.Reserved{
 		GuestPort: v.GuestPort, HostPort: v.HostPort, Profile: profile, URL: v.URLs.Public, PublicHost: hostOf(v.URLs.Public),
-		ServeOff: strings.Contains(v.Detail, catalog.ServeOffDetail),
+		ServeOff: strings.Contains(v.Detail, catalog.ServeOffDetail) || strings.Contains(v.Detail, catalog.SignedOutDetail),
 	}, nil
 }
 

@@ -1,12 +1,13 @@
  - Tailscale                                                                                                        1 ✗
-   ✗ Tailscale  signed out on This Mac: ports are local only
- - macbook  40000-40999 · 2 reserved · 998 free · 20 per VM                                                         3 ◐
-                      port  url                                 state
+   ✗ Tailscale  is signed out on This Mac: ports are local only
+ - Private: shared with you on Tailscale                                                                            4 ◐
+                       port  class    url                       state
    ◐ engine                                                     not shared while the engine is stopped
      → station engine start
-   ◐ linux-1  5173 → 40001  https://jterrazz-macbook-pr…:40001  not shared while the engine is stopped · reserved 40001
-   ◐ linux-1  5432 → 40002                                      not shared while the engine is stopped · reserved 40002
- - mac-mini                                                                                                         1 ◐
-               state
-   ◐ mac-mini  does not answer  → station machines
+   ◐ linux-1   5173 → 40001  private  https://jterrazz-…:40001  not shared while the engine is stopped · reserved 40001
+   ◐ linux-1   5432 → 40002  private                            not shared while the engine is stopped · reserved 40002
+   ◐ mac-mini                                                   does not answer
+     → station machines
+ - Reserved ports
+   Reserved on This Mac: 2 of 1000 (40000-40999), 998 free
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

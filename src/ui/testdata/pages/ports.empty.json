@@ -3,6 +3,7 @@
   "id": "ports",
   "command": "ports",
   "context": {
+    "machine": "macbook",
     "kind": "host"
   },
   "state": "ready",
@@ -50,9 +51,8 @@
       ]
     },
     {
-      "id": "ports",
-      "title": "Ports",
-      "role": "banner",
+      "id": "private",
+      "title": "Private: shared with you on Tailscale",
       "columns": [
         {
           "key": "vm",
@@ -64,6 +64,12 @@
           "label": "port",
           "kind": "portmap",
           "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
         },
         {
           "key": "url",
@@ -94,7 +100,8 @@
             }
           }
         }
-      ]
+      ],
+      "pipe_counts": true
     }
   ]
 }

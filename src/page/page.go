@@ -303,6 +303,7 @@ const (
 	Outlived    Reason = "stale"
 	Expiring    Reason = "expiring"
 	Guard       Reason = "guard"
+	Exposed     Reason = "exposed"
 )
 
 type Value struct {

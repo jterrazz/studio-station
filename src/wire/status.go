@@ -19,8 +19,6 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/platform/local"
-	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
-	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
 	settingscli "github.com/jterrazz/studio-station/src/settings/adapter/cli"
 	settingslinux "github.com/jterrazz/studio-station/src/settings/adapter/linux"
@@ -72,7 +70,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Hypervisor: m.hypervisor(),
 	}
 	var meter activitycontract.Meter
-	var listening portscontract.Listeners = lsof.New(h.Run)
+	listening := m.listeners("/")
 	if m.kind == catalog.Linux {
 		meter = activitylinux.New(h.Run, h.Clock)
 	} else {
@@ -80,7 +78,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	}
 	facts := m.facts()
 	if m.world != nil {
-		meter, listening = m.world.meter(), m.world.listeners()
+		meter = m.world.meter()
 	}
 	if m.kind != catalog.Linux {
 		// value: the status page reads listeners, jobs and app updates on a Mac only.

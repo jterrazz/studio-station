@@ -9,7 +9,9 @@ runs:
       exit: 0
       stdout: |
           ●	Tailscale	signed in · jterrazz-mac-mini.tail1234.ts.net · ports are shared
-          ○	infra	8080	https://jterrazz-mac-mini.tail1234.ts.net:40000	not listening · reserved 40000
+          # Private: shared with you on Tailscale	1 ○
+          ○	infra	8080	private	https://jterrazz-mac-mini.tail1234.ts.net:40000	not listening · reserved 40000
+          	Reserved on jterrazz-mac-mini: 1 of 1000 (40000-40999), 999 free
     - command: 'ports --json | /usr/bin/jq -c ''[.ports[] | .machine] | unique'''
       exit: 0
       stdout: |

@@ -1,6 +1,8 @@
 package overview
 
 import (
+	"strconv"
+
 	"time"
 
 	"github.com/jterrazz/studio-station/src/accounts"
@@ -82,13 +84,30 @@ func DiskRead(r disk.Reading, m machine.Ref) Read {
 }
 
 func PortsRead(l ports.Listing) Read {
-	// invariant: every port station shares is private (a VM's, on the
-	// tailnet); a public one is a declared port, none until they exist.
-	private := 0
+	// invariant: a port is counted in its class once, a shared one as its
+	// share; what listens on its machine only is not counted, and every port
+	// reachable outside the tailnet with no declaration needs you.
+	public, private := 0, 0
+	var heard []ports.Port
 	for _, h := range l.Fleet.Hosts {
-		private += len(h.Services)
+		shared := map[string]bool{}
+		for _, s := range h.Services {
+			shared[s.VM+":"+strconv.Itoa(s.GuestPort)] = true
+		}
+		private += len(shared)
+		for _, p := range h.Ports {
+			heard = append(heard, p)
+			switch {
+			case p.Class() == ports.Public:
+				public++
+			case shared[p.Key()] || p.Reach == ports.ThisMachine:
+			default:
+				private++
+			}
+		}
 	}
-	return Read{Line: Line{Section: section.Ports, Parts: []Part{{Word: "Public", Key: "public", Counted: true}, {Word: "Private", N: private, Key: "private", Counted: true}}}}
+	return Read{Line: Line{Section: section.Ports, Parts: []Part{{Word: "Public", N: public, Key: "public", Counted: true}, {Word: "Private", N: private, Key: "private", Counted: true}}},
+		Findings: ports.Exposed(heard)}
 }
 
 func AccountsRead(r accounts.Report, m machine.Ref) Read {

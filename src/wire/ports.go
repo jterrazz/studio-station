@@ -17,7 +17,8 @@ import (
 )
 
 func (m machine) services(_ kit.Env) *services.Service {
-	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure}
+	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure,
+		Listening: m.listeners("/").Read}
 	d := servicesDaemon{c: m.engineAPI()}
 	if m.kind != catalog.Host {
 		g := m.guest()
@@ -44,8 +45,10 @@ func (m machine) services(_ kit.Env) *services.Service {
 		}
 		return "", false, &services.UnknownVMError{Name: vm}
 	}
-	return services.New(m.host, services.Stores{Services: m.stores.services(), Name: m.stores.name(), Hosts: m.stores.hosts(), Reservations: m.stores.reservations}, d, o)
+	return services.New(m.host, services.Stores{Services: m.stores.services(), Name: m.stores.name(), Hosts: m.stores.hosts(), Reservations: m.stores.reservations, Declarations: m.stores.declarations}, d, o)
 }
+
+// value: what listens on this Mac, read by lsof, the world's in a world.
 
 // value: where this VM runs, as its guest's hello placed it.
 func (m machine) placement(g *guest.Service) guest.Placement {

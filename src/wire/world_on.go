@@ -425,6 +425,9 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 	if kept := m.slice().Engine.Awake; kept != nil {
 		d.RememberAwake(*kept)
 	}
+	if kept := m.slice().Engine.Exposure; kept != nil {
+		d.RememberExposure(*kept)
+	}
 	if err := d.Begin(context.WithValue(ctx, waits{}, true), func(string) {}); err != nil {
 		return nil, false
 	}
@@ -453,6 +456,7 @@ func (m *worldMac) down(forget bool) {
 		return
 	}
 	kept := m.engine.AwakeKept()
+	exposure := m.engine.ExposureKept()
 	memory := m.engine.Memory()
 	if !forget && !m.runs() {
 		m.engine.Stop()
@@ -467,9 +471,9 @@ func (m *worldMac) down(forget bool) {
 	defer m.run.w.Unlock()
 	if e := m.run.w.Mac(m.name).Engine; e != nil {
 		e.Memory = memory
-		e.Awake = &kept
+		e.Awake, e.Exposure = &kept, &exposure
 		if forget || e.Stopped {
-			e.Awake = nil
+			e.Awake, e.Exposure = nil, nil
 		}
 	}
 }

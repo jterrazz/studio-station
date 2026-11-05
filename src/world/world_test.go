@@ -1,7 +1,6 @@
 package world_test
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
@@ -37,13 +36,6 @@ func TestAnEventOutsideTheClosedListIsRefusedByName(t *testing.T) {
 	}
 	if _, err := world.Parse([]string{"reboot"}); err == nil || !strings.Contains(err.Error(), "world reboot takes <mac>") {
 		t.Errorf("a reboot of no Mac parsed as %v", err)
-	}
-}
-
-func TestAnEventNoFakeModelsIsRefusedAsSuch(t *testing.T) {
-	err := apply(t, seeded(t, laptop), "certificate", "mbp", "pending")
-	if !errors.Is(err, world.ErrNotModelled) {
-		t.Errorf("certificate applied as %v", err)
 	}
 }
 

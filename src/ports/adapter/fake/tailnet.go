@@ -108,4 +108,18 @@ func (t *Tailnet) Shared(context.Context) ([]ports.Share, error) {
 	return out, nil
 }
 
-func (t *Tailnet) Warm(context.Context) error { return nil }
+func (t *Tailnet) Warm(context.Context) error {
+	// invariant: a pending certificate is not issued for the whole command:
+	// the world changes only between two commands, and its clock is not the
+	// deadline's, so the wait is the world's alone.
+	if t.pending() {
+		select {}
+	}
+	return nil
+}
+
+func (t *Tailnet) pending() bool {
+	t.w.Lock()
+	defer t.w.Unlock()
+	return t.node().CertificatePending
+}

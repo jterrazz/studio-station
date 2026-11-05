@@ -21,6 +21,6 @@ var List = call.Call[Deps, ListIn, ports.Listing]{
 			return ports.Listing{Fleet: fleet}, err
 		}
 		node, err := d.Tailnet.Status(ctx)
-		return ports.Listing{Fleet: fleet, Tailnet: node}, err
+		return ports.Listing{Fleet: ports.OwnDevices(fleet, node.Peers), Tailnet: node}, err
 	},
 }

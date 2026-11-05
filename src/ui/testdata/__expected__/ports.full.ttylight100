@@ -4,11 +4,22 @@
  [1;38;2;30;102;245mTailscale[m
    [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mTailscale[m  [38;2;76;79;105msigned in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared[m
 
- [1;38;2;30;102;245mmacbook[m  [38;2;108;111;133m40000-40999 · 2 reserved · 998 free · 20 per VM[m
-[38;2;108;111;133m                      port  url                                      state[m
-   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mlinux-1[m  [38;2;76;79;105m5173 → 40001[m  [38;2;76;79;105mhttps://jterrazz-macbook-pro…:40001[m      [38;2;76;79;105mshared[m  [38;2;108;111;133mvite[m
-   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mlinux-1[m  [38;2;76;79;105m5432 → 40002[m                                           [38;2;76;79;105mnot listening · reserved 40002[m
+ [1;38;2;30;102;245mNeeds you: reachable outside Tailscale, not declared public[m  [38;2;210;15;57m1 ✗[m
+[38;2;108;111;133m               port  class      what              listens on             declared[m
+   [38;2;156;160;176m[m[38;2;210;15;57m✗[m [1;38;2;76;79;105mmac-mini[m  [38;2;76;79;105m5000[m  [38;2;76;79;105mneeds you[m  [38;2;76;79;105mAirPlay Receiver[m  [38;2;76;79;105m*:5000 all interfaces[m  [38;2;76;79;105mdeclared no[m
+     [38;2;108;111;133m→ [m[38;2;76;79;105mSystem Settings > General > AirDrop & Handoff > AirPlay Receiver[m
 
- [1;38;2;30;102;245mmac-mini[m
-[38;2;108;111;133m               state[m
-   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mmac-mini[m  [38;2;76;79;105mdoes not answer[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation machines[m
+ [1;38;2;30;102;245mPublic: reachable from anywhere else, internet or LAN, declared[m  [38;2;64;160;43m1 ●[m
+[38;2;108;111;133m               port  class   what  listens on           declared[m
+   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mmac-mini[m    [38;2;76;79;105m22[m  [38;2;76;79;105mpublic[m  [38;2;76;79;105mSSH[m   [38;2;76;79;105m*:22 all interfaces[m  [38;2;76;79;105mdeclared · lan[m
+
+ [1;38;2;30;102;245mPrivate: shared with you on Tailscale[m  [38;2;64;160;43m2 ●[m  [38;2;108;111;133m1 ○[m
+[38;2;108;111;133m                      port  class    url                             state[m
+   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mlinux-1[m  [38;2;76;79;105m5173 → 40001[m  [38;2;76;79;105mprivate[m  [38;2;76;79;105mhttps://jterrazz-macboo…:40001[m  [38;2;76;79;105mshared[m  [38;2;108;111;133mvite[m
+   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mlinux-1[m  [38;2;76;79;105m5432 → 40002[m  [38;2;76;79;105mprivate[m                                  [38;2;76;79;105mnot listening · reserved 40002[m
+   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105minfra[m            [38;2;76;79;105m6443[m  [38;2;76;79;105mprivate[m                                  [38;2;76;79;105mown Tailscale device: infra[m
+
+ [1;38;2;30;102;245mReserved ports[m
+   [38;2;76;79;105mReserved on This Mac: 2 of 1000 (40000-40999), 998 free[m
+   [38;2;76;79;105mReserved on mac-mini: 0 of 1000 (40000-40999), 1000 free[m
+   [38;2;76;79;105m1 more listens on its machine only[m

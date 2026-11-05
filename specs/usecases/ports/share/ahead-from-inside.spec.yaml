@@ -12,15 +12,16 @@ runs:
     - command: 'ports'
       exit: 0
       stdout: |
-          ○	linux-1	3000	https://jterrazz-macbook-pro.tail1234.ts.net:40000	not listening · reserved 40000
-          ●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
-          ●	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server
+          # Private: shared with you on Tailscale	2 ●	1 ○
+          ○	linux-1	3000	private	https://jterrazz-macbook-pro.tail1234.ts.net:40000	not listening · reserved 40000
+          ●	linux-1	5173	private	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
+          ●	linux-1	7000	private	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server
     - command: 'world listen linux-1 "*:3000" node'
       exit: 0
     - command: 'ports | /usr/bin/grep 3000'
       exit: 0
       stdout: |
-          ●	linux-1	3000	https://jterrazz-macbook-pro.tail1234.ts.net:40000	shared	node
+          ●	linux-1	3000	private	https://jterrazz-macbook-pro.tail1234.ts.net:40000	shared	node
     - command: '--version >/dev/null; /usr/bin/jq -c ''[.macs["jterrazz-macbook-pro"].tailnet.shares[].Reserved] | sort'' world.json'
       exit: 0
       stdout: |

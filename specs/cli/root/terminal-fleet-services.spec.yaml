@@ -1,4 +1,4 @@
-description: 'the Services tab holds the Tailscale line, each Mac''s range, and stops sharing another Mac''s port'
+description: 'the Services tab holds Tailscale, the private ports, each Mac''s range, and stops another''s'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/terminal/
@@ -15,7 +15,6 @@ runs:
           send \x1b[B
           send \x1b[B
           send \x1b[B
-          send \x1b[B
           send x
           within 30 see Stop sharing w:3000?
           send y
@@ -27,13 +26,13 @@ runs:
            ──────────────────────────────────────────────────────────────────────────────
            - Tailscale                                                                1 ●
              ● Tailscale  signed in · macbook.tail1234.ts.net · ports are shared
-           - x  40000-40999 · 0 reserved · 1000 free · 20 per VM                      1 ◐
-                       state
+           - Private: shared with you on Tailscale                               1 ●  1 ◐
+                               port  class    url                       state
              ◐ engine  the engine is not installed  → station setup
-           - y  40000-40099 · 1 reserved · 99 free · 20 per VM                        1 ●
-                          port  url                              state   process
-             ● w  3000 → 40000  https://y.tail1234.ts.net:40000  shared  node
-
+             ● w       3000 → 40000  private  https://y…:40000          shared
+           - Reserved ports
+             Reserved on This Mac: 0 of 1000 (40000-40999), 1000 free
+             Reserved on y: 1 of 100 (40000-40099), 99 free
 
 
 

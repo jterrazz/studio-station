@@ -1,7 +1,6 @@
 package world
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -27,10 +26,8 @@ type event struct {
 	apply func(w *World, args []string) error
 }
 
-var ErrNotModelled = errors.New("this world does not model it yet")
-
-// invariant: the closed list of world events (USE-CASES §0.2); an event the
-// fakes do not model yet is known, and refused as such.
+// invariant: the closed list of world events (USE-CASES §0.2), each one
+// played by the fakes.
 func events() []event {
 	return []event{
 		{"reboot", []string{"<mac>"}, reboot},
@@ -44,6 +41,7 @@ func events() []event {
 		{"reboot-inside", []string{"<vm>"}, ended(machines.RunEnd{Reason: machines.GuestReboot})},
 		{"listen", []string{"<machine>", "<bind>:<port>", "<process>"}, listen},
 		{"unlisten", []string{"<machine>", "<port>"}, unlisten},
+		{"container-run", []string{"<vm>", "<port>:<port>", "<container>", "[no-proxy]"}, containerRun},
 		{"edit", []string{"<machine>", "<file>", "[<text>]"}, edit},
 		{"unplug", nil, power(battery, func(p *Power) error { p.Source = "battery"; p.Charging = false; return nil })},
 		{"plug", nil, power(battery, func(p *Power) error { p.Source = "ac"; return nil })},
@@ -59,7 +57,7 @@ func events() []event {
 		{"address", []string{"<vm>", "<ip>"}, address},
 		{"slow", []string{"<machine>", "<duration>"}, slow},
 		{"reads", []string{"<mac>", "<fact>", "<value>"}, reads},
-		{"certificate", []string{"<mac>", "pending|issued"}, nil},
+		{"certificate", []string{"<mac>", "pending|issued"}, certificate},
 	}
 }
 
@@ -96,9 +94,6 @@ func (w *World) Apply(ev Event) error {
 	i := slices.IndexFunc(events(), func(e event) bool { return e.name == ev.Name })
 	if i < 0 {
 		return fmt.Errorf("unknown world event %q", ev.Name)
-	}
-	if events()[i].apply == nil {
-		return fmt.Errorf("world %s: %w", ev.Name, ErrNotModelled)
 	}
 	return events()[i].apply(w, ev.Args)
 }
@@ -302,6 +297,14 @@ func (w *World) Listening(machine string) []ports.Listener {
 	return *at
 }
 
+func (w *World) Containers(vm string) []Container {
+	v, err := w.vm(vm)
+	if err != nil {
+		return nil
+	}
+	return v.Containers
+}
+
 func listen(w *World, args []string) error {
 	at, err := w.listening(args[0])
 	if err != nil {
@@ -327,6 +330,29 @@ func unlisten(w *World, args []string) error {
 		return fmt.Errorf("world unlisten: %q is not a port", args[1])
 	}
 	*at = slices.DeleteFunc(*at, func(l ports.Listener) bool { return l.Port == port })
+	return nil
+}
+
+// invariant: a container publishes its port on the VM's every interface;
+// its engine's userland proxy listens on it too, unless the VM runs without
+// it.
+func containerRun(w *World, args []string) error {
+	v, err := w.vm(args[0])
+	if err != nil {
+		return err
+	}
+	published, _, ok := strings.Cut(args[1], ":")
+	port, perr := strconv.Atoi(published)
+	if !ok || perr != nil {
+		return fmt.Errorf("world container-run: %q is not <port>:<port>", args[1])
+	}
+	if len(args) == 4 && args[3] != "no-proxy" {
+		return fmt.Errorf("world container-run: %q is not no-proxy", args[3])
+	}
+	v.Containers = append(v.Containers, Container{Name: args[2], Published: []int{port}})
+	if len(args) < 4 {
+		v.Listening = append(v.Listening, ports.Listener{Port: port, Bind: "0.0.0.0", Process: "proxy", PID: 2000 + len(v.Listening)})
+	}
 	return nil
 }
 
@@ -417,4 +443,20 @@ func fault(w *World, args []string) error {
 	}
 	w.Script = append(w.Script, f)
 	return nil
+}
+
+func certificate(w *World, args []string) error {
+	m, err := w.known(args[0])
+	if err != nil {
+		return err
+	}
+	if m.Tailnet == nil {
+		return fmt.Errorf("world certificate: %s is not on the tailnet", args[0])
+	}
+	switch args[1] {
+	case "pending", "issued":
+		m.Tailnet.CertificatePending = args[1] == "pending"
+		return nil
+	}
+	return fmt.Errorf("world certificate: %q is not pending or issued", args[1])
 }

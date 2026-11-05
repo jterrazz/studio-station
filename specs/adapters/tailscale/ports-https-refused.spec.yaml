@@ -9,4 +9,4 @@ runs:
       exit: 0
       stdout: |
           ["local-only","https://macbook.tail1234.ts.net:42162","serve: Serve is not enabled on your tailnet."]
-          ◐	api	8000	https://macbook.tail1234.ts.net:42162	local only · serve: Serve is not enabled on your tailnet.
+          ◐	api	8000	private	https://macbook.tail1234.ts.net:42162	local only · serve: Serve is not enabled on your tailnet.

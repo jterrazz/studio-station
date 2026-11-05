@@ -17,7 +17,10 @@ runs:
       exit: 0
       stdout: |
           ●	Tailscale	signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
-          ●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
+          # Private: shared with you on Tailscale	2 ●
+          ●	linux-1	5173	private	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
+          ●	linux-1	7000	private		behind jterrazz-macbook-pro, not shared	server
+          	Reserved on This Mac: 1 of 1000 (40000-40999), 999 free
     - command: 'ports share linux-1 7000'
       exit: 0
       stdout: |
@@ -25,7 +28,7 @@ runs:
     - command: 'ports | /usr/bin/grep 7000'
       exit: 0
       stdout: |
-          ●	linux-1	7000	https://jterrazz-macbook-pro.tail1234.ts.net:40000	shared	server
+          ●	linux-1	7000	private	https://jterrazz-macbook-pro.tail1234.ts.net:40000	shared	server
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | {shared: ([.tailnet.shares[].Reserved] | sort), remembered: .preferences.services.not_shared}'' world.json'
       exit: 0
       stdout: |

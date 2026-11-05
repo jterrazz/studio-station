@@ -3,6 +3,7 @@
   "id": "ports",
   "command": "ports",
   "context": {
+    "machine": "macbook",
     "kind": "host"
   },
   "state": "ready",
@@ -32,7 +33,7 @@
             "cells": [
               {
                 "kind": "text",
-                "text": "signed out on This Mac: ports are local only"
+                "text": "is signed out on This Mac: ports are local only"
               }
             ],
             "reason": "down"
@@ -47,31 +48,8 @@
       ]
     },
     {
-      "id": "host-macbook",
-      "title": "macbook",
-      "role": "banner",
-      "caption": [
-        {
-          "kind": "range",
-          "n": 40000,
-          "of": 40999
-        },
-        {
-          "kind": "count",
-          "n": 2,
-          "unit": "reserved"
-        },
-        {
-          "kind": "count",
-          "n": 998,
-          "unit": "free"
-        },
-        {
-          "kind": "count",
-          "n": 20,
-          "unit": "per VM"
-        }
-      ],
+      "id": "private",
+      "title": "Private: shared with you on Tailscale",
       "columns": [
         {
           "key": "vm",
@@ -83,6 +61,12 @@
           "label": "port",
           "kind": "portmap",
           "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
         },
         {
           "key": "url",
@@ -118,6 +102,9 @@
                 "kind": "none"
               },
               {
+                "kind": "none"
+              },
+              {
                 "kind": "text",
                 "text": "not shared while the engine is stopped"
               }
@@ -138,6 +125,10 @@
                 "kind": "portmap",
                 "n": 5173,
                 "of": 40001
+              },
+              {
+                "kind": "text",
+                "text": "private"
               },
               {
                 "kind": "url",
@@ -180,6 +171,10 @@
                 "of": 40002
               },
               {
+                "kind": "text",
+                "text": "private"
+              },
+              {
                 "kind": "none"
               },
               {
@@ -205,18 +200,45 @@
             },
             "reason": "late"
           }
+        },
+        {
+          "row": {
+            "id": "mac-mini",
+            "mark": "attention",
+            "label": "mac-mini",
+            "cells": [
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "text",
+                "text": "does not answer"
+              }
+            ],
+            "reason": "unreachable",
+            "hint": {
+              "command": "station machines"
+            }
+          }
         }
       ],
       "counts": [
         {
           "mark": "attention",
-          "n": 3
+          "n": 4
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
-      "id": "host-mac-mini",
-      "title": "mac-mini",
+      "id": "ranges",
+      "title": "Reserved ports",
       "role": "banner",
       "columns": [
         {
@@ -229,6 +251,12 @@
           "label": "port",
           "kind": "portmap",
           "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
         },
         {
           "key": "url",
@@ -252,35 +280,12 @@
       ],
       "items": [
         {
-          "row": {
-            "id": "mac-mini",
-            "mark": "attention",
-            "label": "mac-mini",
-            "cells": [
-              {
-                "kind": "none"
-              },
-              {
-                "kind": "none"
-              },
-              {
-                "kind": "text",
-                "text": "does not answer"
-              }
-            ],
-            "reason": "unreachable",
-            "hint": {
-              "command": "station machines"
-            }
+          "note": {
+            "text": "Reserved on This Mac: 2 of 1000 (40000-40999), 998 free"
           }
         }
       ],
-      "counts": [
-        {
-          "mark": "attention",
-          "n": 1
-        }
-      ]
+      "uncounted": true
     }
   ],
   "actions": [

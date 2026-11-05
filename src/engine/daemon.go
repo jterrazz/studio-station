@@ -81,6 +81,10 @@ type Options struct {
 	// value: how the parts of what the engine tells are joined, as the
 	// presentation joins them.
 	Join func(parts ...string) string
+	// value: what listens on this Mac, and what the owner declared public;
+	// nil reads nothing, and the exposure job does not run.
+	Listening    func(ctx context.Context) ([]ports.Listener, error)
+	Declarations func(ctx context.Context) ([]ports.Declaration, error)
 	// value: when the engine process started, for a stepped engine that
 	// stands for one which outlived its command; zero is the Begin.
 	StartedAt time.Time
@@ -95,18 +99,26 @@ type Daemon struct {
 	st     Stores
 	o      Options
 
-	mu      sync.Mutex
-	vms     map[string]*vmState
-	svcs    map[string]*svc
-	leases  []services.Lease
-	self    ports.SharingState
-	read    bool
-	issuing bool
-	started time.Time
-	note    func(line string)
-	power   *power.Machine
-	awake   *power.Kept
-	hub     hub
+	mu   sync.Mutex
+	vms  map[string]*vmState
+	svcs map[string]*svc
+	// value: every address each running VM listens on, as its guest
+	// reported it, shared or not.
+	heard map[string][]ports.Listener
+	// value: when the exposure job last read, what each VM listened on
+	// then, and the red ports it told.
+	exposedAt time.Time
+	scanned   map[string][]ports.Listener
+	red       []string
+	leases    []services.Lease
+	self      ports.SharingState
+	read      bool
+	issuing   bool
+	started   time.Time
+	note      func(line string)
+	power     *power.Machine
+	awake     *power.Kept
+	hub       hub
 
 	notifier Notifier
 	serve    func(ctx context.Context, conn io.ReadWriteCloser)
@@ -145,7 +157,7 @@ func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st
 	if o.GuestPort == 0 {
 		o.GuestPort = 22
 	}
-	d := &Daemon{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, recallFailed: map[string]time.Time{}}
+	d := &Daemon{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, heard: map[string][]ports.Listener{}, recallFailed: map[string]time.Time{}}
 	d.power = d.newPower()
 	if o.Notifier != nil {
 		d.notifier = o.Notifier(d.logf)
@@ -320,6 +332,7 @@ func (d *Daemon) step(ctx context.Context, tick int) {
 	}
 	d.tick(ctx)
 	d.sweepLends(ctx)
+	d.watchExposure(ctx)
 	d.power.Tick()
 	d.watchState()
 }

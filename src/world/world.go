@@ -135,6 +135,8 @@ type Power struct {
 type Node struct {
 	Self   ports.Self    `json:"self"`
 	Shares []ports.Share `json:"shares,omitempty"`
+	// value: the host's certificate is asked for and not issued yet.
+	CertificatePending bool `json:"certificate_pending,omitempty"`
 }
 
 type Manager struct {
@@ -205,6 +207,8 @@ type Engine struct {
 	Memory engine.Memory `json:"memory,omitempty"`
 	// value: what the engine holds of Awake between two commands.
 	Awake *engine.AwakeKept `json:"awake,omitempty"`
+	// value: what the exposure job knows between two commands.
+	Exposure *engine.ExposureKept `json:"exposure,omitempty"`
 }
 
 func (m *Mac) EngineRuns() bool {
@@ -235,6 +239,14 @@ type VM struct {
 	Guest *Guest `json:"guest,omitempty"`
 	// value: what listens inside the VM.
 	Listening []ports.Listener `json:"listening,omitempty"`
+	// value: the containers run inside the VM, each with the ports
+	// it publishes.
+	Containers []Container `json:"containers,omitempty"`
+}
+
+type Container struct {
+	Name      string `json:"name"`
+	Published []int  `json:"published"`
 }
 
 type Boot struct {

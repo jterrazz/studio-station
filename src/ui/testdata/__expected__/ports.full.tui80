@@ -1,11 +1,21 @@
  - Tailscale                                                                1 ●
    ● Tailscale
      signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
- - macbook  40000-40999 · 2 reserved · 998 free · 20 per VM            1 ●  1 ○
-                      port  url                       state
-   ● linux-1  5173 → 40001  https://jterrazz-…:40001  shared  vite
-   ○ linux-1  5432 → 40002  not listening · reserved 40002
- - mac-mini                                                                 1 ◐
-               state
-   ◐ mac-mini  does not answer  → station machines
+ - Needs you: reachable outside Tailscale, not declared public              1 ✗
+               port  class      what              listens on           declared
+   ✗ mac-mini  5000  needs you  AirPlay Receiver  *:5000 all interfa…
+     declared no
+     → System Settings > General > AirDrop & Handoff > AirPlay Receiver
+ - Public: reachable from anywhere else, internet or LAN, declared          1 ●
+               port  class   what  listens on           declared
+   ● mac-mini    22  public  SSH   *:22 all interfaces  declared · lan
+ - Private: shared with you on Tailscale                               2 ●  1 ○
+                      port  class    url                       state
+   ● linux-1  5173 → 40001  private  https://jterrazz-…:40001  shared  vite
+   ○ linux-1  5432 → 40002  private  not listening · reserved 40002
+   ● infra            6443  private  own Tailscale device: infra
+ - Reserved ports
+   Reserved on This Mac: 2 of 1000 (40000-40999), 998 free
+   Reserved on mac-mini: 0 of 1000 (40000-40999), 1000 free
+   1 more listens on its machine only
  ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

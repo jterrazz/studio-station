@@ -1,14 +1,17 @@
 package engine
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
@@ -19,8 +22,6 @@ const (
 	headWait   = 2 * time.Second
 	busyRetry  = 10 * time.Second
 )
-
-const issuingDetail = "issuing certificate"
 
 type svc struct {
 	vm        string
@@ -70,7 +71,7 @@ func (d *Daemon) svcOf(vm string, port int) *svc {
 		s = &svc{vm: vm, port: port}
 		if i := d.leaseIndex(vm, port); i >= 0 {
 			s.st.Pinned = d.leases[i].Pinned
-			s.st.LastSeenAt = d.leases[i].LastSeenAt
+			s.st.LastSeenAt = cmp.Or(d.leases[i].LastSeenAt, d.leases[i].ReservedAt)
 			s.st.Phase = services.Waiting
 		}
 		d.svcs[key(vm, port)] = s
@@ -95,6 +96,8 @@ func (d *Daemon) apply(ctx context.Context, s *svc, acts []services.Action) {
 	}
 }
 
+// invariant: a workspace's port is shared as it starts listening; a
+// server's only once the owner shares it, its tooling choosing its routes.
 func (d *Daemon) listen(ctx context.Context, vm string, port int, ip, process string) {
 	p := d.policy()
 	if p.Ignores(port) || p.Stopped(vm, port) {
@@ -102,6 +105,9 @@ func (d *Daemon) listen(ctx context.Context, vm string, port int, ip, process st
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	if v := d.vms[vm]; v != nil && v.rec.Lifetime == machines.AlwaysOn && d.leaseIndex(vm, port) < 0 {
+		return
+	}
 	s := d.svcOf(vm, port)
 	s.ip, s.process = ip, process
 	now := d.h.Clock.Now().UTC().Truncate(time.Second)
@@ -140,13 +146,23 @@ func (d *Daemon) unlistenExcept(vm string, seen map[int]bool) {
 }
 
 func (d *Daemon) tickServices(ctx context.Context) {
+	// invariant: every reserved port ticks, listened on in this engine's
+	// life or not, so one idle past its days is released, and one served
+	// that its VM says nothing listens on is unshared.
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	now := d.h.Clock.Now()
+	for _, l := range slices.Clone(d.leases) {
+		d.svcOf(l.VM, l.GuestPort)
+	}
 	for _, s := range d.svcs {
 		var acts []services.Action
 		s.st, acts = services.Next(s.st, services.EvTick, now)
 		d.apply(ctx, s, acts)
+		_, told := d.heard[s.vm]
+		if v := d.vms[s.vm]; s.st.Phase == services.Waiting && s.served && (told || v == nil || v.state != StateRunning) {
+			d.unpublish(ctx, s)
+		}
 		if s.st.Phase == services.Published && len(s.listeners) == 0 && !s.retryAt.IsZero() && !now.Before(s.retryAt) {
 			d.publish(ctx, s)
 		}
@@ -156,6 +172,7 @@ func (d *Daemon) tickServices(ctx context.Context) {
 func (d *Daemon) vmStopped(ctx context.Context, vm string) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	delete(d.heard, vm)
 	for _, s := range d.svcs {
 		if s.vm == vm {
 			var acts []services.Action
@@ -374,8 +391,19 @@ func (d *Daemon) detectHTTP(ctx context.Context, s *svc) bool {
 	}
 }
 
+// value: how this Mac shares, and why it shares nothing when it is off: a
+// Mac signed out of the tailnet says so, not that Serve is off; the caller
+// holds d.mu.
+func (d *Daemon) exposureLocked() services.Exposure {
+	e := services.ExposureOf(d.self.On, d.self.Host)
+	if !e.On && d.self.Backend != ports.Running {
+		e.Off = catalog.SignedOutDetail
+	}
+	return e
+}
+
 func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View {
-	v := services.ViewOf(l, services.ExposureOf(d.self.On, d.self.Host), httpsMode, services.Waiting)
+	v := services.ViewOf(l, d.exposureLocked(), httpsMode, services.Waiting)
 	if s != nil {
 		switch s.st.Phase {
 		case services.Published, services.Closing:
@@ -387,11 +415,14 @@ func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View 
 		v.Process, v.Bind = s.process, s.ip
 		v.Detail = services.JoinDetail(services.JoinDetail(s.detail, s.serveNote), v.Detail)
 		if d.issuing && s.served && l.HTTP != nil && *l.HTTP {
-			v.Detail = services.JoinDetail(v.Detail, issuingDetail)
+			v.Detail = services.JoinDetail(v.Detail, catalog.IssuingDetail)
 		}
 		if s.refused {
 			v.State = services.Refused
 		}
+	}
+	if vs := d.vms[l.VM]; v.State == services.Waiting && vs != nil && vs.state != StateRunning {
+		v.Detail = services.JoinDetail(catalog.StoppedDetail(l.VM), v.Detail)
 	}
 	return v
 }
@@ -400,14 +431,17 @@ func (d *Daemon) hostView(vm string) services.HostView {
 	p := d.policy()
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	e := services.ExposureOf(d.self.On, d.self.Host)
+	e := d.exposureLocked()
 	out := services.HostView{
 		Name: d.m.HereName(), Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true, Version: d.o.Version},
 		PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Services: []services.View{},
 	}
+	if vm == "" {
+		out.Listening = d.listeningLocked()
+	}
 	off := ""
 	if !e.On {
-		off = catalog.ServeOffDetail
+		off = e.Off
 	}
 	for _, l := range d.leases {
 		if vm == "" || l.VM == vm {
@@ -512,7 +546,9 @@ func (d *Daemon) reconcileServe(ctx context.Context) {
 			if !justified {
 				e.Path = ""
 				_ = d.tn.Unshare(ctx, e)
+				continue
 			}
+			d.servedBefore(e.Port)
 		case e.Port == 443 && strings.Count(e.Path, "/") >= 2:
 			parts := strings.Split(strings.Trim(e.Path, "/"), "/")
 			justified := false
@@ -521,6 +557,20 @@ func (d *Daemon) reconcileServe(ctx context.Context) {
 			}
 			if vms[parts[0]] && !justified {
 				_ = d.tn.Unshare(ctx, e)
+			}
+		}
+	}
+}
+
+// invariant: a reserved port the tailnet already serves when the engine
+// starts is served until its VM says it no longer listens there.
+func (d *Daemon) servedBefore(hostPort int) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for _, l := range d.leases {
+		if l.HostPort == hostPort {
+			if s := d.svcOf(l.VM, l.GuestPort); s.st.Phase != services.Published {
+				s.served = true
 			}
 		}
 	}
