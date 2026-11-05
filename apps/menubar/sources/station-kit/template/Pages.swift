@@ -97,7 +97,9 @@ struct MachinesTree: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(Array((section.items ?? []).enumerated()), id: \.offset) { _, item in
-                if let mac = item.group {
+                if let g = item.group, g.head?.cells?.isEmpty ?? true {
+                    groups([item])
+                } else if let mac = item.group {
                     if let head = mac.head, only == nil || only!.contains(head.id ?? "") {
                         MachineLine(row: head, symbol: symbol(head), capsule: false, open: open)
                     }
