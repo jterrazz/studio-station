@@ -95,9 +95,12 @@ type Daemon struct {
 	st     Stores
 	o      Options
 
-	mu      sync.Mutex
-	vms     map[string]*vmState
-	svcs    map[string]*svc
+	mu   sync.Mutex
+	vms  map[string]*vmState
+	svcs map[string]*svc
+	// value: every address each running VM listens on, as its guest
+	// reported it, shared or not.
+	heard   map[string][]ports.Listener
 	leases  []services.Lease
 	self    ports.SharingState
 	read    bool
@@ -145,7 +148,7 @@ func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st
 	if o.GuestPort == 0 {
 		o.GuestPort = 22
 	}
-	d := &Daemon{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, recallFailed: map[string]time.Time{}}
+	d := &Daemon{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, heard: map[string][]ports.Listener{}, recallFailed: map[string]time.Time{}}
 	d.power = d.newPower()
 	if o.Notifier != nil {
 		d.notifier = o.Notifier(d.logf)

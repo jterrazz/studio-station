@@ -50,9 +50,8 @@
       ]
     },
     {
-      "id": "ports",
-      "title": "Ports",
-      "role": "banner",
+      "id": "private",
+      "title": "Private: shared with you on Tailscale",
       "columns": [
         {
           "key": "vm",
@@ -94,7 +93,8 @@
             }
           }
         }
-      ]
+      ],
+      "pipe_counts": true
     }
   ]
 }

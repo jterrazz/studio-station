@@ -4,5 +4,5 @@
  Tailscale
    ○ Tailscale  not installed  → station apps install tailscale
 
- Ports
+ Private: shared with you on Tailscale
    no shared ports  → station machines create

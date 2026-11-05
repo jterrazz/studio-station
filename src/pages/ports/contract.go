@@ -8,17 +8,22 @@ import (
 )
 
 type PortJSON struct {
-	Machine  string   `json:"machine"`
-	Port     int      `json:"port"`
-	Proto    string   `json:"proto"`
-	Process  string   `json:"process"`
-	Bind     []string `json:"bind"`
-	Class    string   `json:"class"`
-	Declared *string  `json:"declared"`
-	State    string   `json:"state"`
-	Reserved int      `json:"reserved,omitempty"`
-	URL      string   `json:"url,omitempty"`
-	Detail   string   `json:"detail,omitempty"`
+	Machine  string        `json:"machine"`
+	Port     int           `json:"port"`
+	Proto    string        `json:"proto"`
+	Process  string        `json:"process"`
+	What     string        `json:"what,omitempty"`
+	Bind     []string      `json:"bind"`
+	Class    string        `json:"class"`
+	Declared *DeclaredJSON `json:"declared"`
+	State    string        `json:"state,omitempty"`
+	Reserved int           `json:"reserved,omitempty"`
+	URL      string        `json:"url,omitempty"`
+	Detail   string        `json:"detail,omitempty"`
+}
+
+type DeclaredJSON struct {
+	Via string `json:"via"`
 }
 
 type RangeJSON struct {
@@ -78,17 +83,62 @@ func PortObject(s ports.ServiceView) PortJSON {
 		State: stateWord(s), Reserved: s.HostPort, URL: s.URLs.Public, Detail: s.Detail}
 }
 
+func ListenerObject(p ports.Port) PortJSON {
+	o := PortJSON{Machine: p.Machine.Name, Port: p.Port, Proto: "tcp", Process: p.Process, Bind: p.Binds, Class: string(p.Class())}
+	if w := p.What(); w != p.Process {
+		o.What = w
+	}
+	if p.Declared != nil {
+		o.Declared = &DeclaredJSON{Via: p.Declared.Via}
+	}
+	return o
+}
+
+// invariant: one object per port of a machine, red first, then public, then
+// private; a shared port is its share, told its class by what listens there.
 func ListContract(l ports.Listing) ListJSON {
 	body := BodyJSON{Schema: "station.ports.list/v1", Findings: []string{}, Ports: []PortJSON{}, Range: []RangeJSON{}}
-	var node *NodeJSON
+	var red, public, private []PortJSON
+	var all []ports.Port
 	for _, h := range l.Fleet.Hosts {
+		heard := map[string]ports.Port{}
+		for _, p := range h.Ports {
+			heard[p.Key()] = p
+		}
+		shared := map[string]bool{}
 		for _, s := range h.Services {
-			body.Ports = append(body.Ports, PortObject(s))
+			o := PortObject(s)
+			key := rowID(s.VM, s.GuestPort)
+			shared[key] = true
+			if p, ok := heard[key]; ok {
+				l := ListenerObject(p)
+				o.Bind, o.Class, o.Declared, o.What = l.Bind, l.Class, l.Declared, l.What
+			}
+			private = append(private, o)
+		}
+		for _, p := range h.Ports {
+			all = append(all, p)
+			switch {
+			case shared[p.Key()]:
+			case p.Red():
+				red = append(red, ListenerObject(p))
+			case p.Declared != nil:
+				public = append(public, ListenerObject(p))
+			case p.Reach == ports.ThisMachine:
+				body.LocalOnly++
+			default:
+				private = append(private, ListenerObject(p))
+			}
 		}
 		if r := h.Range; r != nil {
 			body.Range = append(body.Range, RangeJSON{Mac: h.Name, From: r.Low, To: r.High, Reserved: r.Leased, Free: r.Free})
 		}
 	}
+	body.Ports = append(append(append(body.Ports, red...), public...), private...)
+	for _, f := range ports.Exposed(all) {
+		body.Findings = append(body.Findings, f.Machine.Name+": "+f.Text)
+	}
+	var node *NodeJSON
 	if t := l.Tailnet; t.State != "" {
 		state := "on"
 		switch {

@@ -48,31 +48,8 @@
       ]
     },
     {
-      "id": "host-macbook",
-      "title": "macbook",
-      "role": "banner",
-      "caption": [
-        {
-          "kind": "range",
-          "n": 40000,
-          "of": 40999
-        },
-        {
-          "kind": "count",
-          "n": 2,
-          "unit": "reserved"
-        },
-        {
-          "kind": "count",
-          "n": 998,
-          "unit": "free"
-        },
-        {
-          "kind": "count",
-          "n": 20,
-          "unit": "per VM"
-        }
-      ],
+      "id": "private",
+      "title": "Private: shared with you on Tailscale",
       "columns": [
         {
           "key": "vm",
@@ -153,18 +130,40 @@
               "kind": "none"
             }
           }
+        },
+        {
+          "row": {
+            "id": "mac-mini",
+            "mark": "pending",
+            "label": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
         }
       ],
       "counts": [
         {
           "mark": "pending",
-          "n": 2
+          "n": 3
         }
-      ]
+      ],
+      "pipe_counts": true
     },
     {
-      "id": "host-mac-mini",
-      "title": "mac-mini",
+      "id": "ranges",
+      "title": "Reserved ports",
       "role": "banner",
       "columns": [
         {
@@ -200,33 +199,12 @@
       ],
       "items": [
         {
-          "row": {
-            "id": "mac-mini",
-            "mark": "pending",
-            "label": "mac-mini",
-            "cells": [
-              {
-                "kind": "pending"
-              },
-              {
-                "kind": "pending"
-              },
-              {
-                "kind": "pending"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
+          "note": {
+            "text": "Reserved on macbook: 2 of 1000 (40000-40999), 998 free"
           }
         }
       ],
-      "counts": [
-        {
-          "mark": "pending",
-          "n": 1
-        }
-      ]
+      "uncounted": true
     }
   ],
   "actions": [

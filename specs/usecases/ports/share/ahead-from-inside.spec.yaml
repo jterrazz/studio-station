@@ -12,6 +12,7 @@ runs:
     - command: 'ports'
       exit: 0
       stdout: |
+          # Private: shared with you on Tailscale	2 ●	1 ○
           ○	linux-1	3000	https://jterrazz-macbook-pro.tail1234.ts.net:40000	not listening · reserved 40000
           ●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
           ●	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server

@@ -45,6 +45,8 @@ type Options struct {
 	ReleaseOn func(ctx context.Context, host string, t Target, yes bool) (Lease, error)
 	VMHost    func(ctx context.Context, vm string) (host string, here bool, err error)
 	Exposure  func(ctx context.Context) Exposure
+	// value: what listens on this Mac; nil reads nothing.
+	Listening func(ctx context.Context) ([]ports.Listener, error)
 }
 
 type Stores struct {
@@ -52,6 +54,7 @@ type Stores struct {
 	Name         setupcontract.NamePrefs
 	Hosts        machinescontract.MacsPrefs
 	Reservations Reservations
+	Declarations portscontract.DeclarationStore
 }
 
 type Service struct {
@@ -163,7 +166,24 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 	}
 	view.Name, view.Here, view.Reachable = s.o.HereName, true, true
 	view.Range = s.rangeOf()
+	view.Ports, view.Listening = s.survey(ctx, view.Listening), nil
 	return view, nil
+}
+
+// invariant: this Mac's ports and its VMs', each in its class: the Mac's
+// read here, its VMs' as its engine heard them, nothing of a VM while the
+// engine is stopped.
+func (s *Service) survey(ctx context.Context, vms []ports.Machine) []ports.Port {
+	var mine []ports.Listener
+	if s.o.Listening != nil {
+		mine, _ = s.o.Listening(ctx)
+	}
+	here := ports.MacOf(s.o.HereName, mine)
+	var decl []ports.Declaration
+	if s.st.Declarations != nil {
+		decl, _ = s.st.Declarations.List(ctx)
+	}
+	return ports.Survey(append([]ports.Machine{here}, vms...), decl)
 }
 
 // invariant: the range is the host's policy and its lease file, so it reads the

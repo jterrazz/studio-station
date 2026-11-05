@@ -1,6 +1,7 @@
 package pages
 
 import (
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/background"
@@ -375,7 +376,27 @@ func portLists() []Fixture {
 		pending(pageports.List(ports.Listing{Fleet: serviceFleet(), Tailnet: tailnetStatus()}, here())),
 		pageports.List(ports.Listing{Tailnet: ports.Status{State: catalog.StateAbsent}}, here()),
 		pageports.List(ports.Listing{Fleet: stoppedServices(), Tailnet: ports.Status{State: catalog.StateOK, BackendState: "NeedsLogin"}}, here()),
-		pageports.List(ports.Listing{Fleet: serviceFleet(), Tailnet: tailnetStatus()}, here()))
+		pageports.List(ports.Listing{Fleet: portsFleet(), Tailnet: tailnetStatus()}, here()))
+}
+
+// value: the reference fleet's ports in their two classes: the mini's AirPlay
+// Receiver red, infra's API on its own tailnet device, a database on This
+// Mac's loopback folded.
+func portsFleet() services.Fleet {
+	f := serviceFleet()
+	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
+	f.Hosts[0].Ports = []ports.Port{
+		{Machine: coremachine.Ref{Name: "macbook"}, Port: 5432, Process: "postgres", Binds: []string{"127.0.0.1"}, Reach: ports.ThisMachine},
+		{Machine: coremachine.Ref{Name: "linux-1", On: "macbook"}, Port: 5173, Process: "node", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet},
+	}
+	f.Hosts[1] = services.HostView{Name: "mac-mini", Reachable: true, Daemon: services.DaemonInfo{Running: true}, Services: []services.View{},
+		Range: &services.Range{Low: 40000, High: 40999, Free: 1000, MaxPerVM: 20},
+		Ports: []ports.Port{
+			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},
+			{Machine: mini, Port: 22, Process: "sshd", Binds: []string{"*"}, Reach: ports.Outside, Declared: &ports.Declaration{Machine: mini.Name, Port: 22, Via: "lan"}},
+			{Machine: infra, Port: 6443, Process: "kube-apiserver", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet, Device: true},
+		}}
+	return f
 }
 
 func fleets() []Fixture {

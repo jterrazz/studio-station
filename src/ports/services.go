@@ -58,6 +58,10 @@ type HostServices struct {
 	HTTPS      string        `json:"https"`
 	Range      *Range        `json:"range,omitempty"`
 	Services   []ServiceView `json:"services"`
+	// value: what listens on each VM of this Mac, as its engine heard it.
+	Listening []Machine `json:"listening,omitempty"`
+	// value: every port this Mac and its VMs listen on, in its two classes.
+	Ports []Port `json:"ports,omitempty"`
 }
 
 type Range struct {

@@ -162,6 +162,7 @@ func (d *Daemon) tickServices(ctx context.Context) {
 func (d *Daemon) vmStopped(ctx context.Context, vm string) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	delete(d.heard, vm)
 	for _, s := range d.svcs {
 		if s.vm == vm {
 			var acts []services.Action
@@ -410,6 +411,9 @@ func (d *Daemon) hostView(vm string) services.HostView {
 	out := services.HostView{
 		Name: d.m.HereName(), Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true, Version: d.o.Version},
 		PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Services: []services.View{},
+	}
+	if vm == "" {
+		out.Listening = d.listeningLocked()
 	}
 	off := ""
 	if !e.On {

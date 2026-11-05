@@ -7,16 +7,16 @@ runs:
       exit: 0
       stdout: |
           # Needs you
+          ✗	port 3000 is reachable outside Tailscale
           ✗	ai.jterrazz.y is failing, last exit 1	station background remove ai.jterrazz.y
           ◐	Engine not set up	station setup
           ◐	Firewall: off	System Settings > Network > Firewall
           ◐	Remote login: on, not expected on a laptop	System Settings > General > Sharing > Remote Login
-          ◐	macOS updates: 1 update waiting	System Settings > General > Software Update
-          	2 more: station overview --all
+          	3 more: station overview --all
           	Apps	● 0 ok · ? 2 not managed · ○ 106 not installed
           	Settings	set by station · ● 0 of 15
           	Disk	● N free · 2.0 KB can rebuild
-          	Ports	Public 0 · Private 0
+          	Ports	Public 1 · Private 0
           	Accounts	● 1
           	Background	● 3 · ✗ 1 failing · ◐ 2 orphans
           	Awake	needs the engine
@@ -206,7 +206,12 @@ runs:
       exit: 0
       stdout: |
           ◐	Tailscale	signed in · ports are local only	Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
+          # Needs you: reachable outside Tailscale, not declared public	1 ✗
+          ✗	x	3000	node	*:3000 all interfaces	declared no
+          # Private: shared with you on Tailscale	1 ◐
           ◐	engine			the engine is not installed		station setup
+          	Reserved on This Mac: 0 of 1000 (40000-40999), 1000 free
+          	1 more listens on its machine only
     - command: 'status --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
@@ -238,4 +243,4 @@ runs:
     - command: 'ports --json | /usr/bin/jq -S -c ''del(.generated_at, .station.version?, .station.commit?) | (.. | objects | select(has("station_version")) | .station_version) |= "V"'''
       exit: 0
       stdout: |
-          {"findings":[],"local_only":0,"ports":[],"range":[{"free":1000,"from":40000,"mac":"x","reserved":0,"to":40999}],"schema":"station.ports.list/v1","tailscale":{"cli":"{{workdir}}/bin/tailscale","dns_name":"","ip":"100.64.0.1","name":"x","serve":"off","state":"serve-off","variant":""}}
+          {"findings":["x: port 3000 is reachable outside Tailscale"],"local_only":1,"ports":[{"bind":["0.0.0.0"],"class":"public","declared":null,"machine":"x","port":3000,"process":"node","proto":"tcp"}],"range":[{"free":1000,"from":40000,"mac":"x","reserved":0,"to":40999}],"schema":"station.ports.list/v1","tailscale":{"cli":"{{workdir}}/bin/tailscale","dns_name":"","ip":"100.64.0.1","name":"x","serve":"off","state":"serve-off","variant":""}}

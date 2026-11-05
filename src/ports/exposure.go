@@ -35,7 +35,9 @@ const (
 	Outside
 )
 
-var tailnetAddresses = []netip.Prefix{netip.MustParsePrefix("100.64.0.0/10"), netip.MustParsePrefix("fd7a:115c:a1e0::/48")}
+func tailnetAddresses() []netip.Prefix {
+	return []netip.Prefix{netip.MustParsePrefix("100.64.0.0/10"), netip.MustParsePrefix("fd7a:115c:a1e0::/48")}
+}
 
 func ReachOf(bind string, at Placement) Reach {
 	// invariant: SPEC 5.6.1: loopback reaches this machine only; the tailnet
@@ -53,7 +55,7 @@ func ReachOf(bind string, at Placement) Reach {
 	switch {
 	case err == nil && ip.IsLoopback():
 		return ThisMachine
-	case err == nil && slices.ContainsFunc(tailnetAddresses, func(p netip.Prefix) bool { return p.Contains(ip) }):
+	case err == nil && slices.ContainsFunc(tailnetAddresses(), func(p netip.Prefix) bool { return p.Contains(ip) }):
 		return Tailnet
 	case at == BehindMac:
 		return Tailnet
@@ -62,10 +64,8 @@ func ReachOf(bind string, at Placement) Reach {
 }
 
 type Machine struct {
-	Ref machine.Ref
-	At  Placement
-	// value: the machine has its own device on the tailnet.
-	Device    bool
+	Ref       machine.Ref
+	At        Placement
 	Listening []Listener
 }
 
@@ -74,10 +74,23 @@ type Port struct {
 	Port    int
 	Process string
 	// value: every address it listens on, in the order the system reported them.
-	Binds    []string
-	Reach    Reach
+	Binds []string
+	Reach Reach
+	// value: its machine is a VM with its own tailnet device.
 	Device   bool
 	Declared *Declaration
+}
+
+func MacOf(name string, ls []Listener) Machine {
+	return Machine{Ref: machine.Ref{Name: name}, At: OnMac, Listening: ls}
+}
+
+func VMOf(name, mac string, bridged bool, ls []Listener) Machine {
+	at := BehindMac
+	if bridged {
+		at = Bridged
+	}
+	return Machine{Ref: machine.Ref{Name: name, On: mac}, At: at, Listening: ls}
 }
 
 func (p Port) Key() string { return p.Machine.Name + ":" + strconv.Itoa(p.Port) }
@@ -113,7 +126,7 @@ func Classify(m Machine, decl []Declaration) []Port {
 		}
 		i := slices.IndexFunc(out, func(p Port) bool { return p.Port == l.Port })
 		if i < 0 {
-			out = append(out, Port{Machine: m.Ref, Port: l.Port, Process: l.Process, Device: m.Device, Reach: ThisMachine})
+			out = append(out, Port{Machine: m.Ref, Port: l.Port, Process: l.Process, Reach: ThisMachine})
 			i = len(out) - 1
 		}
 		p := &out[i]
@@ -148,6 +161,28 @@ func Exposed(ps []Port) []finding.Finding {
 			f.Fix.Path = k.Off
 		}
 		out = append(out, f)
+	}
+	return out
+}
+
+func OwnDevices(f Fleet, peers []Node) Fleet {
+	// invariant: a VM is its own tailnet device when a peer bears its name,
+	// as this node or the node of the Mac that answered for it sees it.
+	for i, h := range f.Hosts {
+		for j, p := range h.Ports {
+			if p.Machine.On != "" && slices.ContainsFunc(peers, func(n Node) bool { return n.Name == p.Machine.Name }) {
+				f.Hosts[i].Ports[j].Device = true
+			}
+		}
+	}
+	return f
+}
+
+func Survey(ms []Machine, decl []Declaration) []Port {
+	// invariant: every machine's ports in their class, machine by machine.
+	var out []Port
+	for _, m := range ms {
+		out = append(out, Classify(m, decl)...)
 	}
 	return out
 }

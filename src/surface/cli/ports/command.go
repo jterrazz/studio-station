@@ -17,17 +17,18 @@ type Deps struct {
 	Here page.Context
 }
 
-type Input struct{ AllMachines bool }
+type Input struct{ AllMachines, All bool }
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 	cmd := kit.Command(kit.Leaf[Input]{
 		Use:   "ports",
-		Short: "What your VMs share on the tailnet, at which URL, and whether the tailnet carries it",
-		Example: "  station ports\n  station ports --all-machines\n  station ports --json\n" +
+		Short: "What listens on your machines, who reaches it, and what your VMs share on the tailnet",
+		Example: "  station ports\n  station ports --all-machines\n  station ports --all\n  station ports --json\n" +
 			"  station ports share linux-1 3000\n  station ports stop-sharing linux-1 3000",
 		Group: kit.OnAMachine,
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.AllMachines, "all-machines", false, "every Mac's ports")
+			f.BoolVar(&in.All, "all", false, "the ports that listen on their machine only, too")
 		},
 		Read:  func(*Input) bool { return true },
 		Pages: true,
@@ -36,7 +37,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pageports.List(l, d.Here), pageports.ListContract(l))
+			return io.Page(pageports.Listed(l, d.Here, in.All), pageports.ListContract(l))
 		},
 	}, env)
 	cmd.AddCommand(children...)
