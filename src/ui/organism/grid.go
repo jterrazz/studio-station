@@ -382,6 +382,22 @@ func (g Grid) layout(entries []entry) (cols []column, labelWidth int) {
 	return cols, labelWidth
 }
 
+func (g Grid) Dropped() []string {
+	// value: the labels of the columns a short line left out whole, in their
+	// order, so a screen can say which (SPEC §9.9).
+	wide := g
+	wide.Width = 1 << 16
+	all, _ := wide.layout(wide.entries())
+	kept, _ := g.layout(g.entries())
+	var out []string
+	for _, c := range all {
+		if c.label != "" && !slices.ContainsFunc(kept, func(k column) bool { return k.label == c.label }) {
+			out = append(out, c.label)
+		}
+	}
+	return out
+}
+
 // invariant: a long path never crushes a row's detail: while the details of
 // the rows that fill the last column lack room (up to DetailMin each; the
 // other rows' details sit beside their own cells), a column holding a path is

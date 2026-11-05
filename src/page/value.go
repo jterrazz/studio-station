@@ -49,6 +49,17 @@ func Until(t, now time.Time) Value {
 	return Value{Kind: KindUntil, At: t.UTC().Format(time.RFC3339), N: int64(t.Sub(now).Seconds())}
 }
 
+func Spark(samples []int, now Value) Value {
+	// value: a value led by its last samples, oldest first, as a sparkline;
+	// the pipe keeps the value alone, the field it always had.
+	items := make([]Value, 0, len(samples)+1)
+	items = append(items, now)
+	for _, x := range samples {
+		items = append(items, Count(int64(x), ""))
+	}
+	return Value{Kind: KindSpark, Items: items}
+}
+
 func URL(s string) Value { return Value{Kind: KindURL, Text: s} }
 
 func Identity(s string) Value { return Value{Kind: KindIdentity, Text: s} }

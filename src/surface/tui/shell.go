@@ -32,21 +32,24 @@ type read struct {
 }
 
 type shell struct {
-	ctx       context.Context
-	cancel    context.CancelFunc
-	deps      Deps
-	width     int
-	height    int
-	dark      bool
-	machines  *page.Page
-	nodes     []node
-	at        string
-	sec       int
-	focus     ui.Pane
-	side      int
-	reads     map[string]read
-	lists     map[string]ui.List
-	asked     map[string]bool
+	ctx      context.Context
+	cancel   context.CancelFunc
+	deps     Deps
+	width    int
+	height   int
+	dark     bool
+	machines *page.Page
+	nodes    []node
+	at       string
+	sec      int
+	focus    ui.Pane
+	side     int
+	reads    map[string]read
+	lists    map[string]ui.List
+	asked    map[string]bool
+	// value: the CPU percent of each machine at each read of Activity across
+	// every machine this session made, the newest last.
+	samples   map[string][]int
 	filtering bool
 	sheet     bool
 }
@@ -56,7 +59,7 @@ const machinesKey = "\x00machines"
 func newShell(ctx context.Context, d Deps) shell {
 	ctx, cancel := context.WithCancel(ctx)
 	s := shell{ctx: ctx, cancel: cancel, deps: d, width: 110, height: 30, dark: true, at: d.Here.Machine,
-		focus: ui.PaneMaster, reads: map[string]read{}, lists: map[string]ui.List{}, asked: map[string]bool{}}
+		focus: ui.PaneMaster, reads: map[string]read{}, lists: map[string]ui.List{}, asked: map[string]bool{}, samples: map[string][]int{}}
 	s.nodes = tree(d.Here, nil)
 	s.side = s.sectionEntry()
 	s.asked[s.key(s.current(), s.section())] = true
@@ -153,6 +156,9 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
+	if msg.key == s.key(s.nodes[0], section.Activity) && r.err == nil {
+		s.samples = sampled(s.samples, msg.page)
+	}
 	if l, ok := s.lists[msg.key]; ok || r.err == nil {
 		s.lists = with(s.lists, msg.key, l.Show(r.page))
 	}
@@ -187,9 +193,7 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "]":
 		return s.show(s.sec + 1)
 	case "ctrl+r":
-		shown := s.key(s.current(), s.section())
-		s.asked = with(s.asked, shown, false)
-		return s.ask(shown, words(s.current(), s.section()))
+		return s.again()
 	case "esc":
 		return s.back()
 	default:
@@ -208,7 +212,7 @@ func (s shell) quit() (tea.Model, tea.Cmd) {
 
 func (s shell) typing(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	key := s.key(s.current(), s.section())
-	l := s.lists[key]
+	l := s.list(key)
 	switch k.String() {
 	case "esc":
 		s.filtering = false
@@ -230,7 +234,7 @@ func (s shell) typing(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (s shell) back() (tea.Model, tea.Cmd) {
 	key := s.key(s.current(), s.section())
-	if l := s.lists[key]; l.Filter != "" {
+	if l := s.list(key); l.Filter != "" {
 		s.lists = with(s.lists, key, l.Filtered(""))
 		return s, nil
 	}
@@ -255,17 +259,17 @@ func (s shell) open(name string) (tea.Model, tea.Cmd) {
 	if s.focus == ui.PaneDetail {
 		s.focus = ui.PaneMaster
 	}
-	return s.ask(s.key(s.current(), s.section()), words(s.current(), s.section()))
+	return s.load()
 }
 
 func (s shell) show(i int) (tea.Model, tea.Cmd) {
 	n := len(s.sections(s.current()))
 	s.sec = (i%n + n) % n
 	s.side = s.sectionEntry()
-	if s.focus == ui.PaneDetail && !s.listed() {
+	if s.focus == ui.PaneDetail && !s.detailed() {
 		s.focus = ui.PaneMaster
 	}
-	return s.ask(s.key(s.current(), s.section()), words(s.current(), s.section()))
+	return s.load()
 }
 
 func (s shell) sidebar(key string) (tea.Model, tea.Cmd) {
@@ -300,7 +304,7 @@ func (s shell) sidebar(key string) (tea.Model, tea.Cmd) {
 
 func (s shell) master(key string) (tea.Model, tea.Cmd) {
 	k := s.key(s.current(), s.section())
-	l := s.lists[k]
+	l := s.list(k)
 	switch key {
 	case "up", "k":
 		l = l.Move(-1)
@@ -317,12 +321,15 @@ func (s shell) master(key string) (tea.Model, tea.Cmd) {
 			s.focus = ui.PaneSidebar
 		}
 	case "right", "l":
-		if s.listed() {
+		if s.detailed() {
 			s.focus = ui.PaneDetail
 		}
 	case "enter":
+		if name, ok := s.opened(); ok && s.table() {
+			return s.open(name)
+		}
 		var opened bool
-		if l, opened = l.Unfold(); !opened && s.listed() {
+		if l, opened = l.Unfold(); !opened && s.detailed() {
 			s.focus = ui.PaneDetail
 		}
 	case "/":
@@ -337,12 +344,28 @@ func (s shell) master(key string) (tea.Model, tea.Cmd) {
 func (s shell) sidebarShown() bool { return s.width >= ui.SidebarFrom }
 
 func (s shell) listed() bool {
+	if s.table() {
+		return true
+	}
 	switch s.section() {
 	case section.Overview, section.Activity, section.Awake, section.SSH:
 		return false
 	default:
 		return true
 	}
+}
+
+func (s shell) detailed() bool { return s.listed() && !s.table() }
+
+func (s shell) masterWidth() int {
+	width := s.width - 2
+	if s.sidebarShown() {
+		width -= ui.SidebarWidth
+	}
+	if s.detailed() && s.width >= ui.ThreePanes {
+		width -= ui.DetailWidth
+	}
+	return width
 }
 
 func (s shell) page(n node, id section.ID) (page.Page, bool) {
@@ -381,13 +404,36 @@ func (s shell) sections(n node) []section.ID {
 	return slices.DeleteFunc(kind, func(id section.ID) bool { return id != section.Overview && !slices.Contains(lines, id) })
 }
 
+func sampled(samples map[string][]int, p page.Page) map[string][]int {
+	out := make(map[string][]int, len(samples))
+	for k, v := range samples {
+		out[k] = v
+	}
+	for _, sec := range p.Sections {
+		if sec.ID != "machines" {
+			continue
+		}
+		for _, it := range sec.Items {
+			if it.Row == nil {
+				continue
+			}
+			pct, err := strconv.Atoi(strings.TrimSpace(strings.TrimSuffix(ui.Plain(column(sec, *it.Row, "cpu")), "%")))
+			if err != nil {
+				continue
+			}
+			out[it.Row.ID] = append(slices.Clone(out[it.Row.ID]), pct)[max(len(out[it.Row.ID])+1-sparkPoints, 0):]
+		}
+	}
+	return out
+}
+
 func (s shell) cycle(step int) ui.Pane {
 	var panes []ui.Pane
 	if s.sidebarShown() {
 		panes = append(panes, ui.PaneSidebar)
 	}
 	panes = append(panes, ui.PaneMaster)
-	if s.listed() {
+	if s.detailed() {
 		panes = append(panes, ui.PaneDetail)
 	}
 	i := max(slices.Index(panes, s.focus), 0)
@@ -638,17 +684,11 @@ func (s shell) frame() ui.Shell {
 	}
 	f.Cursor = s.side
 	key := s.key(s.current(), s.section())
-	l, r := s.lists[key], s.reads[key]
+	l, r := s.list(key), s.reads[key]
 	title := l.Title(s.section().Title()) + ui.Sep + s.current().label
 	room := max(s.height-5, 1)
-	width := s.width - 2
-	if f.ShowSidebar {
-		width -= ui.SidebarWidth
-	}
-	detail := s.listed() && (s.width >= ui.ThreePanes || s.focus == ui.PaneDetail)
-	if detail && s.width >= ui.ThreePanes {
-		width -= ui.DetailWidth
-	}
+	width := s.masterWidth()
+	detail := s.detailed() && (s.width >= ui.ThreePanes || s.focus == ui.PaneDetail)
 	switch {
 	case !r.done:
 		f.Master = ui.Panel{Title: title, Lines: []string{" " + ui.Glyph(page.Awaiting) + " " + s.section().Title() + ui.Sep + "reading " + strings.Join(words(s.current(), s.section()), " ")}}

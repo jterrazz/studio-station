@@ -115,7 +115,7 @@ func (l List) Lines(s Shell, width, room int, focused bool) []string {
 		top = append(top, organism.Strip(st, *l.Page.Strip, width), "")
 		room = max(room-len(top), 1)
 	}
-	lines := l.lines(st, width)
+	lines := l.lines(st, width, s.Width)
 	if len(lines) == 0 {
 		if l.Filter != "" {
 			return []string{" " + st.Muted.Render("Nothing matches /"+l.Filter+token.Sep+"esc clears it")}
@@ -161,7 +161,7 @@ func (l List) folded(id string) bool {
 
 func (l List) keys() []string {
 	var keys []string
-	for _, x := range l.lines(token.New(true), token.SplitWidth) {
+	for _, x := range l.lines(token.New(true), token.SplitWidth, token.SplitWidth) {
 		if x.Key != "" && (x.Kind == organism.LineTitle || x.Kind == organism.LineRow) && !slices.Contains(keys, x.Key) {
 			keys = append(keys, x.Key)
 		}
@@ -185,7 +185,7 @@ func (l List) match(r page.Row) bool {
 	return false
 }
 
-func (l List) lines(st token.Styles, width int) []organism.Line {
+func (l List) lines(st token.Styles, width, columns int) []organism.Line {
 	var out []organism.Line
 	for _, s := range l.Page.Sections {
 		g := organism.Grid{Styles: st, Section: s, Width: width, Medium: molecule.TUI, Keys: molecule.NoKeys, Folded: l.folded, Match: l.match}
@@ -209,8 +209,22 @@ func (l List) lines(st token.Styles, width int) []organism.Line {
 			continue
 		}
 		out = append(out, body...)
+		if dropped := g.Dropped(); s.SaysDropped && len(dropped) > 0 {
+			said := strconv.Itoa(columns) + " columns: " + and(dropped) + " left out"
+			if more := said + token.Sep + "widen for more"; atom.Width(more) < width-token.Margin-token.Indent {
+				said = more
+			}
+			out = append(out, organism.Line{Kind: organism.LineOther}, organism.Line{Kind: organism.LineOther, Text: atom.Spaces(token.Margin+token.Indent) + st.Muted.Render(said)})
+		}
 	}
 	return out
+}
+
+func and(words []string) string {
+	if len(words) < 2 {
+		return strings.Join(words, "")
+	}
+	return strings.Join(words[:len(words)-1], ", ") + " and " + words[len(words)-1]
 }
 
 func findRow(items []page.Item, id string) (page.Row, bool) {

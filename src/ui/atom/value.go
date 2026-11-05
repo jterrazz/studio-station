@@ -26,6 +26,8 @@ func Plain(v page.Value) string {
 		return strings.Join(parts, token.Sep)
 	case page.KindPending:
 		return ""
+	case page.KindSpark:
+		return Plain(sparkNow(v))
 	case page.KindUntil:
 		return v.At
 	default:
@@ -48,9 +50,22 @@ func Show(v page.Value) string {
 		return token.Arrow + " " + v.Text
 	case page.KindPending:
 		return ""
+	case page.KindSpark:
+		samples := make([]int, 0, len(v.Items))
+		for _, x := range v.Items[min(1, len(v.Items)):] {
+			samples = append(samples, int(x.N))
+		}
+		return Spark(samples) + " " + Show(sparkNow(v))
 	default:
 	}
 	return show(v)
+}
+
+func sparkNow(v page.Value) page.Value {
+	if len(v.Items) == 0 {
+		return page.None()
+	}
+	return v.Items[0]
 }
 
 func show(v page.Value) string {
@@ -67,6 +82,8 @@ func show(v page.Value) string {
 	switch v.Kind {
 	case page.KindNone, "", page.KindPending, page.KindListing:
 		return ""
+	case page.KindSpark:
+		return Show(v)
 	case page.KindCount:
 		n := strconv.FormatInt(v.N, 10)
 		if g := Glyph(page.Mark(v.Label)); g != "" && v.Unit == "" {

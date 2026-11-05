@@ -20,8 +20,10 @@ func (s shell) paneKeys() []ui.Binding {
 		return []ui.Binding{bind("left", "list"), bind("esc", "back")}
 	}
 	keys := []ui.Binding{bind("up/down", "move")}
-	if _, folded := s.lists[s.key(s.current(), s.section())].Unfold(); folded {
+	if _, folded := s.list(s.key(s.current(), s.section())).Unfold(); folded {
 		keys = append(keys, bind("enter", "unfold"))
+	} else if s.table() {
+		keys = append(keys, bind("enter", "open"))
 	} else if s.listed() {
 		keys = append(keys, bind("enter", "detail"))
 	}

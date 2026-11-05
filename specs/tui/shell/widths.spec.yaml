@@ -1,4 +1,4 @@
-description: 'three panes at 110, the detail over the list at 105, no sidebar at 70, one line under 60'
+description: 'three panes at 110, the detail over the list at 105, the All machines table leaving columns out at 85 and saying which, no sidebar at 70, one line under 60'
 fixture:
     - ../../__fixtures__/terminal/
 env:
@@ -23,6 +23,27 @@ runs:
           see ┏━ This Mac ━
           send q
       exit: 0
+    - command: '--version >/dev/null; terminal --size 85x34 "$STATION" | /usr/bin/sed -n "4,14p" | /usr/bin/cut -c25-'
+      stdin: |
+          see mac-mini         1
+          send \x1b
+          see 85 columns:
+          gone ◌
+          screen
+          send q
+      exit: 0
+      stdout: |
+          ┃     MACHINE     KIND       CPU    PORTS  NEED             ┃
+          ┃   ● This Mac    Mac        ▃ 34%  0 · 0  9                ┃
+          ┃   ├─ ○ api      Workspace  –      –      –                ┃
+          ┃   └─ ● linux-1  Workspace  ▁ 8%   0 · 2  –                ┃
+          ┃   ● mac-mini    Mac        ▂ 21%  0 · 0  1                ┃
+          ┃   └─ ● infra    Server     ▂ 18%  0 · 0  –                ┃
+          ┃                                                           ┃
+          ┃   85 columns: MEMORY, DISK and AWAKE left out             ┃
+          ┃                                                           ┃
+          ┃   4 running · 1 stopped · PORTS: public · private         ┃
+          ┃                                                           ┃
     - command: '--version >/dev/null; terminal --size 70x34 "$STATION" | /usr/bin/head -3'
       stdin: |
           see Needs you
