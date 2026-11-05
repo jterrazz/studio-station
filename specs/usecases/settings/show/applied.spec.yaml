@@ -17,11 +17,11 @@ runs:
           lives on	Macs
           where	~/.local/bin/tart
           applied	3 h ago
-    - command: 'settings power'
+    - command: 'settings restart-after-power-cut'
       exit: 0
       stdout: |
-          ○	power	not applied	station settings apply power
+          ○	restart-after-power-cut	not applied	station settings apply restart-after-power-cut
           # Detail
           group	Set by station · Always-on Mac
-          does	Always-on power policy (no sleep, autorestart, wake)
+          does	Restarts after a power cut, and wakes for the network
           lives on	Macs

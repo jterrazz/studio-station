@@ -96,7 +96,7 @@ func snapshot() pagehome.Overview {
 		Tools: toolReports,
 		Config: []config.Report{
 			{Item: catalog.ConfigItem{Name: "hushlogin", Description: "Silence the login banner"}, State: catalog.StateOK, Applies: true},
-			{Item: catalog.ConfigItem{Name: "power", Description: "Always-on power policy"}, State: catalog.StateDegraded, Detail: "policy partly applied", Applies: true},
+			{Item: catalog.ConfigItem{Name: "restart-after-power-cut", Description: "Restarts after a power cut, and wakes for the network"}, State: catalog.StateDegraded, Detail: "partly applied", Applies: true},
 		},
 		Setup:    overview.Setup{State: catalog.StateOK, Steps: []overview.Step{{Name: "name", State: catalog.StateOK, Detail: "macbook"}}},
 		Identity: []overview.Check{check("git-email", catalog.StateOK, "admin@jterrazz.com", ""), check("git-signing", catalog.StateOK, "on", "")},
@@ -423,7 +423,7 @@ func outcomes() []Fixture {
 		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Method: catalog.MethodCask, Detail: "brew bundle exited 1"},
 	}
 	changes := []settings.Change{
-		{Item: "power", Verb: "apply", Result: catalog.StateOK, Before: []settings.KeyValue{{Key: "sleep", Value: "10"}}, After: []settings.KeyValue{{Key: "sleep", Value: "0"}}},
+		{Item: "restart-after-power-cut", Verb: "apply", Result: catalog.StateOK, Before: []settings.KeyValue{{Key: "autorestart", Value: "0"}}, After: []settings.KeyValue{{Key: "autorestart", Value: "1"}}},
 		{Item: catalog.HypervisorLauncher, Verb: "apply", Result: catalog.StateOK},
 	}
 	cleaned := []storage.Outcome{
@@ -438,7 +438,7 @@ func outcomes() []Fixture {
 	out = append(out, states("outcome-settings-apply",
 		pending(pagesettings.Changes("apply", changes, here())),
 		pagesettings.Changes("apply", nil, here()),
-		failure("outcome", "settings apply", "power needs root", "sudo station settings apply power"),
+		failure("outcome", "settings apply", "restart-after-power-cut needs admin rights", "sudo station settings apply restart-after-power-cut"),
 		pagesettings.Changes("apply", changes, here()))...)
 	return append(out, states("outcome-disk-free",
 		pending(pagedisk.Freed(cleaned, here())),

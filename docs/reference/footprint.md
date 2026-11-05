@@ -602,37 +602,37 @@ Free: delete `~/.cache/mole/*`, delete `~/Library/Logs/mole/*`. Erase: none (not
 
 ## Settings
 
-| Setting           | Path                                                                            | Group         | Note                                                                     |
-| ----------------- | ------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------ |
-| hushlogin         | `~/.hushlogin`                                                                  | never touched |                                                                          |
-| ghostty-dotfiles  | `~/.config/ghostty/config`                                                      | never touched | the embedded `ghostty/config`                                            |
-| ghostty-dotfiles  | `~/.config/ghostty/themes/catppuccin-espresso-blur`                             | never touched | the embedded `ghostty/themes/catppuccin-espresso-blur`                   |
-| ghostty-dotfiles  | `~/.config/ghostty/themes/catppuccin-latte-blur`                                | never touched | the embedded `ghostty/themes/catppuccin-latte-blur`                      |
-| tmux-dotfiles     | `~/.tmux.conf`                                                                  | never touched | the embedded `tmux/tmux.conf`                                            |
-| starship-dotfiles | `~/.config/starship.toml`                                                       | never touched | the embedded `starship/starship.toml`                                    |
-| git-signing       | `~/.gnupg`                                                                      | never touched |                                                                          |
-| git-signing       | `~/.gitconfig`                                                                  | never touched | `git config --global` user.signingkey, commit.gpgsign                    |
-| ssh-key           | `~/.ssh/id_ed25519`                                                             | never touched |                                                                          |
-| ssh-key           | `~/.ssh/id_ed25519.pub`                                                         | never touched |                                                                          |
-| ssh-key           | `~/.ssh/config`                                                                 | never touched | the `Host *` stanza: `UseKeychain yes`, `IdentityFile ~/.ssh/id_ed25519` |
-| github-login      | `~/.config/gh/hosts.yml`                                                        | never touched | gh's login                                                               |
-| spotlight-exclude | `/System/Volumes/Data/.Spotlight-V100`                                          | never touched | the Spotlight privacy list, through System Settings                      |
-| dns               | `~/.local/state/station/dns/quad9-dns.mobileconfig`                             | never touched | installed as the profile `com.jterrazz.dns.quad9`                        |
-| claude-token      | `~/.config/studio-os`                                                           | never touched | `operator:claude:oauth-token` in the OS credential store                 |
-| zed-dotfiles      | `~/.config/zed/settings.json`                                                   | never touched | the embedded `zed/settings.json`                                         |
-| zed-dotfiles      | `~/.config/zed/.oxfmtrc.json`                                                   | never touched | the embedded `zed/.oxfmtrc.json`                                         |
-| dock-reset        | `~/Library/Preferences/com.apple.dock.plist`                                    | never touched | `com.apple.dock` defaults                                                |
-| dock-spacer       | `~/Library/Preferences/com.apple.dock.plist`                                    | never touched | `com.apple.dock` defaults: a spacer tile                                 |
-| autologin         | `/etc/kcpassword`                                                               | never touched | the agent user's login password, obfuscated                              |
-| autologin         | `/Library/Preferences/com.apple.loginwindow`                                    | never touched | `autoLoginUser` in `com.apple.loginwindow`                               |
-| power             | `/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist`      | never touched | pmset: no sleep, autorestart, wake                                       |
-| never-sleeps      | `~/.config/station/preferences.json`                                            | never touched | `never_sleeps`, the engine holds an idle-sleep assertion while it is set |
-| lock-after-login  | `/Users/jterrazz.agent/Library/LaunchAgents/ai.jterrazz.lock-after-login.plist` | never touched | the agent user's `lock-after-login.plist`                                |
-| lock-after-login  | `/Users/jterrazz.agent/.openclaw/logs`                                          | can rebuild   | its logs                                                                 |
-| sshd              | `/System/Library/LaunchDaemons/ssh.plist`                                       | never touched | Remote Login, through systemsetup                                        |
-| backup-exclusions | `~/.cache`                                                                      | never touched | a sticky Time Machine exclusion (`tmutil addexclusion`)                  |
-| backup-exclusions | `~/.local/share/station/vms`                                                    | never touched | a sticky Time Machine exclusion (`tmutil addexclusion`)                  |
-| tart-launcher     | `~/.local/bin/tart`                                                             | never touched | the embedded `tart/tart`                                                 |
+| Setting                 | Path                                                                            | Group         | Note                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------ |
+| hushlogin               | `~/.hushlogin`                                                                  | never touched |                                                                          |
+| ghostty-dotfiles        | `~/.config/ghostty/config`                                                      | never touched | the embedded `ghostty/config`                                            |
+| ghostty-dotfiles        | `~/.config/ghostty/themes/catppuccin-espresso-blur`                             | never touched | the embedded `ghostty/themes/catppuccin-espresso-blur`                   |
+| ghostty-dotfiles        | `~/.config/ghostty/themes/catppuccin-latte-blur`                                | never touched | the embedded `ghostty/themes/catppuccin-latte-blur`                      |
+| tmux-dotfiles           | `~/.tmux.conf`                                                                  | never touched | the embedded `tmux/tmux.conf`                                            |
+| starship-dotfiles       | `~/.config/starship.toml`                                                       | never touched | the embedded `starship/starship.toml`                                    |
+| git-signing             | `~/.gnupg`                                                                      | never touched |                                                                          |
+| git-signing             | `~/.gitconfig`                                                                  | never touched | `git config --global` user.signingkey, commit.gpgsign                    |
+| ssh-key                 | `~/.ssh/id_ed25519`                                                             | never touched |                                                                          |
+| ssh-key                 | `~/.ssh/id_ed25519.pub`                                                         | never touched |                                                                          |
+| ssh-key                 | `~/.ssh/config`                                                                 | never touched | the `Host *` stanza: `UseKeychain yes`, `IdentityFile ~/.ssh/id_ed25519` |
+| github-login            | `~/.config/gh/hosts.yml`                                                        | never touched | gh's login                                                               |
+| spotlight-exclude       | `/System/Volumes/Data/.Spotlight-V100`                                          | never touched | the Spotlight privacy list, through System Settings                      |
+| dns                     | `~/.local/state/station/dns/quad9-dns.mobileconfig`                             | never touched | installed as the profile `com.jterrazz.dns.quad9`                        |
+| claude-token            | `~/.config/studio-os`                                                           | never touched | `operator:claude:oauth-token` in the OS credential store                 |
+| zed-dotfiles            | `~/.config/zed/settings.json`                                                   | never touched | the embedded `zed/settings.json`                                         |
+| zed-dotfiles            | `~/.config/zed/.oxfmtrc.json`                                                   | never touched | the embedded `zed/.oxfmtrc.json`                                         |
+| dock-reset              | `~/Library/Preferences/com.apple.dock.plist`                                    | never touched | `com.apple.dock` defaults                                                |
+| dock-spacer             | `~/Library/Preferences/com.apple.dock.plist`                                    | never touched | `com.apple.dock` defaults: a spacer tile                                 |
+| autologin               | `/etc/kcpassword`                                                               | never touched | the agent user's login password, obfuscated                              |
+| autologin               | `/Library/Preferences/com.apple.loginwindow`                                    | never touched | `autoLoginUser` in `com.apple.loginwindow`                               |
+| restart-after-power-cut | `/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist`      | never touched | pmset: autorestart, wake for network                                     |
+| never-sleeps            | `~/.config/station/preferences.json`                                            | never touched | `never_sleeps`, the engine holds an idle-sleep assertion while it is set |
+| lock-after-login        | `/Users/jterrazz.agent/Library/LaunchAgents/ai.jterrazz.lock-after-login.plist` | never touched | the agent user's `lock-after-login.plist`                                |
+| lock-after-login        | `/Users/jterrazz.agent/.openclaw/logs`                                          | can rebuild   | its logs                                                                 |
+| sshd                    | `/System/Library/LaunchDaemons/ssh.plist`                                       | never touched | Remote Login, through systemsetup                                        |
+| backup-exclusions       | `~/.cache`                                                                      | never touched | a sticky Time Machine exclusion (`tmutil addexclusion`)                  |
+| backup-exclusions       | `~/.local/share/station/vms`                                                    | never touched | a sticky Time Machine exclusion (`tmutil addexclusion`)                  |
+| tart-launcher           | `~/.local/bin/tart`                                                             | never touched | the embedded `tart/tart`                                                 |
 
 ## Home-root exceptions
 

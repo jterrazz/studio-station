@@ -21,9 +21,9 @@
       "items": [
         {
           "row": {
-            "id": "power",
+            "id": "restart-after-power-cut",
             "mark": "pending",
-            "label": "power",
+            "label": "restart-after-power-cut",
             "detail": {
               "kind": "none"
             }
@@ -48,8 +48,8 @@
       ]
     },
     {
-      "id": "power-before",
-      "title": "power before",
+      "id": "restart-after-power-cut-before",
+      "title": "restart-after-power-cut before",
       "columns": [
         {
           "key": "name",
@@ -60,18 +60,18 @@
       "items": [
         {
           "fact": {
-            "key": "sleep",
+            "key": "autorestart",
             "value": {
               "kind": "text",
-              "text": "10"
+              "text": "0"
             }
           }
         }
       ]
     },
     {
-      "id": "power-after",
-      "title": "power after",
+      "id": "restart-after-power-cut-after",
+      "title": "restart-after-power-cut after",
       "columns": [
         {
           "key": "name",
@@ -82,10 +82,10 @@
       "items": [
         {
           "fact": {
-            "key": "sleep",
+            "key": "autorestart",
             "value": {
               "kind": "text",
-              "text": "0"
+              "text": "1"
             }
           }
         }

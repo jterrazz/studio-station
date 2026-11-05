@@ -55,20 +55,20 @@ type Copy struct {
 type Procedure string
 
 const (
-	ProcGitSigning       Procedure = "git-signing"
-	ProcSSHKey           Procedure = "ssh-key"
-	ProcGitHubLogin      Procedure = "github-login"
-	ProcSpotlight        Procedure = "spotlight-exclude"
-	ProcDNS              Procedure = "dns"
-	ProcDockReset        Procedure = "dock-reset"
-	ProcDockSpacer       Procedure = "dock-spacer"
-	ProcAutologin        Procedure = "autologin"
-	ProcPower            Procedure = "power"
-	ProcNeverSleeps      Procedure = "never-sleeps"
-	ProcLockAfterLogin   Procedure = "lock-after-login"
-	ProcSshd             Procedure = "sshd"
-	ProcClaudeToken      Procedure = "claude-token"
-	ProcBackupExclusions Procedure = "backup-exclusions"
+	ProcGitSigning           Procedure = "git-signing"
+	ProcSSHKey               Procedure = "ssh-key"
+	ProcGitHubLogin          Procedure = "github-login"
+	ProcSpotlight            Procedure = "spotlight-exclude"
+	ProcDNS                  Procedure = "dns"
+	ProcDockReset            Procedure = "dock-reset"
+	ProcDockSpacer           Procedure = "dock-spacer"
+	ProcAutologin            Procedure = "autologin"
+	ProcRestartAfterPowerCut Procedure = "restart-after-power-cut"
+	ProcNeverSleeps          Procedure = "never-sleeps"
+	ProcLockAfterLogin       Procedure = "lock-after-login"
+	ProcSshd                 Procedure = "sshd"
+	ProcClaudeToken          Procedure = "claude-token"
+	ProcBackupExclusions     Procedure = "backup-exclusions"
 )
 
 func (Touch) Kind() EffectKind    { return EffectTouch }
@@ -149,7 +149,7 @@ var ConfigItems = []ConfigItem{
 	{Name: "autologin", Description: "GUI auto-login for jterrazz.agent (FileVault-aware)", Category: CategoryHeadless, Places: hostKind, Effect: ProcAutologin, Sets: []Value{{"autoLoginUser", "jterrazz.agent"}, {"/etc/kcpassword", "present"}}, Interactive: true, NeedsRoot: true, Reversible: true, Inputs: []Input{
 		{Name: "password", Label: "Password of jterrazz.agent", Kind: InputPassword, DefaultEnv: "AGENT_PASSWORD", Required: true},
 	}, Writes: []Stored{noted(kept("/etc/kcpassword"), "the agent user's login password, obfuscated"), noted(conf("/Library/Preferences/com.apple.loginwindow"), "`autoLoginUser` in `com.apple.loginwindow`")}},
-	{Name: "power", Description: "Always-on power policy (no sleep, autorestart, wake)", Category: CategoryHeadless, Places: hostKind, Effect: ProcPower, Sets: []Value{{"autorestart", "1"}, {"sleep", "0"}, {"displaysleep", "5"}, {"disksleep", "0"}, {"powernap", "0"}, {"womp", "1"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist"), "pmset: no sleep, autorestart, wake")}},
+	{Name: "restart-after-power-cut", Description: "Restarts after a power cut, and wakes for the network", Category: CategoryHeadless, Places: hostKind, Effect: ProcRestartAfterPowerCut, Sets: []Value{{"autorestart", "1"}, {"womp", "1"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist"), "pmset: autorestart, wake for network")}},
 	{Name: "never-sleeps", Description: "Never sleeps: the engine keeps this Mac awake, its servers with it", Category: CategoryHeadless, Places: hostKind, Effect: ProcNeverSleeps, Sets: []Value{{"never sleeps", "held by the engine"}}, Reversible: true, Writes: []Stored{noted(conf("{config}/station/preferences.json"), "`never_sleeps`, the engine holds an idle-sleep assertion while it is set")}},
 	{Name: "lock-after-login", Description: "A LaunchAgent that locks the screen ~20s after auto-login", Category: CategoryHeadless, Places: hostKind, Effect: ProcLockAfterLogin, Sets: []Value{{"agent", "present"}, {"loaded", "yes"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/Users/jterrazz.agent/Library/LaunchAgents/ai.jterrazz.lock-after-login.plist"), "the agent user's `lock-after-login.plist`"), noted(cache("/Users/jterrazz.agent/.openclaw/logs"), "its logs")}},
 	{Name: "sshd", Description: "macOS Remote Login (sshd)", Category: CategoryHeadless, Places: hostKind, Effect: ProcSshd, Sets: []Value{{"Remote Login", "on"}}, NeedsRoot: true, Reversible: true, Writes: []Stored{noted(conf("/System/Library/LaunchDaemons/ssh.plist"), "Remote Login, through systemsetup")}},

@@ -58,6 +58,7 @@ func events() []event {
 		{"slow", []string{"<machine>", "<duration>"}, slow},
 		{"reads", []string{"<mac>", "<fact>", "<value>"}, reads},
 		{"certificate", []string{"<mac>", "pending|issued"}, certificate},
+		{"admin", []string{"on|off"}, admin},
 	}
 }
 
@@ -418,6 +419,15 @@ func lowPower(w *World, args []string) error {
 		}
 		return fmt.Errorf("world low-power takes on or off, not %q", args[0])
 	})(w, args)
+}
+
+func admin(w *World, args []string) error {
+	switch args[0] {
+	case "on", "off":
+		w.Admin = args[0] == "on"
+		return nil
+	}
+	return fmt.Errorf("world admin takes on or off, not %q", args[0])
 }
 
 func hold(w *World, args []string) error {

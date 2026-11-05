@@ -28,13 +28,14 @@ A setting that does not live on this machine's kind reads Not for this machine, 
 | `tart-launcher`             | host        | `~/.local/bin/tart`, the launcher that sets `TART_HOME` ([Disk](disk.md#tart))                  | no         |
 | `ssh-key`                   | host        | `~/.ssh/id_ed25519`                                                                             | no         |
 | `dns`                       | host        | the Quad9 encrypted DNS profile                                                                 | no         |
-| `autologin`                 | host        | automatic login, for an unattended host; needs root                                             | yes        |
-| `power`                     | host        | the power policy of an always-on host; needs root                                               | yes        |
-| `lock-after-login`          | host        | lock the screen after the automatic login; needs root                                           | yes        |
-| `sshd`                      | host        | Remote Login; needs root                                                                        | yes        |
+| `autologin`                 | host        | automatic login, for an unattended host; admin                                                  | yes        |
+| `restart-after-power-cut`   | host        | `pmset` autorestart and wake for network, so the Mac comes back after a power cut; admin        | yes        |
+| `never-sleeps`              | host        | the engine keeps the Mac awake, its servers with it; no admin, applied from any Mac             | yes        |
+| `lock-after-login`          | host        | lock the screen after the automatic login; admin                                                | yes        |
+| `sshd`                      | host        | Remote Login; admin                                                                             | yes        |
 | `claude-token`              | host        | the Claude Code token shared with VMs ([Secrets](secrets.md#claude-in-a-vm))                    | yes        |
 
-The settings are Set by station; `autologin`, `power`, `lock-after-login` and `sshd` are its Always-on Mac group, for a Mac that hosts servers: opt-in, applied by name only, one folded line until one of it is applied. A setting that needs root is refused without it with `sudo station settings apply <setting>`.
+The settings are Set by station; `autologin`, `restart-after-power-cut`, `never-sleeps`, `lock-after-login` and `sshd` are its Always-on Mac group, for a Mac that hosts servers: opt-in, applied by name only, one folded line until one of it is applied. An admin setting (all of the group but `never-sleeps`) applies only when you run station with admin rights on that Mac's own terminal: without them it is refused, exit 2, with the line that does it, `sudo station settings apply <setting>`, or through `--on`, `ssh -t <mac> sudo station settings apply <setting>`. station never calls sudo itself.
 
 ## Values
 

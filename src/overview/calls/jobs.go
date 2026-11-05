@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	settingPowerPolicy = "power"
+	settingPowerPolicy = "restart-after-power-cut"
 	settingNeverSleeps = "never-sleeps"
 	settingAutoLogin   = "autologin"
 )

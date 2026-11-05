@@ -1,6 +1,6 @@
-●	power
+●	restart-after-power-cut
 ●	tart-launcher
-# power before
-sleep	10
-# power after
-sleep	0
+# restart-after-power-cut before
+autorestart	0
+# restart-after-power-cut after
+autorestart	1
