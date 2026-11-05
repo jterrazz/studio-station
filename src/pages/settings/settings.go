@@ -240,11 +240,28 @@ func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.
 		}
 		p.Sections = append(p.Sections, s)
 	}
-	p.Hints = []page.Hint{*page.Cmd("station settings apply"), *page.Cmd("station settings <setting>")}
-	if !all {
-		p.Hints = append(p.Hints, page.Hint{Command: "station settings --all", Text: "for every row"})
-	}
+	p.Hints = next(set, all)
 	return page.Seal(p)
+}
+
+// invariant: one or two next steps (SPEC §5): apply what station sets,
+// counted when some of it waits, then every row, or one setting's detail
+// once every row shows.
+func next(set []settings.Row, all bool) []page.Hint {
+	apply := page.Hint{Command: "station settings apply"}
+	n := 0
+	for _, r := range set {
+		if r.State == settings.StateNotApplied || r.State == settings.StateChangedSince {
+			n++
+		}
+	}
+	if n > 0 {
+		apply.Text = "apply the " + strconv.Itoa(n)
+	}
+	if all {
+		return []page.Hint{apply, *page.Cmd("station settings <setting>")}
+	}
+	return []page.Hint{apply, {Command: "station settings --all", Text: "for every row"}}
 }
 
 // value: a row that needs a look: changed since it was applied, a checked

@@ -50,9 +50,8 @@ runs:
           OK             ● 5 · mise, go, bat, jq, lazygit
           Not for this machine  7 apps live on other machines
 
-          → station apps install <app...>
-          → station apps update
-          → station apps --all  for every row
+          → station apps update            the 3 updates
+          → station apps install <app...>  install some
     - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" settings'
       stdin: |
           scrollback
@@ -66,8 +65,7 @@ runs:
           Always-on Mac   ○ 5 · for a Mac that hosts servers
           Checked         ● 8  ◐ 1 · firewall, filevault, sip, automatic-updates, …
 
-          → station settings apply
-          → station settings <setting>
+          → station settings apply  apply the 17
           → station settings --all  for every row
     - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" settings --all-machines'
       stdin: |

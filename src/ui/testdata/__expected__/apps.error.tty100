@@ -13,6 +13,5 @@ Not known
 OK             ● 4 · homebrew, skills, claude-desktop, modern-web-guidance
 Not for this machine  98 apps live on other machines
 
-→ station apps install <app...>
-→ station apps update
-→ station apps --all  for every row
+→ station apps update            the update
+→ station apps install <app...>  install some

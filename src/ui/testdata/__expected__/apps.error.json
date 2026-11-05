@@ -712,14 +712,12 @@
   ],
   "hints": [
     {
-      "command": "station apps install <app...>"
+      "command": "station apps update",
+      "text": "the update"
     },
     {
-      "command": "station apps update"
-    },
-    {
-      "command": "station apps --all",
-      "text": "for every row"
+      "command": "station apps install <app...>",
+      "text": "install some"
     }
   ],
   "actions": [

@@ -413,9 +413,6 @@
       "command": "station settings apply"
     },
     {
-      "command": "station settings <setting>"
-    },
-    {
       "command": "station settings --all",
       "text": "for every row"
     }

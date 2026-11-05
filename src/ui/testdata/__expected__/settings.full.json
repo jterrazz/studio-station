@@ -814,10 +814,8 @@
   ],
   "hints": [
     {
-      "command": "station settings apply"
-    },
-    {
-      "command": "station settings <setting>"
+      "command": "station settings apply",
+      "text": "apply the 7"
     },
     {
       "command": "station settings --all",

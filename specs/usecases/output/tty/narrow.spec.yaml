@@ -55,9 +55,8 @@ runs:
           OK             ● 5 · mise, go, bat, jq, lazygit
           Not for this machine  7 apps live on other machines
 
-          → station apps install <app...>
-          → station apps update
-          → station apps --all  for every row
+          → station apps update            the 3 updates
+          → station apps install <app...>  install some
     - command: '--version >/dev/null; terminal --size 60x60 /usr/bin/env -u NO_COLOR COLUMNS=60 "$STATION" background'
       stdin: |
           scrollback

@@ -5,5 +5,4 @@ Always-on Mac   ○ 5 · for a Mac that hosts servers
 Checked         ◌ 9 · filevault, firewall, sip, automatic-updates, …
 
 → station settings apply
-→ station settings <setting>
 → station settings --all  for every row

@@ -10,6 +10,5 @@ Not managed    ? 5 · bun, go, java, python, chatgpt
 OK             ● 6 · homebrew, uv, cocoapods, skills, claude-desktop, …
 Not for this machine  98 apps live on other machines
 
-→ station apps install <app...>
-→ station apps update
-→ station apps --all  for every row
+→ station apps update            the 2 updates
+→ station apps install <app...>  install some
