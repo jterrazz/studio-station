@@ -12,7 +12,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | Plumbing       | The hidden commands the machine runs for itself      |
 | Exit codes     | What 0, 1, 2 and 130 mean                            |
 
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `apps`, `settings`, `disk`, `ports`, `accounts`, `background`, `power`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `activity`, `apps`, `settings`, `disk`, `ports`, `accounts`, `background`, `awake`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
 
 ## Rules
 
@@ -145,7 +145,7 @@ station ports undeclare [<machine>] <port> [--yes]     # take the declaration ba
 ```sh
 station images [--json] # every Mac's, one row per version per Mac
 station images build [<image...>] [--binary <linux station binary>]
-station images update [<image...>] # the newest published version
+station images update [<image...>] # the newest released version
 station images delete <image>[@<version>] [--yes]
 ```
 
