@@ -87,7 +87,8 @@ func one(ctx context.Context, d Deps, env kit.Env, target machine.Ref, history b
 func vm(ctx context.Context, d Deps, env kit.Env, holder machine.Ref, name string, kind machine.Kind, running, history bool) (pageactivity.View, error) {
 	// invariant: a VM's history is its Mac's engine's, and so is the word
 	// that its guest does not answer (the relay into it is that engine's);
-	// one it keeps nothing of is read inside the VM, twice 1 s apart.
+	// one it holds no last 10 s of is read inside the VM, twice 1 s apart,
+	// its series still that engine's.
 	v := pageactivity.View{Name: name, Label: name, Kind: string(kind), Mac: holder.Name, On: d.Label(holder.Name), Stopped: !running}
 	if holder == env.Self {
 		v.On = "This Mac"
@@ -101,8 +102,13 @@ func vm(ctx context.Context, d Deps, env kit.Env, holder machine.Ref, name strin
 		v.Report = r
 		return v, nil
 	}
+	kept := r
 	in.Of, in.History = "", false
 	r, err = call.Read(ctx, env.Calls, in.Machine, activitycalls.Read, in, nil)
+	if kept.History != nil {
+		r.Since, r.History = kept.Since, kept.History
+	}
+	r.Findings = activity.Lasting(r.Findings, kept.Findings)
 	v.Report = r
 	return v, err
 }

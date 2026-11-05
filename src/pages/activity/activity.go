@@ -75,7 +75,7 @@ func head(v View) []string {
 	case r.Source == activity.FromDirect && r.Window > 0:
 		words = append(words, "rates over "+activity.Window(r.Window))
 	case r.Window > 0:
-		words = append(words, "rates over the last "+activity.Window(r.Window))
+		words = append(words, "rates over the last "+activity.Window(activity.RateWindow))
 	default:
 		words = append(words, "no rate yet")
 	}

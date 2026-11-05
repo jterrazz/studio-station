@@ -83,7 +83,7 @@ func Fleet(views []View, here page.Context) page.Page {
 	words := []string{strconv.Itoa(len(views)) + " machines", strconv.Itoa(answering) + " answering"}
 	switch {
 	case kept > 0:
-		words = append(words, "rates over the last "+activity.Window(kept))
+		words = append(words, "rates over the last "+activity.Window(activity.RateWindow))
 	case direct > 0:
 		words = append(words, "rates over "+activity.Window(direct))
 	}

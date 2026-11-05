@@ -22,7 +22,8 @@ const (
 
 const (
 	// value: the window a rate is the mean of when the engine holds
-	// history (SPEC §6.2); a direct read's two samples are DirectGap apart.
+	// history (SPEC §6.2), to its 2 s cadence: what a page says; a direct
+	// read's two samples are DirectGap apart.
 	RateWindow = 10 * time.Second
 	DirectGap  = time.Second
 	// value: what a read waits for a Meter before it says it did not answer.
@@ -59,21 +60,36 @@ func SeriesOf(fine, coarse []Sample) Series {
 	return s
 }
 
-func Recent(s *Series) (Rates, time.Duration) {
-	// invariant: the mean from the newest point at least RateWindow before
-	// the newest one, or from the oldest when none is that old; a series of
-	// one point has no rate.
-	points := merged(s)
-	if len(points) < 2 {
+func Recent(s *Series, now time.Time) (Rates, time.Duration) {
+	// invariant: SPEC §6.2: the mean of the last RateWindow, from the 2 s
+	// points of an engine a surface watches: the newest no older than
+	// FineEvery and a second of jitter, its base the point nearest
+	// RateWindow before it, within FineEvery under and twice over (a sample
+	// a cadence skipped). Points a minute apart, or a newest gone stale, span
+	// no such window: no rate, and the reader samples twice itself.
+	fine := s.Fine()
+	if len(fine) < 2 {
 		return Rates{}, 0
 	}
-	newest := points[len(points)-1]
-	base := points[0]
-	for i := len(points) - 2; i >= 0; i-- {
-		if newest.At.Sub(points[i].At) >= RateWindow {
-			base = points[i]
+	newest := fine[len(fine)-1]
+	if now.Sub(newest.At) > FineEvery+time.Second {
+		return Rates{}, 0
+	}
+	var base *Sample
+	for i := len(fine) - 2; i >= 0; i-- {
+		gap := newest.At.Sub(fine[i].At)
+		if gap < RateWindow-FineEvery {
+			continue
+		}
+		if gap >= RateWindow+2*FineEvery {
 			break
 		}
+		if base == nil || (gap-RateWindow).Abs() < (newest.At.Sub(base.At)-RateWindow).Abs() {
+			base = &fine[i]
+		}
 	}
-	return Between(base, newest), newest.At.Sub(base.At)
+	if base == nil {
+		return Rates{}, 0
+	}
+	return Between(*base, newest), newest.At.Sub(base.At)
 }

@@ -38,8 +38,10 @@ var Read = call.Watch[Deps, ReadIn, activity.Report]{
 
 func (d Deps) read(ctx context.Context, in ReadIn) activity.Report {
 	// invariant: SPEC §6.2: the history of the engine that keeps it when it
-	// spans a rate; else, on the machine itself, two samples 1 s apart. A VM
-	// this Mac's engine keeps nothing of is NotKept: its reader asks the VM.
+	// holds the last 10 s; else, on the machine itself, two samples 1 s
+	// apart. A VM this Mac's engine holds no such window of is NotKept, with
+	// the series it keeps and the findings over it: its reader asks the VM
+	// for the values.
 	ref, kind, name := in.Machine, in.Kind, in.Of
 	if ref.Name == "" {
 		ref.Name = d.Name
@@ -50,34 +52,49 @@ func (d Deps) read(ctx context.Context, in ReadIn) activity.Report {
 	if name == "" {
 		name = d.Name
 	}
+	var kept *activity.Kept
+	var since time.Time
 	if d.Kept != nil {
-		if k, since, ok, err := d.Kept(ctx, name); err == nil && ok {
-			if r, usable := fromHistory(k, since, in); usable {
+		if k, at, ok, err := d.Kept(ctx, name); err == nil && ok {
+			if r, usable := fromHistory(k, at, in, d.Now()); usable {
 				r.Findings = findings(ref, kind, &k.Series)
 				return r
 			}
+			kept, since = &k, at
 		}
 	}
-	if in.Of != "" {
-		return activity.Report{Source: activity.NotKept, Findings: []finding.Finding{}}
+	r := activity.Report{Source: activity.NotKept, Findings: []finding.Finding{}}
+	switch {
+	case in.Of == "":
+		r = d.direct(ctx, ref, kind, in.Quick, kept)
+	case kept != nil:
+		r.Findings = findings(ref, kind, &kept.Series)
 	}
-	return d.direct(ctx, ref, kind, in.Quick)
+	if kept != nil {
+		r.Since = since
+		if in.History {
+			r.History = kept.Series.Coarse()
+		}
+	}
+	return r
 }
 
-func fromHistory(k activity.Kept, since time.Time, in ReadIn) (activity.Report, bool) {
+func fromHistory(k activity.Kept, since time.Time, in ReadIn, now time.Time) (activity.Report, bool) {
 	r := activity.Report{Source: activity.FromEngine, Since: since, Last: k.Last}
 	if k.Last.Run != nil {
 		r.Source = activity.FromMacProcess
 		return r, true
 	}
-	r.Rates, r.Window = activity.Recent(&k.Series)
+	r.Rates, r.Window = activity.Recent(&k.Series, now)
 	if in.History {
 		r.History = k.Series.Coarse()
 	}
 	return r, r.Window > 0
 }
 
-func (d Deps) direct(ctx context.Context, ref machine.Ref, kind machine.Kind, quick bool) activity.Report {
+func (d Deps) direct(ctx context.Context, ref machine.Ref, kind machine.Kind, quick bool, kept *activity.Kept) activity.Report {
+	// invariant: the findings judge the engine's series, when it keeps one,
+	// with the samples read now: a CPU busy for 10 min stays told.
 	r := activity.Report{Source: activity.FromDirect, Findings: []finding.Finding{}}
 	first, err := d.budgeted(ctx)
 	if err != nil {
@@ -96,7 +113,13 @@ func (d Deps) direct(ctx context.Context, ref machine.Ref, kind machine.Kind, qu
 		points = append(points, second.Sample)
 		r.Rates, r.Window = activity.Between(first.Sample, second.Sample), second.Sample.At.Sub(first.Sample.At)
 	}
-	s := activity.SeriesOf(nil, points)
+	var s activity.Series
+	if kept != nil {
+		s = activity.SeriesOf(kept.Series.Fine(), kept.Series.Coarse())
+	}
+	for _, x := range points {
+		s.Add(x)
+	}
 	r.Findings = findings(ref, kind, &s)
 	return r
 }

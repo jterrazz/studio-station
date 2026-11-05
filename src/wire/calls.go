@@ -130,7 +130,7 @@ func keptOf(ctx context.Context, api engineAPI, name string) (activity.Kept, tim
 // value: a sample composes its free space from the Disk family, and on a
 // Mac its thermal and battery from Power: a VM's are its Mac's.
 func (m machine) activityDeps(meter activitycontract.Meter) activitycalls.Deps {
-	d := activitycalls.Deps{Meter: meter, Volume: m.disk(), Name: m.profile.Ref.Name, Kind: m.profile.Kind, Sleep: m.host.Clock.Sleep}
+	d := activitycalls.Deps{Meter: meter, Volume: m.disk(), Name: m.profile.Ref.Name, Kind: m.profile.Kind, Sleep: m.host.Clock.Sleep, Now: m.host.Clock.Now}
 	if m.profile.Kind == coremachine.Mac {
 		d.Kept = engineKept(m.engineAPI())
 	}

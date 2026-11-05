@@ -99,3 +99,15 @@ func heldFor(points []Sample, holds func(prev, x Sample) bool) time.Duration {
 	}
 	return newest.At.Sub(since)
 }
+
+func Lasting(now, kept []finding.Finding) []finding.Finding {
+	// invariant: what a machine reads now judges each subject it raises;
+	// what must last (a CPU busy for 10 min) is judged on the series an
+	// engine keeps.
+	for _, f := range kept {
+		if !slices.ContainsFunc(now, func(g finding.Finding) bool { return g.Subject == f.Subject }) {
+			now = append(now, f)
+		}
+	}
+	return now
+}
