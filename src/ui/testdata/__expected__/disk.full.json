@@ -22,6 +22,12 @@
           "label": "size",
           "kind": "size",
           "keep": 90
+        },
+        {
+          "key": "folders",
+          "label": "folders",
+          "kind": "list",
+          "show": "detail"
         }
       ],
       "items": [
@@ -71,6 +77,12 @@
           "label": "size",
           "kind": "size",
           "keep": 90
+        },
+        {
+          "key": "folders",
+          "label": "folders",
+          "kind": "list",
+          "show": "detail"
         }
       ],
       "items": [
@@ -83,6 +95,15 @@
               {
                 "kind": "size",
                 "n": 78383153152
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "~/.tart"
+                  }
+                ]
               }
             ],
             "detail": {
@@ -129,6 +150,12 @@
           "label": "size",
           "kind": "size",
           "keep": 90
+        },
+        {
+          "key": "folders",
+          "label": "folders",
+          "kind": "list",
+          "show": "detail"
         }
       ],
       "items": [
@@ -141,6 +168,15 @@
               {
                 "kind": "size",
                 "n": 27917287424
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "~/Library/Caches/Homebrew"
+                  }
+                ]
               }
             ]
           }
@@ -154,6 +190,15 @@
               {
                 "kind": "size",
                 "n": 1782579200
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "~/Library/Caches/bun"
+                  }
+                ]
               }
             ]
           }
@@ -183,6 +228,12 @@
           "label": "size",
           "kind": "size",
           "keep": 90
+        },
+        {
+          "key": "folders",
+          "label": "folders",
+          "kind": "list",
+          "show": "detail"
         }
       ],
       "items": [
@@ -195,6 +246,15 @@
               {
                 "kind": "size",
                 "n": 12000
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "~/.config/station/preferences.json"
+                  }
+                ]
               }
             ]
           }
@@ -230,6 +290,24 @@
       ],
       "priority": 2,
       "mutates": true
+    },
+    {
+      "key": "enter",
+      "label": "open",
+      "on": "row",
+      "rows": [
+        "misplaced/~/.tart",
+        "can-rebuild/homebrew",
+        "can-rebuild/bun",
+        "never-touched/station"
+      ],
+      "priority": 4
+    },
+    {
+      "key": "s",
+      "label": "sort",
+      "on": "page",
+      "priority": 5
     }
   ]
 }

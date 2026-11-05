@@ -113,6 +113,9 @@ const (
 	// value: a column for the eye only (a peer's online state, a host's role):
 	// the pipe's records keep the fields they always had (§20).
 	EyeOnly Show = "eye"
+	// value: a column only a row's detail shows (the folders a disk row
+	// holds): no line of a list and no record of the pipe carries it.
+	DetailOnly Show = "detail"
 )
 
 type Item struct {

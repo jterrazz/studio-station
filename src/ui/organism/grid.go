@@ -37,6 +37,8 @@ type Grid struct {
 	Width   int
 	Medium  molecule.Medium
 	Keys    molecule.Keys
+	// value: the keys an empty line may name (TU-20), when not Keys.
+	Empties molecule.Keys
 	Folded  func(key string) bool
 	Match   func(r page.Row) bool
 }
@@ -124,6 +126,9 @@ func (g Grid) lines() []Line {
 	if g.Keys == nil {
 		g.Keys = molecule.NoKeys
 	}
+	if g.Empties == nil {
+		g.Empties = g.Keys
+	}
 	entries := g.entries()
 	cols, labelWidth := g.layout(entries)
 	var out []Line
@@ -151,9 +156,9 @@ func (g Grid) item(out *[]Line, it page.Item, entries []entry, at int, cols []co
 		for _, e := range entries[at : at+n] {
 			switch {
 			case e.empty != nil && e.key != "" && e.prefix != "":
-				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+g.indent()) + e.prefix + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Keys)})
+				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+g.indent()) + e.prefix + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Empties)})
 			case e.empty != nil && e.key != "":
-				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+g.indent()) + g.Styles.Subtle.Render(e.prefix) + atom.Spaces(token.MarkWidth) + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Keys)})
+				*out = append(*out, Line{Kind: LineOther, Text: atom.Spaces(token.Margin+g.indent()) + g.Styles.Subtle.Render(e.prefix) + atom.Spaces(token.MarkWidth) + molecule.Empty(g.Styles, *e.empty, g.Medium, g.Empties)})
 			case e.link != nil && e.key != "":
 				*out = append(*out, Line{Kind: LineOther, Text: g.link(e.prefix, *e.link, labelWidth)})
 			case e.key != "":
@@ -164,7 +169,7 @@ func (g Grid) item(out *[]Line, it page.Item, entries []entry, at int, cols []co
 	case it.Fact != nil:
 		*out = append(*out, Line{Kind: LineOther, Text: indent + molecule.Fact(st, it.Fact.Key, factWidth, atom.Show(it.Fact.Value))})
 	case it.Empty != nil:
-		*out = append(*out, Line{Kind: LineOther, Text: indent + molecule.Empty(st, *it.Empty, g.Medium, g.Keys)})
+		*out = append(*out, Line{Kind: LineOther, Text: indent + molecule.Empty(st, *it.Empty, g.Medium, g.Empties)})
 	case it.Error != nil:
 		for _, l := range molecule.ErrorLines(st, *it.Error) {
 			*out = append(*out, Line{Kind: LineOther, Text: indent + l})
@@ -300,7 +305,7 @@ func (g Grid) entry(r page.Row, prefix string, head, hidden bool) entry {
 func (g Grid) columns() []column {
 	var cols []column
 	for i, c := range g.Section.Columns {
-		if i == 0 || c.Show == page.PipeOnly {
+		if i == 0 || c.Show == page.PipeOnly || c.Show == page.DetailOnly {
 			continue
 		}
 		at := i - 1
