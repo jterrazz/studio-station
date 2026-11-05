@@ -41,8 +41,8 @@ const (
 )
 
 type Machine struct {
-	// value: the machine the page is of, a VM or a Mac, by its name in the
-	// fleet; a nil part is still being read.
+	// value: the machine the page is of, a VM or a Mac, by its name among
+	// the machines; a nil part is still being read.
 	Name     string
 	Fleet    *machines.Fleet
 	Summary  *overview.Summary
