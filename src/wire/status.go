@@ -75,16 +75,11 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Daemon:     m.hostDaemon(),
 		Hypervisor: m.hypervisor(),
 	}
-	var meter activitycontract.Meter
+	meter := m.meter()
 	var listening portscontract.Listeners = lsof.New(h.Run)
-	if m.kind == catalog.Linux {
-		meter = activitylinux.New(rootFS{fs: h.FS, root: cmp.Or(m.systemRoot(), "/")}, h.Clock)
-	} else {
-		meter = activitymacos.New(local.NewKernel(m.vars), h.Clock)
-	}
 	facts := m.facts()
 	if m.world != nil {
-		meter, listening = m.world.meter(), m.world.listeners()
+		listening = m.world.listeners()
 	}
 	if m.kind != catalog.Linux {
 		// value: the status page reads listeners, jobs and app updates on a Mac only.
@@ -93,6 +88,17 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	}
 	d.Facts, d.Meter, d.Battery = facts, meter, m.powerPort
 	return d
+}
+
+// value: the Meter of this machine's kernel, or of its world.
+func (m machine) meter() activitycontract.Meter {
+	switch {
+	case m.world != nil:
+		return m.world.meter()
+	case m.kind == catalog.Linux:
+		return activitylinux.New(rootFS{fs: m.host.FS, root: cmp.Or(m.systemRoot(), "/")}, m.host.Clock)
+	}
+	return activitymacos.New(local.NewKernel(m.vars), m.host.Clock)
 }
 
 // value: the Inspector of this machine's facts: its system's own tools, or

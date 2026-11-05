@@ -154,6 +154,11 @@ func (m *worldMac) slice() world.Mac {
 
 func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
+func (m *worldMac) watched() bool {
+	mac := m.slice()
+	return mac.Engine != nil && mac.Engine.Watched
+}
+
 func (m *worldMac) host(h system.Host) system.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	m.home = h.Env.Home()
@@ -428,6 +433,9 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 	if err := d.Begin(context.WithValue(ctx, waits{}, true), func(string) {}); err != nil {
 		return nil, false
 	}
+	if kept := m.slice().Engine.Activity; kept != nil {
+		d.History().Take(kept)
+	}
 	m.engine, m.began = d, m.engineStarted()
 	m.settle(ctx)
 	return d, true
@@ -454,6 +462,7 @@ func (m *worldMac) down(forget bool) {
 	}
 	kept := m.engine.AwakeKept()
 	memory := m.engine.Memory()
+	activity := m.engine.History().Hand()
 	if !forget && !m.runs() {
 		m.engine.Stop()
 	} else {
@@ -467,9 +476,9 @@ func (m *worldMac) down(forget bool) {
 	defer m.run.w.Unlock()
 	if e := m.run.w.Mac(m.name).Engine; e != nil {
 		e.Memory = memory
-		e.Awake = &kept
+		e.Awake, e.Activity = &kept, activity
 		if forget || e.Stopped {
-			e.Awake = nil
+			e.Awake, e.Activity = nil, nil
 		}
 	}
 }

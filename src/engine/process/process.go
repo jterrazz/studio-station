@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/core/machine"
@@ -29,6 +30,9 @@ const (
 	Awake     = "engine.power-awake"
 	Sleep     = "engine.power-sleep"
 	Refresh   = "engine.refresh"
+	// value: the activity this engine keeps, of This Mac and of each VM it
+	// sees, in its memory alone.
+	Activity = "engine.activity"
 	// value: the watch of the engine's pages, and of what it tells.
 	Page   = "page"
 	Events = "engine.events"
@@ -59,6 +63,32 @@ type ExecOut struct {
 	Code   int    `json:"code"`
 	Stdout string `json:"stdout"`
 	Stderr string `json:"stderr"`
+}
+
+type Kept struct {
+	Machine string            `json:"machine"`
+	Last    activity.Reading  `json:"last"`
+	Fine    []activity.Sample `json:"fine"`
+	Coarse  []activity.Sample `json:"coarse"`
+}
+
+type ActivityOut struct {
+	// value: when the engine started: every window begins there.
+	Since    time.Time `json:"since"`
+	Machines []Kept    `json:"machines"`
+}
+
+func activityOf(d *engine.Daemon) ActivityOut {
+	h := d.History()
+	if h == nil {
+		return ActivityOut{Machines: []Kept{}}
+	}
+	out := ActivityOut{Since: h.Since(), Machines: []Kept{}}
+	for _, name := range h.Machines() {
+		k, _ := h.Of(name)
+		out.Machines = append(out.Machines, Kept{Machine: name, Last: k.Last, Fine: k.Series.Fine(), Coarse: k.Series.Coarse()})
+	}
+	return out
 }
 
 type PagesIn struct {
@@ -114,6 +144,7 @@ func calls(d *engine.Daemon, served []string) []call.Handler {
 		own(d, Power, func(_ context.Context, d *engine.Daemon, _ struct{}) (any, error) { return d.Power(), nil }),
 		own(d, Awake, func(_ context.Context, d *engine.Daemon, in engine.AwakeIn) (any, error) { return d.Awake(in) }),
 		own(d, Sleep, func(_ context.Context, d *engine.Daemon, _ struct{}) (any, error) { return d.Sleep(), nil }),
+		own(d, Activity, func(_ context.Context, d *engine.Daemon, _ struct{}) (any, error) { return activityOf(d), nil }),
 		own(d, Refresh, func(_ context.Context, d *engine.Daemon, in PagesIn) (any, error) {
 			return struct{}{}, d.Refresh(in.Pages)
 		}),

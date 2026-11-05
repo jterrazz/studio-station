@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
@@ -84,6 +85,9 @@ type Options struct {
 	// value: when the engine process started, for a stepped engine that
 	// stands for one which outlived its command; zero is the Begin.
 	StartedAt time.Time
+	// value: the jobs of engine/jobs, each run at every tick: each decides
+	// by its own schedule whether it is due.
+	Jobs []Tick
 }
 
 type Daemon struct {
@@ -107,6 +111,7 @@ type Daemon struct {
 	power   *power.Machine
 	awake   *power.Kept
 	hub     hub
+	history *activity.History
 
 	notifier Notifier
 	serve    func(ctx context.Context, conn io.ReadWriteCloser)
@@ -239,6 +244,9 @@ func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
 	if !d.o.StartedAt.IsZero() {
 		d.started = d.o.StartedAt.UTC().Truncate(time.Second)
 	}
+	d.mu.Lock()
+	d.history = activity.NewHistory(d.started)
+	d.mu.Unlock()
 	d.neverSleeps(d.started)
 	d.leases, _ = d.st.Reservations.List(ctx)
 	d.refreshSelf(ctx)
@@ -322,6 +330,9 @@ func (d *Daemon) step(ctx context.Context, tick int) {
 	d.sweepLends(ctx)
 	d.power.Tick()
 	d.watchState()
+	for _, job := range d.o.Jobs {
+		job(ctx)
+	}
 }
 
 func (d *Daemon) logf(subject, message string) {

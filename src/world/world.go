@@ -205,6 +205,12 @@ type Engine struct {
 	Memory engine.Memory `json:"memory,omitempty"`
 	// value: what the engine holds of Awake between two commands.
 	Awake *engine.AwakeKept `json:"awake,omitempty"`
+	// value: the activity the engine holds in its memory between two
+	// commands, by machine; its successor after a restart holds none.
+	Activity map[string]activity.Kept `json:"activity,omitempty"`
+	// value: a surface watches this engine between two commands: the menu
+	// bar open, a terminal UI on Activity.
+	Watched bool `json:"watched,omitempty"`
 }
 
 func (m *Mac) EngineRuns() bool {

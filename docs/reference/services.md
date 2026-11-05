@@ -123,6 +123,7 @@ The engine serves every call of [`calls.json`](../../src/remote/api/calls.json) 
 | `engine.power`                                             |                                   | the Power `session`, `last_end`, `reading` and `guards`                                |
 | `engine.power-awake`                                       | `lid, battery, for, by`           | the session (`for` in seconds), `refreshed` when one held                              |
 | `engine.power-sleep`                                       |                                   | `ended`, `after` (seconds)                                                             |
+| `engine.activity`                                          |                                   | `since` (the engine's start) and each machine's `last` reading, `fine` and `coarse`    |
 | `engine.refresh`                                           | `pages`                           | `{}`: the menu bar's To do is read again now                                           |
 | watch `page`                                               | `pages` (`menubar` `power`)       | an `out` per update: the opening `stream pages`, then `event` `page`, `tick`, `notice` |
 

@@ -28,12 +28,15 @@ func NewMeter(r world.Meter) *Meter {
 }
 
 func (m *Meter) read() (world.Meter, bool) {
+	// invariant: the counters are the world's, read at the world's now.
 	m.w.Lock()
 	defer m.w.Unlock()
 	if r := m.w.Mac(m.mac).Meter; r != nil {
-		return *r, true
+		out := *r
+		out.Sample.At = m.w.Now
+		return out, true
 	}
-	return world.Meter{}, false
+	return world.Meter{Sample: activity.Sample{At: m.w.Now}}, false
 }
 
 func (m *Meter) Sample(ctx context.Context) (activity.Sample, error) {
