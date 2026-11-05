@@ -1,4 +1,4 @@
-description: 'a read on an 80-column terminal: the first line sums it up, Needs you first, one line per calm section, then the next steps'
+description: 'an 80-column read: its first line, Needs you first, one line per calm section, the next steps'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

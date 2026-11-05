@@ -1,4 +1,4 @@
-description: 'NO_COLOR=1 on a terminal prints the pipe form, every glyph kept'
+description: 'a terminal with NO_COLOR=1 gets the pipe form, every glyph kept'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

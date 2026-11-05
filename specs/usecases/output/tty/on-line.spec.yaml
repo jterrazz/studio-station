@@ -1,4 +1,4 @@
-description: 'another machine''s output starts with the On line naming the machine --on named, on a terminal and in a pipe; This Mac is named for itself'
+description: 'another machine''s output starts with On <machine>:, on a terminal and in a pipe'
 fixture:
     - ../../../__fixtures__/terminal/
 env:
