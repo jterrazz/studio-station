@@ -94,7 +94,7 @@ menubar-uninstall: ## Unregister the login item, then remove ~/Applications/Stat
 	@printf "$(GREEN)●$(RESET) Removed $(MENUBAR_HOME)\n"
 
 e2e-machine: build build-linux ## The machine specs on a real VM of this host: KIND=linux (tier 2) or KIND=macos (tier 3); never in check
-	@specs/machine/run.sh $(KIND)
+	@specs/machine/run.sh $(KIND) $(LABEL)
 
 provision: build ## Put this build on the machine (~/.local/bin/station), then run station setup
 	@mkdir -p $(BIN_DIR)

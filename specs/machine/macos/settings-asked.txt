@@ -1,0 +1,5 @@
+# Set by station settings whose apply asks values or a sign-in on a terminal, so a
+# headless run leaves them to the owner; every other one is applied, turned off and
+# applied again.
+github-login
+claude-token
