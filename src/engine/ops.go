@@ -194,6 +194,6 @@ func (d *Daemon) Refresh(pages []string) error {
 	if err := d.CheckPages(pages); err != nil {
 		return err
 	}
-	d.hub.refreshed()
+	d.hub.refreshed(pages)
 	return nil
 }

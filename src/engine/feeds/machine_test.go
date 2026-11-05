@@ -69,6 +69,9 @@ type world struct {
 	mu       sync.Mutex
 	infra    []machines.VM
 	beside   []machines.VM
+	here     []machines.VM
+	added    []machines.HostView
+	lent     accounts.Report
 	asked    map[string][]string
 	activity map[string]uint64
 }
@@ -80,10 +83,10 @@ func (w *world) fleet() machines.Fleet {
 	if len(w.infra) > 1 {
 		w.infra = w.infra[1:]
 	}
-	return machines.Fleet{Hosts: []machines.HostView{
-		{Name: laptop, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}},
+	return machines.Fleet{Hosts: append([]machines.HostView{
+		{Name: laptop, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here},
 		{Name: mini, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: append([]machines.VM{infra}, w.beside...)},
-	}}
+	}, w.added...)}
 }
 
 func (w *world) answer(name string, target machine.Ref) any {
@@ -100,7 +103,9 @@ func (w *world) answer(name string, target machine.Ref) any {
 	case portscalls.List.Name:
 		return ports.Listing{}
 	case accountscalls.List.Name:
-		return accounts.Report{}
+		w.mu.Lock()
+		defer w.mu.Unlock()
+		return w.lent
 	case overviewcalls.Read.Name:
 		need := map[string]string{laptop: "a sign-in expired", mini: "port 5000 is reachable from outside", "infra": "a container exited"}[at]
 		return overviewcalls.ReadOut{Summary: overview.Summary{Head: overview.Head{Name: at}, Needs: []overview.Need{{Machine: at, Section: "ports", Broken: true, Text: need}}}}
@@ -137,10 +142,15 @@ func infraAt(state machines.VMState, restarts int) machines.VM {
 
 func watch(t *testing.T, w *world, clock *steps, subject string) <-chan any {
 	t.Helper()
+	return watchWith(t, w, clock, engine.FeedInput{Subject: subject})
+}
+
+func watchWith(t *testing.T, w *world, clock *steps, in engine.FeedInput) <-chan any {
+	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	o := feeds.Menubar{Calls: w, Clock: clock}
-	return o.Machine()(ctx, engine.FeedInput{Subject: subject})
+	return o.Machine()(ctx, in)
 }
 
 func until(t *testing.T, pages <-chan any, what string, ok func(page.Page) bool) page.Page {
@@ -279,4 +289,75 @@ func TestTheSwitcherDrawsEachMacsServersThenWorkspacesAndRereadsEveryThirtySecon
 	}
 	clock.pass(t, 30*time.Second)
 	until(t, pages, "infra down thirty seconds later", func(p page.Page) bool { return row(p, "machines", "infra").Mark == page.Broken })
+}
+
+func lentTo(vm string, providers ...string) accounts.Report {
+	until := time.Date(2026, 11, 4, 6, 30, 0, 0, time.UTC)
+	m := accounts.Machine{Name: vm, Kind: accounts.KindVM}
+	for _, p := range providers {
+		m.Accounts = append(m.Accounts, accounts.Account{Provider: p, Lent: &accounts.Lend{Name: p, Until: until}})
+	}
+	return accounts.Report{Machines: []accounts.Machine{m}}
+}
+
+func shared(p page.Page) []string {
+	var out []string
+	for _, s := range p.Sections {
+		if s.ID != "shared" {
+			continue
+		}
+		for _, it := range s.Items {
+			if it.Row != nil {
+				out = append(out, it.Row.ID)
+			}
+		}
+	}
+	return out
+}
+
+func TestAnAccountTakenBackLeavesLinux1sPageOnceTheCallReturns(t *testing.T) {
+	linux := machines.VM{Name: "linux-1", Host: laptop, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}
+	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, here: []machines.VM{linux}, lent: lentTo("linux-1", "github", "claude"), asked: map[string][]string{}, activity: map[string]uint64{}}
+	refresh := make(chan struct{}, 1)
+	pages := watchWith(t, w, newSteps(), engine.FeedInput{Subject: "linux-1", Refresh: refresh})
+	until(t, pages, "GitHub and Claude shared with linux-1", func(p page.Page) bool { return slices.Equal(shared(p), []string{"github", "claude"}) })
+	w.mu.Lock()
+	w.lent = lentTo("linux-1", "claude")
+	w.mu.Unlock()
+	refresh <- struct{}{}
+	p := until(t, pages, "GitHub gone from linux-1's shared accounts", func(p page.Page) bool { return slices.Equal(shared(p), []string{"claude"}) })
+	for _, a := range p.Actions {
+		if a.ID == "take-back/github" {
+			t.Errorf("linux-1's page still offers %q after GitHub was taken back", a.Label)
+		}
+	}
+}
+
+func TestAMacAddedReachesTheSwitcherOnceTheCallReturns(t *testing.T) {
+	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, asked: map[string][]string{}, activity: map[string]uint64{}}
+	refresh := make(chan struct{}, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	pages := feeds.Menubar{Calls: w, Clock: newSteps()}.Switcher()(ctx, engine.FeedInput{Refresh: refresh})
+	until(t, pages, "the fleet", func(p page.Page) bool { return row(p, "machines", mini) != nil })
+	w.mu.Lock()
+	w.added = []machines.HostView{{Name: "studio-1", Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}}}
+	w.mu.Unlock()
+	refresh <- struct{}{}
+	until(t, pages, "studio-1 in the switcher", func(p page.Page) bool { return row(p, "machines", "studio-1") != nil })
+}
+
+func TestAWorkspaceStartedOnThisMacReachesItsPageWhenTheEngineMoves(t *testing.T) {
+	linux := machines.VM{Name: "linux-1", Host: laptop, Lifetime: machines.Permanent, State: machines.Stopped}
+	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, here: []machines.VM{linux}, asked: map[string][]string{}, activity: map[string]uint64{}}
+	changed := make(chan struct{}, 1)
+	pages := watchWith(t, w, newSteps(), engine.FeedInput{Subject: "linux-1", Changed: changed})
+	until(t, pages, "linux-1 stopped", func(p page.Page) bool { r := row(p, "machine", "state"); return r != nil && r.Mark != page.OK })
+	w.mu.Lock()
+	linux.State = machines.Running
+	linux.Guest = "connected"
+	w.here = []machines.VM{linux}
+	w.mu.Unlock()
+	changed <- struct{}{}
+	until(t, pages, "linux-1 running", func(p page.Page) bool { r := row(p, "machine", "state"); return r != nil && r.Mark == page.OK })
 }
