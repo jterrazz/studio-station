@@ -20,6 +20,7 @@ const (
 	PaneSidebar Pane = iota
 	PaneMaster
 	PaneDetail
+	PaneProgress
 )
 
 const (
@@ -80,6 +81,10 @@ type Shell struct {
 	Focus         Pane
 	Footer        []organism.Binding
 	Sheet         *Sheet
+	// value: the Progress strip, above the footer, only while not empty.
+	Progress []Task
+	// value: the question put, drawn over the master pane.
+	Modal *Panel
 }
 
 func Fits(width, height int) bool { return width >= LeastWidth && height >= LeastHeight }
@@ -94,8 +99,9 @@ func (s Shell) Render() string {
 	if !Fits(s.Width, s.Height) {
 		return lipgloss.NewStyle().Width(max(s.Width, 1)).Render(TooSmall(s.Width, s.Height))
 	}
-	room := max(s.Height-3, 3)
-	lines := make([]string, 0, room+3)
+	strip := s.progressLines(st)
+	room := max(s.Height-3-len(strip), 3)
+	lines := make([]string, 0, room+3+len(strip))
 	lines = append(lines, s.header(st), " "+st.Muted.Render(strings.Join(s.Crumbs, token.Crumb)))
 	var body []string
 	switch {
@@ -105,6 +111,7 @@ func (s Shell) Render() string {
 		body = s.panes(st, room)
 	}
 	lines = append(lines, body...)
+	lines = append(lines, strip...)
 	lines = append(lines, organism.Footer(st, s.Footer, false, s.Width))
 	return strings.Join(lines, "\n")
 }
@@ -153,6 +160,9 @@ func (s Shell) panes(st token.Styles, room int) []string {
 		right = s.box(st, s.Detail.Title, s.Detail.Lines, DetailWidth, room, s.Focus == PaneDetail)
 	}
 	master := s.box(st, s.Master.Title, s.Master.Lines, masterWidth, room, s.Focus == PaneMaster)
+	if s.Modal != nil {
+		master = s.box(st, s.Modal.Title, s.Modal.Lines, masterWidth, room, true)
+	}
 	if s.Detail != nil && s.Overlay {
 		over := s.box(st, s.Detail.Title, s.Detail.Lines, min(DetailWidth, masterWidth), room, s.Focus == PaneDetail)
 		for i := range master {

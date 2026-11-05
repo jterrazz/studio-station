@@ -1,0 +1,52 @@
+description: 'v moves a misplaced folder, f frees without a question, e erases once the name is typed'
+fixture:
+    - ../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 110x34 "$STATION"'
+      stdin: |
+          see Engine running
+          send ]]]]
+          see All machines › This Mac › Disk
+          send /tart
+          see (/tart)
+          send \r
+          settle
+          send j
+          see v move
+          send v
+          see ✓ Moved ~/.tart
+          send \x1b
+          settle
+          send /go
+          see (/go)
+          send \r
+          settle
+          see f free
+          send f
+          see ✓ Freed go
+          send \x1b
+          settle
+          send /xcode
+          see (/xcode)
+          send \r
+          settle
+          send j
+          see e erase
+          send e
+          see Type xcode to go on:
+          send xc
+          send \r
+          see › xc
+          send ode
+          send \r
+          see ✓ Erased xcode
+          send q
+      exit: 0
+    - command: 'disk --all | /usr/bin/grep -e misplaced -e "	go	" -e "	xcode	"'
+      exit: 0
+      stdout: |
+          ●	This Mac	413 GB free of 994 GB · 0 misplaced folders
+          ●	xcode	19.1 GB

@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"slices"
+
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
@@ -8,6 +10,12 @@ func bind(key, label string) ui.Binding { return ui.Binding{Key: key, Label: lab
 
 func (s shell) paneKeys() []ui.Binding {
 	switch {
+	case s.acts.modal != nil:
+		return s.acts.modal.keys()
+	case s.focus == ui.PaneProgress:
+		if t, ok := s.waiting(); ok {
+			return t.keys()
+		}
 	case s.filtering:
 		return []ui.Binding{bind("type", "filter"), bind("enter", "keep"), bind("esc", "clear")}
 	case s.focus == ui.PaneSidebar:
@@ -20,11 +28,22 @@ func (s shell) paneKeys() []ui.Binding {
 		return []ui.Binding{bind("left", "list"), bind("esc", "back")}
 	}
 	keys := []ui.Binding{bind("up/down", "move")}
-	if _, folded := s.list(s.key(s.current(), s.section())).Unfold(); folded {
+	if s.ticks() {
+		keys = append(keys, bind("space", "tick"))
+	}
+	acts := s.actionKeys()
+	_, folded := s.list(s.key(s.current(), s.section())).Unfold()
+	if folded {
+		acts = slices.DeleteFunc(acts, func(b ui.Binding) bool { return b.Key == "enter" })
+	}
+	keys = append(keys, acts...)
+	switch {
+	case folded:
 		keys = append(keys, bind("enter", "unfold"))
-	} else if s.table() {
+	case s.table():
 		keys = append(keys, bind("enter", "open"))
-	} else if s.listed() {
+	case slices.ContainsFunc(acts, func(b ui.Binding) bool { return b.Key == "enter" }):
+	case s.listed():
 		keys = append(keys, bind("enter", "detail"))
 	}
 	if s.listed() {
@@ -58,7 +77,7 @@ func (s shell) aliases() []ui.Binding {
 
 func (s shell) footer() []ui.Binding {
 	keys := s.paneKeys()
-	if s.filtering {
+	if s.filtering || s.acts.modal != nil || s.focus == ui.PaneProgress {
 		return keys
 	}
 	return append(keys, bind("tab", "next pane"), bind("[ ]", "section"))

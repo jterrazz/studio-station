@@ -20,9 +20,10 @@ runs:
            All machines › This Mac › Overview
           ┏━ Keys · Overview ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
           ┃ OVERVIEW                                                                                                   ┃
-          ┃   ↑↓    move                                                                                               ┃
-          ┃   left  sidebar                                                                                            ┃
-          ┃   esc   up a level                                                                                         ┃
+          ┃   ↑↓     move                                                                                              ┃
+          ┃   enter  fix                                                                                               ┃
+          ┃   left   sidebar                                                                                           ┃
+          ┃   esc    up a level                                                                                        ┃
           ┃                                                                                                            ┃
           ┃ ALSO                                                                                                       ┃
           ┃   k/j  move up/down                                                                                        ┃
@@ -47,6 +48,5 @@ runs:
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃
-          ┃                                                                                                            ┃
           ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-           ↑↓ move  left sidebar  esc up a level  tab next pane  [ ] section  ? keys
+           ↑↓ move  enter fix  left sidebar  esc up a level  tab next pane  [ ] section  ? keys

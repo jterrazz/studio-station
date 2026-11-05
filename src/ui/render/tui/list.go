@@ -17,6 +17,17 @@ type List struct {
 	Cursor string
 	Filter string
 	Open   map[string]bool
+	// value: the rows ticked for a group action, by their line's key.
+	Ticked map[string]bool
+}
+
+func (l List) Keys() []string { return l.keys() }
+
+func (l List) Row(key string) (page.Row, bool) {
+	// value: the row a line's key names.
+	l.Cursor = key
+	_, r, ok := l.Current()
+	return r, ok
 }
 
 func (l List) Show(p page.Page) List {
@@ -131,6 +142,9 @@ func (l List) Lines(s Shell, width, room int, focused bool) []string {
 	out = append(out, top...)
 	for i := start; i < len(lines) && len(out) < room+len(top); i++ {
 		text := lines[i].Text
+		if l.Ticked[lines[i].Key] && lines[i].Kind == organism.LineRow && strings.HasPrefix(text, " ") {
+			text = Tick + text[1:]
+		}
 		if focused && lines[i].Key == l.Cursor && (lines[i].Kind == organism.LineRow || lines[i].Kind == organism.LineTitle) {
 			text = s.CursorLine(text, width)
 		}

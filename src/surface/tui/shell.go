@@ -52,6 +52,7 @@ type shell struct {
 	samples   map[string][]int
 	filtering bool
 	sheet     bool
+	acts      acts
 }
 
 const machinesKey = "\x00machines"
@@ -117,6 +118,10 @@ func (s shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.dark = msg.IsDark()
 	case answered:
 		return s.answer(msg)
+	case stepped:
+		return s.stepDone(msg)
+	case toasted:
+		return s.faded(msg.id), nil
 	case tea.KeyPressMsg:
 		return s.press(msg)
 	}
@@ -169,6 +174,9 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 
 func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	key := k.String()
+	if t := k.Key().Text; len(t) == 1 && t != " " && strings.HasPrefix(key, "shift+") {
+		key = t
+	}
 	if key == "ctrl+c" {
 		return s.quit()
 	}
@@ -176,8 +184,14 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		s.sheet = false
 		return s, nil
 	}
+	if s.acts.modal != nil {
+		return s.answering(k)
+	}
 	if s.filtering {
 		return s.typing(k)
+	}
+	if s.focus == ui.PaneProgress && key != "tab" && key != "shift+tab" && key != "q" && key != "?" {
+		return s.progress(key)
 	}
 	switch key {
 	case "q":
@@ -234,12 +248,13 @@ func (s shell) typing(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (s shell) back() (tea.Model, tea.Cmd) {
 	key := s.key(s.current(), s.section())
-	if l := s.list(key); l.Filter != "" {
-		s.lists = with(s.lists, key, l.Filtered(""))
-		return s, nil
-	}
 	if s.focus == ui.PaneDetail {
 		s.focus = ui.PaneMaster
+		s.acts.shown = with(s.acts.shown, key, shown{})
+		return s, nil
+	}
+	if l := s.list(key); l.Filter != "" {
+		s.lists = with(s.lists, key, l.Filtered(""))
 		return s, nil
 	}
 	n := s.current()
@@ -305,11 +320,21 @@ func (s shell) sidebar(key string) (tea.Model, tea.Cmd) {
 func (s shell) master(key string) (tea.Model, tea.Cmd) {
 	k := s.key(s.current(), s.section())
 	l := s.list(k)
+	if key == "space" {
+		return s.tick(), nil
+	}
+	if _, folded := l.Unfold(); key != "enter" || (!folded && !s.table()) {
+		if acted, cmd, ok := s.act(key); ok {
+			return acted, cmd
+		}
+	}
 	switch key {
 	case "up", "k":
 		l = l.Move(-1)
+		s.acts.shown = with(s.acts.shown, k, shown{})
 	case "down", "j":
 		l = l.Move(1)
+		s.acts.shown = with(s.acts.shown, k, shown{})
 	case "pgup":
 		l = l.Move(-10)
 	case "pgdown":
@@ -355,7 +380,23 @@ func (s shell) listed() bool {
 	}
 }
 
-func (s shell) detailed() bool { return s.listed() && !s.table() }
+func (s shell) detailed() bool { return (s.listed() && !s.table()) || s.detailShown() != nil }
+
+// value: what the section's detail pane shows in place of the row's own
+// detail, while its row has the cursor.
+func (s shell) detailShown() *shown {
+	k := s.key(s.current(), s.section())
+	o, ok := s.acts.shown[k]
+	if !ok || (o.read == "" && o.note == nil) || o.cursor != s.cursorRow(k) {
+		return nil
+	}
+	return &o
+}
+
+func (s shell) cursorRow(key string) string {
+	_, r, _ := s.list(key).Current()
+	return r.ID
+}
 
 func (s shell) masterWidth() int {
 	width := s.width - 2
@@ -435,6 +476,9 @@ func (s shell) cycle(step int) ui.Pane {
 	panes = append(panes, ui.PaneMaster)
 	if s.detailed() {
 		panes = append(panes, ui.PaneDetail)
+	}
+	if _, waits := s.waiting(); waits {
+		panes = append(panes, ui.PaneProgress)
 	}
 	i := max(slices.Index(panes, s.focus), 0)
 	return panes[((i+step)%len(panes)+len(panes))%len(panes)]
@@ -699,6 +743,7 @@ func (s shell) frame() ui.Shell {
 	case r.err != nil:
 		f.Master = ui.Panel{Title: title, Lines: ui.ErrorBlock(*r.err, s.dark)}
 	default:
+		l.Ticked = s.acts.ticked[key]
 		f.Master = ui.Panel{Title: title, Lines: l.Lines(f, width, room, s.focus == ui.PaneMaster || s.focus == ui.PaneDetail)}
 	}
 	if detail {
@@ -709,7 +754,15 @@ func (s shell) frame() ui.Shell {
 			}
 			pane.Lines = l.Detail(s.dark, ui.DetailWidth-2)
 		}
+		if o := s.detailShown(); o != nil {
+			pane = s.openedPanel(f, *o, room)
+		}
 		f.Detail, f.Overlay = &pane, s.width < ui.ThreePanes
+	}
+	f.Progress = s.strip()
+	if s.acts.modal != nil {
+		p := s.acts.modal.panel()
+		f.Modal = &p
 	}
 	f.Footer = s.footer()
 	if s.sheet {

@@ -25,7 +25,7 @@ runs:
           send q
       exit: 0
       stdout: |4
-           ↑↓ move  left sidebar  esc up a level  tab next pane  [ ] section  ? keys
+           ↑↓ move  enter fix  left sidebar  esc up a level  tab next pane  [ ] section  ? keys
            ↑↓ move  enter open  right list  esc up a level  tab next pane  [ ] section  ? keys
-           ↑↓ move  enter detail  / filter  left sidebar  esc up a level  tab next pane  [ ] section  ? keys
+           ↑↓ move  space tick  U update by method  enter detail  / filter  left sidebar  esc up a level  ? keys
            type filter  enter keep  esc clear  ? keys
