@@ -436,7 +436,10 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 	if kept := m.slice().Engine.Activity; kept != nil {
 		d.History().Take(kept)
 	}
-	m.engine, m.began = d, m.engineStarted()
+	// invariant: when it began is set before the engine is, so a surface of
+	// that engine that asks for it meanwhile never reads it as a successor.
+	m.began = m.engineStarted()
+	m.engine = d
 	m.surfaces(ctx, d)
 	m.settle(ctx)
 	return d, true
@@ -488,7 +491,11 @@ func (m *worldMac) settle(ctx context.Context) {
 	for n := 0; n < mostTicks && quiet < quietTicks; n++ {
 		m.tick++
 		_ = m.run.clock().Sleep(ctx, time.Second)
-		if m.engine.Step(ctx, m.tick) {
+		d := m.engine
+		if d == nil {
+			return
+		}
+		if d.Step(ctx, m.tick) {
 			quiet = 0
 		} else {
 			quiet++
