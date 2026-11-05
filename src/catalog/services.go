@@ -50,3 +50,32 @@ const (
 )
 
 var TailscaleCLIs = []string{TailscaleStandaloneCLI, TailscaleBundleCLI}
+
+const ReachableOutside = "reachable outside " + TailnetProduct // value: the words of a port anything outside the tailnet reaches.
+
+type KnownPort struct {
+	Port    int
+	Process string
+	What    string
+	// value: where the owner turns it off, a System Settings path.
+	Off string
+}
+
+const airPlayOff = "System Settings > General > AirDrop & Handoff > AirPlay Receiver"
+
+var KnownPorts = []KnownPort{ // value: the ports whose name the owner knows better than its process's; one with no process is known on any.
+	{Port: 5000, Process: "ControlCenter", What: "AirPlay Receiver", Off: airPlayOff},
+	{Port: 7000, Process: "ControlCenter", What: "AirPlay Receiver", Off: airPlayOff},
+	{Port: 22, What: "SSH"},
+	{Port: 5900, What: "Screen Sharing"},
+	{Port: 6443, What: "Kubernetes API"},
+}
+
+func KnownPortOf(port int, process string) (KnownPort, bool) {
+	for _, k := range KnownPorts {
+		if k.Port == port && (k.Process == "" || k.Process == process) {
+			return k, true
+		}
+	}
+	return KnownPort{}, false
+}
