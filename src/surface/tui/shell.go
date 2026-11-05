@@ -70,6 +70,7 @@ type shell struct {
 	seen   visited
 	pal    *actionsState
 	recent []palette.Item
+	last   clicked
 }
 
 const machinesKey = "\x00machines"
@@ -163,6 +164,10 @@ func (s shell) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return s.relive(msg)
 	case tea.KeyPressMsg:
 		return s.press(msg)
+	case tea.MouseClickMsg:
+		return s.click(msg.Mouse())
+	case tea.MouseWheelMsg:
+		return s.wheel(msg.Mouse())
 	}
 	return s, nil
 }
@@ -851,6 +856,7 @@ func (s shell) awake(n node) string {
 func (s shell) View() tea.View {
 	v := tea.NewView(s.frame().Render())
 	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
 	v.WindowTitle = "station"
 	return v
 }

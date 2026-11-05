@@ -292,3 +292,31 @@ func findRow(items []page.Item, id string) (page.Row, bool) {
 	}
 	return page.Row{}, false
 }
+
+// value: the list with its cursor on the row Lines draws on that line of
+// the pane, counted from its first; false when no row is drawn there.
+func (l List) At(s Shell, width, room, line int) (List, bool) {
+	if l.Page.Error != nil {
+		return l, false
+	}
+	top := 0
+	if l.Page.Strip != nil {
+		top, room = 2, max(room-2, 1)
+	}
+	lines := l.lines(token.New(s.Dark), width, s.Width)
+	at := slices.IndexFunc(lines, func(x organism.Line) bool { return x.Key == l.Cursor })
+	start := 0
+	if at >= room {
+		start = at - room + 1
+	}
+	i := start + line - top
+	if line < top || i < start || i >= len(lines) || i >= start+room {
+		return l, false
+	}
+	x := lines[i]
+	if x.Key == "" || x.Kind != organism.LineRow && x.Kind != organism.LineTitle {
+		return l, false
+	}
+	l.Cursor = x.Key
+	return l, true
+}
