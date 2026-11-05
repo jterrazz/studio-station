@@ -8,22 +8,47 @@
   "state": "ready",
   "sections": [
     {
-      "id": "set",
-      "title": "Set by station",
-      "fold": "auto",
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
       "columns": [
         {
-          "key": "name",
+          "key": "area",
           "kind": "text",
           "keep": 100
         },
         {
-          "key": "state",
-          "kind": "text",
+          "key": "value",
+          "kind": "list",
           "keep": 60
         }
       ],
-      "pipe_counts": true
+      "items": [
+        {
+          "row": {
+            "id": "summary/settings",
+            "mark": "ok",
+            "label": "This Mac",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "0 set by station here"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "nothing needs a look"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
     }
   ],
   "hints": [
@@ -32,6 +57,10 @@
     },
     {
       "command": "station settings <setting>"
+    },
+    {
+      "command": "station settings --all",
+      "text": "for every row"
     }
   ],
   "actions": [

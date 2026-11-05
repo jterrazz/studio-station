@@ -1,3 +1,5 @@
-Awake
-  ◌ jterrazz-macbook-pro
-  ◌ jterrazz-mac-mini
+◌ This Mac
+◌ jterrazz-mac-mini
+
+→ station awake 4h --lid                   this Mac
+→ station awake 4h --on jterrazz-mac-mini  another Mac

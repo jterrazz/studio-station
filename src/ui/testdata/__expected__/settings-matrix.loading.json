@@ -8,50 +8,29 @@
   "state": "loading",
   "sections": [
     {
-      "id": "machines",
-      "title": "Machines",
-      "caption": [
-        {
-          "kind": "text",
-          "text": "31 settings"
-        },
-        {
-          "kind": "text",
-          "text": "4 machines"
-        },
-        {
-          "kind": "text",
-          "text": "20 need a look"
-        }
-      ],
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
       "columns": [
         {
-          "key": "name",
+          "key": "area",
           "kind": "text",
           "keep": 100
         },
         {
-          "key": "kind",
-          "kind": "text",
-          "keep": 40
-        },
-        {
-          "key": "state",
-          "kind": "text",
+          "key": "value",
+          "kind": "list",
           "keep": 60
         }
       ],
       "items": [
         {
           "row": {
-            "id": "jterrazz-macbook-pro",
+            "id": "summary/settings",
             "mark": "pending",
-            "label": "jterrazz-macbook-pro",
-            "short": "This Mac",
+            "label": "31 settings on 4 machines",
             "cells": [
-              {
-                "kind": "pending"
-              },
               {
                 "kind": "pending"
               }
@@ -60,88 +39,6 @@
               "kind": "none"
             }
           }
-        },
-        {
-          "row": {
-            "id": "jterrazz-mac-mini",
-            "mark": "pending",
-            "label": "jterrazz-mac-mini",
-            "short": "mac-mini",
-            "cells": [
-              {
-                "kind": "pending"
-              },
-              {
-                "kind": "pending"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "linux-1",
-            "mark": "pending",
-            "label": "linux-1",
-            "short": "linux-1",
-            "cells": [
-              {
-                "kind": "pending"
-              },
-              {
-                "kind": "pending"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "api",
-            "mark": "pending",
-            "label": "api",
-            "short": "api",
-            "cells": [
-              {
-                "kind": "pending"
-              },
-              {
-                "kind": "pending"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "infra",
-            "mark": "pending",
-            "label": "infra",
-            "short": "infra",
-            "cells": [
-              {
-                "kind": "pending"
-              },
-              {
-                "kind": "pending"
-              }
-            ],
-            "detail": {
-              "kind": "none"
-            }
-          }
-        }
-      ],
-      "counts": [
-        {
-          "mark": "pending",
-          "n": 5
         }
       ],
       "uncounted": true
@@ -552,6 +449,131 @@
         {
           "mark": "pending",
           "n": 20
+        }
+      ]
+    },
+    {
+      "id": "machines",
+      "title": "Machines",
+      "fold": "brief",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 40
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro",
+            "mark": "pending",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini",
+            "mark": "pending",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "linux-1",
+            "mark": "pending",
+            "label": "linux-1",
+            "short": "linux-1",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api",
+            "mark": "pending",
+            "label": "api",
+            "short": "api",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "infra",
+            "mark": "pending",
+            "label": "infra",
+            "short": "infra",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 5
         }
       ]
     },

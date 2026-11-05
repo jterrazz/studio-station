@@ -79,8 +79,7 @@ Prose
   Error: defaults is not installed
   Hint: run station setup
   no lent secrets  → station secrets lend <name>
-Peers
-    iphone  offline
+Peers  iphone · offline
 
 → station overview --all
 → station apps  for the catalogue

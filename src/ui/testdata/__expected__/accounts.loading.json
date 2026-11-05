@@ -8,6 +8,57 @@
   "state": "loading",
   "sections": [
     {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/accounts",
+            "mark": "ok",
+            "label": "This Mac",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "8 accounts"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "0 signed in"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "reading"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "shared with 2 VMs"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
       "id": "accounts",
       "title": "Accounts",
       "columns": [

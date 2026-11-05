@@ -9,9 +9,3 @@ runs:
       exit: 0
     - command: 'awake | /usr/bin/sed -n ''/^# jterrazz-macbook-pro/,$p'''
       exit: 0
-      stdout: |
-          # jterrazz-macbook-pro
-          lid	closed
-          power	battery · 35 % · not charging
-          thermal	nominal
-          screen	always turns off

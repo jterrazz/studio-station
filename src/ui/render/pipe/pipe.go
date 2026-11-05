@@ -27,7 +27,7 @@ func Render(p page.Page) ([]byte, error) {
 
 func section(b *strings.Builder, s page.Section) {
 	switch s.Role {
-	case page.Actions, page.Summary:
+	case page.Actions, page.Summary, page.Lifted:
 		return
 	case page.Banner:
 	case page.Plain:

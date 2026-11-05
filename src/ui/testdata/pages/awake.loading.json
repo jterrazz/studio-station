@@ -9,7 +9,7 @@
   "sections": [
     {
       "id": "awake",
-      "title": "Awake",
+      "role": "banner",
       "columns": [
         {
           "key": "name",
@@ -28,6 +28,7 @@
             "id": "jterrazz-macbook-pro",
             "mark": "pending",
             "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
             "cells": [
               {
                 "kind": "pending"
@@ -40,6 +41,7 @@
             "id": "jterrazz-mac-mini",
             "mark": "pending",
             "label": "jterrazz-mac-mini",
+            "short": "jterrazz-mac-mini",
             "cells": [
               {
                 "kind": "pending"
@@ -54,6 +56,16 @@
           "n": 2
         }
       ]
+    }
+  ],
+  "hints": [
+    {
+      "command": "station awake 4h --lid",
+      "text": "this Mac"
+    },
+    {
+      "command": "station awake 4h --on jterrazz-mac-mini",
+      "text": "another Mac"
     }
   ]
 }

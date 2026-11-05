@@ -196,9 +196,9 @@ func TestEveryHintIsWholeInEveryMedium(t *testing.T) {
 			if s.Fold == page.Folded {
 				continue
 			}
-			if s.Fold == page.Brief {
-				// value: a brief section is one line on a terminal: its rows'
-				// hints are whole in the pipe and the TUI, which list them.
+			if s.Fold == page.Brief || s.Fold == page.Calm {
+				// value: a brief or calm section is one line on a terminal: its
+				// rows' hints are whole in the pipe and the TUI, which list them.
 				all := hints
 				hints = map[string]bool{}
 				walk(s.Items)
@@ -209,9 +209,9 @@ func TestEveryHintIsWholeInEveryMedium(t *testing.T) {
 			all := hints
 			hints = map[string]bool{}
 			walk(s.Items)
-			// value: the pipe prints no Actions or Summary section: their hints
-			// are whole on the eye's media only.
-			if s.Role != page.Actions && s.Role != page.Summary {
+			// value: the pipe prints no Actions, Summary or Lifted section: their
+			// hints are whole on the eye's media only.
+			if s.Role != page.Actions && s.Role != page.Summary && s.Role != page.Lifted {
 				maps.Copy(piped, hints)
 			}
 			maps.Copy(all, hints)

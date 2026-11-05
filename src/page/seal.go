@@ -77,18 +77,11 @@ func rowPending(r Row) bool {
 	return false
 }
 
-// value: a banner of notes only, the `On <machine>:` line a page of another
-// machine starts with (SPEC §8.1): it needs no title.
+// value: a banner that is a page's own first lines needs no title: the
+// `On <machine>:` line a page of another machine starts with (SPEC §8.1), an
+// Overview's section lines, Awake's Macs (vision 07).
 func onLine(s Section) bool {
-	if s.Role != Banner || len(s.Items) == 0 {
-		return false
-	}
-	for _, it := range s.Items {
-		if it.Note == nil {
-			return false
-		}
-	}
-	return true
+	return s.Role == Banner && len(s.Items) > 0
 }
 
 func Check(p Page) error {

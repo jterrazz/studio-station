@@ -23,7 +23,7 @@ public struct PageView: View {
             if let strip = page.strip { StripView(strip) }
             Divider()
             if let error = page.error { ErrorLine(error) }
-            ForEach(Array((page.sections ?? []).enumerated()), id: \.offset) { _, s in
+            ForEach(Array((page.sections ?? []).filter { $0.role != "lifted" }.enumerated()), id: \.offset) { _, s in
                 SectionView(s, width: inner, hintButtons: true)
             }
             ForEach(Array((page.hints ?? []).enumerated()), id: \.offset) { _, h in HintView(h) }

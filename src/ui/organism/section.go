@@ -58,8 +58,9 @@ func Section(st token.Styles, s page.Section, width int) []string {
 	body := Rows(st, s, width)
 	lines := make([]string, 0, len(body)+1)
 	// invariant: a section with no title and no caption reads on as its
-	// rows (an Overview's lines under its Needs you), with no blank head.
-	if s.Title != "" || len(s.Caption) > 0 || len(s.Counts) > 0 {
+	// rows (an Overview's lines under its Needs you, Awake's Macs), with no
+	// blank head, whatever it counts.
+	if s.Title != "" || len(s.Caption) > 0 {
 		lines = append(lines, Title(st, s))
 	}
 	return append(lines, body...)
@@ -71,7 +72,7 @@ func AutoFolded(s page.Section) bool {
 		return true
 	case page.Open, page.Brief:
 		return false
-	case page.Auto:
+	case page.Auto, page.Calm:
 		rows := 0
 		for _, t := range s.Counts {
 			if t.Mark != page.OK && t.Mark != page.Absent {

@@ -8,6 +8,49 @@
   "state": "ready",
   "sections": [
     {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/images",
+            "mark": "ok",
+            "label": "3 images on 2 Macs",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "1 older"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "macos not built yet"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
       "id": "images",
       "title": "Images",
       "role": "banner",
@@ -92,9 +135,12 @@
             ],
             "detail": {
               "kind": "text",
-              "text": "older: station images delete linux@2026.10.20"
+              "text": "older"
             },
-            "reason": "outdated"
+            "reason": "outdated",
+            "hint": {
+              "command": "station images delete linux@2026.10.20"
+            }
           }
         },
         {

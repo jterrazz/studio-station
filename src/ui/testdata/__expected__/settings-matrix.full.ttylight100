@@ -1,9 +1,5 @@
-[1;38;2;30;102;245mMachines[m  [38;2;108;111;133m31 settings · 4 machines · 20 need a look[m
-  [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mThis Mac[m  [38;2;76;79;105mMac[m        [38;2;76;79;105mread[m
-  [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mmac-mini[m  [38;2;76;79;105mMac[m        [38;2;76;79;105mread[m
-  [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mlinux-1[m   [38;2;76;79;105mWorkspace[m  [38;2;76;79;105mread[m
-  [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mapi[m       [38;2;76;79;105mWorkspace[m  [38;2;76;79;105mstopped · last read 2 h ago[m
-  [38;2;156;160;176m[m[38;2;156;160;176m–[m [1;38;2;76;79;105minfra[m     [38;2;76;79;105mServer[m     [38;2;76;79;105mnot checked: station does not manage its settings[m
+[38;2;76;79;105m31 settings on 4 machines · 20 need a look · infra is a server: not checked[m
+
 [1;38;2;30;102;245mNeeds a look[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mThis Mac[m  [38;2;76;79;105mghostty-dotfiles[m  [38;2;76;79;105mchanged since 2 d ago[m
     [38;2;108;111;133m→ [m[38;2;76;79;105mstation settings diff ghostty-dotfiles[m
@@ -41,6 +37,7 @@
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mapi[m       [38;2;76;79;105mgithub-login[m      [38;2;76;79;105mchanged since 2 d ago[m                [38;2;108;111;133m→ [m[38;2;76;79;105mstation machines start api[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mapi[m       [38;2;76;79;105mdock-reset[m        [38;2;76;79;105mchanged since 2 d ago[m                [38;2;108;111;133m→ [m[38;2;76;79;105mstation machines start api[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mapi[m       [38;2;76;79;105mdocker-shortcuts[m  [38;2;76;79;105mchanged since 2 d ago[m                [38;2;108;111;133m→ [m[38;2;76;79;105mstation machines start api[m
+[1;38;2;30;102;245mMachines[m  [38;2;64;160;43m●[m [38;2;76;79;105m3[m  [38;2;108;111;133m○[m [38;2;76;79;105m1[m  [38;2;156;160;176m–[m [38;2;76;79;105m1[m[38;2;108;111;133m · This Mac, mac-mini, linux-1, api, infra[m
 [1;38;2;30;102;245mSet by station[m
 [38;2;108;111;133m                      This Mac  mac-mini  linux-1  api     OK[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mghostty-dotfiles[m  [38;2;223;142;29m◐[m         [38;2;223;142;29m◐[m         [38;2;223;142;29m◐[m        [38;2;223;142;29m◐[m       [38;2;76;79;105m0/4[m

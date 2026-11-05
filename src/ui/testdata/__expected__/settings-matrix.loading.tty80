@@ -1,9 +1,5 @@
-Machines  31 settings · 4 machines · 20 need a look
-  ◌ This Mac
-  ◌ mac-mini
-  ◌ linux-1
-  ◌ api
-  ◌ infra
+31 settings on 4 machines
+
 Needs a look
   ◌ This Mac
   ◌ This Mac
@@ -25,6 +21,7 @@ Needs a look
   ◌ api
   ◌ api
   ◌ api
+Machines  ◌ 5 · This Mac, mac-mini, linux-1, api, infra
 Set by station
   ◌ ghostty-dotfiles
   ◌ github-login

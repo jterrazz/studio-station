@@ -5,5 +5,4 @@ runs:
       exit: 0
       stdout: |
           	On jterrazz-mac-mini:
-          # Awake
-          ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy · last slept: never in 12d 1h · hosts infra (server)
+          ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy	last slept: never in 12d 1h · hosts infra (server)

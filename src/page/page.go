@@ -66,6 +66,10 @@ const (
 	Actions Role = "actions"
 	Summary Role = "summary"
 	Banner  Role = "banner"
+	// value: what needs a look, lifted first on a terminal's page from the
+	// sections its rows stay in (vision 07 "station settings"): the pipe, the
+	// TUI and the menu bar read those rows where they are.
+	Lifted Role = "lifted"
 )
 
 type Fold string
@@ -77,6 +81,9 @@ const (
 	// value: one line on a terminal's page, open in the TUI and the menu bar
 	// (vision 07 "station apps" folds Not installed; screen 2 lists it).
 	Brief Fold = "brief"
+	// value: one line on a terminal's page, folded in the TUI while every
+	// row is calm, as Auto is (Settings' Set by station).
+	Calm Fold = "calm"
 )
 
 type Column struct {

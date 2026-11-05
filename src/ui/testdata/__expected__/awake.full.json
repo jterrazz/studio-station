@@ -9,7 +9,7 @@
   "sections": [
     {
       "id": "awake",
-      "title": "Awake",
+      "role": "banner",
       "columns": [
         {
           "key": "name",
@@ -28,6 +28,7 @@
             "id": "jterrazz-macbook-pro",
             "mark": "ok",
             "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
             "cells": [
               {
                 "kind": "list",
@@ -54,6 +55,7 @@
             "id": "jterrazz-mac-mini",
             "mark": "ok",
             "label": "jterrazz-mac-mini",
+            "short": "jterrazz-mac-mini",
             "cells": [
               {
                 "kind": "list",
@@ -65,18 +67,23 @@
                   {
                     "kind": "text",
                     "text": "always-on Mac policy"
-                  },
-                  {
-                    "kind": "text",
-                    "text": "last slept: never in 12d"
-                  },
-                  {
-                    "kind": "text",
-                    "text": "hosts infra (server)"
                   }
                 ]
               }
-            ]
+            ],
+            "detail": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "last slept: never in 12d"
+                },
+                {
+                  "kind": "text",
+                  "text": "hosts infra (server)"
+                }
+              ]
+            }
           }
         }
       ],
@@ -89,7 +96,7 @@
     },
     {
       "id": "reading",
-      "title": "jterrazz-macbook-pro",
+      "title": "This Mac",
       "columns": [
         {
           "key": "name",
@@ -114,7 +121,7 @@
         },
         {
           "fact": {
-            "key": "power",
+            "key": "power source",
             "value": {
               "kind": "list",
               "items": [
@@ -154,6 +161,16 @@
         }
       ],
       "uncounted": true
+    }
+  ],
+  "hints": [
+    {
+      "command": "station awake 4h --lid",
+      "text": "this Mac"
+    },
+    {
+      "command": "station awake 4h --on jterrazz-mac-mini",
+      "text": "another Mac"
     }
   ]
 }

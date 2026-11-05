@@ -1,18 +1,13 @@
- Set by station  4 ●  4 ◐  3 ○  3 ⊘
-   ◐ ghostty-dotfiles   changed since 2 d ago
-     → station settings diff ghostty-dotfiles
-   ◐ github-login       changed since 2 d ago
-     → station settings diff github-login
-   ◐ dock-reset         changed since 2 d ago
-     → station settings diff dock-reset
-   ◐ docker-shortcuts   changed since 2 d ago
-     → station settings diff docker-shortcuts
-   ○ tmux-dotfiles      not applied
-     → station settings apply tmux-dotfiles
-   ○ spotlight-exclude  not applied
-     → station settings apply spotlight-exclude
-   ○ dock-spacer        not applied
-     → station settings apply dock-spacer
+ - Summary                                                                     
+   ◐ This Mac  14 set by station here · 9 checked · 6 need a look
+ - Set by station                                            4 ●  4 ◐  3 ○  3 ⊘
+   ◐ ghostty-dotfiles   changed since 2 d ago       d diff
+   ◐ github-login       changed since 2 d ago       d diff
+   ◐ dock-reset         changed since 2 d ago       d diff
+   ◐ docker-shortcuts   changed since 2 d ago       d diff
+   ○ tmux-dotfiles      not applied                 a apply
+   ○ spotlight-exclude  not applied                 a apply
+   ○ dock-spacer        not applied                 a apply
    ● hushlogin          applied · ~/.hushlogin
    ● ssh-key            applied · ~/.ssh-key
    ● zed-dotfiles       applied · ~/.zed-dotfiles
@@ -20,11 +15,9 @@
    ⊘ starship-dotfiles  off here
    ⊘ dns                off here
    ⊘ backup-exclusions  off here
-
- Always-on Mac
+ - Always-on Mac
    ○ Always-on Mac  5 · for a Mac that hosts servers
-
- Checked  5 ●  2 ◐  1 ⊘  1 ?
+ - Checked                                                   5 ●  2 ◐  1 ⊘  1 ?
    ◐ firewall           off
      → System Settings > Network > Firewall
    ◐ screen-lock        locks after 10 min · expected 5 min
@@ -36,6 +29,6 @@
    ● remote-login       as expected · off
    ● macos-updates      as expected · up to date
    ⊘ gatekeeper         off here · not checked on this machine
-
- Not for this machine
+ - Not for this machine
    – 3 not for this machine  VMs only
+ ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

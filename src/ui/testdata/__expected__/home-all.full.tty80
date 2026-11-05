@@ -58,8 +58,7 @@ Background
   └─ ◐ socket    not loaded          root  Docker.app  /Library/La…socket.plist
        → sudo launchctl bootout system/com.docker.socket &&
          sudo rm /Library/LaunchDaemons/com.docker.socket.plist
-Gateways
-  ● Tailscale Serve  on
+Gateways  ● Tailscale Serve · on
 Tools
   ○ mise                                brew · system
     → station apps install mise

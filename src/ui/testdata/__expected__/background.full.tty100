@@ -9,10 +9,10 @@ Orphans
     root  idle  iStat Menus (gone)  /Library/LaunchDaemons/com.bjango.istatmenus.installer.plist
     → sudo launchctl bootout system/com.bjango.istatmenus.installer &&
       sudo rm /Library/LaunchDaemons/com.bjango.istatmenus.installer.plist
-Station
-  ● com.jterrazz.station.engine  user  running · pid 812  ~/…/com.jterrazz.station.engine.plist
-Known apps
-  ● com.github.facebook.watchman  user  running · pid 3464  watchman  ~/Library/Laun…watchman.plist
+● com.jterrazz.station.engine · user · running · pid 812
+  ~/Library/LaunchAgents/com.jterrazz.station.engine.plist
+Known apps  ● com.github.facebook.watchman · user · running · pid 3464 · watchman
+              ~/Library/LaunchAgents/com.github.facebook.watchman.plist
 Unknown
   ● com.jterrazz.brain.sync  user  idle  ~/Library/LaunchAgents/com.jterrazz.brain.sync.plist
   ◐ com.jterrazz.brain.late  user  ?     ~/Library/LaunchAgents/com.jterrazz.brain.late.plist

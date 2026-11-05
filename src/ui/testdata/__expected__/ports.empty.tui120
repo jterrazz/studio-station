@@ -1,5 +1,7 @@
- Tailscale
+ - Summary                                                                                                             
+   ● This Mac  0 ports · nothing needs you
+ - Tailscale                                                                                                        1 ○
    ○ Tailscale  not installed  → station apps install tailscale
-
- Private: shared with you on Tailscale
+ - Private: shared with you on Tailscale
    no shared ports  → station machines create
+ ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

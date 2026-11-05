@@ -23,6 +23,20 @@ type Fleet struct {
 	Zone    *time.Location
 	Reports []awake.Report
 	Silent  []Silent
+	// value: how a Mac is named on a page (`mac-mini`), and whether the
+	// page reads another Mac, whose own report says it is here.
+	Label func(mac string) string
+	Far   bool
+}
+
+func (f Fleet) name(r awake.Report) string {
+	switch {
+	case r.Here && !f.Far:
+		return "This Mac"
+	case f.Label != nil:
+		return f.Label(r.Mac)
+	}
+	return r.Mac
 }
 
 func columns() []page.Column {
@@ -67,17 +81,20 @@ func hosts(servers []string) string {
 	return "hosts " + strings.Join(parts, ", ")
 }
 
-func never(r awake.Report) []string {
-	words := []string{"Never sleeps", "always-on Mac policy"}
+// value: a Mac that never sleeps, its mode then what it has done since
+// (vision 07: `● Never sleeps · always-on Mac policy` / `last slept: never
+// in 12 d · hosts infra (server)`).
+func never(r awake.Report) (words, since []string) {
+	words = []string{"Never sleeps", "always-on Mac policy"}
 	if !r.NeverHeld {
 		words = append(words, "let go while the battery is low")
 	} else if !r.NeverSince.IsZero() {
-		words = append(words, "last slept: never in "+pages.Term(r.Now.Sub(r.NeverSince)))
+		since = append(since, "last slept: never in "+pages.Term(r.Now.Sub(r.NeverSince)))
 	}
 	if len(r.Servers) > 0 {
-		words = append(words, hosts(r.Servers))
+		since = append(since, hosts(r.Servers))
 	}
-	return words
+	return words, since
 }
 
 func Row(r awake.Report) page.Row {
@@ -91,7 +108,11 @@ func Row(r awake.Report) page.Row {
 	default:
 		switch r.Mode() {
 		case awake.NeverSleeps:
-			row.Mark, row.Cells = page.OK, []page.Value{page.Texts(never(r)...)}
+			words, since := never(r)
+			row.Mark, row.Cells = page.OK, []page.Value{page.Texts(words...)}
+			if len(since) > 0 {
+				row.Detail = page.Texts(since...)
+			}
 			if !r.NeverHeld {
 				row.Mark, row.Reason = page.Attention, page.Guard
 			}
@@ -122,13 +143,13 @@ func source(rd awake.Reading) page.Value {
 	return page.Texts(src, strconv.Itoa(rd.Percent)+" %", charging)
 }
 
-func reading(r awake.Report) page.Section {
+func reading(r awake.Report, name string) page.Section {
 	rd := r.Reading
 	var facts []page.Fact
 	if r.Caps.Lid {
 		facts = append(facts, page.Fact{Key: "lid", Value: page.Text(rd.Lid)})
 	}
-	facts = append(facts, page.Fact{Key: "power", Value: source(rd)})
+	facts = append(facts, page.Fact{Key: "power source", Value: source(rd)})
 	if r.Caps.Thermal {
 		facts = append(facts, page.Fact{Key: "thermal", Value: page.Text(awake.Level(rd.Thermal))})
 	}
@@ -137,28 +158,32 @@ func reading(r awake.Report) page.Section {
 	for i := range facts {
 		items = append(items, page.Item{Fact: &facts[i]})
 	}
-	return page.Section{ID: "reading", Title: r.Mac, Uncounted: true, Columns: columns(), Items: items}
+	return page.Section{ID: "reading", Title: name, Uncounted: true, Columns: columns(), Items: items}
 }
 
 func Page(f Fleet, here page.Context) page.Page {
-	// invariant: every Mac, This Mac first, each by its mode; its readings
-	// are the ones it reports, This Mac's only.
+	// invariant: every Mac, This Mac first, each by its mode and named as the
+	// owner names it; its readings are the ones it reports, This Mac's only.
 	rows := make([]page.Row, 0, len(f.Reports)+len(f.Silent))
 	for _, r := range f.Reports {
-		rows = append(rows, Row(r))
+		row := Row(r)
+		row.Short = f.name(r)
+		rows = append(rows, row)
 	}
 	for _, s := range f.Silent {
-		rows = append(rows, page.Row{ID: s.Mac, Label: s.Mac, Mark: page.NotKnown, Reason: page.Unreachable, Cells: []page.Value{page.Text(s.Why)}})
+		rows = append(rows, page.Row{ID: s.Mac, Label: s.Mac, Short: f.name(awake.Report{Mac: s.Mac}), Mark: page.NotKnown, Reason: page.Unreachable, Cells: []page.Value{page.Text(s.Why)}})
 	}
 	items := make([]page.Item, 0, len(rows))
 	for i := range rows {
 		items = append(items, page.Item{Row: &rows[i]})
 	}
-	sections := []page.Section{{ID: "awake", Title: "Awake", Columns: columns(), Items: items}}
+	// invariant: each Mac's line is the page's first (vision 07 "station
+	// awake"): the Macs are a banner, drawn flush with no title.
+	sections := []page.Section{{ID: "awake", Role: page.Banner, Columns: columns(), Items: items}}
 	if len(f.Reports) > 0 && f.Reports[0].Here && !stopped(f.Reports[0]) && f.Reports[0].Daemon != awake.EngineReading {
-		sections = append(sections, reading(f.Reports[0]))
+		sections = append(sections, reading(f.Reports[0], f.name(f.Reports[0])))
 	}
-	p := page.Page{ID: "awake", Command: "awake", Context: here, Sections: sections}
+	p := page.Page{ID: "awake", Command: "awake", Context: here, Sections: sections, Hints: f.next()}
 	for _, r := range f.Reports {
 		if r.Daemon == awake.EngineReading {
 			p.State = page.Loading
@@ -295,4 +320,19 @@ func Off(s awake.Slept, label string, here page.Context) page.Page {
 		r.Detail = page.Texts("has no keep-awake to end", "Never sleeps stays: station settings off never-sleeps"+on(s.Mac, label, here))
 	}
 	return pages.Outcome("awake off", here, nil, []page.Row{r}, "keep-awake to end")
+}
+
+// value: the next steps (vision 07 "station awake"): keep This Mac awake,
+// or another Mac.
+func (f Fleet) next() []page.Hint {
+	if f.Far {
+		return nil
+	}
+	hints := []page.Hint{{Command: "station awake 4h --lid", Text: "this Mac"}}
+	for _, r := range f.Reports {
+		if !r.Here {
+			return append(hints, page.Hint{Command: "station awake 4h --on " + f.name(r), Text: "another Mac"})
+		}
+	}
+	return hints
 }

@@ -1,33 +1,9 @@
-Set by station
-  ◌ hushlogin
-  ◌ ghostty-dotfiles
-  ◌ tmux-dotfiles
-  ◌ starship-dotfiles
-  ◌ git-signing
-  ◌ ssh-key
-  ◌ github-login
-  ◌ spotlight-exclude
-  ◌ dns
-  ◌ claude-token
-  ◌ zed-dotfiles
-  ◌ dock-reset
-  ◌ dock-spacer
-  ◌ backup-exclusions
-  ◌ tart-launcher
-  ◌ git-shortcuts
-  ◌ docker-shortcuts
-Always-on Mac
-  ○ Always-on Mac  5 · for a Mac that hosts servers
-Checked
-  ◌ filevault
-  ◌ firewall
-  ◌ sip
-  ◌ automatic-updates
-  ◌ screen-lock
-  ◌ gatekeeper
-  ◌ remote-login
-  ◌ time-machine
-  ◌ macos-updates
+This Mac · 17 set by station here · 9 checked · nothing needs a look
+
+Set by station  ◌ 17 · hushlogin, ghostty-dotfiles, tmux-dotfiles, starship-dotfiles, …
+Always-on Mac   ○ 5 · for a Mac that hosts servers
+Checked         ◌ 9 · filevault, firewall, sip, automatic-updates, screen-lock, gatekeeper, …
 
 → station settings apply
 → station settings <setting>
+→ station settings --all  for every row

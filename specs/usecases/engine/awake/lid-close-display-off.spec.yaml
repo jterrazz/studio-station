@@ -10,12 +10,11 @@ runs:
     - command: 'awake'
       exit: 0
       stdout: |
-          # Awake
           ●	jterrazz-macbook-pro	Awake until 14:00 · lid closed · on battery allowed · 3h 59m left
-          ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy · last slept: never in 12d 1h · hosts infra (server)
-          # jterrazz-macbook-pro
+          ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy	last slept: never in 12d 1h · hosts infra (server)
+          # This Mac
           lid	closed
-          power	battery · 35 % · not charging
+          power source	battery · 35 % · not charging
           thermal	nominal
           screen	always turns off
     - command: 'awake >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"].power | {holds, clamshell, display_sleeps}'' world.json'

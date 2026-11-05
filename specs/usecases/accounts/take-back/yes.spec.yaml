@@ -14,7 +14,7 @@ runs:
       stdout: |
           ┃ Take GitHub back from linux-1?
           ┃
-          github · taken back from linux-1
+          GitHub · taken back from linux-1
     - command: '--version >/dev/null; /usr/bin/jq -c ''[(.macs["linux-1"].secrets // {} | keys), (.macs["jterrazz-macbook-pro"].stores.shares["linux-1"] // [] | map(.name))]'' world.json'
       exit: 0
       stdout: |

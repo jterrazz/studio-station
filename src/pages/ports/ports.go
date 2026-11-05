@@ -37,6 +37,7 @@ func Listed(l ports.Listing, here page.Context, all bool) page.Page {
 	if line := TailnetLine(l.Tailnet); line != nil {
 		sections = append([]page.Section{*line}, sections...)
 	}
+	sections = append([]page.Section{firstLine(sections, whose(l.Fleet, here))}, sections...)
 	return page.Seal(page.Page{ID: "ports", Command: "ports", Context: here, Sections: sections, Actions: Actions(l.Fleet)})
 }
 
@@ -333,4 +334,51 @@ func Undeclared(d ports.Declaration, here page.Context) page.Page {
 
 func Stopped(r ports.Reservation, here page.Context) page.Page {
 	return pages.Outcome("ports stop-sharing", here, nil, []page.Row{pages.Done(r.Key(), catalog.StateOK, "not shared")}, "shared ports")
+}
+
+// value: the first line: whose ports, how many, and how many need you
+// (vision 07 "station ports": `mac-mini and infra · 9 ports · 4 need you`).
+// value: whose ports a list holds: every Mac's, another Mac's, This Mac's.
+func whose(f ports.Fleet, here page.Context) string {
+	switch {
+	case len(f.Hosts) > 1:
+		return "Every Mac"
+	case len(f.Hosts) == 1 && here.Machine != "" && f.Hosts[0].Name != here.Machine:
+		return f.Hosts[0].Name
+	case here.Machine != "" && here.Kind != string(catalog.Host):
+		return here.Machine
+	}
+	return "This Mac"
+}
+
+func firstLine(sections []page.Section, label string) page.Section {
+	n, needs := 0, 0
+	for _, s := range sections {
+		if s.ID == "tailnet" || s.ID == "ranges" {
+			continue
+		}
+		for _, it := range s.Items {
+			if it.Row == nil && it.Link == nil {
+				continue
+			}
+			n++
+			if it.Row != nil && (it.Row.Mark == page.Broken || it.Row.Mark == page.Attention) {
+				needs++
+			}
+		}
+	}
+	words := []string{strconv.Itoa(n) + " ports"}
+	if n == 1 {
+		words[0] = "1 port"
+	}
+	switch needs {
+	case 0:
+		words = append(words, "nothing needs you")
+	case 1:
+		words = append(words, "1 needs you")
+	default:
+		words = append(words, strconv.Itoa(needs)+" need you")
+	}
+	row := page.Row{ID: "summary/ports", Label: label, Mark: page.OK, Cells: []page.Value{page.Texts(words...)}}
+	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: []page.Item{{Row: &row}}}
 }

@@ -53,8 +53,10 @@ func body(st token.Styles, p page.Page, width int) []string {
 				lines = append(lines, "")
 				lines = append(lines, organism.Rows(st, s, width)...)
 			}
-		case s.Fold == page.Folded || s.Fold == page.Brief:
+		case s.Fold == page.Folded || s.Fold == page.Brief || s.Fold == page.Calm:
 			lines = append(lines, folded(st, s, fold, width))
+		case single(s):
+			lines = append(lines, oneRow(st, s, fold, width)...)
 		case noted(s) && atom.Width(atom.Pad(s.Title, fold))+token.Gap+atom.Width(s.Items[0].Note.Text) < width-token.Margin:
 			lines = append(lines, atom.Spaces(token.Margin)+st.Title.Render(atom.Pad(s.Title, fold))+atom.Spaces(token.Gap)+st.Muted.Render(s.Items[0].Note.Text))
 		default:
@@ -95,7 +97,11 @@ func firstLine(sections []page.Section) int {
 // value: a page summed up by one machine's row reads as its first line,
 // `This Mac · 108 apps for this Mac · 2 updates` (vision 07 "station apps").
 func summed(st token.Styles, r page.Row, width int) []string {
-	parts := []page.Value{page.Text(r.Label)}
+	label := r.Label
+	if r.Short != "" {
+		label = r.Short
+	}
+	parts := []page.Value{page.Text(label)}
 	for _, c := range append(r.Cells, r.Detail) {
 		if c.Kind == page.KindList {
 			parts = append(parts, c.Items...)
@@ -182,7 +188,7 @@ func noted(s page.Section) bool {
 func foldWidth(sections []page.Section) int {
 	n := 0
 	for _, s := range sections {
-		if s.Fold == page.Folded || s.Fold == page.Brief {
+		if s.Fold == page.Folded || s.Fold == page.Brief || s.Fold == page.Calm || single(s) && !said(s) {
 			n = max(n, atom.Width(s.Title))
 		}
 	}
@@ -206,7 +212,10 @@ func folded(st token.Styles, s page.Section, at, width int) string {
 	line += atom.Spaces(token.Gap) + strings.Join(counts, atom.Spaces(token.Gap))
 	var names []string
 	for _, it := range s.Items {
-		if it.Row != nil {
+		switch {
+		case it.Row != nil && it.Row.Short != "":
+			names = append(names, it.Row.Short)
+		case it.Row != nil:
 			names = append(names, it.Row.Label)
 		}
 	}
@@ -235,4 +244,73 @@ func folded(st token.Styles, s page.Section, at, width int) string {
 		list = next
 	}
 	return line + st.Muted.Render(token.Sep+list)
+}
+
+// invariant: a calm section of one row with nothing to do is one line
+// (vision 07 "Off  ⊘ 1 · Claude token"): its title, then the row's mark,
+// its label unless the title says it, and its cells; a row whose label
+// says the title is the line alone (`– 12 not for this machine · Mac only`);
+// a table, whose columns are headed, keeps its heads.
+func single(s page.Section) bool {
+	if s.Title == "" || s.Role != page.Plain && s.Role != page.Banner || len(s.Items) != 1 || s.Items[0].Row == nil {
+		return false
+	}
+	for _, c := range s.Columns {
+		if c.Label != "" {
+			return false
+		}
+	}
+	r := s.Items[0].Row
+	return r.Hint == nil && r.Mark != page.Attention && r.Mark != page.Broken && r.Mark != page.Awaiting
+}
+
+func said(s page.Section) bool {
+	label := s.Items[0].Row.Label
+	return label != s.Title && strings.Contains(strings.ToLower(label), strings.ToLower(s.Title))
+}
+
+func oneRow(st token.Styles, s page.Section, at, width int) []string {
+	r := *s.Items[0].Row
+	var parts []string
+	if r.Label != s.Title {
+		parts = append(parts, r.Label)
+	}
+	for _, c := range append(r.Cells, r.Detail) {
+		values := []page.Value{c}
+		if c.Kind == page.KindList {
+			values = c.Items
+		}
+		for _, v := range values {
+			if text := atom.Show(v); text != "" && !v.IsNone() {
+				parts = append(parts, text)
+			}
+		}
+	}
+	lead := atom.Spaces(token.Margin)
+	if !said(s) {
+		lead += st.Title.Render(atom.Pad(s.Title, at)) + atom.Spaces(token.Gap)
+	}
+	if r.Mark != page.Unjudged {
+		lead += atom.Tone(st, r.Mark).Render(atom.Glyph(r.Mark)) + " "
+	}
+	// invariant: like a first line, the line is never cut: a part it cannot
+	// hold goes on the next one, under the first.
+	room := width - 1 - token.Margin
+	var lines []string
+	line, used := lead, atom.Width(lead)-token.Margin
+	first := true
+	for _, part := range parts {
+		switch {
+		case first:
+			line, used = line+st.Text.Render(part), used+atom.Width(part)
+			first = false
+		case used+atom.Width(token.Sep)+atom.Width(part) <= room:
+			line, used = line+st.Text.Render(token.Sep+part), used+atom.Width(token.Sep)+atom.Width(part)
+		default:
+			lines = append(lines, line)
+			pad := atom.Width(lead)
+			line, used = atom.Spaces(pad)+st.Text.Render(part), pad-token.Margin+atom.Width(part)
+		}
+	}
+	return append(lines, line)
 }

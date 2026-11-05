@@ -2,6 +2,7 @@ package images
 
 import (
 	"slices"
+	"strconv"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/images"
@@ -60,7 +61,8 @@ func Section(reports []images.Report) page.Section {
 		if !r.Newest {
 			row.Mark, row.Reason = page.Absent, page.Outdated
 			if len(r.VMs) == 0 {
-				row.Detail = page.Text("older: station images delete " + r.Record.Name + "@" + r.Record.Version)
+				row.Detail = page.Text("older")
+				row.Hint = page.Cmd("station images delete " + r.Record.Name + "@" + r.Record.Version)
 			}
 		}
 		items = append(items, page.Item{Row: &row})
@@ -85,7 +87,7 @@ func madeFrom(vms []string) page.Value {
 func List(reports []images.Report, here page.Context) page.Page {
 	return page.Seal(page.Page{
 		ID: "images", Command: "images", Context: here,
-		Sections: []page.Section{Section(reports)},
+		Sections: []page.Section{firstLine(reports), Section(reports)},
 		Hints:    []page.Hint{*page.Cmd("station images update")},
 	})
 }
@@ -126,4 +128,39 @@ func rows(records []images.Record, done string) []page.Row {
 		out = append(out, row)
 	}
 	return out
+}
+
+// value: the first line: how many images on how many Macs, the older ones
+// and the catalogue's images no Mac holds yet.
+func firstLine(reports []images.Report) page.Section {
+	macs := map[string]bool{}
+	older := 0
+	for _, r := range reports {
+		macs[r.Mac] = true
+		if !r.Newest {
+			older++
+		}
+	}
+	words := []string{}
+	if older > 0 {
+		words = append(words, count(older, "older", "older"))
+	}
+	for _, img := range catalog.Images {
+		if !slices.ContainsFunc(reports, func(r images.Report) bool { return r.Record.Name == img.Name }) {
+			words = append(words, img.Name+" not built yet")
+		}
+	}
+	label := count(len(reports), "image", "images") + " on " + count(len(macs), "Mac", "Macs")
+	if len(reports) == 0 {
+		label = "No image yet"
+	}
+	row := page.Row{ID: "summary/images", Label: label, Mark: page.OK, Cells: []page.Value{page.Texts(words...)}}
+	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true, Columns: []page.Column{{Key: "area", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}, Items: []page.Item{{Row: &row}}}
+}
+
+func count(n int, one, many string) string {
+	if n == 1 {
+		return "1 " + one
+	}
+	return strconv.Itoa(n) + " " + many
 }

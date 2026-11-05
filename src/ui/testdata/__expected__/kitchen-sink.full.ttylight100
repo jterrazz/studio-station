@@ -70,8 +70,7 @@
   [1;38;2;210;15;57mError:[m [38;2;76;79;105mdefaults is not installed[m
   [38;2;108;111;133mHint:[m [38;2;76;79;105mrun station setup[m
   [38;2;108;111;133mno lent secrets[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation secrets lend <name>[m
-[1;38;2;30;102;245mPeers[m
-  [38;2;156;160;176m[m  [1;38;2;76;79;105miphone[m  [38;2;76;79;105moffline[m
+[1;38;2;30;102;245mPeers[m  [38;2;76;79;105miphone[m[38;2;76;79;105m · offline[m
 
 [38;2;108;111;133m→ [m[38;2;76;79;105mstation overview --all[m
 [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps[m  [38;2;108;111;133mfor the catalogue[m

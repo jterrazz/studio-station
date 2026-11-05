@@ -1,9 +1,5 @@
-Machines  31 settings · 4 machines · 20 need a look
-  ● This Mac  Mac        read
-  ● mac-mini  Mac        read
-  ● linux-1   Workspace  read
-  ○ api       Workspace  stopped · last read 2 h ago
-  – infra     Server     not checked: station does not manage its settings
+31 settings on 4 machines · 20 need a look · infra is a server: not checked
+
 Needs a look
   ◐ This Mac  ghostty-dotfiles  changed since 2 d ago
     → station settings diff ghostty-dotfiles
@@ -45,6 +41,7 @@ Needs a look
     → station machines start api
   ◐ api       docker-shortcuts  changed since 2 d ago
     → station machines start api
+Machines  ● 3  ○ 1  – 1 · This Mac, mac-mini, linux-1, api, infra
 Set by station
                       This Mac  mac-mini  linux-1  api     OK
   ◐ ghostty-dotfiles  ◐         ◐         ◐        ◐       0/4

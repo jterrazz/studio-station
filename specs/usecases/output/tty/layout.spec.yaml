@@ -1,4 +1,4 @@
-description: 'an 80-column read: its first line, Needs you first, one line per calm section, the next steps'
+description: 'every 80-column read: its first line, Needs you first, one line per calm section, the next steps'
 fixture:
     - ../../../__fixtures__/terminal/
 env:
@@ -53,3 +53,203 @@ runs:
           → station apps install <app...>
           → station apps update
           → station apps --all  for every row
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" settings'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          This Mac · 17 set by station here · 9 checked · 1 needs a look
+
+          Needs a look
+            ◐ firewall  off  → System Settings > Network > Firewall
+          Set by station  ○ 17 · hushlogin, ghostty-dotfiles, tmux-dotfiles, …
+          Always-on Mac   ○ 5 · for a Mac that hosts servers
+          Checked         ● 8  ◐ 1 · firewall, filevault, sip, automatic-updates, …
+
+          → station settings apply
+          → station settings <setting>
+          → station settings --all  for every row
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" settings --all-machines'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          31 settings on 4 machines · 1 needs a look · infra is a server: not checked
+
+          Needs a look
+            ◐ This Mac  firewall  off  → System Settings > Network > Firewall
+          Machines  ● 3  – 1  ? 1 · This Mac, mac-mini, linux-1, api, infra
+          Set by station
+                           This Mac  mac-mini  linux-1  api  OK
+            ○ 17 settings  ○ 0/17    ○ 0/17    ○ 0/6    ?    0/40
+          Always-on Mac
+                          This Mac  mac-mini  linux-1  api  OK
+            ○ 5 settings  ○         ○ 3/5     –        ?    3/5
+          Checked
+                        This Mac  mac-mini  linux-1  api  OK
+            ◐ firewall  ◐         ●         –        ?    1/2
+            ● 8 more    ● 8/8     ● 8/8     –        ?    16/16
+
+          → station settings --all-machines --all  every row
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" awake'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          ○ This Mac  Sleeps normally
+          ● mac-mini  Never sleeps · always-on Mac policy  last slept: never in 12d 1h …
+
+          This Mac
+            lid           open
+            power source  AC · 96 % · charging
+            thermal       nominal
+            screen        always turns off
+
+          → station awake 4h --lid          this Mac
+          → station awake 4h --on mac-mini  another Mac
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" awake --on mac-mini'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          On mac-mini:
+          mac-mini · Never sleeps · always-on Mac policy · last slept: never in 12d 1h
+            hosts infra (server)
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" images'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          3 images on 2 Macs · 1 older · macos not built yet
+
+          Images
+                     version       size  on
+            ● linux  2026.11.01  4.0 GB  jterrazz-macbook-pro  api · linux-1
+            ○ linux  2026.10.20  3.0 GB  jterrazz-macbook-pro  older
+              → station images delete linux@2026.10.20
+            ● linux  2026.11.01  4.0 GB  jterrazz-mac-mini     infra
+            ○ macos                                            not built yet
+
+          → station images update
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" disk'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          This Mac · 388 GB free of 994 GB · 1 misplaced folder
+
+          Misplaced
+                          size
+            ◐ ~/.tart  73.3 GB  misplaced · tart  → station disk move ~/.tart
+          Can rebuild
+                           size
+            ● go        19.4 GB
+            ● xcode      5.8 GB
+            ● homebrew   2.1 GB
+            ● pnpm       1.8 GB
+            ● mise       1.2 GB
+            ● rust       900 MB
+            ● node       800 MB
+            ● bun        600 MB
+            ● discord    400 MB
+            ● ghostty    400 MB
+            ● claude     300 MB
+            ● zed        300 MB
+            ● cursor     200 MB
+            ● notion     200 MB
+            ● codex      100 MB
+            ● gh         100 MB
+            ● helm       100 MB
+            ● starship   100 MB
+          Your data
+                           size
+            ● xcode     19.1 GB
+            ● orbstack  15.8 GB
+            ● claude     3.6 GB
+            ● ollama     1.9 GB
+            ● zed        1.2 GB
+          Never touched
+                     size
+            ● gpg  200 KB
+            ● ssh  100 KB
+
+          → station disk free  frees every Can rebuild row, nothing is lost
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" machines'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          5 machines · 4 running · 1 stopped · nothing needs you
+
+              MACHINE     KIND       STATE                CPU    MEMORY
+            ● This Mac    Mac        Engine running
+            ├─ ○ api      Workspace  Stopped · permanent  4 CPU  8 GB
+            └─ ● linux-1  Workspace  Running · throwaway  4 CPU  8 GB
+            ● mac-mini    Mac        Engine running
+            └─ ● infra    Server     Running · always on  8 CPU  24 GB
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" background'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          This Mac · 14 background tasks · 1 failing · 3 orphans
+
+          Failing
+            ✗ com.jterrazz.brain.x-snapshot
+              user  failing · last exit 2
+              ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
+              → station background remove com.jterrazz.brain.x-snapshot
+          Orphans
+            ◐ com.bjango.istatmenus.installer
+              root  not loaded  iStat Menus (gone)
+              /Library/LaunchDaemons/com.bjango.istatmenus.installer.plist
+              → sudo launchctl bootout system/com.bjango.istatmenus.installer &&
+                sudo rm /Library/LaunchDaemons/com.bjango.istatmenus.installer.plist
+            ◐ com.docker.socket  root  idle  Docker.app (gone)  /Library/Lau…socket.plist
+              → sudo launchctl bootout system/com.docker.socket &&
+                sudo rm /Library/LaunchDaemons/com.docker.socket.plist
+            ◐ com.docker.vmnetd  root  idle  Docker.app (gone)  /Library/Lau…vmnetd.plist
+              → sudo launchctl bootout system/com.docker.vmnetd &&
+                sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
+          Station     ● 1 · com.jterrazz.station.engine
+          Known apps  ● 7 · com.adguard.mac.adguard.loginhelper, com.discord.helper, …
+          Unknown     ● 2 · com.jterrazz.brain.sync, homebrew.mxcl.postgresql@16
+
+          → station background --all  for every row
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" activity'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          This Mac · up 3d 4h · rates over 1 s
+
+          Now
+              CPU            34 % of 10 CPU · load 2.8 3.1 2.9
+              Memory         12.4 of 16 GB · pressure normal · swap 1.2 GB
+              Disk           388 GB free of 994 GB
+              Disk read      4.1 MB/s · 183 GB since boot
+              Disk write     1.3 MB/s · 96.3 GB since boot
+              Network        in 2.1 MB/s · out 210 KB/s
+              Network total  received 38.5 GB · sent 4.7 GB since boot
+            ● Thermal        Nominal
+              Battery        96 % · charging · health 98 % · 112 cycles
+          Top processes
+              Top by CPU     tart 18 % · Zed 9 % · WindowServer 4 %
+              Top by memory  tart 4.1 GB · Zed 1.9 GB · WindowServer 0.6 GB
+
+          → station activity --all-machines  every machine
+    - command: '--version >/dev/null; terminal --size 80x60 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" ports'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          This Mac · 2 ports · nothing needs you
+
+          Tailscale  ● signed in · jterrazz-macbook-pro.tail1234.ts.net
+                       ports are shared
+          Private: shared with you on Tailscale
+                               port  class    url                                  state
+            ● linux-1  5173 → 40001  private  https://jterrazz-macbook-pro…:40001  shared
+            ● linux-1  7000 → 40002  private  jterrazz-macbook-…1234.ts.net:40002  shared
+          Reserved ports
+            Reserved on This Mac: 2 of 1000 (40000-40999), 998 free

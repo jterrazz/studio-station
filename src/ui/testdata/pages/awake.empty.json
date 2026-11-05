@@ -9,7 +9,7 @@
   "sections": [
     {
       "id": "awake",
-      "title": "Awake",
+      "role": "banner",
       "columns": [
         {
           "key": "name",
@@ -28,6 +28,7 @@
             "id": "jterrazz-macbook-pro",
             "mark": "absent",
             "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
             "cells": [
               {
                 "kind": "text",
@@ -41,6 +42,7 @@
             "id": "jterrazz-mac-mini",
             "mark": "absent",
             "label": "jterrazz-mac-mini",
+            "short": "jterrazz-mac-mini",
             "cells": [
               {
                 "kind": "text",
@@ -59,7 +61,7 @@
     },
     {
       "id": "reading",
-      "title": "jterrazz-macbook-pro",
+      "title": "This Mac",
       "columns": [
         {
           "key": "name",
@@ -84,7 +86,7 @@
         },
         {
           "fact": {
-            "key": "power",
+            "key": "power source",
             "value": {
               "kind": "list",
               "items": [
@@ -124,6 +126,16 @@
         }
       ],
       "uncounted": true
+    }
+  ],
+  "hints": [
+    {
+      "command": "station awake 4h --lid",
+      "text": "this Mac"
+    },
+    {
+      "command": "station awake 4h --on jterrazz-mac-mini",
+      "text": "another Mac"
     }
   ]
 }

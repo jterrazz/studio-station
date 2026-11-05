@@ -489,9 +489,12 @@
             ],
             "detail": {
               "kind": "text",
-              "text": "older: station images delete linux@2026.10.20"
+              "text": "older"
             },
-            "reason": "outdated"
+            "reason": "outdated",
+            "hint": {
+              "command": "station images delete linux@2026.10.20"
+            }
           }
         },
         {
