@@ -58,9 +58,9 @@ func (w *Writer) Finding(m page.Mark, parts ...string) error {
 	return err
 }
 
-func (w *Writer) Note(text string) {
+func (w *Writer) Note(parts ...string) {
 	w.settle()
-	_, _ = io.WriteString(w.stderr.W, text+"\n")
+	_, _ = io.WriteString(w.stderr.W, tty.NoteLine(parts...))
 }
 
 func (w *Writer) Now(command string) {

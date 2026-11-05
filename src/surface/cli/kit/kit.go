@@ -30,6 +30,7 @@ type Env struct {
 	Interactive bool
 	Screen      bool
 	On          *On
+	Use         Uses
 	Stdin       io.Reader
 	Stdout      io.Writer
 	// value: where a leaf's call runs, and this machine; Target names the

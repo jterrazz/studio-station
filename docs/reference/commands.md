@@ -26,6 +26,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 - A word station does not know is `Error: unknown command "<word>"` / `Hint: station help`, exit 2; so is `station help <word>`.
 - A word under `disk` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station disk go` is `"go" is a disk row: say what to do with it`, hint `station disk free go`. Under `apps` the entry is a read: `station apps jq` is jq's detail; under `settings`, a setting's name is its read: `station settings dns`.
 - `--on <machine>` runs any command below on another machine of the fleet, through its engine, and renders the answer here; see [Machines](machines.md#on-another-machine).
+- `station use <machine>` makes every later command of this terminal run there, as `--on` would; `--on` still wins for one command. See [Machines](machines.md#this-terminals-machine).
 - A value a command needs from you is never an argv flag when it could be a secret: a config item asks in a form on a terminal ([Configuration](configuration.md)).
 
 ## Here
@@ -213,13 +214,14 @@ These commands exist for the machine's own use. They are hidden from help and th
 | Command                           | What runs it and what it does                                                                                                                                                                                                                         |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `station shell zsh`               | the `~/.zshrc` block evaluates it at every shell start: PATH, the mise activation, station's completion, and in a VM the lent Claude token and the [profiles'](services.md#profiles) exports. Output on stdout only; another shell or none is refused |
+| `station shell prompt`            | the prompt's `custom.station` segment runs it: `on linux-1` while this terminal [uses](machines.md#this-terminals-machine) another machine, nothing otherwise; it never counts as a use                                                               |
 | `station completion <shell>`      | cobra's completion script, for a shell the block does not serve                                                                                                                                                                                       |
 | `station engine run`              | the launchd agent `com.jterrazz.station.engine` runs it on a host: the VMs and their services ([Machines](machines.md#the-engine))                                                                                                                    |
 | `station guest`                   | the host's engine runs it inside each VM over ssh: what listens there ([Services](services.md))                                                                                                                                                       |
 | `station machines pipe <vm>`      | a VM's `~/.ssh/config` ProxyCommand runs it: ssh's bytes to the VM's NAT ip ([Machines](machines.md#ssh-and-herdr))                                                                                                                                   |
 | `station machines supervise <vm>` | retired: an old per-VM agent that still runs it exits at once; `station setup` removes those agents                                                                                                                                                   |
 
-`--on` is refused on `shell`, `completion`, `help`, `man`, `daemon`, `engine run`, `engine attach`, `guest`, `machines pipe` and `machines supervise`: none of them sends a call.
+`--on` is refused on `shell`, `completion`, `help`, `man`, `use`, `daemon`, `engine run`, `engine attach`, `guest`, `machines pipe` and `machines supervise`: none of them sends a call.
 
 ## Exit codes
 

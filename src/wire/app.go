@@ -75,7 +75,8 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		Prompt:      output.Terminal(stdin, stderr),
 		Interactive: inTTY && errTTY,
 		Screen:      inTTY && outTTY,
-		On:          &kit.On{Here: here.here()},
+		On:          &kit.On{Here: here.here(), Known: here.known},
+		Use:         here.uses(),
 		Stdin:       frameIn,
 		Stdout:      frames,
 		Self:        here.profile.Ref,
@@ -115,6 +116,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		runCommand(kenv, here),
 		setupCommand(kenv, here),
 		shellcmd.Command(kenv),
+		useCommand(kenv, here),
 	}
 	commands = append(commands, engineAliases(kenv, here)...)
 	commands = append(commands, settingsAliases(kenv, here)...)

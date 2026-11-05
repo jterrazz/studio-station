@@ -18,6 +18,7 @@ runs:
           run
           settings
           setup
+          use
     - command: 'completion zsh | /usr/bin/grep -c "compdef _station station"'
       exit: 0
       stdout: |

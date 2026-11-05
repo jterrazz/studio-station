@@ -35,7 +35,7 @@ func NewRoot(env kit.Env, openTUI func(context.Context) error, overview *cobra.C
 		overview.SetContext(c.Context())
 		return overview.RunE(overview, nil)
 	}
-	root.PersistentPreRunE = kit.Aliased(env, kit.RefuseOn(env))
+	root.PersistentPreRunE = kit.Aliased(env, kit.Using(env, kit.RefuseOn(env)))
 	var machine string
 	target := &machine
 	if env.On != nil {
