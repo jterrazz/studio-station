@@ -4,7 +4,7 @@ fixture:
     - ./__fixtures__/recording/
 env: terminal
 runs:
-    - command: '--version >/dev/null; terminal --size 120x250 /usr/bin/env -u NO_COLOR COLUMNS=120 "$STATION" overview --all | /usr/bin/grep -c "thing needs you · "'
+    - command: '--version >/dev/null; terminal --size 120x250 /usr/bin/env -u NO_COLOR COLUMNS=120 "$STATION" overview --all | /usr/bin/grep -cE "needs? you · "'
       stdin: |
           within 5 see Background
           gone ◌
