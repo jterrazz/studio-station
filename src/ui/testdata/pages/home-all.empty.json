@@ -56,7 +56,7 @@
                 "items": [
                   {
                     "kind": "text",
-                    "text": "host"
+                    "text": "Mac"
                   },
                   {
                     "kind": "text",
@@ -97,7 +97,7 @@
           "row": {
             "id": "summary/tailnet",
             "mark": "ok",
-            "label": "Tailnet",
+            "label": "Tailscale",
             "cells": [
               {
                 "kind": "list",
@@ -160,7 +160,7 @@
           "row": {
             "id": "summary/tools",
             "mark": "ok",
-            "label": "Tools",
+            "label": "Apps",
             "cells": [
               {
                 "kind": "list",
@@ -179,7 +179,7 @@
           "row": {
             "id": "summary/config",
             "mark": "ok",
-            "label": "Config",
+            "label": "Settings",
             "cells": [
               {
                 "kind": "list",
@@ -198,7 +198,7 @@
           "row": {
             "id": "summary/storage",
             "mark": "ok",
-            "label": "Storage",
+            "label": "Disk",
             "cells": [
               {
                 "kind": "size",
@@ -212,7 +212,7 @@
           "row": {
             "id": "summary/fleet",
             "mark": "ok",
-            "label": "Fleet",
+            "label": "All machines",
             "cells": [
               {
                 "kind": "text",
@@ -258,7 +258,7 @@
               "items": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 },
                 {
                   "kind": "text",
@@ -466,7 +466,7 @@
           "row": {
             "id": "tailnet",
             "mark": "ok",
-            "label": "tailnet",
+            "label": "Tailscale",
             "cells": [
               {
                 "kind": "list",
@@ -704,7 +704,7 @@
     },
     {
       "id": "tools",
-      "title": "Tools",
+      "title": "Apps",
       "fold": "open",
       "columns": [
         {
@@ -734,7 +734,7 @@
     },
     {
       "id": "config",
-      "title": "Config",
+      "title": "Settings",
       "fold": "open",
       "columns": [
         {

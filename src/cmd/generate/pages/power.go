@@ -36,7 +36,7 @@ func powerPages() []Fixture {
 	return append(out, states("outcome-power",
 		pending(pagepower.Awake(awoken, nil, here())),
 		pagepower.Slept(power.Slept{}, here()),
-		failure("outcome", "power awake", "Awake stays off: the battery is at 18 % on battery", "station awake"),
+		failure("outcome", "awake", "Awake stays off: the battery is at 18 % on battery", "station awake"),
 		pagepower.Awake(awoken, nil, here()),
 	)...)
 }

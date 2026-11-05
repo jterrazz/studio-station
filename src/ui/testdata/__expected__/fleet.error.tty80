@@ -1,4 +1,4 @@
-Fleet
+All machines
   ◐ macbook     Mac        here  online       100.98.133.14
     engine stopped  → station engine start
   ├─ ● linux-1  throwaway        running      192.168.64.5
@@ -13,8 +13,8 @@ Images
     → station images delete linux@2026.10.20
   ● linux  2026.11.01  4.0 GB  jterrazz-mac-mini     infra
   ○ macos                                            not built yet
-Tailnet
-  ● tailnet          Running · jterrazz-macbook-pro.tail1234.ts.net
+Tailscale
+  ● Tailscale        Running · jterrazz-macbook-pro.tail1234.ts.net
   ● node             macbook  100.98.133.14
   ● cli              /Applications/…/Tailscale  app-store
     Peers

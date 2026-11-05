@@ -68,7 +68,7 @@
     },
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "columns": [
         {
           "key": "name",
@@ -202,7 +202,7 @@
     },
     {
       "id": "power",
-      "title": "Power",
+      "title": "Awake",
       "columns": [
         {
           "key": "name",
@@ -353,7 +353,7 @@
         "call": "awake.keep"
       },
       "form": {
-        "title": "Power",
+        "title": "Awake",
         "fields": [
           {
             "key": "For",

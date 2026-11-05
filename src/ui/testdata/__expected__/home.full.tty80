@@ -4,7 +4,7 @@ To do
       rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
   ◐ engine                   not installed  → station setup
   ◐ brew                     120 outdated  → station apps update --method brew
-  ◐ strays                   2 folders out of place · 80.5 GB
+  ◐ misplaced                2 misplaced folders · 80.5 GB
     → station disk move ~/.tart
   ◐ pnpm                     update available  → station apps update pnpm
   ◐ better-ui                update available  → station apps update better-ui
@@ -15,19 +15,19 @@ To do
     → sudo launchctl bootout system/com.docker.socket &&
       sudo rm /Library/LaunchDaemons/com.docker.socket.plist
 Summary
-  ◐ Machine     host · Darwin 27.0.0 …   ◐ Tools     6 ●  7 ◐  4 ○
-  ◐ Network     192.168.1.152 · 4/4 on   ◐ Config    1 ●  1 ◐
-  ● Tailnet     jterrazz-macbook-pro …   ● Storage   27.9 GB reclaimable …
-  ● Identity    admin@jterrazz.com …     ◐ Fleet     engine not installed
-  ✗ Background  3 jobs · 1 failing …     ● Gateways  1 ●
+  ◐ Machine     Mac · Darwin 27.0.0 …    ◐ Apps          6 ●  7 ◐  4 ○
+  ◐ Network     192.168.1.152 · 4/4 on   ◐ Settings      1 ●  1 ◐
+  ● Tailscale   jterrazz-macbook-pro …   ● Disk          27.9 GB reclaimable …
+  ● Identity    admin@jterrazz.com …     ◐ All machines  engine not installed
+  ✗ Background  3 jobs · 1 failing …     ● Gateways      1 ●
 Machine      ● 3  ◐ 1 · name, uptime, setup, engine
 Environment  ● 6  ◐ 2 · local ip, filevault, firewall, sip, gatekeeper, …
 Workspace    ● 1  ◐ 2 · disk, tart, bun
 Identity     ● 2 · git email, git signing
 Background   ● 1  ◐ 1  ✗ 1
 Gateways     ● 1 · Tailscale Serve
-Tools        ● 6  ◐ 7  ○ 4 · mise, mas, pnpm, bun, go, java, python, chatgpt, …
-Config       ● 1  ◐ 1 · restart-after-power-cut
+Apps         ● 6  ◐ 7  ○ 4 · mise, mas, pnpm, bun, go, java, python, chatgpt, …
+Settings     ● 1  ◐ 1 · restart-after-power-cut
 
 → station overview --all  for every row
 → station overview | cat  for records

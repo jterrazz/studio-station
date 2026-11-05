@@ -147,7 +147,7 @@
     },
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "columns": [
         {
           "key": "name",
@@ -536,7 +536,7 @@
     },
     {
       "id": "power",
-      "title": "Power",
+      "title": "Awake",
       "role": "banner",
       "caption": [
         {
@@ -639,7 +639,7 @@
               },
               {
                 "kind": "text",
-                "text": "reset to normal at the end, at every engine start and quit"
+                "text": "back to normal at the end, at every engine start and quit"
               }
             ]
           }

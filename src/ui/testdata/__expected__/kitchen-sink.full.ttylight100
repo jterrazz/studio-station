@@ -25,7 +25,7 @@
 [1;38;2;76;79;105mMarks[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105moutdated[m              [38;2;76;79;105mattention[m                   [38;2;108;111;133m120 outdated[m
     [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps update --method brew[m
-  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mstray[m                 [38;2;76;79;105mattention[m                   [38;2;108;111;133mout of place[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation setup[m
+  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mmisplaced[m             [38;2;76;79;105mattention[m                   [38;2;108;111;133mmisplaced[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation disk move ~/.bun[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105munreachable[m           [38;2;76;79;105mattention[m                   [38;2;108;111;133munreachable[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mmismatch[m              [38;2;76;79;105mattention[m                   [38;2;108;111;133mstation v2.0.0-240 here v2.0.0-242[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105munmanaged[m             [38;2;76;79;105mattention[m                   [38;2;108;111;133mon PATH, not managed by cask[m
@@ -37,7 +37,7 @@
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105munset[m                 [38;2;76;79;105mattention[m                   [38;2;108;111;133mname not set[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation setup[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mstopped[m               [38;2;76;79;105mattention[m                   [38;2;108;111;133mstopped[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation engine start[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mlate[m                  [38;2;76;79;105mattention[m                   [38;2;108;111;133mno answer in 2s[m
-  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mdegraded[m              [38;2;76;79;105mattention[m                   [38;2;108;111;133mServe is off on the tailnet[m
+  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mdegraded[m              [38;2;76;79;105mattention[m                   [38;2;108;111;133mServe is off on Tailscale[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105morphan[m                [38;2;76;79;105mattention[m                   [38;2;108;111;133morphan: Docker.app is gone[m
     [38;2;108;111;133m→ [m[38;2;76;79;105msudo launchctl bootout system/com.docker.vmnetd[m
   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mwaiting[m               [38;2;76;79;105mabsent[m                      [38;2;108;111;133mwaiting[m
@@ -46,30 +46,30 @@
   [38;2;156;160;176m[m[38;2;210;15;57m✗[m [1;38;2;76;79;105mdown[m                  [38;2;76;79;105mbroken[m                      [38;2;108;111;133mnot running[m
   [38;2;156;160;176m[m[38;2;210;15;57m✗[m [1;38;2;76;79;105mstale[m                 [38;2;76;79;105mbroken[m                      [38;2;108;111;133mstale[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation machines delete linux-2[m
   [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mexpiring[m              [38;2;76;79;105mattention[m                   [38;2;108;111;133m42m left[m
-    [38;2;108;111;133m→ [m[38;2;76;79;105mstation secrets lend --to api operator:claude:oauth-token[m
-  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mguard[m                 [38;2;76;79;105mattention[m                   [38;2;108;111;133m28% · on battery[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation power[m
+    [38;2;108;111;133m→ [m[38;2;76;79;105mstation accounts share claude --with api[m
+  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105mguard[m                 [38;2;76;79;105mattention[m                   [38;2;108;111;133m28% · on battery[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation awake[m
   [38;2;156;160;176m[m[38;2;108;111;133m○[m [1;38;2;76;79;105mabsent[m                                            [38;2;108;111;133m→ [m[38;2;76;79;105mstation apps install mas[m
   [38;2;156;160;176m[m[38;2;108;111;133m⊘[m [1;38;2;76;79;105moff-here[m              [38;2;76;79;105mturned off on this machine[m
   [38;2;156;160;176m[m[38;2;156;160;176m–[m [1;38;2;76;79;105mnot-for-this-machine[m  [38;2;76;79;105mMacs only[m
   [38;2;156;160;176m[m[38;2;108;111;133m?[m [1;38;2;76;79;105mnot-known[m             [38;2;76;79;105mdoes not answer[m
-[1;38;2;76;79;105mFleet[m
-  [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mjterrazz-mac-mini[m  [38;2;76;79;105mhost[m
+[1;38;2;76;79;105mAll machines[m
+  [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mjterrazz-mac-mini[m  [38;2;76;79;105mMac[m
   [38;2;156;160;176m├─ [m[38;2;64;160;43m●[m [1;38;2;76;79;105mlinux-1[m         [38;2;76;79;105mpermanent[m
   [38;2;156;160;176m│  ├─ [m[1;38;2;76;79;105m8081 → 40002[m   [38;2;76;79;105mhttps://jterrazz-mac-mini.ts.net:40002[m  [38;2;108;111;133mvite[m
-  [38;2;156;160;176m│  └─ [m[38;2;64;160;43m●[m [1;38;2;76;79;105mweb[m          [38;2;76;79;105mservice[m
+  [38;2;156;160;176m│  └─ [m[38;2;64;160;43m●[m [1;38;2;76;79;105mweb[m          [38;2;76;79;105mserver[m
   [38;2;156;160;176m└─ [m[38;2;108;111;133m○[m [1;38;2;76;79;105mlinux-2[m         [38;2;76;79;105mpermanent[m
-[1;38;2;76;79;105mStorage[m
-[38;2;108;111;133m    tool        data   kept[m
+[1;38;2;76;79;105mDisk[m
+[38;2;108;111;133m    app         data   kept[m
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mstation[m    [38;2;76;79;105m275 B[m  [38;2;76;79;105m546 B[m
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mtart[m     [38;2;76;79;105m73.3 GB[m
 [1;38;2;76;79;105mProse[m
   [1;38;2;76;79;105mmachine[m  [38;2;76;79;105mjterrazz-macbook-pro[m
   [1;38;2;76;79;105muptime [m  [38;2;76;79;105m22d 14h[m
-  [38;2;76;79;105mServe is off on the tailnet, so no service is reachable from another machine until it is turned[m
+  [38;2;76;79;105mServe is off on Tailscale, so no shared port is reachable from another machine until it is turned[m
   [38;2;76;79;105mon in the admin console.[m
   [1;38;2;210;15;57mError:[m [38;2;76;79;105mdefaults is not installed[m
   [38;2;108;111;133mHint:[m [38;2;76;79;105mrun station setup[m
-  [38;2;108;111;133mno lent secrets[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation secrets lend <name>[m
+  [38;2;108;111;133mno shared accounts[m  [38;2;108;111;133m→ [m[38;2;76;79;105mstation accounts share <account> --with <vm>[m
 [1;38;2;76;79;105mPeers[m  [38;2;76;79;105miphone[m[38;2;76;79;105m · offline[m
 
 [38;2;108;111;133m→ [m[38;2;76;79;105mstation overview --all[m

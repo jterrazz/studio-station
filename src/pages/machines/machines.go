@@ -77,9 +77,9 @@ func Section(f machines.Fleet, links func(host, vm string) []page.Link) page.Sec
 		items = append(items, page.Item{Group: &g})
 	}
 	if len(items) == 0 {
-		items = append(items, page.Item{Empty: &page.Empty{Noun: "hosts", Hint: page.Cmd("station machines add <name>")}})
+		items = append(items, page.Item{Empty: &page.Empty{Noun: "Macs", Hint: page.Cmd("station machines add <name>")}})
 	}
-	return page.Section{ID: "fleet", Title: "Fleet", Columns: Columns(), Items: items}
+	return page.Section{ID: "fleet", Title: "All machines", Columns: Columns(), Items: items}
 }
 
 func Actions() []page.Action {

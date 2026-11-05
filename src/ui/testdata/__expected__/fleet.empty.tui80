@@ -1,9 +1,8 @@
- Fleet  1 ●
+ - All machines                                                             1 ●
    ● macbook  Mac  here  online  -  0 VMs
-      no VMs  → station machines create
-
- Images  2 ○
+      no VMs  n create
+ - Images                                                                   2 ○
    ○ linux  not built yet
    ○ macos  not built yet
-
- + Tailnet                                                                  1 ○
+ + Tailscale                                                                1 ○
+ ↑↓ move  n create  b build images  enter detail  / filter  space fold  ? keys

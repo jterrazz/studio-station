@@ -144,7 +144,7 @@ func homes() []Fixture {
 	out := states("home",
 		pagehome.Snapshot(pendingSnapshot(), here(), false),
 		pagehome.Snapshot(calmSnapshot(), here(), false),
-		failure("home", "status", "status reads the host it runs on", "station overview --on <vm>"),
+		failure("home", "status", "status reads the Mac it runs on", "station overview --on <vm>"),
 		pagehome.Snapshot(snapshot(), here(), false))
 	return append(out, states("home-all",
 		pagehome.Snapshot(pendingSnapshot(), here(), true),
@@ -500,8 +500,8 @@ func setups() []Fixture {
 func runs() []Fixture {
 	run := settings.ContainersOutcome{Shortcut: "dreset", Removals: []settings.ContainersRemoval{{What: "containers", Count: 3}, {What: "images", Count: 12}}}
 	return states("run",
-		pending(pagesettings.Removed(run, "run docker reset", here())),
-		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, "run docker reset", here()),
-		failure("outcome", "run docker reset", "docker ps failed: Cannot connect to the Docker daemon", "check that the docker daemon runs, then run it again"),
-		pagesettings.Removed(run, "run docker reset", here()))
+		pending(pagesettings.Removed(run, "run dreset", here())),
+		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, "run dreset", here()),
+		failure("outcome", "run dreset", "docker ps failed: Docker is not running", "start Docker, then run it again"),
+		pagesettings.Removed(run, "run dreset", here()))
 }

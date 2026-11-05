@@ -50,7 +50,7 @@
     },
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "columns": [
         {
           "key": "name",
@@ -131,7 +131,7 @@
     },
     {
       "id": "power",
-      "title": "Power",
+      "title": "Awake",
       "columns": [
         {
           "key": "name",
@@ -248,7 +248,7 @@
       "label": "Stop everything",
       "on": "page",
       "confirm": {
-        "question": "Stop everything on this host?",
+        "question": "Stop everything on this Mac?",
         "lines": [
           {
             "kind": "text",
@@ -282,7 +282,7 @@
         "call": "awake.keep"
       },
       "form": {
-        "title": "Power",
+        "title": "Awake",
         "fields": [
           {
             "key": "For",

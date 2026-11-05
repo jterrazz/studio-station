@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "power",
-  "command": "power",
+  "command": "awake",
   "context": {
     "kind": "host"
   },
@@ -9,7 +9,7 @@
   "sections": [
     {
       "id": "power",
-      "title": "Power",
+      "title": "Awake",
       "role": "banner",
       "caption": [
         {
@@ -112,7 +112,7 @@
               },
               {
                 "kind": "text",
-                "text": "reset to normal at the end, at every engine start and quit"
+                "text": "back to normal at the end, at every engine start and quit"
               }
             ]
           }
@@ -183,7 +183,7 @@
           "row": {
             "id": "low_power",
             "mark": "ok",
-            "label": "low power",
+            "label": "low power mode",
             "cells": [
               {
                 "kind": "off"
@@ -301,7 +301,7 @@
         },
         {
           "fact": {
-            "key": "low power",
+            "key": "low power mode",
             "value": {
               "kind": "off"
             }

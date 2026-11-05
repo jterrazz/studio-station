@@ -8,7 +8,7 @@
   "sections": [
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "fold": "open",
       "columns": [
         {
@@ -213,7 +213,7 @@
     },
     {
       "id": "tailnet",
-      "title": "Tailnet",
+      "title": "Tailscale",
       "fold": "auto",
       "columns": [
         {
@@ -232,7 +232,7 @@
           "row": {
             "id": "tailnet",
             "mark": "absent",
-            "label": "tailnet",
+            "label": "Tailscale",
             "cells": [
               {
                 "kind": "text",

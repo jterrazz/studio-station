@@ -83,7 +83,7 @@ func sessionRows(r power.Report) []page.Row {
 	if s.Lid {
 		rows = append(rows,
 			page.Row{ID: "display", Label: "display", Mark: page.OK, Cells: []page.Value{page.Text("sleeps"), page.Text("on lid close: pmset displaysleepnow (no display assertion)")}},
-			page.Row{ID: "clamshell", Label: "clamshell", Mark: page.OK, Cells: []page.Value{page.Text("held"), page.Text("reset to normal at the end, at every engine start and quit")}},
+			page.Row{ID: "clamshell", Label: "clamshell", Mark: page.OK, Cells: []page.Value{page.Text("held"), page.Text("back to normal at the end, at every engine start and quit")}},
 		)
 	} else {
 		rows = append(rows, page.Row{ID: "display", Label: "display", Mark: page.OK, Cells: []page.Value{page.Text("as set"), page.Text("the display sleeps on its own timer (no display assertion)")}})
@@ -109,7 +109,7 @@ func source(rd power.Reading) string {
 
 func label(name string) string {
 	if name == power.ReasonLowPower {
-		return "low power"
+		return "low power mode"
 	}
 	return name
 }
@@ -181,7 +181,7 @@ func reading(rd power.Reading) []page.Item {
 	facts := []page.Fact{
 		{Key: "lid", Value: page.Text(lid)},
 		{Key: "source", Value: src},
-		{Key: "low power", Value: low},
+		{Key: "low power mode", Value: low},
 		{Key: "thermal", Value: page.Text(power.Level(rd.Thermal) + " (" + strconv.Itoa(rd.Thermal) + ")")},
 	}
 	items := make([]page.Item, 0, len(facts))
@@ -200,7 +200,7 @@ func items(rows []page.Row) []page.Item {
 }
 
 func Session(r power.Report) page.Section {
-	s := page.Section{ID: "power", Title: "Power", Columns: columns(), Items: items(sessionRows(r))}
+	s := page.Section{ID: "power", Title: "Awake", Columns: columns(), Items: items(sessionRows(r))}
 	if r.Session != nil && r.Daemon == power.DaemonRunning {
 		s.Role = page.Banner
 		s.Caption = []page.Value{page.Texts(append(append([]string{"awake"}, flags(*r.Session)...), left(r))...)}
@@ -214,7 +214,7 @@ func Page(r power.Report, here page.Context) page.Page {
 	for _, g := range gs {
 		rows = append(rows, guardRow(r, g, false))
 	}
-	p := page.Page{ID: "power", Command: "power", Context: here, Sections: []page.Section{
+	p := page.Page{ID: "power", Command: "awake", Context: here, Sections: []page.Section{
 		Session(r),
 		{ID: "guards", Title: "Guards", Columns: columns(), Items: items(rows)},
 		{ID: "reading", Title: "Reading", Uncounted: true, Columns: columns(), Items: reading(r.Reading)},
@@ -242,14 +242,14 @@ func Awake(a power.Awoken, zone *time.Location, here page.Context) page.Page {
 		words = append(words, flags(a.Session)...)
 	}
 	r.Detail = page.Texts(append(words, until(a.Session, zone))...)
-	return pages.Outcome("power awake", here, nil, []page.Row{r}, "Power session")
+	return pages.Outcome("awake", here, nil, []page.Row{r}, "Awake session")
 }
 
 func Slept(s power.Slept, here page.Context) page.Page {
 	if !s.Ended {
-		return pages.Outcome("power sleep", here, nil, nil, "Power session to end")
+		return pages.Outcome("awake off", here, nil, nil, "Awake session to end")
 	}
 	r := pages.Done(RowAwake, catalog.StateOK, "")
 	r.Detail = page.Texts("off", "ended after "+pages.Term(s.After))
-	return pages.Outcome("power sleep", here, nil, []page.Row{r}, "Power session to end")
+	return pages.Outcome("awake off", here, nil, []page.Row{r}, "Awake session to end")
 }

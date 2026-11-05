@@ -30,36 +30,36 @@ type banned struct {
 func bannedWords() []banned {
 	return []banned{
 		{word: "host", allowed: []string{"host:port"}},
-		{word: "fleet"},
-		{word: "daemon"},
+		{word: "fleet", forms: []string{"fleets"}},
+		{word: "daemon", forms: []string{"daemons"}},
 		{word: "tool"},
 		{word: "tools"},
 		{word: "config", allowed: []string{".config/", "git config"}},
 		{word: "storage"},
-		{word: "service"},
-		{word: "lease"},
-		{word: "publish"},
+		{word: "service", forms: []string{"services"}},
+		{word: "lease", forms: []string{"leases", "leased"}},
+		{word: "publish", forms: []string{"published", "publishes", "publishing"}},
 		{word: "lend", forms: []string{"lent", "lends", "lending"}},
-		{word: "recall"},
-		{word: "wish"},
-		{word: "probe"},
+		{word: "recall", forms: []string{"recalled", "recalls"}},
+		{word: "wish", forms: []string{"wishes"}},
+		{word: "probe", forms: []string{"probes", "probed"}},
 		{word: "temporary"},
 		{word: "lasting"},
-		{word: "stray"},
+		{word: "stray", forms: []string{"strays"}},
 		{word: "clean", allowed: []string{"dclean"}},
 		{word: "reset", allowed: []string{"dock-reset", "dock reset", "dreset"}},
 		{word: "power", allowed: []string{"power cut", "power-cut", "power source", "low power mode"}},
-		{word: "place"},
+		{word: "place", forms: []string{"places"}},
 		{word: "Resources", exact: true},
 		{word: "Tasks", exact: true},
-		{word: "space"},
-		{word: "sandbox"},
+		{word: "space", forms: []string{"spaces"}},
+		{word: "sandbox", forms: []string{"sandboxes"}},
 		{word: "production"},
 		{word: "OrbStack", exact: true},
 		{word: "a check"},
 		{word: "VM engine"},
 		{word: "NAT", exact: true},
-		{word: "tailnet"},
+		{word: "tailnet", forms: []string{"tailnets"}},
 	}
 }
 
@@ -117,19 +117,9 @@ func bannedIn(texts []string) []string {
 }
 
 // invariant: the allowlist of rule words: the page fixtures that still say
-// a retired word, and the words. It only shrinks; a line no longer true
-// fails the gate until it is removed.
+// a retired word, and the words. It is empty (OU-11) and stays so.
 func bannedTolerated() map[string][]string {
-	return map[string][]string{
-		"fleet":         {"fleet", "probe", "tailnet"},
-		"home":          {"config", "fleet", "host", "place", "storage", "tailnet", "tools"},
-		"home-all":      {"config", "fleet", "host", "place", "storage", "tailnet", "tools"},
-		"kitchen-sink":  {"fleet", "host", "lend", "place", "power", "service", "storage", "stray", "tailnet", "tool"},
-		"menubar":       {"fleet", "host", "power", "reset"},
-		"outcome-power": {"power"},
-		"power":         {"power", "reset"},
-		"run":           {"daemon", "reset"},
-	}
+	return map[string][]string{}
 }
 
 func bannedFindings(root string) (map[string][]string, error) {
@@ -195,5 +185,13 @@ func TestBannedWordsBite(t *testing.T) {
 	visible(page, false, &texts)
 	if got := bannedIn(texts); !slices.Equal(got, []string{"fleet", "storage", "lend"}) {
 		t.Errorf("a planted page says %v, want [fleet storage lend]: the id, the kind and Dock reset are not read, lent is lend", got)
+	}
+}
+
+func TestBannedWordsBiteOnTheirForms(t *testing.T) {
+	for _, text := range []string{"2 strays", "3 services", "the leases", "published", "two daemons", "probes"} {
+		if got := bannedIn([]string{text}); len(got) != 1 {
+			t.Errorf("%q says %v, want one retired word: a form is the word it comes from", text, got)
+		}
 	}
 }

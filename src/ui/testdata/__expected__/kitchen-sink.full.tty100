@@ -25,7 +25,7 @@ Values  40000-40999
 Marks
   ◐ outdated              attention                   120 outdated
     → station apps update --method brew
-  ◐ stray                 attention                   out of place  → station setup
+  ◐ misplaced             attention                   misplaced  → station disk move ~/.bun
   ◐ unreachable           attention                   unreachable
   ◐ mismatch              attention                   station v2.0.0-240 here v2.0.0-242
   ◐ unmanaged             attention                   on PATH, not managed by cask
@@ -37,7 +37,7 @@ Marks
   ◐ unset                 attention                   name not set  → station setup
   ◐ stopped               attention                   stopped  → station engine start
   ◐ late                  attention                   no answer in 2s
-  ◐ degraded              attention                   Serve is off on the tailnet
+  ◐ degraded              attention                   Serve is off on Tailscale
   ◐ orphan                attention                   orphan: Docker.app is gone
     → sudo launchctl bootout system/com.docker.vmnetd
   ○ waiting               absent                      waiting
@@ -46,30 +46,30 @@ Marks
   ✗ down                  broken                      not running
   ✗ stale                 broken                      stale  → station machines delete linux-2
   ◐ expiring              attention                   42m left
-    → station secrets lend --to api operator:claude:oauth-token
-  ◐ guard                 attention                   28% · on battery  → station power
+    → station accounts share claude --with api
+  ◐ guard                 attention                   28% · on battery  → station awake
   ○ absent                                            → station apps install mas
   ⊘ off-here              turned off on this machine
   – not-for-this-machine  Macs only
   ? not-known             does not answer
-Fleet
-  ● jterrazz-mac-mini  host
+All machines
+  ● jterrazz-mac-mini  Mac
   ├─ ● linux-1         permanent
   │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
-  │  └─ ● web          service
+  │  └─ ● web          server
   └─ ○ linux-2         permanent
-Storage
-    tool        data   kept
+Disk
+    app         data   kept
   ● station    275 B  546 B
   ● tart     73.3 GB
 Prose
   machine  jterrazz-macbook-pro
   uptime   22d 14h
-  Serve is off on the tailnet, so no service is reachable from another machine until it is turned
+  Serve is off on Tailscale, so no shared port is reachable from another machine until it is turned
   on in the admin console.
   Error: defaults is not installed
   Hint: run station setup
-  no lent secrets  → station secrets lend <name>
+  no shared accounts  → station accounts share <account> --with <vm>
 Peers  iphone · offline
 
 → station overview --all

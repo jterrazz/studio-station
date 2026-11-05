@@ -168,7 +168,7 @@
     },
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "columns": [
         {
           "key": "name",
@@ -201,11 +201,11 @@
     },
     {
       "id": "storage",
-      "title": "Storage",
+      "title": "Disk",
       "columns": [
         {
           "key": "name",
-          "label": "tool",
+          "label": "app",
           "kind": "text",
           "keep": 100
         },

@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "power",
-  "command": "power",
+  "command": "awake",
   "context": {
     "kind": "host"
   },
@@ -9,7 +9,7 @@
   "sections": [
     {
       "id": "power",
-      "title": "Power",
+      "title": "Awake",
       "columns": [
         {
           "key": "name",
@@ -111,7 +111,7 @@
           "row": {
             "id": "low_power",
             "mark": "ok",
-            "label": "low power",
+            "label": "low power mode",
             "cells": [
               {
                 "kind": "off"
@@ -225,7 +225,7 @@
         },
         {
           "fact": {
-            "key": "low power",
+            "key": "low power mode",
             "value": {
               "kind": "off"
             }

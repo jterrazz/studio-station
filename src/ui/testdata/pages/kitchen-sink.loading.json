@@ -424,7 +424,7 @@
           "row": {
             "id": "stray",
             "mark": "pending",
-            "label": "stray",
+            "label": "misplaced",
             "cells": [
               {
                 "kind": "pending"
@@ -770,7 +770,7 @@
     },
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "columns": [
         {
           "key": "name",
@@ -900,11 +900,11 @@
     },
     {
       "id": "storage",
-      "title": "Storage",
+      "title": "Disk",
       "columns": [
         {
           "key": "name",
-          "label": "tool",
+          "label": "app",
           "kind": "text",
           "keep": 100
         },
@@ -981,7 +981,7 @@
         },
         {
           "note": {
-            "text": "Serve is off on the tailnet, so no service is reachable from another machine until it is turned on in the admin console."
+            "text": "Serve is off on Tailscale, so no shared port is reachable from another machine until it is turned on in the admin console."
           }
         },
         {
@@ -992,9 +992,9 @@
         },
         {
           "empty": {
-            "noun": "lent secrets",
+            "noun": "shared accounts",
             "hint": {
-              "command": "station secrets lend <name>"
+              "command": "station accounts share <account> --with <vm>"
             }
           }
         }

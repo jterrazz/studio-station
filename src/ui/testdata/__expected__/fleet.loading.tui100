@@ -1,8 +1,7 @@
- Fleet  1 ◌
+ - All machines                                                                                 1 ◌
    ◌ reading
-
- Images  1 ◌
+ - Images                                                                                       1 ◌
    ◌ reading
-
- Tailnet  1 ◌
+ - Tailscale                                                                                    1 ◌
    ◌ reading
+ ↑↓ move  n create  b build images  enter detail  / filter  space fold  r reload  q quit  ? keys

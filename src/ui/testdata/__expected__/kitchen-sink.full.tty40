@@ -26,8 +26,8 @@ Values  40000-40999
 Marks
   ◐ outdated              attention
     → station apps update --method brew
-  ◐ stray                 attention
-    → station setup
+  ◐ misplaced             attention
+    → station disk move ~/.bun
   ◐ unreachable           attention
   ◐ mismatch              attention
   ◐ unmanaged             attention
@@ -51,34 +51,34 @@ Marks
   ✗ stale                 broken  stale
     → station machines delete linux-2
   ◐ expiring              attention
-    → station secrets lend --to api operator:claude:oauth-token
+    → station accounts share claude --with api
   ◐ guard                 attention
-    → station power
+    → station awake
   ○ absent
     → station apps install mas
   ⊘ off-here              turned off o…
   – not-for-this-machine  Macs only
   ? not-known             does not ans…
-Fleet
-  ● jterrazz-mac-mini  host
+All machines
+  ● jterrazz-mac-mini  Mac
   ├─ ● linux-1         permanent
   │  ├─ 8081 → 40002   https://j…:40002
-  │  └─ ● web          service
+  │  └─ ● web          server
   └─ ○ linux-2         permanent
-Storage
-    tool        data   kept
+Disk
+    app         data   kept
   ● station    275 B  546 B
   ● tart     73.3 GB
 Prose
   machine  jterrazz-macbook-pro
   uptime   22d 14h
-  Serve is off on the tailnet, so no
-  service is reachable from another
+  Serve is off on Tailscale, so no
+  shared port is reachable from another
   machine until it is turned on in the
   admin console.
   Error: defaults is not installed
   Hint: run station setup
-  no lent secrets  → station secrets lend <name>
+  no shared accounts  → station accounts share <account> --with <vm>
 Peers  iphone · offline
 
 → station overview --all

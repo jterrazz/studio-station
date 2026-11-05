@@ -1,7 +1,7 @@
 {
   "schema": "station.page/v1",
   "id": "outcome",
-  "command": "power awake",
+  "command": "awake",
   "context": {
     "kind": "host"
   },

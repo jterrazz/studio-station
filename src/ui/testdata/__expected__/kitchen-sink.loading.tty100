@@ -24,7 +24,7 @@ Values  40000-40999
   ◌ unknown
 Marks
   ◌ outdated
-  ◌ stray
+  ◌ misplaced
   ◌ unreachable
   ◌ mismatch
   ◌ unmanaged
@@ -47,23 +47,23 @@ Marks
   ◌ off-here
   ◌ not-for-this-machine
   ◌ not-known
-Fleet
+All machines
   ◌ jterrazz-mac-mini
   ├─ ◌ linux-1
   │  ├─ 8081 → 40002   https://jterrazz-mac-mini.ts.net:40002  vite
   │  └─ ◌ web
   └─ ◌ linux-2
-Storage
+Disk
   ◌ station
   ◌ tart
 Prose
   machine  jterrazz-macbook-pro
   uptime   22d 14h
-  Serve is off on the tailnet, so no service is reachable from another machine until it is turned
+  Serve is off on Tailscale, so no shared port is reachable from another machine until it is turned
   on in the admin console.
   Error: defaults is not installed
   Hint: run station setup
-  no lent secrets  → station secrets lend <name>
+  no shared accounts  → station accounts share <account> --with <vm>
 Peers
   ◌ iphone
 

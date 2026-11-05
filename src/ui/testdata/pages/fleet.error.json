@@ -8,7 +8,7 @@
   "sections": [
     {
       "id": "fleet",
-      "title": "Fleet",
+      "title": "All machines",
       "fold": "open",
       "columns": [
         {
@@ -573,7 +573,7 @@
     },
     {
       "id": "tailnet",
-      "title": "Tailnet",
+      "title": "Tailscale",
       "fold": "auto",
       "columns": [
         {
@@ -605,7 +605,7 @@
           "row": {
             "id": "tailnet",
             "mark": "ok",
-            "label": "tailnet",
+            "label": "Tailscale",
             "cells": [
               {
                 "kind": "list",
@@ -834,7 +834,7 @@
     },
     {
       "key": "p",
-      "label": "probe",
+      "label": "health",
       "on": "row",
       "rows": [
         "linux-1",

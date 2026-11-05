@@ -1,2 +1,3 @@
-Error: docker ps failed: Cannot connect to the Docker daemon
-Hint: check that the docker daemon runs, then run it again
+ Error: docker ps failed: Docker is not running
+ Hint: start Docker, then run it again
+ r retry  ↑↓ move  enter detail  / filter  space fold  q quit  ? keys

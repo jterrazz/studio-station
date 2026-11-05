@@ -1,6 +1,7 @@
 package fleet
 
 import (
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
@@ -29,7 +30,7 @@ type Reading struct {
 
 func Tab(r Reading, here page.Context) page.Page {
 	p := page.Page{ID: "fleet", Context: here}
-	p.Sections = append(p.Sections, part(r, "fleet", "Fleet", r.Machines != nil, func() []page.Section {
+	p.Sections = append(p.Sections, part(r, "fleet", "All machines", r.Machines != nil, func() []page.Section {
 		s := pagemachines.Section(*r.Machines, links(r.Services))
 		s.Fold = page.Open
 		return []page.Section{s}
@@ -39,7 +40,7 @@ func Tab(r Reading, here page.Context) page.Page {
 		s.Role, s.Fold = page.Plain, page.Open
 		return []page.Section{s}
 	})...)
-	p.Sections = append(p.Sections, part(r, "tailnet", "Tailnet", r.Tailnet != nil, func() []page.Section {
+	p.Sections = append(p.Sections, part(r, "tailnet", catalog.TailnetProduct, r.Tailnet != nil, func() []page.Section {
 		parts := pageports.TailnetSections(*r.Tailnet)
 		head := parts[0]
 		head.Role = page.Plain
@@ -112,7 +113,7 @@ func Actions(r Reading) []page.Action {
 	add(page.Action{Key: pagemachines.KeyStart, Label: "start/stop", On: page.OnRow, Priority: 5, Mutates: true}, vms)
 	add(page.Action{Key: KeyForget, Label: "forget", On: page.OnRow, Priority: 6, Mutates: true, Confirm: &page.Confirm{Yes: "forget"}}, without(remote, vms))
 	add(page.Action{Key: KeyBuild, Label: "build images", On: page.OnPage, Priority: 7, Mutates: true}, nil)
-	add(page.Action{Key: KeyProbe, Label: "probe", On: page.OnRow, Priority: 8}, remote)
+	add(page.Action{Key: KeyProbe, Label: "health", On: page.OnRow, Priority: 8}, remote)
 	add(page.Action{Key: KeyUnlock, Label: "unlock", On: page.OnRow, Priority: 9, Mutates: true}, without(remote, vms))
 	return out
 }

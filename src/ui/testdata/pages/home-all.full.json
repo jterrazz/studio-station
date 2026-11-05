@@ -94,14 +94,14 @@
           "row": {
             "id": "workspace/strays",
             "mark": "attention",
-            "label": "strays",
+            "label": "misplaced",
             "detail": {
               "kind": "list",
               "items": [
                 {
                   "kind": "count",
                   "n": 2,
-                  "unit": "folders out of place"
+                  "unit": "misplaced folders"
                 },
                 {
                   "kind": "size",
@@ -241,7 +241,7 @@
                 "items": [
                   {
                     "kind": "text",
-                    "text": "host"
+                    "text": "Mac"
                   },
                   {
                     "kind": "text",
@@ -282,7 +282,7 @@
           "row": {
             "id": "summary/tailnet",
             "mark": "ok",
-            "label": "Tailnet",
+            "label": "Tailscale",
             "cells": [
               {
                 "kind": "list",
@@ -355,7 +355,7 @@
           "row": {
             "id": "summary/tools",
             "mark": "attention",
-            "label": "Tools",
+            "label": "Apps",
             "cells": [
               {
                 "kind": "list",
@@ -384,7 +384,7 @@
           "row": {
             "id": "summary/config",
             "mark": "attention",
-            "label": "Config",
+            "label": "Settings",
             "cells": [
               {
                 "kind": "list",
@@ -408,7 +408,7 @@
           "row": {
             "id": "summary/storage",
             "mark": "ok",
-            "label": "Storage",
+            "label": "Disk",
             "cells": [
               {
                 "kind": "list",
@@ -421,7 +421,7 @@
                   {
                     "kind": "count",
                     "n": 2,
-                    "unit": "strays"
+                    "unit": "misplaced"
                   }
                 ]
               }
@@ -432,7 +432,7 @@
           "row": {
             "id": "summary/fleet",
             "mark": "attention",
-            "label": "Fleet",
+            "label": "All machines",
             "cells": [
               {
                 "kind": "text",
@@ -497,7 +497,7 @@
               "items": [
                 {
                   "kind": "text",
-                  "text": "host"
+                  "text": "Mac"
                 },
                 {
                   "kind": "text",
@@ -724,7 +724,7 @@
           "row": {
             "id": "tailnet",
             "mark": "ok",
-            "label": "tailnet",
+            "label": "Tailscale",
             "cells": [
               {
                 "kind": "list",
@@ -1160,7 +1160,7 @@
     },
     {
       "id": "tools",
-      "title": "Tools",
+      "title": "Apps",
       "fold": "open",
       "columns": [
         {
@@ -1523,7 +1523,7 @@
     },
     {
       "id": "config",
-      "title": "Config",
+      "title": "Settings",
       "fold": "open",
       "columns": [
         {
