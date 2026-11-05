@@ -30,8 +30,8 @@ struct StationMenuBarApp: App {
                 .onAppear { model.opened() }
                 .onDisappear { model.closed() }
         } label: {
-            Image(systemName: model.icon)
-                .accessibilityLabel(model.label)
+            Image(nsImage: model.iconImage(dark: NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua))
+                .accessibilityLabel(model.icon.label)
                 .task { model.start() }
         }
         .menuBarExtraStyle(.window)
@@ -47,6 +47,8 @@ struct StationMenuBarApp: App {
             toggleMenu: { model.state.menu.toggle() },
             loginItem: { on in model.setLoginItem(on) },
             loginItemOn: model.loginItemOn,
+            sparkline: { on in model.setSparkline(on) },
+            sparklineOn: model.sparkline,
             quit: { NSApplication.shared.terminate(nil) })
     }
 }

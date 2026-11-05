@@ -33,12 +33,14 @@ public struct PopoverHandlers {
     public var toggleMenu: () -> Void
     public var loginItem: (Bool) -> Void
     public var loginItemOn: Bool
+    public var sparkline: (Bool) -> Void
+    public var sparklineOn: Bool
     public var quit: () -> Void
 
     public init(run: @escaping (Action, [String: String]) -> Void = { _, _ in }, confirm: @escaping (Action?) -> Void = { _ in },
                 answer: @escaping (String, String, String) -> Void = { _, _, _ in }, open: @escaping (URL) -> Void = { _ in },
                 toggleQR: @escaping (String) -> Void = { _ in }, toggleMenu: @escaping () -> Void = {}, loginItem: @escaping (Bool) -> Void = { _ in }, loginItemOn: Bool = false,
-                quit: @escaping () -> Void = {}) {
+                sparkline: @escaping (Bool) -> Void = { _ in }, sparklineOn: Bool = false, quit: @escaping () -> Void = {}) {
         self.run = run
         self.confirm = confirm
         self.answer = answer
@@ -47,11 +49,13 @@ public struct PopoverHandlers {
         self.toggleMenu = toggleMenu
         self.loginItem = loginItem
         self.loginItemOn = loginItemOn
+        self.sparkline = sparkline
+        self.sparklineOn = sparklineOn
         self.quit = quit
     }
 }
 
-public enum Badge {
+public enum TodoBadge {
     public static func todo(_ page: Page) -> (mark: Mark, n: Int)? {
         guard let s = page.section("todo"), page.state != "loading" || s.counts?.contains(where: { $0.mark != .pending }) == true else { return nil }
         let counts = (s.counts ?? []).filter { $0.mark != .pending && $0.mark != .ok }
@@ -107,7 +111,7 @@ public struct Popover: View {
         HStack(spacing: Token.Space.gap / 2) {
             Text(state.page?.context?.machine ?? "station").font(.system(size: Token.Space.text + 1, weight: .bold)).foregroundStyle(palette.text)
             Spacer()
-            if let page = state.page, let (mark, _) = Badge.todo(page), let text = Badge.text(page) {
+            if let page = state.page, let (mark, _) = TodoBadge.todo(page), let text = TodoBadge.text(page) {
                 MarkView(mark)
                 Text(text).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
             }
@@ -119,10 +123,13 @@ public struct Popover: View {
     }
 
     // invariant: the footer menu is drawn inline, never an AppKit menu: the
-    // switch for launch at login and quit.
+    // switches for launch at login and the icon's CPU line, and quit.
     var menu: some View {
         HStack(spacing: Token.Space.gap) {
             Toggle("Open at login", isOn: Binding(get: { handlers.loginItemOn }, set: { handlers.loginItem($0) }))
+                .toggleStyle(.checkbox)
+                .font(.system(size: Token.Space.small))
+            Toggle("CPU in the menu bar", isOn: Binding(get: { handlers.sparklineOn }, set: { handlers.sparkline($0) }))
                 .toggleStyle(.checkbox)
                 .font(.system(size: Token.Space.small))
             Spacer()
@@ -218,44 +225,5 @@ public struct Popover: View {
                 }
             }
         }
-    }
-}
-
-public enum MenuBarIcon {
-    public static func symbol(connection: Connection, page: Page?) -> String {
-        switch connection {
-        case .connecting: return Token.Symbol.pending
-        case .stopped, .notInstalled: return Token.Symbol.stopped
-        case .live: break
-        }
-        guard let page else { return Token.Symbol.pending }
-        if page.section("power")?.role == "banner" { return Token.Symbol.awake }
-        return Token.Symbol.of(worst(page))
-    }
-
-    public static func label(connection: Connection, page: Page?) -> String {
-        switch connection {
-        case .stopped, .notInstalled: return "station: engine stopped"
-        case .connecting: return "station: connecting"
-        case .live: break
-        }
-        if page?.section("power")?.role == "banner" { return "station: awake" }
-        return "station: \(page.flatMap { Badge.todo($0)?.n } ?? 0) to do"
-    }
-
-    static func worst(_ page: Page) -> Mark {
-        var marks: [Mark] = (page.section("todo")?.counts ?? []).compactMap(\.mark)
-        func walk(_ items: [Item]) {
-            for it in items {
-                if let m = it.row?.mark { marks.append(m) }
-                if let g = it.group {
-                    if let m = g.head?.mark { marks.append(m) }
-                    walk(g.items ?? [])
-                }
-            }
-        }
-        walk(page.section("fleet")?.items ?? [])
-        let judged = marks.filter { $0 == .broken || $0 == .attention }
-        return judged.max { $0.rank < $1.rank } ?? .ok
     }
 }

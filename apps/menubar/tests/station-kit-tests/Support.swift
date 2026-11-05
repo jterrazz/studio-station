@@ -7,6 +7,7 @@ enum Tree {
     static let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
     static let pages = root.appendingPathComponent("src/ui/testdata/pages")
     static let stream = root.appendingPathComponent("src/ui/testdata/stream/menubar.jsonl")
+    static let events = root.appendingPathComponent("src/ui/testdata/stream/events.jsonl")
     static let goldens = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("testdata")
     static let sources = root.appendingPathComponent("apps/menubar/sources/station-kit")
     static let app = root.appendingPathComponent("apps/menubar/sources/station-menu-bar")
@@ -74,7 +75,7 @@ enum Snapshot {
     static let now = ISO8601DateFormatter().date(from: "2026-11-03T10:30:00Z")!
 
     static func state(_ name: String, _ page: Page) -> PopoverState {
-        PopoverState(page: page, connection: name.hasSuffix(".error") ? .stopped : .live)
+        PopoverState(page: page, connection: name.hasSuffix(".error") || name.hasSuffix(".engine-stopped") ? .stopped : .live)
     }
 
     @MainActor
@@ -91,5 +92,36 @@ enum Snapshot {
         let rep = NSBitmapImageRep(cgImage: image)
         guard let png = rep.representation(using: .png, properties: [:]) else { return nil }
         return (png, bitmap)
+    }
+}
+
+enum Golden {
+    static let update = ProcessInfo.processInfo.environment["STATION_UPDATE_GOLDENS"] == "1"
+
+    // invariant: a view is proved by its golden PNG, drawn offscreen: nil
+    // when it matches within 0.1 % of its pixels, else what differs.
+    @MainActor
+    static func check(_ name: String, _ view: AnyView, scheme: ColorScheme) throws -> String? {
+        let file = "\(name).\(scheme == .dark ? "dark" : "light")"
+        let golden = Tree.goldens.appendingPathComponent(file + ".png")
+        guard let (png, bitmap) = Snapshot.render(view, scheme: scheme) else { return "\(file): no image rendered" }
+        if bitmap.placeholder >= 20 { return "\(file): \(bitmap.placeholder) pixels of the unsupported placeholder" }
+        if update {
+            try png.write(to: golden)
+            return nil
+        }
+        guard let data = try? Data(contentsOf: golden), let want = Bitmap(png: data) else { return "\(file): no golden (STATION_UPDATE_GOLDENS=1 swift test writes it)" }
+        let actual = Tree.goldens.appendingPathComponent(file + ".actual.png")
+        guard want.width == bitmap.width, want.height == bitmap.height else {
+            try png.write(to: actual)
+            return "\(file): \(bitmap.width)x\(bitmap.height), golden \(want.width)x\(want.height)"
+        }
+        let differing = bitmap.differing(want)
+        if Double(differing) > Double(bitmap.width * bitmap.height) * 0.001 {
+            try png.write(to: actual)
+            return "\(file): \(differing) pixels differ"
+        }
+        try? FileManager.default.removeItem(at: actual)
+        return nil
     }
 }

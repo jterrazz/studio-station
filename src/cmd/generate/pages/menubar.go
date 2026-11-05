@@ -2,6 +2,7 @@ package pages
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
+	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/ui/token"
@@ -54,11 +56,49 @@ func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
 
 func menubarPages() []Fixture {
 	frame, quiet, full := menubarReadings()
-	return states("menubar",
+	return append(states("menubar",
 		pagemenubar.Page(frame, menubarHere()),
 		pagemenubar.Page(quiet, menubarHere()),
 		pagemenubar.Stopped(here(), true),
-		pagemenubar.Page(full, menubarHere()))
+		pagemenubar.Page(full, menubarHere())), menubarWorlds()...)
+}
+
+// value: This Mac in the two-macs world: its engine runs, and five things
+// need you (MB-02).
+func twoMacsHome() pagehome.Overview {
+	s := snapshot()
+	s.PowerKnown, s.Power = true, overview.PowerState{Held: true, Lid: true, Until: heldSession().Until}
+	s.Station.Daemon = check("daemon", catalog.StateOK, "running v2.0.0-250", "")
+	s.Environment.Updates[0] = check("macos", catalog.StateOK, "up to date", "checked 22m ago")
+	s.Config = s.Config[:1]
+	s.Background = s.Background[:2]
+	return s
+}
+
+// value: the menu bar's Home as each world of USE-CASES §0.2 the menu bar's
+// proofs cite draws it, named menubar.home.<world>.
+func menubarWorlds() []Fixture {
+	_, quiet, full := menubarReadings()
+	f := *full.Fleet
+	f.Hosts = slices.Clone(f.Hosts)
+	f.Hosts[1].VMs = []machines.VM{server().VM}
+	two := full
+	home := twoMacsHome()
+	two.Home, two.Fleet = &home, &f
+	down := f
+	down.Hosts = slices.Clone(f.Hosts)
+	infra := server().VM
+	infra.State, infra.Detail = machines.Stopped, "restarting"
+	infra.Restarts = machines.Restarts{Count: 5, Streak: 5, Looping: true, Wait: time.Minute}
+	down.Hosts[1].VMs = []machines.VM{infra}
+	infraDown := two
+	infraDown.Fleet = &down
+	return []Fixture{
+		{Name: "menubar.home.one-mac", Page: pagemenubar.Page(quiet, menubarHere())},
+		{Name: "menubar.home.two-macs", Page: pagemenubar.Page(two, menubarHere())},
+		{Name: "menubar.home.infra-down", Page: pagemenubar.Page(infraDown, menubarHere())},
+		{Name: "menubar.home.engine-stopped", Page: pagemenubar.Stopped(menubarHere(), true)},
+	}
 }
 
 func MenubarStream() []byte {

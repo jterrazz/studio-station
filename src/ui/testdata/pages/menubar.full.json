@@ -754,5 +754,8 @@
         "call": "awake.off"
       }
     }
-  ]
+  ],
+  "badge": {
+    "needs": 9
+  }
 }

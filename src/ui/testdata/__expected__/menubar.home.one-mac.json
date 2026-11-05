@@ -1,0 +1,417 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar",
+  "command": "menubar",
+  "context": {
+    "machine": "jterrazz-macbook-pro",
+    "kind": "host"
+  },
+  "state": "ready",
+  "strip": {
+    "cpu": {
+      "kind": "percent",
+      "n": 340
+    },
+    "spark": [
+      12,
+      18,
+      25,
+      34,
+      30,
+      22,
+      41,
+      55,
+      48,
+      36,
+      28,
+      31,
+      44,
+      38,
+      29,
+      34
+    ],
+    "memory": {
+      "kind": "ratio",
+      "n": 12400000000,
+      "of": 17179869184
+    },
+    "battery": {
+      "kind": "percent",
+      "n": 800
+    }
+  },
+  "sections": [
+    {
+      "id": "todo",
+      "title": "To do",
+      "role": "actions",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "empty": {
+            "noun": "actions"
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "fleet",
+      "title": "All machines",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "show": "pipe"
+        },
+        {
+          "key": "host",
+          "kind": "text",
+          "show": "pipe"
+        },
+        {
+          "key": "lifetime",
+          "kind": "text",
+          "show": "pipe"
+        },
+        {
+          "key": "class",
+          "kind": "text",
+          "keep": 70,
+          "show": "eye"
+        },
+        {
+          "key": "role",
+          "kind": "text",
+          "keep": 30,
+          "show": "eye"
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 90
+        },
+        {
+          "key": "ip",
+          "kind": "identity",
+          "keep": 50
+        },
+        {
+          "key": "record",
+          "kind": "list",
+          "show": "pipe"
+        },
+        {
+          "key": "resources",
+          "kind": "list",
+          "keep": 10,
+          "show": "eye",
+          "whole": true
+        },
+        {
+          "key": "detail",
+          "kind": "list",
+          "keep": 5,
+          "show": "eye"
+        }
+      ],
+      "items": [
+        {
+          "group": {
+            "head": {
+              "id": "macbook",
+              "mark": "ok",
+              "label": "macbook",
+              "cells": [
+                {
+                  "kind": "text",
+                  "text": "mac"
+                },
+                {
+                  "kind": "none"
+                },
+                {
+                  "kind": "none"
+                },
+                {
+                  "kind": "text",
+                  "text": "Mac"
+                },
+                {
+                  "kind": "text",
+                  "text": "This Mac"
+                },
+                {
+                  "kind": "text",
+                  "text": "online"
+                },
+                {
+                  "kind": "identity",
+                  "text": "100.98.133.14"
+                },
+                {
+                  "kind": "count",
+                  "unit": "VMs"
+                },
+                {
+                  "kind": "count",
+                  "unit": "VMs"
+                },
+                {
+                  "kind": "none"
+                }
+              ]
+            },
+            "items": [
+              {
+                "empty": {
+                  "noun": "VMs",
+                  "hint": {
+                    "command": "station machines create",
+                    "key": "n"
+                  }
+                }
+              }
+            ],
+            "fold": "open"
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "title": "Awake",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "detail",
+          "kind": "text",
+          "keep": 60
+        },
+        {
+          "key": "more",
+          "kind": "text",
+          "keep": 20,
+          "whole": true
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "awake",
+            "mark": "ok",
+            "label": "awake",
+            "cells": [
+              {
+                "kind": "off"
+              },
+              {
+                "kind": "text",
+                "text": "the Mac sleeps as macOS decides"
+              }
+            ],
+            "hint": {
+              "command": "station awake 4h",
+              "key": "a"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "New VM",
+      "on": "page",
+      "priority": 1,
+      "mutates": true,
+      "id": "new-vm",
+      "run": {
+        "call": "machines.create-workspace",
+        "in": {
+          "Request.Image": "linux",
+          "Request.Network": "nat"
+        }
+      },
+      "form": {
+        "title": "New VM",
+        "fields": [
+          {
+            "key": "Request.Lifetime",
+            "label": "Lifetime",
+            "kind": "select",
+            "options": [
+              {
+                "value": "throwaway"
+              },
+              {
+                "value": "permanent"
+              }
+            ],
+            "default": "throwaway"
+          },
+          {
+            "key": "Request.Resources.MemoryBytes",
+            "label": "Memory",
+            "kind": "select",
+            "options": [
+              {
+                "value": "4294967296",
+                "label": "4G"
+              },
+              {
+                "value": "8589934592",
+                "label": "8G"
+              }
+            ],
+            "default": "4294967296"
+          }
+        ]
+      }
+    },
+    {
+      "label": "Open station",
+      "on": "page",
+      "priority": 2,
+      "id": "open-station",
+      "run": {
+        "terminal": true
+      }
+    },
+    {
+      "label": "Stop everything",
+      "on": "page",
+      "confirm": {
+        "question": "Stop everything on macbook?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Awake ends, and the engine stays stopped until station engine start or the next login"
+          }
+        ],
+        "danger": true,
+        "yes": "Stop"
+      },
+      "priority": 3,
+      "mutates": true,
+      "id": "stop-all",
+      "run": {
+        "call": "engine.stop",
+        "in": {
+          "By": "the menu bar",
+          "Confirm": "yes"
+        }
+      }
+    },
+    {
+      "label": "awake",
+      "on": "row",
+      "rows": [
+        "awake"
+      ],
+      "priority": 4,
+      "mutates": true,
+      "id": "power-awake",
+      "run": {
+        "call": "awake.keep"
+      },
+      "form": {
+        "title": "Awake",
+        "fields": [
+          {
+            "key": "For",
+            "label": "For",
+            "kind": "select",
+            "options": [
+              {
+                "value": "3600000000000",
+                "label": "1h"
+              },
+              {
+                "value": "7200000000000",
+                "label": "2h"
+              },
+              {
+                "value": "14400000000000",
+                "label": "4h"
+              },
+              {
+                "value": "28800000000000",
+                "label": "8h"
+              },
+              {
+                "value": "43200000000000",
+                "label": "12h"
+              },
+              {
+                "value": "86400000000000",
+                "label": "24h"
+              }
+            ],
+            "default": "14400000000000"
+          },
+          {
+            "key": "Lid",
+            "label": "Lid",
+            "kind": "select",
+            "options": [
+              {
+                "value": "Lid=false",
+                "label": "open only"
+              },
+              {
+                "value": "Lid=true",
+                "label": "closed"
+              },
+              {
+                "value": "Lid=true Battery=true",
+                "label": "closed on battery"
+              }
+            ],
+            "default": "Lid=false"
+          }
+        ]
+      }
+    }
+  ],
+  "badge": {
+    "needs": 0
+  }
+}

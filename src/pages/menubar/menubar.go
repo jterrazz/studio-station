@@ -1,6 +1,7 @@
 package menubar
 
 import (
+	"slices"
 	"strconv"
 	"time"
 
@@ -41,9 +42,32 @@ type Reading struct {
 
 func Page(r Reading, here page.Context) page.Page {
 	p := page.Page{ID: ID, Command: "menubar", Context: here, Strip: strip(r)}
-	p.Sections = []page.Section{todo(r, here), fleet(r), powerSection(r)}
+	todo := todo(r, here)
+	p.Sections = []page.Section{todo, fleet(r), powerSection(r)}
 	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power))
+	p.Badge = badge(r, todo)
 	return page.Seal(p)
+}
+
+// invariant: the icon aggregates and never judges: the count is the to do's
+// own, and a server is down by the machines model's rule; nil while the to
+// do is still read.
+func badge(r Reading, todo page.Section) *page.Badge {
+	if r.Home == nil {
+		return nil
+	}
+	b := page.Badge{}
+	for _, t := range todo.Counts {
+		if t.Mark != page.OK && t.Mark != page.Awaiting {
+			b.Needs += t.N
+		}
+	}
+	if r.Fleet != nil {
+		for _, h := range r.Fleet.Hosts {
+			b.Down = b.Down || slices.ContainsFunc(h.VMs, machines.Down)
+		}
+	}
+	return &b
 }
 
 func Stopped(here page.Context, installed bool) page.Page {

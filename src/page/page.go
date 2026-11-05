@@ -14,6 +14,14 @@ type Page struct {
 	Hints    []Hint    `json:"hints,omitempty"`
 	Error    *Error    `json:"error,omitempty"`
 	Actions  []Action  `json:"actions,omitempty"`
+	Badge    *Badge    `json:"badge,omitempty"`
+}
+
+type Badge struct {
+	// value: what the menu bar's icon says of the page's machines: how many
+	// things need you, and whether a server is down, which wins over the count.
+	Needs int  `json:"needs"`
+	Down  bool `json:"down,omitempty"`
 }
 
 type ID string

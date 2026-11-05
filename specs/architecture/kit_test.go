@@ -412,6 +412,12 @@ func pageFamilies() []string {
 	}
 }
 
+// value: the fixtures named by the world they draw rather than by a state:
+// the menu bar's proofs of USE-CASES §23 cite them by those names.
+func worldFamilies() map[string][]string {
+	return map[string][]string{"menubar.home": {"one-mac", "two-macs", "infra-down", "engine-stopped"}}
+}
+
 func missingPages(packages, families, fixtures []string) []finding {
 	have := map[string]bool{}
 	present := map[string]bool{}
@@ -434,8 +440,15 @@ func missingPages(packages, families, fixtures []string) []finding {
 			}
 		}
 	}
+	for f, worlds := range worldFamilies() {
+		for _, w := range worlds {
+			if !have[f+"."+w] {
+				out = append(out, finding{"fixtures", "src/ui/testdata/pages/" + f + "." + w + ".json", "a world fixture the menu bar's proofs cite is missing"})
+			}
+		}
+	}
 	for f := range present {
-		if !slices.Contains(families, f) {
+		if _, world := worldFamilies()[f]; !world && !slices.Contains(families, f) {
 			out = append(out, finding{"fixtures", "src/ui/testdata/pages/" + f + ".*.json", "a fixture family UI-SPEC §17 does not list"})
 		}
 	}
@@ -468,13 +481,18 @@ func TestEveryPageHasItsFourFixtures(t *testing.T) {
 		}
 	})
 	t.Run("bites", func(t *testing.T) {
-		gone := func(f string) bool { return f == "ports.error" || strings.HasPrefix(f, "run.") }
+		gone := func(f string) bool {
+			return f == "ports.error" || strings.HasPrefix(f, "run.") || f == "menubar.home.infra-down"
+		}
 		got := missingPages(append(slices.Clone(packages), "mutant"), pageFamilies(), append(slices.DeleteFunc(slices.Clone(fixtures), gone), "outcome-tools.full"))
 		if !slices.ContainsFunc(got, func(f finding) bool { return f.where == "src/pages/mutant" }) {
 			t.Error("the fixtures rule did not report a page package with no fixture")
 		}
 		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "ports.error.json") }) {
 			t.Error("the fixtures rule did not report a family missing its error state")
+		}
+		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "menubar.home.infra-down.json") }) {
+			t.Error("the fixtures rule did not report a missing world fixture")
 		}
 		if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasSuffix(f.where, "run.loading.json") }) {
 			t.Error("the fixtures rule did not report a listed family with no fixture at all")
