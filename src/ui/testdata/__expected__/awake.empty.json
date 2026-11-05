@@ -137,5 +137,23 @@
       "command": "station awake 4h --on mac-mini",
       "text": "another Mac"
     }
+  ],
+  "actions": [
+    {
+      "key": "l",
+      "label": "lid",
+      "on": "row",
+      "rows": [
+        "jterrazz-macbook-pro"
+      ]
+    },
+    {
+      "key": "b",
+      "label": "battery",
+      "on": "row",
+      "rows": [
+        "jterrazz-macbook-pro"
+      ]
+    }
   ]
 }

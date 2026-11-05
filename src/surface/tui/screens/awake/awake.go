@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/page"
+	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
@@ -41,18 +43,28 @@ func (Screen) Title(v screen.View) string {
 func (Screen) Lines(screen.View) ([]string, bool) { return nil, false }
 
 func (Screen) Keys(v screen.View) []ui.Binding {
-	if _, ok := mac(v); !ok {
+	t, ok := mac(v)
+	if !ok {
 		return nil
 	}
-	return []ui.Binding{screen.Bind("1", "1 h"), screen.Bind("4", "4 h"), screen.Bind("u", "until"+ui.Ellipsis), screen.Bind("o", "off"),
-		screen.Bind("l", "lid"), screen.Bind("b", "battery"), screen.Bind("c", "change the policy"+ui.Ellipsis)}
+	keys := []ui.Binding{screen.Bind("1", "1 h"), screen.Bind("4", "4 h"), screen.Bind("u", "until"+ui.Ellipsis), screen.Bind("o", "off")}
+	if t.lid {
+		keys = append(keys, screen.Bind("l", "lid"))
+	}
+	if t.battery {
+		keys = append(keys, screen.Bind("b", "battery"))
+	}
+	return append(keys, screen.Bind("c", "change the policy"+ui.Ellipsis))
 }
 
 type target struct {
 	name, label string
 	here        bool
-	words       []string
-	detail      []string
+	// value: whether the Mac reports a lid and a battery (E1), as the page's
+	// lid and battery actions name its row.
+	lid, battery bool
+	words        []string
+	detail       []string
 }
 
 func mac(v screen.View) (target, bool) {
@@ -61,6 +73,7 @@ func mac(v screen.View) (target, bool) {
 	}
 	t := target{name: v.Row.ID, label: cmp.Or(v.Row.Short, v.Row.Label)}
 	t.here = t.label == "This Mac"
+	t.lid, t.battery = offers(v.Page, pageawake.KeyLid, t.name), offers(v.Page, pageawake.KeyBattery, t.name)
 	for _, w := range v.Row.Cells[0].Items {
 		t.words = append(t.words, ui.Plain(w))
 	}
@@ -71,6 +84,15 @@ func mac(v screen.View) (target, bool) {
 		t.detail = append(t.detail, ui.Plain(w))
 	}
 	return t, true
+}
+
+func offers(p page.Page, key, row string) bool {
+	for _, a := range p.Actions {
+		if a.Key == key && slices.Contains(a.Rows, row) {
+			return true
+		}
+	}
+	return false
 }
 
 func (t target) on() []string {
@@ -95,19 +117,19 @@ func (t target) until() string {
 
 func (t target) held(word string) bool { return slices.Contains(t.words, word) }
 
-func flags(st screen.State) []string {
+func (t target) flags(st screen.State) []string {
 	var out []string
-	if st[lid] == on {
+	if t.lid && st[lid] == on {
 		out = append(out, "--lid")
 	}
-	if st[battery] == on {
+	if t.battery && st[battery] == on {
 		out = append(out, "--battery")
 	}
 	return out
 }
 
 func (t target) keep(st screen.State, how []string, said string) *screen.Call {
-	words := append(append(append([]string{"awake"}, how...), flags(st)...), t.on()...)
+	words := append(append(append([]string{"awake"}, how...), t.flags(st)...), t.on()...)
 	return &screen.Call{Words: words, Doing: "Keeping " + t.label + " awake " + said, Done: t.label + " stays awake " + said}
 }
 
@@ -126,12 +148,15 @@ func (Screen) Press(key string, v screen.View) (screen.Effect, bool) {
 		c := t.keep(st, nil, "until then")
 		c.Form = &screen.Form{Title: "Keep " + t.label + " awake until", Fields: []screen.Field{{Label: "Until", Value: "18:00", Note: "a time today, or tomorrow once it has passed"}},
 			Words: func(answers []string) []string {
-				return append(append([]string{"awake", "until", strings.TrimSpace(answers[0])}, flags(st)...), t.on()...)
+				return append(append([]string{"awake", "until", strings.TrimSpace(answers[0])}, t.flags(st)...), t.on()...)
 			}}
 		return screen.Effect{Call: c}, true
 	case "o":
 		return screen.Effect{Call: &screen.Call{Words: append([]string{"awake", "off"}, t.on()...), Doing: "Letting " + t.label + " sleep", Done: t.label + " sleeps normally again"}}, true
 	case "l", "b":
+		if (key == "l" && !t.lid) || (key == "b" && !t.battery) {
+			return screen.Effect{}, false
+		}
 		return toggle(t, st, map[string]string{"l": lid, "b": battery}[key]), true
 	case "c":
 		return change(t), true
