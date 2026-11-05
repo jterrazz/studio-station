@@ -20,6 +20,6 @@
    [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105minfra[m            [38;2;76;79;105m6443[m                                           [38;2;76;79;105mown Tailscale device: infra[m
 
  [1;38;2;30;102;245mReserved ports[m
-   [38;2;76;79;105mReserved on macbook: 2 of 1000 (40000-40999), 998 free[m
+   [38;2;76;79;105mReserved on This Mac: 2 of 1000 (40000-40999), 998 free[m
    [38;2;76;79;105mReserved on mac-mini: 0 of 1000 (40000-40999), 1000 free[m
    [38;2;76;79;105m1 more listens on its machine only[m

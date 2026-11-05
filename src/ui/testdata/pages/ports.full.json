@@ -3,6 +3,7 @@
   "id": "ports",
   "command": "ports",
   "context": {
+    "machine": "macbook",
     "kind": "host"
   },
   "state": "ready",
@@ -400,7 +401,7 @@
       "items": [
         {
           "note": {
-            "text": "Reserved on macbook: 2 of 1000 (40000-40999), 998 free"
+            "text": "Reserved on This Mac: 2 of 1000 (40000-40999), 998 free"
           }
         },
         {

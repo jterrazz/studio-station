@@ -371,12 +371,14 @@ func stoppedServices() services.Fleet {
 	return f
 }
 
+func thisMacPorts() page.Context { return page.Context{Kind: "host", Machine: "macbook"} }
+
 func portLists() []Fixture {
 	return states("ports",
-		pending(pageports.List(ports.Listing{Fleet: serviceFleet(), Tailnet: tailnetStatus()}, here())),
-		pageports.List(ports.Listing{Tailnet: ports.Status{State: catalog.StateAbsent}}, here()),
-		pageports.List(ports.Listing{Fleet: stoppedServices(), Tailnet: ports.Status{State: catalog.StateOK, BackendState: "NeedsLogin"}}, here()),
-		pageports.List(ports.Listing{Fleet: estatePorts(), Tailnet: tailnetStatus()}, here()))
+		pending(pageports.List(ports.Listing{Fleet: serviceFleet(), Tailnet: tailnetStatus()}, thisMacPorts())),
+		pageports.List(ports.Listing{Tailnet: ports.Status{State: catalog.StateAbsent}}, thisMacPorts()),
+		pageports.List(ports.Listing{Fleet: stoppedServices(), Tailnet: ports.Status{State: catalog.StateOK, BackendState: "NeedsLogin"}}, thisMacPorts()),
+		pageports.List(ports.Listing{Fleet: estatePorts(), Tailnet: tailnetStatus()}, thisMacPorts()))
 }
 
 // value: the reference estate's ports in their two classes: the mini's AirPlay

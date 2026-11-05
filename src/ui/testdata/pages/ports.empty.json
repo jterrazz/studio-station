@@ -3,6 +3,7 @@
   "id": "ports",
   "command": "ports",
   "context": {
+    "machine": "macbook",
     "kind": "host"
   },
   "state": "ready",
