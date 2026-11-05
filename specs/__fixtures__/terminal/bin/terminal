@@ -14,6 +14,8 @@
 #   screen      once COMMAND has drawn nothing for 0.2 s (1 s at most), print the
 #               screen's text, each line's trailing blanks and the blank bottom
 #               lines trimmed
+#   asked       wait for COMMAND to exit, then print how many times it asked the
+#               terminal for its background colour
 #   scrollback  wait for COMMAND to exit, then print the history above the screen and
 #               the screen, as tmux keeps them: a line scrolled off the top joins the
 #               history, and so does the whole screen when it is cleared from its
@@ -68,6 +70,7 @@ class Screen:
         self.state = "ground"
         self.seq = ""
         self.replies = b""
+        self.asked = 0
 
     def blank(self):
         return [[" "] * self.cols for _ in range(self.rows)]
@@ -282,6 +285,7 @@ class Screen:
         # invariant: the screen answers the background query as a dark terminal
         # does, so a binary never waits on a reply a real terminal gives at once.
         if body == "11;?":
+            self.asked += 1
             self.replies += b"\x1b]11;rgb:0000/0000/0000\x1b\\"
 
     def painted(self, names):
@@ -447,6 +451,10 @@ def main():
             wait(lambda: status is not None, "the command never exited", ended=False)
             pump(0.2)
             print(screen.painted(dict(reversed(pair.split("=", 1)) for pair in arg.split())))
+        elif verb == "asked":
+            wait(lambda: status is not None, "the command never exited", ended=False)
+            pump(0.2)
+            print("asked for its colours %d times" % screen.asked)
         elif verb == "scrollback":
             wait(lambda: status is not None, "the command never exited", ended=False)
             pump(0.2)
