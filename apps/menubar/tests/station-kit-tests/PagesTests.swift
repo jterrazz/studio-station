@@ -37,7 +37,7 @@ final class PagesTests: XCTestCase {
     }
 
     func drawn(_ name: String, _ state: PopoverState) throws {
-        XCTAssertNil(try Golden.check(name, AnyView(Popover(state, scrolls: false)), scheme: .dark))
+        XCTAssertNil(try Golden.check(name, AnyView(Popover(state, scrolls: false))))
     }
 
     func pushed(_ fixture: String, confirming: String? = nil, typed: String? = nil) throws -> PopoverState {
