@@ -1,4 +1,4 @@
-description: 'the mini''s AirPlay Receiver on every interface needs you, named, with where System Settings turns it off'
+description: 'the mini''s AirPlay Receiver on every interface needs you, with where it is turned off'
 env: two-macs
 runs:
     - command: 'world listen jterrazz-mac-mini "*:5000" ControlCenter'

@@ -1,4 +1,4 @@
-description: 'station ports --on the mini lists the mini''s ports and its server''s, with the mini''s reserved ports'
+description: 'ports --on the mini lists the mini''s ports and its server''s, with the mini''s reserved ports'
 env: two-macs
 runs:
     - command: 'world listen jterrazz-mac-mini "*:5000" ControlCenter'

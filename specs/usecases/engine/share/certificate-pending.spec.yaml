@@ -1,4 +1,4 @@
-description: 'while This Mac''s certificate is not issued its https share says so, then is shared at its https URL'
+description: 'an https share says issuing certificate until This Mac''s certificate is issued, then shared'
 env: two-macs
 runs:
     - command: 'world certificate jterrazz-macbook-pro pending'

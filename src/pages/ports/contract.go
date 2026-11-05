@@ -94,9 +94,9 @@ func ListenerObject(p ports.Port) PortJSON {
 	return o
 }
 
-// invariant: one object per port of a machine, red first, then public, then
-// private; a shared port is its share, told its class by what listens there.
 func ListContract(l ports.Listing) ListJSON {
+	// invariant: one object per port of a machine, red first, then public, then
+	// private; a shared port is its share, told its class by what listens there.
 	body := BodyJSON{Schema: "station.ports.list/v1", Findings: []string{}, Ports: []PortJSON{}, Range: []RangeJSON{}}
 	var red, public, private []PortJSON
 	var all []ports.Port

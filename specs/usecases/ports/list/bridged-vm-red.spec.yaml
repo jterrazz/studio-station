@@ -1,4 +1,4 @@
-description: 'macos-1, bridged onto the LAN, listening on every interface is reachable outside Tailscale and needs you'
+description: 'macos-1, bridged, on every interface is reachable outside Tailscale and needs you'
 env: bridged-macos
 runs:
     - command: 'ports | /usr/bin/grep -e "^#" -e "✗"'

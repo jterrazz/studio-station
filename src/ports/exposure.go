@@ -168,9 +168,9 @@ func Exposed(ps []Port) []finding.Finding {
 	return out
 }
 
-// value: a red port's finding in the words told beyond its machine's own
-// page: always naming its machine.
 func Told(f finding.Finding) string {
+	// value: a red port's finding in the words told beyond its machine's own
+	// page: always naming its machine.
 	if f.Machine.On != "" || f.Machine.Name == "" {
 		return f.Text
 	}
@@ -192,7 +192,7 @@ func OwnDevices(f Fleet, peers []Node) Fleet {
 
 func Survey(ms []Machine, decl []Declaration) []Port {
 	// invariant: every machine's ports in their class, machine by machine.
-	var out []Port
+	out := make([]Port, 0, len(ms))
 	for _, m := range ms {
 		out = append(out, Classify(m, decl)...)
 	}

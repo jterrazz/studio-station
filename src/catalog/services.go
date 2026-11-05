@@ -35,8 +35,10 @@ const ServeRow = "Tailscale Serve" // value: the row that says whether the tailn
 
 var SystemListeners = []string{"rapportd", "ControlCenter", "IPNExtension", "mDNSResponder", "launchd", "systemd"} // value: the processes whose listening port is the system's own: noise in a developer's list.
 
-// value: why a reserved port of a VM that does not run is not shared.
-func StoppedDetail(vm string) string { return "not shared while " + vm + " is stopped" }
+func StoppedDetail(vm string) string {
+	// value: why a reserved port of a VM that does not run is not shared.
+	return "not shared while " + vm + " is stopped"
+}
 
 const IssuingDetail = "issuing certificate" // value: a share whose host certificate the tailnet has not issued yet.
 

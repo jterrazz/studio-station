@@ -1,4 +1,4 @@
-description: '/proc/net/tcp and tcp6 are read in host byte order: loopback, every interface, a Tailscale address, a LAN address, IPv6 loopback and a Tailscale IPv6 address, listening rows only'
+description: '/proc/net/tcp and tcp6 are read in host byte order, every address kind, listening rows only'
 fixture: ./__fixtures__/binds/
 env: engine
 runs:

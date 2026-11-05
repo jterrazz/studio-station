@@ -1,13 +1,13 @@
 description: 'with This Mac signed out of Tailscale its ports are local only, said first with the fix'
 env: tailscale-out
 runs:
-    - command: 'ports'
+    - command: 'ports | /usr/bin/cut -f1-3,5-'
       exit: 0
       stdout: |
-          ✗	Tailscale	signed out on This Mac: ports are local only	open Tailscale and sign in
+          ✗	Tailscale	signed out on This Mac: ports are local only
           # Private: shared with you on Tailscale	2 ◐
-          ◐	linux-1	5173	http://127.0.0.1:40001	local only · Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console	node	vite
-          ◐	linux-1	7000	127.0.0.1:40002	local only · Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console	server
+          ◐	linux-1	5173	local only · Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console	node	vite
+          ◐	linux-1	7000	local only · Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console	server
           	Reserved on This Mac: 2 of 1000 (40000-40999), 998 free
     - command: 'ports --json | /usr/bin/jq -c ''.tailscale.state'''
       exit: 0

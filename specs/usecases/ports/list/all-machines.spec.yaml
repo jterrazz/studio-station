@@ -1,4 +1,4 @@
-description: 'station ports --all-machines lists what needs you, then Public, then Private, each row in its class, and folds what listens on its machine only'
+description: 'ports --all-machines lists Needs you, Public, then Private, and folds the local-only ones'
 env: two-macs
 runs:
     - command: 'world listen jterrazz-mac-mini "*:5000" ControlCenter'

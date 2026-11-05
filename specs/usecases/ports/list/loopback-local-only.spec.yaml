@@ -1,4 +1,4 @@
-description: 'a process This Mac binds to loopback only is not a row: it is counted as listening on its machine only'
+description: 'a port This Mac binds to loopback only is no row: it is counted as on its machine only'
 env: two-macs
 runs:
     - command: 'world listen jterrazz-macbook-pro 127.0.0.1:5432 postgres'

@@ -61,10 +61,10 @@ func TailnetLine(s ports.Status) *page.Section {
 		Items:   []page.Item{{Row: &row}}}
 }
 
-// invariant: SPEC 5.6: what needs you first, then Public, then Private;
-// what listens on its machine only is a count, unfolded by all; each Mac's
-// reserved ports one line.
 func Sections(f ports.Fleet, here page.Context, all bool) []page.Section {
+	// invariant: SPEC 5.6: what needs you first, then Public, then Private;
+	// what listens on its machine only is a count, unfolded by all; each Mac's
+	// reserved ports one line.
 	var red, public, private, local, notes []page.Item
 	for _, h := range f.Hosts {
 		private = append(private, hostRows(h)...)
@@ -160,9 +160,9 @@ func exposedColumns() []page.Column {
 	}
 }
 
-// value: the addresses a port listens on, in the owner's words: every
-// interface, the LAN, the tailnet, this machine.
 func ListensOn(p ports.Port) page.Value {
+	// value: the addresses a port listens on, in the owner's words: every
+	// interface, the LAN, the tailnet, this machine.
 	words := make([]string, 0, len(p.Binds))
 	for _, b := range p.Binds {
 		port := strconv.Itoa(p.Port)
@@ -199,9 +199,9 @@ func LocalRow(p ports.Port) page.Row {
 		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(p.What()), ListensOn(p), page.Text("this machine only")}}
 }
 
-// value: a port reachable through the tailnet only that station does not
-// share: a VM's own tailnet device, its Mac, or the Mac's tailnet address.
 func PrivateRow(p ports.Port) page.Row {
+	// value: a port reachable through the tailnet only that station does not
+	// share: a VM's own tailnet device, its Mac, or the Mac's tailnet address.
 	how := "on " + catalog.TailnetProduct
 	switch {
 	case p.Device:

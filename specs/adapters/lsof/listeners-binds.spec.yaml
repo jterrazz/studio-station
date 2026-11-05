@@ -1,4 +1,4 @@
-description: 'lsof''s listening addresses are read as they were bound: loopback only is this machine, the Tailscale address Private, every interface and a LAN address outside Tailscale'
+description: 'lsof''s listening addresses are read as bound: loopback, every interface, Tailscale, LAN'
 fixture: ./__fixtures__/binds/
 runs:
     - command: 'ports --json | /usr/bin/jq -c ''[.local_only, [.ports[] | [.port, .process, .bind, .class]], .findings]'''

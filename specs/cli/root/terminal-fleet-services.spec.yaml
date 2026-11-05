@@ -1,4 +1,4 @@
-description: 'the Services tab holds the Tailscale line, the private ports, each Mac''s range, and stops sharing another Mac''s port'
+description: 'the Services tab holds Tailscale, the private ports, each Mac''s range, and stops another''s'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/terminal/

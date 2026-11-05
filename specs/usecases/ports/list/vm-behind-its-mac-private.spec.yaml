@@ -1,4 +1,4 @@
-description: 'infra, behind its Mac, listening on every interface is Private on its own Tailscale device, never red'
+description: 'infra behind its Mac on every interface is Private, on its own Tailscale device, never red'
 env: two-macs
 runs:
     - command: 'world listen infra "*:6443" k3s'

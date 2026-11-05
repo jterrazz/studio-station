@@ -1,4 +1,4 @@
-description: 'each Mac''s reserved ports are one line where its ports are listed, and one range object per Mac in JSON'
+description: 'each Mac''s reserved ports are one line, and one range object per Mac in JSON'
 env: two-macs
 runs:
     - command: 'ports | /usr/bin/grep Reserved'

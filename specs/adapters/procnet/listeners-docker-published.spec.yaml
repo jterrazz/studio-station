@@ -1,4 +1,4 @@
-description: 'a port docker publishes counts once, named by its container, whether its userland proxy listens or not'
+description: 'a Docker-published port counts once, named by its container, with or without its proxy'
 fixture: ./__fixtures__/docker/
 env: engine
 runs:
