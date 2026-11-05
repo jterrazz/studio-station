@@ -104,10 +104,11 @@ type Daemon struct {
 	svcs map[string]*svc
 	// value: every address each running VM listens on, as its guest
 	// reported it, shared or not.
-	heard   map[string][]ports.Listener
-	reheard bool
-	// value: when the exposure job last read, and the red ports it told.
+	heard map[string][]ports.Listener
+	// value: when the exposure job last read, what each VM listened on
+	// then, and the red ports it told.
 	exposedAt time.Time
+	scanned   map[string][]ports.Listener
 	red       []string
 	leases    []services.Lease
 	self      ports.SharingState

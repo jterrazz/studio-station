@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"sort"
 	"time"
@@ -16,30 +17,41 @@ const (
 )
 
 type ExposureKept struct {
-	// value: what the exposure job knows between two commands: the red
-	// ports it already told.
-	Red []string `json:"red,omitempty"`
+	// value: what the exposure job knows between two commands: when it last
+	// read the listeners, what each VM listened on then, and the red ports
+	// it already told.
+	At      time.Time                   `json:"at,omitzero"`
+	Scanned map[string][]ports.Listener `json:"scanned,omitempty"`
+	Red     []string                    `json:"red,omitempty"`
 }
 
 func (d *Daemon) ExposureKept() ExposureKept {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return ExposureKept{Red: slices.Sorted(slices.Values(d.red))}
+	return ExposureKept{At: d.exposedAt, Scanned: maps.Clone(d.scanned), Red: slices.Sorted(slices.Values(d.red))}
 }
 
 func (d *Daemon) RememberExposure(k ExposureKept) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.red = slices.Clone(k.Red)
+	d.exposedAt, d.scanned, d.red = k.At, maps.Clone(k.Scanned), slices.Clone(k.Red)
 }
 
 func (d *Daemon) hear(vm string, ls []ports.Listener) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if !slices.Equal(d.heard[vm], ls) {
-		d.reheard = true
-	}
 	d.heard[vm] = ls
+}
+
+// value: whether a guest reported listeners other than the job last read;
+// the caller holds d.mu.
+func (d *Daemon) reheardLocked() bool {
+	for vm, ls := range d.heard {
+		if !slices.Equal(d.scanned[vm], ls) {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *Daemon) heardOf(vm string) []ports.Listener {
@@ -74,11 +86,11 @@ func (d *Daemon) watchExposure(ctx context.Context) {
 	}
 	now := d.h.Clock.Now()
 	d.mu.Lock()
-	if !d.reheard && !d.exposedAt.IsZero() && now.Sub(d.exposedAt) < exposureEvery {
+	if !d.reheardLocked() && !d.exposedAt.IsZero() && now.Sub(d.exposedAt) < exposureEvery {
 		d.mu.Unlock()
 		return
 	}
-	d.exposedAt, d.reheard = now, false
+	d.exposedAt, d.scanned = now, maps.Clone(d.heard)
 	vms := d.listeningLocked()
 	d.mu.Unlock()
 	mine, _ := d.o.Listening(ctx)
