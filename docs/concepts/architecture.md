@@ -89,7 +89,7 @@ specs/
 
 A leaf folder `surface/cli/<noun>/<verb>/` holds two files: `input.go` (argv to a typed input) and `command.go` (one call through the router, one page, one answer). A leaf never prints: it answers through `kit.IO`, and the `output` layer decides the form.
 
-Page functions live in `pages/<page>/` (presenters, for the pages not migrated yet, in `present/<subject>/`), not in the leaf folder, because the TUI tab renders the same page: a `tui` to `cli` import would couple the TUI to cobra. How a page looks in each medium is the kit's alone; the design system's rules (the kit's levels, glyphs only in `ui/token`, only pages build pages, no layout outside `ui/`) are rules 13 to 21 of the architecture test, which lists the packages not migrated yet in an allowlist that only shrinks.
+Page functions live in `pages/<page>/` (presenters, for the pages not migrated yet, in `present/<subject>/`), not in the leaf folder, because the TUI renders the same page, read through the CLI's own words with `--page`: a `tui` to `cli` import would couple the TUI to cobra. How a page looks in each medium is the kit's alone; the design system's rules (the kit's levels, glyphs only in `ui/token`, only pages build pages, no layout outside `ui/`) are rules 13 to 21 of the architecture test, which lists the packages not migrated yet in an allowlist that only shrinks.
 
 ## Who may import whom
 

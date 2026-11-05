@@ -18,7 +18,7 @@ The binary lives at `~/.local/bin/station`; its files follow the XDG folders. Th
 ## What it does
 
 ```sh
-station                 # on a terminal: the TUI (Home · Tools · Config · Storage │ Fleet · Services · Accounts · Power)
+station                 # on a terminal: the TUI (the machines, then the sections of the one you pick)
 
 # Here
 station overview        # everything about this machine
