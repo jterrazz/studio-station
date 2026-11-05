@@ -163,6 +163,7 @@ public struct Action: Codable, Equatable, Sendable {
 public struct Run: Codable, Equatable, Sendable {
     public var call: String?
     public var `in`: [String: String]?
+    public var machine: String?
     public var terminal: Bool?
     public var argv: [String]?
 }

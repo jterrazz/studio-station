@@ -47,6 +47,18 @@ public enum Token {
         public static let mark: CGFloat = 10
         public static let text: CGFloat = 12
         public static let small: CGFloat = 11
+        public static let title: CGFloat = 15
+        public static let graphHeight: CGFloat = 34
+    }
+
+    // value: the glass of the vision's panels: a pane's corner, its inner
+    // margin, how much of the ink tints it, and its bright edge.
+    public enum Glass {
+        public static let radius: CGFloat = 14
+        public static let padding: CGFloat = 10
+        public static let tint = 0.14
+        public static func fill(_ scheme: ColorScheme) -> Double { scheme == .dark ? 0.07 : 0.05 }
+        public static func edge(_ scheme: ColorScheme) -> Color { Color.white.opacity(scheme == .dark ? 0.16 : 0.6) }
     }
 
     public enum Symbol {
@@ -63,6 +75,18 @@ public enum Token {
         public static let awake = "power.circle.fill"
         public static let more = "ellipsis.circle"
         public static let copy = "doc.on.doc"
+        public static let back = "chevron.left"
+        public static let forward = "chevron.right"
+        public static let unfold = "chevron.down"
+        public static let warn = "exclamationmark.triangle.fill"
+        public static let globe = "globe"
+        public static let tailnet = "point.3.connected.trianglepath.dotted"
+        public static let sun = "sun.max"
+        public static let lid = "laptopcomputer"
+        public static let battery = "battery.75percent"
+        public static let thermo = "thermometer.medium"
+        public static let screen = "display"
+        public static let mini = "macmini"
 
         public static func of(_ mark: Mark) -> String {
             switch mark {

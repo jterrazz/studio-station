@@ -49,6 +49,10 @@ struct StationMenuBarApp: App {
             loginItemOn: model.loginItemOn,
             sparkline: { on in model.setSparkline(on) },
             sparklineOn: model.sparkline,
-            quit: { NSApplication.shared.terminate(nil) })
+            quit: { NSApplication.shared.terminate(nil) },
+            copy: { text in
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+            })
     }
 }

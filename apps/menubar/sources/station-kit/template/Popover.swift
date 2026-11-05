@@ -36,11 +36,14 @@ public struct PopoverHandlers {
     public var sparkline: (Bool) -> Void
     public var sparklineOn: Bool
     public var quit: () -> Void
+    public var copy: (String) -> Void
+    public var window: (String) -> Void
 
     public init(run: @escaping (Action, [String: String]) -> Void = { _, _ in }, confirm: @escaping (Action?) -> Void = { _ in },
                 answer: @escaping (String, String, String) -> Void = { _, _, _ in }, open: @escaping (URL) -> Void = { _ in },
                 toggleQR: @escaping (String) -> Void = { _ in }, toggleMenu: @escaping () -> Void = {}, loginItem: @escaping (Bool) -> Void = { _ in }, loginItemOn: Bool = false,
-                sparkline: @escaping (Bool) -> Void = { _ in }, sparklineOn: Bool = false, quit: @escaping () -> Void = {}) {
+                sparkline: @escaping (Bool) -> Void = { _ in }, sparklineOn: Bool = false, quit: @escaping () -> Void = {},
+                copy: @escaping (String) -> Void = { _ in }, window: @escaping (String) -> Void = { _ in }) {
         self.run = run
         self.confirm = confirm
         self.answer = answer
@@ -52,6 +55,8 @@ public struct PopoverHandlers {
         self.sparkline = sparkline
         self.sparklineOn = sparklineOn
         self.quit = quit
+        self.copy = copy
+        self.window = window
     }
 }
 

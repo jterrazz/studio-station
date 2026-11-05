@@ -18,6 +18,8 @@ public struct Reply: Sendable {
     public var hint: String?
     // value: the task of the call's last progress frame, what it was doing.
     public var task: String? = nil
+    // value: the out of a call that answers a list, one entry per item.
+    public var listed: [[String: AnySendable]] = []
 }
 
 public struct AnySendable: @unchecked Sendable {
@@ -46,8 +48,10 @@ public enum Client {
 
     // value: the call's input: each answer sets the field its key's path
     // names (`Request.Lifetime`), and an answer written `K=v K=v` sets each of
-    // those fields; a number or true/false is sent as one.
-    public static func input(_ answers: [String: String], fixed: [String: String]? = nil) -> [String: Any] {
+    // those fields; a value written as JSON (`"5173"`, `["never-sleeps"]`)
+    // is sent as that JSON, a number or true/false as one, a text answer as
+    // its text.
+    public static func input(_ answers: [String: String], fixed: [String: String]? = nil, text: Set<String> = []) -> [String: Any] {
         var out: [String: Any] = [:]
         func set(_ path: [String], _ value: Any, in dict: inout [String: Any]) {
             guard let head = path.first else { return }
@@ -60,12 +64,13 @@ public enum Client {
             dict[head] = inner
         }
         func put(_ key: String, _ value: String) {
-            let typed: Any = Int(value).map { $0 as Any } ?? (value == "true" || value == "false" ? (value == "true") as Any : value as Any)
-            set(key.split(separator: ".").map(String.init), typed, in: &out)
+            set(key.split(separator: ".").map(String.init), typed(value), in: &out)
         }
         for (k, v) in (fixed ?? [:]).sorted(by: { $0.key < $1.key }) { put(k, v) }
         for (k, v) in answers.sorted(by: { $0.key < $1.key }) {
-            if v.contains("=") {
+            if text.contains(k) {
+                set(k.split(separator: ".").map(String.init), v, in: &out)
+            } else if v.contains("=") {
                 for pair in v.split(separator: " ") {
                     let kv = pair.split(separator: "=", maxSplits: 1).map(String.init)
                     if kv.count == 2 { put(kv[0], kv[1]) }
@@ -77,12 +82,23 @@ public enum Client {
         return out
     }
 
+    static func typed(_ value: String) -> Any {
+        if let first = value.first, first == "\"" || first == "[" || first == "{",
+           let json = try? JSONSerialization.jsonObject(with: Data(value.utf8), options: [.fragmentsAllowed]) {
+            return json
+        }
+        if let n = Int(value) { return n }
+        if value == "true" || value == "false" { return value == "true" }
+        return value
+    }
+
     // invariant: one call is one station.api/v2 frame on its own connection;
     // its progress frames are read past, and its answer is the out or the
     // error frame that ends it. A connection that ends first is closed.
-    public static func call(path: String, name: String, input: [String: Any] = [:]) async -> Reply {
+    public static func call(path: String, name: String, input: [String: Any] = [:], machine: String? = nil) async -> Reply {
         var body: [String: Any] = ["v": 2, "id": "1", "call": name]
         if !input.isEmpty { body["in"] = input }
+        if let machine, !machine.isEmpty { body["target"] = ["name": machine] }
         guard let socket = try? UnixSocket.connect(path), let data = try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys]) else {
             return Reply(ok: false, closed: false, result: [:], message: "the station engine is not running", hint: "station engine start")
         }
@@ -100,7 +116,8 @@ public enum Client {
                     return Reply(ok: false, closed: false, result: [:], message: error["message"] as? String, hint: error["hint"] as? String, task: task)
                 }
                 let result = (obj["out"] as? [String: Any] ?? [:]).mapValues { AnySendable(value: $0) }
-                return Reply(ok: true, closed: false, result: result, message: nil, hint: nil)
+                let listed = (obj["out"] as? [[String: Any]] ?? []).map { $0.mapValues { AnySendable(value: $0) } }
+                return Reply(ok: true, closed: false, result: result, message: nil, hint: nil, task: task, listed: listed)
             }
         } catch {
             return Reply(ok: false, closed: true, result: [:], message: "the station engine closed the connection", hint: "station engine start")

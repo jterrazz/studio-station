@@ -219,8 +219,12 @@ type Run struct {
 	// engine's socket.
 	Call string `json:"call,omitempty"`
 	// value: the call's input the action fixes, by the path of each field
-	// (`Request.Image`); a Form's answers fill the paths their keys name.
+	// (`Request.Image`); a Form's answers fill the paths their keys name. A
+	// value written as JSON (`"5173"`, `["never-sleeps"]`) is sent as that
+	// JSON: a number the call reads as text, a list.
 	In map[string]string `json:"in,omitempty"`
+	// value: the Mac the call runs on, by its name; empty is this one.
+	Machine string `json:"machine,omitempty"`
 	// value: a new terminal runs station, with these words after it: the one
 	// way an action starts a program.
 	Terminal bool     `json:"terminal,omitempty"`

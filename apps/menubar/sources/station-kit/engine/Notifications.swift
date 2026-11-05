@@ -21,4 +21,26 @@ public enum Notifications {
     public static func failedCall(_ doing: String, _ message: String) -> String {
         "\(doing) failed: \(message)"
     }
+
+    // value: the result an item of a call's list ends in when it failed.
+    public static let failed = "broken"
+
+    // invariant: MB-16: a call that answers its items, some of them failed,
+    // posts one notification: the item that failed and why, or how many and
+    // which; nil when every item is done.
+    public static func failedItems(_ listed: [[String: AnySendable]]) -> String? {
+        let failed = listed.filter { $0["Result"]?.value as? String == Self.failed }
+        guard let first = failed.first else { return nil }
+        let doing = doing(first["Verb"]?.value as? String ?? "")
+        let names = failed.compactMap { $0["Name"]?.value as? String }
+        if failed.count == 1 {
+            return failedCall("\(doing) \(names.first ?? "")", first["Detail"]?.value as? String ?? "")
+        }
+        return failedCall("\(doing) \(failed.count) apps", names.joined(separator: ", "))
+    }
+
+    static func doing(_ verb: String) -> String {
+        let stem = verb.hasSuffix("e") ? String(verb.dropLast()) : verb
+        return stem.prefix(1).uppercased() + stem.dropFirst() + "ing"
+    }
 }

@@ -46,7 +46,12 @@ public struct ActionRunner: Sendable {
     public func run(_ action: Action, answers: [String: String] = [:]) async -> Status? {
         guard let run = action.run else { return nil }
         if let name = run.call {
-            let reply = await Client.call(path: socket, name: name, input: Client.input(Self.filled(action, answers: answers), fixed: run.in))
+            let text = Set((action.form?.fields ?? []).filter { $0.kind == "text" }.compactMap(\.key))
+            let input = Client.input(Self.filled(action, answers: answers), fixed: run.in, text: text)
+            let reply = await Client.call(path: socket, name: name, input: input, machine: run.machine)
+            if reply.ok, let posted = Notifications.failedItems(reply.listed) {
+                return Status(posted, failed: true, posted: posted)
+            }
             if reply.ok || (reply.closed && name == Self.endsTheEngine) { return nil }
             let message = reply.message ?? name
             var status = Self.failure(message, reply.hint)
