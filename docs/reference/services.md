@@ -54,7 +54,7 @@ The list begins with the Tailscale line, then every port that listens on a Mac o
 
 A VM behind its Mac is reached through Tailscale only, so its ports are Private whatever it binds. Among the shared rows `●` is shared, `○` not listening (reserved, nothing listens), `◐` waiting (the VM shares 20 already, the range is taken), local only (Serve off, Tailscale signed out, a refused serve), `issuing certificate`, not shared while its VM is stopped or while the engine is stopped. A Mac that does not answer is one `◐` row, never a failure.
 
-Each Mac's reserved ports are one line at the end: `Reserved on This Mac: 2 of 1000 (40000-40999) · 998 free`, one per Mac with `--all-machines`. In `--json` each Mac carries it in `range` (`mac`, `from`, `to`, `reserved`, `free`), read from its policy and lease file, so it is there with the engine down.
+Each Mac's reserved ports are one line at the end: `Reserved on This Mac: 2 of 1000 (40000-40999), 998 free`, one per Mac with `--all-machines`. In `--json` each Mac carries it in `range` (`mac`, `from`, `to`, `reserved`, `free`), read from its policy and lease file, so it is there with the engine down.
 
 The engine's exposure job reads what listens on its Mac and its VMs at its start, every 5 minutes and whenever a guest reports a change. A port that turns red is a finding of `station overview` (`✗ port 9000 is reachable outside Tailscale`) and is told once, as a `port_exposed` event (`<machine>: port <port> is reachable outside Tailscale`), then again only after it stopped being red.
 
