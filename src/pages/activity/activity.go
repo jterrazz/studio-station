@@ -30,8 +30,10 @@ type View struct {
 	Report  activity.Report
 	// value: a VM that does not run: it has no activity.
 	Stopped bool
-	// value: a Mac that does not answer, in its words.
-	Silent string
+	// value: a Mac that does not answer, in its words, and the type and code
+	// of the error it answered.
+	Silent                 string
+	SilentType, SilentCode string
 }
 
 func silent() page.Value { return page.Texts("?", "no answer in 2 s") }

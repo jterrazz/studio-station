@@ -137,7 +137,9 @@ type EveryJSON struct {
 }
 
 type ErrorJSON struct {
-	Message string `json:"message"`
+	Type    string  `json:"type"`
+	Code    *string `json:"code"`
+	Message string  `json:"message"`
 }
 
 type AllMachinesJSON struct {
