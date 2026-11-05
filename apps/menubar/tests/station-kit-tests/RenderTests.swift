@@ -8,8 +8,9 @@ final class RenderTests: XCTestCase {
         var failures: [String] = []
         for (name, data) in try Tree.fixtures() {
             let page = try Page.decode(data)
-            if let f = try Golden.check(name, Snapshot.view(name, page), scheme: .dark) { failures.append(f) }
-            if Snapshot.popover(page) || MenuPage.view(Snapshot.state(name, page)) != nil, let f = try Golden.check(name, Snapshot.view(name, page), scheme: .light) { failures.append(f) }
+            for scheme in [ColorScheme.dark, .light] {
+                if let f = try Golden.check(name, Snapshot.view(name, page), scheme: scheme) { failures.append(f) }
+            }
         }
         XCTAssertEqual(failures, [])
     }
@@ -53,6 +54,19 @@ final class GlassTests: XCTestCase {
             }
         }
         XCTAssertGreaterThan(checked, 20)
+    }
+
+    // invariant: live, the panel paints nothing of its own: the
+    // MenuBarExtra's window is the system's glass, and only the still
+    // drawing of a snapshot stands in for it.
+    func testTheLivePanelPaintsNothing() throws {
+        let pane = Color.clear.frame(width: 120, height: 80).stationPanel()
+        let renderer = ImageRenderer(content: pane.stationTheme(.dark).environment(\.stationStill, false))
+        let live = try XCTUnwrap(renderer.cgImage.flatMap(Bitmap.init))
+        XCTAssertEqual(stride(from: 3, to: live.pixels.count, by: 4).filter { live.pixels[$0] != 0 }.count, 0)
+        let still = ImageRenderer(content: pane.stationTheme(.dark).environment(\.stationStill, true))
+        let drawn = try XCTUnwrap(still.cgImage.flatMap(Bitmap.init))
+        XCTAssertGreaterThan(stride(from: 3, to: drawn.pixels.count, by: 4).filter { drawn.pixels[$0] != 0 }.count, 0)
     }
 
     func testAPaintedPanelIsCaught() throws {
