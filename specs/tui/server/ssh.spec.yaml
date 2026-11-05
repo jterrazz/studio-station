@@ -35,7 +35,7 @@ runs:
           │   This Mac › mac-mini   over Tailscale, as jterrazz.agent
           │   mac-mini › infra      192.168.64.5 · its Mac's private network
           │
-          │ Files: scp or rsync through the same name. No folder of a Mac is shared.
+          │ Files travel through the same name; no folder of a Mac is shared.
           │
           │ Station opens it for debugging only; your tooling owns what runs inside.
           │

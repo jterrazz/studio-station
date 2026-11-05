@@ -323,4 +323,7 @@ func Glyph(m page.Mark) string { return atom.Glyph(m) }
 
 type Binding = organism.Binding
 
-const Sep = token.Sep
+const (
+	Sep   = token.Sep
+	Crumb = token.Crumb
+)

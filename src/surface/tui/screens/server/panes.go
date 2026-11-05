@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
@@ -13,7 +14,7 @@ import (
 
 const (
 	activity = "activity"
-	ssh      = "ssh"
+	sshRead  = "door"
 	ports    = "ports"
 	overview = "overview"
 	macSSH   = "mac-ssh"
@@ -32,7 +33,7 @@ func (Screen) Reads(m screen.Machine, id section.ID, words func(section.ID) []st
 		if !m.MacHere {
 			portsOn = append(portsOn, "--on", m.Mac)
 		}
-		return []screen.Read{{Name: activity, Words: append(words(section.Activity), "--graph", "1h")}, {Name: ports, Words: portsOn}, {Name: ssh, Words: words(section.SSH)}}
+		return []screen.Read{{Name: activity, Words: append(words(section.Activity), "--graph", "1h")}, {Name: ports, Words: portsOn}, {Name: sshRead, Words: words(section.SSH)}}
 	}
 	if id == section.SSH {
 		reads := []screen.Read{{Name: overview, Words: words(section.Overview)}}
@@ -111,7 +112,7 @@ func (Screen) Lines(v screen.View) ([]string, bool) {
 	if check := health(p, "check"); check != "" {
 		sv.Created = append(sv.Created, ui.Pair{Label: "Check", Text: check})
 	}
-	sv.SSH = command(v.Beside[ssh], m.Name)
+	sv.SSH = command(v.Beside[sshRead], m.Name)
 	sv.Keys = []ui.Pair{{Label: "r", Text: "Restart"}, {Label: "S", Text: "Stop" + ui.Ellipsis + " type " + m.Name}}
 	return sv.Lines(), true
 }
@@ -140,7 +141,7 @@ func (Screen) Panes(v screen.View) []ui.Panel {
 	p := v.Page
 	var checks []ui.Check
 	worst := page.OK
-	for _, id := range []string{"running", "address", "ssh", "check"} {
+	for _, id := range []string{"running", "address", string(section.SSH), "check"} {
 		r, ok := row(p, "health", id)
 		if !ok {
 			continue
@@ -182,7 +183,7 @@ func portsPane(v screen.View) ui.Panel {
 			}
 			continue
 		}
-		g := ui.PortGroup{Title: map[string]string{"public": "Public" + ui.Sep + "declared", "private": "Private" + ui.Sep + "Tailscale"}[s.ID]}
+		g := ui.PortGroup{Title: map[string]string{"public": "Public" + ui.Sep + "declared", "private": "Private" + ui.Sep + catalog.TailnetProduct}[s.ID]}
 		for _, it := range s.Items {
 			r := it.Row
 			if r == nil || r.Label != v.Machine.Name {
@@ -214,7 +215,7 @@ func portsPane(v screen.View) ui.Panel {
 		ending = append(ending, "Nothing shared.")
 	}
 	if clean {
-		ending = append(ending, "Nothing else reachable", "outside Tailscale. "+ui.Glyph(page.OK))
+		ending = append(ending, "Nothing else reachable", "outside "+catalog.TailnetProduct+". "+ui.Glyph(page.OK))
 	}
 	return ui.Panel{Title: "Ports" + ui.Sep + strconv.Itoa(n), Lines: ui.Ports(v.Dark, groups, ending)}
 }
@@ -226,13 +227,13 @@ func door(v screen.View) []string {
 	d := ui.Door{Name: m.Name, Mac: m.MacLabel, MacHere: m.MacHere, Server: true, Dark: v.Dark}
 	d.Command = command(v.Page, m.Name)
 	if !m.MacHere {
-		hop := "over Tailscale"
-		if user, _, ok := strings.Cut(strings.TrimPrefix(command(v.Beside[macSSH], m.Mac), "ssh "), "@"); ok {
+		hop := "over " + catalog.TailnetProduct
+		if user, _, ok := strings.Cut(strings.TrimPrefix(command(v.Beside[macSSH], m.Mac), string(section.SSH)+" "), "@"); ok {
 			hop += ", as " + user
 		}
-		d.Reached = append(d.Reached, ui.Pair{Label: "This Mac › " + m.MacLabel, Text: hop})
+		d.Reached = append(d.Reached, ui.Pair{Label: "This Mac" + ui.Crumb + m.MacLabel, Text: hop})
 	}
-	vm := ui.Pair{Label: m.MacLabel + " › " + m.Name, Text: "its Mac's private network"}
+	vm := ui.Pair{Label: m.MacLabel + ui.Crumb + m.Name, Text: "its Mac's private network"}
 	if ov, ok := v.Beside[overview]; ok {
 		if ip := health(ov, "address"); ip != "" && ip != "failing" {
 			vm.Text = ip + ui.Sep + vm.Text

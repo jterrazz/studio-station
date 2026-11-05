@@ -135,7 +135,7 @@ func (d Door) Lines() []string {
 	for _, r := range d.Reached {
 		out = append(out, "   "+atom.Pad(r.Label, 22)+r.Text)
 	}
-	out = append(out, "", " Files: scp or rsync through the same name. No folder of a Mac is shared.")
+	out = append(out, "", " Files travel through the same name; no folder of a Mac is shared.")
 	if d.Server {
 		out = append(out, "", " Station opens it for debugging only; your tooling owns what runs inside.")
 	}
