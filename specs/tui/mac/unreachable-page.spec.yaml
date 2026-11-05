@@ -1,4 +1,4 @@
-description: 'a Mac that does not answer: its page says when it last answered, the likely cause, u unlock… in a new terminal and r retry, which reads it again'
+description: 'a Mac that does not answer: its last answer, the likely cause, u unlock… and r retry'
 fixture:
     - ../../__fixtures__/terminal/
     - ../__fixtures__/opener/

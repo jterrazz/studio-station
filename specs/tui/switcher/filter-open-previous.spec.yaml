@@ -1,4 +1,4 @@
-description: 'm opens Switch machine: inf keeps infra, enter moves the whole TUI to it, - goes back to the previous machine'
+description: 'm filters the machines, enter opens infra, - goes back to the previous machine'
 fixture:
     - ../../__fixtures__/terminal/
 env:

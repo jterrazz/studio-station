@@ -1,4 +1,4 @@
-description: 'a call runs in the Progress strip with its spinner and its seconds while every key still works; a success toasts, then goes'
+description: 'a call spins in the Progress strip with its seconds while every key works; a success toasts'
 fixture:
     - ../../__fixtures__/terminal/
 env:

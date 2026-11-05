@@ -1,4 +1,4 @@
-description: 'n, kind Server: the form asks the name and the health check, no lifetime; on mac-mini it creates the server there'
+description: 'n, kind Server: the form asks the name and the health check, no lifetime'
 fixture:
     - ../../__fixtures__/terminal/
 env:

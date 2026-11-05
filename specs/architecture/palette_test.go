@@ -25,8 +25,8 @@ func paletteTargets() map[string][]palette.Target {
 }
 
 // invariant: rule palette-covers-calls, strict (TU-11): every call of
-// calls.json has its palette entry, is offered on some machine its Applies
-// takes, and never on one it refuses.
+// calls.json is offered by the palette on some machine its Applies takes,
+// and never on one it refuses.
 func TestPaletteReachesEveryCall(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join(repoRoot(t), "src", "remote", "api", "calls.json"))
 	if err != nil {
@@ -44,10 +44,6 @@ func TestPaletteReachesEveryCall(t *testing.T) {
 			continue
 		}
 		m := metas[i]
-		if !palette.Has(m.Name) {
-			t.Errorf("%s: no palette entry: the palette does not reach it", m.Name)
-			continue
-		}
 		reached := false
 		for _, ref := range references() {
 			targets := paletteTargets()[ref.name]

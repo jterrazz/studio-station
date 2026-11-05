@@ -1,4 +1,4 @@
-description: 'n opens the create form on the Mac shown: enter creates linux-2 in the Progress strip, and the sidebar gains it under This Mac'
+description: 'n opens the create form: enter creates linux-2 and the sidebar gains it under This Mac'
 fixture:
     - ../../__fixtures__/terminal/
 env:

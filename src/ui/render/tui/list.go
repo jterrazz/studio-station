@@ -293,9 +293,9 @@ func findRow(items []page.Item, id string) (page.Row, bool) {
 	return page.Row{}, false
 }
 
-// value: the list with its cursor on the row Lines draws on that line of
-// the pane, counted from its first; false when no row is drawn there.
 func (l List) At(s Shell, width, room, line int) (List, bool) {
+	// value: the list with its cursor on the row Lines draws on that line of
+	// the pane, counted from its first; false when no row is drawn there.
 	if l.Page.Error != nil {
 		return l, false
 	}

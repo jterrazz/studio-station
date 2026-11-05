@@ -1,4 +1,4 @@
-description: 'station in a terminal that uses linux-1 opens on linux-1; m to mac-mini moves the TUI, and the terminal still uses linux-1'
+description: 'a terminal that uses linux-1 opens the TUI on it; m moves the TUI, not the terminal'
 fixture:
     - ../../__fixtures__/terminal/
 env:

@@ -84,14 +84,14 @@ func (s shell) unansweredPress(n node, key string) (shell, tea.Cmd, bool) {
 	case "u":
 		if fix := s.unansweredFix(n); len(fix) > 1 && fix[1] == "unlock" {
 			line := "station " + strings.Join(fix, " ")
-			s, cmd := s.outside("A new terminal runs "+line, func() error { return s.deps.Terminal(s.ctx, line) })
-			return s, cmd, true
+			opened, cmd := s.outside("A new terminal runs "+line, func() error { return s.deps.Terminal(s.ctx, line) })
+			return opened, cmd, true
 		}
 	case "r":
 		s.asked = with(s.asked, machinesKey, false)
-		s, cmd := s.again()
-		s, more := s.ask(machinesKey, []string{"machines"})
-		return s, tea.Batch(cmd, more), true
+		read, cmd := s.again()
+		read, more := read.ask(machinesKey, []string{"machines"})
+		return read, tea.Batch(cmd, more), true
 	}
 	return s, nil, false
 }

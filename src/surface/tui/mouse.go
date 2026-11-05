@@ -71,11 +71,9 @@ func (s shell) wheel(m tea.Mouse) (tea.Model, tea.Cmd) {
 		return s, nil
 	}
 	key := s.key(s.current(), s.section())
-	switch m.Button {
-	case tea.MouseWheelUp:
-		s.lists = with(s.lists, key, s.list(key).Move(-1))
-	case tea.MouseWheelDown:
-		s.lists = with(s.lists, key, s.list(key).Move(1))
+	step := map[tea.MouseButton]int{tea.MouseWheelUp: -1, tea.MouseWheelDown: 1}[m.Button]
+	if step != 0 {
+		s.lists = with(s.lists, key, s.list(key).Move(step))
 	}
 	return s, nil
 }

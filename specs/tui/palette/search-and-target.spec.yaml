@@ -1,4 +1,4 @@
-description: 'ctrl+p searches the calls of the machine shown, each with its key and its confirmation; tab changes the machine, a server offers no Apps call'
+description: 'ctrl+p searches the calls with their keys and confirmations; tab changes the machine'
 fixture:
     - ../../__fixtures__/terminal/
 env:

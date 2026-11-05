@@ -315,17 +315,11 @@ func onMac(v Target) string {
 	return " on " + v.MacLabel
 }
 
-// value: whether the palette has an entry for the call.
-func Has(name string) bool {
-	_, ok := entries[name]
-	return ok
-}
-
-// invariant: SPEC §9.5: every call of the catalogue that applies to the
-// target, in the catalogue's order; a section's call where the target shows
-// that section, a VM's call on that VM, or on each VM of a Mac, and the
-// confirmation the call asks announced (confirm.For, never the surface).
 func Offer(metas []call.Meta, t Target, macs []Target) []Item {
+	// invariant: SPEC §9.5: every call of the catalogue that applies to the
+	// target, in the catalogue's order; a section's call where the target shows
+	// that section, a VM's call on that VM, or on each VM of a Mac, and the
+	// confirmation the call asks announced (confirm.For, never the surface).
 	var out []Item
 	for _, m := range metas {
 		e, ok := entries[m.Name]
@@ -381,9 +375,9 @@ func offered(e entry, m call.Meta, t Target) bool {
 	return m.Section != "" && slices.Contains(t.Sections, m.Section)
 }
 
-// value: the items whose words hold every word of the query, by their
-// label or their call's name.
 func Search(items []Item, query string) []Item {
+	// value: the items whose words hold every word of the query, by their
+	// label or their call's name.
 	words := strings.Fields(strings.ToLower(query))
 	return slices.DeleteFunc(slices.Clone(items), func(it Item) bool {
 		hay := strings.ToLower(it.Label + " " + it.Call)

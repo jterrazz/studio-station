@@ -1,4 +1,4 @@
-description: 'D on linux-1 asks its name typed: enter stays off until linux-1 is typed, then linux-1 is deleted and leaves the sidebar'
+description: 'D on linux-1 asks its name typed, then deletes it and it leaves the sidebar'
 fixture:
     - ../../__fixtures__/terminal/
 env:

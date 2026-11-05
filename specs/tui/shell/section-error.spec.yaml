@@ -1,4 +1,4 @@
-description: 'a section whose read fails shows its one error block where its rows would be; the other sections still work'
+description: 'a section whose read fails shows its error block; the other sections still work'
 fixture:
     - ../../__fixtures__/terminal/
 env:
