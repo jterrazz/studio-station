@@ -119,6 +119,7 @@ public struct Popover: View {
     let handlers: PopoverHandlers
     let scrolls: Bool
     @Environment(\.stationPalette) private var palette
+    @Namespace private var glass
 
     public init(_ state: PopoverState, handlers: PopoverHandlers = PopoverHandlers(), scrolls: Bool = true) {
         self.state = state
@@ -134,12 +135,17 @@ public struct Popover: View {
 
     var inner: CGFloat { Token.Space.width - Token.Space.margin * 2 }
 
+    // invariant: one glass container holds Home and whatever it pushes,
+    // so a tile morphs into the header of the page it opens.
     public var body: some View {
-        if let own = pushedView {
-            own
-        } else {
-            panel
+        GlassPage {
+            if let own = pushedView {
+                own
+            } else {
+                panel
+            }
         }
+        .environment(\.stationGlassSpace, glass)
     }
 
     // value: a page of the menu bar's own (Ports, Awake, Activity) drawn in
@@ -178,7 +184,7 @@ public struct Popover: View {
         }
         .padding(Token.Space.margin)
         .frame(width: Token.Space.width, alignment: .topLeading)
-        .background(palette.surface)
+        .stationPanel()
         .environment(\.stationHints, false)
     }
 
@@ -188,24 +194,25 @@ public struct Popover: View {
     var header: some View {
         if let pushed = state.pushed, pushed.id == PageID.machine {
             Button(action: handlers.back) {
-                HStack(spacing: 4) {
+                HStack(spacing: 3) {
                     Image(systemName: Token.Symbol.back).font(.system(size: Token.Space.small, weight: .semibold))
-                    Text("All machines").font(.system(size: Token.Space.text))
+                    Text("All machines").font(.system(size: Token.Space.text, weight: .medium))
                 }
                 .foregroundStyle(palette.accent)
             }
             .buttonStyle(.plain)
         } else {
-            HStack(spacing: Token.Space.gap / 2) {
+            HStack(spacing: Token.Space.gap) {
                 Button(action: state.pushed == nil ? handlers.openSwitcher : handlers.back) {
-                    HStack(spacing: 5) {
-                        Image(systemName: Token.Symbol.mac).font(.system(size: Token.Space.small)).foregroundStyle(palette.accent)
+                    HStack(spacing: 6) {
+                        IconCircle(Token.Symbol.mac, tint: palette.accent, size: Token.Tile.smallCircle)
                         Text(Page.ThisMacWord).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
                         Image(systemName: Token.Symbol.down).font(.system(size: Token.Space.small - 2, weight: .bold)).foregroundStyle(palette.muted)
+                            .rotationEffect(.degrees(state.pushed == nil ? 0 : 180))
                     }
-                    .padding(.horizontal, Token.Tile.pill)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(palette.text.opacity(state.pushed == nil ? Token.Tile.fill : Token.Tile.sheet)))
+                    .padding(.leading, 4).padding(.trailing, 10).padding(.vertical, 4)
+                    .stationGlassCapsule(tint: state.pushed == nil ? nil : palette.accent, id: "switcher")
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut("0", modifiers: .command)
@@ -214,7 +221,10 @@ public struct Popover: View {
                 }
                 Spacer()
                 Button(action: handlers.toggleMenu) {
-                    Image(systemName: Token.Symbol.more).font(.system(size: Token.Space.text)).foregroundStyle(palette.muted)
+                    Image(systemName: Token.Symbol.gear).font(.system(size: Token.Space.small + 1, weight: .bold)).foregroundStyle(palette.text)
+                        .frame(width: 28, height: 28)
+                        .stationGlassCapsule(tint: state.menu ? palette.accent : nil, id: "menu")
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
             }

@@ -1,37 +1,64 @@
 import SwiftUI
 
-// value: a rounded tile a step lighter than the panel (vision a-f).
+// value: a rounded tile of glass (vision a-f).
 struct TileBox<Content: View>: View {
+    let id: String?
+    let tint: Color?
     let content: Content
-    @Environment(\.stationPalette) private var palette
 
-    init(@ViewBuilder _ content: () -> Content) { self.content = content() }
+    init(id: String? = nil, tint: Color? = nil, @ViewBuilder _ content: () -> Content) {
+        self.id = id
+        self.tint = tint
+        self.content = content()
+    }
 
     var body: some View {
-        content
-            .padding(Token.Tile.padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: Token.Tile.radius).fill(palette.text.opacity(Token.Tile.fill)))
+        GlassCard(tint: tint, id: id) { content }
     }
 }
 
-// value: one of the three measures: its name, its value, its sparkline.
+// value: one of the three measures: its name, its value large with its
+// unit small, its sparkline.
 struct MetricTile: View {
     let label: String
     let value: Value?
     let spark: [Int]?
+    var id: String? = nil
     @Environment(\.stationPalette) private var palette
+    @Environment(\.stationNow) private var now
 
     var body: some View {
-        TileBox {
+        TileBox(id: id) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(label).font(.system(size: Token.Space.small - 1)).foregroundStyle(palette.muted)
-                ValueText(value, size: Token.Space.text).lineLimit(1).minimumScaleFactor(0.7)
+                Text(label).font(.system(size: Token.Space.small, weight: .semibold)).foregroundStyle(palette.muted)
+                Self.figure(value.map { Format.show($0, now: now) } ?? "", palette: palette).frame(height: 22, alignment: .leading)
                 if let spark, spark.count > 1 {
-                    Spark(Self.scaled(spark), width: 80, height: Token.Tile.sparkHeight)
+                    Spark(Self.scaled(spark), height: Token.Tile.sparkHeight).padding(.top, 2)
                 }
             }
         }
+    }
+
+    // value: a figure as Control Center draws one: the number 17 pt, its
+    // unit after it 11 pt secondary.
+    static func figure(_ shown: String, palette: Token.Palette) -> some View {
+        let (number, unit) = split(shown)
+        return HStack(alignment: .firstTextBaseline, spacing: 2) {
+            Text(number).font(.system(size: Token.Tile.value, weight: .semibold)).foregroundStyle(palette.text)
+                .monospacedDigit().contentTransition(.numericText())
+            if !unit.isEmpty {
+                Text(unit).font(.system(size: Token.Space.small, weight: .medium)).foregroundStyle(palette.muted)
+            }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+    }
+
+    static func split(_ shown: String) -> (String, String) {
+        let figure = Set("0123456789.,")
+        let head = shown.prefix { figure.contains($0) }
+        guard !head.isEmpty else { return (shown, "") }
+        return (String(head), shown.dropFirst(head.count).trimmingCharacters(in: .whitespaces))
     }
 
     // value: a series drawn against its own peak, so a rate in KB/s draws
@@ -42,12 +69,46 @@ struct MetricTile: View {
     }
 }
 
-// value: a machine's line: its mark, its name, a Server capsule, the words
-// under it, and the way into its page.
+// value: a machine's state as a dot: filled in its mark's colour, hollow
+// when it is not running.
+struct StateDot: View {
+    let mark: Mark?
+    @Environment(\.stationPalette) private var palette
+
+    var body: some View {
+        if let mark {
+            if mark == .pending {
+                PendingDot()
+            } else if mark == .absent {
+                Circle().strokeBorder(palette.grey, lineWidth: 1.5).frame(width: Token.Tile.dot + 1, height: Token.Tile.dot + 1)
+            } else {
+                Circle().fill(palette.of(mark)).frame(width: Token.Tile.dot, height: Token.Tile.dot)
+            }
+        }
+    }
+}
+
+// value: a kind's capsule beside a machine's name: Server, Workspace.
+struct KindCapsule: View {
+    let kind: String
+    @Environment(\.stationPalette) private var palette
+
+    var body: some View {
+        Text(kind).font(.system(size: Token.Space.small - 1.5, weight: .semibold)).foregroundStyle(palette.teal)
+            .padding(.horizontal, 5).padding(.vertical, 1)
+            .background(Capsule().fill(palette.teal.opacity(0.2)))
+    }
+}
+
+// value: a machine's line: its state circle, its name, a kind capsule,
+// the words under it, its state dot; the line opens its machine's page.
 struct MachineLine: View {
     let row: Row
     let symbol: String
     let capsule: Bool
+    var rule = false
+    var selected = false
+    var morph = true
     let open: (String) -> Void
     @Environment(\.stationPalette) private var palette
 
@@ -57,27 +118,38 @@ struct MachineLine: View {
         return ([kind == "Mac" ? kind : nil] + rest.map { Optional($0) }).compactMap { $0 }.joined(separator: Token.Glyph.sep)
     }
 
+    var tint: Color? {
+        switch row.mark {
+        case .absent, .offHere, .notKnown, .pending, nil: return nil
+        case .broken: return palette.bad
+        case .attention: return palette.warn
+        default: return symbol == Token.Symbol.mac ? palette.accent : palette.teal
+        }
+    }
+
     var body: some View {
         Button { open(row.id ?? "") } label: {
-            HStack(spacing: Token.Space.gap) {
-                Image(systemName: symbol).font(.system(size: Token.Space.text)).foregroundStyle(row.mark == .absent ? palette.muted : palette.accent).frame(width: 18)
+            HStack(spacing: Token.Space.gap + 2) {
+                IconCircle(symbol, tint: tint, pulse: row.mark == .pending)
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 5) {
-                        Text(row.label ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
-                        if capsule && kind != "Mac" {
-                            Text(kind).font(.system(size: Token.Space.small - 2, weight: .semibold)).foregroundStyle(palette.accent)
-                                .padding(.horizontal, 5).padding(.vertical, 1)
-                                .background(Capsule().fill(palette.accent.opacity(0.18)))
-                        }
+                        Text(row.label ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(selected ? palette.onTint : palette.text)
+                        if capsule && kind != "Mac" { KindCapsule(kind: kind) }
                     }
                     if !sub.isEmpty {
-                        Text(sub).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(1)
+                        Text(sub).font(.system(size: Token.Space.small)).foregroundStyle(selected ? palette.onTint.opacity(0.85) : palette.muted).lineLimit(1)
                     }
                 }
                 Spacer(minLength: 0)
-                MarkView(row.mark)
+                StateDot(mark: row.mark)
             }
-            .contentShape(Rectangle())
+            .frame(minHeight: Token.Tile.rowHeight - 6)
+            .padding(.vertical, 3)
+            .modifier(MorphID(id: morph ? row.label.map { PageID.of($0) } : nil))
+            .stationHover()
+            .overlay(alignment: .top) {
+                if rule { Rectangle().fill(palette.faint).frame(height: 0.5).offset(y: -2) }
+            }
         }
         .buttonStyle(.plain)
     }
@@ -94,16 +166,16 @@ struct MachinesTree: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            ForEach(Array((section.items ?? []).enumerated()), id: \.offset) { _, item in
+            ForEach(Array((section.items ?? []).enumerated()), id: \.offset) { i, item in
                 if let g = item.group, g.head?.cells?.isEmpty ?? true {
                     groups([item])
                 } else if let mac = item.group {
                     if let head = mac.head, only == nil || only!.contains(head.id ?? "") {
-                        MachineLine(row: head, symbol: Token.Symbol.mac, capsule: false, open: open)
+                        MachineLine(row: head, symbol: Token.Symbol.mac, capsule: false, rule: i > 0, morph: only == nil, open: open)
                     }
                     groups(mac.items ?? [])
                 } else if let row = item.row {
-                    MachineLine(row: row, symbol: Token.Symbol.vm, capsule: capsules, open: open)
+                    MachineLine(row: row, symbol: Token.Symbol.vm, capsule: capsules, rule: i > 0, morph: only == nil, open: open)
                 } else if let empty = item.empty {
                     EmptyLine(empty)
                 }
@@ -118,15 +190,17 @@ struct MachinesTree: View {
                 if !rows.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         if only == nil {
-                            Text(g.head?.label ?? "").font(.system(size: Token.Space.small - 1, weight: .semibold)).foregroundStyle(palette.subtle).padding(.leading, 26)
+                            Text((g.head?.label ?? "").uppercased()).font(.system(size: Token.Space.small - 1.5, weight: .semibold)).tracking(0.4)
+                                .foregroundStyle(palette.muted).padding(.leading, 22).padding(.top, 2)
                         }
-                        ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                            MachineLine(row: row, symbol: Token.Symbol.vm, capsule: capsules || row.cells?.first?.text == "Server", open: open).padding(.leading, only == nil ? 14 : 0)
+                        ForEach(Array(rows.enumerated()), id: \.offset) { j, row in
+                            MachineLine(row: row, symbol: Token.Symbol.vm, capsule: capsules || row.cells?.first?.text == "Server", rule: j > 0, morph: only == nil, open: open)
+                                .padding(.leading, only == nil ? 22 : 0)
                         }
                     }
                 }
             } else if let row = item.row, only == nil || only!.contains(row.id ?? "") {
-                MachineLine(row: row, symbol: Token.Symbol.vm, capsule: true, open: open).padding(.leading, 14)
+                MachineLine(row: row, symbol: Token.Symbol.vm, capsule: true, morph: only == nil, open: open).padding(.leading, 22)
             }
         }
     }
@@ -144,19 +218,40 @@ struct MenuLine: View {
 
     var body: some View {
         Button(action: tap) {
-            HStack(spacing: Token.Space.gap) {
-                Image(systemName: symbol).font(.system(size: Token.Space.small)).frame(width: 18)
-                Text(title).font(.system(size: Token.Space.text))
-                Spacer()
-                if let key = action.key {
-                    Text(Token.Key.shown(key)).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle)
-                }
-            }
-            .foregroundStyle(danger ? palette.bad : palette.text)
-            .contentShape(Rectangle())
+            MenuText(symbol: symbol, title: title, key: action.key.map(Token.Key.shown), danger: danger)
         }
         .buttonStyle(.plain)
     }
+}
+
+struct MenuText: View {
+    let symbol: String
+    let title: String
+    let key: String?
+    let danger: Bool
+    @Environment(\.stationPalette) private var palette
+
+    var body: some View {
+        HStack(spacing: Token.Space.gap) {
+            Image(systemName: symbol).font(.system(size: Token.Space.small + 1, weight: .medium)).frame(width: 18)
+                .foregroundStyle(danger ? palette.bad : palette.muted)
+            Text(title).font(.system(size: Token.Space.text))
+            Spacer()
+            if let key {
+                Text(key).font(.system(size: Token.Space.small + 1)).foregroundStyle(palette.subtle)
+            }
+        }
+        .foregroundStyle(danger ? palette.bad : palette.text)
+        .padding(.vertical, 4)
+        .stationHover()
+    }
+}
+
+// value: the thin rule over a menu, as the vision's.
+struct Rule: View {
+    @Environment(\.stationPalette) private var palette
+
+    var body: some View { Rectangle().fill(palette.faint).frame(height: 0.5) }
 }
 
 // invariant: a gesture opens its sheet (a form, or a question at its
@@ -206,8 +301,8 @@ struct HomeContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
             if let strip = page.strip {
-                HStack(spacing: 6) {
-                    MetricTile(label: "CPU", value: strip.cpu, spark: strip.spark)
+                HStack(spacing: Token.Glass.spacing) {
+                    MetricTile(label: "CPU", value: strip.cpu, spark: strip.spark, id: Navigation.activity)
                     MetricTile(label: "Memory", value: strip.memory, spark: strip.memory_spark)
                     MetricTile(label: "Network", value: strip.net?.first, spark: strip.net_spark)
                 }
@@ -215,16 +310,18 @@ struct HomeContent: View {
             if let needs = page.section(TodoBadge.section) { needsTile(needs) }
             if let machines = page.section("machines") {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(machines.title ?? "").font(.system(size: Token.Space.small, weight: .semibold)).foregroundStyle(palette.muted)
-                    MachinesTree(section: machines, capsules: false, only: nil, open: handlers.openMachine)
+                    SectionHead(machines.title ?? "")
+                    GlassCard(padding: 12, spacing: 0) {
+                        MachinesTree(section: machines, capsules: false, only: nil, open: handlers.openMachine)
+                    }
                 }
             }
-            HStack(alignment: .top, spacing: 6) {
+            HStack(alignment: .top, spacing: Token.Glass.spacing) {
                 if let awake = page.section("awake") { awakeTile(awake) }
                 if let accounts = page.section("accounts") { accountsTile(accounts) }
             }
             if state.connection == .live || state.connection == .connecting {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     ForEach(Array(Popover.pages.enumerated()), id: \.offset) { _, p in
                         Pill(p.label) { handlers.push(p.watch) }
                     }
@@ -239,30 +336,33 @@ struct HomeContent: View {
     }
 
     func needsTile(_ s: Section) -> some View {
-        TileBox {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Image(systemName: Token.Symbol.warn).font(.system(size: Token.Space.small)).foregroundStyle(palette.warn)
+        let todo = TodoBadge.todo(page)
+        let tint: Color = todo?.mark == .broken ? palette.bad : palette.warn
+        return TileBox {
+            HStack(alignment: .top, spacing: Token.Space.gap + 2) {
+                IconCircle(Token.Symbol.needs, tint: (todo?.n ?? 0) > 0 ? tint : nil)
+                VStack(alignment: .leading, spacing: 5) {
                     Text(s.caption?.first?.text ?? s.title ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
-                }
-                ForEach(Array((s.items ?? []).enumerated()), id: \.offset) { _, item in
-                    if let row = item.row {
-                        HStack(spacing: 6) {
-                            MarkView(row.mark)
-                            Text(row.label ?? "").font(.system(size: Token.Space.small)).foregroundStyle(palette.text).lineLimit(1)
-                            Spacer(minLength: 4)
-                            ForEach(Array(page.rowActions(row.id ?? "").enumerated()), id: \.offset) { _, a in
-                                if state.running == a.id {
-                                    PendingDot()
-                                } else {
-                                    SheetButton(a.label ?? "", role: .accent) { perform(a, handlers) }.disabled(state.running != nil)
+                        .frame(minHeight: Token.Tile.circle)
+                    ForEach(Array((s.items ?? []).enumerated()), id: \.offset) { _, item in
+                        if let row = item.row {
+                            HStack(spacing: 6) {
+                                MarkView(row.mark)
+                                Text(row.label ?? "").font(.system(size: Token.Space.small + 1)).foregroundStyle(palette.text).lineLimit(1)
+                                Spacer(minLength: 4)
+                                ForEach(Array(page.rowActions(row.id ?? "").enumerated()), id: \.offset) { _, a in
+                                    if state.running == a.id {
+                                        PendingDot()
+                                    } else {
+                                        Pill(a.label ?? "", role: .primary) { perform(a, handlers) }.disabled(state.running != nil)
+                                    }
                                 }
                             }
+                        } else if let empty = item.empty {
+                            EmptyLine(empty)
+                        } else if let link = item.link {
+                            Text(link.label ?? "").font(.system(size: Token.Space.small + 1, weight: .medium)).foregroundStyle(palette.accent)
                         }
-                    } else if let empty = item.empty {
-                        EmptyLine(empty)
-                    } else if let link = item.link {
-                        Text(link.label ?? "").font(.system(size: Token.Space.small)).foregroundStyle(palette.accent)
                     }
                 }
             }
@@ -273,10 +373,10 @@ struct HomeContent: View {
         let toggle = (page.actions ?? []).first { $0.rows?.contains("awake") == true && $0.run != nil }
         let on = toggle?.id == "awake-off"
         let words = (s.items?.first?.row?.cells?.first).map { Format.show($0) } ?? ""
-        return TileBox {
-            VStack(alignment: .leading, spacing: 4) {
+        return TileBox(id: Navigation.awake) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    Image(systemName: Token.Symbol.sun).font(.system(size: Token.Space.small)).foregroundStyle(palette.warn)
+                    IconCircle(on ? Token.Symbol.awakeOn : Token.Symbol.awakeOff, tint: on ? palette.warn : nil)
                     Text(s.title ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
                     Spacer(minLength: 0)
                     if let toggle {
@@ -296,12 +396,12 @@ struct HomeContent: View {
     func accountsTile(_ s: Section) -> some View {
         let cells = s.items?.first?.row?.cells?.first
         return TileBox {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    Image(systemName: Token.Symbol.person).font(.system(size: Token.Space.small)).foregroundStyle(palette.accent)
+                    IconCircle(Token.Symbol.accounts, tint: palette.indigo)
                     Text(s.title ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
                     Spacer(minLength: 0)
-                    Image(systemName: Token.Symbol.forward).font(.system(size: Token.Space.small - 2)).foregroundStyle(palette.subtle)
+                    Image(systemName: Token.Symbol.forward).font(.system(size: Token.Space.small - 1, weight: .semibold)).foregroundStyle(palette.subtle)
                 }
                 ValueText(cells, muted: true, size: Token.Space.small).fixedSize(horizontal: false, vertical: true)
             }
@@ -309,8 +409,8 @@ struct HomeContent: View {
     }
 
     var menu: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Divider()
+        VStack(alignment: .leading, spacing: 2) {
+            Rule().padding(.bottom, 4)
             ForEach(Array(page.pageActions.enumerated()), id: \.offset) { _, a in
                 if state.running == a.id {
                     PendingDot()
@@ -324,6 +424,7 @@ struct HomeContent: View {
                 }
             }
         }
+        .padding(.horizontal, 4)
     }
 
     static func symbol(_ a: Action) -> String {
@@ -362,40 +463,32 @@ struct SwitcherContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
-            HStack(spacing: 6) {
-                Image(systemName: Token.Symbol.search).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
-                TypedField("Search machines", text: Binding(get: { state.search }, set: handlers.search))
-            }
+            TypedField("Search machines", text: Binding(get: { state.search }, set: handlers.search), symbol: Token.Symbol.search)
             if let tree {
                 if !state.recent.isEmpty, state.search.isEmpty {
-                    title("Recent")
-                    MachinesTree(section: tree, capsules: true, only: Set(state.recent), open: handlers.openMachine)
+                    SectionHead("Recent")
+                    GlassCard(padding: 12, spacing: 0) {
+                        MachinesTree(section: tree, capsules: true, only: Set(state.recent), open: handlers.openMachine)
+                    }
                 }
-                title(tree.title ?? "")
-                MachinesTree(section: tree, capsules: true, only: matching(tree), open: handlers.openMachine)
+                SectionHead(tree.title ?? "")
+                GlassCard(padding: 12, spacing: 0) {
+                    MachinesTree(section: tree, capsules: true, only: matching(tree), open: handlers.openMachine)
+                }
             }
             SheetFor(page: page, state: state, handlers: handlers)
-            VStack(alignment: .leading, spacing: 6) {
-                Divider()
+            VStack(alignment: .leading, spacing: 2) {
+                Rule().padding(.bottom, 4)
                 Button(action: handlers.back) {
-                    HStack(spacing: Token.Space.gap) {
-                        Image(systemName: Token.Symbol.mac).font(.system(size: Token.Space.small)).frame(width: 18)
-                        Text("Show all machines").font(.system(size: Token.Space.text))
-                        Spacer()
-                        Text(Token.Key.shown("cmd+0")).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle)
-                    }
-                    .foregroundStyle(palette.text)
+                    MenuText(symbol: Token.Symbol.mac, title: "Show all machines", key: Token.Key.shown("cmd+0"), danger: false)
                 }
                 .buttonStyle(.plain)
                 ForEach(Array(page.pageActions.enumerated()), id: \.offset) { _, a in
                     MenuLine(action: a, symbol: Token.Symbol.plus, danger: false) { perform(a, handlers) }
                 }
             }
+            .padding(.horizontal, 4)
         }
-    }
-
-    func title(_ t: String) -> some View {
-        Text(t).font(.system(size: Token.Space.small, weight: .semibold)).foregroundStyle(palette.muted)
     }
 }
 
@@ -427,31 +520,31 @@ struct MachineContent: View {
 
     func header(_ s: Section) -> some View {
         let row = s.items?.first?.row
-        let symbol = page.context?.kind == "mac" ? Token.Symbol.mac : Token.Symbol.vm
-        return HStack(alignment: .top, spacing: Token.Space.gap) {
-            Image(systemName: symbol).font(.system(size: Token.Tile.title - 2)).foregroundStyle(palette.accent).frame(width: 24)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(s.title ?? "").font(.system(size: Token.Tile.title, weight: .bold)).foregroundStyle(palette.text)
+        let mac = page.context?.kind == "mac"
+        let mark = row?.mark ?? .ok
+        return HStack(alignment: .center, spacing: Token.Space.gap + 2) {
+            IconCircle(mac ? Token.Symbol.mac : Token.Symbol.vm, tint: mark == .ok ? (mac ? palette.accent : palette.teal) : mark == .attention ? palette.warn : nil, size: Token.Tile.circle + 6)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(s.title ?? "").font(.system(size: Token.Space.title, weight: .bold)).foregroundStyle(palette.text)
                 Text((s.caption ?? []).map { Format.show($0) }.joined(separator: Token.Glyph.sep)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
             if let row {
-                HStack(spacing: 4) {
-                    MarkView(row.mark)
-                    Text(row.cells.flatMap { $0.first }.map { Format.show($0) } ?? "").font(.system(size: Token.Space.small, weight: .semibold)).foregroundStyle(palette.text)
-                }
-                .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Capsule().fill(palette.of(row.mark ?? .ok).opacity(0.18)))
+                let ink = mark == .absent ? palette.muted : palette.of(mark)
+                Text(row.cells.flatMap { $0.first }.map { Format.show($0) } ?? "").font(.system(size: Token.Space.small, weight: .semibold)).foregroundStyle(ink)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Capsule().fill(mark == .absent ? palette.faint : ink.opacity(0.2)))
             }
         }
+        .modifier(MorphID(id: s.title.map { PageID.of($0) }))
     }
 
     @ViewBuilder
     func section(_ s: Section) -> some View {
         switch s.id {
         case "activity":
-            HStack(spacing: 6) {
+            HStack(spacing: Token.Glass.spacing) {
                 ForEach(Array((s.items ?? []).compactMap(\.row).enumerated()), id: \.offset) { _, r in
                     MetricTile(label: r.label ?? "", value: r.cells?.first, spark: nil)
                 }
@@ -459,7 +552,9 @@ struct MachineContent: View {
         case "vms":
             VStack(alignment: .leading, spacing: 6) {
                 title(s)
-                MachinesTree(section: s, capsules: true, only: nil, open: handlers.openMachine)
+                GlassCard(padding: 12, spacing: 0) {
+                    MachinesTree(section: s, capsules: true, only: nil, open: handlers.openMachine)
+                }
             }
         case "ports":
             VStack(alignment: .leading, spacing: 6) {
@@ -468,28 +563,27 @@ struct MachineContent: View {
                     VStack(alignment: .leading, spacing: 6) {
                         ItemsView(s.items ?? [], columns: s.columns ?? [], width: width - 20, links: LinkActions(open: handlers.open, qr: state.qr, toggleQR: handlers.toggleQR))
                         ForEach(Array(page.pageActions.filter { $0.id == "share-port" }.enumerated()), id: \.offset) { _, a in
+                            Rule()
                             MenuLine(action: a, symbol: Token.Symbol.plus, danger: false) { perform(a, handlers) }
                         }
                     }
                 }
             }
+        case "up":
+            HStack(spacing: Token.Glass.spacing) {
+                ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in
+                    MetricTile(label: r.label ?? "", value: r.cells?.first, spark: nil)
+                }
+            }
         default:
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 title(s)
-                TileBox {
-                    VStack(alignment: .leading, spacing: 3) {
-                        ForEach(Array((s.items ?? []).enumerated()), id: \.offset) { _, item in
-                            if let row = item.row, !page.rowActions(row.id ?? "").isEmpty {
-                                HStack(spacing: 6) {
-                                    RowView(row, columns: s.columns ?? [], width: width - 110)
-                                    Spacer(minLength: 0)
-                                    ForEach(Array(page.rowActions(row.id ?? "").enumerated()), id: \.offset) { _, a in
-                                        SheetButton(a.label ?? "", role: .plain) { perform(a, handlers) }.disabled(state.running != nil)
-                                    }
-                                }
-                            } else {
-                                ItemsView([item], columns: s.columns ?? [], width: width - 20)
-                            }
+                GlassCard(padding: 12, spacing: 0) {
+                    ForEach(Array((s.items ?? []).enumerated()), id: \.offset) { i, item in
+                        if let row = item.row {
+                            CardRow(row: row, rule: i > 0, actions: page.rowActions(row.id ?? ""), busy: state.running != nil) { perform($0, handlers) }
+                        } else {
+                            ItemsView([item], columns: s.columns ?? [], width: width - 24)
                         }
                     }
                 }
@@ -499,7 +593,7 @@ struct MachineContent: View {
 
     func title(_ s: Section) -> some View {
         HStack(spacing: 6) {
-            Text(s.title ?? "").font(.system(size: Token.Space.small, weight: .semibold)).foregroundStyle(palette.muted)
+            SectionHead(s.title ?? "")
             ForEach(Array((s.caption ?? []).enumerated()), id: \.offset) { _, c in ValueText(c, muted: true, size: Token.Space.small) }
         }
     }
@@ -507,23 +601,65 @@ struct MachineContent: View {
     var buttons: some View {
         let actions = page.pageActions.filter { $0.id != "share-port" && $0.id != "open-station" }
         return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+            HStack(spacing: Token.Glass.spacing) {
                 ForEach(Array(actions.enumerated()), id: \.offset) { _, a in
                     if state.running == a.id {
-                        PendingDot()
+                        PendingDot().frame(maxWidth: .infinity)
                     } else {
                         let label = (a.form != nil || a.confirm?.type != nil) ? "\(a.label ?? "")\(Token.Glyph.ellipsis)" : a.label ?? ""
-                        SheetButton(label, role: a.id == "restart" || a.id == "unlock" ? .accent : (a.confirm?.danger == true ? .danger : .plain)) { perform(a, handlers) }
+                        Pill(label, role: a.id == "restart" || a.id == "unlock" ? .primary : (a.confirm?.danger == true ? .danger : .plain), wide: true) { perform(a, handlers) }
                             .disabled(state.running != nil)
                     }
                 }
-                Spacer(minLength: 0)
             }
             if let open = page.action("open-station") {
-                Divider()
+                Rule().padding(.vertical, 2)
                 MenuLine(action: open, symbol: Token.Symbol.terminal, danger: false) { handlers.run(open, [:]) }
                     .keyboardShortcut("t", modifiers: .command)
+                    .padding(.horizontal, 4)
             }
+        }
+    }
+}
+
+// value: a line of a grouped card, as the vision's lists: its circle or
+// its mark, its name, its value on the right, its actions as buttons.
+struct CardRow: View {
+    let row: Row
+    let rule: Bool
+    let actions: [Action]
+    let busy: Bool
+    let tap: (Action) -> Void
+    @Environment(\.stationPalette) private var palette
+    @Environment(\.stationNow) private var now
+
+    var value: String {
+        (row.cells ?? []).filter { !$0.isNone }.map { Format.show($0, now: now) }.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
+    }
+
+    var body: some View {
+        HStack(spacing: Token.Space.gap + 2) {
+            if row.mark == nil, let symbol = Token.Symbol.line(row.id ?? "") {
+                IconCircle(symbol, tint: palette.grey, size: Token.Tile.smallCircle)
+            } else if row.mark != nil {
+                MarkView(row.mark)
+            }
+            Text(row.short ?? row.label ?? "").font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.text).lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true).layoutPriority(1)
+            Spacer(minLength: Token.Space.gap)
+            if !value.isEmpty {
+                Text(value).font(.system(size: Token.Space.small + 1)).foregroundStyle(palette.muted).lineLimit(1).truncationMode(.middle).monospacedDigit()
+                    .contentTransition(.numericText())
+                    .layoutPriority(value.count <= 20 ? 2 : 0)
+            }
+            ForEach(Array(actions.enumerated()), id: \.offset) { _, a in
+                Pill(a.label ?? "") { tap(a) }.disabled(busy)
+            }
+        }
+        .frame(minHeight: Token.Tile.rowHeight - 8)
+        .padding(.vertical, 2)
+        .overlay(alignment: .top) {
+            if rule { Rectangle().fill(palette.faint).frame(height: 0.5).offset(y: -1) }
         }
     }
 }
