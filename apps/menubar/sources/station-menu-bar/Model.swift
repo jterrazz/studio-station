@@ -160,7 +160,7 @@ final class Model: ObservableObject {
         state.running = action.id
         state.status = nil
         let socket = self.socket
-        let reread = watched.map { [$0] } ?? []
+        let reread = [PageID.shown(watched)]
         Task {
             let executable = await Client.executable(path: socket) ?? Self.fallbackExecutable
             let status = await ActionRunner(executable: executable, socket: socket, reread: reread).run(action, answers: answers)

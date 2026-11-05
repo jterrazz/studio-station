@@ -92,7 +92,8 @@ final class HomeTests: XCTestCase {
     }
 
     // invariant: AP-23: Needs you's `2 app updates` carries Update all,
-    // which runs apps.update on This Mac, for every update there.
+    // which runs apps.update on This Mac, for every update there, then reads
+    // Home again so the line leaves.
     func testNeedsYouUpdateAll() async throws {
         let page = try Tree.page("menubar.home.two-macs")
         let row = try XCTUnwrap(page.section("needs-you")?.items?.first?.row)
@@ -102,10 +103,14 @@ final class HomeTests: XCTestCase {
         XCTAssertNil(update.confirm)
         let engine = try FakeEngine("mb-update")
         engine.serveOnce(Data(#"{"v":2,"id":"1","out":[]}"#.utf8) + [0x0A], thenClose: false)
+        engine.serveOnce(Data(#"{"v":2,"id":"1","out":{}}"#.utf8) + [0x0A], thenClose: false)
         defer { engine.stop() }
-        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(update)
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, reread: [PageID.shown(nil)]).run(update)
         XCTAssertNil(status)
-        XCTAssertEqual(engine.received, [#"{"call":"apps.update","id":"1","v":2}"#])
+        XCTAssertEqual(engine.received, [
+            #"{"call":"apps.update","id":"1","v":2}"#,
+            #"{"call":"engine.refresh","id":"1","in":{"pages":["menubar"]},"v":2}"#,
+        ])
     }
 
     // invariant: CR-22: New VM… ⌘N opens the create form as a sheet, in the

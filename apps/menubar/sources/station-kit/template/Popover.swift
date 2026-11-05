@@ -11,6 +11,10 @@ public enum PageID {
 
     // value: the watch name of one machine's page (SPEC §10.3).
     public static func of(_ machine: String) -> String { "\(Self.machine):\(machine)" }
+
+    // value: the page a call made now may have changed: the page pushed,
+    // else Home.
+    public static func shown(_ pushed: String?) -> String { pushed ?? home }
 }
 
 public struct PopoverState: Equatable, Sendable {

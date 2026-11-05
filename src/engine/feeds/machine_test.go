@@ -74,6 +74,7 @@ type world struct {
 	here     []machines.VM
 	added    []machines.HostView
 	lent     accounts.Report
+	updates  bool
 	asked    map[string][]string
 	activity map[string]uint64
 }
@@ -114,7 +115,13 @@ func (w *world) answer(name string, target machine.Ref, in any) any {
 		return w.lent
 	case overviewcalls.Read.Name:
 		need := map[string]string{laptop: "a sign-in expired", mini: "port 5000 is reachable from outside", "infra": "a container exited"}[at]
-		return overviewcalls.ReadOut{Summary: overview.Summary{Head: overview.Head{Name: at}, Needs: []overview.Need{{Machine: at, Section: "ports", Broken: true, Text: need}}}}
+		needs := []overview.Need{{Machine: at, Section: "ports", Broken: true, Text: need}}
+		w.mu.Lock()
+		if at == laptop && w.updates {
+			needs = append(needs, overview.Need{Machine: at, Section: "apps", Subject: "updates", Text: "2 app updates", Call: "apps.update"})
+		}
+		w.mu.Unlock()
+		return overviewcalls.ReadOut{Summary: overview.Summary{Head: overview.Head{Name: at}, Needs: needs}}
 	case activitycalls.Sample.Name:
 		memory := map[string]int64{laptop: 16 * gb, mini: 64 * gb, "infra": 24 * gb}[at]
 		w.mu.Lock()
@@ -135,10 +142,13 @@ func (w *world) Invoke(_ context.Context, target machine.Ref, name string, in, o
 	return nil
 }
 
-func (w *world) Watch(context.Context, machine.Ref, string, any, call.Progress) (<-chan call.Update[any], error) {
-	closed := make(chan call.Update[any])
-	close(closed)
-	return closed, nil
+func (w *world) Watch(_ context.Context, target machine.Ref, name string, in any, _ call.Progress) (<-chan call.Update[any], error) {
+	once := make(chan call.Update[any], 1)
+	if v := w.answer(name, target, in); v != nil {
+		once <- call.Update[any]{Value: v}
+	}
+	close(once)
+	return once, nil
 }
 
 func (w *world) askedOf(name string) []string {
@@ -391,6 +401,26 @@ func TestAWorkspaceCreatedFromTheMenuBarAppearsInHomeWhenTheEngineMoves(t *testi
 	p := until(t, pages, "linux-2 in Home", func(p page.Page) bool { return row(p, "machines", "linux-2") != nil })
 	if row(p, "machines", "infra") == nil {
 		t.Error("Home lost mac-mini's infra when This Mac was read again")
+	}
+}
+
+func TestUpdateAllLeavesHomesNeedsYouOnceTheCallReturns(t *testing.T) {
+	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, updates: true, asked: map[string][]string{}, activity: map[string]uint64{}}
+	refresh := make(chan struct{}, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	o := feeds.Menubar{Calls: w, Clock: newSteps(), Report: func(awake.View) *awake.Report { return nil }}
+	in := engine.FeedInput{Refresh: refresh}
+	in.Power = nothing(in.Power)
+	pages := o.Feed()(ctx, in)
+	was := until(t, pages, "2 app updates in Needs you", func(p page.Page) bool { return slices.Contains(needs(p), "2 app updates") })
+	w.mu.Lock()
+	w.updates = false
+	w.mu.Unlock()
+	refresh <- struct{}{}
+	is := until(t, pages, "2 app updates gone from Needs you", func(p page.Page) bool { return len(needs(p)) > 0 && !slices.Contains(needs(p), "2 app updates") })
+	if is.Badge.Needs != was.Badge.Needs-1 {
+		t.Errorf("the badge went from %d to %d, want it down by one", was.Badge.Needs, is.Badge.Needs)
 	}
 }
 
