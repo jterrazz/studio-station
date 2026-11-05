@@ -62,7 +62,7 @@ func importTable() map[string][]string {
 		"domain/*":                   domain,
 		"domain/setup":               append(slices.Clone(domain), "domain/shell", "domain/storage"),
 		"domain/tools":               append(slices.Clone(domain), "apps", "apps/contract", "apps/adapter/fake", "core/call"),
-		"engine":                     append(slices.Clone(domain), "domain/machines", "domain/services", "domain/power", "machines", "machines/contract", "net/netip"),
+		"engine":                     append(slices.Clone(domain), "activity", "domain/machines", "domain/services", "domain/power", "machines", "machines/contract", "net/netip"),
 		"domain/guest":               append(slices.Clone(domain), "domain/services"),
 		"domain/power":               append(slices.Clone(domain), "awake", "awake/contract", "core/machine"),
 		"domain/storage":             append(slices.Clone(domain), "disk", "disk/contract"),

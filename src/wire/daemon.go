@@ -74,7 +74,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 			seen := make([]enginejobs.Seen, 0, 1+len(running))
 			seen = append(seen, enginejobs.Seen{Ref: coremachine.Ref{Name: m.profile.Ref.Name}, Kind: coremachine.Mac})
 			for _, r := range running {
-				seen = append(seen, enginejobs.Seen{Ref: coremachine.Ref{Name: r.Name, On: m.profile.Ref.Name}, Kind: r.Kind, PID: r.PID, Guest: r.Guest})
+				seen = append(seen, enginejobs.Seen{Ref: coremachine.Ref{Name: r.Name, On: m.profile.Ref.Name}, Kind: r.Lifetime.Kind(), PID: r.PID, Guest: r.Guest})
 			}
 			return seen
 		},

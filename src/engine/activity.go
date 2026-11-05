@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	"github.com/jterrazz/studio-station/src/activity"
-	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/domain/machines"
 )
 
 const NoticeActivity = "activity"
@@ -23,9 +23,9 @@ func (d *Daemon) History() *activity.History {
 func (d *Daemon) Watched() bool { return d.hub.listening() }
 
 type Running struct {
-	Name string
-	Kind machine.Kind
-	PID  int
+	Name     string
+	Lifetime machines.Lifetime
+	PID      int
 	// value: station's guest answers inside it.
 	Guest bool
 }
@@ -38,7 +38,7 @@ func (d *Daemon) Running() []Running {
 		if v.state != StateRunning {
 			continue
 		}
-		out = append(out, Running{Name: name, Kind: v.rec.Lifetime.Kind(), PID: v.runPID(), Guest: v.guest == GuestConnected})
+		out = append(out, Running{Name: name, Lifetime: v.rec.Lifetime, PID: v.runPID(), Guest: v.guest == GuestConnected})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
