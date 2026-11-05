@@ -417,7 +417,8 @@ func pageFamilies() []string {
 func worldFamilies() map[string][]string {
 	return map[string][]string{
 		"menubar.home":     {"one-mac", "two-macs", "infra-down", "engine-stopped"},
-		"menubar.ports":    {"mini", "linux-1"},
+		"menubar.ports":    {"mini"},
+		"menubar.vm":       {"linux-1"},
 		"menubar.awake":    {"two-macs"},
 		"menubar.activity": {"mac"},
 	}
