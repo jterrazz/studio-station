@@ -59,7 +59,7 @@ func TestThePageFixturesHaveNotDriftedFromThePageFunctions(t *testing.T) {
 
 func TestTheRecordedStreamHasNotDriftedFromTheDaemon(t *testing.T) {
 	current, err := os.ReadFile(filepath.Join(root(t), streamPath))
-	if err != nil || !bytes.Equal(current, pages.MenubarStream()) {
+	if err != nil || !bytes.Equal(current, menubarStream()) {
 		t.Errorf("%s is out of sync with the daemon's encoder: run make generate and commit the result", streamPath)
 	}
 }

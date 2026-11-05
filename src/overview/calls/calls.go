@@ -25,8 +25,8 @@ type ReadIn struct {
 	// value: every shared reading of the run dropped first, so the whole
 	// machine is read again.
 	Fresh bool
-	// value: the v2 reading instead, which the TUI's Home, the menu bar and
-	// the status alias's station.status/v1 still draw until their v3 lots.
+	// value: the v2 reading instead, which only the status alias's
+	// station.status/v1 still draws.
 	V2 bool
 }
 

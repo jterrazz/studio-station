@@ -1,0 +1,458 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.machine",
+  "command": "menubar",
+  "context": {
+    "machine": "linux-1",
+    "kind": "workspace"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "machine",
+      "title": "linux-1",
+      "role": "summary",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "Workspace VM"
+        },
+        {
+          "kind": "text",
+          "text": "Throwaway"
+        },
+        {
+          "kind": "text",
+          "text": "on This Mac"
+        }
+      ],
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "state",
+            "mark": "ok",
+            "label": "State",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Running"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "title": "Activity",
+      "role": "summary",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "cpu",
+            "label": "CPU",
+            "cells": [
+              {
+                "kind": "percent",
+                "n": 340
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "memory",
+            "label": "Memory",
+            "cells": [
+              {
+                "kind": "ratio",
+                "n": 4133906022,
+                "of": 4294967296
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "disk",
+            "label": "Disk",
+            "cells": [
+              {
+                "kind": "ratio",
+                "n": 3874836480,
+                "of": 21474836480
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "inside",
+      "title": "Inside",
+      "role": "summary",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "apps",
+            "label": "Apps",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "count",
+                    "n": 38,
+                    "unit": "installed",
+                    "label": "ok"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "settings",
+            "label": "Settings",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "count",
+                    "n": 2,
+                    "unit": "need a look",
+                    "label": "attention"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "disk",
+            "label": "Disk",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "2.4 of 20 GB"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ports",
+      "title": "Private",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "shared on Tailscale"
+        }
+      ],
+      "items": [
+        {
+          "link": {
+            "label": "Vite",
+            "lead": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "Vite"
+                },
+                {
+                  "kind": "port",
+                  "n": 5173
+                }
+              ]
+            },
+            "value": {
+              "kind": "url",
+              "text": "https://jterrazz-macbook-pro.tail77a797.ts.net:40001"
+            },
+            "row": "5173"
+          }
+        },
+        {
+          "link": {
+            "label": "TCP",
+            "lead": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "TCP"
+                },
+                {
+                  "kind": "port",
+                  "n": 7000
+                }
+              ]
+            },
+            "value": {
+              "kind": "text",
+              "text": "jterrazz-macbook-pro.tail77a797.ts.net:40002"
+            },
+            "row": "7000"
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "shared",
+      "title": "Accounts shared from This Mac",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "github",
+            "mark": "ok",
+            "label": "GitHub",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "4 h left"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "claude",
+            "mark": "ok",
+            "label": "Claude",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "12 h left"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Stop",
+      "on": "page",
+      "confirm": {
+        "question": "Stop linux-1?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its disk is kept"
+          }
+        ],
+        "yes": "Stop"
+      },
+      "priority": 1,
+      "mutates": true,
+      "id": "stop",
+      "run": {
+        "call": "machines.stop",
+        "in": {
+          "Confirm": "yes",
+          "VM": "linux-1"
+        }
+      }
+    },
+    {
+      "label": "Delete",
+      "on": "page",
+      "confirm": {
+        "question": "Delete linux-1?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its disk is erased: nothing of it is kept"
+          },
+          {
+            "kind": "text",
+            "text": "Type linux-1 to delete it"
+          }
+        ],
+        "danger": true,
+        "type": "linux-1",
+        "yes": "Delete"
+      },
+      "priority": 2,
+      "mutates": true,
+      "id": "delete",
+      "run": {
+        "call": "machines.delete",
+        "in": {
+          "VM": "linux-1"
+        }
+      }
+    },
+    {
+      "label": "Share a port",
+      "on": "page",
+      "priority": 3,
+      "mutates": true,
+      "id": "share-port",
+      "run": {
+        "call": "ports.share",
+        "in": {
+          "VM": "linux-1"
+        }
+      },
+      "form": {
+        "title": "Share a port of linux-1",
+        "fields": [
+          {
+            "key": "Port",
+            "label": "Port",
+            "kind": "text",
+            "note": "private, on Tailscale",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "Take back",
+      "on": "row",
+      "rows": [
+        "github"
+      ],
+      "confirm": {
+        "question": "Take back GitHub from linux-1?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its copy on linux-1 is deleted"
+          }
+        ],
+        "yes": "Take back"
+      },
+      "priority": 4,
+      "mutates": true,
+      "id": "take-back/github",
+      "run": {
+        "call": "accounts.take-back",
+        "in": {
+          "Account": "github",
+          "Confirm": "yes",
+          "From": "linux-1"
+        }
+      }
+    },
+    {
+      "label": "Take back",
+      "on": "row",
+      "rows": [
+        "claude"
+      ],
+      "confirm": {
+        "question": "Take back Claude from linux-1?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its copy on linux-1 is deleted"
+          }
+        ],
+        "yes": "Take back"
+      },
+      "priority": 4,
+      "mutates": true,
+      "id": "take-back/claude",
+      "run": {
+        "call": "accounts.take-back",
+        "in": {
+          "Account": "claude",
+          "Confirm": "yes",
+          "From": "linux-1"
+        }
+      }
+    },
+    {
+      "key": "cmd+t",
+      "label": "Open in Terminal",
+      "on": "page",
+      "priority": 2,
+      "id": "open-station",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "--on",
+          "linux-1"
+        ]
+      }
+    }
+  ]
+}

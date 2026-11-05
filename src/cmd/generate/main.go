@@ -53,7 +53,7 @@ func main() {
 	if err := os.MkdirAll(filepath.Dir(*stream), 0o750); err != nil {
 		panic(err)
 	}
-	if err := os.WriteFile(*stream, pages.MenubarStream(), 0o600); err != nil {
+	if err := os.WriteFile(*stream, menubarStream(), 0o600); err != nil {
 		panic(err)
 	}
 	if err := os.WriteFile(filepath.Join(filepath.Dir(*stream), filepath.Base(eventsPath)), pages.EventsStream(), 0o600); err != nil {

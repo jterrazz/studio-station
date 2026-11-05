@@ -79,7 +79,9 @@ func vmCaption(o VMOverview, s *overview.Summary) []page.Value {
 	return parts
 }
 
-func healthItems(vm machines.VM, sshRead bool, now time.Time) []page.Item {
+func Steps(vm machines.VM) []page.Row {
+	// value: SPEC §7.2's health steps of a VM, in their order: running, an
+	// address, ssh answering, then a server's own check when it has one.
 	health := machines.HealthOf(vm)
 	steps := []page.Row{
 		step("running", machines.StepRunning, health.Running, health.Running, ""),
@@ -89,6 +91,11 @@ func healthItems(vm machines.VM, sshRead bool, now time.Time) []page.Item {
 	if vm.Lifetime == machines.AlwaysOn && vm.Check != "" {
 		steps = append(steps, checkStep(vm, health.Running))
 	}
+	return steps
+}
+
+func healthItems(vm machines.VM, sshRead bool, now time.Time) []page.Item {
+	steps := Steps(vm)
 	if vm.Lifetime == machines.AlwaysOn {
 		restarts := page.Row{ID: "restarts", Label: "Restarts", Mark: page.OK, Cells: []page.Value{page.Texts(vm.Restarts.Words(now)...)}}
 		if vm.Restarts.Looping {
@@ -183,6 +190,13 @@ func lifetimeWord(l machines.Lifetime) string {
 	}
 	return titled(string(l))
 }
+
+func Lifetime(l machines.Lifetime) page.Value {
+	// value: a VM's lifetime as a page says it (`Always on`, `Throwaway`).
+	return page.Text(titled(lifetimeWord(l)))
+}
+
+func State(s machines.VMState) page.Value { return page.Text(stateWord(s)) }
 
 func titled(word string) string {
 	if word == "" {

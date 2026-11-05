@@ -9,8 +9,8 @@
   "state": "ready",
   "sections": [
     {
-      "id": "todo",
-      "title": "To do",
+      "id": "needs-you",
+      "title": "Needs you",
       "role": "actions",
       "columns": [
         {
@@ -64,7 +64,8 @@
       }
     },
     {
-      "label": "Open station",
+      "key": "cmd+t",
+      "label": "Open in Terminal",
       "on": "page",
       "priority": 2,
       "id": "open-station",

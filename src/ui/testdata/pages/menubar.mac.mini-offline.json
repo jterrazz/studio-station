@@ -1,0 +1,279 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.machine",
+  "command": "menubar",
+  "context": {
+    "machine": "jterrazz-mac-mini",
+    "kind": "mac"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "machine",
+      "title": "mac-mini",
+      "role": "summary",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "Mac"
+        },
+        {
+          "kind": "text",
+          "text": "jterrazz-mac-mini"
+        }
+      ],
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "state",
+            "mark": "broken",
+            "label": "State",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Unreachable"
+              }
+            ],
+            "reason": "unreachable"
+          }
+        }
+      ]
+    },
+    {
+      "id": "readiness",
+      "title": "Mac readiness",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "restarts-after-a-power-cut",
+            "mark": "ok",
+            "label": "restarts after a power cut",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "applied"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "never-sleeps",
+            "mark": "ok",
+            "label": "never sleeps",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "applied"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "logs-in-by-itself",
+            "mark": "ok",
+            "label": "logs in by itself",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "applied"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "disk-unlock-after-a-power-cut",
+            "mark": "attention",
+            "label": "disk unlock after a power cut",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "waits at pre-boot"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            },
+            "reason": "degraded",
+            "hint": {
+              "command": "station machines unlock mac-mini (from the same network)"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "planned-restarts-unlock-themselves",
+            "mark": "ok",
+            "label": "planned restarts unlock themselves",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "supported"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "engine-starts-at-login",
+            "mark": "ok",
+            "label": "engine starts at login",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "installed"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 5
+        },
+        {
+          "mark": "attention",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "vms",
+      "title": "VMs",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 40
+        },
+        {
+          "key": "detail",
+          "kind": "list",
+          "keep": 80
+        }
+      ],
+      "items": [
+        {
+          "group": {
+            "head": {
+              "id": "jterrazz-mac-mini/servers",
+              "label": "Servers"
+            },
+            "items": [
+              {
+                "row": {
+                  "id": "infra",
+                  "mark": "unknown",
+                  "label": "infra",
+                  "cells": [
+                    {
+                      "kind": "text",
+                      "text": "Server"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "Always on"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "not known while mac-mini does not answer"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "unknown",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Unlock",
+      "on": "page",
+      "priority": 1,
+      "mutates": true,
+      "id": "unlock",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "machines",
+          "unlock",
+          "mac-mini"
+        ]
+      }
+    },
+    {
+      "key": "cmd+t",
+      "label": "Open in Terminal",
+      "on": "page",
+      "priority": 2,
+      "id": "open-station",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "--on",
+          "mac-mini"
+        ]
+      }
+    }
+  ]
+}

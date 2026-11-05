@@ -3,19 +3,20 @@ package menubar
 import (
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pageengine "github.com/jterrazz/studio-station/src/pages/engine"
-	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
-	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
+	"github.com/jterrazz/studio-station/src/ports"
 )
 
 const ID page.ID = "menubar"
@@ -29,35 +30,46 @@ const (
 	ActionStart       = "start"
 	ActionPowerAwake  = "power-awake"
 	ActionPowerSleep  = "power-sleep"
+	ActionUpdateAll   = "update-all"
+
+	SectionNeeds    = "needs-you"
+	SectionMachines = "machines"
+	SectionAwake    = "awake"
+	SectionAccounts = "accounts"
 )
 
 type Reading struct {
 	// value: a nil part is still being read and draws pending.
-	Home     *pagehome.Overview
+	Home     *overview.Summary
 	Samples  []activity.Reading
 	Fleet    *machines.Fleet
-	Services *services.Fleet
-	Power    *power.Report
+	Services *ports.Fleet
+	Power    *awake.Report
+	// value: every other Mac's Awake, as its engine reports it.
+	Macs []awake.Report
 }
 
 func Page(r Reading, here page.Context) page.Page {
-	p := page.Page{ID: ID, Command: "menubar", Context: here, Strip: strip(r)}
-	todo := todo(r, here)
-	p.Sections = []page.Section{todo, fleet(r), powerSection(r)}
+	p := page.Page{ID: ID, Command: "menubar", Context: here, Strip: strip(r.Samples)}
+	needs := needsYou(r)
+	p.Sections = []page.Section{needs, Tree(r.Fleet, r.Services, homeLine(r)), awakeTile(r), accountsTile(r.Home)}
 	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power))
-	p.Badge = badge(r, todo)
+	if update := updateAll(needs, r.Home); update != nil {
+		p.Actions = append(p.Actions, *update)
+	}
+	p.Badge = badge(r, needs)
 	return page.Seal(p)
 }
 
-// invariant: the icon aggregates and never judges: the count is the to do's
-// own, and a server is down by the machines model's rule; nil while the to
-// do is still read.
-func badge(r Reading, todo page.Section) *page.Badge {
+// invariant: the icon aggregates and never judges: the count is Needs you's
+// own, and a server is down by the machines model's rule; nil while Needs
+// you is still read.
+func badge(r Reading, needs page.Section) *page.Badge {
 	if r.Home == nil {
 		return nil
 	}
 	b := page.Badge{}
-	for _, t := range todo.Counts {
+	for _, t := range needs.Counts {
 		if t.Mark != page.OK && t.Mark != page.Awaiting {
 			b.Needs += t.N
 		}
@@ -80,7 +92,7 @@ func Stopped(here page.Context, installed bool) page.Page {
 		row.Hint = page.Cmd("station setup")
 		actions = actions[1:]
 	}
-	s := page.Section{ID: "todo", Title: "To do", Role: page.Actions, Columns: columns(), Items: []page.Item{{Row: &row}}}
+	s := page.Section{ID: SectionNeeds, Title: "Needs you", Role: page.Actions, Columns: columns(), Items: []page.Item{{Row: &row}}}
 	return page.Seal(page.Page{ID: ID, Command: "menubar", Context: here, Sections: []page.Section{s}, Actions: actions})
 }
 
@@ -88,48 +100,68 @@ func columns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}
 }
 
-func strip(r Reading) *page.Strip {
-	if len(r.Samples) == 0 || r.Home == nil {
+// value: the three measures of This Mac, CPU, Memory and Network, each with
+// its sparkline over the readings kept.
+func strip(readings []activity.Reading) *page.Strip {
+	if len(readings) < 2 {
 		return &page.Strip{CPU: page.Pending(), Memory: page.Pending()}
 	}
-	s := pagehome.Strip(r.Samples, *r.Home)
-	s.Net = nil
-	if r.Power != nil && r.Power.Reading.HasBattery {
-		s.Battery = page.Percent(int64(r.Power.Reading.Percent) * 10)
+	var s page.Strip
+	for i := 1; i < len(readings); i++ {
+		rates := activity.Between(readings[i-1].Sample, readings[i].Sample)
+		s.Spark = append(s.Spark, int(rates.CPU))
+		s.NetSpark = append(s.NetSpark, int((rates.NetIn+rates.NetOut)/1e3))
+		if m := readings[i].Sample; m.MemTotal > 0 {
+			s.MemorySpark = append(s.MemorySpark, int(m.MemUsed*100/m.MemTotal))
+		}
 	}
+	last := readings[len(readings)-1].Sample
+	rates := activity.Between(readings[len(readings)-2].Sample, last)
+	s.CPU = page.Percent(int64(rates.CPU * 10))
+	if last.MemTotal > 0 {
+		s.Memory = page.Ratio(min(last.MemUsed, last.MemTotal), last.MemTotal)
+	}
+	net := page.Size(int64(rates.NetIn + rates.NetOut))
+	net.Unit = "/s"
+	s.Net = []page.Value{net}
 	return &s
 }
 
-// invariant: the badge counts every action with its worst mark while only the
-// first three are drawn, so the section keeps the full counts (Uncounted)
-// and the rest is one link to Home.
-func todo(r Reading, here page.Context) page.Section {
-	s := page.Section{ID: "todo", Title: "To do", Role: page.Actions, Uncounted: true, Columns: columns()}
+// invariant: the badge counts every finding while only the first three are
+// drawn, so the section keeps the full counts (Uncounted) and its caption
+// says them all; the rest is one link to the Overview.
+func needsYou(r Reading) page.Section {
+	s := page.Section{ID: SectionNeeds, Title: "Needs you", Role: page.Actions, Uncounted: true, Columns: columns()}
 	if r.Home == nil {
 		s.Uncounted = false
 		s.Items = []page.Item{{Row: &page.Row{ID: "reading", Label: "reading", Mark: page.Awaiting}}}
 		return s
 	}
-	home := pagehome.Snapshot(*r.Home, here, false).Sections[0]
 	var rows []page.Item
 	counts := map[page.Mark]int{}
-	for _, it := range home.Items {
-		if it.Row == nil {
+	for _, body := range pagehome.Body(*r.Home, true) {
+		if body.ID != SectionNeeds {
 			continue
 		}
-		counts[it.Row.Mark]++
-		rows = append(rows, it)
+		for _, it := range body.Items {
+			if it.Row == nil {
+				continue
+			}
+			counts[it.Row.Mark]++
+			rows = append(rows, it)
+		}
 	}
 	for _, m := range page.Marks() {
 		if counts[m] > 0 {
 			s.Counts = append(s.Counts, page.Tally{Mark: m, N: counts[m]})
 		}
 	}
+	s.Caption = []page.Value{page.Text(things(len(rows)))}
 	switch {
 	case len(rows) == 0:
-		s.Items = []page.Item{{Empty: &page.Empty{Noun: "actions"}}}
+		s.Items = []page.Item{{Empty: &page.Empty{Text: "Nothing needs you"}}}
 	case len(rows) > shown:
-		more := page.Link{Label: "+ " + strconv.Itoa(len(rows)-shown) + " more", Page: "home"}
+		more := page.Link{Label: "+ " + strconv.Itoa(len(rows)-shown) + " more", Page: "overview"}
 		rows = append(rows[:shown:shown], page.Item{Link: &more})
 		s.Items = rows
 	default:
@@ -138,43 +170,151 @@ func todo(r Reading, here page.Context) page.Section {
 	return s
 }
 
-func fleet(r Reading) page.Section {
-	if r.Fleet == nil {
-		return page.Section{ID: "fleet", Title: "All machines", Columns: pagemachines.Columns(),
-			Items: []page.Item{{Row: &page.Row{ID: "fleet", Label: "reading", Mark: page.Awaiting}}}}
+func things(n int) string {
+	switch n {
+	case 0:
+		return "nothing needs you"
+	case 1:
+		return "1 thing needs you"
 	}
-	return pagefleet.Machines(*r.Fleet, r.Services)
+	return strconv.Itoa(n) + " things need you"
 }
 
-func powerSection(r Reading) page.Section {
-	if r.Power == nil {
-		return pagepower.Session(power.Report{Daemon: power.DaemonPending})
+// invariant: a Needs you line whose fix is the apps' update gets Update
+// all, which runs that call on This Mac with no name: every update there.
+func updateAll(needs page.Section, home *overview.Summary) *page.Action {
+	if home == nil {
+		return nil
 	}
-	return pagepower.Session(*r.Power)
+	var rows []string
+	for i, n := range home.Needs {
+		id := strconv.Itoa(i) + "-" + n.Subject
+		if n.Call == CallUpdate && slices.ContainsFunc(needs.Items, func(it page.Item) bool { return it.Row != nil && it.Row.ID == id }) {
+			rows = append(rows, id)
+		}
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+	return &page.Action{ID: ActionUpdateAll, Label: "Update all", On: page.OnRow, Rows: rows, Priority: 5, Mutates: true, Run: &page.Run{Call: CallUpdate}}
+}
+
+// value: the line under a Mac in Home: its Awake.
+func homeLine(r Reading) func(h machines.HostView) page.Value {
+	return func(h machines.HostView) page.Value {
+		if h.Here {
+			if r.Power != nil {
+				if w := awakeWords(*r.Power); w != "" {
+					return page.Text("awake " + w)
+				}
+			}
+			return page.None()
+		}
+		for _, m := range r.Macs {
+			if m.Mac == h.Name && m.NeverSleeps {
+				return page.Text("never sleeps")
+			}
+		}
+		return page.None()
+	}
+}
+
+func awakeWords(r awake.Report) string {
+	switch {
+	case r.Session != nil:
+		zone := r.Zone
+		if zone == nil {
+			zone = time.UTC
+		}
+		return "until " + r.Session.Until.In(zone).Format("15:04")
+	case r.NeverSleeps:
+		return "never sleeps"
+	}
+	return ""
+}
+
+// value: the Awake tile: This Mac's keep-awake first, then each other Mac's
+// mode; its switch is This Mac's.
+func awakeTile(r Reading) page.Section {
+	var parts []page.Value
+	self := ""
+	if r.Power != nil {
+		self = r.Power.Mac
+		parts = append(parts, page.Text(page.ThisMac+" "+cmpWord(awakeWords(*r.Power), "sleeps normally")))
+	}
+	for _, m := range r.Macs {
+		if !m.Here {
+			parts = append(parts, page.Text(page.MacName(m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps normally")))
+		}
+	}
+	value := page.Pending()
+	if r.Power != nil {
+		value = page.List(parts...)
+	}
+	row := page.Row{ID: pagepower.RowAwake, Label: "Awake", Cells: []page.Value{value}}
+	return page.Section{ID: SectionAwake, Title: "Awake", Role: page.Summary, Columns: columns(), Items: []page.Item{{Row: &row}}}
+}
+
+func cmpWord(s, otherwise string) string {
+	if s == "" {
+		return otherwise
+	}
+	return s
+}
+
+// value: the Accounts tile: This Mac's Accounts line of its Overview.
+func accountsTile(home *overview.Summary) page.Section {
+	row := page.Row{ID: "accounts", Label: "Accounts", Cells: []page.Value{page.Pending()}}
+	if home != nil {
+		for _, body := range pagehome.Body(*home, true) {
+			for _, it := range body.Items {
+				if body.ID == "sections" && it.Row != nil && it.Row.ID == "accounts" {
+					row.Cells = it.Row.Cells
+				}
+			}
+		}
+	}
+	return page.Section{ID: SectionAccounts, Title: "Accounts", Role: page.Summary, Columns: columns(), Items: []page.Item{{Row: &row}}}
 }
 
 // value: the calls the menu bar's actions make, by their calls.json names.
 const (
-	CallCreate = "machines.create-workspace"
-	CallStop   = "engine.stop"
-	CallAwake  = "awake.keep"
-	CallSleep  = "awake.off"
+	CallCreate    = "machines.create-workspace"
+	CallStop      = "engine.stop"
+	CallAwake     = "awake.keep"
+	CallSleep     = "awake.off"
+	CallUpdate    = "apps.update"
+	CallAddMac    = "machines.add"
+	CallStopVM    = "machines.stop"
+	CallDeleteVM  = "machines.delete"
+	CallRestartVM = "machines.restart"
+	CallSharePort = "ports.share"
+	CallTakeBack  = "accounts.take-back"
 )
 
 func gigabytes(n int64) string { return strconv.FormatInt(n<<30, 10) }
 
+// value: New VM…'s sheet: the create form of the CLI and the TUI, its
+// questions in the same words.
 func newVM() page.Action {
-	return page.Action{ID: ActionNewVM, Label: "New VM", On: page.OnPage, Priority: 1, Mutates: true,
+	return page.Action{ID: ActionNewVM, Key: "cmd+n", Label: "New VM", On: page.OnPage, Priority: 1, Mutates: true,
 		Run: &page.Run{Call: CallCreate, In: map[string]string{"Request.Image": "linux", "Request.Network": "nat"}},
 		Form: &page.Form{Title: "New VM", Fields: []page.Field{
-			{Key: "Request.Lifetime", Label: "Lifetime", Kind: page.FieldSelect, Default: "throwaway", Options: []page.Option{{Value: "throwaway"}, {Value: "permanent"}}},
-			{Key: "Request.Resources.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4G"}, {Value: gigabytes(8), Label: "8G"}}},
+			{Key: "Request.Lifetime", Label: "Will it last?", Kind: page.FieldSelect, Default: "throwaway", Options: []page.Option{
+				{Value: "throwaway", Label: "Throwaway", Note: "deleted when it powers off from inside"},
+				{Value: "permanent", Label: "Permanent", Note: "kept until you delete it"},
+			}},
+			{Key: "Request.Resources.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4 GB"}, {Value: gigabytes(8), Label: "8 GB"}}},
 		}}}
 }
 
-func openStation() page.Action {
-	return page.Action{ID: ActionOpenStation, Label: "Open station", On: page.OnPage, Priority: 2, Run: &page.Run{Terminal: true}}
+// value: Open in Terminal: a new terminal runs station, on the machine
+// these words name; the one way the menu bar starts a program.
+func openIn(words ...string) page.Action {
+	return page.Action{ID: ActionOpenStation, Key: "cmd+t", Label: "Open in Terminal", On: page.OnPage, Priority: 2, Run: &page.Run{Terminal: true, Argv: words}}
 }
+
+func openStation() page.Action { return openIn() }
 
 func start() page.Action {
 	return page.Action{ID: ActionStart, Label: "Start the engine", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Terminal: true, Argv: []string{"engine", "start"}}}
@@ -198,30 +338,73 @@ func stopAll(r Reading) page.Action {
 			}
 		}
 	}
-	confirm := pageengine.StopConfirm(w, page.ThisMac)
-	return page.Action{ID: ActionStopAll, Label: "Stop everything", On: page.OnPage, Priority: 3, Mutates: true, Confirm: &confirm, Run: &page.Run{Call: CallStop, In: map[string]string{"Confirm": "yes", "By": "the menu bar"}}}
+	c := pageengine.StopConfirm(w, page.ThisMac)
+	return page.Action{ID: ActionStopAll, Label: "Stop everything on " + page.ThisMac, On: page.OnPage, Priority: 3, Mutates: true, Confirm: &c,
+		Run: &page.Run{Call: CallStop, In: map[string]string{"Confirm": yes, "By": "the menu bar"}}}
 }
 
-// invariant: the Power switch is the session row's action, awake with its
-// form while off and sleep while a session holds.
-func powerAction(r *power.Report) page.Action {
+// invariant: the Awake switch is the tile's action, awake with its form
+// while off and sleep while a session holds.
+func powerAction(r *awake.Report) page.Action {
 	rows := []string{pagepower.RowAwake}
-	if r != nil && r.Session != nil && r.Daemon == power.DaemonRunning {
+	if r != nil && r.Session != nil && r.Daemon == awake.EngineRunning {
 		return page.Action{ID: ActionPowerSleep, Label: "sleep", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallSleep}}
 	}
-	terms := []struct {
-		label string
-		hours int
-	}{{"1h", 1}, {"2h", 2}, {"4h", 4}, {"8h", 8}, {"12h", 12}, {"24h", 24}}
+	terms := []int{1, 4, 8}
 	opts := make([]page.Option, 0, len(terms))
-	for _, t := range terms {
-		opts = append(opts, page.Option{Value: strconv.FormatInt(int64(time.Duration(t.hours)*time.Hour), 10), Label: t.label})
+	for _, h := range terms {
+		opts = append(opts, page.Option{Value: strconv.FormatInt(int64(time.Duration(h)*time.Hour), 10), Label: strconv.Itoa(h) + " h"})
 	}
 	return page.Action{ID: ActionPowerAwake, Label: "awake", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallAwake},
 		Form: &page.Form{Title: "Awake", Fields: []page.Field{
-			{Key: "For", Label: "For", Kind: page.FieldSelect, Default: strconv.FormatInt(int64(4*time.Hour), 10), Options: opts},
+			{Key: "For", Label: "Keep awake for", Kind: page.FieldSelect, Default: strconv.FormatInt(int64(4*time.Hour), 10), Options: opts},
 			{Key: "Lid", Label: "Lid", Kind: page.FieldSelect, Default: "Lid=false", Options: []page.Option{
 				{Value: "Lid=false", Label: "open only"}, {Value: "Lid=true", Label: "closed"}, {Value: "Lid=true Battery=true", Label: "closed on battery"},
 			}},
 		}}}
+}
+
+type Levels func(gesture string, kind machine.Kind) string
+
+// value: the levels a gesture on a machine of a kind asks at, as the
+// call's confirmation rule gives them (confirm.For, its caller's): a page
+// only draws them.
+const (
+	LevelNone     = "none"
+	LevelYesNo    = "yes-no"
+	LevelTypeName = "type-name"
+	yes           = "yes"
+)
+
+// value: the question a gesture on a machine asks, at the level the call
+// asks it, never the surface's: none, yes or no, or the name to type.
+func ask(levels Levels, gesture string, k machine.Kind, name, question, verb string, lines ...string) *page.Confirm {
+	values := make([]page.Value, 0, len(lines)+1)
+	for _, l := range lines {
+		values = append(values, page.Text(l))
+	}
+	switch levels(gesture, k) {
+	case LevelNone:
+		return nil
+	case LevelTypeName:
+		values = append(values, page.Text("Type "+name+" to "+verb+" it"))
+		return &page.Confirm{Question: question, Lines: values, Danger: true, Type: name, Yes: titled(verb)}
+	}
+	return &page.Confirm{Question: question, Lines: values, Yes: titled(verb)}
+}
+
+// value: the call's input that answers the question ask drew: yes for a
+// yes or no, nothing for a typed one, whose typed name the sheet adds.
+func answered(c *page.Confirm, in map[string]string) map[string]string {
+	if c != nil && c.Type == "" {
+		in["Confirm"] = yes
+	}
+	return in
+}
+
+func titled(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }

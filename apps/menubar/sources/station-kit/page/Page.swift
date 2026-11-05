@@ -31,6 +31,7 @@ public struct Page: Codable, Equatable, Sendable {
     public func section(_ id: String) -> Section? { sections?.first { $0.id == id } }
     public func action(_ id: String) -> Action? { actions?.first { $0.id == id } }
     public var pageActions: [Action] { (actions ?? []).filter { $0.on == "page" && $0.run != nil } }
+    public func rowActions(_ row: String) -> [Action] { (actions ?? []).filter { $0.on == "row" && $0.run != nil && $0.rows?.contains(row) == true } }
 }
 
 public struct Badge: Codable, Equatable, Sendable {
@@ -165,6 +166,12 @@ public struct Run: Codable, Equatable, Sendable {
     public var `in`: [String: String]?
     public var terminal: Bool?
     public var argv: [String]?
+    public var target: Target?
+}
+
+public struct Target: Codable, Equatable, Sendable {
+    public var name: String?
+    public var on: String?
 }
 
 public struct Confirm: Codable, Equatable, Sendable {
@@ -201,6 +208,8 @@ public struct Strip: Codable, Equatable, Sendable {
     public var cpu: Value?
     public var spark: [Int]?
     public var memory: Value?
+    public var memory_spark: [Int]?
+    public var net_spark: [Int]?
     public var battery: Value?
     public var net: [Value]?
     public var power: Value?

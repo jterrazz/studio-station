@@ -1,20 +1,17 @@
-To do
-  ✗ brain.x-snapshot  failing · last exit 2
-    → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
-      rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
-  ◐ engine            not installed  → station setup
-  ◐ brew              120 outdated  → station apps update --method brew
-  + 6 more
-All machines
-  ● macbook     Mac        This Mac  online   100.98.133.14
-  ├─ ● linux-1  throwaway            running  192.168.64.5
-  │  ├─ 5173 → 40001  https://jterrazz-macbook-pro.tail1234.ts.net:40001  node
-  │  └─ 5432 → 40002  postgres
-  └─ ○ api      permanent            stopped  -
-  ◐ mac-mini    Mac                  online   100.98.133.20
-    station v2.0.0-248, This Mac v2.0.0-250
-     no VMs  → station machines create --on mac-mini
-Awake  awake · lid · 3h 12m left
-  ● awake      on      lid · until 14:42 (4h)
-  ● display    sleeps  on lid close: pmset displaysleepnow (no display asserti…
-  ● clamshell  held    back to normal at the end, at every engine start and qu…
+Needs you  5 things need you
+  ◐ 2 app updates         station apps update
+  ✗ npm sign-in expired   npm login
+  ◐ ~/.tart is misplaced  station disk move ~/.tart
+  + 2 more
+Machines
+  ● This Mac       Mac        awake until 18:00
+  └─   Workspaces
+     ├─ ● linux-1  Workspace  Throwaway · 2 ports shared
+     └─ ○ api      Workspace  Permanent · Stopped
+  ● mac-mini       Mac        never sleeps
+  └─   Servers
+     └─ ● infra    Server     Always on · healthy · 0 restarts
+Awake
+    Awake  This Mac until 18:00 · mac-mini never sleeps
+Accounts
+    Accounts  ● 8 · ✗ npm needs sign-in

@@ -32,32 +32,64 @@
     ],
     "memory": {
       "kind": "ratio",
-      "n": 12400000000,
+      "n": 14119704985,
       "of": 17179869184
     },
-    "battery": {
-      "kind": "percent",
-      "n": 800
-    },
-    "power": {
-      "kind": "list",
-      "items": [
-        {
-          "kind": "text",
-          "text": "awake"
-        },
-        {
-          "kind": "text",
-          "text": "3h 12m"
-        }
-      ]
-    }
+    "memory_spark": [
+      77,
+      79,
+      80,
+      82,
+      77,
+      79,
+      80,
+      82,
+      77,
+      79,
+      80,
+      82,
+      77,
+      79,
+      80,
+      82
+    ],
+    "net_spark": [
+      1340,
+      1460,
+      1600,
+      1780,
+      1700,
+      1540,
+      1920,
+      2200,
+      2060,
+      1820,
+      1660,
+      1720,
+      1980,
+      1860,
+      1680,
+      1780
+    ],
+    "net": [
+      {
+        "kind": "size",
+        "n": 1780000,
+        "unit": "/s"
+      }
+    ]
   },
   "sections": [
     {
-      "id": "todo",
-      "title": "To do",
+      "id": "needs-you",
+      "title": "Needs you",
       "role": "actions",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "5 things need you"
+        }
+      ],
       "columns": [
         {
           "key": "name",
@@ -73,91 +105,68 @@
       "items": [
         {
           "row": {
-            "id": "background/com.jterrazz.brain.x-snapshot",
+            "id": "0-updates",
+            "mark": "attention",
+            "label": "2 app updates",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "station apps update"
+              }
+            ],
+            "reason": "degraded"
+          }
+        },
+        {
+          "row": {
+            "id": "1-npm",
             "mark": "broken",
-            "label": "brain.x-snapshot",
-            "detail": {
-              "kind": "list",
-              "items": [
-                {
-                  "kind": "text",
-                  "text": "failing"
-                },
-                {
-                  "kind": "text",
-                  "text": "last exit 2"
-                }
-              ]
-            },
-            "reason": "failing",
-            "hint": {
-              "command": "launchctl bootout gui/501/com.jterrazz.brain.x-snapshot && rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist",
-              "external": true
-            }
+            "label": "npm sign-in expired",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "npm login"
+              }
+            ],
+            "reason": "failing"
           }
         },
         {
           "row": {
-            "id": "environment/brew",
+            "id": "2-~/.tart",
             "mark": "attention",
-            "label": "brew",
-            "detail": {
-              "kind": "text",
-              "text": "120 outdated"
-            },
-            "reason": "degraded",
-            "hint": {
-              "command": "station apps update --method brew"
-            }
-          }
-        },
-        {
-          "row": {
-            "id": "workspace/strays",
-            "mark": "attention",
-            "label": "misplaced",
-            "detail": {
-              "kind": "list",
-              "items": [
-                {
-                  "kind": "count",
-                  "n": 2,
-                  "unit": "misplaced folders"
-                },
-                {
-                  "kind": "size",
-                  "n": 80530636800
-                }
-              ]
-            },
-            "reason": "stray",
-            "hint": {
-              "command": "station disk move ~/.tart"
-            }
+            "label": "~/.tart is misplaced",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "station disk move ~/.tart"
+              }
+            ],
+            "reason": "degraded"
           }
         },
         {
           "link": {
             "label": "+ 2 more",
-            "page": "home"
+            "page": "overview"
           }
         }
       ],
       "counts": [
         {
           "mark": "attention",
-          "n": 4
+          "n": 3
         },
         {
           "mark": "broken",
-          "n": 1
+          "n": 2
         }
       ],
       "uncounted": true
     },
     {
-      "id": "fleet",
-      "title": "All machines",
+      "id": "machines",
+      "title": "Machines",
       "columns": [
         {
           "key": "name",
@@ -167,105 +176,34 @@
         {
           "key": "kind",
           "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "host",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "lifetime",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "class",
-          "kind": "text",
-          "keep": 70,
-          "show": "eye"
-        },
-        {
-          "key": "role",
-          "kind": "text",
-          "keep": 30,
-          "show": "eye"
-        },
-        {
-          "key": "state",
-          "kind": "text",
-          "keep": 90
-        },
-        {
-          "key": "ip",
-          "kind": "identity",
-          "keep": 50
-        },
-        {
-          "key": "record",
-          "kind": "list",
-          "show": "pipe"
-        },
-        {
-          "key": "resources",
-          "kind": "list",
-          "keep": 10,
-          "show": "eye",
-          "whole": true
+          "keep": 40
         },
         {
           "key": "detail",
           "kind": "list",
-          "keep": 5,
-          "show": "eye"
+          "keep": 80
         }
       ],
       "items": [
         {
           "group": {
             "head": {
-              "id": "macbook",
+              "id": "jterrazz-macbook-pro",
               "mark": "ok",
-              "label": "macbook",
+              "label": "This Mac",
               "cells": [
-                {
-                  "kind": "text",
-                  "text": "mac"
-                },
-                {
-                  "kind": "none"
-                },
-                {
-                  "kind": "none"
-                },
                 {
                   "kind": "text",
                   "text": "Mac"
                 },
                 {
-                  "kind": "text",
-                  "text": "This Mac"
-                },
-                {
-                  "kind": "text",
-                  "text": "online"
-                },
-                {
-                  "kind": "identity",
-                  "text": "100.98.133.14"
-                },
-                {
-                  "kind": "count",
-                  "n": 2,
-                  "unit": "VMs"
-                },
-                {
-                  "kind": "count",
-                  "n": 2,
-                  "unit": "VMs"
-                },
-                {
-                  "kind": "none"
+                  "kind": "list",
+                  "items": [
+                    {
+                      "kind": "text",
+                      "text": "awake until 18:00"
+                    }
+                  ]
                 }
               ]
             },
@@ -273,338 +211,141 @@
               {
                 "group": {
                   "head": {
-                    "id": "linux-1",
-                    "mark": "ok",
-                    "label": "linux-1",
-                    "cells": [
-                      {
-                        "kind": "text",
-                        "text": "workspace"
-                      },
-                      {
-                        "kind": "text",
-                        "text": "macbook"
-                      },
-                      {
-                        "kind": "text",
-                        "text": "throwaway"
-                      },
-                      {
-                        "kind": "text",
-                        "text": "throwaway"
-                      },
-                      {
-                        "kind": "none"
-                      },
-                      {
-                        "kind": "text",
-                        "text": "running"
-                      },
-                      {
-                        "kind": "identity",
-                        "text": "192.168.64.5"
-                      },
-                      {
-                        "kind": "list",
-                        "items": [
-                          {
-                            "kind": "count",
-                            "n": 4,
-                            "unit": "cpus"
-                          },
-                          {
-                            "kind": "text",
-                            "text": "4 GB"
-                          },
-                          {
-                            "kind": "size",
-                            "n": 42949672960
-                          }
-                        ]
-                      },
-                      {
-                        "kind": "list",
-                        "items": [
-                          {
-                            "kind": "count",
-                            "n": 4,
-                            "unit": "cpus"
-                          },
-                          {
-                            "kind": "text",
-                            "text": "4 GB"
-                          },
-                          {
-                            "kind": "size",
-                            "n": 42949672960
-                          }
-                        ]
-                      },
-                      {
-                        "kind": "none"
-                      }
-                    ]
+                    "id": "jterrazz-macbook-pro/workspaces",
+                    "label": "Workspaces"
                   },
                   "items": [
                     {
-                      "link": {
-                        "label": "5173",
-                        "lead": {
-                          "kind": "portmap",
-                          "n": 5173,
-                          "of": 40001
-                        },
-                        "value": {
-                          "kind": "url",
-                          "text": "https://jterrazz-macbook-pro.tail1234.ts.net:40001"
-                        },
-                        "detail": {
-                          "kind": "text",
-                          "text": "node"
-                        },
-                        "page": "ports",
-                        "row": "linux-1:5173"
+                      "row": {
+                        "id": "linux-1",
+                        "mark": "ok",
+                        "label": "linux-1",
+                        "cells": [
+                          {
+                            "kind": "text",
+                            "text": "Workspace"
+                          },
+                          {
+                            "kind": "list",
+                            "items": [
+                              {
+                                "kind": "text",
+                                "text": "Throwaway"
+                              },
+                              {
+                                "kind": "count",
+                                "n": 2,
+                                "unit": "ports shared"
+                              }
+                            ]
+                          }
+                        ]
                       }
                     },
                     {
-                      "link": {
-                        "label": "5432",
-                        "lead": {
-                          "kind": "portmap",
-                          "n": 5432,
-                          "of": 40002
-                        },
-                        "value": {
-                          "kind": "url"
-                        },
-                        "detail": {
-                          "kind": "text",
-                          "text": "postgres"
-                        },
-                        "page": "ports",
-                        "row": "linux-1:5432"
+                      "row": {
+                        "id": "api",
+                        "mark": "absent",
+                        "label": "api",
+                        "cells": [
+                          {
+                            "kind": "text",
+                            "text": "Workspace"
+                          },
+                          {
+                            "kind": "list",
+                            "items": [
+                              {
+                                "kind": "text",
+                                "text": "Permanent"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "Stopped"
+                              }
+                            ]
+                          }
+                        ],
+                        "reason": "stopped"
                       }
-                    }
-                  ],
-                  "fold": "open"
-                }
-              },
-              {
-                "row": {
-                  "id": "api",
-                  "mark": "absent",
-                  "label": "api",
-                  "cells": [
-                    {
-                      "kind": "text",
-                      "text": "workspace"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "macbook"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "permanent"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "permanent"
-                    },
-                    {
-                      "kind": "none"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "stopped"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "-"
-                    },
-                    {
-                      "kind": "list",
-                      "items": [
-                        {
-                          "kind": "count",
-                          "n": 4,
-                          "unit": "cpus"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "8 GB"
-                        },
-                        {
-                          "kind": "size",
-                          "n": 42949672960
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "list",
-                      "items": [
-                        {
-                          "kind": "count",
-                          "n": 4,
-                          "unit": "cpus"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "8 GB"
-                        },
-                        {
-                          "kind": "size",
-                          "n": 42949672960
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "none"
                     }
                   ]
                 }
               }
-            ],
-            "fold": "open"
+            ]
           }
         },
         {
           "group": {
             "head": {
-              "id": "mac-mini",
-              "mark": "attention",
+              "id": "jterrazz-mac-mini",
+              "mark": "ok",
               "label": "mac-mini",
               "cells": [
-                {
-                  "kind": "text",
-                  "text": "mac"
-                },
-                {
-                  "kind": "none"
-                },
-                {
-                  "kind": "none"
-                },
                 {
                   "kind": "text",
                   "text": "Mac"
                 },
                 {
-                  "kind": "none"
-                },
-                {
-                  "kind": "text",
-                  "text": "online"
-                },
-                {
-                  "kind": "identity",
-                  "text": "100.98.133.20"
-                },
-                {
-                  "kind": "text",
-                  "text": "station v2.0.0-248, This Mac v2.0.0-250"
-                },
-                {
-                  "kind": "count",
-                  "n": 1,
-                  "unit": "VM"
-                },
-                {
-                  "kind": "text",
-                  "text": "station v2.0.0-248, This Mac v2.0.0-250"
+                  "kind": "list",
+                  "items": [
+                    {
+                      "kind": "text",
+                      "text": "never sleeps"
+                    }
+                  ]
                 }
-              ],
-              "reason": "mismatch"
+              ]
             },
             "items": [
               {
-                "row": {
-                  "id": "infra",
-                  "mark": "ok",
-                  "label": "infra",
-                  "cells": [
+                "group": {
+                  "head": {
+                    "id": "jterrazz-mac-mini/servers",
+                    "label": "Servers"
+                  },
+                  "items": [
                     {
-                      "kind": "text",
-                      "text": "server"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "mac-mini"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "always-on"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "always-on"
-                    },
-                    {
-                      "kind": "none"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "running"
-                    },
-                    {
-                      "kind": "identity",
-                      "text": "192.168.64.7"
-                    },
-                    {
-                      "kind": "list",
-                      "items": [
-                        {
-                          "kind": "count",
-                          "n": 8,
-                          "unit": "cpus"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "24 GB"
-                        },
-                        {
-                          "kind": "size",
-                          "n": 42949672960
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "list",
-                      "items": [
-                        {
-                          "kind": "count",
-                          "n": 8,
-                          "unit": "cpus"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "24 GB"
-                        },
-                        {
-                          "kind": "size",
-                          "n": 42949672960
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "none"
+                      "row": {
+                        "id": "infra",
+                        "mark": "ok",
+                        "label": "infra",
+                        "cells": [
+                          {
+                            "kind": "text",
+                            "text": "Server"
+                          },
+                          {
+                            "kind": "list",
+                            "items": [
+                              {
+                                "kind": "text",
+                                "text": "Always on"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "healthy"
+                              },
+                              {
+                                "kind": "count",
+                                "unit": "restarts"
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     }
                   ]
                 }
               }
-            ],
-            "fold": "open"
+            ]
           }
         }
       ],
       "counts": [
         {
           "mark": "ok",
-          "n": 3
-        },
-        {
-          "mark": "attention",
-          "n": 1
+          "n": 4
         },
         {
           "mark": "absent",
@@ -613,28 +354,9 @@
       ]
     },
     {
-      "id": "power",
+      "id": "awake",
       "title": "Awake",
-      "role": "banner",
-      "caption": [
-        {
-          "kind": "list",
-          "items": [
-            {
-              "kind": "text",
-              "text": "awake"
-            },
-            {
-              "kind": "text",
-              "text": "lid"
-            },
-            {
-              "kind": "text",
-              "text": "3h 12m left"
-            }
-          ]
-        }
-      ],
+      "role": "summary",
       "columns": [
         {
           "key": "name",
@@ -643,96 +365,80 @@
         },
         {
           "key": "value",
-          "kind": "text",
-          "keep": 100
-        },
-        {
-          "key": "detail",
-          "kind": "text",
+          "kind": "list",
           "keep": 60
-        },
-        {
-          "key": "more",
-          "kind": "text",
-          "keep": 20,
-          "whole": true
         }
       ],
       "items": [
         {
           "row": {
             "id": "awake",
-            "mark": "ok",
-            "label": "awake",
+            "label": "Awake",
             "cells": [
-              {
-                "kind": "on"
-              },
               {
                 "kind": "list",
                 "items": [
                   {
                     "kind": "text",
-                    "text": "lid"
+                    "text": "This Mac until 18:00"
                   },
                   {
                     "kind": "text",
-                    "text": "until 14:42 (4h)"
+                    "text": "mac-mini never sleeps"
                   }
                 ]
-              },
-              {
-                "kind": "text",
-                "text": "started 10:42 by station awake 4h --lid"
-              }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "display",
-            "mark": "ok",
-            "label": "display",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "sleeps"
-              },
-              {
-                "kind": "text",
-                "text": "on lid close: pmset displaysleepnow (no display assertion)"
-              }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "clamshell",
-            "mark": "ok",
-            "label": "clamshell",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "held"
-              },
-              {
-                "kind": "text",
-                "text": "back to normal at the end, at every engine start and quit"
               }
             ]
           }
         }
-      ],
-      "counts": [
+      ]
+    },
+    {
+      "id": "accounts",
+      "title": "Accounts",
+      "role": "summary",
+      "columns": [
         {
-          "mark": "ok",
-          "n": 3
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "accounts",
+            "label": "Accounts",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "8",
+                    "label": "ok"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "npm needs sign-in",
+                    "label": "broken"
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     }
   ],
   "actions": [
     {
+      "key": "cmd+n",
       "label": "New VM",
       "on": "page",
       "priority": 1,
@@ -750,14 +456,18 @@
         "fields": [
           {
             "key": "Request.Lifetime",
-            "label": "Lifetime",
+            "label": "Will it last?",
             "kind": "select",
             "options": [
               {
-                "value": "throwaway"
+                "value": "throwaway",
+                "label": "Throwaway",
+                "note": "deleted when it powers off from inside"
               },
               {
-                "value": "permanent"
+                "value": "permanent",
+                "label": "Permanent",
+                "note": "kept until you delete it"
               }
             ],
             "default": "throwaway"
@@ -769,11 +479,11 @@
             "options": [
               {
                 "value": "4294967296",
-                "label": "4G"
+                "label": "4 GB"
               },
               {
                 "value": "8589934592",
-                "label": "8G"
+                "label": "8 GB"
               }
             ],
             "default": "4294967296"
@@ -782,7 +492,8 @@
       }
     },
     {
-      "label": "Open station",
+      "key": "cmd+t",
+      "label": "Open in Terminal",
       "on": "page",
       "priority": 2,
       "id": "open-station",
@@ -791,7 +502,7 @@
       }
     },
     {
-      "label": "Stop everything",
+      "label": "Stop everything on This Mac",
       "on": "page",
       "confirm": {
         "question": "Stop everything on This Mac?",
@@ -830,6 +541,19 @@
       "id": "power-sleep",
       "run": {
         "call": "awake.off"
+      }
+    },
+    {
+      "label": "Update all",
+      "on": "row",
+      "rows": [
+        "0-updates"
+      ],
+      "priority": 5,
+      "mutates": true,
+      "id": "update-all",
+      "run": {
+        "call": "apps.update"
       }
     }
   ],

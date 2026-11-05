@@ -11,6 +11,29 @@ public enum Token {
         public static let dash = "-"
         public static let slash = "/"
         public static let down = "!"
+        public static let command = "⌘"
+        public static let restart = "↺"
+        public static let caret = "|"
+    }
+
+    // value: the keys a menu item says and answers (vision a, b).
+    public enum Key {
+        public static func shown(_ key: String) -> String {
+            guard key.hasPrefix("cmd+") else { return key.uppercased() }
+            return Glyph.command + key.dropFirst(4).uppercased()
+        }
+    }
+
+    // value: the tiles and pills of the popover (vision a-f): rounded
+    // surfaces a step lighter than the panel.
+    public enum Tile {
+        public static let radius: CGFloat = 12
+        public static let padding: CGFloat = 8
+        public static let pill: CGFloat = 10
+        public static let title: CGFloat = 17
+        public static let sparkHeight: CGFloat = 18
+        public static let fill = 0.07
+        public static let sheet = 0.12
     }
 
     // value: the menu bar icon of the vision: the station symbol, 16 pt, its
@@ -63,6 +86,21 @@ public enum Token {
         public static let awake = "power.circle.fill"
         public static let more = "ellipsis.circle"
         public static let copy = "doc.on.doc"
+        public static let back = "chevron.left"
+        public static let down = "chevron.down"
+        public static let forward = "chevron.right"
+        public static let mac = "desktopcomputer"
+        public static let vm = "shippingbox"
+        public static let plus = "plus"
+        public static let terminal = "terminal"
+        public static let stop = "stop.fill"
+        public static let search = "magnifyingglass"
+        public static let check = "checkmark"
+        public static let sun = "sun.max"
+        public static let person = "person.crop.circle"
+        public static let warn = "exclamationmark.triangle"
+        public static let open = "arrow.up.right.square"
+        public static let qr = "qrcode"
 
         public static func of(_ mark: Mark) -> String {
             switch mark {

@@ -8,11 +8,13 @@ final class KitBoundaryTests: XCTestCase {
     }
 
     static let forbidden = ["ProgressView", "Gauge(", "List(", "List {", ".toggleStyle(.switch)", "WindowGroup", "NSWindow(", "Settings {"]
+    static let models = ["\"laptopcomputer", "\"macmini", "\"macbook", "\"macpro", "\"imac", "\"macstudio"]
     static let glyphs: [Character] = ["→", "·", "…", "⏻", "⚡", "●", "◐", "○", "✗", "◌"]
 
     // invariant: the Swift side of the kit's boundary: colours, symbol names
     // and glyphs live in Token only, no AppKit-backed control the offscreen
-    // renderer cannot draw, and Page and Engine stay Foundation.
+    // renderer cannot draw, every Mac drawn with one symbol (DECISIONS E1/E2:
+    // the page reports no model), and Page and Engine stay Foundation.
     static func scan(_ files: [(path: String, text: String)]) -> [Finding] {
         var out: [Finding] = []
         for (path, text) in files {
@@ -27,6 +29,9 @@ final class KitBoundaryTests: XCTestCase {
                 if text.contains(where: { glyphs.contains($0) }) {
                     out.append(Finding(file: path, rule: "a glyph outside Token"))
                 }
+            }
+            for model in models where text.contains(model) {
+                out.append(Finding(file: path, rule: "\(model.dropFirst()) draws a Mac's model, which no capability reports"))
             }
             for word in forbidden where text.contains(word) {
                 out.append(Finding(file: path, rule: "\(word) is not drawn offscreen"))
@@ -54,11 +59,13 @@ final class KitBoundaryTests: XCTestCase {
             ("atom/Dot.swift", "import SwiftUI\nstruct D: View { var body: some View { ProgressView().foregroundStyle(Color(red: 1, green: 0, blue: 0)) } }"),
             ("molecule/Row.swift", "Image(systemName: \"circle\"); Text(\"→\")"),
             ("page/Page.swift", "import SwiftUI"),
+            ("token/Token.swift", "static let mini = \"macmini\""),
         ]).map(\.rule)
         XCTAssertEqual(caught, [
             "a colour outside Token", "ProgressView is not drawn offscreen",
             "a symbol name outside Token", "a glyph outside Token",
             "import SwiftUI: Page and Engine import Foundation only",
+            "macmini draws a Mac's model, which no capability reports",
         ])
     }
 }

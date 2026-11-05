@@ -61,10 +61,6 @@ func part(r Reading, id, title string, ready bool, build func() []page.Section) 
 	return build()
 }
 
-func Machines(f machines.Fleet, s *services.Fleet) page.Section {
-	return pagemachines.Section(f, links(s))
-}
-
 func links(f *services.Fleet) func(host, vm string) []page.Link {
 	if f == nil {
 		return nil

@@ -1,0 +1,17 @@
+ mac-mini  Mac · jterrazz-mac-mini
+   ● State  Engine running
+
+ Needs you
+   ✗ port 5000 is reachable outs…  station ports --on mac-mini
+
+ Mac readiness  6 ●
+   ● restarts after a power cut    applied
+   ● never sleeps                  applied
+   ● logs in by itself             applied
+   ● disk unlock after a power c…  no password at boot
+   ● planned restarts unlock the…  supported
+   ● engine starts at login        installed
+
+ VMs  1 ●
+     Servers
+   └─ ● infra  Server  Always on · healthy · 0 restarts

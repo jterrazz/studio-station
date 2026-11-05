@@ -1,0 +1,14 @@
+State · Running
+
+Activity
+    CPU     34%                            Disk  3.9/21.5 GB
+    Memory  4.1/4.3 GB
+Inside
+    Apps      ● 38 installed               Disk  2.4 of 20 GB
+    Settings  ◐ 2 need a look
+Private  shared on Tailscale
+  Vite · 5173  https://jterrazz-macbook-pro.tail77a797.ts.net:40001
+  TCP · 7000  jterrazz-macbook-pro.tail77a797.ts.net:40002
+Accounts shared from This Mac
+  ● GitHub  4 h left
+  ● Claude  12 h left

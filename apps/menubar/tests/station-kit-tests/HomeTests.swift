@@ -15,6 +15,7 @@ final class HomeTests: XCTestCase {
         let stop = try XCTUnwrap(page.action("stop-all"))
         let confirm = try XCTUnwrap(stop.confirm)
         XCTAssertEqual(confirm.question, "Stop everything on This Mac?")
+        XCTAssertEqual(stop.label, "Stop everything on This Mac")
         XCTAssertEqual(texts(confirm.lines), [
             "linux-1 will stop; its disk is kept",
             "Awake ends, and the engine stays stopped until station engine start or the next login",
@@ -30,10 +31,10 @@ final class HomeTests: XCTestCase {
     // engine, which opens Terminal on station engine start and nothing else.
     func testEngineStoppedHome() async throws {
         let page = try Tree.page("menubar.home.engine-stopped")
-        let row = try XCTUnwrap(page.section("todo")?.items?.first?.row)
+        let row = try XCTUnwrap(page.section("needs-you")?.items?.first?.row)
         XCTAssertEqual(row.label, "engine")
         XCTAssertEqual(texts(row.cells), ["stopped"])
-        XCTAssertEqual(page.pageActions.map(\.label), ["Start the engine", "Open station"])
+        XCTAssertEqual(page.pageActions.map(\.label), ["Start the engine", "Open in Terminal"])
         let calls = Recorded()
         let runner = ActionRunner(executable: "/u/bin/station", socket: "/nonexistent", launcher: RecordingLauncher(calls: calls))
         let status = await runner.run(try XCTUnwrap(page.action("start")))
@@ -42,6 +43,91 @@ final class HomeTests: XCTestCase {
             ["/usr/bin/osascript", "-e", #"tell application "Terminal" to do script "'/u/bin/station' 'engine' 'start'""#, "-e", #"tell application "Terminal" to activate"#],
         ])
         XCTAssertEqual(Snapshot.state("menubar.home.engine-stopped", page).connection, .stopped)
+    }
+
+    func drawn(_ name: String, _ state: PopoverState) throws {
+        XCTAssertNil(try Golden.check(name, AnyView(Popover(state, scrolls: false)), scheme: .dark))
+    }
+
+    // invariant: MB-05: Home is the switcher's pill, the three measures,
+    // Needs you, the machines, the Awake and Accounts tiles, then New VM…,
+    // Open in Terminal and Stop everything on This Mac.
+    func testHomeLayout() throws {
+        let page = try Tree.page("menubar.home.two-macs")
+        XCTAssertEqual(page.sections?.compactMap(\.id), ["needs-you", "machines", "awake", "accounts"])
+        let strip = try XCTUnwrap(page.strip)
+        XCTAssertNotNil(strip.cpu)
+        XCTAssertNotNil(strip.memory)
+        XCTAssertNotNil(strip.net?.first)
+        XCTAssertEqual([strip.spark?.count, strip.memory_spark?.count, strip.net_spark?.count], [16, 16, 16])
+        XCTAssertEqual(page.section("needs-you")?.caption?.first?.text, "5 things need you")
+        XCTAssertEqual(page.pageActions.map(\.label), ["New VM", "Open in Terminal", "Stop everything on This Mac"])
+        XCTAssertEqual(page.pageActions.map(\.key), ["cmd+n", "cmd+t", nil])
+        XCTAssertEqual(texts(page.section("awake")?.items?.first?.row?.cells?.first?.items), ["This Mac until 18:00", "mac-mini never sleeps"])
+        try drawn("menubar.home.two-macs", Snapshot.state("menubar.home.two-macs", page))
+    }
+
+    // invariant: MA-14: under each Mac its Servers, then its Workspaces,
+    // each group named; infra carries its Server kind and a healthy mark.
+    func testHomeMachinesGrouped() throws {
+        let tree = try XCTUnwrap(Tree.page("menubar.home.two-macs").section("machines"))
+        let macs = (tree.items ?? []).compactMap(\.group)
+        XCTAssertEqual(macs.compactMap(\.head?.label), ["This Mac", "mac-mini"])
+        func groups(_ g: StationKit.Group) -> [String] {
+            var out: [String] = []
+            for item in g.items ?? [] {
+                guard let child = item.group else { continue }
+                let names: [String] = (child.items ?? []).compactMap { $0.row?.label }
+                out.append((child.head?.label ?? "") + ": " + names.joined(separator: ", "))
+            }
+            return out
+        }
+        XCTAssertEqual(groups(macs[0]), ["Workspaces: linux-1, api"])
+        XCTAssertEqual(groups(macs[1]), ["Servers: infra"])
+        let infra = try XCTUnwrap(macs[1].items?.first?.group?.items?.first?.row)
+        XCTAssertEqual(infra.cells?.first?.text, "Server")
+        XCTAssertEqual(infra.mark, .ok)
+        XCTAssertEqual(texts(infra.cells?.last?.items).prefix(2), ["Always on", "healthy"])
+        XCTAssertEqual(texts(macs[0].items?.first?.group?.items?.last?.row?.cells?.last?.items), ["Permanent", "Stopped"])
+    }
+
+    // invariant: AP-23: Needs you's `2 app updates` carries Update all,
+    // which runs apps.update on This Mac, for every update there, then reads
+    // Home again so the line leaves.
+    func testNeedsYouUpdateAll() async throws {
+        let page = try Tree.page("menubar.home.two-macs")
+        let row = try XCTUnwrap(page.section("needs-you")?.items?.first?.row)
+        XCTAssertEqual(row.label, "2 app updates")
+        let update = try XCTUnwrap(page.rowActions(row.id ?? "").first)
+        XCTAssertEqual(update.label, "Update all")
+        XCTAssertNil(update.confirm)
+        let engine = try FakeEngine("mb-update")
+        engine.serveOnce(Data(#"{"v":2,"id":"1","out":[]}"#.utf8) + [0x0A], thenClose: false)
+        engine.serveOnce(Data(#"{"v":2,"id":"1","out":{}}"#.utf8) + [0x0A], thenClose: false)
+        defer { engine.stop() }
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, reread: [PageID.shown(nil)]).run(update)
+        XCTAssertNil(status)
+        XCTAssertEqual(engine.received, [
+            #"{"call":"apps.update","id":"1","v":2}"#,
+            #"{"call":"engine.refresh","id":"1","in":{"pages":["menubar"]},"v":2}"#,
+        ])
+    }
+
+    // invariant: CR-22: New VM… ⌘N opens the create form as a sheet, in the
+    // CLI's words, and its Create sends machines.create-workspace.
+    func testNewVMSheetCreates() async throws {
+        let page = try Tree.page("menubar.home.two-macs")
+        let create = try XCTUnwrap(page.action("new-vm"))
+        XCTAssertEqual(create.form?.fields?.compactMap(\.label), ["Will it last?", "Memory"])
+        var state = Snapshot.state("menubar.home.two-macs", page)
+        state.confirming = create.id
+        try drawn("sheet.new-vm", state)
+        let engine = try FakeEngine("mb-new-vm")
+        engine.serveOnce(Data(#"{"v":2,"id":"1","out":{"VM":{"Name":"linux-2"}}}"#.utf8) + [0x0A], thenClose: false)
+        defer { engine.stop() }
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(create, answers: ["Request.Lifetime": "throwaway"])
+        XCTAssertNil(status)
+        XCTAssertEqual(engine.received, [#"{"call":"machines.create-workspace","id":"1","in":{"Request":{"Image":"linux","Lifetime":"throwaway","Network":"nat","Resources":{"MemoryBytes":4294967296}}},"v":2}"#])
     }
 
     // invariant: MB-12: every snapshot, of a page, a sheet or the icon, is

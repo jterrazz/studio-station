@@ -210,3 +210,105 @@ func TestASubscriberThatDoesNotReadNeverHoldsAnotherBack(t *testing.T) {
 		t.Fatalf("the reader got %s, want its page after the other was dropped", got)
 	}
 }
+
+// invariant: MB-14: a machine's page is watched by its name after the
+// page's (`menubar.machine:jterrazz-mac-mini`): the machine feed streams it
+// for that machine; an unknown page is still refused.
+func TestAMachinesPageIsWatchedByItsName(t *testing.T) {
+	files := systemtest.NewFS()
+	h := systemtest.Host(systemtest.NewRunner(t), files, systemtest.Env{}, systemtest.NewNet(), nil)
+	h.Clock = newManualClock()
+	subjects := make(chan string, 1)
+	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", Here: catalog.Host,
+		Feeds: map[string]Feed{PageMachine: func(_ context.Context, in FeedInput) <-chan any {
+			subjects <- in.Subject
+			out := make(chan any, 1)
+			out <- map[string]string{"infra": "restarting"}
+			close(out)
+			return out
+		}}})
+	if err := d.CheckPages([]string{"menubar.machine:jterrazz-mac-mini"}); err != nil {
+		t.Fatalf("the machine's page is refused: %v", err)
+	}
+	if err := d.CheckPages([]string{"menubar.nothing:jterrazz-mac-mini"}); err == nil {
+		t.Fatal("an unknown page is watched")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var pages []string
+	_ = d.Stream(ctx, []string{"menubar.machine:jterrazz-mac-mini"}, func(v any) error {
+		if ev, ok := v.(Event); ok && ev.Event == "page" {
+			pages = append(pages, string(ev.Page))
+			cancel()
+		}
+		return nil
+	})
+	if got := <-subjects; got != "jterrazz-mac-mini" {
+		t.Fatalf("the feed was asked for %q", got)
+	}
+	if len(pages) != 1 || pages[0] != `{"infra":"restarting"}` {
+		t.Fatalf("streamed %q, want the mini's page", pages)
+	}
+}
+
+func TestARefreshReadsAgainOnlyThePageItNames(t *testing.T) {
+	files := systemtest.NewFS()
+	h := systemtest.Host(systemtest.NewRunner(t), files, systemtest.Env{}, systemtest.NewNet(), nil)
+	h.Clock = newManualClock()
+	woke := make(chan string, 8)
+	reread := func(name string) Feed {
+		return func(ctx context.Context, in FeedInput) <-chan any {
+			out := make(chan any, 1)
+			out <- map[string]string{"page": name}
+			go func() {
+				defer close(out)
+				for {
+					select {
+					case <-in.Refresh:
+						woke <- name
+					case <-ctx.Done():
+						select {
+						case <-in.Refresh:
+							woke <- name
+						default:
+						}
+						return
+					}
+				}
+			}()
+			return out
+		}
+	}
+	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", Here: catalog.Host,
+		Feeds: map[string]Feed{PageMenubar: reread("home"), PageMachine: reread("linux-1")}})
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	framed := make(chan struct{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		n := 0
+		_ = d.Stream(ctx, []string{PageMenubar, "menubar.machine:linux-1"}, func(v any) error {
+			if ev, ok := v.(Event); ok && ev.Event == "page" {
+				n++
+				if n == 2 {
+					close(framed)
+				}
+			}
+			return nil
+		})
+	}()
+	<-framed
+	if err := d.Refresh([]string{"menubar.machine:linux-1"}); err != nil {
+		t.Fatalf("linux-1's page is not refreshed: %v", err)
+	}
+	if got := <-woke; got != "linux-1" {
+		t.Fatalf("a refresh of linux-1's page read %q again", got)
+	}
+	cancel()
+	<-done
+	close(woke)
+	for got := range woke {
+		t.Errorf("a refresh of linux-1's page also read %q again", got)
+	}
+}

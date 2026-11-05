@@ -1,0 +1,292 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.machine",
+  "command": "menubar",
+  "context": {
+    "machine": "jterrazz-mac-mini",
+    "kind": "mac"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "machine",
+      "title": "mac-mini",
+      "role": "summary",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "Mac"
+        },
+        {
+          "kind": "text",
+          "text": "jterrazz-mac-mini"
+        }
+      ],
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "state",
+            "mark": "ok",
+            "label": "State",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Engine running"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "needs-you",
+      "title": "Needs you",
+      "columns": [
+        {
+          "key": "finding",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "fix",
+          "kind": "command",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "0-5000",
+            "mark": "broken",
+            "label": "port 5000 is reachable outside Tailscale",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "station ports --on mac-mini"
+              }
+            ],
+            "reason": "failing"
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "readiness",
+      "title": "Mac readiness",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "restarts-after-a-power-cut",
+            "mark": "ok",
+            "label": "restarts after a power cut",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "applied"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "never-sleeps",
+            "mark": "ok",
+            "label": "never sleeps",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "applied"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "logs-in-by-itself",
+            "mark": "ok",
+            "label": "logs in by itself",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "applied"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "disk-unlock-after-a-power-cut",
+            "mark": "ok",
+            "label": "disk unlock after a power cut",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "no password at boot"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "planned-restarts-unlock-themselves",
+            "mark": "ok",
+            "label": "planned restarts unlock themselves",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "supported"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "engine-starts-at-login",
+            "mark": "ok",
+            "label": "engine starts at login",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "installed"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 6
+        }
+      ]
+    },
+    {
+      "id": "vms",
+      "title": "VMs",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 40
+        },
+        {
+          "key": "detail",
+          "kind": "list",
+          "keep": 80
+        }
+      ],
+      "items": [
+        {
+          "group": {
+            "head": {
+              "id": "jterrazz-mac-mini/servers",
+              "label": "Servers"
+            },
+            "items": [
+              {
+                "row": {
+                  "id": "infra",
+                  "mark": "ok",
+                  "label": "infra",
+                  "cells": [
+                    {
+                      "kind": "text",
+                      "text": "Server"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "Always on"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "healthy"
+                        },
+                        {
+                          "kind": "count",
+                          "unit": "restarts"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "cmd+t",
+      "label": "Open in Terminal",
+      "on": "page",
+      "priority": 2,
+      "id": "open-station",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "--on",
+          "mac-mini"
+        ]
+      }
+    }
+  ]
+}
