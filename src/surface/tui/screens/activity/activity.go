@@ -120,10 +120,25 @@ func (Screen) Lines(v screen.View) ([]string, bool) {
 	if v.Machine.Kind == "" || !ok {
 		return nil, false
 	}
-	a := ui.Activity{Banner: banner(v.Page), Graphs: graphs, Sort: v.State["sort"], Width: v.Width, Dark: v.Dark}
+	a := ui.Activity{Banner: banner(v.Page), Graphs: graphs, Sort: v.State["sort"], Width: v.Width, Dark: v.Dark, Sampled: sampled(v)}
 	a.Values, _ = find(v.Page, "values")
 	if procs, ok := find(v.Page, pageactivity.Processes); ok {
 		a.Processes = &procs
 	}
 	return a.Lines(), true
+}
+
+// value: SPEC §9.2: a machine of this Mac is sampled by this Mac's engine,
+// every 2 s while the TUI shows it, so its 6 min window is drawn from 2 s
+// points and its longer ones from 60 s points; another Mac's machine is
+// that Mac's engine's to sample, and its banner stays.
+func sampled(v screen.View) string {
+	m := v.Machine
+	if !m.Here && !m.MacHere {
+		return ""
+	}
+	if of(v.State).flag == windows()[0].flag {
+		return "Sampled every 2 s by the engine while you watch"
+	}
+	return "Sampled every 60 s by the engine"
 }

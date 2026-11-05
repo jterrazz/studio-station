@@ -53,6 +53,9 @@ runs:
           see 34 % of 10 CPU
           run for i in 1 2 3 4 5 6 7 8 9 10 11 12; do "$STATION" world advance 2s; done
           see ▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃
+          see Sampled every 2 s by the engine while you watch
+          send w
+          see Sampled every 60 s by the engine
           send q
       exit: 0
       stdout: |

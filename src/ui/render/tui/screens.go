@@ -24,14 +24,20 @@ type Activity struct {
 	Values    page.Section
 	Processes *page.Section
 	// value: "memory" sorts the processes by memory, else by CPU.
-	Sort  string
-	Width int
-	Dark  bool
+	Sort string
+	// value: how the engine samples what the screen shows, said in place of
+	// the banner when the screen's own engine samples it.
+	Sampled string
+	Width   int
+	Dark    bool
 }
 
 func (a Activity) Lines() []string {
 	st := token.New(a.Dark)
 	said := slices.DeleteFunc(slices.Clone(a.Banner), func(w string) bool { return strings.HasPrefix(w, "from ") })
+	if a.Sampled != "" {
+		said = []string{a.Sampled}
+	}
 	out := []string{" " + st.Muted.Render(strings.Join(said, token.Sep)), ""}
 	room := a.Width - 1 - label - 2
 	widest, drawn := 0, false
