@@ -155,14 +155,26 @@ func Exposed(ps []Port) []finding.Finding {
 		if !p.Red() {
 			continue
 		}
-		f := finding.Finding{Machine: p.Machine, Section: section.Ports, Severity: finding.Broken, Subject: p.Key(),
-			Text: "port " + strconv.Itoa(p.Port) + " is " + catalog.ReachableOutside}
+		text := "port " + strconv.Itoa(p.Port) + " is " + catalog.ReachableOutside
+		if p.Machine.On != "" {
+			text = p.Machine.Name + ": " + text
+		}
+		f := finding.Finding{Machine: p.Machine, Section: section.Ports, Severity: finding.Broken, Subject: p.Key(), Text: text}
 		if k, ok := catalog.KnownPortOf(p.Port, p.Process); ok {
 			f.Fix.Path = k.Off
 		}
 		out = append(out, f)
 	}
 	return out
+}
+
+// value: a red port's finding in the words told beyond its machine's own
+// page: always naming its machine.
+func Told(f finding.Finding) string {
+	if f.Machine.On != "" {
+		return f.Text
+	}
+	return f.Machine.Name + ": " + f.Text
 }
 
 func OwnDevices(f Fleet, peers []Node) Fleet {

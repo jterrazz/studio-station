@@ -136,7 +136,7 @@ func ListContract(l ports.Listing) ListJSON {
 	}
 	body.Ports = append(append(append(body.Ports, red...), public...), private...)
 	for _, f := range ports.Exposed(all) {
-		body.Findings = append(body.Findings, f.Machine.Name+": "+f.Text)
+		body.Findings = append(body.Findings, ports.Told(f))
 	}
 	var node *NodeJSON
 	if t := l.Tailnet; t.State != "" {

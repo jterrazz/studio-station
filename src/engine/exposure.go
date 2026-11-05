@@ -94,7 +94,7 @@ func (d *Daemon) watchExposure(ctx context.Context) {
 	for _, f := range found {
 		d.red = append(d.red, f.Subject)
 		if !slices.Contains(was, f.Subject) {
-			fresh = append(fresh, f.Machine.Name+": "+f.Text)
+			fresh = append(fresh, ports.Told(f))
 		}
 	}
 	d.mu.Unlock()

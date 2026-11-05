@@ -1,0 +1,17 @@
+description: 'the mini''s AirPlay Receiver on every interface needs you, named, with where System Settings turns it off'
+env: two-macs
+runs:
+    - command: 'world listen jterrazz-mac-mini "*:5000" ControlCenter'
+      exit: 0
+    - command: 'ports --on jterrazz-mac-mini | /usr/bin/grep 5000'
+      exit: 0
+      stdout: |
+          ✗	jterrazz-mac-mini	5000	AirPlay Receiver	*:5000 all interfaces	declared no	System Settings > General > AirDrop & Handoff > AirPlay Receiver
+    - command: 'ports --on jterrazz-mac-mini --json | /usr/bin/jq -c ''[.findings, [.ports[] | select(.port == 5000) | [.what, .bind, .class, .declared]]]'''
+      exit: 0
+      stdout: |
+          [["jterrazz-mac-mini: port 5000 is reachable outside Tailscale"],[["AirPlay Receiver",["*"],"public",null]]]
+    - command: 'overview --on jterrazz-mac-mini | /usr/bin/grep 5000'
+      exit: 0
+      stdout: |
+          ✗	port 5000 is reachable outside Tailscale	System Settings > General > AirDrop & Handoff > AirPlay Receiver
