@@ -11,7 +11,7 @@ runs:
           send \x1b
           see never sleeps
           send ]]
-          see Public: reachable from anywhere else
+          see Public · reachable from anywhere else
           send /5173
           send \r
           send x
@@ -19,7 +19,7 @@ runs:
           see y stop sharing   n no
           send y
           see Stopped sharing linux-1 5173
-          gone 5173 → 40001
+          see linux-1    5173   node              behind jterrazz-macbook-pro, not shared
           run "$STATION" ports --all-machines | /usr/bin/grep -q "linux-1	5173	private		behind jterrazz-macbook-pro, not shared"
           send \x1b
           gone (/5173)
@@ -29,8 +29,8 @@ runs:
           see Undeclare infra 443?
           send y
           see Undeclared infra 443
-          gone Public: reachable from anywhere else
-          see ● infra   443  private  own Tailscale devic
+          gone Public · reachable from anywhere else
+          see infra      443    traefik           own Tailscale device: infra
           run "$STATION" ports --all-machines | /usr/bin/grep -q "infra	443	private		own Tailscale device: infra"
           send q
       exit: 0

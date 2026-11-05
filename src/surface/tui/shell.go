@@ -190,6 +190,7 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 		s.samples = sampled(s.samples, msg.page)
 	}
 	if l, ok := s.lists[msg.key]; ok || r.err == nil {
+		l.Skip = s.skips(msg.key)
 		s.lists = with(s.lists, msg.key, l.Show(r.page))
 	}
 	var cmd tea.Cmd
@@ -411,10 +412,33 @@ func (s shell) masterWidth() int {
 	if s.sidebarShown() {
 		width -= ui.SidebarWidth
 	}
-	if (s.detailed() || s.paned()) && s.width >= ui.ThreePanes {
+	if ((s.detailed() && !s.wide()) || s.paned()) && s.width >= ui.ThreePanes {
 		width -= ui.DetailWidth
 	}
 	return width
+}
+
+// value: the sections the screen a read is for keeps its cursor off.
+func (s shell) skips(key string) func(page.Section) bool {
+	for _, n := range s.nodes {
+		for _, id := range s.sections(n) {
+			if s.key(n, id) != key {
+				continue
+			}
+			if sk, ok := screenFor(n, id).(screen.Skips); ok {
+				m := s.machineOf(n)
+				return func(p page.Section) bool { return sk.Skips(m, p) }
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+// value: the shown screen draws one wide pane, its detail opened over it.
+func (s shell) wide() bool {
+	w, ok := s.screen().(screen.Wide)
+	return ok && w.Wide(s.machineOf(s.current()))
 }
 
 func (s shell) page(n node, id section.ID) (page.Page, bool) {
@@ -748,7 +772,7 @@ func (s shell) frame() ui.Shell {
 	}
 	room := max(s.height-5, 1)
 	width := s.masterWidth()
-	detail := s.detailed() && (s.width >= ui.ThreePanes || s.focus == ui.PaneDetail)
+	detail := s.detailed() && ((s.width >= ui.ThreePanes && !s.wide()) || s.focus == ui.PaneDetail)
 	switch {
 	case !r.done:
 		f.Master = ui.Panel{Title: title, Lines: []string{" " + ui.Glyph(page.Awaiting) + " " + s.section().Title() + ui.Sep + "reading " + s.current().label}}
@@ -779,7 +803,7 @@ func (s shell) frame() ui.Shell {
 			}
 			pane.Lines = l.Detail(s.dark, ui.DetailWidth-2)
 		}
-		f.Detail, f.Overlay = &pane, s.width < ui.ThreePanes
+		f.Detail, f.Overlay = &pane, s.width < ui.ThreePanes || s.wide()
 	}
 	f.Footer = s.footer()
 	if s.sheet {

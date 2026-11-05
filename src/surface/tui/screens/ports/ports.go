@@ -1,12 +1,14 @@
 package ports
 
 import (
+	"cmp"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
@@ -14,16 +16,25 @@ import (
 // value: the sections of the Ports page by class (SPEC §5.6): what needs
 // you, the declared public ports, the shared private ones.
 const (
-	needsYou = "needs-you"
-	public   = "public"
-	private  = "private"
+	needsYou  = "needs-you"
+	public    = "public"
+	private   = "private"
+	localOnly = "local-only"
 )
 
 type Screen struct{}
 
 func (Screen) Live() time.Duration { return 0 }
 
-func (Screen) Words(_ screen.Machine, words []string, _ screen.State) []string { return words }
+// value: a all unfolds the ports that listen on their machine only.
+const all = "all"
+
+func (Screen) Words(_ screen.Machine, words []string, st screen.State) []string {
+	if st[all] == all {
+		return append(slices.Clone(words), "--all")
+	}
+	return words
+}
 
 func (Screen) Title(v screen.View) string {
 	n := 0
@@ -39,7 +50,119 @@ func (Screen) Title(v screen.View) string {
 	return "Ports" + ui.Sep + where + ui.Sep + strconv.Itoa(n)
 }
 
-func (Screen) Lines(screen.View) ([]string, bool) { return nil, false }
+func (Screen) Wide(screen.Machine) bool {
+	// value: SPEC §9.2 draws Ports as one wide pane; enter opens a row's
+	// detail, its QR code with it, over it.
+	return true
+}
+
+func (Screen) Skips(_ screen.Machine, s page.Section) bool {
+	// value: the cursor walks the ports, never the lines around them.
+	return !slices.Contains([]string{needsYou, public, private, localOnly}, s.ID)
+}
+
+func (Screen) Lines(v screen.View) ([]string, bool) {
+	t := ui.PortTable{Cursor: ui.Cursor{Key: v.Cursor, Focused: v.Focused, Dark: v.Dark, NoColor: v.NoColor, Width: v.Width, Room: v.Room}}
+	for _, s := range v.Page.Sections {
+		switch s.ID {
+		case needsYou, public, private, localOnly:
+			t.Classes = append(t.Classes, class(v, s))
+		case "tailnet":
+			for _, it := range s.Items {
+				if r := it.Row; r != nil && r.Mark != page.OK && len(r.Cells) > 0 {
+					t.Ending = append(t.Ending, ui.Check{Mark: r.Mark, Label: r.Label + " " + ui.Plain(r.Cells[0])})
+				}
+			}
+		}
+	}
+	t.Ending = append(t.Ending, ui.Check{Label: "Station reads what listens, then compares it with what you declared."})
+	for _, s := range v.Page.Sections {
+		for _, it := range s.Items {
+			if n := it.Note; n != nil && strings.HasSuffix(n.Text, "machine only") {
+				t.Ending = append(t.Ending, ui.Check{Label: n.Text, Text: "a all"})
+			}
+		}
+	}
+	return t.Lines(), true
+}
+
+// value: a class's title in the screen's words: what it is, then how many.
+func title(s page.Section, n int) string {
+	head, rest, _ := strings.Cut(s.Title, ": ")
+	words := []string{head}
+	if rest != "" {
+		if r, ok := strings.CutSuffix(rest, ", declared"); ok {
+			words = append(words, r, "declared")
+		} else {
+			words = append(words, rest)
+		}
+	}
+	return strings.Join(append(words, strconv.Itoa(n)), ui.Sep)
+}
+
+func class(v screen.View, s page.Section) ui.PortClass {
+	c := ui.PortClass{Mark: page.Unjudged}
+	exposed := []string{"MACHINE", "PORT", "WHAT", "LISTENS ON", "DECLARED"}
+	switch s.ID {
+	case needsYou:
+		c.Mark, c.Heads, c.Or = page.Broken, exposed, ui.Pair{Label: "d declare public", Text: "declare a port you mean to open"}
+	case public:
+		c.Heads = []string{"MACHINE", "PORT", "WHAT", "ROUTE", "VERIFIED"}
+	case localOnly:
+		c.Heads = exposed
+	}
+	for _, it := range s.Items {
+		if it.Empty != nil {
+			c.Empty = "No " + it.Empty.Noun
+		}
+		r := it.Row
+		if r == nil || (v.Match != nil && !v.Match(*r)) {
+			continue
+		}
+		row := ui.PortRow{Key: s.ID + "/" + r.ID, Mark: r.Mark, Machine: cmp.Or(r.Short, r.Label), LastMark: page.Unjudged}
+		row.Port, _, _ = strings.Cut(ui.Plain(screen.Cell(s, *r, "port")), " ")
+		switch s.ID {
+		case private:
+			row.What = ui.Plain(screen.Cell(s, *r, "process"))
+			row.Where = screen.Cell(s, *r, "url")
+			if row.Where.IsNone() {
+				row.Where = screen.Cell(s, *r, "state")
+			}
+		case public:
+			row.What = ui.Plain(screen.Cell(s, *r, "what"))
+			row.Where, row.Last, row.LastMark = route(screen.Cell(s, *r, "declared"), r.Mark)
+		default:
+			row.What = ui.Plain(screen.Cell(s, *r, "what"))
+			row.Where = screen.Cell(s, *r, "listens")
+			row.Last = strings.TrimPrefix(ui.Plain(screen.Cell(s, *r, "declared")), "declared ")
+			if row.Last == "" {
+				row.Last = "no"
+			}
+		}
+		if h := r.Hint; s.ID == needsYou && h != nil && h.Command != "" && !slices.Contains(c.Fix, h.Command+" off") {
+			c.Fix = append(c.Fix, h.Command+" off")
+		}
+		c.Rows = append(c.Rows, row)
+	}
+	c.Title = title(s, len(c.Rows))
+	return c
+}
+
+// value: a declared port's route and what was verified of it, from its
+// page's words: the route, then what proves it.
+func route(v page.Value, m page.Mark) (page.Value, string, page.Mark) {
+	words := make([]string, 0, len(v.Items))
+	for _, w := range v.Items {
+		words = append(words, ui.Plain(w))
+	}
+	switch {
+	case len(words) == 0:
+		return page.None(), strings.TrimPrefix(ui.Plain(v), "declared, but "), m
+	case words[0] == "declared" && len(words) > 1:
+		return page.Text(words[1]), "not verified yet", page.Unjudged
+	}
+	return page.Text(words[0]), strings.Join(words[1:], ui.Sep), m
+}
 
 func (Screen) Keys(v screen.View) []ui.Binding {
 	var keys []ui.Binding
@@ -54,7 +177,7 @@ func (Screen) Keys(v screen.View) []ui.Binding {
 	if sharer(v.Machine) {
 		keys = append(keys, screen.Bind("s", "share"))
 	}
-	return keys
+	return append(keys, screen.Bind("a", "all"))
 }
 
 // value: a VM's Ports shares one of its ports; All machines asks which VM.
@@ -98,6 +221,8 @@ func (Screen) Press(key string, v screen.View) (screen.Effect, bool) {
 			Doing: "Stopping the sharing of " + what, Done: "Stopped sharing " + what}}, true
 	case key == "s" && sharer(v.Machine):
 		return share(v.Machine), true
+	case key == "a":
+		return screen.Effect{State: v.State.With(all, map[bool]string{true: "", false: all}[v.State[all] == all]), Read: true}, true
 	}
 	return screen.Effect{}, false
 }

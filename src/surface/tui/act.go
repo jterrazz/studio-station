@@ -87,6 +87,7 @@ func (s shell) view() screen.View {
 	v := screen.View{Machine: s.machineOf(s.current()), Section: s.section(), Page: l.Page, Width: s.masterWidth() - 2,
 		Room: max(s.height-7, 1), Dark: s.dark, NoColor: s.deps.NoColor, State: s.states[key], Beside: map[string]page.Page{}}
 	v.Of, v.Row, v.HasRow = l.Current()
+	v.Cursor, v.Focused, v.Match, v.Samples = l.Cursor, s.focus == ui.PaneMaster || s.focus == ui.PaneDetail, l.Matches, s.samples
 	for _, r := range s.besides(s.current(), s.section()) {
 		if got, ok := s.reads[besideKey(s.current(), r)]; ok && got.done && got.err == nil {
 			v.Beside[r.Name] = got.page

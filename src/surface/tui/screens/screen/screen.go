@@ -38,10 +38,18 @@ type View struct {
 	Machine Machine
 	Section section.ID
 	Page    page.Page
-	// value: the row under the cursor, in its section.
+	// value: the row under the cursor, in its section, and the list's key
+	// of it; Focused while the cursor is drawn.
 	Row     page.Row
 	Of      page.Section
 	HasRow  bool
+	Cursor  string
+	Focused bool
+	// value: whether the list's filter keeps a row.
+	Match func(page.Row) bool
+	// value: each machine's last CPU percents the TUI has read, oldest
+	// first, by its name.
+	Samples map[string][]int
 	Width   int
 	Room    int
 	Dark    bool
@@ -122,6 +130,18 @@ func Cell(s page.Section, r page.Row, key string) page.Value {
 }
 
 func Bind(key, label string) ui.Binding { return ui.Binding{Key: key, Label: label} }
+
+type Wide interface {
+	// value: a screen whose master pane takes the room of the detail too
+	// (SPEC §9.2's one wide pane); enter opens the detail over it.
+	Wide(m Machine) bool
+}
+
+type Skips interface {
+	// value: a screen that draws its own pane keeps the list's cursor off
+	// the sections it draws no row of.
+	Skips(m Machine, s page.Section) bool
+}
 
 type Read struct {
 	Name  string

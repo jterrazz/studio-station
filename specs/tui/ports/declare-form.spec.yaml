@@ -11,7 +11,7 @@ runs:
           send \x1b
           see never sleeps
           send ]]
-          see Needs you: reachable outside Tailscale
+          see Needs you · reachable outside Tailscale
           send /5000
           send \r
           send d
@@ -19,8 +19,8 @@ runs:
           see Route         lan_
           send \r
           see Declared jterrazz-mac-mini 5000 public
-          gone Needs you: reachable outside Tailscale
-          see Public: reachable from anywhere else
+          gone Needs you · reachable outside Tailscale
+          see Public · reachable from anywhere else
           run "$STATION" ports --all-machines | /usr/bin/grep -q "jterrazz-mac-mini	5000	public"
           send q
       exit: 0

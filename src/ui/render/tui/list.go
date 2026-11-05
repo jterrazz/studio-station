@@ -17,6 +17,9 @@ type List struct {
 	Cursor string
 	Filter string
 	Open   map[string]bool
+	// value: the sections the cursor never walks, as the screen that draws
+	// the pane says.
+	Skip func(page.Section) bool
 }
 
 func (l List) Show(p page.Page) List {
@@ -169,6 +172,8 @@ func (l List) keys() []string {
 	return keys
 }
 
+func (l List) Matches(r page.Row) bool { return l.match(r) }
+
 func (l List) match(r page.Row) bool {
 	needle := strings.ToLower(l.Filter)
 	if needle == "" {
@@ -188,7 +193,7 @@ func (l List) match(r page.Row) bool {
 func (l List) lines(st token.Styles, width, columns int) []organism.Line {
 	var out []organism.Line
 	for _, s := range l.Page.Sections {
-		if s.Role == page.Lifted {
+		if s.Role == page.Lifted || (l.Skip != nil && l.Skip(s)) {
 			continue
 		}
 		g := organism.Grid{Styles: st, Section: s, Width: width, Medium: molecule.TUI, Keys: molecule.NoKeys, Folded: l.folded, Match: l.match}
