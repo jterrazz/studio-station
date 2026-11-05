@@ -108,7 +108,10 @@ func lookSection(m settings.Matrix, now time.Time, label func(string) string) pa
 			r, _ := c.Row(mr.Name)
 			one := Row(r, now)
 			row := page.Row{ID: c.Name + "/" + mr.Name, Label: c.Name, Short: heading(c.Place, label), Mark: one.Mark, Reason: one.Reason, Cells: append([]page.Value{page.Text(mr.Name)}, one.Cells...)}
-			if one.Hint != nil {
+			switch {
+			case c.Away == settings.Stopped:
+				row.Hint = page.Cmd("station machines start " + c.Name)
+			case one.Hint != nil:
 				hint := *one.Hint
 				hint.Key = ""
 				if !hint.External && !c.Here {

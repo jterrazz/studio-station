@@ -32,11 +32,11 @@
    ◐ linux-1   dock-reset        changed since 2 d ago
      → station settings diff dock-reset --on linux-1
    ◐ api       ghostty-dotfiles  changed since 2 d ago
-     → station settings diff ghostty-dotfiles --on api
+     → station machines start api
    ◐ api       github-login      changed since 2 d ago
-     → station settings diff github-login --on api
+     → station machines start api
    ◐ api       dock-reset        changed since 2 d ago
-     → station settings diff dock-reset --on api
+     → station machines start api
  - Set by station
                        This Mac  mac-mini  linux-1  api    OK
    ◐ ghostty-dotfiles  ◐         ◐         ◐        ◐      0/4

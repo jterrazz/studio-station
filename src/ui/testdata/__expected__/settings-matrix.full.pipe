@@ -18,9 +18,9 @@
 ◐	linux-1	ghostty-dotfiles	changed since 2 d ago	station settings diff ghostty-dotfiles --on linux-1
 ◐	linux-1	github-login	changed since 2 d ago	station settings diff github-login --on linux-1
 ◐	linux-1	dock-reset	changed since 2 d ago	station settings diff dock-reset --on linux-1
-◐	api	ghostty-dotfiles	changed since 2 d ago	station settings diff ghostty-dotfiles --on api
-◐	api	github-login	changed since 2 d ago	station settings diff github-login --on api
-◐	api	dock-reset	changed since 2 d ago	station settings diff dock-reset --on api
+◐	api	ghostty-dotfiles	changed since 2 d ago	station machines start api
+◐	api	github-login	changed since 2 d ago	station machines start api
+◐	api	dock-reset	changed since 2 d ago	station machines start api
 # Set by station
 ◐	ghostty-dotfiles	◐	◐	◐	◐	0/4
 ◐	github-login	◐	◐	◐	◐	0/4

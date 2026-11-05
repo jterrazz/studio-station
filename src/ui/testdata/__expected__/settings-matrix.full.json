@@ -517,7 +517,7 @@
             ],
             "reason": "differs",
             "hint": {
-              "command": "station settings diff ghostty-dotfiles --on api"
+              "command": "station machines start api"
             }
           }
         },
@@ -539,7 +539,7 @@
             ],
             "reason": "differs",
             "hint": {
-              "command": "station settings diff github-login --on api"
+              "command": "station machines start api"
             }
           }
         },
@@ -561,7 +561,7 @@
             ],
             "reason": "differs",
             "hint": {
-              "command": "station settings diff dock-reset --on api"
+              "command": "station machines start api"
             }
           }
         }
