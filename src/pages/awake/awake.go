@@ -7,6 +7,8 @@ import (
 
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 )
@@ -228,9 +230,10 @@ type SilentJSON struct {
 }
 
 type JSON struct {
-	Schema string       `json:"schema"`
-	Macs   []MacJSON    `json:"macs"`
-	Silent []SilentJSON `json:"silent"`
+	Schema   string         `json:"schema"`
+	Findings []finding.JSON `json:"findings"`
+	Macs     []MacJSON      `json:"macs"`
+	Silent   []SilentJSON   `json:"silent"`
 }
 
 func macJSON(r awake.Report) MacJSON {
@@ -273,9 +276,12 @@ func macJSON(r awake.Report) MacJSON {
 
 func Contract(f Fleet) JSON {
 	out := JSON{Schema: Schema, Macs: []MacJSON{}, Silent: []SilentJSON{}}
+	fs := make([]finding.Finding, 0, len(f.Reports))
 	for _, r := range f.Reports {
 		out.Macs = append(out.Macs, macJSON(r))
+		fs = append(fs, awake.Findings(r, machine.Ref{Name: r.Mac})...)
 	}
+	out.Findings = finding.FleetDoc(fs)
 	for _, s := range f.Silent {
 		out.Silent = append(out.Silent, SilentJSON{Name: s.Mac, Error: s.Why})
 	}

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -51,11 +52,11 @@ type NodeJSON struct {
 }
 
 type BodyJSON struct {
-	Schema    string      `json:"schema"`
-	Findings  []string    `json:"findings"`
-	Ports     []PortJSON  `json:"ports"`
-	LocalOnly int         `json:"local_only"`
-	Range     []RangeJSON `json:"range"`
+	Schema    string         `json:"schema"`
+	Findings  []finding.JSON `json:"findings"`
+	Ports     []PortJSON     `json:"ports"`
+	LocalOnly int            `json:"local_only"`
+	Range     []RangeJSON    `json:"range"`
 }
 
 type ListJSON map[string]any // value: station.ports.list/v1, its node under the key of the tailnet's product, a word the catalogue owns.
@@ -105,7 +106,7 @@ func ListenerObject(p ports.Port) PortJSON {
 func ListContract(l ports.Listing) ListJSON {
 	// invariant: one object per port of a machine, red first, then public, then
 	// private; a shared port is its share, told its class by what listens there.
-	body := BodyJSON{Schema: "station.ports.list/v1", Findings: []string{}, Ports: []PortJSON{}, Range: []RangeJSON{}}
+	body := BodyJSON{Schema: "station.ports.list/v1", Ports: []PortJSON{}, Range: []RangeJSON{}}
 	var red, public, private []PortJSON
 	var all []ports.Port
 	for _, h := range l.Fleet.Hosts {
@@ -143,9 +144,7 @@ func ListContract(l ports.Listing) ListJSON {
 		}
 	}
 	body.Ports = append(append(append(body.Ports, red...), public...), private...)
-	for _, f := range ports.Exposed(all) {
-		body.Findings = append(body.Findings, ports.Told(f))
-	}
+	body.Findings = finding.FleetDoc(ports.Exposed(all))
 	var node *NodeJSON
 	if t := l.Tailnet; t.State != "" {
 		state := "on"

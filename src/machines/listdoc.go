@@ -1,13 +1,17 @@
 package machines
 
-import "time"
+import (
+	"time"
+
+	"github.com/jterrazz/studio-station/src/core/finding"
+)
 
 const ListSchema = "station.machines.list/v1"
 
 type ListDoc struct {
-	Schema   string        `json:"schema"`
-	Macs     []ListMac     `json:"macs"`
-	Findings []ListFinding `json:"findings"`
+	Schema   string         `json:"schema"`
+	Macs     []ListMac      `json:"macs"`
+	Findings []finding.JSON `json:"findings"`
 }
 
 type ListMac struct {
@@ -79,16 +83,8 @@ func restartsOf(r Restarts) ListRestarts {
 	return out
 }
 
-type ListFinding struct {
-	Severity string `json:"severity"`
-	Section  string `json:"section"`
-	Subject  string `json:"subject"`
-	Text     string `json:"text"`
-	Fix      string `json:"fix,omitempty"`
-}
-
 func ToList(f Fleet) ListDoc {
-	out := ListDoc{Schema: ListSchema, Macs: make([]ListMac, 0, len(f.Hosts)), Findings: []ListFinding{}}
+	out := ListDoc{Schema: ListSchema, Macs: make([]ListMac, 0, len(f.Hosts)), Findings: finding.FleetDoc(Findings(f))}
 	for _, h := range f.Hosts {
 		m := ListMac{
 			Name: h.Name, Label: Label(f, h), ThisMac: h.Here, Reachable: h.Reachable, Answered: h.Answered, IP: h.Node.IP, User: h.User,
@@ -103,9 +99,6 @@ func ToList(f Fleet) ListDoc {
 			})
 		}
 		out.Macs = append(out.Macs, m)
-	}
-	for _, fd := range Findings(f) {
-		out.Findings = append(out.Findings, ListFinding{Severity: string(fd.Severity), Section: string(fd.Section), Subject: fd.Subject, Text: fd.Text, Fix: fd.Fix.Command + fd.Fix.Path})
 	}
 	return out
 }

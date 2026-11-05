@@ -1,24 +1,9 @@
 package home
 
-import "github.com/jterrazz/studio-station/src/overview"
-
-type SummaryFixJSON struct {
-	// invariant: one set of the three: a call station runs, a command the
-	// owner runs, or a path in System Settings.
-	Call    string            `json:"call,omitempty"`
-	Args    map[string]string `json:"args,omitempty"`
-	Command string            `json:"command,omitempty"`
-	Path    string            `json:"path,omitempty"`
-}
-
-type SummaryFindingJSON struct {
-	Machine  string         `json:"machine"`
-	Section  string         `json:"section"`
-	Severity string         `json:"severity"`
-	Subject  string         `json:"subject"`
-	Text     string         `json:"text"`
-	Fix      SummaryFixJSON `json:"fix"`
-}
+import (
+	"github.com/jterrazz/studio-station/src/core/finding"
+	"github.com/jterrazz/studio-station/src/overview"
+)
 
 type SummarySectionJSON struct {
 	ID string `json:"id"`
@@ -42,17 +27,18 @@ type SummaryJSON struct {
 	Schema   string               `json:"schema"`
 	Machine  SummaryMachineJSON   `json:"machine"`
 	Engine   string               `json:"engine,omitempty"`
-	Findings []SummaryFindingJSON `json:"findings"`
+	Findings []finding.JSON       `json:"findings"`
 	Sections []SummarySectionJSON `json:"sections"`
 	VMs      []SummaryVMJSON      `json:"vms,omitempty"`
 }
 
 func SummaryContract(s overview.Summary, schema string) SummaryJSON {
 	out := SummaryJSON{Schema: schema, Machine: SummaryMachineJSON{Name: s.Head.Name, Kind: string(s.Head.Kind)}, Engine: string(s.Engine),
-		Findings: make([]SummaryFindingJSON, 0, len(s.Needs)), Sections: make([]SummarySectionJSON, 0, len(s.Lines))}
+		Findings: make([]finding.JSON, 0, len(s.Needs)), Sections: make([]SummarySectionJSON, 0, len(s.Lines))}
 	for _, n := range s.Needs {
-		out.Findings = append(out.Findings, SummaryFindingJSON{Machine: n.Machine, Section: string(n.Section), Severity: string(n.Severity), Subject: n.Subject, Text: n.Text,
-			Fix: SummaryFixJSON{Call: n.Call, Args: n.Args, Command: n.Command, Path: n.Path}})
+		machine := n.Machine
+		out.Findings = append(out.Findings, finding.JSON{Machine: &machine, Severity: string(n.Severity), Section: string(n.Section), Subject: n.Subject, Text: n.Text,
+			Fix: finding.Fix{Call: n.Call, Args: n.Args, Command: n.Command, Path: n.Path}.JSON()})
 	}
 	for _, l := range s.Lines {
 		sec := SummarySectionJSON{ID: string(l.Section), Counts: map[string]int{}, Pending: l.Pending, Unread: l.Unread}

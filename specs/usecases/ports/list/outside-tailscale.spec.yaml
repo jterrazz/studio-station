@@ -10,7 +10,7 @@ runs:
     - command: 'ports --on jterrazz-mac-mini --json | /usr/bin/jq -c ''[.findings, [.ports[] | select(.port == 5000) | [.what, .bind, .class, .declared]]]'''
       exit: 0
       stdout: |
-          [["jterrazz-mac-mini: port 5000 is reachable outside Tailscale"],[["AirPlay Receiver",["*"],"public",null]]]
+          [[{"machine":"jterrazz-mac-mini","severity":"broken","section":"ports","subject":"jterrazz-mac-mini:5000","text":"port 5000 is reachable outside Tailscale","fix":{"call":null,"command":null,"path":"System Settings > General > AirDrop & Handoff > AirPlay Receiver"}}],[["AirPlay Receiver",["*"],"public",null]]]
     - command: 'overview --on jterrazz-mac-mini | /usr/bin/grep 5000'
       exit: 0
       stdout: |

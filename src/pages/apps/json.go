@@ -3,6 +3,8 @@ package apps
 import (
 	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
+	"github.com/jterrazz/studio-station/src/core/machine"
 )
 
 type ToolJSON struct {
@@ -32,15 +34,16 @@ type AppJSON struct {
 }
 
 type ListJSON struct {
-	Schema string    `json:"schema"`
-	Apps   []AppJSON `json:"apps"`
+	Schema   string         `json:"schema"`
+	Findings []finding.JSON `json:"findings"`
+	Apps     []AppJSON      `json:"apps"`
 	// value: how many catalogue apps live on other machines.
 	Elsewhere int `json:"not_for_this_machine"`
 }
 
 func ListContract(schema string, reports []apps.Report) ListJSON {
 	// invariant: every array is built with make, so an empty one encodes as [].
-	body := ListJSON{Schema: schema, Apps: make([]AppJSON, 0, len(reports)), Elsewhere: len(apps.Elsewhere(reports))}
+	body := ListJSON{Schema: schema, Findings: finding.Doc(apps.Findings(reports, machine.Ref{})), Apps: make([]AppJSON, 0, len(reports)), Elsewhere: len(apps.Elsewhere(reports))}
 	for _, r := range reports {
 		detail := r.Detail
 		if detail == "" {

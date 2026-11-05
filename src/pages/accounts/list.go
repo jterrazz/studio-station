@@ -6,6 +6,8 @@ import (
 
 	model "github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
+	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/page"
 )
@@ -144,17 +146,19 @@ func EveryMachine(blocks []MachineBlock) page.Page {
 }
 
 type ListJSON struct {
-	Schema    string       `json:"schema"`
-	Machine   MachineRef   `json:"machine"`
-	Accounts  []AccountRow `json:"accounts"`
-	Shares    []ShareRow   `json:"shares"`
-	ShareList []string     `json:"share_list"`
+	Schema    string         `json:"schema"`
+	Machine   MachineRef     `json:"machine"`
+	Findings  []finding.JSON `json:"findings"`
+	Accounts  []AccountRow   `json:"accounts"`
+	Shares    []ShareRow     `json:"shares"`
+	ShareList []string       `json:"share_list"`
 }
 
 type EveryJSON struct {
-	Schema   string        `json:"schema"`
-	Machines []MachineJSON `json:"machines"`
-	Skipped  []SkippedJSON `json:"skipped"`
+	Schema   string         `json:"schema"`
+	Findings []finding.JSON `json:"findings"`
+	Machines []MachineJSON  `json:"machines"`
+	Skipped  []SkippedJSON  `json:"skipped"`
 }
 
 type MachineJSON struct {
@@ -211,7 +215,7 @@ func ListContract(schema string, r accounts.Report, shared []model.Shared) ListJ
 	// invariant: names, states, who and scopes only: no field of it ever
 	// carries a token, a cookie or a key body.
 	r = r.Resolved()
-	out := ListJSON{Schema: schema, Accounts: []AccountRow{}, Shares: []ShareRow{}, ShareList: r.ShareList}
+	out := ListJSON{Schema: schema, Findings: finding.Doc(model.Findings(r, machine.Ref{})), Accounts: []AccountRow{}, Shares: []ShareRow{}, ShareList: r.ShareList}
 	if out.ShareList == nil {
 		out.ShareList = []string{}
 	}
@@ -241,6 +245,7 @@ func EveryMachineContract(schema string, blocks []MachineBlock) EveryJSON {
 	// page; one that did not answer keeps its place with its error, a
 	// server is skipped and said (SPEC §11.1).
 	out := EveryJSON{Schema: schema, Machines: []MachineJSON{}, Skipped: []SkippedJSON{}}
+	var fs []finding.Finding
 	for _, b := range blocks {
 		if b.Server {
 			out.Skipped = append(out.Skipped, SkippedJSON{Name: b.Name, Why: "server"})
@@ -268,7 +273,9 @@ func EveryMachineContract(schema string, blocks []MachineBlock) EveryJSON {
 		one := ListContract(schema, b.Report, b.Shared)
 		m.Accounts, m.Shares, m.ShareList = one.Accounts, one.Shares, one.ShareList
 		out.Machines = append(out.Machines, m)
+		fs = append(fs, model.Findings(b.Report, machine.Ref{Name: b.Name, On: b.On})...)
 	}
+	out.Findings = finding.FleetDoc(fs)
 	return out
 }
 

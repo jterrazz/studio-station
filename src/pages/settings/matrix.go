@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/finding"
+	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	"github.com/jterrazz/studio-station/src/settings"
@@ -311,7 +314,7 @@ func cellMark(c settings.Cell) page.Mark {
 type MatrixJSON struct {
 	Schema   string          `json:"schema"`
 	Machine  MachineJSON     `json:"machine"`
-	Findings []string        `json:"findings"`
+	Findings []finding.JSON  `json:"findings"`
 	Columns  []string        `json:"columns"`
 	Skipped  []SkippedJSON   `json:"skipped"`
 	Rows     []MatrixRowJSON `json:"rows"`
@@ -345,13 +348,19 @@ func contractKind(kind string) string {
 func MatrixContract(m settings.Matrix, now time.Time, here page.Context) MatrixJSON {
 	// invariant: a machine that could not be read now is a finding, in the
 	// words of its row in Machines.
-	body := MatrixJSON{Schema: "station.settings.matrix/v1", Machine: MachineJSON{Name: here.Machine, Kind: contractKind(here.Kind)}, Findings: []string{}, Columns: []string{}, Skipped: []SkippedJSON{}, Rows: []MatrixRowJSON{}}
+	body := MatrixJSON{Schema: "station.settings.matrix/v1", Machine: MachineJSON{Name: here.Machine, Kind: contractKind(here.Kind)}, Columns: []string{}, Skipped: []SkippedJSON{}, Rows: []MatrixRowJSON{}}
+	var fs []finding.Finding
 	for _, c := range m.Columns {
 		body.Columns = append(body.Columns, c.Name)
 		if mark, _, words := standing(c, now); mark != page.OK {
-			body.Findings = append(body.Findings, c.Name+": "+strings.Join(words, ", "))
+			severity := finding.NeedsALook
+			if mark == page.Broken {
+				severity = finding.Broken
+			}
+			fs = append(fs, finding.Finding{Machine: machine.Ref{Name: c.Name}, Section: section.Settings, Severity: severity, Subject: c.Name, Text: c.Name + ": " + strings.Join(words, ", ")})
 		}
 	}
+	body.Findings = finding.FleetDoc(fs)
 	for _, s := range m.Servers {
 		body.Skipped = append(body.Skipped, SkippedJSON{Name: s, Why: "server"})
 	}
