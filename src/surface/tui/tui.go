@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/page"
 )
 
@@ -15,6 +16,9 @@ type Answer struct {
 	// name typed; the zero Answer runs the command unanswered.
 	Yes   bool
 	Typed string
+	// value: what the owner typed in the command's form, by its input's
+	// name: the command reads it on its stdin, never in its words.
+	Values map[string]string
 }
 
 type Do func(ctx context.Context, words []string, a Answer) (said []string, err error)
@@ -29,6 +33,9 @@ func (a *Asked) Error() string { return a.Message }
 
 type Deps struct {
 	Here page.Context
+	// value: the machine the TUI opens on, by name: the one this terminal
+	// uses; empty is This Mac.
+	Opens string
 	// invariant: the TUI's one read is the page the CLI prints for these
 	// words, so a screen is the same page function as its command.
 	Pages Pages
@@ -45,6 +52,8 @@ type Deps struct {
 	// makes, and answers what it printed.
 	Run     Calls
 	NoColor bool
+	// value: the registry's Meta, the palette's entries (calls.json).
+	Calls []call.Meta
 	// value: stops every read still running, so q leaves nothing behind.
 	Stop func()
 	// value: holds the engine's watch on these machines, by name, until the

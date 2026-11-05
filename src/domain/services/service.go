@@ -170,17 +170,26 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 	}
 	view.Name, view.Here, view.Reachable = s.o.HereName, true, true
 	view.Range = s.rangeOf()
-	view.Ports, view.Listening = s.survey(ctx, view.Listening), nil
+	ps, err := s.survey(ctx, view.Listening)
+	if err != nil {
+		return HostView{}, err
+	}
+	view.Ports, view.Listening = ps, nil
 	return view, nil
 }
 
 // invariant: this Mac's ports and its VMs', each in its class: the Mac's
 // read here, its VMs' as its engine heard them, nothing of a VM while the
-// engine is stopped.
-func (s *Service) survey(ctx context.Context, vms []ports.Machine) []ports.Port {
+// engine is stopped. What listens here that cannot be read fails the read,
+// as an empty list would say nothing listens; a Mac with no reader of its
+// listeners has nothing to say of them.
+func (s *Service) survey(ctx context.Context, vms []ports.Machine) ([]ports.Port, error) {
 	var mine []ports.Listener
 	if s.o.Listening != nil {
-		mine, _ = s.o.Listening(ctx)
+		var err error
+		if mine, err = s.o.Listening(ctx); err != nil && !errors.Is(err, system.ErrNotFound) {
+			return nil, err
+		}
 	}
 	here := ports.MacOf(s.o.HereName, mine)
 	var decl []ports.Declaration
@@ -190,9 +199,9 @@ func (s *Service) survey(ctx context.Context, vms []ports.Machine) []ports.Port 
 	ms := append([]ports.Machine{here}, vms...)
 	ps := ports.Survey(ms, decl)
 	if s.o.Routes == nil {
-		return ps
+		return ps, nil
 	}
-	return s.o.Routes.Verify(ctx, ms, ps)
+	return s.o.Routes.Verify(ctx, ms, ps), nil
 }
 
 // invariant: the range is the host's policy and its lease file, so it reads the

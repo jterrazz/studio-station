@@ -12,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/palette"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
@@ -65,6 +66,11 @@ type shell struct {
 	dialog *dialog
 	gens   map[string]int
 	held   *held
+	sw     *switcher
+	seen   visited
+	pal    *actionsState
+	recent []palette.Item
+	last   clicked
 }
 
 const machinesKey = "\x00machines"
@@ -75,6 +81,9 @@ func newShell(ctx context.Context, d Deps) shell {
 		focus: ui.PaneMaster, reads: map[string]read{}, lists: map[string]ui.List{}, asked: map[string]bool{}, samples: map[string][]int{},
 		states: map[string]screen.State{}, gens: map[string]int{}, held: &held{}}
 	s.nodes = tree(d.Here, nil)
+	if d.Opens != "" && d.Opens != d.Here.Machine {
+		s.at = d.Opens
+	}
 	s.side = s.sectionEntry()
 	s.asked[s.key(s.current(), s.section())] = true
 	return s
@@ -124,10 +133,13 @@ func (s shell) fetch(key string, w []string) tea.Cmd {
 
 func (s shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m, cmd := s.update(msg)
-	if next, ok := m.(shell); ok {
-		next.hold()
+	next, ok := m.(shell)
+	if !ok {
+		return m, cmd
 	}
-	return m, cmd
+	next.hold()
+	next, spin := next.spin()
+	return next, tea.Batch(cmd, spin)
 }
 
 func (s shell) update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -144,12 +156,18 @@ func (s shell) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return s.stepDone(msg)
 	case toasted:
 		return s.faded(msg.id), nil
+	case spun:
+		return s.turned()
 	case called:
 		return s.finished(msg)
 	case ticked:
 		return s.relive(msg)
 	case tea.KeyPressMsg:
 		return s.press(msg)
+	case tea.MouseClickMsg:
+		return s.click(msg.Mouse())
+	case tea.MouseWheelMsg:
+		return s.wheel(msg.Mouse())
 	}
 	return s, nil
 }
@@ -186,6 +204,9 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, cmd)
 			}
 		}
+		var cmd tea.Cmd
+		s, cmd = s.load()
+		cmds = append(cmds, cmd)
 	}
 	if msg.key == s.key(s.nodes[0], section.Activity) && r.err == nil {
 		s.samples = sampled(s.samples, msg.page)
@@ -213,6 +234,12 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if s.sheet {
 		s.sheet = false
 		return s, nil
+	}
+	if s.sw != nil {
+		return s.switching(k)
+	}
+	if s.pal != nil {
+		return s.choosing(k)
 	}
 	if s.dialog != nil {
 		return s.asking(k)
@@ -245,9 +272,20 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return s.back()
 	case "n":
 		return s.create()
+	case "m":
+		s.sw = &switcher{}
+	case "ctrl+p":
+		return s.actions()
+	case "-":
+		return s.previous()
 	default:
 		if s.focus == ui.PaneSidebar {
 			return s.sidebar(key)
+		}
+		if n, ok := s.unanswered(); ok {
+			if pressed, cmd, ok := s.unansweredPress(n, key); ok {
+				return pressed, cmd
+			}
 		}
 		if sc := s.screen(); sc != nil && s.read() {
 			if e, ok := sc.Press(key, s.view()); ok {
@@ -264,7 +302,22 @@ func (s shell) read() bool {
 	return r.done && r.err == nil
 }
 
+// invariant: SPEC §9.3: q asks before it ends a call this session still
+// runs; ctrl+c over that question quits.
 func (s shell) quit() (tea.Model, tea.Cmd) {
+	if n := s.running(); n > 0 && (s.acts.modal == nil || !s.acts.modal.quit) {
+		calls := "1 call still runs"
+		if n > 1 {
+			calls = strconv.Itoa(n) + " calls still run"
+		}
+		s.dialog = nil
+		s.acts.modal = &modal{question: calls + " here: quit anyway?", quit: true}
+		return s, nil
+	}
+	return s.leave()
+}
+
+func (s shell) leave() (tea.Model, tea.Cmd) {
 	s.cancel()
 	return s, tea.Quit
 }
@@ -314,6 +367,7 @@ func (s shell) back() (tea.Model, tea.Cmd) {
 }
 
 func (s shell) open(name string) (tea.Model, tea.Cmd) {
+	s.seen = s.seen.left(s.current().name, name)
 	s.at, s.sec = name, 0
 	s.side = s.sectionEntry()
 	if s.focus == ui.PaneDetail {
@@ -560,7 +614,7 @@ func (s shell) cycle(step int) ui.Pane {
 	if s.detailed() {
 		panes = append(panes, ui.PaneDetail)
 	}
-	if _, waits := s.waiting(); waits {
+	if _, waits := s.waiting(); waits || s.overflows() {
 		panes = append(panes, ui.PaneProgress)
 	}
 	i := max(slices.Index(panes, s.focus), 0)
@@ -802,6 +856,7 @@ func (s shell) awake(n node) string {
 func (s shell) View() tea.View {
 	v := tea.NewView(s.frame().Render())
 	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
 	v.WindowTitle = "station"
 	return v
 }
@@ -836,6 +891,9 @@ func (s shell) frame() ui.Shell {
 		f.Master = ui.Panel{Title: title, Lines: []string{" " + ui.Glyph(page.Awaiting) + " " + s.section().Title() + ui.Sep + "reading " + s.current().label}}
 	case r.err != nil:
 		f.Master = ui.Panel{Title: title, Lines: ui.ErrorBlock(*r.err, s.dark)}
+		if n, ok := s.unanswered(); ok {
+			f.Master.Lines = s.unansweredLines(n)
+		}
 	case s.matrix():
 		m := s.cell(key)
 		f.Master = ui.Panel{Title: m.Title(s.section().Title(), s.current().label), Lines: m.Lines(f, width, room, s.focus == ui.PaneMaster || s.focus == ui.PaneDetail)}
@@ -880,6 +938,12 @@ func (s shell) frame() ui.Shell {
 		f.Sheet = s.keySheet()
 	}
 	f.Dialog = s.dialogPanel()
+	if p := s.switcherPanel(); p != nil {
+		f.Dialog = p
+	}
+	if p := s.actionsPanel(); p != nil {
+		f.Dialog = p
+	}
 	return f
 }
 

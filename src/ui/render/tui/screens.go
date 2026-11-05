@@ -11,11 +11,23 @@ import (
 )
 
 const (
-	Ellipsis = token.Ellipsis
-	label    = 12
-	graphMax = 30
-	graphMin = 4
+	Ellipsis  = token.Ellipsis
+	Arrow     = token.Arrow
+	FleetMark = token.Fleet
+	label     = 12
+	graphMax  = 30
+	graphMin  = 4
 )
+
+func Keyed(text, key string, width int) string {
+	// value: a line of a list a modal draws: its text cut to the room, then
+	// its key in a column of its own (the palette's entries).
+	k := ""
+	if key != "" {
+		k = atom.KeyName(key)
+	}
+	return atom.Pad(atom.End(text, width-12), width-9) + k
+}
 
 type Activity struct {
 	// value: an Activity screen's parts, as its page has them, to draw.
@@ -156,18 +168,21 @@ func (a Ask) Panel() Panel {
 	case a.Type == "":
 		lines = append(lines, "", " y "+yes+"   n no")
 	case a.Input == a.Type:
-		lines = append(lines, "", " Type "+a.Type+" to confirm: "+a.Input+"_", "", " enter "+yes+"   esc keep it")
+		lines = append(lines, "", " Type "+a.Type+" to "+yes+" it: "+a.Input+"_", "", " enter "+yes+"   esc keep it")
 	default:
-		lines = append(lines, "", " Type "+a.Type+" to confirm: "+a.Input+"_", "", " enter is off until you type "+a.Type+"   esc keep it")
+		lines = append(lines, "", " Type "+a.Type+" to "+yes+" it: "+a.Input+"_", "", " enter is off until you type "+a.Type+"   esc keep it")
 	}
 	return Panel{Title: a.Question, Lines: lines}
 }
 
 type Form struct {
 	// value: a form on the screen, its fields' labels, answers and notes, the
-	// cursor on one.
+	// cursor on one; a secret's answer is drawn masked, a choice's with the
+	// values it turns through.
 	Title                 string
 	Labels, Values, Notes []string
+	Secret                []bool
+	Options               [][]string
 	At                    int
 }
 
@@ -179,12 +194,27 @@ func (f Form) Panel() Panel {
 		if i == f.At {
 			lead = token.Cursor + " "
 		}
-		line := " " + lead + atom.Pad(l, 14) + f.Values[i]
-		if i == f.At {
-			line += "_"
+		value := f.Values[i]
+		if i < len(f.Secret) && f.Secret[i] {
+			value = strings.Repeat("•", len([]rune(value)))
 		}
-		if i < len(f.Notes) && f.Notes[i] != "" {
-			line += "   " + f.Notes[i]
+		choice := i < len(f.Options) && len(f.Options[i]) > 0
+		switch {
+		case choice:
+			value = token.KeyLeft + " " + value + " " + token.KeyRight
+		case i == f.At:
+			value += "_"
+		}
+		line := " " + lead + atom.Pad(l, max(14, len([]rune(l))+2)) + value
+		note := ""
+		if i < len(f.Notes) {
+			note = f.Notes[i]
+		}
+		if choice && note == "" {
+			note = strings.Join(f.Options[i], token.Sep)
+		}
+		if note != "" {
+			line += "   " + note
 		}
 		lines = append(lines, line)
 	}

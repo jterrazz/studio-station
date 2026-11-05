@@ -19,6 +19,7 @@ import (
 	imagesscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/images"
 	matrixscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/matrix"
 	overviewscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/overview"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	settingsscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/settings"
 	sshscreen "github.com/jterrazz/studio-station/src/surface/tui/screens/ssh"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
@@ -49,6 +50,8 @@ type task struct {
 	n, total int
 	// value: the call prints what its toast copies (a VM's ssh command).
 	copy bool
+	// value: when the call started, for the seconds the strip says it ran.
+	began time.Time
 }
 
 // value: a question put, the one modal of the shell (SPEC §9.8): yes or no,
@@ -62,6 +65,11 @@ type modal struct {
 	at       int
 	pick     func(string) gesture.Gesture
 	task     task
+	// value: the answers of the form the task's command asked first, held
+	// while its question is put, then dropped with the modal.
+	values map[string]string
+	// value: the question q asks while a call of this session still runs.
+	quit bool
 }
 
 // value: what the actions of this session hold: its tasks, its modal, the
@@ -72,7 +80,14 @@ type acts struct {
 	modal  *modal
 	ticked map[string]map[string]bool
 	shown  map[string]shown
+	// value: the spinner's frame, turned once a second while a call runs.
+	frame    int
+	spinning bool
 }
+
+// value: the strip shows this many calls; the rest are counted on one line
+// until tab opens them all (SPEC §9.1).
+const stripLines = 3
 
 type shown struct {
 	cursor string
@@ -82,12 +97,15 @@ type shown struct {
 }
 
 type stepped struct {
-	t    task
-	said []string
-	err  error
+	t      task
+	values map[string]string
+	said   []string
+	err    error
 }
 
 type toasted struct{ id int }
+
+type spun struct{}
 
 func (s shell) pageOf(key string) (page.Page, bool) {
 	r, ok := s.reads[key]
@@ -199,6 +217,13 @@ func (s shell) perform(g gesture.Gesture) (shell, tea.Cmd) {
 		return s, nil
 	case g.Visit != nil:
 		return s.visit(*g.Visit)
+	case g.Values != nil:
+		f := &screen.Form{Title: g.Values.Title}
+		for _, x := range g.Values.Fields {
+			f.Fields = append(f.Fields, screen.Field{Label: x.Label, Note: x.Note, Secret: x.Secret})
+		}
+		s.dialog = &dialog{call: screen.Call{Form: f}, answers: make([]string, len(f.Fields)), values: g.Values}
+		return s, nil
 	case g.Pick != nil:
 		s.acts.modal = &modal{question: g.Pick.Title, options: g.Pick.Options, pick: g.Pick.Then}
 		return s, nil
@@ -258,7 +283,7 @@ func (s shell) fade(id int) tea.Cmd {
 
 func (s shell) outside(done string, run func() error) (shell, tea.Cmd) {
 	s.acts.next++
-	t := task{id: s.acts.next, step: gesture.Step{Doing: done, Done: done}, n: 1, total: 1}
+	t := task{id: s.acts.next, step: gesture.Step{Doing: done, Done: done}, n: 1, total: 1, began: time.Now()}
 	s.acts.tasks = append(slices.Clone(s.acts.tasks), t)
 	return s, func() tea.Msg { return stepped{t: t, err: run()} }
 }
@@ -268,13 +293,27 @@ func (s shell) start(t task, a Answer) (shell, tea.Cmd) {
 		s.acts.next++
 		t.id = s.acts.next
 	}
-	t.state = running
+	t.state, t.began = running, time.Now()
 	s.acts.tasks = append(slices.DeleteFunc(slices.Clone(s.acts.tasks), func(x task) bool { return x.id == t.id }), t)
 	ctx, do, words := s.ctx, s.deps.Do, t.step.Words
 	return s, func() tea.Msg {
 		said, err := do(ctx, words, a)
-		return stepped{t: t, said: said, err: err}
+		msg := stepped{t: t, said: said, err: err}
+		if _, asked := errors.AsType[*Asked](err); asked {
+			msg.values = a.Values
+		}
+		return msg
 	}
+}
+
+// value: the form's answers by their input's name, handed to its command;
+// the dialog that held them is gone.
+func (s shell) handed(v gesture.Values, answers []string) (shell, tea.Cmd) {
+	values := make(map[string]string, len(v.Fields))
+	for i, f := range v.Fields {
+		values[f.Name] = answers[i]
+	}
+	return s.start(task{step: v.Step, n: 1, total: 1, stale: s.stale()}, Answer{Values: values})
 }
 
 func (s shell) stepDone(msg stepped) (tea.Model, tea.Cmd) {
@@ -282,7 +321,7 @@ func (s shell) stepDone(msg stepped) (tea.Model, tea.Cmd) {
 	var asked *Asked
 	if errors.As(msg.err, &asked) {
 		s.acts.tasks = slices.DeleteFunc(slices.Clone(s.acts.tasks), func(x task) bool { return x.id == t.id })
-		m := &modal{question: question(t.step), name: asked.Name, task: t}
+		m := &modal{question: question(t.step), name: asked.Name, task: t, values: msg.values}
 		if asked.Name != "" {
 			m.lines = []string{asked.Message}
 		}
@@ -405,7 +444,7 @@ func (s shell) answering(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				return s, nil
 			}
 			s.acts.modal = nil
-			return s.start(m.task, Answer{Typed: m.typed})
+			return s.start(m.task, Answer{Typed: m.typed, Values: m.values})
 		case "backspace":
 			if r := []rune(m.typed); len(r) > 0 {
 				m.typed = string(r[:len(r)-1])
@@ -417,7 +456,10 @@ func (s shell) answering(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		switch key {
 		case "y":
 			s.acts.modal = nil
-			return s.start(m.task, Answer{Yes: true})
+			if m.quit {
+				return s.leave()
+			}
+			return s.start(m.task, Answer{Yes: true, Values: m.values})
 		case "n":
 			s.acts.modal = nil
 			return s, nil
@@ -448,6 +490,8 @@ func (m modal) panel() ui.Panel {
 		}
 	case m.name != "":
 		p.Lines = append(p.Lines, " Type "+m.name+" to go on:", " "+ui.Typed+" "+m.typed)
+	case m.quit:
+		p.Lines = append(p.Lines, " It stops with station, what it finished staying done.", "", " y quit   n keep working")
 	default:
 		p.Lines = append(p.Lines, " "+m.question)
 	}
@@ -461,8 +505,40 @@ func (m modal) keys() []ui.Binding {
 	case m.name != "":
 		return []ui.Binding{bind("type", "the name"), bind("enter", "go on"), bind("esc", "cancel")}
 	}
+	if m.quit {
+		return []ui.Binding{bind("y", "quit"), bind("n", "keep working"), bind("esc", "keep working")}
+	}
 	return []ui.Binding{bind("y", "yes"), bind("n", "no"), bind("esc", "no")}
 }
+
+func (s shell) running() int {
+	n := 0
+	for _, t := range s.acts.tasks {
+		if t.state == running {
+			n++
+		}
+	}
+	return n
+}
+
+// invariant: the spinner turns once a second while a call runs, and stops
+// with the last one, so an idle screen draws nothing.
+func (s shell) spin() (shell, tea.Cmd) {
+	if s.acts.spinning || s.running() == 0 {
+		return s, nil
+	}
+	s.acts.spinning = true
+	return s, tea.Tick(time.Second, func(time.Time) tea.Msg { return spun{} })
+}
+
+func (s shell) turned() (shell, tea.Cmd) {
+	s.acts.frame++
+	s.acts.spinning = false
+	return s.spin()
+}
+
+// value: the strip opened to every call once it holds more than it shows.
+func (s shell) overflows() bool { return len(s.acts.tasks) > stripLines }
 
 // value: the failure waiting first, the one the strip's keys answer.
 func (s shell) waiting() (task, bool) {
@@ -552,7 +628,10 @@ func (s shell) strip() []ui.Task {
 			if t.total > 1 {
 				text += ui.Sep + strconv.Itoa(t.n) + "/" + strconv.Itoa(t.total)
 			}
-			out = append(out, ui.Task{Mark: page.Awaiting, Text: text})
+			if ran := int(time.Since(t.began).Seconds()); !t.began.IsZero() && ran > 0 {
+				text += ui.Sep + strconv.Itoa(ran) + " s"
+			}
+			out = append(out, ui.Task{Mark: page.Awaiting, Text: text, Frame: s.acts.frame})
 		case succeeded:
 			out = append(out, ui.Task{Mark: page.OK, Text: t.step.Done})
 		case failedTask:
@@ -562,6 +641,10 @@ func (s shell) strip() []ui.Task {
 			}
 			out = append(out, ui.Task{Mark: page.Broken, Text: text, Keys: t.keys()})
 		}
+	}
+	if len(out) > stripLines && s.focus != ui.PaneProgress {
+		more := len(out) - stripLines
+		return append(out[:stripLines], ui.Task{More: true, Text: "+" + strconv.Itoa(more) + " more" + ui.Sep + "tab to open"})
 	}
 	return out
 }

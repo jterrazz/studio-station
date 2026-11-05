@@ -14,6 +14,9 @@ func Gesture(p page.Page, a page.Action, rows []page.Row) (gesture.Gesture, bool
 	// invariant: a Needs-you line's fix is station's when it is a station
 	// command: enter runs it; any other fix is yours: enter shows it, to copy
 	// or to follow, and runs nothing.
+	if a.ID == pagehome.ActionStartEngine {
+		return gesture.Gesture{Steps: []gesture.Step{{Words: []string{"engine", "start"}, Doing: "Starting the engine", Done: "Started the engine"}}}, true
+	}
 	if a.Key != pagehome.KeyFix || len(rows) != 1 {
 		return gesture.Gesture{}, false
 	}
