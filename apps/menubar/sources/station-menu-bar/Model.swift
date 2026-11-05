@@ -25,6 +25,7 @@ final class Model: ObservableObject {
     private var watching: Task<Void, Never>?
     private var pushing: Task<Void, Never>?
     private var watched: String?
+    private var generation = 0
     private var asked = false
 
     var icon: MenuBarIcon { MenuBarIcon.of(connection: state.connection, page: state.page, sparkline: sparkline) }
@@ -52,14 +53,19 @@ final class Model: ObservableObject {
     }
 
     // invariant: a pushed page is watched only while it is shown: opening
-    // another or going back ends its watch (SPEC §10.3).
+    // another or going back ends its watch (SPEC §10.3), and a page of the
+    // watch ended never comes back.
     func push(_ page: String) {
         pushing?.cancel()
         state.confirming = nil
+        generation += 1
+        let mine = generation
         watched = page
         let sub = Subscription(path: socket, pages: [page]) { event in
             guard case .page(let p) = event else { return }
-            Task { @MainActor in self.state.pushed = p }
+            Task { @MainActor in
+                if self.generation == mine { self.state.pushed = p }
+            }
         }
         pushing = Task.detached { await sub.run() }
     }
@@ -78,6 +84,7 @@ final class Model: ObservableObject {
     func back() {
         pushing?.cancel()
         pushing = nil
+        generation += 1
         watched = nil
         state.pushed = nil
         state.search = ""
