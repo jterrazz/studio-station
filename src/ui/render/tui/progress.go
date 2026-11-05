@@ -38,8 +38,7 @@ func (s Shell) progressLines(st token.Styles) []string {
 		case t.More:
 			mark = ""
 		case t.Mark == page.Awaiting:
-			frames := []rune(token.Spinner)
-			mark = atom.Tone(st, page.Awaiting).Render(string(frames[t.Frame%len(frames)])) + " "
+			mark = atom.Tone(st, page.Awaiting).Render(atom.Frame(t.Frame)) + " "
 		case t.Mark == page.OK:
 			mark = atom.Tone(st, page.OK).Render(Tick) + " "
 		}

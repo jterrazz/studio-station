@@ -8,7 +8,6 @@ import (
 
 	"github.com/jterrazz/studio-station/src/core/machine"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
-	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
 // value: Switch machine (SPEC §9.6), the modal m opens: its filter, typed,
@@ -76,7 +75,7 @@ func (s shell) nodeNamed(name string) (node, bool) {
 
 func (s shell) choiceLine(n node, tree bool) string {
 	if n.all() {
-		return token.Fleet + " " + allMachines
+		return ui.FleetMark + " " + allMachines
 	}
 	lead := ""
 	if tree && n.kind != machine.Mac {

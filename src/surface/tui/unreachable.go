@@ -5,11 +5,11 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
-	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
 // value: the Mac shown does not answer: the machines read says so, and its
@@ -56,9 +56,9 @@ func (s shell) unansweredLines(n node) []string {
 	if len(fix) > 1 && fix[1] == "unlock" {
 		lines = append(lines, "   "+ui.Glyph(page.Attention)+" It runs a server: after a power cut, its disk unlock needs you", "",
 			" Likely: it restarted after a power cut and waits at the FileVault unlock.",
-			" Tailscale starts only after the disk is unlocked, so unlock it from the",
+			" "+catalog.TailnetProduct+" starts only after the disk is unlocked, so unlock it from the",
 			" same network as "+n.label+":", "",
-			"   "+token.Arrow+" u Unlock"+ui.Ellipsis+"   station "+strings.Join(fix, " ")+"   (asks its password)")
+			"   "+ui.Arrow+" u Unlock"+ui.Ellipsis+"   station "+strings.Join(fix, " ")+"   (asks its password)")
 	}
 	for _, x := range s.nodes {
 		if x.mac == n.name && x.kind == machine.Server {

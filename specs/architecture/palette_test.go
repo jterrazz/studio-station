@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
-	"github.com/jterrazz/studio-station/src/surface/tui/palette"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/palette"
 )
 
 // value: the targets the palette is judged on, one per machine of the

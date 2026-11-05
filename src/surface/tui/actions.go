@@ -7,11 +7,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/surface/tui/palette"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/palette"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
-	"github.com/jterrazz/studio-station/src/ui/atom"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
-	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
 // value: the palette ctrl+p opens (SPEC §9.5): its query, its cursor and
@@ -152,11 +150,7 @@ func (s shell) actionsPanel() *ui.Panel {
 		if it.Confirm != "" {
 			text += ui.Sep + it.Confirm
 		}
-		key := ""
-		if it.Key != "" {
-			key = atom.KeyName(it.Key)
-		}
-		p.Lines = append(p.Lines, lead+atom.Pad(atom.End(text, width-12), width-9)+key)
+		p.Lines = append(p.Lines, lead+ui.Keyed(text, it.Key, width))
 	}
 	if len(items) == 0 {
 		p.Lines = append(p.Lines, " Nothing "+on+" matches "+s.pal.query+".")
@@ -168,7 +162,7 @@ func (s shell) actionsPanel() *ui.Panel {
 		}
 	}
 	next := ts[(s.pal.target+1)%len(ts)]
-	p.Lines = append(p.Lines, "", " tab "+on+" "+token.Arrow+" on "+next.Label+"   enter run   esc close")
+	p.Lines = append(p.Lines, "", " tab "+on+" "+ui.Arrow+" on "+next.Label+"   enter run   esc close")
 	return &p
 }
 

@@ -12,11 +12,11 @@ runs:
           see infra always on
           send ]]]]]
           see All machines › This Mac › Ports
-          see Error: lsof failed: what listens could not be read
+          see Error: what listens could not be read
           see Ports              ✗
           send ]
           see Accounts · This Mac
-          gone Error: lsof failed
+          gone Error: what listens
           send [[[[
           see Apps · This Mac
           send q

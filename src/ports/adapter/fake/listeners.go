@@ -24,9 +24,9 @@ func NewListeners(listening ...ports.Listener) *Listeners {
 	return ListenersOf(w, here)
 }
 
-// value: what a scripted fault of Listeners.Read answers, as lsof that
-// fails would.
-var errListeners = errors.New("lsof failed: what listens could not be read")
+// value: what a scripted fault of Listeners.Read answers, as a listeners
+// read that fails would.
+var errListeners = errors.New("what listens could not be read")
 
 func (l *Listeners) Read(context.Context) ([]ports.Listener, error) {
 	l.w.Lock()

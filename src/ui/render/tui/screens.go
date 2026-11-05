@@ -11,11 +11,23 @@ import (
 )
 
 const (
-	Ellipsis = token.Ellipsis
-	label    = 12
-	graphMax = 30
-	graphMin = 4
+	Ellipsis  = token.Ellipsis
+	Arrow     = token.Arrow
+	FleetMark = token.Fleet
+	label     = 12
+	graphMax  = 30
+	graphMin  = 4
 )
+
+func Keyed(text, key string, width int) string {
+	// value: a line of a list a modal draws: its text cut to the room, then
+	// its key in a column of its own (the palette's entries).
+	k := ""
+	if key != "" {
+		k = atom.KeyName(key)
+	}
+	return atom.Pad(atom.End(text, width-12), width-9) + k
+}
 
 type Activity struct {
 	// value: an Activity screen's parts, as its page has them, to draw.

@@ -12,7 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/surface/tui/palette"
+	"github.com/jterrazz/studio-station/src/surface/tui/screens/palette"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
 	ui "github.com/jterrazz/studio-station/src/ui/render/tui"
 )
