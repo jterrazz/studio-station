@@ -1,4 +1,4 @@
-description: 'every 80-column read: its first line, Needs you first, one line per calm section, the next steps; only the glyphs coloured'
+description: 'an 80-column read: first line, Needs you, one line per calm section, next steps, glyphs coloured'
 fixture:
     - ../../../__fixtures__/terminal/
 env:

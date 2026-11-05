@@ -74,10 +74,10 @@ func KeyName(key string) string {
 
 func Count(t page.Tally) string { return strconv.Itoa(t.N) + " " + Glyph(t.Mark) }
 
-// invariant: OU-01: in a value's text only its glyphs take their mark's
-// tone; the words around them stay in base, so a one-line section reads
-// `● 5 ok · ◐ 3 updates` with the two glyphs coloured and nothing else.
 func Paint(st token.Styles, base lipgloss.Style, v page.Value, text string) string {
+	// invariant: OU-01: in a value's text only its glyphs take their mark's
+	// tone; the words around them stay in base, so a one-line section reads
+	// `● 5 ok · ◐ 3 updates` with its two glyphs toned and nothing else.
 	marks := map[string]page.Mark{}
 	marksOf(v, marks)
 	if len(marks) == 0 || text == "" {
