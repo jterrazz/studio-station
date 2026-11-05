@@ -57,7 +57,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return io.Page(pageactivity.AllMachines(views, d.Here), pageactivity.AllMachinesContract(views, d.Now()))
+				return io.Page(pageactivity.AllMachines(views, d.Here, in.Graph > 0), pageactivity.AllMachinesContract(views, d.Now()))
 			}
 			v, err := one(ctx, d, env, env.Target(), read{history: in.History, graph: in.Graph})
 			if err != nil {
