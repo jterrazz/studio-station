@@ -39,7 +39,7 @@ func settingsCommand(env kit.Env, m machine) *cobra.Command {
 	children := func() []*cobra.Command {
 		return []*cobra.Command{
 			settingsdiff.Command(settingsdiff.Deps{Names: all, Here: m.where}, env),
-			settingsapply.Command(settingsapply.Deps{Names: all, Here: m.where}, env),
+			settingsapply.Command(settingsapply.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now}, env),
 			settingsoff.Command(settingsoff.Deps{Names: all, Here: m.where, Also: func(names []string) []string { return m.pauses(env, names) }}, env),
 		}
 	}
@@ -51,7 +51,7 @@ func settingsCommand(env kit.Env, m machine) *cobra.Command {
 func settingsAliases(env kit.Env, m machine) []*cobra.Command {
 	all := func() []string { return nil }
 	return []*cobra.Command{kit.Alias("config", settingscmd.Command(settingscmd.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now, Label: m.label}, env,
-		kit.Alias("install", settingsapply.Command(settingsapply.Deps{Names: all, Here: m.where}, env), "apply"),
+		kit.Alias("install", settingsapply.Command(settingsapply.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now}, env), "apply"),
 		kit.Alias("uninstall", settingsoff.Command(settingsoff.Deps{Names: all, Here: m.where}, env), "off"),
 	), "settings")}
 }
