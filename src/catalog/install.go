@@ -54,6 +54,9 @@ type ScriptInstall struct {
 	URL  string
 	Args []string
 	Env  []string
+	// value: the shell line that updates what the installer put, for an installer
+	// that refuses to run over its own install; empty, an update runs the installer.
+	Upgrade string
 }
 
 type ShellInstall struct{ Line string }
@@ -126,6 +129,10 @@ func Script(url string, args ...string) Install { return ScriptInstall{URL: url,
 
 func ScriptEnv(url string, env []string, args ...string) Install {
 	return ScriptInstall{URL: url, Args: args, Env: env}
+}
+
+func ScriptUpgrade(url string, env []string, upgrade string) Install {
+	return ScriptInstall{URL: url, Env: env, Upgrade: upgrade}
 }
 
 func lastSegment(name string) string {

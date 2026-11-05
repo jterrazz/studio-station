@@ -53,7 +53,21 @@ func (s *Script) Install(ctx context.Context, installs []catalog.Install, _ call
 }
 
 func (s *Script) Update(ctx context.Context, installs []catalog.Install, p call.Progress) error {
-	return s.Install(ctx, installs, p)
+	for _, i := range installs {
+		v, ok := i.(catalog.ScriptInstall)
+		if !ok || v.Upgrade == "" {
+			if err := s.Install(ctx, []catalog.Install{i}, p); err != nil {
+				return err
+			}
+			continue
+		}
+		c := local.Command("bash", "-c", v.Upgrade)
+		c.Env = v.Env
+		if err := local.Attach(ctx, s.run, c); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Script) Remove(context.Context, []catalog.Install, call.Progress) error {

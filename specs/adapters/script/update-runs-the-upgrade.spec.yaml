@@ -1,0 +1,11 @@
+description: 'an update of oh-my-zsh runs its own upgrade, never the installer again, which refuses a folder already there'
+fixture: ./__fixtures__/script-upgrade/
+runs:
+    - command: 'apps update ohmyzsh'
+      exit: 0
+      stdout: |
+          ●	ohmyzsh		script
+      files:
+          .calls:
+              equals: |
+                  bash [-c] [ZSH="$HOME/.oh-my-zsh" exec sh "$HOME/.oh-my-zsh/tools/upgrade.sh"]
