@@ -20,6 +20,10 @@ type Task struct {
 	Mark page.Mark
 	Text string
 	Keys []Binding
+	// value: the spinner's frame a running call draws in place of its mark;
+	// More is the line that counts the calls the strip leaves out.
+	Frame int
+	More  bool
 }
 
 func (s Shell) progressLines(st token.Styles) []string {
@@ -30,7 +34,13 @@ func (s Shell) progressLines(st token.Styles) []string {
 			lead = " " + st.Strong.Render("Progress") + "  "
 		}
 		mark := atom.Mark(st, t.Mark)
-		if t.Mark == page.OK {
+		switch {
+		case t.More:
+			mark = ""
+		case t.Mark == page.Awaiting:
+			frames := []rune(token.Spinner)
+			mark = atom.Tone(st, page.Awaiting).Render(string(frames[t.Frame%len(frames)])) + " "
+		case t.Mark == page.OK:
 			mark = atom.Tone(st, page.OK).Render(Tick) + " "
 		}
 		keys := ""

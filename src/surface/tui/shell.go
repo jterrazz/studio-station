@@ -124,10 +124,13 @@ func (s shell) fetch(key string, w []string) tea.Cmd {
 
 func (s shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m, cmd := s.update(msg)
-	if next, ok := m.(shell); ok {
-		next.hold()
+	next, ok := m.(shell)
+	if !ok {
+		return m, cmd
 	}
-	return m, cmd
+	next.hold()
+	next, spin := next.spin()
+	return next, tea.Batch(cmd, spin)
 }
 
 func (s shell) update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -144,6 +147,8 @@ func (s shell) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return s.stepDone(msg)
 	case toasted:
 		return s.faded(msg.id), nil
+	case spun:
+		return s.turned()
 	case called:
 		return s.finished(msg)
 	case ticked:
@@ -264,7 +269,22 @@ func (s shell) read() bool {
 	return r.done && r.err == nil
 }
 
+// invariant: SPEC §9.3: q asks before it ends a call this session still
+// runs; ctrl+c over that question quits.
 func (s shell) quit() (tea.Model, tea.Cmd) {
+	if n := s.running(); n > 0 && (s.acts.modal == nil || !s.acts.modal.quit) {
+		calls := "1 call still runs"
+		if n > 1 {
+			calls = strconv.Itoa(n) + " calls still run"
+		}
+		s.dialog = nil
+		s.acts.modal = &modal{question: calls + " here: quit anyway?", quit: true}
+		return s, nil
+	}
+	return s.leave()
+}
+
+func (s shell) leave() (tea.Model, tea.Cmd) {
 	s.cancel()
 	return s, tea.Quit
 }
@@ -560,7 +580,7 @@ func (s shell) cycle(step int) ui.Pane {
 	if s.detailed() {
 		panes = append(panes, ui.PaneDetail)
 	}
-	if _, waits := s.waiting(); waits {
+	if _, waits := s.waiting(); waits || s.overflows() {
 		panes = append(panes, ui.PaneProgress)
 	}
 	i := max(slices.Index(panes, s.focus), 0)

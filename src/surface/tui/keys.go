@@ -16,6 +16,7 @@ func (s shell) paneKeys() []ui.Binding {
 		if t, ok := s.waiting(); ok {
 			return t.keys()
 		}
+		return []ui.Binding{bind("tab", "next pane"), bind("esc", "back")}
 	case s.filtering:
 		return []ui.Binding{bind("type", "filter"), bind("enter", "keep"), bind("esc", "clear")}
 	case s.focus == ui.PaneSidebar:
