@@ -27,6 +27,8 @@ runs:
           see Keep This Mac awake until
           send \r
           see Awake until 18:00 · lid closed · on battery allowed
+          run /usr/bin/jq -e '.macs["jterrazz-macbook-pro"].power.holds == ["station: station awake until 18:00 --lid --battery"]' world.json >/dev/null
+          run /usr/bin/jq -e '.macs["jterrazz-mac-mini"].power.holds == ["station: never sleeps"]' world.json >/dev/null
           send j
           send c
           see Let mac-mini sleep again?
@@ -34,5 +36,6 @@ runs:
           see y allow sleep   n no
           send y
           see ○ mac-mini  Sleeps normally
+          run /usr/bin/jq -e '.macs["jterrazz-mac-mini"].power.holds == null' world.json >/dev/null
           send q
       exit: 0
