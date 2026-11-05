@@ -5,23 +5,9 @@ Updates
     → station apps update pnpm
   ◐ better-ui                     skill  update available
     → station apps update better-ui
-Not installed
-  ○ mise             brew · system  → station apps install mise
-  ○ mas              brew           → station apps install mas
-  ○ typewhisper      cask           → station apps install typewhisper
-  ○ frontend-design  skill          skills not installed
-    → station apps install skills
-Not managed
-  ? bun               mise  installed, mise not installed
-    → station apps install mise
-  ? go                mise  installed, mise not installed
-    → station apps install mise
-  ? java     17.0.20  mise  installed, mise not installed
-    → station apps install mise
-  ? python   3.14.6   mise  installed, mise not installed
-    → station apps install mise
-  ? chatgpt           cask  on PATH, not managed by cask
-OK  ● 6 · homebrew, uv, cocoapods, skills, claude-desktop, modern-web-guidance
+Not installed  ○ 4 · mise, mas, typewhisper, frontend-design
+Not managed    ? 5 · bun, go, java, python, chatgpt
+OK             ● 6 · homebrew, uv, cocoapods, skills, claude-desktop, …
 Not for this machine
   98 apps live on other machines
 

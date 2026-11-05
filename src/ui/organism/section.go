@@ -69,7 +69,7 @@ func AutoFolded(s page.Section) bool {
 	switch s.Fold {
 	case page.Folded:
 		return true
-	case page.Open:
+	case page.Open, page.Brief:
 		return false
 	case page.Auto:
 		rows := 0

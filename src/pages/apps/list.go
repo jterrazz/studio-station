@@ -38,8 +38,8 @@ func groupOf(s apps.State) group {
 }
 
 func List(reports []apps.Report, here page.Context, all bool) page.Page {
-	// invariant: the Apps page groups by attention (SPEC §5.3): Updates,
-	// Failed, Not installed, Not managed, then OK folded; what lives
+	// invariant: the Apps page groups by attention (SPEC §5.3): Updates and
+	// Failed open, then Not installed, Not managed and OK folded; what lives
 	// elsewhere is a count, unfolded with --all.
 	p := page.Page{
 		ID:      "apps",
@@ -71,8 +71,12 @@ func List(reports []apps.Report, here page.Context, all bool) page.Page {
 		}
 		g := groupOf(state)
 		fold := page.Open
-		if state == apps.OK && !all {
+		switch {
+		case all:
+		case state == apps.OK:
 			fold = page.Folded
+		case state == apps.NotInstalled, state == apps.NotManaged:
+			fold = page.Brief
 		}
 		p.Sections = append(p.Sections, page.Section{ID: g.id, Title: g.title, Fold: fold, Columns: Columns(), Items: items, PipeCounts: true})
 	}

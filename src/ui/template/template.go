@@ -50,7 +50,7 @@ func body(st token.Styles, p page.Page, width int) []string {
 		case i == first && s.Joined && len(s.Items) > 0:
 			lines = append(lines, organism.Title(st, s), "")
 			lines = append(lines, organism.Rows(st, s, width)...)
-		case s.Fold == page.Folded:
+		case s.Fold == page.Folded || s.Fold == page.Brief:
 			lines = append(lines, folded(st, s, fold, width))
 		default:
 			lines = append(lines, organism.Section(st, s, width)...)
@@ -141,7 +141,7 @@ func unindent(l string) string {
 func foldWidth(sections []page.Section) int {
 	n := 0
 	for _, s := range sections {
-		if s.Fold == page.Folded {
+		if s.Fold == page.Folded || s.Fold == page.Brief {
 			n = max(n, atom.Width(s.Title))
 		}
 	}

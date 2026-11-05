@@ -74,6 +74,9 @@ const (
 	Open   Fold = "open"
 	Folded Fold = "folded"
 	Auto   Fold = "auto"
+	// value: one line on a terminal's page, open in the TUI and the menu bar
+	// (vision 07 "station apps" folds Not installed; screen 2 lists it).
+	Brief Fold = "brief"
 )
 
 type Column struct {
