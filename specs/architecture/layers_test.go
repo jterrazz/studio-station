@@ -748,6 +748,7 @@ func rules() []rule {
 		{"Levels", ruleLevels, "src/ui/atom/mutant_levels.go", "package atom\n\nimport _ \"" + module + "/src/ui/render/json\"\n", "src/ui/atom/mutant_levels.go"},
 		{"LevelsDomain", ruleLevels, "src/ui/organism/mutant_levels.go", "package organism\n\nimport _ \"" + module + "/src/domain/tools\"\n", "src/ui/organism/mutant_levels.go"},
 		{"Semantic", ruleSemantic, "src/pages/tools/mutant_semantic.go", "package tools\n\nfunc Line() string { return \"\" }\n", "src/pages/tools/mutant_semantic.go"},
+		{"TUILoadingLaw", ruleTUILoading, "src/surface/tui/mutant_loading.go", "package tui\n\nimport \"context\"\n\nfunc (s shell) mutantView() string {\n\tp, _ := s.deps.Pages(context.Background(), nil)\n\treturn p.Command\n}\n", "src/surface/tui/mutant_loading.go"},
 		{"Glyphs", ruleGlyphs, "src/surface/cli/tools/mutant_glyphs.go", "package toolscmd\n\nconst mutantMark = \"\u25cf\"\n", "src/surface/cli/tools/mutant_glyphs.go"},
 		{"Presentation", rulePresentation, "src/page/mutant_presentation.go", "package page\n\ntype mutantStyled struct{ Tone int }\n", "src/page/mutant_presentation.go"},
 		{"Keys", ruleKeys, "src/surface/tui/screens/tools/mutant_keys.go", "package toolsscreen\n\nimport tea \"" + tea + "\"\n\nfunc mutantKey(k tea.KeyPressMsg) bool {\n\tswitch k.String() {\n\tcase \"z\":\n\t\treturn true\n\t}\n\treturn false\n}\n", "src/surface/tui/screens/tools/mutant_keys.go"},
