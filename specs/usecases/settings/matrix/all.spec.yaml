@@ -28,9 +28,11 @@ runs:
           ○	dock-spacer	○	○	–	?	0/2
           ○	backup-exclusions	○	○	–	?	0/2
           ○	tart-launcher	○	○	–	?	0/2
+          ○	git-shortcuts	○	○	○	?	0/3
+          ○	docker-shortcuts	○	○	○	?	0/3
           # Always-on Mac
           ●	autologin	○	●	–	?	1/1
-          ●	power	○	●	–	?	1/1
+          ●	restart-after-power-cut	○	●	–	?	1/1
           ●	never-sleeps	○	●	–	?	1/1
           ○	lock-after-login	○	○	–	?	0/1
           ○	sshd	○	○	–	?	0/1
