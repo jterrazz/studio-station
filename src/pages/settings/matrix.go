@@ -71,8 +71,10 @@ func machinesSection(m settings.Matrix, now time.Time, label func(string) string
 // why there is none.
 func standing(c settings.Column, now time.Time) (page.Mark, page.Reason, []string) {
 	switch {
-	case c.Away == settings.Silent && c.Mac:
+	case c.Away == settings.Silent && c.Mac && !c.Answered.IsZero():
 		return page.Broken, page.Unreachable, []string{"does not answer", "last answer " + pages.LastAnswer(c.Answered, now)}
+	case c.Away == settings.Silent && c.Mac:
+		return page.Broken, page.Unreachable, []string{"does not answer"}
 	case c.Away == settings.Silent:
 		return page.Broken, page.Unreachable, []string{"its Mac does not answer"}
 	case c.Why != "":
