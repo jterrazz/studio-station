@@ -1,4 +1,4 @@
-description: 'e edits linux-1''s size in a form, c copies its ssh command; e on infra edits its health check'
+description: 'e edits linux-1''s size and infra''s health check; c copies the ssh command of each'
 fixture:
     - ../../__fixtures__/terminal/
 env:
@@ -42,5 +42,8 @@ runs:
           send \r
           see Edited infra
           run "$STATION" machines infra --on mac-mini | /usr/bin/grep -q "infra:6443"
+          send c
+          see Copied ssh admin@infra
+          run /usr/bin/grep -qx 'ssh admin@infra' clipboard
           send q
       exit: 0

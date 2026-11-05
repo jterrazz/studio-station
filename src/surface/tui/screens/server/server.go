@@ -48,7 +48,7 @@ func (Screen) Press(key string, v screen.View) (screen.Effect, bool) {
 	m := v.Machine
 	name := m.Name
 	if key == "c" {
-		return screen.Effect{Call: &screen.Call{Words: []string{"machines", string(section.SSH), name}, Copy: true, Doing: "Reading the command that reaches " + name}}, true
+		return screen.Effect{Call: &screen.Call{Words: append([]string{"machines", string(section.SSH), name}, on(m)...), Copy: true, Doing: "Reading the command that reaches " + name}}, true
 	}
 	if v.Section == section.SSH {
 		return screen.Effect{}, false
