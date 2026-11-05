@@ -9,11 +9,11 @@ runs:
       exit: 0
       stdout: |
           "off"
-          [5173,"not-listening","http://127.0.0.1:{{port}}","Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console"]
-          [5432,"local-only","127.0.0.1:{{port}}","Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console"]
-          [8081,"local-only","http://127.0.0.1:{{port}}","Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console"]
+          [5173,"not-listening","http://127.0.0.1:{{port}}","Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console"]
+          [5432,"local-only","127.0.0.1:{{port}}","Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console"]
+          [8081,"local-only","http://127.0.0.1:{{port}}","Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console"]
           ○	api	5173	http://127.0.0.1:{{port}}	not listening · reserved 42241		vite
-          ◐	api	5432	127.0.0.1:{{port}}	local only · Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console
-          ◐	api	8081	http://127.0.0.1:{{port}}	local only · Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console		expo
+          ◐	api	5432	127.0.0.1:{{port}}	local only · Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console
+          ◐	api	8081	http://127.0.0.1:{{port}}	local only · Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console		expo
           station-test 8081
           2

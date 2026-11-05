@@ -77,7 +77,7 @@ Unpublishing runs the same line ending `off`. `https` `off`, and any other word,
 
 tailscaled issues the host's certificate at the first https request, 34.5 s measured, so the engine warms it: at its start with Serve on, and when Serve turns on, it runs `tailscale cert --cert-file=- --key-file=- <host>` in the background, its output thrown away (`/dev/null` is refused as not a regular file), one at a time, within 120 s, never holding a publish. Meanwhile every row served `--https` says `issuing certificate` (`◐`, its URL unchanged); `engine.log` then says `certificate for <host> ready in <d>` or `not issued:` with tailscale's line.
 
-With Serve off no serve runs (one would block waiting for the admin): every lease is local only, every row of the host says `Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console`, and every public URL is the local one; `engine.log` says it once per change. Serve turning on serves every published lease at the next read.
+With Serve off no serve runs (one would block waiting for the admin): every lease is local only, every row of the host says `Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console`, and every public URL is the local one; `engine.log` says it once per change. Serve turning on serves every published lease at the next read.
 
 Station owns only the serve entries on its range (both kinds) or under `/<vm>/` of its VMs (`path`), and, while Serve is on, removes the ones no lease justifies at the engine's start and when Serve turns on; it never touches another entry.
 

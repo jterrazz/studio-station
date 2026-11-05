@@ -5,7 +5,7 @@ runs:
     - command: '--version >/dev/null; : > answers/tailscale/status.serve-off; "$STATION" status --json | /usr/bin/jq -c ''.gateways[] | select(.name == "Tailscale Serve")'''
       exit: 0
       stdout: |
-          {"name":"Tailscale Serve","state":"degraded","value":"off","detail":"Tailscale HTTPS is off: enable HTTPS certificates in the Tailscale admin console"}
+          {"name":"Tailscale Serve","state":"degraded","value":"off","detail":"Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console"}
     - command: '--version >/dev/null; : > answers/tailscale/status.serve-off; "$STATION" ports --json | /usr/bin/jq -r ''.tailscale.serve, .tailscale.dns_name'''
       exit: 0
       stdout: |
