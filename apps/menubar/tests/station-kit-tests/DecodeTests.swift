@@ -4,7 +4,7 @@ import XCTest
 final class DecodeTests: XCTestCase {
     func testEveryFixtureDecodesAndSurvivesARoundTrip() throws {
         let fixtures = try Tree.fixtures()
-        XCTAssertEqual(fixtures.count, 100)
+        XCTAssertEqual(fixtures.count, 104)
         for (name, data) in fixtures {
             let page = try Page.decode(data)
             XCTAssertEqual(try Page.decode(page.encoded()), page, name)

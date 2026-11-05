@@ -629,6 +629,9 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 		if v.Stale {
 			styled = st.Muted.Render(text)
 		}
+		if m := page.Mark(v.Label); v.Kind == page.KindText && v.Text == "" && text == atom.Glyph(m) {
+			styled = atom.Tone(st, m).Render(text)
+		}
 		if text == "" {
 			styled = ""
 		}

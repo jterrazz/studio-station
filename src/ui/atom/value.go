@@ -59,7 +59,10 @@ func show(v page.Value) string {
 	// counts do, `47 ●`.
 	if g := Glyph(page.Mark(v.Label)); g != "" && v.Kind != page.KindLevels && (v.Kind != page.KindCount || v.Unit != "") {
 		v.Label = ""
-		return g + " " + show(v)
+		if rest := show(v); rest != "" {
+			return g + " " + rest
+		}
+		return g
 	}
 	switch v.Kind {
 	case page.KindNone, "", page.KindPending, page.KindListing:

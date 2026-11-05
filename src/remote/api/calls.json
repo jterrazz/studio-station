@@ -480,6 +480,13 @@
       "watch": true
     },
     {
+      "name": "settings.matrix",
+      "schema": "station.settings.matrix/v1",
+      "where": "in-process",
+      "in": "MatrixIn",
+      "out": "Matrix"
+    },
+    {
       "name": "settings.off",
       "schema": "station.settings.off/v1",
       "section": "settings",

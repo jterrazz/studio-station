@@ -58,7 +58,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		settingscalls.All(settingscalls.Deps{
 			Settings: config, Appliers: config.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),
 			Now: m.host.Clock.Now, Ask: ask, Shortcuts: shortcuts.New(m.host), Shell: m.shell(), Kind: kind,
-			Facts: m.facts(), Caps: m.profile.Caps,
+			Facts: m.facts(), Caps: m.profile.Caps, Fleet: settingsFleet{m},
 		}),
 	)
 	if err != nil {

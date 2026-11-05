@@ -1,0 +1,855 @@
+{
+  "schema": "station.page/v1",
+  "id": "settings",
+  "command": "settings --all-machines",
+  "context": {
+    "kind": "host"
+  },
+  "state": "loading",
+  "sections": [
+    {
+      "id": "machines",
+      "title": "Machines",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "29 settings"
+        },
+        {
+          "kind": "text",
+          "text": "4 machines"
+        },
+        {
+          "kind": "text",
+          "text": "16 need a look"
+        }
+      ],
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 40
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro",
+            "mark": "pending",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini",
+            "mark": "pending",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "linux-1",
+            "mark": "pending",
+            "label": "linux-1",
+            "short": "linux-1",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api",
+            "mark": "pending",
+            "label": "api",
+            "short": "api",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "infra",
+            "mark": "pending",
+            "label": "infra",
+            "short": "infra",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 5
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "needs-a-look",
+      "title": "Needs a look",
+      "columns": [
+        {
+          "key": "machine",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "setting",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro/ghostty-dotfiles",
+            "mark": "pending",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro/github-login",
+            "mark": "pending",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro/dock-reset",
+            "mark": "pending",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro/firewall",
+            "mark": "pending",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-macbook-pro/screen-lock",
+            "mark": "pending",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini/ghostty-dotfiles",
+            "mark": "pending",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini/github-login",
+            "mark": "pending",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini/dock-reset",
+            "mark": "pending",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini/firewall",
+            "mark": "pending",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini/screen-lock",
+            "mark": "pending",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "linux-1/ghostty-dotfiles",
+            "mark": "pending",
+            "label": "linux-1",
+            "short": "linux-1",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "linux-1/github-login",
+            "mark": "pending",
+            "label": "linux-1",
+            "short": "linux-1",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "linux-1/dock-reset",
+            "mark": "pending",
+            "label": "linux-1",
+            "short": "linux-1",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api/ghostty-dotfiles",
+            "mark": "pending",
+            "label": "api",
+            "short": "api",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api/github-login",
+            "mark": "pending",
+            "label": "api",
+            "short": "api",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "api/dock-reset",
+            "mark": "pending",
+            "label": "api",
+            "short": "api",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 16
+        }
+      ]
+    },
+    {
+      "id": "set",
+      "title": "Set by station",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "jterrazz-macbook-pro",
+          "label": "This Mac",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "jterrazz-mac-mini",
+          "label": "mac-mini",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "linux-1",
+          "label": "linux-1",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "api",
+          "label": "api",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "ok",
+          "label": "OK",
+          "kind": "text",
+          "keep": 20
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "ghostty-dotfiles",
+            "mark": "pending",
+            "label": "ghostty-dotfiles",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "github-login",
+            "mark": "pending",
+            "label": "github-login",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "dock-reset",
+            "mark": "pending",
+            "label": "dock-reset",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "folded",
+            "mark": "pending",
+            "label": "12 more",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 4
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "always-on-mac",
+      "title": "Always-on Mac",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "jterrazz-macbook-pro",
+          "label": "This Mac",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "jterrazz-mac-mini",
+          "label": "mac-mini",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "linux-1",
+          "label": "linux-1",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "api",
+          "label": "api",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "ok",
+          "label": "OK",
+          "kind": "text",
+          "keep": 20
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "folded",
+            "mark": "pending",
+            "label": "5 settings",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 1
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "checked",
+      "title": "Checked",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "jterrazz-macbook-pro",
+          "label": "This Mac",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "jterrazz-mac-mini",
+          "label": "mac-mini",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "linux-1",
+          "label": "linux-1",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "api",
+          "label": "api",
+          "kind": "text",
+          "keep": 20
+        },
+        {
+          "key": "ok",
+          "label": "OK",
+          "kind": "text",
+          "keep": 20
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "firewall",
+            "mark": "pending",
+            "label": "firewall",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "screen-lock",
+            "mark": "pending",
+            "label": "screen-lock",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "folded",
+            "mark": "pending",
+            "label": "7 more",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "pending",
+          "n": 3
+        }
+      ],
+      "uncounted": true
+    }
+  ],
+  "hints": [
+    {
+      "command": "station settings --all-machines --all",
+      "text": "every row"
+    }
+  ]
+}
