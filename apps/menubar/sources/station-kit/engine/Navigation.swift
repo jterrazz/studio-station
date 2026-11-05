@@ -6,11 +6,13 @@ import Foundation
 // shown.
 public final class Navigation: @unchecked Sendable {
     public static let ports = "menubar.ports"
+    public static let vm = "menubar.vm"
     public static let awake = "menubar.awake"
     public static let activity = "menubar.activity"
 
-    // value: the watch of a page of one subject: a Mac's ports, the
-    // activity over a window (`menubar.activity:6m`).
+    // value: the watch of a page of one subject: a Mac's ports, a
+    // workspace's page (`menubar.vm:linux-1`), the activity over a window
+    // (`menubar.activity:6m`).
     public static func page(_ id: String, of subject: String) -> String { "\(id):\(subject)" }
 
     let socket: String

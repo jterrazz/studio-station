@@ -109,7 +109,7 @@ public struct Popover: View {
 
     var inner: CGFloat { Token.Space.width - Token.Space.margin * 2 }
 
-    var links: LinkActions { LinkActions(open: handlers.open, qr: state.qr, toggleQR: handlers.toggleQR) }
+    var links: LinkActions { LinkActions(open: handlers.open, qr: state.qr, toggleQR: handlers.toggleQR, push: handlers.push) }
 
     public var body: some View {
         if let own = pushedView {

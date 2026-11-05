@@ -4,6 +4,7 @@ import SwiftUI
 // page draws as PageView.
 public enum MenuPage {
     public static let ports = Navigation.ports
+    public static let vm = Navigation.vm
     public static let awake = Navigation.awake
     public static let activity = Navigation.activity
 
@@ -12,7 +13,7 @@ public enum MenuPage {
         guard let page = state.page else { return nil }
         let body: AnyView
         switch page.id {
-        case ports: body = AnyView(PortsPage(state, handlers: handlers))
+        case ports, vm: body = AnyView(PortsPage(state, handlers: handlers))
         case awake: body = AnyView(AwakePage(state, handlers: handlers))
         case activity: body = AnyView(ActivityPage(state, handlers: handlers))
         default: return nil

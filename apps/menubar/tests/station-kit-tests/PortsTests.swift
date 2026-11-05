@@ -11,7 +11,7 @@ final class PortsTests: XCTestCase {
     // link, which copies the link, Open, which opens it, and Stop sharing, a
     // y/n whose yes is the ports.stop-sharing call of that port.
     func testPortRowQR() async throws {
-        let page = try Tree.page("menubar.ports.linux-1")
+        let page = try Tree.page("menubar.vm.linux-1")
         let row = try XCTUnwrap(page.section("private")?.rows.first)
         let url = "https://jterrazz-macbook-pro.tail1234.ts.net:40001"
         XCTAssertEqual(page.section("private")?.cell(row, "url")?.text, url)
@@ -25,7 +25,7 @@ final class PortsTests: XCTestCase {
         var asked: [String?] = []
         let handlers = PopoverHandlers(confirm: { asked.append($0?.id) }, open: { opened.append($0) }, copy: { copied.append($0) })
         var state = PopoverState(page: page, connection: .live, qr: url)
-        XCTAssertNil(try Golden.check("menubar.ports.linux-1.qr", try XCTUnwrap(MenuPage.view(state, handlers: handlers)), scheme: .dark))
+        XCTAssertNil(try Golden.check("menubar.vm.linux-1.qr", try XCTUnwrap(MenuPage.view(state, handlers: handlers)), scheme: .dark))
         state.confirming = stop.id
         XCTAssertNil(try Golden.check("sheet.stop-sharing", try XCTUnwrap(MenuPage.view(state, handlers: handlers)), scheme: .dark))
         XCTAssertEqual(copied + opened.map(\.absoluteString) + asked.compactMap { $0 }, [])
@@ -71,10 +71,30 @@ final class PortsTests: XCTestCase {
         XCTAssertNil(try Golden.check("sheet.declare-public", try XCTUnwrap(MenuPage.view(state)), scheme: .dark))
     }
 
-    // invariant: PO-45: Share a port… on linux-1 asks the port as text and
-    // sends ports.share for linux-1, the port a string the call parses.
-    func testWorkspaceSharePort() throws {
-        let page = try Tree.page("menubar.ports.linux-1")
+    // invariant: PO-45: linux-1's row on Home opens linux-1's page, the
+    // engine's watch of menubar.vm:linux-1; Share a port… there asks the port
+    // as text and sends ports.share for linux-1, and a shared port's row
+    // holds its link.
+    func testWorkspaceSharePort() async throws {
+        let home = try Tree.page("menubar.home.two-macs")
+        let row = try XCTUnwrap(Self.row("linux-1", in: home.section("fleet")?.items ?? []))
+        var pushed: [String] = []
+        try XCTUnwrap(LinkActions(push: { pushed.append($0) }).tap(row))()
+        XCTAssertEqual(pushed, ["menubar.vm:linux-1"])
+        XCTAssertNil(LinkActions().tap(try XCTUnwrap(Self.row("infra", in: home.section("fleet")?.items ?? []))))
+        let engine = try FakeEngine("mb-vm")
+        defer { engine.stop() }
+        engine.serveOnce(try Streamed.answer(pushed[0], "menubar.vm.linux-1"), thenClose: false)
+        let shown = Shown()
+        let nav = Navigation(socket: engine.path, clock: TestClock()) { shown.add($0, $1) }
+        nav.wire(PopoverHandlers()).push(pushed[0])
+        for _ in 0..<500 where shown.all.isEmpty { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(engine.received, [Streamed.watch("menubar.vm:linux-1")])
+        XCTAssertEqual(shown.all, ["menubar.vm:linux-1 menubar.vm"])
+        nav.back()
+
+        let page = try Tree.page("menubar.vm.linux-1")
+        XCTAssertNil(page.action("declare-public"))
         let share = try XCTUnwrap(page.action("share-port"))
         XCTAssertEqual(share.run?.call, "ports.share")
         XCTAssertEqual(share.form?.fields?.map(\.kind), ["text"])
@@ -82,10 +102,22 @@ final class PortsTests: XCTestCase {
         let input = Client.input(ActionRunner.filled(share, answers: ["Port": "3000"]), fixed: share.run?.in, text: text)
         XCTAssertEqual(input as NSDictionary, ["VM": "linux-1", "Port": "3000"] as NSDictionary)
         XCTAssertTrue(input["Port"] is String)
-        var state = Snapshot.state("menubar.ports.linux-1", page)
+        let private_ = try XCTUnwrap(page.section("private"))
+        let vite = try XCTUnwrap(private_.rows.first { private_.cell($0, "port")?.n == 5173 })
+        XCTAssertEqual(private_.cell(vite, "url")?.text, "https://jterrazz-macbook-pro.tail1234.ts.net:40001")
+        var state = Snapshot.state("menubar.vm.linux-1", page)
         state.confirming = share.id
         state.answers = ["share-port": ["Port": "3000"]]
         XCTAssertNil(try Golden.check("sheet.share-port", try XCTUnwrap(MenuPage.view(state)), scheme: .dark))
+    }
+
+    static func row(_ id: String, in items: [Item]) -> Row? {
+        for item in items {
+            if item.row?.id == id { return item.row }
+            if item.group?.head?.id == id { return item.group?.head }
+            if let found = row(id, in: item.group?.items ?? []) { return found }
+        }
+        return nil
     }
 
     // invariant: MB-17: Review on a red row of mac-mini's Ports opens a new

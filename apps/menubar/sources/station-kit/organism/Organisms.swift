@@ -4,11 +4,39 @@ public struct LinkActions {
     public var open: (URL) -> Void
     public var qr: String?
     public var toggleQR: (String) -> Void
+    public var push: (String) -> Void
 
-    public init(open: @escaping (URL) -> Void = { _ in }, qr: String? = nil, toggleQR: @escaping (String) -> Void = { _ in }) {
+    public init(open: @escaping (URL) -> Void = { _ in }, qr: String? = nil, toggleQR: @escaping (String) -> Void = { _ in }, push: @escaping (String) -> Void = { _ in }) {
         self.open = open
         self.qr = qr
         self.toggleQR = toggleQR
+        self.push = push
+    }
+
+    // value: what a tap on a row does: open the page it names, or nothing.
+    public func tap(_ row: Row) -> (() -> Void)? {
+        guard let page = row.opens else { return nil }
+        return { push(page) }
+    }
+}
+
+struct Opening<Label: View>: View {
+    let row: Row
+    let links: LinkActions?
+    let label: Label
+
+    init(_ row: Row, links: LinkActions?, @ViewBuilder label: () -> Label) {
+        self.row = row
+        self.links = links
+        self.label = label()
+    }
+
+    var body: some View {
+        if let tap = links?.tap(row) {
+            Button(action: tap) { label.contentShape(Rectangle()) }.buttonStyle(.plain)
+        } else {
+            label
+        }
     }
 }
 
@@ -82,7 +110,7 @@ struct ItemView: View {
 
     var body: some View {
         if let row = item.row {
-            RowView(row, columns: columns, width: width, hintAsButton: hintButtons)
+            Opening(row, links: links) { RowView(row, columns: columns, width: width, hintAsButton: hintButtons) }
         } else if let fact = item.fact {
             FactView(fact)
         } else if let group = item.group {
@@ -112,7 +140,7 @@ struct GroupView: View {
     }
 
     var body: some View {
-        let head = RowView(group.head ?? Row(), columns: columns, width: width, hintAsButton: hintButtons)
+        let head = Opening(group.head ?? Row(), links: links) { RowView(group.head ?? Row(), columns: columns, width: width, hintAsButton: hintButtons) }
         if group.fold == nil || group.fold == "open" {
             VStack(alignment: .leading, spacing: 2) {
                 head

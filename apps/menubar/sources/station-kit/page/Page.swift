@@ -103,6 +103,7 @@ public struct Row: Codable, Equatable, Sendable {
     public var detail: Value?
     public var reason: String?
     public var hint: Hint?
+    public var opens: String?
 }
 
 public struct Fact: Codable, Equatable, Sendable {
