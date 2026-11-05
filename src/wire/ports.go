@@ -10,8 +10,6 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
-	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	portscmd "github.com/jterrazz/studio-station/src/surface/cli/ports"
 	portsshare "github.com/jterrazz/studio-station/src/surface/cli/ports/share"
@@ -20,7 +18,7 @@ import (
 
 func (m machine) services(_ kit.Env) *services.Service {
 	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure,
-		Listening: m.macListeners().Read}
+		Listening: m.listeners("/").Read}
 	d := servicesDaemon{c: m.engineAPI()}
 	if m.kind != catalog.Host {
 		g := m.guest()
@@ -51,12 +49,6 @@ func (m machine) services(_ kit.Env) *services.Service {
 }
 
 // value: what listens on this Mac, read by lsof, the world's in a world.
-func (m machine) macListeners() portscontract.Listeners {
-	if m.world != nil {
-		return m.world.listeners()
-	}
-	return lsof.New(m.host.Run)
-}
 
 // value: where this VM runs, as its guest's hello placed it.
 func (m machine) placement(g *guest.Service) guest.Placement {

@@ -70,7 +70,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Hypervisor: m.hypervisor(),
 	}
 	var meter activitycontract.Meter
-	listening := m.macListeners()
+	listening := m.listeners("/")
 	if m.kind == catalog.Linux {
 		meter = activitylinux.New(h.Run, h.Clock)
 	} else {
