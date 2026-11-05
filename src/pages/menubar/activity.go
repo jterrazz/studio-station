@@ -20,8 +20,9 @@ func windows() []window {
 	return []window{{"6m", "6 min", 6 * time.Minute}, {"1h", "1 h", time.Hour}, {"24h", "24 h", 24 * time.Hour}}
 }
 
-// value: the window a flag of the picker names (`6m`), 1 h for any other.
 func Window(flag string) time.Duration {
+	// invariant: the window a flag of the picker names (`6m`), 1 h for any
+	// other.
 	for _, w := range windows() {
 		if w.Flag == flag {
 			return w.For

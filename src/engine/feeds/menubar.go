@@ -34,7 +34,8 @@ type Menubar struct {
 	Here  page.Context
 	// value: the Power report of a view the engine holds.
 	Report func(awake.View) *awake.Report
-	// value: every Mac's Awake, read for the Awake page.
+	// value: every Mac's Awake, This Mac's first, as the CLI's station awake
+	// reads it, for the Awake page.
 	EveryMac EveryMac
 }
 

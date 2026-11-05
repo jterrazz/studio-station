@@ -120,6 +120,4 @@ func failed(id page.ID, here page.Context, err error) page.Page {
 	return page.Seal(page.Page{ID: id, Context: here, Error: &page.Error{Message: err.Error()}})
 }
 
-// value: the Awake of every Mac, This Mac's first, as the CLI's station
-// awake reads it.
 type EveryMac func(ctx context.Context) (pageawake.Fleet, error)
