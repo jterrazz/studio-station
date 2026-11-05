@@ -39,16 +39,16 @@ type Header struct {
 }
 
 type Entry struct {
-	Label   string
-	Mark    page.Mark
-	Badge   string
-	Tone    page.Mark
-	Depth   int
-	Branch  bool
-	Last    bool
-	Fleet   bool
-	Heading bool
-	Current bool
+	Label       string
+	Mark        page.Mark
+	Badge       string
+	Tone        page.Mark
+	Depth       int
+	Branch      bool
+	Last        bool
+	AllMachines bool
+	Heading     bool
+	Current     bool
 }
 
 type Panel struct {
@@ -196,7 +196,7 @@ func (s Shell) sidebarLines(st token.Styles) []string {
 			left += token.SideEnd
 		case e.Branch:
 			left += token.SideMid
-		case e.Fleet:
+		case e.AllMachines:
 			left += token.Fleet + " "
 		}
 		if e.Mark != page.Unjudged {

@@ -451,7 +451,7 @@ func (e entry) selectable() bool { return !e.Heading && e.Label != "" }
 
 func (s shell) entries() []entry {
 	out := []entry{{Entry: ui.Entry{Label: "MACHINES", Heading: true}}}
-	out = append(out, entry{Entry: ui.Entry{Label: allMachines, Fleet: true}, machine: ""})
+	out = append(out, entry{Entry: ui.Entry{Label: allMachines, AllMachines: true}, machine: ""})
 	var kind machine.Kind
 	vms := s.nodes[1:]
 	for i, n := range vms {

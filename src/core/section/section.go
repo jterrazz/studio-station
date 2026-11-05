@@ -44,7 +44,7 @@ func For(k machine.Kind) []ID {
 }
 
 func AllMachines() []ID {
-	// invariant: the sections of All machines, the fleet-wide reads (SPEC §9.2).
+	// invariant: the sections of All machines, each a read across every machine (SPEC §9.2).
 	return []ID{Overview, Activity, Ports, Settings, Images, Accounts}
 }
 
