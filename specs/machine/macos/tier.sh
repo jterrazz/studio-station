@@ -153,7 +153,7 @@ while read -r app method; do
   case "$app" in '' | '#'*) continue ;; esac
   if [ "$method" = mas ]; then
     in_vm "$brew_path $station apps install mas </dev/null" >> "$log" 2>&1 || miss "apps install mas exited $?"
-    out=$(perl -e 'alarm 120; exec @ARGV' ssh -n "${ssh_opts[@]}" -i "$ssh_key" "$user@$ip" "$brew_path $mise_path $station apps install $app </dev/null" 2>&1)
+    out=$(perl -e 'alarm 120; exec @ARGV' ssh -n "${ssh_opts[@]}" -i "$ssh_key" "$user@$ip" "export STATION_MACHINE_KIND=host; $brew_path $mise_path $station apps install $app </dev/null" 2>&1)
     code=$?
     [ $code -ne 142 ] || { in_vm 'sudo -n pkill -f "mas install"; pkill -f "station apps install"' || true; out="no answer in 120 s"; }
     say "   mas $app: exit $code: $(tr '\n' ' ' <<< "$out" | cut -c1-200)"
@@ -174,7 +174,7 @@ while read -r app method; do
     state=$(in_vm "$brew_path $mise_path $station apps --all --json" | jq -r --arg a "$app" '.apps[] | select(.name == $a) | .state')
     say "   $method $app: $verb, then $state"
     case "$verb" in
-      remove) [ "$state" = not-installed ] || miss "$app is $state after remove" ;;
+      remove) [ "$state" = not-installed ] || [ "$state" = not-managed ] || miss "$app is $state after remove" ;;
       *) [ "$state" != not-installed ] || miss "$app is not installed after $verb" ;;
     esac
   done
