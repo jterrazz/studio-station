@@ -9,7 +9,7 @@ final class KitBoundaryTests: XCTestCase {
 
     static let forbidden = ["ProgressView", "Gauge(", "List(", "List {", ".toggleStyle(.switch)", "WindowGroup", "NSWindow(", "Settings {"]
     static let models = ["\"laptopcomputer", "\"macmini", "\"macbook", "\"macpro", "\"imac", "\"macstudio"]
-    static let glass = ["glassEffect", "GlassEffectContainer", ".buttonStyle(.glass", "Material", ".containerBackground", "RoundedRectangle(cornerRadius: Token.Tile.radius", "RoundedRectangle(cornerRadius: Token.Glass.radius"]
+    static let glass = ["glassEffect", "GlassEffectContainer", ".buttonStyle(.glass", "Material", ".containerBackground", "RoundedRectangle(cornerRadius: Token.Tile.radius", "RoundedRectangle(cornerRadius: Token.Glass.radius", "RoundedRectangle(cornerRadius: Token.Tile.sheet", "palette.well"]
     static let glyphs: [Character] = ["→", "·", "…", "⏻", "⚡", "●", "◐", "○", "✗", "◌"]
 
     // invariant: the Swift side of the kit's boundary: colours, symbol names
@@ -73,6 +73,7 @@ final class KitBoundaryTests: XCTestCase {
             ("page/Page.swift", "import SwiftUI"),
             ("token/Token.swift", "static let mini = \"macmini\""),
             ("template/Panel.swift", "x.background(palette.surface).glassEffect(.regular)"),
+            ("molecule/Field.swift", "x.background(RoundedRectangle(cornerRadius: 8).fill(palette.well))"),
         ]).map(\.rule)
         XCTAssertEqual(caught, [
             "a colour outside Token", "ProgressView is not drawn offscreen",
@@ -80,6 +81,7 @@ final class KitBoundaryTests: XCTestCase {
             "import SwiftUI: Page and Engine import Foundation only",
             "macmini draws a Mac's model, which no capability reports",
             "glassEffect outside the kit's glass", "a painted background",
+            "palette.well outside the kit's glass",
         ])
     }
 }

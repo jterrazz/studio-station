@@ -9,6 +9,7 @@ public enum Token {
         public static let charging = "⚡"
         public static let unknown = "?"
         public static let dash = "-"
+        public static let missing = "—"
         public static let slash = "/"
         public static let down = "!"
         public static let command = "⌘"
@@ -105,10 +106,16 @@ public enum Token {
         public static func rim(_ scheme: ColorScheme) -> [Color] {
             scheme == .dark ? [Color.white.opacity(0.16), Color.white.opacity(0.07)] : [Color.white.opacity(0.95), Color.black.opacity(0.05)]
         }
-        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x26282D).opacity(0.8) : Token.hex(0xF4F5F7).opacity(0.6) }
+        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x22252B).opacity(0.56) : Token.hex(0xF4F5F7).opacity(0.6) }
         public static func edge(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.16) : Color.black.opacity(0.1) }
         public static func shade(_ scheme: ColorScheme) -> Color { Color.black.opacity(scheme == .dark ? 0.5 : 0.22) }
         public static func well(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.black.opacity(0.22) : Color.black.opacity(0.05) }
+        public static func sunken(_ scheme: ColorScheme) -> [Color] {
+            scheme == .dark ? [Color.black.opacity(0.3), Color.black.opacity(0.16)] : [Color.black.opacity(0.08), Color.black.opacity(0.03)]
+        }
+        public static func sunkenRim(_ scheme: ColorScheme) -> [Color] {
+            scheme == .dark ? [Color.black.opacity(0.25), Color.white.opacity(0.1)] : [Color.black.opacity(0.08), Color.white.opacity(0.85)]
+        }
         public static let ink = Color.white
 
         // value: the fixed wallpaper an offscreen snapshot draws the panel

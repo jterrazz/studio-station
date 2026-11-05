@@ -18,10 +18,13 @@ public struct Graph: View {
         self.fit = fit
     }
 
-    // value: the graph's scale: 0 to 100, or for a sparkline the band its
-    // points move in, so a steady series still shows its swing.
+    // value: the graph's scale: 0 to 100, its top brought down to a low
+    // series' (never under 20), so a measure that stays low (a swap of
+    // 7 %) is still drawn as an area; for a sparkline, the band its points
+    // move in, so a steady series still shows its swing.
     var domain: ClosedRange<Int> {
-        guard fit, let lo = points.min(), let hi = points.max() else { return 0...100 }
+        guard let lo = points.min(), let hi = points.max() else { return 0...100 }
+        guard fit else { return 0...min(max(hi * 2, 20), 100) }
         let pad = max(hi - lo, 10)
         return max(lo - pad, 0)...min(hi + pad / 2, 100)
     }
@@ -31,7 +34,7 @@ public struct Graph: View {
         Chart(Array(points.enumerated()), id: \.offset) { i, p in
             AreaMark(x: .value("t", i), yStart: .value("floor", domain.lowerBound), yEnd: .value("v", min(max(p, 0), 100)))
                 .interpolationMethod(.catmullRom)
-                .foregroundStyle(LinearGradient(colors: [ink.opacity(0.38), ink.opacity(0)], startPoint: .top, endPoint: .bottom))
+                .foregroundStyle(LinearGradient(colors: [ink.opacity(0.4), ink.opacity(0.08)], startPoint: .top, endPoint: .bottom))
             LineMark(x: .value("t", i), y: .value("v", min(max(p, 0), 100)))
                 .interpolationMethod(.catmullRom)
                 .lineStyle(StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
@@ -63,6 +66,7 @@ public struct Bars: View {
     let height: CGFloat
     let accented: Int
     let tint: Color?
+    var waiting = false
     @Environment(\.stationPalette) private var palette
 
     public init(_ points: [Int], height: CGFloat = Token.Tile.bars, accented: Int = 1, tint: Color? = nil) {
@@ -73,11 +77,21 @@ public struct Bars: View {
     }
 
     // value: a bar's height, 0 to 1, over the band its points move in, so
-    // a steady series still shows its swing.
+    // a steady series still shows its swing; a level one, half.
     func level(_ p: Int) -> Double {
-        let top = Double(max(points.max() ?? 1, 1)), lo = Double(points.min() ?? 0)
+        guard !waiting else { return 0.25 }
+        guard let hi = points.max(), let low = points.min(), hi != low else { return 0.5 }
+        let top = Double(max(hi, 1)), lo = Double(low)
         let floor = max(lo - max(top - lo, top / 10), 0)
         return max((Double(p) - floor) / max(top - floor, 1), 0.1)
+    }
+
+    // value: the meter of a measure not read yet: its bars low and level,
+    // none accented, so a tile waiting keeps its shape.
+    public static func pending(height: CGFloat = Token.Tile.bars) -> Bars {
+        var bars = Bars(Array(repeating: 1, count: 12), height: height, accented: 0)
+        bars.waiting = true
+        return bars
     }
 
     public var body: some View {
@@ -86,7 +100,7 @@ public struct Bars: View {
         Chart(Array(points.enumerated()), id: \.offset) { i, p in
             BarMark(x: .value("t", "\(i)"), yStart: .value("floor", 0), yEnd: .value("v", level(p)), width: .ratio(0.55))
                 .clipShape(Capsule())
-                .foregroundStyle(i >= recent ? ink : palette.subtle)
+                .foregroundStyle(i >= recent ? ink : waiting ? palette.faint : palette.subtle)
         }
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)

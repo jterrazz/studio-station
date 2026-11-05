@@ -145,7 +145,7 @@ public struct PortsPage: View {
                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(palette.qrLight))
             Text(url.absoluteString).font(.system(size: Token.Space.small, design: .monospaced)).foregroundStyle(palette.text).lineLimit(2).multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity).padding(.horizontal, 9).padding(.vertical, 7)
-                .background(RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(palette.well))
+                .stationWell()
             Text("Scan with your phone. Works on your Tailscale devices.").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: Token.Glass.spacing) {
