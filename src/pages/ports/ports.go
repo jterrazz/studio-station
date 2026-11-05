@@ -265,10 +265,6 @@ func Actions(f ports.Fleet) []page.Action {
 	return []page.Action{{Key: KeyStopSharing, Label: "stop sharing", On: page.OnRow, Rows: shared, Priority: 1, Mutates: true, Confirm: &page.Confirm{Yes: "stop sharing", Danger: true}}}
 }
 
-func StopConfirm(vm string, port int) page.Confirm {
-	return page.Confirm{Question: "Stop sharing " + vm + ":" + strconv.Itoa(port) + "?", Lines: []page.Value{page.Text("it is not shared again when it listens, until you share it")}, Danger: true, Yes: "stop sharing"}
-}
-
 // value: a port's state in the owner's words (SPEC 5.6), the mark it reads
 // with, and the fix it waits for.
 func stateOf(s ports.ServiceView) (page.Mark, page.Reason, page.Value, *page.Hint) {

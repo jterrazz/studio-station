@@ -4,8 +4,6 @@ import (
 	"strconv"
 	"strings"
 
-	"charm.land/lipgloss/v2"
-
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/ui/atom"
 	"github.com/jterrazz/studio-station/src/ui/molecule"
@@ -73,82 +71,6 @@ func Footer(st token.Styles, bindings []Binding, busy bool, width int) string {
 	}
 	parts = append(parts, last)
 	return atom.Spaces(token.Margin) + strings.Join(parts, atom.Spaces(token.Gap))
-}
-
-func Sheet(st token.Styles, tab string, bindings []Binding, width, height int) []string {
-	groups := []string{GroupTab, GroupList, GroupGlobal}
-	cols := make([][]string, len(groups))
-	colWidth := max((width-6)/len(groups), 12)
-	for gi, g := range groups {
-		keyWidth := 0
-		for _, b := range bindings {
-			if b.Group == g {
-				keyWidth = max(keyWidth, atom.Width(atom.KeyName(b.Key)))
-			}
-		}
-		cols[gi] = append(cols[gi], st.Title.Render(atom.Pad(g, colWidth)))
-		for _, b := range bindings {
-			if b.Group != g {
-				continue
-			}
-			cell := st.Accent.Render(atom.Pad(atom.KeyName(b.Key), keyWidth)) + atom.Spaces(token.Gap) + st.Text.Render(atom.End(b.Label, max(colWidth-keyWidth-token.Gap, 1)))
-			cols[gi] = append(cols[gi], cell+atom.Spaces(colWidth-atom.Width(cell)))
-		}
-	}
-	rows := 0
-	for _, c := range cols {
-		rows = max(rows, len(c))
-	}
-	body := make([]string, 0, rows+1)
-	for i := range rows {
-		var line strings.Builder
-		for _, c := range cols {
-			if i < len(c) {
-				line.WriteString(c[i])
-			} else {
-				line.WriteString(atom.Spaces(colWidth))
-			}
-		}
-		body = append(body, strings.TrimRight(line.String(), " "))
-	}
-	body = append(body, "", st.Muted.Render("any key closes"))
-	frame := Frame(st, "Keys"+token.Sep+tab, body, width-2)
-	lines := strings.Split(frame, "\n")
-	for len(lines) < height {
-		lines = append(lines, "")
-	}
-	return lines[:min(len(lines), max(height, len(lines)))]
-}
-
-func Frame(st token.Styles, title string, body []string, width int) string {
-	box := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(st.Colors.Subtle).
-		Padding(0, 1).
-		Width(max(width, 10))
-	head := ""
-	if title != "" {
-		head = st.Title.Render(title) + "\n"
-	}
-	return lipgloss.NewStyle().MarginLeft(token.Margin).Render(box.Render(head + strings.Join(body, "\n")))
-}
-
-func Modal(st token.Styles, c page.Confirm, yes bool, width int) string {
-	return Frame(st, "", molecule.Confirm(st, c, yes), min(width-4, token.ModalWidth))
-}
-
-func StatusBar(st token.Styles, m page.Mark, text, hint string, width int) string {
-	if text == "" {
-		return ""
-	}
-	if m == page.Broken {
-		return atom.Spaces(token.Margin) + molecule.StatusError(st, page.Error{Message: text, Hint: hint}, width-token.Margin)
-	}
-	line := atom.Spaces(token.Margin) + atom.Mark(st, m) + st.Text.Render(atom.End(text, max(width-6, 1)))
-	if hint != "" {
-		line += atom.Spaces(token.Gap) + st.Muted.Render(hint)
-	}
-	return line
 }
 
 func Strip(st token.Styles, s page.Strip, width int) string {

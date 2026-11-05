@@ -2,6 +2,7 @@ package section
 
 import (
 	"slices"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/core/machine"
 )
@@ -39,6 +40,20 @@ func For(k machine.Kind) []ID {
 		return []ID{Overview, Activity, Ports, SSH}
 	default:
 		return nil
+	}
+}
+
+func AllMachines() []ID {
+	// invariant: the sections of All machines, the fleet-wide reads (SPEC §9.2).
+	return []ID{Overview, Activity, Ports, Settings, Images, Accounts}
+}
+
+func (id ID) Title() string {
+	switch id {
+	case SSH:
+		return "SSH"
+	default:
+		return strings.ToUpper(string(id[:1])) + string(id[1:])
 	}
 }
 

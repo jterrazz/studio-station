@@ -1,9 +1,10 @@
- - Tailscale                                                                                    1 ◌
+ Tailscale
    ◌ Tailscale
- - Private: shared with you on Tailscale                                                        3 ◌
+
+ Private: shared with you on Tailscale  3 ◌
    ◌ linux-1
    ◌ linux-1
    ◌ mac-mini
- - Reserved ports
+
+ Reserved ports
    Reserved on This Mac: 2 of 1000 (40000-40999), 998 free
- ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

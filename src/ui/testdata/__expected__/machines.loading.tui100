@@ -1,9 +1,9 @@
- - 4 machines  3 running · 1 stopped · 1 needs you                                              4 ◌
+ 4 machines · 3 running · 1 stopped · 1 needs you
    ◌ This Mac
    ├─ ◌ api
    └─ ◌ linux-1
    ◌ mac-mini
       No VMs yet
- - Needs you                                                                                    1 ◌
+
+ Needs you  1 ◌
    ◌ mac-mini
- ↑↓ move  n create  enter detail  / filter  space fold  r reload  q quit  ? keys

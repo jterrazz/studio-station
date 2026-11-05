@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -244,36 +243,5 @@ func Actions() []page.Action {
 		{Key: KeyLend, Label: "lend", On: page.OnRow, Priority: 1, Mutates: true},
 		{Key: KeyRevoke, Label: "revoke", On: page.OnRow, Priority: 2, Mutates: true},
 		{Key: KeyReload, Label: "reload", On: page.OnPage, Priority: 3},
-	}
-}
-
-func LendForm(vm string, names, checked []string) page.Form {
-	opts := make([]page.Option, 0, len(names))
-	for _, n := range names {
-		opts = append(opts, page.Option{Value: n, Note: accounts.Scope(n)})
-	}
-	terms := [...]string{"1h", "4h", "12h", "24h", "168h"}
-	durations := make([]page.Option, 0, len(terms))
-	for _, t := range terms {
-		label := t
-		if t == "168h" {
-			label = "7d"
-		}
-		durations = append(durations, page.Option{Value: t, Label: label})
-	}
-	return page.Form{Title: "Lend to " + vm, Fields: []page.Field{
-		{Key: "names", Label: "Secrets", Kind: page.FieldMulti, Options: opts, Default: strings.Join(checked, ",")},
-		{Key: "for", Label: "For", Kind: page.FieldSelect, Options: durations, Default: "12h"},
-	}}
-}
-
-func RecallConfirm(vm, what string) page.Confirm {
-	return page.Confirm{
-		Question: "Recall " + what + " from " + vm + "?",
-		Lines: []page.Value{
-			page.Text(vm + "'s copy is deleted now (studio credentials delete inside the VM)"),
-			page.Text("the token stays valid at its service: revoke it there to end it everywhere"),
-		},
-		Yes: "Recall",
 	}
 }

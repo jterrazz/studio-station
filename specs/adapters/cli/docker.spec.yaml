@@ -1,6 +1,6 @@
 description: 'docker is listed only where a credential store is configured, and a credential is never fetched'
 fixture:
-    - ../../__fixtures__/accounts/
+    - ./__fixtures__/accounts/
 env: engine
 runs:
     - command: 'accounts | /usr/bin/grep docker; /usr/bin/grep -c "docker-credential-osxkeychain list" .calls; /usr/bin/grep -c "docker-credential-osxkeychain get" .calls'

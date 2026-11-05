@@ -33,12 +33,17 @@ const (
 	Power    = "⏻"
 	Unknown  = "?"
 	Corner   = "┌┐└┘"
+	Cursor   = "▸"
+	Fleet    = "◇"
+	Crumb    = " › "
+	SideMid  = "├ "
+	SideEnd  = "└ "
 )
 
 func Glyphs() []string {
 	return []string{
 		MarkOK, MarkAttention, MarkAbsent, MarkBroken, MarkPending, MarkOffHere, MarkNotFor, MarkUnknown,
 		Arrow, "·", Ellipsis, Rule, Divider, "├", "└", Spinner, Spark, GaugeOff, QRUpper, QRLower,
-		KeyUp, KeyDown, Charging, Power, Corner,
+		KeyUp, KeyDown, Charging, Power, Corner, Cursor, Fleet, "›",
 	}
 }

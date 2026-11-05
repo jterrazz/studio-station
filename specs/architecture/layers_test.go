@@ -94,8 +94,8 @@ func importTable() map[string][]string {
 		"core/adapter/fake":          {"core/*", "world", std},
 		"core/contract/contracttest": {"core/*", "testing", std},
 		"core/fail":                  {"core/finding", std},
-		"surface/tui":                append([]string{"surface/tui/screens/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
-		"surface/tui/*":              append([]string{"surface/tui/screens/*", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
+		"surface/tui":                append([]string{"surface/tui/screens/*", "core/section", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
+		"surface/tui/*":              append([]string{"surface/tui/screens/*", "core/section", "page", "pages", "pages/*", "ui/render/tui", "catalog", "core/fail", tea, std}, calls...),
 	}
 }
 
@@ -783,7 +783,6 @@ func rules() []rule {
 		{"CallsGated", ruleCallsGated, "src/apps/calls/mutant_calls.go", "package calls\n\nimport \"" + module + "/src/core/call\"\n\nvar Mutant = call.Call[Deps, struct{}, struct{}]{Name: \"tools.mutant\"}\n", "src/apps/calls/mutant_calls.go"},
 		{"ConfirmInUsecase", ruleConfirmInUsecase, "src/disk/calls/mutant_confirm.go", "package calls\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/core/call\"\n\t\"" + module + "/src/core/confirm\"\n\t\"" + module + "/src/core/machine\"\n)\n\nvar mutantErase = call.Call[Deps, struct{}, struct{}]{Name: \"storage.mutant\", Applies: machine.Anywhere, Confirm: confirm.Erase,\n\tRun: func(context.Context, Deps, struct{}, call.Progress) (struct{}, error) { return struct{}{}, nil }}\n", "src/disk/calls/mutant_confirm.go"},
 		{"ConfirmInUsecaseAnswered", ruleConfirmInUsecase, "src/surface/tui/screens/services/mutant_answer.go", "package servicesscreen\n\nimport \"" + module + "/src/core/confirm\"\n\nvar mutantAnswer = confirm.Yes\n", "src/surface/tui/screens/services/mutant_answer.go"},
-		{"ConfirmInUsecaseScreenAsks", ruleConfirmInUsecase, "src/surface/tui/screens/accounts/mutant_ask.go", "package accountsscreen\n\nimport (\n\t\"" + module + "/src/page\"\n\t\"" + module + "/src/ui/render/tui\"\n)\n\nfunc mutantAsk(b tui.Browser) tui.Browser { return b.Ask(page.Confirm{}, nil) }\n", "src/surface/tui/screens/accounts/mutant_ask.go"},
 		{"ConfirmInUsecaseLeafAsks", ruleConfirmInUsecase, "src/surface/cli/stop/mutant_ask.go", "package stopcmd\n\nimport (\n\t\"" + module + "/src/page\"\n\t\"" + module + "/src/surface/cli/kit\"\n)\n\nfunc mutantAsk(a kit.Asker) { _, _ = a.Confirm(page.Confirm{}) }\n", "src/surface/cli/stop/mutant_ask.go"},
 		{"EveryCodeWorded", ruleEveryCodeWorded, "src/apps/mutant_code.go", "package apps\n\nimport \"" + module + "/src/core/fail\"\n\nconst mutantCode fail.Code = \"apps.mutant\"\n", "src/apps/mutant_code.go"},
 		{"EveryCodeWordedRaised", ruleEveryCodeWorded, "src/surface/cli/words/mutant_unraised.go", "package words\n\nimport \"" + module + "/src/core/fail\"\n\nconst mutantUnraised fail.Code = \"usage.needs-terminal\"\n", "src/surface/cli/words/mutant_unraised.go"},

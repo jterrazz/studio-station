@@ -2,7 +2,6 @@ package apps
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/page"
@@ -142,10 +141,6 @@ func Actions() []page.Action {
 		{Key: KeyRemove, Label: "remove", On: page.OnRow, Priority: 2, Mutates: true, Confirm: &page.Confirm{Yes: "remove"}},
 		{Key: KeyUpdate, Label: "update", On: page.OnRow, Priority: 3, Mutates: true},
 	}
-}
-
-func Confirm(verb, name string) page.Confirm {
-	return page.Confirm{Question: strings.ToUpper(verb[:1]) + verb[1:] + " " + name + "?", Yes: verb}
 }
 
 func Row(r apps.Report) page.Row {

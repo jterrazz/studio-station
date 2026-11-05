@@ -2,10 +2,12 @@ package wire
 
 import (
 	"context"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/accounts"
+	"github.com/jterrazz/studio-station/src/accounts/adapter/studio"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -69,4 +71,10 @@ type sharedGuest struct{ g secrets.Guest }
 func (s sharedGuest) GuestExec(ctx context.Context, vm, line, stdin string) (stdout string, code int, err error) {
 	out, err := s.g.GuestExec(ctx, vm, line, stdin)
 	return out.Stdout, out.ExitCode, err
+}
+
+func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostDaemon(), m.vmRunning) }
+
+func (m machine) secretsVia(guest secrets.Guest, running func(context.Context, string) (bool, error)) *secrets.Service {
+	return secrets.New(m.host, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), secrets.Options{Here: m.kind, Running: running, Receives: receives(guest), Log: filepath.Join(m.paths.State, "logs", "accounts.log")})
 }

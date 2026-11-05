@@ -130,30 +130,3 @@ func without(list, drop []string) []string {
 	}
 	return out
 }
-
-func DeleteConfirm(name string) page.Confirm {
-	return page.Confirm{Question: "Delete " + name + "?", Lines: []page.Value{page.Text("everything it holds is destroyed")}, Danger: true, Yes: "delete"}
-}
-
-func ForgetConfirm(name string) page.Confirm {
-	return page.Confirm{Question: "Forget " + name + "?", Lines: []page.Value{page.Text("the host itself is not touched")}, Yes: "forget"}
-}
-
-func RestartConfirm(name string, host bool) page.Confirm {
-	c := page.Confirm{Question: "Restart " + name + "?", Danger: true, Yes: "restart"}
-	if host {
-		c.Type = name
-	}
-	return c
-}
-
-func CreateForm(hosts []pagemachines.HostChoice, imageNames []string) page.Form {
-	f := pagemachines.CreateForm("", hosts)
-	f.Title = "Create a VM"
-	image := page.Field{Key: "image", Label: "Image", Kind: page.FieldSelect, Required: true}
-	for _, n := range imageNames {
-		image.Options = append(image.Options, page.Option{Value: n})
-	}
-	f.Fields = append(f.Fields, image, page.Field{Key: "name", Label: "Name", Kind: page.FieldText, Note: "empty: <image>-<n>"})
-	return f
-}

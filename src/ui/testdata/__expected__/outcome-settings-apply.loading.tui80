@@ -1,8 +1,9 @@
- - Changes                                                                  2 ◌
+ Changes
    ◌ restart-after-power-cut
    ◌ tart-launcher
- - restart-after-power-cut before
+
+ restart-after-power-cut before
    autorestart  0
- - restart-after-power-cut after
+
+ restart-after-power-cut after
    autorestart  1
- ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys

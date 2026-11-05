@@ -2,30 +2,30 @@
 
 Everything `station` shows, in a terminal, a pipe or the TUI, comes from one palette, one mark vocabulary and one document model.
 
-| Section           | Answers                                                |
-| ----------------- | ------------------------------------------------------ |
-| The palette       | The colours, by meaning                                |
-| The marks         | The four glyphs and what each says                     |
-| Typography        | Margins, rows, columns and empty states                |
-| Header and footer | What frames every document                             |
-| Pipe and JSON     | The record format a script reads, written once         |
-| The TUI           | Tabs, focus modes, the action rule and the loading law |
+| Section           | Answers                                              |
+| ----------------- | ---------------------------------------------------- |
+| The palette       | The colours, by meaning                              |
+| The marks         | The four glyphs and what each says                   |
+| Typography        | Margins, rows, columns and empty states              |
+| Header and footer | What frames every document                           |
+| Pipe and JSON     | The record format a script reads, written once       |
+| The TUI           | The shell, its focus, its widths and the loading law |
 
 ## The palette
 
 Semantic tokens, each a light and a dark value chosen by the terminal's background (Catppuccin Latte and Macchiato, the flavour the dotfiles already use). `src/ui/token/palette.go` is the only place a colour is written; the layer test refuses a hex or a colour constructor anywhere else.
 
-| Token       | Used for                                                      |
-| ----------- | ------------------------------------------------------------- |
-| `Text`      | body text                                                     |
-| `Muted`     | hints, details, `○`, secondary text                           |
-| `Subtle`    | rules and inactive tabs only; never text that carries meaning |
-| `Surface`   | borders and the modal frame                                   |
-| `Selection` | the cursor row's background                                   |
-| `Accent`    | active tab, section titles, the header name                   |
-| `Good`      | `●`                                                           |
-| `Warn`      | `◐`                                                           |
-| `Bad`       | `✗` and `Error:`                                              |
+| Token       | Used for                                                          |
+| ----------- | ----------------------------------------------------------------- |
+| `Text`      | body text                                                         |
+| `Muted`     | hints, details, `○`, secondary text                               |
+| `Subtle`    | rules and unfocused borders only; never text that carries meaning |
+| `Surface`   | borders and the modal frame                                       |
+| `Selection` | the cursor row's background                                       |
+| `Accent`    | the focused border, section titles, the header name               |
+| `Good`      | `●`                                                               |
+| `Warn`      | `◐`                                                               |
+| `Bad`       | `✗` and `Error:`                                                  |
 
 The same tokens colour Fang's help and the forms that ask a config item's values.
 
@@ -80,24 +80,13 @@ So `cut -f2` is a row's name. `--json` prints the presenter's JSON value, two-sp
 
 ## The TUI
 
-`station` on a terminal opens one Bubble Tea app with the tabs Home, Tools, Config, Storage, then Fleet, Services, Accounts and Power. Each tab renders the same page as its command. The tab line never wraps: when it does not fit, the context shortens to the machine name (then `host`), the inactive tabs turn into their number key one at a time from the last, then the context goes. While a Power session holds, the context ends with `⏻ awake` (`⏻ awake · lid` with `--lid`), the last thing to go.
+`station` on a terminal opens one Bubble Tea app, the shell of SPEC §9: the header names the target machine with its mark, what it is, its engine and its Awake (a narrow terminal drops the hostname, then Awake, then the engine word); the breadcrumb under it (`All machines › mac-mini › infra › Overview`); the sidebar, MACHINES as a tree (All machines, each Mac with its Needs-you count, its servers then its workspaces) and then the selected machine's sections in the one order of `section.For`, each with its badge (its worst mark, or Overview's count); the master pane, the section's page; the detail pane, which follows the cursor in a list section; the footer. Every screen is the page its command prints: the shell reads `station <words> --page` (`overview --all --on linux-1`, `ports --all-machines`), so a page has one function on every surface.
 
-| Tab      | Holds                                                                                                                   | Keys                                                                                                                                                     |
-| -------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Home     | To do (each action and its fix), the Summary, then the status sections folded, with a live strip while the tab is shown | `enter` on an action runs its station fix; an External one (launchctl, sudo) only opens its detail                                                       |
-| Tools    | the catalogue by category, agent skills last                                                                            | `i` install, `u` uninstall, `U` upgrade, `/`                                                                                                             |
-| Config   | the config items placed here; an item with inputs opens its form                                                        | `i`, `u`                                                                                                                                                 |
-| Storage  | each tool's storage by level, then the strays                                                                           | `c` clean the row (no question), `x` reset it (the reset form, Keep by default), `/`                                                                     |
-| Fleet    | every host and its VMs, images, secrets and the tailnet                                                                 | `n` create, `s` start/stop, `d` delete, `f` forget, `p` probe, `o` unlock a host, `b` build images, `ctrl+r` restart, `e` opens `station --on <it>` here |
-| Services | every host's range and its leases, a QR code of the selected lease's URL                                                | `x` releases the selected lease (another host's on that host)                                                                                            |
-| Accounts | this Mac's and its VMs' identities and scopes, where each right comes from, a share's time left; never a token          | `l` shares (the share Form, then `accounts share --for`), `r` takes back a shared row (an own row shows its logout), `R` reloads                         |
-| Power    | the session, its guards and the reading, on the engine's `page` watch, so a guard's end redraws it at once              | `a` the awake Form (for, lid, battery), `s` sleep                                                                                                        |
+The app holds exactly one focus: the sidebar, the master or the detail. `tab` and `shift+tab` move it pane to pane, `←` `→` between the sidebar and the list, `[` `]` the previous and next section, `enter` opens (a machine of the tree, a section, a folded group, a row's detail), `esc` backs up one level (a filter, the detail, then the machine's parent), `/` filters a list and the title writes it (`Apps (/node) 3/41`), `ctrl+r` reads the section again, `?` lists every key of the focused pane then every key that works everywhere, `q` quits. The footer shows only the keys that work for the focused pane. Filter mode gives the text every key but `esc` and `enter`, so a typed `q` filters.
 
-Focus modes: the app holds exactly one. Normal owns the global keys (`tab`, `1` to `8`, `r` but on a tab that binds it, `?`, `q`); Filter gives the text input every key except `esc` and `enter`, so typing `q1i` filters by `q1i`; Modal gives a form every key except `ctrl+c`.
+Widths: from 110 columns, three panes; under 110 the detail opens with `tab` over the list; under 80 the sidebar goes and the breadcrumb leads; under 60 × 16 one line says the size station needs. With `NO_COLOR` every glyph stays, the focused pane's border is heavy (`┏━┓`) where the others are rounded, and the cursor row is reverse video.
 
-The action rule: every mutating key releases the screen, makes the one call with the real terminal, then restores the screen, shows the outcome in the status bar and reloads. A tab asks only when that call asks (`tab.Confirmed`): the call runs unanswered first, and the question is put once its use case refuses with a confirmation. Reads run as commands with a spinner. One action at a time per screen.
-
-The loading law: a screen's `Init` returns the commands that call the domain, results arrive as messages, and `View` only renders the model. A view never calls a service, a probe or the system. Every tab starts its reading at once, so the first frame shows each tab's rows pending and every tab fills in the background; the shown tab's probes go first, and the header spinner turns while one of them is pending. `r` drops the shared reading and starts a new one.
+The loading law: the shown section is read first, then All machines and each other Mac's Overview. Every read runs in a command off the frame, its answer arrives as a message, and the view only draws what has answered: until then a section is `◌` with its name. A view never calls a read or the system; the architecture rule `tui-loading-law` refuses a call of the TUI's read outside a command.
 
 ## Related
 

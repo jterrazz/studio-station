@@ -1,3 +1,2 @@
- Error: restart-after-power-cut needs admin rights
- Hint: sudo station settings apply restart-after-power-cut
- r retry  ↑↓ move  enter detail  / filter  space fold  q quit  ? keys
+Error: restart-after-power-cut needs admin rights
+Hint: sudo station settings apply restart-after-power-cut

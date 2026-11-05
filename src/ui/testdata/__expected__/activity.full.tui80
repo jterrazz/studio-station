@@ -1,6 +1,7 @@
- - Activity                                                                    
+ Activity
    ● This Mac  up 3d 4h · rates over the last 10 s
- - Now
+
+ Now
      CPU            34 % of 10 CPU · load 2.8 3.1 2.9
      Memory         12.4 of 16 GB · pressure normal · swap 1.2 GB
      Disk           388 GB free of 994 GB
@@ -10,7 +11,7 @@
      Network total  received 38 GB · sent 4.6 GB since boot
    ● Thermal        Nominal
      Battery        96 % · charging · health 98 % · 112 cycles
- - Top processes
+
+ Top processes
      Top by CPU     Virtualization (linux-1) 18 % · Zed 9 % · WindowServer 4 %
      Top by memory  Virtualization (linux-1) 4.1 GB · Zed 1.9 GB
- ↑↓ move  enter detail  / filter  space fold  r reload  q quit  ? keys
