@@ -2,6 +2,7 @@ package feeds_test
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"slices"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/activity"
 	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
+	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -76,12 +78,15 @@ type world struct {
 	activity map[string]uint64
 }
 
-func (w *world) fleet() machines.Fleet {
+func (w *world) fleet(here bool) machines.Fleet {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	infra := w.infra[0]
 	if len(w.infra) > 1 {
 		w.infra = w.infra[1:]
+	}
+	if here {
+		return machines.Fleet{Hosts: []machines.HostView{{Name: laptop, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here}}}
 	}
 	return machines.Fleet{Hosts: append([]machines.HostView{
 		{Name: laptop, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here},
@@ -89,7 +94,7 @@ func (w *world) fleet() machines.Fleet {
 	}, w.added...)}
 }
 
-func (w *world) answer(name string, target machine.Ref) any {
+func (w *world) answer(name string, target machine.Ref, in any) any {
 	w.mu.Lock()
 	at := target.Name
 	if at == "" {
@@ -99,7 +104,8 @@ func (w *world) answer(name string, target machine.Ref) any {
 	w.mu.Unlock()
 	switch name {
 	case machinescalls.List.Name:
-		return machinescalls.ListOut{Fleet: w.fleet()}
+		listed, _ := in.(machinescalls.ListIn)
+		return machinescalls.ListOut{Fleet: w.fleet(listed.Here)}
 	case portscalls.List.Name:
 		return ports.Listing{}
 	case accountscalls.List.Name:
@@ -120,13 +126,19 @@ func (w *world) answer(name string, target machine.Ref) any {
 	return nil
 }
 
-func (w *world) Invoke(_ context.Context, target machine.Ref, name string, _, out any, _ call.Progress) error {
-	reflect.ValueOf(out).Elem().Set(reflect.ValueOf(w.answer(name, target)))
+func (w *world) Invoke(_ context.Context, target machine.Ref, name string, in, out any, _ call.Progress) error {
+	v := w.answer(name, target, in)
+	if v == nil {
+		return errors.New(name + " is not answered in this world")
+	}
+	reflect.ValueOf(out).Elem().Set(reflect.ValueOf(v))
 	return nil
 }
 
 func (w *world) Watch(context.Context, machine.Ref, string, any, call.Progress) (<-chan call.Update[any], error) {
-	return nil, nil
+	closed := make(chan call.Update[any])
+	close(closed)
+	return closed, nil
 }
 
 func (w *world) askedOf(name string) []string {
@@ -361,3 +373,25 @@ func TestAWorkspaceStartedOnThisMacReachesItsPageWhenTheEngineMoves(t *testing.T
 	changed <- struct{}{}
 	until(t, pages, "linux-1 running", func(p page.Page) bool { r := row(p, "machine", "state"); return r != nil && r.Mark == page.OK })
 }
+
+func TestAWorkspaceCreatedFromTheMenuBarAppearsInHomeWhenTheEngineMoves(t *testing.T) {
+	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, asked: map[string][]string{}, activity: map[string]uint64{}}
+	changed := make(chan struct{}, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	o := feeds.Menubar{Calls: w, Clock: newSteps(), Report: func(awake.View) *awake.Report { return nil }}
+	in := engine.FeedInput{Changed: changed}
+	in.Power = nothing(in.Power)
+	pages := o.Feed()(ctx, in)
+	until(t, pages, "the fleet", func(p page.Page) bool { return row(p, "machines", mini) != nil })
+	w.mu.Lock()
+	w.here = []machines.VM{{Name: "linux-2", Host: laptop, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}}
+	w.mu.Unlock()
+	changed <- struct{}{}
+	p := until(t, pages, "linux-2 in Home", func(p page.Page) bool { return row(p, "machines", "linux-2") != nil })
+	if row(p, "machines", "infra") == nil {
+		t.Error("Home lost mac-mini's infra when This Mac was read again")
+	}
+}
+
+func nothing[T any](func() T) func() T { return func() T { var zero T; return zero } }
