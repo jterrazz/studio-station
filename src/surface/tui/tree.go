@@ -19,6 +19,8 @@ type node struct {
 	here   bool
 	engine string
 	facts  []string
+	// value: why the machines read marks it (a Mac that does not answer).
+	reason page.Reason
 }
 
 const allMachines = "All machines"
@@ -52,7 +54,7 @@ func tree(here page.Context, p *page.Page) []node {
 				continue
 			}
 			h := it.Group.Head
-			mac := node{name: h.ID, label: cmp.Or(h.Short, h.Label), kind: machine.Mac, mark: h.Mark, here: h.ID == here.Machine}
+			mac := node{name: h.ID, label: cmp.Or(h.Short, h.Label), kind: machine.Mac, mark: h.Mark, here: h.ID == here.Machine, reason: h.Reason}
 			mac.engine = ui.Plain(column(s, h, "state"))
 			if mac.engine == engineStopped {
 				mac.mark = page.Attention

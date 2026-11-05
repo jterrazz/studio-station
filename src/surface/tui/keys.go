@@ -85,6 +85,9 @@ func (s shell) aliases() []ui.Binding {
 }
 
 func (s shell) screenKeys() []ui.Binding {
+	if n, ok := s.unanswered(); ok && s.focus != ui.PaneSidebar {
+		return s.unansweredKeys(n)
+	}
 	if sc := s.screen(); sc != nil && s.read() && s.focus != ui.PaneSidebar {
 		return sc.Keys(s.view())
 	}

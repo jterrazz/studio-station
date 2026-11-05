@@ -277,6 +277,11 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if s.focus == ui.PaneSidebar {
 			return s.sidebar(key)
 		}
+		if n, ok := s.unanswered(); ok {
+			if pressed, cmd, ok := s.unansweredPress(n, key); ok {
+				return pressed, cmd
+			}
+		}
 		if sc := s.screen(); sc != nil && s.read() {
 			if e, ok := sc.Press(key, s.view()); ok {
 				return s.effect(e)
@@ -880,6 +885,9 @@ func (s shell) frame() ui.Shell {
 		f.Master = ui.Panel{Title: title, Lines: []string{" " + ui.Glyph(page.Awaiting) + " " + s.section().Title() + ui.Sep + "reading " + s.current().label}}
 	case r.err != nil:
 		f.Master = ui.Panel{Title: title, Lines: ui.ErrorBlock(*r.err, s.dark)}
+		if n, ok := s.unanswered(); ok {
+			f.Master.Lines = s.unansweredLines(n)
+		}
 	case s.matrix():
 		m := s.cell(key)
 		f.Master = ui.Panel{Title: m.Title(s.section().Title(), s.current().label), Lines: m.Lines(f, width, room, s.focus == ui.PaneMaster || s.focus == ui.PaneDetail)}
