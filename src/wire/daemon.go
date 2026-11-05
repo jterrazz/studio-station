@@ -95,7 +95,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
 		Lends:       lends, Peer: m.engineAPI(),
 		Feeds: map[string]engine.Feed{engine.PageMenubar: menubar.Feed(),
-			engine.PagePorts: menubar.Ports(), engine.PageAwake: menubar.Awake(), engine.PageActivity: menubar.Activity()},
+			engine.PagePorts: menubar.Ports(), engine.PageVM: menubar.Workspace(), engine.PageAwake: menubar.Awake(), engine.PageActivity: menubar.Activity()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
 		Listening: m.listeners("/").Read, Declarations: m.stores.declarations.List,
 		Jobs: []engine.Tick{sample.Run},

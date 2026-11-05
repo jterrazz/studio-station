@@ -16,8 +16,10 @@ const (
 	PageMenubar = "menubar"
 	// value: the menu bar's own pages of SPEC §10.2, each watched by its name
 	// and, after a colon, its subject: `menubar.ports:jterrazz-mac-mini`, the
-	// ports of that Mac; `menubar.activity:6m`, This Mac over 6 min.
+	// ports of that Mac; `menubar.vm:linux-1`, that workspace's page;
+	// `menubar.activity:6m`, This Mac over 6 min.
 	PagePorts    = "menubar.ports"
+	PageVM       = "menubar.vm"
 	PageAwake    = "menubar.awake"
 	PageActivity = "menubar.activity"
 	coalesce     = 250 * time.Millisecond
@@ -137,6 +139,9 @@ func (d *Daemon) known(id string) bool {
 	if id == PagePower {
 		return d.o.PowerPage != nil
 	}
+	if id == PageVM {
+		return false
+	}
 	_, ok := d.o.Feeds[id]
 	if feed, subject := feedOf(id); !ok && subject != "" {
 		_, ok = d.o.Feeds[feed]
@@ -145,7 +150,7 @@ func (d *Daemon) known(id string) bool {
 }
 
 func (d *Daemon) CheckPages(pages []string) error {
-	hint := "watch page with the pages menubar, menubar.ports[:<mac>], menubar.awake, menubar.activity[:<window>] or power"
+	hint := "watch page with the pages menubar, menubar.ports[:<mac>], menubar.vm:<workspace>, menubar.awake, menubar.activity[:<window>] or power"
 	if len(pages) == 0 {
 		return fault("unknown_page", "the watch names no page", hint)
 	}

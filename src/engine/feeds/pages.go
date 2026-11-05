@@ -35,6 +35,22 @@ func (o Menubar) Ports() engine.Feed {
 	}
 }
 
+func (o Menubar) Workspace() engine.Feed {
+	// invariant: SPEC §10.2 A workspace, PO-45: the page of the workspace its
+	// colon names, its ports among every Mac's, read when it opens, every
+	// 30 s and on a change of this engine's state (a port shared or let go).
+	return func(ctx context.Context, in engine.FeedInput) <-chan any {
+		read := func(ctx context.Context) page.Page {
+			l, err := call.Invoke(ctx, o.Calls, machine.Ref{}, portscalls.List, portscalls.ListIn{AllMachines: true}, nil)
+			if err != nil {
+				return pagemenubar.Unread(pagemenubar.VMID, o.Here, err)
+			}
+			return pagemenubar.Workspace(l, in.Subject, o.Here)
+		}
+		return o.reread(ctx, in, pagemenubar.VMID, remoteEvery, read)
+	}
+}
+
 func (o Menubar) Awake() engine.Feed {
 	// invariant: SPEC §10.2 Awake: This Mac's Awake then each other Mac's,
 	// each through its engine, read when it opens, every 30 s and on a change
