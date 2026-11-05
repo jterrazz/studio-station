@@ -4,7 +4,6 @@ package wire
 
 import (
 	"context"
-	"github.com/jterrazz/studio-station/src/domain/guest"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -18,9 +17,11 @@ import (
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
+	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotecontract "github.com/jterrazz/studio-station/src/remote/contract"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
@@ -58,6 +59,7 @@ func (*worldMac) disk() diskcontract.DiskUsage                          { return
 func (*worldMac) listeners() portscontract.Listeners                    { return nil }
 func (*worldMac) placement() (guest.Placement, bool)                    { return guest.Placement{}, false }
 func (*worldMac) tailnet() portscontract.Tailnet                        { return nil }
+func (*worldMac) funnel() funnel.Config                                 { return nil }
 func (*worldMac) installer(catalog.Method, bool) appscontract.Installer { return nil }
 func (*worldMac) bundler() appscontract.Bundler                         { return nil }
 func (*worldMac) budgets() probe.Clock                                  { return nil }

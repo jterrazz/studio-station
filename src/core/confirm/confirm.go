@@ -18,6 +18,7 @@ const (
 	Remove      Action = "remove"
 	TakeBack    Action = "take-back"
 	StopSharing Action = "stop-sharing"
+	Undeclare   Action = "undeclare"
 	OffHere     Action = "off-here"
 	Overwrite   Action = "overwrite"
 	Forget      Action = "forget"

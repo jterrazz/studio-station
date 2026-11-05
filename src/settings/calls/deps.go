@@ -51,6 +51,13 @@ type Deps struct {
 	// value: the machines of All machines, for the matrix; nil where none
 	// is reached from (a VM).
 	Fleet Fleet
+	// value: the ports family, which keeps what a setting declares public.
+	Public Public
+}
+
+type Public interface {
+	Declare(ctx context.Context, d catalog.Declares, by string) error
+	Undeclare(ctx context.Context, d catalog.Declares) error
 }
 
 type Shell interface {

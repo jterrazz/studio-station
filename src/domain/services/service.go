@@ -47,6 +47,8 @@ type Options struct {
 	Exposure  func(ctx context.Context) Exposure
 	// value: what listens on this Mac; nil reads nothing.
 	Listening func(ctx context.Context) ([]ports.Listener, error)
+	// value: the routes a declared port is verified by; nil verifies none.
+	Routes portscontract.PublicRoutes
 }
 
 type Stores struct {
@@ -185,7 +187,12 @@ func (s *Service) survey(ctx context.Context, vms []ports.Machine) []ports.Port 
 	if s.st.Declarations != nil {
 		decl, _ = s.st.Declarations.List(ctx)
 	}
-	return ports.Survey(append([]ports.Machine{here}, vms...), decl)
+	ms := append([]ports.Machine{here}, vms...)
+	ps := ports.Survey(ms, decl)
+	if s.o.Routes == nil {
+		return ps
+	}
+	return s.o.Routes.Verify(ctx, ms, ps)
 }
 
 // invariant: the range is the host's policy and its lease file, so it reads the
@@ -276,6 +283,26 @@ func (s *Service) CheckPort(text string) (int, error) {
 		return 0, &IgnoredPortError{Port: port, MinPort: p.MinPort}
 	}
 	return port, nil
+}
+
+func (s *Service) ParsePort(text string) (int, error) { return ParsePort(text) }
+
+func (s *Service) Keeper(ctx context.Context, name string) (named, mac string, err error) {
+	// invariant: this Mac keeps its own declarations and its VMs'; another
+	// Mac of the fleet keeps its own and its VMs'.
+	if name == "" || name == s.o.HereName {
+		return s.o.HereName, "", nil
+	}
+	if hosts, read := s.st.Hosts.Get(); read == nil {
+		if _, ok := hosts[name]; ok {
+			return name, name, nil
+		}
+	}
+	host, here, err := s.o.VMHost(ctx, name)
+	if err != nil || here {
+		return name, "", err
+	}
+	return name, host, nil
 }
 
 func (s *Service) CheckVM(ctx context.Context, vm string) (host string, err error) {

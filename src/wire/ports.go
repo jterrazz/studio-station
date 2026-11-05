@@ -3,7 +3,15 @@ package wire
 import (
 	"context"
 	"errors"
+	"strconv"
+
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/fail"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/guest"
+	"github.com/jterrazz/studio-station/src/ports"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 
 	"github.com/spf13/cobra"
 
@@ -12,13 +20,15 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	portscmd "github.com/jterrazz/studio-station/src/surface/cli/ports"
+	portsdeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/declare"
 	portsshare "github.com/jterrazz/studio-station/src/surface/cli/ports/share"
 	portsstopsharing "github.com/jterrazz/studio-station/src/surface/cli/ports/stopsharing"
+	portsundeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/undeclare"
 )
 
 func (m machine) services(_ kit.Env) *services.Service {
 	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure,
-		Listening: m.listeners("/").Read}
+		Listening: m.listeners("/").Read, Routes: m.routes()}
 	d := servicesDaemon{c: m.engineAPI()}
 	if m.kind != catalog.Host {
 		g := m.guest()
@@ -69,9 +79,30 @@ func portsCommands(env kit.Env, m machine) []*cobra.Command {
 	}
 	share := func() *cobra.Command { return portsshare.Command(portsshare.Deps{Here: m.where}, env) }
 	stop := func() *cobra.Command { return portsstopsharing.Command(portsstopsharing.Deps{Here: m.where}, env) }
+	declare := portsdeclare.Command(portsdeclare.Deps{Here: m.where}, env)
+	undeclare := portsundeclare.Command(portsundeclare.Deps{Here: m.where}, env)
 	return []*cobra.Command{
-		list(share(), stop()),
+		list(share(), stop(), declare, undeclare),
 		kit.Alias("services", list(kit.Alias("url", share(), "share"), kit.Alias("release", stop(), "stop-sharing")), "ports"),
 		kit.Alias("tailnet", list(), "ports"),
 	}
+}
+
+// invariant: what a setting declares public goes through ports' own calls,
+// on this Mac: the declarations are the ports family's to write.
+type settingsPublic struct{ calls call.Router }
+
+func (p settingsPublic) Declare(ctx context.Context, d catalog.Declares, by string) error {
+	in := portscalls.DeclareIn{Port: strconv.Itoa(d.Port), Via: d.Via, By: by}
+	_, err := call.Invoke(ctx, p.calls, coremachine.Ref{}, portscalls.Declare, in, nil)
+	return err
+}
+
+func (p settingsPublic) Undeclare(ctx context.Context, d catalog.Declares) error {
+	in := portscalls.UndeclareIn{Port: strconv.Itoa(d.Port), Confirm: confirm.Yes}
+	_, err := call.Invoke(ctx, p.calls, coremachine.Ref{}, portscalls.Undeclare, in, nil)
+	if f, ok := errors.AsType[*fail.Error](err); ok && f.Code == ports.CodeNotDeclared {
+		return nil
+	}
+	return err
 }

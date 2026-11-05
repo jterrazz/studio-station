@@ -123,3 +123,9 @@ func (t *Tailnet) pending() bool {
 	defer t.w.Unlock()
 	return t.node().CertificatePending
 }
+
+func (t *Tailnet) Funneled(context.Context) ([]int, error) {
+	t.w.Lock()
+	defer t.w.Unlock()
+	return slices.Clone(t.node().Funnel), nil
+}

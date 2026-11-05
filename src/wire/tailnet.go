@@ -6,6 +6,9 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/ports/adapter/cloudflare"
+	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
+	"github.com/jterrazz/studio-station/src/ports/adapter/lan"
 	"github.com/jterrazz/studio-station/src/ports/adapter/tailscale"
 	"github.com/jterrazz/studio-station/src/ports/contract"
 )
@@ -23,6 +26,14 @@ func (m machine) tailnet() contract.Tailnet {
 		return m.world.tailnet()
 	}
 	return m.tailnetCLI()
+}
+
+func (m machine) routes() contract.PublicRoutes {
+	var config funnel.Config = m.tailnetCLI()
+	if m.world != nil {
+		config = m.world.funnel()
+	}
+	return contract.PublicRoutes{cloudflare.Route{}, funnel.New(config), lan.Route{}}
 }
 
 func (m machine) tailnetCLI() *tailscale.CLI {

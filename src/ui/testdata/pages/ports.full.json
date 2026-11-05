@@ -221,11 +221,15 @@
                 "items": [
                   {
                     "kind": "text",
-                    "text": "declared"
+                    "text": "your LAN"
                   },
                   {
                     "kind": "text",
-                    "text": "lan"
+                    "text": "Remote login"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "by Settings"
                   }
                 ]
               }

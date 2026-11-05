@@ -165,6 +165,17 @@ func (m machine) releaseOn(ctx context.Context, host string, t services.Target, 
 	return out.Reservation, err
 }
 
+// value: a declaration kept by another Mac, asked of that Mac.
+type farPorts struct{ m machine }
+
+func (f farPorts) Declare(ctx context.Context, mac string, in portscalls.DeclareIn) (portscalls.DeclareOut, error) {
+	return call.Invoke(ctx, f.m.far.router, coremachine.Ref{Name: mac}, portscalls.Declare, in, nil)
+}
+
+func (f farPorts) Undeclare(ctx context.Context, mac string, in portscalls.UndeclareIn) (portscalls.UndeclareOut, error) {
+	return call.Invoke(ctx, f.m.far.router, coremachine.Ref{Name: mac}, portscalls.Undeclare, in, nil)
+}
+
 func orNone(err error) error {
 	if err != nil {
 		return err

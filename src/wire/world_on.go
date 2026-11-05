@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jterrazz/studio-station/src/domain/guest"
 	"io"
 	"io/fs"
 	"maps"
@@ -43,6 +42,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/fail"
 	diskfake "github.com/jterrazz/studio-station/src/disk/adapter/fake"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
+	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginefake "github.com/jterrazz/studio-station/src/engine/adapter/fake"
@@ -52,6 +52,7 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/ports"
 	portsfake "github.com/jterrazz/studio-station/src/ports/adapter/fake"
+	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotefake "github.com/jterrazz/studio-station/src/remote/adapter/fake"
 	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
@@ -165,7 +166,7 @@ func (m *worldMac) host(h system.Host) system.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	m.home = h.Env.Home()
 	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home()), files: m.files()}
-	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.Here}
+	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.Here || m.slice().Root}
 	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
 	return h
@@ -213,6 +214,7 @@ func (m *worldMac) disk() diskcontract.DiskUsage  { return m.files() }
 
 func (m *worldMac) files() *diskfake.Usage         { return diskfake.UsageOf(m.run.w, m.name).At(m.home) }
 func (m *worldMac) tailnet() portscontract.Tailnet { return portsfake.TailnetOf(m.run.w, m.name) }
+func (m *worldMac) funnel() funnel.Config          { return portsfake.TailnetOf(m.run.w, m.name) }
 func (m *worldMac) bundler() appscontract.Bundler  { return appsfake.BundlerOf(m.run.w, m.name) }
 func (m *worldMac) vault() accountscontract.Vault  { return accountsfake.NewVault(m.run.w, m.name) }
 func (m *worldMac) listeners() portscontract.Listeners {

@@ -24,6 +24,11 @@ type PortJSON struct {
 
 type DeclaredJSON struct {
 	Via string `json:"via"`
+	// value: the setting that declared it; absent when the owner did.
+	By string `json:"by,omitempty"`
+	// value: its route is seen; what is missing when it is not.
+	Seen    bool   `json:"seen"`
+	Missing string `json:"missing,omitempty"`
 }
 
 type RangeJSON struct {
@@ -89,7 +94,10 @@ func ListenerObject(p ports.Port) PortJSON {
 		o.What = w
 	}
 	if p.Declared != nil {
-		o.Declared = &DeclaredJSON{Via: p.Declared.Via}
+		o.Declared = &DeclaredJSON{Via: p.Declared.Via, By: p.Declared.By}
+		if v := p.Verified; v != nil {
+			o.Declared.Seen, o.Declared.Missing = v.Seen, v.Missing
+		}
 	}
 	return o
 }

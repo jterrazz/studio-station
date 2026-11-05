@@ -54,12 +54,13 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		enginecalls.All(enginecalls.Deps{Control: m.control(), Kind: kind}),
 		imagescalls.All(imagescalls.Deps{Images: imageBuilds{m.images()}, Kind: kind}),
 		machinescalls.All(machinescalls.Deps{Machines: machineCalls{Service: m.machines(env.Interactive), m: m}, Kind: kind, Laptop: m.profile.Caps.Battery}),
-		portscalls.All(portscalls.Deps{Ports: m.services(env), Tailnet: m.tailnetStatus(), Kind: kind}),
+		portscalls.All(portscalls.Deps{Ports: m.services(env), Tailnet: m.tailnetStatus(), Kind: kind,
+			Declarations: m.stores.declarations, Routes: m.routes(), Far: farPorts{m}}),
 		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupService}, Ask: named}),
 		settingscalls.All(settingscalls.Deps{
 			Settings: config, Appliers: config.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),
 			Now: m.host.Clock.Now, Ask: ask, Shortcuts: docker.New(m.host.Run), GitAliases: gitaliases.NewShortcuts(m.host.Run), Shell: m.shell(), Kind: kind,
-			Facts: m.facts(), Caps: m.profile.Caps, Admin: m.host.Env.Euid() == 0, Mac: m.profile.Ref.Name, Fleet: settingsFleet{m},
+			Facts: m.facts(), Caps: m.profile.Caps, Admin: m.host.Env.Euid() == 0, Mac: m.profile.Ref.Name, Fleet: settingsFleet{m}, Public: settingsPublic{here},
 		}),
 	)
 	if err != nil {

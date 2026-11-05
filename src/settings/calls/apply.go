@@ -73,6 +73,13 @@ var Apply = call.Call[Deps, ApplyIn, []settings.Change]{
 			if err := keep(ctx, d, t.it); err != nil {
 				return changes, err
 			}
+			// invariant: SPEC 5.6.3: only an always-on Mac's Remote login
+			// is meant for its network; a laptop's goes where it goes.
+			if t.it.Declares != nil && d.Public != nil && !d.Caps.Battery {
+				if err := d.Public.Declare(ctx, *t.it.Declares, t.it.Name); err != nil {
+					return changes, err
+				}
+			}
 			changes = append(changes, change)
 		}
 		return changes, nil

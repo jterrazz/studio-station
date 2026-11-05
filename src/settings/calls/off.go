@@ -84,6 +84,11 @@ var Off = call.Call[Deps, OffIn, []settings.Change]{
 			if err := d.Applied.Delete(ctx, it.Name); err != nil {
 				return changes, err
 			}
+			if it.Declares != nil && d.Public != nil {
+				if err := d.Public.Undeclare(ctx, *it.Declares); err != nil {
+					return changes, err
+				}
+			}
 			off[it.Name] = true
 			changes = append(changes, change)
 		}

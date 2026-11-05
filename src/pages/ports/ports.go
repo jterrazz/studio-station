@@ -199,8 +199,24 @@ func RedRow(p ports.Port) page.Row {
 }
 
 func PublicRow(p ports.Port) page.Row {
-	return page.Row{ID: p.Key(), Label: p.Machine.Name, Mark: page.OK,
+	// invariant: SPEC 5.6: a declared port is OK when its route is seen,
+	// attention with what is missing when it is not.
+	row := page.Row{ID: p.Key(), Label: p.Machine.Name, Mark: page.OK,
 		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(ClassPublic), page.Text(p.What()), ListensOn(p), page.Texts("declared", p.Declared.Via)}}
+	v := p.Verified
+	switch {
+	case v == nil:
+	case !v.Seen:
+		row.Mark, row.Reason = page.Attention, page.Degraded
+		row.Cells[4] = page.Text("declared, but " + v.Missing)
+	case p.Declared.By != "":
+		r, _ := catalog.RouteNamed(p.Declared.Via)
+		row.Cells[4] = page.Texts(r.Label, catalog.DeclaredBy(p.Declared.By), "by Settings")
+	default:
+		r, _ := catalog.RouteNamed(p.Declared.Via)
+		row.Cells[4] = page.Texts(r.Label, r.Seen)
+	}
+	return row
 }
 
 func LocalRow(p ports.Port) page.Row {
@@ -304,6 +320,19 @@ func Shared(s ports.ServiceView, here page.Context) page.Page {
 	row.Cells = []page.Value{page.URL(s.URLs.Public)}
 	return pages.Outcome("ports share "+strconv.Itoa(s.GuestPort), here,
 		[]page.Column{{Key: "port", Kind: page.KindText, Keep: 100}, {Key: "url", Kind: page.KindURL, Keep: 90}}, []page.Row{row}, "shared ports")
+}
+
+func Declared(d ports.Declaration, here page.Context) page.Page {
+	r, _ := catalog.RouteNamed(d.Via)
+	row := pages.Done(d.Key(), catalog.StateOK, "declared public ("+r.Label+")")
+	row.Label = strconv.Itoa(d.Port) + " on " + d.Machine
+	return pages.Outcome("ports declare", here, nil, []page.Row{row}, "declared ports")
+}
+
+func Undeclared(d ports.Declaration, here page.Context) page.Page {
+	row := pages.Done(d.Key(), catalog.StateOK, "not declared")
+	row.Label = strconv.Itoa(d.Port) + " on " + d.Machine
+	return pages.Outcome("ports undeclare", here, nil, []page.Row{row}, "declared ports")
 }
 
 func Stopped(r ports.Reservation, here page.Context) page.Page {
