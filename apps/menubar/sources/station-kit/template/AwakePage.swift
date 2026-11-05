@@ -26,8 +26,7 @@ public struct AwakePage: View {
             if let here, let row = here.rows.first { thisMac(here, row) }
             if let guards = page.section("guards") { guardsCard(guards) }
             if let others = page.section("other-macs") {
-                SectionHead(others.title ?? "")
-                GlassCard(padding: 12, spacing: 0) {
+                GroupCard(others.title ?? "") {
                     ForEach(Array(others.rows.enumerated()), id: \.offset) { i, r in other(others, r, rule: i > 0) }
                 }
                 ForEach(Array(others.notes.enumerated()), id: \.offset) { _, n in
@@ -57,7 +56,7 @@ public struct AwakePage: View {
         }
         if !keeps.isEmpty {
             GlassCard(spacing: 6) {
-                Text("Keep awake for\(Token.Glyph.ellipsis)").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).padding(.leading, 2)
+                CardHead("Keep awake for\(Token.Glyph.ellipsis)")
                 if let running = keeps.first(where: { state.running == $0.id }) {
                     HStack(spacing: 6) { PendingDot(); Text(act.label(running)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted) }
                 } else {
@@ -111,8 +110,7 @@ public struct AwakePage: View {
 
     @ViewBuilder
     func guardsCard(_ s: Section) -> some View {
-        SectionHead(s.title ?? "")
-        GlassCard(padding: 12, spacing: 0) {
+        GroupCard(s.title ?? "") {
             ForEach(Array((s.items ?? []).compactMap(\.fact).enumerated()), id: \.offset) { i, f in
                 HStack(spacing: Token.Space.gap + 2) {
                     IconCircle(symbol(f.key ?? ""), tint: palette.good, size: Token.Tile.smallCircle)
@@ -133,7 +131,7 @@ public struct AwakePage: View {
         let change = page.actions(for: r.id ?? "").first { $0.id?.hasPrefix("change:") == true }
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top, spacing: Token.Space.gap + 2) {
-                IconCircle(Token.Symbol.mac, tint: r.mark == .absent ? nil : palette.accent)
+                IconTile(Token.Symbol.mac, tint: r.mark == .absent ? nil : palette.accent)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(r.short ?? r.label ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
                     Text(words(r.cells?.first)).font(.system(size: Token.Space.small)).foregroundStyle(palette.text)

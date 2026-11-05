@@ -15,6 +15,8 @@ public enum Token {
         public static let restart = "↺"
         public static let caret = "|"
         public static let received = "↓"
+        public static let secret = "••••••"
+        public static let add = "+ "
         public static let sent = "↑"
     }
 
@@ -36,6 +38,9 @@ public enum Token {
         public static let value: CGFloat = 17
         public static let sparkHeight: CGFloat = 24
         public static let circle: CGFloat = 26
+        public static let icon: CGFloat = 28
+        public static let figure: CGFloat = 22
+        public static let bars: CGFloat = 16
         public static let smallCircle: CGFloat = 22
         public static let rowHeight: CGFloat = 40
         public static let hover: CGFloat = 8
@@ -89,20 +94,21 @@ public enum Token {
     public enum Glass {
         public static let spacing: CGFloat = 8
         public static let radius: CGFloat = 16
-        public static let window: CGFloat = 26
-        public static let padding: CGFloat = 10
+        public static let window: CGFloat = 24
+        public static let padding: CGFloat = 12
         public static let tint = 0.32
 
-        public static func body(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.085) : Color.white.opacity(0.5) }
+        public static func body(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.07) : Color.white.opacity(0.4) }
         public static func sheen(_ scheme: ColorScheme) -> [Color] {
-            [Color.white.opacity(scheme == .dark ? 0.07 : 0.3), Color.white.opacity(0)]
+            [Color.white.opacity(scheme == .dark ? 0.045 : 0.16), Color.white.opacity(0)]
         }
         public static func rim(_ scheme: ColorScheme) -> [Color] {
-            let dark = scheme == .dark
-            return [Color.white.opacity(dark ? 0.42 : 0.95), Color.white.opacity(dark ? 0.08 : 0.35), Color.white.opacity(dark ? 0.03 : 0.2), Color.white.opacity(dark ? 0.2 : 0.75)]
+            scheme == .dark ? [Color.white.opacity(0.16), Color.white.opacity(0.07)] : [Color.white.opacity(0.95), Color.black.opacity(0.05)]
         }
-        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x1E1F24).opacity(0.62) : Token.hex(0xF6F7FB).opacity(0.66) }
+        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x26282D).opacity(0.8) : Token.hex(0xF4F5F7).opacity(0.6) }
+        public static func edge(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.16) : Color.black.opacity(0.1) }
         public static func shade(_ scheme: ColorScheme) -> Color { Color.black.opacity(scheme == .dark ? 0.5 : 0.22) }
+        public static func well(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.black.opacity(0.22) : Color.black.opacity(0.05) }
         public static let ink = Color.white
 
         // value: the fixed wallpaper an offscreen snapshot draws the panel
@@ -167,6 +173,9 @@ public enum Token {
         public static let screen = "display"
         public static let port = "network"
         public static let terminalFill = "apple.terminal.fill"
+        public static let trash = "trash"
+        public static let copyLink = "doc.on.doc"
+        public static let key = "key.fill"
 
         // value: the state circle a known line of a machine's page wears.
         public static func line(_ id: String) -> String? {
@@ -199,7 +208,7 @@ public enum Token {
     // ink and its two secondary steps, the state colours, white on a
     // filled state circle.
     public struct Palette: Sendable {
-        public let text, muted, subtle, faint, hover, raised, accent, good, warn, bad, teal, indigo, grey, onTint, qrDark, qrLight: Color
+        public let text, muted, subtle, faint, hover, raised, well, accent, good, warn, bad, teal, indigo, grey, onTint, qrDark, qrLight: Color
 
         public func of(_ mark: Mark) -> Color {
             switch mark {
@@ -223,7 +232,7 @@ public enum Token {
         return Palette(
             text: pair(0x1D1D1F, 0xF5F5F7), muted: ink2.opacity(dark ? 0.62 : 0.68), subtle: ink2.opacity(dark ? 0.38 : 0.42),
             faint: ink2.opacity(dark ? 0.16 : 0.16), hover: (dark ? Color.white : Color.black).opacity(dark ? 0.1 : 0.06),
-            raised: Color.white.opacity(dark ? 0.2 : 0.92),
+            raised: Color.white.opacity(dark ? 0.2 : 0.92), well: Glass.well(scheme),
             accent: pair(0x0A7AFF, 0x2B8CFF), good: pair(0x2FB350, 0x32C75A), warn: pair(0xF29D0B, 0xFFAD1F), bad: pair(0xEC3B30, 0xFF4F45),
             teal: pair(0x14A6B8, 0x2BB8C9), indigo: pair(0x5B5CE6, 0x6E6FF0), grey: hex(0x8E8E93), onTint: hex(0xFFFFFF),
             qrDark: hex(0x000000), qrLight: hex(0xFFFFFF))

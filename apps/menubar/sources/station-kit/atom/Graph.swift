@@ -54,3 +54,45 @@ extension Value {
         return (items ?? []).dropFirst().map { Int($0.n ?? 0) }
     }
 }
+
+// invariant: a measure as the references' bar meter: one rounded bar a
+// point, oldest first, grey, the latest `accented` in the accent; Swift
+// Charts' bars, axes hidden, as wide as it is given.
+public struct Bars: View {
+    let points: [Int]
+    let height: CGFloat
+    let accented: Int
+    let tint: Color?
+    @Environment(\.stationPalette) private var palette
+
+    public init(_ points: [Int], height: CGFloat = Token.Tile.bars, accented: Int = 1, tint: Color? = nil) {
+        self.points = points
+        self.height = height
+        self.accented = accented
+        self.tint = tint
+    }
+
+    // value: a bar's height, 0 to 1, over the band its points move in, so
+    // a steady series still shows its swing.
+    func level(_ p: Int) -> Double {
+        let top = Double(max(points.max() ?? 1, 1)), lo = Double(points.min() ?? 0)
+        let floor = max(lo - max(top - lo, top / 10), 0)
+        return max((Double(p) - floor) / max(top - floor, 1), 0.1)
+    }
+
+    public var body: some View {
+        let ink = tint ?? palette.accent
+        let recent = points.count - accented
+        Chart(Array(points.enumerated()), id: \.offset) { i, p in
+            BarMark(x: .value("t", "\(i)"), yStart: .value("floor", 0), yEnd: .value("v", level(p)), width: .ratio(0.55))
+                .clipShape(Capsule())
+                .foregroundStyle(i >= recent ? ink : palette.subtle)
+        }
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartLegend(.hidden)
+        .chartYScale(domain: 0...1)
+        .chartPlotStyle { $0.frame(maxWidth: .infinity) }
+        .frame(height: height)
+    }
+}
