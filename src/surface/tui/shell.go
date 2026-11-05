@@ -411,7 +411,7 @@ func (s shell) masterWidth() int {
 	if s.sidebarShown() {
 		width -= ui.SidebarWidth
 	}
-	if s.detailed() && s.width >= ui.ThreePanes {
+	if (s.detailed() || s.paned()) && s.width >= ui.ThreePanes {
 		width -= ui.DetailWidth
 	}
 	return width
@@ -759,6 +759,15 @@ func (s shell) frame() ui.Shell {
 		if sc != nil {
 			if lines, ok := sc.Lines(s.view()); ok {
 				f.Master.Lines = lines
+			}
+		}
+		// invariant: a narrow terminal draws the fixed panes under the
+		// master pane's lines, never drops one.
+		if panes := s.panes(); s.width >= ui.ThreePanes {
+			f.Beside = panes
+		} else {
+			for _, p := range panes {
+				f.Master.Lines = append(append(f.Master.Lines, "", " "+p.Title), p.Lines...)
 			}
 		}
 	}

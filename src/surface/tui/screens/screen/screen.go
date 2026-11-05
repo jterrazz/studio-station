@@ -47,6 +47,8 @@ type View struct {
 	Dark    bool
 	NoColor bool
 	State   State
+	// value: the pages read beside the section's own, by their Read's name.
+	Beside map[string]page.Page
 }
 
 type Effect struct {
@@ -120,3 +122,20 @@ func Cell(s page.Section, r page.Row, key string) page.Value {
 }
 
 func Bind(key, label string) ui.Binding { return ui.Binding{Key: key, Label: label} }
+
+type Read struct {
+	Name  string
+	Words []string
+}
+
+type Beside interface {
+	// value: a screen that draws more than its section's page: the pages
+	// it reads beside it, and the fixed panes it draws at the right of the
+	// master pane (a server's Overview: its Health and its Ports).
+	// value: the reads beside the section's own, from the CLI's words of
+	// each section of the machine.
+	Reads(m Machine, id section.ID, words func(section.ID) []string) []Read
+	// value: whether the screen draws panes at the right for this section.
+	Paned(m Machine, id section.ID) bool
+	Panes(v View) []ui.Panel
+}

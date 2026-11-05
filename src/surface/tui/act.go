@@ -85,9 +85,41 @@ func (s shell) view() screen.View {
 	key := s.key(s.current(), s.section())
 	l := s.list(key)
 	v := screen.View{Machine: s.machineOf(s.current()), Section: s.section(), Page: l.Page, Width: s.masterWidth() - 2,
-		Room: max(s.height-7, 1), Dark: s.dark, NoColor: s.deps.NoColor, State: s.states[key]}
+		Room: max(s.height-7, 1), Dark: s.dark, NoColor: s.deps.NoColor, State: s.states[key], Beside: map[string]page.Page{}}
 	v.Of, v.Row, v.HasRow = l.Current()
+	for _, r := range s.besides(s.current(), s.section()) {
+		if got, ok := s.reads[besideKey(s.current(), r)]; ok && got.done && got.err == nil {
+			v.Beside[r.Name] = got.page
+		}
+	}
 	return v
+}
+
+func (s shell) besides(n node, id section.ID) []screen.Read {
+	b, ok := screenFor(n, id).(screen.Beside)
+	if !ok {
+		return nil
+	}
+	return b.Reads(s.machineOf(n), id, func(other section.ID) []string { return words(n, other) })
+}
+
+func besideKey(n node, r screen.Read) string {
+	return n.name + "\x00beside\x00" + strings.Join(r.Words, " ")
+}
+
+// value: the fixed panes the shown screen draws at the right of its
+// master pane, once its page is read.
+func (s shell) panes() []ui.Panel {
+	if !s.paned() {
+		return nil
+	}
+	b, _ := s.screen().(screen.Beside)
+	return b.Panes(s.view())
+}
+
+func (s shell) paned() bool {
+	b, ok := s.screen().(screen.Beside)
+	return ok && s.read() && b.Paned(s.machineOf(s.current()), s.section())
 }
 
 func (s shell) effect(e screen.Effect) (shell, tea.Cmd) {

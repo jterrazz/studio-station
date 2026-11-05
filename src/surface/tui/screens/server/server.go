@@ -17,14 +17,17 @@ func (Screen) Live() time.Duration { return 0 }
 
 func (Screen) Words(_ screen.Machine, words []string, _ screen.State) []string { return words }
 
-func (Screen) Title(v screen.View) string { return v.Section.Title() + ui.Sep + v.Machine.Label }
-
-func (Screen) Lines(screen.View) ([]string, bool) { return nil, false }
+func (Screen) Title(v screen.View) string {
+	if v.Machine.Kind == machine.Server && v.Section == section.Overview {
+		return v.Machine.Label + "  " + kind(v.Machine) + " "
+	}
+	return v.Section.Title() + ui.Sep + v.Machine.Label
+}
 
 func (Screen) Keys(v screen.View) []ui.Binding {
 	copySSH := screen.Bind("c", "copy "+strings.ToLower(section.SSH.Title()))
 	if v.Section == section.SSH {
-		return []ui.Binding{copySSH}
+		return []ui.Binding{screen.Bind("c", "copy")}
 	}
 	stop := screen.Bind("s", "stop")
 	if v.Machine.Kind == machine.Server {
@@ -54,6 +57,8 @@ func (Screen) Press(key string, v screen.View) (screen.Effect, bool) {
 		return screen.Effect{}, false
 	}
 	switch {
+	case key == "enter" && m.Kind == machine.Server:
+		return screen.Effect{Open: &screen.Open{Machine: name, Section: section.Activity}}, true
 	case key == "s" && m.Kind == machine.Workspace:
 		return screen.Effect{Call: &screen.Call{Words: append([]string{"machines", "stop", name, "--yes"}, on(m)...),
 			Ask:   &screen.Ask{Question: "Stop " + name + "?", Lines: []string{"It is kept, with its disk, until you start or delete it."}, Yes: "stop"},
@@ -73,14 +78,24 @@ func (Screen) Press(key string, v screen.View) (screen.Effect, bool) {
 }
 
 func health(p page.Page, id string) string {
+	if r, ok := row(p, "health", id); ok && len(r.Cells) > 0 {
+		return ui.Plain(r.Cells[0])
+	}
+	return ""
+}
+
+func row(p page.Page, sec, id string) (page.Row, bool) {
 	for _, s := range p.Sections {
+		if sec != "" && s.ID != sec {
+			continue
+		}
 		for _, it := range s.Items {
-			if it.Row != nil && it.Row.ID == id && len(it.Row.Cells) > 0 {
-				return ui.Plain(it.Row.Cells[0])
+			if it.Row != nil && it.Row.ID == id {
+				return *it.Row, true
 			}
 		}
 	}
-	return ""
+	return page.Row{}, false
 }
 
 // invariant: the form starts from what the VM was created with, and the
