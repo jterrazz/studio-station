@@ -1,4 +1,4 @@
-# Set by station	3 ●	3 ◐	3 ○	3 ⊘
+# Set by station	4 ●	3 ◐	3 ○	3 ⊘
 ◐	ghostty-dotfiles	changed since 2 d ago	station settings diff ghostty-dotfiles
 ◐	github-login	changed since 2 d ago	station settings diff github-login
 ◐	dock-reset	changed since 2 d ago	station settings diff dock-reset
@@ -8,6 +8,7 @@
 ●	hushlogin	applied · ~/.hushlogin
 ●	ssh-key	applied · ~/.ssh-key
 ●	zed-dotfiles	applied · ~/.zed-dotfiles
+●	git-shortcuts	applied · ~/.git-shortcuts
 ⊘	starship-dotfiles	off here
 ⊘	dns	off here
 ⊘	backup-exclusions	off here

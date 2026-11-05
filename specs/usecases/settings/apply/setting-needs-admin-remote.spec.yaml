@@ -1,4 +1,4 @@
-description: 'an admin setting through --on is refused with the ssh line that runs it under sudo on that Mac'
+description: 'an admin setting through --on is refused with the ssh line that runs it under sudo there'
 env: two-macs
 runs:
     - command: 'settings apply restart-after-power-cut --on jterrazz-mac-mini'

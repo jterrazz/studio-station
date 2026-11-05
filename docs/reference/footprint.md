@@ -633,6 +633,7 @@ Free: delete `~/.cache/mole/*`, delete `~/Library/Logs/mole/*`. Erase: none (not
 | backup-exclusions       | `~/.cache`                                                                      | never touched | a sticky Time Machine exclusion (`tmutil addexclusion`)                  |
 | backup-exclusions       | `~/.local/share/station/vms`                                                    | never touched | a sticky Time Machine exclusion (`tmutil addexclusion`)                  |
 | tart-launcher           | `~/.local/bin/tart`                                                             | never touched | the embedded `tart/tart`                                                 |
+| git-shortcuts           | `~/.gitconfig`                                                                  | never touched | station's `[alias]` block                                                |
 
 ## Home-root exceptions
 

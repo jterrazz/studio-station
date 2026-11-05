@@ -8,13 +8,10 @@ import (
 )
 
 func shortcutsFailure(err error) (*fail.Error, bool) {
-	var git *shortcuts.GitStepError
 	var docker *shortcuts.DockerStepError
 	var missing *shortcuts.NotInstalledError
 	var unknown *shortcuts.UnknownShortcutError
 	switch {
-	case errors.As(err, &git):
-		return failed(git.Error(), "fix what git printed above, then run station run git "+git.Shortcut+" again", err), true
 	case errors.As(err, &docker):
 		return failed(docker.Error(), "check that the docker daemon runs, then run it again", err), true
 	case errors.As(err, &missing):

@@ -22,6 +22,8 @@ const (
 	// value: an admin setting named by a run without admin rights: station
 	// never calls sudo, the owner runs it so on that Mac's own terminal.
 	NeedsAdmin fail.Code = "setting.needs-admin"
+	// value: a gesture that needs a setting this machine has not applied.
+	NotApplied fail.Code = "setting.not-applied"
 )
 
 type Deps struct {
@@ -32,8 +34,9 @@ type Deps struct {
 	Now      func() time.Time
 	// value: the values a setting asks, from the owner at a terminal; nil
 	// where nobody is there to answer.
-	Ask       Ask
-	Shortcuts Shortcuts
+	Ask        Ask
+	Shortcuts  Shortcuts
+	GitAliases GitAliases
 	// value: the script the ~/.zshrc block evaluates.
 	Shell Shell
 	Kind  machine.Kind

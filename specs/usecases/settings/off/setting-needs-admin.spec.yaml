@@ -1,4 +1,4 @@
-description: 'off on an admin setting without admin rights is refused with the sudo line, and the setting stays'
+description: 'off on an admin setting without admin rights is refused with the sudo line; it stays'
 env: two-macs
 runs:
     - command: 'settings off restart-after-power-cut --on jterrazz-mac-mini --yes'

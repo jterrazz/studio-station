@@ -197,6 +197,28 @@
         },
         {
           "row": {
+            "id": "git-shortcuts",
+            "mark": "ok",
+            "label": "git-shortcuts",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "applied"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "~/.git-shortcuts"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
             "id": "starship-dotfiles",
             "mark": "off-here",
             "label": "starship-dotfiles",
@@ -238,7 +260,7 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 3
+          "n": 4
         },
         {
           "mark": "attention",

@@ -36,8 +36,9 @@ type Effect interface{ Kind() EffectKind }
 type EffectKind string
 
 const (
-	EffectTouch   EffectKind = "touch"
-	EffectDotfile EffectKind = "dotfile"
+	EffectTouch      EffectKind = "touch"
+	EffectDotfile    EffectKind = "dotfile"
+	EffectGitAliases EffectKind = "git-aliases"
 )
 
 type Touch struct{ Path string }
@@ -51,6 +52,14 @@ type Copy struct {
 	From, To string
 	Mode     fs.FileMode
 }
+
+type GitAliases struct {
+	// value: aliases station keeps in one marked block of this git config file.
+	File    string
+	Aliases []GitAlias
+}
+
+type GitAlias struct{ Name, Command string }
 
 type Procedure string
 
@@ -71,8 +80,9 @@ const (
 	ProcBackupExclusions     Procedure = "backup-exclusions"
 )
 
-func (Touch) Kind() EffectKind    { return EffectTouch }
-func (Dotfiles) Kind() EffectKind { return EffectDotfile }
+func (Touch) Kind() EffectKind      { return EffectTouch }
+func (Dotfiles) Kind() EffectKind   { return EffectDotfile }
+func (GitAliases) Kind() EffectKind { return EffectGitAliases }
 
 func (p Procedure) Kind() EffectKind { return EffectKind("procedure:" + string(p)) }
 
@@ -158,4 +168,24 @@ var ConfigItems = []ConfigItem{
 		noted(conf("{data}/station/vms"), "a sticky Time Machine exclusion (`tmutil addexclusion`)"),
 	}},
 	{Name: "tart-launcher", Description: "The tart launcher: Tart's home is station's VMs folder", Category: CategorySystem, Places: hostKind, Effect: Dotfiles{Files: []Copy{{From: "tart/tart", To: "~/.local/bin/tart", Mode: 0o755}}}},
+	{Name: GitShortcutsSetting, Description: "Git shortcuts: git wip, unwip, sync, feat, fix, chore, branches, lg, st, pushup", Category: CategoryShell, Places: everyKind, Effect: GitShortcuts, Reversible: true, Writes: []Stored{noted(conf("~/.gitconfig"), "station's `[alias]` block")}},
+}
+
+const GitShortcutsSetting = "git-shortcuts"
+
+var GitShortcuts = GitAliases{File: "~/.gitconfig", Aliases: []GitAlias{
+	{Name: "wip", Command: "!git add --all && git commit -m WIP"},
+	{Name: "unwip", Command: "!git reset --soft HEAD~1 && git reset HEAD"},
+	{Name: "sync", Command: "!git fetch -p; git pull"},
+	{Name: "feat", Command: commitAs("feat")},
+	{Name: "fix", Command: commitAs("fix")},
+	{Name: "chore", Command: commitAs("chore")},
+	{Name: "branches", Command: "branch"},
+	{Name: "lg", Command: "log --oneline -10"},
+	{Name: "st", Command: "status"},
+	{Name: "pushup", Command: "push -u origin HEAD"},
+}}
+
+func commitAs(prefix string) string {
+	return `!f() { git add . && git commit -m "` + prefix + `: $*"; }; f`
 }

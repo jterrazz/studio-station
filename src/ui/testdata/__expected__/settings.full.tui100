@@ -1,13 +1,14 @@
- - Set by station                                                                3 ●  3 ◐  3 ○  3 ⊘
-   ◐ ghostty-dotfiles   changed since 2 d ago      d diff
-   ◐ github-login       changed since 2 d ago      d diff
-   ◐ dock-reset         changed since 2 d ago      d diff
-   ○ tmux-dotfiles      not applied                a apply
-   ○ spotlight-exclude  not applied                a apply
-   ○ dock-spacer        not applied                a apply
+ - Set by station                                                                4 ●  3 ◐  3 ○  3 ⊘
+   ◐ ghostty-dotfiles   changed since 2 d ago       d diff
+   ◐ github-login       changed since 2 d ago       d diff
+   ◐ dock-reset         changed since 2 d ago       d diff
+   ○ tmux-dotfiles      not applied                 a apply
+   ○ spotlight-exclude  not applied                 a apply
+   ○ dock-spacer        not applied                 a apply
    ● hushlogin          applied · ~/.hushlogin
    ● ssh-key            applied · ~/.ssh-key
    ● zed-dotfiles       applied · ~/.zed-dotfiles
+   ● git-shortcuts      applied · ~/.git-shortcuts
    ⊘ starship-dotfiles  off here
    ⊘ dns                off here
    ⊘ backup-exclusions  off here

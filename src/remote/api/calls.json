@@ -441,6 +441,9 @@
       "schema": "station.run.git/v1",
       "section": "settings",
       "where": "at-target",
+      "errors": [
+        "setting.not-applied"
+      ],
       "in": "GitIn"
     },
     {

@@ -173,12 +173,22 @@
               "kind": "pending"
             }
           }
+        },
+        {
+          "row": {
+            "id": "git-shortcuts",
+            "mark": "pending",
+            "label": "git-shortcuts",
+            "detail": {
+              "kind": "pending"
+            }
+          }
         }
       ],
       "counts": [
         {
           "mark": "pending",
-          "n": 15
+          "n": 16
         }
       ],
       "pipe_counts": true

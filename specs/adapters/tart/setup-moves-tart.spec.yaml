@@ -10,7 +10,7 @@ runs:
           ●	relocate	bunfig, go env, mise config, npmrc, moved ~/.tart, ~/.local/opt
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
-          ●	settings	applied hushlogin
+          ●	settings	applied hushlogin git-shortcuts
           ○	ssh-key	next: station settings apply ssh-key
           ○	spotlight-exclude	next: station settings apply spotlight-exclude
           ○	dns	next: station settings apply dns

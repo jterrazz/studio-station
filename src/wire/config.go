@@ -2,6 +2,7 @@ package wire
 
 import (
 	"context"
+	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
 	"io/fs"
 	"path/filepath"
 	"strings"
@@ -82,6 +83,7 @@ func settingAppliers(m machine) []settingscontract.Applier {
 	files, _ := fs.Sub(catalog.DotfilesFS, "dotfiles")
 	appliers := []settingscontract.Applier{
 		touch.New(m.host.FS, m.host.Env.Home()),
+		gitaliases.New(m.host.FS, m.host.Env.Home()),
 		dotfile.New(m.host.FS, m.host.Run, dotfile.Options{Home: m.host.Env.Home(), Ours: files}),
 		neversleeps.New(m.stores.neverSleeps()),
 	}

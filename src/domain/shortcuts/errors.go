@@ -1,15 +1,5 @@
 package shortcuts
 
-import "strconv"
-
-type GitStepError struct {
-	Shortcut string
-	Step     string
-	ExitCode int
-}
-
-func (e *GitStepError) Error() string { return e.Step + " exited " + strconv.Itoa(e.ExitCode) }
-
 type DockerStepError struct {
 	Step   string
 	Detail string
