@@ -41,19 +41,19 @@ func settingsCommand(env kit.Env, m machine) *cobra.Command {
 	children := func() []*cobra.Command {
 		return []*cobra.Command{
 			settingsdiff.Command(settingsdiff.Deps{Names: all, Here: m.where}, env),
-			settingsapply.Command(settingsapply.Deps{Names: all, Here: m.where}, env),
+			settingsapply.Command(settingsapply.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now}, env),
 			settingsoff.Command(settingsoff.Deps{Names: all, Here: m.where, Also: func(names []string) []string { return m.pauses(env, names) }}, env),
 		}
 	}
-	return settingscmd.Command(settingscmd.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now}, env, children()...)
+	return settingscmd.Command(settingscmd.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now, Label: m.label}, env, children()...)
 }
 
 // value: station config, config install and config uninstall, the words v2
 // gave settings, settings apply and settings off.
 func settingsAliases(env kit.Env, m machine) []*cobra.Command {
 	all := func() []string { return nil }
-	return []*cobra.Command{kit.Alias("config", settingscmd.Command(settingscmd.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now}, env,
-		kit.Alias("install", settingsapply.Command(settingsapply.Deps{Names: all, Here: m.where}, env), "apply"),
+	return []*cobra.Command{kit.Alias("config", settingscmd.Command(settingscmd.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now, Label: m.label}, env,
+		kit.Alias("install", settingsapply.Command(settingsapply.Deps{Names: all, Here: m.where, Now: m.host.Clock.Now}, env), "apply"),
 		kit.Alias("uninstall", settingsoff.Command(settingsoff.Deps{Names: all, Here: m.where}, env), "off"),
 	), "settings")}
 }

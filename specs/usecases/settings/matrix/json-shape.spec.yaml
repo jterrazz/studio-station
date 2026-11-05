@@ -1,0 +1,7 @@
+description: '--json is station.settings.matrix/v1: columns, servers skipped, one state per cell and the count'
+env: two-macs
+runs:
+    - command: 'settings --all-machines --json | /usr/bin/jq -c ''{schema, machine, findings, columns, skipped, firewall: (.rows[] | select(.name == "firewall"))}'''
+      exit: 0
+      stdout: |
+          {"schema":"station.settings.matrix/v1","machine":{"name":"jterrazz-macbook-pro","kind":"mac"},"findings":["api: stopped, not read since the engine started"],"columns":["jterrazz-macbook-pro","jterrazz-mac-mini","linux-1","api"],"skipped":[{"name":"infra","why":"server"}],"firewall":{"name":"firewall","group":"checked","cells":["needs-fix","as-expected","not-for-this-machine","unknown"],"ok":1,"of":2}}

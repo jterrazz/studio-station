@@ -12,6 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/remote/serve"
+	"github.com/jterrazz/studio-station/src/settings"
 )
 
 // value: the names of the engine's own calls: what a process of this Mac
@@ -33,6 +34,10 @@ const (
 	// value: the activity this engine keeps, of This Mac and of each VM it
 	// sees, in its memory alone.
 	Activity = "engine.activity"
+	// value: the last settings read of a workspace, kept by the engine in its
+	// memory alone, and asked back while it is stopped.
+	KeepSettings = "engine.settings-keep"
+	LastSettings = "engine.settings-last"
 	// value: the watch of the engine's pages, and of what it tells.
 	Page   = "page"
 	Events = "engine.events"
@@ -42,6 +47,16 @@ const (
 )
 
 func VM(verb string) string { return "engine.vm-" + verb }
+
+type KeepSettingsIn struct {
+	VM   string            `json:"vm"`
+	Read settings.LastRead `json:"read"`
+}
+
+type LastSettingsOut struct {
+	Read settings.LastRead `json:"read"`
+	Kept bool              `json:"kept"`
+}
 
 type VMIn struct {
 	VM string `json:"vm"`
@@ -153,6 +168,14 @@ func calls(d *engine.Daemon, served []string) []call.Handler {
 		own(d, Awake, func(_ context.Context, d *engine.Daemon, in engine.AwakeIn) (any, error) { return d.Awake(in) }),
 		own(d, Sleep, func(_ context.Context, d *engine.Daemon, _ struct{}) (any, error) { return d.Sleep(), nil }),
 		own(d, Activity, func(_ context.Context, d *engine.Daemon, _ struct{}) (any, error) { return activityOf(d), nil }),
+		own(d, KeepSettings, func(_ context.Context, d *engine.Daemon, in KeepSettingsIn) (any, error) {
+			d.KeepSettings(in.VM, in.Read)
+			return struct{}{}, nil
+		}),
+		own(d, LastSettings, func(_ context.Context, d *engine.Daemon, in VMIn) (any, error) {
+			read, ok := d.LastSettings(in.VM)
+			return LastSettingsOut{Read: read, Kept: ok}, nil
+		}),
 		own(d, Refresh, func(_ context.Context, d *engine.Daemon, in PagesIn) (any, error) {
 			return struct{}{}, d.Refresh(in.Pages)
 		}),

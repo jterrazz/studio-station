@@ -82,6 +82,11 @@ func Texts(words ...string) Value {
 
 func Levels(labeled ...Value) Value { return Value{Kind: KindLevels, Items: labeled} }
 
+func Marked(m Mark) Value {
+	// value: a mark alone, as a matrix's cell: its glyph and no word.
+	return Value{Kind: KindText, Label: string(m)}
+}
+
 func Labeled(label string, v Value) Value {
 	v.Label = label
 	return v

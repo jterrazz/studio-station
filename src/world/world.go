@@ -215,6 +215,10 @@ type Engine struct {
 	// value: the activity the engine holds in its memory between two
 	// commands, by machine; its successor after a restart holds none.
 	Activity map[string]activity.Kept `json:"activity,omitempty"`
+	// value: the last settings read of each workspace the engine holds in
+	// its memory between two commands; its successor after a restart holds
+	// none.
+	Settings engine.SettingsKept `json:"settings,omitempty"`
 	// value: the menu bar runs against this engine between two commands,
 	// "closed" or "open": closed it holds its page and events watches,
 	// open it watches This Mac's activity too.

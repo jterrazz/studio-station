@@ -125,6 +125,7 @@ type Daemon struct {
 	hub       hub
 	history   *activity.History
 	watchers  watchers
+	settings  SettingsKept
 
 	notifier Notifier
 	serve    func(ctx context.Context, conn io.ReadWriteCloser)

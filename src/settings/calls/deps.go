@@ -48,6 +48,9 @@ type Deps struct {
 	// of the machine it runs on.
 	Admin bool
 	Mac   string
+	// value: the machines of All machines, for the matrix; nil where none
+	// is reached from (a VM).
+	Fleet Fleet
 }
 
 type Shell interface {
@@ -75,7 +78,7 @@ type Ask interface {
 func All(d Deps) []call.Handler {
 	return []call.Handler{
 		call.BindWatch(List, d), call.Bind(Show, d), call.Bind(Diff, d), call.Bind(Apply, d), call.Bind(Off, d),
-		call.Bind(Git, d), call.Bind(Containers, d), call.Bind(Zsh, d),
+		call.Bind(Git, d), call.Bind(Containers, d), call.Bind(Zsh, d), call.Bind(Matrix, d),
 	}
 }
 

@@ -1,0 +1,59 @@
+ station settings --all-machines                                                host · unregistered
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Machines  29 settings · 4 machines · 16 need a look
+   ● This Mac  Mac        read
+   ● mac-mini  Mac        read
+   ● linux-1   Workspace  read
+   ○ api       Workspace  stopped · last read 2 h ago
+   – infra     Server     not checked: station does not manage its settings
+
+ Needs a look  16 ◐
+   ◐ This Mac  ghostty-dotfiles  changed since 2 d ago
+     → station settings diff ghostty-dotfiles
+   ◐ This Mac  github-login      changed since 2 d ago
+     → station settings diff github-login
+   ◐ This Mac  dock-reset        changed since 2 d ago
+     → station settings diff dock-reset
+   ◐ This Mac  firewall          off
+     → System Settings > Network > Firewall
+   ◐ This Mac  screen-lock       locks after 10 min · expected 5 min
+     → System Settings > Lock Screen
+   ◐ mac-mini  ghostty-dotfiles  changed since 2 d ago
+     → station settings diff ghostty-dotfiles --on jterrazz-mac-mini
+   ◐ mac-mini  github-login      changed since 2 d ago
+     → station settings diff github-login --on jterrazz-mac-mini
+   ◐ mac-mini  dock-reset        changed since 2 d ago
+     → station settings diff dock-reset --on jterrazz-mac-mini
+   ◐ mac-mini  firewall          off
+     → System Settings > Network > Firewall
+   ◐ mac-mini  screen-lock       locks after 10 min · expected 5 min
+     → System Settings > Lock Screen
+   ◐ linux-1   ghostty-dotfiles  changed since 2 d ago
+     → station settings diff ghostty-dotfiles --on linux-1
+   ◐ linux-1   github-login      changed since 2 d ago
+     → station settings diff github-login --on linux-1
+   ◐ linux-1   dock-reset        changed since 2 d ago
+     → station settings diff dock-reset --on linux-1
+   ◐ api       ghostty-dotfiles  changed since 2 d ago                → station machines start api
+   ◐ api       github-login      changed since 2 d ago                → station machines start api
+   ◐ api       dock-reset        changed since 2 d ago                → station machines start api
+
+ Set by station
+                       This Mac  mac-mini  linux-1  api    OK
+   ◐ ghostty-dotfiles  ◐         ◐         ◐        ◐      0/4
+   ◐ github-login      ◐         ◐         ◐        ◐      0/4
+   ◐ dock-reset        ◐         ◐         ◐        ◐      0/4
+   ○ 12 more           ○ 3/9     ○ 3/9     ○ 3/9    ○ 3/9  12/36
+
+ Always-on Mac
+                 This Mac  mac-mini  linux-1  api  OK
+   ○ 5 settings  ○         ○         –        –    –
+
+ Checked
+                  This Mac  mac-mini  linux-1  api  OK
+   ◐ firewall     ◐         ◐         –        –    0/2
+   ◐ screen-lock  ◐         ◐         –        –    0/2
+   ⊘ 7 more       ⊘ 5/7     ⊘ 5/7     –        –    10/14
+
+ → station settings --all-machines --all every row

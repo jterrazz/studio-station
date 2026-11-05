@@ -2,6 +2,7 @@ package pages
 
 import (
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/background"
@@ -56,7 +57,7 @@ func failure(id page.ID, command, message, hint string) page.Page {
 
 func Estate() []Fixture {
 	var out []Fixture
-	for _, f := range [][]Fixture{homes(), settingsPages(), disks(), fleets(), machineLists(), sshPages(), imageLists(), portLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), awakePages(), menubarPages()} {
+	for _, f := range [][]Fixture{homes(), settingsPages(), settingsMatrix(), disks(), fleets(), machineLists(), sshPages(), imageLists(), portLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), awakePages(), menubarPages()} {
 		out = append(out, f...)
 	}
 	return out
@@ -225,6 +226,36 @@ func settingsPages() []Fixture {
 		pagesettings.List(nil, now, false, here()),
 		failure(pagesettings.ID, "settings", "the preferences file is not valid JSON", "repair the JSON of ~/.config/station/preferences.json"),
 		pagesettings.List(settingRows(false), now, false, here()))
+}
+
+// value: the matrix of the estate: This Mac and a desktop read, a running
+// workspace, a stopped one shown from its last read, and a server named apart.
+func settingsMatrix() []Fixture {
+	now := time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)
+	mac := settingRows(false)
+	space := make([]settings.Row, 0, len(mac))
+	for _, r := range mac {
+		if r.Group != settings.SetByStation {
+			r.State, r.Checked, r.Why = settings.StateNotForThisMachine, "", "Mac only"
+			if r.Group == settings.Checked {
+				r.Checked = settings.CheckedNotForThisMachine
+			}
+		}
+		space = append(space, r)
+	}
+	cols := []settings.Column{
+		{Place: settings.Place{Name: "jterrazz-macbook-pro", Here: true, Mac: true}, Rows: mac, Read: now},
+		{Place: settings.Place{Name: "jterrazz-mac-mini", Mac: true}, Rows: mac, Read: now},
+		{Place: settings.Place{Name: "linux-1"}, Rows: space, Read: now},
+		{Place: settings.Place{Name: "api", Away: settings.Stopped}, Rows: space, Read: now.Add(-2 * time.Hour)},
+	}
+	short := func(name string) string { return strings.TrimPrefix(name, "jterrazz-") }
+	m := settings.MatrixOf(cols, []string{"infra"})
+	full := pagesettings.Matrix(m, now, false, short, here())
+	return states("settings-matrix", pending(pagesettings.Matrix(m, now, false, short, here())),
+		pagesettings.Matrix(settings.MatrixOf(nil, nil), now, false, short, here()),
+		failure(pagesettings.ID, "settings --all-machines", "jterrazz-macbook-pro does not answer", "station machines"),
+		full)
 }
 
 func storageReport(pending bool) storage.Report {

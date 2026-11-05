@@ -1,0 +1,56 @@
+{
+  "schema": "station.page/v1",
+  "id": "settings",
+  "command": "settings --all-machines",
+  "context": {
+    "kind": "host"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "machines",
+      "title": "Machines",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "0 settings"
+        },
+        {
+          "kind": "text",
+          "text": "0 machines"
+        }
+      ],
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 40
+        },
+        {
+          "key": "state",
+          "kind": "text",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "empty": {
+            "noun": "machines"
+          }
+        }
+      ],
+      "uncounted": true
+    }
+  ],
+  "hints": [
+    {
+      "command": "station settings --all-machines --all",
+      "text": "every row"
+    }
+  ]
+}

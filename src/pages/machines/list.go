@@ -7,6 +7,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/pages"
 )
 
 func listColumns() []page.Column {
@@ -115,7 +116,7 @@ func macRow(label string, h machines.HostView, hereVersion string, now time.Time
 	state, detail := page.Text("Online"), page.None()
 	switch {
 	case !h.Reachable && !h.Answered.IsZero():
-		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.List(page.Text("Unreachable"), page.Text("last answer "+lastAnswer(h.Answered, now)))
+		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.List(page.Text("Unreachable"), page.Text("last answer "+pages.LastAnswer(h.Answered, now)))
 	case !h.Reachable:
 		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.Text("Unreachable")
 	case h.Daemon.Known && !h.Daemon.Running && !h.Daemon.Installed && h.Here:
@@ -168,14 +169,4 @@ func listVMRow(mac string, vm machines.VM) page.Row {
 	r := vm.Resources
 	row.Cells = []page.Value{page.Text(machines.KindWord(vm.Lifetime.Kind())), page.Text(mac), state, page.Text(strconv.Itoa(r.CPUs) + " CPU"), Memory(r.MemoryBytes), detail}
 	return row
-}
-
-// value: the hour of a Mac's last answer, with its day when that was not
-// today.
-func lastAnswer(at, now time.Time) string {
-	at, now = at.Local(), now.Local()
-	if at.YearDay() == now.YearDay() && at.Year() == now.Year() {
-		return at.Format("15:04")
-	}
-	return at.Format("2 Jan 15:04")
 }

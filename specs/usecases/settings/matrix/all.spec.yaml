@@ -1,0 +1,46 @@
+description: '--all unfolds every row of the matrix, those that need no look included'
+env: two-macs
+runs:
+    - command: 'settings --all-machines --all'
+      exit: 0
+      stdout: |
+          # Machines
+          ●	jterrazz-macbook-pro	Mac	read
+          ●	jterrazz-mac-mini	Mac	read
+          ●	linux-1	Workspace	read
+          ?	api	Workspace	stopped · not read since the engine started
+          –	infra	Server	not checked: station does not manage its settings
+          # Needs a look
+          ◐	jterrazz-macbook-pro	firewall	off	System Settings > Network > Firewall
+          # Set by station
+          ○	hushlogin	○	○	○	?	0/3
+          ○	ghostty-dotfiles	○	○	–	?	0/2
+          ○	tmux-dotfiles	○	○	○	?	0/3
+          ○	starship-dotfiles	○	○	○	?	0/3
+          ○	git-signing	○	○	–	?	0/2
+          ○	ssh-key	○	○	–	?	0/2
+          ○	github-login	○	○	○	?	0/3
+          ○	spotlight-exclude	○	○	–	?	0/2
+          ○	dns	○	○	–	?	0/2
+          ○	claude-token	○	○	–	?	0/2
+          ○	zed-dotfiles	○	○	–	?	0/2
+          ○	dock-reset	○	○	–	?	0/2
+          ○	dock-spacer	○	○	–	?	0/2
+          ○	backup-exclusions	○	○	–	?	0/2
+          ○	tart-launcher	○	○	–	?	0/2
+          # Always-on Mac
+          ●	autologin	○	●	–	?	1/1
+          ●	power	○	●	–	?	1/1
+          ●	never-sleeps	○	●	–	?	1/1
+          ○	lock-after-login	○	○	–	?	0/1
+          ○	sshd	○	○	–	?	0/1
+          # Checked
+          ●	filevault	●	●	–	?	2/2
+          ◐	firewall	◐	●	–	?	1/2
+          ●	sip	●	●	–	?	2/2
+          ●	automatic-updates	●	●	–	?	2/2
+          ●	screen-lock	●	●	–	?	2/2
+          ●	gatekeeper	●	●	–	?	2/2
+          ●	remote-login	●	●	–	?	2/2
+          ●	time-machine	●	●	–	?	2/2
+          ●	macos-updates	●	●	–	?	2/2

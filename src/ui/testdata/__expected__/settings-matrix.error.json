@@ -1,0 +1,13 @@
+{
+  "schema": "station.page/v1",
+  "id": "settings",
+  "command": "settings --all-machines",
+  "context": {
+    "kind": "host"
+  },
+  "state": "failed",
+  "error": {
+    "message": "jterrazz-macbook-pro does not answer",
+    "hint": "station machines"
+  }
+}
