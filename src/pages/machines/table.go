@@ -184,7 +184,7 @@ func awake(ov page.Page) page.Value {
 	if len(c.Items) > 0 {
 		c = c.Items[0]
 	}
-	return page.Text(c.Text)
+	return page.Text(strings.TrimSuffix(c.Text, " normally"))
 }
 
 func needsOf(ov page.Page) []page.Row {

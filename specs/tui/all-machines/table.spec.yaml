@@ -20,7 +20,7 @@ runs:
            All machines
           ╭──────────────────────╮┏━ Overview · All machines ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
           │ MACHINES             │┃     MACHINE     KIND       CPU    MEMORY      DISK     PORTS  AWAKE         NEED   ┃
-          │ ◇ All machines       │┃   ● This Mac    Mac        ▃ 34%  12.4/16 GB  388 GB   0 · 0  off           9      ┃
+          │ ◇ All machines       │┃   ● This Mac    Mac        ▃ 34%  12.4/16 GB  388 GB   0 · 0  sleeps        9      ┃
           │ ● This Mac         9 │┃   ├─ ○ api      Workspace  –      –           –        –      –             –      ┃
           │  Workspaces          │┃   └─ ● linux-1  Workspace  ▁ 8%   1.1/4 GB    12.4 GB  0 · 2  –             –      ┃
           │  ├ ○ api             │┃   ● mac-mini    Mac        ▂ 21%  26/64 GB    1.6 TB   0 · 0  never sleeps  1      ┃

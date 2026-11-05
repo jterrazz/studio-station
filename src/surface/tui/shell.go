@@ -653,16 +653,20 @@ func (s shell) awake(n node) string {
 	}
 	for _, sec := range r.page.Sections {
 		for _, it := range sec.Items {
-			if it.Row != nil && it.Row.ID == string(section.Awake) && len(it.Row.Cells) > 0 {
-				c := it.Row.Cells[0]
-				if len(c.Items) > 0 {
-					c = c.Items[0]
-				}
-				if c.Text != "" {
-					return c.Text
-				}
-				return ui.Plain(c)
+			if it.Row == nil || it.Row.ID != string(section.Awake) || len(it.Row.Cells) == 0 {
+				continue
 			}
+			c := it.Row.Cells[0]
+			if len(c.Items) > 0 {
+				c = c.Items[0]
+			}
+			if c.Text == "sleeps normally" {
+				return "off"
+			}
+			if c.Text != "" {
+				return c.Text
+			}
+			return ui.Plain(c)
 		}
 	}
 	return ""
