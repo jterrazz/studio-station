@@ -1,8 +1,0 @@
-#!/bin/sh
-case "$*" in
-    "-eo pid,comm,%cpu,rss") printf '  PID COMMAND %%CPU RSS\n    1 systemd 0.1 4096\n  900 node 30.5 204800\n  901 dockerd 2.0 102400\n' ;;
-    *)
-        echo "stub ${0##*/}: unexpected invocation: $*" >&2
-        exit 97
-        ;;
-esac
