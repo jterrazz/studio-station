@@ -31,6 +31,7 @@ func SSHCommand(d SSHDeps, env kit.Env) *cobra.Command {
 			return nil
 		},
 		Read:     func(*SSHInput) bool { return true },
+		Pages:    true,
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *SSHInput, io kit.IO) error {
 			target, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.SSH, machinescalls.SSHIn{Name: in.Name}, nil)

@@ -53,8 +53,9 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			f.BoolVar(&in.Lid, "lid", false, "stay awake with the lid closed too (the screen still turns off)")
 			f.BoolVar(&in.Battery, "battery", false, "stay awake when unplugged")
 		},
-		Bind: func(in *Input, args []string) error { in.Words = strings.Join(args, " "); return nil },
-		Read: func(in *Input) bool { return in.Words == "" && !in.Lid && !in.Battery },
+		Bind:  func(in *Input, args []string) error { in.Words = strings.Join(args, " "); return nil },
+		Read:  func(in *Input) bool { return in.Words == "" && !in.Lid && !in.Battery },
+		Pages: true,
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			if in.Words == "" && !in.Lid && !in.Battery {
 				return read(ctx, d, env, io)
