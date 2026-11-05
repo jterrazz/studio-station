@@ -1,4 +1,4 @@
-description: 'the engine samples each machine every 60 s, the menu bar running closed; every 2 s the machine a surface shows'
+description: 'every machine sampled every 60 s, the menu bar closed; every 2 s, the machine a surface shows'
 env:
     - two-macs
     - engine
