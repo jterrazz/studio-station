@@ -1,6 +1,6 @@
 # Services
 
-A service is a TCP port something listens on inside a VM. The VM is never on the tailnet, so its host publishes what it listens on: the host's engine leases a host port for it, listens there on 127.0.0.1 only, and carries each connection into the VM over its one ssh connection. The tailnet reaches that port through the Tailscale app alone: `tailscale serve` publishes it, https for an HTTP service and raw TCP for any other, so nothing of station listens on the tailnet. Nothing is configured per service: a dev server that starts listening is published within seconds.
+A service is a TCP port something listens on inside a VM. The VM is never on the tailnet, so its host publishes what it listens on: the host's engine leases a host port for it, listens there on 127.0.0.1 only, and carries each connection into the VM over its one ssh connection. The tailnet reaches that port through the Tailscale app alone: `tailscale serve` publishes it, https for an HTTP service and raw TCP for any other, so nothing of station listens on the tailnet. Nothing is configured per service: a dev server that starts listening in a workspace is published within seconds. A server's ports are never shared by themselves: its own tooling chooses its routes (its own Tailscale device, a tunnel), and `station ports share infra 8080` shares one on demand.
 
 | Section               | Answers                                                      |
 | --------------------- | ------------------------------------------------------------ |
@@ -20,6 +20,7 @@ For each reported port the engine takes a **lease**: the lowest free port of the
 | Event                                   | What happens                                                       |
 | --------------------------------------- | ------------------------------------------------------------------ |
 | the port starts listening               | leased and published                                               |
+| it listens in a server                  | listed, never leased nor published by itself                       |
 | it stops listening                      | unpublished after 5 s (a restart inside them keeps it); lease kept |
 | a VM stops, then runs again             | unpublished, then published again on the same host port            |
 | `machines delete`, a throwaway poweroff | released, its serve entry removed                                  |
@@ -34,16 +35,28 @@ The leases live in `~/.local/state/station/leases.json`, a kept file: deleting i
 ## The commands
 
 ```sh
-station ports                        # the Tailscale line, then this Mac's shared ports
+station ports                        # the Tailscale line, then every listening port in its class
 station ports --all-machines         # every Mac's, asked over ssh
+station ports --all                  # the ports that listen on their machine only, too
 station ports --json                 # station.ports.list/v1
 station ports share api 3000         # reserve 3000's URL now and print it; in a VM: station ports share 3000
 station ports stop-sharing api 3000  # on a Mac; in a VM: station ports stop-sharing 3000
 ```
 
-The list begins with the Tailscale line, then one row per port, piped tab-separated: mark, VM, guest port, URL, state, process, profile, fix. `●` shared, `○` not listening (reserved, nothing listens), `◐` waiting (the VM shares 20 already, the range is taken), local only (Serve off, a refused serve) or not shared while the engine is stopped. A Mac that does not answer is one `◐` row, never a failure.
+The list begins with the Tailscale line, then every port that listens on a Mac or a VM, in the class of who reaches it, piped tab-separated:
 
-Each Mac's group is headed on a terminal by its range: `macbook  40000-40999 · 3 reserved · 997 free · 20 per VM`. In `--json` each Mac carries it in `range` (`mac`, `from`, `to`, `reserved`, `free`), read from its policy and lease file, so it is there with the engine down.
+| Section                     | Holds                                                                                                              | Columns                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Needs you (`✗`)             | a port reachable outside Tailscale (every interface, the LAN) that no declaration names public                     | machine, port, process, bind, `declared no`, the fix |
+| Public (`●`)                | a port reachable outside Tailscale that a declaration names public (`cloudflare-tunnel`, …)                        | machine, port, process, bind, `declared · <how>`     |
+| Private (`●` `◐` `○`)       | what is shared with you on Tailscale: a VM's reserved port, a machine's own Tailscale device                       | machine, port, URL, state, process, profile, fix     |
+| Listens on its machine only | loopback and other ports only their machine reaches; one `N more listen on their machine only` line unless `--all` | machine, port, process, bind                         |
+
+A VM behind its Mac is reached through Tailscale only, so its ports are Private whatever it binds. Among the shared rows `●` is shared, `○` not listening (reserved, nothing listens), `◐` waiting (the VM shares 20 already, the range is taken), local only (Serve off, Tailscale signed out, a refused serve), `issuing certificate`, not shared while its VM is stopped or while the engine is stopped. A Mac that does not answer is one `◐` row, never a failure.
+
+Each Mac's reserved ports are one line at the end: `Reserved on This Mac: 2 of 1000 (40000-40999) · 998 free`, one per Mac with `--all-machines`. In `--json` each Mac carries it in `range` (`mac`, `from`, `to`, `reserved`, `free`), read from its policy and lease file, so it is there with the engine down.
+
+The engine's exposure job reads what listens on its Mac and its VMs at its start, every 5 minutes and whenever a guest reports a change. A port that turns red is a finding of `station overview` (`✗ port 9000 is reachable outside Tailscale`) and is told once, as a `port_exposed` event (`<machine>: port <port> is reachable outside Tailscale`), then again only after it stopped being red.
 
 `ports share <port>` in a VM reserves the lease at once, whether or not anything listens yet, so a value can be computed before the tool starts: `$(station ports share 3000)`. On a Mac it names its VM, `station ports share api 3000`; with the Mac's engine away it is exit 1 (`Error: macbook is not connected to this VM`, `Hint: on macbook: station setup`), and in a VM no host has connected to yet, so with no host name to give, every `ports` command is exit 1 (`Error: no host has connected to this VM yet`, `Hint: on the VM's host: station setup`).
 
