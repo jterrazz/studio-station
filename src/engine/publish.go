@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/system"
@@ -95,6 +96,8 @@ func (d *Daemon) apply(ctx context.Context, s *svc, acts []services.Action) {
 	}
 }
 
+// invariant: a workspace's port is shared as it starts listening; a
+// server's only once the owner shares it, its tooling choosing its routes.
 func (d *Daemon) listen(ctx context.Context, vm string, port int, ip, process string) {
 	p := d.policy()
 	if p.Ignores(port) || p.Stopped(vm, port) {
@@ -102,6 +105,9 @@ func (d *Daemon) listen(ctx context.Context, vm string, port int, ip, process st
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	if v := d.vms[vm]; v != nil && v.rec.Lifetime == machines.AlwaysOn && d.leaseIndex(vm, port) < 0 {
+		return
+	}
 	s := d.svcOf(vm, port)
 	s.ip, s.process = ip, process
 	now := d.h.Clock.Now().UTC().Truncate(time.Second)
