@@ -37,7 +37,8 @@
           "key": "kind",
           "label": "KIND",
           "kind": "text",
-          "keep": 80
+          "keep": 80,
+          "whole": true
         },
         {
           "key": "mac",
