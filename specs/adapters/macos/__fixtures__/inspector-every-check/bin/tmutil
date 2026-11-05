@@ -1,8 +1,8 @@
 #!/bin/sh
-# tmutil latestbackup: a backup two days ago; with $HOME/.off, none.
+# tmutil latestbackup: a backup two days and an hour ago, so a slow run still reads 2 d; with $HOME/.off, none.
 case "$*" in
     latestbackup)
         if [ -e "$HOME/.off" ]; then echo "No machine directory found for host." >&2; exit 1; fi
-        echo "/Volumes/Backups of Mac/$(/bin/date -v-2d +%Y-%m-%d-%H%M%S).backup/$(/bin/date -v-2d +%Y-%m-%d-%H%M%S).backup" ;;
+        echo "/Volumes/Backups of Mac/$(/bin/date -v-2d -v-1H +%Y-%m-%d-%H%M%S).backup/$(/bin/date -v-2d -v-1H +%Y-%m-%d-%H%M%S).backup" ;;
     *) echo "stub ${0##*/}: unexpected invocation: $*" >&2; exit 97 ;;
 esac
