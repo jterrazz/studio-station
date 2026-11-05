@@ -105,7 +105,7 @@ type Screen interface {
 	Keys(v View) []ui.Binding
 	Press(key string, v View) (Effect, bool)
 	// value: how often the page is read again while it is shown; zero for
-	// never (a watch, SPEC §9.10).
+	// a page read once.
 	Live() time.Duration
 }
 
