@@ -18,6 +18,11 @@
 #               the screen, as tmux keeps them: a line scrolled off the top joins the
 #               history, and so does the whole screen when it is cleared from its
 #               first cell (tmux's scroll-on-clear, on by default)
+#   paint NAME=SGR...
+#               the scrollback with its colours: a run drawn with a named SGR reads
+#               {NAME text}, one with an SGR left unnamed {SGR text}, and the name
+#               plain leaves its runs bare, so a document names its palette and
+#               shows exactly what is coloured
 # Then it waits for COMMAND to exit and exits with its code. A wait that times out,
 # or a screen wait COMMAND exits before, prints the screen on stderr and exits 124.
 # usage: terminal [--size COLSxROWS] COMMAND [ARG...]
@@ -37,11 +42,23 @@ import unicodedata
 WAIT = 10.0
 
 
+class Cell(str):
+    sgr = ""
+
+
+def cell(ch, sgr):
+    c = Cell(ch)
+    c.sgr = sgr
+    return c
+
+
 class Screen:
     def __init__(self, cols, rows):
         self.cols, self.rows = max(cols, 80), max(rows, 24)
         self.main = self.blank()
         self.history = []
+        self.rows_kept = []
+        self.sgr = ""
         self.alt = None
         self.cells = self.main
         self.x = self.y = 0
@@ -73,6 +90,7 @@ class Screen:
             while lines and not lines[-1]:
                 lines.pop()
             self.history += lines
+            self.rows_kept += [list(row) for row in self.cells[: len(lines)]]
 
     def feed(self, data):
         for ch in data:
@@ -143,7 +161,7 @@ class Screen:
         if self.x + (2 if wide else 1) > self.cols:
             self.x = 0
             self.down()
-        self.cells[self.y][self.x] = ch
+        self.cells[self.y][self.x] = cell(ch, self.sgr)
         if wide:
             self.cells[self.y][self.x + 1] = None
         self.x += 2 if wide else 1
@@ -161,6 +179,7 @@ class Screen:
         region = self.cells[self.top : self.bottom + 1]
         if n > 0 and self.top == 0 and self.cells is self.main:
             self.history += [self.line(row) for row in region[:n]]
+            self.rows_kept += [list(row) for row in region[:n]]
         if n > 0:
             region = region[n:] + [[" "] * self.cols for _ in range(min(n, len(region)))]
         else:
@@ -180,6 +199,12 @@ class Screen:
         def arg(i, default):
             return params[i] if len(params) > i and params[i] else default
 
+        if final == "m" and not private:
+            kept = self.sgr.split(";") if self.sgr and body else []
+            for p in body.split(";"):
+                kept = [] if p in ("", "0") else kept + [p]
+            self.sgr = ";".join(kept)
+            return
         if private:
             if final in "hl" and 1049 in params:
                 self.screen(final == "h")
@@ -258,6 +283,37 @@ class Screen:
         # does, so a binary never waits on a reply a real terminal gives at once.
         if body == "11;?":
             self.replies += b"\x1b]11;rgb:0000/0000/0000\x1b\\"
+
+    def painted(self, names):
+        rows = self.rows_kept + list(self.cells)
+        lines = []
+        for row in rows:
+            runs = []
+            for c in row:
+                if c is None:
+                    continue
+                sgr = getattr(c, "sgr", "") if c != " " else ""
+                if runs and runs[-1][0] == sgr:
+                    runs[-1][1] += c
+                else:
+                    runs.append([sgr, str(c)])
+            # invariant: a run's words keep together across the blanks a
+            # renderer leaves unstyled between them.
+            joined = []
+            for run in runs:
+                if len(joined) >= 2 and run[0] and joined[-2][0] == run[0] and not joined[-1][0] and not joined[-1][1].strip():
+                    blank = joined.pop()
+                    joined[-1][1] += blank[1] + run[1]
+                else:
+                    joined.append(run)
+            out = ""
+            for sgr, text in joined:
+                name = names.get(sgr, sgr)
+                out += text if not sgr or name == "plain" else "{" + name + " " + text + "}"
+            lines.append(out.rstrip())
+        while lines and not lines[-1]:
+            lines.pop()
+        return "\n".join(lines)
 
     def screen(self, alternate):
         if alternate and self.cells is self.main:
@@ -387,6 +443,10 @@ def main():
         elif verb == "screen":
             settle()
             print(screen.text())
+        elif verb == "paint":
+            wait(lambda: status is not None, "the command never exited", ended=False)
+            pump(0.2)
+            print(screen.painted(dict(reversed(pair.split("=", 1)) for pair in arg.split())))
         elif verb == "scrollback":
             wait(lambda: status is not None, "the command never exited", ended=False)
             pump(0.2)

@@ -779,7 +779,7 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 			if parts := wrapList(v, g.avail()-used-token.Gap); len(parts) > 1 {
 				pad := atom.Spaces(token.Margin + g.indent() + g.markWidth() + used + token.Gap)
 				for _, part := range parts[1:] {
-					below = append(below, Line{Kind: LineOther, Key: e.key, Text: pad + st.Text.Render(atom.Show(part))})
+					below = append(below, Line{Kind: LineOther, Key: e.key, Text: pad + atom.Paint(st, st.Text, part, atom.Show(part))})
 				}
 				v = parts[0]
 				c.width = max(c.width, atom.Width(atom.Show(v)))
@@ -794,12 +794,9 @@ func (g Grid) row(e entry, cols []column, labelWidth int) []Line {
 			b.WriteString(openLine)
 			text, used, c.width = whole, openUsed, atom.Width(whole)
 		}
-		styled := st.Text.Render(text)
+		styled := atom.Paint(st, st.Text, v, text)
 		if v.Stale {
 			styled = st.Muted.Render(text)
-		}
-		if m := page.Mark(v.Label); v.Kind == page.KindText && v.Text == "" && text == atom.Glyph(m) {
-			styled = atom.Tone(st, m).Render(text)
 		}
 		if text == "" {
 			styled = ""
@@ -911,7 +908,7 @@ func (g Grid) stacked(e entry, lead string, hintLines func() []Line) []Line {
 		if muted {
 			style = st.Muted
 		}
-		line += atom.Spaces(gap) + style.Render(text)
+		line += atom.Spaces(gap) + atom.Paint(st, style, v, text)
 		used += gap + atom.Width(text)
 	}
 	for _, c := range g.columns() {
