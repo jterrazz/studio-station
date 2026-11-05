@@ -34,20 +34,6 @@ func Context(c page.Context) string {
 	return c.Machine + token.Sep + kind
 }
 
-func Header(st token.Styles, command, context string, width int) []string {
-	left := atom.Spaces(token.Margin) + st.Title.Render("station")
-	plain := atom.Spaces(token.Margin) + "station"
-	if path := strings.TrimSpace(strings.TrimPrefix(command, "station")); path != "" {
-		left += " " + st.Text.Render(path)
-		plain += " " + path
-	}
-	line := left
-	if context != "" {
-		line += atom.Spaces(max(width-1-atom.Width(plain)-atom.Width(context), 1)) + st.Muted.Render(context)
-	}
-	return []string{line, Rule(st, width)}
-}
-
 func Rule(st token.Styles, width int) string {
 	return atom.Spaces(token.Margin) + st.Subtle.Render(atom.Repeat(token.Rule, max(width-2, 1)))
 }
