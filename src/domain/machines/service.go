@@ -162,6 +162,7 @@ type (
 	ProbeReport = model.ProbeReport
 	SSHTarget   = model.SSHTarget
 	Restarts    = model.Restarts
+	CheckStatus = model.CheckStatus
 )
 
 const (
@@ -194,14 +195,20 @@ func validName(name string) bool {
 }
 
 const (
-	StepRunning      = model.StepRunning
-	StepAddress      = model.StepAddress
-	StepSSH          = model.StepSSH
-	StepCheck        = model.StepCheck
-	PoweredOffInside = model.PoweredOffInside
-	CheckWaiting     = model.CheckWaiting
-	CheckPassing     = model.CheckPassing
-	CheckFailing     = model.CheckFailing
+	StepRunning               = model.StepRunning
+	StepAddress               = model.StepAddress
+	StepSSH                   = model.StepSSH
+	StepCheck                 = model.StepCheck
+	PoweredOffInside          = model.PoweredOffInside
+	CheckWaiting              = model.CheckWaiting
+	CheckPassing              = model.CheckPassing
+	CheckFailing              = model.CheckFailing
+	ItemDiskUnlock            = model.ItemDiskUnlock
+	ItemRestartsAfterPowerCut = model.ItemRestartsAfterPowerCut
+	ItemNeverSleeps           = model.ItemNeverSleeps
+	ItemLogsIn                = model.ItemLogsIn
+	ItemPlannedRestarts       = model.ItemPlannedRestarts
+	ItemEngineAtLogin         = model.ItemEngineAtLogin
 )
 
 var (

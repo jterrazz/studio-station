@@ -225,6 +225,14 @@ type Run struct {
 	// way an action starts a program.
 	Terminal bool     `json:"terminal,omitempty"`
 	Argv     []string `json:"argv,omitempty"`
+	// value: the machine the call runs for when it is not this Mac's engine's
+	// own: a VM of another Mac, by its name and its Mac.
+	Target *Target `json:"target,omitempty"`
+}
+
+type Target struct {
+	Name string `json:"name,omitempty"`
+	On   string `json:"on,omitempty"`
 }
 
 type Scope string
@@ -275,11 +283,15 @@ type Option struct {
 }
 
 type Strip struct {
-	CPU     Value   `json:"cpu,omitzero"`
-	Spark   []int   `json:"spark,omitempty"`
-	Memory  Value   `json:"memory,omitzero"`
-	Battery Value   `json:"battery,omitzero"`
-	Net     []Value `json:"net,omitempty"`
+	CPU    Value `json:"cpu,omitzero"`
+	Spark  []int `json:"spark,omitempty"`
+	Memory Value `json:"memory,omitzero"`
+	// value: the memory used and the network's rate, in and out together,
+	// over the same readings as Spark (the menu bar's three measures).
+	MemorySpark []int   `json:"memory_spark,omitempty"`
+	NetSpark    []int   `json:"net_spark,omitempty"`
+	Battery     Value   `json:"battery,omitzero"`
+	Net         []Value `json:"net,omitempty"`
 	// value: a held Power session's word and time left, after the battery.
 	Power Value    `json:"power,omitzero"`
 	Top   *Section `json:"top,omitempty"`

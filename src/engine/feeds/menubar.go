@@ -7,6 +7,7 @@ import (
 
 	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 	"github.com/jterrazz/studio-station/src/awake"
+	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -38,6 +39,7 @@ type Menubar struct {
 
 type Clock interface {
 	Sleep(ctx context.Context, d time.Duration) error
+	Now() time.Time
 }
 
 type menubar struct {
@@ -108,13 +110,13 @@ func (f *menubar) sample(ctx context.Context, _ engine.FeedInput) {
 func (f *menubar) todo(ctx context.Context, in engine.FeedInput) {
 	fresh := false
 	for {
-		if snaps, err := call.Follow(ctx, f.o.Calls, machine.Ref{}, overviewcalls.Read, overviewcalls.ReadIn{Fresh: fresh, V2: true}, nil); err == nil {
+		if snaps, err := call.Follow(ctx, f.o.Calls, machine.Ref{}, overviewcalls.Read, overviewcalls.ReadIn{Fresh: fresh}, nil); err == nil {
 			for u := range snaps {
-				if u.Err != nil || u.Value.V2 == nil {
+				if u.Err != nil {
 					continue
 				}
-				snap := *u.Value.V2
-				f.update(ctx, func(r *pagemenubar.Reading) { r.Home = &snap })
+				summary := u.Value.Summary
+				f.update(ctx, func(r *pagemenubar.Reading) { r.Home = &summary })
 			}
 		}
 		wait, cancel := context.WithCancel(ctx)
@@ -143,9 +145,11 @@ func (f *menubar) read(ctx context.Context, here bool) (fleet machines.Fleet, se
 func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
 	for {
 		fl, sv, ferr, serr := f.read(ctx, false)
+		macs := f.awake(ctx, fl)
 		f.update(ctx, func(r *pagemenubar.Reading) {
 			if ferr == nil {
 				r.Fleet = &fl
+				r.Macs = macs
 			}
 			if serr == nil {
 				r.Services = &sv
@@ -155,6 +159,22 @@ func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
 			return
 		}
 	}
+}
+
+// value: each other Mac's Awake, as its own engine reports it; a Mac that
+// does not answer is left out.
+func (f *menubar) awake(ctx context.Context, fl machines.Fleet) []awake.Report {
+	var out []awake.Report
+	for _, h := range fl.Hosts {
+		if h.Here || !h.Reachable {
+			continue
+		}
+		if r, err := call.Read(ctx, f.o.Calls, machine.Ref{Name: h.Name}, awakecalls.Read, awakecalls.ReadIn{}, nil); err == nil {
+			r.Mac = h.Name
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 // invariant: a change of the engine's own state rereads this host only and

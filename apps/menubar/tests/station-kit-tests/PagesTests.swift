@@ -1,0 +1,199 @@
+import AppKit
+import StationKit
+import SwiftUI
+import XCTest
+
+// value: one call the menu bar made: the frame the engine received.
+struct Sent {
+    let frame: [String: Any]
+    var call: String? { frame["call"] as? String }
+    var input: [String: AnyHashable] { (frame["in"] as? [String: AnyHashable]) ?? [:] }
+    var target: [String: String]? { frame["target"] as? [String: String] }
+}
+
+@MainActor
+final class PagesTests: XCTestCase {
+    func texts(_ values: [Value]?) -> [String] { (values ?? []).compactMap(\.text) }
+
+    // value: runs the action as the popover does once its sheet is answered,
+    // against an engine that answers ok, and returns the frame it got and the
+    // programs started.
+    func sent(_ action: Action, answers: [String: String] = [:], label: String) async throws -> (Sent, [[String]]) {
+        let engine = try FakeEngine(label)
+        engine.serveOnce(Data(#"{"v":2,"id":"1","out":{}}"#.utf8) + [0x0A], thenClose: false)
+        defer { engine.stop() }
+        let calls = Recorded()
+        let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, launcher: RecordingLauncher(calls: calls)).run(action, answers: answers)
+        XCTAssertNil(status)
+        let line = try XCTUnwrap(engine.received.first)
+        let frame = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any])
+        return (Sent(frame: frame), calls.all)
+    }
+
+    func drawn(_ name: String, _ state: PopoverState) throws {
+        XCTAssertNil(try Golden.check(name, AnyView(Popover(state, scrolls: false)), scheme: .dark))
+    }
+
+    func pushed(_ fixture: String, confirming: String? = nil, typed: String? = nil) throws -> PopoverState {
+        let page = try Tree.page(fixture)
+        var state = Snapshot.state(fixture, page)
+        state.confirming = confirming
+        if let confirming, let typed { state.answers[confirming] = [ActionRunner.typedKey: typed] }
+        return state
+    }
+
+    // invariant: MB-07: a workspace's, a server's and a Mac's page each draw
+    // their sections and show only actions that name a call or open a
+    // terminal, and each draws offscreen.
+    func testPagesLayout() throws {
+        let linux = try Tree.page("menubar.vm.linux-1")
+        XCTAssertEqual(linux.sections?.compactMap(\.id), ["machine", "activity", "inside", "ports", "shared"])
+        XCTAssertEqual(linux.section("machine")?.caption.map { $0.compactMap(\.text) }, ["Workspace VM", "Throwaway", "on This Mac"])
+        XCTAssertEqual(linux.pageActions.map(\.label), ["Stop", "Delete", "Share a port", "Open in Terminal"])
+        let infra = try Tree.page("menubar.vm.infra")
+        XCTAssertEqual(infra.sections?.compactMap(\.id), ["machine", "up", "health", "activity", "server"])
+        XCTAssertEqual(infra.section("health")?.items?.compactMap(\.row?.label), ["Running", "Has an address", "SSH answers", "Check passes"])
+        XCTAssertEqual(infra.pageActions.map(\.label), ["Restart", "Stop", "Open in Terminal"])
+        let mini = try Tree.page("menubar.mac.mini")
+        XCTAssertEqual(mini.sections?.compactMap(\.id), ["machine", "needs-you", "readiness", "vms"])
+        for page in [linux, infra, mini] {
+            for action in page.actions ?? [] {
+                XCTAssertTrue(action.run?.call != nil || action.run?.terminal == true, "\(page.context?.machine ?? ""): \(action.id ?? "") names no call")
+            }
+        }
+        for name in ["menubar.vm.linux-1", "menubar.vm.infra", "menubar.mac.mini"] {
+            try drawn(name, try pushed(name))
+        }
+    }
+
+    // invariant: LC-24: Stop on linux-1 asks yes or no and sends yes.
+    func testWorkspaceStopSheetYesNo() async throws {
+        let stop = try XCTUnwrap(Tree.page("menubar.vm.linux-1").action("stop"))
+        let confirm = try XCTUnwrap(stop.confirm)
+        XCTAssertNil(confirm.type)
+        XCTAssertEqual(confirm.question, "Stop linux-1?")
+        try drawn("sheet.stop-workspace", try pushed("menubar.vm.linux-1", confirming: "stop"))
+        let (frame, started) = try await sent(stop, label: "mb-stop-ws")
+        XCTAssertEqual(frame.call, "machines.stop")
+        XCTAssertEqual(frame.input, ["VM": "linux-1", "Confirm": "yes"])
+        XCTAssertNil(frame.target)
+        XCTAssertEqual(started, [])
+    }
+
+    // invariant: LC-24: Delete… on linux-1 is a typed sheet whose Delete
+    // stays off until linux-1 is typed exactly, then sends that name.
+    func testWorkspaceDeleteSheetTyped() async throws {
+        let delete = try XCTUnwrap(Tree.page("menubar.vm.linux-1").action("delete"))
+        let confirm = try XCTUnwrap(delete.confirm)
+        XCTAssertEqual(confirm.type, "linux-1")
+        XCTAssertEqual(texts(confirm.lines).last, "Type linux-1 to delete it")
+        XCTAssertFalse(ConfirmSheet.allows(confirm, typed: "linux-"))
+        XCTAssertFalse(ConfirmSheet.allows(confirm, typed: "linux-1 "))
+        XCTAssertTrue(ConfirmSheet.allows(confirm, typed: "linux-1"))
+        try drawn("sheet.delete-workspace", try pushed("menubar.vm.linux-1", confirming: "delete", typed: "linux-"))
+        let (frame, _) = try await sent(delete, answers: [ActionRunner.typedKey: "linux-1"], label: "mb-delete")
+        XCTAssertEqual(frame.call, "machines.delete")
+        XCTAssertEqual(frame.input, ["VM": "linux-1", "Confirm": "linux-1"])
+    }
+
+    // invariant: LC-24: Stop… on infra is a typed sheet, sent to infra on
+    // its own Mac.
+    func testServerStopSheetTyped() async throws {
+        let stop = try XCTUnwrap(Tree.page("menubar.vm.infra").action("stop"))
+        XCTAssertEqual(stop.confirm?.type, "infra")
+        XCTAssertEqual(texts(stop.confirm?.lines).last, "Type infra to stop it")
+        try drawn("sheet.stop-server", try pushed("menubar.vm.infra", confirming: "stop", typed: "infra"))
+        let (frame, _) = try await sent(stop, answers: [ActionRunner.typedKey: "infra"], label: "mb-stop-srv")
+        XCTAssertEqual(frame.call, "machines.stop")
+        XCTAssertEqual(frame.input, ["VM": "infra", "Confirm": "infra"])
+        XCTAssertEqual(frame.target, ["name": "infra", "on": "jterrazz-mac-mini"])
+    }
+
+    // invariant: LC-24: Restart on infra asks nothing and runs at once on
+    // infra's Mac.
+    func testServerRestartDirect() async throws {
+        let restart = try XCTUnwrap(Tree.page("menubar.vm.infra").action("restart"))
+        XCTAssertNil(restart.confirm)
+        XCTAssertNil(restart.form)
+        let (frame, started) = try await sent(restart, label: "mb-restart")
+        XCTAssertEqual(frame.call, "machines.restart")
+        XCTAssertEqual(frame.input, ["Name": "infra"])
+        XCTAssertEqual(frame.target, ["name": "infra", "on": "jterrazz-mac-mini"])
+        XCTAssertEqual(started, [])
+    }
+
+    // invariant: AU-15: Take back on linux-1's page asks yes or no, then
+    // takes the account back from linux-1.
+    func testAccountTakeBack() async throws {
+        let page = try Tree.page("menubar.vm.linux-1")
+        XCTAssertEqual(page.section("shared")?.items?.compactMap(\.row?.label), ["GitHub", "Claude"])
+        let take = try XCTUnwrap(page.rowActions("github").first)
+        XCTAssertEqual(take.label, "Take back")
+        XCTAssertEqual(take.confirm?.question, "Take back GitHub from linux-1?")
+        XCTAssertNil(take.confirm?.type)
+        try drawn("sheet.take-back", try pushed("menubar.vm.linux-1", confirming: take.id))
+        let (frame, _) = try await sent(take, label: "mb-take-back")
+        XCTAssertEqual(frame.call, "accounts.take-back")
+        XCTAssertEqual(frame.input, ["Account": "github", "From": "linux-1", "Confirm": "yes"])
+    }
+
+    // invariant: MB-15: Open in Terminal on linux-1's page runs station on
+    // linux-1 in a new terminal, and no call.
+    func testOpenInTerminalTargetsMachine() async throws {
+        let open = try XCTUnwrap(Tree.page("menubar.vm.linux-1").action("open-station"))
+        XCTAssertEqual(open.key, "cmd+t")
+        let calls = Recorded()
+        let status = await ActionRunner(executable: "/u/bin/station", socket: "/nonexistent", launcher: RecordingLauncher(calls: calls)).run(open)
+        XCTAssertNil(status)
+        XCTAssertEqual(calls.all, [
+            ["/usr/bin/osascript", "-e", #"tell application "Terminal" to do script "'/u/bin/station' '--on' 'linux-1'""#, "-e", #"tell application "Terminal" to activate"#],
+        ])
+    }
+
+    // invariant: MC-13: Unlock… on the mini waiting at pre-boot opens
+    // Terminal on station machines unlock mac-mini, and nothing else runs.
+    func testMacUnlockOpensTerminal() async throws {
+        let page = try Tree.page("menubar.mac.mini-offline")
+        XCTAssertEqual(page.section("machine")?.items?.first?.row?.cells?.first?.text, "Unreachable")
+        let unlock = try XCTUnwrap(page.action("unlock"))
+        XCTAssertNil(unlock.run?.call)
+        try drawn("menubar.mac.mini-offline", try pushed("menubar.mac.mini-offline"))
+        let calls = Recorded()
+        let status = await ActionRunner(executable: "/u/bin/station", socket: "/nonexistent", launcher: RecordingLauncher(calls: calls)).run(unlock)
+        XCTAssertNil(status)
+        XCTAssertEqual(calls.all, [
+            ["/usr/bin/osascript", "-e", #"tell application "Terminal" to do script "'/u/bin/station' 'machines' 'unlock' 'mac-mini'""#, "-e", #"tell application "Terminal" to activate"#],
+        ])
+        XCTAssertNil(try Tree.page("menubar.mac.mini").action("unlock"))
+    }
+
+    // invariant: MB-14: mac-mini's page, opened from This Mac, is watched as
+    // that machine's page and draws what the mini's engine streams.
+    func testRemotePageRenders() async throws {
+        let page = try Tree.page("menubar.mac.mini")
+        XCTAssertEqual(page.context?.machine, "jterrazz-mac-mini")
+        XCTAssertEqual(page.section("vms")?.items?.first?.group?.items?.first?.row?.label, "infra")
+        XCTAssertEqual(page.section("needs-you")?.items?.first?.row?.label, "port 5000 is reachable outside Tailscale")
+        let engine = try FakeEngine("mb-remote")
+        defer { engine.stop() }
+        let frame = try JSONSerialization.data(withJSONObject: ["v": 2, "id": "1", "out": ["event": "page", "page": JSONSerialization.jsonObject(with: page.encoded())]])
+        engine.serveOnce(frame + [0x0A], thenClose: true)
+        let got = Box()
+        let sub = Subscription(path: engine.path, pages: [PageID.of("jterrazz-mac-mini")], clock: TestClock()) { event in
+            if case .page(let p) = event { got.set(p) }
+        }
+        let task = Task.detached { await sub.run() }
+        for _ in 0..<500 where got.page == nil { try? await Task.sleep(nanoseconds: 10_000_000) }
+        task.cancel()
+        XCTAssertEqual(engine.received, [#"{"id":"1","in":{"pages":["menubar.machine:jterrazz-mac-mini"]},"v":2,"watch":"page"}"#])
+        XCTAssertEqual(got.page?.section("vms"), page.section("vms"))
+        try drawn("menubar.mac.mini", Snapshot.state("menubar.mac.mini", try XCTUnwrap(got.page)))
+    }
+}
+
+final class Box: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Page?
+    var page: Page? { lock.withLock { value } }
+    func set(_ p: Page) { lock.withLock { value = p } }
+}

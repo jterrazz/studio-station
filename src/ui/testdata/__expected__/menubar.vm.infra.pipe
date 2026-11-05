@@ -1,0 +1,5 @@
+# Health
+●	Running
+●	Has an address	192.168.64.7
+●	SSH answers
+●	Check passes	https://infra:6443/readyz

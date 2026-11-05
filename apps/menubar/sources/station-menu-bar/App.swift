@@ -49,6 +49,10 @@ struct StationMenuBarApp: App {
             loginItemOn: model.loginItemOn,
             sparkline: { on in model.setSparkline(on) },
             sparklineOn: model.sparkline,
-            quit: { NSApplication.shared.terminate(nil) })
+            quit: { NSApplication.shared.terminate(nil) },
+            openMachine: { name in model.openMachine(name) },
+            openSwitcher: { model.openSwitcher() },
+            back: { model.back() },
+            search: { text in model.state.search = text })
     }
 }

@@ -12,6 +12,10 @@ final class Model: ObservableObject {
     // value: the menu bar's own display option, in its macOS user defaults,
     // never in station's preferences.
     static let sparklineKey = "cpuSparkline"
+    // value: the machines last opened, the switcher's Recent: the menu bar's
+    // own, in its macOS user defaults.
+    static let recentKey = "recentMachines"
+    static let recentKept = 3
 
     let socket = EnginePath.socket()
     private var lastPage: Date?
@@ -19,6 +23,7 @@ final class Model: ObservableObject {
     private var events: Task<Void, Never>?
     private var clearing: Task<Void, Never>?
     private var watching: Task<Void, Never>?
+    private var pushing: Task<Void, Never>?
     private var asked = false
 
     var icon: MenuBarIcon { MenuBarIcon.of(connection: state.connection, page: state.page, sparkline: sparkline) }
@@ -43,6 +48,37 @@ final class Model: ObservableObject {
             Task { @MainActor in self.notify(text) }
         }
         events = Task.detached { await told.run() }
+    }
+
+    // invariant: a pushed page is watched only while it is shown: opening
+    // another or going back ends its watch (SPEC §10.3).
+    func push(_ page: String) {
+        pushing?.cancel()
+        state.confirming = nil
+        let sub = Subscription(path: socket, pages: [page]) { event in
+            guard case .page(let p) = event else { return }
+            Task { @MainActor in self.state.pushed = p }
+        }
+        pushing = Task.detached { await sub.run() }
+    }
+
+    func openMachine(_ name: String) {
+        state.recent = Array(([name] + state.recent.filter { $0 != name }).prefix(Self.recentKept))
+        UserDefaults.standard.set(state.recent, forKey: Self.recentKey)
+        push(PageID.of(name))
+    }
+
+    func openSwitcher() {
+        state.recent = UserDefaults.standard.stringArray(forKey: Self.recentKey) ?? []
+        push(PageID.switcher)
+    }
+
+    func back() {
+        pushing?.cancel()
+        pushing = nil
+        state.pushed = nil
+        state.search = ""
+        state.confirming = nil
     }
 
     func setSparkline(_ on: Bool) {
@@ -107,6 +143,7 @@ final class Model: ObservableObject {
     func closed() {
         watching?.cancel()
         watching = nil
+        back()
     }
 
     func run(_ action: Action, answers: [String: String]) {

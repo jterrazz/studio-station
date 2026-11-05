@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/overview"
+	"github.com/jterrazz/studio-station/src/page"
 )
 
 // invariant: EN-10: Stop everything names This Mac, whatever its name, and
@@ -29,5 +31,25 @@ func TestStopEverythingOnThisMacSaysItsServerIsSkipped(t *testing.T) {
 	want := []string{"linux-1 will stop; its disk is kept", "infra skipped (server)", "Awake ends, and the engine keeps running for infra"}
 	if !slices.Equal(said, want) {
 		t.Fatalf("lines %q, want %q", said, want)
+	}
+}
+
+// invariant: AP-23: once Update all has run, the line of the app updates
+// leaves Needs you, Update all goes with it, and the badge drops by one.
+func TestUpdateAllLeavesNeedsYouAndTheBadgeDropsByOne(t *testing.T) {
+	needs := []overview.Need{
+		{Section: "apps", Subject: "updates", Text: "2 app updates", Call: CallUpdate},
+		{Section: "disk", Subject: "misplaced", Text: "a folder is misplaced", Call: "disk.move"},
+	}
+	before, after := overview.Summary{Needs: needs}, overview.Summary{Needs: needs[1:]}
+	was, is := Page(Reading{Home: &before}, page.Context{}), Page(Reading{Home: &after}, page.Context{})
+	if was.Badge.Needs != 2 || is.Badge.Needs != 1 {
+		t.Fatalf("badge %d then %d, want 2 then 1", was.Badge.Needs, is.Badge.Needs)
+	}
+	has := func(p page.Page) bool {
+		return slices.ContainsFunc(p.Actions, func(a page.Action) bool { return a.ID == ActionUpdateAll && a.Run.Call == CallUpdate })
+	}
+	if !has(was) || has(is) {
+		t.Fatalf("Update all before %v, after %v", has(was), has(is))
 	}
 }

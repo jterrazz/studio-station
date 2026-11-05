@@ -87,14 +87,19 @@ public struct Meter: View {
 
 public struct Spark: View {
     let points: [Int]
+    let w: CGFloat
+    let h: CGFloat
     @Environment(\.stationPalette) private var palette
 
-    public init(_ points: [Int]) { self.points = points }
+    public init(_ points: [Int], width: CGFloat = Token.Space.sparkWidth, height: CGFloat = Token.Space.sparkHeight) {
+        self.points = points
+        w = width
+        h = height
+    }
 
     public var body: some View {
         Path { path in
             guard points.count > 1 else { return }
-            let w = Token.Space.sparkWidth, h = Token.Space.sparkHeight
             let step = w / CGFloat(points.count - 1)
             for (i, p) in points.enumerated() {
                 let pt = CGPoint(x: CGFloat(i) * step, y: h - h * CGFloat(min(max(p, 0), 100)) / 100)

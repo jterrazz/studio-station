@@ -46,8 +46,9 @@ public enum Client {
 
     // value: the call's input: each answer sets the field its key's path
     // names (`Request.Lifetime`), and an answer written `K=v K=v` sets each of
-    // those fields; a number or true/false is sent as one.
-    public static func input(_ answers: [String: String], fixed: [String: String]? = nil) -> [String: Any] {
+    // those fields; a number or true/false is sent as one, except under the
+    // keys of words, what the owner typed, sent as written.
+    public static func input(_ answers: [String: String], fixed: [String: String]? = nil, words: Set<String> = []) -> [String: Any] {
         var out: [String: Any] = [:]
         func set(_ path: [String], _ value: Any, in dict: inout [String: Any]) {
             guard let head = path.first else { return }
@@ -60,12 +61,12 @@ public enum Client {
             dict[head] = inner
         }
         func put(_ key: String, _ value: String) {
-            let typed: Any = Int(value).map { $0 as Any } ?? (value == "true" || value == "false" ? (value == "true") as Any : value as Any)
+            let typed: Any = words.contains(key) ? value : Int(value).map { $0 as Any } ?? (value == "true" || value == "false" ? (value == "true") as Any : value as Any)
             set(key.split(separator: ".").map(String.init), typed, in: &out)
         }
         for (k, v) in (fixed ?? [:]).sorted(by: { $0.key < $1.key }) { put(k, v) }
         for (k, v) in answers.sorted(by: { $0.key < $1.key }) {
-            if v.contains("=") {
+            if !words.contains(k), v.contains("=") {
                 for pair in v.split(separator: " ") {
                     let kv = pair.split(separator: "=", maxSplits: 1).map(String.init)
                     if kv.count == 2 { put(kv[0], kv[1]) }
@@ -80,9 +81,15 @@ public enum Client {
     // invariant: one call is one station.api/v2 frame on its own connection;
     // its progress frames are read past, and its answer is the out or the
     // error frame that ends it. A connection that ends first is closed.
-    public static func call(path: String, name: String, input: [String: Any] = [:]) async -> Reply {
+    public static func call(path: String, name: String, input: [String: Any] = [:], target: Target? = nil) async -> Reply {
         var body: [String: Any] = ["v": 2, "id": "1", "call": name]
         if !input.isEmpty { body["in"] = input }
+        if let target {
+            var t: [String: Any] = [:]
+            if let n = target.name { t["name"] = n }
+            if let on = target.on { t["on"] = on }
+            body["target"] = t
+        }
         guard let socket = try? UnixSocket.connect(path), let data = try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys]) else {
             return Reply(ok: false, closed: false, result: [:], message: "the station engine is not running", hint: "station engine start")
         }

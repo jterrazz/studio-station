@@ -13,7 +13,7 @@ runs:
           ["1",["menubar"]]
           loading
           ready
-          ["menubar",["todo","fleet","power"]]
+          ["menubar",["needs-you","machines","awake","accounts"]]
           [["new-vm","machines.create-workspace"],["open-station","terminal"],["stop-all","engine.stop"]]
           [["power-awake","awake.keep",["awake"]]]
           1

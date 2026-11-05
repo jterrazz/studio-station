@@ -4,6 +4,15 @@ public enum Connection: Equatable, Sendable {
     case connecting, live, stopped, notInstalled
 }
 
+public enum PageID {
+    public static let home = "menubar"
+    public static let switcher = "menubar.switcher"
+    public static let machine = "menubar.machine"
+
+    // value: the watch name of one machine's page (SPEC §10.3).
+    public static func of(_ machine: String) -> String { "\(Self.machine):\(machine)" }
+}
+
 public struct PopoverState: Equatable, Sendable {
     public var page: Page?
     public var connection: Connection
@@ -13,15 +22,25 @@ public struct PopoverState: Equatable, Sendable {
     public var qr: String?
     public var menu = false
     public var answers: [String: [String: String]] = [:]
+    // value: the page pushed over Home: the switcher, or one machine's.
+    public var pushed: Page?
+    // value: the machines last opened, newest first: the menu bar's own.
+    public var recent: [String] = []
+    public var search = ""
 
-    public init(page: Page?, connection: Connection, running: String? = nil, confirming: String? = nil, status: Status? = nil, qr: String? = nil) {
+    public init(page: Page?, connection: Connection, running: String? = nil, confirming: String? = nil, status: Status? = nil, qr: String? = nil, pushed: Page? = nil, recent: [String] = []) {
         self.page = page
         self.connection = connection
         self.running = running
         self.confirming = confirming
         self.status = status
         self.qr = qr
+        self.pushed = pushed
+        self.recent = recent
     }
+
+    // value: the page the owner sees, the pushed one over Home.
+    public var shown: Page? { pushed ?? page }
 }
 
 public struct PopoverHandlers {
@@ -36,11 +55,17 @@ public struct PopoverHandlers {
     public var sparkline: (Bool) -> Void
     public var sparklineOn: Bool
     public var quit: () -> Void
+    // value: navigation: open a machine's page, the switcher, back to Home.
+    public var openMachine: (String) -> Void
+    public var openSwitcher: () -> Void
+    public var back: () -> Void
+    public var search: (String) -> Void
 
     public init(run: @escaping (Action, [String: String]) -> Void = { _, _ in }, confirm: @escaping (Action?) -> Void = { _ in },
                 answer: @escaping (String, String, String) -> Void = { _, _, _ in }, open: @escaping (URL) -> Void = { _ in },
                 toggleQR: @escaping (String) -> Void = { _ in }, toggleMenu: @escaping () -> Void = {}, loginItem: @escaping (Bool) -> Void = { _ in }, loginItemOn: Bool = false,
-                sparkline: @escaping (Bool) -> Void = { _ in }, sparklineOn: Bool = false, quit: @escaping () -> Void = {}) {
+                sparkline: @escaping (Bool) -> Void = { _ in }, sparklineOn: Bool = false, quit: @escaping () -> Void = {},
+                openMachine: @escaping (String) -> Void = { _ in }, openSwitcher: @escaping () -> Void = {}, back: @escaping () -> Void = {}, search: @escaping (String) -> Void = { _ in }) {
         self.run = run
         self.confirm = confirm
         self.answer = answer
@@ -52,12 +77,18 @@ public struct PopoverHandlers {
         self.sparkline = sparkline
         self.sparklineOn = sparklineOn
         self.quit = quit
+        self.openMachine = openMachine
+        self.openSwitcher = openSwitcher
+        self.back = back
+        self.search = search
     }
 }
 
 public enum TodoBadge {
+    public static let section = "needs-you"
+
     public static func todo(_ page: Page) -> (mark: Mark, n: Int)? {
-        guard let s = page.section("todo"), page.state != "loading" || s.counts?.contains(where: { $0.mark != .pending }) == true else { return nil }
+        guard let s = page.section(section), page.state != "loading" || s.counts?.contains(where: { $0.mark != .pending }) == true else { return nil }
         let counts = (s.counts ?? []).filter { $0.mark != .pending && $0.mark != .ok }
         let n = counts.reduce(0) { $0 + ($1.n ?? 0) }
         let worst = counts.compactMap(\.mark).max { $0.rank < $1.rank } ?? .ok
@@ -84,14 +115,22 @@ public struct Popover: View {
 
     var inner: CGFloat { Token.Space.width - Token.Space.margin * 2 }
 
-    var links: LinkActions { LinkActions(open: handlers.open, qr: state.qr, toggleQR: handlers.toggleQR) }
-
     public var body: some View {
-        VStack(alignment: .leading, spacing: Token.Space.gap) {
+        VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
             header
             if state.menu { menu }
-            if let page = state.page {
-                content(page)
+            if let shown = state.shown {
+                SwiftUI.Group {
+                    if shown.id == PageID.switcher {
+                        SwitcherContent(page: shown, state: state, handlers: handlers)
+                    } else if shown.id == PageID.machine {
+                        MachineContent(page: shown, state: state, handlers: handlers, width: inner)
+                    } else {
+                        HomeContent(page: shown, state: state, handlers: handlers, width: inner)
+                    }
+                }
+                .opacity(state.connection == .connecting ? 0.5 : 1)
+                .disabled(state.connection == .connecting)
             } else {
                 PendingDot(still: true)
             }
@@ -107,18 +146,42 @@ public struct Popover: View {
         .environment(\.stationHints, false)
     }
 
+    // invariant: Home and the switcher lead with the switcher's pill, This
+    // Mac's; a machine's page leads with the way back.
+    @ViewBuilder
     var header: some View {
-        HStack(spacing: Token.Space.gap / 2) {
-            Text(state.page?.context?.machine ?? "station").font(.system(size: Token.Space.text + 1, weight: .bold)).foregroundStyle(palette.text)
-            Spacer()
-            if let page = state.page, let (mark, _) = TodoBadge.todo(page), let text = TodoBadge.text(page) {
-                MarkView(mark)
-                Text(text).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
-            }
-            Button(action: handlers.toggleMenu) {
-                Image(systemName: Token.Symbol.more).font(.system(size: Token.Space.text)).foregroundStyle(palette.muted)
+        if let pushed = state.pushed, pushed.id == PageID.machine {
+            Button(action: handlers.back) {
+                HStack(spacing: 4) {
+                    Image(systemName: Token.Symbol.back).font(.system(size: Token.Space.small, weight: .semibold))
+                    Text("All machines").font(.system(size: Token.Space.text))
+                }
+                .foregroundStyle(palette.accent)
             }
             .buttonStyle(.plain)
+        } else {
+            HStack(spacing: Token.Space.gap / 2) {
+                Button(action: state.pushed == nil ? handlers.openSwitcher : handlers.back) {
+                    HStack(spacing: 5) {
+                        Image(systemName: Token.Symbol.mac).font(.system(size: Token.Space.small)).foregroundStyle(palette.accent)
+                        Text(Page.ThisMacWord).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
+                        Image(systemName: Token.Symbol.down).font(.system(size: Token.Space.small - 2, weight: .bold)).foregroundStyle(palette.muted)
+                    }
+                    .padding(.horizontal, Token.Tile.pill)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(palette.text.opacity(state.pushed == nil ? Token.Tile.fill : Token.Tile.sheet)))
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut("0", modifiers: .command)
+                if state.pushed == nil {
+                    Text(state.page?.context?.machine ?? "station").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(1)
+                }
+                Spacer()
+                Button(action: handlers.toggleMenu) {
+                    Image(systemName: Token.Symbol.more).font(.system(size: Token.Space.text)).foregroundStyle(palette.muted)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
@@ -136,94 +199,8 @@ public struct Popover: View {
             Button("Quit") { handlers.quit() }.font(.system(size: Token.Space.small))
         }
     }
+}
 
-    @ViewBuilder
-    func content(_ page: Page) -> some View {
-        let dimmed = state.connection == .connecting
-        VStack(alignment: .leading, spacing: Token.Space.gap) {
-            if let strip = page.strip { StripView(strip) }
-            if let todo = page.section("todo") {
-                Divider()
-                SectionView(todo, width: inner)
-            }
-            if let fleet = page.section("fleet") {
-                Divider()
-                if scrolls {
-                    ScrollView { SectionView(fleet, width: inner, links: links) }.frame(maxHeight: Token.Space.cap / 2)
-                } else {
-                    SectionView(fleet, width: inner, links: links)
-                }
-            }
-            if let power = page.section("power") {
-                Divider()
-                powerSection(page, power)
-            }
-            Divider()
-            actions(page)
-        }
-        .opacity(dimmed ? 0.5 : 1)
-        .disabled(dimmed)
-    }
-
-    func powerSection(_ page: Page, _ power: Section) -> some View {
-        let toggle = (page.actions ?? []).first { $0.rows?.contains("awake") == true && $0.run != nil }
-        let held = power.role == "banner"
-        let title = held ? "\(Token.Glyph.power) \(power.title ?? "")" : power.title
-        var shown = power
-        shown.caption = nil
-        return VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                SectionView(shown, width: inner - 40, title: title)
-                if let toggle {
-                    if state.running == toggle.id {
-                        PendingDot()
-                    } else {
-                        Button { handlers.run(toggle, state.answers[toggle.id ?? ""] ?? [:]) } label: { Switch(on: held) }
-                            .buttonStyle(.plain)
-                            .disabled(state.running != nil)
-                    }
-                }
-            }
-            if let form = toggle?.form, !held {
-                FormView(form, answers: Binding(get: { state.answers[toggle?.id ?? ""] ?? [:] }, set: { new in
-                    for (k, v) in new { handlers.answer(toggle?.id ?? "", k, v) }
-                }))
-            }
-        }
-    }
-
-    @ViewBuilder
-    func actions(_ page: Page) -> some View {
-        if let id = state.confirming, let action = page.action(id), let confirm = action.confirm {
-            ConfirmPanel(confirm) { yes in
-                handlers.confirm(nil)
-                if yes { handlers.run(action, [:]) }
-            }
-        } else {
-            VStack(alignment: .leading, spacing: 4) {
-                if let form = page.pageActions.first(where: { $0.form != nil && state.confirming == $0.id })?.form {
-                    FormView(form, answers: .constant([:]))
-                }
-                HStack(spacing: Token.Space.gap) {
-                    ForEach(Array(page.pageActions.enumerated()), id: \.offset) { _, action in
-                        if state.running == action.id {
-                            PendingDot()
-                        } else {
-                            Button(action.form != nil ? "\(action.label ?? "")\(Token.Glyph.ellipsis)" : action.label ?? "") {
-                                if action.confirm != nil || action.form != nil {
-                                    handlers.confirm(action)
-                                } else {
-                                    handlers.run(action, [:])
-                                }
-                            }
-                            .font(.system(size: Token.Space.small))
-                            .controlSize(.small)
-                            .disabled(state.running != nil)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                }
-            }
-        }
-    }
+extension Page {
+    static let ThisMacWord = "This Mac"
 }

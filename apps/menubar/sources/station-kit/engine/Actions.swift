@@ -30,12 +30,25 @@ public struct ActionRunner: Sendable {
         self.terminal = terminal
     }
 
+    // value: the key a typed confirmation's answer goes under: the name the
+    // owner typed, which the call checks against the machine's own.
+    public static let typedKey = "Confirm"
+
     public static func filled(_ action: Action, answers: [String: String]) -> [String: String] {
         var out: [String: String] = [:]
         for f in action.form?.fields ?? [] {
             guard let key = f.key, let value = answers[key] ?? f.default, !value.isEmpty else { continue }
             out[key] = value
         }
+        if action.confirm?.type != nil, let typed = answers[typedKey] { out[typedKey] = typed }
+        return out
+    }
+
+    // value: the answers the owner typed: a text field's, and a typed
+    // confirmation's name.
+    static func words(_ action: Action) -> Set<String> {
+        var out = Set((action.form?.fields ?? []).filter { $0.kind == "text" }.compactMap(\.key))
+        if action.confirm?.type != nil { out.insert(typedKey) }
         return out
     }
 
@@ -46,7 +59,7 @@ public struct ActionRunner: Sendable {
     public func run(_ action: Action, answers: [String: String] = [:]) async -> Status? {
         guard let run = action.run else { return nil }
         if let name = run.call {
-            let reply = await Client.call(path: socket, name: name, input: Client.input(Self.filled(action, answers: answers), fixed: run.in))
+            let reply = await Client.call(path: socket, name: name, input: Client.input(Self.filled(action, answers: answers), fixed: run.in, words: Self.words(action)), target: run.target)
             if reply.ok || (reply.closed && name == Self.endsTheEngine) { return nil }
             let message = reply.message ?? name
             var status = Self.failure(message, reply.hint)

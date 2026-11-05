@@ -17,8 +17,8 @@
   },
   "sections": [
     {
-      "id": "todo",
-      "title": "To do",
+      "id": "needs-you",
+      "title": "Needs you",
       "role": "actions",
       "columns": [
         {
@@ -49,8 +49,8 @@
       ]
     },
     {
-      "id": "fleet",
-      "title": "All machines",
+      "id": "machines",
+      "title": "Machines",
       "columns": [
         {
           "key": "name",
@@ -60,63 +60,18 @@
         {
           "key": "kind",
           "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "host",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "lifetime",
-          "kind": "text",
-          "show": "pipe"
-        },
-        {
-          "key": "class",
-          "kind": "text",
-          "keep": 70,
-          "show": "eye"
-        },
-        {
-          "key": "role",
-          "kind": "text",
-          "keep": 30,
-          "show": "eye"
-        },
-        {
-          "key": "state",
-          "kind": "text",
-          "keep": 90
-        },
-        {
-          "key": "ip",
-          "kind": "identity",
-          "keep": 50
-        },
-        {
-          "key": "record",
-          "kind": "list",
-          "show": "pipe"
-        },
-        {
-          "key": "resources",
-          "kind": "list",
-          "keep": 10,
-          "show": "eye",
-          "whole": true
+          "keep": 40
         },
         {
           "key": "detail",
           "kind": "list",
-          "keep": 5,
-          "show": "eye"
+          "keep": 80
         }
       ],
       "items": [
         {
           "row": {
-            "id": "fleet",
+            "id": "reading",
             "mark": "pending",
             "label": "reading"
           }
@@ -130,8 +85,9 @@
       ]
     },
     {
-      "id": "power",
+      "id": "awake",
       "title": "Awake",
+      "role": "summary",
       "columns": [
         {
           "key": "name",
@@ -140,53 +96,64 @@
         },
         {
           "key": "value",
-          "kind": "text",
-          "keep": 100
-        },
-        {
-          "key": "detail",
-          "kind": "text",
+          "kind": "list",
           "keep": 60
-        },
-        {
-          "key": "more",
-          "kind": "text",
-          "keep": 20,
-          "whole": true
         }
       ],
       "items": [
         {
           "row": {
             "id": "awake",
-            "mark": "ok",
-            "label": "awake",
+            "label": "Awake",
             "cells": [
               {
-                "kind": "off"
-              },
-              {
-                "kind": "text",
-                "text": "the Mac sleeps as macOS decides"
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "This Mac sleeps normally"
+                  }
+                ]
               }
-            ],
-            "hint": {
-              "command": "station awake 4h",
-              "key": "a"
-            }
+            ]
           }
         }
-      ],
-      "counts": [
+      ]
+    },
+    {
+      "id": "accounts",
+      "title": "Accounts",
+      "role": "summary",
+      "columns": [
         {
-          "mark": "ok",
-          "n": 1
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "accounts",
+            "label": "Accounts",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ]
+          }
         }
       ]
     }
   ],
   "actions": [
     {
+      "key": "cmd+n",
       "label": "New VM",
       "on": "page",
       "priority": 1,
@@ -204,14 +171,18 @@
         "fields": [
           {
             "key": "Request.Lifetime",
-            "label": "Lifetime",
+            "label": "Will it last?",
             "kind": "select",
             "options": [
               {
-                "value": "throwaway"
+                "value": "throwaway",
+                "label": "Throwaway",
+                "note": "deleted when it powers off from inside"
               },
               {
-                "value": "permanent"
+                "value": "permanent",
+                "label": "Permanent",
+                "note": "kept until you delete it"
               }
             ],
             "default": "throwaway"
@@ -223,11 +194,11 @@
             "options": [
               {
                 "value": "4294967296",
-                "label": "4G"
+                "label": "4 GB"
               },
               {
                 "value": "8589934592",
-                "label": "8G"
+                "label": "8 GB"
               }
             ],
             "default": "4294967296"
@@ -236,7 +207,8 @@
       }
     },
     {
-      "label": "Open station",
+      "key": "cmd+t",
+      "label": "Open in Terminal",
       "on": "page",
       "priority": 2,
       "id": "open-station",
@@ -245,7 +217,7 @@
       }
     },
     {
-      "label": "Stop everything",
+      "label": "Stop everything on This Mac",
       "on": "page",
       "confirm": {
         "question": "Stop everything on This Mac?",
@@ -286,32 +258,20 @@
         "fields": [
           {
             "key": "For",
-            "label": "For",
+            "label": "Keep awake for",
             "kind": "select",
             "options": [
               {
                 "value": "3600000000000",
-                "label": "1h"
-              },
-              {
-                "value": "7200000000000",
-                "label": "2h"
+                "label": "1 h"
               },
               {
                 "value": "14400000000000",
-                "label": "4h"
+                "label": "4 h"
               },
               {
                 "value": "28800000000000",
-                "label": "8h"
-              },
-              {
-                "value": "43200000000000",
-                "label": "12h"
-              },
-              {
-                "value": "86400000000000",
-                "label": "24h"
+                "label": "8 h"
               }
             ],
             "default": "14400000000000"
