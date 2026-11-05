@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           # Needs you: reachable outside Tailscale, not declared public	1 ✗
-          ✗	macos-1	8081	node	*:8081 all interfaces	declared no
+          ✗	macos-1	8081	needs you	node	*:8081 all interfaces	declared no
           # Private: shared with you on Tailscale	3 ●
     - command: 'ports --json | /usr/bin/jq -c ''.findings'''
       exit: 0

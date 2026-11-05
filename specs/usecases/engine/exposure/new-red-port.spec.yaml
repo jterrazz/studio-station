@@ -26,7 +26,7 @@ runs:
     - command: 'ports --all-machines | /usr/bin/grep 9000'
       exit: 0
       stdout: |
-          ✗	jterrazz-mac-mini	9000	node	*:9000 all interfaces	declared no
+          ✗	jterrazz-mac-mini	9000	needs you	node	*:9000 all interfaces	declared no
     - command: 'world advance 5m'
       exit: 0
     - command: '--version >/dev/null; /usr/bin/jq -c ''.told[] | [.Kind, .Text]'' world.json'

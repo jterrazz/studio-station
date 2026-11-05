@@ -16,13 +16,13 @@ runs:
       stdout: |
           ●	Tailscale	signed in · jterrazz-macbook-pro.tail1234.ts.net · ports are shared
           # Needs you: reachable outside Tailscale, not declared public	1 ✗
-          ✗	jterrazz-mac-mini	5000	AirPlay Receiver	*:5000 all interfaces	declared no	System Settings > General > AirDrop & Handoff > AirPlay Receiver
+          ✗	jterrazz-mac-mini	5000	needs you	AirPlay Receiver	*:5000 all interfaces	declared no	System Settings > General > AirDrop & Handoff > AirPlay Receiver
           # Public: reachable from anywhere else, internet or LAN, declared	1 ●
-          ●	infra	443	traefik	*:443 all interfaces	declared · cloudflare-tunnel
+          ●	infra	443	public	traefik	*:443 all interfaces	declared · cloudflare-tunnel
           # Private: shared with you on Tailscale	3 ●
-          ●	linux-1	5173	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
-          ●	linux-1	7000	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server
-          ●	infra	6443		own Tailscale device: infra	Kubernetes API
+          ●	linux-1	5173	private	https://jterrazz-macbook-pro.tail1234.ts.net:40001	shared	node	vite
+          ●	linux-1	7000	private	jterrazz-macbook-pro.tail1234.ts.net:40002	shared	server
+          ●	infra	6443	private		own Tailscale device: infra	Kubernetes API
           	Reserved on This Mac: 2 of 1000 (40000-40999), 998 free
           	Reserved on jterrazz-mac-mini: 0 of 1000 (40000-40999), 1000 free
           	2 more listen on their machine only

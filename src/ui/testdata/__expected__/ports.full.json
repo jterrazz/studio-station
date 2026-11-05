@@ -75,6 +75,12 @@
           "keep": 90
         },
         {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
           "key": "what",
           "label": "what",
           "kind": "text",
@@ -103,6 +109,10 @@
               {
                 "kind": "port",
                 "n": 5000
+              },
+              {
+                "kind": "text",
+                "text": "needs you"
               },
               {
                 "kind": "text",
@@ -154,6 +164,12 @@
           "keep": 90
         },
         {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
           "key": "what",
           "label": "what",
           "kind": "text",
@@ -182,6 +198,10 @@
               {
                 "kind": "port",
                 "n": 22
+              },
+              {
+                "kind": "text",
+                "text": "public"
               },
               {
                 "kind": "text",
@@ -237,6 +257,12 @@
           "keep": 80
         },
         {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
           "key": "url",
           "label": "url",
           "kind": "url",
@@ -269,6 +295,10 @@
                 "of": 40001
               },
               {
+                "kind": "text",
+                "text": "private"
+              },
+              {
                 "kind": "url",
                 "text": "https://jterrazz-macbook-pro.tail1234.ts.net:40001"
               },
@@ -297,6 +327,10 @@
                 "kind": "portmap",
                 "n": 5432,
                 "of": 40002
+              },
+              {
+                "kind": "text",
+                "text": "private"
               },
               {
                 "kind": "none"
@@ -334,6 +368,10 @@
               {
                 "kind": "port",
                 "n": 6443
+              },
+              {
+                "kind": "text",
+                "text": "private"
               },
               {
                 "kind": "none"
@@ -377,6 +415,12 @@
           "label": "port",
           "kind": "portmap",
           "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
         },
         {
           "key": "url",

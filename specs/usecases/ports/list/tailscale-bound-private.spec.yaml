@@ -7,7 +7,7 @@ runs:
       exit: 0
       stdout: |
           # Private: shared with you on Tailscale	3 ●
-          ●	jterrazz-macbook-pro	8443		on Tailscale	caddy
+          ●	jterrazz-macbook-pro	8443	private		on Tailscale	caddy
     - command: 'ports --json | /usr/bin/jq -c ''[[.ports[] | select(.port == 8443) | [.class, .bind]], .findings]'''
       exit: 0
       stdout: |

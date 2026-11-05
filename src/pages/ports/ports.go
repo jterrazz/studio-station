@@ -12,10 +12,18 @@ import (
 
 const KeyStopSharing = "x"
 
+const (
+	ClassNeedsYou = "needs you"
+	ClassPublic   = "public"
+	ClassPrivate  = "private"
+	ClassLocal    = "this machine only"
+)
+
 func Columns() []page.Column {
 	return []page.Column{
 		{Key: "vm", Kind: page.KindText, Keep: 100},
 		{Key: "port", Label: "port", Kind: page.KindPortMap, Keep: 80},
+		{Key: "class", Label: "class", Kind: page.KindText, Keep: 85},
 		{Key: "url", Label: "url", Kind: page.KindURL, Keep: 40},
 		{Key: "state", Label: "state", Kind: page.KindText, Keep: 70},
 		{Key: "process", Label: "process", Kind: page.KindText, Keep: 20, Whole: true},
@@ -134,7 +142,7 @@ func hostRows(h ports.HostServices) []page.Item {
 	switch {
 	case !h.Reachable:
 		row = page.Row{ID: h.Name, Label: h.Name, Mark: page.Attention, Reason: page.Unreachable,
-			Cells: []page.Value{page.None(), page.None(), page.Text("does not answer")},
+			Cells: []page.Value{page.None(), page.None(), page.None(), page.Text("does not answer")},
 			Hint:  page.Cmd("station machines")}
 	case h.Here && !h.Daemon.Running:
 		reason, word, fix := page.Stopped, "not shared while the engine is stopped", "station engine start"
@@ -142,7 +150,7 @@ func hostRows(h ports.HostServices) []page.Item {
 			reason, word, fix = page.Missing, "the engine is not installed", "station setup"
 		}
 		row = page.Row{ID: "engine", Label: "engine", Mark: page.Attention, Reason: reason,
-			Cells: []page.Value{page.None(), page.None(), page.Text(word)},
+			Cells: []page.Value{page.None(), page.None(), page.None(), page.Text(word)},
 			Hint:  page.Cmd(fix)}
 	default:
 		return nil
@@ -154,6 +162,7 @@ func exposedColumns() []page.Column {
 	return []page.Column{
 		{Key: "machine", Kind: page.KindText, Keep: 100},
 		{Key: "port", Label: "port", Kind: page.KindPort, Keep: 90},
+		{Key: "class", Label: "class", Kind: page.KindText, Keep: 85},
 		{Key: "what", Label: "what", Kind: page.KindText, Keep: 60},
 		{Key: "listens", Label: "listens on", Kind: page.KindText, Keep: 50},
 		{Key: "declared", Label: "declared", Kind: page.KindText, Keep: 70},
@@ -182,7 +191,7 @@ func ListensOn(p ports.Port) page.Value {
 
 func RedRow(p ports.Port) page.Row {
 	row := page.Row{ID: p.Key(), Label: p.Machine.Name, Mark: page.Broken, Reason: page.Exposed,
-		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(p.What()), ListensOn(p), page.Text("declared no")}}
+		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(ClassNeedsYou), page.Text(p.What()), ListensOn(p), page.Text("declared no")}}
 	if k, ok := catalog.KnownPortOf(p.Port, p.Process); ok && k.Off != "" {
 		row.Hint = page.Cmd(k.Off)
 	}
@@ -191,12 +200,12 @@ func RedRow(p ports.Port) page.Row {
 
 func PublicRow(p ports.Port) page.Row {
 	return page.Row{ID: p.Key(), Label: p.Machine.Name, Mark: page.OK,
-		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(p.What()), ListensOn(p), page.Texts("declared", p.Declared.Via)}}
+		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(ClassPublic), page.Text(p.What()), ListensOn(p), page.Texts("declared", p.Declared.Via)}}
 }
 
 func LocalRow(p ports.Port) page.Row {
 	return page.Row{ID: p.Key(), Label: p.Machine.Name, Mark: page.OK,
-		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(p.What()), ListensOn(p), page.Text("this machine only")}}
+		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(ClassLocal), page.Text(p.What()), ListensOn(p), page.None()}}
 }
 
 func PrivateRow(p ports.Port) page.Row {
@@ -210,7 +219,7 @@ func PrivateRow(p ports.Port) page.Row {
 		how = "behind " + p.Machine.On + ", not shared"
 	}
 	return page.Row{ID: p.Key(), Label: p.Machine.Name, Mark: page.OK,
-		Cells: []page.Value{page.Port(int64(p.Port)), page.None(), page.Text(how), page.Text(p.What())}}
+		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(ClassPrivate), page.None(), page.Text(how), page.Text(p.What())}}
 }
 
 func reserved(h ports.HostServices, here page.Context) string {
@@ -278,7 +287,7 @@ func Row(s ports.ServiceView) page.Row {
 	}
 	mark, reason, state, hint := stateOf(s)
 	return page.Row{ID: rowID(s.VM, s.GuestPort), Label: s.VM, Mark: mark, Reason: reason,
-		Cells:  []page.Value{port, url, state, page.Text(s.Process)},
+		Cells:  []page.Value{port, page.Text(ClassPrivate), url, state, page.Text(s.Process)},
 		Detail: page.Text(s.Profile), Hint: hint}
 }
 

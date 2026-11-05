@@ -6,7 +6,7 @@ runs:
     - command: 'ports --on jterrazz-mac-mini | /usr/bin/grep 5000'
       exit: 0
       stdout: |
-          ✗	jterrazz-mac-mini	5000	AirPlay Receiver	*:5000 all interfaces	declared no	System Settings > General > AirDrop & Handoff > AirPlay Receiver
+          ✗	jterrazz-mac-mini	5000	needs you	AirPlay Receiver	*:5000 all interfaces	declared no	System Settings > General > AirDrop & Handoff > AirPlay Receiver
     - command: 'ports --on jterrazz-mac-mini --json | /usr/bin/jq -c ''[.findings, [.ports[] | select(.port == 5000) | [.what, .bind, .class, .declared]]]'''
       exit: 0
       stdout: |

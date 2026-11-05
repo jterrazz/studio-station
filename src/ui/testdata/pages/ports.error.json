@@ -63,6 +63,12 @@
           "keep": 80
         },
         {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
           "key": "url",
           "label": "url",
           "kind": "url",
@@ -96,6 +102,9 @@
                 "kind": "none"
               },
               {
+                "kind": "none"
+              },
+              {
                 "kind": "text",
                 "text": "not shared while the engine is stopped"
               }
@@ -116,6 +125,10 @@
                 "kind": "portmap",
                 "n": 5173,
                 "of": 40001
+              },
+              {
+                "kind": "text",
+                "text": "private"
               },
               {
                 "kind": "url",
@@ -158,6 +171,10 @@
                 "of": 40002
               },
               {
+                "kind": "text",
+                "text": "private"
+              },
+              {
                 "kind": "none"
               },
               {
@@ -190,6 +207,9 @@
             "mark": "attention",
             "label": "mac-mini",
             "cells": [
+              {
+                "kind": "none"
+              },
               {
                 "kind": "none"
               },
@@ -231,6 +251,12 @@
           "label": "port",
           "kind": "portmap",
           "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
         },
         {
           "key": "url",

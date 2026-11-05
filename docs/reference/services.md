@@ -1,6 +1,6 @@
 # Services
 
-A service is a TCP port something listens on inside a VM. The VM is never on the tailnet, so its host publishes what it listens on: the host's engine leases a host port for it, listens there on 127.0.0.1 only, and carries each connection into the VM over its one ssh connection. The tailnet reaches that port through the Tailscale app alone: `tailscale serve` publishes it, https for an HTTP service and raw TCP for any other, so nothing of station listens on the tailnet. Nothing is configured per service: a dev server that starts listening in a workspace is published within seconds. A server's ports are never shared by themselves: its own tooling chooses its routes (its own Tailscale device, a tunnel), and `station ports share infra 8080` shares one on demand.
+`station ports` lists every TCP port that listens on a Mac or a VM, each in the class of who reaches it. A workspace's port is a service: a workspace is not on the tailnet, so its host shares what it listens on: the host's engine leases a host port for it, listens there on 127.0.0.1 only, and carries each connection into the VM over its one ssh connection. The tailnet reaches that port through the Tailscale app alone: `tailscale serve` publishes it, https for an HTTP service and raw TCP for any other, so nothing of station listens on the tailnet. Nothing is configured per service: a dev server that starts listening in a workspace is published within seconds. A server's ports are never shared by themselves: its own tooling chooses its routes (its own Tailscale device, a tunnel), and `station ports share infra 8080` shares one on demand.
 
 | Section               | Answers                                                      |
 | --------------------- | ------------------------------------------------------------ |
@@ -20,7 +20,7 @@ For each reported port the engine takes a **lease**: the lowest free port of the
 | Event                                   | What happens                                                       |
 | --------------------------------------- | ------------------------------------------------------------------ |
 | the port starts listening               | leased and published                                               |
-| it listens in a server                  | listed, never leased nor published by itself                       |
+| it listens in a server                  | listed, never shared by itself                                     |
 | it stops listening                      | unpublished after 5 s (a restart inside them keeps it); lease kept |
 | a VM stops, then runs again             | unpublished, then published again on the same host port            |
 | `machines delete`, a throwaway poweroff | released, its serve entry removed                                  |
@@ -43,14 +43,14 @@ station ports share api 3000         # reserve 3000's URL now and print it; in a
 station ports stop-sharing api 3000  # on a Mac; in a VM: station ports stop-sharing 3000
 ```
 
-The list begins with the Tailscale line, then every port that listens on a Mac or a VM, in the class of who reaches it, piped tab-separated:
+The list begins with the Tailscale line, then every port that listens on a Mac or a VM, in the class of who reaches it, piped tab-separated, each row saying its class in words, so a `grep` of one port still tells Private from Public:
 
-| Section                     | Holds                                                                                                              | Columns                                              |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| Needs you (`✗`)             | a port reachable outside Tailscale (every interface, the LAN) that no declaration names public                     | machine, port, process, bind, `declared no`, the fix |
-| Public (`●`)                | a port reachable outside Tailscale that a declaration names public (`cloudflare-tunnel`, …)                        | machine, port, process, bind, `declared · <how>`     |
-| Private (`●` `◐` `○`)       | what is shared with you on Tailscale: a VM's reserved port, a machine's own Tailscale device                       | machine, port, URL, state, process, profile, fix     |
-| Listens on its machine only | loopback and other ports only their machine reaches; one `N more listen on their machine only` line unless `--all` | machine, port, process, bind                         |
+| Section                     | Holds                                                                                                              | Columns                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Needs you (`✗`)             | a port reachable outside Tailscale (every interface, the LAN) that no declaration names public                     | machine, port, `needs you`, process, bind, `declared no`, the fix |
+| Public (`●`)                | a port reachable outside Tailscale that a declaration names public (`cloudflare-tunnel`, …)                        | machine, port, `public`, process, bind, `declared · <how>`        |
+| Private (`●` `◐` `○`)       | what is shared with you on Tailscale: a VM's reserved port, a machine's own Tailscale device                       | machine, port, `private`, URL, state, process, profile, fix       |
+| Listens on its machine only | loopback and other ports only their machine reaches; one `N more listen on their machine only` line unless `--all` | machine, port, `this machine only`, process, bind                 |
 
 A VM behind its Mac is reached through Tailscale only, so its ports are Private whatever it binds. Among the shared rows `●` is shared, `○` not listening (reserved, nothing listens), `◐` waiting (the VM shares 20 already, the range is taken), local only (Serve off, Tailscale signed out, a refused serve), `issuing certificate`, not shared while its VM is stopped or while the engine is stopped. A Mac that does not answer is one `◐` row, never a failure.
 

@@ -7,7 +7,7 @@ runs:
       exit: 0
       stdout: |
           # Private: shared with you on Tailscale	1 ●
-          ●	infra	6443		own Tailscale device: infra	Kubernetes API
+          ●	infra	6443	private		own Tailscale device: infra	Kubernetes API
     - command: 'ports --on jterrazz-mac-mini --json | /usr/bin/jq -c ''[[.ports[] | select(.port == 6443) | [.machine, .class]], .findings]'''
       exit: 0
       stdout: |

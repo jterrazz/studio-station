@@ -64,6 +64,12 @@
           "keep": 80
         },
         {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
           "key": "url",
           "label": "url",
           "kind": "url",
@@ -101,6 +107,9 @@
               },
               {
                 "kind": "pending"
+              },
+              {
+                "kind": "pending"
               }
             ],
             "detail": {
@@ -125,6 +134,9 @@
               },
               {
                 "kind": "pending"
+              },
+              {
+                "kind": "pending"
               }
             ],
             "detail": {
@@ -138,6 +150,9 @@
             "mark": "pending",
             "label": "mac-mini",
             "cells": [
+              {
+                "kind": "pending"
+              },
               {
                 "kind": "pending"
               },
@@ -177,6 +192,12 @@
           "label": "port",
           "kind": "portmap",
           "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
         },
         {
           "key": "url",
