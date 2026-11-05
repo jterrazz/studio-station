@@ -53,7 +53,7 @@ footprint() {
   local dir=$1 disk=$2 noise=$3 unmatched=0 prev entry i name path
   {
     jq -r '.rows[] | select(.group != "misplaced") | .paths[] | select(startswith("~/")) | ltrimstr("~/")' "$disk"
-    sed -n 's/^| `~\/\([^`]*\)`.*/\1/p' "$repo/docs/reference/footprint.md"
+    grep -o '`~/[^`]*`' "$repo/docs/reference/footprint.md" | sed 's/^`~\///; s/`$//'
     grep -v '^#' "$noise"
     grep -v '^#' "$suite/suite-made.txt"
   } | grep -v '^$' | LC_ALL=C sort -u > "$dir/allowed.txt"
