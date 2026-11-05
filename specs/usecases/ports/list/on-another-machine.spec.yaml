@@ -8,7 +8,7 @@ runs:
     - command: 'ports --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          	On jterrazz-mac-mini:
+          	On mac-mini:
           ●	Tailscale	signed in · jterrazz-mac-mini.tail1234.ts.net · ports are shared
           # Private: shared with you on Tailscale	1 ○
           ○	infra	8080	private	https://jterrazz-mac-mini.tail1234.ts.net:40000	not listening · reserved 40000

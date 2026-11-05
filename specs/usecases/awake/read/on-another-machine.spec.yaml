@@ -4,5 +4,5 @@ runs:
     - command: 'awake --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          	On jterrazz-mac-mini:
+          	On mac-mini:
           ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy	last slept: never in 12d 1h · hosts infra (server)

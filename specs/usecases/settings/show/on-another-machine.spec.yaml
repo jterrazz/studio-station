@@ -4,12 +4,12 @@ runs:
     - command: 'settings apply dns --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          	On jterrazz-mac-mini:
+          	On mac-mini:
           ●	dns	dns: applied
     - command: 'settings dns --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          	On jterrazz-mac-mini:
+          	On mac-mini:
           ●	dns	applied
           # Detail
           group	Set by station

@@ -17,5 +17,5 @@ runs:
     - command: 'machines --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          	On jterrazz-mac-mini:
+          	On mac-mini:
           ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running

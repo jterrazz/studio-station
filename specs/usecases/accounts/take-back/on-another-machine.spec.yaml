@@ -4,12 +4,12 @@ runs:
     - command: 'accounts share github --with ci-1 --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          	On jterrazz-mac-mini:
+          	On mac-mini:
           ●	github	shared with ci-1	12 h
     - command: 'accounts take-back github --from ci-1 --on jterrazz-mac-mini --yes'
       exit: 0
       stdout: |
-          	On jterrazz-mac-mini:
+          	On mac-mini:
           ●	github	taken back from ci-1
     - command: '--version >/dev/null; /usr/bin/jq -c ''[.macs["ci-1"].secrets, .macs["jterrazz-mac-mini"].stores.shares]'' world.json'
       exit: 0

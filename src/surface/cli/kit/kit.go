@@ -16,6 +16,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/pages"
 	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
@@ -116,7 +117,9 @@ func (o IO) LivePage(pages <-chan page.Page) error {
 }
 
 // invariant: SPEC §8.1: every output for another machine starts with
-// `On <that machine>:`, the machine --on named, in place of a page's own.
+// `On <that machine>:`, the machine --on named by the name the interface
+// gives it (SPEC §2.5: `mac-mini` for `jterrazz-mac-mini`), in place of a
+// page's own.
 func (o IO) onLine(p page.Page) page.Page {
 	if o.on == "" {
 		return p
@@ -227,7 +230,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 			out:           env.Out,
 		}
 		if env.Far() {
-			o.on = env.Target().Name
+			o.on = pages.MacName(env.Target().Name, env.Self.Name)
 		}
 		if l.Plumbing {
 			o.in, o.raw = env.Stdin, env.Stdout

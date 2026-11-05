@@ -16,7 +16,7 @@ runs:
     - command: 'machines --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          	On jterrazz-mac-mini:
+          	On mac-mini:
           ●	jterrazz-mac-mini	Mac	jterrazz-mac-mini	Engine running
           ●	infra	Server	jterrazz-mac-mini	Running · always on	8 CPU	24 GB
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].vms.infra | {running: (.pid > 0), want: .kept.want}'' world.json'

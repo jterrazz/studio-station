@@ -4,7 +4,7 @@ runs:
     - command: 'engine stop --yes --on jterrazz-mac-mini'
       exit: 0
       stdout: |
-          	On jterrazz-mac-mini:
+          	On mac-mini:
           ●	engine	stopped 1 VM (ci-1) · infra skipped (server) · the engine keeps running for infra
     - command: 'machines | /usr/bin/grep -A2 jterrazz-mac-mini'
       exit: 0
