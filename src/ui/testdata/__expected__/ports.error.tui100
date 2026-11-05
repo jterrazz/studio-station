@@ -1,5 +1,5 @@
  - Tailscale                                                                                    1 ✗
-   ✗ Tailscale  signed out on This Mac: ports are local only
+   ✗ Tailscale  is signed out on This Mac: ports are local only
  - Private: shared with you on Tailscale                                                        4 ◐
                        port  url                       state
    ◐ engine                                            not shared while the engine is stopped

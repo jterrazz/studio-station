@@ -44,6 +44,8 @@ const IssuingDetail = "issuing certificate" // value: a share whose host certifi
 
 const ServeOffDetail = "Serve is off on Tailscale: turn on HTTPS certificates in the Tailscale admin console"
 
+const SignedOutDetail = TailnetProduct + " is signed out" // value: why nothing is shared on a Mac signed out of the tailnet.
+
 var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}
 
 // value: the two Tailscale app variants, measured 2026-11-01: the Standalone

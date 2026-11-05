@@ -47,7 +47,7 @@ func TailnetLine(s ports.Status) *page.Section {
 		row.Hint = repair(s)
 	case !s.Connected:
 		row.Mark, row.Reason = page.Broken, page.Down
-		row.Cells = []page.Value{page.Text("signed out on This Mac: ports are local only")}
+		row.Cells = []page.Value{page.Text("is signed out on This Mac: ports are local only")}
 		row.Hint = repair(s)
 	case !s.ServeOn:
 		row.Mark, row.Reason = page.Attention, page.Degraded

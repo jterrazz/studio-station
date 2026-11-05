@@ -391,8 +391,19 @@ func (d *Daemon) detectHTTP(ctx context.Context, s *svc) bool {
 	}
 }
 
+// value: how this Mac shares, and why it shares nothing when it is off: a
+// Mac signed out of the tailnet says so, not that Serve is off; the caller
+// holds d.mu.
+func (d *Daemon) exposureLocked() services.Exposure {
+	e := services.ExposureOf(d.self.On, d.self.Host)
+	if !e.On && d.self.Backend != ports.Running {
+		e.Off = catalog.SignedOutDetail
+	}
+	return e
+}
+
 func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View {
-	v := services.ViewOf(l, services.ExposureOf(d.self.On, d.self.Host), httpsMode, services.Waiting)
+	v := services.ViewOf(l, d.exposureLocked(), httpsMode, services.Waiting)
 	if s != nil {
 		switch s.st.Phase {
 		case services.Published, services.Closing:
@@ -420,7 +431,7 @@ func (d *Daemon) hostView(vm string) services.HostView {
 	p := d.policy()
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	e := services.ExposureOf(d.self.On, d.self.Host)
+	e := d.exposureLocked()
 	out := services.HostView{
 		Name: d.m.HereName(), Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true, Version: d.o.Version},
 		PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Services: []services.View{},
@@ -430,7 +441,7 @@ func (d *Daemon) hostView(vm string) services.HostView {
 	}
 	off := ""
 	if !e.On {
-		off = catalog.ServeOffDetail
+		off = e.Off
 	}
 	for _, l := range d.leases {
 		if vm == "" || l.VM == vm {

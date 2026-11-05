@@ -86,11 +86,13 @@ const (
 type Exposure struct {
 	On         bool
 	PublicHost string
+	// value: why nothing is shared when it is off.
+	Off string
 }
 
 func ExposureOf(serveOn bool, dnsName string) Exposure {
 	if !serveOn || dnsName == "" {
-		return Exposure{PublicHost: LocalHost}
+		return Exposure{PublicHost: LocalHost, Off: catalog.ServeOffDetail}
 	}
 	return Exposure{On: true, PublicHost: dnsName}
 }
@@ -112,7 +114,7 @@ func ViewOf(l Lease, e Exposure, httpsMode string, phase Phase) View {
 		v.LastSeenAt = &seen
 	}
 	if !e.On {
-		v.Detail = catalog.ServeOffDetail
+		v.Detail = e.Off
 	}
 	return v
 }
