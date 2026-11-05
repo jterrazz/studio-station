@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	"github.com/jterrazz/studio-station/src/settings"
@@ -293,10 +294,17 @@ type MatrixRowJSON struct {
 	Of    int      `json:"of"`
 }
 
+func contractKind(kind string) string {
+	if kind == string(catalog.Host) {
+		return "mac"
+	}
+	return "workspace"
+}
+
 func MatrixContract(m settings.Matrix, now time.Time, here page.Context) MatrixJSON {
 	// invariant: a machine that could not be read now is a finding, in the
 	// words of its row in Machines.
-	body := MatrixJSON{Schema: "station.settings.matrix/v1", Machine: MachineJSON{Name: here.Machine, Kind: here.Kind}, Findings: []string{}, Columns: []string{}, Skipped: []SkippedJSON{}, Rows: []MatrixRowJSON{}}
+	body := MatrixJSON{Schema: "station.settings.matrix/v1", Machine: MachineJSON{Name: here.Machine, Kind: contractKind(here.Kind)}, Findings: []string{}, Columns: []string{}, Skipped: []SkippedJSON{}, Rows: []MatrixRowJSON{}}
 	for _, c := range m.Columns {
 		body.Columns = append(body.Columns, c.Name)
 		if mark, _, words := standing(c, now); mark != page.OK {
