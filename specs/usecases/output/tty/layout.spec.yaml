@@ -47,8 +47,7 @@ runs:
               → station apps update gh
           Not installed  ○ 100 · homebrew, mas, uv, cocoapods, pnpm, skills, bun, java, …
           OK             ● 5 · mise, go, bat, jq, lazygit
-          Not for this machine
-            7 apps live on other machines
+          Not for this machine  7 apps live on other machines
 
           → station apps install <app...>
           → station apps update

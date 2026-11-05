@@ -52,6 +52,8 @@ func body(st token.Styles, p page.Page, width int) []string {
 			lines = append(lines, organism.Rows(st, s, width)...)
 		case s.Fold == page.Folded || s.Fold == page.Brief:
 			lines = append(lines, folded(st, s, fold, width))
+		case noted(s) && atom.Width(atom.Pad(s.Title, fold))+token.Gap+atom.Width(s.Items[0].Note.Text) < width-token.Margin:
+			lines = append(lines, atom.Spaces(token.Margin)+st.Title.Render(atom.Pad(s.Title, fold))+atom.Spaces(token.Gap)+st.Muted.Render(s.Items[0].Note.Text))
 		default:
 			lines = append(lines, organism.Section(st, s, width)...)
 		}
@@ -136,6 +138,13 @@ func unindent(l string) string {
 		l = styled.ReplaceAllString(l, "$1")
 	}
 	return l
+}
+
+// invariant: a calm section that only says something is one line, its title
+// then what it says (`Not for this machine  7 apps live on other machines`),
+// when the line holds it.
+func noted(s page.Section) bool {
+	return s.Title != "" && s.Role == page.Plain && len(s.Items) == 1 && s.Items[0].Note != nil
 }
 
 func foldWidth(sections []page.Section) int {
