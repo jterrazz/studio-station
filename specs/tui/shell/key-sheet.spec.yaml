@@ -20,9 +20,10 @@ runs:
            All machines › This Mac › Overview
           ┏━ Keys · Overview ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
           ┃ OVERVIEW                                                                                                   ┃
-          ┃   ↑↓    move                                                                                               ┃
-          ┃   left  sidebar                                                                                            ┃
-          ┃   esc   up a level                                                                                         ┃
+          ┃   ↑↓     move                                                                                              ┃
+          ┃   enter  fix                                                                                               ┃
+          ┃   left   sidebar                                                                                           ┃
+          ┃   esc    up a level                                                                                        ┃
           ┃                                                                                                            ┃
           ┃ ALSO                                                                                                       ┃
           ┃   k/j  move up/down                                                                                        ┃
@@ -32,6 +33,7 @@ runs:
           ┃   tab        next pane                                                                                     ┃
           ┃   shift+tab  previous pane                                                                                 ┃
           ┃   [ ]        section                                                                                       ┃
+          ┃   n          new VM                                                                                        ┃
           ┃   ctrl+r     read again                                                                                    ┃
           ┃   q          quit                                                                                          ┃
           ┃   ?          every key                                                                                     ┃
@@ -46,7 +48,5 @@ runs:
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃
           ┃                                                                                                            ┃
-          ┃                                                                                                            ┃
-          ┃                                                                                                            ┃
           ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-           ↑↓ move  left sidebar  esc up a level  tab next pane  [ ] section  ? keys
+           ↑↓ move  enter fix  left sidebar  esc up a level  tab next pane  [ ] section  ? keys

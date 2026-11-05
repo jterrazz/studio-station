@@ -13,6 +13,8 @@ const (
 	KeyMove  = "v"
 	KeyFree  = "f"
 	KeyErase = "e"
+	KeySort  = "s"
+	KeyOpen  = "enter"
 )
 
 func title(g disk.Group) string {
@@ -135,6 +137,7 @@ func columns() []page.Column {
 	return []page.Column{
 		{Key: "name", Kind: page.KindText, Keep: 100},
 		{Key: "size", Label: "size", Kind: page.KindSize, Keep: 90},
+		{Key: "folders", Label: "folders", Kind: page.KindList, Show: page.DetailOnly},
 	}
 }
 
@@ -143,7 +146,7 @@ func Row(r disk.Row) page.Row {
 	if r.Bytes < 0 {
 		cell = page.Unknown()
 	}
-	row := page.Row{ID: string(r.Group) + "/" + r.App, Label: r.App, Mark: page.OK, Cells: []page.Value{cell}}
+	row := page.Row{ID: string(r.Group) + "/" + r.App, Label: r.App, Mark: page.OK, Cells: []page.Value{cell, page.Texts(r.Paths...)}}
 	if r.Group == disk.Misplaced {
 		row.ID, row.Label = string(disk.Misplaced)+"/"+r.Paths[0], r.Paths[0]
 		row.Mark, row.Reason = page.Attention, page.Stray
@@ -154,14 +157,17 @@ func Row(r disk.Row) page.Row {
 		// invariant: a row the walk has not answered shows its last-known
 		// size, Muted, never a blank that a fill would move.
 		row.Mark = page.Awaiting
-		row.Cells = []page.Value{page.Stale(page.Size(r.Bytes))}
+		row.Cells = []page.Value{page.Stale(page.Size(r.Bytes)), page.Texts(r.Paths...)}
 	}
 	return row
 }
 
 func Actions(r disk.Reading) []page.Action {
-	var move, free, erase []string
+	var move, free, erase, open []string
 	for _, row := range r.Rows {
+		if len(row.Paths) > 0 {
+			open = append(open, Row(row).ID)
+		}
 		switch row.Group {
 		case disk.Misplaced:
 			move = append(move, string(disk.Misplaced)+"/"+row.Paths[0])
@@ -181,6 +187,12 @@ func Actions(r disk.Reading) []page.Action {
 	}
 	if len(erase) > 0 {
 		out = append(out, page.Action{Key: KeyErase, Label: "erase", On: page.OnRow, Rows: erase, Priority: 3, Mutates: true, Confirm: &page.Confirm{Yes: "erase", No: "Keep", Danger: true}})
+	}
+	if len(open) > 0 {
+		out = append(out, page.Action{Key: KeyOpen, Label: "open", On: page.OnRow, Rows: open, Priority: 4})
+	}
+	if len(r.Rows) > 1 {
+		out = append(out, page.Action{Key: KeySort, Label: "sort", On: page.OnPage, Priority: 5})
 	}
 	return out
 }

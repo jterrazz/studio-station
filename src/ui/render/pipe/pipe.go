@@ -44,7 +44,7 @@ func section(b *strings.Builder, s page.Section) {
 	}
 	cells := make([]bool, max(len(s.Columns)-1, 0))
 	for i := range cells {
-		cells[i] = s.Columns[i+1].Show != page.EyeOnly
+		cells[i] = s.Columns[i+1].Show != page.EyeOnly && s.Columns[i+1].Show != page.DetailOnly
 	}
 	for _, it := range s.Items {
 		if s.PipeGroups && it.Group != nil && it.Group.Heading() {

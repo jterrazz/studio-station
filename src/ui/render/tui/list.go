@@ -17,6 +17,20 @@ type List struct {
 	Cursor string
 	Filter string
 	Open   map[string]bool
+	// value: the rows ticked for a group action, by their line's key.
+	Ticked map[string]bool
+	// value: the keys the screen answers, each with its label, so an empty
+	// line can name the one that fills it.
+	Bound func(key string) (label string, ok bool)
+}
+
+func (l List) Keys() []string { return l.keys() }
+
+func (l List) Row(key string) (page.Row, bool) {
+	// value: the row a line's key names.
+	l.Cursor = key
+	_, r, ok := l.Current()
+	return r, ok
 }
 
 func (l List) Show(p page.Page) List {
@@ -56,6 +70,31 @@ func (l List) Unfold() (List, bool) {
 	open[l.Cursor] = true
 	l.Open = open
 	return l, true
+}
+
+func (l List) Reveal(row string) (List, bool) {
+	// value: the list with its cursor on the row of that ID, its section
+	// unfolded when folded; found is false when no section holds it.
+	for _, s := range l.Page.Sections {
+		if _, ok := findRow(s.Items, row); !ok {
+			continue
+		}
+		key := organism.RowKey(s.ID, row)
+		if l.folded(s.ID) {
+			open := make(map[string]bool, len(l.Open)+1)
+			for k, v := range l.Open {
+				open[k] = v
+			}
+			open[s.ID] = true
+			l.Open = open
+		}
+		l.Filter = ""
+		if slices.Contains(l.keys(), key) {
+			l.Cursor = key
+			return l, true
+		}
+	}
+	return l, false
 }
 
 func (l List) Current() (page.Section, page.Row, bool) {
@@ -120,7 +159,7 @@ func (l List) Lines(s Shell, width, room int, focused bool) []string {
 		if l.Filter != "" {
 			return []string{" " + st.Muted.Render("Nothing matches /"+l.Filter+token.Sep+"esc clears it")}
 		}
-		return []string{" " + st.Muted.Render("Nothing here.")}
+		return []string{" " + st.Muted.Render("Nothing here. Press ") + st.Accent.Render("ctrl+r") + st.Muted.Render(" to read it again.")}
 	}
 	at := slices.IndexFunc(lines, func(x organism.Line) bool { return x.Key == l.Cursor })
 	start := 0
@@ -131,6 +170,9 @@ func (l List) Lines(s Shell, width, room int, focused bool) []string {
 	out = append(out, top...)
 	for i := start; i < len(lines) && len(out) < room+len(top); i++ {
 		text := lines[i].Text
+		if l.Ticked[lines[i].Key] && lines[i].Kind == organism.LineRow && strings.HasPrefix(text, " ") {
+			text = Tick + text[1:]
+		}
 		if focused && lines[i].Key == l.Cursor && (lines[i].Kind == organism.LineRow || lines[i].Kind == organism.LineTitle) {
 			text = s.CursorLine(text, width)
 		}
@@ -191,7 +233,7 @@ func (l List) lines(st token.Styles, width, columns int) []organism.Line {
 		if s.Role == page.Lifted {
 			continue
 		}
-		g := organism.Grid{Styles: st, Section: s, Width: width, Medium: molecule.TUI, Keys: molecule.NoKeys, Folded: l.folded, Match: l.match}
+		g := organism.Grid{Styles: st, Section: s, Width: width, Medium: molecule.TUI, Keys: molecule.NoKeys, Empties: l.Bound, Folded: l.folded, Match: l.match}
 		body := g.Lines()
 		rows := slices.ContainsFunc(body, func(x organism.Line) bool { return x.Kind == organism.LineRow && x.Key != "" })
 		if l.Filter != "" && !rows {

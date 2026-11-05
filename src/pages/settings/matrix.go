@@ -19,7 +19,7 @@ func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) strin
 	// row per setting and one column per
 	// machine, a group's rows that need no look folded on one line unless
 	// every row is unfolded.
-	p := page.Page{ID: ID, Command: "settings --all-machines", Context: here}
+	p := page.Page{ID: ID, Command: "settings --all-machines", Context: here, Actions: matrixActions(m)}
 	machines := machinesSection(m, now, label)
 	p.Sections = append(p.Sections, matrixLine(m, machines.Caption))
 	machines.Caption = nil
@@ -43,6 +43,33 @@ func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) strin
 		p.Hints = []page.Hint{{Command: "station settings --all-machines --all", Text: "every row"}}
 	}
 	return page.Seal(p)
+}
+
+const (
+	KeyOnMachine = "enter"
+	KeyLook      = "F"
+)
+
+// value: the matrix's keys (SPEC §9.4): apply a setting on every machine it
+// lives on, open it on the machine of the cell, show only what needs a
+// look, and a checked setting's fix (f stays the fix, C21).
+func matrixActions(m settings.Matrix) []page.Action {
+	var set, checked []string
+	all := make([]string, 0, len(m.Rows))
+	for _, r := range m.Rows {
+		all = append(all, r.Name)
+		if r.Group == settings.Checked {
+			checked = append(checked, r.Name)
+		} else {
+			set = append(set, r.Name)
+		}
+	}
+	return []page.Action{
+		{Key: KeyApply, Label: "apply across", On: page.OnRow, Rows: set, Priority: 1, Mutates: true},
+		{Key: KeyOnMachine, Label: "open on that machine", On: page.OnRow, Rows: all, Priority: 2},
+		{Key: KeyLook, Label: "only what needs a look", On: page.OnPage, Priority: 3},
+		{Key: KeyFix, Label: "open the fix", On: page.OnRow, Rows: checked, Priority: 4},
+	}
 }
 
 // value: the first line: how many settings on how many machines, what

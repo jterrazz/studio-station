@@ -11,6 +11,9 @@ const (
 	KeyInstall = "i"
 	KeyRemove  = "x"
 	KeyUpdate  = "u"
+	// value: the stronger update: every update of one method, picked.
+	KeyUpdateByMethod = "U"
+	KeyOpen           = "enter"
 )
 
 type group struct {
@@ -162,6 +165,8 @@ func Actions() []page.Action {
 		{Key: KeyInstall, Label: "install", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Yes: "install"}},
 		{Key: KeyRemove, Label: "remove", On: page.OnRow, Priority: 2, Mutates: true, Confirm: &page.Confirm{Yes: "remove"}},
 		{Key: KeyUpdate, Label: "update", On: page.OnRow, Priority: 3, Mutates: true},
+		{Key: KeyUpdateByMethod, Label: "update by method", On: page.OnPage, Priority: 4, Mutates: true},
+		{Key: KeyOpen, Label: "full page", On: page.OnRow, Priority: 5},
 	}
 }
 

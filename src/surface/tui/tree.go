@@ -104,6 +104,8 @@ func words(n node, s section.ID) []string {
 			return []string{"machines"}
 		case section.Images:
 			return []string{"images"}
+		case section.Settings:
+			return []string{"settings", "--all-machines", "--all"}
 		default:
 			return []string{string(s), "--all-machines"}
 		}

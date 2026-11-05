@@ -22,6 +22,12 @@
           "label": "size",
           "kind": "size",
           "keep": 90
+        },
+        {
+          "key": "folders",
+          "label": "folders",
+          "kind": "list",
+          "show": "detail"
         }
       ],
       "items": [

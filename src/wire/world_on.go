@@ -87,6 +87,10 @@ type worldRun struct {
 	// value: builds another Mac of the world: its registry, its engine.
 	far   func(w *worldMac) farMac
 	moved *moves
+	// value: the run only drives other runs of the binary (the TUI): the
+	// world is theirs to write, and this run's copy, read at its start, is
+	// never written back over what they did.
+	aside bool
 }
 
 // invariant: one Mac of the world as this process sees it: its fakes over
@@ -636,6 +640,9 @@ func (r *worldRun) close(ctx context.Context) error {
 			m.down(false)
 		}
 	}
+	if r.aside {
+		return nil
+	}
 	r.w.Lock()
 	data, err := r.w.Encode()
 	r.w.Unlock()
@@ -644,6 +651,8 @@ func (r *worldRun) close(ctx context.Context) error {
 	}
 	return os.WriteFile(r.path, data, 0o600)
 }
+
+func (m *worldMac) standAside() { m.run.aside = true }
 
 type worldEnv struct {
 	system.Env

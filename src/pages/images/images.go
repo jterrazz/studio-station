@@ -85,11 +85,22 @@ func madeFrom(vms []string) page.Value {
 	return page.Texts(vms...)
 }
 
+const (
+	KeyBuild  = "b"
+	KeyUpdate = "u"
+	KeyDelete = "x"
+)
+
 func List(reports []images.Report, here page.Context) page.Page {
 	return page.Seal(page.Page{
 		ID: "images", Command: "images", Context: here,
 		Sections: []page.Section{firstLine(reports), Section(reports, here)},
 		Hints:    []page.Hint{*page.Cmd("station images update")},
+		Actions: []page.Action{
+			{Key: KeyBuild, Label: "build", On: page.OnRow, Priority: 1, Mutates: true},
+			{Key: KeyUpdate, Label: "update", On: page.OnRow, Priority: 2, Mutates: true},
+			{Key: KeyDelete, Label: "delete", On: page.OnRow, Priority: 3, Mutates: true, Confirm: &page.Confirm{Yes: "delete"}},
+		},
 	})
 }
 

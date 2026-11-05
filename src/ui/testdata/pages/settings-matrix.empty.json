@@ -81,5 +81,32 @@
       "command": "station settings --all-machines --all",
       "text": "every row"
     }
+  ],
+  "actions": [
+    {
+      "key": "a",
+      "label": "apply across",
+      "on": "row",
+      "priority": 1,
+      "mutates": true
+    },
+    {
+      "key": "enter",
+      "label": "open on that machine",
+      "on": "row",
+      "priority": 2
+    },
+    {
+      "key": "F",
+      "label": "only what needs a look",
+      "on": "page",
+      "priority": 3
+    },
+    {
+      "key": "f",
+      "label": "open the fix",
+      "on": "row",
+      "priority": 4
+    }
   ]
 }

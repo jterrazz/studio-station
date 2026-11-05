@@ -83,6 +83,12 @@
       },
       "priority": 3,
       "mutates": true
+    },
+    {
+      "key": "f",
+      "label": "open the fix",
+      "on": "row",
+      "priority": 4
     }
   ]
 }

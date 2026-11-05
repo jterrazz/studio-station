@@ -747,6 +747,19 @@
       "on": "row",
       "priority": 3,
       "mutates": true
+    },
+    {
+      "key": "U",
+      "label": "update by method",
+      "on": "page",
+      "priority": 4,
+      "mutates": true
+    },
+    {
+      "key": "enter",
+      "label": "full page",
+      "on": "row",
+      "priority": 5
     }
   ]
 }

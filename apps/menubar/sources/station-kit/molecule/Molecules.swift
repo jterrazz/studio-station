@@ -14,12 +14,15 @@ public struct Layout {
     static let detailMin = 20
     public static func kept(_ row: Row, columns: [Column], width: CGFloat) -> [Int] {
         let cells = row.cells ?? []
-        var keep = Array(cells.indices)
+        // invariant: a column for a row's detail only (`detail`, a disk row's
+        // folders) is no cell of a line here either.
+        let shown = cells.indices.filter { $0 + 1 >= columns.count || columns[$0 + 1].show != "detail" }
+        var keep = shown
         let room = Int((width - markWidth - Token.Space.gap) / charWidth)
         func need() -> Int {
             (row.short ?? row.label ?? "").count + keep.reduce(0) { $0 + chars(cells[$1]) + 2 } + min(chars(row.detail), detailMin) + 2
         }
-        let order = cells.indices.sorted { a, b in
+        let order = shown.sorted { a, b in
             let ka = a + 1 < columns.count ? columns[a + 1].keep ?? 0 : 0
             let kb = b + 1 < columns.count ? columns[b + 1].keep ?? 0 : 0
             return ka == kb ? a > b : ka < kb

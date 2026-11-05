@@ -57,7 +57,7 @@ func (s shell) again() (shell, tea.Cmd) {
 func (s shell) list(key string) ui.List {
 	l := s.lists[key]
 	if key != machinesKey || s.machines == nil {
-		return l
+		return s.viewed(key, l)
 	}
 	in := machinespage.TableIn{Machines: *s.machines, Overviews: map[string]page.Page{}, Samples: s.samples}
 	for _, j := range s.joined() {

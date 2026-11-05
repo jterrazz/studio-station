@@ -16,6 +16,7 @@ const (
 	KeyApply = "a"
 	KeyOff   = "o"
 	KeyDiff  = "d"
+	KeyFix   = "f"
 )
 
 func columns() []page.Column {
@@ -341,6 +342,7 @@ func actions() []page.Action {
 		{Key: KeyApply, Label: "apply", On: page.OnRow, Priority: 1, Mutates: true},
 		{Key: KeyDiff, Label: "diff", On: page.OnRow, Priority: 2},
 		{Key: KeyOff, Label: "off here", On: page.OnRow, Priority: 3, Mutates: true, Confirm: &page.Confirm{Yes: "off"}},
+		{Key: KeyFix, Label: "open the fix", On: page.OnRow, Priority: 4},
 	}
 }
 
@@ -563,4 +565,15 @@ func Removed(o settings.ContainersOutcome, command string, here page.Context) pa
 		rows = append(rows, row)
 	}
 	return pages.Outcome(command, here, nil, rows, "steps")
+}
+
+func Diff(name, diff string, here page.Context) page.Page {
+	// value: a file's unified diff as a page, one line per line, for the
+	// renderers that cannot print it raw (the TUI's detail pane).
+	lines := strings.Split(strings.TrimRight(diff, "\n"), "\n")
+	items := make([]page.Item, 0, len(lines))
+	for _, l := range lines {
+		items = append(items, page.Item{Note: &page.Note{Text: l}})
+	}
+	return page.Seal(page.Page{ID: ID, Command: "settings diff " + name, Context: here, Sections: []page.Section{{ID: "diff", Title: name, Uncounted: true, Items: items}}})
 }

@@ -74,3 +74,4 @@ func (*worldMac) stopMarks() engine.StopMarks                           { return
 func (*worldMac) engineVersion() string                                 { return "" }
 func (*worldMac) stationVersion() string                                { return "" }
 func (*worldMac) engineStarted() time.Time                              { return time.Time{} }
+func (*worldMac) standAside()                                           {}

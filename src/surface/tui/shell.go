@@ -52,6 +52,13 @@ type shell struct {
 	samples   map[string][]int
 	filtering bool
 	sheet     bool
+	acts      acts
+	// value: the views a key turned on, by section key (Disk by name).
+	views map[string]map[string]bool
+	// value: the matrix's cursor, by section key: its row and column.
+	cells map[string]ui.Matrix
+	// value: the row a section's cursor goes to once its page answers.
+	want map[string]string
 }
 
 const machinesKey = "\x00machines"
@@ -117,6 +124,10 @@ func (s shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.dark = msg.IsDark()
 	case answered:
 		return s.answer(msg)
+	case stepped:
+		return s.stepDone(msg)
+	case toasted:
+		return s.faded(msg.id), nil
 	case tea.KeyPressMsg:
 		return s.press(msg)
 	}
@@ -162,6 +173,7 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 	if l, ok := s.lists[msg.key]; ok || r.err == nil {
 		s.lists = with(s.lists, msg.key, l.Show(r.page))
 	}
+	s = s.reveal(msg.key)
 	var cmd tea.Cmd
 	s, cmd = s.ask(machinesKey, []string{"machines"})
 	return s, tea.Batch(append(cmds, cmd)...)
@@ -169,6 +181,9 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 
 func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	key := k.String()
+	if t := k.Key().Text; len(t) == 1 && t != " " && strings.HasPrefix(key, "shift+") {
+		key = t
+	}
 	if key == "ctrl+c" {
 		return s.quit()
 	}
@@ -176,8 +191,14 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		s.sheet = false
 		return s, nil
 	}
+	if s.acts.modal != nil {
+		return s.answering(k)
+	}
 	if s.filtering {
 		return s.typing(k)
+	}
+	if s.focus == ui.PaneProgress && key != "tab" && key != "shift+tab" && key != "q" && key != "?" {
+		return s.progress(key)
 	}
 	switch key {
 	case "q":
@@ -196,6 +217,8 @@ func (s shell) press(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return s.again()
 	case "esc":
 		return s.back()
+	case "n":
+		return s.create()
 	default:
 		if s.focus == ui.PaneSidebar {
 			return s.sidebar(key)
@@ -234,12 +257,13 @@ func (s shell) typing(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (s shell) back() (tea.Model, tea.Cmd) {
 	key := s.key(s.current(), s.section())
-	if l := s.list(key); l.Filter != "" {
-		s.lists = with(s.lists, key, l.Filtered(""))
-		return s, nil
-	}
 	if s.focus == ui.PaneDetail {
 		s.focus = ui.PaneMaster
+		s.acts.shown = with(s.acts.shown, key, shown{})
+		return s, nil
+	}
+	if l := s.list(key); l.Filter != "" {
+		s.lists = with(s.lists, key, l.Filtered(""))
 		return s, nil
 	}
 	n := s.current()
@@ -305,11 +329,32 @@ func (s shell) sidebar(key string) (tea.Model, tea.Cmd) {
 func (s shell) master(key string) (tea.Model, tea.Cmd) {
 	k := s.key(s.current(), s.section())
 	l := s.list(k)
+	if key == "space" {
+		return s.tick(), nil
+	}
+	if _, folded := l.Unfold(); key != "enter" || s.matrix() || (!folded && !s.table()) {
+		if acted, cmd, ok := s.act(key); ok {
+			return acted, cmd
+		}
+	}
+	if s.matrix() && s.focus == ui.PaneMaster {
+		steps := map[string][2]int{"up": {-1, 0}, "k": {-1, 0}, "down": {1, 0}, "j": {1, 0}, "pgup": {-10, 0}, "pgdown": {10, 0},
+			"left": {0, -1}, "h": {0, -1}, "right": {0, 1}, "l": {0, 1}}
+		if step, ok := steps[key]; ok {
+			moved, inside := s.moveCell(step[0], step[1])
+			if !inside && s.sidebarShown() {
+				moved.focus = ui.PaneSidebar
+			}
+			return moved, nil
+		}
+	}
 	switch key {
 	case "up", "k":
 		l = l.Move(-1)
+		s.acts.shown = with(s.acts.shown, k, shown{})
 	case "down", "j":
 		l = l.Move(1)
+		s.acts.shown = with(s.acts.shown, k, shown{})
 	case "pgup":
 		l = l.Move(-10)
 	case "pgdown":
@@ -355,7 +400,25 @@ func (s shell) listed() bool {
 	}
 }
 
-func (s shell) detailed() bool { return s.listed() && !s.table() }
+func (s shell) detailed() bool {
+	return (s.listed() && !s.table() && !s.matrix()) || s.detailShown() != nil
+}
+
+// value: what the section's detail pane shows in place of the row's own
+// detail, while its row has the cursor.
+func (s shell) detailShown() *shown {
+	k := s.key(s.current(), s.section())
+	o, ok := s.acts.shown[k]
+	if !ok || (o.read == "" && o.note == nil) || o.cursor != s.cursorRow(k) {
+		return nil
+	}
+	return &o
+}
+
+func (s shell) cursorRow(key string) string {
+	r, _ := s.focused(key)
+	return r.ID
+}
 
 func (s shell) masterWidth() int {
 	width := s.width - 2
@@ -435,6 +498,9 @@ func (s shell) cycle(step int) ui.Pane {
 	panes = append(panes, ui.PaneMaster)
 	if s.detailed() {
 		panes = append(panes, ui.PaneDetail)
+	}
+	if _, waits := s.waiting(); waits {
+		panes = append(panes, ui.PaneProgress)
 	}
 	i := max(slices.Index(panes, s.focus), 0)
 	return panes[((i+step)%len(panes)+len(panes))%len(panes)]
@@ -690,6 +756,10 @@ func (s shell) frame() ui.Shell {
 	key := s.key(s.current(), s.section())
 	l, r := s.list(key), s.reads[key]
 	title := l.Title(s.section().Title()) + ui.Sep + s.current().label
+	if words := s.viewTitle(key); words != "" {
+		title += ui.Sep + words
+	}
+	l.Bound = s.bound()
 	room := max(s.height-5, 1)
 	width := s.masterWidth()
 	detail := s.detailed() && (s.width >= ui.ThreePanes || s.focus == ui.PaneDetail)
@@ -698,7 +768,11 @@ func (s shell) frame() ui.Shell {
 		f.Master = ui.Panel{Title: title, Lines: []string{" " + ui.Glyph(page.Awaiting) + " " + s.section().Title() + ui.Sep + "reading " + s.current().label}}
 	case r.err != nil:
 		f.Master = ui.Panel{Title: title, Lines: ui.ErrorBlock(*r.err, s.dark)}
+	case s.matrix():
+		m := s.cell(key)
+		f.Master = ui.Panel{Title: m.Title(s.section().Title(), s.current().label), Lines: m.Lines(f, width, room, s.focus == ui.PaneMaster || s.focus == ui.PaneDetail)}
 	default:
+		l.Ticked = s.acts.ticked[key]
 		f.Master = ui.Panel{Title: title, Lines: l.Lines(f, width, room, s.focus == ui.PaneMaster || s.focus == ui.PaneDetail)}
 	}
 	if detail {
@@ -709,7 +783,15 @@ func (s shell) frame() ui.Shell {
 			}
 			pane.Lines = l.Detail(s.dark, ui.DetailWidth-2)
 		}
+		if o := s.detailShown(); o != nil {
+			pane = s.openedPanel(f, *o, room)
+		}
 		f.Detail, f.Overlay = &pane, s.width < ui.ThreePanes
+	}
+	f.Progress = s.strip()
+	if s.acts.modal != nil {
+		p := s.acts.modal.panel()
+		f.Modal = &p
 	}
 	f.Footer = s.footer()
 	if s.sheet {

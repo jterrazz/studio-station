@@ -17,6 +17,9 @@ const (
 	KeyStop    = "S"
 	KeyRestart = "ctrl+r"
 	KeyEnter   = "e"
+	KeyCopy    = "c"
+	// value: SSH's o: a new terminal runs the command.
+	KeyOpenTerminal = "o"
 )
 
 func Columns() []page.Column {
@@ -438,7 +441,12 @@ func SSHContract(name string, t machines.SSHTarget) SSHJSON {
 func SSH(name string, t machines.SSHTarget, here page.Context) page.Page {
 	row := pages.Done(name, catalog.StateOK, "")
 	row.Cells = []page.Value{page.Command(t.Command)}
-	return pages.Outcome("machines ssh "+name, here, []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "command", Kind: page.KindText, Keep: 90}}, []page.Row{row}, "machines")
+	p := pages.Outcome("machines ssh "+name, here, []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "command", Kind: page.KindText, Keep: 90}}, []page.Row{row}, "machines")
+	p.Actions = []page.Action{
+		{Key: KeyCopy, Label: "copy", On: page.OnRow, Priority: 1},
+		{Key: KeyOpenTerminal, Label: "open in a new terminal", On: page.OnRow, Priority: 2},
+	}
+	return p
 }
 
 func Edited(e machines.Edited, here page.Context) page.Page {
