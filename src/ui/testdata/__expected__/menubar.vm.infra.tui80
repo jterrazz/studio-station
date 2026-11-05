@@ -12,9 +12,9 @@
    ● Check passes    https://infra:6443/readyz
 
  Activity
-     CPU     34%
-     Memory  20.8/25.8 GB
-     Disk    24.9/85.9 GB
+     CPU     34%           ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃ 
+     Memory  20.8/25.8 GB  ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆ 
+     Disk    24.9/85.9 GB  ▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ 
 
  Ports and shell
      Ports  Public 1 · Private 2
