@@ -79,6 +79,8 @@ type Port struct {
 	// value: its machine is a VM with its own tailnet device.
 	Device   bool
 	Declared *Declaration
+	// value: what its route showed of it, once a declared port is verified.
+	Verified *Verified
 }
 
 func MacOf(name string, ls []Listener) Machine {

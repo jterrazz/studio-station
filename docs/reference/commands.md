@@ -130,7 +130,7 @@ station ports declare [<machine>] <port> --via <route> # declare it public: clou
 station ports undeclare [<machine>] <port> [--yes]     # take the declaration back
 ```
 
-`--all-machines` asks every Mac over ssh; `--all` lists the ports that listen on their machine only, otherwise counted on one line. `share` prints the URL before anything listens, piped the URL alone; a port is refused on a VM that shares 20 already (exit 1, `Hint: station ports stop-sharing <vm> <port>`) and while This Mac is signed out of Tailscale (exit 1, the reservation kept). `stop-sharing` asks yes or no and is remembered in `preferences.json` (`services.not_shared`). `declare` and `undeclare` are kept by the machine's Mac and refused inside a VM. `--json` is `station.ports.list/v1`. `services`, `services url`, `services release` and `tailnet` are hidden aliases for one release. See [Services](services.md).
+`--all-machines` asks every Mac over ssh; `--all` lists the ports that listen on their machine only, otherwise counted on one line. `share` prints the URL before anything listens, piped the URL alone; a port is refused on a VM that shares 20 already (exit 1, `Hint: station ports stop-sharing <vm> <port>`) and while This Mac is signed out of Tailscale (exit 1, the reservation kept). `stop-sharing` asks yes or no and is remembered in `preferences.json` (`services.not_shared`). `declare` and `undeclare` are kept by the machine's Mac and refused inside a VM; the route is verified on every list (see [Services](services.md)). `--json` is `station.ports.list/v1`. `services`, `services url`, `services release` and `tailnet` are hidden aliases for one release. See [Services](services.md).
 
 ### `station images`
 

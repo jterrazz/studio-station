@@ -199,8 +199,21 @@ func RedRow(p ports.Port) page.Row {
 }
 
 func PublicRow(p ports.Port) page.Row {
-	return page.Row{ID: p.Key(), Label: p.Machine.Name, Mark: page.OK,
+	// invariant: SPEC 5.6: a declared port is OK when its route is seen,
+	// attention with what is missing when it is not.
+	row := page.Row{ID: p.Key(), Label: p.Machine.Name, Mark: page.OK,
 		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(ClassPublic), page.Text(p.What()), ListensOn(p), page.Texts("declared", p.Declared.Via)}}
+	v := p.Verified
+	switch {
+	case v == nil:
+	case !v.Seen:
+		row.Mark, row.Reason = page.Attention, page.Degraded
+		row.Cells[4] = page.Text("declared, but " + v.Missing)
+	default:
+		r, _ := catalog.RouteNamed(p.Declared.Via)
+		row.Cells[4] = page.Texts(r.Label, r.Seen)
+	}
+	return row
 }
 
 func LocalRow(p ports.Port) page.Row {

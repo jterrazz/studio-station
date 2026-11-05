@@ -21,7 +21,7 @@ import (
 
 func (m machine) services(_ kit.Env) *services.Service {
 	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure,
-		Listening: m.listeners("/").Read}
+		Listening: m.listeners("/").Read, Routes: m.routes()}
 	d := servicesDaemon{c: m.engineAPI()}
 	if m.kind != catalog.Host {
 		g := m.guest()

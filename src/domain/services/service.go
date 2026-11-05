@@ -47,6 +47,8 @@ type Options struct {
 	Exposure  func(ctx context.Context) Exposure
 	// value: what listens on this Mac; nil reads nothing.
 	Listening func(ctx context.Context) ([]ports.Listener, error)
+	// value: the routes a declared port is verified by; nil verifies none.
+	Routes portscontract.PublicRoutes
 }
 
 type Stores struct {
@@ -185,7 +187,12 @@ func (s *Service) survey(ctx context.Context, vms []ports.Machine) []ports.Port 
 	if s.st.Declarations != nil {
 		decl, _ = s.st.Declarations.List(ctx)
 	}
-	return ports.Survey(append([]ports.Machine{here}, vms...), decl)
+	ms := append([]ports.Machine{here}, vms...)
+	ps := ports.Survey(ms, decl)
+	if s.o.Routes == nil {
+		return ps
+	}
+	return s.o.Routes.Verify(ctx, ms, ps)
 }
 
 // invariant: the range is the host's policy and its lease file, so it reads the

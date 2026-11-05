@@ -1,4 +1,4 @@
-description: 'the mini''s 5000 declared public on the LAN moves from Needs you to Public, kept by the mini'
+description: 'the mini''s 5000 declared public on the LAN moves from Needs you to Public, its route seen'
 env: two-macs
 runs:
     - command: 'world listen jterrazz-mac-mini "*:5000" ControlCenter'
@@ -11,12 +11,12 @@ runs:
       exit: 0
       stdout: |
           # Public: reachable from anywhere else, internet or LAN, declared	1 ●
-          ●	jterrazz-mac-mini	5000	public	AirPlay Receiver	*:5000 all interfaces	declared · lan
+          ●	jterrazz-mac-mini	5000	public	AirPlay Receiver	*:5000 all interfaces	your LAN · listens on the LAN
           # Private: shared with you on Tailscale
     - command: 'ports --on jterrazz-mac-mini --json | /usr/bin/jq -c ''[.findings, [.ports[] | select(.port == 5000) | [.class, .declared]]]'''
       exit: 0
       stdout: |
-          [[],[["public",{"via":"lan"}]]]
+          [[],[["public",{"via":"lan","seen":true}]]]
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs | map_values(.stores.declarations // [] | map(.machine + ":" + (.port|tostring) + " " + .via))'' world.json'
       exit: 0
       stdout: |

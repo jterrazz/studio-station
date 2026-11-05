@@ -48,11 +48,21 @@ The list begins with the Tailscale line, then every port that listens on a Mac o
 | Section                     | Holds                                                                                                              | Columns                                                           |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
 | Needs you (`✗`)             | a port reachable outside Tailscale (every interface, the LAN) that no declaration names public                     | machine, port, `needs you`, process, bind, `declared no`, the fix |
-| Public (`●`)                | a port reachable outside Tailscale that a declaration names public (`cloudflare-tunnel`, …)                        | machine, port, `public`, process, bind, `declared · <how>`        |
+| Public (`●` `◐`)            | a port a declaration names public, `●` when its route is seen, `◐` with what is missing when it is not             | machine, port, `public`, process, bind, the route and its proof   |
 | Private (`●` `◐` `○`)       | what is shared with you on Tailscale: a VM's reserved port, a machine's own Tailscale device                       | machine, port, `private`, URL, state, process, profile, fix       |
 | Listens on its machine only | loopback and other ports only their machine reaches; one `N more listen on their machine only` line unless `--all` | machine, port, `this machine only`, process, bind                 |
 
 A VM behind its Mac is reached through Tailscale only, so its ports are Private whatever it binds. Among the shared rows `●` is shared, `○` not listening (reserved, nothing listens), `◐` waiting (the VM shares 20 already, the range is taken), local only (Serve off, Tailscale signed out, a refused serve), `issuing certificate`, not shared while its VM is stopped or while the engine is stopped. A Mac that does not answer is one `◐` row, never a failure.
+
+`station ports declare <machine> <port> --via <route>` declares a port public on the Mac that keeps the machine's declarations (`~/.config/station/public.json`, a VM's on its Mac), wherever it is asked from; the route is how the port is reached from elsewhere, and what the list looks for to call it seen:
+
+| Route               | Seen when                                                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `cloudflare-tunnel` | a `cloudflared` connector runs on that machine (its metrics listener; inside a VM, as its guest reads it)              |
+| `tailscale-funnel`  | the Mac's Funnel config (`tailscale serve status --json`, `AllowFunnel`) lists the port; a VM's own device is not read |
+| `lan`               | the port listens where the machine's network reaches it: every interface or a LAN address                              |
+
+No `--via` and an unknown route are refused (exit 2) with the three routes. `undeclare` asks yes or no, then the port is red again while it is still reachable outside Tailscale; a port never declared is refused (exit 2). Inside a VM both are refused: its Mac keeps them. In `--json` a declared port carries `declared: {via, by, seen, missing}`.
 
 Each Mac's reserved ports are one line at the end: `Reserved on This Mac: 2 of 1000 (40000-40999), 998 free`, one per Mac with `--all-machines`. In `--json` each Mac carries it in `range` (`mac`, `from`, `to`, `reserved`, `free`), read from its policy and lease file, so it is there with the engine down.
 

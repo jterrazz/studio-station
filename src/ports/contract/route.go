@@ -33,3 +33,25 @@ func (rs PublicRoutes) Names() []string {
 	}
 	return out
 }
+
+func (rs PublicRoutes) Verify(ctx context.Context, ms []ports.Machine, ps []ports.Port) []ports.Port {
+	// invariant: every declared port is told what its route shows; a route
+	// station no longer knows, or one that cannot look, shows nothing.
+	out := slices.Clone(ps)
+	for i, p := range out {
+		if p.Declared == nil {
+			continue
+		}
+		v := ports.Verified{Missing: "station knows no route " + p.Declared.Via}
+		j := slices.IndexFunc(ms, func(m ports.Machine) bool { return m.Ref == p.Machine })
+		if r, ok := rs.Named(p.Declared.Via); ok && j >= 0 {
+			if got, err := r.Verify(ctx, *p.Declared, ms[j]); err == nil {
+				v = got
+			} else {
+				v.Missing = err.Error()
+			}
+		}
+		out[i].Verified = &v
+	}
+	return out
+}
