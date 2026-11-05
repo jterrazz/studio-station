@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
 	"github.com/jterrazz/studio-station/src/surface/tui/screens/screen"
@@ -40,7 +42,135 @@ func (Screen) Title(v screen.View) string {
 	return "Awake" + ui.Sep + "every Mac" + ui.Sep + strconv.Itoa(n)
 }
 
-func (Screen) Lines(screen.View) ([]string, bool) { return nil, false }
+func (Screen) Skips(_ screen.Machine, s page.Section) bool {
+	// value: the cursor walks the Macs, never This Mac's readings.
+	return s.ID != "awake"
+}
+
+func (Screen) Lines(v screen.View) ([]string, bool) {
+	// invariant: vision screen 7: a block per Mac, this one first, its state
+	// then what its keys do on it; the policy's Mac says what set it and the
+	// servers that pause while it sleeps.
+	a := ui.Awake{Intro: "Every Mac, this one first. VMs follow their Mac and are not listed.",
+		Ending: "From here or from any Mac: the same controls, sent over " + catalog.TailnetProduct + ".",
+		Cursor: ui.Cursor{Key: v.Cursor, Focused: v.Focused, Dark: v.Dark, NoColor: v.NoColor, Width: v.Width, Room: v.Room}}
+	for _, s := range v.Page.Sections {
+		if s.ID != "awake" {
+			continue
+		}
+		for _, it := range s.Items {
+			if it.Row == nil || (v.Match != nil && !v.Match(*it.Row)) {
+				continue
+			}
+			a.Macs = append(a.Macs, block(v, s, *it.Row))
+		}
+	}
+	return a.Lines(), true
+}
+
+func block(v screen.View, s page.Section, r page.Row) ui.AwakeMac {
+	t := of(v.Page, r)
+	m := ui.AwakeMac{Key: s.ID + "/" + r.ID, Title: []string{t.label}, Mark: r.Mark, State: t.words}
+	if r.ID != t.label {
+		m.Title = append(m.Title, r.ID)
+	}
+	if t.here {
+		m.Title = append(m.Title, "you are here")
+	} else {
+		m.Title = append(m.Title, "over "+catalog.TailnetProduct)
+	}
+	switch {
+	case r.Mark == page.Awaiting || r.Mark == page.NotKnown || r.Reason == page.Stopped:
+	case len(t.words) > 0 && t.words[0] == "Never sleeps":
+		m.Lines = policy(t)
+	default:
+		m.Lines = controls(v, t)
+	}
+	return m
+}
+
+func policy(t target) []ui.AwakeLine {
+	var out []ui.AwakeLine
+	var servers []string
+	for _, d := range t.detail {
+		if slept, ok := strings.CutPrefix(d, "last slept: "); ok {
+			out = append(out, ui.AwakeLine{Label: "Last slept", Text: slept})
+		}
+		if h, ok := strings.CutPrefix(d, "hosts "); ok {
+			for _, one := range strings.Split(h, ", ") {
+				name, _, _ := strings.Cut(one, " ")
+				servers = append(servers, name)
+			}
+		}
+	}
+	out = append(out, ui.AwakeLine{Label: "Set by", Text: strings.Join([]string{section.Settings.Title(), "Always-on Mac", "Never sleeps"}, ui.Crumb)})
+	asks := "asks: y/n"
+	if len(servers) > 0 {
+		kind, pause := "Server", "it pauses"
+		if len(servers) > 1 {
+			kind, pause = "Servers", "they pause"
+		}
+		out = append(out, ui.AwakeLine{Label: "Hosts", Text: strings.Join(servers, ", ") + "  " + kind + ui.Sep + pause + " if " + t.label + " sleeps"})
+		asks += ", names " + strings.Join(servers, ", ")
+	}
+	return append(out, ui.AwakeLine{Keys: []ui.Pair{{Label: "c", Text: "Change" + ui.Ellipsis}}, Text: "keep the policy, or allow sleep (" + asks + ")"})
+}
+
+func controls(v screen.View, t target) []ui.AwakeLine {
+	until := "until" + ui.Ellipsis
+	if at := t.until(); at != "" {
+		until = "until " + at + " (on)"
+	}
+	out := []ui.AwakeLine{{Label: "For", Keys: []ui.Pair{{Label: "1", Text: "1 h"}, {Label: "4", Text: "4 h"}, {Label: "u", Text: until}, {Label: "o", Text: "off"}}}}
+	st := v.State
+	if t.until() != "" {
+		st = st.With(lid, onOff(t.held("lid closed"))).With(battery, onOff(t.held("on battery allowed")))
+	}
+	toggles := ui.AwakeLine{Text: "toggle"}
+	if t.lid {
+		toggles.Toggles = append(toggles.Toggles, ui.Toggle{Label: "Lid closed", On: st[lid] == on})
+		toggles.Keys = append(toggles.Keys, ui.Pair{Label: "l"})
+	}
+	if t.battery {
+		toggles.Toggles = append(toggles.Toggles, ui.Toggle{Label: "On battery", On: st[battery] == on})
+		toggles.Keys = append(toggles.Keys, ui.Pair{Label: "b"})
+	}
+	if len(toggles.Toggles) > 0 {
+		out = append(out, toggles)
+	}
+	if t.here {
+		if g := guards(v.Page); g != "" {
+			out = append(out, ui.AwakeLine{Label: "Guards", Text: g})
+		}
+	}
+	return out
+}
+
+// value: what ends a keep-awake on This Mac, from its readings: its
+// temperature, its battery, and the screen, which still turns off.
+func guards(p page.Page) string {
+	var temperature, charge string
+	for _, s := range p.Sections {
+		if s.ID != "reading" {
+			continue
+		}
+		for _, it := range s.Items {
+			f := it.Fact
+			switch {
+			case f == nil:
+			case f.Key == "thermal":
+				temperature = "temperature " + ui.Plain(f.Value)
+			case f.Key == "power source" && len(f.Value.Items) > 1:
+				charge = "battery " + ui.Plain(f.Value.Items[1])
+			}
+		}
+	}
+	words := slices.DeleteFunc([]string{temperature, charge}, func(w string) bool { return w == "" })
+	if len(words) == 0 {
+		return ""
+	}
+	return strings.Join(append(words, "the screen still turns off"), ui.Sep)
+}
 
 func (Screen) Keys(v screen.View) []ui.Binding {
 	t, ok := mac(v)
@@ -71,19 +201,28 @@ func mac(v screen.View) (target, bool) {
 	if !v.HasRow || v.Of.ID != "awake" {
 		return target{}, false
 	}
-	t := target{name: v.Row.ID, label: cmp.Or(v.Row.Short, v.Row.Label)}
+	return of(v.Page, v.Row), true
+}
+
+func of(p page.Page, r page.Row) target {
+	t := target{name: r.ID, label: cmp.Or(r.Short, r.Label)}
 	t.here = t.label == "This Mac"
-	t.lid, t.battery = offers(v.Page, pageawake.KeyLid, t.name), offers(v.Page, pageawake.KeyBattery, t.name)
-	for _, w := range v.Row.Cells[0].Items {
-		t.words = append(t.words, ui.Plain(w))
+	t.lid, t.battery = offers(p, pageawake.KeyLid, t.name), offers(p, pageawake.KeyBattery, t.name)
+	if len(r.Cells) > 0 {
+		for _, w := range r.Cells[0].Items {
+			t.words = append(t.words, ui.Plain(w))
+		}
+		if len(t.words) == 0 {
+			t.words = []string{ui.Plain(r.Cells[0])}
+		}
 	}
-	if len(t.words) == 0 && len(v.Row.Cells) > 0 {
-		t.words = []string{ui.Plain(v.Row.Cells[0])}
-	}
-	for _, w := range v.Row.Detail.Items {
+	for _, w := range r.Detail.Items {
 		t.detail = append(t.detail, ui.Plain(w))
 	}
-	return t, true
+	if len(t.detail) == 0 && !r.Detail.IsNone() {
+		t.detail = []string{ui.Plain(r.Detail)}
+	}
+	return t
 }
 
 func offers(p page.Page, key, row string) bool {

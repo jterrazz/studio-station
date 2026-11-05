@@ -35,7 +35,9 @@ runs:
           see It hosts infra (server): infra pauses while mac-mini sleeps.
           see y allow sleep   n no
           send y
-          see ○ mac-mini  Sleeps normally
+          see mac-mini sleeps normally
+          gone Set by      Settings › Always-on Mac › Never sleeps
+          see ○ Sleeps normally
           run /usr/bin/jq -e '.macs["jterrazz-mac-mini"].power.holds == null' world.json >/dev/null
           send q
       exit: 0

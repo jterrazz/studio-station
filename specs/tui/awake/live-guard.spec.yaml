@@ -11,6 +11,6 @@ runs:
           send [
           see Awake until 14:
           run "$STATION" world thermal serious
-          within 3 see ◐ This Mac  Awake stopped · thermal serious
+          within 3 see ◐ Awake stopped · thermal serious
           send q
       exit: 0
