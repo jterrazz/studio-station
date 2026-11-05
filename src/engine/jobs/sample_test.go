@@ -77,3 +77,35 @@ func TestTwentyIdleVMsAreSampledOnceAMinuteEach(t *testing.T) {
 		}
 	}
 }
+
+type silentMeter struct{}
+
+func (silentMeter) Sample(context.Context) (activity.Sample, error) { return activity.Sample{}, nil }
+func (silentMeter) Top(context.Context) (activity.Busiest, error)   { return activity.Busiest{}, nil }
+func (silentMeter) Process(context.Context, int) (activity.Usage, error) {
+	return activity.Usage{CPU: 0.18, Memory: 4 << 30}, nil
+}
+
+func TestAVMWhoseGuestIsSilentKeepsAGapInItsHistoryNeverZeros(t *testing.T) {
+	c := &clock{now: time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)}
+	h := activity.NewHistory(c.now)
+	s := &Sample{
+		Calls: &machines{clock: c, asked: map[string]int{}}, Meter: silentMeter{}, Clock: c,
+		Seen: func() []Seen {
+			return []Seen{{Ref: machine.Ref{Name: "linux-1", On: "mac"}, Kind: machine.Workspace, PID: 4242}}
+		},
+		Watched: func(machine.Ref) bool { return true },
+		History: func() *activity.History { return h }, Tell: func(string, string) {},
+	}
+	for range 10 {
+		s.Run(t.Context())
+		c.now = c.now.Add(time.Second)
+	}
+	kept, _ := h.Of("linux-1")
+	if kept.Last.Run == nil || kept.Last.Run.CPU != 0.18 {
+		t.Errorf("linux-1's last reading is %+v; want its process's usage on its Mac", kept.Last)
+	}
+	if fine, coarse := kept.Series.Fine(), kept.Series.Coarse(); len(fine)+len(coarse) != 0 {
+		t.Errorf("linux-1's history holds %d and %d points while its guest was silent; want none, a gap", len(fine), len(coarse))
+	}
+}

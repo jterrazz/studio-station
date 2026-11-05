@@ -29,6 +29,8 @@ func NewHistory(since time.Time) *History {
 func (h *History) Since() time.Time { return h.since }
 
 func (h *History) Add(machine string, r Reading) {
+	// invariant: a VM read from its Mac while its guest is silent knows none
+	// of its own counters: its series keeps a gap there, never zeros.
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	k := h.kept[machine]
@@ -37,7 +39,9 @@ func (h *History) Add(machine string, r Reading) {
 		h.kept[machine] = k
 	}
 	k.Last = r
-	k.Series.Add(r.Sample)
+	if r.Run == nil {
+		k.Series.Add(r.Sample)
+	}
 }
 
 func (h *History) Of(machine string) (Kept, bool) {
