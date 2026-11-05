@@ -2,6 +2,7 @@ package template
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -53,6 +54,12 @@ func body(st token.Styles, p page.Page, width int) []string {
 				lines = append(lines, "")
 				lines = append(lines, organism.Rows(st, s, width)...)
 			}
+		case s.Rest != nil && s.Top > 0 && len(s.Items) > s.Top:
+			cut := s
+			cut.Items = append(slices.Clone(s.Items[:s.Top]), *s.Rest)
+			lines = append(lines, organism.Section(st, cut, width)...)
+		case (s.Fold == page.Folded || s.Fold == page.Brief || s.Fold == page.Calm) && sized(s):
+			lines = append(lines, sizes(st, s, width))
 		case s.Fold == page.Folded || s.Fold == page.Brief || s.Fold == page.Calm:
 			lines = append(lines, folded(st, s, fold, width))
 		case single(s):
@@ -188,7 +195,7 @@ func noted(s page.Section) bool {
 func foldWidth(sections []page.Section) int {
 	n := 0
 	for _, s := range sections {
-		if s.Fold == page.Folded || s.Fold == page.Brief || s.Fold == page.Calm || single(s) && !said(s) {
+		if (s.Fold == page.Folded || s.Fold == page.Brief || s.Fold == page.Calm) && !sized(s) || single(s) && !said(s) {
 			n = max(n, atom.Width(s.Title))
 		}
 	}
@@ -219,10 +226,16 @@ func folded(st token.Styles, s page.Section, at, width int) string {
 			names = append(names, it.Row.Label)
 		}
 	}
-	if len(names) == 0 {
+	list := fit(names, width-1-atom.Width(line)-atom.Width(token.Sep))
+	if list == "" {
 		return line
 	}
-	room := width - 1 - atom.Width(line) - atom.Width(token.Sep)
+	return line + st.Muted.Render(token.Sep+list)
+}
+
+// value: as many names as room holds, then `…` for the others; empty when
+// not even the first fits.
+func fit(names []string, room int) string {
 	list := ""
 	for i, n := range names {
 		next := list
@@ -236,14 +249,57 @@ func folded(st token.Styles, s page.Section, at, width int) string {
 		}
 		if atom.Width(next+more) > room {
 			if list == "" {
-				return line
+				return ""
 			}
-			list += ", " + token.Ellipsis
-			break
+			return list + ", " + token.Ellipsis
 		}
 		list = next
 	}
+	return list
+}
+
+// value: a folded section of sizes, not verdicts: its caption is its total.
+func sized(s page.Section) bool {
+	return s.Uncounted && s.Joined && len(s.Caption) > 0
+}
+
+// invariant: a folded section of sizes is one line: its title, its total,
+// then as many of its rows, each with its size, as the line holds, a size in
+// the total's unit without it (vision 07 "station disk": `Your data ·
+// 41.6 GB · xcode 19.1, orbstack 15.8, …`).
+func sizes(st token.Styles, s page.Section, width int) string {
+	total := atom.Show(page.List(s.Caption...))
+	line := atom.Spaces(token.Margin) + st.Title.Render(s.Title+token.Sep+total)
+	_, unit, _ := strings.Cut(total, " ")
+	var names []string
+	for _, it := range s.Items {
+		if it.Row == nil {
+			continue
+		}
+		name := shown(*it.Row)
+		if len(it.Row.Cells) > 0 {
+			size := atom.Show(it.Row.Cells[0])
+			if n, u, ok := strings.Cut(size, " "); ok && u == unit {
+				size = n
+			}
+			if size != "" {
+				name += " " + size
+			}
+		}
+		names = append(names, name)
+	}
+	list := fit(names, width-1-atom.Width(line)-atom.Width(token.Sep))
+	if list == "" {
+		return line
+	}
 	return line + st.Muted.Render(token.Sep+list)
+}
+
+func shown(r page.Row) string {
+	if r.Short != "" {
+		return r.Short
+	}
+	return r.Label
 }
 
 // invariant: a calm section of one row with nothing to do is one line

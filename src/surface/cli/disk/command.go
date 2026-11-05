@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/disk"
@@ -19,19 +20,24 @@ type Deps struct {
 	Here  page.Context
 }
 
-type Input struct{}
+type Input struct {
+	All bool
+}
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 	cmd := kit.Command(kit.Leaf[Input]{
 		Use:     "disk",
 		Short:   "What each app keeps on this machine: misplaced, can rebuild, your data, never touched",
-		Example: "  station disk\n  station disk --json",
+		Example: "  station disk\n  station disk --all\n  station disk --json",
 		Group:   kit.OnAMachine,
-		Read:    func(*Input) bool { return true },
-		Live:    true,
-		Pages:   true,
-		Entry:   kit.Entry("station disk free", "disk row", d.Names),
-		Run: func(ctx context.Context, _ *Input, io kit.IO) error {
+		Declare: func(f *pflag.FlagSet, in *Input) {
+			f.BoolVar(&in.All, "all", false, "unfold every group, every row")
+		},
+		Read:  func(*Input) bool { return true },
+		Live:  true,
+		Pages: true,
+		Entry: kit.Entry("station disk free", "disk row", d.Names),
+		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			here := d.Here
 			if env.Far() {
 				here = page.Context{Machine: env.Target().Name}
@@ -42,7 +48,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 					return err
 				}
 				if err := io.LivePage(kit.Updates(updates, func(r disk.Reading) page.Page {
-					return pagedisk.Read(r, here)
+					return pagedisk.Read(r, here, in.All)
 				})); err != nil {
 					return err
 				}
@@ -52,7 +58,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagedisk.Read(reading, here), pagedisk.ReadContract(reading))
+			return io.Page(pagedisk.Read(reading, here, in.All), pagedisk.ReadContract(reading))
 		},
 	}, env)
 	cmd.AddCommand(children...)

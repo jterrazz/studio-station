@@ -111,6 +111,13 @@
       "id": "can-rebuild",
       "title": "Can rebuild",
       "fold": "open",
+      "caption": [
+        {
+          "kind": "size",
+          "n": 29699866624
+        }
+      ],
+      "joined": true,
       "columns": [
         {
           "key": "name",
@@ -157,7 +164,14 @@
     {
       "id": "never-touched",
       "title": "Never touched",
-      "fold": "open",
+      "fold": "brief",
+      "caption": [
+        {
+          "kind": "size",
+          "n": 12000
+        }
+      ],
+      "joined": true,
       "columns": [
         {
           "key": "name",

@@ -290,10 +290,10 @@ func disks() []Fixture {
 		return disk.Reading{Total: 994e9, Free: 388e9, Rows: disk.Classify(storageReport(pending)), Pending: pending}
 	}
 	return states("disk",
-		pagedisk.Read(reading(true), here()),
-		pagedisk.Read(disk.Reading{Total: 994e9, Free: 388e9}, here()),
+		pagedisk.Read(reading(true), here(), false),
+		pagedisk.Read(disk.Reading{Total: 994e9, Free: 388e9}, here(), false),
 		failure("disk", "disk", "the walk of ~ was refused: operation not permitted", "grant Full Disk Access to the terminal"),
-		pagedisk.Read(reading(false), here()))
+		pagedisk.Read(reading(false), here(), false))
 }
 
 func fleet() machines.Fleet {

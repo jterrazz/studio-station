@@ -57,6 +57,11 @@ type Section struct {
 	// value: a line too short for every column says which it left out
 	// (All machines' table, SPEC §9.9).
 	SaysDropped bool `json:"says_dropped,omitempty"`
+	// value: on a terminal's page, the rows shown before Rest, the one row
+	// that sums the others (vision 07 "station disk": `+ 15 more  7.8 GB`);
+	// the TUI and the menu bar show every row, --all unfolds it.
+	Top  int   `json:"top,omitempty"`
+	Rest *Item `json:"rest,omitempty"`
 }
 
 type Role string
