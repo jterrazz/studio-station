@@ -22,7 +22,7 @@ func TestStopEverythingOnThisMacSaysItsServerIsSkipped(t *testing.T) {
 	if confirm.Question != "Stop everything on This Mac?" {
 		t.Fatalf("question %q", confirm.Question)
 	}
-	var said []string
+	said := make([]string, 0, len(confirm.Lines))
 	for _, l := range confirm.Lines {
 		said = append(said, l.Text)
 	}

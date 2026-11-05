@@ -383,8 +383,10 @@ func OnMachine(machine string) Section {
 	return Section{ID: OnSection, Role: Banner, Uncounted: true, Items: []Item{{Note: &Note{Text: "On " + machine + ":"}}}}
 }
 
-// value: the interface's name for the Mac you are on (SPEC §2).
-const ThisMac = "This Mac"
+const (
+	// value: the interface's name for the Mac you are on (SPEC §2).
+	ThisMac = "This Mac"
+)
 
 func MacName(name, self string) string {
 	// invariant: how the interface names a Mac (SPEC §2.5): This Mac for the
