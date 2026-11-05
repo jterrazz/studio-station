@@ -18,7 +18,7 @@ runs:
       stdout: |
           ["activity",{}]
           ["apps",{"not-installed":100,"ok":5,"update-available":3}]
-          ["settings",{"applied":0}]
+          ["settings",{"applied":0,"as-expected":8}]
           ["disk",{"misplaced":1}]
           ["ports",{"private":2,"public":0}]
           ["accounts",{"signed-in":6}]

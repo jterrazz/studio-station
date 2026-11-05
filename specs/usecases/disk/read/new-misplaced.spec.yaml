@@ -10,7 +10,7 @@ runs:
     - command: 'disk | /usr/bin/grep -e "^◐" -e "^# Misplaced"'
       exit: 0
       stdout: |
-          ◐	This Mac	388.0 GB free of 994.0 GB · 2 misplaced folders	station disk move ~/.tart
+          ◐	This Mac	388 GB free of 994 GB · 2 misplaced folders	station disk move ~/.tart
           # Misplaced
           ◐	~/.tart	73.3 GB	misplaced · tart · station disk move ~/.tart
           ◐	~/go	2.3 GB	misplaced · go · station disk move ~/go

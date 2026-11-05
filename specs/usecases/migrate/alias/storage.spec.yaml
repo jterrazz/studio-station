@@ -4,7 +4,7 @@ runs:
     - command: 'storage | /usr/bin/head -1'
       exit: 0
       stdout: |
-          ◐	This Mac	388.0 GB free of 994.0 GB · 1 misplaced folder	station disk move ~/.tart
+          ◐	This Mac	388 GB free of 994 GB · 1 misplaced folder	station disk move ~/.tart
       stderr: |
           → now: station disk
     - command: 'storage clean go'

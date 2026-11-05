@@ -12,7 +12,7 @@ runs:
     - command: 'disk | /usr/bin/head -2'
       exit: 0
       stdout: |
-          ●	This Mac	388.0 GB free of 994.0 GB · 0 misplaced folders
+          ●	This Mac	388 GB free of 994 GB · 0 misplaced folders
           # Can rebuild
     - command: '--version >/dev/null; /bin/cat .local/bin/tart | /usr/bin/grep -c TART_HOME'
       exit: 0

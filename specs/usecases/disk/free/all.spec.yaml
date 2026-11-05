@@ -7,21 +7,21 @@ runs:
           ●	homebrew	2.1 GB freed
           ●	mise	1.2 GB freed
           ●	pnpm	1.8 GB freed
-          ●	bun	600.0 MB freed
+          ●	bun	600 MB freed
           ●	go	19.4 GB freed
-          ●	node	800.0 MB freed
-          ●	rust	900.0 MB freed
-          ●	ghostty	400.0 MB freed
-          ●	starship	100.0 MB freed
-          ●	gh	100.0 MB freed
-          ●	zed	300.0 MB freed
-          ●	cursor	200.0 MB freed
+          ●	node	800 MB freed
+          ●	rust	900 MB freed
+          ●	ghostty	400 MB freed
+          ●	starship	100 MB freed
+          ●	gh	100 MB freed
+          ●	zed	300 MB freed
+          ●	cursor	200 MB freed
           ●	xcode	5.8 GB freed
-          ●	helm	100.0 MB freed
-          ●	claude	300.0 MB freed
-          ●	codex	100.0 MB freed
-          ●	discord	400.0 MB freed
-          ●	notion	200.0 MB freed
+          ●	helm	100 MB freed
+          ●	claude	300 MB freed
+          ●	codex	100 MB freed
+          ●	discord	400 MB freed
+          ●	notion	200 MB freed
           ●	Freed	34.8 GB	nothing is lost
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"].disk | {free, kept: (.files | keys)}'' world.json'
       exit: 0

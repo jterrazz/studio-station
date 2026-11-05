@@ -79,9 +79,15 @@ func AppsRead(reports []apps.Report, m machine.Ref) Read {
 }
 
 func SettingsRead(rows []settings.Row, m machine.Ref) Read {
-	var total, applied, changed, off int
+	var total, applied, changed, off, checked, expected int
 	pending := false
 	for _, r := range rows {
+		if r.Group == settings.Checked && r.Checked != settings.CheckedNotForThisMachine && r.Checked != settings.CheckedOffHere {
+			checked++
+			if r.Checked == settings.AsExpected {
+				expected++
+			}
+		}
 		if r.Group != settings.SetByStation || r.State == settings.StateNotForThisMachine {
 			continue
 		}
@@ -100,6 +106,9 @@ func SettingsRead(rows []settings.Row, m machine.Ref) Read {
 	}
 	parts := append([]Part{{Word: "set by station"}, {State: catalog.StateOK, N: applied, Of: total, Key: string(settings.StateApplied), Counted: true}},
 		counted([]Part{{}, Count(catalog.StateDegraded, changed, "changed since", string(settings.StateChangedSince)), Count(catalog.StateAbsent, off, "off here", string(settings.StateOffHere))})[1:]...)
+	if checked > 0 {
+		parts = append(parts, Part{Word: "checked"}, Part{State: catalog.StateOK, N: expected, Of: checked, Key: string(settings.AsExpected), Counted: true})
+	}
 	return Read{Line: Line{Section: section.Settings, Pending: pending, Parts: parts}, Findings: settings.Findings(rows, m)}
 }
 
@@ -205,7 +214,7 @@ func AwakeRead(r awake.Report, m machine.Ref) Read {
 	case awake.StoppedByGuard:
 		parts = []Part{{State: catalog.StateDegraded, Word: "stopped"}, {Word: r.LastEnd.Detail}}
 	case awake.SleepsNormally:
-		parts = []Part{{State: catalog.StateAbsent, Word: "off"}}
+		parts = []Part{{State: catalog.StateAbsent, Word: "sleeps normally"}}
 	}
 	return Read{Line: Line{Section: section.Awake, Parts: parts}, Findings: awake.Findings(r, m)}
 }
