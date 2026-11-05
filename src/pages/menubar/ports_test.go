@@ -50,7 +50,7 @@ func TestAWorkspacesPageSharesItsOwnPorts(t *testing.T) {
 	}}}
 	here := page.Context{Machine: "jterrazz-macbook-pro"}
 	p := Workspace(l, "linux-1", here)
-	var ids []string
+	ids := make([]string, 0, len(p.Actions))
 	for _, a := range p.Actions {
 		ids = append(ids, a.ID)
 	}
