@@ -37,7 +37,7 @@ func spanning() []string {
 }
 
 func engineJobs() []string {
-	return []string{"keep", "share", "expire", "awake", "sample", "exposure"}
+	return []string{"keep", "share", "expire", "awake", "sample", "exposure", "events"}
 }
 
 // invariant: the allowlist of coverage: the calls whose folder or outcomes

@@ -28,11 +28,14 @@ func samples() []activity.Reading {
 	}
 	at := func(i int) time.Time { return powerNow.Add(time.Duration(i-len(cpu)) * 2 * time.Second) }
 	out := make([]activity.Reading, 0, len(cpu)+1)
-	out = append(out, activity.Reading{Sample: activity.Sample{At: at(0), CPUTotal: 1000, MemUsed: 12.4e9}, Top: top})
+	mem := []float64{11.8, 11.9, 12.1, 12.0, 12.2, 12.4, 12.3, 12.5, 12.6, 12.4, 12.3, 12.2, 12.4, 12.5, 12.4, 12.4}
+	net := []float64{0.2, 0.4, 1.8, 2.6, 0.9, 0.5, 0.3, 3.1, 2.2, 0.8, 0.4, 0.6, 1.4, 2.0, 1.1, 0.7}
+	out = append(out, activity.Reading{Sample: activity.Sample{At: at(0), CPUTotal: 1000, MemUsed: 12.4e9, MemTotal: 17179869184}, Top: top})
 	for i, c := range cpu {
 		prev := out[len(out)-1].Sample
 		out = append(out, activity.Reading{Sample: activity.Sample{
-			At: at(i + 1), CPUBusy: prev.CPUBusy + uint64(c*10), CPUTotal: prev.CPUTotal + 1000, MemUsed: 12.4e9,
+			At: at(i + 1), CPUBusy: prev.CPUBusy + uint64(c*10), CPUTotal: prev.CPUTotal + 1000, MemUsed: int64(mem[i] * 1e9), MemTotal: 17179869184,
+			NetIn: prev.NetIn + uint64(net[i]*2e6), NetOut: prev.NetOut + uint64(net[i]*2e5),
 		}, Top: top})
 	}
 	return out

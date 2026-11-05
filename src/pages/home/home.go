@@ -615,12 +615,18 @@ func Strip(readings []activity.Reading, snap Overview) page.Strip {
 	last := readings[len(readings)-1].Sample
 	var strip page.Strip
 	between := func(i int) activity.Rates { return activity.Between(readings[i-1].Sample, readings[i].Sample) }
+	var net []float64
 	for i := 1; i < len(readings); i++ {
-		strip.Spark = append(strip.Spark, int(between(i).CPU))
+		r := between(i)
+		strip.Spark = append(strip.Spark, int(r.CPU))
+		net = append(net, max(r.NetIn, r.NetOut))
+		if x := readings[i].Sample; x.MemTotal > 0 {
+			strip.MemorySpark = append(strip.MemorySpark, int(100*x.MemUsed/x.MemTotal))
+		}
 	}
-	if len(strip.Spark) > 16 {
-		strip.Spark = strip.Spark[len(strip.Spark)-16:]
-	}
+	strip.Spark = lastPoints(strip.Spark)
+	strip.MemorySpark = lastPoints(strip.MemorySpark)
+	strip.NetSpark = lastPoints(scaled(net))
 	if n := len(readings); n > 1 {
 		r := between(n - 1)
 		strip.CPU = page.Percent(int64(r.CPU * 10))
@@ -636,6 +642,30 @@ func Strip(readings []activity.Reading, snap Overview) page.Strip {
 		strip.Power = page.Texts("awake", pages.Term(snap.Power.Until.Sub(last.At)))
 	}
 	return strip
+}
+
+func lastPoints(points []int) []int {
+	if len(points) > 16 {
+		return points[len(points)-16:]
+	}
+	return points
+}
+
+// value: each rate as its share of the busiest, 0 to 100; nil when none
+// moved, so a quiet network draws no flat line.
+func scaled(rates []float64) []int {
+	top := 0.0
+	for _, r := range rates {
+		top = max(top, r)
+	}
+	if top <= 0 {
+		return nil
+	}
+	out := make([]int, 0, len(rates))
+	for _, r := range rates {
+		out = append(out, int(100*r/top))
+	}
+	return out
 }
 
 func machineWord(k catalog.MachineKind) string {

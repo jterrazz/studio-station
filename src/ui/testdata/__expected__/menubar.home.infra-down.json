@@ -30,6 +30,42 @@
       29,
       34
     ],
+    "memory_spark": [
+      68,
+      69,
+      70,
+      69,
+      71,
+      72,
+      71,
+      72,
+      73,
+      72,
+      71,
+      71,
+      72,
+      72,
+      72,
+      72
+    ],
+    "net_spark": [
+      6,
+      12,
+      58,
+      83,
+      29,
+      16,
+      9,
+      100,
+      70,
+      25,
+      12,
+      19,
+      45,
+      64,
+      35,
+      22
+    ],
     "memory": {
       "kind": "ratio",
       "n": 12400000000,
@@ -39,6 +75,18 @@
       "kind": "percent",
       "n": 800
     },
+    "net": [
+      {
+        "kind": "size",
+        "n": 700000,
+        "unit": "/s"
+      },
+      {
+        "kind": "size",
+        "n": 70000,
+        "unit": "/s"
+      }
+    ],
     "power": {
       "kind": "list",
       "items": [
@@ -817,6 +865,16 @@
       "id": "power-sleep",
       "run": {
         "call": "awake.off"
+      }
+    },
+    {
+      "label": "Update all",
+      "on": "page",
+      "priority": 2,
+      "mutates": true,
+      "id": "update-all",
+      "run": {
+        "call": "apps.update"
       }
     }
   ],

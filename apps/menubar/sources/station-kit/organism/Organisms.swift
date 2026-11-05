@@ -171,31 +171,56 @@ public struct StripView: View {
 
     public init(_ strip: Strip) { self.strip = strip }
 
+    // invariant: AC-25: CPU, Memory and Network side by side, each its
+    // sparkline over its value; the battery and a held Awake on a line
+    // below.
     public var body: some View {
         let size = Token.Space.small
-        HStack(spacing: Token.Space.gap - 2) {
-            if let spark = strip.spark, !spark.isEmpty { Spark(spark) }
-            ValueText(strip.cpu, size: size).fixedSize()
-            if let memory = strip.memory {
-                if memory.kind == "ratio", let of = memory.of, of > 0 {
-                    Meter(Double(memory.n ?? 0) / Double(of))
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .top, spacing: Token.Space.gap) {
+                measure("CPU", strip.spark) { ValueText(strip.cpu, size: size) }
+                if let memory = strip.memory {
+                    measure("Memory", strip.memory_spark) {
+                        if strip.memory_spark?.count ?? 0 < 2, memory.kind == "ratio", let of = memory.of, of > 0 {
+                            Meter(Double(memory.n ?? 0) / Double(of))
+                        }
+                        ValueText(memory, size: size)
+                    }
                 }
-                ValueText(memory, size: size).fixedSize()
-            }
-            if let battery = strip.battery {
-                HStack(spacing: 2) {
-                    Text(Token.Glyph.charging).font(.system(size: size)).foregroundStyle(palette.muted)
-                    ValueText(battery, size: size)
+                if let net = strip.net, net.count == 2 {
+                    measure("Network", strip.net_spark) {
+                        Text("\(Token.Glyph.received)\(Format.show(net[0])) \(Token.Glyph.sent)\(Format.show(net[1]))")
+                            .font(.system(size: size)).foregroundStyle(palette.text).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+                    }
                 }
-                .fixedSize()
             }
-            if let power = strip.power, !power.isNone {
-                Text("\(Token.Glyph.power) \(Format.show(power.items?.last ?? power))")
-                    .font(.system(size: size, weight: .semibold)).foregroundStyle(palette.accent)
-                    .lineLimit(1).fixedSize()
+            if strip.battery != nil || strip.power.map({ !$0.isNone }) == true {
+                HStack(spacing: Token.Space.gap) {
+                    if let battery = strip.battery {
+                        HStack(spacing: 2) {
+                            Text(Token.Glyph.charging).font(.system(size: size)).foregroundStyle(palette.muted)
+                            ValueText(battery, size: size)
+                        }
+                        .fixedSize()
+                    }
+                    if let power = strip.power, !power.isNone {
+                        Text("\(Token.Glyph.power) \(Format.show(power.items?.last ?? power))")
+                            .font(.system(size: size, weight: .semibold)).foregroundStyle(palette.accent)
+                            .lineLimit(1).fixedSize()
+                    }
+                    Spacer(minLength: 0)
+                }
             }
-            Spacer(minLength: 0)
         }
+    }
+
+    func measure<V: View>(_ label: String, _ spark: [Int]?, @ViewBuilder value: () -> V) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label).font(.system(size: Token.Space.small - 1, weight: .semibold)).foregroundStyle(palette.muted)
+            if let spark, spark.count > 1 { Spark(spark) }
+            HStack(spacing: 4) { value() }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

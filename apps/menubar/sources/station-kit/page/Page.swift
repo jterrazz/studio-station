@@ -201,6 +201,8 @@ public struct Option: Codable, Equatable, Sendable {
 public struct Strip: Codable, Equatable, Sendable {
     public var cpu: Value?
     public var spark: [Int]?
+    public var memory_spark: [Int]?
+    public var net_spark: [Int]?
     public var memory: Value?
     public var battery: Value?
     public var net: [Value]?

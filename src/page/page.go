@@ -279,11 +279,15 @@ type Option struct {
 }
 
 type Strip struct {
-	CPU     Value   `json:"cpu,omitzero"`
-	Spark   []int   `json:"spark,omitempty"`
-	Memory  Value   `json:"memory,omitzero"`
-	Battery Value   `json:"battery,omitzero"`
-	Net     []Value `json:"net,omitempty"`
+	CPU   Value `json:"cpu,omitzero"`
+	Spark []int `json:"spark,omitempty"`
+	// value: the memory used and the network's busiest direction, each a
+	// sparkline 0 to 100 of its own scale, oldest first, as Spark is CPU's.
+	MemorySpark []int   `json:"memory_spark,omitempty"`
+	NetSpark    []int   `json:"net_spark,omitempty"`
+	Memory      Value   `json:"memory,omitzero"`
+	Battery     Value   `json:"battery,omitzero"`
+	Net         []Value `json:"net,omitempty"`
 	// value: a held Power session's word and time left, after the battery.
 	Power Value    `json:"power,omitzero"`
 	Top   *Section `json:"top,omitempty"`

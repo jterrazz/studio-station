@@ -3,6 +3,7 @@ package menubar
 import (
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
@@ -29,6 +30,7 @@ const (
 	ActionStart       = "start"
 	ActionPowerAwake  = "power-awake"
 	ActionPowerSleep  = "power-sleep"
+	ActionUpdateAll   = "update-all"
 )
 
 type Reading struct {
@@ -45,6 +47,9 @@ func Page(r Reading, here page.Context) page.Page {
 	todo := todo(r, here)
 	p.Sections = []page.Section{todo, fleet(r), powerSection(r)}
 	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power))
+	if updates(todo) {
+		p.Actions = append(p.Actions, updateAll())
+	}
 	p.Badge = badge(r, todo)
 	return page.Seal(p)
 }
@@ -93,7 +98,6 @@ func strip(r Reading) *page.Strip {
 		return &page.Strip{CPU: page.Pending(), Memory: page.Pending()}
 	}
 	s := pagehome.Strip(r.Samples, *r.Home)
-	s.Net = nil
 	if r.Power != nil && r.Power.Reading.HasBattery {
 		s.Battery = page.Percent(int64(r.Power.Reading.Percent) * 10)
 	}
@@ -159,7 +163,26 @@ const (
 	CallStop   = "engine.stop"
 	CallAwake  = "awake.keep"
 	CallSleep  = "awake.off"
+	CallUpdate = "apps.update"
 )
+
+// value: the command a to do's fix names when it is an update.
+const updateFix = "station apps update"
+
+func updates(todo page.Section) bool {
+	for _, it := range todo.Items {
+		if it.Row != nil && it.Row.Hint != nil && strings.HasPrefix(it.Row.Hint.Command, updateFix) {
+			return true
+		}
+	}
+	return false
+}
+
+// invariant: MB-16: Update all is the one apps.update of every Update
+// available row; what fails stays in the to do with its fix.
+func updateAll() page.Action {
+	return page.Action{ID: ActionUpdateAll, Label: "Update all", On: page.OnPage, Priority: 2, Mutates: true, Run: &page.Run{Call: CallUpdate}}
+}
 
 func gigabytes(n int64) string { return strconv.FormatInt(n<<30, 10) }
 

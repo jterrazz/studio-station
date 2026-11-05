@@ -26,6 +26,19 @@ final class HomeTests: XCTestCase {
         XCTAssertNil(try Golden.check("sheet.stop-everything", AnyView(Popover(state, scrolls: false)), scheme: .dark))
     }
 
+    // invariant: AC-25: Home draws CPU, Memory and Network, each with its
+    // sparkline and its value.
+    func testHomeThreeMeasures() throws {
+        let page = try Tree.page("menubar.home.two-macs")
+        let strip = try XCTUnwrap(page.strip)
+        XCTAssertGreaterThan(strip.spark?.count ?? 0, 1)
+        XCTAssertGreaterThan(strip.memory_spark?.count ?? 0, 1)
+        XCTAssertGreaterThan(strip.net_spark?.count ?? 0, 1)
+        XCTAssertEqual(strip.net?.count, 2)
+        XCTAssertNotNil(strip.cpu)
+        XCTAssertNotNil(strip.memory)
+    }
+
     // invariant: MB-11: the engine stopped, Home says it, with Start the
     // engine, which opens Terminal on station engine start and nothing else.
     func testEngineStoppedHome() async throws {

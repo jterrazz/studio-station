@@ -11,6 +11,8 @@ public enum Token {
         public static let dash = "-"
         public static let slash = "/"
         public static let down = "!"
+        public static let received = "↓"
+        public static let sent = "↑"
     }
 
     // value: the menu bar icon of the vision: the station symbol, 16 pt, its
