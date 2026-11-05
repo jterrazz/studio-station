@@ -13,7 +13,7 @@
       "caption": [
         {
           "kind": "text",
-          "text": "29 settings"
+          "text": "31 settings"
         },
         {
           "kind": "text",
@@ -21,7 +21,7 @@
         },
         {
           "kind": "text",
-          "text": "16 need a look"
+          "text": "20 need a look"
         }
       ],
       "columns": [
@@ -226,6 +226,25 @@
         },
         {
           "row": {
+            "id": "jterrazz-macbook-pro/docker-shortcuts",
+            "mark": "pending",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "jterrazz-macbook-pro/firewall",
             "mark": "pending",
             "label": "jterrazz-macbook-pro",
@@ -303,6 +322,25 @@
         {
           "row": {
             "id": "jterrazz-mac-mini/dock-reset",
+            "mark": "pending",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini/docker-shortcuts",
             "mark": "pending",
             "label": "jterrazz-mac-mini",
             "short": "mac-mini",
@@ -416,6 +454,25 @@
         },
         {
           "row": {
+            "id": "linux-1/docker-shortcuts",
+            "mark": "pending",
+            "label": "linux-1",
+            "short": "linux-1",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "api/ghostty-dotfiles",
             "mark": "pending",
             "label": "api",
@@ -470,12 +527,31 @@
               "kind": "none"
             }
           }
+        },
+        {
+          "row": {
+            "id": "api/docker-shortcuts",
+            "mark": "pending",
+            "label": "api",
+            "short": "api",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
         }
       ],
       "counts": [
         {
           "mark": "pending",
-          "n": 16
+          "n": 20
         }
       ]
     },
@@ -603,9 +679,36 @@
         },
         {
           "row": {
+            "id": "docker-shortcuts",
+            "mark": "pending",
+            "label": "docker-shortcuts",
+            "cells": [
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              },
+              {
+                "kind": "pending"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "folded",
             "mark": "pending",
-            "label": "12 more",
+            "label": "13 more",
             "cells": [
               {
                 "kind": "pending"
@@ -632,7 +735,7 @@
       "counts": [
         {
           "mark": "pending",
-          "n": 4
+          "n": 5
         }
       ],
       "uncounted": true

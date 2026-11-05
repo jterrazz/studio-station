@@ -13,7 +13,7 @@
       "caption": [
         {
           "kind": "text",
-          "text": "29 settings"
+          "text": "31 settings"
         },
         {
           "kind": "text",
@@ -21,7 +21,7 @@
         },
         {
           "kind": "text",
-          "text": "16 need a look"
+          "text": "20 need a look"
         }
       ],
       "columns": [
@@ -249,6 +249,28 @@
         },
         {
           "row": {
+            "id": "jterrazz-macbook-pro/docker-shortcuts",
+            "mark": "attention",
+            "label": "jterrazz-macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "docker-shortcuts"
+              },
+              {
+                "kind": "text",
+                "text": "changed since 2 d ago"
+              }
+            ],
+            "reason": "differs",
+            "hint": {
+              "command": "station settings diff docker-shortcuts"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "jterrazz-macbook-pro/firewall",
             "mark": "attention",
             "label": "jterrazz-macbook-pro",
@@ -370,6 +392,28 @@
             "reason": "differs",
             "hint": {
               "command": "station settings diff dock-reset --on jterrazz-mac-mini"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "jterrazz-mac-mini/docker-shortcuts",
+            "mark": "attention",
+            "label": "jterrazz-mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "docker-shortcuts"
+              },
+              {
+                "kind": "text",
+                "text": "changed since 2 d ago"
+              }
+            ],
+            "reason": "differs",
+            "hint": {
+              "command": "station settings diff docker-shortcuts --on jterrazz-mac-mini"
             }
           }
         },
@@ -501,6 +545,28 @@
         },
         {
           "row": {
+            "id": "linux-1/docker-shortcuts",
+            "mark": "attention",
+            "label": "linux-1",
+            "short": "linux-1",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "docker-shortcuts"
+              },
+              {
+                "kind": "text",
+                "text": "changed since 2 d ago"
+              }
+            ],
+            "reason": "differs",
+            "hint": {
+              "command": "station settings diff docker-shortcuts --on linux-1"
+            }
+          }
+        },
+        {
+          "row": {
             "id": "api/ghostty-dotfiles",
             "mark": "attention",
             "label": "api",
@@ -564,12 +630,34 @@
               "command": "station machines start api"
             }
           }
+        },
+        {
+          "row": {
+            "id": "api/docker-shortcuts",
+            "mark": "attention",
+            "label": "api",
+            "short": "api",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "docker-shortcuts"
+              },
+              {
+                "kind": "text",
+                "text": "changed since 2 d ago"
+              }
+            ],
+            "reason": "differs",
+            "hint": {
+              "command": "station machines start api"
+            }
+          }
         }
       ],
       "counts": [
         {
           "mark": "attention",
-          "n": 16
+          "n": 20
         }
       ]
     },
@@ -706,33 +794,63 @@
         },
         {
           "row": {
-            "id": "folded",
-            "mark": "absent",
-            "label": "12 more",
+            "id": "docker-shortcuts",
+            "mark": "attention",
+            "label": "docker-shortcuts",
             "cells": [
               {
                 "kind": "text",
-                "text": "3/9",
+                "label": "attention"
+              },
+              {
+                "kind": "text",
+                "label": "attention"
+              },
+              {
+                "kind": "text",
+                "label": "attention"
+              },
+              {
+                "kind": "text",
+                "label": "attention"
+              },
+              {
+                "kind": "text",
+                "text": "0/4"
+              }
+            ],
+            "reason": "differs"
+          }
+        },
+        {
+          "row": {
+            "id": "folded",
+            "mark": "absent",
+            "label": "13 more",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "4/10",
                 "label": "absent"
               },
               {
                 "kind": "text",
-                "text": "3/9",
+                "text": "4/10",
                 "label": "absent"
               },
               {
                 "kind": "text",
-                "text": "3/9",
+                "text": "4/10",
                 "label": "absent"
               },
               {
                 "kind": "text",
-                "text": "3/9",
+                "text": "4/10",
                 "label": "absent"
               },
               {
                 "kind": "text",
-                "text": "12/36"
+                "text": "16/40"
               }
             ]
           }

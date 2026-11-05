@@ -1,19 +1,21 @@
  station settings --all-machines                                                host · unregistered
  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
- Machines  5 ◌  29 settings · 4 machines · 16 need a look
+ Machines  5 ◌  31 settings · 4 machines · 20 need a look
    ◌ This Mac
    ◌ mac-mini
    ◌ linux-1
    ◌ api
    ◌ infra
 
- Needs a look  16 ◌
+ Needs a look  20 ◌
    ◌ This Mac
    ◌ This Mac
    ◌ This Mac
    ◌ This Mac
    ◌ This Mac
+   ◌ This Mac
+   ◌ mac-mini
    ◌ mac-mini
    ◌ mac-mini
    ◌ mac-mini
@@ -22,15 +24,18 @@
    ◌ linux-1
    ◌ linux-1
    ◌ linux-1
+   ◌ linux-1
+   ◌ api
    ◌ api
    ◌ api
    ◌ api
 
- Set by station  4 ◌
+ Set by station  5 ◌
    ◌ ghostty-dotfiles
    ◌ github-login
    ◌ dock-reset
-   ◌ 12 more
+   ◌ docker-shortcuts
+   ◌ 13 more
 
  Always-on Mac  1 ◌
    ◌ 5 settings
