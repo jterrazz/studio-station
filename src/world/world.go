@@ -239,7 +239,7 @@ type VM struct {
 	Guest *Guest `json:"guest,omitempty"`
 	// value: what listens inside the VM.
 	Listening []ports.Listener `json:"listening,omitempty"`
-	// value: the containers Docker runs inside the VM, each with the ports
+	// value: the containers run inside the VM, each with the ports
 	// it publishes.
 	Containers []Container `json:"containers,omitempty"`
 }

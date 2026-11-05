@@ -1,9 +1,9 @@
 description: 'a port a container publishes is shared like any other, with or without Docker''s proxy'
 env: two-macs
 runs:
-    - command: 'world docker-run linux-1 8080:80 nginx-1'
+    - command: 'world container-run linux-1 8080:80 nginx-1'
       exit: 0
-    - command: 'world docker-run linux-1 8081:80 api-1 no-proxy'
+    - command: 'world container-run linux-1 8081:80 api-1 no-proxy'
       exit: 0
     - command: 'world advance 5s'
       exit: 0

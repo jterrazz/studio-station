@@ -189,11 +189,10 @@ type reported struct {
 	Port    int    `json:"port"`
 	IP      string `json:"ip"`
 	Process string `json:"process"`
-	Source  string `json:"source"`
 }
 
 // invariant: a guest reports a port once: a container's published port is
-// named by its container, over the proxy Docker may run on it.
+// named by its container, over the proxy its engine may run on it.
 func (c *guest) snapshot() []byte {
 	c.w.Lock()
 	listening := c.w.Listening(c.name)
@@ -202,12 +201,12 @@ func (c *guest) snapshot() []byte {
 	found := make([]reported, 0, len(listening))
 	for _, l := range listening {
 		if !slices.ContainsFunc(containers, func(k world.Container) bool { return slices.Contains(k.Published, l.Port) }) {
-			found = append(found, reported{Port: l.Port, IP: l.Bind, Process: l.Process, Source: "socket"})
+			found = append(found, reported{Port: l.Port, IP: l.Bind, Process: l.Process})
 		}
 	}
 	for _, k := range containers {
 		for _, port := range k.Published {
-			found = append(found, reported{Port: port, IP: "0.0.0.0", Process: k.Name, Source: "docker"})
+			found = append(found, reported{Port: port, IP: "0.0.0.0", Process: k.Name})
 		}
 	}
 	line, err := json.Marshal(map[string]any{"v": 1, "type": "snapshot", "ports": found})

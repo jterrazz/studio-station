@@ -44,7 +44,7 @@ func events() []event {
 		{"reboot-inside", []string{"<vm>"}, ended(machines.RunEnd{Reason: machines.GuestReboot})},
 		{"listen", []string{"<machine>", "<bind>:<port>", "<process>"}, listen},
 		{"unlisten", []string{"<machine>", "<port>"}, unlisten},
-		{"docker-run", []string{"<vm>", "<port>:<port>", "<container>", "[no-proxy]"}, dockerRun},
+		{"container-run", []string{"<vm>", "<port>:<port>", "<container>", "[no-proxy]"}, containerRun},
 		{"edit", []string{"<machine>", "<file>", "[<text>]"}, edit},
 		{"unplug", nil, power(battery, func(p *Power) error { p.Source = "battery"; p.Charging = false; return nil })},
 		{"plug", nil, power(battery, func(p *Power) error { p.Source = "ac"; return nil })},
@@ -340,8 +340,9 @@ func unlisten(w *World, args []string) error {
 }
 
 // invariant: a container publishes its port on the VM's every interface;
-// Docker's userland proxy listens on it too, unless the VM runs without it.
-func dockerRun(w *World, args []string) error {
+// its engine's userland proxy listens on it too, unless the VM runs without
+// it.
+func containerRun(w *World, args []string) error {
 	v, err := w.vm(args[0])
 	if err != nil {
 		return err
@@ -349,14 +350,14 @@ func dockerRun(w *World, args []string) error {
 	published, _, ok := strings.Cut(args[1], ":")
 	port, perr := strconv.Atoi(published)
 	if !ok || perr != nil {
-		return fmt.Errorf("world docker-run: %q is not <port>:<port>", args[1])
+		return fmt.Errorf("world container-run: %q is not <port>:<port>", args[1])
 	}
 	if len(args) == 4 && args[3] != "no-proxy" {
-		return fmt.Errorf("world docker-run: %q is not no-proxy", args[3])
+		return fmt.Errorf("world container-run: %q is not no-proxy", args[3])
 	}
 	v.Containers = append(v.Containers, Container{Name: args[2], Published: []int{port}})
 	if len(args) < 4 {
-		v.Listening = append(v.Listening, ports.Listener{Port: port, Bind: "0.0.0.0", Process: "docker-proxy", PID: 2000 + len(v.Listening)})
+		v.Listening = append(v.Listening, ports.Listener{Port: port, Bind: "0.0.0.0", Process: "proxy", PID: 2000 + len(v.Listening)})
 	}
 	return nil
 }
