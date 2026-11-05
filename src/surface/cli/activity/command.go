@@ -146,13 +146,10 @@ func every(ctx context.Context, d Deps, env kit.Env) ([]pageactivity.View, error
 			ref = env.Self
 		}
 		if !h.Reachable && !h.Here {
-			views = append(views, pageactivity.View{Name: h.Name, Label: h.Name, Short: d.Label(h.Name), Kind: string(machine.Mac), Silent: "does not answer", SilentType: string(fail.Unreachable)})
+			views = append(views, pageactivity.View{Name: h.Name, Label: d.Label(h.Name), Kind: string(machine.Mac), Silent: "does not answer", SilentType: string(fail.Unreachable)})
 			continue
 		}
-		v, err := mac(ctx, env, ref, h.Name, read{})
-		if !v.ThisMac {
-			v.Short = d.Label(h.Name)
-		}
+		v, err := mac(ctx, env, ref, d.Label(h.Name), read{})
 		views = append(views, silenced(v, err))
 		for _, m := range h.VMs {
 			v, err := vm(ctx, d, env, ref, m.Name, m.Lifetime.Kind(), m.State == machines.Running, read{})
