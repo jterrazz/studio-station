@@ -134,7 +134,10 @@ grep -q '^go version go' <<< "$login" || fail "a login shell runs no mise go"
 grep -q '^_station: function' <<< "$login" || fail "a login shell loads no station completion"
 grep -q '^dclean: function' <<< "$login" || fail "a login shell defines no Docker shortcuts"
 ! grep -qx unset <<< "$login" || fail "a login shell sets no STATION_TERMINAL"
-plain=$(in_vm "zsh -c 'command -v station mise; go env GOPATH'" 2> /dev/null)
+# value: a non-interactive zsh -c reads ~/.zshenv only, and the one block is in
+# ~/.zshrc: the call is the one an agent or a task runner makes from the owner's
+# session, inheriting its environment.
+plain=$(in_vm "zsh -lic 'zsh -c \"command -v station mise; go env GOPATH\"'" 2> /dev/null)
 [ "$(wc -l <<< "$plain" | tr -d ' ')" -ge 3 ] || fail "zsh -c finds station, mise and go only partly: $plain"
 step "IDE: go env" "$mise_path; d=\$(mise where go)/bin; env -i HOME=\$HOME PATH=\$d go env GOPATH"
 step "IDE: gopls version" "$mise_path; d=\$(mise where go)/bin; env -i HOME=\$HOME PATH=\$HOME/.local/share/go/bin:\$d gopls version"
@@ -149,14 +152,25 @@ case_begin apps-every-method AP-24
 while read -r app method; do
   case "$app" in '' | '#'*) continue ;; esac
   if [ "$method" = mas ]; then
-    out=$(in_vm "$brew_path $mise_path $station apps install $app </dev/null" 2>&1)
+    in_vm "$brew_path $station apps install mas </dev/null" >> "$log" 2>&1 || miss "apps install mas exited $?"
+    out=$(perl -e 'alarm 120; exec @ARGV' ssh -n "${ssh_opts[@]}" -i "$ssh_key" "$user@$ip" "$brew_path $mise_path $station apps install $app </dev/null" 2>&1)
     code=$?
+    [ $code -ne 142 ] || { in_vm 'sudo -n pkill -f "mas install"; pkill -f "station apps install"' || true; out="no answer in 120 s"; }
     say "   mas $app: exit $code: $(tr '\n' ' ' <<< "$out" | cut -c1-200)"
-    [ $code -ne 0 ] && grep -qi 'app store\|sign' <<< "$out" || miss "mas $app signed out gave no sign-in hint"
+    [ $code -ne 0 ] && [ $code -ne 142 ] && grep -qi 'app store\|sign' <<< "$out" || miss "mas $app signed out gave no sign-in hint ($out)"
     continue
   fi
   for verb in install update remove; do
-    in_vm "$brew_path $mise_path $station apps $verb $app </dev/null" >> "$log" 2>&1 || { miss "apps $verb $app ($method) exited $?"; break; }
+    if [ "$verb" = remove ] && [ "$method" = script ]; then
+      out=$(in_vm "$brew_path $mise_path $station apps remove $app --yes </dev/null" 2>&1)
+      code=$?
+      say "   script $app: remove exit $code: $(tr '\n' ' ' <<< "$out" | cut -c1-160)"
+      [ $code -ne 0 ] && grep -q 'remove it by hand' <<< "$out" || miss "script $app: remove gave no by-hand hint"
+      break
+    fi
+    flag=""
+    [ "$verb" != remove ] || flag=--yes
+    in_vm "$brew_path $mise_path $station apps $verb $app $flag </dev/null" >> "$log" 2>&1 || { miss "apps $verb $app ($method) exited $?"; break; }
     state=$(in_vm "$brew_path $mise_path $station apps --all --json" | jq -r --arg a "$app" '.apps[] | select(.name == $a) | .state')
     say "   $method $app: $verb, then $state"
     case "$verb" in
@@ -180,7 +194,7 @@ while read -r name state; do
   in_vm "$brew_path $station settings apply $name </dev/null" >> "$log" 2>&1 || { miss "settings apply $name exited $?"; continue; }
   now=$(in_vm "$brew_path $station settings --json" | jq -r --arg n "$name" '.settings[] | select(.name == $n) | .state')
   [ "$now" = applied ] || { miss "$name reads $now after apply"; continue; }
-  in_vm "$brew_path $station settings off $name </dev/null" >> "$log" 2>&1 || { miss "settings off $name exited $?"; continue; }
+  in_vm "$brew_path $station settings off $name --yes </dev/null" >> "$log" 2>&1 || { miss "settings off $name exited $?"; continue; }
   off=$(in_vm "$brew_path $station settings --json" | jq -r --arg n "$name" '.settings[] | select(.name == $n) | .state')
   [ "$off" != applied ] || miss "$name still reads applied after off"
   in_vm "$brew_path $station settings apply $name </dev/null" >> "$log" 2>&1 || miss "settings apply $name again exited $?"
