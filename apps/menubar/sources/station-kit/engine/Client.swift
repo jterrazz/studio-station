@@ -110,7 +110,7 @@ public enum Client {
         guard let socket = try? UnixSocket.connect(path), let data = try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys]),
               (try? socket.write(line: data)) != nil else { return }
         await withTaskCancellationHandler {
-            while !Task.isCancelled, (try? await readLine(socket)) != nil {}
+                while !Task.isCancelled, (try? await readLine(socket)) != nil {}
         } onCancel: {
             socket.shutdownBoth()
         }
@@ -132,20 +132,32 @@ final class Seen: @unchecked Sendable {
 
 public final class Subscription: @unchecked Sendable {
     let path: String
+    let watch: String
     let pages: [String]
     let clock: StreamClock
     let emit: @Sendable (StreamEvent) -> Void
 
-    public init(path: String, pages: [String] = ["menubar"], clock: StreamClock = SystemClock(), emit: @escaping @Sendable (StreamEvent) -> Void) {
+    public static let pageWatch = "page"
+
+    public init(path: String, watch: String = Subscription.pageWatch, pages: [String] = ["menubar"], clock: StreamClock = SystemClock(), emit: @escaping @Sendable (StreamEvent) -> Void) {
         self.path = path
+        self.watch = watch
         self.pages = pages
         self.clock = clock
         self.emit = emit
     }
 
+    var request: [String: Any] {
+        var body: [String: Any] = ["v": 2, "id": "1", "watch": watch]
+        if watch == Self.pageWatch { body["in"] = ["pages": pages] }
+        return body
+    }
+
     // invariant: one subscribed connection at a time; a connection that ends,
-    // or says nothing for 45 s, is dropped and made again after 1, 2, 4 up to 30 s,
-    // the wait starting over once a connection streamed again.
+    // or a page watch that says nothing for 45 s (it ticks every 15 s), is
+    // dropped and made again after 1, 2, 4 up to 30 s, the wait starting over
+    // once a connection streamed again. The events watch is quiet until the
+    // engine tells something, so only its end drops it.
     public func run() async {
         var backoff = 1.0
         while !Task.isCancelled {
@@ -159,44 +171,51 @@ public final class Subscription: @unchecked Sendable {
     }
 
     func stream(_ socket: UnixSocket) async -> Bool {
-        guard let request = try? JSONSerialization.data(withJSONObject: ["v": 2, "id": "1", "watch": "page", "in": ["pages": pages]], options: [.sortedKeys]),
+        guard let request = try? JSONSerialization.data(withJSONObject: request, options: [.sortedKeys]),
               (try? socket.write(line: request)) != nil else { return false }
         let seen = Seen()
+        let ticks = watch == Self.pageWatch
         return await withTaskGroup(of: Void.self) { group in
-            group.addTask { [clock] in
-                while true {
-                    let before = seen.value
-                    do { try await clock.sleep(Client.silence) } catch { return }
-                    if seen.value == before {
-                        socket.shutdownBoth()
-                        return
+            if ticks {
+                group.addTask { [clock] in
+                    while true {
+                        let before = seen.value
+                        do { try await clock.sleep(Client.silence) } catch { return }
+                        if seen.value == before {
+                            socket.shutdownBoth()
+                            return
+                        }
                     }
                 }
             }
             var streamed = false
-            while let line = try? await Client.readLine(socket) {
-                seen.bump()
-                guard let frame = (try? JSONSerialization.jsonObject(with: line)) as? [String: Any] else { continue }
-                if frame["error"] != nil { break }
-                guard let obj = frame["out"] as? [String: Any] else { continue }
-                if obj["stream"] != nil {
-                    streamed = true
-                    emit(.connected)
-                    continue
-                }
-                switch obj["event"] as? String {
-                case "page":
-                    if let raw = obj["page"], let data = try? JSONSerialization.data(withJSONObject: raw), let page = try? Page.decode(data) {
-                        emit(.page(page))
+            await withTaskCancellationHandler {
+                while let line = try? await Client.readLine(socket) {
+                    seen.bump()
+                    guard let frame = (try? JSONSerialization.jsonObject(with: line)) as? [String: Any] else { continue }
+                    if frame["error"] != nil { break }
+                    guard let obj = frame["out"] as? [String: Any] else { continue }
+                    if obj["stream"] != nil {
+                        streamed = true
+                        emit(.connected)
+                        continue
                     }
-                case "tick":
-                    emit(.tick)
-                case "notice":
-                    let n = obj["notice"] as? [String: Any]
-                    emit(.notice(kind: n?["kind"] as? String ?? "", text: n?["text"] as? String ?? ""))
-                default:
-                    break
+                    switch obj["event"] as? String {
+                    case "page":
+                        if let raw = obj["page"], let data = try? JSONSerialization.data(withJSONObject: raw), let page = try? Page.decode(data) {
+                            emit(.page(page))
+                        }
+                    case "tick":
+                        emit(.tick)
+                    case "notice":
+                        let n = obj["notice"] as? [String: Any]
+                        emit(.notice(kind: n?["kind"] as? String ?? "", text: n?["text"] as? String ?? ""))
+                    default:
+                        break
+                    }
                 }
+            } onCancel: {
+                socket.shutdownBoth()
             }
             socket.shutdownBoth()
             group.cancelAll()

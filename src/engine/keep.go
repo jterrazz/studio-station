@@ -27,6 +27,8 @@ const (
 	EventBack       = "server_back"
 )
 
+const EventsStream = "engine.events" // value: the name the events watch opens with, as a page watch with its schema.
+
 func Notifies(kind string) bool {
 	// value: the closed list of SPEC §10.4: the events the engine's events
 	// watch streams, which the menu bar posts as its notifications.
@@ -128,6 +130,9 @@ func (d *Daemon) Events(ctx context.Context, send func(any) error) error {
 	// bar's notifications); any other word it says is not one.
 	sub := d.hub.add()
 	defer d.hub.remove(sub)
+	if send(Opened{Stream: EventsStream}) != nil {
+		return nil
+	}
 	for {
 		select {
 		case <-ctx.Done():

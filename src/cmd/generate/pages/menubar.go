@@ -154,13 +154,18 @@ func EventsStream() []byte {
 		{Kind: engine.EventExposed, Parts: []string{ports.Told(exposed[0])}},
 		{Kind: engine.EventDiskLow, Parts: []string{activity.DiskFreeTold("This Mac", low)}},
 	}
-	var out []byte
+	outs := make([]any, 0, 1+len(events))
+	outs = append(outs, engine.Opened{Stream: engine.EventsStream})
 	for _, e := range events {
+		outs = append(outs, engine.Event{Event: "notice", Notice: &engine.Notice{Kind: e.Kind, Text: strings.Join(e.Parts, token.Sep)}})
+	}
+	var out []byte
+	for _, o := range outs {
 		data, err := json.Marshal(struct {
-			V   int          `json:"v"`
-			ID  string       `json:"id"`
-			Out engine.Event `json:"out"`
-		}{V: 2, ID: "1", Out: engine.Event{Event: "notice", Notice: &engine.Notice{Kind: e.Kind, Text: strings.Join(e.Parts, token.Sep)}}})
+			V   int    `json:"v"`
+			ID  string `json:"id"`
+			Out any    `json:"out"`
+		}{V: 2, ID: "1", Out: o})
 		if err != nil {
 			panic(err)
 		}

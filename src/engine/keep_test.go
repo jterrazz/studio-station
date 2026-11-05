@@ -13,15 +13,23 @@ func TestTheEventsWatchStreamsEachEventOfTheClosedListOnceAndNoOtherWord(t *test
 	d := &Daemon{o: Options{Join: func(parts ...string) string { return strings.Join(parts, " / ") }}}
 	ctx, cancel := context.WithCancel(t.Context())
 	got := make(chan Event, 4)
+	opened := make(chan Opened, 1)
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		_ = d.Events(ctx, func(v any) error {
+			if o, ok := v.(Opened); ok {
+				opened <- o
+				return nil
+			}
 			ev, _ := v.(Event)
 			got <- ev
 			return nil
 		})
 	}()
+	if o := <-opened; o.Stream != EventsStream {
+		t.Errorf("the events watch opened as %q, want %q", o.Stream, EventsStream)
+	}
 	for !d.hub.listening() {
 		runtime.Gosched()
 	}

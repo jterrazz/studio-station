@@ -16,6 +16,7 @@ final class Model: ObservableObject {
     let socket = EnginePath.socket()
     private var lastPage: Date?
     private var subscription: Task<Void, Never>?
+    private var events: Task<Void, Never>?
     private var clearing: Task<Void, Never>?
     private var watching: Task<Void, Never>?
     private var asked = false
@@ -37,6 +38,11 @@ final class Model: ObservableObject {
             Task { @MainActor in self.receive(event) }
         }
         subscription = Task.detached { await sub.run() }
+        let told = Subscription(path: socket, watch: Notifications.watch) { event in
+            guard let text = Notifications.posted(event, from: Notifications.watch) else { return }
+            Task { @MainActor in self.notify(text) }
+        }
+        events = Task.detached { await told.run() }
     }
 
     func setSparkline(_ on: Bool) {
@@ -55,7 +61,7 @@ final class Model: ObservableObject {
         case .tick:
             break
         case .notice(_, let text):
-            notify(text)
+            state.status = Status(text, failed: false)
         case .down:
             if FileManager.default.fileExists(atPath: socket) && state.page != nil && state.connection == .live {
                 state.connection = .connecting
@@ -134,7 +140,6 @@ final class Model: ObservableObject {
     }
 
     func notify(_ text: String) {
-        state.status = Status(text, failed: false)
         let center = UNUserNotificationCenter.current()
         let post = {
             let content = UNMutableNotificationContent()
