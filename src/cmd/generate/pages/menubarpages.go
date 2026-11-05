@@ -32,7 +32,7 @@ func miniPorts() ports.Listing {
 	return ports.Listing{Fleet: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
 }
 
-// value: linux-1's ports, as its page reads them: Vite shared with its
+// value: the ports of This Mac's VMs, as linux-1's page reads them: Vite shared with its
 // link, postgres reserved and not listening yet.
 func linuxPorts() ports.Listing {
 	host := serviceFleet().Hosts[0]
@@ -79,10 +79,9 @@ func hourOfActivity() pageactivity.View {
 // named menubar.<page>.<world>.
 func menubarOwnPages() []Fixture {
 	here := menubarHere()
-	vm := page.Context{Machine: "linux-1", Kind: "workspace"}
 	return []Fixture{
 		{Name: "menubar.ports.mini", Page: pagemenubar.Ports(miniPorts(), pagemenubar.PortsOf{Machine: "mac-mini"}, here)},
-		{Name: "menubar.ports.linux-1", Page: pagemenubar.Ports(linuxPorts(), pagemenubar.PortsOf{Machine: "linux-1", Workspace: true}, vm)},
+		{Name: "menubar.vm.linux-1", Page: pagemenubar.Workspace(linuxPorts(), "linux-1", here)},
 		{Name: "menubar.awake.two-macs", Page: pagemenubar.Awake(twoMacsAwake(), here)},
 		{Name: "menubar.activity.mac", Page: pagemenubar.Activity(hourOfActivity(), here)},
 	}

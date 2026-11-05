@@ -147,6 +147,9 @@ type Row struct {
 	Detail Value   `json:"detail,omitzero"`
 	Reason Reason  `json:"reason,omitempty"`
 	Hint   *Hint   `json:"hint,omitempty"`
+	// value: the page a tap on the row opens, by its watch
+	// (`menubar.vm:linux-1`); a terminal draws nothing of it.
+	Opens string `json:"opens,omitempty"`
 }
 
 type Fact struct {

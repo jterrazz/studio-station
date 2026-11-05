@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
@@ -147,7 +148,31 @@ func fleet(r Reading) page.Section {
 		return page.Section{ID: "fleet", Title: "All machines", Columns: pagemachines.Columns(),
 			Items: []page.Item{{Row: &page.Row{ID: "fleet", Label: "reading", Mark: page.Awaiting}}}}
 	}
-	return pagefleet.Machines(*r.Fleet, r.Services)
+	s := pagefleet.Machines(*r.Fleet, r.Services)
+	workspaces := map[string]bool{}
+	for _, h := range r.Fleet.Hosts {
+		for _, vm := range h.VMs {
+			workspaces[vm.Name] = workspaces[vm.Name] || vm.Lifetime.Kind() == coremachine.Workspace
+		}
+	}
+	opens(s.Items, workspaces)
+	return s
+}
+
+// invariant: PO-45: a workspace's row on Home opens its page, the engine's
+// watch of `menubar.vm:<workspace>`.
+func opens(items []page.Item, workspaces map[string]bool) {
+	for i := range items {
+		switch it := &items[i]; {
+		case it.Row != nil && workspaces[it.Row.ID]:
+			it.Row.Opens = string(VMID) + ":" + it.Row.ID
+		case it.Group != nil:
+			if workspaces[it.Group.Head.ID] {
+				it.Group.Head.Opens = string(VMID) + ":" + it.Group.Head.ID
+			}
+			opens(it.Group.Items, workspaces)
+		}
+	}
 }
 
 func powerSection(r Reading) page.Section {

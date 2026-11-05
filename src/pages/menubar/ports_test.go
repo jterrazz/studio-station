@@ -2,6 +2,7 @@ package menubar
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
@@ -35,4 +36,41 @@ func TestReviewOnEveryMacsPortsNamesTheMacOfItsRow(t *testing.T) {
 	if !slices.EqualFunc(got, want, slices.Equal) {
 		t.Fatalf("reviews %q, want %q", got, want)
 	}
+}
+
+// invariant: PO-45: a workspace's page lists its own shares alone, offers
+// Share a port… of it and Stop sharing on its own rows, never Declare
+// public; the Ports page of a Mac never offers Share a port.
+func TestAWorkspacesPageSharesItsOwnPorts(t *testing.T) {
+	l := ports.Listing{Fleet: services.Fleet{Hosts: []services.HostView{
+		{Name: "jterrazz-macbook-pro", Here: true, Reachable: true, Services: []services.View{
+			{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: services.Published, Process: "node", URLs: services.URLSet{Public: "https://mac.ts.net:40001"}},
+			{VM: "linux-2", GuestPort: 8080, HostPort: 40002, State: services.Published, Process: "nginx", URLs: services.URLSet{Public: "https://mac.ts.net:40002"}},
+		}},
+	}}}
+	here := page.Context{Machine: "jterrazz-macbook-pro"}
+	p := Workspace(l, "linux-1", here)
+	var ids []string
+	for _, a := range p.Actions {
+		ids = append(ids, a.ID)
+	}
+	share := action(p, ActionSharePort)
+	if share == nil || share.Run.Call != CallShare || share.Run.In["VM"] != `"linux-1"` {
+		t.Fatalf("linux-1's page offers %q, want Share a port of linux-1", ids)
+	}
+	if action(p, ActionDeclarePublic) != nil || len(ids) != 2 || !strings.Contains(ids[1], "5173") {
+		t.Fatalf("linux-1's page offers %q, want Share a port and Stop sharing its 5173 alone", ids)
+	}
+	if mac := Ports(l, PortsOf{}, here); action(mac, ActionSharePort) != nil || action(mac, ActionDeclarePublic) == nil {
+		t.Fatalf("the Ports page of every Mac offers %v", mac.Actions)
+	}
+}
+
+func action(p page.Page, id string) *page.Action {
+	for i := range p.Actions {
+		if p.Actions[i].ID == id {
+			return &p.Actions[i]
+		}
+	}
+	return nil
 }

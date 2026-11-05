@@ -381,7 +381,8 @@
                       {
                         "kind": "none"
                       }
-                    ]
+                    ],
+                    "opens": "menubar.vm:linux-1"
                   },
                   "items": [
                     {
@@ -499,7 +500,8 @@
                     {
                       "kind": "none"
                     }
-                  ]
+                  ],
+                  "opens": "menubar.vm:api"
                 }
               }
             ],

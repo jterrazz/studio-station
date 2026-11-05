@@ -1,6 +1,7 @@
 package menubar
 
 import (
+	"slices"
 	"strconv"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -11,6 +12,7 @@ import (
 
 const (
 	PortsID page.ID = "menubar.ports"
+	VMID    page.ID = "menubar.vm"
 
 	ActionReview        = "review"
 	ActionDeclarePublic = "declare-public"
@@ -26,33 +28,53 @@ type PortsOf struct {
 	// value: the machine whose ports the page lists, as the owner names it
 	// (`mac-mini`, `linux-1`); empty is This Mac.
 	Machine string
-	// value: the machine is a workspace, whose page shares its own ports.
-	Workspace bool
 }
 
 func Ports(l ports.Listing, of PortsOf, here page.Context) page.Page {
 	// invariant: SPEC §10.2 Ports and A port: the ports page of §5.6, red on
 	// top, then Public, then Private, each row's class in words; every action
 	// it shows is a call, but Review, which opens a terminal on the same list.
+	return portsPage(PortsID, l, of, here, declarePublic(l))
+}
+
+func Workspace(l ports.Listing, vm string, here page.Context) page.Page {
+	// invariant: SPEC §10.2 A workspace, PO-45: a workspace's page lists its
+	// own ports alone, each shared one with its link, and offers Share a
+	// port… of it, never Declare public.
+	return portsPage(VMID, only(l, vm), PortsOf{Machine: vm}, here, sharePort(vm))
+}
+
+func portsPage(id page.ID, l ports.Listing, of PortsOf, here page.Context, offer page.Action) page.Page {
 	p := pageports.Listed(l, here, false)
-	p.ID = PortsID
+	p.ID = id
 	p.Actions = nil
 	if of.Machine != "" && len(p.Sections) > 0 && p.Sections[0].ID == "summary" {
 		p.Sections[0].Items[0].Row.Label = of.Machine
 	}
 	p.Actions = append(p.Actions, reviews(p, l, of)...)
-	if !of.Workspace {
-		p.Actions = append(p.Actions, declarePublic(l))
-	}
-	if of.Workspace {
-		p.Actions = append(p.Actions, sharePort(of.Machine))
-	}
+	p.Actions = append(p.Actions, offer)
 	for _, h := range l.Fleet.Hosts {
 		for _, s := range h.Services {
 			p.Actions = append(p.Actions, stopSharing(s, h.Name))
 		}
 	}
 	return page.Seal(p)
+}
+
+// value: the listing of one VM: its listeners and its shares, on the Mac
+// it runs on.
+func only(l ports.Listing, vm string) ports.Listing {
+	out := l
+	out.Fleet.Hosts = nil
+	for _, h := range l.Fleet.Hosts {
+		h.Services = slices.DeleteFunc(slices.Clone(h.Services), func(s ports.ServiceView) bool { return s.VM != vm })
+		h.Ports = slices.DeleteFunc(slices.Clone(h.Ports), func(p ports.Port) bool { return p.Machine.Name != vm })
+		h.Listening = slices.DeleteFunc(slices.Clone(h.Listening), func(m ports.Machine) bool { return m.Ref.Name != vm })
+		if len(h.Services) > 0 || len(h.Ports) > 0 {
+			out.Fleet.Hosts = append(out.Fleet.Hosts, h)
+		}
+	}
+	return out
 }
 
 // invariant: Review opens a terminal on the ports of the Mac its red rows

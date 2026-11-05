@@ -1,10 +1,10 @@
 {
   "schema": "station.page/v1",
-  "id": "menubar.ports",
+  "id": "menubar.vm",
   "command": "ports",
   "context": {
-    "machine": "linux-1",
-    "kind": "workspace"
+    "machine": "jterrazz-macbook-pro",
+    "kind": "host"
   },
   "state": "ready",
   "sections": [
