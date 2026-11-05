@@ -39,7 +39,7 @@ func Findings(m machine.Ref, kind machine.Kind, s *Series) []finding.Finding {
 		if kind == machine.Server {
 			fix = "station machines edit " + m.Name + " --disk <size> --on " + m.On
 		}
-		text := "disk almost full: " + strconv.Itoa(int(free*100)) + " % free"
+		text := "Disk almost full: " + strconv.Itoa(int(free*100)) + " % free"
 		switch {
 		case free < 0.05:
 			add(finding.Broken, "disk", text, fix)
@@ -49,23 +49,33 @@ func Findings(m machine.Ref, kind machine.Kind, s *Series) []finding.Finding {
 	}
 	points := merged(s)
 	if heldFor(points, func(prev, x Sample) bool { return prev.Pressure == PressureCritical && x.Pressure == PressureCritical }) >= PressureFor {
-		add(finding.Broken, "memory", "memory pressure critical", "station activity"+on)
+		add(finding.Broken, "memory", "Memory pressure critical", "station activity"+on)
 	}
 	coarse := s.Coarse()
 	if heldFor(coarse, func(prev, x Sample) bool { return x.SwapUsed > prev.SwapUsed }) >= SwapFor {
-		add(finding.NeedsALook, "swap", "swap growing for 10 min", "station activity"+on)
+		add(finding.NeedsALook, "swap", "Swap growing", "station activity"+on)
 	}
 	switch {
 	case last.Thermal >= ThermalCritical:
-		add(finding.Broken, "thermal", "running hot: thermal critical", "")
+		add(finding.Broken, "thermal", "Running hot: Critical", "")
 	case last.Thermal == ThermalSerious:
-		add(finding.NeedsALook, "thermal", "running hot: thermal serious", "")
+		add(finding.NeedsALook, "thermal", "Running hot: Serious", "")
 	}
 	if b := last.Battery; b != nil && b.OnBattery && b.Percent <= LowBattery {
-		add(finding.NeedsALook, "battery", "battery low: "+strconv.Itoa(b.Percent)+" % on battery, plug in", "")
+		add(finding.NeedsALook, "battery", "Battery low: "+strconv.Itoa(b.Percent)+" %", "plug in")
 	}
-	if kind == machine.Server && heldFor(coarse, func(prev, x Sample) bool { return Between(prev, x).CPU >= BusyCPU }) >= BusyFor {
-		add(finding.NeedsALook, "cpu", m.Name+" busy: CPU at 95 % or more for 10 min", "station activity"+on)
+	busy := func(prev, x Sample) bool { return Between(prev, x).CPU >= BusyCPU }
+	if held := heldFor(coarse, busy); kind == machine.Server && held >= BusyFor {
+		newest := coarse[len(coarse)-1]
+		first := newest
+		for _, x := range coarse {
+			if !x.At.Before(newest.At.Add(-held)) {
+				first = x
+				break
+			}
+		}
+		mean := Between(first, newest).CPU
+		add(finding.NeedsALook, "cpu", m.Name+" busy: "+strconv.Itoa(int(mean+0.5))+" % for "+strconv.Itoa(int(held.Minutes()))+" min", "station activity"+on)
 	}
 	return out
 }

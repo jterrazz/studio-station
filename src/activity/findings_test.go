@@ -122,7 +122,7 @@ func TestABatteryAtTwentyPercentOnBatteryNeedsALook(t *testing.T) {
 	low := series(2*time.Second, 1, func(_ int, s *activity.Sample) { s.Battery = &activity.Battery{Percent: 20, OnBattery: true} })
 	charging := series(2*time.Second, 1, func(_ int, s *activity.Sample) { s.Battery = &activity.Battery{Percent: 12, Charging: true} })
 
-	if got := lines(activity.Findings(here, machine.Mac, low)); !slices.Equal(got, []line{{finding.NeedsALook, "battery", ""}}) {
+	if got := lines(activity.Findings(here, machine.Mac, low)); !slices.Equal(got, []line{{finding.NeedsALook, "battery", "plug in"}}) {
 		t.Errorf("20 %% on battery: Findings() = %v; want battery low", got)
 	}
 	if got := activity.Findings(here, machine.Mac, charging); len(got) != 0 {
