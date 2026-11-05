@@ -4,7 +4,7 @@ fixture:
     - ../../__fixtures__/power/
 env: engine
 runs:
-    - command: '--version > /dev/null; "$STATION" engine run 2> engine.log & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; : > .calls; "$STATION" awake 4h > /dev/null; /bin/cat .calls; "$STATION" awake --json | /usr/bin/jq ''(.macs[0].until|fromdate) - now | . > 14300 and . <= 14400''; "$STATION" awake 1h --lid > /dev/null; /bin/cat .calls; "$STATION" awake --json | /usr/bin/jq -c ''.macs[0] | [.mode, .lid]''; kill $d; wait $d'
+    - command: '--version > /dev/null; "$STATION" engine run 2> engine.log & d=$!; n=0; while [ ! -S .local/state/station/engine.sock ] && [ $n -lt 50 ]; do /bin/sleep 0.1; n=$((n+1)); done; : > .calls; "$STATION" awake 4h > /dev/null; /bin/cat .calls; "$STATION" awake --json | /usr/bin/jq ''(.macs[0].until_at|fromdate) - now | . > 14300 and . <= 14400''; "$STATION" awake 1h --lid > /dev/null; /bin/cat .calls; "$STATION" awake --json | /usr/bin/jq -c ''.macs[0] | [.mode, .lid]''; kill $d; wait $d'
       exit: 0
       stdout: |
           power assert idle station: station awake 4h

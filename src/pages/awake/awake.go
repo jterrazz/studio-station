@@ -209,15 +209,15 @@ type ReadingJSON struct {
 
 type MacJSON struct {
 	Name         string       `json:"name"`
-	Here         bool         `json:"here"`
+	ThisMac      bool         `json:"this_mac"`
 	Mode         awake.Mode   `json:"mode"`
 	Engine       string       `json:"engine"`
-	Until        *time.Time   `json:"until,omitempty"`
+	Until        *time.Time   `json:"until_at,omitempty"`
 	Lid          bool         `json:"lid,omitempty"`
 	Battery      bool         `json:"battery,omitempty"`
 	StoppedBy    string       `json:"stopped_by,omitempty"`
 	NeverSince   *time.Time   `json:"never_since,omitempty"`
-	Servers      []string     `json:"servers"`
+	Servers      []string     `json:"hosts_servers"`
 	Capabilities CapsJSON     `json:"capabilities"`
 	Reading      *ReadingJSON `json:"reading,omitempty"`
 }
@@ -234,7 +234,7 @@ type JSON struct {
 }
 
 func macJSON(r awake.Report) MacJSON {
-	m := MacJSON{Name: r.Mac, Here: r.Here, Mode: r.Mode(), Engine: r.Daemon, Servers: r.Servers,
+	m := MacJSON{Name: r.Mac, ThisMac: r.Here, Mode: r.Mode(), Engine: r.Daemon, Servers: r.Servers,
 		Capabilities: CapsJSON{Battery: r.Caps.Battery, Lid: r.Caps.Lid, Thermal: r.Caps.Thermal}}
 	if m.Servers == nil {
 		m.Servers = []string{}
