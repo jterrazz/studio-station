@@ -22,7 +22,7 @@ runs:
           see enter is off until you type infra
           send infr
           send \r
-          see Type infra to confirm: infr_
+          see Type infra to stop it: infr_
           run "$STATION" machines | /usr/bin/grep -q "^●	infra	Server	jterrazz-mac-mini	Running"
           send a
           see enter stop   esc keep it

@@ -156,9 +156,9 @@ func (a Ask) Panel() Panel {
 	case a.Type == "":
 		lines = append(lines, "", " y "+yes+"   n no")
 	case a.Input == a.Type:
-		lines = append(lines, "", " Type "+a.Type+" to confirm: "+a.Input+"_", "", " enter "+yes+"   esc keep it")
+		lines = append(lines, "", " Type "+a.Type+" to "+yes+" it: "+a.Input+"_", "", " enter "+yes+"   esc keep it")
 	default:
-		lines = append(lines, "", " Type "+a.Type+" to confirm: "+a.Input+"_", "", " enter is off until you type "+a.Type+"   esc keep it")
+		lines = append(lines, "", " Type "+a.Type+" to "+yes+" it: "+a.Input+"_", "", " enter is off until you type "+a.Type+"   esc keep it")
 	}
 	return Panel{Title: a.Question, Lines: lines}
 }

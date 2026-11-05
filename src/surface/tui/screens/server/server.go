@@ -33,7 +33,7 @@ func (Screen) Keys(v screen.View) []ui.Binding {
 	if v.Machine.Kind == machine.Server {
 		stop = screen.Bind("S", "stop"+ui.Ellipsis+" (type the name)")
 	}
-	return []ui.Binding{stop, screen.Bind("r", "restart"), screen.Bind("e", "edit"), copySSH}
+	return []ui.Binding{stop, screen.Bind("r", "restart"), screen.Bind("e", "edit"), copySSH, screen.Bind("D", "delete"+ui.Ellipsis+" (type the name)")}
 }
 
 // value: a VM's call names its Mac when it is not this one.
@@ -46,8 +46,9 @@ func on(m screen.Machine) []string {
 
 func (Screen) Press(key string, v screen.View) (screen.Effect, bool) {
 	// invariant: SPEC §9.4, §9.8: a workspace stops after a yes, a server
-	// only once its name is typed; restart asks nothing; e edits what it was
-	// created with; c copies its ssh command.
+	// only once its name is typed; D deletes either once its name is typed;
+	// restart asks nothing; e edits what it was created with; c copies its
+	// ssh command.
 	m := v.Machine
 	name := m.Name
 	if key == "c" {
@@ -68,6 +69,11 @@ func (Screen) Press(key string, v screen.View) (screen.Effect, bool) {
 			Ask: &screen.Ask{Question: "Stop " + name + "?", Type: name, Yes: "stop",
 				Lines: []string{"A server is always on: Stop sets it to Stopped, and nothing starts it again until you do."}},
 			Doing: "Stopping " + name, Done: "Stopped " + name}}, true
+	case key == "D":
+		return screen.Effect{Call: &screen.Call{Words: append([]string{"machines", "delete", name, "--confirm=" + name}, on(m)...),
+			Ask: &screen.Ask{Question: "Delete " + name + "?", Type: name, Yes: "delete",
+				Lines: []string{"Its disk, its record, its reserved ports and its shared accounts go with it.", "Nothing brings it back."}},
+			Doing: "Deleting " + name, Done: "Deleted " + name}}, true
 	case key == "r":
 		return screen.Effect{Call: &screen.Call{Words: append([]string{"machines", "restart", name, "--yes"}, on(m)...),
 			Doing: "Restarting " + name, Done: "Restarted " + name}}, true
