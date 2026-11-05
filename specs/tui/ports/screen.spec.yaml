@@ -1,4 +1,4 @@
-description: 'all machines'' Ports draws SPEC §9.2''s one wide pane: the class tables with their columns, the fix said once in full, what Station compares; a unfolds what listens on its machine only, and enter opens a row''s detail over the pane'
+description: 'all machines'' Ports: a table per class, the fix in full, a unfolds, enter opens the detail'
 fixture:
     - ../../__fixtures__/terminal/
 env:

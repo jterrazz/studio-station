@@ -1,4 +1,4 @@
-description: 'all machines'' Activity draws SPEC §9.2''s screen: each VM under its Mac with its CPU sparkline, DISK R/W and NET IN/OUT, how it was read, what needs you, each Mac''s thermal state and battery; enter opens a machine''s Activity'
+description: 'all machines'' Activity: VMs under their Mac, CPU sparklines, Macs'' thermal; enter opens one'
 fixture:
     - ../../__fixtures__/terminal/
 env:

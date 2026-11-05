@@ -1,4 +1,4 @@
-description: 'Awake draws vision screen 7: a block per Mac, this one first; This Mac''s keys and toggles with the guards that end them, mac-mini''s policy with what set it and the server that pauses while it sleeps'
+description: 'the Awake screen: a block per Mac, its keys, toggles and guards, a policy with the server it hosts'
 fixture:
     - ../../__fixtures__/terminal/
 env:
