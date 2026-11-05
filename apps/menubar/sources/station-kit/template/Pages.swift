@@ -92,8 +92,6 @@ struct MachinesTree: View {
     let open: (String) -> Void
     @Environment(\.stationPalette) private var palette
 
-    func symbol(_ head: Row) -> String { head.label == Page.ThisMacWord ? Token.Symbol.mac : Token.Symbol.mini }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(Array((section.items ?? []).enumerated()), id: \.offset) { _, item in
@@ -101,7 +99,7 @@ struct MachinesTree: View {
                     groups([item])
                 } else if let mac = item.group {
                     if let head = mac.head, only == nil || only!.contains(head.id ?? "") {
-                        MachineLine(row: head, symbol: symbol(head), capsule: false, open: open)
+                        MachineLine(row: head, symbol: Token.Symbol.mac, capsule: false, open: open)
                     }
                     groups(mac.items ?? [])
                 } else if let row = item.row {
@@ -421,7 +419,7 @@ struct MachineContent: View {
 
     func header(_ s: Section) -> some View {
         let row = s.items?.first?.row
-        let symbol = page.context?.kind == "mac" ? Token.Symbol.mini : Token.Symbol.vm
+        let symbol = page.context?.kind == "mac" ? Token.Symbol.mac : Token.Symbol.vm
         return HStack(alignment: .top, spacing: Token.Space.gap) {
             Image(systemName: symbol).font(.system(size: Token.Tile.title - 2)).foregroundStyle(palette.accent).frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
