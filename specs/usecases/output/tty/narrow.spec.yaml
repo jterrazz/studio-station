@@ -1,0 +1,123 @@
+description: 'a 60-column read cuts details by their kind, never a name, a state word or a command'
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
+runs:
+    - command: '--version >/dev/null; terminal --size 60x40 /usr/bin/env -u NO_COLOR COLUMNS=60 "$STATION" overview'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          This Mac · jterrazz-macbook-pro · 9 things need you
+            Engine running
+
+          Needs you
+            ✗ npm sign-in expired  npm login
+            ✗ com.jterrazz.brain.x-snapshot is failing, last exit 2
+              station background remove com.jterrazz.brain.x-snapshot
+            ◐ 1 mise update waiting
+              station apps update --method mise
+            ◐ 2 brew updates waiting
+              station apps update --method brew
+            ◐ Firewall: off
+              System Settings > Network > Firewall
+            4 more: station overview --all
+          Activity    memory 12.4 of 16 GB · 388 GB free
+          Apps        ● 5 ok · ◐ 3 updates · ○ 100 not installed
+          Settings    set by station · ● 0 of 17 · checked · ● 8 of 9
+          Disk        ◐ 388 GB free · 34.8 GB can rebuild …
+          Ports       Public 0 · Private 2
+          Accounts    ● 6 · ✗ npm
+          Background  ● 10 · ✗ 1 failing · ◐ 3 orphans
+          Awake       ○ sleeps normally
+          VMs         ○ api stopped · ● linux-1 running
+
+          → station background remove com.jterrazz.brain.x-snapshot
+          → station overview --all  for every line
+    - command: '--version >/dev/null; terminal --size 60x60 /usr/bin/env -u NO_COLOR COLUMNS=60 "$STATION" apps'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          This Mac · 108 apps for this Mac · 3 updates
+            100 not installed
+
+          Updates
+            ◐ node     22.11.0 → 24.11.0  mise  update available
+              → station apps update node
+            ◐ ghostty  1.2.0 → 1.2.1      cask  update available
+              → station apps update ghostty
+            ◐ gh       2.97.0 → 2.98.0    brew  update available
+              → station apps update gh
+          Not installed  ○ 100 · homebrew, mas, uv, cocoapods, …
+          OK             ● 5 · mise, go, bat, jq, lazygit
+          Not for this machine  7 apps live on other machines
+
+          → station apps install <app...>
+          → station apps update
+          → station apps --all  for every row
+    - command: '--version >/dev/null; terminal --size 60x60 /usr/bin/env -u NO_COLOR COLUMNS=60 "$STATION" background'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          This Mac · 14 background tasks · 1 failing · 3 orphans
+
+          Failing
+            ✗ com.jterrazz.brain.x-snapshot
+              user  failing · last exit 2
+              ~/…/com.jterrazz.brain.x-snapshot.plist
+              → station background remove com.jterrazz.brain.x-snapshot
+          Orphans
+            ◐ com.bjango.istatmenus.installer
+              root  not loaded  iStat Menus (gone)
+              /Library/…/com.bjango.istatmenus.installer.plist
+              → sudo launchctl bootout system/com.bjango.istatmenus.installer &&
+                sudo rm /Library/LaunchDaemons/com.bjango.istatmenus.installer.plist
+            ◐ com.docker.socket  root  idle  Docker.app (gone)
+              /Library/LaunchDaemons/com.docker.socket.plist
+              → sudo launchctl bootout system/com.docker.socket &&
+                sudo rm /Library/LaunchDaemons/com.docker.socket.plist
+            ◐ com.docker.vmnetd  root  idle  Docker.app (gone)
+              /Library/LaunchDaemons/com.docker.vmnetd.plist
+              → sudo launchctl bootout system/com.docker.vmnetd &&
+                sudo rm /Library/LaunchDaemons/com.docker.vmnetd.plist
+          Station     ● 1 · com.jterrazz.station.engine
+          Known apps  ● 7 · com.adguard.mac.adguard.loginhelper, …
+          Unknown     ● 2 · com.jterrazz.brain.sync, …
+
+          → station background --all  for every row
+    - command: '--version >/dev/null; terminal --size 60x40 /usr/bin/env -u NO_COLOR COLUMNS=60 "$STATION" overview --on mac-mini'
+      stdin: |
+          scrollback
+      exit: 0
+      stdout: |
+          On mac-mini:
+          jterrazz-mac-mini · Mac · 1 thing needs you
+            Engine running
+
+          Needs you
+            ◐ ~/go is misplaced  station disk move ~/go
+          Activity    memory 26 of 64 GB · 1.6 TB free
+          Apps        ● 0 ok · ○ 108 not installed
+          Settings    set by station · ● 0 of 17 · checked · ● 9 of 9
+          Disk        ◐ 1.6 TB free · 1.1 GB can rebuild …
+          Ports       Public 0 · Private 0
+          Accounts    ● 1
+          Background  ● 1
+          Awake       ● never sleeps
+          VMs         ● infra running
+          Mac readiness
+            ● restarts after a power cut  applied
+            ● never sleeps                applied
+            ● logs in by itself           applied
+            ◐ disk unlock after a power cut
+              needs you
+              → station machines unlock mac-mini (from the same network)
+            ● planned restarts unlock themselves
+              supported
+            ● engine starts at login      installed
+
+          → station disk move ~/go

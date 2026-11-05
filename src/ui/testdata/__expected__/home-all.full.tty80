@@ -47,16 +47,15 @@ Background
     station
      no background jobs
     known
-  └─ ● watchman                   running · pid 3464     user  watchman
-       ~/Library/LaunchAgents/com.github.facebook.watchman.plist
+  └─ ● watchman  running · pid 3464  user  watchman    ~/Library/L…tchman.plist
     unknown
-  └─ ✗ com.jterrazz.brain.x-sna…  failing · last exit 2  user
+  └─ ✗ com.jterrazz.brain.x-snapshot
+       failing · last exit 2  user
        ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
        → launchctl bootout gui/501/com.jterrazz.brain.x-snapshot &&
          rm ~/Library/LaunchAgents/com.jterrazz.brain.x-snapshot.plist
     orphan
-  └─ ◐ socket                     not loaded             root  Docker.app
-       /Library/LaunchDaemons/com.docker.socket.plist
+  └─ ◐ socket    not loaded          root  Docker.app  /Library/La…socket.plist
        → sudo launchctl bootout system/com.docker.socket &&
          sudo rm /Library/LaunchDaemons/com.docker.socket.plist
 Gateways

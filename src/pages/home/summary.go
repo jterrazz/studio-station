@@ -117,7 +117,7 @@ func needsYou(needs []overview.Need, all bool) page.Section {
 		row := page.Row{ID: strconv.Itoa(i) + "-" + n.Subject, Label: n.Text, Mark: mark, Reason: reason, Cells: []page.Value{fixValue(n)}}
 		items = append(items, page.Item{Row: &row})
 	}
-	columns := []page.Column{{Key: "finding", Kind: page.KindText, Keep: 100}, {Key: "fix", Kind: page.KindList, Keep: 50}}
+	columns := []page.Column{{Key: "finding", Kind: page.KindText, Keep: 100}, {Key: "fix", Kind: page.KindCommand, Keep: 50}}
 	return page.Section{ID: "needs-you", Title: "Needs you", Uncounted: true, Columns: columns, Items: items}
 }
 
