@@ -41,6 +41,7 @@ final class FakeEngine: @unchecked Sendable {
     let fd: Int32
     private let lock = NSLock()
     private var requests: [String] = []
+    private var hungUp = false
 
     init(_ name: String) throws {
         try FileManager.default.createDirectory(atPath: "/private/tmp/station-work", withIntermediateDirectories: true)
@@ -61,6 +62,8 @@ final class FakeEngine: @unchecked Sendable {
     }
 
     var received: [String] { lock.withLock { requests } }
+    // value: the client closed its connection.
+    var left: Bool { lock.withLock { hungUp } }
 
     // value: accepts one client, reads its request line, answers with these
     // bytes, then stops listening so a reconnect is refused.
@@ -77,6 +80,7 @@ final class FakeEngine: @unchecked Sendable {
             lock.withLock { requests.append(String(decoding: line, as: UTF8.self)) }
             _ = answer.withUnsafeBytes { write(client, $0.baseAddress, $0.count) }
             while !hangUp, read(client, &byte, 1) == 1 {}
+            lock.withLock { hungUp = true }
             close(client)
         }
     }
@@ -141,6 +145,20 @@ final class ClientTests: XCTestCase {
         }
         await task.value
         XCTAssertEqual(clock.backoffs, [1, 2, 4])
+    }
+
+    func testThePopoversWatchIsHeldOpenUntilThePopoverCloses() async throws {
+        let engine = try answered("mb-watch", #"{"v":2,"id":"1","out":{"machines":[]}}"#)
+        defer { engine.stop() }
+        let held = Task { await Client.hold(path: engine.path, watch: "engine.watch") }
+        await until { !engine.received.isEmpty }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertFalse(engine.left, "the popover's watch ended while it was open")
+        held.cancel()
+        await held.value
+        await until { engine.left }
+        XCTAssertTrue(engine.left, "the popover closed and its watch stayed open")
+        XCTAssertEqual(engine.received, [#"{"id":"1","v":2,"watch":"engine.watch"}"#])
     }
 
     func fixtureAction(_ id: String) throws -> Action {

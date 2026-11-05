@@ -65,6 +65,8 @@ type Process struct {
 	// value: a CPU share of the whole machine (0 to 100) in a list by CPU,
 	// resident bytes in a list by memory.
 	Value float64 `json:"value"`
+	// value: the VM whose hypervisor process this is, on its Mac.
+	VM string `json:"vm,omitempty"`
 }
 
 const Top = 5
@@ -98,4 +100,7 @@ func Uptime(d time.Duration) string {
 type Reading struct {
 	Sample Sample  `json:"sample"`
 	Top    Busiest `json:"top"`
+	// value: a VM read from its Mac while its guest does not answer: its
+	// process's usage there, and nothing of the VM's own counters.
+	Run *Usage `json:"run,omitempty"`
 }

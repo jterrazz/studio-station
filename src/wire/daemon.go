@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"github.com/jterrazz/studio-station/src/accounts"
+	"github.com/jterrazz/studio-station/src/activity"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
+	enginejobs "github.com/jterrazz/studio-station/src/engine/jobs"
 	"github.com/jterrazz/studio-station/src/ports"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"os"
@@ -60,7 +63,25 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		tailnet = m.world.tailnet()
 		checks = m.world.checks()
 	}
-	d := engine.New(m.host, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
+	var d *engine.Daemon
+	sample := &enginejobs.Sample{
+		Calls: calls, Meter: m.meter(), Clock: m.host.Clock,
+		History: func() *activity.History { return d.History() },
+		Watched: func(r coremachine.Ref) bool {
+			return d.Watched(r.Name) || (r.On == "" && d.Watched(engine.ThisMac))
+		},
+		Tell: func(subject, text string) { d.Tell(subject, text) },
+		Seen: func() []enginejobs.Seen {
+			running := d.Running()
+			seen := make([]enginejobs.Seen, 0, 1+len(running))
+			seen = append(seen, enginejobs.Seen{Ref: coremachine.Ref{Name: m.profile.Ref.Name}, Kind: coremachine.Mac})
+			for _, r := range running {
+				seen = append(seen, enginejobs.Seen{Ref: coremachine.Ref{Name: r.Name, On: m.profile.Ref.Name}, Kind: r.Lifetime.Kind(), PID: r.PID, Guest: r.Guest})
+			}
+			return seen
+		},
+	}
+	d = engine.New(m.host, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
 		Remember: func(vm string, port int, stopped bool) error {
 			return portscalls.Remember(m.stores.services(), vm, port, stopped)
 		},
@@ -71,6 +92,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		Feeds:    map[string]engine.Feed{engine.PageMenubar: menubar.Feed()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
 		Listening: m.listeners("/").Read, Declarations: m.stores.declarations.List,
+		Jobs: []engine.Tick{sample.Run},
 	})
 	lends.s = m.secretsVia(d, func(_ context.Context, vm string) (bool, error) {
 		for _, v := range d.VMs() {

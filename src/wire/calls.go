@@ -5,6 +5,7 @@ import (
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
+	activitycontract "github.com/jterrazz/studio-station/src/activity/contract"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	backgroundcalls "github.com/jterrazz/studio-station/src/background/calls"
@@ -42,7 +43,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 	here := &localCalls{profile: m.profile, late: m.far}
 	sections.Calls, sections.Kind = here, kind
 	registry, err := call.NewRegistry(
-		activitycalls.All(activitycalls.Deps{Meter: sections.Meter}),
+		activitycalls.All(m.activityDeps(sections.Meter)),
 		overviewcalls.All(sections),
 		accountscalls.All(accountscalls.Deps{Accounts: m.accounts(), Shares: m.secrets(), Kind: kind}),
 		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
@@ -101,3 +102,13 @@ func (l *localCalls) Watch(ctx context.Context, _ coremachine.Ref, name string, 
 }
 
 type awakePower struct{ *power.Service }
+
+// value: a sample composes its free space from the Disk family, and on a
+// Mac its thermal and battery from Power: a VM's are its Mac's.
+func (m machine) activityDeps(meter activitycontract.Meter) activitycalls.Deps {
+	d := activitycalls.Deps{Meter: meter, Volume: m.disk()}
+	if m.powerPort != nil && (m.profile.Caps.Thermal || m.profile.Caps.Battery) {
+		d.Power = m.powerPort
+	}
+	return d
+}

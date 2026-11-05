@@ -101,6 +101,22 @@ public enum Client {
         }
     }
 
+    // invariant: a watch held is a connection kept open until the task that
+    // holds it is cancelled: the engine counts it while it stays open (the
+    // popover's `engine.watch`, SPEC §6.3), never longer.
+    public static func hold(path: String, watch: String, input: [String: Any] = [:]) async {
+        var body: [String: Any] = ["v": 2, "id": "1", "watch": watch]
+        if !input.isEmpty { body["in"] = input }
+        guard let socket = try? UnixSocket.connect(path), let data = try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys]),
+              (try? socket.write(line: data)) != nil else { return }
+        await withTaskCancellationHandler {
+            while !Task.isCancelled, (try? await readLine(socket)) != nil {}
+        } onCancel: {
+            socket.shutdownBoth()
+        }
+        socket.shutdownBoth()
+    }
+
     public static func executable(path: String) async -> String? {
         let reply = await call(path: path, name: "engine.hello")
         return reply.result["executable"]?.value as? String

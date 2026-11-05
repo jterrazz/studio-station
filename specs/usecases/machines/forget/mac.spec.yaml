@@ -5,7 +5,7 @@ env:
     - two-macs
     - terminal
 runs:
-    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"] | del(.engine.memory)'' world.json > mini-before.json'
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"] | del(.engine.memory, .engine.activity)'' world.json > mini-before.json'
       exit: 0
     - command: '--version >/dev/null; terminal --size 100x20 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" machines forget mac-mini'
       stdin: |
@@ -32,7 +32,7 @@ runs:
       exit: 0
       stdout: |
           ["api","linux-1"]
-    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"] | del(.engine.memory)'' world.json | /usr/bin/cmp - mini-before.json && echo unchanged'
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"] | del(.engine.memory, .engine.activity)'' world.json | /usr/bin/cmp - mini-before.json && echo unchanged'
       exit: 0
       stdout: |
           unchanged

@@ -1,7 +1,10 @@
 package wire
 
 import (
+	"cmp"
 	"context"
+	"io/fs"
+	"path"
 
 	"github.com/spf13/cobra"
 
@@ -26,6 +29,7 @@ import (
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
+	"github.com/jterrazz/studio-station/src/system"
 )
 
 func overviewCommand(env kit.Env, m machine) *cobra.Command {
@@ -69,17 +73,9 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Daemon:     m.hostDaemon(),
 		Hypervisor: m.hypervisor(),
 	}
-	var meter activitycontract.Meter
+	meter := m.meter()
 	listening := m.listeners("/")
-	if m.kind == catalog.Linux {
-		meter = activitylinux.New(h.Run, h.Clock)
-	} else {
-		meter = activitymacos.New(local.NewKernel(m.vars), h.Clock)
-	}
 	facts := m.facts()
-	if m.world != nil {
-		meter = m.world.meter()
-	}
 	if m.kind != catalog.Linux {
 		// value: the status page reads listeners, jobs and app updates on a Mac only.
 		d.Listeners, d.Jobs, d.Updates = listening, m.jobs(overviewcalls.ReadBudget), brew.New(h.Run, nil)
@@ -87,6 +83,17 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	}
 	d.Facts, d.Meter, d.Battery = facts, meter, m.powerPort
 	return d
+}
+
+// value: the Meter of this machine's kernel, or of its world.
+func (m machine) meter() activitycontract.Meter {
+	switch {
+	case m.world != nil:
+		return m.world.meter()
+	case m.kind == catalog.Linux:
+		return activitylinux.New(rootFS{fs: m.host.FS, root: cmp.Or(m.systemRoot(), "/")}, m.host.Clock)
+	}
+	return activitymacos.New(local.NewKernel(m.vars), m.host.Clock)
 }
 
 // value: the Inspector of this machine's facts: its system's own tools, or
@@ -175,4 +182,20 @@ func diskOf(report storage.Report) overviewcalls.DiskReading[storage.StrayReport
 		rows = append(rows, overview.Disk{Name: "other", Level: catalog.LevelCache, Bytes: report.Other})
 	}
 	return overviewcalls.DiskReading[storage.StrayReport]{Rows: rows, Strays: append(make([]storage.StrayReport, 0, len(report.Strays)), report.Strays...)}
+}
+
+// value: the machine's files under its root, as the Linux Meter reads /proc.
+type rootFS struct {
+	fs   system.FS
+	root string
+}
+
+func (r rootFS) Open(name string) (fs.File, error) {
+	return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
+}
+
+func (r rootFS) ReadFile(name string) ([]byte, error) { return r.fs.ReadFile(path.Join(r.root, name)) }
+
+func (r rootFS) ReadDir(name string) ([]fs.DirEntry, error) {
+	return r.fs.ReadDir(path.Join(r.root, name))
 }

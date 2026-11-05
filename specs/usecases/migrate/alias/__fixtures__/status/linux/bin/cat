@@ -1,8 +1,7 @@
 #!/bin/sh
-# cat of the files status reads on Linux, served from the fixture's proc/.
+# cat of /etc/resolv.conf, served from the fixture.
 case "$*" in
-    /proc/*) /bin/cat "${0%/*}/../proc/${1#/proc/}" ;;
-    /etc/resolv.conf) /bin/cat "${0%/*}/../proc/resolv.conf" ;;
+    /etc/resolv.conf) /bin/cat "${0%/*}/../resolv.conf" ;;
     *)
         echo "stub ${0##*/}: unexpected invocation: $*" >&2
         exit 97
