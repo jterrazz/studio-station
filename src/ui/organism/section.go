@@ -18,11 +18,11 @@ func Caption(st token.Styles, s page.Section) string {
 
 func Title(st token.Styles, s page.Section) string {
 	if s.Joined {
-		return atom.Spaces(token.Margin) + st.Title.Render(atom.Show(page.List(append([]page.Value{page.Text(s.Title)}, s.Caption...)...)))
+		return atom.Spaces(token.Margin) + st.Strong.Render(atom.Show(page.List(append([]page.Value{page.Text(s.Title)}, s.Caption...)...)))
 	}
 	// invariant: an open section's title counts nothing: its rows are there
 	// to read (vision 07 "Updates"); a folded one counts them on its line.
-	line := atom.Spaces(token.Margin) + st.Title.Render(s.Title)
+	line := atom.Spaces(token.Margin) + st.Strong.Render(s.Title)
 	if c := Caption(st, s); c != "" {
 		line += atom.Spaces(token.Gap) + c
 	}
@@ -34,7 +34,7 @@ func FoldTitle(st token.Styles, s page.Section, folded bool, width int) string {
 	if folded {
 		sign = token.FoldShut
 	}
-	left := atom.Spaces(token.Margin) + st.Muted.Render(sign) + " " + st.Title.Render(s.Title)
+	left := atom.Spaces(token.Margin) + st.Muted.Render(sign) + " " + st.Strong.Render(s.Title)
 	if c := Caption(st, s); c != "" {
 		left += atom.Spaces(token.Gap) + c
 	}

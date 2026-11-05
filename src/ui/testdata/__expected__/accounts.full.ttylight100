@@ -1,6 +1,6 @@
-[38;2;76;79;105mThis Mac · 8 accounts · 6 signed in · 1 needs you · shared with 2 VMs[m
+[38;2;76;79;105mThis Mac[m[38;2;76;79;105m · [m[38;2;76;79;105m8 accounts[m[38;2;76;79;105m · [m[38;2;76;79;105m6 signed in[m[38;2;76;79;105m · [m[38;2;76;79;105m1 needs you[m[38;2;76;79;105m · [m[38;2;76;79;105mshared with 2 VMs[m
 
-[1;38;2;30;102;245mAccounts[m
+[1;38;2;76;79;105mAccounts[m
   [38;2;156;160;176m[m[38;2;210;15;57m✗[m [1;38;2;76;79;105mjterrazz-macbook-pro[m  [38;2;76;79;105mMac[m
   [38;2;156;160;176m├─ [m[38;2;64;160;43m●[m [1;38;2;76;79;105mGitHub[m             [38;2;76;79;105mjterrazz[m          [38;2;76;79;105mown[m     [38;2;76;79;105mgist · read:org · repo · workflow[m  [38;2;76;79;105mgh …[m
   [38;2;156;160;176m├─ [m[38;2;210;15;57m✗[m [1;38;2;76;79;105mnpm[m                [38;2;76;79;105m?[m                 [38;2;76;79;105mown[m     [38;2;76;79;105mtoken refused by registry.npmjs.org[m

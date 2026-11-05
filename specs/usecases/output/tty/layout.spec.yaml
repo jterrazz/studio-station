@@ -7,12 +7,12 @@ env:
 runs:
     - command: '--version >/dev/null; terminal --size 80x40 /usr/bin/env -u NO_COLOR COLUMNS=80 "$STATION" overview'
       stdin: |
-          paint plain=38;2;202;211;245 bold=1;38;2;202;211;245 good=38;2;166;218;149 warn=38;2;238;212;159 bad=38;2;237;135;150 muted=38;2;165;173;203 subtle=38;2;110;115;141 accent=38;2;138;173;244
+          paint plain=38;2;202;211;245 bold=1;38;2;202;211;245 good=38;2;166;218;149 warn=38;2;238;212;159 bad=38;2;237;135;150 muted=38;2;165;173;203 subtle=38;2;110;115;141
       exit: 0
       stdout: |
-          This Mac · jterrazz-macbook-pro · 9 things need you · Engine running
+          {bold This Mac} · jterrazz-macbook-pro · 9 things need you · Engine running
 
-          {1;38;2;138;173;244 Needs you}
+          {bold Needs you}
             {bad ✗} {bold npm sign-in expired}     npm login
             {bad ✗} {bold com.jterrazz.brain.x-snapshot is failing, last exit 2}
               station background remove com.jterrazz.brain.x-snapshot

@@ -49,7 +49,7 @@ func body(st token.Styles, p page.Page, width int) []string {
 				lines = append(lines, atom.Spaces(token.Margin+token.Indent)+molecule.PageHint(st, *h, 0))
 			}
 		case i == first && s.Joined:
-			lines = append(lines, sums(st, append([]page.Value{page.Text(s.Title)}, s.Caption...), width)...)
+			lines = append(lines, sums(st, append([]page.Value{page.Text(s.Title)}, s.Caption...), width, true)...)
 			if len(s.Items) > 0 {
 				lines = append(lines, "")
 				lines = append(lines, organism.Rows(st, s, width)...)
@@ -65,7 +65,7 @@ func body(st token.Styles, p page.Page, width int) []string {
 		case single(s):
 			lines = append(lines, oneRow(st, s, fold, width)...)
 		case noted(s) && atom.Width(atom.Pad(s.Title, fold))+token.Gap+atom.Width(s.Items[0].Note.Text) < width-token.Margin:
-			lines = append(lines, atom.Spaces(token.Margin)+st.Title.Render(atom.Pad(s.Title, fold))+atom.Spaces(token.Gap)+st.Muted.Render(s.Items[0].Note.Text))
+			lines = append(lines, atom.Spaces(token.Margin)+st.Strong.Render(atom.Pad(s.Title, fold))+atom.Spaces(token.Gap)+st.Muted.Render(s.Items[0].Note.Text))
 		default:
 			lines = append(lines, organism.Section(st, s, width)...)
 		}
@@ -116,32 +116,37 @@ func summed(st token.Styles, r page.Row, width int) []string {
 			parts = append(parts, c)
 		}
 	}
-	return sums(st, parts, width)
+	return sums(st, parts, width, false)
 }
 
-// invariant: a first line is plain text, as vision 07 draws it, and never
-// cut: a part the line cannot hold goes on the next one, two columns in
+// invariant: a first line is text, as vision 07 draws it, and never cut: a
+// part the line cannot hold goes on the next one, two columns in
 // (`This Mac · jterrazz-macbook-pro · 9 things need you` / `  Engine running`).
-func sums(st token.Styles, parts []page.Value, width int) []string {
+// A titled one leads with its machine in bold.
+func sums(st token.Styles, parts []page.Value, width int, titled bool) []string {
 	room := width - 1 - token.Margin
 	var lines []string
-	line := ""
-	for _, v := range parts {
+	line, plain := "", ""
+	for i, v := range parts {
 		text := atom.Show(v)
+		style := st.Text
+		if i == 0 && titled {
+			style = st.Strong
+		}
 		switch {
 		case text == "":
-		case line == "":
-			line = text
-		case atom.Width(line)+atom.Width(token.Sep)+atom.Width(text) <= room:
-			line += token.Sep + text
+		case plain == "":
+			line, plain = style.Render(text), text
+		case atom.Width(plain)+atom.Width(token.Sep)+atom.Width(text) <= room:
+			line, plain = line+st.Text.Render(token.Sep)+style.Render(text), plain+token.Sep+text
 		default:
 			lines = append(lines, line)
-			line = atom.Spaces(token.Indent) + text
+			line, plain = atom.Spaces(token.Indent)+style.Render(text), atom.Spaces(token.Indent)+text
 		}
 	}
 	lines = append(lines, line)
 	for i, l := range lines {
-		lines[i] = atom.Spaces(token.Margin) + st.Text.Render(l)
+		lines[i] = atom.Spaces(token.Margin) + l
 	}
 	return lines
 }
@@ -206,7 +211,7 @@ func foldWidth(sections []page.Section) int {
 // (`○ 34`), then as many of its rows' names as the line holds (vision 07:
 // "Not installed   ○ 34 · yazi, dust, eza, …"); --all unfolds it.
 func folded(st token.Styles, s page.Section, at, width int) string {
-	line := atom.Spaces(token.Margin) + st.Title.Render(atom.Pad(s.Title, at))
+	line := atom.Spaces(token.Margin) + st.Strong.Render(atom.Pad(s.Title, at))
 	var counts []string
 	for _, t := range s.Counts {
 		if t.N > 0 {
@@ -269,7 +274,7 @@ func sized(s page.Section) bool {
 // 41.6 GB · xcode 19.1, orbstack 15.8, …`).
 func sizes(st token.Styles, s page.Section, width int) string {
 	total := atom.Show(page.List(s.Caption...))
-	line := atom.Spaces(token.Margin) + st.Title.Render(s.Title+token.Sep+total)
+	line := atom.Spaces(token.Margin) + st.Strong.Render(s.Title+token.Sep+total)
 	_, unit, _ := strings.Cut(total, " ")
 	var names []string
 	for _, it := range s.Items {
@@ -344,7 +349,7 @@ func oneRow(st token.Styles, s page.Section, at, width int) []string {
 	}
 	lead := atom.Spaces(token.Margin)
 	if !said(s) {
-		lead += st.Title.Render(atom.Pad(s.Title, at)) + atom.Spaces(token.Gap)
+		lead += st.Strong.Render(atom.Pad(s.Title, at)) + atom.Spaces(token.Gap)
 	}
 	if r.Mark != page.Unjudged {
 		lead += atom.Tone(st, r.Mark).Render(atom.Glyph(r.Mark)) + " "
