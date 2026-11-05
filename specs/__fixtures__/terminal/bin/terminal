@@ -11,8 +11,9 @@
 #   gone TEXT   wait until the screen no longer shows TEXT
 #   send KEYS   type KEYS; \r, \x1b and \xNN escapes are keys
 #   file PATH   wait until PATH exists and is not empty, so a step can follow a stub's start
-#   screen      print the screen's text, each line's trailing blanks and the blank
-#               bottom lines trimmed
+#   screen      once COMMAND has drawn nothing for 0.2 s (1 s at most), print the
+#               screen's text, each line's trailing blanks and the blank bottom
+#               lines trimmed
 #   scrollback  wait for COMMAND to exit, then print the history above the screen and
 #               the screen, as tmux keeps them: a line scrolled off the top joins the
 #               history, and so does the whole screen when it is cleared from its
@@ -330,6 +331,17 @@ def main():
             if done:
                 status = os.waitstatus_to_exitcode(code)
 
+    def settle():
+        # invariant: the screen is read once the command has drawn nothing for
+        # 0.2 s, so a frame larger than one read is never printed half drawn;
+        # one that never stops drawing (a spinner) is read after 1 s.
+        deadline = time.monotonic() + 1.0
+        while True:
+            before = drawn
+            pump(0.2)
+            if drawn == before or time.monotonic() > deadline:
+                return
+
     def fail(why):
         # value: what the command drew and how long it ran, so a binary that never
         # started (drew 0 bytes) is told apart from a slow first frame.
@@ -373,7 +385,7 @@ def main():
         elif verb == "send":
             os.write(fd, arg.encode().decode("unicode_escape").encode("latin-1"))
         elif verb == "screen":
-            pump(0.2)
+            settle()
             print(screen.text())
         elif verb == "scrollback":
             wait(lambda: status is not None, "the command never exited", ended=False)
