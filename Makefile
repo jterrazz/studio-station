@@ -96,10 +96,13 @@ menubar-uninstall: ## Unregister the login item, then remove ~/Applications/Stat
 e2e-machine: build build-linux ## The machine specs on a real VM of this host: KIND=linux (tier 2) or KIND=macos (tier 3); never in check
 	@specs/machine/run.sh $(KIND)
 
+# hazard: macOS kills (SIGKILL) a signed binary rewritten in place once it has run, so
+# the build lands as a new file renamed over the old one; a running engine keeps its own.
 provision: build ## Put this build on the machine (~/.local/bin/station), then run station setup
 	@mkdir -p $(BIN_DIR)
-	@cp $(BUILD_PATH) $(INSTALL_PATH)
-	@chmod +x $(INSTALL_PATH)
+	@cp $(BUILD_PATH) $(INSTALL_PATH).new
+	@chmod +x $(INSTALL_PATH).new
+	@mv -f $(INSTALL_PATH).new $(INSTALL_PATH)
 	@rm -f $(HOME)/.studio/bin/workstation $(HOME)/.studio/bin/station
 	@printf "$(GREEN)●$(RESET) Installed $(INSTALL_PATH)\n"
 	@$(INSTALL_PATH) setup
