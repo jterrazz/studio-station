@@ -3,9 +3,9 @@ import SwiftUI
 // value: the menu bar's own pages of SPEC §10.2 a page id names; any other
 // page draws as PageView.
 public enum MenuPage {
-    public static let ports = "menubar.ports"
-    public static let awake = "menubar.awake"
-    public static let activity = "menubar.activity"
+    public static let ports = Navigation.ports
+    public static let awake = Navigation.awake
+    public static let activity = Navigation.activity
 
     @MainActor
     public static func view(_ state: PopoverState, handlers: PopoverHandlers = PopoverHandlers()) -> AnyView? {

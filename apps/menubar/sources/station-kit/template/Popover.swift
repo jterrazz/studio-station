@@ -13,15 +13,22 @@ public struct PopoverState: Equatable, Sendable {
     public var qr: String?
     public var menu = false
     public var answers: [String: [String: String]] = [:]
+    // value: the menu bar's own page pushed over Home: Ports, Awake or
+    // Activity, as the engine streams it.
+    public var pushed: Page?
 
-    public init(page: Page?, connection: Connection, running: String? = nil, confirming: String? = nil, status: Status? = nil, qr: String? = nil) {
+    public init(page: Page?, connection: Connection, running: String? = nil, confirming: String? = nil, status: Status? = nil, qr: String? = nil, pushed: Page? = nil) {
         self.page = page
         self.connection = connection
         self.running = running
         self.confirming = confirming
         self.status = status
         self.qr = qr
+        self.pushed = pushed
     }
+
+    // value: the page the owner sees, the pushed one over Home.
+    public var shown: Page? { pushed ?? page }
 }
 
 public struct PopoverHandlers {
@@ -38,12 +45,17 @@ public struct PopoverHandlers {
     public var quit: () -> Void
     public var copy: (String) -> Void
     public var window: (String) -> Void
+    // value: navigation: open one of the menu bar's own pages by its watch
+    // name, back to Home.
+    public var push: (String) -> Void
+    public var back: () -> Void
 
     public init(run: @escaping (Action, [String: String]) -> Void = { _, _ in }, confirm: @escaping (Action?) -> Void = { _ in },
                 answer: @escaping (String, String, String) -> Void = { _, _, _ in }, open: @escaping (URL) -> Void = { _ in },
                 toggleQR: @escaping (String) -> Void = { _ in }, toggleMenu: @escaping () -> Void = {}, loginItem: @escaping (Bool) -> Void = { _ in }, loginItemOn: Bool = false,
                 sparkline: @escaping (Bool) -> Void = { _ in }, sparklineOn: Bool = false, quit: @escaping () -> Void = {},
-                copy: @escaping (String) -> Void = { _ in }, window: @escaping (String) -> Void = { _ in }) {
+                copy: @escaping (String) -> Void = { _ in }, window: @escaping (String) -> Void = { _ in },
+                push: @escaping (String) -> Void = { _ in }, back: @escaping () -> Void = {}) {
         self.run = run
         self.confirm = confirm
         self.answer = answer
@@ -57,6 +69,8 @@ public struct PopoverHandlers {
         self.quit = quit
         self.copy = copy
         self.window = window
+        self.push = push
+        self.back = back
     }
 }
 
@@ -87,11 +101,32 @@ public struct Popover: View {
         self.scrolls = scrolls
     }
 
+    // value: the menu bar's own pages Home opens: This Mac's Activity over
+    // 1 h, every Mac's Awake, every Mac's Ports.
+    public static let pages: [(label: String, watch: String)] = [
+        ("Activity", Navigation.activity), ("Awake", Navigation.awake), ("Ports", Navigation.ports),
+    ]
+
     var inner: CGFloat { Token.Space.width - Token.Space.margin * 2 }
 
     var links: LinkActions { LinkActions(open: handlers.open, qr: state.qr, toggleQR: handlers.toggleQR) }
 
     public var body: some View {
+        if let own = pushedView {
+            own
+        } else {
+            home
+        }
+    }
+
+    var pushedView: AnyView? {
+        guard let pushed = state.pushed else { return nil }
+        var shown = state
+        shown.page = pushed
+        return MenuPage.view(shown, handlers: handlers)
+    }
+
+    var home: some View {
         VStack(alignment: .leading, spacing: Token.Space.gap) {
             header
             if state.menu { menu }
@@ -164,6 +199,14 @@ public struct Popover: View {
                 powerSection(page, power)
             }
             Divider()
+            if state.connection == .live || state.connection == .connecting {
+                HStack(spacing: 4) {
+                    ForEach(Array(Self.pages.enumerated()), id: \.offset) { _, p in
+                        Pill(p.label) { handlers.push(p.watch) }
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
             actions(page)
         }
         .opacity(dimmed ? 0.5 : 1)

@@ -20,6 +20,20 @@ final class Model: ObservableObject {
     private var clearing: Task<Void, Never>?
     private var watching: Task<Void, Never>?
     private var asked = false
+    private(set) var navigation: Navigation!
+
+    init() {
+        navigation = Navigation(socket: socket) { [weak self] page, shown in
+            Task { @MainActor in self?.show(page, shown) }
+        }
+    }
+
+    // invariant: a pushed page is shown only while its watch is the one held.
+    func show(_ watch: String, _ page: Page?) {
+        guard navigation.watched == (page == nil ? nil : watch) else { return }
+        state.pushed = page
+        if page == nil { state.confirming = nil }
+    }
 
     var icon: MenuBarIcon { MenuBarIcon.of(connection: state.connection, page: state.page, sparkline: sparkline) }
 
@@ -107,6 +121,7 @@ final class Model: ObservableObject {
     func closed() {
         watching?.cancel()
         watching = nil
+        navigation.back()
     }
 
     func run(_ action: Action, answers: [String: String]) {

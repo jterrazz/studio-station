@@ -38,7 +38,7 @@ struct StationMenuBarApp: App {
     }
 
     var handlers: PopoverHandlers {
-        PopoverHandlers(
+        model.navigation.wire(PopoverHandlers(
             run: { action, answers in model.run(action, answers: answers) },
             confirm: { action in model.state.confirming = action?.id },
             answer: { id, key, value in model.state.answers[id, default: [:]][key] = value },
@@ -53,6 +53,6 @@ struct StationMenuBarApp: App {
             copy: { text in
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(text, forType: .string)
-            })
+            }))
     }
 }

@@ -22,13 +22,19 @@ public struct ActivityPage: View {
 
     public static func picked(_ page: Page) -> String? { page.section("graphs")?.caption?.first?.text }
 
+    // value: the picker as it is drawn: each window's words, whether it is
+    // the page's, and its tap, which asks the app for that window.
+    public static func picker(_ page: Page, handlers: PopoverHandlers) -> [(words: String, picked: Bool, tap: () -> Void)] {
+        windows.map { w in (w.words, picked(page) == w.words, { handlers.window(w.flag) }) }
+    }
+
     public var body: some View {
         let banner = page.section("machine")?.rows.first
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
-            PushedHeader(back: banner?.label ?? page.context?.machine ?? "", title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()))
+            PushedHeader(back: banner?.label ?? page.context?.machine ?? "", title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()), action: handlers.back)
             HStack(spacing: 4) {
-                ForEach(Array(Self.windows.enumerated()), id: \.offset) { _, w in
-                    Pill(w.words, picked: Self.picked(page) == w.words) { handlers.window(w.flag) }
+                ForEach(Array(Self.picker(page, handlers: handlers).enumerated()), id: \.offset) { _, w in
+                    Pill(w.words, picked: w.picked, action: w.tap)
                 }
                 Spacer(minLength: 0)
             }

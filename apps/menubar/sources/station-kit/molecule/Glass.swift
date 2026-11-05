@@ -28,21 +28,26 @@ public struct PushedHeader: View {
     let back: String
     let title: String
     let subtitle: String?
+    let action: () -> Void
     @Environment(\.stationPalette) private var palette
 
-    public init(back: String, title: String, subtitle: String? = nil) {
+    public init(back: String, title: String, subtitle: String? = nil, action: @escaping () -> Void = {}) {
         self.back = back
         self.title = title
         self.subtitle = subtitle
+        self.action = action
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Image(systemName: Token.Symbol.back).font(.system(size: Token.Space.small, weight: .semibold))
-                Text(back).font(.system(size: Token.Space.text, weight: .semibold))
+            Button(action: action) {
+                HStack(spacing: 4) {
+                    Image(systemName: Token.Symbol.back).font(.system(size: Token.Space.small, weight: .semibold))
+                    Text(back).font(.system(size: Token.Space.text, weight: .semibold))
+                }
+                .foregroundStyle(palette.accent)
             }
-            .foregroundStyle(palette.accent)
+            .buttonStyle(.plain)
             HStack(alignment: .firstTextBaseline, spacing: Token.Space.gap) {
                 Text(title).font(.system(size: Token.Space.title, weight: .bold)).foregroundStyle(palette.text)
                 if let subtitle {
