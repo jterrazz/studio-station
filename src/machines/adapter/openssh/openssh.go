@@ -94,7 +94,24 @@ func (c *config) proxy(b contract.HostBlock) string {
 	if b.Here {
 		return c.o.Executable + " " + strings.Join(words, " ")
 	}
-	return "ssh " + strings.Join(append([]string{b.Behind, "--", "sh", "-c", hop, "station"}, words...), " ")
+	// invariant: ssh runs a ProxyCommand through a local shell, then joins
+	// its words for the far one: the far command line is one word here,
+	// double-quoted, so the far shell still reads hop as one argument.
+	far := strings.Join(append([]string{"sh", "-c", hop, "station"}, words...), " ")
+	return "ssh " + b.Behind + " -- " + doubleQuoted(far)
+}
+
+func doubleQuoted(s string) string {
+	var out strings.Builder
+	out.WriteByte('"')
+	for _, r := range s {
+		if strings.ContainsRune(`\"$`+"`", r) {
+			out.WriteByte('\\')
+		}
+		out.WriteRune(r)
+	}
+	out.WriteByte('"')
+	return out.String()
 }
 
 func (c *config) tilde(p string) string {
