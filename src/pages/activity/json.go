@@ -19,6 +19,7 @@ type FixJSON struct {
 }
 
 type FindingJSON struct {
+	Machine  *string `json:"machine,omitempty"`
 	Severity string  `json:"severity"`
 	Section  string  `json:"section"`
 	Subject  string  `json:"subject"`
@@ -160,12 +161,13 @@ func Contract(v View, now time.Time) ReadJSON {
 	return ReadJSON{Schema: Schema, GeneratedAt: now.UTC().Format(time.RFC3339), Machine: machineOf(v), Body: body(v)}
 }
 
-func findings(r activity.Report) []FindingJSON {
-	out := make([]FindingJSON, 0, len(r.Findings))
-	for _, f := range r.Findings {
-		j := FindingJSON{Severity: string(f.Severity), Section: string(f.Section), Subject: f.Subject, Text: f.Text}
-		if f.Fix.Command != "" {
-			j.Fix.Command = ptr(f.Fix.Command)
+func findings(v View) []FindingJSON {
+	fs := seen(v)
+	out := make([]FindingJSON, 0, len(fs))
+	for _, f := range fs {
+		j := FindingJSON{Severity: f.Severity, Section: f.Section, Subject: f.Subject, Text: f.Text}
+		if f.Fix != "" {
+			j.Fix.Command = ptr(f.Fix)
 		}
 		out = append(out, j)
 	}
@@ -194,7 +196,7 @@ func body(v View) Body {
 	// read is null, never a zero: a VM's thermal and battery are its Mac's.
 	r := v.Report
 	s := r.Last.Sample
-	b := Body{Source: string(r.Source), State: "answering", Top: TopJSON{ByCPU: []ProcessJSON{}, ByMemory: []ProcessJSON{}}, Findings: findings(r)}
+	b := Body{Source: string(r.Source), State: "answering", Top: TopJSON{ByCPU: []ProcessJSON{}, ByMemory: []ProcessJSON{}}, Findings: findings(v)}
 	switch {
 	case v.Stopped:
 		b.State, b.Source = "stopped", ""

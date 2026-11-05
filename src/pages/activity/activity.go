@@ -125,20 +125,38 @@ func Page(v View, here page.Context) page.Page {
 
 func Needs(v View) []page.Item {
 	out := make([]page.Item, 0, len(v.Report.Findings))
-	for i, f := range v.Report.Findings {
+	for i, f := range seen(v) {
 		mark, reason := page.Attention, page.Degraded
 		if f.Severity == "broken" {
 			mark, reason = page.Broken, page.Failing
 		}
-		text := f.Text
-		if v.Kind != mac && !strings.HasPrefix(text, v.Name+" ") {
-			text = v.Name + ": " + lowerFirst(text)
-		}
-		r := page.Row{ID: "finding-" + strconv.Itoa(i), Label: text, Mark: mark, Reason: reason}
-		if f.Fix.Command != "" {
-			r.Hint = page.Cmd(f.Fix.Command)
+		r := page.Row{ID: "finding-" + strconv.Itoa(i), Label: f.Text, Mark: mark, Reason: reason}
+		if f.Fix != "" {
+			r.Hint = page.Cmd(f.Fix)
 		}
 		out = append(out, page.Item{Row: &r})
+	}
+	return out
+}
+
+type seenFinding struct{ Severity, Section, Subject, Text, Fix string }
+
+func seen(v View) []seenFinding {
+	// invariant: a finding of any machine but This Mac names it, and its
+	// station fix acts on it: read from This Mac, a bare `station disk` would
+	// act on This Mac.
+	out := make([]seenFinding, 0, len(v.Report.Findings))
+	for _, f := range v.Report.Findings {
+		n := seenFinding{Severity: string(f.Severity), Section: string(f.Section), Subject: f.Subject, Text: f.Text, Fix: f.Fix.Command}
+		if v.Kind != mac || !v.ThisMac {
+			if !strings.HasPrefix(n.Text, v.Name+" ") {
+				n.Text = v.Name + ": " + lowerFirst(n.Text)
+			}
+			if strings.HasPrefix(n.Fix, "station ") && !strings.Contains(n.Fix, " --on ") {
+				n.Fix += " --on " + v.Name
+			}
+		}
+		out = append(out, n)
 	}
 	return out
 }

@@ -110,7 +110,10 @@ func AllMachinesContract(views []View, now time.Time) AllMachinesJSON {
 	out := AllMachinesJSON{Schema: Schema, GeneratedAt: now.UTC().Format(time.RFC3339), Findings: []FindingJSON{}, Machines: []EveryJSON{}}
 	for _, v := range views {
 		e := EveryJSON{Machine: machineOf(v), Body: body(v)}
-		out.Findings = append(out.Findings, e.Findings...)
+		for _, f := range e.Findings {
+			f.Machine = ptr(v.Name)
+			out.Findings = append(out.Findings, f)
+		}
 		if v.Silent != "" {
 			e.Error = &ErrorJSON{Message: v.Silent}
 		}
