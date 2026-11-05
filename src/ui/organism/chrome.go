@@ -23,21 +23,6 @@ const (
 	GroupGlobal = "Global"
 )
 
-func Context(c page.Context) string {
-	kind := c.Kind
-	if kind == "" {
-		kind = "host"
-	}
-	if !c.Registered || c.Machine == "" {
-		return kind + token.Sep + "unregistered"
-	}
-	return c.Machine + token.Sep + kind
-}
-
-func Rule(st token.Styles, width int) string {
-	return atom.Spaces(token.Margin) + st.Subtle.Render(atom.Repeat(token.Rule, max(width-2, 1)))
-}
-
 func Footer(st token.Styles, bindings []Binding, busy bool, width int) string {
 	last := atom.Key(st, "?", "keys")
 	room := width - 1 - token.Margin - atom.Width("? keys")
