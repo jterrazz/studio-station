@@ -60,7 +60,7 @@ func importTable() map[string][]string {
 		"surface/cli/kit":            append([]string{"output", "page", "core/fail", "surface/cli/words", "core/store", "domain/*", "engine", "catalog", "testing", cobra, pflag, std}, calls...),
 		"surface/cli/*":              append([]string{"surface/cli/kit", "core/fail", "engine", "page", "pages/*", "catalog", cobra, pflag, std}, calls...),
 		"domain/*":                   domain,
-		"domain/setup":               append(slices.Clone(domain), "domain/shell", "domain/storage"),
+		"domain/setup":               append(slices.Clone(domain), "domain/storage"),
 		"domain/tools":               append(slices.Clone(domain), "apps", "apps/contract", "apps/adapter/fake", "core/call"),
 		"engine":                     append(slices.Clone(domain), "activity", "domain/machines", "domain/services", "domain/power", "machines", "machines/contract", "net/netip"),
 		"domain/guest":               append(slices.Clone(domain), "domain/services"),

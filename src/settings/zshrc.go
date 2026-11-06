@@ -1,4 +1,4 @@
-package shell
+package settings
 
 import (
 	"encoding/json"
@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	blockStart = "# >>> station >>>"
-	blockEnd   = "# <<< station <<<"
-	tokenName  = "operator:claude:oauth-token"
+	blockStart      = "# >>> station >>>"
+	blockEnd        = "# <<< station <<<"
+	ClaudeTokenName = "operator:claude:oauth-token"
 )
 
 // invariant: ~/.local/bin is on PATH before the eval runs, and the `command -v`
@@ -53,7 +53,7 @@ func ClaudeTokenLine(exportJSON []byte) (string, bool) {
 	if json.Unmarshal(exportJSON, &values) != nil {
 		return "", false
 	}
-	token := values[tokenName]
+	token := values[ClaudeTokenName]
 	if token == "" {
 		return "", false
 	}

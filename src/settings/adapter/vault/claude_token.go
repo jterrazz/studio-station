@@ -17,7 +17,7 @@ import (
 const readBudget = 5 * time.Second
 
 const (
-	tokenName = "operator:claude:oauth-token"
+	tokenName = settings.ClaudeTokenName
 	kept      = "kept by the studio credential store"
 )
 

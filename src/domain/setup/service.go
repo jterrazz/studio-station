@@ -3,12 +3,13 @@ package setup
 import (
 	"context"
 	"errors"
-	"github.com/jterrazz/studio-station/src/setup"
 	"io/fs"
 	"path"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/jterrazz/studio-station/src/setup"
 
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/core/store"
@@ -17,9 +18,9 @@ import (
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/shell"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/settings"
 )
 
 const (
@@ -273,7 +274,7 @@ func (s *Service) zshrc() (Step, error) {
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return failed(stepZshrc, err)
 	}
-	updated, changed := shell.UpsertBlock(string(current))
+	updated, changed := settings.UpsertBlock(string(current))
 	if changed {
 		perm := fs.FileMode(0o644)
 		if info, statErr := s.h.FS.Stat(s.zshrcPath()); statErr == nil {
@@ -296,7 +297,7 @@ func (s *Service) Check(_ context.Context) (Report, error) {
 		}
 	}
 	zshrc := Step{Name: stepZshrc, State: catalog.StateOK}
-	if data, err := s.h.FS.ReadFile(s.zshrcPath()); err != nil || !shell.HasBlock(string(data)) {
+	if data, err := s.h.FS.ReadFile(s.zshrcPath()); err != nil || !settings.HasBlock(string(data)) {
 		zshrc = Step{Name: stepZshrc, State: catalog.StateAbsent, Detail: "station setup"}
 	}
 	steps = append(steps, zshrc)

@@ -6,7 +6,6 @@ import (
 	"github.com/jterrazz/studio-station/src/accounts/adapter/studio"
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/shell"
 	"github.com/jterrazz/studio-station/src/settings/adapter/zshblock"
 )
 
@@ -17,8 +16,8 @@ func (m machine) secretSource(o studio.Options) accountscontract.SecretSource {
 	return studio.New(m.host.Run, o)
 }
 
-func (m machine) shell() *shell.Service {
-	return shell.New(m.host, catalog.DotfilesFS, m.secretSource(studio.Options{FileBackend: true, Budget: shell.TokenBudget}), shell.Options{Here: m.kind, Services: filepath.Join(m.paths.Config, "services.env"), Functions: m.zshFunctions()})
+func (m machine) shell() *zshblock.Block {
+	return zshblock.NewBlock(m.host.FS, catalog.DotfilesFS, m.secretSource(studio.Options{FileBackend: true, Budget: zshblock.TokenBudget}), zshblock.BlockOptions{Here: m.kind, Services: filepath.Join(m.paths.Config, "services.env"), Functions: m.zshFunctions()})
 }
 
 // value: the script of every setting that defines shell functions, where
