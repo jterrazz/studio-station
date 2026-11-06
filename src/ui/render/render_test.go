@@ -326,7 +326,7 @@ func TestStateColoursAreOnMarksAndLinesOnRules(t *testing.T) {
 	for _, dark := range []bool{true, false} {
 		c := token.Colors(dark)
 		state := []string{rgb(c.Good), rgb(c.Warn), rgb(c.Bad)}
-		marks := token.MarkOK + token.MarkAttention + token.MarkAbsent + token.MarkBroken + token.MarkPending + "0123456789 "
+		marks := token.MarkOK + token.Tick + token.MarkAttention + token.MarkAbsent + token.MarkBroken + token.MarkPending + "0123456789 "
 		lines := token.Rule + token.Divider + "├└ "
 		notFor := token.MarkNotFor + "0123456789 "
 		for _, f := range fixtures(t) {

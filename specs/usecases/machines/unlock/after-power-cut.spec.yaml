@@ -11,7 +11,7 @@ runs:
           screen
       exit: 0
       stdout: |
-          mac-mini · unlocked · on Tailscale again
+          ✓ mac-mini · unlocked · on Tailscale again
     - command: 'machines | /usr/bin/grep mac-mini'
       exit: 0
       stdout: |

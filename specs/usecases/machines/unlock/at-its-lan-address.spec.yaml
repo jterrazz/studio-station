@@ -17,7 +17,7 @@ runs:
           screen
       exit: 0
       stdout: |
-          mac-mini · unlocked · on Tailscale again
+          ✓ mac-mini · unlocked · on Tailscale again
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"] | [.locked, .offline]'' world.json'
       exit: 0
       stdout: |

@@ -40,7 +40,7 @@ func Outcome(command string, here page.Context, columns []page.Column, rows []pa
 		columns = OutcomeColumns()
 	}
 	sections := append([]page.Section{{ID: "changes", Title: "Changes", Role: page.Banner, Columns: columns, Items: items}}, extra...)
-	return page.Seal(page.Page{ID: "outcome", Command: command, Context: here, Sections: sections})
+	return page.Seal(page.Page{ID: page.Outcome, Command: command, Context: here, Sections: sections})
 }
 
 func OutcomeColumns() []page.Column {

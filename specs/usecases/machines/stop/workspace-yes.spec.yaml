@@ -15,7 +15,7 @@ runs:
       stdout: |
           ┃ Stop linux-1? It is kept, stopped, until you start it
           ┃
-          linux-1 · stopped, kept
+          ✓ linux-1 · stopped, kept
     - command: 'machines | /usr/bin/grep linux-1'
       exit: 0
       stdout: |
