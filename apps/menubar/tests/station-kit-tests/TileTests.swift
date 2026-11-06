@@ -3,8 +3,9 @@ import SwiftUI
 import XCTest
 
 // invariant: L50d amendment: a row's icon is a 24 pt rounded square, not a
-// circle, the same tile whatever the state (only its glyph takes the
-// accent), and each concept has its one symbol, set in Token.
+// circle, centred in the vision's 26 pt icon slot, the same tile whatever
+// the state (only its glyph takes the accent), and each concept has its
+// one symbol, set in Token.
 @MainActor
 final class TileTests: XCTestCase {
     func bitmap(_ view: some View, scheme: ColorScheme) throws -> Bitmap {
@@ -21,9 +22,11 @@ final class TileTests: XCTestCase {
     func testATileIsARoundedSquare() throws {
         for scheme in [ColorScheme.dark, .light] {
             let b = try bitmap(IconTile(Token.Symbol.mac), scheme: scheme)
-            XCTAssertEqual(b.width, Int(Token.Tile.icon))
-            XCTAssertNotEqual(pixel(b, x: 3, y: 3)[3], 0, "\(scheme): the tile's corner is cut as a circle's")
-            XCTAssertEqual(pixel(b, x: 0, y: 0)[3], 0, "\(scheme): the tile has no rounded corner")
+            let inset = Int(Token.Tile.slot - Token.Tile.icon) / 2
+            XCTAssertEqual(b.width, Int(Token.Tile.slot))
+            XCTAssertEqual(b.height, Int(Token.Tile.icon))
+            XCTAssertNotEqual(pixel(b, x: inset + 3, y: 3)[3], 0, "\(scheme): the tile's corner is cut as a circle's")
+            XCTAssertEqual(pixel(b, x: inset, y: 0)[3], 0, "\(scheme): the tile has no rounded corner")
         }
     }
 
@@ -31,7 +34,7 @@ final class TileTests: XCTestCase {
         for scheme in [ColorScheme.dark, .light] {
             let idle = try bitmap(IconTile(Token.Symbol.mac), scheme: scheme)
             let active = try bitmap(IconTile(Token.Symbol.mac, active: true), scheme: scheme)
-            XCTAssertEqual(pixel(idle, x: 2, y: 12), pixel(active, x: 2, y: 12), "\(scheme): an active tile changes its fill")
+            XCTAssertEqual(pixel(idle, x: 3, y: 12), pixel(active, x: 3, y: 12), "\(scheme): an active tile changes its fill")
         }
     }
 

@@ -33,11 +33,13 @@ public enum Token {
     // value: the measures of the vision's panels (VISION-v3 .panel, .tile,
     // .list): 10 pt between blocks, a 16 pt tile padded 10 by 12, a list's
     // 40 pt row padded 7 by 12, its nested rows from 34 pt, one 24 pt icon
-    // tile with a 13 pt glyph whose corner is concentric with the row's.
+    // tile with a 13 pt glyph whose corner is concentric with the row's, in
+    // the 26 pt slot of the vision's icon circle.
     public enum Tile {
         public static let row: CGFloat = 40
         public static let rowPadding = EdgeInsets(top: 7, leading: 12, bottom: 7, trailing: 12)
         public static let icon: CGFloat = 24
+        public static let slot: CGFloat = 26
         public static let glyph: CGFloat = 13
         public static let corner: CGFloat = 6.5
         public static let headIcon: CGFloat = 24
@@ -55,6 +57,7 @@ public enum Token {
         public static let measure: CGFloat = 22
         public static let meter: CGFloat = 14
         public static let dot: CGFloat = 7
+        public static let chevron: CGFloat = 14
         public static let switchWidth: CGFloat = 38
         public static let switchHeight: CGFloat = 22
         public static let roundButton: CGFloat = 28
@@ -65,6 +68,7 @@ public enum Token {
         public static let qrBox: CGFloat = 172
         public static let qr: CGFloat = 148
         public static let qrCorner: CGFloat = 14
+        public static let linkMeasure = 37
     }
 
     // value: the vision's type scale: 13 pt text, 11.5 pt words under it,
@@ -81,6 +85,8 @@ public enum Token {
         public static let key: CGFloat = 12
         public static let segment: CGFloat = 12.5
         public static let title: CGFloat = 19
+        // value: a health check's mark, the vision's thin 14 pt stroke.
+        public static let check: CGFloat = 10
         public static let tracking: CGFloat = 0.04
         // value: half what the vision's 1.35 line height adds to a line
         // of SF's own.
@@ -142,7 +148,8 @@ public enum Token {
     }
 
     public enum Space {
-        public static let margin: CGFloat = 12
+        // value: the vision's panel padding, 12 pt inside its 0.5 pt rim.
+        public static let margin: CGFloat = 12.5
         public static let indent: CGFloat = 12
         public static let gap: CGFloat = 8
         public static let row: CGFloat = 22
@@ -286,10 +293,11 @@ public enum Token {
     }
 
     // value: the system's own colours: the label styles for ink, one
-    // accent, and a state colour only where a state means something
-    // (healthy, needs you, failed).
+    // accent, the vision's green for a control's glyph (a chevron, a
+    // footer line's symbol, a button's), and a state colour only where a
+    // state means something (healthy, needs you, failed).
     public struct Palette: Sendable {
-        public let text, muted, accent, good, warn, bad, onTint, qrDark, qrLight: Color
+        public let text, muted, accent, glyph, good, warn, bad, onTint, qrDark, qrLight: Color
 
         public func of(_ mark: Mark) -> Color {
             switch mark {
@@ -308,7 +316,7 @@ public enum Token {
     public static func palette(_ scheme: ColorScheme) -> Palette {
         Palette(
             text: Color.primary, muted: Color.secondary,
-            accent: Color.accentColor, good: Color.green, warn: Color.orange, bad: Color.red,
+            accent: Color.accentColor, glyph: Hue.green(scheme), good: Color.green, warn: Color.orange, bad: Color.red,
             onTint: Color.white, qrDark: hex(0x000000), qrLight: hex(0xFFFFFF))
     }
 }

@@ -66,7 +66,7 @@ public struct PortsPage: View {
         return HStack(alignment: .center, spacing: Token.Tile.gap) {
             IconTile(Token.Symbol.warn, active: true, tint: palette.bad)
             VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.system(size: Token.Size.text, weight: .semibold)).lineLimit(2)
+                Wrap(title).font(.system(size: Token.Size.text, weight: .semibold)).lineLimit(2)
                 SubText(words.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep))
             }
             .frame(maxWidth: .infinity, alignment: .leading)

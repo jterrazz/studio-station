@@ -135,7 +135,7 @@ public struct SectionHeader: View {
     public init(_ title: String) { self.title = title }
 
     public var body: some View {
-        Text(title.uppercased()).font(.system(size: Token.Size.label, weight: .semibold)).tracking(Token.Size.label * Token.Size.tracking)
+        Wrap(title.uppercased()).font(.system(size: Token.Size.label, weight: .semibold)).tracking(Token.Size.label * Token.Size.tracking)
             .foregroundStyle(.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 4).padding(.top, 2)
     }
@@ -159,7 +159,8 @@ public struct GroupCaption: View {
 // value: a row's icon: a 24 pt rounded square on the window's own
 // background (near black in dark, near white in light), its corner
 // concentric with the row's hover, its 13 pt symbol hierarchical in the
-// label colour; the accent (or the colour a finding means) tints only the
+// label colour, centred in the 26 pt the vision's icon circle takes so
+// the words beside it start where the vision's do; the accent (or the colour a finding means) tints only the
 // glyph, never the tile. Increase Contrast draws its separator edge.
 public struct IconTile: View {
     let symbol: String
@@ -198,6 +199,7 @@ public struct IconTile: View {
                 shape.fill(.background)
                 if contrast == .increased { shape.strokeBorder(.separator, lineWidth: 1) }
             }
+            .frame(width: size == Token.Tile.icon ? Token.Tile.slot : size)
     }
 }
 
@@ -303,7 +305,7 @@ public struct SubText: View {
     public init(_ text: String) { self.text = text }
 
     public var body: some View {
-        Text(text).font(.system(size: Token.Size.sub)).foregroundStyle(.secondary).lineSpacing(Token.Size.leading * 2)
+        Wrap(text, spacing: Token.Size.leading * 2).font(.system(size: Token.Size.sub)).foregroundStyle(.secondary)
             .padding(.vertical, Token.Size.leading).fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -322,7 +324,8 @@ public struct TrailingValue: View {
 }
 
 // value: an address as the vision sets one: 11 pt monospaced, in the
-// accent, cut at its end; centred, it wraps.
+// accent, cut at its end; centred, it wraps every 37 characters, the
+// measure the vision's QR card breaks it at.
 public struct LinkText: View {
     let text: String
     let center: Bool
@@ -334,20 +337,28 @@ public struct LinkText: View {
     }
 
     public var body: some View {
-        Text(center ? text.map(String.init).joined(separator: "\u{200B}") : text).font(.system(size: Token.Size.label, design: .monospaced)).foregroundStyle(palette.accent)
+        Text(center ? lines : text).font(.system(size: Token.Size.label, design: .monospaced)).foregroundStyle(palette.accent)
             .lineLimit(center ? 3 : 1).truncationMode(.tail).multilineTextAlignment(center ? .center : .leading)
             .textSelection(.enabled)
     }
+
+    var lines: String {
+        let chars = Array(text)
+        return stride(from: 0, to: chars.count, by: Token.Tile.linkMeasure).map { String(chars[$0..<min($0 + Token.Tile.linkMeasure, chars.count)]) }.joined(separator: "\n")
+    }
 }
 
-// value: the chevron a row that opens a page ends with.
+// value: the chevron a row that opens a page ends with, in the vision's
+// 14 pt glyph box.
 public struct Chevron: View {
     let down: Bool
+    @Environment(\.stationPalette) private var palette
 
     public init(down: Bool = false) { self.down = down }
 
     public var body: some View {
-        Image(systemName: down ? Token.Symbol.down : Token.Symbol.forward).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+        Image(systemName: down ? Token.Symbol.down : Token.Symbol.forward).font(.system(size: 12, weight: .semibold)).foregroundStyle(palette.glyph)
+            .frame(width: Token.Tile.chevron)
     }
 }
 
@@ -412,8 +423,8 @@ public struct StationButton: View {
         Button(action: action) {
             SwiftUI.Group {
                 if wide {
-                    Text(title).font(.system(size: Token.Size.text, weight: role == .quiet ? .medium : .semibold))
-                        .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                    Wrap(title, alignment: .center).font(.system(size: Token.Size.text, weight: role == .quiet ? .medium : .semibold))
+                        .fixedSize(horizontal: false, vertical: true)
                         .padding(8).frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(fill, in: RoundedRectangle(cornerRadius: Token.Tile.buttonCorner, style: .continuous))
                         .opacity(role == .quiet ? 0.75 : 1)
@@ -509,7 +520,7 @@ public struct PlainIcon: View {
         let side = round ? Token.Tile.roundButton : Token.Tile.squareButton
         Button(action: tap) {
             Image(systemName: symbol).font(.system(size: 13, weight: .medium))
-                .foregroundStyle(picked ? AnyShapeStyle(palette.accent) : AnyShapeStyle(.primary))
+                .foregroundStyle(picked ? palette.accent : palette.glyph)
                 .frame(width: side, height: side)
                 .background {
                     if round {
@@ -539,7 +550,7 @@ public struct BackButton: View {
     public var body: some View {
         Button(action: action) {
             HStack(spacing: 2) {
-                Image(systemName: Token.Symbol.back).font(.system(size: 11, weight: .bold))
+                Image(systemName: Token.Symbol.back).font(.system(size: 11, weight: .bold)).foregroundStyle(palette.glyph)
                 Text(title).font(.system(size: Token.Size.text, weight: .medium))
             }
             .foregroundStyle(palette.accent)
@@ -586,8 +597,8 @@ public struct PageHeader<Trailing: View>: View {
                     }
                     if let subtitle, !subtitle.isEmpty { SubText(subtitle) }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .layoutPriority(1)
-                Spacer(minLength: 0)
                 trailing
             }
             .padding(.horizontal, 2)
@@ -671,7 +682,7 @@ struct SwitcherPill: View {
         HStack(spacing: 6) {
             IconTile(Token.Symbol.mac, active: true, size: 22)
             Text(Page.ThisMacWord).font(.system(size: Token.Size.pill, weight: .semibold)).foregroundStyle(.primary)
-            Image(systemName: Token.Symbol.down).font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
+            Image(systemName: Token.Symbol.down).font(.system(size: 10, weight: .bold)).foregroundStyle(palette.glyph)
         }
         .padding(EdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 10))
         .background {

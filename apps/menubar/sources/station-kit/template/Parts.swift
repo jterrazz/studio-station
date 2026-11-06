@@ -129,7 +129,7 @@ struct MachineRow: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if picked {
-                    Image(systemName: Token.Symbol.check).font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary)
+                    Image(systemName: Token.Symbol.check).font(.system(size: 13, weight: .medium)).foregroundStyle(palette.glyph)
                 } else {
                     StateDot(mark: row.mark)
                 }
@@ -248,7 +248,7 @@ struct MenuText: View {
     var body: some View {
         HStack(spacing: Token.Tile.gap) {
             Image(systemName: symbol).font(.system(size: 13, weight: .medium)).frame(width: 14)
-                .foregroundStyle(danger ? AnyShapeStyle(palette.bad) : AnyShapeStyle(.secondary))
+                .foregroundStyle(palette.glyph)
             Text(title).font(.system(size: Token.Size.text)).foregroundStyle(danger ? AnyShapeStyle(palette.bad) : AnyShapeStyle(.primary))
             Spacer()
             if let key {

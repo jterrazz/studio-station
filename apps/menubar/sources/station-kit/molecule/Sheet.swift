@@ -20,7 +20,7 @@ public struct TypedField: View {
 
     public var body: some View {
         HStack(spacing: 8) {
-            if let symbol { Image(systemName: symbol).font(.system(size: Token.Size.text, weight: .medium)).foregroundStyle(palette.muted) }
+            if let symbol { Image(systemName: symbol).font(.system(size: Token.Size.text, weight: .medium)).foregroundStyle(palette.glyph) }
             field
             if let key {
                 Text(key).font(.system(size: Token.Size.key)).foregroundStyle(.secondary)

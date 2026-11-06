@@ -166,7 +166,7 @@ struct MachineContent: View {
         let rest = parts.dropFirst(address == nil ? 0 : 1).map { Format.show($0) }.joined(separator: Token.Glyph.sep)
         return MenuRow(r.label ?? "", subtitle: address, link: true) {
             Image(systemName: r.mark == .ok ? Token.Symbol.health : Token.Symbol.of(r.mark ?? .notKnown))
-                .font(.system(size: 13, weight: .semibold)).foregroundStyle(palette.of(r.mark ?? .notKnown)).frame(width: 14)
+                .font(.system(size: Token.Size.check, weight: .medium)).foregroundStyle(palette.of(r.mark ?? .notKnown)).frame(width: Token.Tile.chevron)
         } trailing: {
             if !rest.isEmpty { TrailingValue(rest) }
         }
