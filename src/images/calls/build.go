@@ -6,8 +6,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math"
-	"net/netip"
 	"slices"
 	"strings"
 	"time"
@@ -18,14 +16,16 @@ import (
 )
 
 const (
-	sshReady   = 60 * time.Second
-	stopWait   = 120 * time.Second
-	recipeWait = 30 * time.Minute
-	pollEvery  = time.Second
-	adminUser  = "admin"
-	adminPass  = "admin"
-	remoteBin  = "/tmp/station"
+	addressWait = 60 * time.Second
+	stopWait    = 120 * time.Second
+	recipeWait  = 30 * time.Minute
+	pollEvery   = time.Second
+	remoteBin   = "/tmp/station"
 )
+
+// value: the base's admin account, reached by its password until the recipe
+// installs the image key.
+var baseAdmin = Login{User: "admin", Password: "admin"}
 
 func (s *Service) recipeSHA(img catalog.Image) (string, error) {
 	h := sha256.New()
@@ -108,13 +108,6 @@ func (s *Service) Build(ctx context.Context, r images.BuildRequest, progress fun
 	return built, nil
 }
 
-type session struct {
-	s   *Service
-	vm  string
-	at  netip.AddrPort
-	key string
-}
-
 func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string, progress func(images.Step)) (images.Record, error) {
 	vm := buildPrefix + img.Name
 	failed := func(step string, cause error) (images.Record, error) {
@@ -157,26 +150,26 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 		return failed("cloning the base", err)
 	}
 	progress(images.Step{Label: "booting " + vm})
-	if _, err = s.e.Boot(ctx, vm, contract.BootOptions{}); err != nil {
+	if err = s.builds.Boot(ctx, vm); err != nil {
 		return failed("booting the build VM", err)
 	}
-	addr, err := s.e.Address(ctx, vm, sshReady)
+	b, err := s.builds.Open(ctx, vm, addressWait)
 	if err != nil {
 		return failed("waiting for the build VM's address", err)
 	}
-	ss := session{s: s, vm: vm, at: netip.AddrPortFrom(addr, s.guestPort()), key: key}
+	defer func() { _ = b.Close() }()
 
 	progress(images.Step{Label: "copying station into " + vm})
-	if err := ss.copy(ctx, binary); err != nil {
+	if err := s.copy(ctx, b, binary); err != nil {
 		return failed("copying the station binary", err)
 	}
 	progress(images.Step{Label: "running the " + img.Name + " recipe"})
 	env := "VM_USER=" + quote(s.o.User) + " IMAGE_KEY=" + quote(strings.TrimSpace(pub))
-	if err := ss.admin(ctx, string(recipe), env); err != nil {
+	if err := recipeRun(ctx, b, string(recipe), env); err != nil {
 		return failed("the recipe", err)
 	}
 	progress(images.Step{Label: "removing the base's admin user"})
-	if err := ss.cleanup(ctx, string(cleanup), s.o.User); err != nil {
+	if err := cleanupRun(ctx, b, string(cleanup), Login{User: s.o.User, Key: key}); err != nil {
 		return failed("the cleanup", err)
 	}
 	progress(images.Step{Label: "waiting for " + vm + " to power off"})
@@ -249,55 +242,18 @@ func (s *Service) imageKey(ctx context.Context) (key, pub string, err error) {
 	return key, string(data), nil
 }
 
-func (s *Service) guestPort() uint16 {
-	if s.o.GuestPort > 0 && s.o.GuestPort <= math.MaxUint16 {
-		return uint16(s.o.GuestPort)
-	}
-	return 22
-}
-
-// invariant: a build VM is a fresh clone, so its guest is dialed with no host
-// key kept; the base's admin account is reached by its password until the
-// recipe installs the image key, and only then as vm_user.
-func (ss session) dial(ctx context.Context, user string, password bool) (contract.Guest, error) {
-	t := contract.GuestTarget{VM: ss.vm, Address: ss.at, User: user, Key: ss.key}
-	if password {
-		t.Key, t.Password = "", adminPass
-	}
-	for range int(sshReady / pollEvery) {
-		g, err := ss.s.guests.Dial(ctx, t)
-		if err == nil {
-			return g, nil
-		}
-		if err := ss.s.m.Sleep(ctx, pollEvery); err != nil {
-			return nil, err
-		}
-	}
-	return nil, errors.New("the build VM did not answer in " + sshReady.String())
-}
-
-func (ss session) copy(ctx context.Context, binary string) error {
-	data, err := ss.s.m.ReadFile(binary)
+func (s *Service) copy(ctx context.Context, b BuildVM, binary string) error {
+	data, err := s.m.ReadFile(binary)
 	if err != nil {
 		return err
 	}
-	g, err := ss.dial(ctx, adminUser, true)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = g.Close() }()
-	return g.Put(ctx, remoteBin, data, 0o755)
+	return b.Put(ctx, baseAdmin, remoteBin, data, 0o755)
 }
 
-func (ss session) admin(ctx context.Context, script, env string) error {
-	g, err := ss.dial(ctx, adminUser, true)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = g.Close() }()
+func recipeRun(ctx context.Context, b BuildVM, script, env string) error {
 	ctx, cancel := context.WithTimeout(ctx, recipeWait)
 	defer cancel()
-	out, err := g.Exec(ctx, contract.GuestCommand{Line: catalog.AsRoot("env " + env + " bash -s"), Stdin: strings.NewReader(script)})
+	out, err := b.Run(ctx, baseAdmin, catalog.AsRoot("env "+env+" bash -s"), script)
 	if err != nil {
 		return err
 	}
@@ -307,15 +263,10 @@ func (ss session) admin(ctx context.Context, script, env string) error {
 	return nil
 }
 
-func (ss session) cleanup(ctx context.Context, script, user string) error {
-	g, err := ss.dial(ctx, user, false)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = g.Close() }()
+func cleanupRun(ctx context.Context, b BuildVM, script string, as Login) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
-	out, err := g.Exec(ctx, contract.GuestCommand{Line: catalog.AsRoot("bash -s"), Stdin: strings.NewReader(script)})
+	out, err := b.Run(ctx, as, catalog.AsRoot("bash -s"), script)
 	// invariant: the cleanup powers the VM off under its own session, so the
 	// session ends with 0 or is cut by the poweroff; any other code is a
 	// failed cleanup.
@@ -328,7 +279,7 @@ func (ss session) cleanup(ctx context.Context, script, user string) error {
 	return nil
 }
 
-func outputError(out contract.GuestResult) error {
+func outputError(out Ran) error {
 	tail := strings.TrimSpace(out.Stderr)
 	if tail == "" {
 		tail = strings.TrimSpace(out.Stdout)

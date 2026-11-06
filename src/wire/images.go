@@ -2,6 +2,7 @@ package wire
 
 import (
 	"context"
+	"math"
 	"path/filepath"
 	"slices"
 	"time"
@@ -11,11 +12,13 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	model "github.com/jterrazz/studio-station/src/images"
 	"github.com/jterrazz/studio-station/src/images/adapter/oci"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/remote/each"
 	imagescmd "github.com/jterrazz/studio-station/src/surface/cli/images"
@@ -32,14 +35,13 @@ func (m machine) images() *imagescalls.Service {
 	}
 	hypervisor := m.hypervisor()
 	return imagescalls.NewService(imagesMachine{h: m.sys, keys: openssh.NewKeyGen(m.sys.Run, m.sys.FS)}, imagescalls.Contracts{
-		Hypervisor: hypervisor, Guests: m.guestDialer(), Store: m.stores.images,
+		Hypervisor: hypervisor, Builds: m.buildVMs(hypervisor), Store: m.stores.images,
 		Source: m.imageSource(hypervisor.Name()), Machines: m.stores.machines,
 	}, catalog.Images, imagescalls.ServiceOptions{
 		Cache: m.paths.Cache, Key: filepath.Join(m.paths.State, "images", "key"),
-		Version:   Version(),
-		User:      user,
-		GuestPort: m.guestPort(),
-		Mac:       m.profile.Ref.Name,
+		Version: Version(),
+		User:    user,
+		Mac:     m.profile.Ref.Name,
 	})
 }
 
@@ -113,3 +115,34 @@ func (i imagesMachine) Get(ctx context.Context, url string) (status int, body []
 	return i.h.Net.Get(ctx, url, nil)
 }
 func (i imagesMachine) MakeKey(ctx context.Context, p string) error { return i.keys.MakeKey(ctx, p) }
+
+// invariant: a build VM is the engine's: it boots the clone and holds the
+// guest a build speaks to.
+func (m machine) buildVMs(hv contract.Hypervisor) imagescalls.BuildVMs {
+	port := m.guestPort()
+	if port <= 0 || port > math.MaxUint16 {
+		port = 22
+	}
+	return imageBuilds{process.NewBuildVMs(buildHypervisor{hv}, buildGuests{m.guestDialer()}, m.sys.Clock.Sleep, uint16(port))}
+}
+
+type imageBuilds struct{ *process.BuildVMs }
+
+func (b imageBuilds) Open(ctx context.Context, vm string, wait time.Duration) (imagescalls.BuildVM, error) {
+	v, err := b.BuildVMs.Open(ctx, vm, wait)
+	if err != nil {
+		return nil, err
+	}
+	return imageBuild{v}, nil
+}
+
+type imageBuild struct{ *process.BuildVM }
+
+func (b imageBuild) Put(ctx context.Context, as imagescalls.Login, path string, data []byte, mode uint32) error {
+	return b.BuildVM.Put(ctx, process.BuildLogin(as), path, data, mode)
+}
+
+func (b imageBuild) Run(ctx context.Context, as imagescalls.Login, line, stdin string) (imagescalls.Ran, error) {
+	ran, err := b.BuildVM.Run(ctx, process.BuildLogin(as), line, stdin)
+	return imagescalls.Ran(ran), err
+}

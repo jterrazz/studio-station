@@ -29,6 +29,13 @@ func (h engineHypervisor) Adopt(ctx context.Context, vm string) (process.Run, bo
 	return h.Hypervisor.Adopt(ctx, vm)
 }
 
+type buildHypervisor struct{ contract.Hypervisor }
+
+func (h buildHypervisor) BootBuild(ctx context.Context, vm string) error {
+	_, err := h.Boot(ctx, vm, contract.BootOptions{})
+	return err
+}
+
 // value: this Mac's kernel tables as tart's adapter asks them.
 type processes struct{ darwin.Tables }
 

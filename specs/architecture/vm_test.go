@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"maps"
 	"slices"
 	"strconv"
 	"strings"
@@ -17,14 +16,6 @@ import (
 // engine (its dialer handed by wire's engineGuests) and the contract's own
 // adapters and suite dial a Guest.
 func sshExecOwners() []string { return []string{"remote/adapter/sshstdio", "machines/adapter/macos"} }
-
-// invariant: the allowlist of one-way-into-a-vm's Guest dials outside the
-// engine, each with why it is not yet the engine's. It only shrinks.
-func guestDialTolerated() map[string]string {
-	return map[string]string{
-		"src/images/calls/build.go": "a build VM is none of the engine's until images.build is a call it runs",
-	}
-}
 
 const guestDialer = module + "/src/machines/contract.GuestDialer"
 
@@ -96,7 +87,6 @@ func execNames(f *file, visit func(at, tool string)) {
 
 func ruleOneWayIntoAVM(w *world) []finding {
 	var out []finding
-	dials := map[string]bool{}
 	for _, f := range w.files {
 		owner := slices.Contains(sshExecOwners(), f.pkg)
 		execNames(f, func(at, tool string) {
@@ -113,18 +103,9 @@ func ruleOneWayIntoAVM(w *world) []finding {
 			if !ok || !dialsAGuest(f, call) || mayDialAGuest(f) {
 				return true
 			}
-			if guestDialTolerated()[f.rel] != "" {
-				dials[f.rel] = true
-				return true
-			}
 			out = append(out, finding{"one-way-into-a-vm", f.at(call.Pos()), fmt.Sprintf("%q dials a Guest: only the engine holds a VM's connection", f.pkg)})
 			return true
 		})
-	}
-	for _, rel := range slices.Sorted(maps.Keys(guestDialTolerated())) {
-		if !dials[rel] {
-			out = append(out, finding{"one-way-into-a-vm", "specs/architecture/vm_test.go", rel + " no longer dials a Guest: remove it from guestDialTolerated"})
-		}
 	}
 	return out
 }

@@ -3,6 +3,7 @@ package calls
 import (
 	"context"
 	"slices"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/images"
 
@@ -17,7 +18,6 @@ type ServiceOptions struct {
 	Cache, Key string
 	Version    string
 	User       string
-	GuestPort  int
 	// value: the Mac this service holds the images of.
 	Mac string
 }
@@ -25,7 +25,7 @@ type ServiceOptions struct {
 type Service struct {
 	m      Machine
 	e      contract.Hypervisor
-	guests contract.GuestDialer
+	builds BuildVMs
 	store  imagescontract.ImageStore
 	source imagescontract.ImageSource
 	vms    contract.MachineStore
@@ -35,14 +35,41 @@ type Service struct {
 
 type Contracts struct {
 	Hypervisor contract.Hypervisor
-	Guests     contract.GuestDialer
+	Builds     BuildVMs
 	Store      imagescontract.ImageStore
 	Source     imagescontract.ImageSource
 	Machines   contract.MachineStore
 }
 
+type BuildVMs interface {
+	// value: the engine's build VMs: it boots a clone and holds the guest a
+	// build speaks to; images/calls never reaches a VM but through it.
+	Boot(ctx context.Context, vm string) error
+	// value: the booted VM, its guest reached at the address it leased within
+	// wait.
+	Open(ctx context.Context, vm string, wait time.Duration) (BuildVM, error)
+}
+
+type BuildVM interface {
+	Put(ctx context.Context, as Login, path string, data []byte, mode uint32) error
+	Run(ctx context.Context, as Login, line, stdin string) (Ran, error)
+	// invariant: lets go of every session the engine held for the build.
+	Close() error
+}
+
+type Login struct {
+	// value: who a build speaks to its VM as: the base's admin by its
+	// password, or the VM's user by the image key.
+	User, Key, Password string
+}
+
+type Ran struct {
+	Code           int
+	Stdout, Stderr string
+}
+
 func NewService(m Machine, c Contracts, list []catalog.Image, o ServiceOptions) *Service {
-	return &Service{m: m, e: c.Hypervisor, guests: c.Guests, store: c.Store, source: c.Source, vms: c.Machines, list: list, o: o}
+	return &Service{m: m, e: c.Hypervisor, builds: c.Builds, store: c.Store, source: c.Source, vms: c.Machines, list: list, o: o}
 }
 
 func (s *Service) image(name string) (catalog.Image, error) {

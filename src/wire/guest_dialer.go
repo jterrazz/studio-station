@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"io"
+	"io/fs"
 	"net/netip"
 	"strings"
 
@@ -78,3 +79,19 @@ type session struct {
 func (s session) Read(p []byte) (int, error)  { return s.out.Read(p) }
 func (s session) Write(p []byte) (int, error) { return s.in.Write(p) }
 func (s session) Close() error                { return s.in.Close() }
+
+type buildGuests struct{ dialer contract.GuestDialer }
+
+func (g buildGuests) Dial(ctx context.Context, vm string, at netip.AddrPort, as process.BuildLogin) (process.BuildGuest, error) {
+	c, err := g.dialer.Dial(ctx, contract.GuestTarget{VM: vm, Address: at, User: as.User, Key: as.Key, Password: as.Password})
+	if err != nil {
+		return nil, err
+	}
+	return buildGuest{engineGuest{c}}, nil
+}
+
+type buildGuest struct{ engineGuest }
+
+func (g buildGuest) Put(ctx context.Context, path string, data []byte, mode uint32) error {
+	return g.engineGuest.Put(ctx, path, data, fs.FileMode(mode))
+}
