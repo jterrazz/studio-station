@@ -1,4 +1,4 @@
-package config
+package settings
 
 import (
 	"strings"
@@ -36,6 +36,6 @@ type NeedsTerminalError struct{ Item string }
 
 func (e *NeedsTerminalError) Error() string { return e.Item + " needs a terminal" }
 
-type unhandledError struct{ Item string }
+type UnhandledError struct{ Item string }
 
-func (e *unhandledError) Error() string { return "no handler for config item \"" + e.Item + "\"" }
+func (e *UnhandledError) Error() string { return "no handler for config item \"" + e.Item + "\"" }

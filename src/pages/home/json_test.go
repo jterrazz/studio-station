@@ -11,11 +11,11 @@ import (
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/settings"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden from the presenter")
@@ -46,7 +46,7 @@ func fixed() pagehome.Overview {
 			Disk: []overview.Disk{{Name: "homebrew", Bytes: 123}},
 		},
 		Tools: []tools.Report{{Tool: node, Method: catalog.MethodMise, State: catalog.StateOK, Version: "24.11.0", Managed: true}},
-		Config: []config.Report{{
+		Config: []settings.Report{{
 			Item:  catalog.ConfigItem{Name: "hushlogin", Category: catalog.CategoryTerminal, Places: []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}},
 			State: catalog.StateOK,
 		}},

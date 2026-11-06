@@ -2,17 +2,17 @@ package wire
 
 import (
 	"context"
-	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
-	"github.com/jterrazz/studio-station/src/settings/adapter/zshblock"
 	"io/fs"
 	"path/filepath"
 	"strings"
+
+	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
+	"github.com/jterrazz/studio-station/src/settings/adapter/zshblock"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	settingsdefaults "github.com/jterrazz/studio-station/src/settings/adapter/defaults"
@@ -22,6 +22,7 @@ import (
 	"github.com/jterrazz/studio-station/src/settings/adapter/neversleeps"
 	"github.com/jterrazz/studio-station/src/settings/adapter/touch"
 	"github.com/jterrazz/studio-station/src/settings/adapter/vault"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	settingscmd "github.com/jterrazz/studio-station/src/surface/cli/settings"
@@ -60,7 +61,7 @@ func settingsAliases(env kit.Env, m machine) []*cobra.Command {
 
 // value: an item's values asked in a form at the owner's terminal.
 type configAsk struct {
-	config *config.Service
+	config *settingscalls.Catalogue
 	ask    kit.Asker
 }
 
@@ -68,9 +69,14 @@ func (a configAsk) Values(it catalog.ConfigItem) (map[string]string, error) {
 	return a.ask.Form(pagesettings.InputsForm(it.Name, it.Inputs, a.config.Defaults(it.Name)))
 }
 
-func configService(m machine) *config.Service {
-	return config.New(m.host, catalog.ConfigItems, config.Options{
-		Here:     m.kind,
+func configService(m machine) *settingscalls.Catalogue {
+	return settingscalls.NewCatalogue(catalog.ConfigItems, settingscalls.CatalogueOptions{
+		Here:  m.kind,
+		Admin: m.host.Env.Euid() == 0,
+		Has: func(app string) bool {
+			_, ok := m.host.Run.LookPath(app)
+			return ok
+		},
 		Defaults: configDefaults(m),
 		Appliers: settingAppliers(m),
 	})
@@ -96,7 +102,7 @@ func settingAppliers(m machine) []settingscontract.Applier {
 		Home:             m.host.Env.Home(),
 		DNSProfile:       filepath.Join(m.paths.State, "dns", "quad9-dns.mobileconfig"),
 		BackupExclusions: []string{m.paths.Roots.Cache, filepath.Join(m.paths.Data, "vms")},
-		Jobs:             m.jobs(config.ReadBudget),
+		Jobs:             m.jobs(settingscalls.ReadBudget),
 		Identity:         m.stores.identity(),
 	})
 	appliers = append(appliers, mac.Appliers()...)

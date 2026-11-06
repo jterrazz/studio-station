@@ -14,7 +14,6 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/adapter/brew"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
@@ -24,9 +23,11 @@ import (
 	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
+	"github.com/jterrazz/studio-station/src/settings"
 	settingscli "github.com/jterrazz/studio-station/src/settings/adapter/cli"
 	settingslinux "github.com/jterrazz/studio-station/src/settings/adapter/linux"
 	settingsmacos "github.com/jterrazz/studio-station/src/settings/adapter/macos"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
@@ -105,7 +106,7 @@ func (m machine) facts() settingscontract.Inspector {
 	case m.kind == catalog.Linux:
 		return settingslinux.New(m.host.Run)
 	}
-	return settingsmacos.New(m.host.Run, m.host.FS, m.host.Clock, settingsmacos.Options{Root: m.systemRoot(), Jobs: m.jobs(config.ReadBudget)})
+	return settingsmacos.New(m.host.Run, m.host.FS, m.host.Clock, settingsmacos.Options{Root: m.systemRoot(), Jobs: m.jobs(settingscalls.ReadBudget)})
 }
 
 type hostedServers struct{ d hostDaemon }
@@ -127,9 +128,9 @@ func (s hostedServers) Hosted(ctx context.Context) bool {
 	return false
 }
 
-type configRead struct{ *config.Service }
+type configRead struct{ *settingscalls.Catalogue }
 
-func (configRead) Placed(r config.Report) (string, catalog.State) { return r.Item.Name, r.State }
+func (configRead) Placed(r settings.Report) (string, catalog.State) { return r.Item.Name, r.State }
 
 type setupRead struct{ s *setup.Service }
 

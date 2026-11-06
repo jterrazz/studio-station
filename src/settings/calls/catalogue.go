@@ -1,14 +1,14 @@
-package config
+package calls
 
 import (
 	"context"
 	"errors"
-	"github.com/jterrazz/studio-station/src/settings"
 	"slices"
+
+	"github.com/jterrazz/studio-station/src/settings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	schedule "github.com/jterrazz/studio-station/src/core/call/lanes"
-	"github.com/jterrazz/studio-station/src/platform/local"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 )
 
@@ -17,43 +17,39 @@ const (
 	verbUninstall = "uninstall"
 )
 
-type Options struct {
+type CatalogueOptions struct {
 	Here     catalog.MachineKind
 	Defaults map[string]map[string]string
 	// value: the Applier of every effect of the catalogue.
 	Appliers []settingscontract.Applier
+	// value: this run has admin rights, which a root setting needs.
+	Admin bool
+	// value: the app a setting requires is installed here.
+	Has func(app string) bool
 }
 
-type Service struct {
-	h        local.Host
+type Catalogue struct {
 	items    []catalog.ConfigItem
 	byName   map[string]catalog.ConfigItem
-	o        Options
+	o        CatalogueOptions
 	appliers settingscontract.Appliers
 }
 
-func New(h local.Host, items []catalog.ConfigItem, o Options) *Service {
+func NewCatalogue(items []catalog.ConfigItem, o CatalogueOptions) *Catalogue {
 	byName := make(map[string]catalog.ConfigItem, len(items))
 	for _, it := range items {
 		byName[it.Name] = it
 	}
-	return &Service{h: h, items: items, byName: byName, o: o, appliers: settingscontract.NewAppliers(o.Appliers...)}
+	return &Catalogue{items: items, byName: byName, o: o, appliers: settingscontract.NewAppliers(o.Appliers...)}
 }
-
-type (
-	Report = settings.Report
-	Change = settings.Change
-	Fact   = settings.KeyValue
-	Step   = settings.ChangeStep
-)
 
 type handler struct {
 	check     func(ctx context.Context) (catalog.State, string)
-	install   func(ctx context.Context, values map[string]string) (Change, error)
-	uninstall func(ctx context.Context) (Change, error)
+	install   func(ctx context.Context, values map[string]string) (settings.Change, error)
+	uninstall func(ctx context.Context) (settings.Change, error)
 }
 
-func (s *Service) Placed() []catalog.ConfigItem {
+func (s *Catalogue) Placed() []catalog.ConfigItem {
 	var placed []catalog.ConfigItem
 	for _, it := range s.items {
 		if slices.Contains(it.Places, s.o.Here) {
@@ -63,18 +59,18 @@ func (s *Service) Placed() []catalog.ConfigItem {
 	return placed
 }
 
-func (s *Service) Items() []catalog.ConfigItem { return s.items }
+func (s *Catalogue) Items() []catalog.ConfigItem { return s.items }
 
-func (s *Service) Lives(it catalog.ConfigItem) bool { return slices.Contains(it.Places, s.o.Here) }
+func (s *Catalogue) Lives(it catalog.ConfigItem) bool { return slices.Contains(it.Places, s.o.Here) }
 
-func (s *Service) Needs(it catalog.ConfigItem) string {
+func (s *Catalogue) Needs(it catalog.ConfigItem) string {
 	if s.applies(it) {
 		return ""
 	}
 	return it.Requires
 }
 
-func (s *Service) Admit(name string, interactive bool) error {
+func (s *Catalogue) Admit(name string, interactive bool) error {
 	found, err := s.Find([]string{name})
 	if err != nil {
 		return err
@@ -82,11 +78,11 @@ func (s *Service) Admit(name string, interactive bool) error {
 	return s.admit(found[0], verbInstall, interactive)
 }
 
-func (s *Service) Apply(ctx context.Context, name string, values map[string]string, interactive bool) (Change, error) {
+func (s *Catalogue) Apply(ctx context.Context, name string, values map[string]string, interactive bool) (settings.Change, error) {
 	return s.Install(ctx, name, values, interactive)
 }
 
-func (s *Service) List(ctx context.Context) ([]Report, error) {
+func (s *Catalogue) List(ctx context.Context) ([]settings.Report, error) {
 	reports, err := s.Watch(ctx)
 	if err != nil {
 		return nil, err
@@ -94,19 +90,19 @@ func (s *Service) List(ctx context.Context) ([]Report, error) {
 	return schedule.Last(reports), nil
 }
 
-func (s *Service) Watch(ctx context.Context) (<-chan []Report, error) {
+func (s *Catalogue) Watch(ctx context.Context) (<-chan []settings.Report, error) {
 	// invariant: the first value is every placed item, those with a check
 	// pending; every check is a read of its own, so they run at once, each row
 	// fills as its check answers, and the list costs its slowest check.
 	placed := s.Placed()
-	reports := make([]Report, len(placed))
+	reports := make([]settings.Report, len(placed))
 	checks := make([]func(context.Context) (catalog.State, string), len(placed))
 	for i, it := range placed {
 		h, err := s.handler(it)
 		if err != nil {
 			return nil, err
 		}
-		reports[i] = Report{Item: it, State: catalog.StateAbsent, Detail: "run once", Applies: s.applies(it)}
+		reports[i] = settings.Report{Item: it, State: catalog.StateAbsent, Detail: "run once", Applies: s.applies(it)}
 		if h.check != nil {
 			reports[i].State, reports[i].Detail, checks[i] = catalog.StatePending, "", h.check
 		}
@@ -128,7 +124,7 @@ func (s *Service) Watch(ctx context.Context) (<-chan []Report, error) {
 			answers <- answer{i: i, state: state, detail: detail}
 		}()
 	}
-	out := make(chan []Report)
+	out := make(chan []settings.Report)
 	go func() {
 		defer close(out)
 		send := func() bool {
@@ -153,7 +149,7 @@ func (s *Service) Watch(ctx context.Context) (<-chan []Report, error) {
 	return out, nil
 }
 
-func (s *Service) Find(names []string) ([]catalog.ConfigItem, error) {
+func (s *Catalogue) Find(names []string) ([]catalog.ConfigItem, error) {
 	seen := map[string]bool{}
 	var found []catalog.ConfigItem
 	for _, name := range names {
@@ -163,25 +159,25 @@ func (s *Service) Find(names []string) ([]catalog.ConfigItem, error) {
 		seen[name] = true
 		it, ok := s.byName[name]
 		if !ok {
-			return nil, &UnknownItemError{Name: name}
+			return nil, &settings.UnknownItemError{Name: name}
 		}
 		if !slices.Contains(it.Places, s.o.Here) {
-			return nil, &WrongPlaceError{Item: name, Places: it.Places, Here: s.o.Here}
+			return nil, &settings.WrongPlaceError{Item: name, Places: it.Places, Here: s.o.Here}
 		}
 		found = append(found, it)
 	}
 	return found, nil
 }
 
-func (s *Service) NeedsInput(it catalog.ConfigItem) bool {
+func (s *Catalogue) NeedsInput(it catalog.ConfigItem) bool {
 	return len(it.Inputs) > 0 || it.Interactive
 }
 
-func (s *Service) Defaults(item string) map[string]string {
+func (s *Catalogue) Defaults(item string) map[string]string {
 	return clone(s.o.Defaults[item])
 }
 
-func (s *Service) CheckInstall(names []string, interactive bool) error {
+func (s *Catalogue) CheckInstall(names []string, interactive bool) error {
 	found, err := s.Find(names)
 	if err != nil {
 		return err
@@ -194,7 +190,7 @@ func (s *Service) CheckInstall(names []string, interactive bool) error {
 	return nil
 }
 
-func (s *Service) CheckUninstall(names []string) error {
+func (s *Catalogue) CheckUninstall(names []string) error {
 	found, err := s.Find(names)
 	if err != nil {
 		return err
@@ -209,43 +205,43 @@ func (s *Service) CheckUninstall(names []string) error {
 
 // invariant: the place, the reversibility, the terminal and the root are local
 // facts, judged before any question and before any effect.
-func (s *Service) admit(it catalog.ConfigItem, verb string, interactive bool) error {
+func (s *Catalogue) admit(it catalog.ConfigItem, verb string, interactive bool) error {
 	switch {
 	case !slices.Contains(it.Places, s.o.Here):
-		return &WrongPlaceError{Item: it.Name, Places: it.Places, Here: s.o.Here}
+		return &settings.WrongPlaceError{Item: it.Name, Places: it.Places, Here: s.o.Here}
 	case verb == verbUninstall && !it.Reversible:
-		return &NotReversibleError{Item: it.Name}
+		return &settings.NotReversibleError{Item: it.Name}
 	case verb == verbInstall && s.NeedsInput(it) && !interactive:
-		return &NeedsTerminalError{Item: it.Name}
-	case it.NeedsRoot && s.h.Env.Euid() != 0:
-		return &NeedsRootError{Item: it.Name, Verb: verb}
+		return &settings.NeedsTerminalError{Item: it.Name}
+	case it.NeedsRoot && !s.o.Admin:
+		return &settings.NeedsRootError{Item: it.Name, Verb: verb}
 	}
 	return nil
 }
 
-func (s *Service) Install(ctx context.Context, name string, values map[string]string, interactive bool) (Change, error) {
-	return s.apply(name, verbInstall, interactive, func(h handler, it catalog.ConfigItem) (Change, error) {
+func (s *Catalogue) Install(ctx context.Context, name string, values map[string]string, interactive bool) (settings.Change, error) {
+	return s.apply(name, verbInstall, interactive, func(h handler, it catalog.ConfigItem) (settings.Change, error) {
 		merged := clone(s.o.Defaults[it.Name])
 		for k, v := range values {
 			merged[k] = v
 		}
 		for _, in := range it.Inputs {
 			if in.Required && merged[in.Name] == "" {
-				return Change{}, errors.New(it.Name + " needs " + in.Name)
+				return settings.Change{}, errors.New(it.Name + " needs " + in.Name)
 			}
 		}
 		return h.install(ctx, merged)
 	})
 }
 
-func (s *Service) Uninstall(ctx context.Context, name string) (Change, error) {
-	return s.apply(name, verbUninstall, true, func(h handler, _ catalog.ConfigItem) (Change, error) {
+func (s *Catalogue) Uninstall(ctx context.Context, name string) (settings.Change, error) {
+	return s.apply(name, verbUninstall, true, func(h handler, _ catalog.ConfigItem) (settings.Change, error) {
 		return h.uninstall(ctx)
 	})
 }
 
-func (s *Service) apply(name, verb string, interactive bool, run func(handler, catalog.ConfigItem) (Change, error)) (Change, error) {
-	failed := Change{Item: name, Verb: verb, Result: catalog.StateBroken}
+func (s *Catalogue) apply(name, verb string, interactive bool, run func(handler, catalog.ConfigItem) (settings.Change, error)) (settings.Change, error) {
+	failed := settings.Change{Item: name, Verb: verb, Result: catalog.StateBroken}
 	found, err := s.Find([]string{name})
 	if err != nil {
 		return failed, err
@@ -262,19 +258,18 @@ func (s *Service) apply(name, verb string, interactive bool, run func(handler, c
 	change.Item, change.Verb = it.Name, verb
 	if err != nil {
 		change.Result = catalog.StateBroken
-		change.Steps = append(change.Steps, Step{Label: "failed", State: catalog.StateBroken, Detail: firstLine(err.Error())})
+		change.Steps = append(change.Steps, settings.ChangeStep{Label: "failed", State: catalog.StateBroken, Detail: firstLine(err.Error())})
 		return change, err
 	}
 	change.Result = catalog.StateOK
 	return change, nil
 }
 
-func (s *Service) applies(it catalog.ConfigItem) bool {
+func (s *Catalogue) applies(it catalog.ConfigItem) bool {
 	if it.Requires == "" {
 		return true
 	}
-	_, ok := s.h.Run.LookPath(it.Requires)
-	return ok
+	return s.o.Has != nil && s.o.Has(it.Requires)
 }
 
 func clone(in map[string]string) map[string]string {

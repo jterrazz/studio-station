@@ -20,9 +20,10 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/adapter/uv"
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
+	"github.com/jterrazz/studio-station/src/settings"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	appscmd "github.com/jterrazz/studio-station/src/surface/cli/apps"
 	appsinstall "github.com/jterrazz/studio-station/src/surface/cli/apps/install"
 	appsremove "github.com/jterrazz/studio-station/src/surface/cli/apps/remove"
@@ -119,7 +120,7 @@ func installers(m machine) (contract.Installers, contract.Bundler) {
 // invariant: a Then item that asks values or a terminal is skipped off one, as a
 // row naming the command that applies it later, never as a failure.
 type configurer struct {
-	config *config.Service
+	config *settingscalls.Catalogue
 	ask    kit.Asker
 }
 
@@ -139,7 +140,7 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 		}
 	}
 	change, err := c.config.Install(ctx, item, values, interactive)
-	var root *config.NeedsRootError
+	var root *settings.NeedsRootError
 	if errors.As(err, &root) {
 		return tools.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: sudo station config install " + item}, nil
 	}

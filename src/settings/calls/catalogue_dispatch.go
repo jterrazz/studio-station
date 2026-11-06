@@ -1,4 +1,4 @@
-package config
+package calls
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/settings"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 )
 
@@ -13,13 +14,15 @@ const ReadBudget = 5 * time.Second
 
 // invariant: an item runs through the Applier of its effect's kind; an
 // effect no Applier writes is an error, never a silent success.
-func (s *Service) handler(it catalog.ConfigItem) (handler, error) {
+func (s *Catalogue) handler(it catalog.ConfigItem) (handler, error) {
 	a, ok := s.appliers.For(it)
 	if !ok {
-		return handler{}, &unhandledError{Item: it.Name}
+		return handler{}, &settings.UnhandledError{Item: it.Name}
 	}
 	h := handler{
-		install: func(ctx context.Context, values map[string]string) (Change, error) { return a.Apply(ctx, it, values) },
+		install: func(ctx context.Context, values map[string]string) (settings.Change, error) {
+			return a.Apply(ctx, it, values)
+		},
 	}
 	if !it.RunOnce {
 		h.check = func(ctx context.Context) (catalog.State, string) {
@@ -31,12 +34,12 @@ func (s *Service) handler(it catalog.ConfigItem) (handler, error) {
 		}
 	}
 	if it.Reversible {
-		h.uninstall = func(ctx context.Context) (Change, error) { return a.Undo(ctx, it) }
+		h.uninstall = func(ctx context.Context) (settings.Change, error) { return a.Undo(ctx, it) }
 	}
 	return h, nil
 }
 
-func (s *Service) Appliers() settingscontract.Appliers { return s.appliers }
+func (s *Catalogue) Appliers() settingscontract.Appliers { return s.appliers }
 
 func firstLine(s string) string {
 	line, _, _ := strings.Cut(strings.TrimSpace(s), "\n")

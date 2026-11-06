@@ -3,19 +3,20 @@ package wire
 import (
 	"context"
 	"errors"
+	"strings"
+
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
-	"strings"
 
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/tools"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	setupcmd "github.com/jterrazz/studio-station/src/surface/cli/setup"
 )
@@ -47,14 +48,14 @@ func setupService(env kit.Env, m machine) *setup.Service {
 	})
 }
 
-type setupConfigurer struct{ config *config.Service }
+type setupConfigurer struct{ config *settingscalls.Catalogue }
 
 func (c setupConfigurer) Configure(ctx context.Context, item string, interactive bool) error {
 	_, err := c.config.Install(ctx, item, nil, interactive)
 	return err
 }
 
-type setupSettings struct{ config *config.Service }
+type setupSettings struct{ config *settingscalls.Catalogue }
 
 func (c setupSettings) List(ctx context.Context) ([]setup.Setting, error) {
 	reports, err := c.config.List(ctx)

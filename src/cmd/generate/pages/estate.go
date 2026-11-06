@@ -1,14 +1,14 @@
 package pages
 
 import (
-	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"strings"
 	"time"
+
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/disk"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
@@ -93,7 +93,7 @@ func snapshot() pagehome.Overview {
 			},
 		},
 		Tools: toolReports,
-		Config: []config.Report{
+		Config: []settings.Report{
 			{Item: catalog.ConfigItem{Name: "hushlogin", Description: "Silence the login banner"}, State: catalog.StateOK, Applies: true},
 			{Item: catalog.ConfigItem{Name: "restart-after-power-cut", Description: "Restarts after a power cut, and wakes for the network"}, State: catalog.StateDegraded, Detail: "partly applied", Applies: true},
 		},

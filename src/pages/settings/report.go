@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
+	settingsmodel "github.com/jterrazz/studio-station/src/settings"
 )
 
 type ItemJSON struct {
@@ -17,7 +17,7 @@ type ItemJSON struct {
 	Detail   string   `json:"detail"`
 }
 
-func ItemObject(r config.Report) ItemJSON {
+func ItemObject(r settingsmodel.Report) ItemJSON {
 	places := make([]string, len(r.Item.Places))
 	for i, p := range r.Item.Places {
 		places[i] = string(p)
@@ -34,7 +34,7 @@ func ReportColumns() []page.Column {
 
 const differs = "differs from station's"
 
-func ReportRow(r config.Report) page.Row {
+func ReportRow(r settingsmodel.Report) page.Row {
 	name := r.Item.Name
 	row := page.Row{ID: name, Label: name, Mark: pages.MarkOf(r.State), Cells: []page.Value{page.Text(r.Item.Description)}}
 	install := page.KeyHint("station settings apply "+name, KeyApply)

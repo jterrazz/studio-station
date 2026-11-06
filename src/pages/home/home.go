@@ -7,7 +7,6 @@ import (
 
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
@@ -16,6 +15,7 @@ import (
 	pageports "github.com/jterrazz/studio-station/src/pages/ports"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/settings"
 )
 
 const KeyFix = "enter"
@@ -149,7 +149,7 @@ func toolCounts(reports []tools.Report) []page.Tally {
 	return tallies(marks)
 }
 
-func configCounts(reports []config.Report) []page.Tally {
+func configCounts(reports []settings.Report) []page.Tally {
 	marks := make([]page.Mark, 0, len(reports))
 	for _, r := range reports {
 		marks = append(marks, pages.MarkOf(r.State))
