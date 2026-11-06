@@ -38,9 +38,11 @@ const (
 	FileMise   ToolFile = "mise config"
 )
 
-// invariant: a TOML file keeps its keys in tables; the others keep one key
-// per line.
-func (f ToolFile) Tabled() bool { return f == FileBunfig || f == FileMise }
+func (f ToolFile) Tabled() bool {
+	// invariant: a TOML file keeps its keys in tables; the others keep one
+	// key per line.
+	return f == FileBunfig || f == FileMise
+}
 
 type Relocation struct {
 	File    ToolFile

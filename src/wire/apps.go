@@ -175,12 +175,12 @@ func (a appsMachine) Glob(pattern string) []string {
 	return matches
 }
 func (a appsMachine) LookPath(name string) (string, bool) { return a.h.Run.LookPath(name) }
-func (a appsMachine) Exists(path string) bool {
-	_, err := a.h.FS.Stat(path)
+func (a appsMachine) Exists(p string) bool {
+	_, err := a.h.FS.Stat(p)
 	return err == nil
 }
 
-func (a appsMachine) Probe(ctx context.Context, name string, args []string, budget time.Duration) (string, int, bool) {
+func (a appsMachine) Probe(ctx context.Context, name string, args []string, budget time.Duration) (output string, code int, ran bool) {
 	out, err := a.h.Run.Output(ctx, local.Cmd{Name: name, Args: args, Timeout: budget})
 	if err != nil {
 		return "", 0, false

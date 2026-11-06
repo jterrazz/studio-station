@@ -16,9 +16,9 @@ type Space struct{ run local.Runner }
 
 func New(run local.Runner) Space { return Space{run: run} }
 
-// invariant: a runtime that does not answer in time is unmeasured (-1); one
-// that is stopped or absent holds nothing station can count.
 func (s Space) Bytes(ctx context.Context) int64 {
+	// invariant: a runtime that does not answer in time is unmeasured (-1);
+	// one that is stopped or absent holds nothing station can count.
 	out, err := s.run.Output(ctx, local.Cmd{Name: "docker", Args: []string{"system", "df", "--format", "{{.Size}}"}, Timeout: budget})
 	if errors.Is(err, local.ErrTimeout) || ctx.Err() != nil {
 		return -1

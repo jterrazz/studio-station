@@ -41,7 +41,7 @@ func (m machine) LookPath(name string) (string, bool) {
 	return where, ok
 }
 
-func (m machine) Probe(_ context.Context, name string, args []string, _ time.Duration) (string, int, bool) {
+func (m machine) Probe(_ context.Context, name string, args []string, _ time.Duration) (output string, code int, ran bool) {
 	p, ok := m.probes[strings.Join(append([]string{name}, args...), " ")]
 	return p.output, p.code, ok
 }
