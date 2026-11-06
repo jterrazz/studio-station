@@ -83,11 +83,14 @@ class Screen:
         self.replies = b""
         self.clipboard = None
         self.asked = 0
+        self.frame = None
 
     def blank(self):
         return [[" "] * self.cols for _ in range(self.rows)]
 
     def text(self):
+        if self.frame is not None:
+            return self.frame
         lines = [self.line(row) for row in self.cells]
         while lines and not lines[-1]:
             lines.pop()
@@ -223,6 +226,14 @@ class Screen:
         if private:
             if final in "hl" and 1049 in params:
                 self.screen(final == "h")
+            # invariant: the screen is a terminal with synchronized output, as
+            # the ones the TUI runs in are: a frame drawn between ?2026h and
+            # ?2026l is read whole, so a step never reads a frame half drawn,
+            # even of a command that never stops drawing.
+            if final in "hl" and 2026 in params:
+                self.frame = self.text() if final == "h" else None
+            if final == "p" and body == "?2026$":
+                self.replies += b"\x1b[?2026;2$y"
             return
         if final == "A":
             self.y = max(self.y - n, 0)
@@ -373,6 +384,12 @@ def hold(args, cols, rows):
         _, code = os.waitpid(job, 0)
         os.tcsetpgrp(0, os.getpgrp())
         os._exit(os.waitstatus_to_exitcode(code) & 0xFF)
+    except BaseException as e:
+        # value: why COMMAND never ran, on the screen the failure prints, so
+        # a 127 names its cause (the call that failed and its errno).
+        import traceback
+        call = [f for f in traceback.extract_tb(e.__traceback__) if f.filename == __file__][-1].line
+        os.write(2, ("terminal: %s\r\n%s\r\n" % (call, getattr(e, "strerror", None) or repr(e))).encode())
     finally:
         os._exit(127)
 
