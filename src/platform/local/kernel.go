@@ -14,6 +14,7 @@ type Kernel interface {
 	Counters() (darwin.Counters, error)
 	Processes() (darwin.Procs, error)
 	Process(pid int) (darwin.Procs, error)
+	Files(pid int) ([]string, error)
 }
 
 var errNoKernel = errors.New("no kernel tables here")
@@ -65,6 +66,8 @@ func (s *stubKernel) Process(pid int) (darwin.Procs, error) {
 	}
 	return darwin.Procs{}, errNoKernel
 }
+
+func (s *stubKernel) Files(int) ([]string, error) { return nil, errNoKernel }
 
 func (s *stubKernel) read(name string, into any) error {
 	data, err := os.ReadFile(filepath.Join(s.dir, name))

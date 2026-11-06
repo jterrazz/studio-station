@@ -26,7 +26,8 @@ func (d *Daemon) History() *activity.History {
 type Running struct {
 	Name     string
 	Lifetime machines.Lifetime
-	PID      int
+	// value: the process that holds its guest on this Mac, 0 while none does.
+	PID int
 	// value: station's guest answers inside it.
 	Guest bool
 }
@@ -39,7 +40,7 @@ func (d *Daemon) Running() []Running {
 		if v.state != StateRunning {
 			continue
 		}
-		out = append(out, Running{Name: name, Lifetime: v.rec.Lifetime, PID: v.runPID(), Guest: v.guest == GuestConnected})
+		out = append(out, Running{Name: name, Lifetime: v.rec.Lifetime, PID: v.holder(), Guest: v.guest == GuestConnected})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out

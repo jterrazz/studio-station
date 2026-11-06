@@ -270,8 +270,9 @@ type run struct {
 	end  *machines.RunEnd
 }
 
-func (r *run) VM() string { return r.vm }
-func (r *run) PID() int   { return r.pid }
+func (r *run) VM() string  { return r.vm }
+func (r *run) PID() int    { return r.pid }
+func (r *run) Holder() int { return r.pid }
 
 func (r *run) Ended() <-chan machines.RunEnd {
 	r.once.Lock()

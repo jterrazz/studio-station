@@ -7,10 +7,11 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 func (m machine) hypervisor() contract.Hypervisor {
-	tool := tart.New(m.host.Run, m.host.FS, m.host.Clock, m.paths.State)
+	tool := tart.New(m.host.Run, m.host.FS, m.host.Clock, local.NewKernel(m.vars), m.paths.State)
 	if m.world != nil {
 		return m.world.hypervisor(tool.Name())
 	}

@@ -49,6 +49,9 @@ type BootOptions struct{ Network machines.Network }
 type Run interface {
 	VM() string
 	PID() int
+	// invariant: Holder is the process that holds the VM's guest, whose CPU
+	// and memory are the VM's on its Mac; 0 while none holds it yet.
+	Holder() int
 	// invariant: Ended fires once, when the run is over, with how it ended; a
 	// run that outlives its engine is read again by Adopt after a restart.
 	Ended() <-chan machines.RunEnd

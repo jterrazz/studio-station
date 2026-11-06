@@ -20,6 +20,7 @@ type Hypervisor interface {
 type Run interface {
 	VM() string
 	PID() int
+	Holder() int
 	Ended() <-chan model.RunEnd
 }
 
@@ -48,6 +49,13 @@ func (v *vmState) runPID() int {
 		return 0
 	}
 	return v.run.PID()
+}
+
+func (v *vmState) holder() int {
+	if v.run == nil {
+		return 0
+	}
+	return v.run.Holder()
 }
 
 func (d *Daemon) runs(v *vmState) bool {

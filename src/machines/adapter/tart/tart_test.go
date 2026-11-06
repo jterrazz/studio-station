@@ -16,6 +16,7 @@ import (
 	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract/contracttest"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
@@ -72,19 +73,45 @@ func recorded(t *testing.T, name string) string {
 	return string(data)
 }
 
+type kernel struct {
+	mu    sync.Mutex
+	procs []darwin.Proc
+	files map[int][]string
+}
+
+func (k *kernel) Processes() (darwin.Procs, error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	return darwin.Procs{List: slices.Clone(k.procs)}, nil
+}
+
+func (k *kernel) Files(pid int) ([]string, error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	return k.files[pid], nil
+}
+
+func (k *kernel) start(pid int, name string, files ...string) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	k.procs = append(k.procs, darwin.Proc{PID: pid, Name: name})
+	k.files[pid] = files
+}
+
 type machine struct {
-	run   *systemtest.Runner
-	fs    *lockedFS
-	disks map[string]string
+	run    *systemtest.Runner
+	fs     *lockedFS
+	kernel *kernel
+	disks  map[string]string
 }
 
 func newMachine(t *testing.T) *machine {
 	run := systemtest.NewRunner(t)
 	run.Paths["tart"] = bin
-	return &machine{run: run, fs: &lockedFS{FS: systemtest.NewFS()}, disks: map[string]string{}}
+	return &machine{run: run, fs: &lockedFS{FS: systemtest.NewFS()}, kernel: &kernel{files: map[int][]string{}}, disks: map[string]string{}}
 }
 
-func (m *machine) hypervisor() contract.Hypervisor { return New(m.run, m.fs, yielding{}, state) }
+func (m *machine) hypervisor() contract.Hypervisor { return New(m.run, m.fs, yielding{}, m.kernel, state) }
 
 func (m *machine) listing() system.Output {
 	type row struct{ Source, Name, State string }
@@ -217,4 +244,30 @@ func TestAFailedCommandCarriesItsStderr(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "no such VM") {
 		t.Fatalf("err = %v", err)
 	}
+}
+
+func TestAVMIsMeasuredByTheServiceThatHoldsItsGuestNotByItsWrapper(t *testing.T) {
+	m := newMachine(t)
+	m.boot("dev")
+	h := m.hypervisor()
+	r, err := h.Boot(t.Context(), "dev", contract.BootOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := r.Holder(); got != 0 {
+		t.Errorf("before Virtualization started the guest, the run's holder is %d; want none", got)
+	}
+	const home = "/Users/o/.local/share/station/vms/vms/"
+	m.kernel.start(r.PID()+1, "tart", home+"dev/config.json")
+	m.kernel.start(7000, "com.apple.Virtualization.Virtual", home+"other/nvram.bin", home+"other/disk.img")
+	m.kernel.start(7001, "com.apple.Virtualization.Virtual", home+"dev/nvram.bin", home+"dev/disk.img")
+	if got := r.Holder(); got != 7001 {
+		t.Errorf("the run of dev is held by %d; want 7001, the Virtualization service holding dev's disk", got)
+	}
+	adopted, ok := m.hypervisor().Adopt(t.Context(), "dev")
+	if !ok || adopted.Holder() != 7001 {
+		t.Errorf("after an engine restart the adopted run is held by %v (ok %v); want 7001", adopted, ok)
+	}
+	m.end(r, machines.GuestPoweroff)
+	<-r.Ended()
 }

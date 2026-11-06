@@ -224,16 +224,41 @@ static station_proc_t *station_procs(int *count) {
 
 static station_proc_t station_proc_at(station_proc_t *list, int i) { return list[i]; }
 
+static int station_files(int pid, char *out, int size) {
+	int want = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, NULL, 0);
+	if (want <= 0) return -1;
+	struct proc_fdinfo *fds = malloc(want);
+	if (!fds) return -1;
+	int got = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, fds, want);
+	if (got <= 0) { free(fds); return -1; }
+	int used = 0;
+	for (int i = 0; i < got / (int)sizeof *fds; i++) {
+		if (fds[i].proc_fdtype != PROX_FDTYPE_VNODE) continue;
+		struct vnode_fdinfowithpath v;
+		if (proc_pidfdinfo(pid, fds[i].proc_fd, PROC_PIDFDVNODEPATHINFO, &v, sizeof v) != (int)sizeof v) continue;
+		int n = (int)strlen(v.pvip.vip_path);
+		if (n == 0 || used + n + 1 > size) continue;
+		memcpy(out + used, v.pvip.vip_path, n);
+		out[used + n] = '\n';
+		used += n + 1;
+	}
+	free(fds);
+	return used;
+}
+
 static void station_free(station_proc_t *list) { free(list); }
 */
 import "C"
 
 import (
 	"errors"
+	"strings"
 	"time"
+	"unsafe"
 )
 
 const (
+	maxFiles   = 1 << 16
 	maxCPUs    = 256
 	maxDrivers = 64
 	maxLinks   = 128
@@ -306,6 +331,18 @@ func (Kernel) Process(pid int) (Procs, error) {
 		one.Started = time.Unix(int64(sec), int64(usec)*1000).UTC()
 	}
 	return Procs{At: time.Duration(C.station_now()), List: []Proc{one}}, nil
+}
+
+func (Kernel) Files(pid int) ([]string, error) {
+	buf := make([]byte, maxFiles)
+	n := int(C.station_files(C.int(pid), (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))))
+	if n < 0 {
+		return nil, errUnread
+	}
+	if n == 0 {
+		return []string{}, nil
+	}
+	return strings.Split(strings.TrimSuffix(string(buf[:n]), "\n"), "\n"), nil
 }
 
 func proc(p C.station_proc_t) Proc {

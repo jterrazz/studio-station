@@ -3,7 +3,10 @@
 package darwin
 
 import (
+	"os"
 	"os/exec"
+	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -50,5 +53,22 @@ func TestThisMacsNetworkTotalsAreTheOnesNetstatReads(t *testing.T) {
 		if in < l.In || in-l.In > drift || sent < l.Out || sent-l.Out > drift {
 			t.Errorf("%s: station reads in %d out %d; netstat, read after, %d and %d", l.Name, l.In, l.Out, in, sent)
 		}
+	}
+}
+
+func TestAProcessNamesTheFilesItHoldsOpen(t *testing.T) {
+	disk := filepath.Join(t.TempDir(), "disk.img")
+	f, err := os.Create(disk)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = f.Close() })
+	files, err := Kernel{}.Files(os.Getpid())
+	if err != nil {
+		t.Fatal(err)
+	}
+	real, _ := filepath.EvalSymlinks(disk)
+	if !slices.Contains(files, real) {
+		t.Errorf("this process holds %s open; its files read %v", real, files)
 	}
 }
