@@ -142,7 +142,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		it(row("not-for-this-machine", page.NotForThisMachine, page.Text("Macs only"))),
 		it(row("not-known", page.NotKnown, page.Text("does not answer"))),
 	)
-	fleet := page.Section{
+	allMachines := page.Section{
 		ID: "fleet", Title: "All machines",
 		Columns: []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "kind", Kind: page.KindText, Keep: 40}, {Key: "host", Kind: page.KindText, Keep: 10, Show: page.PipeOnly}},
 		Items: []page.Item{{Group: &page.Group{
@@ -197,7 +197,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 			Memory: page.Ratio(12400000000, 17200000000), Battery: page.Percent(1000), Power: page.Texts("awake", "3h 12m"),
 			Net: []page.Value{page.Text("28.2 KB/s"), page.Text("14.5 KB/s")},
 		},
-		Sections: []page.Section{todo, summary, values, marks, fleet, storage, prose, peers},
+		Sections: []page.Section{todo, summary, values, marks, allMachines, storage, prose, peers},
 		Hints:    []page.Hint{*page.Cmd("station overview --all"), {Command: "station apps", Text: "for the catalogue"}},
 		Actions: []page.Action{
 			{Key: "enter", Label: "fix", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Question: "Delete linux-1?", Lines: []page.Value{page.Text("its disk is removed"), page.Command("station machines delete linux-1")}, Danger: true, Yes: "delete"}},

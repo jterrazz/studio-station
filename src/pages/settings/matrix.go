@@ -387,7 +387,7 @@ func MatrixContract(m settings.Matrix, now time.Time, here page.Context) MatrixJ
 			fs = append(fs, finding.Finding{Machine: machine.Ref{Name: c.Name}, Section: section.Settings, Severity: severity, Subject: c.Name, Text: c.Name + ": " + strings.Join(words, ", ")})
 		}
 	}
-	body.Findings = finding.FleetDoc(fs)
+	body.Findings = finding.AllMachinesDoc(fs)
 	for _, s := range m.Servers {
 		body.Skipped = append(body.Skipped, SkippedJSON{Name: s, Why: "server"})
 	}

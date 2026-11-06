@@ -346,7 +346,7 @@ func goldensOf(fixture string) []string {
 	if strings.HasPrefix(fixture, "kitchen-sink.") {
 		out = append(out, "tty40")
 	}
-	if strings.HasPrefix(fixture, "fleet.") || strings.HasPrefix(fixture, "ports.") {
+	if strings.HasPrefix(fixture, "all-machines.") || strings.HasPrefix(fixture, "ports.") {
 		out = append(out, "tui120")
 	}
 	return out
@@ -407,7 +407,7 @@ func pageStates() []string { return []string{"loading", "empty", "error", "full"
 // family is checked because the spec lists it, not because a file exists.
 func pageFamilies() []string {
 	return []string{
-		"home", "home-all", "apps", "settings", "settings-matrix", "background", "disk", "fleet", "machines", "images", "ports",
+		"home", "home-all", "apps", "settings", "settings-matrix", "background", "disk", "all-machines", "machines", "images", "ports",
 		"outcome-apps-install", "outcome-settings-apply", "outcome-disk-free", "setup", "run", "kitchen-sink", "accounts", "outcome-stop", "outcome-start", "engine", "power", "outcome-power", "awake", "activity", "menubar", "ssh", "overview",
 	}
 }
@@ -437,7 +437,7 @@ func missingPages(packages, families, fixtures []string) []finding {
 	}
 	var out []finding
 	for _, pkg := range packages {
-		if !slices.ContainsFunc(families, func(f string) bool { return f == pkg || strings.HasPrefix(f, pkg+"-") }) {
+		if !slices.ContainsFunc(families, func(f string) bool { return f == pkg || strings.ReplaceAll(f, "-", "") == pkg || strings.HasPrefix(f, pkg+"-") }) {
 			out = append(out, finding{"fixtures", "src/pages/" + pkg, "a page package with no fixture family in UI-SPEC §17"})
 		}
 	}

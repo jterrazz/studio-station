@@ -240,7 +240,7 @@ func (s Shell) sidebarLines(st token.Styles) []string {
 		case e.Branch:
 			left += token.SideMid
 		case e.AllMachines:
-			left += token.Fleet + " "
+			left += token.AllMachines + " "
 		}
 		if e.Mark != page.Unjudged {
 			left += atom.Mark(st, e.Mark)

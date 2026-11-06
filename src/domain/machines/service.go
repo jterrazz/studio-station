@@ -156,7 +156,7 @@ type (
 	VM          = model.VM
 	DaemonInfo  = model.EngineView
 	HostView    = model.HostView
-	Fleet       = model.Fleet
+	Fleet       = model.AllMachines
 	ListSize    = model.ListSize
 	Check       = model.Check
 	ProbeReport = model.ProbeReport

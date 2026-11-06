@@ -72,13 +72,13 @@ type Range struct {
 	MaxPerVM int `json:"max_per_vm"`
 }
 
-type Fleet struct {
+type AllMachines struct {
 	Schema string         `json:"schema"`
 	Hosts  []HostServices `json:"hosts"`
 }
 
 type Listing struct {
-	Fleet Fleet `json:"fleet"`
+	AllMachines AllMachines `json:"fleet"`
 	// value: this Mac's node on the tailnet, zero inside a VM: its Mac's
 	// sharing is said by each of its rows.
 	Tailnet Status `json:"tailnet"`

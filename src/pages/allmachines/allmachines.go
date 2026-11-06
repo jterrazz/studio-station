@@ -1,4 +1,4 @@
-package fleet
+package allmachines
 
 import (
 	"github.com/jterrazz/studio-station/src/catalog"

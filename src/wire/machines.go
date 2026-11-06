@@ -46,7 +46,7 @@ const (
 
 func (m machine) machines(_ bool) *machines.Service {
 	knownHosts := filepath.Join(m.paths.State, "known_hosts")
-	return machines.New(m.host, m.hypervisor(), machines.Prefs{Name: m.stores.name(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser()}, m.stores.machines, hostNodes{tailnet: m.tailnet()}, fleetImages{service: m.images()}, m.hostEngine(), leaseReleaser{m: m}, machines.Options{
+	return machines.New(m.host, m.hypervisor(), machines.Prefs{Name: m.stores.name(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser()}, m.stores.machines, hostNodes{tailnet: m.tailnet()}, allMachinesImages{service: m.images()}, m.hostEngine(), leaseReleaser{m: m}, machines.Options{
 		Ports: machines.Ports{
 			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
 			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),
@@ -55,7 +55,7 @@ func (m machine) machines(_ bool) *machines.Service {
 		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.host.Env.User(),
 		Version:   m.stationVersion(),
-		Ask:       m.askFleet,
+		Ask:       m.askAllMachines,
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
 		Unlocker:  m.unlocker(knownHosts),
@@ -230,11 +230,11 @@ func (c machineCalls) CheckRestart(name string) (bool, error) {
 }
 
 func (c machineCalls) Running(ctx context.Context, name string) (bool, error) {
-	fleet, err := c.Fleet(ctx, true)
+	allMachines, err := c.Fleet(ctx, true)
 	if err != nil {
 		return false, err
 	}
-	for _, h := range fleet.Hosts {
+	for _, h := range allMachines.Hosts {
 		for _, vm := range h.VMs {
 			if vm.Name == name {
 				return vm.State == machines.Running, nil
@@ -278,11 +278,11 @@ func (c machineCalls) CheckRemote(name string) error {
 	return err
 }
 
-type fleetImages struct{ service *images.Service }
+type allMachinesImages struct{ service *images.Service }
 
-func (i fleetImages) KeyPath() string { return i.service.KeyPath() }
+func (i allMachinesImages) KeyPath() string { return i.service.KeyPath() }
 
-func (i fleetImages) Latest(ctx context.Context, image string) (disk, version string, err error) {
+func (i allMachinesImages) Latest(ctx context.Context, image string) (disk, version string, err error) {
 	r, err := i.service.Latest(ctx, image)
 	var unbuilt *images.NotBuiltError
 	if errors.As(err, &unbuilt) {

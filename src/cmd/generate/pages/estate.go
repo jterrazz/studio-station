@@ -20,7 +20,7 @@ import (
 	allpages "github.com/jterrazz/studio-station/src/pages"
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 	pagedisk "github.com/jterrazz/studio-station/src/pages/disk"
-	pagefleet "github.com/jterrazz/studio-station/src/pages/fleet"
+	pageallmachines "github.com/jterrazz/studio-station/src/pages/allmachines"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
@@ -57,7 +57,7 @@ func failure(id page.ID, command, message, hint string) page.Page {
 
 func Estate() []Fixture {
 	var out []Fixture
-	for _, f := range [][]Fixture{homes(), overviewPages(), settingsPages(), settingsMatrix(), disks(), fleets(), machineLists(), sshPages(), imageLists(), portLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), awakePages(), activityPages(), menubarPages(), menubarOwnPages()} {
+	for _, f := range [][]Fixture{homes(), overviewPages(), settingsPages(), settingsMatrix(), disks(), allMachinesStates(), machineLists(), sshPages(), imageLists(), portLists(), outcomes(), setups(), runs(), accountPages(), backgroundPages(), controlPages(), powerPages(), awakePages(), activityPages(), menubarPages(), menubarOwnPages()} {
 		out = append(out, f...)
 	}
 	return out
@@ -296,7 +296,7 @@ func disks() []Fixture {
 		pagedisk.Read(reading(false), here(), false))
 }
 
-func fleet() machines.Fleet {
+func allMachines() machines.Fleet {
 	return machines.Fleet{Hosts: []machines.HostView{
 		{Name: "macbook", User: "jterrazz", StationVersion: "v2.0.0-250", Here: true, Reachable: true, Daemon: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-250"}, Node: machines.Node{Online: true, IP: "100.98.133.14"},
 			VMs: []machines.VM{
@@ -309,8 +309,8 @@ func fleet() machines.Fleet {
 
 // value: the fleet whose daemon socket refuses: the agent's plist is there,
 // so this host reads stopped (R9.D3); the mini does not answer its ssh read.
-func stoppedFleet() machines.Fleet {
-	f := fleet()
+func stoppedAllMachines() machines.Fleet {
+	f := allMachines()
 	f.Hosts[0].Daemon = machines.DaemonInfo{Known: true, Installed: true}
 	f.Hosts[1] = machines.HostView{Name: "mac-mini", User: "jterrazz", Node: machines.Node{IP: "100.98.133.20"}}
 	return f
@@ -323,16 +323,16 @@ func sized(vm machines.VM, cpus int, memoryGB int64) machines.VM {
 
 func machineLists() []Fixture {
 	return states("machines",
-		pending(pagemachines.List(fleet(), nil, here())),
+		pending(pagemachines.List(allMachines(), nil, here())),
 		pagemachines.List(machines.Fleet{}, nil, here()),
-		pagemachines.List(stoppedFleet(), nil, here()),
-		pagemachines.List(fleet(), []string{"mac-mini: station v2.0.0-248, This Mac v2.0.0-250"}, here()))
+		pagemachines.List(stoppedAllMachines(), nil, here()),
+		pagemachines.List(allMachines(), []string{"mac-mini: station v2.0.0-248, This Mac v2.0.0-250"}, here()))
 }
 
 // value: infra, a server of mac-mini, as This Mac reads it for its SSH
 // section: running, then stopped.
 func server() pagemachines.VMOverview {
-	f := fleet()
+	f := allMachines()
 	vm := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Host: "mac-mini", Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Want: "running", Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built}, 8, 24)
 	f.Hosts[1].VMs = []machines.VM{vm}
 	f.Hosts[1].User = "jterrazz.agent"
@@ -382,7 +382,7 @@ func tailnetStatus() ports.Status {
 	}
 }
 
-func serviceFleet() services.Fleet {
+func serviceAllMachines() services.Fleet {
 	seen := built
 	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
 		{Name: "macbook", Here: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicHost: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
@@ -396,7 +396,7 @@ func serviceFleet() services.Fleet {
 }
 
 func stoppedServices() services.Fleet {
-	f := serviceFleet()
+	f := serviceAllMachines()
 	f.Hosts[0].Engine = services.DaemonInfo{Installed: true}
 	for i := range f.Hosts[0].Services {
 		f.Hosts[0].Services[i].State = services.Unknown
@@ -408,17 +408,17 @@ func thisMacPorts() page.Context { return page.Context{Kind: "host", Machine: "m
 
 func portLists() []Fixture {
 	return states("ports",
-		pending(pageports.List(ports.Listing{Fleet: serviceFleet(), Tailnet: tailnetStatus()}, thisMacPorts())),
+		pending(pageports.List(ports.Listing{AllMachines: serviceAllMachines(), Tailnet: tailnetStatus()}, thisMacPorts())),
 		pageports.List(ports.Listing{Tailnet: ports.Status{State: catalog.StateAbsent}}, thisMacPorts()),
-		pageports.List(ports.Listing{Fleet: stoppedServices(), Tailnet: ports.Status{State: catalog.StateOK, BackendState: "NeedsLogin"}}, thisMacPorts()),
-		pageports.List(ports.Listing{Fleet: estatePorts(), Tailnet: tailnetStatus()}, thisMacPorts()))
+		pageports.List(ports.Listing{AllMachines: stoppedServices(), Tailnet: ports.Status{State: catalog.StateOK, BackendState: "NeedsLogin"}}, thisMacPorts()),
+		pageports.List(ports.Listing{AllMachines: estatePorts(), Tailnet: tailnetStatus()}, thisMacPorts()))
 }
 
 // value: the reference estate's ports in their two classes: the mini's AirPlay
 // Receiver red, infra's API on its own tailnet device, a database on This
 // Mac's loopback folded.
 func estatePorts() services.Fleet {
-	f := serviceFleet()
+	f := serviceAllMachines()
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
 	f.Hosts[0].Ports = []ports.Port{
 		{Machine: coremachine.Ref{Name: "macbook"}, Port: 5432, Process: "postgres", Binds: []string{"127.0.0.1"}, Reach: ports.ThisMachine},
@@ -434,19 +434,19 @@ func estatePorts() services.Fleet {
 	return f
 }
 
-func fleets() []Fixture {
-	f, list, svc, tn := fleet(), imageReports(), serviceFleet(), tailnetStatus()
-	full := pagefleet.Reading{Machines: &f, Images: &list, Services: &svc, Tailnet: &tn}
+func allMachinesStates() []Fixture {
+	f, list, svc, tn := allMachines(), imageReports(), serviceAllMachines(), tailnetStatus()
+	full := pageallmachines.Reading{Machines: &f, Images: &list, Services: &svc, Tailnet: &tn}
 	none := machines.Fleet{Hosts: []machines.HostView{{Name: "macbook", Here: true, Reachable: true}}}
 	var noImages []images.Report
-	empty := pagefleet.Reading{Machines: &none, Images: &noImages, Tailnet: &ports.Status{State: catalog.StateAbsent}}
-	stopped, stoppedSvc := stoppedFleet(), stoppedServices()
-	failed := pagefleet.Reading{Machines: &stopped, Images: &list, Services: &stoppedSvc, Tailnet: &tn}
-	return states("fleet",
-		pagefleet.Tab(pagefleet.Reading{}, here()),
-		pagefleet.Tab(empty, here()),
-		pagefleet.Tab(failed, here()),
-		pagefleet.Tab(full, here()))
+	empty := pageallmachines.Reading{Machines: &none, Images: &noImages, Tailnet: &ports.Status{State: catalog.StateAbsent}}
+	stopped, stoppedSvc := stoppedAllMachines(), stoppedServices()
+	failed := pageallmachines.Reading{Machines: &stopped, Images: &list, Services: &stoppedSvc, Tailnet: &tn}
+	return states("all-machines",
+		pageallmachines.Tab(pageallmachines.Reading{}, here()),
+		pageallmachines.Tab(empty, here()),
+		pageallmachines.Tab(failed, here()),
+		pageallmachines.Tab(full, here()))
 }
 
 func outcomes() []Fixture {

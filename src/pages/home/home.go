@@ -559,7 +559,7 @@ func powerValue(s Overview) page.Value {
 	return page.Texts(append(words, pages.Term(s.Power.Until.Sub(s.GeneratedAt))+" left")...)
 }
 
-func fleetValue(s Overview) page.Value {
+func allMachinesValue(s Overview) page.Value {
 	d := s.Station.Daemon
 	if d.Value == "" || d.State == catalog.StateAbsent {
 		if s.Machine.Name != "" {
@@ -604,7 +604,7 @@ func summary(s Overview, detail []page.Section) page.Section {
 		area("tools", "Apps", worst(find(detail, "tools")), counts("tools")),
 		area("config", "Settings", worst(find(detail, "config")), counts("config")),
 		area("storage", "Disk", page.OK, storageValue(s.Workspace)),
-		area("fleet", "All machines", pages.MarkOf(s.Station.Daemon.State), fleetValue(s)),
+		area("fleet", "All machines", pages.MarkOf(s.Station.Daemon.State), allMachinesValue(s)),
 	)
 	if s.PowerKnown {
 		items = append(items, area("power", "Awake", page.OK, powerValue(s)))

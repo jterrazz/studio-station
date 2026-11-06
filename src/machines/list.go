@@ -15,7 +15,7 @@ type Counts struct {
 	Machines, Running, Stopped int
 }
 
-func Label(f Fleet, h HostView) string {
+func Label(f AllMachines, h HostView) string {
 	if h.Here {
 		return "This Mac"
 	}
@@ -28,7 +28,7 @@ func Label(f Fleet, h HostView) string {
 
 // value: the user every Mac's name starts with: This Mac's, or the one all
 // the Macs share when the fleet was read on another Mac (SPEC §2.5).
-func (f Fleet) owner() string {
+func (f AllMachines) owner() string {
 	users := map[string]bool{}
 	for _, h := range f.Hosts {
 		if h.Here {
@@ -45,7 +45,7 @@ func (f Fleet) owner() string {
 	return ""
 }
 
-func Elsewhere(f Fleet) Fleet {
+func Elsewhere(f AllMachines) AllMachines {
 	// invariant: a fleet another Mac's engine read, as this binary shows it:
 	// none of its Macs is This Mac (SPEC §2.5, §8.1: rendered here).
 	f.Hosts = slices.Clone(f.Hosts)
@@ -55,7 +55,7 @@ func Elsewhere(f Fleet) Fleet {
 	return f
 }
 
-func Tally(f Fleet) Counts {
+func Tally(f AllMachines) Counts {
 	var c Counts
 	for _, h := range f.Hosts {
 		c.Machines++
@@ -109,7 +109,7 @@ func Behind(h HostView, here string) (fix string, differs bool) {
 	return "update station there (scripts/install.sh)", true
 }
 
-func Findings(f Fleet) []finding.Finding {
+func Findings(f AllMachines) []finding.Finding {
 	here := ""
 	for _, h := range f.Hosts {
 		if h.Here {
@@ -243,7 +243,7 @@ type Need struct {
 	Subject, Text, Fix string
 }
 
-func Needs(f Fleet) []Need {
+func Needs(f AllMachines) []Need {
 	fs := Findings(f)
 	out := make([]Need, 0, len(fs))
 	for _, x := range fs {

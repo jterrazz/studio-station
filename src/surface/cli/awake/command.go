@@ -21,7 +21,7 @@ type Deps struct {
 	Now  func() time.Time
 	Zone *time.Location
 	// value: every Mac's Awake, This Mac first.
-	Every func(ctx context.Context) (pageawake.Fleet, error)
+	Every func(ctx context.Context) (pageawake.AllMachines, error)
 	// value: the short name a Mac is said by in a command.
 	Label func(mac string) string
 }
@@ -68,7 +68,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 }
 
 func read(ctx context.Context, d Deps, env kit.Env, io kit.IO) error {
-	f := pageawake.Fleet{Now: d.Now(), Zone: d.Zone}
+	f := pageawake.AllMachines{Now: d.Now(), Zone: d.Zone}
 	if env.Far() {
 		r, err := call.Read(ctx, env.Calls, env.Target(), awakecalls.Read, awakecalls.ReadIn{}, nil)
 		if err != nil {

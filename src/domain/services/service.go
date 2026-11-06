@@ -23,7 +23,7 @@ type (
 	DaemonInfo = ports.EngineInfo
 	HostView   = ports.HostServices
 	Range      = ports.Range
-	Fleet      = ports.Fleet
+	Fleet      = ports.AllMachines
 	Target     = ports.Target
 )
 

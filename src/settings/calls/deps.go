@@ -50,7 +50,7 @@ type Deps struct {
 	Mac   string
 	// value: the machines of All machines, for the matrix; nil where none
 	// is reached from (a VM).
-	Fleet Fleet
+	Fleet AllMachines
 	// value: the ports family, which keeps what a setting declares public.
 	Public Public
 }

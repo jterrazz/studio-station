@@ -83,8 +83,8 @@ func restartsOf(r Restarts) ListRestarts {
 	return out
 }
 
-func ToList(f Fleet) ListDoc {
-	out := ListDoc{Schema: ListSchema, Macs: make([]ListMac, 0, len(f.Hosts)), Findings: finding.FleetDoc(Findings(f))}
+func ToList(f AllMachines) ListDoc {
+	out := ListDoc{Schema: ListSchema, Macs: make([]ListMac, 0, len(f.Hosts)), Findings: finding.AllMachinesDoc(Findings(f))}
 	for _, h := range f.Hosts {
 		m := ListMac{
 			Name: h.Name, Label: Label(f, h), ThisMac: h.Here, Reachable: h.Reachable, Answered: h.Answered, IP: h.Node.IP, User: h.User,

@@ -16,14 +16,14 @@ import (
 
 // value: the matrix's reach: the fleet as This Mac lists it, each machine's
 // settings through this run's Router, the last reads in This Mac's engine.
-type settingsFleet struct{ m machine }
+type settingsAllMachines struct{ m machine }
 
-func (f settingsFleet) Machines(ctx context.Context) (machines.Fleet, error) {
+func (f settingsAllMachines) Machines(ctx context.Context) (machines.AllMachines, error) {
 	out, err := call.Read(ctx, f.m.far.router, coremachine.Ref{}, machinescalls.List, machinescalls.ListIn{Unwritten: true}, nil)
 	return out.Fleet, err
 }
 
-func (f settingsFleet) Read(ctx context.Context, refs []coremachine.Ref) map[coremachine.Ref]settingscalls.Answer {
+func (f settingsAllMachines) Read(ctx context.Context, refs []coremachine.Ref) map[coremachine.Ref]settingscalls.Answer {
 	r := f.m.far.router
 	names := make([]string, len(refs))
 	by := make(map[string]coremachine.Ref, len(refs))
@@ -49,11 +49,11 @@ func (f settingsFleet) Read(ctx context.Context, refs []coremachine.Ref) map[cor
 	return out
 }
 
-func (f settingsFleet) Keep(ctx context.Context, vm string, read settings.LastRead) {
+func (f settingsAllMachines) Keep(ctx context.Context, vm string, read settings.LastRead) {
 	_ = f.m.engineAPI().do(ctx, process.KeepSettings, process.KeepSettingsIn{VM: vm, Read: read}, nil)
 }
 
-func (f settingsFleet) Last(ctx context.Context, vm string) (settings.LastRead, bool) {
+func (f settingsAllMachines) Last(ctx context.Context, vm string) (settings.LastRead, bool) {
 	var out process.LastSettingsOut
 	if err := f.m.engineAPI().do(ctx, process.LastSettings, process.VMIn{VM: vm}, &out); err != nil {
 		return settings.LastRead{}, false

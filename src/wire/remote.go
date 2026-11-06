@@ -118,7 +118,7 @@ func (g guestRelay) GuestExec(ctx context.Context, vm, line, stdin string) (stdo
 	return out.Stdout, out.ExitCode, err
 }
 
-func (m machine) askFleet(ctx context.Context, macs []string, answered func(string, machines.HostView)) {
+func (m machine) askAllMachines(ctx context.Context, macs []string, answered func(string, machines.HostView)) {
 	r := m.far.router
 	for got := range each.Do(ctx, macs, func(ctx context.Context, mac string) (machines.HostView, error) {
 		hello, err := r.Hello(ctx, mac)
@@ -144,10 +144,10 @@ func (m machine) askServices(ctx context.Context, hosts []string) map[string]ser
 	answers := map[string]services.HostView{}
 	for host, got := range each.All(ctx, hosts, func(ctx context.Context, host string) (services.HostView, error) {
 		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: host}, portscalls.List, portscalls.ListIn{}, nil)
-		if err != nil || len(out.Fleet.Hosts) == 0 {
+		if err != nil || len(out.AllMachines.Hosts) == 0 {
 			return services.HostView{}, orNone(err)
 		}
-		return out.Fleet.Hosts[0], nil
+		return out.AllMachines.Hosts[0], nil
 	}) {
 		if got.Err == nil {
 			answers[host] = got.Value

@@ -54,7 +54,7 @@ func (m machine) engine(env kit.Env) *engine.Engine {
 	}
 	menubar := feeds.Menubar{Calls: calls, Clock: m.host.Clock, Here: m.where, Report: func(v power.View) *power.Report {
 		return &power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
-	}, EveryMac: func(ctx context.Context) (pageawake.Fleet, error) {
+	}, EveryMac: func(ctx context.Context) (pageawake.AllMachines, error) {
 		inside := env
 		inside.Calls = calls
 		return m.everyMacAwake(ctx, inside)

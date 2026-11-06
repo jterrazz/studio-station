@@ -9,18 +9,18 @@ import (
 )
 
 const (
-	fleetMachine = 13
-	fleetKind    = 11
-	fleetCPU     = 11
-	fleetMemory  = 14
-	fleetDisk    = 13
-	fleetNet     = 14
-	fleetSpark   = 5
-	fleetName    = 11
-	fleetThermal = 19
+	allMachinesMachine = 13
+	allMachinesKind    = 11
+	allMachinesCPU     = 11
+	allMachinesMemory  = 14
+	allMachinesDisk    = 13
+	allMachinesNet     = 14
+	allMachinesSpark   = 5
+	allMachinesName    = 11
+	allMachinesThermal = 19
 )
 
-type FleetRow struct {
+type AllMachinesRow struct {
 	// value: a machine's row of All machines › Activity: VMs one step in
 	// under their Mac, the last CPU percents it was read at, its rates; a
 	// stopped one has none.
@@ -33,7 +33,7 @@ type FleetRow struct {
 	Stopped                      bool
 }
 
-type FleetMac struct {
+type AllMachinesMac struct {
 	// value: a Mac's thermal state and battery, each with its mark.
 	Name        string
 	ThermalMark page.Mark
@@ -42,16 +42,16 @@ type FleetMac struct {
 	Battery     string
 }
 
-type Fleet struct {
+type AllMachines struct {
 	// value: All machines › Activity (SPEC §9.2): a row per machine, the
 	// notes on how it was read, what needs you, each Mac's thermal state
 	// and battery.
 	Heads    []string
-	Rows     []FleetRow
+	Rows     []AllMachinesRow
 	Notes    []string
 	Needs    Section
 	Macs     *Section
-	Thermals []FleetMac
+	Thermals []AllMachinesMac
 	Cursor   Cursor
 }
 
@@ -62,9 +62,9 @@ type Section struct {
 	Checks     []Check
 }
 
-func (f Fleet) Lines() []string {
+func (f AllMachines) Lines() []string {
 	st := token.New(f.Cursor.Dark)
-	widths := []int{fleetMachine, fleetKind, fleetCPU, fleetMemory, fleetDisk, fleetNet}
+	widths := []int{allMachinesMachine, allMachinesKind, allMachinesCPU, allMachinesMemory, allMachinesDisk, allMachinesNet}
 	var head strings.Builder
 	for i, h := range f.Heads {
 		if i < len(widths) {
@@ -80,10 +80,10 @@ func (f Fleet) Lines() []string {
 		if r.Stopped {
 			cpu, memory, disk, net = token.MarkNotFor, token.MarkNotFor, token.MarkNotFor, token.MarkNotFor
 		} else if len(r.Spark) > 0 {
-			cpu = atom.PadLeft(atom.Spark(r.Spark[max(len(r.Spark)-fleetSpark, 0):]), fleetSpark) + " " + atom.PadLeft(cpu, 3)
+			cpu = atom.PadLeft(atom.Spark(r.Spark[max(len(r.Spark)-allMachinesSpark, 0):]), allMachinesSpark) + " " + atom.PadLeft(cpu, 3)
 		}
-		line := " " + atom.Pad(name, fleetMachine) + atom.Pad(r.Kind, fleetKind) + atom.Pad(cpu, fleetCPU) +
-			atom.Pad(memory, fleetMemory) + atom.Pad(disk, fleetDisk) + atom.Pad(net, fleetNet) + r.Free
+		line := " " + atom.Pad(name, allMachinesMachine) + atom.Pad(r.Kind, allMachinesKind) + atom.Pad(cpu, allMachinesCPU) +
+			atom.Pad(memory, allMachinesMemory) + atom.Pad(disk, allMachinesDisk) + atom.Pad(net, allMachinesNet) + r.Free
 		out = append(out, Line{Key: r.Key, Text: line})
 	}
 	out = append(out, Line{})
@@ -96,7 +96,7 @@ func (f Fleet) Lines() []string {
 	if f.Macs != nil {
 		out = append(out, f.Macs.lines(st)...)
 		for _, m := range f.Thermals {
-			out = append(out, Line{Text: " " + atom.Pad(m.Name, fleetName) + atom.Pad(atom.Mark(st, m.ThermalMark)+m.Thermal, fleetThermal) + atom.Mark(st, m.BatteryMark) + m.Battery})
+			out = append(out, Line{Text: " " + atom.Pad(m.Name, allMachinesName) + atom.Pad(atom.Mark(st, m.ThermalMark)+m.Thermal, allMachinesThermal) + atom.Mark(st, m.BatteryMark) + m.Battery})
 		}
 	}
 	return f.Cursor.Lines(out)

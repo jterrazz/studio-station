@@ -79,7 +79,7 @@ type world struct {
 	activity map[string]uint64
 }
 
-func (w *world) machines(here bool) machines.Fleet {
+func (w *world) machines(here bool) machines.AllMachines {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	infra := w.infra[0]
@@ -87,9 +87,9 @@ func (w *world) machines(here bool) machines.Fleet {
 		w.infra = w.infra[1:]
 	}
 	if here {
-		return machines.Fleet{Hosts: []machines.HostView{{Name: thisMac, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here}}}
+		return machines.AllMachines{Hosts: []machines.HostView{{Name: thisMac, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here}}}
 	}
-	return machines.Fleet{Hosts: append([]machines.HostView{
+	return machines.AllMachines{Hosts: append([]machines.HostView{
 		{Name: thisMac, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here},
 		{Name: mini, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: append([]machines.VM{infra}, w.beside...)},
 	}, w.added...)}

@@ -275,7 +275,7 @@ func EveryMachineContract(schema string, blocks []MachineBlock) EveryJSON {
 		out.Machines = append(out.Machines, m)
 		fs = append(fs, model.Findings(b.Report, machine.Ref{Name: b.Name, On: b.On})...)
 	}
-	out.Findings = finding.FleetDoc(fs)
+	out.Findings = finding.AllMachinesDoc(fs)
 	return out
 }
 

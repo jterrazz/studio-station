@@ -121,7 +121,7 @@ func find(p page.Page, id string) (page.Section, bool) {
 
 func (Screen) Lines(v screen.View) ([]string, bool) {
 	if v.Machine.Kind == "" {
-		return fleet(v)
+		return allMachines(v)
 	}
 	graphs, ok := find(v.Page, pageactivity.Graphs)
 	if !ok {
@@ -154,12 +154,12 @@ func sampled(v screen.View) string {
 // under its Mac with the CPU percents the TUI read it at, how the rates
 // were read, what needs you from them, and each Mac's thermal state and
 // battery.
-func fleet(v screen.View) ([]string, bool) {
+func allMachines(v screen.View) ([]string, bool) {
 	machines, ok := find(v.Page, "machines")
 	if !ok {
 		return nil, false
 	}
-	f := ui.Fleet{Cursor: ui.Cursor{Key: v.Cursor, Focused: v.Focused, Dark: v.Dark, NoColor: v.NoColor, Width: v.Width, Room: v.Room}}
+	f := ui.AllMachines{Cursor: ui.Cursor{Key: v.Cursor, Focused: v.Focused, Dark: v.Dark, NoColor: v.NoColor, Width: v.Width, Room: v.Room}}
 	f.Heads = []string{"MACHINE"}
 	for _, c := range machines.Columns[1:] {
 		f.Heads = append(f.Heads, c.Label)
@@ -171,7 +171,7 @@ func fleet(v screen.View) ([]string, bool) {
 			continue
 		}
 		name := cmp.Or(r.Short, r.Label)
-		row := ui.FleetRow{Key: machines.ID + "/" + r.ID, Mark: r.Mark, Name: name, Kind: ui.Plain(screen.Cell(machines, *r, "kind")), Spark: v.Samples[r.ID]}
+		row := ui.AllMachinesRow{Key: machines.ID + "/" + r.ID, Mark: r.Mark, Name: name, Kind: ui.Plain(screen.Cell(machines, *r, "kind")), Spark: v.Samples[r.ID]}
 		if row.Kind != "Mac" {
 			row.Depth = 1
 		}
@@ -216,7 +216,7 @@ func fleet(v screen.View) ([]string, bool) {
 			if r == nil {
 				continue
 			}
-			m := ui.FleetMac{Name: cmp.Or(r.Short, r.Label), ThermalMark: r.Mark, Thermal: ui.Plain(screen.Cell(macs, *r, "thermal")), BatteryMark: page.OK}
+			m := ui.AllMachinesMac{Name: cmp.Or(r.Short, r.Label), ThermalMark: r.Mark, Thermal: ui.Plain(screen.Cell(macs, *r, "thermal")), BatteryMark: page.OK}
 			if b := screen.Cell(macs, *r, "battery"); b.IsNone() {
 				m.BatteryMark, m.Battery = page.NotForThisMachine, "no battery"
 			} else {

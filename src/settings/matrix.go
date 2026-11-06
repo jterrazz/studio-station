@@ -35,7 +35,7 @@ type LastRead struct {
 	Rows []Row     `json:"rows"`
 }
 
-func Places(f machines.Fleet) (places []Place, servers []string) {
+func Places(f machines.AllMachines) (places []Place, servers []string) {
 	// invariant: every Mac, then every workspace, those that run first; a
 	// server is named apart, never a place: station does not manage its
 	// settings.

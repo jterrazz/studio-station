@@ -17,7 +17,7 @@ type ListIn struct {
 }
 
 type ListOut struct {
-	Fleet machines.Fleet
+	Fleet machines.AllMachines
 	// value: why the owner's client blocks for the fleet were not rewritten.
 	Unrefreshed error
 }
@@ -37,14 +37,14 @@ var List = call.Watch[Deps, ListIn, ListOut]{
 		}
 		go func() {
 			defer close(updates)
-			fleet, err := d.Machines.FleetAsItFills(ctx, in.Here, func(f machines.Fleet) { send(call.Update[ListOut]{Value: ListOut{Fleet: f}}) })
+			allMachines, err := d.Machines.FleetAsItFills(ctx, in.Here, func(f machines.AllMachines) { send(call.Update[ListOut]{Value: ListOut{Fleet: f}}) })
 			if err != nil {
 				send(call.Update[ListOut]{Err: err})
 				return
 			}
-			out := ListOut{Fleet: fleet}
+			out := ListOut{Fleet: allMachines}
 			if !in.Here && !in.Unwritten {
-				out.Unrefreshed = errors.Join(d.Machines.SSHBlocks(ctx, fleet), d.Machines.Remember(ctx, fleet))
+				out.Unrefreshed = errors.Join(d.Machines.SSHBlocks(ctx, allMachines), d.Machines.Remember(ctx, allMachines))
 			}
 			send(call.Update[ListOut]{Value: out})
 		}()

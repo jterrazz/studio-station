@@ -42,7 +42,7 @@ func portsPage(id page.ID, l ports.Listing, of PortsOf, here page.Context, offer
 	}
 	p.Actions = append(p.Actions, reviews(p, l, of)...)
 	p.Actions = append(p.Actions, offer)
-	for _, h := range l.Fleet.Hosts {
+	for _, h := range l.AllMachines.Hosts {
 		for _, s := range h.Services {
 			p.Actions = append(p.Actions, stopSharing(s, h.Name))
 		}
@@ -64,7 +64,7 @@ func reviews(p page.Page, l ports.Listing, of PortsOf) []page.Action {
 	}
 	var out []page.Action
 	var hosts []string
-	for _, h := range l.Fleet.Hosts {
+	for _, h := range l.AllMachines.Hosts {
 		var rows []string
 		for _, port := range h.Ports {
 			if red[port.Key()] {
@@ -115,7 +115,7 @@ func routes() []page.Option {
 func declarePublic(l ports.Listing) page.Action {
 	var opts []page.Option
 	for _, red := range []bool{true, false} {
-		for _, h := range l.Fleet.Hosts {
+		for _, h := range l.AllMachines.Hosts {
 			for _, p := range h.Ports {
 				if p.Declared != nil || p.Red() != red || p.Reach == ports.ThisMachine {
 					continue

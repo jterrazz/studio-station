@@ -36,7 +36,7 @@ func terms() []time.Duration { return []time.Duration{time.Hour, 4 * time.Hour} 
 
 const untilHours = 8
 
-func Awake(f pageawake.Fleet, here page.Context) page.Page {
+func Awake(f pageawake.AllMachines, here page.Context) page.Page {
 	// invariant: SPEC §10.2 Awake, vision panel e: This Mac first, its term,
 	// Lid closed and On battery only where its capabilities have them (E1),
 	// its guards; then each other Mac by its mode, with Change…, a y/n that
@@ -75,7 +75,7 @@ func Awake(f pageawake.Fleet, here page.Context) page.Page {
 	return page.Seal(p)
 }
 
-func label(f pageawake.Fleet, mac string) string {
+func label(f pageawake.AllMachines, mac string) string {
 	if f.Label != nil {
 		return f.Label(mac)
 	}

@@ -20,7 +20,7 @@ type Silent struct {
 	Mac, Why string
 }
 
-type Fleet struct {
+type AllMachines struct {
 	Now     time.Time
 	Zone    *time.Location
 	Reports []awake.Report
@@ -31,7 +31,7 @@ type Fleet struct {
 	Far   bool
 }
 
-func (f Fleet) name(r awake.Report) string {
+func (f AllMachines) name(r awake.Report) string {
 	switch {
 	case r.Here && !f.Far:
 		return "This Mac"
@@ -163,7 +163,7 @@ func reading(r awake.Report, name string) page.Section {
 	return page.Section{ID: "reading", Title: name, Uncounted: true, Columns: columns(), Items: items}
 }
 
-func Page(f Fleet, here page.Context) page.Page {
+func Page(f AllMachines, here page.Context) page.Page {
 	// invariant: every Mac, This Mac first, each by its mode and named as the
 	// owner names it; its readings are the ones it reports, This Mac's only.
 	rows := make([]page.Row, 0, len(f.Reports)+len(f.Silent))
@@ -201,7 +201,7 @@ const (
 
 // invariant: E1: a keep-awake holds the lid closed or runs on battery only
 // on the Macs whose report says they have a lid or a battery.
-func (f Fleet) actions() []page.Action {
+func (f AllMachines) actions() []page.Action {
 	var lid, battery []string
 	for _, r := range f.Reports {
 		if r.Caps.Lid {
@@ -297,14 +297,14 @@ func macJSON(r awake.Report) MacJSON {
 	return m
 }
 
-func Contract(f Fleet) JSON {
+func Contract(f AllMachines) JSON {
 	out := JSON{Schema: Schema, Macs: []MacJSON{}, Silent: []SilentJSON{}}
 	fs := make([]finding.Finding, 0, len(f.Reports))
 	for _, r := range f.Reports {
 		out.Macs = append(out.Macs, macJSON(r))
 		fs = append(fs, awake.Findings(r, machine.Ref{Name: r.Mac})...)
 	}
-	out.Findings = finding.FleetDoc(fs)
+	out.Findings = finding.AllMachinesDoc(fs)
 	for _, s := range f.Silent {
 		out.Silent = append(out.Silent, SilentJSON{Name: s.Mac, Error: s.Why})
 	}
@@ -366,7 +366,7 @@ func Off(s awake.Slept, label string, here page.Context) page.Page {
 
 // value: the next steps (vision 07 "station awake"): keep This Mac awake,
 // with its lid closed where it reports a lid (SPEC §5.9, E1), or another Mac.
-func (f Fleet) next() []page.Hint {
+func (f AllMachines) next() []page.Hint {
 	if f.Far {
 		return nil
 	}

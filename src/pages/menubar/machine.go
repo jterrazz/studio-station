@@ -47,7 +47,7 @@ type Machine struct {
 	Fleet    *machines.Fleet
 	Summary  *overview.Summary
 	Samples  []activity.Reading
-	Services *ports.Fleet
+	Services *ports.AllMachines
 	Accounts *accounts.Report
 	Now      time.Time
 	Asks     Levels
@@ -349,7 +349,7 @@ func locked(m Machine, h machines.HostView) bool {
 	return !h.Reachable && !h.Here && h.LAN != ""
 }
 
-func Switcher(f *machines.Fleet, svc *ports.Fleet) page.Page {
+func Switcher(f *machines.Fleet, svc *ports.AllMachines) page.Page {
 	// invariant: SPEC §10.2's switcher: All machines as a tree, each Mac then its
 	// Servers then its Workspaces, and Add a Mac…; Recent is the app's own.
 	s := Tree(f, svc, func(h machines.HostView) page.Value {

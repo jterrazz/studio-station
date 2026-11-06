@@ -9,9 +9,9 @@ import (
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
-type Fleet interface {
+type AllMachines interface {
 	// value: what the matrix reads beyond this machine.
-	Machines(ctx context.Context) (machines.Fleet, error)
+	Machines(ctx context.Context) (machines.AllMachines, error)
 	// invariant: each machine's settings.list through the Router, a few at
 	// a time, each within its budget (remote/each): a machine that does not
 	// answer in time is its own answer's error, never the others' delay.
@@ -31,16 +31,16 @@ type Answer struct {
 type MatrixIn struct{}
 
 var Matrix = call.Call[Deps, MatrixIn, settings.Matrix]{
-	Name: "settings.matrix", Where: call.InProcess, Applies: settings.ReadsFleet,
+	Name: "settings.matrix", Where: call.InProcess, Applies: settings.ReadsAllMachines,
 	Run: func(ctx context.Context, d Deps, _ MatrixIn, _ call.Progress) (settings.Matrix, error) {
 		// invariant: every place read at once; a stopped workspace shows its
 		// last read, a machine that does not answer is its own column, and
 		// the others are filled.
-		fleet, err := d.Fleet.Machines(ctx)
+		allMachines, err := d.Fleet.Machines(ctx)
 		if err != nil {
 			return settings.Matrix{}, err
 		}
-		places, servers := settings.Places(fleet)
+		places, servers := settings.Places(allMachines)
 		var asked []machine.Ref
 		for _, p := range places {
 			if p.Away == settings.Present {

@@ -25,9 +25,9 @@ func setupCommand(env kit.Env, m machine) *cobra.Command {
 }
 
 func setupService(env kit.Env, m machine) *setup.Service {
-	fleet := m.machines(env.Interactive)
-	registrar := fleetRegistrar{name: m.stores.name(), machines: fleet}
-	installer := engineInstaller{m: m, machines: fleet}
+	allMachines := m.machines(env.Interactive)
+	registrar := allMachinesRegistrar{name: m.stores.name(), machines: allMachines}
+	installer := engineInstaller{m: m, machines: allMachines}
 	return setup.New(m.host, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.services(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
 		Kind:            m.kind,
 		Server:          m.profile.Kind == coremachine.Server,
@@ -121,17 +121,17 @@ func (s systemTools) Install(ctx context.Context, names []string) error {
 	return nil
 }
 
-type fleetRegistrar struct {
+type allMachinesRegistrar struct {
 	name     setupcontract.NamePrefs
 	machines *machines.Service
 }
 
-func (r fleetRegistrar) Here() (string, bool) {
+func (r allMachinesRegistrar) Here() (string, bool) {
 	here, err := r.name.Get()
 	return here, err == nil && here != ""
 }
 
-func (r fleetRegistrar) Register(name string) error { return r.machines.Init(name) }
+func (r allMachinesRegistrar) Register(name string) error { return r.machines.Init(name) }
 
 type setupRun struct{ *setup.Service }
 

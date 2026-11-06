@@ -32,7 +32,7 @@ type Node interface {
 }
 
 type Ports interface {
-	List(ctx context.Context, hereOnly bool) (ports.Fleet, error)
+	List(ctx context.Context, hereOnly bool) (ports.AllMachines, error)
 	// value: the VM this binary runs in, inside one: its share and its stop
 	// of sharing ride the socket its Mac's engine offers there.
 	Placed() (vm string, inside bool)

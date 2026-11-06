@@ -151,7 +151,7 @@ func (f *one) reads(ctx context.Context, in engine.FeedInput) {
 				m.Fleet = &listed.Fleet
 			}
 			if serr == nil {
-				m.Services = &shared.Fleet
+				m.Services = &shared.AllMachines
 			}
 			if aerr == nil {
 				m.Accounts = &lent

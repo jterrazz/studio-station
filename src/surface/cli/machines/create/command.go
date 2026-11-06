@@ -30,7 +30,7 @@ type Deps struct {
 	// check of the request.
 	Admit func() error
 	// value: the fleet, for the host question; read only.
-	Fleet func(ctx context.Context) (machines.Fleet, error)
+	Fleet func(ctx context.Context) (machines.AllMachines, error)
 	Here  page.Context
 	Ask   kit.Asker
 }
@@ -176,8 +176,8 @@ func nowWords(in *Input) string {
 
 func ask(ctx context.Context, d Deps, in *Input) error {
 	var hosts []pagemachines.HostChoice
-	if fleet, fleetErr := d.Fleet(ctx); fleetErr == nil {
-		for _, h := range fleet.Hosts {
+	if allMachines, allMachinesErr := d.Fleet(ctx); allMachinesErr == nil {
+		for _, h := range allMachines.Hosts {
 			if h.Reachable {
 				hosts = append(hosts, pagemachines.HostChoice{Name: h.Name, Here: h.Here, Detail: vmCount(len(h.VMs))})
 			}

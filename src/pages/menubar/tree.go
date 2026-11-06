@@ -18,7 +18,7 @@ func treeColumns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "kind", Kind: page.KindText, Keep: 40}, {Key: "detail", Kind: page.KindList, Keep: 80}}
 }
 
-func Tree(f *machines.Fleet, svc *ports.Fleet, line func(machines.HostView) page.Value) page.Section {
+func Tree(f *machines.Fleet, svc *ports.AllMachines, line func(machines.HostView) page.Value) page.Section {
 	// invariant: SPEC §10.2's Machines: each Mac, then its Servers, then its
 	// Workspaces, each group named; a row's ID is its machine's name, the page
 	// it opens. line says what a Mac's row adds after its kind.
@@ -107,7 +107,7 @@ func health(vm machines.VM) string {
 	return "healthy"
 }
 
-func shared(svc *ports.Fleet, vm string) int {
+func shared(svc *ports.AllMachines, vm string) int {
 	if svc == nil {
 		return 0
 	}

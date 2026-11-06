@@ -47,7 +47,7 @@ func (m machine) servers() []string {
 
 func (m machine) awakeCmdDeps(env kit.Env) awakecmd.Deps {
 	return awakecmd.Deps{Here: m.where, Now: m.host.Clock.Now, Zone: time.Local, Label: m.label,
-		Every: func(ctx context.Context) (pageawake.Fleet, error) { return m.everyMacAwake(ctx, env) }}
+		Every: func(ctx context.Context) (pageawake.AllMachines, error) { return m.everyMacAwake(ctx, env) }}
 }
 
 func awakeCommand(env kit.Env, m machine) *cobra.Command {
@@ -66,8 +66,8 @@ func awakeAliases(env kit.Env, m machine) []*cobra.Command {
 // invariant: This Mac first, then every other Mac that answers, each Mac's
 // own Awake through its engine; a Mac that does not answer is said so, and
 // This Mac's own refusal is the command's.
-func (m machine) everyMacAwake(ctx context.Context, env kit.Env) (pageawake.Fleet, error) {
-	f := pageawake.Fleet{Now: m.host.Clock.Now(), Zone: time.Local}
+func (m machine) everyMacAwake(ctx context.Context, env kit.Env) (pageawake.AllMachines, error) {
+	f := pageawake.AllMachines{Now: m.host.Clock.Now(), Zone: time.Local}
 	here, err := call.Read(ctx, env.Calls, env.Self, awakecalls.Read, awakecalls.ReadIn{}, nil)
 	if err != nil {
 		return f, err

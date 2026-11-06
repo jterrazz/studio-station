@@ -88,7 +88,7 @@ type HostView struct {
 	VMs    []VM
 }
 
-type Fleet struct {
+type AllMachines struct {
 	Hosts []HostView
 	// value: when it was read.
 	Read time.Time
@@ -188,7 +188,7 @@ type Edited struct {
 	Running bool
 }
 
-func FindVM(f Fleet, name string) (HostView, VM, bool) {
+func FindVM(f AllMachines, name string) (HostView, VM, bool) {
 	for _, h := range f.Hosts {
 		for _, vm := range h.VMs {
 			if vm.Name == name {

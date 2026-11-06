@@ -36,9 +36,9 @@ func (m machine) services(_ kit.Env) *services.Service {
 		o.HereName, o.VMName, o.HostName = p.Host, p.VM, p.Host
 		d = servicesEngine{c: socketAPI(m.host, g.SocketPath())}
 	}
-	fleet := m.machines(false)
+	allMachines := m.machines(false)
 	o.VMHost = func(ctx context.Context, vm string) (string, bool, error) {
-		f, err := fleet.Fleet(ctx, false)
+		f, err := allMachines.Fleet(ctx, false)
 		if err != nil {
 			return "", false, err
 		}
@@ -50,7 +50,7 @@ func (m machine) services(_ kit.Env) *services.Service {
 			}
 		}
 		var unknown *machines.UnknownMachineError
-		if _, err := fleet.Lookup(ctx, vm); err != nil && !errors.As(err, &unknown) {
+		if _, err := allMachines.Lookup(ctx, vm); err != nil && !errors.As(err, &unknown) {
 			return "", false, err
 		}
 		return "", false, &services.UnknownVMError{Name: vm}

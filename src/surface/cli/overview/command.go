@@ -23,7 +23,7 @@ type Deps struct {
 	Status bool
 	// value: All machines, read once a target names a VM: its Overview is
 	// its Mac's view of it; nil reads every target as a machine of its own.
-	Fleet func(ctx context.Context) (machines.Fleet, error)
+	Fleet func(ctx context.Context) (machines.AllMachines, error)
 }
 
 type Input struct{ All bool }

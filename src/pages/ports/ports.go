@@ -36,7 +36,7 @@ func List(l ports.Listing, here page.Context) page.Page { return Listed(l, here,
 func Listed(l ports.Listing, here page.Context, all bool) page.Page {
 	// invariant: OU-01: what needs you comes first, before the Tailscale
 	// line, as on every page.
-	sections := Sections(l.Fleet, here, all)
+	sections := Sections(l.AllMachines, here, all)
 	if line := TailnetLine(l.Tailnet); line != nil {
 		at := 0
 		if len(sections) > 0 && sections[0].ID == "needs-you" {
@@ -44,8 +44,8 @@ func Listed(l ports.Listing, here page.Context, all bool) page.Page {
 		}
 		sections = slices.Insert(sections, at, *line)
 	}
-	sections = append([]page.Section{firstLine(sections, whose(l.Fleet, here))}, sections...)
-	return page.Seal(page.Page{ID: "ports", Command: "ports", Context: here, Sections: sections, Actions: Actions(l.Fleet)})
+	sections = append([]page.Section{firstLine(sections, whose(l.AllMachines, here))}, sections...)
+	return page.Seal(page.Page{ID: "ports", Command: "ports", Context: here, Sections: sections, Actions: Actions(l.AllMachines)})
 }
 
 func TailnetLine(s ports.Status) *page.Section {
@@ -77,7 +77,7 @@ func TailnetLine(s ports.Status) *page.Section {
 		Items:   []page.Item{{Row: &row}}}
 }
 
-func Sections(f ports.Fleet, here page.Context, all bool) []page.Section {
+func Sections(f ports.AllMachines, here page.Context, all bool) []page.Section {
 	// invariant: SPEC 5.6: what needs you first, then Public, then Private;
 	// what listens on its machine only is a count, unfolded by all; each Mac's
 	// reserved ports one line.
@@ -265,7 +265,7 @@ func reserved(h ports.HostServices, here page.Context) string {
 		" (" + strconv.Itoa(r.Low) + "-" + strconv.Itoa(r.High) + "), " + strconv.Itoa(r.Free) + " free"
 }
 
-func Actions(f ports.Fleet) []page.Action {
+func Actions(f ports.AllMachines) []page.Action {
 	// invariant: stop sharing binds only a port's row, never a Mac's or the engine's.
 	var shared []string
 	for _, h := range f.Hosts {
@@ -355,7 +355,7 @@ func Stopped(r ports.Reservation, here page.Context) page.Page {
 // value: the first line: whose ports, how many, and how many need you
 // (vision 07 "station ports": `mac-mini and infra · 9 ports · 4 need you`).
 // value: whose ports a list holds: every Mac's, another Mac's, This Mac's.
-func whose(f ports.Fleet, here page.Context) string {
+func whose(f ports.AllMachines, here page.Context) string {
 	switch {
 	case len(f.Hosts) > 1:
 		return "Every Mac"

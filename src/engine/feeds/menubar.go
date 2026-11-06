@@ -139,10 +139,10 @@ func (f *menubar) todo(ctx context.Context, in engine.FeedInput) {
 	}
 }
 
-func (f *menubar) read(ctx context.Context, here bool) (fleet machines.Fleet, services ports.Fleet, fleetErr, servicesErr error) {
-	listed, fleetErr := call.Read(ctx, f.o.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{Here: here, Unwritten: true}, nil)
+func (f *menubar) read(ctx context.Context, here bool) (allMachines machines.AllMachines, services ports.AllMachines, allMachinesErr, servicesErr error) {
+	listed, allMachinesErr := call.Read(ctx, f.o.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{Here: here, Unwritten: true}, nil)
 	shared, servicesErr := call.Invoke(ctx, f.o.Calls, machine.Ref{}, portscalls.List, portscalls.ListIn{AllMachines: !here}, nil)
-	return listed.Fleet, shared.Fleet, fleetErr, servicesErr
+	return listed.Fleet, shared.AllMachines, allMachinesErr, servicesErr
 }
 
 func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
@@ -166,7 +166,7 @@ func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
 
 // value: each other Mac's Awake, as its own engine reports it; a Mac that
 // does not answer is left out.
-func (f *menubar) awake(ctx context.Context, fl machines.Fleet) []awake.Report {
+func (f *menubar) awake(ctx context.Context, fl machines.AllMachines) []awake.Report {
 	var out []awake.Report
 	for _, h := range fl.Hosts {
 		if h.Here || !h.Reachable {
@@ -193,7 +193,7 @@ func (f *menubar) local(ctx context.Context, in engine.FeedInput) {
 		f.update(ctx, func(r *pagemenubar.Reading) {
 			r.Power = f.o.Report(in.Power())
 			if ferr == nil && len(fl.Hosts) == 1 {
-				r.Fleet = hereFleet(r.Fleet, fl)
+				r.Fleet = hereAllMachines(r.Fleet, fl)
 			}
 			if serr == nil && len(sv.Hosts) == 1 {
 				r.Services = hereServices(r.Services, sv)
@@ -204,7 +204,7 @@ func (f *menubar) local(ctx context.Context, in engine.FeedInput) {
 
 // value: the fleet as last read with this host's row replaced by here's
 // one; here itself when nothing was read yet.
-func hereFleet(was *machines.Fleet, here machines.Fleet) *machines.Fleet {
+func hereAllMachines(was *machines.AllMachines, here machines.AllMachines) *machines.AllMachines {
 	if was == nil {
 		return &here
 	}
@@ -218,7 +218,7 @@ func hereFleet(was *machines.Fleet, here machines.Fleet) *machines.Fleet {
 	return &out
 }
 
-func hereServices(was *ports.Fleet, here ports.Fleet) *ports.Fleet {
+func hereServices(was *ports.AllMachines, here ports.AllMachines) *ports.AllMachines {
 	if was == nil {
 		return &here
 	}

@@ -18,11 +18,11 @@ type Deps struct {
 
 type Machines interface {
 	// value: sofar sees the fleet after each Mac's answer, the return holds every Mac.
-	FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(machines.Fleet)) (machines.Fleet, error)
+	FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(machines.AllMachines)) (machines.AllMachines, error)
 	// value: rewrites the owner's ssh blocks for the fleet just read.
-	SSHBlocks(ctx context.Context, f machines.Fleet) error
+	SSHBlocks(ctx context.Context, f machines.AllMachines) error
 	// value: keeps when each other Mac answered, and its VMs then.
-	Remember(ctx context.Context, f machines.Fleet) error
+	Remember(ctx context.Context, f machines.AllMachines) error
 	CheckCreate(ctx context.Context, r machines.CreateRequest) (machines.CreateRequest, error)
 	Create(ctx context.Context, r machines.CreateRequest, progress func(machines.Step)) (machines.Created, error)
 	// value: refuses every action while this Mac's engine is stopped.

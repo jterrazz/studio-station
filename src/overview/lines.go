@@ -135,7 +135,7 @@ func PortsRead(l ports.Listing) Read {
 	// reachable outside the tailnet with no declaration needs you.
 	public, private := 0, 0
 	var heard []ports.Port
-	for _, h := range l.Fleet.Hosts {
+	for _, h := range l.AllMachines.Hosts {
 		shared := map[string]bool{}
 		for _, s := range h.Services {
 			shared[s.VM+":"+strconv.Itoa(s.GuestPort)] = true

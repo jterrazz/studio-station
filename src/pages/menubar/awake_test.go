@@ -18,7 +18,7 @@ func TestAwakeOffersTheSwitchesThisMacHas(t *testing.T) {
 	now := time.Date(2026, 11, 3, 10, 30, 0, 0, time.UTC)
 	offered := func(caps machine.Capabilities) []string {
 		r := awake.Report{Now: now, Daemon: awake.EngineRunning, Mac: "this", Here: true, Reading: awake.Reading{Source: "ac"}, Caps: caps}
-		p := Awake(pageawake.Fleet{Now: now, Zone: time.UTC, Reports: []awake.Report{r}}, page.Context{Machine: "this"})
+		p := Awake(pageawake.AllMachines{Now: now, Zone: time.UTC, Reports: []awake.Report{r}}, page.Context{Machine: "this"})
 		ids := make([]string, 0, len(p.Actions))
 		for _, a := range p.Actions {
 			ids = append(ids, a.ID)

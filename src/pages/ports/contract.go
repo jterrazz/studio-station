@@ -109,7 +109,7 @@ func ListContract(l ports.Listing) ListJSON {
 	body := BodyJSON{Schema: "station.ports.list/v1", Ports: []PortJSON{}, Range: []RangeJSON{}}
 	var red, public, private []PortJSON
 	var all []ports.Port
-	for _, h := range l.Fleet.Hosts {
+	for _, h := range l.AllMachines.Hosts {
 		heard := map[string]ports.Port{}
 		for _, p := range h.Ports {
 			heard[p.Key()] = p
@@ -144,7 +144,7 @@ func ListContract(l ports.Listing) ListJSON {
 		}
 	}
 	body.Ports = append(append(append(body.Ports, red...), public...), private...)
-	body.Findings = finding.FleetDoc(ports.Exposed(all))
+	body.Findings = finding.AllMachinesDoc(ports.Exposed(all))
 	var node *NodeJSON
 	if t := l.Tailnet; t.State != "" {
 		state := "on"

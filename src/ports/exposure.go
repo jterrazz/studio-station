@@ -179,7 +179,7 @@ func Told(f finding.Finding) string {
 	return f.Machine.Name + ": " + f.Text
 }
 
-func OwnDevices(f Fleet, peers []Node) Fleet {
+func OwnDevices(f AllMachines, peers []Node) AllMachines {
 	// invariant: a VM is its own tailnet device when a peer bears its name,
 	// as this node or the node of the Mac that answered for it sees it.
 	for i, h := range f.Hosts {

@@ -119,4 +119,4 @@ func (o Menubar) reread(ctx context.Context, in engine.FeedInput, id page.ID, ev
 	return out
 }
 
-type EveryMac func(ctx context.Context) (pageawake.Fleet, error)
+type EveryMac func(ctx context.Context) (pageawake.AllMachines, error)

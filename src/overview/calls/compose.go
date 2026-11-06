@@ -74,7 +74,7 @@ type answer struct {
 	id        section.ID
 	read      overview.Read
 	err       error
-	all       *machines.Fleet
+	all       *machines.AllMachines
 	readiness []overview.Check
 }
 
@@ -131,7 +131,7 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 	go func() {
 		defer close(out)
 		got := map[section.ID]answer{}
-		var all *machines.Fleet
+		var all *machines.AllMachines
 		var readiness []overview.Check
 		send := func() bool {
 			sum := summarize(head, ids, got, reading, all)
@@ -169,7 +169,7 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 	return out
 }
 
-func summarize(head overview.Head, ids []section.ID, got map[section.ID]answer, reading *engine.Reading, all *machines.Fleet) overview.Summary {
+func summarize(head overview.Head, ids []section.ID, got map[section.ID]answer, reading *engine.Reading, all *machines.AllMachines) overview.Summary {
 	state, own := engineOf(head, reading)
 	var vms []overview.VM
 	if all != nil {
@@ -216,7 +216,7 @@ func engineOf(head overview.Head, r *engine.Reading) (overview.Engine, []finding
 
 // value: what a Mac's Overview reads of All machines: its VMs and their
 // findings; the other Macs are All machines' own.
-func thisMacsVMs(f machines.Fleet) ([]finding.Finding, []overview.VM) {
+func thisMacsVMs(f machines.AllMachines) ([]finding.Finding, []overview.VM) {
 	i := slices.IndexFunc(f.Hosts, func(h machines.HostView) bool { return h.Here })
 	if i < 0 {
 		return nil, nil

@@ -92,12 +92,12 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		session.farFrom(func(w *worldMac) farMac { return here.farMac(kenv, w) })
 	}
 	kenv.On.Refresh = func(ctx context.Context) error {
-		fleet := here.machines(false)
-		f, err := fleet.Fleet(ctx, false)
+		allMachines := here.machines(false)
+		f, err := allMachines.Fleet(ctx, false)
 		if err != nil {
 			return err
 		}
-		return fleet.SSHBlocks(ctx, f)
+		return allMachines.SSHBlocks(ctx, f)
 	}
 
 	commands := []*cobra.Command{

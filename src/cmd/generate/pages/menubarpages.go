@@ -29,19 +29,19 @@ func miniPorts() ports.Listing {
 			{Machine: mini, Port: 5900, Process: "screensharingd", Binds: []string{"100.98.133.20"}, Reach: ports.Tailnet},
 			{Machine: infra, Port: 6443, Process: "kube-apiserver", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet, Device: true},
 		}}
-	return ports.Listing{Fleet: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
+	return ports.Listing{AllMachines: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
 }
 
 // value: the ports of This Mac's VMs, as linux-1's Ports reads them: Vite
 // shared with its link, postgres reserved and not listening yet.
 func linuxPorts() ports.Listing {
-	host := serviceFleet().Hosts[0]
+	host := serviceAllMachines().Hosts[0]
 	host.Ports = nil
-	return ports.Listing{Fleet: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
+	return ports.Listing{AllMachines: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
 }
 
-func twoMacsAwake() pageawake.Fleet {
-	f := awakeFleet(awake.EngineRunning, true)
+func twoMacsAwake() pageawake.AllMachines {
+	f := awakeAllMachines(awake.EngineRunning, true)
 	f.Label = func(mac string) string { return page.MacName(mac, "jterrazz-macbook-pro") }
 	return f
 }

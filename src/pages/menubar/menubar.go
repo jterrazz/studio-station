@@ -43,7 +43,7 @@ type Reading struct {
 	Home     *overview.Summary
 	Samples  []activity.Reading
 	Fleet    *machines.Fleet
-	Services *ports.Fleet
+	Services *ports.AllMachines
 	Power    *awake.Report
 	// value: every other Mac's Awake, as its engine reports it.
 	Macs []awake.Report
