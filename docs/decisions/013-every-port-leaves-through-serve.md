@@ -3,11 +3,11 @@
 **Status:** Accepted
 **Date:** 2026-11-01
 
-Supersedes [ADR-012](012-services-are-leased-and-published.md).
+Supersedes [ADR-012](012-ports-are-reserved-and-shared.md).
 
 ## Context
 
-[ADR-012](012-services-are-leased-and-published.md) published each lease on 127.0.0.1 and on the host's tailnet ip, with `tailscale serve` only for HTTP. The real run on two hosts showed nothing left the host: Serve and HTTPS certificates were off on the tailnet, and the macOS Application Firewall dropped the ad-hoc signed station binary's bytes on the tailnet ip, with no prompt. A listener of station's own on the tailnet would need a firewall exception or a signed binary on every host.
+[ADR-012](012-ports-are-reserved-and-shared.md) published each lease on 127.0.0.1 and on the host's tailnet ip, with `tailscale serve` only for HTTP. The real run on two hosts showed nothing left the host: Serve and HTTPS certificates were off on the tailnet, and the macOS Application Firewall dropped the ad-hoc signed station binary's bytes on the tailnet ip, with no prompt. A listener of station's own on the tailnet would need a firewall exception or a signed binary on every host.
 
 ## Decision
 

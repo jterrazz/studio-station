@@ -4,7 +4,7 @@
 
 | Section          | Answers                                        |
 | ---------------- | ---------------------------------------------- |
-| The items        | Every config item, its place and what it does  |
+| The items        | Every setting, where it lives and what it does |
 | Values           | How an item that needs values asks for them    |
 | preferences.json | The file station keeps its own choices in      |
 | Environment      | The variables station reads, all resolved once |
@@ -13,27 +13,27 @@
 
 A setting that does not live on this machine's kind reads Not for this machine, and an apply of it is refused with exit 2. Each that lives here reads Applied (exactly as station applied it), Changed since (applied, then changed by someone: `station settings diff` shows how), Not applied, or Off here (the owner's choice, kept as `off_here` in `preferences.json`). What station applied, its fingerprint and when, is kept under `~/.local/state/station/applied/`.
 
-| Item                        | Place       | Sets                                                                                                                                                   | Reversible |
+| Item                        | Lives on    | Sets                                                                                                                                                   | Reversible |
 | --------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
 | `hushlogin`                 | all         | `~/.hushlogin`                                                                                                                                         | no         |
 | `tmux-dotfiles`             | all         | `~/.tmux.conf`, reloaded in a running tmux                                                                                                             | no         |
 | `starship-dotfiles`         | all         | `~/.config/starship.toml`                                                                                                                              | no         |
 | `github-login`              | all         | `gh auth login` over ssh; in a VM this token is the VM's own                                                                                           | no         |
-| `ghostty-dotfiles`          | host, macos | `~/.config/ghostty/` config and themes                                                                                                                 | no         |
-| `zed-dotfiles`              | host, macos | `~/.config/zed/` config and formatter values                                                                                                           | no         |
-| `git-signing`               | host, macos | GPG commit signing                                                                                                                                     | no         |
-| `spotlight-exclude`         | host, macos | Spotlight exclusions for build folders                                                                                                                 | no         |
-| `dock-reset`, `dock-spacer` | host, macos | the Dock                                                                                                                                               | no         |
-| `backup-exclusions`         | host        | `~/.cache` and Tart's VMs out of Time Machine (`tmutil addexclusion`) ([Disk](disk.md#backups))                                                        | yes        |
-| `tart-launcher`             | host        | `~/.local/bin/tart`, the launcher that sets `TART_HOME` ([Disk](disk.md#tart))                                                                         | no         |
-| `ssh-key`                   | host        | `~/.ssh/id_ed25519`                                                                                                                                    | no         |
-| `dns`                       | host        | the Quad9 encrypted DNS profile                                                                                                                        | no         |
-| `autologin`                 | host        | automatic login, for an unattended host; admin                                                                                                         | yes        |
-| `restart-after-power-cut`   | host        | `pmset` autorestart and wake for network, so the Mac comes back after a power cut; admin                                                               | yes        |
-| `never-sleeps`              | host        | the engine keeps the Mac awake, its servers with it; no admin, applied from any Mac                                                                    | yes        |
-| `lock-after-login`          | host        | lock the screen after the automatic login; admin                                                                                                       | yes        |
-| `sshd`                      | host        | Remote Login; admin                                                                                                                                    | yes        |
-| `claude-token`              | host        | the Claude Code token shared with VMs ([Secrets](secrets.md#claude-in-a-vm))                                                                           | yes        |
+| `ghostty-dotfiles`          | Mac, macos  | `~/.config/ghostty/` settings and themes                                                                                                                 | no         |
+| `zed-dotfiles`              | Mac, macos  | `~/.config/zed/` settings and formatter values                                                                                                           | no         |
+| `git-signing`               | Mac, macos  | GPG commit signing                                                                                                                                     | no         |
+| `spotlight-exclude`         | Mac, macos  | Spotlight exclusions for build folders                                                                                                                 | no         |
+| `dock-reset`, `dock-spacer` | Mac, macos  | the Dock                                                                                                                                               | no         |
+| `backup-exclusions`         | Mac         | `~/.cache` and Tart's VMs out of Time Machine (`tmutil addexclusion`) ([Disk](disk.md#backups))                                                        | yes        |
+| `tart-launcher`             | Mac         | `~/.local/bin/tart`, the launcher that sets `TART_HOME` ([Disk](disk.md#tart))                                                                         | no         |
+| `ssh-key`                   | Mac         | `~/.ssh/id_ed25519`                                                                                                                                    | no         |
+| `dns`                       | Mac         | the Quad9 encrypted DNS profile                                                                                                                        | no         |
+| `autologin`                 | Mac         | automatic login, for an unattended Mac; admin                                                                                                          | yes        |
+| `restart-after-power-cut`   | Mac         | `pmset` autorestart and wake for network, so the Mac comes back after a power cut; admin                                                               | yes        |
+| `never-sleeps`              | Mac         | the engine keeps the Mac awake, its servers with it; no admin, applied from any Mac                                                                    | yes        |
+| `lock-after-login`          | Mac         | lock the screen after the automatic login; admin                                                                                                       | yes        |
+| `sshd`                      | Mac         | Remote Login; admin                                                                                                                                    | yes        |
+| `claude-token`              | Mac         | the Claude Code token shared with VMs ([Secrets](secrets.md#claude-in-a-vm))                                                                           | yes        |
 | `git-shortcuts`             | all         | station's `[alias]` block in `~/.gitconfig`: wip, unwip, sync, feat, fix, chore, branches, lg, st, pushup                                              | yes        |
 | `docker-shortcuts`          | all         | `dclean`, `dclean-images`, `dreset` in station's zsh block (`~/.config/station/zsh/`), each asks y/n before it removes every container, image, or both | yes        |
 
@@ -64,7 +64,7 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 }
 ```
 
-`name` is this machine's name (a file station v2 left keeps it under `here`, read once and written as `name`), `macs` the other Macs it can drive (`machines add` and `machines forget` write it; a file that still keeps them under `hosts`, as station v3.0 did, is read the same and written under `macs` at the next save; `lan` is the address that Mac last answered with on your LAN, which `machines unlock` dials), `vm_user` the one login of every VM in the fleet, `share_list` the secrets whose accounts may be shared with a VM, written by hand ([Secrets](secrets.md#sharing-accounts)), `services` the policy of [published services](services.md#the-policy): `range` the host ports leases take, `max_per_vm` the leases one VM may hold, `ignored_ports` and `min_port` what is never published, `https` `port`, `path` or `off`; every `services` key is optional, the defaults being `40000-40999`, 20, `[22]`, 1024 and `port`. No secret is in it. A key no group names, such as the `tailnet` an earlier round wrote, is dropped at the next save and at setup's layout step. A `v` field names the version of the shape the file was written at; absent, it is version 1, and a file a newer station wrote is refused rather than read.
+`name` is this machine's name (a file station v2 left keeps it under `here`, read once and written as `name`), `macs` the other Macs it can drive (`machines add` and `machines forget` write it; a file that still keeps them under `hosts`, as station v3.0 did, is read the same and written under `macs` at the next save; `lan` is the address that Mac last answered with on your LAN, which `machines unlock` dials), `vm_user` the one login of every VM, `share_list` the secrets whose accounts may be shared with a VM, written by hand ([Secrets](secrets.md#sharing-accounts)), `services` the policy of [shared ports](ports.md#the-policy): `range` the ports of the Mac reservations take, `max_per_vm` the reservations one VM may hold, `ignored_ports` and `min_port` what is never shared, `https` `port`, `path` or `off`; every key of that policy is optional, the defaults being `40000-40999`, 20, `[22]`, 1024 and `port`. No secret is in it. A key no group names, such as the `tailnet` an earlier round wrote, is dropped at the next save and at setup's layout step. A `v` field names the version of the shape the file was written at; absent, it is version 1, and a file a newer station wrote is refused rather than read.
 
 ## Environment
 
@@ -73,7 +73,7 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 | Variable                                                               | Read for                                                                                                         |
 | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `AGENT_PASSWORD`                                                       | pre-fills the `autologin` form                                                                                   |
-| `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT`      | the gateway ports the TUI's probe checks                                                                         |
+| `OPENCLAW_GATEWAY_PORT`, `HERMES_GATEWAY_PORT`, `API_SERVER_PORT`      | the gateway ports the TUI's read looks at                                                                          |
 | `MISE_DATA_DIR`                                                        | where mise keeps its shims                                                                                       |
 | `NO_COLOR`, `COLUMNS`                                                  | the output form and width                                                                                        |
 | `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | the folders station uses, when absolute ([Disk](disk.md#the-folders))                                            |
@@ -84,7 +84,7 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 | `STATION_SYSTEM_DIRS`, `STATION_MACHINE_KIND`                          | which system folders count, and the machine kind, for a spec                                                     |
 | `STATION_SYSTEM_ROOT`                                                  | the root `/Applications`, `/opt/homebrew`, `/Library` and a VM's `/proc` are read under, for a spec              |
 | `STATION_KERNEL_STUB`                                                  | a folder of recorded kernel tables a Mac's activity is read from, for a spec                                     |
-| `STATION_POWER_STUB`                                                   | a folder whose files are the Power reading and whose calls go to `$HOME/.calls`, for a spec                      |
+| `STATION_POWER_STUB`                                                   | a folder whose files are the IOKit reading and whose calls go to `$HOME/.calls`, for a spec                      |
 | `STATION_GUEST_SSH_PORT`                                               | the port the engine dials a VM's sshd on (default 22), for a spec's stub sshd                                    |
 | `STATION_XDG_DETACHED`                                                 | internal: `setup`'s detached layout step                                                                         |
 

@@ -1,12 +1,12 @@
 # Images
 
-An image is a versioned, read-only VM disk that VMs are cloned from. Each Mac holds its own: built there from a base with a recipe embedded in the binary, or fetched where it is published. The catalogue has two images: `linux`, built or fetched, and `macos`, fetched only (station has no recipe for it).
+An image is a versioned, read-only VM disk that VMs are cloned from. Each Mac holds its own: built there from a base with a recipe embedded in the binary, or fetched where it is released. The catalogue has two images: `linux`, built or fetched, and `macos`, fetched only (station has no recipe for it).
 
 | Section           | Answers                                                    |
 | ----------------- | ---------------------------------------------------------- |
 | Listing           | `station images`, every Mac's                              |
 | Building          | `station images build`, the base and the version           |
-| Updating          | `station images update`, the published versions            |
+| Updating          | `station images update`, the released versions             |
 | The recipe        | What the image contains, and the two sessions that make it |
 | The binary inside | `--binary` and `make build-linux`                          |
 | Cleaning          | `images delete`; Tart's pull cache is `disk free tart`     |
@@ -37,16 +37,16 @@ station images update           # every image this Mac holds
 station images update linux     # ●  linux  2026.11.03  fetched
 ```
 
-The images are published at `ghcr.io/jterrazz/station-<image>`, one tag per version. An update asks the registry for the newest version, and fetches it only when it is newer than every version held: `is the newest` otherwise. The fetched version lands whole as an image disk beside the others, or not at all: a registry that does not answer, or a fetch that fails, exits 1 and leaves the image as it was. Like a build, it changes only the next VMs.
+The images are released at `ghcr.io/jterrazz/station-<image>`, one tag per version. An update asks the registry for the newest version, and fetches it only when it is newer than every version held: `is the newest` otherwise. The fetched version lands whole as an image disk beside the others, or not at all: a registry that does not answer, or a fetch that fails, exits 1 and leaves the image as it was. Like a build, it changes only the next VMs.
 
 ## The recipe
 
-The recipes are shell files embedded under `src/catalog/images/`. The build copies the `station` binary into the build VM, then runs two sessions inside it over the NAT, each over station's own ssh client: the first by the base image's password, the second by the image key the first installs:
+The recipes are shell files embedded under `src/catalog/images/`. The build copies the `station` binary into the build VM, then runs two sessions inside it behind its Mac, each over station's own ssh client: the first by the base image's password, the second by the image key the first installs:
 
-1. as the base's own user, `linux.sh` creates `vm_user` with passwordless sudo and the host's image key, installs the packages, Docker, mise, the `station` binary, lets sshd carry the engine's forwards (`/etc/ssh/sshd_config.d/60-station.conf`: `AllowTcpForwarding local`), runs `station setup` for the shell block, installs two systemd units: `station-intent` (tells the host about a poweroff, see [Machines](machines.md#lifetimes)) and `station-hostkeys` (generates ssh host keys at first boot, ordered before `ssh.socket` outside the default dependencies, which would make a cycle), and masks the getty on `/dev/hvc0`, since tart reads the console file back into the guest as input;
+1. as the base's own user, `linux.sh` creates `vm_user` with passwordless sudo and the Mac's image key, installs the packages, Docker, mise, the `station` binary, lets sshd carry the engine's forwards (`/etc/ssh/sshd_config.d/60-station.conf`: `AllowTcpForwarding local`), runs `station setup` for the shell block, installs two systemd units: `station-intent` (tells the Mac about a poweroff, see [Machines](machines.md#lifetimes)) and `station-hostkeys` (generates ssh host keys at first boot, ordered before `ssh.socket` outside the default dependencies, which would make a cycle), and masks the getty on `/dev/hvc0`, since tart reads the console file back into the guest as input;
 2. as `vm_user`, `linux-cleanup.sh` stops the base's `tart-guest-agent` (it runs as `admin`), removes the base's user and fails the build if it cannot, empties the machine id and the host keys, and powers off.
 
-A VM's first boot sets its own name and machine id and grows the disk. No tailscale is in the image: a VM is reached through its host ([Machines](machines.md#ssh-and-herdr)).
+A VM's first boot sets its own name and machine id and grows the disk. No tailscale is in the image: a VM is reached through its Mac ([Machines](machines.md#ssh-and-herdr)).
 
 ## The binary inside
 

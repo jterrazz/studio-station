@@ -14,5 +14,5 @@ Each host runs one `station daemon` under one launchd agent, `com.jterrazz.stati
 ## Consequences
 
 - The per-VM agents and `machines supervise` as a supervisor are retired; setup migrates them, refusing while one of their VMs runs.
-- One process per host owns the leases and the ssh connection to each VM's guest ([ADR-012](012-services-are-leased-and-published.md)).
+- One process per host owns the leases and the ssh connection to each VM's guest ([ADR-012](012-ports-are-reserved-and-shared.md)).
 - The protocol is versioned: a client of another version is refused `unknown_op`, never misread.

@@ -6,7 +6,7 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 | -------------- | ---------------------------------------------------- |
 | Rules          | What holds for every command                         |
 | Here           | `overview`, `apps`, `settings`, `disk`, `background` |
-| The fleet      | `machines`, `ports`, `images`, `accounts`            |
+| All machines   | `machines`, `ports`, `images`, `accounts`            |
 | The binary     | `setup`, `--version`, `help`                         |
 | Hidden aliases | The v2 words that still run, for one release         |
 | Plumbing       | The hidden commands the machine runs for itself      |
@@ -24,9 +24,9 @@ Every command of `station`, grouped as `station --help` groups them. The words a
 - Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`. With `--json`, the same refusal or failure is also the `station.error/v1` document on stdout (`schema`, `type`, `code`, `subject`, `message`, `hint`, `fix`), the exit code unchanged. A question answered no is `Error: <what> kept: you said no`, exit 1.
 - A word station does not know is `Error: unknown command "<word>"` / `Hint: station help`, exit 2; so is `station help <word>`.
 - A word under `disk` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station disk go` is `"go" is a disk row: say what to do with it`, hint `station disk free go`. Under `apps` the entry is a read: `station apps jq` is jq's detail; under `settings`, a setting's name is its read: `station settings dns`.
-- `--on <machine>` runs any command below on another machine of the fleet, through its engine, and renders the answer here; see [Machines](machines.md#on-another-machine).
+- `--on <machine>` runs any command below on another machine, through its engine, and renders the answer here; see [Machines](machines.md#on-another-machine).
 - `station use <machine>` makes every later command of this terminal run there, as `--on` would; `--on` still wins for one command. See [Machines](machines.md#this-terminals-machine).
-- A value a command needs from you is never an argv flag when it could be a secret: a config item asks in a form on a terminal ([Configuration](configuration.md)).
+- A value a command needs from you is never an argv flag when it could be a secret: a setting asks in a form on a terminal ([Configuration](configuration.md)).
 
 ## Here
 
@@ -61,7 +61,7 @@ The list sums This Mac first (`108 apps for this Mac · 3 updates · 100 not ins
 
 `install` installs in dependency order, then the settings each app brings; on a terminal its spinner names what runs, and ctrl-c stops it with nothing printed after, exit 130, what finished staying installed. Its outcome opens with the count, the machine and the time (`● Installed 2 apps on This Mac 9s`), then each app with the version and the method that hold it; the pipe keeps the app rows alone. An app already installed says so with its version, `● jq 1.8.1 brew already installed`, exit 0. A bare `update` updates only the apps with an update and says so the same way (`● Updated 3 apps on This Mac`; `● every app is up to date on This Mac` when none); `--method` takes `brew` (brew and cask), `npm`, `bun`, `uv`, `mise` or `skills`, never with names; `--all-machines` updates each Mac and running workspace in turn, says each server and stopped VM it skips, and exits 1 when a Mac does not answer. `remove` asks on a terminal and needs `--yes` off one; an app not installed is refused before anything runs.
 
-The refusals exit 2: `no app named "jqq"`, `dia lives on Macs only` (hint `--on <mac>`), `lazygit is not installed`, `infra is a server: station does not manage its apps`; an app whose method's manager is missing (`keynote needs mas, which is not installed`, hint `station apps install mas`) exits 1. An agent skill is an app: `station apps install frontend-design`. The model is [Apps and skills](tools-and-skills.md).
+The refusals exit 2: `no app named "jqq"`, `dia lives on Macs only` (hint `--on <mac>`), `lazygit is not installed`, `infra is a server: station does not manage its apps`; an app whose method's manager is missing (`keynote needs mas, which is not installed`, hint `station apps install mas`) exits 1. An agent skill is an app: `station apps install frontend-design`. The model is [Apps and skills](apps-and-skills.md).
 
 ### `station settings`
 
@@ -96,17 +96,17 @@ station background remove <label> [--yes] # a task of your own: boot it out and 
 
 An orphan is a task whose program is missing or whose app is gone. `remove` asks on a terminal and needs `--yes` off one; it takes only a user-scope task: a root one is refused, exit 2, with the command to run yourself (station never runs sudo), and the engine's own job is refused with `station engine stop`. A Linux workspace has no job manager station reads, so `--on` one is refused; a macOS workspace lists its own launchd tasks. `--json` is `station.background.list/v1`.
 
-### `station power`
+### `station awake`
 
 ```sh
-station power [--json] # the session, its guards, and this Mac's reading (lid, source, battery, thermal)
-station power awake [--lid] [--battery] [--for <d>] # keep this host awake: 1m..24h, default 4h; held by the engine
-station power sleep # end the session now
+station awake [--json] # every Mac, this one first: the session, its guards, and the Mac's reading (lid, source, battery, thermal)
+station awake <for> [--lid] [--battery] # keep this Mac awake: 30m, 1h, 4h, until 18:00 (1 min to 24 h); held by the engine
+station awake off # end the session now
 ```
 
 The engine that already runs holds the session, in memory only: a `PreventUserIdleSystemSleep` assertion, and with `--lid` the clamshell sleep disabled (no root, no `pmset -a`, no file). Every end sets the clamshell back to normal, and so does every engine start and quit. A guard ends the session first: thermal pressure at trapping (or heavy for 5 minutes lid closed on battery), the battery at 20 % on battery, Low Power Mode, or the lid closed on battery without `--battery`; each end is logged in `engine.log` and kept on the page for 24 hours. With `--lid`, a lid close sleeps the display with `pmset displaysleepnow`, never a display assertion. A guard already past its threshold refuses the start (exit 1). Piped, one record per row: the session (`on`, its flags, until in RFC 3339, who asked), the guards, then the reading as `key<TAB>value`. Unrelated to the `restart-after-power-cut` setting, the admin pmset policy of an always-on Mac.
 
-## The fleet
+## All machines
 
 ### `station machines`
 
@@ -138,7 +138,7 @@ station ports declare [<machine>] <port> --via <route> # declare it public: clou
 station ports undeclare [<machine>] <port> [--yes]     # take the declaration back
 ```
 
-`--all-machines` asks every Mac over ssh; `--all` lists the ports that listen on their machine only, otherwise counted on one line. `share` prints the URL before anything listens, piped the URL alone; a port is refused on a VM that shares 20 already (exit 1, `Hint: station ports stop-sharing <vm> <port>`) and while This Mac is signed out of Tailscale (exit 1, the reservation kept). `stop-sharing` asks yes or no and is remembered in `preferences.json` (`services.not_shared`). `declare` and `undeclare` are kept by the machine's Mac and refused inside a VM; the route is verified on every list (see [Services](services.md)). `--json` is `station.ports.list/v1`. `services`, `services url`, `services release` and `tailnet` are hidden aliases for one release. See [Services](services.md).
+`--all-machines` asks every Mac over ssh; `--all` lists the ports that listen on their machine only, otherwise counted on one line. `share` prints the URL before anything listens, piped the URL alone; a port is refused on a VM that shares 20 already (exit 1, `Hint: station ports stop-sharing <vm> <port>`) and while This Mac is signed out of Tailscale (exit 1, the reservation kept). `stop-sharing` asks yes or no and is remembered in `preferences.json` (`services.not_shared`). `declare` and `undeclare` are kept by the machine's Mac and refused inside a VM; the route is verified on every list (see [Ports](ports.md)). `--json` is `station.ports.list/v1`. The v2 nouns of this family and `tailnet` are hidden aliases for one release. See [Ports](ports.md).
 
 ### `station images`
 
@@ -173,7 +173,7 @@ station engine start # the engine bootstrapped again; the VMs it stopped stay st
 
 ### The Tailscale line
 
-The first line of `station ports` is This Mac's node: signed in with its name and whether Serve shares, signed out, or not installed. Read only: the owner logs in through the Tailscale app, and station never drives it but for [published services](services.md#serve-and-https).
+The first line of `station ports` is This Mac's node: signed in with its name and whether Serve shares, signed out, or not installed. Read only: the owner logs in through the Tailscale app, and station never drives it but for [shared ports](ports.md#serve-and-https).
 
 `station disk free docker` prunes Docker's unused data.
 
@@ -207,12 +207,12 @@ These commands exist for the machine's own use. They are hidden from help and th
 
 | Command                           | What runs it and what it does                                                                                                                                                                                                                         |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `station shell zsh`               | the `~/.zshrc` block evaluates it at every shell start: PATH, the mise activation, station's completion, and in a VM the lent Claude token and the [profiles'](services.md#profiles) exports. Output on stdout only; another shell or none is refused |
+| `station shell zsh`               | the `~/.zshrc` block evaluates it at every shell start: PATH, the mise activation, station's completion, and in a VM the shared Claude token and the [profiles'](ports.md#profiles) exports. Output on stdout only; another shell or none is refused |
 | `station shell prompt`            | the prompt's `custom.station` segment runs it: `on linux-1` while this terminal [uses](machines.md#this-terminals-machine) another machine, nothing otherwise; it never counts as a use                                                               |
 | `station completion <shell>`      | cobra's completion script, for a shell the block does not serve                                                                                                                                                                                       |
-| `station engine run`              | the launchd agent `com.jterrazz.station.engine` runs it on a host: the VMs and their services ([Machines](machines.md#the-engine))                                                                                                                    |
-| `station guest`                   | the host's engine runs it inside each VM over ssh: what listens there ([Services](services.md))                                                                                                                                                       |
-| `station machines pipe <vm>`      | a VM's `~/.ssh/config` ProxyCommand runs it: ssh's bytes to the VM's NAT ip ([Machines](machines.md#ssh-and-herdr))                                                                                                                                   |
+| `station engine run`              | the launchd agent `com.jterrazz.station.engine` runs it on a Mac: the VMs and their ports ([Machines](machines.md#the-engine))                                                                                                                    |
+| `station guest`                   | the Mac's engine runs it inside each VM over ssh: what listens there ([Ports](ports.md))                                                                                                                                                          |
+| `station machines pipe <vm>`      | a VM's `~/.ssh/config` ProxyCommand runs it: ssh's bytes to the VM's ip behind its Mac ([Machines](machines.md#ssh-and-herdr))                                                                                                                                   |
 | `station machines supervise <vm>` | retired: an old per-VM agent that still runs it exits at once; `station setup` removes those agents                                                                                                                                                   |
 
 `--on` is refused on `shell`, `completion`, `help`, `man`, `use`, `daemon`, `engine run`, `engine attach`, `guest`, `machines pipe` and `machines supervise`: none of them sends a call.

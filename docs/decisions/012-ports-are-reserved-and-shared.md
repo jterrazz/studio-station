@@ -1,11 +1,11 @@
 # ADR-012: Services are leased and published by the host
 
-**Status:** Superseded by [ADR-013](013-every-service-leaves-through-serve.md)
+**Status:** Superseded by [ADR-013](013-every-port-leaves-through-serve.md)
 **Date:** 2026-11-01
 
 ## Context
 
-A dev server in a VM must be reachable from the owner's other machines and an iPhone, over https for a secure context, and the tool must know the URL it is reached at. The VM is not on the tailnet ([ADR-010](010-vms-are-reached-through-their-host.md)), and a VM choosing ports on its host would let any VM take any port.
+A dev server in a VM must be reachable from the owner's other machines and an iPhone, over https for a secure context, and the tool must know the URL it is reached at. The VM is not on the tailnet ([ADR-010](010-vms-are-reached-through-their-mac.md)), and a VM choosing ports on its host would let any VM take any port.
 
 ## Decision
 

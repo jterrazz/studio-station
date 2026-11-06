@@ -14,7 +14,7 @@ func tailnetFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &absent):
 		return failed(err.Error(), "station apps install "+absent.App, err), true
 	case errors.As(err, &refused):
-		return failed(refused.Error(), "docs/reference/services.md#https", err), true
+		return failed(refused.Error(), "docs/reference/ports.md#https", err), true
 	}
 	return nil, false
 }

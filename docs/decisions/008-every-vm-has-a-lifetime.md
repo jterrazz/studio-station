@@ -17,7 +17,7 @@ Lifetime is asked at every create and never defaulted. The VM says when it power
 - If the console cannot be read, a poweroff leaves the VM stale for `clean stale-vms`; nothing is deleted on a guess.
 - A temporary VM cannot be stopped or restarted from the host, only deleted.
 
-Round 5 (2026-11-01, [ADR-011](011-one-daemon-per-host.md)): the host's one daemon, not a per-VM supervisor, reads the intent.
+Round 5 (2026-11-01, [ADR-011](011-one-engine-per-mac.md)): the host's one daemon, not a per-VM supervisor, reads the intent.
 
 Round 13 (2026-11-04, the v3 specification's SP-4 and SP-5): the words are throwaway and
 permanent, and two consequences above no longer hold. A workspace never starts by itself,

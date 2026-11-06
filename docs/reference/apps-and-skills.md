@@ -1,6 +1,6 @@
 # Apps and skills
 
-An app is installed content: software or an agent skill (v2 called it a tool). The catalogue in `src/catalog/` declares each one as a value, and `station apps`, `station overview` and the toolbelt skill all read it.
+An app is installed content: software or an agent skill (v2 had its own word for it). The catalogue in `src/catalog/` declares each one as a value, and `station apps`, `station overview` and the toolbelt skill all read it.
 
 | Section        | Answers                                                |
 | -------------- | ------------------------------------------------------ |
@@ -12,7 +12,7 @@ An app is installed content: software or an agent skill (v2 called it a tool). T
 
 ## The catalogue
 
-An app has a name, a description, a category, its install per kind of machine, the commands it provides and what it requires. Where it lives, the kinds of machine it may be on (`host`, `linux`, `macos`), is derived from its installs, so it cannot disagree with them; `station apps --json` says it as `lives_on` (`every-machine`, `mac-only`, `vms-only`). Dev tools live in VMs: Xcode, CocoaPods, XcodeGen, Android Studio and Lens are placed `macos` only and install nowhere until the macOS VM exists ([TODO](../../TODO.md)); Ollama stays on hosts for the GPU; Docker lives in the Linux VM.
+An app has a name, a description, a category, its install per kind of machine, the commands it provides and what it requires. Where it lives, the kinds of machine it may be on (`mac`, `linux`, `macos`), is derived from its installs, so it cannot disagree with them; `station apps --json` says it as `lives_on` (`every-machine`, `mac-only`, `vms-only`). Dev apps live in VMs: Xcode, CocoaPods, XcodeGen, Android Studio and Lens are placed `macos` only and install nowhere until the macOS VM exists ([TODO](../../TODO.md)); Ollama stays on Macs for the GPU; Docker lives in the Linux VM.
 
 An app asked for on a machine it does not live on is refused with exit 2, `dia lives on Macs only`, the hint the command with `--on`.
 
@@ -24,13 +24,13 @@ One registry, `Installers` in `src/apps/contract/`, holds an installer per metho
 
 | Method            | Install                                                            | Remove                                  | Update                           | Kinds       |
 | ----------------- | ------------------------------------------------------------------ | --------------------------------------- | -------------------------------- | ----------- |
-| `brew`, `cask`    | `brew bundle` (Brewfile on stdin)                                  | `brew uninstall`                        | `brew bundle --upgrade`          | host, macos |
-| `mas`             | `mas install <id>`, silent 60 s: signed out                        | `mas uninstall`                         | `mas update <id>`                | host, macos |
-| `npm`, `uv`       | `brew bundle`                                                      | `npm uninstall -g`, `uv tool uninstall` | `brew bundle --upgrade`          | host, macos |
+| `brew`, `cask`    | `brew bundle` (Brewfile on stdin)                                  | `brew uninstall`                        | `brew bundle --upgrade`          | Mac, macos  |
+| `mas`             | `mas install <id>`, silent 60 s: signed out                        | `mas uninstall`                         | `mas update <id>`                | Mac, macos  |
+| `npm`, `uv`       | `brew bundle`                                                      | `npm uninstall -g`, `uv tool uninstall` | `brew bundle --upgrade`          | Mac, macos  |
 | `bun`             | `bun install -g`                                                   | `bun remove -g`                         | `bun update -g`                  | all         |
 | `mise`            | `mise use --global <tool>@<version>`                               | `mise unuse --global`                   | `mise upgrade`                   | all         |
 | `script`, `shell` | the vendor's installer                                             | not reversible                          | rerun the script; none for shell | all         |
-| `app`             | manual: the refusal names how                                      | not reversible                          | none                             | host, macos |
+| `app`             | manual: the refusal names how                                      | not reversible                          | none                             | Mac, macos  |
 | `skill`           | `skills add <repo> -g -y --skill <name> --agent claude-code codex` | `skills remove -g -y <name>`            | the install again                | all         |
 
 An App Store app is installed by mas itself, outside the bundle: signed out, the App Store waits on a sign-in no terminal can give and mas says nothing, so a mas that says nothing for 60 s is stopped and the app fails with `the App Store did not answer in 60 s, as when it is signed out: open the App Store and sign in` (exit 1). `brew bundle` installs a whole request in one call and taps a trusted formula itself; the catalogue's `trusted` taps are the owner's act of trust ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). `station apps update` updates the catalogue apps that have an update, and only those; `--method <method>` narrows it to one method's (`brew` covers brew and cask).
@@ -41,7 +41,7 @@ A catalogue app can name the formula it `Supersedes`: with the formula alone the
 
 ## Runtimes
 
-mise owns the language runtimes on every machine ([ADR-003](../decisions/003-mise-owns-the-runtimes.md)). `station apps install node` writes mise's global config and installs; a machine that still has node from elsewhere shows it Not managed, "on PATH, not managed by mise", and the repair is that same command. `station shell zsh` activates mise in every shell ([Dotfiles](dotfiles.md)).
+mise owns the language runtimes on every machine ([ADR-003](../decisions/003-mise-owns-the-runtimes.md)). `station apps install node` writes mise's global file and installs; a machine that still has node from elsewhere shows it Not managed, "on PATH, not managed by mise", and the fix is that same command. `station shell zsh` activates mise in every shell ([Dotfiles](dotfiles.md)).
 
 ## Skills as apps
 

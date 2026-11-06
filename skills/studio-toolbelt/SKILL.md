@@ -214,7 +214,7 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 | Question                                   | Read (in studio-station)             |
 | ------------------------------------------ | ------------------------------------ |
-| How the catalogue works, adding a tool     | `docs/reference/tools-and-skills.md` |
+| How the catalogue works, adding a tool     | `docs/reference/apps-and-skills.md` |
 | Install / upgrade / status commands        | `docs/reference/commands.md`         |
 | What is actually installed on this machine | run `station status`                 |
 

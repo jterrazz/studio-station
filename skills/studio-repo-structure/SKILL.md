@@ -51,7 +51,7 @@ A page growing a second mood splits: the option table to `reference/`, the why t
 | The doctrine itself (three roles, golden rules, root layout)      | `studio-station` `docs/concepts/repo-structure.md`                                                                                                                              |
 | The manual's shape: the sections, the required pages, naming      | `studio-station` `docs/concepts/repo-structure.md`                                                                                                                              |
 | The rule ids the gate prints for that shape                       | `package-typescript`'s [Quality checks](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md#the-docs-layout-pass), the Docs (layout) pass |
-| The studio's own compiler (`make generate`, the toolbelt rosters) | `studio-station` `docs/reference/tools-and-skills.md`                                                                                                                           |
+| The studio's own compiler (`make generate`, the toolbelt rosters) | `studio-station` `docs/reference/apps-and-skills.md`                                                                                                                           |
 
 How `@jterrazz` projects compose (packages, naming, CI) is a separate capability: see the `studio-stack` skill.
 
