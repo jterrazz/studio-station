@@ -19,45 +19,59 @@
 
 ## The tree
 
+The families, each with its model, `contract/`, `calls/` and `adapter/<tech>/`:
+
 ```text
 src/
   machines/  apps/  settings/  disk/  ports/  accounts/  background/  awake/  activity/  images/
-             the families: each a pure model, its contract/, its calls/ and its adapter/<tech>/
   overview/  the Overview's read (overview/calls), which composes every section's own read
   setup/     setup.run, the one bootstrap call, and the preferences groups it writes
-  engine/    the engine's model (its events and its own calls), engine/calls, engine/contract (the Notifier)
+  engine/    the engine's model (its events, its own calls), engine/calls, engine/contract (the Notifier)
     process/ the engine itself: its runs, its guest connections, its jobs, its socket and its server
     jobs/    the sample job, which feeds Activity's history
     feeds/   the menu bar's pages, built over watches
-  core/      the shared kernel, no I/O
-    machine/   a machine's Ref, Kind, System, Capabilities and Profile, and the Verdict of an applicability rule
+```
+
+The shared kernel, which does no I/O:
+
+```text
+  core/
+    machine/   a machine's Ref, Kind, System, Capabilities and Profile, and the Verdict of a rule
     section/   the sections and section.For(kind), the one table of which kind shows which
     finding/   one Needs you line, and finding.Rank, its one order
     confirm/   the graded confirmations: confirm.For(action, kind) and confirm.Require
-    call/      a use case as a Call or a Watch, Bind and Gate, the Registry, the Router interface; lanes/, the bounded read pool
+    call/      a use case as a Call or a Watch, Bind and Gate, the Registry, the Router; lanes/, the read pool
     contract/  the contracts every family shares: Self, Preferences
     store/     what every store shares: its errors, its version, the Migrator setup runs
     fail/      the error: its type, its code, its words
     adapter/   macos and linux (Self), jsonfile (Preferences), fake
-  remote/    the Router; api/ (station.api/v2 frames, the client, calls.json); serve/ (the server of those frames);
-             each/ (a call fanned out to many machines); contract/ and adapter/ (unix, sshstdio: how an engine is reached)
+```
+
+Between machines, and the machine's own door:
+
+```text
+  remote/    the Router; api/ (station.api/v2 frames, the client, calls.json); serve/ (their server);
+             each/ (a call fanned out to many machines); contract/ and adapter/ (unix, sshstdio)
   platform/
-    local/   the machine's door (Runner, FS, Env, Net, Sockets, Clock): the only importer of os/exec, files, the network;
+    local/   Runner, FS, Env, Net, Sockets, Clock: the only importer of os/exec, files, the network;
              localtest/, its scripted fakes
     darwin/  the only cgo: IOKit power and the kernel tables, with their spec seams
-  catalog/   pure data: apps and their disk rows, settings, managers, images, ports' profiles, the embedded dotfiles and recipes
-  page/      the page language: sections, rows, values, marks, reasons, actions; Seal and station.page/v1
+```
+
+The data, the presentation and the surfaces:
+
+```text
+  catalog/   pure data: apps and their disk rows, settings, managers, images, profiles, dotfiles, recipes
+  page/      the page language: sections, rows, values, marks, reasons, actions; station.page/v1
   pages/     one package per page: a family's result to a page, pure
-  ui/        the design system: token, atom, molecule, organism, template; render/ (tty, pipe, json, tui); help/
-  output/    the only place that knows a terminal: picks tty, pipe or json, and prints the one error block
+  ui/        token, atom, molecule, organism, template; render/ (tty, pipe, json, tui); help/
+  output/    the only place that knows a terminal: picks the form, prints the one error block
   surface/
-    cli/     the cobra tree, one folder per noun and verb; kit/ (how a leaf is declared, answers a confirmation, words an error); words/
+    cli/     the cobra tree, one folder per noun and verb; kit/; words/ (every code's words)
     tui/     the Bubble Tea app and its screens/
   world/     the fake world: data only, and its closed list of events
-  wire/      the composition root: builds the adapters, the stores, the Profile, the Registry and the Router; the cobra tree under Fang
-  cmd/
-    station/   process entry: reads argv, the environment and the streams once, calls wire
-    generate/  the compiler
+  wire/      the composition root: adapters, stores, the Profile, the Registry, the Router, Fang
+  cmd/       station/ (process entry: argv, environment, streams, once), generate/ (the compiler)
 ```
 
 Beside `src/`: `apps/menubar` (Swift, a client of the engine's socket), `specs/` (the proofs, [Test](../guides/test.md)), `skills/` (what this repository ships to agents).
@@ -77,7 +91,7 @@ A call declares its name, its section (empty for a call of no section: `machines
 
 What a machine can do is its `core/machine.Profile`, built once by `wire`: its kind and system from `Self`, its battery, lid and thermal from `awake/contract.Power`, a job manager, a hypervisor and an engine from what it wires. A rule reads the capabilities, never a model name: a desktop Mac has no battery guard because it reports no battery, and a Linux workspace has no Background because it reports no job manager.
 
-A strategy is a contract with several adapters chosen per item at run time, through one registry in the contract package: `apps/contract.Installers` (per catalogue method), `settings/contract.Appliers` (per effect), `ports/contract.PublicRoutes` (per `--via` route). No other code switches on a method, an effect or a route. The `Hypervisor` is one contract with one real adapter, `tart`; the spec build runs the VM stories a second time over a fake `vz`, so a second hypervisor is a folder and a line in `wire`. A family may import another family's `contract` (Settings' `lock-after-login` writes through `background/contract.Jobs`), never its adapters.
+A strategy is a contract with several adapters chosen per item at run time, through one registry in the contract package: `Installers` of `src/apps/contract/` (per catalogue method), `settings/contract.Appliers` (per effect), `ports/contract.PublicRoutes` (per `--via` route). No other code switches on a method, an effect or a route. The `Hypervisor` is one contract with one real adapter, `tart`; the spec build runs the VM stories a second time over a fake `vz`, so a second hypervisor is a folder and a line in `wire`. A family may import another family's `contract` (Settings' `lock-after-login` writes through `background/contract.Jobs`), never its adapters.
 
 ## The contracts
 
