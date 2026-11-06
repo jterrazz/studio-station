@@ -172,6 +172,12 @@ func flags(s awake.Session) string {
 }
 
 func (m *Keeper) Awake(req awake.Request) (held awake.Session, refreshed bool, err error) {
+	if !req.Until.IsZero() {
+		req.For = req.Until.Sub(m.clock.Now().UTC().Truncate(time.Second))
+		if req.For <= 0 {
+			return awake.Session{}, false, &awake.RangeError{}
+		}
+	}
 	if req.For == 0 {
 		req.For = awake.DefaultFor
 	}
@@ -195,6 +201,9 @@ func (m *Keeper) Awake(req awake.Request) (held awake.Session, refreshed bool, e
 	m.reading = r
 	now := m.clock.Now().UTC().Truncate(time.Second)
 	want.StartedAt, want.Until, want.For = now, now.Add(req.For), req.For
+	if !req.Until.IsZero() {
+		want.Until = req.Until.UTC()
+	}
 	refreshed = m.session != nil
 	if refreshed {
 		was := m.session.Lid

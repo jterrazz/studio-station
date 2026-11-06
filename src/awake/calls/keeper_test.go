@@ -304,3 +304,19 @@ func TestAHeldSessionLogsItsHeartbeatEvery30Seconds(t *testing.T) {
 		t.Fatalf("a heartbeat was logged with no session held: %q", beats)
 	}
 }
+
+// invariant: a keep-awake asked until an hour ends at that hour, however
+// long after the page that offered it was read: Until 17:00 holds until
+// 17:00, never 17:01.
+func TestAKeepAwakeUntilAnHourEndsAtThatHour(t *testing.T) {
+	w := newWorld(t, laptop())
+	at := time.Date(2026, 11, 3, 17, 0, 0, 0, time.UTC)
+	w.clock.At = time.Date(2026, 11, 3, 10, 0, 47, 0, time.UTC)
+	w.awake(awake.Request{For: 7 * time.Hour, Until: at})
+	if got := w.m.View().Session.Until; !got.Equal(at) {
+		t.Fatalf("until %s, want %s", got, at)
+	}
+	if _, _, err := w.m.Awake(awake.Request{Until: w.clock.At.Add(-time.Minute)}); err == nil {
+		t.Fatalf("an hour already past is taken")
+	}
+}

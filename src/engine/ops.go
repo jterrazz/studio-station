@@ -49,4 +49,6 @@ type AwakeIn struct {
 	// value: seconds.
 	For int    `json:"for,omitempty"`
 	By  string `json:"by,omitempty"`
+	// value: the end asked (until 17:00), which wins over For.
+	Until *time.Time `json:"until,omitempty"`
 }

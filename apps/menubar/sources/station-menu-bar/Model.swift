@@ -222,6 +222,7 @@ final class Model: ObservableObject {
         state.running = action.id
         state.settling = nil
         state.status = nil
+        state.sent = answers
         let on = navigation.watched
         if action.run?.terminal == true { closePanel() }
         let socket = self.socket
@@ -233,7 +234,8 @@ final class Model: ObservableObject {
             state.say(status, on: on)
             state.showing(navigation.watched)
             if status?.failed != true, action.run?.call == ActionRunner.awake, state.pushed?.id == MenuPage.awake {
-                for key in ["Lid", "Battery"] { if let v = answers[key], v == "true" || v == "false" { state.held[key] = v } }
+                let sent = (action.run?.in ?? [:]).merging(answers) { $1 }
+                for key in ["Lid", "Battery"] { if let v = sent[key], v == "true" || v == "false" { state.held[key] = v } }
                 state.held.merge(AwakePage.holding(action, answers: answers)) { $1 }
             }
             if action.mutates == true, status?.failed != true, action.run?.call != nil {

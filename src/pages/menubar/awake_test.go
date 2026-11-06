@@ -61,3 +61,28 @@ func TestKeepAwakeForPicksTheTermInForce(t *testing.T) {
 		t.Fatalf("no session picks %q, want none", got)
 	}
 }
+
+// invariant: Until's hours are sent as the hour itself, and a switch
+// flipped while a keep-awake holds sends the end it holds until, never a
+// time left counted when the page was read: both end where they said.
+func TestAwakeSendsTheEndItHoldsUntil(t *testing.T) {
+	now := time.Date(2026, 11, 3, 10, 30, 0, 0, time.UTC)
+	until := time.Date(2026, 11, 3, 14, 30, 0, 0, time.UTC)
+	r := awake.Report{Now: now, Engine: awake.EngineRunning, Mac: "this", ThisMac: true, Reading: awake.Reading{Source: "ac"},
+		Caps: machine.Capabilities{Engine: true, Lid: true, Battery: true},
+		Session: &awake.Session{StartedAt: now.Add(-time.Hour), Until: until, For: 4 * time.Hour}}
+	p := Awake(pageawake.AllMachines{Now: now, Zone: time.UTC, Reports: []awake.Report{r}}, page.Context{Machine: "this"})
+	for _, a := range p.Actions {
+		switch a.ID {
+		case ActionUntil:
+			f := a.Form.Fields[0]
+			if f.Key != "Until" || f.Options[0].Value != `"2026-11-03T11:00:00Z"` || f.Options[0].Label != "11:00" {
+				t.Fatalf("Until offers %s = %s (%s)", f.Key, f.Options[0].Value, f.Options[0].Label)
+			}
+		case ActionLid, ActionBattery:
+			if a.Run.In["Until"] != `"2026-11-03T14:30:00Z"` || a.Run.In["For"] != "" {
+				t.Fatalf("%s sends %v", a.ID, a.Run.In)
+			}
+		}
+	}
+}

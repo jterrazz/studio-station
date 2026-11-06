@@ -12,7 +12,10 @@ type Request struct {
 	Lid     bool
 	Battery bool
 	For     time.Duration
-	By      string
+	// value: the term given by its end (until 17:00): it wins over For, so
+	// a term picked from a page read a while ago still ends at its hour.
+	Until time.Time
+	By    string
 	// value: the term as the owner said it (4h, until 18:00), for the words
 	// of its refusal.
 	Words string
