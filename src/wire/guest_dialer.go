@@ -4,8 +4,10 @@ import (
 	"context"
 	"io"
 	"net/netip"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/machines/contract"
@@ -25,7 +27,7 @@ type engineGuests struct {
 	vms    *machinescalls.Service
 }
 
-func (g engineGuests) Dial(ctx context.Context, vm string, at netip.AddrPort) (engine.Guest, error) {
+func (g engineGuests) Dial(ctx context.Context, vm string, at netip.AddrPort) (process.Guest, error) {
 	c, err := g.dialer.Dial(ctx, contract.GuestTarget{VM: vm, Address: at, User: g.vms.VMUser(), Key: g.vms.KeyPath(), KnownHosts: g.vms.KnownHostsPath(vm)})
 	if err != nil {
 		return nil, err
@@ -35,7 +37,44 @@ func (g engineGuests) Dial(ctx context.Context, vm string, at netip.AddrPort) (e
 
 type engineGuest struct{ contract.Guest }
 
-func (g engineGuest) Exec(ctx context.Context, line string, stdin io.Reader, stdout, stderr io.Writer) (int, error) {
-	res, err := g.Guest.Exec(ctx, contract.GuestCommand{Line: line, Stdin: stdin, Stdout: stdout, Stderr: stderr})
-	return res.Code, err
+func (g engineGuest) Exec(ctx context.Context, line, stdin string) (engine.GuestRan, error) {
+	res, err := g.Guest.Exec(ctx, contract.GuestCommand{Line: line, Stdin: strings.NewReader(stdin)})
+	return engine.GuestRan{Code: res.Code, Stdout: res.Stdout, Stderr: res.Stderr}, err
 }
+
+func (g engineGuest) Forward(ctx context.Context, ip string, port int) (process.Stream, error) {
+	c, err := g.Guest.Forward(ctx, ip, port)
+	if c == nil {
+		return nil, err
+	}
+	return c, err
+}
+
+// invariant: the session runs until its command, the connection or ctx
+// ends; its output then ends too, so the engine's reader stops.
+func (g engineGuest) Attach(ctx context.Context, line string) (process.Stream, error) {
+	inR, inW := io.Pipe()
+	outR, outW := io.Pipe()
+	go func() {
+		_, _ = g.Guest.Exec(ctx, contract.GuestCommand{Line: line, Stdin: inR, Stdout: outW, Stderr: io.Discard})
+		_ = outW.Close()
+		_ = inR.Close()
+	}()
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-g.Done():
+		}
+		_ = outW.Close()
+	}()
+	return session{out: outR, in: inW}, nil
+}
+
+type session struct {
+	out *io.PipeReader
+	in  *io.PipeWriter
+}
+
+func (s session) Read(p []byte) (int, error)  { return s.out.Read(p) }
+func (s session) Write(p []byte) (int, error) { return s.in.Write(p) }
+func (s session) Close() error                { return s.in.Close() }

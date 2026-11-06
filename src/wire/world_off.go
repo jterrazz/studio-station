@@ -18,6 +18,7 @@ import (
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/platform/local"
@@ -68,9 +69,9 @@ func (*worldMac) budgets() probe.Clock                                  { return
 func (*worldMac) vault() accountscontract.Vault                         { return nil }
 func (*worldMac) identities() accountscontract.Identities               { return nil }
 func (*worldMac) secretSource() accountscontract.SecretSource           { return nil }
-func (*worldMac) notifier() engine.Notifier                             { return nil }
+func (*worldMac) notifier() process.Notifier                            { return nil }
 func (*worldMac) checks() contract.CheckRunner                          { return nil }
-func (*worldMac) engineFrom(func() *engine.Daemon)                      {}
+func (*worldMac) engineFrom(func() *process.Daemon)                     {}
 func (*worldMac) macs() remotecontract.EndpointDialer                   { return nil }
 func (*worldMac) stopMarks() engine.StopMarks                           { return nil }
 func (*worldMac) engineVersion() string                                 { return "" }

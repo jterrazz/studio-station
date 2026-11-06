@@ -46,6 +46,7 @@ import (
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginefake "github.com/jterrazz/studio-station/src/engine/adapter/fake"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	imagesfake "github.com/jterrazz/studio-station/src/images/adapter/fake"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
@@ -102,9 +103,9 @@ type worldMac struct {
 	run  *worldRun
 	name string
 
-	start    func() *engine.Daemon
+	start    func() *process.Daemon
 	starting bool
-	engine   *engine.Daemon
+	engine   *process.Daemon
 	// value: when the world says the running engine started: a Mac rebooted
 	// under it, inside the command, ends it with its process.
 	began  time.Time
@@ -339,11 +340,11 @@ func (m *worldMac) secretSource() accountscontract.SecretSource {
 
 func (m *worldMac) checks() contract.CheckRunner { return machinesfake.CheckRunnerOf(m.run.w) }
 
-func (m *worldMac) notifier() engine.Notifier {
+func (m *worldMac) notifier() process.Notifier {
 	return lockedNotifier{w: m.run.w, n: enginefake.NewNotifier(m.run.w)}
 }
 
-func (m *worldMac) engineFrom(start func() *engine.Daemon) { m.start = start }
+func (m *worldMac) engineFrom(start func() *process.Daemon) { m.start = start }
 
 func (m *worldMac) engineVersion() string {
 	if e := m.slice().Engine; e != nil {
@@ -496,7 +497,7 @@ func (m *worldMac) macs() remotecontract.EndpointDialer { return worldDialer{r: 
 // runs, and ends once it says otherwise or says it started since: begun at the first need of it,
 // then stepped over the world's clock until it is quiet, so a story that
 // waits on the engine is deterministic.
-func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
+func (m *worldMac) up(ctx context.Context) (*process.Daemon, bool) {
 	if m.engine != nil && m.runs() && !m.engineStarted().Equal(m.began) {
 		m.down(true)
 	}
@@ -543,7 +544,7 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 // watches the real ones hold, over the engine's own streams, for as long as
 // it runs in the command: the menu bar its page and events watches from
 // launch, and This Mac's activity only while open.
-func (m *worldMac) surfaces(ctx context.Context, d *engine.Daemon) {
+func (m *worldMac) surfaces(ctx context.Context, d *process.Daemon) {
 	e := m.slice().Engine
 	ctx, cancel := context.WithCancel(context.WithValue(ctx, waits{}, true))
 	var held sync.WaitGroup
@@ -1013,7 +1014,7 @@ func (worldSockets) ListenUnix(string) (local.Listener, error) {
 
 type lockedNotifier struct {
 	w *world.World
-	n engine.Notifier
+	n process.Notifier
 }
 
 func (l lockedNotifier) Notify(ctx context.Context, n engine.Notification) {

@@ -13,7 +13,6 @@ import (
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/engine"
-	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/ports/adapter/guest"
 )
 
@@ -52,7 +51,7 @@ func (m machine) accounts() *accountscalls.Reader {
 		},
 		Daemon: func(ctx context.Context) ([]accounts.VMRead, string) {
 			var view engine.AccountsView
-			if err := d.do(ctx, process.Accounts, nil, &view); err != nil {
+			if err := d.do(ctx, engine.CallAccounts, nil, &view); err != nil {
 				if _, missing := m.host.FS.Stat(catalog.EnginePlist(m.host.Env.Home())); missing != nil {
 					return nil, accounts.DaemonAbsent
 				}

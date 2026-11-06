@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
-	"github.com/jterrazz/studio-station/src/engine/process"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/settings/adapter/docker"
 	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
 
@@ -132,8 +132,8 @@ func engineHolder(api engineAPI) func(ctx context.Context, vm string) (int, erro
 }
 
 func keptOf(ctx context.Context, api engineAPI, name string) (activity.Kept, time.Time, bool, error) {
-	var out process.ActivityOut
-	if err := api.do(ctx, process.Activity, nil, &out); err != nil {
+	var out engine.ActivityOut
+	if err := api.do(ctx, engine.CallActivity, nil, &out); err != nil {
 		return activity.Kept{}, time.Time{}, false, err
 	}
 	for _, kept := range out.Machines {

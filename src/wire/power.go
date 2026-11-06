@@ -9,7 +9,6 @@ import (
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/engine"
-	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
@@ -27,17 +26,17 @@ func (m machine) power() *awakecalls.Service {
 	return awakecalls.NewService(m.host.Clock, awakecalls.ServicePorts{
 		View: func(ctx context.Context) (awake.View, error) {
 			var v awake.View
-			err := c.do(ctx, process.Power, nil, &v)
+			err := c.do(ctx, engine.CallPower, nil, &v)
 			return v, powerDown(err)
 		},
 		Awake: func(ctx context.Context, r awake.Request) (awake.Awoken, error) {
 			var a awake.Awoken
-			err := c.do(ctx, process.Awake, engine.AwakeIn{Lid: r.Lid, Battery: r.Battery, For: int(r.For / time.Second), By: r.By}, &a)
+			err := c.do(ctx, engine.CallAwake, engine.AwakeIn{Lid: r.Lid, Battery: r.Battery, For: int(r.For / time.Second), By: r.By}, &a)
 			return a, powerDown(err)
 		},
 		Sleep: func(ctx context.Context) (awake.Slept, error) {
 			var s engine.PowerSlept
-			err := c.do(ctx, process.Sleep, nil, &s)
+			err := c.do(ctx, engine.CallSleep, nil, &s)
 			return awake.Slept{Ended: s.Ended, After: time.Duration(s.After) * time.Second}, powerDown(err)
 		},
 		Installed: func() bool {

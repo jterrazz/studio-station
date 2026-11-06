@@ -3,7 +3,7 @@ package wire
 import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
@@ -12,7 +12,7 @@ import (
 type farMac struct {
 	registry *call.Registry
 	profile  coremachine.Profile
-	start    func() *engine.Daemon
+	start    func() *process.Daemon
 	// value: its own Router, which reaches the VMs it holds.
 	relay served
 }
@@ -24,5 +24,5 @@ func (m machine) farMac(env kit.Env, w *worldMac) farMac {
 	fenv := kit.Env{Out: env.Out, On: &kit.On{Here: there.here()}, Self: there.profile.Ref}
 	r := there.router(fenv)
 	fenv.Calls = r
-	return farMac{registry: there.registry(fenv), profile: there.profile, start: func() *engine.Daemon { return there.daemon(fenv) }, relay: served{r}}
+	return farMac{registry: there.registry(fenv), profile: there.profile, start: func() *process.Daemon { return there.daemon(fenv) }, relay: served{r}}
 }

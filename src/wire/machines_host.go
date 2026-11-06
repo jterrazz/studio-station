@@ -40,5 +40,5 @@ type machinesDaemon struct{ hostDaemon }
 
 func (d machinesDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (machinescalls.GuestRan, error) {
 	out, err := d.hostDaemon.GuestExec(ctx, vm, line, stdin)
-	return machinescalls.GuestRan{Stdout: out.Stdout, Stderr: out.Stderr, ExitCode: out.ExitCode}, err
+	return machinescalls.GuestRan{Stdout: out.Stdout, Stderr: out.Stderr, ExitCode: out.Code}, err
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	enginecmd "github.com/jterrazz/studio-station/src/surface/cli/engine"
 	enginestart "github.com/jterrazz/studio-station/src/surface/cli/engine/start"
@@ -17,8 +18,8 @@ import (
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-func (m machine) control() *engine.Control {
-	return engine.NewControl(m.host, m.engineAPI(), m.machines(false), engineHypervisor{m.hypervisor()}, m.engineJob(), engine.ControlOptions{
+func (m machine) control() *process.Control {
+	return process.NewControl(engineMac{m.host}, m.engineAPI(), m.machines(false), engineHypervisor{m.hypervisor()}, m.engineJob(), process.ControlOptions{
 		Power: m.powerPort, HereName: m.where.Machine, State: m.paths.State,
 		Version: Version(), Marks: m.stopMarks(),
 	})

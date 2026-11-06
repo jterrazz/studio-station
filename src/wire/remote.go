@@ -117,7 +117,7 @@ type guestRelay struct{ d hostDaemon }
 
 func (g guestRelay) GuestExec(ctx context.Context, vm, line, stdin string) (stdout string, code int, err error) {
 	out, err := g.d.GuestExec(ctx, vm, line, stdin)
-	return out.Stdout, out.ExitCode, err
+	return out.Stdout, out.Code, err
 }
 
 func (m machine) askFleet(ctx context.Context, macs []string, answered func(string, model.HostView)) {

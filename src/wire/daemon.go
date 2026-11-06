@@ -25,6 +25,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/engine"
 	enginelog "github.com/jterrazz/studio-station/src/engine/adapter/log"
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	"github.com/jterrazz/studio-station/src/engine/feeds"
 	"github.com/jterrazz/studio-station/src/engine/process"
 	model "github.com/jterrazz/studio-station/src/machines"
@@ -32,7 +33,6 @@ import (
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
-	"github.com/jterrazz/studio-station/src/platform/local"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/remote"
 	"github.com/jterrazz/studio-station/src/remote/api"
@@ -48,7 +48,7 @@ func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 // Router, so its fleet reaches the other Macs as the CLI's does; a recall
 // rides the engine's own connections, never its socket: the lends are bound
 // to the engine they serve.
-func (m machine) daemon(env kit.Env) *engine.Daemon {
+func (m machine) daemon(env kit.Env) *process.Daemon {
 	lends := &daemonLends{}
 	registry := m.registry(env)
 	calls := env.Calls
@@ -63,15 +63,15 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		return m.everyMacAwake(ctx, inside)
 	}}
 	guests := engineGuests{dialer: m.guestDialer(), vms: m.machines(false)}
-	notifier := func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) }
+	notifier := func(write func(subject, text string)) process.Notifier { return enginelog.New(write) }
 	var tailnet portscontract.Tailnet = m.tailnetCLI().Tracked(engine.ChildrenDir(m.paths.State))
 	var checks machinescontract.CheckRunner = dial.Checker{}
 	if m.world != nil {
-		notifier = func(func(subject, text string)) engine.Notifier { return m.world.notifier() }
+		notifier = func(func(subject, text string)) process.Notifier { return m.world.notifier() }
 		tailnet = m.world.tailnet()
 		checks = m.world.checks()
 	}
-	var d *engine.Daemon
+	var d *process.Daemon
 	sample := &enginejobs.Sample{
 		Calls: calls, Meter: m.meter(), Clock: m.host.Clock,
 		History: func() *activity.History { return d.History() },
@@ -89,7 +89,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 			return seen
 		},
 	}
-	d = engine.New(m.host, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
+	d = process.New(engineMac{m.host}, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, process.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, process.Options{
 		Remember: func(vm string, port int, stopped bool) error {
 			return portscalls.Remember(m.stores.services(), vm, port, stopped)
 		},
@@ -101,7 +101,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 			engine.PagePorts: menubar.Ports(), engine.PageAwake: menubar.Awake(), engine.PageActivity: menubar.Activity()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
 		Listening: m.listeners("/").Read, Declarations: m.stores.declarations.List,
-		Jobs: []engine.Tick{sample.Run},
+		Jobs: []process.Tick{sample.Run},
 	})
 	lends.s = m.secretsVia(d, func(_ context.Context, vm string) (bool, error) {
 		for _, v := range d.VMs() {
@@ -167,7 +167,7 @@ type hostDaemon struct{ c engineAPI }
 func (m machine) hostDaemon() hostDaemon { return hostDaemon{c: m.engineAPI()} }
 
 func downAs(err, sentinel error) error {
-	var down *engine.DownError
+	var down *enginecalls.DownError
 	var gone *api.Down
 	if errors.As(err, &down) || errors.As(err, &gone) {
 		return sentinel
@@ -192,21 +192,21 @@ func (d hostDaemon) VMs(ctx context.Context) (map[string]machinescalls.DaemonVM,
 	return out, nil
 }
 
-func (d hostDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (local.Output, error) {
-	var ran process.ExecOut
-	if err := d.c.do(ctx, process.GuestExec, process.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
-		return local.Output{}, downAs(err, model.ErrDaemonDown)
+func (d hostDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (engine.GuestRan, error) {
+	var ran engine.ExecOut
+	if err := d.c.do(ctx, engine.CallGuestExec, engine.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
+		return engine.GuestRan{}, downAs(err, model.ErrDaemonDown)
 	}
-	return local.Output{Stdout: ran.Stdout, Stderr: ran.Stderr, ExitCode: ran.Code}, nil
+	return engine.GuestRan(ran), nil
 }
 
 func (d hostDaemon) Do(ctx context.Context, op, vm string) error {
-	return downAs(d.c.do(ctx, process.VM(op), process.VMIn{VM: vm}, nil), model.ErrDaemonDown)
+	return downAs(d.c.do(ctx, engine.CallVM(op), engine.VMIn{VM: vm}, nil), model.ErrDaemonDown)
 }
 
 func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile string) (model.Reserved, error) {
 	var v ports.ServiceView
-	if err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
+	if err := d.c.do(ctx, engine.CallReserve, engine.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
 		return model.Reserved{}, downAs(err, model.ErrDaemonDown)
 	}
 	return model.Reserved{
@@ -239,19 +239,19 @@ type servicesDaemon struct{ c engineAPI }
 
 func (d servicesDaemon) Services(ctx context.Context) (ports.HostServices, error) {
 	var v ports.HostServices
-	err := d.c.do(ctx, process.Services, nil, &v)
+	err := d.c.do(ctx, engine.CallServices, nil, &v)
 	return v, downAs(err, ports.ErrDaemonDown)
 }
 
 func (d servicesDaemon) Reserve(ctx context.Context, vm string, port int, pinned bool) (ports.ServiceView, error) {
 	var v ports.ServiceView
-	err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: pinned}, &v)
+	err := d.c.do(ctx, engine.CallReserve, engine.ReserveIn{VM: vm, GuestPort: port, Pinned: pinned}, &v)
 	return v, downAs(err, ports.ErrDaemonDown)
 }
 
 func (d servicesDaemon) Release(ctx context.Context, vm string, port int) (ports.Reservation, error) {
 	var l ports.Reservation
-	err := d.c.do(ctx, process.Release, process.ReserveIn{VM: vm, GuestPort: port}, &l)
+	err := d.c.do(ctx, engine.CallRelease, engine.ReserveIn{VM: vm, GuestPort: port}, &l)
 	return l, downAs(err, ports.ErrDaemonDown)
 }
 

@@ -14,7 +14,6 @@ import (
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/engine"
-	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
 	accountscmd "github.com/jterrazz/studio-station/src/surface/cli/accounts"
 	accountsshare "github.com/jterrazz/studio-station/src/surface/cli/accounts/share"
@@ -73,14 +72,14 @@ func receives(guest localGuest) func(context.Context, string) (bool, error) {
 // value: a command inside a VM as the engine runs it: the socket's, or
 // the engine's own when it is the engine that shares.
 type localGuest interface {
-	GuestExec(ctx context.Context, vm, line, stdin string) (local.Output, error)
+	GuestExec(ctx context.Context, vm, line, stdin string) (engine.GuestRan, error)
 }
 
 type sharedGuest struct{ g localGuest }
 
 func (s sharedGuest) GuestExec(ctx context.Context, vm, line, stdin string) (stdout string, code int, err error) {
 	out, err := s.g.GuestExec(ctx, vm, line, stdin)
-	return out.Stdout, out.ExitCode, err
+	return out.Stdout, out.Code, err
 }
 
 func (m machine) secrets() *accountscalls.Sharing { return m.secretsVia(m.hostDaemon(), m.vmRunning) }
@@ -96,7 +95,7 @@ type sharingGuest struct{ g localGuest }
 
 func (s sharingGuest) GuestExec(ctx context.Context, vm, line, stdin string) (accountscalls.GuestRun, error) {
 	out, err := s.g.GuestExec(ctx, vm, line, stdin)
-	return accountscalls.GuestRun{Stdout: out.Stdout, Stderr: out.Stderr, ExitCode: out.ExitCode}, err
+	return accountscalls.GuestRun{Stdout: out.Stdout, Stderr: out.Stderr, ExitCode: out.Code}, err
 }
 
 // value: appends a line to the log file, and answers where it is kept,

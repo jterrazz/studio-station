@@ -1,4 +1,4 @@
-package engine
+package process
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/platform/local/localtest"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/setup"
 )
 
@@ -79,20 +79,18 @@ func (c *manualClock) advance(d time.Duration) {
 }
 
 type streamed struct {
-	events chan Event
+	events chan engine.Event
 	ended  chan struct{}
 }
 
 // value: the nth subscription's feed reads the nth channel.
 func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
 	t.Helper()
-	files := localtest.NewFS()
-	h := localtest.Host(localtest.NewRunner(t), files, localtest.Env{}, localtest.NewNet(), nil)
-	h.Clock = clock
+	h := &fakeMac{clock: clock}
 	paths := setup.Paths{Config: "/c", State: "/s"}
 	var n atomic.Int32
 	return New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: paths.State, Here: catalog.Host,
-		Feeds: map[string]Feed{PageMenubar: func(ctx context.Context, _ FeedInput) <-chan any {
+		Feeds: map[string]engine.Feed{engine.PageMenubar: func(ctx context.Context, _ engine.FeedInput) <-chan any {
 			feed := feeds[n.Add(1)-1]
 			out := make(chan any)
 			go func() {
@@ -118,13 +116,13 @@ func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
 // of its sends until its watch ends.
 func subscribe(ctx context.Context, t *testing.T, d *Daemon, reading bool) streamed {
 	t.Helper()
-	s := streamed{events: make(chan Event, 64), ended: make(chan struct{})}
+	s := streamed{events: make(chan engine.Event, 64), ended: make(chan struct{})}
 	opened := make(chan struct{})
 	go func() {
 		defer close(s.ended)
 		defer close(s.events)
-		_ = d.Stream(ctx, []string{PageMenubar}, func(v any) error {
-			if _, ok := v.(Opened); ok {
+		_ = d.Stream(ctx, []string{engine.PageMenubar}, func(v any) error {
+			if _, ok := v.(engine.Opened); ok {
 				close(opened)
 				return nil
 			}
@@ -132,7 +130,7 @@ func subscribe(ctx context.Context, t *testing.T, d *Daemon, reading bool) strea
 				<-ctx.Done()
 				return ctx.Err()
 			}
-			ev, _ := v.(Event)
+			ev, _ := v.(engine.Event)
 			s.events <- ev
 			return nil
 		})
@@ -215,12 +213,10 @@ func TestASubscriberThatDoesNotReadNeverHoldsAnotherBack(t *testing.T) {
 // page's (`menubar.machine:jterrazz-mac-mini`): the machine feed streams it
 // for that machine; an unknown page is still refused.
 func TestAMachinesPageIsWatchedByItsName(t *testing.T) {
-	files := localtest.NewFS()
-	h := localtest.Host(localtest.NewRunner(t), files, localtest.Env{}, localtest.NewNet(), nil)
-	h.Clock = newManualClock()
+	h := &fakeMac{clock: newManualClock()}
 	subjects := make(chan string, 1)
 	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", Here: catalog.Host,
-		Feeds: map[string]Feed{PageMachine: func(_ context.Context, in FeedInput) <-chan any {
+		Feeds: map[string]engine.Feed{engine.PageMachine: func(_ context.Context, in engine.FeedInput) <-chan any {
 			subjects <- in.Subject
 			out := make(chan any, 1)
 			out <- map[string]string{"infra": "restarting"}
@@ -237,7 +233,7 @@ func TestAMachinesPageIsWatchedByItsName(t *testing.T) {
 	defer cancel()
 	var pages []string
 	_ = d.Stream(ctx, []string{"menubar.machine:jterrazz-mac-mini"}, func(v any) error {
-		if ev, ok := v.(Event); ok && ev.Event == "page" {
+		if ev, ok := v.(engine.Event); ok && ev.Event == "page" {
 			pages = append(pages, string(ev.Page))
 			cancel()
 		}
@@ -252,12 +248,10 @@ func TestAMachinesPageIsWatchedByItsName(t *testing.T) {
 }
 
 func TestARefreshReadsAgainOnlyThePageItNames(t *testing.T) {
-	files := localtest.NewFS()
-	h := localtest.Host(localtest.NewRunner(t), files, localtest.Env{}, localtest.NewNet(), nil)
-	h.Clock = newManualClock()
+	h := &fakeMac{clock: newManualClock()}
 	woke := make(chan string, 8)
-	reread := func(name string) Feed {
-		return func(ctx context.Context, in FeedInput) <-chan any {
+	reread := func(name string) engine.Feed {
+		return func(ctx context.Context, in engine.FeedInput) <-chan any {
 			out := make(chan any, 1)
 			out <- map[string]string{"page": name}
 			go func() {
@@ -280,7 +274,7 @@ func TestARefreshReadsAgainOnlyThePageItNames(t *testing.T) {
 		}
 	}
 	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", Here: catalog.Host,
-		Feeds: map[string]Feed{PageMenubar: reread("home"), PageMachine: reread("linux-1")}})
+		Feeds: map[string]engine.Feed{engine.PageMenubar: reread("home"), engine.PageMachine: reread("linux-1")}})
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	framed := make(chan struct{})
@@ -288,8 +282,8 @@ func TestARefreshReadsAgainOnlyThePageItNames(t *testing.T) {
 	go func() {
 		defer close(done)
 		n := 0
-		_ = d.Stream(ctx, []string{PageMenubar, "menubar.machine:linux-1"}, func(v any) error {
-			if ev, ok := v.(Event); ok && ev.Event == "page" {
+		_ = d.Stream(ctx, []string{engine.PageMenubar, "menubar.machine:linux-1"}, func(v any) error {
+			if ev, ok := v.(engine.Event); ok && ev.Event == "page" {
 				n++
 				if n == 2 {
 					close(framed)

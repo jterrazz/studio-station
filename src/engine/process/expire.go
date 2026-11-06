@@ -1,4 +1,4 @@
-package engine
+package process
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/accounts"
+	"github.com/jterrazz/studio-station/src/engine"
 )
 
 const (
@@ -26,7 +27,7 @@ type Lends interface {
 // notification. A take-back that fails keeps its share and is told once per
 // expireRetell.
 func (d *Daemon) lendsDue() bool {
-	now := d.h.Clock.Now()
+	now := d.h.Now()
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if !d.lendsAt.IsZero() && now.Sub(d.lendsAt) < expireEvery {
@@ -65,7 +66,7 @@ func (d *Daemon) recallExpired(ctx context.Context, only string) {
 	if err != nil {
 		return
 	}
-	now := d.h.Clock.Now()
+	now := d.h.Now()
 	vms := make([]string, 0, len(held))
 	for vm := range held {
 		vms = append(vms, vm)
@@ -91,12 +92,12 @@ func (d *Daemon) isConnected(vm string) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	v := d.vms[vm]
-	return v != nil && v.state == StateRunning && v.guest == GuestConnected
+	return v != nil && v.state == engine.StateRunning && v.guest == engine.GuestConnected
 }
 
 func (d *Daemon) recall(ctx context.Context, vm string, names []string) {
 	err := d.o.Lends.Expire(ctx, vm, names)
-	now := d.h.Clock.Now()
+	now := d.h.Now()
 	for _, n := range names {
 		key := vm + " " + n
 		d.mu.Lock()
@@ -112,7 +113,7 @@ func (d *Daemon) recall(ctx context.Context, vm string, names []string) {
 		}
 		d.mu.Unlock()
 		if retell {
-			d.notify(ctx, Notification{Kind: NoticeRecallFailed, Subject: vm + " share", Text: "taking " + accounts.Label(accounts.AccountOf(n)) + " back failed: " + err.Error()})
+			d.notify(ctx, engine.Notification{Kind: engine.NoticeRecallFailed, Subject: vm + " share", Text: "taking " + accounts.Label(accounts.AccountOf(n)) + " back failed: " + err.Error()})
 		}
 	}
 }

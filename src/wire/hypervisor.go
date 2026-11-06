@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	"github.com/jterrazz/studio-station/src/machines/contract"
@@ -21,11 +21,11 @@ func (m machine) hypervisor() contract.Hypervisor {
 
 type engineHypervisor struct{ contract.Hypervisor }
 
-func (h engineHypervisor) Boot(ctx context.Context, vm string, n model.Network) (engine.Run, error) {
+func (h engineHypervisor) Boot(ctx context.Context, vm string, n model.Network) (process.Run, error) {
 	return h.Hypervisor.Boot(ctx, vm, contract.BootOptions{Network: n})
 }
 
-func (h engineHypervisor) Adopt(ctx context.Context, vm string) (engine.Run, bool) {
+func (h engineHypervisor) Adopt(ctx context.Context, vm string) (process.Run, bool) {
 	return h.Hypervisor.Adopt(ctx, vm)
 }
 

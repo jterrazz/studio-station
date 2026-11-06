@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/jterrazz/studio-station/src/engine"
-	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
@@ -193,7 +192,7 @@ func tuiWatch(ctx context.Context, m machine) func([]string) func() {
 		done := make(chan struct{})
 		go func() {
 			defer close(done)
-			updates, err := m.engineAPI().c.Watch(watch, process.Watch, process.WatchIn{Machines: held})
+			updates, err := m.engineAPI().c.Watch(watch, engine.CallWatch, engine.WatchIn{Machines: held})
 			if err != nil {
 				return
 			}

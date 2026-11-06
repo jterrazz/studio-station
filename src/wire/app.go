@@ -18,7 +18,7 @@ import (
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/platform/darwin"
@@ -88,7 +88,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	defer router.Close()
 	kenv.Calls = router
 	if session != nil {
-		world.engineFrom(func() *engine.Daemon { return here.daemon(kenv) })
+		world.engineFrom(func() *process.Daemon { return here.daemon(kenv) })
 		session.farFrom(func(w *worldMac) farMac { return here.farMac(kenv, w) })
 	}
 	kenv.On.Refresh = func(ctx context.Context) error {

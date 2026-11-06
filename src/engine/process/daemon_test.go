@@ -1,4 +1,4 @@
-package engine
+package process
 
 import (
 	"context"
@@ -11,8 +11,10 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/platform/local/localtest"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/setup"
+
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 )
 
 type fakeMachines struct {
@@ -32,9 +34,11 @@ func (f *fakeMachines) Remove(context.Context, string) (model.DeleteReport, erro
 	return model.DeleteReport{}, nil
 }
 
-func (f *fakeMachines) PowerOff(context.Context, string) error            { return nil }
+func (f *fakeMachines) PowerOff(context.Context, string) error { return nil }
+
 func (f *fakeMachines) EngineRunning(_ context.Context, name string) bool { return f.stuck[name] }
-func (f *fakeMachines) HereName() string                                  { return "x" }
+
+func (f *fakeMachines) HereName() string { return "x" }
 
 type fakeRun struct {
 	vm    string
@@ -42,9 +46,12 @@ type fakeRun struct {
 	ended chan model.RunEnd
 }
 
-func (r *fakeRun) VM() string                 { return r.vm }
-func (r *fakeRun) PID() int                   { return r.pid }
-func (r *fakeRun) Holder() int                { return r.pid }
+func (r *fakeRun) VM() string { return r.vm }
+
+func (r *fakeRun) PID() int { return r.pid }
+
+func (r *fakeRun) Holder() int { return r.pid }
+
 func (r *fakeRun) Ended() <-chan model.RunEnd { return r.ended }
 
 type fakeHypervisor struct {
@@ -105,22 +112,20 @@ func (*fakeHypervisor) Address(context.Context, string, time.Duration) (netip.Ad
 type harness struct {
 	d     *Daemon
 	hv    *fakeHypervisor
-	run   *localtest.Runner
-	fs    *localtest.FS
-	clock *localtest.Clock
+	mac   *fakeMac
+	clock *stepClock
 	m     *fakeMachines
 }
 
 func newHarness(t *testing.T, records ...model.VMRecord) harness {
 	t.Helper()
-	run, files := localtest.NewRunner(t), localtest.NewFS()
-	clock := &localtest.Clock{At: time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)}
-	h := localtest.Host(run, files, localtest.Env{}, localtest.NewNet(), clock)
+	clock := &stepClock{At: time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)}
+	h := &fakeMac{clock: clock}
 	m := &fakeMachines{records: records}
 	hv := newHypervisor()
 	paths := setup.Paths{Config: "/c", State: "/s"}
 	d := New(h, hv, nil, m, &fakeTailnet{}, memStores(), Options{State: paths.State, Here: catalog.Host})
-	return harness{d: d, hv: hv, run: run, fs: files, clock: clock, m: m}
+	return harness{d: d, hv: hv, mac: h, clock: clock, m: m}
 }
 
 func (h harness) runs() int { return h.hv.started() }
@@ -149,7 +154,7 @@ func TestAtStartADeadRunLeavesEveryWorkspaceStoppedAndRunsNone(t *testing.T) {
 	)
 	h.d.adopt(cancelled(t))
 	for _, vm := range []string{"t", "api", "off"} {
-		if got := h.state(vm); got != StateStopped {
+		if got := h.state(vm); got != engine.StateStopped {
 			t.Errorf("%s with no live run: %s, want stopped", vm, got)
 		}
 	}
@@ -162,7 +167,7 @@ func TestAtStartALiveRunIsAdoptedNeverRunAgain(t *testing.T) {
 	h := newHarness(t, model.VMRecord{Name: "api", Lifetime: model.Permanent, Want: model.WantRunning})
 	h.hv.outlived("api")
 	h.d.adopt(cancelled(t))
-	if got := h.state("api"); got != StateRunning || h.runs() != 0 {
+	if got := h.state("api"); got != engine.StateRunning || h.runs() != 0 {
 		t.Errorf("adopted api: %s with %d runs, want running and none", got, h.runs())
 	}
 }
@@ -176,11 +181,11 @@ func TestAThirdRebootWithinAMinuteStopsTheVMAsALoop(t *testing.T) {
 		h.hv.end("t", model.RunEnd{Reason: model.GuestReboot})
 		h.clock.At = h.clock.At.Add(5 * time.Second)
 		h.d.tick(ctx)
-		if i < 2 && h.state("t") != StateRunning {
+		if i < 2 && h.state("t") != engine.StateRunning {
 			t.Fatalf("reboot %d: %s, want a re-run", i+1, h.state("t"))
 		}
 	}
-	if got := h.state("t"); got != StateBroken || h.runs() != 3 {
+	if got := h.state("t"); got != engine.StateBroken || h.runs() != 3 {
 		t.Errorf("after 3 reboots in 15 s: %s with %d runs, want a loop stopped and no fourth run", got, h.runs())
 	}
 }
@@ -190,10 +195,10 @@ func TestARunWhoseGuestNeverConnectsAnswersGuestTimeoutAfterAMinute(t *testing.T
 	h.hv.outlived("api")
 	v, _ := h.d.find("api")
 	v.run, _ = h.hv.Adopt(t.Context(), "api")
-	v.state, v.guest = StateRunning, GuestConnecting
+	v.state, v.guest = engine.StateRunning, engine.GuestConnecting
 	began := h.clock.At
 	err := h.d.awaitGuest(t.Context(), "api")
-	var op *OpError
+	var op *enginecalls.OpError
 	if !errors.As(err, &op) || op.Code != "guest_timeout" {
 		t.Fatalf("a guest that never connects: %v, want guest_timeout", err)
 	}
@@ -210,12 +215,12 @@ func TestStopAllAnswersFailedForALastingVMTheEngineStillRuns(t *testing.T) {
 	h.m.stuck = map[string]bool{"api": true}
 	for _, name := range []string{"api", "web"} {
 		v, _ := h.d.find(name)
-		v.state = StateRunning
+		v.state = engine.StateRunning
 	}
 	got := h.d.stopAll(t.Context())
-	want := []Stopped{
-		{Name: "api", Lifetime: "permanent", Result: ResultFailed, Detail: "the engine still runs it"},
-		{Name: "web", Lifetime: "permanent", Result: ResultStopped},
+	want := []engine.Stopped{
+		{Name: "api", Lifetime: "permanent", Result: engine.ResultFailed, Detail: "the engine still runs it"},
+		{Name: "web", Lifetime: "permanent", Result: engine.ResultStopped},
 	}
 	if len(got) != 2 || got[0] != want[0] || got[1] != want[1] {
 		t.Errorf("stop_all answered %+v, want %+v", got, want)

@@ -1,7 +1,5 @@
 package words
 
-const PowerOnItsMac = "ssh <host> station power"
-
 func SettingsAsRoot(verb, item string) string { return "sudo station settings " + verb + " " + item }
 
 func PasswordlessRestart(mac string) string {

@@ -1,4 +1,4 @@
-package engine
+package process
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/accounts"
 
+	"github.com/jterrazz/studio-station/src/engine"
 	model "github.com/jterrazz/studio-station/src/machines"
 )
 
@@ -62,10 +63,10 @@ func (f *fakeShares) failing(err error) {
 
 type toldNotifier struct {
 	mu   sync.Mutex
-	told []Notification
+	told []engine.Notification
 }
 
-func (n *toldNotifier) Notify(_ context.Context, x Notification) {
+func (n *toldNotifier) Notify(_ context.Context, x engine.Notification) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	n.told = append(n.told, x)
@@ -91,9 +92,9 @@ func newSharing(t *testing.T, held map[string][]accounts.Share) sharing {
 	)
 	s := sharing{harness: h, shares: &fakeShares{held: held, expires: make(chan expired, 8)}, told: &toldNotifier{}}
 	h.d.o.Lends, h.d.notifier = s.shares, s.told
-	for name, guest := range map[string]string{"api": GuestConnected, "web": GuestConnecting} {
+	for name, guest := range map[string]string{"api": engine.GuestConnected, "web": engine.GuestConnecting} {
 		v, _ := h.d.find(name)
-		v.state, v.guest = StateRunning, guest
+		v.state, v.guest = engine.StateRunning, guest
 	}
 	return s
 }
@@ -177,7 +178,7 @@ func TestAFailedTakeBackKeepsItsShareAndIsToldOncePerHour(t *testing.T) {
 		}
 	}
 	n := s.told.told[0]
-	if n.Kind != NoticeRecallFailed || n.Subject != "api share" || !strings.Contains(n.Text, "taking GitHub back failed: deleting the copies") {
+	if n.Kind != engine.NoticeRecallFailed || n.Subject != "api share" || !strings.Contains(n.Text, "taking GitHub back failed: deleting the copies") {
 		t.Errorf("told %+v, want the GitHub take-back failure of api", n)
 	}
 	held, _ := s.shares.Held()

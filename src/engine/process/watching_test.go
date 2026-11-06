@@ -1,9 +1,11 @@
-package engine
+package process
 
 import (
 	"context"
 	"runtime"
 	"testing"
+
+	"github.com/jterrazz/studio-station/src/engine"
 )
 
 func TestAMachineIsWatchedOnlyWhileASurfaceShowsItsActivity(t *testing.T) {
@@ -21,23 +23,23 @@ func TestAMachineIsWatchedOnlyWhileASurfaceShowsItsActivity(t *testing.T) {
 	for !d.hub.listening() {
 		runtime.Gosched()
 	}
-	if d.Watched(ThisMac) || d.Watched("linux-1") {
+	if d.Watched(engine.ThisMac) || d.Watched("linux-1") {
 		t.Fatal("the menu bar, closed, watches a machine by holding its events watch")
 	}
 	opened, closed := hold(func(ctx context.Context, send func(any) error) error { return d.Watch(ctx, nil, send) })
 	<-opened
-	if !d.Watched(ThisMac) || d.Watched("linux-1") {
-		t.Errorf("the menu bar open: This Mac watched %v, linux-1 watched %v; want This Mac alone", d.Watched(ThisMac), d.Watched("linux-1"))
+	if !d.Watched(engine.ThisMac) || d.Watched("linux-1") {
+		t.Errorf("the menu bar open: This Mac watched %v, linux-1 watched %v; want This Mac alone", d.Watched(engine.ThisMac), d.Watched("linux-1"))
 	}
 	shown, left := hold(func(ctx context.Context, send func(any) error) error { return d.Watch(ctx, []string{"linux-1"}, send) })
 	<-shown
 	closed()
-	if d.Watched(ThisMac) || !d.Watched("linux-1") {
-		t.Errorf("the menu bar closed, linux-1's Activity shown: This Mac watched %v, linux-1 watched %v; want linux-1 alone", d.Watched(ThisMac), d.Watched("linux-1"))
+	if d.Watched(engine.ThisMac) || !d.Watched("linux-1") {
+		t.Errorf("the menu bar closed, linux-1's Activity shown: This Mac watched %v, linux-1 watched %v; want linux-1 alone", d.Watched(engine.ThisMac), d.Watched("linux-1"))
 	}
 	left()
 	quit()
-	if d.Watched(ThisMac) || d.Watched("linux-1") {
+	if d.Watched(engine.ThisMac) || d.Watched("linux-1") {
 		t.Error("a machine stays watched once every surface left")
 	}
 }

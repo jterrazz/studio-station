@@ -1,8 +1,7 @@
-package engine
+package process
 
 import (
 	"context"
-	"errors"
 	"strconv"
 	"strings"
 	"sync"
@@ -12,7 +11,6 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -95,44 +93,13 @@ func (f *fakeTailnet) taken() []string {
 	return out
 }
 
-type idleListener struct {
-	once sync.Once
-	done chan struct{}
-}
-
-func (l *idleListener) Accept() (local.Conn, error) {
-	<-l.done
-	return nil, errors.New("closed")
-}
-
-func (l *idleListener) Close() error {
-	l.once.Do(func() { close(l.done) })
-	return nil
-}
-
-func (l *idleListener) Port() int { return 0 }
-
-type loopback struct {
-	local.Sockets
-	mu    sync.Mutex
-	bound []string
-}
-
-func (s *loopback) ListenTCP(ip string, _ int) (local.Listener, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.bound = append(s.bound, ip)
-	return &idleListener{done: make(chan struct{})}, nil
-}
-
 func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 	h := newHarness(t)
 	tn := &fakeTailnet{
 		sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running},
 		shared:  []ports.Share{{Port: 40099, Scheme: ports.SchemeTCP, Target: "127.0.0.1:40099"}},
 	}
-	sockets := &loopback{}
-	h.d.tn, h.d.h.Sockets = tn, sockets
+	h.d.tn = tn
 	ready := certLines(h.d)
 	ctx := t.Context()
 	yes := true
@@ -177,11 +144,6 @@ func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 	if r := row(); r.Detail != catalog.ServeOffDetail || r.URLs.Public != "http://127.0.0.1:40000" {
 		t.Errorf("Serve off again: row %+v, want the admin step and the local URL", r)
 	}
-	for _, ip := range sockets.bound {
-		if ip != "127.0.0.1" {
-			t.Errorf("a listener bound %s, want 127.0.0.1 only", ip)
-		}
-	}
 }
 
 func TestARunRendersTheProfileEnvironmentAndAnAdoptionKeepsIt(t *testing.T) {
@@ -221,7 +183,7 @@ func TestTheCertificateIsWarmedWhenServeTurnsOnOneAtATime(t *testing.T) {
 		sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running, On: true},
 		hold:    make(chan struct{}), entered: make(chan string, 4),
 	}
-	h.d.tn, h.d.h.Sockets = tn, &loopback{}
+	h.d.tn = tn
 	ready := certLines(h.d)
 	ctx := t.Context()
 	yes := true
@@ -302,7 +264,7 @@ func TestAnEngineThatStopsLeavesItsRunningVMsPortsSharedOnTheTailnet(t *testing.
 	h := newHarness(t, model.VMRecord{Name: "api", Lifetime: model.Permanent, Want: model.WantRunning})
 	h.hv.outlived("api")
 	tn := &fakeTailnet{sharing: ports.SharingState{On: true, Host: "x.tail1234.ts.net", Backend: ports.Running}}
-	h.d.tn, h.d.h.Sockets = tn, &loopback{}
+	h.d.tn = tn
 	ctx := t.Context()
 	h.d.adopt(cancelled(t))
 	yes := true

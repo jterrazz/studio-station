@@ -6,14 +6,14 @@ import (
 	"github.com/jterrazz/studio-station/src/ports"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/engine"
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	model "github.com/jterrazz/studio-station/src/machines"
 )
 
 func daemonFailure(err error) (*fail.Error, bool) {
-	var running *engine.RunningError
-	var hostOnly *engine.HostOnlyError
-	var down *engine.DownError
+	var running *enginecalls.RunningError
+	var hostOnly *enginecalls.HostOnlyError
+	var down *enginecalls.DownError
 	var guestHost *model.GuestOnMacError
 	if f, ok := controlFailure(err); ok {
 		return f, true
@@ -56,9 +56,9 @@ func servicesFailure(err error) (*fail.Error, bool) {
 }
 
 func controlFailure(err error) (*fail.Error, bool) {
-	var notInstalled *engine.NotInstalledError
-	var stuck *engine.StuckError
-	var boot *engine.BootError
+	var notInstalled *enginecalls.NotInstalledError
+	var stuck *enginecalls.StuckError
+	var boot *enginecalls.BootError
 	switch {
 	case errors.As(err, &notInstalled):
 		return failed(notInstalled.Error(), "station setup", err), true
@@ -74,6 +74,6 @@ func controlFailure(err error) (*fail.Error, bool) {
 // with the verb that starts it; an action there is refused.
 func vmStopped(err error) bool {
 	var e *fail.Error
-	var op *engine.OpError
-	return errors.As(err, &e) && e.Code == engine.VMStopped || errors.As(err, &op) && op.Code == engine.VMStopped
+	var op *enginecalls.OpError
+	return errors.As(err, &e) && e.Code == enginecalls.VMStopped || errors.As(err, &op) && op.Code == enginecalls.VMStopped
 }

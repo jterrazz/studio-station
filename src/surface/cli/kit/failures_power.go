@@ -3,9 +3,8 @@ package kit
 import (
 	"errors"
 
-	"github.com/jterrazz/studio-station/src/surface/cli/words"
-
 	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/catalog"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 )
@@ -23,7 +22,7 @@ func powerFailure(err error) (*fail.Error, bool) {
 		}
 		return usage(rng.Error(), "station awake 1h"), true
 	case errors.As(err, &off):
-		return usage(off.Error(), words.PowerOnItsMac), true
+		return usage(off.Error(), catalog.PowerOnItsMac), true
 	case errors.As(err, &none):
 		return usage(none.Error(), "run it on a Mac host"), true
 	case errors.As(err, &guard):

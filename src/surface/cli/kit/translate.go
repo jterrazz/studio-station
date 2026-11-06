@@ -42,6 +42,11 @@ func Translate(err error, path string) *fail.Error {
 		settingsFailure,
 	} {
 		if f, ok := failure(err); ok {
+			// invariant: every worded error carries its one repair; a family's
+			// own that names none gets this command's help.
+			if f.Hint == "" {
+				f.Hint = hint
+			}
 			return f
 		}
 	}

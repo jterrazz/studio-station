@@ -52,7 +52,7 @@ func powerCode(rel string) bool {
 			return true
 		}
 	}
-	return rel == "src/wire/power.go" || rel == "src/wire/awake.go" || rel == "src/engine/power.go"
+	return rel == "src/wire/power.go" || rel == "src/wire/awake.go" || rel == "src/engine/process/power.go"
 }
 
 func powerPackages() []string {

@@ -11,6 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/engine"
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/remote/api"
@@ -34,32 +35,32 @@ type engineAPI struct{ c api.Client }
 func (e engineAPI) do(ctx context.Context, name string, in, out any) error {
 	err := e.c.Call(ctx, name, coremachine.Ref{}, in, out, nil)
 	if down := new(api.Down); errors.As(err, &down) {
-		return &engine.DownError{}
+		return &enginecalls.DownError{}
 	}
 	return err
 }
 
 func (e engineAPI) Hello(ctx context.Context) (engine.Hello, error) {
 	var h engine.Hello
-	err := e.do(ctx, process.Hello, nil, &h)
+	err := e.do(ctx, engine.CallHello, nil, &h)
 	return h, err
 }
 
 func (e engineAPI) VMs(ctx context.Context) ([]engine.VMView, error) {
 	var views []engine.VMView
-	err := e.do(ctx, process.VMs, nil, &views)
+	err := e.do(ctx, engine.CallVMs, nil, &views)
 	return views, err
 }
 
 func (e engineAPI) StopAll(ctx context.Context) (engine.StopAll, error) {
 	var all engine.StopAll
-	err := e.do(ctx, process.StopAll, nil, &all)
+	err := e.do(ctx, engine.CallStopAll, nil, &all)
 	return all, err
 }
 
 func (e engineAPI) Power(ctx context.Context) (awake.View, error) {
 	var v awake.View
-	err := e.do(ctx, process.Power, nil, &v)
+	err := e.do(ctx, engine.CallPower, nil, &v)
 	return v, err
 }
 
@@ -72,7 +73,7 @@ func word(e *fail.Error) (message, hint string) {
 
 // invariant: the engine serves its own calls and this machine's registry,
 // gated by this machine's profile and worded by this binary's table.
-func (m machine) engineServer(d *engine.Daemon, registry *call.Registry) func(ctx context.Context, conn io.ReadWriteCloser) {
+func (m machine) engineServer(d *process.Daemon, registry *call.Registry) func(ctx context.Context, conn process.Stream) {
 	s := process.Server(d, process.Host{Registry: registry, Here: m.profile, Word: word, Sleep: m.host.Clock.Sleep})
-	return s.Conn
+	return func(ctx context.Context, conn process.Stream) { s.Conn(ctx, conn) }
 }
