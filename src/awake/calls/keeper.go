@@ -194,7 +194,7 @@ func (m *Keeper) Awake(req awake.Request) (held awake.Session, refreshed bool, e
 	defer m.mu.Unlock()
 	m.reading = r
 	now := m.clock.Now().UTC().Truncate(time.Second)
-	want.StartedAt, want.Until = now, now.Add(req.For)
+	want.StartedAt, want.Until, want.For = now, now.Add(req.For), req.For
 	refreshed = m.session != nil
 	if refreshed {
 		was := m.session.Lid

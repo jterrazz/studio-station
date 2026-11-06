@@ -42,6 +42,15 @@ func Awake(f pageawake.AllMachines, ctx page.Context) page.Page {
 	// its guards; then each other Mac by its mode, with Change…, a y/n that
 	// names the servers it hosts. VMs are not listed: they follow their Mac.
 	p := page.Page{ID: AwakeID, Command: "awake", Context: ctx}
+	if f.Label == nil {
+		self := ""
+		for _, r := range f.Reports {
+			if r.ThisMac {
+				self = r.Mac
+			}
+		}
+		f.Label = func(mac string) string { return page.MacName(mac, self) }
+	}
 	var others []page.Item
 	for _, r := range f.Reports {
 		if r.ThisMac {
@@ -100,7 +109,7 @@ func guards(r awake.Report) *page.Section {
 	}
 	var facts []page.Fact
 	if r.Caps.Thermal {
-		facts = append(facts, page.Fact{Key: "Temperature", Value: page.Text(awake.Level(r.Reading.Thermal))})
+		facts = append(facts, page.Fact{Key: "Temperature", Value: page.Text(temperature(r.Reading.Thermal))})
 	}
 	if r.Caps.Battery {
 		facts = append(facts, page.Fact{Key: "Battery", Value: page.Text(strconv.Itoa(r.Reading.Percent) + " %")})
@@ -116,6 +125,15 @@ func guards(r awake.Report) *page.Section {
 	return &page.Section{ID: SectionGuards, Title: "Guards", Uncounted: true, Columns: awakeColumns(), Items: items}
 }
 
+// value: the Mac's thermal level in the menu bar's plain word: Normal
+// for the level macOS calls nominal.
+func temperature(n int) string {
+	if w := awake.Level(n); w != "nominal" {
+		return w
+	}
+	return "normal"
+}
+
 func nanos(d time.Duration) string { return strconv.FormatInt(int64(d), 10) }
 
 func flags(lid, battery bool) map[string]string {
@@ -123,7 +141,9 @@ func flags(lid, battery bool) map[string]string {
 }
 
 // invariant: a keep-awake keeps the switches as they are; a switch keeps
-// the term that is left, or starts the 4 h one.
+// the term that is left, or starts the 4 h one. While held, Until… says
+// the time it holds until (vision panel e: `Until 18:00`), and the term it
+// was taken for is the one picked, else Until.
 func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 	var lid, battery bool
 	left := 4 * time.Hour
@@ -133,12 +153,22 @@ func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 	}
 	rows := []string{r.Mac}
 	var out []page.Action
+	picked := false
 	for _, t := range terms() {
 		in := flags(lid, battery)
 		in["For"] = nanos(t)
-		out = append(out, page.Action{ID: ActionKeep + strings.TrimSuffix(t.String(), "0m0s"), Label: pageTerm(t), On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Run: &page.Run{Call: CallKeepAwake, In: in}})
+		on := held && asked(*r.Session) == t
+		picked = picked || on
+		out = append(out, page.Action{ID: ActionKeep + strings.TrimSuffix(t.String(), "0m0s"), Label: pageTerm(t), On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Picked: on, Run: &page.Run{Call: CallKeepAwake, In: in}})
 	}
-	out = append(out, page.Action{ID: ActionUntil, Label: "Until", On: page.OnRow, Rows: rows, Priority: 1, Mutates: true,
+	until := "Until"
+	if held {
+		if zone == nil {
+			zone = time.UTC
+		}
+		until += " " + r.Session.Until.In(zone).Format("15:04")
+	}
+	out = append(out, page.Action{ID: ActionUntil, Label: until, On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Picked: held && !picked,
 		Form: &page.Form{Title: "Keep awake until", Fields: []page.Field{untilField(now, zone)}}, Run: &page.Run{Call: CallKeepAwake, In: flags(lid, battery)}})
 	if r.Caps.Lid {
 		in := flags(!lid, battery)
@@ -154,6 +184,15 @@ func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 		out = append(out, page.Action{ID: ActionLetGo, Label: "Let it sleep", On: page.OnRow, Rows: rows, Priority: 3, Mutates: true, Run: &page.Run{Call: CallAwakeOff}})
 	}
 	return out
+}
+
+// value: the term a session was asked for: its own word, else its span
+// from its start.
+func asked(s awake.Session) time.Duration {
+	if s.For > 0 {
+		return s.For.Round(time.Minute)
+	}
+	return s.Until.Sub(s.StartedAt).Round(time.Minute)
 }
 
 func pageTerm(d time.Duration) string { return strconv.Itoa(int(d.Hours())) + " h" }

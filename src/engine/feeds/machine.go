@@ -55,14 +55,17 @@ func (o Menubar) Switcher() engine.Feed {
 			for {
 				f := &menubar{o: o}
 				fl, sv, ferr, serr := f.read(ctx, false)
-				p := pagemenubar.Switcher(nil, nil)
+				var r pagemenubar.Reading
 				if ferr == nil {
-					svc := &sv
-					if serr != nil {
-						svc = nil
+					r.All, r.Away = &fl, f.away(ctx, fl)
+					if serr == nil {
+						r.Ports = &sv
 					}
-					p = pagemenubar.Switcher(&fl, svc)
+					if home, err := call.Read(ctx, o.Calls, machine.Ref{}, overviewcalls.Read, overviewcalls.ReadIn{}, nil); err == nil {
+						r.Home = &home.Summary
+					}
 				}
+				p := pagemenubar.Switcher(r)
 				latest(ctx, out, page.Document{Schema: page.Schema, Page: p})
 				if rest(ctx, o.Clock, remoteEvery, in) != nil {
 					return

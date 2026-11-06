@@ -20,6 +20,8 @@ public struct Reply: Sendable {
     public var task: String? = nil
     // value: the out of a call that answers a list, one entry per item.
     public var listed: [[String: AnySendable]] = []
+    // value: no answer came in the time the call was given.
+    public var late = false
 }
 
 public struct AnySendable: @unchecked Sendable {
@@ -93,7 +95,8 @@ public enum Client {
     // invariant: one call is one station.api/v2 frame on its own connection;
     // its progress frames are read past, and its answer is the out or the
     // error frame that ends it. A connection that ends first is closed.
-    public static func call(path: String, name: String, input: [String: Any] = [:], target: Target? = nil) async -> Reply {
+    // A call given a time ends, unanswered, once it is spent: it is late.
+    public static func call(path: String, name: String, input: [String: Any] = [:], target: Target? = nil, within: Double? = nil) async -> Reply {
         var body: [String: Any] = ["v": 2, "id": "1", "call": name]
         if !input.isEmpty { body["in"] = input }
         if let target {
@@ -104,6 +107,13 @@ public enum Client {
         }
         guard let socket = try? UnixSocket.connect(path), let data = try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys]) else {
             return Reply(ok: false, closed: false, result: [:], message: "the station engine is not running", hint: "station engine start")
+        }
+        let spent = Seen()
+        if let within {
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + within) {
+                spent.bump()
+                socket.shutdownBoth()
+            }
         }
         do {
             try socket.write(line: data)
@@ -123,6 +133,9 @@ public enum Client {
                 return Reply(ok: true, closed: false, result: result, message: nil, hint: nil, task: task, listed: listed)
             }
         } catch {
+            if spent.value > 0 {
+                return Reply(ok: false, closed: false, result: [:], message: "the station engine did not answer in \(Int(within ?? 0)) s", hint: nil, late: true)
+            }
             return Reply(ok: false, closed: true, result: [:], message: "the station engine closed the connection", hint: "station engine start")
         }
     }

@@ -63,10 +63,11 @@ func twoMacs() model.AllMachines {
 	linux1 := sized(model.VM{Name: "linux-1", Image: "linux", Version: "3", Mac: thisMacName, Kind: catalog.Linux, Lifetime: model.Throwaway, State: model.Running, SizeGB: 20, IP: "192.168.64.5", Guest: "connected", CreatedAt: built}, 4, 4)
 	api := sized(model.VM{Name: "api", Image: "linux", Version: "3", Mac: thisMacName, Kind: catalog.Linux, Lifetime: model.Permanent, State: model.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8)
 	infra := sized(model.VM{Name: "infra", Image: "linux", Version: "3", Mac: miniName, Kind: catalog.Linux, Lifetime: model.AlwaysOn, State: model.Running, SizeGB: 80, IP: "192.168.64.7", Guest: "connected", Want: "running",
-		Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built, CheckStatus: model.CheckStatus{State: model.CheckPassing, At: keepAwakeNow.Add(-40 * time.Second)}}, 8, 24)
+		Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built, CheckStatus: model.CheckStatus{State: model.CheckPassing, At: keepAwakeNow.Add(-40 * time.Second), Answer: "200"}}, 8, 24)
 	infra.Resources.DiskBytes = 80 * gb
 	running := model.EngineView{Known: true, Running: true, Version: "v3.0.0"}
-	return model.AllMachines{Macs: []model.MacView{
+	infra.BootAt = keepAwakeNow.Add(-(12*24*time.Hour + 4*time.Hour))
+	return model.AllMachines{Read: keepAwakeNow, Macs: []model.MacView{
 		{Name: thisMacName, User: "jterrazz", StationVersion: "v3.0.0", ThisMac: true, Reachable: true, Engine: running, Node: model.Node{Online: true, IP: "100.98.133.14"}, VMs: []model.VM{linux1, api}},
 		{Name: miniName, User: "jterrazz", StationVersion: "v3.0.0", Reachable: true, Engine: running, Node: model.Node{Online: true, IP: "100.98.133.20"}, LAN: "192.168.1.20", VMs: []model.VM{infra}},
 	}}
@@ -111,7 +112,7 @@ func miniAwake() awake.Report {
 
 func twoMacsReading(updates bool) pagemenubar.Reading {
 	f, svc, home := twoMacs(), twoMacsPorts(), twoMacsSummary(updates)
-	return pagemenubar.Reading{Home: &home, Samples: samples(), All: &f, Ports: &svc, Awake: thisMacAwake(), Macs: []awake.Report{miniAwake()}}
+	return pagemenubar.Reading{Home: &home, Samples: samples(), All: &f, Ports: &svc, Awake: thisMacAwake(), Macs: []awake.Report{miniAwake()}, Away: []overview.Summary{miniSummary(false)}}
 }
 
 func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
@@ -156,7 +157,7 @@ func menubarWorlds() []Fixture {
 		{Name: "menubar.home.two-macs", Page: pagemenubar.Page(two, menubarHere())},
 		{Name: "menubar.home.infra-down", Page: pagemenubar.Page(infraDown, menubarHere())},
 		{Name: "menubar.home.engine-stopped", Page: pagemenubar.Stopped(menubarHere(), true)},
-		{Name: "menubar.switcher.two-macs", Page: pagemenubar.Switcher(two.All, two.Ports)},
+		{Name: "menubar.switcher.two-macs", Page: pagemenubar.Switcher(two)},
 		{Name: "menubar.vm.linux-1", Page: pagemenubar.MachinePage(linux1Page())},
 		{Name: "menubar.vm.infra", Page: pagemenubar.MachinePage(infraPage())},
 		{Name: "menubar.mac.mini", Page: pagemenubar.MachinePage(miniPage(false))},
@@ -177,7 +178,7 @@ func linux1Page() pagemenubar.Machine {
 		{Provider: catalog.ProviderGitHub, State: catalog.StateOK, Origin: accounts.OriginShared, Scopes: []string{"read only"}, Shared: &accounts.Loan{Name: "github", At: keepAwakeNow.Add(-8 * time.Hour), Until: keepAwakeNow.Add(4 * time.Hour)}},
 		{Provider: catalog.ProviderClaude, State: catalog.StateOK, Origin: accounts.OriginShared, Shared: &accounts.Loan{Name: catalog.ClaudeTokenName, At: keepAwakeNow, Until: keepAwakeNow.Add(12 * time.Hour)}},
 	}}}}
-	return pagemenubar.Machine{Asks: Levels, Name: "linux-1", All: &f, Summary: &inside, Samples: readings(4*gb, 20*gb, 17_600_000_000), Ports: &svc, Accounts: &shares, Now: keepAwakeNow}
+	return pagemenubar.Machine{Asks: Levels, Name: "linux-1", All: &f, Summary: &inside, Samples: readings(4*gb, 20_000_000_000, 17_600_000_000), Ports: &svc, Accounts: &shares, Now: keepAwakeNow}
 }
 
 // value: infra's page from This Mac: up 12 days, its four health steps
@@ -188,7 +189,7 @@ func infraPage() pagemenubar.Machine {
 		{Section: "ports", Parts: []overview.Part{{Word: "Public", N: 1, Key: "public", Counted: true}, {Word: "Private", N: 2, Key: "private", Counted: true}}},
 		{Section: "ssh", Parts: []overview.Part{{Word: "admin@infra"}}},
 	}}
-	return pagemenubar.Machine{Asks: Levels, Name: "infra", All: &f, Summary: &inside, Samples: readings(24*gb, 80*gb, 61_000_000_000), Ports: &svc, Now: keepAwakeNow}
+	return pagemenubar.Machine{Asks: Levels, Name: "infra", All: &f, Summary: &inside, Samples: readings(24*gb, 80_000_000_000, 44_000_000_000), Ports: &svc, Now: keepAwakeNow}
 }
 
 // value: mac-mini's page as This Mac reads it from the mini's engine: its
@@ -196,6 +197,17 @@ func infraPage() pagemenubar.Machine {
 // mini waits at pre-boot for its disk's password.
 func miniPage(offline bool) pagemenubar.Machine {
 	f, svc := twoMacs(), twoMacsPorts()
+	s := miniSummary(offline)
+	if offline {
+		f.Macs[1].Reachable, f.Macs[1].Node.Online, f.Macs[1].Engine = false, false, model.EngineView{}
+	}
+	return pagemenubar.Machine{Asks: Levels, Name: miniName, All: &f, Summary: &s, Ports: &svc, Now: keepAwakeNow}
+}
+
+// value: mac-mini's Overview, as its engine reads it: its readiness all
+// applied and the port that needs you; offline, it waits at pre-boot for
+// its disk's password.
+func miniSummary(offline bool) overview.Summary {
 	ready := func(name, value string) overview.Check {
 		return overview.Check{Name: name, State: catalog.StateOK, Value: value}
 	}
@@ -206,11 +218,10 @@ func miniPage(offline bool) pagemenubar.Machine {
 			ready(model.ItemDiskUnlock, "no password at boot"), ready(model.ItemPlannedRestarts, "supported"), ready(model.ItemEngineAtLogin, "installed"),
 		}}
 	if offline {
-		f.Macs[1].Reachable, f.Macs[1].Node.Online, f.Macs[1].Engine = false, false, model.EngineView{}
 		s.Engine, s.Needs = overview.EngineNone, nil
 		s.Readiness[3] = overview.Check{Name: model.ItemDiskUnlock, State: catalog.StateDegraded, Value: "waits at pre-boot", Detail: "station machines unlock mac-mini (from the same network)"}
 	}
-	return pagemenubar.Machine{Asks: Levels, Name: miniName, All: &f, Summary: &s, Ports: &svc, Now: keepAwakeNow}
+	return s
 }
 
 func MenubarStream() []byte {

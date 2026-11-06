@@ -23,7 +23,7 @@ runs:
           ◐	2 brew updates waiting
           ◐	Firewall: off
           ◐	~/.tart is misplaced
-          ◐	com.bjango.istatmenus.installer is an orphan
-          ◐	com.docker.socket is an orphan
-          ◐	com.docker.vmnetd is an orphan
+          ◐	com.bjango.istatmenus.installer is left over
+          ◐	com.docker.socket is left over
+          ◐	com.docker.vmnetd is left over
           	Activity

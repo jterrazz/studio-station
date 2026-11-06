@@ -81,7 +81,7 @@ func (s *Machinist) vms(ctx context.Context, mac string, live map[string]EngineV
 				vm.State = model.VMState(d.State)
 			}
 			vm.Guest, vm.IP, vm.Detail = d.Guest, d.IP, d.Detail
-			vm.SSH, vm.Restarts, vm.CheckStatus = d.SSH, d.Restarts, d.Check
+			vm.SSH, vm.Restarts, vm.CheckStatus, vm.BootAt = d.SSH, d.Restarts, d.Check, d.BootAt
 		}
 		out = append(out, vm)
 	}

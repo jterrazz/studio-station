@@ -247,7 +247,7 @@
   ],
   "actions": [
     {
-      "label": "Unlock",
+      "label": "Unlock the disk",
       "on": "page",
       "priority": 1,
       "mutates": true,

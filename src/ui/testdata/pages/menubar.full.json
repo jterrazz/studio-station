@@ -146,9 +146,31 @@
           }
         },
         {
-          "link": {
-            "label": "+ 2 more",
-            "page": "overview"
+          "row": {
+            "id": "3-firewall",
+            "mark": "attention",
+            "label": "Firewall off",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "System Settings > Network > Firewall"
+              }
+            ],
+            "reason": "degraded"
+          }
+        },
+        {
+          "row": {
+            "id": "4-~/.tart",
+            "mark": "attention",
+            "label": "~/.tart is misplaced",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "station disk move ~/.tart"
+              }
+            ],
+            "reason": "degraded"
           }
         }
       ],
@@ -189,7 +211,7 @@
           "group": {
             "head": {
               "id": "jterrazz-macbook-pro",
-              "mark": "ok",
+              "mark": "attention",
               "label": "This Mac",
               "cells": [
                 {
@@ -200,12 +222,18 @@
                   "kind": "list",
                   "items": [
                     {
-                      "kind": "text",
-                      "text": "awake until 18:00"
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "awake until 18:00"
+                        }
+                      ]
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "degraded"
             },
             "items": [
               {
@@ -279,7 +307,7 @@
           "group": {
             "head": {
               "id": "jterrazz-mac-mini",
-              "mark": "ok",
+              "mark": "broken",
               "label": "mac-mini",
               "cells": [
                 {
@@ -290,12 +318,22 @@
                   "kind": "list",
                   "items": [
                     {
-                      "kind": "text",
-                      "text": "never sleeps"
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "never sleeps"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "1 needs you"
+                        }
+                      ]
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "exposed"
             },
             "items": [
               {
@@ -327,6 +365,10 @@
                                 "text": "healthy"
                               },
                               {
+                                "kind": "text",
+                                "text": "up 12 d"
+                              },
+                              {
                                 "kind": "count",
                                 "unit": "restarts"
                               }
@@ -345,10 +387,18 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 4
+          "n": 2
+        },
+        {
+          "mark": "attention",
+          "n": 1
         },
         {
           "mark": "absent",
+          "n": 1
+        },
+        {
+          "mark": "broken",
           "n": 1
         }
       ]
@@ -425,7 +475,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "npm needs sign-in",
+                    "text": "npm needs sign-in needs sign-in",
                     "label": "broken"
                   }
                 ]
@@ -513,7 +563,7 @@
           },
           {
             "kind": "text",
-            "text": "Awake ends, and the engine stays stopped until station engine start or the next login"
+            "text": "Awake ends; the engine stays off until you run station engine start or log in again"
           }
         ],
         "danger": true,
@@ -544,6 +594,21 @@
       }
     },
     {
+      "label": "Accounts",
+      "on": "row",
+      "rows": [
+        "accounts"
+      ],
+      "priority": 6,
+      "id": "open-accounts",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "accounts"
+        ]
+      }
+    },
+    {
       "label": "Update all",
       "on": "row",
       "rows": [
@@ -551,7 +616,7 @@
       ],
       "priority": 5,
       "mutates": true,
-      "id": "update-all",
+      "id": "update-all:0-updates",
       "run": {
         "call": "apps.update"
       }

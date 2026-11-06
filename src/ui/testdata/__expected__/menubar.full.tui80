@@ -4,19 +4,20 @@
    ◐ 2 app updates              station apps update
    ✗ npm sign-in expired        npm login
    ✗ 1 background task failing  station background
-   + 2 more
+   ◐ Firewall off               System Settings > Network > Firewall
+   ◐ ~/.tart is misplaced       station disk move ~/.tart
 
- Machines  4 ●  1 ○
-   ● This Mac       Mac        awake until 18:00
+ Machines  2 ●  1 ◐  1 ○  1 ✗
+   ◐ This Mac       Mac        awake until 18:00
    └─   Workspaces
       ├─ ● linux-1  Workspace  Throwaway · 2 ports shared
       └─ ○ api      Workspace  Permanent · Stopped
-   ● mac-mini       Mac        never sleeps
+   ✗ mac-mini       Mac        never sleeps · 1 needs you
    └─   Servers
-      └─ ● infra    Server     Always on · healthy · 0 restarts
+      └─ ● infra    Server     Always on · healthy · up 12 d · 0 restarts
 
  Awake
      Awake  This Mac until 18:00 · mac-mini never sleeps
 
  Accounts
-     Accounts  ● 8 · ✗ npm needs sign-in
+     Accounts  ● 8 · ✗ npm needs sign-in needs sign-in

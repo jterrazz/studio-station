@@ -18,7 +18,7 @@ final class HomeTests: XCTestCase {
         XCTAssertEqual(stop.label, "Stop everything on This Mac")
         XCTAssertEqual(texts(confirm.lines), [
             "linux-1 will stop; its disk is kept",
-            "Awake ends, and the engine stays stopped until station engine start or the next login",
+            "Awake ends; the engine stays off until you run station engine start or log in again",
         ])
         XCTAssertEqual(stop.run?.call, ActionRunner.endsTheEngine)
         XCTAssertEqual(stop.run?.in, ["Confirm": "yes", "By": "the menu bar"])
@@ -119,7 +119,7 @@ final class HomeTests: XCTestCase {
         engine.serveOnce(Data(#"{"v":2,"id":"1","out":{}}"#.utf8) + [0x0A], thenClose: false)
         defer { engine.stop() }
         let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, reread: [PageID.shown(nil)]).run(update)
-        XCTAssertNil(status)
+        XCTAssertEqual(status?.line, "Update all: done")
         XCTAssertEqual(engine.received, [
             #"{"call":"apps.update","id":"1","v":2}"#,
             #"{"call":"engine.refresh","id":"1","in":{"pages":["menubar"]},"v":2}"#,

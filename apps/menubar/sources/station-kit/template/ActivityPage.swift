@@ -30,53 +30,62 @@ public struct ActivityPage: View {
 
     public var body: some View {
         let banner = page.section("machine")?.rows.first
-        VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
-            PushedHeader(back: banner?.label ?? page.context?.machine ?? "", title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()),
-                         symbol: Token.Symbol.cpu, tint: palette.accent, id: Navigation.activity, action: handlers.back)
+        VStack(alignment: .leading, spacing: Token.Tile.section) {
+            PageHeader(back: state.back ?? Page.ThisMacWord, title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()), action: handlers.back)
             Segments(options: Self.picker(page, handlers: handlers).map { ($0.words, $0.picked, $0.tap) })
             if let graphs = page.section("graphs") {
                 let rows = graphs.rows
                 if let lead = rows.first, (lead.cells?.dropFirst().first?.points.count ?? 0) > 1 {
                     wide(lead)
-                    GlassCard(padding: 12, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 12) {
                         ForEach(Array(rows.dropFirst().enumerated()), id: \.offset) { _, r in measure(r) }
                     }
                 } else {
-                    GlassCard(padding: 12, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 12) {
                         ForEach(Array(rows.enumerated()), id: \.offset) { _, r in measure(r) }
                     }
                 }
             }
+            if let graphs = page.section("graphs"), !graphs.rows.contains(where: { ($0.cells?.dropFirst().first?.points.count ?? 0) > 1 }) {
+                FootNote("The graphs fill in as \(banner?.label ?? Page.ThisMacWord) is sampled, every 2 s while this page is open.")
+            }
             if let top = page.section("processes") {
-                GroupCard(top.title ?? "") {
-                    ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { i, r in
-                        process(top, r).overlay(alignment: .top) { if i > 0 { Rule() } }
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: Token.Space.gap) {
+                        SectionHeader(top.title ?? "")
+                        Spacer(minLength: 0)
+                        ForEach(["CPU", "Memory"], id: \.self) { key in
+                            Text(key.uppercased()).font(.system(size: Token.Size.caption, weight: .semibold)).tracking(Token.Size.caption * Token.Size.tracking)
+                                .foregroundStyle(.secondary).frame(width: 52, alignment: .trailing)
+                        }
+                    }
+                    ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { _, r in
+                        process(top, r)
                     }
                 }
             }
         }
     }
 
-    // value: the first measure as the references' wide chart card: its
+    // value: the first measure as a wide chart drawn on the panel: its
     // name and words, its window in bars with the latest accented, the
     // window's start and Now under it.
     func wide(_ r: Row) -> some View {
         let points = r.cells?.dropFirst().first?.points ?? []
         let start = Self.picked(page).map { "\($0) ago" } ?? ""
-        return GlassCard(padding: 12, spacing: 6) {
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text(r.label ?? "").font(.system(size: Token.Space.small + 1, weight: .semibold)).foregroundStyle(palette.muted)
+                SectionHeader(r.label ?? "")
                 Spacer(minLength: Token.Space.gap)
-                Text(r.cells?.first.map { Format.show($0) } ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text).lineLimit(1).monospacedDigit()
-                    .contentTransition(.numericText())
+                Text(r.cells?.first.map { Format.show($0) } ?? "").font(.subheadline.weight(.semibold)).monospacedDigit().contentTransition(.numericText())
             }
-            Bars(Self.buckets(points, 24), height: 64, accented: 3)
+            Bars(Self.buckets(points, 24), height: 64, accented: 2, chart: true)
             HStack {
                 Text(start)
                 Spacer()
                 Text("Now")
             }
-            .font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
+            .font(.caption).foregroundStyle(.secondary)
         }
     }
 
@@ -96,17 +105,17 @@ public struct ActivityPage: View {
         let ratio = r.cells?.dropFirst().first.flatMap { $0.kind == "ratio" ? $0 : nil }
         return VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
-                Text(r.label ?? "").font(.system(size: Token.Space.small + 1, weight: .semibold)).foregroundStyle(palette.muted)
+                Text(r.label ?? "").font(.subheadline).foregroundStyle(.secondary)
                 Spacer(minLength: Token.Space.gap)
-                Text(words).font(.system(size: Token.Space.small + 1, weight: .semibold)).foregroundStyle(palette.text).lineLimit(1).monospacedDigit()
+                Text(words).font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1).monospacedDigit()
                     .contentTransition(.numericText())
             }
             if points.count > 1 {
-                Graph(points)
+                Bars.share(Self.buckets(points, 24), height: Token.Tile.measure)
             } else if let ratio, let of = ratio.of, of > 0 {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(palette.faint)
+                        Capsule().fill(.fill.tertiary)
                         Capsule().fill(palette.accent).frame(width: geo.size.width * CGFloat(ratio.n ?? 0) / CGFloat(of))
                     }
                 }
@@ -124,18 +133,19 @@ public struct ActivityPage: View {
 
     func process(_ s: Section, _ r: Row) -> some View {
         HStack(spacing: Token.Space.gap) {
-            Text(r.label ?? "").font(.system(size: Token.Space.text)).foregroundStyle(palette.text).lineLimit(1)
-            if let what = s.cell(r, "what") { Text(Format.show(what)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted) }
+            Text(r.label ?? "").font(.body).foregroundStyle(.primary).lineLimit(1)
+            if let what = s.cell(r, "what") { Text(Format.show(what)).font(.subheadline).foregroundStyle(.secondary) }
             Spacer(minLength: 0)
             ForEach(["cpu", "memory"], id: \.self) { key in
                 if let v = s.cell(r, key) {
-                    Text(Format.show(v)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).monospacedDigit().frame(width: 52, alignment: .trailing)
+                    Text(Format.show(v)).font(.subheadline).foregroundStyle(.secondary).monospacedDigit().frame(width: 52, alignment: .trailing)
                 } else {
-                    Text(Token.Glyph.missing).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle).frame(width: 52, alignment: .trailing)
+                    Text(Token.Glyph.missing).font(.system(size: Token.Space.small)).foregroundStyle(.tertiary).frame(width: 52, alignment: .trailing)
                         .help(Self.missing(key))
                 }
             }
         }
-        .frame(minHeight: Token.Space.row + 8)
+        .padding(.horizontal, 4)
+        .frame(minHeight: 30)
     }
 }

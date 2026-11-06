@@ -35,8 +35,8 @@ runs:
           │ Settings             │┃   ◐ This Mac  2 brew updates waiting                                 station apps… ┃
           │ Ports                │┃   ◐ This Mac  Firewall: off                                          System Setti… ┃
           │ Accounts             │┃   ◐ This Mac  ~/.tart is misplaced                                   station disk… ┃
-          │ Images               │┃   ◐ This Mac  com.bjango.istatmenus.installer is an orphan           sudo launchc… ┃
-          │                      │┃   ◐ This Mac  com.docker.socket is an orphan                         sudo launchc… ┃
+          │ Images               │┃   ◐ This Mac  com.bjango.istatmenus.installer is left over           sudo launchc… ┃
+          │                      │┃   ◐ This Mac  com.docker.socket is left over                         sudo launchc… ┃
     - command: '--version >/dev/null; terminal --size 110x34 "$STATION"'
       stdin: |
           see mac-mini         1

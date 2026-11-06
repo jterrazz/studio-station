@@ -9,7 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/core/machine"
-
+	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/engine"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -23,15 +23,14 @@ import (
 const ID page.ID = "menubar"
 
 const (
-	shown = 3
-
-	ActionNewVM       = "new-vm"
-	ActionOpenStation = "open-station"
-	ActionStopAll     = "stop-all"
-	ActionStart       = "start"
-	ActionKeepAwake   = "awake-keep"
-	ActionAwakeOff    = "awake-off"
-	ActionUpdateAll   = "update-all"
+	ActionNewVM        = "new-vm"
+	ActionOpenStation  = "open-station"
+	ActionStopAll      = "stop-all"
+	ActionStart        = "start"
+	ActionKeepAwake    = "awake-keep"
+	ActionAwakeOff     = "awake-off"
+	ActionUpdateAll    = "update-all"
+	ActionOpenAccounts = "open-accounts"
 
 	SectionNeeds    = "needs-you"
 	SectionMachines = "machines"
@@ -48,16 +47,18 @@ type Reading struct {
 	Awake   *awake.Report
 	// value: every other Mac's Awake, as its engine reports it.
 	Macs []awake.Report
+	// value: every other Mac's Overview, as its engine reports it.
+	Away []overview.Summary
 }
 
 func Page(r Reading, thisMac page.Context) page.Page {
 	p := page.Page{ID: ID, Command: "menubar", Context: thisMac, Strip: strip(r.Samples)}
 	needs := needsYou(r)
-	p.Sections = []page.Section{needs, Tree(r.All, r.Ports, homeLine(r)), awakeTile(r), accountsTile(r.Home)}
-	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, awakeAction(r.Awake))
-	if update := updateAll(needs, r.Home); update != nil {
-		p.Actions = append(p.Actions, *update)
-	}
+	tree := Tree(r.All, r.Ports, homeLine(r))
+	markMacs(&tree, r)
+	p.Sections = []page.Section{needs, tree, awakeTile(r), accountsTile(r.Home)}
+	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, awakeAction(r.Awake), openAccounts())
+	p.Actions = append(p.Actions, updateAll(needs, r.Home)...)
 	p.Badge = badge(r, needs)
 	return page.Seal(p)
 }
@@ -93,7 +94,11 @@ func Stopped(thisMac page.Context, installed bool) page.Page {
 		row.Hint = page.Cmd("station setup")
 		actions = actions[1:]
 	}
-	s := page.Section{ID: SectionNeeds, Title: "Needs you", Role: page.Actions, Columns: columns(), Items: []page.Item{{Row: &row}}}
+	caption := "The engine is stopped"
+	if !installed {
+		caption = "station is not set up on this Mac"
+	}
+	s := page.Section{ID: SectionNeeds, Title: "Needs you", Role: page.Actions, Caption: []page.Value{page.Text(caption)}, Columns: columns(), Items: []page.Item{{Row: &row}}}
 	return page.Seal(page.Page{ID: ID, Command: "menubar", Context: thisMac, Sections: []page.Section{s}, Actions: actions})
 }
 
@@ -128,9 +133,9 @@ func strip(readings []activity.Reading) *page.Strip {
 	return &s
 }
 
-// invariant: the badge counts every finding while only the first three are
-// drawn, so the section keeps the full counts (Uncounted) and its caption
-// says them all; the rest is one link to the Overview.
+// invariant: Needs you holds every finding, the line vision panel a draws
+// naming each and unfolding into them; the section keeps the full counts
+// (Uncounted) and its caption says them all.
 func needsYou(r Reading) page.Section {
 	s := page.Section{ID: SectionNeeds, Title: "Needs you", Role: page.Actions, Uncounted: true, Columns: columns()}
 	if r.Home == nil {
@@ -158,15 +163,9 @@ func needsYou(r Reading) page.Section {
 		}
 	}
 	s.Caption = []page.Value{page.Text(things(len(rows)))}
-	switch {
-	case len(rows) == 0:
+	s.Items = rows
+	if len(rows) == 0 {
 		s.Items = []page.Item{{Empty: &page.Empty{Text: "Nothing needs you"}}}
-	case len(rows) > shown:
-		more := page.Link{Label: "+ " + strconv.Itoa(len(rows)-shown) + " more", Page: "overview"}
-		rows = append(rows[:shown:shown], page.Item{Link: &more})
-		s.Items = rows
-	default:
-		s.Items = rows
 	}
 	return s
 }
@@ -182,43 +181,115 @@ func things(n int) string {
 }
 
 // invariant: MB-16: a Needs you line whose fix is the apps' update gets
-// Update all, which runs that call on This Mac with no name: every update
-// there; what fails stays in Needs you with its fix.
-func updateAll(needs page.Section, home *overview.Summary) *page.Action {
+// its own Update all, which runs that call on This Mac for what the line
+// counts: every update of its manager (`brew`), or the one app it names;
+// a line that names neither updates everything. What fails stays in Needs
+// you with its fix.
+func updateAll(needs page.Section, home *overview.Summary) []page.Action {
 	if home == nil {
 		return nil
 	}
-	var rows []string
+	var out []page.Action
 	for i, n := range home.Needs {
 		id := strconv.Itoa(i) + "-" + n.Subject
-		if n.Call == CallUpdate && slices.ContainsFunc(needs.Items, func(it page.Item) bool { return it.Row != nil && it.Row.ID == id }) {
-			rows = append(rows, id)
+		if n.Call != CallUpdate || !slices.ContainsFunc(needs.Items, func(it page.Item) bool { return it.Row != nil && it.Row.ID == id }) {
+			continue
 		}
+		run := &page.Run{Call: CallUpdate}
+		switch {
+		case n.Args["method"] != "":
+			run.In = map[string]string{"Method": `["` + n.Args["method"] + `"]`}
+		case n.Args["name"] != "":
+			run.In = map[string]string{"Names": `["` + n.Args["name"] + `"]`}
+		}
+		out = append(out, page.Action{ID: ActionUpdateAll + ":" + id, Label: "Update all", On: page.OnRow, Rows: []string{id}, Priority: 5, Mutates: true, Run: run})
 	}
-	if len(rows) == 0 {
-		return nil
-	}
-	return &page.Action{ID: ActionUpdateAll, Label: "Update all", On: page.OnRow, Rows: rows, Priority: 5, Mutates: true, Run: &page.Run{Call: CallUpdate}}
+	return out
 }
 
-// value: the line under a Mac in Home: its Awake.
+// value: the line under a Mac in Home: its Awake; another Mac's then says
+// how many things need you there (vision panel a: `never sleeps · 1 needs
+// you`).
 func homeLine(r Reading) func(h model.MacView) page.Value {
 	return func(h model.MacView) page.Value {
-		if h.ThisMac {
-			if r.Awake != nil {
-				if w := awakeWords(*r.Awake); w != "" {
-					return page.Text("awake " + w)
+		var parts []page.Value
+		switch {
+		case h.ThisMac && r.Awake != nil:
+			if w := awakeWords(*r.Awake); w != "" {
+				parts = append(parts, page.Text("awake "+w))
+			}
+		case !h.ThisMac:
+			for _, m := range r.Macs {
+				if m.Mac == h.Name && m.NeverSleeps {
+					parts = append(parts, page.Text("never sleeps"))
 				}
 			}
-			return page.None()
-		}
-		for _, m := range r.Macs {
-			if m.Mac == h.Name && m.NeverSleeps {
-				return page.Text("never sleeps")
+			if s := away(r, h.Name); s != nil && len(s.Needs) > 0 {
+				parts = append(parts, page.Text(needWords(len(s.Needs))))
 			}
 		}
-		return page.None()
+		if len(parts) == 0 {
+			return page.None()
+		}
+		return page.List(parts...)
 	}
+}
+
+func needWords(n int) string {
+	if n == 1 {
+		return "1 needs you"
+	}
+	return strconv.Itoa(n) + " need you"
+}
+
+func away(r Reading, mac string) *overview.Summary {
+	for i, s := range r.Away {
+		if s.Head.Name == mac {
+			return &r.Away[i]
+		}
+	}
+	return nil
+}
+
+// invariant: a Mac's dot in Home says what needs you there, This Mac's
+// from its own Needs you, another's from its engine's: amber for
+// anything, red when one of its ports is reachable outside Tailscale
+// undeclared (vision panels a and g); a Mac that does not answer keeps its
+// own mark.
+func markMacs(s *page.Section, r Reading) {
+	if r.All == nil {
+		return
+	}
+	for _, it := range s.Items {
+		if it.Group == nil || it.Group.Head.Mark != page.OK {
+			continue
+		}
+		head := &it.Group.Head
+		for _, h := range r.All.Macs {
+			if h.Name != head.ID {
+				continue
+			}
+			switch {
+			case h.ThisMac && r.Home != nil:
+				head.Mark, head.Reason = needsMark(r.Home.Needs)
+			case !h.ThisMac:
+				if a := away(r, h.Name); a != nil {
+					head.Mark, head.Reason = needsMark(a.Needs)
+				}
+			}
+		}
+	}
+}
+
+func needsMark(needs []overview.Need) (page.Mark, page.Reason) {
+	mark, reason := page.OK, page.Reason("")
+	for _, n := range needs {
+		if n.Section == section.Ports && n.Broken {
+			return page.Broken, page.Exposed
+		}
+		mark, reason = page.Attention, page.Degraded
+	}
+	return mark, reason
 }
 
 func awakeWords(r awake.Report) string {
@@ -246,7 +317,7 @@ func awakeTile(r Reading) page.Section {
 	}
 	for _, m := range r.Macs {
 		if !m.ThisMac {
-			parts = append(parts, page.Text(page.MacName(m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps normally")))
+			parts = append(parts, page.Text(macLabel(r, m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps normally")))
 		}
 	}
 	value := page.Pending()
@@ -255,6 +326,19 @@ func awakeTile(r Reading) page.Section {
 	}
 	row := page.Row{ID: pagekeepawake.RowAwake, Label: "Awake", Cells: []page.Value{value}}
 	return page.Section{ID: SectionAwake, Title: "Awake", Role: page.Summary, Columns: columns(), Items: []page.Item{{Row: &row}}}
+}
+
+// value: a Mac as the Machines list names it (`mac-mini`), else by the
+// interface's rule for a Mac's name.
+func macLabel(r Reading, mac, self string) string {
+	if r.All != nil {
+		for _, h := range r.All.Macs {
+			if h.Name == mac {
+				return model.Label(*r.All, h)
+			}
+		}
+	}
+	return page.MacName(mac, self)
 }
 
 func cmpWord(s, otherwise string) string {
@@ -271,12 +355,34 @@ func accountsTile(home *overview.Summary) page.Section {
 		for _, body := range pagehome.Body(*home, true) {
 			for _, it := range body.Items {
 				if body.ID == "sections" && it.Row != nil && it.Row.ID == "accounts" {
-					row.Cells = it.Row.Cells
+					row.Cells = []page.Value{signIns(it.Row.Cells[0])}
 				}
 			}
 		}
 	}
 	return page.Section{ID: SectionAccounts, Title: "Accounts", Role: page.Summary, Columns: columns(), Items: []page.Item{{Row: &row}}}
+}
+
+// value: the Accounts tile's words: how many are signed in, then each
+// account whose sign-in failed said so (`npm needs sign-in`).
+func signIns(v page.Value) page.Value {
+	if v.Kind != page.KindList {
+		return v
+	}
+	out := make([]page.Value, 0, len(v.Items))
+	for _, it := range v.Items {
+		if it.Kind == page.KindText && (it.Label == string(page.Broken) || it.Label == string(page.Attention)) {
+			it.Text += " needs sign-in"
+		}
+		out = append(out, it)
+	}
+	v.Items = out
+	return v
+}
+
+// value: Accounts opens a terminal on the accounts of This Mac.
+func openAccounts() page.Action {
+	return page.Action{ID: ActionOpenAccounts, Label: "Accounts", On: page.OnRow, Rows: []string{SectionAccounts}, Priority: 6, Run: &page.Run{Terminal: true, Argv: []string{"accounts"}}}
 }
 
 // value: the calls the menu bar's actions make, by their calls.json names.
@@ -288,6 +394,7 @@ const (
 	CallUpdate    = "apps.update"
 	CallAddMac    = "machines.add"
 	CallStopVM    = "machines.stop"
+	CallStartVM   = "machines.start"
 	CallDeleteVM  = "machines.delete"
 	CallRestartVM = "machines.restart"
 	CallSharePort = "ports.share"

@@ -1,3 +1,4 @@
+import Charts
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 
@@ -78,20 +79,23 @@ public struct Meter: View {
 
     public var body: some View {
         ZStack(alignment: .leading) {
-            Capsule().fill(palette.faint)
+            Capsule().fill(.fill.tertiary)
             Capsule().fill(palette.accent).frame(width: Token.Space.meterWidth * fraction)
         }
         .frame(width: Token.Space.meterWidth, height: Token.Space.meterHeight)
     }
 }
 
-// value: a measure's sparkline, as wide as it is given: Swift Charts'
-// catmull-rom line over an area fading down, its axes hidden.
+// value: a measure's sparkline as the vision's: its points 0 to 100 as
+// a straight line in its hue over an area fading to nothing, a hairline
+// under it, a dot ringed in white where it ends; Swift Charts, axes
+// hidden, as wide as it is given.
 public struct Spark: View {
     let points: [Int]
     let h: CGFloat
     let tint: Color?
     @Environment(\.stationPalette) private var palette
+    @Environment(\.colorScheme) private var scheme
 
     public init(_ points: [Int], height: CGFloat = Token.Space.sparkHeight, tint: Color? = nil) {
         self.points = points
@@ -99,8 +103,38 @@ public struct Spark: View {
         self.tint = tint
     }
 
+    // value: the vision's frame: a share p sits at 24 - 0.22 p of a 26
+    // high box, the line runs from 2 to 92 of its 96 wide.
+    static let floor = -24.0 / 0.22 * (2.0 / 24)
+    static let top = 24.0 / 0.22
+    static let base = (24.0 - 25.5) / 0.22
+
     public var body: some View {
-        Graph(points, height: h, tint: tint, fit: true)
+        let ink = tint ?? palette.accent
+        let last = max(points.count - 1, 1)
+        let step = Double(last) / 90
+        let shown = points.enumerated().map { (i: $0.offset, v: Double(min(max($0.element, 0), 100))) }
+        Chart {
+            RuleMark(y: .value("base", Self.base)).foregroundStyle(Token.Fill.faint(scheme)).lineStyle(StrokeStyle(lineWidth: 0.75))
+            ForEach(shown, id: \.i) { p in
+                AreaMark(x: .value("t", Double(p.i)), yStart: .value("floor", Self.base), yEnd: .value("v", p.v))
+                    .foregroundStyle(LinearGradient(colors: [ink.opacity(0.35), ink.opacity(0)], startPoint: .top, endPoint: .bottom))
+                LineMark(x: .value("t", Double(p.i)), y: .value("v", p.v))
+                    .lineStyle(StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round))
+                    .foregroundStyle(ink)
+            }
+            if let end = shown.last {
+                PointMark(x: .value("t", Double(end.i)), y: .value("v", end.v))
+                    .symbol { Circle().fill(ink).frame(width: 4.4, height: 4.4).overlay(Circle().stroke(palette.onTint, lineWidth: 0.8)) }
+            }
+        }
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartLegend(.hidden)
+        .chartYScale(domain: Self.floor...Self.top)
+        .chartXScale(domain: (-2 * step)...(Double(last) + 4 * step))
+        .chartPlotStyle { $0.frame(maxWidth: .infinity) }
+        .frame(height: h)
     }
 }
 
@@ -113,8 +147,8 @@ public struct Switch: View {
 
     public var body: some View {
         ZStack(alignment: on ? .trailing : .leading) {
-            Capsule().fill(on ? palette.good : palette.faint).frame(width: 38, height: 22)
-            Circle().fill(palette.onTint).frame(width: 18, height: 18).shadow(color: palette.subtle, radius: 1.5, y: 1).padding(.horizontal, 2)
+            Capsule().fill(on ? AnyShapeStyle(palette.good) : AnyShapeStyle(.fill.tertiary)).frame(width: 38, height: 22)
+            Circle().fill(palette.onTint).frame(width: 18, height: 18).shadow(color: .black.opacity(0.25), radius: 1.5, y: 1).padding(.horizontal, 2)
         }
         .animation(.snappy, value: on)
     }
@@ -124,7 +158,7 @@ public enum QR {
     public static func modules(_ text: String) -> CGImage? {
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(text.utf8)
-        filter.correctionLevel = "M"
+        filter.correctionLevel = "L"
         guard let image = filter.outputImage else { return nil }
         return CIContext().createCGImage(image, from: image.extent)
     }
@@ -138,14 +172,55 @@ public struct QRView: View {
 
     public var body: some View {
         if let image = QR.modules(text) {
-            let quiet: CGFloat = 4
-            let scale = max(1, (Token.Space.qr / (CGFloat(image.width) + quiet * 2)).rounded(.down))
             Image(decorative: image, scale: 1)
                 .interpolation(.none)
                 .resizable()
-                .frame(width: CGFloat(image.width) * scale, height: CGFloat(image.height) * scale)
-                .padding(quiet * scale)
-                .background(palette.qrLight)
+                .aspectRatio(1, contentMode: .fit)
+                .frame(width: Token.Tile.qr, height: Token.Tile.qr)
         }
+    }
+}
+
+// value: a menu item's glyph: the vision's own `>_` prompt and station
+// mark, drawn as its 16-unit strokes at 14 pt; any other name is an SF
+// Symbol at 13 pt.
+public struct MenuGlyph: View {
+    let symbol: String
+
+    public init(_ symbol: String) { self.symbol = symbol }
+
+    public var body: some View {
+        switch symbol {
+        case Token.Symbol.prompt, Token.Symbol.list:
+            Stroke16(symbol: symbol)
+                .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                .frame(width: 14, height: 14)
+        default:
+            Image(systemName: symbol).font(.system(size: 13, weight: .medium))
+        }
+    }
+}
+
+struct Stroke16: Shape {
+    let symbol: String
+
+    func path(in rect: CGRect) -> Path {
+        let k = rect.width / 16
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * k, y: rect.minY + y * k) }
+        var path = Path()
+        if symbol == Token.Symbol.prompt {
+            path.move(to: p(3, 4.5))
+            path.addLine(to: p(6.5, 8))
+            path.addLine(to: p(3, 11.5))
+            path.move(to: p(8.5, 12))
+            path.addLine(to: p(13, 12))
+        } else {
+            path.addRoundedRect(in: CGRect(origin: p(2.2, 2.2), size: CGSize(width: 11.6 * k, height: 11.6 * k)), cornerSize: CGSize(width: 3.2 * k, height: 3.2 * k))
+            path.move(to: p(5, 6.3))
+            path.addLine(to: p(11, 6.3))
+            path.move(to: p(5, 9.7))
+            path.addLine(to: p(8.6, 9.7))
+        }
+        return path
     }
 }

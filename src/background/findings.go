@@ -19,7 +19,7 @@ func Findings(tasks []Task, m machine.Ref) []finding.Finding {
 		case t.Run == Failing:
 			f.Severity, f.Text = finding.Broken, t.Label+" is failing, last exit "+strconv.Itoa(t.Exit)
 		case t.Group == GroupOrphan:
-			f.Severity, f.Text = finding.NeedsALook, t.Label+" is an orphan"
+			f.Severity, f.Text = finding.NeedsALook, t.Label+" is left over"
 		default:
 			continue
 		}

@@ -7,9 +7,14 @@ final class KitBoundaryTests: XCTestCase {
         var description: String { "\(file): \(rule)" }
     }
 
-    static let forbidden = ["ProgressView", "Gauge(", "List(", "List {", ".toggleStyle(.switch)", "WindowGroup", "NSWindow(", "Settings {"]
+    static let forbidden = ["ProgressView", "Gauge(", "List(", "List {", "WindowGroup", "NSWindow(", "Settings {"]
     static let models = ["\"laptopcomputer", "\"macmini", "\"macbook", "\"macpro", "\"imac", "\"macstudio"]
-    static let glass = ["glassEffect", "GlassEffectContainer", ".buttonStyle(.glass", "Material", ".containerBackground", "RoundedRectangle(cornerRadius: Token.Tile.radius", "RoundedRectangle(cornerRadius: Token.Glass.radius", "RoundedRectangle(cornerRadius: Token.Tile.sheet", "palette.well"]
+    // value: L50d, Apple's rules: the MenuBarExtra's window is the only
+    // glass, so no view of the kit is glass or a material; L50e: the
+    // vision's tiles are translucent fills drawn by molecule/Surface only.
+    static let glass = ["glassEffect", "GlassEffectContainer", "Material", ".containerBackground"]
+    static let surface = "molecule/Surface.swift"
+    static let surfaceOnly = [".quinary", "Token.Fill.tile", ".glassProminent", ".buttonStyle(.bordered", ".toggleStyle(.switch)"]
     static let glyphs: [Character] = ["→", "·", "…", "⏻", "⚡", "●", "◐", "○", "✗", "◌"]
 
     // invariant: the Swift side of the kit's boundary: colours, symbol names
@@ -37,16 +42,21 @@ final class KitBoundaryTests: XCTestCase {
             for word in forbidden where text.contains(word) {
                 out.append(Finding(file: path, rule: "\(word) is not drawn offscreen"))
             }
-            // invariant: the panel is the system's glass, so no view
-            // paints a surface behind it, and every tile, card and button
-            // is glass through the kit's one modifier (molecule/Glass).
-            if path != "molecule/Glass.swift" {
-                for word in glass where text.contains(word) {
-                    out.append(Finding(file: path, rule: "\(word) outside the kit's glass"))
+            for word in glass where text.contains(word) {
+                out.append(Finding(file: path, rule: "\(word) in the content"))
+            }
+            if path != surface {
+                for word in surfaceOnly where text.contains(word) {
+                    out.append(Finding(file: path, rule: "\(word) outside the kit's surface"))
                 }
-                if text.range(of: #"\.background\(palette\.(?!qrLight)"#, options: .regularExpression) != nil {
-                    out.append(Finding(file: path, rule: "a painted background"))
-                }
+            }
+            if text.range(of: #"\.background\(palette\.(?!qrLight)"#, options: .regularExpression) != nil {
+                out.append(Finding(file: path, rule: "a painted background"))
+            }
+            // invariant: a page holds one primary action at most.
+            if path.hasPrefix("template/") {
+                let primaries = text.components(separatedBy: "\n").filter { $0.range(of: #"role: [^,)]*\.primary"#, options: .regularExpression) != nil }.count
+                if primaries > 1 { out.append(Finding(file: path, rule: "\(primaries) primary actions on one page")) }
             }
             if path.hasPrefix("page/") || path.hasPrefix("engine/") {
                 for line in text.split(separator: "\n") where line.hasPrefix("import ") && line != "import Foundation" {
@@ -73,15 +83,18 @@ final class KitBoundaryTests: XCTestCase {
             ("page/Page.swift", "import SwiftUI"),
             ("token/Token.swift", "static let mini = \"macmini\""),
             ("template/Panel.swift", "x.background(palette.surface).glassEffect(.regular)"),
-            ("molecule/Field.swift", "x.background(RoundedRectangle(cornerRadius: 8).fill(palette.well))"),
+            ("molecule/Field.swift", "x.background(.quinary).background(.ultraThinMaterial)"),
+            ("template/Many.swift", "a.background(Token.Fill.tile(scheme))\nStationButton(role: .primary)\nStationButton(role: x ? .primary : .plain)"),
+            ("molecule/Surface.swift", "Toggle().toggleStyle(.switch); x.background(.quinary)"),
         ]).map(\.rule)
         XCTAssertEqual(caught, [
             "a colour outside Token", "ProgressView is not drawn offscreen",
             "a symbol name outside Token", "a glyph outside Token",
             "import SwiftUI: Page and Engine import Foundation only",
             "macmini draws a Mac's model, which no capability reports",
-            "glassEffect outside the kit's glass", "a painted background",
-            "palette.well outside the kit's glass",
+            "glassEffect in the content", "a painted background",
+            "Material in the content", ".quinary outside the kit's surface",
+            "Token.Fill.tile outside the kit's surface", "2 primary actions on one page",
         ])
     }
 }

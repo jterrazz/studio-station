@@ -66,6 +66,9 @@ type VM struct {
 	// health check as last run.
 	Restarts    Restarts
 	CheckStatus CheckStatus
+	// value: when its engine last booted it, while it runs; zero when not
+	// known.
+	BootAt time.Time
 }
 
 type EngineView struct {

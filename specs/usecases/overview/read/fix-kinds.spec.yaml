@@ -6,4 +6,4 @@ runs:
       stdout: |
           ✗	npm sign-in expired	npm login
           ◐	1 mise update waiting	station apps update --method mise
-          ◐	com.docker.socket is an orphan	sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist
+          ◐	com.docker.socket is left over	sudo launchctl bootout system/com.docker.socket && sudo rm /Library/LaunchDaemons/com.docker.socket.plist

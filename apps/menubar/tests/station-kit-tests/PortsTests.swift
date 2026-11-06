@@ -13,13 +13,13 @@ final class PortsTests: XCTestCase {
     func testPortRowQR() async throws {
         let page = try Tree.page("menubar.ports.linux-1")
         let row = try XCTUnwrap(page.section("private")?.rows.first)
-        let url = "https://jterrazz-macbook-pro.tail1234.ts.net:40001"
+        let url = "https://jterrazz-macbook-pro.tail77a797.ts.net:40001"
         XCTAssertEqual(page.section("private")?.cell(row, "url")?.text, url)
         let stop = try XCTUnwrap(page.actions(for: row.id ?? "").first)
         XCTAssertEqual(stop.label, "Stop sharing")
         XCTAssertEqual(stop.confirm?.question, "Stop sharing linux-1's port 5173?")
         XCTAssertEqual(stop.run?.call, "ports.stop-sharing")
-        XCTAssertEqual(Client.input([:], fixed: stop.run?.in) as NSDictionary, ["VM": "linux-1", "Port": "5173", "Mac": "macbook", "Confirm": "yes"] as NSDictionary)
+        XCTAssertEqual(Client.input([:], fixed: stop.run?.in) as NSDictionary, ["VM": "linux-1", "Port": "5173", "Mac": "jterrazz-macbook-pro", "Confirm": "yes"] as NSDictionary)
         var copied: [String] = []
         var opened: [URL] = []
         var asked: [String?] = []
@@ -63,7 +63,7 @@ final class PortsTests: XCTestCase {
         XCTAssertEqual(fields.map(\.key), ["Port", "Via"])
         XCTAssertEqual(fields[0].options?.map(\.label), ["mac-mini:5000", "infra:10250", "mac-mini:5900", "infra:6443"])
         XCTAssertEqual(fields[1].options?.map(\.label), ["Cloudflare Tunnel", "Tailscale Funnel", "your LAN"])
-        XCTAssertEqual(PortsPage.routes(declare), "To open a port on purpose, declare it public by Cloudflare Tunnel, Tailscale Funnel or your LAN.")
+        XCTAssertEqual(PortsPage.routes(declare), "To open a port on purpose, declare it public: a Cloudflare Tunnel, Tailscale Funnel or your LAN.")
         let input = Client.input(ActionRunner.filled(declare, answers: [:]), fixed: declare.run?.in)
         XCTAssertEqual(input as NSDictionary, ["Machine": "mac-mini", "Port": "5000", "Via": "cloudflare-tunnel"] as NSDictionary)
         var state = Snapshot.state("menubar.ports.mini", page)

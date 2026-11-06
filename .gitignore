@@ -19,3 +19,6 @@ node_modules/
 
 # Release builds, should one run in the checkout
 dist/
+
+# SwiftPM, when it runs bare in the menu bar app
+apps/menubar/.build/

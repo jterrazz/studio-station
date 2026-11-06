@@ -1,9 +1,9 @@
 import SwiftUI
 
-// invariant: SPEC §10.2 Awake, vision panel e: This Mac first, its term
-// and its Keep awake for, the switches its capabilities allow, its guards;
-// then the other Macs by their mode, each with its Change, whose y/n sheet
-// opens in its row.
+// invariant: SPEC §10.2 Awake, vision panel e: This Mac first, Keep awake
+// and its switch, Keep awake for, the switches its capabilities allow,
+// its guards; then the other Macs by their mode, each with its Change,
+// whose y/n sheet opens in its row. No grouping: rows on the panel.
 public struct AwakePage: View {
     let state: PopoverState
     let handlers: PopoverHandlers
@@ -17,87 +17,162 @@ public struct AwakePage: View {
     var page: Page { state.page ?? Page() }
     var act: Act { Act(state: state, handlers: handlers) }
 
+    // invariant: while one call runs every control of the page waits; once
+    // it returned, another may run at once: each call sends the switches as
+    // the owner set them (flags), never a stale page's.
+    var busy: Bool { state.running != nil }
+    func waiting(_ a: Action?) -> Bool { a != nil && (state.running == a?.id || state.settling == a?.id) }
+
     public var body: some View {
         let mac = page.section("this-mac")
-        let on = mac?.rows.first?.mark == .ok
-        VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
-            PushedHeader(back: "This Mac", title: "Awake", subtitle: "Every Mac\(Token.Glyph.sep)this one first",
-                         symbol: on ? Token.Symbol.awakeOn : Token.Symbol.awakeOff, tint: on ? palette.warn : nil, id: Navigation.awake, action: handlers.back)
+        VStack(alignment: .leading, spacing: Token.Tile.section) {
+            PageHeader(back: state.back ?? Page.ThisMacWord, title: "Awake", subtitle: "Every Mac\(Token.Glyph.sep)this one first",
+                       symbol: Token.Symbol.awake, action: handlers.back)
             if let mac, let row = mac.rows.first { thisMac(mac, row) }
-            if let guards = page.section("guards") { guardsCard(guards) }
+            if let guards = page.section("guards") { guardsSection(guards) }
             if let others = page.section("other-macs") {
-                GroupCard(others.title ?? "") {
-                    ForEach(Array(others.rows.enumerated()), id: \.offset) { i, r in other(others, r, rule: i > 0) }
+                SectionHeader(others.title ?? "")
+                Rows {
+                    ForEach(Array(others.rows.enumerated()), id: \.offset) { _, r in other(r) }
                 }
-                ForEach(Array(others.notes.enumerated()), id: \.offset) { _, n in
-                    Text(n).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).padding(.horizontal, 4)
-                }
+                ForEach(Array(others.notes.enumerated()), id: \.offset) { _, n in FootNote(n) }
             }
         }
     }
 
     func words(_ v: Value?) -> String { Format.show(v ?? Value()) }
 
+    // value: This Mac: Keep awake and its switch on a tile, how long as a
+    // segmented choice on another, then Lid closed and On battery with
+    // their switches in a list.
     @ViewBuilder
     func thisMac(_ s: Section, _ r: Row) -> some View {
         let actions = page.actions(for: r.id ?? "")
         let keeps = actions.filter { $0.id?.hasPrefix("keep") == true }
         let switches = actions.filter { $0.id == "lid" || $0.id == "battery" }
-        GlassCard {
-            HStack(spacing: Token.Space.gap + 2) {
-                IconCircle(r.mark == .ok ? Token.Symbol.awakeOn : Token.Symbol.awakeOff, tint: r.mark == .ok ? palette.warn : nil)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(r.short ?? r.label ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
-                    Text(words(r.cells?.first)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(2)
-                }
-                Spacer(minLength: 0)
-                if let off = actions.first(where: { $0.id == "let-sleep" }) { Pill(off.label ?? "") { act.tap(off) } }
+        let on = r.mark == .ok
+        let flip = on ? actions.first { $0.id == "let-sleep" } : keeps.first
+        SectionHeader(s.title ?? Page.ThisMacWord)
+        HStack(alignment: .center, spacing: Token.Tile.gap) {
+            RowText(title: "Keep awake", subtitle: words(r.cells?.first))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if let flip {
+                if waiting(flip) { PendingDot() } else { StationSwitch(on: on) { act.tap(flip) }.disabled(busy) }
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .stationTile()
         if !keeps.isEmpty {
-            GlassCard(spacing: 6) {
-                CardHead("Keep awake for\(Token.Glyph.ellipsis)")
-                if let running = keeps.first(where: { state.running == $0.id }) {
-                    HStack(spacing: 6) { PendingDot(); Text(act.label(running)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted) }
+            VStack(alignment: .leading, spacing: 8) {
+                SubText("Keep awake for\(Token.Glyph.ellipsis)")
+                if let running = keeps.first(where: { waiting($0) }) {
+                    HStack(spacing: 6) {
+                        PendingDot()
+                        SubText(act.label(running))
+                    }
                 } else {
-                    Segments(options: keeps.map { k in (act.label(k), false, { act.tap(k) }) })
+                    Segments(options: keeps.map { k in
+                        let chosen = (on || state.held[Self.keepKey] != nil) && Self.picked(k, among: keeps, held: state.held)
+                        return (Self.held(k) && chosen ? k.label ?? "" : Self.offered(k), chosen, { k.form == nil ? run(k) : act.tap(k) })
+                    }).disabled(busy)
                 }
-                ForEach(Array(keeps.enumerated()), id: \.offset) { _, k in act.sheet(k) }
             }
+            .stationTile()
+            ForEach(Array(keeps.enumerated()), id: \.offset) { _, k in act.sheet(k) }
         }
         if !switches.isEmpty {
-            GlassCard(padding: 12, spacing: 0) {
-                ForEach(Array(switches.enumerated()), id: \.offset) { i, a in toggle(a, rule: i > 0) }
+            Rows {
+                ForEach(Array(switches.enumerated()), id: \.offset) { _, a in toggle(a) }
             }
         }
+    }
+
+    // value: Until while a keep-awake holds: it says the time it holds
+    // until (`Until 18:00`), the term chosen.
+    static func held(_ k: Action) -> Bool { k.form != nil && (k.label ?? "").contains(where: \.isNumber) }
+
+    // value: a segment's words while it is not the term chosen: Until
+    // never names the time another term holds until.
+    static func offered(_ k: Action) -> String {
+        guard k.form != nil else { return k.label ?? "" }
+        let word = (k.label ?? "").split(separator: " ").first.map(String.init) ?? ""
+        return word + Token.Glyph.ellipsis
+    }
+
+    // value: the key under which the term the owner just picked is held,
+    // and the For it sent, until the page read again picks it too.
+    public static let keepKey = "Keep"
+    public static let forKey = "For"
+
+    // value: the segment drawn chosen: the term the owner just picked,
+    // else the term the page says is in force; from an engine that says
+    // none, Until while it holds.
+    public static func picked(_ k: Action, among keeps: [Action], held chosen: [String: String] = [:]) -> Bool {
+        if let id = chosen[keepKey] { return k.id == id }
+        return keeps.contains { $0.picked == true } ? k.picked == true : held(k)
+    }
+
+    // value: what a keep-awake that worked leaves held: its term and the
+    // For it sent, so the page drawn before the next read shows it, and a
+    // switch flipped meanwhile keeps it.
+    public static func holding(_ action: Action, answers: [String: String]) -> [String: String] {
+        guard action.id?.hasPrefix("keep") == true, let sent = answers[forKey] ?? action.run?.in?[forKey] else { return [:] }
+        return [keepKey: action.id ?? "", forKey: sent]
     }
 
     // invariant: a switch's action flips it, so its input holds the other
-    // side: Lid closed is on when its action sends Lid false.
+    // side: Lid closed is on when its action sends Lid false; a switch the
+    // owner just set reads as set until the page says so too.
     func on(_ a: Action) -> Bool {
-        let key = a.id == "lid" ? "Lid" : "Battery"
-        return a.run?.in?[key] == "false"
+        let key = Self.key(a)
+        if let held = state.held[key] { return held == "true" }
+        return Self.paged(a)
     }
 
-    func toggle(_ a: Action, rule: Bool) -> some View {
+    static func key(_ a: Action) -> String { a.id == "lid" ? "Lid" : "Battery" }
+    static func paged(_ a: Action) -> Bool { a.run?.in?[key(a)] == "false" }
+
+    // invariant: every Awake call sends both switches as the owner sees
+    // them, the one tapped flipped: a call never carries a switch's state
+    // from a page read before the last call.
+    public static func flags(_ page: Page, held: [String: String], flipping: Action? = nil) -> [String: String] {
+        var out: [String: String] = [:]
+        for a in page.actions ?? [] where a.id == "lid" || a.id == "battery" {
+            let key = key(a)
+            let now = held[key].map { $0 == "true" } ?? paged(a)
+            out[key] = String(flipping?.id == a.id ? !now : now)
+        }
+        if flipping != nil, let sent = held[forKey] { out[forKey] = sent }
+        return out
+    }
+
+    // value: what is still held once a page is read: the switches it does
+    // not say yet.
+    public static func settled(_ held: [String: String], _ page: Page) -> [String: String] {
+        guard page.id == MenuPage.awake else { return held }
+        var out = held
+        for a in page.actions ?? [] where a.id == "lid" || a.id == "battery" {
+            if held[key(a)] == String(paged(a)) { out[key(a)] = nil }
+        }
+        if let id = held[keepKey], page.actions?.contains(where: { $0.id == id && $0.picked == true }) == true {
+            out[keepKey] = nil
+            out[forKey] = nil
+        }
+        return out
+    }
+
+    func run(_ a: Action, flipping: Bool = false) {
+        handlers.run(a, Self.flags(page, held: state.held, flipping: flipping ? a : nil))
+    }
+
+    func toggle(_ a: Action) -> some View {
         let lid = a.id == "lid"
         let on = on(a)
-        return Button { act.tap(a) } label: {
-            HStack(spacing: Token.Space.gap + 2) {
-                IconCircle(lid ? Token.Symbol.lid : Token.Symbol.battery, tint: on ? (lid ? palette.indigo : palette.good) : nil)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(a.label ?? "").font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.text)
-                    Text(lid ? "Stays awake with the lid shut" : "Stays awake when unplugged").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
-                }
-                Spacer(minLength: 0)
-                if state.running == a.id { PendingDot() } else { Switch(on: on) }
-            }
-            .frame(minHeight: Token.Tile.rowHeight)
-            .contentShape(Rectangle())
-            .overlay(alignment: .top) { if rule { Rule() } }
+        return MenuRow(a.label ?? "", subtitle: lid ? "Stays awake with the lid shut" : "Stays awake when unplugged") {
+            IconTile(lid ? Token.Symbol.lid : Token.Symbol.battery, active: on)
+        } trailing: {
+            if waiting(a) { PendingDot() } else { StationSwitch(on: on) { run(a, flipping: true) }.disabled(busy) }
         }
-        .buttonStyle(.plain)
-        .disabled(state.running != nil)
     }
 
     func symbol(_ key: String) -> String {
@@ -109,40 +184,47 @@ public struct AwakePage: View {
     }
 
     @ViewBuilder
-    func guardsCard(_ s: Section) -> some View {
-        GroupCard(s.title ?? "") {
-            ForEach(Array((s.items ?? []).compactMap(\.fact).enumerated()), id: \.offset) { i, f in
-                HStack(spacing: Token.Space.gap + 2) {
-                    IconCircle(symbol(f.key ?? ""), tint: palette.good, size: Token.Tile.smallCircle)
-                    Text(f.key ?? "").font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.text).layoutPriority(1)
-                    Spacer(minLength: Token.Space.gap)
-                    Text(words(f.value)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(1).monospacedDigit()
+    func guardsSection(_ s: Section) -> some View {
+        SectionHeader(s.title ?? "")
+        Rows {
+            ForEach(Array((s.items ?? []).compactMap(\.fact).enumerated()), id: \.offset) { _, f in
+                let parts = (f.value?.kind == "list" ? f.value?.items : nil)?.map { Format.show($0) }
+                if let parts, parts.count > 1 {
+                    MenuRow("\(f.key ?? "") \(parts[0])", subtitle: parts.dropFirst().joined(separator: Token.Glyph.sep).capitalizedFirst) {
+                        IconTile(symbol(f.key ?? ""))
+                    }
+                } else {
+                    MenuRow(f.key ?? "") {
+                        IconTile(symbol(f.key ?? ""))
+                    } trailing: {
+                        TrailingValue(words(f.value).capitalizedFirst)
+                    }
                 }
-                .frame(minHeight: Token.Tile.rowHeight - 6)
-                .overlay(alignment: .top) { if i > 0 { Rule() } }
             }
         }
-        ForEach(Array(s.notes.enumerated()), id: \.offset) { _, n in
-            Text(n).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).padding(.horizontal, 4)
-        }
+        ForEach(Array(s.notes.enumerated()), id: \.offset) { _, n in FootNote(n) }
     }
 
-    func other(_ s: Section, _ r: Row, rule: Bool) -> some View {
+    func other(_ r: Row) -> some View {
         let change = page.actions(for: r.id ?? "").first { $0.id?.hasPrefix("change:") == true }
         return VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top, spacing: Token.Space.gap + 2) {
-                IconTile(Token.Symbol.mac, tint: r.mark == .absent ? nil : palette.accent)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(r.short ?? r.label ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
-                    Text(words(r.cells?.first)).font(.system(size: Token.Space.small)).foregroundStyle(palette.text)
-                    if let detail = r.detail { Text(words(detail)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(2) }
-                }
-                Spacer(minLength: 0)
-                if let change { Pill("\(change.label ?? "")\(Token.Glyph.ellipsis)") { act.tap(change) } }
+            HStack(spacing: Token.Tile.gap) {
+                IconTile(Token.Symbol.mac)
+                RowText(title: r.short ?? r.label ?? "", subtitle: words(r.cells?.first))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
+                StateDot(mark: r.mark)
+                if let change { StationButton("\(change.label ?? "")\(Token.Glyph.ellipsis)") { act.tap(change) } }
             }
-            .padding(.vertical, 4)
+            if let detail = r.detail { SubText(words(detail).capitalizedFirst) }
             if let change { act.sheet(change) }
         }
-        .overlay(alignment: .top) { if rule { Rule() } }
+        .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
     }
+}
+
+extension String {
+    // value: the words with their first letter capital, as a line of a
+    // menu starts.
+    var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }

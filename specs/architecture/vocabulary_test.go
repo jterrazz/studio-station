@@ -314,6 +314,10 @@ func specTexts(root string) ([]corpusText, error) {
 	return out, err
 }
 
+// value: the names SwiftUI's protocols require a type to declare, as
+// foreign as an Apple API's: a Layout places its subviews.
+func swiftRequirements() []string { return []string{"placeSubviews"} }
+
 func swiftTexts(root string) ([]corpusText, error) {
 	var out []corpusText
 	err := walk(root, "apps/menubar/sources", func(rel string) bool { return strings.HasSuffix(rel, ".swift") }, func(rel, body string) {
@@ -329,6 +333,9 @@ func swiftTexts(root string) ([]corpusText, error) {
 				}
 			}
 			for _, m := range swiftDeclRe.FindAllStringSubmatch(line, -1) {
+				if slices.Contains(swiftRequirements(), m[1]) {
+					continue
+				}
 				out = append(out, corpusText{dir, at, splitText(m[1])})
 			}
 		}

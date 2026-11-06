@@ -12,6 +12,12 @@
       "id": "needs-you",
       "title": "Needs you",
       "role": "actions",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "The engine is stopped"
+        }
+      ],
       "columns": [
         {
           "key": "name",

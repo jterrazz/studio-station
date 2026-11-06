@@ -298,7 +298,7 @@
         "lines": [
           {
             "kind": "text",
-            "text": "Awake ends, and the engine stays stopped until station engine start or the next login"
+            "text": "Awake ends; the engine stays off until you run station engine start or log in again"
           }
         ],
         "danger": true,
@@ -370,6 +370,21 @@
             ],
             "default": "Lid=false"
           }
+        ]
+      }
+    },
+    {
+      "label": "Accounts",
+      "on": "row",
+      "rows": [
+        "accounts"
+      ],
+      "priority": 6,
+      "id": "open-accounts",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "accounts"
         ]
       }
     }

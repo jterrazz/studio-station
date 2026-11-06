@@ -15,7 +15,8 @@ public struct MenuBarIcon: Equatable, Sendable {
 
     // invariant: SPEC §10.1: the icon draws the page's badge and never
     // judges it: a server down wins over any count, a count is orange, and
-    // nothing needing you is the symbol alone. The CPU line is the owner's
+    // nothing needing you is the symbol alone; the engine stopped dims it
+    // under an orange `!`, so its silence is never mistaken for all good. The CPU line is the owner's
     // option, drawn only while the engine streams.
     public static func of(connection: Connection, page: Page?, sparkline: Bool = false) -> MenuBarIcon {
         switch connection {
@@ -45,8 +46,8 @@ public struct MenuBarIcon: Equatable, Sendable {
     // bar's appearance.
     public var template: Bool {
         switch mark {
-        case .plain, .stopped, .connecting: true
-        case .needs, .down: false
+        case .plain, .connecting: true
+        case .needs, .down, .stopped: false
         }
     }
 }
@@ -101,6 +102,7 @@ public struct MenuBarIconView: View {
             StationSymbol()
                 .stroke(ink, style: StrokeStyle(lineWidth: Token.Icon.line, lineCap: .round, lineJoin: .round))
                 .frame(width: Token.Icon.symbol, height: Token.Icon.symbol)
+                .opacity(dimmed ? Token.Icon.dimmed : 1)
                 .overlay(alignment: .topTrailing) { badge.offset(Token.Icon.badgeShift) }
             if let spark = icon.spark {
                 IconSpark(points: spark)
@@ -108,7 +110,6 @@ public struct MenuBarIconView: View {
                     .frame(width: Token.Icon.sparkWidth, height: Token.Icon.sparkHeight)
             }
         }
-        .opacity(dimmed ? Token.Icon.dimmed : 1)
         .padding(.vertical, 3)
         .padding(.leading, 2)
         .padding(.trailing, 6)
@@ -117,9 +118,10 @@ public struct MenuBarIconView: View {
     @ViewBuilder
     var badge: some View {
         switch icon.mark {
-        case .needs(let n): pill("\(n)", Token.Icon.needs(scheme))
+        case .needs(let n): pill(n > 99 ? "99+" : "\(n)", Token.Icon.needs(scheme))
         case .down: pill(Token.Glyph.down, Token.Icon.down(scheme))
-        case .plain, .stopped, .connecting: EmptyView()
+        case .stopped: pill(Token.Glyph.down, Token.Icon.needs(scheme))
+        case .plain, .connecting: EmptyView()
         }
     }
 
@@ -127,6 +129,8 @@ public struct MenuBarIconView: View {
         Text(text)
             .font(.system(size: Token.Icon.badgeText, weight: .bold))
             .foregroundStyle(Token.Icon.badgeInk)
+            .lineLimit(1)
+            .fixedSize()
             .padding(.horizontal, 3)
             .frame(minWidth: Token.Icon.badge, minHeight: Token.Icon.badge)
             .background(Capsule().fill(fill))

@@ -14,7 +14,7 @@ final class AwakeTests: XCTestCase {
         let page = try Tree.page("menubar.awake.two-macs")
         let mac = try XCTUnwrap(page.section("this-mac")?.rows.first?.id)
         let actions = page.actions(for: mac)
-        XCTAssertEqual(actions.map(\.label), ["1 h", "4 h", "Until", "Lid closed", "On battery", "Let it sleep"])
+        XCTAssertEqual(actions.map(\.label), ["1 h", "4 h", "Until 18:00", "Lid closed", "On battery", "Let it sleep"])
         let four = try XCTUnwrap(actions.first { $0.label == "4 h" })
         XCTAssertEqual(four.run?.call, "awake.keep")
         XCTAssertEqual(Client.input([:], fixed: four.run?.in) as NSDictionary,

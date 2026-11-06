@@ -21,11 +21,15 @@ public struct ActionRunner: Sendable {
     // value: the pages watched that a call may have changed, read again once
     // it returns.
     public var reread: [String]
+    // value: how long Stop everything waits for the engine to end, in
+    // seconds, before it says the engine did not stop.
+    public var stopWithin: Double = 15
 
     // value: the call that ends the engine answering it: its connection's
     // end, with no answer, is its success.
     public static let endsTheEngine = "engine.stop"
     public static let refresh = "engine.refresh"
+    public static let awake = "awake.keep"
 
     public init(executable: String, socket: String, launcher: Launcher = ProcessLauncher(), terminal: String = "Terminal", reread: [String] = []) {
         self.executable = executable
@@ -46,6 +50,7 @@ public struct ActionRunner: Sendable {
             out[key] = value
         }
         if action.confirm?.type != nil, let typed = answers[typedKey] { out[typedKey] = typed }
+        for (key, value) in answers where action.run?.in?[key] != nil { out[key] = value }
         return out
     }
 
@@ -65,13 +70,20 @@ public struct ActionRunner: Sendable {
     public func run(_ action: Action, answers: [String: String] = [:]) async -> Status? {
         guard let run = action.run else { return nil }
         if let name = run.call {
-            let reply = await Client.call(path: socket, name: name, input: Client.input(Self.filled(action, answers: answers), fixed: run.in, words: Self.words(action)), target: run.target)
+            let reply = await Client.call(path: socket, name: name, input: Client.input(Self.filled(action, answers: answers), fixed: run.in, words: Self.words(action)), target: run.target,
+                                          within: name == Self.endsTheEngine ? stopWithin : nil)
+            if reply.late {
+                var status = Self.failure("The engine did not stop in \(Int(stopWithin)) s", "station engine stop")
+                status.posted = Notifications.failedCall(action.label ?? name, "the engine did not stop")
+                return status
+            }
             if !reread.isEmpty, !reply.closed {
                 _ = await Client.call(path: socket, name: Self.refresh, input: ["pages": reread])
             }
             if reply.ok, let posted = Notifications.failedItems(reply.listed) {
                 return Status(posted, failed: true, posted: posted)
             }
+            if reply.ok, action.on == "row", reply.task != nil || Self.saysDone(action) { return Self.done(action, name) }
             if reply.ok || (reply.closed && name == Self.endsTheEngine) { return nil }
             let message = reply.message ?? name
             var status = Self.failure(message, reply.hint)
@@ -82,6 +94,17 @@ public struct ActionRunner: Sendable {
         let open = Terminal.opening(terminal, executable: executable, words: run.argv ?? [])
         let done = await launcher.run(open.path, open.args, environment: [:])
         return done.code == 0 ? nil : Self.failure("\(terminal) did not open station", nil)
+    }
+
+    // value: a call that worked as a task (Update all) says it is done, so
+    // a call whose outcome the page does not show is never silent.
+    // value: a row's call whose line may stay as it was once it ran (an
+    // update the world does not clear at once): it says it is done.
+    static func saysDone(_ action: Action) -> Bool { action.id?.hasPrefix(updateAll) == true }
+    public static let updateAll = "update-all"
+
+    public static func done(_ action: Action, _ name: String) -> Status {
+        Status("\(action.label ?? name): done", failed: false)
     }
 
     static func failure(_ message: String, _ hint: String?) -> Status {

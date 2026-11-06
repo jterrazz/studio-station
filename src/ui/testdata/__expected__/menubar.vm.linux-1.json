@@ -4,7 +4,8 @@
   "command": "menubar",
   "context": {
     "machine": "linux-1",
-    "kind": "workspace"
+    "kind": "workspace",
+    "on": "This Mac"
   },
   "state": "ready",
   "sections": [
@@ -255,9 +256,8 @@
             "label": "Disk",
             "cells": [
               {
-                "kind": "ratio",
-                "n": 3874836480,
-                "of": 21474836480
+                "kind": "percent",
+                "n": 120
               },
               {
                 "kind": "spark",
@@ -267,71 +267,71 @@
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   }
                 ]
               }
@@ -368,8 +368,7 @@
                   {
                     "kind": "count",
                     "n": 38,
-                    "unit": "installed",
-                    "label": "ok"
+                    "unit": "installed"
                   }
                 ]
               }
@@ -385,10 +384,8 @@
                 "kind": "list",
                 "items": [
                   {
-                    "kind": "count",
-                    "n": 2,
-                    "unit": "need a look",
-                    "label": "attention"
+                    "kind": "text",
+                    "text": "2 need a look"
                   }
                 ]
               }
@@ -500,6 +497,10 @@
                 "items": [
                   {
                     "kind": "text",
+                    "text": "read only"
+                  },
+                  {
+                    "kind": "text",
                     "text": "4 h left"
                   }
                 ]
@@ -607,7 +608,7 @@
             "key": "Port",
             "label": "Port",
             "kind": "text",
-            "note": "private, on Tailscale",
+            "note": "a port number, like 5173",
             "required": true
           }
         ]
@@ -666,6 +667,119 @@
           "Account": "claude",
           "Confirm": "yes",
           "From": "linux-1"
+        }
+      }
+    },
+    {
+      "label": "Open apps",
+      "on": "row",
+      "rows": [
+        "apps"
+      ],
+      "priority": 5,
+      "id": "open:apps",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "apps",
+          "--on",
+          "linux-1"
+        ]
+      }
+    },
+    {
+      "label": "Open settings",
+      "on": "row",
+      "rows": [
+        "settings"
+      ],
+      "priority": 5,
+      "id": "open:settings",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "settings",
+          "--on",
+          "linux-1"
+        ]
+      }
+    },
+    {
+      "label": "Open disk",
+      "on": "row",
+      "rows": [
+        "disk"
+      ],
+      "priority": 5,
+      "id": "open:disk",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "disk",
+          "--on",
+          "linux-1"
+        ]
+      }
+    },
+    {
+      "label": "Stop sharing",
+      "on": "row",
+      "rows": [
+        "5173"
+      ],
+      "confirm": {
+        "question": "Stop sharing linux-1's port 5173?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its link stops working on Tailscale, and reserved port 40001 is let go."
+          }
+        ],
+        "danger": true,
+        "yes": "Stop sharing",
+        "no": "Cancel"
+      },
+      "priority": 3,
+      "mutates": true,
+      "id": "stop-sharing:linux-1/5173",
+      "run": {
+        "call": "ports.stop-sharing",
+        "in": {
+          "Confirm": "yes",
+          "Mac": "\"jterrazz-macbook-pro\"",
+          "Port": "\"5173\"",
+          "VM": "\"linux-1\""
+        }
+      }
+    },
+    {
+      "label": "Stop sharing",
+      "on": "row",
+      "rows": [
+        "7000"
+      ],
+      "confirm": {
+        "question": "Stop sharing linux-1's port 7000?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its link stops working on Tailscale, and reserved port 40002 is let go."
+          }
+        ],
+        "danger": true,
+        "yes": "Stop sharing",
+        "no": "Cancel"
+      },
+      "priority": 3,
+      "mutates": true,
+      "id": "stop-sharing:linux-1/7000",
+      "run": {
+        "call": "ports.stop-sharing",
+        "in": {
+          "Confirm": "yes",
+          "Mac": "\"jterrazz-macbook-pro\"",
+          "Port": "\"7000\"",
+          "VM": "\"linux-1\""
         }
       }
     },

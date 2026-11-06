@@ -3,6 +3,7 @@ package calls
 import (
 	"context"
 	"strings"
+	"time"
 
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
@@ -44,6 +45,7 @@ type EngineVM struct {
 	SSH      bool
 	Restarts model.Restarts
 	Check    model.CheckStatus
+	BootAt   time.Time
 }
 
 type Engine interface {

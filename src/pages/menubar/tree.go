@@ -1,8 +1,11 @@
 package menubar
 
 import (
+	"time"
+
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
+	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	"github.com/jterrazz/studio-station/src/ports"
 )
@@ -20,7 +23,7 @@ func treeColumns() []page.Column {
 
 func Tree(f *model.AllMachines, svc *ports.AllMachines, line func(model.MacView) page.Value) page.Section {
 	// invariant: SPEC §10.2's Machines: each Mac, then its Servers, then its
-	// Workspaces, each group named; a row's ID is its machine's name, the page
+	// Workspaces (the running first), each group named; a row's ID is its machine's name, the page
 	// it opens. line says what a Mac's row adds after its kind.
 	s := page.Section{ID: SectionMachines, Title: "Machines", Columns: treeColumns()}
 	if f == nil {
@@ -29,19 +32,23 @@ func Tree(f *model.AllMachines, svc *ports.AllMachines, line func(model.MacView)
 	}
 	for _, h := range f.Macs {
 		g := page.Group{Head: macRow(*f, h, line(h))}
-		var srv, ws []page.Item
+		var srv, ws, idle []page.Item
 		for _, vm := range h.VMs {
-			row := vmRow(vm, shared(svc, vm.Name))
+			row := vmRow(vm, shared(svc, vm.Name), f.Read)
 			if !h.Reachable && !h.ThisMac {
 				row.Mark, row.Reason = page.NotKnown, ""
 				row.Cells[1] = page.List(row.Cells[1].Items[0], page.Text("not known while "+model.Label(*f, h)+" does not answer"))
 			}
-			if vm.Lifetime == model.AlwaysOn {
+			switch {
+			case vm.Lifetime == model.AlwaysOn:
 				srv = append(srv, page.Item{Row: &row})
-			} else {
+			case vm.State == model.Running:
 				ws = append(ws, page.Item{Row: &row})
+			default:
+				idle = append(idle, page.Item{Row: &row})
 			}
 		}
+		ws = append(ws, idle...)
 		if len(srv) > 0 {
 			g.Items = append(g.Items, page.Item{Group: &page.Group{Head: page.Row{ID: h.Name + servers, Label: GroupServers}, Items: srv}})
 		}
@@ -64,9 +71,10 @@ func macRow(f model.AllMachines, h model.MacView, line page.Value) page.Row {
 	return row
 }
 
-// value: a VM's row: a server's lifetime and health, a workspace's lifetime
-// and either its shared ports or its state.
-func vmRow(vm model.VM, shares int) page.Row {
+// value: a VM's row: a server's lifetime, health, time up (when its boot
+// is known) and restarts, a workspace's lifetime and either its shared
+// ports or its state.
+func vmRow(vm model.VM, shares int, now time.Time) page.Row {
 	row := page.Row{ID: vm.Name, Label: vm.Name, Mark: page.OK}
 	kind := model.KindWord(vm.Lifetime.Kind())
 	life := pagemachines.Lifetime(vm.Lifetime)
@@ -78,7 +86,11 @@ func vmRow(vm model.VM, shares int) page.Row {
 		row.Mark, row.Reason = page.Absent, page.Stopped
 		row.Cells = []page.Value{page.Text(kind), page.List(life, pagemachines.State(vm.State))}
 	case vm.Lifetime == model.AlwaysOn:
-		row.Cells = []page.Value{page.Text(kind), page.List(life, page.Text(health(vm)), page.Count(int64(vm.Restarts.Count), plural(vm.Restarts.Count, "restart")))}
+		words := []page.Value{life, page.Text(health(vm))}
+		if !vm.BootAt.IsZero() && !now.IsZero() && now.After(vm.BootAt) {
+			words = append(words, pagehome.Up(now.Sub(vm.BootAt)))
+		}
+		row.Cells = []page.Value{page.Text(kind), page.List(append(words, page.Count(int64(vm.Restarts.Count), plural(vm.Restarts.Count, "restart")))...)}
 		if health(vm) != "healthy" {
 			row.Mark, row.Reason = page.Attention, page.Waiting
 		}

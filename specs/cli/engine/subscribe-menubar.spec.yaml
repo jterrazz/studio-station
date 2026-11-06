@@ -15,5 +15,5 @@ runs:
           ready
           ["menubar",["needs-you","machines","awake","accounts"]]
           [["new-vm","machines.create-workspace"],["open-station","terminal"],["stop-all","engine.stop"]]
-          [["awake-keep","awake.keep",["awake"]]]
+          [["awake-keep","awake.keep",["awake"]],["open-accounts",null,["accounts"]]]
           1

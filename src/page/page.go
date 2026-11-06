@@ -38,6 +38,9 @@ type Context struct {
 	Machine    string `json:"machine,omitempty"`
 	Kind       string `json:"kind,omitempty"`
 	Registered bool   `json:"registered,omitempty"`
+	// value: the Mac a VM's page is on, as the owner names it (`mac-mini`,
+	// `This Mac`); empty for a Mac's own.
+	On string `json:"on,omitempty"`
 }
 
 type Section struct {
@@ -215,6 +218,9 @@ type Action struct {
 	ID       string   `json:"id,omitempty"`
 	Run      *Run     `json:"run,omitempty"`
 	Form     *Form    `json:"form,omitempty"`
+	// value: the choice in force among its row's choices (Awake's term):
+	// a segmented control's selected segment.
+	Picked bool `json:"picked,omitempty"`
 }
 
 type Run struct {

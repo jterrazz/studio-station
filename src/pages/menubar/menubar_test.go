@@ -2,6 +2,7 @@ package menubar
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	model "github.com/jterrazz/studio-station/src/machines"
@@ -47,7 +48,7 @@ func TestUpdateAllLeavesNeedsYouAndTheBadgeDropsByOne(t *testing.T) {
 		t.Fatalf("badge %d then %d, want 2 then 1", was.Badge.Needs, is.Badge.Needs)
 	}
 	has := func(p page.Page) bool {
-		return slices.ContainsFunc(p.Actions, func(a page.Action) bool { return a.ID == ActionUpdateAll && a.Run.Call == CallUpdate })
+		return slices.ContainsFunc(p.Actions, func(a page.Action) bool { return strings.HasPrefix(a.ID, ActionUpdateAll) && a.Run.Call == CallUpdate })
 	}
 	if !has(was) || has(is) {
 		t.Fatalf("Update all before %v, after %v", has(was), has(is))
@@ -81,5 +82,24 @@ func TestHomeDrawsAMacsServersThenItsWorkspaces(t *testing.T) {
 	}
 	if want := []string{GroupServers, "infra", GroupSpaces, "build"}; !slices.Equal(drawn, want) {
 		t.Fatalf("Home draws %q, want %q", drawn, want)
+	}
+}
+
+// invariant: MB-16: each update line's Update all updates what it counts,
+// its manager's updates, never the other line's too.
+func TestEachUpdateLineUpdatesItsOwnManager(t *testing.T) {
+	needs := []overview.Need{
+		{Section: "apps", Subject: "tools", Text: "1 tools update waiting", Call: CallUpdate, Args: map[string]string{"method": "tools"}},
+		{Section: "apps", Subject: "pkgs", Text: "2 pkgs updates waiting", Call: CallUpdate, Args: map[string]string{"method": "pkgs"}},
+	}
+	p := Page(Reading{Home: &overview.Summary{Needs: needs}}, page.Context{})
+	got := map[string]string{}
+	for _, a := range p.Actions {
+		if strings.HasPrefix(a.ID, ActionUpdateAll) {
+			got[strings.Join(a.Rows, ",")] = a.Run.In["Method"]
+		}
+	}
+	if len(got) != 2 || got["0-tools"] != `["tools"]` || got["1-pkgs"] != `["pkgs"]` {
+		t.Fatalf("Update all per line: %v, want tools's on its line and pkgs's on its own", got)
 	}
 }

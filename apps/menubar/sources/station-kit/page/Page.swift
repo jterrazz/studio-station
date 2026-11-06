@@ -51,10 +51,12 @@ public struct Context: Codable, Equatable, Sendable {
     public var machine: String?
     public var kind: String?
     public var registered: Bool?
-    public init(machine: String? = nil, kind: String? = nil, registered: Bool? = nil) {
+    public var on: String?
+    public init(machine: String? = nil, kind: String? = nil, registered: Bool? = nil, on: String? = nil) {
         self.machine = machine
         self.kind = kind
         self.registered = registered
+        self.on = on
     }
 }
 
@@ -119,6 +121,7 @@ public struct Group: Codable, Equatable, Sendable {
 
 public struct Empty: Codable, Equatable, Sendable {
     public var noun: String?
+    public var text: String?
     public var hint: Hint?
 }
 
@@ -159,6 +162,8 @@ public struct Action: Codable, Equatable, Sendable {
     public var id: String?
     public var run: Run?
     public var form: Form?
+    // value: the choice in force among its row's (Awake's term).
+    public var picked: Bool?
 }
 
 public struct Run: Codable, Equatable, Sendable {

@@ -105,6 +105,8 @@ type Serving struct {
 	ThisMachine machine.Profile
 	Word        func(e *fail.Error) (message, hint string)
 	Sleep       func(ctx context.Context, d time.Duration) error
+	// value: the Router a call for another machine rides.
+	Far call.Router
 }
 
 func Server(d *Engine, h Serving) serve.Server {
@@ -149,6 +151,6 @@ func Server(d *Engine, h Serving) serve.Server {
 			}
 			return d.Watch(ctx, in.Machines, send)
 		}},
-		ThisMachine: h.ThisMachine, Word: h.Word, Hint: "station machines", Sleep: h.Sleep,
+		ThisMachine: h.ThisMachine, Word: h.Word, Hint: "station machines", Sleep: h.Sleep, Far: h.Far,
 	}
 }

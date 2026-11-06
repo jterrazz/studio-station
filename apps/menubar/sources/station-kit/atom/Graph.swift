@@ -20,13 +20,11 @@ public struct Graph: View {
 
     // value: the graph's scale: 0 to 100, its top brought down to a low
     // series' (never under 20), so a measure that stays low (a swap of
-    // 7 %) is still drawn as an area; for a sparkline, the band its points
-    // move in, so a steady series still shows its swing.
+    // 7 %) is still drawn as an area; for a sparkline, the whole 0 to 100,
+    // so a meter's line sits at its share (a disk of 12 % reads low).
     var domain: ClosedRange<Int> {
-        guard let lo = points.min(), let hi = points.max() else { return 0...100 }
-        guard fit else { return 0...min(max(hi * 2, 20), 100) }
-        let pad = max(hi - lo, 10)
-        return max(lo - pad, 0)...min(hi + pad / 2, 100)
+        guard !fit, let hi = points.max() else { return 0...100 }
+        return 0...min(max(hi * 2, 20), 100)
     }
 
     public var body: some View {
@@ -66,15 +64,18 @@ public struct Bars: View {
     let height: CGFloat
     let accented: Int
     let tint: Color?
+    let chart: Bool
     var waiting = false
     var full = false
+    var ceiling: Int? = nil
     @Environment(\.stationPalette) private var palette
 
-    public init(_ points: [Int], height: CGFloat = Token.Tile.bars, accented: Int = 1, tint: Color? = nil) {
+    public init(_ points: [Int], height: CGFloat = Token.Tile.meter, accented: Int = 1, tint: Color? = nil, chart: Bool = false) {
         self.points = points
         self.height = height
         self.accented = accented
         self.tint = tint
+        self.chart = chart
     }
 
     // value: a bar's height, 0 to 1, over the band its points move in, so
@@ -82,15 +83,26 @@ public struct Bars: View {
     func level(_ p: Int) -> Double {
         guard !waiting else { return 0.25 }
         guard !full else { return 1 }
+        if let ceiling { return min(max(Double(p) / Double(max(ceiling, 1)), 0.06), 1) }
+        if chart, let hi = points.max() { return max(Double(p) / Double(max(hi, 1)), 0.06) }
         guard let hi = points.max(), let low = points.min(), hi != low else { return 0.5 }
         let top = Double(max(hi, 1)), lo = Double(low)
         let floor = max(lo - max(top - lo, top / 10), 0)
         return max((Double(p) - floor) / max(top - floor, 1), 0.1)
     }
 
+    // value: a measure's bars against a share's scale, 0 to 100 brought
+    // down to a low series' (never under 20), so a steady measure keeps
+    // its level instead of filling the band.
+    public static func share(_ points: [Int], height: CGFloat) -> Bars {
+        var bars = Bars(points, height: height, chart: true)
+        bars.ceiling = min(max((points.max() ?? 0) * 2, 20), 100)
+        return bars
+    }
+
     // value: the meter of a measure not read yet: its bars low and level,
     // none accented, so a tile waiting keeps its shape.
-    public static func pending(height: CGFloat = Token.Tile.bars) -> Bars {
+    public static func pending(height: CGFloat = Token.Tile.meter) -> Bars {
         var bars = Bars(Array(repeating: 1, count: 12), height: height, accented: 0)
         bars.waiting = true
         return bars
@@ -100,7 +112,7 @@ public struct Bars: View {
     // last `lit` of them in the tint, every bar at full height, so a count reads as a filled share.
     public static let slots = 12
 
-    public static func meter(_ lit: Int, of count: Int, height: CGFloat = Token.Tile.bars, tint: Color? = nil) -> Bars {
+    public static func meter(_ lit: Int, of count: Int, height: CGFloat = Token.Tile.meter, tint: Color? = nil) -> Bars {
         var bars = Bars(Array(repeating: 1, count: count), height: height, accented: min(max(lit, 0), count), tint: tint)
         bars.full = true
         return bars
@@ -110,9 +122,9 @@ public struct Bars: View {
         let ink = tint ?? palette.accent
         let recent = points.count - accented
         Chart(Array(points.enumerated()), id: \.offset) { i, p in
-            BarMark(x: .value("t", "\(i)"), yStart: .value("floor", 0), yEnd: .value("v", level(p)), width: .ratio(0.55))
-                .clipShape(Capsule())
-                .foregroundStyle(i >= recent ? ink : waiting ? palette.faint : palette.subtle)
+            BarMark(x: .value("t", "\(i)"), yStart: .value("floor", 0), yEnd: .value("v", level(p)), width: .ratio(chart ? 0.8 : 0.6))
+                .clipShape(RoundedRectangle(cornerRadius: chart ? 2 : 1, style: .continuous))
+                .foregroundStyle(i >= recent ? AnyShapeStyle(ink) : waiting ? AnyShapeStyle(.fill.tertiary) : AnyShapeStyle(.fill.secondary))
         }
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)

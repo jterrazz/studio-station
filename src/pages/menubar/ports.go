@@ -41,13 +41,57 @@ func portsPage(id page.ID, l ports.Listing, of PortsOf, thisMac page.Context, of
 		p.Sections[0].Items[0].Row.Label = of.Machine
 	}
 	p.Actions = append(p.Actions, reviews(p, l, of)...)
-	p.Actions = append(p.Actions, offer)
+	if h, ok := holder(l, of.Machine); ok {
+		workspace(&p, h, of.Machine)
+	} else {
+		p.Actions = append(p.Actions, offer)
+	}
 	for _, h := range l.AllMachines.Macs {
 		for _, s := range h.Shared {
 			p.Actions = append(p.Actions, stopSharing(s, h.Name))
 		}
 	}
 	return page.Seal(p)
+}
+
+// value: the Mac that shares a workspace's ports, by the workspace's name.
+func holder(l ports.Listing, vm string) (ports.MacPorts, bool) {
+	for _, h := range l.AllMachines.Macs {
+		for _, s := range h.Shared {
+			if vm != "" && s.VM == vm {
+				return h, true
+			}
+		}
+	}
+	return ports.MacPorts{}, false
+}
+
+// invariant: a workspace's Ports, vision panel d: under its title the Mac
+// that reserves its ports, then whether its shares get an https:// link,
+// then its shared ports; the reserved ports' note and Declare public are
+// its Mac's page's, not its own.
+func workspace(p *page.Page, h ports.MacPorts, vm string) {
+	on := h.Name
+	if h.ThisMac {
+		on = page.ThisMac
+	}
+	links := page.Row{ID: "https", Label: "HTTPS links", Mark: page.OK, Cells: []page.Value{page.Text("Shared ports get an https:// link")}}
+	if h.Serve != "on" {
+		links.Mark, links.Reason, links.Cells = page.Absent, page.Unset, []page.Value{page.Text(catalog.ServeOffDetail)}
+	}
+	https := page.Section{ID: "https", Title: "HTTPS links", Role: page.Summary, Columns: columns(), Items: []page.Item{{Row: &links}}}
+	var kept []page.Section
+	for _, s := range p.Sections {
+		switch s.ID {
+		case "summary":
+			s.Items[0].Row.Cells = []page.Value{page.Texts("On "+vm, "reserved ports on "+on)}
+			kept = append(kept, s, https)
+		case "ranges", "tailnet":
+		default:
+			kept = append(kept, s)
+		}
+	}
+	p.Sections = kept
 }
 
 // invariant: Review opens a terminal on the ports of the Mac its red rows

@@ -24,6 +24,9 @@ type Session struct {
 	StartedAt time.Time `json:"started_at"`
 	Until     time.Time `json:"until"`
 	By        string    `json:"by"`
+	// value: the term the owner asked for last (1 h, 4 h, or the time
+	// left until the hour picked): what Keep awake for… shows chosen.
+	For time.Duration `json:"for,omitempty"`
 }
 
 type End struct {

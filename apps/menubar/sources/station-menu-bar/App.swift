@@ -38,11 +38,11 @@ struct StationMenuBarApp: App {
     }
 
     var handlers: PopoverHandlers {
-        model.navigation.wire(PopoverHandlers(
+        var h = model.navigation.wire(PopoverHandlers(
             run: { action, answers in model.run(action, answers: answers) },
             confirm: { action in model.state.confirming = action?.id },
             answer: { id, key, value in model.state.answers[id, default: [:]][key] = value },
-            open: { url in NSWorkspace.shared.open(url) },
+            open: { url in model.open(url) },
             toggleQR: { url in model.state.qr = model.state.qr == url ? nil : url },
             toggleMenu: { model.state.menu.toggle() },
             loginItem: { on in model.setLoginItem(on) },
@@ -56,6 +56,9 @@ struct StationMenuBarApp: App {
             copy: { text in
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(text, forType: .string)
-            }))
+            },
+            close: { model.closePanel() }))
+        h.push = { page in model.push(page) }
+        return h.deferred { DispatchQueue.main.async(execute: $0) }
     }
 }

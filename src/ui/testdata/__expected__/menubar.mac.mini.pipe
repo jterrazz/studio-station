@@ -8,4 +8,4 @@
 ●	planned restarts unlock themselves	supported
 ●	engine starts at login	installed
 # VMs
-●	infra	Server	Always on · healthy · 0 restarts
+●	infra	Server	Always on · healthy · up 12 d · 0 restarts

@@ -6,52 +6,93 @@ public struct TypedField: View {
     let placeholder: String
     let symbol: String?
     let key: String?
+    let autofocus: Bool
+    let move: ((Int) -> Void)?
+    let submit: (() -> Void)?
     @Binding var text: String
+    @FocusState private var focused: Bool
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationStill) private var still
+    @Environment(\.colorScheme) private var scheme
 
-    public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil, key: String? = nil) {
+    // value: a field that takes the keys as it opens (the switcher's
+    // search), its Up and Down moving through what it finds, its Return
+    // opening it.
+    public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil, key: String? = nil, autofocus: Bool = false,
+                move: ((Int) -> Void)? = nil, submit: (() -> Void)? = nil) {
         self.placeholder = placeholder
         self.symbol = symbol
         self.key = key
+        self.autofocus = autofocus
+        self.move = move
+        self.submit = submit
         _text = text
     }
 
     public var body: some View {
-        HStack(spacing: 7) {
-            if let symbol { Image(systemName: symbol).font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.muted) }
+        HStack(spacing: 8) {
+            if let symbol { Image(systemName: symbol).font(.system(size: Token.Size.text, weight: .medium)).foregroundStyle(palette.glyph) }
             field
             if let key {
-                Text(key).font(.system(size: Token.Space.small - 1, weight: .semibold)).foregroundStyle(palette.muted)
-                    .padding(.horizontal, 5).padding(.vertical, 1.5)
-                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(palette.subtle, lineWidth: 0.8))
+                Text(key).font(.system(size: Token.Size.key)).foregroundStyle(.secondary)
             }
         }
-        .font(.system(size: Token.Space.text))
-        .padding(.horizontal, Token.Tile.padding + 1)
-        .padding(.vertical, 8)
-        .stationWell(radius: Token.Tile.pill + 2)
+        .font(.system(size: Token.Size.text))
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .stationField()
     }
 
     @ViewBuilder
     var field: some View {
         SwiftUI.Group {
             if still {
-                HStack(spacing: 0) {
-                    Text(text.isEmpty ? placeholder : text).foregroundStyle(text.isEmpty ? palette.subtle : palette.text)
-                    Text(Token.Glyph.caret).foregroundStyle(palette.accent)
+                HStack(spacing: 2) {
+                    if text.isEmpty { Rectangle().fill(palette.accent).frame(width: 1.5, height: 14) }
+                    Text(text.isEmpty ? placeholder : text).foregroundStyle(text.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                    if !text.isEmpty { Rectangle().fill(palette.accent).frame(width: 1.5, height: 14) }
                     Spacer(minLength: 0)
                 }
             } else {
                 TextField(placeholder, text: $text).textFieldStyle(.plain)
+                    .focused($focused)
+                    .onSubmit { submit?() }
+                    .onKeyPress(.downArrow) {
+                        guard let move else { return .ignored }
+                        move(1)
+                        return .handled
+                    }
+                    .onKeyPress(.upArrow) {
+                        guard let move else { return .ignored }
+                        move(-1)
+                        return .handled
+                    }
+                    .onAppear {
+                        guard autofocus else { return }
+                        DispatchQueue.main.async { focused = true }
+                    }
             }
         }
     }
 }
 
+// value: where a sheet sits: under a divider, in the flow of the page,
+// never a card of its own.
+struct SheetGround: ViewModifier {
+    func body(content: Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionDivider()
+            content
+        }
+        .id(PanelScroll.sheetID)
+    }
+}
+
 // invariant: a select field drawn as its options side by side, the chosen
-// one filled: every option is visible, and it draws offscreen.
+// one filled, at most four to a row: every option is visible and has its
+// room, and it draws offscreen.
 public struct Choice: View {
+    public static let perRow = 4
+
     let field: Field
     @Binding var value: String
     @Environment(\.stationPalette) private var palette
@@ -62,7 +103,12 @@ public struct Choice: View {
     }
 
     public var body: some View {
-        Segments(options: (field.options ?? []).map { ($0.label ?? $0.value ?? "", ($0.value ?? "") == value, { [o = $0] in value = o.value ?? "" }) })
+        let all = (field.options ?? []).map { ($0.label ?? $0.value ?? "", ($0.value ?? "") == value, { [o = $0] in value = o.value ?? "" }) }
+        VStack(spacing: 4) {
+            ForEach(Array(stride(from: 0, to: all.count, by: Self.perRow)), id: \.self) { i in
+                Segments(options: Array(all[i..<min(i + Self.perRow, all.count)]))
+            }
+        }
     }
 }
 
@@ -88,12 +134,12 @@ public struct ConfirmSheet: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(confirm.question ?? "").font(.system(size: Token.Space.text + 1, weight: .semibold)).foregroundStyle(palette.text)
+            Text(confirm.question ?? "").font(.body.weight(.semibold)).foregroundStyle(.primary)
             ForEach(Array((confirm.lines ?? []).enumerated()), id: \.offset) { _, line in
-                ValueText(line, muted: true)
+                SubText(Format.show(line))
             }
             if let name = confirm.type {
-                TypedField(name, text: $typed)
+                TypedField(name, text: $typed, autofocus: true, submit: { if Self.allows(confirm, typed: typed) { onAnswer(true) } })
             }
             HStack {
                 Spacer()
@@ -104,8 +150,7 @@ public struct ConfirmSheet: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(Token.Tile.padding + 2)
-        .stationGlass(radius: Token.Tile.sheet)
+        .modifier(SheetGround())
     }
 }
 
@@ -129,34 +174,58 @@ public struct FormSheet: View {
         Binding(get: { answers[f.key ?? ""] ?? f.default ?? "" }, set: { answers[f.key ?? ""] = $0 })
     }
 
-    var complete: Bool {
-        (form.fields ?? []).allSatisfy { f in f.required != true || !(binding(f).wrappedValue.isEmpty) }
+    // value: the field the keys go to as the sheet opens: its first text
+    // field, so the owner types at once.
+    public static func first(_ form: Form) -> String? { (form.fields ?? []).first { $0.kind != "select" }?.key }
+
+    var complete: Bool { Self.complete(form, answers) }
+
+    // invariant: a form runs once each required field holds something,
+    // and a port holds a port: a number from 1 to 65535.
+    public static func complete(_ form: Form, _ answers: [String: String]) -> Bool {
+        (form.fields ?? []).allSatisfy { f in
+            let v = (answers[f.key ?? ""] ?? f.default ?? "").trimmingCharacters(in: .whitespaces)
+            if f.key == portKey, f.kind != "select", !v.isEmpty, !(Int(v).map { (1...65535).contains($0) } ?? false) { return false }
+            return f.required != true || !v.isEmpty
+        }
+    }
+
+    public static let portKey = "Port"
+
+    // value: the confirm's words: a form that picks a term says the term
+    // picked (`Until 17:00`), one that makes something new says Create,
+    // any other its action's own words.
+    public static func verb(_ run: String, _ form: Form, _ answers: [String: String]) -> String {
+        if let f = (form.fields ?? []).first(where: { $0.kind == "select" }), let word = f.label, !word.isEmpty, run.hasPrefix(word),
+           let chosen = f.options?.first(where: { $0.value == (answers[f.key ?? ""] ?? f.default) })?.label {
+            return "\(word) \(chosen)"
+        }
+        return run.hasPrefix("New ") ? "Create" : run
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(form.title ?? "").font(.system(size: Token.Space.text + 1, weight: .semibold)).foregroundStyle(palette.text)
+            Text(form.title ?? "").font(.body.weight(.semibold)).foregroundStyle(.primary)
             ForEach(Array((form.fields ?? []).enumerated()), id: \.offset) { _, f in
                 VStack(alignment: .leading, spacing: 3) {
                     Text(f.label ?? "").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
                     if f.kind == "select" {
                         Choice(f, value: binding(f))
                         if let note = f.options?.first(where: { $0.value == binding(f).wrappedValue })?.note {
-                            Text(note).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle)
+                            Text(note).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
                         }
                     } else {
-                        TypedField(f.note ?? "", text: binding(f))
+                        TypedField(f.note ?? "", text: binding(f), autofocus: Self.first(form) == f.key, submit: { if complete { onAnswer(true) } })
                     }
                 }
             }
             HStack {
                 Spacer()
                 SheetButton("Cancel", role: .plain) { onAnswer(false) }.keyboardShortcut(.cancelAction)
-                SheetButton(run, role: .accent) { onAnswer(true) }.disabled(!complete).opacity(complete ? 1 : 0.4).keyboardShortcut(.defaultAction)
+                SheetButton(Self.verb(run, form, answers), role: .accent) { onAnswer(true) }.disabled(!complete).opacity(complete ? 1 : 0.4).keyboardShortcut(.defaultAction)
             }
         }
-        .padding(Token.Tile.padding + 2)
-        .stationGlass(radius: Token.Tile.sheet)
+        .modifier(SheetGround())
     }
 }
 
@@ -174,15 +243,15 @@ public struct SheetButton: View {
     }
 
     public var body: some View {
-        Pill(title, role: role == .accent ? .primary : role == .danger ? .danger : .plain, action: action)
+        StationButton(title, role: role == .accent ? .primary : role == .danger ? .danger : .plain, action: action)
     }
 }
 
-// value: a segmented picker as the vision draws one: its options in a
-// faint well, the chosen one raised.
+// value: a picker as macOS's segmented control: its options side by side
+// on a tertiary track, the chosen one raised.
 public struct Segments: View {
     let options: [(label: String, on: Bool, tap: () -> Void)]
-    @Environment(\.stationPalette) private var palette
+    @Environment(\.colorScheme) private var scheme
 
     public init(options: [(label: String, on: Bool, tap: () -> Void)]) { self.options = options }
 
@@ -191,13 +260,14 @@ public struct Segments: View {
             ForEach(Array(options.enumerated()), id: \.offset) { _, o in
                 Button(action: o.tap) {
                     Text(o.label)
-                        .font(.system(size: Token.Space.small + 1, weight: o.on ? .semibold : .medium))
-                        .foregroundStyle(palette.text)
+                        .font(.system(size: Token.Size.segment, weight: o.on ? .semibold : .medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 5)
                         .background {
                             if o.on {
-                                RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(palette.raised).shadow(color: palette.faint, radius: 2, y: 1)
+                                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Token.Fill.raised(scheme)).shadow(color: .black.opacity(0.12), radius: 1.5, y: 1)
                             }
                         }
                         .contentShape(Rectangle())
@@ -206,6 +276,6 @@ public struct Segments: View {
             }
         }
         .padding(2)
-        .stationWell(radius: Token.Tile.pill)
+        .background(Token.Fill.faint(scheme), in: RoundedRectangle(cornerRadius: Token.Tile.fieldCorner, style: .continuous))
     }
 }

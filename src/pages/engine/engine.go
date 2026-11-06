@@ -140,7 +140,7 @@ func StopConfirm(w engine.Work, mac string) page.Confirm {
 		lines = append(lines, page.Text("Awake ends, and the engine keeps running for "+strings.Join(w.Servers, ", ")))
 		return page.Confirm{Question: "Stop everything on " + mac + "?", Lines: lines, Danger: true, Yes: "Stop"}
 	}
-	lines = append(lines, page.Text("Awake ends, and the engine stays stopped until station engine start or the next login"))
+	lines = append(lines, page.Text("Awake ends; the engine stays off until you run station engine start or log in again"))
 	return page.Confirm{Question: "Stop everything on " + mac + "?", Lines: lines, Danger: true, Yes: "Stop"}
 }
 

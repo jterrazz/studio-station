@@ -3,6 +3,7 @@ package menubar
 import (
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/accounts"
@@ -29,6 +30,9 @@ const (
 	ActionTakeBack = "take-back"
 	ActionUnlock   = "unlock"
 	ActionAddMac   = "add-mac"
+	ActionStartVM  = "start-vm"
+	// value: a terminal on one family of a workspace (`open:apps`).
+	ActionOpenFamily = "open:"
 
 	SectionMachine  = "machine"
 	SectionActivity = "activity"
@@ -76,11 +80,13 @@ func MachinePage(m Machine) page.Page {
 		Error: &page.Error{Message: "no machine is named " + m.Name, Hint: "station machines"}})
 }
 
-func target(h model.MacView, name string) *page.Target {
+// value: where a VM's call runs: on the Mac that holds it, which reaches
+// the VM itself; nil on This Mac.
+func target(h model.MacView) *page.Target {
 	if h.ThisMac {
 		return nil
 	}
-	return &page.Target{Name: name, On: h.Name}
+	return &page.Target{Name: h.Name}
 }
 
 func vmPage(m Machine, h model.MacView, vm model.VM) page.Page {
@@ -99,31 +105,42 @@ func vmPage(m Machine, h model.MacView, vm model.VM) page.Page {
 		caption = append(caption, page.Text(strconv.Itoa(r.CPUs)+" CPU"), pagemachines.Memory(r.MemoryBytes))
 	}
 	sections := []page.Section{{ID: SectionMachine, Title: vm.Name, Role: page.Summary, Caption: caption, Columns: columns(), Items: []page.Item{{Row: &head}}}}
-	p := page.Page{ID: MachineID, Command: "menubar", Context: page.Context{Machine: vm.Name, Kind: string(kind)}}
+	p := page.Page{ID: MachineID, Command: "menubar", Context: page.Context{Machine: vm.Name, Kind: string(kind), On: on}}
 	if kind == machine.Server {
-		sections = append(sections, upSection(m, vm), healthSection(vm), activitySection(m.Samples, "Activity"), serverSection(m))
+		sections = append(sections, upSection(m, vm), healthSection(vm, m.Now), activitySection(m.Samples, "Activity"), serverSection(m))
 		restart := page.Action{ID: ActionRestart, Label: "Restart", On: page.OnPage, Priority: 1, Mutates: true, Confirm: ask(m.Asks, "restart", kind, vm.Name, "Restart "+vm.Name+"?", "restart"),
-			Run: &page.Run{Call: CallRestartVM, In: map[string]string{"Name": vm.Name}, Target: target(h, vm.Name)}}
+			Run: &page.Run{Call: CallRestartVM, In: map[string]string{"Name": vm.Name}, Target: target(h)}}
 		restart.Run.In = answered(restart.Confirm, restart.Run.In)
 		stop := page.Action{ID: ActionStop, Label: "Stop", On: page.OnPage, Priority: 2, Mutates: true,
 			Confirm: ask(m.Asks, "stop", kind, vm.Name, "Stop "+vm.Name+"?", "stop", "It stays stopped until you start it: the engine no longer restarts it"),
-			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
+			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		stop.Run.In = answered(stop.Confirm, stop.Run.In)
 		p.Actions = []page.Action{restart, stop}
 	} else {
-		sections = append(sections, activitySection(m.Samples, "Activity"), insideSection(m.Summary), portsSection(m, vm), sharedSection(m, h, vm))
+		sections = append(sections, activitySection(m.Samples, "Activity"), insideSection(m.Summary), portsSection(m, h, vm), sharedSection(m, h, vm))
 		stop := page.Action{ID: ActionStop, Label: "Stop", On: page.OnPage, Priority: 1, Mutates: true,
 			Confirm: ask(m.Asks, "stop", kind, vm.Name, "Stop "+vm.Name+"?", "stop", "Its disk is kept"),
-			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
+			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		stop.Run.In = answered(stop.Confirm, stop.Run.In)
+		if vm.State != model.Running && !model.Down(vm) {
+			stop = page.Action{ID: ActionStartVM, Label: "Start", On: page.OnPage, Priority: 1, Mutates: true,
+				Run: &page.Run{Call: CallStartVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
+		}
 		del := page.Action{ID: ActionDelete, Label: "Delete", On: page.OnPage, Priority: 2, Mutates: true,
 			Confirm: ask(m.Asks, "delete", kind, vm.Name, "Delete "+vm.Name+"?", "delete", "Its disk is erased: nothing of it is kept"),
-			Run:     &page.Run{Call: CallDeleteVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
+			Run:     &page.Run{Call: CallDeleteVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		del.Run.In = answered(del.Confirm, del.Run.In)
-		share := page.Action{ID: ActionShare, Label: "Share a port", On: page.OnPage, Priority: 3, Mutates: true,
-			Run:  &page.Run{Call: CallSharePort, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)},
-			Form: &page.Form{Title: "Share a port of " + vm.Name, Fields: []page.Field{{Key: "Port", Label: "Port", Kind: page.FieldText, Required: true, Note: "private, on " + catalog.TailnetProduct}}}}
-		p.Actions = append([]page.Action{stop, del, share}, takeBacks(m, vm)...)
+		p.Actions = []page.Action{stop, del}
+		if vm.State == model.Running {
+			p.Actions = append(p.Actions, page.Action{ID: ActionShare, Label: "Share a port", On: page.OnPage, Priority: 3, Mutates: true,
+				Run:  &page.Run{Call: CallSharePort, In: map[string]string{"VM": vm.Name}, Target: target(h)},
+				Form: &page.Form{Title: "Share a port of " + vm.Name, Fields: []page.Field{{Key: "Port", Label: "Port", Kind: page.FieldText, Required: true, Note: "a port number, like 5173"}}}})
+		}
+		p.Actions = append(p.Actions, takeBacks(m, vm)...)
+		if vm.State == model.Running {
+			p.Actions = append(p.Actions, insideActions(vm.Name)...)
+		}
+		p.Actions = append(p.Actions, stopSharings(m, vm)...)
 	}
 	p.Actions = append(p.Actions, openIn("--on", vm.Name))
 	p.Sections = sections
@@ -131,9 +148,10 @@ func vmPage(m Machine, h model.MacView, vm model.VM) page.Page {
 }
 
 // value: Activity's three measures of the machine, as its last two
-// readings give them, each led into its series over the readings kept
-// (0 to 100: CPU's share, memory's and disk's use of their total), so a
-// tile draws its bar meter; pending until they are read.
+// readings give them (its disk as the share used, vision panels c and
+// f), each led into its series over the readings kept (0 to 100: CPU's
+// share, memory's and disk's use of their total), so a tile draws its bar
+// meter; pending until they are read.
 func activitySection(readings []activity.Reading, title string) page.Section {
 	cpu, memory, disk := page.Pending(), page.Pending(), page.Pending()
 	var cpus, memories, disks []int
@@ -158,7 +176,7 @@ func activitySection(readings []activity.Reading, title string) page.Section {
 			memory = page.Ratio(min(last.MemUsed, last.MemTotal), last.MemTotal)
 		}
 		if last.DiskTotal > 0 {
-			disk = page.Ratio(last.DiskTotal-last.DiskFree, last.DiskTotal)
+			disk = page.Percent((last.DiskTotal - last.DiskFree) * 1000 / last.DiskTotal)
 		}
 	}
 	measure := func(id, label string, now page.Value, series []int) page.Row {
@@ -193,11 +211,67 @@ func insideSection(s *overview.Summary) page.Section {
 		rows[i].Cells = []page.Value{page.None()}
 		for _, l := range s.Lines {
 			if string(l.Section) == rows[i].ID {
-				rows[i].Cells = []page.Value{lineOf(*s, rows[i].ID)}
+				rows[i].Cells = []page.Value{inside(rows[i].ID, lineOf(*s, rows[i].ID))}
 			}
 		}
 	}
 	return page.Section{ID: SectionInside, Title: "Inside", Role: page.Summary, Columns: columns(), Items: items(rows)}
+}
+
+// value: an Inside line in the vision's few words (`38 installed`, `2
+// need a look`, `12.4 GB free`): what is there and what needs you, never
+// what station does not manage.
+func inside(id string, v page.Value) page.Value {
+	parts := v.Items
+	if v.Kind != page.KindList {
+		parts = []page.Value{v}
+	}
+	var out []page.Value
+	look := 0
+	for _, p := range parts {
+		switch {
+		case p.Label == string(page.Attention) || p.Label == string(page.Broken):
+			switch {
+			case p.Kind == page.KindCount:
+				look += int(p.N)
+			case id == "disk" && p.Kind == page.KindSize:
+				out = append(out, p)
+			default:
+				look++
+			}
+		case id == "apps" && p.Label == string(page.OK):
+			out = append(out, page.Count(p.N, "installed"))
+		case id == "settings" && p.Label == string(page.Absent) && p.Kind == page.KindText:
+			out = append(out, page.Text(p.Text+" set"))
+		case id == "disk" && p.Kind == page.KindSize && p.Unit == "free":
+			out = append(out, p)
+		}
+	}
+	if look > 0 {
+		out = append(out, page.Text(strconv.Itoa(look)+" "+pluralVerb(look, "needs", "need")+" a look"))
+	}
+	if len(out) == 0 {
+		return v
+	}
+	return page.List(out...)
+}
+
+func pluralVerb(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}
+
+// value: what opening Apps, Settings or Disk on a workspace's page does: a
+// terminal on that family, on the workspace.
+func insideActions(vm string) []page.Action {
+	ids := []string{"apps", "settings", "disk"}
+	out := make([]page.Action, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, page.Action{ID: ActionOpenFamily + id, Label: "Open " + id, On: page.OnRow, Rows: []string{id}, Priority: 5, Run: &page.Run{Terminal: true, Argv: []string{id, "--on", vm}}})
+	}
+	return out
 }
 
 func lineOf(s overview.Summary, id string) page.Value {
@@ -211,8 +285,9 @@ func lineOf(s overview.Summary, id string) page.Value {
 	return page.None()
 }
 
-// value: the workspace's shared ports, each a link: private, on Tailscale.
-func portsSection(m Machine, vm model.VM) page.Section {
+// value: the workspace's shared ports, each a link: private, on Tailscale;
+// one with no profile is TCP, or Web when it has a web link.
+func portsSection(m Machine, _ model.MacView, vm model.VM) page.Section {
 	s := page.Section{ID: SectionPorts, Title: "Private", Caption: []page.Value{page.Text("shared on " + catalog.TailnetProduct)}, Uncounted: true}
 	if m.Ports == nil {
 		s.Items = []page.Item{{Row: &page.Row{ID: "reading", Label: "reading", Mark: page.Awaiting}}}
@@ -228,6 +303,9 @@ func portsSection(m Machine, vm model.VM) page.Section {
 				value = page.URL(sv.URLs.Public)
 			}
 			label := cmpWord(titled(sv.Profile), "TCP")
+			if sv.Profile == "" && strings.HasPrefix(sv.URLs.Public, "http") {
+				label = "Web"
+			}
 			s.Items = append(s.Items, page.Item{Link: &page.Link{Label: label, Lead: page.List(page.Text(label), page.Port(int64(sv.GuestPort))), Value: value, Row: strconv.Itoa(sv.GuestPort)}})
 		}
 	}
@@ -237,14 +315,41 @@ func portsSection(m Machine, vm model.VM) page.Section {
 	return s
 }
 
-// value: the accounts This Mac shared with the workspace, each with its time
-// left and its Take back.
+// value: Stop sharing on each of the workspace's shared ports, the row
+// its link is.
+func stopSharings(m Machine, vm model.VM) []page.Action {
+	if m.Ports == nil {
+		return nil
+	}
+	var out []page.Action
+	for _, h := range m.Ports.Macs {
+		for _, sv := range h.Shared {
+			if sv.VM != vm.Name {
+				continue
+			}
+			a := stopSharing(sv, h.Name)
+			row := strconv.Itoa(sv.GuestPort)
+			a.ID, a.Rows = ActionStopSharing+vm.Name+"/"+row, []string{row}
+			out = append(out, a)
+		}
+	}
+	return out
+}
+
+// value: the accounts This Mac shared with the workspace, each with what
+// it may do, its time left and its Take back.
 func sharedSection(m Machine, h model.MacView, vm model.VM) page.Section {
 	from := model.Label(*m.All, h)
 	s := page.Section{ID: SectionShared, Title: "Accounts shared from " + from, Columns: columns()}
 	for _, a := range sharedAccounts(m, vm.Name) {
 		left := a.Shared.Until.Sub(m.Now)
-		row := page.Row{ID: a.Provider, Label: accounts.Label(a.Provider), Mark: page.OK, Cells: []page.Value{page.List(page.Text(hours(left) + " left"))}}
+		words := make([]page.Value, 0, len(a.Scopes)+1)
+		for _, scope := range a.Scopes {
+			if !strings.Contains(scope, ":") {
+				words = append(words, page.Text(scope))
+			}
+		}
+		row := page.Row{ID: a.Provider, Label: accounts.Label(a.Provider), Mark: page.OK, Cells: []page.Value{page.List(append(words, page.Text(hours(left)+" left"))...)}}
 		s.Items = append(s.Items, page.Item{Row: &row})
 	}
 	if len(s.Items) == 0 {
@@ -290,18 +395,45 @@ func takeBacks(m Machine, vm model.VM) []page.Action {
 	return out
 }
 
+// value: a server's Up as vision panel f's figure: days and hours (`12 d
+// 4 h`), since it booted; its restarts beside it.
 func upSection(m Machine, vm model.VM) page.Section {
 	up := page.Row{ID: "up", Label: "Up", Cells: []page.Value{page.None()}}
 	if m.Summary != nil && m.Summary.Head.Up > 0 {
-		up.Cells = []page.Value{pagehome.Up(m.Summary.Head.Up)}
+		up.Cells = []page.Value{page.List(page.Text(span(m.Summary.Head.Up)), page.Text("since boot"))}
 	}
 	words := vm.Restarts.Words(m.Now)
 	restarts := page.Row{ID: "restarts", Label: "Restarts", Cells: []page.Value{page.List(page.Count(int64(vm.Restarts.Count), plural(vm.Restarts.Count, "restart")), page.Text(words[len(words)-1]))}}
 	return page.Section{ID: SectionUp, Title: "Overview", Role: page.Summary, Columns: columns(), Items: items([]page.Row{up, restarts})}
 }
 
-func healthSection(vm model.VM) page.Section {
-	return page.Section{ID: SectionHealth, Title: "Health", Caption: []page.Value{page.Text("after every boot")}, Columns: columns(), Items: items(pagemachines.Steps(vm))}
+func span(d time.Duration) string {
+	day := 24 * time.Hour
+	switch {
+	case d >= day && d%day >= time.Hour:
+		return strconv.Itoa(int(d/day)) + " d " + strconv.Itoa(int(d%day/time.Hour)) + " h"
+	case d >= day:
+		return strconv.Itoa(int(d/day)) + " d"
+	case d >= time.Hour:
+		return strconv.Itoa(int(d/time.Hour)) + " h"
+	}
+	return strconv.Itoa(max(int(d/time.Minute), 1)) + " min"
+}
+
+// value: a server's health steps, run after every boot, how long ago its
+// check last ran, and what a passing check answered (vision panel f).
+func healthSection(vm model.VM, now time.Time) page.Section {
+	caption := []page.Value{page.Text("after every boot")}
+	if at := vm.CheckStatus.At; !at.IsZero() && !now.IsZero() {
+		caption = append(caption, page.Age(at, now))
+	}
+	steps := pagemachines.Steps(vm)
+	for i := range steps {
+		if steps[i].ID == "check" && steps[i].Mark == page.OK && vm.CheckStatus.Answer != "" {
+			steps[i].Cells = []page.Value{page.List(page.Text(vm.Check), page.Text(vm.CheckStatus.Answer))}
+		}
+	}
+	return page.Section{ID: SectionHealth, Title: "Health", Caption: caption, Columns: columns(), Items: items(steps)}
 }
 
 // value: what a server's page adds, as its Overview reads it: its ports'
@@ -314,8 +446,13 @@ func serverSection(m Machine) page.Section {
 		return s
 	}
 	for _, body := range pagehome.Body(*m.Summary, true) {
-		if body.ID == "sections" {
-			s.Items = append(s.Items, body.Items...)
+		if body.ID != "sections" {
+			continue
+		}
+		for _, it := range body.Items {
+			if it.Row == nil || it.Row.ID != string(SectionActivity) {
+				s.Items = append(s.Items, it)
+			}
 		}
 	}
 	return s
@@ -340,7 +477,7 @@ func macPage(m Machine, h model.MacView) page.Page {
 			}
 		}
 	}
-	vms := Tree(&model.AllMachines{Macs: []model.MacView{h}}, m.Ports, func(model.MacView) page.Value { return page.None() })
+	vms := Tree(&model.AllMachines{Macs: []model.MacView{h}, Read: m.All.Read}, m.Ports, func(model.MacView) page.Value { return page.None() })
 	vms.ID, vms.Title = SectionVMs, "VMs"
 	if len(vms.Items) == 1 && vms.Items[0].Group != nil {
 		vms.Items = vms.Items[0].Group.Items
@@ -350,8 +487,16 @@ func macPage(m Machine, h model.MacView) page.Page {
 	}
 	sections = append(sections, vms)
 	p := page.Page{ID: MachineID, Command: "menubar", Context: page.Context{Machine: h.Name, Kind: string(machine.Mac)}, Sections: sections}
+	if h.ThisMac {
+		for _, s := range sections {
+			if s.ID != SectionNeeds {
+				continue
+			}
+			p.Actions = append(p.Actions, updateAll(s, m.Summary)...)
+		}
+	}
 	if locked(m, h) {
-		p.Actions = append(p.Actions, page.Action{ID: ActionUnlock, Label: "Unlock", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Terminal: true, Argv: []string{"machines", "unlock", label}}})
+		p.Actions = append(p.Actions, page.Action{ID: ActionUnlock, Label: "Unlock the disk", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Terminal: true, Argv: []string{"machines", "unlock", label}}})
 	}
 	if !h.ThisMac {
 		p.Actions = append(p.Actions, openIn("--on", label))
@@ -372,17 +517,53 @@ func locked(m Machine, h model.MacView) bool {
 	return !h.Reachable && !h.ThisMac && h.LAN != ""
 }
 
-func Switcher(f *model.AllMachines, svc *ports.AllMachines) page.Page {
+func Switcher(r Reading) page.Page {
 	// invariant: SPEC §10.2's switcher: All machines as a tree, each Mac then its
-	// Servers then its Workspaces, and Add a Mac…; Recent is the app's own.
-	s := Tree(f, svc, func(h model.MacView) page.Value {
+	// Servers then its Workspaces, and Add a Mac…; Recent is the app's own. A
+	// Mac's dot says what needs you there, as Home's does, and a server says
+	// when its check last answered (vision panel b).
+	s := Tree(r.All, r.Ports, func(h model.MacView) page.Value {
 		if h.Engine.Running {
 			return page.Text("Engine running")
 		}
 		return page.Text("Engine stopped")
 	})
+	markMacs(&s, r)
+	if r.All != nil {
+		checked(&s, *r.All)
+	}
 	s.Title = "All machines"
 	add := page.Action{ID: ActionAddMac, Label: "Add a Mac", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Call: CallAddMac},
 		Form: &page.Form{Title: "Add a Mac", Fields: []page.Field{{Key: "Name", Label: "Name", Kind: page.FieldText, Required: true, Note: "as " + catalog.TailnetProduct + " names it"}}}}
 	return page.Seal(page.Page{ID: SwitcherID, Command: "menubar", Sections: []page.Section{s}, Actions: []page.Action{add}})
+}
+
+// value: a running server's line in the switcher: its lifetime, its health
+// and how long ago its check answered, in place of its time up and restarts.
+func checked(s *page.Section, f model.AllMachines) {
+	vms := map[string]model.VM{}
+	for _, h := range f.Macs {
+		for _, vm := range h.VMs {
+			vms[vm.Name] = vm
+		}
+	}
+	for _, mac := range s.Items {
+		if mac.Group == nil {
+			continue
+		}
+		for _, g := range mac.Group.Items {
+			if g.Group == nil || g.Group.Head.Label != GroupServers {
+				continue
+			}
+			for _, it := range g.Group.Items {
+				vm, ok := vms[it.Row.ID]
+				if !ok || vm.State != model.Running || model.Down(vm) || vm.CheckStatus.At.IsZero() || f.Read.IsZero() || len(it.Row.Cells) < 2 {
+					continue
+				}
+				at := page.Age(vm.CheckStatus.At, f.Read)
+				at.Label = "checked"
+				it.Row.Cells[1] = page.List(pagemachines.Lifetime(vm.Lifetime), page.Text(health(vm)), at)
+			}
+		}
+	}
 }

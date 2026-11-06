@@ -152,3 +152,37 @@ func TestAWatcherThatDoesNotReadIsDropped(t *testing.T) {
 		t.Fatalf("a watcher that stopped reading still holds its connection: %v", err)
 	}
 }
+
+type farRouter struct{ asked []string }
+
+func (f *farRouter) Invoke(_ context.Context, target machine.Ref, name string, _, out any, _ call.Progress) error {
+	f.asked = append(f.asked, target.Name+" "+name)
+	raw, ok := out.(*json.RawMessage)
+	if !ok {
+		return errors.New("not raw")
+	}
+	*raw = json.RawMessage(`{"Wanted":"stopped there"}`)
+	return nil
+}
+
+func (f *farRouter) Watch(context.Context, machine.Ref, string, any, call.Progress) (<-chan call.Update[any], error) {
+	return nil, errors.New("no watch")
+}
+
+func TestACallForAnotherMachineRidesFarAndOneForThisMachineRunsHere(t *testing.T) {
+	far := &farRouter{}
+	s := server(t)
+	s.Far = far
+	c := dialed(t.Context(), s)
+	var out stopOut
+	if err := c.Call(t.Context(), "machines.stop", machine.Ref{Name: "jterrazz-mac-mini"}, stopIn{VM: "infra", Confirm: "infra"}, &out, nil); err != nil || out.Wanted != "stopped there" {
+		t.Fatalf("a call for mac-mini: %+v, %v, want the far answer", out, err)
+	}
+	out = stopOut{}
+	if err := c.Call(t.Context(), "machines.stop", laptop.Ref, stopIn{VM: "linux-1", Confirm: "linux-1"}, &out, nil); err != nil || out.Wanted != "stopped" {
+		t.Fatalf("a call for this Mac: %+v, %v, want it run here", out, err)
+	}
+	if strings.Join(far.asked, ",") != "jterrazz-mac-mini machines.stop" {
+		t.Fatalf("far was asked %v, want mac-mini's stop alone", far.asked)
+	}
+}

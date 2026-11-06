@@ -16,6 +16,11 @@ final class Model: ObservableObject {
     // own, in its macOS user defaults.
     static let recentKey = "recentMachines"
     static let recentKept = 3
+    // value: Activity's window last picked, the menu bar's own.
+    nonisolated static let windowKey = "activityWindow"
+    // value: how long a control stays pending once its call returned, at
+    // most, for the page that says its outcome.
+    static let settle: UInt64 = 2_500_000_000
 
     let socket = EnginePath.socket()
     private var lastPage: Date?
@@ -23,21 +28,35 @@ final class Model: ObservableObject {
     private var events: Task<Void, Never>?
     private var clearing: Task<Void, Never>?
     private var watching: Task<Void, Never>?
+    private var reviving: Task<Void, Never>?
     private var asked = false
     private(set) var navigation: Navigation!
 
+    private var settled: Task<Void, Never>?
+
     init() {
-        navigation = Navigation(socket: socket) { [weak self] page, shown in
+        navigation = Navigation(socket: socket, window: UserDefaults.standard.string(forKey: Self.windowKey)) { [weak self] page, shown in
             Task { @MainActor in self?.show(page, shown) }
         }
+        navigation.remember = { flag in UserDefaults.standard.set(flag, forKey: Model.windowKey) }
     }
 
-    // invariant: a pushed page is shown only while its watch is the one held.
+    // invariant: a pushed page is shown only while its watch is the one held;
+    // the page read after a call ends its pending.
     func show(_ watch: String, _ page: Page?) {
         guard navigation.watched == (page == nil ? nil : watch) else { return }
+        let changed = state.pushed?.id != page?.id
+        if let page { state.held = AwakePage.settled(state.held, page) } else { state.held = [:] }
         state.pushed = page
-        if page == nil {
+        state.showing(page == nil ? nil : watch)
+        state.back = navigation.backWords
+        state.settling = nil
+        if page == nil || changed {
             state.confirming = nil
+            state.qr = nil
+            DispatchQueue.main.async { PanelWindow.key(NSApp.windows) }
+        }
+        if page == nil {
             state.search = ""
         }
     }
@@ -71,6 +90,7 @@ final class Model: ObservableObject {
     // watch ended never comes back.
     func push(_ page: String) {
         state.confirming = nil
+        state.showing(page)
         navigation.open(page)
     }
 
@@ -98,10 +118,12 @@ final class Model: ObservableObject {
             state.connection = .live
             state.page = page
             lastPage = Date()
+            if navigation.watched == nil { state.settling = nil }
         case .tick:
             break
         case .notice(_, let text):
-            state.status = Status(text, failed: false)
+            state.say(Status(text, failed: false), on: navigation.watched)
+            clearLater()
         case .down:
             if FileManager.default.fileExists(atPath: socket) && state.page != nil && state.connection == .live {
                 state.connection = .connecting
@@ -112,11 +134,12 @@ final class Model: ObservableObject {
     }
 
     func showStopped() {
+        if watching != nil { revive() }
         let installed = FileManager.default.fileExists(atPath: EnginePath.agentPlist())
         state.connection = installed ? .stopped : .notInstalled
         guard let url = Bundle.main.url(forResource: "stopped", withExtension: "json"),
               let data = try? Data(contentsOf: url), var page = try? Page.decode(data) else { return }
-        page.context = Context(machine: Host.current().localizedName, kind: page.context?.kind)
+        page.context = Context(machine: state.page?.context?.machine ?? Format.bareName(ProcessInfo.processInfo.hostName), kind: page.context?.kind)
         if !installed {
             page = notInstalled(page)
         }
@@ -130,44 +153,110 @@ final class Model: ObservableObject {
             row.cells = [Value(kind: "text", text: "not installed")]
             row.hint = Hint(command: "station setup")
             s.items = [Item(row: row)]
+            s.caption = [Value(kind: "text", text: "station is not set up on this Mac")]
             p.sections = [s]
         }
         return p
     }
 
+    // invariant: the panel opened is the key window, so its first click acts
+    // and its keys are its own; the app it hands the owner to takes the
+    // focus back, and the panel closes then.
     func opened() {
+        NSApp.activate()
+        for delay in PanelWindow.tries {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { PanelWindow.key(NSApp.windows) }
+        }
+        state.openings += 1
         let socket = self.socket
         watching?.cancel()
         watching = Task.detached { await Client.hold(path: socket, watch: "engine.watch") }
+        revive()
         if let last = lastPage, Date().timeIntervalSince(last) > 60 {
             Task { _ = await Client.call(path: socket, name: ActionRunner.refresh, input: ["pages": [PageID.home]]) }
         }
     }
 
+    // invariant: while the panel is open over an engine that does not
+    // answer, the socket is tried every 2 s: an engine back is streamed at
+    // once, never after the subscription's backoff of up to 30 s.
+    func revive() {
+        reviving?.cancel()
+        let socket = self.socket
+        reviving = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                guard let self, !Task.isCancelled, self.state.connection != .live else { return }
+                if (try? UnixSocket.connect(socket)) != nil {
+                    self.subscription?.cancel()
+                    self.subscription = nil
+                    self.events?.cancel()
+                    self.events = nil
+                    self.start()
+                    return
+                }
+            }
+        }
+    }
+
     func closed() {
+        reviving?.cancel()
+        reviving = nil
         watching?.cancel()
         watching = nil
-        navigation.back()
+        navigation.home()
+    }
+
+    // value: the panel's window, closed as a menu closes once it handed the
+    // owner to another app.
+    func closePanel() {
+        PanelWindow.close(NSApp.windows)
+    }
+
+    func open(_ url: URL) {
+        NSWorkspace.shared.open(url)
+        closePanel()
     }
 
     func run(_ action: Action, answers: [String: String]) {
         state.running = action.id
+        state.settling = nil
         state.status = nil
+        let on = navigation.watched
+        if action.run?.terminal == true { closePanel() }
         let socket = self.socket
         let reread = [PageID.shown(navigation.watched)]
         Task {
             let executable = await Client.executable(path: socket) ?? Self.fallbackExecutable
             let status = await ActionRunner(executable: executable, socket: socket, reread: reread).run(action, answers: answers)
             state.running = nil
-            state.status = status
-            if let text = status?.posted { notify(text) }
-            clearing?.cancel()
-            if status != nil {
-                clearing = Task {
-                    try? await Task.sleep(nanoseconds: 30_000_000_000)
-                    if !Task.isCancelled { state.status = nil }
+            state.say(status, on: on)
+            state.showing(navigation.watched)
+            if status?.failed != true, action.run?.call == ActionRunner.awake, state.pushed?.id == MenuPage.awake {
+                for key in ["Lid", "Battery"] { if let v = answers[key], v == "true" || v == "false" { state.held[key] = v } }
+                state.held.merge(AwakePage.holding(action, answers: answers)) { $1 }
+            }
+            if action.mutates == true, status?.failed != true, action.run?.call != nil {
+                state.settling = action.id
+                settled?.cancel()
+                settled = Task {
+                    try? await Task.sleep(nanoseconds: Self.settle)
+                    if !Task.isCancelled, state.settling == action.id { state.settling = nil }
                 }
             }
+            if let text = status?.posted { notify(text) }
+            clearing?.cancel()
+            if status != nil { clearLater() }
+        }
+    }
+
+    // invariant: a status line, a call's outcome or a notice the engine
+    // told, goes after 30 s.
+    func clearLater() {
+        clearing?.cancel()
+        clearing = Task {
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
+            if !Task.isCancelled { state.status = nil }
         }
     }
 
@@ -177,7 +266,7 @@ final class Model: ObservableObject {
         do {
             try LoginItem.set(on)
         } catch {
-            state.status = Status(error.localizedDescription, failed: true)
+            state.say(Status(error.localizedDescription, failed: true), on: navigation.watched)
         }
         loginItemOn = LoginItem.on
     }

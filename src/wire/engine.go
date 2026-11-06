@@ -111,7 +111,7 @@ func (m machine) engine(env kit.Env) *process.Engine {
 		}
 		return false, nil
 	})
-	d.ServeWith(m.engineServer(d, registry))
+	d.ServeWith(m.engineServer(d, registry, calls))
 	return d
 }
 
@@ -187,7 +187,7 @@ func (d macEngine) VMs(ctx context.Context) (map[string]machinescalls.EngineVM, 
 	}
 	out := make(map[string]machinescalls.EngineVM, len(views))
 	for _, v := range views {
-		out[v.Name] = machinescalls.EngineVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check}
+		out[v.Name] = machinescalls.EngineVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check, BootAt: v.BootAt}
 	}
 	return out, nil
 }

@@ -94,6 +94,8 @@ enum Snapshot {
 
     // invariant: a page is drawn over a fixed colourful desk, the vision's,
     // so its glass reads in the PNG; the menu bar icon is drawn bare.
+    // In dark the desk is saturated as the vision's glass saturates what
+    // it blurs (backdrop-filter saturate 185 %), which the stand-in cannot.
     @MainActor
     static func render(_ view: AnyView, scheme: ColorScheme, desk: Bool = true) -> (png: Data, bitmap: Bitmap)? {
         let themed = view.stationTheme(scheme).environment(\.stationNow, now).environment(\.stationStill, true)
@@ -155,14 +157,13 @@ struct Desk: View {
     let scheme: ColorScheme
 
     var body: some View {
-        GeometryReader { geo in
-            let side = max(geo.size.width, geo.size.height)
-            ZStack {
-                LinearGradient(colors: Token.Glass.wallBase(scheme), startPoint: UnitPoint(x: 0.3, y: 0), endPoint: UnitPoint(x: 0.7, y: 1))
-                ForEach(Array(Token.Glass.wallpaper(scheme).enumerated()), id: \.offset) { _, blob in
-                    RadialGradient(colors: [blob.0, blob.0.opacity(0)], center: blob.1, startRadius: 0, endRadius: side * blob.2)
-                }
+        ZStack {
+            LinearGradient(colors: Token.Glass.wallBase(scheme), startPoint: UnitPoint(x: 0.3, y: 0), endPoint: UnitPoint(x: 0.7, y: 1))
+            ForEach(Array(Token.Glass.wallpaper(scheme).enumerated()), id: \.offset) { _, blob in
+                EllipticalGradient(colors: [blob.0, blob.0.opacity(0)], center: blob.1, startRadiusFraction: 0, endRadiusFraction: blob.2)
             }
         }
+        .drawingGroup()
+        .saturation(scheme == .dark ? 1.85 : 1)
     }
 }

@@ -45,7 +45,7 @@ public struct LinkView: View {
             }
             .padding(.vertical, 3)
             if let actions, let url = link.value.flatMap(Format.url), actions.qr == url.absoluteString {
-                QRView(url.absoluteString).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)).frame(maxWidth: .infinity)
+                QRView(url.absoluteString).padding(12).background(RoundedRectangle(cornerRadius: Token.Tile.qrCorner, style: .continuous).fill(palette.qrLight)).frame(maxWidth: .infinity)
             }
         }
     }
@@ -62,8 +62,8 @@ struct LinkButton: View {
         Button(action: tap) {
             Image(systemName: symbol).font(.system(size: Token.Space.small + 1, weight: .medium))
                 .foregroundStyle(picked ? palette.onTint : palette.text)
-                .frame(width: Token.Tile.circle, height: Token.Tile.circle)
-                .background(RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(picked ? palette.accent : palette.hover))
+                .frame(width: Token.Tile.icon, height: Token.Tile.icon)
+                .background(RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(picked ? AnyShapeStyle(palette.accent) : AnyShapeStyle(.fill.tertiary)))
         }
         .buttonStyle(.plain)
     }

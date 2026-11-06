@@ -36,7 +36,7 @@
                 "items": [
                   {
                     "kind": "text",
-                    "text": "Awake until 14:42"
+                    "text": "Awake until 18:00"
                   },
                   {
                     "kind": "text",
@@ -44,7 +44,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "3h 12m left"
+                    "text": "6h 30m left"
                   }
                 ]
               }
@@ -75,7 +75,7 @@
             "key": "Temperature",
             "value": {
               "kind": "text",
-              "text": "nominal"
+              "text": "normal"
             }
           }
         },
@@ -215,7 +215,7 @@
       }
     },
     {
-      "label": "Until",
+      "label": "Until 18:00",
       "on": "row",
       "rows": [
         "jterrazz-macbook-pro"
@@ -275,7 +275,8 @@
             "default": "16200000000000"
           }
         ]
-      }
+      },
+      "picked": true
     },
     {
       "label": "Lid closed",
@@ -291,7 +292,7 @@
         "in": {
           "Battery": "false",
           "By": "the menu bar",
-          "For": "11520000000000",
+          "For": "23400000000000",
           "Lid": "false"
         }
       }
@@ -310,7 +311,7 @@
         "in": {
           "Battery": "true",
           "By": "the menu bar",
-          "For": "11520000000000",
+          "For": "23400000000000",
           "Lid": "true"
         }
       }

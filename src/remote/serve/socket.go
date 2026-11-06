@@ -37,6 +37,9 @@ type Server struct {
 	Sleep func(ctx context.Context, d time.Duration) error
 	// value: how long a write may block before the connection is dropped.
 	Stall time.Duration
+	// value: where a call frame for another machine runs: that machine's
+	// engine, over this run's connections; nil runs every frame on this machine.
+	Far call.Router
 }
 
 func (s Server) Conn(ctx context.Context, conn io.ReadWriteCloser) {
@@ -78,7 +81,16 @@ func (s Server) handler(name string) (call.Handler, error) {
 	return nil, fail.New(fail.NotFound, call.Unknown, name, nil)
 }
 
+// invariant: a frame whose target is another machine runs there, its
+// answer relayed as it came; any other frame runs on this machine.
 func (s Server) call(ctx context.Context, w *writer, f api.Frame) api.Frame {
+	if t := f.Target.Ref(); s.Far != nil && !s.thisMachine(t) {
+		var out json.RawMessage
+		if err := s.Far.Invoke(ctx, t, f.Call, f.In, &out, progress{id: f.ID, out: w, word: s.wording}); err != nil {
+			return api.Frame{ID: f.ID, Error: s.fault(err)}
+		}
+		return api.Frame{ID: f.ID, Out: orNull(out)}
+	}
 	h, err := s.handler(f.Call)
 	if err != nil {
 		return api.Frame{ID: f.ID, Error: s.fault(err)}
@@ -91,6 +103,10 @@ func (s Server) call(ctx context.Context, w *writer, f api.Frame) api.Frame {
 		out = json.RawMessage("null")
 	}
 	return api.Frame{ID: f.ID, Out: out}
+}
+
+func (s Server) thisMachine(t machine.Ref) bool {
+	return t == (machine.Ref{}) || t == s.ThisMachine.Ref || t.Name == s.ThisMachine.Ref.Name
 }
 
 func (s Server) watch(ctx context.Context, conn io.ReadWriteCloser, lines *bufio.Scanner, w *writer, f api.Frame) {

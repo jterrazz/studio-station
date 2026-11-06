@@ -32,15 +32,16 @@ func miniPorts() ports.Listing {
 }
 
 // value: the ports of This Mac's VMs, as linux-1's Ports reads them: Vite
-// shared with its link, postgres reserved and not listening yet.
+// shared with its link, a TCP port shared, as linux-1's page lists them.
 func linuxPorts() ports.Listing {
-	mac := portsAllMachines().Macs[0]
+	mac := twoMacsPorts().Macs[0]
 	mac.Ports = nil
 	return ports.Listing{AllMachines: ports.AllMachines{Schema: ports.AllMachinesSchema, Macs: []ports.MacPorts{mac}}}
 }
 
 func twoMacsAwake() pageawake.AllMachines {
 	f := awakeAllMachines(awake.EngineRunning, true)
+	f.Reports[0].Session = thisMacAwake().Session
 	f.Label = func(mac string) string { return page.MacName(mac, "jterrazz-macbook-pro") }
 	return f
 }

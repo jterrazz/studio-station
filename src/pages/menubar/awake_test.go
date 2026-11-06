@@ -32,3 +32,32 @@ func TestAwakeOffersTheSwitchesThisMacHas(t *testing.T) {
 		t.Fatalf("a laptop offers %q, want %q", got, want)
 	}
 }
+
+// invariant: Keep awake for… shows the term in force: the one the session
+// was taken for, else Until; nothing while This Mac sleeps normally.
+func TestKeepAwakeForPicksTheTermInForce(t *testing.T) {
+	now := time.Date(2026, 11, 3, 10, 30, 0, 0, time.UTC)
+	picked := func(s *awake.Session) []string {
+		r := awake.Report{Now: now, Engine: awake.EngineRunning, Mac: "this", ThisMac: true, Reading: awake.Reading{Source: "ac"}, Caps: machine.Capabilities{Engine: true}, Session: s}
+		p := Awake(pageawake.AllMachines{Now: now, Zone: time.UTC, Reports: []awake.Report{r}}, page.Context{Machine: "this"})
+		var ids []string
+		for _, a := range p.Actions {
+			if a.Picked {
+				ids = append(ids, a.ID)
+			}
+		}
+		return ids
+	}
+	if got := picked(&awake.Session{StartedAt: now.Add(-3 * time.Minute), Until: now.Add(57 * time.Minute)}); !slices.Equal(got, []string{"keep:1h"}) {
+		t.Fatalf("a 1 h session picks %q, want keep:1h", got)
+	}
+	if got := picked(&awake.Session{StartedAt: now.Add(-20 * time.Minute), Until: now.Add(4 * time.Hour), For: 4 * time.Hour}); !slices.Equal(got, []string{"keep:4h"}) {
+		t.Fatalf("a 4 h term asked again picks %q, want keep:4h", got)
+	}
+	if got := picked(&awake.Session{StartedAt: now, Until: now.Add(150 * time.Minute)}); !slices.Equal(got, []string{"keep-until"}) {
+		t.Fatalf("a session until 13:00 picks %q, want keep-until", got)
+	}
+	if got := picked(nil); len(got) != 0 {
+		t.Fatalf("no session picks %q, want none", got)
+	}
+}
