@@ -88,8 +88,11 @@ struct SheetGround: ViewModifier {
 }
 
 // invariant: a select field drawn as its options side by side, the chosen
-// one filled: every option is visible, and it draws offscreen.
+// one filled, at most four to a row: every option is visible and has its
+// room, and it draws offscreen.
 public struct Choice: View {
+    public static let perRow = 4
+
     let field: Field
     @Binding var value: String
     @Environment(\.stationPalette) private var palette
@@ -100,7 +103,12 @@ public struct Choice: View {
     }
 
     public var body: some View {
-        Segments(options: (field.options ?? []).map { ($0.label ?? $0.value ?? "", ($0.value ?? "") == value, { [o = $0] in value = o.value ?? "" }) })
+        let all = (field.options ?? []).map { ($0.label ?? $0.value ?? "", ($0.value ?? "") == value, { [o = $0] in value = o.value ?? "" }) }
+        VStack(spacing: 4) {
+            ForEach(Array(stride(from: 0, to: all.count, by: Self.perRow)), id: \.self) { i in
+                Segments(options: Array(all[i..<min(i + Self.perRow, all.count)]))
+            }
+        }
     }
 }
 
@@ -170,8 +178,29 @@ public struct FormSheet: View {
     // field, so the owner types at once.
     public static func first(_ form: Form) -> String? { (form.fields ?? []).first { $0.kind != "select" }?.key }
 
-    var complete: Bool {
-        (form.fields ?? []).allSatisfy { f in f.required != true || !(binding(f).wrappedValue.isEmpty) }
+    var complete: Bool { Self.complete(form, answers) }
+
+    // invariant: a form runs once each required field holds something,
+    // and a port holds a port: a number from 1 to 65535.
+    public static func complete(_ form: Form, _ answers: [String: String]) -> Bool {
+        (form.fields ?? []).allSatisfy { f in
+            let v = (answers[f.key ?? ""] ?? f.default ?? "").trimmingCharacters(in: .whitespaces)
+            if f.key == portKey, f.kind != "select", !v.isEmpty, !(Int(v).map { (1...65535).contains($0) } ?? false) { return false }
+            return f.required != true || !v.isEmpty
+        }
+    }
+
+    public static let portKey = "Port"
+
+    // value: the confirm's words: a form that picks a term says the term
+    // picked (`Until 17:00`), one that makes something new says Create,
+    // any other its action's own words.
+    public static func verb(_ run: String, _ form: Form, _ answers: [String: String]) -> String {
+        if let f = (form.fields ?? []).first(where: { $0.kind == "select" }), let word = f.label, !word.isEmpty, run.hasPrefix(word),
+           let chosen = f.options?.first(where: { $0.value == (answers[f.key ?? ""] ?? f.default) })?.label {
+            return "\(word) \(chosen)"
+        }
+        return run.hasPrefix("New ") ? "Create" : run
     }
 
     public var body: some View {
@@ -183,7 +212,7 @@ public struct FormSheet: View {
                     if f.kind == "select" {
                         Choice(f, value: binding(f))
                         if let note = f.options?.first(where: { $0.value == binding(f).wrappedValue })?.note {
-                            Text(note).font(.system(size: Token.Space.small)).foregroundStyle(.tertiary)
+                            Text(note).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
                         }
                     } else {
                         TypedField(f.note ?? "", text: binding(f), autofocus: Self.first(form) == f.key, submit: { if complete { onAnswer(true) } })
@@ -193,7 +222,7 @@ public struct FormSheet: View {
             HStack {
                 Spacer()
                 SheetButton("Cancel", role: .plain) { onAnswer(false) }.keyboardShortcut(.cancelAction)
-                SheetButton(run, role: .accent) { onAnswer(true) }.disabled(!complete).opacity(complete ? 1 : 0.4).keyboardShortcut(.defaultAction)
+                SheetButton(Self.verb(run, form, answers), role: .accent) { onAnswer(true) }.disabled(!complete).opacity(complete ? 1 : 0.4).keyboardShortcut(.defaultAction)
             }
         }
         .modifier(SheetGround())

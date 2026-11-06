@@ -3,6 +3,12 @@ import Foundation
 public enum Format {
     static let suffixes = Array("KMGTPE")
 
+    // value: a Mac's name as the engine says it: its host name without
+    // its domain (`jterrazz-macbook-pro`, never with `.local`).
+    public static func hostName(_ raw: String) -> String {
+        String(raw.split(separator: ".").first ?? Substring(raw))
+    }
+
     public static func bytes(_ n: Int64) -> String {
         if n < 1000 { return "\(n) B" }
         var value = Double(n) / 1000

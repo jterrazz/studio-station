@@ -86,11 +86,31 @@ struct MachineContent: View {
             caption.removeFirst()
         }
         let back = state.back ?? Self.all
-        return PageHeader(back: back, title: s.title ?? "", subtitle: caption.joined(separator: Token.Glyph.sep), symbol: Token.Symbol.machine(page.context?.kind),
+        return PageHeader(back: back, title: s.title ?? "", subtitle: Self.subtitle(caption), symbol: Token.Symbol.machine(page.context?.kind),
                           badge: badge, action: handlers.back) {
-            if let word = row?.cells?.first.map({ Format.show($0) }) {
+            if let doing = Self.doing(state.running ?? state.settling) {
+                StateWord(doing, mark: .pending)
+            } else if let word = row?.cells?.first.map({ Format.show($0) }) {
                 StateWord(word, mark: mark)
             }
+        }
+    }
+
+    // value: the header's words, each part kept whole on its line: a
+    // wrap breaks between parts, never inside `on This Mac`.
+    public static func subtitle(_ parts: [String]) -> String {
+        parts.map { $0.replacingOccurrences(of: " ", with: "\u{00A0}") }.joined(separator: Token.Glyph.sep)
+    }
+
+    // value: the state word while a call that changes the machine's state
+    // runs, and until the page read after it says its outcome.
+    public static func doing(_ action: String?) -> String? {
+        switch action {
+        case "stop": "Stopping"
+        case "restart": "Restarting"
+        case "start-vm": "Starting"
+        case "delete": "Deleting"
+        default: nil
         }
     }
 

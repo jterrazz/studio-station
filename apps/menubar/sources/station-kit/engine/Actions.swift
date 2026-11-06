@@ -21,6 +21,9 @@ public struct ActionRunner: Sendable {
     // value: the pages watched that a call may have changed, read again once
     // it returns.
     public var reread: [String]
+    // value: how long Stop everything waits for the engine to end, in
+    // seconds, before it says the engine did not stop.
+    public var stopWithin: Double = 15
 
     // value: the call that ends the engine answering it: its connection's
     // end, with no answer, is its success.
@@ -67,7 +70,13 @@ public struct ActionRunner: Sendable {
     public func run(_ action: Action, answers: [String: String] = [:]) async -> Status? {
         guard let run = action.run else { return nil }
         if let name = run.call {
-            let reply = await Client.call(path: socket, name: name, input: Client.input(Self.filled(action, answers: answers), fixed: run.in, words: Self.words(action)), target: run.target)
+            let reply = await Client.call(path: socket, name: name, input: Client.input(Self.filled(action, answers: answers), fixed: run.in, words: Self.words(action)), target: run.target,
+                                          within: name == Self.endsTheEngine ? stopWithin : nil)
+            if reply.late {
+                var status = Self.failure("The engine did not stop in \(Int(stopWithin)) s", "station engine stop")
+                status.posted = Notifications.failedCall(action.label ?? name, "the engine did not stop")
+                return status
+            }
             if !reread.isEmpty, !reply.closed {
                 _ = await Client.call(path: socket, name: Self.refresh, input: ["pages": reread])
             }

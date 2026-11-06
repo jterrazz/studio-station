@@ -8,7 +8,17 @@ struct HomeContent: View {
     let state: PopoverState
     let handlers: PopoverHandlers
     @State private var unfolded = false
+    @State private var lit: Int?
     @Environment(\.stationPalette) private var palette
+    @Environment(\.stationStill) private var still
+
+    // value: the machines' lines the arrows move through, as drawn.
+    var lines: [Row] {
+        guard let machines = page.section("machines") else { return [] }
+        return HomeKeys.rows(MachineTree(section: machines, kinds: false, only: nil, open: { _ in }).lines())
+    }
+
+    var litID: String? { lit.flatMap { i in lines.indices.contains(i) ? lines[i].id : nil } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Token.Tile.section) {
@@ -26,12 +36,20 @@ struct HomeContent: View {
             }
             if let machines = page.section("machines") {
                 SectionHeader(machines.title ?? "")
-                MachineTree(section: machines, kinds: false, only: nil, open: handlers.openMachine)
+                MachineTree(section: machines, kinds: false, only: nil, lit: litID, open: handlers.openMachine)
             }
             places
             SheetFor(page: page, state: state, handlers: handlers)
             if state.confirming == nil || page.action(state.confirming ?? "")?.on == "row" {
                 menu
+            }
+        }
+        .background {
+            if !still, state.confirming == nil {
+                ArrowKeys(move: { lit = HomeKeys.moved(lit, by: $0, count: lines.count) },
+                          submit: { guard let id = litID else { return false }
+                              handlers.openMachine(id)
+                              return true })
             }
         }
     }
@@ -66,10 +84,21 @@ struct HomeContent: View {
         .stationTile(tint: palette.warn)
     }
 
-    // value: the folded tile's line: each row's words, without the
-    // punctuation that ends them, so the line never ends in `,.`.
+    // value: the folded tile's line, short words as the vision's: each
+    // row's words up to their first comma, a launchd label by its last
+    // part, without the punctuation that ends them, so the line never
+    // ends in `,.`.
     static func folded(_ rows: [Row]) -> String {
-        rows.compactMap(\.label).map { $0.trimmingCharacters(in: CharacterSet(charactersIn: " ,.;:")) }.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
+        rows.compactMap(\.label).map(short).filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
+    }
+
+    static func short(_ label: String) -> String {
+        let head = label.split(separator: ",", maxSplits: 1).first.map(String.init) ?? label
+        let words = head.split(separator: " ").map { w -> String in
+            let parts = w.split(separator: ".")
+            return parts.count > 2 && parts.allSatisfy { !$0.isEmpty } ? String(parts.last!) : String(w)
+        }
+        return words.joined(separator: " ").trimmingCharacters(in: CharacterSet(charactersIn: " ,.;:"))
     }
 
     // value: what needs you as the vision's tile: its count in words, what
@@ -132,8 +161,7 @@ struct HomeContent: View {
                 if let accounts {
                     let open = page.rowActions(accounts.rows.first?.id ?? "").first
                     place(symbol: Token.Symbol.accounts, active: false, title: accounts.title ?? "",
-                          words: accounts.rows.first?.cells?.first.map { Format.show($0) }, tap: open.map { a in { perform(a, handlers) } },
-                          page: open?.run?.terminal != true) { EmptyView() }
+                          words: accounts.rows.first?.cells?.first.map { Format.show($0) }, tap: open.map { a in { perform(a, handlers) } }) { EmptyView() }
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -157,10 +185,10 @@ struct HomeContent: View {
 
     // invariant: a tile that opens something is one button across it, its
     // words included; what ends its head (a switch) stays its own control,
-    // and its words take the tile's whole width under the head.
-    // A tile that opens a page ends its head with a chevron; one that hands
-    // the owner to a terminal does not.
-    func place<T: View>(symbol: String, active: Bool, title: String, words: String?, tap: (() -> Void)?, page opens: Bool = true,
+    // and its words take the tile's whole width under the head, in at most
+    // two lines. A tile with nothing else ending its head ends it with a
+    // chevron (vision panel a), whatever it opens.
+    func place<T: View>(symbol: String, active: Bool, title: String, words: String?, tap: (() -> Void)?,
                         @ViewBuilder trailing: () -> T) -> some View {
         let button = { (label: AnyView) in
             Button { tap?() } label: { label.contentShape(Rectangle()) }.buttonStyle(.plain).allowsHitTesting(tap != nil)
@@ -170,19 +198,19 @@ struct HomeContent: View {
                 button(AnyView(HStack(spacing: Token.Tile.gap) {
                     IconTile(symbol, active: active)
                     Text(title).font(.system(size: Token.Size.text, weight: .semibold)).foregroundStyle(.primary).lineLimit(1).fixedSize()
-                    if tap != nil, opens, T.self == EmptyView.self { Chevron() }
+                    if tap != nil, T.self == EmptyView.self { Chevron() }
                     Spacer(minLength: 0)
                 }))
                 trailing().fixedSize()
             }
             .frame(minHeight: 26)
             if let words, !words.isEmpty {
-                button(AnyView(SubText(words.replacingOccurrences(of: Token.Glyph.dash, with: Token.Glyph.unbroken)).lineLimit(3)
+                button(AnyView(SubText(words.replacingOccurrences(of: Token.Glyph.dash, with: Token.Glyph.unbroken)).lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)))
             }
             Spacer(minLength: 0)
         }
-        .frame(maxHeight: .infinity, alignment: .top)
+        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .stationTile()
     }
 
@@ -208,5 +236,46 @@ struct HomeContent: View {
                 }
             }
         }
+    }
+}
+
+public enum HomeKeys {
+    // value: the rows of a machines' tree, captions left out.
+    static func rows(_ lines: [MachineTree.Line]) -> [Row] {
+        lines.compactMap { if case let .row(r, _, _) = $0 { r } else { nil } }
+    }
+
+    // invariant: Down lights the first line when none is, Up the last;
+    // each press moves one line, never past either end.
+    public static func moved(_ lit: Int?, by: Int, count: Int) -> Int? {
+        guard count > 0 else { return nil }
+        return min(max((lit ?? (by > 0 ? -1 : count)) + by, 0), count - 1)
+    }
+}
+
+// invariant: a page's keys without a field to type in: Up and Down move
+// the line lit, Return opens it; it takes the keys as the page shows, and
+// every other key goes on to the panel's shortcuts.
+struct ArrowKeys: View {
+    let move: (Int) -> Void
+    let submit: () -> Bool
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        Color.clear.frame(width: 1, height: 1)
+            .focusable()
+            .focusEffectDisabled()
+            .focused($focused)
+            .onKeyPress(.downArrow) {
+                move(1)
+                return .handled
+            }
+            .onKeyPress(.upArrow) {
+                move(-1)
+                return .handled
+            }
+            .onKeyPress(.return) { submit() ? .handled : .ignored }
+            .onAppear { DispatchQueue.main.async { focused = true } }
+            .accessibilityHidden(true)
     }
 }

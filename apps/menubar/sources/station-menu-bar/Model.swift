@@ -28,6 +28,7 @@ final class Model: ObservableObject {
     private var events: Task<Void, Never>?
     private var clearing: Task<Void, Never>?
     private var watching: Task<Void, Never>?
+    private var reviving: Task<Void, Never>?
     private var asked = false
     private(set) var navigation: Navigation!
 
@@ -122,6 +123,7 @@ final class Model: ObservableObject {
             break
         case .notice(_, let text):
             state.say(Status(text, failed: false), on: navigation.watched)
+            clearLater()
         case .down:
             if FileManager.default.fileExists(atPath: socket) && state.page != nil && state.connection == .live {
                 state.connection = .connecting
@@ -132,11 +134,12 @@ final class Model: ObservableObject {
     }
 
     func showStopped() {
+        if watching != nil { revive() }
         let installed = FileManager.default.fileExists(atPath: EnginePath.agentPlist())
         state.connection = installed ? .stopped : .notInstalled
         guard let url = Bundle.main.url(forResource: "stopped", withExtension: "json"),
               let data = try? Data(contentsOf: url), var page = try? Page.decode(data) else { return }
-        page.context = Context(machine: Host.current().localizedName, kind: page.context?.kind)
+        page.context = Context(machine: state.page?.context?.machine ?? Format.hostName(ProcessInfo.processInfo.hostName), kind: page.context?.kind)
         if !installed {
             page = notInstalled(page)
         }
@@ -161,17 +164,44 @@ final class Model: ObservableObject {
     // focus back, and the panel closes then.
     func opened() {
         NSApp.activate()
-        DispatchQueue.main.async { PanelWindow.key(NSApp.windows) }
+        for delay in PanelWindow.tries {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { PanelWindow.key(NSApp.windows) }
+        }
         state.openings += 1
         let socket = self.socket
         watching?.cancel()
         watching = Task.detached { await Client.hold(path: socket, watch: "engine.watch") }
+        revive()
         if let last = lastPage, Date().timeIntervalSince(last) > 60 {
             Task { _ = await Client.call(path: socket, name: ActionRunner.refresh, input: ["pages": [PageID.home]]) }
         }
     }
 
+    // invariant: while the panel is open over an engine that does not
+    // answer, the socket is tried every 2 s: an engine back is streamed at
+    // once, never after the subscription's backoff of up to 30 s.
+    func revive() {
+        reviving?.cancel()
+        let socket = self.socket
+        reviving = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                guard let self, !Task.isCancelled, self.state.connection != .live else { return }
+                if (try? UnixSocket.connect(socket)) != nil {
+                    self.subscription?.cancel()
+                    self.subscription = nil
+                    self.events?.cancel()
+                    self.events = nil
+                    self.start()
+                    return
+                }
+            }
+        }
+    }
+
     func closed() {
+        reviving?.cancel()
+        reviving = nil
         watching?.cancel()
         watching = nil
         navigation.home()
@@ -204,6 +234,7 @@ final class Model: ObservableObject {
             state.showing(navigation.watched)
             if status?.failed != true, action.run?.call == ActionRunner.awake, state.pushed?.id == MenuPage.awake {
                 for key in ["Lid", "Battery"] { if let v = answers[key], v == "true" || v == "false" { state.held[key] = v } }
+                state.held.merge(AwakePage.holding(action, answers: answers)) { $1 }
             }
             if action.mutates == true, status?.failed != true, action.run?.call != nil {
                 state.settling = action.id
@@ -215,12 +246,17 @@ final class Model: ObservableObject {
             }
             if let text = status?.posted { notify(text) }
             clearing?.cancel()
-            if status != nil {
-                clearing = Task {
-                    try? await Task.sleep(nanoseconds: 30_000_000_000)
-                    if !Task.isCancelled { state.status = nil }
-                }
-            }
+            if status != nil { clearLater() }
+        }
+    }
+
+    // invariant: a status line, a call's outcome or a notice the engine
+    // told, goes after 30 s.
+    func clearLater() {
+        clearing?.cancel()
+        clearing = Task {
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
+            if !Task.isCancelled { state.status = nil }
         }
     }
 

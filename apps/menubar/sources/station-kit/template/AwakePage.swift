@@ -71,7 +71,10 @@ public struct AwakePage: View {
                         SubText(act.label(running))
                     }
                 } else {
-                    Segments(options: keeps.map { k in (Self.held(k) ? k.label ?? "" : act.label(k), on && Self.picked(k, among: keeps), { k.form == nil ? run(k) : act.tap(k) }) }).disabled(busy)
+                    Segments(options: keeps.map { k in
+                        let chosen = (on || state.held[Self.keepKey] != nil) && Self.picked(k, among: keeps, held: state.held)
+                        return (Self.held(k) && chosen ? k.label ?? "" : Self.offered(k), chosen, { k.form == nil ? run(k) : act.tap(k) })
+                    }).disabled(busy)
                 }
             }
             .stationTile()
@@ -88,10 +91,33 @@ public struct AwakePage: View {
     // until (`Until 18:00`), the term chosen.
     static func held(_ k: Action) -> Bool { k.form != nil && (k.label ?? "").contains(where: \.isNumber) }
 
-    // value: the segment drawn chosen: the term the page says is in force;
-    // from an engine that says none, Until while it holds.
-    public static func picked(_ k: Action, among keeps: [Action]) -> Bool {
-        keeps.contains { $0.picked == true } ? k.picked == true : held(k)
+    // value: a segment's words while it is not the term chosen: Until
+    // never names the time another term holds until.
+    static func offered(_ k: Action) -> String {
+        guard k.form != nil else { return k.label ?? "" }
+        let word = (k.label ?? "").split(separator: " ").first.map(String.init) ?? ""
+        return word + Token.Glyph.ellipsis
+    }
+
+    // value: the key under which the term the owner just picked is held,
+    // and the For it sent, until the page read again picks it too.
+    public static let keepKey = "Keep"
+    public static let forKey = "For"
+
+    // value: the segment drawn chosen: the term the owner just picked,
+    // else the term the page says is in force; from an engine that says
+    // none, Until while it holds.
+    public static func picked(_ k: Action, among keeps: [Action], held chosen: [String: String] = [:]) -> Bool {
+        if let id = chosen[keepKey] { return k.id == id }
+        return keeps.contains { $0.picked == true } ? k.picked == true : held(k)
+    }
+
+    // value: what a keep-awake that worked leaves held: its term and the
+    // For it sent, so the page drawn before the next read shows it, and a
+    // switch flipped meanwhile keeps it.
+    public static func holding(_ action: Action, answers: [String: String]) -> [String: String] {
+        guard action.id?.hasPrefix("keep") == true, let sent = answers[forKey] ?? action.run?.in?[forKey] else { return [:] }
+        return [keepKey: action.id ?? "", forKey: sent]
     }
 
     // invariant: a switch's action flips it, so its input holds the other
@@ -116,6 +142,7 @@ public struct AwakePage: View {
             let now = held[key].map { $0 == "true" } ?? paged(a)
             out[key] = String(flipping?.id == a.id ? !now : now)
         }
+        if flipping != nil, let sent = held[forKey] { out[forKey] = sent }
         return out
     }
 
@@ -126,6 +153,10 @@ public struct AwakePage: View {
         var out = held
         for a in page.actions ?? [] where a.id == "lid" || a.id == "battery" {
             if held[key(a)] == String(paged(a)) { out[key(a)] = nil }
+        }
+        if let id = held[keepKey], page.actions?.contains(where: { $0.id == id && $0.picked == true }) == true {
+            out[keepKey] = nil
+            out[forKey] = nil
         }
         return out
     }
