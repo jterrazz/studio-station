@@ -69,7 +69,7 @@ func TestAwakeSendsTheEndItHoldsUntil(t *testing.T) {
 	now := time.Date(2026, 11, 3, 10, 30, 0, 0, time.UTC)
 	until := time.Date(2026, 11, 3, 14, 30, 0, 0, time.UTC)
 	r := awake.Report{Now: now, Engine: awake.EngineRunning, Mac: "this", ThisMac: true, Reading: awake.Reading{Source: "ac"},
-		Caps: machine.Capabilities{Engine: true, Lid: true, Battery: true},
+		Caps:    machine.Capabilities{Engine: true, Lid: true, Battery: true},
 		Session: &awake.Session{StartedAt: now.Add(-time.Hour), Until: until, For: 4 * time.Hour}}
 	p := Awake(pageawake.AllMachines{Now: now, Zone: time.UTC, Reports: []awake.Report{r}}, page.Context{Machine: "this"})
 	for _, a := range p.Actions {
