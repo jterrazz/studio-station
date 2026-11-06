@@ -219,6 +219,8 @@ struct HomeContent: View {
         }
         .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .stationTile()
+        .contentShape(RoundedRectangle(cornerRadius: Token.Tile.group, style: .continuous))
+        .onTapGesture { tap?() }
     }
 
     // value: the footer's lines: the page's actions, but Start while the
