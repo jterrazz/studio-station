@@ -157,7 +157,7 @@ func menubarWorlds() []Fixture {
 		{Name: "menubar.home.two-macs", Page: pagemenubar.Page(two, menubarHere())},
 		{Name: "menubar.home.infra-down", Page: pagemenubar.Page(infraDown, menubarHere())},
 		{Name: "menubar.home.engine-stopped", Page: pagemenubar.Stopped(menubarHere(), true)},
-		{Name: "menubar.switcher.two-macs", Page: pagemenubar.Switcher(two.Fleet, two.Services)},
+		{Name: "menubar.switcher.two-macs", Page: pagemenubar.Switcher(two)},
 		{Name: "menubar.vm.linux-1", Page: pagemenubar.MachinePage(linux1Page())},
 		{Name: "menubar.vm.infra", Page: pagemenubar.MachinePage(infraPage())},
 		{Name: "menubar.mac.mini", Page: pagemenubar.MachinePage(miniPage(false))},

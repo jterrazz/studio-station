@@ -119,8 +119,8 @@ public struct PortsPage: View {
         [("Copy link", { handlers.copy(url.absoluteString) }), ("Open", { handlers.open(url) })]
     }
 
-    // value: the note over Declare public, the routes in the words its form
-    // offers them.
+    // value: the footnote that declares a port public when tapped, the
+    // routes in the words its form offers them (vision panel g ends on it).
     public static func routes(_ declare: Action) -> String {
         let labels = (declare.form?.fields?.first { $0.key == "Via" }?.options ?? []).compactMap(\.label)
         let words = labels.count > 1 ? labels.dropLast().joined(separator: ", ") + " or " + labels[labels.count - 1] : labels.joined()
@@ -158,13 +158,15 @@ public struct PortsPage: View {
         let declare = page.action("declare-public")
         let share = page.action("share-port")
         return VStack(alignment: .leading, spacing: Token.Space.gap) {
-            if let declare { FootNote(Self.routes(declare)) }
+            if let declare {
+                Button { act.tap(declare) } label: { FootNote(Self.routes(declare)) }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(act.label(declare))
+                    .accessibilityHint(Self.routes(declare))
+            }
             if let declare, act.open(declare) { act.sheet(declare) }
             if let share, act.open(share) { act.sheet(share) }
             VStack(alignment: .leading, spacing: 0) {
-                if let declare, !act.open(declare) {
-                    Button { act.tap(declare) } label: { MenuText(symbol: Token.Symbol.globe, title: act.label(declare), key: nil, danger: false) }.buttonStyle(.plain)
-                }
                 if let share, !act.open(share) {
                     Button { act.tap(share) } label: { MenuText(symbol: Token.Symbol.plus, title: act.label(share), key: nil, danger: false) }.buttonStyle(.plain)
                 }

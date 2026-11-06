@@ -60,7 +60,11 @@ public enum Format {
         let n = v.n ?? 0
         if n > 30 * 86400, let at = v.at, at.count >= 10 { return String(at.prefix(10)) }
         let d = duration(n)
-        return (d.split(separator: " ").first.map(String.init) ?? d) + " ago"
+        let head = d.split(separator: " ").first.map(String.init) ?? d
+        let digits = head.prefix { $0.isNumber }
+        let ago = "\(digits) \(head.dropFirst(digits.count)) ago"
+        guard let label = v.label, !label.isEmpty else { return ago }
+        return "\(label) \(ago)"
     }
 
     public static func show(_ v: Value, now: Date? = nil) -> String {

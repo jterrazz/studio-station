@@ -403,17 +403,53 @@ func locked(m Machine, h machines.HostView) bool {
 	return !h.Reachable && !h.Here && h.LAN != ""
 }
 
-func Switcher(f *machines.Fleet, svc *ports.Fleet) page.Page {
+func Switcher(r Reading) page.Page {
 	// invariant: SPEC §10.2's switcher: All machines as a tree, each Mac then its
-	// Servers then its Workspaces, and Add a Mac…; Recent is the app's own.
-	s := Tree(f, svc, func(h machines.HostView) page.Value {
+	// Servers then its Workspaces, and Add a Mac…; Recent is the app's own. A
+	// Mac's dot says what needs you there, as Home's does, and a server says
+	// when its check last answered (vision panel b).
+	s := Tree(r.Fleet, r.Services, func(h machines.HostView) page.Value {
 		if h.Daemon.Running {
 			return page.Text("Engine running")
 		}
 		return page.Text("Engine stopped")
 	})
+	markMacs(&s, r)
+	if r.Fleet != nil {
+		checked(&s, *r.Fleet)
+	}
 	s.Title = "All machines"
 	add := page.Action{ID: ActionAddMac, Label: "Add a Mac", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Call: CallAddMac},
 		Form: &page.Form{Title: "Add a Mac", Fields: []page.Field{{Key: "Name", Label: "Name", Kind: page.FieldText, Required: true, Note: "as " + catalog.TailnetProduct + " names it"}}}}
 	return page.Seal(page.Page{ID: SwitcherID, Command: "menubar", Sections: []page.Section{s}, Actions: []page.Action{add}})
+}
+
+// value: a running server's line in the switcher: its lifetime, its health
+// and how long ago its check answered, in place of its time up and restarts.
+func checked(s *page.Section, f machines.Fleet) {
+	vms := map[string]machines.VM{}
+	for _, h := range f.Hosts {
+		for _, vm := range h.VMs {
+			vms[vm.Name] = vm
+		}
+	}
+	for _, mac := range s.Items {
+		if mac.Group == nil {
+			continue
+		}
+		for _, g := range mac.Group.Items {
+			if g.Group == nil || g.Group.Head.Label != GroupServers {
+				continue
+			}
+			for _, it := range g.Group.Items {
+				vm, ok := vms[it.Row.ID]
+				if !ok || vm.State != machines.Running || machines.Down(vm) || vm.CheckStatus.At.IsZero() || f.Read.IsZero() || len(it.Row.Cells) < 2 {
+					continue
+				}
+				at := page.Age(vm.CheckStatus.At, f.Read)
+				at.Label = "checked"
+				it.Row.Cells[1] = page.List(pagemachines.Lifetime(vm.Lifetime), page.Text(health(vm)), at)
+			}
+		}
+	}
 }

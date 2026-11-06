@@ -29,7 +29,7 @@
           "group": {
             "head": {
               "id": "jterrazz-macbook-pro",
-              "mark": "ok",
+              "mark": "attention",
               "label": "This Mac",
               "cells": [
                 {
@@ -45,7 +45,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "degraded"
             },
             "items": [
               {
@@ -119,7 +120,7 @@
           "group": {
             "head": {
               "id": "jterrazz-mac-mini",
-              "mark": "ok",
+              "mark": "broken",
               "label": "mac-mini",
               "cells": [
                 {
@@ -135,7 +136,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "exposed"
             },
             "items": [
               {
@@ -167,12 +169,10 @@
                                 "text": "healthy"
                               },
                               {
-                                "kind": "text",
-                                "text": "up 12 d"
-                              },
-                              {
-                                "kind": "count",
-                                "unit": "restarts"
+                                "kind": "age",
+                                "n": 40,
+                                "at": "2026-11-03T11:29:20Z",
+                                "label": "checked"
                               }
                             ]
                           }
@@ -189,10 +189,18 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 4
+          "n": 2
+        },
+        {
+          "mark": "attention",
+          "n": 1
         },
         {
           "mark": "absent",
+          "n": 1
+        },
+        {
+          "mark": "broken",
           "n": 1
         }
       ]

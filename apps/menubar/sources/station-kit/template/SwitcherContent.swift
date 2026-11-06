@@ -29,6 +29,17 @@ struct SwitcherContent: View {
         (s.items ?? []).compactMap { $0.group?.head }.first { $0.label == Page.ThisMacWord }
     }
 
+    // value: a VM's line under Recent, as the vision's: its kind, the Mac
+    // it runs on, then its health or state; a Mac keeps its own words.
+    func recentWords(_ s: Section, _ r: Row) -> String? {
+        guard let kind = r.cells?.first?.text, kind != "Mac",
+              let mac = (s.items ?? []).compactMap(\.group).first(where: { g in
+                  (g.items ?? []).contains { ($0.group?.items ?? []).contains { $0.row?.id == r.id } || $0.row?.id == r.id }
+              })?.head?.label else { return nil }
+        let state = (r.cells?.last?.items ?? []).dropFirst().first.map { Format.show($0) }
+        return (["\(kind) on \(mac)"] + [state].compactMap { $0 }).joined(separator: Token.Glyph.sep)
+    }
+
     func rows(_ s: Section, _ ids: [String]) -> [Row] {
         var out: [Row] = []
         func walk(_ items: [Item]) {
@@ -49,11 +60,10 @@ struct SwitcherContent: View {
                     VStack(alignment: .leading, spacing: 4) {
                         SectionHeader("Recent")
                         if let mac = here(tree) {
-                            let host = state.page?.context?.machine ?? "Mac"
-                            MachineRow(row: mac, symbol: Token.Symbol.mac, kinds: true, sub: "\(host)\(Token.Glyph.sep)you are here", picked: true, open: { _ in handlers.back() })
+                            MachineRow(row: mac, symbol: Token.Symbol.mac, kinds: true, sub: "\(mac.id ?? "")\(Token.Glyph.sep)you are here", picked: true, open: { _ in handlers.back() })
                         }
                         ForEach(Array(rows(tree, state.recent.filter { $0 != here(tree)?.id }).enumerated()), id: \.offset) { _, r in
-                            MachineRow(row: r, symbol: Token.Symbol.machine(r.cells?.first?.text), kinds: true, open: handlers.openMachine)
+                            MachineRow(row: r, symbol: Token.Symbol.machine(r.cells?.first?.text), kinds: true, sub: recentWords(tree, r), open: handlers.openMachine)
                         }
                     }
                 }

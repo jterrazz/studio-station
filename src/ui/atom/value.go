@@ -119,7 +119,11 @@ func show(v page.Value) string {
 		if v.N > 30*86400 && len(v.At) >= 10 {
 			return v.At[:10]
 		}
-		return Duration(v.N)[:durationHead(v.N)] + " ago"
+		ago := Duration(v.N)[:durationHead(v.N)] + " ago"
+		if v.Label != "" {
+			return v.Label + " " + ago
+		}
+		return ago
 	case page.KindUntil:
 		switch {
 		case v.N <= 0:

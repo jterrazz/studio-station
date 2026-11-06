@@ -6,13 +6,18 @@ import XCTest
 @MainActor
 final class SwitcherTests: XCTestCase {
     // invariant: MB-06: the switcher is a search, the machines opened last,
-    // every machine as a tree, Show all machines ⌘0 and Add a Mac….
+    // every machine as a tree, each Mac's dot as Home draws it and a server
+    // with its last check, Show all machines ⌘0 and Add a Mac….
     func testSwitcherLayout() throws {
         let page = try Tree.page("menubar.switcher.two-macs")
         let tree = try XCTUnwrap(page.section("machines"))
         XCTAssertEqual(tree.title, "All machines")
         XCTAssertEqual((tree.items ?? []).compactMap(\.group?.head?.label), ["This Mac", "mac-mini"])
         XCTAssertEqual((tree.items ?? []).compactMap { texts($0.group?.head?.cells?.last?.items) }, [["Engine running"], ["Engine running"]])
+        XCTAssertEqual((tree.items ?? []).compactMap(\.group?.head?.mark), try XCTUnwrap(Tree.page("menubar.home.two-macs").section("machines")?.items).compactMap(\.group?.head?.mark))
+        XCTAssertEqual((tree.items ?? []).last?.group?.head?.mark, .broken)
+        let infra = try XCTUnwrap((tree.items ?? []).last?.group?.items?.first?.group?.items?.first?.row)
+        XCTAssertEqual(infra.cells?.last.map { Format.show($0) }, "Always on · healthy · checked 40 s ago")
         XCTAssertEqual(page.pageActions.map(\.label), ["Add a Mac"])
         XCTAssertNil(try Golden.check("menubar.switcher.two-macs", AnyView(Popover(Snapshot.state("menubar.switcher.two-macs", page), scrolls: false))))
     }
