@@ -33,12 +33,12 @@ station's own files follow the XDG rule: `~/.config/station` (settings), `~/.loc
 
 An app's path moves only through the app's own settings file, the one it reads whoever launches it (an IDE started from the Dock included), never through a shell variable alone. `station setup` writes them, absolute, and never over a value the owner set by hand:
 
-| App  | File                                                                                                                     | Keys                                             | Old home |
-| ---- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ | -------- |
-| go   | Go's env file: `$GOENV`, else `~/Library/Application Support/go/env` (Linux: `~/.config/go/env`)                         | `GOPATH`, `GOMODCACHE`                           | `~/go`   |
-| npm  | `~/.npmrc`                                                                                                               | `cache`                                          | `~/.npm` |
-| bun  | `~/.bunfig.toml`                                                                                                         | `globalDir`, `globalBinDir`, `install.cache.dir` | `~/.bun` |
-| go   | mise's global file:   `$MISE_GLOBAL_CONFIG_FILE`, else `$MISE_CONFIG_DIR/config.toml`, else `~/.config/mise/config.toml` | `settings.go_set_gobin = false`                  |          |
+| App | File                                                                                                                   | Keys                                             | Old home |
+| --- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------- |
+| go  | Go's env file: `$GOENV`, else `~/Library/Application Support/go/env` (Linux: `~/.config/go/env`)                       | `GOPATH`, `GOMODCACHE`                           | `~/go`   |
+| npm | `~/.npmrc`                                                                                                             | `cache`                                          | `~/.npm` |
+| bun | `~/.bunfig.toml`                                                                                                       | `globalDir`, `globalBinDir`, `install.cache.dir` | `~/.bun` |
+| go  | mise's global file: `$MISE_GLOBAL_CONFIG_FILE`, else `$MISE_CONFIG_DIR/config.toml`, else `~/.config/mise/config.toml` | `settings.go_set_gobin = false`                  |          |
 
 mise's go backend sets `GOBIN` to the running version's own install unless `go_set_gobin` is false, so `go install` would put its binaries where an upgrade or a prune loses them and `disk erase go` never sees them; with it off, they land in `~/.local/share/go/bin`. The key goes under the owner's own `[settings]` table when there is one.
 

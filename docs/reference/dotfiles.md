@@ -2,23 +2,23 @@
 
 The application configs `station` puts on a machine are embedded in the binary, one folder per application, so a machine converges on the same setup with no clone on disk.
 
-| Section            | Answers                                            |
-| ------------------ | -------------------------------------------------- |
-| The files          | What is embedded and which setting installs it     |
-| The shell block    | What `station setup` writes into `~/.zshrc`        |
-| Removing the block | How to take it out by hand                         |
+| Section            | Answers                                        |
+| ------------------ | ---------------------------------------------- |
+| The files          | What is embedded and which setting installs it |
+| The shell block    | What `station setup` writes into `~/.zshrc`    |
+| Removing the block | How to take it out by hand                     |
 
 ## The files
 
 They live under `src/catalog/dotfiles/` and are embedded with `go:embed`.
 
-| Application | Contents                                                                            | Installed by        |
-| ----------- | ----------------------------------------------------------------------------------- | ------------------- |
-| `ghostty`   | terminal `config` and `themes/`                                                     | `ghostty-dotfiles`  |
-| `starship`  | the `starship.toml` prompt                                                          | `starship-dotfiles` |
-| `tmux`      | `tmux.conf`                                                                         | `tmux-dotfiles`     |
+| Application | Contents                                                                              | Installed by        |
+| ----------- | ------------------------------------------------------------------------------------- | ------------------- |
+| `ghostty`   | terminal `config` and `themes/`                                                       | `ghostty-dotfiles`  |
+| `starship`  | the `starship.toml` prompt                                                            | `starship-dotfiles` |
+| `tmux`      | `tmux.conf`                                                                           | `tmux-dotfiles`     |
 | `zed`       | `settings.json` and `.oxfmtrc.json`: Zed settings and the formatter values it applies | `zed-dotfiles`      |
-| `zsh`       | `zshrc.sh`, the shell loader: prompt, colours, FZF, `jj` `jc` `jo` `jg`             | `station shell zsh` |
+| `zsh`       | `zshrc.sh`, the shell loader: prompt, colours, FZF, `jj` `jc` `jo` `jg`               | `station shell zsh` |
 
 The `jj`, `jc`, `jo` and `jg` shortcuts attach tmux session `main` and open Claude, Codex and Gemini in tmux.
 

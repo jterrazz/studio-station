@@ -212,11 +212,11 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 ## Where knowledge lives
 
-| Question                                   | Read (in studio-station)             |
-| ------------------------------------------ | ------------------------------------ |
+| Question                                   | Read (in studio-station)            |
+| ------------------------------------------ | ----------------------------------- |
 | How the catalogue works, adding a tool     | `docs/reference/apps-and-skills.md` |
-| Install / upgrade / status commands        | `docs/reference/commands.md`         |
-| What is actually installed on this machine | run `station status`                 |
+| Install / upgrade / status commands        | `docs/reference/commands.md`        |
+| What is actually installed on this machine | run `station status`                |
 
 ## Always
 

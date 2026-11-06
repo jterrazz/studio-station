@@ -22,16 +22,16 @@ An app's state is one of OK (the method's manager lists it, current), Update ava
 
 One registry, `Installers` in `src/apps/contract/`, holds an installer per method, each its own adapter under `src/apps/adapter/<method>/` with its commands and its parser; nothing else switches on a method. `wire` builds the registry; `src/apps/calls` asks each installer what it can do and what is behind (`Outdated`): brew reads `brew outdated --json=v2`, a pinned formula left out; a skill compares its lock with GitHub.
 
-| Method            | Install                                                            | Remove                                  | Update                           | Kinds       |
-| ----------------- | ------------------------------------------------------------------ | --------------------------------------- | -------------------------------- | ----------- |
-| `brew`, `cask`    | `brew bundle` (Brewfile on stdin)                                  | `brew uninstall`                        | `brew bundle --upgrade`          | Mac, macos  |
-| `mas`             | `mas install <id>`, silent 60 s: signed out                        | `mas uninstall`                         | `mas update <id>`                | Mac, macos  |
-| `npm`, `uv`       | `brew bundle`                                                      | `npm uninstall -g`, `uv tool uninstall` | `brew bundle --upgrade`          | Mac, macos  |
-| `bun`             | `bun install -g`                                                   | `bun remove -g`                         | `bun update -g`                  | all         |
-| `mise`            | `mise use --global <tool>@<version>`                               | `mise unuse --global`                   | `mise upgrade`                   | all         |
-| `script`, `shell` | the vendor's installer                                             | not reversible                          | rerun the script; none for shell | all         |
-| `app`             | manual: the refusal names how                                      | not reversible                          | none                             | Mac, macos  |
-| `skill`           | `skills add <repo> -g -y --skill <name> --agent claude-code codex` | `skills remove -g -y <name>`            | the install again                | all         |
+| Method            | Install                                                            | Remove                                  | Update                           | Kinds      |
+| ----------------- | ------------------------------------------------------------------ | --------------------------------------- | -------------------------------- | ---------- |
+| `brew`, `cask`    | `brew bundle` (Brewfile on stdin)                                  | `brew uninstall`                        | `brew bundle --upgrade`          | Mac, macos |
+| `mas`             | `mas install <id>`, silent 60 s: signed out                        | `mas uninstall`                         | `mas update <id>`                | Mac, macos |
+| `npm`, `uv`       | `brew bundle`                                                      | `npm uninstall -g`, `uv tool uninstall` | `brew bundle --upgrade`          | Mac, macos |
+| `bun`             | `bun install -g`                                                   | `bun remove -g`                         | `bun update -g`                  | all        |
+| `mise`            | `mise use --global <tool>@<version>`                               | `mise unuse --global`                   | `mise upgrade`                   | all        |
+| `script`, `shell` | the vendor's installer                                             | not reversible                          | rerun the script; none for shell | all        |
+| `app`             | manual: the refusal names how                                      | not reversible                          | none                             | Mac, macos |
+| `skill`           | `skills add <repo> -g -y --skill <name> --agent claude-code codex` | `skills remove -g -y <name>`            | the install again                | all        |
 
 An App Store app is installed by mas itself, outside the bundle: signed out, the App Store waits on a sign-in no terminal can give and mas says nothing, so a mas that says nothing for 60 s is stopped and the app fails with `the App Store did not answer in 60 s, as when it is signed out: open the App Store and sign in` (exit 1). `brew bundle` installs a whole request in one call and taps a trusted formula itself; the catalogue's `trusted` taps are the owner's act of trust ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). `station apps update` updates the catalogue apps that have an update, and only those; `--method <method>` narrows it to one method's (`brew` covers brew and cask).
 

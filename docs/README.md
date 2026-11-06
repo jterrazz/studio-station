@@ -4,8 +4,8 @@
 
 ## Start
 
-| Page                                        | Answers                                                |
-| ------------------------------------------- | ------------------------------------------------------ |
+| Page                                        | Answers                                           |
+| ------------------------------------------- | ------------------------------------------------- |
 | [Getting started](start/getting-started.md) | From a fresh Mac to a named, set-up Mac, in order |
 
 ## Guides
@@ -28,19 +28,19 @@
 
 ## Reference
 
-| Page                                              | Answers                                                                                   |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [Commands](reference/commands.md)                 | Every command and flag, the hidden plumbing, the exit codes                               |
-| [The status contract](reference/status-json.md)   | The `station.status/v1` document `station status --json` prints and `studio doctor` reads |
-| [Machines](reference/machines.md)                 | Hosts, VMs, lifetimes, `--on`, the tailnet, ssh, the engine, the round-5 migration        |
-| [Ports](reference/ports.md)                    | What a VM listens on: reserved ports, sharing, HTTPS, profiles, the engine protocol       |
-| [Images](reference/images.md)                     | The VM images, the recipe, the binary inside                                              |
-| [Secrets](reference/secrets.md)                   | Kept, shared and bound secrets; sharing accounts with a VM; Claude and studio in a VM     |
-| [Configuration](reference/configuration.md)       | The settings, `preferences.json`, the environment variables                                |
-| [Apps and skills](reference/apps-and-skills.md)  | The catalogue, the method table, mise, skills as apps, the toolbelt                       |
-| [Dotfiles](reference/dotfiles.md)                 | The embedded application configs and the `~/.zshrc` block                                 |
-| [Disk](reference/disk.md)                         | The Disk groups, the relocation rule, `station disk`, free, erase and move                |
-| [Footprint](reference/footprint.md)               | Everything `station` and the apps write on a machine, generated from the table            |
+| Page                                            | Answers                                                                                   |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [Commands](reference/commands.md)               | Every command and flag, the hidden plumbing, the exit codes                               |
+| [The status contract](reference/status-json.md) | The `station.status/v1` document `station status --json` prints and `studio doctor` reads |
+| [Machines](reference/machines.md)               | Hosts, VMs, lifetimes, `--on`, the tailnet, ssh, the engine, the round-5 migration        |
+| [Ports](reference/ports.md)                     | What a VM listens on: reserved ports, sharing, HTTPS, profiles, the engine protocol       |
+| [Images](reference/images.md)                   | The VM images, the recipe, the binary inside                                              |
+| [Secrets](reference/secrets.md)                 | Kept, shared and bound secrets; sharing accounts with a VM; Claude and studio in a VM     |
+| [Configuration](reference/configuration.md)     | The settings, `preferences.json`, the environment variables                               |
+| [Apps and skills](reference/apps-and-skills.md) | The catalogue, the method table, mise, skills as apps, the toolbelt                       |
+| [Dotfiles](reference/dotfiles.md)               | The embedded application configs and the `~/.zshrc` block                                 |
+| [Disk](reference/disk.md)                       | The Disk groups, the relocation rule, `station disk`, free, erase and move                |
+| [Footprint](reference/footprint.md)             | Everything `station` and the apps write on a machine, generated from the table            |
 
 ## Decisions
 

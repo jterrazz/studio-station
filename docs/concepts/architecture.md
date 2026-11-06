@@ -139,12 +139,12 @@ Hint: station apps
 
 The exit code comes from the returned error, never from a call to exit inside a command:
 
-| Code | Means                                                                                               |
-| ---- | --------------------------------------------------------------------------------------------------- |
-| 0    | Done, or a read that found findings (an unreachable machine is a finding)                           |
-| 1    | An operation failed, or a confirmation was declined                                                 |
+| Code | Means                                                                                                           |
+| ---- | --------------------------------------------------------------------------------------------------------------- |
+| 0    | Done, or a read that found findings (an unreachable machine is a finding)                                       |
+| 1    | An operation failed, or a confirmation was declined                                                             |
 | 2    | A refusal: argv, the catalogue, the preferences or the machine kind said no, before any question and any effect |
-| 130  | Interrupted; no block is printed                                                                    |
+| 130  | Interrupted; no block is printed                                                                                |
 
 A bare group with nothing to list prints its menu on stderr and exits 2, with no block. The wording of every domain error (message and one hint) lives in `surface/cli/kit`'s `failures_<noun>.go` files, and the layer test requires one for every exported error type.
 
