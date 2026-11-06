@@ -119,7 +119,21 @@
         },
         {
           "row": {
-            "id": "1-com.jterrazz.brain.x-snapshot",
+            "id": "1-npm",
+            "mark": "broken",
+            "label": "npm sign-in expired",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "npm login"
+              }
+            ],
+            "reason": "failing"
+          }
+        },
+        {
+          "row": {
+            "id": "2-com.jterrazz.brain.x-snapshot",
             "mark": "broken",
             "label": "1 background task failing",
             "cells": [
@@ -132,20 +146,6 @@
           }
         },
         {
-          "row": {
-            "id": "2-brew",
-            "mark": "attention",
-            "label": "122 brew updates waiting",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "station apps update --method brew"
-              }
-            ],
-            "reason": "degraded"
-          }
-        },
-        {
           "link": {
             "label": "+ 2 more",
             "page": "overview"
@@ -155,11 +155,11 @@
       "counts": [
         {
           "mark": "attention",
-          "n": 4
+          "n": 3
         },
         {
           "mark": "broken",
-          "n": 1
+          "n": 2
         }
       ],
       "uncounted": true
@@ -548,8 +548,7 @@
       "label": "Update all",
       "on": "row",
       "rows": [
-        "0-updates",
-        "2-brew"
+        "0-updates"
       ],
       "priority": 5,
       "mutates": true,

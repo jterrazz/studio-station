@@ -89,7 +89,8 @@ func twoMacsPorts() services.Fleet {
 // updates first, whose fix is the apps' update.
 func twoMacsSummary(updates bool) overview.Summary {
 	s := overviewOf(true)
-	s.Needs[0] = overview.Need{Section: "apps", Subject: "updates", Text: "2 app updates", Call: "apps.update"}
+	apps := slices.IndexFunc(s.Needs, func(n overview.Need) bool { return n.Section == "apps" })
+	s.Needs = append([]overview.Need{{Section: "apps", Subject: "updates", Text: "2 app updates", Call: "apps.update"}}, slices.Delete(slices.Clone(s.Needs), apps, apps+1)...)
 	s.Lines[1].Parts[1] = overview.Count(catalog.StateDegraded, 2, "updates", "update-available")
 	s.Lines[5].Parts = []overview.Part{overview.Count(catalog.StateOK, 8, "", "signed-in"), {State: catalog.StateBroken, Word: "npm needs sign-in"}}
 	if !updates {

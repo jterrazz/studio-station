@@ -46,21 +46,7 @@
       "items": [
         {
           "row": {
-            "id": "0-brew",
-            "mark": "attention",
-            "label": "122 brew updates waiting",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "station apps update --method brew"
-              }
-            ],
-            "reason": "degraded"
-          }
-        },
-        {
-          "row": {
-            "id": "1-npm",
+            "id": "0-npm",
             "mark": "broken",
             "label": "npm sign-in expired",
             "cells": [
@@ -74,13 +60,27 @@
         },
         {
           "row": {
-            "id": "2-~/.tart",
-            "mark": "attention",
-            "label": "~/.tart is misplaced",
+            "id": "1-com.jterrazz.brain.x-snapshot",
+            "mark": "broken",
+            "label": "1 background task failing",
             "cells": [
               {
                 "kind": "text",
-                "text": "station disk move ~/.tart"
+                "text": "station background"
+              }
+            ],
+            "reason": "failing"
+          }
+        },
+        {
+          "row": {
+            "id": "2-brew",
+            "mark": "attention",
+            "label": "122 brew updates waiting",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "station apps update --method brew"
               }
             ],
             "reason": "degraded"
@@ -102,16 +102,16 @@
         },
         {
           "row": {
-            "id": "4-com.jterrazz.brain.x-snapshot",
-            "mark": "broken",
-            "label": "1 background task failing",
+            "id": "4-~/.tart",
+            "mark": "attention",
+            "label": "~/.tart is misplaced",
             "cells": [
               {
                 "kind": "text",
-                "text": "station background"
+                "text": "station disk move ~/.tart"
               }
             ],
-            "reason": "failing"
+            "reason": "degraded"
           }
         }
       ],
@@ -214,7 +214,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "12 of 21",
+                    "text": "12 of 22",
                     "label": "ok"
                   },
                   {
@@ -385,11 +385,11 @@
       "label": "fix",
       "on": "row",
       "rows": [
-        "0-brew",
-        "1-npm",
-        "2-~/.tart",
+        "0-npm",
+        "1-com.jterrazz.brain.x-snapshot",
+        "2-brew",
         "3-firewall",
-        "4-com.jterrazz.brain.x-snapshot"
+        "4-~/.tart"
       ],
       "priority": 1,
       "mutates": true

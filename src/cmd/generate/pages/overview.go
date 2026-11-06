@@ -10,7 +10,8 @@ import (
 )
 
 // value: the Overview of This Mac as vision 07 draws it: five things need
-// you, a line per section, the VMs it runs.
+// you, broken first and each in the one order, a line per section, the VMs
+// it runs.
 func overviewOf(needs bool) overview.Summary {
 	s := overview.Summary{
 		Head:   overview.Head{Name: "jterrazz-macbook-pro", Kind: machine.Mac, ThisMac: true, Up: 3 * 24 * time.Hour},
@@ -21,7 +22,7 @@ func overviewOf(needs bool) overview.Summary {
 				overview.Count(catalog.StateOK, 39, "ok", "ok"), overview.Count(catalog.StateDegraded, 122, "updates", "update-available"),
 				overview.Count(catalog.StateUnknown, 35, "not managed", "not-managed"), overview.Count(catalog.StateAbsent, 34, "not installed", "not-installed"),
 			}},
-			{Section: "settings", Parts: []overview.Part{{Word: "set by station"}, {State: catalog.StateOK, N: 12, Of: 21, Key: "applied", Counted: true}, {Word: "checked"}, {State: catalog.StateOK, N: 8, Of: 9, Key: "as-expected", Counted: true}}},
+			{Section: "settings", Parts: []overview.Part{{Word: "set by station"}, {State: catalog.StateOK, N: 12, Of: 22, Key: "applied", Counted: true}, {Word: "checked"}, {State: catalog.StateOK, N: 8, Of: 9, Key: "as-expected", Counted: true}}},
 			{Section: "disk", Parts: []overview.Part{{State: catalog.StateDegraded, Bytes: 388_000_000_000, Word: "free"}, {Bytes: 34_800_000_000, Word: "can rebuild"}, overview.Count(catalog.StateDegraded, 1, "misplaced", "misplaced")}},
 			{Section: "ports", Parts: []overview.Part{{Word: "Public", Key: "public", Counted: true}, {Word: "Private", N: 2, Key: "private", Counted: true}}},
 			{Section: "accounts", Parts: []overview.Part{overview.Count(catalog.StateOK, 6, "", "signed-in"), {State: catalog.StateBroken, Word: "npm"}}},
@@ -33,11 +34,11 @@ func overviewOf(needs bool) overview.Summary {
 	if needs {
 		misplaced := "~/." + catalog.HypervisorApp
 		s.Needs = []overview.Need{
-			{Section: "apps", Subject: "brew", Text: "122 brew updates waiting", Call: "apps.update", Args: map[string]string{"method": "brew"}},
 			{Section: "accounts", Subject: "npm", Broken: true, Text: "npm sign-in expired", Command: "npm login"},
-			{Section: "disk", Subject: misplaced, Text: misplaced + " is misplaced", Call: "disk.move", Args: map[string]string{"path": misplaced}},
-			{Section: "settings", Subject: "firewall", Text: "Firewall off", Path: "System Settings > Network > Firewall"},
 			{Section: "background", Subject: "com.jterrazz.brain.x-snapshot", Broken: true, Text: "1 background task failing", Command: "station background"},
+			{Section: "apps", Subject: "brew", Text: "122 brew updates waiting", Call: "apps.update", Args: map[string]string{"method": "brew"}},
+			{Section: "settings", Subject: "firewall", Text: "Firewall off", Path: "System Settings > Network > Firewall"},
+			{Section: "disk", Subject: misplaced, Text: misplaced + " is misplaced", Call: "disk.move", Args: map[string]string{"path": misplaced}},
 		}
 	}
 	return s
