@@ -219,7 +219,7 @@ func Codes() map[fail.Code]Wording {
 			return "nothing listens on " + e.Subject + " and nothing is reserved", "station ports --on " + e.Detail["vm"]
 		},
 		ports.CodeSignedOut: func(*fail.Error) (string, string) {
-			return catalog.TailnetProduct + " is signed out on This Mac: ports are local only", "open " + catalog.TailnetProduct + " and sign in"
+			return catalog.SignedOutLocalOnly, "open " + catalog.TailnetProduct + " and sign in"
 		},
 		ports.CodeNeedsVM: func(e *fail.Error) (string, string) {
 			return "say which VM's port " + e.Subject + " it is", "station ports share <vm> " + e.Subject

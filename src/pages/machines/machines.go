@@ -321,16 +321,18 @@ func Created(c machines.Created, here page.Context) page.Page {
 	if vm.Lifetime == machines.AlwaysOn {
 		return serverCreated(c, rows, here)
 	}
-	off := false
+	off := ""
 	for _, s := range c.Services {
 		row := pages.Done(s.Profile+"/"+strconv.Itoa(s.GuestPort), catalog.StateOK, "")
 		row.Label = s.Profile
 		row.Cells = []page.Value{page.Port(int64(s.GuestPort)), page.URL(s.URL)}
 		rows = append(rows, row)
-		off = off || s.ServeOff
+		if s.Off != "" {
+			off = s.Off
+		}
 	}
-	if off {
-		row := page.Row{ID: "ports", Label: "ports", Mark: page.Attention, Reason: page.Degraded, Cells: []page.Value{page.Text(catalog.ServeOffDetail)}}
+	if off != "" {
+		row := page.Row{ID: "ports", Label: "ports", Mark: page.Attention, Reason: page.Degraded, Cells: []page.Value{page.Text(off)}}
 		rows = append(rows, row)
 	}
 	head := pages.Done(vm.Name, catalog.StateOK, "")

@@ -17,7 +17,7 @@ type Reserved struct {
 	GuestPort, HostPort int
 	Profile, URL        string
 	PublicHost          string
-	ServeOff            bool
+	Off                 string
 }
 
 type Resources struct {
