@@ -208,6 +208,9 @@ func (m *Keeper) Awake(req awake.Request) (held awake.Session, refreshed bool, e
 	if refreshed {
 		was := m.session.Lid
 		want.StartedAt = m.session.StartedAt
+		if !req.Until.IsZero() && req.Until.Equal(m.session.Until) {
+			want.For = m.session.For
+		}
 		m.session = &want
 		if want.Lid != was {
 			if err := m.port.Clamshell(want.Lid); err != nil {

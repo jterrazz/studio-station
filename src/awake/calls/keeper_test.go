@@ -320,3 +320,18 @@ func TestAKeepAwakeUntilAnHourEndsAtThatHour(t *testing.T) {
 		t.Fatalf("an hour already past is taken")
 	}
 }
+
+// invariant: a switch flipped on a held session keeps its end and the term
+// it was asked for: 4 h asked, then Lid closed, is still the 4 h one.
+func TestASwitchKeepsTheTermTheSessionWasAskedFor(t *testing.T) {
+	w := newWorld(t, laptop())
+	w.awake(awake.Request{For: 4 * time.Hour})
+	end := w.m.View().Session.Until
+	w.clock.At = w.clock.At.Add(time.Minute)
+	if _, _, err := w.m.Awake(awake.Request{Lid: true, Until: end}); err != nil {
+		t.Fatalf("Lid closed on the held session = %v", err)
+	}
+	if s := w.m.View().Session; !s.Until.Equal(end) || s.For != 4*time.Hour || !s.Lid {
+		t.Fatalf("after Lid closed the session is %+v, want until %s, asked 4 h, lid", s, end)
+	}
+}
