@@ -101,31 +101,33 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	}
 
 	commands := []*cobra.Command{
-		statusCommand(kenv, here),
 		activityCommand(kenv, here),
 		appsCommand(kenv, here),
-		toolsAlias(kenv, here),
 		settingsCommand(kenv, here),
 		diskCommand(kenv, here),
-		storageAlias(kenv, here),
+	}
+	commands = append(commands, portsCommands(kenv, here)...)
+	commands = append(commands,
+		accountsCommand(kenv, here),
+		backgroundCommand(kenv, here),
 		awakeCommand(kenv, here),
 		machinesCommand(kenv, here),
 		imagesCommand(kenv, here),
+		engineCommand(kenv, here),
+		useCommand(kenv, here),
+		setupCommand(kenv, here),
+		statusCommand(kenv, here),
+		toolsAlias(kenv, here),
+		storageAlias(kenv, here),
 		secretsAlias(kenv, here),
-		accountsCommand(kenv, here),
-		backgroundCommand(kenv, here),
 		retiredDaemonCommand(kenv, here),
 		guestCommand(kenv, here),
-		engineCommand(kenv, here),
 		runCommand(kenv, here),
-		setupCommand(kenv, here),
 		shellcmd.Command(kenv),
-		useCommand(kenv, here),
-	}
+	)
 	commands = append(commands, engineAliases(kenv, here)...)
 	commands = append(commands, settingsAliases(kenv, here)...)
 	commands = append(commands, awakeAliases(kenv, here)...)
-	commands = append(commands, portsCommands(kenv, here)...)
 	if session != nil {
 		commands = append(commands, session.command())
 	}

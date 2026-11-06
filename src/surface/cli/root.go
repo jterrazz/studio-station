@@ -42,6 +42,7 @@ func NewRoot(env kit.Env, openTUI func(context.Context) error, overview *cobra.C
 		target = &env.On.Machine
 	}
 	root.PersistentFlags().StringVar(target, "on", "", "run this command on that `machine`")
+	cobra.EnableCommandSorting = false
 	root.AddGroup(kit.Groups()...)
 	root.SetHelpCommand(kit.Help())
 	root.SetVersionTemplate("{{.Name}} {{.Version}}\n")

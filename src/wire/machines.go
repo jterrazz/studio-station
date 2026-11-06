@@ -136,8 +136,6 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		return overviewcmd.Run(ctx, m.overviewDeps(false), env, false, io)
 	}
 	return machinescmd.Command(machinescmd.Deps{Here: m.where, Names: service.Names, Overview: overview}, env,
-		machinesadd.Command(machinesadd.Deps{Here: m.where}, env),
-		machinesforget.Command(machinesforget.Deps{Names: service.Names, Here: m.where}, env),
 		machinescreate.Command(machinescreate.Deps{
 			Resources: machines.ParseResources, Check: createCheck(service),
 			NotBuilt: func(image string) error { return &machines.NoImageError{Image: image} },
@@ -156,8 +154,10 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
 		machinesedit.Command(machinesedit.Deps{Names: service.Names, Resources: machines.ParseResources, Here: m.where}, env),
 		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Overview: overview}, env),
-		machinesunlock.Command(machinesunlock.Deps{Names: service.Names, Here: m.where}, env),
 		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),
+		machinesadd.Command(machinesadd.Deps{Here: m.where}, env),
+		machinesforget.Command(machinesforget.Deps{Names: service.Names, Here: m.where}, env),
+		machinesunlock.Command(machinesunlock.Deps{Names: service.Names, Here: m.where}, env),
 		machinessupervise.Command(env),
 		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{service}}, env),
 	)
