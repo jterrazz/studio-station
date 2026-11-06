@@ -70,8 +70,9 @@ func word(e *fail.Error) (message, hint string) {
 }
 
 // invariant: the engine serves its own calls and this machine's registry,
-// gated by this machine's profile and worded by this binary's table.
-func (m machine) engineServer(d *engine.Daemon, registry *call.Registry) func(ctx context.Context, conn io.ReadWriteCloser) {
-	s := process.Server(d, process.Host{Registry: registry, Here: m.profile, Word: word, Sleep: m.host.Clock.Sleep})
+// gated by this machine's profile and worded by this binary's table; a call
+// for another machine rides far, the run's Router.
+func (m machine) engineServer(d *engine.Daemon, registry *call.Registry, far call.Router) func(ctx context.Context, conn io.ReadWriteCloser) {
+	s := process.Server(d, process.Host{Registry: registry, Here: m.profile, Word: word, Sleep: m.host.Clock.Sleep, Far: far})
 	return s.Conn
 }

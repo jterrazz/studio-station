@@ -108,7 +108,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		}
 		return false, nil
 	})
-	d.Host(m.engineServer(d, registry))
+	d.Host(m.engineServer(d, registry, calls))
 	return d
 }
 

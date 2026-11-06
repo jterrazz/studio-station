@@ -149,3 +149,21 @@ func words(v page.Value) string {
 	}
 	return strings.Join(out, " | ")
 }
+
+// invariant: a VM of another Mac is stopped and restarted by that Mac: its
+// actions target the Mac that holds it, never the VM itself.
+func TestAServerOfAnotherMacIsActedOnByItsMac(t *testing.T) {
+	fleet := &machines.Fleet{Hosts: []machines.HostView{
+		{Name: "jterrazz-macbook-pro", Here: true, Reachable: true},
+		{Name: "jterrazz-mac-mini", Reachable: true, VMs: []machines.VM{{Name: "infra", Lifetime: machines.AlwaysOn, State: machines.Running}}},
+	}}
+	p := MachinePage(Machine{Name: "infra", Fleet: fleet, Asks: func(string, machine.Kind) string { return LevelYesNo }})
+	for _, a := range p.Actions {
+		if a.Run == nil || a.Run.Call == "" {
+			continue
+		}
+		if a.Run.Target == nil || *a.Run.Target != (page.Target{Name: "jterrazz-mac-mini"}) {
+			t.Fatalf("%s targets %+v, want mac-mini", a.ID, a.Run.Target)
+		}
+	}
+}

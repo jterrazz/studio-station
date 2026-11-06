@@ -609,7 +609,7 @@
       ],
       "priority": 5,
       "mutates": true,
-      "id": "update-all",
+      "id": "update-all:0-updates",
       "run": {
         "call": "apps.update"
       }

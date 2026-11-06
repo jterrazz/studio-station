@@ -79,11 +79,13 @@ func MachinePage(m Machine) page.Page {
 		Error: &page.Error{Message: "no machine is named " + m.Name, Hint: "station machines"}})
 }
 
-func target(h machines.HostView, name string) *page.Target {
+// value: where a VM's call runs: on the Mac that holds it, which reaches
+// the VM itself; nil on This Mac.
+func target(h machines.HostView) *page.Target {
 	if h.Here {
 		return nil
 	}
-	return &page.Target{Name: name, On: h.Name}
+	return &page.Target{Name: h.Name}
 }
 
 func vmPage(m Machine, h machines.HostView, vm machines.VM) page.Page {
@@ -106,31 +108,31 @@ func vmPage(m Machine, h machines.HostView, vm machines.VM) page.Page {
 	if kind == machine.Server {
 		sections = append(sections, upSection(m, vm), healthSection(vm, m.Now), activitySection(m.Samples, "Activity"), serverSection(m))
 		restart := page.Action{ID: ActionRestart, Label: "Restart", On: page.OnPage, Priority: 1, Mutates: true, Confirm: ask(m.Asks, "restart", kind, vm.Name, "Restart "+vm.Name+"?", "restart"),
-			Run: &page.Run{Call: CallRestartVM, In: map[string]string{"Name": vm.Name}, Target: target(h, vm.Name)}}
+			Run: &page.Run{Call: CallRestartVM, In: map[string]string{"Name": vm.Name}, Target: target(h)}}
 		restart.Run.In = answered(restart.Confirm, restart.Run.In)
 		stop := page.Action{ID: ActionStop, Label: "Stop", On: page.OnPage, Priority: 2, Mutates: true,
 			Confirm: ask(m.Asks, "stop", kind, vm.Name, "Stop "+vm.Name+"?", "stop", "It stays stopped until you start it: the engine no longer restarts it"),
-			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
+			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		stop.Run.In = answered(stop.Confirm, stop.Run.In)
 		p.Actions = []page.Action{restart, stop}
 	} else {
 		sections = append(sections, activitySection(m.Samples, "Activity"), insideSection(m.Summary), portsSection(m, h, vm), sharedSection(m, h, vm))
 		stop := page.Action{ID: ActionStop, Label: "Stop", On: page.OnPage, Priority: 1, Mutates: true,
 			Confirm: ask(m.Asks, "stop", kind, vm.Name, "Stop "+vm.Name+"?", "stop", "Its disk is kept"),
-			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
+			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		stop.Run.In = answered(stop.Confirm, stop.Run.In)
 		if vm.State != machines.Running && !machines.Down(vm) {
 			stop = page.Action{ID: ActionStartVM, Label: "Start", On: page.OnPage, Priority: 1, Mutates: true,
-				Run: &page.Run{Call: CallStartVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
+				Run: &page.Run{Call: CallStartVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		}
 		del := page.Action{ID: ActionDelete, Label: "Delete", On: page.OnPage, Priority: 2, Mutates: true,
 			Confirm: ask(m.Asks, "delete", kind, vm.Name, "Delete "+vm.Name+"?", "delete", "Its disk is erased: nothing of it is kept"),
-			Run:     &page.Run{Call: CallDeleteVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
+			Run:     &page.Run{Call: CallDeleteVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		del.Run.In = answered(del.Confirm, del.Run.In)
 		p.Actions = []page.Action{stop, del}
 		if vm.State == machines.Running {
 			p.Actions = append(p.Actions, page.Action{ID: ActionShare, Label: "Share a port", On: page.OnPage, Priority: 3, Mutates: true,
-				Run:  &page.Run{Call: CallSharePort, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)},
+				Run:  &page.Run{Call: CallSharePort, In: map[string]string{"VM": vm.Name}, Target: target(h)},
 				Form: &page.Form{Title: "Share a port of " + vm.Name, Fields: []page.Field{{Key: "Port", Label: "Port", Kind: page.FieldText, Required: true, Note: "a port number, like 5173"}}}})
 		}
 		p.Actions = append(p.Actions, takeBacks(m, vm)...)
@@ -282,7 +284,8 @@ func lineOf(s overview.Summary, id string) page.Value {
 	return page.None()
 }
 
-// value: the workspace's shared ports, each a link: private, on Tailscale.
+// value: the workspace's shared ports, each a link: private, on Tailscale;
+// one with no profile is TCP, or Web when it has a web link.
 func portsSection(m Machine, _ machines.HostView, vm machines.VM) page.Section {
 	s := page.Section{ID: SectionPorts, Title: "Private", Caption: []page.Value{page.Text("shared on " + catalog.TailnetProduct)}, Uncounted: true}
 	if m.Services == nil {
@@ -299,6 +302,9 @@ func portsSection(m Machine, _ machines.HostView, vm machines.VM) page.Section {
 				value = page.URL(sv.URLs.Public)
 			}
 			label := cmpWord(titled(sv.Profile), "TCP")
+			if sv.Profile == "" && strings.HasPrefix(sv.URLs.Public, "http") {
+				label = "Web"
+			}
 			s.Items = append(s.Items, page.Item{Link: &page.Link{Label: label, Lead: page.List(page.Text(label), page.Port(int64(sv.GuestPort))), Value: value, Row: strconv.Itoa(sv.GuestPort)}})
 		}
 	}
@@ -485,9 +491,7 @@ func macPage(m Machine, h machines.HostView) page.Page {
 			if s.ID != SectionNeeds {
 				continue
 			}
-			if update := updateAll(s, m.Summary); update != nil {
-				p.Actions = append(p.Actions, *update)
-			}
+			p.Actions = append(p.Actions, updateAll(s, m.Summary)...)
 		}
 	}
 	if locked(m, h) {

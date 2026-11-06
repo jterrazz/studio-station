@@ -195,6 +195,8 @@ type Host struct {
 	Here     machine.Profile
 	Word     func(e *fail.Error) (message, hint string)
 	Sleep    func(ctx context.Context, d time.Duration) error
+	// value: the Router a call for another machine rides.
+	Far call.Router
 }
 
 func Server(d *engine.Daemon, h Host) serve.Server {
@@ -239,6 +241,6 @@ func Server(d *engine.Daemon, h Host) serve.Server {
 			}
 			return d.Watch(ctx, in.Machines, send)
 		}},
-		Here: h.Here, Word: h.Word, Hint: "station machines", Sleep: h.Sleep,
+		Here: h.Here, Word: h.Word, Hint: "station machines", Sleep: h.Sleep, Far: h.Far,
 	}
 }

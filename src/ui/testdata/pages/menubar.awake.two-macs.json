@@ -275,7 +275,8 @@
             "default": "16200000000000"
           }
         ]
-      }
+      },
+      "picked": true
     },
     {
       "label": "Lid closed",

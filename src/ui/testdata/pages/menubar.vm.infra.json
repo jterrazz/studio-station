@@ -574,8 +574,7 @@
           "Name": "infra"
         },
         "target": {
-          "name": "infra",
-          "on": "jterrazz-mac-mini"
+          "name": "jterrazz-mac-mini"
         }
       }
     },
@@ -607,8 +606,7 @@
           "VM": "infra"
         },
         "target": {
-          "name": "infra",
-          "on": "jterrazz-mac-mini"
+          "name": "jterrazz-mac-mini"
         }
       }
     },

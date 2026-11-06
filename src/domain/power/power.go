@@ -286,7 +286,7 @@ func (m *Machine) Awake(req Request) (held Session, refreshed bool, err error) {
 	defer m.mu.Unlock()
 	m.reading = r
 	now := m.clock.Now().UTC().Truncate(time.Second)
-	want.StartedAt, want.Until = now, now.Add(req.For)
+	want.StartedAt, want.Until, want.For = now, now.Add(req.For), req.For
 	refreshed = m.session != nil
 	if refreshed {
 		was := m.session.Lid

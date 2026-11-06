@@ -58,9 +58,7 @@ func Page(r Reading, here page.Context) page.Page {
 	markMacs(&tree, r)
 	p.Sections = []page.Section{needs, tree, awakeTile(r), accountsTile(r.Home)}
 	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power), openAccounts())
-	if update := updateAll(needs, r.Home); update != nil {
-		p.Actions = append(p.Actions, *update)
-	}
+	p.Actions = append(p.Actions, updateAll(needs, r.Home)...)
 	p.Badge = badge(r, needs)
 	return page.Seal(p)
 }
@@ -183,23 +181,30 @@ func things(n int) string {
 }
 
 // invariant: MB-16: a Needs you line whose fix is the apps' update gets
-// Update all, which runs that call on This Mac with no name: every update
-// there; what fails stays in Needs you with its fix.
-func updateAll(needs page.Section, home *overview.Summary) *page.Action {
+// its own Update all, which runs that call on This Mac for what the line
+// counts: every update of its manager (`brew`), or the one app it names;
+// a line that names neither updates everything. What fails stays in Needs
+// you with its fix.
+func updateAll(needs page.Section, home *overview.Summary) []page.Action {
 	if home == nil {
 		return nil
 	}
-	var rows []string
+	var out []page.Action
 	for i, n := range home.Needs {
 		id := strconv.Itoa(i) + "-" + n.Subject
-		if n.Call == CallUpdate && slices.ContainsFunc(needs.Items, func(it page.Item) bool { return it.Row != nil && it.Row.ID == id }) {
-			rows = append(rows, id)
+		if n.Call != CallUpdate || !slices.ContainsFunc(needs.Items, func(it page.Item) bool { return it.Row != nil && it.Row.ID == id }) {
+			continue
 		}
+		run := &page.Run{Call: CallUpdate}
+		switch {
+		case n.Args["method"] != "":
+			run.In = map[string]string{"Method": `["` + n.Args["method"] + `"]`}
+		case n.Args["name"] != "":
+			run.In = map[string]string{"Names": `["` + n.Args["name"] + `"]`}
+		}
+		out = append(out, page.Action{ID: ActionUpdateAll + ":" + id, Label: "Update all", On: page.OnRow, Rows: []string{id}, Priority: 5, Mutates: true, Run: run})
 	}
-	if len(rows) == 0 {
-		return nil
-	}
-	return &page.Action{ID: ActionUpdateAll, Label: "Update all", On: page.OnRow, Rows: rows, Priority: 5, Mutates: true, Run: &page.Run{Call: CallUpdate}}
+	return out
 }
 
 // value: the line under a Mac in Home: its Awake; another Mac's then says

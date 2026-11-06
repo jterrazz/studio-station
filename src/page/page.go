@@ -215,6 +215,9 @@ type Action struct {
 	ID       string   `json:"id,omitempty"`
 	Run      *Run     `json:"run,omitempty"`
 	Form     *Form    `json:"form,omitempty"`
+	// value: the choice in force among its row's choices (Awake's term):
+	// a segmented control's selected segment.
+	Picked bool `json:"picked,omitempty"`
 }
 
 type Run struct {

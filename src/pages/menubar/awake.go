@@ -142,7 +142,8 @@ func flags(lid, battery bool) map[string]string {
 
 // invariant: a keep-awake keeps the switches as they are; a switch keeps
 // the term that is left, or starts the 4 h one. While held, Until… says
-// the time it holds until (vision panel e: `Until 18:00`).
+// the time it holds until (vision panel e: `Until 18:00`), and the term it
+// was taken for is the one picked, else Until.
 func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 	var lid, battery bool
 	left := 4 * time.Hour
@@ -152,10 +153,13 @@ func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 	}
 	rows := []string{r.Mac}
 	var out []page.Action
+	picked := false
 	for _, t := range terms() {
 		in := flags(lid, battery)
 		in["For"] = nanos(t)
-		out = append(out, page.Action{ID: ActionKeep + strings.TrimSuffix(t.String(), "0m0s"), Label: pageTerm(t), On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Run: &page.Run{Call: CallAwake, In: in}})
+		on := held && asked(*r.Session) == t
+		picked = picked || on
+		out = append(out, page.Action{ID: ActionKeep + strings.TrimSuffix(t.String(), "0m0s"), Label: pageTerm(t), On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Picked: on, Run: &page.Run{Call: CallAwake, In: in}})
 	}
 	until := "Until"
 	if held {
@@ -164,7 +168,7 @@ func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 		}
 		until += " " + r.Session.Until.In(zone).Format("15:04")
 	}
-	out = append(out, page.Action{ID: ActionUntil, Label: until, On: page.OnRow, Rows: rows, Priority: 1, Mutates: true,
+	out = append(out, page.Action{ID: ActionUntil, Label: until, On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Picked: held && !picked,
 		Form: &page.Form{Title: "Keep awake until", Fields: []page.Field{untilField(now, zone)}}, Run: &page.Run{Call: CallAwake, In: flags(lid, battery)}})
 	if r.Caps.Lid {
 		in := flags(!lid, battery)
@@ -180,6 +184,15 @@ func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 		out = append(out, page.Action{ID: ActionLetGo, Label: "Let it sleep", On: page.OnRow, Rows: rows, Priority: 3, Mutates: true, Run: &page.Run{Call: CallSleep}})
 	}
 	return out
+}
+
+// value: the term a session was asked for: its own word, else its span
+// from its start.
+func asked(s awake.Session) time.Duration {
+	if s.For > 0 {
+		return s.For.Round(time.Minute)
+	}
+	return s.Until.Sub(s.StartedAt).Round(time.Minute)
 }
 
 func pageTerm(d time.Duration) string { return strconv.Itoa(int(d.Hours())) + " h" }
