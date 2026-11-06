@@ -5,7 +5,6 @@ package architecture_test
 // longer says fails the gate until its line is removed.
 func vocabularyTolerated() map[string][]string {
 	return map[string][]string{
-		"apps/menubar/sources/station-kit/template": {"here"},
 		"docs":                               {"config", "daemon", "fleet", "host", "lasting", "lease", "publish", "service", "temporary", "tools"},
 		"docs/concepts":                      {"NAT", "config", "fleet", "host", "lasting", "lease", "lend", "place", "probe", "publish", "reset", "sandbox", "service", "storage", "stray", "temporary", "tool", "tools"},
 		"docs/guides":                        {"a check", "config", "fleet", "host", "place", "probe", "publish", "sandbox", "service", "tool", "tools"},
