@@ -1,4 +1,4 @@
-package disk
+package wire
 
 import (
 	"context"
@@ -12,16 +12,17 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/disk"
-	"github.com/jterrazz/studio-station/src/domain/storage"
+	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/page"
+	pagesdisk "github.com/jterrazz/studio-station/src/pages/disk"
 	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
-type clock struct{}
+type staggerClock struct{}
 
-func (clock) Now() time.Time { return time.Unix(0, 0) }
+func (staggerClock) Now() time.Time { return time.Unix(0, 0) }
 
-func (clock) Sleep(ctx context.Context, d time.Duration) error {
+func (staggerClock) Sleep(ctx context.Context, d time.Duration) error {
 	waited, cancel := context.WithTimeout(ctx, d)
 	defer cancel()
 	<-waited.Done()
@@ -33,19 +34,19 @@ type staggered struct{ localtest.Disk }
 
 func (f staggered) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
 	for i, root := range roots {
-		_ = clock{}.Sleep(ctx, 10*time.Millisecond)
+		_ = staggerClock{}.Sleep(ctx, 10*time.Millisecond)
 		f.FS.Sizes(ctx, []string{root}, func(_ int, b int64) { each(i, b) })
 	}
 }
 
 // value: an inventory that names its tools one at a time, the odd ones not
 // installed, so some rows (and the sections they alone fill) leave at the end.
-type inventory struct{ names []string }
+type staggeredInventory struct{ names []string }
 
-func (v inventory) Installed(ctx context.Context, each func(map[string]bool)) {
+func (v staggeredInventory) Installed(ctx context.Context, each func(map[string]bool)) {
 	got := map[string]bool{}
 	for i, n := range v.names {
-		_ = clock{}.Sleep(ctx, 10*time.Millisecond)
+		_ = staggerClock{}.Sleep(ctx, 10*time.Millisecond)
 		got[n] = i%2 == 0
 		each(maps.Clone(got))
 	}
@@ -72,16 +73,16 @@ func TestNoSectionFlickers(t *testing.T) {
 			Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/" + name + "/*", Level: catalog.LevelCache}}}})
 		names = append(names, name)
 	}
-	pool := probe.NewPool(context.Background(), clock{}, 4, 1)
+	pool := probe.NewPool(context.Background(), staggerClock{}, 4, 1)
 	defer pool.Close()
 	host := localtest.Host(localtest.NewRunner(t), fs.FS, localtest.Env{}, localtest.NewNet(), &localtest.Clock{})
-	host.FS, host.Clock = fs, clock{}
-	s := storage.New(host, tools, storage.Options{Disk: fs, Pool: pool, Here: catalog.Host, Expand: storage.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: inventory{names: names}})
+	host.FS, host.Clock = fs, staggerClock{}
+	s := diskcalls.NewService(diskMachine{host}, tools, diskcalls.ServiceOptions{Disk: fs, Pool: pool, Here: catalog.Host, Expand: disk.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: staggeredInventory{names: names}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	var pages []page.Page
 	for r := range s.Watch(ctx) {
-		pages = append(pages, Read(disk.Reading{Rows: disk.Classify(r)}, page.Context{Kind: "host"}, false))
+		pages = append(pages, pagesdisk.Read(disk.Reading{Rows: disk.Classify(r)}, page.Context{Kind: "host"}, false))
 	}
 	if len(pages) < 5 {
 		t.Fatalf("the watch sent %d values, want one per staggered answer", len(pages))

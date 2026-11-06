@@ -25,7 +25,7 @@ src/
     kit/          how a leaf and a group are declared; how a leaf answers the confirmation its call asks; the wording of every domain error
     words/        the wording of every fail.Code a call raises
   domain/         behaviour, never touching the machine except through ports
-    setup/ storage/ machines/ images/ services/ guest/ power/
+    setup/ machines/ images/ services/ guest/ power/
   engine/         the per-Mac process (the engine): its runs, its socket, the guards it holds
     process/      the engine's own calls over its live state, and its station.api/v2 server: those and the registry's
 ```

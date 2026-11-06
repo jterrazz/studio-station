@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"path"
 
+	"github.com/jterrazz/studio-station/src/disk"
+
 	"github.com/spf13/cobra"
 
 	activitylinux "github.com/jterrazz/studio-station/src/activity/adapter/linux"
@@ -14,9 +16,9 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/adapter/brew"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
+	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/setup"
-	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
@@ -146,10 +148,10 @@ func (r setupRead) Check(ctx context.Context) ([]overview.Step, error) {
 	return steps, nil
 }
 
-type diskRead struct{ s *storage.Service }
+type diskRead struct{ s *diskcalls.Service }
 
-func (r diskRead) Watch(ctx context.Context) <-chan overviewcalls.DiskReading[storage.StrayReport] {
-	out := make(chan overviewcalls.DiskReading[storage.StrayReport])
+func (r diskRead) Watch(ctx context.Context) <-chan overviewcalls.DiskReading[disk.StrayReport] {
+	out := make(chan overviewcalls.DiskReading[disk.StrayReport])
 	go func() {
 		defer close(out)
 		for report := range r.s.Watch(ctx) {
@@ -167,7 +169,7 @@ const levelInstalled catalog.Level = "installed"
 
 // invariant: one row per storage row and level it holds bytes at, then its
 // installed size, then `other`, the caches no row claims.
-func diskOf(report storage.Report) overviewcalls.DiskReading[storage.StrayReport] {
+func diskOf(report disk.Survey) overviewcalls.DiskReading[disk.StrayReport] {
 	rows := []overview.Disk{}
 	for _, r := range report.Rows {
 		for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData} {
@@ -182,7 +184,7 @@ func diskOf(report storage.Report) overviewcalls.DiskReading[storage.StrayReport
 	if report.Other > 0 {
 		rows = append(rows, overview.Disk{Name: "other", Level: catalog.LevelCache, Bytes: report.Other})
 	}
-	return overviewcalls.DiskReading[storage.StrayReport]{Rows: rows, Strays: append(make([]storage.StrayReport, 0, len(report.Strays)), report.Strays...)}
+	return overviewcalls.DiskReading[disk.StrayReport]{Rows: rows, Strays: append(make([]disk.StrayReport, 0, len(report.Strays)), report.Strays...)}
 }
 
 // value: the machine's files under its root, as the Linux Meter reads /proc.

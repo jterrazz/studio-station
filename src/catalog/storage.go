@@ -38,6 +38,10 @@ const (
 	FileMise   ToolFile = "mise config"
 )
 
+// invariant: a TOML file keeps its keys in tables; the others keep one key
+// per line.
+func (f ToolFile) Tabled() bool { return f == FileBunfig || f == FileMise }
+
 type Relocation struct {
 	File    ToolFile
 	Key     string
@@ -60,7 +64,7 @@ type SizeProbe string
 
 const (
 	SizeDirs     SizeProbe = ""
-	SizeDockerDF SizeProbe = "docker-system-df"
+	SizeContainers SizeProbe = "docker-system-df"
 )
 
 type Storage struct {
@@ -575,7 +579,7 @@ var (
 	}
 	storageDocker = Storage{
 		Paths: []Stored{conf("~/.docker")},
-		Size:  SizeDockerDF,
+		Size:  SizeContainers,
 		Clean: []Action{
 			runIf("docker", "docker", "container", "prune", "-f"),
 			runIf("docker", "docker", "image", "prune", "-f"),

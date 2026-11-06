@@ -15,7 +15,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
-	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
@@ -88,7 +87,7 @@ func snapshot() pagehome.Overview {
 		},
 		Workspace: pagehome.Workspace{
 			Disk: []overview.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
-			Strays: []storage.StrayReport{
+			Strays: []disk.StrayReport{
 				{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, Repair: "station disk move ~/." + catalog.HypervisorTool},
 				{Name: "bun", Path: "~/.bun", Bytes: 2 * gb, Repair: "station disk move ~/.bun"},
 			},
@@ -259,25 +258,25 @@ func settingsMatrix() []Fixture {
 		full)
 }
 
-func storageReport(pending bool) storage.Report {
-	entry := func(name, category string) storage.Entry {
-		return storage.Entry{Name: name, Category: category, Places: []catalog.MachineKind{catalog.Host}}
+func storageReport(pending bool) disk.Survey {
+	entry := func(name, category string) disk.Entry {
+		return disk.Entry{Name: name, Category: category, Places: []catalog.MachineKind{catalog.Host}}
 	}
-	at := func(path string, level catalog.Level, bytes int64) storage.PathReport {
-		return storage.PathReport{Path: path, Level: level, Bytes: bytes}
+	at := func(path string, level catalog.Level, bytes int64) disk.PathReport {
+		return disk.PathReport{Path: path, Level: level, Bytes: bytes}
 	}
-	rows := make([]storage.Row, 0, 4)
+	rows := make([]disk.Tally, 0, 4)
 	rows = append(rows,
-		storage.Row{Entry: entry(storage.StationName, storage.StationCategory), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelData: 4 * gb, catalog.LevelConfig: 12000},
-			Paths: []storage.PathReport{at("~/.local/share/station/vms/vms/*", catalog.LevelData, 4*gb), at("~/.config/station/preferences.json", catalog.LevelConfig, 12000)}},
-		storage.Row{Entry: entry("homebrew", string(catalog.CategoryPackageManagers)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 26 * gb}, Install: 3 * gb,
-			Paths: []storage.PathReport{at("~/Library/Caches/Homebrew", catalog.LevelCache, 26*gb)}},
-		storage.Row{Entry: entry("bun", string(catalog.CategoryRuntimes)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 1700 * (1 << 20)},
-			Paths: []storage.PathReport{at("~/Library/Caches/bun", catalog.LevelCache, 1700*(1<<20))}},
+		disk.Tally{Entry: entry(disk.StationName, disk.StationCategory), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelData: 4 * gb, catalog.LevelConfig: 12000},
+			Paths: []disk.PathReport{at("~/.local/share/station/vms/vms/*", catalog.LevelData, 4*gb), at("~/.config/station/preferences.json", catalog.LevelConfig, 12000)}},
+		disk.Tally{Entry: entry("homebrew", string(catalog.CategoryPackageManagers)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 26 * gb}, Install: 3 * gb,
+			Paths: []disk.PathReport{at("~/Library/Caches/Homebrew", catalog.LevelCache, 26*gb)}},
+		disk.Tally{Entry: entry("bun", string(catalog.CategoryRuntimes)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 1700 * (1 << 20)},
+			Paths: []disk.PathReport{at("~/Library/Caches/bun", catalog.LevelCache, 1700*(1<<20))}},
 	)
-	misplaced := []storage.StrayReport{{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, To: "~/.local/share/station/vms", Repair: "station disk move ~/." + catalog.HypervisorTool}}
-	rows = append(rows, storage.Row{Entry: entry(catalog.HypervisorTool, string(catalog.CategoryContainersVMs)), Installed: true, State: catalog.StateDegraded, Bytes: map[catalog.Level]int64{}, Strays: misplaced})
-	r := storage.Report{Rows: rows, Strays: misplaced, Other: 9 * gb}
+	misplaced := []disk.StrayReport{{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, To: "~/.local/share/station/vms", Repair: "station disk move ~/." + catalog.HypervisorTool}}
+	rows = append(rows, disk.Tally{Entry: entry(catalog.HypervisorTool, string(catalog.CategoryContainersVMs)), Installed: true, State: catalog.StateDegraded, Bytes: map[catalog.Level]int64{}, Strays: misplaced})
+	r := disk.Survey{Rows: rows, Strays: misplaced, Other: 9 * gb}
 	if pending {
 		for i := range r.Rows {
 			r.Rows[i].Pending, r.Rows[i].State = true, catalog.StatePending
@@ -460,7 +459,7 @@ func outcomes() []Fixture {
 		{Item: "restart-after-power-cut", Verb: "apply", Result: catalog.StateOK, Before: []settings.KeyValue{{Key: "autorestart", Value: "0"}}, After: []settings.KeyValue{{Key: "autorestart", Value: "1"}}},
 		{Item: catalog.HypervisorLauncher, Verb: "apply", Result: catalog.StateOK},
 	}
-	cleaned := []storage.Outcome{
+	cleaned := []disk.Outcome{
 		{Name: "homebrew", Result: catalog.StateOK, Freed: 26 * gb},
 		{Name: "bun", Result: catalog.StateAbsent, Detail: "nothing to free"},
 	}

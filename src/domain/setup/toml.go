@@ -3,11 +3,11 @@ package setup
 import (
 	"strings"
 
-	"github.com/jterrazz/studio-station/src/domain/storage"
+	"github.com/jterrazz/studio-station/src/disk"
 )
 
 func UpsertTableKey(text, key, value string) (updated string, changed bool, handSet string) {
-	if current, ok := storage.TableValue(text, key); ok {
+	if current, ok := disk.TableValue(text, key); ok {
 		if current == value {
 			return text, false, ""
 		}

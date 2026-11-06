@@ -1,8 +1,7 @@
-package storage
+package calls
 
 import (
 	"encoding/json"
-	"path"
 	"time"
 )
 
@@ -30,7 +29,7 @@ func (s *Service) loadKnown() map[string]knownEntry {
 	if file == "" {
 		return nil
 	}
-	raw, err := s.h.FS.ReadFile(file)
+	raw, err := s.m.ReadFile(file)
 	if err != nil {
 		return nil
 	}
@@ -53,19 +52,15 @@ func (s *Service) saveKnown(roots []string, sizes []int64) {
 	if known == nil {
 		known = map[string]knownEntry{}
 	}
-	at := s.h.Clock.Now().UTC().Truncate(time.Second)
+	at := s.m.Now().UTC().Truncate(time.Second)
 	for i, root := range roots {
 		if sizes[i] >= 0 {
 			known[root] = knownEntry{Bytes: sizes[i], At: at}
 		}
 	}
 	raw, err := json.Marshal(knownFile{V: knownVersion, Sizes: known})
-	if err != nil || s.h.FS.MkdirAll(path.Dir(file), 0o755) != nil {
+	if err != nil {
 		return
 	}
-	tmp := file + ".tmp"
-	if s.h.FS.WriteFile(tmp, raw, 0o644) != nil {
-		return
-	}
-	_ = s.h.FS.Rename(tmp, file)
+	_ = s.m.Keep(file, raw)
 }

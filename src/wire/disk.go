@@ -2,7 +2,13 @@ package wire
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/disk"
+	diskdocker "github.com/jterrazz/studio-station/src/disk/adapter/docker"
+	"github.com/jterrazz/studio-station/src/platform/local"
 
 	"github.com/spf13/cobra"
 
@@ -11,8 +17,8 @@ import (
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/disk/adapter/apfs"
 	"github.com/jterrazz/studio-station/src/disk/adapter/posix"
+	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
-	"github.com/jterrazz/studio-station/src/domain/storage"
 	diskcmd "github.com/jterrazz/studio-station/src/surface/cli/disk"
 	diskerase "github.com/jterrazz/studio-station/src/surface/cli/disk/erase"
 	diskfree "github.com/jterrazz/studio-station/src/surface/cli/disk/free"
@@ -39,9 +45,10 @@ func storageAlias(env kit.Env, m machine) *cobra.Command {
 	), "disk")
 }
 
-func (m machine) storage(env kit.Env) *storage.Service {
-	return storage.New(m.host, catalog.Tools, storage.Options{
+func (m machine) storage(env kit.Env) *diskcalls.Service {
+	return diskcalls.NewService(diskMachine{m.host}, catalog.Tools, diskcalls.ServiceOptions{
 		Disk:       m.disk(),
+		Containers: diskdocker.New(m.host.Run),
 		Pool:       m.pool,
 		Here:       m.kind,
 		Expand:     m.expander(),
@@ -61,8 +68,8 @@ func (m machine) disk() diskcontract.DiskUsage {
 	return apfs.New(m.host.Run)
 }
 
-func (m machine) expander() storage.Expander {
-	return storage.Expander{Home: m.host.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
+func (m machine) expander() disk.Expander {
+	return disk.Expander{Home: m.host.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
 }
 
 // invariant: Go's env file is where `go env GOENV` says: $GOENV when set and
@@ -111,4 +118,55 @@ func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
 		}
 		each(out)
 	}
+}
+
+type diskMachine struct{ h local.Host }
+
+func (d diskMachine) Now() time.Time { return d.h.Clock.Now() }
+func (d diskMachine) Sleep(ctx context.Context, t time.Duration) error {
+	return d.h.Clock.Sleep(ctx, t)
+}
+func (d diskMachine) Glob(pattern string) []string {
+	matches, _ := d.h.FS.Glob(pattern)
+	return matches
+}
+func (d diskMachine) Exists(path string) bool {
+	_, err := d.h.FS.Stat(path)
+	return err == nil
+}
+func (d diskMachine) Names(dir string) ([]string, error) {
+	entries, err := d.h.FS.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	return names, nil
+}
+func (d diskMachine) ReadFile(path string) ([]byte, error) { return d.h.FS.ReadFile(path) }
+func (d diskMachine) Prune(dir string)                     { _ = d.h.FS.Remove(dir) }
+func (d diskMachine) Has(name string) bool {
+	_, ok := d.h.Run.LookPath(name)
+	return ok
+}
+
+func (d diskMachine) Run(ctx context.Context, name string, args, env []string) (diskcalls.Ran, error) {
+	ran, err := d.h.Run.Attach(ctx, local.Cmd{Name: name, Args: args, Env: env}, local.ToStderr)
+	if errors.Is(err, local.ErrNotFound) {
+		return diskcalls.Ran{}, nil
+	}
+	return diskcalls.Ran{Found: true, Code: ran.ExitCode, LastStderr: ran.LastStderr}, err
+}
+
+func (d diskMachine) Keep(file string, data []byte) error {
+	if err := d.h.FS.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		return err
+	}
+	tmp := file + ".tmp"
+	if err := d.h.FS.WriteFile(tmp, data, 0o644); err != nil {
+		return err
+	}
+	return d.h.FS.Rename(tmp, file)
 }

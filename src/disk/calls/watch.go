@@ -1,4 +1,4 @@
-package storage
+package calls
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/disk"
 )
 
 const (
@@ -24,22 +25,22 @@ type part struct {
 }
 
 type pathPlan struct {
-	report PathReport
+	report disk.PathReport
 	parts  []part
 }
 
 type strayPlan struct {
-	report StrayReport
+	report disk.StrayReport
 	root   int
 }
 
 type entryPlan struct {
-	entry   Entry
-	paths   []pathPlan
-	install []int
-	strays  []strayPlan
-	docker  bool
-	exists  bool
+	entry      disk.Entry
+	paths      []pathPlan
+	install    []int
+	strays     []strayPlan
+	containers bool
+	exists     bool
 }
 
 type plan struct {
@@ -49,17 +50,17 @@ type plan struct {
 }
 
 type reading struct {
-	sizes     []int64
-	known     []int64
-	installed map[string]bool
-	listed    bool
-	docker    int64
+	sizes      []int64
+	known      []int64
+	installed  map[string]bool
+	listed     bool
+	containers int64
 	// value: no walk has answered on this machine yet, so no row has a
 	// last size to show.
 	fresh bool
 }
 
-func (s *Service) Watch(ctx context.Context) <-chan Report {
+func (s *Service) Watch(ctx context.Context) <-chan disk.Survey {
 	return probe.Stream(ctx, s.o.Pool, subject, s.watch)
 }
 
@@ -69,9 +70,9 @@ func (s *Service) Forget() { s.o.Pool.Forget(subject) }
 // with a glob and a stat each; one walk then sizes every root of every row and
 // the other caches together, and a row's size fills when its last root
 // answers, its mark when its own tool answers the inventory.
-func (s *Service) watch(ctx context.Context) <-chan Report {
+func (s *Service) watch(ctx context.Context) <-chan disk.Survey {
 	p := s.plan()
-	frame := reading{sizes: make([]int64, len(p.roots)), known: make([]int64, len(p.roots)), docker: pending}
+	frame := reading{sizes: make([]int64, len(p.roots)), known: make([]int64, len(p.roots)), containers: pending}
 	known := s.loadKnown()
 	frame.fresh = len(known) == 0
 	for i, root := range p.roots {
@@ -86,7 +87,7 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 			Key: subject + "/walk", Lane: probe.Walks, Budget: budget,
 			Partial: func(ctx context.Context, emit func(func(*reading))) func(*reading) {
 				var mu sync.Mutex
-				answered := slices.Repeat([]int64{Unknown}, len(p.roots))
+				answered := slices.Repeat([]int64{unmeasured}, len(p.roots))
 				s.o.Disk.Sizes(ctx, p.roots, func(i int, bytes int64) {
 					mu.Lock()
 					answered[i] = bytes
@@ -101,7 +102,7 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 			Late: func(r *reading) {
 				for i, b := range r.sizes {
 					if b == pending {
-						r.sizes[i] = Unknown
+						r.sizes[i] = unmeasured
 					}
 				}
 			},
@@ -117,21 +118,21 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 			Late: func(r *reading) { r.listed = true },
 		},
 		{
-			Key: subject + "/docker", Lane: probe.Inline,
+			Key: subject + "/containers", Lane: probe.Inline,
 			Do: func(ctx context.Context) func(*reading) {
 				bytes := int64(0)
-				if name := dockerEntry(p); name != "" && s.isInstalled(ctx, name) {
-					bytes = s.dockerBytes(ctx)
+				if name := containersEntry(p); name != "" && s.isInstalled(ctx, name) {
+					bytes = s.containerBytes(ctx)
 				}
-				return func(r *reading) { r.docker = bytes }
+				return func(r *reading) { r.containers = bytes }
 			},
-			Late: func(r *reading) { r.docker = Unknown },
+			Late: func(r *reading) { r.containers = unmeasured },
 		},
 	}
 	readings := probe.Run(ctx, s.o.Pool, frame, jobs, func(r reading) reading {
-		return reading{sizes: slices.Clone(r.sizes), known: r.known, fresh: r.fresh, installed: maps.Clone(r.installed), listed: r.listed, docker: r.docker}
+		return reading{sizes: slices.Clone(r.sizes), known: r.known, fresh: r.fresh, installed: maps.Clone(r.installed), listed: r.listed, containers: r.containers}
 	})
-	out := make(chan Report)
+	out := make(chan disk.Survey)
 	go func() {
 		defer close(out)
 		for r := range readings {
@@ -145,9 +146,9 @@ func (s *Service) watch(ctx context.Context) <-chan Report {
 	return out
 }
 
-func dockerEntry(p plan) string {
+func containersEntry(p plan) string {
 	for _, e := range p.entries {
-		if e.docker {
+		if e.containers {
 			return e.entry.Name
 		}
 	}
@@ -169,12 +170,12 @@ func (s *Service) plan() plan {
 	globbed := s.globAll(placed)
 	glob := func(pattern string) []string { return globbed[s.o.Expand.Expand(pattern)] }
 	for _, e := range placed {
-		ep := entryPlan{entry: e, docker: e.Storage.Size == catalog.SizeDockerDF}
+		ep := entryPlan{entry: e, containers: e.Storage.Size == catalog.SizeContainers}
 		for _, st := range e.Storage.Paths {
 			if !st.PlacedOn(s.o.Here) {
 				continue
 			}
-			pp := pathPlan{report: PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(st.Path)), Level: st.Level}}
+			pp := pathPlan{report: disk.PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(st.Path)), Level: st.Level}}
 			for _, m := range glob(st.Path) {
 				pp.parts = append(pp.parts, part{root: root(m), sign: 1})
 			}
@@ -194,7 +195,7 @@ func (s *Service) plan() plan {
 		ep.exists = ep.exists || len(ep.install) > 0
 		for _, st := range e.Storage.Strays {
 			abs := s.o.Expand.Expand(st.Path)
-			if _, err := s.h.FS.Stat(abs); err != nil {
+			if !s.m.Exists(abs) {
 				continue
 			}
 			ep.strays = append(ep.strays, strayPlan{report: s.stray(e, st, abs, 0), root: root(abs)})
@@ -210,7 +211,7 @@ func (s *Service) plan() plan {
 
 // value: the frame's globs are independent reads of the disk, so they run at
 // once, a few at a time, and the frame costs its slowest, not their sum.
-func (s *Service) globAll(placed []Entry) map[string][]string {
+func (s *Service) globAll(placed []disk.Entry) map[string][]string {
 	var patterns []string
 	for _, e := range placed {
 		for _, st := range e.Storage.Paths {
@@ -233,7 +234,7 @@ func (s *Service) globAll(placed []Entry) map[string][]string {
 	for range globWorkers {
 		wg.Go(func() {
 			for pattern := range work {
-				matches, _ := s.h.FS.Glob(pattern)
+				matches := s.m.Glob(pattern)
 				mu.Lock()
 				out[pattern] = matches
 				mu.Unlock()
@@ -248,8 +249,8 @@ func (s *Service) globAll(placed []Entry) map[string][]string {
 	return out
 }
 
-func (s *Service) assemble(p plan, r reading) Report {
-	report := Report{Rows: []Row{}, Strays: []StrayReport{}}
+func (s *Service) assemble(p plan, r reading) disk.Survey {
+	report := disk.Survey{Rows: []disk.Tally{}, Strays: []disk.StrayReport{}}
 	for _, ep := range p.entries {
 		row, show := s.row(ep, r)
 		if !show {
@@ -266,26 +267,26 @@ func (s *Service) assemble(p plan, r reading) Report {
 	return report
 }
 
-func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
+func (s *Service) row(ep entryPlan, r reading) (disk.Tally, bool) {
 	e := ep.entry
-	installed := r.installed[e.Name] || e.Name == StationName
+	installed := r.installed[e.Name] || e.Name == disk.StationName
 	_, answered := r.installed[e.Name]
-	marked := r.listed || answered || e.Name == StationName
-	waiting, dockerWaits := false, false
+	marked := r.listed || answered || e.Name == disk.StationName
+	waiting, containersWait := false, false
 	var within time.Duration
 	value := func(i int) int64 {
 		switch b := r.sizes[i]; b {
 		case pending:
 			waiting = true
 			return max(r.known[i], 0)
-		case Unknown:
+		case unmeasured:
 			within = max(within, s.walkBudget())
 			return 0
 		default:
 			return b
 		}
 	}
-	row := Row{Entry: e, Installed: installed, Bytes: map[catalog.Level]int64{}, Paths: []PathReport{}, Strays: []StrayReport{}}
+	row := disk.Tally{Entry: e, Installed: installed, Bytes: map[catalog.Level]int64{}, Paths: []disk.PathReport{}, Strays: []disk.StrayReport{}}
 	for _, pp := range ep.paths {
 		report := pp.report
 		for _, pt := range pp.parts {
@@ -302,14 +303,14 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 		report.Bytes = value(st.root)
 		row.Strays = append(row.Strays, report)
 	}
-	if ep.docker && installed {
-		switch r.docker {
+	if ep.containers && installed {
+		switch r.containers {
 		case pending:
-			waiting, dockerWaits = true, true
-		case Unknown:
-			within = max(within, dockerDFBudget)
+			waiting, containersWait = true, true
+		case unmeasured:
+			within = max(within, containersBudget)
 		default:
-			row.Bytes[catalog.LevelCache] += r.docker
+			row.Bytes[catalog.LevelCache] += r.containers
 		}
 	}
 	switch {
@@ -330,10 +331,10 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 		return unknown, true
 	}
 	if waiting {
-		row.Pending, row.Unmeasured = true, dockerWaits || r.fresh
-		return row, e.Name == StationName || ep.exists || (ep.docker && installed)
+		row.Pending, row.Unmeasured = true, containersWait || r.fresh
+		return row, e.Name == disk.StationName || ep.exists || (ep.containers && installed)
 	}
-	return row, e.Name == StationName || row.Total() != 0
+	return row, e.Name == disk.StationName || row.Total() != 0
 }
 
 func (s *Service) walkBudget() time.Duration {
@@ -343,17 +344,17 @@ func (s *Service) walkBudget() time.Duration {
 	return sizeBudget
 }
 
-func (s *Service) unknown(e Entry, installed bool, within time.Duration) Row {
-	row := Row{Entry: e, Installed: installed, Unknown: true, Within: within, Bytes: map[catalog.Level]int64{}, Install: Unknown, Paths: []PathReport{}, Strays: []StrayReport{}, State: catalog.StateAbsent}
+func (s *Service) unknown(e disk.Entry, installed bool, within time.Duration) disk.Tally {
+	row := disk.Tally{Entry: e, Installed: installed, Unknown: true, Within: within, Bytes: map[catalog.Level]int64{}, Install: unmeasured, Paths: []disk.PathReport{}, Strays: []disk.StrayReport{}, State: catalog.StateAbsent}
 	if installed {
 		row.State = catalog.StateOK
 	}
 	for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData, catalog.LevelConfig, catalog.LevelKept} {
-		row.Bytes[level] = Unknown
+		row.Bytes[level] = unmeasured
 	}
 	for _, p := range e.Storage.Paths {
 		if p.PlacedOn(s.o.Here) {
-			row.Paths = append(row.Paths, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: Unknown})
+			row.Paths = append(row.Paths, disk.PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: unmeasured})
 		}
 	}
 	return row

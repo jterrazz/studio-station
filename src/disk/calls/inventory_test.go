@@ -1,14 +1,13 @@
-package storage
+package calls
 
 import (
 	"context"
 	"testing"
-	"testing/fstest"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/platform/local"
-	"github.com/jterrazz/studio-station/src/platform/local/localtest"
+	"github.com/jterrazz/studio-station/src/disk"
+	"github.com/jterrazz/studio-station/src/disk/adapter/fake"
 )
 
 type slowInventory struct {
@@ -25,22 +24,20 @@ func (i slowInventory) Installed(ctx context.Context, each func(map[string]bool)
 }
 
 func TestASizedRowShowsItsSizeBeforeASlowInventoryAnswers(t *testing.T) {
-	fs := localtest.NewFS()
-	fs.Files["h/quick/tree/f"] = &fstest.MapFile{Data: []byte("abc")}
-	fs.Files["h/late/tree/f"] = &fstest.MapFile{Data: []byte("abcde")}
+	usage := fake.NewUsage(map[string]int64{"/h/quick/tree/f": 3, "/h/late/tree/f": 5}, 1<<40, 1<<39)
 	tools := []catalog.Tool{
-		{Name: "quick", Installs: catalog.HostOnly(catalog.Brew("quick")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/quick/*", Level: catalog.LevelCache}}}},
-		{Name: "late", Installs: catalog.HostOnly(catalog.Brew("late")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/late/*", Level: catalog.LevelCache}}}},
+		{Name: "quick", Installs: catalog.HostOnly(catalog.Cask("quick")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/quick/*", Level: catalog.LevelCache}}}},
+		{Name: "late", Installs: catalog.HostOnly(catalog.Cask("late")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/late/*", Level: catalog.LevelCache}}}},
 	}
 	inventory := slowInventory{release: make(chan struct{})}
-	s := New(local.Host{FS: fs, Clock: realClock{}}, tools, Options{Disk: localtest.Disk{FS: fs}, Here: catalog.Host, Expand: Expander{Home: "/h"}, Inventory: inventory})
+	s := NewService(onMachine{Usage: usage}, tools, ServiceOptions{Disk: usage, Here: catalog.Host, Expand: disk.Expander{Home: "/h"}, Inventory: inventory})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	reports := s.Watch(ctx)
-	var rows map[string]Row
+	var rows map[string]disk.Tally
 	for r := range reports {
-		rows = map[string]Row{}
+		rows = map[string]disk.Tally{}
 		for _, row := range r.Rows {
 			rows[row.Entry.Name] = row
 		}
@@ -59,7 +56,7 @@ func TestASizedRowShowsItsSizeBeforeASlowInventoryAnswers(t *testing.T) {
 	}
 
 	close(inventory.release)
-	var last Report
+	var last disk.Survey
 	for r := range reports {
 		last = r
 	}

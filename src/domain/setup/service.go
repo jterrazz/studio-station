@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/disk"
+
 	"github.com/jterrazz/studio-station/src/setup"
 
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
@@ -18,7 +20,6 @@ import (
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/settings"
 )
@@ -53,7 +54,7 @@ type Options struct {
 	Executable                  string
 	Detached                    bool
 	Tools                       []catalog.Tool
-	Expand                      storage.Expander
+	Expand                      disk.Expander
 	Files                       map[catalog.ToolFile]string
 	Configurer                  Configurer
 	Installer                   Installer

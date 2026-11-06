@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/disk"
+
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
@@ -164,7 +165,7 @@ func (s *Service) writeToolFiles() (written, notes []string, err error) {
 }
 
 func UpsertEnvLine(text, key, value string) (updated string, changed bool, handSet string) {
-	if current, ok := storage.LineValue(text, key); ok {
+	if current, ok := disk.LineValue(text, key); ok {
 		if current == value {
 			return text, false, ""
 		}
