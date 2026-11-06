@@ -46,8 +46,6 @@ func engineJobs() []string {
 func uncovered() []string {
 	return []string{
 		"activity.sample",
-		"run.containers", "run.git",
-		"shell.zsh",
 	}
 }
 

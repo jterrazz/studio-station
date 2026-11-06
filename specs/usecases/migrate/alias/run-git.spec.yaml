@@ -1,5 +1,5 @@
 description: 'run git <shortcut> runs git''s own alias with the same words, named on stderr'
-fixture: ./__fixtures__/git/
+fixture: ../../__fixtures__/git/
 env: two-macs
 runs:
     - command: 'settings apply git-shortcuts'

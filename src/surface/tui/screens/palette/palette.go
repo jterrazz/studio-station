@@ -276,10 +276,10 @@ func entries() map[string]entry {
 		"ports.undeclare": {kinds: mac(), key: keyed("u"), item: func(t, _ Target) Item {
 			return asked("Undeclare a public port"+ellipsis, field("Port"), one(gesture.V("Undeclare", "Undeclaring", "Undeclared"), func(a string) []string { return []string{"ports", "undeclare", t.Name, a} }))
 		}},
-		"run.containers": {item: func(t, _ Target) Item {
+		"settings.run-containers": {item: func(t, _ Target) Item {
 			return run("Remove the stopped containers", words(t, "run", catalog.ContainerShortcutsWas, "rm"), gesture.V("Remove", "Removing", "Removed"), "the stopped containers")
 		}},
-		"run.git": {item: func(_, _ Target) Item {
+		"settings.run-git": {item: func(_, _ Target) Item {
 			return asked("Run a Git shortcut in a new terminal"+ellipsis, []Field{{Label: "Shortcut", Note: "log, push, status"}}, func(a []string) gesture.Gesture {
 				return gesture.Gesture{Terminal: "station run git " + strings.TrimSpace(a[0])}
 			})
@@ -301,7 +301,7 @@ func entries() map[string]entry {
 		"setup.run": {kinds: []machine.Kind{machine.Mac, machine.Workspace, machine.Server}, item: func(t, _ Target) Item {
 			return terminal("Run setup in a new terminal", words(t, "setup")...)
 		}},
-		"shell.zsh": {kinds: []machine.Kind{machine.Mac, machine.Workspace, machine.Server}, item: func(_, _ Target) Item {
+		"settings.zsh-block": {kinds: []machine.Kind{machine.Mac, machine.Workspace, machine.Server}, item: func(_, _ Target) Item {
 			return terminal("Print the shell block in a new terminal", "shell", "zsh")
 		}},
 	}
