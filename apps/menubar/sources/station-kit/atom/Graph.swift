@@ -20,13 +20,11 @@ public struct Graph: View {
 
     // value: the graph's scale: 0 to 100, its top brought down to a low
     // series' (never under 20), so a measure that stays low (a swap of
-    // 7 %) is still drawn as an area; for a sparkline, the band its points
-    // move in, so a steady series still shows its swing.
+    // 7 %) is still drawn as an area; for a sparkline, the whole 0 to 100,
+    // so a meter's line sits at its share (a disk of 12 % reads low).
     var domain: ClosedRange<Int> {
-        guard let lo = points.min(), let hi = points.max() else { return 0...100 }
-        guard fit else { return 0...min(max(hi * 2, 20), 100) }
-        let pad = max(hi - lo, 10)
-        return max(lo - pad, 0)...min(hi + pad / 2, 100)
+        guard !fit, let hi = points.max() else { return 0...100 }
+        return 0...min(max(hi * 2, 20), 100)
     }
 
     public var body: some View {
