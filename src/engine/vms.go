@@ -255,7 +255,7 @@ func (d *Daemon) vmViews() []VMView {
 	defer d.mu.Unlock()
 	out := make([]VMView, 0, len(d.vms))
 	for name, v := range d.vms {
-		out = append(out, VMView{Name: name, State: v.state, RunPID: v.runPID(), Guest: v.guest, IP: v.ip, Detail: v.detail, SSH: v.ssh, Restarts: v.restarts, Check: v.check})
+		out = append(out, VMView{Name: name, State: v.state, RunPID: v.runPID(), Holder: v.holder(), Guest: v.guest, IP: v.ip, Detail: v.detail, SSH: v.ssh, Restarts: v.restarts, Check: v.check})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out

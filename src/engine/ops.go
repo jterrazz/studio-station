@@ -28,6 +28,8 @@ type VMView struct {
 	Name   string `json:"name"`
 	State  string `json:"state"`
 	RunPID int    `json:"run_pid"`
+	// value: the process that holds its guest on this Mac, 0 while none does.
+	Holder int    `json:"holder,omitempty"`
 	Guest  string `json:"guest"`
 	IP     string `json:"ip"`
 	Detail string `json:"detail"`

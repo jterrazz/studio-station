@@ -119,7 +119,12 @@ func vm(ctx context.Context, d Deps, env kit.Env, holder machine.Ref, name strin
 	}
 	kept := r
 	in.Of, in.History, in.Graph = "", false, 0
-	r, err = call.Read(ctx, env.Calls, in.Machine, activitycalls.Read, in, nil)
+	r, err = inside(ctx, env, in)
+	if err != nil {
+		if mac, macErr := call.Read(ctx, env.Calls, holder, activitycalls.Read, activitycalls.ReadIn{Of: name, Machine: in.Machine, Kind: kind, Run: true}, nil); macErr == nil && mac.Last.Run != nil {
+			r, err = mac, nil
+		}
+	}
 	if kept.History != nil {
 		r.Since, r.History = kept.Since, kept.History
 	}
@@ -129,6 +134,15 @@ func vm(ctx context.Context, d Deps, env kit.Env, holder machine.Ref, name strin
 	r.Findings = activity.Lasting(r.Findings, kept.Findings)
 	v.Report = r
 	return v, err
+}
+
+// invariant: a read inside a VM whose guest stopped answering, before its
+// Mac's engine noticed, is given up after activity.Inside, never waited on
+// until the connection times out.
+func inside(ctx context.Context, env kit.Env, in activitycalls.ReadIn) (activity.Report, error) {
+	ctx, cancel := context.WithTimeout(ctx, activity.Inside)
+	defer cancel()
+	return call.Read(ctx, env.Calls, in.Machine, activitycalls.Read, in, nil)
 }
 
 func every(ctx context.Context, d Deps, env kit.Env) ([]pageactivity.View, error) {

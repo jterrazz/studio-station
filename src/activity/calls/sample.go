@@ -27,6 +27,9 @@ type Deps struct {
 	// value: the clock a kept history's freshness is judged by; set with
 	// Kept.
 	Now func() time.Time
+	// value: the process that holds a VM's guest on this Mac, by the VM's
+	// name, from its engine: 0 when none does; nil on a VM.
+	Holder func(ctx context.Context, vm string) (pid int, err error)
 	// value: the owners of the facts a sample composes in: free space is
 	// the Disk family's, thermal and battery Awake's Power; nil leaves the
 	// fact out (a VM's thermal and battery are its Mac's).
