@@ -196,7 +196,11 @@ func (r *Router) endpoint(ctx context.Context, t machine.Ref, name string) (*lin
 	}
 	if !slices.Contains(hello.Calls, name) {
 		r.release(l)
-		return nil, fail.New(fail.FarTooOld, call.FarTooOld, t.Mac(), map[string]string{"version": hello.Version, "call": name})
+		detail := map[string]string{"version": hello.Version, "call": name}
+		if r.reach.Label != nil {
+			detail["label"] = r.reach.Label(t.Mac())
+		}
+		return nil, fail.New(fail.FarTooOld, call.FarTooOld, t.Mac(), detail)
 	}
 	return l, nil
 }

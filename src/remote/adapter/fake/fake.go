@@ -18,6 +18,9 @@ type Mac struct {
 	Registry *call.Registry
 	Profile  machine.Profile
 	Version  string
+	// value: the calls of the registry that Mac's older binary does not
+	// serve: its Hello leaves them out.
+	Lacks []string
 	// value: how that Mac's binary words its errors; nil words only what
 	// is already worded.
 	Word call.Wording
@@ -97,7 +100,9 @@ func (e endpoint) Hello(context.Context) (contract.Hello, error) {
 	}
 	h := contract.Hello{Version: e.m.Version, Calls: []string{}}
 	for _, meta := range e.m.Registry.Metas() {
-		h.Calls = append(h.Calls, meta.Name)
+		if !slices.Contains(e.m.Lacks, meta.Name) {
+			h.Calls = append(h.Calls, meta.Name)
+		}
 	}
 	return h, nil
 }

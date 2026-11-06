@@ -245,7 +245,8 @@ func Codes() map[fail.Code]Wording {
 			return "station is not installed on " + cmp.Or(e.Detail["label"], e.Subject), "install it there (scripts/install.sh), then add it again"
 		},
 		call.FarTooOld: func(e *fail.Error) (string, string) {
-			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"
+			mac := cmp.Or(e.Detail["label"], e.Subject)
+			return mac + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + mac + " (scripts/install.sh there)"
 		},
 	}
 	for code, word := range usage() {

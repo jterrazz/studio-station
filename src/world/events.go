@@ -266,6 +266,9 @@ func upgrade(w *World, args []string) error {
 		m.Engine = &Engine{}
 	}
 	m.Engine.Version = args[1]
+	if m.Station != "" {
+		m.Station, m.Lacks = args[1], nil
+	}
 	return nil
 }
 
