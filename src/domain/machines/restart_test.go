@@ -25,7 +25,7 @@ func (noTailnet) Peers(context.Context) (map[string]machines.Node, error) {
 	return nil, nil
 }
 
-func service(t *testing.T, run system.Runner) (*machines.Service, *systemtest.Clock) {
+func service(t *testing.T, run system.Runner, answers func(context.Context, string) bool) (*machines.Service, *systemtest.Clock) {
 	t.Helper()
 	files := systemtest.NewFS()
 	clock := &systemtest.Clock{At: time.Unix(0, 0)}
@@ -39,7 +39,7 @@ func service(t *testing.T, run system.Runner) (*machines.Service, *systemtest.Cl
 	if err := p.Hosts.Set(map[string]model.Host{"mac": {}, "x": {User: "u"}}); err != nil {
 		t.Fatal(err)
 	}
-	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, KnownHosts: paths.State + "/known_hosts", Logs: paths.State + "/logs", Unlocker: restarted{}}), clock
+	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, KnownHosts: paths.State + "/known_hosts", Logs: paths.State + "/logs", Unlocker: restarted{}, Answers: answers}), clock
 }
 
 type restarted struct{}
@@ -47,29 +47,24 @@ type restarted struct{}
 func (restarted) Unlock(context.Context, string, string) error { return nil }
 func (restarted) PlannedRestart(context.Context, string) error { return nil }
 
-type answering struct {
-	*systemtest.Runner
-	polls []int
-}
+// value: the Mac's station answering each poll in turn, the last answer kept.
+type answering struct{ polls []bool }
 
-func (a *answering) Output(ctx context.Context, c system.Cmd) (system.Output, error) {
-	if c.Name == "ssh" && c.Args[len(c.Args)-1] == "true" {
-		code := a.polls[0]
-		if len(a.polls) > 1 {
-			a.polls = a.polls[1:]
-		}
-		return system.Output{ExitCode: code}, nil
+func (a *answering) answers(context.Context, string) bool {
+	up := a.polls[0]
+	if len(a.polls) > 1 {
+		a.polls = a.polls[1:]
 	}
-	return a.Runner.Output(ctx, c)
+	return up
 }
 
-func restarting(t *testing.T, polls ...int) (*machines.Service, *systemtest.Clock) {
+func restarting(t *testing.T, polls ...bool) (*machines.Service, *systemtest.Clock) {
 	t.Helper()
-	return service(t, &answering{Runner: systemtest.NewRunner(t), polls: polls})
+	return service(t, systemtest.NewRunner(t), (&answering{polls: polls}).answers)
 }
 
 func TestRestartWaitsForTheHostToGoAwayAndComeBack(t *testing.T) {
-	svc, _ := restarting(t, 0, 0, 255, 255, 0)
+	svc, _ := restarting(t, true, true, false, false, true)
 	var seen []string
 
 	report, err := svc.Restart(context.Background(), "x", func(e machines.RestartEvent) { seen = append(seen, e.Phase) })
@@ -86,7 +81,7 @@ func TestRestartWaitsForTheHostToGoAwayAndComeBack(t *testing.T) {
 }
 
 func TestRestartDoesNotTakeAHostThatNeverWentDownForRestarted(t *testing.T) {
-	svc, clock := restarting(t, 0)
+	svc, clock := restarting(t, true)
 
 	_, err := svc.Restart(context.Background(), "x", nil)
 
@@ -100,7 +95,7 @@ func TestRestartDoesNotTakeAHostThatNeverWentDownForRestarted(t *testing.T) {
 }
 
 func TestRestartGivesUpOnAHostThatNeverComesBack(t *testing.T) {
-	svc, clock := restarting(t, 255)
+	svc, clock := restarting(t, false)
 
 	_, err := svc.Restart(context.Background(), "x", nil)
 

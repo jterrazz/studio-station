@@ -95,10 +95,7 @@ func (s *Service) AwaitAnswer(ctx context.Context, mac string) bool {
 func (s *Service) Answers(ctx context.Context, mac string) bool { return s.answers(ctx, mac) }
 
 func (s *Service) answers(ctx context.Context, mac string) bool {
-	if s.o.Answers != nil {
-		return s.o.Answers(ctx, mac)
-	}
-	return s.sshTrue(ctx, mac)
+	return s.o.Answers != nil && s.o.Answers(ctx, mac)
 }
 
 func firstLine(text string) string {

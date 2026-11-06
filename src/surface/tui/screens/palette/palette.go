@@ -234,9 +234,6 @@ func entries() map[string]entry {
 			return run("Forget "+m.Label, []string{"machines", "forget", m.Name}, gesture.V("Forget", "Forgetting", "Forgot"), m.Label)
 		}},
 		"machines.list": {kinds: []machine.Kind{"", machine.Mac, machine.Workspace, machine.Server}, item: func(_, _ Target) Item { return open(Target{}, section.Overview, "Open All machines") }},
-		"machines.probe": {kinds: mac(), subject: otherMac, key: keyed("r"), item: func(_, m Target) Item {
-			return open(m, section.Overview, "Read "+m.Label+" again")
-		}},
 		"machines.restart": {subject: vm, key: keyed("r"), item: func(_, v Target) Item {
 			return run("Restart "+named(v)+onMac(v), vmWords(v, "machines", "restart", v.Name), gesture.V("Restart", "Restarting", "Restarted"), v.Name)
 		}},

@@ -64,7 +64,6 @@ type Machines interface {
 	StartOn(ctx context.Context, mac, vm string) error
 	// value: refuses a name that is no known machine.
 	CheckRemote(name string) error
-	Probe(ctx context.Context, name string) (machines.ProbeReport, error)
 	SSH(ctx context.Context, name string) (machines.SSHTarget, error)
 	CheckEdit(name string, c machines.Change) error
 	Edit(ctx context.Context, name string, c machines.Change) (machines.Edited, error)
@@ -73,6 +72,6 @@ type Machines interface {
 func All(d Deps) []call.Handler {
 	return []call.Handler{
 		call.BindWatch(List, d), call.Bind(CreateWorkspace, d), call.Bind(CreateServer, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
-		call.Bind(Restart, d), call.Bind(RestartMac, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d), call.Bind(SSH, d), call.Bind(Edit, d),
+		call.Bind(Restart, d), call.Bind(RestartMac, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(SSH, d), call.Bind(Edit, d),
 	}
 }

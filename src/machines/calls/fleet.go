@@ -96,15 +96,3 @@ func create(ctx context.Context, d Deps, r machines.CreateRequest, p call.Progre
 	}
 	return created, err
 }
-
-type ProbeIn struct{ Name string }
-
-var Probe = call.Call[Deps, ProbeIn, machines.ProbeReport]{
-	Name: "machines.probe", Where: call.InProcess, Applies: machine.Anywhere,
-	Run: func(ctx context.Context, d Deps, in ProbeIn, _ call.Progress) (machines.ProbeReport, error) {
-		if err := d.Machines.CheckRemote(in.Name); err != nil {
-			return machines.ProbeReport{}, err
-		}
-		return d.Machines.Probe(ctx, in.Name)
-	},
-}

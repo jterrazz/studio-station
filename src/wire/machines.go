@@ -39,18 +39,12 @@ import (
 )
 
 const (
-	lanBudget           = 2 * time.Second
-	defaultOpenClawPort = 18789
-	defaultHermesPort   = 8642
+	lanBudget = 2 * time.Second
 )
 
 func (m machine) machines(_ bool) *machines.Service {
 	knownHosts := filepath.Join(m.paths.State, "known_hosts")
 	return machines.New(m.host, m.hypervisor(), machines.Prefs{Name: m.stores.name(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser()}, m.stores.machines, hostNodes{tailnet: m.tailnet()}, fleetImages{service: m.images()}, m.hostDaemon(), leaseReleaser{m: m}, machines.Options{
-		Ports: machines.Ports{
-			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
-			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),
-		},
 		Here:       m.kind,
 		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.host.Env.User(),

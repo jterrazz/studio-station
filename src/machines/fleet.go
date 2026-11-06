@@ -94,18 +94,6 @@ type Fleet struct {
 	Read time.Time
 }
 
-type Check struct {
-	Name          string
-	State         catalog.State
-	Value, Detail string
-}
-
-type ProbeReport struct {
-	Name, User, IP string
-	Checks         []Check
-	Console        string
-}
-
 type CreateRequest struct {
 	Image, Name string
 	// value: a workspace's, throwaway or permanent; a server's is always on.

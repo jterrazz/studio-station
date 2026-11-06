@@ -14,11 +14,8 @@ import (
 	"github.com/jterrazz/studio-station/src/system"
 )
 
-type Ports struct{ OpenClaw, Hermes int }
-
 type Options struct {
-	Ports Ports
-	Here  catalog.MachineKind
+	Here catalog.MachineKind
 	// value: the folders of the VMs' known hosts and of their logs.
 	KnownHosts, Logs string
 	User             string
@@ -158,8 +155,6 @@ type (
 	HostView    = model.HostView
 	Fleet       = model.Fleet
 	ListSize    = model.ListSize
-	Check       = model.Check
-	ProbeReport = model.ProbeReport
 	SSHTarget   = model.SSHTarget
 	Restarts    = model.Restarts
 	CheckStatus = model.CheckStatus
