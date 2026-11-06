@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"testing"
 )
 
 func cgoFiles() []string {
@@ -46,13 +47,17 @@ func unsafePower() []string {
 	return []string{"disablesleep", "kIOPMAssertPreventUserIdleDisplaySleep", "kIOPMAssertionTypeNoDisplaySleep", "PreventUserIdleDisplaySleep", "NoDisplaySleep"}
 }
 
+func powerPaths() []string {
+	return []string{"src/awake/", "src/domain/power/", "src/pages/keepawake/", "src/surface/cli/awake/", "src/pages/awake/", "src/platform/local/power_", "src/platform/darwin/power_", "src/wire/awake.go", "src/wire/keepawake.go", "src/engine/awake.go"}
+}
+
 func powerCode(rel string) bool {
-	for _, dir := range []string{"src/awake/", "src/domain/power/", "src/pages/keepawake/", "src/surface/cli/awake/", "src/pages/awake/", "src/platform/local/power_", "src/platform/darwin/power_"} {
-		if strings.HasPrefix(rel, dir) {
+	for _, path := range powerPaths() {
+		if rel == path || !strings.HasSuffix(path, ".go") && strings.HasPrefix(rel, path) {
 			return true
 		}
 	}
-	return rel == "src/wire/power.go" || rel == "src/wire/awake.go" || rel == "src/engine/power.go"
+	return false
 }
 
 func powerPackages() []string {
@@ -122,4 +127,17 @@ func powerRaw(w *world) []finding {
 		}
 	}
 	return out
+}
+
+func TestPowerCodeNamesOnlyPathsThatExist(t *testing.T) {
+	root := repoRoot(t)
+	for _, path := range powerPaths() {
+		found, _ := filepath.Glob(filepath.Join(root, path) + "*")
+		if strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "/") {
+			found, _ = filepath.Glob(filepath.Join(root, path))
+		}
+		if len(found) == 0 {
+			t.Errorf("the no-sudo check names %s, which does not exist: the power code moved and the check lost it", path)
+		}
+	}
 }
