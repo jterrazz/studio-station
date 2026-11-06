@@ -749,11 +749,15 @@ struct PanelScroll: ViewModifier {
     let key: String
     // value: the sheet open, if any: opening one scrolls it into sight.
     let sheet: String?
-    // value: the height kept under the scroll for the status line.
+    // value: the height kept under the scroll for the status line; the
+    // rows it takes the room of are scrolled up into sight, so the line
+    // never hides the control it is about.
     var reserve: CGFloat = 0
     static let sheetID = "station.sheet"
     @Environment(\.stationStill) private var still
     @State private var height: CGFloat = 0
+    @State private var offset: CGFloat = 0
+    @State private var position = ScrollPosition()
 
     // value: the room the panel may take: the screen's visible height
     // under the menu bar, less the gap macOS leaves above the Dock.
@@ -770,6 +774,12 @@ struct PanelScroll: ViewModifier {
                 .onChange(of: sheet) { _, open in
                     guard open != nil else { return }
                     DispatchQueue.main.async { withAnimation { proxy.scrollTo(Self.sheetID, anchor: .bottom) } }
+                }
+                .scrollPosition($position)
+                .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, y in offset = y }
+                .onChange(of: reserve) { was, now in
+                    guard now > was, height > Self.room - now else { return }
+                    position.scrollTo(y: offset + now - was)
                 }
             }
             .id(key)
