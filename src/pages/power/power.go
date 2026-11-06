@@ -82,7 +82,7 @@ func sessionRows(r power.Report) []page.Row {
 	}}}
 	if s.Lid {
 		rows = append(rows,
-			page.Row{ID: "display", Label: "display", Mark: page.OK, Cells: []page.Value{page.Text("sleeps"), page.Text("on lid close: pmset displaysleepnow (no display assertion)")}},
+			page.Row{ID: "display", Label: "display", Mark: page.OK, Cells: []page.Value{page.Text("sleeps"), page.Text(catalog.LidDisplay)}},
 			page.Row{ID: "clamshell", Label: "clamshell", Mark: page.OK, Cells: []page.Value{page.Text("held"), page.Text("back to normal at the end, at every engine start and quit")}},
 		)
 	} else {
