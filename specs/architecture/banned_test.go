@@ -33,13 +33,13 @@ type banned struct {
 // concept it used to name, with the phrases it keeps.
 func bannedWords() []banned {
 	return []banned{
-		{word: "host", allowed: []string{"host:port"}},
+		{word: "host", allowed: []string{"host:port", "host key", "known host"}},
 		{word: "fleet", forms: []string{"fleets"}},
 		{word: "here", only: `^here$|\bhere v\d`},
 		{word: "daemon", forms: []string{"daemons"}},
 		{word: "tool"},
 		{word: "tools"},
-		{word: "config", allowed: []string{".config/", "git config"}},
+		{word: "config", allowed: []string{".config/", "git config", "ssh config", "ssh_config"}},
 		{word: "storage"},
 		{word: "service", forms: []string{"services"}},
 		{word: "lease", forms: []string{"leases", "leased"}},
@@ -52,7 +52,7 @@ func bannedWords() []banned {
 		{word: "lasting"},
 		{word: "stray", forms: []string{"strays"}},
 		{word: "clean", allowed: []string{"dclean"}},
-		{word: "reset", allowed: []string{"dock-reset", "dock reset", "dreset"}},
+		{word: "reset", allowed: []string{"dock-reset", "dock reset", "dreset", "counter reset"}},
 		{word: "power", allowed: []string{"power cut", "power-cut", "power source", "low power mode"}},
 		{word: "place", forms: []string{"places"}},
 		{word: "Resources", exact: true},

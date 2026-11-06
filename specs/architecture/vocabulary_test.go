@@ -3,6 +3,8 @@ package architecture_test
 import (
 	"fmt"
 	"go/ast"
+	"go/parser"
+	"go/token"
 	"io/fs"
 	"maps"
 	"os"
@@ -40,7 +42,8 @@ func saysBanned(list []banned, texts []string) []string {
 type corpusText struct{ dir, at, text string }
 
 // invariant: a hidden alias says its old word on purpose (SPEC §4.3): the
-// name kit.Alias registers and a function named for the alias it builds.
+// name kit.Alias registers, and a function named for the alias it builds,
+// its texts with it.
 func aliasCall(call *ast.CallExpr) bool {
 	sel, ok := call.Fun.(*ast.SelectorExpr)
 	return ok && (sel.Sel.Name == "Alias" || sel.Sel.Name == "AliasArgs")
@@ -48,6 +51,126 @@ func aliasCall(call *ast.CallExpr) bool {
 
 func aliasName(name string) bool {
 	return strings.HasSuffix(name, "Alias") || strings.HasSuffix(name, "Aliases")
+}
+
+// invariant: another program's own text is not station's vocabulary: a
+// file's location (`~/.ssh/config`, `{config}/gh/hosts.yml`), a URL, a
+// launchd label or a bundle id, a file's name, an environment variable's
+// name, ssh_config's own lines (`Host *`), the JSON keys of another program
+// (Tailscale's `HostName`), a code span quoted in a text, and a command line
+// station runs: the literal Args, Run and Command of a step, the literal
+// arguments of a run…, Script…, Shell… or Command call.
+var foreignShape = regexp.MustCompile(`^(?:[~/{][^\n]*|\.[A-Za-z]\S*|[^\s/]+/\S*|\S*://\S*|[a-z]+(?:\.[a-z0-9-]+){2,}\.?|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+|\s*Host (?:\*(?:\n[^\n]*)*)?|[\w-]+\.(?:toml|json|yml|yaml|env|plist|conf)|json:\x22[A-Z]\w*\x22)$`)
+
+func commandLine(fun ast.Expr) bool {
+	var name string
+	switch x := fun.(type) {
+	case *ast.Ident:
+		name = x.Name
+	case *ast.SelectorExpr:
+		name = x.Sel.Name
+	}
+	return slices.ContainsFunc([]string{"run", "Script", "Shell", "Command"}, func(p string) bool { return strings.HasPrefix(name, p) })
+}
+
+func foreignLiterals(file *ast.File, skip map[ast.Node]bool) {
+	argv := func(e ast.Expr) {
+		switch e.(type) {
+		case *ast.BasicLit, *ast.CompositeLit:
+			ast.Inspect(e, func(n ast.Node) bool {
+				if lit, ok := n.(*ast.BasicLit); ok {
+					skip[lit] = true
+				}
+				return true
+			})
+		}
+	}
+	ast.Inspect(file, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.KeyValueExpr:
+			if k, ok := x.Key.(*ast.Ident); ok && slices.Contains([]string{"Args", "Run", "Command"}, k.Name) {
+				argv(x.Value)
+			}
+		case *ast.CallExpr:
+			if commandLine(x.Fun) {
+				for _, a := range x.Args {
+					if lit, ok := a.(*ast.BasicLit); ok {
+						skip[lit] = true
+					}
+				}
+			}
+		}
+		return true
+	})
+}
+
+// invariant: a legacy encoding says its old words on purpose, like a hidden
+// alias: a schema SPEC keeps byte for byte, a v2 key read once and written
+// in v3's word. The declaration says so in a comment of its own starting
+// "value: alias of", and legacyEncodings lists it.
+func legacyDecl(file *ast.File, d ast.Decl) string {
+	start := d.Pos()
+	switch x := d.(type) {
+	case *ast.FuncDecl:
+		if x.Doc != nil {
+			start = x.Doc.Pos()
+		}
+	case *ast.GenDecl:
+		if x.Doc != nil {
+			start = x.Doc.Pos()
+		}
+	}
+	for _, c := range file.Comments {
+		if c.Pos() < start || c.Pos() > d.End() {
+			continue
+		}
+		for _, line := range strings.Split(c.Text(), "\n") {
+			if strings.HasPrefix(line, "value: alias of ") {
+				return line
+			}
+		}
+	}
+	return ""
+}
+
+func legacyDecls(w *world) []string {
+	var out []string
+	for _, f := range w.files {
+		if f.test {
+			continue
+		}
+		for _, d := range f.syntax.Decls {
+			if legacyDecl(f.syntax, d) != "" {
+				out = append(out, filepath.Dir(f.rel)+" "+declName(d))
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func declName(d ast.Decl) string {
+	switch x := d.(type) {
+	case *ast.FuncDecl:
+		return x.Name.Name
+	case *ast.GenDecl:
+		for _, spec := range x.Specs {
+			switch s := spec.(type) {
+			case *ast.TypeSpec:
+				return s.Name.Name
+			case *ast.ValueSpec:
+				return s.Names[0].Name
+			}
+		}
+	}
+	return ""
+}
+
+func TestVocabularyLegacyEncodings(t *testing.T) {
+	clean, _ := worlds(t)
+	if got, want := legacyDecls(clean), legacyEncodings(); !slices.Equal(got, want) {
+		t.Errorf("the declarations marked alias: are %v, legacyEncodings lists %v", got, want)
+	}
 }
 
 func splitText(s string) string { return strings.Join(splitWords(s), " ") }
@@ -65,20 +188,36 @@ func sourceTexts(w *world) []corpusText {
 		for _, spec := range f.syntax.Imports {
 			skip[spec.Path] = true
 		}
+		foreignLiterals(f.syntax, skip)
+		for _, d := range f.syntax.Decls {
+			if fn, ok := d.(*ast.FuncDecl); legacyDecl(f.syntax, d) != "" || ok && aliasName(fn.Name.Name) {
+				ast.Inspect(d, func(n ast.Node) bool {
+					switch x := n.(type) {
+					case *ast.BasicLit:
+						skip[x] = true
+					case *ast.Ident:
+						if x.Name != declName(d) {
+							skip[x] = true
+						}
+					}
+					return true
+				})
+			}
+		}
 		ast.Inspect(f.syntax, func(n ast.Node) bool {
 			if call, ok := n.(*ast.CallExpr); ok && aliasCall(call) {
 				skip[call.Args[0]] = true
 			}
 			x, ok := n.(*ast.Ident)
-			if !ok || x == f.syntax.Name || f.info.Defs[x] == nil || aliasName(x.Name) {
+			if !ok || skip[x] || x == f.syntax.Name || f.info.Defs[x] == nil || aliasName(x.Name) {
 				return true
 			}
 			out = append(out, corpusText{dir, f.at(x.Pos()), splitText(x.Name)})
 			return true
 		})
 		literals(f, func(lit *ast.BasicLit, value string) {
-			if !skip[lit] {
-				out = append(out, corpusText{dir, f.at(lit.Pos()), value})
+			if !skip[lit] && !foreignShape.MatchString(value) {
+				out = append(out, corpusText{dir, f.at(lit.Pos()), inlineCodeRe.ReplaceAllString(value, "")})
 			}
 		})
 	}
@@ -182,10 +321,17 @@ func vocabularyTexts(t *testing.T, w *world) []corpusText {
 	return out
 }
 
+// invariant: OrbStack may stay a catalogue app (SPEC §2.2): the catalogue
+// names it, nothing else does.
+func catalogueApp(dir, word string) bool { return dir == "src/catalog" && word == "OrbStack" }
+
 func vocabularySaid(texts []corpusText) (said, where map[string][]string) {
 	said, where = map[string][]string{}, map[string][]string{}
 	for _, c := range texts {
 		for _, word := range saysBanned(codeBanned(), []string{c.text}) {
+			if catalogueApp(c.dir, word) {
+				continue
+			}
 			if !slices.Contains(said[c.dir], word) {
 				said[c.dir] = append(said[c.dir], word)
 			}
@@ -276,5 +422,42 @@ func TestVocabularyAllowlistShrinks(t *testing.T) {
 	got := ruleVocabulary(nil)
 	if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasPrefix(f.what, dir+" no longer says") }) {
 		t.Errorf("the vocabulary rule kept the line of %s, a folder that says nothing", dir)
+	}
+}
+
+func TestVocabularyReadsPastForeignTextOnly(t *testing.T) {
+	for _, text := range []string{"~/.ssh/config", "{config}/gh/hosts.yml", "https://example.com/tools/x.sh", "com.jterrazz.station.daemon", "STATION_PUBLIC_HOST", "config.toml", "Host ", "\nHost *\n  UseKeychain yes\n", `json:"HostName"`} {
+		if !foreignShape.MatchString(text) {
+			t.Errorf("%q is another program's text, read as station's", text)
+		}
+	}
+	for _, text := range []string{"the daemon runs", "Host port 40000 is busy", "Storage", "lend list", `json:"leased"`} {
+		if foreignShape.MatchString(text) {
+			t.Errorf("%q is station's text, read past as another program's", text)
+		}
+	}
+	src := `package p
+
+func f() {
+	kit.Command(kit.Leaf[In]{Short: "Restart the daemon"})
+	local.Command("git", "config", "--global")
+	_ = Step{Args: []string{"mise", "prune", "--tools"}, Hint: "the tools"}
+}
+`
+	file, err := parser.ParseFile(token.NewFileSet(), "p.go", src, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	skip := map[ast.Node]bool{}
+	foreignLiterals(file, skip)
+	var read []string
+	ast.Inspect(file, func(n ast.Node) bool {
+		if lit, ok := n.(*ast.BasicLit); ok && !skip[lit] {
+			read = append(read, lit.Value)
+		}
+		return true
+	})
+	if want := []string{`"Restart the daemon"`, `"the tools"`}; !slices.Equal(read, want) {
+		t.Errorf("the rule reads %v, want %v: only a command line is another program's", read, want)
 	}
 }
