@@ -31,7 +31,7 @@ public struct ActivityPage: View {
     public var body: some View {
         let banner = page.section("machine")?.rows.first
         VStack(alignment: .leading, spacing: Token.Tile.section) {
-            PageHeader(back: banner?.label ?? page.context?.machine ?? "", title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()), action: handlers.back)
+            PageHeader(back: state.back ?? Page.ThisMacWord, title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()), action: handlers.back)
             Segments(options: Self.picker(page, handlers: handlers).map { ($0.words, $0.picked, $0.tap) })
             if let graphs = page.section("graphs") {
                 let rows = graphs.rows
@@ -46,9 +46,19 @@ public struct ActivityPage: View {
                     }
                 }
             }
+            if let graphs = page.section("graphs"), !graphs.rows.contains(where: { ($0.cells?.dropFirst().first?.points.count ?? 0) > 1 }) {
+                FootNote("The graphs fill in as \(banner?.label ?? Page.ThisMacWord) is sampled, every 2 s while this page is open.")
+            }
             if let top = page.section("processes") {
                 VStack(alignment: .leading, spacing: 2) {
-                    SectionHeader(top.title ?? "")
+                    HStack(spacing: Token.Space.gap) {
+                        SectionHeader(top.title ?? "")
+                        Spacer(minLength: 0)
+                        ForEach(["CPU", "Memory"], id: \.self) { key in
+                            Text(key.uppercased()).font(.system(size: Token.Size.caption, weight: .semibold)).tracking(Token.Size.caption * Token.Size.tracking)
+                                .foregroundStyle(.secondary).frame(width: 52, alignment: .trailing)
+                        }
+                    }
                     ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { _, r in
                         process(top, r)
                     }
@@ -135,6 +145,7 @@ public struct ActivityPage: View {
                 }
             }
         }
-        .frame(minHeight: Token.Tile.row)
+        .padding(.horizontal, 4)
+        .frame(minHeight: 30)
     }
 }

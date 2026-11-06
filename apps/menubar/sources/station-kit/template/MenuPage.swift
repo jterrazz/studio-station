@@ -17,26 +17,34 @@ public enum MenuPage {
         case activity: body = AnyView(ActivityPage(state, handlers: handlers))
         default: return nil
         }
-        return AnyView(MenuPageFrame(state: state) { body })
+        return AnyView(MenuPageFrame(state: state, handlers: handlers) { body })
     }
 }
 
 struct MenuPageFrame<Content: View>: View {
     let state: PopoverState
+    let handlers: PopoverHandlers
     let content: Content
 
-    init(state: PopoverState, @ViewBuilder content: () -> Content) {
+    init(state: PopoverState, handlers: PopoverHandlers, @ViewBuilder content: () -> Content) {
         self.state = state
+        self.handlers = handlers
         self.content = content()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Token.Tile.section) {
             content
-            if let status = state.status { StatusBar(status.line, failed: status.failed) }
         }
         .padding(Token.Space.margin)
         .frame(width: Token.Space.width, alignment: .topLeading)
+        .stationScroll(true, key: "\(state.openings)/\(state.page?.id ?? "")", sheet: state.confirming)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if let status = state.status {
+                StatusBar(status.line, failed: status.failed).padding(EdgeInsets(top: 0, leading: Token.Space.margin, bottom: Token.Space.margin, trailing: Token.Space.margin))
+            }
+        }
+        .background { BackKey(state: state, handlers: handlers) }
         .stationPanel()
         .environment(\.stationHints, false)
     }

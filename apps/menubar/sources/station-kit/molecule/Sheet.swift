@@ -6,15 +6,26 @@ public struct TypedField: View {
     let placeholder: String
     let symbol: String?
     let key: String?
+    let autofocus: Bool
+    let move: ((Int) -> Void)?
+    let submit: (() -> Void)?
     @Binding var text: String
+    @FocusState private var focused: Bool
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationStill) private var still
     @Environment(\.colorScheme) private var scheme
 
-    public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil, key: String? = nil) {
+    // value: a field that takes the keys as it opens (the switcher's
+    // search), its Up and Down moving through what it finds, its Return
+    // opening it.
+    public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil, key: String? = nil, autofocus: Bool = false,
+                move: ((Int) -> Void)? = nil, submit: (() -> Void)? = nil) {
         self.placeholder = placeholder
         self.symbol = symbol
         self.key = key
+        self.autofocus = autofocus
+        self.move = move
+        self.submit = submit
         _text = text
     }
 
@@ -43,6 +54,22 @@ public struct TypedField: View {
                 }
             } else {
                 TextField(placeholder, text: $text).textFieldStyle(.plain)
+                    .focused($focused)
+                    .onSubmit { submit?() }
+                    .onKeyPress(.downArrow) {
+                        guard let move else { return .ignored }
+                        move(1)
+                        return .handled
+                    }
+                    .onKeyPress(.upArrow) {
+                        guard let move else { return .ignored }
+                        move(-1)
+                        return .handled
+                    }
+                    .onAppear {
+                        guard autofocus else { return }
+                        DispatchQueue.main.async { focused = true }
+                    }
             }
         }
     }
@@ -56,6 +83,7 @@ struct SheetGround: ViewModifier {
             SectionDivider()
             content
         }
+        .id(PanelScroll.sheetID)
     }
 }
 
@@ -100,7 +128,7 @@ public struct ConfirmSheet: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(confirm.question ?? "").font(.body.weight(.semibold)).foregroundStyle(.primary)
             ForEach(Array((confirm.lines ?? []).enumerated()), id: \.offset) { _, line in
-                ValueText(line, muted: true).fixedSize(horizontal: false, vertical: true)
+                SubText(Format.show(line))
             }
             if let name = confirm.type {
                 TypedField(name, text: $typed)

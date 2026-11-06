@@ -101,6 +101,7 @@ struct MachineRow: View {
     var sub: String? = nil
     var picked = false
     var nested = false
+    var lit = false
     let open: (String) -> Void
     @Environment(\.stationPalette) private var palette
 
@@ -130,7 +131,7 @@ struct MachineRow: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if picked {
-                    Image(systemName: Token.Symbol.check).font(.system(size: 12, weight: .light)).foregroundStyle(Token.Hue.green(envScheme))
+                    Image(systemName: Token.Symbol.check).font(.system(size: 12, weight: .semibold)).foregroundStyle(palette.onTint)
                 } else {
                     StateDot(mark: row.mark)
                 }
@@ -143,8 +144,11 @@ struct MachineRow: View {
                 if picked {
                     RoundedRectangle(cornerRadius: Token.Tile.fieldCorner, style: .continuous).fill(palette.accent.opacity(Token.Fill.selected))
                 }
+                if lit {
+                    RoundedRectangle(cornerRadius: Token.Tile.fieldCorner, style: .continuous).strokeBorder(palette.accent, lineWidth: 2)
+                }
             }
-            .padding(.horizontal, picked ? 4 : 0)
+            .padding(.horizontal, picked || lit ? 4 : 0)
             .stationHover()
         }
         .buttonStyle(.plain)
@@ -161,6 +165,7 @@ struct MachineTree: View {
     let section: Section
     let kinds: Bool
     let only: Set<String>?
+    var lit: String? = nil
     let open: (String) -> Void
 
     enum Line {
@@ -177,7 +182,7 @@ struct MachineTree: View {
                     GroupCaption(text)
                 case let .row(row, nested, symbol):
                     if i > 0, case .row = all[i - 1] { RowSeparator() }
-                    MachineRow(row: row, symbol: symbol, kinds: kinds, nested: nested, open: open)
+                    MachineRow(row: row, symbol: symbol, kinds: kinds, nested: nested, lit: lit != nil && lit == row.id, open: open)
                 }
             }
             ForEach(Array((section.items ?? []).compactMap(\.empty).enumerated()), id: \.offset) { _, empty in

@@ -22,7 +22,7 @@ public struct PortsPage: View {
     public var body: some View {
         let summary = page.summary()
         VStack(alignment: .leading, spacing: Token.Tile.section) {
-            PageHeader(back: summary?.label ?? page.context?.machine ?? "", title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()), action: handlers.back)
+            PageHeader(back: state.back ?? Page.ThisMacWord, title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()), action: handlers.back)
             if let red = page.section("needs-you") { needsYou(red) }
             if let https = page.section("https"), let row = https.rows.first {
                 MenuRow(row.label ?? "", subtitle: Format.show(row.cells?.first ?? Value()), bare: true) {
@@ -108,6 +108,12 @@ public struct PortsPage: View {
             if let i = machines.firstIndex(where: { $0.0 == name }) { machines[i].1.append(r) } else { machines.append((name, [r])) }
         }
         return VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array((s.items ?? []).compactMap(\.empty).enumerated()), id: \.offset) { _, empty in
+                EmptyLine(empty).padding(Token.Tile.rowPadding)
+            }
+            if rows.isEmpty, (s.items ?? []).allSatisfy({ $0.empty == nil }) {
+                EmptyLine(Empty(noun: nil, text: "No private port", hint: nil)).padding(Token.Tile.rowPadding)
+            }
             ForEach(Array(reserved.enumerated()), id: \.offset) { i, r in
                 if i > 0, !unfoldedRow(s, reserved[i - 1]) { RowSeparator() }
                 privateRow(s, r)
@@ -172,30 +178,9 @@ public struct PortsPage: View {
         return "To open a port on purpose, declare it public: a \(words)."
     }
 
-    // value: a shared port unfolded in its row, as the vision's: its QR on
-    // white, its address, where it works, Copy link the page's primary
-    // action and Open beside it, Stop sharing in red under them.
     func unfolded(_ r: Row, _ url: URL) -> some View {
         let stop = page.actions(for: r.id ?? "").first { $0.id?.hasPrefix("stop-sharing:") == true }
-        let links = Self.link(url, handlers: handlers)
-        return VStack(alignment: .center, spacing: Token.Tile.gap) {
-            QRView(url.absoluteString)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: Token.Tile.qrCorner, style: .continuous).fill(palette.qrLight))
-                .padding(.top, 4)
-            LinkText(url.absoluteString, center: true)
-            SubText("Scan with your phone. Works on your tailnet.").multilineTextAlignment(.center)
-            HStack(spacing: Token.Tile.pair) {
-                ForEach(Array(links.enumerated()), id: \.offset) { i, l in
-                    StationButton(l.label, role: i == 0 ? .primary : .plain, wide: true, action: l.tap)
-                }
-            }
-            .fixedSize(horizontal: false, vertical: true)
-            if let stop { StationButton(stop.label ?? "", role: .danger, wide: true) { act.tap(stop) }.fixedSize(horizontal: false, vertical: true) }
-            if let stop { act.sheet(stop) }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(EdgeInsets(top: 0, leading: 12, bottom: 12, trailing: 12))
+        return SharedPortCard(url: url, stop: stop, page: page, state: state, handlers: handlers)
     }
 
     var footer: some View {
@@ -215,6 +200,55 @@ public struct PortsPage: View {
                     Button { act.tap(share) } label: { MenuText(symbol: Token.Symbol.plus, title: act.label(share), key: nil, danger: false) }.buttonStyle(.plain)
                 }
             }
+        }
+    }
+}
+
+// value: a shared port unfolded in its row, as the vision's panel d: its
+// QR on white, its address, where it works, Copy link the primary action
+// and Open beside it, Stop sharing in red under them, its sheet in place.
+struct SharedPortCard: View {
+    let url: URL
+    let stop: Action?
+    let page: Page
+    let state: PopoverState
+    let handlers: PopoverHandlers
+    @Environment(\.stationPalette) private var palette
+    @State private var copied = false
+
+    var body: some View {
+        let act = Act(state: state, handlers: handlers)
+        let links = PortsPage.link(url, handlers: handlers)
+        VStack(alignment: .center, spacing: Token.Tile.gap) {
+            QRView(url.absoluteString)
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: Token.Tile.qrCorner, style: .continuous).fill(palette.qrLight))
+                .padding(.top, 4)
+            LinkText(url.absoluteString, center: true)
+            SubText("Scan with your phone. Works on your tailnet.").multilineTextAlignment(.center)
+            HStack(spacing: Token.Tile.pair) {
+                ForEach(Array(links.enumerated()), id: \.offset) { i, l in
+                    StationButton(i == 0 && copied ? "Copied" : l.label, role: i == 0 ? .primary : .plain, wide: true) {
+                        l.tap()
+                        if i == 0 { flash() }
+                    }
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            if let stop, !act.open(stop) {
+                StationButton(stop.label ?? "", role: .danger, wide: true) { act.tap(stop) }.fixedSize(horizontal: false, vertical: true)
+            }
+            if let stop, act.open(stop) { SheetFor(page: page, state: state, handlers: handlers) }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(EdgeInsets(top: 0, leading: 12, bottom: 12, trailing: 12))
+    }
+
+    func flash() {
+        copied = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            copied = false
         }
     }
 }

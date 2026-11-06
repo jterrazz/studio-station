@@ -14,31 +14,35 @@ public enum Format {
         return String(format: "%.1f %@B", value, String(suffixes[suffix]))
     }
 
+    // invariant: a total that is a whole number of GiB is memory, said as
+    // macOS says it (16 GB for 16 GiB), its part counted the same way;
+    // any other total in powers of 1000, as a disk's.
     static func ratio(_ used: Int64, _ total: Int64) -> String {
+        let base: Double = total > 0 && total % (1 << 30) == 0 ? 1024 : 1000
         var div = 1.0
         var unit = "B"
-        var step = 1000.0
+        var step = base
         for s in suffixes where Double(total) >= step {
             div = step
             unit = "\(s)B"
-            step *= 1000
+            step *= base
         }
         return String(format: "%.1f/%.1f %@", Double(used) / div, Double(total) / div, unit)
     }
 
     public static func duration(_ seconds: Int64) -> String {
-        let units: [(Int64, String)] = [(86400, "d"), (3600, "h"), (60, "m"), (1, "s")]
+        let units: [(Int64, String)] = [(86400, "d"), (3600, "h"), (60, "min"), (1, "s")]
         var parts: [String] = []
         var rest = seconds
         for (n, name) in units {
             if rest >= n && parts.count < 2 {
-                parts.append("\(rest / n)\(name)")
+                parts.append("\(rest / n) \(name)")
                 rest %= n
             } else if parts.count == 1 {
                 break
             }
         }
-        return parts.isEmpty ? "0s" : parts.joined(separator: " ")
+        return parts.isEmpty ? "0 s" : parts.joined(separator: " ")
     }
 
     static func percent(_ tenths: Int64) -> String {
@@ -52,17 +56,15 @@ public enum Format {
             left = Int64(end.timeIntervalSince(now))
         }
         if left <= 0 { return "expired" }
-        if left < 60 { return "<1m left" }
+        if left < 60 { return "<1 min left" }
         return duration(left - left % 60) + " left"
     }
 
     static func age(_ v: Value) -> String {
         let n = v.n ?? 0
         if n > 30 * 86400, let at = v.at, at.count >= 10 { return String(at.prefix(10)) }
-        let d = duration(n)
-        let head = d.split(separator: " ").first.map(String.init) ?? d
-        let digits = head.prefix { $0.isNumber }
-        let ago = "\(digits) \(head.dropFirst(digits.count)) ago"
+        let d = duration(n).split(separator: " ")
+        let ago = "\(d.prefix(2).joined(separator: " ")) ago"
         guard let label = v.label, !label.isEmpty else { return ago }
         return "\(label) \(ago)"
     }

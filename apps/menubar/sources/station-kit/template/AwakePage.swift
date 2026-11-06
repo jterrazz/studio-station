@@ -17,10 +17,16 @@ public struct AwakePage: View {
     var page: Page { state.page ?? Page() }
     var act: Act { Act(state: state, handlers: handlers) }
 
+    // invariant: while one call runs every control of the page waits; once
+    // it returned, another may run at once: each call sends the switches as
+    // the owner set them (flags), never a stale page's.
+    var busy: Bool { state.running != nil }
+    func waiting(_ a: Action?) -> Bool { a != nil && (state.running == a?.id || state.settling == a?.id) }
+
     public var body: some View {
         let here = page.section("this-mac")
         VStack(alignment: .leading, spacing: Token.Tile.section) {
-            PageHeader(back: Page.ThisMacWord, title: "Awake", subtitle: "Every Mac\(Token.Glyph.sep)this one first",
+            PageHeader(back: state.back ?? Page.ThisMacWord, title: "Awake", subtitle: "Every Mac\(Token.Glyph.sep)this one first",
                        symbol: Token.Symbol.awake, action: handlers.back)
             if let here, let row = here.rows.first { thisMac(here, row) }
             if let guards = page.section("guards") { guardsSection(guards) }
@@ -47,24 +53,25 @@ public struct AwakePage: View {
         let on = r.mark == .ok
         let flip = on ? actions.first { $0.id == "let-sleep" } : keeps.first
         SectionHeader(s.title ?? Page.ThisMacWord)
-        MenuRow("Keep awake", subtitle: words(r.cells?.first), bare: true) {
-            EmptyView()
-        } trailing: {
+        HStack(alignment: .center, spacing: Token.Tile.gap) {
+            RowText(title: "Keep awake", subtitle: words(r.cells?.first))
+                .frame(maxWidth: .infinity, alignment: .leading)
             if let flip {
-                if state.running == flip.id { PendingDot() } else { StationSwitch(on: on) { act.tap(flip) }.disabled(state.running != nil) }
+                if waiting(flip) { PendingDot() } else { StationSwitch(on: on) { act.tap(flip) }.disabled(busy) }
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
         .stationTile()
         if !keeps.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 SubText("Keep awake for\(Token.Glyph.ellipsis)")
-                if let running = keeps.first(where: { state.running == $0.id }) {
+                if let running = keeps.first(where: { waiting($0) }) {
                     HStack(spacing: 6) {
                         PendingDot()
                         SubText(act.label(running))
                     }
                 } else {
-                    Segments(options: keeps.map { k in (Self.held(k) ? k.label ?? "" : act.label(k), on && Self.held(k), { act.tap(k) }) })
+                    Segments(options: keeps.map { k in (Self.held(k) ? k.label ?? "" : act.label(k), on && Self.held(k), { k.form == nil ? run(k) : act.tap(k) }) }).disabled(busy)
                 }
             }
             .stationTile()
@@ -82,10 +89,43 @@ public struct AwakePage: View {
     static func held(_ k: Action) -> Bool { k.form != nil && (k.label ?? "").contains(where: \.isNumber) }
 
     // invariant: a switch's action flips it, so its input holds the other
-    // side: Lid closed is on when its action sends Lid false.
+    // side: Lid closed is on when its action sends Lid false; a switch the
+    // owner just set reads as set until the page says so too.
     func on(_ a: Action) -> Bool {
-        let key = a.id == "lid" ? "Lid" : "Battery"
-        return a.run?.in?[key] == "false"
+        let key = Self.key(a)
+        if let held = state.held[key] { return held == "true" }
+        return Self.paged(a)
+    }
+
+    static func key(_ a: Action) -> String { a.id == "lid" ? "Lid" : "Battery" }
+    static func paged(_ a: Action) -> Bool { a.run?.in?[key(a)] == "false" }
+
+    // invariant: every Awake call sends both switches as the owner sees
+    // them, the one tapped flipped: a call never carries a switch's state
+    // from a page read before the last call.
+    public static func flags(_ page: Page, held: [String: String], flipping: Action? = nil) -> [String: String] {
+        var out: [String: String] = [:]
+        for a in page.actions ?? [] where a.id == "lid" || a.id == "battery" {
+            let key = key(a)
+            let now = held[key].map { $0 == "true" } ?? paged(a)
+            out[key] = String(flipping?.id == a.id ? !now : now)
+        }
+        return out
+    }
+
+    // value: what is still held once a page is read: the switches it does
+    // not say yet.
+    public static func settled(_ held: [String: String], _ page: Page) -> [String: String] {
+        guard page.id == MenuPage.awake else { return held }
+        var out = held
+        for a in page.actions ?? [] where a.id == "lid" || a.id == "battery" {
+            if held[key(a)] == String(paged(a)) { out[key(a)] = nil }
+        }
+        return out
+    }
+
+    func run(_ a: Action, flipping: Bool = false) {
+        handlers.run(a, Self.flags(page, held: state.held, flipping: flipping ? a : nil))
     }
 
     func toggle(_ a: Action) -> some View {
@@ -94,7 +134,7 @@ public struct AwakePage: View {
         return MenuRow(a.label ?? "", subtitle: lid ? "Stays awake with the lid shut" : "Stays awake when unplugged") {
             IconTile(lid ? Token.Symbol.lid : Token.Symbol.battery, active: on)
         } trailing: {
-            if state.running == a.id { PendingDot() } else { StationSwitch(on: on) { act.tap(a) }.disabled(state.running != nil) }
+            if waiting(a) { PendingDot() } else { StationSwitch(on: on) { run(a, flipping: true) }.disabled(busy) }
         }
     }
 

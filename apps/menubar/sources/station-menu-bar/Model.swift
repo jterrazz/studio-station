@@ -16,6 +16,11 @@ final class Model: ObservableObject {
     // own, in its macOS user defaults.
     static let recentKey = "recentMachines"
     static let recentKept = 3
+    // value: Activity's window last picked, the menu bar's own.
+    nonisolated static let windowKey = "activityWindow"
+    // value: how long a control stays pending once its call returned, at
+    // most, for the page that says its outcome.
+    static let settle: UInt64 = 2_500_000_000
 
     let socket = EnginePath.socket()
     private var lastPage: Date?
@@ -26,18 +31,29 @@ final class Model: ObservableObject {
     private var asked = false
     private(set) var navigation: Navigation!
 
+    private var settled: Task<Void, Never>?
+
     init() {
-        navigation = Navigation(socket: socket) { [weak self] page, shown in
+        navigation = Navigation(socket: socket, window: UserDefaults.standard.string(forKey: Self.windowKey)) { [weak self] page, shown in
             Task { @MainActor in self?.show(page, shown) }
         }
+        navigation.remember = { flag in UserDefaults.standard.set(flag, forKey: Model.windowKey) }
     }
 
-    // invariant: a pushed page is shown only while its watch is the one held.
+    // invariant: a pushed page is shown only while its watch is the one held;
+    // the page read after a call ends its pending.
     func show(_ watch: String, _ page: Page?) {
         guard navigation.watched == (page == nil ? nil : watch) else { return }
+        let changed = state.pushed?.id != page?.id
+        if let page { state.held = AwakePage.settled(state.held, page) } else { state.held = [:] }
         state.pushed = page
-        if page == nil {
+        state.back = navigation.backWords
+        state.settling = nil
+        if page == nil || changed {
             state.confirming = nil
+            state.qr = nil
+        }
+        if page == nil {
             state.search = ""
         }
     }
@@ -98,6 +114,7 @@ final class Model: ObservableObject {
             state.connection = .live
             state.page = page
             lastPage = Date()
+            if navigation.watched == nil { state.settling = nil }
         case .tick:
             break
         case .notice(_, let text):
@@ -130,12 +147,18 @@ final class Model: ObservableObject {
             row.cells = [Value(kind: "text", text: "not installed")]
             row.hint = Hint(command: "station setup")
             s.items = [Item(row: row)]
+            s.caption = [Value(kind: "text", text: "station is not set up on this Mac")]
             p.sections = [s]
         }
         return p
     }
 
+    // invariant: the panel opened is the key window, so its first click acts
+    // and its keys are its own; the app it hands the owner to takes the
+    // focus back, and the panel closes then.
     func opened() {
+        NSApp.activate()
+        state.openings += 1
         let socket = self.socket
         watching?.cancel()
         watching = Task.detached { await Client.hold(path: socket, watch: "engine.watch") }
@@ -147,12 +170,27 @@ final class Model: ObservableObject {
     func closed() {
         watching?.cancel()
         watching = nil
-        navigation.back()
+        navigation.home()
+    }
+
+    // value: the panel's window, closed as a menu closes once it handed the
+    // owner to another app.
+    func closePanel() {
+        for w in NSApp.windows where w.isVisible && w.className.contains("MenuBarExtra") {
+            w.close()
+        }
+    }
+
+    func open(_ url: URL) {
+        NSWorkspace.shared.open(url)
+        closePanel()
     }
 
     func run(_ action: Action, answers: [String: String]) {
         state.running = action.id
+        state.settling = nil
         state.status = nil
+        if action.run?.terminal == true { closePanel() }
         let socket = self.socket
         let reread = [PageID.shown(navigation.watched)]
         Task {
@@ -160,6 +198,17 @@ final class Model: ObservableObject {
             let status = await ActionRunner(executable: executable, socket: socket, reread: reread).run(action, answers: answers)
             state.running = nil
             state.status = status
+            if status?.failed != true, action.run?.call == ActionRunner.awake, state.pushed?.id == MenuPage.awake {
+                for key in ["Lid", "Battery"] { if let v = answers[key], v == "true" || v == "false" { state.held[key] = v } }
+            }
+            if action.mutates == true, status?.failed != true, action.run?.call != nil {
+                state.settling = action.id
+                settled?.cancel()
+                settled = Task {
+                    try? await Task.sleep(nanoseconds: Self.settle)
+                    if !Task.isCancelled, state.settling == action.id { state.settling = nil }
+                }
+            }
             if let text = status?.posted { notify(text) }
             clearing?.cancel()
             if status != nil {

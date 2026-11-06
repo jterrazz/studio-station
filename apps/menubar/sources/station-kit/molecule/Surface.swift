@@ -179,7 +179,11 @@ public struct IconTile: View {
         self.pulse = pulse
     }
 
+    // invariant: a finding's glyph is drawn in its colour's bright form on
+    // the near-black tile, whatever the scheme, so it reads in light mode.
     var ink: AnyShapeStyle {
+        if let tint, tint == palette.warn { return AnyShapeStyle(Token.Icon.needs(.dark)) }
+        if let tint, tint == palette.bad { return AnyShapeStyle(Token.Icon.down(.dark)) }
         if let tint { return AnyShapeStyle(tint) }
         return active ? AnyShapeStyle(palette.accent) : AnyShapeStyle(Token.Fill.iconInk)
     }
@@ -188,9 +192,11 @@ public struct IconTile: View {
         let scale = size / Token.Tile.icon
         let shape = RoundedRectangle(cornerRadius: Token.Tile.corner * scale, style: .continuous)
         Image(systemName: symbol)
-            .symbolRenderingMode(.hierarchical)
+            .symbolRenderingMode(tint == nil ? .hierarchical : .monochrome)
             .font(.system(size: Token.Tile.glyph * scale, weight: .medium))
             .foregroundStyle(ink)
+            .environment(\.colorScheme, .dark)
+            .compositingGroup()
             .contentTransition(.symbolEffect(.replace))
             .symbolEffect(.pulse, isActive: pulse && !still)
             .frame(width: size, height: size)
@@ -212,15 +218,17 @@ public struct MenuRow<Leading: View, Trailing: View>: View {
     let subtitle: String?
     let link: Bool
     let lines: Int
+    let titleLines: Int
     let bare: Bool
     let top: Bool
     let tap: (() -> Void)?
     let leading: Leading
     let trailing: Trailing
 
-    public init(_ title: String, subtitle: String? = nil, link: Bool = false, lines: Int = 2, bare: Bool = false, top: Bool = false, tap: (() -> Void)? = nil,
+    public init(_ title: String, subtitle: String? = nil, link: Bool = false, lines: Int = 2, titleLines: Int = 1, bare: Bool = false, top: Bool = false, tap: (() -> Void)? = nil,
                 @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
         self.top = top
+        self.titleLines = titleLines
         self.title = title
         self.subtitle = subtitle
         self.link = link
@@ -234,11 +242,11 @@ public struct MenuRow<Leading: View, Trailing: View>: View {
     var line: some View {
         HStack(spacing: Token.Tile.gap) {
             leading.frame(maxHeight: top ? .infinity : nil, alignment: .top)
-            RowText(title: title, subtitle: subtitle, link: link, lines: lines)
+            RowText(title: title, subtitle: subtitle, link: link, lines: lines, titleLines: titleLines)
                 .frame(maxWidth: .infinity, alignment: .leading)
             trailing.layoutPriority(1)
         }
-        .fixedSize(horizontal: false, vertical: top)
+        .fixedSize(horizontal: false, vertical: true)
         .padding(bare ? EdgeInsets() : Token.Tile.rowPadding)
         .frame(minHeight: bare ? 0 : Token.Tile.row)
         .stationHover()
@@ -266,20 +274,26 @@ public struct RowText<Tag: View>: View {
     let subtitle: String?
     let link: Bool
     let lines: Int
+    let titleLines: Int
     let tag: Tag
 
-    public init(title: String, subtitle: String?, link: Bool = false, lines: Int = 2, @ViewBuilder tag: () -> Tag) {
+    // value: a title this short is never cut: a value beside it gives way.
+    static var whole: Int { 16 }
+
+    public init(title: String, subtitle: String?, link: Bool = false, lines: Int = 2, titleLines: Int = 1, @ViewBuilder tag: () -> Tag) {
         self.title = title
         self.subtitle = subtitle
         self.link = link
         self.lines = lines
+        self.titleLines = titleLines
         self.tag = tag()
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             HStack(alignment: .center, spacing: 6) {
-                Text(title).font(.system(size: Token.Size.text, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
+                Text(title).font(.system(size: Token.Size.text, weight: .semibold)).foregroundStyle(.primary).lineLimit(titleLines)
+                    .fixedSize(horizontal: title.count <= Self.whole, vertical: titleLines > 1)
                     .padding(.vertical, Token.Size.leading)
                 tag
             }
@@ -295,8 +309,8 @@ public struct RowText<Tag: View>: View {
 }
 
 extension RowText where Tag == EmptyView {
-    public init(title: String, subtitle: String?, link: Bool = false, lines: Int = 2) {
-        self.init(title: title, subtitle: subtitle, link: link, lines: lines) { EmptyView() }
+    public init(title: String, subtitle: String?, link: Bool = false, lines: Int = 2, titleLines: Int = 1) {
+        self.init(title: title, subtitle: subtitle, link: link, lines: lines, titleLines: titleLines) { EmptyView() }
     }
 }
 
@@ -539,6 +553,29 @@ public struct PlainIcon: View {
     }
 }
 
+// value: Copy as a row's symbol: it says Copied with a check for a moment
+// once the words are on the pasteboard.
+public struct CopyIcon: View {
+    let tap: () -> Void
+    @State private var copied = false
+    @Environment(\.stationPalette) private var palette
+
+    public init(tap: @escaping () -> Void) { self.tap = tap }
+
+    public var body: some View {
+        PlainIcon(copied ? Token.Symbol.check : Token.Symbol.copy, picked: copied) {
+            tap()
+            copied = true
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                copied = false
+            }
+        }
+        .accessibilityLabel(copied ? "Copied" : "Copy")
+        .help(copied ? "Copied" : "Copy")
+    }
+}
+
 // value: the way back of a pushed page: the chevron and the page it goes
 // back to, in the accent.
 public struct BackButton: View {
@@ -700,4 +737,48 @@ struct SwitcherPill: View {
         }
         .contentShape(Capsule())
     }
+}
+
+// invariant: the panel never grows past the screen: live, it scrolls once
+// its content is taller than the screen's visible frame, and is exactly as
+// tall as its content below that, its words laid out at the panel's width;
+// drawn still, it is its content.
+struct PanelScroll: ViewModifier {
+    let scrolls: Bool
+    // value: what the panel shows; another starts at the top.
+    let key: String
+    // value: the sheet open, if any: opening one scrolls it into sight.
+    let sheet: String?
+    static let sheetID = "station.sheet"
+    @Environment(\.stationStill) private var still
+    @State private var height: CGFloat = 0
+
+    // value: the room the panel may take: the screen's visible height
+    // under the menu bar, less the gap macOS leaves above the Dock.
+    static var room: CGFloat { max((NSScreen.main?.visibleFrame.height ?? 800) - 16, 320) }
+
+    func body(content: Content) -> some View {
+        if still || !scrolls {
+            content
+        } else {
+            ScrollViewReader { proxy in
+                ScrollView(.vertical) {
+                    content.onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+                }
+                .onChange(of: sheet) { _, open in
+                    guard open != nil else { return }
+                    DispatchQueue.main.async { withAnimation { proxy.scrollTo(Self.sheetID, anchor: .bottom) } }
+                }
+            }
+            .id(key)
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(height > Self.room ? .automatic : .never)
+            .frame(width: Token.Space.width, height: height > 0 ? min(height, Self.room) : nil)
+        }
+    }
+}
+
+extension View {
+    // value: the panel's scroll (see PanelScroll).
+    public func stationScroll(_ scrolls: Bool, key: String = "", sheet: String? = nil) -> some View { modifier(PanelScroll(scrolls: scrolls, key: key, sheet: sheet)) }
 }

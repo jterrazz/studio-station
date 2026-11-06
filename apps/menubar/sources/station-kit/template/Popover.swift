@@ -31,6 +31,18 @@ public struct PopoverState: Equatable, Sendable {
     // value: the machines last opened, newest first: the menu bar's own.
     public var recent: [String] = []
     public var search = ""
+    // value: the words of the way back, the page under the one pushed;
+    // nil when Home is under it.
+    public var back: String?
+    // value: the call that returned and whose page is not read again yet:
+    // its control stays pending until the page that says its outcome comes.
+    public var settling: String?
+    // value: how many times the panel opened: each opening starts at its
+    // top.
+    public var openings = 0
+    // value: Awake's switches as the owner last set them, until the page
+    // read again says the same (`Lid`, `Battery`: "true" or "false").
+    public var held: [String: String] = [:]
 
     public init(page: Page?, connection: Connection, running: String? = nil, confirming: String? = nil, status: Status? = nil, qr: String? = nil, pushed: Page? = nil, recent: [String] = []) {
         self.page = page
@@ -68,6 +80,9 @@ public struct PopoverHandlers {
     public var push: (String) -> Void
     public var window: (String) -> Void
     public var back: () -> Void
+    // value: what the panel does once an action hands the owner to another
+    // app (a link opened, a terminal): it closes, as a menu does.
+    public var close: () -> Void
 
     public init(run: @escaping (Action, [String: String]) -> Void = { _, _ in }, confirm: @escaping (Action?) -> Void = { _ in },
                 answer: @escaping (String, String, String) -> Void = { _, _, _ in }, open: @escaping (URL) -> Void = { _ in },
@@ -75,7 +90,7 @@ public struct PopoverHandlers {
                 sparkline: @escaping (Bool) -> Void = { _ in }, sparklineOn: Bool = false, quit: @escaping () -> Void = {},
                 openMachine: @escaping (String) -> Void = { _ in }, openSwitcher: @escaping () -> Void = {}, search: @escaping (String) -> Void = { _ in },
                 copy: @escaping (String) -> Void = { _ in }, window: @escaping (String) -> Void = { _ in },
-                push: @escaping (String) -> Void = { _ in }, back: @escaping () -> Void = {}) {
+                push: @escaping (String) -> Void = { _ in }, back: @escaping () -> Void = {}, close: @escaping () -> Void = {}) {
         self.run = run
         self.confirm = confirm
         self.answer = answer
@@ -94,6 +109,7 @@ public struct PopoverHandlers {
         self.window = window
         self.push = push
         self.back = back
+        self.close = close
     }
 }
 
@@ -168,16 +184,25 @@ public struct Popover: View {
             } else {
                 PendingDot(still: true)
             }
-            if state.connection == .connecting {
-                StatusBar("connecting\(Token.Glyph.ellipsis)", failed: false)
-            } else if let status = state.status {
-                StatusBar(status.line, failed: status.failed)
-            }
         }
         .padding(Token.Space.margin)
         .frame(width: Token.Space.width, alignment: .topLeading)
+        .stationScroll(scrolls, key: "\(state.openings)/\(state.shown?.id ?? "")/\(state.shown?.context?.machine ?? "")", sheet: state.confirming)
+        .safeAreaInset(edge: .bottom, spacing: 0) { statusLine }
+        .background { BackKey(state: state, handlers: handlers) }
         .stationPanel()
         .environment(\.stationHints, false)
+    }
+
+    // invariant: the status line stays in sight under the panel's scroll,
+    // never scrolled away with what it is about.
+    @ViewBuilder
+    var statusLine: some View {
+        if state.connection == .connecting {
+            StatusBar("connecting\(Token.Glyph.ellipsis)", failed: false).padding(EdgeInsets(top: 0, leading: Token.Space.margin, bottom: Token.Space.margin, trailing: Token.Space.margin))
+        } else if let status = state.status {
+            StatusBar(status.line, failed: status.failed).padding(EdgeInsets(top: 0, leading: Token.Space.margin, bottom: Token.Space.margin, trailing: Token.Space.margin))
+        }
     }
 
     // invariant: Home and the switcher lead with the machine switcher,
@@ -224,4 +249,23 @@ public struct Popover: View {
 
 extension Page {
     static let ThisMacWord = "This Mac"
+}
+
+// invariant: Escape goes back a level while a page is pushed and no sheet
+// is open (a sheet's Cancel takes it then); on Home it closes the panel,
+// as macOS does.
+struct BackKey: View {
+    let state: PopoverState
+    let handlers: PopoverHandlers
+    @Environment(\.stationStill) private var still
+
+    var body: some View {
+        if state.confirming == nil, !still {
+            Button("") { state.pushed == nil ? handlers.close() : handlers.back() }
+                .keyboardShortcut(.escape, modifiers: [])
+                .opacity(0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
 }

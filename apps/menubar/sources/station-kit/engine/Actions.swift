@@ -26,6 +26,7 @@ public struct ActionRunner: Sendable {
     // end, with no answer, is its success.
     public static let endsTheEngine = "engine.stop"
     public static let refresh = "engine.refresh"
+    public static let awake = "awake.keep"
 
     public init(executable: String, socket: String, launcher: Launcher = ProcessLauncher(), terminal: String = "Terminal", reread: [String] = []) {
         self.executable = executable
@@ -46,6 +47,7 @@ public struct ActionRunner: Sendable {
             out[key] = value
         }
         if action.confirm?.type != nil, let typed = answers[typedKey] { out[typedKey] = typed }
+        for (key, value) in answers where action.run?.in?[key] != nil { out[key] = value }
         return out
     }
 
@@ -72,6 +74,7 @@ public struct ActionRunner: Sendable {
             if reply.ok, let posted = Notifications.failedItems(reply.listed) {
                 return Status(posted, failed: true, posted: posted)
             }
+            if reply.ok, reply.task != nil, action.on == "row" { return Self.done(action, name) }
             if reply.ok || (reply.closed && name == Self.endsTheEngine) { return nil }
             let message = reply.message ?? name
             var status = Self.failure(message, reply.hint)
@@ -82,6 +85,12 @@ public struct ActionRunner: Sendable {
         let open = Terminal.opening(terminal, executable: executable, words: run.argv ?? [])
         let done = await launcher.run(open.path, open.args, environment: [:])
         return done.code == 0 ? nil : Self.failure("\(terminal) did not open station", nil)
+    }
+
+    // value: a call that worked as a task (Update all) says it is done, so
+    // a call whose outcome the page does not show is never silent.
+    static func done(_ action: Action, _ name: String) -> Status {
+        Status("\(action.label ?? name): done", failed: false)
     }
 
     static func failure(_ message: String, _ hint: String?) -> Status {

@@ -11,6 +11,13 @@ struct SwitcherContent: View {
 
     var tree: Section? { page.section("machines") }
 
+    // value: the line lit is one of Recent's (drawn first, so its index is
+    // under Recent's count).
+    var recentLit: Bool {
+        guard let tree, state.search.isEmpty, let lit else { return false }
+        return lit < (here(tree) == nil ? 0 : 1) + rows(tree, state.recent.filter { $0 != here(tree)?.id }).count
+    }
+
     func matching(_ s: Section) -> Set<String>? {
         guard !state.search.isEmpty else { return nil }
         var out = Set<String>()
@@ -52,23 +59,62 @@ struct SwitcherContent: View {
         return ids.compactMap { id in out.first { $0.id == id } }
     }
 
+    @State private var lit: Int?
+
+    // value: the lines the keys move through, in the order they are drawn:
+    // Recent then the tree, or what the search found.
+    func lines(_ tree: Section) -> [Row] {
+        var out: [Row] = []
+        if state.search.isEmpty {
+            if let mac = here(tree) { out.append(mac) }
+            out += rows(tree, state.recent.filter { $0 != here(tree)?.id })
+        }
+        for line in MachineTree(section: tree, kinds: true, only: matching(tree), open: { _ in }).lines() {
+            if case let .row(r, _, _) = line { out.append(r) }
+        }
+        return out
+    }
+
+
+    func move(_ by: Int) {
+        guard let tree else { return }
+        let n = lines(tree).count
+        guard n > 0 else { return }
+        lit = min(max((lit ?? (by > 0 ? -1 : n)) + by, 0), n - 1)
+    }
+
+    func submit() {
+        guard let tree else { return }
+        let all = lines(tree)
+        guard let i = SwitcherKeys.picked(all.count, lit: lit, searching: !state.search.isEmpty) else { return }
+        let r = all[i]
+        if r.id == here(tree)?.id, state.search.isEmpty { handlers.back() } else { handlers.openMachine(r.id ?? "") }
+    }
+
+    var litID: String? {
+        guard let tree else { return nil }
+        let all = lines(tree)
+        return SwitcherKeys.picked(all.count, lit: lit, searching: !state.search.isEmpty).map { all[$0].id ?? "" }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: Token.Tile.section) {
-            TypedField("Search machines", text: Binding(get: { state.search }, set: handlers.search), symbol: Token.Symbol.search)
+            TypedField("Search machines", text: Binding(get: { state.search }, set: { lit = nil; handlers.search($0) }), symbol: Token.Symbol.search,
+                       autofocus: true, move: move, submit: submit)
             if let tree {
                 if state.search.isEmpty {
                     SectionHeader("Recent")
                     Rows {
                         if let mac = here(tree) {
-                            MachineRow(row: mac, symbol: Token.Symbol.mac, kinds: true, sub: "\(mac.id ?? "")\(Token.Glyph.sep)you are here", picked: true, open: { _ in handlers.back() })
+                            MachineRow(row: mac, symbol: Token.Symbol.mac, kinds: true, sub: "\(mac.id ?? "")\(Token.Glyph.sep)you are here", picked: true, lit: litID == mac.id && lit != nil, open: { _ in handlers.back() })
                         }
                         ForEach(Array(rows(tree, state.recent.filter { $0 != here(tree)?.id }).enumerated()), id: \.offset) { _, r in
-                            MachineRow(row: r, symbol: Token.Symbol.machine(r.cells?.first?.text), kinds: true, sub: recentWords(tree, r), open: handlers.openMachine)
+                            MachineRow(row: r, symbol: Token.Symbol.machine(r.cells?.first?.text), kinds: true, sub: recentWords(tree, r), lit: litID == r.id && recentLit, open: handlers.openMachine)
                         }
                     }
                 }
                 SectionHeader(tree.title ?? "")
-                MachineTree(section: tree, kinds: true, only: matching(tree), open: handlers.openMachine)
+                MachineTree(section: tree, kinds: true, only: matching(tree), lit: recentLit ? nil : litID, open: handlers.openMachine)
             }
             SheetFor(page: page, state: state, handlers: handlers)
             VStack(alignment: .leading, spacing: 0) {
@@ -82,5 +128,15 @@ struct SwitcherContent: View {
                 }
             }
         }
+    }
+}
+
+public enum SwitcherKeys {
+    // invariant: the line lit is the one Return opens; while a search finds
+    // something and none is lit, Return opens the first found.
+    public static func picked(_ count: Int, lit: Int?, searching: Bool) -> Int? {
+        guard count > 0 else { return nil }
+        if let lit { return min(max(lit, 0), count - 1) }
+        return searching ? 0 : nil
     }
 }

@@ -19,14 +19,43 @@ struct MachineContent: View {
         VStack(alignment: .leading, spacing: Token.Tile.section) {
             if let error = page.error { ErrorLine(error) }
             if let head { header(head) }
-            ForEach(Array((page.sections ?? []).enumerated()), id: \.offset) { _, s in
-                if s.id != "machine" { section(s) }
+            if loading {
+                skeleton
+            } else {
+                ForEach(Array((page.sections ?? []).enumerated()), id: \.offset) { _, s in
+                    if s.id != "machine" { section(s) }
+                }
             }
-            SheetFor(page: page, state: state, handlers: handlers)
+            if state.confirming?.hasPrefix("stop-sharing:") != true {
+                SheetFor(page: page, state: state, handlers: handlers)
+            }
             if state.confirming == nil || page.action(state.confirming ?? "")?.on == "row" {
                 buttons
             }
         }
+    }
+
+    // value: the page before its first read: its head alone.
+    var loading: Bool { (page.sections ?? []).allSatisfy { $0.id == "machine" } && page.error == nil }
+
+    // value: what stands in for a page being read: its measures waiting and
+    // a list waiting, about as tall as the page they make way for, so the
+    // panel does not jump.
+    var skeleton: some View {
+        VStack(alignment: .leading, spacing: Token.Tile.section) {
+            Metrics(measures: [("CPU", nil, nil), ("Memory", nil, nil), ("Disk", nil, nil)])
+            Rows {
+                ForEach(0..<3, id: \.self) { _ in
+                    HStack(spacing: Token.Tile.gap) {
+                        PendingDot()
+                        Spacer()
+                    }
+                    .padding(Token.Tile.rowPadding)
+                    .frame(minHeight: Token.Tile.row)
+                }
+            }
+        }
+        .accessibilityLabel("Reading")
     }
 
     func header(_ s: Section) -> some View {
@@ -38,7 +67,7 @@ struct MachineContent: View {
             badge = "Server"
             caption.removeFirst()
         }
-        let back = server ? page.context?.on ?? Self.all : Self.all
+        let back = state.back ?? Self.all
         return PageHeader(back: back, title: s.title ?? "", subtitle: caption.joined(separator: Token.Glyph.sep), symbol: Token.Symbol.machine(page.context?.kind),
                           badge: badge, action: handlers.back) {
             if let word = row?.cells?.first.map({ Format.show($0) }) {
@@ -72,17 +101,21 @@ struct MachineContent: View {
         case "inside":
             Rows {
                 ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in
-                    MenuRow(r.label ?? "", tap: {}) {
+                    let open = page.rowActions(r.id ?? "").first
+                    MenuRow(r.label ?? "", tap: open.map { a in { perform(a, handlers) } }) {
                         IconTile(Token.Symbol.line(r.id ?? "") ?? Token.Symbol.forward)
                     } trailing: {
                         TrailingValue(words(r.cells?.first))
-                        Chevron()
+                        if open != nil { Chevron() }
                     }
                 }
             }
         case "ports":
             SectionHeader("\(s.header)\(Token.Glyph.sep)\((s.items ?? []).compactMap(\.link).count)")
             Rows {
+                ForEach(Array((s.items ?? []).compactMap(\.empty).enumerated()), id: \.offset) { _, empty in
+                    EmptyLine(empty).padding(Token.Tile.rowPadding)
+                }
                 ForEach(Array((s.items ?? []).compactMap(\.link).enumerated()), id: \.offset) { _, l in link(l) }
                 if let share = page.action("share-port") {
                     MenuRow("\(share.label ?? "")\(Token.Glyph.ellipsis)", tap: { perform(share, handlers) }) {
@@ -93,6 +126,9 @@ struct MachineContent: View {
         case "shared":
             SectionHeader(s.header)
             Rows {
+                ForEach(Array((s.items ?? []).compactMap(\.empty).enumerated()), id: \.offset) { _, empty in
+                    EmptyLine(empty).padding(Token.Tile.rowPadding)
+                }
                 ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in
                     MenuRow(r.label ?? "", subtitle: words(r.cells?.first)) {
                         EmptyView()
@@ -177,9 +213,9 @@ struct MachineContent: View {
         let fix = s.columns?.first { $0.kind == "command" }?.key
         let command = fix.flatMap { s.cell(r, $0)?.text }
         let value = (r.cells ?? []).filter { !$0.isNone && $0.text != command }.map { Format.show($0, now: now) }.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
-        let title = (r.short ?? r.label ?? "").capitalizedFirst
-        let long = value.count > 14 || title.count + value.count > 38
-        return MenuRow(title, subtitle: long ? value.capitalizedFirst : nil) {
+        let title = Self.sentence(r.short ?? r.label ?? "", in: s)
+        let long = value.count > 14 || title.count + value.count > 44
+        return MenuRow(title, subtitle: long ? value : nil, titleLines: 2) {
             StateDot(mark: r.mark).frame(width: Token.Tile.icon)
         } trailing: {
             if !value.isEmpty, !long { TrailingValue(value) }
@@ -189,16 +225,32 @@ struct MachineContent: View {
         }
     }
 
+    // value: a row's words as a menu line starts them, capital first,
+    // unless they start with a name the owner types as it is (`npm`,
+    // `com.docker.socket`, `~/go`): Needs you's lines name what they are.
+    static func sentence(_ words: String, in s: Section) -> String {
+        guard s.id != TodoBadge.section, let first = words.split(separator: " ").first,
+              first.allSatisfy({ $0.isLetter }) else { return words }
+        return words.capitalizedFirst
+    }
+
     func serverRow(_ r: Row) -> some View {
         let value = words(r.cells?.first)
         if r.id == "ssh" {
             return AnyView(MenuRow(r.label ?? "", subtitle: value, link: true) {
                 IconTile(Token.Symbol.terminal)
             } trailing: {
-                PlainIcon(Token.Symbol.copy) { handlers.copy(value) }
+                CopyIcon { handlers.copy(value) }
             })
         }
-        return AnyView(MenuRow(r.label ?? "", tap: { handlers.push(Navigation.ports) }) {
+        guard r.id == "ports" else {
+            return AnyView(MenuRow(r.label ?? "") {
+                IconTile(Token.Symbol.line(r.id ?? "") ?? Token.Symbol.forward)
+            } trailing: {
+                TrailingValue(value)
+            })
+        }
+        return AnyView(MenuRow(r.label ?? "", tap: { handlers.push(Navigation.page(Navigation.ports, of: page.context?.machine ?? "")) }) {
             IconTile(Token.Symbol.ports)
         } trailing: {
             TrailingValue(Self.counted(r.cells?.first))
@@ -207,26 +259,30 @@ struct MachineContent: View {
     }
 
     // value: a shared port as the vision's line: its name and port, its
-    // address under it in the accent, Copy, QR and Open at its end; the QR
-    // unfolds under it.
+    // address under it in the accent, Copy, and for a web link QR and Open
+    // at its end; the QR unfolds under it as panel d's card: the link, where
+    // it works, Copy link, Open and Stop sharing. A raw TCP port is copied
+    // only.
     func link(_ l: Link) -> some View {
-        let url = l.value.flatMap(Format.url)
+        let url = l.value.flatMap(Format.url).flatMap { ["http", "https"].contains($0.scheme ?? "") ? $0 : nil }
         let address = l.value.map { Format.show($0) } ?? ""
         let lead = l.lead.map { Format.show($0) } ?? l.label ?? ""
-        return VStack(alignment: .center, spacing: 8) {
+        let stop = page.rowActions(l.row ?? "").first { $0.id?.hasPrefix("stop-sharing:") == true }
+        let open = url.map { state.qr == $0.absoluteString } ?? false
+        return VStack(alignment: .center, spacing: 0) {
             MenuRow(lead, subtitle: address, link: true) {
                 EmptyView()
             } trailing: {
                 HStack(spacing: 10) {
-                    PlainIcon(Token.Symbol.copy) { handlers.copy(address) }
+                    CopyIcon { handlers.copy(address) }
                     if let url {
-                        PlainIcon(Token.Symbol.qr, picked: state.qr == url.absoluteString) { handlers.toggleQR(url.absoluteString) }
+                        PlainIcon(Token.Symbol.qr, picked: open) { handlers.toggleQR(url.absoluteString) }
                         PlainIcon(Token.Symbol.open) { handlers.open(url) }
                     }
                 }
             }
-            if let url, state.qr == url.absoluteString {
-                QRView(url.absoluteString).padding(12).background(RoundedRectangle(cornerRadius: Token.Tile.qrCorner, style: .continuous).fill(palette.qrLight)).padding(.bottom, 12)
+            if let url, open {
+                SharedPortCard(url: url, stop: stop, page: page, state: state, handlers: handlers)
             }
         }
     }
@@ -235,7 +291,7 @@ struct MachineContent: View {
     // side and as wide: Restart the one primary, Stop, and what destroys
     // in red; Open in Terminal answers its key.
     var buttons: some View {
-        let shown = page.pageActions.filter { ["restart", "stop", "start", "delete", "unlock"].contains($0.id ?? "") }
+        let shown = page.pageActions.filter { ["restart", "stop", "start", "start-vm", "delete", "unlock"].contains($0.id ?? "") }
         let terminal = page.action("open-station")
         return HStack(spacing: Token.Tile.pair) {
             ForEach(Array(shown.enumerated()), id: \.offset) { _, a in
@@ -271,7 +327,7 @@ struct MachineContent: View {
     // panel f: Stop, then "(type the name)").
     static func role(_ a: Action) -> StationRole {
         switch a.id {
-        case "restart": .primary
+        case "restart", "start-vm": .primary
         case "delete": .danger
         default: a.confirm?.type != nil ? .quiet : .plain
         }
@@ -281,7 +337,11 @@ struct MachineContent: View {
         role(a) == .quiet ? "\(label(a)) (type the name)" : label(a)
     }
 
+    // value: an action that opens Terminal on its own command (Unlock),
+    // whose label ends in an ellipsis: it opens something more.
+    static func opensTerminal(_ a: Action) -> Bool { a.run?.terminal == true && !(a.run?.argv ?? []).isEmpty && a.id != "open-station" }
+
     static func label(_ a: Action) -> String {
-        (a.form != nil || a.confirm?.type != nil) ? "\(a.label ?? "")\(Token.Glyph.ellipsis)" : a.label ?? ""
+        (a.form != nil || a.confirm?.type != nil || Self.opensTerminal(a)) ? "\(a.label ?? "")\(Token.Glyph.ellipsis)" : a.label ?? ""
     }
 }
