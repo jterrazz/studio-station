@@ -14,8 +14,8 @@ import (
 
 type CheckRunner interface {
 	// invariant: what the engine needs to run a server's check from its
-	// Mac: nil once it answered within its budget.
-	Run(ctx context.Context, t model.CheckTarget) error
+	// Mac: nil once it answered within its budget, with what it answered.
+	Run(ctx context.Context, t model.CheckTarget) (string, error)
 }
 
 // value: the closed list of what the engine tells the owner of its
@@ -108,10 +108,14 @@ func (d *Daemon) keep(ctx context.Context, v *vmState) {
 		ctx = d.life
 	}
 	go func() {
-		passed := d.o.Checks.Run(ctx, target) == nil
+		answer, err := d.o.Checks.Run(ctx, target)
+		passed := err == nil
 		d.mu.Lock()
 		var change model.CheckChange
 		v.check, change = model.Health(v.check, passed, now)
+		if passed {
+			v.check.Answer = answer
+		}
 		v.checking = false
 		d.mu.Unlock()
 		switch change {

@@ -114,6 +114,9 @@ type CheckStatus struct {
 	Since time.Time `json:"since,omitzero"`
 	// value: when the check last ran.
 	At time.Time `json:"at,omitzero"`
+	// value: what it answered when it last passed: a URL's status (`200`);
+	// empty for a connection.
+	Answer string `json:"answer,omitempty"`
 }
 
 type CheckChange int

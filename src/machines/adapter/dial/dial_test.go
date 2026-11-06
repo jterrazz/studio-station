@@ -38,6 +38,7 @@ func TestTheDialCheckerKeepsTheCheckRunnerContract(t *testing.T) {
 		at := "127.0.0.1:" + strconv.Itoa(l.Port())
 		return contracttest.CheckRunnerSubject{
 			Runner: dial.Checker{},
+			Answer: "204",
 			Answering: func() machines.CheckTarget {
 				return machines.CheckTarget{Dial: at, URL: "http://infra:" + strconv.Itoa(l.Port()) + "/readyz", Name: "infra"}
 			},

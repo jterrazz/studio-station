@@ -36,6 +36,8 @@ type VMView struct {
 	SSH      bool              `json:"ssh,omitempty"`
 	Restarts model.Restarts    `json:"restarts,omitzero"`
 	Check    model.CheckStatus `json:"check,omitzero"`
+	// value: when its run began, while it runs.
+	BootAt time.Time `json:"boot_at,omitzero"`
 }
 
 type Peer interface {

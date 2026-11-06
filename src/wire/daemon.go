@@ -184,7 +184,7 @@ func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, erro
 	}
 	out := make(map[string]machines.DaemonVM, len(views))
 	for _, v := range views {
-		out[v.Name] = machines.DaemonVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check}
+		out[v.Name] = machines.DaemonVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check, BootAt: v.BootAt}
 	}
 	return out, nil
 }

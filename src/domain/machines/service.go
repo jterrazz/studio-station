@@ -49,6 +49,7 @@ type DaemonVM struct {
 	SSH      bool
 	Restarts model.Restarts
 	Check    model.CheckStatus
+	BootAt   time.Time
 }
 
 type Daemon interface {

@@ -81,7 +81,7 @@ func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM
 				vm.State = VMState(d.State)
 			}
 			vm.Guest, vm.IP, vm.Detail = d.Guest, d.IP, d.Detail
-			vm.SSH, vm.Restarts, vm.CheckStatus = d.SSH, d.Restarts, d.Check
+			vm.SSH, vm.Restarts, vm.CheckStatus, vm.BootAt = d.SSH, d.Restarts, d.Check, d.BootAt
 		}
 		out = append(out, vm)
 	}
