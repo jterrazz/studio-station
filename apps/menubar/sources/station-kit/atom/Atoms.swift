@@ -1,3 +1,4 @@
+import Charts
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 
@@ -85,13 +86,16 @@ public struct Meter: View {
     }
 }
 
-// value: a measure's sparkline, as wide as it is given: Swift Charts'
-// catmull-rom line over an area fading down, its axes hidden.
+// value: a measure's sparkline as the vision's: its points 0 to 100 as
+// a straight line in its hue over an area fading to nothing, a hairline
+// under it, a dot ringed in white where it ends; Swift Charts, axes
+// hidden, as wide as it is given.
 public struct Spark: View {
     let points: [Int]
     let h: CGFloat
     let tint: Color?
     @Environment(\.stationPalette) private var palette
+    @Environment(\.colorScheme) private var scheme
 
     public init(_ points: [Int], height: CGFloat = Token.Space.sparkHeight, tint: Color? = nil) {
         self.points = points
@@ -99,8 +103,38 @@ public struct Spark: View {
         self.tint = tint
     }
 
+    // value: the vision's frame: a share p sits at 24 - 0.22 p of a 26
+    // high box, the line runs from 2 to 92 of its 96 wide.
+    static let floor = -24.0 / 0.22 * (2.0 / 24)
+    static let top = 24.0 / 0.22
+    static let base = (24.0 - 25.5) / 0.22
+
     public var body: some View {
-        Graph(points, height: h, tint: tint, fit: true)
+        let ink = tint ?? palette.accent
+        let last = max(points.count - 1, 1)
+        let step = Double(last) / 90
+        let shown = points.enumerated().map { (i: $0.offset, v: Double(min(max($0.element, 0), 100))) }
+        Chart {
+            RuleMark(y: .value("base", Self.base)).foregroundStyle(Token.Fill.faint(scheme)).lineStyle(StrokeStyle(lineWidth: 0.75))
+            ForEach(shown, id: \.i) { p in
+                AreaMark(x: .value("t", Double(p.i)), yStart: .value("floor", Self.base), yEnd: .value("v", p.v))
+                    .foregroundStyle(LinearGradient(colors: [ink.opacity(0.35), ink.opacity(0)], startPoint: .top, endPoint: .bottom))
+                LineMark(x: .value("t", Double(p.i)), y: .value("v", p.v))
+                    .lineStyle(StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round))
+                    .foregroundStyle(ink)
+            }
+            if let end = shown.last {
+                PointMark(x: .value("t", Double(end.i)), y: .value("v", end.v))
+                    .symbol { Circle().fill(ink).frame(width: 4.4, height: 4.4).overlay(Circle().stroke(palette.onTint, lineWidth: 0.8)) }
+            }
+        }
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartLegend(.hidden)
+        .chartYScale(domain: Self.floor...Self.top)
+        .chartXScale(domain: (-2 * step)...(Double(last) + 4 * step))
+        .chartPlotStyle { $0.frame(maxWidth: .infinity) }
+        .frame(height: h)
     }
 }
 
@@ -138,14 +172,11 @@ public struct QRView: View {
 
     public var body: some View {
         if let image = QR.modules(text) {
-            let quiet: CGFloat = 4
-            let scale = max(1, (Token.Space.qr / (CGFloat(image.width) + quiet * 2)).rounded(.down))
             Image(decorative: image, scale: 1)
                 .interpolation(.none)
                 .resizable()
-                .frame(width: CGFloat(image.width) * scale, height: CGFloat(image.height) * scale)
-                .padding(quiet * scale)
-                .background(palette.qrLight)
+                .aspectRatio(1, contentMode: .fit)
+                .frame(width: Token.Tile.qr, height: Token.Tile.qr)
         }
     }
 }

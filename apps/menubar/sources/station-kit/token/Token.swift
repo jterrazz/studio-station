@@ -30,29 +30,96 @@ public enum Token {
         }
     }
 
-    // value: the measures of a panel drawn by Apple's menus (Wi-Fi,
-    // Battery): 28 pt rows, a 24 pt icon tile with a 13 pt glyph whose
-    // corner is concentric with the 6 pt hover, 16 pt between sections, a
-    // 10 pt grouping concentric with the panel.
+    // value: the measures of the vision's panels (VISION-v3 .panel, .tile,
+    // .list): 10 pt between blocks, a 16 pt tile padded 10 by 12, a list's
+    // 40 pt row padded 7 by 12, its nested rows from 34 pt, one 24 pt icon
+    // tile with a 13 pt glyph whose corner is concentric with the row's.
     public enum Tile {
-        public static let row: CGFloat = 28
+        public static let row: CGFloat = 40
+        public static let rowPadding = EdgeInsets(top: 7, leading: 12, bottom: 7, trailing: 12)
         public static let icon: CGFloat = 24
         public static let glyph: CGFloat = 13
         public static let corner: CGFloat = 6.5
-        public static let headIcon: CGFloat = 32
+        public static let headIcon: CGFloat = 24
         public static let hover: CGFloat = 6
-        public static let group: CGFloat = 10
-        public static let groupPadding: CGFloat = 10
-        public static let section: CGFloat = 16
-        public static let indent: CGFloat = 32
+        public static let group: CGFloat = 16
+        public static let groupPadding = EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+        public static let listPadding: CGFloat = 4
+        public static let section: CGFloat = 10
+        public static let gap: CGFloat = 10
+        public static let pair: CGFloat = 8
+        public static let indent: CGFloat = 34
         public static let figure: CGFloat = 17
-        public static let spark: CGFloat = 22
+        public static let spark: CGFloat = 26
         public static let chart: CGFloat = 54
         public static let measure: CGFloat = 22
         public static let meter: CGFloat = 14
         public static let dot: CGFloat = 7
-        public static let switchWidth: CGFloat = 26
-        public static let switchHeight: CGFloat = 15
+        public static let switchWidth: CGFloat = 38
+        public static let switchHeight: CGFloat = 22
+        public static let roundButton: CGFloat = 28
+        public static let squareButton: CGFloat = 26
+        public static let squareCorner: CGFloat = 8
+        public static let buttonCorner: CGFloat = 12
+        public static let fieldCorner: CGFloat = 10
+        public static let qrBox: CGFloat = 172
+        public static let qr: CGFloat = 148
+        public static let qrCorner: CGFloat = 14
+    }
+
+    // value: the vision's type scale: 13 pt text, 11.5 pt words under it,
+    // 11 pt uppercase section titles, 10.5 pt group captions, a 19 pt
+    // page title.
+    public enum Size {
+        public static let text: CGFloat = 13
+        public static let sub: CGFloat = 11.5
+        public static let label: CGFloat = 11
+        public static let caption: CGFloat = 10.5
+        public static let tag: CGFloat = 10
+        public static let pill: CGFloat = 13.5
+        public static let mini: CGFloat = 12
+        public static let key: CGFloat = 12
+        public static let segment: CGFloat = 12.5
+        public static let title: CGFloat = 19
+        public static let tracking: CGFloat = 0.04
+        // value: half what the vision's 1.35 line height adds to a line
+        // of SF's own.
+        public static let leading: CGFloat = 0.8
+    }
+
+    // value: the vision's fills on the panel's glass: a tile white at 8 %
+    // in dark, 58 % in light; raised (a chosen segment, a small button)
+    // 14 % and 80 %; the hairline between rows; the switch's green.
+    public enum Fill {
+        public static func tile(_ scheme: ColorScheme) -> Color { Color.white.opacity(scheme == .dark ? 0.08 : 0.58) }
+        public static func raised(_ scheme: ColorScheme) -> Color { Color.white.opacity(scheme == .dark ? 0.14 : 0.8) }
+        public static func faint(_ scheme: ColorScheme) -> Color {
+            scheme == .dark ? Token.hex(0xEBEBF5).opacity(0.16) : Token.hex(0x3C3C43).opacity(0.18)
+        }
+        public static func edge(_ scheme: ColorScheme) -> Color { Color.white.opacity(scheme == .dark ? 0.14 : 0.7) }
+        public static let finding = 0.16
+        public static let chip = 0.22
+        public static let tag = 0.18
+        public static let ring = 0.3
+        public static let selected = 0.85
+    }
+
+    // value: the vision's hues by scheme: a measure's line (CPU blue,
+    // Memory indigo, Network and Disk teal) and the tags.
+    public enum Hue {
+        public static func blue(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0x2B8CFF : 0x0A7AFF) }
+        public static func indigo(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0x6E6FF0 : 0x5B5CE6) }
+        public static func teal(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0x2BB8C9 : 0x14A6B8) }
+        public static func green(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0x32C75A : 0x2FB350) }
+
+        // value: a measure's hue by its name.
+        public static func measure(_ label: String, _ scheme: ColorScheme) -> Color {
+            switch label {
+            case "CPU": blue(scheme)
+            case "Memory": indigo(scheme)
+            default: teal(scheme)
+            }
+        }
     }
 
     // value: the menu bar icon of the vision: the station symbol, 16 pt, its
@@ -98,27 +165,29 @@ public enum Token {
     // MenuBarExtra's system glass, which the renderer cannot sample: a
     // translucent pane, its rim and its shadow over the vision's desk.
     public enum Glass {
-        public static let window: CGFloat = 22
+        public static let window: CGFloat = 24
 
-        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x1E2024).opacity(0.78) : Token.hex(0xF4F5F7).opacity(0.7) }
+        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x222328).opacity(0.58) : Token.hex(0xF6F7FB).opacity(0.62) }
         public static func sheen(_ scheme: ColorScheme) -> [Color] {
-            [Color.white.opacity(scheme == .dark ? 0.03 : 0.12), Color.white.opacity(0)]
+            [Color.white.opacity(scheme == .dark ? 0.06 : 0.35), Color.white.opacity(0)]
         }
-        public static func edge(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.14) : Color.black.opacity(0.1) }
+        public static func edge(_ scheme: ColorScheme) -> Color { Fill.edge(scheme) }
         // value: the chosen segment of a segmented control, raised off its
         // track as macOS draws it.
         public static func knob(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.26) : Color.white }
         public static func shade(_ scheme: ColorScheme) -> Color { Color.black.opacity(scheme == .dark ? 0.5 : 0.22) }
 
         // value: the fixed wallpaper an offscreen snapshot draws the panel
-        // over, so its glass reads in the PNG (the vision's desk).
+        // over, so its glass reads in the PNG (the vision's desk): each
+        // blob's colour, centre, and the share of the desk its ellipse
+        // spans before it fades out.
         public static func wallpaper(_ scheme: ColorScheme) -> [(Color, UnitPoint, CGFloat)] {
             let dark = scheme == .dark
             return [
-                (Token.hex(dark ? 0x9A3F2A : 0xFF9D6B), UnitPoint(x: 0.12, y: 0.18), 0.65),
-                (Token.hex(dark ? 0x1E4FA8 : 0x5AA9FF), UnitPoint(x: 0.88, y: 0.12), 0.6),
-                (Token.hex(dark ? 0x0F6E62 : 0x2FC6A8), UnitPoint(x: 0.7, y: 0.95), 0.7),
-                (Token.hex(dark ? 0x7C5A12 : 0xF7C948), UnitPoint(x: 0.2, y: 0.9), 0.6),
+                (Token.hex(dark ? 0x9A3F2A : 0xFF9D6B), UnitPoint(x: 0.12, y: 0.18), 0.78),
+                (Token.hex(dark ? 0x1E4FA8 : 0x5AA9FF), UnitPoint(x: 0.88, y: 0.12), 0.71),
+                (Token.hex(dark ? 0x0F6E62 : 0x2FC6A8), UnitPoint(x: 0.7, y: 0.95), 0.84),
+                (Token.hex(dark ? 0x7C5A12 : 0xF7C948), UnitPoint(x: 0.2, y: 0.9), 0.66),
             ]
         }
         public static func wallBase(_ scheme: ColorScheme) -> [Color] {
@@ -150,8 +219,9 @@ public enum Token {
         public static let mac = "desktopcomputer"
         public static let workspace = "shippingbox"
         public static let plus = "plus"
+        public static let list = "list.bullet.rectangle"
         public static let terminal = "terminal"
-        public static let stop = "stop.fill"
+        public static let stop = "stop"
         public static let search = "magnifyingglass"
         public static let check = "checkmark"
         public static let cpu = "cpu"
@@ -175,7 +245,7 @@ public enum Token {
         public static let key = "key.fill"
         public static let settings = "gearshape"
         public static let activity = "chart.bar"
-        public static let restart = "arrow.clockwise"
+        public static let restart = "arrow.counterclockwise"
         public static let unlock = "lock.open"
 
         // value: a machine's symbol by its kind: a Mac, a server, a

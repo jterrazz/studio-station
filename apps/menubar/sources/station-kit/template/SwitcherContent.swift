@@ -57,8 +57,8 @@ struct SwitcherContent: View {
             TypedField("Search machines", text: Binding(get: { state.search }, set: handlers.search), symbol: Token.Symbol.search)
             if let tree {
                 if state.search.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        SectionHeader("Recent")
+                    SectionHeader("Recent")
+                    Rows {
                         if let mac = here(tree) {
                             MachineRow(row: mac, symbol: Token.Symbol.mac, kinds: true, sub: "\(mac.id ?? "")\(Token.Glyph.sep)you are here", picked: true, open: { _ in handlers.back() })
                         }
@@ -67,16 +67,14 @@ struct SwitcherContent: View {
                         }
                     }
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    SectionHeader(tree.title ?? "")
-                    MachineTree(section: tree, kinds: true, only: matching(tree), open: handlers.openMachine)
-                }
+                SectionHeader(tree.title ?? "")
+                MachineTree(section: tree, kinds: true, only: matching(tree), open: handlers.openMachine)
             }
             SheetFor(page: page, state: state, handlers: handlers)
-            VStack(alignment: .leading, spacing: 2) {
-                SectionDivider().padding(.bottom, 4)
+            VStack(alignment: .leading, spacing: 0) {
+                SectionDivider().padding(.bottom, 2)
                 Button(action: handlers.back) {
-                    MenuText(symbol: Token.Symbol.mac, title: "Show all machines", key: Token.Key.shown("cmd+0"), danger: false)
+                    MenuText(symbol: Token.Symbol.list, title: "Show all machines", key: Token.Key.shown("cmd+0"), danger: false)
                 }
                 .buttonStyle(.plain)
                 ForEach(Array(page.pageActions.enumerated()), id: \.offset) { _, a in

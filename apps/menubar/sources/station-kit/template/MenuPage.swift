@@ -35,7 +35,7 @@ struct MenuPageFrame<Content: View>: View {
             content
             if let status = state.status { StatusBar(status.line, failed: status.failed) }
         }
-        .padding(Token.Space.margin + 2)
+        .padding(Token.Space.margin)
         .frame(width: Token.Space.width, alignment: .topLeading)
         .stationPanel()
         .environment(\.stationHints, false)

@@ -25,50 +25,55 @@ public struct AwakePage: View {
             if let here, let row = here.rows.first { thisMac(here, row) }
             if let guards = page.section("guards") { guardsSection(guards) }
             if let others = page.section("other-macs") {
-                VStack(alignment: .leading, spacing: 4) {
-                    SectionHeader(others.title ?? "")
+                SectionHeader(others.title ?? "")
+                Rows {
                     ForEach(Array(others.rows.enumerated()), id: \.offset) { _, r in other(r) }
-                    ForEach(Array(others.notes.enumerated()), id: \.offset) { _, n in FootNote(n).padding(.top, 4) }
                 }
+                ForEach(Array(others.notes.enumerated()), id: \.offset) { _, n in FootNote(n) }
             }
         }
     }
 
     func words(_ v: Value?) -> String { Format.show(v ?? Value()) }
 
-    // value: This Mac: Keep awake and its switch, how long as a segmented
-    // choice, then Lid closed and On battery with their switches.
+    // value: This Mac: Keep awake and its switch on a tile, how long as a
+    // segmented choice on another, then Lid closed and On battery with
+    // their switches in a list.
+    @ViewBuilder
     func thisMac(_ s: Section, _ r: Row) -> some View {
         let actions = page.actions(for: r.id ?? "")
         let keeps = actions.filter { $0.id?.hasPrefix("keep") == true }
         let switches = actions.filter { $0.id == "lid" || $0.id == "battery" }
         let on = r.mark == .ok
         let flip = on ? actions.first { $0.id == "let-sleep" } : keeps.first
-        return VStack(alignment: .leading, spacing: 4) {
-            SectionHeader(s.title ?? Page.ThisMacWord)
-            MenuRow("Keep awake", subtitle: words(r.cells?.first)) {
-                EmptyView()
-            } trailing: {
-                if let flip {
-                    if state.running == flip.id { PendingDot() } else { StationSwitch(on: on) { act.tap(flip) }.disabled(state.running != nil) }
-                }
+        SectionHeader(s.title ?? Page.ThisMacWord)
+        MenuRow("Keep awake", subtitle: words(r.cells?.first), bare: true) {
+            EmptyView()
+        } trailing: {
+            if let flip {
+                if state.running == flip.id { PendingDot() } else { StationSwitch(on: on) { act.tap(flip) }.disabled(state.running != nil) }
             }
-            if !keeps.isEmpty {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Keep awake for\(Token.Glyph.ellipsis)").font(.subheadline).foregroundStyle(.secondary)
-                    if let running = keeps.first(where: { state.running == $0.id }) {
-                        HStack(spacing: 6) {
-                            PendingDot()
-                            Text(act.label(running)).font(.subheadline).foregroundStyle(.secondary)
-                        }
-                    } else {
-                        Segments(options: keeps.map { k in (Self.held(k) ? k.label ?? "" : act.label(k), on && Self.held(k), { act.tap(k) }) })
+        }
+        .stationTile()
+        if !keeps.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                SubText("Keep awake for\(Token.Glyph.ellipsis)")
+                if let running = keeps.first(where: { state.running == $0.id }) {
+                    HStack(spacing: 6) {
+                        PendingDot()
+                        SubText(act.label(running))
                     }
+                } else {
+                    Segments(options: keeps.map { k in (Self.held(k) ? k.label ?? "" : act.label(k), on && Self.held(k), { act.tap(k) }) })
                 }
-                .padding(.vertical, 4)
-                ForEach(Array(keeps.enumerated()), id: \.offset) { _, k in act.sheet(k) }
             }
-            ForEach(Array(switches.enumerated()), id: \.offset) { _, a in toggle(a) }
+            .stationTile()
+            ForEach(Array(keeps.enumerated()), id: \.offset) { _, k in act.sheet(k) }
+        }
+        if !switches.isEmpty {
+            Rows {
+                ForEach(Array(switches.enumerated()), id: \.offset) { _, a in toggle(a) }
+            }
         }
     }
 
@@ -101,9 +106,10 @@ public struct AwakePage: View {
         }
     }
 
+    @ViewBuilder
     func guardsSection(_ s: Section) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            SectionHeader(s.title ?? "")
+        SectionHeader(s.title ?? "")
+        Rows {
             ForEach(Array((s.items ?? []).compactMap(\.fact).enumerated()), id: \.offset) { _, f in
                 let parts = (f.value?.kind == "list" ? f.value?.items : nil)?.map { Format.show($0) }
                 if let parts, parts.count > 1 {
@@ -118,22 +124,25 @@ public struct AwakePage: View {
                     }
                 }
             }
-            ForEach(Array(s.notes.enumerated()), id: \.offset) { _, n in FootNote(n).padding(.top, 4) }
         }
+        ForEach(Array(s.notes.enumerated()), id: \.offset) { _, n in FootNote(n) }
     }
 
     func other(_ r: Row) -> some View {
         let change = page.actions(for: r.id ?? "").first { $0.id?.hasPrefix("change:") == true }
-        return VStack(alignment: .leading, spacing: 4) {
-            MenuRow(r.short ?? r.label ?? "", subtitle: words(r.cells?.first)) {
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: Token.Tile.gap) {
                 IconTile(Token.Symbol.mac)
-            } trailing: {
+                RowText(title: r.short ?? r.label ?? "", subtitle: words(r.cells?.first))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
                 StateDot(mark: r.mark)
                 if let change { StationButton("\(change.label ?? "")\(Token.Glyph.ellipsis)") { act.tap(change) } }
             }
-            if let detail = r.detail { FootNote(words(detail).capitalizedFirst).padding(.leading, Token.Tile.icon + Token.Space.gap) }
+            if let detail = r.detail { SubText(words(detail).capitalizedFirst) }
             if let change { act.sheet(change) }
         }
+        .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
     }
 }
 

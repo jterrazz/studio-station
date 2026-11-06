@@ -39,11 +39,11 @@ final class PlainTests: XCTestCase {
     }
 
     func testAGroupingIsAFaintFillOrAStroke() throws {
-        let group = Color.clear.frame(width: 80, height: 40).stationGroup()
+        let group = Color.clear.frame(width: 80, height: 40).stationTile()
         let filled = try bitmap(group)
         let middle = alpha(filled, x: filled.width / 2, y: filled.height / 2)
         XCTAssertGreaterThan(middle, 0)
-        XCTAssertLessThan(middle, 40, "a grouping is a quinary fill, never a painted card")
+        XCTAssertLessThan(middle, 40, "a tile is a faint fill, never a painted card")
         let stroked = try bitmap(group, contrast: .increased)
         XCTAssertEqual(alpha(stroked, x: stroked.width / 2, y: stroked.height / 2), 0)
         XCTAssertGreaterThan(lit(stroked, row: stroked.height / 2), 0)

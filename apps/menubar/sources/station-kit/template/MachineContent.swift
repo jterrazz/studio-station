@@ -34,9 +34,9 @@ struct MachineContent: View {
         let mark = row?.mark ?? .ok
         var caption = (s.caption ?? []).map { Format.show($0) }
         var badge: String?
-        if let first = caption.first, let kind = ["Server", "Workspace"].first(where: { first == "\($0) VM" }) {
-            badge = kind
-            if kind == "Server" { caption.removeFirst() } else { caption[0] = "VM" }
+        if caption.first == "Server VM" {
+            badge = "Server"
+            caption.removeFirst()
         }
         let back = server ? page.context?.on ?? Self.all : Self.all
         return PageHeader(back: back, title: s.title ?? "", subtitle: caption.joined(separator: Token.Glyph.sep), symbol: Token.Symbol.machine(page.context?.kind),
@@ -57,21 +57,20 @@ struct MachineContent: View {
     func section(_ s: Section) -> some View {
         switch s.id {
         case "activity":
-            VStack(alignment: .leading, spacing: 6) {
-                if server { SectionHeader("Resources") }
-                Metrics(measures: s.rows.map { r in (r.label ?? "", r.cells?.first, r.cells?.dropFirst().first?.points) })
-            }
+            if server { SectionHeader("Resources") }
+            Metrics(measures: s.rows.map { r in (r.label ?? "", r.cells?.first, r.cells?.dropFirst().first?.points) })
         case "up":
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: Token.Tile.pair) {
                 ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in figure(r) }
             }
+            .fixedSize(horizontal: false, vertical: true)
         case "health":
-            VStack(alignment: .leading, spacing: 2) {
-                SectionHeader(s.header)
+            SectionHeader(s.header)
+            Rows {
                 ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in health(r) }
             }
         case "inside":
-            VStack(alignment: .leading, spacing: 0) {
+            Rows {
                 ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in
                     MenuRow(r.label ?? "", tap: {}) {
                         IconTile(Token.Symbol.line(r.id ?? "") ?? Token.Symbol.forward)
@@ -82,8 +81,8 @@ struct MachineContent: View {
                 }
             }
         case "ports":
-            VStack(alignment: .leading, spacing: 2) {
-                SectionHeader("\(s.header)\(Token.Glyph.sep)\((s.items ?? []).compactMap(\.link).count)")
+            SectionHeader("\(s.header)\(Token.Glyph.sep)\((s.items ?? []).compactMap(\.link).count)")
+            Rows {
                 ForEach(Array((s.items ?? []).compactMap(\.link).enumerated()), id: \.offset) { _, l in link(l) }
                 if let share = page.action("share-port") {
                     MenuRow("\(share.label ?? "")\(Token.Glyph.ellipsis)", tap: { perform(share, handlers) }) {
@@ -92,8 +91,8 @@ struct MachineContent: View {
                 }
             }
         case "shared":
-            VStack(alignment: .leading, spacing: 2) {
-                SectionHeader(s.header)
+            SectionHeader(s.header)
+            Rows {
                 ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in
                     MenuRow(r.label ?? "", subtitle: words(r.cells?.first)) {
                         EmptyView()
@@ -105,35 +104,31 @@ struct MachineContent: View {
                 }
             }
         case "server":
-            VStack(alignment: .leading, spacing: 6) {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in serverRow(r) }
-                }
-                ForEach(Array(s.notes.enumerated()), id: \.offset) { _, n in FootNote(n) }
+            Rows {
+                ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in serverRow(r) }
             }
+            ForEach(Array(s.notes.enumerated()), id: \.offset) { _, n in FootNote(n) }
         case "vms":
-            VStack(alignment: .leading, spacing: 4) {
-                SectionHeader(s.header)
-                MachineTree(section: s, kinds: true, only: nil, open: handlers.openMachine)
-            }
+            SectionHeader(s.header)
+            MachineTree(section: s, kinds: true, only: nil, open: handlers.openMachine)
         default:
-            VStack(alignment: .leading, spacing: 2) {
-                SectionHeader(s.header)
+            SectionHeader(s.header)
+            Rows {
                 ForEach(Array((s.items ?? []).enumerated()), id: \.offset) { _, item in
                     if let row = item.row {
                         markRow(s, row)
                     } else if let note = item.note?.text {
-                        FootNote(note)
+                        FootNote(note).padding(Token.Tile.rowPadding)
                     } else {
-                        ItemsView([item], columns: s.columns ?? [], width: Token.Space.width - Token.Space.margin * 2)
+                        ItemsView([item], columns: s.columns ?? [], width: Token.Space.width - Token.Space.margin * 2).padding(Token.Tile.rowPadding)
                     }
                 }
             }
         }
     }
 
-    // value: an Overview figure as the vision's two: its name, its figure,
-    // its words under it.
+    // value: an Overview figure as the vision's two tiles: its name, its
+    // figure in 13 pt bold, its words under it.
     func figure(_ r: Row) -> some View {
         let value = r.cells?.first
         let items = value?.kind == "list" ? value?.items ?? [] : value.map { [$0] } ?? []
@@ -144,12 +139,13 @@ struct MachineContent: View {
             shown = items.first.flatMap { Self.span($0) }.map { Format.show($0) }.flatMap { $0.isEmpty ? nil : $0 } ?? Token.Glyph.missing
         }
         let rest = items.dropFirst().map { Format.show($0) }.joined(separator: Token.Glyph.sep)
-        return VStack(alignment: .leading, spacing: 2) {
-            Text(r.label ?? "").font(.subheadline).foregroundStyle(.secondary)
-            Text(shown).font(.system(size: Token.Tile.figure, weight: .semibold)).monospacedDigit()
-            if !rest.isEmpty { Text(rest).font(.subheadline).foregroundStyle(.secondary) }
+        return VStack(alignment: .leading, spacing: 4) {
+            SubText(r.label ?? "")
+            Text(shown).font(.system(size: Token.Size.text, weight: .bold)).monospacedDigit()
+            if !rest.isEmpty { SubText(rest) }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxHeight: .infinity, alignment: .topLeading)
+        .stationTile()
     }
 
     // value: the Up figure without the word its label already says: `up
@@ -170,7 +166,7 @@ struct MachineContent: View {
         let rest = parts.dropFirst(address == nil ? 0 : 1).map { Format.show($0) }.joined(separator: Token.Glyph.sep)
         return MenuRow(r.label ?? "", subtitle: address, link: true) {
             Image(systemName: r.mark == .ok ? Token.Symbol.health : Token.Symbol.of(r.mark ?? .notKnown))
-                .font(.system(size: 12, weight: .bold)).foregroundStyle(palette.of(r.mark ?? .notKnown)).frame(width: Token.Tile.icon)
+                .font(.system(size: 13, weight: .semibold)).foregroundStyle(palette.of(r.mark ?? .notKnown)).frame(width: 14)
         } trailing: {
             if !rest.isEmpty { TrailingValue(rest) }
         }
@@ -220,7 +216,7 @@ struct MachineContent: View {
             MenuRow(lead, subtitle: address, link: true) {
                 EmptyView()
             } trailing: {
-                HStack(spacing: 2) {
+                HStack(spacing: 10) {
                     PlainIcon(Token.Symbol.copy) { handlers.copy(address) }
                     if let url {
                         PlainIcon(Token.Symbol.qr, picked: state.qr == url.absoluteString) { handlers.toggleQR(url.absoluteString) }
@@ -229,7 +225,7 @@ struct MachineContent: View {
                 }
             }
             if let url, state.qr == url.absoluteString {
-                QRView(url.absoluteString).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                QRView(url.absoluteString).padding(12).background(RoundedRectangle(cornerRadius: Token.Tile.qrCorner, style: .continuous).fill(palette.qrLight)).padding(.bottom, 12)
             }
         }
     }
@@ -240,7 +236,7 @@ struct MachineContent: View {
     var buttons: some View {
         let shown = page.pageActions.filter { ["restart", "stop", "start", "delete", "unlock"].contains($0.id ?? "") }
         let terminal = page.action("open-station")
-        return HStack(spacing: Token.Space.gap) {
+        return HStack(spacing: Token.Tile.pair) {
             ForEach(Array(shown.enumerated()), id: \.offset) { _, a in
                 if state.running == a.id {
                     PendingDot().frame(maxWidth: .infinity)
@@ -250,6 +246,7 @@ struct MachineContent: View {
                 }
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
         .background {
             if let terminal, !still {
                 Button("") { handlers.run(terminal, [:]) }.keyboardShortcut("t", modifiers: .command).opacity(0).allowsHitTesting(false)

@@ -45,7 +45,7 @@ public struct LinkView: View {
             }
             .padding(.vertical, 3)
             if let actions, let url = link.value.flatMap(Format.url), actions.qr == url.absoluteString {
-                QRView(url.absoluteString).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)).frame(maxWidth: .infinity)
+                QRView(url.absoluteString).padding(12).background(RoundedRectangle(cornerRadius: Token.Tile.qrCorner, style: .continuous).fill(palette.qrLight)).frame(maxWidth: .infinity)
             }
         }
     }

@@ -25,23 +25,22 @@ public struct PortsPage: View {
             PageHeader(back: summary?.label ?? page.context?.machine ?? "", title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()), action: handlers.back)
             if let red = page.section("needs-you") { needsYou(red) }
             if let https = page.section("https"), let row = https.rows.first {
-                MenuRow(row.label ?? "", subtitle: Format.show(row.cells?.first ?? Value())) {
+                MenuRow(row.label ?? "", subtitle: Format.show(row.cells?.first ?? Value()), bare: true) {
                     EmptyView()
                 } trailing: {
-                    StationSwitch(on: row.mark == .ok).disabled(true)
+                    StationSwitch(on: row.mark == .ok).allowsHitTesting(false)
                 }
+                .stationTile()
             }
             if let public_ = page.section("public") {
-                VStack(alignment: .leading, spacing: 2) {
-                    SectionHeader(public_.header)
+                SectionHeader(public_.header)
+                Rows {
                     ForEach(Array(public_.rows.enumerated()), id: \.offset) { _, r in plainRow(public_, r, symbol: Token.Symbol.globe) }
                 }
             }
             if let private_ = page.section("private") {
-                VStack(alignment: .leading, spacing: 2) {
-                    if page.section("https") == nil { SectionHeader(private_.header) }
-                    ForEach(Array(private_.rows.enumerated()), id: \.offset) { _, r in privateRow(private_, r) }
-                }
+                if page.section("https") == nil { SectionHeader(private_.header) }
+                privateRows(private_)
             }
             if let ranges = page.section("ranges") {
                 ForEach(Array(ranges.notes.enumerated()), id: \.offset) { _, n in FootNote(n) }
@@ -51,27 +50,30 @@ public struct PortsPage: View {
     }
 
     // value: what is reachable outside Tailscale undeclared, as the
-    // vision's red finding: its count in words, the ports and what they
-    // are under them, Review; the page's one grouping.
+    // vision's red finding: its count in words, why, the ports and what
+    // they are, what is known of it, Review.
     func needsYou(_ s: Section) -> some View {
         let rows = s.rows
-        let ports = rows.map { r in "\(r.short ?? r.label ?? "")\(Token.Glyph.sep)\(s.cell(r, "port").map { Format.show($0) } ?? "")" }
-        let whats = rows.compactMap { s.cell($0, "what").map { Format.show($0) } }
+        let ports = rows.map { r in
+            let port = s.cell(r, "port").map { Format.show($0) } ?? ""
+            return s.cell(r, "what").map { "\(port) (\(Format.show($0)))" } ?? port
+        }
         let review = rows.first.flatMap { page.actions(for: $0.id ?? "").first { $0.run?.terminal == true } }
         let reason = s.title.flatMap { t in t.range(of: ": ").map { String(t[$0.upperBound...]) } } ?? ""
-        let title = "\(rows.count) \(rows.count == 1 ? "port" : "ports") \(reason.components(separatedBy: ",").first ?? "")"
-        return HStack(alignment: .center, spacing: Token.Space.gap) {
+        let why = reason.components(separatedBy: ", ")
+        let title = "\(rows.count) \(rows.count == 1 ? "port" : "ports") \(why.first ?? "")"
+        let words = why.dropFirst().map(\.capitalizedFirst) + [ports.joined(separator: ", ")] + (s.caption ?? []).map { Format.show($0) }
+        return HStack(alignment: .center, spacing: Token.Tile.gap) {
             IconTile(Token.Symbol.warn, active: true, tint: palette.bad)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.body.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
-                Text(([ports.joined(separator: ", ")] + whats).joined(separator: Token.Glyph.sep)).font(.subheadline).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.system(size: Token.Size.text, weight: .semibold)).lineLimit(2)
+                SubText(words.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep))
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
-            Spacer(minLength: 4)
             if let review { StationButton(review.label ?? "") { act.tap(review) } }
         }
-        .stationGroup()
+        .stationTile(tint: palette.bad)
     }
 
     func line(title: String, detail: String, mark: Mark?, symbol: String?, trailing: Bool = false, open: Bool = false, tap: (() -> Void)? = nil) -> some View {
@@ -79,7 +81,9 @@ public struct PortsPage: View {
             if let symbol { IconTile(symbol) }
         } trailing: {
             if mark == .broken { StateDot(mark: mark) }
-            if trailing { Chevron(down: open) }
+            if trailing {
+                if open { PlainIcon(Token.Symbol.down) { tap?() } } else { Chevron() }
+            }
         }
     }
 
@@ -91,21 +95,61 @@ public struct PortsPage: View {
 
     func shared(_ s: Section, _ r: Row) -> URL? { s.cell(r, "url").flatMap(Format.url) }
 
-    // invariant: a private row names its class in words: a shared port its
-    // reserved port and state, under no tile as linux-1's links (vision c,
-    // d), any other how Tailscale carries it.
+    // value: the private list: a VM's shared ports one row each (its
+    // unfolded QR in the list), any other machine's ports one row a
+    // machine, its ports after its name and what they are under it.
+    func privateRows(_ s: Section) -> some View {
+        let rows = s.rows
+        let reserved = rows.filter { shared(s, $0) != nil || s.cell($0, "port")?.kind == "portmap" }
+        var machines: [(String, [Row])] = []
+        for r in rows where !reserved.contains(where: { $0.id == r.id }) {
+            let name = r.short ?? r.label ?? ""
+            if let i = machines.firstIndex(where: { $0.0 == name }) { machines[i].1.append(r) } else { machines.append((name, [r])) }
+        }
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(reserved.enumerated()), id: \.offset) { i, r in
+                if i > 0, !unfoldedRow(s, reserved[i - 1]) { RowSeparator() }
+                privateRow(s, r)
+            }
+            ForEach(Array(machines.enumerated()), id: \.offset) { i, m in
+                if i > 0 || !reserved.isEmpty { RowSeparator() }
+                machineRow(s, m.0, m.1)
+            }
+        }
+        .stationRows()
+    }
+
+    func unfoldedRow(_ s: Section, _ r: Row) -> Bool { shared(s, r).map { state_qr($0) } ?? false }
+
+    // value: a machine's private ports as the vision's one row: its name
+    // and its ports, what listens there, how Tailscale carries them when
+    // it is not plainly on Tailscale.
+    func machineRow(_ s: Section, _ name: String, _ rows: [Row]) -> some View {
+        let ports = rows.map { "\(s.cell($0, "port")?.n ?? 0)" }
+        let what = rows.compactMap { s.cell($0, "process").map { Format.show($0) } }
+        var how: [String] = []
+        for r in rows {
+            if let st = s.cell(r, "state").map({ Format.show($0) }), st != "on Tailscale", !how.contains(st) { how.append(st) }
+        }
+        let detail = ([what.joined(separator: ", ")] + how).filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
+        let broken = rows.contains { $0.mark == .broken }
+        return line(title: ([name] + ports).joined(separator: Token.Glyph.sep), detail: detail, mark: broken ? .broken : nil, symbol: Token.Symbol.tailnet, trailing: true)
+    }
+
+    // invariant: a VM's shared port names its class in words, its
+    // reserved port, under no tile as linux-1's links (vision c, d).
     func privateRow(_ s: Section, _ r: Row) -> some View {
         let port = s.cell(r, "port")
         let url = shared(s, r)
         let reserved = port?.kind == "portmap" ? "reserved port \(port?.of ?? 0)" : nil
         let state = s.cell(r, "state").map { Format.show($0) }
         let profile = Format.show(r.detail ?? Value())
-        let what = !profile.isEmpty ? profile.capitalized : reserved != nil ? "TCP" : s.cell(r, "process").map { Format.show($0) } ?? r.label ?? ""
-        let title = url != nil || reserved != nil ? "\(what)\(Token.Glyph.sep)\(port?.n ?? 0)" : "\(r.short ?? r.label ?? "")\(Token.Glyph.sep)\(port?.n ?? 0)"
-        let detail = (["Private", reserved ?? state] + (url == nil && reserved == nil ? [s.cell(r, "process").map { Format.show($0) }] : [])).compactMap { $0 }.joined(separator: Token.Glyph.sep)
+        let what = !profile.isEmpty ? profile.capitalized : "TCP"
+        let title = "\(what)\(Token.Glyph.sep)\(port?.n ?? 0)"
+        let detail = ["Private", reserved ?? state].compactMap { $0 }.joined(separator: Token.Glyph.sep)
         let open = url.map { state_qr($0) } ?? false
-        return VStack(alignment: .leading, spacing: Token.Space.gap) {
-            line(title: title, detail: detail, mark: r.mark, symbol: url == nil && reserved == nil ? Token.Symbol.tailnet : nil,
+        return VStack(alignment: .leading, spacing: 0) {
+            line(title: title, detail: detail, mark: r.mark, symbol: nil,
                  trailing: true, open: open, tap: url.map { u in { handlers.toggleQR(u.absoluteString) } })
             if let url, open { unfolded(r, url) }
         }
@@ -124,34 +168,33 @@ public struct PortsPage: View {
     public static func routes(_ declare: Action) -> String {
         let labels = (declare.form?.fields?.first { $0.key == "Via" }?.options ?? []).compactMap(\.label)
         let words = labels.count > 1 ? labels.dropLast().joined(separator: ", ") + " or " + labels[labels.count - 1] : labels.joined()
-        return "To open a port on purpose, declare it public by \(words)."
+        return "To open a port on purpose, declare it public: a \(words)."
     }
 
-    // value: a shared port unfolded in its row, as the vision's: its QR,
-    // its address, where it works, Copy link the page's primary action and
-    // Open beside it, Stop sharing in red under them.
+    // value: a shared port unfolded in its row, as the vision's: its QR on
+    // white, its address, where it works, Copy link the page's primary
+    // action and Open beside it, Stop sharing in red under them.
     func unfolded(_ r: Row, _ url: URL) -> some View {
         let stop = page.actions(for: r.id ?? "").first { $0.id?.hasPrefix("stop-sharing:") == true }
         let links = Self.link(url, handlers: handlers)
-        return VStack(alignment: .center, spacing: 10) {
+        return VStack(alignment: .center, spacing: Token.Tile.gap) {
             QRView(url.absoluteString)
-                .frame(width: Token.Space.qr, height: Token.Space.qr)
-                .padding(8)
-                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(palette.qrLight))
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: Token.Tile.qrCorner, style: .continuous).fill(palette.qrLight))
+                .padding(.top, 4)
             LinkText(url.absoluteString, center: true)
-            Text("Scan with your phone. Works on your Tailscale devices.").font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: Token.Space.gap) {
+            SubText("Scan with your phone. Works on your tailnet.").multilineTextAlignment(.center)
+            HStack(spacing: Token.Tile.pair) {
                 ForEach(Array(links.enumerated()), id: \.offset) { i, l in
                     StationButton(l.label, role: i == 0 ? .primary : .plain, wide: true, action: l.tap)
                 }
             }
-            if let stop { TextAction(stop.label ?? "", danger: true) { act.tap(stop) } }
+            .fixedSize(horizontal: false, vertical: true)
+            if let stop { StationButton(stop.label ?? "", role: .danger, wide: true) { act.tap(stop) }.fixedSize(horizontal: false, vertical: true) }
             if let stop { act.sheet(stop) }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, Token.Space.gap)
-        .padding(.bottom, 6)
+        .padding(EdgeInsets(top: 0, leading: 12, bottom: 12, trailing: 12))
     }
 
     var footer: some View {

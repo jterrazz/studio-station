@@ -174,7 +174,7 @@ public struct Popover: View {
                 StatusBar(status.line, failed: status.failed)
             }
         }
-        .padding(Token.Space.margin + 2)
+        .padding(Token.Space.margin)
         .frame(width: Token.Space.width, alignment: .topLeading)
         .stationPanel()
         .environment(\.stationHints, false)
@@ -188,25 +188,21 @@ public struct Popover: View {
         if let pushed = state.pushed, pushed.id == PageID.machine {
             EmptyView()
         } else {
-            HStack(alignment: .center, spacing: Token.Space.gap) {
+            HStack(alignment: .center, spacing: 8) {
                 Button(action: state.pushed == nil ? handlers.openSwitcher : handlers.back) {
-                    HStack(alignment: .center, spacing: 6) {
-                        IconTile(Token.Symbol.mac, active: true)
-                        Text(Page.ThisMacWord).font(.headline).foregroundStyle(.primary)
-                        Image(systemName: state.pushed == nil ? Token.Symbol.down : Token.Symbol.up).font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
-                    }
-                    .contentShape(Rectangle())
+                    SwitcherPill(open: state.pushed != nil)
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut("0", modifiers: .command)
                 if state.pushed == nil {
-                    Text(state.page?.context?.machine ?? "station").font(.subheadline).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                    Text(state.page?.context?.machine ?? "station").font(.system(size: Token.Size.sub)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }
                 Spacer(minLength: 4)
                 if state.pushed == nil {
-                    PlainIcon(Token.Symbol.settings, picked: state.menu, tap: handlers.toggleMenu)
+                    PlainIcon(Token.Symbol.settings, picked: state.menu, round: true, tap: handlers.toggleMenu)
                 }
             }
+            .padding(.horizontal, 2).padding(.top, 2)
         }
     }
 

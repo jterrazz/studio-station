@@ -10,12 +10,11 @@ final class KitBoundaryTests: XCTestCase {
     static let forbidden = ["ProgressView", "Gauge(", "List(", "List {", "WindowGroup", "NSWindow(", "Settings {"]
     static let models = ["\"laptopcomputer", "\"macmini", "\"macbook", "\"macpro", "\"imac", "\"macstudio"]
     // value: L50d, Apple's rules: the MenuBarExtra's window is the only
-    // glass, so no view of the kit is glass or a material; the controls
-    // the renderer cannot draw, the one grouping fill and the prominent
-    // button live in molecule/Surface only, behind their still stand-ins.
+    // glass, so no view of the kit is glass or a material; L50e: the
+    // vision's tiles are translucent fills drawn by molecule/Surface only.
     static let glass = ["glassEffect", "GlassEffectContainer", "Material", ".containerBackground"]
     static let surface = "molecule/Surface.swift"
-    static let surfaceOnly = [".quinary", ".glassProminent", ".buttonStyle(.bordered", ".toggleStyle(.switch)"]
+    static let surfaceOnly = [".quinary", "Token.Fill.tile", ".glassProminent", ".buttonStyle(.bordered", ".toggleStyle(.switch)"]
     static let glyphs: [Character] = ["→", "·", "…", "⏻", "⚡", "●", "◐", "○", "✗", "◌"]
 
     // invariant: the Swift side of the kit's boundary: colours, symbol names
@@ -54,11 +53,8 @@ final class KitBoundaryTests: XCTestCase {
             if text.range(of: #"\.background\(palette\.(?!qrLight)"#, options: .regularExpression) != nil {
                 out.append(Finding(file: path, rule: "a painted background"))
             }
-            // invariant: a page holds two subtle groupings at most, and one
-            // primary action at most.
+            // invariant: a page holds one primary action at most.
             if path.hasPrefix("template/") {
-                let groups = text.components(separatedBy: ".stationGroup(").count - 1
-                if groups > 2 { out.append(Finding(file: path, rule: "\(groups) groupings on one page")) }
                 let primaries = text.components(separatedBy: "\n").filter { $0.range(of: #"role: [^,)]*\.primary"#, options: .regularExpression) != nil }.count
                 if primaries > 1 { out.append(Finding(file: path, rule: "\(primaries) primary actions on one page")) }
             }
@@ -88,7 +84,7 @@ final class KitBoundaryTests: XCTestCase {
             ("token/Token.swift", "static let mini = \"macmini\""),
             ("template/Panel.swift", "x.background(palette.surface).glassEffect(.regular)"),
             ("molecule/Field.swift", "x.background(.quinary).background(.ultraThinMaterial)"),
-            ("template/Many.swift", "a.stationGroup()\nb.stationGroup()\nc.stationGroup()\nStationButton(role: .primary)\nStationButton(role: x ? .primary : .plain)"),
+            ("template/Many.swift", "a.background(Token.Fill.tile(scheme))\nStationButton(role: .primary)\nStationButton(role: x ? .primary : .plain)"),
             ("molecule/Surface.swift", "Toggle().toggleStyle(.switch); x.background(.quinary)"),
         ]).map(\.rule)
         XCTAssertEqual(caught, [
@@ -98,7 +94,7 @@ final class KitBoundaryTests: XCTestCase {
             "macmini draws a Mac's model, which no capability reports",
             "glassEffect in the content", "a painted background",
             "Material in the content", ".quinary outside the kit's surface",
-            "3 groupings on one page", "2 primary actions on one page",
+            "Token.Fill.tile outside the kit's surface", "2 primary actions on one page",
         ])
     }
 }

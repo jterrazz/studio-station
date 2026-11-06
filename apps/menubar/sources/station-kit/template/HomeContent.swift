@@ -1,8 +1,8 @@
 import SwiftUI
 
 // invariant: SPEC §10.2's Home, vision panel a, in its order: the three
-// measures, what needs you, the machines, Awake and Accounts side by
-// side, then the menu. One grouping on the page: what needs you.
+// measures' tiles, what needs you, the machines' list, the Awake and
+// Accounts tiles side by side, then the menu.
 struct HomeContent: View {
     let page: Page
     let state: PopoverState
@@ -21,10 +21,8 @@ struct HomeContent: View {
             }
             if let needs = page.section(TodoBadge.section), needs.items?.contains(where: { $0.row != nil }) == true { needsYou(needs) }
             if let machines = page.section("machines") {
-                VStack(alignment: .leading, spacing: 4) {
-                    SectionHeader(machines.title ?? "")
-                    MachineTree(section: machines, kinds: false, only: nil, open: handlers.openMachine)
-                }
+                SectionHeader(machines.title ?? "")
+                MachineTree(section: machines, kinds: false, only: nil, open: handlers.openMachine)
             }
             places
             SheetFor(page: page, state: state, handlers: handlers)
@@ -34,14 +32,13 @@ struct HomeContent: View {
         }
     }
 
-    // value: what needs you as the vision's one line: its count in words,
-    // what it is under them, a chevron that unfolds each row and its
-    // action.
+    // value: what needs you as the vision's tile: its count in words, what
+    // it is under them, a chevron that unfolds each row and its action.
     func needsYou(_ s: Section) -> some View {
         let rows = (s.items ?? []).compactMap(\.row)
         let title = s.caption?.first.map { Format.show($0) } ?? s.title ?? ""
         return VStack(alignment: .leading, spacing: 6) {
-            MenuRow(title, subtitle: rows.compactMap(\.label).joined(separator: Token.Glyph.sep), lines: 3, tap: { unfolded.toggle() }) {
+            MenuRow(title, subtitle: rows.compactMap(\.label).joined(separator: Token.Glyph.sep), lines: 3, bare: true, tap: { unfolded.toggle() }) {
                 let worst = TodoBadge.todo(page)
                 IconTile(Token.Symbol.warn, tint: (worst?.n ?? 0) == 0 ? nil : worst?.mark == .broken && rows.allSatisfy { $0.mark == .broken } ? palette.bad : palette.warn)
             } trailing: {
@@ -49,40 +46,41 @@ struct HomeContent: View {
             }
             if unfolded {
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                    HStack(spacing: Token.Space.gap) {
+                    HStack(spacing: Token.Tile.gap) {
                         StateDot(mark: row.mark).frame(width: Token.Tile.icon)
-                        Text(row.label ?? "").font(.body).lineLimit(1)
+                        Text(row.label ?? "").font(.system(size: Token.Size.text)).lineLimit(1)
                         Spacer(minLength: 4)
                         ForEach(Array(page.rowActions(row.id ?? "").enumerated()), id: \.offset) { _, a in
                             if state.running == a.id {
                                 PendingDot()
                             } else {
-                                TextAction(a.label ?? "") { perform(a, handlers) }.disabled(state.running != nil)
+                                StationButton(a.label ?? "") { perform(a, handlers) }.disabled(state.running != nil)
                             }
                         }
                     }
-                    .frame(minHeight: 22)
+                    .frame(minHeight: 24)
                 }
             }
         }
-        .stationGroup(padding: 8)
+        .stationTile()
     }
 
-    // value: the vision's two places under the machines, side by side:
-    // Awake with its switch, Accounts with its chevron, each its words
-    // under it.
+    // value: the vision's two tiles under the machines, side by side and
+    // as tall: Awake with its switch, Accounts with its chevron, each its
+    // words under it.
     @ViewBuilder
     var places: some View {
         let awake = page.section("awake")
         let accounts = page.section("accounts")
         if awake != nil || accounts != nil {
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: Token.Tile.pair) {
                 if let awake { awakePlace(awake) }
                 if let accounts {
                     place(symbol: Token.Symbol.accounts, active: false, title: accounts.title ?? "",
                           words: accounts.rows.first?.cells?.first.map { Format.show($0) }, tap: {}) { Chevron() }
                 }
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -103,28 +101,30 @@ struct HomeContent: View {
 
     func place<T: View>(symbol: String, active: Bool, title: String, words: String?, tap: @escaping () -> Void, @ViewBuilder trailing: () -> T) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: Token.Space.gap) {
+            HStack(spacing: Token.Tile.gap) {
                 Button(action: tap) {
-                    HStack(spacing: Token.Space.gap) {
+                    HStack(spacing: Token.Tile.gap) {
                         IconTile(symbol, active: active)
-                        Text(title).font(.body).foregroundStyle(.primary).lineLimit(1)
-                        Spacer(minLength: 0)
+                        Text(title).font(.system(size: Token.Size.text, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 trailing()
             }
+            .frame(minHeight: 26)
             if let words, !words.isEmpty {
-                Text(words.replacingOccurrences(of: Token.Glyph.dash, with: Token.Glyph.unbroken)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                SubText(words.replacingOccurrences(of: Token.Glyph.dash, with: Token.Glyph.unbroken)).lineLimit(2)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxHeight: .infinity, alignment: .center)
+        .stationTile()
     }
 
     var menu: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            SectionDivider().padding(.bottom, 4)
+        VStack(alignment: .leading, spacing: 0) {
+            SectionDivider().padding(.bottom, 2)
             ForEach(Array(page.pageActions.enumerated()), id: \.offset) { _, a in
                 if state.running == a.id {
                     PendingDot()

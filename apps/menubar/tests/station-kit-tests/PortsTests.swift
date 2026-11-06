@@ -63,7 +63,7 @@ final class PortsTests: XCTestCase {
         XCTAssertEqual(fields.map(\.key), ["Port", "Via"])
         XCTAssertEqual(fields[0].options?.map(\.label), ["mac-mini:5000", "infra:10250", "mac-mini:5900", "infra:6443"])
         XCTAssertEqual(fields[1].options?.map(\.label), ["Cloudflare Tunnel", "Tailscale Funnel", "your LAN"])
-        XCTAssertEqual(PortsPage.routes(declare), "To open a port on purpose, declare it public by Cloudflare Tunnel, Tailscale Funnel or your LAN.")
+        XCTAssertEqual(PortsPage.routes(declare), "To open a port on purpose, declare it public: a Cloudflare Tunnel, Tailscale Funnel or your LAN.")
         let input = Client.input(ActionRunner.filled(declare, answers: [:]), fixed: declare.run?.in)
         XCTAssertEqual(input as NSDictionary, ["Machine": "mac-mini", "Port": "5000", "Via": "cloudflare-tunnel"] as NSDictionary)
         var state = Snapshot.state("menubar.ports.mini", page)

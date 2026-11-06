@@ -27,41 +27,45 @@ struct PanelGlass: ViewModifier {
     }
 }
 
-// value: the one subtle grouping a page may hold (two at most): a quinary
-// fill concentric with the panel, never glass; with Reduce Transparency
-// or Increase Contrast, a separator stroke in its place.
-struct Grouping: ViewModifier {
-    let padding: CGFloat
+// value: a tile of the vision on the panel's glass: a translucent fill
+// 16 pt round (white at 8 % in dark, 58 % in light), never glass, padded
+// 10 by 12; a finding mixes its colour in. With Reduce Transparency or
+// Increase Contrast, a separator stroke in its place.
+struct TileGround: ViewModifier {
+    let padding: EdgeInsets
+    let tint: Color?
     @Environment(\.accessibilityReduceTransparency) private var reduce
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
-        let shape = ConcentricRectangle(corners: .concentric(minimum: .fixed(Token.Tile.group)), isUniform: true)
+        let shape = RoundedRectangle(cornerRadius: Token.Tile.group, style: .continuous)
         content
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .background {
                 if reduce || contrast == .increased {
-                    shape.stroke(.separator, lineWidth: 1)
+                    shape.strokeBorder(.separator, lineWidth: 1)
                 } else {
-                    shape.fill(.quinary)
+                    ZStack {
+                        shape.fill(Token.Fill.tile(scheme))
+                        if let tint { shape.fill(tint.opacity(Token.Fill.finding)) }
+                    }
                 }
             }
     }
 }
 
-// value: a row the pointer is over lights up as a menu's: a quaternary
-// fill, 6 pt round, across the whole row.
+// value: a row the pointer is over lights up across the whole row.
 struct Hover: ViewModifier {
     @State private var over = false
+    @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
         content
             .contentShape(Rectangle())
             .background {
-                if over {
-                    RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(.fill.quaternary).padding(.horizontal, -6)
-                }
+                if over { Rectangle().fill(Token.Fill.tile(scheme)) }
             }
             .onHover { over = $0 }
     }
@@ -71,22 +75,84 @@ extension View {
     // value: the panel's own window (see PanelGlass).
     public func stationPanel() -> some View { modifier(PanelGlass()) }
 
-    // value: a page's subtle grouping (see Grouping).
-    public func stationGroup(padding: CGFloat = Token.Tile.groupPadding) -> some View { modifier(Grouping(padding: padding)) }
+    // value: a tile (see TileGround).
+    public func stationTile(padding: EdgeInsets = Token.Tile.groupPadding, tint: Color? = nil) -> some View { modifier(TileGround(padding: padding, tint: tint)) }
+
+    // value: a list of the vision: a tile whose rows run edge to edge,
+    // 4 pt above the first and under the last.
+    public func stationRows() -> some View {
+        modifier(TileGround(padding: EdgeInsets(top: Token.Tile.listPadding, leading: 0, bottom: Token.Tile.listPadding, trailing: 0), tint: nil))
+    }
 
     public func stationHover() -> some View { modifier(Hover()) }
+
+    // value: a field's ground (the switcher's search): a tile's fill,
+    // 10 pt round.
+    public func stationField() -> some View { modifier(FieldGround()) }
 }
 
-// value: a section's header as Apple's menus set one: semibold
-// subheadline, secondary.
+struct FieldGround: ViewModifier {
+    @Environment(\.colorScheme) private var scheme
+
+    func body(content: Content) -> some View {
+        content.background(Token.Fill.tile(scheme), in: RoundedRectangle(cornerRadius: Token.Tile.fieldCorner, style: .continuous))
+    }
+}
+
+// value: the hairline between two rows of a list, edge to edge.
+public struct RowSeparator: View {
+    @Environment(\.colorScheme) private var scheme
+
+    public init() {}
+
+    public var body: some View { Rectangle().fill(Token.Fill.faint(scheme)).frame(height: 0.5) }
+}
+
+// value: the rows of a list, a hairline between each two.
+public struct Rows<Content: View>: View {
+    let content: Content
+
+    public init(@ViewBuilder content: () -> Content) { self.content = content() }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SwiftUI.Group(subviews: content) { subviews in
+                ForEach(Array(subviews.enumerated()), id: \.offset) { i, sub in
+                    if i > 0 { RowSeparator() }
+                    sub
+                }
+            }
+        }
+        .stationRows()
+    }
+}
+
+// value: a section's title as the vision's: 11 pt semibold, uppercase,
+// tracked, secondary.
 public struct SectionHeader: View {
     let title: String
 
     public init(_ title: String) { self.title = title }
 
     public var body: some View {
-        Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary).lineLimit(2)
-            .fixedSize(horizontal: false, vertical: true)
+        Text(title.uppercased()).font(.system(size: Token.Size.label, weight: .semibold)).tracking(Token.Size.label * Token.Size.tracking)
+            .foregroundStyle(.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 4).padding(.top, 2)
+    }
+}
+
+// value: a group's caption inside a list (Workspaces, Servers): 10.5 pt
+// semibold, uppercase, tracked, from the nested rows' edge.
+public struct GroupCaption: View {
+    let title: String
+
+    public init(_ title: String) { self.title = title }
+
+    public var body: some View {
+        Text(title.uppercased()).font(.system(size: Token.Size.caption, weight: .semibold)).tracking(Token.Size.caption * Token.Size.tracking)
+            .foregroundStyle(.secondary)
+            .padding(.leading, Token.Tile.indent).padding(.top, 6).padding(.trailing, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -135,48 +201,42 @@ public struct IconTile: View {
     }
 }
 
-// invariant: a row as Apple's Wi-Fi and Battery menus: at least 28 pt,
-// what leads it, its title in the body font, its words under it in
+// invariant: a row as the vision's lists draw one: at least 40 pt,
+// padded 7 by 12, what leads it, its title semibold, its words under it
 // secondary, what ends it; the whole row lights up under the pointer and
-// is one button when it opens or does something.
+// is one button when it opens or does something. Bare, in a tile, it
+// takes the tile's padding instead.
 public struct MenuRow<Leading: View, Trailing: View>: View {
     let title: String
     let subtitle: String?
     let link: Bool
     let lines: Int
+    let bare: Bool
     let tap: (() -> Void)?
     let leading: Leading
     let trailing: Trailing
 
-    public init(_ title: String, subtitle: String? = nil, link: Bool = false, lines: Int = 2, tap: (() -> Void)? = nil, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
+    public init(_ title: String, subtitle: String? = nil, link: Bool = false, lines: Int = 2, bare: Bool = false, tap: (() -> Void)? = nil,
+                @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
         self.title = title
         self.subtitle = subtitle
         self.link = link
         self.lines = lines
+        self.bare = bare
         self.tap = tap
         self.leading = leading()
         self.trailing = trailing()
     }
 
     var line: some View {
-        HStack(spacing: Token.Space.gap) {
+        HStack(spacing: Token.Tile.gap) {
             leading
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.body).foregroundStyle(.primary).lineLimit(1)
-                if let subtitle, !subtitle.isEmpty {
-                    if link {
-                        LinkText(subtitle)
-                    } else {
-                        Text(subtitle).font(.subheadline).foregroundStyle(.secondary).lineLimit(lines).fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-            .layoutPriority(1)
-            Spacer(minLength: Token.Space.gap)
-            trailing
+            RowText(title: title, subtitle: subtitle, link: link, lines: lines)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            trailing.layoutPriority(1)
         }
-        .frame(minHeight: Token.Tile.row)
-        .padding(.vertical, 2)
+        .padding(bare ? EdgeInsets() : Token.Tile.rowPadding)
+        .frame(minHeight: bare ? 0 : Token.Tile.row)
         .stationHover()
     }
 
@@ -190,8 +250,61 @@ public struct MenuRow<Leading: View, Trailing: View>: View {
 }
 
 extension MenuRow where Trailing == EmptyView {
-    public init(_ title: String, subtitle: String? = nil, link: Bool = false, tap: (() -> Void)? = nil, @ViewBuilder leading: () -> Leading) {
-        self.init(title, subtitle: subtitle, link: link, tap: tap, leading: leading) { EmptyView() }
+    public init(_ title: String, subtitle: String? = nil, link: Bool = false, bare: Bool = false, tap: (() -> Void)? = nil, @ViewBuilder leading: () -> Leading) {
+        self.init(title, subtitle: subtitle, link: link, bare: bare, tap: tap, leading: leading) { EmptyView() }
+    }
+}
+
+// value: a row's words: its title, 13 pt semibold, what follows it (a
+// kind's tag), its words under it in 11.5 pt secondary or its address.
+public struct RowText<Tag: View>: View {
+    let title: String
+    let subtitle: String?
+    let link: Bool
+    let lines: Int
+    let tag: Tag
+
+    public init(title: String, subtitle: String?, link: Bool = false, lines: Int = 2, @ViewBuilder tag: () -> Tag) {
+        self.title = title
+        self.subtitle = subtitle
+        self.link = link
+        self.lines = lines
+        self.tag = tag()
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(alignment: .center, spacing: 6) {
+                Text(title).font(.system(size: Token.Size.text, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
+                    .padding(.vertical, Token.Size.leading)
+                tag
+            }
+            if let subtitle, !subtitle.isEmpty {
+                if link {
+                    LinkText(subtitle)
+                } else {
+                    SubText(subtitle).lineLimit(lines)
+                }
+            }
+        }
+    }
+}
+
+extension RowText where Tag == EmptyView {
+    public init(title: String, subtitle: String?, link: Bool = false, lines: Int = 2) {
+        self.init(title: title, subtitle: subtitle, link: link, lines: lines) { EmptyView() }
+    }
+}
+
+// value: the vision's `.sub`: 11.5 pt, secondary.
+public struct SubText: View {
+    let text: String
+
+    public init(_ text: String) { self.text = text }
+
+    public var body: some View {
+        Text(text).font(.system(size: Token.Size.sub)).foregroundStyle(.secondary).lineSpacing(Token.Size.leading * 2)
+            .padding(.vertical, Token.Size.leading).fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -203,13 +316,13 @@ public struct TrailingValue: View {
     public init(_ text: String) { self.text = text }
 
     public var body: some View {
-        Text(text).font(.body).foregroundStyle(.secondary).monospacedDigit().lineLimit(1).truncationMode(.middle)
+        Text(text).font(.system(size: Token.Size.sub)).foregroundStyle(.secondary).monospacedDigit().lineLimit(1).truncationMode(.middle)
             .contentTransition(.numericText())
     }
 }
 
-// value: an address as Apple sets one under a title: monospaced, in the
-// accent, cut in its middle.
+// value: an address as the vision sets one: 11 pt monospaced, in the
+// accent, cut at its end; centred, it wraps.
 public struct LinkText: View {
     let text: String
     let center: Bool
@@ -221,8 +334,8 @@ public struct LinkText: View {
     }
 
     public var body: some View {
-        Text(text).font(.system(.caption, design: .monospaced)).foregroundStyle(palette.accent)
-            .lineLimit(center ? 2 : 1).truncationMode(.middle).multilineTextAlignment(center ? .center : .leading)
+        Text(center ? text.map(String.init).joined(separator: "\u{200B}") : text).font(.system(size: Token.Size.label, design: .monospaced)).foregroundStyle(palette.accent)
+            .lineLimit(center ? 3 : 1).truncationMode(.tail).multilineTextAlignment(center ? .center : .leading)
             .textSelection(.enabled)
     }
 }
@@ -234,7 +347,7 @@ public struct Chevron: View {
     public init(down: Bool = false) { self.down = down }
 
     public var body: some View {
-        Image(systemName: down ? Token.Symbol.down : Token.Symbol.forward).font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
+        Image(systemName: down ? Token.Symbol.down : Token.Symbol.forward).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
     }
 }
 
@@ -251,7 +364,7 @@ public struct StateDot: View {
             if mark == .pending {
                 PendingDot()
             } else if mark == .absent {
-                Circle().strokeBorder(.tertiary, lineWidth: 1.2).frame(width: Token.Tile.dot, height: Token.Tile.dot)
+                Circle().strokeBorder(.secondary, lineWidth: 1.5).frame(width: Token.Tile.dot, height: Token.Tile.dot)
             } else {
                 Circle().fill(palette.of(mark)).frame(width: Token.Tile.dot, height: Token.Tile.dot)
             }
@@ -261,19 +374,18 @@ public struct StateDot: View {
 
 public enum StationRole { case plain, primary, danger, quiet }
 
-// invariant: a button in the content as Apple's: small and bordered, what
-// destroys in red, the page's one primary action prominent glass, one
-// that only opens a sheet asking for a typed name greyed (quiet). Drawn
-// still, where the renderer has no AppKit control, the same shape stands
-// in.
+// invariant: a button as the vision's: a page's buttons side by side as
+// wide tiles 12 pt round (Restart, Copy link filled in the accent; Delete
+// in red; Stop greyed while its sheet asks for the name), a row's small
+// capsule (Take back, Review, Change).
 public struct StationButton: View {
     let title: String
     let role: StationRole
     let wide: Bool
     let action: () -> Void
-    @Environment(\.stationStill) private var still
     @Environment(\.isEnabled) private var enabled
     @Environment(\.stationPalette) private var palette
+    @Environment(\.colorScheme) private var scheme
 
     public init(_ title: String, role: StationRole = .plain, wide: Bool = false, action: @escaping () -> Void = {}) {
         self.title = title
@@ -282,57 +394,50 @@ public struct StationButton: View {
         self.action = action
     }
 
-    var label: some View {
-        Text(title).font(.body.weight(role == .primary ? .semibold : .regular)).lineLimit(1).minimumScaleFactor(0.85).fixedSize(horizontal: !wide, vertical: false)
-            .frame(maxWidth: wide ? .infinity : nil)
+    var ink: AnyShapeStyle {
+        switch role {
+        case .primary: AnyShapeStyle(palette.onTint)
+        case .danger: AnyShapeStyle(palette.bad)
+        case .quiet: AnyShapeStyle(.secondary)
+        case .plain: AnyShapeStyle(.primary)
+        }
+    }
+
+    var fill: AnyShapeStyle {
+        if role == .primary { return AnyShapeStyle(palette.accent) }
+        return AnyShapeStyle(wide ? Token.Fill.tile(scheme) : Token.Fill.raised(scheme))
     }
 
     public var body: some View {
-        if still {
-            drawn
-        } else {
-            switch role {
-            case .primary: Button(action: action) { label }.buttonStyle(.glassProminent).controlSize(.regular)
-            case .danger: Button(role: .destructive, action: action) { label }.buttonStyle(.bordered).controlSize(.regular)
-            case .plain: Button(action: action) { label }.buttonStyle(.bordered).controlSize(.regular)
-            case .quiet: Button(action: action) { label.foregroundStyle(.secondary) }.buttonStyle(.bordered).controlSize(.regular)
-            }
-        }
-    }
-
-    var drawn: some View {
-        let ink: AnyShapeStyle = switch role {
-        case .primary: AnyShapeStyle(palette.onTint)
-        case .danger: AnyShapeStyle(palette.bad)
-        case .quiet: AnyShapeStyle(.tertiary)
-        case .plain: AnyShapeStyle(.primary)
-        }
-        return Button(action: action) {
-            label
-                .foregroundStyle(ink)
-                .padding(.horizontal, 12)
-                .frame(height: 24)
-                .background {
-                    if role == .primary {
-                        Capsule().fill(palette.accent)
-                    } else {
-                        Capsule().fill(.fill.secondary)
-                    }
+        Button(action: action) {
+            SwiftUI.Group {
+                if wide {
+                    Text(title).font(.system(size: Token.Size.text, weight: role == .quiet ? .medium : .semibold))
+                        .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                        .padding(8).frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(fill, in: RoundedRectangle(cornerRadius: Token.Tile.buttonCorner, style: .continuous))
+                        .opacity(role == .quiet ? 0.75 : 1)
+                } else {
+                    Text(title).font(.system(size: Token.Size.mini, weight: .semibold)).lineLimit(1).fixedSize()
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(fill, in: Capsule())
                 }
-                .opacity(enabled ? 1 : 0.45)
-                .contentShape(Capsule())
+            }
+            .foregroundStyle(ink)
+            .opacity(enabled ? 1 : 0.45)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 }
 
-// invariant: a switch as macOS draws one, small, in the accent when on;
-// drawn still, the same switch stands in for the AppKit control.
+// invariant: a switch as the vision draws one: 38 by 22, green when on,
+// its white knob shadowed; one control, live or drawn still.
 public struct StationSwitch: View {
     let on: Bool
     let tap: () -> Void
-    @Environment(\.stationStill) private var still
     @Environment(\.stationPalette) private var palette
+    @Environment(\.colorScheme) private var scheme
 
     public init(on: Bool, tap: @escaping () -> Void = {}) {
         self.on = on
@@ -340,15 +445,18 @@ public struct StationSwitch: View {
     }
 
     public var body: some View {
-        if still {
+        Button(action: tap) {
             ZStack(alignment: on ? .trailing : .leading) {
-                Capsule().fill(on ? AnyShapeStyle(palette.accent) : AnyShapeStyle(.fill.secondary)).frame(width: Token.Tile.switchWidth, height: Token.Tile.switchHeight)
-                Circle().fill(palette.onTint).frame(width: Token.Tile.switchHeight - 2, height: Token.Tile.switchHeight - 2)
-                    .shadow(color: .black.opacity(0.25), radius: 0.8, y: 0.5).padding(.horizontal, 1)
+                Capsule().fill(on ? AnyShapeStyle(palette.good) : AnyShapeStyle(Token.Fill.faint(scheme)))
+                    .frame(width: Token.Tile.switchWidth, height: Token.Tile.switchHeight)
+                Circle().fill(palette.onTint).frame(width: Token.Tile.switchHeight - 4, height: Token.Tile.switchHeight - 4)
+                    .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1).padding(.horizontal, 2)
             }
-        } else {
-            Toggle("", isOn: Binding(get: { on }, set: { _ in tap() })).toggleStyle(.switch).controlSize(.small).labelsHidden()
+            .contentShape(Capsule())
         }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(on ? "on" : "off")
     }
 }
 
@@ -370,8 +478,8 @@ public struct TextAction: View {
     public var body: some View {
         Button(action: tap) {
             HStack(spacing: 4) {
-                if let symbol { Image(systemName: symbol).font(.subheadline.weight(.medium)) }
-                Text(label).font(.body).lineLimit(1).fixedSize()
+                if let symbol { Image(systemName: symbol).font(.system(size: Token.Size.sub, weight: .medium)) }
+                Text(label).font(.system(size: Token.Size.text)).lineLimit(1).fixedSize()
             }
             .foregroundStyle(danger ? palette.bad : palette.accent)
             .contentShape(Rectangle())
@@ -380,25 +488,36 @@ public struct TextAction: View {
     }
 }
 
-// value: a bare symbol that is a button (the header's gear, a link's copy
-// and QR): secondary, a quaternary fill under the pointer, never glass.
+// value: a symbol that is a button: a row's (copy, QR, open) on a raised
+// 26 pt square 8 pt round; the header's settings on a 28 pt circle.
 public struct PlainIcon: View {
     let symbol: String
     let picked: Bool
+    let round: Bool
     let tap: () -> Void
     @Environment(\.stationPalette) private var palette
+    @Environment(\.colorScheme) private var scheme
 
-    public init(_ symbol: String, picked: Bool = false, tap: @escaping () -> Void) {
+    public init(_ symbol: String, picked: Bool = false, round: Bool = false, tap: @escaping () -> Void) {
         self.symbol = symbol
         self.picked = picked
+        self.round = round
         self.tap = tap
     }
 
     public var body: some View {
+        let side = round ? Token.Tile.roundButton : Token.Tile.squareButton
         Button(action: tap) {
-            Image(systemName: symbol).font(.system(size: 12, weight: .medium))
-                .foregroundStyle(picked ? AnyShapeStyle(palette.accent) : AnyShapeStyle(.secondary))
-                .frame(width: 22, height: 22)
+            Image(systemName: symbol).font(.system(size: 13, weight: .medium))
+                .foregroundStyle(picked ? AnyShapeStyle(palette.accent) : AnyShapeStyle(.primary))
+                .frame(width: side, height: side)
+                .background {
+                    if round {
+                        Circle().fill(Token.Fill.tile(scheme))
+                    } else {
+                        RoundedRectangle(cornerRadius: Token.Tile.squareCorner, style: .continuous).fill(Token.Fill.raised(scheme))
+                    }
+                }
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -419,11 +538,12 @@ public struct BackButton: View {
 
     public var body: some View {
         Button(action: action) {
-            HStack(spacing: 3) {
-                Image(systemName: Token.Symbol.back).font(.subheadline.weight(.semibold))
-                Text(title).font(.body)
+            HStack(spacing: 2) {
+                Image(systemName: Token.Symbol.back).font(.system(size: 11, weight: .bold))
+                Text(title).font(.system(size: Token.Size.text, weight: .medium))
             }
             .foregroundStyle(palette.accent)
+            .padding(2)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -431,7 +551,8 @@ public struct BackButton: View {
 }
 
 // value: a pushed page's head as the vision draws it: the way back, then
-// its circle, its title and its words, what it ends with (a state).
+// its icon, its 19 pt title and its tag, its words, what it ends with (a
+// state).
 public struct PageHeader<Trailing: View>: View {
     let back: String
     let title: String
@@ -454,23 +575,22 @@ public struct PageHeader<Trailing: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Token.Tile.gap) {
             BackButton(back, action: action)
-            HStack(alignment: .center, spacing: 10) {
+            HStack(alignment: .center, spacing: 8) {
                 if let symbol { IconTile(symbol, active: active, size: Token.Tile.headIcon) }
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(title).font(.title3.weight(.semibold)).foregroundStyle(.primary)
-                        if let badge { Text(badge).font(.subheadline).foregroundStyle(.secondary) }
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .center, spacing: 4) {
+                        Text(title).font(.system(size: Token.Size.title, weight: .bold)).tracking(-0.015 * Token.Size.title).foregroundStyle(.primary)
+                        if let badge { KindTag(badge) }
                     }
-                    if let subtitle, !subtitle.isEmpty {
-                        Text(subtitle).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    }
+                    if let subtitle, !subtitle.isEmpty { SubText(subtitle) }
                 }
                 .layoutPriority(1)
                 Spacer(minLength: 0)
                 trailing
             }
+            .padding(.horizontal, 2)
         }
     }
 }
@@ -481,11 +601,13 @@ extension PageHeader where Trailing == EmptyView {
     }
 }
 
-// value: a machine's state as the vision's head says "Running": the dot
-// carries the colour, the word stays secondary ink, legible on any panel.
+// value: a machine's state as the vision's chip: "Running" green on its
+// green, a state that is not running secondary on the hairline's grey.
 public struct StateWord: View {
     let word: String
     let mark: Mark
+    @Environment(\.stationPalette) private var palette
+    @Environment(\.colorScheme) private var scheme
 
     public init(_ word: String, mark: Mark) {
         self.word = word
@@ -493,27 +615,70 @@ public struct StateWord: View {
     }
 
     public var body: some View {
-        HStack(spacing: 5) {
-            StateDot(mark: mark)
-            Text(word).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary).lineLimit(1).fixedSize()
-        }
+        let on = mark != .absent && mark != .pending
+        let hue = palette.of(mark)
+        Text(word).font(.system(size: Token.Size.label, weight: .semibold)).lineLimit(1).fixedSize()
+            .foregroundStyle(on ? AnyShapeStyle(hue) : AnyShapeStyle(.secondary))
+            .padding(.horizontal, 7).padding(.vertical, 3)
+            .background(on ? AnyShapeStyle(hue.opacity(Token.Fill.chip)) : AnyShapeStyle(Token.Fill.faint(scheme)), in: Capsule())
     }
 }
 
-// value: the inset divider between two sections, never between rows.
+// value: a VM's kind beside its name: Server in teal on its teal, any
+// other kind secondary on the hairline's grey.
+public struct KindTag: View {
+    let kind: String
+    @Environment(\.colorScheme) private var scheme
+
+    public init(_ kind: String) { self.kind = kind }
+
+    public var body: some View {
+        let server = kind == "Server"
+        Text(kind).font(.system(size: Token.Size.tag, weight: .semibold)).lineLimit(1).fixedSize()
+            .foregroundStyle(server ? AnyShapeStyle(Token.Hue.teal(scheme)) : AnyShapeStyle(.secondary))
+            .padding(.horizontal, 6).padding(.vertical, 3)
+            .background(server ? AnyShapeStyle(Token.Hue.teal(scheme).opacity(Token.Fill.tag)) : AnyShapeStyle(Token.Fill.faint(scheme)), in: Capsule())
+    }
+}
+
+// value: the hairline above the panel's menu, never between rows.
 public struct SectionDivider: View {
     public init() {}
 
-    public var body: some View { Divider().padding(.horizontal, 2) }
+    public var body: some View { RowSeparator() }
 }
 
-// value: a short note under a section: footnote, secondary.
+// value: a short note under a section: 11.5 pt, secondary.
 public struct FootNote: View {
     let text: String
 
     public init(_ text: String) { self.text = text }
 
     public var body: some View {
-        Text(text).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        SubText(text).padding(.horizontal, 4)
+    }
+}
+
+// value: the machine switcher as the vision's capsule: This Mac's icon,
+// its name in 13.5 pt semibold, a chevron; open, raised and ringed in the
+// accent.
+struct SwitcherPill: View {
+    let open: Bool
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.stationPalette) private var palette
+
+    var body: some View {
+        HStack(spacing: 6) {
+            IconTile(Token.Symbol.mac, active: true, size: 22)
+            Text(Page.ThisMacWord).font(.system(size: Token.Size.pill, weight: .semibold)).foregroundStyle(.primary)
+            Image(systemName: Token.Symbol.down).font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
+        }
+        .padding(EdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 10))
+        .background {
+            Capsule().fill(open ? Token.Fill.raised(scheme) : Token.Fill.tile(scheme))
+            Capsule().strokeBorder(Token.Fill.edge(scheme), lineWidth: 0.5)
+            if open { Capsule().stroke(palette.accent.opacity(Token.Fill.ring), lineWidth: 3).padding(-1.5) }
+        }
+        .contentShape(Capsule())
     }
 }

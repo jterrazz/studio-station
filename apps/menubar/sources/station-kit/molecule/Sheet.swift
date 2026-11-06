@@ -9,6 +9,7 @@ public struct TypedField: View {
     @Binding var text: String
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationStill) private var still
+    @Environment(\.colorScheme) private var scheme
 
     public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil, key: String? = nil) {
         self.placeholder = placeholder
@@ -18,26 +19,26 @@ public struct TypedField: View {
     }
 
     public var body: some View {
-        HStack(spacing: 7) {
-            if let symbol { Image(systemName: symbol).font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.muted) }
+        HStack(spacing: 8) {
+            if let symbol { Image(systemName: symbol).font(.system(size: Token.Size.text, weight: .medium)).foregroundStyle(palette.muted) }
             field
             if let key {
-                Text(key).font(.subheadline).foregroundStyle(.tertiary)
+                Text(key).font(.system(size: Token.Size.key)).foregroundStyle(.secondary)
             }
         }
-        .font(.body)
-        .padding(.horizontal, 8)
-        .frame(height: 26)
-        .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .font(.system(size: Token.Size.text))
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .stationField()
     }
 
     @ViewBuilder
     var field: some View {
         SwiftUI.Group {
             if still {
-                HStack(spacing: 0) {
-                    Text(text.isEmpty ? placeholder : text).foregroundStyle(text.isEmpty ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
-                    Text(Token.Glyph.caret).foregroundStyle(palette.accent)
+                HStack(spacing: 2) {
+                    if text.isEmpty { Rectangle().fill(palette.accent).frame(width: 1.5, height: 14) }
+                    Text(text.isEmpty ? placeholder : text).foregroundStyle(text.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                    if !text.isEmpty { Rectangle().fill(palette.accent).frame(width: 1.5, height: 14) }
                     Spacer(minLength: 0)
                 }
             } else {
@@ -198,14 +199,14 @@ public struct Segments: View {
             ForEach(Array(options.enumerated()), id: \.offset) { _, o in
                 Button(action: o.tap) {
                     Text(o.label)
-                        .font(.subheadline.weight(o.on ? .semibold : .regular))
+                        .font(.system(size: Token.Size.segment, weight: o.on ? .semibold : .medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 20)
+                        .padding(.vertical, 5)
                         .background {
                             if o.on {
-                                RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Token.Glass.knob(scheme)).shadow(color: .black.opacity(0.18), radius: 0.8, y: 0.5)
+                                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Token.Fill.raised(scheme)).shadow(color: .black.opacity(0.12), radius: 1.5, y: 1)
                             }
                         }
                         .contentShape(Rectangle())
@@ -214,6 +215,6 @@ public struct Segments: View {
             }
         }
         .padding(2)
-        .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .background(Token.Fill.faint(scheme), in: RoundedRectangle(cornerRadius: Token.Tile.fieldCorner, style: .continuous))
     }
 }
