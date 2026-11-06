@@ -28,7 +28,7 @@ func (s *Service) firstBoot(ctx context.Context, img catalog.Image, name string,
 	}
 	ctx, cancel := context.WithTimeout(ctx, firstbootWait)
 	defer cancel()
-	out, err := s.daemon.GuestExec(ctx, name, "sudo bash -s", renderFirstboot(string(script), name, l))
+	out, err := s.daemon.GuestExec(ctx, name, catalog.AsRoot("bash -s"), renderFirstboot(string(script), name, l))
 	switch {
 	case err != nil:
 		return err

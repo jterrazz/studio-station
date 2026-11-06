@@ -297,7 +297,7 @@ func (ss session) admin(ctx context.Context, script, env string) error {
 	defer func() { _ = g.Close() }()
 	ctx, cancel := context.WithTimeout(ctx, recipeWait)
 	defer cancel()
-	out, err := g.Exec(ctx, contract.GuestCommand{Line: "sudo env " + env + " bash -s", Stdin: strings.NewReader(script)})
+	out, err := g.Exec(ctx, contract.GuestCommand{Line: catalog.AsRoot("env " + env + " bash -s"), Stdin: strings.NewReader(script)})
 	if err != nil {
 		return err
 	}
@@ -315,7 +315,7 @@ func (ss session) cleanup(ctx context.Context, script, user string) error {
 	defer func() { _ = g.Close() }()
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
-	out, err := g.Exec(ctx, contract.GuestCommand{Line: "sudo bash -s", Stdin: strings.NewReader(script)})
+	out, err := g.Exec(ctx, contract.GuestCommand{Line: catalog.AsRoot("bash -s"), Stdin: strings.NewReader(script)})
 	// invariant: the cleanup powers the VM off under its own session, so the
 	// session ends with 0 or is cut by the poweroff; any other code is a
 	// failed cleanup.

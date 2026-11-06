@@ -79,12 +79,16 @@ func splitWords(s string) []string {
 	return out
 }
 
-// invariant: the homes of values may say any word: catalog (station's
+// invariant: the homes of values may spell any word: catalog (station's
 // values), surface/cli/words (the owner's words) and the sample estate the
 // page fixtures are compiled from (cmd/generate/pages), whose machines hold
 // the owner's tools by name as data.
+func valuesHome(pkg string) bool {
+	return pkg == "catalog" || strings.HasPrefix(pkg, "catalog/") || pkg == "surface/cli/words" || pkg == "cmd/generate/pages"
+}
+
 func wordAllowed(pkg, word string) bool {
-	if pkg == "catalog" || strings.HasPrefix(pkg, "catalog/") || pkg == "surface/cli/words" || pkg == "cmd/generate/pages" {
+	if valuesHome(pkg) {
 		return true
 	}
 	parts := strings.Split(pkg, "/")

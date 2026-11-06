@@ -141,7 +141,7 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 	change, err := c.config.Install(ctx, item, values, interactive)
 	var root *settings.NeedsRootError
 	if errors.As(err, &root) {
-		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: sudo station config install " + item}, nil
+		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: " + catalog.AsRoot("station config install "+item)}, nil
 	}
 	if err != nil {
 		return apps.Step{}, err

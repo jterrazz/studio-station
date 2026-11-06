@@ -339,7 +339,7 @@ func (d *Daemon) halt(ctx context.Context, v *vmState, want bool) error {
 	}
 	sent := false
 	if client != nil {
-		_, err := client.Exec(ctx, "sudo systemctl --no-block poweroff", "")
+		_, err := client.Exec(ctx, catalog.AsRoot("systemctl --no-block poweroff"), "")
 		sent = err == nil
 	}
 	if !sent {

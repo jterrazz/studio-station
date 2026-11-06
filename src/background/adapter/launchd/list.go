@@ -237,9 +237,9 @@ func (j *Jobs) removal(job background.Job) string {
 	case job.File == "":
 		return ""
 	case strings.HasPrefix(shown, "/Library/LaunchDaemons/"):
-		return "sudo " + command + " bootout system/" + job.Label + " && sudo rm " + shown
+		return catalog.AsRoot(command+" bootout system/"+job.Label) + " && " + catalog.AsRoot("rm "+shown)
 	case strings.HasPrefix(shown, "/Library/LaunchAgents/"):
-		return command + " bootout " + gui + " && sudo rm " + shown
+		return command + " bootout " + gui + " && " + catalog.AsRoot("rm "+shown)
 	}
 	return command + " bootout " + gui + " && rm " + shown
 }

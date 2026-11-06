@@ -1036,7 +1036,7 @@ func (r rootless) refuses(c local.Cmd) bool {
 	line := strings.Join(append([]string{c.Name}, c.Args...), " ")
 	if !slices.Contains(strings.FieldsFunc(line, func(r rune) bool {
 		return r == ' ' || r == ';' || r == '&' || r == '|' || r == '(' || r == '\'' || r == '"'
-	}), "sudo") {
+	}), catalog.Sudo) {
 		return false
 	}
 	r.w.Lock()
