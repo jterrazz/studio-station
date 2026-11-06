@@ -31,12 +31,16 @@ struct MachineContent: View {
 
     func header(_ s: Section) -> some View {
         let row = s.items?.first?.row
-        let mac = page.context?.kind == "mac"
         let mark = row?.mark ?? .ok
-        let caption = (s.caption ?? []).map { Format.show($0) }.filter { !(server && $0 == "Server VM") }
+        var caption = (s.caption ?? []).map { Format.show($0) }
+        var badge: String?
+        if let first = caption.first, let kind = ["Server", "Workspace"].first(where: { first == "\($0) VM" }) {
+            badge = kind
+            if kind == "Server" { caption.removeFirst() } else { caption[0] = "VM" }
+        }
         let back = server ? page.context?.on ?? Self.all : Self.all
         return PageHeader(back: back, title: s.title ?? "", subtitle: caption.joined(separator: Token.Glyph.sep), symbol: Token.Symbol.machine(page.context?.kind),
-                          badge: server ? "Server" : nil, action: handlers.back) {
+                          badge: badge, action: handlers.back) {
             if let word = row?.cells?.first.map({ Format.show($0) }) {
                 StateWord(word, mark: mark)
             }
