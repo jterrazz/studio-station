@@ -292,7 +292,7 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 		if silent {
 			// invariant: SPEC §8.1: a read of a machine that does not answer
 			// prints its finding and exits 0; an action exits 1.
-			return env.Out.Finding(page.Broken, Translate(err, path(c)).Message)
+			return env.Out.Finding(page.Broken, append([]string{Translate(err, path(c)).Message}, lastAnswer(c.Context(), env, err)...)...)
 		}
 		if err != nil {
 			return Translate(err, path(c))

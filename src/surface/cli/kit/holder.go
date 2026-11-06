@@ -47,6 +47,26 @@ func (h Held) OnTarget(env Env) bool {
 	return t.Name == h.Mac || t.Name == page.MacName(h.Mac, env.Self.Name)
 }
 
+// value: SPEC §8.1: when the Mac that does not answer last answered, as All
+// machines says it (`last answer 03:12`); nothing for a Mac never heard, or
+// for a VM of it, which is named by where it is.
+func lastAnswer(ctx context.Context, env Env, err error) []string {
+	var e *fail.Error
+	if !errors.As(err, &e) || e.Code != call.Unreachable {
+		return nil
+	}
+	list, lErr := call.Read(ctx, env.Calls, env.Self, machinescalls.List, machinescalls.ListIn{Unwritten: true}, nil)
+	if lErr != nil {
+		return nil
+	}
+	for _, h := range list.All.Macs {
+		if h.Name == e.Subject && !h.Reachable && !h.Answered.IsZero() {
+			return []string{"last answer " + page.LastAnswer(h.Answered, env.Now())}
+		}
+	}
+	return nil
+}
+
 func OnItsMac(ctx context.Context, env Env, vm string, err error) error {
 	// value: SPEC §8.1: an action on a VM sent to its Mac, which does not
 	// answer, names the VM where it is (`infra is on mac-mini, which does not
