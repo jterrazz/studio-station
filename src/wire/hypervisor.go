@@ -8,11 +8,11 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	"github.com/jterrazz/studio-station/src/machines/contract"
-	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 )
 
 func (m machine) hypervisor() contract.Hypervisor {
-	tool := tart.New(m.host.Run, m.host.FS, m.host.Clock, processes{local.NewKernel(m.vars)}, m.paths.State)
+	tool := tart.New(m.host.Run, m.host.FS, m.host.Clock, processes{darwin.NewTables(m.vars)}, m.paths.State)
 	if m.world != nil {
 		return m.world.hypervisor(tool.Name())
 	}
@@ -30,7 +30,7 @@ func (h engineHypervisor) Adopt(ctx context.Context, vm string) (engine.Run, boo
 }
 
 // value: this Mac's kernel tables as tart's adapter asks them.
-type processes struct{ local.Kernel }
+type processes struct{ darwin.Tables }
 
 func (k processes) Named(prefix string) ([]int, error) {
 	procs, err := k.Processes()

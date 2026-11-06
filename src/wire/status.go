@@ -21,6 +21,7 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
 	settingscli "github.com/jterrazz/studio-station/src/settings/adapter/cli"
@@ -92,7 +93,7 @@ func (m machine) meter() activitycontract.Meter {
 	case m.kind == catalog.Linux:
 		return activitylinux.New(rootFS{fs: m.host.FS, root: cmp.Or(m.systemRoot(), "/")}, m.host.Clock)
 	}
-	return activitymacos.New(local.NewKernel(m.vars), m.host.Clock)
+	return activitymacos.New(darwin.NewTables(m.vars), m.host.Clock)
 }
 
 // value: the Inspector of this machine's facts: its system's own tools, or

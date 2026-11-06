@@ -10,35 +10,36 @@ import (
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/awake/contract/contracttest"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 type door struct {
 	mu   sync.Mutex
-	r    local.PowerReading
+	r    darwin.Reading
 	none bool
 	tick chan struct{}
 }
 
 func (d *door) HoldIdle(string) (func(), error) {
 	if d.none {
-		return nil, local.ErrPowerUnsupported
+		return nil, darwin.ErrPowerUnsupported
 	}
 	return func() {}, nil
 }
 
 func (d *door) SetClamshellSleep(bool) error {
 	if d.none {
-		return local.ErrPowerUnsupported
+		return darwin.ErrPowerUnsupported
 	}
 	return nil
 }
 
-func (d *door) Read() (local.PowerReading, error) {
+func (d *door) Read() (darwin.Reading, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.none {
-		return local.PowerReading{}, local.ErrPowerUnsupported
+		return darwin.Reading{}, darwin.ErrPowerUnsupported
 	}
 	return d.r, nil
 }
@@ -57,8 +58,8 @@ func (p *pmset) Output(_ context.Context, c local.Cmd) (local.Output, error) {
 	return local.Output{}, nil
 }
 
-func reading(r awake.Reading) local.PowerReading {
-	return local.PowerReading{Lid: r.Lid, Source: r.Source, HasBattery: r.HasBattery, Percent: r.Percent, Charging: r.Charging, LowPower: r.LowPower, Thermal: r.Thermal}
+func reading(r awake.Reading) darwin.Reading {
+	return darwin.Reading{Lid: r.Lid, Source: r.Source, HasBattery: r.HasBattery, Percent: r.Percent, Charging: r.Charging, LowPower: r.LowPower, Thermal: r.Thermal}
 }
 
 func TestTheMacOSPowerKeepsTheContract(t *testing.T) {

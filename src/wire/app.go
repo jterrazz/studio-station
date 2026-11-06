@@ -21,6 +21,7 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/setup"
 	"github.com/jterrazz/studio-station/src/surface/cli"
@@ -68,7 +69,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	if session != nil {
 		world = session.here()
 	}
-	here := resolve(local.New(env, childIn, stdout, stderr), local.NewPower(env), vars, world)
+	here := resolve(local.New(env, childIn, stdout, stderr), darwin.NewDoor(env), vars, world)
 	kenv := kit.Env{
 		Out:         writer,
 		Prompt:      output.Terminal(stdin, stderr),
@@ -249,7 +250,7 @@ type machine struct {
 	// value: the host and power door before any world wraps them, from which
 	// another Mac of the world is built.
 	raw       local.Host
-	door      local.Power
+	door      darwin.Door
 	far       *late
 	pool      *probe.Pool
 	host      local.Host
@@ -262,7 +263,7 @@ type machine struct {
 	where     page.Context
 }
 
-func resolve(raw local.Host, door local.Power, vars map[string]string, world *worldMac) machine {
+func resolve(raw local.Host, door darwin.Door, vars map[string]string, world *worldMac) machine {
 	h := raw
 	if world != nil {
 		h = world.host(raw)

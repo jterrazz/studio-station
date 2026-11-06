@@ -1,4 +1,4 @@
-package local
+package darwin
 
 import (
 	"context"
@@ -67,11 +67,11 @@ func (s *stubPower) SetClamshellSleep(disabled bool) error {
 	return nil
 }
 
-func (s *stubPower) Read() (PowerReading, error) {
+func (s *stubPower) Read() (Reading, error) {
 	if !s.present() {
-		return PowerReading{}, ErrPowerUnsupported
+		return Reading{}, ErrPowerUnsupported
 	}
-	r := PowerReading{Lid: s.word("lid", ""), Source: s.word("source", "ac"), LowPower: s.word("lowpower", "0") == "1"}
+	r := Reading{Lid: s.word("lid", ""), Source: s.word("source", "ac"), LowPower: s.word("lowpower", "0") == "1"}
 	if n, err := strconv.Atoi(s.word("battery", "")); err == nil {
 		r.HasBattery, r.Percent = true, n
 	}

@@ -70,7 +70,7 @@ func importTable() map[string][]string {
 		"domain/images":              append(slices.Clone(domain), "machines/contract", "images/contract", "net/netip"),
 		"machines/adapter/ssh":       {"machines/contract", "machines/contract/contracttest", sshPkg, sshPkg + "/knownhosts", "os", "net", "net/netip", std},
 		"machines/adapter/tart":      {"platform/local", "machines", "machines/contract", "machines/contract/contracttest", "images/contract", "core/call", "net/netip", std},
-		"platform/local":             {"platform/darwin", "os", "os/exec", "os/user", "net", "net/http", "syscall", "unsafe", "golang.org/x/sys/unix", std},
+		"platform/local":             {"os", "os/exec", "os/user", "net", "net/http", "syscall", "unsafe", "golang.org/x/sys/unix", std},
 		"platform/local/localtest":   {"platform/local", "testing", "testing/fstest", std},
 		"catalog":                    {"embed", std},
 		"page":                       {std},
@@ -127,9 +127,9 @@ type symbolRule struct {
 // judges. A symbol is always allowed inside its own package.
 func symbolRules() []symbolRule {
 	return []symbolRule{
-		{symbols: []string{"os.Getenv", "os.LookupEnv", "os.Setenv", "os.UserHomeDir", "os.Hostname", "os.Geteuid"}, owners: []string{"platform/local"}},
+		{symbols: []string{"os.Getenv", "os.LookupEnv", "os.Setenv", "os.UserHomeDir", "os.Hostname", "os.Geteuid"}, owners: []string{"platform/local", "platform/darwin"}},
 		{symbols: []string{"os.Environ", "os.Args", "os.Exit", "os.Stdin", "os.Stdout", "os.Stderr"}, owners: []string{"cmd/station"}},
-		{symbols: []string{"os.ReadFile", "os.ReadDir", "os.WriteFile", "os.MkdirAll"}, owners: []string{"platform/local", "machines/adapter/ssh", "cmd/generate"}, tests: true},
+		{symbols: []string{"os.ReadFile", "os.ReadDir", "os.WriteFile", "os.MkdirAll"}, owners: []string{"platform/local", "platform/darwin", "machines/adapter/ssh", "cmd/generate"}, tests: true},
 		{symbols: []string{"os.Getpid", "syscall.SIGTERM"}, owners: []string{"wire", "platform/local"}},
 		{symbols: []string{"os.File", "os.File.Fd", "os.Interrupt"}, owners: []string{"platform/local", "wire"}},
 		{symbols: []string{"os.*", "os/exec.*", "syscall.*", "os/user.*"}, owners: []string{"platform/local", "platform/darwin", "machines/adapter/ssh"}},

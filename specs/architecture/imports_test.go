@@ -195,7 +195,6 @@ func importsTolerated() map[string][]string {
 	return map[string][]string{
 		"engine":               {"domain/machines", "domain/power", "domain/services", "io", "io/fs", "platform/local", "platform/local/localtest"},
 		"machines/adapter/ssh": {"net", "os"},
-		"platform/local":       {"platform/darwin"},
 		"surface/cli/kit":      {"domain/*", "engine", "testing"},
 	}
 }

@@ -1,4 +1,4 @@
-package local
+package darwin
 
 import (
 	"encoding/json"
@@ -6,24 +6,22 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/jterrazz/studio-station/src/platform/darwin"
 )
 
-type Kernel interface {
-	Counters() (darwin.Counters, error)
-	Processes() (darwin.Procs, error)
-	Process(pid int) (darwin.Procs, error)
+type Tables interface {
+	Counters() (Counters, error)
+	Processes() (Procs, error)
+	Process(pid int) (Procs, error)
 	Files(pid int) ([]string, error)
 }
 
 var errNoKernel = errors.New("no kernel tables here")
 
-func NewKernel(vars map[string]string) Kernel {
+func NewTables(vars map[string]string) Tables {
 	if dir := vars["STATION_KERNEL_STUB"]; filepath.IsAbs(dir) {
 		return &stubKernel{dir: dir}
 	}
-	return darwin.Kernel{}
+	return Kernel{}
 }
 
 // value: the test seam STATION_KERNEL_STUB names: recorded kernel tables,
@@ -36,16 +34,16 @@ type stubKernel struct {
 	next int
 }
 
-func (s *stubKernel) Counters() (darwin.Counters, error) {
-	var c darwin.Counters
+func (s *stubKernel) Counters() (Counters, error) {
+	var c Counters
 	err := s.read("counters.json", &c)
 	return c, err
 }
 
-func (s *stubKernel) Processes() (darwin.Procs, error) {
-	var readings []darwin.Procs
+func (s *stubKernel) Processes() (Procs, error) {
+	var readings []Procs
 	if err := s.read("procs.json", &readings); err != nil || len(readings) == 0 {
-		return darwin.Procs{}, errNoKernel
+		return Procs{}, errNoKernel
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -54,17 +52,17 @@ func (s *stubKernel) Processes() (darwin.Procs, error) {
 	return readings[at], nil
 }
 
-func (s *stubKernel) Process(pid int) (darwin.Procs, error) {
+func (s *stubKernel) Process(pid int) (Procs, error) {
 	all, err := s.Processes()
 	if err != nil {
-		return darwin.Procs{}, err
+		return Procs{}, err
 	}
 	for _, p := range all.List {
 		if p.PID == pid {
-			return darwin.Procs{At: all.At, List: []darwin.Proc{p}}, nil
+			return Procs{At: all.At, List: []Proc{p}}, nil
 		}
 	}
-	return darwin.Procs{}, errNoKernel
+	return Procs{}, errNoKernel
 }
 
 func (s *stubKernel) Files(int) ([]string, error) { return nil, errNoKernel }
