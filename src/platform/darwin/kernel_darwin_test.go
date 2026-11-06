@@ -4,6 +4,8 @@ package darwin
 
 import (
 	"os/exec"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -21,5 +23,32 @@ func TestAProcessReadByItsPidSaysWhenItStarted(t *testing.T) {
 	}
 	if started := got.List[0].Started; started.Before(before) || started.After(time.Now()) {
 		t.Errorf("Started = %v; want the child's start, after %v", started, before)
+	}
+}
+
+func TestThisMacsNetworkTotalsAreTheOnesNetstatReads(t *testing.T) {
+	c, err := Kernel{}.Counters()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, l := range c.Links {
+		if !strings.HasPrefix(l.Name, "en") {
+			continue
+		}
+		out, err := exec.Command("/usr/sbin/netstat", "-ibn", "-I", l.Name).Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+		if len(lines) < 2 {
+			continue
+		}
+		f := strings.Fields(lines[1])
+		in, _ := strconv.ParseUint(f[len(f)-5], 10, 64)
+		sent, _ := strconv.ParseUint(f[len(f)-2], 10, 64)
+		const drift = 1 << 20
+		if in < l.In || in-l.In > drift || sent < l.Out || sent-l.Out > drift {
+			t.Errorf("%s: station reads in %d out %d; netstat, read after, %d and %d", l.Name, l.In, l.Out, in, sent)
+		}
 	}
 }
