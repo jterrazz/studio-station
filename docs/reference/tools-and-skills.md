@@ -20,7 +20,7 @@ An app's state is one of OK (the method's manager lists it, current), Update ava
 
 ## Methods
 
-One registry, `Installers` in `src/apps/contract/`, holds an installer per method, each its own adapter under `src/apps/adapter/<method>/` with its commands and its parser; nothing else switches on a method. `wire` builds the registry; `domain/tools` asks each installer what it can do and what is behind (`Outdated`): brew reads `brew outdated --json=v2`, a pinned formula left out; a skill compares its lock with GitHub.
+One registry, `Installers` in `src/apps/contract/`, holds an installer per method, each its own adapter under `src/apps/adapter/<method>/` with its commands and its parser; nothing else switches on a method. `wire` builds the registry; `apps/calls` asks each installer what it can do and what is behind (`Outdated`): brew reads `brew outdated --json=v2`, a pinned formula left out; a skill compares its lock with GitHub.
 
 | Method            | Install                                                            | Remove                                  | Update                           | Kinds       |
 | ----------------- | ------------------------------------------------------------------ | --------------------------------------- | -------------------------------- | ----------- |

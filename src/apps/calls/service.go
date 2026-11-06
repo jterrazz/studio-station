@@ -1,4 +1,4 @@
-package tools
+package calls
 
 import (
 	"context"
@@ -10,12 +10,11 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
-	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const commandLane = 16
 
-type Options struct {
+type ServiceOptions struct {
 	Pool       *probe.Pool
 	Here       catalog.MachineKind
 	Root       string
@@ -26,7 +25,7 @@ type Options struct {
 }
 
 type Configurer interface {
-	Configure(ctx context.Context, item string, interactive bool) (Step, error)
+	Configure(ctx context.Context, item string, interactive bool) (apps.Step, error)
 }
 
 type VMs interface {
@@ -34,41 +33,23 @@ type VMs interface {
 }
 
 type Service struct {
-	h      local.Host
+	m      Machine
 	tools  []catalog.Tool
 	byName map[string]catalog.Tool
 	cfg    Configurer
-	o      Options
+	o      ServiceOptions
 }
 
-func New(h local.Host, list []catalog.Tool, cfg Configurer, o Options) *Service {
+func NewService(m Machine, list []catalog.Tool, cfg Configurer, o ServiceOptions) *Service {
 	byName := make(map[string]catalog.Tool, len(list))
 	for _, t := range list {
 		byName[t.Name] = t
 	}
 	if o.Pool == nil {
-		o.Pool = probe.NewPool(context.Background(), h.Clock, commandLane, 1)
+		o.Pool = probe.NewPool(context.Background(), m, commandLane, 1)
 	}
-	return &Service{h: h, tools: list, byName: byName, cfg: cfg, o: o}
+	return &Service{m: m, tools: list, byName: byName, cfg: cfg, o: o}
 }
-
-type (
-	Report         = apps.Report
-	Why            = apps.Why
-	Outcome        = apps.Outcome
-	Step           = apps.Step
-	InstallRequest = apps.InstallRequest
-	UpgradeRequest = apps.UpgradeRequest
-)
-
-const (
-	WhyMissing   = apps.WhyMissing
-	WhyUnmanaged = apps.WhyUnmanaged
-	WhyOutdated  = apps.WhyOutdated
-	WhyPartial   = apps.WhyPartial
-	WhyLate      = apps.WhyLate
-	WhyFailing   = apps.WhyFailing
-)
 
 func (s *Service) Placed() []catalog.Tool {
 	var placed []catalog.Tool
@@ -116,7 +97,7 @@ func (s *Service) CheckInstall(ctx context.Context, names []string) error {
 	for _, t := range found {
 		inst := s.installer(t)
 		if !inst.Can().Install {
-			return &ManualInstallError{Tool: t.Name, Hint: s.install(t).Key()}
+			return &apps.ManualInstallError{Tool: t.Name, Hint: s.install(t).Key()}
 		}
 		// invariant: an app whose method's manager is missing is refused,
 		// naming the app that brings it, unless that app is asked too.
@@ -134,10 +115,10 @@ func (s *Service) CheckUninstall(names []string) error {
 	}
 	for _, t := range found {
 		if !s.installer(t).Can().Remove {
-			return &NotReversibleError{Tool: t.Name}
+			return &apps.NotReversibleError{Tool: t.Name}
 		}
 		if s.fromAppStore(t) {
-			return &AppStoreError{Tool: t.Name}
+			return &apps.AppStoreError{Tool: t.Name}
 		}
 	}
 	return nil
@@ -150,7 +131,7 @@ func (s *Service) CheckUpgrade(names []string) error {
 	}
 	for _, t := range found {
 		if !s.installer(t).Can().Update {
-			return &NoUpgradePathError{Tool: t.Name}
+			return &apps.NoUpgradePathError{Tool: t.Name}
 		}
 	}
 	return nil

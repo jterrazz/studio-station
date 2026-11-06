@@ -6,13 +6,13 @@ import (
 
 	"github.com/spf13/cobra"
 
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/disk/adapter/apfs"
 	"github.com/jterrazz/studio-station/src/disk/adapter/posix"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	diskcmd "github.com/jterrazz/studio-station/src/surface/cli/disk"
 	diskerase "github.com/jterrazz/studio-station/src/surface/cli/disk/erase"
 	diskfree "github.com/jterrazz/studio-station/src/surface/cli/disk/free"
@@ -99,7 +99,7 @@ func (m machine) toolFiles() map[catalog.ToolFile]string {
 	}
 }
 
-type inventory struct{ tools *tools.Service }
+type inventory struct{ tools *appscalls.Service }
 
 func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
 	for reports := range i.tools.Watch(ctx) {

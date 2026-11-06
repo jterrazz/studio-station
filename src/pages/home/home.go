@@ -5,9 +5,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/apps"
+
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
@@ -141,7 +142,7 @@ func tallies(marks []page.Mark) []page.Tally {
 	return out
 }
 
-func toolCounts(reports []tools.Report) []page.Tally {
+func toolCounts(reports []apps.Report) []page.Tally {
 	marks := make([]page.Mark, 0, len(reports))
 	for _, r := range reports {
 		marks = append(marks, pages.MarkOf(r.State))

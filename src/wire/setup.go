@@ -5,6 +5,8 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/apps"
+
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
 
@@ -12,10 +14,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/setup"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	setupcmd "github.com/jterrazz/studio-station/src/surface/cli/setup"
@@ -77,7 +79,7 @@ func (c setupSettings) Apply(ctx context.Context, name string) error {
 	return err
 }
 
-type systemTools struct{ tools *tools.Service }
+type systemTools struct{ tools *appscalls.Service }
 
 func (s systemTools) names() []string {
 	var out []string
@@ -110,7 +112,7 @@ func (s systemTools) RemoveFormula(ctx context.Context, formula string) error {
 }
 
 func (s systemTools) Install(ctx context.Context, names []string) error {
-	outcomes, err := s.tools.Install(ctx, tools.InstallRequest{Names: names, Interactive: true})
+	outcomes, err := s.tools.Install(ctx, apps.InstallRequest{Names: names, Interactive: true})
 	if err != nil {
 		return err
 	}

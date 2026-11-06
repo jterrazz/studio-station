@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/apps"
+
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 
 	"github.com/jterrazz/studio-station/src/background"
@@ -14,7 +16,6 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
@@ -450,9 +451,9 @@ func fleets() []Fixture {
 }
 
 func outcomes() []Fixture {
-	appOutcomes := []tools.Outcome{
+	appOutcomes := []apps.Outcome{
 		{Name: "jq", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "1.8.1"},
-		{Name: "mise", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "2026.10.1", Steps: []tools.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
+		{Name: "mise", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "2026.10.1", Steps: []apps.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
 		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Method: catalog.MethodCask, Detail: "brew bundle exited 1"},
 	}
 	changes := []settings.Change{

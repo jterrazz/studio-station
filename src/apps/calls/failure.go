@@ -1,9 +1,6 @@
-package tools
+package calls
 
 import (
-	"errors"
-	"io/fs"
-	"path"
 	"strings"
 	"time"
 
@@ -19,7 +16,7 @@ func (s *Service) failed(verb string, list []catalog.Tool, cause error) string {
 		return words
 	}
 	shown := s.o.Log
-	if home := s.h.Env.Home(); home != "" && strings.HasPrefix(shown, home+"/") {
+	if home := s.m.Home(); home != "" && strings.HasPrefix(shown, home+"/") {
 		shown = "~" + strings.TrimPrefix(shown, home)
 	}
 	return words + ": its output is in " + shown
@@ -30,13 +27,6 @@ func (s *Service) keep(verb string, list []catalog.Tool, cause error) error {
 	for _, t := range list {
 		names = append(names, t.Name)
 	}
-	before, err := s.h.FS.ReadFile(s.o.Log)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return err
-	}
-	if err := s.h.FS.MkdirAll(path.Dir(s.o.Log), 0o700); err != nil {
-		return err
-	}
-	line := s.h.Clock.Now().UTC().Format(time.RFC3339) + " " + verb + " " + strings.Join(names, " ") + ": " + cause.Error() + "\n"
-	return s.h.FS.WriteFile(s.o.Log, append(before, line...), 0o600)
+	line := s.m.Now().UTC().Format(time.RFC3339) + " " + verb + " " + strings.Join(names, " ") + ": " + cause.Error() + "\n"
+	return s.m.Keep(s.o.Log, line)
 }

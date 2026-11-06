@@ -3,8 +3,14 @@ package wire
 import (
 	"context"
 	"errors"
+	"io/fs"
+	"path"
 	"path/filepath"
 	"strconv"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/apps"
+	"github.com/jterrazz/studio-station/src/platform/local"
 
 	"github.com/spf13/cobra"
 
@@ -18,9 +24,9 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/adapter/shell"
 	"github.com/jterrazz/studio-station/src/apps/adapter/skills"
 	"github.com/jterrazz/studio-station/src/apps/adapter/uv"
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	"github.com/jterrazz/studio-station/src/settings"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
@@ -52,7 +58,7 @@ func toolsAlias(env kit.Env, m machine) *cobra.Command {
 	), "apps")
 }
 
-func placedNames(s *tools.Service) func() []string {
+func placedNames(s *appscalls.Service) func() []string {
 	return func() []string {
 		placed := s.Placed()
 		out := make([]string, 0, len(placed))
@@ -63,13 +69,13 @@ func placedNames(s *tools.Service) func() []string {
 	}
 }
 
-func toolsService(env kit.Env, m machine) *tools.Service {
+func toolsService(env kit.Env, m machine) *appscalls.Service {
 	var ask kit.Asker
 	if env.Interactive {
 		ask = env.Prompt
 	}
 	registry, bundler := installers(m)
-	return tools.New(m.host, catalog.Tools, configurer{config: configService(m), ask: ask}, tools.Options{
+	return appscalls.NewService(appsMachine{m.host}, catalog.Tools, configurer{config: configService(m), ask: ask}, appscalls.ServiceOptions{
 		Pool:       m.pool,
 		Here:       m.kind,
 		Root:       m.systemRoot(),
@@ -124,28 +130,28 @@ type configurer struct {
 	ask    kit.Asker
 }
 
-func (c configurer) Configure(ctx context.Context, item string, interactive bool) (tools.Step, error) {
+func (c configurer) Configure(ctx context.Context, item string, interactive bool) (apps.Step, error) {
 	found, err := c.config.Find([]string{item})
 	if err != nil {
-		return tools.Step{}, err
+		return apps.Step{}, err
 	}
 	it := found[0]
 	if c.config.NeedsInput(it) && !interactive {
-		return tools.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs a terminal: station config install " + item}, nil
+		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs a terminal: station config install " + item}, nil
 	}
 	var values map[string]string
 	if len(it.Inputs) > 0 && c.ask != nil {
 		if values, err = c.ask.Form(pagesettings.InputsForm(item, it.Inputs, c.config.Defaults(item))); err != nil {
-			return tools.Step{}, err
+			return apps.Step{}, err
 		}
 	}
 	change, err := c.config.Install(ctx, item, values, interactive)
 	var root *settings.NeedsRootError
 	if errors.As(err, &root) {
-		return tools.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: sudo station config install " + item}, nil
+		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: sudo station config install " + item}, nil
 	}
 	if err != nil {
-		return tools.Step{}, err
+		return apps.Step{}, err
 	}
 	detail := ""
 	switch n := len(change.Steps); {
@@ -154,5 +160,41 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 	case n > 1:
 		detail = change.Steps[0].Label + " and " + strconv.Itoa(n-1) + " more"
 	}
-	return tools.Step{Item: item, Result: catalog.StateOK, Detail: detail}, nil
+	return apps.Step{Item: item, Result: catalog.StateOK, Detail: detail}, nil
+}
+
+type appsMachine struct{ h local.Host }
+
+func (a appsMachine) Now() time.Time { return a.h.Clock.Now() }
+func (a appsMachine) Sleep(ctx context.Context, d time.Duration) error {
+	return a.h.Clock.Sleep(ctx, d)
+}
+func (a appsMachine) Home() string { return a.h.Env.Home() }
+func (a appsMachine) Glob(pattern string) []string {
+	matches, _ := a.h.FS.Glob(pattern)
+	return matches
+}
+func (a appsMachine) LookPath(name string) (string, bool) { return a.h.Run.LookPath(name) }
+func (a appsMachine) Exists(path string) bool {
+	_, err := a.h.FS.Stat(path)
+	return err == nil
+}
+
+func (a appsMachine) Probe(ctx context.Context, name string, args []string, budget time.Duration) (string, int, bool) {
+	out, err := a.h.Run.Output(ctx, local.Cmd{Name: name, Args: args, Timeout: budget})
+	if err != nil {
+		return "", 0, false
+	}
+	return out.Stdout + out.Stderr, out.ExitCode, true
+}
+
+func (a appsMachine) Keep(file, line string) error {
+	before, err := a.h.FS.ReadFile(file)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	if err := a.h.FS.MkdirAll(path.Dir(file), 0o700); err != nil {
+		return err
+	}
+	return a.h.FS.WriteFile(file, append(before, line...), 0o600)
 }
