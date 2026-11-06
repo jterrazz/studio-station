@@ -119,7 +119,7 @@ final class HomeTests: XCTestCase {
         engine.serveOnce(Data(#"{"v":2,"id":"1","out":{}}"#.utf8) + [0x0A], thenClose: false)
         defer { engine.stop() }
         let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path, reread: [PageID.shown(nil)]).run(update)
-        XCTAssertNil(status)
+        XCTAssertEqual(status?.line, "Update all: done")
         XCTAssertEqual(engine.received, [
             #"{"call":"apps.update","id":"1","v":2}"#,
             #"{"call":"engine.refresh","id":"1","in":{"pages":["menubar"]},"v":2}"#,

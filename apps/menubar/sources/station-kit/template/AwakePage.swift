@@ -71,7 +71,7 @@ public struct AwakePage: View {
                         SubText(act.label(running))
                     }
                 } else {
-                    Segments(options: keeps.map { k in (Self.held(k) ? k.label ?? "" : act.label(k), on && Self.held(k), { k.form == nil ? run(k) : act.tap(k) }) }).disabled(busy)
+                    Segments(options: keeps.map { k in (Self.held(k) ? k.label ?? "" : act.label(k), on && Self.picked(k, among: keeps), { k.form == nil ? run(k) : act.tap(k) }) }).disabled(busy)
                 }
             }
             .stationTile()
@@ -87,6 +87,12 @@ public struct AwakePage: View {
     // value: Until while a keep-awake holds: it says the time it holds
     // until (`Until 18:00`), the term chosen.
     static func held(_ k: Action) -> Bool { k.form != nil && (k.label ?? "").contains(where: \.isNumber) }
+
+    // value: the segment drawn chosen: the term the page says is in force;
+    // from an engine that says none, Until while it holds.
+    public static func picked(_ k: Action, among keeps: [Action]) -> Bool {
+        keeps.contains { $0.picked == true } ? k.picked == true : held(k)
+    }
 
     // invariant: a switch's action flips it, so its input holds the other
     // side: Lid closed is on when its action sends Lid false; a switch the

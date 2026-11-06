@@ -131,7 +131,7 @@ public struct ConfirmSheet: View {
                 SubText(Format.show(line))
             }
             if let name = confirm.type {
-                TypedField(name, text: $typed)
+                TypedField(name, text: $typed, autofocus: true, submit: { if Self.allows(confirm, typed: typed) { onAnswer(true) } })
             }
             HStack {
                 Spacer()
@@ -166,6 +166,10 @@ public struct FormSheet: View {
         Binding(get: { answers[f.key ?? ""] ?? f.default ?? "" }, set: { answers[f.key ?? ""] = $0 })
     }
 
+    // value: the field the keys go to as the sheet opens: its first text
+    // field, so the owner types at once.
+    public static func first(_ form: Form) -> String? { (form.fields ?? []).first { $0.kind != "select" }?.key }
+
     var complete: Bool {
         (form.fields ?? []).allSatisfy { f in f.required != true || !(binding(f).wrappedValue.isEmpty) }
     }
@@ -182,7 +186,7 @@ public struct FormSheet: View {
                             Text(note).font(.system(size: Token.Space.small)).foregroundStyle(.tertiary)
                         }
                     } else {
-                        TypedField(f.note ?? "", text: binding(f))
+                        TypedField(f.note ?? "", text: binding(f), autofocus: Self.first(form) == f.key, submit: { if complete { onAnswer(true) } })
                     }
                 }
             }

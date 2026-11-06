@@ -102,8 +102,8 @@ final class PagesTests: XCTestCase {
         XCTAssertEqual(frame.input, ["VM": "linux-1", "Confirm": "linux-1"])
     }
 
-    // invariant: LC-24: Stop… on infra is a typed sheet, sent to infra on
-    // its own Mac.
+    // invariant: LC-24: Stop… on infra is a typed sheet, sent to the Mac
+    // that holds infra.
     func testServerStopSheetTyped() async throws {
         let stop = try XCTUnwrap(Tree.page("menubar.vm.infra").action("stop"))
         XCTAssertEqual(stop.confirm?.type, "infra")
@@ -112,7 +112,7 @@ final class PagesTests: XCTestCase {
         let (frame, _) = try await sent(stop, answers: [ActionRunner.typedKey: "infra"], label: "mb-stop-srv")
         XCTAssertEqual(frame.call, "machines.stop")
         XCTAssertEqual(frame.input, ["VM": "infra", "Confirm": "infra"])
-        XCTAssertEqual(frame.target, ["name": "infra", "on": "jterrazz-mac-mini"])
+        XCTAssertEqual(frame.target, ["name": "jterrazz-mac-mini"])
     }
 
     // invariant: LC-24: Restart on infra asks nothing and runs at once on
@@ -124,7 +124,7 @@ final class PagesTests: XCTestCase {
         let (frame, started) = try await sent(restart, label: "mb-restart")
         XCTAssertEqual(frame.call, "machines.restart")
         XCTAssertEqual(frame.input, ["Name": "infra"])
-        XCTAssertEqual(frame.target, ["name": "infra", "on": "jterrazz-mac-mini"])
+        XCTAssertEqual(frame.target, ["name": "jterrazz-mac-mini"])
         XCTAssertEqual(started, [])
     }
 

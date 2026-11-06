@@ -47,11 +47,13 @@ final class Model: ObservableObject {
         let changed = state.pushed?.id != page?.id
         if let page { state.held = AwakePage.settled(state.held, page) } else { state.held = [:] }
         state.pushed = page
+        state.showing(page == nil ? nil : watch)
         state.back = navigation.backWords
         state.settling = nil
         if page == nil || changed {
             state.confirming = nil
             state.qr = nil
+            DispatchQueue.main.async { PanelWindow.key(NSApp.windows) }
         }
         if page == nil {
             state.search = ""
@@ -87,6 +89,7 @@ final class Model: ObservableObject {
     // watch ended never comes back.
     func push(_ page: String) {
         state.confirming = nil
+        state.showing(page)
         navigation.open(page)
     }
 
@@ -118,7 +121,7 @@ final class Model: ObservableObject {
         case .tick:
             break
         case .notice(_, let text):
-            state.status = Status(text, failed: false)
+            state.say(Status(text, failed: false), on: navigation.watched)
         case .down:
             if FileManager.default.fileExists(atPath: socket) && state.page != nil && state.connection == .live {
                 state.connection = .connecting
@@ -158,6 +161,7 @@ final class Model: ObservableObject {
     // focus back, and the panel closes then.
     func opened() {
         NSApp.activate()
+        DispatchQueue.main.async { PanelWindow.key(NSApp.windows) }
         state.openings += 1
         let socket = self.socket
         watching?.cancel()
@@ -176,9 +180,7 @@ final class Model: ObservableObject {
     // value: the panel's window, closed as a menu closes once it handed the
     // owner to another app.
     func closePanel() {
-        for w in NSApp.windows where w.isVisible && w.className.contains("MenuBarExtra") {
-            w.close()
-        }
+        PanelWindow.close(NSApp.windows)
     }
 
     func open(_ url: URL) {
@@ -190,6 +192,7 @@ final class Model: ObservableObject {
         state.running = action.id
         state.settling = nil
         state.status = nil
+        let on = navigation.watched
         if action.run?.terminal == true { closePanel() }
         let socket = self.socket
         let reread = [PageID.shown(navigation.watched)]
@@ -197,7 +200,8 @@ final class Model: ObservableObject {
             let executable = await Client.executable(path: socket) ?? Self.fallbackExecutable
             let status = await ActionRunner(executable: executable, socket: socket, reread: reread).run(action, answers: answers)
             state.running = nil
-            state.status = status
+            state.say(status, on: on)
+            state.showing(navigation.watched)
             if status?.failed != true, action.run?.call == ActionRunner.awake, state.pushed?.id == MenuPage.awake {
                 for key in ["Lid", "Battery"] { if let v = answers[key], v == "true" || v == "false" { state.held[key] = v } }
             }
@@ -226,7 +230,7 @@ final class Model: ObservableObject {
         do {
             try LoginItem.set(on)
         } catch {
-            state.status = Status(error.localizedDescription, failed: true)
+            state.say(Status(error.localizedDescription, failed: true), on: navigation.watched)
         }
         loginItemOn = LoginItem.on
     }

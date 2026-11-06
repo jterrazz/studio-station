@@ -38,8 +38,8 @@ struct MenuPageFrame<Content: View>: View {
         }
         .padding(Token.Space.margin)
         .frame(width: Token.Space.width, alignment: .topLeading)
-        .stationScroll(true, key: "\(state.openings)/\(state.page?.id ?? "")", sheet: state.confirming)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        .stationScroll(true, key: "\(state.openings)/\(state.page?.id ?? "")", sheet: state.confirming, status: state.status != nil || state.connection == .connecting)
+        .stationStatus {
             if let status = state.status {
                 StatusBar(status.line, failed: status.failed).padding(EdgeInsets(top: 0, leading: Token.Space.margin, bottom: Token.Space.margin, trailing: Token.Space.margin))
             }

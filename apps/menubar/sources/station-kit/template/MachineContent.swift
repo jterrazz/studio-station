@@ -14,6 +14,23 @@ struct MachineContent: View {
 
     var head: Section? { page.section("machine") }
     var server: Bool { page.context?.kind == "server" }
+    var mac: Bool { page.context?.kind == "mac" }
+
+    // value: where a machine's Ports opens: its own Mac's (vision panel g),
+    // where a server's ports are shared too.
+    var portsOf: String { (server ? page.context?.on : nil) ?? page.context?.machine ?? "" }
+
+    // value: a Mac's way to its Ports (vision panel g): one row under its
+    // VMs.
+    var portsRow: some View {
+        Rows {
+            MenuRow("Ports", tap: { handlers.push(Navigation.page(Navigation.ports, of: portsOf)) }) {
+                IconTile(Token.Symbol.ports)
+            } trailing: {
+                Chevron()
+            }
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Token.Tile.section) {
@@ -25,6 +42,7 @@ struct MachineContent: View {
                 ForEach(Array((page.sections ?? []).enumerated()), id: \.offset) { _, s in
                     if s.id != "machine" { section(s) }
                 }
+                if mac { portsRow }
             }
             if state.confirming?.hasPrefix("stop-sharing:") != true {
                 SheetFor(page: page, state: state, handlers: handlers)
@@ -250,7 +268,7 @@ struct MachineContent: View {
                 TrailingValue(value)
             })
         }
-        return AnyView(MenuRow(r.label ?? "", tap: { handlers.push(Navigation.page(Navigation.ports, of: page.context?.machine ?? "")) }) {
+        return AnyView(MenuRow(r.label ?? "", tap: { handlers.push(Navigation.page(Navigation.ports, of: portsOf)) }) {
             IconTile(Token.Symbol.ports)
         } trailing: {
             TrailingValue(Self.counted(r.cells?.first))
@@ -322,20 +340,18 @@ struct MachineContent: View {
         }.joined(separator: Token.Glyph.sep)
     }
 
-    // value: a page button's role: Restart the primary, Delete in red, a
-    // button whose sheet asks for the name greyed and saying so (vision
-    // panel f: Stop, then "(type the name)").
+    // value: a page button's role: Restart the primary, Delete in red, any
+    // other plain and live; a button whose sheet asks for the name says so
+    // by its ellipsis alone, the sheet says what to type.
     static func role(_ a: Action) -> StationRole {
         switch a.id {
         case "restart", "start-vm": .primary
         case "delete": .danger
-        default: a.confirm?.type != nil ? .quiet : .plain
+        default: .plain
         }
     }
 
-    static func button(_ a: Action) -> String {
-        role(a) == .quiet ? "\(label(a)) (type the name)" : label(a)
-    }
+    static func button(_ a: Action) -> String { label(a) }
 
     // value: an action that opens Terminal on its own command (Unlock),
     // whose label ends in an ellipsis: it opens something more.

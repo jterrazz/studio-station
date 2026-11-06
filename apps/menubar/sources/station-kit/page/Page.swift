@@ -162,6 +162,8 @@ public struct Action: Codable, Equatable, Sendable {
     public var id: String?
     public var run: Run?
     public var form: Form?
+    // value: the choice in force among its row's (Awake's term).
+    public var picked: Bool?
 }
 
 public struct Run: Codable, Equatable, Sendable {

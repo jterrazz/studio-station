@@ -43,6 +43,9 @@ public struct PopoverState: Equatable, Sendable {
     // value: Awake's switches as the owner last set them, until the page
     // read again says the same (`Lid`, `Battery`: "true" or "false").
     public var held: [String: String] = [:]
+    // value: the page the status line was said on, by its watch; nil is
+    // Home.
+    public var statusOn: String?
 
     public init(page: Page?, connection: Connection, running: String? = nil, confirming: String? = nil, status: Status? = nil, qr: String? = nil, pushed: Page? = nil, recent: [String] = []) {
         self.page = page
@@ -57,6 +60,17 @@ public struct PopoverState: Equatable, Sendable {
 
     // value: the page the owner sees, the pushed one over Home.
     public var shown: Page? { pushed ?? page }
+
+    // invariant: a status line is about the page it was said on: once
+    // another page is shown it is gone, never carried onto the next one.
+    public mutating func say(_ status: Status?, on watch: String?) {
+        self.status = status
+        statusOn = watch
+    }
+
+    public mutating func showing(_ watch: String?) {
+        if watch != statusOn { status = nil }
+    }
 }
 
 public struct PopoverHandlers {
@@ -110,6 +124,23 @@ public struct PopoverHandlers {
         self.push = push
         self.back = back
         self.close = close
+    }
+}
+
+extension PopoverHandlers {
+    // invariant: a gesture that swaps the page (open, back) acts once the
+    // click that made it has ended: a page torn down under its own click
+    // leaves the next click spent on the page that is gone.
+    public func deferred(_ later: @escaping (@escaping () -> Void) -> Void) -> PopoverHandlers {
+        var h = self
+        let (push, openMachine, openSwitcher, back, window, confirm) = (self.push, self.openMachine, self.openSwitcher, self.back, self.window, self.confirm)
+        h.push = { page in later { push(page) } }
+        h.openMachine = { name in later { openMachine(name) } }
+        h.openSwitcher = { later { openSwitcher() } }
+        h.back = { later { back() } }
+        h.window = { flag in later { window(flag) } }
+        h.confirm = { action in later { confirm(action) } }
+        return h
     }
 }
 
@@ -187,15 +218,15 @@ public struct Popover: View {
         }
         .padding(Token.Space.margin)
         .frame(width: Token.Space.width, alignment: .topLeading)
-        .stationScroll(scrolls, key: "\(state.openings)/\(state.shown?.id ?? "")/\(state.shown?.context?.machine ?? "")", sheet: state.confirming)
-        .safeAreaInset(edge: .bottom, spacing: 0) { statusLine }
+        .stationScroll(scrolls, key: "\(state.openings)/\(state.shown?.id ?? "")/\(state.shown?.context?.machine ?? "")", sheet: state.confirming, status: state.status != nil || state.connection == .connecting)
+        .stationStatus { statusLine }
         .background { BackKey(state: state, handlers: handlers) }
         .stationPanel()
         .environment(\.stationHints, false)
     }
 
     // invariant: the status line stays in sight under the panel's scroll,
-    // never scrolled away with what it is about.
+    // never scrolled away with what it is about, and never drawn over it.
     @ViewBuilder
     var statusLine: some View {
         if state.connection == .connecting {
@@ -218,6 +249,7 @@ public struct Popover: View {
                     SwitcherPill(open: state.pushed != nil)
                 }
                 .buttonStyle(.plain)
+                .focusEffectDisabled()
                 .keyboardShortcut("0", modifiers: .command)
                 if state.pushed == nil {
                     Text(state.page?.context?.machine ?? "station").font(.system(size: Token.Size.sub)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
@@ -266,6 +298,17 @@ struct BackKey: View {
                 .opacity(0)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
+        }
+    }
+}
+
+extension View {
+    // invariant: the status line sits under the panel's content, in its own
+    // room: the panel grows by its height, nothing of the page is under it.
+    func stationStatus<S: View>(@ViewBuilder _ status: () -> S) -> some View {
+        VStack(spacing: 0) {
+            self
+            status()
         }
     }
 }

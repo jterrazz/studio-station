@@ -749,6 +749,8 @@ struct PanelScroll: ViewModifier {
     let key: String
     // value: the sheet open, if any: opening one scrolls it into sight.
     let sheet: String?
+    // value: the height kept under the scroll for the status line.
+    var reserve: CGFloat = 0
     static let sheetID = "station.sheet"
     @Environment(\.stationStill) private var still
     @State private var height: CGFloat = 0
@@ -772,13 +774,15 @@ struct PanelScroll: ViewModifier {
             }
             .id(key)
             .scrollBounceBehavior(.basedOnSize)
-            .scrollIndicators(height > Self.room ? .automatic : .never)
-            .frame(width: Token.Space.width, height: height > 0 ? min(height, Self.room) : nil)
+            .scrollIndicators(height > Self.room - reserve ? .automatic : .never)
+            .frame(width: Token.Space.width, height: height > 0 ? min(height, Self.room - reserve) : nil)
         }
     }
 }
 
 extension View {
     // value: the panel's scroll (see PanelScroll).
-    public func stationScroll(_ scrolls: Bool, key: String = "", sheet: String? = nil) -> some View { modifier(PanelScroll(scrolls: scrolls, key: key, sheet: sheet)) }
+    public func stationScroll(_ scrolls: Bool, key: String = "", sheet: String? = nil, status: Bool = false) -> some View {
+        modifier(PanelScroll(scrolls: scrolls, key: key, sheet: sheet, reserve: status ? Token.Space.statusRoom : 0))
+    }
 }

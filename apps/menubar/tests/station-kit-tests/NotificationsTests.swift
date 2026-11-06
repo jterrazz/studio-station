@@ -58,7 +58,7 @@ final class NotificationsTests: XCTestCase {
     // says which and why, and the status line says it too.
     func testNotificationOnFailedCall() async throws {
         let page = try Tree.page("menubar.home.two-macs")
-        let update = try XCTUnwrap(page.action("update-all"))
+        let update = try XCTUnwrap(page.actions?.first { $0.id?.hasPrefix(ActionRunner.updateAll) == true })
         XCTAssertEqual(update.label, "Update all")
         XCTAssertEqual(update.run?.call, "apps.update")
         let engine = try FakeEngine("mb-update")

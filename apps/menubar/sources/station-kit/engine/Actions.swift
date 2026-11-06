@@ -74,7 +74,7 @@ public struct ActionRunner: Sendable {
             if reply.ok, let posted = Notifications.failedItems(reply.listed) {
                 return Status(posted, failed: true, posted: posted)
             }
-            if reply.ok, reply.task != nil, action.on == "row" { return Self.done(action, name) }
+            if reply.ok, action.on == "row", reply.task != nil || Self.saysDone(action) { return Self.done(action, name) }
             if reply.ok || (reply.closed && name == Self.endsTheEngine) { return nil }
             let message = reply.message ?? name
             var status = Self.failure(message, reply.hint)
@@ -89,7 +89,12 @@ public struct ActionRunner: Sendable {
 
     // value: a call that worked as a task (Update all) says it is done, so
     // a call whose outcome the page does not show is never silent.
-    static func done(_ action: Action, _ name: String) -> Status {
+    // value: a row's call whose line may stay as it was once it ran (an
+    // update the world does not clear at once): it says it is done.
+    static func saysDone(_ action: Action) -> Bool { action.id?.hasPrefix(updateAll) == true }
+    public static let updateAll = "update-all"
+
+    public static func done(_ action: Action, _ name: String) -> Status {
         Status("\(action.label ?? name): done", failed: false)
     }
 

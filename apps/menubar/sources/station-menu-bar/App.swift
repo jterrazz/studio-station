@@ -38,7 +38,7 @@ struct StationMenuBarApp: App {
     }
 
     var handlers: PopoverHandlers {
-        model.navigation.wire(PopoverHandlers(
+        var h = model.navigation.wire(PopoverHandlers(
             run: { action, answers in model.run(action, answers: answers) },
             confirm: { action in model.state.confirming = action?.id },
             answer: { id, key, value in model.state.answers[id, default: [:]][key] = value },
@@ -58,5 +58,7 @@ struct StationMenuBarApp: App {
                 NSPasteboard.general.setString(text, forType: .string)
             },
             close: { model.closePanel() }))
+        h.push = { page in model.push(page) }
+        return h.deferred { DispatchQueue.main.async(execute: $0) }
     }
 }

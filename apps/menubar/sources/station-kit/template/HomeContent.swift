@@ -66,6 +66,12 @@ struct HomeContent: View {
         .stationTile(tint: palette.warn)
     }
 
+    // value: the folded tile's line: each row's words, without the
+    // punctuation that ends them, so the line never ends in `,.`.
+    static func folded(_ rows: [Row]) -> String {
+        rows.compactMap(\.label).map { $0.trimmingCharacters(in: CharacterSet(charactersIn: " ,.;:")) }.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
+    }
+
     // value: what needs you as the vision's tile: its count in words, what
     // it is under them, a chevron that unfolds each row and its action.
     func needsYou(_ s: Section) -> some View {
@@ -81,7 +87,7 @@ struct HomeContent: View {
                         Text(title).font(.system(size: Token.Size.text, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
                             .padding(.vertical, Token.Size.leading)
                         if !unfolded {
-                            SubText(rows.compactMap(\.label).joined(separator: Token.Glyph.sep)).lineLimit(2)
+                            SubText(Self.folded(rows)).lineLimit(2)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -126,7 +132,8 @@ struct HomeContent: View {
                 if let accounts {
                     let open = page.rowActions(accounts.rows.first?.id ?? "").first
                     place(symbol: Token.Symbol.accounts, active: false, title: accounts.title ?? "",
-                          words: accounts.rows.first?.cells?.first.map { Format.show($0) }, tap: open.map { a in { perform(a, handlers) } }) { EmptyView() }
+                          words: accounts.rows.first?.cells?.first.map { Format.show($0) }, tap: open.map { a in { perform(a, handlers) } },
+                          page: open?.run?.terminal != true) { EmptyView() }
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -151,7 +158,10 @@ struct HomeContent: View {
     // invariant: a tile that opens something is one button across it, its
     // words included; what ends its head (a switch) stays its own control,
     // and its words take the tile's whole width under the head.
-    func place<T: View>(symbol: String, active: Bool, title: String, words: String?, tap: (() -> Void)?, @ViewBuilder trailing: () -> T) -> some View {
+    // A tile that opens a page ends its head with a chevron; one that hands
+    // the owner to a terminal does not.
+    func place<T: View>(symbol: String, active: Bool, title: String, words: String?, tap: (() -> Void)?, page opens: Bool = true,
+                        @ViewBuilder trailing: () -> T) -> some View {
         let button = { (label: AnyView) in
             Button { tap?() } label: { label.contentShape(Rectangle()) }.buttonStyle(.plain).allowsHitTesting(tap != nil)
         }
@@ -160,7 +170,7 @@ struct HomeContent: View {
                 button(AnyView(HStack(spacing: Token.Tile.gap) {
                     IconTile(symbol, active: active)
                     Text(title).font(.system(size: Token.Size.text, weight: .semibold)).foregroundStyle(.primary).lineLimit(1).fixedSize()
-                    if tap != nil, T.self == EmptyView.self { Chevron() }
+                    if tap != nil, opens, T.self == EmptyView.self { Chevron() }
                     Spacer(minLength: 0)
                 }))
                 trailing().fixedSize()
@@ -176,10 +186,16 @@ struct HomeContent: View {
         .stationTile()
     }
 
+    // value: the footer's lines: the page's actions, but Start while the
+    // engine-stopped card offers it already.
+    static func footer(_ actions: [Action], stopped: Bool) -> [Action] {
+        stopped ? actions.filter { $0.id != start } : actions
+    }
+
     var menu: some View {
         VStack(alignment: .leading, spacing: 0) {
             SectionDivider().padding(.bottom, 2)
-            ForEach(Array(page.pageActions.enumerated()), id: \.offset) { _, a in
+            ForEach(Array(Self.footer(page.pageActions, stopped: stopped).enumerated()), id: \.offset) { _, a in
                 if state.running == a.id {
                     PendingDot()
                 } else {
