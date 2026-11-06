@@ -16,7 +16,6 @@ import (
 	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract/contracttest"
-	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
@@ -75,14 +74,21 @@ func recorded(t *testing.T, name string) string {
 
 type kernel struct {
 	mu    sync.Mutex
-	procs []darwin.Proc
+	names map[int]string
 	files map[int][]string
 }
 
-func (k *kernel) Processes() (darwin.Procs, error) {
+func (k *kernel) Named(prefix string) ([]int, error) {
 	k.mu.Lock()
 	defer k.mu.Unlock()
-	return darwin.Procs{List: slices.Clone(k.procs)}, nil
+	var pids []int
+	for pid, name := range k.names {
+		if strings.HasPrefix(name, prefix) {
+			pids = append(pids, pid)
+		}
+	}
+	slices.Sort(pids)
+	return pids, nil
 }
 
 func (k *kernel) Files(pid int) ([]string, error) {
@@ -94,7 +100,7 @@ func (k *kernel) Files(pid int) ([]string, error) {
 func (k *kernel) start(pid int, name string, files ...string) {
 	k.mu.Lock()
 	defer k.mu.Unlock()
-	k.procs = append(k.procs, darwin.Proc{PID: pid, Name: name})
+	k.names[pid] = name
 	k.files[pid] = files
 }
 
@@ -108,7 +114,7 @@ type machine struct {
 func newMachine(t *testing.T) *machine {
 	run := systemtest.NewRunner(t)
 	run.Paths["tart"] = bin
-	return &machine{run: run, fs: &lockedFS{FS: systemtest.NewFS()}, kernel: &kernel{files: map[int][]string{}}, disks: map[string]string{}}
+	return &machine{run: run, fs: &lockedFS{FS: systemtest.NewFS()}, kernel: &kernel{names: map[int]string{}, files: map[int][]string{}}, disks: map[string]string{}}
 }
 
 func (m *machine) hypervisor() contract.Hypervisor {

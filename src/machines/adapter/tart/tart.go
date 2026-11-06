@@ -13,7 +13,6 @@ import (
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
-	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -23,7 +22,9 @@ const (
 )
 
 type Kernel interface {
-	Processes() (darwin.Procs, error)
+	// value: the pids of the processes whose name starts with prefix.
+	Named(prefix string) ([]int, error)
+	// value: the paths of the files a process holds open.
 	Files(pid int) ([]string, error)
 }
 

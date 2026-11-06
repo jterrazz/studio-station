@@ -3,7 +3,6 @@
 package darwin
 
 import (
-	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
@@ -57,18 +56,20 @@ func TestThisMacsNetworkTotalsAreTheOnesNetstatReads(t *testing.T) {
 }
 
 func TestAProcessNamesTheFilesItHoldsOpen(t *testing.T) {
-	disk := filepath.Join(t.TempDir(), "disk.img")
-	f, err := os.Create(disk)
-	if err != nil {
+	dir := t.TempDir()
+	child := exec.Command("/bin/sh", "-c", `: >"$0"; exec 3<"$0"; exec /bin/sleep 30`, dir+"/disk.img")
+	if err := child.Start(); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = f.Close() })
-	files, err := Kernel{}.Files(os.Getpid())
-	if err != nil {
-		t.Fatal(err)
+	t.Cleanup(func() { _ = child.Process.Kill(); _ = child.Wait() })
+	held := "/" + filepath.Base(dir) + "/disk.img"
+	var files []string
+	for range 100 {
+		files, _ = Kernel{}.Files(child.Process.Pid)
+		if slices.ContainsFunc(files, func(f string) bool { return strings.HasSuffix(f, held) }) {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
-	held, _ := filepath.EvalSymlinks(disk)
-	if !slices.Contains(files, held) {
-		t.Errorf("this process holds %s open; its files read %v", held, files)
-	}
+	t.Errorf("the child holds %s open; its files read %v", held, files)
 }

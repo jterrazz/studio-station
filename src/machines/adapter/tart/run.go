@@ -128,22 +128,19 @@ func (h *hypervisor) holder(vm string) int {
 	if h.kernel == nil {
 		return 0
 	}
-	procs, err := h.kernel.Processes()
+	pids, err := h.kernel.Named(holderName)
 	if err != nil {
 		return 0
 	}
 	disk := "/vms/" + vm + "/disk.img"
-	for _, p := range procs.List {
-		if !strings.HasPrefix(p.Name, holderName) {
-			continue
-		}
-		files, err := h.kernel.Files(p.PID)
+	for _, pid := range pids {
+		files, err := h.kernel.Files(pid)
 		if err != nil {
 			continue
 		}
 		for _, f := range files {
 			if strings.HasSuffix(f, disk) {
-				return p.PID
+				return pid
 			}
 		}
 	}

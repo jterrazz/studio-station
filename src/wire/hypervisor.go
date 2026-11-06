@@ -2,6 +2,7 @@ package wire
 
 import (
 	"context"
+	"strings"
 
 	"github.com/jterrazz/studio-station/src/engine"
 	model "github.com/jterrazz/studio-station/src/machines"
@@ -11,7 +12,7 @@ import (
 )
 
 func (m machine) hypervisor() contract.Hypervisor {
-	tool := tart.New(m.host.Run, m.host.FS, m.host.Clock, local.NewKernel(m.vars), m.paths.State)
+	tool := tart.New(m.host.Run, m.host.FS, m.host.Clock, processes{local.NewKernel(m.vars)}, m.paths.State)
 	if m.world != nil {
 		return m.world.hypervisor(tool.Name())
 	}
@@ -26,4 +27,21 @@ func (h engineHypervisor) Boot(ctx context.Context, vm string, n model.Network) 
 
 func (h engineHypervisor) Adopt(ctx context.Context, vm string) (engine.Run, bool) {
 	return h.Hypervisor.Adopt(ctx, vm)
+}
+
+// value: this Mac's kernel tables as tart's adapter asks them.
+type processes struct{ local.Kernel }
+
+func (k processes) Named(prefix string) ([]int, error) {
+	procs, err := k.Processes()
+	if err != nil {
+		return nil, err
+	}
+	var pids []int
+	for _, p := range procs.List {
+		if strings.HasPrefix(p.Name, prefix) {
+			pids = append(pids, p.PID)
+		}
+	}
+	return pids, nil
 }
