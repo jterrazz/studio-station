@@ -120,7 +120,7 @@ func (r *Reader[App, Item, Misplaced]) readiness(ctx context.Context) []overview
 		EngineKnown: r.d.ThisMac.Agent != nil,
 	}
 	if f.NeverSleeps.State != catalog.StateOK && r.d.Servers != nil {
-		f.HostsServer = r.d.Servers.Hosted(ctx)
+		f.MacsServer = r.d.Servers.Hosted(ctx)
 	}
 	if machines.Readiness(f) == nil {
 		return []overview.Check{}

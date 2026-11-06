@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Service) VM(name, verb string) (model.VMRecord, error) {
-	if err := s.CheckHost(); err != nil {
+	if err := s.CheckMac(); err != nil {
 		return model.VMRecord{}, err
 	}
 	m, err := s.lookup(name)

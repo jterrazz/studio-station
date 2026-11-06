@@ -37,9 +37,9 @@ func (e *NoRecipeError) Error() string {
 	return "station has no recipe for " + e.Image + ": it is fetched, never built here"
 }
 
-type NotPublishedError struct{ Image string }
+type NotReleasedError struct{ Image string }
 
-func (e *NotPublishedError) Error() string { return "no version of " + e.Image + " is published" }
+func (e *NotReleasedError) Error() string { return "no version of " + e.Image + " is published" }
 
 type RegistryError struct {
 	Image string

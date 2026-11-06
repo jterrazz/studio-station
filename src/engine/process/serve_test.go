@@ -28,13 +28,13 @@ type fakeTailnet struct {
 
 func (f *fakeTailnet) Warm(ctx context.Context) error {
 	f.mu.Lock()
-	host := f.sharing.DNSName
-	f.certs = append(f.certs, host)
+	mac := f.sharing.DNSName
+	f.certs = append(f.certs, mac)
 	hold, err := f.hold, f.certErr
 	f.until, _ = ctx.Deadline()
 	f.mu.Unlock()
 	if f.entered != nil {
-		f.entered <- host
+		f.entered <- mac
 	}
 	if hold != nil {
 		<-hold

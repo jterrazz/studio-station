@@ -66,7 +66,7 @@ func (s *Service) updateOne(ctx context.Context, name string, progress func(imag
 	latest, err := s.source.Latest(ctx, name)
 	switch {
 	case errors.Is(err, imagescontract.ErrNotReleased):
-		return images.Update{}, &images.NotPublishedError{Image: name}
+		return images.Update{}, &images.NotReleasedError{Image: name}
 	case err != nil:
 		return images.Update{}, &images.RegistryError{Image: name, Cause: err}
 	}
@@ -79,7 +79,7 @@ func (s *Service) updateOne(ctx context.Context, name string, progress func(imag
 	}
 	at, err := s.source.Locate(ctx, latest, s.e.Name())
 	if errors.Is(err, imagescontract.ErrNotForHypervisor) {
-		return images.Update{}, &images.NotPublishedError{Image: name}
+		return images.Update{}, &images.NotReleasedError{Image: name}
 	}
 	if err != nil {
 		return images.Update{}, &images.RegistryError{Image: name, Cause: err}

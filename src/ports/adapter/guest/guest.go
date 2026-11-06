@@ -51,16 +51,16 @@ type Containers interface {
 }
 
 type Service struct {
-	h local.Host
+	h local.System
 	o Options
 }
 
-func New(h local.Host, o Options) *Service { return &Service{h: h, o: o} }
+func New(h local.System, o Options) *Service { return &Service{h: h, o: o} }
 
 type Hello struct {
-	Host       string            `json:"host"`
+	Mac        string            `json:"host"`
 	VM         string            `json:"vm"`
-	PublicHost string            `json:"public_host"`
+	PublicName string            `json:"public_host"`
 	Keys       []string          `json:"keys"`
 	Env        map[string]string `json:"env"`
 	Ignored    []int             `json:"ignored"`
@@ -235,7 +235,7 @@ func (s *Service) scan(ctx context.Context, h Hello, held *[]ports.Announced, re
 
 func (s *Service) writeFiles(h Hello) error {
 	home := s.h.Env.Home()
-	return errors.Join(s.writeKeys(path.Join(home, ".ssh", "authorized_keys"), h.Keys), s.writeEnv(h.Env), s.writeHost(h))
+	return errors.Join(s.writeKeys(path.Join(home, ".ssh", "authorized_keys"), h.Keys), s.writeEnv(h.Env), s.writeMac(h))
 }
 
 func (s *Service) writeKeys(file string, keys []string) error {
@@ -281,8 +281,8 @@ func (s *Service) writeEnv(env map[string]string) error {
 	return s.h.FS.WriteFile(file, []byte(b.String()), 0o644)
 }
 
-func (s *Service) writeHost(h Hello) error {
-	data, err := json.MarshalIndent(map[string]string{"host": h.Host, "vm": h.VM, "public_host": h.PublicHost}, "", "  ")
+func (s *Service) writeMac(h Hello) error {
+	data, err := json.MarshalIndent(map[string]string{"host": h.Mac, "vm": h.VM, "public_host": h.PublicName}, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -292,8 +292,8 @@ func (s *Service) writeHost(h Hello) error {
 	return s.h.FS.WriteFile(path.Join(s.o.State, "guest.json"), append(data, '\n'), 0o600)
 }
 
-func (s *Service) Placement() ports.VMPlace {
-	var p ports.VMPlace
+func (s *Service) Placement() ports.VMLivesOn {
+	var p ports.VMLivesOn
 	data, err := s.h.FS.ReadFile(path.Join(s.o.State, "guest.json"))
 	if err == nil {
 		_ = json.Unmarshal(data, &p)

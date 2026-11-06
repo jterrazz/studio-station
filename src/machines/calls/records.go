@@ -53,7 +53,7 @@ func kindOfImage(image string) catalog.MachineKind {
 
 func (s *Service) Records() ([]model.VMRecord, error) { return s.records() }
 
-func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM) ([]model.VM, error) {
+func (s *Service) vms(ctx context.Context, mac string, live map[string]EngineVM) ([]model.VM, error) {
 	// invariant: the daemon's view wins; without it, no engine or a listing that
 	// fails means nothing is running: every workspace reads stopped.
 	records, err := s.records()
@@ -72,7 +72,7 @@ func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM
 	for _, r := range records {
 		info := engine[r.Name]
 		vm := model.VM{
-			Name: r.Name, Image: r.Image, Version: r.Version, Mac: host, Kind: kindOfImage(r.Image),
+			Name: r.Name, Image: r.Image, Version: r.Version, Mac: mac, Kind: kindOfImage(r.Image),
 			Lifetime: r.Lifetime, State: stateOf(info), Resources: r.Resources, SizeGB: int(info.Bytes / 1e9),
 			Network: networkOf(r), Guest: "unknown", Want: r.Want, Check: r.Check, CreatedAt: r.CreatedAt,
 		}

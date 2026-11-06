@@ -17,8 +17,8 @@ const (
 )
 
 type BlockOptions struct {
-	Here     catalog.MachineKind
-	Services string
+	ThisMachine catalog.MachineKind
+	Services    string
 	// value: the scripts of the shell functions settings applied here; one
 	// not written is skipped.
 	Functions []string
@@ -46,7 +46,7 @@ func (s *Block) Zsh(ctx context.Context, completion string) (string, error) {
 	// invariant: an interactive shell that ran no compinit (a fresh Mac, no oh-my-zsh)
 	// gets it from the block, so the completion is there; a script's shell runs none,
 	// and the completion is guarded by `$+functions[compdef]`.
-	script := string(loader) + "\n" + catalog.ToolActivation + "\n" +
+	script := string(loader) + "\n" + catalog.AppActivation + "\n" +
 		"if (( ! $+functions[compdef] )) && [[ -o interactive ]]; then\n  autoload -Uz compinit && compinit -i\nfi\n" +
 		"if (( $+functions[compdef] )); then\n" + completion + "\nfi\n"
 	if line, ok := s.token(ctx); ok {
@@ -70,7 +70,7 @@ func (s *Block) functions() string {
 // invariant: in a VM the profiles' exports the guest wrote are a file read, never
 // a subprocess: a shell start never waits on the host.
 func (s *Block) services() string {
-	if (s.o.Here != catalog.Linux && s.o.Here != catalog.MacOS) || s.o.Services == "" {
+	if (s.o.ThisMachine != catalog.Linux && s.o.ThisMachine != catalog.MacOS) || s.o.Services == "" {
 		return ""
 	}
 	data, err := s.files.ReadFile(s.o.Services)
@@ -83,7 +83,7 @@ func (s *Block) services() string {
 // hazard: the file backend is forced because a VM has no keychain, and any failure
 // (no studio, a timeout, an empty store) answers nothing so a new shell never breaks.
 func (s *Block) token(ctx context.Context) (string, bool) {
-	if s.o.Here != catalog.Linux && s.o.Here != catalog.MacOS {
+	if s.o.ThisMachine != catalog.Linux && s.o.ThisMachine != catalog.MacOS {
 		return "", false
 	}
 	exported, err := s.source.Export(ctx, []string{catalog.ClaudeTokenName})

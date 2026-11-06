@@ -33,9 +33,9 @@ func validCheck(check string) bool {
 	if rest, ok := strings.CutPrefix(check, "http://"); ok {
 		return rest != "" && !strings.HasPrefix(rest, "/")
 	}
-	host, port, ok := strings.Cut(check, ":")
+	mac, port, ok := strings.Cut(check, ":")
 	n, err := strconv.Atoi(port)
-	return ok && host != "" && err == nil && n > 0 && n < 65536
+	return ok && mac != "" && err == nil && n > 0 && n < 65536
 }
 
 func imageOf(name string) (catalog.Image, bool) {
@@ -62,7 +62,7 @@ func networkFor(img catalog.Image, asked string) (string, error) {
 }
 
 func (s *Service) CheckCreate(ctx context.Context, r model.CreateRequest) (model.CreateRequest, error) {
-	if err := s.CheckHost(); err != nil {
+	if err := s.CheckMac(); err != nil {
 		return r, err
 	}
 	server := r.Server
@@ -110,7 +110,7 @@ func (s *Service) CheckCreate(ctx context.Context, r model.CreateRequest) (model
 	case r.Name == "":
 		r.Name = allocateName(r.Image, held)
 	case !nameFree(r.Name, held):
-		return r, &model.NameTakenError{Name: r.Name, VM: held[r.Name] == claimVM, Host: held[r.Name] == claimHost, On: on[r.Name]}
+		return r, &model.NameTakenError{Name: r.Name, VM: held[r.Name] == claimVM, Mac: held[r.Name] == claimMac, On: on[r.Name]}
 	}
 	size := model.Resources{CPUs: img.Defaults.CPUs, MemoryBytes: img.Defaults.MemoryBytes, DiskBytes: img.Defaults.DiskBytes}
 	if server {
@@ -136,12 +136,12 @@ func (s *Service) CheckCreate(ctx context.Context, r model.CreateRequest) (model
 
 func (s *Service) EngineUp(ctx context.Context) error {
 	installed := s.h.Exists(catalog.EnginePlist(s.h.Home()))
-	down := &model.DaemonDownError{Host: "This Mac", Installed: installed}
+	down := &model.EngineDownError{Mac: "This Mac", Installed: installed}
 	if s.daemon == nil {
 		return down
 	}
 	if _, err := s.daemon.Ping(ctx); err != nil {
-		if errors.Is(err, model.ErrDaemonDown) {
+		if errors.Is(err, model.ErrEngineDown) {
 			return down
 		}
 		return err
@@ -152,13 +152,13 @@ func (s *Service) EngineUp(ctx context.Context) error {
 // value: every name All machines holds, and for a VM's name the Mac it is
 // on, worded as the owner reads it: This Mac, or that Mac's short name.
 func (s *Service) claims(ctx context.Context) (held map[string]claim, on map[string]string, err error) {
-	fleet, err := s.Fleet(ctx, false)
+	allMachines, err := s.AllMachines(ctx, false)
 	if err != nil {
 		return nil, nil, err
 	}
 	held, on = map[string]claim{}, map[string]string{}
-	for _, h := range fleet.Macs {
-		held[h.Name] = claimHost
+	for _, h := range allMachines.Macs {
+		held[h.Name] = claimMac
 		mac := "This Mac"
 		if !h.ThisMac {
 			mac = strings.TrimPrefix(h.Name, s.o.User+"-")
@@ -171,8 +171,8 @@ func (s *Service) claims(ctx context.Context) (held map[string]claim, on map[str
 	if err != nil {
 		return nil, nil, err
 	}
-	for name := range cfg.Hosts {
-		held[name] = claimHost
+	for name := range cfg.Macs {
+		held[name] = claimMac
 	}
 	return held, on, nil
 }
@@ -189,7 +189,7 @@ func (s *Service) memoryLeft(ctx context.Context) (int64, bool) {
 		return 0, false
 	}
 	left := total - keptForMacOS
-	_, live := s.daemonView(ctx)
+	_, live := s.engineView(ctx)
 	if vms, err := s.vms(ctx, "", live); err == nil {
 		for _, vm := range vms {
 			if vm.State == model.Running {
@@ -253,7 +253,7 @@ func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress fu
 	var env map[string]string
 	if !server {
 		say("reserving its services")
-		made.leases = true
+		made.reservations = true
 		if reserved, env, err = s.reserveProfiles(ctx, r.Name); err != nil {
 			return fail("the reservations", err)
 		}
@@ -276,12 +276,12 @@ func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress fu
 	if err := s.setUp(ctx, img, r); err != nil {
 		return model.Created{}, &model.UnhealthyError{Name: r.Name, Step: model.StepSSH, Detail: strings.TrimSpace(err.Error())}
 	}
-	if fleet, err := s.Fleet(ctx, false); err == nil {
-		_ = s.SSHBlocks(ctx, fleet)
+	if allMachines, err := s.AllMachines(ctx, false); err == nil {
+		_ = s.SSHBlocks(ctx, allMachines)
 	}
 	return model.Created{
 		VM: model.VM{
-			Name: r.Name, Image: r.Image, Version: version, Mac: s.here(cfg), Kind: img.Kind, Lifetime: r.Lifetime,
+			Name: r.Name, Image: r.Image, Version: version, Mac: s.thisMac(cfg), Kind: img.Kind, Lifetime: r.Lifetime,
 			State: model.Running, Resources: r.Resources, Network: r.Network, IP: ip, Check: r.Check, CreatedAt: rec.CreatedAt,
 		},
 		Ports: reserved,
@@ -331,12 +331,12 @@ func (s *Service) reserveProfiles(ctx context.Context, name string) (reserved []
 	return reserved, model.ProfileEnv(reserved), nil
 }
 
-type made struct{ vm, record, leases bool }
+type made struct{ vm, record, reservations bool }
 
 // invariant: the rollback is best effort and runs every step whatever fails, so a
 // half-made VM leaves as little as it can; what it reports is the create's failure.
 func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
-	if m.leases && s.rel != nil {
+	if m.reservations && s.rel != nil {
 		_ = s.rel.ReleaseVM(ctx, name)
 	}
 	if m.vm {

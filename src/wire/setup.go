@@ -32,10 +32,10 @@ func setupCommand(env kit.Env, m machine) *cobra.Command {
 }
 
 func setupOf(env kit.Env, m machine) *setupcalls.Service {
-	fleet := m.machines(env.Interactive)
-	registrar := allMachinesRegistrar{name: m.stores.name(), machines: fleet}
-	installer := engineInstaller{m: m, machines: fleet}
-	return setupcalls.NewService(setupMachine{m.sys}, setupcalls.ServicePrefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.macs(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.ports(), Stores: m.stores.migrators()}, setupVault{m.vault()}, registrar, installer, setupcalls.ServiceOptions{
+	allMachines := m.machines(env.Interactive)
+	registrar := allMachinesRegistrar{name: m.stores.name(), machines: allMachines}
+	installer := engineInstaller{m: m, machines: allMachines}
+	return setupcalls.NewService(setupMachine{m.sys}, setupcalls.ServicePrefs{Name: m.stores.name(), Identity: m.stores.identity(), Macs: m.stores.macs(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.ports(), Stores: m.stores.migrators()}, setupVault{m.vault()}, registrar, installer, setupcalls.ServiceOptions{
 		Kind:            m.kind,
 		Server:          m.profile.Kind == coremachine.Server,
 		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,
@@ -43,7 +43,7 @@ func setupOf(env kit.Env, m machine) *setupcalls.Service {
 		// observable; unset, the running binary is the one re-executed.
 		Executable:      m.or("STATION_EXECUTABLE", m.sys.Env.Executable()),
 		Detached:        m.vars["STATION_XDG_DETACHED"] == "1",
-		Tools:           catalog.Apps,
+		Apps:            catalog.Apps,
 		Expand:          m.expander(),
 		Files:           m.appFiles(),
 		Configurer:      setupSettingsWriter{settings: settingsOf(m)},

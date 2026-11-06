@@ -353,7 +353,7 @@ func (s *Service) statesWithRequirements(ctx context.Context, list []catalog.App
 		all[t.Name] = t
 		for _, dep := range s.requirements(t) {
 			if d, ok := s.byName[dep]; ok {
-				if _, placed := d.InstallOn(s.o.Here); placed {
+				if _, placed := d.InstallOn(s.o.ThisMachine); placed {
 					walk(d)
 				}
 			}

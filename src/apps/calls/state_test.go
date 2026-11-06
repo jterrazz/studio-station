@@ -46,10 +46,10 @@ func (m machine) Probe(_ context.Context, name string, args []string, _ time.Dur
 	return p.output, p.code, ok
 }
 
-func reportOf(t *testing.T, tool catalog.App, manager *fake.State, m machine) apps.Report {
-	method := tool.Installs[0].Install.Method()
+func reportOf(t *testing.T, app catalog.App, manager *fake.State, m machine) apps.Report {
+	method := app.Installs[0].Install.Method()
 	installers := contract.Installers{method: fake.New(method, manager)}
-	reports, err := calls.NewService(m, []catalog.App{tool}, nil, calls.ServiceOptions{Here: catalog.Mac, Root: "/", Installers: installers, Pool: probe.NewPool(context.Background(), m, 16, 1)}).Inventory(context.Background())
+	reports, err := calls.NewService(m, []catalog.App{app}, nil, calls.ServiceOptions{ThisMachine: catalog.Mac, Root: "/", Installers: installers, Pool: probe.NewPool(context.Background(), m, 16, 1)}).Inventory(context.Background())
 	if err != nil || len(reports) != 1 {
 		t.Fatalf("inventory: %v %v", reports, err)
 	}
@@ -60,12 +60,12 @@ func java(output string, code int) machine {
 	return machine{paths: map[string]string{"java": "/usr/bin/java"}, probes: map[string]probed{"java -version": {output, code}}}
 }
 
-var javaTool = catalog.App{Name: "java", Installs: catalog.Anywhere(catalog.Cask("temurin")), Provides: []string{"java"}, Version: catalog.VersionRead{Args: []string{"java", "-version"}, Pattern: `version "([^"]+)"`}}
+var javaApp = catalog.App{Name: "java", Installs: catalog.Anywhere(catalog.Cask("temurin")), Provides: []string{"java"}, Version: catalog.VersionRead{Args: []string{"java", "-version"}, Pattern: `version "([^"]+)"`}}
 
 func TestStateAnAppPresentWithoutItsManagerIsDegraded(t *testing.T) {
-	tool := catalog.App{Name: "keynote", Installs: catalog.MacOnly(catalog.Cask("keynote")), Bundle: "Keynote"}
+	app := catalog.App{Name: "keynote", Installs: catalog.MacOnly(catalog.Cask("keynote")), Bundle: "Keynote"}
 
-	got := reportOf(t, tool, &fake.State{Absent: true}, machine{files: map[string]bool{"/Applications/Keynote.app": true}})
+	got := reportOf(t, app, &fake.State{Absent: true}, machine{files: map[string]bool{"/Applications/Keynote.app": true}})
 
 	if got.State != catalog.StateDegraded || got.Detail != "installed, cask not installed" || got.Managed {
 		t.Fatalf("report %+v", got)
@@ -73,7 +73,7 @@ func TestStateAnAppPresentWithoutItsManagerIsDegraded(t *testing.T) {
 }
 
 func TestStateAStockShimWhoseProbeFailsIsAbsent(t *testing.T) {
-	got := reportOf(t, javaTool, &fake.State{}, java("The operation couldn't be completed. Unable to locate a Java Runtime.", 1))
+	got := reportOf(t, javaApp, &fake.State{}, java("The operation couldn't be completed. Unable to locate a Java Runtime.", 1))
 
 	if got.State != catalog.StateAbsent {
 		t.Fatalf("report %+v", got)
@@ -81,7 +81,7 @@ func TestStateAStockShimWhoseProbeFailsIsAbsent(t *testing.T) {
 }
 
 func TestStateAShimThatAnswersIsDegraded(t *testing.T) {
-	got := reportOf(t, javaTool, &fake.State{}, java(`openjdk version "21.0.5" 2024-10-15`, 0))
+	got := reportOf(t, javaApp, &fake.State{}, java(`openjdk version "21.0.5" 2024-10-15`, 0))
 
 	if got.State != catalog.StateDegraded || got.Version != "21.0.5" || got.Detail != "on PATH, not managed by cask" {
 		t.Fatalf("report %+v", got)

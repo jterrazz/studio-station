@@ -78,7 +78,7 @@ func (m machine) everyMacImages(ctx context.Context, env kit.Env) ([]model.Repor
 	if err != nil {
 		return nil, err
 	}
-	others := m.machines(false).OtherHosts()
+	others := m.machines(false).OtherMacs()
 	slices.Sort(others)
 	got := each.All(ctx, others, func(ctx context.Context, mac string) ([]model.Report, error) {
 		return call.Invoke(ctx, env.Calls, coremachine.Ref{Name: mac}, imagescalls.List, imagescalls.ListIn{}, nil)
@@ -92,7 +92,7 @@ func (m machine) everyMacImages(ctx context.Context, env kit.Env) ([]model.Repor
 }
 
 type imagesMachine struct {
-	h    local.Host
+	h    local.System
 	keys openssh.KeyGen
 }
 

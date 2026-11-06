@@ -49,7 +49,7 @@ var Off = call.Call[Deps, OffIn, []settings.Change]{
 		if err := confirm.Require(confirm.For(confirm.OffHere, d.Kind), strings.Join(in.Names, ", "), in.Confirm); err != nil {
 			return nil, err
 		}
-		off := offHere(d)
+		off := offThisMac(d)
 		changes := make([]settings.Change, 0, len(items)+len(checked))
 		for _, name := range checked {
 			off[name] = true

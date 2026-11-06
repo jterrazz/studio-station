@@ -16,7 +16,7 @@ func own(provider string, identity, scopes []string, source, detail string) acco
 
 func shared(provider, name string, left time.Duration, state catalog.State, reason, hint string) accounts.Account {
 	return accounts.Account{
-		Provider: provider, State: state, Reason: reason, Origin: accounts.OriginLent, Identity: []string{"admin@jterrazz.com"}, Scopes: []string{name}, Hint: hint,
+		Provider: provider, State: state, Reason: reason, Origin: accounts.OriginShared, Identity: []string{"admin@jterrazz.com"}, Scopes: []string{name}, Hint: hint,
 		Shared: &accounts.Loan{Name: name, At: accountsNow.Add(left - 12*time.Hour), Until: accountsNow.Add(left)},
 	}
 }
@@ -39,7 +39,7 @@ func entryAccount() accounts.Account {
 }
 
 func accountsReport() accounts.Report {
-	return accounts.Report{Now: accountsNow, Engine: accounts.DaemonRunning, Machines: []accounts.Machine{
+	return accounts.Report{Now: accountsNow, Engine: accounts.EngineRunning, Machines: []accounts.Machine{
 		macAccounts(),
 		{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Guest: accounts.GuestConnected, Accounts: []accounts.Account{
 			{Provider: catalog.ProviderGitHub, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "ssh linux-1 gh auth login"},
@@ -57,7 +57,7 @@ func accountsReport() accounts.Report {
 }
 
 func emptyAccounts() accounts.Report {
-	return accounts.Report{Now: accountsNow, Engine: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "jterrazz-macbook-pro", Kind: accounts.KindMac, ThisMac: true, Accounts: []accounts.Account{
+	return accounts.Report{Now: accountsNow, Engine: accounts.EngineRunning, Machines: []accounts.Machine{{Name: "jterrazz-macbook-pro", Kind: accounts.KindMac, ThisMac: true, Accounts: []accounts.Account{
 		{Provider: catalog.ProviderGitHub, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "station settings apply github-login"},
 		{Provider: catalog.ProviderNPM, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "npm login"},
 		{Provider: catalog.ProviderClaude, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "claude /login"},
@@ -68,7 +68,7 @@ func emptyAccounts() accounts.Report {
 
 func stoppedAccounts() accounts.Report {
 	r := accountsReport()
-	r.Engine = accounts.DaemonStopped
+	r.Engine = accounts.EngineStopped
 	return r
 }
 

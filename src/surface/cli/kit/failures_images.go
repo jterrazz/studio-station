@@ -17,7 +17,7 @@ func imagesFailure(err error) (*fail.Error, bool) {
 	var missing *images.BinaryNotFoundError
 	var noEngine *images.NoEngineError
 	var noRecipe *images.NoRecipeError
-	var unpublished *images.NotPublishedError
+	var unpublished *images.NotReleasedError
 	var registry *images.RegistryError
 	var fetch *images.FetchFailedError
 	var build *images.BuildFailedError

@@ -38,7 +38,7 @@ func (f *fakeMachines) PowerOff(context.Context, string) error { return nil }
 
 func (f *fakeMachines) EngineRunning(_ context.Context, name string) bool { return f.stuck[name] }
 
-func (f *fakeMachines) HereName() string { return "x" }
+func (f *fakeMachines) ThisMacName() string { return "x" }
 
 type fakeRun struct {
 	vm    string

@@ -29,7 +29,7 @@ var Apply = call.Call[Deps, ApplyIn, []settings.Change]{
 	Run: func(ctx context.Context, d Deps, in ApplyIn, _ call.Progress) ([]settings.Change, error) {
 		// invariant: every setting is judged before any question and any
 		// effect; one over a change of the owner's asks first, as it is lost.
-		off := offHere(d)
+		off := offThisMac(d)
 		targets, err := targetsOf(ctx, d, in, off)
 		if err != nil {
 			return nil, err
@@ -165,5 +165,5 @@ func setOff(d Deps, off map[string]bool) error {
 			names = append(names, it.Name)
 		}
 	}
-	return d.OffHere.Set(names)
+	return d.OffThisMac.Set(names)
 }

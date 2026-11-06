@@ -9,15 +9,15 @@ import (
 )
 
 type Env struct {
-	Exe, HomeDir, Login, LoginShell, Host, OS, Arch string
-	UID                                             int
+	Exe, HomeDir, Login, LoginShell, Mac, OS, Arch string
+	UID                                            int
 }
 
 func (e Env) Executable() string { return e.Exe }
 func (e Env) Home() string       { return e.HomeDir }
 func (e Env) User() string       { return e.Login }
 func (e Env) Shell() string      { return e.LoginShell }
-func (e Env) Hostname() string   { return e.Host }
+func (e Env) Hostname() string   { return e.Mac }
 func (e Env) Euid() int          { return e.UID }
 func (e Env) GOOS() string       { return e.OS }
 func (e Env) GOARCH() string     { return e.Arch }
@@ -41,8 +41,8 @@ type Net struct {
 
 func NewNet() *Net { return &Net{Open: map[string]bool{}, Responses: map[string]Response{}} }
 
-func (n *Net) Dial(_ context.Context, host string, port int, _ time.Duration) bool {
-	return n.Open[fmt.Sprintf("%s:%d", host, port)]
+func (n *Net) Dial(_ context.Context, mac string, port int, _ time.Duration) bool {
+	return n.Open[fmt.Sprintf("%s:%d", mac, port)]
 }
 
 func (n *Net) answer(method, url string, payload []byte) (status int, body []byte, err error) {
@@ -78,6 +78,6 @@ func (c *Clock) Sleep(ctx context.Context, d time.Duration) error {
 	return nil
 }
 
-func Host(r *Runner, f *FS, e Env, n *Net, c *Clock) local.Host {
-	return local.Host{Run: r, FS: f, Env: e, Net: n, Clock: c}
+func Mac(r *Runner, f *FS, e Env, n *Net, c *Clock) local.System {
+	return local.System{Run: r, FS: f, Env: e, Net: n, Clock: c}
 }

@@ -73,8 +73,8 @@ func (a settingsAsk) Values(it catalog.Setting) (map[string]string, error) {
 
 func settingsOf(m machine) *settingscalls.Catalogue {
 	return settingscalls.NewCatalogue(catalog.Settings, settingscalls.CatalogueOptions{
-		Here:  m.kind,
-		Admin: m.sys.Env.Euid() == 0,
+		ThisMachine: m.kind,
+		Admin:       m.sys.Env.Euid() == 0,
 		Has: func(app string) bool {
 			_, ok := m.sys.Run.LookPath(app)
 			return ok

@@ -24,9 +24,9 @@ func (s *Service) VMUser() string {
 	return s.vmUser(cfg)
 }
 
-func (s *Service) HereName() string {
+func (s *Service) ThisMacName() string {
 	cfg, _ := s.prefs()
-	return s.here(cfg)
+	return s.thisMac(cfg)
 }
 
 func (s *Service) oldAgent(name string) string {

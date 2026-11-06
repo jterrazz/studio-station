@@ -22,8 +22,8 @@ func TestConvertV1KeepsTheRegistryAndDropsRolesAndTheSecret(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := setup.V1Preferences{
-		Here: "macbook",
-		Hosts: map[string]setup.Host{
+		ThisMachine: "macbook",
+		Macs: map[string]setup.Mac{
 			"macbook":  {},
 			"mac-mini": {User: "jterrazz.agent", Key: "~/.ssh/id_ed25519"},
 		},
@@ -35,12 +35,12 @@ func TestConvertV1KeepsTheRegistryAndDropsRolesAndTheSecret(t *testing.T) {
 	}
 }
 
-func TestConvertV1NamesHereFromTheHostname(t *testing.T) {
+func TestConvertV1NamesThisMacFromTheHostname(t *testing.T) {
 	got, err := setup.ConvertV1([]byte(`{"remote": {"hostname": "mac-mini"}}`), "agent")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := got.Hosts["mac-mini"]; got.Here != "mac-mini" || !ok {
+	if _, ok := got.Macs["mac-mini"]; got.ThisMachine != "mac-mini" || !ok {
 		t.Fatalf("converted %+v", got)
 	}
 }

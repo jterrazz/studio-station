@@ -45,7 +45,7 @@ func overviewCommand(env kit.Env, m machine) *cobra.Command {
 // print (MA-06): a VM is read from All machines.
 func (m machine) overviewDeps(status bool) overviewcmd.Deps {
 	return overviewcmd.Deps{ThisMachine: m.where, Status: status, AllMachines: func(ctx context.Context) (model.AllMachines, error) {
-		return m.machines(false).Fleet(ctx, false)
+		return m.machines(false).AllMachines(ctx, false)
 	}}
 }
 

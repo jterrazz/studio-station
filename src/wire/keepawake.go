@@ -18,7 +18,7 @@ func (m machine) keepAwakePage(v awake.View) any {
 	return page.Document{Schema: page.Schema, Page: pagekeepawake.Page(r, m.where)}
 }
 
-func awakeDown(err error) error { return downAs(err, awake.ErrDaemonDown) }
+func awakeDown(err error) error { return downAs(err, awake.ErrEngineDown) }
 
 func (m machine) awakeService() *awakecalls.Service {
 	c := m.engineAPI()
@@ -42,7 +42,7 @@ func (m machine) awakeService() *awakecalls.Service {
 			_, err := m.sys.FS.Stat(catalog.EnginePlist(m.sys.Env.Home()))
 			return err == nil
 		},
-	}, awakecalls.ServiceOptions{Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, Zone: time.Local})
+	}, awakecalls.ServiceOptions{Power: m.powerPort, ThisMachine: m.kind, ThisMacName: m.where.Machine, Zone: time.Local})
 }
 
 type statusAwake struct{ s *awakecalls.Service }

@@ -9,7 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-func TestPlaceEveryInstallOnAKindItsMethodAccepts(t *testing.T) {
+func TestLivesOnEveryInstallOnAKindItsMethodAccepts(t *testing.T) {
 	for _, tool := range catalog.Apps {
 		seen := map[catalog.MachineKind]bool{}
 		for _, place := range tool.Installs {
@@ -30,7 +30,7 @@ func TestPlaceEveryInstallOnAKindItsMethodAccepts(t *testing.T) {
 	}
 }
 
-func TestUniqueNamesAcrossToolsSkillsAndConfigItems(t *testing.T) {
+func TestUniqueNamesAcrossAppsSkillsAndConfigItems(t *testing.T) {
 	owner := map[string]string{}
 	claim := func(name, what string) {
 		if prev, ok := owner[name]; ok {
@@ -50,9 +50,9 @@ func TestUniqueNamesAcrossToolsSkillsAndConfigItems(t *testing.T) {
 }
 
 func TestEveryRequirementAndThenNamesACatalogueEntry(t *testing.T) {
-	tools := map[string]bool{}
+	apps := map[string]bool{}
 	for _, tool := range catalog.Apps {
-		tools[tool.Name] = true
+		apps[tool.Name] = true
 	}
 	items := map[string]bool{}
 	for _, item := range catalog.Settings {
@@ -60,7 +60,7 @@ func TestEveryRequirementAndThenNamesACatalogueEntry(t *testing.T) {
 	}
 	for _, tool := range catalog.Apps {
 		for _, r := range tool.Requires {
-			if !tools[r] {
+			if !apps[r] {
 				t.Errorf("%s requires the unknown tool %q", tool.Name, r)
 			}
 		}
@@ -109,7 +109,7 @@ func TestStorageDeletesOnlyWhatItsLevelAllows(t *testing.T) {
 			}
 			return false
 		}
-		check := func(what string, actions []catalog.Action, strays []catalog.Misplaced, allowed ...catalog.Level) {
+		check := func(what string, actions []catalog.Action, misplacedOnes []catalog.Misplaced, allowed ...catalog.Level) {
 			for _, a := range actions {
 				for _, d := range append(slices.Clone(a.Delete), a.Prune...) {
 					if strings.HasPrefix(d, "/") {
@@ -123,7 +123,7 @@ func TestStorageDeletesOnlyWhatItsLevelAllows(t *testing.T) {
 					}
 				}
 			}
-			for _, st := range strays {
+			for _, st := range misplacedOnes {
 				for _, a := range st.Free {
 					for _, d := range append(slices.Clone(a.Delete), a.Prune...) {
 						if !inside(d, st.Path) {
@@ -156,9 +156,9 @@ func TestStoragePatternsStartAtARootAndTheHomeRootIsDeclared(t *testing.T) {
 		return false
 	}
 	for _, r := range rows() {
-		strays := make([]string, 0, len(r.s.Misplaced))
+		misplacedOnes := make([]string, 0, len(r.s.Misplaced))
 		for _, st := range r.s.Misplaced {
-			strays = append(strays, st.Path)
+			misplacedOnes = append(misplacedOnes, st.Path)
 		}
 		patterns := slices.Clone(r.s.Installed)
 		for _, p := range r.s.Paths {
@@ -172,15 +172,15 @@ func TestStoragePatternsStartAtARootAndTheHomeRootIsDeclared(t *testing.T) {
 			if !root {
 				t.Errorf("%s: %s starts at no root", r.name, p)
 			}
-			stray := slices.ContainsFunc(strays, func(s string) bool { return inside(p, s) })
-			if strings.HasPrefix(p, "~/") && !stray && !exception(p) {
+			misplaced := slices.ContainsFunc(misplacedOnes, func(s string) bool { return inside(p, s) })
+			if strings.HasPrefix(p, "~/") && !misplaced && !exception(p) {
 				t.Errorf("%s: %s sits at the home root, neither a stray nor a declared exception", r.name, p)
 			}
 		}
 	}
 }
 
-func TestSystemToolsAreExactlyTheFleetsAndPlacedOnAHost(t *testing.T) {
+func TestSystemAppsAreExactlyTheFleetsAndPlacedOnAMac(t *testing.T) {
 	var system []string
 	for _, tool := range catalog.Apps {
 		if !tool.System {

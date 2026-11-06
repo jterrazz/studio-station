@@ -58,11 +58,11 @@ func ended(e *awake.End, zone *time.Location) page.Value {
 }
 
 func stopped(r awake.Report) bool {
-	return r.Engine == awake.DaemonStopped || r.Engine == awake.DaemonAbsent
+	return r.Engine == awake.EngineStopped || r.Engine == awake.EngineAbsent
 }
 
 func engineHint(r awake.Report) *page.Hint {
-	if r.Engine == awake.DaemonAbsent {
+	if r.Engine == awake.EngineAbsent {
 		return page.Cmd("station setup")
 	}
 	return page.Cmd("station engine start")
@@ -70,7 +70,7 @@ func engineHint(r awake.Report) *page.Hint {
 
 func sessionRows(r awake.Report) []page.Row {
 	switch {
-	case r.Engine == awake.DaemonPending:
+	case r.Engine == awake.EnginePending:
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Awaiting, Cells: []page.Value{page.Pending()}}}
 	case stopped(r):
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Unknown(), page.Text("engine " + r.Engine)}, Hint: engineHint(r)}}
@@ -220,7 +220,7 @@ func Page(r awake.Report, thisMac page.Context) page.Page {
 		{ID: "guards", Title: "Guards", Columns: columns(), Items: items(rows)},
 		{ID: "reading", Title: "Reading", Uncounted: true, Columns: columns(), Items: reading(r.Reading)},
 	}}
-	if r.Engine == awake.DaemonPending {
+	if r.Engine == awake.EnginePending {
 		p.State = page.Loading
 	}
 	p.Actions = Actions()

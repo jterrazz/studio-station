@@ -30,13 +30,13 @@ type Inventory interface {
 
 type ServiceOptions struct {
 	// value: this machine's disk: sizes, erases, and which apps run.
-	Disk      contract.DiskUsage
-	Pool      *probe.Pool
-	Here      catalog.MachineKind
-	Expand    disk.Expander
-	Files     map[catalog.AppFile]string
-	Inventory Inventory
-	Budget    time.Duration
+	Disk        contract.DiskUsage
+	Pool        *probe.Pool
+	ThisMachine catalog.MachineKind
+	Expand      disk.Expander
+	Files       map[catalog.AppFile]string
+	Inventory   Inventory
+	Budget      time.Duration
 	// value: the space this machine's container runtime holds, or none.
 	Containers ContainerSpace
 	// value: applies the settings a moved folder needs (tart-launcher).
@@ -48,16 +48,16 @@ type Configurer interface {
 }
 
 type Service struct {
-	m     Machine
-	tools []catalog.App
-	o     ServiceOptions
+	m    Machine
+	apps []catalog.App
+	o    ServiceOptions
 }
 
-func NewService(m Machine, tools []catalog.App, o ServiceOptions) *Service {
+func NewService(m Machine, apps []catalog.App, o ServiceOptions) *Service {
 	if o.Pool == nil {
 		o.Pool = probe.NewPool(context.Background(), m, commandLane, walkLane)
 	}
-	return &Service{m: m, tools: tools, o: o}
+	return &Service{m: m, apps: apps, o: o}
 }
 
 func (s *Service) Entries() []disk.Entry {
@@ -66,7 +66,7 @@ func (s *Service) Entries() []disk.Entry {
 		{Name: disk.StationName, Category: disk.StationCategory, Disk: catalog.StationDisk, Kinds: everywhere},
 		{Name: catalog.KeysRow, Category: disk.StationCategory, Disk: catalog.SSHDisk, Kinds: everywhere},
 	}
-	for _, t := range s.tools {
+	for _, t := range s.apps {
 		if t.Disk.Declared() {
 			out = append(out, disk.Entry{Name: t.Name, Category: string(t.Category), Disk: t.Disk, Kinds: t.LivesOn()})
 		}
@@ -95,7 +95,7 @@ func (s *Service) Names() []string {
 
 func (s *Service) placed(e disk.Entry) bool {
 	for _, k := range e.Kinds {
-		if k == s.o.Here {
+		if k == s.o.ThisMachine {
 			return true
 		}
 	}
@@ -156,7 +156,7 @@ func (s *Service) otherRoots() []string {
 		}
 	}
 	roots := []string{s.o.Expand.Roots.Cache}
-	if s.o.Here != catalog.Linux {
+	if s.o.ThisMachine != catalog.Linux {
 		roots = append(roots, path.Join(s.o.Expand.Home, "Library", "Caches"))
 	}
 	var out []string
@@ -209,19 +209,19 @@ func (s *Service) exists(pattern string) bool {
 	return len(matches) > 0
 }
 
-func (s *Service) strays(e disk.Entry) []disk.MisplacedReport {
+func (s *Service) misplacedOnes(e disk.Entry) []disk.MisplacedReport {
 	out := []disk.MisplacedReport{}
 	for _, st := range e.Disk.Misplaced {
 		abs := s.o.Expand.Expand(st.Path)
 		if !s.m.Exists(abs) {
 			continue
 		}
-		out = append(out, s.stray(e, st, abs, s.dirSize(abs)))
+		out = append(out, s.misplaced(e, st, abs, s.dirSize(abs)))
 	}
 	return out
 }
 
-func (s *Service) stray(e disk.Entry, st catalog.Misplaced, abs string, bytes int64) disk.MisplacedReport {
+func (s *Service) misplaced(e disk.Entry, st catalog.Misplaced, abs string, bytes int64) disk.MisplacedReport {
 	r := disk.MisplacedReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: bytes, Repair: "station disk move " + s.o.Expand.Display(abs)}
 	if len(st.Move) > 0 {
 		r.To = s.o.Expand.Display(s.o.Expand.Expand(st.Move[0].To))
@@ -280,7 +280,7 @@ func (s *Service) Free(ctx context.Context, names []string) ([]disk.Outcome, err
 	for _, e := range entries {
 		present := installed[e.Name]
 		before := s.cacheBytes(e)
-		if !present && before == 0 && len(s.strays(e)) == 0 {
+		if !present && before == 0 && len(s.misplacedOnes(e)) == 0 {
 			outcomes = append(outcomes, disk.Outcome{Name: e.Name, Result: catalog.StateAbsent, Detail: "not installed"})
 			continue
 		}
@@ -317,7 +317,7 @@ func (s *Service) CheckErase(name string) (disk.Entry, error) {
 func (s *Service) keptOnly(e disk.Entry) string {
 	first := ""
 	for _, p := range e.Disk.Paths {
-		if !p.PlacedOn(s.o.Here) {
+		if !p.PlacedOn(s.o.ThisMachine) {
 			continue
 		}
 		if p.Level != catalog.LevelKept && p.Level != catalog.LevelSettings {
@@ -348,7 +348,7 @@ func (s *Service) Plan(name string) []disk.PathReport {
 	}
 	var out []disk.PathReport
 	for _, p := range e.Disk.Paths {
-		if !p.PlacedOn(s.o.Here) || (p.Level != catalog.LevelCache && p.Level != catalog.LevelData) {
+		if !p.PlacedOn(s.o.ThisMachine) || (p.Level != catalog.LevelCache && p.Level != catalog.LevelData) {
 			continue
 		}
 		out = append(out, disk.PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: s.storedBytes(p)})
@@ -462,7 +462,7 @@ func (s *Service) cacheBytes(e disk.Entry) int64 {
 func (s *Service) levelBytes(e disk.Entry, level catalog.Level) int64 {
 	var total int64
 	for _, p := range e.Disk.Paths {
-		if p.Level == level && p.PlacedOn(s.o.Here) {
+		if p.Level == level && p.PlacedOn(s.o.ThisMachine) {
 			total += s.storedBytes(p)
 		}
 	}
@@ -494,7 +494,7 @@ func first(a, b *actionFailure) *actionFailure {
 func (s *Service) actions(ctx context.Context, actions []catalog.Action, present bool) *actionFailure {
 	var failed *actionFailure
 	for _, a := range actions {
-		if !a.PlacedOn(s.o.Here) || (!present && len(a.Run) > 0) {
+		if !a.PlacedOn(s.o.ThisMachine) || (!present && len(a.Run) > 0) {
 			continue
 		}
 		failed = first(failed, s.action(ctx, a))
@@ -527,7 +527,7 @@ func (s *Service) action(ctx context.Context, a catalog.Action) *actionFailure {
 func (s *Service) deleteCaches(e disk.Entry) *actionFailure {
 	var failed *actionFailure
 	for _, p := range e.Disk.Paths {
-		if p.Level == catalog.LevelCache && p.PlacedOn(s.o.Here) {
+		if p.Level == catalog.LevelCache && p.PlacedOn(s.o.ThisMachine) {
 			failed = first(failed, s.delete(p.Path))
 		}
 	}

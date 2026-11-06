@@ -6,7 +6,7 @@ type claim int
 
 const (
 	unclaimed claim = iota
-	claimHost
+	claimMac
 	claimVM
 )
 

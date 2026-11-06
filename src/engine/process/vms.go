@@ -541,14 +541,14 @@ func (d *Engine) hello(v *vmState) {
 	keys := d.hostKeys()
 	d.mu.Lock()
 	v.keys = strings.Join(keys, "\n")
-	public := ports.ExposureOf(d.self.On, d.self.DNSName).PublicHost
+	public := ports.ExposureOf(d.self.On, d.self.DNSName).PublicName
 	d.mu.Unlock()
 	env := v.rec.Env
 	if env == nil {
 		env = map[string]string{}
 	}
 	d.write(v, map[string]any{
-		"v": 1, "type": "hello", "host": d.m.HereName(), "vm": v.rec.Name, "public_host": public,
+		"v": 1, "type": "hello", "host": d.m.ThisMacName(), "vm": v.rec.Name, "public_host": public,
 		"keys": keys, "env": env, "ignored": p.Ignored, "min_port": p.MinPort,
 	})
 }
@@ -694,7 +694,7 @@ func (d *Engine) renderEnv(v *vmState) {
 	for _, pr := range catalog.Profiles {
 		if l, i := ports.Find(d.reservations, v.rec.Name, pr.Port); i >= 0 {
 			view := ports.ViewOf(l, e, p.HTTPS, ports.PhaseWaiting)
-			reserved = append(reserved, model.Reserved{GuestPort: l.GuestPort, MacPort: l.MacPort, Profile: pr.Name, URL: view.URLs.Public, PublicName: e.PublicHost})
+			reserved = append(reserved, model.Reserved{GuestPort: l.GuestPort, MacPort: l.MacPort, Profile: pr.Name, URL: view.URLs.Public, PublicName: e.PublicName})
 		}
 	}
 	rec := v.rec

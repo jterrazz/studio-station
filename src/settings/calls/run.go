@@ -37,7 +37,7 @@ var Git = call.Call[Deps, GitIn, struct{}]{
 		if err != nil {
 			return struct{}{}, err
 		}
-		if row, _ := judge(ctx, d, it, offHere(d)); row.State != settings.StateApplied && row.State != settings.StateChangedSince {
+		if row, _ := judge(ctx, d, it, offThisMac(d)); row.State != settings.StateApplied && row.State != settings.StateChangedSince {
 			return struct{}{}, fail.New(fail.Refused, NotApplied, it.Name, nil)
 		}
 		return struct{}{}, d.GitAliases.Git(ctx, in.Alias, in.Words)

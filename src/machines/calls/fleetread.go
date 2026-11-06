@@ -9,11 +9,11 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-func (s *Service) Fleet(ctx context.Context, hereOnly bool) (model.AllMachines, error) {
-	return s.FleetAsItFills(ctx, hereOnly, nil)
+func (s *Service) AllMachines(ctx context.Context, thisMacOnly bool) (model.AllMachines, error) {
+	return s.AllMachinesAsItFills(ctx, thisMacOnly, nil)
 }
 
-func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(model.AllMachines)) (model.AllMachines, error) {
+func (s *Service) AllMachinesAsItFills(ctx context.Context, thisMacOnly bool, sofar func(model.AllMachines)) (model.AllMachines, error) {
 	// invariant: sofar sees this host first, then this host and every other
 	// Mac that has answered, in name order, after each answer; the fleet
 	// returned holds every Mac, a silent one as unreachable.
@@ -22,8 +22,8 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 		return model.AllMachines{}, err
 	}
 	nodes := s.nodeMap(ctx)
-	name := s.here(cfg)
-	info, live := s.daemonView(ctx)
+	name := s.thisMac(cfg)
+	info, live := s.engineView(ctx)
 	vms, err := s.vms(ctx, name, live)
 	if err != nil {
 		return model.AllMachines{}, err
@@ -33,46 +33,46 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 			vms[i].Device = vm.Name
 		}
 	}
-	user := cfg.Hosts[cfg.Here].User
+	user := cfg.Macs[cfg.ThisMachine].User
 	if user == "" {
 		user = s.h.User()
 	}
-	here := model.MacView{
+	thisMac := model.MacView{
 		Name: name, User: user, StationVersion: s.o.Version, ThisMac: true, Reachable: true, Node: nodes[name], Engine: info, VMs: vms,
 	}
-	if s.o.Here == catalog.Mac && s.o.LAN != nil {
-		here.LAN = s.o.LAN(ctx)
+	if s.o.ThisMachine == catalog.Mac && s.o.LAN != nil {
+		thisMac.LAN = s.o.LAN(ctx)
 	}
-	if hereOnly || s.o.Here != catalog.Mac {
-		return model.AllMachines{Macs: []model.MacView{here}}, nil
+	if thisMacOnly || s.o.ThisMachine != catalog.Mac {
+		return model.AllMachines{Macs: []model.MacView{thisMac}}, nil
 	}
-	others := s.OtherHosts()
+	others := s.OtherMacs()
 	answers := map[string]model.MacView{}
-	fleet := func(all bool) model.AllMachines {
-		f := model.AllMachines{Macs: []model.MacView{here}, Read: s.h.Now()}
+	allMachines := func(all bool) model.AllMachines {
+		f := model.AllMachines{Macs: []model.MacView{thisMac}, Read: s.h.Now()}
 		for _, n := range others {
 			if _, ok := answers[n]; ok || all {
-				f.Macs = append(f.Macs, s.view(n, cfg.Hosts[n], nodes[n], answers))
+				f.Macs = append(f.Macs, s.view(n, cfg.Macs[n], nodes[n], answers))
 			}
 		}
 		return f
 	}
 	if sofar != nil {
-		sofar(fleet(false))
+		sofar(allMachines(false))
 	}
 	if s.o.Ask != nil && len(others) > 0 {
 		s.o.Ask(ctx, others, func(mac string, view model.MacView) {
 			answers[mac] = view
 			if sofar != nil {
-				sofar(fleet(false))
+				sofar(allMachines(false))
 			}
 		})
 	}
-	return fleet(true), nil
+	return allMachines(true), nil
 }
 
 func (s *Service) nodeMap(ctx context.Context) map[string]model.Node {
-	if s.nodes == nil || s.o.Here != catalog.Mac {
+	if s.nodes == nil || s.o.ThisMachine != catalog.Mac {
 		return nil
 	}
 	nodes, err := s.nodes.Peers(ctx)
@@ -84,8 +84,8 @@ func (s *Service) nodeMap(ctx context.Context) map[string]model.Node {
 
 // invariant: the daemon matters only where VMs can exist: on a host with its hypervisor; a
 // daemon that does not answer degrades the view, never fails it.
-func (s *Service) daemonView(ctx context.Context) (info model.EngineView, live map[string]DaemonVM) {
-	if s.o.Here != catalog.Mac || s.daemon == nil {
+func (s *Service) engineView(ctx context.Context) (info model.EngineView, live map[string]EngineVM) {
+	if s.o.ThisMachine != catalog.Mac || s.daemon == nil {
 		return model.EngineView{}, nil
 	}
 	if !s.engine.Installed() {
@@ -127,7 +127,7 @@ func (s *Service) view(name string, h model.MacRecord, node model.Node, answers 
 }
 
 func (s *Service) Running(ctx context.Context) (map[string]catalog.MachineKind, error) {
-	_, live := s.daemonView(ctx)
+	_, live := s.engineView(ctx)
 	vms, err := s.vms(ctx, "", live)
 	if err != nil {
 		return nil, err
@@ -146,5 +146,5 @@ func (s *Service) Remembers(mac, vm string) bool {
 	if err != nil {
 		return false
 	}
-	return slices.ContainsFunc(cfg.Hosts[mac].VMs, func(v model.SeenVM) bool { return v.Name == vm })
+	return slices.ContainsFunc(cfg.Macs[mac].VMs, func(v model.SeenVM) bool { return v.Name == vm })
 }

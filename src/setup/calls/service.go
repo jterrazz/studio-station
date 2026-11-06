@@ -48,7 +48,7 @@ type ServiceOptions struct {
 	PreferencesFile, State, Bin string
 	Executable                  string
 	Detached                    bool
-	Tools                       []catalog.App
+	Apps                        []catalog.App
 	Expand                      disk.Expander
 	Files                       map[catalog.AppFile]string
 	Configurer                  Configurer
@@ -63,7 +63,7 @@ type ServiceOptions struct {
 type ServicePrefs struct {
 	Name      setupcontract.NamePrefs
 	Identity  setupcontract.IdentityPrefs
-	Hosts     machinescontract.MacsPrefs
+	Macs      machinescontract.MacsPrefs
 	VMUser    machinescontract.VMUserPrefs
 	ShareList accountscontract.ShareListPrefs
 	Services  portscontract.PortsPrefs
@@ -107,17 +107,17 @@ func (s *Service) CheckName(name string) error {
 	if !s.onMac() {
 		return setup.ErrNameOnVM
 	}
-	if here := s.currentHere(); here != "" && here != name {
-		return &setup.NameMismatchError{Named: here, Asked: name}
+	if thisMac := s.currentThisMac(); thisMac != "" && thisMac != name {
+		return &setup.NameMismatchError{Named: thisMac, Asked: name}
 	}
 	return nil
 }
 
 // invariant: a Mac whose settings.json is not written yet but whose v1
 // config.json names it is already registered: the layout step will say so.
-func (s *Service) currentHere() string {
-	if here, ok := s.reg.ThisMac(); ok {
-		return here
+func (s *Service) currentThisMac() string {
+	if thisMac, ok := s.reg.ThisMac(); ok {
+		return thisMac
 	}
 	if s.m.Exists(s.settingsPath()) {
 		return ""
@@ -130,7 +130,7 @@ func (s *Service) currentHere() string {
 	if err != nil {
 		return ""
 	}
-	return converted.Here
+	return converted.ThisMachine
 }
 
 func (s *Service) DefaultName(ctx context.Context) string {
@@ -172,7 +172,7 @@ func (s *Service) Run(ctx context.Context, r Request) (setup.Report, error) {
 		relocate, relocateErr := s.relocate(ctx, r.Interactive)
 		return setup.Report{Steps: append(moved, zshrc, relocate)}, errors.Join(err, relocateErr)
 	}
-	if r.Name == "" && (!r.Interactive || r.AskName == nil) && s.currentHere() == "" && !s.exists(s.settingsPath()) {
+	if r.Name == "" && (!r.Interactive || r.AskName == nil) && s.currentThisMac() == "" && !s.exists(s.settingsPath()) {
 		return setup.Report{Steps: moved}, setup.ErrNeedsName
 	}
 	migrated := s.migrateSettings()
@@ -226,8 +226,8 @@ func isStepFailure(err error) bool {
 }
 
 func (s *Service) name(r Request, blocked bool) (setup.Step, error) {
-	if here, ok := s.reg.ThisMac(); ok {
-		return setup.Step{Name: stepName, State: catalog.StateOK, Detail: here}, nil
+	if thisMac, ok := s.reg.ThisMac(); ok {
+		return setup.Step{Name: stepName, State: catalog.StateOK, Detail: thisMac}, nil
 	}
 	if blocked {
 		return setup.Step{Name: stepName, State: catalog.StateAbsent, Detail: "waits for the layout step"}, nil
@@ -278,8 +278,8 @@ func (s *Service) zshrc() (setup.Step, error) {
 func (s *Service) Check(_ context.Context) (setup.Report, error) {
 	var steps []setup.Step
 	if s.onMac() {
-		if here, ok := s.reg.ThisMac(); ok {
-			steps = append(steps, setup.Step{Name: stepName, State: catalog.StateOK, Detail: here})
+		if thisMac, ok := s.reg.ThisMac(); ok {
+			steps = append(steps, setup.Step{Name: stepName, State: catalog.StateOK, Detail: thisMac})
 		} else {
 			steps = append(steps, setup.Step{Name: stepName, State: catalog.StateAbsent, Detail: "station setup --name <name>"})
 		}

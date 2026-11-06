@@ -63,7 +63,7 @@ func (d *Engine) listeningLocked() []ports.Machine {
 	out := make([]ports.Machine, 0, len(names))
 	for _, vm := range names {
 		v := d.vms[vm]
-		out = append(out, ports.VMOf(vm, d.m.HereName(), v != nil && v.rec.Network == model.Bridged, slices.Clone(d.heard[vm])))
+		out = append(out, ports.VMOf(vm, d.m.ThisMacName(), v != nil && v.rec.Network == model.Bridged, slices.Clone(d.heard[vm])))
 	}
 	return out
 }
@@ -90,7 +90,7 @@ func (d *Engine) watchExposure(ctx context.Context) {
 	if d.o.Declarations != nil {
 		decl, _ = d.o.Declarations(ctx)
 	}
-	found := ports.Exposed(ports.Survey(append([]ports.Machine{ports.MacOf(d.m.HereName(), mine)}, vms...), decl))
+	found := ports.Exposed(ports.Survey(append([]ports.Machine{ports.MacOf(d.m.ThisMacName(), mine)}, vms...), decl))
 	d.mu.Lock()
 	was := d.red
 	d.red = make([]string, 0, len(found))
@@ -103,6 +103,6 @@ func (d *Engine) watchExposure(ctx context.Context) {
 	}
 	d.mu.Unlock()
 	for _, text := range fresh {
-		d.tell(ctx, d.m.HereName(), engine.Told{Kind: engine.EventExposed, Parts: []string{text}})
+		d.tell(ctx, d.m.ThisMacName(), engine.Told{Kind: engine.EventExposed, Parts: []string{text}})
 	}
 }

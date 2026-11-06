@@ -11,10 +11,10 @@ import (
 
 func awakeFailure(err error) (*fail.Error, bool) {
 	var rng *awake.RangeError
-	var off *awake.OffHostError
+	var off *awake.OffMacError
 	var none *awake.UnsupportedError
 	var guard *awake.GuardError
-	var down *awake.DaemonDownError
+	var down *awake.EngineDownError
 	switch {
 	case errors.As(err, &rng):
 		if rng.Long {

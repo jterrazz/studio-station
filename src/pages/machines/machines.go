@@ -44,7 +44,7 @@ func Columns() []page.Column {
 	}
 }
 
-func Section(f model.AllMachines, links func(host, vm string) []page.Link) page.Section {
+func Section(f model.AllMachines, links func(mac, vm string) []page.Link) page.Section {
 	// invariant: one column schema for host and VM rows, and no piped row ends on
 	// an empty cell nor grows a hint field, so every record has the same eight
 	// fields: a fix rides in the resources cell.

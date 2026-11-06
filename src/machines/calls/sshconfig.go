@@ -18,11 +18,11 @@ func (s *Service) SSHBlocks(ctx context.Context, f model.AllMachines) error {
 	}
 	var blocks []contract.MachineBlock
 	complete := true
-	key := cfg.Hosts[cfg.Here].Key
+	key := cfg.Macs[cfg.ThisMachine].Key
 	for _, host := range f.Macs {
 		complete = complete && host.Reachable
 		if !host.ThisMac {
-			h := cfg.Hosts[host.Name]
+			h := cfg.Macs[host.Name]
 			blocks = append(blocks, contract.MachineBlock{Name: host.Name, User: h.User, Key: h.Key})
 		}
 		for _, vm := range host.VMs {

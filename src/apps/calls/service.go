@@ -15,13 +15,13 @@ import (
 const commandLane = 16
 
 type ServiceOptions struct {
-	Pool       *probe.Pool
-	Here       catalog.MachineKind
-	Root       string
-	Installers contract.Installers
-	Bundler    contract.Bundler
-	VMs        VMs
-	Log        string
+	Pool        *probe.Pool
+	ThisMachine catalog.MachineKind
+	Root        string
+	Installers  contract.Installers
+	Bundler     contract.Bundler
+	VMs         VMs
+	Log         string
 }
 
 type Configurer interface {
@@ -34,7 +34,7 @@ type VMs interface {
 
 type Service struct {
 	m      Machine
-	tools  []catalog.App
+	apps   []catalog.App
 	byName map[string]catalog.App
 	cfg    Configurer
 	o      ServiceOptions
@@ -48,13 +48,13 @@ func NewService(m Machine, list []catalog.App, cfg Configurer, o ServiceOptions)
 	if o.Pool == nil {
 		o.Pool = probe.NewPool(context.Background(), m, commandLane, 1)
 	}
-	return &Service{m: m, tools: list, byName: byName, cfg: cfg, o: o}
+	return &Service{m: m, apps: list, byName: byName, cfg: cfg, o: o}
 }
 
 func (s *Service) Placed() []catalog.App {
 	var placed []catalog.App
-	for _, t := range s.tools {
-		if _, ok := t.InstallOn(s.o.Here); ok {
+	for _, t := range s.apps {
+		if _, ok := t.InstallOn(s.o.ThisMachine); ok {
 			placed = append(placed, t)
 		}
 	}
@@ -73,7 +73,7 @@ func (s *Service) Find(names []string) ([]catalog.App, error) {
 		if !ok {
 			return nil, &apps.UnknownError{Name: name}
 		}
-		if _, ok := t.InstallOn(s.o.Here); !ok {
+		if _, ok := t.InstallOn(s.o.ThisMachine); !ok {
 			return nil, &apps.ElsewhereError{App: name, Kinds: t.LivesOn()}
 		}
 		found = append(found, t)
@@ -83,9 +83,9 @@ func (s *Service) Find(names []string) ([]catalog.App, error) {
 
 func (s *Service) CheckInstall(ctx context.Context, names []string) error {
 	found, err := s.Find(names)
-	var place *apps.ElsewhereError
-	if errors.As(err, &place) {
-		place.VM = s.runningVM(ctx, place.Kinds)
+	var livesOn *apps.ElsewhereError
+	if errors.As(err, &livesOn) {
+		livesOn.VM = s.runningVM(ctx, livesOn.Kinds)
 	}
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (s *Service) CheckInstall(ctx context.Context, names []string) error {
 	for _, t := range found {
 		inst := s.installer(t)
 		if !inst.Can().Install {
-			return &apps.ManualInstallError{Tool: t.Name, Hint: s.install(t).Key()}
+			return &apps.ManualInstallError{App: t.Name, Hint: s.install(t).Key()}
 		}
 		// invariant: an app whose method's manager is missing is refused,
 		// naming the app that brings it, unless that app is asked too.
@@ -115,10 +115,10 @@ func (s *Service) CheckUninstall(names []string) error {
 	}
 	for _, t := range found {
 		if !s.installer(t).Can().Remove {
-			return &apps.NotReversibleError{Tool: t.Name}
+			return &apps.NotReversibleError{App: t.Name}
 		}
 		if s.fromAppStore(t) {
-			return &apps.AppStoreError{Tool: t.Name}
+			return &apps.AppStoreError{App: t.Name}
 		}
 	}
 	return nil
@@ -131,14 +131,14 @@ func (s *Service) CheckUpgrade(names []string) error {
 	}
 	for _, t := range found {
 		if !s.installer(t).Can().Update {
-			return &apps.NoUpgradePathError{Tool: t.Name}
+			return &apps.NoUpgradePathError{App: t.Name}
 		}
 	}
 	return nil
 }
 
 func (s *Service) install(t catalog.App) catalog.Install {
-	i, _ := t.InstallOn(s.o.Here)
+	i, _ := t.InstallOn(s.o.ThisMachine)
 	return i
 }
 
@@ -155,7 +155,7 @@ func (s *Service) lined(t catalog.App) (contract.Lined, bool) {
 
 // invariant: the VM named in a refusal is one that runs now and whose kind is a
 // place of the tool; a failed listing names none, so the refusal still stands.
-func (s *Service) runningVM(ctx context.Context, places []catalog.MachineKind) string {
+func (s *Service) runningVM(ctx context.Context, kinds []catalog.MachineKind) string {
 	if s.o.VMs == nil {
 		return ""
 	}
@@ -165,7 +165,7 @@ func (s *Service) runningVM(ctx context.Context, places []catalog.MachineKind) s
 	}
 	names := make([]string, 0, len(running))
 	for name, kind := range running {
-		if slices.Contains(places, kind) {
+		if slices.Contains(kinds, kind) {
 			names = append(names, name)
 		}
 	}

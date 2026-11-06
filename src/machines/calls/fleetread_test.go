@@ -15,18 +15,18 @@ import (
 	machines "github.com/jterrazz/studio-station/src/machines/calls"
 )
 
-func fleetAsking(t *testing.T, ask func(ctx context.Context, macs []string, answered func(string, model.MacView))) *machines.Service {
+func allMachinesAsking(t *testing.T, ask func(ctx context.Context, macs []string, answered func(string, model.MacView))) *machines.Service {
 	t.Helper()
 	h := &stillMac{at: time.Unix(0, 0)}
 	prefs := memoryPrefs{}
-	p := machines.Prefs{Name: setupcontract.Name(prefs), Hosts: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
+	p := machines.Prefs{Name: setupcontract.Name(prefs), Macs: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
 	if err := p.Name.Set("laptop"); err != nil {
 		t.Fatal(err)
 	}
-	if err := p.Hosts.Set(map[string]model.MacRecord{"laptop": {}, "mac-mini": {}, "studio": {}}); err != nil {
+	if err := p.Macs.Set(map[string]model.MacRecord{"laptop": {}, "mac-mini": {}, "studio": {}}); err != nil {
 		t.Fatal(err)
 	}
-	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Mac, Ask: ask})
+	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{ThisMachine: catalog.Mac, Ask: ask})
 }
 
 func names(f model.AllMachines) []string {
@@ -37,12 +37,12 @@ func names(f model.AllMachines) []string {
 	return out
 }
 
-func TestTheFleetFillsARowAsEachMacAnswersAndASilentOneEndsUnreachable(t *testing.T) {
-	svc := fleetAsking(t, func(_ context.Context, _ []string, answered func(string, model.MacView)) {
+func TestTheAllMachinesFillsARowAsEachMacAnswersAndASilentOneEndsUnreachable(t *testing.T) {
+	svc := allMachinesAsking(t, func(_ context.Context, _ []string, answered func(string, model.MacView)) {
 		answered("studio", model.MacView{Name: "studio"})
 	})
 	var seen [][]string
-	fleet, err := svc.FleetAsItFills(t.Context(), false, func(f model.AllMachines) { seen = append(seen, names(f)) })
+	allMachines, err := svc.AllMachinesAsItFills(t.Context(), false, func(f model.AllMachines) { seen = append(seen, names(f)) })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,8 +50,8 @@ func TestTheFleetFillsARowAsEachMacAnswersAndASilentOneEndsUnreachable(t *testin
 	if !slices.EqualFunc(seen, want, slices.Equal[[]string]) {
 		t.Errorf("the rows as they filled: %q, want %q: this Mac at once, the studio when it answered, the silent mini not yet", seen, want)
 	}
-	got := names(fleet)
-	if !slices.Equal(got, []string{"laptop", "mac-mini", "studio"}) || fleet.Macs[1].Reachable || !fleet.Macs[2].Reachable {
-		t.Errorf("the fleet at the end: %q, mini reachable %v; want every Mac, in name order, the silent mini unreachable", got, fleet.Macs[1].Reachable)
+	got := names(allMachines)
+	if !slices.Equal(got, []string{"laptop", "mac-mini", "studio"}) || allMachines.Macs[1].Reachable || !allMachines.Macs[2].Reachable {
+		t.Errorf("the fleet at the end: %q, mini reachable %v; want every Mac, in name order, the silent mini unreachable", got, allMachines.Macs[1].Reachable)
 	}
 }

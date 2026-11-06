@@ -329,7 +329,7 @@ func cellMark(c settings.Cell) page.Mark {
 		return page.Attention
 	case settings.Cell(settings.StateNotApplied):
 		return page.Absent
-	case settings.Cell(settings.StateOffHere):
+	case settings.Cell(settings.StateOffThisMac):
 		return page.OffHere
 	case settings.Cell(settings.StateNotForThisMachine):
 		return page.NotForThisMachine

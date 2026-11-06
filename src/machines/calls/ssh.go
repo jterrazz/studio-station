@@ -12,7 +12,7 @@ func (s *Service) SSH(ctx context.Context, name string) (model.SSHTarget, error)
 	// value: the ssh command that reaches a machine of All machines, as the
 	// owner's ssh blocks write it: a Mac as its own login, a VM, here or on
 	// another Mac, as the VM user.
-	if err := s.CheckHost(); err != nil {
+	if err := s.CheckMac(); err != nil {
 		return model.SSHTarget{}, err
 	}
 	cfg, err := s.prefs()
@@ -22,7 +22,7 @@ func (s *Service) SSH(ctx context.Context, name string) (model.SSHTarget, error)
 	m, err := s.lookup(name)
 	var unknown *model.UnknownMachineError
 	if errors.As(err, &unknown) {
-		if _, ok := s.hostOf(ctx, name); ok {
+		if _, ok := s.macOf(ctx, name); ok {
 			return sshTarget(s.vmUser(cfg), name), nil
 		}
 	}
@@ -32,6 +32,6 @@ func (s *Service) SSH(ctx context.Context, name string) (model.SSHTarget, error)
 	return sshTarget(m.User, m.Name), nil
 }
 
-func sshTarget(user, host string) model.SSHTarget {
-	return model.SSHTarget{User: user, Address: host, Command: catalog.SSHCommand(user, host)}
+func sshTarget(user, mac string) model.SSHTarget {
+	return model.SSHTarget{User: user, Address: mac, Command: catalog.SSHCommand(user, mac)}
 }

@@ -28,14 +28,14 @@ func service(t *testing.T, answers func(context.Context, string) bool) (*machine
 	h := clock
 	paths := setup.Paths{Config: "/config", State: "/state"}
 	prefs := memoryPrefs{}
-	p := machines.Prefs{Name: setupcontract.Name(prefs), Hosts: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
+	p := machines.Prefs{Name: setupcontract.Name(prefs), Macs: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
 	if err := p.Name.Set("mac"); err != nil {
 		t.Fatal(err)
 	}
-	if err := p.Hosts.Set(map[string]model.MacRecord{"mac": {}, "x": {User: "u"}}); err != nil {
+	if err := p.Macs.Set(map[string]model.MacRecord{"mac": {}, "x": {User: "u"}}); err != nil {
 		t.Fatal(err)
 	}
-	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Mac, KnownHosts: paths.State + "/known_hosts", Logs: paths.State + "/logs", Unlocker: restarted{}, Answers: answers}), clock
+	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{ThisMachine: catalog.Mac, KnownHosts: paths.State + "/known_hosts", Logs: paths.State + "/logs", Unlocker: restarted{}, Answers: answers}), clock
 }
 
 type restarted struct{}
@@ -59,7 +59,7 @@ func restarting(t *testing.T, polls ...bool) (*machines.Service, *stillMac) {
 	return service(t, (&answering{polls: polls}).answers)
 }
 
-func TestRestartWaitsForTheHostToGoAwayAndComeBack(t *testing.T) {
+func TestRestartWaitsForTheMacToGoAwayAndComeBack(t *testing.T) {
 	svc, _ := restarting(t, true, true, false, false, true)
 	var seen []string
 
@@ -76,7 +76,7 @@ func TestRestartWaitsForTheHostToGoAwayAndComeBack(t *testing.T) {
 	}
 }
 
-func TestRestartDoesNotTakeAHostThatNeverWentDownForRestarted(t *testing.T) {
+func TestRestartDoesNotTakeAMacThatNeverWentDownForRestarted(t *testing.T) {
 	svc, clock := restarting(t, true)
 
 	_, err := svc.Restart(context.Background(), "x", nil)
@@ -90,7 +90,7 @@ func TestRestartDoesNotTakeAHostThatNeverWentDownForRestarted(t *testing.T) {
 	}
 }
 
-func TestRestartGivesUpOnAHostThatNeverComesBack(t *testing.T) {
+func TestRestartGivesUpOnAMacThatNeverComesBack(t *testing.T) {
 	svc, clock := restarting(t, false)
 
 	_, err := svc.Restart(context.Background(), "x", nil)

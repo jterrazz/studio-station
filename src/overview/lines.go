@@ -82,7 +82,7 @@ func SettingsRead(rows []settings.Row, m machine.Ref) Read {
 	var total, applied, changed, off, checked, expected int
 	pending := false
 	for _, r := range rows {
-		if r.Group == settings.Checked && r.Checked != settings.CheckedNotForThisMachine && r.Checked != settings.CheckedOffHere {
+		if r.Group == settings.Checked && r.Checked != settings.CheckedNotForThisMachine && r.Checked != settings.CheckedOffThisMac {
 			checked++
 			if r.Checked == settings.AsExpected {
 				expected++
@@ -97,7 +97,7 @@ func SettingsRead(rows []settings.Row, m machine.Ref) Read {
 			applied++
 		case settings.StateChangedSince:
 			changed++
-		case settings.StateOffHere:
+		case settings.StateOffThisMac:
 			off++
 		case settings.StateReading:
 			pending = true
@@ -109,7 +109,7 @@ func SettingsRead(rows []settings.Row, m machine.Ref) Read {
 		appliedState = catalog.StateAbsent
 	}
 	parts := append([]Part{{Word: "set by station"}, {State: appliedState, N: applied, Of: total, Key: string(settings.StateApplied), Counted: true}},
-		counted([]Part{{}, Count(catalog.StateDegraded, changed, "changed since", string(settings.StateChangedSince)), Count(catalog.StateAbsent, off, "off here", string(settings.StateOffHere))})[1:]...)
+		counted([]Part{{}, Count(catalog.StateDegraded, changed, "changed since", string(settings.StateChangedSince)), Count(catalog.StateAbsent, off, "off here", string(settings.StateOffThisMac))})[1:]...)
 	if checked > 0 {
 		parts = append(parts, Part{Word: "checked"}, Part{State: catalog.StateOK, N: expected, Of: checked, Key: string(settings.AsExpected), Counted: true})
 	}

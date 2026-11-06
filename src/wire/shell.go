@@ -17,7 +17,7 @@ func (m machine) secretSource(o studio.Options) accountscontract.SecretSource {
 }
 
 func (m machine) shell() *zshblock.Block {
-	return zshblock.NewBlock(m.sys.FS, catalog.DotfilesFS, m.secretSource(studio.Options{FileBackend: true, Budget: zshblock.TokenBudget}), zshblock.BlockOptions{Here: m.kind, Services: filepath.Join(m.paths.Config, "services.env"), Functions: m.zshFunctions()})
+	return zshblock.NewBlock(m.sys.FS, catalog.DotfilesFS, m.secretSource(studio.Options{FileBackend: true, Budget: zshblock.TokenBudget}), zshblock.BlockOptions{ThisMachine: m.kind, Services: filepath.Join(m.paths.Config, "services.env"), Functions: m.zshFunctions()})
 }
 
 // value: the script of every setting that defines shell functions, where

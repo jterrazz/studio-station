@@ -68,7 +68,7 @@ func origin(a accounts.Account) page.Value {
 	switch a.Origin {
 	case accounts.OriginBoth:
 		return page.Texts(accounts.OriginOwn, shared)
-	case accounts.OriginLent:
+	case accounts.OriginShared:
 		return page.Text(shared)
 	}
 	return page.Text(a.Origin)
@@ -207,7 +207,7 @@ func group(m accounts.Machine, now time.Time) page.Item {
 
 func engineRow(state string) page.Row {
 	r := page.Row{ID: EngineRow, Label: EngineRow, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text(state)}, Hint: page.Cmd("station engine start")}
-	if state == accounts.DaemonAbsent {
+	if state == accounts.EngineAbsent {
 		r.Hint = page.Cmd("station setup")
 	}
 	return r
@@ -237,7 +237,7 @@ func Section(r accounts.Report) page.Section {
 }
 
 func stopped(r accounts.Report) bool {
-	return r.Engine == accounts.DaemonStopped || r.Engine == accounts.DaemonAbsent
+	return r.Engine == accounts.EngineStopped || r.Engine == accounts.EngineAbsent
 }
 
 func Page(r accounts.Report, thisMac page.Context) page.Page {

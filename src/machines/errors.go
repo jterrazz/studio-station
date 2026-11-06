@@ -14,16 +14,16 @@ func (e *RunningUnderAgentError) Error() string {
 	return strings.Join(e.Names, ", ") + " still runs under its round-3 agent"
 }
 
-type DaemonDownError struct {
-	Host      string
+type EngineDownError struct {
+	Mac       string
 	Installed bool
 }
 
-func (e *DaemonDownError) Error() string {
+func (e *EngineDownError) Error() string {
 	if e.Installed {
-		return "the engine is stopped on " + e.Host
+		return "the engine is stopped on " + e.Mac
 	}
-	return "the engine is not installed on " + e.Host
+	return "the engine is not installed on " + e.Mac
 }
 
 type BadNetworkError struct {
@@ -125,7 +125,7 @@ func (e *UnhealthyError) Error() string {
 	return e.Name + " is kept, failing " + e.Step + ": " + e.Detail
 }
 
-var ErrDaemonDown = errors.New("the engine is not running")
+var ErrEngineDown = errors.New("the engine is not running")
 
 type NothingToChangeError struct{ Name string }
 
@@ -142,40 +142,40 @@ type UnknownMachineError struct{ Name string }
 
 func (e *UnknownMachineError) Error() string { return "no machine named \"" + e.Name + "\"" }
 
-type HereMachineError struct{ Name, Verb string }
+type ThisMachineError struct{ Name, Verb string }
 
-func (e *HereMachineError) Error() string {
+func (e *ThisMachineError) Error() string {
 	if e.Verb == VerbForget {
 		return "this is This Mac: station forgets only the other Macs"
 	}
 	return "\"" + e.Name + "\" is this machine"
 }
 
-type NotAHostError struct{ Name, Verb string }
+type NotAMacError struct{ Name, Verb string }
 
-func (e *NotAHostError) Error() string {
+func (e *NotAMacError) Error() string {
 	if e.Verb == VerbForget {
 		return e.Name + " is a VM: a VM is deleted, never forgotten"
 	}
 	return "\"" + e.Name + "\" is a VM, not a host"
 }
 
-type OnlyOnHostError struct{ Here catalog.MachineKind }
+type OnlyOnMacError struct{ ThisMachine catalog.MachineKind }
 
-func (e *OnlyOnHostError) Error() string {
-	return "only a host does this; here is " + e.Here.Article()
+func (e *OnlyOnMacError) Error() string {
+	return "only a host does this; here is " + e.ThisMachine.Article()
 }
 
 type NameTakenError struct {
 	Name string
 	VM   bool
-	Host bool
+	Mac  bool
 	// value: the Mac a VM of that name is on, as the owner reads it.
 	On string
 }
 
 func (e *NameTakenError) Error() string {
-	if e.Host {
+	if e.Mac {
 		return "\"" + e.Name + "\" already names a host"
 	}
 	if e.VM {
@@ -242,9 +242,9 @@ type NotAVMError struct{ Name, Verb string }
 
 func (e *NotAVMError) Error() string { return e.Name + " is a Mac" }
 
-type NotHereError struct{ Name, Host string }
+type NotThisMacError struct{ Name, Mac string }
 
-func (e *NotHereError) Error() string { return e.Name + " runs on " + e.Host + ", not here" }
+func (e *NotThisMacError) Error() string { return e.Name + " runs on " + e.Mac + ", not here" }
 
 type StoppedError struct {
 	Name     string

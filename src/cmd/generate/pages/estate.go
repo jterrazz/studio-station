@@ -166,7 +166,7 @@ func unnamedSnapshot() pagehome.Overview {
 // and one of each other group.
 func settingRows(reading bool) []settings.Row {
 	since := time.Date(2026, 11, 2, 10, 0, 0, 0, time.UTC)
-	states := []settings.State{settings.StateApplied, settings.StateChangedSince, settings.StateNotApplied, settings.StateOffHere, settings.StateNotForThisMachine}
+	states := []settings.State{settings.StateApplied, settings.StateChangedSince, settings.StateNotApplied, settings.StateOffThisMac, settings.StateNotForThisMachine}
 	out := make([]settings.Row, 0, len(catalog.Settings))
 	for i, it := range catalog.Settings {
 		r := settings.Row{Name: it.Name, Group: settings.GroupOf(it), State: states[i%len(states)]}

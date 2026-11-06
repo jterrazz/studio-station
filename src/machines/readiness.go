@@ -13,7 +13,7 @@ type ReadinessSetting struct {
 type ReadinessFacts struct {
 	// value: the Mac, as the owner names it in a command.
 	Mac                                        string
-	HostsServer                                bool
+	MacsServer                                 bool
 	RestartsAfterPowerCut, NeverSleeps, LogsIn ReadinessSetting
 	// value: FileVault on, and FileVault's planned restart supported, each
 	// ok, absent or unknown as the Mac reads it.
@@ -45,7 +45,7 @@ func Readiness(f ReadinessFacts) []ReadinessItem {
 	// has its readiness, six items in the one order, each measured; any
 	// other Mac has none. A disk that FileVault guards needs you after a
 	// power cut, however ready the rest is.
-	if !f.HostsServer && f.NeverSleeps.State != catalog.StateOK {
+	if !f.MacsServer && f.NeverSleeps.State != catalog.StateOK {
 		return nil
 	}
 	return []ReadinessItem{

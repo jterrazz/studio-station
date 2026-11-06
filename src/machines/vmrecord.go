@@ -17,9 +17,9 @@ const (
 
 func ProfileEnv(reserved []Reserved) map[string]string {
 	env := map[string]string{}
-	publicHost := ""
+	publicName := ""
 	for _, r := range reserved {
-		publicHost = r.PublicName
+		publicName = r.PublicName
 		for _, p := range catalog.Profiles {
 			if p.Name != r.Profile {
 				continue
@@ -29,8 +29,8 @@ func ProfileEnv(reserved []Reserved) map[string]string {
 			}
 		}
 	}
-	if publicHost != "" {
-		env[catalog.PublicNameEnv.Name] = render(catalog.PublicNameEnv.Value, Reserved{PublicName: publicHost})
+	if publicName != "" {
+		env[catalog.PublicNameEnv.Name] = render(catalog.PublicNameEnv.Value, Reserved{PublicName: publicName})
 	}
 	return env
 }

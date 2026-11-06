@@ -20,7 +20,7 @@ import (
 
 func (m machine) control() *process.Control {
 	return process.NewControl(engineMac{m.sys}, m.engineAPI(), m.machines(false), engineHypervisor{m.hypervisor()}, m.engineJob(), process.ControlOptions{
-		Power: m.powerPort, HereName: m.where.Machine, State: m.paths.State,
+		Power: m.powerPort, ThisMacName: m.where.Machine, State: m.paths.State,
 		Version: Version(), Marks: m.stopMarks(),
 	})
 }

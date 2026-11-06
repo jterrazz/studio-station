@@ -18,8 +18,8 @@ const (
 )
 
 type CatalogueOptions struct {
-	Here     catalog.MachineKind
-	Defaults map[string]map[string]string
+	ThisMachine catalog.MachineKind
+	Defaults    map[string]map[string]string
 	// value: the Applier of every effect of the catalogue.
 	Appliers []settingscontract.Applier
 	// value: this run has admin rights, which a root setting needs.
@@ -52,7 +52,7 @@ type handler struct {
 func (s *Catalogue) Placed() []catalog.Setting {
 	var placed []catalog.Setting
 	for _, it := range s.items {
-		if slices.Contains(it.Kinds, s.o.Here) {
+		if slices.Contains(it.Kinds, s.o.ThisMachine) {
 			placed = append(placed, it)
 		}
 	}
@@ -61,7 +61,7 @@ func (s *Catalogue) Placed() []catalog.Setting {
 
 func (s *Catalogue) Items() []catalog.Setting { return s.items }
 
-func (s *Catalogue) Lives(it catalog.Setting) bool { return slices.Contains(it.Kinds, s.o.Here) }
+func (s *Catalogue) Lives(it catalog.Setting) bool { return slices.Contains(it.Kinds, s.o.ThisMachine) }
 
 func (s *Catalogue) Needs(it catalog.Setting) string {
 	if s.applies(it) {
@@ -161,8 +161,8 @@ func (s *Catalogue) Find(names []string) ([]catalog.Setting, error) {
 		if !ok {
 			return nil, &settings.UnknownItemError{Name: name}
 		}
-		if !slices.Contains(it.Kinds, s.o.Here) {
-			return nil, &settings.WrongPlaceError{Item: name, Places: it.Kinds, Here: s.o.Here}
+		if !slices.Contains(it.Kinds, s.o.ThisMachine) {
+			return nil, &settings.WrongLivesOnError{Item: name, Kinds: it.Kinds, ThisMachine: s.o.ThisMachine}
 		}
 		found = append(found, it)
 	}
@@ -207,8 +207,8 @@ func (s *Catalogue) CheckUninstall(names []string) error {
 // facts, judged before any question and before any effect.
 func (s *Catalogue) admit(it catalog.Setting, verb string, interactive bool) error {
 	switch {
-	case !slices.Contains(it.Kinds, s.o.Here):
-		return &settings.WrongPlaceError{Item: it.Name, Places: it.Kinds, Here: s.o.Here}
+	case !slices.Contains(it.Kinds, s.o.ThisMachine):
+		return &settings.WrongLivesOnError{Item: it.Name, Kinds: it.Kinds, ThisMachine: s.o.ThisMachine}
 	case verb == verbUninstall && !it.Reversible:
 		return &settings.NotReversibleError{Item: it.Name}
 	case verb == verbInstall && s.NeedsInput(it) && !interactive:

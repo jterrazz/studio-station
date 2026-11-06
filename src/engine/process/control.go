@@ -39,9 +39,9 @@ type Job interface {
 
 type ControlOptions struct {
 	// value: this Mac's power, whose clamshell a stop resets; nil is none.
-	Power    awakecontract.Power
-	HereName string
-	State    string
+	Power       awakecontract.Power
+	ThisMacName string
+	State       string
 	// value: this station's version, which a reading compares with the engine's.
 	Version string
 	// value: where a stop the owner asks is kept, so a reading names it.

@@ -14,18 +14,18 @@ type NeedsRootError struct{ Item, Verb string }
 
 func (e *NeedsRootError) Error() string { return e.Item + " needs root" }
 
-type WrongPlaceError struct {
-	Item   string
-	Places []catalog.MachineKind
-	Here   catalog.MachineKind
+type WrongLivesOnError struct {
+	Item        string
+	Kinds       []catalog.MachineKind
+	ThisMachine catalog.MachineKind
 }
 
-func (e *WrongPlaceError) Error() string {
-	places := make([]string, len(e.Places))
-	for i, p := range e.Places {
-		places[i] = string(p)
+func (e *WrongLivesOnError) Error() string {
+	kinds := make([]string, len(e.Kinds))
+	for i, p := range e.Kinds {
+		kinds[i] = string(p)
 	}
-	return e.Item + "'s place is " + strings.Join(places, ", ") + "; here is " + e.Here.Article()
+	return e.Item + "'s place is " + strings.Join(kinds, ", ") + "; here is " + e.ThisMachine.Article()
 }
 
 type NotReversibleError struct{ Item string }

@@ -61,7 +61,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 			Declarations: m.stores.declarations, Routes: m.routes(), Far: farPorts{m}}),
 		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupOf}, Ask: named}),
 		settingscalls.All(settingscalls.Deps{
-			Settings: settings, Appliers: settings.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),
+			Settings: settings, Appliers: settings.Appliers(), Applied: m.stores.applied, OffThisMac: settingscontract.OffHere(m.stores.prefs),
 			Now: m.sys.Clock.Now, Ask: ask, Shortcuts: docker.New(m.sys.Run), GitAliases: gitaliases.NewShortcuts(m.sys.Run), Shell: m.shell(), Kind: kind,
 			Facts: m.facts(), Caps: m.profile.Caps, Admin: m.sys.Env.Euid() == 0, Mac: m.profile.Ref.Name, All: settingsAllMachines{m}, Public: settingsPublic{thisMac},
 		}),

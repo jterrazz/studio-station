@@ -41,7 +41,7 @@ type Machines interface {
 	Remove(ctx context.Context, name string) (model.DeleteReport, error)
 	PowerOff(ctx context.Context, name string) error
 	EngineRunning(ctx context.Context, name string) bool
-	HereName() string
+	ThisMacName() string
 }
 
 type Tailnet interface {
@@ -194,7 +194,7 @@ func (d *Engine) policy() ports.Policy {
 }
 
 func (d *Engine) saveReservations() {
-	_ = portscalls.SaveLeases(context.Background(), d.st.Reservations, append([]ports.Reservation(nil), d.reservations...))
+	_ = portscalls.SaveReservations(context.Background(), d.st.Reservations, append([]ports.Reservation(nil), d.reservations...))
 }
 
 func (d *Engine) Run(ctx context.Context, note func(line string)) error {

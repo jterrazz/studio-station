@@ -21,10 +21,10 @@ type ServicePorts struct {
 }
 
 type ServiceOptions struct {
-	Power    contract.Power
-	Here     catalog.MachineKind
-	HereName string
-	Zone     *time.Location
+	Power       contract.Power
+	ThisMachine catalog.MachineKind
+	ThisMacName string
+	Zone        *time.Location
 }
 
 type Service struct {
@@ -38,8 +38,8 @@ func NewService(clock Clock, p ServicePorts, o ServiceOptions) *Service {
 }
 
 func (s *Service) Check() error {
-	if s.o.Here != catalog.Mac {
-		return &awake.OffHostError{}
+	if s.o.ThisMachine != catalog.Mac {
+		return &awake.OffMacError{}
 	}
 	if s.o.Power == nil {
 		return &awake.UnsupportedError{}
@@ -51,14 +51,14 @@ func (s *Service) Check() error {
 }
 
 func (s *Service) down() error {
-	return &awake.DaemonDownError{Host: s.o.HereName, Installed: s.p.Installed()}
+	return &awake.EngineDownError{Mac: s.o.ThisMacName, Installed: s.p.Installed()}
 }
 
-func (s *Service) daemonState() string {
+func (s *Service) engineState() string {
 	if s.p.Installed() {
-		return awake.DaemonStopped
+		return awake.EngineStopped
 	}
-	return awake.DaemonAbsent
+	return awake.EngineAbsent
 }
 
 func (s *Service) Read(ctx context.Context) <-chan awake.Report {
@@ -69,7 +69,7 @@ func (s *Service) Read(ctx context.Context) <-chan awake.Report {
 	go func() {
 		defer close(out)
 		r, _ := s.o.Power.Read()
-		first := awake.Report{Now: s.clock.Now(), Zone: s.o.Zone, Engine: awake.DaemonPending, Reading: r, Guards: awake.GuardStates(r, nil)}
+		first := awake.Report{Now: s.clock.Now(), Zone: s.o.Zone, Engine: awake.EnginePending, Reading: r, Guards: awake.GuardStates(r, nil)}
 		out <- first
 		v, err := s.p.View(ctx)
 		if ctx.Err() != nil {
@@ -78,7 +78,7 @@ func (s *Service) Read(ctx context.Context) <-chan awake.Report {
 		last := first
 		last.Now = s.clock.Now()
 		if err != nil {
-			last.Engine = s.daemonState()
+			last.Engine = s.engineState()
 		} else {
 			last.Engine, last.Session, last.LastEnd = awake.DaemonRunning, v.Session, v.LastEnd
 			last.NeverSleeps, last.NeverSince, last.NeverHeld = v.NeverSleeps, v.NeverSince, v.NeverHeld
@@ -97,7 +97,7 @@ func (s *Service) Awake(ctx context.Context, r awake.Request) (awake.Awoken, err
 		return awake.Awoken{}, err
 	}
 	a, err := s.p.Awake(ctx, r)
-	if errors.Is(err, awake.ErrDaemonDown) {
+	if errors.Is(err, awake.ErrEngineDown) {
 		return a, s.down()
 	}
 	return a, err
@@ -105,7 +105,7 @@ func (s *Service) Awake(ctx context.Context, r awake.Request) (awake.Awoken, err
 
 func (s *Service) Sleep(ctx context.Context) (awake.Slept, error) {
 	sl, err := s.p.Sleep(ctx)
-	if errors.Is(err, awake.ErrDaemonDown) {
+	if errors.Is(err, awake.ErrEngineDown) {
 		return sl, s.down()
 	}
 	return sl, err

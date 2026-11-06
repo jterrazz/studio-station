@@ -42,7 +42,7 @@ func secretsAlias(env kit.Env, m machine) *cobra.Command {
 
 func (m machine) secretStores() accountscalls.SharingStores {
 	return accountscalls.SharingStores{
-		ShareList: m.stores.shareList(), Hosts: m.stores.macs(), Name: m.stores.name(),
+		ShareList: m.stores.shareList(), Macs: m.stores.macs(), Name: m.stores.name(),
 		Shares: m.stores.shares, Machines: m.stores.machines,
 	}
 }
@@ -86,7 +86,7 @@ func (m machine) secrets() *accountscalls.Sharing { return m.secretsVia(m.macEng
 
 func (m machine) secretsVia(guest localGuest, running func(context.Context, string) (bool, error)) *accountscalls.Sharing {
 	return accountscalls.NewSharing(sharingGuest{guest}, m.secretStores(), m.secretSource(studio.Options{Budget: accountscalls.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), accountscalls.SharingOptions{
-		Here: m.kind, Running: running, Receives: receives(guest), Now: m.sys.Clock.Now,
+		ThisMachine: m.kind, Running: running, Receives: receives(guest), Now: m.sys.Clock.Now,
 		Keep: m.keepIn(filepath.Join(m.paths.State, "logs", "accounts.log")),
 	})
 }

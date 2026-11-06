@@ -8,7 +8,7 @@ import (
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
-type macSystem struct{ h local.Host }
+type macSystem struct{ h local.System }
 
 func (t macSystem) Now() time.Time { return t.h.Clock.Now() }
 func (t macSystem) Sleep(ctx context.Context, d time.Duration) error {

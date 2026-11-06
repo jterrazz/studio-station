@@ -82,7 +82,7 @@ func (m machine) locate(name string) (coremachine.Ref, bool) {
 // silent Mac that held it at its last answer first.
 func (m machine) holder(ctx context.Context, vm string) (string, error) {
 	r := m.far.router
-	others := m.machines(false).OtherHosts()
+	others := m.machines(false).OtherMacs()
 	got := each.All(ctx, others, func(ctx context.Context, mac string) (bool, error) {
 		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{ThisMac: true}, nil)
 		if err != nil {

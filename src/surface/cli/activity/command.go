@@ -93,7 +93,7 @@ func one(ctx context.Context, d Deps, env kit.Env, target machine.Ref, how read)
 		return mac(ctx, env, target, target.Name, how)
 	}
 	holder := machine.Ref{Name: held.Mac}
-	if held.MacIsHere {
+	if held.MacIsThisMac {
 		holder = env.Self
 	}
 	return vm(ctx, d, env, holder, held.VM, held.Kind, held.Running, how)

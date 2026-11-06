@@ -21,8 +21,8 @@ func (s *Service) lookup(name string) (Machine, error) {
 	if err != nil {
 		return Machine{}, err
 	}
-	if h, ok := cfg.Hosts[name]; ok {
-		return Machine{Name: name, Kind: catalog.Mac, Here: name == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
+	if h, ok := cfg.Macs[name]; ok {
+		return Machine{Name: name, Kind: catalog.Mac, ThisMachine: name == cfg.ThisMachine, User: h.User, Key: h.Key, LAN: h.LAN}, nil
 	}
 	records, err := s.records()
 	if err != nil {
@@ -30,14 +30,14 @@ func (s *Service) lookup(name string) (Machine, error) {
 	}
 	for _, r := range records {
 		if r.Name == name {
-			return Machine{Name: name, Kind: kindOfImage(r.Image), Host: cfg.Here, User: s.vmUser(cfg), Lifetime: r.Lifetime}, nil
+			return Machine{Name: name, Kind: kindOfImage(r.Image), Mac: cfg.ThisMachine, User: s.vmUser(cfg), Lifetime: r.Lifetime}, nil
 		}
 	}
 	// value: a Mac answers to its short name too, the one All machines shows
 	// (mac-mini for jterrazz-mac-mini).
 	if full := s.o.User + "-" + name; s.o.User != "" {
-		if h, ok := cfg.Hosts[full]; ok {
-			return Machine{Name: full, Kind: catalog.Mac, Here: full == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
+		if h, ok := cfg.Macs[full]; ok {
+			return Machine{Name: full, Kind: catalog.Mac, ThisMachine: full == cfg.ThisMachine, User: h.User, Key: h.Key, LAN: h.LAN}, nil
 		}
 	}
 	return Machine{}, &model.UnknownMachineError{Name: name}
@@ -47,31 +47,31 @@ func (s *Service) Remote(name string) (Machine, error) {
 	// invariant: another machine is never This Mac, by any of its names,
 	// registered or not.
 	if cfg, err := s.prefs(); err == nil {
-		if here := s.here(cfg); name == here || (s.o.User != "" && s.o.User+"-"+name == here) {
-			return Machine{}, &model.HereMachineError{Name: name}
+		if thisMac := s.thisMac(cfg); name == thisMac || (s.o.User != "" && s.o.User+"-"+name == thisMac) {
+			return Machine{}, &model.ThisMachineError{Name: name}
 		}
 	}
 	m, err := s.lookup(name)
 	if err != nil {
 		return Machine{}, err
 	}
-	if m.Here {
-		return Machine{}, &model.HereMachineError{Name: name}
+	if m.ThisMachine {
+		return Machine{}, &model.ThisMachineError{Name: name}
 	}
 	return m, nil
 }
 
-func (s *Service) RemoteHost(name, verb string) (Machine, error) {
+func (s *Service) RemoteMac(name, verb string) (Machine, error) {
 	m, err := s.Remote(name)
-	var here *model.HereMachineError
-	if errors.As(err, &here) {
-		here.Verb = verb
+	var thisMac *model.ThisMachineError
+	if errors.As(err, &thisMac) {
+		thisMac.Verb = verb
 	}
 	if err != nil {
 		return Machine{}, err
 	}
 	if m.Kind != catalog.Mac {
-		return Machine{}, &model.NotAHostError{Name: name, Verb: verb}
+		return Machine{}, &model.NotAMacError{Name: name, Verb: verb}
 	}
 	return m, nil
 }
@@ -84,13 +84,13 @@ func (s *Service) Init(name string) error {
 	if err != nil {
 		return err
 	}
-	if _, ok := cfg.Hosts[name]; !ok {
-		hosts := maps.Clone(cfg.Hosts)
-		if hosts == nil {
-			hosts = map[string]model.MacRecord{}
+	if _, ok := cfg.Macs[name]; !ok {
+		macs := maps.Clone(cfg.Macs)
+		if macs == nil {
+			macs = map[string]model.MacRecord{}
 		}
-		hosts[name] = model.MacRecord{}
-		if err := s.p.Hosts.Set(hosts); err != nil {
+		macs[name] = model.MacRecord{}
+		if err := s.p.Macs.Set(macs); err != nil {
 			return err
 		}
 	}
@@ -100,8 +100,8 @@ func (s *Service) Init(name string) error {
 	return nil
 }
 
-func (s *Service) AddHost(ctx context.Context, name string, h model.MacRecord) error {
-	if err := s.CheckHost(); err != nil {
+func (s *Service) AddMac(ctx context.Context, name string, h model.MacRecord) error {
+	if err := s.CheckMac(); err != nil {
 		return err
 	}
 	if !validName(name) {
@@ -111,7 +111,7 @@ func (s *Service) AddHost(ctx context.Context, name string, h model.MacRecord) e
 	if err != nil {
 		return err
 	}
-	if _, ok := cfg.Hosts[name]; ok {
+	if _, ok := cfg.Macs[name]; ok {
 		return &model.NameTakenError{Name: name}
 	}
 	records, err := s.records()
@@ -123,27 +123,27 @@ func (s *Service) AddHost(ctx context.Context, name string, h model.MacRecord) e
 			return &model.NameTakenError{Name: name, VM: true}
 		}
 	}
-	before := cfg.Hosts
-	hosts := maps.Clone(cfg.Hosts)
-	if hosts == nil {
-		hosts = map[string]model.MacRecord{}
+	before := cfg.Macs
+	macs := maps.Clone(cfg.Macs)
+	if macs == nil {
+		macs = map[string]model.MacRecord{}
 	}
-	hosts[name] = h
-	if err := s.p.Hosts.Set(hosts); err != nil {
+	macs[name] = h
+	if err := s.p.Macs.Set(macs); err != nil {
 		return err
 	}
 	if err := s.o.SSHConfig.Put(ctx, []contract.MachineBlock{{Name: name, User: h.User, Key: h.Key}}); err != nil {
-		_ = s.p.Hosts.Set(before)
+		_ = s.p.Macs.Set(before)
 		return configFailure(err, true)
 	}
 	return nil
 }
 
-func (s *Service) ForgetHost(ctx context.Context, name string) error {
-	if err := s.CheckHost(); err != nil {
+func (s *Service) ForgetMac(ctx context.Context, name string) error {
+	if err := s.CheckMac(); err != nil {
 		return err
 	}
-	m, err := s.RemoteHost(name, "forget")
+	m, err := s.RemoteMac(name, "forget")
 	if err != nil {
 		return err
 	}
@@ -151,30 +151,30 @@ func (s *Service) ForgetHost(ctx context.Context, name string) error {
 	if err != nil {
 		return err
 	}
-	delete(cfg.Hosts, m.Name)
-	if err := s.p.Hosts.Set(cfg.Hosts); err != nil {
+	delete(cfg.Macs, m.Name)
+	if err := s.p.Macs.Set(cfg.Macs); err != nil {
 		return err
 	}
 	return configFailure(s.o.SSHConfig.Remove(ctx, m.Name), false)
 }
 
-func (s *Service) here(cfg prefsView) string {
-	if cfg.Here != "" {
-		return cfg.Here
+func (s *Service) thisMac(cfg prefsView) string {
+	if cfg.ThisMachine != "" {
+		return cfg.ThisMachine
 	}
 	return strings.ToLower(s.h.Hostname())
 }
 
-func (s *Service) OtherHosts() []string {
+func (s *Service) OtherMacs() []string {
 	// value: every host of the fleet but this one, by name.
 	cfg, err := s.prefs()
 	if err != nil {
 		return nil
 	}
-	here := s.here(cfg)
-	others := make([]string, 0, len(cfg.Hosts))
-	for n := range cfg.Hosts {
-		if n != here && n != cfg.Here {
+	thisMac := s.thisMac(cfg)
+	others := make([]string, 0, len(cfg.Macs))
+	for n := range cfg.Macs {
+		if n != thisMac && n != cfg.ThisMachine {
 			others = append(others, n)
 		}
 	}
@@ -187,8 +187,8 @@ func (s *Service) Names() []string {
 	if err != nil {
 		return nil
 	}
-	names := make([]string, 0, len(cfg.Hosts))
-	for n := range cfg.Hosts {
+	names := make([]string, 0, len(cfg.Macs))
+	for n := range cfg.Macs {
 		names = append(names, n)
 	}
 	if records, err := s.records(); err == nil {
@@ -207,7 +207,7 @@ func (s *Service) Remember(_ context.Context, f model.AllMachines) error {
 	}
 	changed := false
 	for _, h := range f.Macs {
-		known, ok := cfg.Hosts[h.Name]
+		known, ok := cfg.Macs[h.Name]
 		if h.ThisMac || !h.Reachable || !ok {
 			continue
 		}
@@ -219,10 +219,10 @@ func (s *Service) Remember(_ context.Context, f model.AllMachines) error {
 		if h.LAN != "" {
 			known.LAN = h.LAN
 		}
-		cfg.Hosts[h.Name], changed = known, true
+		cfg.Macs[h.Name], changed = known, true
 	}
 	if !changed {
 		return nil
 	}
-	return s.p.Hosts.Set(cfg.Hosts)
+	return s.p.Macs.Set(cfg.Macs)
 }

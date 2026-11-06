@@ -12,10 +12,10 @@ func (e *NotAVMError) Error() string {
 	return e.Name + " is a Mac: accounts are shared with VMs only"
 }
 
-type OffHostError struct{ Here catalog.MachineKind }
+type OffMacError struct{ ThisMachine catalog.MachineKind }
 
-func (e *OffHostError) Error() string {
-	return "accounts are shared from a Mac; here is " + e.Here.Article()
+func (e *OffMacError) Error() string {
+	return "accounts are shared from a Mac; here is " + e.ThisMachine.Article()
 }
 
 type NoStudioError struct{ VM string }

@@ -13,14 +13,14 @@ import (
 const pipeIPWait = 5 * time.Second
 
 func (s *Service) CheckPipe(ctx context.Context, name string) (model.VMRecord, error) {
-	if err := s.CheckHost(); err != nil {
+	if err := s.CheckMac(); err != nil {
 		return model.VMRecord{}, err
 	}
 	m, err := s.lookup(name)
 	var unknown *model.UnknownMachineError
 	if errors.As(err, &unknown) {
-		if host, ok := s.hostOf(ctx, name); ok {
-			return model.VMRecord{}, &model.NotHereError{Name: name, Host: host}
+		if mac, ok := s.macOf(ctx, name); ok {
+			return model.VMRecord{}, &model.NotThisMacError{Name: name, Mac: mac}
 		}
 	}
 	if err != nil {
@@ -29,12 +29,12 @@ func (s *Service) CheckPipe(ctx context.Context, name string) (model.VMRecord, e
 	return s.VM(m.Name, "pipe")
 }
 
-func (s *Service) hostOf(ctx context.Context, name string) (string, bool) {
-	fleet, err := s.Fleet(ctx, false)
+func (s *Service) macOf(ctx context.Context, name string) (string, bool) {
+	allMachines, err := s.AllMachines(ctx, false)
 	if err != nil {
 		return "", false
 	}
-	for _, h := range fleet.Macs {
+	for _, h := range allMachines.Macs {
 		for _, vm := range h.VMs {
 			if vm.Name == name {
 				return h.Name, true

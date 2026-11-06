@@ -10,7 +10,7 @@ import (
 	setupcalls "github.com/jterrazz/studio-station/src/setup/calls"
 )
 
-type setupMachine struct{ h local.Host }
+type setupMachine struct{ h local.System }
 
 func (s setupMachine) Home() string     { return s.h.Env.Home() }
 func (s setupMachine) User() string     { return s.h.Env.User() }

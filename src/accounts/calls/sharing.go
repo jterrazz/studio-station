@@ -22,7 +22,7 @@ const (
 )
 
 type SharingOptions struct {
-	Here catalog.MachineKind
+	ThisMachine catalog.MachineKind
 	// value: whether a VM of this Mac runs now, as its engine says.
 	Running func(ctx context.Context, vm string) (bool, error)
 	// value: whether a running VM of this Mac keeps accounts, by
@@ -46,7 +46,7 @@ type GuestRun struct {
 
 type SharingStores struct {
 	ShareList contract.ShareListPrefs
-	Hosts     machinescontract.MacsPrefs
+	Macs      machinescontract.MacsPrefs
 	Name      setupcontract.NamePrefs
 	Shares    contract.ShareStore
 	Machines  machinescontract.MachineStore
@@ -76,7 +76,7 @@ func (s *Sharing) Shares(ctx context.Context) (map[string][]accounts.Share, erro
 	return s.st.Shares.List(ctx)
 }
 
-func (s *Sharing) here() string {
+func (s *Sharing) thisMac() string {
 	name, err := s.st.Name.Get()
 	if err != nil || name == "" {
 		return "This Mac"
@@ -88,8 +88,8 @@ func (s *Sharing) CheckShare(ctx context.Context, account, vm string) (secret st
 	// invariant: a share is refused before anything is read or copied: an
 	// unknown account, one the share list does not hold, a VM that may not
 	// receive it, an account not signed in here.
-	if s.o.Here != catalog.Mac {
-		return "", &accounts.OffHostError{Here: s.o.Here}
+	if s.o.ThisMachine != catalog.Mac {
+		return "", &accounts.OffMacError{ThisMachine: s.o.ThisMachine}
 	}
 	if !accounts.Known(account) {
 		return "", &accounts.UnknownError{Account: account}
@@ -121,13 +121,13 @@ func (s *Sharing) CheckShare(ctx context.Context, account, vm string) (secret st
 func (s *Sharing) CheckFrom(ctx context.Context, account, vm, from string) error {
 	// invariant: a share is its VM's own Mac's: asked from another Mac, the
 	// VM is judged first, so a server's refusal stands, then it is refused.
-	if from == "" || from == s.here() {
+	if from == "" || from == s.thisMac() {
 		return nil
 	}
 	if err := s.CheckReceiver(ctx, vm); err != nil {
 		return err
 	}
-	return &accounts.OtherMacError{Account: account, VM: vm, Mac: s.here()}
+	return &accounts.OtherMacError{Account: account, VM: vm, Mac: s.thisMac()}
 }
 
 func (s *Sharing) CheckReceiver(ctx context.Context, vm string) error {
@@ -257,11 +257,11 @@ func (s *Sharing) checkVM(ctx context.Context, name string) error {
 	} else if !errors.Is(err, store.ErrNotFound) {
 		return err
 	}
-	hosts, err := s.st.Hosts.Get()
+	macs, err := s.st.Macs.Get()
 	if err != nil {
 		return err
 	}
-	if _, host := hosts[name]; host || name == s.here() {
+	if _, mac := macs[name]; mac || name == s.thisMac() {
 		return &accounts.NotAVMError{Name: name}
 	}
 	return &accounts.UnknownVMError{VM: name}

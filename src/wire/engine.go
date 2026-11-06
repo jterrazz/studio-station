@@ -177,17 +177,17 @@ func downAs(err, sentinel error) error {
 
 func (d macEngine) Ping(ctx context.Context) (string, error) {
 	p, err := d.c.Hello(ctx)
-	return p.Version, downAs(err, model.ErrDaemonDown)
+	return p.Version, downAs(err, model.ErrEngineDown)
 }
 
-func (d macEngine) VMs(ctx context.Context) (map[string]machinescalls.DaemonVM, error) {
+func (d macEngine) VMs(ctx context.Context) (map[string]machinescalls.EngineVM, error) {
 	views, err := d.c.VMs(ctx)
 	if err != nil {
-		return nil, downAs(err, model.ErrDaemonDown)
+		return nil, downAs(err, model.ErrEngineDown)
 	}
-	out := make(map[string]machinescalls.DaemonVM, len(views))
+	out := make(map[string]machinescalls.EngineVM, len(views))
 	for _, v := range views {
-		out[v.Name] = machinescalls.DaemonVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check}
+		out[v.Name] = machinescalls.EngineVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check}
 	}
 	return out, nil
 }
@@ -195,19 +195,19 @@ func (d macEngine) VMs(ctx context.Context) (map[string]machinescalls.DaemonVM, 
 func (d macEngine) GuestExec(ctx context.Context, vm, line, stdin string) (engine.GuestRan, error) {
 	var ran engine.ExecOut
 	if err := d.c.do(ctx, engine.CallGuestExec, engine.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
-		return engine.GuestRan{}, downAs(err, model.ErrDaemonDown)
+		return engine.GuestRan{}, downAs(err, model.ErrEngineDown)
 	}
 	return engine.GuestRan(ran), nil
 }
 
 func (d macEngine) Do(ctx context.Context, op, vm string) error {
-	return downAs(d.c.do(ctx, engine.CallVM(op), engine.VMIn{VM: vm}, nil), model.ErrDaemonDown)
+	return downAs(d.c.do(ctx, engine.CallVM(op), engine.VMIn{VM: vm}, nil), model.ErrEngineDown)
 }
 
 func (d macEngine) Reserve(ctx context.Context, vm string, port int, profile string) (model.Reserved, error) {
 	var v ports.SharedPort
 	if err := d.c.do(ctx, engine.CallReserve, engine.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
-		return model.Reserved{}, downAs(err, model.ErrDaemonDown)
+		return model.Reserved{}, downAs(err, model.ErrEngineDown)
 	}
 	return model.Reserved{
 		GuestPort: v.GuestPort, MacPort: v.Reserved, Profile: profile, URL: v.URLs.Public, PublicName: nameOf(v.URLs.Public),
@@ -240,19 +240,19 @@ type portsEngine struct{ c engineAPI }
 func (d portsEngine) Services(ctx context.Context) (ports.MacPorts, error) {
 	var v ports.MacPorts
 	err := d.c.do(ctx, engine.CallPorts, nil, &v)
-	return v, downAs(err, ports.ErrDaemonDown)
+	return v, downAs(err, ports.ErrEngineDown)
 }
 
 func (d portsEngine) Reserve(ctx context.Context, vm string, port int, pinned bool) (ports.SharedPort, error) {
 	var v ports.SharedPort
 	err := d.c.do(ctx, engine.CallReserve, engine.ReserveIn{VM: vm, GuestPort: port, Pinned: pinned}, &v)
-	return v, downAs(err, ports.ErrDaemonDown)
+	return v, downAs(err, ports.ErrEngineDown)
 }
 
 func (d portsEngine) Release(ctx context.Context, vm string, port int) (ports.Reservation, error) {
 	var l ports.Reservation
 	err := d.c.do(ctx, engine.CallRelease, engine.ReserveIn{VM: vm, GuestPort: port}, &l)
-	return l, downAs(err, ports.ErrDaemonDown)
+	return l, downAs(err, ports.ErrEngineDown)
 }
 
 type reservationReleaser struct{ m machine }
@@ -280,7 +280,7 @@ func (r reservationReleaser) ReleaseVM(ctx context.Context, vm string) error {
 			_ = tn.Unshare(ctx, ports.ShareOf(l, mode))
 		}
 	}
-	return portscalls.SaveLeases(ctx, store, kept)
+	return portscalls.SaveReservations(ctx, store, kept)
 }
 
 func (r reservationReleaser) forgetDeclarations(ctx context.Context, vm string) error {

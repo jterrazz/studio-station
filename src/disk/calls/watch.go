@@ -29,18 +29,18 @@ type pathPlan struct {
 	parts  []part
 }
 
-type strayPlan struct {
+type misplacedPlan struct {
 	report disk.MisplacedReport
 	root   int
 }
 
 type entryPlan struct {
-	entry      disk.Entry
-	paths      []pathPlan
-	install    []int
-	strays     []strayPlan
-	containers bool
-	exists     bool
+	entry         disk.Entry
+	paths         []pathPlan
+	install       []int
+	misplacedOnes []misplacedPlan
+	containers    bool
+	exists        bool
 }
 
 type plan struct {
@@ -172,7 +172,7 @@ func (s *Service) plan() plan {
 	for _, e := range placed {
 		ep := entryPlan{entry: e, containers: e.Disk.Size == catalog.SizeContainers}
 		for _, st := range e.Disk.Paths {
-			if !st.PlacedOn(s.o.Here) {
+			if !st.PlacedOn(s.o.ThisMachine) {
 				continue
 			}
 			pp := pathPlan{report: disk.PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(st.Path)), Level: st.Level}}
@@ -198,9 +198,9 @@ func (s *Service) plan() plan {
 			if !s.m.Exists(abs) {
 				continue
 			}
-			ep.strays = append(ep.strays, strayPlan{report: s.stray(e, st, abs, 0), root: root(abs)})
+			ep.misplacedOnes = append(ep.misplacedOnes, misplacedPlan{report: s.misplaced(e, st, abs, 0), root: root(abs)})
 		}
-		ep.exists = ep.exists || len(ep.strays) > 0
+		ep.exists = ep.exists || len(ep.misplacedOnes) > 0
 		p.entries = append(p.entries, ep)
 	}
 	for _, other := range s.otherRoots() {
@@ -215,7 +215,7 @@ func (s *Service) globAll(placed []disk.Entry) map[string][]string {
 	var patterns []string
 	for _, e := range placed {
 		for _, st := range e.Disk.Paths {
-			if !st.PlacedOn(s.o.Here) {
+			if !st.PlacedOn(s.o.ThisMachine) {
 				continue
 			}
 			patterns = append(patterns, s.o.Expand.Expand(st.Path))
@@ -298,7 +298,7 @@ func (s *Service) row(ep entryPlan, r reading) (disk.Tally, bool) {
 	for _, i := range ep.install {
 		row.Install += value(i)
 	}
-	for _, st := range ep.strays {
+	for _, st := range ep.misplacedOnes {
 		report := st.report
 		report.Bytes = value(st.root)
 		row.Misplaced = append(row.Misplaced, report)
@@ -353,7 +353,7 @@ func (s *Service) unknown(e disk.Entry, installed bool, within time.Duration) di
 		row.Bytes[level] = unmeasured
 	}
 	for _, p := range e.Disk.Paths {
-		if p.PlacedOn(s.o.Here) {
+		if p.PlacedOn(s.o.ThisMachine) {
 			row.Paths = append(row.Paths, disk.PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: unmeasured})
 		}
 	}

@@ -47,9 +47,9 @@ const (
 
 func (m machine) machines(_ bool) *machinescalls.Service {
 	knownHosts := filepath.Join(m.paths.State, "known_hosts")
-	return machinescalls.New(macSystem{m.sys}, m.hypervisor(), machinescalls.Prefs{Name: m.stores.name(), Hosts: m.stores.macs(), VMUser: m.stores.vmUser()}, m.stores.machines, macNodes{tailnet: m.tailnet()}, allMachinesImages{images: m.images()}, machinesEngine{m.macEngine()}, reservationReleaser{m: m}, machinescalls.Options{
-		Here:       m.kind,
-		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
+	return machinescalls.New(macSystem{m.sys}, m.hypervisor(), machinescalls.Prefs{Name: m.stores.name(), Macs: m.stores.macs(), VMUser: m.stores.vmUser()}, m.stores.machines, macNodes{tailnet: m.tailnet()}, allMachinesImages{images: m.images()}, machinesEngine{m.macEngine()}, reservationReleaser{m: m}, machinescalls.Options{
+		ThisMachine: m.kind,
+		KnownHosts:  knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.sys.Env.User(),
 		Version:   m.stationVersion(),
 		Ask:       m.askAllMachines,
@@ -139,7 +139,7 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 			Admit: func() error {
 				return call.Gate(call.Meta{Name: machinescalls.CreateWorkspace.Name, Applies: machinescalls.CreateWorkspace.Applies}, m.profile)
 			},
-			AllMachines: func(ctx context.Context) (model.AllMachines, error) { return vms.Fleet(ctx, false) },
+			AllMachines: func(ctx context.Context) (model.AllMachines, error) { return vms.AllMachines(ctx, false) },
 			ThisMachine: m.where, Ask: createAsker(env),
 		}, env),
 		machinesstart.Command(machinesstart.Deps{Names: vms.Names, ThisMachine: m.where}, env),
@@ -236,7 +236,7 @@ func (c machineCalls) CheckRestart(name string) (bool, error) {
 }
 
 func (c machineCalls) Running(ctx context.Context, name string) (bool, error) {
-	allMachines, err := c.Fleet(ctx, true)
+	allMachines, err := c.AllMachines(ctx, true)
 	if err != nil {
 		return false, err
 	}
@@ -255,7 +255,7 @@ func (c machineCalls) Restart(ctx context.Context, name string) (model.RestartRe
 }
 
 func (c machineCalls) CheckRemoteMac(name, verb string) (string, error) {
-	m, err := c.RemoteHost(name, verb)
+	m, err := c.RemoteMac(name, verb)
 	return m.Name, err
 }
 
@@ -305,18 +305,4 @@ func createAsker(env kit.Env) kit.Asker {
 		return nil
 	}
 	return env.Prompt
-}
-
-func (c machineCalls) AllMachinesAsItFills(ctx context.Context, thisMacOnly bool, sofar func(model.AllMachines)) (model.AllMachines, error) {
-	return c.FleetAsItFills(ctx, thisMacOnly, sofar)
-}
-
-func (c machineCalls) CheckMac() error { return c.CheckHost() }
-
-func (c machineCalls) AddMac(ctx context.Context, name string, h model.MacRecord) error {
-	return c.AddHost(ctx, name, h)
-}
-
-func (c machineCalls) ForgetMac(ctx context.Context, name string) error {
-	return c.ForgetHost(ctx, name)
 }

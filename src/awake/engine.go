@@ -7,12 +7,12 @@ import (
 
 const (
 	DaemonRunning = EngineRunning
-	DaemonStopped = "stopped"
-	DaemonAbsent  = "not installed"
-	DaemonPending = EngineReading
+	EngineStopped = "stopped"
+	EngineAbsent  = "not installed"
+	EnginePending = EngineReading
 )
 
-var ErrDaemonDown = errors.New("the engine does not answer")
+var ErrEngineDown = errors.New("the engine does not answer")
 
 const (
 	ReasonThermal  = Thermal
@@ -75,20 +75,20 @@ func GuardStates(r Reading, s *Session) []GuardState {
 	}
 }
 
-type OffHostError struct{}
+type OffMacError struct{}
 
-func (*OffHostError) Error() string { return "Power runs on a host; here is a VM" }
+func (*OffMacError) Error() string { return "Power runs on a host; here is a VM" }
 
-type DaemonDownError struct {
-	Host      string
+type EngineDownError struct {
+	Mac       string
 	Installed bool
 }
 
-func (e *DaemonDownError) Error() string {
+func (e *EngineDownError) Error() string {
 	if e.Installed {
-		return "the engine is stopped on " + e.Host
+		return "the engine is stopped on " + e.Mac
 	}
-	return "the engine is not installed on " + e.Host
+	return "the engine is not installed on " + e.Mac
 }
 
 type Kept struct {

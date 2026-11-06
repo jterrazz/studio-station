@@ -25,12 +25,12 @@ func (i slowInventory) Installed(ctx context.Context, each func(map[string]bool)
 
 func TestASizedRowShowsItsSizeBeforeASlowInventoryAnswers(t *testing.T) {
 	usage := fake.NewUsage(map[string]int64{"/h/quick/tree/f": 3, "/h/late/tree/f": 5}, 1<<40, 1<<39)
-	tools := []catalog.App{
+	apps := []catalog.App{
 		{Name: "quick", Installs: catalog.MacOnly(catalog.Cask("quick")), Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/quick/*", Level: catalog.LevelCache}}}},
 		{Name: "late", Installs: catalog.MacOnly(catalog.Cask("late")), Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/late/*", Level: catalog.LevelCache}}}},
 	}
 	inventory := slowInventory{release: make(chan struct{})}
-	s := NewService(onMachine{Usage: usage}, tools, ServiceOptions{Disk: usage, Here: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Inventory: inventory})
+	s := NewService(onMachine{Usage: usage}, apps, ServiceOptions{Disk: usage, ThisMachine: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Inventory: inventory})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

@@ -95,7 +95,7 @@ type worldRun struct {
 	// value: the run handed its world to the commands it runs as children
 	// (the TUI), or only looks at it (a page the TUI reads): its copy is
 	// never written back.
-	lent bool
+	shared bool
 }
 
 // invariant: one Mac of the world as this process sees it: its fakes over
@@ -147,7 +147,7 @@ func openWorld(vars map[string]string, look bool) (*worldRun, error) {
 	w.UseHypervisor(vars["STATION_WORLD_HYPERVISOR"])
 	if look {
 		unlockWorld(held)
-		return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, lent: true}, nil
+		return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, shared: true}, nil
 	}
 	return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, held: held}, nil
 }
@@ -183,7 +183,7 @@ func (m *worldMac) handOver(ctx context.Context) error {
 		return nil
 	}
 	err := m.run.close(ctx)
-	m.run.lent = true
+	m.run.shared = true
 	return err
 }
 
@@ -250,11 +250,11 @@ func (m *worldMac) slice() world.Mac {
 
 func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
-func (m *worldMac) system(h local.Host) local.Host {
+func (m *worldMac) system(h local.System) local.System {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	m.home = h.Env.Home()
 	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home()), files: m.files()}
-	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.ThisMac || m.slice().Root}
+	h.Env = worldEnv{Env: h.Env, thisMac: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.ThisMac || m.slice().Root}
 	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
 	return h
@@ -718,7 +718,7 @@ func restarts(ev world.Event, mac string) bool {
 // turn on it, as the real ones run beside every command, then the world is
 // written back.
 func (r *worldRun) close(ctx context.Context) error {
-	if r.lent {
+	if r.shared {
 		return nil
 	}
 	defer func() { unlockWorld(r.held); r.held = nil }()
@@ -740,12 +740,12 @@ func (r *worldRun) close(ctx context.Context) error {
 
 type worldEnv struct {
 	local.Env
-	here, user string
+	thisMac, user string
 	// value: this run has admin rights, on This Mac's own terminal.
 	admin bool
 }
 
-func (e worldEnv) Hostname() string { return e.here }
+func (e worldEnv) Hostname() string { return e.thisMac }
 func (e worldEnv) User() string     { return e.user }
 
 func (e worldEnv) Euid() int {
@@ -879,17 +879,17 @@ func (g worldGuest) Exec(ctx context.Context, cmd contract.GuestCommand) (contra
 
 // value: a VM of the world as its guest's hello placed it: the Mac that
 // holds it and that Mac's name on the tailnet; false for a Mac.
-func (m *worldMac) placement() (ports.VMPlace, bool) {
+func (m *worldMac) placement() (ports.VMLivesOn, bool) {
 	w := m.run.w
 	w.Lock()
 	defer w.Unlock()
 	mac := w.Holder(m.name)
 	if mac == "" {
-		return ports.VMPlace{}, false
+		return ports.VMLivesOn{}, false
 	}
-	p := ports.VMPlace{Host: mac, VM: m.name}
+	p := ports.VMLivesOn{Mac: mac, VM: m.name}
 	if n := w.Macs[mac].Tailnet; n != nil {
-		p.PublicHost = n.Self.Sharing.DNSName
+		p.PublicName = n.Self.Sharing.DNSName
 	}
 	return p, true
 }
@@ -999,7 +999,7 @@ func (worldSockets) DialTCP(context.Context, string, time.Duration) (net.Conn, e
 func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (local.Conn, error) {
 	m := s.m
 	if p, inside := m.placement(); inside {
-		m = m.run.mac(p.Host)
+		m = m.run.mac(p.Mac)
 	}
 	d, ok := m.up(context.WithoutCancel(ctx))
 	if !ok {

@@ -47,14 +47,14 @@ func storageAlias(env kit.Env, m machine) *cobra.Command {
 
 func (m machine) diskOf(env kit.Env) *diskcalls.Service {
 	return diskcalls.NewService(diskMachine{m.sys}, catalog.Apps, diskcalls.ServiceOptions{
-		Disk:       m.disk(),
-		Containers: diskdocker.New(m.sys.Run),
-		Pool:       m.pool,
-		Here:       m.kind,
-		Expand:     m.expander(),
-		Files:      m.appFiles(),
-		Inventory:  inventory{apps: appsOf(env, m)},
-		Configurer: setupSettingsWriter{settings: settingsOf(m)},
+		Disk:        m.disk(),
+		Containers:  diskdocker.New(m.sys.Run),
+		Pool:        m.pool,
+		ThisMachine: m.kind,
+		Expand:      m.expander(),
+		Files:       m.appFiles(),
+		Inventory:   inventory{apps: appsOf(env, m)},
+		Configurer:  setupSettingsWriter{settings: settingsOf(m)},
 	})
 }
 
@@ -73,7 +73,7 @@ func (m machine) expander() disk.Expander {
 }
 
 func (m machine) appFiles() map[catalog.AppFile]string {
-	return catalog.ToolFilePaths(m.sys.Env.Home(), m.paths.Roots.Config, m.kind, m.vars)
+	return catalog.AppFilePaths(m.sys.Env.Home(), m.paths.Roots.Config, m.kind, m.vars)
 }
 
 type inventory struct{ apps *appscalls.Service }
@@ -90,7 +90,7 @@ func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
 	}
 }
 
-type diskMachine struct{ h local.Host }
+type diskMachine struct{ h local.System }
 
 func (d diskMachine) Now() time.Time { return d.h.Clock.Now() }
 func (d diskMachine) Sleep(ctx context.Context, t time.Duration) error {

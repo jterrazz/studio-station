@@ -61,7 +61,7 @@ func part(r Reading, id, title string, ready bool, build func() []page.Section) 
 	return build()
 }
 
-func links(f *ports.AllMachines) func(host, vm string) []page.Link {
+func links(f *ports.AllMachines) func(mac, vm string) []page.Link {
 	if f == nil {
 		return nil
 	}

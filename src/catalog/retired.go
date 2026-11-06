@@ -22,17 +22,17 @@ func RetiredNodeFiles() []string {
 	return []string{RetiredNodeState, retiredNodeLog, retiredNodeSocket, RetiredNodePID, RetiredAwakePID, retiredAwakeLog}
 }
 
-func RetiredNodeDetail(here string) string {
-	return "userspace tailscaled retired; its node \"" + here + "\" stays at " + nodeConsole + " until you remove it"
+func RetiredNodeDetail(thisMac string) string {
+	return "userspace tailscaled retired; its node \"" + thisMac + "\" stays at " + nodeConsole + " until you remove it"
 }
 
 func TailnetWrapperWritten(at string) string { return TailnetCLI + " wrapper written: " + at }
 
 const TailnetWrapperDue = TailnetCLI + " wrapper due: station setup"
 
-func SSHCommand(user, host string) string {
+func SSHCommand(user, mac string) string {
 	if user != "" {
-		return "ssh " + user + "@" + host
+		return "ssh " + user + "@" + mac
 	}
-	return "ssh " + host
+	return "ssh " + mac
 }

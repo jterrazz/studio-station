@@ -17,7 +17,7 @@ import (
 )
 
 func (m machine) accounts() *accountscalls.Reader {
-	o := accountscalls.ReaderOptions{Here: m.kind, HereName: m.where.Machine, Now: m.sys.Clock.Now}
+	o := accountscalls.ReaderOptions{ThisMachine: m.kind, ThisMacName: m.where.Machine, Now: m.sys.Clock.Now}
 	ids := m.identities(engine.ChildrenDir(m.paths.State))
 	if m.kind != catalog.Mac {
 		o.Keys = m.stationHostKeys
@@ -26,7 +26,7 @@ func (m machine) accounts() *accountscalls.Reader {
 	sec := m.secrets()
 	d := m.engineAPI()
 	sources := accountscalls.ReaderPorts{
-		LendList: sec.ShareList,
+		ShareList: sec.ShareList,
 		VMs: func(ctx context.Context) ([]accounts.VM, error) {
 			recs, err := m.machines(false).Records()
 			if err != nil {
@@ -43,19 +43,19 @@ func (m machine) accounts() *accountscalls.Reader {
 					}
 				}
 				for _, l := range shares[r.Name] {
-					vm.Lends = append(vm.Lends, accounts.Loan(l))
+					vm.Shares = append(vm.Shares, accounts.Loan(l))
 				}
 				out = append(out, vm)
 			}
 			return out, nil
 		},
-		Daemon: func(ctx context.Context) ([]accounts.VMRead, string) {
+		Engine: func(ctx context.Context) ([]accounts.VMRead, string) {
 			var view engine.AccountsView
 			if err := d.do(ctx, engine.CallAccounts, nil, &view); err != nil {
 				if _, missing := m.sys.FS.Stat(catalog.EnginePlist(m.sys.Env.Home())); missing != nil {
-					return nil, accounts.DaemonAbsent
+					return nil, accounts.EngineAbsent
 				}
-				return nil, accounts.DaemonStopped
+				return nil, accounts.EngineStopped
 			}
 			out := make([]accounts.VMRead, 0, len(view.VMs))
 			for _, v := range view.VMs {
@@ -68,7 +68,7 @@ func (m machine) accounts() *accountscalls.Reader {
 				}
 				out = append(out, read)
 			}
-			return out, accounts.DaemonRunning
+			return out, accounts.EngineRunning
 		},
 	}
 	return accountscalls.NewReader(m.pool, tailscale.New(m.tailnet(), ids), sources, o)

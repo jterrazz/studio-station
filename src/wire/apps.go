@@ -49,7 +49,7 @@ func appsCommand(env kit.Env, m machine) *cobra.Command {
 
 // invariant: station tools and its verbs are the hidden v2 words of station
 // apps for one release (SPEC §4.3); upgrade's --via is update's --method.
-func toolsAlias(env kit.Env, m machine) *cobra.Command {
+func appsAlias(env kit.Env, m machine) *cobra.Command {
 	names := placedNames(appsOf(env, m))
 	update := appsupdate.Via(appsupdate.Command(appsupdate.Deps{ThisMachine: m.where, Now: m.sys.Clock.Now}, env))
 	return kit.Alias("tools", appscmd.Command(appscmd.Deps{Names: names, ThisMachine: m.where}, env,
@@ -77,13 +77,13 @@ func appsOf(env kit.Env, m machine) *appscalls.Service {
 	}
 	registry, bundler := installers(m)
 	return appscalls.NewService(appsMachine{m.sys}, catalog.Apps, configurer{settings: settingsOf(m), ask: ask}, appscalls.ServiceOptions{
-		Pool:       m.pool,
-		Here:       m.kind,
-		Root:       m.systemRoot(),
-		Installers: registry,
-		Bundler:    bundler,
-		VMs:        m.machines(env.Interactive),
-		Log:        filepath.Join(m.paths.State, "logs", "apps.log"),
+		Pool:        m.pool,
+		ThisMachine: m.kind,
+		Root:        m.systemRoot(),
+		Installers:  registry,
+		Bundler:     bundler,
+		VMs:         m.machines(env.Interactive),
+		Log:         filepath.Join(m.paths.State, "logs", "apps.log"),
 	})
 }
 
@@ -157,7 +157,7 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 	return apps.Step{Item: item, Result: catalog.StateOK, Detail: detail}, nil
 }
 
-type appsMachine struct{ h local.Host }
+type appsMachine struct{ h local.System }
 
 func (a appsMachine) Now() time.Time { return a.h.Clock.Now() }
 func (a appsMachine) Sleep(ctx context.Context, d time.Duration) error {

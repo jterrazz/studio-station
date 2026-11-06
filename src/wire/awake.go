@@ -75,7 +75,7 @@ func (m machine) everyMacAwake(ctx context.Context, env kit.Env) (pageawake.AllM
 	}
 	thisMac.ThisMac = true
 	f.Reports = append(f.Reports, thisMac)
-	others := m.machines(false).OtherHosts()
+	others := m.machines(false).OtherMacs()
 	slices.Sort(others)
 	got := each.All(ctx, others, func(ctx context.Context, mac string) (awake.Report, error) {
 		return call.Read(ctx, env.Calls, coremachine.Ref{Name: mac}, awakecalls.Read, awakecalls.ReadIn{}, nil)

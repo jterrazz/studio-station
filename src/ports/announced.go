@@ -29,12 +29,12 @@ type Announcement struct {
 	Unlisten int
 }
 
-type VMPlace struct {
+type VMLivesOn struct {
 	// value: a VM's placement, as its host told its guest: the Mac it runs
 	// on, its own name, the public host of its shares.
-	Host       string `json:"host"`
+	Mac        string `json:"host"`
 	VM         string `json:"vm"`
-	PublicHost string `json:"public_host"`
+	PublicName string `json:"public_host"`
 }
 
 func Announce(ls []Listener) []Announced {

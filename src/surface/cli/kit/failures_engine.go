@@ -36,7 +36,7 @@ func portsFailure(err error) (*fail.Error, bool) {
 	var perVM *ports.VMFull
 	var badPort *ports.BadPortError
 	var ignored *ports.IgnoredPortError
-	var away *ports.HostAwayError
+	var away *ports.MacAwayError
 	var unknown *ports.UnknownVMError
 	switch {
 	case errors.As(err, &full):

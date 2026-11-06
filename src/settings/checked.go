@@ -15,7 +15,7 @@ type CheckedState string
 const (
 	AsExpected               CheckedState = "as-expected"
 	NeedsFix                 CheckedState = "needs-fix"
-	CheckedOffHere           CheckedState = "off-here"
+	CheckedOffThisMac        CheckedState = "off-here"
 	CheckedNotForThisMachine CheckedState = "not-for-this-machine"
 	CheckedUnknown           CheckedState = "unknown"
 )
@@ -67,7 +67,7 @@ func JudgeChecked(it catalog.CheckedSetting, lives bool, facts map[catalog.Fact]
 		row.Checked, row.Why = CheckedNotForThisMachine, LivesOnReason(it.Kinds)
 		return row
 	case off:
-		row.Checked = CheckedOffHere
+		row.Checked = CheckedOffThisMac
 		return row
 	}
 	for _, f := range it.Facts {

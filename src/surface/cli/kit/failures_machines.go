@@ -11,9 +11,9 @@ import (
 
 func machinesFailure(err error) (*fail.Error, bool) {
 	var unknown *model.UnknownMachineError
-	var thisMac *model.HereMachineError
-	var notMac *model.NotAHostError
-	var macOnly *model.OnlyOnHostError
+	var thisMac *model.ThisMachineError
+	var notMac *model.NotAMacError
+	var macOnly *model.OnlyOnMacError
 	var taken *model.NameTakenError
 	var bad *model.BadNameError
 	var unreachable *model.UnreachableError
@@ -56,7 +56,7 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	return nil, false
 }
 
-func notAMacHint(e *model.NotAHostError) string {
+func notAMacHint(e *model.NotAMacError) string {
 	if e.Verb == "forget" {
 		return "station machines delete " + e.Name
 	}
@@ -64,7 +64,7 @@ func notAMacHint(e *model.NotAHostError) string {
 }
 
 func takenHint(e *model.NameTakenError) string {
-	if e.VM || e.Host {
+	if e.VM || e.Mac {
 		return "pick another name"
 	}
 	return "station machines forget " + e.Name + " first, to change it"
@@ -82,7 +82,7 @@ func vmFailure(err error) (*fail.Error, bool) {
 	var created *model.CreateFailedError
 	var noBoot *model.DidNotBootError
 	var unhealthy *model.UnhealthyError
-	var down *model.DaemonDownError
+	var down *model.EngineDownError
 	var network *model.BadNetworkError
 	var nothing *model.NothingToChangeError
 	var shrinks *model.DiskShrinksError
@@ -156,13 +156,13 @@ func notAVMHint(e *model.NotAVMError) string {
 }
 
 func pipeFailure(err error) (*fail.Error, bool) {
-	var notHere *model.NotHereError
+	var notThisMac *model.NotThisMacError
 	var stopped *model.StoppedError
 	var closed *model.SSHDClosedError
 	var running *model.RunningUnderAgentError
 	switch {
-	case errors.As(err, &notHere):
-		return usage(notHere.Error(), words.ReachedThrough(notHere.Name, notHere.Host)), true
+	case errors.As(err, &notThisMac):
+		return usage(notThisMac.Error(), words.ReachedThrough(notThisMac.Name, notThisMac.Mac)), true
 	case errors.As(err, &stopped):
 		return failed(stopped.Error(), "station machines start "+stopped.Name, err), true
 	case errors.As(err, &closed):

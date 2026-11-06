@@ -20,7 +20,7 @@ func appsFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &appStore):
 		return usage(appStore.Error(), "remove it from /Applications"), true
 	case errors.As(err, &noUpgrade):
-		return usage(noUpgrade.Error(), "reinstall it by hand: station apps install "+noUpgrade.Tool), true
+		return usage(noUpgrade.Error(), "reinstall it by hand: station apps install "+noUpgrade.App), true
 	}
 	return nil, false
 }

@@ -84,7 +84,7 @@ type streamed struct {
 }
 
 // value: the nth subscription's feed reads the nth channel.
-func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Engine {
+func streamEngine(t *testing.T, clock *manualClock, feeds ...chan any) *Engine {
 	t.Helper()
 	h := &fakeMac{clock: clock}
 	paths := setup.Paths{Config: "/c", State: "/s"}
@@ -163,7 +163,7 @@ func settle(feed chan any, v any) {
 
 func TestAStreamSendsTheFrameThenOnePageForABurstAndNeverTheSamePageTwice(t *testing.T) {
 	clock, feed := newManualClock(), make(chan any)
-	s := subscribe(t.Context(), t, streamDaemon(t, clock, feed), true)
+	s := subscribe(t.Context(), t, streamEngine(t, clock, feed), true)
 	feed <- "frame"
 	if got := s.next(t, "page"); got != `"frame"` {
 		t.Fatalf("first page %s, want the frame", got)
@@ -185,7 +185,7 @@ func TestAStreamSendsTheFrameThenOnePageForABurstAndNeverTheSamePageTwice(t *tes
 
 func TestAStreamTicksEvery15Seconds(t *testing.T) {
 	clock, feed := newManualClock(), make(chan any)
-	s := subscribe(t.Context(), t, streamDaemon(t, clock, feed), true)
+	s := subscribe(t.Context(), t, streamEngine(t, clock, feed), true)
 	feed <- "frame"
 	s.next(t, "page")
 	clock.advance(tickEvery)
@@ -196,7 +196,7 @@ func TestAStreamTicksEvery15Seconds(t *testing.T) {
 
 func TestASubscriberThatDoesNotReadNeverHoldsAnotherBack(t *testing.T) {
 	clock, feedA, feedB := newManualClock(), make(chan any), make(chan any)
-	d := streamDaemon(t, clock, feedA, feedB)
+	d := streamEngine(t, clock, feedA, feedB)
 	reader := subscribe(t.Context(), t, d, true)
 	feedA <- "frame"
 	reader.next(t, "page")

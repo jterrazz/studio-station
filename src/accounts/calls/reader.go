@@ -16,19 +16,19 @@ import (
 
 const (
 	expiringWithin  = time.Hour
-	daemonBudget    = 13 * time.Second
+	engineBudget    = 13 * time.Second
 	providerReserve = 500 * time.Millisecond
 )
 
 type ReaderPorts struct {
-	VMs      func(ctx context.Context) ([]accounts.VM, error)
-	Daemon   func(ctx context.Context) ([]accounts.VMRead, string)
-	LendList func() []string
+	VMs       func(ctx context.Context) ([]accounts.VM, error)
+	Engine    func(ctx context.Context) ([]accounts.VMRead, string)
+	ShareList func() []string
 }
 
 type ReaderOptions struct {
-	Here     catalog.MachineKind
-	HereName string
+	ThisMachine catalog.MachineKind
+	ThisMacName string
 	// value: in a VM, the guest's hello keys: who may ssh in.
 	Keys func() []string
 	Now  func() time.Time
@@ -46,7 +46,7 @@ func NewReader(pool *probe.Pool, ids contract.Identities, p ReaderPorts, o Reade
 }
 
 func (s *Reader) where() string {
-	if s.o.Here == catalog.Mac {
+	if s.o.ThisMachine == catalog.Mac {
 		return accounts.KindMac
 	}
 	return accounts.KindVM
@@ -128,12 +128,12 @@ func (s *Reader) entry() accounts.Account {
 
 func (s *Reader) Read(ctx context.Context, withVMs bool) <-chan accounts.Report {
 	now := s.o.Now().UTC()
-	here := accounts.Machine{Name: s.o.HereName, Kind: s.where(), ThisMac: true}
+	thisMac := accounts.Machine{Name: s.o.ThisMacName, Kind: s.where(), ThisMac: true}
 	ps := s.providers()
 	for _, p := range ps {
-		here.Accounts = append(here.Accounts, accounts.Account{Provider: p.ID, State: catalog.StatePending})
+		thisMac.Accounts = append(thisMac.Accounts, accounts.Account{Provider: p.ID, State: catalog.StatePending})
 	}
-	frame := accounts.Report{Machines: []accounts.Machine{here}, Now: now}
+	frame := accounts.Report{Machines: []accounts.Machine{thisMac}, Now: now}
 	var vms []accounts.VM
 	if s.where() == accounts.KindMac && s.p.VMs != nil {
 		vms, _ = s.p.VMs(ctx)
@@ -161,14 +161,14 @@ func (s *Reader) Read(ctx context.Context, withVMs bool) <-chan accounts.Report 
 			Late: func(r *accounts.Report) { r.Machines[0].Accounts[i] = withHint(own(accounts.Late(p)), "") },
 		})
 	}
-	if withVMs && len(vms) > 0 && s.p.Daemon != nil {
+	if withVMs && len(vms) > 0 && s.p.Engine != nil {
 		jobs = append(jobs, probe.Job[accounts.Report]{
-			Key: "accounts/vms", Lane: probe.Inline, Budget: daemonBudget,
+			Key: "accounts/vms", Lane: probe.Inline, Budget: engineBudget,
 			Do: func(ctx context.Context) func(*accounts.Report) {
-				reads, daemon := s.p.Daemon(ctx)
-				return func(r *accounts.Report) { s.merge(r, vms, reads, daemon) }
+				reads, engine := s.p.Engine(ctx)
+				return func(r *accounts.Report) { s.merge(r, vms, reads, engine) }
 			},
-			Late: func(r *accounts.Report) { s.merge(r, vms, nil, accounts.DaemonRunning) },
+			Late: func(r *accounts.Report) { s.merge(r, vms, nil, accounts.EngineRunning) },
 		})
 	}
 	if len(jobs) == 0 {
@@ -182,12 +182,12 @@ func (s *Reader) Read(ctx context.Context, withVMs bool) <-chan accounts.Report 
 
 func (s *Reader) vmFrame(v accounts.VM, now time.Time) accounts.Machine {
 	m := accounts.Machine{Name: v.Name, Kind: accounts.KindVM, Lifetime: v.Lifetime, Running: v.Running, Pending: v.Running}
-	m.Accounts = lentRows(v, nil, false, now)
+	m.Accounts = sharedRows(v, nil, false, now)
 	return m
 }
 
-func (s *Reader) merge(r *accounts.Report, vms []accounts.VM, reads []accounts.VMRead, daemon string) {
-	r.Engine = daemon
+func (s *Reader) merge(r *accounts.Report, vms []accounts.VM, reads []accounts.VMRead, engine string) {
+	r.Engine = engine
 	byName := map[string]accounts.VMRead{}
 	for _, v := range reads {
 		byName[v.Name] = v
@@ -213,13 +213,13 @@ func (s *Reader) merge(r *accounts.Report, vms []accounts.VM, reads []accounts.V
 		default:
 			m.Guest = accounts.GuestAbsent
 		}
-		m.Accounts = lentRows(v, read.Accounts, m.Guest == accounts.GuestAbsent, r.Now)
+		m.Accounts = sharedRows(v, read.Accounts, m.Guest == accounts.GuestAbsent, r.Now)
 	}
 }
 
 // invariant: a running VM whose guest is absent keeps its rows from its
 // record: its lent rows whole, every other provider of a VM read `?`.
-func lentRows(v accounts.VM, own []accounts.Account, unreachable bool, now time.Time) []accounts.Account {
+func sharedRows(v accounts.VM, own []accounts.Account, unreachable bool, now time.Time) []accounts.Account {
 	var out []accounts.Account
 	for _, p := range catalog.Providers {
 		if !p.VM {
@@ -232,23 +232,23 @@ func lentRows(v accounts.VM, own []accounts.Account, unreachable bool, now time.
 				acc = &a
 			}
 		}
-		lend := lendFor(v.Lends, p.ID)
+		share := shareFor(v.Shares, p.ID)
 		switch {
-		case acc == nil && lend == nil && unreachable && !p.Optional:
+		case acc == nil && share == nil && unreachable && !p.Optional:
 			a := accounts.Account{Provider: p.ID, State: catalog.StateDegraded, Reason: accounts.ReasonUnreachable, Origin: accounts.OriginOwn, Identity: []string{accounts.Unknown}, Detail: "guest not connected"}
 			acc = &a
-		case acc == nil && lend == nil:
+		case acc == nil && share == nil:
 			continue
 		case acc == nil:
-			a := accounts.Account{Provider: p.ID, State: catalog.StateOK, Origin: accounts.OriginLent, Identity: []string{accounts.Unknown}}
+			a := accounts.Account{Provider: p.ID, State: catalog.StateOK, Origin: accounts.OriginShared, Identity: []string{accounts.Unknown}}
 			acc = &a
-		case lend != nil && acc.State == catalog.StateOK:
+		case share != nil && acc.State == catalog.StateOK:
 			acc.Origin = accounts.OriginBoth
-		case lend != nil:
-			acc.State, acc.Reason, acc.Origin, acc.Detail, acc.Identity = catalog.StateOK, "", accounts.OriginLent, "", []string{accounts.Unknown}
+		case share != nil:
+			acc.State, acc.Reason, acc.Origin, acc.Detail, acc.Identity = catalog.StateOK, "", accounts.OriginShared, "", []string{accounts.Unknown}
 		}
-		if lend != nil {
-			l := *lend
+		if share != nil {
+			l := *share
 			acc.Shared = &l
 			acc.Scopes = append([]string{l.Name}, acc.Scopes...)
 			switch left := l.Until.Sub(now); {
@@ -263,8 +263,8 @@ func lentRows(v accounts.VM, own []accounts.Account, unreachable bool, now time.
 	return out
 }
 
-func lendFor(lends []accounts.Loan, provider string) *accounts.Loan {
-	for _, l := range lends {
+func shareFor(shares []accounts.Loan, provider string) *accounts.Loan {
+	for _, l := range shares {
 		for _, sc := range catalog.ShareScopes {
 			if sc.Name == l.Name && sc.Provider == provider {
 				return &l
@@ -280,11 +280,11 @@ func (s *Reader) Forget() {
 	}
 }
 
-func (s *Reader) LendList() []string {
-	if s.p.LendList == nil {
+func (s *Reader) ShareList() []string {
+	if s.p.ShareList == nil {
 		return nil
 	}
-	return s.p.LendList()
+	return s.p.ShareList()
 }
 
 func withHint(a accounts.Account, vm string) accounts.Account {
@@ -306,7 +306,7 @@ func withHint(a accounts.Account, vm string) accounts.Account {
 			if h.Reason != a.Reason {
 				continue
 			}
-			a.Hint = h.Here
+			a.Hint = h.ThisMachine
 			if vm != "" {
 				a.Hint = strings.ReplaceAll(h.InVM, catalog.HintVM, vm)
 			}

@@ -19,7 +19,7 @@ const (
 )
 
 func (s *Service) Restart(ctx context.Context, name string, progress func(model.RestartEvent)) (model.RestartReport, error) {
-	if err := s.CheckHost(); err != nil {
+	if err := s.CheckMac(); err != nil {
 		return model.RestartReport{}, err
 	}
 	m, err := s.Remote(name)

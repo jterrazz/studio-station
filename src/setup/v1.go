@@ -28,29 +28,29 @@ func ConvertV1(v1 []byte, user string) (V1Preferences, error) {
 		return V1Preferences{}, &store.UnreadableError{Path: "config.json", Cause: err}
 	}
 	var s V1Preferences
-	s.Here = old.Self
+	s.ThisMachine = old.Self
 	s.VMUser = user
 	s.UserEmail = old.UserEmail
 	s.UserName = old.UserName
 	for name, m := range old.Machines {
-		if s.Hosts == nil {
-			s.Hosts = map[string]Host{}
+		if s.Macs == nil {
+			s.Macs = map[string]Mac{}
 		}
 		login, _, found := strings.Cut(m.SSH, "@")
 		if !found {
 			login = ""
 		}
-		s.Hosts[name] = Host{User: login, Key: m.Identity}
+		s.Macs[name] = Mac{User: login, Key: m.Identity}
 	}
-	if s.Here == "" && old.Remote.Hostname != "" {
-		s.Here = old.Remote.Hostname
+	if s.ThisMachine == "" && old.Remote.Hostname != "" {
+		s.ThisMachine = old.Remote.Hostname
 	}
-	if s.Here != "" {
-		if s.Hosts == nil {
-			s.Hosts = map[string]Host{}
+	if s.ThisMachine != "" {
+		if s.Macs == nil {
+			s.Macs = map[string]Mac{}
 		}
-		if _, ok := s.Hosts[s.Here]; !ok {
-			s.Hosts[s.Here] = Host{}
+		if _, ok := s.Macs[s.ThisMachine]; !ok {
+			s.Macs[s.ThisMachine] = Mac{}
 		}
 	}
 	return s, nil

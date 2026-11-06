@@ -7,8 +7,8 @@ import (
 	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
-func TestEveryMethodTheCataloguePlacesHasItsInstaller(t *testing.T) {
-	system := localtest.Host(localtest.NewRunner(t), localtest.NewFS(), localtest.Env{HomeDir: "/home/u", OS: "darwin"}, localtest.NewNet(), &localtest.Clock{})
+func TestEveryMethodTheCatalogueKindsHasItsInstaller(t *testing.T) {
+	system := localtest.Mac(localtest.NewRunner(t), localtest.NewFS(), localtest.Env{HomeDir: "/home/u", OS: "darwin"}, localtest.NewNet(), &localtest.Clock{})
 
 	registry, _ := installers(machine{sys: system, vars: map[string]string{}})
 

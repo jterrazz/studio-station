@@ -66,10 +66,10 @@ func (s *Service) migrateSettings() error {
 // invariant: same is false when the preferences hold a group a v1
 // config.json never converts to (the share list, the services' policy).
 func (s *Service) current() (v setup.V1Preferences, same bool, err error) {
-	if v.Here, err = s.p.Name.Get(); err != nil {
+	if v.ThisMachine, err = s.p.Name.Get(); err != nil {
 		return v, false, err
 	}
-	if v.Hosts, err = s.p.Hosts.Get(); err != nil {
+	if v.Macs, err = s.p.Macs.Get(); err != nil {
 		return v, false, err
 	}
 	if v.VMUser, err = s.p.VMUser.Get(); err != nil {
@@ -92,10 +92,10 @@ func (s *Service) current() (v setup.V1Preferences, same bool, err error) {
 }
 
 func (s *Service) write(v setup.V1Preferences) error {
-	if err := s.p.Name.Set(v.Here); err != nil {
+	if err := s.p.Name.Set(v.ThisMachine); err != nil {
 		return err
 	}
-	if err := machinescalls.AdoptV1(s.p.Hosts, s.p.VMUser, v.Hosts, v.VMUser); err != nil {
+	if err := machinescalls.AdoptV1(s.p.Macs, s.p.VMUser, v.Macs, v.VMUser); err != nil {
 		return err
 	}
 	return s.p.Identity.Set(setup.Identity{UserEmail: v.UserEmail, UserName: v.UserName})

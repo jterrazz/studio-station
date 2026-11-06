@@ -94,7 +94,7 @@ type Env interface {
 }
 
 type Net interface {
-	Dial(ctx context.Context, host string, port int, timeout time.Duration) bool
+	Dial(ctx context.Context, mac string, port int, timeout time.Duration) bool
 	Get(ctx context.Context, url string, header map[string]string) (status int, body []byte, err error)
 }
 
@@ -122,7 +122,7 @@ type Clock interface {
 	Sleep(ctx context.Context, d time.Duration) error
 }
 
-type Host struct {
+type System struct {
 	Run     Runner
 	FS      FS
 	Env     Env

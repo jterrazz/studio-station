@@ -27,7 +27,7 @@ func (m machine) guest() *guest.Service {
 		root = "/"
 	}
 	return guest.New(m.sys, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Containers: m.containers(), Accounts: func(ctx context.Context, keys []string) any {
-		a := accountscalls.NewReader(m.pool, m.identities(path.Join(m.paths.State, "children")), accountscalls.ReaderPorts{}, accountscalls.ReaderOptions{Here: m.kind, HereName: m.where.Machine, Now: m.sys.Clock.Now, Keys: func() []string { return keys }})
+		a := accountscalls.NewReader(m.pool, m.identities(path.Join(m.paths.State, "children")), accountscalls.ReaderPorts{}, accountscalls.ReaderOptions{ThisMachine: m.kind, ThisMacName: m.where.Machine, Now: m.sys.Clock.Now, Keys: func() []string { return keys }})
 		return a.Own(ctx)
 	}})
 }

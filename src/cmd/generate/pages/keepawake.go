@@ -27,9 +27,9 @@ func keepAwakePages() []Fixture {
 	low.Source, low.Percent = "battery", 28
 	held := heldSession()
 	out := states("keep-awake",
-		pagekeepawake.Page(keepAwakeReport(awake.DaemonPending, nil, thisMacReading()), thisMacContext()),
+		pagekeepawake.Page(keepAwakeReport(awake.EnginePending, nil, thisMacReading()), thisMacContext()),
 		pagekeepawake.Page(keepAwakeReport(awake.DaemonRunning, nil, thisMacReading()), thisMacContext()),
-		pagekeepawake.Page(keepAwakeReport(awake.DaemonStopped, nil, thisMacReading()), thisMacContext()),
+		pagekeepawake.Page(keepAwakeReport(awake.EngineStopped, nil, thisMacReading()), thisMacContext()),
 		pagekeepawake.Page(keepAwakeReport(awake.DaemonRunning, held, low), thisMacContext()),
 	)
 	awoken := awake.Awoken{Session: *held}

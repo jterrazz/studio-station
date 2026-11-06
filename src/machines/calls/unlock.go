@@ -10,10 +10,10 @@ import (
 )
 
 func (s *Service) Unlock(ctx context.Context, name string) error {
-	if err := s.CheckHost(); err != nil {
+	if err := s.CheckMac(); err != nil {
 		return err
 	}
-	m, err := s.RemoteHost(name, "unlock")
+	m, err := s.RemoteMac(name, "unlock")
 	if err != nil {
 		return err
 	}

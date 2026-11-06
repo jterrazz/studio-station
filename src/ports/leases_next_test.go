@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-func TestTheLifecycleKeepsLeasesAndIdlesOnlyUnpinnedOnes(t *testing.T) {
+func TestTheLifecycleKeepsReservationsAndIdlesOnlyUnpinnedOnes(t *testing.T) {
 	t0 := time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)
 	st, acts := Next(State{}, EvListen, t0)
-	if st.Phase != PhaseShared || !slices.Equal(acts, []Action{ActPublish}) {
+	if st.Phase != PhaseShared || !slices.Equal(acts, []Action{ActShare}) {
 		t.Fatalf("listen: %+v %v", st, acts)
 	}
 	st, _ = Next(st, EvUnlisten, t0.Add(time.Second))

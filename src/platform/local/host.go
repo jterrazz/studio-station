@@ -7,7 +7,7 @@ import (
 
 const defaultSystemDirs = "/usr/sbin:/sbin:/usr/libexec:/usr/libexec/ApplicationFirewall"
 
-func New(env []string, stdin io.Reader, stdout, stderr io.Writer) Host {
+func New(env []string, stdin io.Reader, stdout, stderr io.Writer) System {
 	vars := map[string]string{}
 	for _, kv := range env {
 		if k, v, ok := strings.Cut(kv, "="); ok {
@@ -24,7 +24,7 @@ func New(env []string, stdin io.Reader, stdout, stderr io.Writer) Host {
 			dirs = append(dirs, d)
 		}
 	}
-	return Host{
+	return System{
 		Run:     &runner{env: env, dirs: dirs, stdin: stdin, stdout: stdout, stderr: stderr},
 		FS:      disk{},
 		Env:     identity{vars: vars},

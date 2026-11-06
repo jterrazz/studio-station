@@ -43,7 +43,7 @@ func (*worldRun) farFrom(func(*worldMac) farMac) {}
 func (*worldRun) command() *cobra.Command        { return nil }
 func (*worldRun) close(context.Context) error    { return nil }
 
-func (*worldMac) system(h local.Host) local.Host                        { return h }
+func (*worldMac) system(h local.System) local.System                    { return h }
 func (*worldMac) handOver(context.Context) error                        { return nil }
 func (*worldMac) watch([]string) func()                                 { return func() {} }
 func (*worldMac) stores(*stores)                                        {}
@@ -60,7 +60,7 @@ func (*worldMac) procedureAppliers() []settingscontract.Applier         { return
 func (*worldMac) meter() activitycontract.Meter                         { return nil }
 func (*worldMac) disk() diskcontract.DiskUsage                          { return nil }
 func (*worldMac) listeners() portscontract.Listeners                    { return nil }
-func (*worldMac) placement() (ports.VMPlace, bool)                      { return ports.VMPlace{}, false }
+func (*worldMac) placement() (ports.VMLivesOn, bool)                    { return ports.VMLivesOn{}, false }
 func (*worldMac) tailnet() portscontract.Tailnet                        { return nil }
 func (*worldMac) funnel() funnel.Funnel                                 { return nil }
 func (*worldMac) installer(catalog.Method, bool) appscontract.Installer { return nil }

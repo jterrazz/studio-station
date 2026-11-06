@@ -2,13 +2,13 @@ package accounts
 
 const (
 	OriginOwn     = "own"
-	OriginLent    = "lent"
+	OriginShared  = "lent"
 	OriginBoth    = "own+lent"
 	OriginUnknown = "?"
 
-	DaemonRunning  = "running"
-	DaemonStopped  = "stopped"
-	DaemonAbsent   = "not installed"
+	EngineRunning  = "running"
+	EngineStopped  = "stopped"
+	EngineAbsent   = "not installed"
 	GuestConnected = "connected"
 	GuestAbsent    = "absent"
 )
@@ -17,7 +17,7 @@ type VM struct {
 	// value: a VM of this host as its record and the daemon's list say.
 	Name, Lifetime string
 	Running        bool
-	Lends          []Loan
+	Shares         []Loan
 }
 
 type VMRead struct {

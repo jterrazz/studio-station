@@ -20,7 +20,7 @@ import (
 
 // value: a client of the station.api/v2 server at file: this Mac's engine
 // socket, or inside a VM the socket its engine offers there.
-func socketAPI(h local.Host, file string) engineAPI {
+func socketAPI(h local.System, file string) engineAPI {
 	return engineAPI{c: api.NewClient(func(ctx context.Context) (io.ReadWriteCloser, error) {
 		return h.Sockets.DialUnix(ctx, file, api.ConnectBudget)
 	})}

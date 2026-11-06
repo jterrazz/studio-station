@@ -93,7 +93,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	}
 	kenv.On.Refresh = func(ctx context.Context) error {
 		allMachines := thisMac.machines(false)
-		f, err := allMachines.Fleet(ctx, false)
+		f, err := allMachines.AllMachines(ctx, false)
 		if err != nil {
 			return err
 		}
@@ -117,7 +117,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		useCommand(kenv, thisMac),
 		setupCommand(kenv, thisMac),
 		statusCommand(kenv, thisMac),
-		toolsAlias(kenv, thisMac),
+		appsAlias(kenv, thisMac),
 		storageAlias(kenv, thisMac),
 		secretsAlias(kenv, thisMac),
 		retiredEngineCommand(kenv, thisMac),
@@ -212,7 +212,7 @@ func withAppBins(env []string, guest bool) []string {
 		switch k, v, _ := strings.Cut(kv, "="); k {
 		case "HOME":
 			home = v
-		case catalog.ToolDataVar:
+		case catalog.AppDataVar:
 			apps = v
 		case "PATH":
 			path, at = v, i
@@ -222,12 +222,12 @@ func withAppBins(env []string, guest bool) []string {
 		return env
 	}
 	if !filepath.IsAbs(apps) {
-		apps = filepath.Join(home, catalog.ToolData)
+		apps = filepath.Join(home, catalog.AppData)
 	}
 	have := strings.Split(path, ":")
 	var dirs []string
 	if guest {
-		dirs = append(dirs, filepath.Join(home, ".local", "bin"), filepath.Join(apps, catalog.ToolShims))
+		dirs = append(dirs, filepath.Join(home, ".local", "bin"), filepath.Join(apps, catalog.AppShims))
 	}
 	for _, bin := range catalog.GlobalBins {
 		dirs = append(dirs, filepath.Join(home, bin))
@@ -254,11 +254,11 @@ type machine struct {
 	world *worldMac
 	// value: the system and power door before any world wraps them, from which
 	// another Mac of the world is built.
-	raw       local.Host
+	raw       local.System
 	door      darwin.Door
 	far       *late
 	pool      *lanes.Pool
-	sys       local.Host
+	sys       local.System
 	powerPort awakecontract.Power
 	profile   coremachine.Profile
 	vars      map[string]string
@@ -268,7 +268,7 @@ type machine struct {
 	where     page.Context
 }
 
-func resolve(raw local.Host, door darwin.Door, vars map[string]string, world *worldMac) machine {
+func resolve(raw local.System, door darwin.Door, vars map[string]string, world *worldMac) machine {
 	h := raw
 	if world != nil {
 		h = world.system(raw)
@@ -321,7 +321,7 @@ func resolve(raw local.Host, door darwin.Door, vars map[string]string, world *wo
 		// read, never the pin every document runs with.
 		pin, self, m.powerPort = "", world.self(), world.power()
 	}
-	name := hereName(registered, h.Env.Hostname())
+	name := thisMacName(registered, h.Env.Hostname())
 	m.profile = profileOf(context.Background(), self, pin, name, m.powerPort, func() (string, bool) { h := m.hypervisor(); return h.Name(), h.Installed() })
 	m.kind = legacyKind(m.profile)
 	m.where = page.Context{Machine: name, Kind: string(m.kind), Registered: registered != ""}
@@ -330,7 +330,7 @@ func resolve(raw local.Host, door darwin.Door, vars map[string]string, world *wo
 
 // value: the name the fleet shows this machine by: the one setup gave it, else
 // its hostname, as machines names it (one name in every page, §13.5).
-func hereName(registered, hostname string) string {
+func thisMacName(registered, hostname string) string {
 	if registered != "" {
 		return registered
 	}

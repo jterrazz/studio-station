@@ -699,7 +699,7 @@ func (f AppFile) KeyLabel(key string) string {
 	return key
 }
 
-func ToolFilePaths(home, config string, kind MachineKind, vars map[string]string) map[AppFile]string {
+func AppFilePaths(home, config string, kind MachineKind, vars map[string]string) map[AppFile]string {
 	// value: where each tool keeps the file station relocates in: Go's env file
 	// where `go env GOENV` says ($GOENV when absolute, "off" writes nothing, else
 	// the user config dir: ~/Library/Application Support on darwin, the XDG

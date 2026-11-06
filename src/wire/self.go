@@ -12,7 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
-func selfOf(h local.Host) contract.Self {
+func selfOf(h local.System) contract.Self {
 	if h.Env.GOOS() == "linux" {
 		return coreadapterlinux.New(h.Env.Hostname())
 	}

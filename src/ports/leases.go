@@ -8,7 +8,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-var ErrDaemonDown = errors.New("the engine is not running")
+var ErrEngineDown = errors.New("the engine is not running")
 
 const (
 	ServeOn  = "on"
@@ -17,16 +17,16 @@ const (
 
 type Exposure struct {
 	On         bool
-	PublicHost string
+	PublicName string
 	// value: why nothing is shared when it is off.
 	Off string
 }
 
 func ExposureOf(serveOn bool, dnsName string) Exposure {
 	if !serveOn || dnsName == "" {
-		return Exposure{PublicHost: LocalHost, Off: catalog.ServeOffDetail}
+		return Exposure{PublicName: LocalHost, Off: catalog.ServeOffDetail}
 	}
-	return Exposure{On: true, PublicHost: dnsName}
+	return Exposure{On: true, PublicName: dnsName}
 }
 
 func (e Exposure) Word() string {
@@ -39,7 +39,7 @@ func (e Exposure) Word() string {
 func ViewOf(l Reservation, e Exposure, httpsMode string, phase Phase) SharedPort {
 	v := SharedPort{
 		VM: l.VM, GuestPort: l.GuestPort, Reserved: l.MacPort, State: phase, Pinned: l.Pinned, Profile: l.Profile,
-		HTTP: l.HTTP != nil && *l.HTTP, URLs: URLs(l, e.PublicHost, httpsMode, e.On),
+		HTTP: l.HTTP != nil && *l.HTTP, URLs: URLs(l, e.PublicName, httpsMode, e.On),
 	}
 	if !l.LastSeenAt.IsZero() {
 		seen := l.LastSeenAt
@@ -71,10 +71,10 @@ func ParsePort(text string) (int, error) {
 
 func NotFoundAt(t Target) error { return NotFound(t.VM, t.Port) }
 
-const LeasesSchema = "station.services/v1"
+const ReservationsSchema = "station.services/v1"
 
-func Find(leases []Reservation, vm string, port int) (found Reservation, index int) {
-	for i, l := range leases {
+func Find(reservations []Reservation, vm string, port int) (found Reservation, index int) {
+	for i, l := range reservations {
 		if l.VM == vm && l.GuestPort == port {
 			return l, i
 		}
@@ -82,8 +82,8 @@ func Find(leases []Reservation, vm string, port int) (found Reservation, index i
 	return Reservation{}, -1
 }
 
-func Without(leases []Reservation, keep func(Reservation) bool) (kept, gone []Reservation) {
-	for _, l := range leases {
+func Without(reservations []Reservation, keep func(Reservation) bool) (kept, gone []Reservation) {
+	for _, l := range reservations {
 		if keep(l) {
 			kept = append(kept, l)
 		} else {
@@ -107,7 +107,7 @@ const (
 type Action int
 
 const (
-	ActPublish Action = iota
+	ActShare Action = iota
 	ActUnpublish
 	ActRelease
 )
@@ -135,7 +135,7 @@ func Next(st State, ev Event, now time.Time) (State, []Action) {
 		case PhaseNone, PhaseWaiting, PhaseRefused, PhaseGone, PhaseUnknown:
 		}
 		st.Phase, st.Since = PhaseShared, now
-		return st, []Action{ActPublish}
+		return st, []Action{ActShare}
 	case EvUnlisten:
 		if st.Phase == PhaseShared {
 			st.Phase, st.Since = PhaseClosing, now
@@ -175,7 +175,7 @@ const LocalHost = "127.0.0.1"
 
 func isHTTP(l Reservation) bool { return l.HTTP == nil || *l.HTTP }
 
-func URLs(l Reservation, publicHost, httpsMode string, serveOn bool) URLSet {
+func URLs(l Reservation, publicName, httpsMode string, serveOn bool) URLSet {
 	// invariant: one shape everywhere. An HTTP service, or one not yet detected,
 	// carries a scheme so a URL parser reads a host; with Serve off the local URL
 	// is the only one there is; a raw TCP service is the tailnet's bytes, no scheme.
@@ -185,16 +185,16 @@ func URLs(l Reservation, publicHost, httpsMode string, serveOn bool) URLSet {
 		u.Local = "http://" + u.Local
 	}
 	u.Public = u.Local
-	if !serveOn || publicHost == "" {
+	if !serveOn || publicName == "" {
 		return u
 	}
 	switch {
 	case !isHTTP(l):
-		u.Public = publicHost + ":" + port
+		u.Public = publicName + ":" + port
 	case httpsMode == HTTPSPath:
-		u.Public = "https://" + publicHost + "/" + l.VM + "/" + strconv.Itoa(l.GuestPort) + "/"
+		u.Public = "https://" + publicName + "/" + l.VM + "/" + strconv.Itoa(l.GuestPort) + "/"
 	default:
-		u.Public = "https://" + publicHost + ":" + port
+		u.Public = "https://" + publicName + ":" + port
 	}
 	return u
 }
@@ -232,20 +232,20 @@ func (e *IgnoredPortError) Error() string {
 	return "port " + strconv.Itoa(e.Port) + " is never shared"
 }
 
-type HostAwayError struct{ Host string }
+type MacAwayError struct{ Mac string }
 
-func (e *HostAwayError) Error() string {
-	if e.Host == "" {
+func (e *MacAwayError) Error() string {
+	if e.Mac == "" {
 		return "no host has connected to this VM yet"
 	}
-	return e.Host + " is not connected to this VM"
+	return e.Mac + " is not connected to this VM"
 }
 
-func (e *HostAwayError) Hint() string {
-	if e.Host == "" {
+func (e *MacAwayError) Hint() string {
+	if e.Mac == "" {
 		return "on the VM's host: station setup"
 	}
-	return "on " + e.Host + ": station setup"
+	return "on " + e.Mac + ": station setup"
 }
 
 type UnknownVMError struct{ Name string }

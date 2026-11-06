@@ -13,7 +13,7 @@ import (
 )
 
 type Options struct {
-	Here catalog.MachineKind
+	ThisMachine catalog.MachineKind
 	// value: the folders of the VMs' known hosts and of their logs.
 	KnownHosts, Logs string
 	User             string
@@ -38,7 +38,7 @@ type Nodes interface {
 	Peers(ctx context.Context) (map[string]model.Node, error)
 }
 
-type DaemonVM struct {
+type EngineVM struct {
 	State, Guest, IP, Detail string
 	// value: its ssh connection opened; a server's restarts and check.
 	SSH      bool
@@ -46,9 +46,9 @@ type DaemonVM struct {
 	Check    model.CheckStatus
 }
 
-type Daemon interface {
+type Engine interface {
 	Ping(ctx context.Context) (version string, err error)
-	VMs(ctx context.Context) (map[string]DaemonVM, error)
+	VMs(ctx context.Context) (map[string]EngineVM, error)
 	Do(ctx context.Context, op, vm string) error
 	Reserve(ctx context.Context, vm string, port int, profile string) (model.Reserved, error)
 	// invariant: a command inside a VM of this Mac rides the engine's one
@@ -72,30 +72,30 @@ type Service struct {
 	recs   contract.MachineStore
 	nodes  Nodes
 	img    Images
-	daemon Daemon
+	daemon Engine
 	rel    Releaser
 	o      Options
 }
 
 type Prefs struct {
 	Name   setupcontract.NamePrefs
-	Hosts  contract.MacsPrefs
+	Macs   contract.MacsPrefs
 	VMUser contract.VMUserPrefs
 }
 
 type prefsView struct {
-	Here   string
-	Hosts  map[string]model.MacRecord
-	VMUser string
+	ThisMachine string
+	Macs        map[string]model.MacRecord
+	VMUser      string
 }
 
 func (s *Service) prefs() (prefsView, error) {
 	var v prefsView
 	var err error
-	if v.Here, err = s.p.Name.Get(); err != nil {
+	if v.ThisMachine, err = s.p.Name.Get(); err != nil {
 		return prefsView{}, err
 	}
-	if v.Hosts, err = s.p.Hosts.Get(); err != nil {
+	if v.Macs, err = s.p.Macs.Get(); err != nil {
 		return prefsView{}, err
 	}
 	if v.VMUser, err = s.p.VMUser.Get(); err != nil {
@@ -104,16 +104,16 @@ func (s *Service) prefs() (prefsView, error) {
 	return v, nil
 }
 
-func New(h ThisMac, e contract.Hypervisor, p Prefs, vms contract.MachineStore, nodes Nodes, img Images, d Daemon, rel Releaser, o Options) *Service {
+func New(h ThisMac, e contract.Hypervisor, p Prefs, vms contract.MachineStore, nodes Nodes, img Images, d Engine, rel Releaser, o Options) *Service {
 	return &Service{h: h, engine: e, p: p, recs: vms, nodes: nodes, img: img, daemon: d, rel: rel, o: o}
 }
 
 type Machine struct {
-	Name      string
-	Kind      catalog.MachineKind
-	Here      bool
-	Host      string
-	User, Key string
+	Name        string
+	Kind        catalog.MachineKind
+	ThisMachine bool
+	Mac         string
+	User, Key   string
 	// value: a Mac's last address on your LAN, as it answered with it.
 	LAN      string
 	Lifetime model.Lifetime
@@ -126,9 +126,9 @@ func (s *Service) vmUser(cfg prefsView) string {
 	return s.o.User
 }
 
-func (s *Service) CheckHost() error {
-	if s.o.Here != catalog.Mac {
-		return &model.OnlyOnHostError{Here: s.o.Here}
+func (s *Service) CheckMac() error {
+	if s.o.ThisMachine != catalog.Mac {
+		return &model.OnlyOnMacError{ThisMachine: s.o.ThisMachine}
 	}
 	return nil
 }

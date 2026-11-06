@@ -11,7 +11,7 @@ import (
 func settingsFailure(err error) (*fail.Error, bool) {
 	var unknown *settings.UnknownItemError
 	var root *settings.NeedsRootError
-	var livesOn *settings.WrongPlaceError
+	var livesOn *settings.WrongLivesOnError
 	var irreversible *settings.NotReversibleError
 	var terminal *settings.NeedsTerminalError
 	var studio *settings.StudioMissingError

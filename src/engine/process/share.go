@@ -82,7 +82,7 @@ func (d *Engine) svcOf(vm string, port int) *svc {
 func (d *Engine) apply(ctx context.Context, s *svc, acts []ports.Action) {
 	for _, a := range acts {
 		switch a {
-		case ports.ActPublish:
+		case ports.ActShare:
 			d.share(ctx, s)
 		case ports.ActUnpublish:
 			d.unpublish(ctx, s)
@@ -433,8 +433,8 @@ func (d *Engine) macPorts(vm string) ports.MacPorts {
 	defer d.mu.Unlock()
 	e := d.exposureLocked()
 	out := ports.MacPorts{
-		Name: d.m.HereName(), ThisMac: true, Reachable: true, Engine: ports.EngineInfo{Running: true, Version: d.o.Version},
-		PublicName: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Shared: []ports.SharedPort{},
+		Name: d.m.ThisMacName(), ThisMac: true, Reachable: true, Engine: ports.EngineInfo{Running: true, Version: d.o.Version},
+		PublicName: e.PublicName, Serve: e.Word(), HTTPS: p.HTTPS, Shared: []ports.SharedPort{},
 	}
 	if vm == "" {
 		out.Listening = d.listeningLocked()
@@ -494,7 +494,7 @@ func (d *Engine) reserve(ctx context.Context, vm string, port int, pinned bool, 
 		d.apply(ctx, s, acts)
 	}
 	if d.self.Backend != ports.Running && profile == "" {
-		return ports.SharedPort{}, ports.SignedOut(d.m.HereName())
+		return ports.SharedPort{}, ports.SignedOut(d.m.ThisMacName())
 	}
 	return d.view(l, s, p.HTTPS), nil
 }

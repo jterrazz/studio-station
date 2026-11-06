@@ -12,7 +12,7 @@ import (
 )
 
 // value: this Mac as the engine process reads it, over platform/local.
-type engineMac struct{ local.Host }
+type engineMac struct{ local.System }
 
 var _ process.Mac = engineMac{}
 
