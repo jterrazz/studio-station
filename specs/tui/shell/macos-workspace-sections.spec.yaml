@@ -18,7 +18,7 @@ runs:
       exit: 0
       stdout: |
           ┃ MACOS-1 · WORKSPACE  
-          ┃▸Overview           1 
+          ┃▸Overview           2 
           ┃ Activity             
           ┃ Apps                 
           ┃ Settings             
