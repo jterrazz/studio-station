@@ -71,13 +71,13 @@ func controlFailure(err error) (*fail.Error, bool) {
 	return nil, false
 }
 
-// invariant: a read of a VM that is not running is a finding, the VM named
-// with the verb that starts it; an action there is refused.
 func unanswered(err error) bool {
 	var e *fail.Error
 	return errors.As(err, &e) && (e.Code == call.Unreachable || e.Code == call.VMMacUnreachable)
 }
 
+// invariant: a read of a VM that is not running is a finding, the VM named
+// with the verb that starts it; an action there is refused.
 func vmStopped(err error) bool {
 	var e *fail.Error
 	var op *enginecalls.OpError
