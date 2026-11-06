@@ -28,7 +28,7 @@ type Server struct {
 	// send is the watch's refusal.
 	Streams map[string]Feed
 	// value: the machine the calls run on: the gate of every call frame.
-	Here machine.Profile
+	ThisMachine machine.Profile
 	// value: words a fault that carries only its code.
 	Word func(*fail.Error) (message, hint string)
 	// value: the hint of an error no table words.
@@ -83,7 +83,7 @@ func (s Server) call(ctx context.Context, w *writer, f api.Frame) api.Frame {
 	if err != nil {
 		return api.Frame{ID: f.ID, Error: s.fault(err)}
 	}
-	out, err := h.Invoke(ctx, s.Here, f.In, progress{id: f.ID, out: w, word: s.wording})
+	out, err := h.Invoke(ctx, s.ThisMachine, f.In, progress{id: f.ID, out: w, word: s.wording})
 	if err != nil {
 		return api.Frame{ID: f.ID, Error: s.fault(err)}
 	}
@@ -129,7 +129,7 @@ func (s Server) updates(ctx context.Context, f api.Frame, send func(any) error) 
 	if err != nil {
 		return err
 	}
-	updates, err := h.Watch(ctx, s.Here, f.In, nil)
+	updates, err := h.Watch(ctx, s.ThisMachine, f.In, nil)
 	if err != nil {
 		return err
 	}

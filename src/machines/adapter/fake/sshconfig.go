@@ -20,18 +20,18 @@ type SSHConfig struct {
 func SSHConfigOf(w *world.World, mac string) *SSHConfig { return &SSHConfig{w: w, mac: mac} }
 
 func NewSSHConfig() *SSHConfig {
-	w := &world.World{Here: "here"}
-	w.Mac("here")
-	return SSHConfigOf(w, "here")
+	w := &world.World{ThisMac: "this-mac"}
+	w.Mac("this-mac")
+	return SSHConfigOf(w, "this-mac")
 }
 
-func (c *SSHConfig) config() *world.SSH {
+func (c *SSHConfig) blocks() *world.SSH {
 	m := c.w.Mac(c.mac)
 	if m.SSH == nil {
 		m.SSH = &world.SSH{}
 	}
 	if m.SSH.Blocks == nil {
-		m.SSH.Blocks = map[string]world.HostBlock{}
+		m.SSH.Blocks = map[string]world.SSHBlock{}
 	}
 	return m.SSH
 }
@@ -39,43 +39,43 @@ func (c *SSHConfig) config() *world.SSH {
 func (c *SSHConfig) Foreign(name string) {
 	c.w.Lock()
 	defer c.w.Unlock()
-	cfg := c.config()
+	cfg := c.blocks()
 	cfg.Foreign = append(cfg.Foreign, name)
 }
 
 func (c *SSHConfig) Managed() []string {
 	c.w.Lock()
 	defer c.w.Unlock()
-	return slices.Sorted(maps.Keys(c.config().Blocks))
+	return slices.Sorted(maps.Keys(c.blocks().Blocks))
 }
 
-func (c *SSHConfig) put(blocks []contract.HostBlock) error {
-	cfg := c.config()
+func (c *SSHConfig) put(blocks []contract.MachineBlock) error {
+	cfg := c.blocks()
 	var refused error
 	for _, b := range blocks {
 		if slices.Contains(cfg.Foreign, b.Name) {
 			if refused == nil {
-				refused = &contract.SSHConfigError{Path: "~/.ssh/config", Cause: errors.New("Host " + b.Name + " already defined outside any managed block")}
+				refused = &contract.SSHConfigError{Path: "~/.ssh/config", Cause: errors.New("a block of yours already names " + b.Name + " (outside any managed block)")}
 			}
 			continue
 		}
-		cfg.Blocks[b.Name] = world.HostBlock{User: b.User, Key: b.Key, Behind: b.Behind, Here: b.Here}
+		cfg.Blocks[b.Name] = world.SSHBlock{User: b.User, Key: b.Key, Behind: b.Behind, ThisMac: b.ThisMac}
 	}
 	return refused
 }
 
-func (c *SSHConfig) Put(_ context.Context, blocks []contract.HostBlock) error {
+func (c *SSHConfig) Put(_ context.Context, blocks []contract.MachineBlock) error {
 	c.w.Lock()
 	defer c.w.Unlock()
 	return c.put(blocks)
 }
 
-func (c *SSHConfig) Replace(_ context.Context, blocks []contract.HostBlock) error {
+func (c *SSHConfig) Replace(_ context.Context, blocks []contract.MachineBlock) error {
 	c.w.Lock()
 	defer c.w.Unlock()
 	refused := c.put(blocks)
-	maps.DeleteFunc(c.config().Blocks, func(name string, _ world.HostBlock) bool {
-		return !slices.ContainsFunc(blocks, func(b contract.HostBlock) bool { return b.Name == name })
+	maps.DeleteFunc(c.blocks().Blocks, func(name string, _ world.SSHBlock) bool {
+		return !slices.ContainsFunc(blocks, func(b contract.MachineBlock) bool { return b.Name == name })
 	})
 	return refused
 }
@@ -84,7 +84,7 @@ func (c *SSHConfig) Remove(_ context.Context, names ...string) error {
 	c.w.Lock()
 	defer c.w.Unlock()
 	for _, name := range names {
-		delete(c.config().Blocks, name)
+		delete(c.blocks().Blocks, name)
 	}
 	return nil
 }

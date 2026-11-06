@@ -75,29 +75,29 @@ type Row struct {
 	Fix             finding.Fix
 }
 
-func (r Row) Item() catalog.ConfigItem {
+func (r Row) Item() catalog.Setting {
 	// value: the catalogue entry of the row's setting; a row travels between
 	// machines by its name, as the catalogue is the same on both.
-	for _, it := range catalog.ConfigItems {
+	for _, it := range catalog.Settings {
 		if it.Name == r.Name {
 			return it
 		}
 	}
-	return catalog.ConfigItem{Name: r.Name}
+	return catalog.Setting{Name: r.Name}
 }
 
-func GroupOf(it catalog.ConfigItem) Group {
+func GroupOf(it catalog.Setting) Group {
 	if it.Category == catalog.CategoryHeadless {
 		return AlwaysOnMac
 	}
 	return SetByStation
 }
 
-func PlaceReason(places []catalog.MachineKind) string {
+func LivesOnReason(livesOn []catalog.MachineKind) string {
 	// value: "not for this machine" with the kinds it lives on, in the
 	// owner's words.
-	mac := slices.Contains(places, catalog.Host)
-	vm := slices.Contains(places, catalog.Linux) || slices.Contains(places, catalog.MacOS)
+	mac := slices.Contains(livesOn, catalog.Mac)
+	vm := slices.Contains(livesOn, catalog.Linux) || slices.Contains(livesOn, catalog.MacOS)
 	switch {
 	case mac && !vm:
 		return "Mac only"
@@ -107,7 +107,7 @@ func PlaceReason(places []catalog.MachineKind) string {
 	return "Macs and macOS VMs only"
 }
 
-func JudgeSet(it catalog.ConfigItem, lives bool, applied *Applied, now Observation, off bool) Row {
+func JudgeSet(it catalog.Setting, lives bool, applied *Applied, now Observation, off bool) Row {
 	// invariant: one setting's state on one machine, from its place, the owner's
 	// Off here, what station recorded when it applied it and what is there now.
 	// Off here wins over everything but the place; a record whose fingerprint no
@@ -117,7 +117,7 @@ func JudgeSet(it catalog.ConfigItem, lives bool, applied *Applied, now Observati
 	row := Row{Name: it.Name, Group: GroupOf(it), Where: now.Where}
 	switch {
 	case !lives:
-		row.State, row.Where, row.Why = StateNotForThisMachine, "", PlaceReason(it.Places)
+		row.State, row.Where, row.Why = StateNotForThisMachine, "", LivesOnReason(it.Kinds)
 	case off:
 		row.State = StateOffHere
 	case now.State == catalog.StatePending:

@@ -39,7 +39,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	corefake "github.com/jterrazz/studio-station/src/core/adapter/fake"
 	"github.com/jterrazz/studio-station/src/core/call"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	diskfake "github.com/jterrazz/studio-station/src/disk/adapter/fake"
@@ -62,6 +62,7 @@ import (
 	"github.com/jterrazz/studio-station/src/remote/serve"
 	settingsfake "github.com/jterrazz/studio-station/src/settings/adapter/fake"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/world"
 )
@@ -103,9 +104,9 @@ type worldMac struct {
 	run  *worldRun
 	name string
 
-	start    func() *process.Daemon
+	start    func() *process.Engine
 	starting bool
-	engine   *process.Daemon
+	engine   *process.Engine
 	// value: when the world says the running engine started: a Mac rebooted
 	// under it, inside the command, ends it with its process.
 	began  time.Time
@@ -177,7 +178,7 @@ func unlockWorld(f *os.File) {
 
 // invariant: the TUI's own process reads every page through a child, so it
 // writes its world back once, before its first child, and lets go of it.
-func (m *worldMac) lend(ctx context.Context) error {
+func (m *worldMac) handOver(ctx context.Context) error {
 	if m == nil {
 		return nil
 	}
@@ -231,7 +232,7 @@ func (r *worldRun) mac(name string) *worldMac {
 	return m
 }
 
-func (r *worldRun) here() *worldMac { return r.mac(r.w.Here) }
+func (r *worldRun) thisMac() *worldMac { return r.mac(r.w.ThisMac) }
 
 func (r *worldRun) farFrom(far func(w *worldMac) farMac) { r.far = far }
 
@@ -249,11 +250,11 @@ func (m *worldMac) slice() world.Mac {
 
 func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
-func (m *worldMac) host(h local.Host) local.Host {
+func (m *worldMac) system(h local.Host) local.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	m.home = h.Env.Home()
 	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home()), files: m.files()}
-	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.Here || m.slice().Root}
+	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.ThisMac || m.slice().Root}
 	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
 	return h
@@ -274,7 +275,8 @@ func (m *worldMac) stores(st *stores) {
 	if slice.Files == nil {
 		slice.Files = map[string]string{}
 	}
-	st.prefs = corefake.PreferencesOver(slice.Preferences, m.name, m.run.w).Over(slice.Files).Renaming(contract.RetiredGroupMacs, contract.GroupMacs)
+	st.prefs = corefake.PreferencesOver(slice.Preferences, m.name, m.run.w).Over(slice.Files).Renaming(contract.RetiredGroupMacs, contract.GroupMacs).
+		Renaming(setupcontract.RetiredGroupName, setupcontract.GroupName).Renaming(portscontract.RetiredGroupPorts, portscontract.GroupPorts)
 	m.run.w.Unlock()
 	w := m.run.w
 	st.machines = machinesfake.StoreOf(w, m.name)
@@ -301,7 +303,7 @@ func (m *worldMac) disk() diskcontract.DiskUsage  { return m.files() }
 
 func (m *worldMac) files() *diskfake.Usage         { return diskfake.UsageOf(m.run.w, m.name).At(m.home) }
 func (m *worldMac) tailnet() portscontract.Tailnet { return portsfake.TailnetOf(m.run.w, m.name) }
-func (m *worldMac) funnel() funnel.Config          { return portsfake.TailnetOf(m.run.w, m.name) }
+func (m *worldMac) funnel() funnel.Funnel          { return portsfake.TailnetOf(m.run.w, m.name) }
 func (m *worldMac) bundler() appscontract.Bundler  { return appsfake.BundlerOf(m.run.w, m.name) }
 func (m *worldMac) vault() accountscontract.Vault  { return accountsfake.NewVault(m.run.w, m.name) }
 func (m *worldMac) listeners() portscontract.Listeners {
@@ -313,7 +315,7 @@ func (m *worldMac) listeners() portscontract.Listeners {
 func (m *worldMac) procedureAppliers() []settingscontract.Applier {
 	var out []settingscontract.Applier
 	seen := map[catalog.EffectKind]bool{}
-	for _, it := range catalog.ConfigItems {
+	for _, it := range catalog.Settings {
 		if p, ok := it.Effect.(catalog.Procedure); ok && p != catalog.ProcNeverSleeps && !seen[p.Kind()] {
 			seen[p.Kind()] = true
 			out = append(out, settingsfake.ApplierOf(m.run.w, m.name, p.Kind()))
@@ -344,7 +346,7 @@ func (m *worldMac) notifier() process.Notifier {
 	return lockedNotifier{w: m.run.w, n: enginefake.NewNotifier(m.run.w)}
 }
 
-func (m *worldMac) engineFrom(start func() *process.Daemon) { m.start = start }
+func (m *worldMac) engineFrom(start func() *process.Engine) { m.start = start }
 
 func (m *worldMac) engineVersion() string {
 	if e := m.slice().Engine; e != nil {
@@ -497,7 +499,7 @@ func (m *worldMac) macs() remotecontract.EndpointDialer { return worldDialer{r: 
 // runs, and ends once it says otherwise or says it started since: begun at the first need of it,
 // then stepped over the world's clock until it is quiet, so a story that
 // waits on the engine is deterministic.
-func (m *worldMac) up(ctx context.Context) (*process.Daemon, bool) {
+func (m *worldMac) up(ctx context.Context) (*process.Engine, bool) {
 	if m.engine != nil && m.runs() && !m.engineStarted().Equal(m.began) {
 		m.down(true)
 	}
@@ -508,7 +510,7 @@ func (m *worldMac) up(ctx context.Context) (*process.Daemon, bool) {
 		m.down(false)
 		return nil, false
 	}
-	if m.start == nil && m.name != m.run.w.Here && m.run.far != nil && m.runs() {
+	if m.start == nil && m.name != m.run.w.ThisMac && m.run.far != nil && m.runs() {
 		m.serve()
 	}
 	if m.start == nil || m.starting || !m.runs() {
@@ -544,7 +546,7 @@ func (m *worldMac) up(ctx context.Context) (*process.Daemon, bool) {
 // watches the real ones hold, over the engine's own streams, for as long as
 // it runs in the command: the menu bar its page and events watches from
 // launch, and This Mac's activity only while open.
-func (m *worldMac) surfaces(ctx context.Context, d *process.Daemon) {
+func (m *worldMac) surfaces(ctx context.Context, d *process.Engine) {
 	e := m.slice().Engine
 	ctx, cancel := context.WithCancel(context.WithValue(ctx, waits{}, true))
 	var held sync.WaitGroup
@@ -887,7 +889,7 @@ func (m *worldMac) placement() (ports.VMPlace, bool) {
 	}
 	p := ports.VMPlace{Host: mac, VM: m.name}
 	if n := w.Macs[mac].Tailnet; n != nil {
-		p.PublicHost = n.Self.Sharing.Host
+		p.PublicHost = n.Self.Sharing.DNSName
 	}
 	return p, true
 }
@@ -909,7 +911,7 @@ func (c budgetClock) Sleep(ctx context.Context, d time.Duration) error {
 	return c.worldClock.Sleep(context.WithValue(ctx, waits{}, true), d)
 }
 
-func (m *worldMac) budgets() probe.Clock { return budgetClock{m.run.clock()} }
+func (m *worldMac) budgets() lanes.Clock { return budgetClock{m.run.clock()} }
 
 // invariant: a Mac's engine socket is its engine in this process, reached
 // through a pipe; its loopback ports are the world's, busy when the Mac

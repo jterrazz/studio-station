@@ -22,8 +22,8 @@ import (
 )
 
 func accountsCommand(env kit.Env, m machine) *cobra.Command {
-	return accountscmd.Command(accountscmd.Deps{Here: m.where}, env,
-		accountsshare.Command(accountsshare.Deps{Now: m.host.Clock.Now}, env),
+	return accountscmd.Command(accountscmd.Deps{ThisMachine: m.where}, env,
+		accountsshare.Command(accountsshare.Deps{Now: m.sys.Clock.Now}, env),
 		accountstakeback.Command(env),
 	)
 }
@@ -32,9 +32,9 @@ func accountsCommand(env kit.Env, m machine) *cobra.Command {
 // station accounts for one release (SPEC §4.3); allow and disallow are
 // refused, the share list being the owner's to write.
 func secretsAlias(env kit.Env, m machine) *cobra.Command {
-	return kit.Alias("secrets", accountscmd.Command(accountscmd.Deps{Here: m.where}, env,
-		kit.AliasArgs(kit.Alias("lend", accountsshare.Lend(accountsshare.Deps{Now: m.host.Clock.Now}, env), "share"), "<account>"),
-		kit.AliasArgs(kit.Alias("recall", accountstakeback.Recall(env), "take-back"), "<account>"),
+	return kit.Alias("secrets", accountscmd.Command(accountscmd.Deps{ThisMachine: m.where}, env,
+		kit.AliasArgs(kit.Alias("lend", accountsshare.LendAlias(accountsshare.Deps{Now: m.sys.Clock.Now}, env), "share"), "<account>"),
+		kit.AliasArgs(kit.Alias("recall", accountstakeback.RecallAlias(env), "take-back"), "<account>"),
 		accountscmd.Retired("allow", env),
 		accountscmd.Retired("disallow", env),
 	), "accounts")
@@ -42,7 +42,7 @@ func secretsAlias(env kit.Env, m machine) *cobra.Command {
 
 func (m machine) secretStores() accountscalls.SharingStores {
 	return accountscalls.SharingStores{
-		ShareList: m.stores.shareList(), Hosts: m.stores.hosts(), Name: m.stores.name(),
+		ShareList: m.stores.shareList(), Hosts: m.stores.macs(), Name: m.stores.name(),
 		Shares: m.stores.shares, Machines: m.stores.machines,
 	}
 }
@@ -50,7 +50,7 @@ func (m machine) secretStores() accountscalls.SharingStores {
 // value: whether a VM of this Mac runs, as its engine says, asked through
 // the engine's socket.
 func (m machine) vmRunning(ctx context.Context, vm string) (bool, error) {
-	live, err := m.hostDaemon().VMs(ctx)
+	live, err := m.macEngine().VMs(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -82,11 +82,11 @@ func (s sharedGuest) GuestExec(ctx context.Context, vm, line, stdin string) (std
 	return out.Stdout, out.Code, err
 }
 
-func (m machine) secrets() *accountscalls.Sharing { return m.secretsVia(m.hostDaemon(), m.vmRunning) }
+func (m machine) secrets() *accountscalls.Sharing { return m.secretsVia(m.macEngine(), m.vmRunning) }
 
 func (m machine) secretsVia(guest localGuest, running func(context.Context, string) (bool, error)) *accountscalls.Sharing {
 	return accountscalls.NewSharing(sharingGuest{guest}, m.secretStores(), m.secretSource(studio.Options{Budget: accountscalls.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), accountscalls.SharingOptions{
-		Here: m.kind, Running: running, Receives: receives(guest), Now: m.host.Clock.Now,
+		Here: m.kind, Running: running, Receives: receives(guest), Now: m.sys.Clock.Now,
 		Keep: m.keepIn(filepath.Join(m.paths.State, "logs", "accounts.log")),
 	})
 }
@@ -102,17 +102,17 @@ func (s sharingGuest) GuestExec(ctx context.Context, vm, line, stdin string) (ac
 // shown from home; empty when it could not be kept.
 func (m machine) keepIn(log string) func(line string) string {
 	return func(line string) string {
-		before, err := m.host.FS.ReadFile(log)
+		before, err := m.sys.FS.ReadFile(log)
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return ""
 		}
-		if err := m.host.FS.MkdirAll(filepath.Dir(log), 0o700); err != nil {
+		if err := m.sys.FS.MkdirAll(filepath.Dir(log), 0o700); err != nil {
 			return ""
 		}
-		if err := m.host.FS.WriteFile(log, append(before, line...), 0o600); err != nil {
+		if err := m.sys.FS.WriteFile(log, append(before, line...), 0o600); err != nil {
 			return ""
 		}
-		if home := m.host.Env.Home(); home != "" && strings.HasPrefix(log, home+"/") {
+		if home := m.sys.Env.Home(); home != "" && strings.HasPrefix(log, home+"/") {
 			return "~" + strings.TrimPrefix(log, home)
 		}
 		return log

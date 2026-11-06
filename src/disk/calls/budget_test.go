@@ -66,11 +66,11 @@ func TestARowPastTheBudgetIsUnknownAndDelaysNoOtherRow(t *testing.T) {
 	usage := fake.NewUsage(map[string]int64{"/h/slow/tree/f": 1, "/h/fast/tree/f": 3}, 1<<40, 1<<39)
 	fs := slowUsage{Usage: usage, release: make(chan struct{})}
 	defer close(fs.release)
-	tools := []catalog.Tool{
-		{Name: "slow", Installs: catalog.HostOnly(catalog.Cask("slow")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/slow/*", Level: catalog.LevelCache}}}},
-		{Name: "fast", Installs: catalog.HostOnly(catalog.Cask("fast")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/fast/*", Level: catalog.LevelCache}}}},
+	tools := []catalog.App{
+		{Name: "slow", Installs: catalog.MacOnly(catalog.Cask("slow")), Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/slow/*", Level: catalog.LevelCache}}}},
+		{Name: "fast", Installs: catalog.MacOnly(catalog.Cask("fast")), Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/fast/*", Level: catalog.LevelCache}}}},
 	}
-	s := NewService(onMachine{Usage: usage}, tools, ServiceOptions{Disk: fs, Here: catalog.Host, Expand: disk.Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
+	s := NewService(onMachine{Usage: usage}, tools, ServiceOptions{Disk: fs, Here: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
 
 	waited, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

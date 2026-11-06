@@ -7,7 +7,7 @@ import (
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
-func (d *Daemon) KeepSettings(vm string, read settings.LastRead) {
+func (d *Engine) KeepSettings(vm string, read settings.LastRead) {
 	// invariant: the last settings read of each workspace, held in this
 	// engine's memory alone, for the matrix to show while it is stopped.
 	d.mu.Lock()
@@ -18,20 +18,20 @@ func (d *Daemon) KeepSettings(vm string, read settings.LastRead) {
 	d.settings[vm] = read
 }
 
-func (d *Daemon) LastSettings(vm string) (settings.LastRead, bool) {
+func (d *Engine) LastSettings(vm string) (settings.LastRead, bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	read, ok := d.settings[vm]
 	return read, ok
 }
 
-func (d *Daemon) SettingsKept() engine.SettingsKept {
+func (d *Engine) SettingsKept() engine.SettingsKept {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return maps.Clone(d.settings)
 }
 
-func (d *Daemon) RememberSettings(k engine.SettingsKept) {
+func (d *Engine) RememberSettings(k engine.SettingsKept) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.settings = maps.Clone(k)

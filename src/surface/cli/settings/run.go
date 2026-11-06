@@ -71,6 +71,8 @@ type runContainersIn struct{}
 // function that replaced it and what it removes.
 type containerShortcut struct{ old, function, removes string }
 
+// value: alias of v2's run shortcuts of containers, each kept hidden by
+// its old word.
 func containerShortcuts() []containerShortcut {
 	return []containerShortcut{
 		{"rm", "dclean", "every container"},
@@ -79,17 +81,17 @@ func containerShortcuts() []containerShortcut {
 	}
 }
 
-func RunContainers(env kit.Env, here page.Context) *cobra.Command {
+func RunContainers(env kit.Env, thisMac page.Context) *cobra.Command {
 	// value: v2's run shortcuts of containers (rm, rmi, reset), now shell
 	// functions: the same steps, asking as before.
 	leaves := make([]*cobra.Command, 0, len(containerShortcuts()))
 	for _, sc := range containerShortcuts() {
-		leaves = append(leaves, containerLeaf(env, here, sc))
+		leaves = append(leaves, containerLeaf(env, thisMac, sc))
 	}
 	return kit.Group(catalog.ContainerShortcutsWas, "Container shortcuts, now shell functions", "", env, leaves...)
 }
 
-func containerLeaf(env kit.Env, here page.Context, sc containerShortcut) *cobra.Command {
+func containerLeaf(env kit.Env, thisMac page.Context, sc containerShortcut) *cobra.Command {
 	return kit.AliasShell(kit.Command(kit.Leaf[runContainersIn]{
 		Use:     sc.old,
 		Short:   sc.function + ": remove " + sc.removes,
@@ -106,7 +108,7 @@ func containerLeaf(env kit.Env, here page.Context, sc containerShortcut) *cobra.
 			if err != nil {
 				return err
 			}
-			return io.Page(pagesettings.Removed(outcome, "run "+catalog.ContainerShortcutsWas+" "+sc.old, here), nil)
+			return io.Page(pagesettings.Removed(outcome, "run "+catalog.ContainerShortcutsWas+" "+sc.old, thisMac), nil)
 		},
 	}, env), sc.function)
 }

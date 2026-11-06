@@ -26,12 +26,12 @@ import (
 )
 
 func (m machine) images() *imagescalls.Service {
-	user := m.host.Env.User()
+	user := m.sys.Env.User()
 	if current, err := m.stores.vmUser().Get(); err == nil && current != "" {
 		user = current
 	}
 	hypervisor := m.hypervisor()
-	return imagescalls.NewService(imagesMachine{h: m.host, keys: openssh.NewKeyGen(m.host.Run, m.host.FS)}, imagescalls.Contracts{
+	return imagescalls.NewService(imagesMachine{h: m.sys, keys: openssh.NewKeyGen(m.sys.Run, m.sys.FS)}, imagescalls.Contracts{
 		Hypervisor: hypervisor, Guests: m.guestDialer(), Store: m.stores.images,
 		Source: m.imageSource(hypervisor.Name()), Machines: m.stores.machines,
 	}, catalog.Images, imagescalls.ServiceOptions{
@@ -48,31 +48,31 @@ func (m machine) imageSource(hypervisor string) imagescontract.ImageSource {
 	if m.world != nil {
 		return m.world.imageSource(hypervisor)
 	}
-	return oci.New(m.host.Net, "https://ghcr.io", "jterrazz", hypervisor)
+	return oci.New(m.sys.Net, "https://ghcr.io", "jterrazz", hypervisor)
 }
 
 func imagesCommand(env kit.Env, m machine) *cobra.Command {
-	return imagescmd.Command(imagescmd.Deps{Here: m.where, Every: func(ctx context.Context) ([]model.Report, error) { return m.everyMacImages(ctx, env) }}, env,
-		imagesbuild.Command(imagesbuild.Deps{Here: m.where}, env),
-		imagesupdate.Command(imagesupdate.Deps{Here: m.where}, env),
-		imagesdelete.Command(imagesdelete.Deps{Here: m.where}, env),
+	return imagescmd.Command(imagescmd.Deps{ThisMachine: m.where, Every: func(ctx context.Context) ([]model.Report, error) { return m.everyMacImages(ctx, env) }}, env,
+		imagesbuild.Command(imagesbuild.Deps{ThisMachine: m.where}, env),
+		imagesupdate.Command(imagesupdate.Deps{ThisMachine: m.where}, env),
+		imagesdelete.Command(imagesdelete.Deps{ThisMachine: m.where}, env),
 	)
 }
 
-type imageBuilds struct{ *imagescalls.Service }
+type imageBuilder struct{ *imagescalls.Service }
 
-func (s imageBuilds) Build(ctx context.Context, names []string, binary string, step func(label string)) ([]model.Record, error) {
+func (s imageBuilder) Build(ctx context.Context, names []string, binary string, step func(label string)) ([]model.Record, error) {
 	return s.Service.Build(ctx, model.BuildRequest{Images: names, Binary: binary}, func(st model.Step) { step(st.Label) })
 }
 
-func (s imageBuilds) Update(ctx context.Context, names []string, step func(label string)) ([]model.Update, error) {
+func (s imageBuilder) Update(ctx context.Context, names []string, step func(label string)) ([]model.Update, error) {
 	return s.Service.Update(ctx, names, func(st model.Step) { step(st.Label) })
 }
 
 // invariant: the images of This Mac, then of every other Mac that answers,
 // each Mac's own; a Mac that does not answer has no row.
 func (m machine) everyMacImages(ctx context.Context, env kit.Env) ([]model.Report, error) {
-	here, err := call.Invoke(ctx, env.Calls, env.Self, imagescalls.List, imagescalls.ListIn{}, nil)
+	thisMac, err := call.Invoke(ctx, env.Calls, env.Self, imagescalls.List, imagescalls.ListIn{}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -83,10 +83,10 @@ func (m machine) everyMacImages(ctx context.Context, env kit.Env) ([]model.Repor
 	})
 	for _, mac := range others {
 		if got[mac].Err == nil {
-			here = append(here, got[mac].Value...)
+			thisMac = append(thisMac, got[mac].Value...)
 		}
 	}
-	return here, nil
+	return thisMac, nil
 }
 
 type imagesMachine struct {

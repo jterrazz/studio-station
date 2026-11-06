@@ -88,7 +88,7 @@ func (s *Sharing) CheckShare(ctx context.Context, account, vm string) (secret st
 	// invariant: a share is refused before anything is read or copied: an
 	// unknown account, one the share list does not hold, a VM that may not
 	// receive it, an account not signed in here.
-	if s.o.Here != catalog.Host {
+	if s.o.Here != catalog.Mac {
 		return "", &accounts.OffHostError{Here: s.o.Here}
 	}
 	if !accounts.Known(account) {

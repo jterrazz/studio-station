@@ -47,12 +47,12 @@ const (
 
 func (m machine) machines(_ bool) *machinescalls.Service {
 	knownHosts := filepath.Join(m.paths.State, "known_hosts")
-	return machinescalls.New(thisMac{m.host}, m.hypervisor(), machinescalls.Prefs{Name: m.stores.name(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser()}, m.stores.machines, hostNodes{tailnet: m.tailnet()}, fleetImages{service: m.images()}, machinesDaemon{m.hostDaemon()}, leaseReleaser{m: m}, machinescalls.Options{
+	return machinescalls.New(macSystem{m.sys}, m.hypervisor(), machinescalls.Prefs{Name: m.stores.name(), Hosts: m.stores.macs(), VMUser: m.stores.vmUser()}, m.stores.machines, macNodes{tailnet: m.tailnet()}, allMachinesImages{images: m.images()}, machinesEngine{m.macEngine()}, reservationReleaser{m: m}, machinescalls.Options{
 		Here:       m.kind,
 		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
-		User:      m.host.Env.User(),
+		User:      m.sys.Env.User(),
 		Version:   m.stationVersion(),
-		Ask:       m.askFleet,
+		Ask:       m.askAllMachines,
 		GuestPort: m.guestPort(),
 		Jobs:      m.jobs(0),
 		Unlocker:  m.unlocker(knownHosts),
@@ -66,7 +66,7 @@ func (m machine) machines(_ bool) *machinescalls.Service {
 // value: this Mac's address on your LAN, as it reads it (its world's in
 // the spec build).
 func (m machine) lanAddress(ctx context.Context) string {
-	var facts settingscontract.Inspector = settingsmacos.New(m.host.Run, m.host.FS, m.host.Clock, settingsmacos.Options{Root: m.systemRoot()})
+	var facts settingscontract.Inspector = settingsmacos.New(m.sys.Run, m.sys.FS, m.sys.Clock, settingsmacos.Options{Root: m.systemRoot()})
 	if m.world != nil {
 		facts = m.world.inspector()
 	}
@@ -82,7 +82,7 @@ func (m machine) lanAddress(ctx context.Context) string {
 // value: the memory this Mac has, as it reads itself (its world's in the
 // spec build).
 func (m machine) memory(ctx context.Context) int64 {
-	self := selfOf(m.host)
+	self := selfOf(m.sys)
 	if m.world != nil {
 		self = m.world.self()
 	}
@@ -106,15 +106,15 @@ func (m machine) unlocker(knownHosts string) contract.Unlocker {
 	if m.world != nil {
 		return m.world.unlocker()
 	}
-	return macos.New(m.host.Run, m.host.FS, knownHosts)
+	return macos.New(m.sys.Run, m.sys.FS, knownHosts)
 }
 
 func (m machine) sshConfig(knownHosts string) contract.SSHConfig {
 	if m.world != nil {
 		return m.world.sshConfig()
 	}
-	return openssh.New(m.host.FS, openssh.Options{
-		Home: m.host.Env.Home(), KnownHosts: knownHosts, Executable: m.host.Env.Executable(),
+	return openssh.New(m.sys.FS, openssh.Options{
+		Home: m.sys.Env.Home(), KnownHosts: knownHosts, Executable: m.sys.Env.Executable(),
 	})
 }
 
@@ -128,35 +128,35 @@ func (m machine) port(fallback int, names ...string) int {
 }
 
 func machinesCommand(env kit.Env, m machine) *cobra.Command {
-	service := m.machines(env.Interactive)
+	vms := m.machines(env.Interactive)
 	overview := func(ctx context.Context, io kit.IO) error {
 		return overviewcmd.Run(ctx, m.overviewDeps(false), env, false, io)
 	}
-	return machinescmd.Command(machinescmd.Deps{Here: m.where, Names: service.Names, Overview: overview}, env,
-		machinesadd.Command(machinesadd.Deps{Here: m.where}, env),
-		machinesforget.Command(machinesforget.Deps{Names: service.Names, Here: m.where}, env),
+	return machinescmd.Command(machinescmd.Deps{ThisMachine: m.where, Names: vms.Names, Overview: overview}, env,
 		machinescreate.Command(machinescreate.Deps{
-			Resources: model.ParseResources, Check: createCheck(service),
+			Resources: model.ParseResources, Check: createCheck(vms),
 			NotBuilt: func(image string) error { return &model.NoImageError{Image: image} },
 			Admit: func() error {
 				return call.Gate(call.Meta{Name: machinescalls.CreateWorkspace.Name, Applies: machinescalls.CreateWorkspace.Applies}, m.profile)
 			},
-			Fleet: func(ctx context.Context) (model.Fleet, error) { return service.Fleet(ctx, false) },
-			Here:  m.where, Ask: createAsker(env),
+			AllMachines: func(ctx context.Context) (model.AllMachines, error) { return vms.Fleet(ctx, false) },
+			ThisMachine: m.where, Ask: createAsker(env),
 		}, env),
-		machinesstart.Command(machinesstart.Deps{Names: service.Names, Here: m.where}, env),
-		machinesstop.Command(machinesstop.Deps{Names: service.Names, Here: m.where}, env),
-		machinesrestart.Command(machinesrestart.Deps{Names: service.Names, IsMac: func(name string) bool {
-			r, err := service.Remote(name)
-			return err == nil && r.Kind == catalog.Host && !env.Far()
-		}, Pausing: m.pausing(env), Here: m.where}, env),
-		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
-		machinesedit.Command(machinesedit.Deps{Names: service.Names, Resources: model.ParseResources, Here: m.where}, env),
-		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Overview: overview}, env),
-		machinesunlock.Command(machinesunlock.Deps{Names: service.Names, Here: m.where}, env),
-		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),
+		machinesstart.Command(machinesstart.Deps{Names: vms.Names, ThisMachine: m.where}, env),
+		machinesstop.Command(machinesstop.Deps{Names: vms.Names, ThisMachine: m.where}, env),
+		machinesrestart.Command(machinesrestart.Deps{Names: vms.Names, IsMac: func(name string) bool {
+			r, err := vms.Remote(name)
+			return err == nil && r.Kind == catalog.Mac && !env.Far()
+		}, Pausing: m.pausing(env), ThisMachine: m.where}, env),
+		machinesdelete.Command(machinesdelete.Deps{Names: vms.Names, ThisMachine: m.where}, env),
+		machinesedit.Command(machinesedit.Deps{Names: vms.Names, Resources: model.ParseResources, ThisMachine: m.where}, env),
+		machinesprobe.Command(machinesprobe.Deps{Names: vms.Names, Overview: overview}, env),
+		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: vms.Names, ThisMachine: m.where}, env),
+		machinesadd.Command(machinesadd.Deps{ThisMachine: m.where}, env),
+		machinesforget.Command(machinesforget.Deps{Names: vms.Names, ThisMachine: m.where}, env),
+		machinesunlock.Command(machinesunlock.Deps{Names: vms.Names, ThisMachine: m.where}, env),
 		machinessupervise.Command(env),
-		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{service, m.host.Sockets}}, env),
+		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{vms, m.sys.Sockets}}, env),
 	)
 }
 
@@ -215,7 +215,7 @@ func (c machineCalls) Reach(ctx context.Context, name string) (model.Added, erro
 	if err != nil {
 		return model.Added{}, err
 	}
-	update, _ := model.Behind(model.HostView{Name: name, StationVersion: hello.Version}, c.m.stationVersion())
+	update, _ := model.Behind(model.MacView{Name: name, StationVersion: hello.Version}, c.m.stationVersion())
 	return model.Added{Name: name, Label: c.m.label(name), Version: hello.Version, Update: update}, nil
 }
 
@@ -229,18 +229,18 @@ func (c machineCalls) CheckRestart(name string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if r.Kind == catalog.Host {
+	if r.Kind == catalog.Mac {
 		return false, nil
 	}
 	return true, nil
 }
 
 func (c machineCalls) Running(ctx context.Context, name string) (bool, error) {
-	fleet, err := c.Fleet(ctx, true)
+	allMachines, err := c.Fleet(ctx, true)
 	if err != nil {
 		return false, err
 	}
-	for _, h := range fleet.Hosts {
+	for _, h := range allMachines.Macs {
 		for _, vm := range h.VMs {
 			if vm.Name == name {
 				return vm.State == model.Running, nil
@@ -254,7 +254,7 @@ func (c machineCalls) Restart(ctx context.Context, name string) (model.RestartRe
 	return c.Service.Restart(ctx, name, nil)
 }
 
-func (c machineCalls) CheckRemoteHost(name, verb string) (string, error) {
+func (c machineCalls) CheckRemoteMac(name, verb string) (string, error) {
 	m, err := c.RemoteHost(name, verb)
 	return m.Name, err
 }
@@ -267,11 +267,11 @@ func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool)
 }
 
 func (c machineCalls) VMsOf(ctx context.Context, name string) ([]model.VM, error) {
-	out, err := call.Read(ctx, c.m.far.router, coremachine.Ref{Name: name}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
-	if err != nil || len(out.Fleet.Hosts) == 0 {
+	out, err := call.Read(ctx, c.m.far.router, coremachine.Ref{Name: name}, machinescalls.List, machinescalls.ListIn{ThisMac: true}, nil)
+	if err != nil || len(out.All.Macs) == 0 {
 		return nil, err
 	}
-	return out.Fleet.Hosts[0].VMs, nil
+	return out.All.Macs[0].VMs, nil
 }
 
 func (c machineCalls) StartOn(ctx context.Context, mac, vm string) error {
@@ -284,12 +284,12 @@ func (c machineCalls) CheckRemote(name string) error {
 	return err
 }
 
-type fleetImages struct{ service *imagescalls.Service }
+type allMachinesImages struct{ images *imagescalls.Service }
 
-func (i fleetImages) KeyPath() string { return i.service.KeyPath() }
+func (i allMachinesImages) KeyPath() string { return i.images.KeyPath() }
 
-func (i fleetImages) Latest(ctx context.Context, image string) (disk, version string, err error) {
-	r, err := i.service.Latest(ctx, image)
+func (i allMachinesImages) Latest(ctx context.Context, image string) (disk, version string, err error) {
+	r, err := i.images.Latest(ctx, image)
 	var unbuilt *images.NotBuiltError
 	if errors.As(err, &unbuilt) {
 		return "", "", &model.NoImageError{Image: image}
@@ -305,4 +305,18 @@ func createAsker(env kit.Env) kit.Asker {
 		return nil
 	}
 	return env.Prompt
+}
+
+func (c machineCalls) AllMachinesAsItFills(ctx context.Context, thisMacOnly bool, sofar func(model.AllMachines)) (model.AllMachines, error) {
+	return c.FleetAsItFills(ctx, thisMacOnly, sofar)
+}
+
+func (c machineCalls) CheckMac() error { return c.CheckHost() }
+
+func (c machineCalls) AddMac(ctx context.Context, name string, h model.MacRecord) error {
+	return c.AddHost(ctx, name, h)
+}
+
+func (c machineCalls) ForgetMac(ctx context.Context, name string) error {
+	return c.ForgetHost(ctx, name)
 }

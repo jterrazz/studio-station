@@ -27,9 +27,9 @@ func (o Menubar) Ports() engine.Feed {
 			}
 			l, err := call.Invoke(ctx, o.Calls, target, portscalls.List, list, nil)
 			if err != nil {
-				return pagemenubar.Unread(pagemenubar.PortsID, o.Here, err)
+				return pagemenubar.Unread(pagemenubar.PortsID, o.ThisMachine, err)
 			}
-			return pagemenubar.Ports(l, of, o.Here)
+			return pagemenubar.Ports(l, of, o.ThisMachine)
 		}
 		return o.reread(ctx, in, pagemenubar.PortsID, remoteEvery, read)
 	}
@@ -43,9 +43,9 @@ func (o Menubar) Awake() engine.Feed {
 		read := func(ctx context.Context) page.Page {
 			f, err := o.EveryMac(ctx)
 			if err != nil {
-				return pagemenubar.Unread(pagemenubar.AwakeID, o.Here, err)
+				return pagemenubar.Unread(pagemenubar.AwakeID, o.ThisMachine, err)
 			}
-			return pagemenubar.Awake(f, o.Here)
+			return pagemenubar.Awake(f, o.ThisMachine)
 		}
 		return o.reread(ctx, in, pagemenubar.AwakeID, remoteEvery, read)
 	}
@@ -61,18 +61,18 @@ func (o Menubar) Activity() engine.Feed {
 			window = time.Hour
 		}
 		read := func(ctx context.Context) page.Page {
-			v := pageactivity.View{Name: o.Here.Machine, Label: "This Mac", Kind: string(machine.Mac), ThisMac: true, Graph: window}
+			v := pageactivity.View{Name: o.ThisMachine.Machine, Label: "This Mac", Kind: string(machine.Mac), ThisMac: true, Graph: window}
 			snaps, err := call.Follow(ctx, o.Calls, machine.Ref{}, activitycalls.Read, activitycalls.ReadIn{Graph: window}, nil)
 			if err != nil {
-				return pagemenubar.Unread(pagemenubar.ActivityID, o.Here, err)
+				return pagemenubar.Unread(pagemenubar.ActivityID, o.ThisMachine, err)
 			}
 			for u := range snaps {
 				if u.Err != nil {
-					return pagemenubar.Unread(pagemenubar.ActivityID, o.Here, u.Err)
+					return pagemenubar.Unread(pagemenubar.ActivityID, o.ThisMachine, u.Err)
 				}
 				v.Report = u.Value
 			}
-			return pagemenubar.Activity(v, o.Here)
+			return pagemenubar.Activity(v, o.ThisMachine)
 		}
 		return o.reread(ctx, in, pagemenubar.ActivityID, sampleEvery, read)
 	}
@@ -85,7 +85,7 @@ func (o Menubar) reread(ctx context.Context, in engine.FeedInput, id page.ID, ev
 	out := make(chan any, 1)
 	go func() {
 		defer close(out)
-		out <- page.Document{Schema: page.Schema, Page: pagemenubar.Opening(id, o.Here)}
+		out <- page.Document{Schema: page.Schema, Page: pagemenubar.Opening(id, o.ThisMachine)}
 		for {
 			p := read(ctx)
 			if ctx.Err() != nil {
@@ -119,4 +119,4 @@ func (o Menubar) reread(ctx context.Context, in engine.FeedInput, id page.ID, ev
 	return out
 }
 
-type EveryMac func(ctx context.Context) (pageawake.Fleet, error)
+type EveryMac func(ctx context.Context) (pageawake.AllMachines, error)

@@ -9,7 +9,7 @@ import (
 )
 
 func TestJudgeSetGivesEachSetByStationStateItsCause(t *testing.T) {
-	starship := catalog.ConfigItem{Name: "starship", Places: []catalog.MachineKind{catalog.Host, catalog.Linux}}
+	starship := catalog.Setting{Name: "starship", Kinds: []catalog.MachineKind{catalog.Mac, catalog.Linux}}
 	at := time.Date(2026, 11, 2, 10, 0, 0, 0, time.UTC)
 	record := &settings.Applied{Setting: "starship", Digest: "sha256:station", At: at}
 	same := settings.Observation{State: catalog.StateOK, Digest: "sha256:station", Where: "~/.config/starship.toml"}
@@ -49,7 +49,7 @@ func TestJudgeSetGivesEachSetByStationStateItsCause(t *testing.T) {
 }
 
 func TestJudgeSetReadsARunOnceSettingAsAppliedOnceStationRanIt(t *testing.T) {
-	dock := catalog.ConfigItem{Name: "dock-reset", Places: []catalog.MachineKind{catalog.Host}, RunOnce: true}
+	dock := catalog.Setting{Name: "dock-reset", Kinds: []catalog.MachineKind{catalog.Mac}, RunOnce: true}
 	blind := settings.Observation{State: catalog.StateAbsent, Blind: true}
 	if got := settings.JudgeSet(dock, true, nil, blind, false).State; got != settings.StateNotApplied {
 		t.Fatalf("never run: %s, want not-applied", got)
@@ -65,11 +65,11 @@ func TestJudgeSetNamesWhereASettingLivesWhenItIsNotForThisMachine(t *testing.T) 
 		kinds []catalog.MachineKind
 		why   string
 	}{
-		"a Mac's only":  {[]catalog.MachineKind{catalog.Host}, "Mac only"},
-		"Macs and VMs":  {[]catalog.MachineKind{catalog.Host, catalog.MacOS}, "Macs and macOS VMs only"},
+		"a Mac's only":  {[]catalog.MachineKind{catalog.Mac}, "Mac only"},
+		"Macs and VMs":  {[]catalog.MachineKind{catalog.Mac, catalog.MacOS}, "Macs and macOS VMs only"},
 		"the VMs' only": {[]catalog.MachineKind{catalog.Linux}, "VMs only"},
 	} {
-		row := settings.JudgeSet(catalog.ConfigItem{Name: "x", Places: want.kinds}, false, nil, settings.Observation{}, false)
+		row := settings.JudgeSet(catalog.Setting{Name: "x", Kinds: want.kinds}, false, nil, settings.Observation{}, false)
 		if row.Why != want.why {
 			t.Errorf("%s: why = %q, want %q", places, row.Why, want.why)
 		}

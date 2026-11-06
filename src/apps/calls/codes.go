@@ -28,7 +28,7 @@ func coded(err error) error {
 	case errors.As(err, &unknown):
 		return fail.New(fail.NotFound, Unknown, unknown.Name, nil)
 	case errors.As(err, &elsewhere):
-		return fail.New(fail.Refused, Elsewhere, elsewhere.App, map[string]string{"lives": apps.LivesOn(elsewhere.Places), "vm": elsewhere.VM})
+		return fail.New(fail.Refused, Elsewhere, elsewhere.App, map[string]string{"lives": apps.LivesOn(elsewhere.Kinds), "vm": elsewhere.VM})
 	case errors.As(err, &needs):
 		return &fail.Error{Type: fail.Failed, Code: Needs, Subject: needs.App, Detail: map[string]string{"needs": needs.Needs}, Cause: err}
 	case errors.As(err, &absent):

@@ -13,7 +13,7 @@ import (
 
 const (
 	command = "security"
-	service = "station"
+	entry   = "station"
 	// outside: `security` exits 44 when the item is not in the keychain.
 	notFound = 44
 )
@@ -42,7 +42,7 @@ func failed(name string, out local.Output, err error) error {
 }
 
 func (k Keychain) Get(ctx context.Context, name string) ([]byte, error) {
-	out, err := k.security(ctx, "", "find-generic-password", "-s", service, "-a", name, "-w")
+	out, err := k.security(ctx, "", "find-generic-password", "-s", entry, "-a", name, "-w")
 	switch {
 	case err != nil:
 		return nil, failed(name, out, err)
@@ -60,7 +60,7 @@ func (k Keychain) Put(ctx context.Context, name string, secret []byte) error {
 	if strings.ContainsAny(name+string(secret), "\n\r") {
 		return &accounts.VaultError{Name: name, Cause: errMultiline}
 	}
-	line := "add-generic-password -U -s " + service + " -a " + quote(name) + " -w " + quote(string(secret)) + "\n"
+	line := "add-generic-password -U -s " + entry + " -a " + quote(name) + " -w " + quote(string(secret)) + "\n"
 	out, err := k.security(ctx, line, "-i")
 	if err != nil || out.ExitCode != 0 {
 		return failed(name, out, err)
@@ -73,7 +73,7 @@ func quote(s string) string {
 }
 
 func (k Keychain) Forget(ctx context.Context, name string) error {
-	out, err := k.security(ctx, "", "delete-generic-password", "-s", service, "-a", name)
+	out, err := k.security(ctx, "", "delete-generic-password", "-s", entry, "-a", name)
 	switch {
 	case err != nil:
 		return failed(name, out, err)
@@ -95,7 +95,7 @@ func (k Keychain) Names(ctx context.Context) ([]string, error) {
 	var names []string
 	var account, svc string
 	flush := func() {
-		if svc == service && account != "" && !slices.Contains(names, account) {
+		if svc == entry && account != "" && !slices.Contains(names, account) {
 			names = append(names, account)
 		}
 		account, svc = "", ""

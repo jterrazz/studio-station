@@ -47,7 +47,7 @@ func New(files Files, run Runner, o Options) *Applier { return &Applier{files: f
 
 func (*Applier) Kind() catalog.EffectKind { return catalog.EffectDotfile }
 
-func of(it catalog.ConfigItem) (catalog.Dotfiles, error) {
+func of(it catalog.Setting) (catalog.Dotfiles, error) {
 	d, ok := it.Effect.(catalog.Dotfiles)
 	if !ok || len(d.Files) == 0 {
 		return catalog.Dotfiles{}, errors.New(it.Name + " is not files station writes")
@@ -55,7 +55,7 @@ func of(it catalog.ConfigItem) (catalog.Dotfiles, error) {
 	return d, nil
 }
 
-func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+func (a *Applier) Observe(_ context.Context, it catalog.Setting) (settings.Observation, error) {
 	// invariant: the fingerprint covers every file of the setting in its order,
 	// a missing one included, so an edit or a removal of any of them shows.
 	d, err := of(it)
@@ -101,7 +101,7 @@ func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Ob
 	return o, nil
 }
 
-func (a *Applier) Apply(ctx context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
+func (a *Applier) Apply(ctx context.Context, it catalog.Setting, _ map[string]string) (settings.Change, error) {
 	d, err := of(it)
 	if err != nil {
 		return settings.Change{}, err
@@ -134,7 +134,7 @@ func (a *Applier) Apply(ctx context.Context, it catalog.ConfigItem, _ map[string
 	return change, nil
 }
 
-func (a *Applier) Undo(_ context.Context, it catalog.ConfigItem) (settings.Change, error) {
+func (a *Applier) Undo(_ context.Context, it catalog.Setting) (settings.Change, error) {
 	// invariant: Undo removes a file only while it is still exactly station's:
 	// off never destroys a change of the owner's.
 	d, err := of(it)

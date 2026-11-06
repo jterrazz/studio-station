@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	Overview  = overview.Snapshot[apps.Report, settings.Report, disk.StrayReport]
-	Workspace = overview.Workspace[disk.StrayReport]
+	Overview  = overview.Snapshot[apps.Report, settings.Report, disk.MisplacedReport]
+	Workspace = overview.Workspace[disk.MisplacedReport]
 	Reading   = activity.Reading
 )

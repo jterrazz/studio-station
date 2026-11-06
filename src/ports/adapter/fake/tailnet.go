@@ -20,8 +20,8 @@ func TailnetOf(w *world.World, mac string) *Tailnet { return &Tailnet{w: w, mac:
 
 func NewTailnet(self ports.Self) *Tailnet {
 	w := alone()
-	w.Mac(here).Tailnet = &world.Node{Self: self}
-	return TailnetOf(w, here)
+	w.Mac(thisMac).Tailnet = &world.Node{Self: self}
+	return TailnetOf(w, thisMac)
 }
 
 func (t *Tailnet) node() *world.Node {
@@ -70,14 +70,14 @@ func (t *Tailnet) Share(_ context.Context, s ports.Share) (string, error) {
 		}
 	}
 	n.Shares = append(slices.DeleteFunc(n.Shares, func(o ports.Share) bool { return same(o, s) }), s)
-	host := n.Self.Sharing.Host
+	name := n.Self.Sharing.DNSName
 	switch {
 	case s.Scheme == ports.SchemeTCP:
-		return host + ":" + strconv.Itoa(s.Port), nil
+		return name + ":" + strconv.Itoa(s.Port), nil
 	case s.Mounted():
-		return "https://" + host + s.Path + "/", nil
+		return "https://" + name + s.Path + "/", nil
 	}
-	return "https://" + host + ":" + strconv.Itoa(s.Port), nil
+	return "https://" + name + ":" + strconv.Itoa(s.Port), nil
 }
 
 func (t *Tailnet) Unshare(_ context.Context, s ports.Share) error {

@@ -12,8 +12,8 @@ import (
 	"github.com/jterrazz/studio-station/src/ports/contract"
 )
 
-func reservation(vm string, guest, host int) ports.Reservation {
-	return ports.Reservation{VM: vm, GuestPort: guest, HostPort: host, Pinned: true, ReservedAt: time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)}
+func reservation(vm string, guest, reserved int) ports.Reservation {
+	return ports.Reservation{VM: vm, GuestPort: guest, MacPort: reserved, Pinned: true, ReservedAt: time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)}
 }
 
 func ReservationStore(t *testing.T, open func(t *testing.T) contract.ReservationStore) {
@@ -45,7 +45,7 @@ func ReservationStore(t *testing.T, open func(t *testing.T) contract.Reservation
 		for _, r := range list {
 			keys = append(keys, r.Key())
 		}
-		if !reflect.DeepEqual(keys, []string{"api:3000", "linux-1:5173", "linux-1:7000"}) || list[2].HostPort != 40003 {
+		if !reflect.DeepEqual(keys, []string{"api:3000", "linux-1:5173", "linux-1:7000"}) || list[2].MacPort != 40003 {
 			t.Errorf("List = %v; want sorted, linux-1:7000 at 40003", list)
 		}
 	})

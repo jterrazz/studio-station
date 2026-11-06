@@ -1,4 +1,4 @@
-description: 'a named tool that is not installed is a skipped row, exit 0, and nothing runs'
+description: 'a named app that is not installed is a skipped row, exit 0, and nothing runs'
 runs:
     - command: 'disk free go'
       exit: 0

@@ -3,7 +3,7 @@
   "id": "settings",
   "command": "settings",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "loading",
   "sections": [

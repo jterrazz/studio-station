@@ -33,5 +33,5 @@ func (s *Service) SSH(ctx context.Context, name string) (model.SSHTarget, error)
 }
 
 func sshTarget(user, host string) model.SSHTarget {
-	return model.SSHTarget{User: user, Host: host, Command: catalog.SSHCommand(user, host)}
+	return model.SSHTarget{User: user, Address: host, Command: catalog.SSHCommand(user, host)}
 }

@@ -1,7 +1,7 @@
 package catalog
 
-func skill(name, description, repo, skillName string) Tool {
-	return Tool{Name: name, Description: description, Category: CategoryAgentSkills, Installs: Anywhere(Skill(repo, skillName))}
+func skill(name, description, repo, skillName string) App {
+	return App{Name: name, Description: description, Category: CategoryAgentSkills, Installs: Anywhere(Skill(repo, skillName))}
 }
 
 // invariant: a skill tool is named after its skill, except where that name is
@@ -14,8 +14,8 @@ func skill(name, description, repo, skillName string) Tool {
 
 var SkillAgents = []string{"claude-code", "codex"}
 
-var AgentSkills = []Tool{
-	skill("frontend-design", "Distinctive, production-grade frontend interfaces", "anthropics/skills", "frontend-design"),
+var AgentSkills = []App{
+	skill("frontend-design", "Distinctive, polished frontend interfaces", "anthropics/skills", "frontend-design"),
 	skill("upgrading-expo", "Upgrade an Expo app across SDK versions", "expo/skills", "upgrading-expo"),
 	skill("modern-web-guidance", "Chrome's current web platform guidance", "GoogleChrome/modern-web-guidance", "modern-web-guidance"),
 	skill("chrome-extensions", "Chrome extension authoring", "GoogleChrome/modern-web-guidance", "chrome-extensions"),

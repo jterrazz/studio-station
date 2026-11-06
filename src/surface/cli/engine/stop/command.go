@@ -15,7 +15,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 type Input struct {
@@ -30,7 +30,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Example: "  station engine stop\n  station engine stop --yes",
 		Asks:    true,
 		Ask: func(in *Input) (bool, error) {
-			return env.Prompt.Confirm(pageengine.StopConfirm(in.asked.Work, d.Here.Machine))
+			return env.Prompt.Confirm(pageengine.StopConfirm(in.asked.Work, d.ThisMachine.Machine))
 		},
 		Refuse: func(in *Input) error { return kit.Refuse(unconfirmed(in.asked), "station engine stop --yes") },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
@@ -45,7 +45,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if out.Report == nil {
 				return err
 			}
-			if pageErr := io.Page(pageengine.Stop(*out.Report, d.Here), nil); pageErr != nil {
+			if pageErr := io.Page(pageengine.Stop(*out.Report, d.ThisMachine), nil); pageErr != nil {
 				return pageErr
 			}
 			return err

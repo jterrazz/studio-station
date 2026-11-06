@@ -3,7 +3,7 @@ package settings
 import "github.com/jterrazz/studio-station/src/catalog"
 
 type Report struct {
-	Item    catalog.ConfigItem
+	Item    catalog.Setting
 	State   catalog.State
 	Detail  string
 	Applies bool
@@ -32,7 +32,7 @@ func (e *StudioMissingError) Error() string {
 	return e.Item + " is kept by the studio CLI, which is not on PATH"
 }
 
-func Sets(it catalog.ConfigItem) []KeyValue {
+func Sets(it catalog.Setting) []KeyValue {
 	// value: the values station sets for a setting that writes no file.
 	out := make([]KeyValue, len(it.Sets))
 	for i, v := range it.Sets {

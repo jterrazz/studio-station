@@ -20,7 +20,7 @@ public struct AwakePage: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
             PushedHeader(back: "This Mac", title: "Awake", subtitle: "Every Mac\(Token.Glyph.sep)this one first", action: handlers.back)
-            if let here = page.section("this-mac"), let row = here.rows.first { thisMac(here, row) }
+            if let mac = page.section("this-mac"), let row = mac.rows.first { thisMac(mac, row) }
             if let guards = page.section("guards") { guardsCard(guards) }
             if let others = page.section("other-macs") {
                 SectionHead(others.title ?? "")

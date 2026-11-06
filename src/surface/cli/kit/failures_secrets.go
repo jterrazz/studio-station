@@ -10,14 +10,14 @@ import (
 
 func secretsFailure(err error) (*fail.Error, bool) {
 	var notVM *accounts.NotAVMError
-	var offHost *accounts.OffHostError
+	var offMac *accounts.OffHostError
 	var noStudio *accounts.NoStudioError
 	var step *accounts.StepError
 	switch {
 	case errors.As(err, &notVM):
 		return usage(notVM.Error(), "station machines"), true
-	case errors.As(err, &offHost):
-		return usage(offHost.Error(), "station accounts share <account> --with <vm> --on <mac>"), true
+	case errors.As(err, &offMac):
+		return usage(offMac.Error(), "station accounts share <account> --with <vm> --on <mac>"), true
 	case errors.As(err, &noStudio):
 		return failed(noStudio.Error(), "see docs/reference/secrets.md#studio-in-a-vm", err), true
 	case errors.As(err, &step):

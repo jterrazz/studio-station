@@ -13,28 +13,28 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 <!-- GENERATED:prefer by `make generate` from src/catalog: DO NOT EDIT between markers -->
 
-| Instead of                              | Use                                                          |
-| --------------------------------------- | ------------------------------------------------------------ |
-| cd (jumping around)                     | `zoxide`: Smarter cd command                                 |
-| Finder in the terminal                  | `yazi`: Terminal file manager                                |
-| cat (for humans)                        | `bat`: Cat clone with syntax highlighting                    |
-| du -sh                                  | `dust`: Intuitive disk usage tool                            |
-| ls                                      | `eza`: Modern ls replacement                                 |
-| find                                    | `fd`: Fast find alternative                                  |
-| grep (what agent and editor tools call) | `ripgrep`: Fast grep, the rg agents and editors shell out to |
-| grep -r                                 | `tgrep`: Trigram-indexed grep for large codebases            |
-| sed (simple replaces)                   | `sd`: Intuitive sed alternative                              |
-| diff                                    | `difftastic`: Structural diff tool                           |
-| raw git porcelain (interactive)         | `lazygit`: Terminal UI for git                               |
-| raw GitHub API / web UI                 | `gh`: GitHub CLI for repository management                   |
-| grep over markdown notes                | `qmd`: Local semantic search over markdown                   |
-| raw dev commands (token-heavy output)   | `rtk`: Token-optimized CLI proxy for agents                  |
+| Instead of                            | Use                                                          |
+| ------------------------------------- | ------------------------------------------------------------ |
+| cd (jumping around)                   | `zoxide`: Smarter cd command                                 |
+| Finder in the terminal                | `yazi`: Terminal file manager                                |
+| cat (for humans)                      | `bat`: Cat clone with syntax highlighting                    |
+| du -sh                                | `dust`: Intuitive disk usage viewer                          |
+| ls                                    | `eza`: Modern ls replacement                                 |
+| find                                  | `fd`: Fast find alternative                                  |
+| grep (what agents and editors call)   | `ripgrep`: Fast grep, the rg agents and editors shell out to |
+| grep -r                               | `tgrep`: Trigram-indexed grep for large codebases            |
+| sed (simple replaces)                 | `sd`: Intuitive sed alternative                              |
+| diff                                  | `difftastic`: Structural diff                                |
+| raw git porcelain (interactive)       | `lazygit`: Terminal UI for git                               |
+| raw GitHub API / web UI               | `gh`: GitHub CLI for repository management                   |
+| grep over markdown notes              | `qmd`: Local semantic search over markdown                   |
+| raw dev commands (token-heavy output) | `rtk`: Token-optimized CLI proxy for agents                  |
 
 <!-- /GENERATED:prefer -->
 
 ## Tools roster
 
-<!-- GENERATED:tools by `make generate` from src/catalog: DO NOT EDIT between markers -->
+<!-- GENERATED:apps by `make generate` from src/catalog: DO NOT EDIT between markers -->
 
 ### Package Managers
 
@@ -63,22 +63,22 @@ Modern replacements are on every machine; prefer them over the defaults:
 - **starship**: Cross-shell prompt (path, git branch/status, versions)
 - **zoxide**: Smarter cd command
 
-### CLI Tools
+### Command line
 
 - **yazi**: Terminal file manager
 - **bat**: Cat clone with syntax highlighting
-- **dust**: Intuitive disk usage tool
+- **dust**: Intuitive disk usage viewer
 - **eza**: Modern ls replacement
 - **fd**: Fast find alternative
 - **ripgrep**: Fast grep, the rg agents and editors shell out to
 - **tgrep**: Trigram-indexed grep for large codebases
 - **sd**: Intuitive sed alternative
-- **difftastic**: Structural diff tool
+- **difftastic**: Structural diff
 - **jq**: Command-line JSON processor
 
 ### Git
 
-- **git**: Distributed version control system (the Command Line Tools)
+- **git**: Distributed version control system, from xcode-select
 - **gpg**: GNU Privacy Guard for encryption and signing
 - **lazygit**: Terminal UI for git
 - **gh**: GitHub CLI for repository management
@@ -95,7 +95,7 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 - **tart**: Virtual machines on Apple silicon: the engine of station's VMs
 - **docker**: Container engine, inside the Linux VM
-- **orbstack**: Docker and Linux machines on the Mac, for exploration on a host
+- **orbstack**: Docker and Linux machines on the Mac, for exploration on a Mac
 - **lens**: Kubernetes IDE for managing clusters
 - **kubectl**: Kubernetes command line
 - **helm**: Kubernetes package manager
@@ -104,9 +104,9 @@ Modern replacements are on every machine; prefer them over the defaults:
 ### Deploy
 
 - **ansible**: Agentless IT automation and configuration management
-- **eas**: Expo Application Services CLI for app builds
+- **eas**: Expo's EAS CLI for app builds
 - **pulumi**: Infrastructure as code using real programming languages
-- **terraform**: Infrastructure as code provisioning tool
+- **terraform**: Infrastructure as code provisioning
 
 ### AI Agents
 
@@ -121,7 +121,7 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 ### AI Tooling
 
-- **ollama**: Run large language models locally, on the host's GPU
+- **ollama**: Run large language models locally, on the Mac's GPU
 - **qmd**: Local semantic search over markdown
 - **rtk**: Token-optimized CLI proxy for agents
 - **browser-use**: AI agent library for browser automation
@@ -152,7 +152,7 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 ### Productivity
 
-- **linear**: Project management tool
+- **linear**: Project management
 - **notion**: Workspace for notes and docs
 - **obsidian**: Knowledge base and note-taking
 - **keynote**: Apple presentations
@@ -163,16 +163,16 @@ Modern replacements are on every machine; prefer them over the defaults:
 ### Media
 
 - **broadcasts**: Internet radio and stream player
-- **compressor**: Apple video compression tool
+- **compressor**: Apple video compression
 - **final-cut-pro**: Professional video editor
 - **lightroom**: Adobe photo editor
-- **logic-pro**: Professional music production
+- **logic-pro**: Professional music making
 
 ### Remote Access
 
-- **jump-desktop-connect**: Remote GUI recovery host service for headless Macs
+- **jump-desktop-connect**: Remote GUI recovery for headless Macs
 - **jump-desktop**: Jump Desktop viewer/client app
-- **tailscale**: The Tailscale app: each host is a node, and station reads it
+- **tailscale**: The Tailscale app: each Mac is a node, and station reads it
 
 ### Security
 
@@ -182,7 +182,7 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 ### System Utilities
 
-- **mole**: Clean, uninstall, analyze, and optimize macOS from the terminal
+- **mole**: Tidy, uninstall, analyze, and optimize macOS from the terminal
 - **betterdisplay**: Flexible HiDPI scaling and display management
 - **pipifier**: Picture-in-Picture for Safari
 - **snippety**: Code snippet manager
@@ -190,7 +190,7 @@ Modern replacements are on every machine; prefer them over the defaults:
 
 ### Agent skills
 
-- **frontend-design**: Distinctive, production-grade frontend interfaces
+- **frontend-design**: Distinctive, polished frontend interfaces
 - **upgrading-expo**: Upgrade an Expo app across SDK versions
 - **modern-web-guidance**: Chrome's current web platform guidance
 - **chrome-extensions**: Chrome extension authoring
@@ -208,7 +208,7 @@ Modern replacements are on every machine; prefer them over the defaults:
 - **vercel-react-best-practices**: React and Next.js performance practices
 - **vercel-react-native-skills**: React Native practices
 
-<!-- /GENERATED:tools -->
+<!-- /GENERATED:apps -->
 
 ## Where knowledge lives
 

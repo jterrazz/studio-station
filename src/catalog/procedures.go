@@ -5,7 +5,7 @@ package catalog
 // added.
 const (
 	DNSProfileID  = "com.jterrazz.dns.quad9"
-	GitHubHost    = "github.com"
+	GitHubDomain  = "github.com"
 	GitHubSSHKeys = "https://github.com/settings/ssh/new"
 	GitHubGPGKeys = "https://github.com/settings/gpg/new"
 	// value: the openclaw script the lock-after-login agent runs.

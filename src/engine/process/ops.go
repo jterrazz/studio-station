@@ -16,7 +16,7 @@ type Peer interface {
 	Hello(ctx context.Context) (engine.Hello, error)
 	VMs(ctx context.Context) ([]engine.VMView, error)
 	StopAll(ctx context.Context) (engine.StopAll, error)
-	Power(ctx context.Context) (awake.View, error)
+	AwakeView(ctx context.Context) (awake.View, error)
 }
 
 func fault(code, message, hint string) *enginecalls.OpError {
@@ -25,34 +25,34 @@ func fault(code, message, hint string) *enginecalls.OpError {
 	return &enginecalls.OpError{Code: code, Message: message, Hint: hint}
 }
 
-func (d *Daemon) Hello() engine.Hello {
+func (d *Engine) Hello() engine.Hello {
 	return engine.Hello{Version: d.o.Version, PID: d.o.PID, StartedAt: d.started, Executable: d.o.Executable}
 }
 
-func (d *Daemon) VMs() []engine.VMView { return d.vmViews() }
+func (d *Engine) VMs() []engine.VMView { return d.vmViews() }
 
-func (d *Daemon) Services(vm string) ports.HostServices { return d.hostView(vm) }
+func (d *Engine) Ports(vm string) ports.MacPorts { return d.macPorts(vm) }
 
-func (d *Daemon) Reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (ports.ServiceView, error) {
+func (d *Engine) Reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (ports.SharedPort, error) {
 	return d.shareOf(ctx, vm, port, pinned, profile)
 }
 
-func (d *Daemon) Release(ctx context.Context, vm string, port int) (ports.Reservation, error) {
+func (d *Engine) Release(ctx context.Context, vm string, port int) (ports.Reservation, error) {
 	return d.stopSharing(ctx, vm, port)
 }
 
 // invariant: a share takes back a stop of sharing, and a stop of sharing is
 // remembered, on this Mac whoever asked: a command here or a VM's guest.
-func (d *Daemon) shareOf(ctx context.Context, vm string, port int, pinned bool, profile string) (ports.ServiceView, error) {
+func (d *Engine) shareOf(ctx context.Context, vm string, port int, pinned bool, profile string) (ports.SharedPort, error) {
 	if d.o.Remember != nil {
 		if err := d.o.Remember(vm, port, false); err != nil {
-			return ports.ServiceView{}, err
+			return ports.SharedPort{}, err
 		}
 	}
 	return d.reserve(ctx, vm, port, pinned, profile)
 }
 
-func (d *Daemon) stopSharing(ctx context.Context, vm string, port int) (ports.Reservation, error) {
+func (d *Engine) stopSharing(ctx context.Context, vm string, port int) (ports.Reservation, error) {
 	l, err := d.release(ctx, vm, port)
 	if err != nil || d.o.Remember == nil {
 		return l, err
@@ -72,7 +72,7 @@ const (
 
 func VMVerbs() []string { return []string{VMRun, VMStart, VMStop, VMRestart, VMDelete, VMForget} }
 
-func (d *Daemon) VM(ctx context.Context, verb, vm string) error {
+func (d *Engine) VM(ctx context.Context, verb, vm string) error {
 	switch verb {
 	case VMRun:
 		if err := d.opRun(ctx, vm); err != nil {
@@ -103,25 +103,25 @@ func (d *Daemon) VM(ctx context.Context, verb, vm string) error {
 	return fault("unknown_op", "unknown verb \""+verb+"\" for a VM", "station machines")
 }
 
-func (d *Daemon) Accounts(ctx context.Context) engine.AccountsView { return d.accounts(ctx) }
+func (d *Engine) Accounts(ctx context.Context) engine.AccountsView { return d.accounts(ctx) }
 
-func (d *Daemon) StopAll(ctx context.Context) engine.StopAll {
+func (d *Engine) StopAll(ctx context.Context) engine.StopAll {
 	shared := d.sharedVMs()
 	vms := d.stopAll(ctx)
-	all := engine.StopAll{VMs: vms, PowerEnded: d.power.Stop()}
+	all := engine.StopAll{VMs: vms, AwakeEnded: d.awakeJob.Stop()}
 	for _, v := range vms {
 		all.SharingEnded = all.SharingEnded || v.Result == engine.ResultStopped && shared[v.Name]
 	}
 	return all
 }
 
-func (d *Daemon) Power() awake.View { return d.power.View() }
+func (d *Engine) AwakeView() awake.View { return d.awakeJob.View() }
 
-func (d *Daemon) Awake(r engine.AwakeIn) (awake.Awoken, error) { return d.powerAwake(r) }
+func (d *Engine) Awake(r engine.AwakeIn) (awake.Awoken, error) { return d.powerAwake(r) }
 
-func (d *Daemon) Sleep() engine.PowerSlept { return d.powerSleep() }
+func (d *Engine) Sleep() engine.AwakeOff { return d.powerSleep() }
 
-func (d *Daemon) Refresh(pages []string) error {
+func (d *Engine) Refresh(pages []string) error {
 	if err := d.CheckPages(pages); err != nil {
 		return err
 	}

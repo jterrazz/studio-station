@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           ●	linux-1	deleted
-    - command: 'machines --here'
+    - command: 'machines --this-mac'
       exit: 0
       stdout: |
           ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running

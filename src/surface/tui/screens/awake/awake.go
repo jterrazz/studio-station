@@ -74,7 +74,7 @@ func block(v screen.View, s page.Section, r page.Row) ui.AwakeMac {
 	if r.ID != t.label {
 		m.Title = append(m.Title, r.ID)
 	}
-	if t.here {
+	if t.thisMac {
 		m.Title = append(m.Title, "you are here")
 	} else {
 		m.Title = append(m.Title, "over "+catalog.TailnetProduct)
@@ -138,7 +138,7 @@ func controls(v screen.View, t target) []ui.AwakeLine {
 	if len(toggles.Toggles) > 0 {
 		out = append(out, toggles)
 	}
-	if t.here {
+	if t.thisMac {
 		if g := guards(v.Page); g != "" {
 			out = append(out, ui.AwakeLine{Label: "Guards", Text: g})
 		}
@@ -189,7 +189,7 @@ func (Screen) Keys(v screen.View) []ui.Binding {
 
 type target struct {
 	name, label string
-	here        bool
+	thisMac     bool
 	// value: whether the Mac reports a lid and a battery (E1), as the page's
 	// lid and battery actions name its row.
 	lid, battery bool
@@ -206,7 +206,7 @@ func mac(v screen.View) (target, bool) {
 
 func of(p page.Page, r page.Row) target {
 	t := target{name: r.ID, label: cmp.Or(r.Short, r.Label)}
-	t.here = t.label == "This Mac"
+	t.thisMac = t.label == "This Mac"
 	t.lid, t.battery = offers(p, pageawake.KeyLid, t.name), offers(p, pageawake.KeyBattery, t.name)
 	if len(r.Cells) > 0 {
 		for _, w := range r.Cells[0].Items {
@@ -235,7 +235,7 @@ func offers(p page.Page, key, row string) bool {
 }
 
 func (t target) on() []string {
-	if t.here {
+	if t.thisMac {
 		return nil
 	}
 	return []string{"--on", t.label}
@@ -340,7 +340,7 @@ func change(t target) screen.Effect {
 		}
 	}
 	on := []string{"--on", t.label}
-	if t.here {
+	if t.thisMac {
 		on = nil
 	}
 	if len(t.words) > 0 && t.words[0] == "Never sleeps" {

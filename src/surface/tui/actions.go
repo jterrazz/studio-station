@@ -24,9 +24,9 @@ type actionsState struct {
 const recentActions = 5
 
 func (s shell) target(n node) palette.Target {
-	t := palette.Target{Name: n.name, Label: n.label, Kind: n.kind, Here: n.here, Mac: n.mac, Sections: s.sections(n)}
+	t := palette.Target{Name: n.name, Label: n.label, Kind: n.kind, ThisMachine: n.thisMac, Mac: n.mac, Sections: s.sections(n)}
 	if mac, ok := find(s.nodes, n.mac); ok && n.mac != "" {
-		t.MacHere, t.MacLabel = mac.here, mac.label
+		t.MacHere, t.MacLabel = mac.thisMac, mac.label
 	}
 	if n.kind == machine.Mac {
 		for _, v := range s.nodes {

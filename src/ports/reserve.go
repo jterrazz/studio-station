@@ -27,7 +27,7 @@ func Reserve(p Policy, taken []Reservation, vm string, guestPort int, busy func(
 		if r.VM == vm && r.GuestPort == guestPort {
 			return r, nil
 		}
-		held[r.HostPort] = true
+		held[r.MacPort] = true
 		if r.VM == vm {
 			mine++
 		}
@@ -39,7 +39,7 @@ func Reserve(p Policy, taken []Reservation, vm string, guestPort int, busy func(
 		if held[hp] || (busy != nil && busy(hp)) {
 			continue
 		}
-		return Reservation{VM: vm, GuestPort: guestPort, HostPort: hp}, nil
+		return Reservation{VM: vm, GuestPort: guestPort, MacPort: hp}, nil
 	}
 	return Reservation{}, &RangeFull{Low: p.Low, High: p.High}
 }

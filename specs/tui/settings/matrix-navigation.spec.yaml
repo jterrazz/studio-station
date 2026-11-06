@@ -10,7 +10,7 @@ runs:
           see Engine running
           send \x1b
           settle
-          send ]]]
+          send ]]
           see This Mac  mac-mini  linux-1  api  OK
           see ○ hushlogin               [○]        ○         ○        ?    0/3
           send F
@@ -25,7 +25,7 @@ runs:
           see ─ firewall ─
           send \x1b
           settle
-          send ]]]
+          send ]]
           see only what needs a look
           send F
           see hushlogin

@@ -14,9 +14,9 @@ import (
 type On struct {
 	Machine string
 	// value: the machine this terminal uses, when no --on names one.
-	Used    string
-	Here    string
-	Refresh func(ctx context.Context) error
+	Used        string
+	ThisMachine string
+	Refresh     func(ctx context.Context) error
 	// value: whether a machine of that name exists; an error when it cannot
 	// be told (a Mac that does not answer).
 	Known func(ctx context.Context, name string) (bool, error)
@@ -45,7 +45,7 @@ func (o *On) Target() (string, bool) {
 	if name == "" {
 		name = o.Used
 	}
-	if name == "" || name == o.Here || name == thisMac {
+	if name == "" || name == o.ThisMachine || name == thisMac {
 		return "", false
 	}
 	return name, true
@@ -68,6 +68,12 @@ func Delegates(env Env, c *cobra.Command) (bool, error) {
 	}
 	return true, Menu(env, c)
 }
+
+const (
+	// value: alias of v2's `station daemon`, the engine run under its old
+	// name for one release.
+	RetiredEngineCommand = "daemon"
+)
 
 func refusesOn(path string) bool {
 	fields := strings.Fields(path)

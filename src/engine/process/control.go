@@ -100,7 +100,7 @@ func (c *Control) Read(ctx context.Context) (engine.Reading, error) {
 			}
 		}
 	}
-	if v, err := c.c.Power(ctx); err == nil && v.Session != nil {
+	if v, err := c.c.AwakeView(ctx); err == nil && v.Session != nil {
 		until := v.Session.Until
 		r.AwakeUntil = &until
 	}
@@ -146,15 +146,15 @@ func (c *Control) Stop(ctx context.Context, w engine.Work, by string) (engine.St
 			return r, err
 		}
 		r.VMs, r.Sharing = all.VMs, all.SharingEnded
-		if all.PowerEnded {
-			r.Power = engine.PowerEnded
+		if all.AwakeEnded {
+			r.Awake = engine.AwakeEnded
 		}
 	} else {
 		r.VMs = c.stopDirect(ctx, w)
-		// invariant: a clamshell mask a dead engine left is reset here, by the
+		// invariant: a clamshell mask a dead engine left is released here, by the
 		// same call the engine makes, so a stop never leaves the lid held.
 		if c.o.Power != nil && c.o.Power.Clamshell(false) == nil {
-			r.Power = engine.PowerReset
+			r.Awake = engine.AwakeReleased
 		}
 	}
 	for _, v := range r.VMs {

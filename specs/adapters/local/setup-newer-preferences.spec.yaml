@@ -11,7 +11,7 @@ runs:
           ○	name	not set: station setup --name <name>
           ●	zshrc
           ✗	layout	cannot read {{workdir}}/.config/station/preferences.json: written at version 2 by a newer station, this one knows 1
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts

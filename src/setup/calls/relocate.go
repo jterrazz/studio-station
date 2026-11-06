@@ -23,10 +23,10 @@ type Configurer interface {
 	Configure(ctx context.Context, item string, interactive bool) error
 }
 
-func (s *Service) placedTools() []catalog.Tool {
-	var out []catalog.Tool
+func (s *Service) placedTools() []catalog.App {
+	var out []catalog.App
 	for _, t := range s.o.Tools {
-		if slices.Contains(t.Places(), s.o.Kind) {
+		if slices.Contains(t.LivesOn(), s.o.Kind) {
 			out = append(out, t)
 		}
 	}
@@ -61,10 +61,10 @@ func (s *Service) relocate(ctx context.Context, interactive bool) (setup.Step, e
 }
 
 func (s *Service) writeToolFiles() (written, notes []string, err error) {
-	byFile := map[catalog.ToolFile][]catalog.Relocation{}
-	var order []catalog.ToolFile
+	byFile := map[catalog.AppFile][]catalog.Relocation{}
+	var order []catalog.AppFile
 	for _, t := range s.placedTools() {
-		for _, r := range t.Storage.Relocate {
+		for _, r := range t.Disk.Relocate {
 			if r.Pending != "" {
 				continue
 			}
@@ -142,7 +142,7 @@ func UpsertEnvLine(text, key, value string) (updated string, changed bool, handS
 
 func (s *Service) moveStrays(ctx context.Context, interactive bool) (moved, notes []string, err error) {
 	for _, t := range s.placedTools() {
-		for _, st := range t.Storage.Strays {
+		for _, st := range t.Disk.Misplaced {
 			if !s.pending(st) {
 				continue
 			}
@@ -173,7 +173,7 @@ func (s *Service) moveStrays(ctx context.Context, interactive bool) (moved, note
 	return moved, notes, nil
 }
 
-func (s *Service) pending(st catalog.Stray) bool {
+func (s *Service) pending(st catalog.Misplaced) bool {
 	for _, m := range st.Move {
 		if len(s.m.Glob(s.o.Expand.Expand(m.From))) > 0 {
 			return true
@@ -190,7 +190,7 @@ func (s *Service) busy(ctx context.Context, process string) bool {
 // invariant: every move is one rename(2), never a copy: an entry glob moves each
 // match into the destination folder and keeps the owner's file where one of the same
 // name is already there; a whole folder refuses a destination that holds anything.
-func (s *Service) moveStray(st catalog.Stray) (did bool, conflicts []string, err error) {
+func (s *Service) moveStray(st catalog.Misplaced) (did bool, conflicts []string, err error) {
 	for _, m := range st.Move {
 		from, to := s.o.Expand.Expand(m.From), s.o.Expand.Expand(m.To)
 		entries := strings.HasSuffix(m.From, "/*")

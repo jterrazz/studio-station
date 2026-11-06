@@ -25,7 +25,7 @@ type AdminSetting struct{ Name, Command string }
 
 type Elsewhere struct{ Name, Why string }
 
-func EveryMachine(applies []MachineApply, here page.Context) page.Page {
+func EveryMachine(applies []MachineApply, thisMac page.Context) page.Page {
 	// invariant: --all-machines tells each machine in turn: each setting
 	// applied there, each admin setting with the command that applies it, each
 	// setting that does not live there,
@@ -52,7 +52,7 @@ func EveryMachine(applies []MachineApply, here page.Context) page.Page {
 			rows = append(rows, page.Row{ID: a.Machine + "/" + s.Name, Label: a.Machine, Mark: page.Absent, Detail: page.Texts(s.Name, "needs admin rights"), Hint: page.Cmd(s.Command)})
 		}
 	}
-	return pages.Outcome("settings apply", here, nil, rows, "settings to apply")
+	return pages.Outcome("settings apply", thisMac, nil, rows, "settings to apply")
 }
 
 func summary(c settings.Change) string {

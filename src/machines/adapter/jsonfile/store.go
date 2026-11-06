@@ -39,6 +39,8 @@ func New(files Files, dir string) *Store { return &Store{files: files, dir: dir}
 
 func (s *Store) recordFile(name string) string { return path.Join(s.dir, name+".json") }
 
+// value: alias of the v2 `lent` key, kept in a VM record until Accounts
+// moves its shares; the record is otherwise v3's.
 type file struct {
 	Name        string            `json:"name"`
 	Image       string            `json:"image"`
@@ -51,7 +53,7 @@ type file struct {
 	CPUs        int               `json:"cpus"`
 	MemoryBytes int64             `json:"memory_bytes"`
 	DiskBytes   int64             `json:"disk_bytes"`
-	Lent        json.RawMessage   `json:"lent,omitempty"`
+	Shared      json.RawMessage   `json:"lent,omitempty"`
 	CreatedAt   time.Time         `json:"created_at"`
 	V           int               `json:"v,omitempty"`
 }
@@ -105,7 +107,7 @@ func (s *Store) Put(_ context.Context, r machines.Record) error {
 	}
 	data, err := json.MarshalIndent(file{
 		Name: r.Name, Image: r.Image, Version: r.Version, Lifetime: r.Lifetime, Want: r.Want, Network: r.Network, Check: r.Check, Env: r.Env,
-		CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes, Lent: held.Lent, CreatedAt: r.CreatedAt,
+		CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes, Shared: held.Shared, CreatedAt: r.CreatedAt,
 	}, "", "  ")
 	if err != nil {
 		return err

@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
-type Snapshot[Tool, Item, Stray any] struct {
+type Snapshot[App, Item, Misplaced any] struct {
 	// value: one reading of this machine. Tool, Item and Stray are the rows of
 	// the Apps, Settings and Disk reads, which keep their own types.
 	GeneratedAt time.Time
@@ -18,9 +18,9 @@ type Snapshot[Tool, Item, Stray any] struct {
 	Machine     Machine
 	System      System
 	Environment Environment
-	Workspace   Workspace[Stray]
-	Tools       []Tool
-	Config      []Item
+	Workspace   Workspace[Misplaced]
+	Apps        []App
+	Settings    []Item
 	Setup       Setup
 	Identity    []Check
 	Background  []background.Task
@@ -28,18 +28,18 @@ type Snapshot[Tool, Item, Stray any] struct {
 	Tailnet     ports.Status
 	// value: the Mac readiness checklist, empty on a Mac that needs none.
 	Readiness []Check
-	Power     PowerState
-	// value: Power was read (a host that has it, its daemon answering).
-	PowerKnown bool
+	Awake     AwakeState
+	// value: Awake was read (a Mac whose engine answers).
+	AwakeKnown bool
 	// value: a section whose reading has not answered; never past a whole read.
-	ToolsPending, ConfigPending bool
+	AppsPending, SettingsPending bool
 	// value: what failed the reading, when a section's read did.
 	Err error
 }
 
 type Station struct {
 	Version, Commit string
-	Daemon          Check
+	Engine          Check
 }
 
 type Machine struct {
@@ -98,14 +98,14 @@ type Disk struct {
 	Bytes int64
 }
 
-type Workspace[Stray any] struct {
-	Disk   []Disk
-	Strays []Stray
+type Workspace[Misplaced any] struct {
+	Disk      []Disk
+	Misplaced []Misplaced
 	// value: the disk row has not answered; never past a whole read.
 	DiskPending bool
 }
 
-type PowerState struct {
+type AwakeState struct {
 	Held, Lid bool
 	Until     time.Time
 }
@@ -147,11 +147,11 @@ func SetupOf(steps []Step) Setup {
 	return Setup{State: state, Steps: steps}
 }
 
-func Gateways(here catalog.MachineKind, t ports.Status) []Check {
+func Gateways(thisMac catalog.MachineKind, t ports.Status) []Check {
 	// invariant: the tailnet's Serve is the way every VM service leaves the host, so a
 	// host whose tailnet is connected says whether it is on, and the admin step
 	// when it is not.
-	if here != catalog.Host || !t.Connected {
+	if thisMac != catalog.Mac || !t.Connected {
 		return []Check{}
 	}
 	if t.ServeOn {

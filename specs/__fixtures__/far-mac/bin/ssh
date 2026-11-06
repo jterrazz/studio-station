@@ -7,7 +7,7 @@ case "$*" in
     *" station engine attach")
         /bin/mkdir -p "$HOME/far"
         cd "$HOME/far" && exec /usr/bin/env -i HOME="$HOME/far" PATH="$HOME/far/bin" TZ=UTC NO_COLOR=1 COLUMNS=80 \
-            STATION_MACHINE_KIND=host STATION_SYSTEM_DIRS= STATION_SYSTEM_ROOT="$HOME/far/root" STATION_POWER_STUB="$HOME/far/power" \
+            STATION_MACHINE_KIND=mac STATION_SYSTEM_DIRS= STATION_SYSTEM_ROOT="$HOME/far/root" STATION_POWER_STUB="$HOME/far/power" \
             STATION_GITHUB_API_URL=http://127.0.0.1:9 "$STATION" engine attach
         ;;
     *)

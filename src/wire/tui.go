@@ -20,7 +20,7 @@ import (
 // calls name their machine, never the terminal's.
 func tuiOpener(env kit.Env, m machine, noColor bool) func(context.Context) error {
 	return func(ctx context.Context) error {
-		if err := m.world.lend(ctx); err != nil {
+		if err := m.world.handOver(ctx); err != nil {
 			return err
 		}
 		b := binary{m: m}
@@ -28,14 +28,14 @@ func tuiOpener(env kit.Env, m machine, noColor bool) func(context.Context) error
 		if env.On != nil {
 			opens = env.On.Used
 		}
-		return tui.Run(ctx, tui.Deps{Here: m.where, Opens: opens, Calls: m.registry(env).Metas(), Pages: b.pages, Do: b.do, Run: b.call, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close, Watch: tuiWatch(ctx, m)})
+		return tui.Run(ctx, tui.Deps{ThisMachine: m.where, Opens: opens, Calls: m.registry(env).Metas(), Pages: b.pages, Do: b.do, Run: b.call, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close, Watch: tuiWatch(ctx, m)})
 	}
 }
 
 // invariant: a screen is the page its command prints and an action the
 // command it runs: the TUI runs this very binary for the CLI's words, so a
 // page and a gesture each have one function. An action runs alone, on
-// every host: a read that started before it would show the state it is
+// every system: a read that started before it would show the state it is
 // changing, and in a spec world, which each run reads at its start and
 // writes back at its end, it would write the action's effect away.
 type binary struct {
@@ -116,7 +116,7 @@ func (b *binary) run(ctx context.Context, args []string) (local.Output, error) {
 }
 
 func (b *binary) runIn(ctx context.Context, args []string, stdin string) (local.Output, error) {
-	return b.m.host.Run.Output(ctx, local.Cmd{Name: b.m.host.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}, Stdin: stdin})
+	return b.m.sys.Run.Output(ctx, local.Cmd{Name: b.m.sys.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}, Stdin: stdin})
 }
 
 func (b *binary) open(ctx context.Context, target string) error {
@@ -131,7 +131,7 @@ func (b *binary) terminal(ctx context.Context, line string) error {
 }
 
 func (b *binary) exec(ctx context.Context, c local.Cmd) error {
-	out, err := b.m.host.Run.Output(ctx, c)
+	out, err := b.m.sys.Run.Output(ctx, c)
 	if err != nil {
 		return err
 	}

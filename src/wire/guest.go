@@ -26,8 +26,8 @@ func (m machine) guest() *guest.Service {
 	if root == "" {
 		root = "/"
 	}
-	return guest.New(m.host, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Containers: m.containers(), Accounts: func(ctx context.Context, keys []string) any {
-		a := accountscalls.NewReader(m.pool, m.identities(path.Join(m.paths.State, "children")), accountscalls.ReaderPorts{}, accountscalls.ReaderOptions{Here: m.kind, HereName: m.where.Machine, Now: m.host.Clock.Now, Keys: func() []string { return keys }})
+	return guest.New(m.sys, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Containers: m.containers(), Accounts: func(ctx context.Context, keys []string) any {
+		a := accountscalls.NewReader(m.pool, m.identities(path.Join(m.paths.State, "children")), accountscalls.ReaderPorts{}, accountscalls.ReaderOptions{Here: m.kind, HereName: m.where.Machine, Now: m.sys.Clock.Now, Keys: func() []string { return keys }})
 		return a.Own(ctx)
 	}})
 }
@@ -37,7 +37,7 @@ func (m machine) containers() guest.Containers {
 	if m.world != nil {
 		return nil
 	}
-	return docker.New(m.host.Run)
+	return docker.New(m.sys.Run)
 }
 
 // value: station guest, refused on a Mac.
@@ -47,7 +47,7 @@ type guestServer struct {
 }
 
 func (g guestServer) Check() error {
-	if g.kind == catalog.Host {
+	if g.kind == catalog.Mac {
 		return &model.GuestOnMacError{}
 	}
 	return nil
@@ -67,9 +67,9 @@ func (m machine) listeners(root string) portscontract.Listeners {
 		return m.world.listeners()
 	}
 	if m.kind == catalog.Linux {
-		return procnet.New(m.host.FS, root)
+		return procnet.New(m.sys.FS, root)
 	}
-	return lsof.New(m.host.Run)
+	return lsof.New(m.sys.Run)
 }
 
 func guestCommand(env kit.Env, m machine) *cobra.Command {

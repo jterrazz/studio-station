@@ -112,13 +112,13 @@ func (h *hub) listening() bool {
 }
 
 // invariant: the daemon's own state is compared each tick while a client
-// subscribes, so a VM, guest or lease change reaches the stream within a
+// subscribes, so a VM, guest or reservation change reaches the stream within a
 // tick; with no subscriber nothing is read.
-func (d *Daemon) watchState() {
+func (d *Engine) watchState() {
 	if !d.hub.listening() {
 		return
 	}
-	now := string(mustJSON([]any{d.vmViews(), d.hostView("")}))
+	now := string(mustJSON([]any{d.vmViews(), d.macPorts("")}))
 	d.hub.mu.Lock()
 	moved := d.hub.seen != now
 	d.hub.seen = now
@@ -128,9 +128,9 @@ func (d *Daemon) watchState() {
 	}
 }
 
-func (d *Daemon) known(id string) bool {
-	if id == engine.PagePower {
-		return d.o.PowerPage != nil
+func (d *Engine) known(id string) bool {
+	if id == engine.PageKeepAwake {
+		return d.o.KeepAwakePage != nil
 	}
 	_, ok := d.o.Feeds[id]
 	if feed, subject := feedOf(id); !ok && subject != "" {
@@ -139,8 +139,8 @@ func (d *Daemon) known(id string) bool {
 	return ok
 }
 
-func (d *Daemon) CheckPages(pages []string) error {
-	hint := "watch page with the pages menubar, menubar.switcher, menubar.machine:<name>, menubar.ports[:<mac>], menubar.awake, menubar.activity[:<window>] or power"
+func (d *Engine) CheckPages(pages []string) error {
+	hint := "watch page with the pages menubar, menubar.switcher, menubar.machine:<name>, menubar.ports[:<mac>], menubar.awake, menubar.activity[:<window>] or keep-awake"
 	if len(pages) == 0 {
 		return fault("unknown_page", "the watch names no page", hint)
 	}
@@ -172,8 +172,8 @@ func (l *latest) get(id string) (json.RawMessage, bool) {
 
 // invariant: a feed's first page is its frame and goes out before any
 // other, never coalesced away by the reads that answer right after it.
-func (d *Daemon) feed(ctx context.Context, id string, sub *subscriber, into *latest, first chan<- json.RawMessage) {
-	in := engine.FeedInput{Changed: sub.inlets[id].state, Refresh: sub.inlets[id].refresh, Power: d.power.View}
+func (d *Engine) feed(ctx context.Context, id string, sub *subscriber, into *latest, first chan<- json.RawMessage) {
+	in := engine.FeedInput{Changed: sub.inlets[id].state, Refresh: sub.inlets[id].refresh, Awake: d.awakeJob.View}
 	feed, ok := d.o.Feeds[id]
 	if !ok {
 		var name string
@@ -199,7 +199,7 @@ func (d *Daemon) feed(ctx context.Context, id string, sub *subscriber, into *lat
 	}
 }
 
-func (d *Daemon) Stream(ctx context.Context, pages []string, write func(any) error) error {
+func (d *Engine) Stream(ctx context.Context, pages []string, write func(any) error) error {
 	// invariant: after its opening, a watch of pages only streams: a full page
 	// per change, coalesced over 250 ms (so at most 4 a second) and never resent
 	// unchanged, a tick every 15 s, and the notices.
@@ -218,7 +218,7 @@ func (d *Daemon) Stream(ctx context.Context, pages []string, write func(any) err
 	frames := map[string]chan json.RawMessage{}
 	var feeds sync.WaitGroup
 	for _, id := range pages {
-		if id != engine.PagePower {
+		if id != engine.PageKeepAwake {
 			frames[id] = make(chan json.RawMessage, 1)
 			feeds.Add(1)
 			go func() {
@@ -238,8 +238,8 @@ func (d *Daemon) Stream(ctx context.Context, pages []string, write func(any) err
 	}()
 	last := map[string]string{}
 	pageOf := func(id string) (json.RawMessage, bool) {
-		if id == engine.PagePower {
-			data, err := json.Marshal(d.o.PowerPage(d.power.View()))
+		if id == engine.PageKeepAwake {
+			data, err := json.Marshal(d.o.KeepAwakePage(d.awakeJob.View()))
 			return data, err == nil
 		}
 		return fed.get(id)

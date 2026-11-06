@@ -15,7 +15,7 @@ type Self struct {
 func NewSelf(p machine.Profile) *Self {
 	// value: the machine a spec stands on, by its profile; its capabilities
 	// are the other contracts', so Self drops them.
-	w := &world.World{Here: p.Ref.Name}
+	w := &world.World{ThisMac: p.Ref.Name}
 	w.Mac(p.Ref.Name).Self = &world.Self{Kind: p.Kind, System: p.System, Hardware: p.Hardware}
 	return SelfOf(w, p.Ref.Name)
 }

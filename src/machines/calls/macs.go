@@ -2,227 +2,157 @@ package calls
 
 import (
 	"context"
-	"errors"
-	"maps"
-	"sort"
-	"strings"
-	"time"
 
-	model "github.com/jterrazz/studio-station/src/machines"
-
-	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+
+	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/fail"
+	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/machines"
 )
 
-func (s *Service) Lookup(_ context.Context, name string) (Machine, error) { return s.lookup(name) }
+type AddIn struct {
+	Name string
+	// value: the login and the key ssh uses there; empty takes the owner's.
+	User, Key string
+}
 
-func (s *Service) lookup(name string) (Machine, error) {
-	cfg, err := s.prefs()
-	if err != nil {
-		return Machine{}, err
-	}
-	if h, ok := cfg.Hosts[name]; ok {
-		return Machine{Name: name, Kind: catalog.Host, Here: name == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
-	}
-	records, err := s.records()
-	if err != nil {
-		return Machine{}, err
-	}
-	for _, r := range records {
-		if r.Name == name {
-			return Machine{Name: name, Kind: kindOfImage(r.Image), Host: cfg.Here, User: s.vmUser(cfg), Lifetime: r.Lifetime}, nil
+var Add = call.Call[Deps, AddIn, machines.Added]{
+	Name: "machines.add", Where: call.InProcess, Applies: machines.AddsMacs,
+	Run: func(ctx context.Context, d Deps, in AddIn, _ call.Progress) (machines.Added, error) {
+		if err := d.Machines.CheckMac(); err != nil {
+			return machines.Added{}, err
 		}
-	}
-	// value: a Mac answers to its short name too, the one All machines shows
-	// (mac-mini for jterrazz-mac-mini).
-	if full := s.o.User + "-" + name; s.o.User != "" {
-		if h, ok := cfg.Hosts[full]; ok {
-			return Machine{Name: full, Kind: catalog.Host, Here: full == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
+		if err := d.Machines.AddMac(ctx, in.Name, machines.MacRecord{User: in.User, Key: in.Key}); err != nil {
+			return machines.Added{}, err
 		}
-	}
-	return Machine{}, &model.UnknownMachineError{Name: name}
-}
-
-func (s *Service) Remote(name string) (Machine, error) {
-	// invariant: another machine is never This Mac, by any of its names,
-	// registered or not.
-	if cfg, err := s.prefs(); err == nil {
-		if here := s.here(cfg); name == here || (s.o.User != "" && s.o.User+"-"+name == here) {
-			return Machine{}, &model.HereMachineError{Name: name}
+		added, err := d.Machines.Reach(ctx, in.Name)
+		if err != nil {
+			_ = d.Machines.ForgetMac(ctx, in.Name)
+			return machines.Added{}, err
 		}
-	}
-	m, err := s.lookup(name)
-	if err != nil {
-		return Machine{}, err
-	}
-	if m.Here {
-		return Machine{}, &model.HereMachineError{Name: name}
-	}
-	return m, nil
+		return added, nil
+	},
 }
 
-func (s *Service) RemoteHost(name, verb string) (Machine, error) {
-	m, err := s.Remote(name)
-	var here *model.HereMachineError
-	if errors.As(err, &here) {
-		here.Verb = verb
-	}
-	if err != nil {
-		return Machine{}, err
-	}
-	if m.Kind != catalog.Host {
-		return Machine{}, &model.NotAHostError{Name: name, Verb: verb}
-	}
-	return m, nil
+type ForgetIn struct {
+	Name    string
+	Confirm string
 }
 
-func (s *Service) Init(name string) error {
-	if !validName(name) {
-		return &model.BadNameError{Name: name}
-	}
-	cfg, err := s.prefs()
-	if err != nil {
-		return err
-	}
-	if _, ok := cfg.Hosts[name]; !ok {
-		hosts := maps.Clone(cfg.Hosts)
-		if hosts == nil {
-			hosts = map[string]model.Host{}
+var Forget = call.Call[Deps, ForgetIn, struct{}]{
+	Name: "machines.forget", Where: call.InProcess, Applies: machine.Anywhere, Confirm: confirm.Forget,
+	Errors: []fail.Code{confirm.YesNeeded},
+	Run: func(ctx context.Context, d Deps, in ForgetIn, _ call.Progress) (struct{}, error) {
+		if err := d.Machines.CheckMac(); err != nil {
+			return struct{}{}, err
 		}
-		hosts[name] = model.Host{}
-		if err := s.p.Hosts.Set(hosts); err != nil {
-			return err
+		if _, err := d.Machines.CheckRemoteMac(in.Name, "forget"); err != nil {
+			return struct{}{}, err
 		}
-	}
-	if cfg.VMUser == "" {
-		return s.p.VMUser.Set(s.o.User)
-	}
-	return nil
-}
-
-func (s *Service) AddHost(ctx context.Context, name string, h model.Host) error {
-	if err := s.CheckHost(); err != nil {
-		return err
-	}
-	if !validName(name) {
-		return &model.BadNameError{Name: name}
-	}
-	cfg, err := s.prefs()
-	if err != nil {
-		return err
-	}
-	if _, ok := cfg.Hosts[name]; ok {
-		return &model.NameTakenError{Name: name}
-	}
-	records, err := s.records()
-	if err != nil {
-		return err
-	}
-	for _, r := range records {
-		if r.Name == name {
-			return &model.NameTakenError{Name: name, VM: true}
+		if err := confirm.Require(confirm.For(confirm.Forget, d.Kind), in.Name, in.Confirm); err != nil {
+			return struct{}{}, err
 		}
-	}
-	before := cfg.Hosts
-	hosts := maps.Clone(cfg.Hosts)
-	if hosts == nil {
-		hosts = map[string]model.Host{}
-	}
-	hosts[name] = h
-	if err := s.p.Hosts.Set(hosts); err != nil {
-		return err
-	}
-	if err := s.o.SSHConfig.Put(ctx, []contract.HostBlock{{Name: name, User: h.User, Key: h.Key}}); err != nil {
-		_ = s.p.Hosts.Set(before)
-		return configFailure(err, true)
-	}
-	return nil
+		return struct{}{}, d.Machines.ForgetMac(ctx, in.Name)
+	},
 }
 
-func (s *Service) ForgetHost(ctx context.Context, name string) error {
-	if err := s.CheckHost(); err != nil {
-		return err
-	}
-	m, err := s.RemoteHost(name, "forget")
-	if err != nil {
-		return err
-	}
-	cfg, err := s.prefs()
-	if err != nil {
-		return err
-	}
-	delete(cfg.Hosts, m.Name)
-	if err := s.p.Hosts.Set(cfg.Hosts); err != nil {
-		return err
-	}
-	return configFailure(s.o.SSHConfig.Remove(ctx, m.Name), false)
+type UnlockIn struct {
+	Name string
+	// value: the pre-boot session asks the password at a terminal.
+	Interactive bool
 }
 
-func (s *Service) here(cfg prefsView) string {
-	if cfg.Here != "" {
-		return cfg.Here
-	}
-	return strings.ToLower(s.h.Hostname())
-}
-
-func (s *Service) OtherHosts() []string {
-	// value: every host of the fleet but this one, by name.
-	cfg, err := s.prefs()
-	if err != nil {
-		return nil
-	}
-	here := s.here(cfg)
-	others := make([]string, 0, len(cfg.Hosts))
-	for n := range cfg.Hosts {
-		if n != here && n != cfg.Here {
-			others = append(others, n)
+var Unlock = call.Call[Deps, UnlockIn, machines.Unlocked]{
+	Name: "machines.unlock", Where: call.InProcess, Applies: machine.Anywhere,
+	Run: func(ctx context.Context, d Deps, in UnlockIn, _ call.Progress) (machines.Unlocked, error) {
+		if err := d.Machines.CheckMac(); err != nil {
+			return machines.Unlocked{}, err
 		}
-	}
-	sort.Strings(others)
-	return others
-}
-
-func (s *Service) Names() []string {
-	cfg, err := s.prefs()
-	if err != nil {
-		return nil
-	}
-	names := make([]string, 0, len(cfg.Hosts))
-	for n := range cfg.Hosts {
-		names = append(names, n)
-	}
-	if records, err := s.records(); err == nil {
-		for _, r := range records {
-			names = append(names, r.Name)
+		mac, err := d.Machines.CheckRemoteMac(in.Name, "unlock")
+		if err != nil {
+			return machines.Unlocked{}, err
 		}
-	}
-	sort.Strings(names)
-	return names
+		if d.Machines.Answers(ctx, mac) {
+			return machines.Unlocked{Name: in.Name, Already: true}, nil
+		}
+		if err := d.Machines.Unlock(ctx, in.Name, in.Interactive); err != nil {
+			return machines.Unlocked{}, err
+		}
+		return machines.Unlocked{Name: in.Name, Answers: d.Machines.AwaitAnswer(ctx, mac)}, nil
+	},
 }
 
-func (s *Service) Remember(_ context.Context, f model.Fleet) error {
-	cfg, err := s.prefs()
-	if err != nil {
-		return err
-	}
-	changed := false
-	for _, h := range f.Hosts {
-		known, ok := cfg.Hosts[h.Name]
-		if h.Here || !h.Reachable || !ok {
+type RestartMacIn struct {
+	Name    string
+	Confirm string
+}
+
+var RestartMac = call.Call[Deps, RestartMacIn, machines.Back]{
+	Name: "machines.restart-mac", Where: call.InProcess, Applies: machine.Anywhere, Confirm: confirm.RestartMac,
+	Errors: []fail.Code{confirm.YesNeeded},
+	Run: func(ctx context.Context, d Deps, in RestartMacIn, _ call.Progress) (machines.Back, error) {
+		// invariant: a Mac restarts by a planned restart that unlocks itself,
+		// sent from this Mac; the answer waits for it to answer again, runs
+		// again each VM it paused, and says how they are now.
+		if err := d.Machines.CheckMac(); err != nil {
+			return machines.Back{}, err
+		}
+		mac, err := d.Machines.CheckRemoteMac(in.Name, "restart")
+		if err != nil {
+			return machines.Back{}, err
+		}
+		if err = confirm.Require(confirm.For(confirm.RestartMac, d.Kind), in.Name, in.Confirm); err != nil {
+			return machines.Back{}, err
+		}
+		paused, _ := d.Machines.VMsOf(ctx, mac)
+		report, err := d.Machines.Restart(ctx, in.Name)
+		if err != nil {
+			return machines.Back{}, err
+		}
+		for _, vm := range paused {
+			if vm.State == machines.Running {
+				_ = d.Machines.StartOn(ctx, mac, vm.Name)
+			}
+		}
+		now, _ := d.Machines.VMsOf(ctx, mac)
+		return machines.Back{Name: in.Name, Waited: report.Waited, VMs: pausedNow(paused, now)}, nil
+	},
+}
+
+func pausedNow(paused, now []machines.VM) []machines.VM {
+	var out []machines.VM
+	for _, before := range machines.Ordered(paused) {
+		if before.State != machines.Running {
 			continue
 		}
-		seen := make([]model.SeenVM, 0, len(h.VMs))
-		for _, vm := range model.Ordered(h.VMs) {
-			seen = append(seen, model.SeenVM{Name: vm.Name, Lifetime: vm.Lifetime, CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes})
+		after := before
+		after.State = machines.UnknownState
+		for _, vm := range now {
+			if vm.Name == before.Name {
+				after = vm
+			}
 		}
-		known.Answered, known.VMs = s.h.Now().UTC().Truncate(time.Second), seen
-		if h.LAN != "" {
-			known.LAN = h.LAN
-		}
-		cfg.Hosts[h.Name], changed = known, true
+		out = append(out, after)
 	}
-	if !changed {
-		return nil
+	return out
+}
+
+type SSHIn struct{ Name string }
+
+var SSH = call.Call[Deps, SSHIn, machines.SSHTarget]{
+	Name: "machines.ssh", Where: call.InProcess, Applies: machine.Anywhere,
+	Run: func(ctx context.Context, d Deps, in SSHIn, _ call.Progress) (machines.SSHTarget, error) {
+		return d.Machines.SSH(ctx, in.Name)
+	},
+}
+
+func AdoptV1(hosts contract.MacsPrefs, vmUser contract.VMUserPrefs, macs map[string]machines.MacRecord, user string) error {
+	// value: the Macs and the VM user a v1 config.json named, kept where
+	// machines keeps them; setup's layout step converts the file once.
+	if err := hosts.Set(macs); err != nil {
+		return err
 	}
-	return s.p.Hosts.Set(cfg.Hosts)
+	return vmUser.Set(user)
 }

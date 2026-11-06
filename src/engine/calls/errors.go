@@ -38,10 +38,10 @@ func (e *RunningError) Error() string {
 	return "an engine already runs (pid " + strconv.Itoa(e.PID) + ")"
 }
 
-type HostOnlyError struct{ Here catalog.MachineKind }
+type MacOnlyError struct{ Kind catalog.MachineKind }
 
-func (e *HostOnlyError) Error() string {
-	return "the engine runs only on a host; here is " + e.Here.Article()
+func (e *MacOnlyError) Error() string {
+	return "the engine runs only on a Mac; this machine is " + e.Kind.Article()
 }
 
 type OpError struct {

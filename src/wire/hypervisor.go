@@ -12,11 +12,11 @@ import (
 )
 
 func (m machine) hypervisor() contract.Hypervisor {
-	tool := tart.New(m.host.Run, m.host.FS, m.host.Clock, processes{darwin.NewTables(m.vars)}, m.paths.State)
+	app := tart.New(m.sys.Run, m.sys.FS, m.sys.Clock, processes{darwin.NewTables(m.vars)}, m.paths.State)
 	if m.world != nil {
-		return m.world.hypervisor(tool.Name())
+		return m.world.hypervisor(app.Name())
 	}
-	return tool
+	return app
 }
 
 type engineHypervisor struct{ contract.Hypervisor }

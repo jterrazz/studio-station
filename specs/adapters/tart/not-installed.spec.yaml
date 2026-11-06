@@ -1,4 +1,4 @@
-description: 'without tart the create is refused before anything, and names the tool to install'
+description: 'without tart the create is refused before anything, and names the app to install'
 fixture: ../../__fixtures__/vms/
 runs:
     - command: '--version > /dev/null; /bin/rm bin/tart'

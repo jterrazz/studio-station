@@ -46,10 +46,10 @@ func (m machine) Probe(_ context.Context, name string, args []string, _ time.Dur
 	return p.output, p.code, ok
 }
 
-func reportOf(t *testing.T, tool catalog.Tool, manager *fake.State, m machine) apps.Report {
+func reportOf(t *testing.T, tool catalog.App, manager *fake.State, m machine) apps.Report {
 	method := tool.Installs[0].Install.Method()
 	installers := contract.Installers{method: fake.New(method, manager)}
-	reports, err := calls.NewService(m, []catalog.Tool{tool}, nil, calls.ServiceOptions{Here: catalog.Host, Root: "/", Installers: installers, Pool: probe.NewPool(context.Background(), m, 16, 1)}).Inventory(context.Background())
+	reports, err := calls.NewService(m, []catalog.App{tool}, nil, calls.ServiceOptions{Here: catalog.Mac, Root: "/", Installers: installers, Pool: probe.NewPool(context.Background(), m, 16, 1)}).Inventory(context.Background())
 	if err != nil || len(reports) != 1 {
 		t.Fatalf("inventory: %v %v", reports, err)
 	}
@@ -60,10 +60,10 @@ func java(output string, code int) machine {
 	return machine{paths: map[string]string{"java": "/usr/bin/java"}, probes: map[string]probed{"java -version": {output, code}}}
 }
 
-var javaTool = catalog.Tool{Name: "java", Installs: catalog.Anywhere(catalog.Cask("temurin")), Provides: []string{"java"}, Version: catalog.Probe{Args: []string{"java", "-version"}, Pattern: `version "([^"]+)"`}}
+var javaTool = catalog.App{Name: "java", Installs: catalog.Anywhere(catalog.Cask("temurin")), Provides: []string{"java"}, Version: catalog.VersionRead{Args: []string{"java", "-version"}, Pattern: `version "([^"]+)"`}}
 
 func TestStateAnAppPresentWithoutItsManagerIsDegraded(t *testing.T) {
-	tool := catalog.Tool{Name: "keynote", Installs: catalog.HostOnly(catalog.Cask("keynote")), Bundle: "Keynote"}
+	tool := catalog.App{Name: "keynote", Installs: catalog.MacOnly(catalog.Cask("keynote")), Bundle: "Keynote"}
 
 	got := reportOf(t, tool, &fake.State{Absent: true}, machine{files: map[string]bool{"/Applications/Keynote.app": true}})
 

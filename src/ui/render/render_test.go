@@ -396,7 +396,7 @@ func TestTheKitchenSinkHoldsEveryNodeAndValueKind(t *testing.T) {
 	for _, m := range []page.Mark{page.OK, page.Attention, page.Absent, page.Broken} {
 		want = append(want, "mark "+string(m))
 	}
-	for _, r := range []page.Reason{page.Outdated, page.Stray, page.Unreachable, page.Mismatch, page.Unmanaged, page.Missing, page.Partial, page.Differs, page.Unset, page.Stopped, page.Late, page.Degraded, page.Orphan, page.Waiting, page.Failing, page.Refused, page.Down, page.Outlived, page.Expiring, page.Guard} {
+	for _, r := range []page.Reason{page.Outdated, page.Misplaced, page.Unreachable, page.Mismatch, page.Unmanaged, page.Missing, page.Partial, page.Differs, page.Unset, page.Stopped, page.Late, page.Degraded, page.Orphan, page.Waiting, page.Failing, page.Refused, page.Down, page.Outlived, page.Expiring, page.Guard} {
 		want = append(want, "reason "+string(r))
 	}
 	for _, k := range []page.Kind{page.KindText, page.KindCount, page.KindSize, page.KindRatio, page.KindPercent, page.KindVersion, page.KindDuration, page.KindAge, page.KindUntil, page.KindURL, page.KindIdentity, page.KindPath, page.KindPort, page.KindPortMap, page.KindRange, page.KindCommand, page.KindList, page.KindLevels, page.KindOn, page.KindOff, page.KindUnknown} {

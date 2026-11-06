@@ -1,4 +1,4 @@
-description: 'bare machines writes a block for a VM of another host, with the VM login'
+description: 'bare machines writes a block for a VM of another Mac, with the VM login'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/

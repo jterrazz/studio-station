@@ -18,8 +18,8 @@ import (
 )
 
 type Deps struct {
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 type Input struct{ App, Confirm string }
@@ -61,7 +61,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Page(pagedisk.Erased(outcome, d.Here), nil); err != nil {
+			if err := io.Page(pagedisk.Erased(outcome, d.ThisMachine), nil); err != nil {
 				return err
 			}
 			if failed, _ := disk.Failures([]disk.Outcome{outcome}); failed > 0 {

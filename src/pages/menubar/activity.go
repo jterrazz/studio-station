@@ -20,7 +20,7 @@ func windows() []window {
 	return []window{{"6m", "6 min", 6 * time.Minute}, {"1h", "1 h", time.Hour}, {"24h", "24 h", 24 * time.Hour}}
 }
 
-func Activity(v pageactivity.View, here page.Context) page.Page {
+func Activity(v pageactivity.View, thisMac page.Context) page.Page {
 	// invariant: SPEC §10.2 Activity: the machine's measures of §6.2 as graphs
 	// over the window picked (1 h unless picked), then its top processes, in
 	// place of the CLI's last values; the graphs' section says its window,
@@ -28,7 +28,7 @@ func Activity(v pageactivity.View, here page.Context) page.Page {
 	if v.Graph == 0 {
 		v.Graph = time.Hour
 	}
-	p := pageactivity.Page(v, here)
+	p := pageactivity.Page(v, thisMac)
 	p.ID = ActivityID
 	kept := p.Sections[:0]
 	for _, s := range p.Sections {

@@ -83,7 +83,7 @@ func (p played) Alive(int) bool        { return false }
 func (p played) Signal(int, Sig) error { return errors.ErrUnsupported }
 func (p played) Reap(string) int       { return 0 }
 
-func Probe(ctx context.Context, r Runner, c Cmd) (string, bool) {
+func Read(ctx context.Context, r Runner, c Cmd) (string, bool) {
 	// value: a read: the trimmed stdout, ok only when the command ran and
 	// exited 0.
 	out, err := r.Output(ctx, c)

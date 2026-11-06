@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           ●	zshrc
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
     - command: '--version >/dev/null; /usr/bin/grep -c "^# >>> station >>>$" .zshrc'
       exit: 0
       stdout: |

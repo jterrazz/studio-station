@@ -25,7 +25,7 @@ var _ contract.Jobs = (*Jobs)(nil)
 
 func New(w *world.World, mac string) *Jobs { return &Jobs{w: w, mac: mac} }
 
-func (j *Jobs) here() *world.Mac {
+func (j *Jobs) thisMac() *world.Mac {
 	if j.w.Macs == nil {
 		j.w.Macs = map[string]*world.Mac{}
 	}
@@ -57,7 +57,7 @@ func (j *Jobs) failed(verb string, r contract.Ref) error {
 func (j *Jobs) List(context.Context) ([]background.Job, error) {
 	j.w.Lock()
 	defer j.w.Unlock()
-	m := j.here()
+	m := j.thisMac()
 	jobs := make([]background.Job, 0, len(m.Jobs)+1)
 	for label, job := range m.Jobs {
 		if label != catalog.EngineLabel {
@@ -77,7 +77,7 @@ const enginePID = 812
 // value: the engine's job as the job manager lists it: loaded and running
 // while the engine runs, its definition where setup wrote it.
 func (j *Jobs) engineJob() background.Job {
-	m := j.here()
+	m := j.thisMac()
 	job := background.Job{Label: catalog.EngineLabel, Scope: background.ScopeUser, File: catalog.EnginePlist("~"), ProgramExists: true, OwnerExists: true}
 	if written := m.Jobs[catalog.EngineLabel]; written != nil {
 		job.File, job.Program = written.File, written.Program
@@ -95,12 +95,12 @@ func (j *Jobs) engineJob() background.Job {
 func (j *Jobs) engine(r contract.Ref) bool { return r.Label == catalog.EngineLabel }
 
 func (j *Jobs) setUp() bool {
-	m := j.here()
+	m := j.thisMac()
 	return m.Engine != nil || m.Jobs[catalog.EngineLabel] != nil
 }
 
 func (j *Jobs) run(on bool) {
-	m := j.here()
+	m := j.thisMac()
 	if m.Engine == nil {
 		m.Engine = &world.Engine{Stopped: true}
 	}
@@ -114,12 +114,12 @@ func (j *Jobs) Read(_ context.Context, r contract.Ref) contract.Status {
 	j.w.Lock()
 	defer j.w.Unlock()
 	if j.engine(r) {
-		if m := j.here(); m.EngineRuns() {
+		if m := j.thisMac(); m.EngineRuns() {
 			return contract.Status{Loaded: true, State: "running"}
 		}
 		return contract.Status{}
 	}
-	job := j.here().Jobs[r.Label]
+	job := j.thisMac().Jobs[r.Label]
 	switch {
 	case job == nil || !job.Loaded:
 		return contract.Status{}
@@ -132,7 +132,7 @@ func (j *Jobs) Read(_ context.Context, r contract.Ref) contract.Status {
 func (j *Jobs) Overrides(context.Context, contract.Domain) map[string]bool {
 	j.w.Lock()
 	defer j.w.Unlock()
-	return maps.Clone(j.here().Overrides)
+	return maps.Clone(j.thisMac().Overrides)
 }
 
 func (j *Jobs) Install(_ context.Context, spec contract.JobSpec) (bool, error) {
@@ -142,7 +142,7 @@ func (j *Jobs) Install(_ context.Context, spec contract.JobSpec) (bool, error) {
 		return false, &contract.Failed{Argv: []string{command, "install", spec.Label}, Exit: 1, Stderr: "the job manager refused it", See: command + " read " + spec.Label}
 	}
 	definition := fmt.Sprintf("%+v", spec)
-	m := j.here()
+	m := j.thisMac()
 	job := m.Jobs[spec.Label]
 	if job != nil && job.Definition == definition {
 		return false, nil
@@ -164,12 +164,12 @@ func (j *Jobs) Load(_ context.Context, r contract.Ref) error {
 	j.w.Lock()
 	defer j.w.Unlock()
 	if j.engine(r) && j.setUp() {
-		if j.here().Engine == nil {
+		if j.thisMac().Engine == nil {
 			j.run(false)
 		}
 		return nil
 	}
-	job := j.here().Jobs[r.Label]
+	job := j.thisMac().Jobs[r.Label]
 	if job == nil || job.File != r.File {
 		return &contract.Failed{Argv: []string{command, "load", r.Label}, Exit: 1, Stderr: "no definition at " + r.File, See: command + " read " + r.Label}
 	}
@@ -194,7 +194,7 @@ func (j *Jobs) start(r contract.Ref) error {
 		j.run(true)
 		return nil
 	}
-	job := j.here().Jobs[r.Label]
+	job := j.thisMac().Jobs[r.Label]
 	if job == nil || !job.Loaded {
 		return j.failed("start", r)
 	}
@@ -211,7 +211,7 @@ func (j *Jobs) Restart(_ context.Context, r contract.Ref) error {
 	if j.engine(r) {
 		return j.start(r)
 	}
-	job := j.here().Jobs[r.Label]
+	job := j.thisMac().Jobs[r.Label]
 	if job == nil || !job.Loaded {
 		return j.failed("restart", r)
 	}
@@ -227,13 +227,13 @@ func (j *Jobs) Stop(_ context.Context, r contract.Ref) error {
 
 func (j *Jobs) stop(r contract.Ref) error {
 	if j.engine(r) {
-		if !j.here().EngineRuns() {
+		if !j.thisMac().EngineRuns() {
 			return j.failed("stop", r)
 		}
 		j.run(false)
 		return nil
 	}
-	job := j.here().Jobs[r.Label]
+	job := j.thisMac().Jobs[r.Label]
 	if job == nil || !job.Loaded {
 		return j.failed("stop", r)
 	}
@@ -245,6 +245,6 @@ func (j *Jobs) Remove(_ context.Context, r contract.Ref) error {
 	j.w.Lock()
 	defer j.w.Unlock()
 	_ = j.stop(r)
-	delete(j.here().Jobs, r.Label)
+	delete(j.thisMac().Jobs, r.Label)
 	return nil
 }

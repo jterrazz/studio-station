@@ -11,7 +11,7 @@ type Paths struct {
 	Roots                           Roots
 }
 
-type Host = machines.Host
+type Host = machines.MacRecord
 
 type V1Preferences struct {
 	// value: station's preferences as a v1 config.json converts to them, one

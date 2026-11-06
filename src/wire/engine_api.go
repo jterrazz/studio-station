@@ -26,7 +26,7 @@ func socketAPI(h local.Host, file string) engineAPI {
 	})}
 }
 
-func (m machine) engineAPI() engineAPI { return socketAPI(m.host, engine.SocketPath(m.paths.State)) }
+func (m machine) engineAPI() engineAPI { return socketAPI(m.sys, engine.SocketPath(m.paths.State)) }
 
 type engineAPI struct{ c api.Client }
 
@@ -58,9 +58,9 @@ func (e engineAPI) StopAll(ctx context.Context) (engine.StopAll, error) {
 	return all, err
 }
 
-func (e engineAPI) Power(ctx context.Context) (awake.View, error) {
+func (e engineAPI) AwakeView(ctx context.Context) (awake.View, error) {
 	var v awake.View
-	err := e.do(ctx, engine.CallPower, nil, &v)
+	err := e.do(ctx, engine.CallAwakeView, nil, &v)
 	return v, err
 }
 
@@ -73,7 +73,7 @@ func word(e *fail.Error) (message, hint string) {
 
 // invariant: the engine serves its own calls and this machine's registry,
 // gated by this machine's profile and worded by this binary's table.
-func (m machine) engineServer(d *process.Daemon, registry *call.Registry) func(ctx context.Context, conn process.Stream) {
-	s := process.Server(d, process.Host{Registry: registry, Here: m.profile, Word: word, Sleep: m.host.Clock.Sleep})
+func (m machine) engineServer(d *process.Engine, registry *call.Registry) func(ctx context.Context, conn process.Stream) {
+	s := process.Server(d, process.Serving{Registry: registry, ThisMachine: m.profile, Word: word, Sleep: m.sys.Clock.Sleep})
 	return func(ctx context.Context, conn process.Stream) { s.Conn(ctx, conn) }
 }

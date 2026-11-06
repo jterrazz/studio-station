@@ -14,7 +14,7 @@ const ReadBudget = 5 * time.Second
 
 // invariant: an item runs through the Applier of its effect's kind; an
 // effect no Applier writes is an error, never a silent success.
-func (s *Catalogue) handler(it catalog.ConfigItem) (handler, error) {
+func (s *Catalogue) handler(it catalog.Setting) (handler, error) {
 	a, ok := s.appliers.For(it)
 	if !ok {
 		return handler{}, &settings.UnhandledError{Item: it.Name}

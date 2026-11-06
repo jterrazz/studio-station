@@ -19,9 +19,9 @@ func parts(r page.Row) (mac, name, version string) {
 	return mac, name, version
 }
 
-func Gesture(here page.Context, a page.Action, rows []page.Row) (gesture.Gesture, bool) {
+func Gesture(thisMac page.Context, a page.Action, rows []page.Row) (gesture.Gesture, bool) {
 	on := func(mac string, w []string) []string {
-		if mac != "" && mac != here.Machine {
+		if mac != "" && mac != thisMac.Machine {
 			w = append(w, "--on", mac)
 		}
 		return w

@@ -14,7 +14,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 type Input struct{ VM, Port string }
@@ -49,7 +49,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pageports.Stopped(out.Reservation, d.Here), nil)
+			return io.Page(pageports.Stopped(out.Reservation, d.ThisMachine), nil)
 		},
 	}, env)
 }

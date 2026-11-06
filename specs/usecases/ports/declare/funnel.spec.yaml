@@ -1,4 +1,4 @@
-description: 'a port declared via Tailscale Funnel is seen when the Mac''s Funnel config lists it, and only then'
+description: 'a port declared via Tailscale Funnel is seen when the Mac''s Funnel lists it, and only then'
 env: two-macs
 runs:
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].tailnet.funnel = [8443]'' world.json > next.json && /bin/mv next.json world.json'

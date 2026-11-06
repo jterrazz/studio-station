@@ -12,7 +12,7 @@ import (
 
 func (e Env) envelope(ctx context.Context) *output.Envelope {
 	// invariant: the machine a document is about is the one its call ran on,
-	// named as the interface names it (SPEC §2.5, §11.1); a name the fleet
+	// named as the interface names it (SPEC §2.5, §11.1); a name All machines
 	// does not hold is said as it was typed.
 	if e.Now == nil {
 		return nil
@@ -37,7 +37,7 @@ func (e Env) envelope(ctx context.Context) *output.Envelope {
 			return out
 		}
 	}
-	if m, ok := e.named(ctx, target, machinescalls.ListIn{Here: true}); ok {
+	if m, ok := e.named(ctx, target, machinescalls.ListIn{ThisMac: true}); ok {
 		out.Machine = m
 	} else if m, ok := e.named(ctx, target, machinescalls.ListIn{Unwritten: true}); ok {
 		out.Machine = m
@@ -47,14 +47,14 @@ func (e Env) envelope(ctx context.Context) *output.Envelope {
 
 func (e Env) named(ctx context.Context, target machine.Ref, in machinescalls.ListIn) (output.Machine, bool) {
 	// invariant: a Mac and this Mac's own VMs are named from this Mac's
-	// records; only a VM another Mac holds is asked of the fleet.
+	// records; only a VM another Mac holds is asked of All machines.
 	list, err := call.Read(ctx, e.Calls, e.Self, machinescalls.List, in, nil)
 	if err != nil {
 		return output.Machine{}, false
 	}
-	for _, h := range list.Fleet.Hosts {
+	for _, h := range list.All.Macs {
 		if h.Name == target.Name || page.MacName(h.Name, e.Self.Name) == target.Name {
-			return output.Machine{Name: h.Name, Label: page.MacName(h.Name, e.Self.Name), Kind: string(machine.Mac), ThisMac: h.Here}, true
+			return output.Machine{Name: h.Name, Label: page.MacName(h.Name, e.Self.Name), Kind: string(machine.Mac), ThisMac: h.ThisMac}, true
 		}
 		for _, vm := range h.VMs {
 			if vm.Name == target.Name {

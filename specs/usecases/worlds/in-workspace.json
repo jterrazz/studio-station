@@ -1,6 +1,6 @@
 {
     "now": "2026-11-04T10:00:00Z",
-    "here": "linux-1",
+    "this_mac": "linux-1",
     "macs": {
         "jterrazz-macbook-pro": {
             "engine": {

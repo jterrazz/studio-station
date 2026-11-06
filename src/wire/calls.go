@@ -33,43 +33,43 @@ import (
 // Deps; the Router runs its calls on this machine.
 func (m machine) registry(env kit.Env) *call.Registry {
 	kind := m.profile.Kind
-	config := configService(m)
+	settings := settingsOf(m)
 	var ask settingscalls.Ask
 	if env.Interactive {
-		ask = configAsk{config: config, ask: env.Prompt}
+		ask = settingsAsk{settings: settings, ask: env.Prompt}
 	}
-	setupService := setupService(env, m)
+	setupOf := setupOf(env, m)
 	var named setupcalls.Ask
 	if env.Interactive {
-		named = setupAsk{setup: setupService, ask: env.Prompt}
+		named = setupAsk{setup: setupOf, ask: env.Prompt}
 	}
 	sections := statusDeps(env, m)
-	here := &localCalls{profile: m.profile, late: m.far}
-	sections.Calls, sections.Kind = here, kind
+	thisMac := &localCalls{profile: m.profile, late: m.far}
+	sections.Calls, sections.Kind = thisMac, kind
 	registry, err := call.NewRegistry(
 		activitycalls.All(m.activityDeps(sections.Meter)),
 		overviewcalls.All(sections),
 		accountscalls.All(accountscalls.Deps{Accounts: m.accounts(), Shares: m.secrets(), Kind: kind}),
-		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
+		appscalls.All(appscalls.Deps{Apps: appsOf(env, m), Kind: kind}),
 		awakecalls.All(m.awakeDeps()),
 		backgroundcalls.All(m.backgroundDeps()),
-		diskcalls.All(diskcalls.Deps{Disk: m.storage(env), Kind: kind}),
+		diskcalls.All(diskcalls.Deps{Disk: m.diskOf(env), Kind: kind}),
 		enginecalls.All(enginecalls.Deps{Control: m.control(), Kind: kind}),
-		imagescalls.All(imagescalls.Deps{Images: imageBuilds{m.images()}, Kind: kind}),
+		imagescalls.All(imagescalls.Deps{Images: imageBuilder{m.images()}, Kind: kind}),
 		machinescalls.All(machinescalls.Deps{Machines: machineCalls{Service: m.machines(env.Interactive), m: m}, Kind: kind, Laptop: m.profile.Caps.Battery}),
-		portscalls.All(portscalls.Deps{Ports: m.services(env), Tailnet: m.tailnetStatus(), Kind: kind,
+		portscalls.All(portscalls.Deps{Ports: m.portsOf(env), Tailnet: m.tailnetStatus(), Kind: kind,
 			Declarations: m.stores.declarations, Routes: m.routes(), Far: farPorts{m}}),
-		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupService}, Ask: named}),
+		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupOf}, Ask: named}),
 		settingscalls.All(settingscalls.Deps{
-			Settings: config, Appliers: config.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),
-			Now: m.host.Clock.Now, Ask: ask, Shortcuts: docker.New(m.host.Run), GitAliases: gitaliases.NewShortcuts(m.host.Run), Shell: m.shell(), Kind: kind,
-			Facts: m.facts(), Caps: m.profile.Caps, Admin: m.host.Env.Euid() == 0, Mac: m.profile.Ref.Name, Fleet: settingsFleet{m}, Public: settingsPublic{here},
+			Settings: settings, Appliers: settings.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),
+			Now: m.sys.Clock.Now, Ask: ask, Shortcuts: docker.New(m.sys.Run), GitAliases: gitaliases.NewShortcuts(m.sys.Run), Shell: m.shell(), Kind: kind,
+			Facts: m.facts(), Caps: m.profile.Caps, Admin: m.sys.Env.Euid() == 0, Mac: m.profile.Ref.Name, All: settingsAllMachines{m}, Public: settingsPublic{thisMac},
 		}),
 	)
 	if err != nil {
 		panic(err)
 	}
-	here.registry = registry
+	thisMac.registry = registry
 	return registry
 }
 
@@ -106,7 +106,7 @@ func (l *localCalls) Watch(ctx context.Context, _ coremachine.Ref, name string, 
 	return l.registry.Stream(ctx, l.profile, name, in, p)
 }
 
-type awakePower struct{ *awakecalls.Service }
+type awakeKeeper struct{ *awakecalls.Service }
 
 // invariant: the history a Mac's engine keeps, asked over its socket.
 func engineKept(api engineAPI) func(ctx context.Context, name string) (activity.Kept, time.Time, bool, error) {
@@ -147,7 +147,7 @@ func keptOf(ctx context.Context, api engineAPI, name string) (activity.Kept, tim
 // value: a sample composes its free space from the Disk family, and on a
 // Mac its thermal and battery from Power: a VM's are its Mac's.
 func (m machine) activityDeps(meter activitycontract.Meter) activitycalls.Deps {
-	d := activitycalls.Deps{Meter: meter, Volume: m.disk(), Name: m.profile.Ref.Name, Kind: m.profile.Kind, Sleep: m.host.Clock.Sleep, Now: m.host.Clock.Now}
+	d := activitycalls.Deps{Meter: meter, Volume: m.disk(), Name: m.profile.Ref.Name, Kind: m.profile.Kind, Sleep: m.sys.Clock.Sleep, Now: m.sys.Clock.Now}
 	if m.profile.Kind == coremachine.Mac {
 		d.Kept = engineKept(m.engineAPI())
 		d.Holder = engineHolder(m.engineAPI())

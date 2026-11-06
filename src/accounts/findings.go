@@ -13,7 +13,7 @@ func Findings(r Report, m machine.Ref) []finding.Finding {
 	// sign-in command; a VM's accounts are its own Overview's.
 	var out []finding.Finding
 	for _, mm := range r.Machines {
-		if !mm.Here {
+		if !mm.ThisMac {
 			continue
 		}
 		for _, a := range mm.Accounts {

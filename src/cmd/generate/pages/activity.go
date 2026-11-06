@@ -10,7 +10,7 @@ import (
 // value: This Mac's activity as the engine keeps it: 34 % busy of 10 CPU,
 // rates over the last 10 s, the VM linux-1 the busiest.
 func thisMacActivity() pageactivity.View {
-	at := powerNow
+	at := keepAwakeNow
 	last := activity.Sample{
 		At: at, CPUs: 10, Load: [3]float64{2.8, 3.1, 2.9}, MemUsed: 13314398618, MemTotal: 17179869184, Pressure: activity.PressureNormal,
 		SwapUsed: 1288490188, DiskRead: 182e9, DiskWritten: 96e9, NetIn: 38e9, NetOut: 4.6e9, DiskFree: 388e9, DiskTotal: 994e9,
@@ -28,9 +28,9 @@ func thisMacActivity() pageactivity.View {
 func activityPages() []Fixture {
 	stopped := pageactivity.View{Name: "api", Label: "api", Kind: "workspace", Mac: "jterrazz-macbook-pro", On: "This Mac", Stopped: true}
 	return states("activity",
-		pending(pageactivity.Page(thisMacActivity(), here())),
-		pageactivity.Page(stopped, here()),
+		pending(pageactivity.Page(thisMacActivity(), thisMacContext())),
+		pageactivity.Page(stopped, thisMacContext()),
 		failure("activity", "activity", "jterrazz-mac-mini does not answer", "station machines"),
-		pageactivity.Page(thisMacActivity(), here()),
+		pageactivity.Page(thisMacActivity(), thisMacContext()),
 	)
 }

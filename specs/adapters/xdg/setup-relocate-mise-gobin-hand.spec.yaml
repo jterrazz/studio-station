@@ -1,4 +1,4 @@
-description: 'a go_set_gobin the owner set in mise''s config is reported and never overwritten'
+description: 'a go_set_gobin the owner set in mise''s settings file is reported and never overwritten'
 fixture: ./__fixtures__/mise-gobin-hand/
 runs:
     - command: 'setup --name m </dev/null'

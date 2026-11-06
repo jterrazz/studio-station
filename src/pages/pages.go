@@ -24,11 +24,11 @@ func MarkOf(s catalog.State) page.Mark {
 	return page.Unjudged
 }
 
-func Failure(id page.ID, command string, here page.Context, message, hint string) page.Page {
-	return page.Seal(page.Page{ID: id, Command: command, Context: here, Error: &page.Error{Message: message, Hint: hint}})
+func Failure(id page.ID, command string, thisMac page.Context, message, hint string) page.Page {
+	return page.Seal(page.Page{ID: id, Command: command, Context: thisMac, Error: &page.Error{Message: message, Hint: hint}})
 }
 
-func Outcome(command string, here page.Context, columns []page.Column, rows []page.Row, empty string, extra ...page.Section) page.Page {
+func Outcome(command string, thisMac page.Context, columns []page.Column, rows []page.Row, empty string, extra ...page.Section) page.Page {
 	items := make([]page.Item, 0, len(rows))
 	for i := range rows {
 		items = append(items, page.Item{Row: &rows[i]})
@@ -40,7 +40,7 @@ func Outcome(command string, here page.Context, columns []page.Column, rows []pa
 		columns = OutcomeColumns()
 	}
 	sections := append([]page.Section{{ID: "changes", Title: "Changes", Role: page.Banner, Columns: columns, Items: items}}, extra...)
-	return page.Seal(page.Page{ID: page.Outcome, Command: command, Context: here, Sections: sections})
+	return page.Seal(page.Page{ID: page.Outcome, Command: command, Context: thisMac, Sections: sections})
 }
 
 func OutcomeColumns() []page.Column {

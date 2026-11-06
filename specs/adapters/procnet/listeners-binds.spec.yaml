@@ -1,4 +1,4 @@
-description: '/proc/net/tcp and tcp6 are read in host byte order, every address kind, listening rows only'
+description: '/proc/net/tcp and tcp6 are read in the machine''s byte order, every address kind, listening only'
 fixture: ./__fixtures__/binds/
 env: engine
 runs:

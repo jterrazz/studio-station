@@ -14,7 +14,7 @@ What an app keeps on a machine, by what an erase would lose, and the one family 
 
 ## The groups
 
-Every path a tool or station writes has one catalogue level, declared in `src/catalog/storage.go`; the Disk group is the level in the owner's words (`disk.GroupOf`).
+Every path a tool or station writes has one catalogue level, declared in `src/catalog/disk.go`; the Disk group is the level in the owner's words (`disk.GroupOf`).
 
 | Group           | Levels              | Means                                                                 | Who removes it                                 |
 | --------------- | ------------------- | --------------------------------------------------------------------- | ---------------------------------------------- |

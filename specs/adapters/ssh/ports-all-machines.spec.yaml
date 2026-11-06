@@ -1,7 +1,7 @@
 description: 'ports --all-machines asks every Mac over ssh, its range with it, and shows one that does not answer'
 fixture:
     - ../../__fixtures__/vms/
-    - ./__fixtures__/ports-fleet/
+    - ./__fixtures__/ports-all-machines/
 runs:
     - command: 'ports --all-machines --json | /usr/bin/jq -c ''.schema, [.range[] | .mac], ([.ports[] | keys] | unique)'''
       exit: 0

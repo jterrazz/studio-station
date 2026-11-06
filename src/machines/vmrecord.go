@@ -19,7 +19,7 @@ func ProfileEnv(reserved []Reserved) map[string]string {
 	env := map[string]string{}
 	publicHost := ""
 	for _, r := range reserved {
-		publicHost = r.PublicHost
+		publicHost = r.PublicName
 		for _, p := range catalog.Profiles {
 			if p.Name != r.Profile {
 				continue
@@ -30,13 +30,13 @@ func ProfileEnv(reserved []Reserved) map[string]string {
 		}
 	}
 	if publicHost != "" {
-		env[catalog.PublicHostEnv.Name] = render(catalog.PublicHostEnv.Value, Reserved{PublicHost: publicHost})
+		env[catalog.PublicNameEnv.Name] = render(catalog.PublicNameEnv.Value, Reserved{PublicName: publicHost})
 	}
 	return env
 }
 
 func render(template string, r Reserved) string {
-	return strings.NewReplacer("{url}", r.URL, "{host}", r.PublicHost, "{port}", strconv.Itoa(r.HostPort)).Replace(template)
+	return strings.NewReplacer("{url}", r.URL, "{host}", r.PublicName, "{port}", strconv.Itoa(r.MacPort)).Replace(template)
 }
 
 func ParseResources(cpus int, memory, disk string) (Resources, error) {

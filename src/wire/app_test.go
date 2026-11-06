@@ -18,18 +18,18 @@ func globals(home string) string {
 }
 
 func TestAGuestStartedWithTheSystemPathFindsWhatStationInstalledThere(t *testing.T) {
-	env := withToolBins([]string{"HOME=/home/e2e", "PATH=/usr/bin:/bin"}, true)
+	env := withAppBins([]string{"HOME=/home/e2e", "PATH=/usr/bin:/bin"}, true)
 	want := "PATH=/usr/bin:/bin:/home/e2e/.local/bin:" + path.Join("/home/e2e", catalog.ToolData, catalog.ToolShims) + ":" + globals("/home/e2e")
 	if !slices.Contains(env, want) {
 		t.Errorf("the guest's PATH: %v, want %s", env, want)
 	}
-	moved := withToolBins([]string{"HOME=/home/e2e", catalog.ToolDataVar + "=/data/tools", "PATH=/home/e2e/.local/bin:/usr/bin"}, true)
-	want = "PATH=/home/e2e/.local/bin:/usr/bin:/data/tools/" + catalog.ToolShims + ":" + globals("/home/e2e")
+	moved := withAppBins([]string{"HOME=/home/e2e", catalog.ToolDataVar + "=/data/apps", "PATH=/home/e2e/.local/bin:/usr/bin"}, true)
+	want = "PATH=/home/e2e/.local/bin:/usr/bin:/data/apps/" + catalog.ToolShims + ":" + globals("/home/e2e")
 	if !slices.Contains(moved, want) {
-		t.Errorf("with the tool manager's data moved and ~/.local/bin already first: %v, want %s", moved, want)
+		t.Errorf("with the app manager's data moved and ~/.local/bin already first: %v, want %s", moved, want)
 	}
-	mac := withToolBins([]string{"HOME=/Users/o", "PATH=/usr/bin"}, false)
+	mac := withAppBins([]string{"HOME=/Users/o", "PATH=/usr/bin"}, false)
 	if !slices.Contains(mac, "PATH=/usr/bin:"+globals("/Users/o")) {
-		t.Errorf("on a Mac the shell block owns ~/.local/bin and the tool manager: %v", mac)
+		t.Errorf("on a Mac the shell block owns ~/.local/bin and the app manager: %v", mac)
 	}
 }

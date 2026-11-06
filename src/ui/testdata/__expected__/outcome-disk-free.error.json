@@ -3,7 +3,7 @@
   "id": "outcome",
   "command": "disk free",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "failed",
   "error": {

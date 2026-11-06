@@ -38,22 +38,22 @@ import (
 )
 
 func appsCommand(env kit.Env, m machine) *cobra.Command {
-	names := placedNames(toolsService(env, m))
-	return appscmd.Command(appscmd.Deps{Names: names, Here: m.where}, env,
-		appsinstall.Command(appsinstall.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env),
-		appsupdate.Command(appsupdate.Deps{Here: m.where, Now: m.host.Clock.Now}, env),
-		appsremove.Command(appsremove.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env),
+	names := placedNames(appsOf(env, m))
+	return appscmd.Command(appscmd.Deps{Names: names, ThisMachine: m.where}, env,
+		appsinstall.Command(appsinstall.Deps{Names: names, ThisMachine: m.where, Now: m.sys.Clock.Now}, env),
+		appsupdate.Command(appsupdate.Deps{ThisMachine: m.where, Now: m.sys.Clock.Now}, env),
+		appsremove.Command(appsremove.Deps{Names: names, ThisMachine: m.where, Now: m.sys.Clock.Now}, env),
 	)
 }
 
 // invariant: station tools and its verbs are the hidden v2 words of station
 // apps for one release (SPEC §4.3); upgrade's --via is update's --method.
 func toolsAlias(env kit.Env, m machine) *cobra.Command {
-	names := placedNames(toolsService(env, m))
-	update := appsupdate.Via(appsupdate.Command(appsupdate.Deps{Here: m.where, Now: m.host.Clock.Now}, env))
-	return kit.Alias("tools", appscmd.Command(appscmd.Deps{Names: names, Here: m.where}, env,
-		kit.Alias("install", appsinstall.Command(appsinstall.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env), "install"),
-		kit.Alias("uninstall", appsremove.Command(appsremove.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env), "remove"),
+	names := placedNames(appsOf(env, m))
+	update := appsupdate.Via(appsupdate.Command(appsupdate.Deps{ThisMachine: m.where, Now: m.sys.Clock.Now}, env))
+	return kit.Alias("tools", appscmd.Command(appscmd.Deps{Names: names, ThisMachine: m.where}, env,
+		kit.Alias("install", appsinstall.Command(appsinstall.Deps{Names: names, ThisMachine: m.where, Now: m.sys.Clock.Now}, env), "install"),
+		kit.Alias("uninstall", appsremove.Command(appsremove.Deps{Names: names, ThisMachine: m.where, Now: m.sys.Clock.Now}, env), "remove"),
 		kit.Alias("upgrade", update, "update"),
 	), "apps")
 }
@@ -69,13 +69,13 @@ func placedNames(s *appscalls.Service) func() []string {
 	}
 }
 
-func toolsService(env kit.Env, m machine) *appscalls.Service {
+func appsOf(env kit.Env, m machine) *appscalls.Service {
 	var ask kit.Asker
 	if env.Interactive {
 		ask = env.Prompt
 	}
 	registry, bundler := installers(m)
-	return appscalls.NewService(appsMachine{m.host}, catalog.Tools, configurer{config: configService(m), ask: ask}, appscalls.ServiceOptions{
+	return appscalls.NewService(appsMachine{m.sys}, catalog.Apps, configurer{settings: settingsOf(m), ask: ask}, appscalls.ServiceOptions{
 		Pool:       m.pool,
 		Here:       m.kind,
 		Root:       m.systemRoot(),
@@ -87,16 +87,16 @@ func toolsService(env kit.Env, m machine) *appscalls.Service {
 }
 
 func installers(m machine) (contract.Installers, contract.Bundler) {
-	run := m.host.Run
+	run := m.sys.Run
 	runtimes := mise.New(run)
-	bundle := brew.New(run, func() []string { return runtimes.ShimsFirst(m.host.Env.Home(), m.vars) })
+	bundle := brew.New(run, func() []string { return runtimes.ShimsFirst(m.sys.Env.Home(), m.vars) })
 	registry := contract.Installers{}
 	for _, i := range []contract.Installer{
 		bundle.Formulae(), bundle.Casks(),
 		mas.New(run), npm.New(run, bundle), uv.New(run, bundle),
 		bun.New(run), runtimes,
 		skills.New(skills.Options{
-			Run: run, FS: m.host.FS, Net: m.host.Net, Home: m.host.Env.Home(),
+			Run: run, FS: m.sys.FS, Net: m.sys.Net, Home: m.sys.Env.Home(),
 			APIURL: m.or("STATION_GITHUB_API_URL", "https://api.github.com"),
 			Token:  m.or("GITHUB_TOKEN", m.vars["GH_TOKEN"]),
 		}),
@@ -119,29 +119,29 @@ func installers(m machine) (contract.Installers, contract.Bundler) {
 // invariant: a Then item that asks values or a terminal is skipped off one, as a
 // row naming the command that applies it later, never as a failure.
 type configurer struct {
-	config *settingscalls.Catalogue
-	ask    kit.Asker
+	settings *settingscalls.Catalogue
+	ask      kit.Asker
 }
 
 func (c configurer) Configure(ctx context.Context, item string, interactive bool) (apps.Step, error) {
-	found, err := c.config.Find([]string{item})
+	found, err := c.settings.Find([]string{item})
 	if err != nil {
 		return apps.Step{}, err
 	}
 	it := found[0]
-	if c.config.NeedsInput(it) && !interactive {
-		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs a terminal: station config install " + item}, nil
+	if c.settings.NeedsInput(it) && !interactive {
+		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs a terminal: station settings apply " + item}, nil
 	}
 	var values map[string]string
 	if len(it.Inputs) > 0 && c.ask != nil {
-		if values, err = c.ask.Form(pagesettings.InputsForm(item, it.Inputs, c.config.Defaults(item))); err != nil {
+		if values, err = c.ask.Form(pagesettings.InputsForm(item, it.Inputs, c.settings.Defaults(item))); err != nil {
 			return apps.Step{}, err
 		}
 	}
-	change, err := c.config.Install(ctx, item, values, interactive)
+	change, err := c.settings.Install(ctx, item, values, interactive)
 	var root *settings.NeedsRootError
 	if errors.As(err, &root) {
-		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: " + catalog.AsRoot("station config install "+item)}, nil
+		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: " + catalog.AsRoot("station settings apply "+item)}, nil
 	}
 	if err != nil {
 		return apps.Step{}, err

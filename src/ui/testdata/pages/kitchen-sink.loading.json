@@ -4,7 +4,7 @@
   "command": "status",
   "context": {
     "machine": "jterrazz-macbook-pro",
-    "kind": "host",
+    "kind": "mac",
     "registered": true
   },
   "state": "loading",
@@ -422,7 +422,7 @@
         },
         {
           "row": {
-            "id": "stray",
+            "id": "misplaced",
             "mark": "pending",
             "label": "misplaced",
             "cells": [
@@ -769,7 +769,7 @@
       ]
     },
     {
-      "id": "fleet",
+      "id": "all-machines",
       "title": "All machines",
       "columns": [
         {
@@ -783,7 +783,7 @@
           "keep": 40
         },
         {
-          "key": "host",
+          "key": "mac",
           "kind": "text",
           "keep": 10,
           "show": "pipe"
@@ -844,7 +844,7 @@
                           "kind": "text",
                           "text": "vite"
                         },
-                        "page": "services",
+                        "page": "ports",
                         "row": "api"
                       }
                     },
@@ -899,7 +899,7 @@
       ]
     },
     {
-      "id": "storage",
+      "id": "disk",
       "title": "Disk",
       "columns": [
         {

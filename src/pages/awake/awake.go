@@ -20,7 +20,7 @@ type Silent struct {
 	Mac, Why string
 }
 
-type Fleet struct {
+type AllMachines struct {
 	Now     time.Time
 	Zone    *time.Location
 	Reports []awake.Report
@@ -31,9 +31,9 @@ type Fleet struct {
 	Far   bool
 }
 
-func (f Fleet) name(r awake.Report) string {
+func (f AllMachines) name(r awake.Report) string {
 	switch {
-	case r.Here && !f.Far:
+	case r.ThisMac && !f.Far:
 		return "This Mac"
 	case f.Label != nil:
 		return f.Label(r.Mac)
@@ -61,7 +61,7 @@ func clock(t, now time.Time, zone *time.Location) string {
 }
 
 func stopped(r awake.Report) bool {
-	return r.Daemon != "" && r.Daemon != awake.EngineRunning && r.Daemon != awake.EngineReading
+	return r.Engine != "" && r.Engine != awake.EngineRunning && r.Engine != awake.EngineReading
 }
 
 func until(s awake.Session, now time.Time, zone *time.Location) []string {
@@ -102,7 +102,7 @@ func never(r awake.Report) (words, since []string) {
 func Row(r awake.Report) page.Row {
 	row := page.Row{ID: r.Mac, Label: r.Mac}
 	switch {
-	case r.Daemon == awake.EngineReading:
+	case r.Engine == awake.EngineReading:
 		row.Mark, row.Cells = page.Awaiting, []page.Value{page.Pending()}
 	case stopped(r):
 		row.Mark, row.Cells = page.Absent, []page.Value{page.Texts("Sleeps normally", "the engine is stopped")}
@@ -163,7 +163,7 @@ func reading(r awake.Report, name string) page.Section {
 	return page.Section{ID: "reading", Title: name, Uncounted: true, Columns: columns(), Items: items}
 }
 
-func Page(f Fleet, here page.Context) page.Page {
+func Page(f AllMachines, thisMac page.Context) page.Page {
 	// invariant: every Mac, This Mac first, each by its mode and named as the
 	// owner names it; its readings are the ones it reports, This Mac's only.
 	rows := make([]page.Row, 0, len(f.Reports)+len(f.Silent))
@@ -182,12 +182,12 @@ func Page(f Fleet, here page.Context) page.Page {
 	// invariant: each Mac's line is the page's first (vision 07 "station
 	// awake"): the Macs are a banner, drawn flush with no title.
 	sections := []page.Section{{ID: "awake", Role: page.Banner, Columns: columns(), Items: items}}
-	if len(f.Reports) > 0 && f.Reports[0].Here && !stopped(f.Reports[0]) && f.Reports[0].Daemon != awake.EngineReading {
+	if len(f.Reports) > 0 && f.Reports[0].ThisMac && !stopped(f.Reports[0]) && f.Reports[0].Engine != awake.EngineReading {
 		sections = append(sections, reading(f.Reports[0], f.name(f.Reports[0])))
 	}
-	p := page.Page{ID: "awake", Command: "awake", Context: here, Sections: sections, Hints: f.next(), Actions: f.actions()}
+	p := page.Page{ID: "awake", Command: "awake", Context: thisMac, Sections: sections, Hints: f.next(), Actions: f.actions()}
 	for _, r := range f.Reports {
-		if r.Daemon == awake.EngineReading {
+		if r.Engine == awake.EngineReading {
 			p.State = page.Loading
 		}
 	}
@@ -201,7 +201,7 @@ const (
 
 // invariant: E1: a keep-awake holds the lid closed or runs on battery only
 // on the Macs whose report says they have a lid or a battery.
-func (f Fleet) actions() []page.Action {
+func (f AllMachines) actions() []page.Action {
 	var lid, battery []string
 	for _, r := range f.Reports {
 		if r.Caps.Lid {
@@ -260,7 +260,7 @@ type JSON struct {
 }
 
 func macJSON(r awake.Report) MacJSON {
-	m := MacJSON{Name: r.Mac, ThisMac: r.Here, Mode: r.Mode(), Engine: r.Daemon, Servers: r.Servers,
+	m := MacJSON{Name: r.Mac, ThisMac: r.ThisMac, Mode: r.Mode(), Engine: r.Engine, Servers: r.Servers,
 		Capabilities: CapsJSON{Battery: r.Caps.Battery, Lid: r.Caps.Lid, Thermal: r.Caps.Thermal}}
 	if m.Servers == nil {
 		m.Servers = []string{}
@@ -279,7 +279,7 @@ func macJSON(r awake.Report) MacJSON {
 		since := r.NeverSince.UTC()
 		m.NeverSince = &since
 	}
-	if r.Here {
+	if r.ThisMac {
 		rd := r.Reading
 		j := &ReadingJSON{Source: rd.Source, Charging: rd.Charging, LowPower: rd.LowPower}
 		if r.Caps.Lid {
@@ -297,29 +297,29 @@ func macJSON(r awake.Report) MacJSON {
 	return m
 }
 
-func Contract(f Fleet) JSON {
+func Contract(f AllMachines) JSON {
 	out := JSON{Schema: Schema, Macs: []MacJSON{}, Silent: []SilentJSON{}}
 	fs := make([]finding.Finding, 0, len(f.Reports))
 	for _, r := range f.Reports {
 		out.Macs = append(out.Macs, macJSON(r))
 		fs = append(fs, awake.Findings(r, machine.Ref{Name: r.Mac})...)
 	}
-	out.Findings = finding.FleetDoc(fs)
+	out.Findings = finding.AllMachinesDoc(fs)
 	for _, s := range f.Silent {
 		out.Silent = append(out.Silent, SilentJSON{Name: s.Mac, Error: s.Why})
 	}
 	return out
 }
 
-func Kept(a awake.Awoken, label string, now time.Time, zone *time.Location, here page.Context) page.Page {
+func Kept(a awake.Awoken, label string, now time.Time, zone *time.Location, thisMac page.Context) page.Page {
 	if a.NeverSleeps {
 		r := pages.Done(a.Mac, catalog.StateOK, "already never sleeps (always-on Mac policy). Nothing to add.")
-		r.Short, r.Sentence = named(a.Mac, label, here), true
-		r.Hint = page.Cmd("station settings off never-sleeps" + on(a.Mac, label, here))
-		return pages.Outcome("awake", here, nil, []page.Row{r}, "keep-awake")
+		r.Short, r.Sentence = named(a.Mac, label, thisMac), true
+		r.Hint = page.Cmd("station settings off never-sleeps" + on(a.Mac, label, thisMac))
+		return pages.Outcome("awake", thisMac, nil, []page.Row{r}, "keep-awake")
 	}
 	r := pages.Done(a.Mac, catalog.StateOK, "")
-	r.Short, r.Sentence = named(a.Mac, label, here), true
+	r.Short, r.Sentence = named(a.Mac, label, thisMac), true
 	words := []string{"stays awake until " + clock(a.Until, now, zone)}
 	if a.Refreshed {
 		words[0] = "now " + words[0]
@@ -331,54 +331,54 @@ func Kept(a awake.Awoken, label string, now time.Time, zone *time.Location, here
 		words = append(words, "on battery allowed")
 	}
 	r.Detail = page.Texts(words...)
-	return pages.Outcome("awake", here, nil, []page.Row{r}, "keep-awake")
+	return pages.Outcome("awake", thisMac, nil, []page.Row{r}, "keep-awake")
 }
 
 // value: the Mac an outcome is about, named as every awake page names it:
 // This Mac here, the owner's name for any other.
-func named(mac, label string, here page.Context) string {
-	if mac == "" || mac == here.Machine {
+func named(mac, label string, thisMac page.Context) string {
+	if mac == "" || mac == thisMac.Machine {
 		return "This Mac"
 	}
 	return label
 }
 
-func on(mac, label string, here page.Context) string {
-	if mac == "" || mac == here.Machine {
+func on(mac, label string, thisMac page.Context) string {
+	if mac == "" || mac == thisMac.Machine {
 		return ""
 	}
 	return " --on " + label
 }
 
-func Off(s awake.Slept, label string, here page.Context) page.Page {
+func Off(s awake.Slept, label string, thisMac page.Context) page.Page {
 	if s.Ended {
 		r := pages.Done(s.Mac, catalog.StateOK, "sleeps normally again")
-		r.Short, r.Sentence = named(s.Mac, label, here), true
-		return pages.Outcome("awake off", here, nil, []page.Row{r}, "keep-awake to end")
+		r.Short, r.Sentence = named(s.Mac, label, thisMac), true
+		return pages.Outcome("awake off", thisMac, nil, []page.Row{r}, "keep-awake to end")
 	}
 	r := pages.Done(s.Mac, catalog.StateAbsent, "has no keep-awake to end")
-	r.Short, r.Sentence = named(s.Mac, label, here), true
+	r.Short, r.Sentence = named(s.Mac, label, thisMac), true
 	if s.NeverSleeps {
-		r.Detail = page.Texts("has no keep-awake to end", "Never sleeps stays: station settings off never-sleeps"+on(s.Mac, label, here))
+		r.Detail = page.Texts("has no keep-awake to end", "Never sleeps stays: station settings off never-sleeps"+on(s.Mac, label, thisMac))
 	}
-	return pages.Outcome("awake off", here, nil, []page.Row{r}, "keep-awake to end")
+	return pages.Outcome("awake off", thisMac, nil, []page.Row{r}, "keep-awake to end")
 }
 
 // value: the next steps (vision 07 "station awake"): keep This Mac awake,
 // with its lid closed where it reports a lid (SPEC §5.9, E1), or another Mac.
-func (f Fleet) next() []page.Hint {
+func (f AllMachines) next() []page.Hint {
 	if f.Far {
 		return nil
 	}
 	keep := "station awake 4h"
 	for _, r := range f.Reports {
-		if r.Here && r.Caps.Lid {
+		if r.ThisMac && r.Caps.Lid {
 			keep = "station awake 4h --lid"
 		}
 	}
 	hints := []page.Hint{{Command: keep, Text: "this Mac"}}
 	for _, r := range f.Reports {
-		if !r.Here {
+		if !r.ThisMac {
 			return append(hints, page.Hint{Command: "station awake 4h --on " + f.name(r), Text: "another Mac"})
 		}
 	}

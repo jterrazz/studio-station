@@ -13,8 +13,8 @@ import (
 )
 
 type Deps struct {
-	Here  page.Context
-	Label func(mac string) string
+	ThisMachine page.Context
+	Label       func(mac string) string
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -27,7 +27,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pageawake.Off(s, d.Label(s.Mac), d.Here), s)
+			return io.Page(pageawake.Off(s, d.Label(s.Mac), d.ThisMachine), s)
 		},
 	}, env)
 }

@@ -52,7 +52,7 @@ func (m *Mac) applyLock(ctx context.Context) (settings.Change, error) {
 	change.Steps = append(change.Steps, done("plist", lockPlist))
 
 	command := m.o.Jobs.Names().Command
-	owner, _ := m.probe(ctx, "stat", "-f", "%Su", "/dev/console")
+	owner, _ := m.output(ctx, "stat", "-f", "%Su", "/dev/console")
 	if owner == agentUser && known {
 		// invariant: stopped first, so installing over a loaded agent succeeds.
 		_ = m.o.Jobs.Stop(ctx, lockJob(uid))
@@ -109,11 +109,11 @@ func jobFailure(err error) string {
 }
 
 func (m *Mac) agentIDs(ctx context.Context) (uid, gid int, known bool) {
-	u, ok := m.probe(ctx, "id", "-u", agentUser)
+	u, ok := m.output(ctx, "id", "-u", agentUser)
 	if !ok {
 		return 0, 0, false
 	}
-	g, ok := m.probe(ctx, "id", "-g", agentUser)
+	g, ok := m.output(ctx, "id", "-g", agentUser)
 	if !ok {
 		return 0, 0, false
 	}

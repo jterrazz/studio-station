@@ -1,4 +1,4 @@
-description: 'clean empties every Linux cache, what tools write back and bun''s files in npm''s folder included'
+description: 'free empties every Linux cache, what apps write back and bun''s files in npm''s folder included'
 fixture: ./__fixtures__/disk-residue/
 env:
     - STATION_MACHINE_KIND=linux

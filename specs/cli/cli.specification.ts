@@ -87,7 +87,7 @@ export const { cleanup, cli } = await specification.cli(STATION_BIN, {
         NO_COLOR: '1',
         PATH: '$WORKDIR/bin',
         STATION_GITHUB_API_URL: 'http://127.0.0.1:9',
-        STATION_MACHINE_KIND: 'host',
+        STATION_MACHINE_KIND: 'mac',
         STATION_KERNEL_STUB: '$WORKDIR/kernel',
         STATION_POWER_STUB: '$WORKDIR/power',
         STATION_SYSTEM_DIRS: '',

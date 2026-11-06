@@ -31,8 +31,8 @@ type SharingState struct {
 	// invariant: sharing is on when the tailnet issues certificates to a node
 	// that runs: a share needs HTTPS certificates, and a node logged out or
 	// absent shares nothing.
-	On   bool
-	Host string
+	On      bool
+	DNSName string
 }
 
 type Self struct {

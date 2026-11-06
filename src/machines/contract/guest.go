@@ -39,7 +39,7 @@ type GuestResult struct {
 
 type Guest interface {
 	Exec(ctx context.Context, c GuestCommand) (GuestResult, error)
-	Forward(ctx context.Context, host string, port int) (io.ReadWriteCloser, error)
+	Forward(ctx context.Context, addr string, port int) (io.ReadWriteCloser, error)
 	Put(ctx context.Context, path string, data []byte, mode fs.FileMode) error
 	Close() error
 	Done() <-chan struct{}

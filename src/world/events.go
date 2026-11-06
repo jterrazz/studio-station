@@ -342,15 +342,15 @@ func containerRun(w *World, args []string) error {
 	if err != nil {
 		return err
 	}
-	published, _, ok := strings.Cut(args[1], ":")
-	port, perr := strconv.Atoi(published)
+	shared, _, ok := strings.Cut(args[1], ":")
+	port, perr := strconv.Atoi(shared)
 	if !ok || perr != nil {
 		return fmt.Errorf("world container-run: %q is not <port>:<port>", args[1])
 	}
 	if len(args) == 4 && args[3] != "no-proxy" {
 		return fmt.Errorf("world container-run: %q is not no-proxy", args[3])
 	}
-	v.Containers = append(v.Containers, Container{Name: args[2], Published: []int{port}})
+	v.Containers = append(v.Containers, Container{Name: args[2], Shared: []int{port}})
 	if len(args) < 4 {
 		v.Listening = append(v.Listening, ports.Listener{Port: port, Bind: "0.0.0.0", Process: "proxy", PID: 2000 + len(v.Listening)})
 	}
@@ -370,18 +370,18 @@ const (
 // and is refused on one that has not the capability it moves.
 func power(needs need, move func(p *Power) error) func(w *World, args []string) error {
 	return func(w *World, _ []string) error {
-		m, err := w.known(w.Here)
+		m, err := w.known(w.ThisMac)
 		if err != nil {
 			return err
 		}
 		p := m.Power
 		switch {
 		case p == nil:
-			return fmt.Errorf("%s has no power management", w.Here)
+			return fmt.Errorf("%s has no power management", w.ThisMac)
 		case needs == battery && !p.HasBattery:
-			return fmt.Errorf("%s has no battery", w.Here)
+			return fmt.Errorf("%s has no battery", w.ThisMac)
 		case needs == lid && p.Lid == "":
-			return fmt.Errorf("%s has no lid", w.Here)
+			return fmt.Errorf("%s has no lid", w.ThisMac)
 		}
 		return move(p)
 	}

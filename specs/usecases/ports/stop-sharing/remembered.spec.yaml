@@ -5,7 +5,7 @@ runs:
       exit: 0
       stdout: |
           ●	linux-1:7000	not shared
-    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | {reserved: [.stores.reservations[].guest_port], shared: [.tailnet.shares[].Reserved], remembered: .preferences.services.not_shared}'' world.json'
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | {reserved: [.stores.reservations[].guest_port], shared: [.tailnet.shares[].Reserved], remembered: .preferences.ports.not_shared}'' world.json'
       exit: 0
       stdout: |
           {"reserved":[5173],"shared":[40001],"remembered":["linux-1:7000"]}
@@ -29,7 +29,7 @@ runs:
       exit: 0
       stdout: |
           ●	linux-1	7000	private	https://jterrazz-macbook-pro.tail1234.ts.net:40000	shared	server
-    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | {shared: ([.tailnet.shares[].Reserved] | sort), remembered: .preferences.services.not_shared}'' world.json'
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | {shared: ([.tailnet.shares[].Reserved] | sort), remembered: .preferences.ports.not_shared}'' world.json'
       exit: 0
       stdout: |
           {"shared":[40000,40001],"remembered":null}

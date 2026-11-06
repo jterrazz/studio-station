@@ -59,8 +59,8 @@ func Strip(st token.Styles, s page.Strip, width int) string {
 	add("CPU", s.CPU, atom.Spark(s.Spark))
 	add("memory", s.Memory, "")
 	add("battery", s.Battery, "")
-	if !s.Power.IsNone() {
-		parts = append(parts, st.Accent.Render(token.Power+" "+atom.Show(s.Power)))
+	if !s.Awake.IsNone() {
+		parts = append(parts, st.Accent.Render(token.Awake+" "+atom.Show(s.Awake)))
 	}
 	if len(s.Net) == 2 {
 		parts = append(parts, st.Muted.Render("net")+" "+st.Text.Render(token.KeyDown+" "+atom.Show(s.Net[0])+" "+token.KeyUp+" "+atom.Show(s.Net[1])))

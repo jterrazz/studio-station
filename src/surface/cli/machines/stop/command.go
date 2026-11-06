@@ -19,8 +19,8 @@ import (
 
 type Deps struct {
 	// value: the machines known here, for completion.
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 type Input struct{ Name, Confirm string }
@@ -70,15 +70,15 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			}
 			switch {
 			case out.Already:
-				return io.Page(pagemachines.Already("stop", in.Name, false, d.Here), nil)
+				return io.Page(pagemachines.Already("stop", in.Name, false, d.ThisMachine), nil)
 			case out.Kind == machine.Server:
 				start := "station machines start " + in.Name
 				if env.Far() {
 					start += " --on " + env.Target().Name
 				}
-				return io.Page(pagemachines.ServerStopped(in.Name, start, d.Here), nil)
+				return io.Page(pagemachines.ServerStopped(in.Name, start, d.ThisMachine), nil)
 			}
-			return io.Page(pagemachines.Change("stop", in.Name, "stopped, kept", d.Here), nil)
+			return io.Page(pagemachines.Change("stop", in.Name, "stopped, kept", d.ThisMachine), nil)
 		},
 	}, env)
 }

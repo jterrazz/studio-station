@@ -30,7 +30,7 @@ type pathPlan struct {
 }
 
 type strayPlan struct {
-	report disk.StrayReport
+	report disk.MisplacedReport
 	root   int
 }
 
@@ -170,8 +170,8 @@ func (s *Service) plan() plan {
 	globbed := s.globAll(placed)
 	glob := func(pattern string) []string { return globbed[s.o.Expand.Expand(pattern)] }
 	for _, e := range placed {
-		ep := entryPlan{entry: e, containers: e.Storage.Size == catalog.SizeContainers}
-		for _, st := range e.Storage.Paths {
+		ep := entryPlan{entry: e, containers: e.Disk.Size == catalog.SizeContainers}
+		for _, st := range e.Disk.Paths {
 			if !st.PlacedOn(s.o.Here) {
 				continue
 			}
@@ -187,13 +187,13 @@ func (s *Service) plan() plan {
 			ep.exists = ep.exists || len(pp.parts) > 0
 			ep.paths = append(ep.paths, pp)
 		}
-		for _, pattern := range e.Storage.Installed {
+		for _, pattern := range e.Disk.Installed {
 			for _, m := range glob(pattern) {
 				ep.install = append(ep.install, root(m))
 			}
 		}
 		ep.exists = ep.exists || len(ep.install) > 0
-		for _, st := range e.Storage.Strays {
+		for _, st := range e.Disk.Misplaced {
 			abs := s.o.Expand.Expand(st.Path)
 			if !s.m.Exists(abs) {
 				continue
@@ -214,7 +214,7 @@ func (s *Service) plan() plan {
 func (s *Service) globAll(placed []disk.Entry) map[string][]string {
 	var patterns []string
 	for _, e := range placed {
-		for _, st := range e.Storage.Paths {
+		for _, st := range e.Disk.Paths {
 			if !st.PlacedOn(s.o.Here) {
 				continue
 			}
@@ -223,7 +223,7 @@ func (s *Service) globAll(placed []disk.Entry) map[string][]string {
 				patterns = append(patterns, s.o.Expand.Expand(path.Join(st.Path, memo)))
 			}
 		}
-		for _, pattern := range e.Storage.Installed {
+		for _, pattern := range e.Disk.Installed {
 			patterns = append(patterns, s.o.Expand.Expand(pattern))
 		}
 	}
@@ -250,14 +250,14 @@ func (s *Service) globAll(placed []disk.Entry) map[string][]string {
 }
 
 func (s *Service) assemble(p plan, r reading) disk.Survey {
-	report := disk.Survey{Rows: []disk.Tally{}, Strays: []disk.StrayReport{}}
+	report := disk.Survey{Rows: []disk.Tally{}, Misplaced: []disk.MisplacedReport{}}
 	for _, ep := range p.entries {
 		row, show := s.row(ep, r)
 		if !show {
 			continue
 		}
 		report.Rows = append(report.Rows, row)
-		report.Strays = append(report.Strays, row.Strays...)
+		report.Misplaced = append(report.Misplaced, row.Misplaced...)
 	}
 	for _, i := range p.other {
 		if b := r.sizes[i]; b > 0 {
@@ -286,7 +286,7 @@ func (s *Service) row(ep entryPlan, r reading) (disk.Tally, bool) {
 			return b
 		}
 	}
-	row := disk.Tally{Entry: e, Installed: installed, Bytes: map[catalog.Level]int64{}, Paths: []disk.PathReport{}, Strays: []disk.StrayReport{}}
+	row := disk.Tally{Entry: e, Installed: installed, Bytes: map[catalog.Level]int64{}, Paths: []disk.PathReport{}, Misplaced: []disk.MisplacedReport{}}
 	for _, pp := range ep.paths {
 		report := pp.report
 		for _, pt := range pp.parts {
@@ -301,7 +301,7 @@ func (s *Service) row(ep entryPlan, r reading) (disk.Tally, bool) {
 	for _, st := range ep.strays {
 		report := st.report
 		report.Bytes = value(st.root)
-		row.Strays = append(row.Strays, report)
+		row.Misplaced = append(row.Misplaced, report)
 	}
 	if ep.containers && installed {
 		switch r.containers {
@@ -314,7 +314,7 @@ func (s *Service) row(ep entryPlan, r reading) (disk.Tally, bool) {
 		}
 	}
 	switch {
-	case len(row.Strays) > 0:
+	case len(row.Misplaced) > 0:
 		row.State = catalog.StateDegraded
 	case installed:
 		row.State = catalog.StateOK
@@ -345,14 +345,14 @@ func (s *Service) walkBudget() time.Duration {
 }
 
 func (s *Service) unknown(e disk.Entry, installed bool, within time.Duration) disk.Tally {
-	row := disk.Tally{Entry: e, Installed: installed, Unknown: true, Within: within, Bytes: map[catalog.Level]int64{}, Install: unmeasured, Paths: []disk.PathReport{}, Strays: []disk.StrayReport{}, State: catalog.StateAbsent}
+	row := disk.Tally{Entry: e, Installed: installed, Unknown: true, Within: within, Bytes: map[catalog.Level]int64{}, Install: unmeasured, Paths: []disk.PathReport{}, Misplaced: []disk.MisplacedReport{}, State: catalog.StateAbsent}
 	if installed {
 		row.State = catalog.StateOK
 	}
-	for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData, catalog.LevelConfig, catalog.LevelKept} {
+	for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData, catalog.LevelSettings, catalog.LevelKept} {
 		row.Bytes[level] = unmeasured
 	}
-	for _, p := range e.Storage.Paths {
+	for _, p := range e.Disk.Paths {
 		if p.PlacedOn(s.o.Here) {
 			row.Paths = append(row.Paths, disk.PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: unmeasured})
 		}

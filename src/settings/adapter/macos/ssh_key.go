@@ -14,7 +14,7 @@ import (
 const (
 	sshKey         = "~/.ssh/id_ed25519"
 	sshConfig      = "~/.ssh/config"
-	sshHostStanza  = "\nHost *\n  AddKeysToAgent yes\n  UseKeychain yes\n  IdentityFile ~/.ssh/id_ed25519\n"
+	sshKeyStanza   = "\nHost *\n  AddKeysToAgent yes\n  UseKeychain yes\n  IdentityFile ~/.ssh/id_ed25519\n"
 	keychainStanza = "the Keychain stanza"
 )
 
@@ -28,9 +28,9 @@ func (m *Mac) observeSSHKey(_ context.Context, want []settings.KeyValue) setting
 }
 
 func (m *Mac) sshKeyValues() []settings.KeyValue {
-	config, _ := m.files.ReadFile(m.home(sshConfig))
+	text, _ := m.files.ReadFile(m.home(sshConfig))
 	stanza := "none"
-	if strings.Contains(string(config), "AddKeysToAgent yes") {
+	if strings.Contains(string(text), "AddKeysToAgent yes") {
 		stanza = keychainStanza
 	}
 	return []settings.KeyValue{{Key: sshKey, Value: presence(m.exists(m.home(sshKey)))}, {Key: sshConfig, Value: stanza}}
@@ -54,15 +54,15 @@ func (m *Mac) applySSHKey(ctx context.Context) (settings.Change, error) {
 		}
 		change.Steps = append(change.Steps, done("ssh key", "generated"))
 	}
-	config := m.home(sshConfig)
-	existing, err := m.files.ReadFile(config)
+	file := m.home(sshConfig)
+	existing, err := m.files.ReadFile(file)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return change, err
 	}
 	if strings.Contains(string(existing), "AddKeysToAgent yes") {
 		change.Steps = append(change.Steps, done(sshConfig, "already configured"))
 	} else {
-		if fault := m.files.WriteFile(config, append(existing, sshHostStanza...), 0o600); fault != nil {
+		if fault := m.files.WriteFile(file, append(existing, sshKeyStanza...), 0o600); fault != nil {
 			return change, fault
 		}
 		change.Steps = append(change.Steps, done(sshConfig, "keychain stanza added"))

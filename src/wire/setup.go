@@ -28,43 +28,43 @@ import (
 )
 
 func setupCommand(env kit.Env, m machine) *cobra.Command {
-	return setupcmd.Command(setupcmd.Deps{Here: m.where}, env)
+	return setupcmd.Command(setupcmd.Deps{ThisMachine: m.where}, env)
 }
 
-func setupService(env kit.Env, m machine) *setupcalls.Service {
+func setupOf(env kit.Env, m machine) *setupcalls.Service {
 	fleet := m.machines(env.Interactive)
-	registrar := fleetRegistrar{name: m.stores.name(), machines: fleet}
+	registrar := allMachinesRegistrar{name: m.stores.name(), machines: fleet}
 	installer := engineInstaller{m: m, machines: fleet}
-	return setupcalls.NewService(setupMachine{m.host}, setupcalls.ServicePrefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.services(), Stores: m.stores.migrators()}, setupVault{m.vault()}, registrar, installer, setupcalls.ServiceOptions{
+	return setupcalls.NewService(setupMachine{m.sys}, setupcalls.ServicePrefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.macs(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.ports(), Stores: m.stores.migrators()}, setupVault{m.vault()}, registrar, installer, setupcalls.ServiceOptions{
 		Kind:            m.kind,
 		Server:          m.profile.Kind == coremachine.Server,
 		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
 		// observable; unset, the running binary is the one re-executed.
-		Executable:      m.or("STATION_EXECUTABLE", m.host.Env.Executable()),
+		Executable:      m.or("STATION_EXECUTABLE", m.sys.Env.Executable()),
 		Detached:        m.vars["STATION_XDG_DETACHED"] == "1",
-		Tools:           catalog.Tools,
+		Tools:           catalog.Apps,
 		Expand:          m.expander(),
-		Files:           m.toolFiles(),
-		Configurer:      setupConfigurer{config: configService(m)},
-		Settings:        setupSettings{config: configService(m)},
-		Installer:       systemTools{tools: toolsService(env, m)},
+		Files:           m.appFiles(),
+		Configurer:      setupSettingsWriter{settings: settingsOf(m)},
+		Settings:        setupSettings{settings: settingsOf(m)},
+		Installer:       systemApps{apps: appsOf(env, m)},
 		AppStoreCLI:     m.tailnetCLI().AppStoreCLI,
 		MovePreferences: m.stores.prefs.MoveRetired,
 	})
 }
 
-type setupConfigurer struct{ config *settingscalls.Catalogue }
+type setupSettingsWriter struct{ settings *settingscalls.Catalogue }
 
-func (c setupConfigurer) Configure(ctx context.Context, item string, interactive bool) error {
-	_, err := c.config.Install(ctx, item, nil, interactive)
+func (c setupSettingsWriter) Configure(ctx context.Context, item string, interactive bool) error {
+	_, err := c.settings.Install(ctx, item, nil, interactive)
 	return err
 }
 
-type setupSettings struct{ config *settingscalls.Catalogue }
+type setupSettings struct{ settings *settingscalls.Catalogue }
 
 func (c setupSettings) List(ctx context.Context) ([]setupcalls.Setting, error) {
-	reports, err := c.config.List(ctx)
+	reports, err := c.settings.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -79,15 +79,15 @@ func (c setupSettings) List(ctx context.Context) ([]setupcalls.Setting, error) {
 }
 
 func (c setupSettings) Apply(ctx context.Context, name string) error {
-	_, err := c.config.Install(ctx, name, nil, false)
+	_, err := c.settings.Install(ctx, name, nil, false)
 	return err
 }
 
-type systemTools struct{ tools *appscalls.Service }
+type systemApps struct{ apps *appscalls.Service }
 
-func (s systemTools) names() []string {
+func (s systemApps) names() []string {
 	var out []string
-	for _, t := range s.tools.Placed() {
+	for _, t := range s.apps.Placed() {
 		if t.System {
 			out = append(out, t.Name)
 		}
@@ -95,8 +95,8 @@ func (s systemTools) names() []string {
 	return out
 }
 
-func (s systemTools) Missing(ctx context.Context) ([]string, error) {
-	states, err := s.tools.States(ctx, s.names())
+func (s systemApps) Missing(ctx context.Context) ([]string, error) {
+	states, err := s.apps.States(ctx, s.names())
 	if err != nil {
 		return nil, err
 	}
@@ -109,14 +109,14 @@ func (s systemTools) Missing(ctx context.Context) ([]string, error) {
 	return missing, nil
 }
 
-func (s systemTools) Superseded(ctx context.Context) []string { return s.tools.Superseded(ctx) }
+func (s systemApps) Superseded(ctx context.Context) []string { return s.apps.Superseded(ctx) }
 
-func (s systemTools) RemoveFormula(ctx context.Context, formula string) error {
-	return s.tools.RemoveFormula(ctx, formula)
+func (s systemApps) RemoveFormula(ctx context.Context, formula string) error {
+	return s.apps.RemoveFormula(ctx, formula)
 }
 
-func (s systemTools) Install(ctx context.Context, names []string) error {
-	outcomes, err := s.tools.Install(ctx, apps.InstallRequest{Names: names, Interactive: true})
+func (s systemApps) Install(ctx context.Context, names []string) error {
+	outcomes, err := s.apps.Install(ctx, apps.InstallRequest{Names: names, Interactive: true})
 	if err != nil {
 		return err
 	}
@@ -128,17 +128,17 @@ func (s systemTools) Install(ctx context.Context, names []string) error {
 	return nil
 }
 
-type fleetRegistrar struct {
+type allMachinesRegistrar struct {
 	name     setupcontract.NamePrefs
 	machines *machinescalls.Service
 }
 
-func (r fleetRegistrar) Here() (string, bool) {
-	here, err := r.name.Get()
-	return here, err == nil && here != ""
+func (r allMachinesRegistrar) ThisMac() (string, bool) {
+	thisMac, err := r.name.Get()
+	return thisMac, err == nil && thisMac != ""
 }
 
-func (r fleetRegistrar) Register(name string) error { return r.machines.Init(name) }
+func (r allMachinesRegistrar) Register(name string) error { return r.machines.Init(name) }
 
 type setupRun struct{ *setupcalls.Service }
 

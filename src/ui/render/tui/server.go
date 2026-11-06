@@ -129,7 +129,7 @@ func (d Door) Lines() []string {
 	out := []string{" The one door into " + d.Name + through + ". No password: your key.", ""}
 	out = append(out, "   "+atom.Pad(d.Command, 48)+st.Muted.Render("c copy"))
 	if through != "" {
-		out = append(out, "   From any Mac: the block in ~/.ssh/config hops through "+d.Mac+".")
+		out = append(out, "   From any Mac: the block in your ssh_config hops through "+d.Mac+".")
 	}
 	out = append(out, "   In an editor: Remote SSH to "+d.Name+" (Zed, VS Code).", "", " "+st.Strong.Render("HOW IT IS REACHED"))
 	for _, r := range d.Reached {

@@ -17,7 +17,7 @@ type VM struct {
 	// value: a VM of this host as its record and the daemon's list say.
 	Name, Lifetime string
 	Running        bool
-	Lends          []Lend
+	Lends          []Loan
 }
 
 type VMRead struct {
@@ -26,9 +26,9 @@ type VMRead struct {
 	Accounts []Account `json:"accounts"`
 }
 
-func Redact(a Account) Account {
+func RedactAccount(a Account) Account {
 	clean := func(v string) string {
-		c, redacted := Clean(v)
+		c, redacted := Redact(v)
 		a.Redacted = a.Redacted || redacted
 		return c
 	}
@@ -41,10 +41,10 @@ func Redact(a Account) Account {
 	}
 	a.Identity, a.Scopes = cleanAll(a.Identity), cleanAll(a.Scopes)
 	a.Source, a.Detail, a.Notes = clean(a.Source), clean(a.Detail), cleanAll(a.Notes)
-	if a.Lent != nil {
-		l := *a.Lent
+	if a.Shared != nil {
+		l := *a.Shared
 		l.Name = clean(l.Name)
-		a.Lent = &l
+		a.Shared = &l
 	}
 	return a
 }

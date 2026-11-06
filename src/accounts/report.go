@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	KindHost = "host"
-	KindVM   = "vm"
+	KindMac = "mac"
+	KindVM  = "vm"
 )
 
 type Account struct {
@@ -23,11 +23,11 @@ type Account struct {
 	Detail   string        `json:"detail,omitempty"`
 	Notes    []string      `json:"notes,omitempty"`
 	Hint     string        `json:"hint,omitempty"`
-	Lent     *Lend         `json:"lent,omitempty"`
+	Shared   *Loan         `json:"shared,omitempty"`
 	Redacted bool          `json:"-"`
 }
 
-type Lend struct {
+type Loan struct {
 	Name  string    `json:"name"`
 	At    time.Time `json:"at"`
 	Until time.Time `json:"until"`
@@ -36,7 +36,7 @@ type Lend struct {
 type Machine struct {
 	Name     string    `json:"name"`
 	Kind     string    `json:"kind"`
-	Here     bool      `json:"here,omitempty"`
+	ThisMac  bool      `json:"this_mac,omitempty"`
 	Lifetime string    `json:"lifetime,omitempty"`
 	Guest    string    `json:"guest,omitempty"`
 	Running  bool      `json:"-"`
@@ -46,8 +46,8 @@ type Machine struct {
 
 type Report struct {
 	Machines []Machine
-	// value: the daemon's state when this host's VMs could not be asked.
-	Daemon string
+	// value: the engine's state when this Mac's VMs could not be asked.
+	Engine string
 	Now    time.Time
 	// value: on a Mac, every share it holds with its VMs, and the names its
 	// share list lets it copy.
@@ -66,22 +66,22 @@ func (r Report) Clone() Report {
 }
 
 func (r Report) Resolved() Report {
-	// value: a lent copy is the host's right, so its identity is the host's
-	// for that provider once the host's read has answered.
-	if len(r.Machines) == 0 || r.Machines[0].Kind != KindHost {
+	// value: a shared copy is the Mac's right, so its identity is the Mac's
+	// for that provider once the Mac's read has answered.
+	if len(r.Machines) == 0 || r.Machines[0].Kind != KindMac {
 		return r
 	}
-	host := map[string][]string{}
+	mac := map[string][]string{}
 	for _, a := range r.Machines[0].Accounts {
 		if a.State == catalog.StateOK {
-			host[a.Provider] = a.Identity
+			mac[a.Provider] = a.Identity
 		}
 	}
 	out := r.Clone()
 	for i := range out.Machines {
 		for j, a := range out.Machines[i].Accounts {
-			if a.Lent != nil && len(a.Identity) == 1 && a.Identity[0] == Unknown && host[a.Provider] != nil {
-				out.Machines[i].Accounts[j].Identity = host[a.Provider]
+			if a.Shared != nil && len(a.Identity) == 1 && a.Identity[0] == Unknown && mac[a.Provider] != nil {
+				out.Machines[i].Accounts[j].Identity = mac[a.Provider]
 			}
 		}
 	}
@@ -92,7 +92,7 @@ func RowID(machine, provider string) string { return machine + "/" + provider }
 
 func Lendable(list []string, provider string) []string {
 	var out []string
-	for _, sc := range catalog.LendScopes {
+	for _, sc := range catalog.ShareScopes {
 		if Shareable(sc.Name, list) && (provider == "" || sc.Provider == provider) {
 			out = append(out, sc.Name)
 		}

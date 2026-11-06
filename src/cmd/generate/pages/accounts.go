@@ -14,15 +14,15 @@ func own(provider string, identity, scopes []string, source, detail string) acco
 	return accounts.Account{Provider: provider, State: catalog.StateOK, Origin: accounts.OriginOwn, Identity: identity, Scopes: scopes, Source: source, Detail: detail}
 }
 
-func lent(provider, name string, left time.Duration, state catalog.State, reason, hint string) accounts.Account {
+func shared(provider, name string, left time.Duration, state catalog.State, reason, hint string) accounts.Account {
 	return accounts.Account{
 		Provider: provider, State: state, Reason: reason, Origin: accounts.OriginLent, Identity: []string{"admin@jterrazz.com"}, Scopes: []string{name}, Hint: hint,
-		Lent: &accounts.Lend{Name: name, At: accountsNow.Add(left - 12*time.Hour), Until: accountsNow.Add(left)},
+		Shared: &accounts.Loan{Name: name, At: accountsNow.Add(left - 12*time.Hour), Until: accountsNow.Add(left)},
 	}
 }
 
-func hostAccounts() accounts.Machine {
-	return accounts.Machine{Name: "jterrazz-macbook-pro", Kind: accounts.KindHost, Here: true, Accounts: []accounts.Account{
+func macAccounts() accounts.Machine {
+	return accounts.Machine{Name: "jterrazz-macbook-pro", Kind: accounts.KindMac, ThisMac: true, Accounts: []accounts.Account{
 		github(),
 		{Provider: catalog.ProviderNPM, State: catalog.StateBroken, Reason: accounts.ReasonRefused, Origin: accounts.OriginOwn, Identity: []string{"?"}, Detail: "token refused by registry.npmjs.org", Hint: "npm login"},
 		own(catalog.ProviderClaude, []string{"admin@jterrazz.com"}, []string{"max"}, "", "claude.ai"),
@@ -39,25 +39,25 @@ func entryAccount() accounts.Account {
 }
 
 func accountsReport() accounts.Report {
-	return accounts.Report{Now: accountsNow, Daemon: accounts.DaemonRunning, Machines: []accounts.Machine{
-		hostAccounts(),
+	return accounts.Report{Now: accountsNow, Engine: accounts.DaemonRunning, Machines: []accounts.Machine{
+		macAccounts(),
 		{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Guest: accounts.GuestConnected, Accounts: []accounts.Account{
 			{Provider: catalog.ProviderGitHub, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "ssh linux-1 gh auth login"},
 			{Provider: catalog.ProviderNPM, State: catalog.StateAbsent, Reason: accounts.ReasonMissing, Detail: "npm not on PATH"},
-			lent(catalog.ProviderClaude, catalog.ClaudeTokenName, 11*time.Hour+40*time.Minute, catalog.StateOK, "", ""),
+			shared(catalog.ProviderClaude, catalog.ClaudeTokenName, 11*time.Hour+40*time.Minute, catalog.StateOK, "", ""),
 			own(catalog.ProviderGit, []string{"Jean-Baptiste Terrazzoni", "admin@jterrazz.com"}, nil, "", ""),
 			{Provider: catalog.ProviderSSH, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "no key in the agent"},
 			entryAccount(),
 		}},
 		{Name: "api", Kind: accounts.KindVM, Lifetime: "permanent", Running: true, Guest: accounts.GuestConnected, Accounts: []accounts.Account{
-			lent(catalog.ProviderClaude, catalog.ClaudeTokenName, 42*time.Minute, catalog.StateDegraded, accounts.ReasonExpiring, "station accounts share claude --with api"),
+			shared(catalog.ProviderClaude, catalog.ClaudeTokenName, 42*time.Minute, catalog.StateDegraded, accounts.ReasonExpiring, "station accounts share claude --with api"),
 			entryAccount(),
 		}},
 	}}
 }
 
 func emptyAccounts() accounts.Report {
-	return accounts.Report{Now: accountsNow, Daemon: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "jterrazz-macbook-pro", Kind: accounts.KindHost, Here: true, Accounts: []accounts.Account{
+	return accounts.Report{Now: accountsNow, Engine: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "jterrazz-macbook-pro", Kind: accounts.KindMac, ThisMac: true, Accounts: []accounts.Account{
 		{Provider: catalog.ProviderGitHub, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "station settings apply github-login"},
 		{Provider: catalog.ProviderNPM, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "npm login"},
 		{Provider: catalog.ProviderClaude, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "claude /login"},
@@ -68,7 +68,7 @@ func emptyAccounts() accounts.Report {
 
 func stoppedAccounts() accounts.Report {
 	r := accountsReport()
-	r.Daemon = accounts.DaemonStopped
+	r.Engine = accounts.DaemonStopped
 	return r
 }
 
@@ -84,10 +84,10 @@ func loadingAccounts() accounts.Report {
 
 func accountPages() []Fixture {
 	return states("accounts",
-		pageaccounts.Page(loadingAccounts(), here()),
-		pageaccounts.Page(emptyAccounts(), here()),
-		pageaccounts.Page(stoppedAccounts(), here()),
-		pageaccounts.Page(accountsReport(), here()),
+		pageaccounts.Page(loadingAccounts(), thisMacContext()),
+		pageaccounts.Page(emptyAccounts(), thisMacContext()),
+		pageaccounts.Page(stoppedAccounts(), thisMacContext()),
+		pageaccounts.Page(accountsReport(), thisMacContext()),
 	)
 }
 

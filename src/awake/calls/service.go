@@ -38,7 +38,7 @@ func NewService(clock Clock, p ServicePorts, o ServiceOptions) *Service {
 }
 
 func (s *Service) Check() error {
-	if s.o.Here != catalog.Host {
+	if s.o.Here != catalog.Mac {
 		return &awake.OffHostError{}
 	}
 	if s.o.Power == nil {
@@ -69,7 +69,7 @@ func (s *Service) Read(ctx context.Context) <-chan awake.Report {
 	go func() {
 		defer close(out)
 		r, _ := s.o.Power.Read()
-		first := awake.Report{Now: s.clock.Now(), Zone: s.o.Zone, Daemon: awake.DaemonPending, Reading: r, Guards: awake.GuardStates(r, nil)}
+		first := awake.Report{Now: s.clock.Now(), Zone: s.o.Zone, Engine: awake.DaemonPending, Reading: r, Guards: awake.GuardStates(r, nil)}
 		out <- first
 		v, err := s.p.View(ctx)
 		if ctx.Err() != nil {
@@ -78,9 +78,9 @@ func (s *Service) Read(ctx context.Context) <-chan awake.Report {
 		last := first
 		last.Now = s.clock.Now()
 		if err != nil {
-			last.Daemon = s.daemonState()
+			last.Engine = s.daemonState()
 		} else {
-			last.Daemon, last.Session, last.LastEnd = awake.DaemonRunning, v.Session, v.LastEnd
+			last.Engine, last.Session, last.LastEnd = awake.DaemonRunning, v.Session, v.LastEnd
 			last.NeverSleeps, last.NeverSince, last.NeverHeld = v.NeverSleeps, v.NeverSince, v.NeverHeld
 			last.Guards = awake.GuardStates(r, v.Session)
 		}

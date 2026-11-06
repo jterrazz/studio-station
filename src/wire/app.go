@@ -15,7 +15,7 @@ import (
 	awakemacos "github.com/jterrazz/studio-station/src/awake/adapter/macos"
 	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/engine/process"
@@ -32,7 +32,7 @@ import (
 )
 
 func Run(args, env []string, stdin, stdout, stderr *os.File) int {
-	env = withToolBins(env, len(args) > 0 && args[0] == "guest")
+	env = withAppBins(env, len(args) > 0 && args[0] == "guest")
 	frames, frameIn := stdout, stdin
 	var childIn io.Reader = stdin
 	if serving(args) {
@@ -67,69 +67,71 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	}
 	var world *worldMac
 	if session != nil {
-		world = session.here()
+		world = session.thisMac()
 	}
-	here := resolve(local.New(env, childIn, stdout, stderr), darwin.NewDoor(env), vars, world)
+	thisMac := resolve(local.New(env, childIn, stdout, stderr), darwin.NewDoor(env), vars, world)
 	kenv := kit.Env{
 		Out:         writer,
 		Prompt:      output.Terminal(stdin, stderr),
 		Interactive: inTTY && errTTY,
 		Screen:      inTTY && outTTY,
-		On:          &kit.On{Here: here.here(), Known: here.known},
-		Use:         here.uses(),
+		On:          &kit.On{ThisMachine: thisMac.thisMac(), Known: thisMac.known},
+		Use:         thisMac.uses(),
 		Stdin:       frameIn,
 		Stdout:      frames,
-		Self:        here.profile.Ref,
-		Kind:        here.profile.Kind,
-		Now:         here.host.Clock.Now,
-		Locate:      here.locate,
+		Self:        thisMac.profile.Ref,
+		Kind:        thisMac.profile.Kind,
+		Now:         thisMac.sys.Clock.Now,
+		Locate:      thisMac.locate,
 	}
-	router := here.router(kenv)
+	router := thisMac.router(kenv)
 	defer router.Close()
 	kenv.Calls = router
 	if session != nil {
-		world.engineFrom(func() *process.Daemon { return here.daemon(kenv) })
-		session.farFrom(func(w *worldMac) farMac { return here.farMac(kenv, w) })
+		world.engineFrom(func() *process.Engine { return thisMac.engine(kenv) })
+		session.farFrom(func(w *worldMac) farMac { return thisMac.farMac(kenv, w) })
 	}
 	kenv.On.Refresh = func(ctx context.Context) error {
-		fleet := here.machines(false)
-		f, err := fleet.Fleet(ctx, false)
+		allMachines := thisMac.machines(false)
+		f, err := allMachines.Fleet(ctx, false)
 		if err != nil {
 			return err
 		}
-		return fleet.SSHBlocks(ctx, f)
+		return allMachines.SSHBlocks(ctx, f)
 	}
 
 	commands := []*cobra.Command{
-		statusCommand(kenv, here),
-		activityCommand(kenv, here),
-		appsCommand(kenv, here),
-		toolsAlias(kenv, here),
-		settingsCommand(kenv, here),
-		diskCommand(kenv, here),
-		storageAlias(kenv, here),
-		awakeCommand(kenv, here),
-		machinesCommand(kenv, here),
-		imagesCommand(kenv, here),
-		secretsAlias(kenv, here),
-		accountsCommand(kenv, here),
-		backgroundCommand(kenv, here),
-		retiredDaemonCommand(kenv, here),
-		guestCommand(kenv, here),
-		engineCommand(kenv, here),
-		runCommand(kenv, here),
-		setupCommand(kenv, here),
-		shellcmd.Command(kenv),
-		useCommand(kenv, here),
+		activityCommand(kenv, thisMac),
+		appsCommand(kenv, thisMac),
+		settingsCommand(kenv, thisMac),
+		diskCommand(kenv, thisMac),
 	}
-	commands = append(commands, engineAliases(kenv, here)...)
-	commands = append(commands, settingsAliases(kenv, here)...)
-	commands = append(commands, awakeAliases(kenv, here)...)
-	commands = append(commands, portsCommands(kenv, here)...)
+	commands = append(commands, portsCommands(kenv, thisMac)...)
+	commands = append(commands,
+		accountsCommand(kenv, thisMac),
+		backgroundCommand(kenv, thisMac),
+		awakeCommand(kenv, thisMac),
+		machinesCommand(kenv, thisMac),
+		imagesCommand(kenv, thisMac),
+		engineCommand(kenv, thisMac),
+		useCommand(kenv, thisMac),
+		setupCommand(kenv, thisMac),
+		statusCommand(kenv, thisMac),
+		toolsAlias(kenv, thisMac),
+		storageAlias(kenv, thisMac),
+		secretsAlias(kenv, thisMac),
+		retiredEngineCommand(kenv, thisMac),
+		guestCommand(kenv, thisMac),
+		runCommand(kenv, thisMac),
+		shellcmd.Command(kenv),
+	)
+	commands = append(commands, engineAliases(kenv, thisMac)...)
+	commands = append(commands, settingsAliases(kenv, thisMac)...)
+	commands = append(commands, awakeAliases(kenv, thisMac)...)
 	if session != nil {
 		commands = append(commands, session.command())
 	}
-	root := cli.NewRoot(kenv, tuiOpener(kenv, here, vars["NO_COLOR"] != ""), overviewCommand(kenv, here), commands...)
+	root := cli.NewRoot(kenv, tuiOpener(kenv, thisMac, vars["NO_COLOR"] != ""), overviewCommand(kenv, thisMac), commands...)
 	root.SetArgs(args)
 	root.SetIn(stdin)
 	root.SetOut(stdout)
@@ -148,7 +150,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		fang.WithColorSchemeFunc(help.FangScheme),
 		fang.WithNotifySignal(os.Interrupt, syscall.SIGTERM),
 	)
-	here.pool.Close()
+	thisMac.pool.Close()
 	if session != nil {
 		if closed := session.close(context.Background()); closed != nil && err == nil {
 			err = closed
@@ -202,16 +204,16 @@ func widthOf(f *os.File, isTerminal bool) int {
 // interactive PATH; station appends them to its own, so what it installed
 // there answers a non-interactive caller too, and the caller's PATH still
 // wins. A VM's guest is started over ssh with the system's PATH, which also
-// lacks the shell block's ~/.local/bin and the tool manager's runtimes: it
+// lacks the shell block's ~/.local/bin and the app manager's runtimes: it
 // appends those first.
-func withToolBins(env []string, guest bool) []string {
-	home, tools, path, at := "", "", "", -1
+func withAppBins(env []string, guest bool) []string {
+	home, apps, path, at := "", "", "", -1
 	for i, kv := range env {
 		switch k, v, _ := strings.Cut(kv, "="); k {
 		case "HOME":
 			home = v
 		case catalog.ToolDataVar:
-			tools = v
+			apps = v
 		case "PATH":
 			path, at = v, i
 		}
@@ -219,13 +221,13 @@ func withToolBins(env []string, guest bool) []string {
 	if home == "" {
 		return env
 	}
-	if !filepath.IsAbs(tools) {
-		tools = filepath.Join(home, catalog.ToolData)
+	if !filepath.IsAbs(apps) {
+		apps = filepath.Join(home, catalog.ToolData)
 	}
 	have := strings.Split(path, ":")
 	var dirs []string
 	if guest {
-		dirs = append(dirs, filepath.Join(home, ".local", "bin"), filepath.Join(tools, catalog.ToolShims))
+		dirs = append(dirs, filepath.Join(home, ".local", "bin"), filepath.Join(apps, catalog.ToolShims))
 	}
 	for _, bin := range catalog.GlobalBins {
 		dirs = append(dirs, filepath.Join(home, bin))
@@ -250,13 +252,13 @@ type machine struct {
 	// value: this machine's Mac of the spec world, its fakes' slice; nil in
 	// every real run.
 	world *worldMac
-	// value: the host and power door before any world wraps them, from which
+	// value: the system and power door before any world wraps them, from which
 	// another Mac of the world is built.
 	raw       local.Host
 	door      darwin.Door
 	far       *late
-	pool      *probe.Pool
-	host      local.Host
+	pool      *lanes.Pool
+	sys       local.Host
 	powerPort awakecontract.Power
 	profile   coremachine.Profile
 	vars      map[string]string
@@ -269,7 +271,7 @@ type machine struct {
 func resolve(raw local.Host, door darwin.Door, vars map[string]string, world *worldMac) machine {
 	h := raw
 	if world != nil {
-		h = world.host(raw)
+		h = world.system(raw)
 	}
 	home := h.Env.Home()
 	root := func(name, fallback string) string {
@@ -297,7 +299,7 @@ func resolve(raw local.Host, door darwin.Door, vars map[string]string, world *wo
 		world.stores(st)
 	}
 	registered, _ := st.name().Get()
-	var budgets probe.Clock = h.Clock
+	var budgets lanes.Clock = h.Clock
 	if world != nil {
 		budgets = world.budgets()
 	}
@@ -306,8 +308,8 @@ func resolve(raw local.Host, door darwin.Door, vars map[string]string, world *wo
 		raw:    raw,
 		door:   door,
 		far:    &late{},
-		pool:   probe.NewPool(context.Background(), budgets, commandLane, walkLane),
-		host:   h,
+		pool:   lanes.NewPool(context.Background(), budgets, commandLane, walkLane),
+		sys:    h,
 		vars:   vars,
 		paths:  paths,
 		stores: st,
@@ -352,7 +354,7 @@ func (m machine) systemRoot() string {
 	return ""
 }
 
-func (m machine) here() string {
-	here, _ := m.stores.name().Get()
-	return here
+func (m machine) thisMac() string {
+	thisMac, _ := m.stores.name().Get()
+	return thisMac
 }

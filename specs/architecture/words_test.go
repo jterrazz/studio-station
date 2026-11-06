@@ -107,7 +107,7 @@ func wordAllowed(pkg, word string) bool {
 // shell line that calls it.
 func productWords() []string { return []string{"ssh", "docker", "security"} }
 
-func commandLine(word string, fields []string) bool {
+func runsWord(word string, fields []string) bool {
 	for i, f := range fields {
 		if path.Base(f) != word {
 			continue
@@ -125,7 +125,7 @@ func commandLine(word string, fields []string) bool {
 func literalWords(value string) []string {
 	words := splitWords(value)
 	for _, w := range productWords() {
-		if !commandLine(w, strings.Fields(value)) {
+		if !runsWord(w, strings.Fields(value)) {
 			words = slices.DeleteFunc(words, func(x string) bool { return x == w })
 		}
 	}

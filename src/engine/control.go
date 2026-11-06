@@ -14,8 +14,8 @@ type StopReport struct {
 	VMs []Stopped
 	// value: "ended" (the engine ended the Awake session), "reset" (the CLI
 	// set a dead engine's clamshell back to normal), or "" (nothing held, or
-	// no Power here).
-	Power string
+	// no keep-awake here).
+	Awake string
 	// value: the engine stopped sharing the ports of the VMs it stopped.
 	Sharing bool
 	// value: "stopped" (booted out now), "already stopped", "kept" (a VM
@@ -27,8 +27,8 @@ type StopReport struct {
 }
 
 const (
-	PowerEnded = "ended"
-	PowerReset = "reset"
+	AwakeEnded    = "ended"
+	AwakeReleased = "released"
 )
 
 const (

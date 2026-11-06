@@ -38,7 +38,7 @@ func TestApplier(t *testing.T) {
 	contracttest.Applier(t, func(*testing.T) contracttest.Opened {
 		files := &memory{files: map[string][]byte{}}
 		ours := fstest.MapFS{"zsh/greet.zsh": {Data: []byte("greet() { echo hi; }\n")}}
-		item := catalog.ConfigItem{Name: "greetings", Effect: catalog.ZshFunctions{From: "zsh/greet.zsh", Functions: []string{"greet"}}}
+		item := catalog.Setting{Name: "greetings", Effect: catalog.ZshFunctions{From: "zsh/greet.zsh", Functions: []string{"greet"}}}
 		script := zshblock.Script("/home/u/.config/station/zsh", item.Name)
 		edit := func(*testing.T) { files.files[script] = []byte("greet() { echo mine; }\n") }
 		return contracttest.Opened{Applier: zshblock.New(files, zshblock.Options{Dir: "/home/u/.config/station/zsh", Ours: ours}), Item: item, Edit: edit}

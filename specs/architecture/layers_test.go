@@ -772,7 +772,7 @@ func rules() []rule {
 		{"OneWayIntoAVMDial", ruleOneWayIntoAVM, "src/apps/mutant_vm_dial.go", "package apps\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/machines/contract\"\n)\n\nfunc mutantDial(ctx context.Context, d contract.GuestDialer) { _, _ = d.Dial(ctx, contract.GuestTarget{}) }\n", "src/apps/mutant_vm_dial.go"},
 		{"OneWriterPerStore", ruleOneWriterPerStore, "src/apps/mutant_store.go", "package apps\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/machines/contract\"\n)\n\nfunc mutantForget(ctx context.Context, s contract.MachineStore) { _ = s.Delete(ctx, \"api\") }\n", "src/apps/mutant_store.go"},
 		{"OneWriterPerStoreBuilt", ruleOneWriterPerStore, "src/apps/mutant_store_built.go", "package apps\n\nimport \"" + module + "/src/machines/adapter/jsonfile\"\n\nvar mutantStore = jsonfile.New(nil, \"vms\")\n", "src/apps/mutant_store_built.go"},
-		{"OneWriterPerStoreGroup", ruleOneWriterPerStore, "src/apps/contract/mutant_group.go", "package contract\n\nimport core \"" + module + "/src/core/contract\"\n\nfunc mutantName(p core.Preferences) error { return p.Write(\"here\", \"mutant\") }\n", "src/apps/contract/mutant_group.go"},
+		{"OneWriterPerStoreGroup", ruleOneWriterPerStore, "src/apps/contract/mutant_group.go", "package contract\n\nimport core \"" + module + "/src/core/contract\"\n\nfunc mutantName(p core.Preferences) error { return p.Write(\"name\", \"mutant\") }\n", "src/apps/contract/mutant_group.go"},
 		{"NoOutboundLiterals", ruleNoOutboundLiterals, "src/overview/mutant_outbound.go", "package overview\n\nconst mutantLookup = \"curl -s https://ifconfig.me\"\n", "src/overview/mutant_outbound.go"},
 		{"EngineNoTCP", ruleEngineNoTCP, "src/remote/serve/mutant_tcp.go", "package serve\n\ntype mutantSockets interface{ ListenTCP(ip string, port int) (any, error) }\n\nfunc mutantListen(s mutantSockets) { _, _ = s.ListenTCP(\"127.0.0.1\", 8080) }\n", "src/remote/serve/mutant_tcp.go"},
 		{"NoRemoteReexec", ruleNoRemoteReexec, "src/apps/mutant_reexec.go", "package apps\n\nfunc mutantRelay(host string) []string { return []string{host, \"--\", \"station\", \"apps\", \"--json\"} }\n", "src/apps/mutant_reexec.go"},
@@ -785,6 +785,8 @@ func rules() []rule {
 		{"EveryCodeWorded", ruleEveryCodeWorded, "src/apps/mutant_code.go", "package apps\n\nimport \"" + module + "/src/core/fail\"\n\nconst mutantCode fail.Code = \"apps.mutant\"\n", "src/apps/mutant_code.go"},
 		{"EveryCodeWordedRaised", ruleEveryCodeWorded, "src/surface/cli/words/mutant_unraised.go", "package words\n\nimport \"" + module + "/src/core/fail\"\n\nconst mutantUnraised fail.Code = \"usage.needs-terminal\"\n", "src/surface/cli/words/mutant_unraised.go"},
 		{"NoSubprocessInSample", ruleNoSubprocessInSample, "src/activity/adapter/macos/mutant_exec.go", "package macos\n\nimport _ \"os/exec\"\n", "src/activity/adapter/macos/mutant_exec.go"},
+		{"Vocabulary", ruleVocabularySource, "src/apps/mutant_vocabulary.go", "package apps\n\ntype mutantLease struct{ Fleet string }\n", "src/apps/mutant_vocabulary.go"},
+		{"VocabularyAwake", ruleVocabularySource, "src/ports/mutant_awake.go", "package ports\n\ntype mutantStrip struct {\n\tHeld bool `json:\"power\"`\n}\n\nconst mutantHeld = \"Power session held\"\n", "src/ports/mutant_awake.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
 }

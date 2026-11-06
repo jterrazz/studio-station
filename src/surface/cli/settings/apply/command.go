@@ -21,9 +21,9 @@ import (
 )
 
 type Deps struct {
-	Names func() []string
-	Here  page.Context
-	Now   func() time.Time
+	Names       func() []string
+	ThisMachine page.Context
+	Now         func() time.Time
 }
 
 type Input struct {
@@ -61,7 +61,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Page(pagesettings.Changes("apply", changes, d.Here), nil); err != nil {
+			if err := io.Page(pagesettings.Changes("apply", changes, d.ThisMachine), nil); err != nil {
 				return err
 			}
 			return partial(changes, "apply")
@@ -88,10 +88,10 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, in *Input, io kit.IO
 	if err != nil {
 		return err
 	}
-	places, servers := settings.Places(list.Fleet)
+	livesOn, servers := settings.LivesOnAll(list.All)
 	var applies []pagesettings.MachineApply
 	failed := 0
-	for _, p := range places {
+	for _, p := range livesOn {
 		a := pagesettings.MachineApply{Machine: p.Name}
 		switch p.Away {
 		case settings.Silent:
@@ -128,7 +128,7 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, in *Input, io kit.IO
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if err := io.Page(pagesettings.EveryMachine(applies, d.Here), nil); err != nil {
+	if err := io.Page(pagesettings.EveryMachine(applies, d.ThisMachine), nil); err != nil {
 		return err
 	}
 	if failed > 0 {
@@ -140,7 +140,7 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, in *Input, io kit.IO
 // invariant: a setting that does not live on the machine is dropped and
 // said, and the rest are applied there; the machine is asked again, as it
 // alone knows which of its settings live there.
-func applyLiving(ctx context.Context, env kit.Env, p settings.Place, names []string, io kit.IO, a *pagesettings.MachineApply) error {
+func applyLiving(ctx context.Context, env kit.Env, p settings.LivesOn, names []string, io kit.IO, a *pagesettings.MachineApply) error {
 	for {
 		err := io.Confirmed(func(answer string) (err error) {
 			a.Changes, err = call.Invoke(ctx, env.Calls, p.Ref, settingscalls.Apply, settingscalls.ApplyIn{Names: names, Interactive: io.Interactive, Confirm: answer}, nil)
@@ -160,7 +160,7 @@ func applyLiving(ctx context.Context, env kit.Env, p settings.Place, names []str
 
 // value: the names a Mac is asked to apply, and the admin settings among
 // them, each with the command that applies it on that Mac's own terminal.
-func admins(names []string, p settings.Place) ([]string, []pagesettings.AdminSetting) {
+func admins(names []string, p settings.LivesOn) ([]string, []pagesettings.AdminSetting) {
 	var asked []string
 	var admin []pagesettings.AdminSetting
 	for _, n := range names {
@@ -168,7 +168,7 @@ func admins(names []string, p settings.Place) ([]string, []pagesettings.AdminSet
 			asked = append(asked, n)
 			continue
 		}
-		admin = append(admin, pagesettings.AdminSetting{Name: n, Command: kit.AdminApply(n, p.Name, p.Here)})
+		admin = append(admin, pagesettings.AdminSetting{Name: n, Command: kit.AdminApply(n, p.Name, p.ThisMachine)})
 	}
 	return asked, admin
 }

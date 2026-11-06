@@ -27,7 +27,7 @@ func apply(t *testing.T, w *world.World, words ...string) error {
 	return w.Apply(ev)
 }
 
-const laptop = `{"here": "mbp", "macs": {"mbp": {"power": {"Lid": "open", "Source": "ac", "HasBattery": true, "Percent": 96}}, "mini": {"power": {"Source": "ac"}, "vms": {"linux-1": {"disk": true, "pid": 7}}}}}`
+const laptop = `{"this_mac": "mbp", "macs": {"mbp": {"power": {"Lid": "open", "Source": "ac", "HasBattery": true, "Percent": 96}}, "mini": {"power": {"Source": "ac"}, "vms": {"linux-1": {"disk": true, "pid": 7}}}}}`
 
 func TestAnEventOutsideTheClosedListIsRefusedByName(t *testing.T) {
 	_, err := world.Parse([]string{"meteor", "mbp"})
@@ -54,7 +54,7 @@ func TestUnpluggingAndClosingTheLidMoveTheLaptopsReading(t *testing.T) {
 }
 
 func TestAMacWithoutTheCapabilityRefusesItsEvent(t *testing.T) {
-	w := seeded(t, strings.Replace(laptop, `"here": "mbp"`, `"here": "mini"`, 1))
+	w := seeded(t, strings.Replace(laptop, `"this_mac": "mbp"`, `"this_mac": "mini"`, 1))
 	if err := apply(t, w, "close-lid"); err == nil || !strings.Contains(err.Error(), "mini has no lid") {
 		t.Errorf("a lid closed on a desktop as %v", err)
 	}
@@ -143,7 +143,7 @@ func TestAWorldReadsBackAsItWasWritten(t *testing.T) {
 }
 
 func TestAnotherHypervisorStandsInWhereStationsOwnWas(t *testing.T) {
-	w := seeded(t, `{"here": "mbp", "macs": {"mbp": {}, "bare": {"hypervisor": "none"}}}`)
+	w := seeded(t, `{"this_mac": "mbp", "macs": {"mbp": {}, "bare": {"hypervisor": "none"}}}`)
 	w.UseHypervisor("vz")
 	if got := w.Macs["mbp"].Hypervisor; got != "vz" {
 		t.Errorf("the Mac with station's hypervisor has %q, want vz", got)

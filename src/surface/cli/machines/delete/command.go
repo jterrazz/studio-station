@@ -19,8 +19,8 @@ import (
 
 type Deps struct {
 	// value: the machines known here, for completion.
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 type Input struct{ Name, Confirm string }
@@ -65,7 +65,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if env.Use != nil {
 				env.Use.Gone(in.Name, env.Use.Now())
 			}
-			return io.Page(pagemachines.Deleted(report, d.Here), nil)
+			return io.Page(pagemachines.Deleted(report, d.ThisMachine), nil)
 		},
 	}, env)
 }

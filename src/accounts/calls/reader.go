@@ -46,8 +46,8 @@ func NewReader(pool *probe.Pool, ids contract.Identities, p ReaderPorts, o Reade
 }
 
 func (s *Reader) where() string {
-	if s.o.Here == catalog.Host {
-		return accounts.KindHost
+	if s.o.Here == catalog.Mac {
+		return accounts.KindMac
 	}
 	return accounts.KindVM
 }
@@ -55,7 +55,7 @@ func (s *Reader) where() string {
 func (s *Reader) providers() []catalog.Provider {
 	var out []catalog.Provider
 	for _, p := range catalog.Providers {
-		if s.where() == accounts.KindHost && !p.Host || s.where() == accounts.KindVM && !p.VM {
+		if s.where() == accounts.KindMac && !p.Mac || s.where() == accounts.KindVM && !p.VM {
 			continue
 		}
 		if !s.ids.Offers(p) {
@@ -93,7 +93,7 @@ func (s *Reader) read(ctx context.Context, p catalog.Provider) accounts.Account 
 		}
 		acc = own(id)
 	}
-	return accounts.Redact(acc)
+	return accounts.RedactAccount(acc)
 }
 
 func (s *Reader) entry() accounts.Account {
@@ -128,14 +128,14 @@ func (s *Reader) entry() accounts.Account {
 
 func (s *Reader) Read(ctx context.Context, withVMs bool) <-chan accounts.Report {
 	now := s.o.Now().UTC()
-	here := accounts.Machine{Name: s.o.HereName, Kind: s.where(), Here: true}
+	here := accounts.Machine{Name: s.o.HereName, Kind: s.where(), ThisMac: true}
 	ps := s.providers()
 	for _, p := range ps {
 		here.Accounts = append(here.Accounts, accounts.Account{Provider: p.ID, State: catalog.StatePending})
 	}
 	frame := accounts.Report{Machines: []accounts.Machine{here}, Now: now}
 	var vms []accounts.VM
-	if s.where() == accounts.KindHost && s.p.VMs != nil {
+	if s.where() == accounts.KindMac && s.p.VMs != nil {
 		vms, _ = s.p.VMs(ctx)
 		slices.SortStableFunc(vms, func(a, b accounts.VM) int {
 			if a.Running != b.Running {
@@ -187,14 +187,14 @@ func (s *Reader) vmFrame(v accounts.VM, now time.Time) accounts.Machine {
 }
 
 func (s *Reader) merge(r *accounts.Report, vms []accounts.VM, reads []accounts.VMRead, daemon string) {
-	r.Daemon = daemon
+	r.Engine = daemon
 	byName := map[string]accounts.VMRead{}
 	for _, v := range reads {
 		byName[v.Name] = v
 	}
 	for i := range r.Machines {
 		m := &r.Machines[i]
-		if m.Kind != accounts.KindVM || m.Here {
+		if m.Kind != accounts.KindVM || m.ThisMac {
 			continue
 		}
 		var v accounts.VM
@@ -249,7 +249,7 @@ func lentRows(v accounts.VM, own []accounts.Account, unreachable bool, now time.
 		}
 		if lend != nil {
 			l := *lend
-			acc.Lent = &l
+			acc.Shared = &l
 			acc.Scopes = append([]string{l.Name}, acc.Scopes...)
 			switch left := l.Until.Sub(now); {
 			case left <= 0:
@@ -263,9 +263,9 @@ func lentRows(v accounts.VM, own []accounts.Account, unreachable bool, now time.
 	return out
 }
 
-func lendFor(lends []accounts.Lend, provider string) *accounts.Lend {
+func lendFor(lends []accounts.Loan, provider string) *accounts.Loan {
 	for _, l := range lends {
-		for _, sc := range catalog.LendScopes {
+		for _, sc := range catalog.ShareScopes {
 			if sc.Name == l.Name && sc.Provider == provider {
 				return &l
 			}
@@ -289,12 +289,12 @@ func (s *Reader) LendList() []string {
 
 func withHint(a accounts.Account, vm string) accounts.Account {
 	a.Hint = ""
-	if a.Lent != nil {
+	if a.Shared != nil {
 		switch a.Reason {
 		case accounts.ReasonExpiring:
-			a.Hint = "station accounts share " + accounts.AccountOf(a.Lent.Name) + " --with " + vm
+			a.Hint = "station accounts share " + accounts.AccountOf(a.Shared.Name) + " --with " + vm
 		case accounts.ReasonFailing:
-			a.Hint = "station accounts take-back " + accounts.AccountOf(a.Lent.Name) + " --from " + vm
+			a.Hint = "station accounts take-back " + accounts.AccountOf(a.Shared.Name) + " --from " + vm
 		}
 		return a
 	}

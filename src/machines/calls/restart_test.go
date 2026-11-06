@@ -32,10 +32,10 @@ func service(t *testing.T, answers func(context.Context, string) bool) (*machine
 	if err := p.Name.Set("mac"); err != nil {
 		t.Fatal(err)
 	}
-	if err := p.Hosts.Set(map[string]model.Host{"mac": {}, "x": {User: "u"}}); err != nil {
+	if err := p.Hosts.Set(map[string]model.MacRecord{"mac": {}, "x": {User: "u"}}); err != nil {
 		t.Fatal(err)
 	}
-	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, KnownHosts: paths.State + "/known_hosts", Logs: paths.State + "/logs", Unlocker: restarted{}, Answers: answers}), clock
+	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Mac, KnownHosts: paths.State + "/known_hosts", Logs: paths.State + "/logs", Unlocker: restarted{}, Answers: answers}), clock
 }
 
 type restarted struct{}

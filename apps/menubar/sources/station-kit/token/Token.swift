@@ -5,7 +5,7 @@ public enum Token {
         public static let arrow = "→"
         public static let sep = " · "
         public static let ellipsis = "…"
-        public static let power = "⏻"
+        public static let awake = "⏻"
         public static let charging = "⚡"
         public static let unknown = "?"
         public static let dash = "-"

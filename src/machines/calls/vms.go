@@ -17,7 +17,7 @@ func (s *Service) VM(name, verb string) (model.VMRecord, error) {
 	if err != nil {
 		return model.VMRecord{}, err
 	}
-	if m.Kind == catalog.Host {
+	if m.Kind == catalog.Mac {
 		return model.VMRecord{}, &model.NotAVMError{Name: name, Verb: verb}
 	}
 	records, err := s.records()

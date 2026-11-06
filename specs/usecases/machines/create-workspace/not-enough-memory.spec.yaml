@@ -6,7 +6,7 @@ runs:
       stderr: |
           Error: not enough memory on This Mac: 60 GB asked, 4 GB left for VMs
           Hint: ask for less: --memory 4G
-    - command: 'machines --here'
+    - command: 'machines --this-mac'
       exit: 0
       stdout: |
           ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running

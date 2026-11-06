@@ -32,7 +32,7 @@ type Asked struct {
 func (a *Asked) Error() string { return a.Message }
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 	// value: the machine the TUI opens on, by name: the one this terminal
 	// uses; empty is This Mac.
 	Opens string

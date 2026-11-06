@@ -1,4 +1,4 @@
-description: 'a check that passed then fails is failing since then, orange, and never restarts the server'
+description: 'a health check that passed then fails is failing since then, orange, and never restarts the server'
 env: two-macs
 runs:
     - command: 'machines infra | /usr/bin/grep Check'

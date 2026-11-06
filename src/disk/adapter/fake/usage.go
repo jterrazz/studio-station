@@ -29,9 +29,9 @@ func (u *Usage) At(home string) *Usage { return &Usage{w: u.w, mac: u.mac, home:
 func NewUsage(files map[string]int64, total, free int64, running ...string) *Usage {
 	// value: a disk holding files by their absolute path and length, on a
 	// volume of total bytes with free left.
-	w := &world.World{Here: "here"}
-	w.Mac("here").Disk = &world.Disk{Total: total, Free: free, Files: maps.Clone(files), Running: running}
-	return UsageOf(w, "here")
+	w := &world.World{ThisMac: "this-mac"}
+	w.Mac("this-mac").Disk = &world.Disk{Total: total, Free: free, Files: maps.Clone(files), Running: running}
+	return UsageOf(w, "this-mac")
 }
 
 func (u *Usage) disk() *world.Disk {

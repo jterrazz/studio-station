@@ -72,16 +72,16 @@ func FailedOf(outcomes []Outcome) (n int, first string) {
 	return n, first
 }
 
-func Elsewhere(reports []Report) []catalog.Tool {
+func Elsewhere(reports []Report) []catalog.App {
 	// value: the catalogue apps that live on other machines than this one:
-	// every app the list does not place here.
-	here := map[string]bool{}
+	// every app the list does not place thisMac.
+	thisMac := map[string]bool{}
 	for _, r := range reports {
-		here[r.Tool.Name] = true
+		thisMac[r.App.Name] = true
 	}
-	var out []catalog.Tool
-	for _, t := range catalog.Tools {
-		if !here[t.Name] {
+	var out []catalog.App
+	for _, t := range catalog.Apps {
+		if !thisMac[t.Name] {
 			out = append(out, t)
 		}
 	}

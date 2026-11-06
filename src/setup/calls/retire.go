@@ -64,7 +64,7 @@ func (s *Service) retire(ctx context.Context) (rows []setup.Step, background boo
 		removed = s.drop(dir) || removed
 	}
 	if removed {
-		here, _ := s.reg.Here()
+		here, _ := s.reg.ThisMac()
 		rows = append(rows, setup.Step{Name: stepLayout, State: catalog.StateOK, Changed: true,
 			Detail: catalog.RetiredNodeDetail(here)})
 	}

@@ -44,18 +44,18 @@ func (m *Mac) applySpotlight(ctx context.Context) (settings.Change, error) {
 // `defaults read com.apple.Spotlight Exclusions` says "does not exist", so the check
 // probes instead: mdfind finds a known file inside dir unless dir is excluded.
 func (m *Mac) spotlightExcluded(ctx context.Context, dir string) bool {
-	probe := m.spotlightProbe(dir)
-	if probe == "" {
+	sample := m.spotlightSample(dir)
+	if sample == "" {
 		return false
 	}
-	slash := strings.LastIndex(probe, "/")
-	out, ok := m.probe(ctx, "mdfind", "-onlyin", probe[:slash], "kMDItemFSName == "+strconv.Quote(probe[slash+1:]))
+	slash := strings.LastIndex(sample, "/")
+	out, ok := m.output(ctx, "mdfind", "-onlyin", sample[:slash], "kMDItemFSName == "+strconv.Quote(sample[slash+1:]))
 	return ok && out == ""
 }
 
 // hazard: hidden files are skipped: Spotlight ignores them by default, so they would read as excluded.
-func (m *Mac) spotlightProbe(dir string) string {
-	var probe string
+func (m *Mac) spotlightSample(dir string) string {
+	var sample string
 	_ = m.files.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			//nolint:nilerr // an unreadable entry is skipped; the probe is the first file that IS readable
@@ -68,10 +68,10 @@ func (m *Mac) spotlightProbe(dir string) string {
 			return nil
 		}
 		if d.Type().IsRegular() {
-			probe = p
+			sample = p
 			return fs.SkipAll
 		}
 		return nil
 	})
-	return probe
+	return sample
 }

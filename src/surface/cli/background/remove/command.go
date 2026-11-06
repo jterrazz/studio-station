@@ -14,7 +14,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 type Input struct{ Label string }
@@ -37,7 +37,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagebackground.Removed(task, d.Here), nil)
+			return io.Page(pagebackground.Removed(task, d.ThisMachine), nil)
 		},
 	}, env)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func TestPlaceEveryInstallOnAKindItsMethodAccepts(t *testing.T) {
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		seen := map[catalog.MachineKind]bool{}
 		for _, place := range tool.Installs {
 			accepts := catalog.MethodKinds[place.Install.Method()]
@@ -38,10 +38,10 @@ func TestUniqueNamesAcrossToolsSkillsAndConfigItems(t *testing.T) {
 		}
 		owner[name] = what
 	}
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		claim(tool.Name, "tool")
 	}
-	for _, item := range catalog.ConfigItems {
+	for _, item := range catalog.Settings {
 		claim(item.Name, "config item")
 	}
 	for _, item := range catalog.CheckedSettings {
@@ -51,14 +51,14 @@ func TestUniqueNamesAcrossToolsSkillsAndConfigItems(t *testing.T) {
 
 func TestEveryRequirementAndThenNamesACatalogueEntry(t *testing.T) {
 	tools := map[string]bool{}
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		tools[tool.Name] = true
 	}
 	items := map[string]bool{}
-	for _, item := range catalog.ConfigItems {
+	for _, item := range catalog.Settings {
 		items[item.Name] = true
 	}
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		for _, r := range tool.Requires {
 			if !tools[r] {
 				t.Errorf("%s requires the unknown tool %q", tool.Name, r)
@@ -74,14 +74,14 @@ func TestEveryRequirementAndThenNamesACatalogueEntry(t *testing.T) {
 
 type row struct {
 	name string
-	s    catalog.Storage
+	s    catalog.Disk
 }
 
 func rows() []row {
-	out := []row{{name: "station", s: catalog.StationStorage}}
-	for _, tool := range catalog.Tools {
-		if tool.Storage.Declared() {
-			out = append(out, row{name: tool.Name, s: tool.Storage})
+	out := []row{{name: "station", s: catalog.StationDisk}}
+	for _, tool := range catalog.Apps {
+		if tool.Disk.Declared() {
+			out = append(out, row{name: tool.Name, s: tool.Disk})
 		}
 	}
 	return out
@@ -109,13 +109,13 @@ func TestStorageDeletesOnlyWhatItsLevelAllows(t *testing.T) {
 			}
 			return false
 		}
-		check := func(what string, actions []catalog.Action, strays []catalog.Stray, allowed ...catalog.Level) {
+		check := func(what string, actions []catalog.Action, strays []catalog.Misplaced, allowed ...catalog.Level) {
 			for _, a := range actions {
 				for _, d := range append(slices.Clone(a.Delete), a.Prune...) {
 					if strings.HasPrefix(d, "/") {
 						t.Errorf("%s: %s deletes the absolute %s", r.name, what, d)
 					}
-					if within(d, catalog.LevelKept, catalog.LevelConfig) {
+					if within(d, catalog.LevelKept, catalog.LevelSettings) {
 						t.Errorf("%s: %s deletes %s, a kept or config path", r.name, what, d)
 					}
 					if !within(d, allowed...) {
@@ -124,7 +124,7 @@ func TestStorageDeletesOnlyWhatItsLevelAllows(t *testing.T) {
 				}
 			}
 			for _, st := range strays {
-				for _, a := range st.Clean {
+				for _, a := range st.Free {
 					for _, d := range append(slices.Clone(a.Delete), a.Prune...) {
 						if !inside(d, st.Path) {
 							t.Errorf("%s: the stray %s cleans %s outside it", r.name, st.Path, d)
@@ -133,9 +133,9 @@ func TestStorageDeletesOnlyWhatItsLevelAllows(t *testing.T) {
 				}
 			}
 		}
-		check("clean", r.s.Clean, r.s.Strays, catalog.LevelCache)
-		check("reset", r.s.Reset, nil, catalog.LevelCache, catalog.LevelData)
-		if len(r.s.Reset) == 0 && r.s.NoReset == "" {
+		check("clean", r.s.Free, r.s.Misplaced, catalog.LevelCache)
+		check("reset", r.s.Erase, nil, catalog.LevelCache, catalog.LevelData)
+		if len(r.s.Erase) == 0 && r.s.NoErase == "" {
 			t.Errorf("%s: no reset and no NoReset naming who owns its data", r.name)
 		}
 	}
@@ -156,8 +156,8 @@ func TestStoragePatternsStartAtARootAndTheHomeRootIsDeclared(t *testing.T) {
 		return false
 	}
 	for _, r := range rows() {
-		strays := make([]string, 0, len(r.s.Strays))
-		for _, st := range r.s.Strays {
+		strays := make([]string, 0, len(r.s.Misplaced))
+		for _, st := range r.s.Misplaced {
 			strays = append(strays, st.Path)
 		}
 		patterns := slices.Clone(r.s.Installed)
@@ -182,12 +182,12 @@ func TestStoragePatternsStartAtARootAndTheHomeRootIsDeclared(t *testing.T) {
 
 func TestSystemToolsAreExactlyTheFleetsAndPlacedOnAHost(t *testing.T) {
 	var system []string
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		if !tool.System {
 			continue
 		}
 		system = append(system, tool.Name)
-		if !slices.Contains(tool.Places(), catalog.Host) {
+		if !slices.Contains(tool.LivesOn(), catalog.Mac) {
 			t.Errorf("%s is a system tool not placed on a host", tool.Name)
 		}
 	}

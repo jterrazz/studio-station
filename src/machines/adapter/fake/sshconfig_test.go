@@ -10,7 +10,7 @@ func TestTheFakeSSHConfigKeepsTheContract(t *testing.T) {
 	contracttest.SSHConfig(t, func(*testing.T) contracttest.SSHConfigSubject {
 		c := NewSSHConfig()
 		return contracttest.SSHConfigSubject{
-			Config:  c,
+			Blocks:  c,
 			Managed: func(*testing.T) []string { return c.Managed() },
 			Foreign: func(_ *testing.T, name string) { c.Foreign(name) },
 		}

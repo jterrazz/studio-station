@@ -6,7 +6,7 @@ import (
 	"github.com/jterrazz/studio-station/src/setup"
 )
 
-func Outcome(report setup.Report, here page.Context) page.Page {
+func Outcome(report setup.Report, thisMac page.Context) page.Page {
 	rows := make([]page.Row, 0, len(report.Steps))
 	for _, step := range report.Steps {
 		r := pages.Done(step.Name, step.State, step.Detail)
@@ -14,7 +14,7 @@ func Outcome(report setup.Report, here page.Context) page.Page {
 		r.Detail = page.Text(step.Log)
 		rows = append(rows, r)
 	}
-	return pages.Outcome("setup", here, Columns(), rows, "steps")
+	return pages.Outcome("setup", thisMac, Columns(), rows, "steps")
 }
 
 func Columns() []page.Column {

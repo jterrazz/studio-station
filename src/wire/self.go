@@ -20,11 +20,11 @@ func selfOf(h local.Host) contract.Self {
 }
 
 // value: the kind STATION_MACHINE_KIND pins, in the words it is spelled
-// with; a spec pins it so a document means the same on every host, and Self
+// with; a spec pins it so a document means the same on every system, and Self
 // is then not asked.
 func pinned(word string) (coremachine.Kind, coremachine.OS, bool) {
 	switch catalog.MachineKind(word) {
-	case catalog.Host:
+	case catalog.Mac:
 		return coremachine.Mac, coremachine.MacOS, true
 	case catalog.MacOS:
 		return coremachine.Workspace, coremachine.MacOS, true
@@ -59,11 +59,11 @@ func profileOf(ctx context.Context, self contract.Self, pin, name string, power 
 }
 
 // value: the kind the packages not yet on the Profile read: a Mac is a
-// host, a VM is named by its system.
+// system, a VM is named by its system.
 func legacyKind(p coremachine.Profile) catalog.MachineKind {
 	switch {
 	case p.Kind == coremachine.Mac:
-		return catalog.Host
+		return catalog.Mac
 	case p.System.OS == coremachine.Linux:
 		return catalog.Linux
 	}

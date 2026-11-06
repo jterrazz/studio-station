@@ -24,7 +24,7 @@ import (
 
 func (m machine) awakeDeps() awakecalls.Deps {
 	return awakecalls.Deps{
-		Power: awakePower{m.power()}, Mac: m.profile.Ref.Name, Label: m.label(m.profile.Ref.Name), Caps: m.profile.Caps,
+		Holder: awakeKeeper{m.awakeService()}, Mac: m.profile.Ref.Name, Label: m.label(m.profile.Ref.Name), Caps: m.profile.Caps,
 		Servers:     func(context.Context) []string { return m.servers() },
 		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
 	}
@@ -47,34 +47,34 @@ func (m machine) servers() []string {
 }
 
 func (m machine) awakeCmdDeps(env kit.Env) awakecmd.Deps {
-	return awakecmd.Deps{Here: m.where, Now: m.host.Clock.Now, Zone: time.Local, Label: m.label,
-		Every: func(ctx context.Context) (pageawake.Fleet, error) { return m.everyMacAwake(ctx, env) }}
+	return awakecmd.Deps{ThisMachine: m.where, Now: m.sys.Clock.Now, Zone: time.Local, Label: m.label,
+		Every: func(ctx context.Context) (pageawake.AllMachines, error) { return m.everyMacAwake(ctx, env) }}
 }
 
 func awakeCommand(env kit.Env, m machine) *cobra.Command {
-	return awakecmd.Command(m.awakeCmdDeps(env), env, awakeoff.Command(awakeoff.Deps{Here: m.where, Label: m.label}, env))
+	return awakecmd.Command(m.awakeCmdDeps(env), env, awakeoff.Command(awakeoff.Deps{ThisMachine: m.where, Label: m.label}, env))
 }
 
 // value: station power, power awake and power sleep, the words v2 gave
 // awake, a keep-awake and awake off.
 func awakeAliases(env kit.Env, m machine) []*cobra.Command {
 	return []*cobra.Command{kit.Alias("power", awakecmd.Command(m.awakeCmdDeps(env), env,
-		awakecmd.PowerAwake(m.awakeCmdDeps(env), env),
-		kit.Alias("sleep", awakeoff.Command(awakeoff.Deps{Here: m.where, Label: m.label}, env), "off"),
+		awakecmd.PowerAwakeAlias(m.awakeCmdDeps(env), env),
+		kit.Alias("sleep", awakeoff.Command(awakeoff.Deps{ThisMachine: m.where, Label: m.label}, env), "off"),
 	), "awake")}
 }
 
 // invariant: This Mac first, then every other Mac that answers, each Mac's
 // own Awake through its engine; a Mac that does not answer is said so, and
 // This Mac's own refusal is the command's.
-func (m machine) everyMacAwake(ctx context.Context, env kit.Env) (pageawake.Fleet, error) {
-	f := pageawake.Fleet{Now: m.host.Clock.Now(), Zone: time.Local}
-	here, err := call.Read(ctx, env.Calls, env.Self, awakecalls.Read, awakecalls.ReadIn{}, nil)
+func (m machine) everyMacAwake(ctx context.Context, env kit.Env) (pageawake.AllMachines, error) {
+	f := pageawake.AllMachines{Now: m.sys.Clock.Now(), Zone: time.Local}
+	thisMac, err := call.Read(ctx, env.Calls, env.Self, awakecalls.Read, awakecalls.ReadIn{}, nil)
 	if err != nil {
 		return f, err
 	}
-	here.Here = true
-	f.Reports = append(f.Reports, here)
+	thisMac.ThisMac = true
+	f.Reports = append(f.Reports, thisMac)
 	others := m.machines(false).OtherHosts()
 	slices.Sort(others)
 	got := each.All(ctx, others, func(ctx context.Context, mac string) (awake.Report, error) {

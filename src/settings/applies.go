@@ -7,7 +7,7 @@ import (
 
 var Applies = section.Shown(section.Settings)
 
-var ReadsFleet = machine.All(Applies, fromAMac)
+var ReadsAllMachines = machine.All(Applies, fromAMac)
 
 func fromAMac(p machine.Profile) machine.Verdict {
 	// invariant: the matrix is read from a Mac: the one kind that reaches

@@ -28,7 +28,7 @@ type Guest interface {
 	Done() <-chan struct{}
 }
 
-func (d *Daemon) GuestExec(ctx context.Context, vm, line, stdin string) (engine.GuestRan, error) {
+func (d *Engine) GuestExec(ctx context.Context, vm, line, stdin string) (engine.GuestRan, error) {
 	// invariant: a command inside a VM always rides the engine's own connection
 	// to it; with none up, it is refused as absent, never run another way.
 	v, err := d.find(vm)
@@ -47,7 +47,7 @@ func (d *Daemon) GuestExec(ctx context.Context, vm, line, stdin string) (engine.
 
 const guestWait = 10 * time.Second
 
-func (d *Daemon) dialed(ctx context.Context, v *vmState) (client Guest, state string) {
+func (d *Engine) dialed(ctx context.Context, v *vmState) (client Guest, state string) {
 	// invariant: a call that lands while the guest is being dialed waits for
 	// that dial, within guestWait, rather than being refused as absent.
 	d.mu.Lock()

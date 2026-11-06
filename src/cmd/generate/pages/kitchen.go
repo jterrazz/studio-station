@@ -37,7 +37,7 @@ func Kitchen() []Fixture {
 				p.Sections[si].Items = []page.Item{{Empty: &page.Empty{Noun: "VMs", Hint: page.KeyHint("station machines create", "n")}}}
 			}
 		}))},
-		{"kitchen-sink.error", page.Seal(page.Page{ID: "home", Command: "status", Context: here(), Error: &page.Error{Message: "the settings file is not valid JSON", Hint: "repair the JSON of ~/.config/station/settings.json"}})},
+		{"kitchen-sink.error", page.Seal(page.Page{ID: "home", Command: "status", Context: thisMacContext(), Error: &page.Error{Message: "the settings file is not valid JSON", Hint: "repair the JSON of ~/.config/station/settings.json"}})},
 		{"kitchen-sink.full", page.Seal(kitchen(func(*page.Page) {}))},
 	}
 }
@@ -106,7 +106,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		hint   string
 	}{
 		{page.Outdated, page.Attention, "120 outdated", "station apps update --method brew"},
-		{page.Stray, page.Attention, "misplaced", "station disk move ~/.bun"},
+		{page.Misplaced, page.Attention, "misplaced", "station disk move ~/.bun"},
 		{page.Unreachable, page.Attention, "unreachable", ""},
 		{page.Mismatch, page.Attention, "station v2.0.0-240, This Mac v2.0.0-242", ""},
 		{page.Unmanaged, page.Attention, "on PATH, not managed by cask", ""},
@@ -129,7 +129,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 	for _, r := range reasons {
 		x := row(string(r.reason), r.mark, page.Text(string(r.mark)))
 		x.Reason, x.Detail = r.reason, page.Text(r.detail)
-		if r.reason == page.Stray {
+		if r.reason == page.Misplaced {
 			x.Label = "misplaced"
 		}
 		if r.hint != "" {
@@ -143,16 +143,16 @@ func kitchen(edit func(*page.Page)) page.Page {
 		it(row("not-for-this-machine", page.NotForThisMachine, page.Text("Macs only"))),
 		it(row("not-known", page.NotKnown, page.Text("does not answer"))),
 	)
-	fleet := page.Section{
-		ID: "fleet", Title: "All machines",
-		Columns: []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "kind", Kind: page.KindText, Keep: 40}, {Key: "host", Kind: page.KindText, Keep: 10, Show: page.PipeOnly}},
+	allMachines := page.Section{
+		ID: "all-machines", Title: "All machines",
+		Columns: []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "kind", Kind: page.KindText, Keep: 40}, {Key: "mac", Kind: page.KindText, Keep: 10, Show: page.PipeOnly}},
 		Items: []page.Item{{Group: &page.Group{
 			Head: row("jterrazz-mac-mini", page.OK, page.Text("Mac"), page.Text("jterrazz-mac-mini")),
 			Items: []page.Item{
 				{Group: &page.Group{
 					Head: row("linux-1", page.OK, page.Text("permanent"), page.Text("jterrazz-mac-mini")),
 					Items: []page.Item{
-						{Link: &page.Link{Label: "8081", Lead: page.PortMap(8081, 40002), Value: page.URL("https://jterrazz-mac-mini.ts.net:40002"), Detail: page.Text("vite"), Page: "services", Row: "api"}},
+						{Link: &page.Link{Label: "8081", Lead: page.PortMap(8081, 40002), Value: page.URL("https://jterrazz-mac-mini.ts.net:40002"), Detail: page.Text("vite"), Page: "ports", Row: "api"}},
 						it(row("web", page.OK, page.Text("server"), page.Text("jterrazz-mac-mini"))),
 					},
 				}},
@@ -160,12 +160,12 @@ func kitchen(edit func(*page.Page)) page.Page {
 			},
 		}}},
 	}
-	storage := page.Section{
-		ID: "storage", Title: "Disk",
+	disk := page.Section{
+		ID: "disk", Title: "Disk",
 		Columns: []page.Column{{Key: "name", Label: "app", Kind: page.KindText, Keep: 100}, {Key: "levels", Kind: page.KindLevels, Keep: 80, Levels: []string{"data", "kept"}}},
 		Items: []page.Item{
 			it(row("station", page.OK, page.Levels(page.Labeled("data", page.Size(275)), page.Labeled("kept", page.Size(546))))),
-			it(row(catalog.HypervisorTool, page.OK, page.Levels(page.Labeled("data", page.Size(73300000000))))),
+			it(row(catalog.HypervisorApp, page.OK, page.Levels(page.Labeled("data", page.Size(73300000000))))),
 		},
 	}
 	prose := page.Section{
@@ -192,13 +192,13 @@ func kitchen(edit func(*page.Page)) page.Page {
 		Items: []page.Item{it(page.Row{ID: "marks", Mark: page.Broken, Label: "Marks", Reason: page.Failing, Detail: page.Count(4, "broken")})},
 	}
 	p := page.Page{
-		ID: "home", Command: "status", Context: page.Context{Machine: "jterrazz-macbook-pro", Kind: "host", Registered: true},
+		ID: "home", Command: "status", Context: page.Context{Machine: "jterrazz-macbook-pro", Kind: "mac", Registered: true},
 		Strip: &page.Strip{
 			CPU: page.Percent(340), Spark: []int{3, 10, 25, 40, 60, 80, 100, 50, 34, 20, 10, 5, 0, 15, 30, 34},
-			Memory: page.Ratio(12400000000, 17200000000), Battery: page.Percent(1000), Power: page.Texts("awake", "3h 12m"),
+			Memory: page.Ratio(12400000000, 17200000000), Battery: page.Percent(1000), Awake: page.Texts("awake", "3h 12m"),
 			Net: []page.Value{page.Text("28.2 KB/s"), page.Text("14.5 KB/s")},
 		},
-		Sections: []page.Section{todo, summary, values, marks, fleet, storage, prose, peers},
+		Sections: []page.Section{todo, summary, values, marks, allMachines, disk, prose, peers},
 		Hints:    []page.Hint{*page.Cmd("station overview --all"), {Command: "station apps", Text: "for the catalogue"}},
 		Actions: []page.Action{
 			{Key: "enter", Label: "fix", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Question: "Delete linux-1?", Lines: []page.Value{page.Text("its disk is removed"), page.Command("station machines delete linux-1")}, Danger: true, Yes: "delete"}},

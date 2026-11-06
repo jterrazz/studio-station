@@ -16,7 +16,7 @@ type Record struct {
 	CreatedAt   time.Time
 }
 
-type Host struct {
+type MacRecord struct {
 	User string `json:"user,omitempty"`
 	Key  string `json:"key,omitempty"`
 	// value: when this Mac last had that Mac's answer, and the VMs it then

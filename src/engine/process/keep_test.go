@@ -11,7 +11,7 @@ import (
 )
 
 func TestTheEventsWatchStreamsEachEventOfTheClosedListOnceAndNoOtherWord(t *testing.T) {
-	d := &Daemon{o: Options{Join: func(parts ...string) string { return strings.Join(parts, " / ") }}}
+	d := &Engine{o: Options{Join: func(parts ...string) string { return strings.Join(parts, " / ") }}}
 	ctx, cancel := context.WithCancel(t.Context())
 	got := make(chan engine.Event, 4)
 	opened := make(chan engine.Opened, 1)

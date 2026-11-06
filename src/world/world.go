@@ -25,9 +25,9 @@ type World struct {
 
 	Now time.Time `json:"now"`
 	// value: the Mac the binary runs on, and its owner's login.
-	Here string          `json:"here"`
-	User string          `json:"user,omitempty"`
-	Macs map[string]*Mac `json:"macs"`
+	ThisMac string          `json:"this_mac"`
+	User    string          `json:"user,omitempty"`
+	Macs    map[string]*Mac `json:"macs"`
 	// value: what the engine told the owner, in the order told.
 	Told []engine.Notification `json:"told,omitempty"`
 	// value: each image's latest version, as its registry answers it.
@@ -178,15 +178,15 @@ type Disk struct {
 }
 
 type SSH struct {
-	Blocks  map[string]HostBlock `json:"blocks,omitempty"`
-	Foreign []string             `json:"foreign,omitempty"`
+	Blocks  map[string]SSHBlock `json:"blocks,omitempty"`
+	Foreign []string            `json:"foreign,omitempty"`
 }
 
-type HostBlock struct {
-	User   string `json:"user,omitempty"`
-	Key    string `json:"key,omitempty"`
-	Behind string `json:"behind,omitempty"`
-	Here   bool   `json:"here,omitempty"`
+type SSHBlock struct {
+	User    string `json:"user,omitempty"`
+	Key     string `json:"key,omitempty"`
+	Behind  string `json:"behind,omitempty"`
+	ThisMac bool   `json:"this_mac,omitempty"`
 }
 
 type Stores struct {
@@ -270,8 +270,8 @@ type VM struct {
 }
 
 type Container struct {
-	Name      string `json:"name"`
-	Published []int  `json:"published"`
+	Name   string `json:"name"`
+	Shared []int  `json:"ports"`
 }
 
 type Boot struct {
@@ -280,6 +280,8 @@ type Boot struct {
 }
 
 type Kept struct {
+	// value: alias of the v2 `lent` key, as a VM record the machines store
+	// keeps still holds it.
 	Image     string            `json:"image,omitempty"`
 	Version   string            `json:"version,omitempty"`
 	Lifetime  machines.Lifetime `json:"lifetime"`
@@ -290,7 +292,7 @@ type Kept struct {
 	CreatedAt time.Time         `json:"created_at,omitzero"`
 	// value: the shares station v2 kept in the VM's record, by name, until
 	// the accounts' store moves them out once.
-	Lent []string `json:"lent,omitempty"`
+	Shared []string `json:"lent,omitempty"`
 }
 
 func (v *VM) Running() bool { return v.PID != 0 }

@@ -17,7 +17,7 @@ func (m machine) exposure(ctx context.Context) ports.Exposure {
 	if err != nil {
 		return ports.ExposureOf(false, "")
 	}
-	return ports.ExposureOf(ready.On, ready.Host)
+	return ports.ExposureOf(ready.On, ready.DNSName)
 }
 
 func (m machine) tailnet() contract.Tailnet {
@@ -28,15 +28,15 @@ func (m machine) tailnet() contract.Tailnet {
 }
 
 func (m machine) routes() contract.PublicRoutes {
-	var config funnel.Config = m.tailnetCLI()
+	var funneled funnel.Funnel = m.tailnetCLI()
 	if m.world != nil {
-		config = m.world.funnel()
+		funneled = m.world.funnel()
 	}
-	return contract.PublicRoutes{cloudflare.Route{}, funnel.New(config), lan.Route{}}
+	return contract.PublicRoutes{cloudflare.Route{}, funnel.New(funneled), lan.Route{}}
 }
 
 func (m machine) tailnetCLI() *tailscale.CLI {
-	return tailscale.New(m.host.Run, m.host.FS, m.systemRoot())
+	return tailscale.New(m.sys.Run, m.sys.FS, m.systemRoot())
 }
 
 // value: the tailnet as a page reads it, this node and what it shares in
@@ -46,7 +46,7 @@ type tailnetStatus struct{ m machine }
 func (m machine) tailnetStatus() tailnetStatus { return tailnetStatus{m: m} }
 
 func (t tailnetStatus) Status(ctx context.Context) (ports.Status, error) {
-	g, _ := t.m.stores.services().Get()
+	g, _ := t.m.stores.ports().Get()
 	p := ports.PolicyOf(g)
 	owns := func(s ports.Share) bool {
 		return p.InRange(s.Port) || (p.HTTPS == ports.HTTPSPath && s.Port == 443 && s.Path != "/")
@@ -60,9 +60,9 @@ func (t tailnetStatus) Status(ctx context.Context) (ports.Status, error) {
 	return ports.StatusOf(self, err, shared, owns), nil
 }
 
-type hostNodes struct{ tailnet contract.Tailnet }
+type macNodes struct{ tailnet contract.Tailnet }
 
-func (t hostNodes) Peers(ctx context.Context) (map[string]model.Node, error) {
+func (t macNodes) Peers(ctx context.Context) (map[string]model.Node, error) {
 	self, err := t.tailnet.Self(ctx)
 	if err != nil {
 		return nil, err

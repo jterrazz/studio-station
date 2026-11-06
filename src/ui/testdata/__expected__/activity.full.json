@@ -3,7 +3,7 @@
   "id": "activity",
   "command": "activity",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "ready",
   "sections": [

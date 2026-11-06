@@ -83,12 +83,12 @@ func restartsOf(r Restarts) ListRestarts {
 	return out
 }
 
-func ToList(f Fleet) ListDoc {
-	out := ListDoc{Schema: ListSchema, Macs: make([]ListMac, 0, len(f.Hosts)), Findings: finding.FleetDoc(Findings(f))}
-	for _, h := range f.Hosts {
+func ToList(f AllMachines) ListDoc {
+	out := ListDoc{Schema: ListSchema, Macs: make([]ListMac, 0, len(f.Macs)), Findings: finding.AllMachinesDoc(Findings(f))}
+	for _, h := range f.Macs {
 		m := ListMac{
-			Name: h.Name, Label: Label(f, h), ThisMac: h.Here, Reachable: h.Reachable, Answered: h.Answered, IP: h.Node.IP, User: h.User,
-			Engine: ListEngine{State: engineState(h), Version: h.Daemon.Version}, Station: h.StationVersion, VMs: []ListVM{},
+			Name: h.Name, Label: Label(f, h), ThisMac: h.ThisMac, Reachable: h.Reachable, Answered: h.Answered, IP: h.Node.IP, User: h.User,
+			Engine: ListEngine{State: engineState(h), Version: h.Engine.Version}, Station: h.StationVersion, VMs: []ListVM{},
 		}
 		for _, vm := range Ordered(h.VMs) {
 			m.VMs = append(m.VMs, ListVM{
@@ -103,15 +103,15 @@ func ToList(f Fleet) ListDoc {
 	return out
 }
 
-func engineState(h HostView) string {
+func engineState(h MacView) string {
 	switch {
 	case !h.Reachable:
 		return "unknown"
-	case !h.Daemon.Known:
+	case !h.Engine.Known:
 		return "none"
-	case h.Daemon.Running:
+	case h.Engine.Running:
 		return "running"
-	case !h.Daemon.Installed && h.Here:
+	case !h.Engine.Installed && h.ThisMac:
 		return "not-set-up"
 	}
 	return "stopped"

@@ -60,7 +60,7 @@ func (s *Service) watch(ctx context.Context) <-chan []apps.Report {
 	var methods []catalog.Method
 	for i, t := range list {
 		m := s.install(t).Method()
-		frame[i] = apps.Report{Tool: t, Method: m, State: catalog.StateUnknown, Pending: true}
+		frame[i] = apps.Report{App: t, Method: m, State: catalog.StateUnknown, Pending: true}
 		if _, seen := byMethod[m]; !seen {
 			methods = append(methods, m)
 		}
@@ -72,7 +72,7 @@ func (s *Service) watch(ctx context.Context) <-chan []apps.Report {
 		jobs = append(jobs, probe.Job[[]apps.Report]{
 			Key: subject + "/method/" + string(m), Budget: inventoryBudget + probeBudget + currencyBudget,
 			Partial: func(ctx context.Context, emit func(func(*[]apps.Report))) func(*[]apps.Report) {
-				group := make([]catalog.Tool, len(rows))
+				group := make([]catalog.App, len(rows))
 				for k, i := range rows {
 					group[k] = list[i]
 				}
@@ -91,7 +91,7 @@ func (s *Service) watch(ctx context.Context) <-chan []apps.Report {
 					if !(*out)[i].Pending {
 						continue
 					}
-					(*out)[i] = apps.Report{Tool: list[i], Method: m, State: catalog.StateUnknown, Why: apps.WhyLate, Detail: "no answer in " + (inventoryBudget + probeBudget + currencyBudget).String()}
+					(*out)[i] = apps.Report{App: list[i], Method: m, State: catalog.StateUnknown, Why: apps.WhyLate, Detail: "no answer in " + (inventoryBudget + probeBudget + currencyBudget).String()}
 				}
 			},
 		})
@@ -101,7 +101,7 @@ func (s *Service) watch(ctx context.Context) <-chan []apps.Report {
 
 // invariant: a shared listing is keyed by its method alone, so it asks the
 // currency of every placed app of that method, whichever reader starts it.
-func (s *Service) sharedListings(ctx context.Context, list []catalog.Tool) map[catalog.Method]listing {
+func (s *Service) sharedListings(ctx context.Context, list []catalog.App) map[catalog.Method]listing {
 	placed := s.Placed()
 	out := map[catalog.Method]listing{}
 	for m := range s.needed(list) {
@@ -110,15 +110,15 @@ func (s *Service) sharedListings(ctx context.Context, list []catalog.Tool) map[c
 	return out
 }
 
-func (s *Service) reports(ctx context.Context, list []catalog.Tool) []apps.Report {
+func (s *Service) reports(ctx context.Context, list []catalog.App) []apps.Report {
 	return s.reportsWith(ctx, list, s.listings(ctx, list))
 }
 
-func (s *Service) reportsWith(ctx context.Context, list []catalog.Tool, listings map[catalog.Method]listing) []apps.Report {
+func (s *Service) reportsWith(ctx context.Context, list []catalog.App, listings map[catalog.Method]listing) []apps.Report {
 	return s.reportsEach(ctx, list, listings, func(int, apps.Report) {})
 }
 
-func (s *Service) reportsEach(ctx context.Context, list []catalog.Tool, listings map[catalog.Method]listing, each func(int, apps.Report)) []apps.Report {
+func (s *Service) reportsEach(ctx context.Context, list []catalog.App, listings map[catalog.Method]listing, each func(int, apps.Report)) []apps.Report {
 	out := make([]apps.Report, len(list))
 	var wg sync.WaitGroup
 	for i, t := range list {
@@ -131,7 +131,7 @@ func (s *Service) reportsEach(ctx context.Context, list []catalog.Tool, listings
 	return out
 }
 
-func (s *Service) needed(list []catalog.Tool) map[catalog.Method]bool {
+func (s *Service) needed(list []catalog.App) map[catalog.Method]bool {
 	needed := map[catalog.Method]bool{}
 	for _, t := range list {
 		needed[s.install(t).Method()] = true
@@ -142,7 +142,7 @@ func (s *Service) needed(list []catalog.Tool) map[catalog.Method]bool {
 	return needed
 }
 
-func (s *Service) listings(ctx context.Context, list []catalog.Tool) map[catalog.Method]listing {
+func (s *Service) listings(ctx context.Context, list []catalog.App) map[catalog.Method]listing {
 	needed := s.needed(list)
 	var mu sync.Mutex
 	out := map[catalog.Method]listing{}
@@ -159,7 +159,7 @@ func (s *Service) listings(ctx context.Context, list []catalog.Tool) map[catalog
 	return out
 }
 
-func (s *Service) list(ctx context.Context, m catalog.Method, list []catalog.Tool) listing {
+func (s *Service) list(ctx context.Context, m catalog.Method, list []catalog.App) listing {
 	inst := s.o.Installers[m]
 	l := listing{missing: inst.Ready(ctx) != nil}
 	listed, cancel := context.WithTimeout(ctx, inventoryBudget)
@@ -195,11 +195,11 @@ func (s *Service) list(ctx context.Context, m catalog.Method, list []catalog.Too
 	return l
 }
 
-func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catalog.Method]listing) apps.Report {
+func (s *Service) report(ctx context.Context, t catalog.App, listings map[catalog.Method]listing) apps.Report {
 	i := s.install(t)
 	m := i.Method()
 	manager := s.installer(t).Manager()
-	r := apps.Report{Tool: t, Method: m, State: catalog.StateAbsent}
+	r := apps.Report{App: t, Method: m, State: catalog.StateAbsent}
 	l := listings[m]
 	switch {
 	case l.unlisted && s.bundled(t):
@@ -250,7 +250,7 @@ func (s *Service) report(ctx context.Context, t catalog.Tool, listings map[catal
 	return r
 }
 
-func listedOld(t catalog.Tool, listings map[catalog.Method]listing) bool {
+func listedOld(t catalog.App, listings map[catalog.Method]listing) bool {
 	old, ok := t.Superseded()
 	if !ok {
 		return false
@@ -259,7 +259,7 @@ func listedOld(t catalog.Tool, listings map[catalog.Method]listing) bool {
 	return listed
 }
 
-func (s *Service) probed(ctx context.Context, t catalog.Tool, r apps.Report) apps.Report {
+func (s *Service) probed(ctx context.Context, t catalog.App, r apps.Report) apps.Report {
 	if t.Version.Path != "" {
 		matches := s.m.Glob(s.home(t.Version.Path))
 		if len(matches) == 0 {
@@ -291,7 +291,7 @@ func (s *Service) probed(ctx context.Context, t catalog.Tool, r apps.Report) app
 	return r
 }
 
-func (s *Service) present(ctx context.Context, t catalog.Tool, r *apps.Report) bool {
+func (s *Service) present(ctx context.Context, t catalog.App, r *apps.Report) bool {
 	if s.bundled(t) {
 		return true
 	}
@@ -323,7 +323,7 @@ func (s *Service) present(ctx context.Context, t catalog.Tool, r *apps.Report) b
 	return false
 }
 
-func (s *Service) provided(t catalog.Tool) bool {
+func (s *Service) provided(t catalog.App) bool {
 	for _, name := range t.Provides {
 		if _, ok := s.m.LookPath(name); ok {
 			return true
@@ -332,7 +332,7 @@ func (s *Service) provided(t catalog.Tool) bool {
 	return len(t.Provides) == 0 && len(t.Version.Args) > 0
 }
 
-func (s *Service) bundled(t catalog.Tool) bool {
+func (s *Service) bundled(t catalog.App) bool {
 	if t.Bundle == "" {
 		return false
 	}
@@ -341,14 +341,14 @@ func (s *Service) bundled(t catalog.Tool) bool {
 
 // invariant: an App Store copy of an AppStore tool's bundle is its install,
 // not station's: present, never managed, upgraded or removed by station.
-func (s *Service) fromAppStore(t catalog.Tool) bool {
+func (s *Service) fromAppStore(t catalog.App) bool {
 	if !t.AppStore || t.Bundle == "" {
 		return false
 	}
 	return s.m.Exists(path.Join(s.o.Root, applications, t.Bundle+".app", catalog.AppStoreReceipt))
 }
 
-func (s *Service) probe(ctx context.Context, p catalog.Probe) (version string, code int, ran bool) {
+func (s *Service) probe(ctx context.Context, p catalog.VersionRead) (version string, code int, ran bool) {
 	args := make([]string, 0, len(p.Args)-1)
 	for _, a := range p.Args[1:] {
 		args = append(args, s.home(a))

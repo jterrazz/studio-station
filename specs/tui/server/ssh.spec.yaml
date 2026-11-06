@@ -28,7 +28,7 @@ runs:
           │ The one door into infra, through mac-mini. No password: your key.
           │
           │   ssh admin@infra                                 c copy
-          │   From any Mac: the block in ~/.ssh/config hops through mac-mini.
+          │   From any Mac: the block in your ssh_config hops through mac-mini.
           │   In an editor: Remote SSH to infra (Zed, VS Code).
           │
           │ HOW IT IS REACHED

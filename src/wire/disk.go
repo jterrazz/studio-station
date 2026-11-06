@@ -27,34 +27,34 @@ import (
 )
 
 func diskCommand(env kit.Env, m machine) *cobra.Command {
-	names := m.storage(env).Names
-	return diskcmd.Command(diskcmd.Deps{Names: names, Here: m.where}, env,
-		diskfree.Command(diskfree.Deps{Names: names, Here: m.where}, env),
-		diskerase.Command(diskerase.Deps{Names: names, Here: m.where}, env),
-		diskmove.Command(diskmove.Deps{Here: m.where, Home: m.host.Env.Home()}, env),
+	names := m.diskOf(env).Names
+	return diskcmd.Command(diskcmd.Deps{Names: names, ThisMachine: m.where}, env,
+		diskfree.Command(diskfree.Deps{Names: names, ThisMachine: m.where}, env),
+		diskerase.Command(diskerase.Deps{Names: names, ThisMachine: m.where}, env),
+		diskmove.Command(diskmove.Deps{ThisMachine: m.where, Home: m.sys.Env.Home()}, env),
 	)
 }
 
-// invariant: station storage and its verbs are the hidden v2 words of
+// invariant: station diskOf and its verbs are the hidden v2 words of
 // station disk for one release (SPEC §4.3): clean is free, reset is erase.
 func storageAlias(env kit.Env, m machine) *cobra.Command {
-	names := m.storage(env).Names
-	return kit.Alias("storage", diskcmd.Command(diskcmd.Deps{Names: names, Here: m.where}, env,
-		kit.Alias("clean", diskfree.Command(diskfree.Deps{Names: names, Here: m.where}, env), "free"),
-		kit.Alias("reset", diskerase.Command(diskerase.Deps{Names: names, Here: m.where}, env), "erase"),
+	names := m.diskOf(env).Names
+	return kit.Alias("storage", diskcmd.Command(diskcmd.Deps{Names: names, ThisMachine: m.where}, env,
+		kit.Alias("clean", diskfree.Command(diskfree.Deps{Names: names, ThisMachine: m.where}, env), "free"),
+		kit.Alias("reset", diskerase.Command(diskerase.Deps{Names: names, ThisMachine: m.where}, env), "erase"),
 	), "disk")
 }
 
-func (m machine) storage(env kit.Env) *diskcalls.Service {
-	return diskcalls.NewService(diskMachine{m.host}, catalog.Tools, diskcalls.ServiceOptions{
+func (m machine) diskOf(env kit.Env) *diskcalls.Service {
+	return diskcalls.NewService(diskMachine{m.sys}, catalog.Apps, diskcalls.ServiceOptions{
 		Disk:       m.disk(),
-		Containers: diskdocker.New(m.host.Run),
+		Containers: diskdocker.New(m.sys.Run),
 		Pool:       m.pool,
 		Here:       m.kind,
 		Expand:     m.expander(),
-		Files:      m.toolFiles(),
-		Inventory:  inventory{tools: toolsService(env, m)},
-		Configurer: setupConfigurer{config: configService(m)},
+		Files:      m.appFiles(),
+		Inventory:  inventory{apps: appsOf(env, m)},
+		Configurer: setupSettingsWriter{settings: settingsOf(m)},
 	})
 }
 
@@ -63,27 +63,27 @@ func (m machine) disk() diskcontract.DiskUsage {
 		return m.world.disk()
 	}
 	if m.profile.System.OS == coremachine.Linux {
-		return posix.New(m.host.Run)
+		return posix.New(m.sys.Run)
 	}
-	return apfs.New(m.host.Run)
+	return apfs.New(m.sys.Run)
 }
 
 func (m machine) expander() disk.Expander {
-	return disk.Expander{Home: m.host.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
+	return disk.Expander{Home: m.sys.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
 }
 
-func (m machine) toolFiles() map[catalog.ToolFile]string {
-	return catalog.ToolFilePaths(m.host.Env.Home(), m.paths.Roots.Config, m.kind, m.vars)
+func (m machine) appFiles() map[catalog.AppFile]string {
+	return catalog.ToolFilePaths(m.sys.Env.Home(), m.paths.Roots.Config, m.kind, m.vars)
 }
 
-type inventory struct{ tools *appscalls.Service }
+type inventory struct{ apps *appscalls.Service }
 
 func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
-	for reports := range i.tools.Watch(ctx) {
+	for reports := range i.apps.Watch(ctx) {
 		out := make(map[string]bool, len(reports))
 		for _, r := range reports {
 			if !r.Pending {
-				out[r.Tool.Name] = r.State == catalog.StateOK || r.State == catalog.StateDegraded
+				out[r.App.Name] = r.State == catalog.StateOK || r.State == catalog.StateDegraded
 			}
 		}
 		each(out)

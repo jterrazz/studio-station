@@ -1,4 +1,4 @@
-description: 'station help lists the commands in their groups, and never a hidden alias or plumbing'
+description: 'station help lists its groups and commands in the map''s one order, never an alias or plumbing'
 env: one-mac
 runs:
     - command: 'help | /usr/bin/grep -E "^  [A-Z]" | /usr/bin/sed -E "s/ +$//"'
@@ -15,20 +15,20 @@ runs:
     - command: 'help | /usr/bin/sed -n "/^  ON A MACHINE/,/^  A MAC/p" | /usr/bin/grep -oE "^    [a-z]+ " | /usr/bin/tr -d " "'
       exit: 0
       stdout: |
-          accounts
+          overview
           activity
           apps
-          awake
-          background
-          disk
-          overview
-          ports
           settings
+          disk
+          ports
+          accounts
+          background
+          awake
     - command: 'help | /usr/bin/sed -n "/^  A MAC/,/^  THIS TERMINAL/p" | /usr/bin/grep -oE "^    [a-z]+ " | /usr/bin/tr -d " "'
       exit: 0
       stdout: |
-          engine
           images
+          engine
     - command: 'help | /usr/bin/sed -n "/^  THIS TERMINAL/,/^  STATION/p" | /usr/bin/grep -oE "^    [a-z]+ " | /usr/bin/tr -d " "'
       exit: 0
       stdout: |

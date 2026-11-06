@@ -44,7 +44,7 @@ func kindWord(kind string) string {
 func ownRecords(m model.Machine) []page.Item {
 	var items []page.Item
 	for _, a := range m.Accounts {
-		if a.Lent != nil && a.Origin == model.OriginLent {
+		if a.Shared != nil && a.Origin == model.OriginLent {
 			continue
 		}
 		rec := page.Row{ID: model.RowID(m.Name, a.Provider), Label: a.Provider, Mark: mark(a)}
@@ -222,7 +222,7 @@ func ListContract(schema string, r model.Report, shared []model.Shared) ListJSON
 		m := r.Machines[0]
 		out.Machine = MachineRef{Name: m.Name, Kind: kindWord(m.Kind)}
 		for _, a := range m.Accounts {
-			if a.Lent != nil && a.Origin == model.OriginLent {
+			if a.Shared != nil && a.Origin == model.OriginLent {
 				continue
 			}
 			secret, ok := model.SecretOf(a.Provider)
@@ -274,7 +274,7 @@ func EveryMachineContract(schema string, blocks []MachineBlock) EveryJSON {
 		out.Machines = append(out.Machines, m)
 		fs = append(fs, model.Findings(b.Report, machine.Ref{Name: b.Name, On: b.On})...)
 	}
-	out.Findings = finding.FleetDoc(fs)
+	out.Findings = finding.AllMachinesDoc(fs)
 	return out
 }
 

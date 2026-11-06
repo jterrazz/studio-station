@@ -1,4 +1,4 @@
-description: 'an update fetches the newest published linux beside the version held; its VMs keep the older'
+description: 'an update fetches the newest released linux beside the version held; its VMs keep the older'
 env: two-macs
 runs:
     - command: 'images update linux'

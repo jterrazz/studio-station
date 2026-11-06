@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/apps"
+	"github.com/jterrazz/studio-station/src/settings"
 
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/background"
@@ -17,18 +18,17 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	"github.com/jterrazz/studio-station/src/ports"
-	"github.com/jterrazz/studio-station/src/settings"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden from the presenter")
 
 func fixed() pagehome.Overview {
-	node := catalog.Tools[slices.IndexFunc(catalog.Tools, func(t catalog.Tool) bool { return t.Name == "node" })]
+	node := catalog.Apps[slices.IndexFunc(catalog.Apps, func(t catalog.App) bool { return t.Name == "node" })]
 	return pagehome.Overview{
 		GeneratedAt: time.Date(2026, 10, 31, 14, 0, 0, 0, time.UTC),
-		Station:     overview.Station{Version: "v3.0.0", Commit: "abc1234", Daemon: overview.Check{Name: "daemon", State: catalog.StateOK, Value: "running v3.0.0"}},
+		Station:     overview.Station{Version: "v3.0.0", Commit: "abc1234", Engine: overview.Check{Name: "daemon", State: catalog.StateOK, Value: "running v3.0.0"}},
 		Machine: overview.Machine{
-			Name: "macbook", Registered: true, Kind: catalog.Host, Hostname: "macbook",
+			Name: "macbook", Registered: true, Kind: catalog.Mac, Hostname: "macbook",
 			OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh",
 		},
 		System: overview.System{
@@ -47,9 +47,9 @@ func fixed() pagehome.Overview {
 		Workspace: pagehome.Workspace{
 			Disk: []overview.Disk{{Name: "homebrew", Bytes: 123}},
 		},
-		Tools: []apps.Report{{Tool: node, Method: node.Installs[0].Install.Method(), State: catalog.StateOK, Version: "24.11.0", Managed: true}},
-		Config: []settings.Report{{
-			Item:  catalog.ConfigItem{Name: "hushlogin", Category: catalog.CategoryTerminal, Places: []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}},
+		Apps: []apps.Report{{App: node, Method: node.Installs[0].Install.Method(), State: catalog.StateOK, Version: "24.11.0", Managed: true}},
+		Settings: []settings.Report{{
+			Item:  catalog.Setting{Name: "hushlogin", Category: catalog.CategoryTerminal, Kinds: []catalog.MachineKind{catalog.Mac, catalog.Linux, catalog.MacOS}},
 			State: catalog.StateOK,
 		}},
 		Setup: overview.Setup{State: catalog.StateOK, Steps: []overview.Step{

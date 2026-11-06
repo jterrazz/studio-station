@@ -29,14 +29,14 @@ type CatalogueOptions struct {
 }
 
 type Catalogue struct {
-	items    []catalog.ConfigItem
-	byName   map[string]catalog.ConfigItem
+	items    []catalog.Setting
+	byName   map[string]catalog.Setting
 	o        CatalogueOptions
 	appliers settingscontract.Appliers
 }
 
-func NewCatalogue(items []catalog.ConfigItem, o CatalogueOptions) *Catalogue {
-	byName := make(map[string]catalog.ConfigItem, len(items))
+func NewCatalogue(items []catalog.Setting, o CatalogueOptions) *Catalogue {
+	byName := make(map[string]catalog.Setting, len(items))
 	for _, it := range items {
 		byName[it.Name] = it
 	}
@@ -49,21 +49,21 @@ type handler struct {
 	uninstall func(ctx context.Context) (settings.Change, error)
 }
 
-func (s *Catalogue) Placed() []catalog.ConfigItem {
-	var placed []catalog.ConfigItem
+func (s *Catalogue) Placed() []catalog.Setting {
+	var placed []catalog.Setting
 	for _, it := range s.items {
-		if slices.Contains(it.Places, s.o.Here) {
+		if slices.Contains(it.Kinds, s.o.Here) {
 			placed = append(placed, it)
 		}
 	}
 	return placed
 }
 
-func (s *Catalogue) Items() []catalog.ConfigItem { return s.items }
+func (s *Catalogue) Items() []catalog.Setting { return s.items }
 
-func (s *Catalogue) Lives(it catalog.ConfigItem) bool { return slices.Contains(it.Places, s.o.Here) }
+func (s *Catalogue) Lives(it catalog.Setting) bool { return slices.Contains(it.Kinds, s.o.Here) }
 
-func (s *Catalogue) Needs(it catalog.ConfigItem) string {
+func (s *Catalogue) Needs(it catalog.Setting) string {
 	if s.applies(it) {
 		return ""
 	}
@@ -149,9 +149,9 @@ func (s *Catalogue) Watch(ctx context.Context) (<-chan []settings.Report, error)
 	return out, nil
 }
 
-func (s *Catalogue) Find(names []string) ([]catalog.ConfigItem, error) {
+func (s *Catalogue) Find(names []string) ([]catalog.Setting, error) {
 	seen := map[string]bool{}
-	var found []catalog.ConfigItem
+	var found []catalog.Setting
 	for _, name := range names {
 		if seen[name] {
 			continue
@@ -161,15 +161,15 @@ func (s *Catalogue) Find(names []string) ([]catalog.ConfigItem, error) {
 		if !ok {
 			return nil, &settings.UnknownItemError{Name: name}
 		}
-		if !slices.Contains(it.Places, s.o.Here) {
-			return nil, &settings.WrongPlaceError{Item: name, Places: it.Places, Here: s.o.Here}
+		if !slices.Contains(it.Kinds, s.o.Here) {
+			return nil, &settings.WrongPlaceError{Item: name, Places: it.Kinds, Here: s.o.Here}
 		}
 		found = append(found, it)
 	}
 	return found, nil
 }
 
-func (s *Catalogue) NeedsInput(it catalog.ConfigItem) bool {
+func (s *Catalogue) NeedsInput(it catalog.Setting) bool {
 	return len(it.Inputs) > 0 || it.Interactive
 }
 
@@ -205,10 +205,10 @@ func (s *Catalogue) CheckUninstall(names []string) error {
 
 // invariant: the place, the reversibility, the terminal and the root are local
 // facts, judged before any question and before any effect.
-func (s *Catalogue) admit(it catalog.ConfigItem, verb string, interactive bool) error {
+func (s *Catalogue) admit(it catalog.Setting, verb string, interactive bool) error {
 	switch {
-	case !slices.Contains(it.Places, s.o.Here):
-		return &settings.WrongPlaceError{Item: it.Name, Places: it.Places, Here: s.o.Here}
+	case !slices.Contains(it.Kinds, s.o.Here):
+		return &settings.WrongPlaceError{Item: it.Name, Places: it.Kinds, Here: s.o.Here}
 	case verb == verbUninstall && !it.Reversible:
 		return &settings.NotReversibleError{Item: it.Name}
 	case verb == verbInstall && s.NeedsInput(it) && !interactive:
@@ -220,7 +220,7 @@ func (s *Catalogue) admit(it catalog.ConfigItem, verb string, interactive bool) 
 }
 
 func (s *Catalogue) Install(ctx context.Context, name string, values map[string]string, interactive bool) (settings.Change, error) {
-	return s.apply(name, verbInstall, interactive, func(h handler, it catalog.ConfigItem) (settings.Change, error) {
+	return s.apply(name, verbInstall, interactive, func(h handler, it catalog.Setting) (settings.Change, error) {
 		merged := clone(s.o.Defaults[it.Name])
 		for k, v := range values {
 			merged[k] = v
@@ -235,12 +235,12 @@ func (s *Catalogue) Install(ctx context.Context, name string, values map[string]
 }
 
 func (s *Catalogue) Uninstall(ctx context.Context, name string) (settings.Change, error) {
-	return s.apply(name, verbUninstall, true, func(h handler, _ catalog.ConfigItem) (settings.Change, error) {
+	return s.apply(name, verbUninstall, true, func(h handler, _ catalog.Setting) (settings.Change, error) {
 		return h.uninstall(ctx)
 	})
 }
 
-func (s *Catalogue) apply(name, verb string, interactive bool, run func(handler, catalog.ConfigItem) (settings.Change, error)) (settings.Change, error) {
+func (s *Catalogue) apply(name, verb string, interactive bool, run func(handler, catalog.Setting) (settings.Change, error)) (settings.Change, error) {
 	failed := settings.Change{Item: name, Verb: verb, Result: catalog.StateBroken}
 	found, err := s.Find([]string{name})
 	if err != nil {
@@ -265,7 +265,7 @@ func (s *Catalogue) apply(name, verb string, interactive bool, run func(handler,
 	return change, nil
 }
 
-func (s *Catalogue) applies(it catalog.ConfigItem) bool {
+func (s *Catalogue) applies(it catalog.Setting) bool {
 	if it.Requires == "" {
 		return true
 	}

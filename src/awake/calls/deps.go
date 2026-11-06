@@ -11,7 +11,7 @@ import (
 )
 
 type Deps struct {
-	Power Power
+	Holder Holder
 	// value: this Mac: its name, the short label its words use, what it
 	// reports it can do.
 	Mac   string
@@ -23,8 +23,8 @@ type Deps struct {
 	NeverSleeps func() bool
 }
 
-type Power interface {
-	// value: refuses a machine Power does not run on, in its own words.
+type Holder interface {
+	// value: refuses a machine that cannot keep awake, in its own words.
 	Check() error
 	Read(ctx context.Context) <-chan awake.Report
 	Awake(ctx context.Context, r awake.Request) (awake.Awoken, error)

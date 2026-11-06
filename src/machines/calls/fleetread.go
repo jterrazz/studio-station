@@ -9,24 +9,24 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-func (s *Service) Fleet(ctx context.Context, hereOnly bool) (model.Fleet, error) {
+func (s *Service) Fleet(ctx context.Context, hereOnly bool) (model.AllMachines, error) {
 	return s.FleetAsItFills(ctx, hereOnly, nil)
 }
 
-func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(model.Fleet)) (model.Fleet, error) {
+func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(model.AllMachines)) (model.AllMachines, error) {
 	// invariant: sofar sees this host first, then this host and every other
 	// Mac that has answered, in name order, after each answer; the fleet
 	// returned holds every Mac, a silent one as unreachable.
 	cfg, err := s.prefs()
 	if err != nil {
-		return model.Fleet{}, err
+		return model.AllMachines{}, err
 	}
 	nodes := s.nodeMap(ctx)
 	name := s.here(cfg)
 	info, live := s.daemonView(ctx)
 	vms, err := s.vms(ctx, name, live)
 	if err != nil {
-		return model.Fleet{}, err
+		return model.AllMachines{}, err
 	}
 	for i, vm := range vms {
 		if _, own := nodes[vm.Name]; own && vm.Lifetime == model.AlwaysOn {
@@ -37,22 +37,22 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 	if user == "" {
 		user = s.h.User()
 	}
-	here := model.HostView{
-		Name: name, User: user, StationVersion: s.o.Version, Here: true, Reachable: true, Node: nodes[name], Daemon: info, VMs: vms,
+	here := model.MacView{
+		Name: name, User: user, StationVersion: s.o.Version, ThisMac: true, Reachable: true, Node: nodes[name], Engine: info, VMs: vms,
 	}
-	if s.o.Here == catalog.Host && s.o.LAN != nil {
+	if s.o.Here == catalog.Mac && s.o.LAN != nil {
 		here.LAN = s.o.LAN(ctx)
 	}
-	if hereOnly || s.o.Here != catalog.Host {
-		return model.Fleet{Hosts: []model.HostView{here}}, nil
+	if hereOnly || s.o.Here != catalog.Mac {
+		return model.AllMachines{Macs: []model.MacView{here}}, nil
 	}
 	others := s.OtherHosts()
-	answers := map[string]model.HostView{}
-	fleet := func(all bool) model.Fleet {
-		f := model.Fleet{Hosts: []model.HostView{here}, Read: s.h.Now()}
+	answers := map[string]model.MacView{}
+	fleet := func(all bool) model.AllMachines {
+		f := model.AllMachines{Macs: []model.MacView{here}, Read: s.h.Now()}
 		for _, n := range others {
 			if _, ok := answers[n]; ok || all {
-				f.Hosts = append(f.Hosts, s.view(n, cfg.Hosts[n], nodes[n], answers))
+				f.Macs = append(f.Macs, s.view(n, cfg.Hosts[n], nodes[n], answers))
 			}
 		}
 		return f
@@ -61,7 +61,7 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 		sofar(fleet(false))
 	}
 	if s.o.Ask != nil && len(others) > 0 {
-		s.o.Ask(ctx, others, func(mac string, view model.HostView) {
+		s.o.Ask(ctx, others, func(mac string, view model.MacView) {
 			answers[mac] = view
 			if sofar != nil {
 				sofar(fleet(false))
@@ -72,7 +72,7 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 }
 
 func (s *Service) nodeMap(ctx context.Context) map[string]model.Node {
-	if s.nodes == nil || s.o.Here != catalog.Host {
+	if s.nodes == nil || s.o.Here != catalog.Mac {
 		return nil
 	}
 	nodes, err := s.nodes.Peers(ctx)
@@ -85,7 +85,7 @@ func (s *Service) nodeMap(ctx context.Context) map[string]model.Node {
 // invariant: the daemon matters only where VMs can exist: on a host with its hypervisor; a
 // daemon that does not answer degrades the view, never fails it.
 func (s *Service) daemonView(ctx context.Context) (info model.EngineView, live map[string]DaemonVM) {
-	if s.o.Here != catalog.Host || s.daemon == nil {
+	if s.o.Here != catalog.Mac || s.daemon == nil {
 		return model.EngineView{}, nil
 	}
 	if !s.engine.Installed() {
@@ -103,21 +103,21 @@ func (s *Service) daemonView(ctx context.Context) (info model.EngineView, live m
 	return model.EngineView{Known: true, Running: true, Version: version}, live
 }
 
-func (s *Service) view(name string, h model.Host, node model.Node, answers map[string]model.HostView) model.HostView {
+func (s *Service) view(name string, h model.MacRecord, node model.Node, answers map[string]model.MacView) model.MacView {
 	far, ok := answers[name]
 	if !ok {
-		silent := model.HostView{Name: name, User: h.User, Node: node, Answered: h.Answered, LAN: h.LAN}
+		silent := model.MacView{Name: name, User: h.User, Node: node, Answered: h.Answered, LAN: h.LAN}
 		for _, vm := range h.VMs {
 			silent.VMs = append(silent.VMs, model.VM{
-				Name: vm.Name, Host: name, Lifetime: vm.Lifetime, State: model.UnknownState,
+				Name: vm.Name, Mac: name, Lifetime: vm.Lifetime, State: model.UnknownState,
 				Resources: model.Resources{CPUs: vm.CPUs, MemoryBytes: vm.MemoryBytes},
 			})
 		}
 		return silent
 	}
-	view := model.HostView{Name: name, User: h.User, StationVersion: far.StationVersion, Reachable: true, LAN: far.LAN, Node: far.Node, Daemon: far.Daemon}
+	view := model.MacView{Name: name, User: h.User, StationVersion: far.StationVersion, Reachable: true, LAN: far.LAN, Node: far.Node, Engine: far.Engine}
 	for _, vm := range far.VMs {
-		vm.Host = name
+		vm.Mac = name
 		view.VMs = append(view.VMs, vm)
 	}
 	if node.IP != "" || node.Online {

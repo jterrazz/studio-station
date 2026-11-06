@@ -4,7 +4,7 @@
   "command": "status",
   "context": {
     "machine": "jterrazz-macbook-pro",
-    "kind": "host",
+    "kind": "mac",
     "registered": true
   },
   "state": "ready",
@@ -50,7 +50,7 @@
         "text": "14.5 KB/s"
       }
     ],
-    "power": {
+    "awake": {
       "kind": "list",
       "items": [
         {
@@ -485,7 +485,7 @@
         },
         {
           "row": {
-            "id": "stray",
+            "id": "misplaced",
             "mark": "attention",
             "label": "misplaced",
             "cells": [
@@ -498,7 +498,7 @@
               "kind": "text",
               "text": "misplaced"
             },
-            "reason": "stray",
+            "reason": "misplaced",
             "hint": {
               "command": "station disk move ~/.bun"
             }
@@ -932,7 +932,7 @@
       ]
     },
     {
-      "id": "fleet",
+      "id": "all-machines",
       "title": "All machines",
       "columns": [
         {
@@ -946,7 +946,7 @@
           "keep": 40
         },
         {
-          "key": "host",
+          "key": "mac",
           "kind": "text",
           "keep": 10,
           "show": "pipe"
@@ -1005,7 +1005,7 @@
                           "kind": "text",
                           "text": "vite"
                         },
-                        "page": "services",
+                        "page": "ports",
                         "row": "api"
                       }
                     },
@@ -1062,7 +1062,7 @@
       ]
     },
     {
-      "id": "storage",
+      "id": "disk",
       "title": "Disk",
       "columns": [
         {

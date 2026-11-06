@@ -13,15 +13,15 @@ import (
 const (
 	CallHello     = "engine.hello"
 	CallVMs       = "engine.vms"
-	CallServices  = "engine.services"
+	CallPorts     = "engine.ports"
 	CallReserve   = "engine.reserve"
 	CallRelease   = "engine.release"
 	CallGuestExec = "engine.guest-exec"
 	CallAccounts  = "engine.accounts"
 	CallStopAll   = "engine.stop-all"
-	CallPower     = "engine.power"
-	CallAwake     = "engine.power-awake"
-	CallSleep     = "engine.power-sleep"
+	CallAwakeView = "engine.awake"
+	CallKeepAwake = "engine.awake-keep"
+	CallAwakeOff  = "engine.awake-off"
 	CallRefresh   = "engine.refresh"
 	// value: the activity this engine keeps, of This Mac and of each VM it
 	// sees, in its memory alone.

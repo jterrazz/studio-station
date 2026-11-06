@@ -31,7 +31,7 @@ const (
 )
 
 type Registrar interface {
-	Here() (string, bool)
+	ThisMac() (string, bool)
 	Register(name string) error
 }
 
@@ -48,9 +48,9 @@ type ServiceOptions struct {
 	PreferencesFile, State, Bin string
 	Executable                  string
 	Detached                    bool
-	Tools                       []catalog.Tool
+	Tools                       []catalog.App
 	Expand                      disk.Expander
-	Files                       map[catalog.ToolFile]string
+	Files                       map[catalog.AppFile]string
 	Configurer                  Configurer
 	Installer                   Installer
 	Settings                    Settings
@@ -95,7 +95,7 @@ type Request struct {
 	AskName     func() (string, error)
 }
 
-func (s *Service) onMac() bool { return s.o.Kind == catalog.Host }
+func (s *Service) onMac() bool { return s.o.Kind == catalog.Mac }
 
 func (s *Service) CheckName(name string) error {
 	if name == "" {
@@ -116,7 +116,7 @@ func (s *Service) CheckName(name string) error {
 // invariant: a Mac whose settings.json is not written yet but whose v1
 // config.json names it is already registered: the layout step will say so.
 func (s *Service) currentHere() string {
-	if here, ok := s.reg.Here(); ok {
+	if here, ok := s.reg.ThisMac(); ok {
 		return here
 	}
 	if s.m.Exists(s.settingsPath()) {
@@ -226,7 +226,7 @@ func isStepFailure(err error) bool {
 }
 
 func (s *Service) name(r Request, blocked bool) (setup.Step, error) {
-	if here, ok := s.reg.Here(); ok {
+	if here, ok := s.reg.ThisMac(); ok {
 		return setup.Step{Name: stepName, State: catalog.StateOK, Detail: here}, nil
 	}
 	if blocked {
@@ -278,7 +278,7 @@ func (s *Service) zshrc() (setup.Step, error) {
 func (s *Service) Check(_ context.Context) (setup.Report, error) {
 	var steps []setup.Step
 	if s.onMac() {
-		if here, ok := s.reg.Here(); ok {
+		if here, ok := s.reg.ThisMac(); ok {
 			steps = append(steps, setup.Step{Name: stepName, State: catalog.StateOK, Detail: here})
 		} else {
 			steps = append(steps, setup.Step{Name: stepName, State: catalog.StateAbsent, Detail: "station setup --name <name>"})

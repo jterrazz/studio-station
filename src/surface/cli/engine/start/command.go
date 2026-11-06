@@ -13,7 +13,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -26,7 +26,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pageengine.Start(report, d.Here), nil)
+			return io.Page(pageengine.Start(report, d.ThisMachine), nil)
 		},
 	}, env)
 }

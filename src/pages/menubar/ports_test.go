@@ -16,9 +16,9 @@ func TestReviewOnEveryMacsPortsNamesTheMacOfItsRow(t *testing.T) {
 	red := func(mac string, port int) ports.Port {
 		return ports.Port{Machine: coremachine.Ref{Name: mac}, Port: port, Process: "p", Binds: []string{"*"}, Reach: ports.Outside}
 	}
-	l := ports.Listing{Fleet: ports.Fleet{Hosts: []ports.HostServices{
-		{Name: "jterrazz-macbook-pro", Here: true, Reachable: true, Services: []ports.ServiceView{}, Ports: []ports.Port{red("jterrazz-macbook-pro", 5000)}},
-		{Name: "jterrazz-mac-mini", Reachable: true, Services: []ports.ServiceView{}, Ports: []ports.Port{red("jterrazz-mac-mini", 10250)}},
+	l := ports.Listing{AllMachines: ports.AllMachines{Macs: []ports.MacPorts{
+		{Name: "jterrazz-macbook-pro", ThisMac: true, Reachable: true, Shared: []ports.SharedPort{}, Ports: []ports.Port{red("jterrazz-macbook-pro", 5000)}},
+		{Name: "jterrazz-mac-mini", Reachable: true, Shared: []ports.SharedPort{}, Ports: []ports.Port{red("jterrazz-mac-mini", 10250)}},
 	}}}
 	p := Ports(l, PortsOf{}, page.Context{Machine: "jterrazz-macbook-pro"})
 	var got [][]string
@@ -39,9 +39,9 @@ func TestReviewOnEveryMacsPortsNamesTheMacOfItsRow(t *testing.T) {
 // invariant: PO-45: the Ports page of a Mac offers Declare public and
 // never Share a port, which is a workspace's page's own.
 func TestTheMacsPortsPageNeverOffersShareAPort(t *testing.T) {
-	l := ports.Listing{Fleet: ports.Fleet{Hosts: []ports.HostServices{
-		{Name: "jterrazz-macbook-pro", Here: true, Reachable: true, Services: []ports.ServiceView{
-			{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: ports.PhasePublished, Process: "node", URLs: ports.URLSet{Public: "https://mac.ts.net:40001"}},
+	l := ports.Listing{AllMachines: ports.AllMachines{Macs: []ports.MacPorts{
+		{Name: "jterrazz-macbook-pro", ThisMac: true, Reachable: true, Shared: []ports.SharedPort{
+			{VM: "linux-1", GuestPort: 5173, Reserved: 40001, State: ports.PhaseShared, Process: "node", URLs: ports.URLSet{Public: "https://mac.ts.net:40001"}},
 		}},
 	}}}
 	mac := Ports(l, PortsOf{}, page.Context{Machine: "jterrazz-macbook-pro"})

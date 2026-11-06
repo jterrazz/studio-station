@@ -1,6 +1,7 @@
 package images
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -21,8 +22,25 @@ type Record struct {
 	RecipeSHA string    `json:"recipe_sha"`
 	BuiltAt   time.Time `json:"built_at"`
 	SizeGB    int       `json:"size_gb"`
-	// value: fetched from where the image is published, not built here.
-	Published bool `json:"published,omitempty"`
+	// value: fetched from the registry that releases the image, not built
+	// here.
+	Fetched bool `json:"fetched,omitempty"`
+}
+
+func (r *Record) UnmarshalJSON(data []byte) error {
+	// value: alias of v2's `published` key of an image record, read as
+	// fetched; the next write says fetched.
+	type plain Record
+	var v struct {
+		plain
+		Published bool `json:"published"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	*r = Record(v.plain)
+	r.Fetched = r.Fetched || v.Published
+	return nil
 }
 
 func (r Record) Ref() Ref { return Ref{Name: r.Name, Version: r.Version} }

@@ -10,7 +10,7 @@ import (
 )
 
 type Held struct {
-	// value: a VM of the fleet, the Mac that holds it, and whether it runs.
+	// value: a VM of All machines, the Mac that holds it, and whether it runs.
 	VM, Mac   string
 	MacIsHere bool
 	Running   bool
@@ -22,10 +22,10 @@ func Holder(ctx context.Context, env Env, vm string) (Held, bool) {
 	if err != nil {
 		return Held{}, false
 	}
-	for _, h := range list.Fleet.Hosts {
+	for _, h := range list.All.Macs {
 		for _, v := range h.VMs {
 			if v.Name == vm {
-				return Held{VM: vm, Mac: h.Name, MacIsHere: h.Here, Running: v.State == machines.Running, Kind: v.Lifetime.Kind()}, true
+				return Held{VM: vm, Mac: h.Name, MacIsHere: h.ThisMac, Running: v.State == machines.Running, Kind: v.Lifetime.Kind()}, true
 			}
 		}
 	}

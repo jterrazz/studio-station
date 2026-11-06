@@ -10,7 +10,7 @@ runs:
           see Engine running
           send \x1b
           see ALL MACHINES
-          send [[
+          send [
           see All machines › Images
           send /2026.10.20
           see (/2026.10.20)

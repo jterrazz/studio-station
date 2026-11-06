@@ -1,4 +1,4 @@
-description: 'clean never touches a kept or a config file'
+description: 'free never touches a file it never touches, nor a settings file'
 fixture:
     - ../__fixtures__/system-tools/
     - ./__fixtures__/disk-go/

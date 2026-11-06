@@ -1,4 +1,4 @@
-description: 'a host refusing the key before boot is dialed on its LAN and gets a password session'
+description: 'a Mac refusing the key before boot is dialed on its LAN and gets a password session'
 fixture:
     - ../../__fixtures__/terminal/
     - ../../__fixtures__/hosts-x-y/

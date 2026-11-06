@@ -18,24 +18,27 @@ import (
 const schema = "station.status/v1"
 
 type SnapshotJSON struct {
-	Schema      string                  `json:"schema"`
-	GeneratedAt string                  `json:"generated_at"`
-	Station     stationJSON             `json:"station"`
-	Machine     machineJSON             `json:"machine"`
-	System      systemJSON              `json:"system"`
-	Environment environmentJSON         `json:"environment"`
-	Workspace   workspaceJSON           `json:"workspace"`
-	Tools       []pageapps.ToolJSON     `json:"tools"`
-	Config      []pagesettings.ItemJSON `json:"config"`
-	Setup       setupJSON               `json:"setup"`
-	Identity    []checkJSON             `json:"identity"`
-	Background  []jobJSON               `json:"background"`
-	Gateways    []checkJSON             `json:"gateways"`
-	Tailnet     pageports.TailnetJSON   `json:"tailnet"`
-	Power       *powerJSON              `json:"power,omitempty"`
+	// value: alias of station.status/v1, the OS connector's, kept byte for
+	// byte one release.
+	Schema      string                   `json:"schema"`
+	GeneratedAt string                   `json:"generated_at"`
+	Station     stationJSON              `json:"station"`
+	Machine     machineJSON              `json:"machine"`
+	System      systemJSON               `json:"system"`
+	Environment environmentJSON          `json:"environment"`
+	Workspace   workspaceJSON            `json:"workspace"`
+	Apps        []pageapps.AppStatusJSON `json:"tools"`
+	Settings    []pagesettings.ItemJSON  `json:"config"`
+	Setup       setupJSON                `json:"setup"`
+	Identity    []checkJSON              `json:"identity"`
+	Background  []jobJSON                `json:"background"`
+	Gateways    []checkJSON              `json:"gateways"`
+	Tailnet     pageports.TailnetJSON    `json:"tailnet"`
+	Power       *awakeJSON               `json:"power,omitempty"`
 }
 
-type powerJSON struct {
+// value: alias of station.status/v1's power, byte for byte one release.
+type awakeJSON struct {
 	Held  bool   `json:"held"`
 	Lid   bool   `json:"lid,omitempty"`
 	Until string `json:"until,omitempty"`
@@ -64,13 +67,14 @@ func jobs(in []background.Task) []jobJSON {
 	return out
 }
 
+// value: alias of station.status/v1's station block, byte for byte.
 type stationJSON struct {
 	Version string     `json:"version"`
 	Commit  string     `json:"commit"`
-	Daemon  daemonJSON `json:"daemon"`
+	Engine  engineJSON `json:"daemon"`
 }
 
-type daemonJSON struct {
+type engineJSON struct {
 	State   string `json:"state"`
 	Running bool   `json:"running"`
 	Version string `json:"version"`
@@ -151,14 +155,15 @@ type diskJSON struct {
 	Bytes int64  `json:"bytes"`
 }
 
+// value: alias of station.status/v1's workspace block, byte for byte.
 type workspaceJSON struct {
 	// invariant: v1 keeps every key it ever had; the workspace is no longer
 	// scanned, so repositories, dependencies and docker read as nothing seen.
-	Repositories []repositoryJSON     `json:"repositories"`
-	Dependencies []dependencyJSON     `json:"dependencies"`
-	Docker       dockerJSON           `json:"docker"`
-	Disk         []diskJSON           `json:"disk"`
-	Strays       []pagedisk.StrayJSON `json:"strays"`
+	Repositories []repositoryJSON         `json:"repositories"`
+	Dependencies []dependencyJSON         `json:"dependencies"`
+	Docker       dockerJSON               `json:"docker"`
+	Disk         []diskJSON               `json:"disk"`
+	Misplaced    []pagedisk.MisplacedJSON `json:"strays"`
 }
 
 type stepJSON struct {
@@ -177,9 +182,9 @@ func SnapshotContract(s Overview) SnapshotJSON {
 	body := SnapshotJSON{
 		Schema:      schema,
 		GeneratedAt: s.GeneratedAt.UTC().Format(time.RFC3339),
-		Station:     stationJSON{Version: s.Station.Version, Commit: s.Station.Commit, Daemon: daemonOf(s.Station.Daemon)},
+		Station:     stationJSON{Version: s.Station.Version, Commit: s.Station.Commit, Engine: engineOf(s.Station.Engine)},
 		Machine: machineJSON{
-			Kind: string(s.Machine.Kind), Hostname: s.Machine.Hostname, OS: s.Machine.OS,
+			Kind: catalog.StatusV1Kind(s.Machine.Kind), Hostname: s.Machine.Hostname, OS: s.Machine.OS,
 			Arch: s.Machine.Arch, User: s.Machine.User, Shell: s.Machine.Shell,
 		},
 		System: systemJSON{
@@ -198,10 +203,10 @@ func SnapshotContract(s Overview) SnapshotJSON {
 			Dependencies: []dependencyJSON{},
 			Docker:       dockerJSON{State: string(catalog.StateUnknown)},
 			Disk:         make([]diskJSON, 0, len(s.Workspace.Disk)),
-			Strays:       pagedisk.StraysContract(s.Workspace.Strays),
+			Misplaced:    pagedisk.MisplacedContract(s.Workspace.Misplaced),
 		},
-		Tools:      make([]pageapps.ToolJSON, 0, len(s.Tools)),
-		Config:     make([]pagesettings.ItemJSON, 0, len(s.Config)),
+		Apps:       make([]pageapps.AppStatusJSON, 0, len(s.Apps)),
+		Settings:   make([]pagesettings.ItemJSON, 0, len(s.Settings)),
 		Setup:      setupJSON{State: string(s.Setup.State), Steps: make([]stepJSON, 0, len(s.Setup.Steps))},
 		Identity:   checks(s.Identity),
 		Background: jobs(s.Background),
@@ -218,19 +223,19 @@ func SnapshotContract(s Overview) SnapshotJSON {
 	for _, d := range s.Workspace.Disk {
 		body.Workspace.Disk = append(body.Workspace.Disk, diskJSON{Name: d.Name, Level: string(d.Level), Bytes: d.Bytes})
 	}
-	for _, t := range s.Tools {
-		body.Tools = append(body.Tools, pageapps.ToolObject(t))
+	for _, t := range s.Apps {
+		body.Apps = append(body.Apps, pageapps.AppObject(t))
 	}
-	for _, c := range s.Config {
-		body.Config = append(body.Config, pagesettings.ItemObject(c))
+	for _, c := range s.Settings {
+		body.Settings = append(body.Settings, pagesettings.ItemObject(c))
 	}
 	for _, step := range s.Setup.Steps {
 		body.Setup.Steps = append(body.Setup.Steps, stepJSON{Name: step.Name, State: string(step.State), Detail: step.Detail})
 	}
-	if s.PowerKnown {
-		body.Power = &powerJSON{Held: s.Power.Held, Lid: s.Power.Lid}
-		if s.Power.Held {
-			body.Power.Until = s.Power.Until.UTC().Format(time.RFC3339)
+	if s.AwakeKnown {
+		body.Power = &awakeJSON{Held: s.Awake.Held, Lid: s.Awake.Lid}
+		if s.Awake.Held {
+			body.Power.Until = s.Awake.Until.UTC().Format(time.RFC3339)
 		}
 	}
 	return body
@@ -252,8 +257,8 @@ func processes(in []activity.Process) []processJSON {
 	return out
 }
 
-func daemonOf(c overview.Check) daemonJSON {
-	d := daemonJSON{State: string(c.State), Running: c.State == catalog.StateOK || strings.HasPrefix(c.Value, "runs ")}
+func engineOf(c overview.Check) engineJSON {
+	d := engineJSON{State: string(c.State), Running: c.State == catalog.StateOK || strings.HasPrefix(c.Value, "runs ")}
 	if d.State == "" {
 		d.State = string(catalog.StateAbsent)
 	}

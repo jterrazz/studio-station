@@ -9,9 +9,9 @@ import (
 
 var (
 	// value: no published version of that image.
-	ErrNotPublished = errors.New("not published")
+	ErrNotReleased = errors.New("not released")
 	// value: the image is published, never for that hypervisor.
-	ErrNotForHypervisor = errors.New("not published for this hypervisor")
+	ErrNotForHypervisor = errors.New("not released for this hypervisor")
 )
 
 type ImageSource interface {

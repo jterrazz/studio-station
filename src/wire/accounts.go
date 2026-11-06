@@ -17,9 +17,9 @@ import (
 )
 
 func (m machine) accounts() *accountscalls.Reader {
-	o := accountscalls.ReaderOptions{Here: m.kind, HereName: m.where.Machine, Now: m.host.Clock.Now}
+	o := accountscalls.ReaderOptions{Here: m.kind, HereName: m.where.Machine, Now: m.sys.Clock.Now}
 	ids := m.identities(engine.ChildrenDir(m.paths.State))
-	if m.kind != catalog.Host {
+	if m.kind != catalog.Mac {
 		o.Keys = m.stationHostKeys
 		return accountscalls.NewReader(m.pool, ids, accountscalls.ReaderPorts{}, o)
 	}
@@ -32,7 +32,7 @@ func (m machine) accounts() *accountscalls.Reader {
 			if err != nil {
 				return nil, err
 			}
-			lends, _ := m.stores.shares.List(ctx)
+			shares, _ := m.stores.shares.List(ctx)
 			live, _ := d.VMs(ctx)
 			out := make([]accounts.VM, 0, len(recs))
 			for _, r := range recs {
@@ -42,8 +42,8 @@ func (m machine) accounts() *accountscalls.Reader {
 						vm.Running = true
 					}
 				}
-				for _, l := range lends[r.Name] {
-					vm.Lends = append(vm.Lends, accounts.Lend(l))
+				for _, l := range shares[r.Name] {
+					vm.Lends = append(vm.Lends, accounts.Loan(l))
 				}
 				out = append(out, vm)
 			}
@@ -52,7 +52,7 @@ func (m machine) accounts() *accountscalls.Reader {
 		Daemon: func(ctx context.Context) ([]accounts.VMRead, string) {
 			var view engine.AccountsView
 			if err := d.do(ctx, engine.CallAccounts, nil, &view); err != nil {
-				if _, missing := m.host.FS.Stat(catalog.EnginePlist(m.host.Env.Home())); missing != nil {
+				if _, missing := m.sys.FS.Stat(catalog.EnginePlist(m.sys.Env.Home())); missing != nil {
 					return nil, accounts.DaemonAbsent
 				}
 				return nil, accounts.DaemonStopped
@@ -63,7 +63,7 @@ func (m machine) accounts() *accountscalls.Reader {
 				var rows []accounts.Account
 				if json.Unmarshal(v.Accounts, &rows) == nil {
 					for _, a := range rows {
-						read.Accounts = append(read.Accounts, accounts.Redact(a))
+						read.Accounts = append(read.Accounts, accounts.RedactAccount(a))
 					}
 				}
 				out = append(out, read)
@@ -77,7 +77,7 @@ func (m machine) accounts() *accountscalls.Reader {
 // value: inside a VM, who may ssh in is the station hosts block the guest
 // writes into authorized_keys.
 func (m machine) stationHostKeys() []string {
-	data, err := m.host.FS.ReadFile(path.Join(m.host.Env.Home(), ".ssh", "authorized_keys"))
+	data, err := m.sys.FS.ReadFile(path.Join(m.sys.Env.Home(), ".ssh", "authorized_keys"))
 	if err != nil {
 		return nil
 	}
@@ -98,11 +98,11 @@ func (m machine) stationHostKeys() []string {
 	return keys
 }
 
-// value: who each provider says is signed in here, read by its own tool, each
+// value: who each provider says is signed in here, read by its own app, each
 // read's process recorded under track.
 func (m machine) identities(track string) accountscontract.Identities {
 	if m.world != nil {
 		return m.world.identities()
 	}
-	return cli.New(m.host.Run, m.host.FS, cli.Options{Home: m.host.Env.Home(), Track: track})
+	return cli.New(m.sys.Run, m.sys.FS, cli.Options{Home: m.sys.Env.Home(), Track: track})
 }

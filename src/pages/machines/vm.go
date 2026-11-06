@@ -17,21 +17,21 @@ import (
 )
 
 type VMOverview struct {
-	Fleet model.Fleet
-	Mac   model.HostView
-	VM    model.VM
+	All model.AllMachines
+	Mac model.MacView
+	VM  model.VM
 }
 
 func (o VMOverview) on() string {
-	if o.Mac.Here {
+	if o.Mac.ThisMac {
 		return "This Mac"
 	}
-	return model.Label(o.Fleet, o.Mac)
+	return model.Label(o.All, o.Mac)
 }
 
 func (o VMOverview) unreachable() bool { return !o.Mac.Reachable }
 
-func VMPage(o VMOverview, s *overview.Summary, here page.Context, all bool) page.Page {
+func VMPage(o VMOverview, s *overview.Summary, thisMac page.Context, all bool) page.Page {
 	// invariant: a VM's Overview, read from its Mac: the line naming the
 	// machine, its first line from All machines, then its sections as it reads
 	// them inside (nil while it does not run or does not answer), then health.
@@ -39,7 +39,7 @@ func VMPage(o VMOverview, s *overview.Summary, here page.Context, all bool) page
 	on := page.OnMachine(vm.Name)
 	if o.unreachable() {
 		row := page.Row{ID: vm.Name, Label: vm.Name, Mark: page.Broken, Reason: page.Unreachable, Cells: []page.Value{page.Text("is on " + o.on() + ", which does not answer")}}
-		return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, Sections: []page.Section{on, {
+		return page.Seal(page.Page{ID: "overview", Command: "overview", Context: thisMac, Sections: []page.Section{on, {
 			ID: "overview", Title: vm.Name, Role: page.Banner, Uncounted: true, Columns: vmColumns(), Items: []page.Item{{Row: &row}},
 		}}})
 	}
@@ -53,8 +53,8 @@ func VMPage(o VMOverview, s *overview.Summary, here page.Context, all bool) page
 			state = page.Loading
 		}
 	}
-	sections = append(sections, page.Section{ID: "health", Title: "Health", Uncounted: true, Columns: vmColumns(), Items: healthItems(vm, readsSSH(s), o.Fleet.Read)})
-	return page.Seal(page.Page{ID: "overview", Command: "overview", Context: here, State: state, Sections: sections, Hints: hints})
+	sections = append(sections, page.Section{ID: "health", Title: "Health", Uncounted: true, Columns: vmColumns(), Items: healthItems(vm, readsSSH(s), o.All.Read)})
+	return page.Seal(page.Page{ID: "overview", Command: "overview", Context: thisMac, State: state, Sections: sections, Hints: hints})
 }
 
 // value: SPEC §5.1's first line of a VM: its kind and its Mac, its
@@ -304,7 +304,7 @@ func checkJSON(vm model.VM) *VMCheckJSON {
 	return c
 }
 
-func SSHPage(o VMOverview, target model.SSHTarget, here page.Context) page.Page {
+func SSHPage(o VMOverview, target model.SSHTarget, thisMac page.Context) page.Page {
 	// invariant: a server's SSH section (SPEC §3.2, §7.7): its one door, the
 	// path that reaches it from This Mac, and what station leaves to the
 	// owner's tooling; station opens it for debugging only.
@@ -315,7 +315,7 @@ func SSHPage(o VMOverview, target model.SSHTarget, here page.Context) page.Page 
 		{ID: "to-mac", Label: "This Mac to " + o.on(), Mark: page.OK, Cells: []page.Value{page.List(page.Text("over "+catalog.TailnetProduct), page.Text("as "+mac.User))}},
 		{ID: "to-vm", Label: o.on() + " to " + vm.Name, Mark: page.OK, Cells: []page.Value{page.List(page.Text(vm.IP), page.Text("its Mac's private network"))}},
 	}
-	if mac.Here {
+	if mac.ThisMac {
 		reached = reached[1:]
 	}
 	if vm.State != model.Running {
@@ -330,7 +330,7 @@ func SSHPage(o VMOverview, target model.SSHTarget, here page.Context) page.Page 
 		return items
 	}
 	columns := []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "detail", Kind: page.KindList, Keep: 50}}
-	return page.Seal(page.Page{ID: page.ID(coresection.SSH), Command: "machines ssh " + vm.Name, Context: here, Sections: []page.Section{
+	return page.Seal(page.Page{ID: page.ID(coresection.SSH), Command: "machines ssh " + vm.Name, Context: thisMac, Sections: []page.Section{
 		{ID: "door", Title: "SSH", Caption: []page.Value{page.Text(vm.Name)}, Uncounted: true, Columns: columns, Items: append(rows(door, editor), page.Item{Note: &page.Note{Text: "No password: your key. Files travel through the same name; no folder of a Mac is shared."}})},
 		{ID: "reached", Title: "How it is reached", Uncounted: true, Columns: columns, Items: rows(reached...)},
 		{ID: "inside", Title: "Inside", Uncounted: true, Items: []page.Item{{Note: &page.Note{Text: "Station opens it for debugging only; your tooling owns what runs inside."}}}},

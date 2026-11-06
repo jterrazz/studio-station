@@ -10,7 +10,7 @@ import (
 
 type Tick func(ctx context.Context)
 
-func (d *Daemon) History() *activity.History {
+func (d *Engine) History() *activity.History {
 	// value: the activity this engine keeps of every machine it sees, since
 	// it started; nil before Begin.
 	d.mu.Lock()
@@ -18,7 +18,7 @@ func (d *Daemon) History() *activity.History {
 	return d.history
 }
 
-func (d *Daemon) Running() []engine.Running {
+func (d *Engine) Running() []engine.Running {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	var out []engine.Running
@@ -32,7 +32,7 @@ func (d *Daemon) Running() []engine.Running {
 	return out
 }
 
-func (d *Daemon) Tell(machine, finding, text string) {
+func (d *Engine) Tell(machine, finding, text string) {
 	// invariant: told once, to the open surfaces and to the owner's
 	// notifications, as every word the engine says by itself; a disk under
 	// its floor is the event of SPEC §10.4, any other finding the activity's.

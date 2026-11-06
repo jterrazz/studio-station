@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/disk"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/page"
@@ -39,7 +39,7 @@ func (f staggered) Sizes(ctx context.Context, roots []string, each func(int, int
 	}
 }
 
-// value: an inventory that names its tools one at a time, the odd ones not
+// value: an inventory that names its apps one at a time, the odd ones not
 // installed, so some rows (and the sections they alone fill) leave at the end.
 type staggeredInventory struct{ names []string }
 
@@ -64,25 +64,25 @@ func shape(p page.Page) (ids []string, rows map[string]int) {
 func TestNoSectionFlickers(t *testing.T) {
 	fs := staggered{Disk: localtest.Disk{FS: localtest.NewFS()}}
 	categories := []catalog.Category{catalog.CategoryPackageManagers, catalog.CategoryRuntimes, catalog.CategoryAIApps, catalog.CategoryAgentSkills}
-	tools := make([]catalog.Tool, 0, 40)
+	apps := make([]catalog.App, 0, 40)
 	names := make([]string, 0, 40)
 	for i := range 40 {
 		name := "t" + strconv.Itoa(i)
 		fs.Files["h/"+name+"/cache/f"] = &fstest.MapFile{Data: []byte("abc")}
-		tools = append(tools, catalog.Tool{Name: name, Category: categories[i%len(categories)], Installs: catalog.HostOnly(catalog.Shell(name)),
-			Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/" + name + "/*", Level: catalog.LevelCache}}}})
+		apps = append(apps, catalog.App{Name: name, Category: categories[i%len(categories)], Installs: catalog.MacOnly(catalog.Shell(name)),
+			Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/" + name + "/*", Level: catalog.LevelCache}}}})
 		names = append(names, name)
 	}
-	pool := probe.NewPool(context.Background(), staggerClock{}, 4, 1)
+	pool := lanes.NewPool(context.Background(), staggerClock{}, 4, 1)
 	defer pool.Close()
-	host := localtest.Host(localtest.NewRunner(t), fs.FS, localtest.Env{}, localtest.NewNet(), &localtest.Clock{})
-	host.FS, host.Clock = fs, staggerClock{}
-	s := diskcalls.NewService(diskMachine{host}, tools, diskcalls.ServiceOptions{Disk: fs, Pool: pool, Here: catalog.Host, Expand: disk.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: staggeredInventory{names: names}})
+	system := localtest.Host(localtest.NewRunner(t), fs.FS, localtest.Env{}, localtest.NewNet(), &localtest.Clock{})
+	system.FS, system.Clock = fs, staggerClock{}
+	s := diskcalls.NewService(diskMachine{system}, apps, diskcalls.ServiceOptions{Disk: fs, Pool: pool, Here: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: staggeredInventory{names: names}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	var pages []page.Page
 	for r := range s.Watch(ctx) {
-		pages = append(pages, pagesdisk.Read(disk.Reading{Rows: disk.Classify(r)}, page.Context{Kind: "host"}, false))
+		pages = append(pages, pagesdisk.Read(disk.Reading{Rows: disk.Classify(r)}, page.Context{Kind: "system"}, false))
 	}
 	if len(pages) < 5 {
 		t.Fatalf("the watch sent %d values, want one per staggered answer", len(pages))

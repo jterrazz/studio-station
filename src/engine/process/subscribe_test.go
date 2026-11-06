@@ -84,12 +84,12 @@ type streamed struct {
 }
 
 // value: the nth subscription's feed reads the nth channel.
-func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
+func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Engine {
 	t.Helper()
 	h := &fakeMac{clock: clock}
 	paths := setup.Paths{Config: "/c", State: "/s"}
 	var n atomic.Int32
-	return New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: paths.State, Here: catalog.Host,
+	return New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: paths.State, ThisMachine: catalog.Mac,
 		Feeds: map[string]engine.Feed{engine.PageMenubar: func(ctx context.Context, _ engine.FeedInput) <-chan any {
 			feed := feeds[n.Add(1)-1]
 			out := make(chan any)
@@ -114,7 +114,7 @@ func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
 
 // value: a watch of the menubar page; a subscriber not reading blocks each
 // of its sends until its watch ends.
-func subscribe(ctx context.Context, t *testing.T, d *Daemon, reading bool) streamed {
+func subscribe(ctx context.Context, t *testing.T, d *Engine, reading bool) streamed {
 	t.Helper()
 	s := streamed{events: make(chan engine.Event, 64), ended: make(chan struct{})}
 	opened := make(chan struct{})
@@ -215,7 +215,7 @@ func TestASubscriberThatDoesNotReadNeverHoldsAnotherBack(t *testing.T) {
 func TestAMachinesPageIsWatchedByItsName(t *testing.T) {
 	h := &fakeMac{clock: newManualClock()}
 	subjects := make(chan string, 1)
-	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", Here: catalog.Host,
+	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", ThisMachine: catalog.Mac,
 		Feeds: map[string]engine.Feed{engine.PageMachine: func(_ context.Context, in engine.FeedInput) <-chan any {
 			subjects <- in.Subject
 			out := make(chan any, 1)
@@ -273,7 +273,7 @@ func TestARefreshReadsAgainOnlyThePageItNames(t *testing.T) {
 			return out
 		}
 	}
-	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", Here: catalog.Host,
+	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", ThisMachine: catalog.Mac,
 		Feeds: map[string]engine.Feed{engine.PageMenubar: reread("home"), engine.PageMachine: reread("linux-1")}})
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

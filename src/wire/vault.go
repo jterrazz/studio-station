@@ -9,16 +9,16 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-// value: the vault a machine keeps station's secrets in: a host's keychain;
+// value: the vault a machine keeps station's secrets in: a system's keychain;
 // a VM keeps none.
 func (m machine) vault() contract.Vault {
-	if m.kind != catalog.Host {
+	if m.kind != catalog.Mac {
 		return noVault{}
 	}
 	if m.world != nil {
 		return m.world.vault()
 	}
-	return keychain.New(m.host.Run)
+	return keychain.New(m.sys.Run)
 }
 
 type noVault struct{}

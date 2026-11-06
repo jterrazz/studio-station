@@ -9,7 +9,7 @@ import (
 )
 
 func TestAMachineIsWatchedOnlyWhileASurfaceShowsItsActivity(t *testing.T) {
-	d := &Daemon{}
+	d := &Engine{}
 	hold := func(watch func(ctx context.Context, send func(any) error) error) (opened <-chan struct{}, leave func()) {
 		ctx, cancel := context.WithCancel(t.Context())
 		open, done := make(chan struct{}, 1), make(chan struct{})

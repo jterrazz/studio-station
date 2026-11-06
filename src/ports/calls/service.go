@@ -16,8 +16,8 @@ import (
 )
 
 type Daemon interface {
-	Services(ctx context.Context) (ports.HostServices, error)
-	Reserve(ctx context.Context, vm string, port int, pinned bool) (ports.ServiceView, error)
+	Services(ctx context.Context) (ports.MacPorts, error)
+	Reserve(ctx context.Context, vm string, port int, pinned bool) (ports.SharedPort, error)
 	Release(ctx context.Context, vm string, port int) (ports.Reservation, error)
 }
 
@@ -28,7 +28,7 @@ type ServiceOptions struct {
 	VMName   string
 	HostName string
 	// value: each other host's own services, from those that answered.
-	Ask func(ctx context.Context, hosts []string) map[string]ports.HostServices
+	Ask func(ctx context.Context, hosts []string) map[string]ports.MacPorts
 	// value: a VM's port released by the host it runs on.
 	ReleaseOn func(ctx context.Context, host string, t ports.Target, yes bool) (ports.Reservation, error)
 	VMHost    func(ctx context.Context, vm string) (host string, here bool, err error)
@@ -61,7 +61,7 @@ func NewService(st Stores, d Daemon, o ServiceOptions) *Service {
 	return &Service{st: st, d: d, o: o}
 }
 
-func (s *Service) inVM() bool { return s.o.Here != catalog.Host }
+func (s *Service) inVM() bool { return s.o.Here != catalog.Mac }
 
 func (s *Service) policy() ports.Policy {
 	g, err := s.st.Services.Get()
@@ -71,47 +71,47 @@ func (s *Service) policy() ports.Policy {
 	return ports.PolicyOf(g)
 }
 
-func (s *Service) offline(ctx context.Context) ports.HostServices {
+func (s *Service) offline(ctx context.Context) ports.MacPorts {
 	e := ports.ExposureOf(false, "")
 	if s.o.Exposure != nil {
 		e = s.o.Exposure(ctx)
 	}
-	view := ports.HostServices{Name: s.o.HereName, Here: true, Reachable: true, PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: s.policy().HTTPS, Services: []ports.ServiceView{}}
+	view := ports.MacPorts{Name: s.o.HereName, ThisMac: true, Reachable: true, PublicName: e.PublicHost, Serve: e.Word(), HTTPS: s.policy().HTTPS, Shared: []ports.SharedPort{}}
 	leases, _ := s.st.Reservations.List(ctx)
 	for _, l := range leases {
-		view.Services = append(view.Services, ports.ViewOf(l, e, view.HTTPS, ports.PhaseUnknown))
+		view.Shared = append(view.Shared, ports.ViewOf(l, e, view.HTTPS, ports.PhaseUnknown))
 	}
 	return view
 }
 
-func (s *Service) Here(ctx context.Context) (ports.HostServices, error) {
+func (s *Service) Here(ctx context.Context) (ports.MacPorts, error) {
 	if s.inVM() {
 		view, err := s.d.Services(ctx)
 		if err != nil {
-			return ports.HostServices{}, &ports.HostAwayError{Host: s.o.HostName}
+			return ports.MacPorts{}, &ports.HostAwayError{Host: s.o.HostName}
 		}
-		mine := view.Services[:0:0]
-		for _, v := range view.Services {
+		mine := view.Shared[:0:0]
+		for _, v := range view.Shared {
 			if v.VM == s.o.VMName {
 				mine = append(mine, v)
 			}
 		}
-		view.Services = mine
+		view.Shared = mine
 		return view, nil
 	}
 	view, err := s.d.Services(ctx)
 	if errors.Is(err, ports.ErrDaemonDown) {
 		view, err = s.offline(ctx), nil
-		view.Daemon.Installed = s.o.EngineInstalled != nil && s.o.EngineInstalled()
+		view.Engine.Installed = s.o.EngineInstalled != nil && s.o.EngineInstalled()
 	}
 	if err != nil {
-		return ports.HostServices{}, err
+		return ports.MacPorts{}, err
 	}
-	view.Name, view.Here, view.Reachable = s.o.HereName, true, true
+	view.Name, view.ThisMac, view.Reachable = s.o.HereName, true, true
 	view.Range = s.rangeOf()
 	ps, err := s.survey(ctx, view.Listening)
 	if err != nil {
-		return ports.HostServices{}, err
+		return ports.MacPorts{}, err
 	}
 	view.Ports, view.Listening = ps, nil
 	return view, nil
@@ -151,29 +151,29 @@ func (s *Service) rangeOf() *ports.Range {
 	leases, _ := s.st.Reservations.List(context.Background())
 	leased := 0
 	for _, l := range leases {
-		if l.HostPort >= p.Low && l.HostPort <= p.High {
+		if l.MacPort >= p.Low && l.MacPort <= p.High {
 			leased++
 		}
 	}
-	return &ports.Range{Low: p.Low, High: p.High, Leased: leased, Free: p.High - p.Low + 1 - leased, MaxPerVM: p.MaxPerVM}
+	return &ports.Range{Low: p.Low, High: p.High, Reserved: leased, Free: p.High - p.Low + 1 - leased, MaxPerVM: p.MaxPerVM}
 }
 
-func (s *Service) List(ctx context.Context, hereOnly bool) (ports.Fleet, error) {
+func (s *Service) List(ctx context.Context, hereOnly bool) (ports.AllMachines, error) {
 	here, err := s.Here(ctx)
 	if err != nil {
-		return ports.Fleet{}, err
+		return ports.AllMachines{}, err
 	}
-	fleet := ports.Fleet{Schema: ports.LeasesSchema, Hosts: []ports.HostServices{here}}
+	fleet := ports.AllMachines{Schema: ports.LeasesSchema, Macs: []ports.MacPorts{here}}
 	if hereOnly || s.inVM() {
 		return fleet, nil
 	}
 	hosts, err := s.st.Hosts.Get()
 	if err != nil {
-		return ports.Fleet{}, err
+		return ports.AllMachines{}, err
 	}
 	name, err := s.st.Name.Get()
 	if err != nil {
-		return ports.Fleet{}, err
+		return ports.AllMachines{}, err
 	}
 	var others []string
 	for host := range hosts {
@@ -182,26 +182,26 @@ func (s *Service) List(ctx context.Context, hereOnly bool) (ports.Fleet, error) 
 		}
 	}
 	sort.Strings(others)
-	var answers map[string]ports.HostServices
+	var answers map[string]ports.MacPorts
 	if s.o.Ask != nil {
 		answers = s.o.Ask(ctx, others)
 	}
-	views := make([]ports.HostServices, len(others))
+	views := make([]ports.MacPorts, len(others))
 	for i, name := range others {
 		views[i] = answered(name, answers)
 	}
-	fleet.Hosts = append(fleet.Hosts, views...)
+	fleet.Macs = append(fleet.Macs, views...)
 	return fleet, nil
 }
 
-func answered(name string, answers map[string]ports.HostServices) ports.HostServices {
+func answered(name string, answers map[string]ports.MacPorts) ports.MacPorts {
 	view, ok := answers[name]
 	if !ok {
-		return ports.HostServices{Name: name, Services: []ports.ServiceView{}}
+		return ports.MacPorts{Name: name, Shared: []ports.SharedPort{}}
 	}
-	view.Name, view.Here, view.Reachable = name, false, true
-	if view.Services == nil {
-		view.Services = []ports.ServiceView{}
+	view.Name, view.ThisMac, view.Reachable = name, false, true
+	if view.Shared == nil {
+		view.Shared = []ports.SharedPort{}
 	}
 	return view
 }
@@ -255,11 +255,11 @@ func (s *Service) CheckVM(ctx context.Context, vm string) (host string, err erro
 	return host, nil
 }
 
-func (s *Service) Share(ctx context.Context, vm string, port int) (ports.ServiceView, error) {
+func (s *Service) Share(ctx context.Context, vm string, port int) (ports.SharedPort, error) {
 	v, err := s.d.Reserve(ctx, vm, port, false)
 	var down *ports.HostAwayError
 	if s.inVM() && (errors.Is(err, ports.ErrDaemonDown) || errors.As(err, &down)) {
-		return ports.ServiceView{}, &ports.HostAwayError{Host: s.o.HostName}
+		return ports.SharedPort{}, &ports.HostAwayError{Host: s.o.HostName}
 	}
 	return v, err
 }

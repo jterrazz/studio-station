@@ -18,15 +18,15 @@ const (
 	Silent Away = "silent"
 )
 
-type Place struct {
+type LivesOn struct {
 	// value: one machine of All machines whose settings are read: a Mac, or
 	// a workspace of one.
-	Name     string
-	Ref      machine.Ref
-	Here     bool
-	Mac      bool
-	Away     Away
-	Answered time.Time
+	Name        string
+	Ref         machine.Ref
+	ThisMachine bool
+	Mac         bool
+	Away        Away
+	Answered    time.Time
 }
 
 type LastRead struct {
@@ -35,14 +35,14 @@ type LastRead struct {
 	Rows []Row     `json:"rows"`
 }
 
-func Places(f machines.Fleet) (places []Place, servers []string) {
+func LivesOnAll(f machines.AllMachines) (livesOn []LivesOn, servers []string) {
 	// invariant: every Mac, then every workspace, those that run first; a
 	// server is named apart, never a place: station does not manage its
 	// settings.
-	var macs, spaces []Place
-	for _, h := range f.Hosts {
-		silent := !h.Reachable && !h.Here
-		mac := Place{Name: h.Name, Ref: machine.Ref{Name: h.Name}, Here: h.Here, Mac: true}
+	var macs, spaces []LivesOn
+	for _, h := range f.Macs {
+		silent := !h.Reachable && !h.ThisMac
+		mac := LivesOn{Name: h.Name, Ref: machine.Ref{Name: h.Name}, ThisMachine: h.ThisMac, Mac: true}
 		if silent {
 			mac.Away, mac.Answered = Silent, h.Answered
 		}
@@ -52,7 +52,7 @@ func Places(f machines.Fleet) (places []Place, servers []string) {
 				servers = append(servers, vm.Name)
 				continue
 			}
-			p := Place{Name: vm.Name, Ref: machine.Ref{Name: vm.Name, On: h.Name}}
+			p := LivesOn{Name: vm.Name, Ref: machine.Ref{Name: vm.Name, On: h.Name}}
 			switch {
 			case silent:
 				p.Away, p.Answered = Silent, h.Answered
@@ -62,7 +62,7 @@ func Places(f machines.Fleet) (places []Place, servers []string) {
 			spaces = append(spaces, p)
 		}
 	}
-	slices.SortStableFunc(spaces, func(a, b Place) int { return awayRank(a.Away) - awayRank(b.Away) })
+	slices.SortStableFunc(spaces, func(a, b LivesOn) int { return awayRank(a.Away) - awayRank(b.Away) })
 	return append(macs, spaces...), servers
 }
 
@@ -78,7 +78,7 @@ func awayRank(a Away) int {
 }
 
 type Column struct {
-	Place
+	LivesOn
 	// value: the rows read, now or, for a stopped workspace, at Read; none
 	// when nothing could be read.
 	Rows []Row

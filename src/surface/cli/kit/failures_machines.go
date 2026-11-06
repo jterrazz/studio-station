@@ -11,9 +11,9 @@ import (
 
 func machinesFailure(err error) (*fail.Error, bool) {
 	var unknown *model.UnknownMachineError
-	var here *model.HereMachineError
-	var notHost *model.NotAHostError
-	var onlyHost *model.OnlyOnHostError
+	var thisMac *model.HereMachineError
+	var notMac *model.NotAHostError
+	var macOnly *model.OnlyOnHostError
 	var taken *model.NameTakenError
 	var bad *model.BadNameError
 	var unreachable *model.UnreachableError
@@ -28,14 +28,14 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	switch {
 	case errors.As(err, &unknown):
 		return usage(unknown.Error(), "station machines"), true
-	case errors.As(err, &here) && here.Verb == "forget":
-		return usage(here.Error(), "station machines"), true
-	case errors.As(err, &here):
-		return usage(here.Error(), "pick another machine: run station machines for the fleet"), true
-	case errors.As(err, &notHost):
-		return usage(notHost.Error(), notAHostHint(notHost)), true
-	case errors.As(err, &onlyHost):
-		return usage(onlyHost.Error(), "run it on a host"), true
+	case errors.As(err, &thisMac) && thisMac.Verb == "forget":
+		return usage(thisMac.Error(), "station machines"), true
+	case errors.As(err, &thisMac):
+		return usage(thisMac.Error(), "pick another machine: station machines lists them all"), true
+	case errors.As(err, &notMac):
+		return usage(notMac.Error(), notAMacHint(notMac)), true
+	case errors.As(err, &macOnly):
+		return usage(macOnly.Error(), "run it on a Mac"), true
 	case errors.As(err, &taken):
 		return usage(taken.Error(), takenHint(taken)), true
 	case errors.As(err, &bad):
@@ -56,7 +56,7 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	return nil, false
 }
 
-func notAHostHint(e *model.NotAHostError) string {
+func notAMacHint(e *model.NotAHostError) string {
 	if e.Verb == "forget" {
 		return "station machines delete " + e.Name
 	}

@@ -18,8 +18,8 @@ func parse(p catalog.Provider, outs []local.Output, late bool) accounts.Identity
 	}
 	if len(outs) == 0 {
 		detail := "not installed"
-		if p.Tool != "" {
-			detail = p.Tool + " not on PATH"
+		if p.Command != "" {
+			detail = p.Command + " not on PATH"
 		}
 		return accounts.Absent(p.ID, accounts.ReasonMissing, detail)
 	}
@@ -202,13 +202,13 @@ func keys(n int) string {
 	return strconv.Itoa(n) + " keys"
 }
 
-func dockerStore(config []byte) (store string, listed bool) {
+func dockerStore(body []byte) (store string, listed bool) {
 	var c struct {
 		Auths       map[string]json.RawMessage `json:"auths"`
 		CredsStore  string                     `json:"credsStore"`
 		CredHelpers map[string]string          `json:"credHelpers"`
 	}
-	if json.Unmarshal(config, &c) != nil {
+	if json.Unmarshal(body, &c) != nil {
 		return "", false
 	}
 	if c.CredsStore == "" {
@@ -235,12 +235,12 @@ func parseDocker(out local.Output) accounts.Identity {
 	slices.Sort(names)
 	acc := accounts.SignedIn(catalog.ProviderDocker)
 	for _, r := range names {
-		host := strings.TrimPrefix(strings.TrimPrefix(r, "https://"), "http://")
-		host, _, _ = strings.Cut(host, "/")
+		domain := strings.TrimPrefix(strings.TrimPrefix(r, "https://"), "http://")
+		domain, _, _ = strings.Cut(domain, "/")
 		if !slices.Contains(acc.Who, registries[r]) {
 			acc.Who = append(acc.Who, registries[r])
 		}
-		acc.Scopes = append(acc.Scopes, host)
+		acc.Scopes = append(acc.Scopes, domain)
 	}
 	return acc
 }

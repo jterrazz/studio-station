@@ -14,8 +14,8 @@ import (
 )
 
 type Deps struct {
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 	// value: what else turning these settings off does on the target, said
 	// in the question.
 	Also func(names []string) []string
@@ -48,7 +48,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagesettings.Changes("off", changes, d.Here), nil)
+			return io.Page(pagesettings.Changes("off", changes, d.ThisMachine), nil)
 		},
 	}, env)
 }

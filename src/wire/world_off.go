@@ -14,7 +14,7 @@ import (
 	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	backgroundcontract "github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -38,13 +38,13 @@ type (
 
 func openWorld(map[string]string, bool) (*worldRun, error) { return nil, nil }
 
-func (*worldRun) here() *worldMac                { return nil }
+func (*worldRun) thisMac() *worldMac             { return nil }
 func (*worldRun) farFrom(func(*worldMac) farMac) {}
 func (*worldRun) command() *cobra.Command        { return nil }
 func (*worldRun) close(context.Context) error    { return nil }
 
-func (*worldMac) host(h local.Host) local.Host                          { return h }
-func (*worldMac) lend(context.Context) error                            { return nil }
+func (*worldMac) system(h local.Host) local.Host                        { return h }
+func (*worldMac) handOver(context.Context) error                        { return nil }
 func (*worldMac) watch([]string) func()                                 { return func() {} }
 func (*worldMac) stores(*stores)                                        {}
 func (*worldMac) self() corecontract.Self                               { return nil }
@@ -62,16 +62,16 @@ func (*worldMac) disk() diskcontract.DiskUsage                          { return
 func (*worldMac) listeners() portscontract.Listeners                    { return nil }
 func (*worldMac) placement() (ports.VMPlace, bool)                      { return ports.VMPlace{}, false }
 func (*worldMac) tailnet() portscontract.Tailnet                        { return nil }
-func (*worldMac) funnel() funnel.Config                                 { return nil }
+func (*worldMac) funnel() funnel.Funnel                                 { return nil }
 func (*worldMac) installer(catalog.Method, bool) appscontract.Installer { return nil }
 func (*worldMac) bundler() appscontract.Bundler                         { return nil }
-func (*worldMac) budgets() probe.Clock                                  { return nil }
+func (*worldMac) budgets() lanes.Clock                                  { return nil }
 func (*worldMac) vault() accountscontract.Vault                         { return nil }
 func (*worldMac) identities() accountscontract.Identities               { return nil }
 func (*worldMac) secretSource() accountscontract.SecretSource           { return nil }
 func (*worldMac) notifier() process.Notifier                            { return nil }
 func (*worldMac) checks() contract.CheckRunner                          { return nil }
-func (*worldMac) engineFrom(func() *process.Daemon)                     {}
+func (*worldMac) engineFrom(func() *process.Engine)                     {}
 func (*worldMac) macs() remotecontract.EndpointDialer                   { return nil }
 func (*worldMac) stopMarks() engine.StopMarks                           { return nil }
 func (*worldMac) engineVersion() string                                 { return "" }

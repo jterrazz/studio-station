@@ -15,7 +15,7 @@ import (
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 )
 
-func activityOf(d *Daemon) engine.ActivityOut {
+func activityOf(d *Engine) engine.ActivityOut {
 	h := d.History()
 	if h == nil {
 		return engine.ActivityOut{Machines: []engine.Kept{}}
@@ -28,10 +28,10 @@ func activityOf(d *Daemon) engine.ActivityOut {
 	return out
 }
 
-func own[In any](d *Daemon, name string, run func(ctx context.Context, d *Daemon, in In) (any, error)) call.Handler {
-	return call.Bind(call.Call[*Daemon, In, any]{
+func own[In any](d *Engine, name string, run func(ctx context.Context, d *Engine, in In) (any, error)) call.Handler {
+	return call.Bind(call.Call[*Engine, In, any]{
 		Name: name, Where: call.InEngine, Applies: machine.Anywhere,
-		Run: func(ctx context.Context, d *Daemon, in In, _ call.Progress) (any, error) {
+		Run: func(ctx context.Context, d *Engine, in In, _ call.Progress) (any, error) {
 			out, err := run(ctx, d, in)
 			return out, worded(err)
 		},
@@ -52,62 +52,62 @@ func worded(err error) error {
 	return &fail.Error{Type: t, Code: fail.Code(op.Code), Message: op.Message, Hint: op.Hint}
 }
 
-func calls(d *Daemon, served []string) []call.Handler {
+func calls(d *Engine, served []string) []call.Handler {
 	out := make([]call.Handler, 0, 12+len(VMVerbs()))
 	out = append(out,
-		own(d, engine.CallHello, func(_ context.Context, d *Daemon, _ struct{}) (any, error) {
+		own(d, engine.CallHello, func(_ context.Context, d *Engine, _ struct{}) (any, error) {
 			h := d.Hello()
 			h.Calls = served
 			return h, nil
 		}),
-		own(d, engine.CallVMs, func(_ context.Context, d *Daemon, _ struct{}) (any, error) { return d.VMs(), nil }),
-		own(d, engine.CallServices, func(_ context.Context, d *Daemon, in engine.VMIn) (any, error) { return d.Services(in.VM), nil }),
-		own(d, engine.CallReserve, func(ctx context.Context, d *Daemon, in engine.ReserveIn) (any, error) {
+		own(d, engine.CallVMs, func(_ context.Context, d *Engine, _ struct{}) (any, error) { return d.VMs(), nil }),
+		own(d, engine.CallPorts, func(_ context.Context, d *Engine, in engine.VMIn) (any, error) { return d.Ports(in.VM), nil }),
+		own(d, engine.CallReserve, func(ctx context.Context, d *Engine, in engine.ReserveIn) (any, error) {
 			return d.Reserve(ctx, in.VM, in.GuestPort, in.Pinned, in.Profile)
 		}),
-		own(d, engine.CallRelease, func(ctx context.Context, d *Daemon, in engine.ReserveIn) (any, error) {
+		own(d, engine.CallRelease, func(ctx context.Context, d *Engine, in engine.ReserveIn) (any, error) {
 			return d.Release(ctx, in.VM, in.GuestPort)
 		}),
-		own(d, engine.CallGuestExec, func(ctx context.Context, d *Daemon, in engine.ExecIn) (any, error) {
+		own(d, engine.CallGuestExec, func(ctx context.Context, d *Engine, in engine.ExecIn) (any, error) {
 			ran, err := d.GuestExec(ctx, in.VM, in.Line, in.Stdin)
 			return engine.ExecOut(ran), err
 		}),
-		own(d, engine.CallAccounts, func(ctx context.Context, d *Daemon, _ struct{}) (any, error) { return d.Accounts(ctx), nil }),
-		own(d, engine.CallStopAll, func(ctx context.Context, d *Daemon, _ struct{}) (any, error) { return d.StopAll(ctx), nil }),
-		own(d, engine.CallPower, func(_ context.Context, d *Daemon, _ struct{}) (any, error) { return d.Power(), nil }),
-		own(d, engine.CallAwake, func(_ context.Context, d *Daemon, in engine.AwakeIn) (any, error) { return d.Awake(in) }),
-		own(d, engine.CallSleep, func(_ context.Context, d *Daemon, _ struct{}) (any, error) { return d.Sleep(), nil }),
-		own(d, engine.CallActivity, func(_ context.Context, d *Daemon, _ struct{}) (any, error) { return activityOf(d), nil }),
-		own(d, engine.CallKeepSettings, func(_ context.Context, d *Daemon, in engine.KeepSettingsIn) (any, error) {
+		own(d, engine.CallAccounts, func(ctx context.Context, d *Engine, _ struct{}) (any, error) { return d.Accounts(ctx), nil }),
+		own(d, engine.CallStopAll, func(ctx context.Context, d *Engine, _ struct{}) (any, error) { return d.StopAll(ctx), nil }),
+		own(d, engine.CallAwakeView, func(_ context.Context, d *Engine, _ struct{}) (any, error) { return d.AwakeView(), nil }),
+		own(d, engine.CallKeepAwake, func(_ context.Context, d *Engine, in engine.AwakeIn) (any, error) { return d.Awake(in) }),
+		own(d, engine.CallAwakeOff, func(_ context.Context, d *Engine, _ struct{}) (any, error) { return d.Sleep(), nil }),
+		own(d, engine.CallActivity, func(_ context.Context, d *Engine, _ struct{}) (any, error) { return activityOf(d), nil }),
+		own(d, engine.CallKeepSettings, func(_ context.Context, d *Engine, in engine.KeepSettingsIn) (any, error) {
 			d.KeepSettings(in.VM, in.Read)
 			return struct{}{}, nil
 		}),
-		own(d, engine.CallLastSettings, func(_ context.Context, d *Daemon, in engine.VMIn) (any, error) {
+		own(d, engine.CallLastSettings, func(_ context.Context, d *Engine, in engine.VMIn) (any, error) {
 			read, ok := d.LastSettings(in.VM)
 			return engine.LastSettingsOut{Read: read, Kept: ok}, nil
 		}),
-		own(d, engine.CallRefresh, func(_ context.Context, d *Daemon, in engine.PagesIn) (any, error) {
+		own(d, engine.CallRefresh, func(_ context.Context, d *Engine, in engine.PagesIn) (any, error) {
 			return struct{}{}, d.Refresh(in.Pages)
 		}),
 	)
 	for _, verb := range VMVerbs() {
-		out = append(out, own(d, engine.CallVM(verb), func(ctx context.Context, d *Daemon, in engine.VMIn) (any, error) {
+		out = append(out, own(d, engine.CallVM(verb), func(ctx context.Context, d *Engine, in engine.VMIn) (any, error) {
 			return nil, d.VM(ctx, verb, in.VM)
 		}))
 	}
 	return out
 }
 
-type Host struct {
+type Serving struct {
 	// value: the registry the engine serves to its clients (the menu bar's
 	// actions), run on this Mac; nil serves the engine's own calls alone.
-	Registry *call.Registry
-	Here     machine.Profile
-	Word     func(e *fail.Error) (message, hint string)
-	Sleep    func(ctx context.Context, d time.Duration) error
+	Registry    *call.Registry
+	ThisMachine machine.Profile
+	Word        func(e *fail.Error) (message, hint string)
+	Sleep       func(ctx context.Context, d time.Duration) error
 }
 
-func Server(d *Daemon, h Host) serve.Server {
+func Server(d *Engine, h Serving) serve.Server {
 	// invariant: the engine's server: its own calls first, then the registry's,
 	// and the watch of its pages; a call of neither is unknown.
 	var served []string
@@ -149,6 +149,6 @@ func Server(d *Daemon, h Host) serve.Server {
 			}
 			return d.Watch(ctx, in.Machines, send)
 		}},
-		Here: h.Here, Word: h.Word, Hint: "station machines", Sleep: h.Sleep,
+		ThisMachine: h.ThisMachine, Word: h.Word, Hint: "station machines", Sleep: h.Sleep,
 	}
 }

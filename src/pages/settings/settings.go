@@ -185,7 +185,7 @@ func touched(rows []settings.Row) bool {
 	return false
 }
 
-func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.Page {
+func List(rows []settings.Row, now time.Time, all bool, thisMac page.Context) page.Page {
 	// invariant: the first line sums the machine up, then Needs a look lifts
 	// every row that needs one first, whatever its group; then the Set by station
 	// group, the Always-on Mac group folded on one line until one of it is
@@ -207,8 +207,8 @@ func List(rows []settings.Row, now time.Time, all bool, here page.Context) page.
 			set = append(set, r)
 		}
 	}
-	p := page.Page{ID: ID, Command: "settings", Context: here, Actions: actions()}
-	p.Sections = append(p.Sections, firstLine(rows, len(look), here))
+	p := page.Page{ID: ID, Command: "settings", Context: thisMac, Actions: actions()}
+	p.Sections = append(p.Sections, firstLine(rows, len(look), thisMac))
 	if len(look) > 0 {
 		p.Sections = append(p.Sections, page.Section{ID: "needs-a-look", Title: "Needs a look", Role: page.Lifted, Fold: page.Open, Columns: columns(), Items: items(look, now)})
 	}
@@ -287,7 +287,7 @@ func brief(all bool) page.Fold {
 
 // value: the first line: the machine, what station sets on it, what it
 // checks, and what needs a look (vision 07 "station settings").
-func firstLine(rows []settings.Row, look int, here page.Context) page.Section {
+func firstLine(rows []settings.Row, look int, thisMac page.Context) page.Section {
 	set, checked := 0, 0
 	for _, r := range rows {
 		switch {
@@ -299,8 +299,8 @@ func firstLine(rows []settings.Row, look int, here page.Context) page.Section {
 		}
 	}
 	label := "This Mac"
-	if here.Machine != "" && here.Kind != string(catalog.Host) {
-		label = here.Machine
+	if thisMac.Machine != "" && thisMac.Kind != string(catalog.Mac) {
+		label = thisMac.Machine
 	}
 	words := []string{strconv.Itoa(set) + " set by station here"}
 	if checked > 0 {
@@ -366,12 +366,12 @@ func ApplyConfirm(names []string) page.Confirm {
 	return page.Confirm{Question: "Apply " + what + "? A setting changed since is overwritten: yours is lost", Yes: "apply"}
 }
 
-func Show(r settings.Row, now time.Time, here page.Context) page.Page {
+func Show(r settings.Row, now time.Time, thisMac page.Context) page.Page {
 	// value: one setting's detail: its group, state, where it lives and what
 	// it does, and the machines it lives on.
 	head := Row(r, now)
 	if r.Group == settings.Checked {
-		return showChecked(r, head, here)
+		return showChecked(r, head, thisMac)
 	}
 	group := page.Text("Set by station")
 	if r.Group == settings.AlwaysOnMac {
@@ -380,7 +380,7 @@ func Show(r settings.Row, now time.Time, here page.Context) page.Page {
 	facts := []page.Item{
 		{Fact: &page.Fact{Key: "group", Value: group}},
 		{Fact: &page.Fact{Key: "does", Value: page.Text(r.Item().Description)}},
-		{Fact: &page.Fact{Key: "lives on", Value: page.Text(livesOn(r.Item().Places))}},
+		{Fact: &page.Fact{Key: "lives on", Value: page.Text(livesOn(r.Item().Kinds))}},
 	}
 	if r.Where != "" {
 		facts = append(facts, page.Item{Fact: &page.Fact{Key: "where", Value: page.Text(r.Where)}})
@@ -388,35 +388,35 @@ func Show(r settings.Row, now time.Time, here page.Context) page.Page {
 	if !r.Since.IsZero() {
 		facts = append(facts, page.Item{Fact: &page.Fact{Key: "applied", Value: page.Text(ago(r.Since, now))}})
 	}
-	p := page.Page{ID: ID, Command: "settings " + r.Item().Name, Context: here, Sections: []page.Section{
+	p := page.Page{ID: ID, Command: "settings " + r.Item().Name, Context: thisMac, Sections: []page.Section{
 		{ID: "setting", Title: r.Item().Name, Role: page.Banner, Columns: columns(), Items: []page.Item{{Row: &head}}},
 		{ID: "detail", Title: "Detail", Columns: pages.OutcomeColumns(), Items: facts},
 	}}
 	return page.Seal(p)
 }
 
-func showChecked(r settings.Row, head page.Row, here page.Context) page.Page {
+func showChecked(r settings.Row, head page.Row, thisMac page.Context) page.Page {
 	it := r.CheckedItem()
 	facts := []page.Item{
 		{Fact: &page.Fact{Key: "group", Value: page.Text("Checked")}},
 		{Fact: &page.Fact{Key: "does", Value: page.Text(it.Description)}},
-		{Fact: &page.Fact{Key: "lives on", Value: page.Text(livesOn(it.Places))}},
+		{Fact: &page.Fact{Key: "lives on", Value: page.Text(livesOn(it.Kinds))}},
 		{Fact: &page.Fact{Key: "fix", Value: page.Text(it.Fix)}},
 	}
 	if r.Expected != "" {
 		facts = append(facts, page.Item{Fact: &page.Fact{Key: "expected", Value: page.Text(r.Expected)}})
 	}
-	return page.Seal(page.Page{ID: ID, Command: "settings " + it.Name, Context: here, Sections: []page.Section{
+	return page.Seal(page.Page{ID: ID, Command: "settings " + it.Name, Context: thisMac, Sections: []page.Section{
 		{ID: "setting", Title: it.Name, Role: page.Banner, Columns: columns(), Items: []page.Item{{Row: &head}}},
 		{ID: "detail", Title: "Detail", Columns: pages.OutcomeColumns(), Items: facts},
 	}})
 }
 
-func livesOn(places []catalog.MachineKind) string {
-	words := make([]string, 0, len(places))
-	for _, p := range places {
+func livesOn(livesOn []catalog.MachineKind) string {
+	words := make([]string, 0, len(livesOn))
+	for _, p := range livesOn {
 		switch p {
-		case catalog.Host:
+		case catalog.Mac:
 			words = append(words, "Macs")
 		case catalog.Linux:
 			words = append(words, "Linux VMs")
@@ -427,7 +427,7 @@ func livesOn(places []catalog.MachineKind) string {
 	return strings.Join(words, ", ")
 }
 
-func Values(r settings.Row, before, after []settings.KeyValue, here page.Context) page.Page {
+func Values(r settings.Row, before, after []settings.KeyValue, thisMac page.Context) page.Page {
 	// value: a setting that writes no file, what station would set against
 	// what is there: one row per value, before then after; when every value
 	// is already station's, the setting's own row.
@@ -456,10 +456,10 @@ func Values(r settings.Row, before, after []settings.KeyValue, here page.Context
 		head := Row(r, time.Time{})
 		s.Items = []page.Item{{Row: &head}}
 	}
-	return page.Seal(page.Page{ID: ID, Command: "settings diff " + r.Item().Name, Context: here, Sections: []page.Section{s}})
+	return page.Seal(page.Page{ID: ID, Command: "settings diff " + r.Item().Name, Context: thisMac, Sections: []page.Section{s}})
 }
 
-func Changes(verb string, changes []settings.Change, here page.Context) page.Page {
+func Changes(verb string, changes []settings.Change, thisMac page.Context) page.Page {
 	// value: each setting a verb ran on, its outcome and its steps.
 	var rows []page.Row
 	var extra []page.Section
@@ -480,7 +480,7 @@ func Changes(verb string, changes []settings.Change, here page.Context) page.Pag
 			rows = append(rows, r)
 		}
 	}
-	return pages.Outcome("settings "+verb, here, nil, rows, "settings to "+verb, extra...)
+	return pages.Outcome("settings "+verb, thisMac, nil, rows, "settings to "+verb, extra...)
 }
 
 func values(item, when string, list []settings.KeyValue) []page.Section {
@@ -553,7 +553,7 @@ func ShowContract(r settings.Row) ShowJSON {
 	return ShowJSON{Schema: "station.settings.show/v1", Setting: Object(r)}
 }
 
-func Removed(o settings.ContainersOutcome, command string, here page.Context) page.Page {
+func Removed(o settings.ContainersOutcome, command string, thisMac page.Context) page.Page {
 	// value: what one of the Docker shortcuts removed, by what it removes,
 	// under the command that ran it.
 	rows := make([]page.Row, 0, len(o.Removals))
@@ -566,10 +566,10 @@ func Removed(o settings.ContainersOutcome, command string, here page.Context) pa
 		row.Detail = detail
 		rows = append(rows, row)
 	}
-	return pages.Outcome(command, here, nil, rows, "steps")
+	return pages.Outcome(command, thisMac, nil, rows, "steps")
 }
 
-func Diff(name, diff string, here page.Context) page.Page {
+func Diff(name, diff string, thisMac page.Context) page.Page {
 	// value: a file's unified diff as a page, one line per line, for the
 	// renderers that cannot print it raw (the TUI's detail pane).
 	lines := strings.Split(strings.TrimRight(diff, "\n"), "\n")
@@ -577,5 +577,5 @@ func Diff(name, diff string, here page.Context) page.Page {
 	for _, l := range lines {
 		items = append(items, page.Item{Note: &page.Note{Text: l}})
 	}
-	return page.Seal(page.Page{ID: ID, Command: "settings diff " + name, Context: here, Sections: []page.Section{{ID: "diff", Title: name, Uncounted: true, Items: items}}})
+	return page.Seal(page.Page{ID: ID, Command: "settings diff " + name, Context: thisMac, Sections: []page.Section{{ID: "diff", Title: name, Uncounted: true, Items: items}}})
 }

@@ -9,9 +9,9 @@ import (
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
-type Fleet interface {
+type AllMachines interface {
 	// value: what the matrix reads beyond this machine.
-	Machines(ctx context.Context) (machines.Fleet, error)
+	Machines(ctx context.Context) (machines.AllMachines, error)
 	// invariant: each machine's settings.list through the Router, a few at
 	// a time, each within its budget (remote/each): a machine that does not
 	// answer in time is its own answer's error, never the others' delay.
@@ -31,30 +31,30 @@ type Answer struct {
 type MatrixIn struct{}
 
 var Matrix = call.Call[Deps, MatrixIn, settings.Matrix]{
-	Name: "settings.matrix", Where: call.InProcess, Applies: settings.ReadsFleet,
+	Name: "settings.matrix", Where: call.InProcess, Applies: settings.ReadsAllMachines,
 	Run: func(ctx context.Context, d Deps, _ MatrixIn, _ call.Progress) (settings.Matrix, error) {
 		// invariant: every place read at once; a stopped workspace shows its
 		// last read, a machine that does not answer is its own column, and
 		// the others are filled.
-		fleet, err := d.Fleet.Machines(ctx)
+		allMachines, err := d.All.Machines(ctx)
 		if err != nil {
 			return settings.Matrix{}, err
 		}
-		places, servers := settings.Places(fleet)
+		livesOn, servers := settings.LivesOnAll(allMachines)
 		var asked []machine.Ref
-		for _, p := range places {
+		for _, p := range livesOn {
 			if p.Away == settings.Present {
 				asked = append(asked, p.Ref)
 			}
 		}
-		answers := d.Fleet.Read(ctx, asked)
+		answers := d.All.Read(ctx, asked)
 		if err := ctx.Err(); err != nil {
 			return settings.Matrix{}, err
 		}
 		now := d.Now()
-		cols := make([]settings.Column, 0, len(places))
-		for _, p := range places {
-			col := settings.Column{Place: p}
+		cols := make([]settings.Column, 0, len(livesOn))
+		for _, p := range livesOn {
+			col := settings.Column{LivesOn: p}
 			switch p.Away {
 			case settings.Present:
 				a := answers[p.Ref]
@@ -64,10 +64,10 @@ var Matrix = call.Call[Deps, MatrixIn, settings.Matrix]{
 				}
 				col.Rows, col.Read = a.Rows, now
 				if !p.Mac {
-					d.Fleet.Keep(ctx, p.Name, settings.LastRead{At: now, Rows: a.Rows})
+					d.All.Keep(ctx, p.Name, settings.LastRead{At: now, Rows: a.Rows})
 				}
 			case settings.Stopped:
-				if last, ok := d.Fleet.Last(ctx, p.Name); ok {
+				if last, ok := d.All.Last(ctx, p.Name); ok {
 					col.Rows, col.Read = last.Rows, last.At
 				}
 			case settings.Silent:

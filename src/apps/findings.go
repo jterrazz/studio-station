@@ -19,8 +19,8 @@ func Findings(reports []Report, m machine.Ref) []finding.Finding {
 	for _, r := range reports {
 		switch StateOf(r) {
 		case Failed:
-			out = append(out, finding.Finding{Machine: m, Section: section.Apps, Severity: finding.Broken, Subject: r.Tool.Name,
-				Text: r.Tool.Name + " failed", Fix: finding.Fix{Call: "apps.update", Args: map[string]string{"name": r.Tool.Name}}})
+			out = append(out, finding.Finding{Machine: m, Section: section.Apps, Severity: finding.Broken, Subject: r.App.Name,
+				Text: r.App.Name + " failed", Fix: finding.Fix{Call: "apps.update", Args: map[string]string{"name": r.App.Name}}})
 		case UpdateAvailable:
 			manager := ManagerOf(r.Method)
 			if waiting[manager] == 0 {

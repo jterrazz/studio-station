@@ -48,7 +48,7 @@ func count(n int, one string) string {
 	return strconv.Itoa(n) + " " + one + "s"
 }
 
-func Read(r engine.Reading, zone *time.Location, here page.Context) page.Page {
+func Read(r engine.Reading, zone *time.Location, thisMac page.Context) page.Page {
 	// value: an engine's reading as one row: its state, then what it runs.
 	row := page.Row{ID: Row, Label: Row, Mark: page.OK}
 	switch r.State {
@@ -77,10 +77,10 @@ func Read(r engine.Reading, zone *time.Location, here page.Context) page.Page {
 		row.Hint = page.Cmd("station setup")
 	}
 	s := page.Section{ID: "engine", Title: "Engine", Role: page.Banner, Columns: columns(), Items: []page.Item{{Row: &row}}}
-	return page.Seal(page.Page{ID: ID, Command: "engine", Context: here, Sections: []page.Section{s}})
+	return page.Seal(page.Page{ID: ID, Command: "engine", Context: thisMac, Sections: []page.Section{s}})
 }
 
-func Stop(r engine.StopReport, here page.Context) page.Page {
+func Stop(r engine.StopReport, thisMac page.Context) page.Page {
 	// value: a stop as one sentence: what it stopped, what it ended, and
 	// whether the engine stopped with it.
 	var stopped, failed []string
@@ -95,11 +95,11 @@ func Stop(r engine.StopReport, here page.Context) page.Page {
 	if len(stopped) > 0 {
 		parts = append(parts, "stopped "+count(len(stopped), "VM")+" ("+strings.Join(stopped, ", ")+")")
 	}
-	switch r.Power {
-	case engine.PowerEnded:
+	switch r.Awake {
+	case engine.AwakeEnded:
 		parts = append(parts, "Awake off")
-	case engine.PowerReset:
-		parts = append(parts, "the lid reset")
+	case engine.AwakeReleased:
+		parts = append(parts, "the lid released")
 	}
 	if r.Sharing {
 		parts = append(parts, "sharing off")
@@ -121,7 +121,7 @@ func Stop(r engine.StopReport, here page.Context) page.Page {
 	}
 	row := pages.Done(Row, state, "")
 	row.Detail = page.Texts(parts...)
-	p := pages.Outcome("engine stop", here, nil, []page.Row{row}, "nothing to stop")
+	p := pages.Outcome("engine stop", thisMac, nil, []page.Row{row}, "nothing to stop")
 	if r.Engine == engine.EngineHalted || r.Engine == engine.EngineAlready {
 		p.Hints = []page.Hint{*page.Cmd("station engine start")}
 	}
@@ -144,12 +144,12 @@ func StopConfirm(w engine.Work, mac string) page.Confirm {
 	return page.Confirm{Question: "Stop everything on " + mac + "?", Lines: lines, Danger: true, Yes: "Stop"}
 }
 
-func Start(r engine.StartReport, here page.Context) page.Page {
+func Start(r engine.StartReport, thisMac page.Context) page.Page {
 	row := pages.Done(Row, catalog.StateOK, "running")
 	if r.Already {
 		row.Detail = page.Texts("already running", r.Version)
 	} else {
 		row.Detail = page.Texts("running", r.Version)
 	}
-	return pages.Outcome("engine start", here, nil, []page.Row{row}, "engine to start")
+	return pages.Outcome("engine start", thisMac, nil, []page.Row{row}, "engine to start")
 }

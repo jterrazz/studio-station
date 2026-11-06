@@ -38,7 +38,7 @@ const EngineLabel = StationLaunchPrefix + "engine"
 
 const (
 	// value: the label station v2 gave the engine's job; setup moves it once.
-	RetiredEngineLabel = StationLaunchPrefix + "daemon"
+	RetiredEngineLabel = "com.jterrazz.station.daemon"
 )
 
 func EnginePlist(home string) string {

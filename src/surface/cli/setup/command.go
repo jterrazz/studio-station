@@ -14,7 +14,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -29,7 +29,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			report, err := call.Invoke(ctx, env.Calls, env.Target(), setupcalls.Run, setupcalls.RunIn{Name: in.Name, Interactive: io.Interactive}, nil)
 			if len(report.Steps) > 0 {
-				if answerErr := io.Page(pagesetup.Outcome(report, d.Here), nil); answerErr != nil {
+				if answerErr := io.Page(pagesetup.Outcome(report, d.ThisMachine), nil); answerErr != nil {
 					return answerErr
 				}
 			}

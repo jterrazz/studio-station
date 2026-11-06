@@ -19,7 +19,7 @@ import (
 // mini's Screen Sharing and infra's API private.
 func miniPorts() ports.Listing {
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
-	host := ports.HostServices{Name: "mac-mini", Reachable: true, Daemon: ports.EngineInfo{Running: true}, Services: []ports.ServiceView{},
+	mac := ports.MacPorts{Name: "mac-mini", Reachable: true, Engine: ports.EngineInfo{Running: true}, Shared: []ports.SharedPort{},
 		Ports: []ports.Port{
 			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},
 			{Machine: infra, Port: 10250, Process: "kubelet", Binds: []string{"0.0.0.0"}, Reach: ports.Outside},
@@ -28,19 +28,19 @@ func miniPorts() ports.Listing {
 			{Machine: mini, Port: 5900, Process: "screensharingd", Binds: []string{"100.98.133.20"}, Reach: ports.Tailnet},
 			{Machine: infra, Port: 6443, Process: "kube-apiserver", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet, Device: true},
 		}}
-	return ports.Listing{Fleet: ports.Fleet{Schema: "station.services/v1", Hosts: []ports.HostServices{host}}}
+	return ports.Listing{AllMachines: ports.AllMachines{Schema: ports.AllMachinesSchema, Macs: []ports.MacPorts{mac}}}
 }
 
 // value: the ports of This Mac's VMs, as linux-1's Ports reads them: Vite
 // shared with its link, postgres reserved and not listening yet.
 func linuxPorts() ports.Listing {
-	host := serviceFleet().Hosts[0]
-	host.Ports = nil
-	return ports.Listing{Fleet: ports.Fleet{Schema: "station.services/v1", Hosts: []ports.HostServices{host}}}
+	mac := portsAllMachines().Macs[0]
+	mac.Ports = nil
+	return ports.Listing{AllMachines: ports.AllMachines{Schema: ports.AllMachinesSchema, Macs: []ports.MacPorts{mac}}}
 }
 
-func twoMacsAwake() pageawake.Fleet {
-	f := awakeFleet(awake.EngineRunning, true)
+func twoMacsAwake() pageawake.AllMachines {
+	f := awakeAllMachines(awake.EngineRunning, true)
 	f.Label = func(mac string) string { return page.MacName(mac, "jterrazz-macbook-pro") }
 	return f
 }
@@ -77,11 +77,11 @@ func hourOfActivity() pageactivity.View {
 // value: the menu bar's own pages of SPEC §10.2 in the two-macs world,
 // named menubar.<page>.<world>.
 func menubarOwnPages() []Fixture {
-	here := menubarHere()
+	thisMac := menubarHere()
 	return []Fixture{
-		{Name: "menubar.ports.mini", Page: pagemenubar.Ports(miniPorts(), pagemenubar.PortsOf{Machine: "mac-mini"}, here)},
-		{Name: "menubar.ports.linux-1", Page: pagemenubar.Ports(linuxPorts(), pagemenubar.PortsOf{Machine: "linux-1"}, here)},
-		{Name: "menubar.awake.two-macs", Page: pagemenubar.Awake(twoMacsAwake(), here)},
-		{Name: "menubar.activity.mac", Page: pagemenubar.Activity(hourOfActivity(), here)},
+		{Name: "menubar.ports.mini", Page: pagemenubar.Ports(miniPorts(), pagemenubar.PortsOf{Machine: "mac-mini"}, thisMac)},
+		{Name: "menubar.ports.linux-1", Page: pagemenubar.Ports(linuxPorts(), pagemenubar.PortsOf{Machine: "linux-1"}, thisMac)},
+		{Name: "menubar.awake.two-macs", Page: pagemenubar.Awake(twoMacsAwake(), thisMac)},
+		{Name: "menubar.activity.mac", Page: pagemenubar.Activity(hourOfActivity(), thisMac)},
 	}
 }

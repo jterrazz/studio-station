@@ -3,7 +3,7 @@
   "id": "awake",
   "command": "awake",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "ready",
   "sections": [

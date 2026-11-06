@@ -1,4 +1,4 @@
-description: 'a CLI that warns of its daemon''s version on both streams is still read'
+description: 'a CLI that warns of tailscaled''s version on both streams is still read'
 fixture: ../../__fixtures__/vms/
 env: engine
 runs:

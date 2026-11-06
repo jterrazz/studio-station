@@ -36,15 +36,15 @@ func terms() []time.Duration { return []time.Duration{time.Hour, 4 * time.Hour} 
 
 const untilHours = 8
 
-func Awake(f pageawake.Fleet, here page.Context) page.Page {
+func Awake(f pageawake.AllMachines, ctx page.Context) page.Page {
 	// invariant: SPEC §10.2 Awake, vision panel e: This Mac first, its term,
 	// Lid closed and On battery only where its capabilities have them (E1),
 	// its guards; then each other Mac by its mode, with Change…, a y/n that
 	// names the servers it hosts. VMs are not listed: they follow their Mac.
-	p := page.Page{ID: AwakeID, Command: "awake", Context: here}
+	p := page.Page{ID: AwakeID, Command: "awake", Context: ctx}
 	var others []page.Item
 	for _, r := range f.Reports {
-		if r.Here {
+		if r.ThisMac {
 			p.Sections = append(p.Sections, thisMac(r))
 			if g := guards(r); g != nil {
 				p.Sections = append(p.Sections, *g)
@@ -68,14 +68,14 @@ func Awake(f pageawake.Fleet, here page.Context) page.Page {
 		p.Sections = append(p.Sections, page.Section{ID: SectionOthers, Title: "Other Macs", Uncounted: true, Columns: awakeColumns(), Items: others})
 	}
 	for _, r := range f.Reports {
-		if r.Daemon == awake.EngineReading {
+		if r.Engine == awake.EngineReading {
 			p.State = page.Loading
 		}
 	}
 	return page.Seal(p)
 }
 
-func label(f pageawake.Fleet, mac string) string {
+func label(f pageawake.AllMachines, mac string) string {
 	if f.Label != nil {
 		return f.Label(mac)
 	}
@@ -95,7 +95,7 @@ func thisMac(r awake.Report) page.Section {
 // value: the guards this Mac's capabilities allow, each with its reading
 // (vision panel e: Temperature, Battery, the screen).
 func guards(r awake.Report) *page.Section {
-	if r.Daemon == awake.EngineReading {
+	if r.Engine == awake.EngineReading {
 		return nil
 	}
 	var facts []page.Fact
@@ -136,22 +136,22 @@ func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 	for _, t := range terms() {
 		in := flags(lid, battery)
 		in["For"] = nanos(t)
-		out = append(out, page.Action{ID: ActionKeep + strings.TrimSuffix(t.String(), "0m0s"), Label: pageTerm(t), On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Run: &page.Run{Call: CallAwake, In: in}})
+		out = append(out, page.Action{ID: ActionKeep + strings.TrimSuffix(t.String(), "0m0s"), Label: pageTerm(t), On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Run: &page.Run{Call: CallKeepAwake, In: in}})
 	}
 	out = append(out, page.Action{ID: ActionUntil, Label: "Until", On: page.OnRow, Rows: rows, Priority: 1, Mutates: true,
-		Form: &page.Form{Title: "Keep awake until", Fields: []page.Field{untilField(now, zone)}}, Run: &page.Run{Call: CallAwake, In: flags(lid, battery)}})
+		Form: &page.Form{Title: "Keep awake until", Fields: []page.Field{untilField(now, zone)}}, Run: &page.Run{Call: CallKeepAwake, In: flags(lid, battery)}})
 	if r.Caps.Lid {
 		in := flags(!lid, battery)
 		in["For"] = nanos(left)
-		out = append(out, page.Action{ID: ActionLid, Label: "Lid closed", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallAwake, In: in}})
+		out = append(out, page.Action{ID: ActionLid, Label: "Lid closed", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallKeepAwake, In: in}})
 	}
 	if r.Caps.Battery {
 		in := flags(lid, !battery)
 		in["For"] = nanos(left)
-		out = append(out, page.Action{ID: ActionBattery, Label: "On battery", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallAwake, In: in}})
+		out = append(out, page.Action{ID: ActionBattery, Label: "On battery", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallKeepAwake, In: in}})
 	}
 	if held {
-		out = append(out, page.Action{ID: ActionLetGo, Label: "Let it sleep", On: page.OnRow, Rows: rows, Priority: 3, Mutates: true, Run: &page.Run{Call: CallSleep}})
+		out = append(out, page.Action{ID: ActionLetGo, Label: "Let it sleep", On: page.OnRow, Rows: rows, Priority: 3, Mutates: true, Run: &page.Run{Call: CallAwakeOff}})
 	}
 	return out
 }
@@ -175,7 +175,7 @@ func untilField(now time.Time, zone *time.Location) page.Field {
 // a y/n that names each server it hosts, which pauses while it sleeps; on
 // one that sleeps it keeps it awake for good. It runs on that Mac.
 func change(r awake.Report, name string) (page.Action, bool) {
-	if r.Daemon == awake.EngineReading || (r.Daemon != "" && r.Daemon != awake.EngineRunning) {
+	if r.Engine == awake.EngineReading || (r.Engine != "" && r.Engine != awake.EngineRunning) {
 		return page.Action{}, false
 	}
 	run := &page.Run{Target: &page.Target{Name: r.Mac}, In: map[string]string{"Names": `["` + neverSleeps + `"]`, "Confirm": "yes"}}

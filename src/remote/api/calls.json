@@ -420,7 +420,7 @@
       "section": "ports",
       "where": "in-engine",
       "in": "ShareIn",
-      "out": "ServiceView"
+      "out": "SharedPort"
     },
     {
       "name": "ports.stop-sharing",

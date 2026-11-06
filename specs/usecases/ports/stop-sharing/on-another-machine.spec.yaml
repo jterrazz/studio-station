@@ -10,7 +10,7 @@ runs:
       stdout: |
           	On mac-mini:
           ●	infra:8080	not shared
-    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs | {mini: [.["jterrazz-mac-mini"].stores.reservations[]?], remembered: .["jterrazz-mac-mini"].preferences.services.not_shared, here: .["jterrazz-macbook-pro"].preferences.services}'' world.json'
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs | {mini: [.["jterrazz-mac-mini"].stores.reservations[]?], remembered: .["jterrazz-mac-mini"].preferences.ports.not_shared, here: .["jterrazz-macbook-pro"].preferences.ports}'' world.json'
       exit: 0
       stdout: |
           {"mini":[],"remembered":["infra:8080"],"here":null}

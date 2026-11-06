@@ -1,4 +1,4 @@
-description: 'add writes one block and keeps the owner''s Host lines; forget gives the file back, dialing nothing'
+description: 'add writes one block and keeps the owner''s own blocks; forget gives the file back, dialing nothing'
 fixture:
     - ../../__fixtures__/far-mac/
     - ./__fixtures__/owner-ssh-config/

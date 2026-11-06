@@ -73,16 +73,16 @@ func (m *Mise) Outdated(context.Context, []string) (map[string]apps.Currency, er
 
 func (m *Mise) Install(ctx context.Context, installs []catalog.Install, _ call.Progress) error {
 	return m.each(ctx, installs, func(v catalog.MiseInstall) local.Cmd {
-		return local.Command(command, "use", "--global", v.Tool+"@"+v.Version)
+		return local.Command(command, "use", "--global", v.App+"@"+v.Version)
 	})
 }
 
 func (m *Mise) Update(ctx context.Context, installs []catalog.Install, _ call.Progress) error {
-	return m.each(ctx, installs, func(v catalog.MiseInstall) local.Cmd { return local.Command(command, "upgrade", v.Tool) })
+	return m.each(ctx, installs, func(v catalog.MiseInstall) local.Cmd { return local.Command(command, "upgrade", v.App) })
 }
 
 func (m *Mise) Remove(ctx context.Context, installs []catalog.Install, _ call.Progress) error {
-	return m.each(ctx, installs, func(v catalog.MiseInstall) local.Cmd { return local.Command(command, "unuse", "--global", v.Tool) })
+	return m.each(ctx, installs, func(v catalog.MiseInstall) local.Cmd { return local.Command(command, "unuse", "--global", v.App) })
 }
 
 func (m *Mise) each(ctx context.Context, installs []catalog.Install, argv func(catalog.MiseInstall) local.Cmd) error {

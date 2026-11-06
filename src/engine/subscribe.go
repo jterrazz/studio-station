@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	PagePower   = "power"
-	PageMenubar = "menubar"
+	PageKeepAwake = "keep-awake"
+	PageMenubar   = "menubar"
 	// value: the menu bar's pages of SPEC §10.2, each watched by its name
 	// and, after a colon, its subject: `menubar.machine:infra`, that
 	// machine's page; `menubar.ports:jterrazz-mac-mini`, the ports of that
@@ -24,7 +24,7 @@ type FeedInput struct {
 	// value: the daemon's own state moved (VMs, guests, leases, Power).
 	Changed <-chan struct{}
 	Refresh <-chan struct{}
-	Power   func() awake.View
+	Awake   func() awake.View
 	// value: what a page is of, after its page's name (`menubar.machine:infra`,
 	// `menubar.ports:jterrazz-mac-mini`); empty for every other page.
 	Subject string

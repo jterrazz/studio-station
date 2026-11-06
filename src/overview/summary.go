@@ -27,9 +27,9 @@ type Summary struct {
 
 type Head struct {
 	// value: the machine an Overview is of, as its first line names it.
-	Name string
-	Kind machine.Kind
-	Here bool
+	Name    string
+	Kind    machine.Kind
+	ThisMac bool
 	// value: how long the machine has run, as Activity's meter reads it;
 	// zero where unknown.
 	Up time.Duration

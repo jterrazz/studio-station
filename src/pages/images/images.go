@@ -50,14 +50,14 @@ func Columns() []page.Column {
 	}
 }
 
-func Section(reports []images.Report, here page.Context) page.Section {
+func Section(reports []images.Report, thisMac page.Context) page.Section {
 	// invariant: one row per image per Mac, then one row for each image of
 	// the catalogue no Mac holds.
 	items := make([]page.Item, 0, len(reports)+len(catalog.Images))
 	for _, r := range reports {
 		row := page.Row{
 			ID: r.Mac + "/" + r.Record.Name + "@" + r.Record.Version, Label: r.Record.Name, Mark: page.OK,
-			Cells:  []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), page.Text(page.MacName(r.Mac, here.Machine)), page.Text(r.Mac)},
+			Cells:  []page.Value{page.Version(r.Record.Version), page.Size(int64(r.Record.SizeGB) * 1_000_000_000), page.Text(page.MacName(r.Mac, thisMac.Machine)), page.Text(r.Mac)},
 			Detail: madeFrom(r.VMs),
 		}
 		if !r.Newest {
@@ -92,10 +92,10 @@ const (
 	KeyDelete = "x"
 )
 
-func List(reports []images.Report, here page.Context) page.Page {
+func List(reports []images.Report, thisMac page.Context) page.Page {
 	return page.Seal(page.Page{
-		ID: "images", Command: "images", Context: here,
-		Sections: []page.Section{firstLine(reports), Section(reports, here)},
+		ID: "images", Command: "images", Context: thisMac,
+		Sections: []page.Section{firstLine(reports), Section(reports, thisMac)},
 		Hints:    []page.Hint{*page.Cmd("station images update")},
 		Actions: []page.Action{
 			{Key: KeyBuild, Label: "build", On: page.OnRow, Priority: 1, Mutates: true},
@@ -105,11 +105,11 @@ func List(reports []images.Report, here page.Context) page.Page {
 	})
 }
 
-func Built(records []images.Record, here page.Context) page.Page {
-	return pages.Outcome("images build", here, versioned(), rows(records, "built"), "images to build")
+func Built(records []images.Record, thisMac page.Context) page.Page {
+	return pages.Outcome("images build", thisMac, versioned(), rows(records, "built"), "images to build")
 }
 
-func Updated(updates []images.Update, here page.Context) page.Page {
+func Updated(updates []images.Update, thisMac page.Context) page.Page {
 	out := make([]page.Row, 0, len(updates))
 	for _, u := range updates {
 		done := "fetched"
@@ -121,11 +121,11 @@ func Updated(updates []images.Update, here page.Context) page.Page {
 		row.Cells = []page.Value{page.Version(u.Ref.Version)}
 		out = append(out, row)
 	}
-	return pages.Outcome("images update", here, versioned(), out, "images to update")
+	return pages.Outcome("images update", thisMac, versioned(), out, "images to update")
 }
 
-func Deleted(records []images.Record, here page.Context) page.Page {
-	return pages.Outcome("images delete", here, versioned(), rows(records, "deleted"), "images to delete")
+func Deleted(records []images.Record, thisMac page.Context) page.Page {
+	return pages.Outcome("images delete", thisMac, versioned(), rows(records, "deleted"), "images to delete")
 }
 
 func versioned() []page.Column {

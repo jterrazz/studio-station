@@ -69,7 +69,7 @@ type Report struct {
 	// value: the zone a page shows its clock times in (the owner's, read once
 	// by the caller); nil is UTC.
 	Zone    *time.Location
-	Daemon  string
+	Engine  string
 	Reading Reading
 	Session *Session
 	LastEnd *End
@@ -77,7 +77,7 @@ type Report struct {
 	// value: the Mac this report is of, This Mac's first; its reported
 	// capabilities and the servers it hosts.
 	Mac         string
-	Here        bool
+	ThisMac     bool
 	Caps        machine.Capabilities
 	NeverSleeps bool
 	NeverSince  time.Time

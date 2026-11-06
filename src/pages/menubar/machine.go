@@ -45,10 +45,10 @@ type Machine struct {
 	// value: the machine the page is of, a VM or a Mac, by its name among
 	// the machines; a nil part is still being read.
 	Name     string
-	Fleet    *model.Fleet
+	All      *model.AllMachines
 	Summary  *overview.Summary
 	Samples  []activity.Reading
-	Services *ports.Fleet
+	Ports    *ports.AllMachines
 	Accounts *accounts.Report
 	Now      time.Time
 	Asks     Levels
@@ -58,11 +58,11 @@ func MachinePage(m Machine) page.Page {
 	// invariant: SPEC §10.2's page of one machine: a workspace's, a server's or
 	// a Mac's, each with only the actions its kind takes, each naming its call
 	// and asking at the level the call asks.
-	if m.Fleet == nil {
+	if m.All == nil {
 		row := page.Row{ID: "reading", Label: m.Name, Mark: page.Awaiting}
 		return page.Seal(page.Page{ID: MachineID, Command: "menubar", Context: page.Context{Machine: m.Name}, Sections: []page.Section{{ID: SectionMachine, Title: m.Name, Role: page.Summary, Items: []page.Item{{Row: &row}}}}})
 	}
-	for _, h := range m.Fleet.Hosts {
+	for _, h := range m.All.Macs {
 		if h.Name == m.Name {
 			return macPage(m, h)
 		}
@@ -76,16 +76,16 @@ func MachinePage(m Machine) page.Page {
 		Error: &page.Error{Message: "no machine is named " + m.Name, Hint: "station machines"}})
 }
 
-func target(h model.HostView, name string) *page.Target {
-	if h.Here {
+func target(h model.MacView, name string) *page.Target {
+	if h.ThisMac {
 		return nil
 	}
 	return &page.Target{Name: name, On: h.Name}
 }
 
-func vmPage(m Machine, h model.HostView, vm model.VM) page.Page {
+func vmPage(m Machine, h model.MacView, vm model.VM) page.Page {
 	kind := vm.Lifetime.Kind()
-	on := model.Label(*m.Fleet, h)
+	on := model.Label(*m.All, h)
 	head := page.Row{ID: "state", Label: "State", Mark: page.OK, Cells: []page.Value{pagemachines.State(vm.State)}}
 	if vm.State != model.Running {
 		head.Mark, head.Reason = page.Absent, page.Stopped
@@ -192,16 +192,16 @@ func lineOf(s overview.Summary, id string) page.Value {
 // value: the workspace's shared ports, each a link: private, on Tailscale.
 func portsSection(m Machine, vm model.VM) page.Section {
 	s := page.Section{ID: SectionPorts, Title: "Private", Caption: []page.Value{page.Text("shared on " + catalog.TailnetProduct)}, Uncounted: true}
-	if m.Services == nil {
+	if m.Ports == nil {
 		s.Items = []page.Item{{Row: &page.Row{ID: "reading", Label: "reading", Mark: page.Awaiting}}}
 		return s
 	}
-	for _, h := range m.Services.Hosts {
-		for _, sv := range h.Services {
+	for _, h := range m.Ports.Macs {
+		for _, sv := range h.Shared {
 			if sv.VM != vm.Name {
 				continue
 			}
-			value := page.Text(h.PublicHost + ":" + strconv.Itoa(sv.HostPort))
+			value := page.Text(h.PublicName + ":" + strconv.Itoa(sv.Reserved))
 			if sv.URLs.Public != "" {
 				value = page.URL(sv.URLs.Public)
 			}
@@ -217,11 +217,11 @@ func portsSection(m Machine, vm model.VM) page.Section {
 
 // value: the accounts This Mac shared with the workspace, each with its time
 // left and its Take back.
-func sharedSection(m Machine, h model.HostView, vm model.VM) page.Section {
-	from := model.Label(*m.Fleet, h)
+func sharedSection(m Machine, h model.MacView, vm model.VM) page.Section {
+	from := model.Label(*m.All, h)
 	s := page.Section{ID: SectionShared, Title: "Accounts shared from " + from, Columns: columns()}
-	for _, a := range lent(m, vm.Name) {
-		left := a.Lent.Until.Sub(m.Now)
+	for _, a := range sharedAccounts(m, vm.Name) {
+		left := a.Shared.Until.Sub(m.Now)
 		row := page.Row{ID: a.Provider, Label: accounts.Label(a.Provider), Mark: page.OK, Cells: []page.Value{page.List(page.Text(hours(left) + " left"))}}
 		s.Items = append(s.Items, page.Item{Row: &row})
 	}
@@ -231,7 +231,7 @@ func sharedSection(m Machine, h model.HostView, vm model.VM) page.Section {
 	return s
 }
 
-func lent(m Machine, vm string) []accounts.Account {
+func sharedAccounts(m Machine, vm string) []accounts.Account {
 	if m.Accounts == nil {
 		return nil
 	}
@@ -241,7 +241,7 @@ func lent(m Machine, vm string) []accounts.Account {
 			continue
 		}
 		for _, a := range mc.Accounts {
-			if a.Lent != nil {
+			if a.Shared != nil {
 				out = append(out, a)
 			}
 		}
@@ -257,7 +257,7 @@ func hours(d time.Duration) string {
 }
 
 func takeBacks(m Machine, vm model.VM) []page.Action {
-	shared := lent(m, vm.Name)
+	shared := sharedAccounts(m, vm.Name)
 	out := make([]page.Action, 0, len(shared))
 	for _, a := range shared {
 		label := accounts.Label(a.Provider)
@@ -301,13 +301,13 @@ func serverSection(m Machine) page.Section {
 
 // value: a Mac's page: its readiness checklist, its VMs, its Needs you;
 // Unlock… while it waits for its disk's password.
-func macPage(m Machine, h model.HostView) page.Page {
-	label := model.Label(*m.Fleet, h)
+func macPage(m Machine, h model.MacView) page.Page {
+	label := model.Label(*m.All, h)
 	state := page.Row{ID: "state", Label: "State", Mark: page.OK, Cells: []page.Value{page.Text("Engine running")}}
 	switch {
-	case !h.Reachable && !h.Here:
+	case !h.Reachable && !h.ThisMac:
 		state.Mark, state.Reason, state.Cells = page.Broken, page.Unreachable, []page.Value{page.Text("Unreachable")}
-	case !h.Daemon.Running:
+	case !h.Engine.Running:
 		state.Mark, state.Reason, state.Cells = page.Attention, page.Stopped, []page.Value{page.Text("Engine stopped")}
 	}
 	sections := []page.Section{{ID: SectionMachine, Title: label, Role: page.Summary, Caption: []page.Value{page.Text(KindMac), page.Text(h.Name)}, Columns: columns(), Items: []page.Item{{Row: &state}}}}
@@ -318,7 +318,7 @@ func macPage(m Machine, h model.HostView) page.Page {
 			}
 		}
 	}
-	vms := Tree(&model.Fleet{Hosts: []model.HostView{h}}, m.Services, func(model.HostView) page.Value { return page.None() })
+	vms := Tree(&model.AllMachines{Macs: []model.MacView{h}}, m.Ports, func(model.MacView) page.Value { return page.None() })
 	vms.ID, vms.Title = SectionVMs, "VMs"
 	if len(vms.Items) == 1 && vms.Items[0].Group != nil {
 		vms.Items = vms.Items[0].Group.Items
@@ -331,7 +331,7 @@ func macPage(m Machine, h model.HostView) page.Page {
 	if locked(m, h) {
 		p.Actions = append(p.Actions, page.Action{ID: ActionUnlock, Label: "Unlock", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Terminal: true, Argv: []string{"machines", "unlock", label}}})
 	}
-	if !h.Here {
+	if !h.ThisMac {
 		p.Actions = append(p.Actions, openIn("--on", label))
 	} else {
 		p.Actions = append(p.Actions, openIn())
@@ -341,20 +341,20 @@ func macPage(m Machine, h model.HostView) page.Page {
 
 // value: the Mac waits for its disk's password, as its readiness or its
 // unreachable row says: Unlock… is its one action that helps.
-func locked(m Machine, h model.HostView) bool {
+func locked(m Machine, h model.MacView) bool {
 	if m.Summary != nil && slices.ContainsFunc(m.Summary.Readiness, func(c overview.Check) bool {
 		return c.Name == model.ItemDiskUnlock && c.State != catalog.StateOK
 	}) {
 		return true
 	}
-	return !h.Reachable && !h.Here && h.LAN != ""
+	return !h.Reachable && !h.ThisMac && h.LAN != ""
 }
 
-func Switcher(f *model.Fleet, svc *ports.Fleet) page.Page {
+func Switcher(f *model.AllMachines, svc *ports.AllMachines) page.Page {
 	// invariant: SPEC §10.2's switcher: All machines as a tree, each Mac then its
 	// Servers then its Workspaces, and Add a Mac…; Recent is the app's own.
-	s := Tree(f, svc, func(h model.HostView) page.Value {
-		if h.Daemon.Running {
+	s := Tree(f, svc, func(h model.MacView) page.Value {
+		if h.Engine.Running {
 			return page.Text("Engine running")
 		}
 		return page.Text("Engine stopped")

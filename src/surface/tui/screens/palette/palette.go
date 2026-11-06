@@ -18,7 +18,7 @@ type Target struct {
 	// names it; a Kind of "" is All machines.
 	Name, Label string
 	Kind        machine.Kind
-	Here        bool
+	ThisMachine bool
 	// value: a VM's Mac, by name and as the sidebar says it, and whether
 	// it is this one.
 	Mac, MacLabel string
@@ -77,10 +77,10 @@ func keyed(k string) func(machine.Kind) string { return func(machine.Kind) strin
 
 func mac() []machine.Kind { return []machine.Kind{machine.Mac} }
 
-func fleet() []machine.Kind { return []machine.Kind{"", machine.Mac} }
+func allMachines() []machine.Kind { return []machine.Kind{"", machine.Mac} }
 
 func words(t Target, w ...string) []string {
-	if t.Kind == machine.Mac && t.Here || t.Kind == "" {
+	if t.Kind == machine.Mac && t.ThisMachine || t.Kind == "" {
 		return w
 	}
 	return append(w, "--on", t.Name)
@@ -197,23 +197,23 @@ func entries() map[string]entry {
 		"engine.stop": {kinds: mac(), item: func(t, _ Target) Item {
 			return run("Stop everything on "+t.Label, words(t, "engine", "stop"), gesture.V("Stop", "Stopping", "Stopped"), "everything on "+t.Label)
 		}},
-		"images.build": {kinds: fleet(), key: keyed("b"), item: func(t, _ Target) Item {
+		"images.build": {kinds: allMachines(), key: keyed("b"), item: func(t, _ Target) Item {
 			return run("Build the images", words(t, "images", "build"), gesture.V("Build", "Building", "Built"), "the images")
 		}},
-		"images.delete": {kinds: fleet(), key: keyed("x"), item: func(t, _ Target) Item {
+		"images.delete": {kinds: allMachines(), key: keyed("x"), item: func(t, _ Target) Item {
 			return asked("Delete an image"+ellipsis, []Field{{Label: "Image", Note: "linux@<version>"}}, one(gesture.V("Delete", "Deleting", "Deleted"), func(a string) []string { return words(t, "images", "delete", a) }))
 		}},
-		"images.list": {kinds: fleet(), item: func(_, _ Target) Item { return open(Target{}, section.Images, "Open Images") }},
-		"images.update": {kinds: fleet(), key: keyed("u"), item: func(t, _ Target) Item {
+		"images.list": {kinds: allMachines(), item: func(_, _ Target) Item { return open(Target{}, section.Images, "Open Images") }},
+		"images.update": {kinds: allMachines(), key: keyed("u"), item: func(t, _ Target) Item {
 			return run("Update the images", words(t, "images", "update"), gesture.V("Update", "Updating", "Updated"), "the images")
 		}},
-		"machines.add": {kinds: fleet(), item: func(_, _ Target) Item {
+		"machines.add": {kinds: allMachines(), item: func(_, _ Target) Item {
 			return asked("Add a Mac"+ellipsis, []Field{{Label: "Mac", Note: "its name on " + catalog.TailnetProduct}}, one(gesture.V("Add", "Adding", "Added"), func(a string) []string { return []string{"machines", "add", a} }))
 		}},
-		"machines.create-server": {kinds: fleet(), item: func(_, _ Target) Item {
+		"machines.create-server": {kinds: allMachines(), item: func(_, _ Target) Item {
 			return Item{Label: "New server" + ellipsis, Create: machine.Server}
 		}},
-		"machines.create-workspace": {kinds: fleet(), key: keyed("n"), item: func(_, _ Target) Item {
+		"machines.create-workspace": {kinds: allMachines(), key: keyed("n"), item: func(_, _ Target) Item {
 			return Item{Label: "New workspace" + ellipsis, Create: machine.Workspace}
 		}},
 		"machines.delete": {subject: vm, key: keyed("D"), item: func(_, v Target) Item {
@@ -291,7 +291,7 @@ func entries() map[string]entry {
 			return asked("Diff a setting"+ellipsis, field("Setting"), shown(func(a string) []string { return words(t, "settings", "diff", a) }))
 		}},
 		"settings.list":   {item: func(t, _ Target) Item { return open(t, section.Settings, "Open Settings") }},
-		"settings.matrix": {kinds: fleet(), item: func(_, _ Target) Item { return open(Target{}, section.Settings, "Open the settings of every machine") }},
+		"settings.matrix": {kinds: allMachines(), item: func(_, _ Target) Item { return open(Target{}, section.Settings, "Open the settings of every machine") }},
 		"settings.off": {key: keyed("o"), item: func(t, _ Target) Item {
 			return asked("Turn a setting off here"+ellipsis, field("Setting"), one(gesture.V("Turn off", "Turning off", "Turned off"), func(a string) []string { return words(t, "settings", "off", a) }))
 		}},
@@ -348,11 +348,11 @@ func Offer(metas []call.Meta, t Target, macs []Target) []Item {
 				subjects = []Target{t}
 			}
 		case otherMac:
-			if t.Kind == machine.Mac && !t.Here {
+			if t.Kind == machine.Mac && !t.ThisMachine {
 				subjects = []Target{t}
 			}
 			if t.Kind == "" {
-				subjects = slices.DeleteFunc(slices.Clone(macs), func(x Target) bool { return x.Here })
+				subjects = slices.DeleteFunc(slices.Clone(macs), func(x Target) bool { return x.ThisMachine })
 			}
 		}
 		for _, s := range subjects {

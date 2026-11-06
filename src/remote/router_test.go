@@ -144,7 +144,7 @@ func updates(ran *int) *call.Registry {
 // value: this Mac's engine: a server of the same calls over a pipe.
 func engineOf(t *testing.T, ran *int) call.Router {
 	t.Helper()
-	s := serve.Server{Calls: updates(ran).Lookup, Here: laptop}
+	s := serve.Server{Calls: updates(ran).Lookup, ThisMachine: laptop}
 	return remote.Endpoint(api.NewClient(func(context.Context) (io.ReadWriteCloser, error) {
 		inR, inW := io.Pipe()
 		outR, outW := io.Pipe()

@@ -36,9 +36,9 @@ func (e Exposure) Word() string {
 	return ServeOff
 }
 
-func ViewOf(l Reservation, e Exposure, httpsMode string, phase Phase) ServiceView {
-	v := ServiceView{
-		VM: l.VM, GuestPort: l.GuestPort, HostPort: l.HostPort, State: phase, Pinned: l.Pinned, Profile: l.Profile,
+func ViewOf(l Reservation, e Exposure, httpsMode string, phase Phase) SharedPort {
+	v := SharedPort{
+		VM: l.VM, GuestPort: l.GuestPort, Reserved: l.MacPort, State: phase, Pinned: l.Pinned, Profile: l.Profile,
 		HTTP: l.HTTP != nil && *l.HTTP, URLs: URLs(l, e.PublicHost, httpsMode, e.On),
 	}
 	if !l.LastSeenAt.IsZero() {
@@ -128,31 +128,31 @@ func Next(st State, ev Event, now time.Time) (State, []Action) {
 		st.LastSeenAt = now
 		switch st.Phase {
 		case PhaseClosing:
-			st.Phase = PhasePublished
+			st.Phase = PhaseShared
 			return st, nil
-		case PhasePublished:
+		case PhaseShared:
 			return st, nil
 		case PhaseNone, PhaseWaiting, PhaseRefused, PhaseGone, PhaseUnknown:
 		}
-		st.Phase, st.Since = PhasePublished, now
+		st.Phase, st.Since = PhaseShared, now
 		return st, []Action{ActPublish}
 	case EvUnlisten:
-		if st.Phase == PhasePublished {
+		if st.Phase == PhaseShared {
 			st.Phase, st.Since = PhaseClosing, now
 		}
 		return st, nil
 	case EvTick:
 		switch {
-		case st.Phase == PhaseClosing && now.Sub(st.Since) >= catalog.ServicePolicy.Grace:
+		case st.Phase == PhaseClosing && now.Sub(st.Since) >= catalog.PortPolicy.Grace:
 			st.Phase, st.Since = PhaseWaiting, now
 			return st, []Action{ActUnpublish}
-		case st.Phase == PhaseWaiting && !st.Pinned && !st.LastSeenAt.IsZero() && now.Sub(st.LastSeenAt) > catalog.ServicePolicy.Idle:
+		case st.Phase == PhaseWaiting && !st.Pinned && !st.LastSeenAt.IsZero() && now.Sub(st.LastSeenAt) > catalog.PortPolicy.Idle:
 			st.Phase = PhaseGone
 			return st, []Action{ActRelease}
 		}
 		return st, nil
 	case EvVMStopped:
-		if st.Phase == PhasePublished || st.Phase == PhaseClosing {
+		if st.Phase == PhaseShared || st.Phase == PhaseClosing {
 			st.Phase, st.Since = PhaseWaiting, now
 			return st, []Action{ActUnpublish}
 		}
@@ -163,7 +163,7 @@ func Next(st State, ev Event, now time.Time) (State, []Action) {
 	case EvDeleted, EvReleased:
 		was := st.Phase
 		st.Phase = PhaseGone
-		if was == PhasePublished || was == PhaseClosing {
+		if was == PhaseShared || was == PhaseClosing {
 			return st, []Action{ActUnpublish, ActRelease}
 		}
 		return st, []Action{ActRelease}
@@ -179,7 +179,7 @@ func URLs(l Reservation, publicHost, httpsMode string, serveOn bool) URLSet {
 	// invariant: one shape everywhere. An HTTP service, or one not yet detected,
 	// carries a scheme so a URL parser reads a host; with Serve off the local URL
 	// is the only one there is; a raw TCP service is the tailnet's bytes, no scheme.
-	port := strconv.Itoa(l.HostPort)
+	port := strconv.Itoa(l.MacPort)
 	u := URLSet{Local: LocalHost + ":" + port}
 	if isHTTP(l) {
 		u.Local = "http://" + u.Local
@@ -200,7 +200,7 @@ func URLs(l Reservation, publicHost, httpsMode string, serveOn bool) URLSet {
 }
 
 func ShareOf(l Reservation, httpsMode string) Share {
-	s := Share{Port: l.HostPort, Reserved: l.HostPort, Scheme: SchemeHTTPS}
+	s := Share{Port: l.MacPort, Reserved: l.MacPort, Scheme: SchemeHTTPS}
 	switch {
 	case !isHTTP(l):
 		s.Scheme = SchemeTCP

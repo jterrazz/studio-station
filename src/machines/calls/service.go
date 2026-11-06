@@ -20,7 +20,7 @@ type Options struct {
 	Version          string
 	// value: asks each other Mac for its own view of itself and hands on
 	// each answer as it comes, one at a time; a silent Mac is never handed on.
-	Ask       func(ctx context.Context, macs []string, answered func(mac string, view model.HostView))
+	Ask       func(ctx context.Context, macs []string, answered func(mac string, view model.MacView))
 	GuestPort int
 	Jobs      background.Jobs
 	Unlocker  contract.Unlocker
@@ -85,7 +85,7 @@ type Prefs struct {
 
 type prefsView struct {
 	Here   string
-	Hosts  map[string]model.Host
+	Hosts  map[string]model.MacRecord
 	VMUser string
 }
 
@@ -127,7 +127,7 @@ func (s *Service) vmUser(cfg prefsView) string {
 }
 
 func (s *Service) CheckHost() error {
-	if s.o.Here != catalog.Host {
+	if s.o.Here != catalog.Mac {
 		return &model.OnlyOnHostError{Here: s.o.Here}
 	}
 	return nil

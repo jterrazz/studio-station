@@ -2,37 +2,36 @@ package kit
 
 import (
 	"errors"
-	"strconv"
-	"strings"
 
-	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/core/store"
+	"github.com/jterrazz/studio-station/src/settings"
+	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
-const preferencesFile = "preferences.json"
-
 func settingsFailure(err error) (*fail.Error, bool) {
-	var unreadable *store.UnreadableError
-	var unwritable *store.UnwritableError
-	var vault *accounts.VaultError
+	var unknown *settings.UnknownItemError
+	var root *settings.NeedsRootError
+	var livesOn *settings.WrongPlaceError
+	var irreversible *settings.NotReversibleError
+	var terminal *settings.NeedsTerminalError
+	var studio *settings.StudioMissingError
 	switch {
-	case errors.As(err, &unreadable) && strings.HasSuffix(unreadable.Path, "/"+preferencesFile):
-		// invariant: a preferences file that does not read stops the command and
-		// is never rewritten, so the owner's hand edit is never lost.
-		where := unreadable.Cause.Error()
-		if unreadable.Line > 0 {
-			where = "line " + strconv.Itoa(unreadable.Line) + ": " + where
+	case errors.As(err, &unknown):
+		return usage(unknown.Error(), "station settings"), true
+	case errors.As(err, &root):
+		verb := "apply"
+		if root.Verb == "uninstall" {
+			verb = "off"
 		}
-		return failed(unreadable.Path+" cannot be read: "+where, "fix that line: station never rewrites a file it cannot read", err), true
-	case errors.As(err, &unreadable):
-		return failed("cannot read \""+unreadable.Path+"\": "+unreadable.Cause.Error(), "repair the JSON of \""+unreadable.Path+"\", or move it away to start afresh", err), true
-	case errors.As(err, &unwritable):
-		return failed("cannot write \""+unwritable.Path+"\": "+unwritable.Cause.Error(), "check the permissions of \""+unwritable.Path+"\"", err), true
-	case errors.Is(err, accounts.ErrNoVault):
-		return usage(accounts.ErrNoVault.Error(), "run it on the host: station <command> --on <host>"), true
-	case errors.As(err, &vault):
-		return failed("keychain account \""+vault.Name+"\": "+vault.Cause.Error(), "open Keychain Access and check the station items", err), true
+		return failed(root.Error(), words.SettingsAsRoot(verb, root.Item), err), true
+	case errors.As(err, &livesOn):
+		return usage(livesOn.Error(), "station settings apply "+livesOn.Item+" --on this-mac"), true
+	case errors.As(err, &irreversible):
+		return usage(irreversible.Error(), "station applies it but cannot undo it: undo it by hand"), true
+	case errors.As(err, &terminal):
+		return Translate(fail.New(fail.NeedsTerminal, words.NeedsTerminal, terminal.Item, nil), ""), true
+	case errors.As(err, &studio):
+		return failed(studio.Error(), "see docs/reference/secrets.md#claude-in-a-vm", err), true
 	}
 	return nil, false
 }
