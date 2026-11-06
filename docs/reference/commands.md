@@ -234,7 +234,7 @@ These commands exist for the machine's own use. They are hidden from help and th
 | `station machines pipe <vm>`      | a VM's `~/.ssh/config` ProxyCommand runs it: ssh's bytes to the VM's ip behind its Mac ([Machines](machines.md#ssh-and-herdr))                                                                                                                       |
 | `station machines supervise <vm>` | retired: an old per-VM agent that still runs it exits at once; `station setup` removes those agents                                                                                                                                                  |
 
-`--on` is refused on `shell`, `completion`, `help`, `man`, `use`, `daemon`, `engine run`, `engine attach`, `guest`, `machines pipe` and `machines supervise`: none of them sends a call.
+`--on` is refused on `shell`, `completion`, `help`, `use`, `engine run` (and `daemon`, its v2 name), `engine attach`, `guest`, `machines pipe` and `machines supervise`: none of them sends a call.
 
 ## Exit codes
 
