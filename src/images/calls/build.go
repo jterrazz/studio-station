@@ -238,8 +238,8 @@ func (s *Service) KeyPath() string { return s.o.Key }
 func (s *Service) imageKey(ctx context.Context) (key, pub string, err error) {
 	key = s.KeyPath()
 	if !s.m.Exists(key) {
-		if err := s.m.MakeKey(ctx, key); err != nil {
-			return "", "", err
+		if made := s.m.MakeKey(ctx, key); made != nil {
+			return "", "", made
 		}
 	}
 	data, err := s.m.ReadFile(key + ".pub")
