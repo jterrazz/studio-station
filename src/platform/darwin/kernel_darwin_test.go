@@ -67,8 +67,8 @@ func TestAProcessNamesTheFilesItHoldsOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	real, _ := filepath.EvalSymlinks(disk)
-	if !slices.Contains(files, real) {
-		t.Errorf("this process holds %s open; its files read %v", real, files)
+	held, _ := filepath.EvalSymlinks(disk)
+	if !slices.Contains(files, held) {
+		t.Errorf("this process holds %s open; its files read %v", held, files)
 	}
 }

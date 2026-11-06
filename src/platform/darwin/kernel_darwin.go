@@ -224,27 +224,33 @@ static station_proc_t *station_procs(int *count) {
 
 static station_proc_t station_proc_at(station_proc_t *list, int i) { return list[i]; }
 
-static int station_files(int pid, char *out, int size) {
+static char *station_files(int pid, int *used) {
+	*used = -1;
 	int want = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, NULL, 0);
-	if (want <= 0) return -1;
+	if (want <= 0) return NULL;
 	struct proc_fdinfo *fds = malloc(want);
-	if (!fds) return -1;
+	if (!fds) return NULL;
 	int got = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, fds, want);
-	if (got <= 0) { free(fds); return -1; }
-	int used = 0;
-	for (int i = 0; i < got / (int)sizeof *fds; i++) {
+	if (got <= 0) { free(fds); return NULL; }
+	int count = got / (int)sizeof *fds;
+	char *out = malloc((size_t)count * (MAXPATHLEN + 1) + 1);
+	if (!out) { free(fds); return NULL; }
+	*used = 0;
+	for (int i = 0; i < count; i++) {
 		if (fds[i].proc_fdtype != PROX_FDTYPE_VNODE) continue;
 		struct vnode_fdinfowithpath v;
 		if (proc_pidfdinfo(pid, fds[i].proc_fd, PROC_PIDFDVNODEPATHINFO, &v, sizeof v) != (int)sizeof v) continue;
-		int n = (int)strlen(v.pvip.vip_path);
-		if (n == 0 || used + n + 1 > size) continue;
-		memcpy(out + used, v.pvip.vip_path, n);
-		out[used + n] = '\n';
-		used += n + 1;
+		int n = (int)strnlen(v.pvip.vip_path, MAXPATHLEN);
+		if (n == 0) continue;
+		memcpy(out + *used, v.pvip.vip_path, n);
+		out[*used + n] = '\n';
+		*used += n + 1;
 	}
 	free(fds);
-	return used;
+	return out;
 }
+
+static void station_free_files(char *files) { free(files); }
 
 static void station_free(station_proc_t *list) { free(list); }
 */
@@ -254,11 +260,9 @@ import (
 	"errors"
 	"strings"
 	"time"
-	"unsafe"
 )
 
 const (
-	maxFiles   = 1 << 16
 	maxCPUs    = 256
 	maxDrivers = 64
 	maxLinks   = 128
@@ -334,15 +338,16 @@ func (Kernel) Process(pid int) (Procs, error) {
 }
 
 func (Kernel) Files(pid int) ([]string, error) {
-	buf := make([]byte, maxFiles)
-	n := int(C.station_files(C.int(pid), (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))))
+	var n C.int
+	files := C.station_files(C.int(pid), &n)
 	if n < 0 {
 		return nil, errUnread
 	}
+	defer C.station_free_files(files)
 	if n == 0 {
 		return []string{}, nil
 	}
-	return strings.Split(strings.TrimSuffix(string(buf[:n]), "\n"), "\n"), nil
+	return strings.Split(strings.TrimSuffix(C.GoStringN(files, n), "\n"), "\n"), nil
 }
 
 func proc(p C.station_proc_t) Proc {
