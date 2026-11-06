@@ -203,9 +203,11 @@ while read -r name state; do
   in_vm "$brew_path $station settings apply $name </dev/null" >> "$log" 2>&1 || miss "settings apply $name again exited $?"
   say "   $name: applied, off ($off), applied again"
 done < "$work/settings-set.txt"
+# value: the system answers first: its `softwareupdate -l` rewrites the list station
+# reads, which Apple's catalogue changes between two calls minutes apart.
+real=$(ssh "${ssh_opts[@]}" -i "$ssh_key" "$user@$ip" 'bash -s' < "$suite/macos/checked-truth.sh")
 in_vm "$brew_path $station settings --json" > "$work/settings-checked.json" || fail "settings --json"
 checked=$(jq -r '[.settings[] | select(.group == "checked")] | length' "$work/settings-checked.json")
-real=$(ssh "${ssh_opts[@]}" -i "$ssh_key" "$user@$ip" 'bash -s' < "$suite/macos/checked-truth.sh")
 [ "$(wc -l <<< "$real" | tr -d ' ')" -eq "$checked" ] || miss "station lists $checked checked settings, checked-truth.sh answers $(wc -l <<< "$real" | tr -d ' ')"
 while read -r name value; do
   read_value=$(jq -r --arg n "$name" '.settings[] | select(.name == $n) | .value' "$work/settings-checked.json")

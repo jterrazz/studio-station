@@ -22,6 +22,12 @@ else
   echo "time-machine $(tmutil latestbackup 2>&1 | tail -1)"
 fi
 waiting=$(softwareupdate -l 2>&1 | grep -c '^\* Label:')
+# value: softwareupdated rewrites its list on disk a few seconds after the check, one
+# entry first; the list station reads is waited on, 30 s at most, to settle.
+for _ in $(seq 15); do
+  [ "$(plutil -extract RecommendedUpdates raw -o - /Library/Preferences/com.apple.SoftwareUpdate.plist 2> /dev/null)" = "$waiting" ] && break
+  sleep 2
+done
 case "$waiting" in
   0) echo "macos-updates up to date" ;;
   1) echo "macos-updates 1 update waiting" ;;
