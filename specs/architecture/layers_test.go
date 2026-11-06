@@ -40,8 +40,6 @@ const (
 // `x/*`, a longer prefix beats a shorter. `std` is the standard library minus
 // forbiddenStd; a forbidden member is re-allowed only by its name in a row.
 func importTable() map[string][]string {
-	domain := []string{"platform/local", "catalog", "setup", "core/call/lanes", "ports", "ports/contract", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract",
-		"machines", "machines/contract", "images", "setup", "setup/contract", "core/store", "core/adapter/fake", "machines/adapter/fake", std}
 	// value: what a surface reaches the use cases by: the kernel's calls,
 	// confirmations and machines, each family's model and calls.
 	calls := make([]string, 0, 3+2*len(families()))
@@ -54,14 +52,12 @@ func importTable() map[string][]string {
 	return map[string][]string{
 		"cmd/station":                {"wire", "os"},
 		"cmd/generate":               append([]string{"catalog", "disk", "cmd/generate/pages", "page", "ui/render/json", "os", "flag", std}, calls...),
-		"cmd/generate/pages":         {"page", "pages", "pages/*", "domain/*", "engine", "machines", "ports", "images", "setup", "overview", "activity", "apps", "settings", "disk", "accounts", "background", "awake", "core/machine", "catalog", "ui/token", std},
+		"cmd/generate/pages":         {"page", "pages", "pages/*", "engine", "machines", "ports", "images", "setup", "overview", "activity", "apps", "settings", "disk", "accounts", "background", "awake", "core/machine", "catalog", "ui/token", std},
 		"wire":                       {"*", fang, cobra, "os", "os/signal", "syscall", "runtime/debug", "net/netip", std},
 		"surface/cli":                {"surface/cli/kit", cobra, std},
-		"surface/cli/kit":            append([]string{"output", "page", "core/fail", "surface/cli/words", "core/store", "domain/*", "engine", "catalog", "testing", cobra, pflag, std}, calls...),
+		"surface/cli/kit":            append([]string{"output", "page", "core/fail", "surface/cli/words", "core/store", "engine", "catalog", "testing", cobra, pflag, std}, calls...),
 		"surface/cli/*":              append([]string{"surface/cli/kit", "core/fail", "engine", "page", "pages/*", "catalog", cobra, pflag, std}, calls...),
-		"domain/*":                   domain,
-		"engine":                     append(slices.Clone(domain), "activity", "domain/machines", "ports/calls", "awake", "awake/contract", "awake/calls", "machines", "machines/contract", "net/netip"),
-		"domain/machines":            append(slices.Clone(domain), "machines", "machines/contract", "images/contract"),
+		"engine":                     {"platform/local", "catalog", "setup", "core/call/lanes", "ports", "ports/contract", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract", "machines", "machines/contract", "images", "setup", "setup/contract", "core/store", "core/adapter/fake", "machines/adapter/fake", std, "activity", "ports/calls", "awake", "awake/contract", "awake/calls", "net/netip"},
 		"machines/adapter/ssh":       {"machines/contract", "machines/contract/contracttest", sshPkg, sshPkg + "/knownhosts", "platform/local", "platform/local/localtest", "net/netip", std},
 		"machines/adapter/tart":      {"platform/local", "machines", "machines/contract", "machines/contract/contracttest", "images/contract", "core/call", "net/netip", std},
 		"platform/local":             {"os", "os/exec", "os/user", "net", "net/http", "syscall", "unsafe", "golang.org/x/sys/unix", std},
@@ -69,7 +65,7 @@ func importTable() map[string][]string {
 		"catalog":                    {"embed", std},
 		"page":                       {std},
 		"pages":                      {"page", "catalog", std},
-		"pages/*":                    {"page", "pages", "pages/*", "domain/*", "core/call/lanes", "core/finding", "core/machine", "core/section", "engine", "machines", "ports", "images", "setup", "overview", "activity", "apps", "settings", "disk", "accounts", "background", "awake", "catalog", std},
+		"pages/*":                    {"page", "pages", "pages/*", "core/call/lanes", "core/finding", "core/machine", "core/section", "engine", "machines", "ports", "images", "setup", "overview", "activity", "apps", "settings", "disk", "accounts", "background", "awake", "catalog", std},
 		"ui/token":                   {lip, term, std},
 		"ui/atom":                    {"ui/token", "page", lip, qr, bubble + "/spinner", std},
 		"ui/molecule":                {"ui/atom", "ui/token", "page", lip, std},
@@ -533,6 +529,10 @@ func ruleCatalog(w *world) []finding {
 	return out
 }
 
+// invariant: the models whose refusals reach the kit as errors, worded by
+// its failures_*.go; the other families word theirs as codes in their calls.
+func wordedByKit() []string { return []string{"machines", "setup", "ports", "awake"} }
+
 func ruleWorded(w *world) []finding {
 	worded := map[string]bool{}
 	for _, f := range w.files {
@@ -567,7 +567,7 @@ func ruleWorded(w *world) []finding {
 	}
 	var out []finding
 	for _, f := range w.files {
-		if !strings.HasPrefix(f.pkg, "domain/") || f.test {
+		if !slices.Contains(wordedByKit(), f.pkg) || f.test {
 			continue
 		}
 		for _, decl := range f.syntax.Decls {
@@ -734,7 +734,7 @@ func rules() []rule {
 		{"ANSI", ruleANSI, "src/present/mutant_ansi.go", "package present\n\nconst mutantBold = \"\\x1b[1m\"\n", "src/present/mutant_ansi.go"},
 		{"Palette", rulePalette, "src/present/mutant_palette.go", "package present\n\nconst mutantRed = \"#ff0000\"\n", "src/present/mutant_palette.go"},
 		{"Catalog", ruleCatalog, "src/catalog/mutant_catalog.go", "package catalog\n\ntype mutantEntry struct{ Check func() bool }\n\nvar mutantDefault = mutantEntry{Check: func() bool { return true }}\n", "src/catalog/mutant_catalog.go"},
-		{"Worded", ruleWorded, "src/domain/mutant/mutant.go", "package mutant\n\ntype UnwordedError struct{}\n\nfunc (UnwordedError) Error() string { return \"unworded\" }\n", "src/domain/mutant/mutant.go"},
+		{"Worded", ruleWorded, "src/ports/mutant_worded.go", "package ports\n\ntype UnwordedError struct{}\n\nfunc (UnwordedError) Error() string { return \"unworded\" }\n", "src/ports/mutant_worded.go"},
 		{"Comments", ruleComments, "src/present/mutant_comments.go", "package present\n\n// a comment that states no kind\nconst mutantComment = 1\n", "src/present/mutant_comments.go"},
 		{"Streams", ruleStreams, "src/surface/cli/mutant/mutant_streams.go", "package mutant\n\nimport \"" + module + "/src/surface/cli/kit\"\n\nfunc mutantStreams(o kit.IO) { _, _ = o.Streams() }\n", "src/surface/cli/mutant"},
 		{"Kit", ruleKit, "src/pages/tools/mutant_kit.go", "package tools\n\nimport _ \"" + lip + "\"\n", "src/pages/tools/mutant_kit.go"},

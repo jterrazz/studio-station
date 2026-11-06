@@ -246,6 +246,9 @@ func (s *Service) name(r Request, blocked bool) (setup.Step, error) {
 	if !setup.ValidName(name) {
 		return setup.Step{}, &setup.BadNameError{Name: name}
 	}
+	if err := s.p.Name.Set(name); err != nil {
+		return failed(stepName, err)
+	}
 	if err := s.reg.Register(name); err != nil {
 		return failed(stepName, err)
 	}

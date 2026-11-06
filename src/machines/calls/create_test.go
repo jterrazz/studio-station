@@ -1,4 +1,4 @@
-package machines
+package calls
 
 import (
 	"errors"
@@ -18,9 +18,9 @@ func TestBridgedIsForMacOSImagesOnly(t *testing.T) {
 		want   string
 		bridge bool
 	}{
-		{"a model.VM is behind its Mac by default", linux, "", model.NetworkNAT, false},
-		{"a macOS model.VM may be bridged", macos, model.Bridged, model.Bridged, false},
-		{"a linux model.VM is refused bridged", linux, model.Bridged, "", true},
+		{"a VM is behind its Mac by default", linux, "", model.NetworkNAT, false},
+		{"a macOS VM may be bridged", macos, model.Bridged, model.Bridged, false},
+		{"a linux VM is refused bridged", linux, model.Bridged, "", true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			got, err := networkFor(c.img, c.asked)

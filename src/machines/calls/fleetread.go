@@ -1,4 +1,4 @@
-package machines
+package calls
 
 import (
 	"context"
@@ -35,7 +35,7 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 	}
 	user := cfg.Hosts[cfg.Here].User
 	if user == "" {
-		user = s.h.Env.User()
+		user = s.h.User()
 	}
 	here := model.HostView{
 		Name: name, User: user, StationVersion: s.o.Version, Here: true, Reachable: true, Node: nodes[name], Daemon: info, VMs: vms,
@@ -49,7 +49,7 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 	others := s.OtherHosts()
 	answers := map[string]model.HostView{}
 	fleet := func(all bool) model.Fleet {
-		f := model.Fleet{Hosts: []model.HostView{here}, Read: s.h.Clock.Now()}
+		f := model.Fleet{Hosts: []model.HostView{here}, Read: s.h.Now()}
 		for _, n := range others {
 			if _, ok := answers[n]; ok || all {
 				f.Hosts = append(f.Hosts, s.view(n, cfg.Hosts[n], nodes[n], answers))
@@ -93,8 +93,8 @@ func (s *Service) daemonView(ctx context.Context) (info model.EngineView, live m
 	}
 	version, err := s.daemon.Ping(ctx)
 	if err != nil {
-		_, missing := s.h.FS.Stat(catalog.EnginePlist(s.h.Env.Home()))
-		return model.EngineView{Known: true, Installed: missing == nil}, nil
+		installed := s.h.Exists(catalog.EnginePlist(s.h.Home()))
+		return model.EngineView{Known: true, Installed: installed}, nil
 	}
 	live, err = s.daemon.VMs(ctx)
 	if err != nil {

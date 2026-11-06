@@ -1,4 +1,4 @@
-package machines
+package calls
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-// value: what macOS keeps of a Mac's memory, never given to a model.VM (SPEC §7.1).
+// value: what macOS keeps of a Mac's memory, never given to a VM (SPEC §7.1).
 const keptForMacOS = 4 << 30
 
 var (
@@ -135,8 +135,8 @@ func (s *Service) CheckCreate(ctx context.Context, r model.CreateRequest) (model
 }
 
 func (s *Service) EngineUp(ctx context.Context) error {
-	_, missing := s.h.FS.Stat(catalog.EnginePlist(s.h.Env.Home()))
-	down := &model.DaemonDownError{Host: "This Mac", Installed: missing == nil}
+	installed := s.h.Exists(catalog.EnginePlist(s.h.Home()))
+	down := &model.DaemonDownError{Host: "This Mac", Installed: installed}
 	if s.daemon == nil {
 		return down
 	}
@@ -149,7 +149,7 @@ func (s *Service) EngineUp(ctx context.Context) error {
 	return nil
 }
 
-// value: every name All machines holds, and for a model.VM's name the Mac it is
+// value: every name All machines holds, and for a VM's name the Mac it is
 // on, worded as the owner reads it: This Mac, or that Mac's short name.
 func (s *Service) claims(ctx context.Context) (held map[string]claim, on map[string]string, err error) {
 	fleet, err := s.Fleet(ctx, false)
@@ -177,7 +177,7 @@ func (s *Service) claims(ctx context.Context) (held map[string]claim, on map[str
 	return held, on, nil
 }
 
-// value: the memory a new model.VM may take on this Mac: what it has, less what
+// value: the memory a new VM may take on this Mac: what it has, less what
 // macOS keeps and what its running VMs hold; unknown when the Mac does not
 // say what it has.
 func (s *Service) memoryLeft(ctx context.Context) (int64, bool) {
@@ -201,10 +201,10 @@ func (s *Service) memoryLeft(ctx context.Context) (int64, bool) {
 }
 
 func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress func(model.Step)) (model.Created, error) {
-	// invariant: the profiles' ports are reserved before the model.VM first runs, and
-	// their rendered variables go into the record, fixed for the model.VM's life; a
+	// invariant: the profiles' ports are reserved before the VM first runs, and
+	// their rendered variables go into the record, fixed for the VM's life; a
 	// failure after the clone and before the first run rolls every made thing
-	// back, and from the first run on the model.VM is kept, with what failed.
+	// back, and from the first run on the VM is kept, with what failed.
 	r, err := s.CheckCreate(ctx, r)
 	if err != nil {
 		return model.Created{}, err
@@ -226,7 +226,7 @@ func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress fu
 	server := r.Lifetime == model.AlwaysOn
 	rec := model.VMRecord{
 		Name: r.Name, Image: r.Image, Version: version, Lifetime: r.Lifetime, Network: r.Network, Check: r.Check,
-		Resources: r.Resources, CreatedAt: s.h.Clock.Now().UTC().Truncate(time.Second),
+		Resources: r.Resources, CreatedAt: s.h.Now().UTC().Truncate(time.Second),
 	}
 	if r.Lifetime == model.Permanent || server {
 		rec.Want = model.WantRunning
@@ -307,7 +307,7 @@ func (s *Service) setUp(ctx context.Context, img catalog.Image, r model.CreateRe
 	return nil
 }
 
-// invariant: once its first run is asked, a model.VM is kept whatever fails
+// invariant: once its first run is asked, a VM is kept whatever fails
 // (CR-15, CR-16): a run the hypervisor never began did not boot; one that
 // runs failed the first health step that did not pass (SPEC §7.2).
 func (s *Service) unhealthy(ctx context.Context, name string, cause error) error {
@@ -334,7 +334,7 @@ func (s *Service) reserveProfiles(ctx context.Context, name string) (reserved []
 type made struct{ vm, record, leases bool }
 
 // invariant: the rollback is best effort and runs every step whatever fails, so a
-// half-made model.VM leaves as little as it can; what it reports is the create's failure.
+// half-made VM leaves as little as it can; what it reports is the create's failure.
 func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
 	if m.leases && s.rel != nil {
 		_ = s.rel.ReleaseVM(ctx, name)
@@ -350,7 +350,7 @@ func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
 
 func (s *Service) removeFiles(name string, record bool) {
 	for _, f := range []string{s.LogPath(name), s.KnownHostsPath(name)} {
-		_ = s.h.FS.Remove(f)
+		_ = s.h.Remove(f)
 	}
 	if record {
 		_ = s.recs.Delete(context.Background(), name)

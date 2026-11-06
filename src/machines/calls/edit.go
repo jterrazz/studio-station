@@ -1,4 +1,4 @@
-package machines
+package calls
 
 import (
 	"context"
@@ -26,7 +26,7 @@ func (s *Service) CheckEdit(name string, c model.Change) error {
 }
 
 func (s *Service) Edit(ctx context.Context, name string, c model.Change) (model.Edited, error) {
-	// invariant: an edit writes the sizes the model.VM boots with; a running model.VM keeps
+	// invariant: an edit writes the sizes the VM boots with; a running VM keeps
 	// its own until its next start, and a disk is never shrunk. A server's
 	// check is its record's: the next health run reads it.
 	r := c.Resources

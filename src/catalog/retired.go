@@ -29,3 +29,10 @@ func RetiredNodeDetail(here string) string {
 func TailnetWrapperWritten(at string) string { return TailnetCLI + " wrapper written: " + at }
 
 const TailnetWrapperDue = TailnetCLI + " wrapper due: station setup"
+
+func SSHCommand(user, host string) string {
+	if user != "" {
+		return "ssh " + user + "@" + host
+	}
+	return "ssh " + host
+}

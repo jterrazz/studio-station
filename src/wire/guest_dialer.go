@@ -5,9 +5,9 @@ import (
 	"io"
 	"net/netip"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/machines/adapter/ssh"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
@@ -22,7 +22,7 @@ func (m machine) guestDialer() contract.GuestDialer {
 
 type engineGuests struct {
 	dialer contract.GuestDialer
-	vms    *machines.Service
+	vms    *machinescalls.Service
 }
 
 func (g engineGuests) Dial(ctx context.Context, vm string, at netip.AddrPort) (engine.Guest, error) {

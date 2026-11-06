@@ -1,4 +1,4 @@
-package machines_test
+package calls_test
 
 import (
 	"context"
@@ -6,16 +6,13 @@ import (
 	"testing"
 	"time"
 
-	corefake "github.com/jterrazz/studio-station/src/core/adapter/fake"
 	model "github.com/jterrazz/studio-station/src/machines"
 	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/platform/local"
-	"github.com/jterrazz/studio-station/src/platform/local/localtest"
+	machines "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/setup"
 )
 
@@ -25,13 +22,12 @@ func (noTailnet) Peers(context.Context) (map[string]model.Node, error) {
 	return nil, nil
 }
 
-func service(t *testing.T, run local.Runner, answers func(context.Context, string) bool) (*machines.Service, *localtest.Clock) {
+func service(t *testing.T, answers func(context.Context, string) bool) (*machines.Service, *stillMac) {
 	t.Helper()
-	files := localtest.NewFS()
-	clock := &localtest.Clock{At: time.Unix(0, 0)}
-	h := local.Host{Run: run, FS: files, Env: localtest.Env{HomeDir: "/home"}, Net: localtest.NewNet(), Clock: clock}
+	clock := &stillMac{at: time.Unix(0, 0)}
+	h := clock
 	paths := setup.Paths{Config: "/config", State: "/state"}
-	prefs := corefake.NewPreferences()
+	prefs := memoryPrefs{}
 	p := machines.Prefs{Name: setupcontract.Name(prefs), Hosts: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
 	if err := p.Name.Set("mac"); err != nil {
 		t.Fatal(err)
@@ -58,9 +54,9 @@ func (a *answering) answers(context.Context, string) bool {
 	return up
 }
 
-func restarting(t *testing.T, polls ...bool) (*machines.Service, *localtest.Clock) {
+func restarting(t *testing.T, polls ...bool) (*machines.Service, *stillMac) {
 	t.Helper()
-	return service(t, localtest.NewRunner(t), (&answering{polls: polls}).answers)
+	return service(t, (&answering{polls: polls}).answers)
 }
 
 func TestRestartWaitsForTheHostToGoAwayAndComeBack(t *testing.T) {
@@ -89,7 +85,7 @@ func TestRestartDoesNotTakeAHostThatNeverWentDownForRestarted(t *testing.T) {
 	if !errors.As(err, &timeout) || timeout.Phase != "stop" {
 		t.Fatalf("Restart error = %v, want a timeout in the stop phase", err)
 	}
-	if spent := clock.At.Sub(time.Unix(0, 0)); spent != time.Minute {
+	if spent := clock.at.Sub(time.Unix(0, 0)); spent != time.Minute {
 		t.Fatalf("spent %v before giving up, want the 60s stop budget", spent)
 	}
 }
@@ -103,7 +99,7 @@ func TestRestartGivesUpOnAHostThatNeverComesBack(t *testing.T) {
 	if !errors.As(err, &timeout) || timeout.Phase != "return" {
 		t.Fatalf("Restart error = %v, want a timeout in the return phase", err)
 	}
-	if spent := clock.At.Sub(time.Unix(0, 0)); spent != 3*time.Minute {
+	if spent := clock.at.Sub(time.Unix(0, 0)); spent != 3*time.Minute {
 		t.Fatalf("spent %v, want the 180s return budget", spent)
 	}
 }

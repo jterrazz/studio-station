@@ -1,4 +1,4 @@
-package machines_test
+package calls_test
 
 import (
 	"context"
@@ -6,22 +6,19 @@ import (
 	"testing"
 	"time"
 
-	corefake "github.com/jterrazz/studio-station/src/core/adapter/fake"
 	model "github.com/jterrazz/studio-station/src/machines"
 	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/platform/local"
-	"github.com/jterrazz/studio-station/src/platform/local/localtest"
+	machines "github.com/jterrazz/studio-station/src/machines/calls"
 )
 
 func fleetAsking(t *testing.T, ask func(ctx context.Context, macs []string, answered func(string, model.HostView))) *machines.Service {
 	t.Helper()
-	h := local.Host{Run: localtest.NewRunner(t), FS: localtest.NewFS(), Env: localtest.Env{HomeDir: "/home"}, Net: localtest.NewNet(), Clock: &localtest.Clock{At: time.Unix(0, 0)}}
-	prefs := corefake.NewPreferences()
+	h := &stillMac{at: time.Unix(0, 0)}
+	prefs := memoryPrefs{}
 	p := machines.Prefs{Name: setupcontract.Name(prefs), Hosts: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
 	if err := p.Name.Set("laptop"); err != nil {
 		t.Fatal(err)

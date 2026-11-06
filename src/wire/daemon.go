@@ -23,13 +23,13 @@ import (
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginelog "github.com/jterrazz/studio-station/src/engine/adapter/log"
 	"github.com/jterrazz/studio-station/src/engine/feeds"
 	"github.com/jterrazz/studio-station/src/engine/process"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/dial"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
 	"github.com/jterrazz/studio-station/src/platform/local"
@@ -180,14 +180,14 @@ func (d hostDaemon) Ping(ctx context.Context) (string, error) {
 	return p.Version, downAs(err, model.ErrDaemonDown)
 }
 
-func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, error) {
+func (d hostDaemon) VMs(ctx context.Context) (map[string]machinescalls.DaemonVM, error) {
 	views, err := d.c.VMs(ctx)
 	if err != nil {
 		return nil, downAs(err, model.ErrDaemonDown)
 	}
-	out := make(map[string]machines.DaemonVM, len(views))
+	out := make(map[string]machinescalls.DaemonVM, len(views))
 	for _, v := range views {
-		out[v.Name] = machines.DaemonVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check}
+		out[v.Name] = machinescalls.DaemonVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check}
 	}
 	return out, nil
 }
@@ -301,7 +301,7 @@ func (r leaseReleaser) forgetDeclarations(ctx context.Context, vm string) error 
 
 type engineInstaller struct {
 	m        machine
-	machines *machines.Service
+	machines *machinescalls.Service
 }
 
 func (i engineInstaller) env() map[string]string {

@@ -1,9 +1,8 @@
-package machines
+package calls
 
 import (
 	"context"
 	"errors"
-	"io"
 	"strconv"
 	"time"
 
@@ -45,8 +44,8 @@ func (s *Service) hostOf(ctx context.Context, name string) (string, bool) {
 	return "", false
 }
 
-func (s *Service) Pipe(ctx context.Context, name string, in io.Reader, out io.Writer) error {
-	// invariant: the model.VM's NAT ip is read at each pipe, never written into a block:
+func (s *Service) Pipe(ctx context.Context, name string, pipe func(ctx context.Context, ip string, port int) error) error {
+	// invariant: the VM's NAT ip is read at each pipe, never written into a block:
 	// the hypervisor's DHCP lease may change across runs; the pipe needs no daemon.
 	rec, err := s.CheckPipe(ctx, name)
 	if err != nil {
@@ -64,7 +63,7 @@ func (s *Service) Pipe(ctx context.Context, name string, in io.Reader, out io.Wr
 	if port == 0 {
 		port = 22
 	}
-	if err := s.h.Sockets.Pipe(ctx, ip, port, in, out); err != nil {
+	if err := pipe(ctx, ip, port); err != nil {
 		return &model.SSHDClosedError{Name: name, Addr: ip + ":" + strconv.Itoa(port), Cause: err}
 	}
 	return nil

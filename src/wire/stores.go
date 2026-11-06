@@ -2,8 +2,9 @@ package wire
 
 import (
 	"context"
-	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	"path/filepath"
+
+	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 
 	accountsjsonfile "github.com/jterrazz/studio-station/src/accounts/adapter/jsonfile"
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"

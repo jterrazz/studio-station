@@ -18,7 +18,7 @@ import (
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	"github.com/jterrazz/studio-station/src/setup"
@@ -130,7 +130,7 @@ func (s systemTools) Install(ctx context.Context, names []string) error {
 
 type fleetRegistrar struct {
 	name     setupcontract.NamePrefs
-	machines *machines.Service
+	machines *machinescalls.Service
 }
 
 func (r fleetRegistrar) Here() (string, bool) {

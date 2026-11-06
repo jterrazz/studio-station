@@ -1,16 +1,17 @@
-package machines
+package calls
 
 import (
 	"context"
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	model "github.com/jterrazz/studio-station/src/machines"
 )
 
 func (s *Service) SSH(ctx context.Context, name string) (model.SSHTarget, error) {
 	// value: the ssh command that reaches a machine of All machines, as the
-	// owner's ssh blocks write it: a Mac as its own login, a model.VM, here or on
-	// another Mac, as the model.VM user.
+	// owner's ssh blocks write it: a Mac as its own login, a VM, here or on
+	// another Mac, as the VM user.
 	if err := s.CheckHost(); err != nil {
 		return model.SSHTarget{}, err
 	}
@@ -32,9 +33,5 @@ func (s *Service) SSH(ctx context.Context, name string) (model.SSHTarget, error)
 }
 
 func sshTarget(user, host string) model.SSHTarget {
-	command := "ssh " + host
-	if user != "" {
-		command = "ssh " + user + "@" + host
-	}
-	return model.SSHTarget{User: user, Host: host, Command: command}
+	return model.SSHTarget{User: user, Host: host, Command: catalog.SSHCommand(user, host)}
 }

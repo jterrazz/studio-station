@@ -3,18 +3,19 @@ package wire
 import (
 	"context"
 	"errors"
+	"io"
 	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/images"
+	"github.com/jterrazz/studio-station/src/platform/local"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
@@ -44,9 +45,9 @@ const (
 	lanBudget = 2 * time.Second
 )
 
-func (m machine) machines(_ bool) *machines.Service {
+func (m machine) machines(_ bool) *machinescalls.Service {
 	knownHosts := filepath.Join(m.paths.State, "known_hosts")
-	return machines.New(m.host, m.hypervisor(), machines.Prefs{Name: m.stores.name(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser()}, m.stores.machines, hostNodes{tailnet: m.tailnet()}, fleetImages{service: m.images()}, m.hostDaemon(), leaseReleaser{m: m}, machines.Options{
+	return machinescalls.New(thisMac{m.host}, m.hypervisor(), machinescalls.Prefs{Name: m.stores.name(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser()}, m.stores.machines, hostNodes{tailnet: m.tailnet()}, fleetImages{service: m.images()}, machinesDaemon{m.hostDaemon()}, leaseReleaser{m: m}, machinescalls.Options{
 		Here:       m.kind,
 		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.host.Env.User(),
@@ -155,7 +156,7 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		machinesunlock.Command(machinesunlock.Deps{Names: service.Names, Here: m.where}, env),
 		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),
 		machinessupervise.Command(env),
-		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{service}}, env),
+		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{service, m.host.Sockets}}, env),
 	)
 }
 
@@ -172,7 +173,7 @@ func (m machine) pausing(env kit.Env) func(mac string) []string {
 	}
 }
 
-func createCheck(s *machines.Service) func(ctx context.Context, r model.CreateRequest) (bool, error) {
+func createCheck(s *machinescalls.Service) func(ctx context.Context, r model.CreateRequest) (bool, error) {
 	return func(ctx context.Context, r model.CreateRequest) (bool, error) {
 		_, err := s.CheckCreate(ctx, r)
 		var unbuilt *model.NoImageError
@@ -183,7 +184,16 @@ func createCheck(s *machines.Service) func(ctx context.Context, r model.CreateRe
 	}
 }
 
-type vmPipe struct{ *machines.Service }
+type vmPipe struct {
+	*machinescalls.Service
+	sockets local.Sockets
+}
+
+func (p vmPipe) Pipe(ctx context.Context, vm string, in io.Reader, out io.Writer) error {
+	return p.Service.Pipe(ctx, vm, func(ctx context.Context, ip string, port int) error {
+		return p.sockets.Pipe(ctx, ip, port, in, out)
+	})
+}
 
 func (p vmPipe) Check(ctx context.Context, vm string) error {
 	_, err := p.CheckPipe(ctx, vm)
@@ -193,7 +203,7 @@ func (p vmPipe) Check(ctx context.Context, vm string) error {
 // invariant: the machines calls' Deps over today's service: each check the
 // leaves ran before, worded by the service's own errors.
 type machineCalls struct {
-	*machines.Service
+	*machinescalls.Service
 	m machine
 }
 

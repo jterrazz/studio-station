@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/constant"
 	"go/types"
-	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -40,20 +39,6 @@ func storeOwners() map[string]string {
 		src + "ports/adapter/jsonfile.Declarations": "ports/calls",
 		src + "settings/adapter/jsonfile.Applied":   "settings/calls",
 		src + "core/adapter/jsonfile.Preferences":   "core/contract",
-	}
-}
-
-// invariant: the allowlist of one-writer-per-store: each file of today's
-// tree that still writes a store its family's calls will own, by the store
-// it writes, with the lot that moves it. It only shrinks; a line no longer
-// true fails the gate until it is removed.
-func storeWritersTolerated() map[string]string {
-	src := module + "/src/"
-	return map[string]string{
-		"src/domain/machines/hosts.go " + src + "setup/contract.NamePrefs":        "L19: the name is setup's, written by setup.run",
-		"src/domain/machines/hosts.go " + src + "machines/contract.MacsPrefs":     "L14: machines.add and machines.remove become calls",
-		"src/domain/machines/hosts.go " + src + "machines/contract.VMUserPrefs":   "L14: setup.run hands the VM user to machines' call",
-		"src/domain/machines/create.go " + src + "machines/contract.MachineStore": "L14: machines.create and machines.delete become calls",
 	}
 }
 
@@ -95,7 +80,6 @@ const preferences = module + "/src/core/contract.Preferences"
 
 func ruleOneWriterPerStore(w *world) []finding {
 	var out []finding
-	seen := map[string]bool{}
 	groups := map[string]string{}
 	for _, f := range w.files {
 		if f.test {
@@ -133,19 +117,9 @@ func ruleOneWriterPerStore(w *world) []finding {
 			if mayWrite(f.pkg, store) {
 				return true
 			}
-			key := f.rel + " " + store
-			if storeWritersTolerated()[key] != "" {
-				seen[key] = true
-				return true
-			}
 			out = append(out, finding{"one-writer-per-store", f.at(call.Pos()), fmt.Sprintf("%q writes %s: only %s does", f.pkg, strings.TrimPrefix(store, module+"/src/"), storeOwners()[store])})
 			return true
 		})
-	}
-	for _, key := range slices.Sorted(maps.Keys(storeWritersTolerated())) {
-		if !seen[key] {
-			out = append(out, finding{"one-writer-per-store", "specs/architecture/stores_test.go", key + " no longer writes its store: remove it from storeWritersTolerated"})
-		}
 	}
 	return out
 }
@@ -153,18 +127,3 @@ func ruleOneWriterPerStore(w *world) []finding {
 func TestOneWriterPerStore(t *testing.T)      { judge(t, "OneWriterPerStore") }
 func TestOneWriterPerStoreBuilt(t *testing.T) { judge(t, "OneWriterPerStoreBuilt") }
 func TestOneWriterPerStoreGroup(t *testing.T) { judge(t, "OneWriterPerStoreGroup") }
-
-func TestOneWriterPerStoreAllowlistShrinks(t *testing.T) {
-	clean, _ := worlds(t)
-	key := slices.Sorted(maps.Keys(storeWritersTolerated()))[0]
-	rel, _, _ := strings.Cut(key, " ")
-	gone := &world{root: clean.root, packages: clean.packages, cgo: clean.cgo}
-	for _, f := range clean.files {
-		if f.rel != rel {
-			gone.files = append(gone.files, f)
-		}
-	}
-	if !slices.ContainsFunc(ruleOneWriterPerStore(gone), func(f finding) bool { return strings.HasPrefix(f.what, key+" no longer writes") }) {
-		t.Errorf("the one-writer-per-store rule kept the line of %s, a file that is gone", rel)
-	}
-}

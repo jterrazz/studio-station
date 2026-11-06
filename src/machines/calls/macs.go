@@ -1,4 +1,4 @@
-package machines
+package calls
 
 import (
 	"context"
@@ -84,9 +84,6 @@ func (s *Service) Init(name string) error {
 	if err != nil {
 		return err
 	}
-	if err := s.p.Name.Set(name); err != nil {
-		return err
-	}
 	if _, ok := cfg.Hosts[name]; !ok {
 		hosts := maps.Clone(cfg.Hosts)
 		if hosts == nil {
@@ -165,7 +162,7 @@ func (s *Service) here(cfg prefsView) string {
 	if cfg.Here != "" {
 		return cfg.Here
 	}
-	return strings.ToLower(s.h.Env.Hostname())
+	return strings.ToLower(s.h.Hostname())
 }
 
 func (s *Service) OtherHosts() []string {
@@ -218,7 +215,7 @@ func (s *Service) Remember(_ context.Context, f model.Fleet) error {
 		for _, vm := range model.Ordered(h.VMs) {
 			seen = append(seen, model.SeenVM{Name: vm.Name, Lifetime: vm.Lifetime, CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes})
 		}
-		known.Answered, known.VMs = s.h.Clock.Now().UTC().Truncate(time.Second), seen
+		known.Answered, known.VMs = s.h.Now().UTC().Truncate(time.Second), seen
 		if h.LAN != "" {
 			known.LAN = h.LAN
 		}

@@ -1,4 +1,4 @@
-package machines
+package calls
 
 import (
 	"context"
@@ -97,7 +97,7 @@ func (s *Service) restartVM(ctx context.Context, name string, say func(phase, de
 	if err := s.EngineUp(ctx); err != nil {
 		return model.RestartReport{}, err
 	}
-	started := s.h.Clock.Now()
+	started := s.h.Now()
 	say("restarting", "poweroff, then start")
 	if err := s.daemon.Do(ctx, "restart", name); err != nil {
 		return model.RestartReport{}, err
@@ -112,7 +112,7 @@ func (s *Service) restartVM(ctx context.Context, name string, say func(phase, de
 	if out, err := s.daemon.GuestExec(sshCtx, name, "true", ""); err != nil || out.ExitCode != 0 {
 		return model.RestartReport{}, &model.UnhealthyError{Name: name, Step: model.StepSSH, Detail: "none after 30 s"}
 	}
-	return model.RestartReport{Name: name, VM: true, IP: addr.String(), Waited: s.h.Clock.Now().Sub(started)}, nil
+	return model.RestartReport{Name: name, VM: true, IP: addr.String(), Waited: s.h.Now().Sub(started)}, nil
 }
 
 func (s *Service) Delete(ctx context.Context, name string) (model.DeleteReport, error) {
@@ -130,7 +130,7 @@ func (s *Service) Delete(ctx context.Context, name string) (model.DeleteReport, 
 
 func (s *Service) Remove(ctx context.Context, name string) (model.DeleteReport, error) {
 	// invariant: Remove is the whole delete, run by the engine: the run stops,
-	// the disk, record, files and block go, and the model.VM's leases and their serve
+	// the disk, record, files and block go, and the VM's leases and their serve
 	// entries are released.
 	report := model.DeleteReport{Name: name}
 	s.retireAgent(ctx, name)

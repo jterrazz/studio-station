@@ -1,4 +1,4 @@
-package machines
+package calls
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func (s *Service) Restart(ctx context.Context, name string, progress func(model.
 	if m.Kind != catalog.Host {
 		return s.restartVM(ctx, name, say)
 	}
-	started := s.h.Clock.Now()
+	started := s.h.Now()
 
 	say("restarting", "a planned restart that unlocks itself")
 	var refused *contract.RestartRefusedError
@@ -51,8 +51,8 @@ func (s *Service) Restart(ctx context.Context, name string, progress func(model.
 	if err := s.await(ctx, m.Name, true, returnBudget); err != nil {
 		return model.RestartReport{}, wrap(err, name, model.PhaseReturn)
 	}
-	waited := s.h.Clock.Now().Sub(started)
-	say("back", "ssh answers again")
+	waited := s.h.Now().Sub(started)
+	say("back", "the Mac answers on ssh again")
 	return model.RestartReport{Name: name, Waited: waited}, nil
 }
 
@@ -75,7 +75,7 @@ func (s *Service) await(ctx context.Context, name string, up bool, budget time.D
 		if waited >= budget {
 			return budgetError{}
 		}
-		if err := s.h.Clock.Sleep(ctx, pollEvery); err != nil {
+		if err := s.h.Sleep(ctx, pollEvery); err != nil {
 			return err
 		}
 	}
