@@ -45,6 +45,7 @@ public enum Token {
         public static let meterBars = 10
         public static let meterWidth: CGFloat = 30
         public static let chart: CGFloat = 54
+        public static let measure: CGFloat = 22
         public static let line: CGFloat = 32
         public static let bars: CGFloat = 16
         public static let smallCircle: CGFloat = 22
@@ -226,12 +227,12 @@ public enum Token {
     // ink and its two secondary steps, the state colours, white on a
     // filled state circle.
     public struct Palette: Sendable {
-        public let text, muted, subtle, faint, hover, raised, well, chip, accent, good, warn, bad, teal, indigo, grey, onTint, qrDark, qrLight: Color
+        public let text, muted, subtle, faint, hover, raised, well, chip, accent, good, bad, teal, indigo, grey, onTint, qrDark, qrLight: Color
 
         public func of(_ mark: Mark) -> Color {
             switch mark {
             case .ok: good
-            case .attention: warn
+            case .attention: text
             case .broken: bad
             case .absent, .pending, .offHere, .notKnown: muted
             case .notForThisMachine: subtle
@@ -251,7 +252,7 @@ public enum Token {
             text: pair(0x1D1D1F, 0xF5F5F7), muted: ink2.opacity(dark ? 0.62 : 0.68), subtle: ink2.opacity(dark ? 0.38 : 0.42),
             faint: ink2.opacity(dark ? 0.16 : 0.16), hover: (dark ? Color.white : Color.black).opacity(dark ? 0.1 : 0.06),
             raised: Color.white.opacity(dark ? 0.2 : 0.92), well: Glass.well(scheme), chip: dark ? hex(0x0E1013).opacity(0.85) : hex(0x2C2F35),
-            accent: pair(0x0A7AFF, 0x2B8CFF), good: pair(0x2FB350, 0x32C75A), warn: pair(0xF29D0B, 0xFFAD1F), bad: pair(0xEC3B30, 0xFF4F45),
+            accent: pair(0x0A7AFF, 0x2B8CFF), good: pair(0x2FB350, 0x32C75A), bad: pair(0xEC3B30, 0xFF4F45),
             teal: pair(0x14A6B8, 0x2BB8C9), indigo: pair(0x5B5CE6, 0x6E6FF0), grey: hex(0x8E8E93), onTint: hex(0xFFFFFF),
             qrDark: hex(0x000000), qrLight: hex(0xFFFFFF))
     }

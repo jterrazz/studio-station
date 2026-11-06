@@ -379,7 +379,7 @@ struct HomeContent: View {
                 }
                 .fixedSize(horizontal: false, vertical: true)
             }
-            if let needs = page.section(TodoBadge.section) { needsCard(needs) }
+            if let needs = page.section(TodoBadge.section), needs.items?.contains(where: { $0.row != nil }) == true { needsCard(needs) }
             if let spark = page.strip?.spark, spark.count > 1 {
                 Button { handlers.push(Navigation.activity) } label: {
                     ChartCard(title: Self.lastHour, words: MetricTile.peak(spark) { "\($0) %" }, points: spark, start: Self.hourAgo, id: Navigation.activity)
@@ -698,6 +698,16 @@ struct MachineContent: View {
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
+        case TodoBadge.section:
+            let rows = (s.items ?? []).compactMap(\.row)
+            if !rows.isEmpty {
+                GroupCard(s.title ?? "", count: rows.count) {
+                    let fix = s.columns?.first { $0.kind == "command" }?.key
+                    ForEach(Array(rows.enumerated()), id: \.offset) { i, row in
+                        CardRow(row: row, rule: i > 0, actions: page.rowActions(row.id ?? ""), busy: state.running != nil, command: fix.flatMap { s.cell(row, $0)?.text }) { perform($0, handlers) }
+                    }
+                }
+            }
         default:
             GroupCard(s.title ?? "", words: words(s)) {
                 ForEach(Array((s.items ?? []).enumerated()), id: \.offset) { i, item in
@@ -714,13 +724,14 @@ struct MachineContent: View {
         }
     }
 
-    // value: an Overview tile: Up with its whole meter lit while its span
-    // is known, Restarts with one bar lit per restart.
+    // value: an Overview tile: Up with its latest bar lit while its span
+    // is known, Restarts with one bar lit per restart; grey bars, the lit
+    // ones in the accent, as every tile.
     func upTile(_ r: Row) -> MetricTile {
         let value = r.cells?.first
         if r.id == "up" {
-            let lit = value?.isNone ?? true ? 0 : Bars.slots
-            return MetricTile(label: r.label ?? "", value: Self.span(value), spark: nil, meter: Bars.meter(lit, of: Bars.slots, height: Token.Tile.meter, tint: palette.good))
+            let lit = value?.isNone ?? true ? 0 : 1
+            return MetricTile(label: r.label ?? "", value: Self.span(value), spark: nil, meter: Bars.meter(lit, of: Bars.slots, height: Token.Tile.meter))
         }
         let count = Int(value?.items?.first?.n ?? 0)
         return MetricTile(label: r.label ?? "", value: value, spark: nil, meter: Bars.meter(count, of: Bars.slots, height: Token.Tile.meter))
@@ -804,12 +815,13 @@ struct CardRow: View {
     let actions: [Action]
     let busy: Bool
     var secret = false
+    var command: String? = nil
     let tap: (Action) -> Void
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationNow) private var now
 
     var value: String {
-        (row.cells ?? []).filter { !$0.isNone }.map { Format.show($0, now: now) }.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
+        (row.cells ?? []).filter { !$0.isNone && (command == nil || $0.text != command) }.map { Format.show($0, now: now) }.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
     }
 
     var body: some View {
@@ -819,8 +831,15 @@ struct CardRow: View {
             } else if row.mark != nil {
                 MarkView(row.mark)
             }
-            Text(row.short ?? row.label ?? "").font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.text).lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true).layoutPriority(1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(row.short ?? row.label ?? "").font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.text).lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let command {
+                    Text(command).font(.system(size: Token.Space.small, design: .monospaced)).foregroundStyle(palette.muted).lineLimit(1).truncationMode(.tail)
+                        .textSelection(.enabled)
+                }
+            }
+            .layoutPriority(1)
             Spacer(minLength: Token.Space.gap)
             if secret {
                 Text(Token.Glyph.secret).font(.system(size: Token.Space.small - 2, weight: .bold)).tracking(1).foregroundStyle(palette.subtle).lineLimit(1).fixedSize()

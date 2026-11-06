@@ -88,12 +88,12 @@ public struct ActivityPage: View {
                     .contentTransition(.numericText())
             }
             if points.count > 1 {
-                Graph(points)
+                Bars.share(Self.buckets(points, 24), height: Token.Tile.measure)
             } else if let ratio, let of = ratio.of, of > 0 {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule().fill(palette.faint)
-                        Capsule().fill(palette.accent).frame(width: geo.size.width * CGFloat(ratio.n ?? 0) / CGFloat(of))
+                        Capsule().fill(palette.muted).frame(width: geo.size.width * CGFloat(ratio.n ?? 0) / CGFloat(of))
                     }
                 }
                 .frame(height: Token.Space.meterHeight)

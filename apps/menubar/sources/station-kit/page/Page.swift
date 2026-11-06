@@ -119,6 +119,7 @@ public struct Group: Codable, Equatable, Sendable {
 
 public struct Empty: Codable, Equatable, Sendable {
     public var noun: String?
+    public var text: String?
     public var hint: Hint?
 }
 

@@ -69,6 +69,7 @@ public struct Bars: View {
     let chart: Bool
     var waiting = false
     var full = false
+    var ceiling: Int? = nil
     @Environment(\.stationPalette) private var palette
 
     public init(_ points: [Int], height: CGFloat = Token.Tile.bars, accented: Int = 1, tint: Color? = nil, chart: Bool = false) {
@@ -84,11 +85,21 @@ public struct Bars: View {
     func level(_ p: Int) -> Double {
         guard !waiting else { return 0.25 }
         guard !full else { return 1 }
+        if let ceiling { return min(max(Double(p) / Double(max(ceiling, 1)), 0.06), 1) }
         if chart, let hi = points.max() { return max(Double(p) / Double(max(hi, 1)), 0.06) }
         guard let hi = points.max(), let low = points.min(), hi != low else { return 0.5 }
         let top = Double(max(hi, 1)), lo = Double(low)
         let floor = max(lo - max(top - lo, top / 10), 0)
         return max((Double(p) - floor) / max(top - floor, 1), 0.1)
+    }
+
+    // value: a measure's bars against a share's scale, 0 to 100 brought
+    // down to a low series' (never under 20), so a steady measure keeps
+    // its level instead of filling the band.
+    public static func share(_ points: [Int], height: CGFloat) -> Bars {
+        var bars = Bars(points, height: height, chart: true)
+        bars.ceiling = min(max((points.max() ?? 0) * 2, 20), 100)
+        return bars
     }
 
     // value: the meter of a measure not read yet: its bars low and level,

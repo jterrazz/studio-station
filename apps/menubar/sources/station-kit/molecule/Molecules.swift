@@ -140,7 +140,7 @@ public struct EmptyLine: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("no \(empty.noun ?? "")").font(.system(size: Token.Space.text)).foregroundStyle(palette.muted)
+            Text(empty.text ?? "no \(empty.noun ?? "")").font(.system(size: Token.Space.text)).foregroundStyle(palette.muted)
             if hints, let hint = empty.hint { HintView(hint) }
         }
     }
