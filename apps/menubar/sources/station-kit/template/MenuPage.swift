@@ -24,7 +24,6 @@ public enum MenuPage {
 struct MenuPageFrame<Content: View>: View {
     let state: PopoverState
     let content: Content
-    @Environment(\.stationPalette) private var palette
 
     init(state: PopoverState, @ViewBuilder content: () -> Content) {
         self.state = state
@@ -32,11 +31,11 @@ struct MenuPageFrame<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
+        VStack(alignment: .leading, spacing: Token.Tile.section) {
             content
             if let status = state.status { StatusBar(status.line, failed: status.failed) }
         }
-        .padding(Token.Space.margin)
+        .padding(Token.Space.margin + 2)
         .frame(width: Token.Space.width, alignment: .topLeading)
         .stationPanel()
         .environment(\.stationHints, false)

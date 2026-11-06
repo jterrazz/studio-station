@@ -118,9 +118,6 @@ public struct Popover: View {
     let state: PopoverState
     let handlers: PopoverHandlers
     let scrolls: Bool
-    @Environment(\.stationPalette) private var palette
-    @Namespace private var glass
-
     public init(_ state: PopoverState, handlers: PopoverHandlers = PopoverHandlers(), scrolls: Bool = true) {
         self.state = state
         self.handlers = handlers
@@ -133,19 +130,14 @@ public struct Popover: View {
         ("Activity", Navigation.activity), ("Awake", Navigation.awake), ("Ports", Navigation.ports),
     ]
 
-    var inner: CGFloat { Token.Space.width - Token.Space.margin * 2 }
-
-    // invariant: one glass container holds Home and whatever it pushes,
-    // so a tile morphs into the header of the page it opens.
+    // invariant: the panel is the MenuBarExtra's own glass; nothing in it
+    // is glass again (WWDC25: no glass on glass, none in the content).
     public var body: some View {
-        GlassPage {
-            if let own = pushedView {
-                own
-            } else {
-                panel
-            }
+        if let own = pushedView {
+            own
+        } else {
+            panel
         }
-        .environment(\.stationGlassSpace, glass)
     }
 
     // value: a page of the menu bar's own (Ports, Awake, Activity) drawn in
@@ -158,7 +150,7 @@ public struct Popover: View {
     }
 
     var panel: some View {
-        VStack(alignment: .leading, spacing: Token.Glass.spacing + 2) {
+        VStack(alignment: .leading, spacing: Token.Tile.section) {
             header
             if state.menu { menu }
             if let shown = state.shown {
@@ -166,9 +158,9 @@ public struct Popover: View {
                     if shown.id == PageID.switcher {
                         SwitcherContent(page: shown, state: state, handlers: handlers)
                     } else if shown.id == PageID.machine {
-                        MachineContent(page: shown, state: state, handlers: handlers, width: inner)
+                        MachineContent(page: shown, state: state, handlers: handlers)
                     } else {
-                        HomeContent(page: shown, state: state, handlers: handlers, width: inner)
+                        HomeContent(page: shown, state: state, handlers: handlers)
                     }
                 }
                 .opacity(state.connection == .connecting ? 0.5 : 1)
@@ -182,50 +174,39 @@ public struct Popover: View {
                 StatusBar(status.line, failed: status.failed)
             }
         }
-        .padding(Token.Space.margin)
+        .padding(Token.Space.margin + 2)
         .frame(width: Token.Space.width, alignment: .topLeading)
         .stationPanel()
         .environment(\.stationHints, false)
     }
 
-    // invariant: Home and the switcher lead with the switcher's pill, This
-    // Mac's; a machine's page leads with the way back.
+    // invariant: Home and the switcher lead with the machine switcher,
+    // This Mac's, its host's name and the settings; a machine's page leads
+    // with the way back (its own header).
     @ViewBuilder
     var header: some View {
         if let pushed = state.pushed, pushed.id == PageID.machine {
-            Button(action: handlers.back) {
-                HStack(spacing: 3) {
-                    Image(systemName: Token.Symbol.back).font(.system(size: Token.Space.small, weight: .semibold))
-                    Text("All machines").font(.system(size: Token.Space.small + 1, weight: .medium))
-                }
-                .foregroundStyle(palette.accent)
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 4)
+            EmptyView()
         } else {
-            HStack(alignment: .center, spacing: 6) {
+            HStack(alignment: .center, spacing: Token.Space.gap) {
                 Button(action: state.pushed == nil ? handlers.openSwitcher : handlers.back) {
-                    HStack(alignment: .firstTextBaseline, spacing: 5) {
-                        Image(systemName: Token.Symbol.mac).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.accent)
-                        Text(Page.ThisMacWord).font(.system(size: Token.Space.head, weight: .bold)).foregroundStyle(palette.text)
-                        Image(systemName: Token.Symbol.down).font(.system(size: Token.Space.small - 2, weight: .bold)).foregroundStyle(palette.muted)
-                            .rotationEffect(.degrees(state.pushed == nil ? 0 : 180))
+                    HStack(alignment: .center, spacing: 6) {
+                        IconCircle(Token.Symbol.mac, active: true)
+                        Text(Page.ThisMacWord).font(.headline).foregroundStyle(.primary)
+                        Image(systemName: state.pushed == nil ? Token.Symbol.down : Token.Symbol.up).font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut("0", modifiers: .command)
                 if state.pushed == nil {
-                    Text(state.page?.context?.machine ?? "station").font(.system(size: Token.Space.text)).foregroundStyle(palette.muted).lineLimit(1).minimumScaleFactor(0.85).truncationMode(.middle)
+                    Text(state.page?.context?.machine ?? "station").font(.subheadline).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }
                 Spacer(minLength: 4)
-                if state.connection == .live {
-                    PlainIcon(Token.Symbol.activity) { handlers.push(Navigation.activity) }
+                if state.pushed == nil {
+                    PlainIcon(Token.Symbol.settings, picked: state.menu, tap: handlers.toggleMenu)
                 }
-                PlainIcon(Token.Symbol.settings, picked: state.menu, tap: handlers.toggleMenu)
             }
-            .padding(.horizontal, 4)
-            .padding(.top, 2)
         }
     }
 
@@ -240,7 +221,7 @@ public struct Popover: View {
                 .toggleStyle(.checkbox)
                 .font(.system(size: Token.Space.small))
             Spacer()
-            Button("Quit") { handlers.quit() }.font(.system(size: Token.Space.small))
+            TextAction("Quit") { handlers.quit() }
         }
     }
 }

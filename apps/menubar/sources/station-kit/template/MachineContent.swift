@@ -1,0 +1,265 @@
+import SwiftUI
+
+// invariant: SPEC §10.2's page of one machine, vision panels c and f: its
+// name, kind and state, its sections in the vision's order and words,
+// its buttons; each action names its call and asks at its call's level.
+// A server's one primary action is Restart.
+struct MachineContent: View {
+    let page: Page
+    let state: PopoverState
+    let handlers: PopoverHandlers
+    @Environment(\.stationPalette) private var palette
+    @Environment(\.stationNow) private var now
+    @Environment(\.stationStill) private var still
+
+    var head: Section? { page.section("machine") }
+    var server: Bool { page.context?.kind == "server" }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Token.Tile.section) {
+            if let error = page.error { ErrorLine(error) }
+            if let head { header(head) }
+            ForEach(Array((page.sections ?? []).enumerated()), id: \.offset) { _, s in
+                if s.id != "machine" { section(s) }
+            }
+            SheetFor(page: page, state: state, handlers: handlers)
+            if state.confirming == nil || page.action(state.confirming ?? "")?.on == "row" {
+                buttons
+            }
+        }
+    }
+
+    func header(_ s: Section) -> some View {
+        let row = s.items?.first?.row
+        let mac = page.context?.kind == "mac"
+        let mark = row?.mark ?? .ok
+        let caption = (s.caption ?? []).map { Format.show($0) }.filter { !(server && $0 == "Server VM") }
+        return PageHeader(back: "All machines", title: s.title ?? "", subtitle: caption.joined(separator: Token.Glyph.sep), symbol: mac ? Token.Symbol.mac : Token.Symbol.vm,
+                          active: mark != .absent, badge: server ? "Server" : nil, action: handlers.back) {
+            if let word = row?.cells?.first.map({ Format.show($0) }) {
+                StateWord(word, ink: mark == .absent ? palette.grey : palette.of(mark))
+            }
+        }
+    }
+
+    func words(_ v: Value?) -> String { v.map { Format.show($0, now: now) } ?? "" }
+
+    @ViewBuilder
+    func section(_ s: Section) -> some View {
+        switch s.id {
+        case "activity":
+            VStack(alignment: .leading, spacing: 6) {
+                if server { SectionHeader("Resources") }
+                Metrics(measures: s.rows.map { r in (r.label ?? "", r.cells?.first, r.cells?.dropFirst().first?.points) })
+            }
+        case "up":
+            HStack(alignment: .top, spacing: 14) {
+                ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in figure(r) }
+            }
+        case "health":
+            VStack(alignment: .leading, spacing: 2) {
+                SectionHeader(s.header)
+                ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in health(r) }
+            }
+        case "inside":
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in
+                    MenuRow(r.label ?? "", tap: {}) {
+                        IconCircle(Token.Symbol.line(r.id ?? "") ?? Token.Symbol.forward)
+                    } trailing: {
+                        TrailingValue(words(r.cells?.first))
+                        Chevron()
+                    }
+                }
+            }
+        case "ports":
+            VStack(alignment: .leading, spacing: 2) {
+                SectionHeader("\(s.header)\(Token.Glyph.sep)\((s.items ?? []).compactMap(\.link).count)")
+                ForEach(Array((s.items ?? []).compactMap(\.link).enumerated()), id: \.offset) { _, l in link(l) }
+                if let share = page.action("share-port") {
+                    MenuRow("\(share.label ?? "")\(Token.Glyph.ellipsis)", tap: { perform(share, handlers) }) {
+                        IconCircle(Token.Symbol.share)
+                    }
+                }
+            }
+        case "shared":
+            VStack(alignment: .leading, spacing: 2) {
+                SectionHeader(s.header)
+                ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in
+                    MenuRow(r.label ?? "", subtitle: words(r.cells?.first)) {
+                        EmptyView()
+                    } trailing: {
+                        ForEach(Array(page.rowActions(r.id ?? "").enumerated()), id: \.offset) { _, a in
+                            StationButton(a.label ?? "") { perform(a, handlers) }.disabled(state.running != nil)
+                        }
+                    }
+                }
+            }
+        case "server":
+            VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in serverRow(r) }
+                }
+                ForEach(Array(s.notes.enumerated()), id: \.offset) { _, n in FootNote(n) }
+            }
+        case "vms":
+            VStack(alignment: .leading, spacing: 4) {
+                SectionHeader(s.header)
+                MachineTree(section: s, kinds: true, only: nil, open: handlers.openMachine)
+            }
+        default:
+            VStack(alignment: .leading, spacing: 2) {
+                SectionHeader(s.header)
+                ForEach(Array((s.items ?? []).enumerated()), id: \.offset) { _, item in
+                    if let row = item.row {
+                        markRow(s, row)
+                    } else if let note = item.note?.text {
+                        FootNote(note)
+                    } else {
+                        ItemsView([item], columns: s.columns ?? [], width: Token.Space.width - Token.Space.margin * 2)
+                    }
+                }
+            }
+        }
+    }
+
+    // value: an Overview figure as the vision's two: its name, its figure,
+    // its words.
+    func figure(_ r: Row) -> some View {
+        let value = r.cells?.first
+        let items = value?.items ?? []
+        let shown: String
+        let rest: String?
+        if r.id == "restarts" {
+            shown = "\(Token.Glyph.restart) \(items.first?.n ?? 0)"
+            rest = items.dropFirst().map { Format.show($0) }.joined(separator: Token.Glyph.sep)
+        } else {
+            shown = Self.span(value).map { Format.show($0) } ?? Token.Glyph.missing
+            rest = nil
+        }
+        return VStack(alignment: .leading, spacing: 2) {
+            Text(r.label ?? "").font(.subheadline).foregroundStyle(.secondary)
+            Text(shown).font(.system(size: Token.Tile.figure, weight: .semibold)).monospacedDigit()
+            if let rest, !rest.isEmpty { Text(rest).font(.subheadline).foregroundStyle(.secondary) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // value: the Up figure without the word its label already says: `up
+    // 12 d` is shown 12 d.
+    static func span(_ v: Value?) -> Value? {
+        guard var v, let text = v.text, text.hasPrefix("up ") else { return v }
+        v.text = String(text.dropFirst(3))
+        return v
+    }
+
+    // value: a health check as the vision's: a check in its state's
+    // colour, its name, an address under it when it is one, its value on
+    // the right.
+    func health(_ r: Row) -> some View {
+        let value = r.cells?.first.flatMap { $0.isNone ? nil : $0 }
+        let address = value.flatMap { Format.show($0).hasPrefix("http") ? Format.show($0) : nil }
+        return MenuRow(r.label ?? "", subtitle: address, link: true) {
+            Image(systemName: r.mark == .ok ? Token.Symbol.health : Token.Symbol.of(r.mark ?? .notKnown))
+                .font(.system(size: 12, weight: .bold)).foregroundStyle(palette.of(r.mark ?? .notKnown)).frame(width: Token.Tile.circle)
+        } trailing: {
+            if address == nil, let value { TrailingValue(Format.show(value)) }
+        }
+    }
+
+    func markRow(_ s: Section, _ r: Row) -> some View {
+        let fix = s.columns?.first { $0.kind == "command" }?.key
+        let command = fix.flatMap { s.cell(r, $0)?.text }
+        let value = (r.cells ?? []).filter { !$0.isNone && $0.text != command }.map { Format.show($0, now: now) }.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
+        let title = (r.short ?? r.label ?? "").capitalizedFirst
+        let long = value.count > 14 || title.count + value.count > 38
+        return MenuRow(title, subtitle: long ? value.capitalizedFirst : nil) {
+            StateDot(mark: r.mark).frame(width: Token.Tile.circle)
+        } trailing: {
+            if !value.isEmpty, !long { TrailingValue(value) }
+            ForEach(Array(page.rowActions(r.id ?? "").enumerated()), id: \.offset) { _, a in
+                TextAction(a.label ?? "") { perform(a, handlers) }.disabled(state.running != nil)
+            }
+        }
+    }
+
+    func serverRow(_ r: Row) -> some View {
+        let value = words(r.cells?.first)
+        if r.id == "ssh" {
+            return AnyView(MenuRow(r.label ?? "", subtitle: value, link: true) {
+                IconCircle(Token.Symbol.terminalFill)
+            } trailing: {
+                PlainIcon(Token.Symbol.copy) { handlers.copy(value) }
+            })
+        }
+        return AnyView(MenuRow(r.label ?? "", tap: { handlers.push(Navigation.ports) }) {
+            IconCircle(Token.Symbol.globe)
+        } trailing: {
+            TrailingValue(Self.counted(r.cells?.first))
+            Chevron()
+        })
+    }
+
+    // value: a shared port as the vision's line: its name and port, its
+    // address under it in the accent, Copy, QR and Open at its end; the QR
+    // unfolds under it.
+    func link(_ l: Link) -> some View {
+        let url = l.value.flatMap(Format.url)
+        let address = l.value.map { Format.show($0) } ?? ""
+        let lead = l.lead.map { Format.show($0) } ?? l.label ?? ""
+        return VStack(alignment: .center, spacing: 8) {
+            MenuRow(lead, subtitle: address, link: true) {
+                EmptyView()
+            } trailing: {
+                HStack(spacing: 2) {
+                    PlainIcon(Token.Symbol.copy) { handlers.copy(address) }
+                    if let url {
+                        PlainIcon(Token.Symbol.qr, picked: state.qr == url.absoluteString) { handlers.toggleQR(url.absoluteString) }
+                        PlainIcon(Token.Symbol.open) { handlers.open(url) }
+                    }
+                }
+            }
+            if let url, state.qr == url.absoluteString {
+                QRView(url.absoluteString).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+        }
+    }
+
+    // invariant: the page's own actions as the vision's buttons, side by
+    // side and as wide: Restart the one primary, Stop, and what destroys
+    // in red; Open in Terminal answers its key.
+    var buttons: some View {
+        let shown = page.pageActions.filter { ["restart", "stop", "start", "delete", "unlock"].contains($0.id ?? "") }
+        let terminal = page.action("open-station")
+        return HStack(spacing: Token.Space.gap) {
+            ForEach(Array(shown.enumerated()), id: \.offset) { _, a in
+                if state.running == a.id {
+                    PendingDot().frame(maxWidth: .infinity)
+                } else {
+                    StationButton(Self.label(a), role: a.id == "restart" ? .primary : a.id == "delete" ? .danger : .plain, wide: true) { perform(a, handlers) }
+                        .disabled(state.running != nil)
+                }
+            }
+        }
+        .background {
+            if let terminal, !still {
+                Button("") { handlers.run(terminal, [:]) }.keyboardShortcut("t", modifiers: .command).opacity(0).allowsHitTesting(false)
+            }
+        }
+    }
+
+    // value: a count said as the vision says it, its number first: `Public
+    // 1` is 1 public.
+    static func counted(_ v: Value?) -> String {
+        let parts = (v?.items ?? v.map { [$0] } ?? []).map { Format.show($0) }
+        return parts.map { p in
+            let words = p.split(separator: " ")
+            guard words.count == 2, Int(words[1]) != nil else { return p }
+            return "\(words[1]) \(words[0].lowercased())"
+        }.joined(separator: Token.Glyph.sep)
+    }
+
+    static func label(_ a: Action) -> String {
+        (a.form != nil || a.confirm?.type != nil) ? "\(a.label ?? "")\(Token.Glyph.ellipsis)" : a.label ?? ""
+    }
+}

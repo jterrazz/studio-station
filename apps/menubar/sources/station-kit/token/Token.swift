@@ -19,6 +19,7 @@ public enum Token {
         public static let secret = "••••••"
         public static let add = "+ "
         public static let sent = "↑"
+        public static let unbroken = "\u{2011}"
     }
 
     // value: the keys a menu item says and answers (vision a, b).
@@ -29,30 +30,26 @@ public enum Token {
         }
     }
 
-    // value: the tiles and pills of the popover (vision a-f): Control
-    // Center's rounded glass, its 26 pt state circles, its 13 pt rows.
+    // value: the measures of a panel drawn by Apple's menus (Wi-Fi,
+    // Battery): 28 pt rows, a 24 pt icon circle, a 6 pt hover, 16 pt
+    // between sections, a 10 pt grouping concentric with the panel.
     public enum Tile {
-        public static let radius: CGFloat = 16
-        public static let padding: CGFloat = 10
-        public static let pill: CGFloat = 10
-        public static let title: CGFloat = 17
-        public static let value: CGFloat = 17
-        public static let sparkHeight: CGFloat = 24
-        public static let circle: CGFloat = 26
-        public static let icon: CGFloat = 22
-        public static let figure: CGFloat = 20
-        public static let meter: CGFloat = 14
-        public static let meterBars = 10
-        public static let meterWidth: CGFloat = 30
+        public static let row: CGFloat = 28
+        public static let circle: CGFloat = 24
+        public static let headCircle: CGFloat = 32
+        public static let hover: CGFloat = 6
+        public static let group: CGFloat = 10
+        public static let groupPadding: CGFloat = 10
+        public static let section: CGFloat = 16
+        public static let indent: CGFloat = 32
+        public static let figure: CGFloat = 17
+        public static let spark: CGFloat = 22
         public static let chart: CGFloat = 54
         public static let measure: CGFloat = 22
-        public static let line: CGFloat = 32
-        public static let bars: CGFloat = 16
-        public static let smallCircle: CGFloat = 22
-        public static let rowHeight: CGFloat = 40
-        public static let hover: CGFloat = 8
-        public static let dot: CGFloat = 6
-        public static let sheet: CGFloat = 14
+        public static let meter: CGFloat = 14
+        public static let dot: CGFloat = 7
+        public static let switchWidth: CGFloat = 26
+        public static let switchHeight: CGFloat = 15
     }
 
     // value: the menu bar icon of the vision: the station symbol, 16 pt, its
@@ -94,37 +91,21 @@ public enum Token {
         public static let graphHeight: CGFloat = 40
     }
 
-    // value: Liquid Glass (VISION-v3 panels a-g): one container per page
-    // whose shapes merge closer than `spacing`, each tile's corner, and the
-    // look an offscreen snapshot draws in place of the system's glass, which
-    // the renderer cannot sample: a translucent body, a sheen from the top
-    // and a specular rim lit from the top left.
+    // value: the panel an offscreen snapshot draws in place of the
+    // MenuBarExtra's system glass, which the renderer cannot sample: a
+    // translucent pane, its rim and its shadow over the vision's desk.
     public enum Glass {
-        public static let spacing: CGFloat = 8
-        public static let radius: CGFloat = 14
         public static let window: CGFloat = 22
-        public static let padding: CGFloat = 12
-        public static let tint = 0.32
 
-        public static func body(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.06) : Color.white.opacity(0.42) }
+        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x1E2024).opacity(0.78) : Token.hex(0xF4F5F7).opacity(0.7) }
         public static func sheen(_ scheme: ColorScheme) -> [Color] {
-            [Color.white.opacity(scheme == .dark ? 0.02 : 0.08), Color.white.opacity(0)]
+            [Color.white.opacity(scheme == .dark ? 0.03 : 0.12), Color.white.opacity(0)]
         }
-        public static func rim(_ scheme: ColorScheme) -> [Color] {
-            scheme == .dark ? [Color.white.opacity(0.09), Color.white.opacity(0.03)] : [Color.white.opacity(0.7), Color.black.opacity(0.04)]
-        }
-        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x1C1F24).opacity(0.8) : Token.hex(0xEEF0F3).opacity(0.72) }
-        public static func edge(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.13) : Color.black.opacity(0.1) }
+        public static func edge(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.14) : Color.black.opacity(0.1) }
+        // value: the chosen segment of a segmented control, raised off its
+        // track as macOS draws it.
+        public static func knob(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.26) : Color.white }
         public static func shade(_ scheme: ColorScheme) -> Color { Color.black.opacity(scheme == .dark ? 0.5 : 0.22) }
-        public static func well(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.black.opacity(0.22) : Color.black.opacity(0.05) }
-        public static func sunken(_ scheme: ColorScheme) -> [Color] {
-            scheme == .dark ? [Color.black.opacity(0.3), Color.black.opacity(0.16)] : [Color.black.opacity(0.08), Color.black.opacity(0.03)]
-        }
-        public static func sunkenRim(_ scheme: ColorScheme) -> [Color] {
-            scheme == .dark ? [Color.black.opacity(0.25), Color.white.opacity(0.1)] : [Color.black.opacity(0.08), Color.white.opacity(0.85)]
-        }
-        public static let ink = Color.white
-        public static func inset(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.black.opacity(0.24) : Color.black.opacity(0.06) }
 
         // value: the fixed wallpaper an offscreen snapshot draws the panel
         // over, so its glass reads in the PNG (the vision's desk).
@@ -173,11 +154,14 @@ public enum Token {
         public static let search = "magnifyingglass"
         public static let check = "checkmark"
         public static let sun = "sun.max.fill"
-        public static let person = "person.crop.circle"
+        public static let person = "person.fill"
         public static let cpu = "cpu"
         public static let memory = "memorychip"
         public static let network = "arrow.up.arrow.down"
-        public static let warn = "exclamationmark.triangle"
+        public static let warn = "exclamationmark.triangle.fill"
+        public static let share = "square.and.arrow.up"
+        public static let up = "chevron.up"
+        public static let health = "checkmark"
         public static let open = "arrow.up.right.square"
         public static let qr = "qrcode"
         public static let globe = "globe"
@@ -223,16 +207,16 @@ public enum Token {
         }
     }
 
-    // value: the system colours of the vision's glass (VISION-v3 --g-*):
-    // ink and its two secondary steps, the state colours, white on a
-    // filled state circle.
+    // value: the system's own colours: the label styles for ink, one
+    // accent, and a state colour only where a state means something
+    // (healthy, needs you, failed).
     public struct Palette: Sendable {
-        public let text, muted, subtle, faint, hover, raised, well, chip, accent, good, bad, teal, indigo, grey, onTint, qrDark, qrLight: Color
+        public let text, muted, subtle, faint, accent, good, warn, bad, grey, onTint, qrDark, qrLight: Color
 
         public func of(_ mark: Mark) -> Color {
             switch mark {
             case .ok: good
-            case .attention: text
+            case .attention: warn
             case .broken: bad
             case .absent, .pending, .offHere, .notKnown: muted
             case .notForThisMachine: subtle
@@ -247,14 +231,10 @@ public enum Token {
     public static func palette(_ scheme: ColorScheme) -> Palette {
         let dark = scheme == .dark
         let pair = { (light: UInt32, night: UInt32) in hex(dark ? night : light) }
-        let ink2 = dark ? hex(0xEBEBF5) : hex(0x3C3C43)
         return Palette(
-            text: pair(0x1D1D1F, 0xF5F5F7), muted: ink2.opacity(dark ? 0.62 : 0.68), subtle: ink2.opacity(dark ? 0.38 : 0.42),
-            faint: ink2.opacity(dark ? 0.16 : 0.16), hover: (dark ? Color.white : Color.black).opacity(dark ? 0.1 : 0.06),
-            raised: Color.white.opacity(dark ? 0.2 : 0.92), well: Glass.well(scheme), chip: dark ? hex(0x0E1013).opacity(0.85) : hex(0x2C2F35),
-            accent: pair(0x0A7AFF, 0x2B8CFF), good: pair(0x2FB350, 0x32C75A), bad: pair(0xEC3B30, 0xFF4F45),
-            teal: pair(0x14A6B8, 0x2BB8C9), indigo: pair(0x5B5CE6, 0x6E6FF0), grey: hex(0x8E8E93), onTint: hex(0xFFFFFF),
-            qrDark: hex(0x000000), qrLight: hex(0xFFFFFF))
+            text: Color.primary, muted: Color.secondary, subtle: Color.primary.opacity(0.26), faint: Color.primary.opacity(0.1),
+            accent: pair(0x007AFF, 0x0A84FF), good: pair(0x28CD41, 0x32D74B), warn: pair(0xFF9500, 0xFF9F0A), bad: pair(0xFF3B30, 0xFF453A),
+            grey: hex(0x8E8E93), onTint: hex(0xFFFFFF), qrDark: hex(0x000000), qrLight: hex(0xFFFFFF))
     }
 }
 

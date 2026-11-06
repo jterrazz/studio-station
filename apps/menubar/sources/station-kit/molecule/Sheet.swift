@@ -9,7 +9,6 @@ public struct TypedField: View {
     @Binding var text: String
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationStill) private var still
-    @Environment(\.stationInCard) private var inCard
 
     public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil, key: String? = nil) {
         self.placeholder = placeholder
@@ -23,15 +22,13 @@ public struct TypedField: View {
             if let symbol { Image(systemName: symbol).font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.muted) }
             field
             if let key {
-                Text(key).font(.system(size: Token.Space.small - 1, weight: .semibold)).foregroundStyle(palette.muted)
-                    .padding(.horizontal, 5).padding(.vertical, 1.5)
-                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(palette.subtle, lineWidth: 0.8))
+                Text(key).font(.subheadline).foregroundStyle(.tertiary)
             }
         }
-        .font(.system(size: Token.Space.text))
-        .padding(.horizontal, inCard ? 9 : Token.Glass.padding)
-        .padding(.vertical, inCard ? 6 : 10)
-        .modifier(FieldGround(inCard: inCard))
+        .font(.body)
+        .padding(.horizontal, 8)
+        .frame(height: 26)
+        .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
     }
 
     @ViewBuilder
@@ -50,27 +47,13 @@ public struct TypedField: View {
     }
 }
 
-// value: where a field sits: on the panel, a card of its own, as the
-// references' "Filter by name or port"; in a card, a flat inset.
-struct FieldGround: ViewModifier {
-    let inCard: Bool
-
-    func body(content: Content) -> some View {
-        if inCard { content.stationWell() } else { content.stationGlass(radius: Token.Glass.radius) }
-    }
-}
-
-// value: where a sheet sits: on the panel, a card of its own; in a card,
-// the rest of it under a hairline.
+// value: where a sheet sits: under a divider, in the flow of the page,
+// never a card of its own.
 struct SheetGround: ViewModifier {
-    @Environment(\.stationInCard) private var inCard
-    @Environment(\.stationPalette) private var palette
-
     func body(content: Content) -> some View {
-        if inCard {
-            content.padding(.top, 10).overlay(alignment: .top) { Rectangle().fill(palette.faint).frame(height: 0.5) }
-        } else {
-            content.padding(Token.Glass.padding).stationGlass(radius: Token.Glass.radius)
+        VStack(alignment: .leading, spacing: 10) {
+            SectionDivider()
+            content
         }
     }
 }
@@ -114,7 +97,7 @@ public struct ConfirmSheet: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(confirm.question ?? "").font(.system(size: Token.Space.text + 1, weight: .semibold)).foregroundStyle(palette.text)
+            Text(confirm.question ?? "").font(.body.weight(.semibold)).foregroundStyle(.primary)
             ForEach(Array((confirm.lines ?? []).enumerated()), id: \.offset) { _, line in
                 ValueText(line, muted: true).fixedSize(horizontal: false, vertical: true)
             }
@@ -160,7 +143,7 @@ public struct FormSheet: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(form.title ?? "").font(.system(size: Token.Space.text + 1, weight: .semibold)).foregroundStyle(palette.text)
+            Text(form.title ?? "").font(.body.weight(.semibold)).foregroundStyle(.primary)
             ForEach(Array((form.fields ?? []).enumerated()), id: \.offset) { _, f in
                 VStack(alignment: .leading, spacing: 3) {
                     Text(f.label ?? "").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
@@ -198,32 +181,39 @@ public struct SheetButton: View {
     }
 
     public var body: some View {
-        Pill(title, role: role == .accent ? .primary : role == .danger ? .danger : .plain, action: action)
+        StationButton(title, role: role == .accent ? .primary : role == .danger ? .danger : .plain, action: action)
     }
 }
 
-// value: a picker as the references draw one: its options as words side
-// by side, the chosen one on a faint fill, no well around them.
+// value: a picker as macOS's segmented control: its options side by side
+// on a tertiary track, the chosen one raised.
 public struct Segments: View {
     let options: [(label: String, on: Bool, tap: () -> Void)]
-    @Environment(\.stationPalette) private var palette
+    @Environment(\.colorScheme) private var scheme
 
     public init(options: [(label: String, on: Bool, tap: () -> Void)]) { self.options = options }
 
     public var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 2) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, o in
                 Button(action: o.tap) {
                     Text(o.label)
-                        .font(.system(size: Token.Space.small + 1, weight: o.on ? .semibold : .medium))
-                        .foregroundStyle(o.on ? palette.text : palette.muted)
+                        .font(.subheadline.weight(o.on ? .semibold : .regular))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
-                        .background(RoundedRectangle(cornerRadius: Token.Tile.hover - 2, style: .continuous).fill(o.on ? palette.hover : .clear))
+                        .frame(height: 20)
+                        .background {
+                            if o.on {
+                                RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Token.Glass.knob(scheme)).shadow(color: .black.opacity(0.18), radius: 0.8, y: 0.5)
+                            }
+                        }
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
+        .padding(2)
+        .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
     }
 }

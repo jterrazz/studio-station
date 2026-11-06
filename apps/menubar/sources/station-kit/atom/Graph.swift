@@ -72,7 +72,7 @@ public struct Bars: View {
     var ceiling: Int? = nil
     @Environment(\.stationPalette) private var palette
 
-    public init(_ points: [Int], height: CGFloat = Token.Tile.bars, accented: Int = 1, tint: Color? = nil, chart: Bool = false) {
+    public init(_ points: [Int], height: CGFloat = Token.Tile.meter, accented: Int = 1, tint: Color? = nil, chart: Bool = false) {
         self.points = points
         self.height = height
         self.accented = accented
@@ -104,7 +104,7 @@ public struct Bars: View {
 
     // value: the meter of a measure not read yet: its bars low and level,
     // none accented, so a tile waiting keeps its shape.
-    public static func pending(height: CGFloat = Token.Tile.bars) -> Bars {
+    public static func pending(height: CGFloat = Token.Tile.meter) -> Bars {
         var bars = Bars(Array(repeating: 1, count: 12), height: height, accented: 0)
         bars.waiting = true
         return bars
@@ -114,7 +114,7 @@ public struct Bars: View {
     // last `lit` of them in the tint, every bar at full height, so a count reads as a filled share.
     public static let slots = 12
 
-    public static func meter(_ lit: Int, of count: Int, height: CGFloat = Token.Tile.bars, tint: Color? = nil) -> Bars {
+    public static func meter(_ lit: Int, of count: Int, height: CGFloat = Token.Tile.meter, tint: Color? = nil) -> Bars {
         var bars = Bars(Array(repeating: 1, count: count), height: height, accented: min(max(lit, 0), count), tint: tint)
         bars.full = true
         return bars

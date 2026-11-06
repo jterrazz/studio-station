@@ -30,25 +30,25 @@ public struct ActivityPage: View {
 
     public var body: some View {
         let banner = page.section("machine")?.rows.first
-        VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
-            PushedHeader(back: banner?.label ?? page.context?.machine ?? "", title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()),
-                         symbol: Token.Symbol.cpu, id: Navigation.activity, action: handlers.back)
+        VStack(alignment: .leading, spacing: Token.Tile.section) {
+            PageHeader(back: banner?.label ?? page.context?.machine ?? "", title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()), action: handlers.back)
             Segments(options: Self.picker(page, handlers: handlers).map { ($0.words, $0.picked, $0.tap) })
             if let graphs = page.section("graphs") {
                 let rows = graphs.rows
                 if let lead = rows.first, (lead.cells?.dropFirst().first?.points.count ?? 0) > 1 {
                     wide(lead)
-                    GlassCard(padding: 12, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 12) {
                         ForEach(Array(rows.dropFirst().enumerated()), id: \.offset) { _, r in measure(r) }
                     }
                 } else {
-                    GlassCard(padding: 12, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 12) {
                         ForEach(Array(rows.enumerated()), id: \.offset) { _, r in measure(r) }
                     }
                 }
             }
             if let top = page.section("processes") {
-                GroupCard(top.title ?? "") {
+                VStack(alignment: .leading, spacing: 2) {
+                    SectionHeader(top.title ?? "")
                     ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { _, r in
                         process(top, r)
                     }
@@ -57,13 +57,26 @@ public struct ActivityPage: View {
         }
     }
 
-    // value: the first measure as the references' wide chart card: its
+    // value: the first measure as a wide chart drawn on the panel: its
     // name and words, its window in bars with the latest accented, the
     // window's start and Now under it.
     func wide(_ r: Row) -> some View {
         let points = r.cells?.dropFirst().first?.points ?? []
         let start = Self.picked(page).map { "\($0) ago" } ?? ""
-        return ChartCard(title: r.label ?? "", words: r.cells?.first.map { Format.show($0) }, points: Self.buckets(points, 24), start: start, height: 64)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                SectionHeader(r.label ?? "")
+                Spacer(minLength: Token.Space.gap)
+                Text(r.cells?.first.map { Format.show($0) } ?? "").font(.subheadline.weight(.semibold)).monospacedDigit().contentTransition(.numericText())
+            }
+            Bars(Self.buckets(points, 24), height: 64, accented: 2, chart: true)
+            HStack {
+                Text(start)
+                Spacer()
+                Text("Now")
+            }
+            .font(.caption).foregroundStyle(.secondary)
+        }
     }
 
     // value: a series cut into `n` buckets, each its mean, oldest first.
@@ -82,9 +95,9 @@ public struct ActivityPage: View {
         let ratio = r.cells?.dropFirst().first.flatMap { $0.kind == "ratio" ? $0 : nil }
         return VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
-                Text(r.label ?? "").font(.system(size: Token.Space.small + 1, weight: .medium)).foregroundStyle(palette.muted)
+                Text(r.label ?? "").font(.subheadline).foregroundStyle(.secondary)
                 Spacer(minLength: Token.Space.gap)
-                Text(words).font(.system(size: Token.Space.small + 1, weight: .medium)).foregroundStyle(palette.text).lineLimit(1).monospacedDigit()
+                Text(words).font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1).monospacedDigit()
                     .contentTransition(.numericText())
             }
             if points.count > 1 {
@@ -93,7 +106,7 @@ public struct ActivityPage: View {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule().fill(palette.faint)
-                        Capsule().fill(palette.muted).frame(width: geo.size.width * CGFloat(ratio.n ?? 0) / CGFloat(of))
+                        Capsule().fill(palette.accent).frame(width: geo.size.width * CGFloat(ratio.n ?? 0) / CGFloat(of))
                     }
                 }
                 .frame(height: Token.Space.meterHeight)
@@ -110,18 +123,18 @@ public struct ActivityPage: View {
 
     func process(_ s: Section, _ r: Row) -> some View {
         HStack(spacing: Token.Space.gap) {
-            Text(r.label ?? "").font(.system(size: Token.Space.text)).foregroundStyle(palette.text).lineLimit(1)
-            if let what = s.cell(r, "what") { Text(Format.show(what)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted) }
+            Text(r.label ?? "").font(.body).foregroundStyle(.primary).lineLimit(1)
+            if let what = s.cell(r, "what") { Text(Format.show(what)).font(.subheadline).foregroundStyle(.secondary) }
             Spacer(minLength: 0)
             ForEach(["cpu", "memory"], id: \.self) { key in
                 if let v = s.cell(r, key) {
-                    Text(Format.show(v)).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).monospacedDigit().frame(width: 52, alignment: .trailing)
+                    Text(Format.show(v)).font(.subheadline).foregroundStyle(.secondary).monospacedDigit().frame(width: 52, alignment: .trailing)
                 } else {
                     Text(Token.Glyph.missing).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle).frame(width: 52, alignment: .trailing)
                         .help(Self.missing(key))
                 }
             }
         }
-        .frame(minHeight: Token.Space.row + 8)
+        .frame(minHeight: Token.Tile.row)
     }
 }
