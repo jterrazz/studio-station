@@ -425,11 +425,13 @@ public struct StationButton: View {
                 if wide {
                     Wrap(title, alignment: .center).font(.system(size: Token.Size.text, weight: role == .quiet ? .medium : .semibold))
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(.vertical, Token.Size.leading)
                         .padding(8).frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(fill, in: RoundedRectangle(cornerRadius: Token.Tile.buttonCorner, style: .continuous))
                         .opacity(role == .quiet ? 0.75 : 1)
                 } else {
                     Text(title).font(.system(size: Token.Size.mini, weight: .semibold)).lineLimit(1).fixedSize()
+                        .padding(.vertical, Token.Size.leading)
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(fill, in: Capsule())
                 }
@@ -551,7 +553,7 @@ public struct BackButton: View {
         Button(action: action) {
             HStack(spacing: 2) {
                 Image(systemName: Token.Symbol.back).font(.system(size: 11, weight: .bold)).foregroundStyle(palette.glyph)
-                Text(title).font(.system(size: Token.Size.text, weight: .medium))
+                Text(title).font(.system(size: Token.Size.text, weight: .medium)).padding(.vertical, Token.Size.leading)
             }
             .foregroundStyle(palette.accent)
             .padding(2)
@@ -593,15 +595,19 @@ public struct PageHeader<Trailing: View>: View {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .center, spacing: 4) {
                         Text(title).font(.system(size: Token.Size.title, weight: .bold)).tracking(-0.015 * Token.Size.title).foregroundStyle(.primary)
+                            .padding(.vertical, Token.Size.titleLeading)
                         if let badge { KindTag(badge) }
                     }
-                    if let subtitle, !subtitle.isEmpty { SubText(subtitle) }
+                    if let subtitle, !subtitle.isEmpty {
+                        Wrap(subtitle, spacing: Token.Size.headLeading * 2).font(.system(size: Token.Size.sub)).foregroundStyle(.secondary)
+                            .padding(.vertical, Token.Size.headLeading).fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .layoutPriority(1)
                 trailing
             }
-            .padding(.horizontal, 2)
+            .padding(EdgeInsets(top: 2, leading: 2, bottom: 0, trailing: 2))
         }
     }
 }

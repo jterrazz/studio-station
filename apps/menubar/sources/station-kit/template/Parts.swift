@@ -16,7 +16,8 @@ struct Metric: View {
         let (number, unit, of) = Self.parts(value.map { Format.show($0, now: now) } ?? "")
         VStack(alignment: .leading, spacing: 4) {
             Text(label).font(.system(size: Token.Size.label, weight: .semibold)).foregroundStyle(.secondary).lineLimit(1)
-            Self.figure(Token.Glyph.missing, nil).hidden().overlay(alignment: .leading) {
+                .padding(.vertical, Token.Size.labelLeading)
+            Self.figure(Token.Glyph.missing, nil).hidden().padding(.vertical, Token.Size.figureLeading).overlay(alignment: .leading) {
                 if waiting || number.isEmpty {
                     Self.figure(Token.Glyph.missing, nil).foregroundStyle(.tertiary)
                 } else {
@@ -129,14 +130,14 @@ struct MachineRow: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if picked {
-                    Image(systemName: Token.Symbol.check).font(.system(size: 13, weight: .medium)).foregroundStyle(palette.glyph)
+                    Image(systemName: Token.Symbol.check).font(.system(size: 12, weight: .regular)).foregroundStyle(.secondary)
                 } else {
                     StateDot(mark: row.mark)
                 }
             }
             .padding(EdgeInsets(top: 7, leading: nested ? Token.Tile.indent : (picked ? 8 : 12), bottom: 7, trailing: picked ? 8 : 12))
             .frame(minHeight: Token.Tile.row)
-            .foregroundStyle(picked ? AnyShapeStyle(palette.onTint) : AnyShapeStyle(.primary))
+            .foregroundStyle(picked ? AnyShapeStyle(palette.onTint) : AnyShapeStyle(.primary), picked ? AnyShapeStyle(palette.onTint.opacity(Token.Fill.onTintSub)) : AnyShapeStyle(.secondary))
             .environment(\.colorScheme, picked ? .dark : envScheme)
             .background {
                 if picked {

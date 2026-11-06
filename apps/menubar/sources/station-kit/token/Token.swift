@@ -69,6 +69,7 @@ public enum Token {
         public static let qr: CGFloat = 148
         public static let qrCorner: CGFloat = 14
         public static let linkMeasure = 37
+        public static let findInset: CGFloat = 3
     }
 
     // value: the vision's type scale: 13 pt text, 11.5 pt words under it,
@@ -91,6 +92,10 @@ public enum Token {
         // value: half what the vision's 1.35 line height adds to a line
         // of SF's own.
         public static let leading: CGFloat = 0.8
+        public static let labelLeading: CGFloat = 0.9
+        public static let figureLeading: CGFloat = 1.3
+        public static let titleLeading: CGFloat = 1.3
+        public static let headLeading: CGFloat = 1.9
     }
 
     // value: the vision's fills on the panel's glass: a tile white at 8 %
@@ -108,6 +113,7 @@ public enum Token {
         public static let tag = 0.18
         public static let ring = 0.3
         public static let selected = 0.85
+        public static let onTintSub = 0.85
     }
 
     // value: the vision's hues by scheme: a measure's line (CPU blue,

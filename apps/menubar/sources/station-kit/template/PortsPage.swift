@@ -69,6 +69,7 @@ public struct PortsPage: View {
                 Wrap(title).font(.system(size: Token.Size.text, weight: .semibold)).lineLimit(2)
                 SubText(words.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep))
             }
+            .padding(.trailing, Token.Tile.findInset)
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
             if let review { StationButton(review.label ?? "") { act.tap(review) } }
