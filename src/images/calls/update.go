@@ -1,4 +1,4 @@
-package images
+package calls
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"slices"
 	"time"
 
-	model "github.com/jterrazz/studio-station/src/images"
+	"github.com/jterrazz/studio-station/src/images"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 )
 
@@ -37,18 +37,18 @@ func (s *Service) updating(names []string) ([]string, error) {
 	return out, nil
 }
 
-func (s *Service) Update(ctx context.Context, names []string, progress func(Step)) ([]model.Update, error) {
+func (s *Service) Update(ctx context.Context, names []string, progress func(images.Step)) ([]images.Update, error) {
 	wanted, err := s.updating(names)
 	if err != nil || len(wanted) == 0 {
 		return nil, err
 	}
 	if _, err := s.e.Version(ctx); err != nil {
-		return nil, &NoEngineError{Hypervisor: s.e.Name(), Cause: err}
+		return nil, &images.NoEngineError{Hypervisor: s.e.Name(), Cause: err}
 	}
 	if progress == nil {
-		progress = func(Step) {}
+		progress = func(images.Step) {}
 	}
-	var out []model.Update
+	var out []images.Update
 	for _, name := range wanted {
 		u, err := s.updateOne(ctx, name, progress)
 		if err != nil {
@@ -62,43 +62,43 @@ func (s *Service) Update(ctx context.Context, names []string, progress func(Step
 // invariant: an update fetches only a version newer than every one held;
 // it lands whole as an image disk or not at all, so a failed fetch leaves
 // the image as it was.
-func (s *Service) updateOne(ctx context.Context, name string, progress func(Step)) (model.Update, error) {
+func (s *Service) updateOne(ctx context.Context, name string, progress func(images.Step)) (images.Update, error) {
 	latest, err := s.source.Latest(ctx, name)
 	switch {
 	case errors.Is(err, imagescontract.ErrNotPublished):
-		return model.Update{}, &NotPublishedError{Image: name}
+		return images.Update{}, &images.NotPublishedError{Image: name}
 	case err != nil:
-		return model.Update{}, &RegistryError{Image: name, Cause: err}
+		return images.Update{}, &images.RegistryError{Image: name, Cause: err}
 	}
 	held, err := s.records(name)
 	if err != nil {
-		return model.Update{}, err
+		return images.Update{}, err
 	}
-	if len(held) > 0 && model.CompareVersions(held[0].Version, latest.Version) >= 0 {
-		return model.Update{Ref: held[0].Ref(), Newest: true}, nil
+	if len(held) > 0 && images.CompareVersions(held[0].Version, latest.Version) >= 0 {
+		return images.Update{Ref: held[0].Ref(), Newest: true}, nil
 	}
 	at, err := s.source.Locate(ctx, latest, s.e.Name())
 	if errors.Is(err, imagescontract.ErrNotForHypervisor) {
-		return model.Update{}, &NotPublishedError{Image: name}
+		return images.Update{}, &images.NotPublishedError{Image: name}
 	}
 	if err != nil {
-		return model.Update{}, &RegistryError{Image: name, Cause: err}
+		return images.Update{}, &images.RegistryError{Image: name, Cause: err}
 	}
-	failed := func(step string, cause error) (model.Update, error) {
-		return model.Update{}, &FetchFailedError{Image: name, Version: latest.Version, Step: step, Cause: cause}
+	failed := func(step string, cause error) (images.Update, error) {
+		return images.Update{}, &images.FetchFailedError{Image: name, Version: latest.Version, Step: step, Cause: cause}
 	}
-	progress(Step{Label: "fetching " + name + " " + latest.Version})
+	progress(images.Step{Label: "fetching " + name + " " + latest.Version})
 	if err := s.e.Fetch(ctx, at, nil); err != nil {
 		return failed("fetching", err)
 	}
 	disk := DiskName(name, latest.Version)
-	progress(Step{Label: "recording " + name + " " + latest.Version})
+	progress(images.Step{Label: "recording " + name + " " + latest.Version})
 	if err := s.e.Clone(ctx, at, disk); err != nil {
 		_ = s.e.Discard(context.WithoutCancel(ctx), at)
 		return failed("keeping the fetched image", err)
 	}
 	_ = s.e.Discard(ctx, at)
-	rec := Record{Name: name, Version: latest.Version, BuiltAt: s.h.Clock.Now().UTC().Truncate(time.Second), Published: true}
+	rec := images.Record{Name: name, Version: latest.Version, BuiltAt: s.m.Now().UTC().Truncate(time.Second), Published: true}
 	if img, err := s.image(name); err == nil {
 		rec.Base = img.Base
 	}
@@ -113,5 +113,5 @@ func (s *Service) updateOne(ctx context.Context, name string, progress func(Step
 		_ = s.e.Delete(context.WithoutCancel(ctx), disk)
 		return failed("writing the image record", err)
 	}
-	return model.Update{Ref: rec.Ref()}, nil
+	return images.Update{Ref: rec.Ref()}, nil
 }

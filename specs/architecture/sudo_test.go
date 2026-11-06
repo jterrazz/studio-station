@@ -8,13 +8,13 @@ import (
 )
 
 // invariant: the allowlist of no-sudo-literal: today's packages that still
-// spell sudo. Most are a hint for the owner; engine, domain/images and
+// spell sudo. Most are a hint for the owner; engine, images/calls and
 // domain/machines run sudo inside a VM; machines/adapter/macos runs
 // `sudo fdesetup authrestart` on another Mac, the planned restart of SPEC
 // §5.13, which security/never-sudo does not cover. It only shrinks.
 func sudoTolerated() []string {
 	return []string{
-		"background/adapter/launchd", "cmd/generate/pages", "domain/images",
+		"background/adapter/launchd", "cmd/generate/pages", "images/calls",
 		"domain/machines", "engine", "machines/adapter/macos", "machines/contract/contracttest",
 		"surface/cli/kit", "wire",
 	}

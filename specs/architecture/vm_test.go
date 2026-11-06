@@ -22,7 +22,7 @@ func sshExecOwners() []string { return []string{"remote/adapter/sshstdio", "mach
 // engine, each with why it is not yet the engine's. It only shrinks.
 func guestDialTolerated() map[string]string {
 	return map[string]string{
-		"src/domain/images/build.go": "a build VM is none of the engine's until images.build is a call it runs",
+		"src/images/calls/build.go": "a build VM is none of the engine's until images.build is a call it runs",
 	}
 }
 

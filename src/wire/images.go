@@ -4,17 +4,19 @@ import (
 	"context"
 	"path/filepath"
 	"slices"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/images"
 	model "github.com/jterrazz/studio-station/src/images"
 	"github.com/jterrazz/studio-station/src/images/adapter/oci"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
+	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/remote/each"
 	imagescmd "github.com/jterrazz/studio-station/src/surface/cli/images"
 	imagesbuild "github.com/jterrazz/studio-station/src/surface/cli/images/build"
@@ -23,16 +25,16 @@ import (
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-func (m machine) images() *images.Service {
+func (m machine) images() *imagescalls.Service {
 	user := m.host.Env.User()
 	if current, err := m.stores.vmUser().Get(); err == nil && current != "" {
 		user = current
 	}
 	hypervisor := m.hypervisor()
-	return images.New(m.host, images.Contracts{
+	return imagescalls.NewService(imagesMachine{h: m.host, keys: openssh.NewKeyGen(m.host.Run, m.host.FS)}, imagescalls.Contracts{
 		Hypervisor: hypervisor, Guests: m.guestDialer(), Store: m.stores.images,
 		Source: m.imageSource(hypervisor.Name()), Machines: m.stores.machines,
-	}, catalog.Images, images.Options{
+	}, catalog.Images, imagescalls.ServiceOptions{
 		Cache: m.paths.Cache, Key: filepath.Join(m.paths.State, "images", "key"),
 		Version:   Version(),
 		User:      user,
@@ -57,14 +59,14 @@ func imagesCommand(env kit.Env, m machine) *cobra.Command {
 	)
 }
 
-type imageBuilds struct{ *images.Service }
+type imageBuilds struct{ *imagescalls.Service }
 
-func (s imageBuilds) Build(ctx context.Context, names []string, binary string, step func(label string)) ([]images.Record, error) {
-	return s.Service.Build(ctx, images.BuildRequest{Images: names, Binary: binary}, func(st images.Step) { step(st.Label) })
+func (s imageBuilds) Build(ctx context.Context, names []string, binary string, step func(label string)) ([]model.Record, error) {
+	return s.Service.Build(ctx, model.BuildRequest{Images: names, Binary: binary}, func(st model.Step) { step(st.Label) })
 }
 
 func (s imageBuilds) Update(ctx context.Context, names []string, step func(label string)) ([]model.Update, error) {
-	return s.Service.Update(ctx, names, func(st images.Step) { step(st.Label) })
+	return s.Service.Update(ctx, names, func(st model.Step) { step(st.Label) })
 }
 
 // invariant: the images of This Mac, then of every other Mac that answers,
@@ -86,3 +88,28 @@ func (m machine) everyMacImages(ctx context.Context, env kit.Env) ([]model.Repor
 	}
 	return here, nil
 }
+
+type imagesMachine struct {
+	h    local.Host
+	keys openssh.KeyGen
+}
+
+func (i imagesMachine) Now() time.Time { return i.h.Clock.Now() }
+func (i imagesMachine) Sleep(ctx context.Context, d time.Duration) error {
+	return i.h.Clock.Sleep(ctx, d)
+}
+func (i imagesMachine) Exists(p string) bool {
+	_, err := i.h.FS.Stat(p)
+	return err == nil
+}
+func (i imagesMachine) ReadFile(p string) ([]byte, error) { return i.h.FS.ReadFile(p) }
+func (i imagesMachine) Keep(p string, data []byte) error {
+	if err := i.h.FS.MkdirAll(filepath.Dir(p), 0o700); err != nil {
+		return err
+	}
+	return i.h.FS.WriteFile(p, data, 0o755)
+}
+func (i imagesMachine) Get(ctx context.Context, url string) (status int, body []byte, err error) {
+	return i.h.Net.Get(ctx, url, nil)
+}
+func (i imagesMachine) MakeKey(ctx context.Context, p string) error { return i.keys.MakeKey(ctx, p) }

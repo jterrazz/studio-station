@@ -1,4 +1,4 @@
-package images
+package calls
 
 import (
 	"context"
@@ -8,22 +8,14 @@ import (
 	"fmt"
 	"math"
 	"net/netip"
-	"path"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/images"
 	"github.com/jterrazz/studio-station/src/machines/contract"
-	"github.com/jterrazz/studio-station/src/platform/local"
 )
-
-type BuildRequest struct {
-	Images []string
-	Binary string
-}
-
-type Step struct{ Label string }
 
 const (
 	sshReady   = 60 * time.Second
@@ -56,7 +48,7 @@ func (s *Service) selection(ctx context.Context, names []string) ([]catalog.Imag
 				return nil, err
 			}
 			if img.Recipe == "" {
-				return nil, &NoRecipeError{Image: name}
+				return nil, &images.NoRecipeError{Image: name}
 			}
 			if !slices.ContainsFunc(out, func(i catalog.Image) bool { return i.Name == name }) {
 				out = append(out, img)
@@ -74,7 +66,7 @@ func (s *Service) selection(ctx context.Context, names []string) ([]catalog.Imag
 			return nil, err
 		}
 		latest, err := s.Latest(ctx, img.Name)
-		var missing *NotBuiltError
+		var missing *images.NotBuiltError
 		switch {
 		case errors.As(err, &missing):
 			out = append(out, img)
@@ -87,7 +79,7 @@ func (s *Service) selection(ctx context.Context, names []string) ([]catalog.Imag
 	return out, nil
 }
 
-func (s *Service) Build(ctx context.Context, r BuildRequest, progress func(Step)) ([]Record, error) {
+func (s *Service) Build(ctx context.Context, r images.BuildRequest, progress func(images.Step)) ([]images.Record, error) {
 	wanted, err := s.selection(ctx, r.Images)
 	if err != nil || len(wanted) == 0 {
 		return nil, err
@@ -96,16 +88,16 @@ func (s *Service) Build(ctx context.Context, r BuildRequest, progress func(Step)
 		return nil, need
 	}
 	if _, err = s.e.Version(ctx); err != nil {
-		return nil, &NoEngineError{Hypervisor: s.e.Name(), Cause: err}
+		return nil, &images.NoEngineError{Hypervisor: s.e.Name(), Cause: err}
 	}
 	binary, err := s.binary(ctx, r.Binary)
 	if err != nil {
 		return nil, err
 	}
 	if progress == nil {
-		progress = func(Step) {}
+		progress = func(images.Step) {}
 	}
-	var built []Record
+	var built []images.Record
 	for _, img := range wanted {
 		rec, err := s.buildOne(ctx, img, binary, progress)
 		if err != nil {
@@ -123,48 +115,48 @@ type session struct {
 	key string
 }
 
-func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string, progress func(Step)) (Record, error) {
+func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string, progress func(images.Step)) (images.Record, error) {
 	vm := buildPrefix + img.Name
-	failed := func(step string, cause error) (Record, error) {
+	failed := func(step string, cause error) (images.Record, error) {
 		// invariant: a failed build leaves no VM behind; the cleanup survives a cancelled ctx.
 		clean := context.WithoutCancel(ctx)
 		_ = s.e.Shutdown(clean, vm, 10*time.Second)
 		_ = s.e.Delete(clean, vm)
-		return Record{}, &BuildFailedError{Image: img.Name, Step: step, Cause: cause}
+		return images.Record{}, &images.BuildFailedError{Image: img.Name, Step: step, Cause: cause}
 	}
 	version, err := s.nextVersion(img.Name)
 	if err != nil {
-		return Record{}, err
+		return images.Record{}, err
 	}
 	sha, err := s.recipeSHA(img)
 	if err != nil {
-		return Record{}, err
+		return images.Record{}, err
 	}
 	recipe, err := catalog.Recipes.ReadFile(img.Recipe)
 	if err != nil {
-		return Record{}, err
+		return images.Record{}, err
 	}
 	cleanup, err := catalog.Recipes.ReadFile(img.Cleanup)
 	if err != nil {
-		return Record{}, err
+		return images.Record{}, err
 	}
 	key, pub, err := s.imageKey(ctx)
 	if err != nil {
-		return Record{}, &BuildFailedError{Image: img.Name, Step: "making the image key", Cause: err}
+		return images.Record{}, &images.BuildFailedError{Image: img.Name, Step: "making the image key", Cause: err}
 	}
 	if err = s.dropLeftover(ctx, vm); err != nil {
-		return Record{}, &BuildFailedError{Image: img.Name, Step: "removing the earlier build VM", Cause: err}
+		return images.Record{}, &images.BuildFailedError{Image: img.Name, Step: "removing the earlier build VM", Cause: err}
 	}
 
-	progress(Step{Label: "pulling " + img.Base})
+	progress(images.Step{Label: "pulling " + img.Base})
 	if err = s.e.Fetch(ctx, s.location(img.Base), nil); err != nil {
 		return failed("pulling the base", err)
 	}
-	progress(Step{Label: "cloning " + vm})
+	progress(images.Step{Label: "cloning " + vm})
 	if err = s.e.Clone(ctx, s.location(img.Base), vm); err != nil {
 		return failed("cloning the base", err)
 	}
-	progress(Step{Label: "booting " + vm})
+	progress(images.Step{Label: "booting " + vm})
 	if _, err = s.e.Boot(ctx, vm, contract.BootOptions{}); err != nil {
 		return failed("booting the build VM", err)
 	}
@@ -174,30 +166,30 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 	}
 	ss := session{s: s, vm: vm, at: netip.AddrPortFrom(addr, s.guestPort()), key: key}
 
-	progress(Step{Label: "copying station into " + vm})
+	progress(images.Step{Label: "copying station into " + vm})
 	if err := ss.copy(ctx, binary); err != nil {
 		return failed("copying the station binary", err)
 	}
-	progress(Step{Label: "running the " + img.Name + " recipe"})
+	progress(images.Step{Label: "running the " + img.Name + " recipe"})
 	env := "VM_USER=" + quote(s.o.User) + " IMAGE_KEY=" + quote(strings.TrimSpace(pub))
 	if err := ss.admin(ctx, string(recipe), env); err != nil {
 		return failed("the recipe", err)
 	}
-	progress(Step{Label: "removing the base's admin user"})
+	progress(images.Step{Label: "removing the base's admin user"})
 	if err := ss.cleanup(ctx, string(cleanup), s.o.User); err != nil {
 		return failed("the cleanup", err)
 	}
-	progress(Step{Label: "waiting for " + vm + " to power off"})
+	progress(images.Step{Label: "waiting for " + vm + " to power off"})
 	if err := s.waitStopped(ctx, vm); err != nil {
 		return failed("waiting for the build VM to power off", err)
 	}
 	_ = s.e.Shutdown(ctx, vm, 10*time.Second)
-	progress(Step{Label: "recording " + img.Name + " " + version})
+	progress(images.Step{Label: "recording " + img.Name + " " + version})
 	final := DiskName(img.Name, version)
 	if err := s.e.Rename(ctx, vm, final); err != nil {
 		return failed("renaming the build VM", err)
 	}
-	rec := Record{Name: img.Name, Version: version, Base: img.Base, Station: s.o.Version, RecipeSHA: sha, BuiltAt: s.h.Clock.Now().UTC()}
+	rec := images.Record{Name: img.Name, Version: version, Base: img.Base, Station: s.o.Version, RecipeSHA: sha, BuiltAt: s.m.Now().UTC()}
 	if disks, err := s.e.Disks(ctx); err == nil {
 		for _, d := range disks {
 			if d.VM == final {
@@ -206,7 +198,7 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 		}
 	}
 	if err := s.writeRecord(rec); err != nil {
-		return Record{}, &BuildFailedError{Image: img.Name, Step: "writing the image record", Cause: err}
+		return images.Record{}, &images.BuildFailedError{Image: img.Name, Step: "writing the image record", Cause: err}
 	}
 	return rec, nil
 }
@@ -234,7 +226,7 @@ func (s *Service) waitStopped(ctx context.Context, vm string) error {
 				return nil
 			}
 		}
-		if err := s.h.Clock.Sleep(ctx, pollEvery); err != nil {
+		if err := s.m.Sleep(ctx, pollEvery); err != nil {
 			return err
 		}
 	}
@@ -245,20 +237,12 @@ func (s *Service) KeyPath() string { return s.o.Key }
 
 func (s *Service) imageKey(ctx context.Context) (key, pub string, err error) {
 	key = s.KeyPath()
-	if _, statErr := s.h.FS.Stat(key); statErr != nil {
-		if mkErr := s.h.FS.MkdirAll(path.Dir(key), 0o700); mkErr != nil {
-			return "", "", mkErr
-		}
-		var out local.Output
-		out, err = s.h.Run.Output(ctx, local.Cmd{Name: "ssh-keygen", Args: []string{"-q", "-t", "ed25519", "-N", "", "-C", "station-image", "-f", key}})
-		if err != nil {
+	if !s.m.Exists(key) {
+		if err := s.m.MakeKey(ctx, key); err != nil {
 			return "", "", err
 		}
-		if out.ExitCode != 0 {
-			return "", "", fmt.Errorf("ssh-keygen exited %d: %s", out.ExitCode, strings.TrimSpace(out.Stderr))
-		}
 	}
-	data, err := s.h.FS.ReadFile(key + ".pub")
+	data, err := s.m.ReadFile(key + ".pub")
 	if err != nil {
 		return "", "", err
 	}
@@ -285,7 +269,7 @@ func (ss session) dial(ctx context.Context, user string, password bool) (contrac
 		if err == nil {
 			return g, nil
 		}
-		if err := ss.s.h.Clock.Sleep(ctx, pollEvery); err != nil {
+		if err := ss.s.m.Sleep(ctx, pollEvery); err != nil {
 			return nil, err
 		}
 	}
@@ -293,7 +277,7 @@ func (ss session) dial(ctx context.Context, user string, password bool) (contrac
 }
 
 func (ss session) copy(ctx context.Context, binary string) error {
-	data, err := ss.s.h.FS.ReadFile(binary)
+	data, err := ss.s.m.ReadFile(binary)
 	if err != nil {
 		return err
 	}

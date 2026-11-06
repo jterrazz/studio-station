@@ -1,18 +1,18 @@
-package images
+package calls
 
 import (
 	"context"
-	model "github.com/jterrazz/studio-station/src/images"
 	"slices"
+
+	"github.com/jterrazz/studio-station/src/images"
 
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
-type Options struct {
+type ServiceOptions struct {
 	// value: where the release binary is cached, and the build key.
 	Cache, Key string
 	Version    string
@@ -23,14 +23,14 @@ type Options struct {
 }
 
 type Service struct {
-	h      local.Host
+	m      Machine
 	e      contract.Hypervisor
 	guests contract.GuestDialer
 	store  imagescontract.ImageStore
 	source imagescontract.ImageSource
 	vms    contract.MachineStore
 	list   []catalog.Image
-	o      Options
+	o      ServiceOptions
 }
 
 type Contracts struct {
@@ -41,11 +41,9 @@ type Contracts struct {
 	Machines   contract.MachineStore
 }
 
-func New(h local.Host, c Contracts, list []catalog.Image, o Options) *Service {
-	return &Service{h: h, e: c.Hypervisor, guests: c.Guests, store: c.Store, source: c.Source, vms: c.Machines, list: list, o: o}
+func NewService(m Machine, c Contracts, list []catalog.Image, o ServiceOptions) *Service {
+	return &Service{m: m, e: c.Hypervisor, guests: c.Guests, store: c.Store, source: c.Source, vms: c.Machines, list: list, o: o}
 }
-
-type Report = model.Report
 
 func (s *Service) image(name string) (catalog.Image, error) {
 	for _, img := range s.list {
@@ -53,10 +51,10 @@ func (s *Service) image(name string) (catalog.Image, error) {
 			return img, nil
 		}
 	}
-	return catalog.Image{}, &model.UnknownError{Image: name}
+	return catalog.Image{}, &images.UnknownError{Image: name}
 }
 
-func (s *Service) List(ctx context.Context) ([]Report, error) {
+func (s *Service) List(ctx context.Context) ([]images.Report, error) {
 	sizes := map[string]int{}
 	if disks, err := s.e.Disks(ctx); err == nil {
 		for _, d := range disks {
@@ -67,7 +65,7 @@ func (s *Service) List(ctx context.Context) ([]Report, error) {
 	if err != nil {
 		return nil, err
 	}
-	var out []Report
+	var out []images.Report
 	for _, img := range s.list {
 		all, err := s.records(img.Name)
 		if err != nil {
@@ -77,7 +75,7 @@ func (s *Service) List(ctx context.Context) ([]Report, error) {
 			if size, ok := sizes[DiskName(r.Name, r.Version)]; ok {
 				r.SizeGB = size
 			}
-			out = append(out, Report{Record: r, Newest: i == 0, VMs: users[r.Name+"@"+r.Version], Mac: s.o.Mac})
+			out = append(out, images.Report{Record: r, Newest: i == 0, VMs: users[r.Name+"@"+r.Version], Mac: s.o.Mac})
 		}
 	}
 	return out, nil
@@ -108,20 +106,20 @@ func (s *Service) CheckDelete(image, version string) error {
 		return err
 	}
 	if len(all) == 0 {
-		return &NotBuiltError{Image: image}
+		return &images.NotBuiltError{Image: image}
 	}
-	if version != "" && !slices.ContainsFunc(all, func(r Record) bool { return r.Version == version }) {
-		return &UnknownVersionError{Image: image, Version: version}
+	if version != "" && !slices.ContainsFunc(all, func(r images.Record) bool { return r.Version == version }) {
+		return &images.UnknownVersionError{Image: image, Version: version}
 	}
 	return nil
 }
 
-func (s *Service) Delete(ctx context.Context, image, version string) ([]Record, error) {
+func (s *Service) Delete(ctx context.Context, image, version string) ([]images.Record, error) {
 	if err := s.CheckDelete(image, version); err != nil {
 		return nil, err
 	}
 	if _, err := s.e.Version(ctx); err != nil {
-		return nil, &NoEngineError{Hypervisor: s.e.Name(), Cause: err}
+		return nil, &images.NoEngineError{Hypervisor: s.e.Name(), Cause: err}
 	}
 	all, err := s.records(image)
 	if err != nil {
@@ -131,7 +129,7 @@ func (s *Service) Delete(ctx context.Context, image, version string) ([]Record, 
 	if err != nil {
 		return nil, err
 	}
-	var removed []Record
+	var removed []images.Record
 	for _, r := range all {
 		if version != "" && r.Version != version {
 			continue

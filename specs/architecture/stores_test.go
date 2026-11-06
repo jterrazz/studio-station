@@ -54,8 +54,6 @@ func storeWritersTolerated() map[string]string {
 		"src/domain/machines/hosts.go " + src + "machines/contract.MacsPrefs":     "L14: machines.add and machines.remove become calls",
 		"src/domain/machines/hosts.go " + src + "machines/contract.VMUserPrefs":   "L14: setup.run hands the VM user to machines' call",
 		"src/domain/machines/create.go " + src + "machines/contract.MachineStore": "L14: machines.create and machines.delete become calls",
-		"src/domain/images/records.go " + src + "images/contract.ImageStore":      "L14: images.build becomes a call",
-		"src/domain/images/service.go " + src + "images/contract.ImageStore":      "L14: images.delete becomes a call",
 		"src/domain/setup/layout.go " + src + "setup/contract.NamePrefs":          "L19: the v1 conversion becomes the Preferences migration",
 		"src/domain/setup/layout.go " + src + "setup/contract.IdentityPrefs":      "L19: the v1 conversion becomes the Preferences migration",
 		"src/domain/setup/layout.go " + src + "machines/contract.MacsPrefs":       "L19: the v1 conversion becomes the Preferences migration",

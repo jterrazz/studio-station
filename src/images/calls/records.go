@@ -1,15 +1,10 @@
-package images
+package calls
 
 import (
 	"context"
 	"strconv"
 
-	model "github.com/jterrazz/studio-station/src/images"
-)
-
-type (
-	Record = model.Record
-	Update = model.Update
+	"github.com/jterrazz/studio-station/src/images"
 )
 
 const (
@@ -19,11 +14,11 @@ const (
 
 func DiskName(image, version string) string { return imagePrefix + image + "-" + version }
 
-func (s *Service) records(image string) ([]Record, error) {
+func (s *Service) records(image string) ([]images.Record, error) {
 	return s.store.List(context.Background(), image)
 }
 
-func (s *Service) writeRecord(r Record) error { return s.store.Put(context.Background(), r) }
+func (s *Service) writeRecord(r images.Record) error { return s.store.Put(context.Background(), r) }
 
 func (s *Service) nextVersion(image string) (string, error) {
 	existing, err := s.records(image)
@@ -34,7 +29,7 @@ func (s *Service) nextVersion(image string) (string, error) {
 	for _, r := range existing {
 		taken[r.Version] = true
 	}
-	day := s.h.Clock.Now().UTC().Format("2006.01.02")
+	day := s.m.Now().UTC().Format("2006.01.02")
 	if !taken[day] {
 		return day, nil
 	}

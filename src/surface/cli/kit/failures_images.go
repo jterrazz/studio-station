@@ -3,8 +3,9 @@ package kit
 import (
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/images"
+
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/images"
 )
 
 const linuxBinaryHint = "make build-linux, then station images build linux --binary .artifacts/go/station-linux-arm64"

@@ -7,13 +7,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/images"
+
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
@@ -272,7 +274,7 @@ func (c machineCalls) CheckRemote(name string) error {
 	return err
 }
 
-type fleetImages struct{ service *images.Service }
+type fleetImages struct{ service *imagescalls.Service }
 
 func (i fleetImages) KeyPath() string { return i.service.KeyPath() }
 
@@ -285,7 +287,7 @@ func (i fleetImages) Latest(ctx context.Context, image string) (disk, version st
 	if err != nil {
 		return "", "", err
 	}
-	return images.DiskName(r.Name, r.Version), r.Version, nil
+	return imagescalls.DiskName(r.Name, r.Version), r.Version, nil
 }
 
 func createAsker(env kit.Env) kit.Asker {

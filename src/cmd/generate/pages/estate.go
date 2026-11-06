@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/images"
+
 	"github.com/jterrazz/studio-station/src/apps"
 
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
@@ -11,7 +13,6 @@ import (
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/disk"
-	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/overview"

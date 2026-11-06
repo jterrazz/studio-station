@@ -1,4 +1,4 @@
-package images
+package calls
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"path"
 	"regexp"
 	"strings"
+
+	"github.com/jterrazz/studio-station/src/images"
 )
 
 const (
@@ -19,15 +21,15 @@ var releaseTag = regexp.MustCompile(`^v\d+\.\d+\.\d+$`)
 
 func (s *Service) needsBinary(given string) error {
 	if given == "" && !releaseTag.MatchString(s.o.Version) {
-		return &NoLinuxBinaryError{}
+		return &images.NoLinuxBinaryError{}
 	}
 	return nil
 }
 
 func (s *Service) binary(ctx context.Context, given string) (string, error) {
 	if given != "" {
-		if _, err := s.h.FS.Stat(given); err != nil {
-			return "", &BinaryNotFoundError{Path: given}
+		if !s.m.Exists(given) {
+			return "", &images.BinaryNotFoundError{Path: given}
 		}
 		return given, nil
 	}
@@ -36,14 +38,14 @@ func (s *Service) binary(ctx context.Context, given string) (string, error) {
 
 func (s *Service) download(ctx context.Context) (string, error) {
 	cached := path.Join(s.o.Cache, releaseAsset+"-"+s.o.Version)
-	if _, err := s.h.FS.Stat(cached); err == nil {
+	if s.m.Exists(cached) {
 		return cached, nil
 	}
 	fail := func(cause error) error {
-		return &BuildFailedError{Image: "linux", Step: "fetching " + releaseAsset + " " + s.o.Version, Cause: cause}
+		return &images.BuildFailedError{Image: "linux", Step: "fetching " + releaseAsset + " " + s.o.Version, Cause: cause}
 	}
 	base := releaseBase + s.o.Version + "/"
-	status, sums, err := s.h.Net.Get(ctx, base+"checksums.txt", nil)
+	status, sums, err := s.m.Get(ctx, base+"checksums.txt")
 	if err != nil || status != 200 {
 		return "", fail(statusError(base+"checksums.txt", status, err))
 	}
@@ -51,7 +53,7 @@ func (s *Service) download(ctx context.Context) (string, error) {
 	if want == "" {
 		return "", fail(fmt.Errorf("checksums.txt lists no %s", releaseAsset))
 	}
-	status, body, err := s.h.Net.Get(ctx, base+releaseAsset, nil)
+	status, body, err := s.m.Get(ctx, base+releaseAsset)
 	if err != nil || status != 200 {
 		return "", fail(statusError(base+releaseAsset, status, err))
 	}
@@ -59,10 +61,7 @@ func (s *Service) download(ctx context.Context) (string, error) {
 	if got := hex.EncodeToString(sum[:]); got != want {
 		return "", fail(fmt.Errorf("checksum mismatch: checksums.txt says %s, the download is %s", want, got))
 	}
-	if err := s.h.FS.MkdirAll(s.o.Cache, 0o700); err != nil {
-		return "", fail(err)
-	}
-	if err := s.h.FS.WriteFile(cached, body, 0o755); err != nil {
+	if err := s.m.Keep(cached, body); err != nil {
 		return "", fail(err)
 	}
 	return cached, nil
