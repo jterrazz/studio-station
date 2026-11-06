@@ -379,6 +379,9 @@ func (d *Daemon) refreshSelf(ctx context.Context) {
 		d.logf("tailnet", "Serve is on: every lease is served on the tailnet")
 		d.serveAll(ctx)
 		d.reconcileServe(ctx)
+	case !self.On && self.Backend != ports.Running:
+		d.logf("tailnet", catalog.SignedOutDetail+": services are local only")
+		d.unserveAll()
 	case !self.On:
 		d.logf("tailnet", catalog.ServeOffDetail+": services are local only")
 		d.unserveAll()
