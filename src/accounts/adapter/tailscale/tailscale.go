@@ -12,9 +12,10 @@ import (
 
 const running = "Running"
 
-// value: the identities of every provider, the tailnet's account read from
-// the node itself: who is logged in, on which tailnet, with which client.
 type Identities struct {
+	// value: the identities of every provider, the tailnet's account read
+	// from the node itself: who is logged in, on which tailnet, with which
+	// client.
 	tailnet portscontract.Tailnet
 	others  contract.Identities
 }
@@ -32,22 +33,26 @@ func (i *Identities) Read(ctx context.Context, p catalog.Provider) (accounts.Ide
 		return i.others.Read(ctx, p)
 	}
 	self, err := i.tailnet.Self(ctx)
+	return identity(p, self.Login, self.Network, self.Client.Variant, self.Sharing.Backend, err), nil
+}
+
+func identity(p catalog.Provider, login, network, variant, backend string, err error) accounts.Identity {
 	var absent *portscontract.Absent
 	switch {
 	case errors.As(err, &absent):
-		return accounts.Absent(p.ID, accounts.ReasonMissing, "not installed"), nil
+		return accounts.Absent(p.ID, accounts.ReasonMissing, "not installed")
 	case err != nil:
-		return accounts.Broken(p.ID, accounts.ReasonFailing, "tailscale status did not answer"), nil
-	case self.Sharing.Backend != running:
-		return accounts.Absent(p.ID, accounts.ReasonUnset, "not logged in"), nil
+		return accounts.Broken(p.ID, accounts.ReasonFailing, "tailscale status did not answer")
+	case backend != running:
+		return accounts.Absent(p.ID, accounts.ReasonUnset, "not logged in")
 	}
 	id := accounts.SignedIn(p.ID)
-	id.Who, id.Detail = []string{self.Login}, self.Client.Variant
-	if self.Login == "" {
+	id.Who, id.Detail = []string{login}, variant
+	if login == "" {
 		id.Who = []string{accounts.Unknown}
 	}
-	if self.Network != "" {
-		id.Scopes = []string{self.Network}
+	if network != "" {
+		id.Scopes = []string{network}
 	}
-	return id, nil
+	return id
 }

@@ -24,10 +24,10 @@ type BlockOptions struct {
 	Functions []string
 }
 
-// value: the script station's ~/.zshrc block evaluates: the dotfiles'
-// loader, the tools' activation, completion, the Claude token, the
-// services' variables and the settings' shell functions.
 type Block struct {
+	// value: the script station's ~/.zshrc block evaluates: the dotfiles'
+	// loader, the tools' activation, completion, the Claude token, the
+	// services' variables and the settings' shell functions.
 	files    Files
 	embedded fs.FS
 	source   contract.SecretSource
