@@ -2,8 +2,10 @@ package kit
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
@@ -43,4 +45,23 @@ func (h Held) OnTarget(env Env) bool {
 		return h.MacIsThisMac
 	}
 	return t.Name == h.Mac || t.Name == page.MacName(h.Mac, env.Self.Name)
+}
+
+func OnItsMac(ctx context.Context, env Env, vm string, err error) error {
+	// value: SPEC §8.1: an action on a VM sent to its Mac, which does not
+	// answer, names the VM where it is (`infra is on mac-mini, which does not
+	// answer`); any other error is kept.
+	var e *fail.Error
+	if err == nil || !errors.As(err, &e) || e.Code != call.Unreachable {
+		return err
+	}
+	h, ok := Holder(ctx, env, vm)
+	if !ok || h.MacIsThisMac || h.Mac != e.Subject {
+		return err
+	}
+	detail := map[string]string{"mac": h.Mac}
+	for k, v := range e.Detail {
+		detail[k] = v
+	}
+	return fail.New(e.Type, call.VMMacUnreachable, vm, detail)
 }

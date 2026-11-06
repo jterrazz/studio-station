@@ -37,7 +37,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			out, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Start, machinescalls.VMIn{VM: in.Name}, nil)
 			stop()
 			if err != nil {
-				return err
+				return kit.OnItsMac(ctx, env, in.Name, err)
 			}
 			if out.Already {
 				return io.Page(pagemachines.Already("start", in.Name, true, d.ThisMachine), nil)

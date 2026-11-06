@@ -43,7 +43,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		Complete: func([]string, string) []string { return d.Names() },
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			deleteIt := func(answer string) (machines.DeleteReport, error) {
-				return call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Delete, machinescalls.DeleteIn{VM: in.Name, Confirm: answer}, nil)
+				report, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Delete, machinescalls.DeleteIn{VM: in.Name, Confirm: answer}, nil)
+				return report, kit.OnItsMac(ctx, env, in.Name, err)
 			}
 			report, err := deleteIt(in.Confirm)
 			if _, typed := confirm.Answer(err); typed && in.Confirm == "" && io.Interactive && io.Prompt != nil {

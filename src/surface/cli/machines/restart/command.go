@@ -65,7 +65,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			err := io.Confirmed(func(answer string) error {
 				var err error
 				report, err = call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Restart, machinescalls.RestartIn{Name: in.Name, Confirm: answer}, nil)
-				return err
+				return kit.OnItsMac(ctx, env, in.Name, err)
 			})
 			if err != nil {
 				return err

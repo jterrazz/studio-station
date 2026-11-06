@@ -54,7 +54,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			}
 			edited, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Edit, machinescalls.EditIn{VM: in.Name, Resources: r, Check: in.Check, NoCheck: in.NoCheck}, nil)
 			if err != nil {
-				return err
+				return kit.OnItsMac(ctx, env, in.Name, err)
 			}
 			return io.Page(pagemachines.Edited(edited, d.ThisMachine), nil)
 		},
