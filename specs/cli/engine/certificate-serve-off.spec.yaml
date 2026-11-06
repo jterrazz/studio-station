@@ -1,4 +1,4 @@
-description: 'with Serve off the daemon asks for no certificate'
+description: 'with Serve off the engine asks for no certificate'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/engine-vm/

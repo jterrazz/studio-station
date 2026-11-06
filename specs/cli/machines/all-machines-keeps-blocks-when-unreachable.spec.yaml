@@ -1,4 +1,4 @@
-description: 'an unreachable host leaves the blocks of its VMs alone: unknown is not gone'
+description: 'an unreachable Mac leaves the blocks of its VMs alone: unknown is not gone'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/

@@ -1,4 +1,4 @@
-description: 'start asks the daemon to run a lasting VM again'
+description: 'start asks the engine to run a permanent VM again'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/engine-vm/

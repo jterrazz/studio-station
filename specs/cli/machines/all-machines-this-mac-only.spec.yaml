@@ -1,4 +1,4 @@
-description: '--here lists this host alone and asks no other host'
+description: '--here lists This Mac alone and asks no other Mac'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/

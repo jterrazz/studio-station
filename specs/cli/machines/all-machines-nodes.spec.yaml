@@ -1,4 +1,4 @@
-description: 'tailnet nodes give the fleet its ips, this host''s included'
+description: 'tailnet nodes give All machines its ips, This Mac''s included'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/

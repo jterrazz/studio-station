@@ -1,4 +1,4 @@
-description: 'a second daemon finds the first answering and refuses'
+description: 'a second engine finds the first answering and refuses'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/engine-vm/

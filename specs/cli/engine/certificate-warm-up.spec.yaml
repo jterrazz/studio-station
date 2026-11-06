@@ -1,4 +1,4 @@
-description: 'with Serve on the daemon warms the certificate in the background, its https rows say so meanwhile'
+description: 'with Serve on the engine warms the certificate in the background, its https rows say so meanwhile'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/engine-vm/

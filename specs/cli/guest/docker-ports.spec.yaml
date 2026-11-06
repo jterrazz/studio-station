@@ -1,4 +1,4 @@
-description: 'a port docker publishes counts, named by its container'
+description: 'a port docker maps counts, named by its container'
 fixture:
     - ./__fixtures__/vm/
     - ./__fixtures__/docker/

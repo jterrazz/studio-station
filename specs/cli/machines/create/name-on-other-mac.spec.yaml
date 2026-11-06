@@ -1,4 +1,4 @@
-description: 'a VM record on another host holds its name, even with its node offline'
+description: 'a VM record on another Mac holds its name, even with its node offline'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/engine-vm/

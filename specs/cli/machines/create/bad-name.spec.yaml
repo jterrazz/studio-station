@@ -1,4 +1,4 @@
-description: 'a malformed name, a host''s name and a name a VM record holds are refused before the daemon'
+description: 'a malformed name, a Mac''s name and a name a VM record holds are refused before the engine'
 fixture:
     - ../../../__fixtures__/vms/
     - ./__fixtures__/other-host/

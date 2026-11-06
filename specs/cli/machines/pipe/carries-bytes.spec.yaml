@@ -1,4 +1,4 @@
-description: 'machines pipe carries ssh''s bytes to the VM''s current NAT ip'
+description: 'machines pipe carries ssh''s bytes to the VM''s current ip behind its Mac'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/engine-vm/

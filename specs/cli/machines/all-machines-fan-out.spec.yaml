@@ -1,4 +1,4 @@
-description: 'the fleet asks every other host''s engine for its own view, in BatchMode, and merges the answers'
+description: 'All machines asks every other Mac''s engine for its own view, in BatchMode, and merges the answers'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/

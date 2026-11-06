@@ -1,4 +1,4 @@
-description: 'a VM created on another host with --on gets its ssh block here as soon as the create returns'
+description: 'a VM created on another Mac with --on gets its ssh block on This Mac as soon as the create returns'
 fixture: ./__fixtures__/create-on-y/
 runs:
     - command: 'machines create --permanent --on y'

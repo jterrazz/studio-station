@@ -1,4 +1,4 @@
-description: 'a daemon restart adopts the running VMs: no second run, the guest connected again'
+description: 'an engine restart adopts the running VMs: no second run, the guest connected again'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/engine-vm/

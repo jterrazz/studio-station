@@ -1,4 +1,4 @@
-description: 'a permanent workspace: its record wants it running on NAT, and the engine runs it'
+description: 'a permanent workspace: its record wants it running behind its Mac, and the engine runs it'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/engine-vm/

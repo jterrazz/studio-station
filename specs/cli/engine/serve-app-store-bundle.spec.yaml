@@ -1,4 +1,4 @@
-description: 'with no tailscale on its PATH, the daemon serves through the App Store bundle''s CLI'
+description: 'with no tailscale on its PATH, the engine serves through the App Store bundle''s CLI'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/engine-vm/

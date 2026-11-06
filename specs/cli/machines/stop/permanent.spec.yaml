@@ -1,4 +1,4 @@
-description: 'a lasting VM stops by its guest''s own poweroff on the daemon''s connection, and stays stopped'
+description: 'a permanent VM stops by its guest''s own poweroff on the engine''s connection, and stays stopped'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/engine-vm/

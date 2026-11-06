@@ -1,4 +1,4 @@
-description: 'machines pipe refuses before any byte: an unknown name, a host, --on, a VM'
+description: 'machines pipe refuses before any byte: an unknown name, a Mac, --on, a VM'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/local-vm/

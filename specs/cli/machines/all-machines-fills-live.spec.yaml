@@ -1,4 +1,4 @@
-description: 'on a terminal the fleet draws a row for each Mac as it answers, never waiting for the slowest'
+description: 'on a terminal All machines draws a row for each Mac as it answers, never waiting for the slowest'
 fixture:
     - ../../__fixtures__/terminal/
     - ../../__fixtures__/machines-stubs/
