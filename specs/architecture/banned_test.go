@@ -97,9 +97,11 @@ func visible(v any, skip bool, out *[]string) {
 	}
 }
 
-func bannedIn(texts []string) []string {
+func bannedIn(texts []string) []string { return bannedInList(bannedWords(), texts) }
+
+func bannedInList(list []banned, texts []string) []string {
 	var found []string
-	for _, b := range bannedWords() {
+	for _, b := range list {
 		words := []string{regexp.QuoteMeta(b.word)}
 		for _, f := range b.forms {
 			words = append(words, regexp.QuoteMeta(f))
