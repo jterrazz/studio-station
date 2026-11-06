@@ -37,7 +37,7 @@ func (d *Engine) sharesDue() bool {
 }
 
 func (d *Engine) sweepShares(ctx context.Context) {
-	if d.o.Lends == nil || !d.sharesDue() {
+	if d.o.AccountShares == nil || !d.sharesDue() {
 		return
 	}
 	go func() {
@@ -52,7 +52,7 @@ func (d *Engine) sweepShares(ctx context.Context) {
 // invariant: a VM stopped past a share's until has it taken back at its
 // next start, before its guest is reported connected.
 func (d *Engine) takeBackBeforeReady(ctx context.Context, vm string) {
-	if d.o.Lends == nil {
+	if d.o.AccountShares == nil {
 		return
 	}
 	d.shareMu.Lock()
@@ -61,7 +61,7 @@ func (d *Engine) takeBackBeforeReady(ctx context.Context, vm string) {
 }
 
 func (d *Engine) takeBackExpired(ctx context.Context, only string) {
-	held, err := d.o.Lends.Held()
+	held, err := d.o.AccountShares.Held()
 	if err != nil {
 		return
 	}
@@ -95,7 +95,7 @@ func (d *Engine) isConnected(vm string) bool {
 }
 
 func (d *Engine) takeBack(ctx context.Context, vm string, names []string) {
-	err := d.o.Lends.Expire(ctx, vm, names)
+	err := d.o.AccountShares.Expire(ctx, vm, names)
 	now := d.h.Clock.Now()
 	for _, n := range names {
 		key := vm + " " + n
@@ -120,7 +120,7 @@ func (d *Engine) takeBack(ctx context.Context, vm string, names []string) {
 // invariant: a VM deleted takes its copies with its disk; its shares go
 // with it.
 func (d *Engine) forgetShares(ctx context.Context, vm string) {
-	if d.o.Lends != nil {
-		_ = d.o.Lends.Forget(ctx, vm)
+	if d.o.AccountShares != nil {
+		_ = d.o.AccountShares.Forget(ctx, vm)
 	}
 }

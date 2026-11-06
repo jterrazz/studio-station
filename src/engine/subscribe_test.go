@@ -91,7 +91,7 @@ func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Engine {
 	h.Clock = clock
 	paths := settings.Paths{Config: "/c", State: "/s"}
 	var n atomic.Int32
-	return New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: paths.State, Here: catalog.Host,
+	return New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: paths.State, ThisMachine: catalog.Mac,
 		Feeds: map[string]Feed{PageMenubar: func(ctx context.Context, _ FeedInput) <-chan any {
 			feed := feeds[n.Add(1)-1]
 			out := make(chan any)
@@ -219,7 +219,7 @@ func TestAMachinesPageIsWatchedByItsName(t *testing.T) {
 	h := systemtest.Host(systemtest.NewRunner(t), files, systemtest.Env{}, systemtest.NewNet(), nil)
 	h.Clock = newManualClock()
 	subjects := make(chan string, 1)
-	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", Here: catalog.Host,
+	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", ThisMachine: catalog.Mac,
 		Feeds: map[string]Feed{PageMachine: func(_ context.Context, in FeedInput) <-chan any {
 			subjects <- in.Subject
 			out := make(chan any, 1)
@@ -279,7 +279,7 @@ func TestARefreshReadsAgainOnlyThePageItNames(t *testing.T) {
 			return out
 		}
 	}
-	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", Here: catalog.Host,
+	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", ThisMachine: catalog.Mac,
 		Feeds: map[string]Feed{PageMenubar: reread("home"), PageMachine: reread("linux-1")}})
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

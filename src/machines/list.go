@@ -15,8 +15,8 @@ type Counts struct {
 	Machines, Running, Stopped int
 }
 
-func Label(f AllMachines, h HostView) string {
-	if h.Here {
+func Label(f AllMachines, h MacView) string {
+	if h.ThisMac {
 		return "This Mac"
 	}
 	owner := f.owner()
@@ -30,8 +30,8 @@ func Label(f AllMachines, h HostView) string {
 // the Macs share when the fleet was read on another Mac (SPEC §2.5).
 func (f AllMachines) owner() string {
 	users := map[string]bool{}
-	for _, h := range f.Hosts {
-		if h.Here {
+	for _, h := range f.Macs {
+		if h.ThisMac {
 			return h.User
 		}
 		users[h.User] = true
@@ -48,16 +48,16 @@ func (f AllMachines) owner() string {
 func Elsewhere(f AllMachines) AllMachines {
 	// invariant: a fleet another Mac's engine read, as this binary shows it:
 	// none of its Macs is This Mac (SPEC §2.5, §8.1: rendered here).
-	f.Hosts = slices.Clone(f.Hosts)
-	for i := range f.Hosts {
-		f.Hosts[i].Here = false
+	f.Macs = slices.Clone(f.Macs)
+	for i := range f.Macs {
+		f.Macs[i].ThisMac = false
 	}
 	return f
 }
 
 func Tally(f AllMachines) Counts {
 	var c Counts
-	for _, h := range f.Hosts {
+	for _, h := range f.Macs {
 		c.Machines++
 		if h.Reachable {
 			c.Running++
@@ -99,8 +99,8 @@ func KindWord(k machine.Kind) string {
 	return "Workspace"
 }
 
-func Behind(h HostView, thisMac string) (fix string, differs bool) {
-	if h.Here || h.StationVersion == "" || thisMac == "" || h.StationVersion == thisMac {
+func Behind(h MacView, thisMac string) (fix string, differs bool) {
+	if h.ThisMac || h.StationVersion == "" || thisMac == "" || h.StationVersion == thisMac {
 		return "", false
 	}
 	if newer(h.StationVersion, thisMac) {
@@ -111,8 +111,8 @@ func Behind(h HostView, thisMac string) (fix string, differs bool) {
 
 func Findings(f AllMachines) []finding.Finding {
 	thisMac := ""
-	for _, h := range f.Hosts {
-		if h.Here {
+	for _, h := range f.Macs {
+		if h.ThisMac {
 			thisMac = h.StationVersion
 		}
 	}
@@ -120,10 +120,10 @@ func Findings(f AllMachines) []finding.Finding {
 	add := func(m machine.Ref, sev finding.Severity, subject, text, fix string) {
 		out = append(out, finding.Finding{Machine: m, Section: section.Overview, Severity: sev, Subject: subject, Text: text, Fix: finding.Fix{Command: fix}})
 	}
-	for _, h := range f.Hosts {
+	for _, h := range f.Macs {
 		label, mac := Label(f, h), machine.Ref{Name: h.Name}
 		on := ""
-		if !h.Here {
+		if !h.ThisMac {
 			on = " --on " + label
 		}
 		switch {
@@ -131,9 +131,9 @@ func Findings(f AllMachines) []finding.Finding {
 			add(mac, finding.Broken, label, label+" does not answer", "station machines unlock "+label)
 		case !h.Reachable:
 			add(mac, finding.Broken, label, label+" does not answer", "")
-		case h.Daemon.Known && !h.Daemon.Running && !h.Daemon.Installed && h.Here:
+		case h.Engine.Known && !h.Engine.Running && !h.Engine.Installed && h.ThisMac:
 			add(mac, finding.Broken, label, label+" has no engine set up", "station setup")
-		case h.Daemon.Known && !h.Daemon.Running:
+		case h.Engine.Known && !h.Engine.Running:
 			add(mac, finding.Broken, label, label+" has its engine stopped", "station engine start"+on)
 		}
 		if fix, ok := Behind(h, thisMac); ok && h.Reachable {
@@ -164,7 +164,7 @@ func Findings(f AllMachines) []finding.Finding {
 // invariant: a Mac that hosts a server and stops answering may wait at its
 // disk unlock after a power cut: its readiness fix is the unlock, from your
 // LAN (SPEC §7.6).
-func hostsServer(h HostView) bool {
+func hostsServer(h MacView) bool {
 	return slices.ContainsFunc(h.VMs, func(vm VM) bool { return vm.Lifetime == AlwaysOn })
 }
 

@@ -3,7 +3,7 @@
   "id": "power",
   "command": "awake",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "loading",
   "sections": [

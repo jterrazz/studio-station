@@ -120,7 +120,7 @@ func newHarness(t *testing.T, records ...machines.VMRecord) harness {
 	m := &fakeMachines{records: records}
 	hv := newHypervisor()
 	paths := settings.Paths{Config: "/c", State: "/s"}
-	d := New(h, hv, nil, m, &fakeTailnet{}, memStores(), Options{State: paths.State, Here: catalog.Host})
+	d := New(h, hv, nil, m, &fakeTailnet{}, memStores(), Options{State: paths.State, ThisMachine: catalog.Mac})
 	return harness{d: d, hv: hv, run: run, fs: files, clock: clock, m: m}
 }
 

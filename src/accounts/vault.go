@@ -3,7 +3,7 @@ package accounts
 import "errors"
 
 var (
-	ErrNoVault = errors.New("kept secrets live only in a host's keychain")
+	ErrNoVault = errors.New("kept secrets live only in a Mac's keychain")
 	// value: the vault keeps nothing under the name asked.
 	ErrNotKept = errors.New("not kept")
 )

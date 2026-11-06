@@ -1,4 +1,4 @@
-description: 'the tmux config is written, then a running tmux is told to read it'
+description: 'the tmux settings are written, then a running tmux is told to read it'
 fixture: ./__fixtures__/settings-tmux/
 runs:
     - command: 'settings apply tmux-dotfiles'

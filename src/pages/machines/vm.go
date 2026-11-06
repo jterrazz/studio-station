@@ -14,16 +14,16 @@ import (
 )
 
 type VMOverview struct {
-	Fleet machines.Fleet
-	Mac   machines.HostView
-	VM    machines.VM
+	All machines.Fleet
+	Mac machines.HostView
+	VM  machines.VM
 }
 
 func (o VMOverview) on() string {
-	if o.Mac.Here {
+	if o.Mac.ThisMac {
 		return "This Mac"
 	}
-	return machines.Label(o.Fleet, o.Mac)
+	return machines.Label(o.All, o.Mac)
 }
 
 func (o VMOverview) unreachable() bool { return !o.Mac.Reachable }
@@ -50,7 +50,7 @@ func VMPage(o VMOverview, s *overview.Summary, thisMac page.Context, all bool) p
 			state = page.Loading
 		}
 	}
-	sections = append(sections, page.Section{ID: "health", Title: "Health", Uncounted: true, Columns: vmColumns(), Items: healthItems(vm, readsSSH(s), o.Fleet.Read)})
+	sections = append(sections, page.Section{ID: "health", Title: "Health", Uncounted: true, Columns: vmColumns(), Items: healthItems(vm, readsSSH(s), o.All.Read)})
 	return page.Seal(page.Page{ID: "overview", Command: "overview", Context: thisMac, State: state, Sections: sections, Hints: hints})
 }
 
@@ -312,7 +312,7 @@ func SSHPage(o VMOverview, target machines.SSHTarget, thisMac page.Context) page
 		{ID: "to-mac", Label: "This Mac to " + o.on(), Mark: page.OK, Cells: []page.Value{page.List(page.Text("over "+catalog.TailnetProduct), page.Text("as "+mac.User))}},
 		{ID: "to-vm", Label: o.on() + " to " + vm.Name, Mark: page.OK, Cells: []page.Value{page.List(page.Text(vm.IP), page.Text("its Mac's private network"))}},
 	}
-	if mac.Here {
+	if mac.ThisMac {
 		reached = reached[1:]
 	}
 	if vm.State != machines.Running {

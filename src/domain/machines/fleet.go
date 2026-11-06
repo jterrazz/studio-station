@@ -38,21 +38,21 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 		user = s.h.Env.User()
 	}
 	here := HostView{
-		Name: name, User: user, StationVersion: s.o.Version, Here: true, Reachable: true, Node: nodes[name], Daemon: info, VMs: vms,
+		Name: name, User: user, StationVersion: s.o.Version, ThisMac: true, Reachable: true, Node: nodes[name], Engine: info, VMs: vms,
 	}
-	if s.o.Here == catalog.Host && s.o.LAN != nil {
+	if s.o.Here == catalog.Mac && s.o.LAN != nil {
 		here.LAN = s.o.LAN(ctx)
 	}
-	if hereOnly || s.o.Here != catalog.Host {
-		return Fleet{Hosts: []HostView{here}}, nil
+	if hereOnly || s.o.Here != catalog.Mac {
+		return Fleet{Macs: []HostView{here}}, nil
 	}
 	others := s.OtherHosts()
 	answers := map[string]HostView{}
 	fleet := func(all bool) Fleet {
-		f := Fleet{Hosts: []HostView{here}, Read: s.h.Clock.Now()}
+		f := Fleet{Macs: []HostView{here}, Read: s.h.Clock.Now()}
 		for _, n := range others {
 			if _, ok := answers[n]; ok || all {
-				f.Hosts = append(f.Hosts, s.view(n, cfg.Hosts[n], nodes[n], answers))
+				f.Macs = append(f.Macs, s.view(n, cfg.Hosts[n], nodes[n], answers))
 			}
 		}
 		return f
@@ -72,7 +72,7 @@ func (s *Service) FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(
 }
 
 func (s *Service) nodeMap(ctx context.Context) map[string]Node {
-	if s.nodes == nil || s.o.Here != catalog.Host {
+	if s.nodes == nil || s.o.Here != catalog.Mac {
 		return nil
 	}
 	nodes, err := s.nodes.Peers(ctx)
@@ -85,7 +85,7 @@ func (s *Service) nodeMap(ctx context.Context) map[string]Node {
 // invariant: the daemon matters only where VMs can exist: on a host with its hypervisor; a
 // daemon that does not answer degrades the view, never fails it.
 func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[string]DaemonVM) {
-	if s.o.Here != catalog.Host || s.daemon == nil {
+	if s.o.Here != catalog.Mac || s.daemon == nil {
 		return DaemonInfo{}, nil
 	}
 	if !s.engine.Installed() {
@@ -103,21 +103,21 @@ func (s *Service) daemonView(ctx context.Context) (info DaemonInfo, live map[str
 	return DaemonInfo{Known: true, Running: true, Version: version}, live
 }
 
-func (s *Service) view(name string, h model.Host, node Node, answers map[string]HostView) HostView {
+func (s *Service) view(name string, h model.MacRecord, node Node, answers map[string]HostView) HostView {
 	far, ok := answers[name]
 	if !ok {
 		silent := HostView{Name: name, User: h.User, Node: node, Answered: h.Answered, LAN: h.LAN}
 		for _, vm := range h.VMs {
 			silent.VMs = append(silent.VMs, VM{
-				Name: vm.Name, Host: name, Lifetime: vm.Lifetime, State: model.UnknownState,
+				Name: vm.Name, Mac: name, Lifetime: vm.Lifetime, State: model.UnknownState,
 				Resources: Resources{CPUs: vm.CPUs, MemoryBytes: vm.MemoryBytes},
 			})
 		}
 		return silent
 	}
-	view := HostView{Name: name, User: h.User, StationVersion: far.StationVersion, Reachable: true, LAN: far.LAN, Node: far.Node, Daemon: far.Daemon}
+	view := HostView{Name: name, User: h.User, StationVersion: far.StationVersion, Reachable: true, LAN: far.LAN, Node: far.Node, Engine: far.Engine}
 	for _, vm := range far.VMs {
-		vm.Host = name
+		vm.Mac = name
 		view.VMs = append(view.VMs, vm)
 	}
 	if node.IP != "" || node.Online {

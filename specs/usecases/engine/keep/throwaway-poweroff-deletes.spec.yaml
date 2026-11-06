@@ -7,7 +7,7 @@ runs:
           {"disk":true,"record":"throwaway","ports":[40001,40002],"tailscale":[40001,40002],"accounts":["session:github","operator:claude:oauth-token"],"ssh":"jterrazz-macbook-pro"}
     - command: 'world poweroff-inside linux-1'
       exit: 0
-    - command: 'machines --here'
+    - command: 'machines --this-mac'
       exit: 0
       stdout: |
           ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running

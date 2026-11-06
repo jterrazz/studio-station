@@ -24,15 +24,15 @@ func listColumns() []page.Column {
 
 func List(f machines.Fleet, warnings []string, thisMac page.Context) page.Page {
 	hereVersion := ""
-	for _, h := range f.Hosts {
-		if h.Here {
+	for _, h := range f.Macs {
+		if h.ThisMac {
 			hereVersion = h.StationVersion
 		}
 	}
 	findings := machines.Needs(f)
-	items := make([]page.Item, 0, len(f.Hosts))
+	items := make([]page.Item, 0, len(f.Macs))
 	var hints []page.Hint
-	for _, h := range f.Hosts {
+	for _, h := range f.Macs {
 		g := page.Group{Head: macRow(machines.Label(f, h), h, hereVersion, f.Read), Fold: page.Open}
 		for _, vm := range machines.Ordered(h.VMs) {
 			row := listVMRow(h.Name, vm)
@@ -40,12 +40,12 @@ func List(f machines.Fleet, warnings []string, thisMac page.Context) page.Page {
 		}
 		if len(h.VMs) == 0 && h.Reachable {
 			empty := &page.Empty{Noun: "VMs", Text: "No VMs yet"}
-			if h.Here {
+			if h.ThisMac {
 				empty.Hint = &page.Hint{Key: KeyCreate, Text: "create one"}
 			}
 			g.Items = append(g.Items, page.Item{Empty: empty})
 			create := "station machines create"
-			if !h.Here {
+			if !h.ThisMac {
 				create += " --on " + machines.Label(f, h)
 			}
 			hints = append(hints, page.Hint{Command: create})
@@ -123,11 +123,11 @@ func macRow(label string, h machines.HostView, hereVersion string, now time.Time
 		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.List(page.Text("Unreachable"), page.Text("last answer "+pages.LastAnswer(h.Answered, now)))
 	case !h.Reachable:
 		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.Text("Unreachable")
-	case h.Daemon.Known && !h.Daemon.Running && !h.Daemon.Installed && h.Here:
+	case h.Engine.Known && !h.Engine.Running && !h.Engine.Installed && h.ThisMac:
 		row.Mark, row.Reason, state = page.Broken, page.Missing, page.Text("Engine not set up")
-	case h.Daemon.Known && !h.Daemon.Running:
+	case h.Engine.Known && !h.Engine.Running:
 		row.Mark, row.Reason, state = page.Broken, page.Stopped, page.Text("Engine stopped")
-	case h.Daemon.Known:
+	case h.Engine.Known:
 		state = page.Text("Engine running")
 	}
 	if _, ok := machines.Behind(h, hereVersion); ok && h.Reachable {

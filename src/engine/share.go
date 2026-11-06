@@ -145,7 +145,7 @@ func (d *Engine) unlistenExcept(vm string, seen map[int]bool) {
 	}
 }
 
-func (d *Engine) tickServices(ctx context.Context) {
+func (d *Engine) tickShares(ctx context.Context) {
 	// invariant: every reserved port ticks, listened on in this engine's
 	// life or not, so one idle past its days is released, and one served
 	// that its VM says nothing listens on is unshared.
@@ -228,28 +228,28 @@ func (d *Engine) share(ctx context.Context, s *svc) {
 		d.saveReservations()
 	}
 	reservation := d.reservations[i]
-	local, err := d.h.Sockets.ListenTCP(services.LocalHost, reservation.HostPort)
+	local, err := d.h.Sockets.ListenTCP(services.LocalHost, reservation.MacPort)
 	if err != nil {
 		if reservation.Pinned {
-			s.detail, s.retryAt = "host port "+strconv.Itoa(reservation.HostPort)+" is busy", d.h.Clock.Now().Add(busyRetry)
+			s.detail, s.retryAt = "reserved port "+strconv.Itoa(reservation.MacPort)+" is busy", d.h.Clock.Now().Add(busyRetry)
 			s.refused = true
 			return
 		}
-		was := reservation.HostPort
+		was := reservation.MacPort
 		others := append(append([]services.Lease(nil), d.reservations[:i]...), d.reservations[i+1:]...)
 		moved, allocErr := ports.Reserve(p, others, s.vm, s.port, func(hp int) bool { return hp == was || d.busy(hp) })
 		if allocErr != nil {
 			s.st.Phase, s.refused, s.detail = services.Refused, true, allocErr.Error()
 			return
 		}
-		reservation.HostPort = moved.HostPort
+		reservation.MacPort = moved.MacPort
 		d.reservations[i] = reservation
 		d.saveReservations()
-		if local, err = d.h.Sockets.ListenTCP(services.LocalHost, reservation.HostPort); err != nil {
+		if local, err = d.h.Sockets.ListenTCP(services.LocalHost, reservation.MacPort); err != nil {
 			s.detail = err.Error()
 			return
 		}
-		s.detail = "host port " + strconv.Itoa(was) + " was busy: now " + strconv.Itoa(reservation.HostPort)
+		s.detail = "reserved port " + strconv.Itoa(was) + " was busy: now " + strconv.Itoa(reservation.MacPort)
 	}
 	s.listeners = []system.Listener{local}
 	go d.carry(ctx, s, local)
@@ -395,7 +395,7 @@ func (d *Engine) detectHTTP(ctx context.Context, s *svc) bool {
 // Mac signed out of the tailnet says so, not that Serve is off; the caller
 // holds d.mu.
 func (d *Engine) exposureLocked() services.Exposure {
-	e := services.ExposureOf(d.self.On, d.self.Host)
+	e := services.ExposureOf(d.self.On, d.self.DNSName)
 	if !e.On && d.self.Backend != ports.Running {
 		e.Off = catalog.SignedOutDetail
 	}
@@ -427,14 +427,14 @@ func (d *Engine) view(l services.Lease, s *svc, httpsMode string) services.View 
 	return v
 }
 
-func (d *Engine) hostView(vm string) services.HostView {
+func (d *Engine) macPorts(vm string) services.HostView {
 	p := d.policy()
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	e := d.exposureLocked()
 	out := services.HostView{
 		Name: d.m.HereName(), ThisMac: true, Reachable: true, Engine: services.DaemonInfo{Running: true, Version: d.o.Version},
-		PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Services: []services.View{},
+		PublicName: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Shared: []services.View{},
 	}
 	if vm == "" {
 		out.Listening = d.listeningLocked()
@@ -445,16 +445,16 @@ func (d *Engine) hostView(vm string) services.HostView {
 	}
 	for _, l := range d.reservations {
 		if vm == "" || l.VM == vm {
-			out.Services = append(out.Services, d.view(l, d.svcs[key(l.VM, l.GuestPort)], p.HTTPS))
+			out.Shared = append(out.Shared, d.view(l, d.svcs[key(l.VM, l.GuestPort)], p.HTTPS))
 		}
 	}
 	for _, s := range d.svcs {
 		if s.st.Phase == services.Refused && d.reservationIndex(s.vm, s.port) < 0 && (vm == "" || s.vm == vm) {
-			out.Services = append(out.Services, services.View{VM: s.vm, GuestPort: s.port, State: services.Refused, Process: s.process, Detail: services.JoinDetail(s.detail, off)})
+			out.Shared = append(out.Shared, services.View{VM: s.vm, GuestPort: s.port, State: services.Refused, Process: s.process, Detail: services.JoinDetail(s.detail, off)})
 		}
 	}
-	sort.Slice(out.Services, func(i, j int) bool {
-		a, b := out.Services[i], out.Services[j]
+	sort.Slice(out.Shared, func(i, j int) bool {
+		a, b := out.Shared[i], out.Shared[j]
 		if a.VM != b.VM {
 			return a.VM < b.VM
 		}
@@ -544,7 +544,7 @@ func (d *Engine) reconcileServe(ctx context.Context) {
 		case p.InRange(e.Port):
 			justified := false
 			for _, l := range reservations {
-				justified = justified || l.HostPort == e.Port
+				justified = justified || l.MacPort == e.Port
 			}
 			if !justified {
 				e.Path = ""
@@ -567,11 +567,11 @@ func (d *Engine) reconcileServe(ctx context.Context) {
 
 // invariant: a reserved port the tailnet already serves when the engine
 // starts is served until its VM says it no longer listens there.
-func (d *Engine) servedBefore(hostPort int) {
+func (d *Engine) servedBefore(macPort int) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for _, l := range d.reservations {
-		if l.HostPort == hostPort {
+		if l.MacPort == macPort {
 			if s := d.svcOf(l.VM, l.GuestPort); s.st.Phase != services.Published {
 				s.served = true
 			}

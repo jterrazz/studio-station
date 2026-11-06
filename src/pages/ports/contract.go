@@ -62,9 +62,9 @@ type BodyJSON struct {
 type ListJSON map[string]any // value: station.ports.list/v1, its node under the key of the tailnet's product, a word the catalogue owns.
 
 // value: the words of a port's state in station.ports.list/v1.
-func stateWord(s ports.ServiceView) string {
+func stateWord(s ports.SharedPort) string {
 	switch {
-	case s.State == ports.PhaseRefused || s.HostPort == 0:
+	case s.State == ports.PhaseRefused || s.Reserved == 0:
 		return "waiting"
 	case s.State == ports.PhaseUnknown:
 		return "engine-stopped"
@@ -76,7 +76,7 @@ func stateWord(s ports.ServiceView) string {
 	return "shared"
 }
 
-func PortObject(s ports.ServiceView) PortJSON {
+func PortObject(s ports.SharedPort) PortJSON {
 	bind := []string{}
 	if s.Bind != "" {
 		bind = append(bind, s.Bind)
@@ -86,7 +86,7 @@ func PortObject(s ports.ServiceView) PortJSON {
 		proto = "http"
 	}
 	return PortJSON{Machine: s.VM, Port: s.GuestPort, Proto: proto, Process: s.Process, Bind: bind, Class: "private",
-		State: stateWord(s), Reserved: s.HostPort, URL: s.URLs.Public, Detail: s.Detail}
+		State: stateWord(s), Reserved: s.Reserved, URL: s.URLs.Public, Detail: s.Detail}
 }
 
 func ListenerObject(p ports.Port) PortJSON {
@@ -109,13 +109,13 @@ func ListContract(l ports.Listing) ListJSON {
 	body := BodyJSON{Schema: "station.ports.list/v1", Ports: []PortJSON{}, Range: []RangeJSON{}}
 	var red, public, private []PortJSON
 	var all []ports.Port
-	for _, h := range l.AllMachines.Hosts {
+	for _, h := range l.AllMachines.Macs {
 		heard := map[string]ports.Port{}
 		for _, p := range h.Ports {
 			heard[p.Key()] = p
 		}
 		shared := map[string]bool{}
-		for _, s := range h.Services {
+		for _, s := range h.Shared {
 			o := PortObject(s)
 			key := rowID(s.VM, s.GuestPort)
 			shared[key] = true

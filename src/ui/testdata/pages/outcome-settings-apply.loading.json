@@ -3,7 +3,7 @@
   "id": "outcome",
   "command": "settings apply",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "loading",
   "sections": [

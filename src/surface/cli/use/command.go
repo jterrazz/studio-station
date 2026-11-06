@@ -12,8 +12,8 @@ import (
 
 type Deps struct {
 	// value: the machines known here, for completion.
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 type Input struct{ Machine string }
@@ -51,7 +51,7 @@ func run(ctx context.Context, d Deps, env kit.Env, in *Input, io kit.IO) error {
 	now, _ := env.Use.Read()
 	switch in.Machine {
 	case "":
-		return io.Page(pagemachines.UseCurrent(now.Machine, kit.Clock(now.Since, env.Use.Now()), d.Here), nil)
+		return io.Page(pagemachines.UseCurrent(now.Machine, kit.Clock(now.Since, env.Use.Now()), d.ThisMachine), nil)
 	case "-":
 		if now.Previous == "" && now.Machine == "" {
 			return kit.Refuse("this terminal has used no other machine", "station use <machine>")
@@ -59,7 +59,7 @@ func run(ctx context.Context, d Deps, env kit.Env, in *Input, io kit.IO) error {
 		return back(env, d, io, now, now.Previous)
 	}
 	to := in.Machine
-	if to == thisMac || to == env.Self.Name || to == d.Here.Machine {
+	if to == thisMac || to == env.Self.Name || to == d.ThisMachine.Machine {
 		return back(env, d, io, now, "")
 	}
 	if env.On.Known != nil {
@@ -70,14 +70,14 @@ func run(ctx context.Context, d Deps, env kit.Env, in *Input, io kit.IO) error {
 	if err := env.Use.Write(kit.Choice{Machine: to, Previous: now.Machine, Since: env.Use.Now()}); err != nil {
 		return err
 	}
-	return io.Page(pagemachines.UseChosen(to, d.Here), nil)
+	return io.Page(pagemachines.UseChosen(to, d.ThisMachine), nil)
 }
 
 func back(env kit.Env, d Deps, io kit.IO, now kit.Choice, to string) error {
 	if err := env.Use.Write(kit.Choice{Machine: to, Previous: now.Machine, Since: env.Use.Now()}); err != nil {
 		return err
 	}
-	return io.Page(pagemachines.UseBack(to, now.Machine, d.Here), nil)
+	return io.Page(pagemachines.UseBack(to, now.Machine, d.ThisMachine), nil)
 }
 
 func example(machine string) string {

@@ -182,8 +182,8 @@ type StopReport struct {
 }
 
 const (
-	PowerEnded = "ended"
-	PowerReset = "reset"
+	PowerEnded   = "ended"
+	PowerCleared = "released"
 )
 
 const (
@@ -206,10 +206,10 @@ func (c *Control) Stop(ctx context.Context, w Work, by string) (StopReport, erro
 		}
 	} else {
 		r.VMs = c.stopDirect(ctx, w)
-		// invariant: a clamshell mask a dead engine left is reset here, by the
+		// invariant: a clamshell mask a dead engine left is released here, by the
 		// same call the engine makes, so a stop never leaves the lid held.
 		if c.o.Power != nil && c.o.Power.Clamshell(false) == nil {
-			r.Power = PowerReset
+			r.Power = PowerCleared
 		}
 	}
 	for _, v := range r.VMs {

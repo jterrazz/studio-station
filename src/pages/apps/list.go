@@ -171,7 +171,7 @@ func Actions() []page.Action {
 }
 
 func Row(r apps.Report) page.Row {
-	name := r.Tool.Name
+	name := r.App.Name
 	row := page.Row{ID: name, Label: name, Cells: []page.Value{version(r), method(r)}}
 	state := apps.StateOf(r)
 	if state == apps.Pending {
@@ -232,7 +232,7 @@ func version(r apps.Report) page.Value {
 }
 
 func method(r apps.Report) page.Value {
-	if r.Tool.System {
+	if r.App.System {
 		return page.Texts(string(r.Method), "system")
 	}
 	return page.Texts(string(r.Method))

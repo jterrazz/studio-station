@@ -20,7 +20,7 @@ import (
 // mini's Screen Sharing and infra's API private.
 func miniPorts() ports.Listing {
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
-	host := services.HostView{Name: "mac-mini", Reachable: true, Engine: services.DaemonInfo{Running: true}, Services: []services.View{},
+	mac := services.HostView{Name: "mac-mini", Reachable: true, Engine: services.DaemonInfo{Running: true}, Shared: []services.View{},
 		Ports: []ports.Port{
 			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},
 			{Machine: infra, Port: 10250, Process: "kubelet", Binds: []string{"0.0.0.0"}, Reach: ports.Outside},
@@ -29,15 +29,15 @@ func miniPorts() ports.Listing {
 			{Machine: mini, Port: 5900, Process: "screensharingd", Binds: []string{"100.98.133.20"}, Reach: ports.Tailnet},
 			{Machine: infra, Port: 6443, Process: "kube-apiserver", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet, Device: true},
 		}}
-	return ports.Listing{AllMachines: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
+	return ports.Listing{AllMachines: services.Fleet{Schema: ports.AllMachinesSchema, Macs: []services.HostView{mac}}}
 }
 
 // value: the ports of This Mac's VMs, as linux-1's Ports reads them: Vite
 // shared with its link, postgres reserved and not listening yet.
 func linuxPorts() ports.Listing {
-	host := serviceAllMachines().Hosts[0]
-	host.Ports = nil
-	return ports.Listing{AllMachines: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
+	mac := portsAllMachines().Macs[0]
+	mac.Ports = nil
+	return ports.Listing{AllMachines: services.Fleet{Schema: ports.AllMachinesSchema, Macs: []services.HostView{mac}}}
 }
 
 func twoMacsAwake() pageawake.AllMachines {

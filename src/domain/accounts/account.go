@@ -24,7 +24,7 @@ const (
 
 type (
 	Account = accounts.Account
-	Lend    = accounts.Lend
+	Lend    = accounts.Loan
 )
 
 // invariant: a provider's own read is the owner's own right once it is
@@ -39,7 +39,7 @@ func own(id accounts.Identity) Account {
 
 func Redact(a Account) Account {
 	clean := func(v string) string {
-		c, redacted := accounts.Clean(v)
+		c, redacted := accounts.Redact(v)
 		a.Redacted = a.Redacted || redacted
 		return c
 	}

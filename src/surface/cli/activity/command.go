@@ -20,8 +20,8 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
-	Now  func() time.Time
+	ThisMachine page.Context
+	Now         func() time.Time
 	// value: the short name a Mac is said by (mac-mini).
 	Label func(mac string) string
 }
@@ -58,13 +58,13 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return io.Page(pageactivity.AllMachines(views, d.Here, in.Graph > 0), pageactivity.AllMachinesContract(views, d.Now()))
+				return io.Page(pageactivity.AllMachines(views, d.ThisMachine, in.Graph > 0), pageactivity.AllMachinesContract(views, d.Now()))
 			}
 			v, err := one(ctx, d, env, env.Target(), read{history: in.History, graph: in.Graph})
 			if err != nil {
 				return err
 			}
-			return io.Page(pageactivity.Page(v, d.Here), pageactivity.Contract(v, d.Now()))
+			return io.Page(pageactivity.Page(v, d.ThisMachine), pageactivity.Contract(v, d.Now()))
 		},
 	}, env)
 }
@@ -154,12 +154,12 @@ func every(ctx context.Context, d Deps, env kit.Env) ([]pageactivity.View, error
 		return nil, err
 	}
 	var views []pageactivity.View
-	for _, h := range list.Fleet.Hosts {
+	for _, h := range list.All.Macs {
 		ref := machine.Ref{Name: h.Name}
-		if h.Here {
+		if h.ThisMac {
 			ref = env.Self
 		}
-		if !h.Reachable && !h.Here {
+		if !h.Reachable && !h.ThisMac {
 			views = append(views, pageactivity.View{Name: h.Name, Label: d.Label(h.Name), Kind: string(machine.Mac), Silent: "does not answer", SilentType: string(fail.Unreachable)})
 			continue
 		}

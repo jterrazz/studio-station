@@ -28,9 +28,9 @@ func thisMacActivity() pageactivity.View {
 func activityPages() []Fixture {
 	stopped := pageactivity.View{Name: "api", Label: "api", Kind: "workspace", Mac: "jterrazz-macbook-pro", On: "This Mac", Stopped: true}
 	return states("activity",
-		pending(pageactivity.Page(thisMacActivity(), here())),
-		pageactivity.Page(stopped, here()),
+		pending(pageactivity.Page(thisMacActivity(), thisMacContext())),
+		pageactivity.Page(stopped, thisMacContext()),
 		failure("activity", "activity", "jterrazz-mac-mini does not answer", "station machines"),
-		pageactivity.Page(thisMacActivity(), here()),
+		pageactivity.Page(thisMacActivity(), thisMacContext()),
 	)
 }

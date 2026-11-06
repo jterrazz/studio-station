@@ -13,8 +13,8 @@ import (
 func machinesFailure(err error) (*fail.Error, bool) {
 	var unknown *machines.UnknownMachineError
 	var thisMac *machines.HereMachineError
-	var notHost *machines.NotAHostError
-	var onlyHost *machines.OnlyOnHostError
+	var notMac *machines.NotAHostError
+	var macOnly *machines.OnlyOnHostError
 	var taken *machines.NameTakenError
 	var bad *machines.BadNameError
 	var unreachable *machines.UnreachableError
@@ -33,10 +33,10 @@ func machinesFailure(err error) (*fail.Error, bool) {
 		return usage(thisMac.Error(), "station machines"), true
 	case errors.As(err, &thisMac):
 		return usage(thisMac.Error(), "pick another machine: station machines lists them all"), true
-	case errors.As(err, &notHost):
-		return usage(notHost.Error(), notAHostHint(notHost)), true
-	case errors.As(err, &onlyHost):
-		return usage(onlyHost.Error(), "run it on a Mac"), true
+	case errors.As(err, &notMac):
+		return usage(notMac.Error(), notAMacHint(notMac)), true
+	case errors.As(err, &macOnly):
+		return usage(macOnly.Error(), "run it on a Mac"), true
 	case errors.As(err, &taken):
 		return usage(taken.Error(), takenHint(taken)), true
 	case errors.As(err, &bad):
@@ -57,7 +57,7 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	return nil, false
 }
 
-func notAHostHint(e *machines.NotAHostError) string {
+func notAMacHint(e *machines.NotAHostError) string {
 	if e.Verb == "forget" {
 		return "station machines delete " + e.Name
 	}

@@ -51,7 +51,7 @@ func DiskUsage(t *testing.T, open Open) {
 			t.Fatalf("a kept folder = %d, want 300", got)
 		}
 	})
-	t.Run("a moved folder is whole at its new place and gone from the old", func(t *testing.T) {
+	t.Run("a moved folder is whole at its new location and gone from the old", func(t *testing.T) {
 		u, root := open(t, Scene())
 		if err := u.Move(context.Background(), root+"/cache", root+"/moved/cache"); err != nil {
 			t.Fatalf("Move: %v", err)
@@ -60,7 +60,7 @@ func DiskUsage(t *testing.T, open Open) {
 			t.Fatalf("the moved folder = %d, want 5100", got)
 		}
 		if got := size(context.Background(), u, root+"/cache"); got != 0 {
-			t.Fatalf("the old place = %d, want 0", got)
+			t.Fatalf("the old location = %d, want 0", got)
 		}
 	})
 	t.Run("a move onto a folder that holds anything is refused, and nothing moves", func(t *testing.T) {

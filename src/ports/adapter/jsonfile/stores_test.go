@@ -31,7 +31,7 @@ func TestDeclarationStore(t *testing.T) {
 func TestReservationsReadAsTodaysLeases(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "leases.json")
 	at := time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)
-	if err := jsonfile.NewReservations(disk(), file).Put(context.Background(), ports.Reservation{VM: "api", GuestPort: 3000, HostPort: 40010, ReservedAt: at}); err != nil {
+	if err := jsonfile.NewReservations(disk(), file).Put(context.Background(), ports.Reservation{VM: "api", GuestPort: 3000, MacPort: 40010, ReservedAt: at}); err != nil {
 		t.Fatal(err)
 	}
 	got, _ := os.ReadFile(file)

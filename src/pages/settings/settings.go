@@ -299,7 +299,7 @@ func firstLine(rows []settings.Row, look int, thisMac page.Context) page.Section
 		}
 	}
 	label := "This Mac"
-	if thisMac.Machine != "" && thisMac.Kind != string(catalog.Host) {
+	if thisMac.Machine != "" && thisMac.Kind != string(catalog.Mac) {
 		label = thisMac.Machine
 	}
 	words := []string{strconv.Itoa(set) + " set by station here"}
@@ -380,7 +380,7 @@ func Show(r settings.Row, now time.Time, thisMac page.Context) page.Page {
 	facts := []page.Item{
 		{Fact: &page.Fact{Key: "group", Value: group}},
 		{Fact: &page.Fact{Key: "does", Value: page.Text(r.Item().Description)}},
-		{Fact: &page.Fact{Key: "lives on", Value: page.Text(livesOn(r.Item().Places))}},
+		{Fact: &page.Fact{Key: "lives on", Value: page.Text(livesOn(r.Item().Kinds))}},
 	}
 	if r.Where != "" {
 		facts = append(facts, page.Item{Fact: &page.Fact{Key: "where", Value: page.Text(r.Where)}})
@@ -400,7 +400,7 @@ func showChecked(r settings.Row, head page.Row, thisMac page.Context) page.Page 
 	facts := []page.Item{
 		{Fact: &page.Fact{Key: "group", Value: page.Text("Checked")}},
 		{Fact: &page.Fact{Key: "does", Value: page.Text(it.Description)}},
-		{Fact: &page.Fact{Key: "lives on", Value: page.Text(livesOn(it.Places))}},
+		{Fact: &page.Fact{Key: "lives on", Value: page.Text(livesOn(it.Kinds))}},
 		{Fact: &page.Fact{Key: "fix", Value: page.Text(it.Fix)}},
 	}
 	if r.Expected != "" {
@@ -416,7 +416,7 @@ func livesOn(livesOn []catalog.MachineKind) string {
 	words := make([]string, 0, len(livesOn))
 	for _, p := range livesOn {
 		switch p {
-		case catalog.Host:
+		case catalog.Mac:
 			words = append(words, "Macs")
 		case catalog.Linux:
 			words = append(words, "Linux VMs")

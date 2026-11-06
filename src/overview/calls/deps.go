@@ -39,11 +39,11 @@ type Deps[App, Item, Misplaced any] struct {
 	Pool *lanes.Pool
 	// value: the Router the Overview reads each section of this machine
 	// through, and the machine's kind, which decides its sections.
-	Calls call.Router
-	Kind  machine.Kind
-	Clock Clock
-	Here  ThisMac
-	Name  setupcontract.NamePrefs
+	Calls   call.Router
+	Kind    machine.Kind
+	Clock   Clock
+	ThisMac ThisMac
+	Name    setupcontract.NamePrefs
 	// value: the git identity the owner's preferences expect.
 	Identity setupcontract.IdentityPrefs
 	// value: the facts of this machine (its kernel, network, protections and
@@ -57,13 +57,13 @@ type Deps[App, Item, Misplaced any] struct {
 	// value: the app updates waiting, on a Mac; nil elsewhere.
 	Updates Updates
 	Tailnet Tailnet
-	Daemon  Engine
+	Engine  Engine
 	Power   Power
 	// value: the servers this Mac runs; nil where none can run.
 	Servers    Servers
 	Hypervisor Hypervisor
-	Tools      Apps[App]
-	Config     Config[Item]
+	Apps       Apps[App]
+	Settings   Settings[Item]
 	Setup      Setup
 	Disk       Disk[Misplaced]
 }
@@ -107,7 +107,7 @@ type Apps[App any] interface {
 	Inventory(ctx context.Context) ([]App, error)
 }
 
-type Config[Item any] interface {
+type Settings[Item any] interface {
 	List(ctx context.Context) ([]Item, error)
 	// value: the config item a row is, and its state.
 	Placed(r Item) (item string, state catalog.State)
@@ -118,8 +118,8 @@ type Setup interface {
 }
 
 type DiskReading[Misplaced any] struct {
-	Rows   []overview.Disk
-	Strays []Misplaced
+	Rows      []overview.Disk
+	Misplaced []Misplaced
 }
 
 type Disk[Misplaced any] interface {

@@ -24,7 +24,7 @@ func socketAPI(h system.Host, file string) engineAPI {
 	})}
 }
 
-func (m machine) engineAPI() engineAPI { return socketAPI(m.host, engine.SocketPath(m.paths.State)) }
+func (m machine) engineAPI() engineAPI { return socketAPI(m.sys, engine.SocketPath(m.paths.State)) }
 
 type engineAPI struct{ c api.Client }
 
@@ -72,6 +72,6 @@ func word(e *fail.Error) (message, hint string) {
 // invariant: the engine serves its own calls and this machine's registry,
 // gated by this machine's profile and worded by this binary's table.
 func (m machine) engineServer(d *engine.Engine, registry *call.Registry) func(ctx context.Context, conn io.ReadWriteCloser) {
-	s := process.Server(d, process.Host{Registry: registry, Here: m.profile, Word: word, Sleep: m.host.Clock.Sleep})
+	s := process.Server(d, process.Serving{Registry: registry, ThisMachine: m.profile, Word: word, Sleep: m.sys.Clock.Sleep})
 	return s.Conn
 }

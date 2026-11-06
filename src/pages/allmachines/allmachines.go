@@ -23,15 +23,15 @@ const (
 type Reading struct {
 	Machines *machines.Fleet
 	Images   *[]images.Report
-	Services *services.Fleet
+	Ports    *services.Fleet
 	Tailnet  *ports.Status
 	Failed   map[string]page.Error
 }
 
 func Tab(r Reading, thisMac page.Context) page.Page {
-	p := page.Page{ID: "fleet", Context: thisMac}
-	p.Sections = append(p.Sections, part(r, "fleet", "All machines", r.Machines != nil, func() []page.Section {
-		s := pagemachines.Section(*r.Machines, links(r.Services))
+	p := page.Page{ID: "all-machines", Context: thisMac}
+	p.Sections = append(p.Sections, part(r, "all-machines", "All machines", r.Machines != nil, func() []page.Section {
+		s := pagemachines.Section(*r.Machines, links(r.Ports))
 		s.Fold = page.Open
 		return []page.Section{s}
 	})...)
@@ -61,17 +61,17 @@ func part(r Reading, id, title string, ready bool, build func() []page.Section) 
 	return build()
 }
 
-func links(f *services.Fleet) func(host, vm string) []page.Link {
+func links(f *services.Fleet) func(mac, vm string) []page.Link {
 	if f == nil {
 		return nil
 	}
-	return func(host, vm string) []page.Link {
+	return func(mac, vm string) []page.Link {
 		var out []page.Link
-		for _, h := range f.Hosts {
-			if h.Name != host {
+		for _, h := range f.Macs {
+			if h.Name != mac {
 				continue
 			}
-			for _, s := range h.Services {
+			for _, s := range h.Shared {
 				if s.VM == vm {
 					out = append(out, pageports.Link(s))
 				}
@@ -84,9 +84,9 @@ func links(f *services.Fleet) func(host, vm string) []page.Link {
 func Actions(r Reading) []page.Action {
 	var vms, remote, hosts []string
 	if r.Machines != nil {
-		for _, h := range r.Machines.Hosts {
+		for _, h := range r.Machines.Macs {
 			hosts = append(hosts, h.Name)
-			if !h.Here {
+			if !h.ThisMac {
 				remote = append(remote, h.Name)
 			}
 			for _, vm := range h.VMs {

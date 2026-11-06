@@ -167,6 +167,8 @@ func (s *Shares) Migrate(context.Context) error {
 	return nil
 }
 
+// value: alias of v2's `lent` key of a VM record, read once and moved.
+//
 // invariant: a v2 record holds its shares as plain names (before shares
 // expired) or as {name, at, until}; a plain name reads as shared at the
 // record's mtime for the default term.

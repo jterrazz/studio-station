@@ -21,7 +21,7 @@ func Notifier(t *testing.T, subject func(t *testing.T) NotifierSubject) {
 		s := subject(t)
 		told := []engine.Notification{
 			{Kind: engine.NoticeTakeBackFailed, Subject: "api share", Text: "taking GitHub back failed: exit 1"},
-			{Kind: engine.NoticeTakeBackFailed, Subject: "api lend", Text: "recall of session:b failed: exit 1"},
+			{Kind: engine.NoticeTakeBackFailed, Subject: "api share", Text: "take back of session:b failed: exit 1"},
 		}
 		for _, n := range told {
 			s.Notifier.Notify(context.Background(), n)

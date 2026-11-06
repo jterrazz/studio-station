@@ -21,43 +21,43 @@ import (
 )
 
 func setupCommand(env kit.Env, m machine) *cobra.Command {
-	return setupcmd.Command(setupcmd.Deps{Here: m.where}, env)
+	return setupcmd.Command(setupcmd.Deps{ThisMachine: m.where}, env)
 }
 
-func setupService(env kit.Env, m machine) *setup.Service {
+func setupOf(env kit.Env, m machine) *setup.Service {
 	allMachines := m.machines(env.Interactive)
 	registrar := allMachinesRegistrar{name: m.stores.name(), machines: allMachines}
 	installer := engineInstaller{m: m, machines: allMachines}
-	return setup.New(m.host, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.services(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
+	return setup.New(m.sys, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.ports(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
 		Kind:            m.kind,
 		Server:          m.profile.Kind == coremachine.Server,
 		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,
 		// hazard: a spec points STATION_EXECUTABLE at a stub so the detached re-exec is
 		// observable; unset, the running binary is the one re-executed.
-		Executable:      m.or("STATION_EXECUTABLE", m.host.Env.Executable()),
+		Executable:      m.or("STATION_EXECUTABLE", m.sys.Env.Executable()),
 		Detached:        m.vars["STATION_XDG_DETACHED"] == "1",
 		Tools:           catalog.Apps,
 		Expand:          m.expander(),
 		Files:           m.appFiles(),
-		Configurer:      setupConfigurer{config: configService(m)},
-		Settings:        setupSettings{config: configService(m)},
-		Installer:       systemApps{apps: appsService(env, m)},
+		Configurer:      setupSettingsWriter{settings: settingsOf(m)},
+		Settings:        setupSettings{settings: settingsOf(m)},
+		Installer:       systemApps{apps: appsOf(env, m)},
 		AppStoreCLI:     m.tailnetCLI().AppStoreCLI,
 		MovePreferences: m.stores.prefs.MoveRetired,
 	})
 }
 
-type setupConfigurer struct{ config *config.Service }
+type setupSettingsWriter struct{ settings *config.Service }
 
-func (c setupConfigurer) Configure(ctx context.Context, item string, interactive bool) error {
-	_, err := c.config.Install(ctx, item, nil, interactive)
+func (c setupSettingsWriter) Configure(ctx context.Context, item string, interactive bool) error {
+	_, err := c.settings.Install(ctx, item, nil, interactive)
 	return err
 }
 
-type setupSettings struct{ config *config.Service }
+type setupSettings struct{ settings *config.Service }
 
 func (c setupSettings) List(ctx context.Context) ([]setup.Setting, error) {
-	reports, err := c.config.List(ctx)
+	reports, err := c.settings.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (c setupSettings) List(ctx context.Context) ([]setup.Setting, error) {
 }
 
 func (c setupSettings) Apply(ctx context.Context, name string) error {
-	_, err := c.config.Install(ctx, name, nil, false)
+	_, err := c.settings.Install(ctx, name, nil, false)
 	return err
 }
 
@@ -126,7 +126,7 @@ type allMachinesRegistrar struct {
 	machines *machines.Service
 }
 
-func (r allMachinesRegistrar) Here() (string, bool) {
+func (r allMachinesRegistrar) ThisMac() (string, bool) {
 	thisMac, err := r.name.Get()
 	return thisMac, err == nil && thisMac != ""
 }

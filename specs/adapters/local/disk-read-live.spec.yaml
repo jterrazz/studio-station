@@ -1,4 +1,4 @@
-description: 'disk on a terminal fills in place, a late size says ?, and last-known sizes are kept'
+description: 'disk on a terminal fills in as it reads, a late size says ?, and last-known sizes are kept'
 fixture:
     - ../../__fixtures__/terminal/
     - ./__fixtures__/disk-slow-docker/

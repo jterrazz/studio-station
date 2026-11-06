@@ -37,10 +37,10 @@ type Shared struct {
 }
 
 type Sharing struct {
-	LendList []string
-	Lent     map[string][]string
-	Lends    map[string][]Share
-	Kept     []string
+	ShareList  []string
+	SharedWith map[string][]string
+	Shares     map[string][]Share
+	Kept       []string
 }
 
 type ShareReport struct {
@@ -110,7 +110,7 @@ func Label(account string) string {
 }
 
 func Known(account string) bool {
-	return slices.ContainsFunc(catalog.Providers, func(p catalog.Provider) bool { return p.ID == account && p.Host })
+	return slices.ContainsFunc(catalog.Providers, func(p catalog.Provider) bool { return p.ID == account && p.Mac })
 }
 
 func SharedOf(held map[string][]Share) []Shared {

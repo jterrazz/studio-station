@@ -1,16 +1,16 @@
-description: 'an engine launchd loads but cannot start is a failed step, never a running row'
+description: 'setup boots out the per-VM agents of stopped VMs; a permanent one stopped by its owner stays so'
 fixture:
     - ../../__fixtures__/vms/
-    - ./__fixtures__/launchctl-fails-kickstart/
+    - ./__fixtures__/old-agents/
 runs:
     - command: 'setup </dev/null'
-      exit: 1
+      exit: 0
       stdout: |
           ●	name	x
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	bunfig, go env, mise config, npmrc
-          ✗	engine	launchctl kickstart exited 5: Could not kickstart service: 5: Input/output error
+          ●	relocate	bunfig, go env, mise settings, npmrc
+          ●	engine	running {{string}}
           ○	apps	missing: homebrew mise git tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts
           ○	ssh-key	next: station settings apply ssh-key
@@ -19,6 +19,12 @@ runs:
           ○	claude-token	next: station settings apply claude-token
           ○	dock-reset	next: station settings apply dock-reset
           ○	dock-spacer	next: station settings apply dock-spacer
-      stderr: |
-          Error: setup step engine: launchctl kickstart exited 5: Could not kickstart service: 5: Input/output error
-          Hint: fix it, then run station setup again: it resumes
+      files:
+          .calls:
+              contains:
+                  - 'launchctl bootout gui/{{int}}/com.jterrazz.station.vm.t'
+                  - 'launchctl bootout gui/{{int}}/com.jterrazz.station.vm.api'
+          Library/LaunchAgents/com.jterrazz.station.vm.t.plist: absent
+          Library/LaunchAgents/com.jterrazz.station.vm.api.plist: absent
+          .local/state/station/vms/api.json:
+              contains: '"want": "stopped"'

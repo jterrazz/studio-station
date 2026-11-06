@@ -9,7 +9,7 @@ runs:
           ●	name	m
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ○	engine	launchd is not here to run it
           ○	apps	missing: tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts

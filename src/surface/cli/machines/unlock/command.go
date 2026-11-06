@@ -14,8 +14,8 @@ import (
 )
 
 type Deps struct {
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 type Input struct{ Name string }
@@ -36,7 +36,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Unlocked(u, d.Here), nil)
+			return io.Page(pagemachines.Unlocked(u, d.ThisMachine), nil)
 		},
 	}, env)
 }

@@ -60,6 +60,7 @@ import (
 	"github.com/jterrazz/studio-station/src/remote/serve"
 	settingsfake "github.com/jterrazz/studio-station/src/settings/adapter/fake"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
+	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/world"
@@ -230,7 +231,7 @@ func (r *worldRun) mac(name string) *worldMac {
 	return m
 }
 
-func (r *worldRun) here() *worldMac { return r.mac(r.w.ThisMac) }
+func (r *worldRun) thisMac() *worldMac { return r.mac(r.w.ThisMac) }
 
 func (r *worldRun) farFrom(far func(w *worldMac) farMac) { r.far = far }
 
@@ -248,7 +249,7 @@ func (m *worldMac) slice() world.Mac {
 
 func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
-func (m *worldMac) host(h system.Host) system.Host {
+func (m *worldMac) system(h system.Host) system.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	m.home = h.Env.Home()
 	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home()), files: m.files()}
@@ -273,7 +274,8 @@ func (m *worldMac) stores(st *stores) {
 	if slice.Files == nil {
 		slice.Files = map[string]string{}
 	}
-	st.prefs = corefake.PreferencesOver(slice.Preferences, m.name, m.run.w).Over(slice.Files).Renaming(contract.RetiredGroupMacs, contract.GroupMacs)
+	st.prefs = corefake.PreferencesOver(slice.Preferences, m.name, m.run.w).Over(slice.Files).Renaming(contract.RetiredGroupMacs, contract.GroupMacs).
+		Renaming(setupcontract.RetiredGroupName, setupcontract.GroupName).Renaming(portscontract.RetiredGroupPorts, portscontract.GroupPorts)
 	m.run.w.Unlock()
 	w := m.run.w
 	st.machines = machinesfake.StoreOf(w, m.name)
@@ -300,7 +302,7 @@ func (m *worldMac) disk() diskcontract.DiskUsage  { return m.files() }
 
 func (m *worldMac) files() *diskfake.Usage         { return diskfake.UsageOf(m.run.w, m.name).At(m.home) }
 func (m *worldMac) tailnet() portscontract.Tailnet { return portsfake.TailnetOf(m.run.w, m.name) }
-func (m *worldMac) funnel() funnel.Config          { return portsfake.TailnetOf(m.run.w, m.name) }
+func (m *worldMac) funnel() funnel.Funnel          { return portsfake.TailnetOf(m.run.w, m.name) }
 func (m *worldMac) bundler() appscontract.Bundler  { return appsfake.BundlerOf(m.run.w, m.name) }
 func (m *worldMac) vault() accountscontract.Vault  { return accountsfake.NewVault(m.run.w, m.name) }
 func (m *worldMac) listeners() portscontract.Listeners {
@@ -312,7 +314,7 @@ func (m *worldMac) listeners() portscontract.Listeners {
 func (m *worldMac) procedureAppliers() []settingscontract.Applier {
 	var out []settingscontract.Applier
 	seen := map[catalog.EffectKind]bool{}
-	for _, it := range catalog.ConfigItems {
+	for _, it := range catalog.Settings {
 		if p, ok := it.Effect.(catalog.Procedure); ok && p != catalog.ProcNeverSleeps && !seen[p.Kind()] {
 			seen[p.Kind()] = true
 			out = append(out, settingsfake.ApplierOf(m.run.w, m.name, p.Kind()))
@@ -886,7 +888,7 @@ func (m *worldMac) placement() (guest.Placement, bool) {
 	}
 	p := guest.Placement{Host: mac, VM: m.name}
 	if n := w.Macs[mac].Tailnet; n != nil {
-		p.PublicHost = n.Self.Sharing.Host
+		p.PublicHost = n.Self.Sharing.DNSName
 	}
 	return p, true
 }

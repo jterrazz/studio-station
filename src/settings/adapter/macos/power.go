@@ -14,7 +14,7 @@ func (m *Mac) observePower(ctx context.Context, want []settings.KeyValue) settin
 	return judged(m.powerValues(ctx, want), want, "restarts after a power cut", "partly applied")
 }
 
-func (m *Mac) applyPower(ctx context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
+func (m *Mac) applyPower(ctx context.Context, it catalog.Setting, _ map[string]string) (settings.Change, error) {
 	policy := settings.Sets(it)
 	change := settings.Change{Before: m.powerValues(ctx, policy)}
 	args := make([]string, 0, 1+2*len(policy))
@@ -32,7 +32,7 @@ func (m *Mac) applyPower(ctx context.Context, it catalog.ConfigItem, _ map[strin
 	return change, nil
 }
 
-func (m *Mac) undoPower(ctx context.Context, it catalog.ConfigItem) (settings.Change, error) {
+func (m *Mac) undoPower(ctx context.Context, it catalog.Setting) (settings.Change, error) {
 	policy := settings.Sets(it)
 	change := settings.Change{Before: m.powerValues(ctx, policy)}
 	args := make([]string, 0, 1+2*len(policy))

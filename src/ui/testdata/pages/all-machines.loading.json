@@ -1,13 +1,13 @@
 {
   "schema": "station.page/v1",
-  "id": "fleet",
+  "id": "all-machines",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "loading",
   "sections": [
     {
-      "id": "fleet",
+      "id": "all-machines",
       "title": "All machines",
       "columns": [
         {
@@ -19,7 +19,7 @@
       "items": [
         {
           "row": {
-            "id": "fleet",
+            "id": "all-machines",
             "mark": "pending",
             "label": "reading"
           }

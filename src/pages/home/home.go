@@ -57,7 +57,7 @@ func Snapshot(s Overview, thisMac page.Context, all bool) page.Page {
 	if len(s.Gateways) > 0 {
 		detail = append(detail, section("gateways", "Gateways", checkRows(s.Gateways)))
 	}
-	detail = append(detail, appsSection(s), configSection(s))
+	detail = append(detail, appsSection(s), settingsSection(s))
 	if len(s.Readiness) > 0 {
 		detail = append(detail, section("readiness", "Mac readiness", checkRows(s.Readiness)))
 	}
@@ -98,31 +98,31 @@ func section(id, title string, rows []page.Row) page.Section {
 }
 
 func appsSection(s Overview) page.Section {
-	if s.ToolsPending {
-		return section("tools", "Apps", []page.Row{pending("catalogue", "catalogue")})
+	if s.AppsPending {
+		return section("apps", "Apps", []page.Row{pending("catalogue", "catalogue")})
 	}
 	var items []page.Item
-	for _, r := range s.Tools {
+	for _, r := range s.Apps {
 		if r.State != catalog.StateOK {
 			row := pageapps.Row(r)
 			items = append(items, page.Item{Row: &row})
 		}
 	}
-	return page.Section{ID: "tools", Title: "Apps", Columns: pageapps.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: appCounts(s.Tools)}
+	return page.Section{ID: "apps", Title: "Apps", Columns: pageapps.Columns(), Items: items, Uncounted: true, PipeCounts: true, Counts: appCounts(s.Apps)}
 }
 
-func configSection(s Overview) page.Section {
-	if s.ConfigPending {
-		return section("config", "Settings", []page.Row{pending("items", "items")})
+func settingsSection(s Overview) page.Section {
+	if s.SettingsPending {
+		return section("settings", "Settings", []page.Row{pending("items", "items")})
 	}
 	var items []page.Item
-	for _, r := range s.Config {
+	for _, r := range s.Settings {
 		if r.State != catalog.StateOK {
 			row := pagesettings.ReportRow(r)
 			items = append(items, page.Item{Row: &row})
 		}
 	}
-	return page.Section{ID: "config", Title: "Settings", Columns: pagesettings.ReportColumns(), Items: items, Uncounted: true, PipeCounts: true, Counts: configCounts(s.Config)}
+	return page.Section{ID: "settings", Title: "Settings", Columns: pagesettings.ReportColumns(), Items: items, Uncounted: true, PipeCounts: true, Counts: settingsCounts(s.Settings)}
 }
 
 func tallies(marks []page.Mark) []page.Tally {
@@ -149,7 +149,7 @@ func appCounts(reports []tools.Report) []page.Tally {
 	return tallies(marks)
 }
 
-func configCounts(reports []config.Report) []page.Tally {
+func settingsCounts(reports []config.Report) []page.Tally {
 	marks := make([]page.Mark, 0, len(reports))
 	for _, r := range reports {
 		marks = append(marks, pages.MarkOf(r.State))
@@ -233,7 +233,7 @@ func machineRows(s Overview) []page.Row {
 		rows = append(rows, row("uptime", page.OK, page.Text(s.System.Uptime), detail))
 	}
 	rows = append(rows, setupRow(s.Setup))
-	if d := s.Station.Daemon; d.State == catalog.StatePending {
+	if d := s.Station.Engine; d.State == catalog.StatePending {
 		rows = append(rows, pending("engine", "engine"))
 	} else if d.Value != "" {
 		rows = append(rows, fixed(row("engine", pages.MarkOf(d.State), page.Text(d.Value), d.Detail)))
@@ -273,9 +273,9 @@ func environmentRows(s Overview) []page.Row {
 }
 
 func workspaceRows(w Workspace) []page.Row {
-	rows := make([]page.Row, 0, 1+len(w.Strays))
+	rows := make([]page.Row, 0, 1+len(w.Misplaced))
 	rows = append(rows, diskRow(w.Disk, w.DiskPending))
-	for i, st := range w.Strays {
+	for i, st := range w.Misplaced {
 		r := page.Row{ID: st.Name + "/" + strconv.Itoa(i), Label: st.Name, Mark: page.Attention, Reason: page.Misplaced, Cells: []page.Value{page.Path(st.Path)}, Detail: page.Size(st.Bytes)}
 		if st.Repair != "" {
 			r.Hint = page.Cmd(st.Repair)
@@ -323,7 +323,7 @@ func action(section string, r page.Row) page.Row {
 	act.ID = section + "/" + r.ID
 	act.Cells = nil
 	var parts []page.Value
-	if len(r.Cells) > 0 && !r.Cells[0].IsNone() && (section != "tools" && section != "config" || r.Detail.IsNone()) {
+	if len(r.Cells) > 0 && !r.Cells[0].IsNone() && (section != "apps" && section != "settings" || r.Detail.IsNone()) {
 		parts = append(parts, r.Cells[0])
 	}
 	if !r.Detail.IsNone() {
@@ -348,7 +348,7 @@ func todo(detail []page.Section, jobs []background.Task) page.Section {
 		}
 		rows := rowsOf(s)
 		switch s.ID {
-		case "tools":
+		case "apps":
 			rows = foldApps(rows)
 		case "workspace":
 			rows = foldMisplaced(rows)
@@ -414,7 +414,7 @@ func foldMisplaced(rows []page.Row) []page.Row {
 			total += r.Detail.N
 		}
 	}
-	r := page.Row{ID: "strays", Label: "misplaced", Mark: page.Attention, Reason: page.Misplaced, Hint: misplaced[0].Hint,
+	r := page.Row{ID: "misplaced", Label: "misplaced", Mark: page.Attention, Reason: page.Misplaced, Hint: misplaced[0].Hint,
 		Detail: page.List(page.Count(int64(len(misplaced)), "misplaced folders"), page.Size(total))}
 	return append(out, r)
 }
@@ -447,7 +447,7 @@ func foldApps(rows []page.Row) []page.Row {
 			continue
 		}
 		n := int64(len(g))
-		r := page.Row{ID: string(k.reason) + "/" + k.fix, Label: "tools", Mark: page.Attention, Reason: k.reason, Hint: g[0].Hint}
+		r := page.Row{ID: string(k.reason) + "/" + k.fix, Label: "apps", Mark: page.Attention, Reason: k.reason, Hint: g[0].Hint}
 		switch k.reason {
 		case page.Missing:
 			r.Detail = page.Count(n, "wait for "+strings.TrimPrefix(k.fix, "station apps install "))
@@ -542,7 +542,7 @@ func diskValue(w Workspace) page.Value {
 	}
 	disk := page.Size(cache)
 	disk.Unit = "reclaimable"
-	if n := len(w.Strays); n > 0 {
+	if n := len(w.Misplaced); n > 0 {
 		return page.List(disk, page.Count(int64(n), "misplaced"))
 	}
 	return disk
@@ -560,7 +560,7 @@ func powerValue(s Overview) page.Value {
 }
 
 func allMachinesValue(s Overview) page.Value {
-	d := s.Station.Daemon
+	d := s.Station.Engine
 	if d.Value == "" || d.State == catalog.StateAbsent {
 		if s.Machine.Name != "" {
 			return page.Text(s.Machine.Name)
@@ -601,10 +601,10 @@ func summary(s Overview, detail []page.Section) page.Section {
 	}
 	right := len(items)
 	items = append(items,
-		area("tools", "Apps", worst(find(detail, "tools")), counts("tools")),
-		area("config", "Settings", worst(find(detail, "config")), counts("config")),
-		area("storage", "Disk", page.OK, diskValue(s.Workspace)),
-		area("fleet", "All machines", pages.MarkOf(s.Station.Daemon.State), allMachinesValue(s)),
+		area("apps", "Apps", worst(find(detail, "apps")), counts("apps")),
+		area("settings", "Settings", worst(find(detail, "settings")), counts("settings")),
+		area("disk", "Disk", page.OK, diskValue(s.Workspace)),
+		area("all-machines", "All machines", pages.MarkOf(s.Station.Engine.State), allMachinesValue(s)),
 	)
 	if s.PowerKnown {
 		items = append(items, area("power", "Awake", page.OK, powerValue(s)))
@@ -617,7 +617,7 @@ func summary(s Overview, detail []page.Section) page.Section {
 
 func machineWord(k catalog.MachineKind) string {
 	switch k {
-	case catalog.Host:
+	case catalog.Mac:
 		return "Mac"
 	case catalog.Linux:
 		return "Linux VM"

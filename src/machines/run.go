@@ -32,6 +32,7 @@ func (l Lifetime) Word() string {
 }
 
 func (l *Lifetime) UnmarshalText(text []byte) error {
+	// value: alias of v2's lifetime words, read once and written in v3's.
 	// invariant: a record station v2 wrote reads in v3's words: temporary
 	// is throwaway, lasting is permanent; the next write keeps the new word.
 	switch v := Lifetime(text); v {

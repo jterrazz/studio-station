@@ -30,7 +30,7 @@ func Translate(err error, path string) *fail.Error {
 	}
 	for _, failure := range []func(error) (*fail.Error, bool){
 		appsFailure,
-		configFailure,
+		settingsFailure,
 		setupFailure,
 		machinesFailure,
 		imagesFailure,
@@ -39,7 +39,7 @@ func Translate(err error, path string) *fail.Error {
 		powerFailure,
 		engineFailure,
 		saidFailure,
-		settingsFailure,
+		preferencesFailure,
 	} {
 		if f, ok := failure(err); ok {
 			return f

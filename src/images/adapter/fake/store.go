@@ -24,9 +24,9 @@ var (
 func StoreOf(w *world.World, mac string) *Store { return &Store{w: w, mac: mac} }
 
 func NewStore() *Store {
-	w := &world.World{ThisMac: "here"}
-	w.Mac("here")
-	return StoreOf(w, "here")
+	w := &world.World{ThisMac: "this-mac"}
+	w.Mac("this-mac")
+	return StoreOf(w, "this-mac")
 }
 
 func (s *Store) records() *[]images.Record { return &s.w.Mac(s.mac).Store().Images }

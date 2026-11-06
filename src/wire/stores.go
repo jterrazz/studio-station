@@ -28,7 +28,7 @@ import (
 func preferenceGroups() []string {
 	return []string{
 		setupcontract.GroupName, machinescontract.GroupMacs, machinescontract.GroupVMUser,
-		accountscontract.GroupShareList, accountscontract.GroupLendList, setupcontract.GroupUserEmail, setupcontract.GroupUserName,
+		accountscontract.GroupShareList, accountscontract.GroupV2ShareList, setupcontract.GroupUserEmail, setupcontract.GroupUserName,
 		portscontract.GroupPorts, settingscontract.GroupOffHere,
 	}
 }
@@ -86,7 +86,8 @@ type stores struct {
 
 func newStores(files system.FS, p settings.Paths) *stores {
 	return &stores{
-		prefs:        corejsonfile.NewPreferences(files, p.Config, preferenceGroups()).Renaming(machinescontract.RetiredGroupMacs, machinescontract.GroupMacs),
+		prefs: corejsonfile.NewPreferences(files, p.Config, preferenceGroups()).Renaming(machinescontract.RetiredGroupMacs, machinescontract.GroupMacs).
+			Renaming(setupcontract.RetiredGroupName, setupcontract.GroupName).Renaming(portscontract.RetiredGroupPorts, portscontract.GroupPorts),
 		machines:     machinesjsonfile.New(files, filepath.Join(p.State, "vms")),
 		images:       imagesjsonfile.New(files, filepath.Join(p.State, "images")),
 		shares:       accountsjsonfile.NewShares(files, filepath.Join(p.State, "shares.json"), filepath.Join(p.State, "vms")),
@@ -107,7 +108,7 @@ func (s *stores) vmUser() machinescontract.VMUserPrefs  { return machinescontrac
 func (s *stores) shareList() accountscontract.ShareListPrefs {
 	return accountscontract.ShareList(s.prefs)
 }
-func (s *stores) services() portscontract.PortsPrefs { return portscontract.Ports(s.prefs) }
+func (s *stores) ports() portscontract.PortsPrefs { return portscontract.Ports(s.prefs) }
 func (s *stores) neverSleeps() awakecontract.NeverSleepsPrefs {
 	return awakecontract.NeverSleeps(s.prefs)
 }

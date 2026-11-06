@@ -187,7 +187,7 @@ func (d *Engine) tick(ctx context.Context) {
 		}
 	}
 	d.mu.Unlock()
-	d.tickServices(ctx)
+	d.tickShares(ctx)
 }
 
 func (d *Engine) ended(ctx context.Context, v *vmState) {
@@ -482,7 +482,7 @@ func (d *Engine) guestOnce(ctx context.Context, v *vmState, gen int) {
 		v.ip = ip
 	}
 	d.mu.Unlock()
-	at, err := netip.ParseAddrPort(hostPort(ip, d.o.GuestPort))
+	at, err := netip.ParseAddrPort(joinPort(ip, d.o.GuestPort))
 	if err != nil {
 		d.guestFailed(ctx, v, err.Error())
 		return
@@ -559,7 +559,7 @@ func (d *Engine) hello(v *vmState) {
 	keys := d.hostKeys()
 	d.mu.Lock()
 	v.keys = strings.Join(keys, "\n")
-	public := services.ExposureOf(d.self.On, d.self.Host).PublicHost
+	public := services.ExposureOf(d.self.On, d.self.DNSName).PublicHost
 	d.mu.Unlock()
 	env := v.rec.Env
 	if env == nil {
@@ -651,8 +651,8 @@ func (d *Engine) fromGuest(ctx context.Context, v *vmState, line []byte) {
 
 func (d *Engine) guestRequest(ctx context.Context, vm string, m guestMessage) (any, error) {
 	switch m.Op {
-	case "services":
-		return d.hostView(vm), nil
+	case "ports":
+		return d.macPorts(vm), nil
 	case "reserve":
 		return d.shareOf(ctx, vm, m.Port, false, "")
 	case "release":
@@ -693,7 +693,7 @@ func (d *Engine) askGuest(ctx context.Context, v *vmState, op string, budget tim
 	}
 }
 
-func hostPort(ip string, port int) string {
+func joinPort(ip string, port int) string {
 	if strings.Contains(ip, ":") {
 		return "[" + ip + "]:" + strconv.Itoa(port)
 	}
@@ -712,7 +712,7 @@ func (d *Engine) renderEnv(v *vmState) {
 	for _, pr := range catalog.Profiles {
 		if l, i := services.Find(d.reservations, v.rec.Name, pr.Port); i >= 0 {
 			view := services.ViewOf(l, e, p.HTTPS, services.Waiting)
-			reserved = append(reserved, machines.Reserved{GuestPort: l.GuestPort, HostPort: l.HostPort, Profile: pr.Name, URL: view.URLs.Public, PublicHost: e.PublicHost})
+			reserved = append(reserved, machines.Reserved{GuestPort: l.GuestPort, MacPort: l.MacPort, Profile: pr.Name, URL: view.URLs.Public, PublicName: e.PublicHost})
 		}
 	}
 	rec := v.rec

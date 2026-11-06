@@ -31,7 +31,7 @@ type fakeTailnet struct {
 
 func (f *fakeTailnet) Warm(ctx context.Context) error {
 	f.mu.Lock()
-	host := f.sharing.Host
+	host := f.sharing.DNSName
 	f.certs = append(f.certs, host)
 	hold, err := f.hold, f.certErr
 	f.until, _ = ctx.Deadline()
@@ -129,7 +129,7 @@ func (s *loopback) ListenTCP(ip string, _ int) (system.Listener, error) {
 func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 	h := newHarness(t)
 	tn := &fakeTailnet{
-		sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running},
+		sharing: ports.SharingState{DNSName: "x.tail1234.ts.net", Backend: ports.Running},
 		shared:  []ports.Share{{Port: 40099, Scheme: ports.SchemeTCP, Target: "127.0.0.1:40099"}},
 	}
 	sockets := &loopback{}
@@ -137,7 +137,7 @@ func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 	ready := certLines(h.d)
 	ctx := t.Context()
 	yes := true
-	h.d.reservations = []services.Lease{{VM: "api", GuestPort: 8000, HostPort: 40000, HTTP: &yes}}
+	h.d.reservations = []services.Lease{{VM: "api", GuestPort: 8000, MacPort: 40000, HTTP: &yes}}
 	h.d.refreshSelf(ctx)
 	h.d.mu.Lock()
 	s := h.d.svcOf("api", 8000)
@@ -145,7 +145,7 @@ func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 	h.d.share(ctx, s)
 	h.d.mu.Unlock()
 	defer h.d.closeAll()
-	row := func() services.View { return h.d.hostView("").Services[0] }
+	row := func() services.View { return h.d.macPorts("").Shared[0] }
 	if calls := tn.taken(); len(calls) != 0 || row().Detail != catalog.ServeOffDetail || row().URLs.Public != "http://127.0.0.1:40000" {
 		t.Fatalf("Serve off: calls %q, row %+v; want no serve, the admin step and the local URL", calls, row())
 	}
@@ -188,9 +188,9 @@ func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 func TestARunRendersTheProfileEnvironmentAndAnAdoptionKeepsIt(t *testing.T) {
 	kept := map[string]string{"EXPO_PACKAGER_PROXY_URL": "http://127.0.0.1:40000"}
 	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning, Env: kept})
-	h.d.tn = &fakeTailnet{sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running, On: true}}
+	h.d.tn = &fakeTailnet{sharing: ports.SharingState{DNSName: "x.tail1234.ts.net", Backend: ports.Running, On: true}}
 	yes := true
-	h.d.reservations = []services.Lease{{VM: "api", GuestPort: catalog.Profiles[0].Port, HostPort: 40000, HTTP: &yes, Pinned: true, Profile: catalog.Profiles[0].Name}}
+	h.d.reservations = []services.Lease{{VM: "api", GuestPort: catalog.Profiles[0].Port, MacPort: 40000, HTTP: &yes, Pinned: true, Profile: catalog.Profiles[0].Name}}
 	h.d.refreshSelf(t.Context())
 	h.hv.outlived("api")
 	ctx := cancelled(t)
@@ -219,14 +219,14 @@ func certLines(d *Engine) chan string {
 func TestTheCertificateIsWarmedWhenServeTurnsOnOneAtATime(t *testing.T) {
 	h := newHarness(t)
 	tn := &fakeTailnet{
-		sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running, On: true},
+		sharing: ports.SharingState{DNSName: "x.tail1234.ts.net", Backend: ports.Running, On: true},
 		hold:    make(chan struct{}), entered: make(chan string, 4),
 	}
 	h.d.tn, h.d.h.Sockets = tn, &loopback{}
 	ready := certLines(h.d)
 	ctx := t.Context()
 	yes := true
-	h.d.reservations = []services.Lease{{VM: "api", GuestPort: 8000, HostPort: 40000, HTTP: &yes}}
+	h.d.reservations = []services.Lease{{VM: "api", GuestPort: 8000, MacPort: 40000, HTTP: &yes}}
 	h.d.refreshSelf(ctx)
 	<-tn.entered
 	h.d.mu.Lock()
@@ -235,7 +235,7 @@ func TestTheCertificateIsWarmedWhenServeTurnsOnOneAtATime(t *testing.T) {
 	h.d.share(ctx, s)
 	h.d.mu.Unlock()
 	defer h.d.closeAll()
-	if r := h.d.hostView("").Services[0]; r.Detail != catalog.IssuingDetail || r.URLs.Public != "https://x.tail1234.ts.net:40000" {
+	if r := h.d.macPorts("").Shared[0]; r.Detail != catalog.IssuingDetail || r.URLs.Public != "https://x.tail1234.ts.net:40000" {
 		t.Fatalf("while the certificate is issued: row %+v, want the https URL with %q", r, catalog.IssuingDetail)
 	}
 	tn.turn(false)
@@ -255,7 +255,7 @@ func TestTheCertificateIsWarmedWhenServeTurnsOnOneAtATime(t *testing.T) {
 	if got := tn.issued(); len(got) != 1 {
 		t.Fatalf("Serve still on: certs %q, want no second warm-up", got)
 	}
-	if r := h.d.hostView("").Services[0]; r.Detail != "" {
+	if r := h.d.macPorts("").Shared[0]; r.Detail != "" {
 		t.Fatalf("the certificate ready: row detail %q, want none", r.Detail)
 	}
 	tn.turn(false)
@@ -271,7 +271,7 @@ func TestTheCertificateIsWarmedWhenServeTurnsOnOneAtATime(t *testing.T) {
 
 func TestACertificateNeverIssuedIsCutAtItsBudgetAndSaysSo(t *testing.T) {
 	h := newHarness(t)
-	tn := &fakeTailnet{sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running}, certErr: context.DeadlineExceeded}
+	tn := &fakeTailnet{sharing: ports.SharingState{DNSName: "x.tail1234.ts.net", Backend: ports.Running}, certErr: context.DeadlineExceeded}
 	h.d.tn = tn
 	var lines []string
 	done := make(chan struct{})
@@ -302,12 +302,12 @@ func TestACertificateNeverIssuedIsCutAtItsBudgetAndSaysSo(t *testing.T) {
 func TestAnEngineThatStopsLeavesItsRunningVMsPortsSharedOnTheTailnet(t *testing.T) {
 	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning})
 	h.hv.outlived("api")
-	tn := &fakeTailnet{sharing: ports.SharingState{On: true, Host: "x.tail1234.ts.net", Backend: ports.Running}}
+	tn := &fakeTailnet{sharing: ports.SharingState{On: true, DNSName: "x.tail1234.ts.net", Backend: ports.Running}}
 	h.d.tn, h.d.h.Sockets = tn, &loopback{}
 	ctx := t.Context()
 	h.d.adopt(cancelled(t))
 	yes := true
-	h.d.reservations = []services.Lease{{VM: "api", GuestPort: 5173, HostPort: 40001, HTTP: &yes, Pinned: true}}
+	h.d.reservations = []services.Lease{{VM: "api", GuestPort: 5173, MacPort: 40001, HTTP: &yes, Pinned: true}}
 	h.d.refreshSelf(ctx)
 	h.d.mu.Lock()
 	s := h.d.svcOf("api", 5173)

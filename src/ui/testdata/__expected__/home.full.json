@@ -3,7 +3,7 @@
   "id": "home",
   "command": "status",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "ready",
   "sections": [
@@ -77,7 +77,7 @@
         },
         {
           "row": {
-            "id": "workspace/strays",
+            "id": "workspace/misplaced",
             "mark": "attention",
             "label": "misplaced",
             "detail": {
@@ -94,7 +94,7 @@
                 }
               ]
             },
-            "reason": "stray",
+            "reason": "misplaced",
             "hint": {
               "command": "station disk move ~/.tart"
             }
@@ -102,7 +102,7 @@
         },
         {
           "row": {
-            "id": "tools/pnpm",
+            "id": "apps/pnpm",
             "mark": "attention",
             "label": "pnpm",
             "detail": {
@@ -118,7 +118,7 @@
         },
         {
           "row": {
-            "id": "tools/better-ui",
+            "id": "apps/better-ui",
             "mark": "attention",
             "label": "better-ui",
             "detail": {
@@ -134,7 +134,7 @@
         },
         {
           "row": {
-            "id": "config/restart-after-power-cut",
+            "id": "settings/restart-after-power-cut",
             "mark": "attention",
             "label": "restart-after-power-cut",
             "detail": {
@@ -338,7 +338,7 @@
         },
         {
           "row": {
-            "id": "summary/tools",
+            "id": "summary/apps",
             "mark": "attention",
             "label": "Apps",
             "cells": [
@@ -367,7 +367,7 @@
         },
         {
           "row": {
-            "id": "summary/config",
+            "id": "summary/settings",
             "mark": "attention",
             "label": "Settings",
             "cells": [
@@ -391,7 +391,7 @@
         },
         {
           "row": {
-            "id": "summary/storage",
+            "id": "summary/disk",
             "mark": "ok",
             "label": "Disk",
             "cells": [
@@ -415,7 +415,7 @@
         },
         {
           "row": {
-            "id": "summary/fleet",
+            "id": "summary/all-machines",
             "mark": "attention",
             "label": "All machines",
             "cells": [
@@ -786,7 +786,7 @@
               "kind": "size",
               "n": 78383153152
             },
-            "reason": "stray",
+            "reason": "misplaced",
             "hint": {
               "command": "station disk move ~/.tart"
             }
@@ -807,7 +807,7 @@
               "kind": "size",
               "n": 2147483648
             },
-            "reason": "stray",
+            "reason": "misplaced",
             "hint": {
               "command": "station disk move ~/.bun"
             }
@@ -1138,7 +1138,7 @@
       ]
     },
     {
-      "id": "tools",
+      "id": "apps",
       "title": "Apps",
       "fold": "folded",
       "columns": [
@@ -1501,7 +1501,7 @@
       "pipe_counts": true
     },
     {
-      "id": "config",
+      "id": "settings",
       "title": "Settings",
       "fold": "folded",
       "columns": [
@@ -1573,10 +1573,10 @@
       "rows": [
         "machine/engine",
         "environment/brew",
-        "workspace/strays",
-        "tools/pnpm",
-        "tools/better-ui",
-        "config/restart-after-power-cut"
+        "workspace/misplaced",
+        "apps/pnpm",
+        "apps/better-ui",
+        "settings/restart-after-power-cut"
       ],
       "mutates": true
     }

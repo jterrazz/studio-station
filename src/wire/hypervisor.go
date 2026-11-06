@@ -12,7 +12,7 @@ import (
 )
 
 func (m machine) hypervisor() contract.Hypervisor {
-	app := tart.New(m.host.Run, m.host.FS, m.host.Clock, processes{local.NewKernel(m.vars)}, m.paths.State)
+	app := tart.New(m.sys.Run, m.sys.FS, m.sys.Clock, processes{local.NewKernel(m.vars)}, m.paths.State)
 	if m.world != nil {
 		return m.world.hypervisor(app.Name())
 	}

@@ -14,17 +14,17 @@ func (s *Service) SSHBlocks(ctx context.Context, f Fleet) error {
 	if err != nil {
 		return err
 	}
-	var blocks []contract.HostBlock
+	var blocks []contract.MachineBlock
 	complete := true
 	key := cfg.Hosts[cfg.Here].Key
-	for _, host := range f.Hosts {
+	for _, host := range f.Macs {
 		complete = complete && host.Reachable
-		if !host.Here {
+		if !host.ThisMac {
 			h := cfg.Hosts[host.Name]
-			blocks = append(blocks, contract.HostBlock{Name: host.Name, User: h.User, Key: h.Key})
+			blocks = append(blocks, contract.MachineBlock{Name: host.Name, User: h.User, Key: h.Key})
 		}
 		for _, vm := range host.VMs {
-			blocks = append(blocks, contract.HostBlock{Name: vm.Name, User: s.vmUser(cfg), Key: key, Behind: host.Name, Here: host.Here})
+			blocks = append(blocks, contract.MachineBlock{Name: vm.Name, User: s.vmUser(cfg), Key: key, Behind: host.Name, ThisMac: host.ThisMac})
 		}
 	}
 	write := s.o.SSHConfig.Put

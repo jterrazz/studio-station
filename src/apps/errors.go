@@ -16,23 +16,23 @@ type NeedsError struct{ App, Needs string }
 func (e *NeedsError) Error() string { return e.App + " needs " + e.Needs + ", which is not installed" }
 
 type ElsewhereError struct {
-	App    string
-	Places []catalog.MachineKind
+	App   string
+	Kinds []catalog.MachineKind
 	// value: a running VM where the app lives, named for the hint; empty
 	// when none runs.
 	VM string
 }
 
-func (e *ElsewhereError) Error() string { return e.App + " lives on " + LivesOn(e.Places) }
+func (e *ElsewhereError) Error() string { return e.App + " lives on " + LivesOn(e.Kinds) }
 
 type NotInstalledError struct{ App string }
 
 func (e *NotInstalledError) Error() string { return e.App + " is not installed" }
 
-func LivesOn(places []catalog.MachineKind) string {
+func LivesOn(kinds []catalog.MachineKind) string {
 	// value: where an app lives, in the owner's words: a Mac is This Mac and
 	// any other Mac, a VM a workspace.
-	switch livesOn(places) {
+	switch livesOn(kinds) {
 	case "every-machine":
 		return "every machine"
 	case "mac-only":
@@ -47,16 +47,16 @@ func LivesOn(places []catalog.MachineKind) string {
 	return "no machine"
 }
 
-func LivesOnToken(places []catalog.MachineKind) string {
+func LivesOnToken(kinds []catalog.MachineKind) string {
 	// value: where an app lives, as station.apps.list/v1's lives_on spells it.
-	return livesOn(places)
+	return livesOn(kinds)
 }
 
 func livesOn(livesOn []catalog.MachineKind) string {
 	var mac, linux, macVM bool
 	for _, p := range livesOn {
 		switch p {
-		case catalog.Host:
+		case catalog.Mac:
 			mac = true
 		case catalog.Linux:
 			linux = true

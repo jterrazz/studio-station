@@ -21,12 +21,12 @@ const (
 type LivesOn struct {
 	// value: one machine of All machines whose settings are read: a Mac, or
 	// a workspace of one.
-	Name     string
-	Ref      machine.Ref
-	Here     bool
-	Mac      bool
-	Away     Away
-	Answered time.Time
+	Name        string
+	Ref         machine.Ref
+	ThisMachine bool
+	Mac         bool
+	Away        Away
+	Answered    time.Time
 }
 
 type LastRead struct {
@@ -35,14 +35,14 @@ type LastRead struct {
 	Rows []Row     `json:"rows"`
 }
 
-func Places(f machines.AllMachines) (livesOn []LivesOn, servers []string) {
+func LivesOnAll(f machines.AllMachines) (livesOn []LivesOn, servers []string) {
 	// invariant: every Mac, then every workspace, those that run first; a
 	// server is named apart, never a place: station does not manage its
 	// settings.
 	var macs, spaces []LivesOn
-	for _, h := range f.Hosts {
-		silent := !h.Reachable && !h.Here
-		mac := LivesOn{Name: h.Name, Ref: machine.Ref{Name: h.Name}, Here: h.Here, Mac: true}
+	for _, h := range f.Macs {
+		silent := !h.Reachable && !h.ThisMac
+		mac := LivesOn{Name: h.Name, Ref: machine.Ref{Name: h.Name}, ThisMachine: h.ThisMac, Mac: true}
 		if silent {
 			mac.Away, mac.Answered = Silent, h.Answered
 		}

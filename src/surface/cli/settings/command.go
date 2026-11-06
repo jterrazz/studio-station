@@ -16,9 +16,9 @@ import (
 
 type Deps struct {
 	// value: every setting of the catalogue, for completion.
-	Names func() []string
-	Here  page.Context
-	Now   func() time.Time
+	Names       func() []string
+	ThisMachine page.Context
+	Now         func() time.Time
 	// value: the name a machine's column is headed by (`mac-mini`).
 	Label func(string) string
 }
@@ -56,20 +56,20 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return io.Page(pagesettings.Matrix(m, d.Now(), in.All, d.Label, d.Here), pagesettings.MatrixContract(m, d.Now(), d.Here))
+				return io.Page(pagesettings.Matrix(m, d.Now(), in.All, d.Label, d.ThisMachine), pagesettings.MatrixContract(m, d.Now(), d.ThisMachine))
 			}
 			if in.Name != "" {
 				row, err := call.Invoke(ctx, env.Calls, env.Target(), settingscalls.Show, settingscalls.ShowIn{Name: in.Name}, nil)
 				if err != nil {
 					return err
 				}
-				return io.Page(pagesettings.Show(row, d.Now(), d.Here), pagesettings.ShowContract(row))
+				return io.Page(pagesettings.Show(row, d.Now(), d.ThisMachine), pagesettings.ShowContract(row))
 			}
 			rows, err := call.Read(ctx, env.Calls, env.Target(), settingscalls.List, settingscalls.ListIn{}, nil)
 			if err != nil {
 				return err
 			}
-			thisMac := d.Here
+			thisMac := d.ThisMachine
 			if env.Far() {
 				thisMac = page.Context{Machine: env.Target().Name}
 			}

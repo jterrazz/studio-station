@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/world"
 )
 
-const thisMac = "here"
+const thisMac = "this-mac"
 
 type Power struct {
 	// invariant: the power of one Mac of the world: its reading is the world's,

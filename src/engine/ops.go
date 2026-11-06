@@ -58,10 +58,10 @@ func (e *RunningError) Error() string {
 	return "an engine already runs (pid " + strconv.Itoa(e.PID) + ")"
 }
 
-type HostOnlyError struct{ Here catalog.MachineKind }
+type MacOnlyError struct{ Kind catalog.MachineKind }
 
-func (e *HostOnlyError) Error() string {
-	return "the engine runs only on a Mac; this machine is " + e.Here.Article()
+func (e *MacOnlyError) Error() string {
+	return "the engine runs only on a Mac; this machine is " + e.Kind.Article()
 }
 
 func SocketPath(state string) string { return path.Join(state, "engine.sock") }
@@ -94,7 +94,7 @@ func (d *Engine) Hello() Hello {
 
 func (d *Engine) VMs() []VMView { return d.vmViews() }
 
-func (d *Engine) Services(vm string) services.HostView { return d.hostView(vm) }
+func (d *Engine) Ports(vm string) services.HostView { return d.macPorts(vm) }
 
 func (d *Engine) Reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (services.View, error) {
 	return d.shareOf(ctx, vm, port, pinned, profile)

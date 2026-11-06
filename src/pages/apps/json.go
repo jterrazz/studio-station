@@ -7,7 +7,8 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 )
 
-type ToolJSON struct {
+type AppStatusJSON struct {
+	// value: alias of station.status/v1's row, kept byte for byte one release.
 	Name     string   `json:"name"`
 	Category string   `json:"category"`
 	Method   string   `json:"method"`
@@ -50,39 +51,48 @@ func ListContract(schema string, reports []apps.Report) ListJSON {
 			detail = r.Live
 		}
 		body.Apps = append(body.Apps, AppJSON{
-			Name: r.Tool.Name, Category: string(r.Tool.Category), Method: string(r.Method),
-			State: string(apps.StateOf(r)), Installed: installed(r.Version), Newest: r.Newest, LivesOn: apps.LivesOnToken(r.Tool.LivesOn()),
-			Provides: append([]string{}, r.Tool.Provides...), Detail: detail,
+			Name: r.App.Name, Category: string(r.App.Category), Method: string(r.Method),
+			State: string(apps.StateOf(r)), Installed: installed(r.Version), Newest: r.Newest, LivesOn: apps.LivesOnToken(r.App.LivesOn()),
+			Provides: append([]string{}, r.App.Provides...), Detail: detail,
 		})
 	}
 	return body
 }
 
-func AppObject(r apps.Report) ToolJSON {
-	kinds := r.Tool.LivesOn()
+func statusV1Category(c catalog.Category) string {
+	// value: alias of v2's name of the command line category, which
+	// station.status/v1 keeps byte for byte.
+	if c == catalog.CategoryCLIApps {
+		return "CLI Tools"
+	}
+	return string(c)
+}
+
+func AppObject(r apps.Report) AppStatusJSON {
+	kinds := r.App.LivesOn()
 	livesOn := make([]string, 0, len(kinds))
 	for _, k := range kinds {
-		livesOn = append(livesOn, string(k))
+		livesOn = append(livesOn, catalog.StatusV1Kind(k))
 	}
 	detail := r.Detail
 	if detail == "" {
 		detail = r.Live
 	}
-	return ToolJSON{
-		Name:     r.Tool.Name,
-		Category: string(r.Tool.Category),
+	return AppStatusJSON{
+		Name:     r.App.Name,
+		Category: statusV1Category(r.App.Category),
 		Method:   string(r.Method),
 		LivesOn:  livesOn,
 		State:    string(r.State),
 		Version:  r.Version,
 		Managed:  r.Managed,
-		Provides: append([]string{}, r.Tool.Provides...),
+		Provides: append([]string{}, r.App.Provides...),
 		Detail:   detail,
-		Use:      use(r.Tool),
+		Use:      use(r.App),
 	}
 }
 
-func use(t catalog.Tool) string {
+func use(t catalog.App) string {
 	if t.System {
 		return "system"
 	}

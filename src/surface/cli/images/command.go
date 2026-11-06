@@ -14,7 +14,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 	// value: the images of every Mac, this one first; nil reads the target's alone.
 	Every func(ctx context.Context) ([]images.Report, error)
 }
@@ -38,7 +38,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pageimages.List(reports, d.Here), pageimages.ListContract(reports))
+			return io.Page(pageimages.List(reports, d.ThisMachine), pageimages.ListContract(reports))
 		},
 	}, env)
 	cmd.AddCommand(children...)

@@ -21,7 +21,7 @@ import (
 const (
 	Hello     = "engine.hello"
 	VMs       = "engine.vms"
-	Services  = "engine.services"
+	Ports     = "engine.ports"
 	Reserve   = "engine.reserve"
 	Release   = "engine.release"
 	GuestExec = "engine.guest-exec"
@@ -151,7 +151,7 @@ func calls(d *engine.Engine, served []string) []call.Handler {
 			return h, nil
 		}),
 		own(d, VMs, func(_ context.Context, d *engine.Engine, _ struct{}) (any, error) { return d.VMs(), nil }),
-		own(d, Services, func(_ context.Context, d *engine.Engine, in VMIn) (any, error) { return d.Services(in.VM), nil }),
+		own(d, Ports, func(_ context.Context, d *engine.Engine, in VMIn) (any, error) { return d.Ports(in.VM), nil }),
 		own(d, Reserve, func(ctx context.Context, d *engine.Engine, in ReserveIn) (any, error) {
 			return d.Reserve(ctx, in.VM, in.GuestPort, in.Pinned, in.Profile)
 		}),
@@ -188,16 +188,16 @@ func calls(d *engine.Engine, served []string) []call.Handler {
 	return out
 }
 
-type Host struct {
+type Serving struct {
 	// value: the registry the engine serves to its clients (the menu bar's
 	// actions), run on this Mac; nil serves the engine's own calls alone.
-	Registry *call.Registry
-	Here     machine.Profile
-	Word     func(e *fail.Error) (message, hint string)
-	Sleep    func(ctx context.Context, d time.Duration) error
+	Registry    *call.Registry
+	ThisMachine machine.Profile
+	Word        func(e *fail.Error) (message, hint string)
+	Sleep       func(ctx context.Context, d time.Duration) error
 }
 
-func Server(d *engine.Engine, h Host) serve.Server {
+func Server(d *engine.Engine, h Serving) serve.Server {
 	// invariant: the engine's server: its own calls first, then the registry's,
 	// and the watch of its pages; a call of neither is unknown.
 	var served []string
@@ -239,6 +239,6 @@ func Server(d *engine.Engine, h Host) serve.Server {
 			}
 			return d.Watch(ctx, in.Machines, send)
 		}},
-		Here: h.Here, Word: h.Word, Hint: "station machines", Sleep: h.Sleep,
+		ThisMachine: h.ThisMachine, Word: h.Word, Hint: "station machines", Sleep: h.Sleep,
 	}
 }

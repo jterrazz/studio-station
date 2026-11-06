@@ -1,16 +1,16 @@
-description: 'setup boots out the per-VM agents of stopped VMs; a permanent one stopped by its owner stays so'
+description: 'an engine launchd refuses to load is a failed step, never a running row'
 fixture:
     - ../../__fixtures__/vms/
-    - ./__fixtures__/old-agents/
+    - ./__fixtures__/launchctl-fails-bootstrap/
 runs:
     - command: 'setup </dev/null'
-      exit: 0
+      exit: 1
       stdout: |
           ●	name	x
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	bunfig, go env, mise config, npmrc
-          ●	engine	running {{string}}
+          ●	relocate	bunfig, go env, mise settings, npmrc
+          ✗	engine	launchctl bootstrap exited 5: Bootstrap failed: 5: Input/output error
           ○	apps	missing: homebrew mise git tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts
           ○	ssh-key	next: station settings apply ssh-key
@@ -19,12 +19,10 @@ runs:
           ○	claude-token	next: station settings apply claude-token
           ○	dock-reset	next: station settings apply dock-reset
           ○	dock-spacer	next: station settings apply dock-spacer
-      files:
-          .calls:
-              contains:
-                  - 'launchctl bootout gui/{{int}}/com.jterrazz.station.vm.t'
-                  - 'launchctl bootout gui/{{int}}/com.jterrazz.station.vm.api'
-          Library/LaunchAgents/com.jterrazz.station.vm.t.plist: absent
-          Library/LaunchAgents/com.jterrazz.station.vm.api.plist: absent
-          .local/state/station/vms/api.json:
-              contains: '"want": "stopped"'
+      stderr: |
+          Error: setup step engine: launchctl bootstrap exited 5: Bootstrap failed: 5: Input/output error
+          Hint: fix it, then run station setup again: it resumes
+    - command: '--version >/dev/null; /usr/bin/grep -c "launchctl kickstart" .calls || true'
+      exit: 0
+      stdout: |
+          0

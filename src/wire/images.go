@@ -24,12 +24,12 @@ import (
 )
 
 func (m machine) images() *images.Service {
-	user := m.host.Env.User()
+	user := m.sys.Env.User()
 	if current, err := m.stores.vmUser().Get(); err == nil && current != "" {
 		user = current
 	}
 	hypervisor := m.hypervisor()
-	return images.New(m.host, images.Contracts{
+	return images.New(m.sys, images.Contracts{
 		Hypervisor: hypervisor, Guests: m.guestDialer(), Store: m.stores.images,
 		Source: m.imageSource(hypervisor.Name()), Machines: m.stores.machines,
 	}, catalog.Images, images.Options{
@@ -46,24 +46,24 @@ func (m machine) imageSource(hypervisor string) imagescontract.ImageSource {
 	if m.world != nil {
 		return m.world.imageSource(hypervisor)
 	}
-	return oci.New(m.host.Net, "https://ghcr.io", "jterrazz", hypervisor)
+	return oci.New(m.sys.Net, "https://ghcr.io", "jterrazz", hypervisor)
 }
 
 func imagesCommand(env kit.Env, m machine) *cobra.Command {
-	return imagescmd.Command(imagescmd.Deps{Here: m.where, Every: func(ctx context.Context) ([]model.Report, error) { return m.everyMacImages(ctx, env) }}, env,
-		imagesbuild.Command(imagesbuild.Deps{Here: m.where}, env),
-		imagesupdate.Command(imagesupdate.Deps{Here: m.where}, env),
-		imagesdelete.Command(imagesdelete.Deps{Here: m.where}, env),
+	return imagescmd.Command(imagescmd.Deps{ThisMachine: m.where, Every: func(ctx context.Context) ([]model.Report, error) { return m.everyMacImages(ctx, env) }}, env,
+		imagesbuild.Command(imagesbuild.Deps{ThisMachine: m.where}, env),
+		imagesupdate.Command(imagesupdate.Deps{ThisMachine: m.where}, env),
+		imagesdelete.Command(imagesdelete.Deps{ThisMachine: m.where}, env),
 	)
 }
 
-type imageBuilds struct{ *images.Service }
+type imageBuilder struct{ *images.Service }
 
-func (s imageBuilds) Build(ctx context.Context, names []string, binary string, step func(label string)) ([]images.Record, error) {
+func (s imageBuilder) Build(ctx context.Context, names []string, binary string, step func(label string)) ([]images.Record, error) {
 	return s.Service.Build(ctx, images.BuildRequest{Images: names, Binary: binary}, func(st images.Step) { step(st.Label) })
 }
 
-func (s imageBuilds) Update(ctx context.Context, names []string, step func(label string)) ([]model.Update, error) {
+func (s imageBuilder) Update(ctx context.Context, names []string, step func(label string)) ([]model.Update, error) {
 	return s.Service.Update(ctx, names, func(st images.Step) { step(st.Label) })
 }
 

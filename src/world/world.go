@@ -25,7 +25,7 @@ type World struct {
 
 	Now time.Time `json:"now"`
 	// value: the Mac the binary runs on, and its owner's login.
-	ThisMac string          `json:"here"`
+	ThisMac string          `json:"this_mac"`
 	User    string          `json:"user,omitempty"`
 	Macs    map[string]*Mac `json:"macs"`
 	// value: what the engine told the owner, in the order told.
@@ -178,15 +178,15 @@ type Disk struct {
 }
 
 type SSH struct {
-	Blocks  map[string]HostBlock `json:"blocks,omitempty"`
-	Foreign []string             `json:"foreign,omitempty"`
+	Blocks  map[string]SSHBlock `json:"blocks,omitempty"`
+	Foreign []string            `json:"foreign,omitempty"`
 }
 
-type HostBlock struct {
+type SSHBlock struct {
 	User    string `json:"user,omitempty"`
 	Key     string `json:"key,omitempty"`
 	Behind  string `json:"behind,omitempty"`
-	ThisMac bool   `json:"here,omitempty"`
+	ThisMac bool   `json:"this_mac,omitempty"`
 }
 
 type Stores struct {
@@ -271,7 +271,7 @@ type VM struct {
 
 type Container struct {
 	Name   string `json:"name"`
-	Shared []int  `json:"published"`
+	Shared []int  `json:"ports"`
 }
 
 type Boot struct {
@@ -280,6 +280,8 @@ type Boot struct {
 }
 
 type Kept struct {
+	// value: alias of the v2 `lent` key, as a VM record the machines store
+	// keeps still holds it.
 	Image     string            `json:"image,omitempty"`
 	Version   string            `json:"version,omitempty"`
 	Lifetime  machines.Lifetime `json:"lifetime"`

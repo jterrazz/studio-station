@@ -3,7 +3,7 @@
   "id": "outcome",
   "command": "apps install",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "loading",
   "sections": [

@@ -14,10 +14,10 @@ type Node struct {
 }
 
 type Reserved struct {
-	GuestPort, HostPort int
-	Profile, URL        string
-	PublicHost          string
-	Off                 string
+	GuestPort, MacPort int
+	Profile, URL       string
+	PublicName         string
+	Off                string
 }
 
 type Resources struct {
@@ -44,7 +44,7 @@ const (
 )
 
 type VM struct {
-	Name, Image, Version, Host string
+	Name, Image, Version, Mac  string
 	Kind                       catalog.MachineKind
 	Lifetime                   Lifetime
 	State                      VMState
@@ -76,20 +76,20 @@ type EngineView struct {
 	Version   string
 }
 
-type HostView struct {
+type MacView struct {
 	Name, User, StationVersion string
-	Here, Reachable            bool
+	ThisMac, Reachable         bool
 	// value: when this Mac last had its answer; zero for one never heard.
 	Answered time.Time
 	// value: its address on your LAN, as it reads it; empty when it cannot say.
 	LAN    string
 	Node   Node
-	Daemon EngineView
+	Engine EngineView
 	VMs    []VM
 }
 
 type AllMachines struct {
-	Hosts []HostView
+	Macs []MacView
 	// value: when it was read.
 	Read time.Time
 }
@@ -135,9 +135,9 @@ func ServerSize() Resources {
 }
 
 type Created struct {
-	VM       VM
-	Services []Reserved
-	Env      map[string]string
+	VM    VM
+	Ports []Reserved
+	Env   map[string]string
 	// value: the Mac it was made on reports a battery: a server there stops
 	// whenever the Mac sleeps.
 	OnALaptop bool
@@ -188,13 +188,13 @@ type Edited struct {
 	Running bool
 }
 
-func FindVM(f AllMachines, name string) (HostView, VM, bool) {
-	for _, h := range f.Hosts {
+func FindVM(f AllMachines, name string) (MacView, VM, bool) {
+	for _, h := range f.Macs {
 		for _, vm := range h.VMs {
 			if vm.Name == name {
 				return h, vm, true
 			}
 		}
 	}
-	return HostView{}, VM{}, false
+	return MacView{}, VM{}, false
 }

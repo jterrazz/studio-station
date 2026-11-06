@@ -1,13 +1,13 @@
 {
   "schema": "station.page/v1",
-  "id": "fleet",
+  "id": "all-machines",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "ready",
   "sections": [
     {
-      "id": "fleet",
+      "id": "all-machines",
       "title": "All machines",
       "fold": "open",
       "columns": [
@@ -22,7 +22,7 @@
           "show": "pipe"
         },
         {
-          "key": "host",
+          "key": "mac",
           "kind": "text",
           "show": "pipe"
         },

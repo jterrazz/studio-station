@@ -37,7 +37,7 @@ func New[App, Item, Misplaced any](d Deps[App, Item, Misplaced]) *Reader[App, It
 	return &Reader[App, Item, Misplaced]{d: d}
 }
 
-func (r *Reader[App, Item, Misplaced]) mac() bool { return r.d.Here.Kind != catalog.Linux }
+func (r *Reader[App, Item, Misplaced]) mac() bool { return r.d.ThisMac.Kind != catalog.Linux }
 
 func (r *Reader[App, Item, Misplaced]) Watch(ctx context.Context) <-chan snapshot[App, Item, Misplaced] {
 	return lanes.Stream(ctx, r.d.Pool, subject, r.watch)
@@ -138,20 +138,20 @@ func (r *Reader[App, Item, Misplaced]) identityRows() []row {
 // section and every row a table declares, each pending; a job per row then
 // fills it, so a slow tool delays only its own row.
 func (r *Reader[App, Item, Misplaced]) frame() snapshot[App, Item, Misplaced] {
-	h := r.d.Here
+	h := r.d.ThisMac
 	snap := snapshot[App, Item, Misplaced]{
-		GeneratedAt:   r.d.Clock.Now().UTC(),
-		Station:       overview.Station{Version: h.Version, Commit: h.Commit, Daemon: overview.Check{Name: "daemon", State: catalog.StatePending}},
-		Tailnet:       ports.Status{State: catalog.StatePending},
-		Setup:         overview.Setup{State: catalog.StatePending, Steps: []overview.Step{}},
-		System:        overview.System{Pending: true, Reading: activity.Reading{Top: activity.Busiest{CPU: []activity.Process{}, Memory: []activity.Process{}}}},
-		Identity:      pendingChecks(r.identityRows()),
-		Background:    []background.Task{},
-		Gateways:      []overview.Check{},
-		Environment:   overview.Environment{Network: pendingChecks(r.networkRows())},
-		Workspace:     overview.Workspace[Misplaced]{Disk: []overview.Disk{}, Strays: []Misplaced{}, DiskPending: true},
-		ToolsPending:  true,
-		ConfigPending: true,
+		GeneratedAt:     r.d.Clock.Now().UTC(),
+		Station:         overview.Station{Version: h.Version, Commit: h.Commit, Engine: overview.Check{Name: "engine", State: catalog.StatePending}},
+		Tailnet:         ports.Status{State: catalog.StatePending},
+		Setup:           overview.Setup{State: catalog.StatePending, Steps: []overview.Step{}},
+		System:          overview.System{Pending: true, Reading: activity.Reading{Top: activity.Busiest{CPU: []activity.Process{}, Memory: []activity.Process{}}}},
+		Identity:        pendingChecks(r.identityRows()),
+		Background:      []background.Task{},
+		Gateways:        []overview.Check{},
+		Environment:     overview.Environment{Network: pendingChecks(r.networkRows())},
+		Workspace:       overview.Workspace[Misplaced]{Disk: []overview.Disk{}, Misplaced: []Misplaced{}, DiskPending: true},
+		AppsPending:     true,
+		SettingsPending: true,
 	}
 	if r.mac() {
 		snap.Environment.Ports = []overview.Port{}
@@ -246,7 +246,7 @@ func (r *Reader[App, Item, Misplaced]) kernel(ctx context.Context) string {
 	if got, err := r.d.Facts.Read(ctx, catalog.FactKernel); err == nil && got.State == catalog.StateOK && got.Value != "" {
 		return got.Value
 	}
-	return r.d.Here.OS
+	return r.d.ThisMac.OS
 }
 
 func (r *Reader[App, Item, Misplaced]) system(ctx context.Context) (uptime, battery string, memory int64) {
@@ -280,14 +280,14 @@ func batteryLine(b awake.Reading) string {
 }
 
 func (r *Reader[App, Item, Misplaced]) engine(ctx context.Context) overview.Check {
-	absent := overview.Check{Name: "daemon", State: catalog.StateAbsent}
-	if r.d.Here.Kind != catalog.Host || r.d.Daemon == nil {
+	absent := overview.Check{Name: "engine", State: catalog.StateAbsent}
+	if r.d.ThisMac.Kind != catalog.Mac || r.d.Engine == nil {
 		return absent
 	}
-	d := overview.Daemon{Hypervisor: r.d.Hypervisor.Name(), Installed: r.d.Hypervisor.Installed()}
+	d := overview.EngineCheck{Hypervisor: r.d.Hypervisor.Name(), Installed: r.d.Hypervisor.Installed()}
 	if d.Installed {
-		d.Version, d.Err = r.d.Daemon.Ping(ctx)
-		d.Agent = d.Err != nil && r.d.Here.Agent != nil && r.d.Here.Agent()
+		d.Version, d.Err = r.d.Engine.Ping(ctx)
+		d.Agent = d.Err != nil && r.d.ThisMac.Agent != nil && r.d.ThisMac.Agent()
 	}
-	return overview.EngineRow(d, r.d.Here.Version)
+	return overview.EngineRow(d, r.d.ThisMac.Version)
 }

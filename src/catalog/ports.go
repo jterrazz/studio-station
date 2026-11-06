@@ -2,14 +2,14 @@ package catalog
 
 import "time"
 
-type ServiceDefaults struct {
+type PortDefaults struct {
 	RangeLow, RangeHigh, MaxPerVM, MinPort int
 	Ignored                                []int
 	HTTPS                                  string
 	Idle, Grace                            time.Duration
 }
 
-var ServicePolicy = ServiceDefaults{
+var PortPolicy = PortDefaults{
 	RangeLow: 40000, RangeHigh: 40999, MaxPerVM: 20, MinPort: 1024,
 	Ignored: []int{22}, HTTPS: "port", Idle: 7 * 24 * time.Hour, Grace: 5 * time.Second,
 }
@@ -48,7 +48,7 @@ const SignedOutDetail = TailnetProduct + " is signed out" // value: why nothing 
 
 const SignedOutLocalOnly = SignedOutDetail + " on This Mac: ports are local only"
 
-var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}
+var PublicNameEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}
 
 // value: the two Tailscale app variants, measured 2026-11-01: the Standalone
 // app's pkg installs the first CLI path, the App Store app only its bundle,

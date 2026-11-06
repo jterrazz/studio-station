@@ -64,7 +64,7 @@ func Body(s overview.Summary, all bool) []page.Section {
 		}
 		lines = append(lines, page.Item{Row: &row})
 	}
-	if s.Head.Here && len(s.VMs) > 0 {
+	if s.Head.ThisMac && len(s.VMs) > 0 {
 		row := page.Row{ID: "vms", Label: "VMs", Cells: []page.Value{vmsValue(s.VMs)}}
 		lines = append(lines, page.Item{Row: &row})
 	}
@@ -83,20 +83,20 @@ func Body(s overview.Summary, all bool) []page.Section {
 // value: the Mac this binary runs on; another Mac read through --on is
 // itself "here" on its side and goes by its name on this one.
 func thisMac(s overview.Summary, thisMac page.Context) bool {
-	return s.Head.Here && s.Head.Mac() && (!thisMac.Registered || thisMac.Machine == "" || thisMac.Machine == s.Head.Name)
+	return s.Head.ThisMac && s.Head.Mac() && (!thisMac.Registered || thisMac.Machine == "" || thisMac.Machine == s.Head.Name)
 }
 
-func title(s overview.Summary, here page.Context) string {
-	if thisMac(s, here) {
+func title(s overview.Summary, thisMachine page.Context) string {
+	if thisMac(s, thisMachine) {
 		return "This Mac"
 	}
-	if s.Head.Mac() && s.Head.Name != here.Machine {
-		return page.MacName(s.Head.Name, here.Machine)
+	if s.Head.Mac() && s.Head.Name != thisMachine.Machine {
+		return page.MacName(s.Head.Name, thisMachine.Machine)
 	}
 	return s.Head.Name
 }
 
-func caption(s overview.Summary, here page.Context) []page.Value {
+func caption(s overview.Summary, thisMachine page.Context) []page.Value {
 	if !s.Head.Mac() {
 		// invariant: a VM read inside it names its kind and how long it has
 		// run; which Mac it is on and its lifetime are its Mac's to tell.
@@ -107,7 +107,7 @@ func caption(s overview.Summary, here page.Context) []page.Value {
 		return parts
 	}
 	parts := []page.Value{page.Text(s.Head.Name)}
-	if !thisMac(s, here) {
+	if !thisMac(s, thisMachine) {
 		parts = []page.Value{page.Text(kindWord(s.Head))}
 	}
 	switch len(s.Needs) {

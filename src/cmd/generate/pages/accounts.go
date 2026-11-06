@@ -21,7 +21,7 @@ func shared(provider, name string, left time.Duration, state catalog.State, reas
 	}
 }
 
-func hostAccounts() accounts.Machine {
+func macAccounts() accounts.Machine {
 	return accounts.Machine{Name: "jterrazz-macbook-pro", Kind: accounts.KindHost, ThisMac: true, Accounts: []accounts.Account{
 		github(),
 		{Provider: catalog.ProviderNPM, State: catalog.StateBroken, Reason: accounts.ReasonRefused, Origin: accounts.OriginOwn, Identity: []string{"?"}, Detail: "token refused by registry.npmjs.org", Hint: "npm login"},
@@ -39,8 +39,8 @@ func entryAccount() accounts.Account {
 }
 
 func accountsReport() accounts.Report {
-	return accounts.Report{Now: accountsNow, Daemon: accounts.DaemonRunning, Machines: []accounts.Machine{
-		hostAccounts(),
+	return accounts.Report{Now: accountsNow, Engine: accounts.DaemonRunning, Machines: []accounts.Machine{
+		macAccounts(),
 		{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Guest: accounts.GuestConnected, Accounts: []accounts.Account{
 			{Provider: catalog.ProviderGitHub, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "ssh linux-1 gh auth login"},
 			{Provider: catalog.ProviderNPM, State: catalog.StateAbsent, Reason: accounts.ReasonMissing, Detail: "npm not on PATH"},
@@ -57,7 +57,7 @@ func accountsReport() accounts.Report {
 }
 
 func emptyAccounts() accounts.Report {
-	return accounts.Report{Now: accountsNow, Daemon: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "jterrazz-macbook-pro", Kind: accounts.KindHost, ThisMac: true, Accounts: []accounts.Account{
+	return accounts.Report{Now: accountsNow, Engine: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "jterrazz-macbook-pro", Kind: accounts.KindHost, ThisMac: true, Accounts: []accounts.Account{
 		{Provider: catalog.ProviderGitHub, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "station settings apply github-login"},
 		{Provider: catalog.ProviderNPM, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "npm login"},
 		{Provider: catalog.ProviderClaude, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "claude /login"},
@@ -68,7 +68,7 @@ func emptyAccounts() accounts.Report {
 
 func stoppedAccounts() accounts.Report {
 	r := accountsReport()
-	r.Daemon = accounts.DaemonStopped
+	r.Engine = accounts.DaemonStopped
 	return r
 }
 
@@ -84,10 +84,10 @@ func loadingAccounts() accounts.Report {
 
 func accountPages() []Fixture {
 	return states("accounts",
-		pageaccounts.Page(loadingAccounts(), here()),
-		pageaccounts.Page(emptyAccounts(), here()),
-		pageaccounts.Page(stoppedAccounts(), here()),
-		pageaccounts.Page(accountsReport(), here()),
+		pageaccounts.Page(loadingAccounts(), thisMacContext()),
+		pageaccounts.Page(emptyAccounts(), thisMacContext()),
+		pageaccounts.Page(stoppedAccounts(), thisMacContext()),
+		pageaccounts.Page(accountsReport(), thisMacContext()),
 	)
 }
 

@@ -52,7 +52,7 @@ func pending(p page.Page) page.Page {
 }
 
 func failure(id page.ID, command, message, hint string) page.Page {
-	return allpages.Failure(id, command, here(), message, hint)
+	return allpages.Failure(id, command, thisMacContext(), message, hint)
 }
 
 func Estate() []Fixture {
@@ -71,8 +71,8 @@ func snapshot() pagehome.Overview {
 	appReports := reports(thisMac(), false)
 	return pagehome.Overview{
 		GeneratedAt: built,
-		Station:     overview.Station{Version: "v2.0.0-250", Daemon: check("daemon", catalog.StateDegraded, "not installed", "station setup")},
-		Machine:     overview.Machine{Name: "macbook", Registered: true, Kind: catalog.Host, Hostname: "jterrazz-macbook-pro", OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh"},
+		Station:     overview.Station{Version: "v2.0.0-250", Engine: check("engine", catalog.StateDegraded, "not installed", "station setup")},
+		Machine:     overview.Machine{Name: "macbook", Registered: true, Kind: catalog.Mac, Hostname: "jterrazz-macbook-pro", OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh"},
 		System:      overview.System{Uptime: "22d 14h", Battery: "100% charged", MemoryTotal: 17179869184},
 		Environment: overview.Environment{
 			Network: []overview.Check{check("local ip", catalog.StateOK, "192.168.1.152", "")},
@@ -87,15 +87,15 @@ func snapshot() pagehome.Overview {
 		},
 		Workspace: pagehome.Workspace{
 			Disk: []overview.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
-			Strays: []storage.StrayReport{
+			Misplaced: []storage.StrayReport{
 				{Name: catalog.HypervisorApp, Path: "~/." + catalog.HypervisorApp, Bytes: 73 * gb, Repair: "station disk move ~/." + catalog.HypervisorApp},
 				{Name: "bun", Path: "~/.bun", Bytes: 2 * gb, Repair: "station disk move ~/.bun"},
 			},
 		},
-		Tools: appReports,
-		Config: []config.Report{
-			{Item: catalog.ConfigItem{Name: "hushlogin", Description: "Silence the login banner"}, State: catalog.StateOK, Applies: true},
-			{Item: catalog.ConfigItem{Name: "restart-after-power-cut", Description: "Restarts after a power cut, and wakes for the network"}, State: catalog.StateDegraded, Detail: "partly applied", Applies: true},
+		Apps: appReports,
+		Settings: []config.Report{
+			{Item: catalog.Setting{Name: "hushlogin", Description: "Silence the login banner"}, State: catalog.StateOK, Applies: true},
+			{Item: catalog.Setting{Name: "restart-after-power-cut", Description: "Restarts after a power cut, and wakes for the network"}, State: catalog.StateDegraded, Detail: "partly applied", Applies: true},
 		},
 		Setup:    overview.Setup{State: catalog.StateOK, Steps: []overview.Step{{Name: "name", State: catalog.StateOK, Detail: "macbook"}}},
 		Identity: []overview.Check{check("git-email", catalog.StateOK, "admin@jterrazz.com", ""), check("git-signing", catalog.StateOK, "on", "")},
@@ -114,9 +114,9 @@ func snapshot() pagehome.Overview {
 func pendingSnapshot() pagehome.Overview {
 	s := snapshot()
 	s.System = overview.System{Pending: true}
-	s.ToolsPending, s.ConfigPending = true, true
+	s.AppsPending, s.SettingsPending = true, true
 	s.Workspace.DiskPending = true
-	s.Station.Daemon = overview.Check{Name: "daemon", State: catalog.StatePending}
+	s.Station.Engine = overview.Check{Name: "engine", State: catalog.StatePending}
 	s.Tailnet = ports.Status{State: catalog.StatePending}
 	s.Setup = overview.Setup{State: catalog.StatePending}
 	for _, list := range [][]overview.Check{s.Environment.Updates, s.Identity, s.Gateways} {
@@ -130,11 +130,11 @@ func pendingSnapshot() pagehome.Overview {
 
 func calmSnapshot() pagehome.Overview {
 	s := snapshot()
-	s.Station.Daemon = check("daemon", catalog.StateOK, "running v2.0.0-250", "")
+	s.Station.Engine = check("engine", catalog.StateOK, "running v2.0.0-250", "")
 	s.Environment.Updates = []overview.Check{check("macos", catalog.StateOK, "up to date", "checked 22m ago"), check("brew", catalog.StateOK, "up to date", "")}
-	s.Workspace.Strays = nil
-	s.Tools = reports([]app{{name: "homebrew", category: catalog.CategoryPackageManagers, method: catalog.MethodScript, system: true, state: catalog.StateOK, version: "7.0.12"}}, false)
-	s.Config = s.Config[:1]
+	s.Workspace.Misplaced = nil
+	s.Apps = reports([]app{{name: "homebrew", category: catalog.CategoryPackageManagers, method: catalog.MethodScript, system: true, state: catalog.StateOK, version: "7.0.12"}}, false)
+	s.Settings = s.Settings[:1]
 	s.Background = s.Background[:1]
 	s.Gateways = nil
 	return s
@@ -142,15 +142,15 @@ func calmSnapshot() pagehome.Overview {
 
 func homes() []Fixture {
 	out := states("home",
-		pagehome.Snapshot(pendingSnapshot(), here(), false),
-		pagehome.Snapshot(calmSnapshot(), here(), false),
+		pagehome.Snapshot(pendingSnapshot(), thisMacContext(), false),
+		pagehome.Snapshot(calmSnapshot(), thisMacContext(), false),
 		failure("home", "status", "status reads the Mac it runs on", "station overview --on <vm>"),
-		pagehome.Snapshot(snapshot(), here(), false))
+		pagehome.Snapshot(snapshot(), thisMacContext(), false))
 	return append(out, states("home-all",
-		pagehome.Snapshot(pendingSnapshot(), here(), true),
-		pagehome.Snapshot(calmSnapshot(), here(), true),
+		pagehome.Snapshot(pendingSnapshot(), thisMacContext(), true),
+		pagehome.Snapshot(calmSnapshot(), thisMacContext(), true),
 		failure("home", "status", "the settings file is not valid JSON", "repair the JSON of ~/.config/station/settings.json"),
-		pagehome.Snapshot(unnamedSnapshot(), here(), true))...)
+		pagehome.Snapshot(unnamedSnapshot(), thisMacContext(), true))...)
 }
 
 // value: this Mac as it reads before setup names it, its daemon from an
@@ -160,7 +160,7 @@ func unnamedSnapshot() pagehome.Overview {
 	s := snapshot()
 	s.Machine.Name, s.Machine.Registered = "", false
 	s.Setup = overview.Setup{State: catalog.StateDegraded, Steps: []overview.Step{{Name: "name", State: catalog.StateDegraded}}}
-	s.Station.Daemon = check("daemon", catalog.StateDegraded, "runs v2.0.0-242-gd653060, station is v2.0.0-250", "station setup")
+	s.Station.Engine = check("engine", catalog.StateDegraded, "runs v2.0.0-242-gd653060, station is v2.0.0-250", "station setup")
 	return s
 }
 
@@ -169,8 +169,8 @@ func unnamedSnapshot() pagehome.Overview {
 func settingRows(reading bool) []settings.Row {
 	since := time.Date(2026, 11, 2, 10, 0, 0, 0, time.UTC)
 	states := []settings.State{settings.StateApplied, settings.StateChangedSince, settings.StateNotApplied, settings.StateOffHere, settings.StateNotForThisMachine}
-	out := make([]settings.Row, 0, len(catalog.ConfigItems))
-	for i, it := range catalog.ConfigItems {
+	out := make([]settings.Row, 0, len(catalog.Settings))
+	for i, it := range catalog.Settings {
 		r := settings.Row{Name: it.Name, Group: settings.GroupOf(it), State: states[i%len(states)]}
 		switch {
 		case reading:
@@ -222,10 +222,10 @@ func checkedRows(reading bool) []settings.Row {
 func settingsPages() []Fixture {
 	now := time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)
 	return states("settings",
-		pagesettings.List(settingRows(true), now, false, here()),
-		pagesettings.List(nil, now, false, here()),
+		pagesettings.List(settingRows(true), now, false, thisMacContext()),
+		pagesettings.List(nil, now, false, thisMacContext()),
 		failure(pagesettings.ID, "settings", "the preferences file is not valid JSON", "repair the JSON of ~/.config/station/preferences.json"),
-		pagesettings.List(settingRows(false), now, false, here()))
+		pagesettings.List(settingRows(false), now, false, thisMacContext()))
 }
 
 // value: the matrix of the estate: This Mac and a desktop read, a running
@@ -244,39 +244,39 @@ func settingsMatrix() []Fixture {
 		space = append(space, r)
 	}
 	cols := []settings.Column{
-		{LivesOn: settings.LivesOn{Name: "jterrazz-macbook-pro", Here: true, Mac: true}, Rows: mac, Read: now},
+		{LivesOn: settings.LivesOn{Name: "jterrazz-macbook-pro", ThisMachine: true, Mac: true}, Rows: mac, Read: now},
 		{LivesOn: settings.LivesOn{Name: "jterrazz-mac-mini", Mac: true}, Rows: mac, Read: now},
 		{LivesOn: settings.LivesOn{Name: "linux-1"}, Rows: space, Read: now},
 		{LivesOn: settings.LivesOn{Name: "api", Away: settings.Stopped}, Rows: space, Read: now.Add(-2 * time.Hour)},
 	}
 	short := func(name string) string { return strings.TrimPrefix(name, "jterrazz-") }
 	m := settings.MatrixOf(cols, []string{"infra"})
-	full := pagesettings.Matrix(m, now, false, short, here())
-	return states("settings-matrix", pending(pagesettings.Matrix(m, now, false, short, here())),
-		pagesettings.Matrix(settings.MatrixOf(nil, nil), now, false, short, here()),
+	full := pagesettings.Matrix(m, now, false, short, thisMacContext())
+	return states("settings-matrix", pending(pagesettings.Matrix(m, now, false, short, thisMacContext())),
+		pagesettings.Matrix(settings.MatrixOf(nil, nil), now, false, short, thisMacContext()),
 		failure(pagesettings.ID, "settings --all-machines", "jterrazz-macbook-pro does not answer", "station machines"),
 		full)
 }
 
 func diskReport(pending bool) storage.Report {
 	entry := func(name, category string) storage.Entry {
-		return storage.Entry{Name: name, Category: category, Places: []catalog.MachineKind{catalog.Host}}
+		return storage.Entry{Name: name, Category: category, Kinds: []catalog.MachineKind{catalog.Mac}}
 	}
 	at := func(path string, level catalog.Level, bytes int64) storage.PathReport {
 		return storage.PathReport{Path: path, Level: level, Bytes: bytes}
 	}
 	rows := make([]storage.Row, 0, 4)
 	rows = append(rows,
-		storage.Row{Entry: entry(storage.StationName, storage.StationCategory), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelData: 4 * gb, catalog.LevelConfig: 12000},
-			Paths: []storage.PathReport{at("~/.local/share/station/vms/vms/*", catalog.LevelData, 4*gb), at("~/.config/station/preferences.json", catalog.LevelConfig, 12000)}},
+		storage.Row{Entry: entry(storage.StationName, storage.StationCategory), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelData: 4 * gb, catalog.LevelSettings: 12000},
+			Paths: []storage.PathReport{at("~/.local/share/station/vms/vms/*", catalog.LevelData, 4*gb), at("~/.config/station/preferences.json", catalog.LevelSettings, 12000)}},
 		storage.Row{Entry: entry("homebrew", string(catalog.CategoryPackageManagers)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 26 * gb}, Install: 3 * gb,
 			Paths: []storage.PathReport{at("~/Library/Caches/Homebrew", catalog.LevelCache, 26*gb)}},
 		storage.Row{Entry: entry("bun", string(catalog.CategoryRuntimes)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 1700 * (1 << 20)},
 			Paths: []storage.PathReport{at("~/Library/Caches/bun", catalog.LevelCache, 1700*(1<<20))}},
 	)
 	misplaced := []storage.StrayReport{{Name: catalog.HypervisorApp, Path: "~/." + catalog.HypervisorApp, Bytes: 73 * gb, To: "~/.local/share/station/vms", Repair: "station disk move ~/." + catalog.HypervisorApp}}
-	rows = append(rows, storage.Row{Entry: entry(catalog.HypervisorApp, string(catalog.CategoryContainersVMs)), Installed: true, State: catalog.StateDegraded, Bytes: map[catalog.Level]int64{}, Strays: misplaced})
-	r := storage.Report{Rows: rows, Strays: misplaced, Other: 9 * gb}
+	rows = append(rows, storage.Row{Entry: entry(catalog.HypervisorApp, string(catalog.CategoryContainersVMs)), Installed: true, State: catalog.StateDegraded, Bytes: map[catalog.Level]int64{}, Misplaced: misplaced})
+	r := storage.Report{Rows: rows, Misplaced: misplaced, Other: 9 * gb}
 	if pending {
 		for i := range r.Rows {
 			r.Rows[i].Pending, r.Rows[i].State = true, catalog.StatePending
@@ -290,20 +290,20 @@ func disks() []Fixture {
 		return disk.Reading{Total: 994e9, Free: 388e9, Rows: disk.Classify(diskReport(pending)), Pending: pending}
 	}
 	return states("disk",
-		pagedisk.Read(reading(true), here(), false),
-		pagedisk.Read(disk.Reading{Total: 994e9, Free: 388e9}, here(), false),
+		pagedisk.Read(reading(true), thisMacContext(), false),
+		pagedisk.Read(disk.Reading{Total: 994e9, Free: 388e9}, thisMacContext(), false),
 		failure("disk", "disk", "the walk of ~ was refused: operation not permitted", "grant Full Disk Access to the terminal"),
-		pagedisk.Read(reading(false), here(), false))
+		pagedisk.Read(reading(false), thisMacContext(), false))
 }
 
 func allMachines() machines.Fleet {
-	return machines.Fleet{Hosts: []machines.HostView{
-		{Name: "macbook", User: "jterrazz", StationVersion: "v2.0.0-250", Here: true, Reachable: true, Daemon: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-250"}, Node: machines.Node{Online: true, IP: "100.98.133.14"},
+	return machines.Fleet{Macs: []machines.HostView{
+		{Name: "macbook", User: "jterrazz", StationVersion: "v2.0.0-250", ThisMac: true, Reachable: true, Engine: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-250"}, Node: machines.Node{Online: true, IP: "100.98.133.14"},
 			VMs: []machines.VM{
-				sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: machines.Throwaway, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", CreatedAt: built}, 4, 4),
-				sized(machines.VM{Name: "api", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: machines.Permanent, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8),
+				sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Mac: "macbook", Kind: catalog.Linux, Lifetime: machines.Throwaway, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", CreatedAt: built}, 4, 4),
+				sized(machines.VM{Name: "api", Image: "linux", Version: "3", Mac: "macbook", Kind: catalog.Linux, Lifetime: machines.Permanent, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8),
 			}},
-		{Name: "mac-mini", User: "jterrazz", StationVersion: "v2.0.0-248", Reachable: true, Daemon: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-248"}, Node: machines.Node{Online: true, IP: "100.98.133.20"}},
+		{Name: "mac-mini", User: "jterrazz", StationVersion: "v2.0.0-248", Reachable: true, Engine: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-248"}, Node: machines.Node{Online: true, IP: "100.98.133.20"}},
 	}}
 }
 
@@ -311,8 +311,8 @@ func allMachines() machines.Fleet {
 // so this host reads stopped (R9.D3); the mini does not answer its ssh read.
 func stoppedAllMachines() machines.Fleet {
 	f := allMachines()
-	f.Hosts[0].Daemon = machines.DaemonInfo{Known: true, Installed: true}
-	f.Hosts[1] = machines.HostView{Name: "mac-mini", User: "jterrazz", Node: machines.Node{IP: "100.98.133.20"}}
+	f.Macs[0].Engine = machines.DaemonInfo{Known: true, Installed: true}
+	f.Macs[1] = machines.HostView{Name: "mac-mini", User: "jterrazz", Node: machines.Node{IP: "100.98.133.20"}}
 	return f
 }
 
@@ -323,31 +323,31 @@ func sized(vm machines.VM, cpus int, memoryGB int64) machines.VM {
 
 func machineLists() []Fixture {
 	return states("machines",
-		pending(pagemachines.List(allMachines(), nil, here())),
-		pagemachines.List(machines.Fleet{}, nil, here()),
-		pagemachines.List(stoppedAllMachines(), nil, here()),
-		pagemachines.List(allMachines(), []string{"mac-mini: station v2.0.0-248, This Mac v2.0.0-250"}, here()))
+		pending(pagemachines.List(allMachines(), nil, thisMacContext())),
+		pagemachines.List(machines.Fleet{}, nil, thisMacContext()),
+		pagemachines.List(stoppedAllMachines(), nil, thisMacContext()),
+		pagemachines.List(allMachines(), []string{"mac-mini: station v2.0.0-248, This Mac v2.0.0-250"}, thisMacContext()))
 }
 
 // value: infra, a server of mac-mini, as This Mac reads it for its SSH
 // section: running, then stopped.
 func server() pagemachines.VMOverview {
 	f := allMachines()
-	vm := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Host: "mac-mini", Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Want: "running", Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built}, 8, 24)
-	f.Hosts[1].VMs = []machines.VM{vm}
-	f.Hosts[1].User = "jterrazz.agent"
-	return pagemachines.VMOverview{Fleet: f, Mac: f.Hosts[1], VM: vm}
+	vm := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Mac: "mac-mini", Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Want: "running", Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built}, 8, 24)
+	f.Macs[1].VMs = []machines.VM{vm}
+	f.Macs[1].User = "jterrazz.agent"
+	return pagemachines.VMOverview{All: f, Mac: f.Macs[1], VM: vm}
 }
 
 func sshPages() []Fixture {
 	running, stopped := server(), server()
 	stopped.VM.State, stopped.VM.IP = machines.Stopped, ""
-	target := machines.SSHTarget{User: "admin", Host: "infra", Command: "ssh admin@infra"}
+	target := machines.SSHTarget{User: "admin", Address: "infra", Command: "ssh admin@infra"}
 	return states("ssh",
-		pending(pagemachines.SSHPage(running, target, here())),
-		pagemachines.SSHPage(stopped, target, here()),
+		pending(pagemachines.SSHPage(running, target, thisMacContext())),
+		pagemachines.SSHPage(stopped, target, thisMacContext()),
 		failure("ssh", "machines ssh infra", "infra is on mac-mini, which does not answer", "station machines"),
-		pagemachines.SSHPage(running, target, here()))
+		pagemachines.SSHPage(running, target, thisMacContext()))
 }
 
 func imageReports() []images.Report {
@@ -367,7 +367,7 @@ func imageLists() []Fixture {
 }
 
 func thisMacImages() page.Context {
-	return page.Context{Kind: "host", Machine: "jterrazz-macbook-pro", Registered: true}
+	return page.Context{Kind: "mac", Machine: "jterrazz-macbook-pro", Registered: true}
 }
 
 func tailnetStatus() ports.Status {
@@ -382,35 +382,35 @@ func tailnetStatus() ports.Status {
 	}
 }
 
-func serviceAllMachines() services.Fleet {
+func portsAllMachines() services.Fleet {
 	seen := built
-	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
-		{Name: "macbook", ThisMac: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicHost: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
+	return services.Fleet{Schema: ports.AllMachinesSchema, Macs: []services.HostView{
+		{Name: "macbook", ThisMac: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicName: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
 			Range: &services.Range{Low: 40000, High: 40999, Reserved: 2, Free: 998, MaxPerVM: 20},
-			Services: []services.View{
-				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://jterrazz-macbook-pro.tail1234.ts.net:40001"}, LastSeenAt: &seen},
-				{VM: "linux-1", GuestPort: 5432, HostPort: 40002, State: services.Waiting, Process: "postgres"},
+			Shared: []services.View{
+				{VM: "linux-1", GuestPort: 5173, Reserved: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://jterrazz-macbook-pro.tail1234.ts.net:40001"}, LastSeenAt: &seen},
+				{VM: "linux-1", GuestPort: 5432, Reserved: 40002, State: services.Waiting, Process: "postgres"},
 			}},
 		{Name: "mac-mini", Reachable: false},
 	}}
 }
 
-func stoppedServices() services.Fleet {
-	f := serviceAllMachines()
-	f.Hosts[0].Engine = services.DaemonInfo{Installed: true}
-	for i := range f.Hosts[0].Services {
-		f.Hosts[0].Services[i].State = services.Unknown
+func stoppedPorts() services.Fleet {
+	f := portsAllMachines()
+	f.Macs[0].Engine = services.DaemonInfo{Installed: true}
+	for i := range f.Macs[0].Shared {
+		f.Macs[0].Shared[i].State = services.Unknown
 	}
 	return f
 }
 
-func thisMacPorts() page.Context { return page.Context{Kind: "host", Machine: "macbook"} }
+func thisMacPorts() page.Context { return page.Context{Kind: "mac", Machine: "macbook"} }
 
 func portLists() []Fixture {
 	return states("ports",
-		pending(pageports.List(ports.Listing{AllMachines: serviceAllMachines(), Tailnet: tailnetStatus()}, thisMacPorts())),
+		pending(pageports.List(ports.Listing{AllMachines: portsAllMachines(), Tailnet: tailnetStatus()}, thisMacPorts())),
 		pageports.List(ports.Listing{Tailnet: ports.Status{State: catalog.StateAbsent}}, thisMacPorts()),
-		pageports.List(ports.Listing{AllMachines: stoppedServices(), Tailnet: ports.Status{State: catalog.StateOK, BackendState: "NeedsLogin"}}, thisMacPorts()),
+		pageports.List(ports.Listing{AllMachines: stoppedPorts(), Tailnet: ports.Status{State: catalog.StateOK, BackendState: "NeedsLogin"}}, thisMacPorts()),
 		pageports.List(ports.Listing{AllMachines: estatePorts(), Tailnet: tailnetStatus()}, thisMacPorts()))
 }
 
@@ -418,13 +418,13 @@ func portLists() []Fixture {
 // Receiver red, infra's API on its own tailnet device, a database on This
 // Mac's loopback folded.
 func estatePorts() services.Fleet {
-	f := serviceAllMachines()
+	f := portsAllMachines()
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
-	f.Hosts[0].Ports = []ports.Port{
+	f.Macs[0].Ports = []ports.Port{
 		{Machine: coremachine.Ref{Name: "macbook"}, Port: 5432, Process: "postgres", Binds: []string{"127.0.0.1"}, Reach: ports.ThisMachine},
 		{Machine: coremachine.Ref{Name: "linux-1", On: "macbook"}, Port: 5173, Process: "node", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet},
 	}
-	f.Hosts[1] = services.HostView{Name: "mac-mini", Reachable: true, Engine: services.DaemonInfo{Running: true}, Services: []services.View{},
+	f.Macs[1] = services.HostView{Name: "mac-mini", Reachable: true, Engine: services.DaemonInfo{Running: true}, Shared: []services.View{},
 		Range: &services.Range{Low: 40000, High: 40999, Free: 1000, MaxPerVM: 20},
 		Ports: []ports.Port{
 			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},
@@ -435,18 +435,18 @@ func estatePorts() services.Fleet {
 }
 
 func allMachinesStates() []Fixture {
-	f, list, svc, tn := allMachines(), imageReports(), serviceAllMachines(), tailnetStatus()
-	full := pageallmachines.Reading{Machines: &f, Images: &list, Services: &svc, Tailnet: &tn}
-	none := machines.Fleet{Hosts: []machines.HostView{{Name: "macbook", Here: true, Reachable: true}}}
+	f, list, svc, tn := allMachines(), imageReports(), portsAllMachines(), tailnetStatus()
+	full := pageallmachines.Reading{Machines: &f, Images: &list, Ports: &svc, Tailnet: &tn}
+	none := machines.Fleet{Macs: []machines.HostView{{Name: "macbook", ThisMac: true, Reachable: true}}}
 	var noImages []images.Report
 	empty := pageallmachines.Reading{Machines: &none, Images: &noImages, Tailnet: &ports.Status{State: catalog.StateAbsent}}
-	stopped, stoppedSvc := stoppedAllMachines(), stoppedServices()
-	failed := pageallmachines.Reading{Machines: &stopped, Images: &list, Services: &stoppedSvc, Tailnet: &tn}
+	stopped, stoppedSvc := stoppedAllMachines(), stoppedPorts()
+	failed := pageallmachines.Reading{Machines: &stopped, Images: &list, Ports: &stoppedSvc, Tailnet: &tn}
 	return states("all-machines",
-		pageallmachines.Tab(pageallmachines.Reading{}, here()),
-		pageallmachines.Tab(empty, here()),
-		pageallmachines.Tab(failed, here()),
-		pageallmachines.Tab(full, here()))
+		pageallmachines.Tab(pageallmachines.Reading{}, thisMacContext()),
+		pageallmachines.Tab(empty, thisMacContext()),
+		pageallmachines.Tab(failed, thisMacContext()),
+		pageallmachines.Tab(full, thisMacContext()))
 }
 
 func outcomes() []Fixture {
@@ -464,20 +464,20 @@ func outcomes() []Fixture {
 		{Name: "bun", Result: catalog.StateAbsent, Detail: "nothing to free"},
 	}
 	out := states("outcome-apps-install",
-		pending(pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, here())),
-		pageapps.Outcomes("install", nil, pageapps.Run{}, here()),
+		pending(pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, thisMacContext())),
+		pageapps.Outcomes("install", nil, pageapps.Run{}, thisMacContext()),
 		failure("outcome", "apps install", "no app named \"jqq\"", "station apps for every app here"),
-		pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, here()))
+		pageapps.Outcomes("install", appOutcomes, pageapps.Run{Took: 9 * time.Second}, thisMacContext()))
 	out = append(out, states("outcome-settings-apply",
-		pending(pagesettings.Changes("apply", changes, here())),
-		pagesettings.Changes("apply", nil, here()),
+		pending(pagesettings.Changes("apply", changes, thisMacContext())),
+		pagesettings.Changes("apply", nil, thisMacContext()),
 		failure("outcome", "settings apply", "restart-after-power-cut needs admin rights", "sudo station settings apply restart-after-power-cut"),
-		pagesettings.Changes("apply", changes, here()))...)
+		pagesettings.Changes("apply", changes, thisMacContext()))...)
 	return append(out, states("outcome-disk-free",
-		pending(pagedisk.Freed(cleaned, here())),
-		pagedisk.Freed(nil, here()),
+		pending(pagedisk.Freed(cleaned, thisMacContext())),
+		pagedisk.Freed(nil, thisMacContext()),
 		failure("outcome", "disk free", "no disk row for \"brw\"", "station disk"),
-		pagedisk.Freed(cleaned, here()))...)
+		pagedisk.Freed(cleaned, thisMacContext()))...)
 }
 
 func setupReport() setup.Report {
@@ -491,17 +491,17 @@ func setupReport() setup.Report {
 
 func setups() []Fixture {
 	return states("setup",
-		pending(pagesetup.Outcome(setupReport(), here())),
-		pagesetup.Outcome(setup.Report{}, here()),
+		pending(pagesetup.Outcome(setupReport(), thisMacContext())),
+		pagesetup.Outcome(setup.Report{}, thisMacContext()),
 		failure("outcome", "setup", "a VM is named by its Mac", "station setup on its Mac"),
-		pagesetup.Outcome(setupReport(), here()))
+		pagesetup.Outcome(setupReport(), thisMacContext()))
 }
 
 func runs() []Fixture {
 	run := settings.ContainersOutcome{Shortcut: "dreset", Removals: []settings.ContainersRemoval{{What: "containers", Count: 3}, {What: "images", Count: 12}}}
 	return states("run",
-		pending(pagesettings.Removed(run, "run dreset", here())),
-		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, "run dreset", here()),
+		pending(pagesettings.Removed(run, "run dreset", thisMacContext())),
+		pagesettings.Removed(settings.ContainersOutcome{Shortcut: "dreset"}, "run dreset", thisMacContext()),
 		failure("outcome", "run dreset", "docker ps failed: Docker is not running", "start Docker, then run it again"),
-		pagesettings.Removed(run, "run dreset", here()))
+		pagesettings.Removed(run, "run dreset", thisMacContext()))
 }

@@ -33,7 +33,7 @@ func (s *Source) Latest(_ context.Context, name string) (images.Ref, error) {
 	}
 	v, ok := s.w.Registry[name]
 	if !ok {
-		return images.Ref{}, contract.ErrNotShared
+		return images.Ref{}, contract.ErrNotReleased
 	}
 	return images.Ref{Name: name, Version: v}, nil
 }

@@ -35,7 +35,7 @@ func Identities(t *testing.T, subject func(t *testing.T) IdentitiesSubject) {
 		}
 	})
 
-	t.Run("a provider whose tool is not there reads absent, never an error", func(t *testing.T) {
+	t.Run("a provider whose program is not there reads absent, never an error", func(t *testing.T) {
 		s := subject(t)
 		id, err := s.Identities.Read(ctx, s.Missing)
 		if err != nil {

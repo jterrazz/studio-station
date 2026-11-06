@@ -21,9 +21,9 @@ import (
 func (m machine) accounts() *accounts.Service {
 	o := accounts.Options{Here: m.kind, HereName: m.where.Machine}
 	ids := m.identities(engine.ChildrenDir(m.paths.State))
-	if m.kind != catalog.Host {
+	if m.kind != catalog.Mac {
 		o.Keys = m.stationHostKeys
-		return accounts.New(m.host, m.pool, ids, accounts.Ports{}, o)
+		return accounts.New(m.sys, m.pool, ids, accounts.Ports{}, o)
 	}
 	sec := m.secrets()
 	tn := m.tailnet()
@@ -58,7 +58,7 @@ func (m machine) accounts() *accounts.Service {
 		Daemon: func(ctx context.Context) ([]accounts.VMRead, string) {
 			var view engine.AccountsView
 			if err := d.do(ctx, process.Accounts, nil, &view); err != nil {
-				if _, missing := m.host.FS.Stat(catalog.EnginePlist(m.host.Env.Home())); missing != nil {
+				if _, missing := m.sys.FS.Stat(catalog.EnginePlist(m.sys.Env.Home())); missing != nil {
 					return nil, accounts.DaemonAbsent
 				}
 				return nil, accounts.DaemonStopped
@@ -77,13 +77,13 @@ func (m machine) accounts() *accounts.Service {
 			return out, accounts.DaemonRunning
 		},
 	}
-	return accounts.New(m.host, m.pool, ids, sources, o)
+	return accounts.New(m.sys, m.pool, ids, sources, o)
 }
 
 // value: inside a VM, who may ssh in is the station hosts block the guest
 // writes into authorized_keys.
 func (m machine) stationHostKeys() []string {
-	data, err := m.host.FS.ReadFile(path.Join(m.host.Env.Home(), ".ssh", "authorized_keys"))
+	data, err := m.sys.FS.ReadFile(path.Join(m.sys.Env.Home(), ".ssh", "authorized_keys"))
 	if err != nil {
 		return nil
 	}
@@ -122,5 +122,5 @@ func (m machine) identities(track string) accountscontract.Identities {
 	if m.world != nil {
 		return m.world.identities()
 	}
-	return cli.New(m.host.Run, m.host.FS, cli.Options{Home: m.host.Env.Home(), Track: track})
+	return cli.New(m.sys.Run, m.sys.FS, cli.Options{Home: m.sys.Env.Home(), Track: track})
 }

@@ -5,7 +5,7 @@ runs:
       exit: 0
     - command: 'world reboot-inside linux-1'
       exit: 0
-    - command: 'machines --here'
+    - command: 'machines --this-mac'
       exit: 0
       stdout: |
           ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running
@@ -13,7 +13,7 @@ runs:
           ●	linux-1	Workspace	jterrazz-macbook-pro	Running · throwaway	4 CPU	8 GB
     - command: 'world reboot-inside linux-1'
       exit: 0
-    - command: 'machines --here'
+    - command: 'machines --this-mac'
       exit: 0
       stdout: |
           ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running

@@ -71,6 +71,8 @@ type runContainersIn struct{}
 // function that replaced it and what it removes.
 type containerShortcut struct{ old, function, removes string }
 
+// value: alias of v2's run shortcuts of containers, each kept hidden by
+// its old word.
 func containerShortcuts() []containerShortcut {
 	return []containerShortcut{
 		{"rm", "dclean", "every container"},

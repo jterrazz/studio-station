@@ -13,7 +13,7 @@ import (
 // you, a line per section, the VMs it runs.
 func overviewOf(needs bool) overview.Summary {
 	s := overview.Summary{
-		Head:   overview.Head{Name: "jterrazz-macbook-pro", Kind: machine.Mac, Here: true, Up: 3 * 24 * time.Hour},
+		Head:   overview.Head{Name: "jterrazz-macbook-pro", Kind: machine.Mac, ThisMac: true, Up: 3 * 24 * time.Hour},
 		Engine: overview.EngineRunning,
 		Lines: []overview.Line{
 			{Section: "activity", Parts: []overview.Part{{Word: "CPU 34%"}, {Word: "memory 12.4 of 16 GB"}, {Bytes: 388_000_000_000, Word: "free"}, {Word: "in 2.1 MB/s"}}},
@@ -50,9 +50,9 @@ func overviewPages() []Fixture {
 		loading.Lines[i] = overview.Line{Section: loading.Lines[i].Section, Pending: true}
 	}
 	return states("overview",
-		pagehome.Summary(loading, here(), false),
-		pagehome.Summary(overviewOf(false), here(), false),
+		pagehome.Summary(loading, thisMacContext(), false),
+		pagehome.Summary(overviewOf(false), thisMacContext(), false),
 		failure("overview", "overview", "the engine is stopped on jterrazz-macbook-pro", "station engine start"),
-		pagehome.Summary(overviewOf(true), here(), false),
+		pagehome.Summary(overviewOf(true), thisMacContext(), false),
 	)
 }

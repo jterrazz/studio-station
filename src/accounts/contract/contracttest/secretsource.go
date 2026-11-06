@@ -38,7 +38,7 @@ func SecretSource(t *testing.T, subject func(t *testing.T) SecretSourceSubject) 
 		}
 	})
 
-	t.Run("a name the tool does not keep fails the export", func(t *testing.T) {
+	t.Run("a name the program does not keep fails the export", func(t *testing.T) {
 		s := subject(t)
 		if _, err := s.Source.Export(ctx, []string{"session:a", "session:never"}); err == nil {
 			t.Fatal("Export of a name not kept succeeded")

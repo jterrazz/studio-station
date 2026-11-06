@@ -43,28 +43,28 @@ type Files interface {
 	MkdirAll(path string, perm fs.FileMode) error
 }
 
-type config struct {
+type sshFile struct {
 	fs Files
 	o  Options
 }
 
-func New(files Files, o Options) contract.SSHConfig { return &config{fs: files, o: o} }
+func New(files Files, o Options) contract.SSHConfig { return &sshFile{fs: files, o: o} }
 
-func (c *config) file() string { return path.Join(c.o.Home, ".ssh", "config") }
+func (c *sshFile) file() string { return path.Join(c.o.Home, ".ssh/config") }
 
-func (c *config) Put(_ context.Context, blocks []contract.HostBlock) error {
+func (c *sshFile) Put(_ context.Context, blocks []contract.MachineBlock) error {
 	return c.edit(blocks, false, nil)
 }
 
-func (c *config) Replace(_ context.Context, blocks []contract.HostBlock) error {
+func (c *sshFile) Replace(_ context.Context, blocks []contract.MachineBlock) error {
 	return c.edit(blocks, true, nil)
 }
 
-func (c *config) Remove(_ context.Context, names ...string) error {
+func (c *sshFile) Remove(_ context.Context, names ...string) error {
 	return c.edit(nil, false, names)
 }
 
-func (c *config) block(b contract.HostBlock) string {
+func (c *sshFile) block(b contract.MachineBlock) string {
 	// invariant: the name IS the HostName, and each machine keeps its own
 	// known_hosts, so a name reused by a new VM meets no changed host key; a VM
 	// is reached through its Mac, never on the tailnet.
@@ -89,9 +89,9 @@ func (c *config) block(b contract.HostBlock) string {
 	return strings.Join(append(lines, endMarker(b.Name), ""), "\n")
 }
 
-func (c *config) proxy(b contract.HostBlock) string {
+func (c *sshFile) proxy(b contract.MachineBlock) string {
 	words := []string{"machines", "pipe", b.Name}
-	if b.Here {
+	if b.ThisMac {
 		return c.o.Executable + " " + strings.Join(words, " ")
 	}
 	// invariant: ssh runs a ProxyCommand through a local shell, then joins
@@ -114,7 +114,7 @@ func doubleQuoted(s string) string {
 	return out.String()
 }
 
-func (c *config) tilde(p string) string {
+func (c *sshFile) tilde(p string) string {
 	home := strings.TrimSuffix(c.o.Home, "/")
 	if home != "" && strings.HasPrefix(p, home+"/") {
 		return "~" + strings.TrimPrefix(p, home)
@@ -122,7 +122,7 @@ func (c *config) tilde(p string) string {
 	return p
 }
 
-func (c *config) edit(upsert []contract.HostBlock, prune bool, remove []string) error {
+func (c *sshFile) edit(upsert []contract.MachineBlock, prune bool, remove []string) error {
 	if len(remove) == 0 {
 		if err := c.fs.MkdirAll(c.o.KnownHosts, 0o700); err != nil {
 			return &contract.SSHConfigError{Path: c.o.KnownHosts, Cause: err}
@@ -195,7 +195,7 @@ func upsertBlock(existing []byte, name, block string) (updated []byte, conflict 
 		}
 		return []byte(text[:beginIdx] + block + text[endLine:]), ""
 	}
-	if clash := foreignHost(text, name); clash != "" {
+	if clash := foreignBlock(text, name); clash != "" {
 		return existing, clash
 	}
 	if text != "" && !strings.HasSuffix(text, "\n") {
@@ -234,7 +234,7 @@ func removeBlock(existing []byte, name string) []byte {
 
 // invariant: any managed block counts, not only this machine's: a neighbour's
 // block is not a foreign Host.
-func foreignHost(text, name string) string {
+func foreignBlock(text, name string) string {
 	inManaged := false
 	for i, line := range strings.Split(text, "\n") {
 		trimmed := strings.TrimSpace(line)
@@ -249,9 +249,9 @@ func foreignHost(text, name string) string {
 		if inManaged || !strings.HasPrefix(trimmed, "Host ") {
 			continue
 		}
-		for _, host := range strings.Fields(trimmed)[1:] {
-			if host == name {
-				return fmt.Sprintf("Host %s already defined at line %d (outside any managed block)", name, i+1)
+		for _, word := range strings.Fields(trimmed)[1:] {
+			if word == name {
+				return fmt.Sprintf("a block of yours already names %s at line %d (outside any managed block)", name, i+1)
 			}
 		}
 	}

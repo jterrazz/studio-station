@@ -14,7 +14,7 @@ func thisMacReading() power.Reading {
 }
 
 func powerReport(engine string, s *power.Session, r power.Reading) power.Report {
-	return power.Report{Now: powerNow, Daemon: engine, Reading: r, Session: s, Guards: power.Guards(r, s)}
+	return power.Report{Now: powerNow, Engine: engine, Reading: r, Session: s, Guards: power.Guards(r, s)}
 }
 
 func heldSession() *power.Session {
@@ -27,16 +27,16 @@ func powerPages() []Fixture {
 	low.Source, low.Percent = "battery", 28
 	held := heldSession()
 	out := states("power",
-		pagepower.Page(powerReport(power.DaemonPending, nil, thisMacReading()), here()),
-		pagepower.Page(powerReport(power.DaemonRunning, nil, thisMacReading()), here()),
-		pagepower.Page(powerReport(power.DaemonStopped, nil, thisMacReading()), here()),
-		pagepower.Page(powerReport(power.DaemonRunning, held, low), here()),
+		pagepower.Page(powerReport(power.DaemonPending, nil, thisMacReading()), thisMacContext()),
+		pagepower.Page(powerReport(power.DaemonRunning, nil, thisMacReading()), thisMacContext()),
+		pagepower.Page(powerReport(power.DaemonStopped, nil, thisMacReading()), thisMacContext()),
+		pagepower.Page(powerReport(power.DaemonRunning, held, low), thisMacContext()),
 	)
 	awoken := power.Awoken{Session: *held}
 	return append(out, states("outcome-power",
-		pending(pagepower.Awake(awoken, nil, here())),
-		pagepower.Slept(power.Slept{}, here()),
+		pending(pagepower.Awake(awoken, nil, thisMacContext())),
+		pagepower.Slept(power.Slept{}, thisMacContext()),
 		failure("outcome", "awake", "Awake stays off: the battery is at 18 % on battery", "station awake"),
-		pagepower.Awake(awoken, nil, here()),
+		pagepower.Awake(awoken, nil, thisMacContext()),
 	)...)
 }

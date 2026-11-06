@@ -88,12 +88,12 @@ var Apply = call.Call[Deps, ApplyIn, []settings.Change]{
 
 // invariant: values given stand for the terminal only for a setting whose
 // one question is its form: one that runs its own dialog still needs one.
-func answered(it catalog.ConfigItem, in ApplyIn) bool {
+func answered(it catalog.Setting, in ApplyIn) bool {
 	return in.Values[it.Name] != nil && !it.Interactive
 }
 
 type target struct {
-	it  catalog.ConfigItem
+	it  catalog.Setting
 	row settings.Row
 }
 
@@ -141,7 +141,7 @@ func targetsOf(ctx context.Context, d Deps, in ApplyIn, off map[string]bool) ([]
 
 // invariant: what station applied is recorded as it reads once written, so
 // a later edit by hand shows as Changed since.
-func keep(ctx context.Context, d Deps, it catalog.ConfigItem) error {
+func keep(ctx context.Context, d Deps, it catalog.Setting) error {
 	a, ok := d.Appliers.For(it)
 	if !ok {
 		return nil

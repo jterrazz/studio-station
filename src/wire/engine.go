@@ -52,8 +52,8 @@ func (m machine) engine(env kit.Env) *engine.Engine {
 	if calls == nil {
 		calls = remote.NewRouter(registry, m.profile, remote.Reach{})
 	}
-	menubar := feeds.Menubar{Calls: calls, Clock: m.host.Clock, Here: m.where, Report: func(v power.View) *power.Report {
-		return &power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
+	menubar := feeds.Menubar{Calls: calls, Clock: m.sys.Clock, ThisMachine: m.where, Report: func(v power.View) *power.Report {
+		return &power.Report{Now: m.sys.Clock.Now(), Zone: time.Local, Engine: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	}, EveryMac: func(ctx context.Context) (pageawake.AllMachines, error) {
 		inside := env
 		inside.Calls = calls
@@ -70,7 +70,7 @@ func (m machine) engine(env kit.Env) *engine.Engine {
 	}
 	var d *engine.Engine
 	sample := &enginejobs.Sample{
-		Calls: calls, Meter: m.meter(), Clock: m.host.Clock,
+		Calls: calls, Meter: m.meter(), Clock: m.sys.Clock,
 		History: func() *activity.History { return d.History() },
 		Watched: func(r coremachine.Ref) bool {
 			return d.Watched(r.Name) || (r.On == "" && d.Watched(engine.ThisMac))
@@ -86,14 +86,14 @@ func (m machine) engine(env kit.Env) *engine.Engine {
 			return seen
 		},
 	}
-	d = engine.New(m.host, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Services: m.stores.services(), Reservations: m.stores.reservations}, engine.Options{
+	d = engine.New(m.sys, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Ports: m.stores.ports(), Reservations: m.stores.reservations}, engine.Options{
 		Remember: func(vm string, port int, stopped bool) error {
-			return portscalls.Remember(m.stores.services(), vm, port, stopped)
+			return portscalls.Remember(m.stores.ports(), vm, port, stopped)
 		},
-		State: m.paths.State, Here: m.kind, Version: m.engineVersion(), StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
-		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
-		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
-		Lends:       shares, Peer: m.engineAPI(),
+		State: m.paths.State, ThisMachine: m.kind, Version: m.engineVersion(), StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
+		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.sys.Env.Executable(),
+		NeverSleeps:   func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
+		AccountShares: shares, Peer: m.engineAPI(),
 		Feeds: map[string]engine.Feed{engine.PageMenubar: menubar.Feed(), engine.PageSwitcher: menubar.Switcher(), engine.PageMachine: menubar.Machine(),
 			engine.PagePorts: menubar.Ports(), engine.PageAwake: menubar.Awake(), engine.PageActivity: menubar.Activity()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
@@ -108,7 +108,7 @@ func (m machine) engine(env kit.Env) *engine.Engine {
 		}
 		return false, nil
 	})
-	d.Host(m.engineServer(d, registry))
+	d.ServeWith(m.engineServer(d, registry))
 	return d
 }
 
@@ -143,7 +143,7 @@ func engineRunCommand(env kit.Env, m machine) *cobra.Command {
 // engine's label; it runs the engine, hidden, for one release.
 func retiredEngineCommand(env kit.Env, m machine) *cobra.Command {
 	cmd := engineRunCommand(env, m)
-	cmd.Use = "daemon"
+	cmd.Use = kit.RetiredEngineCommand
 	return cmd
 }
 
@@ -159,9 +159,9 @@ func (l *engineShares) Expire(ctx context.Context, vm string, names []string) er
 
 func (l *engineShares) Forget(ctx context.Context, vm string) error { return l.s.Forget(ctx, vm) }
 
-type hostEngine struct{ c engineAPI }
+type macEngine struct{ c engineAPI }
 
-func (m machine) hostEngine() hostEngine { return hostEngine{c: m.engineAPI()} }
+func (m machine) macEngine() macEngine { return macEngine{c: m.engineAPI()} }
 
 func downAs(err, sentinel error) error {
 	var down *engine.DownError
@@ -172,12 +172,12 @@ func downAs(err, sentinel error) error {
 	return err
 }
 
-func (d hostEngine) Ping(ctx context.Context) (string, error) {
+func (d macEngine) Ping(ctx context.Context) (string, error) {
 	p, err := d.c.Hello(ctx)
 	return p.Version, downAs(err, machines.ErrDaemonDown)
 }
 
-func (d hostEngine) VMs(ctx context.Context) (map[string]machines.DaemonVM, error) {
+func (d macEngine) VMs(ctx context.Context) (map[string]machines.DaemonVM, error) {
 	views, err := d.c.VMs(ctx)
 	if err != nil {
 		return nil, downAs(err, machines.ErrDaemonDown)
@@ -189,7 +189,7 @@ func (d hostEngine) VMs(ctx context.Context) (map[string]machines.DaemonVM, erro
 	return out, nil
 }
 
-func (d hostEngine) GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error) {
+func (d macEngine) GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error) {
 	var ran process.ExecOut
 	if err := d.c.do(ctx, process.GuestExec, process.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
 		return system.Output{}, downAs(err, machines.ErrDaemonDown)
@@ -197,17 +197,17 @@ func (d hostEngine) GuestExec(ctx context.Context, vm, line, stdin string) (syst
 	return system.Output{Stdout: ran.Stdout, Stderr: ran.Stderr, ExitCode: ran.Code}, nil
 }
 
-func (d hostEngine) Do(ctx context.Context, op, vm string) error {
+func (d macEngine) Do(ctx context.Context, op, vm string) error {
 	return downAs(d.c.do(ctx, process.VM(op), process.VMIn{VM: vm}, nil), machines.ErrDaemonDown)
 }
 
-func (d hostEngine) Reserve(ctx context.Context, vm string, port int, profile string) (machines.Reserved, error) {
+func (d macEngine) Reserve(ctx context.Context, vm string, port int, profile string) (machines.Reserved, error) {
 	var v services.View
 	if err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
 		return machines.Reserved{}, downAs(err, machines.ErrDaemonDown)
 	}
 	return machines.Reserved{
-		GuestPort: v.GuestPort, HostPort: v.HostPort, Profile: profile, URL: v.URLs.Public, PublicHost: hostOf(v.URLs.Public),
+		GuestPort: v.GuestPort, MacPort: v.Reserved, Profile: profile, URL: v.URLs.Public, PublicName: nameOf(v.URLs.Public),
 		Off: localOnlyBecause(v.Detail),
 	}, nil
 }
@@ -222,31 +222,31 @@ func localOnlyBecause(detail string) string {
 	return ""
 }
 
-func hostOf(url string) string {
+func nameOf(url string) string {
 	_, rest, ok := strings.Cut(url, "://")
 	if !ok {
 		rest = url
 	}
-	host, _, _ := strings.Cut(rest, "/")
-	host, _, _ = strings.Cut(host, ":")
-	return host
+	name, _, _ := strings.Cut(rest, "/")
+	name, _, _ = strings.Cut(name, ":")
+	return name
 }
 
-type servicesEngine struct{ c engineAPI }
+type portsEngine struct{ c engineAPI }
 
-func (d servicesEngine) Services(ctx context.Context) (services.HostView, error) {
+func (d portsEngine) Services(ctx context.Context) (services.HostView, error) {
 	var v services.HostView
-	err := d.c.do(ctx, process.Services, nil, &v)
+	err := d.c.do(ctx, process.Ports, nil, &v)
 	return v, downAs(err, services.ErrDaemonDown)
 }
 
-func (d servicesEngine) Reserve(ctx context.Context, vm string, port int, pinned bool) (services.View, error) {
+func (d portsEngine) Reserve(ctx context.Context, vm string, port int, pinned bool) (services.View, error) {
 	var v services.View
 	err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: pinned}, &v)
 	return v, downAs(err, services.ErrDaemonDown)
 }
 
-func (d servicesEngine) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
+func (d portsEngine) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
 	var l services.Lease
 	err := d.c.do(ctx, process.Release, process.ReserveIn{VM: vm, GuestPort: port}, &l)
 	return l, downAs(err, services.ErrDaemonDown)
@@ -269,7 +269,7 @@ func (r reservationReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	if len(gone) == 0 {
 		return nil
 	}
-	g, _ := r.m.stores.services().Get()
+	g, _ := r.m.stores.ports().Get()
 	mode := ports.PolicyOf(g).HTTPS
 	tn := r.m.tailnet()
 	if ready, err := tn.Ready(ctx); err == nil && ready.On {
@@ -302,7 +302,7 @@ type engineInstaller struct {
 }
 
 func (i engineInstaller) env() map[string]string {
-	env := map[string]string{"HOME": i.m.host.Env.Home()}
+	env := map[string]string{"HOME": i.m.sys.Env.Home()}
 	for _, name := range []string{"PATH", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "STATION_GUEST_SSH_PORT"} {
 		if v := i.m.vars[name]; v != "" {
 			env[name] = v
@@ -340,8 +340,8 @@ func (i engineInstaller) Install(ctx context.Context) (setup.Step, error) {
 // invariant: the job station v2 named com.jterrazz.station.daemon is
 // removed once, before the engine's own is written: one engine per Mac.
 func (i engineInstaller) retire(ctx context.Context, jobs contract.Jobs) (bool, error) {
-	ref := contract.Ref{Domain: contract.Domain{UID: i.m.host.Env.Euid()}, Label: catalog.RetiredEngineLabel, File: catalog.RetiredEnginePlist(i.m.host.Env.Home())}
-	if _, err := i.m.host.FS.Stat(ref.File); err != nil && !jobs.Read(ctx, ref).Loaded {
+	ref := contract.Ref{Domain: contract.Domain{UID: i.m.sys.Env.Euid()}, Label: catalog.RetiredEngineLabel, File: catalog.RetiredEnginePlist(i.m.sys.Env.Home())}
+	if _, err := i.m.sys.FS.Stat(ref.File); err != nil && !jobs.Read(ctx, ref).Loaded {
 		return false, nil
 	}
 	return true, jobs.Remove(ctx, ref)
@@ -349,9 +349,9 @@ func (i engineInstaller) retire(ctx context.Context, jobs contract.Jobs) (bool, 
 
 func (i engineInstaller) install(ctx context.Context, jobs contract.Jobs) (setup.Step, error) {
 	const step = "engine"
-	job := i.m.daemonJob()
+	job := i.m.engineJobRef()
 	changed, err := jobs.Install(ctx, contract.JobSpec{
-		Label: job.Label, Program: []string{i.m.host.Env.Executable(), "engine", "run"}, Env: i.env(),
+		Label: job.Label, Program: []string{i.m.sys.Env.Executable(), "engine", "run"}, Env: i.env(),
 		AtLogin: true, KeepAlive: true, Log: filepath.Join(i.m.paths.State, "logs", "engine.log"), File: job.File,
 	})
 	if err != nil {

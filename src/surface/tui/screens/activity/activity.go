@@ -141,7 +141,7 @@ func (Screen) Lines(v screen.View) ([]string, bool) {
 // that Mac's engine's to sample, and its banner stays.
 func sampled(v screen.View) string {
 	m := v.Machine
-	if !m.Here && !m.MacHere {
+	if !m.ThisMachine && !m.MacHere {
 		return ""
 	}
 	if of(v.State).flag == windows()[0].flag {

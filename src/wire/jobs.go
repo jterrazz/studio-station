@@ -16,13 +16,13 @@ func (m machine) jobs(budget time.Duration) contract.Jobs {
 	if m.world != nil {
 		return m.world.jobs()
 	}
-	return launchd.New(m.host.Run, m.host.FS, launchd.Options{
-		Home: m.host.Env.Home(), Root: m.systemRoot(), UID: m.host.Env.Euid(), Budget: budget,
+	return launchd.New(m.sys.Run, m.sys.FS, launchd.Options{
+		Home: m.sys.Env.Home(), Root: m.systemRoot(), UID: m.sys.Env.Euid(), Budget: budget,
 	})
 }
 
-func (m machine) daemonJob() contract.Ref {
-	return contract.Ref{Domain: contract.Domain{UID: m.host.Env.Euid()}, Label: engine.Label, File: catalog.EnginePlist(m.host.Env.Home())}
+func (m machine) engineJobRef() contract.Ref {
+	return contract.Ref{Domain: contract.Domain{UID: m.sys.Env.Euid()}, Label: engine.Label, File: catalog.EnginePlist(m.sys.Env.Home())}
 }
 
 type engineJob struct {
@@ -31,7 +31,7 @@ type engineJob struct {
 }
 
 func (m machine) engineJob() engineJob {
-	return engineJob{jobs: m.jobs(engine.JobBudget), ref: m.daemonJob()}
+	return engineJob{jobs: m.jobs(engine.JobBudget), ref: m.engineJobRef()}
 }
 
 func (j engineJob) Loaded(ctx context.Context) bool { return j.jobs.Read(ctx, j.ref).Loaded }

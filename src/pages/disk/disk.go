@@ -58,7 +58,7 @@ func ReadContract(r disk.Reading) ReadJSON {
 }
 
 func machineLabel(thisMac page.Context) string {
-	if thisMac.Kind == string(catalog.Host) || thisMac.Machine == "" {
+	if thisMac.Kind == string(catalog.Mac) || thisMac.Machine == "" {
 		return "This Mac"
 	}
 	return thisMac.Machine

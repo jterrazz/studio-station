@@ -7,7 +7,7 @@ import (
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 )
 
-func here() page.Context { return page.Context{Kind: "host"} }
+func thisMacContext() page.Context { return page.Context{Kind: "mac"} }
 
 type app struct {
 	name     string
@@ -26,7 +26,7 @@ func reports(list []app, pending bool) []tools.Report {
 	out := make([]tools.Report, 0, len(list))
 	for _, t := range list {
 		r := tools.Report{
-			Tool:    catalog.Tool{Name: t.name, Category: t.category, System: t.system},
+			App:     catalog.App{Name: t.name, Category: t.category, System: t.system},
 			Method:  t.method,
 			State:   t.state,
 			Version: t.version,
@@ -88,9 +88,9 @@ func lateMac() []app {
 
 func Apps() []Fixture {
 	return []Fixture{
-		{"apps.loading", pageapps.List(reports(thisMac(), true), here(), false)},
-		{"apps.empty", pageapps.List(nil, here(), false)},
-		{"apps.error", pageapps.List(reports(lateMac(), false), here(), false)},
-		{"apps.full", pageapps.List(reports(thisMac(), false), here(), false)},
+		{"apps.loading", pageapps.List(reports(thisMac(), true), thisMacContext(), false)},
+		{"apps.empty", pageapps.List(nil, thisMacContext(), false)},
+		{"apps.error", pageapps.List(reports(lateMac(), false), thisMacContext(), false)},
+		{"apps.full", pageapps.List(reports(thisMac(), false), thisMacContext(), false)},
 	}
 }

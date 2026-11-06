@@ -14,8 +14,8 @@ import (
 
 type SSHDeps struct {
 	// value: the machines known here, for completion.
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 type SSHInput struct{ Name string }
@@ -39,7 +39,7 @@ func SSHCommand(d SSHDeps, env kit.Env) *cobra.Command {
 				return err
 			}
 			if io.JSON || io.PageJSON {
-				return io.Page(pagemachines.SSH(in.Name, target, d.Here), pagemachines.SSHContract(in.Name, target))
+				return io.Page(pagemachines.SSH(in.Name, target, d.ThisMachine), pagemachines.SSHContract(in.Name, target))
 			}
 			return io.Raw([]byte(target.Command + "\n"))
 		},

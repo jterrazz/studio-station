@@ -39,6 +39,8 @@ func New(files Files, dir string) *Store { return &Store{files: files, dir: dir}
 
 func (s *Store) recordFile(name string) string { return path.Join(s.dir, name+".json") }
 
+// value: alias of the v2 `lent` key, kept in a VM record until Accounts
+// moves its shares; the record is otherwise v3's.
 type file struct {
 	Name        string            `json:"name"`
 	Image       string            `json:"image"`

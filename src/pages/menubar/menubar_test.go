@@ -13,14 +13,14 @@ import (
 // says a server running there is skipped and keeps the engine running; a
 // server on another Mac is not its business.
 func TestStopEverythingOnThisMacSaysItsServerIsSkipped(t *testing.T) {
-	fleet := &machines.Fleet{Hosts: []machines.HostView{
-		{Name: "jterrazz-macbook-pro", Here: true, VMs: []machines.VM{
+	fleet := &machines.Fleet{Macs: []machines.HostView{
+		{Name: "jterrazz-macbook-pro", ThisMac: true, VMs: []machines.VM{
 			{Name: "infra", Lifetime: machines.AlwaysOn, State: machines.Running},
 			{Name: "linux-1", Lifetime: machines.Throwaway, State: machines.Running},
 		}},
 		{Name: "jterrazz-mac-mini", VMs: []machines.VM{{Name: "db", Lifetime: machines.AlwaysOn, State: machines.Running}}},
 	}}
-	confirm := stopAll(Reading{Fleet: fleet}).Confirm
+	confirm := stopAll(Reading{All: fleet}).Confirm
 	if confirm.Question != "Stop everything on This Mac?" {
 		t.Fatalf("question %q", confirm.Question)
 	}
@@ -57,13 +57,13 @@ func TestUpdateAllLeavesNeedsYouAndTheBadgeDropsByOne(t *testing.T) {
 // invariant: MA-14: Home draws each Mac's servers, then its workspaces,
 // whatever order its engine lists them in.
 func TestHomeDrawsAMacsServersThenItsWorkspaces(t *testing.T) {
-	fleet := &machines.Fleet{Hosts: []machines.HostView{
-		{Name: "jterrazz-mac-mini", Here: true, Reachable: true, VMs: []machines.VM{
+	fleet := &machines.Fleet{Macs: []machines.HostView{
+		{Name: "jterrazz-mac-mini", ThisMac: true, Reachable: true, VMs: []machines.VM{
 			{Name: "build", Lifetime: machines.Throwaway, State: machines.Running},
 			{Name: "infra", Lifetime: machines.AlwaysOn, State: machines.Running},
 		}},
 	}}
-	p := Page(Reading{Fleet: fleet}, page.Context{})
+	p := Page(Reading{All: fleet}, page.Context{})
 	var drawn []string
 	for _, s := range p.Sections {
 		if s.ID != SectionMachines {

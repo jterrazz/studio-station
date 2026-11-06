@@ -31,7 +31,7 @@ func New(files Files, home string) *Applier { return &Applier{files: files, home
 
 func (*Applier) Kind() catalog.EffectKind { return catalog.EffectGitAliases }
 
-func of(it catalog.ConfigItem) (catalog.GitAliases, error) {
+func of(it catalog.Setting) (catalog.GitAliases, error) {
 	g, ok := it.Effect.(catalog.GitAliases)
 	if !ok || len(g.Aliases) == 0 {
 		return catalog.GitAliases{}, errors.New(it.Name + " is not git aliases station writes")
@@ -42,11 +42,11 @@ func of(it catalog.ConfigItem) (catalog.GitAliases, error) {
 // invariant: station's aliases live in one block between its two marker
 // lines, so the owner's own [alias] entries elsewhere in the file are never
 // read, changed nor removed.
-func markers(it catalog.ConfigItem) (start, end string) {
+func markers(it catalog.Setting) (start, end string) {
 	return "# >>> station " + it.Name + " >>>", "# <<< station " + it.Name + " <<<"
 }
 
-func block(it catalog.ConfigItem, g catalog.GitAliases) string {
+func block(it catalog.Setting, g catalog.GitAliases) string {
 	start, end := markers(it)
 	var b strings.Builder
 	b.WriteString(start + "\n[alias]\n")
@@ -65,7 +65,7 @@ func quoted(v string) string {
 
 // value: the file split around station's block: what comes before it, the
 // block itself, and what follows; found is false when no block is there.
-func split(text string, it catalog.ConfigItem) (before, inside, after string, found bool) {
+func split(text string, it catalog.Setting) (before, inside, after string, found bool) {
 	start, end := markers(it)
 	i := strings.Index(text, start+"\n")
 	if i < 0 {
@@ -90,7 +90,7 @@ func (a *Applier) read(g catalog.GitAliases) (string, error) {
 	return string(data), err
 }
 
-func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+func (a *Applier) Observe(_ context.Context, it catalog.Setting) (settings.Observation, error) {
 	g, err := of(it)
 	if err != nil {
 		return settings.Observation{}, err
@@ -117,7 +117,7 @@ func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Ob
 	return o, nil
 }
 
-func (a *Applier) Apply(_ context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
+func (a *Applier) Apply(_ context.Context, it catalog.Setting, _ map[string]string) (settings.Change, error) {
 	g, err := of(it)
 	if err != nil {
 		return settings.Change{}, err
@@ -140,7 +140,7 @@ func (a *Applier) Apply(_ context.Context, it catalog.ConfigItem, _ map[string]s
 	return settings.Change{Steps: []settings.ChangeStep{{Label: g.File + " [alias]", State: catalog.StateOK, Detail: "written"}}}, nil
 }
 
-func (a *Applier) Undo(_ context.Context, it catalog.ConfigItem) (settings.Change, error) {
+func (a *Applier) Undo(_ context.Context, it catalog.Setting) (settings.Change, error) {
 	// invariant: Undo removes the block only while it is still exactly
 	// station's: off never destroys a change of the owner's.
 	g, err := of(it)

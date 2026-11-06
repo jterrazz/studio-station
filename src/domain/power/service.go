@@ -66,7 +66,7 @@ func (e *DaemonDownError) Error() string {
 func NewService(h system.Host, p Ports, o ServiceOptions) *Service { return &Service{h: h, p: p, o: o} }
 
 func (s *Service) Check() error {
-	if s.o.Here != catalog.Host {
+	if s.o.Here != catalog.Mac {
 		return &OffHostError{}
 	}
 	if s.o.Power == nil {
@@ -97,7 +97,7 @@ func (s *Service) Read(ctx context.Context) <-chan Report {
 	go func() {
 		defer close(out)
 		r, _ := s.o.Power.Read()
-		first := Report{Now: s.h.Clock.Now(), Zone: s.o.Zone, Daemon: DaemonPending, Reading: r, Guards: Guards(r, nil)}
+		first := Report{Now: s.h.Clock.Now(), Zone: s.o.Zone, Engine: DaemonPending, Reading: r, Guards: Guards(r, nil)}
 		out <- first
 		v, err := s.p.View(ctx)
 		if ctx.Err() != nil {
@@ -106,9 +106,9 @@ func (s *Service) Read(ctx context.Context) <-chan Report {
 		last := first
 		last.Now = s.h.Clock.Now()
 		if err != nil {
-			last.Daemon = s.daemonState()
+			last.Engine = s.daemonState()
 		} else {
-			last.Daemon, last.Session, last.LastEnd = DaemonRunning, v.Session, v.LastEnd
+			last.Engine, last.Session, last.LastEnd = DaemonRunning, v.Session, v.LastEnd
 			last.NeverSleeps, last.NeverSince, last.NeverHeld = v.NeverSleeps, v.NeverSince, v.NeverHeld
 			last.Guards = Guards(r, v.Session)
 		}

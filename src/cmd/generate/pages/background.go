@@ -25,8 +25,8 @@ func backgroundJobs() []background.Job {
 func backgroundPages() []Fixture {
 	tasks := background.Judge(backgroundJobs(), "", "/Users/jterrazz")
 	return states("background",
-		pending(pagebackground.List(tasks, here(), false)),
-		pagebackground.List(nil, here(), false),
+		pending(pagebackground.List(tasks, thisMacContext(), false)),
+		pagebackground.List(nil, thisMacContext(), false),
 		failure("background", "background", "the job manager did not answer", "station background"),
-		pagebackground.List(tasks, here(), true))
+		pagebackground.List(tasks, thisMacContext(), true))
 }

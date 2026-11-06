@@ -35,7 +35,7 @@ const (
 var machineName = regexp.MustCompile(`^[a-z0-9-]{1,40}$`)
 
 type Registrar interface {
-	Here() (string, bool)
+	ThisMac() (string, bool)
 	Register(name string) error
 }
 
@@ -52,7 +52,7 @@ type Options struct {
 	PreferencesFile, State, Bin string
 	Executable                  string
 	Detached                    bool
-	Tools                       []catalog.Tool
+	Tools                       []catalog.App
 	Expand                      storage.Expander
 	Files                       map[catalog.AppFile]string
 	Configurer                  Configurer
@@ -106,7 +106,7 @@ type (
 
 func ValidName(name string) bool { return machineName.MatchString(name) }
 
-func (s *Service) onMac() bool { return s.o.Kind == catalog.Host }
+func (s *Service) onMac() bool { return s.o.Kind == catalog.Mac }
 
 func (s *Service) CheckName(name string) error {
 	if name == "" {
@@ -127,7 +127,7 @@ func (s *Service) CheckName(name string) error {
 // invariant: a Mac whose settings.json is not written yet but whose v1
 // config.json names it is already registered: the layout step will say so.
 func (s *Service) currentHere() string {
-	if here, ok := s.reg.Here(); ok {
+	if here, ok := s.reg.ThisMac(); ok {
 		return here
 	}
 	if _, err := s.h.FS.Stat(s.settingsPath()); err == nil {
@@ -237,7 +237,7 @@ func isStepFailure(err error) bool {
 }
 
 func (s *Service) name(r Request, blocked bool) (Step, error) {
-	if here, ok := s.reg.Here(); ok {
+	if here, ok := s.reg.ThisMac(); ok {
 		return Step{Name: stepName, State: catalog.StateOK, Detail: here}, nil
 	}
 	if blocked {
@@ -290,7 +290,7 @@ func (s *Service) zshrc() (Step, error) {
 func (s *Service) Check(_ context.Context) (Report, error) {
 	var steps []Step
 	if s.onMac() {
-		if here, ok := s.reg.Here(); ok {
+		if here, ok := s.reg.ThisMac(); ok {
 			steps = append(steps, Step{Name: stepName, State: catalog.StateOK, Detail: here})
 		} else {
 			steps = append(steps, Step{Name: stepName, State: catalog.StateAbsent, Detail: "station setup --name <name>"})

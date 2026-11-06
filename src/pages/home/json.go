@@ -18,21 +18,23 @@ import (
 const schema = "station.status/v1"
 
 type SnapshotJSON struct {
-	Schema      string                  `json:"schema"`
-	GeneratedAt string                  `json:"generated_at"`
-	Station     stationJSON             `json:"station"`
-	Machine     machineJSON             `json:"machine"`
-	System      systemJSON              `json:"system"`
-	Environment environmentJSON         `json:"environment"`
-	Workspace   workspaceJSON           `json:"workspace"`
-	Apps        []pageapps.ToolJSON     `json:"tools"`
-	Config      []pagesettings.ItemJSON `json:"config"`
-	Setup       setupJSON               `json:"setup"`
-	Identity    []checkJSON             `json:"identity"`
-	Background  []jobJSON               `json:"background"`
-	Gateways    []checkJSON             `json:"gateways"`
-	Tailnet     pageports.TailnetJSON   `json:"tailnet"`
-	Power       *powerJSON              `json:"power,omitempty"`
+	// value: alias of station.status/v1, the OS connector's, kept byte for
+	// byte one release.
+	Schema      string                   `json:"schema"`
+	GeneratedAt string                   `json:"generated_at"`
+	Station     stationJSON              `json:"station"`
+	Machine     machineJSON              `json:"machine"`
+	System      systemJSON               `json:"system"`
+	Environment environmentJSON          `json:"environment"`
+	Workspace   workspaceJSON            `json:"workspace"`
+	Apps        []pageapps.AppStatusJSON `json:"tools"`
+	Settings    []pagesettings.ItemJSON  `json:"config"`
+	Setup       setupJSON                `json:"setup"`
+	Identity    []checkJSON              `json:"identity"`
+	Background  []jobJSON                `json:"background"`
+	Gateways    []checkJSON              `json:"gateways"`
+	Tailnet     pageports.TailnetJSON    `json:"tailnet"`
+	Power       *powerJSON               `json:"power,omitempty"`
 }
 
 type powerJSON struct {
@@ -64,6 +66,7 @@ func jobs(in []background.Task) []jobJSON {
 	return out
 }
 
+// value: alias of station.status/v1's station block, byte for byte.
 type stationJSON struct {
 	Version string     `json:"version"`
 	Commit  string     `json:"commit"`
@@ -151,6 +154,7 @@ type diskJSON struct {
 	Bytes int64  `json:"bytes"`
 }
 
+// value: alias of station.status/v1's workspace block, byte for byte.
 type workspaceJSON struct {
 	// invariant: v1 keeps every key it ever had; the workspace is no longer
 	// scanned, so repositories, dependencies and docker read as nothing seen.
@@ -177,9 +181,9 @@ func SnapshotContract(s Overview) SnapshotJSON {
 	body := SnapshotJSON{
 		Schema:      schema,
 		GeneratedAt: s.GeneratedAt.UTC().Format(time.RFC3339),
-		Station:     stationJSON{Version: s.Station.Version, Commit: s.Station.Commit, Engine: engineOf(s.Station.Daemon)},
+		Station:     stationJSON{Version: s.Station.Version, Commit: s.Station.Commit, Engine: engineOf(s.Station.Engine)},
 		Machine: machineJSON{
-			Kind: string(s.Machine.Kind), Hostname: s.Machine.Hostname, OS: s.Machine.OS,
+			Kind: catalog.StatusV1Kind(s.Machine.Kind), Hostname: s.Machine.Hostname, OS: s.Machine.OS,
 			Arch: s.Machine.Arch, User: s.Machine.User, Shell: s.Machine.Shell,
 		},
 		System: systemJSON{
@@ -198,10 +202,10 @@ func SnapshotContract(s Overview) SnapshotJSON {
 			Dependencies: []dependencyJSON{},
 			Docker:       dockerJSON{State: string(catalog.StateUnknown)},
 			Disk:         make([]diskJSON, 0, len(s.Workspace.Disk)),
-			Misplaced:    pagedisk.MisplacedContract(s.Workspace.Strays),
+			Misplaced:    pagedisk.MisplacedContract(s.Workspace.Misplaced),
 		},
-		Apps:       make([]pageapps.ToolJSON, 0, len(s.Tools)),
-		Config:     make([]pagesettings.ItemJSON, 0, len(s.Config)),
+		Apps:       make([]pageapps.AppStatusJSON, 0, len(s.Apps)),
+		Settings:   make([]pagesettings.ItemJSON, 0, len(s.Settings)),
 		Setup:      setupJSON{State: string(s.Setup.State), Steps: make([]stepJSON, 0, len(s.Setup.Steps))},
 		Identity:   checks(s.Identity),
 		Background: jobs(s.Background),
@@ -218,11 +222,11 @@ func SnapshotContract(s Overview) SnapshotJSON {
 	for _, d := range s.Workspace.Disk {
 		body.Workspace.Disk = append(body.Workspace.Disk, diskJSON{Name: d.Name, Level: string(d.Level), Bytes: d.Bytes})
 	}
-	for _, t := range s.Tools {
+	for _, t := range s.Apps {
 		body.Apps = append(body.Apps, pageapps.AppObject(t))
 	}
-	for _, c := range s.Config {
-		body.Config = append(body.Config, pagesettings.ItemObject(c))
+	for _, c := range s.Settings {
+		body.Settings = append(body.Settings, pagesettings.ItemObject(c))
 	}
 	for _, step := range s.Setup.Steps {
 		body.Setup.Steps = append(body.Setup.Steps, stepJSON{Name: step.Name, State: string(step.State), Detail: step.Detail})

@@ -36,18 +36,18 @@ var Matrix = call.Call[Deps, MatrixIn, settings.Matrix]{
 		// invariant: every place read at once; a stopped workspace shows its
 		// last read, a machine that does not answer is its own column, and
 		// the others are filled.
-		allMachines, err := d.Fleet.Machines(ctx)
+		allMachines, err := d.All.Machines(ctx)
 		if err != nil {
 			return settings.Matrix{}, err
 		}
-		livesOn, servers := settings.Places(allMachines)
+		livesOn, servers := settings.LivesOnAll(allMachines)
 		var asked []machine.Ref
 		for _, p := range livesOn {
 			if p.Away == settings.Present {
 				asked = append(asked, p.Ref)
 			}
 		}
-		answers := d.Fleet.Read(ctx, asked)
+		answers := d.All.Read(ctx, asked)
 		if err := ctx.Err(); err != nil {
 			return settings.Matrix{}, err
 		}
@@ -64,10 +64,10 @@ var Matrix = call.Call[Deps, MatrixIn, settings.Matrix]{
 				}
 				col.Rows, col.Read = a.Rows, now
 				if !p.Mac {
-					d.Fleet.Keep(ctx, p.Name, settings.LastRead{At: now, Rows: a.Rows})
+					d.All.Keep(ctx, p.Name, settings.LastRead{At: now, Rows: a.Rows})
 				}
 			case settings.Stopped:
-				if last, ok := d.Fleet.Last(ctx, p.Name); ok {
+				if last, ok := d.All.Last(ctx, p.Name); ok {
 					col.Rows, col.Read = last.Rows, last.At
 				}
 			case settings.Silent:

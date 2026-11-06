@@ -1,4 +1,4 @@
-description: 'a server-first port is shared raw by serve --tcp, scheme-less, and unshared with it'
+description: 'a port whose server speaks first is shared raw by serve --tcp, scheme-less, and unshared with it'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/engine-vm/

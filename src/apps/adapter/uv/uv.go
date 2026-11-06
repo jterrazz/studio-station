@@ -48,7 +48,7 @@ func (u *Uv) Inventory(ctx context.Context) (map[string]string, error) {
 		return nil, err
 	}
 	if out.ExitCode != 0 {
-		return nil, errors.New("uv tool list exited " + strconv.Itoa(out.ExitCode))
+		return nil, errors.New("`uv tool list` exited " + strconv.Itoa(out.ExitCode))
 	}
 	list := map[string]string{}
 	for _, line := range strings.Split(out.Stdout, "\n") {
@@ -81,7 +81,7 @@ func (u *Uv) Remove(ctx context.Context, installs []catalog.Install, _ call.Prog
 	for _, i := range installs {
 		v, ok := i.(catalog.UvInstall)
 		if !ok {
-			return errors.New(i.Key() + " is not a uv tool")
+			return errors.New(i.Key() + " is not installed by uv")
 		}
 		if err := local.Attach(ctx, u.run, local.Command(command, "tool", "uninstall", v.Key())); err != nil {
 			return err

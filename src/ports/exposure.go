@@ -182,10 +182,10 @@ func Told(f finding.Finding) string {
 func OwnDevices(f AllMachines, peers []Node) AllMachines {
 	// invariant: a VM is its own tailnet device when a peer bears its name,
 	// as this node or the node of the Mac that answered for it sees it.
-	for i, h := range f.Hosts {
+	for i, h := range f.Macs {
 		for j, p := range h.Ports {
 			if p.Machine.On != "" && slices.ContainsFunc(peers, func(n Node) bool { return n.Name == p.Machine.Name }) {
-				f.Hosts[i].Ports[j].Device = true
+				f.Macs[i].Ports[j].Device = true
 			}
 		}
 	}

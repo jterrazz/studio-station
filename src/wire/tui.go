@@ -29,7 +29,7 @@ func tuiOpener(env kit.Env, m machine, noColor bool) func(context.Context) error
 		if env.On != nil {
 			opens = env.On.Used
 		}
-		return tui.Run(ctx, tui.Deps{Here: m.where, Opens: opens, Calls: m.registry(env).Metas(), Pages: b.pages, Do: b.do, Run: b.call, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close, Watch: tuiWatch(ctx, m)})
+		return tui.Run(ctx, tui.Deps{ThisMachine: m.where, Opens: opens, Calls: m.registry(env).Metas(), Pages: b.pages, Do: b.do, Run: b.call, Open: b.open, Terminal: b.terminal, NoColor: noColor, Stop: m.pool.Close, Watch: tuiWatch(ctx, m)})
 	}
 }
 
@@ -117,7 +117,7 @@ func (b *binary) run(ctx context.Context, args []string) (system.Output, error) 
 }
 
 func (b *binary) runIn(ctx context.Context, args []string, stdin string) (system.Output, error) {
-	return b.m.host.Run.Output(ctx, system.Cmd{Name: b.m.host.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}, Stdin: stdin})
+	return b.m.sys.Run.Output(ctx, system.Cmd{Name: b.m.sys.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}, Stdin: stdin})
 }
 
 func (b *binary) open(ctx context.Context, target string) error {
@@ -132,7 +132,7 @@ func (b *binary) terminal(ctx context.Context, line string) error {
 }
 
 func (b *binary) exec(ctx context.Context, c system.Cmd) error {
-	out, err := b.m.host.Run.Output(ctx, c)
+	out, err := b.m.sys.Run.Output(ctx, c)
 	if err != nil {
 		return err
 	}

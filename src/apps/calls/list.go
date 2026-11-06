@@ -25,7 +25,7 @@ type ShowOut struct {
 	Report apps.Report
 	// value: the app lives on this machine; one that does not is shown with
 	// where it lives instead.
-	Here bool
+	ThisMachine bool
 }
 
 var Show = call.Call[Deps, ShowIn, ShowOut]{
@@ -33,13 +33,13 @@ var Show = call.Call[Deps, ShowIn, ShowOut]{
 	Errors: []fail.Code{Unknown},
 	Run: func(ctx context.Context, d Deps, in ShowIn, _ call.Progress) (ShowOut, error) {
 		for _, r := range read(ctx, d) {
-			if r.Tool.Name == in.Name {
-				return ShowOut{Report: r, Here: true}, nil
+			if r.App.Name == in.Name {
+				return ShowOut{Report: r, ThisMachine: true}, nil
 			}
 		}
 		for _, t := range catalog.Apps {
 			if t.Name == in.Name {
-				return ShowOut{Report: apps.Report{Tool: t, State: catalog.StateAbsent}}, nil
+				return ShowOut{Report: apps.Report{App: t, State: catalog.StateAbsent}}, nil
 			}
 		}
 		if err := ctx.Err(); err != nil {
@@ -62,7 +62,7 @@ func installed(ctx context.Context, d Deps, names []string) error {
 	// runs, before any question is asked.
 	for _, r := range read(ctx, d) {
 		for _, name := range names {
-			if r.Tool.Name == name && !apps.StateOf(r).Installed() {
+			if r.App.Name == name && !apps.StateOf(r).Installed() {
 				return coded(&apps.NotInstalledError{App: name})
 			}
 		}

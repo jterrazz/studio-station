@@ -27,11 +27,11 @@ var (
 func SharesOf(w *world.World, mac string) *Shares { return &Shares{w: w, mac: mac} }
 
 func NewShares(vms ...string) *Shares {
-	w := &world.World{ThisMac: "here"}
+	w := &world.World{ThisMac: "this-mac"}
 	for _, vm := range vms {
-		w.Mac("here").VMs[vm] = &world.VM{Kept: &world.Kept{}}
+		w.Mac("this-mac").VMs[vm] = &world.VM{Kept: &world.Kept{}}
 	}
-	return SharesOf(w, "here")
+	return SharesOf(w, "this-mac")
 }
 
 func (s *Shares) kept() map[string][]accounts.Share {

@@ -333,7 +333,7 @@ type Reason string
 
 const (
 	Outdated    Reason = "outdated"
-	Misplaced   Reason = "stray"
+	Misplaced   Reason = "misplaced"
 	Unreachable Reason = "unreachable"
 	Mismatch    Reason = "mismatch"
 	Unmanaged   Reason = "unmanaged"

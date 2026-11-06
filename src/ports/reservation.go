@@ -8,7 +8,7 @@ import (
 type Reservation struct {
 	VM         string    `json:"vm"`
 	GuestPort  int       `json:"guest_port"`
-	HostPort   int       `json:"host_port"`
+	MacPort    int       `json:"host_port"`
 	Profile    string    `json:"profile,omitempty"`
 	Pinned     bool      `json:"pinned"`
 	HTTP       *bool     `json:"http,omitempty"`

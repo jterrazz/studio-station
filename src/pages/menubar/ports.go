@@ -42,8 +42,8 @@ func portsPage(id page.ID, l ports.Listing, of PortsOf, thisMac page.Context, of
 	}
 	p.Actions = append(p.Actions, reviews(p, l, of)...)
 	p.Actions = append(p.Actions, offer)
-	for _, h := range l.AllMachines.Hosts {
-		for _, s := range h.Services {
+	for _, h := range l.AllMachines.Macs {
+		for _, s := range h.Shared {
 			p.Actions = append(p.Actions, stopSharing(s, h.Name))
 		}
 	}
@@ -64,7 +64,7 @@ func reviews(p page.Page, l ports.Listing, of PortsOf) []page.Action {
 	}
 	var out []page.Action
 	var hosts []string
-	for _, h := range l.AllMachines.Hosts {
+	for _, h := range l.AllMachines.Macs {
 		var rows []string
 		for _, port := range h.Ports {
 			if red[port.Key()] {
@@ -115,7 +115,7 @@ func routes() []page.Option {
 func declarePublic(l ports.Listing) page.Action {
 	var opts []page.Option
 	for _, red := range []bool{true, false} {
-		for _, h := range l.AllMachines.Hosts {
+		for _, h := range l.AllMachines.Macs {
 			for _, p := range h.Ports {
 				if p.Declared != nil || p.Red() != red || p.Reach == ports.ThisMachine {
 					continue
@@ -134,19 +134,19 @@ func declarePublic(l ports.Listing) page.Action {
 	return page.Action{ID: ActionDeclarePublic, Label: "Declare public", On: page.OnPage, Priority: 2, Mutates: true, Form: form, Run: &page.Run{Call: CallDeclare}}
 }
 
-func stopSharing(s ports.ServiceView, host string) page.Action {
+func stopSharing(s ports.SharedPort, mac string) page.Action {
 	id := pageports.Row(s).ID
 	port := strconv.Itoa(s.GuestPort)
 	confirm := &page.Confirm{Question: "Stop sharing " + s.VM + "'s port " + port + "?",
 		Lines: []page.Value{page.Text(released(s))},
 		Yes:   "Stop sharing", No: "Cancel", Danger: true}
 	return page.Action{ID: ActionStopSharing + id, Label: "Stop sharing", On: page.OnRow, Rows: []string{id}, Priority: 3, Mutates: true, Confirm: confirm,
-		Run: &page.Run{Call: CallStopSharing, In: map[string]string{"VM": strconv.Quote(s.VM), "Port": strconv.Quote(port), "Host": strconv.Quote(host), "Confirm": "yes"}}}
+		Run: &page.Run{Call: CallStopSharing, In: map[string]string{"VM": strconv.Quote(s.VM), "Port": strconv.Quote(port), "Mac": strconv.Quote(mac), "Confirm": "yes"}}}
 }
 
-func released(s ports.ServiceView) string {
-	if s.HostPort == 0 {
+func released(s ports.SharedPort) string {
+	if s.Reserved == 0 {
 		return "Its link stops working on " + catalog.TailnetProduct + "."
 	}
-	return "Its link stops working on " + catalog.TailnetProduct + ", and reserved port " + strconv.Itoa(s.HostPort) + " is let go."
+	return "Its link stops working on " + catalog.TailnetProduct + ", and reserved port " + strconv.Itoa(s.Reserved) + " is let go."
 }

@@ -21,7 +21,7 @@ type farMac struct {
 // terminal: what it asks, it asks of the call's input, as over ssh.
 func (m machine) farMac(env kit.Env, w *worldMac) farMac {
 	there := resolve(m.raw, m.door, m.vars, w)
-	fenv := kit.Env{Out: env.Out, On: &kit.On{Here: there.thisMac()}, Self: there.profile.Ref}
+	fenv := kit.Env{Out: env.Out, On: &kit.On{ThisMachine: there.thisMac()}, Self: there.profile.Ref}
 	r := there.router(fenv)
 	fenv.Calls = r
 	return farMac{registry: there.registry(fenv), profile: there.profile, start: func() *engine.Engine { return there.engine(fenv) }, relay: served{r}}

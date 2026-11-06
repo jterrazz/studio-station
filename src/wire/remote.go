@@ -36,7 +36,7 @@ type late struct{ router *remote.Router }
 
 func (m machine) router(env kit.Env) *remote.Router {
 	var macs contract.EndpointDialer
-	if spawn, ok := m.host.Run.(local.Spawner); ok {
+	if spawn, ok := m.sys.Run.(local.Spawner); ok {
 		macs = sshstdio.New(spawn)
 	}
 	if m.world != nil {
@@ -44,7 +44,7 @@ func (m machine) router(env kit.Env) *remote.Router {
 	}
 	r := remote.NewRouter(m.registry(env), m.profile, remote.Reach{
 		Macs:    macs,
-		Engine:  unix.New(guestRelay{m.hostEngine()}, func() contract.Hello { return m.far.router.Served() }),
+		Engine:  unix.New(guestRelay{m.macEngine()}, func() contract.Hello { return m.far.router.Served() }),
 		Locate:  m.locate,
 		Holder:  m.holder,
 		Version: Version(),
@@ -55,7 +55,7 @@ func (m machine) router(env kit.Env) *remote.Router {
 }
 
 func (m machine) label(mac string) string {
-	if short, ok := strings.CutPrefix(mac, m.host.Env.User()+"-"); ok && short != "" {
+	if short, ok := strings.CutPrefix(mac, m.sys.Env.User()+"-"); ok && short != "" {
 		return short
 	}
 	return mac
@@ -68,7 +68,7 @@ func (m machine) locate(name string) (coremachine.Ref, bool) {
 	switch {
 	case err != nil:
 		return coremachine.Ref{Name: name}, false
-	case found.Kind != catalog.Host:
+	case found.Kind != catalog.Mac:
 		return coremachine.Ref{Name: found.Name, On: m.profile.Ref.Name}, true
 	}
 	return coremachine.Ref{Name: found.Name}, true
@@ -82,12 +82,12 @@ func (m machine) holder(ctx context.Context, vm string) (string, error) {
 	r := m.far.router
 	others := m.machines(false).OtherHosts()
 	got := each.All(ctx, others, func(ctx context.Context, mac string) (bool, error) {
-		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
+		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{ThisMac: true}, nil)
 		if err != nil {
 			return false, err
 		}
-		for _, host := range out.Fleet.Hosts {
-			if slices.ContainsFunc(host.VMs, func(v machines.VM) bool { return v.Name == vm }) {
+		for _, mac := range out.All.Macs {
+			if slices.ContainsFunc(mac.VMs, func(v machines.VM) bool { return v.Name == vm }) {
 				return true, nil
 			}
 		}
@@ -111,7 +111,7 @@ func (m machine) holder(ctx context.Context, vm string) (string, error) {
 	return "", &machines.UnknownMachineError{Name: vm}
 }
 
-type guestRelay struct{ d hostEngine }
+type guestRelay struct{ d macEngine }
 
 func (g guestRelay) GuestExec(ctx context.Context, vm, line, stdin string) (stdout string, code int, err error) {
 	out, err := g.d.GuestExec(ctx, vm, line, stdin)
@@ -125,11 +125,11 @@ func (m machine) askAllMachines(ctx context.Context, macs []string, answered fun
 		if err != nil {
 			return machines.HostView{}, err
 		}
-		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
-		if err != nil || len(out.Fleet.Hosts) == 0 {
+		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{ThisMac: true}, nil)
+		if err != nil || len(out.All.Macs) == 0 {
 			return machines.HostView{}, orNone(err)
 		}
-		view := out.Fleet.Hosts[0]
+		view := out.All.Macs[0]
 		view.StationVersion = hello.Version
 		return view, nil
 	}) {
@@ -139,29 +139,29 @@ func (m machine) askAllMachines(ctx context.Context, macs []string, answered fun
 	}
 }
 
-func (m machine) askServices(ctx context.Context, hosts []string) map[string]services.HostView {
+func (m machine) askPorts(ctx context.Context, macs []string) map[string]services.HostView {
 	r := m.far.router
 	answers := map[string]services.HostView{}
-	for host, got := range each.All(ctx, hosts, func(ctx context.Context, host string) (services.HostView, error) {
-		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: host}, portscalls.List, portscalls.ListIn{}, nil)
-		if err != nil || len(out.AllMachines.Hosts) == 0 {
+	for mac, got := range each.All(ctx, macs, func(ctx context.Context, mac string) (services.HostView, error) {
+		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: mac}, portscalls.List, portscalls.ListIn{}, nil)
+		if err != nil || len(out.AllMachines.Macs) == 0 {
 			return services.HostView{}, orNone(err)
 		}
-		return out.AllMachines.Hosts[0], nil
+		return out.AllMachines.Macs[0], nil
 	}) {
 		if got.Err == nil {
-			answers[host] = got.Value
+			answers[mac] = got.Value
 		}
 	}
 	return answers
 }
 
-func (m machine) releaseOn(ctx context.Context, host string, t services.Target, yes bool) (services.Lease, error) {
+func (m machine) releaseOn(ctx context.Context, mac string, t services.Target, yes bool) (services.Lease, error) {
 	in := portscalls.StopSharingIn{VM: t.VM, Port: strconv.Itoa(t.Port)}
 	if yes {
 		in.Confirm = confirm.Yes
 	}
-	out, err := call.Invoke(ctx, m.far.router, coremachine.Ref{Name: host}, portscalls.StopSharing, in, nil)
+	out, err := call.Invoke(ctx, m.far.router, coremachine.Ref{Name: mac}, portscalls.StopSharing, in, nil)
 	return out.Reservation, err
 }
 

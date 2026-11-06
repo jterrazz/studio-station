@@ -157,7 +157,7 @@ func standing(c settings.Column, now time.Time) (page.Mark, page.Reason, []strin
 }
 
 func heading(p settings.LivesOn, label func(string) string) string {
-	if p.Here {
+	if p.ThisMachine {
 		return "This Mac"
 	}
 	return label(p.Name)
@@ -186,7 +186,7 @@ func lookSection(m settings.Matrix, now time.Time, label func(string) string) pa
 			case one.Hint != nil:
 				hint := *one.Hint
 				hint.Key = ""
-				if !hint.External && !c.Here {
+				if !hint.External && !c.ThisMachine {
 					hint.Command += " --on " + c.Name
 				}
 				row.Hint = &hint
@@ -366,7 +366,7 @@ type MatrixRowJSON struct {
 }
 
 func contractKind(kind string) string {
-	if kind == string(catalog.Host) {
+	if kind == string(catalog.Mac) {
 		return "mac"
 	}
 	return "workspace"

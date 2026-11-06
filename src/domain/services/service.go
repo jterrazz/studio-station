@@ -19,9 +19,9 @@ import (
 var ErrDaemonDown = errors.New("the engine is not running")
 
 type (
-	View       = ports.ServiceView
+	View       = ports.SharedPort
 	DaemonInfo = ports.EngineInfo
-	HostView   = ports.HostServices
+	HostView   = ports.MacPorts
 	Range      = ports.Range
 	Fleet      = ports.AllMachines
 	Target     = ports.Target
@@ -70,7 +70,7 @@ func New(h system.Host, st Stores, d Daemon, o Options) *Service {
 	return &Service{h: h, st: st, d: d, o: o}
 }
 
-func (s *Service) inVM() bool { return s.o.Here != catalog.Host }
+func (s *Service) inVM() bool { return s.o.Here != catalog.Mac }
 
 func (s *Service) policy() ports.Policy {
 	g, err := s.st.Services.Get()
@@ -108,7 +108,7 @@ func (e Exposure) Word() string {
 
 func ViewOf(l Lease, e Exposure, httpsMode string, phase Phase) View {
 	v := View{
-		VM: l.VM, GuestPort: l.GuestPort, HostPort: l.HostPort, State: phase, Pinned: l.Pinned, Profile: l.Profile,
+		VM: l.VM, GuestPort: l.GuestPort, Reserved: l.MacPort, State: phase, Pinned: l.Pinned, Profile: l.Profile,
 		HTTP: l.HTTP != nil && *l.HTTP, URLs: URLs(l, e.PublicHost, httpsMode, e.On),
 	}
 	if !l.LastSeenAt.IsZero() {
@@ -136,10 +136,10 @@ func (s *Service) offline(ctx context.Context) HostView {
 	if s.o.Exposure != nil {
 		e = s.o.Exposure(ctx)
 	}
-	view := HostView{Name: s.o.HereName, ThisMac: true, Reachable: true, PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: s.policy().HTTPS, Services: []View{}}
+	view := HostView{Name: s.o.HereName, ThisMac: true, Reachable: true, PublicName: e.PublicHost, Serve: e.Word(), HTTPS: s.policy().HTTPS, Shared: []View{}}
 	leases, _ := s.st.Reservations.List(ctx)
 	for _, l := range leases {
-		view.Services = append(view.Services, ViewOf(l, e, view.HTTPS, Unknown))
+		view.Shared = append(view.Shared, ViewOf(l, e, view.HTTPS, Unknown))
 	}
 	return view
 }
@@ -150,13 +150,13 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 		if err != nil {
 			return HostView{}, &HostAwayError{Host: s.o.HostName}
 		}
-		mine := view.Services[:0:0]
-		for _, v := range view.Services {
+		mine := view.Shared[:0:0]
+		for _, v := range view.Shared {
 			if v.VM == s.o.VMName {
 				mine = append(mine, v)
 			}
 		}
-		view.Services = mine
+		view.Shared = mine
 		return view, nil
 	}
 	view, err := s.d.Services(ctx)
@@ -212,7 +212,7 @@ func (s *Service) rangeOf() *Range {
 	leases, _ := s.st.Reservations.List(context.Background())
 	leased := 0
 	for _, l := range leases {
-		if l.HostPort >= p.Low && l.HostPort <= p.High {
+		if l.MacPort >= p.Low && l.MacPort <= p.High {
 			leased++
 		}
 	}
@@ -224,7 +224,7 @@ func (s *Service) List(ctx context.Context, hereOnly bool) (Fleet, error) {
 	if err != nil {
 		return Fleet{}, err
 	}
-	fleet := Fleet{Schema: Schema, Hosts: []HostView{here}}
+	fleet := Fleet{Schema: Schema, Macs: []HostView{here}}
 	if hereOnly || s.inVM() {
 		return fleet, nil
 	}
@@ -251,18 +251,18 @@ func (s *Service) List(ctx context.Context, hereOnly bool) (Fleet, error) {
 	for i, name := range others {
 		views[i] = answered(name, answers)
 	}
-	fleet.Hosts = append(fleet.Hosts, views...)
+	fleet.Macs = append(fleet.Macs, views...)
 	return fleet, nil
 }
 
 func answered(name string, answers map[string]HostView) HostView {
 	view, ok := answers[name]
 	if !ok {
-		return HostView{Name: name, Services: []View{}}
+		return HostView{Name: name, Shared: []View{}}
 	}
 	view.Name, view.ThisMac, view.Reachable = name, false, true
-	if view.Services == nil {
-		view.Services = []View{}
+	if view.Shared == nil {
+		view.Shared = []View{}
 	}
 	return view
 }

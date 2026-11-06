@@ -4,14 +4,14 @@ fixture:
     - ./__fixtures__/vm-t/
     - ./__fixtures__/stale-t/
 runs:
-    - command: 'machines --here'
+    - command: 'machines --this-mac'
       exit: 0
       stdout: |
           ✗	x	Mac	x	Engine not set up
           ○	t	Workspace	x	Stopped · throwaway	4 CPU	8 GB
           # Needs you
           ✗	This Mac	has no engine set up	station setup
-    - command: 'machines --here --json | /usr/bin/jq -r ''.macs[0].vms[0] | .name + " " + .state'''
+    - command: 'machines --this-mac --json | /usr/bin/jq -r ''.macs[0].vms[0] | .name + " " + .state'''
       exit: 0
       stdout: |
           t stopped

@@ -169,8 +169,8 @@ func (s *Service) plan() plan {
 	globbed := s.globAll(placed)
 	glob := func(pattern string) []string { return globbed[s.o.Expand.Expand(pattern)] }
 	for _, e := range placed {
-		ep := entryPlan{entry: e, docker: e.Storage.Size == catalog.SizeDockerDF}
-		for _, st := range e.Storage.Paths {
+		ep := entryPlan{entry: e, docker: e.Disk.Size == catalog.SizeDockerDF}
+		for _, st := range e.Disk.Paths {
 			if !st.PlacedOn(s.o.Here) {
 				continue
 			}
@@ -186,13 +186,13 @@ func (s *Service) plan() plan {
 			ep.exists = ep.exists || len(pp.parts) > 0
 			ep.paths = append(ep.paths, pp)
 		}
-		for _, pattern := range e.Storage.Installed {
+		for _, pattern := range e.Disk.Installed {
 			for _, m := range glob(pattern) {
 				ep.install = append(ep.install, root(m))
 			}
 		}
 		ep.exists = ep.exists || len(ep.install) > 0
-		for _, st := range e.Storage.Strays {
+		for _, st := range e.Disk.Misplaced {
 			abs := s.o.Expand.Expand(st.Path)
 			if _, err := s.h.FS.Stat(abs); err != nil {
 				continue
@@ -213,7 +213,7 @@ func (s *Service) plan() plan {
 func (s *Service) globAll(placed []Entry) map[string][]string {
 	var patterns []string
 	for _, e := range placed {
-		for _, st := range e.Storage.Paths {
+		for _, st := range e.Disk.Paths {
 			if !st.PlacedOn(s.o.Here) {
 				continue
 			}
@@ -222,7 +222,7 @@ func (s *Service) globAll(placed []Entry) map[string][]string {
 				patterns = append(patterns, s.o.Expand.Expand(path.Join(st.Path, memo)))
 			}
 		}
-		for _, pattern := range e.Storage.Installed {
+		for _, pattern := range e.Disk.Installed {
 			patterns = append(patterns, s.o.Expand.Expand(pattern))
 		}
 	}
@@ -249,14 +249,14 @@ func (s *Service) globAll(placed []Entry) map[string][]string {
 }
 
 func (s *Service) assemble(p plan, r reading) Report {
-	report := Report{Rows: []Row{}, Strays: []StrayReport{}}
+	report := Report{Rows: []Row{}, Misplaced: []StrayReport{}}
 	for _, ep := range p.entries {
 		row, show := s.row(ep, r)
 		if !show {
 			continue
 		}
 		report.Rows = append(report.Rows, row)
-		report.Strays = append(report.Strays, row.Strays...)
+		report.Misplaced = append(report.Misplaced, row.Misplaced...)
 	}
 	for _, i := range p.other {
 		if b := r.sizes[i]; b > 0 {
@@ -285,7 +285,7 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 			return b
 		}
 	}
-	row := Row{Entry: e, Installed: installed, Bytes: map[catalog.Level]int64{}, Paths: []PathReport{}, Strays: []StrayReport{}}
+	row := Row{Entry: e, Installed: installed, Bytes: map[catalog.Level]int64{}, Paths: []PathReport{}, Misplaced: []StrayReport{}}
 	for _, pp := range ep.paths {
 		report := pp.report
 		for _, pt := range pp.parts {
@@ -300,7 +300,7 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 	for _, st := range ep.strays {
 		report := st.report
 		report.Bytes = value(st.root)
-		row.Strays = append(row.Strays, report)
+		row.Misplaced = append(row.Misplaced, report)
 	}
 	if ep.docker && installed {
 		switch r.docker {
@@ -313,7 +313,7 @@ func (s *Service) row(ep entryPlan, r reading) (Row, bool) {
 		}
 	}
 	switch {
-	case len(row.Strays) > 0:
+	case len(row.Misplaced) > 0:
 		row.State = catalog.StateDegraded
 	case installed:
 		row.State = catalog.StateOK
@@ -344,14 +344,14 @@ func (s *Service) walkBudget() time.Duration {
 }
 
 func (s *Service) unknown(e Entry, installed bool, within time.Duration) Row {
-	row := Row{Entry: e, Installed: installed, Unknown: true, Within: within, Bytes: map[catalog.Level]int64{}, Install: Unknown, Paths: []PathReport{}, Strays: []StrayReport{}, State: catalog.StateAbsent}
+	row := Row{Entry: e, Installed: installed, Unknown: true, Within: within, Bytes: map[catalog.Level]int64{}, Install: Unknown, Paths: []PathReport{}, Misplaced: []StrayReport{}, State: catalog.StateAbsent}
 	if installed {
 		row.State = catalog.StateOK
 	}
-	for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData, catalog.LevelConfig, catalog.LevelKept} {
+	for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData, catalog.LevelSettings, catalog.LevelKept} {
 		row.Bytes[level] = Unknown
 	}
-	for _, p := range e.Storage.Paths {
+	for _, p := range e.Disk.Paths {
 		if p.PlacedOn(s.o.Here) {
 			row.Paths = append(row.Paths, PathReport{Path: s.o.Expand.Display(s.o.Expand.Expand(p.Path)), Level: p.Level, Bytes: Unknown})
 		}

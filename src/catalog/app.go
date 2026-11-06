@@ -3,14 +3,23 @@ package catalog
 type MachineKind string
 
 const (
-	Host  MachineKind = "host"
+	Mac   MachineKind = "mac"
 	Linux MachineKind = "linux"
 	MacOS MachineKind = "macos"
 )
 
+func StatusV1Kind(k MachineKind) string {
+	// value: alias of v2's kind word for a Mac, which station.status/v1 keeps
+	// byte for byte.
+	if k == Mac {
+		return "host"
+	}
+	return string(k)
+}
+
 func (k MachineKind) Article() string {
-	if k == Host {
-		return "a host"
+	if k == Mac {
+		return "a Mac"
 	}
 	return "a " + string(k) + " VM"
 }
@@ -20,7 +29,7 @@ type LivesOn struct {
 	Install Install
 }
 
-type Probe struct {
+type VersionRead struct {
 	Args    []string
 	Pattern string
 	Path    string
@@ -31,7 +40,7 @@ type Liveness struct {
 	Command []string
 }
 
-type Tool struct {
+type App struct {
 	Name        string
 	Description string
 	Category    Category
@@ -41,11 +50,11 @@ type Tool struct {
 	Installs    []LivesOn
 	Provides    []string
 	Bundle      string
-	Version     Probe
+	Version     VersionRead
 	Requires    []string
 	Then        []string
 	Live        Liveness
-	Storage     Disk
+	Disk        Disk
 	System      bool
 }
 
@@ -54,26 +63,26 @@ type Tool struct {
 // the dispatch that runs it can never disagree.
 
 var MethodKinds = map[Method][]MachineKind{
-	MethodBrew:   {Host, MacOS},
-	MethodCask:   {Host, MacOS},
-	MethodMas:    {Host, MacOS},
-	MethodApp:    {Host, MacOS},
-	MethodNpm:    {Host, MacOS},
-	MethodUv:     {Host, MacOS},
-	MethodBun:    {Host, Linux, MacOS},
-	MethodMise:   {Host, Linux, MacOS},
-	MethodScript: {Host, Linux, MacOS},
-	MethodShell:  {Host, Linux, MacOS},
-	MethodSkill:  {Host, Linux, MacOS},
+	MethodBrew:   {Mac, MacOS},
+	MethodCask:   {Mac, MacOS},
+	MethodMas:    {Mac, MacOS},
+	MethodApp:    {Mac, MacOS},
+	MethodNpm:    {Mac, MacOS},
+	MethodUv:     {Mac, MacOS},
+	MethodBun:    {Mac, Linux, MacOS},
+	MethodMise:   {Mac, Linux, MacOS},
+	MethodScript: {Mac, Linux, MacOS},
+	MethodShell:  {Mac, Linux, MacOS},
+	MethodSkill:  {Mac, Linux, MacOS},
 }
 
 func Everywhere(mac, linux Install) []LivesOn {
-	return []LivesOn{{Kinds: []MachineKind{Host, MacOS}, Install: mac}, {Kinds: []MachineKind{Linux}, Install: linux}}
+	return []LivesOn{{Kinds: []MachineKind{Mac, MacOS}, Install: mac}, {Kinds: []MachineKind{Linux}, Install: linux}}
 }
 
-func Mac(i Install) []LivesOn { return []LivesOn{{Kinds: []MachineKind{Host, MacOS}, Install: i}} }
+func OnMacOS(i Install) []LivesOn { return []LivesOn{{Kinds: []MachineKind{Mac, MacOS}, Install: i}} }
 
-func HostOnly(i Install) []LivesOn { return []LivesOn{{Kinds: []MachineKind{Host}, Install: i}} }
+func MacOnly(i Install) []LivesOn { return []LivesOn{{Kinds: []MachineKind{Mac}, Install: i}} }
 
 func LinuxOnly(i Install) []LivesOn { return []LivesOn{{Kinds: []MachineKind{Linux}, Install: i}} }
 
@@ -81,9 +90,9 @@ func VMs(mac, linux Install) []LivesOn {
 	return []LivesOn{{Kinds: []MachineKind{MacOS}, Install: mac}, {Kinds: []MachineKind{Linux}, Install: linux}}
 }
 
-func (t Tool) LivesOn() []MachineKind {
+func (t App) LivesOn() []MachineKind {
 	var kinds []MachineKind
-	for _, k := range []MachineKind{Host, Linux, MacOS} {
+	for _, k := range []MachineKind{Mac, Linux, MacOS} {
 		if _, ok := t.InstallOn(k); ok {
 			kinds = append(kinds, k)
 		}
@@ -93,7 +102,7 @@ func (t Tool) LivesOn() []MachineKind {
 
 const AppStoreReceipt = "Contents/_MASReceipt"
 
-func (t Tool) Superseded() (Install, bool) {
+func (t App) Superseded() (Install, bool) {
 	// invariant: what a tool supersedes is a formula, named by Supersedes.
 	if t.Supersedes == "" {
 		return nil, false
@@ -101,7 +110,7 @@ func (t Tool) Superseded() (Install, bool) {
 	return Brew(t.Supersedes), true
 }
 
-func (t Tool) InstallOn(k MachineKind) (Install, bool) {
+func (t App) InstallOn(k MachineKind) (Install, bool) {
 	for _, p := range t.Installs {
 		for _, kind := range p.Kinds {
 			if kind == k {
@@ -113,5 +122,5 @@ func (t Tool) InstallOn(k MachineKind) (Install, bool) {
 }
 
 func Anywhere(i Install) []LivesOn {
-	return []LivesOn{{Kinds: []MachineKind{Host, Linux, MacOS}, Install: i}}
+	return []LivesOn{{Kinds: []MachineKind{Mac, Linux, MacOS}, Install: i}}
 }

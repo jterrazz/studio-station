@@ -3,7 +3,7 @@
   "id": "apps",
   "command": "apps",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "loading",
   "sections": [

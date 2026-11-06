@@ -27,12 +27,12 @@ var Off = call.Call[Deps, OffIn, []settings.Change]{
 		// setting still exactly as station applied it is undone; any other
 		// is left as it is, and every one is Off here after. A checked
 		// setting Off here is only no longer checked here.
-		var items []catalog.ConfigItem
+		var items []catalog.Setting
 		var checked []string
 		for _, name := range in.Names {
 			if c, ok := settings.CheckedNamed(name); ok {
-				if !d.Settings.Lives(catalog.ConfigItem{Name: c.Name, Places: c.Places}) {
-					return nil, fail.New(fail.NotForThisMachine, NotForThisMachine, name, map[string]string{"why": settings.LivesOnReason(c.Places)})
+				if !d.Settings.Lives(catalog.Setting{Name: c.Name, Kinds: c.Kinds}) {
+					return nil, fail.New(fail.NotForThisMachine, NotForThisMachine, name, map[string]string{"why": settings.LivesOnReason(c.Kinds)})
 				}
 				checked = append(checked, name)
 				continue

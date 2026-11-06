@@ -6,7 +6,7 @@ const (
 	CategoryPackageManagers Category = "Package Managers"
 	CategoryRuntimes        Category = "Runtimes"
 	CategoryShellTerminal   Category = "Shell & Terminal"
-	CategoryCLIApps         Category = "CLI Tools"
+	CategoryCLIApps         Category = "Command line"
 	CategoryGit             Category = "Git"
 	CategoryEditors         Category = "Editors & IDEs"
 	CategoryContainersVMs   Category = "Containers & VMs"

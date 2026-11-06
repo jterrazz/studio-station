@@ -25,9 +25,9 @@ func ApplierOf(w *world.World, mac string, kind catalog.EffectKind) *Applier {
 }
 
 func NewApplier(kind catalog.EffectKind) *Applier {
-	w := &world.World{ThisMac: "here"}
-	w.Mac("here")
-	return ApplierOf(w, "here", kind)
+	w := &world.World{ThisMac: "this-mac"}
+	w.Mac("this-mac")
+	return ApplierOf(w, "this-mac", kind)
 }
 
 func (a *Applier) Kind() catalog.EffectKind { return a.kind }
@@ -49,7 +49,7 @@ func (a *Applier) Edit(name, text string) {
 
 // value: what station sets for a setting, the catalogue's values; one that
 // declares none sets station's own text.
-func wants(it catalog.ConfigItem) []settings.KeyValue {
+func wants(it catalog.Setting) []settings.KeyValue {
 	if sets := settings.Sets(it); len(sets) > 0 {
 		return sets
 	}
@@ -76,7 +76,7 @@ func decode(name, text string) []settings.KeyValue {
 	return out
 }
 
-func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+func (a *Applier) Observe(_ context.Context, it catalog.Setting) (settings.Observation, error) {
 	a.w.Lock()
 	defer a.w.Unlock()
 	want := wants(it)
@@ -91,14 +91,14 @@ func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Ob
 	return o, nil
 }
 
-func (a *Applier) Apply(_ context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
+func (a *Applier) Apply(_ context.Context, it catalog.Setting, _ map[string]string) (settings.Change, error) {
 	a.w.Lock()
 	defer a.w.Unlock()
 	a.held()[it.Name] = encode(wants(it))
 	return settings.Change{Steps: []settings.ChangeStep{{Label: it.Name, State: catalog.StateOK, Detail: "applied"}}}, nil
 }
 
-func (a *Applier) Undo(_ context.Context, it catalog.ConfigItem) (settings.Change, error) {
+func (a *Applier) Undo(_ context.Context, it catalog.Setting) (settings.Change, error) {
 	a.w.Lock()
 	defer a.w.Unlock()
 	if a.held()[it.Name] != encode(wants(it)) {

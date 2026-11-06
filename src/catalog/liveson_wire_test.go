@@ -14,7 +14,7 @@ func TestEveryToolOfTheCatalogueReadsBackAsItWasSent(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", tool.Name, err)
 		}
-		var back catalog.Tool
+		var back catalog.App
 		if err := json.Unmarshal(raw, &back); err != nil {
 			t.Fatalf("%s: %v", tool.Name, err)
 		}

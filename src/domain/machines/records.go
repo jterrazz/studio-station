@@ -72,7 +72,7 @@ func (s *Service) vms(ctx context.Context, host string, live map[string]DaemonVM
 	for _, r := range records {
 		info := engine[r.Name]
 		vm := VM{
-			Name: r.Name, Image: r.Image, Version: r.Version, Host: host, Kind: kindOfImage(r.Image),
+			Name: r.Name, Image: r.Image, Version: r.Version, Mac: host, Kind: kindOfImage(r.Image),
 			Lifetime: r.Lifetime, State: stateOf(info), Resources: r.Resources, SizeGB: int(info.Bytes / 1e9),
 			Network: networkOf(r), Guest: "unknown", Want: r.Want, Check: r.Check, CreatedAt: r.CreatedAt,
 		}

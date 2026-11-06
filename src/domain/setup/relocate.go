@@ -55,8 +55,8 @@ func keyLabel(file catalog.AppFile, key string) string {
 	return key
 }
 
-func (s *Service) placedTools() []catalog.Tool {
-	var out []catalog.Tool
+func (s *Service) placedTools() []catalog.App {
+	var out []catalog.App
 	for _, t := range s.o.Tools {
 		if slices.Contains(t.LivesOn(), s.o.Kind) {
 			out = append(out, t)
@@ -96,7 +96,7 @@ func (s *Service) writeToolFiles() (written, notes []string, err error) {
 	byFile := map[catalog.AppFile][]catalog.Relocation{}
 	var order []catalog.AppFile
 	for _, t := range s.placedTools() {
-		for _, r := range t.Storage.Relocate {
+		for _, r := range t.Disk.Relocate {
 			if r.Pending != "" {
 				continue
 			}
@@ -178,7 +178,7 @@ func UpsertEnvLine(text, key, value string) (updated string, changed bool, handS
 
 func (s *Service) moveStrays(ctx context.Context, interactive bool) (moved, notes []string, err error) {
 	for _, t := range s.placedTools() {
-		for _, st := range t.Storage.Strays {
+		for _, st := range t.Disk.Misplaced {
 			if !s.pending(st) {
 				continue
 			}

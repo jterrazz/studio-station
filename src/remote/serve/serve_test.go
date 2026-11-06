@@ -69,8 +69,8 @@ func server(t *testing.T) serve.Server {
 		},
 	}, struct{}{})
 	return serve.Server{
-		Calls: func(name string) (call.Handler, bool) { return stop, name == "machines.stop" },
-		Here:  laptop,
+		Calls:       func(name string) (call.Handler, bool) { return stop, name == "machines.stop" },
+		ThisMachine: laptop,
 		Streams: map[string]serve.Feed{"page": func(ctx context.Context, _ json.RawMessage, send func(any) error) error {
 			for i := 0; ; i++ {
 				if err := send(map[string]int{"page": i}); err != nil {

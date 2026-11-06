@@ -18,7 +18,7 @@ type Deps struct {
 
 type Machines interface {
 	// value: sofar sees the fleet after each Mac's answer, the return holds every Mac.
-	FleetAsItFills(ctx context.Context, hereOnly bool, sofar func(machines.AllMachines)) (machines.AllMachines, error)
+	AllMachinesAsItFills(ctx context.Context, thisMacOnly bool, sofar func(machines.AllMachines)) (machines.AllMachines, error)
 	// value: rewrites the owner's ssh blocks for the fleet just read.
 	SSHBlocks(ctx context.Context, f machines.AllMachines) error
 	// value: keeps when each other Mac answered, and its VMs then.
@@ -42,15 +42,15 @@ type Machines interface {
 	// value: whether name is a VM rather than a Mac.
 	CheckRestart(name string) (vm bool, err error)
 	Restart(ctx context.Context, name string) (machines.RestartReport, error)
-	CheckHost() error
+	CheckMac() error
 	// value: the registered name of another Mac, which name may say short;
 	// refuses a name that is no other Mac, worded for verb.
-	CheckRemoteHost(name, verb string) (string, error)
-	AddHost(ctx context.Context, name string, h machines.Host) error
+	CheckRemoteMac(name, verb string) (string, error)
+	AddMac(ctx context.Context, name string, h machines.MacRecord) error
 	// value: what a Mac's station says once ssh reaches it; a Mac that does
 	// not answer, or has no station, is the error.
 	Reach(ctx context.Context, name string) (machines.Added, error)
-	ForgetHost(ctx context.Context, name string) error
+	ForgetMac(ctx context.Context, name string) error
 	// value: refuses off a terminal, where nobody can type the password.
 	Unlock(ctx context.Context, name string, interactive bool) error
 	// value: whether the Mac's station answers now.

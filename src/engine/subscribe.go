@@ -141,7 +141,7 @@ func (d *Engine) watchState() {
 	if !d.hub.listening() {
 		return
 	}
-	now := string(mustJSON([]any{d.vmViews(), d.hostView("")}))
+	now := string(mustJSON([]any{d.vmViews(), d.macPorts("")}))
 	d.hub.mu.Lock()
 	moved := d.hub.seen != now
 	d.hub.seen = now

@@ -17,8 +17,8 @@ import (
 
 type Deps struct {
 	// value: the catalogue apps placed on this machine, for completion.
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
@@ -47,9 +47,9 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return io.Page(pageapps.Show(out.Report, out.Here, d.Here), pageapps.ListContract(call.Schema(appscalls.Show.Name), []apps.Report{out.Report}))
+				return io.Page(pageapps.Show(out.Report, out.ThisMachine, d.ThisMachine), pageapps.ListContract(call.Schema(appscalls.Show.Name), []apps.Report{out.Report}))
 			}
-			thisMac := d.Here
+			thisMac := d.ThisMachine
 			if env.Far() {
 				thisMac = page.Context{Machine: env.Target().Name}
 			}

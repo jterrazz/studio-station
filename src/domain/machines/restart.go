@@ -38,7 +38,7 @@ func (s *Service) Restart(ctx context.Context, name string, progress func(Restar
 			progress(RestartEvent{Phase: phase, Detail: detail})
 		}
 	}
-	if m.Kind != catalog.Host {
+	if m.Kind != catalog.Mac {
 		return s.restartVM(ctx, name, say)
 	}
 	started := s.h.Clock.Now()

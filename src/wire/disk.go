@@ -21,33 +21,33 @@ import (
 )
 
 func diskCommand(env kit.Env, m machine) *cobra.Command {
-	names := m.storage(env).Names
-	return diskcmd.Command(diskcmd.Deps{Names: names, Here: m.where}, env,
-		diskfree.Command(diskfree.Deps{Names: names, Here: m.where}, env),
-		diskerase.Command(diskerase.Deps{Names: names, Here: m.where}, env),
-		diskmove.Command(diskmove.Deps{Here: m.where, Home: m.host.Env.Home()}, env),
+	names := m.diskOf(env).Names
+	return diskcmd.Command(diskcmd.Deps{Names: names, ThisMachine: m.where}, env,
+		diskfree.Command(diskfree.Deps{Names: names, ThisMachine: m.where}, env),
+		diskerase.Command(diskerase.Deps{Names: names, ThisMachine: m.where}, env),
+		diskmove.Command(diskmove.Deps{ThisMachine: m.where, Home: m.sys.Env.Home()}, env),
 	)
 }
 
 // invariant: station storage and its verbs are the hidden v2 words of
 // station disk for one release (SPEC §4.3): clean is free, reset is erase.
 func storageAlias(env kit.Env, m machine) *cobra.Command {
-	names := m.storage(env).Names
-	return kit.Alias("storage", diskcmd.Command(diskcmd.Deps{Names: names, Here: m.where}, env,
-		kit.Alias("clean", diskfree.Command(diskfree.Deps{Names: names, Here: m.where}, env), "free"),
-		kit.Alias("reset", diskerase.Command(diskerase.Deps{Names: names, Here: m.where}, env), "erase"),
+	names := m.diskOf(env).Names
+	return kit.Alias("storage", diskcmd.Command(diskcmd.Deps{Names: names, ThisMachine: m.where}, env,
+		kit.Alias("clean", diskfree.Command(diskfree.Deps{Names: names, ThisMachine: m.where}, env), "free"),
+		kit.Alias("reset", diskerase.Command(diskerase.Deps{Names: names, ThisMachine: m.where}, env), "erase"),
 	), "disk")
 }
 
-func (m machine) storage(env kit.Env) *storage.Service {
-	return storage.New(m.host, catalog.Apps, storage.Options{
+func (m machine) diskOf(env kit.Env) *storage.Service {
+	return storage.New(m.sys, catalog.Apps, storage.Options{
 		Disk:       m.disk(),
 		Pool:       m.pool,
 		Here:       m.kind,
 		Expand:     m.expander(),
 		Files:      m.appFiles(),
-		Inventory:  inventory{apps: appsService(env, m)},
-		Configurer: setupConfigurer{config: configService(m)},
+		Inventory:  inventory{apps: appsOf(env, m)},
+		Configurer: setupSettingsWriter{settings: settingsOf(m)},
 	})
 }
 
@@ -56,20 +56,20 @@ func (m machine) disk() diskcontract.DiskUsage {
 		return m.world.disk()
 	}
 	if m.profile.System.OS == coremachine.Linux {
-		return posix.New(m.host.Run)
+		return posix.New(m.sys.Run)
 	}
-	return apfs.New(m.host.Run)
+	return apfs.New(m.sys.Run)
 }
 
 func (m machine) expander() storage.Expander {
-	return storage.Expander{Home: m.host.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
+	return storage.Expander{Home: m.sys.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
 }
 
 // invariant: Go's env file is where `go env GOENV` says: $GOENV when set and
 // absolute ("off" writes nothing), else os.UserConfigDir()/go/env, which is
 // ~/Library/Application Support on darwin and the XDG config root on linux.
 func (m machine) appFiles() map[catalog.AppFile]string {
-	home := m.host.Env.Home()
+	home := m.sys.Env.Home()
 	goenv := filepath.Join(home, "Library", "Application Support", "go", "env")
 	if m.kind == catalog.Linux {
 		goenv = filepath.Join(m.paths.Roots.Config, "go", "env")
@@ -106,7 +106,7 @@ func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
 		out := make(map[string]bool, len(reports))
 		for _, r := range reports {
 			if !r.Pending {
-				out[r.Tool.Name] = r.State == catalog.StateOK || r.State == catalog.StateDegraded
+				out[r.App.Name] = r.State == catalog.StateOK || r.State == catalog.StateDegraded
 			}
 		}
 		each(out)

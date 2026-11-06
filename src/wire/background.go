@@ -11,13 +11,13 @@ import (
 )
 
 func backgroundCommand(env kit.Env, m machine) *cobra.Command {
-	return backgroundcmd.Command(backgroundcmd.Deps{Here: m.where}, env,
-		backgroundremove.Command(backgroundremove.Deps{Here: m.where}, env))
+	return backgroundcmd.Command(backgroundcmd.Deps{ThisMachine: m.where}, env,
+		backgroundremove.Command(backgroundremove.Deps{ThisMachine: m.where}, env))
 }
 
 func (m machine) backgroundDeps() backgroundcalls.Deps {
 	return backgroundcalls.Deps{
-		Jobs: m.jobs(0), Domain: contract.Domain{UID: m.host.Env.Euid()},
-		Home: m.host.Env.Home(), Root: m.systemRoot(), Kind: m.profile.Kind,
+		Jobs: m.jobs(0), Domain: contract.Domain{UID: m.sys.Env.Euid()},
+		Home: m.sys.Env.Home(), Root: m.systemRoot(), Kind: m.profile.Kind,
 	}
 }

@@ -3,7 +3,7 @@
   "id": "accounts",
   "command": "accounts",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "loading",
   "sections": [

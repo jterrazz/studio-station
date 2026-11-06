@@ -35,7 +35,7 @@ func (m machine) uses() *terminalUses {
 	if !terminalID.MatchString(id) {
 		id = ""
 	}
-	return &terminalUses{fs: m.host.FS, clock: m.host.Clock, dir: filepath.Join(m.paths.State, "use"), terminal: id}
+	return &terminalUses{fs: m.sys.FS, clock: m.sys.Clock, dir: filepath.Join(m.paths.State, "use"), terminal: id}
 }
 
 func (u *terminalUses) Block() bool    { return u.terminal != "" }
@@ -128,5 +128,5 @@ func (m machine) known(ctx context.Context, name string) (bool, error) {
 }
 
 func useCommand(env kit.Env, m machine) *cobra.Command {
-	return usecmd.Command(usecmd.Deps{Here: m.where, Names: m.machines(false).Names}, env)
+	return usecmd.Command(usecmd.Deps{ThisMachine: m.where, Names: m.machines(false).Names}, env)
 }

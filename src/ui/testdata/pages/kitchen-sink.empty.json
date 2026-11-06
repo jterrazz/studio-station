@@ -4,7 +4,7 @@
   "command": "status",
   "context": {
     "machine": "jterrazz-macbook-pro",
-    "kind": "host",
+    "kind": "mac",
     "registered": true
   },
   "state": "ready",
@@ -167,7 +167,7 @@
       ]
     },
     {
-      "id": "fleet",
+      "id": "all-machines",
       "title": "All machines",
       "columns": [
         {
@@ -181,7 +181,7 @@
           "keep": 40
         },
         {
-          "key": "host",
+          "key": "mac",
           "kind": "text",
           "keep": 10,
           "show": "pipe"
@@ -200,7 +200,7 @@
       ]
     },
     {
-      "id": "storage",
+      "id": "disk",
       "title": "Disk",
       "columns": [
         {

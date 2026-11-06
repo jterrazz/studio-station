@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	appsStart   = "<!-- GENERATED:tools by `make generate` from src/catalog: DO NOT EDIT between markers -->"
-	appsEnd     = "<!-- /GENERATED:tools -->"
+	appsStart   = "<!-- GENERATED:apps by `make generate` from src/catalog: DO NOT EDIT between markers -->"
+	appsEnd     = "<!-- /GENERATED:apps -->"
 	preferStart = "<!-- GENERATED:prefer by `make generate` from src/catalog: DO NOT EDIT between markers -->"
 	preferEnd   = "<!-- /GENERATED:prefer -->"
 

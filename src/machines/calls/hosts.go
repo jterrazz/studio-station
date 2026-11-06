@@ -19,15 +19,15 @@ type AddIn struct {
 var Add = call.Call[Deps, AddIn, machines.Added]{
 	Name: "machines.add", Where: call.InProcess, Applies: machines.AddsMacs,
 	Run: func(ctx context.Context, d Deps, in AddIn, _ call.Progress) (machines.Added, error) {
-		if err := d.Machines.CheckHost(); err != nil {
+		if err := d.Machines.CheckMac(); err != nil {
 			return machines.Added{}, err
 		}
-		if err := d.Machines.AddHost(ctx, in.Name, machines.Host{User: in.User, Key: in.Key}); err != nil {
+		if err := d.Machines.AddMac(ctx, in.Name, machines.MacRecord{User: in.User, Key: in.Key}); err != nil {
 			return machines.Added{}, err
 		}
 		added, err := d.Machines.Reach(ctx, in.Name)
 		if err != nil {
-			_ = d.Machines.ForgetHost(ctx, in.Name)
+			_ = d.Machines.ForgetMac(ctx, in.Name)
 			return machines.Added{}, err
 		}
 		return added, nil
@@ -43,16 +43,16 @@ var Forget = call.Call[Deps, ForgetIn, struct{}]{
 	Name: "machines.forget", Where: call.InProcess, Applies: machine.Anywhere, Confirm: confirm.Forget,
 	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in ForgetIn, _ call.Progress) (struct{}, error) {
-		if err := d.Machines.CheckHost(); err != nil {
+		if err := d.Machines.CheckMac(); err != nil {
 			return struct{}{}, err
 		}
-		if _, err := d.Machines.CheckRemoteHost(in.Name, "forget"); err != nil {
+		if _, err := d.Machines.CheckRemoteMac(in.Name, "forget"); err != nil {
 			return struct{}{}, err
 		}
 		if err := confirm.Require(confirm.For(confirm.Forget, d.Kind), in.Name, in.Confirm); err != nil {
 			return struct{}{}, err
 		}
-		return struct{}{}, d.Machines.ForgetHost(ctx, in.Name)
+		return struct{}{}, d.Machines.ForgetMac(ctx, in.Name)
 	},
 }
 
@@ -65,10 +65,10 @@ type UnlockIn struct {
 var Unlock = call.Call[Deps, UnlockIn, machines.Unlocked]{
 	Name: "machines.unlock", Where: call.InProcess, Applies: machine.Anywhere,
 	Run: func(ctx context.Context, d Deps, in UnlockIn, _ call.Progress) (machines.Unlocked, error) {
-		if err := d.Machines.CheckHost(); err != nil {
+		if err := d.Machines.CheckMac(); err != nil {
 			return machines.Unlocked{}, err
 		}
-		mac, err := d.Machines.CheckRemoteHost(in.Name, "unlock")
+		mac, err := d.Machines.CheckRemoteMac(in.Name, "unlock")
 		if err != nil {
 			return machines.Unlocked{}, err
 		}
@@ -94,10 +94,10 @@ var RestartMac = call.Call[Deps, RestartMacIn, machines.Back]{
 		// invariant: a Mac restarts by a planned restart that unlocks itself,
 		// sent from this Mac; the answer waits for it to answer again, runs
 		// again each VM it paused, and says how they are now.
-		if err := d.Machines.CheckHost(); err != nil {
+		if err := d.Machines.CheckMac(); err != nil {
 			return machines.Back{}, err
 		}
-		mac, err := d.Machines.CheckRemoteHost(in.Name, "restart")
+		mac, err := d.Machines.CheckRemoteMac(in.Name, "restart")
 		if err != nil {
 			return machines.Back{}, err
 		}

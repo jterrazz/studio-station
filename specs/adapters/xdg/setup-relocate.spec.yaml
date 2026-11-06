@@ -1,4 +1,4 @@
-description: 'setup writes go''s env file, mise''s config, ~/.npmrc and the bunfig; a rerun changes nothing'
+description: 'setup writes go''s env file, mise''s settings, ~/.npmrc and the bunfig; a rerun changes nothing'
 runs:
     - command: 'setup --name m </dev/null'
       exit: 0
@@ -6,7 +6,7 @@ runs:
           ●	name	m
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts

@@ -49,7 +49,7 @@ func Script(dir, setting string) string {
 	return path.Join(dir, setting+".zsh")
 }
 
-func (a *Applier) of(it catalog.ConfigItem) (want []byte, file string, err error) {
+func (a *Applier) of(it catalog.Setting) (want []byte, file string, err error) {
 	z, ok := it.Effect.(catalog.ZshFunctions)
 	if !ok {
 		return nil, "", errors.New(it.Name + " is not shell functions station defines")
@@ -58,7 +58,7 @@ func (a *Applier) of(it catalog.ConfigItem) (want []byte, file string, err error
 	return want, Script(a.o.Dir, it.Name), err
 }
 
-func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+func (a *Applier) Observe(_ context.Context, it catalog.Setting) (settings.Observation, error) {
 	want, file, err := a.of(it)
 	if err != nil {
 		return settings.Observation{}, err
@@ -83,12 +83,12 @@ func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Ob
 	return o, nil
 }
 
-func functions(it catalog.ConfigItem) []string {
+func functions(it catalog.Setting) []string {
 	z, _ := it.Effect.(catalog.ZshFunctions)
 	return z.Functions
 }
 
-func (a *Applier) Apply(_ context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
+func (a *Applier) Apply(_ context.Context, it catalog.Setting, _ map[string]string) (settings.Change, error) {
 	want, file, err := a.of(it)
 	if err != nil {
 		return settings.Change{}, err
@@ -102,7 +102,7 @@ func (a *Applier) Apply(_ context.Context, it catalog.ConfigItem, _ map[string]s
 	return settings.Change{Steps: []settings.ChangeStep{{Label: where, State: catalog.StateOK, Detail: strings.Join(functions(it), ", ") + " added"}}}, nil
 }
 
-func (a *Applier) Undo(_ context.Context, it catalog.ConfigItem) (settings.Change, error) {
+func (a *Applier) Undo(_ context.Context, it catalog.Setting) (settings.Change, error) {
 	// invariant: the functions leave the block only while they are still
 	// exactly station's: off never destroys a change of the owner's.
 	want, file, err := a.of(it)

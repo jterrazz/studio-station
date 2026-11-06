@@ -14,8 +14,8 @@ import (
 )
 
 type Deps struct {
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 type Input struct{ Apps []string }
@@ -33,7 +33,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Page(pagedisk.Freed(outcomes, d.Here), nil); err != nil {
+			if err := io.Page(pagedisk.Freed(outcomes, d.ThisMachine), nil); err != nil {
 				return err
 			}
 			failed, first := disk.Failures(outcomes)

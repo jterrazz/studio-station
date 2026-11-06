@@ -72,7 +72,7 @@ type world struct {
 	infra    []machines.VM
 	beside   []machines.VM
 	here     []machines.VM
-	added    []machines.HostView
+	added    []machines.MacView
 	lent     accounts.Report
 	updates  bool
 	asked    map[string][]string
@@ -87,11 +87,11 @@ func (w *world) machines(here bool) machines.AllMachines {
 		w.infra = w.infra[1:]
 	}
 	if here {
-		return machines.AllMachines{Hosts: []machines.HostView{{Name: thisMac, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here}}}
+		return machines.AllMachines{Macs: []machines.MacView{{Name: thisMac, ThisMac: true, Reachable: true, Engine: machines.EngineView{Known: true, Running: true}, VMs: w.here}}}
 	}
-	return machines.AllMachines{Hosts: append([]machines.HostView{
-		{Name: thisMac, Here: true, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: w.here},
-		{Name: mini, Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}, VMs: append([]machines.VM{infra}, w.beside...)},
+	return machines.AllMachines{Macs: append([]machines.MacView{
+		{Name: thisMac, ThisMac: true, Reachable: true, Engine: machines.EngineView{Known: true, Running: true}, VMs: w.here},
+		{Name: mini, Reachable: true, Engine: machines.EngineView{Known: true, Running: true}, VMs: append([]machines.VM{infra}, w.beside...)},
 	}, w.added...)}
 }
 
@@ -106,7 +106,7 @@ func (w *world) answer(name string, target machine.Ref, in any) any {
 	switch name {
 	case machinescalls.List.Name:
 		listed, _ := in.(machinescalls.ListIn)
-		return machinescalls.ListOut{Fleet: w.machines(listed.Here)}
+		return machinescalls.ListOut{All: w.machines(listed.ThisMac)}
 	case portscalls.List.Name:
 		return ports.Listing{}
 	case accountscalls.List.Name:
@@ -158,7 +158,7 @@ func (w *world) askedOf(name string) []string {
 }
 
 func infraAt(state machines.VMState, restarts int) machines.VM {
-	return machines.VM{Name: "infra", Host: mini, Lifetime: machines.AlwaysOn, State: state, Want: "running", Guest: "connected", IP: "192.168.64.7", Check: "https://infra:6443/readyz", Device: "infra",
+	return machines.VM{Name: "infra", Mac: mini, Lifetime: machines.AlwaysOn, State: state, Want: "running", Guest: "connected", IP: "192.168.64.7", Check: "https://infra:6443/readyz", Device: "infra",
 		Restarts: machines.Restarts{Count: restarts}, CheckStatus: machines.CheckStatus{State: machines.CheckPassing}}
 }
 
@@ -288,7 +288,7 @@ func TestInfrasPageFollowsItLiveWhileItRestarts(t *testing.T) {
 }
 
 func TestTheSwitcherDrawsEachMacsServersThenWorkspacesAndRereadsEveryThirtySeconds(t *testing.T) {
-	build := machines.VM{Name: "build", Host: mini, Lifetime: machines.Throwaway, State: machines.Running}
+	build := machines.VM{Name: "build", Mac: mini, Lifetime: machines.Throwaway, State: machines.Running}
 	w := &world{infra: []machines.VM{infraAt(machines.Running, 0), infraAt(machines.Stopped, 0)}, beside: []machines.VM{build}, asked: map[string][]string{}, activity: map[string]uint64{}}
 	clock := newSteps()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -317,7 +317,7 @@ func lentTo(vm string, providers ...string) accounts.Report {
 	until := time.Date(2026, 11, 4, 6, 30, 0, 0, time.UTC)
 	m := accounts.Machine{Name: vm, Kind: accounts.KindVM}
 	for _, p := range providers {
-		m.Accounts = append(m.Accounts, accounts.Account{Provider: p, Shared: &accounts.Lend{Name: p, Until: until}})
+		m.Accounts = append(m.Accounts, accounts.Account{Provider: p, Shared: &accounts.Loan{Name: p, Until: until}})
 	}
 	return accounts.Report{Machines: []accounts.Machine{m}}
 }
@@ -338,7 +338,7 @@ func shared(p page.Page) []string {
 }
 
 func TestAnAccountTakenBackLeavesLinux1sPageOnceTheCallReturns(t *testing.T) {
-	linux := machines.VM{Name: "linux-1", Host: thisMac, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}
+	linux := machines.VM{Name: "linux-1", Mac: thisMac, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}
 	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, here: []machines.VM{linux}, lent: lentTo("linux-1", "github", "claude"), asked: map[string][]string{}, activity: map[string]uint64{}}
 	refresh := make(chan struct{}, 1)
 	pages := watchWith(t, w, newSteps(), engine.FeedInput{Subject: "linux-1", Refresh: refresh})
@@ -363,14 +363,14 @@ func TestAMacAddedReachesTheSwitcherOnceTheCallReturns(t *testing.T) {
 	pages := feeds.Menubar{Calls: w, Clock: newSteps()}.Switcher()(ctx, engine.FeedInput{Refresh: refresh})
 	until(t, pages, "every Mac", func(p page.Page) bool { return row(p, "machines", mini) != nil })
 	w.mu.Lock()
-	w.added = []machines.HostView{{Name: "studio-1", Reachable: true, Daemon: machines.EngineView{Known: true, Running: true}}}
+	w.added = []machines.MacView{{Name: "studio-1", Reachable: true, Engine: machines.EngineView{Known: true, Running: true}}}
 	w.mu.Unlock()
 	refresh <- struct{}{}
 	until(t, pages, "studio-1 in the switcher", func(p page.Page) bool { return row(p, "machines", "studio-1") != nil })
 }
 
 func TestAWorkspaceStartedOnThisMacReachesItsPageWhenTheEngineMoves(t *testing.T) {
-	linux := machines.VM{Name: "linux-1", Host: thisMac, Lifetime: machines.Permanent, State: machines.Stopped}
+	linux := machines.VM{Name: "linux-1", Mac: thisMac, Lifetime: machines.Permanent, State: machines.Stopped}
 	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, here: []machines.VM{linux}, asked: map[string][]string{}, activity: map[string]uint64{}}
 	changed := make(chan struct{}, 1)
 	pages := watchWith(t, w, newSteps(), engine.FeedInput{Subject: "linux-1", Changed: changed})
@@ -395,7 +395,7 @@ func TestAWorkspaceCreatedFromTheMenuBarAppearsInHomeWhenTheEngineMoves(t *testi
 	pages := o.Feed()(ctx, in)
 	until(t, pages, "every Mac", func(p page.Page) bool { return row(p, "machines", mini) != nil })
 	w.mu.Lock()
-	w.here = []machines.VM{{Name: "linux-2", Host: thisMac, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}}
+	w.here = []machines.VM{{Name: "linux-2", Mac: thisMac, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}}
 	w.mu.Unlock()
 	changed <- struct{}{}
 	p := until(t, pages, "linux-2 in Home", func(p page.Page) bool { return row(p, "machines", "linux-2") != nil })

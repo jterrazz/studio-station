@@ -16,15 +16,15 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 	// value: one machine's Overview, read on the machine env targets.
 	Overview func(ctx context.Context, io kit.IO) error
 	Names    func() []string
 }
 
 type Input struct {
-	Here    bool
-	Machine string
+	ThisMacOnly bool
+	Machine     string
 }
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
@@ -47,7 +47,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Complete: func([]string, string) []string { return d.Names() },
 		Group:    kit.Machines,
 		Declare: func(f *pflag.FlagSet, in *Input) {
-			f.BoolVar(&in.Here, "here", false, "This Mac only, without asking the other Macs")
+			f.BoolVar(&in.ThisMacOnly, "this-mac", false, "This Mac only, without asking the other Macs")
 		},
 		Read:  func(*Input) bool { return true },
 		Live:  true,
@@ -59,13 +59,13 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 				}
 				return d.Overview(ctx, io)
 			}
-			listed := machinescalls.ListIn{Here: in.Here}
+			listed := machinescalls.ListIn{ThisMac: in.ThisMacOnly}
 			if !io.CanLive() {
 				out, err := call.Read(ctx, env.Calls, env.Target(), machinescalls.List, listed, nil)
 				if err != nil {
 					return err
 				}
-				return io.Page(listPage(out, d.Here, env.Far()), machines.ToList(out.Fleet))
+				return io.Page(listPage(out, d.ThisMachine, env.Far()), machines.ToList(out.All))
 			}
 			updates, err := call.Follow(ctx, env.Calls, env.Target(), machinescalls.List, listed, nil)
 			if err != nil {
@@ -80,7 +80,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 						failed = u.Err
 						continue
 					}
-					pages <- listPage(u.Value, d.Here, env.Far())
+					pages <- listPage(u.Value, d.ThisMachine, env.Far())
 				}
 			}()
 			if err := io.LivePage(pages); err != nil {
@@ -100,11 +100,11 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 
 func listPage(out machinescalls.ListOut, thisMac page.Context, far bool) page.Page {
 	if far {
-		out.Fleet = machines.Elsewhere(out.Fleet)
+		out.All = machines.Elsewhere(out.All)
 	}
 	var warnings []string
 	if out.Unrefreshed != nil {
 		warnings = append(warnings, "ssh config not refreshed: "+out.Unrefreshed.Error())
 	}
-	return pagemachines.List(out.Fleet, warnings, thisMac)
+	return pagemachines.List(out.All, warnings, thisMac)
 }

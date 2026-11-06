@@ -171,13 +171,13 @@ func portsPane(v screen.View) ui.Panel {
 	}
 	n := 0
 	var groups []ui.PortGroup
-	clean := true
+	tidy := true
 	for _, s := range pp.Sections {
 		if s.ID != "public" && s.ID != "private" {
 			if s.ID == "summary" {
 				for _, it := range s.Items {
 					if it.Row != nil && it.Row.Mark != page.OK {
-						clean = false
+						tidy = false
 					}
 				}
 			}
@@ -214,7 +214,7 @@ func portsPane(v screen.View) ui.Panel {
 	if n == 0 {
 		ending = append(ending, "Nothing shared.")
 	}
-	if clean {
+	if tidy {
 		ending = append(ending, "Nothing else reachable", "outside "+catalog.TailnetProduct+". "+ui.Glyph(page.OK))
 	}
 	return ui.Panel{Title: "Ports" + ui.Sep + strconv.Itoa(n), Lines: ui.Ports(v.Dark, groups, ending)}

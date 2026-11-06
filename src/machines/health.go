@@ -33,9 +33,9 @@ func ParseCheck(check string) (HealthCheck, bool) {
 		}
 		return HealthCheck{URL: u}, true
 	}
-	host, port, ok := splitHostPort(check)
+	name, port, ok := splitAddress(check)
 	n, perr := strconv.Atoi(port)
-	if !ok || host == "" || perr != nil || n < 1 || n > 65535 {
+	if !ok || name == "" || perr != nil || n < 1 || n > 65535 {
 		return HealthCheck{}, false
 	}
 	return HealthCheck{TCP: check}, true
@@ -55,9 +55,9 @@ func (c HealthCheck) Target(vm string, addr netip.Addr) CheckTarget {
 	// invariant: a check whose hostname is the VM's own name reaches the
 	// VM's address and accepts the VM's own certificate (a cluster's); any
 	// other name is resolved by the probe and its certificate verified.
-	host, port := "", ""
+	name, port := "", ""
 	if c.URL != nil {
-		host, port = c.URL.Hostname(), c.URL.Port()
+		name, port = c.URL.Hostname(), c.URL.Port()
 		if port == "" {
 			port = "80"
 			if c.URL.Scheme == "https" {
@@ -65,39 +65,39 @@ func (c HealthCheck) Target(vm string, addr netip.Addr) CheckTarget {
 			}
 		}
 	} else {
-		host, port, _ = splitHostPort(c.TCP)
+		name, port, _ = splitAddress(c.TCP)
 	}
-	own := strings.EqualFold(host, vm) && addr.IsValid()
-	dial := host
+	own := strings.EqualFold(name, vm) && addr.IsValid()
+	dial := name
 	if own {
 		dial = addr.String()
 	}
-	t := CheckTarget{Dial: joinHostPort(dial, port), Name: host, Verify: !own}
+	t := CheckTarget{Dial: joinAddress(dial, port), Name: name, Verify: !own}
 	if c.URL != nil {
 		t.URL = c.URL.String()
 	}
 	return t
 }
 
-func splitHostPort(s string) (host, port string, ok bool) {
+func splitAddress(s string) (name, port string, ok bool) {
 	i := strings.LastIndex(s, ":")
 	if i < 0 {
 		return "", "", false
 	}
-	host, port = s[:i], s[i+1:]
-	if strings.HasPrefix(host, "[") && strings.HasSuffix(host, "]") {
-		host = host[1 : len(host)-1]
-	} else if strings.Contains(host, ":") {
+	name, port = s[:i], s[i+1:]
+	if strings.HasPrefix(name, "[") && strings.HasSuffix(name, "]") {
+		name = name[1 : len(name)-1]
+	} else if strings.Contains(name, ":") {
 		return "", "", false
 	}
-	return host, port, true
+	return name, port, true
 }
 
-func joinHostPort(host, port string) string {
-	if strings.Contains(host, ":") {
-		return "[" + host + "]:" + port
+func joinAddress(name, port string) string {
+	if strings.Contains(name, ":") {
+		return "[" + name + "]:" + port
 	}
-	return host + ":" + port
+	return name + ":" + port
 }
 
 type CheckState string

@@ -37,12 +37,12 @@ type (
 
 func openWorld(map[string]string, bool) (*worldRun, error) { return nil, nil }
 
-func (*worldRun) here() *worldMac                { return nil }
+func (*worldRun) thisMac() *worldMac             { return nil }
 func (*worldRun) farFrom(func(*worldMac) farMac) {}
 func (*worldRun) command() *cobra.Command        { return nil }
 func (*worldRun) close(context.Context) error    { return nil }
 
-func (*worldMac) host(h system.Host) system.Host                        { return h }
+func (*worldMac) system(h system.Host) system.Host                      { return h }
 func (*worldMac) handOver(context.Context) error                        { return nil }
 func (*worldMac) watch([]string) func()                                 { return func() {} }
 func (*worldMac) stores(*stores)                                        {}
@@ -61,7 +61,7 @@ func (*worldMac) disk() diskcontract.DiskUsage                          { return
 func (*worldMac) listeners() portscontract.Listeners                    { return nil }
 func (*worldMac) placement() (guest.Placement, bool)                    { return guest.Placement{}, false }
 func (*worldMac) tailnet() portscontract.Tailnet                        { return nil }
-func (*worldMac) funnel() funnel.Config                                 { return nil }
+func (*worldMac) funnel() funnel.Funnel                                 { return nil }
 func (*worldMac) installer(catalog.Method, bool) appscontract.Installer { return nil }
 func (*worldMac) bundler() appscontract.Bundler                         { return nil }
 func (*worldMac) budgets() lanes.Clock                                  { return nil }

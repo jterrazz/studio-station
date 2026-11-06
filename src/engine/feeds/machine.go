@@ -144,17 +144,17 @@ func (f *one) reads(ctx context.Context, in engine.FeedInput) {
 	for {
 		listed, ferr := call.Read(ctx, f.o.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{Unwritten: true}, nil)
 		shared, serr := call.Invoke(ctx, f.o.Calls, machine.Ref{}, portscalls.List, portscalls.ListIn{AllMachines: true}, nil)
-		lent, aerr := call.Read(ctx, f.o.Calls, machine.Ref{}, accountscalls.List, accountscalls.ListIn{VMs: true}, nil)
+		shares, aerr := call.Read(ctx, f.o.Calls, machine.Ref{}, accountscalls.List, accountscalls.ListIn{VMs: true}, nil)
 		read, oerr := call.Read(ctx, f.o.Calls, at, overviewcalls.Read, overviewcalls.ReadIn{}, nil)
 		f.send(ctx, func(m *pagemenubar.Machine) {
 			if ferr == nil {
-				m.Fleet = &listed.Fleet
+				m.All = &listed.All
 			}
 			if serr == nil {
-				m.Services = &shared.AllMachines
+				m.Ports = &shared.AllMachines
 			}
 			if aerr == nil {
-				m.Accounts = &lent
+				m.Accounts = &shares
 			}
 			if oerr == nil {
 				m.Summary = &read.Summary

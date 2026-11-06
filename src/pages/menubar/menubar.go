@@ -40,11 +40,11 @@ const (
 
 type Reading struct {
 	// value: a nil part is still being read and draws pending.
-	Home     *overview.Summary
-	Samples  []activity.Reading
-	Fleet    *machines.Fleet
-	Services *ports.AllMachines
-	Power    *awake.Report
+	Home    *overview.Summary
+	Samples []activity.Reading
+	All     *machines.Fleet
+	Ports   *ports.AllMachines
+	Power   *awake.Report
 	// value: every other Mac's Awake, as its engine reports it.
 	Macs []awake.Report
 }
@@ -52,7 +52,7 @@ type Reading struct {
 func Page(r Reading, thisMac page.Context) page.Page {
 	p := page.Page{ID: ID, Command: "menubar", Context: thisMac, Strip: strip(r.Samples)}
 	needs := needsYou(r)
-	p.Sections = []page.Section{needs, Tree(r.Fleet, r.Services, homeLine(r)), awakeTile(r), accountsTile(r.Home)}
+	p.Sections = []page.Section{needs, Tree(r.All, r.Ports, homeLine(r)), awakeTile(r), accountsTile(r.Home)}
 	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power))
 	if update := updateAll(needs, r.Home); update != nil {
 		p.Actions = append(p.Actions, *update)
@@ -74,8 +74,8 @@ func badge(r Reading, needs page.Section) *page.Badge {
 			b.Needs += t.N
 		}
 	}
-	if r.Fleet != nil {
-		for _, h := range r.Fleet.Hosts {
+	if r.All != nil {
+		for _, h := range r.All.Macs {
 			b.Down = b.Down || slices.ContainsFunc(h.VMs, machines.Down)
 		}
 	}
@@ -203,7 +203,7 @@ func updateAll(needs page.Section, home *overview.Summary) *page.Action {
 // value: the line under a Mac in Home: its Awake.
 func homeLine(r Reading) func(h machines.HostView) page.Value {
 	return func(h machines.HostView) page.Value {
-		if h.Here {
+		if h.ThisMac {
 			if r.Power != nil {
 				if w := awakeWords(*r.Power); w != "" {
 					return page.Text("awake " + w)
@@ -244,7 +244,7 @@ func awakeTile(r Reading) page.Section {
 		parts = append(parts, page.Text(page.ThisMac+" "+cmpWord(awakeWords(*r.Power), "sleeps normally")))
 	}
 	for _, m := range r.Macs {
-		if !m.Here {
+		if !m.ThisMac {
 			parts = append(parts, page.Text(page.MacName(m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps normally")))
 		}
 	}
@@ -323,9 +323,9 @@ func start() page.Action {
 
 func stopAll(r Reading) page.Action {
 	var w engine.Work
-	if r.Fleet != nil {
-		for _, h := range r.Fleet.Hosts {
-			if !h.Here {
+	if r.All != nil {
+		for _, h := range r.All.Macs {
+			if !h.ThisMac {
 				continue
 			}
 			for _, vm := range h.VMs {
@@ -348,7 +348,7 @@ func stopAll(r Reading) page.Action {
 // while off and sleep while a session holds.
 func powerAction(r *awake.Report) page.Action {
 	rows := []string{pagepower.RowAwake}
-	if r != nil && r.Session != nil && r.Daemon == awake.EngineRunning {
+	if r != nil && r.Session != nil && r.Engine == awake.EngineRunning {
 		return page.Action{ID: ActionPowerSleep, Label: "sleep", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallSleep}}
 	}
 	terms := []int{1, 4, 8}

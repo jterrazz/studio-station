@@ -19,8 +19,8 @@ type Snapshot[App, Item, Misplaced any] struct {
 	System      System
 	Environment Environment
 	Workspace   Workspace[Misplaced]
-	Tools       []App
-	Config      []Item
+	Apps        []App
+	Settings    []Item
 	Setup       Setup
 	Identity    []Check
 	Background  []background.Task
@@ -32,14 +32,14 @@ type Snapshot[App, Item, Misplaced any] struct {
 	// value: Power was read (a host that has it, its daemon answering).
 	PowerKnown bool
 	// value: a section whose reading has not answered; never past a whole read.
-	ToolsPending, ConfigPending bool
+	AppsPending, SettingsPending bool
 	// value: what failed the reading, when a section's read did.
 	Err error
 }
 
 type Station struct {
 	Version, Commit string
-	Daemon          Check
+	Engine          Check
 }
 
 type Machine struct {
@@ -99,8 +99,8 @@ type Disk struct {
 }
 
 type Workspace[Misplaced any] struct {
-	Disk   []Disk
-	Strays []Misplaced
+	Disk      []Disk
+	Misplaced []Misplaced
 	// value: the disk row has not answered; never past a whole read.
 	DiskPending bool
 }
@@ -151,7 +151,7 @@ func Gateways(thisMac catalog.MachineKind, t ports.Status) []Check {
 	// invariant: the tailnet's Serve is the way every VM service leaves the host, so a
 	// host whose tailnet is connected says whether it is on, and the admin step
 	// when it is not.
-	if thisMac != catalog.Host || !t.Connected {
+	if thisMac != catalog.Mac || !t.Connected {
 		return []Check{}
 	}
 	if t.ServeOn {

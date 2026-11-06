@@ -27,9 +27,9 @@ func MeterOf(w *world.World, mac string) *Meter { return &Meter{w: w, mac: mac} 
 func NewMeter(r world.Meter) *Meter {
 	// value: a machine whose kernel answers r, at r's time; the zero Meter
 	// answers nothing.
-	w := &world.World{ThisMac: "here", Now: r.Sample.At}
-	w.Mac("here").Meter = &r
-	return MeterOf(w, "here")
+	w := &world.World{ThisMac: "this-mac", Now: r.Sample.At}
+	w.Mac("this-mac").Meter = &r
+	return MeterOf(w, "this-mac")
 }
 
 func (m *Meter) read() (world.Meter, bool) {

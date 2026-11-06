@@ -22,7 +22,7 @@ func (s *Service) VM(name, verb string) (VMRecord, error) {
 	if err != nil {
 		return VMRecord{}, err
 	}
-	if m.Kind == catalog.Host {
+	if m.Kind == catalog.Mac {
 		return VMRecord{}, &NotAVMError{Name: name, Verb: verb}
 	}
 	records, err := s.records()

@@ -55,12 +55,12 @@ type Options struct {
 	// next listen there is not shared until a share; nil keeps nothing.
 	Remember func(vm string, port int, stopped bool) error
 	// value: the engine's own state folder: its socket and its children.
-	State     string
-	Here      catalog.MachineKind
-	Version   string
-	PID       int
-	Tick      time.Duration
-	GuestPort int
+	State       string
+	ThisMachine catalog.MachineKind
+	Version     string
+	PID         int
+	Tick        time.Duration
+	GuestPort   int
 	// value: this Mac's power, whose sessions the daemon holds; nil is none.
 	Power power.Port
 	// value: the never_sleeps preference, read at start and every 30 ticks.
@@ -74,7 +74,7 @@ type Options struct {
 	// value: this engine as a client sees it: a second engine asks it first.
 	Peer Peer
 	// value: the lend records and the recall a lend past its until goes through.
-	Lends Shares
+	AccountShares Shares
 	// value: the Notifier the engine tells, built over the engine's own log.
 	Notifier func(log func(subject, text string)) Notifier
 	// value: what runs a server's health check from this Mac; nil runs none.
@@ -140,7 +140,7 @@ type Engine struct {
 }
 
 type Stores struct {
-	Services     Policy
+	Ports        Policy
 	Reservations Reservations
 }
 
@@ -172,19 +172,19 @@ func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st
 	return d
 }
 
-func (d *Engine) Host(serve func(ctx context.Context, conn io.ReadWriteCloser)) { d.serve = serve }
+func (d *Engine) ServeWith(serve func(ctx context.Context, conn io.ReadWriteCloser)) { d.serve = serve }
 
 func (d *Engine) Check() error {
 	// value: the server of station.api/v2, run on each connection of the
 	// socket; it is the engine's, built over this daemon, so it is handed after New.
-	if d.o.Here != catalog.Host {
-		return &HostOnlyError{Here: d.o.Here}
+	if d.o.ThisMachine != catalog.Mac {
+		return &MacOnlyError{Kind: d.o.ThisMachine}
 	}
 	return nil
 }
 
 func (d *Engine) policy() ports.Policy {
-	g, err := d.st.Services.Get()
+	g, err := d.st.Ports.Get()
 	if err != nil {
 		return ports.PolicyOf(nil)
 	}
@@ -372,7 +372,7 @@ func (d *Engine) refreshSelf(ctx context.Context) {
 		return
 	}
 	if self.On {
-		d.warmCert(ctx, self.Host)
+		d.warmCert(ctx, self.DNSName)
 	}
 	switch {
 	case self.On && !first:
@@ -391,9 +391,9 @@ func (d *Engine) refreshSelf(ctx context.Context) {
 // invariant: the tailnet issues the host's certificate at the first https
 // request, 34.5 s measured, so the daemon asks for it as Serve turns on, in
 // the background: never blocking a publish, one at a time, within its budget.
-func (d *Engine) warmCert(ctx context.Context, host string) {
+func (d *Engine) warmCert(ctx context.Context, name string) {
 	d.mu.Lock()
-	if d.issuing || host == "" {
+	if d.issuing || name == "" {
 		d.mu.Unlock()
 		return
 	}
@@ -410,11 +410,11 @@ func (d *Engine) warmCert(ctx context.Context, host string) {
 		switch {
 		case ctx.Err() != nil:
 		case err == nil:
-			d.logf("tailnet", "certificate for "+host+" ready in "+d.h.Clock.Now().Sub(start).Round(time.Millisecond).String())
+			d.logf("tailnet", "certificate for "+name+" ready in "+d.h.Clock.Now().Sub(start).Round(time.Millisecond).String())
 		case errors.Is(err, system.ErrTimeout) || errors.Is(err, context.DeadlineExceeded):
-			d.logf("tailnet", "certificate for "+host+" not issued: no answer within "+certBudget.String())
+			d.logf("tailnet", "certificate for "+name+" not issued: no answer within "+certBudget.String())
 		default:
-			d.logf("tailnet", "certificate for "+host+" not issued: "+err.Error())
+			d.logf("tailnet", "certificate for "+name+" not issued: "+err.Error())
 		}
 	}()
 }

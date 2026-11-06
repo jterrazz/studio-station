@@ -30,9 +30,9 @@ const (
 type Menubar struct {
 	// value: the router the feed reads this Mac through, its calls run in
 	// the engine's process.
-	Calls call.Router
-	Clock Clock
-	Here  page.Context
+	Calls       call.Router
+	Clock       Clock
+	ThisMachine page.Context
 	// value: the Power report of a view the engine holds.
 	Report func(awake.View) *awake.Report
 	// value: every Mac's Awake, This Mac's first, as the CLI's station awake
@@ -80,7 +80,7 @@ func (f *menubar) run(ctx context.Context, in engine.FeedInput) {
 func (f *menubar) update(ctx context.Context, change func(*pagemenubar.Reading)) {
 	f.mu.Lock()
 	change(&f.r)
-	p := page.Document{Schema: page.Schema, Page: pagemenubar.Page(f.r, f.o.Here)}
+	p := page.Document{Schema: page.Schema, Page: pagemenubar.Page(f.r, f.o.ThisMachine)}
 	f.mu.Unlock()
 	select {
 	case <-f.out:
@@ -139,10 +139,10 @@ func (f *menubar) todo(ctx context.Context, in engine.FeedInput) {
 	}
 }
 
-func (f *menubar) read(ctx context.Context, thisMac bool) (allMachines machines.AllMachines, services ports.AllMachines, allMachinesErr, servicesErr error) {
-	listed, allMachinesErr := call.Read(ctx, f.o.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{Here: thisMac, Unwritten: true}, nil)
-	shared, servicesErr := call.Invoke(ctx, f.o.Calls, machine.Ref{}, portscalls.List, portscalls.ListIn{AllMachines: !thisMac}, nil)
-	return listed.Fleet, shared.AllMachines, allMachinesErr, servicesErr
+func (f *menubar) read(ctx context.Context, thisMac bool) (allMachines machines.AllMachines, portsRead ports.AllMachines, allMachinesErr, portsErr error) {
+	listed, allMachinesErr := call.Read(ctx, f.o.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{ThisMac: thisMac, Unwritten: true}, nil)
+	shared, portsErr := call.Invoke(ctx, f.o.Calls, machine.Ref{}, portscalls.List, portscalls.ListIn{AllMachines: !thisMac}, nil)
+	return listed.All, shared.AllMachines, allMachinesErr, portsErr
 }
 
 func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
@@ -151,11 +151,11 @@ func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
 		macs := f.awake(ctx, fl)
 		f.update(ctx, func(r *pagemenubar.Reading) {
 			if ferr == nil {
-				r.Fleet = &fl
+				r.All = &fl
 				r.Macs = macs
 			}
 			if serr == nil {
-				r.Services = &sv
+				r.Ports = &sv
 			}
 		})
 		if f.o.Clock.Sleep(ctx, remoteEvery) != nil {
@@ -168,8 +168,8 @@ func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
 // does not answer is left out.
 func (f *menubar) awake(ctx context.Context, fl machines.AllMachines) []awake.Report {
 	var out []awake.Report
-	for _, h := range fl.Hosts {
-		if h.Here || !h.Reachable {
+	for _, h := range fl.Macs {
+		if h.ThisMac || !h.Reachable {
 			continue
 		}
 		if r, err := call.Read(ctx, f.o.Calls, machine.Ref{Name: h.Name}, awakecalls.Read, awakecalls.ReadIn{}, nil); err == nil {
@@ -192,11 +192,11 @@ func (f *menubar) local(ctx context.Context, in engine.FeedInput) {
 		fl, sv, ferr, serr := f.read(ctx, true)
 		f.update(ctx, func(r *pagemenubar.Reading) {
 			r.Power = f.o.Report(in.Power())
-			if ferr == nil && len(fl.Hosts) == 1 {
-				r.Fleet = hereAllMachines(r.Fleet, fl)
+			if ferr == nil && len(fl.Macs) == 1 {
+				r.All = hereAllMachines(r.All, fl)
 			}
-			if serr == nil && len(sv.Hosts) == 1 {
-				r.Services = thisMacServices(r.Services, sv)
+			if serr == nil && len(sv.Macs) == 1 {
+				r.Ports = thisMacPorts(r.Ports, sv)
 			}
 		})
 	}
@@ -209,24 +209,24 @@ func hereAllMachines(was *machines.AllMachines, thisMac machines.AllMachines) *m
 		return &thisMac
 	}
 	out := *was
-	out.Hosts = append([]machines.HostView(nil), was.Hosts...)
-	for i, h := range out.Hosts {
-		if h.Here {
-			out.Hosts[i] = thisMac.Hosts[0]
+	out.Macs = append([]machines.MacView(nil), was.Macs...)
+	for i, h := range out.Macs {
+		if h.ThisMac {
+			out.Macs[i] = thisMac.Macs[0]
 		}
 	}
 	return &out
 }
 
-func thisMacServices(was *ports.AllMachines, thisMac ports.AllMachines) *ports.AllMachines {
+func thisMacPorts(was *ports.AllMachines, thisMac ports.AllMachines) *ports.AllMachines {
 	if was == nil {
 		return &thisMac
 	}
 	out := *was
-	out.Hosts = append([]ports.HostServices(nil), was.Hosts...)
-	for i, h := range out.Hosts {
+	out.Macs = append([]ports.MacPorts(nil), was.Macs...)
+	for i, h := range out.Macs {
 		if h.ThisMac {
-			out.Hosts[i] = thisMac.Hosts[0]
+			out.Macs[i] = thisMac.Macs[0]
 		}
 	}
 	return &out

@@ -98,8 +98,8 @@ func Stop(r engine.StopReport, thisMac page.Context) page.Page {
 	switch r.Power {
 	case engine.PowerEnded:
 		parts = append(parts, "Awake off")
-	case engine.PowerReset:
-		parts = append(parts, "the lid reset")
+	case engine.PowerCleared:
+		parts = append(parts, "the lid released")
 	}
 	if r.Sharing {
 		parts = append(parts, "sharing off")

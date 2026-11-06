@@ -18,7 +18,7 @@ type Target struct {
 	// names it; a Kind of "" is All machines.
 	Name, Label string
 	Kind        machine.Kind
-	Here        bool
+	ThisMachine bool
 	// value: a VM's Mac, by name and as the sidebar says it, and whether
 	// it is this one.
 	Mac, MacLabel string
@@ -80,7 +80,7 @@ func mac() []machine.Kind { return []machine.Kind{machine.Mac} }
 func allMachines() []machine.Kind { return []machine.Kind{"", machine.Mac} }
 
 func words(t Target, w ...string) []string {
-	if t.Kind == machine.Mac && t.Here || t.Kind == "" {
+	if t.Kind == machine.Mac && t.ThisMachine || t.Kind == "" {
 		return w
 	}
 	return append(w, "--on", t.Name)
@@ -351,11 +351,11 @@ func Offer(metas []call.Meta, t Target, macs []Target) []Item {
 				subjects = []Target{t}
 			}
 		case otherMac:
-			if t.Kind == machine.Mac && !t.Here {
+			if t.Kind == machine.Mac && !t.ThisMachine {
 				subjects = []Target{t}
 			}
 			if t.Kind == "" {
-				subjects = slices.DeleteFunc(slices.Clone(macs), func(x Target) bool { return x.Here })
+				subjects = slices.DeleteFunc(slices.Clone(macs), func(x Target) bool { return x.ThisMachine })
 			}
 		}
 		for _, s := range subjects {

@@ -25,7 +25,7 @@ var (
 
 func NewStore() *Store {
 	// value: a store over a world of its own, for a test that needs no other fake.
-	return StoreOf(&world.World{}, "here")
+	return StoreOf(&world.World{}, "this-mac")
 }
 
 func StoreOf(w *world.World, mac string) *Store { return &Store{w: w, mac: mac} }

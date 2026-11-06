@@ -12,8 +12,8 @@ type Provider struct {
 	// the commands that read it (never one that prints a secret), and the
 	// budget the whole read gets.
 	ID, Label string
-	Host, VM  bool
-	Tool      string
+	Mac, VM   bool
+	Command   string
 	Reads     []ProviderRead
 	Budget    time.Duration
 	// value: where the owner ends a right station did not lend: shown on a
@@ -34,17 +34,17 @@ const (
 )
 
 var Providers = []Provider{
-	{ID: ProviderGitHub, Label: "GitHub", Logout: "gh auth logout", Host: true, VM: true, Tool: "gh", Reads: []ProviderRead{{Name: "gh", Args: []string{"auth", "status", "--hostname", "github.com"}}}, Budget: 5 * time.Second},
-	{ID: ProviderNPM, Label: "npm", Logout: "npm logout", Host: true, VM: true, Tool: "npm", Reads: []ProviderRead{{Name: "npm", Args: []string{"whoami"}}}, Budget: 5 * time.Second},
-	{ID: ProviderClaude, Label: "Claude", Logout: "claude /logout", Host: true, VM: true, Tool: "claude", Reads: []ProviderRead{{Name: "claude", Args: []string{"auth", "status"}}}, Budget: 5 * time.Second},
-	{ID: ProviderTailscale, Label: "Tailscale", Logout: "tailscale logout", Host: true},
-	{ID: ProviderCloudflare, Label: "Cloudflare", Logout: "wrangler logout", Host: true, VM: true, Tool: "wrangler", Reads: []ProviderRead{{Name: "wrangler", Args: []string{"whoami"}}}, Budget: 10 * time.Second},
-	{ID: ProviderGit, Label: "git", Host: true, VM: true, Tool: "git", Reads: []ProviderRead{
+	{ID: ProviderGitHub, Label: "GitHub", Logout: "gh auth logout", Mac: true, VM: true, Command: "gh", Reads: []ProviderRead{{Name: "gh", Args: []string{"auth", "status", "--hostname", "github.com"}}}, Budget: 5 * time.Second},
+	{ID: ProviderNPM, Label: "npm", Logout: "npm logout", Mac: true, VM: true, Command: "npm", Reads: []ProviderRead{{Name: "npm", Args: []string{"whoami"}}}, Budget: 5 * time.Second},
+	{ID: ProviderClaude, Label: "Claude", Logout: "claude /logout", Mac: true, VM: true, Command: "claude", Reads: []ProviderRead{{Name: "claude", Args: []string{"auth", "status"}}}, Budget: 5 * time.Second},
+	{ID: ProviderTailscale, Label: "Tailscale", Logout: "tailscale logout", Mac: true},
+	{ID: ProviderCloudflare, Label: "Cloudflare", Logout: "wrangler logout", Mac: true, VM: true, Command: "wrangler", Reads: []ProviderRead{{Name: "wrangler", Args: []string{"whoami"}}}, Budget: 10 * time.Second},
+	{ID: ProviderGit, Label: "git", Mac: true, VM: true, Command: "git", Reads: []ProviderRead{
 		{Name: "git", Args: []string{"config", "--global", "user.name"}},
 		{Name: "git", Args: []string{"config", "--global", "user.email"}},
 	}, Budget: 2 * time.Second},
-	{ID: ProviderSSH, Label: "ssh", Logout: "ssh-add -D", Host: true, VM: true, Tool: "ssh-add", Reads: []ProviderRead{{Name: "ssh-add", Args: []string{"-l"}}}, Budget: 2 * time.Second},
-	{ID: ProviderDocker, Label: "Docker", Logout: "docker logout", Host: true, VM: true, Budget: 5 * time.Second},
+	{ID: ProviderSSH, Label: "ssh", Logout: "ssh-add -D", Mac: true, VM: true, Command: "ssh-add", Reads: []ProviderRead{{Name: "ssh-add", Args: []string{"-l"}}}, Budget: 2 * time.Second},
+	{ID: ProviderDocker, Label: "Docker", Logout: "docker logout", Mac: true, VM: true, Budget: 5 * time.Second},
 	{ID: ProviderEntry, Label: "entry", VM: true},
 }
 
@@ -63,4 +63,4 @@ var ShareScopes = []ShareScope{
 	{Name: "session:github", Provider: ProviderGitHub, Scope: "GitHub browser session"},
 }
 
-const DockerConfig = ".docker/config.json"
+const DockerSettingsFile = ".docker/config.json"

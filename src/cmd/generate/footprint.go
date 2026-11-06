@@ -33,16 +33,16 @@ func footprint() string {
 		"## Apps",
 	}
 	for _, t := range catalog.Apps {
-		if !t.Storage.Declared() {
+		if !t.Disk.Declared() {
 			continue
 		}
-		parts = append(parts, "### "+t.Name, table([]string{"Path", "Group", "Note"}, storedRows(t.Storage)))
-		if lines := actionLines(t.Storage); lines != "" {
+		parts = append(parts, "### "+t.Name, table([]string{"Path", "Group", "Note"}, storedRows(t.Disk)))
+		if lines := actionLines(t.Disk); lines != "" {
 			parts = append(parts, lines)
 		}
 	}
 	parts = append(parts,
-		"## Settings", table([]string{"Setting", "Path", "Group", "Note"}, configRows()),
+		"## Settings", table([]string{"Setting", "Path", "Group", "Note"}, settingsRows()),
 		"## Home-root exceptions", "What an app keeps at the root of the home folder, declared with its reason; anything else there is misplaced.", table([]string{"Path", "Reason"}, exceptionRows()),
 		"## Relocations", "Written by `station setup` into the app's own file, never by a shell variable.", table([]string{"App", "File", "Key", "Value", "Status"}, relocationRows()),
 	)
@@ -77,13 +77,13 @@ func on(kinds []catalog.MachineKind) string {
 	switch {
 	case len(has) == 0 || len(has) == 3:
 		return ""
-	case len(has) == 2 && has[catalog.Host] && has[catalog.MacOS]:
+	case len(has) == 2 && has[catalog.Mac] && has[catalog.MacOS]:
 		return "macOS"
 	case len(has) == 2 && has[catalog.Linux] && has[catalog.MacOS]:
 		return "vm"
 	case len(has) == 1 && has[catalog.Linux]:
 		return "linux"
-	case len(has) == 1 && has[catalog.Host]:
+	case len(has) == 1 && has[catalog.Mac]:
 		return "Mac"
 	case len(has) == 1 && has[catalog.MacOS]:
 		return "macOS VM"
@@ -113,7 +113,7 @@ func memoNote(memos []string) string {
 }
 
 func storedRows(s catalog.Disk) [][]string {
-	rows := make([][]string, 0, len(s.Paths)+len(s.Installed)+len(s.Strays))
+	rows := make([][]string, 0, len(s.Paths)+len(s.Installed)+len(s.Misplaced))
 	for _, p := range s.Paths {
 		rows = append(rows, []string{code(shown(p.Path)), group(p.Level), note(on(p.On), p.Note, memoNote(p.Memos))})
 	}
@@ -124,7 +124,7 @@ func storedRows(s catalog.Disk) [][]string {
 		}
 		rows = append(rows, []string{code(shown(p)), "installed", removal})
 	}
-	for _, st := range s.Strays {
+	for _, st := range s.Misplaced {
 		moves := make([]string, 0, len(st.Move))
 		for _, m := range st.Move {
 			moves = append(moves, code(shown(m.From))+" to "+code(shown(m.To)))
@@ -140,13 +140,13 @@ func storedRows(s catalog.Disk) [][]string {
 
 func actionLines(s catalog.Disk) string {
 	var lines []string
-	if c := actions(s.Clean); c != "" {
+	if c := actions(s.Free); c != "" {
 		lines = append(lines, "Free: "+c+".")
 	}
-	if r := actions(s.Reset); r != "" {
+	if r := actions(s.Erase); r != "" {
 		lines = append(lines, "Erase: "+r+".")
-	} else if s.NoReset != "" {
-		lines = append(lines, "Erase: none ("+s.NoReset+").")
+	} else if s.NoErase != "" {
+		lines = append(lines, "Erase: none ("+s.NoErase+").")
 	}
 	if s.Quit != "" {
 		lines = append(lines, "An erase refuses while "+code(s.Quit)+" runs.")
@@ -171,17 +171,17 @@ func actions(list []catalog.Action) string {
 	return strings.Join(out, ", ")
 }
 
-func configRows() [][]string {
+func settingsRows() [][]string {
 	var rows [][]string
-	for _, it := range catalog.ConfigItems {
+	for _, it := range catalog.Settings {
 		writes := it.Writes
 		if d, ok := it.Effect.(catalog.Dotfiles); ok {
 			for _, c := range d.Files {
-				writes = append(writes, catalog.Stored{Path: c.To, Level: catalog.LevelConfig, Note: "the embedded " + code(c.From)})
+				writes = append(writes, catalog.Stored{Path: c.To, Level: catalog.LevelSettings, Note: "the embedded " + code(c.From)})
 			}
 		}
 		if t, ok := it.Effect.(catalog.Touch); ok && len(writes) == 0 {
-			writes = append(writes, catalog.Stored{Path: t.Path, Level: catalog.LevelConfig})
+			writes = append(writes, catalog.Stored{Path: t.Path, Level: catalog.LevelSettings})
 		}
 		for _, w := range writes {
 			rows = append(rows, []string{it.Name, code(shown(w.Path)), group(w.Level), w.Note})
@@ -201,7 +201,7 @@ func exceptionRows() [][]string {
 func relocationRows() [][]string {
 	var rows [][]string
 	for _, t := range catalog.Apps {
-		for _, r := range t.Storage.Relocate {
+		for _, r := range t.Disk.Relocate {
 			status := "written"
 			if r.Pending != "" {
 				status = "pending: " + r.Pending

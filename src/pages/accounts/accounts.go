@@ -228,7 +228,7 @@ func Section(r accounts.Report) page.Section {
 	}
 	switch {
 	case stopped(r):
-		d := engineRow(r.Daemon)
+		d := engineRow(r.Engine)
 		s.Items = append(s.Items, page.Item{Row: &d})
 	case vms == 0 && len(r.Machines) > 0 && r.Machines[0].Kind == accounts.KindHost:
 		s.Items = append(s.Items, page.Item{Note: &page.Note{Text: "no VMs: accounts shared with a VM appear here"}})
@@ -237,7 +237,7 @@ func Section(r accounts.Report) page.Section {
 }
 
 func stopped(r accounts.Report) bool {
-	return r.Daemon == accounts.DaemonStopped || r.Daemon == accounts.DaemonAbsent
+	return r.Engine == accounts.DaemonStopped || r.Engine == accounts.DaemonAbsent
 }
 
 func Page(r accounts.Report, thisMac page.Context) page.Page {

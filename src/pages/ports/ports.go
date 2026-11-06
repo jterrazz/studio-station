@@ -82,13 +82,13 @@ func Sections(f ports.AllMachines, thisMac page.Context, all bool) []page.Sectio
 	// what listens on its machine only is a count, unfolded by all; each Mac's
 	// reserved ports one line.
 	var red, public, private, local, notes []page.Item
-	for _, h := range f.Hosts {
-		private = append(private, hostRows(h)...)
+	for _, h := range f.Macs {
+		private = append(private, macRows(h)...)
 		if !h.Reachable {
 			continue
 		}
 		shared := map[string]bool{}
-		for _, s := range h.Services {
+		for _, s := range h.Shared {
 			row := Row(s)
 			shared[row.ID] = true
 			private = append(private, page.Item{Row: &row})
@@ -145,7 +145,7 @@ func localOnly(n int) string {
 }
 
 // value: a host's own rows: it does not answer, or its engine does not run.
-func hostRows(h ports.HostServices) []page.Item {
+func macRows(h ports.MacPorts) []page.Item {
 	var row page.Row
 	switch {
 	case !h.Reachable:
@@ -255,7 +255,7 @@ func PrivateRow(p ports.Port) page.Row {
 		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(ClassPrivate), page.None(), page.Text(how), page.Text(p.What())}}
 }
 
-func reserved(h ports.HostServices, thisMac page.Context) string {
+func reserved(h ports.MacPorts, thisMac page.Context) string {
 	r, mac := h.Range, page.MacName(h.Name, thisMac.Machine)
 	if mac == "" && h.ThisMac {
 		mac = "This Mac"
@@ -268,11 +268,11 @@ func reserved(h ports.HostServices, thisMac page.Context) string {
 func Actions(f ports.AllMachines) []page.Action {
 	// invariant: stop sharing binds only a port's row, never a Mac's or the engine's.
 	var shared []string
-	for _, h := range f.Hosts {
+	for _, h := range f.Macs {
 		if !h.Reachable {
 			continue
 		}
-		for _, s := range h.Services {
+		for _, s := range h.Shared {
 			shared = append(shared, Row(s).ID)
 		}
 	}
@@ -284,10 +284,10 @@ func Actions(f ports.AllMachines) []page.Action {
 
 // value: a port's state in the owner's words (SPEC 5.6), the mark it reads
 // with, and the fix it waits for.
-func stateOf(s ports.ServiceView) (page.Mark, page.Reason, page.Value, *page.Hint) {
-	reserved := "reserved " + strconv.Itoa(s.HostPort)
+func stateOf(s ports.SharedPort) (page.Mark, page.Reason, page.Value, *page.Hint) {
+	reserved := "reserved " + strconv.Itoa(s.Reserved)
 	switch {
-	case s.State == ports.PhaseRefused || s.HostPort == 0:
+	case s.State == ports.PhaseRefused || s.Reserved == 0:
 		return page.Attention, page.Waiting, page.Texts("waiting", s.Detail), page.Cmd("station ports stop-sharing " + s.VM + " <port>")
 	case s.State == ports.PhaseUnknown:
 		return page.Attention, page.Late, page.Texts("not shared while the engine is stopped", reserved), nil
@@ -305,14 +305,14 @@ func stateOf(s ports.ServiceView) (page.Mark, page.Reason, page.Value, *page.Hin
 
 func rowID(vm string, port int) string { return vm + ":" + strconv.Itoa(port) }
 
-func Row(s ports.ServiceView) page.Row {
+func Row(s ports.SharedPort) page.Row {
 	url := page.URL(s.URLs.Public)
-	if s.HostPort == 0 || s.URLs.Public == "" {
+	if s.Reserved == 0 || s.URLs.Public == "" {
 		url = page.None()
 	}
 	port := page.Port(int64(s.GuestPort))
-	if s.HostPort != 0 {
-		port = page.PortMap(int64(s.GuestPort), int64(s.HostPort))
+	if s.Reserved != 0 {
+		port = page.PortMap(int64(s.GuestPort), int64(s.Reserved))
 	}
 	mark, reason, state, hint := stateOf(s)
 	return page.Row{ID: rowID(s.VM, s.GuestPort), Label: s.VM, Mark: mark, Reason: reason,
@@ -320,15 +320,15 @@ func Row(s ports.ServiceView) page.Row {
 		Detail: page.Text(s.Profile), Hint: hint}
 }
 
-func Link(s ports.ServiceView) page.Link {
+func Link(s ports.SharedPort) page.Link {
 	l := page.Link{Label: strconv.Itoa(s.GuestPort), Lead: page.Port(int64(s.GuestPort)), Value: page.URL(s.URLs.Public), Detail: page.Text(s.Process), Page: "ports", Row: rowID(s.VM, s.GuestPort)}
-	if s.HostPort != 0 {
-		l.Lead = page.PortMap(int64(s.GuestPort), int64(s.HostPort))
+	if s.Reserved != 0 {
+		l.Lead = page.PortMap(int64(s.GuestPort), int64(s.Reserved))
 	}
 	return l
 }
 
-func Shared(s ports.ServiceView, thisMac page.Context) page.Page {
+func Shared(s ports.SharedPort, thisMac page.Context) page.Page {
 	row := pages.Done(rowID(s.VM, s.GuestPort), catalog.StateOK, "")
 	row.Cells = []page.Value{page.URL(s.URLs.Public)}
 	return pages.Outcome("ports share "+strconv.Itoa(s.GuestPort), thisMac,
@@ -357,11 +357,11 @@ func Stopped(r ports.Reservation, thisMac page.Context) page.Page {
 // value: whose ports a list holds: every Mac's, another Mac's, This Mac's.
 func whose(f ports.AllMachines, thisMac page.Context) string {
 	switch {
-	case len(f.Hosts) > 1:
+	case len(f.Macs) > 1:
 		return "Every Mac"
-	case len(f.Hosts) == 1 && thisMac.Machine != "" && f.Hosts[0].Name != thisMac.Machine:
-		return page.MacName(f.Hosts[0].Name, thisMac.Machine)
-	case thisMac.Machine != "" && thisMac.Kind != string(catalog.Host):
+	case len(f.Macs) == 1 && thisMac.Machine != "" && f.Macs[0].Name != thisMac.Machine:
+		return page.MacName(f.Macs[0].Name, thisMac.Machine)
+	case thisMac.Machine != "" && thisMac.Kind != string(catalog.Mac):
 		return thisMac.Machine
 	}
 	return "This Mac"

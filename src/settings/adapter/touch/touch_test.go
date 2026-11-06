@@ -46,7 +46,7 @@ func (m *memory) Remove(p string) error {
 
 func TestApplier(t *testing.T) {
 	contracttest.Applier(t, func(*testing.T) contracttest.Opened {
-		item := catalog.ConfigItem{Name: "quiet-login", Effect: catalog.Touch{Path: "~/.hushlogin"}}
+		item := catalog.Setting{Name: "quiet-login", Effect: catalog.Touch{Path: "~/.hushlogin"}}
 		return contracttest.Opened{Applier: touch.New(newMemory(), "/home/u"), Item: item}
 	})
 }

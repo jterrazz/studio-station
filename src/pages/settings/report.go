@@ -10,6 +10,7 @@ import (
 )
 
 type ItemJSON struct {
+	// value: alias of station.status/v1's row, kept byte for byte one release.
 	Name     string   `json:"name"`
 	Category string   `json:"category"`
 	LivesOn  []string `json:"places"`
@@ -18,9 +19,9 @@ type ItemJSON struct {
 }
 
 func ItemObject(r config.Report) ItemJSON {
-	livesOn := make([]string, len(r.Item.Places))
-	for i, p := range r.Item.Places {
-		livesOn[i] = string(p)
+	livesOn := make([]string, len(r.Item.Kinds))
+	for i, p := range r.Item.Kinds {
+		livesOn[i] = catalog.StatusV1Kind(p)
 	}
 	return ItemJSON{Name: r.Item.Name, Category: string(r.Item.Category), LivesOn: livesOn, State: string(r.State), Detail: r.Detail}
 }

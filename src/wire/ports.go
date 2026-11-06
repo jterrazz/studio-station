@@ -26,15 +26,15 @@ import (
 	portsundeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/undeclare"
 )
 
-func (m machine) services(_ kit.Env) *services.Service {
-	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.thisMac(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure,
+func (m machine) portsOf(_ kit.Env) *services.Service {
+	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.thisMac(), Ask: m.askPorts, ReleaseOn: m.releaseOn, Exposure: m.exposure,
 		Listening: m.listeners("/").Read, Routes: m.routes()}
-	d := servicesEngine{c: m.engineAPI()}
-	if m.kind != catalog.Host {
+	d := portsEngine{c: m.engineAPI()}
+	if m.kind != catalog.Mac {
 		g := m.guest()
 		p := m.placement(g)
 		o.HereName, o.VMName, o.HostName = p.Host, p.VM, p.Host
-		d = servicesEngine{c: socketAPI(m.host, g.SocketPath())}
+		d = portsEngine{c: socketAPI(m.sys, g.SocketPath())}
 	}
 	allMachines := m.machines(false)
 	o.VMHost = func(ctx context.Context, vm string) (string, bool, error) {
@@ -42,10 +42,10 @@ func (m machine) services(_ kit.Env) *services.Service {
 		if err != nil {
 			return "", false, err
 		}
-		for _, h := range f.Hosts {
+		for _, h := range f.Macs {
 			for _, v := range h.VMs {
 				if v.Name == vm {
-					return h.Name, h.Here, nil
+					return h.Name, h.ThisMac, nil
 				}
 			}
 		}
@@ -55,7 +55,7 @@ func (m machine) services(_ kit.Env) *services.Service {
 		}
 		return "", false, &services.UnknownVMError{Name: vm}
 	}
-	return services.New(m.host, services.Stores{Services: m.stores.services(), Name: m.stores.name(), Hosts: m.stores.hosts(), Reservations: m.stores.reservations, Declarations: m.stores.declarations}, d, o)
+	return services.New(m.sys, services.Stores{Services: m.stores.ports(), Name: m.stores.name(), Hosts: m.stores.hosts(), Reservations: m.stores.reservations, Declarations: m.stores.declarations}, d, o)
 }
 
 // value: what listens on this Mac, read by lsof, the world's in a world.
@@ -75,12 +75,14 @@ func (m machine) placement(g *guest.Service) guest.Placement {
 // line of the ports.
 func portsCommands(env kit.Env, m machine) []*cobra.Command {
 	list := func(children ...*cobra.Command) *cobra.Command {
-		return portscmd.Command(portscmd.Deps{Here: m.where}, env, children...)
+		return portscmd.Command(portscmd.Deps{ThisMachine: m.where}, env, children...)
 	}
-	share := func() *cobra.Command { return portsshare.Command(portsshare.Deps{Here: m.where}, env) }
-	stop := func() *cobra.Command { return portsstopsharing.Command(portsstopsharing.Deps{Here: m.where}, env) }
-	declare := portsdeclare.Command(portsdeclare.Deps{Here: m.where}, env)
-	undeclare := portsundeclare.Command(portsundeclare.Deps{Here: m.where}, env)
+	share := func() *cobra.Command { return portsshare.Command(portsshare.Deps{ThisMachine: m.where}, env) }
+	stop := func() *cobra.Command {
+		return portsstopsharing.Command(portsstopsharing.Deps{ThisMachine: m.where}, env)
+	}
+	declare := portsdeclare.Command(portsdeclare.Deps{ThisMachine: m.where}, env)
+	undeclare := portsundeclare.Command(portsundeclare.Deps{ThisMachine: m.where}, env)
 	return []*cobra.Command{
 		list(share(), stop(), declare, undeclare),
 		kit.Alias("services", list(kit.Alias("url", share(), "share"), kit.Alias("release", stop(), "stop-sharing")), "ports"),

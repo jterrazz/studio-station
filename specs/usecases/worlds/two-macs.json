@@ -1,6 +1,6 @@
 {
     "now": "2026-11-04T10:00:00Z",
-    "here": "jterrazz-macbook-pro",
+    "this_mac": "jterrazz-macbook-pro",
     "macs": {
         "jterrazz-macbook-pro": {
             "engine": {
@@ -257,7 +257,7 @@
                     "Sharing": {
                         "Backend": "Running",
                         "On": true,
-                        "Host": "jterrazz-macbook-pro.tail1234.ts.net"
+                        "DNSName": "jterrazz-macbook-pro.tail1234.ts.net"
                     },
                     "Client": {
                         "Path": "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
@@ -284,7 +284,7 @@
                     "api": {
                         "user": "admin",
                         "behind": "jterrazz-macbook-pro",
-                        "here": true
+                        "this_mac": true
                     },
                     "infra": {
                         "user": "admin",
@@ -296,7 +296,7 @@
                     "linux-1": {
                         "user": "admin",
                         "behind": "jterrazz-macbook-pro",
-                        "here": true
+                        "this_mac": true
                     }
                 }
             },
@@ -758,7 +758,7 @@
                     "Sharing": {
                         "Backend": "Running",
                         "On": true,
-                        "Host": "jterrazz-mac-mini.tail1234.ts.net"
+                        "DNSName": "jterrazz-mac-mini.tail1234.ts.net"
                     },
                     "Client": {
                         "Path": "/usr/local/bin/tailscale",

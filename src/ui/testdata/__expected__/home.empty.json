@@ -3,7 +3,7 @@
   "id": "home",
   "command": "status",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "ready",
   "sections": [
@@ -158,7 +158,7 @@
         },
         {
           "row": {
-            "id": "summary/tools",
+            "id": "summary/apps",
             "mark": "ok",
             "label": "Apps",
             "cells": [
@@ -177,7 +177,7 @@
         },
         {
           "row": {
-            "id": "summary/config",
+            "id": "summary/settings",
             "mark": "ok",
             "label": "Settings",
             "cells": [
@@ -196,7 +196,7 @@
         },
         {
           "row": {
-            "id": "summary/storage",
+            "id": "summary/disk",
             "mark": "ok",
             "label": "Disk",
             "cells": [
@@ -210,7 +210,7 @@
         },
         {
           "row": {
-            "id": "summary/fleet",
+            "id": "summary/all-machines",
             "mark": "ok",
             "label": "All machines",
             "cells": [
@@ -703,7 +703,7 @@
       "pipe_counts": true
     },
     {
-      "id": "tools",
+      "id": "apps",
       "title": "Apps",
       "fold": "folded",
       "columns": [
@@ -733,7 +733,7 @@
       "pipe_counts": true
     },
     {
-      "id": "config",
+      "id": "settings",
       "title": "Settings",
       "fold": "folded",
       "columns": [

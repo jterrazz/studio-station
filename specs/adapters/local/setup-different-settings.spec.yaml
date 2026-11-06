@@ -1,4 +1,4 @@
-description: 'a settings.json that differs from the converted config.json is never overwritten'
+description: 'a settings.json that differs from the converted v1 file is never overwritten'
 fixture:
     - ../__fixtures__/setup-stubs/
     - ../__fixtures__/v1-studio/
@@ -12,7 +12,7 @@ runs:
           ●	name	elsewhere
           ●	zshrc
           ✗	layout	{{workdir}}/.config/station/preferences.json already exists with different content
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts

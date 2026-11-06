@@ -16,8 +16,8 @@ import (
 
 type Deps struct {
 	// value: the apps with a Disk row here, for completion.
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 type Input struct {
@@ -38,7 +38,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Pages: true,
 		Entry: kit.Entry("station disk free", "disk row", d.Names),
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			thisMac := d.Here
+			thisMac := d.ThisMachine
 			if env.Far() {
 				thisMac = page.Context{Machine: env.Target().Name}
 			}

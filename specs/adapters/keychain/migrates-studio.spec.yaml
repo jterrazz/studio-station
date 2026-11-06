@@ -12,7 +12,7 @@ runs:
           ●	zshrc
           ●	layout	moved to the XDG folders
           ●	layout	userspace tailscaled retired; its node "base" stays at https://login.tailscale.com/admin/machines until you remove it
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts
@@ -26,7 +26,7 @@ runs:
           .config/station/preferences.json:
               equals: |
                   {
-                    "here": "base",
+                    "name": "base",
                     "macs": {
                       "base": {},
                       "mini": {

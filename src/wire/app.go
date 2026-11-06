@@ -67,7 +67,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	}
 	var world *worldMac
 	if session != nil {
-		world = session.here()
+		world = session.thisMac()
 	}
 	thisMac := resolve(local.New(env, childIn, stdout, stderr), local.NewPower(env), vars, world)
 	kenv := kit.Env{
@@ -75,13 +75,13 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		Prompt:      output.Terminal(stdin, stderr),
 		Interactive: inTTY && errTTY,
 		Screen:      inTTY && outTTY,
-		On:          &kit.On{Here: thisMac.thisMac(), Known: thisMac.known},
+		On:          &kit.On{ThisMachine: thisMac.thisMac(), Known: thisMac.known},
 		Use:         thisMac.uses(),
 		Stdin:       frameIn,
 		Stdout:      frames,
 		Self:        thisMac.profile.Ref,
 		Kind:        thisMac.profile.Kind,
-		Now:         thisMac.host.Clock.Now,
+		Now:         thisMac.sys.Clock.Now,
 		Locate:      thisMac.locate,
 	}
 	router := thisMac.router(kenv)
@@ -255,7 +255,7 @@ type machine struct {
 	door      local.Power
 	far       *late
 	pool      *lanes.Pool
-	host      system.Host
+	sys       system.Host
 	powerPort awakecontract.Power
 	profile   coremachine.Profile
 	vars      map[string]string
@@ -268,7 +268,7 @@ type machine struct {
 func resolve(raw system.Host, door local.Power, vars map[string]string, world *worldMac) machine {
 	h := raw
 	if world != nil {
-		h = world.host(raw)
+		h = world.system(raw)
 	}
 	home := h.Env.Home()
 	root := func(name, fallback string) string {
@@ -306,7 +306,7 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 		door:   door,
 		far:    &late{},
 		pool:   lanes.NewPool(context.Background(), budgets, commandLane, walkLane),
-		host:   h,
+		sys:    h,
 		vars:   vars,
 		paths:  paths,
 		stores: st,

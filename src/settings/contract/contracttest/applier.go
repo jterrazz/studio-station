@@ -11,7 +11,7 @@ import (
 
 type Opened struct {
 	Applier contract.Applier
-	Item    catalog.ConfigItem
+	Item    catalog.Setting
 	// value: the owner edits what the setting wrote, by hand.
 	Edit func(t *testing.T)
 }

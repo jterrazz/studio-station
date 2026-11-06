@@ -24,7 +24,7 @@ func selfOf(h system.Host) contract.Self {
 // is then not asked.
 func pinned(word string) (coremachine.Kind, coremachine.OS, bool) {
 	switch catalog.MachineKind(word) {
-	case catalog.Host:
+	case catalog.Mac:
 		return coremachine.Mac, coremachine.MacOS, true
 	case catalog.MacOS:
 		return coremachine.Workspace, coremachine.MacOS, true
@@ -63,7 +63,7 @@ func profileOf(ctx context.Context, self contract.Self, pin, name string, power 
 func legacyKind(p coremachine.Profile) catalog.MachineKind {
 	switch {
 	case p.Kind == coremachine.Mac:
-		return catalog.Host
+		return catalog.Mac
 	case p.System.OS == coremachine.Linux:
 		return catalog.Linux
 	}

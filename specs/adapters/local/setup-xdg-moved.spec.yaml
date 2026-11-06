@@ -8,7 +8,7 @@ runs:
           ●	name	t
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts
@@ -20,6 +20,6 @@ runs:
           ○	dock-spacer	next: station settings apply dock-spacer
       files:
           c/station/preferences.json:
-              contains: '"here": "t",'
+              contains: '"name": "t",'
           .config: absent
           .studio: absent

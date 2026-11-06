@@ -1,5 +1,5 @@
 description: 'in a VM the shell block ends with the VM''s exports'
-fixture: ./__fixtures__/vm-services/
+fixture: ./__fixtures__/vm-exports/
 env: engine
 runs:
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" shell zsh | /usr/bin/tail -3'

@@ -9,8 +9,8 @@ import (
 type Entry struct {
 	Name     string
 	Category string
-	Storage  catalog.Disk
-	Places   []catalog.MachineKind
+	Disk     catalog.Disk
+	Kinds    []catalog.MachineKind
 }
 
 type PathReport struct {
@@ -37,7 +37,7 @@ type Tally struct {
 	Bytes     map[catalog.Level]int64
 	Install   int64
 	Paths     []PathReport
-	Strays    []MisplacedReport
+	Misplaced []MisplacedReport
 	Pending   bool
 	// value: a pending size the walk has never measured, so the row cannot
 	// know yet which groups it will fill.
@@ -49,16 +49,16 @@ func (r Tally) Total() int64 {
 	for _, b := range r.Bytes {
 		total += b
 	}
-	for _, s := range r.Strays {
+	for _, s := range r.Misplaced {
 		total += s.Bytes
 	}
 	return total
 }
 
 type Survey struct {
-	Rows   []Tally
-	Strays []MisplacedReport
-	Other  int64
+	Rows      []Tally
+	Misplaced []MisplacedReport
+	Other     int64
 }
 
 type Outcome struct {
@@ -68,7 +68,7 @@ type Outcome struct {
 	Reason string
 	Hint   string
 	Freed  int64
-	Reset  bool
+	Erase  bool
 }
 
 func Failures(outcomes []Outcome) (failed int, firstFailed Outcome) {

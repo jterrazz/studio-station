@@ -21,9 +21,9 @@ import (
 )
 
 type Deps struct {
-	Names func() []string
-	Here  page.Context
-	Now   func() time.Time
+	Names       func() []string
+	ThisMachine page.Context
+	Now         func() time.Time
 }
 
 type Input struct {
@@ -61,7 +61,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Page(pagesettings.Changes("apply", changes, d.Here), nil); err != nil {
+			if err := io.Page(pagesettings.Changes("apply", changes, d.ThisMachine), nil); err != nil {
 				return err
 			}
 			return partial(changes, "apply")
@@ -88,7 +88,7 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, in *Input, io kit.IO
 	if err != nil {
 		return err
 	}
-	livesOn, servers := settings.Places(list.Fleet)
+	livesOn, servers := settings.LivesOnAll(list.All)
 	var applies []pagesettings.MachineApply
 	failed := 0
 	for _, p := range livesOn {
@@ -128,7 +128,7 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, in *Input, io kit.IO
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if err := io.Page(pagesettings.EveryMachine(applies, d.Here), nil); err != nil {
+	if err := io.Page(pagesettings.EveryMachine(applies, d.ThisMachine), nil); err != nil {
 		return err
 	}
 	if failed > 0 {
@@ -168,7 +168,7 @@ func admins(names []string, p settings.LivesOn) ([]string, []pagesettings.AdminS
 			asked = append(asked, n)
 			continue
 		}
-		admin = append(admin, pagesettings.AdminSetting{Name: n, Command: kit.AdminApply(n, p.Name, p.Here)})
+		admin = append(admin, pagesettings.AdminSetting{Name: n, Command: kit.AdminApply(n, p.Name, p.ThisMachine)})
 	}
 	return asked, admin
 }

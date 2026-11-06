@@ -31,7 +31,7 @@ func Columns() []page.Column {
 	return []page.Column{
 		{Key: "name", Kind: page.KindText, Keep: 100},
 		{Key: "kind", Kind: page.KindText, Show: page.PipeOnly},
-		{Key: "host", Kind: page.KindText, Show: page.PipeOnly},
+		{Key: "mac", Kind: page.KindText, Show: page.PipeOnly},
 		{Key: "lifetime", Kind: page.KindText, Show: page.PipeOnly},
 		{Key: "class", Kind: page.KindText, Keep: 70, Show: page.EyeOnly},
 		{Key: "role", Kind: page.KindText, Keep: 30, Show: page.EyeOnly},
@@ -43,19 +43,19 @@ func Columns() []page.Column {
 	}
 }
 
-func Section(f machines.Fleet, links func(host, vm string) []page.Link) page.Section {
+func Section(f machines.Fleet, links func(mac, vm string) []page.Link) page.Section {
 	// invariant: one column schema for host and VM rows, and no piped row ends on
 	// an empty cell nor grows a hint field, so every record has the same eight
 	// fields: a fix rides in the resources cell.
 	hereVersion := ""
-	for _, h := range f.Hosts {
-		if h.Here {
+	for _, h := range f.Macs {
+		if h.ThisMac {
 			hereVersion = h.StationVersion
 		}
 	}
-	items := make([]page.Item, 0, len(f.Hosts))
-	for _, h := range f.Hosts {
-		g := page.Group{Head: hostRow(h, hereVersion), Fold: page.Open}
+	items := make([]page.Item, 0, len(f.Macs))
+	for _, h := range f.Macs {
+		g := page.Group{Head: macHeadRow(h, hereVersion), Fold: page.Open}
 		for _, vm := range h.VMs {
 			row := vmRow(vm)
 			var under []page.Item
@@ -72,7 +72,7 @@ func Section(f machines.Fleet, links func(host, vm string) []page.Link) page.Sec
 		}
 		if len(h.VMs) == 0 && h.Reachable {
 			hint := page.KeyHint("station machines create", KeyCreate)
-			if !h.Here {
+			if !h.ThisMac {
 				hint = page.Cmd("station machines create --on " + h.Name)
 			}
 			g.Items = append(g.Items, page.Item{Empty: &page.Empty{Noun: "VMs", Hint: hint}})
@@ -82,7 +82,7 @@ func Section(f machines.Fleet, links func(host, vm string) []page.Link) page.Sec
 	if len(items) == 0 {
 		items = append(items, page.Item{Empty: &page.Empty{Noun: "Macs", Hint: page.Cmd("station machines add <name>")}})
 	}
-	return page.Section{ID: "fleet", Title: "All machines", Columns: Columns(), Items: items}
+	return page.Section{ID: "all-machines", Title: "All machines", Columns: Columns(), Items: items}
 }
 
 func Actions() []page.Action {
@@ -96,28 +96,28 @@ func Actions() []page.Action {
 	}
 }
 
-func hostRow(h machines.HostView, hereVersion string) page.Row {
+func macHeadRow(h machines.HostView, thisVersion string) page.Row {
 	row := page.Row{ID: h.Name, Label: h.Name, Mark: page.OK}
 	state, resources, detail := page.Text("online"), vmCount(len(h.VMs)), page.None()
 	switch {
 	case !h.Reachable:
 		row.Mark, row.Reason, state, resources = page.Attention, page.Unreachable, page.Text("unreachable"), page.Text("-")
-	case h.StationVersion != "" && h.StationVersion != hereVersion:
+	case h.StationVersion != "" && h.StationVersion != thisVersion:
 		row.Mark, row.Reason = page.Attention, page.Mismatch
-		detail = page.Text("station " + h.StationVersion + ", This Mac " + hereVersion)
-	case h.Daemon.Known && !h.Daemon.Running:
+		detail = page.Text("station " + h.StationVersion + ", This Mac " + thisVersion)
+	case h.Engine.Known && !h.Engine.Running:
 		row.Mark, row.Reason = page.Attention, page.Stopped
 		word, fix := "engine stopped", "station engine start"
 		switch {
-		case !h.Here:
+		case !h.ThisMac:
 			fix = "ssh " + h.Name + " station engine start"
-		case !h.Daemon.Installed:
+		case !h.Engine.Installed:
 			row.Reason, word, fix = page.Missing, "engine not installed", "station setup"
 		}
 		detail = page.List(page.Text(word), page.Command(fix))
 	}
 	role := ""
-	if h.Here {
+	if h.ThisMac {
 		role = "This Mac"
 	}
 	row.Cells = []page.Value{page.Text("mac"), page.Text(""), page.Text(""), page.Text("Mac"), page.Text(role), state, orDash(h.Node.IP), record(resources, detail), resources, detail}
@@ -144,7 +144,7 @@ func vmRow(vm machines.VM) page.Row {
 	case machines.Unknown:
 		row.Mark, row.Reason = page.NotKnown, page.Unreachable
 	}
-	row.Cells = []page.Value{page.Text(string(vm.Lifetime.Kind())), page.Text(vm.Host), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
+	row.Cells = []page.Value{page.Text(string(vm.Lifetime.Kind())), page.Text(vm.Mac), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
 	return row
 }
 
@@ -269,7 +269,7 @@ type CreatedJSON struct {
 	Schema      string            `json:"schema"`
 	Name        string            `json:"name"`
 	Kind        string            `json:"kind"`
-	Host        string            `json:"host"`
+	Mac         string            `json:"mac"`
 	Lifetime    string            `json:"lifetime"`
 	Check       string            `json:"check,omitempty"`
 	Image       string            `json:"image"`
@@ -280,7 +280,7 @@ type CreatedJSON struct {
 	IP          string            `json:"ip"`
 	Network     string            `json:"network"`
 	Health      CreatedHealth     `json:"health"`
-	Services    []CreatedService  `json:"services"`
+	Ports       []CreatedPort     `json:"ports"`
 	Env         map[string]string `json:"env"`
 }
 
@@ -290,9 +290,9 @@ type CreatedHealth struct {
 	SSH     bool `json:"ssh"`
 }
 
-type CreatedService struct {
+type CreatedPort struct {
 	GuestPort int    `json:"guest_port"`
-	HostPort  int    `json:"host_port"`
+	Reserved  int    `json:"reserved"`
 	Profile   string `json:"profile"`
 	URL       string `json:"url"`
 }
@@ -302,15 +302,15 @@ func CreatedContract(schema string, c machines.Created) CreatedJSON {
 	// ssh: the three steps its page passes.
 	vm, r := c.VM, c.VM.Resources
 	body := CreatedJSON{
-		Schema: schema, Health: CreatedHealth{Running: true, Address: vm.IP != "", SSH: true}, Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Host: vm.Host, Lifetime: string(vm.Lifetime), Check: vm.Check, Image: vm.Image,
+		Schema: schema, Health: CreatedHealth{Running: true, Address: vm.IP != "", SSH: true}, Name: vm.Name, Kind: string(vm.Lifetime.Kind()), Mac: vm.Mac, Lifetime: string(vm.Lifetime), Check: vm.Check, Image: vm.Image,
 		Version: vm.Version, CPUs: r.CPUs, MemoryBytes: r.MemoryBytes, DiskBytes: r.DiskBytes, IP: vm.IP,
-		Network: vm.Network, Services: []CreatedService{}, Env: c.Env,
+		Network: vm.Network, Ports: []CreatedPort{}, Env: c.Env,
 	}
 	if body.Env == nil {
 		body.Env = map[string]string{}
 	}
-	for _, s := range c.Services {
-		body.Services = append(body.Services, CreatedService{GuestPort: s.GuestPort, HostPort: s.HostPort, Profile: s.Profile, URL: s.URL})
+	for _, s := range c.Ports {
+		body.Ports = append(body.Ports, CreatedPort{GuestPort: s.GuestPort, Reserved: s.MacPort, Profile: s.Profile, URL: s.URL})
 	}
 	return body
 }
@@ -322,7 +322,7 @@ func Created(c machines.Created, thisMac page.Context) page.Page {
 		return serverCreated(c, rows, thisMac)
 	}
 	off := ""
-	for _, s := range c.Services {
+	for _, s := range c.Ports {
 		row := pages.Done(s.Profile+"/"+strconv.Itoa(s.GuestPort), catalog.StateOK, "")
 		row.Label = s.Profile
 		row.Cells = []page.Value{page.Port(int64(s.GuestPort)), page.URL(s.URL)}
@@ -365,7 +365,7 @@ func serverCreated(c machines.Created, rows []page.Row, thisMac page.Context) pa
 		rows = append(rows, page.Row{ID: "check", Label: "Check waiting", Mark: page.Attention, Reason: page.Waiting, Cells: []page.Value{page.Text("normal: what answers comes with your tooling")}})
 	}
 	if c.OnALaptop {
-		mac := vm.Host
+		mac := vm.Mac
 		if mac == thisMac.Machine {
 			mac = "This Mac"
 		}
@@ -405,12 +405,12 @@ func Restarted(r machines.RestartReport, thisMac page.Context) page.Page {
 	return pages.Outcome("machines restart "+r.Name, thisMac, nil, rows, "VMs")
 }
 
-type HostChoice struct {
+type MacChoice struct {
 	Name, Detail string
-	Here         bool
+	ThisMac      bool
 }
 
-func CreateForm(lifetime string, hosts []HostChoice) page.Form {
+func CreateForm(lifetime string, hosts []MacChoice) page.Form {
 	var f page.Form
 	if lifetime == "" {
 		f.Fields = append(f.Fields, page.Field{Key: "lifetime", Label: "Will it last?", Kind: page.FieldSelect, Options: []page.Option{
@@ -419,10 +419,10 @@ func CreateForm(lifetime string, hosts []HostChoice) page.Form {
 		}})
 	}
 	if len(hosts) >= 2 {
-		field := page.Field{Key: "host", Label: "On which Mac?", Kind: page.FieldSelect}
+		field := page.Field{Key: "mac", Label: "On which Mac?", Kind: page.FieldSelect}
 		for _, h := range hosts {
 			field.Options = append(field.Options, page.Option{Value: h.Name, Label: h.Name, Note: h.Detail})
-			if h.Here {
+			if h.ThisMac {
 				field.Default = h.Name
 			}
 		}
@@ -439,12 +439,12 @@ type SSHJSON struct {
 	Schema  string `json:"schema"`
 	Name    string `json:"name"`
 	User    string `json:"user"`
-	Host    string `json:"host"`
+	Address string `json:"address"`
 	Command string `json:"command"`
 }
 
 func SSHContract(name string, t machines.SSHTarget) SSHJSON {
-	return SSHJSON{Schema: "station.machines.ssh/v1", Name: name, User: t.User, Host: t.Host, Command: t.Command}
+	return SSHJSON{Schema: "station.machines.ssh/v1", Name: name, User: t.User, Address: t.Address, Command: t.Command}
 }
 
 func SSH(name string, t machines.SSHTarget, thisMac page.Context) page.Page {

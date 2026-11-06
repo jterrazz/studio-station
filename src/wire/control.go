@@ -18,7 +18,7 @@ import (
 )
 
 func (m machine) control() *engine.Control {
-	return engine.NewControl(m.host, m.engineAPI(), m.machines(false), engineHypervisor{m.hypervisor()}, m.engineJob(), engine.ControlOptions{
+	return engine.NewControl(m.sys, m.engineAPI(), m.machines(false), engineHypervisor{m.hypervisor()}, m.engineJob(), engine.ControlOptions{
 		Power: m.powerPort, HereName: m.where.Machine, State: m.paths.State,
 		Version: Version(), Marks: m.stopMarks(),
 	})
@@ -28,7 +28,7 @@ func (m machine) stopMarks() engine.StopMarks {
 	if m.world != nil {
 		return m.world.stopMarks()
 	}
-	return fileMarks{fs: m.host.FS, file: path.Join(m.paths.State, "engine-stopped.json")}
+	return fileMarks{fs: m.sys.FS, file: path.Join(m.paths.State, "engine-stopped.json")}
 }
 
 // invariant: the last stop the owner asked, kept beside the engine's socket
@@ -60,19 +60,19 @@ func (f fileMarks) Write(m engine.StopMark) error {
 
 func engineCommands(env kit.Env, m machine) []*cobra.Command {
 	return []*cobra.Command{
-		enginestart.Command(enginestart.Deps{Here: m.where}, env),
-		enginestop.Command(enginestop.Deps{Here: m.where}, env),
+		enginestart.Command(enginestart.Deps{ThisMachine: m.where}, env),
+		enginestop.Command(enginestop.Deps{ThisMachine: m.where}, env),
 	}
 }
 
 func engineNoun(env kit.Env, m machine, plumbing ...*cobra.Command) *cobra.Command {
-	return enginecmd.Command(enginecmd.Deps{Here: m.where, Zone: time.Local}, env, append(engineCommands(env, m), plumbing...)...)
+	return enginecmd.Command(enginecmd.Deps{ThisMachine: m.where, Zone: time.Local}, env, append(engineCommands(env, m), plumbing...)...)
 }
 
 // value: station stop and station start, the words v2 gave them.
 func engineAliases(env kit.Env, m machine) []*cobra.Command {
 	return []*cobra.Command{
-		kit.Alias("stop", enginestop.Command(enginestop.Deps{Here: m.where}, env), "engine stop"),
-		kit.Alias("start", enginestart.Command(enginestart.Deps{Here: m.where}, env), "engine start"),
+		kit.Alias("stop", enginestop.Command(enginestop.Deps{ThisMachine: m.where}, env), "engine stop"),
+		kit.Alias("start", enginestart.Command(enginestart.Deps{ThisMachine: m.where}, env), "engine start"),
 	}
 }

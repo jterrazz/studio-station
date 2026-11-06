@@ -52,11 +52,11 @@ func TestARowPastTheBudgetIsUnknownAndDelaysNoOtherRow(t *testing.T) {
 	defer close(fs.release)
 	fs.Files["h/slow/tree/f"] = &fstest.MapFile{Data: []byte("x")}
 	fs.Files["h/fast/tree/f"] = &fstest.MapFile{Data: []byte("abc")}
-	tools := []catalog.Tool{
-		{Name: "slow", Installs: catalog.HostOnly(catalog.Brew("slow")), Storage: catalog.Disk{Paths: []catalog.Stored{{Path: "~/slow/*", Level: catalog.LevelCache}}}},
-		{Name: "fast", Installs: catalog.HostOnly(catalog.Brew("fast")), Storage: catalog.Disk{Paths: []catalog.Stored{{Path: "~/fast/*", Level: catalog.LevelCache}}}},
+	tools := []catalog.App{
+		{Name: "slow", Installs: catalog.MacOnly(catalog.Brew("slow")), Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/slow/*", Level: catalog.LevelCache}}}},
+		{Name: "fast", Installs: catalog.MacOnly(catalog.Brew("fast")), Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/fast/*", Level: catalog.LevelCache}}}},
 	}
-	s := New(system.Host{FS: fs.FS, Clock: realClock{}}, tools, Options{Disk: fs, Here: catalog.Host, Expand: Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
+	s := New(system.Host{FS: fs.FS, Clock: realClock{}}, tools, Options{Disk: fs, Here: catalog.Mac, Expand: Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
 
 	waited, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

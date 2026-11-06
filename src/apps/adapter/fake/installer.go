@@ -17,7 +17,7 @@ import (
 // shows it raw.
 var errScripted = errors.New("exited 1: Error: the run failed, as the world scripted it")
 
-const thisMac = "here"
+const thisMac = "this-mac"
 
 type State struct {
 	Absent    bool

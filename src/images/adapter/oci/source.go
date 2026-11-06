@@ -34,12 +34,12 @@ func New(net Getter, base, owner string, fetchers ...string) *Source {
 
 func (s *Source) repository(name string) string { return s.owner + "/station-" + name }
 
-func (s *Source) host() string {
-	_, host, found := strings.Cut(s.base, "://")
+func (s *Source) registry() string {
+	_, registry, found := strings.Cut(s.base, "://")
 	if !found {
 		return s.base
 	}
-	return host
+	return registry
 }
 
 func (s *Source) Latest(ctx context.Context, name string) (images.Ref, error) {
@@ -53,7 +53,7 @@ func (s *Source) Latest(ctx context.Context, name string) (images.Ref, error) {
 	case err != nil:
 		return images.Ref{}, err
 	case status == 404:
-		return images.Ref{}, contract.ErrNotShared
+		return images.Ref{}, contract.ErrNotReleased
 	case status != 200:
 		return images.Ref{}, fmt.Errorf("the registry answered %d for %s", status, repo)
 	}
@@ -70,7 +70,7 @@ func (s *Source) Latest(ctx context.Context, name string) (images.Ref, error) {
 		}
 	}
 	if newest == "" {
-		return images.Ref{}, contract.ErrNotShared
+		return images.Ref{}, contract.ErrNotReleased
 	}
 	return images.Ref{Name: name, Version: newest}, nil
 }
@@ -110,5 +110,5 @@ func (s *Source) Locate(_ context.Context, r images.Ref, hypervisor string) (con
 	if !slices.Contains(s.fetchers, hypervisor) {
 		return contract.ImageLocation{}, contract.ErrNotForHypervisor
 	}
-	return contract.ImageLocation{Hypervisor: hypervisor, Ref: s.host() + "/" + s.repository(r.Name) + ":" + r.Version}, nil
+	return contract.ImageLocation{Hypervisor: hypervisor, Ref: s.registry() + "/" + s.repository(r.Name) + ":" + r.Version}, nil
 }

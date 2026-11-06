@@ -57,11 +57,11 @@ func ended(e *power.End, zone *time.Location) page.Value {
 }
 
 func stopped(r power.Report) bool {
-	return r.Daemon == power.DaemonStopped || r.Daemon == power.DaemonAbsent
+	return r.Engine == power.DaemonStopped || r.Engine == power.DaemonAbsent
 }
 
 func engineHint(r power.Report) *page.Hint {
-	if r.Daemon == power.DaemonAbsent {
+	if r.Engine == power.DaemonAbsent {
 		return page.Cmd("station setup")
 	}
 	return page.Cmd("station engine start")
@@ -69,10 +69,10 @@ func engineHint(r power.Report) *page.Hint {
 
 func sessionRows(r power.Report) []page.Row {
 	switch {
-	case r.Daemon == power.DaemonPending:
+	case r.Engine == power.DaemonPending:
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Awaiting, Cells: []page.Value{page.Pending()}}}
 	case stopped(r):
-		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Unknown(), page.Text("engine " + r.Daemon)}, Hint: engineHint(r)}}
+		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Unknown(), page.Text("engine " + r.Engine)}, Hint: engineHint(r)}}
 	case r.Session == nil:
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.OK, Cells: []page.Value{page.Off(), ended(r.LastEnd, r.Zone)}, Hint: page.KeyHint("station awake 4h", KeyAwake)}}
 	}
@@ -201,7 +201,7 @@ func items(rows []page.Row) []page.Item {
 
 func Session(r power.Report) page.Section {
 	s := page.Section{ID: "power", Title: "Awake", Columns: columns(), Items: items(sessionRows(r))}
-	if r.Session != nil && r.Daemon == power.DaemonRunning {
+	if r.Session != nil && r.Engine == power.DaemonRunning {
 		s.Role = page.Banner
 		s.Caption = []page.Value{page.Texts(append(append([]string{"awake"}, flags(*r.Session)...), left(r))...)}
 	}
@@ -219,7 +219,7 @@ func Page(r power.Report, thisMac page.Context) page.Page {
 		{ID: "guards", Title: "Guards", Columns: columns(), Items: items(rows)},
 		{ID: "reading", Title: "Reading", Uncounted: true, Columns: columns(), Items: reading(r.Reading)},
 	}}
-	if r.Daemon == power.DaemonPending {
+	if r.Engine == power.DaemonPending {
 		p.State = page.Loading
 	}
 	p.Actions = Actions()

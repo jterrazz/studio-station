@@ -106,7 +106,7 @@ var Restart = call.Call[Deps, RestartIn, machines.RestartReport]{
 	Name: "machines.restart", Where: call.AtTarget, Applies: machine.Anywhere, Confirm: confirm.RestartMac,
 	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in RestartIn, _ call.Progress) (machines.RestartReport, error) {
-		if err := d.Machines.CheckHost(); err != nil {
+		if err := d.Machines.CheckMac(); err != nil {
 			return machines.RestartReport{}, err
 		}
 		vm, err := d.Machines.CheckRestart(in.Name)

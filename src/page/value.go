@@ -68,7 +68,7 @@ func Path(s string) Value { return Value{Kind: KindPath, Text: s} }
 
 func Port(n int64) Value { return Value{Kind: KindPort, N: n} }
 
-func PortMap(guest, host int64) Value { return Value{Kind: KindPortMap, N: guest, Of: host} }
+func PortMap(guest, mac int64) Value { return Value{Kind: KindPortMap, N: guest, Of: mac} }
 
 func Range(low, high int64) Value { return Value{Kind: KindRange, N: low, Of: high} }
 

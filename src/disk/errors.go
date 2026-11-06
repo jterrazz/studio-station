@@ -10,11 +10,11 @@ type UnknownError struct{ Name string }
 func (e *UnknownError) Error() string { return "no disk row for \"" + e.Name + "\"" }
 
 type ElsewhereError struct {
-	Name   string
-	Places []catalog.MachineKind
+	Name  string
+	Kinds []catalog.MachineKind
 }
 
-func (e *ElsewhereError) Error() string { return e.Name + " is for " + apps.LivesOn(e.Places) }
+func (e *ElsewhereError) Error() string { return e.Name + " is for " + apps.LivesOn(e.Kinds) }
 
 type NothingToFreeError struct{ Name string }
 

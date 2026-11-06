@@ -34,7 +34,7 @@ func NewClaudeToken(run local.Runner, share accountscontract.ShareListPrefs) *Cl
 
 func (*ClaudeToken) Kind() catalog.EffectKind { return catalog.ProcClaudeToken.Kind() }
 
-func (c *ClaudeToken) Observe(ctx context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+func (c *ClaudeToken) Observe(ctx context.Context, it catalog.Setting) (settings.Observation, error) {
 	// invariant: the values name where the token is, never the token.
 	now := c.values(ctx)
 	o := settings.Observation{State: catalog.StateAbsent, Before: now, After: settings.Sets(it)}
@@ -59,7 +59,7 @@ func (c *ClaudeToken) values(ctx context.Context) []settings.KeyValue {
 	return []settings.KeyValue{{Key: "token", Value: token}, {Key: "share list", Value: held}}
 }
 
-func (c *ClaudeToken) Apply(ctx context.Context, it catalog.ConfigItem, values map[string]string) (settings.Change, error) {
+func (c *ClaudeToken) Apply(ctx context.Context, it catalog.Setting, values map[string]string) (settings.Change, error) {
 	// invariant: the token travels on studio's stdin, never in argv.
 	if _, ok := c.run.LookPath("studio"); !ok {
 		return settings.Change{}, &settings.StudioMissingError{Item: it.Name}
@@ -87,7 +87,7 @@ func (c *ClaudeToken) Apply(ctx context.Context, it catalog.ConfigItem, values m
 	return change, nil
 }
 
-func (c *ClaudeToken) Undo(ctx context.Context, it catalog.ConfigItem) (settings.Change, error) {
+func (c *ClaudeToken) Undo(ctx context.Context, it catalog.Setting) (settings.Change, error) {
 	if _, ok := c.run.LookPath("studio"); !ok {
 		return settings.Change{}, &settings.StudioMissingError{Item: it.Name}
 	}

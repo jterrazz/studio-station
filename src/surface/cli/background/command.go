@@ -14,7 +14,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 type Input struct {
@@ -36,7 +36,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagebackground.List(tasks, d.Here, in.All), pagebackground.ListContract(tasks))
+			return io.Page(pagebackground.List(tasks, d.ThisMachine, in.All), pagebackground.ListContract(tasks))
 		},
 	}, env)
 	cmd.AddCommand(children...)

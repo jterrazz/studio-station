@@ -33,7 +33,7 @@ type AllMachines struct {
 
 func (f AllMachines) name(r awake.Report) string {
 	switch {
-	case r.Here && !f.Far:
+	case r.ThisMac && !f.Far:
 		return "This Mac"
 	case f.Label != nil:
 		return f.Label(r.Mac)
@@ -61,7 +61,7 @@ func clock(t, now time.Time, zone *time.Location) string {
 }
 
 func stopped(r awake.Report) bool {
-	return r.Daemon != "" && r.Daemon != awake.EngineRunning && r.Daemon != awake.EngineReading
+	return r.Engine != "" && r.Engine != awake.EngineRunning && r.Engine != awake.EngineReading
 }
 
 func until(s awake.Session, now time.Time, zone *time.Location) []string {
@@ -102,7 +102,7 @@ func never(r awake.Report) (words, since []string) {
 func Row(r awake.Report) page.Row {
 	row := page.Row{ID: r.Mac, Label: r.Mac}
 	switch {
-	case r.Daemon == awake.EngineReading:
+	case r.Engine == awake.EngineReading:
 		row.Mark, row.Cells = page.Awaiting, []page.Value{page.Pending()}
 	case stopped(r):
 		row.Mark, row.Cells = page.Absent, []page.Value{page.Texts("Sleeps normally", "the engine is stopped")}
@@ -182,12 +182,12 @@ func Page(f AllMachines, thisMac page.Context) page.Page {
 	// invariant: each Mac's line is the page's first (vision 07 "station
 	// awake"): the Macs are a banner, drawn flush with no title.
 	sections := []page.Section{{ID: "awake", Role: page.Banner, Columns: columns(), Items: items}}
-	if len(f.Reports) > 0 && f.Reports[0].Here && !stopped(f.Reports[0]) && f.Reports[0].Daemon != awake.EngineReading {
+	if len(f.Reports) > 0 && f.Reports[0].ThisMac && !stopped(f.Reports[0]) && f.Reports[0].Engine != awake.EngineReading {
 		sections = append(sections, reading(f.Reports[0], f.name(f.Reports[0])))
 	}
 	p := page.Page{ID: "awake", Command: "awake", Context: thisMac, Sections: sections, Hints: f.next(), Actions: f.actions()}
 	for _, r := range f.Reports {
-		if r.Daemon == awake.EngineReading {
+		if r.Engine == awake.EngineReading {
 			p.State = page.Loading
 		}
 	}
@@ -260,7 +260,7 @@ type JSON struct {
 }
 
 func macJSON(r awake.Report) MacJSON {
-	m := MacJSON{Name: r.Mac, ThisMac: r.Here, Mode: r.Mode(), Engine: r.Daemon, Servers: r.Servers,
+	m := MacJSON{Name: r.Mac, ThisMac: r.ThisMac, Mode: r.Mode(), Engine: r.Engine, Servers: r.Servers,
 		Capabilities: CapsJSON{Battery: r.Caps.Battery, Lid: r.Caps.Lid, Thermal: r.Caps.Thermal}}
 	if m.Servers == nil {
 		m.Servers = []string{}
@@ -279,7 +279,7 @@ func macJSON(r awake.Report) MacJSON {
 		since := r.NeverSince.UTC()
 		m.NeverSince = &since
 	}
-	if r.Here {
+	if r.ThisMac {
 		rd := r.Reading
 		j := &ReadingJSON{Source: rd.Source, Charging: rd.Charging, LowPower: rd.LowPower}
 		if r.Caps.Lid {
@@ -372,13 +372,13 @@ func (f AllMachines) next() []page.Hint {
 	}
 	keep := "station awake 4h"
 	for _, r := range f.Reports {
-		if r.Here && r.Caps.Lid {
+		if r.ThisMac && r.Caps.Lid {
 			keep = "station awake 4h --lid"
 		}
 	}
 	hints := []page.Hint{{Command: keep, Text: "this Mac"}}
 	for _, r := range f.Reports {
-		if !r.Here {
+		if !r.ThisMac {
 			return append(hints, page.Hint{Command: "station awake 4h --on " + f.name(r), Text: "another Mac"})
 		}
 	}

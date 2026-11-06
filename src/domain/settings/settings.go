@@ -12,7 +12,7 @@ type Paths struct {
 	Roots                           Roots
 }
 
-type Host = machines.Host
+type Host = machines.MacRecord
 
 type Services = ports.PortsGroup
 

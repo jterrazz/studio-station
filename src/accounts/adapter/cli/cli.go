@@ -47,7 +47,7 @@ func (r *Reads) Offers(p catalog.Provider) bool {
 }
 
 func (r *Reads) dockerStore() (string, bool) {
-	data, err := r.files.ReadFile(path.Join(r.o.Home, catalog.DockerConfig))
+	data, err := r.files.ReadFile(path.Join(r.o.Home, catalog.DockerSettingsFile))
 	if err != nil {
 		return "", false
 	}
@@ -62,12 +62,12 @@ func (r *Reads) Read(ctx context.Context, p catalog.Provider) (accounts.Identity
 	if p.ID == catalog.ProviderDocker && id.State == catalog.StateOK {
 		id.Source, _ = r.dockerStore()
 	}
-	return clean(id), nil
+	return redactIdentity(id), nil
 }
 
-func clean(id accounts.Identity) accounts.Identity {
+func redactIdentity(id accounts.Identity) accounts.Identity {
 	one := func(v string) string {
-		c, _ := accounts.Clean(v)
+		c, _ := accounts.Redact(v)
 		return c
 	}
 	all := func(vs []string) []string {
@@ -93,8 +93,8 @@ func (r *Reads) answer(ctx context.Context, p catalog.Provider) (outs []local.Ou
 		}
 		reads = []catalog.ProviderRead{{Name: "docker-credential-" + store, Args: []string{"list"}}}
 	}
-	if p.Tool != "" {
-		if _, found := r.run.LookPath(p.Tool); !found {
+	if p.Command != "" {
+		if _, found := r.run.LookPath(p.Command); !found {
 			return nil, false
 		}
 	}

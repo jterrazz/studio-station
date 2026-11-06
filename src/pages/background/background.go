@@ -102,7 +102,7 @@ func summary(tasks []background.Task, thisMac page.Context) page.Section {
 		mark = page.Attention
 	}
 	label := "This Mac"
-	if thisMac.Kind != string(catalog.Host) && thisMac.Machine != "" {
+	if thisMac.Kind != string(catalog.Mac) && thisMac.Machine != "" {
 		label = thisMac.Machine
 	}
 	row := page.Row{ID: "summary/background", Label: label, Mark: mark, Cells: []page.Value{page.Texts(words...)}}

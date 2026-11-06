@@ -12,26 +12,26 @@ import (
 
 func engineFailure(err error) (*fail.Error, bool) {
 	var running *engine.RunningError
-	var hostOnly *engine.HostOnlyError
+	var macOnly *engine.MacOnlyError
 	var down *engine.DownError
-	var guestHost *guest.HostOnlyRefusedError
+	var guestMacOnly *guest.HostOnlyRefusedError
 	if f, ok := controlFailure(err); ok {
 		return f, true
 	}
 	switch {
 	case errors.As(err, &running):
 		return usage(running.Error(), "station overview shows it"), true
-	case errors.As(err, &hostOnly):
-		return usage(hostOnly.Error(), "run it on a Mac: station setup installs it"), true
+	case errors.As(err, &macOnly):
+		return usage(macOnly.Error(), "run it on a Mac: station setup installs it"), true
 	case errors.As(err, &down):
 		return failed(down.Error(), "station setup", err), true
-	case errors.As(err, &guestHost):
-		return usage(guestHost.Error(), "its Mac's engine runs it inside each VM"), true
+	case errors.As(err, &guestMacOnly):
+		return usage(guestMacOnly.Error(), "its Mac's engine runs it inside each VM"), true
 	}
-	return servicesFailure(err)
+	return portsFailure(err)
 }
 
-func servicesFailure(err error) (*fail.Error, bool) {
+func portsFailure(err error) (*fail.Error, bool) {
 	var full *ports.RangeFull
 	var perVM *ports.VMFull
 	var badPort *services.BadPortError

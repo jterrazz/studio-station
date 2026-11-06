@@ -14,7 +14,7 @@ import (
 )
 
 func (m machine) powerPage(v power.View) any {
-	r := power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
+	r := power.Report{Now: m.sys.Clock.Now(), Zone: time.Local, Engine: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	return page.Document{Schema: page.Schema, Page: pagepower.Page(r, m.where)}
 }
 
@@ -22,7 +22,7 @@ func powerDown(err error) error { return downAs(err, power.ErrDaemonDown) }
 
 func (m machine) power() *power.Service {
 	c := m.engineAPI()
-	return power.NewService(m.host, power.Ports{
+	return power.NewService(m.sys, power.Ports{
 		View: func(ctx context.Context) (power.View, error) {
 			var v power.View
 			err := c.do(ctx, process.Power, nil, &v)
@@ -39,7 +39,7 @@ func (m machine) power() *power.Service {
 			return power.Slept{Ended: s.Ended, After: time.Duration(s.After) * time.Second}, powerDown(err)
 		},
 		Installed: func() bool {
-			_, err := m.host.FS.Stat(catalog.EnginePlist(m.host.Env.Home()))
+			_, err := m.sys.FS.Stat(catalog.EnginePlist(m.sys.Env.Home()))
 			return err == nil
 		},
 	}, power.ServiceOptions{Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, Zone: time.Local})
@@ -55,7 +55,7 @@ func (p statusPower) Session(ctx context.Context) (overview.PowerState, bool) {
 	for r := range p.s.Read(ctx) {
 		last = r
 	}
-	if last.Daemon != power.DaemonRunning {
+	if last.Engine != power.DaemonRunning {
 		return overview.PowerState{}, false
 	}
 	if last.Session == nil {

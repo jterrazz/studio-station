@@ -31,6 +31,6 @@ runs:
             "findings": [],
             "name": "infra",
             "user": "admin",
-            "host": "infra",
+            "address": "infra",
             "command": "ssh admin@infra"
           }

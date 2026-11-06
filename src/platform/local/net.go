@@ -12,9 +12,9 @@ import (
 
 type network struct{}
 
-func (network) Dial(ctx context.Context, host string, port int, timeout time.Duration) bool {
+func (network) Dial(ctx context.Context, addr string, port int, timeout time.Duration) bool {
 	d := net.Dialer{Timeout: timeout}
-	conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort(host, strconv.Itoa(port)))
+	conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort(addr, strconv.Itoa(port)))
 	if err != nil {
 		return false
 	}

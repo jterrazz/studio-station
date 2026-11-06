@@ -1,4 +1,4 @@
-description: 'add never shadows a Host the owner wrote: nothing is written, the preferences rolled back'
+description: 'add never shadows a block the owner wrote: nothing is written, the preferences rolled back'
 fixture:
     - ../../__fixtures__/far-mac/
     - ./__fixtures__/hand-written-ssh-config/
@@ -7,7 +7,7 @@ runs:
     - command: 'machines add mac-mini --user agent'
       exit: 1
       stderr: |
-          Error: ssh config update failed (registry rolled back): refusing to modify {{workdir}}/.ssh/config: Host mac-mini already defined at line 1 (outside any managed block)
+          Error: ssh config update failed (registry rolled back): refusing to modify {{workdir}}/.ssh/config: a block of yours already names mac-mini at line 1 (outside any managed block)
           Hint: check "{{workdir}}/.ssh/config" and run it again
       files:
           .ssh/config:
@@ -27,7 +27,7 @@ runs:
           .config/station/preferences.json:
               equals: |
                   {
-                    "here": "x",
+                    "name": "x",
                     "macs": {
                       "x": {}
                     },

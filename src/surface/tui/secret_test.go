@@ -29,7 +29,7 @@ func TestSecretIsHandedNeverKept(t *testing.T) {
 		}
 		return nil, nil
 	}
-	s := newShell(t.Context(), Deps{Here: page.Context{Machine: "jterrazz-macbook-pro"}, Do: do})
+	s := newShell(t.Context(), Deps{ThisMachine: page.Context{Machine: "jterrazz-macbook-pro"}, Do: do})
 	g, ok := settingsscreen.Gesture(page.Action{Key: pagesettings.KeyApply}, []page.Row{{ID: "claude-token", Label: "claude-token"}})
 	if !ok || g.Values == nil {
 		t.Fatal("a on claude-token opens no form")

@@ -3,7 +3,7 @@ package apps
 import "github.com/jterrazz/studio-station/src/catalog"
 
 type Report struct {
-	Tool    catalog.Tool
+	App     catalog.App
 	Method  catalog.Method
 	State   catalog.State
 	Version string

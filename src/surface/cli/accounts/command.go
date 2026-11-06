@@ -21,7 +21,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 type Input struct{ AllMachines bool }
@@ -48,7 +48,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			}
 			if io.CanLive() {
 				return io.LivePage(kit.Updates(updates, func(r accounts.Report) page.Page {
-					return pageaccounts.Page(r, d.Here)
+					return pageaccounts.Page(r, d.ThisMachine)
 				}))
 			}
 			var last accounts.Report
@@ -62,7 +62,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 				return err
 			}
 			shared := held(ctx, env, last)
-			return io.PageRecords(pageaccounts.Page(last, d.Here), pageaccounts.List(last, shared), pageaccounts.ListContract(call.Schema(accountscalls.List.Name), last, shared))
+			return io.PageRecords(pageaccounts.Page(last, d.ThisMachine), pageaccounts.List(last, shared), pageaccounts.ListContract(call.Schema(accountscalls.List.Name), last, shared))
 		},
 	}, env)
 	cmd.AddCommand(children...)
@@ -106,9 +106,9 @@ func everyMachine(ctx context.Context, env kit.Env, io kit.IO) error {
 		return err
 	}
 	var blocks []pageaccounts.MachineBlock
-	for _, h := range list.Fleet.Hosts {
-		mac := pageaccounts.MachineBlock{Name: h.Name, Label: page.MacName(h.Name, env.Self.Name), Kind: string(machine.Mac), ThisMac: h.Here}
-		if !h.Reachable && !h.Here {
+	for _, h := range list.All.Macs {
+		mac := pageaccounts.MachineBlock{Name: h.Name, Label: page.MacName(h.Name, env.Self.Name), Kind: string(machine.Mac), ThisMac: h.ThisMac}
+		if !h.Reachable && !h.ThisMac {
 			mac.Mark, mac.Reason, mac.State, mac.Fault = page.Broken, page.Unreachable, "does not answer", pageaccounts.Fault{Type: string(fail.Unreachable)}
 			blocks = append(blocks, mac)
 			continue

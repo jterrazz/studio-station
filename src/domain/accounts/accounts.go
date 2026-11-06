@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	KindHost = accounts.KindHost
+	KindHost = accounts.KindMac
 	KindVM   = accounts.KindVM
 
 	DaemonRunning   = "running"
@@ -80,7 +80,7 @@ func New(h system.Host, pool *probe.Pool, ids contract.Identities, p Ports, o Op
 }
 
 func (s *Service) where() string {
-	if s.o.Here == catalog.Host {
+	if s.o.Here == catalog.Mac {
 		return KindHost
 	}
 	return KindVM
@@ -89,7 +89,7 @@ func (s *Service) where() string {
 func (s *Service) providers() []catalog.Provider {
 	var out []catalog.Provider
 	for _, p := range catalog.Providers {
-		if s.where() == KindHost && !p.Host || s.where() == KindVM && !p.VM {
+		if s.where() == KindHost && !p.Mac || s.where() == KindVM && !p.VM {
 			continue
 		}
 		if !s.ids.Offers(p) {
@@ -246,7 +246,7 @@ func (s *Service) vmFrame(v VM, now time.Time) Machine {
 }
 
 func (s *Service) merge(r *Report, vms []VM, reads []VMRead, daemon string) {
-	r.Daemon = daemon
+	r.Engine = daemon
 	byName := map[string]VMRead{}
 	for _, v := range reads {
 		byName[v.Name] = v

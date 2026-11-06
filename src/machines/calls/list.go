@@ -11,13 +11,13 @@ import (
 
 type ListIn struct {
 	// value: this host only, without asking the others.
-	Here bool
+	ThisMac bool
 	// value: the fleet read only, the owner's client blocks left as they are.
 	Unwritten bool
 }
 
 type ListOut struct {
-	Fleet machines.AllMachines
+	All machines.AllMachines
 	// value: why the owner's client blocks for the fleet were not rewritten.
 	Unrefreshed error
 }
@@ -37,13 +37,13 @@ var List = call.Watch[Deps, ListIn, ListOut]{
 		}
 		go func() {
 			defer close(updates)
-			allMachines, err := d.Machines.FleetAsItFills(ctx, in.Here, func(f machines.AllMachines) { send(call.Update[ListOut]{Value: ListOut{Fleet: f}}) })
+			allMachines, err := d.Machines.AllMachinesAsItFills(ctx, in.ThisMac, func(f machines.AllMachines) { send(call.Update[ListOut]{Value: ListOut{All: f}}) })
 			if err != nil {
 				send(call.Update[ListOut]{Err: err})
 				return
 			}
-			out := ListOut{Fleet: allMachines}
-			if !in.Here && !in.Unwritten {
+			out := ListOut{All: allMachines}
+			if !in.ThisMac && !in.Unwritten {
 				out.Unrefreshed = errors.Join(d.Machines.SSHBlocks(ctx, allMachines), d.Machines.Remember(ctx, allMachines))
 			}
 			send(call.Update[ListOut]{Value: out})

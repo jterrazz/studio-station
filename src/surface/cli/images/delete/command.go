@@ -16,7 +16,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 type Input struct{ Image, Version string }
@@ -54,7 +54,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pageimages.Deleted(removed, d.Here), nil)
+			return io.Page(pageimages.Deleted(removed, d.ThisMachine), nil)
 		},
 	}, env)
 }

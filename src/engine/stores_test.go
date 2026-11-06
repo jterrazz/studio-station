@@ -38,4 +38,4 @@ func (m *memReservations) Delete(_ context.Context, vm string, port int) error {
 	return nil
 }
 
-func memStores() Stores { return Stores{Services: noPolicy{}, Reservations: &memReservations{}} }
+func memStores() Stores { return Stores{Ports: noPolicy{}, Reservations: &memReservations{}} }

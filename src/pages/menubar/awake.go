@@ -36,15 +36,15 @@ func terms() []time.Duration { return []time.Duration{time.Hour, 4 * time.Hour} 
 
 const untilHours = 8
 
-func Awake(f pageawake.AllMachines, here page.Context) page.Page {
+func Awake(f pageawake.AllMachines, ctx page.Context) page.Page {
 	// invariant: SPEC §10.2 Awake, vision panel e: This Mac first, its term,
 	// Lid closed and On battery only where its capabilities have them (E1),
 	// its guards; then each other Mac by its mode, with Change…, a y/n that
 	// names the servers it hosts. VMs are not listed: they follow their Mac.
-	p := page.Page{ID: AwakeID, Command: "awake", Context: here}
+	p := page.Page{ID: AwakeID, Command: "awake", Context: ctx}
 	var others []page.Item
 	for _, r := range f.Reports {
-		if r.Here {
+		if r.ThisMac {
 			p.Sections = append(p.Sections, thisMac(r))
 			if g := guards(r); g != nil {
 				p.Sections = append(p.Sections, *g)
@@ -68,7 +68,7 @@ func Awake(f pageawake.AllMachines, here page.Context) page.Page {
 		p.Sections = append(p.Sections, page.Section{ID: SectionOthers, Title: "Other Macs", Uncounted: true, Columns: awakeColumns(), Items: others})
 	}
 	for _, r := range f.Reports {
-		if r.Daemon == awake.EngineReading {
+		if r.Engine == awake.EngineReading {
 			p.State = page.Loading
 		}
 	}
@@ -95,7 +95,7 @@ func thisMac(r awake.Report) page.Section {
 // value: the guards this Mac's capabilities allow, each with its reading
 // (vision panel e: Temperature, Battery, the screen).
 func guards(r awake.Report) *page.Section {
-	if r.Daemon == awake.EngineReading {
+	if r.Engine == awake.EngineReading {
 		return nil
 	}
 	var facts []page.Fact
@@ -175,7 +175,7 @@ func untilField(now time.Time, zone *time.Location) page.Field {
 // a y/n that names each server it hosts, which pauses while it sleeps; on
 // one that sleeps it keeps it awake for good. It runs on that Mac.
 func change(r awake.Report, name string) (page.Action, bool) {
-	if r.Daemon == awake.EngineReading || (r.Daemon != "" && r.Daemon != awake.EngineRunning) {
+	if r.Engine == awake.EngineReading || (r.Engine != "" && r.Engine != awake.EngineRunning) {
 		return page.Action{}, false
 	}
 	run := &page.Run{Target: &page.Target{Name: r.Mac}, In: map[string]string{"Names": `["` + neverSleeps + `"]`, "Confirm": "yes"}}

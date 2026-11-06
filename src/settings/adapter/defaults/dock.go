@@ -24,7 +24,7 @@ func NewDock(run local.Runner) []contract.Applier {
 
 func (d Dock) Kind() catalog.EffectKind { return d.of.Kind() }
 
-func (d Dock) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+func (d Dock) Observe(_ context.Context, it catalog.Setting) (settings.Observation, error) {
 	return settings.Observation{
 		State: catalog.StateAbsent, Detail: "run once", Blind: true,
 		Before: []settings.KeyValue{{Key: "Dock", Value: "not read back"}},
@@ -32,7 +32,7 @@ func (d Dock) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observ
 	}, nil
 }
 
-func (d Dock) Apply(ctx context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
+func (d Dock) Apply(ctx context.Context, it catalog.Setting, _ map[string]string) (settings.Change, error) {
 	// outside: `defaults delete` fails when the domain is already absent, which is the
 	// state the reset asks for.
 	if d.of == catalog.ProcDockReset {
@@ -50,6 +50,6 @@ func (d Dock) Apply(ctx context.Context, it catalog.ConfigItem, _ map[string]str
 	return change, nil
 }
 
-func (Dock) Undo(context.Context, catalog.ConfigItem) (settings.Change, error) {
+func (Dock) Undo(context.Context, catalog.Setting) (settings.Change, error) {
 	return settings.Change{}, contract.ErrNoUndo
 }

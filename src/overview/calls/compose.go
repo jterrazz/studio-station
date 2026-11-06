@@ -84,7 +84,7 @@ func (r *Reader[App, Item, Misplaced]) Compose(ctx context.Context) <-chan overv
 	// first value has every line pending, each answer fills its own, and the
 	// last is the whole Overview.
 	kind := r.d.Kind
-	head := overview.Head{Name: r.d.Here.Hostname, Kind: kind, Here: true}
+	head := overview.Head{Name: r.d.ThisMac.Hostname, Kind: kind, ThisMac: true}
 	self := machine.Ref{Name: head.Name}
 	if r.d.Meter != nil {
 		if sample, err := r.d.Meter.Sample(ctx); err == nil && !sample.Boot.IsZero() {
@@ -117,12 +117,12 @@ func (r *Reader[App, Item, Misplaced]) Compose(ctx context.Context) <-chan overv
 	if kind == machine.Mac {
 		left++
 		go func() {
-			out, err := call.Read(ctx, r.d.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{Here: true, Unwritten: true}, nil)
+			out, err := call.Read(ctx, r.d.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{ThisMac: true, Unwritten: true}, nil)
 			if err != nil {
 				answers <- answer{err: err}
 				return
 			}
-			answers <- answer{all: &out.Fleet}
+			answers <- answer{all: &out.All}
 		}()
 		left++
 		go func() { answers <- answer{readiness: r.readiness(ctx)} }()
@@ -217,11 +217,11 @@ func engineOf(head overview.Head, r *engine.Reading) (overview.Engine, []finding
 // value: what a Mac's Overview reads of All machines: its VMs and their
 // findings; the other Macs are All machines' own.
 func thisMacsVMs(f machines.AllMachines) ([]finding.Finding, []overview.VM) {
-	i := slices.IndexFunc(f.Hosts, func(h machines.HostView) bool { return h.Here })
+	i := slices.IndexFunc(f.Macs, func(h machines.MacView) bool { return h.ThisMac })
 	if i < 0 {
 		return nil, nil
 	}
-	h := f.Hosts[i]
+	h := f.Macs[i]
 	var own []finding.Finding
 	for _, fd := range machines.Findings(f) {
 		if fd.Machine.On == h.Name {

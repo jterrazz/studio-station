@@ -12,7 +12,7 @@ runs:
           ●	zshrc
           ●	layout	userspace tailscaled retired; its node "m" stays at https://login.tailscale.com/admin/machines until you remove it
           ●	layout	the VM-join client and the tailnet auth key left the keychain; revoke the OAuth client at https://login.tailscale.com/admin/settings/oauth
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts
@@ -32,7 +32,7 @@ runs:
           .config/station/preferences.json:
               equals: |
                   {
-                    "here": "m",
+                    "name": "m",
                     "macs": {
                       "m": {}
                     },
