@@ -10,7 +10,7 @@ runs:
           see mac-mini         2
           send \x1b
           see never sleeps
-          send ]]
+          send ]]]
           see Needs you · reachable outside Tailscale
           send /5000
           send \r

@@ -10,7 +10,7 @@ runs:
           see mac-mini         1
           send \x1b
           see never sleeps
-          send ]]
+          send ]]]
           see Ports · all machines
           send /5173
           send \r
