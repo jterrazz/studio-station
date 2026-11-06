@@ -1,5 +1,7 @@
 package catalog
 
+import "strings"
+
 type Level string
 
 const (
@@ -675,3 +677,21 @@ var (
 		},
 	}
 )
+
+func (f ToolFile) Label() string {
+	if f == FileGoEnv {
+		return "go env"
+	}
+	return string(f)
+}
+
+func (f ToolFile) KeyLabel(key string) string {
+	switch f {
+	case FileNpmrc:
+		return "npm " + key
+	case FileMise:
+		return "mise " + strings.TrimPrefix(key, "settings.")
+	case FileGoEnv, FileBunfig:
+	}
+	return key
+}

@@ -1,11 +1,9 @@
-package setup
+package calls
 
 import (
 	"context"
 	"errors"
-	"io/fs"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 
@@ -20,7 +18,6 @@ import (
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
@@ -33,18 +30,16 @@ const (
 	stepPreferences = "preferences"
 )
 
-var machineName = regexp.MustCompile(`^[a-z0-9-]{1,40}$`)
-
 type Registrar interface {
 	Here() (string, bool)
 	Register(name string) error
 }
 
 type EngineInstaller interface {
-	Install(ctx context.Context) (Step, error)
+	Install(ctx context.Context) (setup.Step, error)
 }
 
-type Options struct {
+type ServiceOptions struct {
 	Kind catalog.MachineKind
 	// value: this machine is a server: its own tooling keeps it, never station.
 	Server bool
@@ -65,7 +60,7 @@ type Options struct {
 	MovePreferences func(ctx context.Context) (moved bool, err error)
 }
 
-type Prefs struct {
+type ServicePrefs struct {
 	Name      setupcontract.NamePrefs
 	Identity  setupcontract.IdentityPrefs
 	Hosts     machinescontract.MacsPrefs
@@ -78,20 +73,20 @@ type Prefs struct {
 }
 
 type Service struct {
-	h      local.Host
-	p      Prefs
+	m      Machine
+	p      ServicePrefs
 	vault  Vault
 	reg    Registrar
 	engine EngineInstaller
-	o      Options
+	o      ServiceOptions
 }
 
 type Vault interface {
 	Forget(ctx context.Context, name string) error
 }
 
-func New(h local.Host, p Prefs, v Vault, reg Registrar, e EngineInstaller, o Options) *Service {
-	return &Service{h: h, p: p, vault: v, reg: reg, engine: e, o: o}
+func NewService(m Machine, p ServicePrefs, v Vault, reg Registrar, e EngineInstaller, o ServiceOptions) *Service {
+	return &Service{m: m, p: p, vault: v, reg: reg, engine: e, o: o}
 }
 
 type Request struct {
@@ -100,27 +95,20 @@ type Request struct {
 	AskName     func() (string, error)
 }
 
-type (
-	Step   = setup.Step
-	Report = setup.Report
-)
-
-func ValidName(name string) bool { return machineName.MatchString(name) }
-
 func (s *Service) onMac() bool { return s.o.Kind == catalog.Host }
 
 func (s *Service) CheckName(name string) error {
 	if name == "" {
 		return nil
 	}
-	if !ValidName(name) {
-		return &BadNameError{Name: name}
+	if !setup.ValidName(name) {
+		return &setup.BadNameError{Name: name}
 	}
 	if !s.onMac() {
-		return ErrNameOnVM
+		return setup.ErrNameOnVM
 	}
 	if here := s.currentHere(); here != "" && here != name {
-		return &NameMismatchError{Named: here, Asked: name}
+		return &setup.NameMismatchError{Named: here, Asked: name}
 	}
 	return nil
 }
@@ -131,14 +119,14 @@ func (s *Service) currentHere() string {
 	if here, ok := s.reg.Here(); ok {
 		return here
 	}
-	if _, err := s.h.FS.Stat(s.settingsPath()); err == nil {
+	if s.m.Exists(s.settingsPath()) {
 		return ""
 	}
-	data, err := s.h.FS.ReadFile(s.v1Path())
-	if err != nil {
+	data, found, err := s.m.ReadFile(s.v1Path())
+	if err != nil || !found {
 		return ""
 	}
-	converted, err := setup.ConvertV1(data, s.h.Env.User())
+	converted, err := setup.ConvertV1(data, s.m.User())
 	if err != nil {
 		return ""
 	}
@@ -146,9 +134,9 @@ func (s *Service) currentHere() string {
 }
 
 func (s *Service) DefaultName(ctx context.Context) string {
-	raw := s.h.Env.Hostname()
-	if out, err := s.h.Run.Output(ctx, local.Cmd{Name: "scutil", Args: []string{"--get", "LocalHostName"}, Timeout: 2 * time.Second}); err == nil && out.ExitCode == 0 && strings.TrimSpace(out.Stdout) != "" {
-		raw = strings.TrimSpace(out.Stdout)
+	raw := s.m.Hostname()
+	if out, code, err := s.m.Output(ctx, "scutil", []string{"--get", "LocalHostName"}, 2*time.Second); err == nil && code == 0 && strings.TrimSpace(out) != "" {
+		raw = strings.TrimSpace(out)
 	}
 	return sanitize(raw)
 }
@@ -168,146 +156,142 @@ func sanitize(raw string) string {
 	return label
 }
 
-func (s *Service) Run(ctx context.Context, r Request) (Report, error) {
+func (s *Service) Run(ctx context.Context, r Request) (setup.Report, error) {
 	moved, err := s.movePreferences(ctx)
 	if err != nil {
-		return Report{Steps: moved}, err
+		return setup.Report{Steps: moved}, err
 	}
 	if err := s.CheckName(r.Name); err != nil {
-		return Report{}, err
+		return setup.Report{}, err
 	}
 	if s.o.Server {
-		return Report{Steps: append(moved, Step{Name: stepKind, State: catalog.StateOK, Detail: "server: its own tooling keeps it, station sets nothing up"})}, nil
+		return setup.Report{Steps: append(moved, setup.Step{Name: stepKind, State: catalog.StateOK, Detail: "server: its own tooling keeps it, station sets nothing up"})}, nil
 	}
 	if !s.onMac() {
 		zshrc, err := s.zshrc()
 		relocate, relocateErr := s.relocate(ctx, r.Interactive)
-		return Report{Steps: append(moved, zshrc, relocate)}, errors.Join(err, relocateErr)
+		return setup.Report{Steps: append(moved, zshrc, relocate)}, errors.Join(err, relocateErr)
 	}
 	if r.Name == "" && (!r.Interactive || r.AskName == nil) && s.currentHere() == "" && !s.exists(s.settingsPath()) {
-		return Report{Steps: moved}, ErrNeedsName
+		return setup.Report{Steps: moved}, setup.ErrNeedsName
 	}
 	migrated := s.migrateSettings()
 	name, nameErr := s.name(r, migrated != nil)
 	if nameErr != nil && !isStepFailure(nameErr) {
-		return Report{}, nameErr
+		return setup.Report{}, nameErr
 	}
 	zshrc, zshrcErr := s.zshrc()
 	layout, layoutErr := s.layout(ctx, migrated)
 	relocate, relocateErr := s.relocate(ctx, r.Interactive)
-	steps := append(append([]Step{name, zshrc}, layout...), relocate)
+	steps := append(append([]setup.Step{name, zshrc}, layout...), relocate)
 	var engineErr, appsErr, settingsErr error
 	if s.engine != nil {
-		var engine Step
+		var engine setup.Step
 		engine, engineErr = s.engine.Install(ctx)
 		steps = append(steps, engine)
 	}
 	if relocateErr == nil {
-		var apps Step
+		var apps setup.Step
 		apps, appsErr = s.apps(ctx, r.Interactive)
 		steps = append(steps, apps)
 		if appsErr == nil {
-			var set []Step
+			var set []setup.Step
 			set, settingsErr = s.settings(ctx)
 			steps = append(steps, set...)
 		}
 	}
-	return Report{Steps: append(moved, steps...)}, errors.Join(nameErr, zshrcErr, layoutErr, relocateErr, engineErr, appsErr, settingsErr)
+	return setup.Report{Steps: append(moved, steps...)}, errors.Join(nameErr, zshrcErr, layoutErr, relocateErr, engineErr, appsErr, settingsErr)
 }
 
 // invariant: the move comes before any step reads a preference, and says so
 // once: a second run has nothing to move, and no row of it.
-func (s *Service) movePreferences(ctx context.Context) ([]Step, error) {
+func (s *Service) movePreferences(ctx context.Context) ([]setup.Step, error) {
 	if s.o.MovePreferences == nil {
 		return nil, nil
 	}
 	moved, err := s.o.MovePreferences(ctx)
 	if err != nil {
 		step, stepErr := failed(stepPreferences, err)
-		return []Step{step}, stepErr
+		return []setup.Step{step}, stepErr
 	}
 	if !moved {
 		return nil, nil
 	}
-	return []Step{{Name: stepPreferences, State: catalog.StateOK, Detail: "moved settings.json to preferences.json", Changed: true}}, nil
+	return []setup.Step{{Name: stepPreferences, State: catalog.StateOK, Detail: "moved settings.json to preferences.json", Changed: true}}, nil
 }
 
 func isStepFailure(err error) bool {
-	var failed *StepFailedError
+	var failed *setup.StepFailedError
 	return errors.As(err, &failed)
 }
 
-func (s *Service) name(r Request, blocked bool) (Step, error) {
+func (s *Service) name(r Request, blocked bool) (setup.Step, error) {
 	if here, ok := s.reg.Here(); ok {
-		return Step{Name: stepName, State: catalog.StateOK, Detail: here}, nil
+		return setup.Step{Name: stepName, State: catalog.StateOK, Detail: here}, nil
 	}
 	if blocked {
-		return Step{Name: stepName, State: catalog.StateAbsent, Detail: "waits for the layout step"}, nil
+		return setup.Step{Name: stepName, State: catalog.StateAbsent, Detail: "waits for the layout step"}, nil
 	}
 	name := r.Name
 	if name == "" && r.Interactive && r.AskName != nil {
 		asked, err := r.AskName()
 		if err != nil {
-			return Step{}, err
+			return setup.Step{}, err
 		}
 		name = asked
 	}
 	if name == "" {
-		return Step{Name: stepName, State: catalog.StateAbsent, Detail: "not set: station setup --name <name>"}, nil
+		return setup.Step{Name: stepName, State: catalog.StateAbsent, Detail: "not set: station setup --name <name>"}, nil
 	}
-	if !ValidName(name) {
-		return Step{}, &BadNameError{Name: name}
+	if !setup.ValidName(name) {
+		return setup.Step{}, &setup.BadNameError{Name: name}
 	}
 	if err := s.reg.Register(name); err != nil {
 		return failed(stepName, err)
 	}
-	return Step{Name: stepName, State: catalog.StateOK, Detail: name, Changed: true}, nil
+	return setup.Step{Name: stepName, State: catalog.StateOK, Detail: name, Changed: true}, nil
 }
 
-func failed(step string, cause error) (Step, error) {
-	return Step{Name: step, State: catalog.StateBroken, Detail: cause.Error()}, &StepFailedError{Step: step, Cause: cause}
+func failed(step string, cause error) (setup.Step, error) {
+	return setup.Step{Name: step, State: catalog.StateBroken, Detail: cause.Error()}, &setup.StepFailedError{Step: step, Cause: cause}
 }
 
-func (s *Service) zshrcPath() string { return path.Join(s.h.Env.Home(), ".zshrc") }
+func (s *Service) zshrcPath() string { return path.Join(s.m.Home(), ".zshrc") }
 
-func (s *Service) zshrc() (Step, error) {
-	current, err := s.h.FS.ReadFile(s.zshrcPath())
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+func (s *Service) zshrc() (setup.Step, error) {
+	current, _, err := s.m.ReadFile(s.zshrcPath())
+	if err != nil {
 		return failed(stepZshrc, err)
 	}
 	updated, changed := settings.UpsertBlock(string(current))
 	if changed {
-		perm := fs.FileMode(0o644)
-		if info, statErr := s.h.FS.Stat(s.zshrcPath()); statErr == nil {
-			perm = info.Mode().Perm()
-		}
-		if err := s.h.FS.WriteFile(s.zshrcPath(), []byte(updated), perm); err != nil {
+		if err := s.m.WriteFile(s.zshrcPath(), []byte(updated), s.m.Mode(s.zshrcPath(), 0o644)); err != nil {
 			return failed(stepZshrc, err)
 		}
 	}
-	return Step{Name: stepZshrc, State: catalog.StateOK, Changed: changed}, nil
+	return setup.Step{Name: stepZshrc, State: catalog.StateOK, Changed: changed}, nil
 }
 
-func (s *Service) Check(_ context.Context) (Report, error) {
-	var steps []Step
+func (s *Service) Check(_ context.Context) (setup.Report, error) {
+	var steps []setup.Step
 	if s.onMac() {
 		if here, ok := s.reg.Here(); ok {
-			steps = append(steps, Step{Name: stepName, State: catalog.StateOK, Detail: here})
+			steps = append(steps, setup.Step{Name: stepName, State: catalog.StateOK, Detail: here})
 		} else {
-			steps = append(steps, Step{Name: stepName, State: catalog.StateAbsent, Detail: "station setup --name <name>"})
+			steps = append(steps, setup.Step{Name: stepName, State: catalog.StateAbsent, Detail: "station setup --name <name>"})
 		}
 	}
-	zshrc := Step{Name: stepZshrc, State: catalog.StateOK}
-	if data, err := s.h.FS.ReadFile(s.zshrcPath()); err != nil || !settings.HasBlock(string(data)) {
-		zshrc = Step{Name: stepZshrc, State: catalog.StateAbsent, Detail: "station setup"}
+	zshrc := setup.Step{Name: stepZshrc, State: catalog.StateOK}
+	if data, found, err := s.m.ReadFile(s.zshrcPath()); err != nil || !found || !settings.HasBlock(string(data)) {
+		zshrc = setup.Step{Name: stepZshrc, State: catalog.StateAbsent, Detail: "station setup"}
 	}
 	steps = append(steps, zshrc)
 	if s.onMac() {
-		layout := Step{Name: stepLayout, State: catalog.StateOK}
+		layout := setup.Step{Name: stepLayout, State: catalog.StateOK}
 		if s.holdsStationFiles() {
-			layout = Step{Name: stepLayout, State: catalog.StateDegraded, Detail: "~/.studio still holds station's files: station setup"}
+			layout = setup.Step{Name: stepLayout, State: catalog.StateDegraded, Detail: "~/.studio still holds station's files: station setup"}
 		}
 		steps = append(steps, layout, s.appsCheck())
 	}
-	return Report{Steps: steps}, nil
+	return setup.Report{Steps: steps}, nil
 }

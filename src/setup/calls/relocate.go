@@ -1,18 +1,17 @@
-package setup
+package calls
 
 import (
 	"context"
-	"errors"
-	"io/fs"
 	"path"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/setup"
+
 	"github.com/jterrazz/studio-station/src/disk"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -22,38 +21,6 @@ const (
 
 type Configurer interface {
 	Configure(ctx context.Context, item string, interactive bool) error
-}
-
-type BusyError struct{ Process string }
-
-func (e *BusyError) Error() string { return e.Process + " is running: its files cannot move under it" }
-
-type DestinationExistsError struct{ Path string }
-
-func (e *DestinationExistsError) Error() string { return e.Path + " already exists" }
-
-type CrossDeviceError struct{ From, To string }
-
-func (e *CrossDeviceError) Error() string {
-	return e.From + " and " + e.To + " are on different volumes: station moves, never copies"
-}
-
-func fileName(f catalog.ToolFile) string {
-	if f == catalog.FileGoEnv {
-		return "go env"
-	}
-	return string(f)
-}
-
-func keyLabel(file catalog.ToolFile, key string) string {
-	switch file {
-	case catalog.FileNpmrc:
-		return "npm " + key
-	case catalog.FileMise:
-		return "mise " + strings.TrimPrefix(key, "settings.")
-	case catalog.FileGoEnv, catalog.FileBunfig:
-	}
-	return key
 }
 
 func (s *Service) placedTools() []catalog.Tool {
@@ -66,7 +33,7 @@ func (s *Service) placedTools() []catalog.Tool {
 	return out
 }
 
-func (s *Service) relocate(ctx context.Context, interactive bool) (Step, error) {
+func (s *Service) relocate(ctx context.Context, interactive bool) (setup.Step, error) {
 	written, notes, err := s.writeToolFiles()
 	if err != nil {
 		return failed(stepRelocate, err)
@@ -82,15 +49,15 @@ func (s *Service) relocate(ctx context.Context, interactive bool) (Step, error) 
 	}
 	switch {
 	case len(notes) > 0:
-		return Step{Name: stepRelocate, State: catalog.StateDegraded, Detail: strings.Join(notes, "; "), Changed: len(written)+len(moved) > 0}, nil
+		return setup.Step{Name: stepRelocate, State: catalog.StateDegraded, Detail: strings.Join(notes, "; "), Changed: len(written)+len(moved) > 0}, nil
 	case len(written)+len(moved) == 0:
-		return Step{Name: stepRelocate, State: catalog.StateOK, Detail: "nothing to do"}, nil
+		return setup.Step{Name: stepRelocate, State: catalog.StateOK, Detail: "nothing to do"}, nil
 	}
 	parts := slices.Clone(written)
 	if len(moved) > 0 {
 		parts = append(parts, "moved "+strings.Join(moved, ", "))
 	}
-	return Step{Name: stepRelocate, State: catalog.StateOK, Detail: strings.Join(parts, ", "), Changed: true}, nil
+	return setup.Step{Name: stepRelocate, State: catalog.StateOK, Detail: strings.Join(parts, ", "), Changed: true}, nil
 }
 
 func (s *Service) writeToolFiles() (written, notes []string, err error) {
@@ -110,11 +77,11 @@ func (s *Service) writeToolFiles() (written, notes []string, err error) {
 	for _, file := range order {
 		target := s.o.Files[file]
 		if target == "" {
-			notes = append(notes, fileName(file)+" is off (GOENV=off): station writes nothing")
+			notes = append(notes, file.Label()+" is off (GOENV=off): station writes nothing")
 			continue
 		}
-		current, readErr := s.h.FS.ReadFile(target)
-		if readErr != nil && !errors.Is(readErr, fs.ErrNotExist) {
+		current, _, readErr := s.m.ReadFile(target)
+		if readErr != nil {
 			return written, notes, readErr
 		}
 		text := string(current)
@@ -124,7 +91,7 @@ func (s *Service) writeToolFiles() (written, notes []string, err error) {
 			for _, r := range byFile[file] {
 				values[r.Key] = s.o.Expand.Expand(r.Value)
 			}
-			updated, did, conflict := UpsertBunfig(text, values["install.globalDir"], values["install.globalBinDir"], values["install.cache.dir"])
+			updated, did, conflict := catalog.UpsertBunfig(text, values["install.globalDir"], values["install.globalBinDir"], values["install.cache.dir"])
 			if conflict != "" {
 				notes = append(notes, conflict)
 			}
@@ -136,12 +103,12 @@ func (s *Service) writeToolFiles() (written, notes []string, err error) {
 			}
 			value := s.o.Expand.Expand(r.Value)
 			upsert := UpsertEnvLine
-			if file == catalog.FileMise {
+			if file.Tabled() {
 				upsert = UpsertTableKey
 			}
 			updated, did, hand := upsert(text, r.Key, value)
 			if hand != "" {
-				notes = append(notes, keyLabel(file, r.Key)+" set by hand to "+hand+"; station leaves it")
+				notes = append(notes, file.KeyLabel(r.Key)+" set by hand to "+hand+"; station leaves it")
 				continue
 			}
 			text, changed = updated, changed || did
@@ -149,17 +116,13 @@ func (s *Service) writeToolFiles() (written, notes []string, err error) {
 		if !changed {
 			continue
 		}
-		if err := s.h.FS.MkdirAll(path.Dir(target), 0o755); err != nil {
+		if err := s.m.MkdirAll(path.Dir(target), 0o755); err != nil {
 			return written, notes, err
 		}
-		perm := fs.FileMode(0o644)
-		if info, statErr := s.h.FS.Stat(target); statErr == nil {
-			perm = info.Mode().Perm()
-		}
-		if err := s.h.FS.WriteFile(target, []byte(text), perm); err != nil {
+		if err := s.m.WriteFile(target, []byte(text), s.m.Mode(target, 0o644)); err != nil {
 			return written, notes, err
 		}
-		written = append(written, fileName(file))
+		written = append(written, file.Label())
 	}
 	return written, notes, nil
 }
@@ -184,7 +147,7 @@ func (s *Service) moveStrays(ctx context.Context, interactive bool) (moved, note
 				continue
 			}
 			if st.Busy != "" && s.busy(ctx, st.Busy) {
-				return moved, notes, &BusyError{Process: st.Busy}
+				return moved, notes, &setup.BusyError{Process: st.Busy}
 			}
 			did, conflicts, moveErr := s.moveStray(st)
 			notes = append(notes, conflicts...)
@@ -192,7 +155,7 @@ func (s *Service) moveStrays(ctx context.Context, interactive bool) (moved, note
 				return moved, notes, moveErr
 			}
 			for _, dir := range st.Prune {
-				_ = s.h.FS.Remove(s.o.Expand.Expand(dir))
+				_, _ = s.m.Remove(s.o.Expand.Expand(dir))
 			}
 			if did {
 				moved = append(moved, st.Path)
@@ -212,7 +175,7 @@ func (s *Service) moveStrays(ctx context.Context, interactive bool) (moved, note
 
 func (s *Service) pending(st catalog.Stray) bool {
 	for _, m := range st.Move {
-		if matches, _ := s.h.FS.Glob(s.o.Expand.Expand(m.From)); len(matches) > 0 {
+		if len(s.m.Glob(s.o.Expand.Expand(m.From))) > 0 {
 			return true
 		}
 	}
@@ -220,8 +183,8 @@ func (s *Service) pending(st catalog.Stray) bool {
 }
 
 func (s *Service) busy(ctx context.Context, process string) bool {
-	out, err := s.h.Run.Output(ctx, local.Cmd{Name: "pgrep", Args: []string{"-x", process}, Timeout: busyBudget})
-	return err == nil && out.ExitCode == 0
+	_, code, err := s.m.Output(ctx, "pgrep", []string{"-x", process}, busyBudget)
+	return err == nil && code == 0
 }
 
 // invariant: every move is one rename(2), never a copy: an entry glob moves each
@@ -231,7 +194,7 @@ func (s *Service) moveStray(st catalog.Stray) (did bool, conflicts []string, err
 	for _, m := range st.Move {
 		from, to := s.o.Expand.Expand(m.From), s.o.Expand.Expand(m.To)
 		entries := strings.HasSuffix(m.From, "/*")
-		matches, _ := s.h.FS.Glob(from)
+		matches := s.m.Glob(from)
 		for _, src := range matches {
 			dst := to
 			if entries {
@@ -242,7 +205,7 @@ func (s *Service) moveStray(st catalog.Stray) (did bool, conflicts []string, err
 					conflicts = append(conflicts, s.o.Expand.Display(src)+" already in "+s.o.Expand.Display(to))
 					continue
 				}
-				return did, conflicts, &DestinationExistsError{Path: s.o.Expand.Display(dst)}
+				return did, conflicts, &setup.DestinationExistsError{Path: s.o.Expand.Display(dst)}
 			}
 			if err := s.rename(src, dst); err != nil {
 				return did, conflicts, err
@@ -254,29 +217,29 @@ func (s *Service) moveStray(st catalog.Stray) (did bool, conflicts []string, err
 }
 
 func (s *Service) empty(p string) bool {
-	info, err := s.h.FS.Stat(p)
-	if err != nil {
+	dir, found := s.m.IsDir(p)
+	if !found {
 		return true
 	}
-	if !info.IsDir() {
+	if !dir {
 		return false
 	}
-	entries, err := s.h.FS.ReadDir(p)
+	entries, _, err := s.m.Entries(p)
 	return err == nil && len(entries) == 0
 }
 
 func (s *Service) rename(from, to string) error {
-	if err := s.h.FS.MkdirAll(path.Dir(to), 0o755); err != nil {
+	if err := s.m.MkdirAll(path.Dir(to), 0o755); err != nil {
 		return err
 	}
 	if s.exists(to) {
-		if err := s.h.FS.Remove(to); err != nil {
+		if _, err := s.m.Remove(to); err != nil {
 			return err
 		}
 	}
-	err := s.h.FS.Rename(from, to)
-	if errors.Is(err, local.ErrCrossDevice) {
-		return &CrossDeviceError{From: s.o.Expand.Display(from), To: s.o.Expand.Display(to)}
+	crossDevice, err := s.m.Rename(from, to)
+	if crossDevice {
+		return &setup.CrossDeviceError{From: s.o.Expand.Display(from), To: s.o.Expand.Display(to)}
 	}
 	return err
 }

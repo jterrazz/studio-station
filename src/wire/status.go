@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"path"
 
+	setupcalls "github.com/jterrazz/studio-station/src/setup/calls"
+
 	"github.com/jterrazz/studio-station/src/disk"
 
 	"github.com/spf13/cobra"
@@ -18,7 +20,6 @@ import (
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
@@ -134,7 +135,7 @@ type configRead struct{ *settingscalls.Catalogue }
 
 func (configRead) Placed(r settings.Report) (string, catalog.State) { return r.Item.Name, r.State }
 
-type setupRead struct{ s *setup.Service }
+type setupRead struct{ s *setupcalls.Service }
 
 func (r setupRead) Check(ctx context.Context) ([]overview.Step, error) {
 	report, err := r.s.Check(ctx)

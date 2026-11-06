@@ -31,3 +31,17 @@ type DifferentContentError struct{ Path string }
 func (e *DifferentContentError) Error() string {
 	return e.Path + " already exists with different content"
 }
+
+type BusyError struct{ Process string }
+
+func (e *BusyError) Error() string { return e.Process + " is running: its files cannot move under it" }
+
+type DestinationExistsError struct{ Path string }
+
+func (e *DestinationExistsError) Error() string { return e.Path + " already exists" }
+
+type CrossDeviceError struct{ From, To string }
+
+func (e *CrossDeviceError) Error() string {
+	return e.From + " and " + e.To + " are on different volumes: station moves, never copies"
+}

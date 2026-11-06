@@ -6,7 +6,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/machines"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/setup"
+	"github.com/jterrazz/studio-station/src/setup"
 )
 
 func setupFailure(err error) (*fail.Error, bool) {

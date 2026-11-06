@@ -1,11 +1,11 @@
-package setup
+package calls
 
 import (
 	"context"
-	"errors"
-	"io/fs"
 	"path"
 	"strings"
+
+	"github.com/jterrazz/studio-station/src/setup"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 )
@@ -19,8 +19,8 @@ type Installer interface {
 	RemoveFormula(ctx context.Context, formula string) error
 }
 
-func (s *Service) apps(ctx context.Context, interactive bool) (Step, error) {
-	step := Step{Name: stepApps, State: catalog.StateOK}
+func (s *Service) apps(ctx context.Context, interactive bool) (setup.Step, error) {
+	step := setup.Step{Name: stepApps, State: catalog.StateOK}
 	var done []string
 	if s.o.Installer != nil {
 		missing, err := s.o.Installer.Missing(ctx)
@@ -50,21 +50,21 @@ func (s *Service) apps(ctx context.Context, interactive bool) (Step, error) {
 		return failed(stepApps, err)
 	}
 	if wrote {
-		done = append(done, "tailscale wrapper written: "+s.o.Expand.Display(s.wrapperPath()))
+		done = append(done, catalog.TailnetWrapperWritten(s.o.Expand.Display(s.wrapperPath())))
 	}
 	step.Detail = strings.Join(done, ", ")
 	step.Changed = len(done) > 0
 	return step, nil
 }
 
-func (s *Service) appsCheck() Step {
+func (s *Service) appsCheck() setup.Step {
 	if s.wrapperDue() {
-		return Step{Name: stepApps, State: catalog.StateDegraded, Detail: "tailscale wrapper due: station setup"}
+		return setup.Step{Name: stepApps, State: catalog.StateDegraded, Detail: catalog.TailnetWrapperDue}
 	}
-	return Step{Name: stepApps, State: catalog.StateOK}
+	return setup.Step{Name: stepApps, State: catalog.StateOK}
 }
 
-func (s *Service) wrapperPath() string { return path.Join(s.o.Bin, "tailscale") }
+func (s *Service) wrapperPath() string { return path.Join(s.o.Bin, catalog.TailnetCLI) }
 
 func wrapper(cli string) []byte { return []byte("#!/bin/sh\nexec " + cli + " \"$@\"\n") }
 
@@ -82,13 +82,13 @@ func (s *Service) wrapperDue() bool {
 		return false
 	}
 	at := s.wrapperPath()
-	if _, err := s.h.FS.Readlink(at); err == nil {
+	if s.m.IsLink(at) {
 		return true
 	}
-	if _, err := s.h.FS.Stat(at); err == nil {
+	if s.m.Exists(at) {
 		return false
 	}
-	if found, ok := s.h.Run.LookPath("tailscale"); ok && found != at {
+	if found, ok := s.m.LookPath(catalog.TailnetCLI); ok && found != at {
 		return false
 	}
 	return true
@@ -99,14 +99,14 @@ func (s *Service) writeWrapper() (bool, error) {
 		return false, nil
 	}
 	at := s.wrapperPath()
-	if err := s.h.FS.Remove(at); err != nil && !errors.Is(err, fs.ErrNotExist) {
+	if _, err := s.m.Remove(at); err != nil {
 		return false, err
 	}
-	if err := s.h.FS.MkdirAll(s.o.Bin, 0o755); err != nil {
+	if err := s.m.MkdirAll(s.o.Bin, 0o755); err != nil {
 		return false, err
 	}
-	if err := s.h.FS.WriteFile(at, wrapper(s.o.AppStoreCLI()), 0o755); err != nil {
+	if err := s.m.WriteFile(at, wrapper(s.o.AppStoreCLI()), 0o755); err != nil {
 		return false, err
 	}
-	return true, s.h.FS.Chmod(at, 0o755)
+	return true, s.m.Chmod(at, 0o755)
 }

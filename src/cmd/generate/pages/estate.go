@@ -14,7 +14,6 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
@@ -29,6 +28,7 @@ import (
 	pagesetup "github.com/jterrazz/studio-station/src/pages/setup"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/settings"
+	"github.com/jterrazz/studio-station/src/setup"
 )
 
 var (

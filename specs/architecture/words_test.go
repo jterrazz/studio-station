@@ -63,7 +63,6 @@ func wordsTolerated() map[string][]string {
 		"cmd/generate/pages":   {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "ssh", "tailscale", "uv"},
 		"engine":               {"ssh"},
 		"domain/machines":      {"ssh"},
-		"domain/setup":         {"bun", "mise", "npm", "tailscale", "tailscaled"},
 		"pages/home":           {"brew", "docker", "mise", "npm", "security", "ssh", "tailscale"},
 		"pages/machines":       {"ssh"},
 	}

@@ -14,11 +14,15 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/setup"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
+	"github.com/jterrazz/studio-station/src/setup"
+	setupcalls "github.com/jterrazz/studio-station/src/setup/calls"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	setupcmd "github.com/jterrazz/studio-station/src/surface/cli/setup"
 )
@@ -27,11 +31,11 @@ func setupCommand(env kit.Env, m machine) *cobra.Command {
 	return setupcmd.Command(setupcmd.Deps{Here: m.where}, env)
 }
 
-func setupService(env kit.Env, m machine) *setup.Service {
+func setupService(env kit.Env, m machine) *setupcalls.Service {
 	fleet := m.machines(env.Interactive)
 	registrar := fleetRegistrar{name: m.stores.name(), machines: fleet}
 	installer := engineInstaller{m: m, machines: fleet}
-	return setup.New(m.host, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.services(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
+	return setupcalls.NewService(setupMachine{m.host}, setupcalls.ServicePrefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.services(), Stores: m.stores.migrators()}, setupVault{m.vault()}, registrar, installer, setupcalls.ServiceOptions{
 		Kind:            m.kind,
 		Server:          m.profile.Kind == coremachine.Server,
 		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,
@@ -59,14 +63,14 @@ func (c setupConfigurer) Configure(ctx context.Context, item string, interactive
 
 type setupSettings struct{ config *settingscalls.Catalogue }
 
-func (c setupSettings) List(ctx context.Context) ([]setup.Setting, error) {
+func (c setupSettings) List(ctx context.Context) ([]setupcalls.Setting, error) {
 	reports, err := c.config.List(ctx)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]setup.Setting, 0, len(reports))
+	out := make([]setupcalls.Setting, 0, len(reports))
 	for _, r := range reports {
-		out = append(out, setup.Setting{
+		out = append(out, setupcalls.Setting{
 			Name: r.Item.Name, Due: r.Applies && r.State == catalog.StateAbsent, ChangedSince: r.Applies && r.State == catalog.StateDegraded,
 			AlwaysOn: r.Item.AlwaysOn(), NeedsOwner: r.Item.NeedsOwner(),
 		})
@@ -136,20 +140,32 @@ func (r fleetRegistrar) Here() (string, bool) {
 
 func (r fleetRegistrar) Register(name string) error { return r.machines.Init(name) }
 
-type setupRun struct{ *setup.Service }
+type setupRun struct{ *setupcalls.Service }
 
 func (s setupRun) Run(ctx context.Context, name string, interactive bool, ask func() (string, error)) (setup.Report, error) {
-	return s.Service.Run(ctx, setup.Request{Name: name, Interactive: interactive, AskName: ask})
+	return s.Service.Run(ctx, setupcalls.Request{Name: name, Interactive: interactive, AskName: ask})
 }
 
 // value: the name asked in a form at the owner's terminal, from the one
 // this machine would take.
 type setupAsk struct {
-	setup *setup.Service
+	setup *setupcalls.Service
 	ask   kit.Asker
 }
 
 func (a setupAsk) Name(ctx context.Context) (string, error) {
 	values, err := a.ask.Form(pagesetup.NameForm(a.setup.DefaultName(ctx)))
 	return strings.TrimSpace(values["name"]), err
+}
+
+// value: the keychain as setup's retirement forgets from it: a Mac without
+// its command keeps nothing.
+type setupVault struct{ v accountscontract.Vault }
+
+func (s setupVault) Forget(ctx context.Context, name string) error {
+	err := s.v.Forget(ctx, name)
+	if errors.Is(err, local.ErrNotFound) {
+		return accounts.ErrNotKept
+	}
+	return err
 }

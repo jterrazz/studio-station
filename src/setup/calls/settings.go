@@ -1,9 +1,11 @@
-package setup
+package calls
 
 import (
 	"context"
 	"errors"
 	"strings"
+
+	"github.com/jterrazz/studio-station/src/setup"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 )
@@ -29,14 +31,14 @@ type Settings interface {
 // the others due and every Changed since one as next steps, and never applies
 // nor lists the Always-on Mac group (opt-in); a setting it could not read is
 // left alone; one that fails leaves the others applied.
-func (s *Service) settings(ctx context.Context) ([]Step, error) {
+func (s *Service) settings(ctx context.Context) ([]setup.Step, error) {
 	if s.o.Settings == nil {
 		return nil, nil
 	}
 	list, err := s.o.Settings.List(ctx)
 	if err != nil {
 		step, stepErr := failed(stepSettings, err)
-		return []Step{step}, stepErr
+		return []setup.Step{step}, stepErr
 	}
 	var applied, next, broken []string
 	var errs []error
@@ -58,15 +60,15 @@ func (s *Service) settings(ctx context.Context) ([]Step, error) {
 	if len(applied) > 0 {
 		done = append(done, "applied "+strings.Join(applied, " "))
 	}
-	step := Step{Name: stepSettings, State: catalog.StateOK, Detail: strings.Join(append(done, broken...), ", "), Changed: len(applied) > 0}
+	step := setup.Step{Name: stepSettings, State: catalog.StateOK, Detail: strings.Join(append(done, broken...), ", "), Changed: len(applied) > 0}
 	var stepErr error
 	if len(broken) > 0 {
 		step.State = catalog.StateBroken
-		stepErr = &StepFailedError{Step: stepSettings, Cause: errors.Join(errs...)}
+		stepErr = &setup.StepFailedError{Step: stepSettings, Cause: errors.Join(errs...)}
 	}
-	steps := []Step{step}
+	steps := []setup.Step{step}
 	for _, name := range next {
-		steps = append(steps, Step{Name: name, State: catalog.StateAbsent, Detail: "next: station settings apply " + name})
+		steps = append(steps, setup.Step{Name: name, State: catalog.StateAbsent, Detail: "next: station settings apply " + name})
 	}
 	return steps, stepErr
 }
