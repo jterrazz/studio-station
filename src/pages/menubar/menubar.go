@@ -163,11 +163,83 @@ func needsYou(r Reading) page.Section {
 		}
 	}
 	s.Caption = []page.Value{page.Text(things(len(rows)))}
+	s.Glance = glance(r.Home.Needs)
 	s.Items = rows
 	if len(rows) == 0 {
 		s.Items = []page.Item{{Empty: &page.Empty{Text: "Nothing needs you"}}}
 	}
 	return s
+}
+
+// value: Needs you in the vision's short words, one part per kind of
+// finding in the one order: the updates summed, an account's sign-in, a
+// folder to move, a setting, a failing or left-over task; any other
+// finding by its words up to a comma.
+func glance(needs []overview.Need) []page.Value {
+	var updates, failing, left int
+	var signins, folders, settings, others []string
+	for _, n := range needs {
+		switch n.Section {
+		case section.Apps:
+			updates += leading(n.Text)
+		case section.Accounts:
+			signins = append(signins, n.Subject+" sign-in")
+		case section.Disk:
+			folders = append(folders, n.Subject)
+		case section.Settings:
+			settings = append(settings, strings.ToLower(strings.ReplaceAll(n.Text, ":", "")))
+		case section.Background:
+			if n.Broken {
+				failing++
+			} else {
+				left++
+			}
+		default:
+			head, _, _ := strings.Cut(n.Text, ",")
+			others = append(others, head)
+		}
+	}
+	var parts []string
+	if updates > 0 {
+		parts = append(parts, counted(updates, "update", "updates"))
+	}
+	parts = append(parts, signins...)
+	parts = append(parts, grouped(folders, "folders to move")...)
+	parts = append(parts, grouped(settings, "settings")...)
+	if failing > 0 {
+		parts = append(parts, counted(failing, "failing task", "failing tasks"))
+	}
+	if left > 0 {
+		parts = append(parts, counted(left, "left-over task", "left-over tasks"))
+	}
+	parts = append(parts, others...)
+	out := make([]page.Value, 0, len(parts))
+	for _, p := range parts {
+		out = append(out, page.Text(p))
+	}
+	return out
+}
+
+func leading(text string) int {
+	head, _, _ := strings.Cut(text, " ")
+	if n, err := strconv.Atoi(head); err == nil && n > 0 {
+		return n
+	}
+	return 1
+}
+
+func counted(n int, one, many string) string {
+	if n == 1 {
+		return "1 " + one
+	}
+	return strconv.Itoa(n) + " " + many
+}
+
+func grouped(words []string, many string) []string {
+	if len(words) > 1 {
+		return []string{strconv.Itoa(len(words)) + " " + many}
+	}
+	return words
 }
 
 func things(n int) string {
@@ -313,11 +385,11 @@ func awakeTile(r Reading) page.Section {
 	self := ""
 	if r.Awake != nil {
 		self = r.Awake.Mac
-		parts = append(parts, page.Text(page.ThisMac+" "+cmpWord(awakeWords(*r.Awake), "sleeps normally")))
+		parts = append(parts, page.Text(page.ThisMac+" "+cmpWord(awakeWords(*r.Awake), "sleeps")))
 	}
 	for _, m := range r.Macs {
 		if !m.ThisMac {
-			parts = append(parts, page.Text(macLabel(r, m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps normally")))
+			parts = append(parts, page.Text(macLabel(r, m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps")))
 		}
 	}
 	value := page.Pending()

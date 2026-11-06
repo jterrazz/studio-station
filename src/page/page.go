@@ -75,6 +75,9 @@ type Section struct {
 	// the TUI and the menu bar show every row, --all unfolds it.
 	Top  int   `json:"top,omitempty"`
 	Rest *Item `json:"rest,omitempty"`
+	// value: the section in a few words, for a surface that gives it one
+	// line (the menu bar's folded Needs you); a terminal shows its rows.
+	Glance []Value `json:"glance,omitempty"`
 }
 
 type Role string

@@ -127,6 +127,12 @@ public struct ConfirmSheet: View {
         self.onAnswer = onAnswer
     }
 
+    // value: a confirm's line as it is drawn: a command set off as code
+    // (`station engine start`), any other line as its words.
+    public static func line(_ v: Value) -> (words: String, code: Bool) {
+        v.kind == "command" ? (v.text ?? "", true) : (Format.show(v), false)
+    }
+
     public static func allows(_ confirm: Confirm, typed: String) -> Bool {
         guard let name = confirm.type else { return true }
         return typed == name
@@ -135,8 +141,16 @@ public struct ConfirmSheet: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(confirm.question ?? "").font(.body.weight(.semibold)).foregroundStyle(.primary)
-            ForEach(Array((confirm.lines ?? []).enumerated()), id: \.offset) { _, line in
-                SubText(Format.show(line))
+            ForEach(Array((confirm.lines ?? []).enumerated()), id: \.offset) { _, v in
+                let line = Self.line(v)
+                if line.code {
+                    Text(line.words).font(.system(size: Token.Size.sub, design: .monospaced)).foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                        .padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.fill.tertiary))
+                } else {
+                    SubText(line.words)
+                }
             }
             if let name = confirm.type {
                 TypedField(name, text: $typed, autofocus: true, submit: { if Self.allows(confirm, typed: typed) { onAnswer(true) } })

@@ -88,6 +88,13 @@ struct HomeContent: View {
     // row's words up to their first comma, a launchd label by its last
     // part, without the punctuation that ends them, so the line never
     // ends in `,.`.
+    static func folded(_ s: Section) -> String {
+        if let glance = s.glance, !glance.isEmpty {
+            return glance.map { Format.show($0) }.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
+        }
+        return folded((s.items ?? []).compactMap(\.row))
+    }
+
     static func folded(_ rows: [Row]) -> String {
         rows.compactMap(\.label).map(short).filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
     }
@@ -116,7 +123,7 @@ struct HomeContent: View {
                         Text(title).font(.system(size: Token.Size.text, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
                             .padding(.vertical, Token.Size.leading)
                         if !unfolded {
-                            SubText(Self.folded(rows)).lineLimit(2)
+                            SubText(Self.folded(s)).lineLimit(2)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -220,12 +227,28 @@ struct HomeContent: View {
         stopped ? actions.filter { $0.id != start } : actions
     }
 
+    // value: what a call that takes a while says it does from the click
+    // until the page says its outcome.
+    static func doing(_ a: Action) -> String? {
+        switch a.id {
+        case "new-vm": "Creating the VM\(Token.Glyph.ellipsis)"
+        case "stop-all": "Stopping everything\(Token.Glyph.ellipsis)"
+        default: nil
+        }
+    }
+
     var menu: some View {
         VStack(alignment: .leading, spacing: 0) {
             SectionDivider().padding(.bottom, 2)
             ForEach(Array(Self.footer(page.pageActions, stopped: stopped).enumerated()), id: \.offset) { _, a in
-                if state.running == a.id {
-                    PendingDot()
+                if state.running == a.id || (state.settling == a.id && Self.doing(a) != nil) {
+                    HStack(spacing: Token.Tile.gap) {
+                        PendingDot()
+                        SubText(Self.doing(a) ?? "\(a.label ?? "")\(Token.Glyph.ellipsis)")
+                    }
+                    .frame(minHeight: Token.Tile.row - 8)
+                    .padding(.horizontal, 4)
+                    .accessibilityElement(children: .combine)
                 } else {
                     let line = MenuLine(action: a, symbol: Symbols.of(a), danger: a.id == "stop-all") { perform(a, handlers) }.disabled(state.running != nil)
                     switch a.key {

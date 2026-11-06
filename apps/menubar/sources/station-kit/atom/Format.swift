@@ -52,8 +52,34 @@ public enum Format {
     }
 
     static func percent(_ tenths: Int64) -> String {
-        if tenths < 100 && tenths % 10 != 0 { return "\(tenths / 10).\(tenths % 10)%" }
-        return "\(tenths / 10)%"
+        if tenths < 100 && tenths % 10 != 0 { return "\(tenths / 10).\(tenths % 10)\(glued)%" }
+        return "\(tenths / 10)\(glued)%"
+    }
+
+    // value: the panel's one duration and percent format in the words the
+    // engine sends a terminal (`3h 59m left`, `up 3d`, `18%`): `3 h 59 min
+    // left`, `up 3 d`, `18 %`, each kept whole on its line.
+    static let compact = try! NSRegularExpression(pattern: #"(?<![\w.])(\d+)(d|h|m|s)(?: (\d+)(h|m|s))?(?!\w)( left| ago)?|(?<![\w.])(\d+(?:\.\d+)?)%"#)
+    static let units = ["d": "d", "h": "h", "m": "min", "s": "s"]
+    static let glued = "\u{00A0}"
+
+    public static func said(_ text: String) -> String {
+        guard text.contains(where: \.isNumber) else { return text }
+        var out = text
+        for m in compact.matches(in: text, range: NSRange(text.startIndex..., in: text)).reversed() {
+            guard let whole = Range(m.range, in: text) else { continue }
+            func part(_ i: Int) -> String? { Range(m.range(at: i), in: text).map { String(text[$0]) } }
+            var words: [String] = []
+            if let percent = part(6) {
+                words = [percent, "%"]
+            } else if let n = part(1), let u = part(2) {
+                words = [n, units[u] ?? u]
+                if let n2 = part(3), let u2 = part(4) { words += [n2, units[u2] ?? u2] }
+                if let tail = part(5) { words.append(tail.trimmingCharacters(in: .whitespaces)) }
+            }
+            out.replaceSubrange(Range(m.range, in: out) ?? whole, with: words.joined(separator: glued))
+        }
+        return out
     }
 
     static func until(_ v: Value, now: Date?) -> String {
@@ -104,7 +130,7 @@ public enum Format {
             return (v.items ?? []).map { "\($0.label ?? "") \(show($0, now: now))" }.joined(separator: Token.Glyph.sep)
         case "list":
             return (v.items ?? []).map { show($0, now: now) }.filter { !$0.isEmpty }.joined(separator: Token.Glyph.sep)
-        default: return v.text ?? ""
+        default: return said(v.text ?? "")
         }
     }
 

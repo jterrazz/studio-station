@@ -73,6 +73,9 @@ public struct Section: Codable, Equatable, Sendable {
     public var pipe_counts: Bool?
     public var pipe_groups: Bool?
     public var `break`: Int?
+    // value: the section in a few words, for a line that sums it up
+    // (Needs you folded).
+    public var glance: [Value]?
 }
 
 public struct Column: Codable, Equatable, Sendable {
