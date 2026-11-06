@@ -1,6 +1,6 @@
 # The manual of station
 
-`station` is the CLI that sets up and runs a Mac and every machine around it: it installs from a catalogue of apps and agent skills, configures the machine and its dotfiles, and creates, runs and deletes the VMs where development lives. This repository also authors two doctrines every `@jterrazz` repository follows, shipped to agents as skills. This page lists every page of the manual, by what the reader came to do.
+`station` is the CLI that sets up and runs a Mac, its VMs and your other Macs: it installs apps and agent skills from a catalogue, applies and checks the machine's settings, keeps servers alive and workspaces at hand, shows what listens and who reaches it, and keeps a Mac awake, the same sections on every machine. This repository also authors two doctrines every `@jterrazz` repository follows, shipped to agents as skills. This page lists every page of the manual, by what the reader came to do.
 
 ## Start
 
@@ -13,16 +13,16 @@
 | Page                         | Answers                                                                            |
 | ---------------------------- | ---------------------------------------------------------------------------------- |
 | [Develop](guides/develop.md) | Working from source: the gestures, which folder a change opens, what a change owes |
-| [Test](guides/test.md)       | The suites, the spec documents, the stubs                                          |
+| [Test](guides/test.md)       | The three tiers, a use case told over a world, the adapter documents, the stubs    |
 | [Release](guides/release.md) | The tagged release, how a machine takes it, provisioning from a checkout           |
 
 ## Concepts
 
 | Page                                         | Answers                                                                                       |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| [Architecture](concepts/architecture.md)     | The layers, the import table, the path of a request, the method table                         |
-| [Design system](concepts/design-system.md)   | The palette, the marks, the pipe format, the TUI                                              |
-| [Glossary](concepts/glossary.md)             | The one word for each concept, and the words rejected                                         |
+| [Architecture](concepts/architecture.md)     | The families and the hexagon in each, the contracts, the Router, the engine, the fake world   |
+| [Design system](concepts/design-system.md)   | The palette, the marks, the pipe format, the TUI, Activity's graphs                           |
+| [Glossary](concepts/glossary.md)             | The one word for each concept, the words rejected, the words of the code                      |
 | [The stack](concepts/stack.md)               | How `@jterrazz` projects compose: packages, naming, required files; shipped as `studio-stack` |
 | [Repo structure](concepts/repo-structure.md) | Where knowledge lives in every `@jterrazz` repository; shipped as `studio-repo-structure`     |
 

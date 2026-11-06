@@ -203,15 +203,21 @@ station help [command]
 
 A v2 word runs its v3 command with the same arguments, for one release, and prints one muted line on stderr naming it (nothing there with `--json` or `--page`); help and completion never list it.
 
-| Old                                 | Runs                                                                                                                                                                                                      |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `station status`                    | `station overview`; `status --json` keeps `station.status/v1`                                                                                                                                             |
-| `station stop`                      | `station engine stop`                                                                                                                                                                                     |
-| `station start`                     | `station engine start`                                                                                                                                                                                    |
-| `station tools`                     | `station apps`; `install`, `uninstall` and `upgrade --via` run `apps install`, `apps remove` and `apps update --method`                                                                                   |
-| `station secrets`                   | `station accounts`; `lend --to` and `recall --from` run `accounts share --with` and `accounts take-back --from`                                                                                           |
-| `station run git <shortcut>`        | `git <alias>`, the [Git shortcuts](settings.md#the-items) setting's alias (`log`, `push`, `status` are `lg`, `pushup`, `st`); refused with `station settings apply git-shortcuts` while it is not applied |
-| `station run docker rm\|rmi\|reset` | the steps of `dclean`, `dclean-images`, `dreset`, the [Docker shortcuts](settings.md#the-items), asking as before (`--yes` off a terminal)                                                                |
+| Old                                   | Runs                                                                                                                                                                                                      |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `station status`                      | `station overview`; `status --json` keeps `station.status/v1`                                                                                                                                             |
+| `station stop`                        | `station engine stop`                                                                                                                                                                                     |
+| `station start`                       | `station engine start`                                                                                                                                                                                    |
+| `station tools`                       | `station apps`; `install`, `uninstall` and `upgrade --via` run `apps install`, `apps remove` and `apps update --method`                                                                                   |
+| `station secrets`                     | `station accounts`; `lend --to` and `recall --from` run `accounts share --with` and `accounts take-back --from`                                                                                           |
+| `station config`                      | `station settings`; `install` and `uninstall` run `settings apply` and `settings off`                                                                                                                     |
+| `station storage`                     | `station disk`; `clean` and `reset` run `disk free` and `disk erase`                                                                                                                                      |
+| `station power`                       | `station awake`; `awake --for <d>` runs `awake <d>`, `sleep` runs `awake off`                                                                                                                             |
+| `station services`, `station tailnet` | `station ports`; `url` and `release` run `ports share` and `ports stop-sharing`                                                                                                                           |
+| `station machines probe <machine>`    | `station machines <machine>`                                                                                                                                                                              |
+| `machines create --always-on`         | `machines create --server`                                                                                                                                                                                |
+| `station run git <shortcut>`          | `git <alias>`, the [Git shortcuts](settings.md#the-items) setting's alias (`log`, `push`, `status` are `lg`, `pushup`, `st`); refused with `station settings apply git-shortcuts` while it is not applied |
+| `station run docker rm\|rmi\|reset`   | the steps of `dclean`, `dclean-images`, `dreset`, the [Docker shortcuts](settings.md#the-items), asking as before (`--yes` off a terminal)                                                                |
 
 ## Plumbing
 
