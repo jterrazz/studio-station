@@ -9,8 +9,8 @@ Health  after every boot
   ● SSH answers
   ● Check passes    https://infra:6443/readyz
 Activity
-    CPU     34%                            Disk  24.9/85.9 GB
-    Memory  20.8/25.8 GB
+    CPU     34%     ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃       Disk  24.9/85.9 GB
+    Memory  20.8/25.8 GB  ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆      ▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ 
 Ports and shell
     Ports  Public 1 · Private 2          Apps, settings, accounts: not managed
     SSH    ssh admin@infra               by station

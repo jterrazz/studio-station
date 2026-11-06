@@ -68,6 +68,11 @@
           "key": "value",
           "kind": "list",
           "keep": 60
+        },
+        {
+          "key": "graph",
+          "kind": "spark",
+          "keep": 50
         }
       ],
       "items": [
@@ -79,6 +84,78 @@
               {
                 "kind": "percent",
                 "n": 340
+              },
+              {
+                "kind": "spark",
+                "items": [
+                  {
+                    "kind": "none"
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 25
+                  },
+                  {
+                    "kind": "count",
+                    "n": 34
+                  },
+                  {
+                    "kind": "count",
+                    "n": 30
+                  },
+                  {
+                    "kind": "count",
+                    "n": 22
+                  },
+                  {
+                    "kind": "count",
+                    "n": 41
+                  },
+                  {
+                    "kind": "count",
+                    "n": 55
+                  },
+                  {
+                    "kind": "count",
+                    "n": 48
+                  },
+                  {
+                    "kind": "count",
+                    "n": 36
+                  },
+                  {
+                    "kind": "count",
+                    "n": 28
+                  },
+                  {
+                    "kind": "count",
+                    "n": 31
+                  },
+                  {
+                    "kind": "count",
+                    "n": 44
+                  },
+                  {
+                    "kind": "count",
+                    "n": 38
+                  },
+                  {
+                    "kind": "count",
+                    "n": 29
+                  },
+                  {
+                    "kind": "count",
+                    "n": 34
+                  }
+                ]
               }
             ]
           }
@@ -92,6 +169,82 @@
                 "kind": "ratio",
                 "n": 4133906022,
                 "of": 4294967296
+              },
+              {
+                "kind": "spark",
+                "items": [
+                  {
+                    "kind": "none"
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 83
+                  },
+                  {
+                    "kind": "count",
+                    "n": 89
+                  },
+                  {
+                    "kind": "count",
+                    "n": 96
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 83
+                  },
+                  {
+                    "kind": "count",
+                    "n": 89
+                  },
+                  {
+                    "kind": "count",
+                    "n": 96
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 83
+                  },
+                  {
+                    "kind": "count",
+                    "n": 89
+                  },
+                  {
+                    "kind": "count",
+                    "n": 96
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 83
+                  },
+                  {
+                    "kind": "count",
+                    "n": 89
+                  },
+                  {
+                    "kind": "count",
+                    "n": 96
+                  }
+                ]
               }
             ]
           }
@@ -105,6 +258,82 @@
                 "kind": "ratio",
                 "n": 3874836480,
                 "of": 21474836480
+              },
+              {
+                "kind": "spark",
+                "items": [
+                  {
+                    "kind": "none"
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  }
+                ]
               }
             ]
           }

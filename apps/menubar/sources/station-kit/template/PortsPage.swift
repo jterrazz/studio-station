@@ -20,15 +20,14 @@ public struct PortsPage: View {
     public var body: some View {
         let summary = page.summary()
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
-            PushedHeader(back: summary?.label ?? page.context?.machine ?? "", title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()), action: handlers.back)
+            PushedHeader(back: summary?.label ?? page.context?.machine ?? "", title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()),
+                         symbol: Token.Symbol.port, tint: palette.accent, id: Navigation.ports, action: handlers.back)
             if let red = page.section("needs-you") { needsYou(red) }
             if let public_ = page.section("public") {
-                SectionHead(public_.title ?? "")
-                GlassCard { ForEach(Array(public_.rows.enumerated()), id: \.offset) { _, r in plainRow(public_, r, symbol: Token.Symbol.globe) } }
+                GroupCard(public_.title ?? "", count: public_.rows.count, spacing: 6) { ForEach(Array(public_.rows.enumerated()), id: \.offset) { _, r in plainRow(public_, r, symbol: Token.Symbol.globe) } }
             }
             if let private_ = page.section("private") {
-                SectionHead(private_.title ?? "")
-                GlassCard { ForEach(Array(private_.rows.enumerated()), id: \.offset) { _, r in privateRow(private_, r) } }
+                GroupCard(private_.title ?? "", count: private_.rows.count, spacing: 8) { ForEach(Array(private_.rows.enumerated()), id: \.offset) { i, r in privateRow(private_, r).overlay(alignment: .top) { if i > 0 { Rule().offset(y: -4) } } } }
             }
             if let ranges = page.section("ranges") {
                 ForEach(Array(ranges.notes.enumerated()), id: \.offset) { _, n in note(n) }
@@ -45,15 +44,15 @@ public struct PortsPage: View {
         let rows = s.rows
         let ports = rows.map { s.cell($0, "port").map { Format.show($0) } ?? "" }
         return GlassCard(tint: palette.bad) {
-            HStack(alignment: .top, spacing: Token.Space.gap) {
-                Image(systemName: Token.Symbol.warn).foregroundStyle(palette.bad)
+            HStack(alignment: .top, spacing: Token.Space.gap + 2) {
+                IconCircle(Token.Symbol.warn, tint: palette.bad)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(rows.count) \(rows.count == 1 ? "port" : "ports") reachable outside Tailscale").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
                     Text("Not declared public\(Token.Glyph.sep)\(ports.joined(separator: ", "))").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
                 }
                 Spacer(minLength: 0)
                 if let review = rows.first.flatMap({ page.actions(for: $0.id ?? "").first { $0.run?.terminal == true } }) {
-                    Pill(review.label ?? "", role: .danger) { act.tap(review) }
+                    Pill(review.label ?? "") { act.tap(review) }
                 }
             }
             ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
@@ -64,14 +63,23 @@ public struct PortsPage: View {
     }
 
     func line(title: String, detail: String, mark: Mark?, symbol: String? = nil, trailing: String? = nil) -> some View {
-        HStack(alignment: .top, spacing: Token.Space.gap) {
-            if let symbol {
-                Image(systemName: symbol).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).frame(width: 14)
-            } else {
-                MarkView(mark)
+        let tint: Color? = {
+            switch symbol {
+            case Token.Symbol.globe: return palette.warn
+            case Token.Symbol.tailnet: return palette.teal
+            default:
+                switch mark {
+                case .broken: return palette.bad
+                case .attention: return palette.warn
+                case .ok: return palette.accent
+                default: return nil
+                }
             }
+        }()
+        return HStack(alignment: .center, spacing: Token.Space.gap + 2) {
+            IconTile(symbol ?? Token.Symbol.port, tint: tint)
             VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.text).lineLimit(1)
+                Text(title).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text).lineLimit(1)
                 Text(detail).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(2)
             }
             Spacer(minLength: 0)
@@ -79,6 +87,8 @@ public struct PortsPage: View {
                 Image(systemName: trailing).font(.system(size: Token.Space.small, weight: .semibold)).foregroundStyle(palette.subtle)
             }
         }
+        .frame(minHeight: Token.Tile.rowHeight - 6)
+        .contentShape(Rectangle())
     }
 
     func plainRow(_ s: Section, _ r: Row, symbol: String) -> some View {
@@ -128,23 +138,26 @@ public struct PortsPage: View {
 
     func unfolded(_ r: Row, _ url: URL) -> some View {
         let stop = page.actions(for: r.id ?? "").first { $0.id?.hasPrefix("stop-sharing:") == true }
-        return VStack(alignment: .leading, spacing: Token.Space.gap) {
-            Text(url.absoluteString).font(.system(size: Token.Space.small)).foregroundStyle(palette.accent).lineLimit(1).truncationMode(.middle)
-            HStack(alignment: .top, spacing: Token.Space.gap) {
-                QRView(url.absoluteString).frame(width: Token.Space.qr / 1.6, height: Token.Space.qr / 1.6).clipShape(RoundedRectangle(cornerRadius: 8))
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Scan with your phone. Works on your Tailscale devices.").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 4) {
-                        ForEach(Array(Self.link(url, handlers: handlers).enumerated()), id: \.offset) { i, l in
-                            Pill(l.label, role: i == 0 ? .plain : .primary, action: l.tap)
-                        }
-                    }
-                    if let stop { Pill(stop.label ?? "", role: .danger) { act.tap(stop) } }
+        return VStack(alignment: .center, spacing: Token.Space.gap) {
+            QRView(url.absoluteString)
+                .frame(width: Token.Space.qr, height: Token.Space.qr)
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(palette.qrLight))
+            Text(url.absoluteString).font(.system(size: Token.Space.small, design: .monospaced)).foregroundStyle(palette.text).lineLimit(2).multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity).padding(.horizontal, 9).padding(.vertical, 7)
+                .stationWell()
+            Text("Scan with your phone. Works on your Tailscale devices.").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: Token.Glass.spacing) {
+                ForEach(Array(Self.link(url, handlers: handlers).enumerated()), id: \.offset) { i, l in
+                    Pill(l.label, role: i == 0 ? .primary : .plain, wide: true, action: l.tap)
                 }
             }
+            if let stop { Pill(stop.label ?? "", role: .danger, wide: true) { act.tap(stop) } }
             if let stop { act.sheet(stop) }
         }
-        .padding(.leading, 22)
+        .frame(maxWidth: .infinity)
+        .padding(.bottom, 4)
     }
 
     var footer: some View {

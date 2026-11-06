@@ -38,7 +38,7 @@ struct MenuPageFrame<Content: View>: View {
         }
         .padding(Token.Space.margin)
         .frame(width: Token.Space.width, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(palette.surface))
+        .stationPanel()
         .environment(\.stationHints, false)
     }
 }

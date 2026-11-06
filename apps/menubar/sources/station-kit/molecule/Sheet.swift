@@ -4,16 +4,37 @@ import SwiftUI
 // drawn still (an offscreen snapshot), a live text field in the app.
 public struct TypedField: View {
     let placeholder: String
+    let symbol: String?
+    let key: String?
     @Binding var text: String
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationStill) private var still
 
-    public init(_ placeholder: String, text: Binding<String>) {
+    public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil, key: String? = nil) {
         self.placeholder = placeholder
+        self.symbol = symbol
+        self.key = key
         _text = text
     }
 
     public var body: some View {
+        HStack(spacing: 7) {
+            if let symbol { Image(systemName: symbol).font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(palette.muted) }
+            field
+            if let key {
+                Text(key).font(.system(size: Token.Space.small - 1, weight: .semibold)).foregroundStyle(palette.muted)
+                    .padding(.horizontal, 5).padding(.vertical, 1.5)
+                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(palette.subtle, lineWidth: 0.8))
+            }
+        }
+        .font(.system(size: Token.Space.text))
+        .padding(.horizontal, Token.Tile.padding + 1)
+        .padding(.vertical, 8)
+        .stationWell(radius: Token.Tile.pill + 2)
+    }
+
+    @ViewBuilder
+    var field: some View {
         SwiftUI.Group {
             if still {
                 HStack(spacing: 0) {
@@ -25,10 +46,6 @@ public struct TypedField: View {
                 TextField(placeholder, text: $text).textFieldStyle(.plain)
             }
         }
-        .font(.system(size: Token.Space.text))
-        .padding(.horizontal, Token.Tile.padding)
-        .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: Token.Tile.pill / 1.5).fill(palette.text.opacity(Token.Tile.fill)))
     }
 }
 
@@ -45,20 +62,7 @@ public struct Choice: View {
     }
 
     public var body: some View {
-        HStack(spacing: 4) {
-            ForEach(Array((field.options ?? []).enumerated()), id: \.offset) { _, o in
-                let on = (o.value ?? "") == value
-                Button { value = o.value ?? "" } label: {
-                    Text(o.label ?? o.value ?? "")
-                        .font(.system(size: Token.Space.small, weight: on ? .semibold : .regular))
-                        .foregroundStyle(on ? palette.surface : palette.text)
-                        .padding(.horizontal, Token.Tile.padding)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(on ? palette.accent : palette.text.opacity(Token.Tile.fill)))
-                }
-                .buttonStyle(.plain)
-            }
-        }
+        Segments(options: (field.options ?? []).map { ($0.label ?? $0.value ?? "", ($0.value ?? "") == value, { [o = $0] in value = o.value ?? "" }) })
     }
 }
 
@@ -101,7 +105,7 @@ public struct ConfirmSheet: View {
             }
         }
         .padding(Token.Tile.padding + 2)
-        .background(RoundedRectangle(cornerRadius: Token.Tile.radius).fill(palette.text.opacity(Token.Tile.sheet)))
+        .stationGlass(radius: Token.Tile.sheet)
     }
 }
 
@@ -152,7 +156,7 @@ public struct FormSheet: View {
             }
         }
         .padding(Token.Tile.padding + 2)
-        .background(RoundedRectangle(cornerRadius: Token.Tile.radius).fill(palette.text.opacity(Token.Tile.sheet)))
+        .stationGlass(radius: Token.Tile.sheet)
     }
 }
 
@@ -169,23 +173,39 @@ public struct SheetButton: View {
         self.action = action
     }
 
-    var fill: Color {
-        switch role {
-        case .plain: palette.text.opacity(Token.Tile.fill)
-        case .accent: palette.accent
-        case .danger: palette.bad
-        }
+    public var body: some View {
+        Pill(title, role: role == .accent ? .primary : role == .danger ? .danger : .plain, action: action)
     }
+}
+
+// value: a segmented picker as the vision draws one: its options in a
+// faint well, the chosen one raised.
+public struct Segments: View {
+    let options: [(label: String, on: Bool, tap: () -> Void)]
+    @Environment(\.stationPalette) private var palette
+
+    public init(options: [(label: String, on: Bool, tap: () -> Void)]) { self.options = options }
 
     public var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: Token.Space.small, weight: .semibold))
-                .foregroundStyle(role == .plain ? palette.text : palette.surface)
-                .padding(.horizontal, Token.Tile.padding + 2)
-                .padding(.vertical, 5)
-                .background(Capsule().fill(fill))
+        HStack(spacing: 2) {
+            ForEach(Array(options.enumerated()), id: \.offset) { _, o in
+                Button(action: o.tap) {
+                    Text(o.label)
+                        .font(.system(size: Token.Space.small + 1, weight: o.on ? .semibold : .medium))
+                        .foregroundStyle(palette.text)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                        .background {
+                            if o.on {
+                                RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(palette.raised).shadow(color: palette.faint, radius: 2, y: 1)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .buttonStyle(.plain)
+        .padding(2)
+        .stationWell(radius: Token.Tile.pill)
     }
 }
