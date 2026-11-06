@@ -158,7 +158,7 @@ public enum QR {
     public static func modules(_ text: String) -> CGImage? {
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(text.utf8)
-        filter.correctionLevel = "M"
+        filter.correctionLevel = "L"
         guard let image = filter.outputImage else { return nil }
         return CIContext().createCGImage(image, from: image.extent)
     }
@@ -178,5 +178,49 @@ public struct QRView: View {
                 .aspectRatio(1, contentMode: .fit)
                 .frame(width: Token.Tile.qr, height: Token.Tile.qr)
         }
+    }
+}
+
+// value: a menu item's glyph: the vision's own `>_` prompt and station
+// mark, drawn as its 16-unit strokes at 14 pt; any other name is an SF
+// Symbol at 13 pt.
+public struct MenuGlyph: View {
+    let symbol: String
+
+    public init(_ symbol: String) { self.symbol = symbol }
+
+    public var body: some View {
+        switch symbol {
+        case Token.Symbol.prompt, Token.Symbol.list:
+            Stroke16(symbol: symbol)
+                .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                .frame(width: 14, height: 14)
+        default:
+            Image(systemName: symbol).font(.system(size: 13, weight: .medium))
+        }
+    }
+}
+
+struct Stroke16: Shape {
+    let symbol: String
+
+    func path(in rect: CGRect) -> Path {
+        let k = rect.width / 16
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * k, y: rect.minY + y * k) }
+        var path = Path()
+        if symbol == Token.Symbol.prompt {
+            path.move(to: p(3, 4.5))
+            path.addLine(to: p(6.5, 8))
+            path.addLine(to: p(3, 11.5))
+            path.move(to: p(8.5, 12))
+            path.addLine(to: p(13, 12))
+        } else {
+            path.addRoundedRect(in: CGRect(origin: p(2.2, 2.2), size: CGSize(width: 11.6 * k, height: 11.6 * k)), cornerSize: CGSize(width: 3.2 * k, height: 3.2 * k))
+            path.move(to: p(5, 6.3))
+            path.addLine(to: p(11, 6.3))
+            path.move(to: p(5, 9.7))
+            path.addLine(to: p(8.6, 9.7))
+        }
+        return path
     }
 }

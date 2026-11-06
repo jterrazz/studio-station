@@ -130,7 +130,7 @@ struct MachineRow: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if picked {
-                    Image(systemName: Token.Symbol.check).font(.system(size: 12, weight: .regular)).foregroundStyle(.secondary)
+                    Image(systemName: Token.Symbol.check).font(.system(size: 12, weight: .light)).foregroundStyle(Token.Hue.green(envScheme))
                 } else {
                     StateDot(mark: row.mark)
                 }
@@ -248,7 +248,7 @@ struct MenuText: View {
 
     var body: some View {
         HStack(spacing: Token.Tile.gap) {
-            Image(systemName: symbol).font(.system(size: 13, weight: .medium)).frame(width: 14)
+            MenuGlyph(symbol).frame(width: 14)
                 .foregroundStyle(palette.glyph)
             Text(title).font(.system(size: Token.Size.text)).foregroundStyle(danger ? AnyShapeStyle(palette.bad) : AnyShapeStyle(.primary))
             Spacer()
@@ -300,7 +300,7 @@ enum Symbols {
     static func of(_ a: Action) -> String {
         switch a.id {
         case "new-vm": Token.Symbol.plus
-        case "open-station", "start": Token.Symbol.terminal
+        case "open-station", "start": Token.Symbol.prompt
         case "stop-all": Token.Symbol.stop
         case "restart": Token.Symbol.restart
         case "unlock": Token.Symbol.unlock

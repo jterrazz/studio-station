@@ -107,6 +107,8 @@ public enum Token {
         public static func faint(_ scheme: ColorScheme) -> Color {
             scheme == .dark ? Token.hex(0xEBEBF5).opacity(0.16) : Token.hex(0x3C3C43).opacity(0.18)
         }
+        public static let icon = Token.hex(0x1C1C1E)
+        public static let iconInk = Color.white
         public static func edge(_ scheme: ColorScheme) -> Color { Color.white.opacity(scheme == .dark ? 0.14 : 0.7) }
         public static let finding = 0.16
         public static let chip = 0.22
@@ -225,14 +227,15 @@ public enum Token {
         public static let server = "server.rack"
         public static let accounts = "person.2"
         public static let more = "ellipsis.circle"
-        public static let copy = "doc.on.doc"
+        public static let copy = "square.on.square"
         public static let back = "chevron.left"
         public static let down = "chevron.down"
         public static let forward = "chevron.right"
         public static let mac = "desktopcomputer"
         public static let workspace = "shippingbox"
         public static let plus = "plus"
-        public static let list = "list.bullet.rectangle"
+        public static let list = "station"
+        public static let prompt = "prompt"
         public static let terminal = "terminal"
         public static let stop = "stop"
         public static let search = "magnifyingglass"
@@ -254,7 +257,7 @@ public enum Token {
         public static let screen = "display"
         public static let ports = "network"
         public static let trash = "trash"
-        public static let copyLink = "doc.on.doc"
+        public static let copyLink = "square.on.square"
         public static let key = "key.fill"
         public static let settings = "gearshape"
         public static let activity = "chart.bar"

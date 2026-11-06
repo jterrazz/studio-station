@@ -156,10 +156,9 @@ public struct GroupCaption: View {
     }
 }
 
-// value: a row's icon: a 24 pt rounded square on the window's own
-// background (near black in dark, near white in light), its corner
-// concentric with the row's hover, its 13 pt symbol hierarchical in the
-// label colour, centred in the 26 pt the vision's icon circle takes so
+// value: a row's icon: a 24 pt near-black rounded square in both
+// schemes, its corner concentric with the row's hover, its 13 pt symbol
+// hierarchical in white, centred in the 26 pt the vision's icon circle takes so
 // the words beside it start where the vision's do; the accent (or the colour a finding means) tints only the
 // glyph, never the tile. Increase Contrast draws its separator edge.
 public struct IconTile: View {
@@ -182,7 +181,7 @@ public struct IconTile: View {
 
     var ink: AnyShapeStyle {
         if let tint { return AnyShapeStyle(tint) }
-        return active ? AnyShapeStyle(palette.accent) : AnyShapeStyle(.primary)
+        return active ? AnyShapeStyle(palette.accent) : AnyShapeStyle(Token.Fill.iconInk)
     }
 
     public var body: some View {
@@ -196,7 +195,7 @@ public struct IconTile: View {
             .symbolEffect(.pulse, isActive: pulse && !still)
             .frame(width: size, height: size)
             .background {
-                shape.fill(.background)
+                shape.fill(Token.Fill.icon)
                 if contrast == .increased { shape.strokeBorder(.separator, lineWidth: 1) }
             }
             .frame(width: size == Token.Tile.icon ? Token.Tile.slot : size)
@@ -214,12 +213,14 @@ public struct MenuRow<Leading: View, Trailing: View>: View {
     let link: Bool
     let lines: Int
     let bare: Bool
+    let top: Bool
     let tap: (() -> Void)?
     let leading: Leading
     let trailing: Trailing
 
-    public init(_ title: String, subtitle: String? = nil, link: Bool = false, lines: Int = 2, bare: Bool = false, tap: (() -> Void)? = nil,
+    public init(_ title: String, subtitle: String? = nil, link: Bool = false, lines: Int = 2, bare: Bool = false, top: Bool = false, tap: (() -> Void)? = nil,
                 @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
+        self.top = top
         self.title = title
         self.subtitle = subtitle
         self.link = link
@@ -232,11 +233,12 @@ public struct MenuRow<Leading: View, Trailing: View>: View {
 
     var line: some View {
         HStack(spacing: Token.Tile.gap) {
-            leading
+            leading.frame(maxHeight: top ? .infinity : nil, alignment: .top)
             RowText(title: title, subtitle: subtitle, link: link, lines: lines)
                 .frame(maxWidth: .infinity, alignment: .leading)
             trailing.layoutPriority(1)
         }
+        .fixedSize(horizontal: false, vertical: top)
         .padding(bare ? EdgeInsets() : Token.Tile.rowPadding)
         .frame(minHeight: bare ? 0 : Token.Tile.row)
         .stationHover()
@@ -521,7 +523,7 @@ public struct PlainIcon: View {
     public var body: some View {
         let side = round ? Token.Tile.roundButton : Token.Tile.squareButton
         Button(action: tap) {
-            Image(systemName: symbol).font(.system(size: 13, weight: .medium))
+            Image(systemName: symbol).font(.system(size: round ? 13 : 11, weight: .medium))
                 .foregroundStyle(picked ? palette.accent : palette.glyph)
                 .frame(width: side, height: side)
                 .background {

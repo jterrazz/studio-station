@@ -164,9 +164,10 @@ struct MachineContent: View {
         let parts = value.map { $0.kind == "list" ? $0.items ?? [] : [$0] } ?? []
         let address = parts.first.flatMap { Format.show($0).hasPrefix("http") ? Format.show($0) : nil }
         let rest = parts.dropFirst(address == nil ? 0 : 1).map { Format.show($0) }.joined(separator: Token.Glyph.sep)
-        return MenuRow(r.label ?? "", subtitle: address, link: true) {
+        return MenuRow(r.label ?? "", subtitle: address, link: true, top: true) {
             Image(systemName: r.mark == .ok ? Token.Symbol.health : Token.Symbol.of(r.mark ?? .notKnown))
-                .font(.system(size: Token.Size.check, weight: .medium)).foregroundStyle(palette.of(r.mark ?? .notKnown)).frame(width: Token.Tile.chevron)
+                .font(.system(size: Token.Size.check, weight: .medium)).foregroundStyle(palette.of(r.mark ?? .notKnown))
+                .frame(width: Token.Tile.chevron, height: Token.Size.text + 2 * Token.Size.leading + 2)
         } trailing: {
             if !rest.isEmpty { TrailingValue(rest) }
         }
