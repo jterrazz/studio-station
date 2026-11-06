@@ -198,10 +198,20 @@ public struct FormSheet: View {
     // and a port holds a port: a number from 1 to 65535.
     public static func complete(_ form: Form, _ answers: [String: String]) -> Bool {
         (form.fields ?? []).allSatisfy { f in
-            let v = (answers[f.key ?? ""] ?? f.default ?? "").trimmingCharacters(in: .whitespaces)
-            if f.key == portKey, f.kind != "select", !v.isEmpty, !(Int(v).map { (1...65535).contains($0) } ?? false) { return false }
-            return f.required != true || !v.isEmpty
+            refused(f, answers) == nil && (f.required != true || !value(f, answers).isEmpty)
         }
+    }
+
+    static func value(_ f: Field, _ answers: [String: String]) -> String {
+        (answers[f.key ?? ""] ?? f.default ?? "").trimmingCharacters(in: .whitespaces)
+    }
+
+    // value: why a field's answer cannot run, said under it; nil while it
+    // is empty or holds what it asks.
+    public static func refused(_ f: Field, _ answers: [String: String]) -> String? {
+        let v = value(f, answers)
+        guard f.key == portKey, f.kind != "select", !v.isEmpty, !(Int(v).map { (1...65535).contains($0) } ?? false) else { return nil }
+        return "A port is a number from 1 to 65535."
     }
 
     public static let portKey = "Port"
@@ -230,6 +240,9 @@ public struct FormSheet: View {
                         }
                     } else {
                         TypedField(f.note ?? "", text: binding(f), autofocus: Self.first(form) == f.key, submit: { if complete { onAnswer(true) } })
+                        if let why = Self.refused(f, answers) {
+                            Text(why).font(.system(size: Token.Space.small)).foregroundStyle(palette.bad)
+                        }
                     }
                 }
             }
