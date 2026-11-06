@@ -19,10 +19,9 @@ public struct AwakePage: View {
 
     public var body: some View {
         let here = page.section("this-mac")
-        let on = here?.rows.first?.mark == .ok
         VStack(alignment: .leading, spacing: Token.Tile.section) {
             PageHeader(back: Page.ThisMacWord, title: "Awake", subtitle: "Every Mac\(Token.Glyph.sep)this one first",
-                       symbol: on ? Token.Symbol.awakeOn : Token.Symbol.awakeOff, active: on, action: handlers.back)
+                       symbol: Token.Symbol.awake, action: handlers.back)
             if let here, let row = here.rows.first { thisMac(here, row) }
             if let guards = page.section("guards") { guardsSection(guards) }
             if let others = page.section("other-macs") {
@@ -63,7 +62,7 @@ public struct AwakePage: View {
                             Text(act.label(running)).font(.subheadline).foregroundStyle(.secondary)
                         }
                     } else {
-                        Segments(options: keeps.map { k in (act.label(k), false, { act.tap(k) }) })
+                        Segments(options: keeps.map { k in (Self.held(k) ? k.label ?? "" : act.label(k), on && Self.held(k), { act.tap(k) }) })
                     }
                 }
                 .padding(.vertical, 4)
@@ -72,6 +71,10 @@ public struct AwakePage: View {
             ForEach(Array(switches.enumerated()), id: \.offset) { _, a in toggle(a) }
         }
     }
+
+    // value: Until while a keep-awake holds: it says the time it holds
+    // until (`Until 18:00`), the term chosen.
+    static func held(_ k: Action) -> Bool { k.form != nil && (k.label ?? "").contains(where: \.isNumber) }
 
     // invariant: a switch's action flips it, so its input holds the other
     // side: Lid closed is on when its action sends Lid false.
@@ -84,7 +87,7 @@ public struct AwakePage: View {
         let lid = a.id == "lid"
         let on = on(a)
         return MenuRow(a.label ?? "", subtitle: lid ? "Stays awake with the lid shut" : "Stays awake when unplugged") {
-            IconCircle(lid ? Token.Symbol.lid : Token.Symbol.battery, active: on)
+            IconTile(lid ? Token.Symbol.lid : Token.Symbol.battery, active: on)
         } trailing: {
             if state.running == a.id { PendingDot() } else { StationSwitch(on: on) { act.tap(a) }.disabled(state.running != nil) }
         }
@@ -105,11 +108,11 @@ public struct AwakePage: View {
                 let parts = (f.value?.kind == "list" ? f.value?.items : nil)?.map { Format.show($0) }
                 if let parts, parts.count > 1 {
                     MenuRow("\(f.key ?? "") \(parts[0])", subtitle: parts.dropFirst().joined(separator: Token.Glyph.sep).capitalizedFirst) {
-                        IconCircle(symbol(f.key ?? ""))
+                        IconTile(symbol(f.key ?? ""))
                     }
                 } else {
                     MenuRow(f.key ?? "") {
-                        IconCircle(symbol(f.key ?? ""))
+                        IconTile(symbol(f.key ?? ""))
                     } trailing: {
                         TrailingValue(words(f.value).capitalizedFirst)
                     }
@@ -123,12 +126,12 @@ public struct AwakePage: View {
         let change = page.actions(for: r.id ?? "").first { $0.id?.hasPrefix("change:") == true }
         return VStack(alignment: .leading, spacing: 4) {
             MenuRow(r.short ?? r.label ?? "", subtitle: words(r.cells?.first)) {
-                IconCircle(Token.Symbol.mac)
+                IconTile(Token.Symbol.mac)
             } trailing: {
                 StateDot(mark: r.mark)
                 if let change { StationButton("\(change.label ?? "")\(Token.Glyph.ellipsis)") { act.tap(change) } }
             }
-            if let detail = r.detail { FootNote(words(detail).capitalizedFirst).padding(.leading, Token.Tile.circle + Token.Space.gap) }
+            if let detail = r.detail { FootNote(words(detail).capitalizedFirst).padding(.leading, Token.Tile.icon + Token.Space.gap) }
             if let change { act.sheet(change) }
         }
     }

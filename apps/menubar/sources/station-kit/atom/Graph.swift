@@ -126,7 +126,7 @@ public struct Bars: View {
         Chart(Array(points.enumerated()), id: \.offset) { i, p in
             BarMark(x: .value("t", "\(i)"), yStart: .value("floor", 0), yEnd: .value("v", level(p)), width: .ratio(chart ? 0.8 : 0.6))
                 .clipShape(RoundedRectangle(cornerRadius: chart ? 2 : 1, style: .continuous))
-                .foregroundStyle(i >= recent ? ink : waiting ? palette.faint : palette.subtle)
+                .foregroundStyle(i >= recent ? AnyShapeStyle(ink) : waiting ? AnyShapeStyle(.fill.tertiary) : AnyShapeStyle(.fill.secondary))
         }
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)

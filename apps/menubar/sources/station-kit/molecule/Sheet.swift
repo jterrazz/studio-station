@@ -36,7 +36,7 @@ public struct TypedField: View {
         SwiftUI.Group {
             if still {
                 HStack(spacing: 0) {
-                    Text(text.isEmpty ? placeholder : text).foregroundStyle(text.isEmpty ? palette.subtle : palette.text)
+                    Text(text.isEmpty ? placeholder : text).foregroundStyle(text.isEmpty ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
                     Text(Token.Glyph.caret).foregroundStyle(palette.accent)
                     Spacer(minLength: 0)
                 }
@@ -150,7 +150,7 @@ public struct FormSheet: View {
                     if f.kind == "select" {
                         Choice(f, value: binding(f))
                         if let note = f.options?.first(where: { $0.value == binding(f).wrappedValue })?.note {
-                            Text(note).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle)
+                            Text(note).font(.system(size: Token.Space.small)).foregroundStyle(.tertiary)
                         }
                     } else {
                         TypedField(f.note ?? "", text: binding(f))

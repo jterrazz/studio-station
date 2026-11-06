@@ -83,14 +83,13 @@ struct Metrics: View {
     }
 }
 
-// value: a machine's line as the vision's Machines: its circle (the
-// accent's for This Mac, where the owner is), its name and kind, its
+// value: a machine's line as the vision's Machines: its tile (its glyph
+// in the accent for This Mac, where the owner is), its name and kind, its
 // words, its state dot; the line opens its machine's page.
 struct MachineRow: View {
     let row: Row
     let symbol: String
     let kinds: Bool
-    var small = false
     var sub: String? = nil
     var picked = false
     let open: (String) -> Void
@@ -108,7 +107,7 @@ struct MachineRow: View {
     var body: some View {
         Button { open(row.id ?? "") } label: {
             HStack(spacing: Token.Space.gap) {
-                IconCircle(symbol, active: row.label == Page.ThisMacWord, size: small ? 20 : Token.Tile.circle, pulse: row.mark == .pending)
+                IconTile(symbol, active: row.label == Page.ThisMacWord, pulse: row.mark == .pending)
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(alignment: .firstTextBaseline, spacing: 5) {
                         Text(row.label ?? "").font(.body).foregroundStyle(.primary).lineLimit(1)
@@ -158,7 +157,7 @@ struct MachineTree: View {
                     }
                     nested(lines(mac.items ?? []), indent: only == nil)
                 } else if let row = item.row, only == nil || only!.contains(row.id ?? "") {
-                    MachineRow(row: row, symbol: Token.Symbol.vm, kinds: kinds, open: open)
+                    MachineRow(row: row, symbol: Token.Symbol.machine(row.cells?.first?.text), kinds: kinds, open: open)
                 } else if let empty = item.empty {
                     EmptyLine(empty)
                 }
@@ -189,7 +188,7 @@ struct MachineTree: View {
                 Text(text).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     .padding(.leading, indent ? Token.Tile.indent : 0).padding(.top, 4).padding(.bottom, 1)
             case let .row(row):
-                MachineRow(row: row, symbol: Token.Symbol.vm, kinds: kinds, small: indent, open: open)
+                MachineRow(row: row, symbol: Token.Symbol.machine(row.cells?.first?.text), kinds: kinds, open: open)
                     .padding(.leading, indent ? Token.Tile.indent : 0)
             }
         }

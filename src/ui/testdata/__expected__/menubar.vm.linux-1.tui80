@@ -2,9 +2,9 @@
    ● State  Running
 
  Activity
-     CPU     34%          ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃ 
-     Memory  4.1/4.3 GB   ▆▆▆▇▇▆▆▇▇▆▆▇▇▆▆▇▇ 
-     Disk    3.9/21.5 GB  ▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ 
+     CPU     34%         ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃ 
+     Memory  4.1/4.3 GB  ▆▆▆▇▇▆▆▇▇▆▆▇▇▆▆▇▇ 
+     Disk    12%         ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ 
 
  Inside
      Apps      ● 38 installed
@@ -16,5 +16,5 @@
    TCP · 7000  jterrazz-macbook-pro.tail77a797.ts.net:40002
 
  Accounts shared from This Mac  2 ●
-   ● GitHub  4 h left
+   ● GitHub  read only · 4 h left
    ● Claude  12 h left

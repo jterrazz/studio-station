@@ -78,7 +78,7 @@ public struct Meter: View {
 
     public var body: some View {
         ZStack(alignment: .leading) {
-            Capsule().fill(palette.faint)
+            Capsule().fill(.fill.tertiary)
             Capsule().fill(palette.accent).frame(width: Token.Space.meterWidth * fraction)
         }
         .frame(width: Token.Space.meterWidth, height: Token.Space.meterHeight)
@@ -113,8 +113,8 @@ public struct Switch: View {
 
     public var body: some View {
         ZStack(alignment: on ? .trailing : .leading) {
-            Capsule().fill(on ? palette.good : palette.faint).frame(width: 38, height: 22)
-            Circle().fill(palette.onTint).frame(width: 18, height: 18).shadow(color: palette.subtle, radius: 1.5, y: 1).padding(.horizontal, 2)
+            Capsule().fill(on ? AnyShapeStyle(palette.good) : AnyShapeStyle(.fill.tertiary)).frame(width: 38, height: 22)
+            Circle().fill(palette.onTint).frame(width: 18, height: 18).shadow(color: .black.opacity(0.25), radius: 1.5, y: 1).padding(.horizontal, 2)
         }
         .animation(.snappy, value: on)
     }

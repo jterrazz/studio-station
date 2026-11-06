@@ -33,15 +33,16 @@ func miniPorts() ports.Listing {
 }
 
 // value: the ports of This Mac's VMs, as linux-1's Ports reads them: Vite
-// shared with its link, postgres reserved and not listening yet.
+// shared with its link, a TCP port shared, as linux-1's page lists them.
 func linuxPorts() ports.Listing {
-	host := serviceFleet().Hosts[0]
+	host := twoMacsServices().Hosts[0]
 	host.Ports = nil
 	return ports.Listing{Fleet: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
 }
 
 func twoMacsAwake() pageawake.Fleet {
 	f := awakeFleet(awake.EngineRunning, true)
+	f.Reports[0].Session = thisMacAwake().Session
 	f.Label = func(mac string) string { return page.MacName(mac, "jterrazz-macbook-pro") }
 	return f
 }

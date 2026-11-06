@@ -38,6 +38,9 @@ type Context struct {
 	Machine    string `json:"machine,omitempty"`
 	Kind       string `json:"kind,omitempty"`
 	Registered bool   `json:"registered,omitempty"`
+	// value: the Mac a VM's page is on, as the owner names it (`mac-mini`,
+	// `This Mac`); empty for a Mac's own.
+	On string `json:"on,omitempty"`
 }
 
 type Section struct {

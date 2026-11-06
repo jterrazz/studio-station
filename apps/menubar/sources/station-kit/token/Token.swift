@@ -31,12 +31,15 @@ public enum Token {
     }
 
     // value: the measures of a panel drawn by Apple's menus (Wi-Fi,
-    // Battery): 28 pt rows, a 24 pt icon circle, a 6 pt hover, 16 pt
-    // between sections, a 10 pt grouping concentric with the panel.
+    // Battery): 28 pt rows, a 24 pt icon tile with a 13 pt glyph whose
+    // corner is concentric with the 6 pt hover, 16 pt between sections, a
+    // 10 pt grouping concentric with the panel.
     public enum Tile {
         public static let row: CGFloat = 28
-        public static let circle: CGFloat = 24
-        public static let headCircle: CGFloat = 32
+        public static let icon: CGFloat = 24
+        public static let glyph: CGFloat = 13
+        public static let corner: CGFloat = 6.5
+        public static let headIcon: CGFloat = 32
         public static let hover: CGFloat = 6
         public static let group: CGFloat = 10
         public static let groupPadding: CGFloat = 10
@@ -134,27 +137,23 @@ public enum Token {
         public static let notKnown = "questionmark"
         public static let error = "xmark.octagon"
         public static let stopped = "stop.circle"
-        public static let awake = "power.circle.fill"
-        public static let awakeOn = "sun.max.fill"
-        public static let awakeOff = "moon.zzz.fill"
+        public static let awake = "sun.max"
         public static let needs = "exclamationmark"
         public static let gear = "ellipsis"
         public static let server = "server.rack"
-        public static let accounts = "person.2.fill"
+        public static let accounts = "person.2"
         public static let more = "ellipsis.circle"
         public static let copy = "doc.on.doc"
         public static let back = "chevron.left"
         public static let down = "chevron.down"
         public static let forward = "chevron.right"
         public static let mac = "desktopcomputer"
-        public static let vm = "shippingbox.fill"
+        public static let workspace = "shippingbox"
         public static let plus = "plus"
         public static let terminal = "terminal"
         public static let stop = "stop.fill"
         public static let search = "magnifyingglass"
         public static let check = "checkmark"
-        public static let sun = "sun.max.fill"
-        public static let person = "person.fill"
         public static let cpu = "cpu"
         public static let memory = "memorychip"
         public static let network = "arrow.up.arrow.down"
@@ -170,25 +169,34 @@ public enum Token {
         public static let battery = "battery.75percent"
         public static let thermo = "thermometer.medium"
         public static let screen = "display"
-        public static let port = "network"
-        public static let terminalFill = "apple.terminal.fill"
+        public static let ports = "network"
         public static let trash = "trash"
         public static let copyLink = "doc.on.doc"
         public static let key = "key.fill"
         public static let settings = "gearshape"
-        public static let activity = "chart.bar.xaxis"
+        public static let activity = "chart.bar"
         public static let restart = "arrow.clockwise"
         public static let unlock = "lock.open"
 
-        // value: the state circle a known line of a machine's page wears.
+        // value: a machine's symbol by its kind: a Mac, a server, a
+        // workspace.
+        public static func machine(_ kind: String?) -> String {
+            switch kind {
+            case "Mac", "mac": mac
+            case "Server", "server": server
+            default: workspace
+            }
+        }
+
+        // value: the tile a known line of a machine's page wears.
         public static func line(_ id: String) -> String? {
             switch id {
-            case "apps": "square.grid.2x2.fill"
-            case "settings": "gearshape.fill"
-            case "disk": "internaldrive.fill"
-            case "ports": "network"
-            case "ssh": "apple.terminal.fill"
-            case "github", "claude", "npm": "person.fill"
+            case "apps": "square.grid.2x2"
+            case "settings": "gearshape"
+            case "disk": "internaldrive"
+            case "ports": ports
+            case "ssh": terminal
+            case "github", "claude", "npm": accounts
             default: nil
             }
         }
@@ -211,15 +219,14 @@ public enum Token {
     // accent, and a state colour only where a state means something
     // (healthy, needs you, failed).
     public struct Palette: Sendable {
-        public let text, muted, subtle, faint, accent, good, warn, bad, grey, onTint, qrDark, qrLight: Color
+        public let text, muted, accent, good, warn, bad, grey, onTint, qrDark, qrLight: Color
 
         public func of(_ mark: Mark) -> Color {
             switch mark {
             case .ok: good
             case .attention: warn
             case .broken: bad
-            case .absent, .pending, .offHere, .notKnown: muted
-            case .notForThisMachine: subtle
+            case .absent, .pending, .offHere, .notKnown, .notForThisMachine: muted
             }
         }
     }
@@ -232,7 +239,7 @@ public enum Token {
         let dark = scheme == .dark
         let pair = { (light: UInt32, night: UInt32) in hex(dark ? night : light) }
         return Palette(
-            text: Color.primary, muted: Color.secondary, subtle: Color.primary.opacity(0.26), faint: Color.primary.opacity(0.1),
+            text: Color.primary, muted: Color.secondary,
             accent: pair(0x007AFF, 0x0A84FF), good: pair(0x28CD41, 0x32D74B), warn: pair(0xFF9500, 0xFF9F0A), bad: pair(0xFF3B30, 0xFF453A),
             grey: hex(0x8E8E93), onTint: hex(0xFFFFFF), qrDark: hex(0x000000), qrLight: hex(0xFFFFFF))
     }

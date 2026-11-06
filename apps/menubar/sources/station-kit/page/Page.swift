@@ -51,10 +51,12 @@ public struct Context: Codable, Equatable, Sendable {
     public var machine: String?
     public var kind: String?
     public var registered: Bool?
-    public init(machine: String? = nil, kind: String? = nil, registered: Bool? = nil) {
+    public var on: String?
+    public init(machine: String? = nil, kind: String? = nil, registered: Bool? = nil, on: String? = nil) {
         self.machine = machine
         self.kind = kind
         self.registered = registered
+        self.on = on
     }
 }
 

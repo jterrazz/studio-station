@@ -1,8 +1,11 @@
 package menubar
 
 import (
+	"time"
+
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/page"
+	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
 	"github.com/jterrazz/studio-station/src/ports"
 )
@@ -31,7 +34,7 @@ func Tree(f *machines.Fleet, svc *ports.Fleet, line func(machines.HostView) page
 		g := page.Group{Head: macRow(*f, h, line(h))}
 		var srv, ws []page.Item
 		for _, vm := range h.VMs {
-			row := vmRow(vm, shared(svc, vm.Name))
+			row := vmRow(vm, shared(svc, vm.Name), f.Read)
 			if !h.Reachable && !h.Here {
 				row.Mark, row.Reason = page.NotKnown, ""
 				row.Cells[1] = page.List(row.Cells[1].Items[0], page.Text("not known while "+machines.Label(*f, h)+" does not answer"))
@@ -64,9 +67,10 @@ func macRow(f machines.Fleet, h machines.HostView, line page.Value) page.Row {
 	return row
 }
 
-// value: a VM's row: a server's lifetime and health, a workspace's lifetime
-// and either its shared ports or its state.
-func vmRow(vm machines.VM, shares int) page.Row {
+// value: a VM's row: a server's lifetime, health, time up (when its boot
+// is known) and restarts, a workspace's lifetime and either its shared
+// ports or its state.
+func vmRow(vm machines.VM, shares int, now time.Time) page.Row {
 	row := page.Row{ID: vm.Name, Label: vm.Name, Mark: page.OK}
 	kind := machines.KindWord(vm.Lifetime.Kind())
 	life := pagemachines.Lifetime(vm.Lifetime)
@@ -78,7 +82,11 @@ func vmRow(vm machines.VM, shares int) page.Row {
 		row.Mark, row.Reason = page.Absent, page.Stopped
 		row.Cells = []page.Value{page.Text(kind), page.List(life, pagemachines.State(vm.State))}
 	case vm.Lifetime == machines.AlwaysOn:
-		row.Cells = []page.Value{page.Text(kind), page.List(life, page.Text(health(vm)), page.Count(int64(vm.Restarts.Count), plural(vm.Restarts.Count, "restart")))}
+		words := []page.Value{life, page.Text(health(vm))}
+		if !vm.BootAt.IsZero() && !now.IsZero() && now.After(vm.BootAt) {
+			words = append(words, pagehome.Up(now.Sub(vm.BootAt)))
+		}
+		row.Cells = []page.Value{page.Text(kind), page.List(append(words, page.Count(int64(vm.Restarts.Count), plural(vm.Restarts.Count, "restart")))...)}
 		if health(vm) != "healthy" {
 			row.Mark, row.Reason = page.Attention, page.Waiting
 		}

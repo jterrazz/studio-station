@@ -34,13 +34,18 @@ struct MachineContent: View {
         let mac = page.context?.kind == "mac"
         let mark = row?.mark ?? .ok
         let caption = (s.caption ?? []).map { Format.show($0) }.filter { !(server && $0 == "Server VM") }
-        return PageHeader(back: "All machines", title: s.title ?? "", subtitle: caption.joined(separator: Token.Glyph.sep), symbol: mac ? Token.Symbol.mac : Token.Symbol.vm,
-                          active: mark != .absent, badge: server ? "Server" : nil, action: handlers.back) {
+        let back = server ? page.context?.on ?? Self.all : Self.all
+        return PageHeader(back: back, title: s.title ?? "", subtitle: caption.joined(separator: Token.Glyph.sep), symbol: Token.Symbol.machine(page.context?.kind),
+                          badge: server ? "Server" : nil, action: handlers.back) {
             if let word = row?.cells?.first.map({ Format.show($0) }) {
                 StateWord(word, ink: mark == .absent ? palette.grey : palette.of(mark))
             }
         }
     }
+
+    // value: where a page goes back to: All machines, or for a server the
+    // Mac it lives on (vision panels c and f).
+    static let all = "All machines"
 
     func words(_ v: Value?) -> String { v.map { Format.show($0, now: now) } ?? "" }
 
@@ -65,7 +70,7 @@ struct MachineContent: View {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in
                     MenuRow(r.label ?? "", tap: {}) {
-                        IconCircle(Token.Symbol.line(r.id ?? "") ?? Token.Symbol.forward)
+                        IconTile(Token.Symbol.line(r.id ?? "") ?? Token.Symbol.forward)
                     } trailing: {
                         TrailingValue(words(r.cells?.first))
                         Chevron()
@@ -78,7 +83,7 @@ struct MachineContent: View {
                 ForEach(Array((s.items ?? []).compactMap(\.link).enumerated()), id: \.offset) { _, l in link(l) }
                 if let share = page.action("share-port") {
                     MenuRow("\(share.label ?? "")\(Token.Glyph.ellipsis)", tap: { perform(share, handlers) }) {
-                        IconCircle(Token.Symbol.share)
+                        IconTile(Token.Symbol.share)
                     }
                 }
             }
@@ -124,23 +129,21 @@ struct MachineContent: View {
     }
 
     // value: an Overview figure as the vision's two: its name, its figure,
-    // its words.
+    // its words under it.
     func figure(_ r: Row) -> some View {
         let value = r.cells?.first
-        let items = value?.items ?? []
+        let items = value?.kind == "list" ? value?.items ?? [] : value.map { [$0] } ?? []
         let shown: String
-        let rest: String?
         if r.id == "restarts" {
             shown = "\(Token.Glyph.restart) \(items.first?.n ?? 0)"
-            rest = items.dropFirst().map { Format.show($0) }.joined(separator: Token.Glyph.sep)
         } else {
-            shown = Self.span(value).map { Format.show($0) } ?? Token.Glyph.missing
-            rest = nil
+            shown = items.first.flatMap { Self.span($0) }.map { Format.show($0) }.flatMap { $0.isEmpty ? nil : $0 } ?? Token.Glyph.missing
         }
+        let rest = items.dropFirst().map { Format.show($0) }.joined(separator: Token.Glyph.sep)
         return VStack(alignment: .leading, spacing: 2) {
             Text(r.label ?? "").font(.subheadline).foregroundStyle(.secondary)
             Text(shown).font(.system(size: Token.Tile.figure, weight: .semibold)).monospacedDigit()
-            if let rest, !rest.isEmpty { Text(rest).font(.subheadline).foregroundStyle(.secondary) }
+            if !rest.isEmpty { Text(rest).font(.subheadline).foregroundStyle(.secondary) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -154,16 +157,18 @@ struct MachineContent: View {
     }
 
     // value: a health check as the vision's: a check in its state's
-    // colour, its name, an address under it when it is one, its value on
-    // the right.
+    // colour, its name, an address under it when it is one, what it
+    // answered (or its value) on the right.
     func health(_ r: Row) -> some View {
         let value = r.cells?.first.flatMap { $0.isNone ? nil : $0 }
-        let address = value.flatMap { Format.show($0).hasPrefix("http") ? Format.show($0) : nil }
+        let parts = value.map { $0.kind == "list" ? $0.items ?? [] : [$0] } ?? []
+        let address = parts.first.flatMap { Format.show($0).hasPrefix("http") ? Format.show($0) : nil }
+        let rest = parts.dropFirst(address == nil ? 0 : 1).map { Format.show($0) }.joined(separator: Token.Glyph.sep)
         return MenuRow(r.label ?? "", subtitle: address, link: true) {
             Image(systemName: r.mark == .ok ? Token.Symbol.health : Token.Symbol.of(r.mark ?? .notKnown))
-                .font(.system(size: 12, weight: .bold)).foregroundStyle(palette.of(r.mark ?? .notKnown)).frame(width: Token.Tile.circle)
+                .font(.system(size: 12, weight: .bold)).foregroundStyle(palette.of(r.mark ?? .notKnown)).frame(width: Token.Tile.icon)
         } trailing: {
-            if address == nil, let value { TrailingValue(Format.show(value)) }
+            if !rest.isEmpty { TrailingValue(rest) }
         }
     }
 
@@ -174,7 +179,7 @@ struct MachineContent: View {
         let title = (r.short ?? r.label ?? "").capitalizedFirst
         let long = value.count > 14 || title.count + value.count > 38
         return MenuRow(title, subtitle: long ? value.capitalizedFirst : nil) {
-            StateDot(mark: r.mark).frame(width: Token.Tile.circle)
+            StateDot(mark: r.mark).frame(width: Token.Tile.icon)
         } trailing: {
             if !value.isEmpty, !long { TrailingValue(value) }
             ForEach(Array(page.rowActions(r.id ?? "").enumerated()), id: \.offset) { _, a in
@@ -187,13 +192,13 @@ struct MachineContent: View {
         let value = words(r.cells?.first)
         if r.id == "ssh" {
             return AnyView(MenuRow(r.label ?? "", subtitle: value, link: true) {
-                IconCircle(Token.Symbol.terminalFill)
+                IconTile(Token.Symbol.terminal)
             } trailing: {
                 PlainIcon(Token.Symbol.copy) { handlers.copy(value) }
             })
         }
         return AnyView(MenuRow(r.label ?? "", tap: { handlers.push(Navigation.ports) }) {
-            IconCircle(Token.Symbol.globe)
+            IconTile(Token.Symbol.ports)
         } trailing: {
             TrailingValue(Self.counted(r.cells?.first))
             Chevron()
@@ -236,7 +241,7 @@ struct MachineContent: View {
                 if state.running == a.id {
                     PendingDot().frame(maxWidth: .infinity)
                 } else {
-                    StationButton(Self.label(a), role: a.id == "restart" ? .primary : a.id == "delete" ? .danger : .plain, wide: true) { perform(a, handlers) }
+                    StationButton(Self.button(a), role: Self.role(a), wide: true) { perform(a, handlers) }
                         .disabled(state.running != nil)
                 }
             }
@@ -257,6 +262,21 @@ struct MachineContent: View {
             guard words.count == 2, Int(words[1]) != nil else { return p }
             return "\(words[1]) \(words[0].lowercased())"
         }.joined(separator: Token.Glyph.sep)
+    }
+
+    // value: a page button's role: Restart the primary, Delete in red, a
+    // button whose sheet asks for the name greyed and saying so (vision
+    // panel f: Stop, then "(type the name)").
+    static func role(_ a: Action) -> StationRole {
+        switch a.id {
+        case "restart": .primary
+        case "delete": .danger
+        default: a.confirm?.type != nil ? .quiet : .plain
+        }
+    }
+
+    static func button(_ a: Action) -> String {
+        role(a) == .quiet ? "\(label(a)) (type the name)" : label(a)
     }
 
     static func label(_ a: Action) -> String {

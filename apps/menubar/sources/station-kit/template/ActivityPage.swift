@@ -105,7 +105,7 @@ public struct ActivityPage: View {
             } else if let ratio, let of = ratio.of, of > 0 {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(palette.faint)
+                        Capsule().fill(.fill.tertiary)
                         Capsule().fill(palette.accent).frame(width: geo.size.width * CGFloat(ratio.n ?? 0) / CGFloat(of))
                     }
                 }
@@ -130,7 +130,7 @@ public struct ActivityPage: View {
                 if let v = s.cell(r, key) {
                     Text(Format.show(v)).font(.subheadline).foregroundStyle(.secondary).monospacedDigit().frame(width: 52, alignment: .trailing)
                 } else {
-                    Text(Token.Glyph.missing).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle).frame(width: 52, alignment: .trailing)
+                    Text(Token.Glyph.missing).font(.system(size: Token.Space.small)).foregroundStyle(.tertiary).frame(width: 52, alignment: .trailing)
                         .help(Self.missing(key))
                 }
             }

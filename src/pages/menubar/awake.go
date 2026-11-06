@@ -123,7 +123,8 @@ func flags(lid, battery bool) map[string]string {
 }
 
 // invariant: a keep-awake keeps the switches as they are; a switch keeps
-// the term that is left, or starts the 4 h one.
+// the term that is left, or starts the 4 h one. While held, Until… says
+// the time it holds until (vision panel e: `Until 18:00`).
 func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 	var lid, battery bool
 	left := 4 * time.Hour
@@ -138,7 +139,14 @@ func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 		in["For"] = nanos(t)
 		out = append(out, page.Action{ID: ActionKeep + strings.TrimSuffix(t.String(), "0m0s"), Label: pageTerm(t), On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Run: &page.Run{Call: CallAwake, In: in}})
 	}
-	out = append(out, page.Action{ID: ActionUntil, Label: "Until", On: page.OnRow, Rows: rows, Priority: 1, Mutates: true,
+	until := "Until"
+	if held {
+		if zone == nil {
+			zone = time.UTC
+		}
+		until += " " + r.Session.Until.In(zone).Format("15:04")
+	}
+	out = append(out, page.Action{ID: ActionUntil, Label: until, On: page.OnRow, Rows: rows, Priority: 1, Mutates: true,
 		Form: &page.Form{Title: "Keep awake until", Fields: []page.Field{untilField(now, zone)}}, Run: &page.Run{Call: CallAwake, In: flags(lid, battery)}})
 	if r.Caps.Lid {
 		in := flags(!lid, battery)

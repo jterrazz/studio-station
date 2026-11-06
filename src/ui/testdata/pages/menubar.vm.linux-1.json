@@ -4,7 +4,8 @@
   "command": "menubar",
   "context": {
     "machine": "linux-1",
-    "kind": "workspace"
+    "kind": "workspace",
+    "on": "This Mac"
   },
   "state": "ready",
   "sections": [
@@ -255,9 +256,8 @@
             "label": "Disk",
             "cells": [
               {
-                "kind": "ratio",
-                "n": 3874836480,
-                "of": 21474836480
+                "kind": "percent",
+                "n": 120
               },
               {
                 "kind": "spark",
@@ -267,71 +267,71 @@
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   },
                   {
                     "kind": "count",
-                    "n": 18
+                    "n": 12
                   }
                 ]
               }
@@ -498,6 +498,10 @@
               {
                 "kind": "list",
                 "items": [
+                  {
+                    "kind": "text",
+                    "text": "read only"
+                  },
                   {
                     "kind": "text",
                     "text": "4 h left"

@@ -90,10 +90,12 @@ public struct SectionHeader: View {
     }
 }
 
-// value: a row's icon as Control Center and the Wi-Fi menu draw one: a
-// 24 pt circle on the tertiary fill, its symbol in the label colour; the
-// accent (or the state colour) with a white symbol only while active.
-public struct IconCircle: View {
+// value: a row's icon: a 24 pt rounded square on the window's own
+// background (near black in dark, near white in light), its corner
+// concentric with the row's hover, its 13 pt symbol hierarchical in the
+// label colour; the accent (or the colour a finding means) tints only the
+// glyph, never the tile. Increase Contrast draws its separator edge.
+public struct IconTile: View {
     let symbol: String
     let active: Bool
     let tint: Color?
@@ -103,7 +105,7 @@ public struct IconCircle: View {
     @Environment(\.stationStill) private var still
     @Environment(\.colorSchemeContrast) private var contrast
 
-    public init(_ symbol: String, active: Bool = false, tint: Color? = nil, size: CGFloat = Token.Tile.circle, pulse: Bool = false) {
+    public init(_ symbol: String, active: Bool = false, tint: Color? = nil, size: CGFloat = Token.Tile.icon, pulse: Bool = false) {
         self.symbol = symbol
         self.active = active
         self.tint = tint
@@ -111,21 +113,24 @@ public struct IconCircle: View {
         self.pulse = pulse
     }
 
+    var ink: AnyShapeStyle {
+        if let tint { return AnyShapeStyle(tint) }
+        return active ? AnyShapeStyle(palette.accent) : AnyShapeStyle(.primary)
+    }
+
     public var body: some View {
+        let scale = size / Token.Tile.icon
+        let shape = RoundedRectangle(cornerRadius: Token.Tile.corner * scale, style: .continuous)
         Image(systemName: symbol)
-            .font(.system(size: size * 0.44, weight: .semibold))
-            .foregroundStyle(active ? AnyShapeStyle(palette.onTint) : AnyShapeStyle(.primary))
+            .symbolRenderingMode(.hierarchical)
+            .font(.system(size: Token.Tile.glyph * scale, weight: .medium))
+            .foregroundStyle(ink)
             .contentTransition(.symbolEffect(.replace))
             .symbolEffect(.pulse, isActive: pulse && !still)
             .frame(width: size, height: size)
             .background {
-                if active {
-                    Circle().fill(tint ?? palette.accent)
-                } else if contrast == .increased {
-                    Circle().stroke(.separator, lineWidth: 1)
-                } else {
-                    Circle().fill(.fill.tertiary)
-                }
+                shape.fill(.background)
+                if contrast == .increased { shape.strokeBorder(.separator, lineWidth: 1) }
             }
     }
 }
@@ -138,14 +143,16 @@ public struct MenuRow<Leading: View, Trailing: View>: View {
     let title: String
     let subtitle: String?
     let link: Bool
+    let lines: Int
     let tap: (() -> Void)?
     let leading: Leading
     let trailing: Trailing
 
-    public init(_ title: String, subtitle: String? = nil, link: Bool = false, tap: (() -> Void)? = nil, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
+    public init(_ title: String, subtitle: String? = nil, link: Bool = false, lines: Int = 2, tap: (() -> Void)? = nil, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
         self.title = title
         self.subtitle = subtitle
         self.link = link
+        self.lines = lines
         self.tap = tap
         self.leading = leading()
         self.trailing = trailing()
@@ -160,7 +167,7 @@ public struct MenuRow<Leading: View, Trailing: View>: View {
                     if link {
                         LinkText(subtitle)
                     } else {
-                        Text(subtitle).font(.subheadline).foregroundStyle(.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                        Text(subtitle).font(.subheadline).foregroundStyle(.secondary).lineLimit(lines).fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -252,12 +259,13 @@ public struct StateDot: View {
     }
 }
 
-public enum StationRole { case plain, primary, danger }
+public enum StationRole { case plain, primary, danger, quiet }
 
 // invariant: a button in the content as Apple's: small and bordered, what
-// destroys in red, the page's one primary action prominent glass. Drawn
-// still, where the renderer has no AppKit control, the same shape
-// stands in.
+// destroys in red, the page's one primary action prominent glass, one
+// that only opens a sheet asking for a typed name greyed (quiet). Drawn
+// still, where the renderer has no AppKit control, the same shape stands
+// in.
 public struct StationButton: View {
     let title: String
     let role: StationRole
@@ -275,7 +283,7 @@ public struct StationButton: View {
     }
 
     var label: some View {
-        Text(title).font(.body.weight(role == .primary ? .semibold : .regular)).lineLimit(1).fixedSize(horizontal: !wide, vertical: false)
+        Text(title).font(.body.weight(role == .primary ? .semibold : .regular)).lineLimit(1).minimumScaleFactor(0.85).fixedSize(horizontal: !wide, vertical: false)
             .frame(maxWidth: wide ? .infinity : nil)
     }
 
@@ -287,12 +295,18 @@ public struct StationButton: View {
             case .primary: Button(action: action) { label }.buttonStyle(.glassProminent).controlSize(.regular)
             case .danger: Button(role: .destructive, action: action) { label }.buttonStyle(.bordered).controlSize(.regular)
             case .plain: Button(action: action) { label }.buttonStyle(.bordered).controlSize(.regular)
+            case .quiet: Button(action: action) { label.foregroundStyle(.secondary) }.buttonStyle(.bordered).controlSize(.regular)
             }
         }
     }
 
     var drawn: some View {
-        let ink: AnyShapeStyle = role == .primary ? AnyShapeStyle(palette.onTint) : role == .danger ? AnyShapeStyle(palette.bad) : AnyShapeStyle(.primary)
+        let ink: AnyShapeStyle = switch role {
+        case .primary: AnyShapeStyle(palette.onTint)
+        case .danger: AnyShapeStyle(palette.bad)
+        case .quiet: AnyShapeStyle(.tertiary)
+        case .plain: AnyShapeStyle(.primary)
+        }
         return Button(action: action) {
             label
                 .foregroundStyle(ink)
@@ -443,7 +457,7 @@ public struct PageHeader<Trailing: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             BackButton(back, action: action)
             HStack(alignment: .center, spacing: 10) {
-                if let symbol { IconCircle(symbol, active: active, size: Token.Tile.headCircle) }
+                if let symbol { IconTile(symbol, active: active, size: Token.Tile.headIcon) }
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(title).font(.title3.weight(.semibold)).foregroundStyle(.primary)

@@ -115,7 +115,7 @@ public struct HintView: View {
                 .foregroundStyle(palette.muted)
                 .lineLimit(2)
             if let text = hint.text {
-                Text(text).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle)
+                Text(text).font(.system(size: Token.Space.small)).foregroundStyle(.tertiary)
             }
             if asButton {
                 Button {

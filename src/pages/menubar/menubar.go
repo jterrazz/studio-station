@@ -9,6 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -22,8 +23,6 @@ import (
 const ID page.ID = "menubar"
 
 const (
-	shown = 3
-
 	ActionNewVM       = "new-vm"
 	ActionOpenStation = "open-station"
 	ActionStopAll     = "stop-all"
@@ -47,12 +46,16 @@ type Reading struct {
 	Power    *awake.Report
 	// value: every other Mac's Awake, as its engine reports it.
 	Macs []awake.Report
+	// value: every other Mac's Overview, as its engine reports it.
+	Away []overview.Summary
 }
 
 func Page(r Reading, here page.Context) page.Page {
 	p := page.Page{ID: ID, Command: "menubar", Context: here, Strip: strip(r.Samples)}
 	needs := needsYou(r)
-	p.Sections = []page.Section{needs, Tree(r.Fleet, r.Services, homeLine(r)), awakeTile(r), accountsTile(r.Home)}
+	tree := Tree(r.Fleet, r.Services, homeLine(r))
+	markMacs(&tree, r)
+	p.Sections = []page.Section{needs, tree, awakeTile(r), accountsTile(r.Home)}
 	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power))
 	if update := updateAll(needs, r.Home); update != nil {
 		p.Actions = append(p.Actions, *update)
@@ -127,9 +130,9 @@ func strip(readings []activity.Reading) *page.Strip {
 	return &s
 }
 
-// invariant: the badge counts every finding while only the first three are
-// drawn, so the section keeps the full counts (Uncounted) and its caption
-// says them all; the rest is one link to the Overview.
+// invariant: Needs you holds every finding, the line vision panel a draws
+// naming each and unfolding into them; the section keeps the full counts
+// (Uncounted) and its caption says them all.
 func needsYou(r Reading) page.Section {
 	s := page.Section{ID: SectionNeeds, Title: "Needs you", Role: page.Actions, Uncounted: true, Columns: columns()}
 	if r.Home == nil {
@@ -157,15 +160,9 @@ func needsYou(r Reading) page.Section {
 		}
 	}
 	s.Caption = []page.Value{page.Text(things(len(rows)))}
-	switch {
-	case len(rows) == 0:
+	s.Items = rows
+	if len(rows) == 0 {
 		s.Items = []page.Item{{Empty: &page.Empty{Text: "Nothing needs you"}}}
-	case len(rows) > shown:
-		more := page.Link{Label: "+ " + strconv.Itoa(len(rows)-shown) + " more", Page: "overview"}
-		rows = append(rows[:shown:shown], page.Item{Link: &more})
-		s.Items = rows
-	default:
-		s.Items = rows
 	}
 	return s
 }
@@ -200,24 +197,89 @@ func updateAll(needs page.Section, home *overview.Summary) *page.Action {
 	return &page.Action{ID: ActionUpdateAll, Label: "Update all", On: page.OnRow, Rows: rows, Priority: 5, Mutates: true, Run: &page.Run{Call: CallUpdate}}
 }
 
-// value: the line under a Mac in Home: its Awake.
+// value: the line under a Mac in Home: its Awake; another Mac's then says
+// how many things need you there (vision panel a: `never sleeps · 1 needs
+// you`).
 func homeLine(r Reading) func(h machines.HostView) page.Value {
 	return func(h machines.HostView) page.Value {
-		if h.Here {
-			if r.Power != nil {
-				if w := awakeWords(*r.Power); w != "" {
-					return page.Text("awake " + w)
+		var parts []page.Value
+		switch {
+		case h.Here && r.Power != nil:
+			if w := awakeWords(*r.Power); w != "" {
+				parts = append(parts, page.Text("awake "+w))
+			}
+		case !h.Here:
+			for _, m := range r.Macs {
+				if m.Mac == h.Name && m.NeverSleeps {
+					parts = append(parts, page.Text("never sleeps"))
 				}
 			}
-			return page.None()
-		}
-		for _, m := range r.Macs {
-			if m.Mac == h.Name && m.NeverSleeps {
-				return page.Text("never sleeps")
+			if s := away(r, h.Name); s != nil && len(s.Needs) > 0 {
+				parts = append(parts, page.Text(needWords(len(s.Needs))))
 			}
 		}
-		return page.None()
+		if len(parts) == 0 {
+			return page.None()
+		}
+		return page.List(parts...)
 	}
+}
+
+func needWords(n int) string {
+	if n == 1 {
+		return "1 needs you"
+	}
+	return strconv.Itoa(n) + " need you"
+}
+
+func away(r Reading, mac string) *overview.Summary {
+	for i, s := range r.Away {
+		if s.Head.Name == mac {
+			return &r.Away[i]
+		}
+	}
+	return nil
+}
+
+// invariant: a Mac's dot in Home says what needs you there, This Mac's
+// from its own Needs you, another's from its engine's: amber for
+// anything, red when one of its ports is reachable outside Tailscale
+// undeclared (vision panels a and g); a Mac that does not answer keeps its
+// own mark.
+func markMacs(s *page.Section, r Reading) {
+	if r.Fleet == nil {
+		return
+	}
+	for _, it := range s.Items {
+		if it.Group == nil || it.Group.Head.Mark != page.OK {
+			continue
+		}
+		head := &it.Group.Head
+		for _, h := range r.Fleet.Hosts {
+			if h.Name != head.ID {
+				continue
+			}
+			switch {
+			case h.Here && r.Home != nil:
+				head.Mark, head.Reason = needsMark(r.Home.Needs)
+			case !h.Here:
+				if a := away(r, h.Name); a != nil {
+					head.Mark, head.Reason = needsMark(a.Needs)
+				}
+			}
+		}
+	}
+}
+
+func needsMark(needs []overview.Need) (page.Mark, page.Reason) {
+	mark, reason := page.OK, page.Reason("")
+	for _, n := range needs {
+		if n.Section == section.Ports && n.Broken {
+			return page.Broken, page.Exposed
+		}
+		mark, reason = page.Attention, page.Degraded
+	}
+	return mark, reason
 }
 
 func awakeWords(r awake.Report) string {

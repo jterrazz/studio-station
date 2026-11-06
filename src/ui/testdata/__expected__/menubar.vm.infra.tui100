@@ -2,16 +2,16 @@
    ● State  Running
 
  Overview
-     Up  up 12 d                            Restarts  0 restarts · none since boot
+     Up  12 d 4 h · since boot              Restarts  0 restarts · none since boot
 
- Health  after every boot  4 ●
+ Health  after every boot · 40s ago  4 ●
    ● Running
    ● Has an address  192.168.64.7
    ● SSH answers
-   ● Check passes    https://infra:6443/readyz
+   ● Check passes    https://infra:6443/readyz · 200
 
  Activity
-     CPU     34%           ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃       Disk  24.9/85.9 GB  ▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ 
+     CPU     34%           ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃       Disk  45%  ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄ 
      Memory  20.8/25.8 GB  ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆ 
 
  Ports and shell

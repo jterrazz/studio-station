@@ -167,6 +167,10 @@
                                 "text": "healthy"
                               },
                               {
+                                "kind": "text",
+                                "text": "up 12 d"
+                              },
+                              {
                                 "kind": "count",
                                 "unit": "restarts"
                               }

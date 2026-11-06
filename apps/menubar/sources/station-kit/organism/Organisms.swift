@@ -62,7 +62,7 @@ struct LinkButton: View {
         Button(action: tap) {
             Image(systemName: symbol).font(.system(size: Token.Space.small + 1, weight: .medium))
                 .foregroundStyle(picked ? palette.onTint : palette.text)
-                .frame(width: Token.Tile.circle, height: Token.Tile.circle)
+                .frame(width: Token.Tile.icon, height: Token.Tile.icon)
                 .background(RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(picked ? AnyShapeStyle(palette.accent) : AnyShapeStyle(.fill.tertiary)))
         }
         .buttonStyle(.plain)

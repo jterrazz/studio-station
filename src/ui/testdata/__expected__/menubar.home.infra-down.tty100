@@ -1,14 +1,15 @@
 Needs you  5 things need you
-  ◐ 2 app updates         station apps update
-  ✗ npm sign-in expired   npm login
-  ◐ ~/.tart is misplaced  station disk move ~/.tart
-  + 2 more
+  ◐ 2 app updates              station apps update
+  ✗ npm sign-in expired        npm login
+  ◐ ~/.tart is misplaced       station disk move ~/.tart
+  ◐ Firewall off               System Settings > Network > Firewall
+  ✗ 1 background task failing  station background
 Machines
-  ● This Mac       Mac        awake until 18:00
+  ◐ This Mac       Mac        awake until 18:00
   └─   Workspaces
      ├─ ● linux-1  Workspace  Throwaway · 2 ports shared
      └─ ○ api      Workspace  Permanent · Stopped
-  ● mac-mini       Mac        never sleeps
+  ✗ mac-mini       Mac        never sleeps · 1 needs you
   └─   Servers
      └─ ✗ infra    Server     Always on · Stopped
 Awake

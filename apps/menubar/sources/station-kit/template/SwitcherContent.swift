@@ -53,7 +53,7 @@ struct SwitcherContent: View {
                             MachineRow(row: mac, symbol: Token.Symbol.mac, kinds: true, sub: "\(host)\(Token.Glyph.sep)you are here", picked: true, open: { _ in handlers.back() })
                         }
                         ForEach(Array(rows(tree, state.recent.filter { $0 != here(tree)?.id }).enumerated()), id: \.offset) { _, r in
-                            MachineRow(row: r, symbol: r.cells?.first?.text == "Mac" ? Token.Symbol.mac : Token.Symbol.vm, kinds: true, open: handlers.openMachine)
+                            MachineRow(row: r, symbol: Token.Symbol.machine(r.cells?.first?.text), kinds: true, open: handlers.openMachine)
                         }
                     }
                 }

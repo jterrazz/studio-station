@@ -13,6 +13,7 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
+	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
@@ -148,11 +149,12 @@ func (f *menubar) read(ctx context.Context, here bool) (fleet machines.Fleet, se
 func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
 	for {
 		fl, sv, ferr, serr := f.read(ctx, false)
-		macs := f.awake(ctx, fl)
+		macs, away := f.awake(ctx, fl), f.away(ctx, fl)
 		f.update(ctx, func(r *pagemenubar.Reading) {
 			if ferr == nil {
 				r.Fleet = &fl
 				r.Macs = macs
+				r.Away = away
 			}
 			if serr == nil {
 				r.Services = &sv
@@ -175,6 +177,21 @@ func (f *menubar) awake(ctx context.Context, fl machines.Fleet) []awake.Report {
 		if r, err := call.Read(ctx, f.o.Calls, machine.Ref{Name: h.Name}, awakecalls.Read, awakecalls.ReadIn{}, nil); err == nil {
 			r.Mac = h.Name
 			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// value: each other Mac's Overview, as its own engine last read it; a Mac
+// that does not answer is left out.
+func (f *menubar) away(ctx context.Context, fl machines.Fleet) []overview.Summary {
+	var out []overview.Summary
+	for _, h := range fl.Hosts {
+		if h.Here || !h.Reachable {
+			continue
+		}
+		if r, err := call.Read(ctx, f.o.Calls, machine.Ref{Name: h.Name}, overviewcalls.Read, overviewcalls.ReadIn{}, nil); err == nil {
+			out = append(out, r.Summary)
 		}
 	}
 	return out

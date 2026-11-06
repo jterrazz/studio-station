@@ -2,8 +2,10 @@ import SwiftUI
 
 // invariant: SPEC §10.2 Ports and A port, vision panels d and g: what is
 // reachable outside Tailscale undeclared first, in red with Review; then
-// Public; then Private; each row says its class in words. A shared port
-// unfolds in its row: its link, its QR, Copy link, Open, Stop sharing.
+// Public; then Private; each row says its class in words. A workspace's
+// page (vision d) says instead whether its shares get an https:// link,
+// then lists them under no header. A shared port unfolds in its row: its
+// link, its QR, Copy link, Open, Stop sharing.
 public struct PortsPage: View {
     let state: PopoverState
     let handlers: PopoverHandlers
@@ -22,6 +24,13 @@ public struct PortsPage: View {
         VStack(alignment: .leading, spacing: Token.Tile.section) {
             PageHeader(back: summary?.label ?? page.context?.machine ?? "", title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()), action: handlers.back)
             if let red = page.section("needs-you") { needsYou(red) }
+            if let https = page.section("https"), let row = https.rows.first {
+                MenuRow(row.label ?? "", subtitle: Format.show(row.cells?.first ?? Value())) {
+                    EmptyView()
+                } trailing: {
+                    StationSwitch(on: row.mark == .ok).disabled(true)
+                }
+            }
             if let public_ = page.section("public") {
                 VStack(alignment: .leading, spacing: 2) {
                     SectionHeader(public_.header)
@@ -30,7 +39,7 @@ public struct PortsPage: View {
             }
             if let private_ = page.section("private") {
                 VStack(alignment: .leading, spacing: 2) {
-                    SectionHeader(private_.header)
+                    if page.section("https") == nil { SectionHeader(private_.header) }
                     ForEach(Array(private_.rows.enumerated()), id: \.offset) { _, r in privateRow(private_, r) }
                 }
             }
@@ -52,7 +61,7 @@ public struct PortsPage: View {
         let reason = s.title.flatMap { t in t.range(of: ": ").map { String(t[$0.upperBound...]) } } ?? ""
         let title = "\(rows.count) \(rows.count == 1 ? "port" : "ports") \(reason.components(separatedBy: ",").first ?? "")"
         return HStack(alignment: .center, spacing: Token.Space.gap) {
-            IconCircle(Token.Symbol.warn, active: true, tint: palette.bad)
+            IconTile(Token.Symbol.warn, active: true, tint: palette.bad)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.body.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
                 Text(([ports.joined(separator: ", ")] + whats).joined(separator: Token.Glyph.sep)).font(.subheadline).foregroundStyle(.secondary)
@@ -65,9 +74,9 @@ public struct PortsPage: View {
         .stationGroup()
     }
 
-    func line(title: String, detail: String, mark: Mark?, symbol: String? = nil, trailing: Bool = false, open: Bool = false, tap: (() -> Void)? = nil) -> some View {
+    func line(title: String, detail: String, mark: Mark?, symbol: String?, trailing: Bool = false, open: Bool = false, tap: (() -> Void)? = nil) -> some View {
         MenuRow(title, subtitle: detail, tap: tap) {
-            IconCircle(symbol ?? Token.Symbol.port)
+            if let symbol { IconTile(symbol) }
         } trailing: {
             if mark == .broken { StateDot(mark: mark) }
             if trailing { Chevron(down: open) }
@@ -83,13 +92,15 @@ public struct PortsPage: View {
     func shared(_ s: Section, _ r: Row) -> URL? { s.cell(r, "url").flatMap(Format.url) }
 
     // invariant: a private row names its class in words: a shared port its
-    // reserved port and state, any other how Tailscale carries it.
+    // reserved port and state, under no tile as linux-1's links (vision c,
+    // d), any other how Tailscale carries it.
     func privateRow(_ s: Section, _ r: Row) -> some View {
         let port = s.cell(r, "port")
         let url = shared(s, r)
         let reserved = port?.kind == "portmap" ? "reserved port \(port?.of ?? 0)" : nil
         let state = s.cell(r, "state").map { Format.show($0) }
-        let what = Format.show(r.detail ?? Value()).isEmpty ? (s.cell(r, "process").map { Format.show($0) } ?? r.label ?? "") : Format.show(r.detail ?? Value()).capitalized
+        let profile = Format.show(r.detail ?? Value())
+        let what = !profile.isEmpty ? profile.capitalized : reserved != nil ? "TCP" : s.cell(r, "process").map { Format.show($0) } ?? r.label ?? ""
         let title = url != nil || reserved != nil ? "\(what)\(Token.Glyph.sep)\(port?.n ?? 0)" : "\(r.short ?? r.label ?? "")\(Token.Glyph.sep)\(port?.n ?? 0)"
         let detail = (["Private", reserved ?? state] + (url == nil && reserved == nil ? [s.cell(r, "process").map { Format.show($0) }] : [])).compactMap { $0 }.joined(separator: Token.Glyph.sep)
         let open = url.map { state_qr($0) } ?? false
@@ -139,7 +150,7 @@ public struct PortsPage: View {
             if let stop { act.sheet(stop) }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, Token.Tile.circle + Token.Space.gap)
+        .padding(.horizontal, Token.Space.gap)
         .padding(.bottom, 6)
     }
 

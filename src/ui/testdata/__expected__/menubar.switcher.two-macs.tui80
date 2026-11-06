@@ -5,4 +5,4 @@
       └─ ○ api      Workspace  Permanent · Stopped
    ● mac-mini       Mac        Engine running
    └─   Servers
-      └─ ● infra    Server     Always on · healthy · 0 restarts
+      └─ ● infra    Server     Always on · healthy · up 12 d · 0 restarts

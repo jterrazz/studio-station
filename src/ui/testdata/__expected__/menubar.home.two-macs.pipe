@@ -1,6 +1,6 @@
 # Machines
-●	This Mac	Mac	awake until 18:00
+◐	This Mac	Mac	awake until 18:00
 ●	linux-1	Workspace	Throwaway · 2 ports shared
 ○	api	Workspace	Permanent · Stopped
-●	mac-mini	Mac	never sleeps
-●	infra	Server	Always on · healthy · 0 restarts
+✗	mac-mini	Mac	never sleeps · 1 needs you
+●	infra	Server	Always on · healthy · up 12 d · 0 restarts

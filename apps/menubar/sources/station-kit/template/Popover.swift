@@ -191,7 +191,7 @@ public struct Popover: View {
             HStack(alignment: .center, spacing: Token.Space.gap) {
                 Button(action: state.pushed == nil ? handlers.openSwitcher : handlers.back) {
                     HStack(alignment: .center, spacing: 6) {
-                        IconCircle(Token.Symbol.mac, active: true)
+                        IconTile(Token.Symbol.mac, active: true)
                         Text(Page.ThisMacWord).font(.headline).foregroundStyle(.primary)
                         Image(systemName: state.pushed == nil ? Token.Symbol.down : Token.Symbol.up).font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
                     }

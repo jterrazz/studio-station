@@ -4,7 +4,8 @@
   "command": "menubar",
   "context": {
     "machine": "infra",
-    "kind": "server"
+    "kind": "server",
+    "on": "mac-mini"
   },
   "state": "ready",
   "sections": [
@@ -85,8 +86,17 @@
             "label": "Up",
             "cells": [
               {
-                "kind": "text",
-                "text": "up 12 d"
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "12 d 4 h"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "since boot"
+                  }
+                ]
               }
             ]
           }
@@ -121,6 +131,11 @@
         {
           "kind": "text",
           "text": "after every boot"
+        },
+        {
+          "kind": "age",
+          "n": 40,
+          "at": "2026-11-03T11:29:20Z"
         }
       ],
       "columns": [
@@ -180,8 +195,17 @@
             "label": "Check passes",
             "cells": [
               {
-                "kind": "text",
-                "text": "https://infra:6443/readyz"
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "https://infra:6443/readyz"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "200"
+                  }
+                ]
               }
             ]
           }
@@ -395,9 +419,8 @@
             "label": "Disk",
             "cells": [
               {
-                "kind": "ratio",
-                "n": 24899345920,
-                "of": 85899345920
+                "kind": "percent",
+                "n": 450
               },
               {
                 "kind": "spark",
@@ -407,71 +430,71 @@
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   },
                   {
                     "kind": "count",
-                    "n": 28
+                    "n": 45
                   }
                 ]
               }

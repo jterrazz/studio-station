@@ -41,16 +41,16 @@ struct HomeContent: View {
         let rows = (s.items ?? []).compactMap(\.row)
         let title = s.caption?.first.map { Format.show($0) } ?? s.title ?? ""
         return VStack(alignment: .leading, spacing: 6) {
-            MenuRow(title, subtitle: rows.compactMap(\.label).joined(separator: Token.Glyph.sep), tap: { unfolded.toggle() }) {
+            MenuRow(title, subtitle: rows.compactMap(\.label).joined(separator: Token.Glyph.sep), lines: 3, tap: { unfolded.toggle() }) {
                 let worst = TodoBadge.todo(page)
-                IconCircle(Token.Symbol.warn, active: (worst?.n ?? 0) > 0, tint: worst?.mark == .broken && rows.allSatisfy { $0.mark == .broken } ? palette.bad : palette.warn)
+                IconTile(Token.Symbol.warn, tint: (worst?.n ?? 0) == 0 ? nil : worst?.mark == .broken && rows.allSatisfy { $0.mark == .broken } ? palette.bad : palette.warn)
             } trailing: {
                 Chevron(down: unfolded)
             }
             if unfolded {
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                     HStack(spacing: Token.Space.gap) {
-                        StateDot(mark: row.mark).frame(width: Token.Tile.circle)
+                        StateDot(mark: row.mark).frame(width: Token.Tile.icon)
                         Text(row.label ?? "").font(.body).lineLimit(1)
                         Spacer(minLength: 4)
                         ForEach(Array(page.rowActions(row.id ?? "").enumerated()), id: \.offset) { _, a in
@@ -79,7 +79,7 @@ struct HomeContent: View {
             HStack(alignment: .top, spacing: 14) {
                 if let awake { awakePlace(awake) }
                 if let accounts {
-                    place(symbol: Token.Symbol.person, active: false, title: accounts.title ?? "",
+                    place(symbol: Token.Symbol.accounts, active: false, title: accounts.title ?? "",
                           words: accounts.rows.first?.cells?.first.map { Format.show($0) }, tap: {}) { Chevron() }
                 }
             }
@@ -90,7 +90,7 @@ struct HomeContent: View {
         let toggle = (page.actions ?? []).first { $0.rows?.contains("awake") == true && $0.run != nil }
         let on = toggle?.id == "power-sleep"
         let words = (s.rows.first?.cells?.first).map { Format.show($0) }
-        return place(symbol: on ? Token.Symbol.awakeOn : Token.Symbol.awakeOff, active: on, title: s.title ?? "", words: words, tap: { handlers.push(Navigation.awake) }) {
+        return place(symbol: Token.Symbol.awake, active: on, title: s.title ?? "", words: words, tap: { handlers.push(Navigation.awake) }) {
             if let toggle {
                 if state.running == toggle.id {
                     PendingDot()
@@ -106,7 +106,7 @@ struct HomeContent: View {
             HStack(spacing: Token.Space.gap) {
                 Button(action: tap) {
                     HStack(spacing: Token.Space.gap) {
-                        IconCircle(symbol, active: active)
+                        IconTile(symbol, active: active)
                         Text(title).font(.body).foregroundStyle(.primary).lineLimit(1)
                         Spacer(minLength: 0)
                     }

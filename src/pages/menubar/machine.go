@@ -98,9 +98,9 @@ func vmPage(m Machine, h machines.HostView, vm machines.VM) page.Page {
 		caption = append(caption, page.Text(strconv.Itoa(r.CPUs)+" CPU"), pagemachines.Memory(r.MemoryBytes))
 	}
 	sections := []page.Section{{ID: SectionMachine, Title: vm.Name, Role: page.Summary, Caption: caption, Columns: columns(), Items: []page.Item{{Row: &head}}}}
-	p := page.Page{ID: MachineID, Command: "menubar", Context: page.Context{Machine: vm.Name, Kind: string(kind)}}
+	p := page.Page{ID: MachineID, Command: "menubar", Context: page.Context{Machine: vm.Name, Kind: string(kind), On: on}}
 	if kind == machine.Server {
-		sections = append(sections, upSection(m, vm), healthSection(vm), activitySection(m.Samples, "Activity"), serverSection(m))
+		sections = append(sections, upSection(m, vm), healthSection(vm, m.Now), activitySection(m.Samples, "Activity"), serverSection(m))
 		restart := page.Action{ID: ActionRestart, Label: "Restart", On: page.OnPage, Priority: 1, Mutates: true, Confirm: ask(m.Asks, "restart", kind, vm.Name, "Restart "+vm.Name+"?", "restart"),
 			Run: &page.Run{Call: CallRestartVM, In: map[string]string{"Name": vm.Name}, Target: target(h, vm.Name)}}
 		restart.Run.In = answered(restart.Confirm, restart.Run.In)
@@ -130,9 +130,10 @@ func vmPage(m Machine, h machines.HostView, vm machines.VM) page.Page {
 }
 
 // value: Activity's three measures of the machine, as its last two
-// readings give them, each led into its series over the readings kept
-// (0 to 100: CPU's share, memory's and disk's use of their total), so a
-// tile draws its bar meter; pending until they are read.
+// readings give them (its disk as the share used, vision panels c and
+// f), each led into its series over the readings kept (0 to 100: CPU's
+// share, memory's and disk's use of their total), so a tile draws its bar
+// meter; pending until they are read.
 func activitySection(readings []activity.Reading, title string) page.Section {
 	cpu, memory, disk := page.Pending(), page.Pending(), page.Pending()
 	var cpus, memories, disks []int
@@ -157,7 +158,7 @@ func activitySection(readings []activity.Reading, title string) page.Section {
 			memory = page.Ratio(min(last.MemUsed, last.MemTotal), last.MemTotal)
 		}
 		if last.DiskTotal > 0 {
-			disk = page.Ratio(last.DiskTotal-last.DiskFree, last.DiskTotal)
+			disk = page.Percent((last.DiskTotal - last.DiskFree) * 1000 / last.DiskTotal)
 		}
 	}
 	measure := func(id, label string, now page.Value, series []int) page.Row {
@@ -236,14 +237,18 @@ func portsSection(m Machine, vm machines.VM) page.Section {
 	return s
 }
 
-// value: the accounts This Mac shared with the workspace, each with its time
-// left and its Take back.
+// value: the accounts This Mac shared with the workspace, each with what
+// it may do, its time left and its Take back.
 func sharedSection(m Machine, h machines.HostView, vm machines.VM) page.Section {
 	from := machines.Label(*m.Fleet, h)
 	s := page.Section{ID: SectionShared, Title: "Accounts shared from " + from, Columns: columns()}
 	for _, a := range lent(m, vm.Name) {
 		left := a.Lent.Until.Sub(m.Now)
-		row := page.Row{ID: a.Provider, Label: accounts.Label(a.Provider), Mark: page.OK, Cells: []page.Value{page.List(page.Text(hours(left) + " left"))}}
+		words := make([]page.Value, 0, len(a.Scopes)+1)
+		for _, scope := range a.Scopes {
+			words = append(words, page.Text(scope))
+		}
+		row := page.Row{ID: a.Provider, Label: accounts.Label(a.Provider), Mark: page.OK, Cells: []page.Value{page.List(append(words, page.Text(hours(left)+" left"))...)}}
 		s.Items = append(s.Items, page.Item{Row: &row})
 	}
 	if len(s.Items) == 0 {
@@ -289,18 +294,45 @@ func takeBacks(m Machine, vm machines.VM) []page.Action {
 	return out
 }
 
+// value: a server's Up as vision panel f's figure: days and hours (`12 d
+// 4 h`), since it booted; its restarts beside it.
 func upSection(m Machine, vm machines.VM) page.Section {
 	up := page.Row{ID: "up", Label: "Up", Cells: []page.Value{page.None()}}
 	if m.Summary != nil && m.Summary.Head.Up > 0 {
-		up.Cells = []page.Value{pagehome.Up(m.Summary.Head.Up)}
+		up.Cells = []page.Value{page.List(page.Text(span(m.Summary.Head.Up)), page.Text("since boot"))}
 	}
 	words := vm.Restarts.Words(m.Now)
 	restarts := page.Row{ID: "restarts", Label: "Restarts", Cells: []page.Value{page.List(page.Count(int64(vm.Restarts.Count), plural(vm.Restarts.Count, "restart")), page.Text(words[len(words)-1]))}}
 	return page.Section{ID: SectionUp, Title: "Overview", Role: page.Summary, Columns: columns(), Items: items([]page.Row{up, restarts})}
 }
 
-func healthSection(vm machines.VM) page.Section {
-	return page.Section{ID: SectionHealth, Title: "Health", Caption: []page.Value{page.Text("after every boot")}, Columns: columns(), Items: items(pagemachines.Steps(vm))}
+func span(d time.Duration) string {
+	day := 24 * time.Hour
+	switch {
+	case d >= day && d%day >= time.Hour:
+		return strconv.Itoa(int(d/day)) + " d " + strconv.Itoa(int(d%day/time.Hour)) + " h"
+	case d >= day:
+		return strconv.Itoa(int(d/day)) + " d"
+	case d >= time.Hour:
+		return strconv.Itoa(int(d/time.Hour)) + " h"
+	}
+	return strconv.Itoa(max(int(d/time.Minute), 1)) + " min"
+}
+
+// value: a server's health steps, run after every boot, how long ago its
+// check last ran, and what a passing check answered (vision panel f).
+func healthSection(vm machines.VM, now time.Time) page.Section {
+	caption := []page.Value{page.Text("after every boot")}
+	if at := vm.CheckStatus.At; !at.IsZero() && !now.IsZero() {
+		caption = append(caption, page.Age(at, now))
+	}
+	steps := pagemachines.Steps(vm)
+	for i := range steps {
+		if steps[i].ID == "check" && steps[i].Mark == page.OK && vm.CheckStatus.Answer != "" {
+			steps[i].Cells = []page.Value{page.List(page.Text(vm.Check), page.Text(vm.CheckStatus.Answer))}
+		}
+	}
+	return page.Section{ID: SectionHealth, Title: "Health", Caption: caption, Columns: columns(), Items: items(steps)}
 }
 
 // value: what a server's page adds, as its Overview reads it: its ports'
@@ -339,7 +371,7 @@ func macPage(m Machine, h machines.HostView) page.Page {
 			}
 		}
 	}
-	vms := Tree(&machines.Fleet{Hosts: []machines.HostView{h}}, m.Services, func(machines.HostView) page.Value { return page.None() })
+	vms := Tree(&machines.Fleet{Hosts: []machines.HostView{h}, Read: m.Fleet.Read}, m.Services, func(machines.HostView) page.Value { return page.None() })
 	vms.ID, vms.Title = SectionVMs, "VMs"
 	if len(vms.Items) == 1 && vms.Items[0].Group != nil {
 		vms.Items = vms.Items[0].Group.Items
