@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	DaemonRunning = EngineRunning
 	EngineStopped = "stopped"
 	EngineAbsent  = "not installed"
 	EnginePending = EngineReading
@@ -34,9 +33,9 @@ type RangeError struct{ Long bool }
 
 func (e *RangeError) Error() string {
 	if e.Long {
-		return "a Power session lasts at most 24h"
+		return "an Awake session lasts at most 24h"
 	}
-	return "a Power session lasts at least 1m"
+	return "an Awake session lasts at least 1m"
 }
 
 type GuardError struct {
@@ -48,7 +47,7 @@ func (e *GuardError) Error() string { return "Awake stays off: " + e.Words }
 
 type UnsupportedError struct{}
 
-func (*UnsupportedError) Error() string { return "Power runs on a macOS host" }
+func (*UnsupportedError) Error() string { return "Awake runs on a Mac" }
 
 func CheckFor(d time.Duration) error {
 	switch {
@@ -77,7 +76,7 @@ func GuardStates(r Reading, s *Session) []GuardState {
 
 type OffMacError struct{}
 
-func (*OffMacError) Error() string { return "Power runs on a host; here is a VM" }
+func (*OffMacError) Error() string { return "Awake runs on a Mac; here is a VM" }
 
 type EngineDownError struct {
 	Mac       string

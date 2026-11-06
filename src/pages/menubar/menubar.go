@@ -306,7 +306,7 @@ func newVM() page.Action {
 				{Value: "throwaway", Label: "Throwaway", Note: "deleted when it powers off from inside"},
 				{Value: "permanent", Label: "Permanent", Note: "kept until you delete it"},
 			}},
-			{Key: "Request.Resources.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4 GB"}, {Value: gigabytes(8), Label: "8 GB"}}},
+			{Key: "Request.Size.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4 GB"}, {Value: gigabytes(8), Label: "8 GB"}}},
 		}}}
 }
 

@@ -4,11 +4,11 @@ import (
 	"github.com/jterrazz/studio-station/src/machines"
 )
 
-type Roots struct{ Config, Data, State, Cache string }
+type Roots struct{ Prefs, Data, State, Cache string }
 
 type Paths struct {
-	Config, Data, State, Cache, Bin string
-	Roots                           Roots
+	Prefs, Data, State, Cache, Bin string
+	Roots                          Roots
 }
 
 type Mac = machines.MacRecord

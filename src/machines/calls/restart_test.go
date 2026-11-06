@@ -22,11 +22,11 @@ func (noTailnet) Peers(context.Context) (map[string]model.Node, error) {
 	return nil, nil
 }
 
-func service(t *testing.T, answers func(context.Context, string) bool) (*machines.Service, *stillMac) {
+func service(t *testing.T, answers func(context.Context, string) bool) (*machines.Machinist, *stillMac) {
 	t.Helper()
 	clock := &stillMac{at: time.Unix(0, 0)}
 	h := clock
-	paths := setup.Paths{Config: "/config", State: "/state"}
+	paths := setup.Paths{Prefs: "/config", State: "/state"}
 	prefs := memoryPrefs{}
 	p := machines.Prefs{Name: setupcontract.Name(prefs), Macs: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
 	if err := p.Name.Set("mac"); err != nil {
@@ -54,7 +54,7 @@ func (a *answering) answers(context.Context, string) bool {
 	return up
 }
 
-func restarting(t *testing.T, polls ...bool) (*machines.Service, *stillMac) {
+func restarting(t *testing.T, polls ...bool) (*machines.Machinist, *stillMac) {
 	t.Helper()
 	return service(t, (&answering{polls: polls}).answers)
 }

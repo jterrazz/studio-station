@@ -25,7 +25,7 @@ func (m machine) guestDialer() contract.GuestDialer {
 
 type engineGuests struct {
 	dialer contract.GuestDialer
-	vms    *machinescalls.Service
+	vms    *machinescalls.Machinist
 }
 
 func (g engineGuests) Dial(ctx context.Context, vm string, at netip.AddrPort) (process.Guest, error) {

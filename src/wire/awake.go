@@ -24,7 +24,7 @@ import (
 
 func (m machine) awakeDeps() awakecalls.Deps {
 	return awakecalls.Deps{
-		Holder: awakeKeeper{m.awakeService()}, Mac: m.profile.Ref.Name, Label: m.label(m.profile.Ref.Name), Caps: m.profile.Caps,
+		Holder: awakeKeeper{m.awakeWaker()}, Mac: m.profile.Ref.Name, Label: m.label(m.profile.Ref.Name), Caps: m.profile.Caps,
 		Servers:     func(context.Context) []string { return m.servers() },
 		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
 	}

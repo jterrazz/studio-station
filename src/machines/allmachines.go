@@ -97,9 +97,9 @@ type AllMachines struct {
 type CreateRequest struct {
 	Image, Name string
 	// value: a workspace's, throwaway or permanent; a server's is always on.
-	Lifetime  Lifetime
-	Network   string
-	Resources Resources
+	Lifetime Lifetime
+	Network  string
+	Size     Resources
 	// value: the create makes a server, which is always on.
 	Server bool
 	// value: a server's health check, a URL or host:port; empty for none.

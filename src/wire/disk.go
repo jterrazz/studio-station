@@ -45,8 +45,8 @@ func storageAlias(env kit.Env, m machine) *cobra.Command {
 	), "disk")
 }
 
-func (m machine) diskOf(env kit.Env) *diskcalls.Service {
-	return diskcalls.NewService(diskMachine{m.sys}, catalog.Apps, diskcalls.ServiceOptions{
+func (m machine) diskOf(env kit.Env) *diskcalls.Surveyor {
+	return diskcalls.NewSurveyor(diskMachine{m.sys}, catalog.Apps, diskcalls.SurveyorOptions{
 		Disk:        m.disk(),
 		Containers:  diskdocker.New(m.sys.Run),
 		Pool:        m.pool,
@@ -73,10 +73,10 @@ func (m machine) expander() disk.Expander {
 }
 
 func (m machine) appFiles() map[catalog.AppFile]string {
-	return catalog.AppFilePaths(m.sys.Env.Home(), m.paths.Roots.Config, m.kind, m.vars)
+	return catalog.AppFilePaths(m.sys.Env.Home(), m.paths.Roots.Prefs, m.kind, m.vars)
 }
 
-type inventory struct{ apps *appscalls.Service }
+type inventory struct{ apps *appscalls.Shelf }
 
 func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
 	for reports := range i.apps.Watch(ctx) {

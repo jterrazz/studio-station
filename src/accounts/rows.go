@@ -2,8 +2,8 @@ package accounts
 
 const (
 	OriginOwn     = "own"
-	OriginShared  = "lent"
-	OriginBoth    = "own+lent"
+	OriginShared  = "shared"
+	OriginBoth    = "own+shared"
 	OriginUnknown = "?"
 
 	EngineRunning  = "running"
@@ -27,23 +27,23 @@ type VMRead struct {
 }
 
 func RedactAccount(a Account) Account {
-	clean := func(v string) string {
+	scrub := func(v string) string {
 		c, redacted := Redact(v)
 		a.Redacted = a.Redacted || redacted
 		return c
 	}
-	cleanAll := func(vs []string) []string {
+	scrubAll := func(vs []string) []string {
 		out := make([]string, 0, len(vs))
 		for _, v := range vs {
-			out = append(out, clean(v))
+			out = append(out, scrub(v))
 		}
 		return out
 	}
-	a.Identity, a.Scopes = cleanAll(a.Identity), cleanAll(a.Scopes)
-	a.Source, a.Detail, a.Notes = clean(a.Source), clean(a.Detail), cleanAll(a.Notes)
+	a.Identity, a.Scopes = scrubAll(a.Identity), scrubAll(a.Scopes)
+	a.Source, a.Detail, a.Notes = scrub(a.Source), scrub(a.Detail), scrubAll(a.Notes)
 	if a.Shared != nil {
 		l := *a.Shared
-		l.Name = clean(l.Name)
+		l.Name = scrub(l.Name)
 		a.Shared = &l
 	}
 	return a

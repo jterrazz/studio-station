@@ -17,14 +17,14 @@ type knownEntry struct {
 	At    time.Time `json:"at"`
 }
 
-func (s *Service) knownPath() string {
+func (s *Surveyor) knownPath() string {
 	if s.o.Expand.Roots.Cache == "" {
 		return ""
 	}
 	return s.o.Expand.Expand("{cache}/station/sizes.json")
 }
 
-func (s *Service) loadKnown() map[string]knownEntry {
+func (s *Surveyor) loadKnown() map[string]knownEntry {
 	file := s.knownPath()
 	if file == "" {
 		return nil
@@ -43,7 +43,7 @@ func (s *Service) loadKnown() map[string]knownEntry {
 // invariant: last-known sizes are stale-while-revalidate, never a reason to skip
 // a walk (a directory's mtime does not move when a file deeper down grows): every
 // walk rewrites the file with what it answered, by an atomic rename.
-func (s *Service) saveKnown(roots []string, sizes []int64) {
+func (s *Surveyor) saveKnown(roots []string, sizes []int64) {
 	file := s.knownPath()
 	if file == "" {
 		return

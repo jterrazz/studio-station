@@ -30,9 +30,9 @@ const (
 
 type Options struct {
 	// value: the guest's own state folder and the services' env file.
-	State, ServicesEnv string
-	Kind               catalog.MachineKind
-	Version            string
+	State, PortsEnv string
+	Kind            catalog.MachineKind
+	Version         string
 	// value: what the host's `accounts` request is answered with: this VM's
 	// providers, parsed into identities and scopes, never a token.
 	Accounts func(ctx context.Context, keys []string) any
@@ -50,14 +50,15 @@ type Containers interface {
 	Read(ctx context.Context) ([]ports.Announced, error)
 }
 
-type Service struct {
+type Agent struct {
 	h local.System
 	o Options
 }
 
-func New(h local.System, o Options) *Service { return &Service{h: h, o: o} }
+func New(h local.System, o Options) *Agent { return &Agent{h: h, o: o} }
 
 type Hello struct {
+	// value: alias of hello v1, the line the engine of any version writes.
 	Mac        string            `json:"host"`
 	VM         string            `json:"vm"`
 	PublicName string            `json:"public_host"`
@@ -78,10 +79,10 @@ type message struct {
 	Hello
 }
 
-func (s *Service) SocketPath() string { return path.Join(s.o.State, "guest.sock") }
+func (s *Agent) SocketPath() string { return path.Join(s.o.State, "guest.sock") }
 
 type session struct {
-	s       *Service
+	s       *Agent
 	out     io.Writer
 	mu      sync.Mutex
 	hello   Hello
@@ -102,7 +103,7 @@ func (g *session) send(v any) {
 	_, _ = g.out.Write(append(data, '\n'))
 }
 
-func (s *Service) Run(ctx context.Context, in io.Reader, out io.Writer) error {
+func (s *Agent) Run(ctx context.Context, in io.Reader, out io.Writer) error {
 	// invariant: the guest never opens a connection to its host: its stdin and
 	// stdout ARE the host's channel, and a stdin that ends ends the guest.
 	ctx, cancel := context.WithCancel(ctx)
@@ -217,7 +218,7 @@ func (g *session) watch(ctx context.Context) {
 // last answer is merged into every scan between, so a container's port keeps
 // its name and never flaps (its socket is the container engine's proxy, or
 // none without the proxy).
-func (s *Service) scan(ctx context.Context, h Hello, held *[]ports.Announced, refresh bool) []ports.Announced {
+func (s *Agent) scan(ctx context.Context, h Hello, held *[]ports.Announced, refresh bool) []ports.Announced {
 	var found []ports.Announced
 	if s.o.Listeners != nil {
 		if ls, err := s.o.Listeners.Read(ctx); err == nil {
@@ -225,20 +226,20 @@ func (s *Service) scan(ctx context.Context, h Hello, held *[]ports.Announced, re
 		}
 	}
 	if refresh && s.o.Containers != nil {
-		if published, err := s.o.Containers.Read(ctx); err == nil {
-			*held = published
+		if mapped, err := s.o.Containers.Read(ctx); err == nil {
+			*held = mapped
 		}
 	}
 	found = ports.MergeAnnounced(found, *held)
 	return ports.FilterAnnounced(found, h.MinPort, h.Ignored)
 }
 
-func (s *Service) writeFiles(h Hello) error {
+func (s *Agent) writeFiles(h Hello) error {
 	home := s.h.Env.Home()
 	return errors.Join(s.writeKeys(path.Join(home, ".ssh", "authorized_keys"), h.Keys), s.writeEnv(h.Env), s.writeMac(h))
 }
 
-func (s *Service) writeKeys(file string, keys []string) error {
+func (s *Agent) writeKeys(file string, keys []string) error {
 	current, _ := s.h.FS.ReadFile(file)
 	var kept []string
 	inside := false
@@ -264,7 +265,7 @@ func (s *Service) writeKeys(file string, keys []string) error {
 
 func Quote(v string) string { return "'" + strings.ReplaceAll(v, "'", `'\''`) + "'" }
 
-func (s *Service) writeEnv(env map[string]string) error {
+func (s *Agent) writeEnv(env map[string]string) error {
 	names := make([]string, 0, len(env))
 	for k := range env {
 		names = append(names, k)
@@ -274,15 +275,15 @@ func (s *Service) writeEnv(env map[string]string) error {
 	for _, k := range names {
 		b.WriteString("export " + k + "=" + Quote(env[k]) + "\n")
 	}
-	file := s.o.ServicesEnv
+	file := s.o.PortsEnv
 	if err := s.h.FS.MkdirAll(path.Dir(file), 0o700); err != nil {
 		return err
 	}
 	return s.h.FS.WriteFile(file, []byte(b.String()), 0o644)
 }
 
-func (s *Service) writeMac(h Hello) error {
-	data, err := json.MarshalIndent(map[string]string{"host": h.Mac, "vm": h.VM, "public_host": h.PublicName}, "", "  ")
+func (s *Agent) writeMac(h Hello) error {
+	data, err := json.MarshalIndent(ports.VMLivesOn{Mac: h.Mac, VM: h.VM, PublicName: h.PublicName}, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -292,7 +293,7 @@ func (s *Service) writeMac(h Hello) error {
 	return s.h.FS.WriteFile(path.Join(s.o.State, "guest.json"), append(data, '\n'), 0o600)
 }
 
-func (s *Service) Placement() ports.VMLivesOn {
+func (s *Agent) Placement() ports.VMLivesOn {
 	var p ports.VMLivesOn
 	data, err := s.h.FS.ReadFile(path.Join(s.o.State, "guest.json"))
 	if err == nil {
@@ -301,7 +302,7 @@ func (s *Service) Placement() ports.VMLivesOn {
 	return p
 }
 
-func (s *Service) listen(ctx context.Context, g *session, quit context.CancelFunc) local.Listener {
+func (s *Agent) listen(ctx context.Context, g *session, quit context.CancelFunc) local.Listener {
 	file := s.SocketPath()
 	if conn, err := s.h.Sockets.DialUnix(ctx, file, time.Second); err == nil {
 		_, _ = conn.Write([]byte(`{"v":2,"id":"q","call":"` + callQuit + `"}` + "\n"))
@@ -369,7 +370,7 @@ func (g *session) serve(ctx context.Context, conn local.Conn, quit context.Cance
 		}
 		frame := map[string]any{"v": 2, "id": r.ID}
 		if op, ok := map[string]string{callPorts: "ports", callReserve: "reserve", callRelease: "release"}[r.Call]; !ok || r.V != 2 {
-			frame["error"] = fault{Type: "refused", Code: "call.unknown", Message: "no call is named " + r.Call, Hint: "station services"}
+			frame["error"] = fault{Type: "refused", Code: "call.unknown", Message: "no call is named " + r.Call, Hint: "station ports"}
 		} else if reply := g.relay(ctx, op, r.In.Port); reply.OK {
 			frame["out"] = reply.Result
 		} else {

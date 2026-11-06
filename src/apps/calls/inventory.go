@@ -14,17 +14,17 @@ import (
 	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 )
 
 const (
 	DetailAppStore = "app-store"
-	subject        = "tools"
+	subject        = "apps"
 )
 
 const (
 	inventoryBudget = 30 * time.Second
-	probeBudget     = 5 * time.Second
+	versionBudget   = 5 * time.Second
 	applications    = "/Applications"
 )
 
@@ -38,22 +38,22 @@ type listing struct {
 	unlisted bool
 }
 
-func (s *Service) Inventory(ctx context.Context) ([]apps.Report, error) {
-	return probe.Last(s.Watch(ctx)), ctx.Err()
+func (s *Shelf) Inventory(ctx context.Context) ([]apps.Report, error) {
+	return lanes.Last(s.Watch(ctx)), ctx.Err()
 }
 
-func (s *Service) Watch(ctx context.Context) <-chan []apps.Report {
-	return probe.Stream(ctx, s.o.Pool, subject, s.watch)
+func (s *Shelf) Watch(ctx context.Context) <-chan []apps.Report {
+	return lanes.Stream(ctx, s.o.Pool, subject, s.watch)
 }
 
-func (s *Service) Forget() { s.o.Pool.Forget(subject) }
+func (s *Shelf) Forget() { s.o.Pool.Forget(subject) }
 
 // invariant: the frame is the catalogue placed here, every row pending; one job
 // per method lists its manager once (shared by every reader of the run), and
 // each row fills as its own probe answers, so one hung tool holds back no other
 // row of its method; a row whose method tells currency waits for it, inside
 // the listing.
-func (s *Service) watch(ctx context.Context) <-chan []apps.Report {
+func (s *Shelf) watch(ctx context.Context) <-chan []apps.Report {
 	list := s.Placed()
 	frame := make([]apps.Report, len(list))
 	byMethod := map[catalog.Method][]int{}
@@ -66,11 +66,11 @@ func (s *Service) watch(ctx context.Context) <-chan []apps.Report {
 		}
 		byMethod[m] = append(byMethod[m], i)
 	}
-	jobs := make([]probe.Job[[]apps.Report], 0, len(methods))
+	jobs := make([]lanes.Job[[]apps.Report], 0, len(methods))
 	for _, m := range methods {
 		rows := byMethod[m]
-		jobs = append(jobs, probe.Job[[]apps.Report]{
-			Key: subject + "/method/" + string(m), Budget: inventoryBudget + probeBudget + currencyBudget,
+		jobs = append(jobs, lanes.Job[[]apps.Report]{
+			Key: subject + "/method/" + string(m), Budget: inventoryBudget + versionBudget + currencyBudget,
 			Partial: func(ctx context.Context, emit func(func(*[]apps.Report))) func(*[]apps.Report) {
 				group := make([]catalog.App, len(rows))
 				for k, i := range rows {
@@ -91,34 +91,34 @@ func (s *Service) watch(ctx context.Context) <-chan []apps.Report {
 					if !(*out)[i].Pending {
 						continue
 					}
-					(*out)[i] = apps.Report{App: list[i], Method: m, State: catalog.StateUnknown, Why: apps.WhyLate, Detail: "no answer in " + (inventoryBudget + probeBudget + currencyBudget).String()}
+					(*out)[i] = apps.Report{App: list[i], Method: m, State: catalog.StateUnknown, Why: apps.WhyLate, Detail: "no answer in " + (inventoryBudget + versionBudget + currencyBudget).String()}
 				}
 			},
 		})
 	}
-	return probe.Run(ctx, s.o.Pool, frame, jobs, slices.Clone[[]apps.Report])
+	return lanes.Run(ctx, s.o.Pool, frame, jobs, slices.Clone[[]apps.Report])
 }
 
 // invariant: a shared listing is keyed by its method alone, so it asks the
 // currency of every placed app of that method, whichever reader starts it.
-func (s *Service) sharedListings(ctx context.Context, list []catalog.App) map[catalog.Method]listing {
+func (s *Shelf) sharedListings(ctx context.Context, list []catalog.App) map[catalog.Method]listing {
 	placed := s.Placed()
 	out := map[catalog.Method]listing{}
 	for m := range s.needed(list) {
-		out[m] = probe.Share(ctx, s.o.Pool, subject+"/list/"+string(m), func(ctx context.Context) listing { return s.list(ctx, m, placed) })
+		out[m] = lanes.Share(ctx, s.o.Pool, subject+"/list/"+string(m), func(ctx context.Context) listing { return s.list(ctx, m, placed) })
 	}
 	return out
 }
 
-func (s *Service) reports(ctx context.Context, list []catalog.App) []apps.Report {
+func (s *Shelf) reports(ctx context.Context, list []catalog.App) []apps.Report {
 	return s.reportsWith(ctx, list, s.listings(ctx, list))
 }
 
-func (s *Service) reportsWith(ctx context.Context, list []catalog.App, listings map[catalog.Method]listing) []apps.Report {
+func (s *Shelf) reportsWith(ctx context.Context, list []catalog.App, listings map[catalog.Method]listing) []apps.Report {
 	return s.reportsEach(ctx, list, listings, func(int, apps.Report) {})
 }
 
-func (s *Service) reportsEach(ctx context.Context, list []catalog.App, listings map[catalog.Method]listing, each func(int, apps.Report)) []apps.Report {
+func (s *Shelf) reportsEach(ctx context.Context, list []catalog.App, listings map[catalog.Method]listing, each func(int, apps.Report)) []apps.Report {
 	out := make([]apps.Report, len(list))
 	var wg sync.WaitGroup
 	for i, t := range list {
@@ -131,7 +131,7 @@ func (s *Service) reportsEach(ctx context.Context, list []catalog.App, listings 
 	return out
 }
 
-func (s *Service) needed(list []catalog.App) map[catalog.Method]bool {
+func (s *Shelf) needed(list []catalog.App) map[catalog.Method]bool {
 	needed := map[catalog.Method]bool{}
 	for _, t := range list {
 		needed[s.install(t).Method()] = true
@@ -142,7 +142,7 @@ func (s *Service) needed(list []catalog.App) map[catalog.Method]bool {
 	return needed
 }
 
-func (s *Service) listings(ctx context.Context, list []catalog.App) map[catalog.Method]listing {
+func (s *Shelf) listings(ctx context.Context, list []catalog.App) map[catalog.Method]listing {
 	needed := s.needed(list)
 	var mu sync.Mutex
 	out := map[catalog.Method]listing{}
@@ -159,7 +159,7 @@ func (s *Service) listings(ctx context.Context, list []catalog.App) map[catalog.
 	return out
 }
 
-func (s *Service) list(ctx context.Context, m catalog.Method, list []catalog.App) listing {
+func (s *Shelf) list(ctx context.Context, m catalog.Method, list []catalog.App) listing {
 	inst := s.o.Installers[m]
 	l := listing{missing: inst.Ready(ctx) != nil}
 	listed, cancel := context.WithTimeout(ctx, inventoryBudget)
@@ -195,7 +195,7 @@ func (s *Service) list(ctx context.Context, m catalog.Method, list []catalog.App
 	return l
 }
 
-func (s *Service) report(ctx context.Context, t catalog.App, listings map[catalog.Method]listing) apps.Report {
+func (s *Shelf) report(ctx context.Context, t catalog.App, listings map[catalog.Method]listing) apps.Report {
 	i := s.install(t)
 	m := i.Method()
 	manager := s.installer(t).Manager()
@@ -206,7 +206,7 @@ func (s *Service) report(ctx context.Context, t catalog.App, listings map[catalo
 		r.State, r.Managed = catalog.StateOK, true
 		return r
 	case l.unlisted:
-		return s.probed(ctx, t, r)
+		return s.readInstalled(ctx, t, r)
 	case l.failed:
 		r.State, r.Detail, r.Why = catalog.StateUnknown, manager.Name+" did not answer", apps.WhyLate
 		return r
@@ -259,7 +259,7 @@ func listedOld(t catalog.App, listings map[catalog.Method]listing) bool {
 	return listed
 }
 
-func (s *Service) probed(ctx context.Context, t catalog.App, r apps.Report) apps.Report {
+func (s *Shelf) readInstalled(ctx context.Context, t catalog.App, r apps.Report) apps.Report {
 	if t.Version.Path != "" {
 		matches := s.m.Glob(s.home(t.Version.Path))
 		if len(matches) == 0 {
@@ -268,7 +268,7 @@ func (s *Service) probed(ctx context.Context, t catalog.App, r apps.Report) apps
 		r.State, r.Managed = catalog.StateOK, true
 		r.Version = path.Base(matches[0])
 		if len(t.Version.Args) > 0 {
-			if version, code, ok := s.probe(ctx, t.Version); ok && code == 0 {
+			if version, code, ok := s.readVersion(ctx, t.Version); ok && code == 0 {
 				r.Version = version
 			}
 		}
@@ -281,7 +281,7 @@ func (s *Service) probed(ctx context.Context, t catalog.App, r apps.Report) apps
 		r.State, r.Managed = catalog.StateOK, true
 		return r
 	}
-	version, code, ok := s.probe(ctx, t.Version)
+	version, code, ok := s.readVersion(ctx, t.Version)
 	switch {
 	case ok && code == 0:
 		r.State, r.Version, r.Managed = catalog.StateOK, version, true
@@ -291,7 +291,7 @@ func (s *Service) probed(ctx context.Context, t catalog.App, r apps.Report) apps
 	return r
 }
 
-func (s *Service) present(ctx context.Context, t catalog.App, r *apps.Report) bool {
+func (s *Shelf) present(ctx context.Context, t catalog.App, r *apps.Report) bool {
 	if s.bundled(t) {
 		return true
 	}
@@ -306,7 +306,7 @@ func (s *Service) present(ctx context.Context, t catalog.App, r *apps.Report) bo
 			if len(t.Version.Args) == 0 {
 				continue
 			}
-			version, code, ok := s.probe(ctx, t.Version)
+			version, code, ok := s.readVersion(ctx, t.Version)
 			if !ok || code != 0 {
 				continue
 			}
@@ -314,7 +314,7 @@ func (s *Service) present(ctx context.Context, t catalog.App, r *apps.Report) bo
 			return true
 		}
 		if len(t.Version.Args) > 0 {
-			if version, code, ok := s.probe(ctx, t.Version); ok && code == 0 {
+			if version, code, ok := s.readVersion(ctx, t.Version); ok && code == 0 {
 				r.Version = version
 			}
 		}
@@ -323,7 +323,7 @@ func (s *Service) present(ctx context.Context, t catalog.App, r *apps.Report) bo
 	return false
 }
 
-func (s *Service) provided(t catalog.App) bool {
+func (s *Shelf) provided(t catalog.App) bool {
 	for _, name := range t.Provides {
 		if _, ok := s.m.LookPath(name); ok {
 			return true
@@ -332,7 +332,7 @@ func (s *Service) provided(t catalog.App) bool {
 	return len(t.Provides) == 0 && len(t.Version.Args) > 0
 }
 
-func (s *Service) bundled(t catalog.App) bool {
+func (s *Shelf) bundled(t catalog.App) bool {
 	if t.Bundle == "" {
 		return false
 	}
@@ -341,19 +341,19 @@ func (s *Service) bundled(t catalog.App) bool {
 
 // invariant: an App Store copy of an AppStore tool's bundle is its install,
 // not station's: present, never managed, upgraded or removed by station.
-func (s *Service) fromAppStore(t catalog.App) bool {
+func (s *Shelf) fromAppStore(t catalog.App) bool {
 	if !t.AppStore || t.Bundle == "" {
 		return false
 	}
 	return s.m.Exists(path.Join(s.o.Root, applications, t.Bundle+".app", catalog.AppStoreReceipt))
 }
 
-func (s *Service) probe(ctx context.Context, p catalog.VersionRead) (version string, code int, ran bool) {
+func (s *Shelf) readVersion(ctx context.Context, p catalog.VersionRead) (version string, code int, ran bool) {
 	args := make([]string, 0, len(p.Args)-1)
 	for _, a := range p.Args[1:] {
 		args = append(args, s.home(a))
 	}
-	text, code, ran := s.m.Probe(ctx, p.Args[0], args, probeBudget)
+	text, code, ran := s.m.RunBriefly(ctx, p.Args[0], args, versionBudget)
 	if !ran {
 		return "", 0, false
 	}
@@ -370,7 +370,7 @@ func (s *Service) probe(ctx context.Context, p catalog.VersionRead) (version str
 	return "", code, true
 }
 
-func (s *Service) home(p string) string {
+func (s *Shelf) home(p string) string {
 	if p == "~" || strings.HasPrefix(p, "~/") {
 		return s.m.Home() + p[1:]
 	}

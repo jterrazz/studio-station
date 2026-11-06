@@ -17,7 +17,7 @@ func (m machine) secretSource(o studio.Options) accountscontract.SecretSource {
 }
 
 func (m machine) shell() *zshblock.Block {
-	return zshblock.NewBlock(m.sys.FS, catalog.DotfilesFS, m.secretSource(studio.Options{FileBackend: true, Budget: zshblock.TokenBudget}), zshblock.BlockOptions{ThisMachine: m.kind, Services: filepath.Join(m.paths.Config, "services.env"), Functions: m.zshFunctions()})
+	return zshblock.NewBlock(m.sys.FS, catalog.DotfilesFS, m.secretSource(studio.Options{FileBackend: true, Budget: zshblock.TokenBudget}), zshblock.BlockOptions{ThisMachine: m.kind, PortsEnv: filepath.Join(m.paths.Prefs, "services.env"), Functions: m.zshFunctions()})
 }
 
 // value: the script of every setting that defines shell functions, where
@@ -32,4 +32,4 @@ func (m machine) zshFunctions() []string {
 	return out
 }
 
-func (m machine) zshDir() string { return filepath.Join(m.paths.Config, "zsh") }
+func (m machine) zshDir() string { return filepath.Join(m.paths.Prefs, "zsh") }

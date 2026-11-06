@@ -26,7 +26,7 @@ func storedOf(r model.VMRecord) model.Record {
 	}
 }
 
-func (s *Service) records() ([]model.VMRecord, error) {
+func (s *Machinist) records() ([]model.VMRecord, error) {
 	stored, err := s.recs.List(context.Background())
 	if err != nil {
 		var unreadable *store.UnreadableError
@@ -51,9 +51,9 @@ func kindOfImage(image string) catalog.MachineKind {
 	return catalog.Linux
 }
 
-func (s *Service) Records() ([]model.VMRecord, error) { return s.records() }
+func (s *Machinist) Records() ([]model.VMRecord, error) { return s.records() }
 
-func (s *Service) vms(ctx context.Context, mac string, live map[string]EngineVM) ([]model.VM, error) {
+func (s *Machinist) vms(ctx context.Context, mac string, live map[string]EngineVM) ([]model.VM, error) {
 	// invariant: the daemon's view wins; without it, no engine or a listing that
 	// fails means nothing is running: every workspace reads stopped.
 	records, err := s.records()

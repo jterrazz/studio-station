@@ -87,13 +87,13 @@ type stores struct {
 
 func newStores(files local.FS, p setup.Paths) *stores {
 	return &stores{
-		prefs: corejsonfile.NewPreferences(files, p.Config, preferenceGroups()).Renaming(machinescontract.RetiredGroupMacs, machinescontract.GroupMacs).
+		prefs: corejsonfile.NewPreferences(files, p.Prefs, preferenceGroups()).Renaming(machinescontract.RetiredGroupMacs, machinescontract.GroupMacs).
 			Renaming(setupcontract.RetiredGroupName, setupcontract.GroupName).Renaming(portscontract.RetiredGroupPorts, portscontract.GroupPorts),
 		machines:     machinesjsonfile.New(files, filepath.Join(p.State, "vms")),
 		images:       imagesjsonfile.New(files, filepath.Join(p.State, "images")),
 		shares:       accountsjsonfile.NewShares(files, filepath.Join(p.State, "shares.json"), filepath.Join(p.State, "vms")),
 		reservations: portsjsonfile.NewReservations(files, filepath.Join(p.State, "leases.json")),
-		declarations: portsjsonfile.NewDeclarations(files, filepath.Join(p.Config, "public.json")),
+		declarations: portsjsonfile.NewDeclarations(files, filepath.Join(p.Prefs, "public.json")),
 		applied:      settingsjsonfile.NewApplied(files, filepath.Join(p.State, "applied")),
 	}
 }

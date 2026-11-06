@@ -14,15 +14,15 @@ import (
 )
 
 func (m machine) keepAwakePage(v awake.View) any {
-	r := awake.Report{Now: m.sys.Clock.Now(), Zone: time.Local, Engine: awake.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
+	r := awake.Report{Now: m.sys.Clock.Now(), Zone: time.Local, Engine: awake.EngineRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	return page.Document{Schema: page.Schema, Page: pagekeepawake.Page(r, m.where)}
 }
 
 func awakeDown(err error) error { return downAs(err, awake.ErrEngineDown) }
 
-func (m machine) awakeService() *awakecalls.Service {
+func (m machine) awakeWaker() *awakecalls.Waker {
 	c := m.engineAPI()
-	return awakecalls.NewService(m.sys.Clock, awakecalls.ServicePorts{
+	return awakecalls.NewWaker(m.sys.Clock, awakecalls.WakerPorts{
 		View: func(ctx context.Context) (awake.View, error) {
 			var v awake.View
 			err := c.do(ctx, engine.CallAwakeView, nil, &v)
@@ -42,10 +42,10 @@ func (m machine) awakeService() *awakecalls.Service {
 			_, err := m.sys.FS.Stat(catalog.EnginePlist(m.sys.Env.Home()))
 			return err == nil
 		},
-	}, awakecalls.ServiceOptions{Power: m.powerPort, ThisMachine: m.kind, ThisMacName: m.where.Machine, Zone: time.Local})
+	}, awakecalls.WakerOptions{Power: m.powerPort, ThisMachine: m.kind, ThisMacName: m.where.Machine, Zone: time.Local})
 }
 
-type statusAwake struct{ s *awakecalls.Service }
+type statusAwake struct{ s *awakecalls.Waker }
 
 func (p statusAwake) Session(ctx context.Context) (overview.AwakeState, bool) {
 	if p.s.Check() != nil {
@@ -55,7 +55,7 @@ func (p statusAwake) Session(ctx context.Context) (overview.AwakeState, bool) {
 	for r := range p.s.Read(ctx) {
 		last = r
 	}
-	if last.Engine != awake.DaemonRunning {
+	if last.Engine != awake.EngineRunning {
 		return overview.AwakeState{}, false
 	}
 	if last.Session == nil {

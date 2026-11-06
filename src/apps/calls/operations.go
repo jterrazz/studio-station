@@ -17,7 +17,7 @@ const (
 	verbUpdate    = "update"
 )
 
-func (s *Service) Install(ctx context.Context, r apps.InstallRequest) ([]apps.Outcome, error) {
+func (s *Shelf) Install(ctx context.Context, r apps.InstallRequest) ([]apps.Outcome, error) {
 	requested, err := s.Find(r.Names)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (s *Service) Install(ctx context.Context, r apps.InstallRequest) ([]apps.Ou
 	return s.held(ctx, result), nil
 }
 
-func (s *Service) Uninstall(ctx context.Context, names []string) ([]apps.Outcome, error) {
+func (s *Shelf) Uninstall(ctx context.Context, names []string) ([]apps.Outcome, error) {
 	requested, err := s.Find(names)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func (s *Service) Uninstall(ctx context.Context, names []string) ([]apps.Outcome
 	return out, nil
 }
 
-func (s *Service) Upgrade(ctx context.Context, r apps.UpgradeRequest) ([]apps.Outcome, error) {
+func (s *Shelf) Upgrade(ctx context.Context, r apps.UpgradeRequest) ([]apps.Outcome, error) {
 	var candidates []catalog.App
 	if len(r.Names) > 0 {
 		found, err := s.Find(r.Names)
@@ -165,7 +165,7 @@ func (s *Service) Upgrade(ctx context.Context, r apps.UpgradeRequest) ([]apps.Ou
 	return s.held(ctx, outcomes), nil
 }
 
-func (s *Service) held(ctx context.Context, outcomes []apps.Outcome) []apps.Outcome {
+func (s *Shelf) held(ctx context.Context, outcomes []apps.Outcome) []apps.Outcome {
 	// invariant: an outcome names the method that holds its app and the
 	// version the method lists once the verb has run, read once per method.
 	versions := map[catalog.Method]map[string]string{}
@@ -191,7 +191,7 @@ func (s *Service) held(ctx context.Context, outcomes []apps.Outcome) []apps.Outc
 	return outcomes
 }
 
-func (s *Service) bundleBatch(pending []catalog.App, inRequest map[string]bool, done map[string]*apps.Outcome) []catalog.App {
+func (s *Shelf) bundleBatch(pending []catalog.App, inRequest map[string]bool, done map[string]*apps.Outcome) []catalog.App {
 	var batch []catalog.App
 	for _, t := range pending {
 		if !s.isLined(t) {
@@ -210,12 +210,12 @@ func (s *Service) bundleBatch(pending []catalog.App, inRequest map[string]bool, 
 	return batch
 }
 
-func (s *Service) isLined(t catalog.App) bool {
+func (s *Shelf) isLined(t catalog.App) bool {
 	_, ok := s.lined(t)
 	return ok
 }
 
-func (s *Service) bundle(ctx context.Context, verb string, list []catalog.App, update bool) []apps.Outcome {
+func (s *Shelf) bundle(ctx context.Context, verb string, list []catalog.App, update bool) []apps.Outcome {
 	lines := make([]string, 0, len(list))
 	for _, t := range list {
 		l, _ := s.lined(t)
@@ -255,7 +255,7 @@ func (s *Service) bundle(ctx context.Context, verb string, list []catalog.App, u
 
 type verbOf func(contract.Installer, context.Context, []catalog.Install, call.Progress) error
 
-func (s *Service) run(ctx context.Context, verb string, t catalog.App, op verbOf) apps.Outcome {
+func (s *Shelf) run(ctx context.Context, verb string, t catalog.App, op verbOf) apps.Outcome {
 	o := apps.Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
 	err := op(s.installer(t), ctx, []catalog.Install{s.install(t)}, nil)
 	var signedOut *apps.SignedOutError
@@ -268,11 +268,11 @@ func (s *Service) run(ctx context.Context, verb string, t catalog.App, op verbOf
 	return o
 }
 
-func (s *Service) then(ctx context.Context, t catalog.App, interactive bool) []apps.Step {
+func (s *Shelf) then(ctx context.Context, t catalog.App, interactive bool) []apps.Step {
 	steps := make([]apps.Step, 0, len(t.Then))
 	for _, item := range t.Then {
 		if s.cfg == nil {
-			steps = append(steps, apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "not applied: station config install " + item})
+			steps = append(steps, apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "not applied: station settings apply " + item})
 			continue
 		}
 		step, err := s.cfg.Configure(ctx, item, interactive)
@@ -284,7 +284,7 @@ func (s *Service) then(ctx context.Context, t catalog.App, interactive bool) []a
 	return steps
 }
 
-func (s *Service) requirements(t catalog.App) []string {
+func (s *Shelf) requirements(t catalog.App) []string {
 	reqs := slices.Clone(t.Requires)
 	if needs := s.installer(t).Manager().Needs; needs != "" && needs != t.Name && !slices.Contains(reqs, needs) {
 		reqs = append([]string{needs}, reqs...)
@@ -292,7 +292,7 @@ func (s *Service) requirements(t catalog.App) []string {
 	return reqs
 }
 
-func (s *Service) failedRequirement(t catalog.App, outcomes map[string]*apps.Outcome) string {
+func (s *Shelf) failedRequirement(t catalog.App, outcomes map[string]*apps.Outcome) string {
 	for _, dep := range s.requirements(t) {
 		if o := outcomes[dep]; o != nil && o.Result == catalog.StateBroken {
 			return dep
@@ -301,7 +301,7 @@ func (s *Service) failedRequirement(t catalog.App, outcomes map[string]*apps.Out
 	return ""
 }
 
-func (s *Service) topological(list []catalog.App) []catalog.App {
+func (s *Shelf) topological(list []catalog.App) []catalog.App {
 	inRequest := map[string]catalog.App{}
 	for _, t := range list {
 		inRequest[t.Name] = t
@@ -327,7 +327,7 @@ func (s *Service) topological(list []catalog.App) []catalog.App {
 	return ordered
 }
 
-func (s *Service) States(ctx context.Context, names []string) (map[string]catalog.State, error) {
+func (s *Shelf) States(ctx context.Context, names []string) (map[string]catalog.State, error) {
 	list, err := s.Find(names)
 	if err != nil {
 		return nil, err
@@ -335,7 +335,7 @@ func (s *Service) States(ctx context.Context, names []string) (map[string]catalo
 	return s.states(ctx, list), nil
 }
 
-func (s *Service) states(ctx context.Context, list []catalog.App) map[string]catalog.State {
+func (s *Shelf) states(ctx context.Context, list []catalog.App) map[string]catalog.State {
 	out := map[string]catalog.State{}
 	for _, r := range s.reports(ctx, list) {
 		out[r.App.Name] = r.State
@@ -343,7 +343,7 @@ func (s *Service) states(ctx context.Context, list []catalog.App) map[string]cat
 	return out
 }
 
-func (s *Service) statesWithRequirements(ctx context.Context, list []catalog.App) map[string]catalog.State {
+func (s *Shelf) statesWithRequirements(ctx context.Context, list []catalog.App) map[string]catalog.State {
 	all := map[string]catalog.App{}
 	var walk func(t catalog.App)
 	walk = func(t catalog.App) {
@@ -375,7 +375,7 @@ func sameName(t catalog.App) func(catalog.App) bool {
 	return func(o catalog.App) bool { return o.Name == t.Name }
 }
 
-func (s *Service) Superseded(ctx context.Context) []string {
+func (s *Shelf) Superseded(ctx context.Context) []string {
 	// invariant: a superseded formula goes only once the tool replacing it is
 	// ok: the formula alone is a half install, named, never removed.
 	var list []catalog.App
@@ -397,7 +397,7 @@ func (s *Service) Superseded(ctx context.Context) []string {
 	return out
 }
 
-func (s *Service) RemoveFormula(ctx context.Context, formula string) error {
+func (s *Shelf) RemoveFormula(ctx context.Context, formula string) error {
 	for _, t := range s.Placed() {
 		if old, ok := t.Superseded(); ok && t.Supersedes == formula {
 			return s.o.Installers[old.Method()].Remove(ctx, []catalog.Install{old}, nil)

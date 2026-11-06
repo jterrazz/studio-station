@@ -81,7 +81,7 @@ func refusesOn(path string) bool {
 		return false
 	}
 	switch fields[0] {
-	case "shell", "completion", "help", "daemon", "guest", "use":
+	case "shell", "completion", "help", RetiredEngineCommand, "guest", "use":
 		return true
 	}
 	return len(fields) > 1 && (fields[0] == "machines" && (fields[1] == "supervise" || fields[1] == "pipe") ||

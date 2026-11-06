@@ -9,11 +9,11 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-func (s *Service) AllMachines(ctx context.Context, thisMacOnly bool) (model.AllMachines, error) {
+func (s *Machinist) AllMachines(ctx context.Context, thisMacOnly bool) (model.AllMachines, error) {
 	return s.AllMachinesAsItFills(ctx, thisMacOnly, nil)
 }
 
-func (s *Service) AllMachinesAsItFills(ctx context.Context, thisMacOnly bool, sofar func(model.AllMachines)) (model.AllMachines, error) {
+func (s *Machinist) AllMachinesAsItFills(ctx context.Context, thisMacOnly bool, sofar func(model.AllMachines)) (model.AllMachines, error) {
 	// invariant: sofar sees this host first, then this host and every other
 	// Mac that has answered, in name order, after each answer; the fleet
 	// returned holds every Mac, a silent one as unreachable.
@@ -71,7 +71,7 @@ func (s *Service) AllMachinesAsItFills(ctx context.Context, thisMacOnly bool, so
 	return allMachines(true), nil
 }
 
-func (s *Service) nodeMap(ctx context.Context) map[string]model.Node {
+func (s *Machinist) nodeMap(ctx context.Context) map[string]model.Node {
 	if s.nodes == nil || s.o.ThisMachine != catalog.Mac {
 		return nil
 	}
@@ -84,26 +84,26 @@ func (s *Service) nodeMap(ctx context.Context) map[string]model.Node {
 
 // invariant: the daemon matters only where VMs can exist: on a host with its hypervisor; a
 // daemon that does not answer degrades the view, never fails it.
-func (s *Service) engineView(ctx context.Context) (info model.EngineView, live map[string]EngineVM) {
-	if s.o.ThisMachine != catalog.Mac || s.daemon == nil {
+func (s *Machinist) engineView(ctx context.Context) (info model.EngineView, live map[string]EngineVM) {
+	if s.o.ThisMachine != catalog.Mac || s.engineAPI == nil {
 		return model.EngineView{}, nil
 	}
 	if !s.engine.Installed() {
 		return model.EngineView{}, nil
 	}
-	version, err := s.daemon.Ping(ctx)
+	version, err := s.engineAPI.Ping(ctx)
 	if err != nil {
 		installed := s.h.Exists(catalog.EnginePlist(s.h.Home()))
 		return model.EngineView{Known: true, Installed: installed}, nil
 	}
-	live, err = s.daemon.VMs(ctx)
+	live, err = s.engineAPI.VMs(ctx)
 	if err != nil {
 		return model.EngineView{Known: true, Running: true, Version: version}, nil
 	}
 	return model.EngineView{Known: true, Running: true, Version: version}, live
 }
 
-func (s *Service) view(name string, h model.MacRecord, node model.Node, answers map[string]model.MacView) model.MacView {
+func (s *Machinist) view(name string, h model.MacRecord, node model.Node, answers map[string]model.MacView) model.MacView {
 	far, ok := answers[name]
 	if !ok {
 		silent := model.MacView{Name: name, User: h.User, Node: node, Answered: h.Answered, LAN: h.LAN}
@@ -126,7 +126,7 @@ func (s *Service) view(name string, h model.MacRecord, node model.Node, answers 
 	return view
 }
 
-func (s *Service) Running(ctx context.Context) (map[string]catalog.MachineKind, error) {
+func (s *Machinist) Running(ctx context.Context) (map[string]catalog.MachineKind, error) {
 	_, live := s.engineView(ctx)
 	vms, err := s.vms(ctx, "", live)
 	if err != nil {
@@ -141,7 +141,7 @@ func (s *Service) Running(ctx context.Context) (map[string]catalog.MachineKind, 
 	return running, nil
 }
 
-func (s *Service) Remembers(mac, vm string) bool {
+func (s *Machinist) Remembers(mac, vm string) bool {
 	cfg, err := s.prefs()
 	if err != nil {
 		return false

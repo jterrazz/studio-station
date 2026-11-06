@@ -87,7 +87,7 @@ type streamed struct {
 func streamEngine(t *testing.T, clock *manualClock, feeds ...chan any) *Engine {
 	t.Helper()
 	h := &fakeMac{clock: clock}
-	paths := setup.Paths{Config: "/c", State: "/s"}
+	paths := setup.Paths{Prefs: "/c", State: "/s"}
 	var n atomic.Int32
 	return New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: paths.State, ThisMachine: catalog.Mac,
 		Feeds: map[string]engine.Feed{engine.PageMenubar: func(ctx context.Context, _ engine.FeedInput) <-chan any {

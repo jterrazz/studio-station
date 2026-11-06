@@ -202,7 +202,7 @@ func items(rows []page.Row) []page.Item {
 
 func Session(r awake.Report) page.Section {
 	s := page.Section{ID: "keep-awake", Title: "Awake", Columns: columns(), Items: items(sessionRows(r))}
-	if r.Session != nil && r.Engine == awake.DaemonRunning {
+	if r.Session != nil && r.Engine == awake.EngineRunning {
 		s.Role = page.Banner
 		s.Caption = []page.Value{page.Texts(append(append([]string{"awake"}, flags(*r.Session)...), left(r))...)}
 	}

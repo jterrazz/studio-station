@@ -28,16 +28,16 @@ import (
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-func (m machine) images() *imagescalls.Service {
+func (m machine) images() *imagescalls.Builder {
 	user := m.sys.Env.User()
 	if current, err := m.stores.vmUser().Get(); err == nil && current != "" {
 		user = current
 	}
 	hypervisor := m.hypervisor()
-	return imagescalls.NewService(imagesMachine{h: m.sys, keys: openssh.NewKeyGen(m.sys.Run, m.sys.FS)}, imagescalls.Contracts{
+	return imagescalls.NewBuilder(imagesMachine{h: m.sys, keys: openssh.NewKeyGen(m.sys.Run, m.sys.FS)}, imagescalls.Contracts{
 		Hypervisor: hypervisor, Builds: m.buildVMs(hypervisor), Store: m.stores.images,
 		Source: m.imageSource(hypervisor.Name()), Machines: m.stores.machines,
-	}, catalog.Images, imagescalls.ServiceOptions{
+	}, catalog.Images, imagescalls.BuilderOptions{
 		Cache: m.paths.Cache, Key: filepath.Join(m.paths.State, "images", "key"),
 		Version: Version(),
 		User:    user,
@@ -61,14 +61,14 @@ func imagesCommand(env kit.Env, m machine) *cobra.Command {
 	)
 }
 
-type imageBuilder struct{ *imagescalls.Service }
+type imageBuilder struct{ *imagescalls.Builder }
 
 func (s imageBuilder) Build(ctx context.Context, names []string, binary string, step func(label string)) ([]model.Record, error) {
-	return s.Service.Build(ctx, model.BuildRequest{Images: names, Binary: binary}, func(st model.Step) { step(st.Label) })
+	return s.Builder.Build(ctx, model.BuildRequest{Images: names, Binary: binary}, func(st model.Step) { step(st.Label) })
 }
 
 func (s imageBuilder) Update(ctx context.Context, names []string, step func(label string)) ([]model.Update, error) {
-	return s.Service.Update(ctx, names, func(st model.Step) { step(st.Label) })
+	return s.Builder.Update(ctx, names, func(st model.Step) { step(st.Label) })
 }
 
 // invariant: the images of This Mac, then of every other Mac that answers,

@@ -14,13 +14,13 @@ const (
 
 func DiskName(image, version string) string { return imagePrefix + image + "-" + version }
 
-func (s *Service) records(image string) ([]images.Record, error) {
+func (s *Builder) records(image string) ([]images.Record, error) {
 	return s.store.List(context.Background(), image)
 }
 
-func (s *Service) writeRecord(r images.Record) error { return s.store.Put(context.Background(), r) }
+func (s *Builder) writeRecord(r images.Record) error { return s.store.Put(context.Background(), r) }
 
-func (s *Service) nextVersion(image string) (string, error) {
+func (s *Builder) nextVersion(image string) (string, error) {
 	existing, err := s.records(image)
 	if err != nil {
 		return "", err

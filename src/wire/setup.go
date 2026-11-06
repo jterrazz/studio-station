@@ -31,11 +31,11 @@ func setupCommand(env kit.Env, m machine) *cobra.Command {
 	return setupcmd.Command(setupcmd.Deps{ThisMachine: m.where}, env)
 }
 
-func setupOf(env kit.Env, m machine) *setupcalls.Service {
+func setupOf(env kit.Env, m machine) *setupcalls.Provisioner {
 	allMachines := m.machines(env.Interactive)
 	registrar := allMachinesRegistrar{name: m.stores.name(), machines: allMachines}
 	installer := engineInstaller{m: m, machines: allMachines}
-	return setupcalls.NewService(setupMachine{m.sys}, setupcalls.ServicePrefs{Name: m.stores.name(), Identity: m.stores.identity(), Macs: m.stores.macs(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.ports(), Stores: m.stores.migrators()}, setupVault{m.vault()}, registrar, installer, setupcalls.ServiceOptions{
+	return setupcalls.NewProvisioner(setupMachine{m.sys}, setupcalls.ProvisionerPrefs{Name: m.stores.name(), Identity: m.stores.identity(), Macs: m.stores.macs(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Ports: m.stores.ports(), Stores: m.stores.migrators()}, setupVault{m.vault()}, registrar, installer, setupcalls.ProvisionerOptions{
 		Kind:            m.kind,
 		Server:          m.profile.Kind == coremachine.Server,
 		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,
@@ -83,7 +83,7 @@ func (c setupSettings) Apply(ctx context.Context, name string) error {
 	return err
 }
 
-type systemApps struct{ apps *appscalls.Service }
+type systemApps struct{ apps *appscalls.Shelf }
 
 func (s systemApps) names() []string {
 	var out []string
@@ -130,7 +130,7 @@ func (s systemApps) Install(ctx context.Context, names []string) error {
 
 type allMachinesRegistrar struct {
 	name     setupcontract.NamePrefs
-	machines *machinescalls.Service
+	machines *machinescalls.Machinist
 }
 
 func (r allMachinesRegistrar) ThisMac() (string, bool) {
@@ -140,16 +140,16 @@ func (r allMachinesRegistrar) ThisMac() (string, bool) {
 
 func (r allMachinesRegistrar) Register(name string) error { return r.machines.Init(name) }
 
-type setupRun struct{ *setupcalls.Service }
+type setupRun struct{ *setupcalls.Provisioner }
 
 func (s setupRun) Run(ctx context.Context, name string, interactive bool, ask func() (string, error)) (setup.Report, error) {
-	return s.Service.Run(ctx, setupcalls.Request{Name: name, Interactive: interactive, AskName: ask})
+	return s.Provisioner.Run(ctx, setupcalls.Request{Name: name, Interactive: interactive, AskName: ask})
 }
 
 // value: the name asked in a form at the owner's terminal, from the one
 // this machine would take.
 type setupAsk struct {
-	setup *setupcalls.Service
+	setup *setupcalls.Provisioner
 	ask   kit.Asker
 }
 

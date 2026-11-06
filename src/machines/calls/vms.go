@@ -9,7 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-func (s *Service) VM(name, verb string) (model.VMRecord, error) {
+func (s *Machinist) VM(name, verb string) (model.VMRecord, error) {
 	if err := s.CheckMac(); err != nil {
 		return model.VMRecord{}, err
 	}
@@ -32,7 +32,7 @@ func (s *Service) VM(name, verb string) (model.VMRecord, error) {
 	return model.VMRecord{}, &model.UnknownMachineError{Name: name}
 }
 
-func (s *Service) LifetimeOf(name string) model.Lifetime {
+func (s *Machinist) LifetimeOf(name string) model.Lifetime {
 	rec, err := s.VM(name, "")
 	if err != nil {
 		return ""
@@ -40,27 +40,27 @@ func (s *Service) LifetimeOf(name string) model.Lifetime {
 	return rec.Lifetime
 }
 
-func (s *Service) CheckStart(name string) error {
+func (s *Machinist) CheckStart(name string) error {
 	_, err := s.VM(name, "start")
 	return err
 }
 
-func (s *Service) CheckStop(name string) error {
+func (s *Machinist) CheckStop(name string) error {
 	_, err := s.VM(name, "stop")
 	return err
 }
 
-func (s *Service) Start(ctx context.Context, name string) error {
+func (s *Machinist) Start(ctx context.Context, name string) error {
 	if err := s.CheckStart(name); err != nil {
 		return err
 	}
 	if err := s.EngineUp(ctx); err != nil {
 		return err
 	}
-	return s.daemon.Do(ctx, "start", name)
+	return s.engineAPI.Do(ctx, "start", name)
 }
 
-func (s *Service) Stop(ctx context.Context, name string) error {
+func (s *Machinist) Stop(ctx context.Context, name string) error {
 	// invariant: a stop keeps the workspace, throwaway or permanent (SP-5), and
 	// like every action it is refused while the engine is stopped.
 	if err := s.CheckStop(name); err != nil {
@@ -69,10 +69,10 @@ func (s *Service) Stop(ctx context.Context, name string) error {
 	if err := s.EngineUp(ctx); err != nil {
 		return err
 	}
-	return s.daemon.Do(ctx, "stop", name)
+	return s.engineAPI.Do(ctx, "stop", name)
 }
 
-func (s *Service) StopDirect(ctx context.Context, name string) error {
+func (s *Machinist) StopDirect(ctx context.Context, name string) error {
 	// value: the stop the engine's own Stop everything takes for a run that
 	// outlived the engine.
 	rec, err := s.VM(name, "stop")
@@ -90,7 +90,7 @@ func (s *Service) StopDirect(ctx context.Context, name string) error {
 	return nil
 }
 
-func (s *Service) restartVM(ctx context.Context, name string, say func(phase, detail string)) (model.RestartReport, error) {
+func (s *Machinist) restartVM(ctx context.Context, name string, say func(phase, detail string)) (model.RestartReport, error) {
 	if _, err := s.VM(name, "restart"); err != nil {
 		return model.RestartReport{}, err
 	}
@@ -99,7 +99,7 @@ func (s *Service) restartVM(ctx context.Context, name string, say func(phase, de
 	}
 	started := s.h.Now()
 	say("restarting", "poweroff, then start")
-	if err := s.daemon.Do(ctx, "restart", name); err != nil {
+	if err := s.engineAPI.Do(ctx, "restart", name); err != nil {
 		return model.RestartReport{}, err
 	}
 	say("back", "the engine runs it again")
@@ -109,26 +109,26 @@ func (s *Service) restartVM(ctx context.Context, name string, say func(phase, de
 	}
 	sshCtx, cancel := context.WithTimeout(ctx, sshWait)
 	defer cancel()
-	if out, err := s.daemon.GuestExec(sshCtx, name, "true", ""); err != nil || out.ExitCode != 0 {
+	if out, err := s.engineAPI.GuestExec(sshCtx, name, "true", ""); err != nil || out.ExitCode != 0 {
 		return model.RestartReport{}, &model.UnhealthyError{Name: name, Step: model.StepSSH, Detail: "none after 30 s"}
 	}
 	return model.RestartReport{Name: name, VM: true, IP: addr.String(), Waited: s.h.Now().Sub(started)}, nil
 }
 
-func (s *Service) Delete(ctx context.Context, name string) (model.DeleteReport, error) {
+func (s *Machinist) Delete(ctx context.Context, name string) (model.DeleteReport, error) {
 	if _, err := s.VM(name, "delete"); err != nil {
 		return model.DeleteReport{}, err
 	}
 	if err := s.EngineUp(ctx); err != nil {
 		return model.DeleteReport{}, err
 	}
-	if err := s.daemon.Do(ctx, "delete", name); err != nil {
+	if err := s.engineAPI.Do(ctx, "delete", name); err != nil {
 		return model.DeleteReport{}, err
 	}
 	return model.DeleteReport{Name: name}, nil
 }
 
-func (s *Service) Remove(ctx context.Context, name string) (model.DeleteReport, error) {
+func (s *Machinist) Remove(ctx context.Context, name string) (model.DeleteReport, error) {
 	// invariant: Remove is the whole delete, run by the engine: the run stops,
 	// the disk, record, files and block go, and the VM's leases and their serve
 	// entries are released.
@@ -150,7 +150,7 @@ func (s *Service) Remove(ctx context.Context, name string) (model.DeleteReport, 
 		}
 	}
 	s.removeFiles(name, true)
-	if err := configFailure(s.o.SSHConfig.Remove(ctx, name), false); err != nil {
+	if err := blocksFailure(s.o.SSHConfig.Remove(ctx, name), false); err != nil {
 		report.Warnings = append(report.Warnings, err.Error())
 	}
 	return report, nil

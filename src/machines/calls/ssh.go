@@ -8,7 +8,7 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 )
 
-func (s *Service) SSH(ctx context.Context, name string) (model.SSHTarget, error) {
+func (s *Machinist) SSH(ctx context.Context, name string) (model.SSHTarget, error) {
 	// value: the ssh command that reaches a machine of All machines, as the
 	// owner's ssh blocks write it: a Mac as its own login, a VM, here or on
 	// another Mac, as the VM user.

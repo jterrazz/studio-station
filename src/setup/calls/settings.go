@@ -31,7 +31,7 @@ type Settings interface {
 // the others due and every Changed since one as next steps, and never applies
 // nor lists the Always-on Mac group (opt-in); a setting it could not read is
 // left alone; one that fails leaves the others applied.
-func (s *Service) settings(ctx context.Context) ([]setup.Step, error) {
+func (s *Provisioner) settings(ctx context.Context) ([]setup.Step, error) {
 	if s.o.Settings == nil {
 		return nil, nil
 	}

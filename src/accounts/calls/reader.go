@@ -11,7 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 )
 
 const (
@@ -35,13 +35,13 @@ type ReaderOptions struct {
 }
 
 type Reader struct {
-	pool *probe.Pool
+	pool *lanes.Pool
 	ids  contract.Identities
 	p    ReaderPorts
 	o    ReaderOptions
 }
 
-func NewReader(pool *probe.Pool, ids contract.Identities, p ReaderPorts, o ReaderOptions) *Reader {
+func NewReader(pool *lanes.Pool, ids contract.Identities, p ReaderPorts, o ReaderOptions) *Reader {
 	return &Reader{pool: pool, ids: ids, p: p, o: o}
 }
 
@@ -150,10 +150,10 @@ func (s *Reader) Read(ctx context.Context, withVMs bool) <-chan accounts.Report 
 			frame.Machines = append(frame.Machines, s.vmFrame(v, now))
 		}
 	}
-	jobs := make([]probe.Job[accounts.Report], 0, len(ps)+1)
+	jobs := make([]lanes.Job[accounts.Report], 0, len(ps)+1)
 	for i, p := range ps {
-		jobs = append(jobs, probe.Job[accounts.Report]{
-			Key: "accounts/" + p.ID, Lane: probe.Commands, Budget: p.Budget + providerReserve,
+		jobs = append(jobs, lanes.Job[accounts.Report]{
+			Key: "accounts/" + p.ID, Lane: lanes.Commands, Budget: p.Budget + providerReserve,
 			Do: func(ctx context.Context) func(*accounts.Report) {
 				acc := withHint(s.read(ctx, p), "")
 				return func(r *accounts.Report) { r.Machines[0].Accounts[i] = acc }
@@ -162,8 +162,8 @@ func (s *Reader) Read(ctx context.Context, withVMs bool) <-chan accounts.Report 
 		})
 	}
 	if withVMs && len(vms) > 0 && s.p.Engine != nil {
-		jobs = append(jobs, probe.Job[accounts.Report]{
-			Key: "accounts/vms", Lane: probe.Inline, Budget: engineBudget,
+		jobs = append(jobs, lanes.Job[accounts.Report]{
+			Key: "accounts/vms", Lane: lanes.Inline, Budget: engineBudget,
 			Do: func(ctx context.Context) func(*accounts.Report) {
 				reads, engine := s.p.Engine(ctx)
 				return func(r *accounts.Report) { s.merge(r, vms, reads, engine) }
@@ -177,7 +177,7 @@ func (s *Reader) Read(ctx context.Context, withVMs bool) <-chan accounts.Report 
 		close(out)
 		return out
 	}
-	return probe.Run(ctx, s.pool, frame, jobs, accounts.Report.Clone)
+	return lanes.Run(ctx, s.pool, frame, jobs, accounts.Report.Clone)
 }
 
 func (s *Reader) vmFrame(v accounts.VM, now time.Time) accounts.Machine {
@@ -253,7 +253,7 @@ func sharedRows(v accounts.VM, own []accounts.Account, unreachable bool, now tim
 			acc.Scopes = append([]string{l.Name}, acc.Scopes...)
 			switch left := l.Until.Sub(now); {
 			case left <= 0:
-				acc.State, acc.Reason, acc.Detail = catalog.StateBroken, accounts.ReasonFailing, "expired, not recalled"
+				acc.State, acc.Reason, acc.Detail = catalog.StateBroken, accounts.ReasonFailing, "expired, not taken back"
 			case left <= expiringWithin:
 				acc.State, acc.Reason = catalog.StateDegraded, accounts.ReasonExpiring
 			}

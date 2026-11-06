@@ -24,7 +24,7 @@ type Exposure struct {
 
 func ExposureOf(serveOn bool, dnsName string) Exposure {
 	if !serveOn || dnsName == "" {
-		return Exposure{PublicName: LocalHost, Off: catalog.ServeOffDetail}
+		return Exposure{PublicName: Loopback, Off: catalog.ServeOffDetail}
 	}
 	return Exposure{On: true, PublicName: dnsName}
 }
@@ -171,7 +171,7 @@ func Next(st State, ev Event, now time.Time) (State, []Action) {
 	return st, nil
 }
 
-const LocalHost = "127.0.0.1"
+const Loopback = "127.0.0.1"
 
 func isHTTP(l Reservation) bool { return l.HTTP == nil || *l.HTTP }
 
@@ -180,7 +180,7 @@ func URLs(l Reservation, publicName, httpsMode string, serveOn bool) URLSet {
 	// carries a scheme so a URL parser reads a host; with Serve off the local URL
 	// is the only one there is; a raw TCP service is the tailnet's bytes, no scheme.
 	port := strconv.Itoa(l.MacPort)
-	u := URLSet{Local: LocalHost + ":" + port}
+	u := URLSet{Local: Loopback + ":" + port}
 	if isHTTP(l) {
 		u.Local = "http://" + u.Local
 	}
@@ -236,14 +236,14 @@ type MacAwayError struct{ Mac string }
 
 func (e *MacAwayError) Error() string {
 	if e.Mac == "" {
-		return "no host has connected to this VM yet"
+		return "no Mac has connected to this VM yet"
 	}
 	return e.Mac + " is not connected to this VM"
 }
 
 func (e *MacAwayError) Hint() string {
 	if e.Mac == "" {
-		return "on the VM's host: station setup"
+		return "on the VM's Mac: station setup"
 	}
 	return "on " + e.Mac + ": station setup"
 }

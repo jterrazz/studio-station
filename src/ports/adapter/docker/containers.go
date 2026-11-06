@@ -12,13 +12,13 @@ import (
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
-type Published struct{ run local.Runner }
+type Containers struct{ run local.Runner }
 
-func New(run local.Runner) *Published { return &Published{run: run} }
+func New(run local.Runner) *Containers { return &Containers{run: run} }
 
 var errAnswered = errors.New("docker ps did not answer")
 
-func (p *Published) Read(ctx context.Context) ([]ports.Announced, error) {
+func (p *Containers) Read(ctx context.Context) ([]ports.Announced, error) {
 	// value: nil and no error when docker is absent: no container publishes.
 	if _, ok := p.run.LookPath("docker"); !ok {
 		return nil, nil
@@ -46,19 +46,19 @@ func ParsePS(data []byte) []ports.Announced {
 			continue
 		}
 		for _, entry := range strings.Split(r.Ports, ",") {
-			published, _, ok := strings.Cut(strings.TrimSpace(entry), "->")
+			mapped, _, ok := strings.Cut(strings.TrimSpace(entry), "->")
 			if !ok {
 				continue
 			}
-			i := strings.LastIndex(published, ":")
+			i := strings.LastIndex(mapped, ":")
 			if i < 0 {
 				continue
 			}
-			port, err := strconv.Atoi(published[i+1:])
+			port, err := strconv.Atoi(mapped[i+1:])
 			if err != nil {
 				continue
 			}
-			ip := strings.Trim(published[:i], "[]")
+			ip := strings.Trim(mapped[:i], "[]")
 			if _, seen := byPort[port]; !seen {
 				byPort[port] = ports.Announced{Port: port, IP: ip, Process: r.Names, Source: ports.ByContainer}
 			}

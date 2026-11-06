@@ -6,7 +6,7 @@ import (
 	"github.com/jterrazz/studio-station/src/images"
 )
 
-func (s *Service) Latest(_ context.Context, image string) (images.Record, error) {
+func (s *Builder) Latest(_ context.Context, image string) (images.Record, error) {
 	all, err := s.records(image)
 	if err != nil {
 		return images.Record{}, err

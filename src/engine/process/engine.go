@@ -246,7 +246,7 @@ func (d *Engine) Begin(ctx context.Context, note func(line string)) error {
 		return err
 	}
 	d.note, d.life = note, ctx
-	d.awakeJob.Reset()
+	d.awakeJob.ClearClamshell()
 	if d.awake != nil {
 		d.awakeJob.Restore(*d.awake)
 	}

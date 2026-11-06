@@ -77,7 +77,7 @@ func TestNoSectionFlickers(t *testing.T) {
 	defer pool.Close()
 	system := localtest.Mac(localtest.NewRunner(t), fs.FS, localtest.Env{}, localtest.NewNet(), &localtest.Clock{})
 	system.FS, system.Clock = fs, staggerClock{}
-	s := diskcalls.NewService(diskMachine{system}, apps, diskcalls.ServiceOptions{Disk: fs, Pool: pool, ThisMachine: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: staggeredInventory{names: names}})
+	s := diskcalls.NewSurveyor(diskMachine{system}, apps, diskcalls.SurveyorOptions{Disk: fs, Pool: pool, ThisMachine: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: staggeredInventory{names: names}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	var pages []page.Page

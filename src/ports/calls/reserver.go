@@ -16,12 +16,12 @@ import (
 )
 
 type Engine interface {
-	Services(ctx context.Context) (ports.MacPorts, error)
+	MacPorts(ctx context.Context) (ports.MacPorts, error)
 	Reserve(ctx context.Context, vm string, port int, pinned bool) (ports.SharedPort, error)
 	Release(ctx context.Context, vm string, port int) (ports.Reservation, error)
 }
 
-type ServiceOptions struct {
+type ReserverOptions struct {
 	ThisMachine catalog.MachineKind
 	State       string
 	ThisMacName string
@@ -44,34 +44,34 @@ type ServiceOptions struct {
 }
 
 type Stores struct {
-	Services     contract.PortsPrefs
+	Ports        contract.PortsPrefs
 	Name         setupcontract.NamePrefs
 	Macs         machinescontract.MacsPrefs
 	Reservations contract.ReservationStore
 	Declarations contract.DeclarationStore
 }
 
-type Service struct {
+type Reserver struct {
 	st Stores
 	d  Engine
-	o  ServiceOptions
+	o  ReserverOptions
 }
 
-func NewService(st Stores, d Engine, o ServiceOptions) *Service {
-	return &Service{st: st, d: d, o: o}
+func NewReserver(st Stores, d Engine, o ReserverOptions) *Reserver {
+	return &Reserver{st: st, d: d, o: o}
 }
 
-func (s *Service) inVM() bool { return s.o.ThisMachine != catalog.Mac }
+func (s *Reserver) inVM() bool { return s.o.ThisMachine != catalog.Mac }
 
-func (s *Service) policy() ports.Policy {
-	g, err := s.st.Services.Get()
+func (s *Reserver) policy() ports.Policy {
+	g, err := s.st.Ports.Get()
 	if err != nil {
 		return ports.PolicyOf(nil)
 	}
 	return ports.PolicyOf(g)
 }
 
-func (s *Service) offline(ctx context.Context) ports.MacPorts {
+func (s *Reserver) offline(ctx context.Context) ports.MacPorts {
 	e := ports.ExposureOf(false, "")
 	if s.o.Exposure != nil {
 		e = s.o.Exposure(ctx)
@@ -84,9 +84,9 @@ func (s *Service) offline(ctx context.Context) ports.MacPorts {
 	return view
 }
 
-func (s *Service) ThisMachine(ctx context.Context) (ports.MacPorts, error) {
+func (s *Reserver) ThisMachine(ctx context.Context) (ports.MacPorts, error) {
 	if s.inVM() {
-		view, err := s.d.Services(ctx)
+		view, err := s.d.MacPorts(ctx)
 		if err != nil {
 			return ports.MacPorts{}, &ports.MacAwayError{Mac: s.o.MacName}
 		}
@@ -99,7 +99,7 @@ func (s *Service) ThisMachine(ctx context.Context) (ports.MacPorts, error) {
 		view.Shared = mine
 		return view, nil
 	}
-	view, err := s.d.Services(ctx)
+	view, err := s.d.MacPorts(ctx)
 	if errors.Is(err, ports.ErrEngineDown) {
 		view, err = s.offline(ctx), nil
 		view.Engine.Installed = s.o.EngineInstalled != nil && s.o.EngineInstalled()
@@ -122,7 +122,7 @@ func (s *Service) ThisMachine(ctx context.Context) (ports.MacPorts, error) {
 // engine is stopped. What listens here that cannot be read fails the read,
 // as an empty list would say nothing listens; a Mac with no reader of its
 // listeners has nothing to say of them.
-func (s *Service) survey(ctx context.Context, vms []ports.Machine) ([]ports.Port, error) {
+func (s *Reserver) survey(ctx context.Context, vms []ports.Machine) ([]ports.Port, error) {
 	var mine []ports.Listener
 	if s.o.Listening != nil {
 		var err error
@@ -146,19 +146,19 @@ func (s *Service) survey(ctx context.Context, vms []ports.Machine) ([]ports.Port
 // invariant: the range is the host's policy and its lease file, so it reads the
 // same with the daemon up or down; a lease left outside a narrowed range is not
 // counted against it.
-func (s *Service) rangeOf() *ports.Range {
+func (s *Reserver) rangeOf() *ports.Range {
 	p := s.policy()
 	reservations, _ := s.st.Reservations.List(context.Background())
-	leased := 0
+	reserved := 0
 	for _, l := range reservations {
 		if l.MacPort >= p.Low && l.MacPort <= p.High {
-			leased++
+			reserved++
 		}
 	}
-	return &ports.Range{Low: p.Low, High: p.High, Reserved: leased, Free: p.High - p.Low + 1 - leased, MaxPerVM: p.MaxPerVM}
+	return &ports.Range{Low: p.Low, High: p.High, Reserved: reserved, Free: p.High - p.Low + 1 - reserved, MaxPerVM: p.MaxPerVM}
 }
 
-func (s *Service) List(ctx context.Context, thisMacOnly bool) (ports.AllMachines, error) {
+func (s *Reserver) List(ctx context.Context, thisMacOnly bool) (ports.AllMachines, error) {
 	thisMac, err := s.ThisMachine(ctx)
 	if err != nil {
 		return ports.AllMachines{}, err
@@ -176,9 +176,9 @@ func (s *Service) List(ctx context.Context, thisMacOnly bool) (ports.AllMachines
 		return ports.AllMachines{}, err
 	}
 	var others []string
-	for host := range macs {
-		if host != name {
-			others = append(others, host)
+	for mac := range macs {
+		if mac != name {
+			others = append(others, mac)
 		}
 	}
 	sort.Strings(others)
@@ -206,7 +206,7 @@ func answered(name string, answers map[string]ports.MacPorts) ports.MacPorts {
 	return view
 }
 
-func (s *Service) Placed() (vm string, inside bool) {
+func (s *Reserver) Placed() (vm string, inside bool) {
 	// value: the VM this binary runs in, as its guest placed it, inside one.
 	if !s.inVM() {
 		return "", false
@@ -214,7 +214,7 @@ func (s *Service) Placed() (vm string, inside bool) {
 	return s.o.VMName, true
 }
 
-func (s *Service) CheckPort(text string) (int, error) {
+func (s *Reserver) CheckPort(text string) (int, error) {
 	port, err := ports.ParsePort(text)
 	if err != nil {
 		return 0, err
@@ -225,9 +225,9 @@ func (s *Service) CheckPort(text string) (int, error) {
 	return port, nil
 }
 
-func (s *Service) ParsePort(text string) (int, error) { return ports.ParsePort(text) }
+func (s *Reserver) ParsePort(text string) (int, error) { return ports.ParsePort(text) }
 
-func (s *Service) Keeper(ctx context.Context, name string) (named, mac string, err error) {
+func (s *Reserver) Keeper(ctx context.Context, name string) (named, mac string, err error) {
 	// invariant: this Mac keeps its own declarations and its VMs'; another
 	// Mac of the fleet keeps its own and its VMs'.
 	if name == "" || name == s.o.ThisMacName {
@@ -238,14 +238,14 @@ func (s *Service) Keeper(ctx context.Context, name string) (named, mac string, e
 			return name, name, nil
 		}
 	}
-	host, thisMac, err := s.o.VMMac(ctx, name)
+	on, thisMac, err := s.o.VMMac(ctx, name)
 	if err != nil || thisMac {
 		return name, "", err
 	}
-	return name, host, nil
+	return name, on, nil
 }
 
-func (s *Service) CheckVM(ctx context.Context, vm string) (mac string, err error) {
+func (s *Reserver) CheckVM(ctx context.Context, vm string) (mac string, err error) {
 	// invariant: a VM of another Mac is shared by that Mac's engine: its
 	// name is returned, and its share asked there.
 	mac, thisMac, err := s.o.VMMac(ctx, vm)
@@ -255,7 +255,7 @@ func (s *Service) CheckVM(ctx context.Context, vm string) (mac string, err error
 	return mac, nil
 }
 
-func (s *Service) Share(ctx context.Context, vm string, port int) (ports.SharedPort, error) {
+func (s *Reserver) Share(ctx context.Context, vm string, port int) (ports.SharedPort, error) {
 	v, err := s.d.Reserve(ctx, vm, port, false)
 	var down *ports.MacAwayError
 	if s.inVM() && (errors.Is(err, ports.ErrEngineDown) || errors.As(err, &down)) {
@@ -264,7 +264,7 @@ func (s *Service) Share(ctx context.Context, vm string, port int) (ports.SharedP
 	return v, err
 }
 
-func (s *Service) CheckRelease(ctx context.Context, t ports.Target) (mac string, err error) {
+func (s *Reserver) CheckRelease(ctx context.Context, t ports.Target) (mac string, err error) {
 	if s.inVM() {
 		return "", nil
 	}
@@ -285,7 +285,7 @@ func (s *Service) CheckRelease(ctx context.Context, t ports.Target) (mac string,
 	return "", nil
 }
 
-func (s *Service) Release(ctx context.Context, t ports.Target, mac string, yes bool) (ports.Reservation, error) {
+func (s *Reserver) Release(ctx context.Context, t ports.Target, mac string, yes bool) (ports.Reservation, error) {
 	if mac != "" {
 		return s.o.ReleaseOn(ctx, mac, t, yes)
 	}

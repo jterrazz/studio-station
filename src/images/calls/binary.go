@@ -19,14 +19,14 @@ const (
 
 var releaseTag = regexp.MustCompile(`^v\d+\.\d+\.\d+$`)
 
-func (s *Service) needsBinary(given string) error {
+func (s *Builder) needsBinary(given string) error {
 	if given == "" && !releaseTag.MatchString(s.o.Version) {
 		return &images.NoLinuxBinaryError{}
 	}
 	return nil
 }
 
-func (s *Service) binary(ctx context.Context, given string) (string, error) {
+func (s *Builder) binary(ctx context.Context, given string) (string, error) {
 	if given != "" {
 		if !s.m.Exists(given) {
 			return "", &images.BinaryNotFoundError{Path: given}
@@ -36,7 +36,7 @@ func (s *Service) binary(ctx context.Context, given string) (string, error) {
 	return s.download(ctx)
 }
 
-func (s *Service) download(ctx context.Context) (string, error) {
+func (s *Builder) download(ctx context.Context) (string, error) {
 	cached := path.Join(s.o.Cache, releaseAsset+"-"+s.o.Version)
 	if s.m.Exists(cached) {
 		return cached, nil

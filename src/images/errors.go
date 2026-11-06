@@ -39,7 +39,7 @@ func (e *NoRecipeError) Error() string {
 
 type NotReleasedError struct{ Image string }
 
-func (e *NotReleasedError) Error() string { return "no version of " + e.Image + " is published" }
+func (e *NotReleasedError) Error() string { return "no version of " + e.Image + " is released" }
 
 type RegistryError struct {
 	Image string

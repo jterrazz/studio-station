@@ -21,14 +21,14 @@ func renderFirstboot(script, name string, l model.Lifetime) string {
 	return strings.NewReplacer("{{name}}", name, "{{lifetime}}", string(l)).Replace(script)
 }
 
-func (s *Service) firstBoot(ctx context.Context, img catalog.Image, name string, l model.Lifetime) error {
+func (s *Machinist) firstBoot(ctx context.Context, img catalog.Image, name string, l model.Lifetime) error {
 	script, err := catalog.Recipes.ReadFile(img.Firstboot)
 	if err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(ctx, firstbootWait)
 	defer cancel()
-	out, err := s.daemon.GuestExec(ctx, name, catalog.AsRoot("bash -s"), renderFirstboot(string(script), name, l))
+	out, err := s.engineAPI.GuestExec(ctx, name, catalog.AsRoot("bash -s"), renderFirstboot(string(script), name, l))
 	switch {
 	case err != nil:
 		return err

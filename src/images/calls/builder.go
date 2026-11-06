@@ -13,7 +13,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-type ServiceOptions struct {
+type BuilderOptions struct {
 	// value: where the release binary is cached, and the build key.
 	Cache, Key string
 	Version    string
@@ -22,7 +22,7 @@ type ServiceOptions struct {
 	Mac string
 }
 
-type Service struct {
+type Builder struct {
 	m      Machine
 	e      contract.Hypervisor
 	builds BuildVMs
@@ -30,7 +30,7 @@ type Service struct {
 	source imagescontract.ImageSource
 	vms    contract.MachineStore
 	list   []catalog.Image
-	o      ServiceOptions
+	o      BuilderOptions
 }
 
 type Contracts struct {
@@ -68,11 +68,11 @@ type Ran struct {
 	Stdout, Stderr string
 }
 
-func NewService(m Machine, c Contracts, list []catalog.Image, o ServiceOptions) *Service {
-	return &Service{m: m, e: c.Hypervisor, builds: c.Builds, store: c.Store, source: c.Source, vms: c.Machines, list: list, o: o}
+func NewBuilder(m Machine, c Contracts, list []catalog.Image, o BuilderOptions) *Builder {
+	return &Builder{m: m, e: c.Hypervisor, builds: c.Builds, store: c.Store, source: c.Source, vms: c.Machines, list: list, o: o}
 }
 
-func (s *Service) image(name string) (catalog.Image, error) {
+func (s *Builder) image(name string) (catalog.Image, error) {
 	for _, img := range s.list {
 		if img.Name == name {
 			return img, nil
@@ -81,7 +81,7 @@ func (s *Service) image(name string) (catalog.Image, error) {
 	return catalog.Image{}, &images.UnknownError{Image: name}
 }
 
-func (s *Service) List(ctx context.Context) ([]images.Report, error) {
+func (s *Builder) List(ctx context.Context) ([]images.Report, error) {
 	sizes := map[string]int{}
 	if disks, err := s.e.Disks(ctx); err == nil {
 		for _, d := range disks {
@@ -108,7 +108,7 @@ func (s *Service) List(ctx context.Context) ([]images.Report, error) {
 	return out, nil
 }
 
-func (s *Service) users() (map[string][]string, error) {
+func (s *Builder) users() (map[string][]string, error) {
 	records, err := s.vms.ListReadable(context.Background())
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (s *Service) users() (map[string][]string, error) {
 	return out, nil
 }
 
-func (s *Service) CheckDelete(image, version string) error {
+func (s *Builder) CheckDelete(image, version string) error {
 	if _, err := s.image(image); err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (s *Service) CheckDelete(image, version string) error {
 	return nil
 }
 
-func (s *Service) Delete(ctx context.Context, image, version string) ([]images.Record, error) {
+func (s *Builder) Delete(ctx context.Context, image, version string) ([]images.Record, error) {
 	if err := s.CheckDelete(image, version); err != nil {
 		return nil, err
 	}
@@ -175,6 +175,6 @@ func (s *Service) Delete(ctx context.Context, image, version string) ([]images.R
 	return removed, nil
 }
 
-func (s *Service) location(ref string) imagescontract.ImageLocation {
+func (s *Builder) location(ref string) imagescontract.ImageLocation {
 	return imagescontract.ImageLocation{Hypervisor: s.e.Name(), Ref: ref}
 }

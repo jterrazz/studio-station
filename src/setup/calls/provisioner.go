@@ -39,7 +39,7 @@ type EngineInstaller interface {
 	Install(ctx context.Context) (setup.Step, error)
 }
 
-type ServiceOptions struct {
+type ProvisionerOptions struct {
 	Kind catalog.MachineKind
 	// value: this machine is a server: its own tooling keeps it, never station.
 	Server bool
@@ -60,33 +60,33 @@ type ServiceOptions struct {
 	MovePreferences func(ctx context.Context) (moved bool, err error)
 }
 
-type ServicePrefs struct {
+type ProvisionerPrefs struct {
 	Name      setupcontract.NamePrefs
 	Identity  setupcontract.IdentityPrefs
 	Macs      machinescontract.MacsPrefs
 	VMUser    machinescontract.VMUserPrefs
 	ShareList accountscontract.ShareListPrefs
-	Services  portscontract.PortsPrefs
+	Ports     portscontract.PortsPrefs
 	// value: every store station keeps, each brought to its version by the
 	// layout step.
 	Stores []store.Migrator
 }
 
-type Service struct {
+type Provisioner struct {
 	m      Machine
-	p      ServicePrefs
+	p      ProvisionerPrefs
 	vault  Vault
 	reg    Registrar
 	engine EngineInstaller
-	o      ServiceOptions
+	o      ProvisionerOptions
 }
 
 type Vault interface {
 	Forget(ctx context.Context, name string) error
 }
 
-func NewService(m Machine, p ServicePrefs, v Vault, reg Registrar, e EngineInstaller, o ServiceOptions) *Service {
-	return &Service{m: m, p: p, vault: v, reg: reg, engine: e, o: o}
+func NewProvisioner(m Machine, p ProvisionerPrefs, v Vault, reg Registrar, e EngineInstaller, o ProvisionerOptions) *Provisioner {
+	return &Provisioner{m: m, p: p, vault: v, reg: reg, engine: e, o: o}
 }
 
 type Request struct {
@@ -95,9 +95,9 @@ type Request struct {
 	AskName     func() (string, error)
 }
 
-func (s *Service) onMac() bool { return s.o.Kind == catalog.Mac }
+func (s *Provisioner) onMac() bool { return s.o.Kind == catalog.Mac }
 
-func (s *Service) CheckName(name string) error {
+func (s *Provisioner) CheckName(name string) error {
 	if name == "" {
 		return nil
 	}
@@ -115,7 +115,7 @@ func (s *Service) CheckName(name string) error {
 
 // invariant: a Mac whose settings.json is not written yet but whose v1
 // config.json names it is already registered: the layout step will say so.
-func (s *Service) currentThisMac() string {
+func (s *Provisioner) currentThisMac() string {
 	if thisMac, ok := s.reg.ThisMac(); ok {
 		return thisMac
 	}
@@ -133,7 +133,7 @@ func (s *Service) currentThisMac() string {
 	return converted.ThisMachine
 }
 
-func (s *Service) DefaultName(ctx context.Context) string {
+func (s *Provisioner) DefaultName(ctx context.Context) string {
 	raw := s.m.Hostname()
 	if out, code, err := s.m.Output(ctx, "scutil", []string{"--get", "LocalHostName"}, 2*time.Second); err == nil && code == 0 && strings.TrimSpace(out) != "" {
 		raw = strings.TrimSpace(out)
@@ -156,7 +156,7 @@ func sanitize(raw string) string {
 	return label
 }
 
-func (s *Service) Run(ctx context.Context, r Request) (setup.Report, error) {
+func (s *Provisioner) Run(ctx context.Context, r Request) (setup.Report, error) {
 	moved, err := s.movePreferences(ctx)
 	if err != nil {
 		return setup.Report{Steps: moved}, err
@@ -205,7 +205,7 @@ func (s *Service) Run(ctx context.Context, r Request) (setup.Report, error) {
 
 // invariant: the move comes before any step reads a preference, and says so
 // once: a second run has nothing to move, and no row of it.
-func (s *Service) movePreferences(ctx context.Context) ([]setup.Step, error) {
+func (s *Provisioner) movePreferences(ctx context.Context) ([]setup.Step, error) {
 	if s.o.MovePreferences == nil {
 		return nil, nil
 	}
@@ -225,7 +225,7 @@ func isStepFailure(err error) bool {
 	return errors.As(err, &failed)
 }
 
-func (s *Service) name(r Request, blocked bool) (setup.Step, error) {
+func (s *Provisioner) name(r Request, blocked bool) (setup.Step, error) {
 	if thisMac, ok := s.reg.ThisMac(); ok {
 		return setup.Step{Name: stepName, State: catalog.StateOK, Detail: thisMac}, nil
 	}
@@ -259,9 +259,9 @@ func failed(step string, cause error) (setup.Step, error) {
 	return setup.Step{Name: step, State: catalog.StateBroken, Detail: cause.Error()}, &setup.StepFailedError{Step: step, Cause: cause}
 }
 
-func (s *Service) zshrcPath() string { return path.Join(s.m.Home(), ".zshrc") }
+func (s *Provisioner) zshrcPath() string { return path.Join(s.m.Home(), ".zshrc") }
 
-func (s *Service) zshrc() (setup.Step, error) {
+func (s *Provisioner) zshrc() (setup.Step, error) {
 	current, _, err := s.m.ReadFile(s.zshrcPath())
 	if err != nil {
 		return failed(stepZshrc, err)
@@ -275,7 +275,7 @@ func (s *Service) zshrc() (setup.Step, error) {
 	return setup.Step{Name: stepZshrc, State: catalog.StateOK, Changed: changed}, nil
 }
 
-func (s *Service) Check(_ context.Context) (setup.Report, error) {
+func (s *Provisioner) Check(_ context.Context) (setup.Report, error) {
 	var steps []setup.Step
 	if s.onMac() {
 		if thisMac, ok := s.reg.ThisMac(); ok {

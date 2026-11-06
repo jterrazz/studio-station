@@ -21,12 +21,12 @@ import (
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 )
 
-func (m machine) guest() *guest.Service {
+func (m machine) guest() *guest.Agent {
 	root := m.systemRoot()
 	if root == "" {
 		root = "/"
 	}
-	return guest.New(m.sys, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Containers: m.containers(), Accounts: func(ctx context.Context, keys []string) any {
+	return guest.New(m.sys, guest.Options{State: m.paths.State, PortsEnv: filepath.Join(m.paths.Prefs, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Containers: m.containers(), Accounts: func(ctx context.Context, keys []string) any {
 		a := accountscalls.NewReader(m.pool, m.identities(path.Join(m.paths.State, "children")), accountscalls.ReaderPorts{}, accountscalls.ReaderOptions{ThisMachine: m.kind, ThisMacName: m.where.Machine, Now: m.sys.Clock.Now, Keys: func() []string { return keys }})
 		return a.Own(ctx)
 	}})
@@ -42,7 +42,7 @@ func (m machine) containers() guest.Containers {
 
 // value: station guest, refused on a Mac.
 type guestServer struct {
-	*guest.Service
+	*guest.Agent
 	kind catalog.MachineKind
 }
 
@@ -57,7 +57,7 @@ func (g guestServer) Run(ctx context.Context, in io.Reader, out io.Writer) error
 	if err := g.Check(); err != nil {
 		return err
 	}
-	return g.Service.Run(ctx, in, out)
+	return g.Agent.Run(ctx, in, out)
 }
 
 // value: what listens here, read the way this system can: a Linux kernel's

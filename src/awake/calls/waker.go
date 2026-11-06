@@ -11,7 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-type ServicePorts struct {
+type WakerPorts struct {
 	// value: the daemon's power op; awake.ErrDaemonDown when it does not answer.
 	View  func(ctx context.Context) (awake.View, error)
 	Awake func(ctx context.Context, r awake.Request) (awake.Awoken, error)
@@ -20,24 +20,24 @@ type ServicePorts struct {
 	Installed func() bool
 }
 
-type ServiceOptions struct {
+type WakerOptions struct {
 	Power       contract.Power
 	ThisMachine catalog.MachineKind
 	ThisMacName string
 	Zone        *time.Location
 }
 
-type Service struct {
+type Waker struct {
 	clock Clock
-	p     ServicePorts
-	o     ServiceOptions
+	p     WakerPorts
+	o     WakerOptions
 }
 
-func NewService(clock Clock, p ServicePorts, o ServiceOptions) *Service {
-	return &Service{clock: clock, p: p, o: o}
+func NewWaker(clock Clock, p WakerPorts, o WakerOptions) *Waker {
+	return &Waker{clock: clock, p: p, o: o}
 }
 
-func (s *Service) Check() error {
+func (s *Waker) Check() error {
 	if s.o.ThisMachine != catalog.Mac {
 		return &awake.OffMacError{}
 	}
@@ -50,18 +50,18 @@ func (s *Service) Check() error {
 	return nil
 }
 
-func (s *Service) down() error {
+func (s *Waker) down() error {
 	return &awake.EngineDownError{Mac: s.o.ThisMacName, Installed: s.p.Installed()}
 }
 
-func (s *Service) engineState() string {
+func (s *Waker) engineState() string {
 	if s.p.Installed() {
 		return awake.EngineStopped
 	}
 	return awake.EngineAbsent
 }
 
-func (s *Service) Read(ctx context.Context) <-chan awake.Report {
+func (s *Waker) Read(ctx context.Context) <-chan awake.Report {
 	// invariant: the reading is the CLI's own, at once and with the daemon
 	// stopped; only the session is the daemon's, so the first report holds the
 	// reading and a pending session.
@@ -80,7 +80,7 @@ func (s *Service) Read(ctx context.Context) <-chan awake.Report {
 		if err != nil {
 			last.Engine = s.engineState()
 		} else {
-			last.Engine, last.Session, last.LastEnd = awake.DaemonRunning, v.Session, v.LastEnd
+			last.Engine, last.Session, last.LastEnd = awake.EngineRunning, v.Session, v.LastEnd
 			last.NeverSleeps, last.NeverSince, last.NeverHeld = v.NeverSleeps, v.NeverSince, v.NeverHeld
 			last.Guards = awake.GuardStates(r, v.Session)
 		}
@@ -89,7 +89,7 @@ func (s *Service) Read(ctx context.Context) <-chan awake.Report {
 	return out
 }
 
-func (s *Service) Awake(ctx context.Context, r awake.Request) (awake.Awoken, error) {
+func (s *Waker) Awake(ctx context.Context, r awake.Request) (awake.Awoken, error) {
 	if r.For == 0 {
 		r.For = awake.DefaultFor
 	}
@@ -103,7 +103,7 @@ func (s *Service) Awake(ctx context.Context, r awake.Request) (awake.Awoken, err
 	return a, err
 }
 
-func (s *Service) Sleep(ctx context.Context) (awake.Slept, error) {
+func (s *Waker) Sleep(ctx context.Context) (awake.Slept, error) {
 	sl, err := s.p.Sleep(ctx)
 	if errors.Is(err, awake.ErrEngineDown) {
 		return sl, s.down()
@@ -111,6 +111,6 @@ func (s *Service) Sleep(ctx context.Context) (awake.Slept, error) {
 	return sl, err
 }
 
-func (s *Service) Now() time.Time { return s.clock.Now() }
+func (s *Waker) Now() time.Time { return s.clock.Now() }
 
-func (s *Service) Zone() *time.Location { return s.o.Zone }
+func (s *Waker) Zone() *time.Location { return s.o.Zone }

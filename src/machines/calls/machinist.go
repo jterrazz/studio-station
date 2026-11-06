@@ -65,16 +65,16 @@ type Images interface {
 	KeyPath() string
 }
 
-type Service struct {
-	h      ThisMac
-	engine contract.Hypervisor
-	p      Prefs
-	recs   contract.MachineStore
-	nodes  Nodes
-	img    Images
-	daemon Engine
-	rel    Releaser
-	o      Options
+type Machinist struct {
+	h         ThisMac
+	engine    contract.Hypervisor
+	p         Prefs
+	recs      contract.MachineStore
+	nodes     Nodes
+	img       Images
+	engineAPI Engine
+	rel       Releaser
+	o         Options
 }
 
 type Prefs struct {
@@ -89,7 +89,7 @@ type prefsView struct {
 	VMUser      string
 }
 
-func (s *Service) prefs() (prefsView, error) {
+func (s *Machinist) prefs() (prefsView, error) {
 	var v prefsView
 	var err error
 	if v.ThisMachine, err = s.p.Name.Get(); err != nil {
@@ -104,8 +104,8 @@ func (s *Service) prefs() (prefsView, error) {
 	return v, nil
 }
 
-func New(h ThisMac, e contract.Hypervisor, p Prefs, vms contract.MachineStore, nodes Nodes, img Images, d Engine, rel Releaser, o Options) *Service {
-	return &Service{h: h, engine: e, p: p, recs: vms, nodes: nodes, img: img, daemon: d, rel: rel, o: o}
+func New(h ThisMac, e contract.Hypervisor, p Prefs, vms contract.MachineStore, nodes Nodes, img Images, d Engine, rel Releaser, o Options) *Machinist {
+	return &Machinist{h: h, engine: e, p: p, recs: vms, nodes: nodes, img: img, engineAPI: d, rel: rel, o: o}
 }
 
 type Machine struct {
@@ -119,14 +119,14 @@ type Machine struct {
 	Lifetime model.Lifetime
 }
 
-func (s *Service) vmUser(cfg prefsView) string {
+func (s *Machinist) vmUser(cfg prefsView) string {
 	if cfg.VMUser != "" {
 		return cfg.VMUser
 	}
 	return s.o.User
 }
 
-func (s *Service) CheckMac() error {
+func (s *Machinist) CheckMac() error {
 	if s.o.ThisMachine != catalog.Mac {
 		return &model.OnlyOnMacError{ThisMachine: s.o.ThisMachine}
 	}

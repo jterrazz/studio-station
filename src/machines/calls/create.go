@@ -61,7 +61,7 @@ func networkFor(img catalog.Image, asked string) (string, error) {
 	}
 }
 
-func (s *Service) CheckCreate(ctx context.Context, r model.CreateRequest) (model.CreateRequest, error) {
+func (s *Machinist) CheckCreate(ctx context.Context, r model.CreateRequest) (model.CreateRequest, error) {
 	if err := s.CheckMac(); err != nil {
 		return r, err
 	}
@@ -116,17 +116,17 @@ func (s *Service) CheckCreate(ctx context.Context, r model.CreateRequest) (model
 	if server {
 		size = model.ServerSize()
 	}
-	if r.Resources.CPUs == 0 {
-		r.Resources.CPUs = size.CPUs
+	if r.Size.CPUs == 0 {
+		r.Size.CPUs = size.CPUs
 	}
-	if r.Resources.MemoryBytes == 0 {
-		r.Resources.MemoryBytes = size.MemoryBytes
+	if r.Size.MemoryBytes == 0 {
+		r.Size.MemoryBytes = size.MemoryBytes
 	}
-	if r.Resources.DiskBytes == 0 {
-		r.Resources.DiskBytes = size.DiskBytes
+	if r.Size.DiskBytes == 0 {
+		r.Size.DiskBytes = size.DiskBytes
 	}
-	if left, ok := s.memoryLeft(ctx); ok && r.Resources.MemoryBytes > left {
-		return r, &model.TooBigError{Mac: "This Mac", AskedGB: int(r.Resources.MemoryBytes >> 30), LeftGB: int(max(left, 0) >> 30)}
+	if left, ok := s.memoryLeft(ctx); ok && r.Size.MemoryBytes > left {
+		return r, &model.TooBigError{Mac: "This Mac", AskedGB: int(r.Size.MemoryBytes >> 30), LeftGB: int(max(left, 0) >> 30)}
 	}
 	if err := s.EngineUp(ctx); err != nil {
 		return r, err
@@ -134,13 +134,13 @@ func (s *Service) CheckCreate(ctx context.Context, r model.CreateRequest) (model
 	return r, nil
 }
 
-func (s *Service) EngineUp(ctx context.Context) error {
+func (s *Machinist) EngineUp(ctx context.Context) error {
 	installed := s.h.Exists(catalog.EnginePlist(s.h.Home()))
 	down := &model.EngineDownError{Mac: "This Mac", Installed: installed}
-	if s.daemon == nil {
+	if s.engineAPI == nil {
 		return down
 	}
-	if _, err := s.daemon.Ping(ctx); err != nil {
+	if _, err := s.engineAPI.Ping(ctx); err != nil {
 		if errors.Is(err, model.ErrEngineDown) {
 			return down
 		}
@@ -151,7 +151,7 @@ func (s *Service) EngineUp(ctx context.Context) error {
 
 // value: every name All machines holds, and for a VM's name the Mac it is
 // on, worded as the owner reads it: This Mac, or that Mac's short name.
-func (s *Service) claims(ctx context.Context) (held map[string]claim, on map[string]string, err error) {
+func (s *Machinist) claims(ctx context.Context) (held map[string]claim, on map[string]string, err error) {
 	allMachines, err := s.AllMachines(ctx, false)
 	if err != nil {
 		return nil, nil, err
@@ -180,7 +180,7 @@ func (s *Service) claims(ctx context.Context) (held map[string]claim, on map[str
 // value: the memory a new VM may take on this Mac: what it has, less what
 // macOS keeps and what its running VMs hold; unknown when the Mac does not
 // say what it has.
-func (s *Service) memoryLeft(ctx context.Context) (int64, bool) {
+func (s *Machinist) memoryLeft(ctx context.Context) (int64, bool) {
 	total := int64(0)
 	if s.o.Memory != nil {
 		total = s.o.Memory(ctx)
@@ -200,7 +200,7 @@ func (s *Service) memoryLeft(ctx context.Context) (int64, bool) {
 	return left, true
 }
 
-func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress func(model.Step)) (model.Created, error) {
+func (s *Machinist) Create(ctx context.Context, r model.CreateRequest, progress func(model.Step)) (model.Created, error) {
 	// invariant: the profiles' ports are reserved before the VM first runs, and
 	// their rendered variables go into the record, fixed for the VM's life; a
 	// failure after the clone and before the first run rolls every made thing
@@ -226,7 +226,7 @@ func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress fu
 	server := r.Lifetime == model.AlwaysOn
 	rec := model.VMRecord{
 		Name: r.Name, Image: r.Image, Version: version, Lifetime: r.Lifetime, Network: r.Network, Check: r.Check,
-		Resources: r.Resources, CreatedAt: s.h.Now().UTC().Truncate(time.Second),
+		Resources: r.Size, CreatedAt: s.h.Now().UTC().Truncate(time.Second),
 	}
 	if r.Lifetime == model.Permanent || server {
 		rec.Want = model.WantRunning
@@ -242,7 +242,7 @@ func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress fu
 		return fail("the clone", err)
 	}
 	made.vm = true
-	if err = s.engine.Resize(ctx, r.Name, r.Resources.Size()); err != nil {
+	if err = s.engine.Resize(ctx, r.Name, r.Size.Size()); err != nil {
 		return fail("the resize", err)
 	}
 	if err = s.writeRecord(rec); err != nil {
@@ -252,7 +252,7 @@ func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress fu
 	var reserved []model.Reserved
 	var env map[string]string
 	if !server {
-		say("reserving its services")
+		say("reserving its ports")
 		made.reservations = true
 		if reserved, env, err = s.reserveProfiles(ctx, r.Name); err != nil {
 			return fail("the reservations", err)
@@ -263,7 +263,7 @@ func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress fu
 		}
 	}
 	say(model.StepRunning)
-	if err = s.daemon.Do(ctx, "run", r.Name); err != nil {
+	if err = s.engineAPI.Do(ctx, "run", r.Name); err != nil {
 		return model.Created{}, s.unhealthy(ctx, r.Name, err)
 	}
 	say(model.StepAddress)
@@ -282,7 +282,7 @@ func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress fu
 	return model.Created{
 		VM: model.VM{
 			Name: r.Name, Image: r.Image, Version: version, Mac: s.thisMac(cfg), Kind: img.Kind, Lifetime: r.Lifetime,
-			State: model.Running, Resources: r.Resources, Network: r.Network, IP: ip, Check: r.Check, CreatedAt: rec.CreatedAt,
+			State: model.Running, Resources: r.Size, Network: r.Network, IP: ip, Check: r.Check, CreatedAt: rec.CreatedAt,
 		},
 		Ports: reserved,
 		Env:   env,
@@ -291,13 +291,13 @@ func (s *Service) Create(ctx context.Context, r model.CreateRequest, progress fu
 
 // invariant: a workspace is set up by its image's first boot; a server is
 // set up by its owner's own tooling, so station only waits for its ssh.
-func (s *Service) setUp(ctx context.Context, img catalog.Image, r model.CreateRequest) error {
+func (s *Machinist) setUp(ctx context.Context, img catalog.Image, r model.CreateRequest) error {
 	if r.Lifetime != model.AlwaysOn {
 		return s.firstBoot(ctx, img, r.Name, r.Lifetime)
 	}
 	ctx, cancel := context.WithTimeout(ctx, sshWait)
 	defer cancel()
-	out, err := s.daemon.GuestExec(ctx, r.Name, "true", "")
+	out, err := s.engineAPI.GuestExec(ctx, r.Name, "true", "")
 	switch {
 	case err != nil:
 		return err
@@ -310,7 +310,7 @@ func (s *Service) setUp(ctx context.Context, img catalog.Image, r model.CreateRe
 // invariant: once its first run is asked, a VM is kept whatever fails
 // (CR-15, CR-16): a run the hypervisor never began did not boot; one that
 // runs failed the first health step that did not pass (SPEC §7.2).
-func (s *Service) unhealthy(ctx context.Context, name string, cause error) error {
+func (s *Machinist) unhealthy(ctx context.Context, name string, cause error) error {
 	if s.engineState(ctx, name) != contract.DiskRunning {
 		return &model.DidNotBootError{Name: name, Cause: cause}
 	}
@@ -320,9 +320,9 @@ func (s *Service) unhealthy(ctx context.Context, name string, cause error) error
 	return &model.UnhealthyError{Name: name, Step: model.StepSSH, Detail: "none after 30 s"}
 }
 
-func (s *Service) reserveProfiles(ctx context.Context, name string) (reserved []model.Reserved, env map[string]string, err error) {
+func (s *Machinist) reserveProfiles(ctx context.Context, name string) (reserved []model.Reserved, env map[string]string, err error) {
 	for _, p := range catalog.Profiles {
-		got, err := s.daemon.Reserve(ctx, name, p.Port, p.Name)
+		got, err := s.engineAPI.Reserve(ctx, name, p.Port, p.Name)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -335,7 +335,7 @@ type made struct{ vm, record, reservations bool }
 
 // invariant: the rollback is best effort and runs every step whatever fails, so a
 // half-made VM leaves as little as it can; what it reports is the create's failure.
-func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
+func (s *Machinist) undoCreate(ctx context.Context, name string, m *made) {
 	if m.reservations && s.rel != nil {
 		_ = s.rel.ReleaseVM(ctx, name)
 	}
@@ -348,7 +348,7 @@ func (s *Service) undoCreate(ctx context.Context, name string, m *made) {
 	s.removeFiles(name, m.record)
 }
 
-func (s *Service) removeFiles(name string, record bool) {
+func (s *Machinist) removeFiles(name string, record bool) {
 	for _, f := range []string{s.LogPath(name), s.KnownHostsPath(name)} {
 		_ = s.h.Remove(f)
 	}
@@ -357,8 +357,8 @@ func (s *Service) removeFiles(name string, record bool) {
 	}
 }
 
-func (s *Service) Save(r model.VMRecord) error { return s.writeRecord(r) }
+func (s *Machinist) Save(r model.VMRecord) error { return s.writeRecord(r) }
 
-func (s *Service) writeRecord(r model.VMRecord) error {
+func (s *Machinist) writeRecord(r model.VMRecord) error {
 	return s.recs.Put(context.Background(), storedOf(r))
 }

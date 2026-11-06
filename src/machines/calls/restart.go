@@ -18,7 +18,7 @@ const (
 	returnBudget = 180 * time.Second
 )
 
-func (s *Service) Restart(ctx context.Context, name string, progress func(model.RestartEvent)) (model.RestartReport, error) {
+func (s *Machinist) Restart(ctx context.Context, name string, progress func(model.RestartEvent)) (model.RestartReport, error) {
 	if err := s.CheckMac(); err != nil {
 		return model.RestartReport{}, err
 	}
@@ -67,7 +67,7 @@ func wrap(err error, name, phase string) error {
 	return err
 }
 
-func (s *Service) await(ctx context.Context, name string, up bool, budget time.Duration) error {
+func (s *Machinist) await(ctx context.Context, name string, up bool, budget time.Duration) error {
 	for waited := time.Duration(0); ; waited += pollEvery {
 		if s.answers(ctx, name) == up {
 			return nil
@@ -81,13 +81,13 @@ func (s *Service) await(ctx context.Context, name string, up bool, budget time.D
 	}
 }
 
-func (s *Service) AwaitAnswer(ctx context.Context, mac string) bool {
+func (s *Machinist) AwaitAnswer(ctx context.Context, mac string) bool {
 	return s.await(ctx, mac, true, returnBudget) == nil
 }
 
-func (s *Service) Answers(ctx context.Context, mac string) bool { return s.answers(ctx, mac) }
+func (s *Machinist) Answers(ctx context.Context, mac string) bool { return s.answers(ctx, mac) }
 
-func (s *Service) answers(ctx context.Context, mac string) bool {
+func (s *Machinist) answers(ctx context.Context, mac string) bool {
 	return s.o.Answers != nil && s.o.Answers(ctx, mac)
 }
 

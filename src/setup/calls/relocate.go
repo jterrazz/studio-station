@@ -23,7 +23,7 @@ type Configurer interface {
 	Configure(ctx context.Context, item string, interactive bool) error
 }
 
-func (s *Service) placedApps() []catalog.App {
+func (s *Provisioner) placedApps() []catalog.App {
 	var out []catalog.App
 	for _, t := range s.o.Apps {
 		if slices.Contains(t.LivesOn(), s.o.Kind) {
@@ -33,7 +33,7 @@ func (s *Service) placedApps() []catalog.App {
 	return out
 }
 
-func (s *Service) relocate(ctx context.Context, interactive bool) (setup.Step, error) {
+func (s *Provisioner) relocate(ctx context.Context, interactive bool) (setup.Step, error) {
 	written, notes, err := s.writeAppFiles()
 	if err != nil {
 		return failed(stepRelocate, err)
@@ -60,7 +60,7 @@ func (s *Service) relocate(ctx context.Context, interactive bool) (setup.Step, e
 	return setup.Step{Name: stepRelocate, State: catalog.StateOK, Detail: strings.Join(parts, ", "), Changed: true}, nil
 }
 
-func (s *Service) writeAppFiles() (written, notes []string, err error) {
+func (s *Provisioner) writeAppFiles() (written, notes []string, err error) {
 	byFile := map[catalog.AppFile][]catalog.Relocation{}
 	var order []catalog.AppFile
 	for _, t := range s.placedApps() {
@@ -140,7 +140,7 @@ func UpsertEnvLine(text, key, value string) (updated string, changed bool, handS
 	return text + key + "=" + value + "\n", true, ""
 }
 
-func (s *Service) moveMisplaced(ctx context.Context, interactive bool) (moved, notes []string, err error) {
+func (s *Provisioner) moveMisplaced(ctx context.Context, interactive bool) (moved, notes []string, err error) {
 	for _, t := range s.placedApps() {
 		for _, st := range t.Disk.Misplaced {
 			if !s.pending(st) {
@@ -149,7 +149,7 @@ func (s *Service) moveMisplaced(ctx context.Context, interactive bool) (moved, n
 			if st.Busy != "" && s.busy(ctx, st.Busy) {
 				return moved, notes, &setup.BusyError{Process: st.Busy}
 			}
-			did, conflicts, moveErr := s.moveStray(st)
+			did, conflicts, moveErr := s.moveOne(st)
 			notes = append(notes, conflicts...)
 			if moveErr != nil {
 				return moved, notes, moveErr
@@ -173,7 +173,7 @@ func (s *Service) moveMisplaced(ctx context.Context, interactive bool) (moved, n
 	return moved, notes, nil
 }
 
-func (s *Service) pending(st catalog.Misplaced) bool {
+func (s *Provisioner) pending(st catalog.Misplaced) bool {
 	for _, m := range st.Move {
 		if len(s.m.Glob(s.o.Expand.Expand(m.From))) > 0 {
 			return true
@@ -182,7 +182,7 @@ func (s *Service) pending(st catalog.Misplaced) bool {
 	return false
 }
 
-func (s *Service) busy(ctx context.Context, process string) bool {
+func (s *Provisioner) busy(ctx context.Context, process string) bool {
 	_, code, err := s.m.Output(ctx, "pgrep", []string{"-x", process}, busyBudget)
 	return err == nil && code == 0
 }
@@ -190,7 +190,7 @@ func (s *Service) busy(ctx context.Context, process string) bool {
 // invariant: every move is one rename(2), never a copy: an entry glob moves each
 // match into the destination folder and keeps the owner's file where one of the same
 // name is already there; a whole folder refuses a destination that holds anything.
-func (s *Service) moveStray(st catalog.Misplaced) (did bool, conflicts []string, err error) {
+func (s *Provisioner) moveOne(st catalog.Misplaced) (did bool, conflicts []string, err error) {
 	for _, m := range st.Move {
 		from, to := s.o.Expand.Expand(m.From), s.o.Expand.Expand(m.To)
 		entries := strings.HasSuffix(m.From, "/*")
@@ -216,7 +216,7 @@ func (s *Service) moveStray(st catalog.Misplaced) (did bool, conflicts []string,
 	return did, conflicts, nil
 }
 
-func (s *Service) empty(p string) bool {
+func (s *Provisioner) empty(p string) bool {
 	dir, found := s.m.IsDir(p)
 	if !found {
 		return true
@@ -228,7 +228,7 @@ func (s *Service) empty(p string) bool {
 	return err == nil && len(entries) == 0
 }
 
-func (s *Service) rename(from, to string) error {
+func (s *Provisioner) rename(from, to string) error {
 	if err := s.m.MkdirAll(path.Dir(to), 0o755); err != nil {
 		return err
 	}

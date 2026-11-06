@@ -27,7 +27,7 @@ const (
 // installs the image key.
 var baseAdmin = Login{User: "admin", Password: "admin"}
 
-func (s *Service) recipeSHA(img catalog.Image) (string, error) {
+func (s *Builder) recipeSHA(img catalog.Image) (string, error) {
 	h := sha256.New()
 	for _, file := range []string{img.Recipe, img.Cleanup, img.Firstboot} {
 		data, err := catalog.Recipes.ReadFile(file)
@@ -39,7 +39,7 @@ func (s *Service) recipeSHA(img catalog.Image) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-func (s *Service) selection(ctx context.Context, names []string) ([]catalog.Image, error) {
+func (s *Builder) selection(ctx context.Context, names []string) ([]catalog.Image, error) {
 	if len(names) > 0 {
 		var out []catalog.Image
 		for _, name := range names {
@@ -79,7 +79,7 @@ func (s *Service) selection(ctx context.Context, names []string) ([]catalog.Imag
 	return out, nil
 }
 
-func (s *Service) Build(ctx context.Context, r images.BuildRequest, progress func(images.Step)) ([]images.Record, error) {
+func (s *Builder) Build(ctx context.Context, r images.BuildRequest, progress func(images.Step)) ([]images.Record, error) {
 	wanted, err := s.selection(ctx, r.Images)
 	if err != nil || len(wanted) == 0 {
 		return nil, err
@@ -108,13 +108,13 @@ func (s *Service) Build(ctx context.Context, r images.BuildRequest, progress fun
 	return built, nil
 }
 
-func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string, progress func(images.Step)) (images.Record, error) {
+func (s *Builder) buildOne(ctx context.Context, img catalog.Image, binary string, progress func(images.Step)) (images.Record, error) {
 	vm := buildPrefix + img.Name
 	failed := func(step string, cause error) (images.Record, error) {
 		// invariant: a failed build leaves no VM behind; the cleanup survives a cancelled ctx.
-		clean := context.WithoutCancel(ctx)
-		_ = s.e.Shutdown(clean, vm, 10*time.Second)
-		_ = s.e.Delete(clean, vm)
+		detached := context.WithoutCancel(ctx)
+		_ = s.e.Shutdown(detached, vm, 10*time.Second)
+		_ = s.e.Delete(detached, vm)
 		return images.Record{}, &images.BuildFailedError{Image: img.Name, Step: step, Cause: cause}
 	}
 	version, err := s.nextVersion(img.Name)
@@ -196,7 +196,7 @@ func (s *Service) buildOne(ctx context.Context, img catalog.Image, binary string
 	return rec, nil
 }
 
-func (s *Service) dropLeftover(ctx context.Context, vm string) error {
+func (s *Builder) dropLeftover(ctx context.Context, vm string) error {
 	disks, err := s.e.Disks(ctx)
 	if err != nil {
 		return err
@@ -208,7 +208,7 @@ func (s *Service) dropLeftover(ctx context.Context, vm string) error {
 	return nil
 }
 
-func (s *Service) waitStopped(ctx context.Context, vm string) error {
+func (s *Builder) waitStopped(ctx context.Context, vm string) error {
 	for range int(stopWait / pollEvery) {
 		disks, err := s.e.Disks(ctx)
 		if err != nil {
@@ -226,9 +226,9 @@ func (s *Service) waitStopped(ctx context.Context, vm string) error {
 	return fmt.Errorf("still running after %d s", int(stopWait/time.Second))
 }
 
-func (s *Service) KeyPath() string { return s.o.Key }
+func (s *Builder) KeyPath() string { return s.o.Key }
 
-func (s *Service) imageKey(ctx context.Context) (key, pub string, err error) {
+func (s *Builder) imageKey(ctx context.Context) (key, pub string, err error) {
 	key = s.KeyPath()
 	if !s.m.Exists(key) {
 		if made := s.m.MakeKey(ctx, key); made != nil {
@@ -242,7 +242,7 @@ func (s *Service) imageKey(ctx context.Context) (key, pub string, err error) {
 	return key, string(data), nil
 }
 
-func (s *Service) copy(ctx context.Context, b BuildVM, binary string) error {
+func (s *Builder) copy(ctx context.Context, b BuildVM, binary string) error {
 	data, err := s.m.ReadFile(binary)
 	if err != nil {
 		return err

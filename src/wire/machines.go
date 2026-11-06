@@ -45,7 +45,7 @@ const (
 	lanBudget = 2 * time.Second
 )
 
-func (m machine) machines(_ bool) *machinescalls.Service {
+func (m machine) machines(_ bool) *machinescalls.Machinist {
 	knownHosts := filepath.Join(m.paths.State, "known_hosts")
 	return machinescalls.New(macSystem{m.sys}, m.hypervisor(), machinescalls.Prefs{Name: m.stores.name(), Macs: m.stores.macs(), VMUser: m.stores.vmUser()}, m.stores.machines, macNodes{tailnet: m.tailnet()}, allMachinesImages{images: m.images()}, machinesEngine{m.macEngine()}, reservationReleaser{m: m}, machinescalls.Options{
 		ThisMachine: m.kind,
@@ -150,7 +150,7 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		}, Pausing: m.pausing(env), ThisMachine: m.where}, env),
 		machinesdelete.Command(machinesdelete.Deps{Names: vms.Names, ThisMachine: m.where}, env),
 		machinesedit.Command(machinesedit.Deps{Names: vms.Names, Resources: model.ParseResources, ThisMachine: m.where}, env),
-		machinesprobe.Command(machinesprobe.Deps{Names: vms.Names, Overview: overview}, env),
+		machinesprobe.Alias(machinesprobe.Deps{Names: vms.Names, Overview: overview}, env),
 		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: vms.Names, ThisMachine: m.where}, env),
 		machinesadd.Command(machinesadd.Deps{ThisMachine: m.where}, env),
 		machinesforget.Command(machinesforget.Deps{Names: vms.Names, ThisMachine: m.where}, env),
@@ -162,7 +162,7 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 
 func (m machine) pausing(env kit.Env) func(mac string) []string {
 	return func(mac string) []string {
-		vms, _ := machineCalls{Service: m.machines(env.Interactive), m: m}.VMsOf(context.Background(), mac)
+		vms, _ := machineCalls{Machinist: m.machines(env.Interactive), m: m}.VMsOf(context.Background(), mac)
 		var names []string
 		for _, vm := range model.Ordered(vms) {
 			if vm.State == model.Running {
@@ -173,7 +173,7 @@ func (m machine) pausing(env kit.Env) func(mac string) []string {
 	}
 }
 
-func createCheck(s *machinescalls.Service) func(ctx context.Context, r model.CreateRequest) (bool, error) {
+func createCheck(s *machinescalls.Machinist) func(ctx context.Context, r model.CreateRequest) (bool, error) {
 	return func(ctx context.Context, r model.CreateRequest) (bool, error) {
 		_, err := s.CheckCreate(ctx, r)
 		var unbuilt *model.NoImageError
@@ -185,12 +185,12 @@ func createCheck(s *machinescalls.Service) func(ctx context.Context, r model.Cre
 }
 
 type vmPipe struct {
-	*machinescalls.Service
+	*machinescalls.Machinist
 	sockets local.Sockets
 }
 
 func (p vmPipe) Pipe(ctx context.Context, vm string, in io.Reader, out io.Writer) error {
-	return p.Service.Pipe(ctx, vm, func(ctx context.Context, ip string, port int) error {
+	return p.Machinist.Pipe(ctx, vm, func(ctx context.Context, ip string, port int) error {
 		return p.sockets.Pipe(ctx, ip, port, in, out)
 	})
 }
@@ -203,7 +203,7 @@ func (p vmPipe) Check(ctx context.Context, vm string) error {
 // invariant: the machines calls' Deps over today's service: each check the
 // leaves ran before, worded by the service's own errors.
 type machineCalls struct {
-	*machinescalls.Service
+	*machinescalls.Machinist
 	m machine
 }
 
@@ -251,7 +251,7 @@ func (c machineCalls) Running(ctx context.Context, name string) (bool, error) {
 }
 
 func (c machineCalls) Restart(ctx context.Context, name string) (model.RestartReport, error) {
-	return c.Service.Restart(ctx, name, nil)
+	return c.Machinist.Restart(ctx, name, nil)
 }
 
 func (c machineCalls) CheckRemoteMac(name, verb string) (string, error) {
@@ -263,7 +263,7 @@ func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool)
 	if !interactive {
 		return &model.NeedsTerminalError{Verb: "machines unlock"}
 	}
-	return c.Service.Unlock(ctx, name)
+	return c.Machinist.Unlock(ctx, name)
 }
 
 func (c machineCalls) VMsOf(ctx context.Context, name string) ([]model.VM, error) {
@@ -284,7 +284,7 @@ func (c machineCalls) CheckRemote(name string) error {
 	return err
 }
 
-type allMachinesImages struct{ images *imagescalls.Service }
+type allMachinesImages struct{ images *imagescalls.Builder }
 
 func (i allMachinesImages) KeyPath() string { return i.images.KeyPath() }
 

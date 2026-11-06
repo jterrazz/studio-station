@@ -536,6 +536,8 @@ func (d *Engine) write(v *vmState, msg any) {
 	}
 }
 
+// value: alias of hello v1, the line a guest of any version reads: its
+// keys keep the words v2 wrote.
 func (d *Engine) hello(v *vmState) {
 	p := d.policy()
 	keys := d.hostKeys()

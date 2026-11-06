@@ -9,7 +9,7 @@ runs:
     - command: 'machines unlock linux-1'
       exit: 2
       stderr: |
-          Error: "linux-1" is a VM, not a host
+          Error: "linux-1" is a VM, not a Mac
           Hint: run station machines for the hosts
     - command: 'machines unlock nope'
       exit: 2

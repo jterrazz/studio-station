@@ -112,10 +112,10 @@ func (m *Keeper) changed() {
 
 func unsupported(err error) bool { return errors.Is(err, contract.ErrUnsupported) }
 
-// invariant: resetting the clamshell is the safe direction, so a reset that
+// invariant: clearing the clamshell mask is the safe direction, so a clear that
 // fails is retried at every poll until it passes; a Mac with no power
-// management has nothing to reset.
-func (m *Keeper) resetLocked() {
+// management has nothing to clear.
+func (m *Keeper) clearClamshellLocked() {
 	err := m.port.Clamshell(false)
 	switch {
 	case err == nil:
@@ -124,14 +124,14 @@ func (m *Keeper) resetLocked() {
 		m.unreset = false
 	default:
 		m.unreset = true
-		m.log("reset failed, retried in 30s: " + err.Error())
+		m.log("clearing the clamshell mask failed, retried in 30s: " + err.Error())
 	}
 }
 
-func (m *Keeper) Reset() {
+func (m *Keeper) ClearClamshell() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.resetLocked()
+	m.clearClamshellLocked()
 }
 
 func (m *Keeper) Held() bool {
@@ -236,7 +236,7 @@ func (m *Keeper) endLocked(reason, detail string) (awake.End, time.Duration) {
 		m.release()
 	}
 	m.release, m.session, m.heavySince, m.held = nil, nil, time.Time{}, ""
-	m.resetLocked()
+	m.clearClamshellLocked()
 	e := awake.End{At: now, Reason: reason, Detail: detail}
 	m.lastEnd = &e
 	m.log("ended (" + reason + ": " + detail + ")")
@@ -277,7 +277,7 @@ func (m *Keeper) Quit() {
 	m.releaseNeverLocked()
 	m.mu.Unlock()
 	if !m.finish(awake.ReasonQuit, "the engine stopped") {
-		m.Reset()
+		m.ClearClamshell()
 	}
 }
 
@@ -371,7 +371,7 @@ func (m *Keeper) Tick() {
 	}
 	m.polled = now
 	if m.unreset && m.session == nil {
-		m.resetLocked()
+		m.clearClamshellLocked()
 	}
 	if m.session == nil {
 		told, changed := "", false

@@ -39,7 +39,7 @@ func (m engineMac) ListenUnix(path string) (process.Listener, error) {
 }
 
 func (m engineMac) ListenLoopback(port int) (process.Listener, error) {
-	l, err := m.Sockets.ListenTCP(ports.LocalHost, port)
+	l, err := m.Sockets.ListenTCP(ports.Loopback, port)
 	if err != nil {
 		return nil, err
 	}

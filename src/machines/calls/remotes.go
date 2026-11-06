@@ -14,9 +14,9 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
-func (s *Service) Lookup(_ context.Context, name string) (Machine, error) { return s.lookup(name) }
+func (s *Machinist) Lookup(_ context.Context, name string) (Machine, error) { return s.lookup(name) }
 
-func (s *Service) lookup(name string) (Machine, error) {
+func (s *Machinist) lookup(name string) (Machine, error) {
 	cfg, err := s.prefs()
 	if err != nil {
 		return Machine{}, err
@@ -43,7 +43,7 @@ func (s *Service) lookup(name string) (Machine, error) {
 	return Machine{}, &model.UnknownMachineError{Name: name}
 }
 
-func (s *Service) Remote(name string) (Machine, error) {
+func (s *Machinist) Remote(name string) (Machine, error) {
 	// invariant: another machine is never This Mac, by any of its names,
 	// registered or not.
 	if cfg, err := s.prefs(); err == nil {
@@ -61,7 +61,7 @@ func (s *Service) Remote(name string) (Machine, error) {
 	return m, nil
 }
 
-func (s *Service) RemoteMac(name, verb string) (Machine, error) {
+func (s *Machinist) RemoteMac(name, verb string) (Machine, error) {
 	m, err := s.Remote(name)
 	var thisMac *model.ThisMachineError
 	if errors.As(err, &thisMac) {
@@ -76,7 +76,7 @@ func (s *Service) RemoteMac(name, verb string) (Machine, error) {
 	return m, nil
 }
 
-func (s *Service) Init(name string) error {
+func (s *Machinist) Init(name string) error {
 	if !validName(name) {
 		return &model.BadNameError{Name: name}
 	}
@@ -100,7 +100,7 @@ func (s *Service) Init(name string) error {
 	return nil
 }
 
-func (s *Service) AddMac(ctx context.Context, name string, h model.MacRecord) error {
+func (s *Machinist) AddMac(ctx context.Context, name string, h model.MacRecord) error {
 	if err := s.CheckMac(); err != nil {
 		return err
 	}
@@ -134,12 +134,12 @@ func (s *Service) AddMac(ctx context.Context, name string, h model.MacRecord) er
 	}
 	if err := s.o.SSHConfig.Put(ctx, []contract.MachineBlock{{Name: name, User: h.User, Key: h.Key}}); err != nil {
 		_ = s.p.Macs.Set(before)
-		return configFailure(err, true)
+		return blocksFailure(err, true)
 	}
 	return nil
 }
 
-func (s *Service) ForgetMac(ctx context.Context, name string) error {
+func (s *Machinist) ForgetMac(ctx context.Context, name string) error {
 	if err := s.CheckMac(); err != nil {
 		return err
 	}
@@ -155,17 +155,17 @@ func (s *Service) ForgetMac(ctx context.Context, name string) error {
 	if err := s.p.Macs.Set(cfg.Macs); err != nil {
 		return err
 	}
-	return configFailure(s.o.SSHConfig.Remove(ctx, m.Name), false)
+	return blocksFailure(s.o.SSHConfig.Remove(ctx, m.Name), false)
 }
 
-func (s *Service) thisMac(cfg prefsView) string {
+func (s *Machinist) thisMac(cfg prefsView) string {
 	if cfg.ThisMachine != "" {
 		return cfg.ThisMachine
 	}
 	return strings.ToLower(s.h.Hostname())
 }
 
-func (s *Service) OtherMacs() []string {
+func (s *Machinist) OtherMacs() []string {
 	// value: every host of the fleet but this one, by name.
 	cfg, err := s.prefs()
 	if err != nil {
@@ -182,7 +182,7 @@ func (s *Service) OtherMacs() []string {
 	return others
 }
 
-func (s *Service) Names() []string {
+func (s *Machinist) Names() []string {
 	cfg, err := s.prefs()
 	if err != nil {
 		return nil
@@ -200,7 +200,7 @@ func (s *Service) Names() []string {
 	return names
 }
 
-func (s *Service) Remember(_ context.Context, f model.AllMachines) error {
+func (s *Machinist) Remember(_ context.Context, f model.AllMachines) error {
 	cfg, err := s.prefs()
 	if err != nil {
 		return err

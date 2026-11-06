@@ -23,7 +23,7 @@ func (e Expander) Expand(pattern string) string {
 	if strings.HasPrefix(pattern, "/") {
 		return path.Join("/", e.Root, pattern)
 	}
-	for prefix, root := range map[string]string{"{config}": e.Roots.Config, "{data}": e.Roots.Data, "{state}": e.Roots.State, "{cache}": e.Roots.Cache} {
+	for prefix, root := range map[string]string{"{config}": e.Roots.Prefs, "{data}": e.Roots.Data, "{state}": e.Roots.State, "{cache}": e.Roots.Cache} {
 		if pattern == prefix {
 			return root
 		}

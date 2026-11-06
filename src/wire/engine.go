@@ -56,7 +56,7 @@ func (m machine) engine(env kit.Env) *process.Engine {
 		calls = remote.NewRouter(registry, m.profile, remote.Reach{})
 	}
 	menubar := feeds.Menubar{Calls: calls, Clock: m.sys.Clock, ThisMachine: m.where, Report: func(v awake.View) *awake.Report {
-		return &awake.Report{Now: m.sys.Clock.Now(), Zone: time.Local, Engine: awake.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
+		return &awake.Report{Now: m.sys.Clock.Now(), Zone: time.Local, Engine: awake.EngineRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	}, EveryMac: func(ctx context.Context) (pageawake.AllMachines, error) {
 		inside := env
 		inside.Calls = calls
@@ -237,7 +237,7 @@ func nameOf(url string) string {
 
 type portsEngine struct{ c engineAPI }
 
-func (d portsEngine) Services(ctx context.Context) (ports.MacPorts, error) {
+func (d portsEngine) MacPorts(ctx context.Context) (ports.MacPorts, error) {
 	var v ports.MacPorts
 	err := d.c.do(ctx, engine.CallPorts, nil, &v)
 	return v, downAs(err, ports.ErrEngineDown)
@@ -301,7 +301,7 @@ func (r reservationReleaser) forgetDeclarations(ctx context.Context, vm string) 
 
 type engineInstaller struct {
 	m        machine
-	machines *machinescalls.Service
+	machines *machinescalls.Machinist
 }
 
 func (i engineInstaller) env() map[string]string {

@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/disk"
 )
 
 const (
-	subject     = "storage"
+	subject     = "disk"
 	pending     = int64(-2)
 	globWorkers = 8
 )
@@ -60,17 +60,17 @@ type reading struct {
 	fresh bool
 }
 
-func (s *Service) Watch(ctx context.Context) <-chan disk.Survey {
-	return probe.Stream(ctx, s.o.Pool, subject, s.watch)
+func (s *Surveyor) Watch(ctx context.Context) <-chan disk.Survey {
+	return lanes.Stream(ctx, s.o.Pool, subject, s.watch)
 }
 
-func (s *Service) Forget() { s.o.Pool.Forget(subject) }
+func (s *Surveyor) Forget() { s.o.Pool.Forget(subject) }
 
 // invariant: the frame is every placed entry whose declared paths exist, read
 // with a glob and a stat each; one walk then sizes every root of every row and
 // the other caches together, and a row's size fills when its last root
 // answers, its mark when its own tool answers the inventory.
-func (s *Service) watch(ctx context.Context) <-chan disk.Survey {
+func (s *Surveyor) watch(ctx context.Context) <-chan disk.Survey {
 	p := s.plan()
 	frame := reading{sizes: make([]int64, len(p.roots)), known: make([]int64, len(p.roots)), containers: pending}
 	known := s.loadKnown()
@@ -82,9 +82,9 @@ func (s *Service) watch(ctx context.Context) <-chan disk.Survey {
 		}
 	}
 	budget := s.walkBudget()
-	jobs := []probe.Job[reading]{
+	jobs := []lanes.Job[reading]{
 		{
-			Key: subject + "/walk", Lane: probe.Walks, Budget: budget,
+			Key: subject + "/walk", Lane: lanes.Walks, Budget: budget,
 			Partial: func(ctx context.Context, emit func(func(*reading))) func(*reading) {
 				var mu sync.Mutex
 				answered := slices.Repeat([]int64{unmeasured}, len(p.roots))
@@ -108,7 +108,7 @@ func (s *Service) watch(ctx context.Context) <-chan disk.Survey {
 			},
 		},
 		{
-			Key: subject + "/installed", Lane: probe.Inline,
+			Key: subject + "/installed", Lane: lanes.Inline,
 			Partial: func(ctx context.Context, emit func(func(*reading))) func(*reading) {
 				s.eachInstalled(ctx, func(installed map[string]bool) {
 					emit(func(r *reading) { r.installed = installed })
@@ -118,7 +118,7 @@ func (s *Service) watch(ctx context.Context) <-chan disk.Survey {
 			Late: func(r *reading) { r.listed = true },
 		},
 		{
-			Key: subject + "/containers", Lane: probe.Inline,
+			Key: subject + "/containers", Lane: lanes.Inline,
 			Do: func(ctx context.Context) func(*reading) {
 				bytes := int64(0)
 				if name := containersEntry(p); name != "" && s.isInstalled(ctx, name) {
@@ -129,7 +129,7 @@ func (s *Service) watch(ctx context.Context) <-chan disk.Survey {
 			Late: func(r *reading) { r.containers = unmeasured },
 		},
 	}
-	readings := probe.Run(ctx, s.o.Pool, frame, jobs, func(r reading) reading {
+	readings := lanes.Run(ctx, s.o.Pool, frame, jobs, func(r reading) reading {
 		return reading{sizes: slices.Clone(r.sizes), known: r.known, fresh: r.fresh, installed: maps.Clone(r.installed), listed: r.listed, containers: r.containers}
 	})
 	out := make(chan disk.Survey)
@@ -155,7 +155,7 @@ func containersEntry(p plan) string {
 	return ""
 }
 
-func (s *Service) plan() plan {
+func (s *Surveyor) plan() plan {
 	var p plan
 	index := map[string]int{}
 	root := func(abs string) int {
@@ -211,7 +211,7 @@ func (s *Service) plan() plan {
 
 // value: the frame's globs are independent reads of the disk, so they run at
 // once, a few at a time, and the frame costs its slowest, not their sum.
-func (s *Service) globAll(placed []disk.Entry) map[string][]string {
+func (s *Surveyor) globAll(placed []disk.Entry) map[string][]string {
 	var patterns []string
 	for _, e := range placed {
 		for _, st := range e.Disk.Paths {
@@ -249,7 +249,7 @@ func (s *Service) globAll(placed []disk.Entry) map[string][]string {
 	return out
 }
 
-func (s *Service) assemble(p plan, r reading) disk.Survey {
+func (s *Surveyor) assemble(p plan, r reading) disk.Survey {
 	report := disk.Survey{Rows: []disk.Tally{}, Misplaced: []disk.MisplacedReport{}}
 	for _, ep := range p.entries {
 		row, show := s.row(ep, r)
@@ -267,7 +267,7 @@ func (s *Service) assemble(p plan, r reading) disk.Survey {
 	return report
 }
 
-func (s *Service) row(ep entryPlan, r reading) (disk.Tally, bool) {
+func (s *Surveyor) row(ep entryPlan, r reading) (disk.Tally, bool) {
 	e := ep.entry
 	installed := r.installed[e.Name] || e.Name == disk.StationName
 	_, answered := r.installed[e.Name]
@@ -337,14 +337,14 @@ func (s *Service) row(ep entryPlan, r reading) (disk.Tally, bool) {
 	return row, e.Name == disk.StationName || row.Total() != 0
 }
 
-func (s *Service) walkBudget() time.Duration {
+func (s *Surveyor) walkBudget() time.Duration {
 	if s.o.Budget > 0 {
 		return s.o.Budget
 	}
 	return sizeBudget
 }
 
-func (s *Service) unknown(e disk.Entry, installed bool, within time.Duration) disk.Tally {
+func (s *Surveyor) unknown(e disk.Entry, installed bool, within time.Duration) disk.Tally {
 	row := disk.Tally{Entry: e, Installed: installed, Unknown: true, Within: within, Bytes: map[catalog.Level]int64{}, Install: unmeasured, Paths: []disk.PathReport{}, Misplaced: []disk.MisplacedReport{}, State: catalog.StateAbsent}
 	if installed {
 		row.State = catalog.StateOK

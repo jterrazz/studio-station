@@ -70,7 +70,7 @@ func TestARowPastTheBudgetIsUnknownAndDelaysNoOtherRow(t *testing.T) {
 		{Name: "slow", Installs: catalog.MacOnly(catalog.Cask("slow")), Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/slow/*", Level: catalog.LevelCache}}}},
 		{Name: "fast", Installs: catalog.MacOnly(catalog.Cask("fast")), Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/fast/*", Level: catalog.LevelCache}}}},
 	}
-	s := NewService(onMachine{Usage: usage}, apps, ServiceOptions{Disk: fs, ThisMachine: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
+	s := NewSurveyor(onMachine{Usage: usage}, apps, SurveyorOptions{Disk: fs, ThisMachine: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Budget: 30 * time.Millisecond})
 
 	waited, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

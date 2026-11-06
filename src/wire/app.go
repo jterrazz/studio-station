@@ -281,18 +281,18 @@ func resolve(raw local.System, door darwin.Door, vars map[string]string, world *
 		return filepath.Join(home, fallback)
 	}
 	roots := setup.Roots{
-		Config: root("XDG_CONFIG_HOME", ".config"),
-		Data:   root("XDG_DATA_HOME", filepath.Join(".local", "share")),
-		State:  root("XDG_STATE_HOME", filepath.Join(".local", "state")),
-		Cache:  root("XDG_CACHE_HOME", ".cache"),
+		Prefs: root("XDG_CONFIG_HOME", ".config"),
+		Data:  root("XDG_DATA_HOME", filepath.Join(".local", "share")),
+		State: root("XDG_STATE_HOME", filepath.Join(".local", "state")),
+		Cache: root("XDG_CACHE_HOME", ".cache"),
 	}
 	paths := setup.Paths{
-		Config: filepath.Join(roots.Config, "station"),
-		Data:   filepath.Join(roots.Data, "station"),
-		State:  filepath.Join(roots.State, "station"),
-		Cache:  filepath.Join(roots.Cache, "station"),
-		Bin:    filepath.Join(home, ".local", "bin"),
-		Roots:  roots,
+		Prefs: filepath.Join(roots.Prefs, "station"),
+		Data:  filepath.Join(roots.Data, "station"),
+		State: filepath.Join(roots.State, "station"),
+		Cache: filepath.Join(roots.Cache, "station"),
+		Bin:   filepath.Join(home, ".local", "bin"),
+		Roots: roots,
 	}
 	st := newStores(h.FS, paths)
 	if world != nil {

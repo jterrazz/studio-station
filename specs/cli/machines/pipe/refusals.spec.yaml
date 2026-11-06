@@ -22,5 +22,5 @@ runs:
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" machines pipe a'
       exit: 2
       stderr: |
-          Error: only a host does this; here is a linux VM
+          Error: only a Mac does this; here is a linux VM
           Hint: run it on a Mac

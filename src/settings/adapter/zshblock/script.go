@@ -18,7 +18,7 @@ const (
 
 type BlockOptions struct {
 	ThisMachine catalog.MachineKind
-	Services    string
+	PortsEnv    string
 	// value: the scripts of the shell functions settings applied here; one
 	// not written is skipped.
 	Functions []string
@@ -52,7 +52,7 @@ func (s *Block) Zsh(ctx context.Context, completion string) (string, error) {
 	if line, ok := s.token(ctx); ok {
 		script += "\n" + line + "\n"
 	}
-	return script + s.services() + s.functions(), nil
+	return script + s.portsEnv() + s.functions(), nil
 }
 
 // invariant: the functions of an applied setting are a file read, like the
@@ -69,11 +69,11 @@ func (s *Block) functions() string {
 
 // invariant: in a VM the profiles' exports the guest wrote are a file read, never
 // a subprocess: a shell start never waits on the host.
-func (s *Block) services() string {
-	if (s.o.ThisMachine != catalog.Linux && s.o.ThisMachine != catalog.MacOS) || s.o.Services == "" {
+func (s *Block) portsEnv() string {
+	if (s.o.ThisMachine != catalog.Linux && s.o.ThisMachine != catalog.MacOS) || s.o.PortsEnv == "" {
 		return ""
 	}
-	data, err := s.files.ReadFile(s.o.Services)
+	data, err := s.files.ReadFile(s.o.PortsEnv)
 	if err != nil || len(data) == 0 {
 		return ""
 	}

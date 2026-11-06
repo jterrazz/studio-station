@@ -7,7 +7,7 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
-func (s *Service) CheckEdit(name string, c model.Change) error {
+func (s *Machinist) CheckEdit(name string, c model.Change) error {
 	rec, err := s.VM(name, "edit")
 	if err != nil {
 		return err
@@ -25,7 +25,7 @@ func (s *Service) CheckEdit(name string, c model.Change) error {
 	return nil
 }
 
-func (s *Service) Edit(ctx context.Context, name string, c model.Change) (model.Edited, error) {
+func (s *Machinist) Edit(ctx context.Context, name string, c model.Change) (model.Edited, error) {
 	// invariant: an edit writes the sizes the VM boots with; a running VM keeps
 	// its own until its next start, and a disk is never shrunk. A server's
 	// check is its record's: the next health run reads it.

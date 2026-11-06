@@ -14,7 +14,7 @@ import (
 
 func (d *Engine) newAwake() *awakecalls.Keeper {
 	return awakecalls.NewKeeper(d.o.Power, d.h, awakecalls.KeeperOptions{
-		Log:    func(m string) { d.logf("power", m) },
+		Log:    func(m string) { d.logf("awake", m) },
 		Notice: func(e awake.End) { d.told(engine.NoticeAwakeEnded, engine.AwakeStopped(e.Detail)) },
 		Told:   func(text string) { d.told(engine.NoticeNeverSleeps, text) },
 		Change: d.hub.changed,
@@ -58,7 +58,7 @@ func (d *Engine) watchAwake(ctx context.Context) {
 	}
 }
 
-func (d *Engine) powerAwake(r engine.AwakeIn) (awake.Awoken, error) {
+func (d *Engine) keepAwake(r engine.AwakeIn) (awake.Awoken, error) {
 	session, refreshed, err := d.awakeJob.Awake(awake.Request{Lid: r.Lid, Battery: r.Battery, For: time.Duration(r.For) * time.Second, By: r.By})
 	s := awake.Awoken{Session: session, Refreshed: refreshed}
 	var rng *awake.RangeError
@@ -74,12 +74,12 @@ func (d *Engine) powerAwake(r engine.AwakeIn) (awake.Awoken, error) {
 		}
 		return s, fault("awake_guard", guard.Error(), hint)
 	case errors.As(err, &none):
-		return s, fault("power_unsupported", none.Error(), catalog.PowerOnItsMac)
+		return s, fault("awake_unsupported", none.Error(), catalog.AwakeOnItsMac)
 	}
 	return s, err
 }
 
-func (d *Engine) powerSleep() engine.AwakeOff {
+func (d *Engine) endAwake() engine.AwakeOff {
 	s := d.awakeJob.Sleep()
 	return engine.AwakeOff{Ended: s.Ended, After: int(s.After.Seconds())}
 }

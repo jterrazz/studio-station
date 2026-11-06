@@ -10,7 +10,7 @@ import (
 // invariant: an installer's own words (its stderr, its exit) go to the log
 // and only there (SPEC §12.3); the outcome says, in station's words, what
 // failed and where the tool's output is kept.
-func (s *Service) failed(verb string, list []catalog.App, cause error) string {
+func (s *Shelf) failed(verb string, list []catalog.App, cause error) string {
 	words := "the " + verb + " failed"
 	if s.o.Log == "" || s.keep(verb, list, cause) != nil {
 		return words
@@ -22,7 +22,7 @@ func (s *Service) failed(verb string, list []catalog.App, cause error) string {
 	return words + ": its output is in " + shown
 }
 
-func (s *Service) keep(verb string, list []catalog.App, cause error) error {
+func (s *Shelf) keep(verb string, list []catalog.App, cause error) error {
 	names := make([]string, 0, len(list))
 	for _, t := range list {
 		names = append(names, t.Name)

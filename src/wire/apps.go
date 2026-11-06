@@ -59,7 +59,7 @@ func appsAlias(env kit.Env, m machine) *cobra.Command {
 	), "apps")
 }
 
-func placedNames(s *appscalls.Service) func() []string {
+func placedNames(s *appscalls.Shelf) func() []string {
 	return func() []string {
 		placed := s.Placed()
 		out := make([]string, 0, len(placed))
@@ -70,13 +70,13 @@ func placedNames(s *appscalls.Service) func() []string {
 	}
 }
 
-func appsOf(env kit.Env, m machine) *appscalls.Service {
+func appsOf(env kit.Env, m machine) *appscalls.Shelf {
 	var ask kit.Asker
 	if env.Interactive {
 		ask = env.Prompt
 	}
 	registry, bundler := installers(m)
-	return appscalls.NewService(appsMachine{m.sys}, catalog.Apps, configurer{settings: settingsOf(m), ask: ask}, appscalls.ServiceOptions{
+	return appscalls.NewShelf(appsMachine{m.sys}, catalog.Apps, configurer{settings: settingsOf(m), ask: ask}, appscalls.ShelfOptions{
 		Pool:        m.pool,
 		ThisMachine: m.kind,
 		Root:        m.systemRoot(),
@@ -174,7 +174,7 @@ func (a appsMachine) Exists(p string) bool {
 	return err == nil
 }
 
-func (a appsMachine) Probe(ctx context.Context, name string, args []string, budget time.Duration) (output string, code int, ran bool) {
+func (a appsMachine) RunBriefly(ctx context.Context, name string, args []string, budget time.Duration) (output string, code int, ran bool) {
 	out, err := a.h.Run.Output(ctx, local.Cmd{Name: name, Args: args, Timeout: budget})
 	if err != nil {
 		return "", 0, false

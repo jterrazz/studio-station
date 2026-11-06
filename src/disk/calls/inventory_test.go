@@ -30,7 +30,7 @@ func TestASizedRowShowsItsSizeBeforeASlowInventoryAnswers(t *testing.T) {
 		{Name: "late", Installs: catalog.MacOnly(catalog.Cask("late")), Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/late/*", Level: catalog.LevelCache}}}},
 	}
 	inventory := slowInventory{release: make(chan struct{})}
-	s := NewService(onMachine{Usage: usage}, apps, ServiceOptions{Disk: usage, ThisMachine: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Inventory: inventory})
+	s := NewSurveyor(onMachine{Usage: usage}, apps, SurveyorOptions{Disk: usage, ThisMachine: catalog.Mac, Expand: disk.Expander{Home: "/h"}, Inventory: inventory})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

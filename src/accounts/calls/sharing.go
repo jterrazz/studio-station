@@ -165,11 +165,11 @@ func (s *Sharing) Share(ctx context.Context, account, vm string, term time.Durat
 	if err != nil {
 		return accounts.Shared{}, err
 	}
-	probe, err := s.inVM(ctx, vm, "command -v studio", "")
+	found, err := s.inVM(ctx, vm, "command -v studio", "")
 	switch {
 	case err != nil:
 		return accounts.Shared{}, &accounts.StepError{VM: vm, Step: "reaching it", Cause: err}
-	case probe.ExitCode != 0:
+	case found.ExitCode != 0:
 		return accounts.Shared{}, &accounts.NoStudioError{VM: vm}
 	}
 	exported, err := s.source.Export(ctx, []string{secret})

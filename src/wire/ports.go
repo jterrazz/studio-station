@@ -27,8 +27,8 @@ import (
 	portsundeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/undeclare"
 )
 
-func (m machine) portsOf(_ kit.Env) *portscalls.Service {
-	o := portscalls.ServiceOptions{ThisMachine: m.kind, State: m.paths.State, ThisMacName: m.thisMac(), Ask: m.askPorts, ReleaseOn: m.releaseOn, Exposure: m.exposure,
+func (m machine) portsOf(_ kit.Env) *portscalls.Reserver {
+	o := portscalls.ReserverOptions{ThisMachine: m.kind, State: m.paths.State, ThisMacName: m.thisMac(), Ask: m.askPorts, ReleaseOn: m.releaseOn, Exposure: m.exposure,
 		Listening: listedOrNone(m.listeners("/").Read), Routes: m.routes(), EngineInstalled: m.engineInstalled}
 	d := portsEngine{c: m.engineAPI()}
 	if m.kind != catalog.Mac {
@@ -56,13 +56,13 @@ func (m machine) portsOf(_ kit.Env) *portscalls.Service {
 		}
 		return "", false, &ports.UnknownVMError{Name: vm}
 	}
-	return portscalls.NewService(portscalls.Stores{Services: m.stores.ports(), Name: m.stores.name(), Macs: m.stores.macs(), Reservations: m.stores.reservations, Declarations: m.stores.declarations}, d, o)
+	return portscalls.NewReserver(portscalls.Stores{Ports: m.stores.ports(), Name: m.stores.name(), Macs: m.stores.macs(), Reservations: m.stores.reservations, Declarations: m.stores.declarations}, d, o)
 }
 
 // value: what listens on this Mac, read by lsof, the world's in a world.
 
 // value: where this VM runs, as its guest's hello placed it.
-func (m machine) placement(g *guest.Service) ports.VMLivesOn {
+func (m machine) placement(g *guest.Agent) ports.VMLivesOn {
 	if m.world != nil {
 		if p, inside := m.world.placement(); inside {
 			return p

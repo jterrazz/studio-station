@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/disk/contract"
 )
@@ -28,10 +28,10 @@ type Inventory interface {
 	Installed(ctx context.Context, each func(map[string]bool))
 }
 
-type ServiceOptions struct {
+type SurveyorOptions struct {
 	// value: this machine's disk: sizes, erases, and which apps run.
 	Disk        contract.DiskUsage
-	Pool        *probe.Pool
+	Pool        *lanes.Pool
 	ThisMachine catalog.MachineKind
 	Expand      disk.Expander
 	Files       map[catalog.AppFile]string
@@ -47,20 +47,20 @@ type Configurer interface {
 	Configure(ctx context.Context, item string, interactive bool) error
 }
 
-type Service struct {
+type Surveyor struct {
 	m    Machine
 	apps []catalog.App
-	o    ServiceOptions
+	o    SurveyorOptions
 }
 
-func NewService(m Machine, apps []catalog.App, o ServiceOptions) *Service {
+func NewSurveyor(m Machine, apps []catalog.App, o SurveyorOptions) *Surveyor {
 	if o.Pool == nil {
-		o.Pool = probe.NewPool(context.Background(), m, commandLane, walkLane)
+		o.Pool = lanes.NewPool(context.Background(), m, commandLane, walkLane)
 	}
-	return &Service{m: m, apps: apps, o: o}
+	return &Surveyor{m: m, apps: apps, o: o}
 }
 
-func (s *Service) Entries() []disk.Entry {
+func (s *Surveyor) Entries() []disk.Entry {
 	everywhere := []catalog.MachineKind{catalog.Mac, catalog.Linux, catalog.MacOS}
 	out := []disk.Entry{
 		{Name: disk.StationName, Category: disk.StationCategory, Disk: catalog.StationDisk, Kinds: everywhere},
@@ -74,7 +74,7 @@ func (s *Service) Entries() []disk.Entry {
 	return out
 }
 
-func (s *Service) Placed() []disk.Entry {
+func (s *Surveyor) Placed() []disk.Entry {
 	var out []disk.Entry
 	for _, e := range s.Entries() {
 		if s.placed(e) {
@@ -84,7 +84,7 @@ func (s *Service) Placed() []disk.Entry {
 	return out
 }
 
-func (s *Service) Names() []string {
+func (s *Surveyor) Names() []string {
 	placed := s.Placed()
 	out := make([]string, 0, len(placed))
 	for _, e := range placed {
@@ -93,7 +93,7 @@ func (s *Service) Names() []string {
 	return out
 }
 
-func (s *Service) placed(e disk.Entry) bool {
+func (s *Surveyor) placed(e disk.Entry) bool {
 	for _, k := range e.Kinds {
 		if k == s.o.ThisMachine {
 			return true
@@ -102,7 +102,7 @@ func (s *Service) placed(e disk.Entry) bool {
 	return false
 }
 
-func (s *Service) find(name string) (disk.Entry, error) {
+func (s *Surveyor) find(name string) (disk.Entry, error) {
 	for _, e := range s.Entries() {
 		if e.Name != name {
 			continue
@@ -115,20 +115,20 @@ func (s *Service) find(name string) (disk.Entry, error) {
 	return disk.Entry{}, &disk.UnknownError{Name: name}
 }
 
-func (s *Service) installed(ctx context.Context) map[string]bool {
+func (s *Surveyor) installed(ctx context.Context) map[string]bool {
 	out := map[string]bool{}
 	s.eachInstalled(ctx, func(got map[string]bool) { out = got })
 	out[disk.StationName] = true
 	return out
 }
 
-func (s *Service) eachInstalled(ctx context.Context, each func(map[string]bool)) {
+func (s *Surveyor) eachInstalled(ctx context.Context, each func(map[string]bool)) {
 	if s.o.Inventory != nil {
 		s.o.Inventory.Installed(ctx, each)
 	}
 }
 
-func (s *Service) isInstalled(ctx context.Context, name string) bool {
+func (s *Surveyor) isInstalled(ctx context.Context, name string) bool {
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 	var installed bool
@@ -141,11 +141,11 @@ func (s *Service) isInstalled(ctx context.Context, name string) bool {
 	return installed
 }
 
-func (s *Service) List(ctx context.Context) (disk.Survey, error) {
-	return probe.Last(s.Watch(ctx)), ctx.Err()
+func (s *Surveyor) List(ctx context.Context) (disk.Survey, error) {
+	return lanes.Last(s.Watch(ctx)), ctx.Err()
 }
 
-func (s *Service) otherRoots() []string {
+func (s *Surveyor) otherRoots() []string {
 	var claimed []string
 	for _, e := range s.Placed() {
 		for _, p := range e.Disk.Paths {
@@ -189,7 +189,7 @@ func claims(patterns []string, entry string) bool {
 	return false
 }
 
-func (s *Service) size(pattern string) int64 {
+func (s *Surveyor) size(pattern string) int64 {
 	matches := s.m.Glob(s.o.Expand.Expand(pattern))
 	var total int64
 	for _, m := range matches {
@@ -198,18 +198,18 @@ func (s *Service) size(pattern string) int64 {
 	return total
 }
 
-func (s *Service) dirSize(p string) int64 {
+func (s *Surveyor) dirSize(p string) int64 {
 	var bytes int64
 	s.o.Disk.Sizes(context.Background(), []string{p}, func(_ int, b int64) { bytes = b })
 	return bytes
 }
 
-func (s *Service) exists(pattern string) bool {
+func (s *Surveyor) exists(pattern string) bool {
 	matches := s.m.Glob(s.o.Expand.Expand(pattern))
 	return len(matches) > 0
 }
 
-func (s *Service) misplacedOnes(e disk.Entry) []disk.MisplacedReport {
+func (s *Surveyor) misplacedOnes(e disk.Entry) []disk.MisplacedReport {
 	out := []disk.MisplacedReport{}
 	for _, st := range e.Disk.Misplaced {
 		abs := s.o.Expand.Expand(st.Path)
@@ -221,7 +221,7 @@ func (s *Service) misplacedOnes(e disk.Entry) []disk.MisplacedReport {
 	return out
 }
 
-func (s *Service) misplaced(e disk.Entry, st catalog.Misplaced, abs string, bytes int64) disk.MisplacedReport {
+func (s *Surveyor) misplaced(e disk.Entry, st catalog.Misplaced, abs string, bytes int64) disk.MisplacedReport {
 	r := disk.MisplacedReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: bytes, Repair: "station disk move " + s.o.Expand.Display(abs)}
 	if len(st.Move) > 0 {
 		r.To = s.o.Expand.Display(s.o.Expand.Expand(st.Move[0].To))
@@ -229,7 +229,7 @@ func (s *Service) misplaced(e disk.Entry, st catalog.Misplaced, abs string, byte
 	return r
 }
 
-func (s *Service) Relocated(st catalog.Disk) bool {
+func (s *Surveyor) Relocated(st catalog.Disk) bool {
 	for _, r := range st.Relocate {
 		if r.Pending != "" {
 			continue
@@ -253,7 +253,7 @@ func (s *Service) Relocated(st catalog.Disk) bool {
 	return true
 }
 
-func (s *Service) Free(ctx context.Context, names []string) ([]disk.Outcome, error) {
+func (s *Surveyor) Free(ctx context.Context, names []string) ([]disk.Outcome, error) {
 	var entries []disk.Entry
 	named := len(names) > 0
 	for _, name := range dedupe(names) {
@@ -298,7 +298,7 @@ func (s *Service) Free(ctx context.Context, names []string) ([]disk.Outcome, err
 	return outcomes, nil
 }
 
-func (s *Service) CheckErase(name string) (disk.Entry, error) {
+func (s *Surveyor) CheckErase(name string) (disk.Entry, error) {
 	// invariant: an erase names one row whose data station can erase: a row
 	// of keys, tokens or settings only is never touched, whatever it is asked.
 	e, err := s.find(name)
@@ -314,7 +314,7 @@ func (s *Service) CheckErase(name string) (disk.Entry, error) {
 	return e, &disk.NothingToEraseError{Name: name, Hint: e.Disk.NoErase}
 }
 
-func (s *Service) keptOnly(e disk.Entry) string {
+func (s *Surveyor) keptOnly(e disk.Entry) string {
 	first := ""
 	for _, p := range e.Disk.Paths {
 		if !p.PlacedOn(s.o.ThisMachine) {
@@ -330,7 +330,7 @@ func (s *Service) keptOnly(e disk.Entry) string {
 	return cmp.Or(first, e.Name)
 }
 
-func (s *Service) CheckRunning(ctx context.Context, name string) error {
+func (s *Surveyor) CheckRunning(ctx context.Context, name string) error {
 	e, err := s.CheckErase(name)
 	if err != nil {
 		return err
@@ -341,7 +341,7 @@ func (s *Service) CheckRunning(ctx context.Context, name string) error {
 	return nil
 }
 
-func (s *Service) Plan(name string) []disk.PathReport {
+func (s *Surveyor) Plan(name string) []disk.PathReport {
 	e, err := s.CheckErase(name)
 	if err != nil {
 		return nil
@@ -356,7 +356,7 @@ func (s *Service) Plan(name string) []disk.PathReport {
 	return out
 }
 
-func (s *Service) Erase(ctx context.Context, name string) (disk.Outcome, error) {
+func (s *Surveyor) Erase(ctx context.Context, name string) (disk.Outcome, error) {
 	// invariant: the caller checked the erase first (CheckRunning).
 	e, err := s.CheckErase(name)
 	if err != nil {
@@ -372,7 +372,7 @@ func (s *Service) Erase(ctx context.Context, name string) (disk.Outcome, error) 
 	return s.outcome(e.Name, failure, before-after, true), nil
 }
 
-func (s *Service) Move(ctx context.Context, folder string) (disk.Outcome, error) {
+func (s *Surveyor) Move(ctx context.Context, folder string) (disk.Outcome, error) {
 	// invariant: a move takes a misplaced folder where its app's own config
 	// says, by renames only, then applies the settings that make the app look
 	// there; the app running refuses it before anything moves.
@@ -391,7 +391,7 @@ func (s *Service) Move(ctx context.Context, folder string) (disk.Outcome, error)
 	return disk.Outcome{}, &disk.NotMisplacedError{Path: s.o.Expand.Display(abs)}
 }
 
-func (s *Service) move(ctx context.Context, e disk.Entry, st catalog.Misplaced) (disk.Outcome, error) {
+func (s *Surveyor) move(ctx context.Context, e disk.Entry, st catalog.Misplaced) (disk.Outcome, error) {
 	shown := s.o.Expand.Display(s.o.Expand.Expand(st.Path))
 	if st.Busy != "" && s.running(ctx, st.Busy) {
 		return disk.Outcome{}, &disk.RunningError{Name: e.Name, Process: st.Busy, Verb: "move", Subject: shown}
@@ -436,22 +436,22 @@ func (s *Service) move(ctx context.Context, e disk.Entry, st catalog.Misplaced) 
 	return disk.Outcome{Name: shown, Result: catalog.StateOK, Detail: "moved to " + to}, nil
 }
 
-func (s *Service) Volume(ctx context.Context) (total, free int64, err error) {
+func (s *Surveyor) Volume(ctx context.Context) (total, free int64, err error) {
 	return s.o.Disk.Volume(ctx)
 }
 
-func (s *Service) outcome(name string, f *actionFailure, freed int64, reset bool) disk.Outcome {
+func (s *Surveyor) outcome(name string, f *actionFailure, freed int64, erase bool) disk.Outcome {
 	if f != nil {
-		return disk.Outcome{Name: name, Result: catalog.StateBroken, Detail: f.detail, Reason: f.reason, Erase: reset}
+		return disk.Outcome{Name: name, Result: catalog.StateBroken, Detail: f.detail, Reason: f.reason, Erase: erase}
 	}
-	return disk.Outcome{Name: name, Result: catalog.StateOK, Freed: max(freed, 0), Erase: reset}
+	return disk.Outcome{Name: name, Result: catalog.StateOK, Freed: max(freed, 0), Erase: erase}
 }
 
-func (s *Service) running(ctx context.Context, process string) bool {
+func (s *Surveyor) running(ctx context.Context, process string) bool {
 	return s.o.Disk.Running(ctx, process)
 }
 
-func (s *Service) cacheBytes(e disk.Entry) int64 {
+func (s *Surveyor) cacheBytes(e disk.Entry) int64 {
 	total := s.levelBytes(e, catalog.LevelCache)
 	for _, st := range e.Disk.Misplaced {
 		total += s.dirSize(s.o.Expand.Expand(st.Path))
@@ -459,7 +459,7 @@ func (s *Service) cacheBytes(e disk.Entry) int64 {
 	return total
 }
 
-func (s *Service) levelBytes(e disk.Entry, level catalog.Level) int64 {
+func (s *Surveyor) levelBytes(e disk.Entry, level catalog.Level) int64 {
 	var total int64
 	for _, p := range e.Disk.Paths {
 		if p.Level == level && p.PlacedOn(s.o.ThisMachine) {
@@ -471,7 +471,7 @@ func (s *Service) levelBytes(e disk.Entry, level catalog.Level) int64 {
 
 // invariant: a memo a tool rewrites on every call (mise's bin_paths, written by each
 // shim and by station's own reads) is not counted, so a cleaned cache measures empty.
-func (s *Service) storedBytes(st catalog.Stored) int64 {
+func (s *Surveyor) storedBytes(st catalog.Stored) int64 {
 	total := s.size(st.Path)
 	for _, m := range st.Memos {
 		total -= s.size(path.Join(st.Path, m))
@@ -491,7 +491,7 @@ func first(a, b *actionFailure) *actionFailure {
 // invariant: every action runs even after one failed, and the first failure is the one
 // reported, so a stopped container runtime does not hide an image prune that could run.
 // A tool that is not installed has no binary to run, so only its plain deletions run.
-func (s *Service) actions(ctx context.Context, actions []catalog.Action, present bool) *actionFailure {
+func (s *Surveyor) actions(ctx context.Context, actions []catalog.Action, present bool) *actionFailure {
 	var failed *actionFailure
 	for _, a := range actions {
 		if !a.PlacedOn(s.o.ThisMachine) || (!present && len(a.Run) > 0) {
@@ -502,7 +502,7 @@ func (s *Service) actions(ctx context.Context, actions []catalog.Action, present
 	return failed
 }
 
-func (s *Service) action(ctx context.Context, a catalog.Action) *actionFailure {
+func (s *Surveyor) action(ctx context.Context, a catalog.Action) *actionFailure {
 	if a.Needs != "" {
 		if !s.m.Has(a.Needs) {
 			return nil
@@ -524,7 +524,7 @@ func (s *Service) action(ctx context.Context, a catalog.Action) *actionFailure {
 	return failed
 }
 
-func (s *Service) deleteCaches(e disk.Entry) *actionFailure {
+func (s *Surveyor) deleteCaches(e disk.Entry) *actionFailure {
 	var failed *actionFailure
 	for _, p := range e.Disk.Paths {
 		if p.Level == catalog.LevelCache && p.PlacedOn(s.o.ThisMachine) {
@@ -534,7 +534,7 @@ func (s *Service) deleteCaches(e disk.Entry) *actionFailure {
 	return failed
 }
 
-func (s *Service) delete(pattern string) *actionFailure {
+func (s *Surveyor) delete(pattern string) *actionFailure {
 	matches := s.m.Glob(s.o.Expand.Expand(pattern))
 	if err := s.o.Disk.Erase(context.Background(), matches); err != nil {
 		return &actionFailure{detail: err.Error()}
@@ -542,7 +542,7 @@ func (s *Service) delete(pattern string) *actionFailure {
 	return nil
 }
 
-func (s *Service) run(ctx context.Context, a catalog.Action) *actionFailure {
+func (s *Surveyor) run(ctx context.Context, a catalog.Action) *actionFailure {
 	args := make([]string, 0, len(a.Run)-1)
 	for _, w := range a.Run[1:] {
 		args = append(args, s.o.Expand.Word(w))
@@ -577,7 +577,7 @@ func label(argv []string) string {
 }
 
 // invariant: a machine without a container runtime measures none of its space.
-func (s *Service) containerBytes(ctx context.Context) int64 {
+func (s *Surveyor) containerBytes(ctx context.Context) int64 {
 	if s.o.Containers == nil {
 		return 0
 	}

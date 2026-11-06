@@ -117,9 +117,9 @@ func (d *Engine) StopAll(ctx context.Context) engine.StopAll {
 
 func (d *Engine) AwakeView() awake.View { return d.awakeJob.View() }
 
-func (d *Engine) Awake(r engine.AwakeIn) (awake.Awoken, error) { return d.powerAwake(r) }
+func (d *Engine) Awake(r engine.AwakeIn) (awake.Awoken, error) { return d.keepAwake(r) }
 
-func (d *Engine) Sleep() engine.AwakeOff { return d.powerSleep() }
+func (d *Engine) Sleep() engine.AwakeOff { return d.endAwake() }
 
 func (d *Engine) Refresh(pages []string) error {
 	if err := d.CheckPages(pages); err != nil {

@@ -96,7 +96,7 @@ var CreateServer = call.Call[Deps, CreateServerIn, machines.Created]{
 	Name: "machines.create-server", Where: call.InEngine, Applies: machines.CanCreate, Confirm: confirm.BuildImage,
 	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in CreateServerIn, p call.Progress) (machines.Created, error) {
-		r := machines.CreateRequest{Image: in.Image, Name: in.Name, Server: true, Network: in.Network, Resources: in.Resources, Check: in.Check}
+		r := machines.CreateRequest{Image: in.Image, Name: in.Name, Server: true, Network: in.Network, Size: in.Resources, Check: in.Check}
 		if image := missingImage(ctx, d, r); image != "" {
 			if err := confirm.Ask(confirm.BuildImage, d.Kind, image, in.Confirm); err != nil {
 				return machines.Created{}, err

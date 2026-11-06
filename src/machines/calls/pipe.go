@@ -12,7 +12,7 @@ import (
 
 const pipeIPWait = 5 * time.Second
 
-func (s *Service) CheckPipe(ctx context.Context, name string) (model.VMRecord, error) {
+func (s *Machinist) CheckPipe(ctx context.Context, name string) (model.VMRecord, error) {
 	if err := s.CheckMac(); err != nil {
 		return model.VMRecord{}, err
 	}
@@ -29,7 +29,7 @@ func (s *Service) CheckPipe(ctx context.Context, name string) (model.VMRecord, e
 	return s.VM(m.Name, "pipe")
 }
 
-func (s *Service) macOf(ctx context.Context, name string) (string, bool) {
+func (s *Machinist) macOf(ctx context.Context, name string) (string, bool) {
 	allMachines, err := s.AllMachines(ctx, false)
 	if err != nil {
 		return "", false
@@ -44,7 +44,7 @@ func (s *Service) macOf(ctx context.Context, name string) (string, bool) {
 	return "", false
 }
 
-func (s *Service) Pipe(ctx context.Context, name string, pipe func(ctx context.Context, ip string, port int) error) error {
+func (s *Machinist) Pipe(ctx context.Context, name string, pipe func(ctx context.Context, ip string, port int) error) error {
 	// invariant: the VM's NAT ip is read at each pipe, never written into a block:
 	// the hypervisor's DHCP lease may change across runs; the pipe needs no daemon.
 	rec, err := s.CheckPipe(ctx, name)

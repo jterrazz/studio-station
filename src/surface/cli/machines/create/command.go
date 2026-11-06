@@ -108,7 +108,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 					env.Out.Now(nowWords(in))
 				}
 			}
-			in.request = machines.CreateRequest{Image: in.Image, Name: in.Name, Lifetime: lifetime, Network: in.Network, Resources: r, Check: in.Check, Server: in.Server}
+			in.request = machines.CreateRequest{Image: in.Image, Name: in.Name, Lifetime: lifetime, Network: in.Network, Size: r, Check: in.Check, Server: in.Server}
 			return nil
 		},
 		Validate: func(ctx context.Context, in *Input) error {
@@ -141,7 +141,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			err := io.Confirmed(func(answer string) (err error) {
 				r := in.request
 				if in.Server {
-					created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateServer, machinescalls.CreateServerIn{Name: r.Name, Image: r.Image, Network: r.Network, Resources: r.Resources, Check: r.Check, Confirm: answer}, steps)
+					created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateServer, machinescalls.CreateServerIn{Name: r.Name, Image: r.Image, Network: r.Network, Resources: r.Size, Check: r.Check, Confirm: answer}, steps)
 				} else {
 					created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateWorkspace, machinescalls.CreateIn{Request: r, Confirm: answer}, steps)
 				}

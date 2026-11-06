@@ -16,7 +16,7 @@ type Machine interface {
 	Exists(path string) bool
 	// value: name run with args within budget: its stdout then stderr and
 	// its exit code; ran is false when it did not start.
-	Probe(ctx context.Context, name string, args []string, budget time.Duration) (output string, code int, ran bool)
+	RunBriefly(ctx context.Context, name string, args []string, budget time.Duration) (output string, code int, ran bool)
 	// value: line appended to the log at path, its folder made.
 	Keep(path, line string) error
 }

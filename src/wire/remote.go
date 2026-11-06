@@ -88,8 +88,8 @@ func (m machine) holder(ctx context.Context, vm string) (string, error) {
 		if err != nil {
 			return false, err
 		}
-		for _, host := range out.All.Macs {
-			if slices.ContainsFunc(host.VMs, func(v model.VM) bool { return v.Name == vm }) {
+		for _, mac := range out.All.Macs {
+			if slices.ContainsFunc(mac.VMs, func(v model.VM) bool { return v.Name == vm }) {
 				return true, nil
 			}
 		}

@@ -9,7 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
-func (s *Service) SSHBlocks(ctx context.Context, f model.AllMachines) error {
+func (s *Machinist) SSHBlocks(ctx context.Context, f model.AllMachines) error {
 	// hazard: the blocks of machines the fleet no longer holds are pruned only when
 	// every host answered; an unreachable host's VMs are unknown, not gone.
 	cfg, err := s.prefs()
@@ -19,24 +19,24 @@ func (s *Service) SSHBlocks(ctx context.Context, f model.AllMachines) error {
 	var blocks []contract.MachineBlock
 	complete := true
 	key := cfg.Macs[cfg.ThisMachine].Key
-	for _, host := range f.Macs {
-		complete = complete && host.Reachable
-		if !host.ThisMac {
-			h := cfg.Macs[host.Name]
-			blocks = append(blocks, contract.MachineBlock{Name: host.Name, User: h.User, Key: h.Key})
+	for _, mac := range f.Macs {
+		complete = complete && mac.Reachable
+		if !mac.ThisMac {
+			h := cfg.Macs[mac.Name]
+			blocks = append(blocks, contract.MachineBlock{Name: mac.Name, User: h.User, Key: h.Key})
 		}
-		for _, vm := range host.VMs {
-			blocks = append(blocks, contract.MachineBlock{Name: vm.Name, User: s.vmUser(cfg), Key: key, Behind: host.Name, ThisMac: host.ThisMac})
+		for _, vm := range mac.VMs {
+			blocks = append(blocks, contract.MachineBlock{Name: vm.Name, User: s.vmUser(cfg), Key: key, Behind: mac.Name, ThisMac: mac.ThisMac})
 		}
 	}
 	write := s.o.SSHConfig.Put
 	if complete {
 		write = s.o.SSHConfig.Replace
 	}
-	return configFailure(write(ctx, blocks), false)
+	return blocksFailure(write(ctx, blocks), false)
 }
 
-func configFailure(err error, rolledBack bool) error {
+func blocksFailure(err error, rolledBack bool) error {
 	if err == nil {
 		return nil
 	}

@@ -22,7 +22,7 @@ func awakeFailure(err error) (*fail.Error, bool) {
 		}
 		return usage(rng.Error(), "station awake 1h"), true
 	case errors.As(err, &off):
-		return usage(off.Error(), catalog.PowerOnItsMac), true
+		return usage(off.Error(), catalog.AwakeOnItsMac), true
 	case errors.As(err, &none):
 		return usage(none.Error(), "run it on a Mac"), true
 	case errors.As(err, &guard):

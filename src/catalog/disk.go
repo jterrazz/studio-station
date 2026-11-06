@@ -699,7 +699,7 @@ func (f AppFile) KeyLabel(key string) string {
 	return key
 }
 
-func AppFilePaths(home, config string, kind MachineKind, vars map[string]string) map[AppFile]string {
+func AppFilePaths(home, prefsDir string, kind MachineKind, vars map[string]string) map[AppFile]string {
 	// value: where each tool keeps the file station relocates in: Go's env file
 	// where `go env GOENV` says ($GOENV when absolute, "off" writes nothing, else
 	// the user config dir: ~/Library/Application Support on darwin, the XDG
@@ -708,7 +708,7 @@ func AppFilePaths(home, config string, kind MachineKind, vars map[string]string)
 	// the config root).
 	goenv := filepath.Join(home, "Library", "Application Support", "go", "env")
 	if kind == Linux {
-		goenv = filepath.Join(config, "go", "env")
+		goenv = filepath.Join(prefsDir, "go", "env")
 	}
 	switch v := vars["GOENV"]; {
 	case v == "off":
@@ -720,7 +720,7 @@ func AppFilePaths(home, config string, kind MachineKind, vars map[string]string)
 	if filepath.IsAbs(vars["XDG_CONFIG_HOME"]) {
 		bunfig = filepath.Join(vars["XDG_CONFIG_HOME"], ".bunfig.toml")
 	}
-	mise := filepath.Join(config, "mise", "config.toml")
+	mise := filepath.Join(prefsDir, "mise", "config.toml")
 	if dir := vars["MISE_CONFIG_DIR"]; filepath.IsAbs(dir) {
 		mise = filepath.Join(dir, "config.toml")
 	}

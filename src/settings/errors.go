@@ -8,7 +8,7 @@ import (
 
 type UnknownItemError struct{ Name string }
 
-func (e *UnknownItemError) Error() string { return "unknown config item \"" + e.Name + "\"" }
+func (e *UnknownItemError) Error() string { return "unknown setting \"" + e.Name + "\"" }
 
 type NeedsRootError struct{ Item, Verb string }
 
@@ -25,7 +25,7 @@ func (e *WrongLivesOnError) Error() string {
 	for i, p := range e.Kinds {
 		kinds[i] = string(p)
 	}
-	return e.Item + "'s place is " + strings.Join(kinds, ", ") + "; here is " + e.ThisMachine.Article()
+	return e.Item + " lives on " + strings.Join(kinds, ", ") + "; here is " + e.ThisMachine.Article()
 }
 
 type NotReversibleError struct{ Item string }
@@ -38,4 +38,4 @@ func (e *NeedsTerminalError) Error() string { return e.Item + " needs a terminal
 
 type UnhandledError struct{ Item string }
 
-func (e *UnhandledError) Error() string { return "no handler for config item \"" + e.Item + "\"" }
+func (e *UnhandledError) Error() string { return "no handler for setting \"" + e.Item + "\"" }

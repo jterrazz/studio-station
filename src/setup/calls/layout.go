@@ -22,21 +22,21 @@ const legacyDNS = "dns"
 // layout step moves or removes exactly these and never anything else.
 func legacyBin() []string { return []string{"station", "workstation"} }
 
-func (s *Service) legacyPath(parts ...string) string {
+func (s *Provisioner) legacyPath(parts ...string) string {
 	return path.Join(append([]string{s.m.Home(), legacyDir}, parts...)...)
 }
 
-func (s *Service) v1Path() string       { return s.legacyPath("config.json") }
-func (s *Service) settingsPath() string { return s.o.PreferencesFile }
-func (s *Service) logPath() string      { return path.Join(s.o.State, "logs", "setup.log") }
+func (s *Provisioner) v1Path() string       { return s.legacyPath("config.json") }
+func (s *Provisioner) settingsPath() string { return s.o.PreferencesFile }
+func (s *Provisioner) logPath() string      { return path.Join(s.o.State, "logs", "setup.log") }
 
-func (s *Service) exists(p string) bool {
+func (s *Provisioner) exists(p string) bool {
 	return s.m.Exists(p)
 }
 
 // invariant: config.json is removed only after the new settings.json is
 // written, so a rerun after any failure finds its source.
-func (s *Service) migrateSettings() error {
+func (s *Provisioner) migrateSettings() error {
 	data, found, err := s.m.ReadFile(s.v1Path())
 	if err != nil || !found {
 		return err
@@ -65,7 +65,7 @@ func (s *Service) migrateSettings() error {
 
 // invariant: same is false when the preferences hold a group a v1
 // config.json never converts to (the share list, the services' policy).
-func (s *Service) current() (v setup.V1Preferences, same bool, err error) {
+func (s *Provisioner) current() (v setup.V1Preferences, same bool, err error) {
 	if v.ThisMachine, err = s.p.Name.Get(); err != nil {
 		return v, false, err
 	}
@@ -84,14 +84,14 @@ func (s *Service) current() (v setup.V1Preferences, same bool, err error) {
 	if err != nil {
 		return v, false, err
 	}
-	policy, err := s.p.Services.Get()
+	policy, err := s.p.Ports.Get()
 	if err != nil {
 		return v, false, err
 	}
 	return v, len(list) == 0 && policy == nil, nil
 }
 
-func (s *Service) write(v setup.V1Preferences) error {
+func (s *Provisioner) write(v setup.V1Preferences) error {
 	if err := s.p.Name.Set(v.ThisMachine); err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (s *Service) write(v setup.V1Preferences) error {
 	return s.p.Identity.Set(setup.Identity{UserEmail: v.UserEmail, UserName: v.UserName})
 }
 
-func (s *Service) layout(ctx context.Context, migrated error) ([]setup.Step, error) {
+func (s *Provisioner) layout(ctx context.Context, migrated error) ([]setup.Step, error) {
 	if migrated != nil {
 		step, err := failed(stepLayout, migrated)
 		return []setup.Step{step}, err
@@ -136,7 +136,7 @@ func (s *Service) layout(ctx context.Context, migrated error) ([]setup.Step, err
 	return append([]setup.Step{step}, retired...), nil
 }
 
-func (s *Service) moveDNS() (bool, error) {
+func (s *Provisioner) moveDNS() (bool, error) {
 	entries, found, err := s.m.Entries(s.legacyPath(legacyDNS))
 	if err != nil || !found {
 		return false, err
@@ -156,7 +156,7 @@ func (s *Service) moveDNS() (bool, error) {
 
 // hazard: a run over the tailnet loses its session while the retired node stops, so
 // the retirement runs in a process of its own, logging to setup.log.
-func (s *Service) detach() error {
+func (s *Provisioner) detach() error {
 	if err := s.m.MkdirAll(path.Dir(s.logPath()), 0o700); err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (s *Service) detach() error {
 // invariant: a destination holding the same bytes is a move already done, one
 // holding other bytes is refused with both files untouched, and the source goes
 // only after the copy is read back identical (a node state file IS the node's identity).
-func (s *Service) move(src, dst string) error {
+func (s *Provisioner) move(src, dst string) error {
 	data, found, err := s.m.ReadFile(src)
 	if err != nil {
 		return err
@@ -188,7 +188,7 @@ func (s *Service) move(src, dst string) error {
 	return err
 }
 
-func (s *Service) copyVerified(src, dst string, data []byte) error {
+func (s *Provisioner) copyVerified(src, dst string, data []byte) error {
 	perm := s.m.Mode(src, 0o600)
 	if err := s.m.MkdirAll(path.Dir(dst), 0o700); err != nil {
 		return err
@@ -206,7 +206,7 @@ func (s *Service) copyVerified(src, dst string, data []byte) error {
 	return nil
 }
 
-func (s *Service) tidy() (removed, leftover bool) {
+func (s *Provisioner) tidy() (removed, leftover bool) {
 	for _, name := range legacyBin() {
 		removed = s.drop(s.legacyPath("bin", name)) || removed
 	}
@@ -217,12 +217,12 @@ func (s *Service) tidy() (removed, leftover bool) {
 	return removed, s.exists(s.legacyPath())
 }
 
-func (s *Service) drop(p string) bool {
+func (s *Provisioner) drop(p string) bool {
 	removed, err := s.m.Remove(p)
 	return removed && err == nil
 }
 
-func (s *Service) holdsStationFiles() bool {
+func (s *Provisioner) holdsStationFiles() bool {
 	if s.exists(s.v1Path()) {
 		return true
 	}

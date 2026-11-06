@@ -18,11 +18,11 @@ func legacyNodeState() []string { return []string{catalog.RetiredLegacyDir, cata
 
 func retiredAccounts() []string { return []string{"vm-join-id", "vm-join-secret", "tailnet-authkey"} }
 
-func (s *Service) retiredDirs() []string {
+func (s *Provisioner) retiredDirs() []string {
 	return []string{path.Join(s.o.State, catalog.RetiredNodeDir), s.legacyPath(catalog.RetiredLegacyDir)}
 }
 
-func (s *Service) livePIDs() []int {
+func (s *Provisioner) livePIDs() []int {
 	var pids []int
 	for _, dir := range s.retiredDirs() {
 		for _, name := range []string{catalog.RetiredNodePID, catalog.RetiredAwakePID} {
@@ -42,7 +42,7 @@ func (s *Service) livePIDs() []int {
 // running daemon stops (detached, since a run arriving over that very node would
 // cut its own session), its named files go, and its keychain accounts go; the old
 // node stays in the admin console until the owner removes it, which the row says.
-func (s *Service) retire(ctx context.Context) (rows []setup.Step, background bool, err error) {
+func (s *Provisioner) retire(ctx context.Context) (rows []setup.Step, background bool, err error) {
 	if pids := s.livePIDs(); len(pids) > 0 {
 		if !s.o.Detached {
 			if err := s.detach(); err != nil {
@@ -85,7 +85,7 @@ func (s *Service) retire(ctx context.Context) (rows []setup.Step, background boo
 	return rows, false, s.migrateStores(ctx)
 }
 
-func (s *Service) migrateStores(ctx context.Context) error {
+func (s *Provisioner) migrateStores(ctx context.Context) error {
 	for _, m := range s.p.Stores {
 		if err := m.Migrate(ctx); err != nil {
 			return err
@@ -94,7 +94,7 @@ func (s *Service) migrateStores(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) stop(ctx context.Context, pid int) error {
+func (s *Provisioner) stop(ctx context.Context, pid int) error {
 	if err := s.m.Terminate(pid); err != nil {
 		return err
 	}

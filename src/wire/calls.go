@@ -56,7 +56,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		diskcalls.All(diskcalls.Deps{Disk: m.diskOf(env), Kind: kind}),
 		enginecalls.All(enginecalls.Deps{Control: m.control(), Kind: kind}),
 		imagescalls.All(imagescalls.Deps{Images: imageBuilder{m.images()}, Kind: kind}),
-		machinescalls.All(machinescalls.Deps{Machines: machineCalls{Service: m.machines(env.Interactive), m: m}, Images: createImages{imageBuilder{m.images()}}, Kind: kind, Laptop: m.profile.Caps.Battery}),
+		machinescalls.All(machinescalls.Deps{Machines: machineCalls{Machinist: m.machines(env.Interactive), m: m}, Images: createImages{imageBuilder{m.images()}}, Kind: kind, Laptop: m.profile.Caps.Battery}),
 		portscalls.All(portscalls.Deps{Ports: m.portsOf(env), Tailnet: m.tailnetStatus(), Kind: kind,
 			Declarations: m.stores.declarations, Routes: m.routes(), Far: farPorts{m}}),
 		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupOf}, Ask: named}),
@@ -106,7 +106,7 @@ func (l *localCalls) Watch(ctx context.Context, _ coremachine.Ref, name string, 
 	return l.registry.Stream(ctx, l.profile, name, in, p)
 }
 
-type awakeKeeper struct{ *awakecalls.Service }
+type awakeKeeper struct{ *awakecalls.Waker }
 
 // invariant: the history a Mac's engine keeps, asked over its socket.
 func engineKept(api engineAPI) func(ctx context.Context, name string) (activity.Kept, time.Time, bool, error) {

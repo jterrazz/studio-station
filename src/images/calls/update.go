@@ -11,7 +11,7 @@ import (
 )
 
 // value: bare, every image this Mac holds a version of; named, those.
-func (s *Service) updating(names []string) ([]string, error) {
+func (s *Builder) updating(names []string) ([]string, error) {
 	if len(names) > 0 {
 		var out []string
 		for _, name := range names {
@@ -37,7 +37,7 @@ func (s *Service) updating(names []string) ([]string, error) {
 	return out, nil
 }
 
-func (s *Service) Update(ctx context.Context, names []string, progress func(images.Step)) ([]images.Update, error) {
+func (s *Builder) Update(ctx context.Context, names []string, progress func(images.Step)) ([]images.Update, error) {
 	wanted, err := s.updating(names)
 	if err != nil || len(wanted) == 0 {
 		return nil, err
@@ -62,7 +62,7 @@ func (s *Service) Update(ctx context.Context, names []string, progress func(imag
 // invariant: an update fetches only a version newer than every one held;
 // it lands whole as an image disk or not at all, so a failed fetch leaves
 // the image as it was.
-func (s *Service) updateOne(ctx context.Context, name string, progress func(images.Step)) (images.Update, error) {
+func (s *Builder) updateOne(ctx context.Context, name string, progress func(images.Step)) (images.Update, error) {
 	latest, err := s.source.Latest(ctx, name)
 	switch {
 	case errors.Is(err, imagescontract.ErrNotReleased):

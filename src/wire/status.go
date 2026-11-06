@@ -70,9 +70,9 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Identity:   m.stores.identity(),
 		Owner:      settingscli.New(h.Run, h.FS, settingscli.Options{Home: h.Env.Home(), Pool: m.pool}),
 		Tailnet:    m.tailnetStatus(),
-		Awake:      statusAwake{s: m.awakeService()},
+		Awake:      statusAwake{s: m.awakeWaker()},
 		Apps:       appsOf(env, m),
-		Settings:   configRead{settingsOf(m)},
+		Settings:   settingsRead{settingsOf(m)},
 		Setup:      setupRead{setupOf(env, m)},
 		Disk:       diskRead{m.diskOf(env)},
 		Engine:     m.macEngine(),
@@ -132,11 +132,11 @@ func (s hostedServers) Hosted(ctx context.Context) bool {
 	return false
 }
 
-type configRead struct{ *settingscalls.Catalogue }
+type settingsRead struct{ *settingscalls.Catalogue }
 
-func (configRead) Placed(r settings.Report) (string, catalog.State) { return r.Item.Name, r.State }
+func (settingsRead) Placed(r settings.Report) (string, catalog.State) { return r.Item.Name, r.State }
 
-type setupRead struct{ s *setupcalls.Service }
+type setupRead struct{ s *setupcalls.Provisioner }
 
 func (r setupRead) Check(ctx context.Context) ([]overview.Step, error) {
 	report, err := r.s.Check(ctx)
@@ -150,7 +150,7 @@ func (r setupRead) Check(ctx context.Context) ([]overview.Step, error) {
 	return steps, nil
 }
 
-type diskRead struct{ s *diskcalls.Service }
+type diskRead struct{ s *diskcalls.Surveyor }
 
 func (r diskRead) Watch(ctx context.Context) <-chan overviewcalls.DiskReading[disk.MisplacedReport] {
 	out := make(chan overviewcalls.DiskReading[disk.MisplacedReport])

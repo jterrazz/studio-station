@@ -30,8 +30,8 @@ type Announcement struct {
 }
 
 type VMLivesOn struct {
-	// value: a VM's placement, as its host told its guest: the Mac it runs
-	// on, its own name, the public host of its shares.
+	// value: alias of guest.json v1, a VM's placement as its Mac told its
+	// guest: the Mac it runs on, its own name, the public name of its ports.
 	Mac        string `json:"host"`
 	VM         string `json:"vm"`
 	PublicName string `json:"public_host"`

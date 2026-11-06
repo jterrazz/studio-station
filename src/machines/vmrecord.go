@@ -56,9 +56,9 @@ func parseSize(flag, value string, base int64) (int64, error) {
 	}
 	text, scale := strings.TrimSuffix(strings.ToUpper(strings.TrimSpace(value)), "B"), int64(0)
 	if text != "" {
-		if power := strings.IndexByte("KMGT", text[len(text)-1]); power >= 0 {
+		if exponent := strings.IndexByte("KMGT", text[len(text)-1]); exponent >= 0 {
 			scale = base
-			for range power {
+			for range exponent {
 				scale *= base
 			}
 			text = text[:len(text)-1]

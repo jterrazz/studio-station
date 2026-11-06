@@ -11,7 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 )
 
 type probed struct {
@@ -41,7 +41,7 @@ func (m machine) LookPath(name string) (string, bool) {
 	return where, ok
 }
 
-func (m machine) Probe(_ context.Context, name string, args []string, _ time.Duration) (output string, code int, ran bool) {
+func (m machine) RunBriefly(_ context.Context, name string, args []string, _ time.Duration) (output string, code int, ran bool) {
 	p, ok := m.probes[strings.Join(append([]string{name}, args...), " ")]
 	return p.output, p.code, ok
 }
@@ -49,7 +49,7 @@ func (m machine) Probe(_ context.Context, name string, args []string, _ time.Dur
 func reportOf(t *testing.T, app catalog.App, manager *fake.State, m machine) apps.Report {
 	method := app.Installs[0].Install.Method()
 	installers := contract.Installers{method: fake.New(method, manager)}
-	reports, err := calls.NewService(m, []catalog.App{app}, nil, calls.ServiceOptions{ThisMachine: catalog.Mac, Root: "/", Installers: installers, Pool: probe.NewPool(context.Background(), m, 16, 1)}).Inventory(context.Background())
+	reports, err := calls.NewShelf(m, []catalog.App{app}, nil, calls.ShelfOptions{ThisMachine: catalog.Mac, Root: "/", Installers: installers, Pool: lanes.NewPool(context.Background(), m, 16, 1)}).Inventory(context.Background())
 	if err != nil || len(reports) != 1 {
 		t.Fatalf("inventory: %v %v", reports, err)
 	}

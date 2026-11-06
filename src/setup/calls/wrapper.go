@@ -19,7 +19,7 @@ type Installer interface {
 	RemoveFormula(ctx context.Context, formula string) error
 }
 
-func (s *Service) apps(ctx context.Context, interactive bool) (setup.Step, error) {
+func (s *Provisioner) apps(ctx context.Context, interactive bool) (setup.Step, error) {
 	step := setup.Step{Name: stepApps, State: catalog.StateOK}
 	var done []string
 	if s.o.Installer != nil {
@@ -57,14 +57,14 @@ func (s *Service) apps(ctx context.Context, interactive bool) (setup.Step, error
 	return step, nil
 }
 
-func (s *Service) appsCheck() setup.Step {
+func (s *Provisioner) appsCheck() setup.Step {
 	if s.wrapperDue() {
 		return setup.Step{Name: stepApps, State: catalog.StateDegraded, Detail: catalog.TailnetWrapperDue}
 	}
 	return setup.Step{Name: stepApps, State: catalog.StateOK}
 }
 
-func (s *Service) wrapperPath() string { return path.Join(s.o.Bin, catalog.TailnetCLI) }
+func (s *Provisioner) wrapperPath() string { return path.Join(s.o.Bin, catalog.TailnetCLI) }
 
 func wrapper(cli string) []byte { return []byte("#!/bin/sh\nexec " + cli + " \"$@\"\n") }
 
@@ -73,7 +73,7 @@ func wrapper(cli string) []byte { return []byte("#!/bin/sh\nexec " + cli + " \"$
 // only where nothing else answers: a symlink is replaced, the script's own
 // bytes are adopted, another tailscale on PATH or a file station did not
 // write is never touched.
-func (s *Service) wrapperDue() bool {
+func (s *Provisioner) wrapperDue() bool {
 	if s.o.AppStoreCLI == nil {
 		return false
 	}
@@ -94,7 +94,7 @@ func (s *Service) wrapperDue() bool {
 	return true
 }
 
-func (s *Service) writeWrapper() (bool, error) {
+func (s *Provisioner) writeWrapper() (bool, error) {
 	if !s.wrapperDue() {
 		return false, nil
 	}

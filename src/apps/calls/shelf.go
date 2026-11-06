@@ -9,13 +9,13 @@ import (
 	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 )
 
 const commandLane = 16
 
-type ServiceOptions struct {
-	Pool        *probe.Pool
+type ShelfOptions struct {
+	Pool        *lanes.Pool
 	ThisMachine catalog.MachineKind
 	Root        string
 	Installers  contract.Installers
@@ -32,26 +32,26 @@ type VMs interface {
 	Running(ctx context.Context) (map[string]catalog.MachineKind, error)
 }
 
-type Service struct {
+type Shelf struct {
 	m      Machine
 	apps   []catalog.App
 	byName map[string]catalog.App
 	cfg    Configurer
-	o      ServiceOptions
+	o      ShelfOptions
 }
 
-func NewService(m Machine, list []catalog.App, cfg Configurer, o ServiceOptions) *Service {
+func NewShelf(m Machine, list []catalog.App, cfg Configurer, o ShelfOptions) *Shelf {
 	byName := make(map[string]catalog.App, len(list))
 	for _, t := range list {
 		byName[t.Name] = t
 	}
 	if o.Pool == nil {
-		o.Pool = probe.NewPool(context.Background(), m, commandLane, 1)
+		o.Pool = lanes.NewPool(context.Background(), m, commandLane, 1)
 	}
-	return &Service{m: m, apps: list, byName: byName, cfg: cfg, o: o}
+	return &Shelf{m: m, apps: list, byName: byName, cfg: cfg, o: o}
 }
 
-func (s *Service) Placed() []catalog.App {
+func (s *Shelf) Placed() []catalog.App {
 	var placed []catalog.App
 	for _, t := range s.apps {
 		if _, ok := t.InstallOn(s.o.ThisMachine); ok {
@@ -61,7 +61,7 @@ func (s *Service) Placed() []catalog.App {
 	return placed
 }
 
-func (s *Service) Find(names []string) ([]catalog.App, error) {
+func (s *Shelf) Find(names []string) ([]catalog.App, error) {
 	seen := map[string]bool{}
 	var found []catalog.App
 	for _, name := range names {
@@ -81,7 +81,7 @@ func (s *Service) Find(names []string) ([]catalog.App, error) {
 	return found, nil
 }
 
-func (s *Service) CheckInstall(ctx context.Context, names []string) error {
+func (s *Shelf) CheckInstall(ctx context.Context, names []string) error {
 	found, err := s.Find(names)
 	var livesOn *apps.ElsewhereError
 	if errors.As(err, &livesOn) {
@@ -108,7 +108,7 @@ func (s *Service) CheckInstall(ctx context.Context, names []string) error {
 	return nil
 }
 
-func (s *Service) CheckUninstall(names []string) error {
+func (s *Shelf) CheckUninstall(names []string) error {
 	found, err := s.Find(names)
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func (s *Service) CheckUninstall(names []string) error {
 	return nil
 }
 
-func (s *Service) CheckUpgrade(names []string) error {
+func (s *Shelf) CheckUpgrade(names []string) error {
 	found, err := s.Find(names)
 	if err != nil {
 		return err
@@ -137,25 +137,25 @@ func (s *Service) CheckUpgrade(names []string) error {
 	return nil
 }
 
-func (s *Service) install(t catalog.App) catalog.Install {
+func (s *Shelf) install(t catalog.App) catalog.Install {
 	i, _ := t.InstallOn(s.o.ThisMachine)
 	return i
 }
 
 // invariant: the registry wire builds holds an installer for every method
 // the catalogue places.
-func (s *Service) installer(t catalog.App) contract.Installer {
+func (s *Shelf) installer(t catalog.App) contract.Installer {
 	return s.o.Installers[s.install(t).Method()]
 }
 
-func (s *Service) lined(t catalog.App) (contract.Lined, bool) {
+func (s *Shelf) lined(t catalog.App) (contract.Lined, bool) {
 	l, ok := s.installer(t).(contract.Lined)
 	return l, ok
 }
 
 // invariant: the VM named in a refusal is one that runs now and whose kind is a
 // place of the tool; a failed listing names none, so the refusal still stands.
-func (s *Service) runningVM(ctx context.Context, kinds []catalog.MachineKind) string {
+func (s *Shelf) runningVM(ctx context.Context, kinds []catalog.MachineKind) string {
 	if s.o.VMs == nil {
 		return ""
 	}

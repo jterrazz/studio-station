@@ -9,7 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
-func (s *Service) Unlock(ctx context.Context, name string) error {
+func (s *Machinist) Unlock(ctx context.Context, name string) error {
 	if err := s.CheckMac(); err != nil {
 		return err
 	}

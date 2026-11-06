@@ -157,13 +157,13 @@ func (e *NotAMacError) Error() string {
 	if e.Verb == VerbForget {
 		return e.Name + " is a VM: a VM is deleted, never forgotten"
 	}
-	return "\"" + e.Name + "\" is a VM, not a host"
+	return "\"" + e.Name + "\" is a VM, not a Mac"
 }
 
 type OnlyOnMacError struct{ ThisMachine catalog.MachineKind }
 
 func (e *OnlyOnMacError) Error() string {
-	return "only a host does this; here is " + e.ThisMachine.Article()
+	return "only a Mac does this; here is " + e.ThisMachine.Article()
 }
 
 type NameTakenError struct {
@@ -176,7 +176,7 @@ type NameTakenError struct {
 
 func (e *NameTakenError) Error() string {
 	if e.Mac {
-		return "\"" + e.Name + "\" already names a host"
+		return "\"" + e.Name + "\" already names a Mac"
 	}
 	if e.VM {
 		return "\"" + e.Name + "\" is taken (on " + e.On + ")"

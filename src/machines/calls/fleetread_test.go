@@ -15,7 +15,7 @@ import (
 	machines "github.com/jterrazz/studio-station/src/machines/calls"
 )
 
-func allMachinesAsking(t *testing.T, ask func(ctx context.Context, macs []string, answered func(string, model.MacView))) *machines.Service {
+func allMachinesAsking(t *testing.T, ask func(ctx context.Context, macs []string, answered func(string, model.MacView))) *machines.Machinist {
 	t.Helper()
 	h := &stillMac{at: time.Unix(0, 0)}
 	prefs := memoryPrefs{}

@@ -28,9 +28,9 @@ func keepAwakePages() []Fixture {
 	held := heldSession()
 	out := states("keep-awake",
 		pagekeepawake.Page(keepAwakeReport(awake.EnginePending, nil, thisMacReading()), thisMacContext()),
-		pagekeepawake.Page(keepAwakeReport(awake.DaemonRunning, nil, thisMacReading()), thisMacContext()),
+		pagekeepawake.Page(keepAwakeReport(awake.EngineRunning, nil, thisMacReading()), thisMacContext()),
 		pagekeepawake.Page(keepAwakeReport(awake.EngineStopped, nil, thisMacReading()), thisMacContext()),
-		pagekeepawake.Page(keepAwakeReport(awake.DaemonRunning, held, low), thisMacContext()),
+		pagekeepawake.Page(keepAwakeReport(awake.EngineRunning, held, low), thisMacContext()),
 	)
 	awoken := awake.Awoken{Session: *held}
 	return append(out, states("outcome-keep-awake",
