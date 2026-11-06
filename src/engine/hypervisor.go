@@ -58,7 +58,7 @@ func (v *vmState) holder() int {
 	return v.run.Holder()
 }
 
-func (d *Daemon) runs(v *vmState) bool {
+func (d *Engine) runs(v *vmState) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return v.run != nil && !v.over()

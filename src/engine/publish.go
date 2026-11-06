@@ -39,12 +39,12 @@ type svc struct {
 
 func key(vm string, port int) string { return vm + ":" + strconv.Itoa(port) }
 
-func (d *Daemon) leaseIndex(vm string, port int) int {
+func (d *Engine) leaseIndex(vm string, port int) int {
 	_, i := services.Find(d.leases, vm, port)
 	return i
 }
 
-func (d *Daemon) busy(p int) bool {
+func (d *Engine) busy(p int) bool {
 	l, err := d.h.Sockets.ListenTCP("127.0.0.1", p)
 	if err != nil {
 		return true
@@ -65,7 +65,7 @@ func asOp(err error) error {
 	return fault("internal", err.Error(), "station ports")
 }
 
-func (d *Daemon) svcOf(vm string, port int) *svc {
+func (d *Engine) svcOf(vm string, port int) *svc {
 	s, ok := d.svcs[key(vm, port)]
 	if !ok {
 		s = &svc{vm: vm, port: port}
@@ -79,7 +79,7 @@ func (d *Daemon) svcOf(vm string, port int) *svc {
 	return s
 }
 
-func (d *Daemon) apply(ctx context.Context, s *svc, acts []services.Action) {
+func (d *Engine) apply(ctx context.Context, s *svc, acts []services.Action) {
 	for _, a := range acts {
 		switch a {
 		case services.ActPublish:
@@ -98,7 +98,7 @@ func (d *Daemon) apply(ctx context.Context, s *svc, acts []services.Action) {
 
 // invariant: a workspace's port is shared as it starts listening; a
 // server's only once the owner shares it, its tooling choosing its routes.
-func (d *Daemon) listen(ctx context.Context, vm string, port int, ip, process string) {
+func (d *Engine) listen(ctx context.Context, vm string, port int, ip, process string) {
 	p := d.policy()
 	if p.Ignores(port) || p.Stopped(vm, port) {
 		return
@@ -123,7 +123,7 @@ func (d *Daemon) listen(ctx context.Context, vm string, port int, ip, process st
 	d.apply(ctx, s, acts)
 }
 
-func (d *Daemon) unlisten(vm string, port int) {
+func (d *Engine) unlisten(vm string, port int) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if s, ok := d.svcs[key(vm, port)]; ok {
@@ -131,7 +131,7 @@ func (d *Daemon) unlisten(vm string, port int) {
 	}
 }
 
-func (d *Daemon) unlistenExcept(vm string, seen map[int]bool) {
+func (d *Engine) unlistenExcept(vm string, seen map[int]bool) {
 	d.mu.Lock()
 	var gone []int
 	for _, s := range d.svcs {
@@ -145,7 +145,7 @@ func (d *Daemon) unlistenExcept(vm string, seen map[int]bool) {
 	}
 }
 
-func (d *Daemon) tickServices(ctx context.Context) {
+func (d *Engine) tickServices(ctx context.Context) {
 	// invariant: every reserved port ticks, listened on in this engine's
 	// life or not, so one idle past its days is released, and one served
 	// that its VM says nothing listens on is unshared.
@@ -169,7 +169,7 @@ func (d *Daemon) tickServices(ctx context.Context) {
 	}
 }
 
-func (d *Daemon) vmStopped(ctx context.Context, vm string) {
+func (d *Engine) vmStopped(ctx context.Context, vm string) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	delete(d.heard, vm)
@@ -182,7 +182,7 @@ func (d *Daemon) vmStopped(ctx context.Context, vm string) {
 	}
 }
 
-func (d *Daemon) releaseVM(ctx context.Context, vm string) {
+func (d *Engine) releaseVM(ctx context.Context, vm string) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for _, s := range d.svcs {
@@ -208,7 +208,7 @@ func (d *Daemon) releaseVM(ctx context.Context, vm string) {
 // wildcard: the tailnet carries its own bytes, so no firewall stands in the
 // way; a pinned lease never moves, an unpinned one moves off a busy port and
 // says so.
-func (d *Daemon) publish(ctx context.Context, s *svc) {
+func (d *Engine) publish(ctx context.Context, s *svc) {
 	p := d.policy()
 	s.detail, s.serveNote, s.refused = "", "", false
 	i := d.leaseIndex(s.vm, s.port)
@@ -265,7 +265,7 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 // invariant: with Serve off no serve runs: the app would block waiting for the
 // admin; a serve refused while Serve is on leaves the service local, its
 // public URL unchanged, and says the tailnet's own line.
-func (d *Daemon) expose(ctx context.Context, s *svc, lease services.Lease, httpsMode string) {
+func (d *Engine) expose(ctx context.Context, s *svc, lease services.Lease, httpsMode string) {
 	s.serveNote = ""
 	if !d.self.On {
 		return
@@ -280,7 +280,7 @@ func (d *Daemon) expose(ctx context.Context, s *svc, lease services.Lease, https
 	s.served = true
 }
 
-func (d *Daemon) serveAll(ctx context.Context) {
+func (d *Engine) serveAll(ctx context.Context) {
 	p := d.policy()
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -291,7 +291,7 @@ func (d *Daemon) serveAll(ctx context.Context) {
 	}
 }
 
-func (d *Daemon) unserveAll() {
+func (d *Engine) unserveAll() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for _, s := range d.svcs {
@@ -299,7 +299,7 @@ func (d *Daemon) unserveAll() {
 	}
 }
 
-func (d *Daemon) unpublish(ctx context.Context, s *svc) {
+func (d *Engine) unpublish(ctx context.Context, s *svc) {
 	for _, l := range s.listeners {
 		_ = l.Close()
 	}
@@ -312,20 +312,20 @@ func (d *Daemon) unpublish(ctx context.Context, s *svc) {
 	s.served, s.serveNote = false, ""
 }
 
-func (d *Daemon) clientOf(vm string) Guest {
+func (d *Engine) clientOf(vm string) Guest {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.clientLocked(vm)
 }
 
-func (d *Daemon) clientLocked(vm string) Guest {
+func (d *Engine) clientLocked(vm string) Guest {
 	if v, ok := d.vms[vm]; ok {
 		return v.client
 	}
 	return nil
 }
 
-func (d *Daemon) carry(ctx context.Context, s *svc, l system.Listener) {
+func (d *Engine) carry(ctx context.Context, s *svc, l system.Listener) {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -354,7 +354,7 @@ type readResult struct {
 
 // invariant: HTTP is detected once per lease: a server that speaks first
 // (ssh, mysql, smtp) is not HTTP; else a HEAD answered with "HTTP/" is.
-func (d *Daemon) detectHTTP(ctx context.Context, s *svc) bool {
+func (d *Engine) detectHTTP(ctx context.Context, s *svc) bool {
 	client := d.clientLocked(s.vm)
 	if client == nil {
 		return false
@@ -394,7 +394,7 @@ func (d *Daemon) detectHTTP(ctx context.Context, s *svc) bool {
 // value: how this Mac shares, and why it shares nothing when it is off: a
 // Mac signed out of the tailnet says so, not that Serve is off; the caller
 // holds d.mu.
-func (d *Daemon) exposureLocked() services.Exposure {
+func (d *Engine) exposureLocked() services.Exposure {
 	e := services.ExposureOf(d.self.On, d.self.Host)
 	if !e.On && d.self.Backend != ports.Running {
 		e.Off = catalog.SignedOutDetail
@@ -402,7 +402,7 @@ func (d *Daemon) exposureLocked() services.Exposure {
 	return e
 }
 
-func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View {
+func (d *Engine) view(l services.Lease, s *svc, httpsMode string) services.View {
 	v := services.ViewOf(l, d.exposureLocked(), httpsMode, services.Waiting)
 	if s != nil {
 		switch s.st.Phase {
@@ -427,13 +427,13 @@ func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View 
 	return v
 }
 
-func (d *Daemon) hostView(vm string) services.HostView {
+func (d *Engine) hostView(vm string) services.HostView {
 	p := d.policy()
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	e := d.exposureLocked()
 	out := services.HostView{
-		Name: d.m.HereName(), Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true, Version: d.o.Version},
+		Name: d.m.HereName(), Here: true, Reachable: true, Engine: services.DaemonInfo{Running: true, Version: d.o.Version},
 		PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Services: []services.View{},
 	}
 	if vm == "" {
@@ -466,7 +466,7 @@ func (d *Daemon) hostView(vm string) services.HostView {
 // invariant: a Mac signed out of the tailnet refuses a share the owner asks
 // for, but a workspace's profile ports are reserved local only, so its create
 // goes on.
-func (d *Daemon) reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (services.View, error) {
+func (d *Engine) reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (services.View, error) {
 	if _, err := d.find(vm); err != nil {
 		return services.View{}, err
 	}
@@ -499,7 +499,7 @@ func (d *Daemon) reserve(ctx context.Context, vm string, port int, pinned bool, 
 	return d.view(l, s, p.HTTPS), nil
 }
 
-func (d *Daemon) release(ctx context.Context, vm string, port int) (services.Lease, error) {
+func (d *Engine) release(ctx context.Context, vm string, port int) (services.Lease, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	i := d.leaseIndex(vm, port)
@@ -520,7 +520,7 @@ func (d *Daemon) release(ctx context.Context, vm string, port int) (services.Lea
 // raw TCP) or of a path /<vm>/ of this host (path mode), and removes those no
 // lease justifies, both kinds; it never touches another entry, and waits for
 // Serve to be on.
-func (d *Daemon) reconcileServe(ctx context.Context) {
+func (d *Engine) reconcileServe(ctx context.Context) {
 	d.mu.Lock()
 	on := d.self.On
 	d.mu.Unlock()
@@ -567,7 +567,7 @@ func (d *Daemon) reconcileServe(ctx context.Context) {
 
 // invariant: a reserved port the tailnet already serves when the engine
 // starts is served until its VM says it no longer listens there.
-func (d *Daemon) servedBefore(hostPort int) {
+func (d *Engine) servedBefore(hostPort int) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for _, l := range d.leases {

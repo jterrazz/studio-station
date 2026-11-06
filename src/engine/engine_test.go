@@ -104,7 +104,7 @@ func (*fakeHypervisor) Address(context.Context, string, time.Duration) (netip.Ad
 }
 
 type harness struct {
-	d     *Daemon
+	d     *Engine
 	hv    *fakeHypervisor
 	run   *systemtest.Runner
 	fs    *systemtest.FS

@@ -20,7 +20,7 @@ import (
 // mini's Screen Sharing and infra's API private.
 func miniPorts() ports.Listing {
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
-	host := services.HostView{Name: "mac-mini", Reachable: true, Daemon: services.DaemonInfo{Running: true}, Services: []services.View{},
+	host := services.HostView{Name: "mac-mini", Reachable: true, Engine: services.DaemonInfo{Running: true}, Services: []services.View{},
 		Ports: []ports.Port{
 			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},
 			{Machine: infra, Port: 10250, Process: "kubelet", Binds: []string{"0.0.0.0"}, Reach: ports.Outside},

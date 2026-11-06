@@ -72,7 +72,7 @@ type vmState struct {
 // leaves the workspace stopped and kept, never started again (SP-4): one its
 // record wants running ended with its Mac. A server whose wanted state is
 // Running starts with its Mac's engine: it is always on.
-func (d *Daemon) adopt(ctx context.Context) {
+func (d *Engine) adopt(ctx context.Context) {
 	records, _ := d.m.Records()
 	for _, r := range records {
 		v := &vmState{rec: r, state: StateStopped, guest: GuestAbsent}
@@ -104,7 +104,7 @@ func (d *Daemon) adopt(ctx context.Context) {
 	}
 }
 
-func (d *Daemon) find(vm string) (*vmState, error) {
+func (d *Engine) find(vm string) (*vmState, error) {
 	d.mu.Lock()
 	v, ok := d.vms[vm]
 	d.mu.Unlock()
@@ -129,7 +129,7 @@ func (d *Daemon) find(vm string) (*vmState, error) {
 	return nil, fault("unknown_vm", "unknown VM \""+vm+"\"", "station machines")
 }
 
-func (d *Daemon) start(ctx context.Context, v *vmState) error {
+func (d *Engine) start(ctx context.Context, v *vmState) error {
 	name := v.rec.Name
 	if records, err := d.m.Records(); err == nil {
 		for _, r := range records {
@@ -154,7 +154,7 @@ func (d *Daemon) start(ctx context.Context, v *vmState) error {
 	return nil
 }
 
-func (d *Daemon) tick(ctx context.Context) {
+func (d *Engine) tick(ctx context.Context) {
 	records, _ := d.m.Records()
 	known := map[string]bool{}
 	for _, r := range records {
@@ -190,7 +190,7 @@ func (d *Daemon) tick(ctx context.Context) {
 	d.tickServices(ctx)
 }
 
-func (d *Daemon) ended(ctx context.Context, v *vmState) {
+func (d *Engine) ended(ctx context.Context, v *vmState) {
 	name := v.rec.Name
 	d.mu.Lock()
 	end := unread
@@ -235,13 +235,13 @@ func (d *Daemon) ended(ctx context.Context, v *vmState) {
 	}
 }
 
-func (d *Daemon) setState(v *vmState, state, detail string) {
+func (d *Engine) setState(v *vmState, state, detail string) {
 	d.mu.Lock()
 	v.state, v.detail = state, detail
 	d.mu.Unlock()
 }
 
-func (d *Daemon) forget(name string) {
+func (d *Engine) forget(name string) {
 	d.mu.Lock()
 	if v, ok := d.vms[name]; ok && v.cancel != nil {
 		v.cancel()
@@ -250,7 +250,7 @@ func (d *Daemon) forget(name string) {
 	d.mu.Unlock()
 }
 
-func (d *Daemon) vmViews() []VMView {
+func (d *Engine) vmViews() []VMView {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	out := make([]VMView, 0, len(d.vms))
@@ -263,7 +263,7 @@ func (d *Daemon) vmViews() []VMView {
 
 const endedWithItsMac = "ended with its Mac"
 
-func (d *Daemon) opRun(ctx context.Context, vm string) error {
+func (d *Engine) opRun(ctx context.Context, vm string) error {
 	v, err := d.find(vm)
 	if err != nil {
 		return err
@@ -277,7 +277,7 @@ func (d *Daemon) opRun(ctx context.Context, vm string) error {
 // invariant: run answers once the guest is connected (it has written the VM's
 // keys block and services.env), or when the run ended first (its end is the
 // supervision's), else guest_timeout after guestReady.
-func (d *Daemon) awaitGuest(ctx context.Context, vm string) error {
+func (d *Engine) awaitGuest(ctx context.Context, vm string) error {
 	v, err := d.find(vm)
 	if err != nil {
 		return err
@@ -296,7 +296,7 @@ func (d *Daemon) awaitGuest(ctx context.Context, vm string) error {
 	return fault("guest_timeout", vm+"'s guest did not connect in "+strconv.Itoa(int(guestReady.Seconds()))+" s", "station machines "+vm)
 }
 
-func (d *Daemon) opStart(ctx context.Context, vm string) error {
+func (d *Engine) opStart(ctx context.Context, vm string) error {
 	v, err := d.find(vm)
 	if err != nil {
 		return err
@@ -315,7 +315,7 @@ func (d *Daemon) opStart(ctx context.Context, vm string) error {
 // invariant: a graceful stop is the guest's own poweroff, sent on the VM's one
 // ssh connection (the NAT ssh when it is down); the hard stop comes only after
 // the wait; the run's end is the daemon's own, so it is never read as a reboot.
-func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
+func (d *Engine) opStop(ctx context.Context, vm string, want bool) error {
 	v, err := d.find(vm)
 	if err != nil {
 		return err
@@ -325,7 +325,7 @@ func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
 
 // invariant: halt ends a VM's run and keeps its disk; want also keeps the
 // wish stopped, so a permanent VM stays stopped when the engine starts again.
-func (d *Daemon) halt(ctx context.Context, v *vmState, want bool) error {
+func (d *Engine) halt(ctx context.Context, v *vmState, want bool) error {
 	vm := v.rec.Name
 	if want {
 		v.rec.Want = machines.WantStopped
@@ -378,7 +378,7 @@ func (d *Daemon) halt(ctx context.Context, v *vmState, want bool) error {
 	return nil
 }
 
-func (d *Daemon) opDelete(ctx context.Context, vm string) error {
+func (d *Engine) opDelete(ctx context.Context, vm string) error {
 	v, err := d.find(vm)
 	if err != nil {
 		return err
@@ -394,7 +394,7 @@ func (d *Daemon) opDelete(ctx context.Context, vm string) error {
 	return err
 }
 
-func (d *Daemon) connect(ctx context.Context, v *vmState) {
+func (d *Engine) connect(ctx context.Context, v *vmState) {
 	d.mu.Lock()
 	if v.cancel != nil {
 		d.mu.Unlock()
@@ -414,7 +414,7 @@ func (d *Daemon) connect(ctx context.Context, v *vmState) {
 // invariant: a run that ended takes its guest session with it, so the next
 // run's guest is awaited afresh: a stopped VM's ssh connection may outlive it,
 // and a session it kept would answer for the new run before its sshd is up.
-func (d *Daemon) disconnect(v *vmState) {
+func (d *Engine) disconnect(v *vmState) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if v.cancel != nil {
@@ -432,19 +432,19 @@ func (v *vmState) release() {
 	}
 }
 
-func (d *Daemon) current(v *vmState, gen int) bool {
+func (d *Engine) current(v *vmState, gen int) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return v.gen == gen
 }
 
-func (d *Daemon) alive(v *vmState) bool {
+func (d *Engine) alive(v *vmState) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return v.run != nil && !v.stopping && !v.over()
 }
 
-func (d *Daemon) session(ctx context.Context, v *vmState, gen int) {
+func (d *Engine) session(ctx context.Context, v *vmState, gen int) {
 	defer func() {
 		d.mu.Lock()
 		if v.gen == gen {
@@ -469,7 +469,7 @@ func (d *Daemon) session(ctx context.Context, v *vmState, gen int) {
 	}
 }
 
-func (d *Daemon) guestOnce(ctx context.Context, v *vmState, gen int) {
+func (d *Engine) guestOnce(ctx context.Context, v *vmState, gen int) {
 	name := v.rec.Name
 	addr, err := d.hv.Address(ctx, name, 5*time.Second)
 	if err != nil {
@@ -526,7 +526,7 @@ func (d *Daemon) guestOnce(ctx context.Context, v *vmState, gen int) {
 
 // invariant: why a guest does not connect reaches daemon.log once per new
 // reason, so a guest stuck connecting is never a silent log.
-func (d *Daemon) guestFailed(ctx context.Context, v *vmState, reason string) {
+func (d *Engine) guestFailed(ctx context.Context, v *vmState, reason string) {
 	if ctx.Err() != nil {
 		return
 	}
@@ -539,7 +539,7 @@ func (d *Daemon) guestFailed(ctx context.Context, v *vmState, reason string) {
 	}
 }
 
-func (d *Daemon) write(v *vmState, msg any) {
+func (d *Engine) write(v *vmState, msg any) {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return
@@ -554,7 +554,7 @@ func (d *Daemon) write(v *vmState, msg any) {
 	}
 }
 
-func (d *Daemon) hello(v *vmState) {
+func (d *Engine) hello(v *vmState) {
 	p := d.policy()
 	keys := d.hostKeys()
 	d.mu.Lock()
@@ -571,7 +571,7 @@ func (d *Daemon) hello(v *vmState) {
 	})
 }
 
-func (d *Daemon) rehello(v *vmState) {
+func (d *Engine) rehello(v *vmState) {
 	d.mu.Lock()
 	connected, was := v.guest == GuestConnected, v.keys
 	d.mu.Unlock()
@@ -597,7 +597,7 @@ type guestMessage struct {
 	} `json:"ports"`
 }
 
-func (d *Daemon) fromGuest(ctx context.Context, v *vmState, line []byte) {
+func (d *Engine) fromGuest(ctx context.Context, v *vmState, line []byte) {
 	var m guestMessage
 	if ctx.Err() != nil || json.Unmarshal(line, &m) != nil {
 		return
@@ -649,7 +649,7 @@ func (d *Daemon) fromGuest(ctx context.Context, v *vmState, line []byte) {
 	}
 }
 
-func (d *Daemon) guestRequest(ctx context.Context, vm string, m guestMessage) (any, error) {
+func (d *Engine) guestRequest(ctx context.Context, vm string, m guestMessage) (any, error) {
 	switch m.Op {
 	case "services":
 		return d.hostView(vm), nil
@@ -661,7 +661,7 @@ func (d *Daemon) guestRequest(ctx context.Context, vm string, m guestMessage) (a
 	return nil, fault("unknown_op", "unknown op \""+m.Op+"\"", "station ports")
 }
 
-func (d *Daemon) askGuest(ctx context.Context, v *vmState, op string, budget time.Duration) (json.RawMessage, error) {
+func (d *Engine) askGuest(ctx context.Context, v *vmState, op string, budget time.Duration) (json.RawMessage, error) {
 	ch := make(chan guestMessage, 1)
 	d.mu.Lock()
 	if v.asked == nil {
@@ -704,7 +704,7 @@ func hostPort(ip string, port int) string {
 // Serve's state read then, never at an adoption, so it holds for the whole of a run
 // and a permanent VM picks up the public URLs at its first start after Serve
 // turns on.
-func (d *Daemon) renderEnv(v *vmState) {
+func (d *Engine) renderEnv(v *vmState) {
 	p := d.policy()
 	d.mu.Lock()
 	e := d.exposureLocked()

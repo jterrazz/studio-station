@@ -13,8 +13,8 @@ func thisMacReading() power.Reading {
 	return power.Reading{Lid: "open", Source: "ac", HasBattery: true, Percent: 80}
 }
 
-func powerReport(daemon string, s *power.Session, r power.Reading) power.Report {
-	return power.Report{Now: powerNow, Daemon: daemon, Reading: r, Session: s, Guards: power.Guards(r, s)}
+func powerReport(engine string, s *power.Session, r power.Reading) power.Report {
+	return power.Report{Now: powerNow, Daemon: engine, Reading: r, Session: s, Guards: power.Guards(r, s)}
 }
 
 func heldSession() *power.Session {

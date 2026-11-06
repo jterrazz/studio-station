@@ -25,19 +25,19 @@ type ExposureKept struct {
 	Red     []string                    `json:"red,omitempty"`
 }
 
-func (d *Daemon) ExposureKept() ExposureKept {
+func (d *Engine) ExposureKept() ExposureKept {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return ExposureKept{At: d.exposedAt, Scanned: maps.Clone(d.scanned), Red: slices.Sorted(slices.Values(d.red))}
 }
 
-func (d *Daemon) RememberExposure(k ExposureKept) {
+func (d *Engine) RememberExposure(k ExposureKept) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.exposedAt, d.scanned, d.red = k.At, maps.Clone(k.Scanned), slices.Clone(k.Red)
 }
 
-func (d *Daemon) hear(vm string, ls []ports.Listener) {
+func (d *Engine) hear(vm string, ls []ports.Listener) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.heard[vm] = ls
@@ -45,7 +45,7 @@ func (d *Daemon) hear(vm string, ls []ports.Listener) {
 
 // value: whether a guest reported listeners other than the job last read;
 // the caller holds d.mu.
-func (d *Daemon) reheardLocked() bool {
+func (d *Engine) reheardLocked() bool {
 	for vm, ls := range d.heard {
 		if !slices.Equal(d.scanned[vm], ls) {
 			return true
@@ -54,7 +54,7 @@ func (d *Daemon) reheardLocked() bool {
 	return false
 }
 
-func (d *Daemon) heardOf(vm string) []ports.Listener {
+func (d *Engine) heardOf(vm string) []ports.Listener {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return slices.Clone(d.heard[vm])
@@ -62,7 +62,7 @@ func (d *Daemon) heardOf(vm string) []ports.Listener {
 
 // value: what listens in each running VM, placed behind its Mac or bridged
 // onto its network; the caller holds d.mu.
-func (d *Daemon) listeningLocked() []ports.Machine {
+func (d *Engine) listeningLocked() []ports.Machine {
 	names := make([]string, 0, len(d.heard))
 	for vm := range d.heard {
 		names = append(names, vm)
@@ -80,7 +80,7 @@ func (d *Daemon) listeningLocked() []ports.Machine {
 // VMs' are read at the start, every exposureEvery and on every listener
 // change a guest reports; a port that turns red is told once, and again
 // only after it stopped being red.
-func (d *Daemon) watchExposure(ctx context.Context) {
+func (d *Engine) watchExposure(ctx context.Context) {
 	if d.o.Listening == nil {
 		return
 	}

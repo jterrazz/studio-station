@@ -29,12 +29,12 @@ import (
 func (m machine) services(_ kit.Env) *services.Service {
 	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure,
 		Listening: m.listeners("/").Read, Routes: m.routes()}
-	d := servicesDaemon{c: m.engineAPI()}
+	d := servicesEngine{c: m.engineAPI()}
 	if m.kind != catalog.Host {
 		g := m.guest()
 		p := m.placement(g)
 		o.HereName, o.VMName, o.HostName = p.Host, p.VM, p.Host
-		d = servicesDaemon{c: socketAPI(m.host, g.SocketPath())}
+		d = servicesEngine{c: socketAPI(m.host, g.SocketPath())}
 	}
 	fleet := m.machines(false)
 	o.VMHost = func(ctx context.Context, vm string) (string, bool, error) {

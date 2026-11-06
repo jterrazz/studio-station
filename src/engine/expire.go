@@ -25,7 +25,7 @@ type Lends interface {
 // expireEvery; a share past its until on a running VM is taken back, with no
 // notification. A take-back that fails keeps its share and is told once per
 // expireRetell.
-func (d *Daemon) lendsDue() bool {
+func (d *Engine) lendsDue() bool {
 	now := d.h.Clock.Now()
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -36,7 +36,7 @@ func (d *Daemon) lendsDue() bool {
 	return true
 }
 
-func (d *Daemon) sweepLends(ctx context.Context) {
+func (d *Engine) sweepLends(ctx context.Context) {
 	if d.o.Lends == nil || !d.lendsDue() {
 		return
 	}
@@ -51,7 +51,7 @@ func (d *Daemon) sweepLends(ctx context.Context) {
 
 // invariant: a VM stopped past a share's until has it taken back at its
 // next start, before its guest is reported connected.
-func (d *Daemon) recallBeforeReady(ctx context.Context, vm string) {
+func (d *Engine) recallBeforeReady(ctx context.Context, vm string) {
 	if d.o.Lends == nil {
 		return
 	}
@@ -60,7 +60,7 @@ func (d *Daemon) recallBeforeReady(ctx context.Context, vm string) {
 	d.recallExpired(ctx, vm)
 }
 
-func (d *Daemon) recallExpired(ctx context.Context, only string) {
+func (d *Engine) recallExpired(ctx context.Context, only string) {
 	held, err := d.o.Lends.Held()
 	if err != nil {
 		return
@@ -87,14 +87,14 @@ func (d *Daemon) recallExpired(ctx context.Context, only string) {
 
 // invariant: the sweep takes back only through a connected guest; a VM still
 // connecting has its ended shares taken back as it connects, before it is ready.
-func (d *Daemon) isConnected(vm string) bool {
+func (d *Engine) isConnected(vm string) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	v := d.vms[vm]
 	return v != nil && v.state == StateRunning && v.guest == GuestConnected
 }
 
-func (d *Daemon) recall(ctx context.Context, vm string, names []string) {
+func (d *Engine) recall(ctx context.Context, vm string, names []string) {
 	err := d.o.Lends.Expire(ctx, vm, names)
 	now := d.h.Clock.Now()
 	for _, n := range names {
@@ -119,7 +119,7 @@ func (d *Daemon) recall(ctx context.Context, vm string, names []string) {
 
 // invariant: a VM deleted takes its copies with its disk; its shares go
 // with it.
-func (d *Daemon) forgetShares(ctx context.Context, vm string) {
+func (d *Engine) forgetShares(ctx context.Context, vm string) {
 	if d.o.Lends != nil {
 		_ = d.o.Lends.Forget(ctx, vm)
 	}

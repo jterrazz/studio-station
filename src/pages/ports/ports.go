@@ -152,9 +152,9 @@ func hostRows(h ports.HostServices) []page.Item {
 		row = page.Row{ID: h.Name, Label: h.Name, Mark: page.Attention, Reason: page.Unreachable,
 			Cells: []page.Value{page.None(), page.None(), page.None(), page.Text("does not answer")},
 			Hint:  page.Cmd("station machines")}
-	case h.Here && !h.Daemon.Running:
+	case h.Here && !h.Engine.Running:
 		reason, word, fix := page.Stopped, "not shared while the engine is stopped", "station engine start"
-		if !h.Daemon.Installed {
+		if !h.Engine.Installed {
 			reason, word, fix = page.Missing, "the engine is not installed", "station setup"
 		}
 		row = page.Row{ID: "engine", Label: "engine", Mark: page.Attention, Reason: reason,

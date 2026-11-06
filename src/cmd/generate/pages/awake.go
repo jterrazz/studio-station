@@ -10,10 +10,10 @@ import (
 
 // value: Awake on every Mac: This Mac a laptop kept awake with its lid
 // closed, the mini a desktop that never sleeps and hosts infra.
-func awakeFleet(daemon string, held bool) pageawake.Fleet {
-	laptop := awake.Report{Now: powerNow, Daemon: daemon, Mac: "jterrazz-macbook-pro", Here: true, Reading: thisMacReading(),
+func awakeFleet(engine string, held bool) pageawake.Fleet {
+	laptop := awake.Report{Now: powerNow, Daemon: engine, Mac: "jterrazz-macbook-pro", Here: true, Reading: thisMacReading(),
 		Caps: machine.Capabilities{Battery: true, Lid: true, Thermal: true, Engine: true}}
-	mini := awake.Report{Now: powerNow, Daemon: daemon, Mac: "mac-mini", Reading: awake.Reading{Source: "ac"},
+	mini := awake.Report{Now: powerNow, Daemon: engine, Mac: "mac-mini", Reading: awake.Reading{Source: "ac"},
 		Caps: machine.Capabilities{Thermal: true, Engine: true}, Servers: []string{"infra"}}
 	if held {
 		laptop.Session = heldSession()

@@ -10,10 +10,10 @@ import (
 // an unknown one, and one the job manager did not answer for.
 func backgroundJobs() []background.Job {
 	agent := func(label string) string { return "/Users/jterrazz/Library/LaunchAgents/" + label + ".plist" }
-	daemon := func(label string) string { return "/Library/LaunchDaemons/" + label + ".plist" }
+	rootPlist := func(label string) string { return "/Library/LaunchDaemons/" + label + ".plist" }
 	return []background.Job{
 		{Label: "com.jterrazz.brain.x-snapshot", File: agent("com.jterrazz.brain.x-snapshot"), Scope: background.ScopeUser, Loaded: true, LastExit: 2, ProgramExists: true, OwnerExists: true},
-		{Label: "com.bjango.istatmenus.installer", File: daemon("com.bjango.istatmenus.installer"), Scope: background.ScopeRoot, Loaded: true, ProgramExists: true,
+		{Label: "com.bjango.istatmenus.installer", File: rootPlist("com.bjango.istatmenus.installer"), Scope: background.ScopeRoot, Loaded: true, ProgramExists: true,
 			Removal: "sudo launchctl bootout system/com.bjango.istatmenus.installer && sudo rm /Library/LaunchDaemons/com.bjango.istatmenus.installer.plist"},
 		{Label: "com.jterrazz.station.engine", File: agent("com.jterrazz.station.engine"), Scope: background.ScopeUser, Loaded: true, Running: true, PID: 812, ProgramExists: true, OwnerExists: true},
 		{Label: "com.github.facebook.watchman", File: agent("com.github.facebook.watchman"), Scope: background.ScopeUser, Loaded: true, Running: true, PID: 3464, ProgramExists: true, OwnerExists: true},

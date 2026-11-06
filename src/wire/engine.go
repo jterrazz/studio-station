@@ -45,8 +45,8 @@ func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 // Router, so its fleet reaches the other Macs as the CLI's does; a recall
 // rides the engine's own connections, never its socket: the lends are bound
 // to the engine they serve.
-func (m machine) daemon(env kit.Env) *engine.Daemon {
-	lends := &daemonLends{}
+func (m machine) engine(env kit.Env) *engine.Engine {
+	lends := &engineLends{}
 	registry := m.registry(env)
 	calls := env.Calls
 	if calls == nil {
@@ -68,7 +68,7 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 		tailnet = m.world.tailnet()
 		checks = m.world.checks()
 	}
-	var d *engine.Daemon
+	var d *engine.Engine
 	sample := &enginejobs.Sample{
 		Calls: calls, Meter: m.meter(), Clock: m.host.Clock,
 		History: func() *activity.History { return d.History() },
@@ -136,32 +136,32 @@ func (m machine) engineStarted() time.Time {
 }
 
 func engineRunCommand(env kit.Env, m machine) *cobra.Command {
-	return enginerun.Command(enginerun.Deps{Engine: m.daemon(env)}, env)
+	return enginerun.Command(enginerun.Deps{Engine: m.engine(env)}, env)
 }
 
 // invariant: a v2 job runs `station daemon` until setup moves it to the
 // engine's label; it runs the engine, hidden, for one release.
-func retiredDaemonCommand(env kit.Env, m machine) *cobra.Command {
+func retiredEngineCommand(env kit.Env, m machine) *cobra.Command {
 	cmd := engineRunCommand(env, m)
 	cmd.Use = "daemon"
 	return cmd
 }
 
-type daemonLends struct{ s *secrets.Service }
+type engineLends struct{ s *secrets.Service }
 
-func (l *daemonLends) Held() (map[string][]accounts.Share, error) {
+func (l *engineLends) Held() (map[string][]accounts.Share, error) {
 	return l.s.Shares(context.Background())
 }
 
-func (l *daemonLends) Expire(ctx context.Context, vm string, names []string) error {
+func (l *engineLends) Expire(ctx context.Context, vm string, names []string) error {
 	return l.s.Expire(ctx, vm, names)
 }
 
-func (l *daemonLends) Forget(ctx context.Context, vm string) error { return l.s.Forget(ctx, vm) }
+func (l *engineLends) Forget(ctx context.Context, vm string) error { return l.s.Forget(ctx, vm) }
 
-type hostDaemon struct{ c engineAPI }
+type hostEngine struct{ c engineAPI }
 
-func (m machine) hostDaemon() hostDaemon { return hostDaemon{c: m.engineAPI()} }
+func (m machine) hostEngine() hostEngine { return hostEngine{c: m.engineAPI()} }
 
 func downAs(err, sentinel error) error {
 	var down *engine.DownError
@@ -172,12 +172,12 @@ func downAs(err, sentinel error) error {
 	return err
 }
 
-func (d hostDaemon) Ping(ctx context.Context) (string, error) {
+func (d hostEngine) Ping(ctx context.Context) (string, error) {
 	p, err := d.c.Hello(ctx)
 	return p.Version, downAs(err, machines.ErrDaemonDown)
 }
 
-func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, error) {
+func (d hostEngine) VMs(ctx context.Context) (map[string]machines.DaemonVM, error) {
 	views, err := d.c.VMs(ctx)
 	if err != nil {
 		return nil, downAs(err, machines.ErrDaemonDown)
@@ -189,7 +189,7 @@ func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, erro
 	return out, nil
 }
 
-func (d hostDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error) {
+func (d hostEngine) GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error) {
 	var ran process.ExecOut
 	if err := d.c.do(ctx, process.GuestExec, process.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
 		return system.Output{}, downAs(err, machines.ErrDaemonDown)
@@ -197,11 +197,11 @@ func (d hostDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (syst
 	return system.Output{Stdout: ran.Stdout, Stderr: ran.Stderr, ExitCode: ran.Code}, nil
 }
 
-func (d hostDaemon) Do(ctx context.Context, op, vm string) error {
+func (d hostEngine) Do(ctx context.Context, op, vm string) error {
 	return downAs(d.c.do(ctx, process.VM(op), process.VMIn{VM: vm}, nil), machines.ErrDaemonDown)
 }
 
-func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile string) (machines.Reserved, error) {
+func (d hostEngine) Reserve(ctx context.Context, vm string, port int, profile string) (machines.Reserved, error) {
 	var v services.View
 	if err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
 		return machines.Reserved{}, downAs(err, machines.ErrDaemonDown)
@@ -232,21 +232,21 @@ func hostOf(url string) string {
 	return host
 }
 
-type servicesDaemon struct{ c engineAPI }
+type servicesEngine struct{ c engineAPI }
 
-func (d servicesDaemon) Services(ctx context.Context) (services.HostView, error) {
+func (d servicesEngine) Services(ctx context.Context) (services.HostView, error) {
 	var v services.HostView
 	err := d.c.do(ctx, process.Services, nil, &v)
 	return v, downAs(err, services.ErrDaemonDown)
 }
 
-func (d servicesDaemon) Reserve(ctx context.Context, vm string, port int, pinned bool) (services.View, error) {
+func (d servicesEngine) Reserve(ctx context.Context, vm string, port int, pinned bool) (services.View, error) {
 	var v services.View
 	err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: pinned}, &v)
 	return v, downAs(err, services.ErrDaemonDown)
 }
 
-func (d servicesDaemon) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
+func (d servicesEngine) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
 	var l services.Lease
 	err := d.c.do(ctx, process.Release, process.ReserveIn{VM: vm, GuestPort: port}, &l)
 	return l, downAs(err, services.ErrDaemonDown)

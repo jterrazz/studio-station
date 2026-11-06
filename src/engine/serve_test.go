@@ -206,7 +206,7 @@ func TestARunRendersTheProfileEnvironmentAndAnAdoptionKeepsIt(t *testing.T) {
 	}
 }
 
-func certLines(d *Daemon) chan string {
+func certLines(d *Engine) chan string {
 	lines := make(chan string, 8)
 	d.note = func(line string) {
 		if strings.Contains(line, "certificate for") {

@@ -94,7 +94,7 @@ type Options struct {
 	Jobs []Tick
 }
 
-type Daemon struct {
+type Engine struct {
 	h      system.Host
 	hv     Hypervisor
 	guests Guests
@@ -157,14 +157,14 @@ type Reservations interface {
 	Delete(ctx context.Context, vm string, guestPort int) error
 }
 
-func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st Stores, o Options) *Daemon {
+func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st Stores, o Options) *Engine {
 	if o.Tick == 0 {
 		o.Tick = time.Second
 	}
 	if o.GuestPort == 0 {
 		o.GuestPort = 22
 	}
-	d := &Daemon{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, heard: map[string][]ports.Listener{}, recallFailed: map[string]time.Time{}}
+	d := &Engine{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, heard: map[string][]ports.Listener{}, recallFailed: map[string]time.Time{}}
 	d.power = d.newPower()
 	if o.Notifier != nil {
 		d.notifier = o.Notifier(d.logf)
@@ -172,9 +172,9 @@ func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st
 	return d
 }
 
-func (d *Daemon) Host(serve func(ctx context.Context, conn io.ReadWriteCloser)) { d.serve = serve }
+func (d *Engine) Host(serve func(ctx context.Context, conn io.ReadWriteCloser)) { d.serve = serve }
 
-func (d *Daemon) Check() error {
+func (d *Engine) Check() error {
 	// value: the server of station.api/v2, run on each connection of the
 	// socket; it is the engine's, built over this daemon, so it is handed after New.
 	if d.o.Here != catalog.Host {
@@ -183,7 +183,7 @@ func (d *Daemon) Check() error {
 	return nil
 }
 
-func (d *Daemon) policy() ports.Policy {
+func (d *Engine) policy() ports.Policy {
 	g, err := d.st.Services.Get()
 	if err != nil {
 		return ports.PolicyOf(nil)
@@ -191,11 +191,11 @@ func (d *Daemon) policy() ports.Policy {
 	return ports.PolicyOf(g)
 }
 
-func (d *Daemon) saveLeases() {
+func (d *Engine) saveLeases() {
 	_ = services.SaveLeases(context.Background(), d.st.Reservations, append([]services.Lease(nil), d.leases...))
 }
 
-func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
+func (d *Engine) Run(ctx context.Context, note func(line string)) error {
 	// invariant: the socket's liveness is the lock: a daemon that answers ping makes
 	// a second one exit; a socket file nobody answers is removed and made again.
 	// The socket is made only once adoption and serve reconciliation are done,
@@ -233,7 +233,7 @@ func (d *Daemon) Run(ctx context.Context, note func(line string)) error {
 	}
 }
 
-func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
+func (d *Engine) Begin(ctx context.Context, note func(line string)) error {
 	// invariant: Begin is the engine up to its socket: the clamshell set back
 	// to normal (a killed daemon's mask is cleared by its successor), the
 	// children a killed one left reaped, the runs adopted, the lends swept and
@@ -270,7 +270,7 @@ func (d *Daemon) Begin(ctx context.Context, note func(line string)) error {
 	return nil
 }
 
-func (d *Daemon) Step(ctx context.Context, tick int) bool {
+func (d *Engine) Step(ctx context.Context, tick int) bool {
 	// value: one tick of a stepped engine; it reports whether it is busy: a VM
 	// changed, a run waits for its delay, or a health check runs.
 	before := d.vmViews()
@@ -278,7 +278,7 @@ func (d *Daemon) Step(ctx context.Context, tick int) bool {
 	return !reflect.DeepEqual(before, d.vmViews()) || d.waiting()
 }
 
-func (d *Daemon) waiting() bool {
+func (d *Engine) waiting() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for _, v := range d.vms {
@@ -307,7 +307,7 @@ type Remembered struct {
 	Check    model.CheckStatus `json:"check,omitzero"`
 }
 
-func (d *Daemon) Memory() Memory {
+func (d *Engine) Memory() Memory {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	out := Memory{}
@@ -317,25 +317,25 @@ func (d *Daemon) Memory() Memory {
 	return out
 }
 
-func (d *Daemon) Remember(m Memory) {
+func (d *Engine) Remember(m Memory) {
 	// invariant: Remember comes before Begin: a VM it holds broken, or waiting
 	// for its delay, is not run again by the adoption.
 	d.memory = m
 }
 
-func (d *Daemon) Serve(ctx context.Context, conn io.ReadWriteCloser) {
+func (d *Engine) Serve(ctx context.Context, conn io.ReadWriteCloser) {
 	defer func() { _ = conn.Close() }()
 	if d.serve != nil {
 		d.serve(ctx, conn)
 	}
 }
 
-func (d *Daemon) Stop() {
+func (d *Engine) Stop() {
 	d.power.Quit()
 	d.closeAll()
 }
 
-func (d *Daemon) step(ctx context.Context, tick int) {
+func (d *Engine) step(ctx context.Context, tick int) {
 	if tick%serveEvery == 0 {
 		d.refreshSelf(ctx)
 		d.neverSleeps(time.Time{})
@@ -350,7 +350,7 @@ func (d *Daemon) step(ctx context.Context, tick int) {
 	}
 }
 
-func (d *Daemon) logf(subject, message string) {
+func (d *Engine) logf(subject, message string) {
 	if d.note != nil {
 		d.note(d.h.Clock.Now().UTC().Format(time.RFC3339) + " " + subject + ": " + message)
 	}
@@ -359,7 +359,7 @@ func (d *Daemon) logf(subject, message string) {
 // invariant: Serve's state is read at start and every serveEvery ticks: on,
 // every published lease is served and the entries no lease justifies go; off,
 // no serve runs and every row says so, logged once per change.
-func (d *Daemon) refreshSelf(ctx context.Context) {
+func (d *Engine) refreshSelf(ctx context.Context) {
 	self, err := d.tn.Ready(ctx)
 	if err != nil {
 		self = ports.SharingState{}
@@ -391,7 +391,7 @@ func (d *Daemon) refreshSelf(ctx context.Context) {
 // invariant: the tailnet issues the host's certificate at the first https
 // request, 34.5 s measured, so the daemon asks for it as Serve turns on, in
 // the background: never blocking a publish, one at a time, within its budget.
-func (d *Daemon) warmCert(ctx context.Context, host string) {
+func (d *Engine) warmCert(ctx context.Context, host string) {
 	d.mu.Lock()
 	if d.issuing || host == "" {
 		d.mu.Unlock()
@@ -419,7 +419,7 @@ func (d *Daemon) warmCert(ctx context.Context, host string) {
 	}()
 }
 
-func (d *Daemon) accept(ctx context.Context, l system.Listener) {
+func (d *Engine) accept(ctx context.Context, l system.Listener) {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -444,7 +444,7 @@ const accountsBudget = 12 * time.Second
 // invariant: each running VM is asked by its own guest, all at once, each
 // within accountsBudget; a VM whose guest is not connected is "absent" with
 // no rows. Only the guest's parsed rows travel: never a provider's output.
-func (d *Daemon) accounts(ctx context.Context) AccountsView {
+func (d *Engine) accounts(ctx context.Context) AccountsView {
 	d.mu.Lock()
 	var running []*vmState
 	for _, v := range d.vms {
@@ -496,7 +496,7 @@ const (
 // the wish stopped and its disk kept, whatever its lifetime: only a delete
 // destroys. Each answers its own result, so a VM that would not stop keeps
 // the engine that supervises it.
-func (d *Daemon) stopAll(ctx context.Context) []Stopped {
+func (d *Engine) stopAll(ctx context.Context) []Stopped {
 	records, _ := d.m.Records()
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -534,7 +534,7 @@ func (d *Daemon) stopAll(ctx context.Context) []Stopped {
 	return out
 }
 
-func (d *Daemon) sharedVMs() map[string]bool {
+func (d *Engine) sharedVMs() map[string]bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	out := map[string]bool{}
@@ -544,7 +544,7 @@ func (d *Daemon) sharedVMs() map[string]bool {
 	return out
 }
 
-func (d *Daemon) closeAll() {
+func (d *Engine) closeAll() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for _, s := range d.svcs {
@@ -560,7 +560,7 @@ func (d *Daemon) closeAll() {
 	}
 }
 
-func (d *Daemon) hostKeys() []string {
+func (d *Engine) hostKeys() []string {
 	home := d.h.Env.Home()
 	var keys []string
 	if pub, err := d.h.FS.ReadFile(path.Join(home, ".ssh", "id_ed25519.pub")); err == nil {

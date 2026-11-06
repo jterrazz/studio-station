@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 )
 
-func daemonFailure(err error) (*fail.Error, bool) {
+func engineFailure(err error) (*fail.Error, bool) {
 	var running *engine.RunningError
 	var hostOnly *engine.HostOnlyError
 	var down *engine.DownError

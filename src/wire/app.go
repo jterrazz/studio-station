@@ -88,7 +88,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	defer router.Close()
 	kenv.Calls = router
 	if session != nil {
-		world.engineFrom(func() *engine.Daemon { return here.daemon(kenv) })
+		world.engineFrom(func() *engine.Engine { return here.engine(kenv) })
 		session.farFrom(func(w *worldMac) farMac { return here.farMac(kenv, w) })
 	}
 	kenv.On.Refresh = func(ctx context.Context) error {
@@ -120,7 +120,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		toolsAlias(kenv, here),
 		storageAlias(kenv, here),
 		secretsAlias(kenv, here),
-		retiredDaemonCommand(kenv, here),
+		retiredEngineCommand(kenv, here),
 		guestCommand(kenv, here),
 		runCommand(kenv, here),
 		shellcmd.Command(kenv),

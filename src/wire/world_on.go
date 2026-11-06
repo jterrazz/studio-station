@@ -102,9 +102,9 @@ type worldMac struct {
 	run  *worldRun
 	name string
 
-	start    func() *engine.Daemon
+	start    func() *engine.Engine
 	starting bool
-	engine   *engine.Daemon
+	engine   *engine.Engine
 	// value: when the world says the running engine started: a Mac rebooted
 	// under it, inside the command, ends it with its process.
 	began  time.Time
@@ -343,7 +343,7 @@ func (m *worldMac) notifier() engine.Notifier {
 	return lockedNotifier{w: m.run.w, n: enginefake.NewNotifier(m.run.w)}
 }
 
-func (m *worldMac) engineFrom(start func() *engine.Daemon) { m.start = start }
+func (m *worldMac) engineFrom(start func() *engine.Engine) { m.start = start }
 
 func (m *worldMac) engineVersion() string {
 	if e := m.slice().Engine; e != nil {
@@ -496,7 +496,7 @@ func (m *worldMac) macs() remotecontract.EndpointDialer { return worldDialer{r: 
 // runs, and ends once it says otherwise or says it started since: begun at the first need of it,
 // then stepped over the world's clock until it is quiet, so a story that
 // waits on the engine is deterministic.
-func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
+func (m *worldMac) up(ctx context.Context) (*engine.Engine, bool) {
 	if m.engine != nil && m.runs() && !m.engineStarted().Equal(m.began) {
 		m.down(true)
 	}
@@ -543,7 +543,7 @@ func (m *worldMac) up(ctx context.Context) (*engine.Daemon, bool) {
 // watches the real ones hold, over the engine's own streams, for as long as
 // it runs in the command: the menu bar its page and events watches from
 // launch, and This Mac's activity only while open.
-func (m *worldMac) surfaces(ctx context.Context, d *engine.Daemon) {
+func (m *worldMac) surfaces(ctx context.Context, d *engine.Engine) {
 	e := m.slice().Engine
 	ctx, cancel := context.WithCancel(context.WithValue(ctx, waits{}, true))
 	var held sync.WaitGroup

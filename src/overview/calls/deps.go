@@ -57,7 +57,7 @@ type Deps[Tool, Item, Stray any] struct {
 	// value: the app updates waiting, on a Mac; nil elsewhere.
 	Updates Updates
 	Tailnet Tailnet
-	Daemon  Daemon
+	Daemon  Engine
 	Power   Power
 	// value: the servers this Mac runs; nil where none can run.
 	Servers    Servers
@@ -79,7 +79,7 @@ type Tailnet interface {
 	Status(ctx context.Context) (ports.Status, error)
 }
 
-type Daemon interface {
+type Engine interface {
 	Ping(ctx context.Context) (version string, err error)
 }
 

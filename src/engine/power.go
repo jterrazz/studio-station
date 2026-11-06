@@ -38,7 +38,7 @@ type Event struct {
 	Notice *Notice         `json:"notice,omitempty"`
 }
 
-func (d *Daemon) newPower() *power.Machine {
+func (d *Engine) newPower() *power.Machine {
 	return power.New(d.o.Power, d.h.Clock, power.Options{
 		Log:    func(m string) { d.logf("power", m) },
 		Notice: func(e power.End) { d.told(NoticeEnded, AwakeStopped(e.Detail)) },
@@ -55,14 +55,14 @@ func AwakeStopped(detail string) string {
 
 // invariant: every end of Awake and every word of Never sleeps is told once,
 // to the open surfaces and to the owner's notifications.
-func (d *Daemon) told(kind, text string) {
+func (d *Engine) told(kind, text string) {
 	d.hub.tell(Notice{Kind: kind, Text: text})
 	d.notify(context.Background(), Notification{Kind: kind, Subject: "awake", Text: text})
 }
 
 // invariant: at its start the engine holds Never sleeps before any VM
 // starts, as held since that start.
-func (d *Daemon) neverSleeps(since time.Time) {
+func (d *Engine) neverSleeps(since time.Time) {
 	if d.o.NeverSleeps != nil {
 		d.power.Policy(d.o.NeverSleeps(), since)
 	}
@@ -70,20 +70,20 @@ func (d *Daemon) neverSleeps(since time.Time) {
 
 type AwakeKept = power.Kept
 
-func (d *Daemon) AwakeKept() power.Kept {
+func (d *Engine) AwakeKept() power.Kept {
 	// value: what this engine keeps of Awake, for the stepped engine that
 	// follows it.
 	return d.power.Kept()
 }
 
-func (d *Daemon) RememberAwake(k power.Kept) { d.awake = &k }
+func (d *Engine) RememberAwake(k power.Kept) { d.awake = &k }
 
-func (d *Daemon) Suspend() {
+func (d *Engine) Suspend() {
 	d.power.Suspend()
 	d.closeAll()
 }
 
-func (d *Daemon) watchPower(ctx context.Context) {
+func (d *Engine) watchPower(ctx context.Context) {
 	if d.o.Power == nil {
 		return
 	}
@@ -92,7 +92,7 @@ func (d *Daemon) watchPower(ctx context.Context) {
 	}
 }
 
-func (d *Daemon) powerAwake(r AwakeIn) (power.Awoken, error) {
+func (d *Engine) powerAwake(r AwakeIn) (power.Awoken, error) {
 	session, refreshed, err := d.power.Awake(power.Request{Lid: r.Lid, Battery: r.Battery, For: time.Duration(r.For) * time.Second, By: r.By})
 	s := power.Awoken{Session: session, Refreshed: refreshed}
 	var rng *power.RangeError
@@ -113,7 +113,7 @@ func (d *Daemon) powerAwake(r AwakeIn) (power.Awoken, error) {
 	return s, err
 }
 
-func (d *Daemon) powerSleep() PowerSlept {
+func (d *Engine) powerSleep() PowerSlept {
 	s := d.power.Sleep()
 	return PowerSlept{Ended: s.Ended, After: int(s.After.Seconds())}
 }

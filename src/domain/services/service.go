@@ -163,7 +163,7 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 	if errors.Is(err, ErrDaemonDown) {
 		view, err = s.offline(ctx), nil
 		_, missing := s.h.FS.Stat(catalog.EnginePlist(s.h.Env.Home()))
-		view.Daemon.Installed = missing == nil
+		view.Engine.Installed = missing == nil
 	}
 	if err != nil {
 		return HostView{}, err

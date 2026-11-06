@@ -385,7 +385,7 @@ func tailnetStatus() ports.Status {
 func serviceFleet() services.Fleet {
 	seen := built
 	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
-		{Name: "macbook", Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true}, PublicHost: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
+		{Name: "macbook", Here: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicHost: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
 			Range: &services.Range{Low: 40000, High: 40999, Leased: 2, Free: 998, MaxPerVM: 20},
 			Services: []services.View{
 				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://jterrazz-macbook-pro.tail1234.ts.net:40001"}, LastSeenAt: &seen},
@@ -397,7 +397,7 @@ func serviceFleet() services.Fleet {
 
 func stoppedServices() services.Fleet {
 	f := serviceFleet()
-	f.Hosts[0].Daemon = services.DaemonInfo{Installed: true}
+	f.Hosts[0].Engine = services.DaemonInfo{Installed: true}
 	for i := range f.Hosts[0].Services {
 		f.Hosts[0].Services[i].State = services.Unknown
 	}
@@ -424,7 +424,7 @@ func estatePorts() services.Fleet {
 		{Machine: coremachine.Ref{Name: "macbook"}, Port: 5432, Process: "postgres", Binds: []string{"127.0.0.1"}, Reach: ports.ThisMachine},
 		{Machine: coremachine.Ref{Name: "linux-1", On: "macbook"}, Port: 5173, Process: "node", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet},
 	}
-	f.Hosts[1] = services.HostView{Name: "mac-mini", Reachable: true, Daemon: services.DaemonInfo{Running: true}, Services: []services.View{},
+	f.Hosts[1] = services.HostView{Name: "mac-mini", Reachable: true, Engine: services.DaemonInfo{Running: true}, Services: []services.View{},
 		Range: &services.Range{Low: 40000, High: 40999, Free: 1000, MaxPerVM: 20},
 		Ports: []ports.Port{
 			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},

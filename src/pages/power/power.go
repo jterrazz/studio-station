@@ -60,7 +60,7 @@ func stopped(r power.Report) bool {
 	return r.Daemon == power.DaemonStopped || r.Daemon == power.DaemonAbsent
 }
 
-func daemonHint(r power.Report) *page.Hint {
+func engineHint(r power.Report) *page.Hint {
 	if r.Daemon == power.DaemonAbsent {
 		return page.Cmd("station setup")
 	}
@@ -72,7 +72,7 @@ func sessionRows(r power.Report) []page.Row {
 	case r.Daemon == power.DaemonPending:
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Awaiting, Cells: []page.Value{page.Pending()}}}
 	case stopped(r):
-		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Unknown(), page.Text("engine " + r.Daemon)}, Hint: daemonHint(r)}}
+		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Unknown(), page.Text("engine " + r.Daemon)}, Hint: engineHint(r)}}
 	case r.Session == nil:
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.OK, Cells: []page.Value{page.Off(), ended(r.LastEnd, r.Zone)}, Hint: page.KeyHint("station awake 4h", KeyAwake)}}
 	}

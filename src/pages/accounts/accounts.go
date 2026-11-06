@@ -14,7 +14,7 @@ const (
 	KeyShare    = "s"
 	KeyTakeBack = "t"
 	KeyReload   = "R"
-	DaemonRow   = "engine"
+	EngineRow   = "engine"
 )
 
 func columns() []page.Column {
@@ -205,8 +205,8 @@ func group(m accounts.Machine, now time.Time) page.Item {
 	return page.Item{Group: g}
 }
 
-func daemonRow(state string) page.Row {
-	r := page.Row{ID: DaemonRow, Label: DaemonRow, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text(state)}, Hint: page.Cmd("station engine start")}
+func engineRow(state string) page.Row {
+	r := page.Row{ID: EngineRow, Label: EngineRow, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text(state)}, Hint: page.Cmd("station engine start")}
 	if state == accounts.DaemonAbsent {
 		r.Hint = page.Cmd("station setup")
 	}
@@ -228,7 +228,7 @@ func Section(r accounts.Report) page.Section {
 	}
 	switch {
 	case stopped(r):
-		d := daemonRow(r.Daemon)
+		d := engineRow(r.Daemon)
 		s.Items = append(s.Items, page.Item{Row: &d})
 	case vms == 0 && len(r.Machines) > 0 && r.Machines[0].Kind == accounts.KindHost:
 		s.Items = append(s.Items, page.Item{Note: &page.Note{Text: "no VMs: accounts shared with a VM appear here"}})

@@ -44,7 +44,7 @@ func (m machine) router(env kit.Env) *remote.Router {
 	}
 	r := remote.NewRouter(m.registry(env), m.profile, remote.Reach{
 		Macs:    macs,
-		Engine:  unix.New(guestRelay{m.hostDaemon()}, func() contract.Hello { return m.far.router.Served() }),
+		Engine:  unix.New(guestRelay{m.hostEngine()}, func() contract.Hello { return m.far.router.Served() }),
 		Locate:  m.locate,
 		Holder:  m.holder,
 		Version: Version(),
@@ -111,7 +111,7 @@ func (m machine) holder(ctx context.Context, vm string) (string, error) {
 	return "", &machines.UnknownMachineError{Name: vm}
 }
 
-type guestRelay struct{ d hostDaemon }
+type guestRelay struct{ d hostEngine }
 
 func (g guestRelay) GuestExec(ctx context.Context, vm, line, stdin string) (stdout string, code int, err error) {
 	out, err := g.d.GuestExec(ctx, vm, line, stdin)

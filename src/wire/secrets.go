@@ -47,7 +47,7 @@ func (m machine) secretStores() secrets.Stores {
 // value: whether a VM of this Mac runs, as its engine says, asked through
 // the engine's socket.
 func (m machine) vmRunning(ctx context.Context, vm string) (bool, error) {
-	live, err := m.hostDaemon().VMs(ctx)
+	live, err := m.hostEngine().VMs(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -73,7 +73,7 @@ func (s sharedGuest) GuestExec(ctx context.Context, vm, line, stdin string) (std
 	return out.Stdout, out.ExitCode, err
 }
 
-func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostDaemon(), m.vmRunning) }
+func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostEngine(), m.vmRunning) }
 
 func (m machine) secretsVia(guest secrets.Guest, running func(context.Context, string) (bool, error)) *secrets.Service {
 	return secrets.New(m.host, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), secrets.Options{Here: m.kind, Running: running, Receives: receives(guest), Log: filepath.Join(m.paths.State, "logs", "accounts.log")})

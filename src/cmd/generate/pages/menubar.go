@@ -66,22 +66,22 @@ func twoMacs() machines.Fleet {
 	infra := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Host: miniName, Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Guest: "connected", Want: "running",
 		Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built, CheckStatus: machines.CheckStatus{State: machines.CheckPassing, At: powerNow.Add(-40 * time.Second)}}, 8, 24)
 	infra.Resources.DiskBytes = 80 * gb
-	daemon := machines.DaemonInfo{Known: true, Running: true, Version: "v3.0.0"}
+	running := machines.DaemonInfo{Known: true, Running: true, Version: "v3.0.0"}
 	return machines.Fleet{Hosts: []machines.HostView{
-		{Name: thisMacName, User: "jterrazz", StationVersion: "v3.0.0", Here: true, Reachable: true, Daemon: daemon, Node: machines.Node{Online: true, IP: "100.98.133.14"}, VMs: []machines.VM{linux1, api}},
-		{Name: miniName, User: "jterrazz", StationVersion: "v3.0.0", Reachable: true, Daemon: daemon, Node: machines.Node{Online: true, IP: "100.98.133.20"}, LAN: "192.168.1.20", VMs: []machines.VM{infra}},
+		{Name: thisMacName, User: "jterrazz", StationVersion: "v3.0.0", Here: true, Reachable: true, Daemon: running, Node: machines.Node{Online: true, IP: "100.98.133.14"}, VMs: []machines.VM{linux1, api}},
+		{Name: miniName, User: "jterrazz", StationVersion: "v3.0.0", Reachable: true, Daemon: running, Node: machines.Node{Online: true, IP: "100.98.133.20"}, LAN: "192.168.1.20", VMs: []machines.VM{infra}},
 	}}
 }
 
 func twoMacsServices() services.Fleet {
 	public := "jterrazz-macbook-pro.tail77a797.ts.net"
 	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
-		{Name: thisMacName, Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true}, PublicHost: public, Serve: "on", HTTPS: "port",
+		{Name: thisMacName, Here: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicHost: public, Serve: "on", HTTPS: "port",
 			Services: []services.View{
 				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://" + public + ":40001"}},
 				{VM: "linux-1", GuestPort: 7000, HostPort: 40002, State: services.Published, Process: "nc"},
 			}},
-		{Name: miniName, Reachable: true, Daemon: services.DaemonInfo{Running: true}},
+		{Name: miniName, Reachable: true, Engine: services.DaemonInfo{Running: true}},
 	}}
 }
 

@@ -279,7 +279,7 @@ func batteryLine(b awake.Reading) string {
 	return strconv.Itoa(b.Percent) + "% " + state
 }
 
-func (r *Reader[Tool, Item, Stray]) daemon(ctx context.Context) overview.Check {
+func (r *Reader[Tool, Item, Stray]) engine(ctx context.Context) overview.Check {
 	absent := overview.Check{Name: "daemon", State: catalog.StateAbsent}
 	if r.d.Here.Kind != catalog.Host || r.d.Daemon == nil {
 		return absent
@@ -289,5 +289,5 @@ func (r *Reader[Tool, Item, Stray]) daemon(ctx context.Context) overview.Check {
 		d.Version, d.Err = r.d.Daemon.Ping(ctx)
 		d.Agent = d.Err != nil && r.d.Here.Agent != nil && r.d.Here.Agent()
 	}
-	return overview.DaemonRow(d, r.d.Here.Version)
+	return overview.EngineRow(d, r.d.Here.Version)
 }

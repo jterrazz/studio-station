@@ -65,7 +65,7 @@ func (r *Reader[Tool, Item, Stray]) machineJobs() []job[Tool, Item, Stray] {
 		},
 		{Key: subject + "/machine/daemon", Budget: defaultBudget + margin,
 			Do: func(ctx context.Context) func(*sn) {
-				d := r.daemon(ctx)
+				d := r.engine(ctx)
 				return func(s *sn) { s.Station.Daemon = d }
 			},
 			Late: func(s *sn) { s.Station.Daemon = overview.Check{Name: "daemon", State: catalog.StateAbsent} },

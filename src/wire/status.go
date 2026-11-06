@@ -70,7 +70,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Config:     configRead{configService(m)},
 		Setup:      setupRead{setupService(env, m)},
 		Disk:       diskRead{m.storage(env)},
-		Daemon:     m.hostDaemon(),
+		Daemon:     m.hostEngine(),
 		Hypervisor: m.hypervisor(),
 	}
 	meter := m.meter()
@@ -79,7 +79,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	if m.kind != catalog.Linux {
 		// value: the status page reads listeners, jobs and app updates on a Mac only.
 		d.Listeners, d.Jobs, d.Updates = listening, m.jobs(overviewcalls.ReadBudget), brew.New(h.Run, nil)
-		d.Servers = hostedServers{d: m.hostDaemon()}
+		d.Servers = hostedServers{d: m.hostEngine()}
 	}
 	d.Facts, d.Meter, d.Battery = facts, meter, m.powerPort
 	return d
@@ -108,7 +108,7 @@ func (m machine) facts() settingscontract.Inspector {
 	return settingsmacos.New(m.host.Run, m.host.FS, m.host.Clock, settingsmacos.Options{Root: m.systemRoot(), Jobs: m.jobs(config.ReadBudget)})
 }
 
-type hostedServers struct{ d hostDaemon }
+type hostedServers struct{ d hostEngine }
 
 func (s hostedServers) Hosted(ctx context.Context) bool {
 	live, err := s.d.VMs(ctx)

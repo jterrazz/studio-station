@@ -52,7 +52,7 @@ type HostServices struct {
 	Name       string        `json:"name"`
 	Here       bool          `json:"here"`
 	Reachable  bool          `json:"reachable"`
-	Daemon     EngineInfo    `json:"daemon"`
+	Engine     EngineInfo    `json:"daemon"`
 	PublicHost string        `json:"public_host"`
 	Serve      string        `json:"serve"`
 	HTTPS      string        `json:"https"`

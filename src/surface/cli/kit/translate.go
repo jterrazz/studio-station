@@ -37,7 +37,7 @@ func Translate(err error, path string) *fail.Error {
 		secretsFailure,
 		tailnetFailure,
 		powerFailure,
-		daemonFailure,
+		engineFailure,
 		saidFailure,
 		settingsFailure,
 	} {

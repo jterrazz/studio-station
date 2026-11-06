@@ -84,7 +84,7 @@ type streamed struct {
 }
 
 // value: the nth subscription's feed reads the nth channel.
-func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
+func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Engine {
 	t.Helper()
 	files := systemtest.NewFS()
 	h := systemtest.Host(systemtest.NewRunner(t), files, systemtest.Env{}, systemtest.NewNet(), nil)
@@ -116,7 +116,7 @@ func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
 
 // value: a watch of the menubar page; a subscriber not reading blocks each
 // of its sends until its watch ends.
-func subscribe(ctx context.Context, t *testing.T, d *Daemon, reading bool) streamed {
+func subscribe(ctx context.Context, t *testing.T, d *Engine, reading bool) streamed {
 	t.Helper()
 	s := streamed{events: make(chan Event, 64), ended: make(chan struct{})}
 	opened := make(chan struct{})

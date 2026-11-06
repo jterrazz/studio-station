@@ -74,7 +74,7 @@ type Daemon struct {
 	Err     error
 }
 
-func DaemonRow(d Daemon, station string) Check {
+func EngineRow(d Daemon, station string) Check {
 	// invariant: the daemon matters where VMs can exist: a host with its hypervisor; one that
 	// does not answer, or answers another version, is degraded, never an error.
 	c := Check{Name: "daemon", State: catalog.StateAbsent}

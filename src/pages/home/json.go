@@ -67,10 +67,10 @@ func jobs(in []background.Task) []jobJSON {
 type stationJSON struct {
 	Version string     `json:"version"`
 	Commit  string     `json:"commit"`
-	Daemon  daemonJSON `json:"daemon"`
+	Engine  engineJSON `json:"daemon"`
 }
 
-type daemonJSON struct {
+type engineJSON struct {
 	State   string `json:"state"`
 	Running bool   `json:"running"`
 	Version string `json:"version"`
@@ -177,7 +177,7 @@ func SnapshotContract(s Overview) SnapshotJSON {
 	body := SnapshotJSON{
 		Schema:      schema,
 		GeneratedAt: s.GeneratedAt.UTC().Format(time.RFC3339),
-		Station:     stationJSON{Version: s.Station.Version, Commit: s.Station.Commit, Daemon: daemonOf(s.Station.Daemon)},
+		Station:     stationJSON{Version: s.Station.Version, Commit: s.Station.Commit, Engine: engineOf(s.Station.Daemon)},
 		Machine: machineJSON{
 			Kind: string(s.Machine.Kind), Hostname: s.Machine.Hostname, OS: s.Machine.OS,
 			Arch: s.Machine.Arch, User: s.Machine.User, Shell: s.Machine.Shell,
@@ -252,8 +252,8 @@ func processes(in []activity.Process) []processJSON {
 	return out
 }
 
-func daemonOf(c overview.Check) daemonJSON {
-	d := daemonJSON{State: string(c.State), Running: c.State == catalog.StateOK || strings.HasPrefix(c.Value, "runs ")}
+func engineOf(c overview.Check) engineJSON {
+	d := engineJSON{State: string(c.State), Running: c.State == catalog.StateOK || strings.HasPrefix(c.Value, "runs ")}
 	if d.State == "" {
 		d.State = string(catalog.StateAbsent)
 	}

@@ -41,7 +41,7 @@ type Watching struct {
 	Machines []string `json:"machines"`
 }
 
-func (d *Daemon) Watch(ctx context.Context, machines []string, send func(any) error) error {
+func (d *Engine) Watch(ctx context.Context, machines []string, send func(any) error) error {
 	// invariant: SPEC §6.3: a machine is watched while a surface holds this
 	// watch open on it (the menu bar open, a terminal UI on its Activity or
 	// its Overview, or on All machines), and only then; a watch of pages or
@@ -59,4 +59,4 @@ func (d *Daemon) Watch(ctx context.Context, machines []string, send func(any) er
 	return nil
 }
 
-func (d *Daemon) Watched(machine string) bool { return d.watchers.watched(machine) }
+func (d *Engine) Watched(machine string) bool { return d.watchers.watched(machine) }
