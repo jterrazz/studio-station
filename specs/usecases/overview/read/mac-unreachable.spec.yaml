@@ -1,13 +1,11 @@
-description: 'the Overview of a Mac that does not answer says so, and the hint lists All machines'
+description: 'the Overview of a Mac that does not answer is its finding, and the read exits 0'
 env: mini-offline
 runs:
     - command: 'machines mac-mini'
-      exit: 1
-      stderr: |
-          Error: mac-mini does not answer
-          Hint: station machines
+      exit: 0
+      stdout: |
+          ✗ mac-mini does not answer
     - command: 'overview --on mac-mini'
-      exit: 1
-      stderr: |
-          Error: mac-mini does not answer
-          Hint: station machines
+      exit: 0
+      stdout: |
+          ✗ mac-mini does not answer

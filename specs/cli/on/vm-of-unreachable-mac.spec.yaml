@@ -4,15 +4,14 @@ fixture:
     - ./__fixtures__/mini-offline/
 runs:
     - command: 'apps --on infra'
-      exit: 1
-      stderr: |
-          Error: z does not answer
-          Hint: station machines
+      exit: 0
+      stdout: |
+          ✗ z does not answer
     - command: 'apps install jq --on infra'
       exit: 1
       stderr: |
           Error: z does not answer
-          Hint: station machines
+          Hint: station machines z
     - command: 'apps --on w 2>&1 | /usr/bin/head -n 1'
       exit: 0
       stdout: |

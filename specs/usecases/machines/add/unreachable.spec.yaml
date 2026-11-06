@@ -7,7 +7,7 @@ runs:
       exit: 1
       stderr: |
           Error: mac-mini does not answer
-          Hint: station machines
+          Hint: station machines mac-mini
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | [.preferences.macs, (.ssh.blocks // {})]'' world.json'
       exit: 0
       stdout: |

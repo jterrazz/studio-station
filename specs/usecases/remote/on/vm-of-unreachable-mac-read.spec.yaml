@@ -1,0 +1,11 @@
+description: 'a read of a VM whose Mac does not answer names where it is, and exits 0'
+env: mini-offline
+runs:
+    - command: 'activity --on infra'
+      exit: 0
+      stdout: |
+          ✗ infra is on mac-mini, which does not answer
+    - command: 'activity --on infra --json 2>/dev/null | /usr/bin/jq -c ''[.code, .subject, .hint]'''
+      exit: 0
+      stdout: |
+          ["remote.vm-mac-unreachable","infra","station machines mac-mini"]

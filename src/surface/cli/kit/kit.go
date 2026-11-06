@@ -278,6 +278,11 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 		if err != nil && l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && vmStopped(err) {
 			return env.Out.Finding(page.Absent, env.Target().Name+" is stopped", "start it to read its "+strings.Fields(path(c))[0])
 		}
+		if err != nil && l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && env.Far() && unanswered(err) {
+			// invariant: SPEC §8.1: a read of a machine that does not answer
+			// prints its finding and exits 0; an action exits 1.
+			return env.Out.Finding(page.Broken, Translate(err, path(c)).Message)
+		}
 		if err != nil {
 			return Translate(err, path(c))
 		}

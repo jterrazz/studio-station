@@ -13,8 +13,10 @@ type Held struct {
 	// value: a VM of All machines, the Mac that holds it, and whether it runs.
 	VM, Mac      string
 	MacIsThisMac bool
-	Running      bool
-	Kind         machine.Kind
+	// value: whether that Mac answered the list.
+	Reachable bool
+	Running   bool
+	Kind      machine.Kind
 }
 
 func Holder(ctx context.Context, env Env, vm string) (Held, bool) {
@@ -25,7 +27,7 @@ func Holder(ctx context.Context, env Env, vm string) (Held, bool) {
 	for _, h := range list.All.Macs {
 		for _, v := range h.VMs {
 			if v.Name == vm {
-				return Held{VM: vm, Mac: h.Name, MacIsThisMac: h.ThisMac, Running: v.State == machines.Running, Kind: v.Lifetime.Kind()}, true
+				return Held{VM: vm, Mac: h.Name, MacIsThisMac: h.ThisMac, Reachable: h.ThisMac || h.Reachable, Running: v.State == machines.Running, Kind: v.Lifetime.Kind()}, true
 			}
 		}
 	}

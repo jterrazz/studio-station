@@ -1,8 +1,7 @@
-description: 'ssh''s own 255 is a machine that cannot be reached, with the health step to run'
+description: 'ssh''s own 255 is a machine that cannot be reached: a read says so and exits 0'
 fixture: ./__fixtures__/ssh-down/
 runs:
     - command: 'apps --on x'
-      exit: 1
-      stderr: |
-          Error: x does not answer
-          Hint: station machines
+      exit: 0
+      stdout: |
+          ✗ x does not answer
