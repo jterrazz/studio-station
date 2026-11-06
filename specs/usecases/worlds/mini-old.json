@@ -133,7 +133,8 @@
                     }
                 ]
             },
-            "station": "v3.0.0"
+            "station": "v3.0.0",
+            "lacks": ["ports.declare", "activity.read"]
         }
     },
     "user": "jterrazz"

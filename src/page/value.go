@@ -43,6 +43,16 @@ func Age(t, now time.Time) Value {
 	return Value{Kind: KindAge, At: t.UTC().Format(time.RFC3339), N: int64(now.Sub(t).Seconds())}
 }
 
+func LastAnswer(at, now time.Time) string {
+	// value: the hour of a Mac's last answer, with its day when that was not
+	// today.
+	at, now = at.Local(), now.Local()
+	if at.YearDay() == now.YearDay() && at.Year() == now.Year() {
+		return at.Format("15:04")
+	}
+	return at.Format("2 Jan 15:04")
+}
+
 func Until(t, now time.Time) Value {
 	// value: the time left until t, as seen at now (a page never reads the
 	// clock): negative once t has passed.

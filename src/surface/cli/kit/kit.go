@@ -275,8 +275,24 @@ func Command[I any](l Leaf[I], env Env) *cobra.Command {
 			o.values = func() (map[string]string, error) { return valuesOn(env.Stdin) }
 		}
 		err := run(c.Context(), c, l, in, a, env, o)
-		if err != nil && l.Read != nil && l.Read(in) && !o.JSON && !o.PageJSON && vmStopped(err) {
+		read := err != nil && l.Read != nil && l.Read(in)
+		silent := read && env.Far() && unanswered(err)
+		if silent && (o.JSON || o.PageJSON) {
+			// invariant: SPEC §11.1, §12.2: a read of a machine that does not
+			// answer prints station.error/v1 and its block, and still exits 0,
+			// as the same read does on a terminal.
+			worded := Translate(err, path(c))
+			env.Out.FailureJSON(worded)
+			env.Out.Failure(worded)
+			return nil
+		}
+		if read && !o.JSON && !o.PageJSON && vmStopped(err) {
 			return env.Out.Finding(page.Absent, env.Target().Name+" is stopped", "start it to read its "+strings.Fields(path(c))[0])
+		}
+		if silent {
+			// invariant: SPEC §8.1: a read of a machine that does not answer
+			// prints its finding and exits 0; an action exits 1.
+			return env.Out.Finding(page.Broken, append([]string{Translate(err, path(c)).Message}, lastAnswer(c.Context(), env, err)...)...)
 		}
 		if err != nil {
 			return Translate(err, path(c))

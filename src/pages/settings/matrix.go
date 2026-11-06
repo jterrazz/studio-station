@@ -10,7 +10,6 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/pages"
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
@@ -141,7 +140,7 @@ func machinesSection(m settings.Matrix, now time.Time, label func(string) string
 func standing(c settings.Column, now time.Time) (page.Mark, page.Reason, []string) {
 	switch {
 	case c.Away == settings.Silent && c.Mac && !c.Answered.IsZero():
-		return page.Broken, page.Unreachable, []string{"does not answer", "last answer " + pages.LastAnswer(c.Answered, now)}
+		return page.Broken, page.Unreachable, []string{"does not answer", "last answer " + page.LastAnswer(c.Answered, now)}
 	case c.Away == settings.Silent && c.Mac:
 		return page.Broken, page.Unreachable, []string{"does not answer"}
 	case c.Away == settings.Silent:

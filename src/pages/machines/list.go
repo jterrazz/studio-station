@@ -7,7 +7,6 @@ import (
 
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/pages"
 )
 
 func listColumns() []page.Column {
@@ -120,7 +119,7 @@ func macRow(label string, h model.MacView, thisVersion string, now time.Time) pa
 	state, detail := page.Text("Online"), page.None()
 	switch {
 	case !h.Reachable && !h.Answered.IsZero():
-		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.List(page.Text("Unreachable"), page.Text("last answer "+pages.LastAnswer(h.Answered, now)))
+		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.List(page.Text("Unreachable"), page.Text("last answer "+page.LastAnswer(h.Answered, now)))
 	case !h.Reachable:
 		row.Mark, row.Reason, state = page.Broken, page.Unreachable, page.Text("Unreachable")
 	case h.Engine.Known && !h.Engine.Running && !h.Engine.Installed && h.ThisMac:

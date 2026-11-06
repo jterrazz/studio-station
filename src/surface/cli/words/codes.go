@@ -80,7 +80,12 @@ func Codes() map[fail.Code]Wording {
 			return "the request is not a " + e.Subject + " frame", "send one JSON object per line with v 2 and a call or a watch"
 		},
 		call.Unreachable: func(e *fail.Error) (string, string) {
-			return cmp.Or(e.Detail["label"], e.Subject) + " does not answer", "station machines"
+			mac := cmp.Or(e.Detail["label"], e.Subject)
+			return mac + " does not answer", strings.TrimSpace("station machines " + mac)
+		},
+		call.VMMacUnreachable: func(e *fail.Error) (string, string) {
+			mac := cmp.Or(e.Detail["label"], e.Detail["mac"])
+			return e.Subject + " is on " + mac + ", which does not answer", "station machines " + mac
 		},
 		enginecalls.StartFailed: func(e *fail.Error) (string, string) {
 			return "the engine did not start: " + e.Detail["last"], "station engine"
@@ -240,7 +245,8 @@ func Codes() map[fail.Code]Wording {
 			return "station is not installed on " + cmp.Or(e.Detail["label"], e.Subject), "install it there (scripts/install.sh), then add it again"
 		},
 		call.FarTooOld: func(e *fail.Error) (string, string) {
-			return e.Subject + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + e.Subject + " (scripts/install.sh there)"
+			mac := cmp.Or(e.Detail["label"], e.Subject)
+			return mac + " runs station " + e.Detail["version"] + ", which has no " + e.Detail["call"], "update station on " + mac + " (scripts/install.sh there)"
 		},
 	}
 	for code, word := range usage() {

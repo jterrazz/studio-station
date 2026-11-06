@@ -44,7 +44,10 @@ func Findings(m machine.Ref, kind machine.Kind, s *Series) []finding.Finding {
 		free := float64(last.DiskFree) / float64(last.DiskTotal)
 		fix := "station disk" + on
 		if kind == machine.Server {
-			fix = "station machines edit " + m.Name + " --disk <size> --on " + m.On
+			fix = "station machines edit " + m.Name + " --disk <size>"
+			if m.On != "" {
+				fix += " --on " + m.On
+			}
 		}
 		text := "Disk almost full: " + strconv.Itoa(int(free*100)) + " % free"
 		switch {

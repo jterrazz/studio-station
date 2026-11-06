@@ -80,7 +80,7 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 	}
 	l, err := r.endpoint(ctx, t, name)
 	if err != nil {
-		return err
+		return r.named(t, err)
 	}
 	defer r.release(l)
 	raw, err := json.Marshal(in)
@@ -90,7 +90,7 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 	answer, err := l.ep.Invoke(ctx, t, name, raw, p)
 	if err != nil {
 		r.broke(t.Mac(), l, err)
-		return r.labeled(t.Mac(), err)
+		return r.named(t, r.labeled(t.Mac(), err))
 	}
 	if decoded := call.Decode(answer, out); decoded != nil {
 		e := fail.New(fail.Failed, call.BadOutput, name, map[string]string{"out": name})
@@ -113,7 +113,7 @@ func (r *Router) Watch(ctx context.Context, target machine.Ref, name string, in 
 	}
 	l, err := r.endpoint(ctx, t, name)
 	if err != nil {
-		return nil, err
+		return nil, r.named(t, err)
 	}
 	raw, err := json.Marshal(in)
 	if err != nil {
@@ -196,7 +196,11 @@ func (r *Router) endpoint(ctx context.Context, t machine.Ref, name string) (*lin
 	}
 	if !slices.Contains(hello.Calls, name) {
 		r.release(l)
-		return nil, fail.New(fail.FarTooOld, call.FarTooOld, t.Mac(), map[string]string{"version": hello.Version, "call": name})
+		detail := map[string]string{"version": hello.Version, "call": name}
+		if r.reach.Label != nil {
+			detail["label"] = r.reach.Label(t.Mac())
+		}
+		return nil, fail.New(fail.FarTooOld, call.FarTooOld, t.Mac(), detail)
 	}
 	return l, nil
 }
@@ -397,6 +401,21 @@ func (e engineRow) Watch(ctx context.Context, _ machine.Ref, name string, in any
 		}
 	}()
 	return out, nil
+}
+
+// value: a VM of another Mac that does not answer is named as the owner
+// asked for it: the VM, on that Mac (SPEC §8.1).
+func (r *Router) named(t machine.Ref, err error) error {
+	var e *fail.Error
+	mac := t.Mac()
+	if t.Name == mac || mac == r.thisMac.Ref.Name || !errors.As(err, &e) || e.Code != call.Unreachable || e.Subject != mac {
+		return err
+	}
+	detail := map[string]string{"mac": mac}
+	for k, v := range e.Detail {
+		detail[k] = v
+	}
+	return fail.New(e.Type, call.VMMacUnreachable, t.Name, detail)
 }
 
 // value: a Mac that does not answer, or that names itself in its refusal,

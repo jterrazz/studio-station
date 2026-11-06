@@ -5,6 +5,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/ports"
 
+	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	model "github.com/jterrazz/studio-station/src/machines"
@@ -68,6 +69,11 @@ func controlFailure(err error) (*fail.Error, bool) {
 		return failed(boot.Error(), boot.See, err), true
 	}
 	return nil, false
+}
+
+func unanswered(err error) bool {
+	var e *fail.Error
+	return errors.As(err, &e) && (e.Code == call.Unreachable || e.Code == call.VMMacUnreachable)
 }
 
 // invariant: a read of a VM that is not running is a finding, the VM named

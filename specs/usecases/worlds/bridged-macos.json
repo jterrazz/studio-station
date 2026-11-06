@@ -22,7 +22,7 @@
                 },
                 "vm_user": "admin"
             },
-            "images": ["ghcr.io/jterrazz/station-linux:1"],
+            "images": ["ghcr.io/jterrazz/station-linux:1", "station-image-macos-2026.11.01"],
             "fresh": {
                 "size": {
                     "CPUs": 4,
@@ -152,6 +152,13 @@
                         "recipe_sha": "",
                         "built_at": "2026-11-01T08:00:00Z",
                         "size_gb": 4
+                    },
+                    {
+                        "name": "macos",
+                        "version": "2026.11.01",
+                        "fetched": true,
+                        "built_at": "2026-11-01T08:00:00Z",
+                        "size_gb": 30
                     }
                 ],
                 "reservations": [

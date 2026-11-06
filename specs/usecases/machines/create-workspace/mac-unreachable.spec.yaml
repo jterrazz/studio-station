@@ -5,4 +5,4 @@ runs:
       exit: 1
       stderr: |
           Error: mac-mini does not answer
-          Hint: station machines
+          Hint: station machines mac-mini

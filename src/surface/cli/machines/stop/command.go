@@ -49,7 +49,8 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			stopIt := func(answer string) (machinescalls.StopOut, error) {
 				stop := io.Wait("stopping " + in.Name)
 				defer stop()
-				return call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Stop, machinescalls.StopIn{VM: in.Name, Confirm: answer}, nil)
+				out, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Stop, machinescalls.StopIn{VM: in.Name, Confirm: answer}, nil)
+				return out, kit.OnItsMac(ctx, env, in.Name, err)
 			}
 			first := in.Confirm
 			if first == "" {

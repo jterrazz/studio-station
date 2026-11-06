@@ -2,12 +2,14 @@ package machinesadd
 
 import (
 	"context"
+	"errors"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/fail"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
@@ -42,6 +44,13 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			added, err := call.Invoke(ctx, env.Calls, env.Target(), machinescalls.Add, machinescalls.AddIn{Name: in.Name, User: in.User, Key: in.Key}, nil)
+			if e := new(fail.Error); errors.As(err, &e) && e.Code == call.Unreachable {
+				// invariant: a Mac that did not answer was not added: the
+				// hint is the list, never the page of a Mac it does not hold.
+				worded := kit.Translate(err, "machines add")
+				worded.Hint = "station machines"
+				return worded
+			}
 			if err != nil {
 				return err
 			}

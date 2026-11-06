@@ -96,6 +96,9 @@ func one(ctx context.Context, d Deps, env kit.Env, target machine.Ref, how read)
 	if held.MacIsThisMac {
 		holder = env.Self
 	}
+	if !held.Reachable {
+		return pageactivity.View{}, fail.New(fail.Unreachable, call.VMMacUnreachable, held.VM, map[string]string{"mac": held.Mac, "label": d.Label(held.Mac)})
+	}
 	return vm(ctx, d, env, holder, held.VM, held.Kind, held.Running, how)
 }
 

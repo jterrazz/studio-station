@@ -71,6 +71,8 @@ type Mac struct {
 	Hypervisor string `json:"hypervisor,omitempty"`
 	// value: the station version this Mac runs; empty, the spec binary's.
 	Station string `json:"station,omitempty"`
+	// value: the calls that older station does not serve, until an upgrade.
+	Lacks []string `json:"lacks,omitempty"`
 	// value: what station keeps in this Mac's preferences, by group.
 	Preferences map[string]json.RawMessage `json:"preferences,omitempty"`
 	// value: station's own files as text, by name, while no store has read

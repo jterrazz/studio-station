@@ -13,6 +13,8 @@ const (
 	Unknown fail.Code = "call.unknown"
 	// value: a machine that does not answer, or whose station API does not.
 	Unreachable fail.Code = "remote.unreachable"
+	// value: a VM whose Mac does not answer, so nothing reaches it.
+	VMMacUnreachable fail.Code = "remote.vm-mac-unreachable"
 	// value: a far binary that serves no such call.
 	FarTooOld fail.Code = "remote.far-too-old"
 	// value: a Mac whose ssh answers and that has no station to answer it.
